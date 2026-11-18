@@ -1,0 +1,395 @@
+# What the face asks of a client that writes: connecting to the pool,
+# writing with a reconnection where the connection is found lost, publishing,
+# subscribing and ending a subscription, and closing.
+
+use bytes
+use nats/internal/dialing
+use nats/internal/fixture
+use nats/internal/link
+use nats/internal/model
+use nats/internal/protocol
+use nats/internal/servers
+use nats/internal/state
+use nats/internal/subjects
+use random
+
+# The failure of a closed session.
+#
+# - `s`: the session.
+function closed_failure<T>(s: state.Session) -> T?
+    return fail(code: model.CLOSED, msg: f"the client of {s.target} is closed")
+
+# Whether `opts` stand within their ranges; the message names the first that
+# does not.
+#
+# - `opts`: the options.
+function check(opts: model.Options) -> ()?
+    if opts.servers.len() == 0
+        return fail(code: model.INVALID, msg: "the options name no server")
+
+    if opts.connect_ms < 1 || opts.write_ms < 0 || opts.ping_interval_ms < 0 || opts.pings_outstanding < 1
+        return fail(
+            code: model.INVALID,
+            msg: "a time of the options is out of its range: connect_ms is 1 or more, write_ms and ping_interval_ms 0 or more, pings_outstanding 1 or more"
+        )
+    r = opts.reconnect
+
+    if r.attempts < 0 || r.wait_ms < 1 || r.most_wait_ms < r.wait_ms || r.jitter_ms < 0
+        return fail(
+            code: model.INVALID,
+            msg: "the reconnection is out of its range: attempts and jitter_ms 0 or more, wait_ms 1 or more, most_wait_ms wait_ms or more"
+        )
+
+    if opts.pending_messages < 1 || opts.pending_bytes < 1
+        return fail(code: model.INVALID, msg: "the messages and bytes held are 1 or more")
+
+    if !subjects.is_subject(opts.inbox_prefix)
+        return fail(code: model.INVALID, msg: f"the inbox prefix \"{opts.inbox_prefix}\" is no subject")
+    return ok()
+
+# `pool` in a random order.
+#
+# - `pool`: the servers.
+function shuffled(pool: [servers.Server]) -> [servers.Server]
+    out @= pool
+    at: i64 @= out.len() - 1
+
+    while at > 0
+        other = to_i64(random.secure_below(to_u64(at + 1).must()).default(0)).must()
+        held = out[at]
+        out[at] @ out[other]
+        out[other] @ held
+        at @ at - 1
+
+    return out
+
+# A session connected to the first server of the pool that answers.
+#
+# - `opts`: the options.
+function open(opts: model.Options) -> state.Session?
+    check(opts)?
+    pool: [servers.Server] @= []
+
+    for text in opts.servers
+        pool @ pool.push(servers.read(text)?)
+
+    if opts.randomize
+        pool @ shuffled(pool)
+    s @= state.fresh(opts, pool: pool)
+    last: str @= ""
+    last_code: str @= model.CLOSED
+
+    for index in range(from: 0, to: pool.len())
+        match dialing.dial(@s, index: index)
+            .ok _ => return ok(s)
+            .err e =>
+                if e.code == model.PERMISSION || e.code == model.UNSUPPORTED
+                    return fail(code: e.code, msg: e.msg)
+                last @ e.msg
+                last_code @ e.code
+
+    return fail(code: last_code, msg: last)
+
+# Loses the connection and makes it again.
+#
+# - `s`: the session.
+# - `code`: the loss's code.
+# - `msg`: what was lost.
+function lose(@s: state.Session, code: str, msg: str) -> ()?
+    link.close(@s.link)
+    s.open @ false
+    return dialing.recover(@s, code: code, msg: msg)
+
+# Writes `data`, making the connection again and writing once more where it
+# was found lost.
+#
+# - `s`: the session.
+# - `data`: whole operations.
+function send(@s: state.Session, data: [u8]) -> ()?
+    if s.closed
+        return closed_failure(s)
+
+    if !s.open
+        dialing.recover(@s, code: model.CLOSED, msg: "the connection was lost")?
+    tried: i64 @= 0
+
+    while true
+        armed = link.arm(s.link, ms: s.options.write_ms)
+
+        failure = match armed
+            .err e => e
+            .ok _ =>
+                match link.write(@s.link, data: data)
+                    .ok _  => return ok()
+                    .err e => e
+
+        if tried >= 1
+            return lose(@s, code: failure.code, msg: f"writing to {s.target}: {failure.msg}")
+        tried @ tried + 1
+        lose(@s, code: failure.code, msg: f"writing to {s.target}: {failure.msg}")?
+
+# Publishes `m`.
+#
+# - `s`: the session.
+# - `m`: the message.
+function publish(@s: state.Session, m: model.Message) -> ()?
+    if !subjects.is_subject(m.subject)
+        return fail(code: model.INVALID, msg: f"\"{m.subject}\" is no subject to publish to")
+
+    if m.reply != "" && !subjects.is_subject(m.reply)
+        return fail(code: model.INVALID, msg: f"\"{m.reply}\" is no reply subject")
+
+    if s.closed
+        return closed_failure(s)
+    block: [u8] @= []
+
+    if m.headers.len() > 0
+        if !s.info.headers
+            return fail(code: model.UNSUPPORTED, msg: f"{s.target} reads no headers")
+        block @ protocol.header_block(m.headers)?
+
+    if block.len() + m.data.len() > s.info.max_payload
+        return fail(
+            code: model.LIMIT,
+            msg: f"a message of {block.len() + m.data.len()} bytes on \"{m.subject}\" is past the server's maximum of {s.info.max_payload}"
+        )
+
+    out = if m.headers.len() > 0
+        protocol.hpub(subject: m.subject, reply: m.reply, block: block, data: m.data)
+    else
+        protocol.pub(subject: m.subject, reply: m.reply, data: m.data)
+    send(@s, data: out)?
+    s.stats.messages_out @ s.stats.messages_out + 1
+    s.stats.bytes_out @ s.stats.bytes_out + m.data.len()
+    return ok()
+
+# Subscribes and answers the subscription's number.
+#
+# - `s`: the session.
+# - `subject`: the subject, wildcards allowed.
+# - `queue`: the queue group, "" for none.
+# - `internal`: whether the client makes it for its requests.
+function subscribe(@s: state.Session, subject: str, queue: str, internal: bool) -> i64?
+    if !subjects.is_filter(subject)
+        return fail(code: model.INVALID, msg: f"\"{subject}\" is no subject to subscribe to")
+
+    if queue != "" && !subjects.is_queue(queue)
+        return fail(code: model.INVALID, msg: f"\"{queue}\" is no queue group's name")
+
+    if s.closed
+        return closed_failure(s)
+    sid = s.next_sid
+    send(@s, data: protocol.sub(subject: subject, queue: queue, sid: sid))?
+    s.next_sid @ sid + 1
+    state.put_sub(
+        @s.subs,
+        sub: state.Sub(sid: sid, subject: subject, queue: queue, most: 0, delivered: 0, dropped: 0, pending: 0, internal: internal)
+    )
+    state.push_sid(@s.order, sid: sid)
+    return ok(sid)
+
+# The subscription `sid`, of the program's own.
+#
+# - `s`: the session.
+# - `sid`: its number.
+function sub_of(s: state.Session, sid: i64) -> state.Sub?
+    match s.subs[sid]
+        .ok got =>
+            if !got.internal
+                return ok(got)
+        .err _ => _ = 0
+
+    return fail(code: model.NOT_FOUND, msg: f"the client holds no subscription {sid}")
+
+# Ends the subscription `sid` at once.
+#
+# - `s`: the session.
+# - `sid`: its number.
+function unsubscribe(@s: state.Session, sid: i64) -> ()?
+    _ = sub_of(s, sid: sid)?
+
+    if s.closed
+        return closed_failure(s)
+    send(@s, data: protocol.unsub(sid: sid, most: 0))?
+    state.remove_sub(@s, sid: sid)
+    return ok()
+
+# Ends the subscription `sid` after `most` messages in all.
+#
+# - `s`: the session.
+# - `sid`: its number.
+# - `most`: the messages in all, 1 or more.
+function unsubscribe_after(@s: state.Session, sid: i64, most: i64) -> ()?
+    sub @= sub_of(s, sid: sid)?
+
+    if most < 1
+        return fail(code: model.INVALID, msg: f"a subscription ends after 1 message or more, and {most} was asked")
+
+    if sub.delivered >= most
+        return unsubscribe(@s, sid: sid)
+
+    if s.closed
+        return closed_failure(s)
+    send(@s, data: protocol.unsub(sid: sid, most: most))?
+    sub.most @ most
+    state.put_sub(@s.subs, sub: sub)
+    return ok()
+
+# Closes the session and drops what it holds.
+#
+# - `s`: the session.
+function close(@s: state.Session) -> ()?
+    if s.closed && s.held_count == 0 && link.is_gone(s.link)
+        return closed_failure(s)
+    dialing.close_for_good(@s)
+    _ = state.take_all(@s)
+    return ok()
+
+# The program's own subscriptions, oldest first.
+#
+# - `s`: the session.
+function subscriptions(s: state.Session) -> [i64]
+    out: [i64] @= []
+
+    for sid in s.order
+        match s.subs[sid]
+            .ok sub =>
+                if !sub.internal
+                    out @ out.push(sid)
+            .err _ => _ = 0
+
+    return out
+
+# The pool's URLs, no secret in them.
+#
+# - `s`: the session.
+function pool_urls(s: state.Session) -> [str]
+    out: [str] @= []
+
+    for one in s.pool
+        out @ out.push(servers.shown(one))
+
+    return out
+
+# A message to publish, for the tests.
+#
+# - `subject`: the subject.
+# - `data`: the data, as text.
+function sample(subject: str, data: str) -> model.Message
+    return model.Message(
+        subject: subject,
+        reply: "",
+        headers: [],
+        data: bytes.from_text(data),
+        sid: 0,
+        status: 0,
+        description: ""
+    )
+
+test "publish: PUB, PUB with a reply, HPUB, the counts"
+    r @= fixture.rig("")
+    publish(@r.session, m: sample(subject: "a", data: "hi")).must()
+    with_reply @= sample(subject: "a", data: "")
+    with_reply.reply @ "r.1"
+    publish(@r.session, m: with_reply).must()
+    headed @= sample(subject: "h", data: "x")
+    headed.headers @ [model.Header(name: "K", value: "v")]
+    publish(@r.session, m: headed).must()
+    assert fixture.heard(r.peer) == "PUB a 2\r\nhi\r\nPUB a r.1 0\r\n\r\nHPUB h 18 19\r\nNATS/1.0\r\nK: v\r\n\r\nx\r\n"
+    assert r.session.stats.messages_out == 3 && r.session.stats.bytes_out == 3
+    fixture.close_rig(@r)
+
+test "publish: a subject refused, a reply refused, headers a server reads none of, data past the maximum, a header refused"
+    r @= fixture.rig("")
+    assert publish(@r.session, m: sample(subject: "a.*", data: "")).is_err()
+    bad_reply @= sample(subject: "a", data: "")
+    bad_reply.reply @ "r s"
+    assert publish(@r.session, m: bad_reply).is_err()
+    headed @= sample(subject: "h", data: "")
+    headed.headers @ [model.Header(name: "K", value: "v")]
+    r.session.info.headers @ false
+
+    match publish(@r.session, m: headed)
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported"
+
+    r.session.info.headers @ true
+    r.session.info.max_payload @ 4
+
+    match publish(@r.session, m: sample(subject: "a", data: "12345"))
+        .ok _  => assert false
+        .err e => assert e.code == "limit"
+
+    headed.headers @ [model.Header(name: "K:", value: "v")]
+    assert publish(@r.session, m: headed).is_err() && fixture.heard(r.peer) == ""
+    fixture.close_rig(@r)
+
+test "subscribe and unsubscribe: SUB with and without a queue, UNSUB, a subject and a queue refused, an unknown subscription"
+    r @= fixture.rig("")
+    a = subscribe(@r.session, subject: "a.>", queue: "", internal: false).must()
+    b = subscribe(@r.session, subject: "b", queue: "workers", internal: false).must()
+    assert a == 1 && b == 2 && subscriptions(r.session) == [1, 2]
+    unsubscribe(@r.session, sid: a).must()
+    assert subscriptions(r.session) == [2] && unsubscribe(@r.session, sid: a).is_err()
+    assert subscribe(@r.session, subject: "a..b", queue: "", internal: false).is_err()
+    assert subscribe(@r.session, subject: "a", queue: "q q", internal: false).is_err()
+    assert fixture.heard(r.peer) == "SUB a.> 1\r\nSUB b workers 2\r\nUNSUB 1\r\n"
+    fixture.close_rig(@r)
+
+test "unsubscribe_after: UNSUB with the count, a count below 1, a count reached already"
+    r @= fixture.rig("")
+    a = subscribe(@r.session, subject: "a", queue: "", internal: false).must()
+    unsubscribe_after(@r.session, sid: a, most: 5).must()
+    assert r.session.subs[a].must().most == 5 && unsubscribe_after(@r.session, sid: a, most: 0).is_err()
+    sub @= r.session.subs[a].must()
+    sub.delivered @ 2
+    state.put_sub(@r.session.subs, sub: sub)
+    unsubscribe_after(@r.session, sid: a, most: 2).must()
+    assert subscriptions(r.session) == [] && fixture.heard(r.peer) == "SUB a 1\r\nUNSUB 1 5\r\nUNSUB 1\r\n"
+    fixture.close_rig(@r)
+
+test "close: once, then closed; every later call fails closed"
+    r @= fixture.rig("")
+    close(@r.session).must()
+
+    match close(@r.session)
+        .ok _  => assert false
+        .err e => assert e.code == "closed"
+
+    assert publish(@r.session, m: sample(subject: "a", data: "")).is_err()
+    assert subscribe(@r.session, subject: "a", queue: "", internal: false).is_err()
+    fixture.close(@r.peer.stream)
+
+test "check: no server, a time out of range, a reconnection out of range, a bound of 0, a prefix refused"
+    o @= state.sample().options
+    check(o).must()
+    o.servers @ []
+    assert check(o).is_err()
+    o @ state.sample().options
+    o.connect_ms @ 0
+    assert check(o).is_err()
+    o @ state.sample().options
+    o.reconnect.most_wait_ms @ 0
+    assert check(o).is_err()
+    o @ state.sample().options
+    o.pending_bytes @ 0
+    assert check(o).is_err()
+    o @ state.sample().options
+    o.inbox_prefix @ "a.>"
+    assert check(o).is_err()
+
+test "open: a URL refused, and no server listening"
+    o @= state.sample().options
+    o.servers @ ["http://h"]
+    assert open(o).is_err()
+    o.servers @ ["nats://127.0.0.1:1"]
+    o.connect_ms @ 2000
+
+    match open(o)
+        .ok _  => assert false
+        .err e => assert e.code == "closed" || e.code == "timeout" || e.code == "failed"
+
+test "shuffled: the same servers, every one once"
+    pool = [servers.read("a").must(), servers.read("b").must(), servers.read("c").must()]
+    out = shuffled(pool)
+    assert out.len() == 3 && servers.holds(out, host: "a", port: 4222) && servers.holds(out, host: "b", port: 4222) && servers.holds(out, host: "c", port: 4222)

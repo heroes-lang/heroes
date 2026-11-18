@@ -1,0 +1,232 @@
+# What carries a client's bytes: a TCP connection of `net`, a TLS stream of
+# `tls`, or a WebSocket of `websocket`, read, written, given a deadline and
+# closed alike. A read answers what one read brings; the end of the
+# connection is a failure `closed`, so a caller never stands still on it.
+
+use io
+use nats/internal/model
+use net
+use tls
+use websocket
+
+# The bytes asked of a stream at a time.
+constant CHUNK: i64
+    65536
+
+# The most bytes of one WebSocket frame or message read: 8 MiB, past a
+# message of the largest payload a server is usually given.
+constant MOST_FRAME: i64
+    8388608
+
+# What carries the bytes.
+variant Link
+    # A TCP connection, whose deadline `net` moves.
+    plain
+        # The connection.
+        conn: net.Conn
+    # A TLS stream, whose deadline `tls` moves.
+    secured
+        # The stream.
+        stream: io.Stream
+    # A WebSocket, binary messages carrying the protocol's bytes.
+    socket
+        # The connection.
+        conn: websocket.Conn
+    # Nothing: closed, or not connected yet.
+    gone
+
+# The failure of a link that carries nothing.
+#
+# - `target`: how the server is named.
+function closed_failure<T>(target: str) -> T?
+    return fail(code: model.CLOSED, msg: f"the connection to {target} is closed")
+
+# A TCP connection to `host` at `port`, made within `ms`.
+#
+# - `host`: the host.
+# - `port`: the port.
+# - `ms`: milliseconds, 1 or more.
+function open_plain(host: str, port: i64, ms: i64) -> Link?
+    c = net.connect_timeout(host, port: port, timeout_ms: ms, deadline_ms: 0)?
+    return ok(.plain(conn: c))
+
+# A TLS connection to `host` at `port`, TLS from its first byte.
+#
+# - `host`: the host, which the certificate must name.
+# - `port`: the port.
+# - `ms`: milliseconds the connection and its handshake may take.
+# - `roots`: the authorities trusted, "" for the system's.
+function open_tls(host: str, port: i64, ms: i64, roots: str) -> Link?
+    s = tls.connect(host: host, port: port, deadline_ms: ms, client: tls.Client(roots: roots, protocols: []))?
+    return ok(.secured(stream: s))
+
+# A TLS connection to `host` at `port` begun after the server's first line,
+# which begins `INFO` and is read and dropped below TLS.
+#
+# - `host`: the host.
+# - `port`: the port.
+# - `ms`: milliseconds the whole may take.
+# - `roots`: the authorities trusted.
+function open_after_info(host: str, port: i64, ms: i64, roots: str) -> Link?
+    s = tls.connect_after(host: host, port: port, deadline_ms: ms, client: tls.Client(roots: roots, protocols: []), steps: [.expect_line(prefix: "INFO")])?
+    return ok(.secured(stream: s))
+
+# A WebSocket to `target`.
+#
+# - `target`: a `ws://` or `wss://` URL.
+# - `ms`: milliseconds the connection and its handshake may take.
+# - `roots`: the authorities trusted for `wss://`.
+function open_socket(target: str, ms: i64, roots: str) -> Link?
+    client @= websocket.default_client()
+    client.tls @ tls.Client(roots: roots, protocols: [])
+    client.deadline_ms @ ms
+    client.redirects @ 0
+    client.settings.frame_bytes @ MOST_FRAME
+    client.settings.message_bytes @ MOST_FRAME
+    client.settings.close_wait_ms @ 1000
+    c = websocket.connect(target, client: client)?
+    return ok(.socket(conn: c))
+
+# TLS begun over the TCP connection `l`, as the client of `host`.
+#
+# - `l`: a plain link; its connection is the TLS stream's from then on, or
+#   closed where TLS cannot begin.
+# - `host`: the host the certificate must name.
+# - `roots`: the authorities trusted.
+#
+# Fails as `tls.client_over` fails, `unsupported` on macOS.
+function upgrade(@l: Link, host: str, roots: str) -> ()?
+    match l
+        .plain p =>
+            inner @= p.conn.stream
+
+            match tls.client_over(@inner, host: host, client: tls.Client(roots: roots, protocols: []))
+                .ok s =>
+                    l @ .secured(stream: s)
+                    return ok()
+                .err e =>
+                    _ = io.close(@inner).is_err()
+                    l @ .gone
+                    return fail(code: e.code, msg: e.msg)
+        .secured _        => return ok()
+        .socket _ | .gone => return fail(code: model.UNSUPPORTED, msg: "TLS begins only over a TCP connection")
+
+# Whether `l` is TLS, or a WebSocket over TLS.
+#
+# - `l`: the link.
+# - `secure`: whether a WebSocket was made over TLS.
+function is_secured(l: Link, secure: bool) -> bool
+    return match l
+        .plain _   => false
+        .secured _ => true
+        .socket _  => secure
+        .gone      => false
+
+# Makes every read and write of `l` end by `ms` milliseconds from now, 0
+# for none.
+#
+# - `l`: the link.
+# - `ms`: milliseconds, 0 or more.
+function arm(l: Link, ms: i64) -> ()?
+    return match l
+        .plain p   => net.set_deadline(p.conn, ms: ms)
+        .secured s => tls.set_deadline(s.stream, ms: ms)
+        .socket w  => websocket.set_deadline(w.conn, ms: ms)
+        .gone      => fail(code: model.CLOSED, msg: "the connection is closed")
+
+# The bytes one read of `l` brings, at least one.
+#
+# - `l`: the link; a WebSocket's state moves.
+# - `target`: how the server is named.
+#
+# Fails `closed` where the server ended the connection, and as the read
+# fails.
+function read(@l: Link, target: str) -> [u8]?
+    got = match l
+        .plain p   => io.read(p.conn.stream, most: CHUNK)?
+        .secured s => io.read(s.stream, most: CHUNK)?
+        .socket w =>
+            c @= w.conn
+            answer = websocket.read_message(@c)
+            l @ .socket(conn: c)
+            websocket.data_of(answer?)
+        .gone => return closed_failure(target)
+
+    if got.len() == 0
+        return fail(code: model.CLOSED, msg: f"{target} closed the connection")
+    return ok(got)
+
+# Writes `data` to `l`.
+#
+# - `l`: the link.
+# - `data`: the bytes.
+function write(@l: Link, data: [u8]) -> ()?
+    match l
+        .plain p   => return io.write(p.conn.stream, data: data)
+        .secured s => return io.write(s.stream, data: data)
+        .socket w =>
+            c @= w.conn
+            done = websocket.write_binary(@c, data: data)
+            l @ .socket(conn: c)
+            return done
+        .gone => return fail(code: model.CLOSED, msg: "the connection is closed")
+
+# Closes `l`, whatever it holds, and leaves it `gone`.
+#
+# - `l`: the link.
+function close(@l: Link)
+    match l
+        .plain p =>
+            s @= p.conn.stream
+            _ = io.close(@s).is_err()
+        .secured t =>
+            s @= t.stream
+            _ = io.close(@s).is_err()
+        .socket w =>
+            c @= w.conn
+            _ = websocket.drop(@c).is_err()
+        .gone => _ = 0
+
+    l @ .gone
+
+# Whether `l` carries nothing.
+#
+# - `l`: the link.
+function is_gone(l: Link) -> bool
+    return match l
+        .gone                             => true
+        .plain _ | .secured _ | .socket _ => false
+
+# The stream under `l`, for a program that waits on it.
+#
+# - `l`: the link.
+function stream_of(l: Link) -> io.Stream?
+    return match l
+        .plain p   => ok(p.conn.stream)
+        .secured s => ok(s.stream)
+        .socket w  => ok(w.conn.stream)
+        .gone      => fail(code: model.CLOSED, msg: "the client is closed")
+
+test "a link over a pair of connections: written, read, armed, closed, and gone after"
+    two = net.pair(5000).must()
+    l: Link @= .plain(conn: two.first)
+    peer @= two.second.stream
+    write(@l, data: [1, 2, 3]).must()
+    assert io.read_exact(peer, count: 3).must() == [1, 2, 3]
+    io.write(peer, data: [9]).must()
+    assert read(@l, target: "t").must() == [9]
+    arm(l, ms: 50).must()
+
+    match read(@l, target: "t")
+        .ok _  => assert false
+        .err e => assert e.code == "timeout"
+
+    io.close(@peer).must()
+    arm(l, ms: 0).must()
+
+    match read(@l, target: "t")
+        .ok _  => assert false
+        .err e => assert e.code == "closed"
+
+    close(@l)
+    assert stream_of(l).is_err() && write(@l, data: [1]).is_err() && !is_secured(l, secure: false)

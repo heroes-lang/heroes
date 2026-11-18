@@ -1,0 +1,222 @@
+# The bytes of NATS's client protocol the client writes: `CONNECT`, `PUB`,
+# `HPUB`, `SUB`, `UNSUB`, `PING` and `PONG`; and a message's header block,
+# written and read.
+
+use bytes
+use nats/internal/model
+use strings
+
+# Adds the bytes of `s` to `out`.
+#
+# - `out`: the bytes being written.
+# - `s`: the text.
+function put_text(@out: [u8], s: str)
+    bytes.push_text(@out, s: s)
+
+# `CONNECT` and its JSON.
+#
+# - `json_text`: the JSON object.
+function connect(json_text: str) -> [u8]
+    out: [u8] @= []
+    put_text(@out, s: "CONNECT " + json_text + "\r\n")
+    return out
+
+# `PING`.
+function ping() -> [u8]
+    return bytes.from_text("PING\r\n")
+
+# `PONG`.
+function pong() -> [u8]
+    return bytes.from_text("PONG\r\n")
+
+# `PUB`, its data and its end.
+#
+# - `subject`: the subject.
+# - `reply`: the reply subject, "" for none.
+# - `data`: the data.
+function pub(subject: str, reply: str, data: [u8]) -> [u8]
+    out: [u8] @= []
+
+    if reply == ""
+        put_text(@out, s: f"PUB {subject} {data.len()}\r\n")
+    else
+        put_text(@out, s: f"PUB {subject} {reply} {data.len()}\r\n")
+    bytes.push_all(to: @out, from: data)
+    put_text(@out, s: "\r\n")
+    return out
+
+# `HPUB`, its header block, its data and its end.
+#
+# - `subject`: the subject.
+# - `reply`: the reply subject, "" for none.
+# - `block`: the header block, as `header_block` writes it.
+# - `data`: the data.
+function hpub(subject: str, reply: str, block: [u8], data: [u8]) -> [u8]
+    out: [u8] @= []
+    total = block.len() + data.len()
+
+    if reply == ""
+        put_text(@out, s: f"HPUB {subject} {block.len()} {total}\r\n")
+    else
+        put_text(@out, s: f"HPUB {subject} {reply} {block.len()} {total}\r\n")
+    bytes.push_all(to: @out, from: block)
+    bytes.push_all(to: @out, from: data)
+    put_text(@out, s: "\r\n")
+    return out
+
+# `SUB`.
+#
+# - `subject`: the subject.
+# - `queue`: the queue group, "" for none.
+# - `sid`: the subscription's number.
+function sub(subject: str, queue: str, sid: i64) -> [u8]
+    if queue == ""
+        return bytes.from_text(f"SUB {subject} {sid}\r\n")
+    return bytes.from_text(f"SUB {subject} {queue} {sid}\r\n")
+
+# `UNSUB`.
+#
+# - `sid`: the subscription's number.
+# - `most`: the messages in all after which it ends, 0 for at once.
+function unsub(sid: i64, most: i64) -> [u8]
+    if most == 0
+        return bytes.from_text(f"UNSUB {sid}\r\n")
+    return bytes.from_text(f"UNSUB {sid} {most}\r\n")
+
+# Whether `name` may name a header: printable ASCII with no `:`.
+#
+# - `name`: the name.
+function is_header_name(name: str) -> bool
+    if name == ""
+        return false
+
+    for b in bytes.from_text(name)
+        if b <= ' ' || b >= 127 || b == ':'
+            return false
+
+    return true
+
+# Whether `value` may be a header's value: no carriage return or line feed.
+#
+# - `value`: the value.
+function is_header_value(value: str) -> bool
+    for b in bytes.from_text(value)
+        if b == '\r' || b == '\n'
+            return false
+
+    return true
+
+# The header block of `headers`: `NATS/1.0`, a line per field, an empty line.
+#
+# - `headers`: the fields.
+#
+# Fails `invalid` where a name or a value is refused.
+function header_block(headers: [model.Header]) -> [u8]?
+    out: [u8] @= []
+    put_text(@out, s: "NATS/1.0\r\n")
+
+    for h in headers
+        if !is_header_name(h.name)
+            return fail(
+                code: model.INVALID,
+                msg: f"\"{h.name}\" is no header's name: printable ASCII with no space and no colon"
+            )
+
+        if !is_header_value(h.value)
+            return fail(code: model.INVALID, msg: f"the value of the header \"{h.name}\" holds a line's end")
+        put_text(@out, s: h.name + ": " + h.value + "\r\n")
+
+    put_text(@out, s: "\r\n")
+    return ok(out)
+
+# What a header block holds.
+record HeadersRead
+    # The fields, in order.
+    headers: [model.Header]
+    # The status, 0 for none.
+    status: i64
+    # The status's words.
+    description: str
+
+# The fields and the status of a header block.
+#
+# - `block`: the block's bytes.
+#
+# Fails `invalid` where it does not open with `NATS/1.0`, a status is no
+# number of three digits, or a line holds no colon.
+function read_headers(block: [u8]) -> HeadersRead?
+    text = match bytes.to_text(block)
+        .ok got => got
+        .err _  => return fail(code: model.INVALID, msg: "a message's headers are not UTF-8")
+
+    lines = strings.split(s: text, sep: "\r\n")
+
+    if lines.len() == 0 || !strings.has_prefix(s: lines[0], prefix: "NATS/1.0")
+        return fail(code: model.INVALID, msg: "a message's headers do not open with NATS/1.0")
+    first = strings.trim(lines[0].slice(from: 8, to: lines[0].len()))
+    status: i64 @= 0
+    description: str @= ""
+
+    if first != ""
+        code_text = match strings.split_once(s: first, sep: " ")
+            .ok h =>
+                description @ strings.trim(h.after)
+                h.before
+            .err _ => first
+
+        if code_text.len() != 3
+            return fail(
+                code: model.INVALID,
+                msg: f"the status \"{code_text}\" of a message is no number of three digits"
+            )
+
+        for b in bytes.from_text(code_text)
+            if b < '0' || b > '9'
+                return fail(
+                    code: model.INVALID,
+                    msg: f"the status \"{code_text}\" of a message is no number of three digits"
+                )
+            status @ status * 10 + to_i64(b - '0').must()
+
+    out: [model.Header] @= []
+
+    for at in range(from: 1, to: lines.len())
+        line = lines[at]
+
+        if line != ""
+            h = match strings.split_once(s: line, sep: ":")
+                .ok got => got
+                .err _  => return fail(code: model.INVALID, msg: f"the header line \"{line}\" holds no colon")
+
+            out @ out.push(model.Header(name: h.before, value: strings.trim_start(h.after)))
+
+    return ok(HeadersRead(headers: out, status: status, description: description))
+
+test "pub, hpub, sub and unsub: the bytes NATS's protocol writes, with and without a reply, a queue and a count"
+    assert pub(subject: "a", reply: "", data: bytes.from_text("hi")) == bytes.from_text("PUB a 2\r\nhi\r\n")
+    assert pub(subject: "a", reply: "r", data: []) == bytes.from_text("PUB a r 0\r\n\r\n")
+    block = header_block([model.Header(name: "K", value: "v")]).must()
+    assert block == bytes.from_text("NATS/1.0\r\nK: v\r\n\r\n")
+    assert hpub(subject: "a", reply: "", block: block, data: bytes.from_text("x")) == bytes.from_text("HPUB a 18 19\r\nNATS/1.0\r\nK: v\r\n\r\nx\r\n")
+    assert sub(subject: "a.*", queue: "", sid: 1) == bytes.from_text("SUB a.* 1\r\n")
+    assert sub(subject: "a", queue: "q", sid: 2) == bytes.from_text("SUB a q 2\r\n")
+    assert unsub(sid: 3, most: 0) == bytes.from_text("UNSUB 3\r\n") && unsub(sid: 3, most: 5) == bytes.from_text("UNSUB 3 5\r\n")
+
+test "header_block: none, a name with a colon, a space, a value with a line feed, UTF-8 in a value"
+    assert header_block([]).must() == bytes.from_text("NATS/1.0\r\n\r\n")
+    assert header_block([model.Header(name: "a:b", value: "")]).is_err()
+    assert header_block([model.Header(name: "a b", value: "")]).is_err()
+    assert header_block([model.Header(name: "a", value: "x\ny")]).is_err()
+    assert !header_block([model.Header(name: "a", value: "città")]).is_err()
+
+test "read_headers: Go's answers for a status alone, a status with words, a value's leading space taken and its trailing kept, a name repeated"
+    one = read_headers(bytes.from_text("NATS/1.0 503\r\nfoo-bar:  x \r\n\r\n")).must()
+    assert one.status == 503 && one.description == "" && one.headers == [model.Header(name: "foo-bar", value: "x ")]
+    two = read_headers(bytes.from_text("NATS/1.0 408 Request Timeout\r\nA: b\r\nA: c\r\n\r\n")).must()
+    assert two.status == 408 && two.description == "Request Timeout" && two.headers.len() == 2
+
+test "read_headers: no NATS/1.0, a status of two digits, a line with no colon, bytes that are no UTF-8"
+    assert read_headers(bytes.from_text("HTTP/1.1\r\n\r\n")).is_err()
+    assert read_headers(bytes.from_text("NATS/1.0 50\r\n\r\n")).is_err()
+    assert read_headers(bytes.from_text("NATS/1.0\r\nnocolon\r\n\r\n")).is_err()
+    assert read_headers([78, 65, 84, 83, 47, 49, 46, 48, 13, 10, 255, 58, 13, 10]).is_err()

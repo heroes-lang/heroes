@@ -1,0 +1,386 @@
+# What the face asks of a client: connecting, publishing at each quality of
+# service with its handshake, subscribing and unsubscribing with their
+# acknowledgements, acknowledging a message the program read, and ending the
+# connection with or without `DISCONNECT`.
+
+use maps
+use mqtt/internal/dialing
+use mqtt/internal/fixture
+use mqtt/internal/model
+use mqtt/internal/reading
+use mqtt/internal/state
+use mqtt/internal/topics
+use mqtt/internal/waiting
+
+# Whether `opts` stand within their ranges; the message names the first that
+# does not.
+#
+# - `opts`: the options.
+function check(opts: model.Options) -> ()?
+    if opts.host == ""
+        return fail(code: model.INVALID, msg: "the options name no host")
+
+    if opts.port < 1 || opts.port > 65535
+        return fail(code: model.INVALID, msg: f"the port {opts.port} is outside 1 to 65535")
+
+    if opts.version != 4 && opts.version != 5
+        return fail(code: model.UNSUPPORTED, msg: f"the protocol level {opts.version} is neither 4 (MQTT 3.1.1) nor 5")
+
+    if opts.keep_alive_s < 0 || opts.keep_alive_s > 65535
+        return fail(code: model.INVALID, msg: f"the keep-alive {opts.keep_alive_s} is outside 0 to 65,535 seconds")
+
+    if opts.connect_ms < 1 || opts.wait_ms < 1 || opts.most_packet_bytes < 16 || opts.most_held < 1
+        return fail(
+            code: model.INVALID,
+            msg: "connect_ms and wait_ms are 1 or more, most_packet_bytes 16 or more, most_held 1 or more"
+        )
+    r = opts.reconnect
+
+    if r.attempts < 0 || r.wait_ms < 1 || r.most_wait_ms < r.wait_ms || r.jitter_ms < 0
+        return fail(
+            code: model.INVALID,
+            msg: "the reconnection is out of its range: attempts and jitter_ms 0 or more, wait_ms 1 or more, most_wait_ms wait_ms or more"
+        )
+
+    if opts.version == 4 && opts.client_id == "" && !opts.clean_start
+        return fail(code: model.INVALID, msg: "MQTT 3.1.1 keeps no session for a client with no identifier")
+    return ok()
+
+# A session connected to the server.
+#
+# - `opts`: the options.
+function open(opts: model.Options) -> state.Session?
+    check(opts)?
+    s @= state.fresh(opts)
+    dialing.dial(@s)?
+    return ok(s)
+
+# Publishes `m`, waiting for its acknowledgement at QoS 1 and its whole
+# handshake at QoS 2, sent again with its DUP set after a reconnection.
+#
+# - `s`: the session.
+# - `m`: the message; its identifier and DUP are the client's.
+function publish(@s: state.Session, m: model.Message) -> ()?
+    if !topics.is_topic(m.topic)
+        return fail(code: model.INVALID, msg: f"\"{m.topic}\" is no topic to publish to")
+
+    if m.qos < 0 || m.qos > 2
+        return fail(code: model.INVALID, msg: f"the quality of service {m.qos} is none of 0, 1 and 2")
+
+    if s.closed
+        return dialing.closed_failure(s)
+
+    if m.qos > s.max_qos
+        return fail(code: model.UNSUPPORTED, msg: f"{s.target} takes messages of QoS {s.max_qos} at most")
+
+    if m.retain && !s.retain_available
+        return fail(code: model.UNSUPPORTED, msg: f"{s.target} keeps no retained message")
+    out @= m
+    out.dup @ false
+    out.packet_id @ 0
+
+    if m.qos > 0
+        out.packet_id @ state.take_id(@s)
+    dialing.send(@s, p: .publish(message: out))?
+
+    if m.qos > 0
+        until = waiting.deadline(s.options.wait_ms)
+        released: bool @= false
+
+        while true
+            kind = if m.qos == 1
+                4
+            else if released
+                7
+            else
+                5
+
+            match waiting.await_ack(@s, kind: kind, packet_id: out.packet_id, until: until)?
+                .ack a =>
+                    if a.reason >= 128
+                        said = reading.text_in(a.properties, id: 31)
+                        return fail(
+                            code: reading.code_of(a.reason),
+                            msg: f"{s.target} refused the message on \"{m.topic}\" with the code {a.reason} {said}"
+                        )
+
+                    if kind == 5
+                        released @ true
+                        dialing.send(@s, p: .pubrel(packet_id: out.packet_id, reason: 0, properties: []))?
+                    else
+                        break
+                .acks _ | .held | .pong | .other =>
+                    if released
+                        dialing.send(@s, p: .pubrel(packet_id: out.packet_id, reason: 0, properties: []))?
+                    else
+                        again @= out
+                        again.dup @ true
+                        dialing.send(@s, p: .publish(message: again))?
+
+    s.stats.messages_out @ s.stats.messages_out + 1
+    s.stats.bytes_out @ s.stats.bytes_out + m.payload.len()
+    return ok()
+
+# Adds `sub` to `list`, replacing one of the same filter.
+#
+# - `list`: the subscriptions.
+# - `sub`: the subscription.
+function kept_with(list: [model.Subscription], sub: model.Subscription) -> [model.Subscription]
+    out: [model.Subscription] @= []
+
+    for one in list
+        if one.filter != sub.filter
+            out @ out.push(one)
+
+    out @ out.push(sub)
+    return out
+
+# Subscribes and answers a reason code per subscription, below 128 the
+# quality of service granted.
+#
+# - `s`: the session.
+# - `subs`: the subscriptions.
+# - `list`: the properties of `SUBSCRIBE`.
+function subscribe(@s: state.Session, subs: [model.Subscription], list: [model.Property]) -> [i64]?
+    if subs.len() == 0
+        return fail(code: model.INVALID, msg: "a subscription is asked for one filter at least")
+
+    for one in subs
+        if !topics.is_filter(one.filter)
+            return fail(code: model.INVALID, msg: f"\"{one.filter}\" is no topic filter")
+
+    if s.closed
+        return dialing.closed_failure(s)
+    id = state.take_id(@s)
+    p: model.Packet = .subscribe(packet_id: id, subscriptions: subs, properties: list)
+    dialing.send(@s, p: p)?
+    until = waiting.deadline(s.options.wait_ms)
+
+    while true
+        match waiting.await_ack(@s, kind: 9, packet_id: id, until: until)?
+            .acks a =>
+                if a.reasons.len() != subs.len()
+                    return fail(
+                        code: model.INVALID,
+                        msg: f"{s.target} answered {a.reasons.len()} codes to {subs.len()} subscriptions"
+                    )
+
+                for at in range(from: 0, to: subs.len())
+                    if a.reasons[at] < 128
+                        s.subs @ kept_with(s.subs, sub: subs[at])
+
+                return ok(a.reasons)
+            .ack _ | .held | .pong | .other => dialing.send(@s, p: p)?
+
+# Unsubscribes and answers a reason code per filter, 0 for each in 3.1.1.
+#
+# - `s`: the session.
+# - `filters`: the filters.
+# - `list`: the properties of `UNSUBSCRIBE`.
+function unsubscribe(@s: state.Session, filters: [str], list: [model.Property]) -> [i64]?
+    if filters.len() == 0
+        return fail(code: model.INVALID, msg: "an unsubscription is asked for one filter at least")
+
+    for f in filters
+        if !topics.is_filter(f)
+            return fail(code: model.INVALID, msg: f"\"{f}\" is no topic filter")
+
+    if s.closed
+        return dialing.closed_failure(s)
+    id = state.take_id(@s)
+    p: model.Packet = .unsubscribe(packet_id: id, filters: filters, properties: list)
+    dialing.send(@s, p: p)?
+    until = waiting.deadline(s.options.wait_ms)
+
+    while true
+        match waiting.await_ack(@s, kind: 11, packet_id: id, until: until)?
+            .acks a =>
+                kept: [model.Subscription] @= []
+
+                for one in s.subs
+                    gone: bool @= false
+
+                    for f in filters
+                        if f == one.filter
+                            gone @ true
+
+                    if !gone
+                        kept @ kept.push(one)
+
+                s.subs @ kept
+
+                if s.options.version == 4
+                    zeros: [i64] @= []
+
+                    for _ in filters
+                        zeros @ zeros.push(0)
+
+                    return ok(zeros)
+
+                if a.reasons.len() != filters.len()
+                    return fail(
+                        code: model.INVALID,
+                        msg: f"{s.target} answered {a.reasons.len()} codes to {filters.len()} filters"
+                    )
+                return ok(a.reasons)
+            .ack _ | .held | .pong | .other => dialing.send(@s, p: p)?
+
+# Acknowledges `m`, a message the program read, where the options ask the
+# program to.
+#
+# - `s`: the session.
+# - `m`: the message.
+function ack(@s: state.Session, m: model.Message) -> ()?
+    if !s.options.manual_acks
+        return fail(code: model.INVALID, msg: "the client acknowledges its messages itself unless manual_acks is set")
+
+    if m.qos == 0
+        return ok()
+
+    qos = match s.owed[m.packet_id]
+        .ok q  => q
+        .err _ => return fail(code: model.NOT_FOUND, msg: f"no message {m.packet_id} waits for an acknowledgement")
+
+    if qos == 1
+        dialing.send(@s, p: .puback(packet_id: m.packet_id, reason: 0, properties: []))?
+    else
+        dialing.send(@s, p: .pubrec(packet_id: m.packet_id, reason: 0, properties: []))?
+    s.owed @ maps.remove(s.owed, key: m.packet_id)
+    return ok()
+
+# Sends `DISCONNECT` and closes the connection, the will left unpublished.
+#
+# - `s`: the session.
+# - `reason`: the reason code, 0 in 3.1.1.
+# - `list`: the properties, none in 3.1.1.
+function disconnect(@s: state.Session, reason: i64, list: [model.Property]) -> ()?
+    if s.closed
+        return dialing.closed_failure(s)
+
+    sent: ()? = if s.open
+        reading.write(@s, p: .disconnect(reason: reason, properties: list))
+    else
+        ok()
+    dialing.close_for_good(@s)
+    return sent
+
+# Closes the connection with no `DISCONNECT`, so the server publishes the
+# will.
+#
+# - `s`: the session.
+function drop(@s: state.Session) -> ()?
+    if s.closed
+        return dialing.closed_failure(s)
+    dialing.close_for_good(@s)
+    return ok()
+
+test "publish: QoS 0 written whole, QoS 1 with its PUBACK, QoS 2 with PUBREC, PUBREL and PUBCOMP"
+    r @= fixture.rig_bytes([64, 2, 0, 1, 80, 2, 0, 2, 112, 2, 0, 2])
+    publish(@r.session, m: model.message("a", payload: [1])).must()
+    one @= model.message("b", payload: [2])
+    one.qos @ 1
+    publish(@r.session, m: one).must()
+    two @= model.message("c", payload: [3])
+    two.qos @ 2
+    two.retain @ true
+    publish(@r.session, m: two).must()
+    assert fixture.heard(r.peer) == [48, 5, 0, 1, 97, 0, 1, 50, 7, 0, 1, 98, 0, 1, 0, 2, 53, 7, 0, 1, 99, 0, 2, 0, 3, 98, 2, 0, 2]
+    assert r.session.stats.messages_out == 3
+    fixture.close_rig(@r)
+
+test "publish: a topic with a wildcard, a QoS of 3, a QoS past the server's, retained where the server keeps none, a PUBACK refusing"
+    r @= fixture.rig_bytes([64, 4, 0, 1, 135, 0])
+    assert publish(@r.session, m: model.message("a/+", payload: [])).is_err()
+    bad @= model.message("a", payload: [])
+    bad.qos @ 3
+    assert publish(@r.session, m: bad).is_err()
+    one @= model.message("a", payload: [])
+    one.qos @ 1
+
+    match publish(@r.session, m: one)
+        .ok _  => assert false
+        .err e => assert e.code == "permission"
+
+    r.session.max_qos @ 0
+
+    match publish(@r.session, m: one)
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported"
+
+    r.session.retain_available @ false
+    kept @= model.message("a", payload: [])
+    kept.retain @ true
+    assert publish(@r.session, m: kept).is_err()
+    fixture.close_rig(@r)
+
+test "subscribe and unsubscribe: SUBSCRIBE with its options, the SUBACK's codes, a filter refused, UNSUBSCRIBE and its codes"
+    r @= fixture.rig_bytes([144, 5, 0, 1, 0, 1, 135, 176, 4, 0, 2, 0, 0])
+    subs = [
+        model.Subscription(filter: "a/#", qos: 1, no_local: true, retain_as_published: false, retain_handling: 2)
+        model.Subscription(filter: "b", qos: 0, no_local: false, retain_as_published: false, retain_handling: 0)
+    ]
+    assert subscribe(@r.session, subs: subs, list: []).must() == [1, 135]
+    assert r.session.subs.len() == 1 && r.session.subs[0].filter == "a/#"
+    assert unsubscribe(@r.session, filters: ["a/#"], list: []).must() == [0]
+    assert r.session.subs.len() == 0
+    assert subscribe(
+        @r.session,
+        subs: [model.Subscription(filter: "a/#/b", qos: 0, no_local: false, retain_as_published: false, retain_handling: 0)],
+        list: []
+    ).is_err()
+    assert fixture.heard(r.peer) == [130, 13, 0, 1, 0, 0, 3, 97, 47, 35, 37, 0, 1, 98, 0, 162, 8, 0, 2, 0, 0, 3, 97, 47, 35]
+    fixture.close_rig(@r)
+
+test "ack: owed acknowledgements written, one owed nowhere, one where the client acknowledges itself"
+    r @= fixture.rig("")
+    one @= model.message("a", payload: [])
+    one.qos @ 1
+    one.packet_id @ 4
+    assert ack(@r.session, m: one).is_err()
+    r.session.options.manual_acks @ true
+    r.session.owed[4] @ 1
+    ack(@r.session, m: one).must()
+
+    match ack(@r.session, m: one)
+        .ok _  => assert false
+        .err e => assert e.code == "not_found"
+
+    assert fixture.heard(r.peer) == [64, 2, 0, 4]
+    fixture.close_rig(@r)
+
+test "disconnect and drop: DISCONNECT with a reason, then closed; drop writes nothing"
+    r @= fixture.rig("")
+    disconnect(@r.session, reason: 4, list: []).must()
+    assert r.session.closed && disconnect(@r.session, reason: 0, list: []).is_err()
+    assert fixture.heard(r.peer) == [224, 2, 4, 0]
+    fixture.close(@r.peer.stream)
+    d @= fixture.rig("")
+    drop(@d.session).must()
+    assert d.session.closed && drop(@d.session).is_err() && fixture.heard(d.peer) == []
+    fixture.close(@d.peer.stream)
+
+test "check: no host, a port, a version, a keep-alive, a time, a reconnection, and 3.1.1's identifier"
+    o @= state.sample_options()
+    check(o).must()
+    o.host @ ""
+    assert check(o).is_err()
+    o @ state.sample_options()
+    o.port @ 0
+    assert check(o).is_err()
+    o @ state.sample_options()
+    o.version @ 3
+    assert check(o).is_err()
+    o @ state.sample_options()
+    o.keep_alive_s @ 65536
+    assert check(o).is_err()
+    o @ state.sample_options()
+    o.wait_ms @ 0
+    assert check(o).is_err()
+    o @ state.sample_options()
+    o.reconnect.attempts @ -1
+    assert check(o).is_err()
+    o @ state.sample_options()
+    o.version @ 4
+    o.client_id @ ""
+    o.clean_start @ false
+    assert check(o).is_err()

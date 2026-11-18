@@ -1,0 +1,494 @@
+# Every MQTT control packet written (MQTT 5.0 § 3 and 3.1.1 § 3): the fixed
+# header, its remaining length, the variable header and the payload, each
+# field checked against what the version allows, an acknowledgement's reason
+# and properties left out where MQTT 5 lets them be.
+
+use bytes
+use mqtt/internal/model
+use mqtt/internal/properties
+use mqtt/internal/wire
+
+# The failure of a packet that cannot be written.
+#
+# - `why`: what is wrong.
+function refused<T>(why: str) -> T?
+    return fail(code: model.INVALID, msg: why)
+
+# The whole packet: its first byte, the remaining length, then `body`.
+#
+# - `first`: the type in the high four bits and the flags in the low four.
+# - `body`: the variable header and the payload.
+function framed(first: i64, body: [u8]) -> [u8]?
+    if body.len() > wire.MOST_VARINT
+        return fail(code: model.LIMIT, msg: f"a packet of {body.len()} bytes is past MQTT's 268,435,455")
+    out: [u8] @= []
+    wire.put_u8(@out, n: first)
+    wire.put_varint(@out, n: body.len())
+    bytes.push_all(to: @out, from: body)
+    return ok(out)
+
+# Whether `version` is a level this client writes: 4 for 3.1.1, 5 for 5.0.
+#
+# - `version`: the level.
+function is_version(version: i64) -> bool
+    return version == 4 || version == 5
+
+# Fails `invalid` where `id` is no packet identifier, 1 to 65,535.
+#
+# - `id`: the identifier.
+function check_id(id: i64) -> ()?
+    if id < 1 || id > 65535
+        return refused(f"the packet identifier {id} is outside 1 to 65,535")
+    return ok()
+
+# Fails `invalid` where `qos` is not 0, 1 or 2.
+#
+# - `qos`: the quality of service.
+function check_qos(qos: i64) -> ()?
+    if qos < 0 || qos > 2
+        return refused(f"the quality of service {qos} is none of 0, 1 and 2")
+    return ok()
+
+# Fails `invalid` where a reason code is out of a byte, or set in 3.1.1
+# where only 0 can be written.
+#
+# - `reason`: the code.
+# - `version`: the level.
+function check_reason(reason: i64, version: i64) -> ()?
+    if reason < 0 || reason > 255
+        return refused(f"the reason code {reason} is out of a byte")
+
+    if version == 4 && reason != 0
+        return refused(f"MQTT 3.1.1 writes no reason code, and {reason} was asked")
+    return ok()
+
+# Fails `invalid` where MQTT 3.1.1 is asked to write properties.
+#
+# - `list`: the properties.
+# - `version`: the level.
+function check_no_properties(list: [model.Property], version: i64) -> ()?
+    if version == 4 && list.len() > 0
+        return refused("MQTT 3.1.1 writes no properties")
+    return ok()
+
+# The bytes of `p` as the level `version` writes it.
+#
+# - `p`: the packet; a `CONNECT` writes its own level.
+# - `version`: 4 or 5.
+#
+# Fails `invalid` where a field is refused, `limit` where the packet is past
+# MQTT's largest.
+function encode(p: model.Packet, version: i64) -> [u8]?
+    if !is_version(version)
+        return fail(code: model.UNSUPPORTED, msg: f"the protocol level {version} is neither 4 (MQTT 3.1.1) nor 5")
+
+    match p
+        .connect _ => return connect(p)
+        .connack a =>
+            check_reason(reason: a.reason, version: version)?
+            check_no_properties(a.properties, version: version)?
+            body: [u8] @= []
+
+            if a.session_present
+                wire.put_u8(@body, n: 1)
+            else
+                wire.put_u8(@body, n: 0)
+            wire.put_u8(@body, n: a.reason)
+
+            if version == 5
+                bytes.push_all(to: @body, from: properties.encode(a.properties, place: .connack)?)
+            return framed(first: 32, body: body)
+        .publish m => return publish(m.message, version: version)
+        .puback a => return ack(
+            first: 64,
+            packet_id: a.packet_id,
+            reason: a.reason,
+            list: a.properties,
+            version: version
+        )
+        .pubrec a => return ack(
+            first: 80,
+            packet_id: a.packet_id,
+            reason: a.reason,
+            list: a.properties,
+            version: version
+        )
+        .pubrel a => return ack(
+            first: 98,
+            packet_id: a.packet_id,
+            reason: a.reason,
+            list: a.properties,
+            version: version
+        )
+        .pubcomp a => return ack(
+            first: 112,
+            packet_id: a.packet_id,
+            reason: a.reason,
+            list: a.properties,
+            version: version
+        )
+        .subscribe s =>
+            check_id(s.packet_id)?
+            check_no_properties(s.properties, version: version)?
+
+            if s.subscriptions.len() == 0
+                return refused("a SUBSCRIBE holds one subscription at least")
+            body: [u8] @= []
+            wire.put_u16(@body, n: s.packet_id)
+
+            if version == 5
+                bytes.push_all(to: @body, from: properties.encode(s.properties, place: .subscribe)?)
+
+            for one in s.subscriptions
+                check_qos(one.qos)?
+                wire.put_text(@body, s: one.filter)?
+
+                if version == 4
+                    if one.no_local || one.retain_as_published || one.retain_handling != 0
+                        return refused("MQTT 3.1.1 has no subscription options but the quality of service")
+                    wire.put_u8(@body, n: one.qos)
+                else
+                    if one.retain_handling < 0 || one.retain_handling > 2
+                        return refused(f"the retain handling {one.retain_handling} is none of 0, 1 and 2")
+                    flags: i64 @= one.qos | one.retain_handling << 4
+
+                    if one.no_local
+                        flags @ flags | 4
+
+                    if one.retain_as_published
+                        flags @ flags | 8
+                    wire.put_u8(@body, n: flags)
+
+            return framed(first: 130, body: body)
+        .suback s => return acks(
+            first: 144,
+            packet_id: s.packet_id,
+            reasons: s.reasons,
+            list: s.properties,
+            version: version,
+            with_reasons: true
+        )
+        .unsubscribe u =>
+            check_id(u.packet_id)?
+            check_no_properties(u.properties, version: version)?
+
+            if u.filters.len() == 0
+                return refused("an UNSUBSCRIBE holds one topic filter at least")
+            body: [u8] @= []
+            wire.put_u16(@body, n: u.packet_id)
+
+            if version == 5
+                bytes.push_all(to: @body, from: properties.encode(u.properties, place: .unsubscribe)?)
+
+            for f in u.filters
+                wire.put_text(@body, s: f)?
+
+            return framed(first: 162, body: body)
+        .unsuback u => return acks(
+            first: 176,
+            packet_id: u.packet_id,
+            reasons: u.reasons,
+            list: u.properties,
+            version: version,
+            with_reasons: version == 5
+        )
+        .pingreq  => return ok([192, 0])
+        .pingresp => return ok([208, 0])
+        .disconnect d => return closing(
+            first: 224,
+            reason: d.reason,
+            list: d.properties,
+            version: version,
+            place: .disconnect
+        )
+        .auth a =>
+            if version == 4
+                return refused("MQTT 3.1.1 has no AUTH packet")
+            return closing(first: 240, reason: a.reason, list: a.properties, version: version, place: .auth)
+
+# `PUBACK`, `PUBREC`, `PUBREL` or `PUBCOMP`: the identifier, then in MQTT 5
+# the reason and the properties where either is not the default.
+#
+# - `first`: the first byte.
+# - `packet_id`: the identifier.
+# - `reason`: the reason code.
+# - `list`: the properties.
+# - `version`: the level.
+function ack(first: i64, packet_id: i64, reason: i64, list: [model.Property], version: i64) -> [u8]?
+    check_id(packet_id)?
+    check_reason(reason: reason, version: version)?
+    check_no_properties(list, version: version)?
+    body: [u8] @= []
+    wire.put_u16(@body, n: packet_id)
+
+    if reason != 0 || list.len() > 0
+        wire.put_u8(@body, n: reason)
+
+    if list.len() > 0
+        bytes.push_all(to: @body, from: properties.encode(list, place: .ack)?)
+    return framed(first: first, body: body)
+
+# `SUBACK` or `UNSUBACK`: the identifier, the properties in MQTT 5, then a
+# reason code per filter where the packet has them.
+#
+# - `first`: the first byte.
+# - `packet_id`: the identifier.
+# - `reasons`: the codes.
+# - `list`: the properties.
+# - `version`: the level.
+# - `with_reasons`: whether the codes are written.
+function acks(first: i64, packet_id: i64, reasons: [i64], list: [model.Property], version: i64, with_reasons: bool) -> [u8]?
+    check_id(packet_id)?
+    check_no_properties(list, version: version)?
+    body: [u8] @= []
+    wire.put_u16(@body, n: packet_id)
+
+    if version == 5
+        bytes.push_all(to: @body, from: properties.encode(list, place: .suback)?)
+
+    if with_reasons
+        for r in reasons
+            if r < 0 || r > 255
+                return refused(f"the reason code {r} is out of a byte")
+            wire.put_u8(@body, n: r)
+    else if reasons.len() > 0
+        return refused("MQTT 3.1.1's UNSUBACK holds no reason codes")
+    return framed(first: first, body: body)
+
+# `DISCONNECT` or `AUTH`: nothing where the reason is 0 and there are no
+# properties, else the reason and the properties.
+#
+# - `first`: the first byte.
+# - `reason`: the reason code.
+# - `list`: the properties.
+# - `version`: the level.
+# - `place`: where the properties stand.
+function closing(first: i64, reason: i64, list: [model.Property], version: i64, place: properties.Place) -> [u8]?
+    check_reason(reason: reason, version: version)?
+    check_no_properties(list, version: version)?
+    body: [u8] @= []
+
+    if reason != 0 || list.len() > 0
+        wire.put_u8(@body, n: reason)
+        bytes.push_all(to: @body, from: properties.encode(list, place: place)?)
+    return framed(first: first, body: body)
+
+# `PUBLISH`.
+#
+# - `m`: the message.
+# - `version`: the level.
+function publish(m: model.Message, version: i64) -> [u8]?
+    check_qos(m.qos)?
+    check_no_properties(m.properties, version: version)?
+    first: i64 @= 48 | m.qos << 1
+
+    if m.retain
+        first @ first | 1
+
+    if m.dup
+        if m.qos == 0
+            return refused("a message of QoS 0 is never sent again, so its DUP is 0")
+        first @ first | 8
+    body: [u8] @= []
+    wire.put_text(@body, s: m.topic)?
+
+    if m.qos > 0
+        check_id(m.packet_id)?
+        wire.put_u16(@body, n: m.packet_id)
+
+    if version == 5
+        bytes.push_all(to: @body, from: properties.encode(m.properties, place: .publish)?)
+    bytes.push_all(to: @body, from: m.payload)
+    return framed(first: first, body: body)
+
+# `CONNECT`, at the level it names.
+#
+# - `p`: the packet, a `connect`.
+function connect(p: model.Packet) -> [u8]?
+    c = match p
+        .connect got => got
+        .connack _ | .publish _ | .puback _ | .pubrec _ | .pubrel _ | .pubcomp _ | .subscribe _ | .suback _ | .unsubscribe _ | .unsuback _ | .pingreq | .pingresp | .disconnect _ | .auth _ => return refused(
+            "no CONNECT"
+        )
+
+    if !is_version(c.version)
+        return fail(code: model.UNSUPPORTED, msg: f"the protocol level {c.version} is neither 4 (MQTT 3.1.1) nor 5")
+
+    if c.keep_alive < 0 || c.keep_alive > 65535
+        return refused(f"the keep-alive {c.keep_alive} is outside 0 to 65,535 seconds")
+
+    if c.version == 4 && c.has_password && !c.has_username
+        return refused("MQTT 3.1.1 sends no password without a user's name")
+    check_no_properties(c.properties, version: c.version)?
+    flags: i64 @= 0
+
+    if c.has_username
+        flags @ flags | 128
+
+    if c.has_password
+        flags @ flags | 64
+
+    if c.clean_start
+        flags @ flags | 2
+    body: [u8] @= []
+    wire.put_text(@body, s: "MQTT")?
+    wire.put_u8(@body, n: c.version)
+    will_body: [u8] @= []
+
+    match c.will
+        .none => _ = 0
+        .message w =>
+            check_qos(w.message.qos)?
+            check_no_properties(w.message.properties, version: c.version)?
+            flags @ flags | 4 | w.message.qos << 3
+
+            if w.message.retain
+                flags @ flags | 32
+
+            if c.version == 5
+                bytes.push_all(to: @will_body, from: properties.encode(w.message.properties, place: .will)?)
+            wire.put_text(@will_body, s: w.message.topic)?
+            wire.put_binary(out: @will_body, data: w.message.payload)?
+
+    wire.put_u8(@body, n: flags)
+    wire.put_u16(@body, n: c.keep_alive)
+
+    if c.version == 5
+        bytes.push_all(to: @body, from: properties.encode(c.properties, place: .connect)?)
+    wire.put_text(@body, s: c.client_id)?
+    bytes.push_all(to: @body, from: will_body)
+
+    if c.has_username
+        wire.put_text(@body, s: c.username)?
+
+    if c.has_password
+        wire.put_binary(out: @body, data: c.password)?
+    return framed(first: 16, body: body)
+
+# The packets Go's paho packages wrote for the tests, as values: the
+# 3.1.1 `CONNECT` with a will of QoS 1 retained and a login.
+function sample_connect_4() -> model.Packet
+    will = model.Message(
+        topic: "w",
+        payload: [98, 121, 101],
+        qos: 1,
+        retain: true,
+        dup: false,
+        packet_id: 0,
+        properties: []
+    )
+    return .connect(
+        version: 4,
+        client_id: "c1",
+        clean_start: true,
+        keep_alive: 30,
+        username: "u",
+        has_username: true,
+        password: [112],
+        has_password: true,
+        will: .message(message: will),
+        properties: []
+    )
+
+# The MQTT 5 `CONNECT` Go's paho.golang wrote for the tests.
+function sample_connect_5() -> model.Packet
+    will = model.Message(
+        topic: "w",
+        payload: [98, 121, 101],
+        qos: 2,
+        retain: false,
+        dup: false,
+        packet_id: 0,
+        properties: [model.Property(id: 24, value: .number(v: 5))]
+    )
+    list = [
+        model.Property(id: 33, value: .number(v: 10))
+        model.Property(id: 17, value: .number(v: 60))
+        model.Property(id: 38, value: .pair(name: "k", value: "v"))
+    ]
+    return .connect(
+        version: 5,
+        client_id: "c5",
+        clean_start: true,
+        keep_alive: 60,
+        username: "u",
+        has_username: true,
+        password: [112],
+        has_password: true,
+        will: .message(message: will),
+        properties: list
+    )
+
+# The MQTT 5 `PUBLISH` Go's paho.golang wrote for the tests.
+function sample_publish_5() -> model.Packet
+    list = [
+        model.Property(id: 2, value: .number(v: 30))
+        model.Property(id: 3, value: .text(v: "text/plain"))
+        model.Property(id: 8, value: .text(v: "r"))
+        model.Property(id: 9, value: .data(v: [1, 2]))
+        model.Property(id: 38, value: .pair(name: "k", value: "v"))
+    ]
+    return .publish(
+        message: model.Message(topic: "t", payload: [120], qos: 2, retain: false, dup: false, packet_id: 7, properties: list)
+    )
+
+test "encode: the bytes Go's paho.mqtt.golang writes for 3.1.1, every kind of packet"
+    assert encode(sample_connect_4(), version: 4).must() == [16, 28, 0, 4, 77, 81, 84, 84, 4, 238, 0, 30, 0, 2, 99, 49, 0, 1, 119, 0, 3, 98, 121, 101, 0, 1, 117, 0, 1, 112]
+    m = model.Message(topic: "a/b", payload: [104, 105], qos: 1, retain: true, dup: true, packet_id: 10, properties: [])
+    assert encode(.publish(message: m), version: 4).must() == [59, 9, 0, 3, 97, 47, 98, 0, 10, 104, 105]
+    subs = [
+        model.Subscription(filter: "a/#", qos: 1, no_local: false, retain_as_published: false, retain_handling: 0)
+        model.Subscription(filter: "b", qos: 2, no_local: false, retain_as_published: false, retain_handling: 0)
+    ]
+    assert encode(.subscribe(packet_id: 3, subscriptions: subs, properties: []), version: 4).must() == [130, 12, 0, 3, 0, 3, 97, 47, 35, 1, 0, 1, 98, 2]
+    assert encode(.unsubscribe(packet_id: 4, filters: ["a/#"], properties: []), version: 4).must() == [162, 7, 0, 4, 0, 3, 97, 47, 35]
+    assert encode(.pubrel(packet_id: 5, reason: 0, properties: []), version: 4).must() == [98, 2, 0, 5]
+    assert encode(.connack(session_present: true, reason: 0, properties: []), version: 4).must() == [32, 2, 1, 0]
+    assert encode(.suback(packet_id: 3, reasons: [1, 128], properties: []), version: 4).must() == [144, 4, 0, 3, 1, 128]
+    assert encode(.unsuback(packet_id: 4, reasons: [], properties: []), version: 4).must() == [176, 2, 0, 4]
+    assert encode(.disconnect(reason: 0, properties: []), version: 4).must() == [224, 0]
+    assert encode(.pingreq, version: 4).must() == [192, 0] && encode(.pingresp, version: 4).must() == [208, 0]
+
+test "encode: the bytes Go's paho.golang writes for MQTT 5, properties included, an acknowledgement in its shortest form"
+    assert encode(sample_connect_5(), version: 5).must() == [16, 50, 0, 4, 77, 81, 84, 84, 5, 214, 0, 60, 15, 33, 0, 10, 17, 0, 0, 0, 60, 38, 0, 1, 107, 0, 1, 118, 0, 2, 99, 53, 5, 24, 0, 0, 0, 5, 0, 1, 119, 0, 3, 98, 121, 101, 0, 1, 117, 0, 1, 112]
+    assert encode(sample_publish_5(), version: 5).must() == [52, 41, 0, 1, 116, 0, 7, 34, 2, 0, 0, 0, 30, 3, 0, 10, 116, 101, 120, 116, 47, 112, 108, 97, 105, 110, 8, 0, 1, 114, 9, 0, 2, 1, 2, 38, 0, 1, 107, 0, 1, 118, 120]
+    sub = model.Subscription(filter: "a/+", qos: 1, no_local: true, retain_as_published: true, retain_handling: 1)
+    assert encode(.subscribe(packet_id: 2, subscriptions: [sub], properties: [model.Property(id: 11, value: .number(v: 7))]), version: 5).must() == [130, 11, 0, 2, 2, 11, 7, 0, 3, 97, 47, 43, 29]
+    assert encode(.puback(packet_id: 3, reason: 16, properties: [model.Property(id: 31, value: .text(v: "none"))]), version: 5).must() == [64, 11, 0, 3, 16, 7, 31, 0, 4, 110, 111, 110, 101]
+    assert encode(.puback(packet_id: 3, reason: 0, properties: []), version: 5).must() == [64, 2, 0, 3]
+    assert encode(.disconnect(reason: 4, properties: []), version: 5).must() == [224, 2, 4, 0]
+    assert encode(.auth(reason: 24, properties: [model.Property(id: 21, value: .text(v: "SCRAM")), model.Property(id: 22, value: .data(v: [1]))]), version: 5).must() == [240, 14, 24, 12, 21, 0, 5, 83, 67, 82, 65, 77, 22, 0, 1, 1]
+    assert encode(.unsuback(packet_id: 9, reasons: [0, 17], properties: []), version: 5).must() == [176, 5, 0, 9, 0, 0, 17]
+
+test "encode: what each version refuses: a level of 3, properties and reason codes in 3.1.1, AUTH in 3.1.1, a password with no user in 3.1.1"
+    assert encode(.pingreq, version: 3).is_err()
+    assert encode(.puback(packet_id: 1, reason: 16, properties: []), version: 4).is_err()
+    assert encode(
+        .disconnect(reason: 0, properties: [model.Property(id: 31, value: .text(v: "x"))]),
+        version: 4
+    ).is_err()
+    assert encode(.auth(reason: 0, properties: []), version: 4).is_err()
+    assert encode(
+        .connect(version: 4, client_id: "", clean_start: true, keep_alive: 0, username: "", has_username: false, password: [1], has_password: true, will: .none, properties: []),
+        version: 4
+    ).is_err()
+
+test "encode: an identifier of 0 and of 65,536, a QoS of 3, DUP at QoS 0, an empty SUBSCRIBE, 3.1.1's subscription options, a keep-alive past 65,535"
+    assert encode(.puback(packet_id: 0, reason: 0, properties: []), version: 5).is_err()
+    assert encode(.puback(packet_id: 65536, reason: 0, properties: []), version: 5).is_err()
+    bad @= model.message("a", payload: [])
+    bad.qos @ 3
+    assert encode(.publish(message: bad), version: 5).is_err()
+    dup @= model.message("a", payload: [])
+    dup.dup @ true
+    assert encode(.publish(message: dup), version: 5).is_err()
+    assert encode(.subscribe(packet_id: 1, subscriptions: [], properties: []), version: 5).is_err()
+    local = model.Subscription(filter: "a", qos: 0, no_local: true, retain_as_published: false, retain_handling: 0)
+    assert encode(.subscribe(packet_id: 1, subscriptions: [local], properties: []), version: 4).is_err()
+    assert encode(
+        .connect(version: 5, client_id: "", clean_start: true, keep_alive: 65536, username: "", has_username: false, password: [], has_password: false, will: .none, properties: []),
+        version: 5
+    ).is_err()
+
+test "framed: a body of 268,435,455 bytes is the largest MQTT writes"
+    assert wire.varint(wire.MOST_VARINT).len() == 4

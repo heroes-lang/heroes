@@ -1,0 +1,427 @@
+# Making a connection to one server of the pool: the link, the server's
+# `INFO`, TLS where it is asked, the `CONNECT` with its login, and the
+# `PONG` that says the server took it; and making it again after a loss,
+# with a backoff, the subscriptions sent anew.
+
+use bytes
+use io
+use nats/internal/info
+use nats/internal/link
+use nats/internal/model
+use nats/internal/nkeys
+use nats/internal/protocol
+use nats/internal/reading
+use nats/internal/servers
+use nats/internal/state
+use net
+use random
+use strings
+use threads
+use time
+use tls
+
+# This client's version, as `CONNECT` tells it.
+constant VERSION: str
+    "0.1.0"
+
+# Closes the link and answers `e`'s failure.
+#
+# - `s`: the session.
+# - `code`: the code.
+# - `msg`: the message.
+function abandon<T>(@s: state.Session, code: str, msg: str) -> T?
+    link.close(@s.link)
+    s.open @ false
+    return fail(code: code, msg: msg)
+
+# The login of `server`: the options', or else the user or the token its
+# URL names.
+#
+# - `opts`: the options.
+# - `server`: the server.
+function auth_for(opts: model.Options, server: servers.Server) -> model.Auth
+    match opts.auth
+        .none =>
+            if server.user == ""
+                return .none
+
+            if server.has_password
+                return .user(name: server.user, password: server.password)
+            return .token(token: server.user)
+        .token t       => return .token(token: t.token)
+        .user u        => return .user(name: u.name, password: u.password)
+        .nkey k        => return .nkey(seed: k.seed)
+        .credentials c => return .credentials(jwt: c.jwt, seed: c.seed)
+
+# The signature of `nonce` by `seed`, in base 64's URL alphabet, unpadded.
+#
+# - `seed`: the seed.
+# - `nonce`: the server's nonce.
+function signed(seed: str, nonce: str) -> str?
+    return ok(bytes.format_base64_url_unpadded(nkeys.sign(seed, data: bytes.from_text(nonce))?))
+
+# The members of `CONNECT` that log in by `auth`.
+#
+# - `auth`: the login.
+# - `nonce`: the server's nonce, "" where it sent none.
+function login(auth: model.Auth, nonce: str) -> {str: str}?
+    out: {str: str} @= {}
+
+    match auth
+        .none    => _ = 0
+        .token t => out["auth_token"] @ t.token
+        .user u =>
+            out["user"] @ u.name
+            out["pass"] @ u.password
+        .nkey k =>
+            out["nkey"] @ nkeys.public_of(k.seed)?
+            out["sig"] @ signed(seed: k.seed, nonce: nonce)?
+        .credentials c =>
+            out["jwt"] @ c.jwt
+            out["sig"] @ signed(seed: c.seed, nonce: nonce)?
+
+    return ok(out)
+
+# Reads the server's `INFO`, which opens the conversation.
+#
+# - `s`: the session.
+function read_info(@s: state.Session) -> ()?
+    op = reading.next_op(@s)?
+
+    match op
+        .info i =>
+            match info.read(i.text)
+                .ok got =>
+                    s.info @ got
+                    return ok()
+                .err e => return abandon(@s, code: e.code, msg: f"{s.target} sent an INFO that is refused: {e.msg}")
+        .msg _ | .ping | .pong | .fine => return abandon(
+            @s,
+            code: model.INVALID,
+            msg: f"{s.target} did not begin with an INFO"
+        )
+        .err e => return abandon(@s, code: refusal_code(e.text), msg: f"{s.target} refused the connection: {e.text}")
+
+# The code of a server's refusal: `permission` for a login, `failed` for any
+# other.
+#
+# - `text`: the `-ERR`'s words.
+function refusal_code(text: str) -> str
+    lower = strings.to_lower_ascii(text)
+
+    if strings.contains(s: lower, substr: "authorization") || strings.contains(s: lower, substr: "authentication") || strings.contains(s: lower, substr: "permission")
+        return model.PERMISSION
+    return model.FAILED
+
+# Arms the link's deadline, or abandons it.
+#
+# - `s`: the session.
+# - `ms`: milliseconds.
+function armed(@s: state.Session, ms: i64) -> ()?
+    match link.arm(s.link, ms: ms)
+        .ok _  => return ok()
+        .err e => return abandon(@s, code: e.code, msg: e.msg)
+
+# Connects to the server at `index` of the pool, logs in and waits for the
+# server's `PONG`; the session's bytes and counts begin anew.
+#
+# - `s`: the session, open where it answers.
+# - `index`: the server's index in the pool.
+function dial(@s: state.Session, index: i64) -> ()?
+    server = s.pool[index]
+    s.current @ index
+    s.target @ servers.shown(server)
+    s.buf @ []
+    s.at @ 0
+    s.pings_sent @ 0
+    s.pongs_seen @ 0
+    s.last_error @ ""
+    s.open @ false
+    s.info @ model.default_info()
+    ms = s.options.connect_ms
+    socket = server.scheme == "ws" || server.scheme == "wss"
+    wants = server.scheme == "tls" || server.scheme == "wss" || s.options.tls
+    s.secure @ server.scheme == "wss"
+
+    if socket
+        s.link @ link.open_socket(target: servers.websocket_url(server), ms: ms, roots: s.options.roots)?
+        armed(@s, ms: ms)?
+        read_info(@s)?
+    else if wants && s.options.tls_first
+        s.link @ link.open_tls(host: server.host, port: server.port, ms: ms, roots: s.options.roots)?
+        armed(@s, ms: ms)?
+        read_info(@s)?
+    else
+        s.link @ link.open_plain(server.host, port: server.port, ms: ms)?
+        armed(@s, ms: ms)?
+        read_info(@s)?
+
+        if wants || s.info.tls_required
+            match link.upgrade(@s.link, host: server.host, roots: s.options.roots)
+                .ok _ => _ = 0
+                .err e =>
+                    if e.code != model.UNSUPPORTED
+                        return fail(code: e.code, msg: f"TLS with {s.target}: {e.msg}")
+                    s.link @ link.open_after_info(host: server.host, port: server.port, ms: ms, roots: s.options.roots)?
+
+            armed(@s, ms: ms)?
+
+    members = match login(auth_for(s.options, server: server), nonce: s.info.nonce)
+        .ok got => got
+        .err e  => return abandon(@s, code: e.code, msg: f"logging in to {s.target}: {e.msg}")
+
+    text = info.connect_json(
+        s.options,
+        tls: link.is_secured(s.link, secure: s.secure),
+        headers: s.info.headers,
+        login: members,
+        version: VERSION
+    )
+    hello @= protocol.connect(text)
+    bytes.push_all(to: @hello, from: protocol.ping())
+
+    match link.write(@s.link, data: hello)
+        .ok _  => s.pings_sent @ 1
+        .err e => return abandon(@s, code: e.code, msg: f"writing to {s.target}: {e.msg}")
+
+    while s.pongs_seen < 1
+        op = reading.next_op(@s)?
+
+        match op
+            .err e => return abandon(
+                @s,
+                code: refusal_code(e.text),
+                msg: f"{s.target} refused the connection: {e.text}"
+            )
+            .msg _ | .ping | .pong | .fine | .info _ => _ = reading.apply(@s, op: op)?
+
+    s.open @ true
+
+    if s.options.ping_interval_ms > 0
+        s.ping_due @ reading.now_ms() + s.options.ping_interval_ms
+    return armed(@s, ms: 0)
+
+# Every subscription of the session sent again: `SUB`, and `UNSUB` with the
+# messages left where one ends after a count.
+#
+# - `s`: the session, just connected.
+function resubscribe(@s: state.Session) -> ()?
+    out: [u8] @= []
+
+    for sid in s.order
+        sub = s.subs[sid].must()
+        bytes.push_all(to: @out, from: protocol.sub(subject: sub.subject, queue: sub.queue, sid: sid))
+
+        if sub.most > 0
+            bytes.push_all(to: @out, from: protocol.unsub(sid: sid, most: sub.most - sub.delivered))
+
+    if out.len() == 0
+        return ok()
+
+    match link.write(@s.link, data: out)
+        .ok _  => return ok()
+        .err e => return abandon(@s, code: e.code, msg: f"subscribing again on {s.target}: {e.msg}")
+
+# Closes the session for good.
+#
+# - `s`: the session.
+function close_for_good(@s: state.Session)
+    link.close(@s.link)
+    s.open @ false
+    s.closed @ true
+
+# The milliseconds before attempt `n`, its random part drawn.
+#
+# - `n`: the attempt, from 1.
+# - `r`: the settings.
+function wait_before(n: i64, r: model.Reconnect) -> i64
+    base = servers.backoff_ms(n: n, r: r)
+
+    if n <= 1 || r.jitter_ms <= 0
+        return base
+    extra = random.secure_below(to_u64(r.jitter_ms + 1).must()).default(0)
+    return base + to_i64(extra).must()
+
+# Makes the lost connection again, as the options' reconnection says, its
+# subscriptions sent anew; closes the session for good where it cannot.
+#
+# - `s`: the session, its connection lost.
+# - `code`: the loss's code.
+# - `msg`: what was lost, and how.
+#
+# Fails `closed` where every attempt fails, `permission` where a server
+# refuses the login, `stopped` where the stop is asked, the session left lost
+# and not closed.
+function recover(@s: state.Session, code: str, msg: str) -> ()?
+    link.close(@s.link)
+    s.open @ false
+
+    if s.closed
+        return fail(code: model.CLOSED, msg: f"the client is closed: {msg}")
+    r = s.options.reconnect
+
+    if r.attempts == 0 || s.pool.len() == 0
+        close_for_good(@s)
+        return fail(
+            code: model.CLOSED,
+            msg: f"the connection to {s.target} was lost ({code}: {msg}), and the options make it no more"
+        )
+    last: str @= msg
+
+    for n in range(from: 1, to: r.attempts + 1)
+        if net.is_stop_asked()
+            return fail(code: model.STOPPED, msg: f"the stop was asked while the client reconnected to {s.target}")
+        wait = wait_before(n: n, r: r)
+
+        if wait > 0
+            time.sleep(time.milliseconds(wait).must())
+        index = (s.current + 1) % s.pool.len()
+
+        match dial(@s, index: index)
+            .ok _ =>
+                match resubscribe(@s)
+                    .ok _ =>
+                        s.stats.reconnects @ s.stats.reconnects + 1
+                        return ok()
+                    .err e => last @ e.msg
+            .err e =>
+                if e.code == model.PERMISSION
+                    close_for_good(@s)
+                    return fail(code: e.code, msg: e.msg)
+                last @ e.msg
+
+    close_for_good(@s)
+    return fail(
+        code: model.CLOSED,
+        msg: f"the connection was lost ({msg}), and {r.attempts} attempts to make it again failed, the last: {last}"
+    )
+
+test "auth_for: the options' login first, then a URL's user and password, its token, and none"
+    o @= state.sample().options
+    plain = servers.read("nats://h").must()
+    assert auth_for(o, server: plain) == .none
+    assert auth_for(o, server: servers.read("nats://bob:pw@h").must()) == .user(name: "bob", password: "pw")
+    assert auth_for(o, server: servers.read("nats://tok@h").must()) == .token(token: "tok")
+    o.auth @ .token(token: "t2")
+    assert auth_for(o, server: servers.read("nats://bob:pw@h").must()) == .token(token: "t2")
+
+test "login: none, a token, a user, and an NKey where the system has Ed25519"
+    assert keys(login(.none, nonce: "").must()).len() == 0
+    assert login(.token(token: "t"), nonce: "").must()["auth_token"].must() == "t"
+    u = login(.user(name: "a", password: "b"), nonce: "").must()
+    assert u["user"].must() == "a" && u["pass"].must() == "b"
+
+    match login(.nkey(seed: "SUAAAAICAMCAKBQHBAEQUCYMBUHA6EARCIJRIFIWC4MBSGQ3DQOR4H776Y"), nonce: "abc")
+        .ok k  => assert k["nkey"].must() == "UAB2CB576PHBBPQ5ODORRZ2LYCMWPZGWGCN2KDK7DXOIMZASKUY3RLKK" && k["sig"].must() == "zEbWLTdU9BdUsntuosssJyuvp6Wh9gYr0GD0FOUMqurC2matOc70QkqQI26pB7fYBX40Q9xav8mYaWfuchOkBw"
+        .err e => assert e.code == "unsupported"
+
+test "refusal_code: an authorization, an expired authentication, and anything else"
+    assert refusal_code("Authorization Violation") == "permission"
+    assert refusal_code("User Authentication Expired") == "permission"
+    assert refusal_code("Maximum Connections Exceeded") == "failed"
+
+test "wait_before: none first, the backoff with no random part, and within the random part's bound"
+    r = model.Reconnect(attempts: 3, wait_ms: 10, most_wait_ms: 40, jitter_ms: 0)
+    assert wait_before(n: 1, r: r) == 0 && wait_before(n: 2, r: r) == 10 && wait_before(n: 3, r: r) == 20
+    j = wait_before(n: 2, r: model.Reconnect(attempts: 3, wait_ms: 10, most_wait_ms: 40, jitter_ms: 5))
+    assert j >= 10 && j <= 15
+
+test "recover: with no attempt allowed the session closes, and a closed one stays closed"
+    s @= state.sample()
+    s.target @ "x"
+
+    match recover(@s, code: "closed", msg: "gone")
+        .ok _  => assert false
+        .err e => assert e.code == "closed" && s.closed
+
+    assert recover(@s, code: "closed", msg: "again").is_err()
+
+# For the tests: dials the server `url` names and answers what its `INFO`
+# said and the `PONG`s seen, or the failure.
+#
+# - `url`: the fake server's URL.
+function dial_for_test(url: str) -> str
+    s @= state.fresh(state.sample().options, pool: [servers.read(url).must()])
+
+    match dial(@s, index: 0)
+        .ok _ =>
+            answer = f"open {s.info.server_name} {s.info.max_payload} {s.pongs_seen}"
+            link.close(@s.link)
+            return answer
+        .err e => return e.code + ": " + e.msg
+
+test "dial: INFO, CONNECT with the URL's user and password, PING and PONG; then a server that refuses the login"
+    l @= net.listen("127.0.0.1", port: 0).must()
+    t @= threads.spawn_text(body: dial_for_test, arg: f"nats://bob:pw@127.0.0.1:{l.address.port}")
+    c @= net.accept(l, deadline_ms: 5000).must()
+    io.write_text(c.stream, text: "INFO {\"server_name\":\"fake\",\"max_payload\":2048,\"headers\":true}\r\n").must()
+    r @= io.reader(c.stream)
+    hello = io.read_line(@r).must()
+    assert strings.has_prefix(s: hello, prefix: "CONNECT {") && strings.contains(s: hello, substr: "\"user\":\"bob\",\"pass\":\"pw\"")
+    assert strings.contains(s: hello, substr: "\"protocol\":1,") && io.read_line(@r).must() == "PING"
+    io.write_text(c.stream, text: "+OK\r\nPONG\r\n").must()
+    assert threads.wait_text(@t) == "open fake 2048 1"
+    io.close(@c.stream).must()
+    t2 @= threads.spawn_text(body: dial_for_test, arg: f"nats://127.0.0.1:{l.address.port}")
+    c2 @= net.accept(l, deadline_ms: 5000).must()
+    io.write_text(c2.stream, text: "INFO {\"auth_required\":true}\r\n").must()
+    r2 @= io.reader(c2.stream)
+    _ = io.read_line(@r2).must()
+    _ = io.read_line(@r2).must()
+    io.write_text(c2.stream, text: "-ERR 'Authorization Violation'\r\n").must()
+    assert strings.has_prefix(s: threads.wait_text(@t2), prefix: "permission: ")
+    io.close(@c2.stream).must()
+    net.close_listener(@l).must()
+
+test "dial: a server that begins with something other than INFO"
+    l @= net.listen("127.0.0.1", port: 0).must()
+    t @= threads.spawn_text(body: dial_for_test, arg: f"nats://127.0.0.1:{l.address.port}")
+    c @= net.accept(l, deadline_ms: 5000).must()
+    io.write_text(c.stream, text: "PONG\r\n").must()
+    assert strings.has_prefix(s: threads.wait_text(@t), prefix: "invalid: ")
+    io.close(@c.stream).must()
+    net.close_listener(@l).must()
+
+# For the tests: dials the TLS server `url` names, its certificate checked
+# against the tests' authority, and answers what its `INFO` said, or the
+# failure.
+#
+# - `url`: the fake server's URL.
+function dial_tls_for_test(url: str) -> str
+    opts @= state.sample().options
+    opts.roots @ tls.TEST_ROOT
+    s @= state.fresh(opts, pool: [servers.read(url).must()])
+
+    match dial(@s, index: 0)
+        .ok _ =>
+            answer = f"open {s.info.server_name} {s.info.max_payload} {s.pongs_seen} {link.is_secured(s.link, secure: false)}"
+            link.close(@s.link)
+            return answer
+        .err e => return e.code + ": " + e.msg
+
+test "dial: TLS begun after the INFO line, over the connection where tls can, on a connection made again past the line where it cannot (macOS)"
+    server = tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: [])
+    hello = "INFO {\"server_name\":\"tlsfake\",\"tls_required\":true,\"max_payload\":4096}\r\n"
+    l @= tls.listen_after("127.0.0.1", port: 0, server: server, steps: [.send(data: bytes.from_text(hello))]).must()
+    t @= threads.spawn_text(body: dial_tls_for_test, arg: f"tls://localhost:{l.port}")
+    tries: i64 @= 0
+    done: bool @= false
+
+    while !done && tries < 3
+        tries @ tries + 1
+
+        match tls.accept(l, deadline_ms: 10000)
+            .err _ => _ = 0
+            .ok got =>
+                c @= got
+                r @= io.reader(c)
+                line = io.read_line(@r).must()
+                assert strings.has_prefix(s: line, prefix: "CONNECT {") && strings.contains(s: line, substr: "\"tls_required\":true")
+                assert io.read_line(@r).must() == "PING"
+                io.write_text(c, text: "PONG\r\n").must()
+                assert threads.wait_text(@t) == "open tlsfake 4096 1 true"
+                io.close(@c).must()
+                done @ true
+
+    assert done
+    tls.close_listener(@l).must()

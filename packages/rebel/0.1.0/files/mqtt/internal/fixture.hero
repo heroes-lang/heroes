@@ -1,0 +1,65 @@
+# What the tests of `mqtt` share: a session connected to one end of a pair
+# of TCP connections within the process, whose other end plays the server,
+# its bytes written before the client reads them and the client's read
+# after it writes.
+
+use bytes
+use io
+use mqtt/internal/link
+use mqtt/internal/state
+use net
+
+# A session and the end that plays its server.
+record Rig
+    # The session, open, MQTT 5, its link the pair's first end.
+    session: state.Session
+    # The server's end.
+    peer: net.Conn
+
+# A session open over a pair, `script` written by the server's end already.
+#
+# - `script`: what the server sends first.
+function rig_bytes(script: [u8]) -> Rig
+    two = net.pair(5000).must()
+    s @= state.fresh(state.sample_options())
+    s.link @ .plain(conn: two.first)
+    s.open @ true
+    s.target @ "the test's server"
+
+    if script.len() > 0
+        io.write(two.second.stream, data: script).must()
+    return Rig(session: s, peer: two.second)
+
+# A session open over a pair, `script` written as text.
+#
+# - `script`: what the server sends first, as text.
+function rig(script: str) -> Rig
+    return rig_bytes(bytes.from_text(script))
+
+# What the server's end has received within a tenth of a second.
+#
+# - `c`: the server's end.
+function heard(c: net.Conn) -> [u8]
+    out: [u8] @= []
+    net.set_deadline(c, ms: 100).must()
+
+    while true
+        match io.read(c.stream, most: 65536)
+            .ok got =>
+                if got.len() == 0
+                    return out
+                bytes.push_all(to: @out, from: got)
+            .err _ => return out
+
+# Closes `s`.
+#
+# - `s`: the stream.
+function close(@s: io.Stream)
+    _ = io.close(@s).is_err()
+
+# Closes the rig's two ends.
+#
+# - `r`: the rig.
+function close_rig(@r: Rig)
+    link.close(@r.session.link)
+    close(@r.peer.stream)

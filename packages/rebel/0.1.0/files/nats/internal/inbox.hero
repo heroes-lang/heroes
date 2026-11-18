@@ -1,0 +1,54 @@
+# Inboxes: subjects only one client listens on, its prefix and 22 random
+# letters and digits of the system's generator for keys, as NATS's own
+# clients make them.
+
+use nats/internal/model
+use os
+
+# The 62 characters an inbox's random part is made of.
+constant DIGITS: str
+    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+
+# How many characters an inbox's random part holds.
+constant LENGTH: i64
+    22
+
+# `count` characters drawn evenly from `DIGITS`: a byte below 248, the
+# largest multiple of 62 a byte holds, is kept and the others drawn again.
+#
+# - `count`: how many, 0 or more.
+#
+# Fails with the code of `os.random_bytes`.
+function random_part(count: i64) -> str?
+    out: [str] @= []
+
+    while out.len() < count
+        drawn = match os.random_bytes(32)
+            .ok got => got
+            .err e  => return fail(code: model.FAILED, msg: f"an inbox's random part: {e.msg}")
+
+        for b in drawn
+            if b < 248 && out.len() < count
+                at = to_i64(b % 62).must()
+                out @ out.push(DIGITS.slice(from: at, to: at + 1))
+
+    return ok(out.join(""))
+
+# A new inbox under `prefix`.
+#
+# - `prefix`: a subject.
+function next(prefix: str) -> str?
+    return ok(prefix + "." + random_part(LENGTH)?)
+
+test "random_part: none, the length asked, every character a letter or a digit, two that differ"
+    assert random_part(0).must() == ""
+    a = random_part(LENGTH).must()
+    b = random_part(LENGTH).must()
+    assert a.len() == 22 && a != b
+
+    for c in a.chars()
+        assert c[0] >= '0' && c[0] <= 'z'
+
+test "next: the prefix, a dot, then 22 characters"
+    i = next("_INBOX").must()
+    assert i.len() == 29 && i.slice(from: 0, to: 7) == "_INBOX."

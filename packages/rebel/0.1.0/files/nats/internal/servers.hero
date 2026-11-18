@@ -1,0 +1,184 @@
+# The pool of servers a client tries: each URL of the options read, the
+# servers a server tells of added, a URL shown without its secret, and the
+# wait before each attempt of a reconnection.
+
+use nats/internal/model
+use strings
+use url
+
+# One server of the pool.
+record Server
+    # `nats`, `tls`, `ws` or `wss`.
+    scheme: str
+    # The host, an IPv6 address without brackets.
+    host: str
+    # The port.
+    port: i64
+    # A WebSocket's path, "" for the root.
+    path: str
+    # The user the URL names, or the token where it names no password.
+    user: str
+    # The password the URL names.
+    password: str
+    # Whether the URL writes a password, so `user` is a user's name and not
+    # a token.
+    has_password: bool
+    # Whether a server told of it rather than the options.
+    discovered: bool
+
+# The server a URL names, as `Options.servers` reads it.
+#
+# - `text`: the URL, or `host:port` alone.
+#
+# Fails `invalid` where it is no such URL.
+function read(text: str) -> Server?
+    whole = if strings.contains(s: text, substr: "://")
+        text
+    else
+        "nats://" + text
+
+    u = match url.parse(whole)
+        .ok got => got
+        .err e  => return fail(code: model.INVALID, msg: f"\"{text}\" is no server's URL: {e.msg}")
+
+    if u.scheme != "nats" && u.scheme != "tls" && u.scheme != "ws" && u.scheme != "wss"
+        return fail(
+            code: model.INVALID,
+            msg: f"\"{text}\" names the scheme \"{u.scheme}\": a server is nats://, tls://, ws:// or wss://"
+        )
+
+    if u.host == ""
+        return fail(code: model.INVALID, msg: f"\"{text}\" names no host")
+    socket = u.scheme == "ws" || u.scheme == "wss"
+
+    if !socket && u.path != "" && u.path != "/"
+        return fail(code: model.INVALID, msg: f"\"{text}\" holds a path, which only a WebSocket's URL has")
+
+    if u.query != "" || u.fragment != ""
+        return fail(code: model.INVALID, msg: f"\"{text}\" holds a query or a fragment")
+    port: i64 @= 4222
+
+    if u.port != ""
+        port @ match url.port_of(u)
+            .ok p  => p
+            .err _ => -1
+    else if u.scheme == "ws"
+        port @ 80
+    else if u.scheme == "wss"
+        port @ 443
+
+    if port < 1 || port > 65535
+        return fail(code: model.INVALID, msg: f"the port of \"{text}\" is outside 1 to 65535")
+
+    path = if socket && u.path != "/"
+        u.path
+    else
+        ""
+    return ok(
+        Server(scheme: u.scheme, host: u.host, port: port, path: path, user: u.user, password: u.password, has_password: u.password != "" || u.empty_password, discovered: false)
+    )
+
+# The host and the port of `s` as an authority writes them.
+#
+# - `s`: the server.
+function place(s: Server) -> str
+    return url.format_host_port(host: s.host, port: to_str(s.port))
+
+# The URL of `s` with no user, no password and no token.
+#
+# - `s`: the server.
+function shown(s: Server) -> str
+    return s.scheme + "://" + place(s) + s.path
+
+# The URL a WebSocket of `s` connects to.
+#
+# - `s`: a `ws` or `wss` server.
+function websocket_url(s: Server) -> str
+    path = if s.path == ""
+        "/"
+    else
+        s.path
+    return s.scheme + "://" + place(s) + path
+
+# Whether `pool` holds a server at `host` and `port` already.
+#
+# - `pool`: the servers.
+# - `host`: the host.
+# - `port`: the port.
+function holds(pool: [Server], host: str, port: i64) -> bool
+    for s in pool
+        if s.host == host && s.port == port
+            return true
+
+    return false
+
+# `pool` with the servers of `told` it does not hold, each `host:port` taken
+# with `scheme`; a text that is no `host:port` is left out.
+#
+# - `pool`: the servers.
+# - `told`: the servers an `INFO` names.
+# - `scheme`: the scheme of the server that told of them.
+function joined(pool: [Server], told: [str], scheme: str) -> [Server]
+    out @= pool
+
+    for t in told
+        match read(scheme + "://" + t)
+            .err _ => _ = 0
+            .ok s =>
+                if !holds(out, host: s.host, port: s.port)
+                    found @= s
+                    found.discovered @ true
+                    out @ out.push(found)
+
+    return out
+
+# The milliseconds waited before the attempt `n` of a reconnection, its
+# random part left out: none before the first, then `wait_ms` doubled each
+# attempt up to `most_wait_ms`.
+#
+# - `n`: the attempt, from 1.
+# - `r`: the settings.
+function backoff_ms(n: i64, r: model.Reconnect) -> i64
+    if n <= 1
+        return 0
+    wait: i64 @= r.wait_ms
+    k: i64 @= 2
+
+    while k < n && wait < r.most_wait_ms
+        wait @ wait * 2
+        k @ k + 1
+
+    if wait > r.most_wait_ms
+        return r.most_wait_ms
+    return wait
+
+test "read: a URL of each scheme, a host and port alone, an IPv6 host, a user and password, a token, an empty password"
+    a = read("nats://demo.nats.io:4443").must()
+    assert a.scheme == "nats" && a.host == "demo.nats.io" && a.port == 4443 && a.user == ""
+    assert read("localhost").must().port == 4222 && read("tls://h").must().scheme == "tls"
+    assert read("ws://h").must().port == 80 && read("wss://h/nats").must().port == 443 && read("wss://h/nats").must().path == "/nats"
+    assert read("nats://[::1]:4222").must().host == "::1" && read("127.0.0.1:4333").must().port == 4333
+    u = read("nats://bob:s3cret@h").must()
+    assert u.user == "bob" && u.password == "s3cret" && u.has_password
+    t = read("nats://tok@h").must()
+    assert t.user == "tok" && !t.has_password
+    assert read("nats://bob:@h").must().has_password
+
+test "read: another scheme, no host, a path on nats://, a port outside the range, a query"
+    assert read("http://h").is_err() && read("nats://").is_err() && read("nats://h/x").is_err()
+    assert read("nats://h:0").is_err() && read("nats://h:65536").is_err() && read("nats://h?a=1").is_err()
+
+test "shown and websocket_url: no secret, brackets around IPv6, the root path"
+    assert shown(read("nats://bob:pw@h:4222").must()) == "nats://h:4222"
+    assert shown(read("nats://[::1]").must()) == "nats://[::1]:4222"
+    assert websocket_url(read("ws://h:8080").must()) == "ws://h:8080/"
+
+test "joined: a new server, one held already, one that is no host:port"
+    pool = [read("nats://a:4222").must()]
+    out = joined(pool, told: ["a:4222", "b:4223", "::bad"], scheme: "nats")
+    assert out.len() == 2 && out[1].host == "b" && out[1].port == 4223 && out[1].discovered
+
+test "backoff_ms: none first, the wait, doubling, the most"
+    r = model.Reconnect(attempts: 10, wait_ms: 100, most_wait_ms: 500, jitter_ms: 0)
+    assert backoff_ms(n: 1, r: r) == 0 && backoff_ms(n: 2, r: r) == 100 && backoff_ms(n: 3, r: r) == 200
+    assert backoff_ms(n: 4, r: r) == 400 && backoff_ms(n: 5, r: r) == 500 && backoff_ms(n: 60, r: r) == 500

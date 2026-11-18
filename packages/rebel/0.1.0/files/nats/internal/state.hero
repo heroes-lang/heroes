@@ -1,0 +1,365 @@
+# A client's state, which the face's `Client` holds: the connection, the
+# bytes read and not yet given out, the subscriptions by number, and the
+# messages held unread in arrival order, each taken once. A message is
+# taken from the front, or from the middle by its subscription, which marks
+# it taken; the list is cut once its front holds mostly taken ones.
+
+use maps
+use nats/internal/link
+use nats/internal/model
+use nats/internal/servers
+
+# One subscription.
+record Sub
+    # Its number.
+    sid: i64
+    # Its subject.
+    subject: str
+    # Its queue group, "" for none.
+    queue: str
+    # The messages in all after which it ends, 0 for no end.
+    most: i64
+    # The messages that have arrived on it.
+    delivered: i64
+    # The messages dropped because the client held its most.
+    dropped: i64
+    # The messages of it held and not taken.
+    pending: i64
+    # Whether the client made it for its requests' replies.
+    internal: bool
+
+# The conversation's state.
+record Session
+    # The options it was made with.
+    options: model.Options
+    # The servers tried, the options' then the discovered.
+    pool: [servers.Server]
+    # The index in `pool` of the server connected to, or last tried.
+    current: i64
+    # What carries the bytes.
+    link: link.Link
+    # Whether a WebSocket is over TLS.
+    secure: bool
+    # The server's URL, no secret in it.
+    target: str
+    # Whether the connection is made and in step.
+    open: bool
+    # Whether the client is closed for good.
+    closed: bool
+    # What the server last told of itself.
+    info: model.ServerInfo
+    # The bytes read and not given out, from `at` on.
+    buf: [u8]
+    # Where the next operation begins in `buf`.
+    at: i64
+    # The subscriptions by number.
+    subs: {i64: Sub}
+    # Their numbers, oldest first.
+    order: [i64]
+    # The number the next subscription takes.
+    next_sid: i64
+    # The messages held, in arrival order.
+    held: [model.Message]
+    # Whether each message of `held` was taken already.
+    taken: [bool]
+    # Where the first message not yet looked at stands in `held`.
+    held_at: i64
+    # The messages held and not taken.
+    held_count: i64
+    # Their data's bytes.
+    held_bytes: i64
+    # The `-ERR`s kept for `take_errors`.
+    errors: [str]
+    # The `PING`s sent on this connection.
+    pings_sent: i64
+    # The `PONG`s received on this connection.
+    pongs_seen: i64
+    # When, on the monotonic clock in milliseconds, the client's next
+    # `PING` is due.
+    ping_due: i64
+    # What the client has carried.
+    stats: model.Stats
+    # The subscription of the requests' replies, 0 before the first request.
+    mux_sid: i64
+    # The prefix of the requests' replies.
+    mux_prefix: str
+    # The requests made.
+    requests: i64
+    # The last `-ERR` that came before the server closed the connection.
+    last_error: str
+
+# A session of `options` over `pool`, not connected.
+#
+# - `options`: the options.
+# - `pool`: the servers.
+function fresh(options: model.Options, pool: [servers.Server]) -> Session
+    return Session(
+        options: options,
+        pool: pool,
+        current: 0,
+        link: .gone,
+        secure: false,
+        target: "",
+        open: false,
+        closed: false,
+        info: model.default_info(),
+        buf: [],
+        at: 0,
+        subs: {},
+        order: [],
+        next_sid: 1,
+        held: [],
+        taken: [],
+        held_at: 0,
+        held_count: 0,
+        held_bytes: 0,
+        errors: [],
+        pings_sent: 0,
+        pongs_seen: 0,
+        ping_due: 0,
+        stats: model.Stats(messages_in: 0, messages_out: 0, bytes_in: 0, bytes_out: 0, reconnects: 0),
+        mux_sid: 0,
+        mux_prefix: "",
+        requests: 0,
+        last_error: ""
+    )
+
+# Adds `m` to `list`.
+#
+# - `list`: the messages.
+# - `m`: the message.
+function push_message(@list: [model.Message], m: model.Message)
+    list @ list.push(m)
+
+# Adds `v` to `list`.
+#
+# - `list`: the flags.
+# - `v`: the flag.
+function push_flag(@list: [bool], v: bool)
+    list @ list.push(v)
+
+# Adds `text` to `list`.
+#
+# - `list`: the texts.
+# - `text`: the text.
+function push_text(@list: [str], text: str)
+    list @ list.push(text)
+
+# Adds `sid` to `list`.
+#
+# - `list`: the numbers.
+# - `sid`: the number.
+function push_sid(@list: [i64], sid: i64)
+    list @ list.push(sid)
+
+# Puts `sub` in `subs` under its number.
+#
+# - `subs`: the table.
+# - `sub`: the subscription.
+function put_sub(@subs: {i64: Sub}, sub: Sub)
+    subs[sub.sid] @ sub
+
+# Adds a subscription and answers its number.
+#
+# - `s`: the session.
+# - `subject`: the subject.
+# - `queue`: the queue group.
+# - `internal`: whether the client made it for itself.
+function add_sub(@s: Session, subject: str, queue: str, internal: bool) -> i64
+    sid = s.next_sid
+    s.next_sid @ sid + 1
+    put_sub(
+        @s.subs,
+        sub: Sub(sid: sid, subject: subject, queue: queue, most: 0, delivered: 0, dropped: 0, pending: 0, internal: internal)
+    )
+    push_sid(@s.order, sid: sid)
+    return sid
+
+# Whether `sub` has had every message `unsubscribe_after` allowed it.
+#
+# - `sub`: the subscription.
+function is_finished(sub: Sub) -> bool
+    return sub.most > 0 && sub.delivered >= sub.most
+
+# Takes the subscription `sid` out of the table and the order, its held
+# messages left where they are.
+#
+# - `s`: the session.
+# - `sid`: its number.
+function forget_sub(@s: Session, sid: i64)
+    s.subs @ maps.remove(s.subs, key: sid)
+    kept: [i64] @= []
+
+    for one in s.order
+        if one != sid
+            kept @ kept.push(one)
+
+    s.order @ kept
+
+# Takes the subscription `sid` away, and drops its held messages.
+#
+# - `s`: the session.
+# - `sid`: its number.
+function remove_sub(@s: Session, sid: i64)
+    forget_sub(@s, sid: sid)
+    at: i64 @= s.held_at
+
+    while at < s.held.len()
+        if !s.taken[at] && s.held[at].sid == sid
+            s.taken[at] @ true
+            s.held_count @ s.held_count - 1
+            s.held_bytes @ s.held_bytes - s.held[at].data.len()
+        at @ at + 1
+
+    advance(@s)
+
+# Holds `m`, or drops it and counts it where the client holds its most.
+#
+# - `s`: the session.
+# - `m`: the message, of a subscription the session holds.
+function hold(@s: Session, m: model.Message)
+    sub @= match s.subs[m.sid]
+        .ok got => got
+        .err _  => return
+
+    if s.held_count >= s.options.pending_messages || s.held_bytes + m.data.len() > s.options.pending_bytes
+        sub.dropped @ sub.dropped + 1
+        put_sub(@s.subs, sub: sub)
+        return
+    push_message(@s.held, m: m)
+    push_flag(@s.taken, v: false)
+    s.held_count @ s.held_count + 1
+    s.held_bytes @ s.held_bytes + m.data.len()
+    sub.pending @ sub.pending + 1
+    put_sub(@s.subs, sub: sub)
+
+# Moves the front of the held messages past those taken, and cuts the list
+# once its front holds most of it.
+#
+# - `s`: the session.
+function advance(@s: Session)
+    while s.held_at < s.held.len() && s.taken[s.held_at]
+        s.held_at @ s.held_at + 1
+
+    if s.held_at == s.held.len()
+        s.held @ []
+        s.taken @ []
+        s.held_at @ 0
+    else if s.held_at > 1024 && s.held_at * 2 > s.held.len()
+        s.held @ s.held.slice(from: s.held_at, to: s.held.len())
+        s.taken @ s.taken.slice(from: s.held_at, to: s.taken.len())
+        s.held_at @ 0
+
+# Marks the message at `at` taken and answers it.
+#
+# - `s`: the session.
+# - `at`: its index in `held`, not taken.
+function take_at(@s: Session, at: i64) -> model.Message
+    m = s.held[at]
+    s.taken[at] @ true
+    s.held_count @ s.held_count - 1
+    s.held_bytes @ s.held_bytes - m.data.len()
+
+    match s.subs[m.sid]
+        .ok got =>
+            sub @= got
+            sub.pending @ sub.pending - 1
+            put_sub(@s.subs, sub: sub)
+
+            if is_finished(sub) && sub.pending == 0
+                forget_sub(@s, sid: sub.sid)
+        .err _ => _ = 0
+
+    advance(@s)
+    return m
+
+# The first message held, taken; `not_found` where none is.
+#
+# - `s`: the session.
+function take_first(@s: Session) -> model.Message?
+    if s.held_count == 0
+        return fail(code: model.NOT_FOUND, msg: "no message is held")
+    return ok(take_at(@s, at: s.held_at))
+
+# The first message held of the subscription `sid`, taken; `not_found`
+# where none is.
+#
+# - `s`: the session.
+# - `sid`: the subscription's number.
+function take_of(@s: Session, sid: i64) -> model.Message?
+    at: i64 @= s.held_at
+
+    while at < s.held.len()
+        if !s.taken[at] && s.held[at].sid == sid
+            return ok(take_at(@s, at: at))
+        at @ at + 1
+
+    return fail(code: model.NOT_FOUND, msg: f"no message of the subscription {sid} is held")
+
+# Every message held, taken, in arrival order.
+#
+# - `s`: the session.
+function take_all(@s: Session) -> [model.Message]
+    out: [model.Message] @= []
+
+    while s.held_count > 0
+        out @ out.push(take_at(@s, at: s.held_at))
+
+    return out
+
+# A session of default options over no server, for the tests.
+function sample() -> Session
+    return fresh(
+        model.Options(servers: ["nats://localhost"], auth: .none, roots: "", tls: false, tls_first: false, name: "", echo: true, connect_ms: 1000, write_ms: 1000, ping_interval_ms: 0, pings_outstanding: 2, reconnect: model.Reconnect(attempts: 0, wait_ms: 1, most_wait_ms: 1, jitter_ms: 0), inbox_prefix: "_INBOX", pending_messages: 3, pending_bytes: 10, discovered: false, randomize: false),
+        pool: []
+    )
+
+# A message of `sid` holding `n` bytes, for the tests.
+#
+# - `sid`: the subscription.
+# - `n`: how many bytes.
+function sample_message(sid: i64, n: i64) -> model.Message
+    data: [u8] @= []
+
+    for _ in range(from: 0, to: n)
+        data @ data.push('x')
+
+    return model.Message(subject: "s", reply: "", headers: [], data: data, sid: sid, status: 0, description: "")
+
+test "hold and take: in order, by subscription from the middle, the most messages and bytes, an unknown subscription"
+    s @= sample()
+    a = add_sub(@s, subject: "a", queue: "", internal: false)
+    b = add_sub(@s, subject: "b", queue: "", internal: false)
+    hold(@s, m: sample_message(sid: a, n: 1))
+    hold(@s, m: sample_message(sid: b, n: 2))
+    hold(@s, m: sample_message(sid: a, n: 3))
+    hold(@s, m: sample_message(sid: a, n: 1))
+    hold(@s, m: sample_message(sid: 99, n: 1))
+    assert s.held_count == 3 && s.held_bytes == 6 && s.subs[a].must().dropped == 1 && s.subs[a].must().pending == 2
+    assert take_of(@s, sid: b).must().data.len() == 2 && s.held_count == 2
+    assert take_first(@s).must().data.len() == 1 && take_first(@s).must().data.len() == 3
+    assert take_first(@s).is_err() && s.held.len() == 0 && s.held_at == 0
+
+test "hold: the bytes bound, and a message of 0 bytes past it"
+    s @= sample()
+    a = add_sub(@s, subject: "a", queue: "", internal: false)
+    hold(@s, m: sample_message(sid: a, n: 10))
+    hold(@s, m: sample_message(sid: a, n: 1))
+    hold(@s, m: sample_message(sid: a, n: 0))
+    assert s.held_count == 2 && s.subs[a].must().dropped == 1
+
+test "remove_sub: its held messages dropped, the others kept, its number gone from the order"
+    s @= sample()
+    a = add_sub(@s, subject: "a", queue: "", internal: false)
+    b = add_sub(@s, subject: "b", queue: "", internal: false)
+    hold(@s, m: sample_message(sid: a, n: 1))
+    hold(@s, m: sample_message(sid: b, n: 1))
+    remove_sub(@s, sid: a)
+    assert s.order == [b] && s.held_count == 1 && take_first(@s).must().sid == b && s.subs[a].is_err()
+
+test "take_all: every message, then none"
+    s @= sample()
+    a = add_sub(@s, subject: "a", queue: "", internal: false)
+    hold(@s, m: sample_message(sid: a, n: 1))
+    hold(@s, m: sample_message(sid: a, n: 1))
+    assert take_all(@s).len() == 2 && take_all(@s).len() == 0

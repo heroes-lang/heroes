@@ -1,0 +1,20 @@
+# Reaches Rebel's `nats`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It reads a server's options from a URL
+# and, where a server answers there, publishes a message to itself and reads
+# it back; where none answers it says why.
+
+use <rebel>/nats
+
+function main()
+    match nats.parse_url("nats://localhost:4222")
+        .err e => print(e.code, ": ", e.msg)
+        .ok opts =>
+            match nats.connect(opts)
+                .err e => print("no server: ", e.code, ": ", e.msg)
+                .ok first =>
+                    c @= first
+                    sid = nats.subscribe(@c, "reach.nats").default(0)
+                    _ = nats.publish(@c, subject: "reach.nats", data: [104, 105]).is_err()
+                    got = nats.next_message_of(@c, sid: sid, wait_ms: 2000)
+                    print(got.is_err())
+                    print(nats.close(@c).is_err())

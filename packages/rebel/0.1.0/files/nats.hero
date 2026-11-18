@@ -1,0 +1,1665 @@
+# A NATS client written in Heroes: it speaks NATS's text protocol over a TCP
+# connection of `net`, a TLS connection of `tls` or a WebSocket of
+# `websocket`, and links no library. It connects and logs in (a token, a user
+# and a password, an NKey's signature, or a user's JWT and its seed),
+# publishes with and without headers, subscribes to subjects and to queue
+# groups, asks and answers through inboxes, and reconnects with a backoff when
+# a connection is lost, its subscriptions made again on the new one.
+#
+# **One thread, many subscriptions**: every subscription of a client shares
+# its one connection, and the program reads what comes with `next_message`,
+# which answers the next message of any of them, or `next_message_of`, which
+# answers one subscription's and holds the others'. A program that waits on
+# several clients and sockets at once adds each client's stream to a
+# `poll.Set`, reads what `held_of` says the client holds, and calls
+# `read_ready` when the stream is readable. A `PING` of the
+# server is answered while the client reads, so a program that stops reading
+# for longer than the server's ping interval twice is dropped by it.
+#
+# **Every wait has a deadline and every read is bounded**: each call that
+# waits takes its milliseconds or the options', a line of the server is read
+# up to 1 MiB, and a message up to the server's `max_payload`; the messages
+# held unread are bounded by `Options.pending_messages` and
+# `Options.pending_bytes`, past which new ones are dropped and counted.
+#
+# **TLS**: NATS sends its `INFO` in plain text and TLS begins after it, as
+# the server asks or the options say; on macOS, where `tls` begins TLS only
+# over a connection it makes itself, the client connects again and begins TLS
+# after the `INFO` line, which it then cannot read, so the server's own
+# limits are taken as NATS's defaults there. `Options.tls_first` begins TLS
+# at the first byte, for a server configured with `handshake_first`.
+#
+# It does not speak JetStream, its key-value store or its object store
+# (pending in the ledger: they are a protocol of their own over requests), nor
+# the older encoded connections; it keeps no messages across a reconnection
+# but those already read.
+#
+# It fails with `invalid` (an argument refused, bytes that are no NATS),
+# `not_found` (a request no one answers, a subscription unknown), `permission`
+# (a login or a subject refused), `closed`, `timeout`, `stopped`, `limit` (a
+# message past the server's maximum), `unsupported` and `failed`.
+
+use bytes
+use io
+use nats/internal/inbox
+use nats/internal/link
+use nats/internal/live
+use nats/internal/model
+use nats/internal/nkeys
+use nats/internal/servers
+use nats/internal/session
+use nats/internal/state
+use nats/internal/subjects
+use nats/internal/waiting
+use os
+use poll
+use strings
+use threads
+use time
+use tls
+
+## Codes
+
+# An argument refused (a subject, a header, a size), or bytes from the server
+# that are no NATS: every function that takes a subject, `connect`.
+constant INVALID: str
+    "invalid"
+
+# A request no responder answered (the server's status 503), a subscription
+# the client does not hold: `request`, `unsubscribe`, `next_message_of`.
+constant NOT_FOUND: str
+    "not_found"
+
+# A login the server refused, or a subject it does not allow this user:
+# `connect`, `publish`, `subscribe`.
+constant PERMISSION: str
+    "permission"
+
+# The client is closed, or its connection was lost and could not be made
+# again: every function that talks to the server.
+constant CLOSED: str
+    "closed"
+
+# The time a call allowed ran out: every function that waits.
+constant TIMEOUT: str
+    "timeout"
+
+# The program was asked to stop while the call waited (`net.ask_stop`).
+constant STOPPED: str
+    "stopped"
+
+# A message past the server's `max_payload`, or a server's line past 1 MiB.
+constant LIMIT: str
+    "limit"
+
+# What this platform cannot do: an NKey's signature where the system's
+# cryptography has no Ed25519 (macOS, Windows).
+constant UNSUPPORTED: str
+    "unsupported"
+
+# A failure none of the above names, the system's or the server's own words
+# in the message.
+constant FAILED: str
+    "failed"
+
+## Connecting
+
+# The port a NATS server listens on unless told another.
+constant DEFAULT_PORT: i64
+    4222
+
+# How the client logs in, as the server's `authorization` block asks.
+variant Auth
+    # No login.
+    none
+    # A token, the server's `token`.
+    token
+        # The token, as the server holds it.
+        token: str
+    # A user and a password.
+    user
+        # The user's name.
+        name: str
+        # The password.
+        password: str
+    # An NKey: the client signs the server's nonce with the seed's key, and
+    # the server knows the public key.
+    nkey
+        # The user's seed, the 58 characters that begin `SU`.
+        seed: str
+    # A user's JWT and the seed whose key signs the nonce, as a `.creds` file
+    # holds them (`parse_credentials`).
+    credentials
+        # The user's JWT.
+        jwt: str
+        # The user's seed, the 58 characters that begin `SU`.
+        seed: str
+
+# How the client tries again after a connection is lost: the first wait, then
+# twice the one before up to `most_wait_ms`, with a random part added.
+record Reconnect
+    # The most attempts after a loss, each server of the pool counting one;
+    # 0 for none, so a lost connection closes the client.
+    attempts: i64
+    # Milliseconds waited before the second attempt, 1 or more; the first is
+    # at once.
+    wait_ms: i64
+    # The longest wait, `wait_ms` or more.
+    most_wait_ms: i64
+    # The most milliseconds added to each wait at random, 0 or more, so
+    # many clients do not come back at once.
+    jitter_ms: i64
+
+# Where the servers are and how to talk to them. `options` makes one; a
+# program changes the fields it needs with `@`, or `parse_url` reads one.
+record Options
+    # The servers, tried in order: `nats://host:port` (plain, or TLS where
+    # the server or `tls` asks), `tls://host:port` (TLS always), `ws://` and
+    # `wss://` (a WebSocket); `host:port` alone is `nats://`, and a port left
+    # out is 4222, or 80 and 443 for a WebSocket. At least one.
+    servers: [str]
+    # How the client logs in; a server's URL that holds a user, or a token
+    # alone, logs in so where this is `none`.
+    auth: Auth
+    # The PEM of the only authorities a server's certificate is checked
+    # against; "" for the system's own store.
+    roots: str
+    # Whether TLS is asked of a `nats://` server too.
+    tls: bool
+    # Whether TLS begins at the first byte, before the server's `INFO`, for
+    # a server configured with `handshake_first`.
+    tls_first: bool
+    # The name the server shows for this connection, "" for none.
+    name: str
+    # Whether the client receives the messages it publishes itself on the
+    # subjects it subscribes to; true by default, as the server's.
+    echo: bool
+    # Milliseconds a connection to one server may take, its handshake and
+    # login included, 1 or more.
+    connect_ms: i64
+    # Milliseconds a write may wait for the server to take its bytes; 0 for
+    # no limit.
+    write_ms: i64
+    # Milliseconds after which a wait of the client sends a `PING` of its
+    # own; 0 for none.
+    ping_interval_ms: i64
+    # The `PING`s left unanswered after which the connection is taken as
+    # lost, 1 or more.
+    pings_outstanding: i64
+    # How a lost connection is made again.
+    reconnect: Reconnect
+    # The first part of the inboxes `new_inbox` makes, a subject of no
+    # wildcard: `_INBOX` by default.
+    inbox_prefix: str
+    # The most messages held unread, 1 or more; past them a new message is
+    # dropped and counted.
+    pending_messages: i64
+    # The most bytes of messages' data held unread, 1 or more.
+    pending_bytes: i64
+    # Whether the servers a server tells of (`connect_urls`) join the pool
+    # tried on a reconnection.
+    discovered: bool
+    # Whether the pool is tried in a random order rather than as written.
+    randomize: bool
+
+# What a server tells of itself in its `INFO`.
+record ServerInfo
+    # The server's unique identity.
+    server_id: str
+    # The server's name, "" where it gives none.
+    server_name: str
+    # The server's version, `2.10.27`.
+    version: str
+    # The host the server listens on, as it says.
+    host: str
+    # The port the server listens on, as it says.
+    port: i64
+    # The largest message's data and headers together, in bytes.
+    max_payload: i64
+    # The protocol's version the server speaks: 1 where it tells of
+    # subscriptions changing.
+    protocol: i64
+    # Whether the server reads and sends headers.
+    headers: bool
+    # Whether the server asks for a login.
+    auth_required: bool
+    # Whether the server asks for TLS.
+    tls_required: bool
+    # Whether the server offers TLS without asking for it.
+    tls_available: bool
+    # Whether the server runs JetStream.
+    jetstream: bool
+    # Whether the server is shutting down and asks its clients to go
+    # elsewhere ("lame duck mode").
+    lame_duck: bool
+    # The cluster's name, "" where none.
+    cluster: str
+    # The JetStream domain, "" where none.
+    domain: str
+    # The other servers of the cluster, as `host:port`.
+    connect_urls: [str]
+    # The identity the server gives this connection.
+    client_id: i64
+    # The address the server sees this client at, "" where it says none.
+    client_ip: str
+    # The nonce the server asked to be signed, "" where it asks for none.
+    nonce: str
+
+# A header field of a message: a name and a value, a name repeated for each
+# of its values.
+record Header
+    # The field's name, printable ASCII with no `:` and no space; compared as
+    # written.
+    name: str
+    # The value, with no carriage return or line feed.
+    value: str
+
+# A message, as one is published and as one arrives.
+record Message
+    # The subject it was published to.
+    subject: str
+    # The subject an answer goes to, "" for none.
+    reply: str
+    # Its header fields in order, [] for none.
+    headers: [Header]
+    # Its data, any bytes.
+    data: [u8]
+    # The subscription it arrived on; 0 for a message to publish.
+    sid: i64
+    # The status the server set in its headers, 503 for no responders; 0
+    # for none, and for a message to publish.
+    status: i64
+    # The status's words, "" for none.
+    description: str
+
+# What a client has carried since it was made.
+record Stats
+    # Messages received.
+    messages_in: i64
+    # Messages published.
+    messages_out: i64
+    # Bytes of data received.
+    bytes_in: i64
+    # Bytes of data published.
+    bytes_out: i64
+    # The connections made again after one was lost.
+    reconnects: i64
+
+# A user's JWT and seed, as a `.creds` file holds them.
+record Credentials
+    # The user's JWT.
+    jwt: str
+    # The user's seed, the 58 characters that begin `SU`.
+    seed: str
+
+# A connection to a NATS server, which `connect` makes and `close` ends. Its
+# one field is the conversation's private state: the connection, the bytes
+# read and not given out, the subscriptions, the messages held and the pool
+# of servers. Every call that talks to the server works on the caller's own
+# place, through `@`.
+record Client
+    # The conversation's state, which only this package reads and writes.
+    session: state.Session
+
+# The reconnection NATS's own clients make by default, nearly: 60
+# attempts, 250 ms first, doubling to 4 s, with 100 ms at random.
+function default_reconnect() -> Reconnect
+    return Reconnect(attempts: 60, wait_ms: 250, most_wait_ms: 4000, jitter_ms: 100)
+
+# The options of a connection to `servers`, with no login, no TLS asked but
+# where a server asks for it, the system's own authorities, no name, echo on,
+# 5 seconds to connect and 10 for a write, a `PING` every 2 minutes with 2
+# left unanswered at most, `default_reconnect`, `_INBOX`, 65,536 messages
+# and 64 MiB held at most, and the discovered servers taken in order.
+#
+# - `urls`: the servers' URLs, as `Options.servers` reads them.
+#
+# See also `parse_url`, `connect`.
+function options(urls: [str]) -> Options
+    return Options(
+        servers: urls,
+        auth: .none,
+        roots: "",
+        tls: false,
+        tls_first: false,
+        name: "",
+        echo: true,
+        connect_ms: 5000,
+        write_ms: 10000,
+        ping_interval_ms: 120000,
+        pings_outstanding: 2,
+        reconnect: default_reconnect(),
+        inbox_prefix: "_INBOX",
+        pending_messages: 65536,
+        pending_bytes: 67108864,
+        discovered: true,
+        randomize: false
+    )
+
+# The options a URL names, or several separated by commas, as NATS's
+# clients read one: `nats://user:password@host:4222,nats://host2:4222`.
+#
+# - `text`: the URLs, each `nats://`, `tls://`, `ws://` or `wss://` or a
+#   `host:port` alone. A user and a password, or a token alone, of the first
+#   URL that holds one is the login, percent-decoded.
+#
+# Fails `invalid` where a part is no such URL: another scheme, a port outside
+# 1 to 65535, a path on a `nats://` or `tls://` URL. See also `options`.
+function parse_url(text: str) -> Options?
+    texts: [str] @= []
+    auth: Auth @= .none
+
+    for part in strings.split(s: text, sep: ",")
+        one = strings.trim(part)
+
+        if one == ""
+            return fail(code: INVALID, msg: f"\"{text}\" holds an empty URL between its commas")
+        server = servers.read(one)?
+
+        match auth
+            .none =>
+                if server.user != "" && server.has_password
+                    auth @ .user(name: server.user, password: server.password)
+                else if server.user != ""
+                    auth @ .token(token: server.user)
+            .token _ | .user _ | .nkey _ | .credentials _ => _ = 0
+
+        texts @ texts.push(servers.shown(server))
+
+    opts @= options(texts)
+    opts.auth @ auth
+    return ok(opts)
+
+# A connection to the first server of `opts` that answers, logged in, its
+# `PING` answered.
+#
+# - `opts`: the servers and how to talk to them.
+#
+# The program owes the client a `close`. Each server is tried once, in the
+# pool's order, each within `opts.connect_ms`.
+#
+# Fails `permission` where the server refuses the login or asks for one and
+# none was given; `invalid` where an option is out of range or the server
+# sends bytes that are no NATS; `unsupported` for an NKey where the system
+# has no Ed25519; as `net.connect`, `tls.connect` and `websocket.connect`
+# fail where no server answers, the last server's failure. See also
+# `options`, `close`.
+function connect(opts: Options) -> Client?
+    auth: model.Auth = match opts.auth
+        .none          => .none
+        .token t       => .token(token: t.token)
+        .user u        => .user(name: u.name, password: u.password)
+        .nkey k        => .nkey(seed: k.seed)
+        .credentials c => .credentials(jwt: c.jwt, seed: c.seed)
+
+    r = opts.reconnect
+    inner = model.Options(
+        servers: opts.servers,
+        auth: auth,
+        roots: opts.roots,
+        tls: opts.tls,
+        tls_first: opts.tls_first,
+        name: opts.name,
+        echo: opts.echo,
+        connect_ms: opts.connect_ms,
+        write_ms: opts.write_ms,
+        ping_interval_ms: opts.ping_interval_ms,
+        pings_outstanding: opts.pings_outstanding,
+        reconnect: model.Reconnect(attempts: r.attempts, wait_ms: r.wait_ms, most_wait_ms: r.most_wait_ms, jitter_ms: r.jitter_ms),
+        inbox_prefix: opts.inbox_prefix,
+        pending_messages: opts.pending_messages,
+        pending_bytes: opts.pending_bytes,
+        discovered: opts.discovered,
+        randomize: opts.randomize
+    )
+    return ok(Client(session: session.open(inner)?))
+
+# Closes the connection and empties the client, so every later call through
+# it fails `closed`; the messages held are dropped.
+#
+# - `c`: the client, emptied.
+#
+# Fails `closed` where it is closed already. See also `drain`.
+function close(@c: Client) -> ()?
+    return session.close(@c.session)
+
+# Ends every subscription, reads what the server sent before the end into
+# the messages held, then closes the connection: the held messages are still
+# read by `next_message`, which fails `closed` after the last.
+#
+# - `c`: the client, closed.
+# - `wait_ms`: milliseconds the server may take to answer, 1 or more.
+#
+# Fails `timeout` where the server does not answer in time, the client closed
+# either way; `closed` where it was closed. See also `close`.
+function drain(@c: Client, wait_ms: i64) -> ()?
+    return waiting.drain(@c.session, wait_ms: wait_ms)
+
+# Whether the client is closed: by `close` or `drain`, or by a lost
+# connection no reconnection made again.
+#
+# - `c`: the client asked about.
+#
+# See also `close`.
+function is_closed(c: Client) -> bool
+    return c.session.closed
+
+# Drops the connection and makes a new one, as after a loss, its
+# subscriptions made again; the pool is tried as `Options.reconnect` says.
+#
+# - `c`: the client.
+#
+# Fails `closed` where it is closed, or where no server answers within the
+# attempts, which closes it. See also `connect`.
+function reconnect(@c: Client) -> ()?
+    if c.session.closed
+        return fail(code: CLOSED, msg: f"the client of {c.session.target} is closed")
+    return session.lose(@c.session, code: CLOSED, msg: "the program asked for a new connection")
+
+# What the server the client is connected to told of itself, its last
+# `INFO`.
+#
+# - `c`: the client asked about.
+#
+# See also `max_payload_of`.
+function server_info_of(c: Client) -> ServerInfo
+    i = c.session.info
+    return ServerInfo(
+        server_id: i.server_id,
+        server_name: i.server_name,
+        version: i.version,
+        host: i.host,
+        port: i.port,
+        max_payload: i.max_payload,
+        protocol: i.protocol,
+        headers: i.headers,
+        auth_required: i.auth_required,
+        tls_required: i.tls_required,
+        tls_available: i.tls_available,
+        jetstream: i.jetstream,
+        lame_duck: i.lame_duck,
+        cluster: i.cluster,
+        domain: i.domain,
+        connect_urls: i.connect_urls,
+        client_id: i.client_id,
+        client_ip: i.client_ip,
+        nonce: i.nonce
+    )
+
+# The URL of the server the client is connected to, its password and token
+# left out.
+#
+# - `c`: the client asked about.
+#
+# See also `servers_of`.
+function connected_url_of(c: Client) -> str
+    return c.session.target
+
+# The largest message the server takes, its data and headers together, in
+# bytes.
+#
+# - `c`: the client asked about.
+#
+# See also `server_info_of`.
+function max_payload_of(c: Client) -> i64
+    return c.session.info.max_payload
+
+# The servers a reconnection tries, in order: those of the options, then
+# those the servers told of where `Options.discovered` says so.
+#
+# - `c`: the client asked about.
+#
+# See also `connected_url_of`.
+function servers_of(c: Client) -> [str]
+    return session.pool_urls(c.session)
+
+# What the client has carried since `connect`.
+#
+# - `c`: the client asked about.
+#
+# See also `pending_of`.
+function stats_of(c: Client) -> Stats
+    t = c.session.stats
+    return Stats(
+        messages_in: t.messages_in,
+        messages_out: t.messages_out,
+        bytes_in: t.bytes_in,
+        bytes_out: t.bytes_out,
+        reconnects: t.reconnects
+    )
+
+# The messages the client holds, read from its connection while a call
+# waited for something else and not given out yet: a program waiting with
+# `poll` reads these first with `read_ready`, since its stream does not tell
+# of bytes read already.
+#
+# - `c`: the client asked about.
+#
+# See also `read_ready`.
+function held_of(c: Client) -> i64
+    return c.session.held_count
+
+# The stream the client reads, for a program that waits on it with
+# `poll.add_stream`; a reconnection makes another, which `stats_of` counts.
+#
+# - `c`: the client asked about.
+#
+# Fails `closed` where the client is closed. See also `read_ready`.
+function stream_of(c: Client) -> io.Stream?
+    if c.session.closed
+        return fail(code: CLOSED, msg: f"the client of {c.session.target} is closed")
+    return link.stream_of(c.session.link)
+
+# Every `-ERR` the server sent since the last call that left the connection
+# open, a permission refused to a subscription, oldest first; the client
+# forgets them.
+#
+# - `c`: the client.
+#
+# Empty where there were none. See also `subscribe`.
+function take_errors(@c: Client) -> [str]
+    out = c.session.errors
+    c.session.errors @ []
+    return out
+
+## Publishing
+
+# A message to publish to `subject`, with no reply and no headers.
+#
+# - `subject`: the subject.
+# - `data`: the data, any bytes.
+#
+# See also `publish_message`.
+function message(subject: str, data: [u8]) -> Message
+    return Message(subject: subject, reply: "", headers: [], data: data, sid: 0, status: 0, description: "")
+
+# Publishes `data` to `subject`.
+#
+# - `c`: the client.
+# - `subject`: a subject with no wildcard.
+# - `data`: the data, any bytes.
+#
+# It answers once the bytes are written, not once the server has read them:
+# `flush` waits for that. Fails `invalid` where `subject` is no subject,
+# `limit` where `data` is past the server's `max_payload`, `closed`, and as a
+# write fails. See also `publish_message`, `flush`.
+function publish(@c: Client, subject: str, data: [u8]) -> ()?
+    return session.publish(
+        @c.session,
+        m: model.Message(subject: subject, reply: "", headers: [], data: data, sid: 0, status: 0, description: "")
+    )
+
+# Publishes `m`: its subject, its reply, its headers and its data.
+#
+# - `c`: the client.
+# - `m`: the message; its `sid`, `status` and `description` are not read.
+#
+# Fails `invalid` where the subject or the reply is no subject, or a header's
+# name or value is refused; `unsupported` where `m` has headers and the server
+# reads none; and as `publish` fails. See also `publish`, `request_message`.
+function publish_message(@c: Client, m: Message) -> ()?
+    headers: [model.Header] @= []
+
+    for h in m.headers
+        headers @ headers.push(model.Header(name: h.name, value: h.value))
+
+    return session.publish(
+        @c.session,
+        m: model.Message(subject: m.subject, reply: m.reply, headers: headers, data: m.data, sid: 0, status: 0, description: "")
+    )
+
+# Waits until the server has read every byte written before, by a `PING`
+# and its `PONG`; the messages that arrive meanwhile are held.
+#
+# - `c`: the client.
+# - `wait_ms`: milliseconds to wait, 1 or more.
+#
+# Fails `timeout`, `closed`, `invalid` where `wait_ms` is below 1. See also
+# `rtt`.
+function flush(@c: Client, wait_ms: i64) -> ()?
+    return waiting.flush(@c.session, wait_ms: wait_ms)
+
+# The time a `PING` takes to be answered.
+#
+# - `c`: the client.
+# - `wait_ms`: milliseconds to wait, 1 or more.
+#
+# Fails as `flush` does. See also `flush`.
+function rtt(@c: Client, wait_ms: i64) -> time.Duration?
+    start = time.mark()?
+    waiting.flush(@c.session, wait_ms: wait_ms)?
+    return time.elapsed(start)
+
+## Subscribing
+
+# Subscribes to `subject` and answers the subscription's number, which the
+# messages that arrive on it carry as their `sid`.
+#
+# - `c`: the client.
+# - `subject`: a subject, where `*` stands for one token and a last `>` for
+#   one or more.
+#
+# The server says nothing of a subscription it refuses: its `-ERR` comes
+# later, and `take_errors` gives it. Fails `invalid` where `subject` is no
+# subject, `closed`. See also `queue_subscribe`, `next_message`.
+function subscribe(@c: Client, subject: str) -> i64?
+    return session.subscribe(@c.session, subject: subject, queue: "", internal: false)
+
+# Subscribes to `subject` in the queue group `queue`: each message goes to
+# one member of the group.
+#
+# - `c`: the client.
+# - `subject`: a subject, wildcards allowed.
+# - `queue`: the group's name, with no space.
+#
+# Fails `invalid` where either is refused, `closed`. See also `subscribe`.
+function queue_subscribe(@c: Client, subject: str, queue: str) -> i64?
+    if queue == ""
+        return fail(code: INVALID, msg: "a queue group's name is not empty")
+    return session.subscribe(@c.session, subject: subject, queue: queue, internal: false)
+
+# Ends the subscription `sid`; the messages of it already held are dropped.
+#
+# - `c`: the client.
+# - `sid`: the subscription's number.
+#
+# Fails `not_found` where the client holds no such subscription, `closed`.
+# See also `unsubscribe_after`.
+function unsubscribe(@c: Client, sid: i64) -> ()?
+    return session.unsubscribe(@c.session, sid: sid)
+
+# Ends the subscription `sid` once `most` messages in all have arrived on
+# it, the server and the client both counting.
+#
+# - `c`: the client.
+# - `sid`: the subscription's number.
+# - `most`: the messages in all, 1 or more; where as many have arrived
+#   already it ends at once.
+#
+# Fails `not_found`, `invalid` where `most` is below 1, `closed`. See also
+# `unsubscribe`.
+function unsubscribe_after(@c: Client, sid: i64, most: i64) -> ()?
+    return session.unsubscribe_after(@c.session, sid: sid, most: most)
+
+# The numbers of the client's subscriptions, oldest first.
+#
+# - `c`: the client asked about.
+#
+# See also `subscribe`.
+function subscriptions_of(c: Client) -> [i64]
+    return session.subscriptions(c.session)
+
+# The next message of any subscription, a held one first, waiting for one.
+#
+# - `c`: the client.
+# - `wait_ms`: milliseconds to wait, 0 to ask without waiting.
+#
+# A `PING` of the server is answered while it waits. Fails `timeout` where
+# no message comes in time, the client left as it was; `closed` once the
+# client is closed and holds nothing; `invalid` where `wait_ms` is below 0.
+# See also `next_message_of`, `read_ready`.
+function next_message(@c: Client, wait_ms: i64) -> Message?
+    m = waiting.next(@c.session, sid: 0, wait_ms: wait_ms)?
+    headers: [Header] @= []
+
+    for h in m.headers
+        headers @ headers.push(Header(name: h.name, value: h.value))
+
+    return ok(
+        Message(subject: m.subject, reply: m.reply, headers: headers, data: m.data, sid: m.sid, status: m.status, description: m.description)
+    )
+
+# The next message of the subscription `sid`, waiting for one; the messages
+# of other subscriptions that arrive meanwhile are held.
+#
+# - `c`: the client.
+# - `sid`: the subscription's number.
+# - `wait_ms`: milliseconds to wait, 0 to ask without waiting.
+#
+# Fails `not_found` where the client holds no such subscription and no
+# message of it, and as `next_message` fails. See also `next_message`.
+function next_message_of(@c: Client, sid: i64, wait_ms: i64) -> Message?
+    if sid == 0
+        return fail(code: NOT_FOUND, msg: "the client holds no subscription 0")
+    m = waiting.next(@c.session, sid: sid, wait_ms: wait_ms)?
+    headers: [Header] @= []
+
+    for h in m.headers
+        headers @ headers.push(Header(name: h.name, value: h.value))
+
+    return ok(
+        Message(subject: m.subject, reply: m.reply, headers: headers, data: m.data, sid: m.sid, status: m.status, description: m.description)
+    )
+
+# The messages the client holds and those one read of its stream completes:
+# what a program waiting on many streams with `poll` calls when the client's
+# is readable, so it never waits there.
+#
+# - `c`: the client.
+#
+# Empty where nothing is whole yet. The read is skipped where the client
+# holds a message already. Fails as `next_message` does. See also
+# `stream_of`, `poll.wait`.
+function read_ready(@c: Client) -> [Message]?
+    out: [Message] @= []
+
+    for m in waiting.read_ready(@c.session)?
+        headers: [Header] @= []
+
+        for h in m.headers
+            headers @ headers.push(Header(name: h.name, value: h.value))
+
+        out @ out.push(
+            Message(subject: m.subject, reply: m.reply, headers: headers, data: m.data, sid: m.sid, status: m.status, description: m.description)
+        )
+
+    return ok(out)
+
+# The messages of `sid` held and not read yet.
+#
+# - `c`: the client asked about.
+# - `sid`: the subscription's number.
+#
+# Fails `not_found` where the client holds no such subscription. See also
+# `dropped_of`.
+function pending_of(c: Client, sid: i64) -> i64?
+    return ok(session.sub_of(c.session, sid: sid)?.pending)
+
+# The messages of `sid` dropped because the client held its most.
+#
+# - `c`: the client asked about.
+# - `sid`: the subscription's number.
+#
+# Fails `not_found`. See also `pending_of`, `Options`.
+function dropped_of(c: Client, sid: i64) -> i64?
+    return ok(session.sub_of(c.session, sid: sid)?.dropped)
+
+# The messages of `sid` that have arrived, held, read or dropped.
+#
+# - `c`: the client asked about.
+# - `sid`: the subscription's number.
+#
+# Fails `not_found`. See also `unsubscribe_after`.
+function delivered_of(c: Client, sid: i64) -> i64?
+    return ok(session.sub_of(c.session, sid: sid)?.delivered)
+
+## Requests and replies
+
+# A new inbox: the options' prefix, then 22 random letters and digits, a
+# subject only this client listens on.
+#
+# - `c`: the client asked.
+#
+# Fails `failed` where the system's generator refuses. See also `request`.
+function new_inbox(c: Client) -> str?
+    return inbox.next(c.session.options.inbox_prefix)
+
+# Publishes `data` to `subject` and answers the first reply, which comes to
+# an inbox of the client.
+#
+# - `c`: the client.
+# - `subject`: a subject with no wildcard.
+# - `data`: the request's data.
+# - `wait_ms`: milliseconds to wait for the reply, 1 or more.
+#
+# Fails `not_found` where the server says no one listens on `subject`,
+# `timeout` where no reply comes in time, and as `publish` fails. See also
+# `request_message`, `respond`.
+function request(@c: Client, subject: str, data: [u8], wait_ms: i64) -> Message?
+    return request_message(@c, m: message(subject, data: data), wait_ms: wait_ms)
+
+# Publishes `m`, headers included, and answers the first reply; its `reply`
+# is replaced by an inbox of the client.
+#
+# - `c`: the client.
+# - `m`: the request.
+# - `wait_ms`: milliseconds to wait for the reply, 1 or more.
+#
+# Fails as `request` and `publish_message` fail. See also `request`.
+function request_message(@c: Client, m: Message, wait_ms: i64) -> Message?
+    headers: [model.Header] @= []
+
+    for h in m.headers
+        headers @ headers.push(model.Header(name: h.name, value: h.value))
+
+    got = waiting.request(@c.session, m: model.Message(subject: m.subject, reply: "", headers: headers, data: m.data, sid: 0, status: 0, description: ""), wait_ms: wait_ms)?
+    back: [Header] @= []
+
+    for h in got.headers
+        back @ back.push(Header(name: h.name, value: h.value))
+
+    return ok(
+        Message(subject: got.subject, reply: got.reply, headers: back, data: got.data, sid: got.sid, status: got.status, description: got.description)
+    )
+
+# Publishes `data` to the reply subject of `m`, which answers a request.
+#
+# - `c`: the client.
+# - `m`: the request received.
+# - `data`: the answer's data.
+#
+# Fails `invalid` where `m` has no reply subject, and as `publish` fails.
+# See also `request`.
+function respond(@c: Client, m: Message, data: [u8]) -> ()?
+    if m.reply == ""
+        return fail(code: INVALID, msg: f"the message on \"{m.subject}\" asks for no reply")
+    return publish(@c, subject: m.reply, data: data)
+
+## Headers
+
+# The first value of the header `name` of `m`, the name compared as written.
+#
+# - `m`: the message.
+# - `name`: the header's name.
+#
+# Fails `not_found` where `m` has no such header. See also `headers_of`.
+function header_of(m: Message, name: str) -> str?
+    for h in m.headers
+        if h.name == name
+            return ok(h.value)
+
+    return fail(code: NOT_FOUND, msg: f"the message on \"{m.subject}\" has no header \"{name}\"")
+
+# Every value of the header `name` of `m`, in order: [] where it has none.
+#
+# - `m`: the message.
+# - `name`: the header's name, compared as written.
+#
+# See also `header_of`.
+function headers_of(m: Message, name: str) -> [str]
+    out: [str] @= []
+
+    for h in m.headers
+        if h.name == name
+            out @ out.push(h.value)
+
+    return out
+
+# A copy of `m` with the header `name` set to `value` after its others.
+#
+# - `m`: the message.
+# - `name`: the header's name.
+# - `value`: its value.
+#
+# See also `header_of`.
+function with_header(m: Message, name: str, value: str) -> Message
+    out @= m
+    headers @= m.headers
+    headers @ headers.push(Header(name: name, value: value))
+    out.headers @ headers
+    return out
+
+## Subjects
+
+# Whether `s` is a subject a message is published to: tokens of printable
+# characters with no space, separated by `.`, none empty, no wildcard.
+#
+# - `s`: the text asked about; "" is none.
+#
+# See also `is_valid_filter`.
+function is_valid_subject(s: str) -> bool
+    return subjects.is_subject(s)
+
+# Whether `s` is a subject a subscription takes: a subject where a token may
+# be `*`, and the last `>`.
+#
+# - `s`: the text asked about.
+#
+# See also `matches`.
+function is_valid_filter(s: str) -> bool
+    return subjects.is_filter(s)
+
+# Whether a message published to `subject` reaches a subscription to
+# `pattern`: `*` matches one token, `>` one or more.
+#
+# - `pattern`: a subscription's subject.
+# - `subject`: a published subject.
+#
+# False where either is invalid. See also `is_valid_filter`.
+function matches(pattern: str, subject: str) -> bool
+    return subjects.matches(pattern: pattern, subject: subject)
+
+## Keys and credentials
+
+# The user's JWT and seed a `.creds` file holds, between its
+# `BEGIN NATS USER JWT` and `BEGIN USER NKEY SEED` lines.
+#
+# - `text`: the file's text.
+#
+# Fails `invalid` where either block is missing or empty. See also `Auth`.
+function parse_credentials(text: str) -> Credentials?
+    match nkeys.credentials(text)?
+        .credentials got                     => return ok(Credentials(jwt: got.jwt, seed: got.seed))
+        .none | .token _ | .user _ | .nkey _ => return fail(code: INVALID, msg: "the text holds no credentials")
+
+# The public key of an NKey's seed, as NATS writes it: 56 characters, the
+# first naming its kind (`U` for a user).
+#
+# - `seed`: the seed, 58 characters beginning `S`.
+#
+# Fails `invalid` where `seed` is no seed (its checksum, its length, its
+# kind), `unsupported` where the system has no Ed25519. See also
+# `nkey_sign`.
+function nkey_public_of(seed: str) -> str?
+    return nkeys.public_of(seed)
+
+# The Ed25519 signature of `data` by the key of `seed`: 64 bytes.
+#
+# - `seed`: the seed.
+# - `data`: the bytes signed.
+#
+# Fails as `nkey_public_of` does. See also `nkey_verify`.
+function nkey_sign(seed: str, data: [u8]) -> [u8]?
+    return nkeys.sign(seed, data: data)
+
+# Whether `signature` is the signature of `data` by the key whose public
+# key is `public_key`.
+#
+# - `public_key`: the public key, 56 characters.
+# - `data`: the bytes signed.
+# - `signature`: the signature.
+#
+# Fails `invalid` where `public_key` is no public key, `unsupported` where
+# the system has no Ed25519. See also `nkey_sign`.
+function nkey_verify(public_key: str, data: [u8], signature: [u8]) -> bool?
+    return nkeys.verify(public_key: public_key, data: data, signature: signature)
+
+# A new user's seed, from the system's generator for keys.
+#
+# Fails `unsupported` where the system has no Ed25519. See also
+# `nkey_public_of`.
+function generate_user_seed() -> str?
+    return nkeys.generate_user()
+
+## Tests
+
+test "options: the defaults, every one"
+    o = options(["nats://h"])
+    assert o.servers == ["nats://h"] && o.auth == .none && o.roots == "" && !o.tls && !o.tls_first && o.echo
+    assert o.connect_ms == 5000 && o.write_ms == 10000 && o.ping_interval_ms == 120000 && o.pings_outstanding == 2
+    assert o.reconnect == default_reconnect() && o.inbox_prefix == "_INBOX" && o.pending_messages == 65536
+    assert o.pending_bytes == 67108864 && o.discovered && !o.randomize
+
+test "parse_url: several URLs, a token, a user, a host alone, an IPv6 host, and what is refused"
+    two = parse_url("nats://a:4222, tls://b:4443").must()
+    assert two.servers == ["nats://a:4222", "tls://b:4443"] && two.auth == .none
+    assert parse_url("nats://tok@h").must().auth == .token(token: "tok")
+    assert parse_url("nats://bob:s%40c@h,nats://x:y@h2").must().auth == .user(name: "bob", password: "s@c")
+    assert parse_url("localhost").must().servers == ["nats://localhost:4222"]
+    assert parse_url("nats://[::1]:4223").must().servers == ["nats://[::1]:4223"]
+    assert parse_url("ws://h/nats").must().servers == ["ws://h:80/nats"]
+    assert parse_url("").is_err() && parse_url("a,,b").is_err() && parse_url("http://h").is_err() && parse_url("nats://h:0").is_err()
+
+test "header_of, headers_of and with_header: none, one, a name repeated, a name in another case"
+    m = with_header(with_header(message("s", data: []), name: "A", value: "1"), name: "A", value: "2")
+    assert header_of(m, name: "A").must() == "1" && headers_of(m, name: "A") == ["1", "2"]
+    assert header_of(m, name: "a").is_err() && headers_of(m, name: "B") == []
+    assert message("s", data: [1]).headers == []
+
+test "is_valid_subject, is_valid_filter and matches: through the face"
+    assert is_valid_subject("a.b") && !is_valid_subject("a.*") && is_valid_filter("a.*") && !is_valid_filter("a.>.b")
+    assert matches(pattern: "a.>", subject: "a.b.c") && !matches(pattern: "a.*", subject: "a.b.c")
+
+test "parse_credentials and the NKey functions: a file, its seed's key, and a seed refused"
+    text = "-----BEGIN NATS USER JWT-----\nJWT\n------END NATS USER JWT------\n-----BEGIN USER NKEY SEED-----\nSUAAAAICAMCAKBQHBAEQUCYMBUHA6EARCIJRIFIWC4MBSGQ3DQOR4H776Y\n------END USER NKEY SEED------\n"
+    c = parse_credentials(text).must()
+    assert c.jwt == "JWT" && c.seed == "SUAAAAICAMCAKBQHBAEQUCYMBUHA6EARCIJRIFIWC4MBSGQ3DQOR4H776Y"
+    assert nkey_public_of("SXXX").is_err() && nkey_sign("", data: []).is_err()
+
+test "connect: options refused before any connection"
+    o @= options([])
+    assert connect(o).is_err()
+    o @ options(["nats://h"])
+    o.pings_outstanding @ 0
+    assert connect(o).is_err()
+
+test "connect live, against the server REBEL_NATS_URL names: INFO, headers, a round trip, queue groups, a request, no responders, limits, a drain"
+    match os.env("REBEL_NATS_URL")
+        .err _ => print("connect live: skipped, REBEL_NATS_URL names no server")
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            i = server_info_of(c)
+            assert i.headers && i.max_payload >= 1024 && i.version != "" && i.protocol == 1
+            assert !is_closed(c) && connected_url_of(c) != "" && max_payload_of(c) == i.max_payload
+            sid = subscribe(@c, "live.>").must()
+            publish(@c, subject: "live.a", data: bytes.from_text("città")).must()
+            publish_message(
+                @c,
+                m: with_header(message("live.h", data: [0, 255, 13, 10]), name: "K", value: "v1")
+            ).must()
+            one = next_message_of(@c, sid: sid, wait_ms: 5000).must()
+            assert one.subject == "live.a" && one.data == bytes.from_text("città") && one.sid == sid
+            two = next_message(@c, wait_ms: 5000).must()
+            assert two.data == [0, 255, 13, 10] && header_of(two, name: "K").must() == "v1"
+            big: [u8] @= []
+
+            for at in range(from: 0, to: 1000000)
+                big @ big.push(to_u8(at % 251).must())
+
+            publish(@c, subject: "live.big", data: big).must()
+            assert next_message(@c, wait_ms: 10000).must().data == big
+            past: [u8] @= big
+
+            for _ in range(from: 0, to: i.max_payload)
+                past @ past.push(1)
+
+            match publish(@c, subject: "live.past", data: past)
+                .ok _  => assert false
+                .err e => assert e.code == "limit"
+
+            for n in range(from: 0, to: 10000)
+                publish(@c, subject: "live.many", data: bytes.from_text(to_str(n))).must()
+
+            flush(@c, wait_ms: 10000).must()
+            assert pending_of(c, sid: sid).must() == 10000 && delivered_of(c, sid: sid).must() == 10003
+            count: i64 @= 0
+
+            while count < 10000
+                m = next_message(@c, wait_ms: 5000).must()
+                assert m.data == bytes.from_text(to_str(count))
+                count @ count + 1
+
+            match next_message(@c, wait_ms: 50)
+                .ok _  => assert false
+                .err e => assert e.code == "timeout"
+
+            q1 @= connect(parse_url(url).must()).must()
+            q2 @= connect(parse_url(url).must()).must()
+            s1 = queue_subscribe(@q1, subject: "work.x", queue: "workers").must()
+            s2 = queue_subscribe(@q2, subject: "work.x", queue: "workers").must()
+            flush(@q1, wait_ms: 5000).must()
+            flush(@q2, wait_ms: 5000).must()
+
+            for _ in range(from: 0, to: 100)
+                publish(@c, subject: "work.x", data: [1]).must()
+
+            flush(@c, wait_ms: 5000).must()
+            flush(@q1, wait_ms: 5000).must()
+            flush(@q2, wait_ms: 5000).must()
+            assert pending_of(q1, sid: s1).must() + pending_of(q2, sid: s2).must() == 100
+            close(@q1).must()
+            close(@q2).must()
+
+            match request(@c, subject: "nobody.listens", data: [], wait_ms: 5000)
+                .ok _  => assert false
+                .err e => assert e.code == "not_found"
+
+            ready = subscribe(@c, "svc.ready").must()
+            t @= threads.spawn_text(body: live.responder, arg: url)
+            _ = next_message_of(@c, sid: ready, wait_ms: 10000).must()
+            answer = request(@c, subject: "svc.echo", data: bytes.from_text("ping"), wait_ms: 10000).must()
+            assert answer.data == bytes.from_text("ping!") && header_of(answer, name: "Seen").must() == "yes"
+            assert threads.wait_text(@t) == "answered"
+            box = new_inbox(c).must()
+            assert strings.has_prefix(s: box, prefix: "_INBOX.") && is_valid_subject(box)
+            once = subscribe(@c, "once.x").must()
+            unsubscribe_after(@c, sid: once, most: 2).must()
+
+            for _ in range(from: 0, to: 5)
+                publish(@c, subject: "once.x", data: [7]).must()
+
+            flush(@c, wait_ms: 5000).must()
+            assert next_message_of(@c, sid: once, wait_ms: 1000).must().data == [7]
+            assert next_message_of(@c, sid: once, wait_ms: 1000).must().data == [7]
+            assert next_message_of(@c, sid: once, wait_ms: 100).is_err()
+            unsubscribe(@c, sid: ready).must()
+            assert rtt(@c, wait_ms: 5000).must().nanoseconds > 0
+            reconnect(@c).must()
+            assert stats_of(c).reconnects == 1 && subscriptions_of(c) == [sid]
+            publish(@c, subject: "live.after", data: [9]).must()
+            assert next_message(@c, wait_ms: 5000).must().data == [9]
+            publish(@c, subject: "live.last", data: [8]).must()
+            drain(@c, wait_ms: 5000).must()
+            assert is_closed(c) && next_message(@c, wait_ms: 0).must().data == [8]
+            assert next_message(@c, wait_ms: 0).is_err() && take_errors(@c) == []
+            print(f"connect live: {i.version}, 1 MB, 10000 messages, 100 in a queue group, a request, a reconnection")
+
+test "connect live, many clients on one thread: two clients' streams waited on by poll, each read when ready"
+    match os.env("REBEL_NATS_URL")
+        .err _ => print("poll live: skipped, REBEL_NATS_URL names no server")
+        .ok url =>
+            a @= connect(parse_url(url).must()).must()
+            b @= connect(parse_url(url).must()).must()
+            sa = subscribe(@a, "poll.a").must()
+            sb = subscribe(@b, "poll.b").must()
+            flush(@a, wait_ms: 5000).must()
+            flush(@b, wait_ms: 5000).must()
+            set @= poll.make(4).must()
+
+            match poll.add_stream(set, s: stream_of(a).must(), interest: .read)
+                .err e => print(f"poll live: {e.code}, {e.msg}")
+                .ok ka =>
+                    kb = poll.add_stream(set, s: stream_of(b).must(), interest: .read).must()
+                    publish(@a, subject: "poll.b", data: [2]).must()
+                    publish(@b, subject: "poll.a", data: [1]).must()
+                    flush(@a, wait_ms: 5000).must()
+                    flush(@b, wait_ms: 5000).must()
+                    got: [i64] @= []
+                    tries: i64 @= 0
+
+                    while got.len() < 2 && tries < 20
+                        if held_of(a) > 0
+                            for m in read_ready(@a).must()
+                                got @ got.push(m.sid * 10 + to_i64(m.data[0]).must())
+
+                        if held_of(b) > 0
+                            for m in read_ready(@b).must()
+                                got @ got.push(m.sid * 10 + to_i64(m.data[0]).must())
+
+                        for ev in poll.wait(set, limit: time.milliseconds(500).must()).must()
+                            if ev.key == ka
+                                for m in read_ready(@a).must()
+                                    got @ got.push(m.sid * 10 + to_i64(m.data[0]).must())
+
+                            if ev.key == kb
+                                for m in read_ready(@b).must()
+                                    got @ got.push(m.sid * 10 + to_i64(m.data[0]).must())
+
+                        tries @ tries + 1
+
+                    assert got.len() == 2 && got[0] + got[1] == sa * 10 + 1 + sb * 10 + 2
+
+            poll.close(@set).must()
+            close(@a).must()
+            close(@b).must()
+
+test "connect live, logins: the token, the user and password, and the NKey the variables name; a wrong one refused"
+    match os.env("REBEL_NATS_TOKEN_URL")
+        .err _ => print("token live: skipped, REBEL_NATS_TOKEN_URL names no server")
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            flush(@c, wait_ms: 5000).must()
+            close(@c).must()
+            wrong @= parse_url(url).must()
+            wrong.auth @ .token(token: "wrong")
+
+            match connect(wrong)
+                .ok _  => assert false
+                .err e => assert e.code == "permission"
+
+    match os.env("REBEL_NATS_USER_URL")
+        .err _ => print("user live: skipped, REBEL_NATS_USER_URL names no server")
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            publish(@c, subject: "forbidden.x", data: [1]).must()
+            flush(@c, wait_ms: 5000).must()
+            errors = take_errors(@c)
+            assert errors.len() == 1 && strings.has_prefix(s: errors[0], prefix: "Permissions Violation for Publish")
+            close(@c).must()
+            wrong @= parse_url(url).must()
+            wrong.auth @ .user(name: "nobody", password: "x")
+
+            match connect(wrong)
+                .ok _  => assert false
+                .err e => assert e.code == "permission"
+
+    match os.env("REBEL_NATS_NKEY_URL")
+        .err _ => print("nkey live: skipped, REBEL_NATS_NKEY_URL names no server")
+        .ok url =>
+            o @= parse_url(url).must()
+            o.auth @ .nkey(seed: os.env("REBEL_NATS_NKEY_SEED").must())
+
+            match connect(o)
+                .ok first =>
+                    c @= first
+                    flush(@c, wait_ms: 5000).must()
+                    close(@c).must()
+                .err e => assert e.code == "unsupported"
+
+            o.auth @ .nkey(
+                seed: generate_user_seed().default("SUAAAAICAMCAKBQHBAEQUCYMBUHA6EARCIJRIFIWC4MBSGQ3DQOR4H776Y")
+            )
+            assert connect(o).is_err()
+
+test "connect live, TLS: after INFO, from the first byte, and over a WebSocket, as the variables name them"
+    match os.env("REBEL_NATS_TLS_URL")
+        .err _ => print("tls live: skipped, REBEL_NATS_TLS_URL names no server")
+        .ok url =>
+            o @= parse_url(url).must()
+            o.roots @ tls.TEST_ROOT
+            c @= connect(o).must()
+            sid = subscribe(@c, "tls.x").must()
+            publish(@c, subject: "tls.x", data: [5]).must()
+            assert next_message_of(@c, sid: sid, wait_ms: 5000).must().data == [5]
+            close(@c).must()
+            o.roots @ ""
+
+            match connect(o)
+                .ok _  => assert false
+                .err e => assert e.code == "invalid" || e.code == "failed"
+
+    match os.env("REBEL_NATS_TLS_FIRST_URL")
+        .err _ => print("tls first live: skipped, REBEL_NATS_TLS_FIRST_URL names no server")
+        .ok url =>
+            o @= parse_url(url).must()
+            o.roots @ tls.TEST_ROOT
+            o.tls_first @ true
+            c @= connect(o).must()
+            flush(@c, wait_ms: 5000).must()
+            close(@c).must()
+
+    match os.env("REBEL_NATS_WS_URL")
+        .err _ => print("websocket live: skipped, REBEL_NATS_WS_URL names no server")
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            sid = subscribe(@c, "ws.x").must()
+            data: [u8] @= []
+
+            for at in range(from: 0, to: 200000)
+                data @ data.push(to_u8(at % 256).must())
+
+            publish(@c, subject: "ws.x", data: data).must()
+            assert next_message_of(@c, sid: sid, wait_ms: 5000).must().data == data
+            close(@c).must()
+
+## Examples
+
+# The options of a local server, its reconnection made patient.
+test "options: a local server, more attempts"
+    o @= options(["nats://localhost:4222"])
+    o.reconnect.attempts @ 600
+    assert o.servers.len() == 1 && o.reconnect.attempts == 600
+
+# The reconnection's defaults.
+test "default_reconnect: what a client tries after a loss"
+    r = default_reconnect()
+    assert r.attempts == 60 && r.wait_ms == 250 && r.most_wait_ms == 4000
+
+# The options a cluster's URLs name, with a user's login.
+test "parse_url: two servers and a login"
+    o = parse_url("nats://app:pw@n1:4222,nats://n2:4222").must()
+    assert o.servers == ["nats://n1:4222", "nats://n2:4222"] && o.auth == .user(name: "app", password: "pw")
+
+# A connection to a local server, where one answers; elsewhere it shows
+# nothing.
+test "connect: a local server"
+    match connect(options(["nats://localhost:4222"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            assert !is_closed(c)
+            close(@c).must()
+
+# A client closed, after which every call fails `closed`.
+test "close: the end of a client"
+    match connect(options(["nats://localhost:4222"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            close(@c).must()
+            assert publish(@c, subject: "a", data: []).is_err()
+
+# A client drained: what came before is still read.
+test "drain: subscriptions ended, messages kept"
+    match connect(options(["nats://localhost:4222"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            _ = subscribe(@c, "ex.drain").must()
+            publish(@c, subject: "ex.drain", data: [1]).must()
+            drain(@c, wait_ms: 2000).must()
+            assert next_message(@c, wait_ms: 0).must().data == [1]
+
+# Whether a client is closed.
+test "is_closed: before and after close"
+    match connect(options(["nats://localhost:4222"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            assert !is_closed(c)
+            close(@c).must()
+            assert is_closed(c)
+
+# A new connection asked for, the subscriptions kept.
+test "reconnect: a new connection"
+    match connect(options(["nats://localhost:4222"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            sid = subscribe(@c, "ex.again").must()
+            reconnect(@c).must()
+            assert subscriptions_of(c) == [sid]
+            close(@c).must()
+
+# What the server says of itself.
+test "server_info_of: the server's version"
+    match connect(options(["nats://localhost:4222"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            assert server_info_of(c).version != ""
+            close(@c).must()
+
+# The URL connected to.
+test "connected_url_of: no secret in it"
+    match connect(parse_url("nats://user:pw@localhost:4222").must())
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            assert connected_url_of(c) == "nats://localhost:4222"
+            close(@c).must()
+
+# The largest message the server takes.
+test "max_payload_of: a megabyte by default"
+    match connect(options(["nats://localhost:4222"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            assert max_payload_of(c) >= 1024
+            close(@c).must()
+
+# The servers a reconnection would try.
+test "servers_of: the options' servers first"
+    match connect(options(["nats://localhost:4222"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            assert servers_of(c)[0] == "nats://localhost:4222"
+            close(@c).must()
+
+# What a client has carried.
+test "stats_of: one message out"
+    match connect(options(["nats://localhost:4222"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            publish(@c, subject: "ex.stats", data: [1, 2]).must()
+            assert stats_of(c).messages_out == 1 && stats_of(c).bytes_out == 2
+            close(@c).must()
+
+# What a client holds before a program waits on its stream.
+test "held_of: nothing on a fresh client"
+    match connect(options(["nats://localhost:4222"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            assert held_of(c) == 0
+            close(@c).must()
+
+# The stream a program waits on with `poll`.
+test "stream_of: the client's stream"
+    match connect(options(["nats://localhost:4222"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            assert !io.is_closed(stream_of(c).must())
+            close(@c).must()
+            assert stream_of(c).is_err()
+
+# The errors the server sent that left the connection open.
+test "take_errors: none on a fresh client"
+    match connect(options(["nats://localhost:4222"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            assert take_errors(@c) == []
+            close(@c).must()
+
+# A message built to publish.
+test "message: a subject and data"
+    m = message("orders.new", data: [1, 2, 3])
+    assert m.subject == "orders.new" && m.reply == "" && m.headers == []
+
+# A message published.
+test "publish: data to a subject"
+    match connect(options(["nats://localhost:4222"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            publish(@c, subject: "ex.publish", data: bytes.from_text("hello")).must()
+            close(@c).must()
+
+# A message with a header published.
+test "publish_message: a header and a reply subject"
+    match connect(options(["nats://localhost:4222"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            m @= with_header(message("ex.headers", data: []), name: "Trace", value: "1")
+            m.reply @ "ex.answers"
+            publish_message(@c, m: m).must()
+            close(@c).must()
+
+# Everything written read by the server.
+test "flush: a round trip"
+    match connect(options(["nats://localhost:4222"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            flush(@c, wait_ms: 2000).must()
+            close(@c).must()
+
+# The time of a round trip.
+test "rtt: under two seconds"
+    match connect(options(["nats://localhost:4222"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            assert rtt(@c, wait_ms: 2000).must().nanoseconds < 2000000000
+            close(@c).must()
+
+# A subscription with a wildcard.
+test "subscribe: every subject under orders"
+    match connect(options(["nats://localhost:4222"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            sid = subscribe(@c, "orders.>").must()
+            assert sid > 0
+            close(@c).must()
+
+# A member of a queue group.
+test "queue_subscribe: one of a group of workers"
+    match connect(options(["nats://localhost:4222"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            assert queue_subscribe(@c, subject: "jobs", queue: "workers").must() > 0
+            close(@c).must()
+
+# A subscription ended.
+test "unsubscribe: no longer listening"
+    match connect(options(["nats://localhost:4222"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            sid = subscribe(@c, "ex.unsub").must()
+            unsubscribe(@c, sid: sid).must()
+            assert subscriptions_of(c) == []
+            close(@c).must()
+
+# A subscription that ends after one message.
+test "unsubscribe_after: one message"
+    match connect(options(["nats://localhost:4222"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            sid = subscribe(@c, "ex.once").must()
+            unsubscribe_after(@c, sid: sid, most: 1).must()
+            close(@c).must()
+
+# The client's subscriptions.
+test "subscriptions_of: two"
+    match connect(options(["nats://localhost:4222"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            a = subscribe(@c, "ex.a").must()
+            b = subscribe(@c, "ex.b").must()
+            assert subscriptions_of(c) == [a, b]
+            close(@c).must()
+
+# The next message of any subscription.
+test "next_message: a message published to itself"
+    match connect(options(["nats://localhost:4222"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            _ = subscribe(@c, "ex.next").must()
+            publish(@c, subject: "ex.next", data: [42]).must()
+            assert next_message(@c, wait_ms: 2000).must().data == [42]
+            close(@c).must()
+
+# The next message of one subscription.
+test "next_message_of: one subscription's"
+    match connect(options(["nats://localhost:4222"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            sid = subscribe(@c, "ex.one").must()
+            publish(@c, subject: "ex.one", data: [1]).must()
+            assert next_message_of(@c, sid: sid, wait_ms: 2000).must().subject == "ex.one"
+            close(@c).must()
+
+# What a client holds once its stream is readable.
+test "read_ready: the messages that came"
+    match connect(options(["nats://localhost:4222"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            _ = subscribe(@c, "ex.ready").must()
+            publish(@c, subject: "ex.ready", data: [1]).must()
+            flush(@c, wait_ms: 2000).must()
+            assert read_ready(@c).must().len() == 1
+            close(@c).must()
+
+# The messages held of a subscription.
+test "pending_of: one held"
+    match connect(options(["nats://localhost:4222"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            sid = subscribe(@c, "ex.pending").must()
+            publish(@c, subject: "ex.pending", data: [1]).must()
+            flush(@c, wait_ms: 2000).must()
+            assert pending_of(c, sid: sid).must() == 1
+            close(@c).must()
+
+# The messages a subscription dropped.
+test "dropped_of: none"
+    match connect(options(["nats://localhost:4222"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            sid = subscribe(@c, "ex.dropped").must()
+            assert dropped_of(c, sid: sid).must() == 0
+            close(@c).must()
+
+# The messages a subscription received.
+test "delivered_of: one"
+    match connect(options(["nats://localhost:4222"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            sid = subscribe(@c, "ex.delivered").must()
+            publish(@c, subject: "ex.delivered", data: [1]).must()
+            flush(@c, wait_ms: 2000).must()
+            assert delivered_of(c, sid: sid).must() == 1
+            close(@c).must()
+
+# An inbox of the client's own.
+test "new_inbox: under _INBOX"
+    match connect(options(["nats://localhost:4222"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            assert strings.has_prefix(s: new_inbox(c).must(), prefix: "_INBOX.")
+            close(@c).must()
+
+# A request no one answers.
+test "request: no responders"
+    match connect(options(["nats://localhost:4222"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+
+            match request(@c, subject: "ex.nobody", data: [], wait_ms: 2000)
+                .ok _  => assert false
+                .err e => assert e.code == "not_found"
+
+            close(@c).must()
+
+# A request with a header, no one answering.
+test "request_message: a header sent"
+    match connect(options(["nats://localhost:4222"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            m = with_header(message("ex.nobody", data: []), name: "Id", value: "7")
+            assert request_message(@c, m: m, wait_ms: 2000).is_err()
+            close(@c).must()
+
+# A reply to a request, here one the client asks of itself.
+test "respond: to a message's reply subject"
+    match connect(options(["nats://localhost:4222"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            _ = subscribe(@c, "ex.ask").must()
+            answers = subscribe(@c, "ex.answer").must()
+            m @= message("ex.ask", data: [1])
+            m.reply @ "ex.answer"
+            publish_message(@c, m: m).must()
+            asked = next_message(@c, wait_ms: 2000).must()
+            respond(@c, m: asked, data: [2]).must()
+            assert next_message_of(@c, sid: answers, wait_ms: 2000).must().data == [2]
+            close(@c).must()
+
+# A header read.
+test "header_of: a trace header"
+    m = with_header(message("s", data: []), name: "Trace", value: "abc")
+    assert header_of(m, name: "Trace").must() == "abc"
+
+# A header's every value.
+test "headers_of: a name twice"
+    m = with_header(with_header(message("s", data: []), name: "V", value: "1"), name: "V", value: "2")
+    assert headers_of(m, name: "V") == ["1", "2"]
+
+# A header added.
+test "with_header: one more field"
+    assert with_header(message("s", data: []), name: "K", value: "v").headers == [Header(name: "K", value: "v")]
+
+# A subject checked.
+test "is_valid_subject: tokens and dots"
+    assert is_valid_subject("orders.eu.new") && !is_valid_subject("orders..new")
+
+# A subscription's subject checked.
+test "is_valid_filter: a wildcard"
+    assert is_valid_filter("orders.*.new") && is_valid_filter("orders.>")
+
+# A subject matched.
+test "matches: one token and the rest"
+    assert matches(pattern: "orders.*", subject: "orders.new") && matches(pattern: "orders.>", subject: "orders.eu.new")
+
+# The credentials a file holds.
+test "parse_credentials: a .creds file"
+    c = parse_credentials(
+        "-----BEGIN NATS USER JWT-----\nJ\n------END NATS USER JWT------\n-----BEGIN USER NKEY SEED-----\nS\n------END USER NKEY SEED------\n"
+    ).must()
+    assert c.jwt == "J" && c.seed == "S"
+
+# A seed's public key, where the system has Ed25519.
+test "nkey_public_of: the key a server is told"
+    match nkey_public_of("SUAAAAICAMCAKBQHBAEQUCYMBUHA6EARCIJRIFIWC4MBSGQ3DQOR4H776Y")
+        .ok k  => assert k == "UAB2CB576PHBBPQ5ODORRZ2LYCMWPZGWGCN2KDK7DXOIMZASKUY3RLKK"
+        .err e => assert e.code == "unsupported"
+
+# A nonce signed, where the system has Ed25519.
+test "nkey_sign: 64 bytes"
+    match nkey_sign("SUAAAAICAMCAKBQHBAEQUCYMBUHA6EARCIJRIFIWC4MBSGQ3DQOR4H776Y", data: [1])
+        .ok sig => assert sig.len() == 64
+        .err e  => assert e.code == "unsupported"
+
+# A signature checked, where the system has Ed25519.
+test "nkey_verify: a signature that holds"
+    seed = "SUAAAAICAMCAKBQHBAEQUCYMBUHA6EARCIJRIFIWC4MBSGQ3DQOR4H776Y"
+
+    match nkey_sign(seed, data: [1])
+        .ok sig => assert nkey_verify(public_key: nkey_public_of(seed).must(), data: [1], signature: sig).must()
+        .err e  => assert e.code == "unsupported"
+
+# A new user's seed, where the system has Ed25519.
+test "generate_user_seed: 58 characters beginning SU"
+    match generate_user_seed()
+        .ok s  => assert s.len() == 58 && strings.has_prefix(s: s, prefix: "SU")
+        .err e => assert e.code == "unsupported"

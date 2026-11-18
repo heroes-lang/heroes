@@ -1,0 +1,70 @@
+# What the live tests of `nats` share: the options of a server a variable of
+# the environment names, and a responder that runs on a thread of its own,
+# since a request waits on the thread that asks.
+
+use bytes
+use nats/internal/model
+use nats/internal/session
+use nats/internal/state
+use nats/internal/waiting
+
+# The options of the test's session for `url`, with room for the large
+# messages and the many the live tests send.
+#
+# - `url`: the server's URL.
+function options_for(url: str) -> model.Options
+    o @= state.sample().options
+    o.servers @ [url]
+    o.connect_ms @ 5000
+    o.write_ms @ 10000
+    o.pending_messages @ 100000
+    o.pending_bytes @ 67108864
+    return o
+
+# For the live tests: a client of `url` that subscribes to `svc.echo`, says
+# it is ready on `svc.ready`, answers one request with its data before
+# `!`, and answers "answered" or the failure.
+#
+# - `url`: the server's URL.
+function responder(url: str) -> str
+    s @= match session.open(options_for(url))
+        .ok got => got
+        .err e  => return "open: " + e.msg
+
+    sid = match session.subscribe(@s, subject: "svc.echo", queue: "", internal: false)
+        .ok got => got
+        .err e  => return "subscribe: " + e.msg
+
+    match waiting.flush(@s, wait_ms: 5000)
+        .ok _  => _ = 0
+        .err e => return "flush: " + e.msg
+
+    ready = model.Message(subject: "svc.ready", reply: "", headers: [], data: [], sid: 0, status: 0, description: "")
+
+    match session.publish(@s, m: ready)
+        .ok _  => _ = 0
+        .err e => return "ready: " + e.msg
+
+    asked = match waiting.next(@s, sid: sid, wait_ms: 10000)
+        .ok got => got
+        .err e  => return "next: " + e.msg
+
+    answer @= asked.data
+    bytes.push_text(to: @answer, s: "!")
+    back = model.Message(
+        subject: asked.reply,
+        reply: "",
+        headers: [model.Header(name: "Seen", value: "yes")],
+        data: answer,
+        sid: 0,
+        status: 0,
+        description: ""
+    )
+
+    match session.publish(@s, m: back)
+        .ok _  => _ = 0
+        .err e => return "answer: " + e.msg
+
+    _ = waiting.flush(@s, wait_ms: 5000).is_err()
+    _ = session.close(@s).is_err()
+    return "answered"

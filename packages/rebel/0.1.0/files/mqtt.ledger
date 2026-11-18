@@ -1,0 +1,264 @@
+# The ledger of `mqtt`: what a program does with an MQTT server, measured
+# against Go's `github.com/eclipse/paho.mqtt.golang` v1.5.1 (its `go doc
+# -all`, fetched into the scratch folder on 2026-11-18) and, for MQTT 5's
+# packets, `github.com/eclipse/paho.golang` v0.23.0; Python's paho-mqtt
+# 2.2.0 (`dir(paho.mqtt.client.Client)`, the parameters of its constructor
+# and `connect`, `MQTTMessage`, `properties`, `reasoncodes`,
+# `subscribeoptions`, `publish`, `subscribe`, installed into the scratch
+# folder the same day); and Rust's rumqttc (its docs.rs pages read the same
+# day: `MqttOptions` and its v5 twin, `AsyncClient`, the crate's items).
+#
+# The expected values of the tests were asked of the three: the bytes of
+# every kind of packet in 3.1.1 (`paho.mqtt.golang/packets`) and in 5
+# (`paho.golang/packets`), how a topic matches a filter
+# (`paho.mqtt.client.topic_matches_sub`), and the names of the reason codes
+# (`paho.mqtt.reasoncodes.ReasonCode`). The live run, on 2026-11-18, reached
+# Mosquitto 2.0.21 of Debian 13 in a container of this Mac: TCP with no login
+# and with a password, TLS, and a WebSocket, in MQTT 5 and 3.1.1.
+
+capability mqtt/connect  a connection made, the CONNACK read, the login taken
+  heroes  mqtt.connect, mqtt.options, mqtt.parse_url, mqtt.Options, mqtt.Client, mqtt.DEFAULT_PORT, mqtt.DEFAULT_TLS_PORT
+  go      NewClient, NewClientOptions, ClientOptions, ClientOptions.AddBroker, Client.Connect, ConnectToken, ConnectToken.ReturnCode, ConnectMQTT, NewOptionsReader, ClientOptionsReader
+  rust    MqttOptions::new, MqttOptions::parse_url, MqttOptions::broker_address, AsyncClient::new, Client::new, EventLoop, Connection
+  python  Client, Client.connect, Client.connect_async, Client.host, Client.port, connack_string
+  note    MQTT 5 by default, where Go's and Python's default is 3.1.1: every server measured speaks 5, and 3.1.1 is one field away
+
+capability mqtt/version  MQTT 3.1.1 and 5.0, one client
+  heroes  mqtt.Options (version)
+  go      ClientOptions.SetProtocolVersion
+  rust    the module `v5` beside the 3.1.1 one
+  python  MQTTv311, MQTTv5, MQTTProtocolVersion, Client.protocol
+
+capability mqtt/v31  MQTT 3.1, the protocol name MQIsdp
+  heroes  refused: superseded by 3.1.1 in 2014, which every server that speaks 3.1 speaks too; a CONNECT of 3.1 read by `decode` fails `unsupported`
+  go      ClientOptions.SetProtocolVersion (3)
+  rust    -
+  python  MQTTv31
+
+capability mqtt/client-id  the client's identifier, given or assigned by the server
+  heroes  mqtt.Options (client_id), mqtt.client_id_of
+  go      ClientOptions.SetClientID
+  rust    MqttOptions::client_id, MqttOptions::set_client_id
+  python  Client(client_id)
+
+capability mqtt/session  a clean start or a session the server keeps, and whether it kept one
+  heroes  mqtt.Options (clean_start, properties: SESSION_EXPIRY_INTERVAL), mqtt.connack_of, mqtt.Connack
+  go      ClientOptions.SetCleanSession, ConnectToken.SessionPresent, ClientOptions.SetResumeSubs
+  rust    MqttOptions::clean_session, MqttOptions::set_clean_session, MqttOptions::clean_start, MqttOptions::set_clean_start, MqttOptions::session_expiry_interval, MqttOptions::set_session_expiry_interval
+  python  Client(clean_session), connect (clean_start), CleanStartOption
+
+capability mqtt/keep-alive  the keep-alive told, a PINGREQ sent when due, a PINGRESP awaited
+  heroes  mqtt.Options (keep_alive_s), mqtt.ping
+  go      ClientOptions.SetKeepAlive, ClientOptions.SetPingTimeout
+  rust    MqttOptions::keep_alive, MqttOptions::set_keep_alive
+  python  connect (keepalive), Client.keepalive
+  note    the PINGREQ is sent while a call waits, the program's own loop being the only one; the server's own keep-alive (MQTT 5) replaces the options'
+
+capability mqtt/login  a user's name and a password
+  heroes  mqtt.Options (username, password)
+  go      ClientOptions.SetUsername, ClientOptions.SetPassword, ClientOptions.SetCredentialsProvider, CredentialsProvider
+  rust    MqttOptions::credentials, MqttOptions::set_credentials, Login
+  python  username_pw_set, Client.username, Client.password
+  note    a password is bytes, as MQTT 5 allows; "" and [] send none, so an empty password present is sent only by `encode`
+
+capability mqtt/enhanced-auth  MQTT 5's exchange of authentication past the CONNECT (AUTH)
+  heroes  pending: an exchange of several steps needs the program between packets (SCRAM, Kerberos); an AUTH from the server fails `unsupported`, and a method of one step is sent with AUTHENTICATION_METHOD and AUTHENTICATION_DATA in the options' properties
+  go      -
+  rust    MqttOptions::authentication_method, MqttOptions::authentication_data, Auth
+  python  connect (properties AuthenticationMethod)
+
+capability mqtt/will  the will the server publishes when the connection ends badly
+  heroes  mqtt.Options (will), mqtt.Will, mqtt.drop
+  go      ClientOptions.SetWill, ClientOptions.SetBinaryWill, ClientOptions.UnsetWill
+  rust    MqttOptions::last_will, MqttOptions::set_last_will, LastWill, LastWillProperties
+  python  will_set, will_clear
+
+capability mqtt/tls  TLS, the server's certificate checked against the system's store or the program's authorities
+  heroes  mqtt.Transport (tls, websocket_tls), mqtt.Options (roots)
+  go      ClientOptions.SetTLSConfig
+  rust    TlsConfiguration, Transport::Tls, TlsError
+  python  tls_set, tls_set_context, tls_insecure_set
+  note    a certificate's check cannot be turned off but by `tls`'s function for tests, so Python's tls_insecure_set has no twin
+
+capability mqtt/tls-client-certificate  a certificate of the client's own (mutual TLS)
+  heroes  pending: `tls.Client` holds no certificate of the client's own to present
+  go      ClientOptions.SetTLSConfig (Certificates)
+  rust    TlsConfiguration (client_auth)
+  python  tls_set (certfile, keyfile)
+
+capability mqtt/websocket  MQTT over a WebSocket, subprotocol mqtt
+  heroes  mqtt.Transport (websocket, websocket_tls)
+  go      ClientOptions.SetWebsocketOptions, NewWebsocket, WebsocketOptions
+  rust    Transport::Ws, Transport::Wss
+  python  Client(transport="websockets"), ws_set_options, WebsocketConnectionError
+
+capability mqtt/websocket-headers  the WebSocket's opening headers
+  heroes  pending: `websocket.Client` takes them, and the options do not carry them yet
+  go      ClientOptions.SetHTTPHeaders
+  rust    -
+  python  ws_set_options (headers)
+
+capability mqtt/proxy  a connection through an HTTP or SOCKS proxy
+  heroes  pending: `tls.connect_after` speaks a proxy's CONNECT below TLS, and no transport of these options asks for it yet
+  go      -
+  rust    Proxy, ProxyType, ProxyAuth, MqttOptions::proxy, MqttOptions::set_proxy
+  python  proxy_set
+
+capability mqtt/publish  a message published at QoS 0, 1 or 2, its handshake waited for
+  heroes  mqtt.publish, mqtt.publish_message, mqtt.message, mqtt.Message
+  go      Client.Publish, PublishToken, Token, Token.Wait, Token.WaitTimeout, WaitTokenTimeout, Token.Done, Token.Error
+  rust    AsyncClient::publish, AsyncClient::publish_bytes, AsyncClient::publish_with_properties, AsyncClient::try_publish, Client::publish, QoS, Publish
+  python  publish, MQTTMessageInfo, MQTTMessageInfo.wait_for_publish
+  note    a publish answers once its handshake is done (PUBACK, or PUBREC, PUBREL and PUBCOMP), as a token waited for answers in Go and Python
+
+capability mqtt/inflight  several publishes in flight at once, up to the server's Receive Maximum
+  heroes  pending: a publish here waits for its handshake, so one is in flight; a window needs a publish that answers before its acknowledgement and a token the program waits on later
+  go      ClientOptions.SetMaxResumePubInFlight, ClientOptions.SetOrderMatters
+  rust    MqttOptions::inflight, MqttOptions::set_inflight, MqttOptions::set_outgoing_inflight_upper_limit, MqttOptions::pending_throttle, MqttOptions::set_pending_throttle, MqttOptions::request_channel_capacity
+  python  max_inflight_messages_set, max_queued_messages_set
+
+capability mqtt/store  the messages in flight kept across a restart of the process
+  heroes  refused: a message is in flight only while its publish call waits, so the program holds every one it has not seen acknowledged
+  go      Store, MemoryStore, NewMemoryStore, OrderedMemoryStore, NewOrderedMemoryStore, FileStore, NewFileStore, ClientOptions.SetStore
+  rust    MqttState
+  python  -
+
+capability mqtt/retain  retained messages: published, received with their flag, cleared by an empty payload
+  heroes  mqtt.publish (retain), mqtt.Message (retain), mqtt.Subscription (retain_as_published, retain_handling)
+  go      Message.Retained
+  rust    Publish.retain, RetainForwardRule
+  python  publish (retain), MQTTMessage.retain, SubscribeOptions (retainAsPublished, retainHandling)
+
+capability mqtt/subscribe  subscriptions with topic filters and their wildcards, the QoS granted
+  heroes  mqtt.subscribe, mqtt.subscribe_many, mqtt.subscription, mqtt.Subscription
+  go      Client.Subscribe, Client.SubscribeMultiple, SubscribeToken, SubscribeToken.Result
+  rust    AsyncClient::subscribe, AsyncClient::subscribe_many, AsyncClient::subscribe_with_properties, AsyncClient::subscribe_many_with_properties, SubscribeFilter, Filter, SubscribeReasonCode
+  python  subscribe, SubscribeOptions
+
+capability mqtt/unsubscribe  subscriptions ended, a code per filter
+  heroes  mqtt.unsubscribe, mqtt.unsubscribe_many
+  go      Client.Unsubscribe, UnsubscribeToken
+  rust    AsyncClient::unsubscribe, AsyncClient::unsubscribe_with_properties, UnsubAckReason
+  python  unsubscribe
+
+capability mqtt/receive  the messages of every subscription read in order on one thread
+  heroes  mqtt.next_message
+  go      MessageHandler, ClientOptions.SetDefaultPublishHandler, Message, Message.Topic, Message.Payload, Message.Qos, Message.Duplicate, Message.MessageID
+  rust    EventLoop::poll, Connection::iter, Connection::recv, Connection::try_recv, Connection::recv_timeout, Iter, Event, Incoming, Outgoing, RecvError, RecvTimeoutError, TryRecvError
+  python  on_message, loop, loop_forever, loop_start, loop_stop, MQTTMessage
+  note    a message is read by the program, never handed to a callback (no closure)
+
+capability mqtt/routes  a message sent to the code of the filter it matches
+  heroes  mqtt.matches
+  go      Client.AddRoute
+  rust    -
+  python  message_callback_add, message_callback_remove, topic_callback
+  note    the program matches each message's topic against its own filters with `matches`
+
+capability mqtt/manual-ack  a message of QoS 1 or 2 acknowledged by the program once handled
+  heroes  mqtt.Options (manual_acks), mqtt.ack
+  go      ClientOptions.SetAutoAckDisabled, Message.Ack
+  rust    MqttOptions::manual_acks, MqttOptions::set_manual_acks, AsyncClient::ack, AsyncClient::try_ack
+  python  Client(manual_ack), manual_ack_set, ack
+
+capability mqtt/topics  topics and filters checked, a topic matched against a filter, a shared subscription's filter included
+  heroes  mqtt.is_valid_topic, mqtt.is_valid_filter, mqtt.matches
+  go      -
+  rust    mqttbytes::valid_topic, mqttbytes::valid_filter, mqttbytes::matches, mqttbytes::has_wildcards
+  python  topic_matches_sub, MQTTMatcher
+  note    paho's matcher answers false for `$share/g/a/#` against `a/b`; the server delivers by the filter after the group (MQTT 5 § 4.8.2), which this follows
+
+capability mqtt/properties  MQTT 5's properties written and read: every one, its kind, its packets, its range
+  heroes  mqtt.Property, mqtt.PropertyValue, mqtt.Pair, mqtt.number_of, mqtt.text_of, mqtt.data_of, mqtt.pairs_of, the constants PAYLOAD_FORMAT_INDICATOR to SHARED_SUBSCRIPTION_AVAILABLE
+  go      -
+  rust    ConnectProperties, ConnAckProperties, PublishProperties, PubAckProperties, PubRecProperties, PubRelProperties, PubCompProperties, SubscribeProperties, SubAckProperties, UnsubscribeProperties, UnsubAckProperties, DisconnectProperties, LastWillProperties, MqttOptions::connect_properties, MqttOptions::set_connect_properties, MqttOptions::user_properties, MqttOptions::set_user_properties, MqttOptions::receive_maximum, MqttOptions::set_receive_maximum, MqttOptions::topic_alias_max, MqttOptions::set_topic_alias_max, MqttOptions::request_problem_info, MqttOptions::set_request_problem_info, MqttOptions::request_response_info, MqttOptions::set_request_response_info, MqttOptions::max_packet_size, MqttOptions::set_max_packet_size
+  python  Properties, Properties.json, Properties.pack, Properties.unpack, Properties.isEmpty, Properties.clear, Properties.getIdentFromName, Properties.getNameFromIdent, Properties.allowsMultiple, Properties.readProperty, Properties.writeProperty, PacketTypes
+  note    a list of properties, each an identifier and a value, rather than a record per packet: the one shape serves every packet, and `encode` refuses a property a packet may not hold
+
+capability mqtt/topic-alias  topic aliases: the server's resolved, the client's own sent
+  heroes  mqtt.Options (properties: TOPIC_ALIAS_MAXIMUM) for the server's
+  go      -
+  rust    MqttOptions::topic_alias_max, MqttOptions::set_topic_alias_max
+  python  connect (properties TopicAliasMaximum)
+  note    the server's aliases are resolved and left out of a message's properties; a publish by an alias alone, its topic empty, is pending in the block below
+
+capability mqtt/topic-alias-out  a message published by a topic alias alone
+  heroes  pending: `publish` asks a topic; an alias set with TOPIC_ALIAS beside its topic is sent, and the empty topic that uses it is refused
+  go      -
+  rust    PublishProperties.topic_alias
+  python  publish (properties TopicAlias)
+
+capability mqtt/reason-codes  MQTT 5's reason codes named, a refusal told by its code
+  heroes  mqtt.reason_text, the codes of README § A4 each refusal fails with
+  go      ConnectToken.ReturnCode
+  rust    ConnectReturnCode, DisconnectReasonCode, PubAckReason, PubRecReason, PubRelReason, PubCompReason, SubscribeReasonCode, UnsubAckReason
+  python  ReasonCode, ReasonCodes, ReasonCode.getName, ReasonCode.json, ReasonCode.pack, ReasonCode.unpack, connack_string, error_string, convert_connack_rc_to_reason_code, convert_disconnect_error_code_to_reason_code, ConnackCode, MQTTErrorCode
+  note    paho-mqtt's names are taken: 17 is "No subscription found" there, "No subscription existed" in the standard
+
+capability mqtt/disconnect  the connection ended with DISCONNECT, with a reason and properties, or dropped with none
+  heroes  mqtt.close, mqtt.disconnect, mqtt.drop, mqtt.is_closed
+  go      Client.Disconnect, Client.IsConnected, Client.IsConnectionOpen, DisconnectToken
+  rust    AsyncClient::disconnect, AsyncClient::try_disconnect, Disconnect
+  python  disconnect, is_connected, DisconnectFlags
+
+capability mqtt/reconnect  a lost connection made again with a backoff, the subscriptions sent anew where the server kept no session, a publish sent again
+  heroes  mqtt.Options (reconnect), mqtt.Reconnect, mqtt.default_reconnect, mqtt.reconnect, mqtt.stats_of (reconnects)
+  go      ClientOptions.SetAutoReconnect, ClientOptions.SetMaxReconnectInterval, ClientOptions.SetConnectRetry, ClientOptions.SetConnectRetryInterval, ClientOptions.SetReconnectingHandler, ReconnectHandler
+  rust    EventLoop::poll (reconnects at the next poll)
+  python  reconnect, reconnect_delay_set, Client(reconnect_on_failure)
+  note    the reconnection runs inside the call that found the loss; a connection retried before the first succeeds (Go's SetConnectRetry) is the program's own loop around `connect`
+
+capability mqtt/connect-timeout  the time a connection, a write and an acknowledgement may take
+  heroes  mqtt.Options (connect_ms, wait_ms)
+  go      ClientOptions.SetConnectTimeout, ClientOptions.SetWriteTimeout
+  rust    MqttOptions::connection_timeout, MqttOptions::set_connection_timeout, NetworkOptions, MqttOptions::network_options, MqttOptions::set_network_options
+  python  Client.connect_timeout
+
+capability mqtt/bounds  the largest packet read, the messages held unread
+  heroes  mqtt.Options (most_packet_bytes, most_held), mqtt.stats_of (dropped)
+  go      ClientOptions.SetMessageChannelDepth
+  rust    MqttOptions::max_packet_size, MqttOptions::set_max_packet_size
+  python  -
+
+capability mqtt/many-on-one-thread  many clients waited on together and read when ready
+  heroes  mqtt.stream_of, mqtt.read_ready
+  go      -
+  rust    -
+  python  socket, want_write, loop_read, loop_write, loop_misc, on_socket_open, on_socket_close, on_socket_register_write, on_socket_unregister_write
+
+capability mqtt/stats  what a client carried
+  heroes  mqtt.stats_of, mqtt.Stats
+  go      -
+  rust    -
+  python  -
+
+capability mqtt/packets  every control packet written and read as a value, exactly as the standard lays it out
+  heroes  mqtt.encode, mqtt.decode, mqtt.Packet
+  go      packets (paho.mqtt.golang's and paho.golang's: ConnectPacket, PublishPacket, ..., ReadPacket, NewControlPacket, ControlPacket.Write)
+  rust    mqttbytes::v4::Packet, mqttbytes::v5::Packet, Codec, check, mqttbytes::FixedHeader, PacketType, mqttbytes::qos, mqttbytes::Protocol, mqttbytes::Error, and each packet's record (ConnAck, Connect, Disconnect, PingReq, PingResp, PubAck, PubComp, PubRec, PubRel, Publish, SubAck, Subscribe, UnsubAck, Unsubscribe, Auth)
+  python  -
+  note    paho.golang v0.23.0 writes AUTH with its reserved flag set (the first byte 241); the standard asks 240 (MQTT 5.0 § 3.15.1), which `encode` writes and `decode` asks
+
+capability mqtt/simple  one message published, or one read, in one call
+  heroes  mqtt.connect, mqtt.publish, mqtt.next_message, mqtt.close
+  go      -
+  rust    -
+  python  paho.mqtt.publish.single, paho.mqtt.publish.multiple, paho.mqtt.subscribe.simple, paho.mqtt.subscribe.callback
+  note    three calls in the program; a module of its own for them would be a second way to do what these do
+
+capability mqtt/srv  the server found by a DNS SRV record
+  heroes  pending: `dns` asks SRV records; the options take a host and a port, and nothing here asks them yet
+  go      -
+  rust    -
+  python  connect_srv
+
+capability mqtt/bridge  a broker's bridge connection, its protocol level marked
+  heroes  refused: a bridge is a broker's own connection, not a client's
+  go      -
+  rust    -
+  python  enable_bridge_mode
+
+dropped
+  go      Logger, NOOPLogger, ERROR, CRITICAL, WARN, DEBUG (logging; a failure here is a value), ConnectionLostHandler, DefaultConnectionLostHandler, OnConnectHandler, ConnectionAttemptHandler, ConnectionNotificationHandler and every ConnectionNotification type, ClientOptions.SetConnectionLostHandler, ClientOptions.SetOnConnectHandler, ClientOptions.SetConnectionAttemptHandler, ClientOptions.SetConnectionNotificationHandler, ClientOptions.SetReconnectingHandler (callbacks, which need a closure), ClientOptions.SetCustomOpenConnectionFn, OpenConnectionFunc, ClientOptions.SetDialer, ProxyFunction (a connection made by the program's own function), Client.OptionsReader and every ClientOptionsReader getter (the options are a record the program reads), DummyToken, PlaceHolderToken, PacketAndToken, TokenErrorSetter, MId
+  rust    Request, ClientError, ConnectionError, OptionError, StateError, Outgoing (the plumbing of a channel between the client and its event loop), MqttOptions::request_modifier, MqttOptions::set_request_modifier (a function rewriting the WebSocket's request), Transport::Unix (no Unix socket in `net`)
+  python  CallbackAPIVersion and every Callback* type, on_connect, on_connect_fail, on_disconnect, on_log, on_pre_connect, on_publish, on_subscribe, on_unsubscribe, connect_callback, connect_fail_callback, disconnect_callback, log_callback, pre_connect_callback, publish_callback, subscribe_callback, unsubscribe_callback, socket_open_callback, socket_close_callback, socket_register_write_callback, socket_unregister_write_callback, message_callback, user_data_get, user_data_set (callbacks and their context), enable_logger, disable_logger, logger, LogLevel, reinitialise, drop_out_messages, MessageState, MessageType, PahoClientMode, ConnectFlags, HTTPHeader, WebSocketHeaders, PayloadType, MQTTException, MalformedPacket

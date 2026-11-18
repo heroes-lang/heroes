@@ -1,0 +1,329 @@
+# The ledger of `nats`: what a program does with a NATS server, measured
+# against Go's `github.com/nats-io/nats.go` v1.56.0 and `nkeys` v0.4.17
+# (their `go doc -all`, fetched into the scratch folder on 2026-11-18),
+# Python's nats-py 2.17.0 (`dir(nats.aio.client.Client)`, the parameters of
+# `connect`, `Msg`, `Subscription`, `nats.errors`, installed into the scratch
+# folder the same day) and Rust's async-nats (its docs.rs pages read the same
+# day: `Client`, `ConnectOptions`, the crate's items). JetStream, its
+# key-value and object stores are the three libraries' largest part and stand
+# in three blocks of their own, pending.
+#
+# The expected values of the tests were asked of Go: the NKey seed and public
+# key of the bytes 0 to 31 and the signature of "abc" (`nkeys.FromRawSeed`,
+# `Seed`, `PublicKey`, `Sign`), and how a header block is read
+# (`nats.DecodeHeadersMsg`: a value's leading spaces taken, its trailing ones
+# kept, a name compared as written, `Header.Get("foo-bar")` and
+# `Get("Foo-Bar")` two names). The bytes of each operation are the protocol's
+# own page's. The live run, on 2026-11-18, reached nats-server 2.10.27 of
+# Debian 13 in a container of this Mac: plain, a token, a user and password
+# with a publish permission denied, an NKey, TLS after INFO, TLS first
+# (`handshake_first`) and a WebSocket.
+
+capability nats/connect  a connection made to the first server of a list that answers, logged in, its PING answered
+  heroes  nats.connect, nats.options, nats.parse_url, nats.Options, nats.Client, nats.DEFAULT_PORT
+  go      Connect, Options, GetDefaultOptions, Options.Connect, Conn, DefaultURL, DefaultPort
+  rust    connect, connect_with_options, ConnectOptions::new, ConnectOptions::connect, ServerAddr, ToServerAddrs, Client
+  python  nats.connect, NATS, Client.connect (servers)
+  note    the URL list is Go's and Python's comma-separated text; a server's URL that holds a user or a token logs in, as all three read it
+
+capability nats/connect-timeout  the time a connection to one server may take
+  heroes  nats.Options (connect_ms)
+  go      Timeout, Dialer, SetCustomDialer
+  rust    ConnectOptions::connection_timeout, ConnectOptions::local_address
+  python  connect_timeout
+  note    a custom dialer and a local address are refused below with the transports: `net` makes the connection
+
+capability nats/pool  several servers, the servers a cluster tells of, tried in order or at random
+  heroes  nats.Options (servers, discovered, randomize), nats.servers_of
+  go      DontRandomize, IgnoreDiscoveredServers, Conn.Servers, Conn.DiscoveredServers, Conn.ServerPool, DiscoveredServersHandler, Conn.SetDiscoveredServersHandler
+  rust    ConnectOptions::ignore_discovered_servers, ConnectOptions::retain_servers_order, Client::server_pool, ConnectOptions::verify_discovered_servers_by_ip
+  python  dont_randomize, discovered_servers, servers, server_pool, discovered_server_cb
+  note    the pool is tried in the options' order by default, where Go and Rust shuffle it: a program asks `randomize`; a discovered server is checked by its name, never by its address alone
+
+capability nats/pool-changed  the pool replaced while connected
+  heroes  pending: a connection made from new options serves meanwhile; the pool is read from the options and the servers' INFO alone
+  go      Conn.SetServerPool, ReconnectToServer
+  rust    Client::set_server_pool, ConnectOptions::reconnect_to_server_callback
+  python  set_server_pool, reconnect_to_server_handler
+
+capability nats/auth-token  a login by token
+  heroes  nats.Auth (token)
+  go      Token, TokenHandler
+  rust    ConnectOptions::with_token, ConnectOptions::token
+  python  token
+  note    a token computed at each connection by a function (Go's TokenHandler) is the program's own: it builds the options anew
+
+capability nats/auth-user  a login by user and password
+  heroes  nats.Auth (user)
+  go      UserInfo
+  rust    ConnectOptions::with_user_and_password, ConnectOptions::user_and_password
+  python  user, password
+
+capability nats/auth-nkey  a login by an NKey: the server's nonce signed with Ed25519
+  heroes  nats.Auth (nkey)
+  go      Nkey, NkeyOptionFromSeed
+  rust    ConnectOptions::with_nkey, ConnectOptions::nkey
+  python  nkeys_seed, nkeys_seed_str, signature_cb
+  note    the signature is the system's (`crypto/keypairs`): Linux has Ed25519, macOS and Windows do not, and there it fails `unsupported`; a signature made by a function of the program (Python's signature_cb) is refused below
+
+capability nats/auth-jwt  a login by a user's JWT and its seed, as a .creds file holds them
+  heroes  nats.Auth (credentials), nats.parse_credentials, nats.Credentials
+  go      UserCredentials, UserCredentialBytes, UserJWTAndSeed, UserJWT
+  rust    ConnectOptions::with_credentials, ConnectOptions::with_credentials_file, ConnectOptions::credentials, ConnectOptions::credentials_file, ConnectOptions::jwt, ConnectOptions::with_jwt
+  python  user_credentials, user_jwt_cb
+  note    the file is read by the program (`fs` or `read_file`) and given as text; Go's UserJWT with a signing callback is the seed given directly
+
+capability nats/auth-callback  a login computed by a function of the program at each connection
+  heroes  refused: the login is a value of the options; a function asked at each connection would carry the program's state, which a function value cannot hold (no closure, README B3)
+  go      -
+  rust    ConnectOptions::with_auth_callback, Auth, AuthError
+  python  signature_cb, user_jwt_cb
+
+capability nats/nkeys  NKeys read and written: a seed's public key, a signature, a check, a new user's seed
+  heroes  nats.nkey_public_of, nats.nkey_sign, nats.nkey_verify, nats.generate_user_seed
+  go      nkeys.FromSeed, nkeys.FromRawSeed, nkeys.FromPublicKey, nkeys.CreateUser, nkeys.KeyPair, nkeys.Decode, nkeys.Encode, nkeys.EncodeSeed, nkeys.DecodeSeed, nkeys.IsValidPublicUserKey, nkeys.ParseDecoratedJWT, nkeys.ParseDecoratedNKey, nkeys.ParseDecoratedUserNKey, nkeys.PrefixByte
+  rust    -
+  python  -
+  note    users' keys alone are made here; an account's, an operator's and a server's are read (their seeds sign), and curve keys (X25519, `X`) are refused, NATS using them for xkeys, not for a login
+
+capability nats/tls  TLS after the server's INFO, the certificate checked against the system's store or the program's authorities
+  heroes  nats.Options (tls, roots), servers `tls://`
+  go      Secure, RootCAs, ClientTLSConfig, Conn.TLSRequired, Conn.TLSConnectionState
+  rust    ConnectOptions::require_tls, ConnectOptions::add_root_certificates, ConnectOptions::tls_client_config, ConnectOptions::tls_server_name, ConnectOptions::tls_optional
+  python  tls, tls_hostname
+  note    a server that asks for TLS gets it whatever the options say, as all three do; on macOS `tls` begins TLS only over a connection it makes, so the client connects again past the INFO line there (`tls.connect_after`), the server's limits read from the first connection's INFO
+
+capability nats/tls-first  TLS from the first byte, for a server configured with handshake_first
+  heroes  nats.Options (tls_first)
+  go      TLSHandshakeFirst
+  rust    ConnectOptions::tls_first
+  python  tls_handshake_first
+
+capability nats/tls-client-certificate  a certificate of the client's own (mutual TLS)
+  heroes  pending: `tls.Client` holds no certificate of the client's own to present
+  go      ClientCert
+  rust    ConnectOptions::add_client_certificate
+  python  tls (an ssl.SSLContext with a certificate)
+
+capability nats/websocket  NATS over a WebSocket, ws:// and wss://
+  heroes  nats.Options (servers `ws://`, `wss://`)
+  go      ProxyPath, Compression
+  rust    -
+  python  servers ws://
+  note    the opening request's own headers and its compression are pending in the block below
+
+capability nats/websocket-options  the WebSocket's opening headers and its compression
+  heroes  pending: `websocket.Client` takes both, and the options do not carry them yet
+  go      WebSocketConnectionHeaders, WebSocketConnectionHeadersHandler, Compression
+  rust    -
+  python  ws_connection_headers
+
+capability nats/publish  a message published to a subject
+  heroes  nats.publish, nats.message
+  go      Conn.Publish
+  rust    Client::publish
+  python  publish
+  note    answered once the bytes are written, as Go and Python answer; `flush` waits for the server
+
+capability nats/publish-reply  a message published with a reply subject, its headers and its data
+  heroes  nats.publish_message, nats.Message
+  go      Conn.PublishRequest, Conn.PublishMsg, NewMsg, Msg
+  rust    Client::publish_with_reply, Client::publish_with_reply_and_headers, message::Message, message::OutboundMessage
+  python  publish (reply), Msg
+
+capability nats/headers  headers written with HPUB and read from HMSG, the server's status among them
+  heroes  nats.Header, nats.header_of, nats.headers_of, nats.with_header, nats.Message (headers, status, description)
+  go      Header, Header.Add, Header.Get, Header.Set, Header.Del, Header.Values, DecodeHeadersMsg, Conn.HeadersSupported, MsgHeaders
+  rust    Client::publish_with_headers, header::HeaderMap, header::HeaderName, header::HeaderValue, header::GetAll, status::StatusCode
+  python  publish (headers), Msg.headers, Msg.header
+  note    a name is compared as written, as Go's Header.Get answered on 2026-11-18; Go's Header.Set and Del are a list's own operations on `Message.headers`
+
+capability nats/subscribe  a subscription, its messages read in order, many subscriptions on one connection
+  heroes  nats.subscribe, nats.next_message, nats.next_message_of, nats.subscriptions_of
+  go      Conn.Subscribe, Conn.SubscribeSync, Conn.ChanSubscribe, Subscription, Subscription.NextMsg, Subscription.NextMsgWithContext, Subscription.Msgs, Subscription.MsgsTimeout, Conn.NumSubscriptions, MsgHandler
+  rust    Client::subscribe, Subscriber
+  python  subscribe, Subscription.next_msg, Subscription.messages, Subscription.subject
+  note    a message is read by the program, never handed to a callback (no closure); a subscription is its number, which its messages carry
+
+capability nats/queue  a queue group: each message to one member
+  heroes  nats.queue_subscribe
+  go      Conn.QueueSubscribe, Conn.QueueSubscribeSync, Conn.ChanQueueSubscribe, Conn.QueueSubscribeSyncWithChan
+  rust    Client::queue_subscribe
+  python  subscribe (queue), Subscription.queue
+
+capability nats/unsubscribe  a subscription ended, at once or after a count
+  heroes  nats.unsubscribe, nats.unsubscribe_after
+  go      Subscription.Unsubscribe, Subscription.AutoUnsubscribe, Subscription.IsValid
+  rust    Subscriber::unsubscribe, Subscriber::unsubscribe_after
+  python  Subscription.unsubscribe (limit)
+
+capability nats/pending  the messages held unread bounded, the dropped ones counted
+  heroes  nats.pending_of, nats.dropped_of, nats.delivered_of, nats.Options (pending_messages, pending_bytes)
+  go      Subscription.Pending, Subscription.Dropped, Subscription.Delivered, Subscription.SetPendingLimits, Subscription.PendingLimits, Subscription.MaxPending, Subscription.ClearMaxPending, Subscription.QueuedMsgs, DefaultSubPendingMsgsLimit, DefaultSubPendingBytesLimit, SyncQueueLen
+  rust    ConnectOptions::subscription_capacity, ConnectOptions::client_capacity
+  python  Subscription.pending_msgs, Subscription.pending_bytes, Subscription.delivered, pending_size
+  note    the bound is the client's, every subscription together, where Go's is each subscription's; a message past it is dropped and counted on its subscription, as Go's slow consumer is
+
+capability nats/request  a request published and its first reply read, through one inbox subscription of the client's
+  heroes  nats.request, nats.request_message, nats.new_inbox
+  go      Conn.Request, Conn.RequestMsg, Conn.RequestWithContext, Conn.RequestMsgWithContext, NewInbox, Conn.NewInbox, Conn.NewRespInbox, CustomInboxPrefix, InboxPrefix
+  rust    Client::request, Client::request_with_headers, Client::send_request, Client::new_inbox, client::Request, ConnectOptions::custom_inbox_prefix, ConnectOptions::request_timeout, Client::timeout
+  python  request, new_inbox, inbox_prefix
+
+capability nats/respond  a reply published to a request's reply subject
+  heroes  nats.respond
+  go      Msg.Respond, Msg.RespondMsg
+  rust    -
+  python  Msg.respond
+
+capability nats/no-responders  a request no one listens to told at once, by the server's status 503
+  heroes  nats.request
+  go      ErrNoResponders
+  rust    client::RequestErrorKind (NoResponders)
+  python  errors.NoRespondersError
+  note    it fails `not_found`; a server that reads no headers answers nothing, and the request times out
+
+capability nats/old-request  one subscription made and ended per request
+  heroes  refused: the inbox subscription the client keeps answers every request; Go keeps this form for servers before 2.2 alone
+  go      UseOldRequestStyle
+  rust    -
+  python  -
+
+capability nats/flush  every byte written read by the server, by a PING and its PONG; the time of a round trip
+  heroes  nats.flush, nats.rtt
+  go      Conn.Flush, Conn.FlushTimeout, Conn.FlushWithContext, Conn.RTT, FlusherTimeout
+  rust    Client::flush
+  python  flush, rtt, flush_timeout
+
+capability nats/drain  subscriptions ended, the messages already sent kept and read, the connection closed
+  heroes  nats.drain
+  go      Conn.Drain, Subscription.Drain, Conn.IsDraining, Subscription.IsDraining, DrainTimeout
+  rust    Client::drain, client::DrainError
+  python  drain, drain_timeout, is_draining, is_draining_pubs
+  note    one subscription drained alone (Go's Subscription.Drain) is `unsubscribe` after reading what is held
+
+capability nats/close  the connection closed
+  heroes  nats.close, nats.is_closed
+  go      Conn.Close, Conn.IsClosed, Conn.IsConnected
+  rust    -
+  python  close, is_closed, is_connected
+
+capability nats/reconnect  a lost connection made again with a backoff, the subscriptions sent anew, a write sent again
+  heroes  nats.Options (reconnect), nats.Reconnect, nats.default_reconnect, nats.reconnect, nats.stats_of (reconnects)
+  go      MaxReconnects, ReconnectWait, ReconnectJitter, CustomReconnectDelay, NoReconnect, ReconnectBufSize, Conn.ForceReconnect, Conn.IsReconnecting, ReconnectOnFlusherError, DefaultMaxReconnect, DefaultReconnectWait
+  rust    ConnectOptions::max_reconnects, ConnectOptions::reconnect_delay_callback, Client::force_reconnect, client::ReconnectError
+  python  allow_reconnect, reconnect_time_wait, max_reconnect_attempts, force_reconnect, is_reconnecting
+  note    the backoff doubles from `wait_ms` to `most_wait_ms` with a random part, as Rust's does, where Go waits the same each time; the reconnection runs inside the call that found the loss, so nothing is buffered meanwhile, and the write that failed is sent once more
+
+capability nats/retry-first-connect  a connection answered before any server is reached, made in the background
+  heroes  refused: a client that answers before it is connected needs a loop running beside the program; the program calls `connect` again
+  go      RetryOnFailedConnect
+  rust    ConnectOptions::retry_on_initial_connect
+  python  -
+
+capability nats/ping  the client's own PINGs, a connection taken as lost after so many go unanswered
+  heroes  nats.Options (ping_interval_ms, pings_outstanding)
+  go      PingInterval, MaxPingsOutstanding
+  rust    ConnectOptions::ping_interval
+  python  ping_interval, max_outstanding_pings
+  note    a PING is sent while a call waits, the program's own loop being the only one
+
+capability nats/info  what the server tells of itself: its version, its limits, the client's identity
+  heroes  nats.server_info_of, nats.ServerInfo, nats.max_payload_of, nats.connected_url_of
+  go      Conn.ConnectedUrl, Conn.ConnectedUrlRedacted, Conn.ConnectedServerId, Conn.ConnectedServerName, Conn.ConnectedServerVersion, Conn.ConnectedClusterName, Conn.ConnectedAddr, Conn.ConnectedDomain, Conn.ConnectedServerJetStream, Conn.MaxPayload, Conn.AuthRequired, Conn.GetClientID, Conn.GetClientIP, Conn.LocalAddr
+  rust    Client::server_info, Client::try_server_info, Client::max_payload, Client::is_server_compatible, ServerInfo
+  python  connected_url, connected_server_version, client_id, client_ip, max_payload
+  note    a version compared is the program's, with `semver`
+
+capability nats/lame-duck  a server shutting down told
+  heroes  nats.server_info_of (lame_duck)
+  go      LameDuckModeHandler
+  rust    Event (LameDuckMode)
+  python  lame_duck_mode_cb
+
+capability nats/stats  what a client carried
+  heroes  nats.stats_of, nats.Stats
+  go      Conn.Stats, Statistics
+  rust    Client::statistics, client::Statistics
+  python  stats
+
+capability nats/errors  the server's errors that leave the connection open, a permission refused
+  heroes  nats.take_errors
+  go      Conn.LastError, ErrorHandler, Conn.SetErrorHandler, ErrPermissionViolation, PermissionErrOnSubscribe
+  rust    ServerError, Event (ServerError)
+  python  last_error, error_cb
+  note    asked by the program rather than called back; a permission refused to a publish comes after the publish answered, as in all three
+
+capability nats/events  connected, disconnected, reconnected, closed
+  heroes  nats.is_closed, nats.stats_of, nats.take_errors
+  go      ConnectHandler, DisconnectHandler, DisconnectErrHandler, ReconnectHandler, ReconnectErrHandler, ClosedHandler, Conn.SetClosedHandler, Conn.SetDisconnectHandler, Conn.SetDisconnectErrHandler, Conn.SetReconnectHandler, Conn.Status, Conn.StatusChanged, Conn.RemoveStatusListener, Status, Subscription.StatusChanged, SubStatus, Subscription.SetClosedHandler, NoCallbacksAfterClientClose
+  rust    ConnectOptions::event_callback, Event, connection::State, Client::connection_state
+  python  disconnected_cb, reconnected_cb, closed_cb, is_connecting
+  note    a callback would need a closure; a program reads the state when its own loop asks, the reconnections counted and the client's end told by `is_closed`
+
+capability nats/subjects  a subject and a subscription's subject checked, and matched
+  heroes  nats.is_valid_subject, nats.is_valid_filter, nats.matches
+  go      SkipSubjectValidation
+  rust    ConnectOptions::skip_subject_validation, subject::Subject, subject::ToSubject
+  python  skip_subject_validation
+  note    a subject is always checked, never skipped: a space in one breaks the protocol's line
+
+capability nats/name-echo  the connection's name, and whether its own messages come back
+  heroes  nats.Options (name, echo)
+  go      Name, NoEcho
+  rust    ConnectOptions::name, ConnectOptions::no_echo
+  python  name, no_echo
+
+capability nats/many-on-one-thread  many clients waited on together and read when ready
+  heroes  nats.stream_of, nats.read_ready
+  go      -
+  rust    -
+  python  -
+  note    `poll` waits on the streams; a TLS stream on macOS is refused by `poll`, as its own page says
+
+capability nats/jetstream  JetStream: streams, consumers, acknowledgements, publishing with an answer
+  heroes  pending: JetStream is a protocol of its own over requests to `$JS.API.*` with JSON (streams, consumers, pulls, acknowledgements, flow control, ordered consumers), as large as the client; `request` with `json` reaches its API by hand meanwhile
+  go      Conn.JetStream, JetStream, JetStreamContext, JetStreamManager, JetStreamOption, PubOpt, SubOpt, ConsumerConfig, StreamConfig, StreamInfo, ConsumerInfo, PubAck, PubAckFuture, AckPolicy, DeliverPolicy, ReplayPolicy, RetentionPolicy, DiscardPolicy, StorageType, StoreCompression, AccountInfo, APIError, MsgMetadata, Msg.Ack, Msg.AckSync, Msg.Nak, Msg.NakWithDelay, Msg.InProgress, Msg.Term, Msg.Metadata, Subscription.Fetch, Subscription.FetchBatch, Subscription.ConsumerInfo, Subscription.InitialConsumerPending, APIPrefix, AckAll, AckExplicit, AckNone, BackOff, Bind, BindStream, ConsumerFilterSubjects, ConsumerMemoryStorage, ConsumerName, ConsumerReplicas, Context, DeliverAll, DeliverLast, DeliverLastPerSubject, DeliverNew, DeliverSubject, Description, DirectGet, DirectGetNext, Domain, Durable, EnableFlowControl, ExpectLastMsgId, ExpectLastSequence, ExpectLastSequencePerSubject, ExpectStream, HeadersOnly, IdleHeartbeat, InactiveThreshold, ManualAck, MaxAckPending, MaxDeliver, MaxRequestBatch, MaxRequestExpires, MaxRequestMaxBytes, MsgId, MsgTTL, OrderedConsumer, PublishAsyncErrHandler, PublishAsyncMaxPending, PublishAsyncTimeout, PullMaxWaiting, RateLimit, ReplayInstant, ReplayOriginal, RetryAttempts, RetryWait, SkipConsumerLookup, StallWait, StartSequence, StartTime, StreamListFilter, UseLegacyDurableConsumers, ErrConsumerSequenceMismatch, Conn.ConnectedServerJetStream
+  rust    jetstream module
+  python  jetstream, jsm, Msg.ack, Msg.ack_sync, Msg.nak, Msg.in_progress, Msg.term, Msg.metadata, Msg.is_acked, errors.NotJSMessageError, errors.MsgAlreadyAckdError
+
+capability nats/key-value  JetStream's key-value store
+  heroes  pending: built on JetStream, pending above
+  go      KeyValue, KeyValueConfig, KeyValueStatus, KeyValueBucketStatus, KeyValueEntry, KeyValueOp, KeyWatcher, WatchOpt, IgnoreDeletes, IncludeHistory, LastRevision, MetaOnly, UpdatesOnly
+  rust    kv module
+  python  jetstream key_value
+
+capability nats/object-store  JetStream's object store
+  heroes  pending: built on JetStream, pending above
+  go      ObjectStore, ObjectStoreConfig, ObjectStoreStatus, ObjectBucketStatus, ObjectInfo, ObjectMeta, ObjectResult, ObjectWatcher, GetObjectInfoShowDeleted, GetObjectShowDeleted, ListObjectsShowDeleted, DecodeObjectDigest, GetObjectDigestValue
+  rust    object_store module
+  python  jetstream object_store
+
+capability nats/services  the services API: endpoints answering requests, their stats and their discovery
+  heroes  pending: a protocol of its own over requests (`$SRV.*`), as `micro` writes it
+  go      -
+  rust    service module
+  python  nats.micro
+
+capability nats/encoded  messages encoded and decoded by a registered encoder
+  heroes  refused: deprecated in Go since v1.28; a program encodes with `json`, `msgpack` or `protobuf` and publishes bytes
+  go      EncodedConn, NewEncodedConn, RegisterEncoder, EncoderForType, Encoder, EncodedConn.BindRecvChan, EncodedConn.BindRecvQueueChan, EncodedConn.BindSendChan, EncodedConn.Publish, EncodedConn.PublishRequest, EncodedConn.Request, EncodedConn.RequestWithContext, EncodedConn.Subscribe, EncodedConn.QueueSubscribe, EncodedConn.Flush, EncodedConn.FlushTimeout, EncodedConn.Drain, EncodedConn.Close, EncodedConn.LastError
+  rust    -
+  python  -
+
+capability nats/verbose  the server's +OK after every operation, and its pedantic checks
+  heroes  refused: `verbose` doubles the server's lines for nothing a client reads, and `flush` asks the same once; the client sends both false, reading a +OK where one comes
+  go      -
+  rust    -
+  python  verbose, pedantic
+
+capability nats/in-process  a server in the same process, connected without a socket
+  heroes  refused: no NATS server runs inside a Heroes program
+  go      InProcessServer, InProcessConnProvider
+  rust    -
+  python  -
+
+dropped
+  go      Conn.Barrier (an order among callbacks, which do not exist here), Conn.Buffered (the bytes a buffered writer holds; every write here is written), Msg.Equal, Msg.Size, Status.String, SubStatus.String, Subscription.Type, Subscription.SetClosedHandler, WriteBufferSize, MultipathTCP, SkipHostLookup, IgnoreAuthErrorAbort, UserInfoHandler, Conn.IsSystemAccount, Conn.RemoteAccount, CustomDialer, ProxyPath (a proxy's path for a WebSocket; `websocket` dials no proxy), Conn.JetStream's options and every constant `Err*` (a failure here is a code of README § A4 and a message)
+  rust    ConnectOptions::read_buffer_capacity, Client::try_server_info's option, every error kind enum (ClientError, ConnectErrorKind, client::FlushErrorKind, client::PublishErrorKind, client::RequestErrorKind, client::ServerPoolErrorKind, client::SetServerPoolErrorKind, client::SubscribeErrorKind, subject::SubjectError, CallbackError, UnsubscribeError, header::ParseHeaderNameError, header::ParseHeaderValueError, status::InvalidStatusCode), connection::ShouldFlush, Protocol, Server, datetime functions, traits Publisher, Requester, Subscriber, TimeoutProvider, IntoHeaderName, IntoHeaderValue
+  python  CLOSED, CONNECTED, CONNECTING, DISCONNECTED, DRAINING_PUBS, DRAINING_SUBS, RECONNECTING (the state's names), msg_class, flusher_queue_size, pending_data_size, ssl_context, Subscription.pending_bytes's twin attributes, nuid, protocol, errors' classes (every one a code and a message here)

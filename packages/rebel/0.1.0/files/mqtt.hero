@@ -1,0 +1,2358 @@
+# An MQTT client written in Heroes: MQTT 3.1.1 and 5.0 spoken over a TCP
+# connection of `net`, TLS of `tls` or a WebSocket of `websocket`, linking no
+# library. It connects with a will and a login, publishes at each quality of
+# service with its handshake (QoS 1's `PUBACK`, QoS 2's `PUBREC`, `PUBREL`
+# and `PUBCOMP`), subscribes with topic filters and their wildcards,
+# receives retained messages, keeps the connection alive with `PINGREQ`, and
+# reads and writes MQTT 5's properties and reason codes. Every packet is
+# also a value: `encode` and `decode` read and write any of the fifteen.
+#
+# **One thread, many subscriptions**: every subscription of a client shares
+# its connection, and `next_message` answers the next message of any of
+# them. A program waiting on several clients and sockets adds each client's
+# stream to a `poll.Set`, reads what `held_of` says the client holds, and
+# calls `read_ready` when the stream is readable. A
+# message of QoS 1 or 2 is acknowledged as it is read, or by `ack` where
+# `Options.manual_acks` asks the program to.
+#
+# **Every wait has a deadline and every read is bounded**: a call that waits
+# takes `Options.wait_ms` or its own, a packet is read up to
+# `Options.most_packet_bytes` (told to an MQTT 5 server as its Maximum
+# Packet Size), and the messages of QoS 0 held unread up to
+# `Options.most_held`, past which they are dropped and counted; a message of
+# QoS 1 or 2 is held whatever their number, being acknowledged already. The
+# keep-alive's `PINGREQ` is sent while a call waits, so a program that does
+# not call the client for longer than one and a half keep-alives is dropped
+# by the server, which then publishes the will.
+#
+# **A lost connection is made again** as `Options.reconnect` says, the
+# subscriptions sent anew where the server kept no session, a publish
+# waiting for its acknowledgement sent again with its DUP set.
+#
+# It does not run MQTT 5's exchanges of enhanced authentication past the
+# `CONNECT` (an `AUTH` from the server fails `unsupported`), set topic
+# aliases of its own, or speak MQTT 3.1 (`MQIsdp`). It fails with `invalid`
+# (an argument refused, bytes that are no MQTT), `not_found` (an
+# acknowledgement owed nowhere), `permission` (a login or a topic refused),
+# `closed`, `timeout`, `stopped`, `limit` (a packet past a bound, a quota),
+# `unsupported` (what the server, the version or the platform does not
+# offer) and `failed`.
+
+use bytes
+use io
+use mqtt/internal/decoding
+use mqtt/internal/dialing
+use mqtt/internal/encoding
+use mqtt/internal/link
+use mqtt/internal/model
+use mqtt/internal/reading
+use mqtt/internal/session
+use mqtt/internal/state
+use mqtt/internal/topics
+use mqtt/internal/waiting
+use numbers
+use os
+use poll
+use time
+use tls
+use url
+
+## Codes
+
+# An argument refused, or bytes from the server that are no MQTT: every
+# function that takes a topic or a packet.
+constant INVALID: str
+    "invalid"
+
+# An acknowledgement owed nowhere: `ack`.
+constant NOT_FOUND: str
+    "not_found"
+
+# A login refused (`connect`), or a topic the server does not allow this
+# client (`publish`, `subscribe`).
+constant PERMISSION: str
+    "permission"
+
+# The client is closed, or its connection was lost and could not be made
+# again: every function that talks to the server.
+constant CLOSED: str
+    "closed"
+
+# The time a call allowed ran out: every function that waits.
+constant TIMEOUT: str
+    "timeout"
+
+# The program was asked to stop while the call waited (`net.ask_stop`).
+constant STOPPED: str
+    "stopped"
+
+# A packet past a bound, the server's or this client's, or a quota the
+# server says is spent.
+constant LIMIT: str
+    "limit"
+
+# What the server, the version or the platform does not offer: a QoS past
+# the server's, a retained message where it keeps none, MQTT 3.1.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# A failure none of the above names, the server's reason code and words in
+# the message.
+constant FAILED: str
+    "failed"
+
+## Ports
+
+# The port an MQTT server listens on unless told another.
+constant DEFAULT_PORT: i64
+    1883
+
+# The port an MQTT server listens on for TLS unless told another.
+constant DEFAULT_TLS_PORT: i64
+    8883
+
+## Properties of MQTT 5
+
+# Payload Format Indicator: a byte, 1 where the payload is UTF-8.
+constant PAYLOAD_FORMAT_INDICATOR: i64
+    1
+
+# Message Expiry Interval: the seconds a message lives, four bytes.
+constant MESSAGE_EXPIRY_INTERVAL: i64
+    2
+
+# Content Type: a text, a MIME type.
+constant CONTENT_TYPE: i64
+    3
+
+# Response Topic: the topic an answer goes to.
+constant RESPONSE_TOPIC: i64
+    8
+
+# Correlation Data: bytes that tie an answer to its request.
+constant CORRELATION_DATA: i64
+    9
+
+# Subscription Identifier: a number from 1 to 268,435,455 a subscription
+# carries and its messages come back with.
+constant SUBSCRIPTION_IDENTIFIER: i64
+    11
+
+# Session Expiry Interval: the seconds a session outlives its connection.
+constant SESSION_EXPIRY_INTERVAL: i64
+    17
+
+# Assigned Client Identifier: the identifier the server chose.
+constant ASSIGNED_CLIENT_IDENTIFIER: i64
+    18
+
+# Server Keep Alive: the keep-alive the server sets, in seconds.
+constant SERVER_KEEP_ALIVE: i64
+    19
+
+# Authentication Method: the name of an exchange of authentication.
+constant AUTHENTICATION_METHOD: i64
+    21
+
+# Authentication Data: its bytes.
+constant AUTHENTICATION_DATA: i64
+    22
+
+# Request Problem Information: a byte, 0 asking the server to say less of
+# a failure.
+constant REQUEST_PROBLEM_INFORMATION: i64
+    23
+
+# Will Delay Interval: the seconds the server waits before it publishes the
+# will.
+constant WILL_DELAY_INTERVAL: i64
+    24
+
+# Request Response Information: a byte, 1 asking for Response Information.
+constant REQUEST_RESPONSE_INFORMATION: i64
+    25
+
+# Response Information: a text the server gives for building response
+# topics.
+constant RESPONSE_INFORMATION: i64
+    26
+
+# Server Reference: another server to use.
+constant SERVER_REFERENCE: i64
+    28
+
+# Reason String: the words of a reason code.
+constant REASON_STRING: i64
+    31
+
+# Receive Maximum: the most messages of QoS 1 and 2 in flight at once.
+constant RECEIVE_MAXIMUM: i64
+    33
+
+# Topic Alias Maximum: the most topic aliases taken.
+constant TOPIC_ALIAS_MAXIMUM: i64
+    34
+
+# Topic Alias: a number standing for a topic.
+constant TOPIC_ALIAS: i64
+    35
+
+# Maximum QoS: the most quality of service the server takes, 0 or 1.
+constant MAXIMUM_QOS: i64
+    36
+
+# Retain Available: a byte, 0 where the server keeps no retained message.
+constant RETAIN_AVAILABLE: i64
+    37
+
+# User Property: a name and a value, which may repeat.
+constant USER_PROPERTY: i64
+    38
+
+# Maximum Packet Size: the largest packet taken, in bytes.
+constant MAXIMUM_PACKET_SIZE: i64
+    39
+
+# Wildcard Subscription Available: a byte, 0 where filters take no wildcard.
+constant WILDCARD_SUBSCRIPTION_AVAILABLE: i64
+    40
+
+# Subscription Identifier Available: a byte, 0 where subscriptions carry no
+# identifier.
+constant SUBSCRIPTION_IDENTIFIER_AVAILABLE: i64
+    41
+
+# Shared Subscription Available: a byte, 0 where `$share/` is refused.
+constant SHARED_SUBSCRIPTION_AVAILABLE: i64
+    42
+
+# The value of a property, whose kind its identifier fixes.
+variant PropertyValue
+    # A number: a byte, two or four bytes, or a variable byte integer.
+    number
+        # The number.
+        v: i64
+    # A UTF-8 text.
+    text
+        # The text.
+        v: str
+    # Bytes.
+    data
+        # The bytes.
+        v: [u8]
+    # A user property's name and value.
+    pair
+        # The name.
+        name: str
+        # The value.
+        value: str
+
+# One property of MQTT 5: an identifier, one of the constants above, and a
+# value of the kind it fixes. Built directly.
+record Property
+    # The identifier.
+    id: i64
+    # The value.
+    value: PropertyValue
+
+# A user property's name and value, as `pairs_of` answers them.
+record Pair
+    # The name.
+    name: str
+    # The value.
+    value: str
+
+## Messages, subscriptions and the will
+
+# A message, as one is published and as one arrives. `message` makes one at
+# QoS 0; a program changes the fields it needs with `@`.
+record Message
+    # The topic, no wildcard in it.
+    topic: str
+    # The payload, any bytes.
+    payload: [u8]
+    # The quality of service: 0 at most once, 1 at least once, 2 exactly
+    # once.
+    qos: i64
+    # Whether the server keeps it for the subscriptions to come; an empty
+    # payload retained clears the topic's retained message.
+    retain: bool
+    # Whether the server sends it again; the client's own for a publish.
+    dup: bool
+    # The packet identifier of QoS 1 and 2, 1 to 65,535; the client's own
+    # for a publish, 0 at QoS 0.
+    packet_id: i64
+    # Its properties in MQTT 5: an expiry, a content type, a response topic,
+    # correlation data, user properties; and the subscription identifiers it
+    # came with. [] in 3.1.1.
+    properties: [Property]
+
+# What a subscription asks of the server. `subscription` makes one; MQTT 5
+# reads every field, 3.1.1 the quality of service alone.
+record Subscription
+    # The topic filter: `+` one level, a last `#` any number; `$share/g/`
+    # before it shares it among the group `g`.
+    filter: str
+    # The most quality of service the messages come with, 0 to 2.
+    qos: i64
+    # Whether the client's own messages are not sent back to it.
+    no_local: bool
+    # Whether the retain flag is kept as the message was published.
+    retain_as_published: bool
+    # When retained messages are sent: 0 at every subscription, 1 only when
+    # it is new, 2 never.
+    retain_handling: i64
+
+# What the server publishes when the connection ends with no `DISCONNECT`.
+variant Will
+    # No will.
+    none
+    # The message the server publishes; its properties may hold a Will Delay
+    # Interval.
+    message
+        # The message.
+        message: Message
+
+## Connecting
+
+# How the client reaches the server.
+variant Transport
+    # TCP.
+    tcp
+    # TLS from the first byte, the server's certificate checked.
+    tls
+    # A WebSocket, subprotocol `mqtt`.
+    websocket
+        # The path of the WebSocket's URL, `/mqtt`.
+        path: str
+    # A WebSocket over TLS.
+    websocket_tls
+        # The path of the WebSocket's URL.
+        path: str
+
+# How the client tries again after a connection is lost: the first wait,
+# then twice the one before up to `most_wait_ms`, with a random part.
+record Reconnect
+    # The most attempts after a loss; 0 for none, so a lost connection
+    # closes the client.
+    attempts: i64
+    # Milliseconds waited before the second attempt, 1 or more.
+    wait_ms: i64
+    # The longest wait, `wait_ms` or more.
+    most_wait_ms: i64
+    # The most milliseconds added to each wait at random, 0 or more.
+    jitter_ms: i64
+
+# Where the server is and how to talk to it. `options` makes one; a program
+# changes the fields it needs with `@`, or `parse_url` reads one.
+record Options
+    # The server's name or address, without brackets.
+    host: str
+    # The server's port, 1 to 65535.
+    port: i64
+    # How the server is reached.
+    transport: Transport
+    # The PEM of the only authorities a server's certificate is checked
+    # against; "" for the system's own store.
+    roots: str
+    # The protocol's level: 4 for MQTT 3.1.1, 5 for MQTT 5.0.
+    version: i64
+    # The client's identifier; "" asks the server for one, which MQTT 3.1.1
+    # grants only with `clean_start`.
+    client_id: str
+    # Whether the session begins anew rather than going on with the one the
+    # server kept (3.1.1's clean session).
+    clean_start: bool
+    # The seconds after which a silent connection is pinged, and dropped by
+    # the server at one and a half; 0 for none.
+    keep_alive_s: i64
+    # The user's name, "" for none.
+    username: str
+    # The password, any bytes, [] for none; 3.1.1 sends one only with a
+    # user's name.
+    password: [u8]
+    # The will.
+    will: Will
+    # The properties of `CONNECT` in MQTT 5: a session's expiry, a receive
+    # maximum, the topic aliases taken, an authentication method. [] in
+    # 3.1.1.
+    properties: [Property]
+    # Milliseconds a connection may take, its `CONNACK` included, 1 or more.
+    connect_ms: i64
+    # Milliseconds a write, and the acknowledgement a publish, a
+    # subscription or a ping waits for, may take, 1 or more.
+    wait_ms: i64
+    # The largest packet read, 16 or more; past it the connection is lost.
+    most_packet_bytes: i64
+    # Whether a received message of QoS 1 or 2 waits for the program's `ack`
+    # rather than the client's own.
+    manual_acks: bool
+    # The most messages of QoS 0 held unread, 1 or more.
+    most_held: i64
+    # How a lost connection is made again.
+    reconnect: Reconnect
+
+# What the server's `CONNACK` said.
+record Connack
+    # Whether the server went on with a session it kept.
+    session_present: bool
+    # The reason code, 0 for success.
+    reason: i64
+    # Its properties in MQTT 5: an assigned identifier, the server's
+    # keep-alive, its limits.
+    properties: [Property]
+
+# What a client has carried since it was made.
+record Stats
+    # Messages received.
+    messages_in: i64
+    # Messages published.
+    messages_out: i64
+    # Bytes of payload received.
+    bytes_in: i64
+    # Bytes of payload published.
+    bytes_out: i64
+    # The connections made again after one was lost.
+    reconnects: i64
+    # The messages of QoS 0 dropped past `Options.most_held`.
+    dropped: i64
+
+# A connection to an MQTT server, which `connect` makes and `close`,
+# `disconnect` or `drop` ends. Its one field is the conversation's private
+# state. Every call that talks to the server works on the caller's own
+# place, through `@`.
+record Client
+    # The conversation's state, which only this package reads and writes.
+    session: state.Session
+
+## Packets
+
+# One MQTT control packet, as `encode` writes it and `decode` reads it.
+variant Packet
+    # `CONNECT`.
+    connect
+        # The protocol's level, 4 or 5.
+        version: i64
+        # The client's identifier.
+        client_id: str
+        # Whether the session begins anew.
+        clean_start: bool
+        # The keep-alive, in seconds.
+        keep_alive: i64
+        # The user's name.
+        username: str
+        # Whether a user's name is sent, empty or not.
+        has_username: bool
+        # The password.
+        password: [u8]
+        # Whether a password is sent, empty or not.
+        has_password: bool
+        # The will.
+        will: Will
+        # The properties.
+        properties: [Property]
+    # `CONNACK`.
+    connack
+        # Whether the server held a session.
+        session_present: bool
+        # The return code of 3.1.1 or the reason code of 5.
+        reason: i64
+        # The properties.
+        properties: [Property]
+    # `PUBLISH`.
+    publish
+        # The message, its identifier and DUP as written.
+        message: Message
+    # `PUBACK`.
+    puback
+        # The packet identifier.
+        packet_id: i64
+        # The reason code.
+        reason: i64
+        # The properties.
+        properties: [Property]
+    # `PUBREC`.
+    pubrec
+        # The packet identifier.
+        packet_id: i64
+        # The reason code.
+        reason: i64
+        # The properties.
+        properties: [Property]
+    # `PUBREL`.
+    pubrel
+        # The packet identifier.
+        packet_id: i64
+        # The reason code.
+        reason: i64
+        # The properties.
+        properties: [Property]
+    # `PUBCOMP`.
+    pubcomp
+        # The packet identifier.
+        packet_id: i64
+        # The reason code.
+        reason: i64
+        # The properties.
+        properties: [Property]
+    # `SUBSCRIBE`.
+    subscribe
+        # The packet identifier.
+        packet_id: i64
+        # The subscriptions, one at least.
+        subscriptions: [Subscription]
+        # The properties.
+        properties: [Property]
+    # `SUBACK`.
+    suback
+        # The packet identifier.
+        packet_id: i64
+        # A code per subscription: the QoS granted, or 128 and up refused.
+        reasons: [i64]
+        # The properties.
+        properties: [Property]
+    # `UNSUBSCRIBE`.
+    unsubscribe
+        # The packet identifier.
+        packet_id: i64
+        # The filters, one at least.
+        filters: [str]
+        # The properties.
+        properties: [Property]
+    # `UNSUBACK`.
+    unsuback
+        # The packet identifier.
+        packet_id: i64
+        # A code per filter in MQTT 5; [] in 3.1.1.
+        reasons: [i64]
+        # The properties.
+        properties: [Property]
+    # `PINGREQ`.
+    pingreq
+    # `PINGRESP`.
+    pingresp
+    # `DISCONNECT`.
+    disconnect
+        # The reason code.
+        reason: i64
+        # The properties.
+        properties: [Property]
+    # `AUTH`, MQTT 5 alone.
+    auth
+        # The reason code.
+        reason: i64
+        # The properties.
+        properties: [Property]
+
+# The reconnection this client makes by default: 60 attempts, 250 ms first,
+# doubling to 8 s, with 100 ms at random.
+function default_reconnect() -> Reconnect
+    return Reconnect(attempts: 60, wait_ms: 250, most_wait_ms: 8000, jitter_ms: 100)
+
+# The options of a connection to `host` at `DEFAULT_PORT` over TCP: MQTT 5,
+# an identifier the server assigns, a clean start, a keep-alive of 60
+# seconds, no login, no will, no property, 10 seconds to connect and for
+# each acknowledgement, packets of 16 MiB at most, 65,536 messages of QoS 0
+# held, the client's own acknowledgements, and `default_reconnect`.
+#
+# - `host`: the server's name or address, without brackets.
+#
+# See also `parse_url`, `connect`.
+function options(host: str) -> Options
+    return Options(
+        host: host,
+        port: DEFAULT_PORT,
+        transport: .tcp,
+        roots: "",
+        version: 5,
+        client_id: "",
+        clean_start: true,
+        keep_alive_s: 60,
+        username: "",
+        password: [],
+        will: .none,
+        properties: [],
+        connect_ms: 10000,
+        wait_ms: 10000,
+        most_packet_bytes: 16777216,
+        manual_acks: false,
+        most_held: 65536,
+        reconnect: default_reconnect()
+    )
+
+# The options a URL names: `mqtt://user:password@host:1883`.
+#
+# - `text`: the URL: `mqtt://` or `tcp://` (TCP, port 1883), `mqtts://`,
+#   `ssl://` or `tls://` (TLS, 8883), `ws://` (80) or `wss://` (443), a
+#   WebSocket's path `/mqtt` where it names none. Its user and password,
+#   percent-decoded, are the login.
+#
+# Fails `invalid` where it is no such URL: another scheme, no host, a port
+# outside 1 to 65535, a path on a URL that is no WebSocket's, a query or a
+# fragment. See also `options`.
+function parse_url(text: str) -> Options?
+    u = match url.parse(text)
+        .ok got => got
+        .err e  => return fail(code: INVALID, msg: f"\"{text}\" is no URL: {e.msg}")
+
+    if u.host == ""
+        return fail(code: INVALID, msg: f"\"{text}\" names no host")
+
+    if u.query != "" || u.fragment != ""
+        return fail(code: INVALID, msg: f"\"{text}\" holds a query or a fragment")
+    opts @= options(u.host)
+    socket = u.scheme == "ws" || u.scheme == "wss"
+
+    path = if u.path == "" || u.path == "/"
+        "/mqtt"
+    else
+        u.path
+
+    if !socket && u.path != "" && u.path != "/"
+        return fail(code: INVALID, msg: f"\"{text}\" holds a path, which only a WebSocket's URL has")
+
+    if u.scheme == "mqtt" || u.scheme == "tcp"
+        opts.transport @ .tcp
+    else if u.scheme == "mqtts" || u.scheme == "ssl" || u.scheme == "tls"
+        opts.transport @ .tls
+        opts.port @ DEFAULT_TLS_PORT
+    else if u.scheme == "ws"
+        opts.transport @ .websocket(path: path)
+        opts.port @ 80
+    else if u.scheme == "wss"
+        opts.transport @ .websocket_tls(path: path)
+        opts.port @ 443
+    else
+        return fail(
+            code: INVALID,
+            msg: f"\"{text}\" names the scheme \"{u.scheme}\": a server is mqtt://, mqtts://, tcp://, ssl://, tls://, ws:// or wss://"
+        )
+
+    if u.port != ""
+        port = numbers.parse_int(u.port).default(0)
+
+        if port < 1 || port > 65535
+            return fail(code: INVALID, msg: f"the port of \"{text}\" is outside 1 to 65535")
+        opts.port @ port
+    opts.username @ u.user
+    opts.password @ bytes.from_text(u.password)
+    return ok(opts)
+
+# A connection to the server `opts` names, its `CONNACK` read: the login
+# taken, the session begun or found.
+#
+# - `opts`: where the server is and how to talk to it.
+#
+# The program owes the client a `close`. Fails `permission` where the server
+# refuses the login (3.1.1's codes 4 and 5, MQTT 5's 134, 135, 138, 140);
+# `unsupported` where it refuses the version; `invalid` where an option is
+# out of range, the identifier is refused or the server sends bytes that are
+# no MQTT; `limit` for a quota; `failed` for any other code; and as
+# `net.connect`, `tls.connect` and `websocket.connect` fail where nothing
+# answers. See also `options`, `close`.
+function connect(opts: Options) -> Client?
+    list: [model.Property] @= []
+
+    for prop in opts.properties
+        pv: model.PropertyValue = match prop.value
+            .number nv => .number(v: nv.v)
+            .text tv   => .text(v: tv.v)
+            .data dv   => .data(v: dv.v)
+            .pair qv   => .pair(name: qv.name, value: qv.value)
+
+        list @ list.push(model.Property(id: prop.id, value: pv))
+
+    will: model.Will = match opts.will
+        .none => .none
+        .message w =>
+            wm_list: [model.Property] @= []
+
+            for prop in w.message.properties
+                pv: model.PropertyValue = match prop.value
+                    .number nv => .number(v: nv.v)
+                    .text tv   => .text(v: tv.v)
+                    .data dv   => .data(v: dv.v)
+                    .pair qv   => .pair(name: qv.name, value: qv.value)
+
+                wm_list @ wm_list.push(model.Property(id: prop.id, value: pv))
+
+            wm = model.Message(
+                topic: w.message.topic,
+                payload: w.message.payload,
+                qos: w.message.qos,
+                retain: w.message.retain,
+                dup: w.message.dup,
+                packet_id: w.message.packet_id,
+                properties: wm_list
+            )
+
+            .message(message: wm)
+
+    transport: model.Transport = match opts.transport
+        .tcp             => .tcp
+        .tls             => .tls
+        .websocket w     => .websocket(path: w.path)
+        .websocket_tls w => .websocket_tls(path: w.path)
+
+    r = opts.reconnect
+    inner = model.Options(
+        host: opts.host,
+        port: opts.port,
+        transport: transport,
+        roots: opts.roots,
+        version: opts.version,
+        client_id: opts.client_id,
+        clean_start: opts.clean_start,
+        keep_alive_s: opts.keep_alive_s,
+        username: opts.username,
+        password: opts.password,
+        will: will,
+        properties: list,
+        connect_ms: opts.connect_ms,
+        wait_ms: opts.wait_ms,
+        most_packet_bytes: opts.most_packet_bytes,
+        manual_acks: opts.manual_acks,
+        most_held: opts.most_held,
+        reconnect: model.Reconnect(attempts: r.attempts, wait_ms: r.wait_ms, most_wait_ms: r.most_wait_ms, jitter_ms: r.jitter_ms)
+    )
+    return ok(Client(session: session.open(inner)?))
+
+# Sends `DISCONNECT` and closes the connection, so the server publishes no
+# will; every later call through the client fails `closed`.
+#
+# - `c`: the client, emptied.
+#
+# Fails `closed` where it is closed already; the connection is closed even
+# where the `DISCONNECT` cannot be written. See also `disconnect`, `drop`.
+function close(@c: Client) -> ()?
+    return disconnect(@c, reason: 0, properties: [])
+
+# Sends `DISCONNECT` with a reason and properties, then closes the
+# connection.
+#
+# - `c`: the client, emptied.
+# - `reason`: the reason code, 0 for a normal end, 4 asking the server to
+#   publish the will all the same; 0 in 3.1.1.
+# - `properties`: MQTT 5's: a Session Expiry Interval, a Reason String,
+#   user properties; [] in 3.1.1.
+#
+# Fails `invalid` where 3.1.1 is asked a reason or a property, and as
+# `close` does. See also `close`.
+function disconnect(@c: Client, reason: i64, properties: [Property]) -> ()?
+    list: [model.Property] @= []
+
+    for prop in properties
+        pv: model.PropertyValue = match prop.value
+            .number nv => .number(v: nv.v)
+            .text tv   => .text(v: tv.v)
+            .data dv   => .data(v: dv.v)
+            .pair qv   => .pair(name: qv.name, value: qv.value)
+
+        list @ list.push(model.Property(id: prop.id, value: pv))
+
+    return session.disconnect(@c.session, reason: reason, list: list)
+
+# Closes the connection with no `DISCONNECT`, as a crash would, so the
+# server publishes the will.
+#
+# - `c`: the client, emptied.
+#
+# Fails `closed` where it is closed already. See also `close`.
+function drop(@c: Client) -> ()?
+    return session.drop(@c.session)
+
+# Whether the client is closed: by `close`, `disconnect` or `drop`, by a
+# server that ended the session for good, or by a lost connection no
+# reconnection made again.
+#
+# - `c`: the client asked about.
+#
+# See also `close`.
+function is_closed(c: Client) -> bool
+    return c.session.closed
+
+# Drops the connection and makes a new one, as after a loss, the
+# subscriptions sent again where the server kept no session.
+#
+# - `c`: the client.
+#
+# Fails `closed` where it is closed or no attempt connects, which closes
+# it. See also `connect`.
+function reconnect(@c: Client) -> ()?
+    if c.session.closed
+        return fail(code: CLOSED, msg: f"the client of {c.session.target} is closed")
+    return dialing.lose(@c.session, code: CLOSED, msg: "the program asked for a new connection")
+
+# What the server's last `CONNACK` said.
+#
+# - `c`: the client asked about.
+#
+# See also `client_id_of`.
+function connack_of(c: Client) -> Connack
+    a = c.session.connack
+    list: [Property] @= []
+
+    for prop in a.properties
+        pv: PropertyValue = match prop.value
+            .number nv => .number(v: nv.v)
+            .text tv   => .text(v: tv.v)
+            .data dv   => .data(v: dv.v)
+            .pair qv   => .pair(name: qv.name, value: qv.value)
+
+        list @ list.push(Property(id: prop.id, value: pv))
+
+    return Connack(session_present: a.session_present, reason: a.reason, properties: list)
+
+# The client's identifier: the server's where it assigned one, else the
+# options'.
+#
+# - `c`: the client asked about.
+#
+# See also `connack_of`.
+function client_id_of(c: Client) -> str
+    return c.session.client_id
+
+# The messages the client holds, read from its connection while a call
+# waited for something else and not given out yet: a program waiting with
+# `poll` reads these first with `read_ready`, since its stream does not tell
+# of bytes read already.
+#
+# - `c`: the client asked about.
+#
+# See also `read_ready`.
+function held_of(c: Client) -> i64
+    return state.held_count(c.session)
+
+# The stream the client reads, for a program that waits on it with
+# `poll.add_stream`; a reconnection makes another, which `stats_of` counts.
+#
+# - `c`: the client asked about.
+#
+# Fails `closed` where the client is closed. See also `read_ready`.
+function stream_of(c: Client) -> io.Stream?
+    if c.session.closed
+        return fail(code: CLOSED, msg: f"the client of {c.session.target} is closed")
+    return link.stream_of(c.session.link)
+
+# What the client has carried since `connect`.
+#
+# - `c`: the client asked about.
+#
+# See also `stream_of`.
+function stats_of(c: Client) -> Stats
+    t = c.session.stats
+    return Stats(
+        messages_in: t.messages_in,
+        messages_out: t.messages_out,
+        bytes_in: t.bytes_in,
+        bytes_out: t.bytes_out,
+        reconnects: t.reconnects,
+        dropped: t.dropped
+    )
+
+## Publishing
+
+# A message to publish on `topic`, at QoS 0, not retained, with no
+# property.
+#
+# - `topic`: the topic.
+# - `payload`: the payload, any bytes.
+#
+# See also `publish_message`.
+function message(topic: str, payload: [u8]) -> Message
+    return Message(topic: topic, payload: payload, qos: 0, retain: false, dup: false, packet_id: 0, properties: [])
+
+# Publishes `payload` on `topic`, waiting at QoS 1 for its `PUBACK` and at
+# QoS 2 for its `PUBREC` and `PUBCOMP`.
+#
+# - `c`: the client.
+# - `topic`: a topic with no wildcard.
+# - `payload`: the payload, any bytes.
+# - `qos`: 0, 1 or 2.
+# - `retain`: whether the server keeps it for the subscriptions to come.
+#
+# Fails `invalid` where `topic` or `qos` is refused; `unsupported` where the
+# server takes no such QoS or keeps no retained message; `permission` where
+# it refuses the topic (MQTT 5's 135); `timeout` where the acknowledgement
+# does not come within `Options.wait_ms`; `closed`. See also
+# `publish_message`.
+function publish(@c: Client, topic: str, payload: [u8], qos: i64, retain: bool) -> ()?
+    m @= message(topic, payload: payload)
+    m.qos @ qos
+    m.retain @ retain
+    return publish_message(@c, m: m)
+
+# Publishes `m`, its properties included, as `publish` does.
+#
+# - `c`: the client.
+# - `m`: the message; its `dup` and `packet_id` are the client's own.
+#
+# Fails as `publish` does, and `invalid` where a property is refused (one
+# not allowed in a message, a value of the wrong kind) or 3.1.1 is asked one.
+# See also `publish`.
+function publish_message(@c: Client, m: Message) -> ()?
+    inner_list: [model.Property] @= []
+
+    for prop in m.properties
+        pv: model.PropertyValue = match prop.value
+            .number nv => .number(v: nv.v)
+            .text tv   => .text(v: tv.v)
+            .data dv   => .data(v: dv.v)
+            .pair qv   => .pair(name: qv.name, value: qv.value)
+
+        inner_list @ inner_list.push(model.Property(id: prop.id, value: pv))
+
+    inner = model.Message(
+        topic: m.topic,
+        payload: m.payload,
+        qos: m.qos,
+        retain: m.retain,
+        dup: m.dup,
+        packet_id: m.packet_id,
+        properties: inner_list
+    )
+    return session.publish(@c.session, m: inner)
+
+## Subscribing
+
+# A subscription to `topic_filter` at `qos`, with MQTT 5's options at their
+# defaults.
+#
+# - `topic_filter`: the topic filter.
+# - `qos`: the most quality of service, 0 to 2.
+#
+# See also `subscribe_many`.
+function subscription(topic_filter: str, qos: i64) -> Subscription
+    return Subscription(filter: topic_filter, qos: qos, no_local: false, retain_as_published: false, retain_handling: 0)
+
+# Subscribes to `topic_filter` and answers the quality of service the server
+# granted.
+#
+# - `c`: the client.
+# - `topic_filter`: the topic filter.
+# - `qos`: the most quality of service asked, 0 to 2.
+#
+# The retained messages of the topics it matches come after it. Fails
+# `invalid` where `topic_filter` is no filter; with the code of the server's
+# refusal (`permission` for MQTT 5's 135, `failed` for 3.1.1's 128);
+# `timeout`, `closed`. See also `subscribe_many`, `next_message`.
+function subscribe(@c: Client, topic_filter: str, qos: i64) -> i64?
+    codes = subscribe_many(@c, subscriptions: [subscription(topic_filter, qos: qos)], properties: [])?
+    code = codes[0]
+
+    if code >= 128
+        return fail(
+            code: reading.code_of(code),
+            msg: f"{c.session.target} refused the subscription to \"{topic_filter}\" with the code {code}"
+        )
+    return ok(code)
+
+# Subscribes to every one of `subscriptions` in one `SUBSCRIBE`, and answers
+# a code per subscription: the quality of service granted, or 128 and up
+# where the server refused it.
+#
+# - `c`: the client.
+# - `subscriptions`: one or more.
+# - `properties`: MQTT 5's: a Subscription Identifier, user properties; []
+#   in 3.1.1.
+#
+# Fails `invalid` where a filter is refused or 3.1.1 is asked an option or a
+# property; `timeout`, `closed`. See also `subscribe`.
+function subscribe_many(@c: Client, subscriptions: [Subscription], properties: [Property]) -> [i64]?
+    subs: [model.Subscription] @= []
+
+    for one in subscriptions
+        subs @ subs.push(
+            model.Subscription(filter: one.filter, qos: one.qos, no_local: one.no_local, retain_as_published: one.retain_as_published, retain_handling: one.retain_handling)
+        )
+
+    list: [model.Property] @= []
+
+    for prop in properties
+        pv: model.PropertyValue = match prop.value
+            .number nv => .number(v: nv.v)
+            .text tv   => .text(v: tv.v)
+            .data dv   => .data(v: dv.v)
+            .pair qv   => .pair(name: qv.name, value: qv.value)
+
+        list @ list.push(model.Property(id: prop.id, value: pv))
+
+    return session.subscribe(@c.session, subs: subs, list: list)
+
+# Ends the subscription to `topic_filter`.
+#
+# - `c`: the client.
+# - `topic_filter`: the filter, as it was subscribed.
+#
+# The messages of it already held stay to be read. Fails `invalid` where it
+# is no filter, with the code of the server's refusal, `timeout`, `closed`.
+# See also `unsubscribe_many`.
+function unsubscribe(@c: Client, topic_filter: str) -> ()?
+    codes = unsubscribe_many(@c, filters: [topic_filter], properties: [])?
+
+    if codes[0] >= 128
+        return fail(
+            code: reading.code_of(codes[0]),
+            msg: f"{c.session.target} refused to end the subscription to \"{topic_filter}\" with the code {codes[0]}"
+        )
+    return ok()
+
+# Ends the subscriptions to every one of `filters` in one `UNSUBSCRIBE`, and
+# answers a code per filter: 0, 17 where none existed (MQTT 5), or 128 and
+# up refused; 0 for each in 3.1.1, whose server answers none.
+#
+# - `c`: the client.
+# - `filters`: one or more.
+# - `properties`: MQTT 5's user properties; [] in 3.1.1.
+#
+# Fails as `unsubscribe` does. See also `unsubscribe`.
+function unsubscribe_many(@c: Client, filters: [str], properties: [Property]) -> [i64]?
+    list: [model.Property] @= []
+
+    for prop in properties
+        pv: model.PropertyValue = match prop.value
+            .number nv => .number(v: nv.v)
+            .text tv   => .text(v: tv.v)
+            .data dv   => .data(v: dv.v)
+            .pair qv   => .pair(name: qv.name, value: qv.value)
+
+        list @ list.push(model.Property(id: prop.id, value: pv))
+
+    return session.unsubscribe(@c.session, filters: filters, list: list)
+
+# The next message of any subscription, a held one first, waiting for one.
+#
+# - `c`: the client.
+# - `wait_ms`: milliseconds to wait, 0 to ask without waiting.
+#
+# A message of QoS 1 or 2 has been acknowledged by the time it is answered,
+# unless `Options.manual_acks` leaves that to `ack`. Fails `timeout` where
+# none comes in time, the client left as it was; `closed` once the client is
+# closed and holds nothing; `invalid` where `wait_ms` is below 0. See also
+# `read_ready`, `ack`.
+function next_message(@c: Client, wait_ms: i64) -> Message?
+    m = waiting.next(@c.session, wait_ms: wait_ms)?
+    out_list: [Property] @= []
+
+    for prop in m.properties
+        pv: PropertyValue = match prop.value
+            .number nv => .number(v: nv.v)
+            .text tv   => .text(v: tv.v)
+            .data dv   => .data(v: dv.v)
+            .pair qv   => .pair(name: qv.name, value: qv.value)
+
+        out_list @ out_list.push(Property(id: prop.id, value: pv))
+
+    out = Message(
+        topic: m.topic,
+        payload: m.payload,
+        qos: m.qos,
+        retain: m.retain,
+        dup: m.dup,
+        packet_id: m.packet_id,
+        properties: out_list
+    )
+    return ok(out)
+
+# The messages the client holds and those one read of its stream
+# completes: what a program waiting on many streams with `poll` calls when
+# the client's is readable, so it never waits there.
+#
+# - `c`: the client.
+#
+# Empty where nothing is whole yet; the read is skipped where the client
+# holds a message already. Fails as `next_message` does. See also
+# `stream_of`, `poll.wait`.
+function read_ready(@c: Client) -> [Message]?
+    out: [Message] @= []
+
+    for m in waiting.read_ready(@c.session)?
+        one_list: [Property] @= []
+
+        for prop in m.properties
+            pv: PropertyValue = match prop.value
+                .number nv => .number(v: nv.v)
+                .text tv   => .text(v: tv.v)
+                .data dv   => .data(v: dv.v)
+                .pair qv   => .pair(name: qv.name, value: qv.value)
+
+            one_list @ one_list.push(Property(id: prop.id, value: pv))
+
+        one = Message(
+            topic: m.topic,
+            payload: m.payload,
+            qos: m.qos,
+            retain: m.retain,
+            dup: m.dup,
+            packet_id: m.packet_id,
+            properties: one_list
+        )
+        out @ out.push(one)
+
+    return ok(out)
+
+# Acknowledges `m`, a message read with `Options.manual_acks` set: `PUBACK`
+# for QoS 1, `PUBREC` for QoS 2, whose release the client completes itself.
+#
+# - `c`: the client.
+# - `m`: the message as it was read; QoS 0 asks nothing.
+#
+# Fails `invalid` where the options leave acknowledgements to the client,
+# `not_found` where `m` was acknowledged already or never read, `closed`.
+# See also `next_message`.
+function ack(@c: Client, m: Message) -> ()?
+    return session.ack(
+        @c.session,
+        m: model.Message(topic: m.topic, payload: [], qos: m.qos, retain: m.retain, dup: m.dup, packet_id: m.packet_id, properties: [])
+    )
+
+# Sends a `PINGREQ` and waits for its `PINGRESP`.
+#
+# - `c`: the client.
+# - `wait_ms`: milliseconds to wait, 1 or more.
+#
+# Fails `timeout`, `closed`, `invalid` where `wait_ms` is below 1. See also
+# `Options`.
+function ping(@c: Client, wait_ms: i64) -> ()?
+    return waiting.ping(@c.session, wait_ms: wait_ms)
+
+## Topics
+
+# Whether `s` is a topic a message is published to: 1 to 65,535 bytes of
+# UTF-8 with no `+`, no `#` and no U+0000.
+#
+# - `s`: the text asked about.
+#
+# See also `is_valid_filter`.
+function is_valid_topic(s: str) -> bool
+    return topics.is_topic(s)
+
+# Whether `s` is a topic filter: `+` a whole level, `#` the whole last one,
+# and a shared subscription's `$share/<group>/` before a filter.
+#
+# - `s`: the text asked about.
+#
+# See also `matches`.
+function is_valid_filter(s: str) -> bool
+    return topics.is_filter(s)
+
+# Whether a message published on `topic` reaches a subscription to
+# `pattern`: `+` matches one level, `#` any number, the parent level
+# included; a topic beginning with `$` is reached by no filter beginning
+# with a wildcard.
+#
+# - `pattern`: the topic filter; a shared one is matched by its filter.
+# - `topic`: the topic.
+#
+# False where either is invalid. See also `is_valid_filter`.
+function matches(pattern: str, topic: str) -> bool
+    return topics.matches(pattern: pattern, topic: topic)
+
+## Properties
+
+# The number of the property `id` in `properties`.
+#
+# - `properties`: the list.
+# - `id`: the identifier, a constant above.
+#
+# Fails `not_found` where the list holds no such property with a number.
+# See also `text_of`.
+function number_of(properties: [Property], id: i64) -> i64?
+    for p in properties
+        if p.id == id
+            match p.value
+                .number n                   => return ok(n.v)
+                .text _ | .data _ | .pair _ => _ = 0
+
+    return fail(code: NOT_FOUND, msg: f"no property {id} holding a number")
+
+# The text of the property `id` in `properties`.
+#
+# - `properties`: the list.
+# - `id`: the identifier.
+#
+# Fails `not_found` where the list holds no such property with a text. See
+# also `number_of`.
+function text_of(properties: [Property], id: i64) -> str?
+    for p in properties
+        if p.id == id
+            match p.value
+                .text t                       => return ok(t.v)
+                .number _ | .data _ | .pair _ => _ = 0
+
+    return fail(code: NOT_FOUND, msg: f"no property {id} holding a text")
+
+# The bytes of the property `id` in `properties`.
+#
+# - `properties`: the list.
+# - `id`: the identifier, `CORRELATION_DATA` or `AUTHENTICATION_DATA`.
+#
+# Fails `not_found` where the list holds no such property with bytes. See
+# also `text_of`.
+function data_of(properties: [Property], id: i64) -> [u8]?
+    for p in properties
+        if p.id == id
+            match p.value
+                .data d                       => return ok(d.v)
+                .number _ | .text _ | .pair _ => _ = 0
+
+    return fail(code: NOT_FOUND, msg: f"no property {id} holding bytes")
+
+# The user properties in `properties`, in order: [] where there are none.
+#
+# - `properties`: the list.
+#
+# See also `number_of`.
+function pairs_of(properties: [Property]) -> [Pair]
+    out: [Pair] @= []
+
+    for p in properties
+        match p.value
+            .pair q                       => out @ out.push(Pair(name: q.name, value: q.value))
+            .number _ | .text _ | .data _ => _ = 0
+
+    return out
+
+# The name MQTT 5 gives the reason code `code`, as paho-mqtt writes it:
+# "Success" for 0, "Not authorized" for 135.
+#
+# - `code`: the reason code.
+#
+# Fails `not_found` for a code MQTT 5 does not define. See also `Connack`.
+function reason_text(code: i64) -> str?
+    names: {i64: str} = {
+        0: "Success"
+        1: "Granted QoS 1"
+        2: "Granted QoS 2"
+        4: "Disconnect with will message"
+        16: "No matching subscribers"
+        17: "No subscription found"
+        24: "Continue authentication"
+        25: "Re-authenticate"
+        128: "Unspecified error"
+        129: "Malformed packet"
+        130: "Protocol error"
+        131: "Implementation specific error"
+        132: "Unsupported protocol version"
+        133: "Client identifier not valid"
+        134: "Bad user name or password"
+        135: "Not authorized"
+        136: "Server unavailable"
+        137: "Server busy"
+        138: "Banned"
+        139: "Server shutting down"
+        140: "Bad authentication method"
+        141: "Keep alive timeout"
+        142: "Session taken over"
+        143: "Topic filter invalid"
+        144: "Topic name invalid"
+        145: "Packet identifier in use"
+        146: "Packet identifier not found"
+        147: "Receive maximum exceeded"
+        148: "Topic alias invalid"
+        149: "Packet too large"
+        150: "Message rate too high"
+        151: "Quota exceeded"
+        152: "Administrative action"
+        153: "Payload format invalid"
+        154: "Retain not supported"
+        155: "QoS not supported"
+        156: "Use another server"
+        157: "Server moved"
+        158: "Shared subscription not supported"
+        159: "Connection rate exceeded"
+        160: "Maximum connect time"
+        161: "Subscription identifiers not supported"
+        162: "Wildcard subscription not supported"
+    }
+
+    return match names[code]
+        .ok name => ok(name)
+        .err _   => fail(code: NOT_FOUND, msg: f"MQTT 5 defines no reason code {code}")
+
+## Writing and reading packets
+
+# The bytes of `p` as the level `version` writes them, an acknowledgement's
+# reason and properties left out where MQTT 5 lets them be.
+#
+# - `p`: the packet; a `CONNECT` writes its own level.
+# - `version`: 4 for 3.1.1, 5 for 5.0.
+#
+# Fails `invalid` where a field is refused (a QoS of 3, an identifier of 0,
+# a property not allowed in that packet or of the wrong kind, a reason or a
+# property in 3.1.1), `unsupported` for another level, `limit` past MQTT's
+# 268,435,455 bytes. See also `decode`.
+function encode(p: Packet, version: i64) -> [u8]?
+    inner: model.Packet = match p
+        .connect c =>
+            list: [model.Property] @= []
+
+            for prop in c.properties
+                pv: model.PropertyValue = match prop.value
+                    .number nv => .number(v: nv.v)
+                    .text tv   => .text(v: tv.v)
+                    .data dv   => .data(v: dv.v)
+                    .pair qv   => .pair(name: qv.name, value: qv.value)
+
+                list @ list.push(model.Property(id: prop.id, value: pv))
+
+            will: model.Will = match c.will
+                .none => .none
+                .message w =>
+                    wm_list: [model.Property] @= []
+
+                    for prop in w.message.properties
+                        pv: model.PropertyValue = match prop.value
+                            .number nv => .number(v: nv.v)
+                            .text tv   => .text(v: tv.v)
+                            .data dv   => .data(v: dv.v)
+                            .pair qv   => .pair(name: qv.name, value: qv.value)
+
+                        wm_list @ wm_list.push(model.Property(id: prop.id, value: pv))
+
+                    wm = model.Message(
+                        topic: w.message.topic,
+                        payload: w.message.payload,
+                        qos: w.message.qos,
+                        retain: w.message.retain,
+                        dup: w.message.dup,
+                        packet_id: w.message.packet_id,
+                        properties: wm_list
+                    )
+
+                    .message(message: wm)
+
+            .connect(
+                version: c.version,
+                client_id: c.client_id,
+                clean_start: c.clean_start,
+                keep_alive: c.keep_alive,
+                username: c.username,
+                has_username: c.has_username,
+                password: c.password,
+                has_password: c.has_password,
+                will: will,
+                properties: list
+            )
+        .connack a =>
+            list: [model.Property] @= []
+
+            for prop in a.properties
+                pv: model.PropertyValue = match prop.value
+                    .number nv => .number(v: nv.v)
+                    .text tv   => .text(v: tv.v)
+                    .data dv   => .data(v: dv.v)
+                    .pair qv   => .pair(name: qv.name, value: qv.value)
+
+                list @ list.push(model.Property(id: prop.id, value: pv))
+
+            .connack(session_present: a.session_present, reason: a.reason, properties: list)
+        .publish m =>
+            one_list: [model.Property] @= []
+
+            for prop in m.message.properties
+                pv: model.PropertyValue = match prop.value
+                    .number nv => .number(v: nv.v)
+                    .text tv   => .text(v: tv.v)
+                    .data dv   => .data(v: dv.v)
+                    .pair qv   => .pair(name: qv.name, value: qv.value)
+
+                one_list @ one_list.push(model.Property(id: prop.id, value: pv))
+
+            one = model.Message(
+                topic: m.message.topic,
+                payload: m.message.payload,
+                qos: m.message.qos,
+                retain: m.message.retain,
+                dup: m.message.dup,
+                packet_id: m.message.packet_id,
+                properties: one_list
+            )
+
+            .publish(message: one)
+        .puback a =>
+            list: [model.Property] @= []
+
+            for prop in a.properties
+                pv: model.PropertyValue = match prop.value
+                    .number nv => .number(v: nv.v)
+                    .text tv   => .text(v: tv.v)
+                    .data dv   => .data(v: dv.v)
+                    .pair qv   => .pair(name: qv.name, value: qv.value)
+
+                list @ list.push(model.Property(id: prop.id, value: pv))
+
+            .puback(packet_id: a.packet_id, reason: a.reason, properties: list)
+        .pubrec a =>
+            list: [model.Property] @= []
+
+            for prop in a.properties
+                pv: model.PropertyValue = match prop.value
+                    .number nv => .number(v: nv.v)
+                    .text tv   => .text(v: tv.v)
+                    .data dv   => .data(v: dv.v)
+                    .pair qv   => .pair(name: qv.name, value: qv.value)
+
+                list @ list.push(model.Property(id: prop.id, value: pv))
+
+            .pubrec(packet_id: a.packet_id, reason: a.reason, properties: list)
+        .pubrel a =>
+            list: [model.Property] @= []
+
+            for prop in a.properties
+                pv: model.PropertyValue = match prop.value
+                    .number nv => .number(v: nv.v)
+                    .text tv   => .text(v: tv.v)
+                    .data dv   => .data(v: dv.v)
+                    .pair qv   => .pair(name: qv.name, value: qv.value)
+
+                list @ list.push(model.Property(id: prop.id, value: pv))
+
+            .pubrel(packet_id: a.packet_id, reason: a.reason, properties: list)
+        .pubcomp a =>
+            list: [model.Property] @= []
+
+            for prop in a.properties
+                pv: model.PropertyValue = match prop.value
+                    .number nv => .number(v: nv.v)
+                    .text tv   => .text(v: tv.v)
+                    .data dv   => .data(v: dv.v)
+                    .pair qv   => .pair(name: qv.name, value: qv.value)
+
+                list @ list.push(model.Property(id: prop.id, value: pv))
+
+            .pubcomp(packet_id: a.packet_id, reason: a.reason, properties: list)
+        .subscribe s =>
+            subs: [model.Subscription] @= []
+
+            for one in s.subscriptions
+                subs @ subs.push(
+                    model.Subscription(filter: one.filter, qos: one.qos, no_local: one.no_local, retain_as_published: one.retain_as_published, retain_handling: one.retain_handling)
+                )
+
+            list: [model.Property] @= []
+
+            for prop in s.properties
+                pv: model.PropertyValue = match prop.value
+                    .number nv => .number(v: nv.v)
+                    .text tv   => .text(v: tv.v)
+                    .data dv   => .data(v: dv.v)
+                    .pair qv   => .pair(name: qv.name, value: qv.value)
+
+                list @ list.push(model.Property(id: prop.id, value: pv))
+
+            .subscribe(packet_id: s.packet_id, subscriptions: subs, properties: list)
+        .suback s =>
+            list: [model.Property] @= []
+
+            for prop in s.properties
+                pv: model.PropertyValue = match prop.value
+                    .number nv => .number(v: nv.v)
+                    .text tv   => .text(v: tv.v)
+                    .data dv   => .data(v: dv.v)
+                    .pair qv   => .pair(name: qv.name, value: qv.value)
+
+                list @ list.push(model.Property(id: prop.id, value: pv))
+
+            .suback(packet_id: s.packet_id, reasons: s.reasons, properties: list)
+        .unsubscribe u =>
+            list: [model.Property] @= []
+
+            for prop in u.properties
+                pv: model.PropertyValue = match prop.value
+                    .number nv => .number(v: nv.v)
+                    .text tv   => .text(v: tv.v)
+                    .data dv   => .data(v: dv.v)
+                    .pair qv   => .pair(name: qv.name, value: qv.value)
+
+                list @ list.push(model.Property(id: prop.id, value: pv))
+
+            .unsubscribe(packet_id: u.packet_id, filters: u.filters, properties: list)
+        .unsuback u =>
+            list: [model.Property] @= []
+
+            for prop in u.properties
+                pv: model.PropertyValue = match prop.value
+                    .number nv => .number(v: nv.v)
+                    .text tv   => .text(v: tv.v)
+                    .data dv   => .data(v: dv.v)
+                    .pair qv   => .pair(name: qv.name, value: qv.value)
+
+                list @ list.push(model.Property(id: prop.id, value: pv))
+
+            .unsuback(packet_id: u.packet_id, reasons: u.reasons, properties: list)
+        .pingreq  => .pingreq
+        .pingresp => .pingresp
+        .disconnect d =>
+            list: [model.Property] @= []
+
+            for prop in d.properties
+                pv: model.PropertyValue = match prop.value
+                    .number nv => .number(v: nv.v)
+                    .text tv   => .text(v: tv.v)
+                    .data dv   => .data(v: dv.v)
+                    .pair qv   => .pair(name: qv.name, value: qv.value)
+
+                list @ list.push(model.Property(id: prop.id, value: pv))
+
+            .disconnect(reason: d.reason, properties: list)
+        .auth a =>
+            list: [model.Property] @= []
+
+            for prop in a.properties
+                pv: model.PropertyValue = match prop.value
+                    .number nv => .number(v: nv.v)
+                    .text tv   => .text(v: tv.v)
+                    .data dv   => .data(v: dv.v)
+                    .pair qv   => .pair(name: qv.name, value: qv.value)
+
+                list @ list.push(model.Property(id: prop.id, value: pv))
+
+            .auth(reason: a.reason, properties: list)
+
+    return encoding.encode(inner, version: version)
+
+# The one packet `data` holds, whole, read as the level `version` writes it.
+#
+# - `data`: the bytes of exactly one packet.
+# - `version`: 4 for 3.1.1, 5 for 5.0; a `CONNECT` is read at its own level.
+#
+# Fails `invalid` where `data` holds less or more than one packet or the
+# packet is malformed (a reserved flag set, a field cut short, a property
+# not allowed there or repeated where it may not be, a wildcard in a
+# published topic); `unsupported` for MQTT 3.1's `CONNECT`. See also
+# `encode`.
+function decode(data: [u8], version: i64) -> Packet?
+    if version != 4 && version != 5
+        return fail(code: UNSUPPORTED, msg: f"the protocol level {version} is neither 4 (MQTT 3.1.1) nor 5")
+
+    match decoding.decode(data, version: version)?
+        .connect c =>
+            list: [Property] @= []
+
+            for prop in c.properties
+                pv: PropertyValue = match prop.value
+                    .number nv => .number(v: nv.v)
+                    .text tv   => .text(v: tv.v)
+                    .data dv   => .data(v: dv.v)
+                    .pair qv   => .pair(name: qv.name, value: qv.value)
+
+                list @ list.push(Property(id: prop.id, value: pv))
+
+            will: Will = match c.will
+                .none => .none
+                .message w =>
+                    wm_list: [Property] @= []
+
+                    for prop in w.message.properties
+                        pv: PropertyValue = match prop.value
+                            .number nv => .number(v: nv.v)
+                            .text tv   => .text(v: tv.v)
+                            .data dv   => .data(v: dv.v)
+                            .pair qv   => .pair(name: qv.name, value: qv.value)
+
+                        wm_list @ wm_list.push(Property(id: prop.id, value: pv))
+
+                    wm = Message(
+                        topic: w.message.topic,
+                        payload: w.message.payload,
+                        qos: w.message.qos,
+                        retain: w.message.retain,
+                        dup: w.message.dup,
+                        packet_id: w.message.packet_id,
+                        properties: wm_list
+                    )
+
+                    .message(message: wm)
+
+            return ok(
+                .connect(version: c.version, client_id: c.client_id, clean_start: c.clean_start, keep_alive: c.keep_alive, username: c.username, has_username: c.has_username, password: c.password, has_password: c.has_password, will: will, properties: list)
+            )
+        .connack a =>
+            list: [Property] @= []
+
+            for prop in a.properties
+                pv: PropertyValue = match prop.value
+                    .number nv => .number(v: nv.v)
+                    .text tv   => .text(v: tv.v)
+                    .data dv   => .data(v: dv.v)
+                    .pair qv   => .pair(name: qv.name, value: qv.value)
+
+                list @ list.push(Property(id: prop.id, value: pv))
+
+            return ok(.connack(session_present: a.session_present, reason: a.reason, properties: list))
+        .publish m =>
+            one_list: [Property] @= []
+
+            for prop in m.message.properties
+                pv: PropertyValue = match prop.value
+                    .number nv => .number(v: nv.v)
+                    .text tv   => .text(v: tv.v)
+                    .data dv   => .data(v: dv.v)
+                    .pair qv   => .pair(name: qv.name, value: qv.value)
+
+                one_list @ one_list.push(Property(id: prop.id, value: pv))
+
+            one = Message(
+                topic: m.message.topic,
+                payload: m.message.payload,
+                qos: m.message.qos,
+                retain: m.message.retain,
+                dup: m.message.dup,
+                packet_id: m.message.packet_id,
+                properties: one_list
+            )
+
+            return ok(.publish(message: one))
+        .puback a =>
+            list: [Property] @= []
+
+            for prop in a.properties
+                pv: PropertyValue = match prop.value
+                    .number nv => .number(v: nv.v)
+                    .text tv   => .text(v: tv.v)
+                    .data dv   => .data(v: dv.v)
+                    .pair qv   => .pair(name: qv.name, value: qv.value)
+
+                list @ list.push(Property(id: prop.id, value: pv))
+
+            return ok(.puback(packet_id: a.packet_id, reason: a.reason, properties: list))
+        .pubrec a =>
+            list: [Property] @= []
+
+            for prop in a.properties
+                pv: PropertyValue = match prop.value
+                    .number nv => .number(v: nv.v)
+                    .text tv   => .text(v: tv.v)
+                    .data dv   => .data(v: dv.v)
+                    .pair qv   => .pair(name: qv.name, value: qv.value)
+
+                list @ list.push(Property(id: prop.id, value: pv))
+
+            return ok(.pubrec(packet_id: a.packet_id, reason: a.reason, properties: list))
+        .pubrel a =>
+            list: [Property] @= []
+
+            for prop in a.properties
+                pv: PropertyValue = match prop.value
+                    .number nv => .number(v: nv.v)
+                    .text tv   => .text(v: tv.v)
+                    .data dv   => .data(v: dv.v)
+                    .pair qv   => .pair(name: qv.name, value: qv.value)
+
+                list @ list.push(Property(id: prop.id, value: pv))
+
+            return ok(.pubrel(packet_id: a.packet_id, reason: a.reason, properties: list))
+        .pubcomp a =>
+            list: [Property] @= []
+
+            for prop in a.properties
+                pv: PropertyValue = match prop.value
+                    .number nv => .number(v: nv.v)
+                    .text tv   => .text(v: tv.v)
+                    .data dv   => .data(v: dv.v)
+                    .pair qv   => .pair(name: qv.name, value: qv.value)
+
+                list @ list.push(Property(id: prop.id, value: pv))
+
+            return ok(.pubcomp(packet_id: a.packet_id, reason: a.reason, properties: list))
+        .subscribe s =>
+            subs: [Subscription] @= []
+
+            for one in s.subscriptions
+                subs @ subs.push(
+                    Subscription(filter: one.filter, qos: one.qos, no_local: one.no_local, retain_as_published: one.retain_as_published, retain_handling: one.retain_handling)
+                )
+
+            list: [Property] @= []
+
+            for prop in s.properties
+                pv: PropertyValue = match prop.value
+                    .number nv => .number(v: nv.v)
+                    .text tv   => .text(v: tv.v)
+                    .data dv   => .data(v: dv.v)
+                    .pair qv   => .pair(name: qv.name, value: qv.value)
+
+                list @ list.push(Property(id: prop.id, value: pv))
+
+            return ok(.subscribe(packet_id: s.packet_id, subscriptions: subs, properties: list))
+        .suback s =>
+            list: [Property] @= []
+
+            for prop in s.properties
+                pv: PropertyValue = match prop.value
+                    .number nv => .number(v: nv.v)
+                    .text tv   => .text(v: tv.v)
+                    .data dv   => .data(v: dv.v)
+                    .pair qv   => .pair(name: qv.name, value: qv.value)
+
+                list @ list.push(Property(id: prop.id, value: pv))
+
+            return ok(.suback(packet_id: s.packet_id, reasons: s.reasons, properties: list))
+        .unsubscribe u =>
+            list: [Property] @= []
+
+            for prop in u.properties
+                pv: PropertyValue = match prop.value
+                    .number nv => .number(v: nv.v)
+                    .text tv   => .text(v: tv.v)
+                    .data dv   => .data(v: dv.v)
+                    .pair qv   => .pair(name: qv.name, value: qv.value)
+
+                list @ list.push(Property(id: prop.id, value: pv))
+
+            return ok(.unsubscribe(packet_id: u.packet_id, filters: u.filters, properties: list))
+        .unsuback u =>
+            list: [Property] @= []
+
+            for prop in u.properties
+                pv: PropertyValue = match prop.value
+                    .number nv => .number(v: nv.v)
+                    .text tv   => .text(v: tv.v)
+                    .data dv   => .data(v: dv.v)
+                    .pair qv   => .pair(name: qv.name, value: qv.value)
+
+                list @ list.push(Property(id: prop.id, value: pv))
+
+            return ok(.unsuback(packet_id: u.packet_id, reasons: u.reasons, properties: list))
+        .pingreq  => return ok(.pingreq)
+        .pingresp => return ok(.pingresp)
+        .disconnect d =>
+            list: [Property] @= []
+
+            for prop in d.properties
+                pv: PropertyValue = match prop.value
+                    .number nv => .number(v: nv.v)
+                    .text tv   => .text(v: tv.v)
+                    .data dv   => .data(v: dv.v)
+                    .pair qv   => .pair(name: qv.name, value: qv.value)
+
+                list @ list.push(Property(id: prop.id, value: pv))
+
+            return ok(.disconnect(reason: d.reason, properties: list))
+        .auth a =>
+            list: [Property] @= []
+
+            for prop in a.properties
+                pv: PropertyValue = match prop.value
+                    .number nv => .number(v: nv.v)
+                    .text tv   => .text(v: tv.v)
+                    .data dv   => .data(v: dv.v)
+                    .pair qv   => .pair(name: qv.name, value: qv.value)
+
+                list @ list.push(Property(id: prop.id, value: pv))
+
+            return ok(.auth(reason: a.reason, properties: list))
+
+## Tests
+
+test "options: the defaults, every one"
+    o = options("h")
+    assert o.host == "h" && o.port == 1883 && o.transport == .tcp && o.roots == "" && o.version == 5 && o.client_id == ""
+    assert o.clean_start && o.keep_alive_s == 60 && o.username == "" && o.password == [] && o.will == .none && o.properties == []
+    assert o.connect_ms == 10000 && o.wait_ms == 10000 && o.most_packet_bytes == 16777216 && !o.manual_acks && o.most_held == 65536
+    assert o.reconnect == default_reconnect()
+
+test "parse_url: each scheme and its port, a login, a WebSocket's path, an IPv6 host, and what is refused"
+    a = parse_url("mqtt://u:p%40ss@broker:1999").must()
+    assert a.host == "broker" && a.port == 1999 && a.transport == .tcp && a.username == "u" && a.password == [112, 64, 115, 115]
+    assert parse_url("tcp://h").must().port == 1883 && parse_url("mqtts://h").must().port == 8883 && parse_url("ssl://h").must().transport == .tls
+    assert parse_url("tls://h").must().port == 8883 && parse_url("ws://h").must().transport == .websocket(path: "/mqtt")
+    assert parse_url("ws://h:9001/ws").must().transport == .websocket(path: "/ws") && parse_url("wss://h").must().port == 443
+    assert parse_url("mqtt://[::1]").must().host == "::1"
+    assert parse_url("http://h").is_err() && parse_url("mqtt://").is_err() && parse_url("mqtt://h:0").is_err()
+    assert parse_url("mqtt://h/x").is_err() && parse_url("mqtt://h?a=1").is_err() && parse_url("nonsense").is_err()
+
+test "number_of, text_of, data_of and pairs_of: found, absent, of another kind, the pairs in order"
+    list = [
+        Property(id: MESSAGE_EXPIRY_INTERVAL, value: .number(v: 30))
+        Property(id: CONTENT_TYPE, value: .text(v: "text/plain"))
+        Property(id: CORRELATION_DATA, value: .data(v: [1]))
+        Property(id: USER_PROPERTY, value: .pair(name: "a", value: "1"))
+        Property(id: USER_PROPERTY, value: .pair(name: "b", value: "2"))
+    ]
+    assert number_of(list, id: MESSAGE_EXPIRY_INTERVAL).must() == 30 && number_of(list, id: TOPIC_ALIAS).is_err()
+    assert text_of(list, id: CONTENT_TYPE).must() == "text/plain" && text_of(list, id: MESSAGE_EXPIRY_INTERVAL).is_err()
+    assert data_of(list, id: CORRELATION_DATA).must() == [1] && data_of([], id: CORRELATION_DATA).is_err()
+    assert pairs_of(list) == [Pair(name: "a", value: "1"), Pair(name: "b", value: "2")] && pairs_of([]) == []
+
+test "reason_text: paho-mqtt's names, the first and the last, and a code MQTT 5 does not define"
+    assert reason_text(0).must() == "Success" && reason_text(135).must() == "Not authorized"
+    assert reason_text(162).must() == "Wildcard subscription not supported" && reason_text(17).must() == "No subscription found"
+    assert reason_text(3).is_err() && reason_text(163).is_err() && reason_text(-1).is_err()
+
+test "encode and decode through the face: every kind of packet written and read back the same, in both versions"
+    will = Message(
+        topic: "w",
+        payload: [1],
+        qos: 1,
+        retain: true,
+        dup: false,
+        packet_id: 0,
+        properties: [Property(id: WILL_DELAY_INTERVAL, value: .number(v: 5))]
+    )
+    m = Message(
+        topic: "t/x",
+        payload: [1, 2],
+        qos: 2,
+        retain: false,
+        dup: true,
+        packet_id: 9,
+        properties: [Property(id: USER_PROPERTY, value: .pair(name: "k", value: "v"))]
+    )
+    sub = Subscription(filter: "t/#", qos: 1, no_local: true, retain_as_published: true, retain_handling: 2)
+    reason = [Property(id: REASON_STRING, value: .text(v: "why"))]
+    five: [Packet] = [
+        .connect(version: 5, client_id: "id", clean_start: false, keep_alive: 10, username: "", has_username: true, password: [], has_password: true, will: .message(message: will), properties: [Property(id: SESSION_EXPIRY_INTERVAL, value: .number(v: 60))])
+        .connack(session_present: true, reason: 0, properties: [Property(id: ASSIGNED_CLIENT_IDENTIFIER, value: .text(v: "a"))])
+        .publish(message: m)
+        .puback(packet_id: 1, reason: 16, properties: reason)
+        .pubrec(packet_id: 2, reason: 0, properties: [])
+        .pubrel(packet_id: 3, reason: 146, properties: [])
+        .pubcomp(packet_id: 4, reason: 0, properties: reason)
+        .subscribe(packet_id: 5, subscriptions: [sub], properties: [Property(id: SUBSCRIPTION_IDENTIFIER, value: .number(v: 268435455))])
+        .suback(packet_id: 5, reasons: [1, 135], properties: reason)
+        .unsubscribe(packet_id: 6, filters: ["a", "b/+"], properties: [])
+        .unsuback(packet_id: 6, reasons: [0, 17], properties: [])
+        .pingreq
+        .pingresp
+        .disconnect(reason: 4, properties: [Property(id: SESSION_EXPIRY_INTERVAL, value: .number(v: 0))])
+        .auth(reason: 24, properties: [Property(id: AUTHENTICATION_METHOD, value: .text(v: "SCRAM-SHA-1")), Property(id: AUTHENTICATION_DATA, value: .data(v: [0, 255]))])
+    ]
+
+    for p in five
+        assert decode(encode(p, version: 5).must(), version: 5).must() == p
+
+    four: [Packet] = [
+        .connect(version: 4, client_id: "id", clean_start: true, keep_alive: 0, username: "u", has_username: true, password: [0], has_password: true, will: .none, properties: [])
+        .publish(message: Message(topic: "a", payload: [], qos: 1, retain: true, dup: false, packet_id: 65535, properties: []))
+        .subscribe(packet_id: 1, subscriptions: [subscription("a/+", qos: 2)], properties: [])
+        .suback(packet_id: 1, reasons: [128], properties: [])
+        .unsuback(packet_id: 2, reasons: [], properties: [])
+        .disconnect(reason: 0, properties: [])
+    ]
+
+    for p in four
+        assert decode(encode(p, version: 4).must(), version: 4).must() == p
+
+test "encode and decode through the face: a property of the wrong kind, one not allowed, a level of 3"
+    assert encode(
+        .puback(packet_id: 1, reason: 0, properties: [Property(id: REASON_STRING, value: .number(v: 1))]),
+        version: 5
+    ).is_err()
+    assert encode(
+        .puback(packet_id: 1, reason: 0, properties: [Property(id: TOPIC_ALIAS, value: .number(v: 1))]),
+        version: 5
+    ).is_err()
+    assert decode([192, 0], version: 3).is_err()
+
+test "connect: options refused before any connection"
+    o @= options("h")
+    o.port @ 0
+    assert connect(o).is_err()
+    o @ options("h")
+    o.version @ 3
+
+    match connect(o)
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported"
+
+test "connect live, against the server REBEL_MQTT_URL names, in MQTT 5 and 3.1.1: every QoS, retained messages, a will, properties, options, sessions, acknowledgements by hand, a reconnection"
+    match os.env("REBEL_MQTT_URL")
+        .err _ => print("connect live: skipped, REBEL_MQTT_URL names no server")
+        .ok text =>
+            for version in [5, 4]
+                o @= parse_url(text).must()
+                o.version @ version
+                o.client_id @ f"rebel-live-{version}"
+                c @= connect(o).must()
+                assert !is_closed(c) && client_id_of(c) == f"rebel-live-{version}"
+                assert subscribe(@c, topic_filter: f"live{version}/#", qos: 2).must() == 2
+                publish(@c, topic: f"live{version}/q0", payload: [0], qos: 0, retain: false).must()
+                publish(@c, topic: f"live{version}/q1", payload: [1], qos: 1, retain: false).must()
+                publish(@c, topic: f"live{version}/q2", payload: [2], qos: 2, retain: false).must()
+                got: [i64] @= []
+
+                for _ in range(from: 0, to: 3)
+                    m = next_message(@c, wait_ms: 5000).must()
+                    got @ got.push(m.qos * 10 + to_i64(m.payload[0]).must())
+
+                assert got == [0, 11, 22]
+                big: [u8] @= []
+
+                for at in range(from: 0, to: 1000000)
+                    big @ big.push(to_u8(at % 253).must())
+
+                publish(@c, topic: f"live{version}/big", payload: big, qos: 1, retain: false).must()
+                assert next_message(@c, wait_ms: 10000).must().payload == big
+
+                for n in range(from: 0, to: 1000)
+                    publish(
+                        @c,
+                        topic: f"live{version}/many",
+                        payload: [to_u8(n % 256).must()],
+                        qos: 1,
+                        retain: false
+                    ).must()
+
+                for n in range(from: 0, to: 1000)
+                    assert next_message(@c, wait_ms: 5000).must().payload == [to_u8(n % 256).must()]
+
+                publish(@c, topic: f"retained{version}/a", payload: [7], qos: 1, retain: true).must()
+                assert subscribe(@c, topic_filter: f"retained{version}/+", qos: 1).must() == 1
+                kept = next_message(@c, wait_ms: 5000).must()
+                assert kept.retain && kept.payload == [7] && kept.topic == f"retained{version}/a"
+                publish(@c, topic: f"retained{version}/a", payload: [], qos: 1, retain: true).must()
+                _ = next_message(@c, wait_ms: 5000).must()
+                unsubscribe(@c, topic_filter: f"retained{version}/+").must()
+                assert unsubscribe_many(@c, filters: [f"live{version}/#", "never/subscribed"], properties: []).must().len() == 2
+                ping(@c, wait_ms: 5000).must()
+                w @= parse_url(text).must()
+                w.version @ version
+                w.client_id @ f"rebel-will-{version}"
+                w.will @ .message(message: message(f"will{version}/gone", payload: [9]))
+                dying @= connect(w).must()
+                _ = subscribe(@c, topic_filter: f"will{version}/+", qos: 0).must()
+                drop(@dying).must()
+                assert next_message(@c, wait_ms: 5000).must().payload == [9]
+                reconnect(@c).must()
+                assert stats_of(c).reconnects == 1
+                publish(@c, topic: f"will{version}/after", payload: [3], qos: 1, retain: false).must()
+                assert next_message(@c, wait_ms: 5000).must().payload == [3]
+                close(@c).must()
+                assert is_closed(c) && publish(@c, topic: "a", payload: [], qos: 0, retain: false).is_err()
+
+            five @= parse_url(text).must()
+            five.client_id @ "rebel-props"
+            five.properties @ [Property(id: SESSION_EXPIRY_INTERVAL, value: .number(v: 60))]
+            five.clean_start @ true
+            p @= connect(five).must()
+            sub = Subscription(
+                filter: "props/#",
+                qos: 1,
+                no_local: false,
+                retain_as_published: false,
+                retain_handling: 0
+            )
+            assert subscribe_many(@p, subscriptions: [sub], properties: [Property(id: SUBSCRIPTION_IDENTIFIER, value: .number(v: 7))]).must() == [1]
+            local = Subscription(
+                filter: "local/#",
+                qos: 0,
+                no_local: true,
+                retain_as_published: false,
+                retain_handling: 0
+            )
+            _ = subscribe_many(@p, subscriptions: [local], properties: []).must()
+            out @= message("props/x", payload: [1])
+            out.qos @ 1
+            out.properties @ [
+                Property(id: CONTENT_TYPE, value: .text(v: "text/plain"))
+                Property(id: RESPONSE_TOPIC, value: .text(v: "props/answer"))
+                Property(id: CORRELATION_DATA, value: .data(v: [4, 2]))
+                Property(id: USER_PROPERTY, value: .pair(name: "k", value: "città"))
+                Property(id: MESSAGE_EXPIRY_INTERVAL, value: .number(v: 60))
+            ]
+            publish(@p, topic: "local/x", payload: [1], qos: 0, retain: false).must()
+            publish_message(@p, m: out).must()
+            back = next_message(@p, wait_ms: 5000).must()
+            assert back.topic == "props/x" && text_of(back.properties, id: CONTENT_TYPE).must() == "text/plain"
+            assert data_of(back.properties, id: CORRELATION_DATA).must() == [4, 2] && pairs_of(back.properties) == [Pair(name: "k", value: "città")]
+            assert number_of(back.properties, id: SUBSCRIPTION_IDENTIFIER).must() == 7
+            assert text_of(back.properties, id: RESPONSE_TOPIC).must() == "props/answer"
+            disconnect(@p, reason: 0, properties: []).must()
+            again @= five
+            again.clean_start @ false
+            q @= connect(again).must()
+            assert connack_of(q).session_present
+            manual @= parse_url(text).must()
+            manual.client_id @ "rebel-manual"
+            manual.manual_acks @ true
+            h @= connect(manual).must()
+            _ = subscribe(@h, topic_filter: "manual/#", qos: 2).must()
+            publish(@q, topic: "manual/a", payload: [5], qos: 2, retain: false).must()
+            got = next_message(@h, wait_ms: 5000).must()
+            assert got.qos == 2 && got.payload == [5]
+            ack(@h, m: got).must()
+            assert ack(@h, m: got).is_err()
+            ping(@h, wait_ms: 5000).must()
+            shared_a @= connect(parse_url(text).must()).must()
+            _ = subscribe(@shared_a, topic_filter: "$share/g/shared/#", qos: 1).must()
+            publish(@q, topic: "shared/1", payload: [6], qos: 1, retain: false).must()
+            assert next_message(@shared_a, wait_ms: 5000).must().payload == [6]
+            close(@shared_a).must()
+            close(@h).must()
+            disconnect(@q, reason: 0, properties: [Property(id: SESSION_EXPIRY_INTERVAL, value: .number(v: 0))]).must()
+            print(
+                "connect live: MQTT 5 and 3.1.1, QoS 0 to 2, 1 MB, 1000 messages, a retained message, a will, properties, a session kept, acknowledgements by hand, a shared subscription, a reconnection"
+            )
+
+test "connect live, many clients on one thread: two clients' streams waited on by poll, each read when ready"
+    match os.env("REBEL_MQTT_URL")
+        .err _ => print("poll live: skipped, REBEL_MQTT_URL names no server")
+        .ok text =>
+            a @= connect(parse_url(text).must()).must()
+            b @= connect(parse_url(text).must()).must()
+            _ = subscribe(@a, topic_filter: "poll/a", qos: 1).must()
+            _ = subscribe(@b, topic_filter: "poll/b", qos: 1).must()
+            set @= poll.make(4).must()
+
+            match poll.add_stream(set, s: stream_of(a).must(), interest: .read)
+                .err e => print(f"poll live: {e.code}, {e.msg}")
+                .ok ka =>
+                    kb = poll.add_stream(set, s: stream_of(b).must(), interest: .read).must()
+                    publish(@a, topic: "poll/b", payload: [2], qos: 1, retain: false).must()
+                    publish(@b, topic: "poll/a", payload: [1], qos: 1, retain: false).must()
+                    got: [i64] @= []
+                    tries: i64 @= 0
+
+                    while got.len() < 2 && tries < 20
+                        if held_of(a) > 0
+                            for m in read_ready(@a).must()
+                                got @ got.push(to_i64(m.payload[0]).must())
+
+                        if held_of(b) > 0
+                            for m in read_ready(@b).must()
+                                got @ got.push(to_i64(m.payload[0]).must())
+
+                        for ev in poll.wait(set, limit: time.milliseconds(500).must()).must()
+                            if ev.key == ka
+                                for m in read_ready(@a).must()
+                                    got @ got.push(to_i64(m.payload[0]).must())
+
+                            if ev.key == kb
+                                for m in read_ready(@b).must()
+                                    got @ got.push(to_i64(m.payload[0]).must())
+
+                        tries @ tries + 1
+
+                    assert got.len() == 2 && got[0] + got[1] == 3
+
+            poll.close(@set).must()
+            close(@a).must()
+            close(@b).must()
+
+test "connect live, a login, TLS and a WebSocket, as the variables name them; a wrong password refused"
+    match os.env("REBEL_MQTT_AUTH_URL")
+        .err _ => print("auth live: skipped, REBEL_MQTT_AUTH_URL names no server")
+        .ok text =>
+            for version in [5, 4]
+                o @= parse_url(text).must()
+                o.version @ version
+                c @= connect(o).must()
+                ping(@c, wait_ms: 5000).must()
+                close(@c).must()
+                o.password @ [119, 114, 111, 110, 103]
+
+                match connect(o)
+                    .ok _  => assert false
+                    .err e => assert e.code == "permission"
+
+    match os.env("REBEL_MQTT_TLS_URL")
+        .err _ => print("tls live: skipped, REBEL_MQTT_TLS_URL names no server")
+        .ok text =>
+            o @= parse_url(text).must()
+            o.roots @ tls.TEST_ROOT
+            c @= connect(o).must()
+            _ = subscribe(@c, topic_filter: "tls/x", qos: 1).must()
+            publish(@c, topic: "tls/x", payload: [8], qos: 1, retain: false).must()
+            assert next_message(@c, wait_ms: 5000).must().payload == [8]
+            close(@c).must()
+
+    match os.env("REBEL_MQTT_WS_URL")
+        .err _ => print("websocket live: skipped, REBEL_MQTT_WS_URL names no server")
+        .ok text =>
+            for version in [5, 4]
+                o @= parse_url(text).must()
+                o.version @ version
+                c @= connect(o).must()
+                _ = subscribe(@c, topic_filter: "ws/x", qos: 2).must()
+                data: [u8] @= []
+
+                for at in range(from: 0, to: 200000)
+                    data @ data.push(to_u8(at % 256).must())
+
+                publish(@c, topic: "ws/x", payload: data, qos: 2, retain: false).must()
+                assert next_message(@c, wait_ms: 5000).must().payload == data
+                close(@c).must()
+
+## Examples
+
+# The reconnection's defaults.
+test "default_reconnect: what a client tries after a loss"
+    r = default_reconnect()
+    assert r.attempts == 60 && r.wait_ms == 250 && r.most_wait_ms == 8000
+
+# The options of a local server in MQTT 3.1.1, with a keep-alive of 30
+# seconds.
+test "options: a local server, 3.1.1"
+    o @= options("localhost")
+    o.version @ 4
+    o.keep_alive_s @ 30
+    assert o.port == 1883 && o.version == 4
+
+# The options a URL names.
+test "parse_url: a login and a TLS port"
+    o = parse_url("mqtts://app:pw@broker.lan").must()
+    assert o.transport == .tls && o.port == 8883 && o.username == "app"
+
+# A connection to a local server, where one answers; elsewhere it shows
+# nothing.
+test "connect: a local server"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            assert !is_closed(c)
+            close(@c).must()
+
+# A client closed with `DISCONNECT`.
+test "close: the end of a client"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            close(@c).must()
+            assert is_closed(c)
+
+# A client ended asking the server to publish its will all the same.
+test "disconnect: with the will published"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            disconnect(@c, reason: 4, properties: []).must()
+
+# A client dropped, as a crash would.
+test "drop: no DISCONNECT"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            drop(@c).must()
+            assert is_closed(c)
+
+# Whether a client is closed.
+test "is_closed: before and after close"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            assert !is_closed(c)
+            close(@c).must()
+            assert is_closed(c)
+
+# A new connection asked for.
+test "reconnect: a new connection"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            reconnect(@c).must()
+            assert stats_of(c).reconnects == 1
+            close(@c).must()
+
+# What the server's `CONNACK` said.
+test "connack_of: no session on a clean start"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            assert !connack_of(c).session_present
+            close(@c).must()
+
+# The identifier the server assigned.
+test "client_id_of: one assigned where none was given"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            assert client_id_of(c) != ""
+            close(@c).must()
+
+# What a client holds before a program waits on its stream.
+test "held_of: nothing on a fresh client"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            assert held_of(c) == 0
+            close(@c).must()
+
+# The stream a program waits on with `poll`.
+test "stream_of: the client's stream"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            assert !io.is_closed(stream_of(c).must())
+            close(@c).must()
+
+# What a client has carried.
+test "stats_of: one message out"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            publish(@c, topic: "ex/stats", payload: [1], qos: 0, retain: false).must()
+            assert stats_of(c).messages_out == 1
+            close(@c).must()
+
+# A message built, then given QoS 1.
+test "message: QoS 0 first"
+    m @= message("sensors/1", payload: [21])
+    m.qos @ 1
+    assert m.topic == "sensors/1" && m.qos == 1 && !m.retain
+
+# A message published at QoS 1.
+test "publish: at least once"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            publish(@c, topic: "ex/publish", payload: [1, 2], qos: 1, retain: false).must()
+            close(@c).must()
+
+# A message published with MQTT 5's properties.
+test "publish_message: a content type and a user property"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            m @= message("ex/props", payload: [123, 125])
+            m.properties @ [
+                Property(id: CONTENT_TYPE, value: .text(v: "application/json"))
+                Property(id: USER_PROPERTY, value: .pair(name: "trace", value: "1"))
+            ]
+            publish_message(@c, m: m).must()
+            close(@c).must()
+
+# A subscription built.
+test "subscription: a filter and a QoS"
+    s = subscription("sensors/+/temp", qos: 1)
+    assert s.filter == "sensors/+/temp" && s.retain_handling == 0
+
+# A subscription with a wildcard.
+test "subscribe: every sensor"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            assert subscribe(@c, topic_filter: "ex/sensors/#", qos: 1).must() == 1
+            close(@c).must()
+
+# Two subscriptions at once, one with no local messages.
+test "subscribe_many: two filters"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            mine @= subscription("ex/chat/#", qos: 1)
+            mine.no_local @ true
+            assert subscribe_many(@c, subscriptions: [mine, subscription("ex/news", qos: 0)], properties: []).must().len() == 2
+            close(@c).must()
+
+# A subscription ended.
+test "unsubscribe: no longer listening"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            _ = subscribe(@c, topic_filter: "ex/unsub", qos: 0).must()
+            unsubscribe(@c, topic_filter: "ex/unsub").must()
+            close(@c).must()
+
+# Two subscriptions ended at once, one of which never existed.
+test "unsubscribe_many: a code each"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            _ = subscribe(@c, topic_filter: "ex/a", qos: 0).must()
+            assert unsubscribe_many(@c, filters: ["ex/a", "ex/never"], properties: []).must() == [0, 17]
+            close(@c).must()
+
+# A message published to itself and read back.
+test "next_message: one's own message"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            _ = subscribe(@c, topic_filter: "ex/next", qos: 1).must()
+            publish(@c, topic: "ex/next", payload: [42], qos: 1, retain: false).must()
+            assert next_message(@c, wait_ms: 2000).must().payload == [42]
+            close(@c).must()
+
+# What a client holds once its stream is readable.
+test "read_ready: the messages that came"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            _ = subscribe(@c, topic_filter: "ex/ready", qos: 1).must()
+            publish(@c, topic: "ex/ready", payload: [1], qos: 1, retain: false).must()
+            ping(@c, wait_ms: 2000).must()
+            assert read_ready(@c).must().len() == 1
+            close(@c).must()
+
+# A message acknowledged by the program.
+test "ack: by hand"
+    o @= options("localhost")
+    o.manual_acks @ true
+
+    match connect(o)
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            _ = subscribe(@c, topic_filter: "ex/ack", qos: 1).must()
+            publish(@c, topic: "ex/ack", payload: [1], qos: 1, retain: false).must()
+            ack(@c, m: next_message(@c, wait_ms: 2000).must()).must()
+            close(@c).must()
+
+# A round trip to the server.
+test "ping: a PINGRESP"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            ping(@c, wait_ms: 2000).must()
+            close(@c).must()
+
+# A topic checked.
+test "is_valid_topic: levels, no wildcard"
+    assert is_valid_topic("home/kitchen/temp") && !is_valid_topic("home/+/temp")
+
+# A filter checked.
+test "is_valid_filter: a wildcard in its place"
+    assert is_valid_filter("home/+/temp") && !is_valid_filter("home/#/temp")
+
+# A topic matched.
+test "matches: one level and the rest"
+    assert matches(pattern: "home/+/temp", topic: "home/kitchen/temp") && matches(pattern: "home/#", topic: "home")
+
+# A property's number.
+test "number_of: a message's expiry"
+    assert number_of([Property(id: MESSAGE_EXPIRY_INTERVAL, value: .number(v: 60))], id: MESSAGE_EXPIRY_INTERVAL).must() == 60
+
+# A property's text.
+test "text_of: a content type"
+    assert text_of([Property(id: CONTENT_TYPE, value: .text(v: "text/csv"))], id: CONTENT_TYPE).must() == "text/csv"
+
+# A property's bytes.
+test "data_of: correlation data"
+    assert data_of([Property(id: CORRELATION_DATA, value: .data(v: [7]))], id: CORRELATION_DATA).must() == [7]
+
+# The user properties of a message.
+test "pairs_of: one user property"
+    assert pairs_of([Property(id: USER_PROPERTY, value: .pair(name: "a", value: "b"))]) == [Pair(name: "a", value: "b")]
+
+# A reason code's name.
+test "reason_text: a quota spent"
+    assert reason_text(151).must() == "Quota exceeded"
+
+# A `PINGREQ` written.
+test "encode: the two bytes of a PINGREQ"
+    assert encode(.pingreq, version: 5).must() == [192, 0]
+
+# A `PUBACK` read.
+test "decode: a PUBACK of MQTT 5"
+    assert decode([64, 3, 0, 1, 16], version: 5).must() == .puback(packet_id: 1, reason: 16, properties: [])

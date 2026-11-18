@@ -1,0 +1,275 @@
+# The server's side of the conversation: bytes read into the session, one
+# operation scanned at a time, and each acted on: a `PING` answered, a
+# `PONG` counted, an `INFO` kept, an `-ERR` kept or told, a message held or
+# handed to the request that waits for it. A connection that ends, or
+# bytes that are no NATS, lose the connection: the link is closed and the
+# failure answered, for the caller to reconnect or give up.
+
+use bytes
+use nats/internal/fixture
+use nats/internal/info
+use nats/internal/link
+use nats/internal/model
+use nats/internal/protocol
+use nats/internal/scanning
+use nats/internal/servers
+use nats/internal/state
+use strings
+use time
+
+# The room a message may take past the server's `max_payload`: headers a
+# server adds itself.
+constant SLACK: i64
+    1048576
+
+# What one operation did.
+variant Event
+    # A message of a subscription was held, or dropped past the most held.
+    held
+    # A message on the requests' subscription.
+    reply
+        # The message.
+        m: model.Message
+    # A `PONG`.
+    pong
+    # An `-ERR`.
+    error
+        # Its words.
+        text: str
+    # Anything else: a `PING` answered, an `INFO`, a `+OK`, a message of no
+    # subscription the client holds.
+    other
+
+# The monotonic clock in milliseconds; 0 where it cannot be read.
+function now_ms() -> i64
+    return match time.mark()
+        .ok m  => m.nanoseconds / 1000000
+        .err _ => 0
+
+# Loses the connection: closes the link and answers the failure.
+#
+# - `s`: the session, no longer open.
+# - `code`: the failure's code.
+# - `msg`: what happened.
+function lost<T>(@s: state.Session, code: str, msg: str) -> T?
+    link.close(@s.link)
+    s.open @ false
+
+    if s.last_error != ""
+        return fail(code: code, msg: msg + f" (the server said: {s.last_error})")
+    return fail(code: code, msg: msg)
+
+# Whether a failure leaves the connection in step: a deadline that passed or
+# the stop asked, while nothing was half read.
+#
+# - `code`: the failure's code.
+function keeps_step(code: str) -> bool
+    return code == model.TIMEOUT || code == model.STOPPED
+
+# Reads more of the server's bytes into the session.
+#
+# - `s`: the session; the connection lost where the read fails otherwise
+#   than by its deadline or the stop.
+function fill(@s: state.Session) -> ()?
+    match link.read(@s.link, target: s.target)
+        .ok got =>
+            bytes.push_all(to: @s.buf, from: got)
+
+            if s.options.ping_interval_ms > 0
+                s.ping_due @ now_ms() + s.options.ping_interval_ms
+            return ok()
+        .err e =>
+            if keeps_step(e.code)
+                return fail(code: e.code, msg: e.msg)
+            return lost(@s, code: e.code, msg: e.msg)
+
+# Cuts the bytes given out from the front of the buffer, once they are most
+# of it.
+#
+# - `s`: the session.
+function compact(@s: state.Session)
+    if s.at == s.buf.len()
+        s.buf @ []
+        s.at @ 0
+    else if s.at > 65536 && s.at * 2 > s.buf.len()
+        s.buf @ s.buf.slice(from: s.at, to: s.buf.len())
+        s.at @ 0
+
+# The next operation whole in the buffer, without reading; incomplete where
+# there is none.
+#
+# - `s`: the session; the connection lost where the bytes are no NATS.
+function buffered(@s: state.Session) -> scanning.Scanned?
+    compact(@s)
+
+    match scanning.scan(s.buf, at: s.at, most: s.info.max_payload + SLACK)
+        .ok got =>
+            if got.complete
+                s.at @ got.next
+            return ok(got)
+        .err e => return lost(@s, code: e.code, msg: f"{s.target} sent bytes that are no NATS: {e.msg}")
+
+# The next operation, reading until it is whole.
+#
+# - `s`: the session.
+function next_op(@s: state.Session) -> scanning.Op?
+    while true
+        got = buffered(@s)?
+
+        if got.complete
+            return ok(got.op)
+        fill(@s)?
+
+# Whether an `-ERR` leaves the connection open: a permission refused, a
+# subject refused.
+#
+# - `text`: its words.
+function is_soft(text: str) -> bool
+    lower = strings.to_lower_ascii(text)
+    return strings.has_prefix(s: lower, prefix: "permissions violation") || strings.has_prefix(s: lower, prefix: "invalid subject")
+
+# Writes `PONG`, losing the connection where the write fails.
+#
+# - `s`: the session.
+function answer_ping(@s: state.Session) -> ()?
+    match link.write(@s.link, data: protocol.pong())
+        .ok _  => return ok()
+        .err e => return lost(@s, code: e.code, msg: f"answering a PING of {s.target}: {e.msg}")
+
+# Acts on `op`.
+#
+# - `s`: the session.
+# - `op`: the operation.
+function apply(@s: state.Session, op: scanning.Op) -> Event?
+    match op
+        .ping =>
+            answer_ping(@s)?
+            return ok(.other)
+        .pong =>
+            s.pongs_seen @ s.pongs_seen + 1
+            return ok(.pong)
+        .fine => return ok(.other)
+        .err e =>
+            if s.open && is_soft(e.text)
+                state.push_text(@s.errors, text: e.text)
+            else
+                s.last_error @ e.text
+            return ok(.error(text: e.text))
+        .info i =>
+            told = match info.read(i.text)
+                .ok got => got
+                .err e => return lost(@s, code: e.code, msg: f"{s.target} sent an INFO that is no JSON object: {e.msg}")
+
+            s.info @ told
+
+            if s.options.discovered && s.pool.len() > 0
+                scheme = s.pool[s.current].scheme
+
+                if scheme == "nats" || scheme == "tls"
+                    s.pool @ servers.joined(s.pool, told: told.connect_urls, scheme: scheme)
+            return ok(.other)
+        .msg _ => return message(@s, m: op)
+
+# Acts on a message the server sent.
+#
+# - `s`: the session.
+# - `m`: the operation's message.
+function message(@s: state.Session, m: scanning.Op) -> Event?
+    got = match m
+        .msg one                                 => one
+        .ping | .pong | .fine | .err _ | .info _ => return ok(.other)
+
+    read = if got.has_headers
+        match protocol.read_headers(got.block)
+            .ok h => h
+            .err e => return lost(
+                @s,
+                code: e.code,
+                msg: f"{s.target} sent a message on \"{got.subject}\" whose headers are refused: {e.msg}"
+            )
+    else
+        protocol.HeadersRead(headers: [], status: 0, description: "")
+    out = model.Message(
+        subject: got.subject,
+        reply: got.reply,
+        headers: read.headers,
+        data: got.data,
+        sid: got.sid,
+        status: read.status,
+        description: read.description
+    )
+    s.stats.messages_in @ s.stats.messages_in + 1
+    s.stats.bytes_in @ s.stats.bytes_in + got.data.len()
+
+    if s.mux_sid != 0 && got.sid == s.mux_sid
+        return ok(.reply(m: out))
+
+    sub @= match s.subs[got.sid]
+        .ok one => one
+        .err _  => return ok(.other)
+
+    if state.is_finished(sub)
+        return ok(.other)
+    sub.delivered @ sub.delivered + 1
+    state.put_sub(@s.subs, sub: sub)
+    state.hold(@s, m: out)
+    after = s.subs[got.sid].must()
+
+    if state.is_finished(after) && after.pending == 0
+        state.forget_sub(@s, sid: after.sid)
+    return ok(.held)
+
+test "apply: a PING answered with a PONG, a PONG counted, a soft -ERR kept, a hard one remembered"
+    r @= fixture.rig("")
+    assert apply(@r.session, op: .ping).must() == .other
+    assert fixture.read_n(r.peer.stream, n: 6) == bytes.from_text("PONG\r\n")
+    assert apply(@r.session, op: .pong).must() == .pong && r.session.pongs_seen == 1
+    _ = apply(@r.session, op: .err(text: "Permissions Violation for Subscription to \"x\"")).must()
+    _ = apply(@r.session, op: .err(text: "Stale Connection")).must()
+    assert r.session.errors.len() == 1 && r.session.last_error == "Stale Connection"
+    fixture.close_rig(@r)
+
+test "apply: a message held, one of no subscription dropped, the reply of a request handed back, headers read"
+    s @= state.sample()
+    a = state.add_sub(@s, subject: "a", queue: "", internal: false)
+    s.mux_sid @ 50
+    assert apply(@s, op: .msg(subject: "a", sid: a, reply: "", has_headers: false, block: [], data: [1])).must() == .held
+    assert apply(@s, op: .msg(subject: "z", sid: 9, reply: "", has_headers: false, block: [], data: [1])).must() == .other
+    got = apply(
+        @s,
+        op: .msg(subject: "r", sid: 50, reply: "", has_headers: true, block: bytes.from_text("NATS/1.0 503\r\n\r\n"), data: [])
+    ).must()
+
+    match got
+        .reply r                          => assert r.m.status == 503
+        .held | .pong | .error _ | .other => assert false
+
+    assert s.held_count == 1 && s.stats.messages_in == 3
+
+test "apply: a subscription that ends after two messages leaves once both are read"
+    s @= state.sample()
+    a = state.add_sub(@s, subject: "a", queue: "", internal: false)
+    sub @= s.subs[a].must()
+    sub.most @ 2
+    state.put_sub(@s.subs, sub: sub)
+
+    for _ in range(from: 0, to: 3)
+        _ = apply(@s, op: .msg(subject: "a", sid: a, reply: "", has_headers: false, block: [], data: [1])).must()
+
+    assert s.held_count == 2 && s.subs[a].must().delivered == 2
+    _ = state.take_first(@s).must()
+    _ = state.take_first(@s).must()
+    assert s.subs[a].is_err() && s.order == []
+
+test "buffered: an operation whole, then one cut, then bytes that are no NATS lose the connection"
+    s @= state.sample()
+    s.buf @ bytes.from_text("PONG\r\nPIN")
+    assert buffered(@s).must().complete && !buffered(@s).must().complete
+    s.buf @ bytes.from_text("WHAT\r\n")
+    s.at @ 0
+    s.open @ true
+    assert buffered(@s).is_err() && !s.open
+
+test "is_soft: a permission refused, an invalid subject, and the errors that close"
+    assert is_soft("Permissions Violation for Publish to \"x\"") && is_soft("Invalid Subject")
+    assert !is_soft("Authorization Violation") && !is_soft("Slow Consumer")

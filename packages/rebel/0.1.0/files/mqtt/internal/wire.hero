@@ -1,0 +1,258 @@
+# MQTT's data representations (MQTT 5.0 § 1.5, 3.1.1 § 1.5): the two- and
+# four-byte integers, the variable byte integer, the UTF-8 string with its
+# length before it and the binary data the same way, written into a list of
+# bytes and read from a cursor that never reads past the end it is given.
+
+use bytes
+use mqtt/internal/model
+
+# The largest variable byte integer, 268,435,455.
+constant MOST_VARINT: i64
+    268435455
+
+# Where a reader stands in a packet's bytes.
+record Cursor
+    # The bytes.
+    data: [u8]
+    # The next byte to read.
+    at: i64
+    # One past the last byte this cursor may read.
+    end: i64
+
+# A cursor over the whole of `data`.
+#
+# - `data`: the bytes.
+function cursor(data: [u8]) -> Cursor
+    return Cursor(data: data, at: 0, end: data.len())
+
+# The failure of a packet cut short.
+#
+# - `what`: what was being read.
+function short<T>(what: str) -> T?
+    return fail(code: model.INVALID, msg: f"the packet ends inside {what}")
+
+# Adds `n`, 0 to 255, as one byte.
+#
+# - `out`: the bytes being written.
+# - `n`: the number.
+function put_u8(@out: [u8], n: i64)
+    out @ out.push(to_u8(n).must())
+
+# Adds `n`, 0 to 65,535, as two bytes, most significant first.
+#
+# - `out`: the bytes being written.
+# - `n`: the number.
+function put_u16(@out: [u8], n: i64)
+    out @ out.push(to_u8(n >> 8).must())
+    out @ out.push(to_u8(n & 255).must())
+
+# Adds `n`, 0 to 4,294,967,295, as four bytes, most significant first.
+#
+# - `out`: the bytes being written.
+# - `n`: the number.
+function put_u32(@out: [u8], n: i64)
+    out @ out.push(to_u8(n >> 24 & 255).must())
+    out @ out.push(to_u8(n >> 16 & 255).must())
+    out @ out.push(to_u8(n >> 8 & 255).must())
+    out @ out.push(to_u8(n & 255).must())
+
+# Adds `n`, 0 to `MOST_VARINT`, as a variable byte integer.
+#
+# - `out`: the bytes being written.
+# - `n`: the number.
+function put_varint(@out: [u8], n: i64)
+    left: i64 @= n
+
+    while true
+        b = left % 128
+        left @ left / 128
+
+        if left > 0
+            out @ out.push(to_u8(b + 128).must())
+        else
+            out @ out.push(to_u8(b).must())
+            return
+
+# The bytes of `n` as a variable byte integer.
+#
+# - `n`: the number.
+function varint(n: i64) -> [u8]
+    out: [u8] @= []
+    put_varint(@out, n: n)
+    return out
+
+# Adds `s` with its length before it, as two bytes.
+#
+# - `out`: the bytes being written.
+# - `s`: the text, at most 65,535 bytes.
+#
+# Fails `invalid` where it is longer, or holds U+0000.
+function put_text(@out: [u8], s: str) -> ()?
+    if s.len() > 65535
+        return fail(code: model.INVALID, msg: f"a string of {s.len()} bytes is past MQTT's 65,535")
+
+    for b in bytes.from_text(s)
+        if b == 0
+            return fail(code: model.INVALID, msg: "a string holds the character U+0000, which MQTT refuses")
+
+    put_u16(@out, n: s.len())
+    bytes.push_text(to: @out, s: s)
+    return ok()
+
+# Adds `data` with its length before it, as two bytes.
+#
+# - `out`: the bytes being written.
+# - `data`: the bytes, at most 65,535.
+function put_binary(@out: [u8], data: [u8]) -> ()?
+    if data.len() > 65535
+        return fail(code: model.INVALID, msg: f"binary data of {data.len()} bytes is past MQTT's 65,535")
+    put_u16(@out, n: data.len())
+    bytes.push_all(to: @out, from: data)
+    return ok()
+
+# The next byte.
+#
+# - `c`: the cursor.
+# - `what`: what is read, for a failure's message.
+function u8_of(@c: Cursor, what: str) -> i64?
+    if c.at >= c.end
+        return short(what)
+    b = c.data[c.at]
+    c.at @ c.at + 1
+    return ok(to_i64(b).must())
+
+# The next two bytes, most significant first.
+#
+# - `c`: the cursor.
+# - `what`: what is read.
+function u16_of(@c: Cursor, what: str) -> i64?
+    if c.end - c.at < 2
+        return short(what)
+    n = to_i64(c.data[c.at]).must() << 8 | to_i64(c.data[c.at + 1]).must()
+    c.at @ c.at + 2
+    return ok(n)
+
+# The next four bytes, most significant first.
+#
+# - `c`: the cursor.
+# - `what`: what is read.
+function u32_of(@c: Cursor, what: str) -> i64?
+    if c.end - c.at < 4
+        return short(what)
+    n: i64 @= 0
+
+    for k in range(from: 0, to: 4)
+        n @ n << 8 | to_i64(c.data[c.at + k]).must()
+
+    c.at @ c.at + 4
+    return ok(n)
+
+# The next variable byte integer, of one to four bytes.
+#
+# - `c`: the cursor.
+# - `what`: what is read.
+#
+# Fails `invalid` where a fifth byte would be needed.
+function varint_of(@c: Cursor, what: str) -> i64?
+    n: i64 @= 0
+    scale: i64 @= 1
+
+    for _ in range(from: 0, to: 4)
+        b = u8_of(@c, what: what)?
+        n @ n + (b & 127) * scale
+
+        if b < 128
+            return ok(n)
+        scale @ scale * 128
+
+    return fail(code: model.INVALID, msg: f"{what} is a variable byte integer of more than four bytes")
+
+# The next string: two bytes of length, then UTF-8 holding no U+0000.
+#
+# - `c`: the cursor.
+# - `what`: what is read.
+function text_of(@c: Cursor, what: str) -> str?
+    raw = binary_of(@c, what: what)?
+
+    for b in raw
+        if b == 0
+            return fail(code: model.INVALID, msg: f"{what} holds the character U+0000")
+
+    return match bytes.to_text(raw)
+        .ok t  => ok(t)
+        .err _ => fail(code: model.INVALID, msg: f"{what} is not UTF-8")
+
+# The next binary data: two bytes of length, then the bytes.
+#
+# - `c`: the cursor.
+# - `what`: what is read.
+function binary_of(@c: Cursor, what: str) -> [u8]?
+    n = u16_of(@c, what: what)?
+
+    if c.end - c.at < n
+        return short(what)
+    out = c.data.slice(from: c.at, to: c.at + n)
+    c.at @ c.at + n
+    return ok(out)
+
+# The bytes left to the cursor's end, read.
+#
+# - `c`: the cursor.
+function rest_of(@c: Cursor) -> [u8]
+    out = c.data.slice(from: c.at, to: c.end)
+    c.at @ c.end
+    return out
+
+test "put_varint and varint_of: the edges of every length, MQTT's own examples"
+    assert varint(0) == [0] && varint(127) == [127] && varint(128) == [128, 1] && varint(16383) == [255, 127]
+    assert varint(16384) == [128, 128, 1] && varint(2097151) == [255, 255, 127] && varint(2097152) == [128, 128, 128, 1]
+    assert varint(MOST_VARINT) == [255, 255, 255, 127]
+
+    for n in [0, 127, 128, 16383, 16384, 2097151, 2097152, MOST_VARINT]
+        c @= cursor(varint(n))
+        assert varint_of(@c, what: "n").must() == n && c.at == c.end
+
+test "varint_of: five bytes, and bytes that end inside one"
+    c @= cursor([255, 255, 255, 255, 127])
+    assert varint_of(@c, what: "n").is_err()
+    d @= cursor([128])
+    assert varint_of(@d, what: "n").is_err()
+
+test "put_u16, put_u32 and their readers: zero, the largest, and a cut"
+    out: [u8] @= []
+    put_u16(@out, n: 65535)
+    put_u32(@out, n: 4294967295)
+    put_u16(@out, n: 0)
+    assert out == [255, 255, 255, 255, 255, 255, 0, 0]
+    c @= cursor(out)
+    assert u16_of(@c, what: "a").must() == 65535 && u32_of(@c, what: "b").must() == 4294967295
+    assert u16_of(@c, what: "c").must() == 0 && u16_of(@c, what: "d").is_err()
+
+test "put_text and text_of: empty, UTF-8 of several bytes, U+0000 refused both ways, bytes that are no UTF-8, a length past the end"
+    out: [u8] @= []
+    put_text(@out, s: "").must()
+    put_text(@out, s: "città").must()
+    assert out == [0, 0, 0, 6, 99, 105, 116, 116, 195, 160]
+    c @= cursor(out)
+    assert text_of(@c, what: "a").must() == "" && text_of(@c, what: "b").must() == "città"
+    bad: [u8] @= []
+    assert !put_text(@bad, s: "a\u{1}").is_err()
+    z @= cursor([0, 1, 0])
+    assert text_of(@z, what: "z").is_err()
+    n @= cursor([0, 1, 255])
+    assert text_of(@n, what: "n").is_err()
+    p @= cursor([0, 5, 97])
+    assert text_of(@p, what: "p").is_err()
+
+test "put_binary and binary_of: none, some, and past 65,535"
+    out: [u8] @= []
+    put_binary(out: @out, data: [1, 2]).must()
+    assert out == [0, 2, 1, 2]
+    big: [u8] @= []
+
+    for _ in range(from: 0, to: 65536)
+        big @ big.push(0)
+
+    assert put_binary(out: @out, data: big).is_err()
+    c @= cursor([0, 0])
+    assert binary_of(@c, what: "b").must() == []

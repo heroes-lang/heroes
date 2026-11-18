@@ -1,0 +1,20 @@
+# Reaches Rebel's `mqtt`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It reads a server's options from a URL
+# and, where a server answers there, subscribes, publishes a message to
+# itself at QoS 1 and reads it back; where none answers it says why.
+
+use <rebel>/mqtt
+
+function main()
+    match mqtt.parse_url("mqtt://localhost:1883")
+        .err e => print(e.code, ": ", e.msg)
+        .ok opts =>
+            match mqtt.connect(opts)
+                .err e => print("no server: ", e.code, ": ", e.msg)
+                .ok first =>
+                    c @= first
+                    _ = mqtt.subscribe(@c, topic_filter: "reach/mqtt", qos: 1).default(-1)
+                    _ = mqtt.publish(@c, topic: "reach/mqtt", payload: [104, 105], qos: 1, retain: false).is_err()
+                    got = mqtt.next_message(@c, wait_ms: 2000)
+                    print(got.is_err())
+                    print(mqtt.close(@c).is_err())

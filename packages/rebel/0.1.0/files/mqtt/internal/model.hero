@@ -1,0 +1,330 @@
+# The values the private modules of `mqtt` share: a mirror of each type the
+# face declares, field for field, since a private module cannot `use` its own
+# face. The face turns its own values into these at its edge and back; the
+# meaning of every field is the face's.
+
+## Codes
+
+# An argument refused, or bytes that are no MQTT.
+constant INVALID: str
+    "invalid"
+
+# Nothing found.
+constant NOT_FOUND: str
+    "not_found"
+
+# A login or an operation the server refuses.
+constant PERMISSION: str
+    "permission"
+
+# The client or its connection is closed.
+constant CLOSED: str
+    "closed"
+
+# The time allowed ran out.
+constant TIMEOUT: str
+    "timeout"
+
+# The program was asked to stop.
+constant STOPPED: str
+    "stopped"
+
+# A bound passed.
+constant LIMIT: str
+    "limit"
+
+# What the server, the version or the platform does not offer.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# A failure none of the others names.
+constant FAILED: str
+    "failed"
+
+## Values
+
+# The face's `PropertyValue`.
+variant PropertyValue
+    # A number.
+    number
+        # The number.
+        v: i64
+    # A text.
+    text
+        # The text.
+        v: str
+    # Bytes.
+    data
+        # The bytes.
+        v: [u8]
+    # A name and a value.
+    pair
+        # The name.
+        name: str
+        # The value.
+        value: str
+
+# The face's `Property`.
+record Property
+    # The property's identifier.
+    id: i64
+    # Its value.
+    value: PropertyValue
+
+# The face's `Message`.
+record Message
+    # The topic.
+    topic: str
+    # The payload.
+    payload: [u8]
+    # The quality of service, 0, 1 or 2.
+    qos: i64
+    # Whether it is retained.
+    retain: bool
+    # Whether it is sent again.
+    dup: bool
+    # Its packet identifier, 0 for none.
+    packet_id: i64
+    # Its properties.
+    properties: [Property]
+
+# The face's `Subscription`.
+record Subscription
+    # The topic filter.
+    filter: str
+    # The most quality of service asked.
+    qos: i64
+    # Whether the client's own messages are not sent back.
+    no_local: bool
+    # Whether the retain flag is kept as published.
+    retain_as_published: bool
+    # When retained messages are sent: 0, 1 or 2.
+    retain_handling: i64
+
+# The face's `Will`.
+variant Will
+    # No will.
+    none
+    # A will.
+    message
+        # The message.
+        message: Message
+
+# The face's `Transport`.
+variant Transport
+    # TCP.
+    tcp
+    # TLS.
+    tls
+    # A WebSocket.
+    websocket
+        # Its path.
+        path: str
+    # A WebSocket over TLS.
+    websocket_tls
+        # Its path.
+        path: str
+
+# The face's `Reconnect`.
+record Reconnect
+    # The most attempts.
+    attempts: i64
+    # The first wait.
+    wait_ms: i64
+    # The longest wait.
+    most_wait_ms: i64
+    # The random part's most.
+    jitter_ms: i64
+
+# The face's `Options`.
+record Options
+    # The host.
+    host: str
+    # The port.
+    port: i64
+    # The transport.
+    transport: Transport
+    # The authorities trusted.
+    roots: str
+    # The protocol's level, 4 or 5.
+    version: i64
+    # The client's identifier.
+    client_id: str
+    # Whether the session begins anew.
+    clean_start: bool
+    # The keep-alive, in seconds.
+    keep_alive_s: i64
+    # The user's name, "" for none.
+    username: str
+    # The password, [] for none.
+    password: [u8]
+    # The will.
+    will: Will
+    # The properties of `CONNECT`.
+    properties: [Property]
+    # Milliseconds a connection may take.
+    connect_ms: i64
+    # Milliseconds a write, and the acknowledgement a call waits for, may
+    # take.
+    wait_ms: i64
+    # The largest packet read.
+    most_packet_bytes: i64
+    # Whether received messages wait for the program's acknowledgement.
+    manual_acks: bool
+    # The most messages held unread.
+    most_held: i64
+    # How a lost connection is made again.
+    reconnect: Reconnect
+
+# The face's `Connack`.
+record Connack
+    # Whether the server held a session.
+    session_present: bool
+    # The reason code.
+    reason: i64
+    # The properties.
+    properties: [Property]
+
+# The face's `Stats`.
+record Stats
+    # Messages received.
+    messages_in: i64
+    # Messages published.
+    messages_out: i64
+    # Bytes of payload received.
+    bytes_in: i64
+    # Bytes of payload published.
+    bytes_out: i64
+    # Reconnections.
+    reconnects: i64
+    # Messages of QoS 0 dropped past the most held.
+    dropped: i64
+
+# The face's `Packet`.
+variant Packet
+    # `CONNECT`.
+    connect
+        # The protocol's level.
+        version: i64
+        # The client's identifier.
+        client_id: str
+        # Whether the session begins anew.
+        clean_start: bool
+        # The keep-alive, in seconds.
+        keep_alive: i64
+        # The user's name.
+        username: str
+        # Whether a user's name is sent.
+        has_username: bool
+        # The password.
+        password: [u8]
+        # Whether a password is sent.
+        has_password: bool
+        # The will.
+        will: Will
+        # The properties.
+        properties: [Property]
+    # `CONNACK`.
+    connack
+        # Whether the server held a session.
+        session_present: bool
+        # The reason code.
+        reason: i64
+        # The properties.
+        properties: [Property]
+    # `PUBLISH`.
+    publish
+        # The message.
+        message: Message
+    # `PUBACK`.
+    puback
+        # The packet identifier.
+        packet_id: i64
+        # The reason code.
+        reason: i64
+        # The properties.
+        properties: [Property]
+    # `PUBREC`.
+    pubrec
+        # The packet identifier.
+        packet_id: i64
+        # The reason code.
+        reason: i64
+        # The properties.
+        properties: [Property]
+    # `PUBREL`.
+    pubrel
+        # The packet identifier.
+        packet_id: i64
+        # The reason code.
+        reason: i64
+        # The properties.
+        properties: [Property]
+    # `PUBCOMP`.
+    pubcomp
+        # The packet identifier.
+        packet_id: i64
+        # The reason code.
+        reason: i64
+        # The properties.
+        properties: [Property]
+    # `SUBSCRIBE`.
+    subscribe
+        # The packet identifier.
+        packet_id: i64
+        # The subscriptions.
+        subscriptions: [Subscription]
+        # The properties.
+        properties: [Property]
+    # `SUBACK`.
+    suback
+        # The packet identifier.
+        packet_id: i64
+        # A reason code per subscription.
+        reasons: [i64]
+        # The properties.
+        properties: [Property]
+    # `UNSUBSCRIBE`.
+    unsubscribe
+        # The packet identifier.
+        packet_id: i64
+        # The topic filters.
+        filters: [str]
+        # The properties.
+        properties: [Property]
+    # `UNSUBACK`.
+    unsuback
+        # The packet identifier.
+        packet_id: i64
+        # A reason code per filter.
+        reasons: [i64]
+        # The properties.
+        properties: [Property]
+    # `PINGREQ`.
+    pingreq
+    # `PINGRESP`.
+    pingresp
+    # `DISCONNECT`.
+    disconnect
+        # The reason code.
+        reason: i64
+        # The properties.
+        properties: [Property]
+    # `AUTH`.
+    auth
+        # The reason code.
+        reason: i64
+        # The properties.
+        properties: [Property]
+
+# A message of `topic` and `payload` at QoS 0, for the tests and the
+# modules that build one.
+#
+# - `topic`: the topic.
+# - `payload`: the payload.
+function message(topic: str, payload: [u8]) -> Message
+    return Message(topic: topic, payload: payload, qos: 0, retain: false, dup: false, packet_id: 0, properties: [])
+
+test "message: QoS 0, not retained, no identifier, no properties"
+    m = message("a/b", payload: [1])
+    assert m.qos == 0 && !m.retain && !m.dup && m.packet_id == 0 && m.properties == []

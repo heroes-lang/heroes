@@ -1,0 +1,141 @@
+# The JSON of the two operations that carry it: the server's `INFO`, read
+# into what the client keeps of it, a member left out taking NATS's default;
+# and the client's `CONNECT`, written from the options and the login.
+
+use json
+use nats/internal/model
+
+# The text member `key` of `v`, or `fallback` where it holds none or another
+# kind.
+#
+# - `v`: the object.
+# - `key`: the member's name.
+# - `fallback`: the answer where there is none.
+function text_member(v: json.Value, key: str, fallback: str) -> str
+    return match json.member(v, key: key)
+        .ok got => json.text_of(got).default(fallback)
+        .err _  => fallback
+
+# The integer member `key` of `v`, or `fallback`.
+#
+# - `v`: the object.
+# - `key`: the member's name.
+# - `fallback`: the answer where there is none.
+function int_member(v: json.Value, key: str, fallback: i64) -> i64
+    return match json.member(v, key: key)
+        .ok got => json.int_of(got).default(fallback)
+        .err _  => fallback
+
+# The boolean member `key` of `v`, or false.
+#
+# - `v`: the object.
+# - `key`: the member's name.
+function bool_member(v: json.Value, key: str) -> bool
+    return match json.member(v, key: key)
+        .ok got => json.bool_of(got).default(false)
+        .err _  => false
+
+# The texts of the list member `key` of `v`, the members of other kinds
+# left out; [] where there is none.
+#
+# - `v`: the object.
+# - `key`: the member's name.
+function texts_member(v: json.Value, key: str) -> [str]
+    out: [str] @= []
+
+    match json.member(v, key: key)
+        .err _ => _ = 0
+        .ok got =>
+            for item in json.items_of(got).default([])
+                match json.text_of(item)
+                    .ok t  => out @ out.push(t)
+                    .err _ => _ = 0
+
+    return out
+
+# What an `INFO`'s JSON tells.
+#
+# - `text`: the JSON.
+#
+# Fails `invalid` where it is no JSON object, or its `max_payload` is
+# below 1.
+function read(text: str) -> model.ServerInfo?
+    v = match json.parse(text)
+        .ok got => got
+        .err e  => return fail(code: model.INVALID, msg: f"the server's INFO is no JSON: {e.msg}")
+
+    if json.kind_of(v) != "object"
+        return fail(code: model.INVALID, msg: "the server's INFO is no JSON object")
+    d = model.default_info()
+    most = int_member(v, key: "max_payload", fallback: d.max_payload)
+
+    if most < 1
+        return fail(code: model.INVALID, msg: f"the server's INFO gives a max_payload of {most}")
+    return ok(
+        model.ServerInfo(server_id: text_member(v, key: "server_id", fallback: ""), server_name: text_member(v, key: "server_name", fallback: ""), version: text_member(v, key: "version", fallback: ""), host: text_member(v, key: "host", fallback: ""), port: int_member(v, key: "port", fallback: 0), max_payload: most, protocol: int_member(v, key: "proto", fallback: 0), headers: bool_member(v, key: "headers"), auth_required: bool_member(v, key: "auth_required"), tls_required: bool_member(v, key: "tls_required"), tls_available: bool_member(v, key: "tls_available"), jetstream: bool_member(v, key: "jetstream"), lame_duck: bool_member(v, key: "ldm"), cluster: text_member(v, key: "cluster", fallback: ""), domain: text_member(v, key: "domain", fallback: ""), connect_urls: texts_member(v, key: "connect_urls"), client_id: int_member(v, key: "client_id", fallback: 0), client_ip: text_member(v, key: "client_ip", fallback: ""), nonce: text_member(v, key: "nonce", fallback: ""))
+    )
+
+# The JSON of a `CONNECT`.
+#
+# - `opts`: the options.
+# - `tls`: whether the connection is TLS.
+# - `headers`: whether headers and no-responders are asked for.
+# - `login`: the members of the login, `auth_token`, `user` and `pass`,
+#   `jwt`, `nkey` and `sig`, as the caller built them.
+# - `version`: this client's version.
+function connect_json(opts: model.Options, tls: bool, headers: bool, login: {str: str}, version: str) -> str
+    members: {str: json.Value} @= {}
+    members["verbose"] @ .boolean(v: false)
+    members["pedantic"] @ .boolean(v: false)
+    members["tls_required"] @ .boolean(v: tls)
+
+    if opts.name != ""
+        members["name"] @ .text(v: opts.name)
+    members["lang"] @ .text(v: "heroes")
+    members["version"] @ .text(v: version)
+    members["protocol"] @ .number(v: 1.0)
+    members["echo"] @ .boolean(v: opts.echo)
+    members["headers"] @ .boolean(v: headers)
+    members["no_responders"] @ .boolean(v: headers)
+
+    for key in keys(login)
+        members[key] @ .text(v: login[key].must())
+
+    return json.format(.object(members: members)).must()
+
+test "read: an INFO as nats-server 2.10 writes one, and the defaults of an empty object"
+    i = read(
+        "{\"server_id\":\"NA\",\"server_name\":\"n1\",\"version\":\"2.10.27\",\"go\":\"go1.24\",\"host\":\"0.0.0.0\",\"port\":4222,\"headers\":true,\"max_payload\":1048576,\"proto\":1,\"client_id\":5,\"client_ip\":\"127.0.0.1\",\"connect_urls\":[\"10.0.0.1:4222\",3],\"ldm\":true,\"nonce\":\"abc\"}"
+    ).must()
+    assert i.server_name == "n1" && i.version == "2.10.27" && i.port == 4222 && i.headers && i.client_id == 5
+    assert i.connect_urls == ["10.0.0.1:4222"] && i.lame_duck && i.nonce == "abc" && !i.tls_required
+    e = read("{}").must()
+    assert e.max_payload == 1048576 && !e.headers && e.protocol == 0
+
+test "read: no JSON, a list, a max_payload of 0"
+    assert read("{").is_err() && read("[]").is_err() && read("{\"max_payload\":0}").is_err()
+
+test "connect_json: the members in order, a name, a login"
+    opts = model.Options(
+        servers: ["nats://h"],
+        auth: .none,
+        roots: "",
+        tls: false,
+        tls_first: false,
+        name: "n",
+        echo: false,
+        connect_ms: 1,
+        write_ms: 0,
+        ping_interval_ms: 0,
+        pings_outstanding: 2,
+        reconnect: model.Reconnect(attempts: 0, wait_ms: 1, most_wait_ms: 1, jitter_ms: 0),
+        inbox_prefix: "_INBOX",
+        pending_messages: 1,
+        pending_bytes: 1,
+        discovered: false,
+        randomize: false
+    )
+    login: {str: str} @= {}
+    login["auth_token"] @ "t"
+    text = connect_json(opts, tls: true, headers: true, login: login, version: "0.1.0")
+    assert text == "{\"verbose\":false,\"pedantic\":false,\"tls_required\":true,\"name\":\"n\",\"lang\":\"heroes\",\"version\":\"0.1.0\",\"protocol\":1,\"echo\":false,\"headers\":true,\"no_responders\":true,\"auth_token\":\"t\"}"

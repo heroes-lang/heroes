@@ -1,0 +1,80 @@
+# What the tests of `nats` share: a session connected to one end of a pair
+# of TCP connections within the process, whose other end plays the server,
+# its bytes written before the client reads them and the client's read
+# after it writes.
+
+use bytes
+use io
+use nats/internal/link
+use nats/internal/model
+use nats/internal/state
+use net
+
+# A session and the end that plays its server.
+record Rig
+    # The session, open, its link the pair's first end.
+    session: state.Session
+    # The server's end.
+    peer: net.Conn
+
+# Two connected ends, every wait on them ending within five seconds.
+function pair() -> net.Pair
+    return net.pair(5000).must()
+
+# A session open over a pair, `script` written by the server's end already.
+#
+# - `script`: what the server sends first.
+function rig(script: str) -> Rig
+    two = pair()
+    s @= state.sample()
+    s.link @ .plain(conn: two.first)
+    s.open @ true
+    s.target @ "the test's server"
+    s.info @ model.default_info()
+
+    if script != ""
+        io.write_text(two.second.stream, text: script).must()
+    return Rig(session: s, peer: two.second)
+
+# Exactly `n` bytes of `s`.
+#
+# - `s`: the stream.
+# - `n`: how many.
+function read_n(s: io.Stream, n: i64) -> [u8]
+    return io.read_exact(s, count: n).must()
+
+# What the server's end has received within a tenth of a second, as text,
+# bytes that are no UTF-8 replaced.
+#
+# - `c`: the server's end.
+function heard(c: net.Conn) -> str
+    out: [u8] @= []
+    net.set_deadline(c, ms: 100).must()
+
+    while true
+        match io.read(c.stream, most: 65536)
+            .ok got =>
+                if got.len() == 0
+                    return bytes.to_text_lossy(out)
+                bytes.push_all(to: @out, from: got)
+            .err _ => return bytes.to_text_lossy(out)
+
+# Writes `text` from the server's end.
+#
+# - `c`: the server's end.
+# - `text`: the bytes, as text.
+function say(c: net.Conn, text: str)
+    io.write_text(c.stream, text: text).must()
+
+# Closes `s`.
+#
+# - `s`: the stream.
+function close(@s: io.Stream)
+    _ = io.close(@s).is_err()
+
+# Closes the rig's two ends.
+#
+# - `r`: the rig.
+function close_rig(@r: Rig)
+    link.close(@r.session.link)
+    close(@r.peer.stream)

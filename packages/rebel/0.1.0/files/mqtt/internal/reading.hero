@@ -1,0 +1,424 @@
+# The server's side of the conversation: bytes read into the session, one
+# packet found and read at a time, and each acted on: a message held and
+# acknowledged as its quality of service asks, a release of a QoS 2 message
+# completed, an acknowledgement handed to the call that waits for it, a
+# `PINGRESP` counted. A connection that ends, bytes that are no MQTT, or a
+# packet only a client sends, lose the connection: the link is closed and the
+# failure answered, for the caller to reconnect or give up.
+
+use bytes
+use maps
+use mqtt/internal/decoding
+use mqtt/internal/encoding
+use mqtt/internal/fixture
+use mqtt/internal/link
+use mqtt/internal/model
+use mqtt/internal/state
+use mqtt/internal/wire
+use time
+
+# What one packet did.
+variant Event
+    # A message was held, or dropped past the most held.
+    held
+    # `PUBACK` (4), `PUBREC` (5) or `PUBCOMP` (7).
+    ack
+        # The packet's type.
+        kind: i64
+        # Its identifier.
+        packet_id: i64
+        # Its reason code.
+        reason: i64
+        # Its properties.
+        properties: [model.Property]
+    # `SUBACK` (9) or `UNSUBACK` (11).
+    acks
+        # The packet's type.
+        kind: i64
+        # Its identifier.
+        packet_id: i64
+        # Its reason codes.
+        reasons: [i64]
+        # Its properties.
+        properties: [model.Property]
+    # A `PINGRESP`.
+    pong
+    # Anything else: a release completed, a message sent again and known.
+    other
+
+# What a scan of the buffer found.
+record Scanned
+    # Whether a packet was whole.
+    complete: bool
+    # The packet, where it was.
+    packet: model.Packet
+
+# The monotonic clock in milliseconds; 0 where it cannot be read.
+function now_ms() -> i64
+    return match time.mark()
+        .ok m  => m.nanoseconds / 1000000
+        .err _ => 0
+
+# Loses the connection: closes the link and answers the failure.
+#
+# - `s`: the session, no longer open.
+# - `code`: the failure's code.
+# - `msg`: what happened.
+function lost<T>(@s: state.Session, code: str, msg: str) -> T?
+    link.close(@s.link)
+    s.open @ false
+    return fail(code: code, msg: msg)
+
+# Whether a failure leaves the connection in step.
+#
+# - `code`: the failure's code.
+function keeps_step(code: str) -> bool
+    return code == model.TIMEOUT || code == model.STOPPED
+
+# Reads more of the server's bytes into the session.
+#
+# - `s`: the session; the connection lost where the read fails otherwise
+#   than by its deadline or the stop.
+function fill(@s: state.Session) -> ()?
+    match link.read(@s.link, target: s.target)
+        .ok got =>
+            bytes.push_all(to: @s.buf, from: got)
+            return ok()
+        .err e =>
+            if keeps_step(e.code)
+                return fail(code: e.code, msg: e.msg)
+            return lost(@s, code: e.code, msg: e.msg)
+
+# The next packet whole in the buffer, without reading.
+#
+# - `s`: the session; the connection lost where the bytes are no MQTT.
+function buffered(@s: state.Session) -> Scanned?
+    if s.at == s.buf.len()
+        s.buf @ []
+        s.at @ 0
+    else if s.at > 65536 && s.at * 2 > s.buf.len()
+        s.buf @ s.buf.slice(from: s.at, to: s.buf.len())
+        s.at @ 0
+
+    ext = match decoding.extent(s.buf, at: s.at, most: s.options.most_packet_bytes)
+        .ok got => got
+        .err e  => return lost(@s, code: e.code, msg: f"{s.target} sent {e.msg}")
+
+    if !ext.complete
+        return ok(Scanned(complete: false, packet: .pingresp))
+    c @= wire.Cursor(data: s.buf, at: ext.body, end: ext.next)
+    s.at @ ext.next
+
+    match decoding.packet(first: ext.first, @c, version: s.options.version)
+        .ok p  => return ok(Scanned(complete: true, packet: p))
+        .err e => return lost(@s, code: model.INVALID, msg: f"{s.target} sent a malformed packet: {e.msg}")
+
+# The next packet, reading until it is whole.
+#
+# - `s`: the session.
+function next_packet(@s: state.Session) -> model.Packet?
+    while true
+        got = buffered(@s)?
+
+        if got.complete
+            return ok(got.packet)
+        fill(@s)?
+
+# Writes `p`, the keep-alive's clock moved; the connection lost where the
+# write fails.
+#
+# - `s`: the session.
+# - `p`: the packet.
+#
+# Fails `limit` where the packet is past the server's largest, `invalid`
+# where it cannot be written, the connection left as it was.
+function write(@s: state.Session, p: model.Packet) -> ()?
+    data = encoding.encode(p, version: s.options.version)?
+
+    if s.max_packet > 0 && data.len() > s.max_packet
+        return fail(
+            code: model.LIMIT,
+            msg: f"a packet of {data.len()} bytes is past the {s.max_packet} {s.target} takes"
+        )
+
+    match link.write(@s.link, data: data)
+        .ok _ =>
+            if s.keep_alive_ms > 0
+                s.ping_due @ now_ms() + s.keep_alive_ms
+            return ok()
+        .err e => return lost(@s, code: e.code, msg: f"writing to {s.target}: {e.msg}")
+
+# The code of a reason code of MQTT 5 at or above 0x80, as the library's
+# closed list names it.
+#
+# - `reason`: the code.
+function code_of(reason: i64) -> str
+    if reason == 135 || reason == 134 || reason == 138 || reason == 140 || reason == 151
+        if reason == 151
+            return model.LIMIT
+        return model.PERMISSION
+
+    if reason == 129 || reason == 130 || reason == 133 || reason == 144 || reason == 145 || reason == 153 || reason == 162 || reason == 148 || reason == 143
+        return model.INVALID
+
+    if reason == 132 || reason == 154 || reason == 155 || reason == 158 || reason == 161
+        return model.UNSUPPORTED
+
+    if reason == 149 || reason == 159 || reason == 147
+        return model.LIMIT
+    return model.FAILED
+
+# The number of the property `id` in `list`, or `fallback`.
+#
+# - `list`: the properties.
+# - `id`: the identifier.
+# - `fallback`: the answer where there is none.
+function number_in(list: [model.Property], id: i64, fallback: i64) -> i64
+    for p in list
+        if p.id == id
+            match p.value
+                .number n                   => return n.v
+                .text _ | .data _ | .pair _ => _ = 0
+
+    return fallback
+
+# The text of the property `id` in `list`, or "".
+#
+# - `list`: the properties.
+# - `id`: the identifier.
+function text_in(list: [model.Property], id: i64) -> str
+    for p in list
+        if p.id == id
+            match p.value
+                .text t                       => return t.v
+                .number _ | .data _ | .pair _ => _ = 0
+
+    return ""
+
+# Acts on `p`.
+#
+# - `s`: the session.
+# - `p`: the packet.
+function apply(@s: state.Session, p: model.Packet) -> Event?
+    match p
+        .publish m => return incoming(@s, m: m.message)
+        .puback a  => return ok(.ack(kind: 4, packet_id: a.packet_id, reason: a.reason, properties: a.properties))
+        .pubrec a  => return ok(.ack(kind: 5, packet_id: a.packet_id, reason: a.reason, properties: a.properties))
+        .pubcomp a => return ok(.ack(kind: 7, packet_id: a.packet_id, reason: a.reason, properties: a.properties))
+        .pubrel a =>
+            known = s.received[a.packet_id].default(false)
+            s.received @ maps.remove(s.received, key: a.packet_id)
+
+            reason = if known || s.options.version == 4
+                0
+            else
+                146
+            write(@s, p: .pubcomp(packet_id: a.packet_id, reason: reason, properties: []))?
+            return ok(.other)
+        .suback a   => return ok(.acks(kind: 9, packet_id: a.packet_id, reasons: a.reasons, properties: a.properties))
+        .unsuback a => return ok(.acks(kind: 11, packet_id: a.packet_id, reasons: a.reasons, properties: a.properties))
+        .pingresp =>
+            s.ping_sent @ false
+            s.pongs @ s.pongs + 1
+            return ok(.pong)
+        .disconnect d =>
+            said = text_in(d.properties, id: 31)
+            s.last_reason @ f"{d.reason} {said}"
+
+            if d.reason == 142 || d.reason == 135 || d.reason == 138
+                s.closed @ true
+
+            code = if d.reason >= 128
+                code_of(d.reason)
+            else
+                model.CLOSED
+            return lost(@s, code: code, msg: f"{s.target} ended the connection with the reason {d.reason} {said}")
+        .auth _ => return lost(
+            @s,
+            code: model.UNSUPPORTED,
+            msg: f"{s.target} asked for an exchange of authentication, which this client does not run"
+        )
+        .connect _ | .connack _ | .subscribe _ | .unsubscribe _ | .pingreq => return lost(
+            @s,
+            code: model.INVALID,
+            msg: f"{s.target} sent a packet only a client sends"
+        )
+
+# Holds a message the server sent and acknowledges it as its quality of
+# service and the options ask.
+#
+# - `s`: the session.
+# - `m`: the message as it came.
+function incoming(@s: state.Session, m: model.Message) -> Event?
+    topic: str @= m.topic
+    kept: [model.Property] @= []
+    alias: i64 @= 0
+
+    for p in m.properties
+        if p.id == 35
+            alias @ number_in([p], id: 35, fallback: 0)
+        else
+            kept @ kept.push(p)
+
+    if alias > 0
+        most = number_in(s.options.properties, id: 34, fallback: 0)
+
+        if alias > most
+            return lost(
+                @s,
+                code: model.INVALID,
+                msg: f"{s.target} used the topic alias {alias}, past the {most} this client allowed"
+            )
+
+        if topic != ""
+            s.aliases[alias] @ topic
+        else
+            topic @ match s.aliases[alias]
+                .ok t => t
+                .err _ => return lost(
+                    @s,
+                    code: model.INVALID,
+                    msg: f"{s.target} used the topic alias {alias}, which it never set"
+                )
+
+    if topic == ""
+        return lost(@s, code: model.INVALID, msg: f"{s.target} sent a message with no topic")
+    out = model.Message(
+        topic: topic,
+        payload: m.payload,
+        qos: m.qos,
+        retain: m.retain,
+        dup: m.dup,
+        packet_id: m.packet_id,
+        properties: kept
+    )
+    s.stats.messages_in @ s.stats.messages_in + 1
+    s.stats.bytes_in @ s.stats.bytes_in + m.payload.len()
+
+    if m.qos == 0
+        if state.held_count(s) >= s.options.most_held
+            s.stats.dropped @ s.stats.dropped + 1
+            return ok(.held)
+        state.hold(@s, m: out)
+        return ok(.held)
+
+    if m.qos == 1
+        state.hold(@s, m: out)
+
+        if s.options.manual_acks
+            s.owed[m.packet_id] @ 1
+        else
+            write(@s, p: .puback(packet_id: m.packet_id, reason: 0, properties: []))?
+        return ok(.held)
+
+    if s.received[m.packet_id].default(false)
+        if !s.options.manual_acks
+            write(@s, p: .pubrec(packet_id: m.packet_id, reason: 0, properties: []))?
+        return ok(.other)
+    state.hold(@s, m: out)
+    s.received[m.packet_id] @ true
+
+    if s.options.manual_acks
+        s.owed[m.packet_id] @ 2
+    else
+        write(@s, p: .pubrec(packet_id: m.packet_id, reason: 0, properties: []))?
+    return ok(.held)
+
+test "apply: QoS 0 held, QoS 1 held and acknowledged, QoS 2 held once, recorded, released, and the most held"
+    r @= fixture.rig("")
+    m0 = model.message("a", payload: [1])
+    assert apply(@r.session, p: .publish(message: m0)).must() == .held
+    m1 = model.Message(topic: "b", payload: [2], qos: 1, retain: false, dup: false, packet_id: 7, properties: [])
+    assert apply(@r.session, p: .publish(message: m1)).must() == .held
+    m2 = model.Message(topic: "c", payload: [3], qos: 2, retain: false, dup: false, packet_id: 9, properties: [])
+    assert apply(@r.session, p: .publish(message: m2)).must() == .held
+    assert apply(@r.session, p: .publish(message: m2)).must() == .other
+    assert apply(@r.session, p: .pubrel(packet_id: 9, reason: 0, properties: [])).must() == .other
+    assert apply(@r.session, p: .publish(message: m0)).must() == .held && r.session.stats.dropped == 1
+    assert state.held_count(r.session) == 3 && r.session.received[9].is_err()
+    assert fixture.heard(r.peer) == [64, 2, 0, 7, 80, 2, 0, 9, 80, 2, 0, 9, 112, 2, 0, 9]
+    fixture.close_rig(@r)
+
+test "apply: an acknowledgement handed back, a PINGRESP counted, a DISCONNECT of the server, a CONNACK refused"
+    r @= fixture.rig("")
+    assert apply(@r.session, p: .puback(packet_id: 3, reason: 16, properties: [])).must() == .ack(kind: 4, packet_id: 3, reason: 16, properties: [])
+    r.session.ping_sent @ true
+    assert apply(@r.session, p: .pingresp).must() == .pong && !r.session.ping_sent && r.session.pongs == 1
+
+    match apply(@r.session, p: .disconnect(reason: 142, properties: [model.Property(id: 31, value: .text(v: "taken over"))]))
+        .ok _  => assert false
+        .err e => assert e.code == "failed" && r.session.closed && !r.session.open
+
+    s @= fixture.rig("")
+    assert apply(@s.session, p: .connack(session_present: false, reason: 0, properties: [])).is_err() && !s.session.open
+    fixture.close(@r.peer.stream)
+    fixture.close(@s.peer.stream)
+
+test "incoming: a topic alias set and used, one never set, one past the most allowed, the alias left out of the properties"
+    r @= fixture.rig("")
+    r.session.options.properties @ [model.Property(id: 34, value: .number(v: 5))]
+    set = model.Message(
+        topic: "a/b",
+        payload: [],
+        qos: 0,
+        retain: false,
+        dup: false,
+        packet_id: 0,
+        properties: [model.Property(id: 35, value: .number(v: 2))]
+    )
+    _ = incoming(@r.session, m: set).must()
+    used = model.Message(
+        topic: "",
+        payload: [],
+        qos: 0,
+        retain: false,
+        dup: false,
+        packet_id: 0,
+        properties: [model.Property(id: 35, value: .number(v: 2))]
+    )
+    _ = incoming(@r.session, m: used).must()
+    a = state.take_first(@r.session).must()
+    b = state.take_first(@r.session).must()
+    assert a.topic == "a/b" && b.topic == "a/b" && b.properties == []
+    unset = model.Message(
+        topic: "",
+        payload: [],
+        qos: 0,
+        retain: false,
+        dup: false,
+        packet_id: 0,
+        properties: [model.Property(id: 35, value: .number(v: 3))]
+    )
+    assert incoming(@r.session, m: unset).is_err() && !r.session.open
+    fixture.close(@r.peer.stream)
+
+test "incoming: manual acknowledgements owed, nothing written"
+    r @= fixture.rig("")
+    r.session.options.manual_acks @ true
+    _ = incoming(
+        @r.session,
+        m: model.Message(topic: "a", payload: [], qos: 1, retain: false, dup: false, packet_id: 4, properties: [])
+    ).must()
+    _ = incoming(
+        @r.session,
+        m: model.Message(topic: "a", payload: [], qos: 2, retain: false, dup: false, packet_id: 5, properties: [])
+    ).must()
+    assert r.session.owed[4].must() == 1 && r.session.owed[5].must() == 2 && fixture.heard(r.peer) == []
+    fixture.close_rig(@r)
+
+test "code_of: a login refused, a quota, a malformed packet, a version, anything else"
+    assert code_of(134) == "permission" && code_of(135) == "permission" && code_of(151) == "limit"
+    assert code_of(129) == "invalid" && code_of(132) == "unsupported" && code_of(128) == "failed" && code_of(136) == "failed"
+
+test "buffered: a packet whole, then one cut, then a packet past the most read"
+    r @= fixture.rig("")
+    r.session.buf @ [208, 0, 208]
+    assert buffered(@r.session).must().complete && !buffered(@r.session).must().complete
+    r.session.buf @ [48, 255, 255, 127]
+    r.session.at @ 0
+
+    match buffered(@r.session)
+        .ok _  => assert false
+        .err e => assert e.code == "limit" && !r.session.open
+
+    fixture.close(@r.peer.stream)

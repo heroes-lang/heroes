@@ -1,0 +1,405 @@
+# Every MQTT control packet read (MQTT 5.0 § 3 and 3.1.1 § 3): a packet's
+# extent found in the bytes received, its fixed header's flags checked, then
+# its fields read by a cursor bounded by the remaining length, a byte left
+# over or a field cut short refused as malformed.
+
+use mqtt/internal/encoding
+use mqtt/internal/model
+use mqtt/internal/properties
+use mqtt/internal/wire
+
+# Where a packet stands in the bytes received.
+record Extent
+    # Whether the packet is whole; false where more bytes are needed.
+    complete: bool
+    # Its first byte.
+    first: i64
+    # Where its variable header begins.
+    body: i64
+    # One past its last byte.
+    next: i64
+
+# The extent of the packet at `at` in `data`.
+#
+# - `data`: the bytes received.
+# - `at`: where the packet begins.
+# - `most`: the most bytes a packet may hold, its fixed header included.
+#
+# Fails `invalid` where the remaining length takes five bytes, `limit` where
+# the packet is past `most`.
+function extent(data: [u8], at: i64, most: i64) -> Extent?
+    none = Extent(complete: false, first: 0, body: 0, next: 0)
+
+    if at >= data.len()
+        return ok(none)
+    n: i64 @= 0
+    scale: i64 @= 1
+    pos: i64 @= at + 1
+
+    while true
+        if pos >= data.len()
+            return ok(none)
+        b = to_i64(data[pos]).must()
+        n @ n + (b & 127) * scale
+        pos @ pos + 1
+
+        if b < 128
+            break
+
+        if pos - at > 4
+            return fail(code: model.INVALID, msg: "a packet's remaining length takes more than four bytes")
+        scale @ scale * 128
+
+    if pos - at + n > most
+        return fail(code: model.LIMIT, msg: f"a packet of {pos - at + n} bytes is past the {most} this client reads")
+
+    if data.len() < pos + n
+        return ok(none)
+    return ok(Extent(complete: true, first: to_i64(data[at]).must(), body: pos, next: pos + n))
+
+# The failure of a malformed packet.
+#
+# - `why`: what is wrong.
+function malformed<T>(why: str) -> T?
+    return fail(code: model.INVALID, msg: why)
+
+# Fails where the cursor did not read to its end.
+#
+# - `c`: the cursor.
+# - `name`: the packet's name.
+function ended(c: wire.Cursor, name: str) -> ()?
+    if c.at != c.end
+        return malformed(f"the {name} holds {c.end - c.at} bytes past its last field")
+    return ok()
+
+# The packet whose first byte is `first` and whose remaining bytes the cursor
+# holds.
+#
+# - `first`: the fixed header's first byte.
+# - `c`: the cursor over the remaining bytes.
+# - `version`: the level of the connection, 4 or 5; a `CONNECT` reads its
+#   own.
+function packet(first: i64, @c: wire.Cursor, version: i64) -> model.Packet?
+    kind = first >> 4
+    flags = first & 15
+
+    if kind == 3
+        return publish(flags: flags, @c, version: version)
+
+    wanted = if kind == 6 || kind == 8 || kind == 10
+        2
+    else
+        0
+
+    if flags != wanted
+        return malformed(f"the packet of type {kind} has the flags {flags}, where MQTT asks {wanted}")
+
+    if kind == 1
+        return connect(@c)
+
+    if kind == 2
+        b = wire.u8_of(@c, what: "the CONNACK's flags")?
+
+        if b > 1
+            return malformed(f"the CONNACK's reserved flags are {b}")
+        reason = wire.u8_of(@c, what: "the CONNACK's reason code")?
+        list = list_of(@c, place: .connack, version: version, optional: false)?
+        ended(c, name: "CONNACK")?
+        return ok(.connack(session_present: b == 1, reason: reason, properties: list))
+
+    if kind >= 4 && kind <= 7
+        id = wire.u16_of(@c, what: "the packet identifier")?
+        reason: i64 @= 0
+
+        if version == 5 && c.at < c.end
+            reason @ wire.u8_of(@c, what: "the reason code")?
+        list = list_of(@c, place: .ack, version: version, optional: true)?
+        ended(c, name: "acknowledgement")?
+
+        if kind == 4
+            return ok(.puback(packet_id: id, reason: reason, properties: list))
+
+        if kind == 5
+            return ok(.pubrec(packet_id: id, reason: reason, properties: list))
+
+        if kind == 6
+            return ok(.pubrel(packet_id: id, reason: reason, properties: list))
+        return ok(.pubcomp(packet_id: id, reason: reason, properties: list))
+
+    if kind == 8
+        return subscribe(@c, version: version)
+
+    if kind == 9 || kind == 11
+        id = wire.u16_of(@c, what: "the packet identifier")?
+        place: properties.Place = .suback
+        list = list_of(@c, place: place, version: version, optional: false)?
+        reasons: [i64] @= []
+
+        while c.at < c.end
+            reasons @ reasons.push(wire.u8_of(@c, what: "a reason code")?)
+
+        if kind == 9
+            if reasons.len() == 0
+                return malformed("the SUBACK holds no reason code")
+            return ok(.suback(packet_id: id, reasons: reasons, properties: list))
+
+        if version == 4 && reasons.len() > 0
+            return malformed("MQTT 3.1.1's UNSUBACK holds bytes past its identifier")
+        return ok(.unsuback(packet_id: id, reasons: reasons, properties: list))
+
+    if kind == 10
+        id = wire.u16_of(@c, what: "the packet identifier")?
+        list = list_of(@c, place: .unsubscribe, version: version, optional: false)?
+        filters: [str] @= []
+
+        while c.at < c.end
+            filters @ filters.push(wire.text_of(@c, what: "a topic filter")?)
+
+        if filters.len() == 0
+            return malformed("the UNSUBSCRIBE holds no topic filter")
+        return ok(.unsubscribe(packet_id: id, filters: filters, properties: list))
+
+    if kind == 12 || kind == 13
+        ended(c, name: "PING")?
+
+        if kind == 12
+            return ok(.pingreq)
+        return ok(.pingresp)
+
+    if kind == 14 || kind == 15
+        if kind == 15 && version == 4
+            return malformed("MQTT 3.1.1 has no AUTH packet")
+        reason: i64 @= 0
+
+        if version == 5 && c.at < c.end
+            reason @ wire.u8_of(@c, what: "the reason code")?
+
+        place: properties.Place = if kind == 14
+            .disconnect
+        else
+            .auth
+        list = list_of(@c, place: place, version: version, optional: true)?
+        ended(c, name: "DISCONNECT")?
+
+        if kind == 14
+            return ok(.disconnect(reason: reason, properties: list))
+        return ok(.auth(reason: reason, properties: list))
+    return malformed(f"the packet type {kind} is reserved")
+
+# The properties at the cursor in MQTT 5, none in 3.1.1.
+#
+# - `c`: the cursor.
+# - `place`: where they stand.
+# - `version`: the level.
+# - `optional`: whether the list may be absent at the packet's end.
+function list_of(@c: wire.Cursor, place: properties.Place, version: i64, optional: bool) -> [model.Property]?
+    if version != 5 || optional && c.at >= c.end
+        return ok([])
+    return properties.decode(@c, place: place)
+
+# Whether `topic` is a topic a message is published to: no wildcard.
+#
+# - `topic`: the topic.
+function has_wildcard(topic: str) -> bool
+    for b in topic.chars()
+        if b == "+" || b == "#"
+            return true
+
+    return false
+
+# `PUBLISH`.
+#
+# - `flags`: the fixed header's flags.
+# - `c`: the cursor.
+# - `version`: the level.
+function publish(flags: i64, @c: wire.Cursor, version: i64) -> model.Packet?
+    qos = flags >> 1 & 3
+
+    if qos == 3
+        return malformed("a PUBLISH has the quality of service 3")
+    dup = flags & 8 != 0
+
+    if dup && qos == 0
+        return malformed("a PUBLISH of QoS 0 has its DUP set")
+    topic = wire.text_of(@c, what: "the topic")?
+
+    if has_wildcard(topic)
+        return malformed(f"the topic \"{topic}\" of a PUBLISH holds a wildcard")
+    id: i64 @= 0
+
+    if qos > 0
+        id @ wire.u16_of(@c, what: "the packet identifier")?
+
+        if id == 0
+            return malformed("a PUBLISH of QoS above 0 has the packet identifier 0")
+    list = list_of(@c, place: .publish, version: version, optional: false)?
+
+    if topic == "" && version == 4
+        return malformed("a PUBLISH has an empty topic")
+    payload = wire.rest_of(@c)
+    return ok(
+        .publish(message: model.Message(topic: topic, payload: payload, qos: qos, retain: flags & 1 != 0, dup: dup, packet_id: id, properties: list))
+    )
+
+# `SUBSCRIBE`.
+#
+# - `c`: the cursor.
+# - `version`: the level.
+function subscribe(@c: wire.Cursor, version: i64) -> model.Packet?
+    id = wire.u16_of(@c, what: "the packet identifier")?
+    list = list_of(@c, place: .subscribe, version: version, optional: false)?
+    subs: [model.Subscription] @= []
+
+    while c.at < c.end
+        f = wire.text_of(@c, what: "a topic filter")?
+        o = wire.u8_of(@c, what: "a subscription's options")?
+        qos = o & 3
+
+        if qos == 3
+            return malformed("a subscription asks the quality of service 3")
+
+        if version == 4 && o > 3
+            return malformed(f"a subscription's reserved bits are set: {o}")
+
+        if version == 5 && (o > 63 || o >> 4 == 3)
+            return malformed(f"a subscription's options {o} are refused")
+        subs @ subs.push(
+            model.Subscription(filter: f, qos: qos, no_local: o & 4 != 0, retain_as_published: o & 8 != 0, retain_handling: o >> 4 & 3)
+        )
+
+    if subs.len() == 0
+        return malformed("the SUBSCRIBE holds no subscription")
+    return ok(.subscribe(packet_id: id, subscriptions: subs, properties: list))
+
+# `CONNECT`, at the level it names.
+#
+# - `c`: the cursor.
+function connect(@c: wire.Cursor) -> model.Packet?
+    name = wire.text_of(@c, what: "the protocol's name")?
+    level = wire.u8_of(@c, what: "the protocol's level")?
+
+    if name == "MQIsdp"
+        return fail(code: model.UNSUPPORTED, msg: "MQTT 3.1 (MQIsdp) is not read: its successor 3.1.1 is")
+
+    if name != "MQTT"
+        return malformed(f"the protocol's name \"{name}\" is not MQTT")
+
+    if level != 4 && level != 5
+        return fail(code: model.UNSUPPORTED, msg: f"the protocol level {level} is neither 4 nor 5")
+    flags = wire.u8_of(@c, what: "the connect flags")?
+
+    if flags & 1 != 0
+        return malformed("the connect flags' reserved bit is set")
+    will_flag = flags & 4 != 0
+    will_qos = flags >> 3 & 3
+
+    if will_qos == 3 || !will_flag && (will_qos != 0 || flags & 32 != 0)
+        return malformed(f"the will's flags {flags} are refused")
+    has_username = flags & 128 != 0
+    has_password = flags & 64 != 0
+
+    if level == 4 && has_password && !has_username
+        return malformed("MQTT 3.1.1 sends no password without a user's name")
+    keep = wire.u16_of(@c, what: "the keep-alive")?
+    list = list_of(@c, place: .connect, version: level, optional: false)?
+    id = wire.text_of(@c, what: "the client identifier")?
+    will: model.Will @= .none
+
+    if will_flag
+        will_list = list_of(@c, place: .will, version: level, optional: false)?
+        topic = wire.text_of(@c, what: "the will's topic")?
+        payload = wire.binary_of(@c, what: "the will's payload")?
+        will @ .message(
+            message: model.Message(topic: topic, payload: payload, qos: will_qos, retain: flags & 32 != 0, dup: false, packet_id: 0, properties: will_list)
+        )
+    username: str @= ""
+
+    if has_username
+        username @ wire.text_of(@c, what: "the user's name")?
+    password: [u8] @= []
+
+    if has_password
+        password @ wire.binary_of(@c, what: "the password")?
+    ended(c, name: "CONNECT")?
+    return ok(
+        .connect(version: level, client_id: id, clean_start: flags & 2 != 0, keep_alive: keep, username: username, has_username: has_username, password: password, has_password: has_password, will: will, properties: list)
+    )
+
+# The one packet `data` holds, whole.
+#
+# - `data`: the bytes.
+# - `version`: the level of the connection.
+#
+# Fails `invalid` where `data` holds less or more than one packet, or the
+# packet is malformed.
+function decode(data: [u8], version: i64) -> model.Packet?
+    e = extent(data, at: 0, most: data.len() + 1)?
+
+    if !e.complete
+        return malformed(f"the {data.len()} bytes end before their packet does")
+
+    if e.next != data.len()
+        return malformed(f"the bytes hold {data.len() - e.next} bytes past their packet")
+    c @= wire.Cursor(data: data, at: e.body, end: e.next)
+    return packet(first: e.first, @c, version: version)
+
+test "decode: Go's bytes of 3.1.1 back into the values that wrote them"
+    assert decode([16, 28, 0, 4, 77, 81, 84, 84, 4, 238, 0, 30, 0, 2, 99, 49, 0, 1, 119, 0, 3, 98, 121, 101, 0, 1, 117, 0, 1, 112], version: 4).must() == encoding.sample_connect_4()
+    m = model.Message(topic: "a/b", payload: [104, 105], qos: 1, retain: true, dup: true, packet_id: 10, properties: [])
+    assert decode([59, 9, 0, 3, 97, 47, 98, 0, 10, 104, 105], version: 4).must() == .publish(message: m)
+    assert decode([144, 4, 0, 3, 1, 128], version: 4).must() == .suback(packet_id: 3, reasons: [1, 128], properties: [])
+    assert decode([176, 2, 0, 4], version: 4).must() == .unsuback(packet_id: 4, reasons: [], properties: [])
+    assert decode([32, 2, 1, 0], version: 4).must() == .connack(session_present: true, reason: 0, properties: [])
+    assert decode([224, 0], version: 4).must() == .disconnect(reason: 0, properties: [])
+    assert decode([162, 7, 0, 4, 0, 3, 97, 47, 35], version: 4).must() == .unsubscribe(packet_id: 4, filters: ["a/#"], properties: [])
+
+test "decode: Go's bytes of MQTT 5 back, an acknowledgement with and without its reason and properties, a CONNACK's properties"
+    assert decode([16, 50, 0, 4, 77, 81, 84, 84, 5, 214, 0, 60, 15, 33, 0, 10, 17, 0, 0, 0, 60, 38, 0, 1, 107, 0, 1, 118, 0, 2, 99, 53, 5, 24, 0, 0, 0, 5, 0, 1, 119, 0, 3, 98, 121, 101, 0, 1, 117, 0, 1, 112], version: 5).must() == encoding.sample_connect_5()
+    assert decode([52, 41, 0, 1, 116, 0, 7, 34, 2, 0, 0, 0, 30, 3, 0, 10, 116, 101, 120, 116, 47, 112, 108, 97, 105, 110, 8, 0, 1, 114, 9, 0, 2, 1, 2, 38, 0, 1, 107, 0, 1, 118, 120], version: 5).must() == encoding.sample_publish_5()
+    assert decode([64, 4, 0, 3, 0, 0], version: 5).must() == .puback(packet_id: 3, reason: 0, properties: [])
+    assert decode([64, 2, 0, 3], version: 5).must() == .puback(packet_id: 3, reason: 0, properties: [])
+    assert decode([64, 3, 0, 3, 16], version: 5).must() == .puback(packet_id: 3, reason: 16, properties: [])
+    connack = decode([32, 15, 0, 0, 12, 36, 1, 18, 0, 4, 97, 117, 116, 111, 19, 0, 20], version: 5).must()
+    assert connack == .connack(session_present: false, reason: 0, properties: [model.Property(id: 36, value: .number(v: 1)), model.Property(id: 18, value: .text(v: "auto")), model.Property(id: 19, value: .number(v: 20))])
+    assert decode([176, 5, 0, 9, 0, 0, 17], version: 5).must() == .unsuback(packet_id: 9, reasons: [0, 17], properties: [])
+    assert decode([224, 0], version: 5).must() == .disconnect(reason: 0, properties: [])
+
+test "decode: AUTH with its reserved flag set, as paho.golang writes it, is malformed"
+    assert decode([241, 14, 24, 12, 21, 0, 5, 83, 67, 82, 65, 77, 22, 0, 1, 1], version: 5).is_err()
+    assert decode([240, 14, 24, 12, 21, 0, 5, 83, 67, 82, 65, 77, 22, 0, 1, 1], version: 5).must() == .auth(reason: 24, properties: [model.Property(id: 21, value: .text(v: "SCRAM")), model.Property(id: 22, value: .data(v: [1]))])
+
+test "decode: malformed packets: QoS 3, DUP at QoS 0, a wildcard in a topic, PUBREL's flags 0, a reserved type, bytes left over, cut short"
+    assert decode([54, 3, 0, 1, 97], version: 4).is_err()
+    assert decode([56, 3, 0, 1, 97], version: 4).is_err()
+    assert decode([48, 3, 0, 1, 43], version: 4).is_err()
+    assert decode([96, 2, 0, 5], version: 4).is_err()
+    assert decode([0, 0], version: 4).is_err()
+    assert decode([224, 0, 0], version: 4).is_err()
+    assert decode([224, 1, 0], version: 4).is_err()
+    assert decode([32, 2, 1], version: 4).is_err()
+    assert decode([32, 2, 2, 0], version: 4).is_err()
+
+test "decode: a SUBSCRIBE with none, a SUBACK with no code, 3.1.1's UNSUBACK with codes, an identifier of 0 at QoS 1, an empty topic in 3.1.1"
+    assert decode([130, 2, 0, 1], version: 4).is_err()
+    assert decode([144, 2, 0, 1], version: 4).is_err()
+    assert decode([176, 3, 0, 1, 0], version: 4).is_err()
+    assert decode([50, 5, 0, 1, 97, 0, 0], version: 4).is_err()
+    assert decode([48, 2, 0, 0], version: 4).is_err()
+
+test "decode: a CONNECT of MQTT 3.1, of another name, with its reserved flag, with a will's QoS and no will"
+    match decode([16, 14, 0, 6, 77, 81, 73, 115, 100, 112, 3, 2, 0, 0, 0, 0], version: 4)
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported"
+
+    assert decode([16, 12, 0, 4, 77, 81, 84, 88, 4, 2, 0, 0, 0, 0], version: 4).is_err()
+    assert decode([16, 12, 0, 4, 77, 81, 84, 84, 4, 3, 0, 0, 0, 0], version: 4).is_err()
+    assert decode([16, 12, 0, 4, 77, 81, 84, 84, 4, 10, 0, 0, 0, 0], version: 4).is_err()
+
+test "extent: a whole packet, one cut, a remaining length of five bytes, one past the most"
+    assert extent([208, 0], at: 0, most: 10).must().complete && !extent([48, 5, 0], at: 0, most: 10).must().complete
+    assert !extent([48], at: 0, most: 10).must().complete && !extent([], at: 0, most: 10).must().complete
+    assert extent([48, 255, 255, 255, 255, 1], at: 0, most: 1000).is_err()
+
+    match extent([48, 200, 1], at: 0, most: 100)
+        .ok _  => assert false
+        .err e => assert e.code == "limit"

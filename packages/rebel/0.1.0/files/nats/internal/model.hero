@@ -1,0 +1,224 @@
+# The values the private modules of `nats` share: a mirror of each type the
+# face declares, field for field, since a private module cannot `use` its own
+# face. The face turns its own values into these at its edge and back; the
+# meaning of every field is the face's.
+
+## Codes
+
+# An argument refused, or bytes from the server that are no NATS.
+constant INVALID: str
+    "invalid"
+
+# A request no one answered, a subscription unknown.
+constant NOT_FOUND: str
+    "not_found"
+
+# A login or a subject refused.
+constant PERMISSION: str
+    "permission"
+
+# The client or its connection is closed.
+constant CLOSED: str
+    "closed"
+
+# The time allowed ran out.
+constant TIMEOUT: str
+    "timeout"
+
+# The program was asked to stop.
+constant STOPPED: str
+    "stopped"
+
+# A bound passed.
+constant LIMIT: str
+    "limit"
+
+# What this platform or this server does not offer.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# A failure none of the others names.
+constant FAILED: str
+    "failed"
+
+## Values
+
+# The face's `Auth`.
+variant Auth
+    # No login.
+    none
+    # A token.
+    token
+        # The token.
+        token: str
+    # A user and a password.
+    user
+        # The user's name.
+        name: str
+        # The password.
+        password: str
+    # An NKey's seed.
+    nkey
+        # The seed.
+        seed: str
+    # A JWT and its seed.
+    credentials
+        # The JWT.
+        jwt: str
+        # The seed.
+        seed: str
+
+# The face's `Reconnect`.
+record Reconnect
+    # The most attempts.
+    attempts: i64
+    # The first wait, in milliseconds.
+    wait_ms: i64
+    # The longest wait.
+    most_wait_ms: i64
+    # The random part's most.
+    jitter_ms: i64
+
+# The face's `Options`.
+record Options
+    # The servers' URLs.
+    servers: [str]
+    # The login.
+    auth: Auth
+    # The authorities trusted, PEM, "" for the system's.
+    roots: str
+    # Whether TLS is asked of a `nats://` server.
+    tls: bool
+    # Whether TLS begins at the first byte.
+    tls_first: bool
+    # The connection's name.
+    name: str
+    # Whether the client's own messages come back.
+    echo: bool
+    # Milliseconds a connection may take.
+    connect_ms: i64
+    # Milliseconds a write may wait, 0 for no limit.
+    write_ms: i64
+    # Milliseconds between the client's own `PING`s, 0 for none.
+    ping_interval_ms: i64
+    # The `PING`s left unanswered that lose the connection.
+    pings_outstanding: i64
+    # How a lost connection is made again.
+    reconnect: Reconnect
+    # The inboxes' prefix.
+    inbox_prefix: str
+    # The most messages held.
+    pending_messages: i64
+    # The most bytes of data held.
+    pending_bytes: i64
+    # Whether discovered servers join the pool.
+    discovered: bool
+    # Whether the pool is tried at random.
+    randomize: bool
+
+# The face's `Header`.
+record Header
+    # The name.
+    name: str
+    # The value.
+    value: str
+
+# The face's `Message`.
+record Message
+    # The subject.
+    subject: str
+    # The reply subject, "" for none.
+    reply: str
+    # The headers.
+    headers: [Header]
+    # The data.
+    data: [u8]
+    # The subscription's number.
+    sid: i64
+    # The status, 0 for none.
+    status: i64
+    # The status's words.
+    description: str
+
+# The face's `ServerInfo`.
+record ServerInfo
+    # The server's identity.
+    server_id: str
+    # Its name.
+    server_name: str
+    # Its version.
+    version: str
+    # Its host.
+    host: str
+    # Its port.
+    port: i64
+    # The largest message.
+    max_payload: i64
+    # The protocol's version.
+    protocol: i64
+    # Whether it reads headers.
+    headers: bool
+    # Whether it asks for a login.
+    auth_required: bool
+    # Whether it asks for TLS.
+    tls_required: bool
+    # Whether it offers TLS.
+    tls_available: bool
+    # Whether it runs JetStream.
+    jetstream: bool
+    # Whether it is shutting down.
+    lame_duck: bool
+    # The cluster's name.
+    cluster: str
+    # The JetStream domain.
+    domain: str
+    # The other servers.
+    connect_urls: [str]
+    # This connection's identity.
+    client_id: i64
+    # This client's address as the server sees it.
+    client_ip: str
+    # The nonce to sign.
+    nonce: str
+
+# The face's `Stats`.
+record Stats
+    # Messages received.
+    messages_in: i64
+    # Messages published.
+    messages_out: i64
+    # Bytes received.
+    bytes_in: i64
+    # Bytes published.
+    bytes_out: i64
+    # Reconnections.
+    reconnects: i64
+
+# The limits a server has where it has told none: NATS's own defaults, a
+# payload of 1 MiB and headers read.
+function default_info() -> ServerInfo
+    return ServerInfo(
+        server_id: "",
+        server_name: "",
+        version: "",
+        host: "",
+        port: 0,
+        max_payload: 1048576,
+        protocol: 1,
+        headers: true,
+        auth_required: false,
+        tls_required: false,
+        tls_available: false,
+        jetstream: false,
+        lame_duck: false,
+        cluster: "",
+        domain: "",
+        connect_urls: [],
+        client_id: 0,
+        client_ip: "",
+        nonce: ""
+    )
+
+test "default_info: NATS's own payload of 1 MiB, headers read, no nonce"
+    i = default_info()
+    assert i.max_payload == 1048576 && i.headers && i.nonce == "" && i.protocol == 1

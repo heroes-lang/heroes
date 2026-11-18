@@ -1,0 +1,138 @@
+# MQTT's topics and topic filters (MQTT 5.0 § 4.7, 4.8.2): levels separated
+# by `/`, a filter's `+` standing for one level and its last `#` for any
+# number, a topic beginning with `$` reached by no filter that begins with a
+# wildcard, and a shared subscription's `$share/<group>/` matched by the
+# filter after it.
+
+use bytes
+use strings
+
+# The levels of `s`, split at every `/`; the empty text has one empty level.
+#
+# - `s`: the topic or filter.
+function levels(s: str) -> [str]
+    return strings.split(s: s, sep: "/")
+
+# Whether `s` may be a topic or filter at all: 1 to 65,535 bytes, no
+# U+0000.
+#
+# - `s`: the text.
+function is_text(s: str) -> bool
+    if s == "" || s.len() > 65535
+        return false
+
+    for b in bytes.from_text(s)
+        if b == 0
+            return false
+
+    return true
+
+# Whether `s` is a topic a message is published to: no wildcard.
+#
+# - `s`: the text.
+function is_topic(s: str) -> bool
+    return is_text(s) && !strings.contains(s: s, substr: "+") && !strings.contains(s: s, substr: "#")
+
+# The filter a shared subscription stands for, or `s` itself.
+#
+# - `s`: the filter.
+function inner_of(s: str) -> str
+    if !strings.has_prefix(s: s, prefix: "$share/")
+        return s
+    rest = s.slice(from: 7, to: s.len())
+
+    return match strings.index_of(s: rest, substr: "/")
+        .ok at => rest.slice(from: at + 1, to: rest.len())
+        .err _ => ""
+
+# Whether `s` is a filter a subscription takes.
+#
+# - `s`: the text.
+function is_filter(s: str) -> bool
+    if !is_text(s)
+        return false
+
+    f = if strings.has_prefix(s: s, prefix: "$share/")
+        group = s.slice(from: 7, to: s.len())
+
+        match strings.index_of(s: group, substr: "/")
+            .ok at =>
+                name = group.slice(from: 0, to: at)
+
+                if name == "" || strings.contains(s: name, substr: "+") || strings.contains(s: name, substr: "#")
+                    return false
+                group.slice(from: at + 1, to: group.len())
+            .err _ => return false
+    else
+        s
+
+    if f == ""
+        return false
+    parts = levels(f)
+
+    for at in range(from: 0, to: parts.len())
+        p = parts[at]
+
+        if strings.contains(s: p, substr: "#")
+            if p != "#" || at != parts.len() - 1
+                return false
+
+        if strings.contains(s: p, substr: "+") && p != "+"
+            return false
+
+    return true
+
+# Whether a message published to `topic` reaches a subscription to
+# `pattern`.
+#
+# - `pattern`: the filter, a shared one included.
+# - `topic`: the topic.
+function matches(pattern: str, topic: str) -> bool
+    if !is_filter(pattern) || !is_topic(topic)
+        return false
+    f = levels(inner_of(pattern))
+    t = levels(topic)
+
+    if topic[0] == '$' && (f[0] == "+" || f[0] == "#")
+        return false
+    at: i64 @= 0
+
+    while at < f.len()
+        if f[at] == "#"
+            return true
+
+        if at >= t.len()
+            return false
+
+        if f[at] != "+" && f[at] != t[at]
+            return false
+        at @ at + 1
+
+    return at == t.len()
+
+test "matches: paho's answers for #, a parent level, $ topics, + and empty levels"
+    assert matches(pattern: "sport/#", topic: "sport") && matches(pattern: "sport/#", topic: "sport/x/y")
+    assert matches(pattern: "#", topic: "a/b") && !matches(pattern: "#", topic: "$SYS/x") && !matches(pattern: "+/x", topic: "$SYS/x")
+    assert matches(pattern: "$SYS/#", topic: "$SYS/x") && matches(pattern: "+", topic: "a") && !matches(pattern: "+", topic: "a/b")
+    assert matches(pattern: "a/+/c", topic: "a//c") && matches(pattern: "a/+", topic: "a/") && matches(pattern: "+/+", topic: "/x")
+    assert !matches(pattern: "a/b", topic: "a/b/") && matches(pattern: "/#", topic: "/a") && matches(pattern: "a/#", topic: "a/")
+
+test "matches: a shared subscription by the filter after its group, where paho's matcher answers false"
+    assert matches(pattern: "$share/g/a/#", topic: "a/b") && !matches(pattern: "$share/g/a/+", topic: "b/c")
+
+test "is_filter: # last and alone, + alone, a shared group, an empty one"
+    assert is_filter("#") && is_filter("a/#") && is_filter("+/b/+") && is_filter("$share/g/x/#")
+    assert !is_filter("a/#/b") && !is_filter("a#") && !is_filter("a+/b") && !is_filter("") && !is_filter("$share//x")
+    assert !is_filter("$share/g") && !is_filter("$share/g+/x") && !is_filter("$share/g/")
+
+test "is_topic: wildcards refused, the empty text, U+0000, one of 65,536 bytes"
+    assert is_topic("a/b") && is_topic("/") && !is_topic("a/+") && !is_topic("#") && !is_topic("")
+    long: [str] @= []
+
+    for _ in range(from: 0, to: 65536)
+        long @ long.push("a")
+
+    assert !is_topic(long.join("")) && is_topic("città/🎸")
+
+test "inner_of: a shared filter, an ordinary one"
+    assert inner_of("$share/g/a/b") == "a/b" && inner_of("a/b") == "a/b"

@@ -1,0 +1,197 @@
+# A client's state, which the face's `Client` holds: the connection, the
+# bytes read and not yet given out, what the server's `CONNACK` allowed, the
+# messages held unread in arrival order, the QoS 2 messages received and not
+# yet released, the acknowledgements the program owes, the topic aliases the
+# server set, and the subscriptions to make again on a new session.
+
+use mqtt/internal/link
+use mqtt/internal/model
+
+# The conversation's state.
+record Session
+    # The options it was made with.
+    options: model.Options
+    # How messages name the server: `host:port`.
+    target: str
+    # What carries the packets.
+    link: link.Link
+    # Whether the connection is made and in step.
+    open: bool
+    # Whether the client is closed for good.
+    closed: bool
+    # The bytes read and not given out, from `at` on.
+    buf: [u8]
+    # Where the next packet begins in `buf`.
+    at: i64
+    # The packet identifier the next request takes.
+    next_id: i64
+    # The messages held, in arrival order, from `held_at` on.
+    held: [model.Message]
+    # Where the first message not yet given out stands.
+    held_at: i64
+    # The identifiers of QoS 2 messages received whose `PUBREL` has not
+    # come.
+    received: {i64: bool}
+    # The quality of service of each message the program owes an
+    # acknowledgement, by its identifier.
+    owed: {i64: i64}
+    # The topics the server's aliases stand for.
+    aliases: {i64: str}
+    # The server's `CONNACK`.
+    connack: model.Connack
+    # The client identifier, the server's where it assigned one.
+    client_id: str
+    # The keep-alive in milliseconds, the server's where it set one; 0 for
+    # none.
+    keep_alive_ms: i64
+    # When, on the monotonic clock in milliseconds, a `PINGREQ` is due.
+    ping_due: i64
+    # Whether a `PINGREQ` waits for its `PINGRESP`.
+    ping_sent: bool
+    # When the awaited `PINGRESP` is late.
+    ping_late: i64
+    # The `PINGRESP`s received.
+    pongs: i64
+    # The most quality of service the server takes.
+    max_qos: i64
+    # Whether the server keeps retained messages.
+    retain_available: bool
+    # The largest packet the server takes, 0 for MQTT's own.
+    max_packet: i64
+    # The subscriptions granted, made again where a new connection finds
+    # no session.
+    subs: [model.Subscription]
+    # What the client has carried.
+    stats: model.Stats
+    # Why the server last ended the connection, "" where it did not say.
+    last_reason: str
+
+# A session of `options`, not connected.
+#
+# - `options`: the options.
+function fresh(options: model.Options) -> Session
+    return Session(
+        options: options,
+        target: options.host + ":" + to_str(options.port),
+        link: .gone,
+        open: false,
+        closed: false,
+        buf: [],
+        at: 0,
+        next_id: 1,
+        held: [],
+        held_at: 0,
+        received: {},
+        owed: {},
+        aliases: {},
+        connack: model.Connack(session_present: false, reason: 0, properties: []),
+        client_id: options.client_id,
+        keep_alive_ms: 0,
+        ping_due: 0,
+        ping_sent: false,
+        ping_late: 0,
+        pongs: 0,
+        max_qos: 2,
+        retain_available: true,
+        max_packet: 0,
+        subs: [],
+        stats: model.Stats(messages_in: 0, messages_out: 0, bytes_in: 0, bytes_out: 0, reconnects: 0, dropped: 0),
+        last_reason: ""
+    )
+
+# The next packet identifier, from 1 to 65,535 and round again.
+#
+# - `s`: the session.
+function take_id(@s: Session) -> i64
+    id = s.next_id
+
+    if id >= 65535
+        s.next_id @ 1
+    else
+        s.next_id @ id + 1
+    return id
+
+# Adds `m` to `list`.
+#
+# - `list`: the messages.
+# - `m`: the message.
+function push_message(@list: [model.Message], m: model.Message)
+    list @ list.push(m)
+
+# Holds `m`.
+#
+# - `s`: the session.
+# - `m`: the message.
+function hold(@s: Session, m: model.Message)
+    push_message(@s.held, m: m)
+
+# The messages held and not given out.
+#
+# - `s`: the session.
+function held_count(s: Session) -> i64
+    return s.held.len() - s.held_at
+
+# The first message held, given out; `not_found` where none is.
+#
+# - `s`: the session.
+function take_first(@s: Session) -> model.Message?
+    if s.held_at >= s.held.len()
+        return fail(code: model.NOT_FOUND, msg: "no message is held")
+    m = s.held[s.held_at]
+    s.held_at @ s.held_at + 1
+
+    if s.held_at == s.held.len()
+        s.held @ []
+        s.held_at @ 0
+    else if s.held_at > 1024 && s.held_at * 2 > s.held.len()
+        s.held @ s.held.slice(from: s.held_at, to: s.held.len())
+        s.held_at @ 0
+    return ok(m)
+
+# Every message held, given out in arrival order.
+#
+# - `s`: the session.
+function take_all(@s: Session) -> [model.Message]
+    out = s.held.slice(from: s.held_at, to: s.held.len())
+    s.held @ []
+    s.held_at @ 0
+    return out
+
+# The options of the tests: a server at `localhost`, MQTT 5, no keep-alive,
+# no reconnection.
+function sample_options() -> model.Options
+    return model.Options(
+        host: "localhost",
+        port: 1883,
+        transport: .tcp,
+        roots: "",
+        version: 5,
+        client_id: "test",
+        clean_start: true,
+        keep_alive_s: 0,
+        username: "",
+        password: [],
+        will: .none,
+        properties: [],
+        connect_ms: 2000,
+        wait_ms: 2000,
+        most_packet_bytes: 1048576,
+        manual_acks: false,
+        most_held: 3,
+        reconnect: model.Reconnect(attempts: 0, wait_ms: 1, most_wait_ms: 1, jitter_ms: 0)
+    )
+
+test "take_id: from 1, and round again after 65,535"
+    s @= fresh(sample_options())
+    assert take_id(@s) == 1 && take_id(@s) == 2
+    s.next_id @ 65535
+    assert take_id(@s) == 65535 && take_id(@s) == 1
+
+test "hold and take: in order, then none, then all at once"
+    s @= fresh(sample_options())
+    hold(@s, m: model.message("a", payload: [1]))
+    hold(@s, m: model.message("b", payload: [2]))
+    assert held_count(s) == 2 && take_first(@s).must().topic == "a" && held_count(s) == 1
+    assert take_first(@s).must().topic == "b" && take_first(@s).is_err()
+    hold(@s, m: model.message("c", payload: []))
+    assert take_all(@s).len() == 1 && held_count(s) == 0

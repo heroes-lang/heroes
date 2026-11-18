@@ -1,0 +1,313 @@
+# MQTT 5's properties (MQTT 5.0 § 2.2.2): each identifier's kind of value,
+# the packets it may stand in, its range, and the list written and read with
+# its length before it, a property that may appear once refused twice.
+
+use bytes
+use mqtt/internal/model
+use mqtt/internal/wire
+
+# Where a list of properties stands.
+variant Place
+    # `CONNECT`.
+    connect
+    # `CONNACK`.
+    connack
+    # `PUBLISH`.
+    publish
+    # A will's properties.
+    will
+    # `PUBACK`, `PUBREC`, `PUBREL` or `PUBCOMP`.
+    ack
+    # `SUBSCRIBE`.
+    subscribe
+    # `SUBACK` or `UNSUBACK`.
+    suback
+    # `UNSUBSCRIBE`.
+    unsubscribe
+    # `DISCONNECT`.
+    disconnect
+    # `AUTH`.
+    auth
+
+# The kind of value of the property `id`: `byte`, `u16`, `u32`, `varint`,
+# `text`, `binary`, `pair`; "" for an identifier MQTT 5 does not define.
+#
+# - `id`: the identifier.
+function kind_of(id: i64) -> str
+    if id == 1 || id == 23 || id == 25 || id == 36 || id == 37 || id == 40 || id == 41 || id == 42
+        return "byte"
+
+    if id == 19 || id == 33 || id == 34 || id == 35
+        return "u16"
+
+    if id == 2 || id == 17 || id == 24 || id == 39
+        return "u32"
+
+    if id == 11
+        return "varint"
+
+    if id == 3 || id == 8 || id == 18 || id == 21 || id == 26 || id == 28 || id == 31
+        return "text"
+
+    if id == 9 || id == 22
+        return "binary"
+
+    if id == 38
+        return "pair"
+    return ""
+
+# Whether `id` may stand at `place`.
+#
+# - `id`: the identifier.
+# - `place`: the list's place.
+function is_allowed(id: i64, place: Place) -> bool
+    allowed: [i64] = match place
+        .connect     => [17, 33, 39, 34, 25, 23, 38, 21, 22]
+        .connack     => [17, 33, 36, 37, 39, 18, 34, 31, 38, 40, 41, 42, 19, 26, 28, 21, 22]
+        .publish     => [1, 2, 35, 8, 9, 38, 11, 3]
+        .will        => [24, 1, 2, 3, 8, 9, 38]
+        .ack         => [31, 38]
+        .subscribe   => [11, 38]
+        .suback      => [31, 38]
+        .unsubscribe => [38]
+        .disconnect  => [17, 31, 38, 28]
+        .auth        => [21, 22, 31, 38]
+
+    for one in allowed
+        if one == id
+            return true
+
+    return false
+
+# The name MQTT 5 gives the property `id`, for a failure's message.
+#
+# - `id`: the identifier.
+function name_of(id: i64) -> str
+    names: {i64: str} = {
+        1: "Payload Format Indicator"
+        2: "Message Expiry Interval"
+        3: "Content Type"
+        8: "Response Topic"
+        9: "Correlation Data"
+        11: "Subscription Identifier"
+        17: "Session Expiry Interval"
+        18: "Assigned Client Identifier"
+        19: "Server Keep Alive"
+        21: "Authentication Method"
+        22: "Authentication Data"
+        23: "Request Problem Information"
+        24: "Will Delay Interval"
+        25: "Request Response Information"
+        26: "Response Information"
+        28: "Server Reference"
+        31: "Reason String"
+        33: "Receive Maximum"
+        34: "Topic Alias Maximum"
+        35: "Topic Alias"
+        36: "Maximum QoS"
+        37: "Retain Available"
+        38: "User Property"
+        39: "Maximum Packet Size"
+        40: "Wildcard Subscription Available"
+        41: "Subscription Identifier Available"
+        42: "Shared Subscription Available"
+    }
+    return names[id].default(f"the property {id}")
+
+# Whether a number `v` of the property `id` stands within its range.
+#
+# - `id`: the identifier.
+# - `v`: the number.
+function in_range(id: i64, v: i64) -> bool
+    kind = kind_of(id)
+
+    if kind == "byte"
+        if id == 36 || id == 1 || id == 23 || id == 25 || id == 37 || id == 40 || id == 41 || id == 42
+            return v == 0 || v == 1
+        return v >= 0 && v <= 255
+
+    if kind == "u16"
+        if id == 33 || id == 35
+            return v >= 1 && v <= 65535
+        return v >= 0 && v <= 65535
+
+    if kind == "u32"
+        if id == 39
+            return v >= 1 && v <= 4294967295
+        return v >= 0 && v <= 4294967295
+
+    if kind == "varint"
+        return v >= 1 && v <= wire.MOST_VARINT
+    return false
+
+# Whether `id` may stand more than once in one list.
+#
+# - `id`: the identifier.
+# - `place`: the list's place.
+function may_repeat(id: i64, place: Place) -> bool
+    if id == 38
+        return true
+    return id == 11 && place == .publish
+
+# The failure of a property refused, its message naming it.
+#
+# - `id`: the identifier.
+# - `why`: what is wrong.
+function refused<T>(id: i64, why: str) -> T?
+    return fail(code: model.INVALID, msg: f"the property {name_of(id)} ({id}) {why}")
+
+# The bytes of `list`: its length as a variable byte integer, then each.
+#
+# - `list`: the properties.
+# - `place`: where they stand.
+#
+# Fails `invalid` where one is not allowed there, holds a value of the
+# wrong kind or out of its range, or stands twice where it may not.
+function encode(list: [model.Property], place: Place) -> [u8]?
+    body: [u8] @= []
+    seen: {i64: bool} @= {}
+
+    for p in list
+        kind = kind_of(p.id)
+
+        if kind == "" || !is_allowed(p.id, place: place)
+            return refused(p.id, why: "is not allowed here")
+
+        if seen[p.id].default(false) && !may_repeat(p.id, place: place)
+            return refused(p.id, why: "stands twice")
+        seen[p.id] @ true
+        wire.put_varint(@body, n: p.id)
+
+        match p.value
+            .number n =>
+                if kind == "text" || kind == "binary" || kind == "pair"
+                    return refused(p.id, why: f"holds a number where it holds a {kind}")
+
+                if !in_range(id: p.id, v: n.v)
+                    return refused(p.id, why: f"holds {n.v}, out of its range")
+
+                if kind == "byte"
+                    wire.put_u8(@body, n: n.v)
+                else if kind == "u16"
+                    wire.put_u16(@body, n: n.v)
+                else if kind == "u32"
+                    wire.put_u32(@body, n: n.v)
+                else
+                    wire.put_varint(@body, n: n.v)
+            .text t =>
+                if kind != "text"
+                    return refused(p.id, why: f"holds a text where it holds a {kind}")
+                wire.put_text(@body, s: t.v)?
+            .data d =>
+                if kind != "binary"
+                    return refused(p.id, why: f"holds bytes where it holds a {kind}")
+                wire.put_binary(out: @body, data: d.v)?
+            .pair q =>
+                if kind != "pair"
+                    return refused(p.id, why: f"holds a pair where it holds a {kind}")
+                wire.put_text(@body, s: q.name)?
+                wire.put_text(@body, s: q.value)?
+
+    out @= wire.varint(body.len())
+    bytes.push_all(to: @out, from: body)
+    return ok(out)
+
+# The properties at the cursor: their length, then each, checked as
+# `encode` checks them.
+#
+# - `c`: the cursor, past the list after.
+# - `place`: where they stand.
+function decode(@c: wire.Cursor, place: Place) -> [model.Property]?
+    length = wire.varint_of(@c, what: "the properties' length")?
+
+    if length > c.end - c.at
+        return fail(code: model.INVALID, msg: f"the properties' length {length} is past the packet's end")
+    inner @= wire.Cursor(data: c.data, at: c.at, end: c.at + length)
+    out: [model.Property] @= []
+    seen: {i64: bool} @= {}
+
+    while inner.at < inner.end
+        id = wire.varint_of(@inner, what: "a property's identifier")?
+        kind = kind_of(id)
+
+        if kind == "" || !is_allowed(id, place: place)
+            return refused(id, why: "is not allowed here")
+
+        if seen[id].default(false) && !may_repeat(id, place: place)
+            return refused(id, why: "stands twice")
+        seen[id] @ true
+        what = name_of(id)
+
+        value: model.PropertyValue = if kind == "byte"
+            .number(v: wire.u8_of(@inner, what: what)?)
+        else if kind == "u16"
+            .number(v: wire.u16_of(@inner, what: what)?)
+        else if kind == "u32"
+            .number(v: wire.u32_of(@inner, what: what)?)
+        else if kind == "varint"
+            .number(v: wire.varint_of(@inner, what: what)?)
+        else if kind == "text"
+            .text(v: wire.text_of(@inner, what: what)?)
+        else if kind == "binary"
+            .data(v: wire.binary_of(@inner, what: what)?)
+        else
+            .pair(name: wire.text_of(@inner, what: what)?, value: wire.text_of(@inner, what: what)?)
+
+        match value
+            .number n =>
+                if !in_range(id: id, v: n.v)
+                    return refused(id, why: f"holds {n.v}, out of its range")
+            .text _ | .data _ | .pair _ => _ = 0
+
+        out @ out.push(model.Property(id: id, value: value))
+
+    c.at @ inner.end
+    return ok(out)
+
+test "kind_of and is_allowed: every kind, an identifier MQTT does not define, a property in a place it may not stand"
+    assert kind_of(1) == "byte" && kind_of(33) == "u16" && kind_of(17) == "u32" && kind_of(11) == "varint"
+    assert kind_of(3) == "text" && kind_of(9) == "binary" && kind_of(38) == "pair" && kind_of(4) == ""
+    assert is_allowed(17, place: .connect) && !is_allowed(35, place: .connect) && is_allowed(35, place: .publish)
+    assert is_allowed(24, place: .will) && !is_allowed(24, place: .publish)
+
+test "encode and decode: one of each kind, back the same, and the bytes MQTT writes"
+    list = [
+        model.Property(id: 1, value: .number(v: 1))
+        model.Property(id: 2, value: .number(v: 60))
+        model.Property(id: 35, value: .number(v: 7))
+        model.Property(id: 11, value: .number(v: 200))
+        model.Property(id: 3, value: .text(v: "text/plain"))
+        model.Property(id: 9, value: .data(v: [0, 255]))
+        model.Property(id: 38, value: .pair(name: "k", value: "v"))
+        model.Property(id: 38, value: .pair(name: "k", value: "w"))
+    ]
+    out = encode(list, place: .publish).must()
+    c @= wire.cursor(out)
+    assert decode(@c, place: .publish).must() == list && c.at == out.len()
+    assert encode([model.Property(id: 2, value: .number(v: 60))], place: .publish).must() == [5, 2, 0, 0, 0, 60]
+    assert encode([], place: .connect).must() == [0]
+
+test "encode: a property twice, a text where a number goes, a number out of range, a property not allowed"
+    assert encode(
+        [model.Property(id: 2, value: .number(v: 1)), model.Property(id: 2, value: .number(v: 2))],
+        place: .publish
+    ).is_err()
+    assert encode([model.Property(id: 2, value: .text(v: "x"))], place: .publish).is_err()
+    assert encode([model.Property(id: 33, value: .number(v: 0))], place: .connect).is_err()
+    assert encode([model.Property(id: 1, value: .number(v: 2))], place: .publish).is_err()
+    assert encode([model.Property(id: 17, value: .number(v: 4294967296))], place: .connect).is_err()
+    assert encode([model.Property(id: 24, value: .number(v: 1))], place: .publish).is_err()
+
+test "decode: a length past the end, an unknown identifier, a value cut, a Maximum QoS of 2, a repeated Session Expiry Interval"
+    a @= wire.cursor([5, 1])
+    assert decode(@a, place: .publish).is_err()
+    b @= wire.cursor([2, 4, 0])
+    assert decode(@b, place: .publish).is_err()
+    d @= wire.cursor([2, 2, 0])
+    assert decode(@d, place: .publish).is_err()
+    e @= wire.cursor([2, 36, 2])
+    assert decode(@e, place: .connack).is_err()
+    f @= wire.cursor([10, 17, 0, 0, 0, 1, 17, 0, 0, 0, 1])
+    assert decode(@f, place: .connack).is_err()
+    g @= wire.cursor([0])
+    assert decode(@g, place: .connack).must() == []

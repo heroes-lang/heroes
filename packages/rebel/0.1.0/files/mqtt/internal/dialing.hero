@@ -1,0 +1,316 @@
+# Making a connection to the server: the link of the options' transport,
+# the `CONNECT` and its `CONNACK`, what the server allowed kept; writing with
+# a reconnection where the connection is found lost; and making it again
+# after a loss, with a backoff, the subscriptions made anew where the server
+# kept no session.
+
+use mqtt/internal/link
+use mqtt/internal/model
+use mqtt/internal/reading
+use mqtt/internal/state
+use net
+use random
+use time
+use url
+
+# The failure of a closed session.
+#
+# - `s`: the session.
+function closed_failure<T>(s: state.Session) -> T?
+    return fail(code: model.CLOSED, msg: f"the client of {s.target} is closed")
+
+# The link the options' transport asks for.
+#
+# - `o`: the options.
+function opened(o: model.Options) -> link.Link?
+    place = url.format_host_port(host: o.host, port: to_str(o.port))
+
+    return match o.transport
+        .tcp => link.open_plain(o.host, port: o.port, ms: o.connect_ms)
+        .tls => link.open_tls(host: o.host, port: o.port, ms: o.connect_ms, roots: o.roots)
+        .websocket w => link.open_socket(
+            target: "ws://" + place + w.path,
+            ms: o.connect_ms,
+            roots: o.roots,
+            most: o.most_packet_bytes + 16
+        )
+        .websocket_tls w => link.open_socket(
+            target: "wss://" + place + w.path,
+            ms: o.connect_ms,
+            roots: o.roots,
+            most: o.most_packet_bytes + 16
+        )
+
+# The properties `CONNECT` sends: the options', and in MQTT 5 the largest
+# packet this client reads where they name none.
+#
+# - `o`: the options.
+function connect_properties(o: model.Options) -> [model.Property]
+    out @= o.properties
+
+    if o.version == 5 && reading.number_in(o.properties, id: 39, fallback: 0) == 0
+        out @ out.push(model.Property(id: 39, value: .number(v: o.most_packet_bytes)))
+    return out
+
+# The code of a refused `CONNACK`.
+#
+# - `reason`: its return code or reason code.
+# - `version`: the level.
+function refusal_code(reason: i64, version: i64) -> str
+    if version == 4
+        if reason == 1
+            return model.UNSUPPORTED
+
+        if reason == 2
+            return model.INVALID
+
+        if reason == 4 || reason == 5
+            return model.PERMISSION
+        return model.FAILED
+    return reading.code_of(reason)
+
+# Connects, sends `CONNECT` and reads the `CONNACK`, keeping what the server
+# allowed.
+#
+# - `s`: the session, open where it answers.
+function dial(@s: state.Session) -> ()?
+    o = s.options
+    s.buf @ []
+    s.at @ 0
+    s.open @ false
+    s.ping_sent @ false
+    s.aliases @ {}
+    s.max_packet @ 0
+    s.link @ opened(o)?
+
+    match link.arm(s.link, ms: o.connect_ms)
+        .ok _  => _ = 0
+        .err e => return reading.lost(@s, code: e.code, msg: e.msg)
+
+    hello: model.Packet = .connect(
+        version: o.version,
+        client_id: o.client_id,
+        clean_start: o.clean_start,
+        keep_alive: o.keep_alive_s,
+        username: o.username,
+        has_username: o.username != "",
+        password: o.password,
+        has_password: o.password.len() > 0,
+        will: o.will,
+        properties: connect_properties(o)
+    )
+
+    match reading.write(@s, p: hello)
+        .ok _ => _ = 0
+        .err e =>
+            link.close(@s.link)
+            return fail(code: e.code, msg: e.msg)
+
+    first = reading.next_packet(@s)?
+
+    a = match first
+        .connack got => got
+        .connect _ | .publish _ | .puback _ | .pubrec _ | .pubrel _ | .pubcomp _ | .subscribe _ | .suback _ | .unsubscribe _ | .unsuback _ | .pingreq | .pingresp | .disconnect _ | .auth _ => return reading.lost(
+            @s,
+            code: model.INVALID,
+            msg: f"{s.target} sent another packet before its CONNACK"
+        )
+
+    if a.reason != 0
+        said = reading.text_in(a.properties, id: 31)
+        return reading.lost(
+            @s,
+            code: refusal_code(reason: a.reason, version: o.version),
+            msg: f"{s.target} refused the connection with the code {a.reason} {said}"
+        )
+    s.connack @ model.Connack(session_present: a.session_present, reason: a.reason, properties: a.properties)
+    assigned = reading.text_in(a.properties, id: 18)
+
+    if assigned != ""
+        s.client_id @ assigned
+    s.keep_alive_ms @ reading.number_in(a.properties, id: 19, fallback: o.keep_alive_s) * 1000
+    s.max_qos @ reading.number_in(a.properties, id: 36, fallback: 2)
+    s.retain_available @ reading.number_in(a.properties, id: 37, fallback: 1) == 1
+    s.max_packet @ reading.number_in(a.properties, id: 39, fallback: 0)
+
+    if !a.session_present
+        s.received @ {}
+        s.owed @ {}
+    s.open @ true
+    s.ping_due @ reading.now_ms() + s.keep_alive_ms
+
+    match link.arm(s.link, ms: 0)
+        .ok _  => return ok()
+        .err e => return reading.lost(@s, code: e.code, msg: e.msg)
+
+# Every subscription granted made again, on a new connection whose server
+# kept no session, waiting for its `SUBACK`.
+#
+# - `s`: the session, just connected.
+function resubscribe(@s: state.Session) -> ()?
+    if s.connack.session_present || s.subs.len() == 0
+        return ok()
+    id = state.take_id(@s)
+    reading.write(@s, p: .subscribe(packet_id: id, subscriptions: s.subs, properties: []))?
+
+    match link.arm(s.link, ms: s.options.connect_ms)
+        .ok _  => _ = 0
+        .err e => return reading.lost(@s, code: e.code, msg: e.msg)
+
+    while true
+        p = reading.next_packet(@s)?
+
+        match reading.apply(@s, p: p)?
+            .acks a =>
+                if a.kind == 9 && a.packet_id == id
+                    match link.arm(s.link, ms: 0)
+                        .ok _  => return ok()
+                        .err e => return reading.lost(@s, code: e.code, msg: e.msg)
+            .held | .ack _ | .pong | .other => _ = 0
+
+# Closes the session for good.
+#
+# - `s`: the session.
+function close_for_good(@s: state.Session)
+    link.close(@s.link)
+    s.open @ false
+    s.closed @ true
+
+# The milliseconds before attempt `n` of a reconnection: none before the
+# first, then the wait doubled each attempt up to the most, with a random
+# part.
+#
+# - `n`: the attempt, from 1.
+# - `r`: the settings.
+function wait_before(n: i64, r: model.Reconnect) -> i64
+    if n <= 1
+        return 0
+    wait: i64 @= r.wait_ms
+    k: i64 @= 2
+
+    while k < n && wait < r.most_wait_ms
+        wait @ wait * 2
+        k @ k + 1
+
+    if wait > r.most_wait_ms
+        wait @ r.most_wait_ms
+
+    if r.jitter_ms > 0
+        extra = random.secure_below(to_u64(r.jitter_ms + 1).must()).default(0)
+        wait @ wait + to_i64(extra).must()
+    return wait
+
+# Makes the lost connection again as the options' reconnection says;
+# closes the session for good where it cannot.
+#
+# - `s`: the session, its connection lost.
+# - `code`: the loss's code.
+# - `msg`: what was lost.
+function recover(@s: state.Session, code: str, msg: str) -> ()?
+    link.close(@s.link)
+    s.open @ false
+
+    if s.closed
+        return fail(code: model.CLOSED, msg: f"the client is closed: {msg}")
+    r = s.options.reconnect
+
+    if r.attempts == 0
+        close_for_good(@s)
+        return fail(
+            code: model.CLOSED,
+            msg: f"the connection to {s.target} was lost ({code}: {msg}), and the options make it no more"
+        )
+    last: str @= msg
+
+    for n in range(from: 1, to: r.attempts + 1)
+        if net.is_stop_asked()
+            return fail(code: model.STOPPED, msg: f"the stop was asked while the client reconnected to {s.target}")
+        wait = wait_before(n: n, r: r)
+
+        if wait > 0
+            time.sleep(time.milliseconds(wait).must())
+
+        match dial(@s)
+            .ok _ =>
+                match resubscribe(@s)
+                    .ok _ =>
+                        s.stats.reconnects @ s.stats.reconnects + 1
+                        return ok()
+                    .err e => last @ e.msg
+            .err e =>
+                if e.code == model.PERMISSION
+                    close_for_good(@s)
+                    return fail(code: e.code, msg: e.msg)
+                last @ e.msg
+
+    close_for_good(@s)
+    return fail(
+        code: model.CLOSED,
+        msg: f"the connection was lost ({msg}), and {r.attempts} attempts to make it again failed, the last: {last}"
+    )
+
+# Loses the connection and makes it again.
+#
+# - `s`: the session.
+# - `code`: the loss's code.
+# - `msg`: what was lost.
+function lose(@s: state.Session, code: str, msg: str) -> ()?
+    link.close(@s.link)
+    s.open @ false
+    return recover(@s, code: code, msg: msg)
+
+# Writes `p`, making the connection again and writing once more where it
+# was found lost.
+#
+# - `s`: the session.
+# - `p`: the packet.
+function send(@s: state.Session, p: model.Packet) -> ()?
+    if s.closed
+        return closed_failure(s)
+
+    if !s.open
+        recover(@s, code: model.CLOSED, msg: "the connection was lost")?
+    tried: i64 @= 0
+
+    while true
+        match link.arm(s.link, ms: s.options.wait_ms)
+            .ok _  => _ = 0
+            .err e => lose(@s, code: e.code, msg: e.msg)?
+
+        match reading.write(@s, p: p)
+            .ok _ => return ok()
+            .err e =>
+                if s.open
+                    return fail(code: e.code, msg: e.msg)
+
+                if tried >= 1
+                    return lose(@s, code: e.code, msg: e.msg)
+                tried @ tried + 1
+                recover(@s, code: e.code, msg: e.msg)?
+
+test "connect_properties: the largest packet added in MQTT 5 where none is named, kept where one is, none in 3.1.1"
+    o @= state.sample_options()
+    assert connect_properties(o) == [model.Property(id: 39, value: .number(v: 1048576))]
+    o.properties @ [model.Property(id: 39, value: .number(v: 10))]
+    assert connect_properties(o).len() == 1
+    o.version @ 4
+    o.properties @ []
+    assert connect_properties(o) == []
+
+test "refusal_code: 3.1.1's return codes and 5's reason codes"
+    assert refusal_code(reason: 1, version: 4) == "unsupported" && refusal_code(reason: 2, version: 4) == "invalid"
+    assert refusal_code(reason: 3, version: 4) == "failed" && refusal_code(reason: 4, version: 4) == "permission" && refusal_code(reason: 5, version: 4) == "permission"
+    assert refusal_code(reason: 134, version: 5) == "permission" && refusal_code(reason: 132, version: 5) == "unsupported"
+
+test "wait_before: none first, doubling to the most, and the random part's bound"
+    r = model.Reconnect(attempts: 9, wait_ms: 10, most_wait_ms: 30, jitter_ms: 0)
+    assert wait_before(n: 1, r: r) == 0 && wait_before(n: 2, r: r) == 10 && wait_before(n: 3, r: r) == 20 && wait_before(n: 4, r: r) == 30
+    j = wait_before(n: 2, r: model.Reconnect(attempts: 9, wait_ms: 10, most_wait_ms: 30, jitter_ms: 4))
+    assert j >= 10 && j <= 14
+
+test "recover: with no attempt allowed the session closes"
+    s @= state.fresh(state.sample_options())
+
+    match recover(@s, code: "closed", msg: "gone")
+        .ok _  => assert false
+        .err e => assert e.code == "closed" && s.closed
