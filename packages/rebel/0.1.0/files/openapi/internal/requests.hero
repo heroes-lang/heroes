@@ -1,0 +1,527 @@
+# A request validated against a compiled document: the operation that takes
+# it found by its path and method, each parameter read by its location,
+# style and explode rules and validated by its schema, the body read by its
+# media type and validated, and the credentials its security asks for looked
+# for. Every issue says where it is and what was found.
+
+use bytes
+use http
+use json
+use json/schema as jsonschema
+use openapi/internal/compiled
+use openapi/internal/media
+use openapi/internal/objects
+use openapi/internal/routes
+use openapi/internal/styles
+use strings
+use url
+
+# One thing wrong with a request or a response.
+record Issue
+    # The status a server answers it with.
+    status: i64
+    # Where: `path`, `query`, `header`, `cookie`, `body`, `security`,
+    # `route` or `status`.
+    location: str
+    # The parameter's or field's name; for a 405, the methods the path takes.
+    name: str
+    # Where inside the value, as a JSON pointer.
+    pointer: str
+    # The keyword or the rule that failed.
+    keyword: str
+    # What was asked and what was found.
+    message: str
+
+# A request's values, read.
+record Values
+    # The operation's `operationId`.
+    operation_id: str
+    # The method, in upper case.
+    method: str
+    # The path's template.
+    template: str
+    # The path's parameters.
+    path: {str: json.Value}
+    # The query's parameters.
+    query: {str: json.Value}
+    # The header's parameters.
+    headers: {str: json.Value}
+    # The cookies' parameters.
+    cookies: {str: json.Value}
+    # The body; `null` where there is none.
+    body: json.Value
+    # The body's media type; "" where there is none.
+    media_type: str
+
+# Where a request was routed.
+record Routed
+    # The index of its operation; -1 where none takes it.
+    at: i64
+    # The variables of its template, raw.
+    captures: [routes.Capture]
+    # Why none takes it, where `at` is -1.
+    issue: Issue
+
+# What a request's validation found.
+record Outcome
+    # The index of its operation; -1 where none takes it.
+    at: i64
+    # Its values, where it was routed.
+    values: Values
+    # Its issues; none where it is valid.
+    issues: [Issue]
+
+# A body read by its media type.
+record Decoded
+    # Its value.
+    value: json.Value
+    # What was wrong in reading it; "" where it read.
+    error: str
+    # Whether its schema is to be asked: false for a media type this package
+    # does not read.
+    validate: bool
+
+# An issue of a request, answered 400.
+function bad(location: str, name: str, pointer: str, keyword: str, message: str) -> Issue
+    return Issue(status: 400, location: location, name: name, pointer: pointer, keyword: keyword, message: message)
+
+# Values with nothing in them, of the operation `op` and the method
+# `method`.
+function no_values(operation_id: str, method: str, template: str) -> Values
+    return Values(
+        operation_id: operation_id,
+        method: method,
+        template: template,
+        path: {},
+        query: {},
+        headers: {},
+        cookies: {},
+        body: .null_value,
+        media_type: ""
+    )
+
+# Whether the captures of the server's path of `op` take values it allows.
+function bases_allow(op: compiled.Op lent, captures: [routes.Capture]) -> bool
+    for c in captures
+        for name in op.base_names
+            if c.name == name
+                allowed = op.base_values[name].default([])
+
+                if allowed.len() > 0
+                    value = url.unescape(c.raw).default("")
+                    known: bool @= false
+
+                    for each in allowed
+                        if each == value
+                            known @ true
+
+                    if !known
+                        return false
+
+    return true
+
+# The operation of `c` that takes `r`.
+function route(c: compiled.Compiled lent, r: http.Request) -> Routed
+    segments = routes.segments_of(r.url.path)
+    method = strings.to_lower_ascii(r.method)
+    matched: str @= ""
+    path: str @= ""
+    allowed: [str] @= []
+
+    for i in range(from: 0, to: c.operations.len())
+        text = c.operations[i].template.text
+
+        if matched == "" || text == matched
+            match routes.match_path(c.operations[i].template, segments: segments)
+                .ok captures =>
+                    if bases_allow(c.operations[i], captures: captures)
+                        if matched == ""
+                            matched @ text
+                            path @ c.operations[i].path
+
+                        if c.operations[i].method == method
+                            return Routed(
+                                at: i,
+                                captures: captures,
+                                issue: bad(location: "route", name: "", pointer: "", keyword: "", message: "")
+                            )
+                        upper = strings.to_upper_ascii(c.operations[i].method)
+                        known: bool @= false
+
+                        for each in allowed
+                            if each == upper
+                                known @ true
+
+                        if !known
+                            allowed @ allowed.push(upper)
+                .err _ => _ = 0
+
+    if matched == ""
+        return Routed(
+            at: -1,
+            captures: [],
+            issue: Issue(status: 404, location: "route", name: "", pointer: "", keyword: "path", message: f"no path of the document takes \"{r.url.path}\"")
+        )
+    return Routed(
+        at: -1,
+        captures: [],
+        issue: Issue(status: 405, location: "route", name: allowed.join(", "), pointer: "", keyword: "method", message: f"{r.method} is no operation of {path}, which takes {allowed.join(", ")}")
+    )
+
+# The issues of `value` against `code`, each at `location` and `name`.
+function schema_issues(@out: [Issue], code: jsonschema.Schema lent, value: json.Value, location: str, name: str, status: i64)
+    for e in jsonschema.errors_of(code, instance: value)
+        out @ out.push(
+            Issue(status: status, location: location, name: name, pointer: e.instance_location, keyword: e.keyword, message: e.message)
+        )
+
+# The raw text of a parameter read through its `content`: JSON where its
+# media type is, the text otherwise.
+function content_value(text: str, media_type: str) -> json.Value?
+    if media.is_json(media_type)
+        return json.parse(text)
+    return ok(.text(v: text))
+
+# The value of the request's parameter `p`, or why it has none.
+function param_raw(p: compiled.Param lent, r: http.Request lent, captures: [routes.Capture], pairs: [styles.Pair], cookies: [styles.Pair], shape: str, defs: json.Value) -> styles.Raw
+    if p.location == "path"
+        for c in captures
+            if c.name == p.name
+                if p.media_type != ""
+                    return styles.path_raw(raw: c.raw, name: p.name, style: "simple", explode: false, shape: "scalar")
+                return styles.path_raw(raw: c.raw, name: p.name, style: p.style, explode: p.explode, shape: shape)
+
+        return styles.absent()
+
+    if p.location == "query"
+        if p.media_type != ""
+            return styles.pairs_raw(
+                pairs,
+                name: p.name,
+                style: "form",
+                explode: false,
+                shape: "scalar",
+                properties: [],
+                decode: "query"
+            )
+        return styles.pairs_raw(
+            pairs,
+            name: p.name,
+            style: p.style,
+            explode: p.explode,
+            shape: shape,
+            properties: styles.property_names(schema: p.schema, defs: defs),
+            decode: "query"
+        )
+
+    if p.location == "header"
+        if !http.has_header(r.headers, name: p.name)
+            return styles.absent()
+        text = http.values_of(r.headers, name: p.name).join(",")
+
+        if p.media_type != ""
+            return styles.found([text])
+        return styles.header_raw(text: text, explode: p.explode, shape: shape)
+
+    if p.media_type != ""
+        return styles.pairs_raw(
+            cookies,
+            name: p.name,
+            style: "form",
+            explode: false,
+            shape: "scalar",
+            properties: [],
+            decode: "none"
+        )
+    return styles.pairs_raw(
+        cookies,
+        name: p.name,
+        style: p.style,
+        explode: p.explode,
+        shape: shape,
+        properties: styles.property_names(schema: p.schema, defs: defs),
+        decode: "none"
+    )
+
+# Puts `value` in the place of `values` that `location` names.
+function put_value(@values: Values, location: str, name: str, value: json.Value)
+    if location == "path"
+        values.path[name] @ value
+    else if location == "query"
+        values.query[name] @ value
+    else if location == "header"
+        values.headers[name] @ value
+    else
+        values.cookies[name] @ value
+
+# The body `data` of the media type `given` read as `m` takes it.
+function decode(r: http.Request lent, data: [u8], given: str, m: compiled.Media lent, defs: json.Value) -> Decoded
+    if media.is_json(given) || media.is_json(m.media_type)
+        text = match bytes.to_text(data)
+            .ok t  => t
+            .err e => return Decoded(value: .null_value, error: e.msg, validate: false)
+
+        match json.parse(text)
+            .ok v  => return Decoded(value: v, error: "", validate: true)
+            .err e => return Decoded(value: .null_value, error: f"the body is not JSON: {e.msg}", validate: false)
+
+    if given == "application/x-www-form-urlencoded"
+        text = match bytes.to_text(data)
+            .ok t  => t
+            .err e => return Decoded(value: .null_value, error: e.msg, validate: false)
+
+        pairs = match styles.query_pairs(text)
+            .ok got => got
+            .err e  => return Decoded(value: .null_value, error: e.msg, validate: false)
+
+        names: [str] @= []
+        texts: [[str]] @= []
+
+        for p in pairs
+            value = match url.unescape_query(p.value)
+                .ok got => got
+                .err e  => return Decoded(value: .null_value, error: e.msg, validate: false)
+
+            at: i64 @= names.len()
+
+            for i in range(from: 0, to: names.len())
+                if names[i] == p.key
+                    at @ i
+
+            if at == names.len()
+                names @ names.push(p.key)
+                texts @ texts.push([value])
+            else
+                texts[at] @ texts[at].push(value)
+
+        return Decoded(value: form_object(names, texts: texts, schema: m.schema, defs: defs), error: "", validate: true)
+
+    if given == "multipart/form-data"
+        parts = match http.parts_of(r, limits: http.default_part_limits())
+            .ok got => got
+            .err e => return Decoded(
+                value: .null_value,
+                error: f"the body is no multipart form: {e.msg}",
+                validate: false
+            )
+
+        members: {str: json.Value} @= {}
+        lists: {str: [json.Value]} @= {}
+
+        for part in parts
+            value: json.Value @= .null_value
+
+            match bytes.to_text(part.data)
+                .ok text =>
+                    if media.is_json(media.name_of(part.content_type))
+                        value @ json.parse(text).default(.text(v: text))
+                    else
+                        value @ styles.coerce(
+                            text,
+                            schema: styles.property_of(schema: m.schema, defs: defs, name: part.name),
+                            defs: defs
+                        )
+                .err _ => value @ .text(v: bytes.format_base64(part.data))
+
+            if styles.shape_of(schema: styles.property_of(schema: m.schema, defs: defs, name: part.name), defs: defs) == "array"
+                given_list @= lists[part.name].default([])
+                given_list @ given_list.push(value)
+                lists[part.name] @ given_list
+                members[part.name] @ .list(items: given_list)
+            else if members[part.name].is_err()
+                members[part.name] @ value
+
+        return Decoded(value: .object(members: members), error: "", validate: true)
+
+    if media.is_text(given)
+        match bytes.to_text(data)
+            .ok text => return Decoded(value: .text(v: text), error: "", validate: true)
+            .err e   => return Decoded(value: .null_value, error: e.msg, validate: false)
+    return Decoded(value: .null_value, error: "", validate: false)
+
+# The object of a form's keys `names`, each with its values `texts`: an
+# array where the property's schema says one, else its first value, each
+# typed by its schema.
+function form_object(names: [str], texts: [[str]], schema: json.Value, defs: json.Value) -> json.Value
+    members: {str: json.Value} @= {}
+
+    for i in range(from: 0, to: names.len())
+        property = styles.property_of(schema: schema, defs: defs, name: names[i])
+
+        if styles.shape_of(schema: property, defs: defs) == "array"
+            items: [json.Value] @= []
+            each = styles.items_of(schema: property, defs: defs)
+
+            for t in texts[i]
+                items @ items.push(styles.coerce(t, schema: each, defs: defs))
+
+            members[names[i]] @ .list(items: items)
+        else
+            members[names[i]] @ styles.coerce(texts[i][0], schema: property, defs: defs)
+
+    return .object(members: members)
+
+# Whether `r` carries what `scheme` asks for, by its presence alone.
+function carries(scheme: compiled.Scheme, r: http.Request lent, pairs: [styles.Pair], cookies: [styles.Pair]) -> bool
+    if scheme.kind == "apiKey"
+        if scheme.location == "header"
+            return http.has_header(r.headers, name: scheme.key_name)
+
+        given = if scheme.location == "query"
+            pairs
+        else
+            cookies
+
+        for p in given
+            if p.key == scheme.key_name
+                return true
+
+        return false
+    authorization = strings.to_lower_ascii(http.value_of(r.headers, name: "Authorization").default(""))
+
+    if scheme.kind == "http"
+        return scheme.scheme != "" && strings.has_prefix(s: authorization, prefix: scheme.scheme + " ")
+
+    if scheme.kind == "oauth2" || scheme.kind == "openIdConnect"
+        return strings.has_prefix(s: authorization, prefix: "bearer ")
+    return scheme.kind == "mutualTLS"
+
+# What `scheme` asks a request for, in words.
+function described(scheme: compiled.Scheme) -> str
+    if scheme.kind == "apiKey"
+        return f"the {scheme.location} `{scheme.key_name}`"
+
+    if scheme.kind == "http"
+        return f"an Authorization of the scheme `{scheme.scheme}`"
+
+    if scheme.kind == "oauth2" || scheme.kind == "openIdConnect"
+        return "a bearer token"
+    return "a client's certificate"
+
+# Everything `r` holds against the operation of `c` that takes it.
+function check(c: compiled.Compiled lent, r: http.Request) -> Outcome
+    routed = route(c, r: r)
+
+    if routed.at < 0
+        return Outcome(
+            at: -1,
+            values: no_values(operation_id: "", method: strings.to_upper_ascii(r.method), template: ""),
+            issues: [routed.issue]
+        )
+    op = c.operations[routed.at]
+    issues: [Issue] @= []
+    values @= no_values(operation_id: op.operation_id, method: strings.to_upper_ascii(r.method), template: op.path)
+
+    pairs: [styles.Pair] = match styles.query_pairs(r.url.query)
+        .ok got => got
+        .err e =>
+            issues @ issues.push(bad(location: "query", name: "", pointer: "", keyword: "escape", message: e.msg))
+            []
+
+    cookies = styles.cookie_pairs(http.values_of(r.headers, name: "Cookie"))
+
+    for p in op.params
+        shape = styles.shape_of(schema: p.schema, defs: c.defs)
+        raw = param_raw(p, r: r, captures: routed.captures, pairs: pairs, cookies: cookies, shape: shape, defs: c.defs)
+
+        if !raw.present
+            if p.required
+                issues @ issues.push(
+                    bad(location: p.location, name: p.name, pointer: "", keyword: "required", message: f"the {p.location} parameter \"{p.name}\" is required, and the request has none")
+                )
+            else if objects.has(p.schema, key: "default")
+                put_value(
+                    @values,
+                    location: p.location,
+                    name: p.name,
+                    value: objects.value_at(p.schema, key: "default")
+                )
+        else if raw.error != ""
+            issues @ issues.push(
+                bad(location: p.location, name: p.name, pointer: "", keyword: "style", message: raw.error)
+            )
+        else if p.location == "query" && !p.allow_empty && raw.pieces == [""] && p.media_type == ""
+            issues @ issues.push(
+                bad(location: p.location, name: p.name, pointer: "", keyword: "allowEmptyValue", message: f"the query parameter \"{p.name}\" is empty, which it does not allow")
+            )
+        else
+            read: json.Value? @= styles.value_of(raw, shape: shape, schema: p.schema, defs: c.defs)
+
+            if p.media_type != ""
+                read @ content_value(text: raw.pieces[0], media_type: p.media_type)
+
+            match read
+                .err e => issues @ issues.push(
+                    bad(location: p.location, name: p.name, pointer: "", keyword: "style", message: e.msg)
+                )
+                .ok value =>
+                    before = issues.len()
+                    schema_issues(@issues, code: p.code, value: value, location: p.location, name: p.name, status: 400)
+
+                    if issues.len() == before
+                        put_value(@values, location: p.location, name: p.name, value: value)
+
+    if op.body.present
+        if r.body.len() == 0
+            if op.body.required
+                issues @ issues.push(
+                    bad(location: "body", name: "", pointer: "", keyword: "required", message: "the operation requires a body, and the request has none")
+                )
+        else
+            given = media.name_of(http.value_of(r.headers, name: "Content-Type").default(""))
+            names: [str] @= []
+
+            for m in op.body.content
+                names @ names.push(m.media_type)
+
+            match media.best_of(names, given: given)
+                .err _ => issues @ issues.push(
+                    Issue(status: 415, location: "body", name: "", pointer: "", keyword: "mediaType", message: f"the body is of the type \"{given}\", and the operation takes {names.join(", ")}")
+                )
+                .ok at =>
+                    m = op.body.content[at]
+                    decoded = decode(r, data: r.body, given: given, m: m, defs: c.defs)
+                    values.media_type @ given
+
+                    if decoded.error != ""
+                        issues @ issues.push(
+                            bad(location: "body", name: "", pointer: "", keyword: "mediaType", message: decoded.error)
+                        )
+                    else
+                        values.body @ decoded.value
+
+                        if decoded.validate && m.has_schema
+                            schema_issues(
+                                @issues,
+                                code: m.code,
+                                value: decoded.value,
+                                location: "body",
+                                name: "",
+                                status: 400
+                            )
+
+    if op.security.len() > 0
+        met: bool @= false
+        asked: [str] @= []
+
+        for alternative in op.security
+            all_there: bool @= true
+            words: [str] @= []
+
+            for scheme in alternative.schemes
+                words @ words.push(described(scheme))
+
+                if !carries(scheme, r: r, pairs: pairs, cookies: cookies)
+                    all_there @ false
+
+            if all_there
+                met @ true
+
+            if words.len() > 0
+                asked @ asked.push(words.join(" and "))
+
+        if !met
+            issues @ issues.push(
+                Issue(status: 401, location: "security", name: "", pointer: "", keyword: "security", message: f"the request carries no credential the operation asks for: {asked.join(", or ")}")
+            )
+    return Outcome(at: routed.at, values: values, issues: issues)

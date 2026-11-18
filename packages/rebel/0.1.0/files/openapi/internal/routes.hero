@@ -1,0 +1,339 @@
+# Paths as OpenAPI writes them: the eight methods, a path's template read
+# into its segments and their pieces, matched against a request's raw path,
+# ranked so that the most literal template is tried first, turned into a
+# pattern `web` reads, and the path of a server's URL.
+
+use strings
+
+# The most pieces one segment of a template may hold: a template is matched
+# piece by piece, so their number is bounded.
+constant MOST_PIECES: i64
+    32
+
+# One piece of a segment: literal text, or a variable.
+record Piece
+    # The literal text, or the variable's name.
+    text: str
+    # Whether it is a variable.
+    is_variable: bool
+
+# A template read: its text and its segments, each a list of pieces.
+record Template
+    # The template as written.
+    text: str
+    # Its segments after the first `/`, each its pieces; a segment with no
+    # piece matches the empty segment alone.
+    segments: [[Piece]]
+
+# A variable's value as a request's path writes it, unescaped by none.
+record Capture
+    # The variable's name.
+    name: str
+    # Its value, raw.
+    raw: str
+
+# The eight methods of a Path Item object, in the order OpenAPI lists them.
+function methods() -> [str]
+    return ["get", "put", "post", "delete", "options", "head", "patch", "trace"]
+
+# Whether `s` is one of the eight, in lower case.
+function is_method(s: str) -> bool
+    for each in methods()
+        if each == s
+            return true
+
+    return false
+
+# Whether `version` is OpenAPI 3.1's: `3.1.` and a digit.
+function is_version_31(version: str) -> bool
+    return version.len() > 4 && strings.has_prefix(s: version, prefix: "3.1.") && version[4] >= '0' && version[4] <= '9'
+
+# The template `text` read.
+#
+# Fails `invalid` where a `{` is not closed, a `}` was not opened, a name is
+# empty, or a segment holds more than `MOST_PIECES` pieces.
+function parse_template(text: str) -> Template?
+    body = if text != "" && text[0] == '/'
+        text.slice(from: 1, to: text.len())
+    else
+        text
+    segments: [[Piece]] @= []
+
+    if text == ""
+        return ok(Template(text: text, segments: segments))
+
+    for raw in strings.split(s: body, sep: "/")
+        pieces: [Piece] @= []
+        at: i64 @= 0
+
+        while at < raw.len()
+            if raw[at] == '{'
+                close: i64 @= at + 1
+
+                while close < raw.len() && raw[close] != '}'
+                    close @ close + 1
+
+                if close == raw.len()
+                    return fail(code: "invalid", msg: f"the template \"{text}\" opens a `{{` it does not close")
+
+                if close == at + 1
+                    return fail(code: "invalid", msg: f"the template \"{text}\" names a variable with no name")
+                pieces @ pieces.push(Piece(text: raw.slice(from: at + 1, to: close), is_variable: true))
+                at @ close + 1
+            else if raw[at] == '}'
+                return fail(code: "invalid", msg: f"the template \"{text}\" closes a `}}` it did not open")
+            else
+                next: i64 @= at + 1
+
+                while next < raw.len() && raw[next] != '{' && raw[next] != '}'
+                    next @ next + 1
+
+                pieces @ pieces.push(Piece(text: raw.slice(from: at, to: next), is_variable: false))
+                at @ next
+
+        if pieces.len() > MOST_PIECES
+            return fail(
+                code: "invalid",
+                msg: f"the template \"{text}\" holds more than {MOST_PIECES} pieces in one segment"
+            )
+        segments @ segments.push(pieces)
+
+    return ok(Template(text: text, segments: segments))
+
+# The names of the variables of `t`, in order.
+function names_of(t: Template) -> [str]
+    out: [str] @= []
+
+    for segment in t.segments
+        for piece in segment
+            if piece.is_variable
+                out @ out.push(piece.text)
+
+    return out
+
+# The pattern `web` reads for the template `text`: `{id}` becomes `:id`.
+#
+# Fails `invalid` as `parse_template` does, and where a segment holds a
+# variable beside other text or a literal one begins with `:` or `*`.
+function pattern(text: str) -> str?
+    t = parse_template(text)?
+    out: [str] @= []
+
+    for segment in t.segments
+        if segment.len() == 1 && segment[0].is_variable
+            out @ out.push(":" + segment[0].text)
+        else
+            literal: [str] @= []
+
+            for piece in segment
+                if piece.is_variable
+                    return fail(
+                        code: "invalid",
+                        msg: f"the template \"{text}\" holds a variable beside other text in a segment, which a route's pattern does not say"
+                    )
+                literal @ literal.push(piece.text)
+
+            joined = literal.join("")
+
+            if joined != "" && (joined[0] == ':' || joined[0] == '*')
+                return fail(
+                    code: "invalid",
+                    msg: f"the template \"{text}\" holds a segment beginning with `{joined.slice(from: 0, to: 1)}`, which a route's pattern reads as a parameter"
+                )
+            out @ out.push(joined)
+
+    return ok("/" + out.join("/"))
+
+# Whether `s` holds `part` at the byte `at`.
+function has_at(s: str, at: i64, part: str) -> bool
+    if at + part.len() > s.len()
+        return false
+
+    for i in range(from: 0, to: part.len())
+        if s[at + i] != part[i]
+            return false
+
+    return true
+
+# Whether the byte `at` of `s` begins a character, or is its end.
+function is_boundary(s: str, at: i64) -> bool
+    return at >= s.len() || s[at] < 0x80 || s[at] >= 0xc0
+
+# Whether the pieces of `pieces` from `index` match `s` from the byte `from`,
+# each variable's value added to `captures`: a variable takes one byte or
+# more, the longest that lets the rest match, and never splits a character.
+# It recurses once a piece, and a segment holds at most `MOST_PIECES`.
+function match_pieces(pieces: [Piece], index: i64, s: str, from: i64, @captures: [Capture]) -> bool
+    if index == pieces.len()
+        return from == s.len()
+    piece = pieces[index]
+
+    if !piece.is_variable
+        if !has_at(s: s, at: from, part: piece.text)
+            return false
+        return match_pieces(pieces, index: index + 1, s: s, from: from + piece.text.len(), @captures)
+
+    if index + 1 == pieces.len()
+        if from >= s.len()
+            return false
+        captures @ captures.push(Capture(name: piece.text, raw: s.slice(from: from, to: s.len())))
+        return true
+    end: i64 @= s.len()
+
+    while end > from
+        if is_boundary(s, at: end) && match_pieces(pieces, index: index + 1, s: s, from: end, @captures)
+            captures @ captures.push(Capture(name: piece.text, raw: s.slice(from: from, to: end)))
+            return true
+        end @ end - 1
+
+    return false
+
+# The segments of the raw path `path` after its first `/`; none for "".
+function segments_of(path: str) -> [str]
+    if path == ""
+        return []
+
+    body = if path[0] == '/'
+        path.slice(from: 1, to: path.len())
+    else
+        path
+    return strings.split(s: body, sep: "/")
+
+# The values of `t`'s variables where it matches the raw segments
+# `segments`, raw.
+#
+# Fails `not_found` where it does not match.
+function match_path(t: Template, segments: [str]) -> [Capture]?
+    if segments.len() != t.segments.len()
+        return fail(code: "not_found", msg: f"the template \"{t.text}\" has {t.segments.len()} segments")
+    out: [Capture] @= []
+
+    for i in range(from: 0, to: segments.len())
+        if !match_pieces(t.segments[i], index: 0, s: segments[i], from: 0, @out)
+            return fail(code: "not_found", msg: f"the template \"{t.text}\" does not match")
+
+    return ok(out)
+
+# How literal each segment of `t` is: 2 for text alone, 1 for text and a
+# variable, 0 for a variable alone. A template that ranks higher is tried
+# first.
+function rank_of(t: Template) -> [i64]
+    out: [i64] @= []
+
+    for segment in t.segments
+        variables: i64 @= 0
+
+        for piece in segment
+            if piece.is_variable
+                variables @ variables + 1
+
+        if variables == 0
+            out @ out.push(2)
+        else if segment.len() == 1
+            out @ out.push(0)
+        else
+            out @ out.push(1)
+
+    return out
+
+# Whether the rank `a` comes before the rank `b`: higher at the first
+# segment where they differ.
+function is_before(a: [i64], b: [i64]) -> bool
+    i: i64 @= 0
+
+    while i < a.len() && i < b.len()
+        if a[i] != b[i]
+            return a[i] > b[i]
+        i @ i + 1
+
+    return false
+
+# The path of the server URL `url`: what follows its host where it has one,
+# else the URL itself; "" for the root, and never a `/` at its end.
+function base_path(url: str) -> str
+    rest: str @= url
+
+    match strings.index_of(s: url, substr: "://")
+        .ok at =>
+            after = at + 3
+            slash: i64 @= after
+
+            while slash < url.len() && url[slash] != '/'
+                slash @ slash + 1
+
+            rest @ url.slice(from: slash, to: url.len())
+        .err _ => _ = 0
+
+    if rest == "" || rest == "/" || rest == "."
+        return ""
+
+    if rest[0] != '/'
+        rest @ "/" + rest
+
+    if rest[rest.len() - 1] == '/'
+        rest @ rest.slice(from: 0, to: rest.len() - 1)
+    return rest
+
+test "routes: the eight methods and the versions of 3.1"
+    assert methods().len() == 8
+    assert is_method("trace")
+    assert !is_method("GET")
+    assert !is_method("query")
+    assert is_version_31("3.1.0")
+    assert is_version_31("3.1.12-rc1")
+    assert !is_version_31("3.1")
+    assert !is_version_31("3.1.x")
+    assert !is_version_31("3.0.3")
+
+test "parse_template: segments, pieces, and the errors"
+    t = parse_template("/pets/{id}/files/{name}.{ext}").must()
+    assert t.segments.len() == 4
+    assert t.segments[3].len() == 3
+    assert names_of(t) == ["id", "name", "ext"]
+    assert parse_template("/").must().segments == [[]]
+    assert parse_template("/a/{b").is_err()
+    assert parse_template("/a/b}").is_err()
+    assert parse_template("/a/{}").is_err()
+    assert parse_template("").must().segments.len() == 0
+
+test "pattern: variables become parameters, and a mixed segment is refused"
+    assert pattern("/pets/{petId}").must() == "/pets/:petId"
+    assert pattern("/").must() == "/"
+    assert pattern("/a/b").must() == "/a/b"
+    assert pattern("/files/{name}.json").is_err()
+    assert pattern("/:x").is_err()
+
+test "match_path: literal, variables, the longest value, and a character never split"
+    t = parse_template("/files/{name}.{ext}").must()
+    found = match_path(t, segments: segments_of("/files/a.b.c")).must()
+    assert found.len() == 2
+    assert found[0].name == "ext"
+    assert found[0].raw == "c"
+    assert found[1].raw == "a.b"
+    assert match_path(t, segments: segments_of("/files/abc")).is_err()
+    assert match_path(t, segments: segments_of("/files/.c")).is_err()
+    whole = parse_template("/pets/{id}").must()
+    assert match_path(whole, segments: segments_of("/pets/")).is_err()
+    assert match_path(whole, segments: segments_of("/pets/7/x")).is_err()
+    assert match_path(whole, segments: segments_of("/pets/café")).must()[0].raw == "café"
+    two = parse_template("/{a}é{b}").must()
+    got = match_path(two, segments: ["xééy"]).must()
+    assert got[1].raw == "xé"
+    assert got[0].raw == "y"
+
+test "rank_of: text before a mixed segment before a variable"
+    a = rank_of(parse_template("/pets/mine").must())
+    b = rank_of(parse_template("/pets/{id}").must())
+    c = rank_of(parse_template("/pets/{id}.json").must())
+    assert is_before(a: a, b: b)
+    assert is_before(a: c, b: b)
+    assert !is_before(a: b, b: a)
+    assert !is_before(a: a, b: a)
+
+test "base_path: of an absolute URL, a relative one, and the root"
+    assert base_path("https://api.example.com/v1") == "/v1"
+    assert base_path("https://{region}.example.com/{version}/") == "/{version}"
+    assert base_path("http://localhost:8080") == ""
+    assert base_path("/") == ""
+    assert base_path("") == ""
+    assert base_path("v2") == "/v2"

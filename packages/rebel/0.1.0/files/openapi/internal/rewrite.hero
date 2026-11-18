@@ -1,0 +1,185 @@
+# A schema of an OpenAPI document made one `json/schema` compiles: each
+# `$ref` to `#/components/schemas/<name>` rewritten to the resource
+# `COMPONENTS_URI`, whose `$defs` hold the components' schemas, and a
+# `$schema` naming OpenAPI's own dialect dropped, since that dialect is
+# 2020-12 with keywords that assert nothing. Only the places a schema stands
+# are rewritten: a `const`, an `enum`, a `default` or an example holding a
+# `$ref` is data and stays as written. The walk holds its own stack.
+
+use json
+use openapi/internal/objects
+
+# The URI of the resource that holds the components' schemas.
+constant COMPONENTS_URI: str
+    "urn:rebel:openapi:components"
+
+# OpenAPI 3.1's dialect of JSON Schema.
+constant DIALECT_URI: str
+    "https://spec.openapis.org/oas/3.1/dialect/base"
+
+# A value whose members are being rewritten.
+record Frame
+    # Whether it is an object; a list otherwise.
+    is_object: bool
+    # What it is: `schema`, `schemas` (an object of schemas by name) or
+    # `list` (a list of schemas).
+    role: str
+    # An object's names, in order.
+    names: [str]
+    # An object's members as given.
+    given: {str: json.Value}
+    # A list's elements as given.
+    items: [json.Value]
+    # The next member or element to read.
+    next: i64
+    # An object's members rewritten.
+    members: {str: json.Value}
+    # A list's elements rewritten.
+    built: [json.Value]
+    # Its name in the object it stands in; "" in a list.
+    key: str
+
+# What the member `key` of a value of `role` is: `schema`, `schemas`,
+# `list`, or `data`, which is not walked.
+function role_of(parent: str, key: str, value: json.Value) -> str
+    if parent == "schemas" || parent == "list"
+        return "schema"
+
+    if parent != "schema"
+        return "data"
+
+    return match key
+        "properties" | "patternProperties" | "$defs" | "definitions" | "dependentSchemas" => "schemas"
+        "allOf" | "anyOf" | "oneOf" | "prefixItems"                                       => "list"
+        "items" =>
+            if json.kind_of(value) == "list"
+                "list"
+            else
+                "schema"
+        "additionalProperties" | "unevaluatedItems" | "unevaluatedProperties" | "not" | "if" | "then" | "else" | "contains" | "propertyNames" | "contentSchema" | "additionalItems" => "schema"
+        _ => "data"
+
+# The frame of `value`, a container, in `role`.
+function opened(value: json.Value, role: str, key: str) -> Frame
+    given = objects.members_of(value)
+    return Frame(
+        is_object: json.kind_of(value) == "object",
+        role: role,
+        names: keys(given),
+        given: given,
+        items: json.items_of(value).default([]),
+        next: 0,
+        members: {},
+        built: [],
+        key: key
+    )
+
+# Whether `value` holds members or elements to walk.
+function is_container(value: json.Value) -> bool
+    kind = json.kind_of(value)
+    return kind == "object" || kind == "list"
+
+# The reference `text` rewritten where it names a component's schema.
+function rewritten_ref(text: str) -> str
+    prefix = "#/components/schemas/"
+
+    if text.len() >= prefix.len() && text.slice(from: 0, to: prefix.len()) == prefix
+        return COMPONENTS_URI + "#/$defs/" + text.slice(from: prefix.len(), to: text.len())
+    return text
+
+# `schema` rewritten.
+function rewrite(schema: json.Value) -> json.Value
+    if !is_container(schema)
+        return schema
+    stack: [Frame] @= [opened(schema, role: "schema", key: "")]
+    top: i64 @= 1
+    result: json.Value @= schema
+
+    while top > 0
+        frame @= stack[top - 1]
+
+        count = if frame.is_object
+            frame.names.len()
+        else
+            frame.items.len()
+
+        if frame.next < count
+            key = if frame.is_object
+                frame.names[frame.next]
+            else
+                ""
+
+            value = if frame.is_object
+                frame.given[key].must()
+            else
+                frame.items[frame.next]
+            frame.next @ frame.next + 1
+            role = role_of(parent: frame.role, key: key, value: value)
+
+            if role != "data" && is_container(value)
+                stack[top - 1] @ frame
+                child = opened(value, role: role, key: key)
+
+                if top < stack.len()
+                    stack[top] @ child
+                else
+                    stack @ stack.push(child)
+                top @ top + 1
+            else
+                kept: json.Value @= value
+                dropped: bool @= false
+
+                if frame.role == "schema" && (key == "$ref" || key == "$dynamicRef")
+                    match json.text_of(value)
+                        .ok text => kept @ .text(v: rewritten_ref(text))
+                        .err _   => _ = 0
+
+                if frame.role == "schema" && key == "$schema" && json.text_of(value).default("") == DIALECT_URI
+                    dropped @ true
+
+                if !dropped
+                    if frame.is_object
+                        frame.members[key] @ kept
+                    else
+                        frame.built @ frame.built.push(kept)
+                stack[top - 1] @ frame
+        else
+            done: json.Value = if frame.is_object
+                .object(members: frame.members)
+            else
+                .list(items: frame.built)
+            top @ top - 1
+
+            if top == 0
+                result @ done
+            else
+                parent @= stack[top - 1]
+
+                if parent.is_object
+                    parent.members[frame.key] @ done
+                else
+                    parent.built @ parent.built.push(done)
+                stack[top - 1] @ parent
+
+    return result
+
+test "rewrite: references in schema places, never in data"
+    given = json.parse(
+        "{\"$schema\": \"https://spec.openapis.org/oas/3.1/dialect/base\", \"type\": \"object\", \"properties\": {\"pet\": {\"$ref\": \"#/components/schemas/Pet\"}, \"$ref\": {\"type\": \"string\"}, \"default\": {\"allOf\": [{\"$ref\": \"#/components/schemas/A~1B\"}]}}, \"default\": {\"$ref\": \"#/components/schemas/Pet\"}, \"items\": [{\"$ref\": \"#/x\"}]}"
+    ).must()
+    out = json.format(rewrite(given)).must()
+    assert out == "{\"type\":\"object\",\"properties\":{\"pet\":{\"$ref\":\"urn:rebel:openapi:components#/$defs/Pet\"},\"$ref\":{\"type\":\"string\"},\"default\":{\"allOf\":[{\"$ref\":\"urn:rebel:openapi:components#/$defs/A~1B\"}]}},\"default\":{\"$ref\":\"#/components/schemas/Pet\"},\"items\":[{\"$ref\":\"#/x\"}]}"
+
+test "rewrite: a boolean, an empty object, and a schema nested deeper than any stack"
+    assert rewrite(.boolean(v: true)) == .boolean(v: true)
+    assert json.format(rewrite(.object(members: {}))).must() == "{}"
+    deep: json.Value @= json.parse("{\"$ref\": \"#/components/schemas/Leaf\"}").must()
+
+    for _ in range(from: 0, to: 5000)
+        members: {str: json.Value} @= {}
+        members["not"] @ deep
+        deep @ .object(members: members)
+
+    out = rewrite(deep)
+    leaf = json.value_at(out, pointer: "/not".repeat(5000) + "/$ref").must()
+    assert json.text_of(leaf).must() == "urn:rebel:openapi:components#/$defs/Leaf"

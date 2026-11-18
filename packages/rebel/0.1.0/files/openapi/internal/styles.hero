@@ -1,0 +1,549 @@
+# A parameter's value read from what a request writes, by its location,
+# style and explode rules (OpenAPI 3.1 § Style Values), then each piece made
+# the type its schema says: `"7"` is the number 7 where the schema says
+# `integer`. A schema's type is found through its `$ref`, `allOf`, `anyOf`
+# and `oneOf`, a bounded number of steps.
+
+use json
+use numbers
+use openapi/internal/objects
+use openapi/internal/rewrite
+use strings
+use url
+
+# The most schemas a search for a type or a member reads.
+constant MOST_STEPS: i64
+    64
+
+# A parameter's text as its style reads it, before its type.
+record Raw
+    # Whether the request holds it.
+    present: bool
+    # What was wrong in reading it; "" where it read.
+    error: str
+    # Its pieces, each unescaped: one for a scalar, each element of an array,
+    # or names and values in turn for an object.
+    pieces: [str]
+
+# A key and a value of a query or a cookie.
+record Pair
+    # The key, unescaped.
+    key: str
+    # The value as written.
+    value: str
+
+# A parameter present, its pieces given.
+function found(pieces: [str]) -> Raw
+    return Raw(present: true, error: "", pieces: pieces)
+
+# A parameter the request does not hold.
+function absent() -> Raw
+    return Raw(present: false, error: "", pieces: [])
+
+# A parameter present whose text does not read.
+function wrong(error: str) -> Raw
+    return Raw(present: true, error: error, pieces: [])
+
+# The schema `ref` names: one of the components' where it names their
+# resource, one inside `root` where it is a fragment alone; `null` otherwise.
+function target_of(ref: str, root: json.Value, defs: json.Value) -> json.Value
+    prefix = rewrite.COMPONENTS_URI + "#"
+
+    if strings.has_prefix(s: ref, prefix: prefix)
+        pointer = url.unescape(ref.slice(from: prefix.len(), to: ref.len())).default("?")
+        return json.value_at(defs, pointer: pointer).default(.null_value)
+
+    if ref != "" && ref[0] == '#'
+        pointer = url.unescape(ref.slice(from: 1, to: ref.len())).default("?")
+        return json.value_at(root, pointer: pointer).default(.null_value)
+    return .null_value
+
+# `schema` and the schemas it leads to, in the order a search reads them:
+# itself, its `$ref`'s target, its `allOf`, `anyOf` and `oneOf`.
+function reached(schema: json.Value, defs: json.Value) -> [json.Value]
+    out: [json.Value] @= []
+    pending: [json.Value] @= [schema]
+    top: i64 @= 1
+
+    while top > 0 && out.len() < MOST_STEPS
+        top @ top - 1
+        s = pending[top]
+        out @ out.push(s)
+        next_ones: [json.Value] @= []
+        target = target_of(objects.text_at(s, key: "$ref"), root: schema, defs: defs)
+
+        if !json.is_null(target)
+            next_ones @ next_ones.push(target)
+
+        for keyword in ["allOf", "anyOf", "oneOf"]
+            for each in objects.items_at(s, key: keyword)
+                next_ones @ next_ones.push(each)
+
+        at: i64 @= next_ones.len() - 1
+
+        while at >= 0
+            if top < pending.len()
+                pending[top] @ next_ones[at]
+            else
+                pending @ pending.push(next_ones[at])
+            top @ top + 1
+            at @ at - 1
+
+    return out
+
+# The types `schema` names, through the schemas it leads to.
+function types_of(schema: json.Value, defs: json.Value) -> [str]
+    out: [str] @= []
+
+    for s in reached(schema: schema, defs: defs)
+        t = objects.value_at(s, key: "type")
+        names: [str] @= []
+
+        match json.text_of(t)
+            .ok name => names @ [name]
+            .err _   => names @ objects.texts_at(s, key: "type")
+
+        for name in names
+            known: bool @= false
+
+            for each in out
+                if each == name
+                    known @ true
+
+            if !known
+                out @ out.push(name)
+
+    return out
+
+# What a value of `schema` is read as: `array`, `object` or `scalar`.
+function shape_of(schema: json.Value, defs: json.Value) -> str
+    types = types_of(schema: schema, defs: defs)
+
+    for t in types
+        if t == "array"
+            return "array"
+
+    for t in types
+        if t == "object"
+            return "object"
+
+    return "scalar"
+
+# The schema of `schema`'s elements, `items`; `true` where none says.
+function items_of(schema: json.Value, defs: json.Value) -> json.Value
+    for s in reached(schema: schema, defs: defs)
+        if objects.has(s, key: "items")
+            return objects.value_at(s, key: "items")
+
+    return .boolean(v: true)
+
+# The schema of `schema`'s property `name`, else its `additionalProperties`;
+# `true` where none says.
+function property_of(schema: json.Value, defs: json.Value, name: str) -> json.Value
+    every = reached(schema: schema, defs: defs)
+
+    for s in every
+        properties = objects.object_at(s, key: "properties")
+
+        match properties[name]
+            .ok given => return given
+            .err _    => _ = 0
+
+    for s in every
+        if objects.has(s, key: "additionalProperties")
+            return objects.value_at(s, key: "additionalProperties")
+
+    return .boolean(v: true)
+
+# The names of `schema`'s properties, in order.
+function property_names(schema: json.Value, defs: json.Value) -> [str]
+    out: [str] @= []
+
+    for s in reached(schema: schema, defs: defs)
+        for name in keys(objects.object_at(s, key: "properties"))
+            out @ out.push(name)
+
+    return out
+
+# Whether `x` is a number JSON writes: neither `nan` nor an infinity.
+function is_finite(x: f64) -> bool
+    return x - x == 0.0
+
+# `text` as the type `schema` names: an integer, a number or a boolean where
+# it names one and `text` spells one, else the text itself.
+function coerce(text: str, schema: json.Value, defs: json.Value) -> json.Value
+    types = types_of(schema: schema, defs: defs)
+
+    for t in types
+        if t == "integer"
+            match numbers.parse_int(text)
+                .ok n  => return .number(v: to_f64(n))
+                .err _ => _ = 0
+
+    for t in types
+        if t == "number"
+            match numbers.parse_float(text)
+                .ok x =>
+                    if is_finite(x) && text != "" && (text[0] == '-' || text[0] >= '0' && text[0] <= '9')
+                        return .number(v: x)
+                .err _ => _ = 0
+
+    for t in types
+        if t == "boolean" && (text == "true" || text == "false")
+            return .boolean(v: text == "true")
+
+    return .text(v: text)
+
+# The value of `raw` read as `shape` and typed by `schema`.
+#
+# Fails `invalid` where an object's names and values do not come in pairs.
+function value_of(raw: Raw, shape: str, schema: json.Value, defs: json.Value) -> json.Value?
+    if shape == "array"
+        items: [json.Value] @= []
+        each_schema = items_of(schema: schema, defs: defs)
+
+        for piece in raw.pieces
+            items @ items.push(coerce(piece, schema: each_schema, defs: defs))
+
+        return ok(.list(items: items))
+
+    if shape == "object"
+        if raw.pieces.len() % 2 != 0
+            return fail(
+                code: "invalid",
+                msg: f"an object's names and values come in pairs, and {raw.pieces.len()} pieces are given"
+            )
+        m: {str: json.Value} @= {}
+        at: i64 @= 0
+
+        while at < raw.pieces.len()
+            name = raw.pieces[at]
+            m[name] @ coerce(
+                raw.pieces[at + 1],
+                schema: property_of(schema: schema, defs: defs, name: name),
+                defs: defs
+            )
+            at @ at + 2
+
+        return ok(.object(members: m))
+
+    if raw.pieces.len() == 0
+        return ok(coerce("", schema: schema, defs: defs))
+    return ok(coerce(raw.pieces[0], schema: schema, defs: defs))
+
+# The pieces of `text` parted by `sep`, each unescaped as a path's or a
+# query's are where `decode` says so; none where `text` is "".
+function pieces_of(text: str, sep: str, decode: str) -> Raw
+    out: [str] @= []
+
+    if text == ""
+        return found(out)
+
+    for piece in strings.split(s: text, sep: sep)
+        match unescaped(text: piece, decode: decode)
+            .ok got => out @ out.push(got)
+            .err e  => return wrong(e.msg)
+
+    return found(out)
+
+# `text` unescaped: `path` by `url.unescape`, `query` by
+# `url.unescape_query`, `none` as it is.
+function unescaped(text: str, decode: str) -> str?
+    if decode == "path"
+        return url.unescape(text)
+
+    if decode == "query"
+        return url.unescape_query(text)
+    return ok(text)
+
+# The names and values of `items`, each `name=value`, in turn.
+function named_pieces(items: [str], decode: str) -> Raw
+    out: [str] @= []
+
+    for item in items
+        at = strings.index_of(s: item, substr: "=").default(item.len())
+        name = unescaped(text: item.slice(from: 0, to: at), decode: decode)
+
+        value: str? = if at < item.len()
+            unescaped(text: item.slice(from: at + 1, to: item.len()), decode: decode)
+        else
+            ok("")
+
+        match name
+            .ok n =>
+                match value
+                    .ok v =>
+                        out @ out.push(n)
+                        out @ out.push(v)
+                    .err e => return wrong(e.msg)
+            .err e => return wrong(e.msg)
+
+    return found(out)
+
+# A path parameter's raw value `raw` read by `style` and `explode`.
+function path_raw(raw: str, name: str, style: str, explode: bool, shape: str) -> Raw
+    body: str @= raw
+    sep: str @= ","
+
+    if style == "label"
+        if raw == "" || raw[0] != '.'
+            return wrong(f"a value of the style `label` begins with `.`, and \"{raw}\" does not")
+        body @ raw.slice(from: 1, to: raw.len())
+
+        if explode
+            sep @ "."
+    else if style == "matrix"
+        if raw == "" || raw[0] != ';'
+            return wrong(f"a value of the style `matrix` begins with `;`, and \"{raw}\" does not")
+
+        if explode && shape != "scalar"
+            items = strings.split(s: raw.slice(from: 1, to: raw.len()), sep: ";")
+
+            if shape == "object"
+                return named_pieces(items, decode: "path")
+            out: [str] @= []
+
+            for item in items
+                text: str @= ""
+
+                if strings.has_prefix(s: item, prefix: name + "=")
+                    text @ item.slice(from: name.len() + 1, to: item.len())
+                else if item != name
+                    return wrong(
+                        f"each value of the style `matrix` exploded begins with `{name}=`, and \"{item}\" does not"
+                    )
+
+                match url.unescape(text)
+                    .ok got => out @ out.push(got)
+                    .err e  => return wrong(e.msg)
+
+            return found(out)
+        prefix = ";" + name
+
+        if raw == prefix
+            body @ ""
+        else if strings.has_prefix(s: raw, prefix: prefix + "=")
+            body @ raw.slice(from: prefix.len() + 1, to: raw.len())
+        else
+            return wrong(f"a value of the style `matrix` begins with `;{name}=`, and \"{raw}\" does not")
+    else if style != "simple"
+        return wrong(f"the style \"{style}\" is not one a path takes")
+
+    if shape == "scalar"
+        match url.unescape(body)
+            .ok got => return found([got])
+            .err e  => return wrong(e.msg)
+
+    if shape == "object" && explode
+        if body == ""
+            return found([])
+        return named_pieces(strings.split(s: body, sep: sep), decode: "path")
+    return pieces_of(text: body, sep: sep, decode: "path")
+
+# The keys and values of the raw query `query`, each key unescaped.
+#
+# Fails as `url.unescape_query` does on a key.
+function query_pairs(query: str) -> [Pair]?
+    out: [Pair] @= []
+
+    for piece in strings.split(s: query, sep: "&")
+        if piece != ""
+            at = strings.index_of(s: piece, substr: "=").default(piece.len())
+            key = url.unescape_query(piece.slice(from: 0, to: at))?
+
+            value = if at < piece.len()
+                piece.slice(from: at + 1, to: piece.len())
+            else
+                ""
+            out @ out.push(Pair(key: key, value: value))
+
+    return ok(out)
+
+# The cookies of a request's `Cookie` fields, `values`, each `name=value`
+# parted by `;`.
+function cookie_pairs(values: [str]) -> [Pair]
+    out: [Pair] @= []
+
+    for line in values
+        for piece in strings.split(s: line, sep: ";")
+            trimmed = strings.trim(piece)
+
+            if trimmed != ""
+                at = strings.index_of(s: trimmed, substr: "=").default(trimmed.len())
+
+                value = if at < trimmed.len()
+                    trimmed.slice(from: at + 1, to: trimmed.len())
+                else
+                    ""
+                out @ out.push(Pair(key: trimmed.slice(from: 0, to: at), value: value))
+
+    return out
+
+# A query's or a cookie's parameter read from `pairs` by `style` and
+# `explode`; a value unescaped as a query's where `decode` is `query`.
+function pairs_raw(pairs: [Pair], name: str, style: str, explode: bool, shape: str, properties: [str], decode: str) -> Raw
+    if style == "deepObject"
+        prefix = name + "["
+        out: [str] @= []
+
+        for p in pairs
+            if strings.has_prefix(s: p.key, prefix: prefix) && p.key.len() > prefix.len() && p.key[p.key.len() - 1] == ']'
+                match unescaped(text: p.value, decode: decode)
+                    .ok got =>
+                        out @ out.push(p.key.slice(from: prefix.len(), to: p.key.len() - 1))
+                        out @ out.push(got)
+                    .err e => return wrong(e.msg)
+
+        if out.len() == 0
+            return absent()
+        return found(out)
+
+    if shape == "object" && explode
+        out: [str] @= []
+
+        for p in pairs
+            for property in properties
+                if p.key == property
+                    match unescaped(text: p.value, decode: decode)
+                        .ok got =>
+                            out @ out.push(p.key)
+                            out @ out.push(got)
+                        .err e => return wrong(e.msg)
+
+        if out.len() == 0
+            return absent()
+        return found(out)
+    values: [str] @= []
+
+    for p in pairs
+        if p.key == name
+            values @ values.push(p.value)
+
+    if values.len() == 0
+        return absent()
+
+    if shape == "array" && explode
+        out: [str] @= []
+
+        for v in values
+            match unescaped(text: v, decode: decode)
+                .ok got => out @ out.push(got)
+                .err e  => return wrong(e.msg)
+
+        return found(out)
+
+    if shape == "scalar"
+        match unescaped(text: values[0], decode: decode)
+            .ok got => return found([got])
+            .err e  => return wrong(e.msg)
+
+    if style == "form"
+        return pieces_of(text: values[0], sep: ",", decode: decode)
+
+    sep = if style == "spaceDelimited"
+        " "
+    else if style == "pipeDelimited"
+        "|"
+    else
+        ""
+
+    if sep == ""
+        return wrong(f"the style \"{style}\" is not one a query takes")
+
+    whole = match unescaped(text: values[0], decode: decode)
+        .ok got => got
+        .err e  => return wrong(e.msg)
+
+    return pieces_of(text: whole, sep: sep, decode: "none")
+
+# A header field's parameter read from its text by the style `simple`.
+function header_raw(text: str, explode: bool, shape: str) -> Raw
+    if shape == "scalar"
+        return found([strings.trim(text)])
+
+    if strings.trim(text) == ""
+        return found([])
+    items: [str] @= []
+
+    for piece in strings.split(s: text, sep: ",")
+        items @ items.push(strings.trim(piece))
+
+    if shape == "object" && explode
+        return named_pieces(items, decode: "none")
+    return found(items)
+
+test "coerce: an integer, a number, a boolean, a text, and what spells none"
+    defs = json.parse("{\"$defs\": {}}").must()
+    integer = json.parse("{\"type\": \"integer\"}").must()
+    number = json.parse("{\"type\": \"number\"}").must()
+    boolean = json.parse("{\"type\": \"boolean\"}").must()
+    assert coerce("7", schema: integer, defs: defs) == .number(v: 7.0)
+    assert coerce("-7", schema: integer, defs: defs) == .number(v: -7.0)
+    assert coerce("7.5", schema: integer, defs: defs) == .text(v: "7.5")
+    assert coerce("7.5", schema: json.parse("{\"type\": [\"integer\", \"number\"]}").must(), defs: defs) == .number(v: 7.5)
+    assert coerce("inf", schema: number, defs: defs) == .text(v: "inf")
+    assert coerce("nan", schema: number, defs: defs) == .text(v: "nan")
+    assert coerce(".5", schema: number, defs: defs) == .text(v: ".5")
+    assert coerce("9223372036854775808", schema: integer, defs: defs) == .text(v: "9223372036854775808")
+    assert coerce("true", schema: boolean, defs: defs) == .boolean(v: true)
+    assert coerce("True", schema: boolean, defs: defs) == .text(v: "True")
+    assert coerce("", schema: integer, defs: defs) == .text(v: "")
+    assert coerce("é", schema: integer, defs: defs) == .text(v: "é")
+
+test "types_of: through a component's reference, a local one, allOf and anyOf, and a cycle that ends"
+    defs = json.parse(
+        "{\"$defs\": {\"Id\": {\"type\": \"integer\"}, \"Loop\": {\"$ref\": \"urn:rebel:openapi:components#/$defs/Loop\"}}}"
+    ).must()
+    assert types_of(schema: json.parse("{\"$ref\": \"urn:rebel:openapi:components#/$defs/Id\"}").must(), defs: defs) == ["integer"]
+    assert types_of(schema: json.parse("{\"allOf\": [{\"type\": \"string\"}, {\"anyOf\": [{\"type\": \"null\"}]}]}").must(), defs: defs) == ["string", "null"]
+    assert types_of(schema: json.parse("{\"$ref\": \"urn:rebel:openapi:components#/$defs/Loop\"}").must(), defs: defs).len() == 0
+    assert types_of(schema: json.parse("{\"$ref\": \"#/$defs/n\", \"$defs\": {\"n\": {\"type\": \"number\"}}}").must(), defs: defs) == ["number"]
+    assert types_of(schema: .boolean(v: true), defs: defs).len() == 0
+    assert shape_of(schema: json.parse("{\"type\": [\"object\", \"array\"]}").must(), defs: defs) == "array"
+
+test "path_raw: each style, an escape, a value of more than one byte, and what does not read"
+    assert path_raw(raw: "a%2Cb", name: "x", style: "simple", explode: false, shape: "scalar").pieces == ["a,b"]
+    assert path_raw(raw: "1,2", name: "x", style: "simple", explode: false, shape: "array").pieces == ["1", "2"]
+    assert path_raw(raw: "caf%C3%A9", name: "x", style: "simple", explode: false, shape: "scalar").pieces == ["café"]
+    assert path_raw(raw: "%ZZ", name: "x", style: "simple", explode: false, shape: "scalar").error != ""
+    assert path_raw(raw: "%FF", name: "x", style: "simple", explode: false, shape: "scalar").error != ""
+    assert path_raw(raw: ";x", name: "x", style: "matrix", explode: false, shape: "scalar").pieces == [""]
+    assert path_raw(raw: ";x=1;x=2", name: "x", style: "matrix", explode: true, shape: "array").pieces == ["1", "2"]
+    assert path_raw(raw: ";y=1", name: "x", style: "matrix", explode: true, shape: "array").error != ""
+    assert path_raw(raw: ".a=1.b=2", name: "x", style: "label", explode: true, shape: "object").pieces == ["a", "1", "b", "2"]
+    assert path_raw(raw: ".", name: "x", style: "label", explode: false, shape: "array").pieces.len() == 0
+    assert path_raw(raw: "a", name: "x", style: "form", explode: false, shape: "scalar").error != ""
+
+test "query_pairs and pairs_raw: absent, repeated, deep, delimited, an escaped comma, and a bad escape"
+    pairs = query_pairs("a=1&a=2&b%5Bc%5D=3&d=x%20y&e=1%2C2,3&f").must()
+    assert !pairs_raw(pairs, name: "z", style: "form", explode: true, shape: "scalar", properties: [], decode: "query").present
+    assert pairs_raw(pairs, name: "a", style: "form", explode: true, shape: "array", properties: [], decode: "query").pieces == ["1", "2"]
+    assert pairs_raw(pairs, name: "a", style: "form", explode: true, shape: "scalar", properties: [], decode: "query").pieces == ["1"]
+    assert pairs_raw(pairs, name: "b", style: "deepObject", explode: true, shape: "object", properties: [], decode: "query").pieces == ["c", "3"]
+    assert pairs_raw(pairs, name: "d", style: "spaceDelimited", explode: false, shape: "array", properties: [], decode: "query").pieces == ["x", "y"]
+    assert pairs_raw(pairs, name: "e", style: "form", explode: false, shape: "array", properties: [], decode: "query").pieces == ["1,2", "3"]
+    assert pairs_raw(pairs, name: "f", style: "form", explode: true, shape: "scalar", properties: [], decode: "query").pieces == [""]
+    assert pairs_raw(pairs, name: "a", style: "matrix", explode: false, shape: "array", properties: [], decode: "query").error != ""
+    assert pairs_raw(pairs, name: "o", style: "form", explode: true, shape: "object", properties: ["a", "d"], decode: "query").pieces == ["a", "1", "a", "2", "d", "x y"]
+    assert query_pairs("%ZZ=1").is_err()
+    assert query_pairs("").must().len() == 0
+
+test "header_raw and cookie_pairs: trimmed, split, exploded, empty"
+    assert header_raw(text: " a ", explode: false, shape: "scalar").pieces == ["a"]
+    assert header_raw(text: "1, 2", explode: false, shape: "array").pieces == ["1", "2"]
+    assert header_raw(text: "a=1, b=2", explode: true, shape: "object").pieces == ["a", "1", "b", "2"]
+    assert header_raw(text: "", explode: false, shape: "array").pieces.len() == 0
+    cookies = cookie_pairs(["a=1; b=2", "c", ""])
+    assert cookies.len() == 3
+    assert cookies[1].value == "2"
+    assert cookies[2].key == "c"
+    assert cookies[2].value == ""
+
+test "value_of: an array typed, an object's pairs, and pieces that do not pair"
+    defs = json.parse("{\"$defs\": {}}").must()
+    numbers_schema = json.parse("{\"type\": \"array\", \"items\": {\"type\": \"integer\"}}").must()
+    assert json.format(value_of(found(["1", "x"]), shape: "array", schema: numbers_schema, defs: defs).must()).must() == "[1,\"x\"]"
+    point = json.parse("{\"type\": \"object\", \"properties\": {\"x\": {\"type\": \"integer\"}}}").must()
+    assert json.format(value_of(found(["x", "1", "y", "2"]), shape: "object", schema: point, defs: defs).must()).must() == "{\"x\":1,\"y\":\"2\"}"
+    assert value_of(found(["x"]), shape: "object", schema: point, defs: defs).is_err()
+    assert value_of(found([]), shape: "scalar", schema: point, defs: defs).must() == .text(v: "")

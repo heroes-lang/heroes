@@ -1,0 +1,110 @@
+# Reaches Rebel's package `openapi`, so that `heroes test` on this file runs
+# the tests of its face and its private modules (spec § 12), and is itself a
+# small API described by OpenAPI 3.1: a store of pets.
+#
+# With no argument it prints its document as JSON, with `--yaml` as YAML.
+# With `--serve <port>` it serves on 127.0.0.1:<port> its two operations,
+# every request validated against the document before it is answered, the
+# document at `/openapi.json` and `/openapi.yaml`, and the pages of Swagger UI
+# at `/docs` and of Redoc at `/redoc`, until it is stopped.
+
+use <rebel>/http
+use <rebel>/json
+use <rebel>/net
+use <rebel>/numbers
+use <rebel>/openapi
+use <rebel>/web
+
+# What the server keeps: its routes, its validator and its site.
+record App
+    # The routes of the operations and of the site.
+    router: web.Router
+    # The document compiled.
+    validator: openapi.Validator
+    # The document and its pages.
+    site: openapi.Site
+
+# The document of the store: `listPets` and `showPetById`, a `Pet` and an
+# `Error` among the components.
+function document() -> openapi.Document
+    doc @= openapi.new_document(title: "Pets", version: "1.0.0")
+    doc.servers @ [openapi.new_server(url: "/v1", description: "this server")]
+    properties: {str: json.Value} @= {}
+    properties["id"] @ openapi.with_format(openapi.integer_schema(), format: "int64")
+    properties["name"] @ openapi.string_schema()
+    properties["tag"] @ openapi.string_schema()
+    doc.components.schemas["Pet"] @ openapi.object_schema(properties, required: ["id", "name"])
+    error_properties: {str: json.Value} @= {}
+    error_properties["message"] @ openapi.string_schema()
+    doc.components.schemas["Error"] @ openapi.object_schema(error_properties, required: ["message"])
+
+    list @= openapi.new_operation(operation_id: "listPets", summary: "List all pets")
+    limit @= openapi.new_parameter(
+        name: "limit",
+        location: .query,
+        schema: openapi.with_keyword(schema: openapi.integer_schema(), keyword: "maximum", value: .number(v: 100.0))
+    )
+    limit.description @ "How many items to return at one time, at most 100"
+    list.parameters @ [limit]
+    list.responses["200"] @ openapi.json_response(
+        description: "A list of pets",
+        schema: openapi.array_schema(openapi.schema_ref("Pet"))
+    )
+    list.responses["default"] @ openapi.json_response(description: "An error", schema: openapi.schema_ref("Error"))
+    openapi.add_operation(@doc, path: "/pets", method: "GET", operation: list).must()
+
+    show @= openapi.new_operation(operation_id: "showPetById", summary: "Info for a specific pet")
+    show.parameters @ [openapi.new_parameter(name: "petId", location: .path, schema: openapi.integer_schema())]
+    show.responses["200"] @ openapi.json_response(description: "The pet", schema: openapi.schema_ref("Pet"))
+    show.responses["404"] @ openapi.json_response(description: "No such pet", schema: openapi.schema_ref("Error"))
+    openapi.add_operation(@doc, path: "/pets/{petId}", method: "GET", operation: show).must()
+    return doc
+
+# Answers each request: the site's routes, then each operation's, its request
+# validated first.
+function answer(app: App, r: http.Request) -> http.Response
+    match web.route(app.router, r: r)
+        .err _ => return web.not_routed(app.router, r: r)
+        .ok found =>
+            if openapi.is_site_route(found.name)
+                return openapi.respond_site(app.site, name: found.name)
+
+            match openapi.read_request(app.validator, r: r)
+                .err _     => return openapi.problem_response(openapi.request_errors_of(app.validator, r: r))
+                .ok values => return answer_operation(values)
+
+# The answer of an operation to its valid values.
+function answer_operation(values: openapi.Values) -> http.Response
+    pet: {str: json.Value} @= {}
+    pet["id"] @ values.path["petId"].default(.number(v: 1.0))
+    pet["name"] @ .text(v: "Rex")
+
+    if values.operation_id == "listPets"
+        return http.respond_json(http.STATUS_OK, value: .list(items: [.object(members: pet)])).must()
+    return http.respond_json(http.STATUS_OK, value: .object(members: pet)).must()
+
+function main()
+    doc = document()
+    given = args()
+
+    if given.len() == 0
+        print(openapi.format_json(doc).must())
+        return
+
+    if given[0] == "--yaml"
+        print(openapi.format_yaml(doc).must())
+        return
+
+    if given[0] == "--serve" && given.len() == 2
+        port = numbers.parse_int(given[1]).must()
+        router @= web.new_router()
+        openapi.add_routes(@router, doc: doc).must()
+        site = openapi.new_site(doc, title: "Pets").must()
+        openapi.add_site_routes(@router, site: site).must()
+        app = App(router: router, validator: openapi.new_validator(doc).must(), site: site)
+        listener = net.listen(host: "127.0.0.1", port: port).must()
+        print(f"serving on http://127.0.0.1:{port}/docs")
+        http.serve_with(http.default_server(), l: listener, state: app, handler: answer).must()
+        return
+    print("usage: reach_openapi [--yaml | --serve <port>]")
+    exit(code: 2)

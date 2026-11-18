@@ -1,0 +1,108 @@
+# A response validated against the operation of the request it answers: the
+# response its status names (the status, its range, `default`), each header
+# field it declares, and its body by its media type. Every issue is answered
+# 500: a server that writes it has a defect.
+
+use http
+use json
+use openapi/internal/compiled
+use openapi/internal/media
+use openapi/internal/requests
+use openapi/internal/styles
+
+# A response's issue, answered 500.
+function wrong(location: str, name: str, keyword: str, message: str) -> requests.Issue
+    return requests.Issue(status: 500, location: location, name: name, pointer: "", keyword: keyword, message: message)
+
+# The index of the answer of `op` for `status`: the status, its range, then
+# `default`; -1 where there is none.
+function answer_of(op: compiled.Op lent, status: i64) -> i64
+    for key in [to_str(status), to_str(status / 100) + "XX", "default"]
+        for i in range(from: 0, to: op.answers.len())
+            if op.answers[i].key == key
+                return i
+
+    return -1
+
+# Every issue of `response` as the answer of `c`'s operation to `r`.
+function check(c: compiled.Compiled lent, r: http.Request, response: http.Response) -> [requests.Issue]
+    routed = requests.route(c, r: r)
+
+    if routed.at < 0
+        return [routed.issue]
+    op = c.operations[routed.at]
+    at = answer_of(op, status: response.status)
+
+    if at < 0
+        return [
+            wrong(location: "status", name: "", keyword: "status", message: f"the operation \"{op.operation_id}\" declares no response for {response.status}, nor for {response.status / 100}XX, nor a default")
+        ]
+    answer = op.answers[at]
+    out: [requests.Issue] @= []
+
+    for h in answer.headers
+        if !http.has_header(response.headers, name: h.name)
+            if h.required
+                out @ out.push(
+                    wrong(location: "header", name: h.name, keyword: "required", message: f"the response's header field \"{h.name}\" is required, and the response has none")
+                )
+        else
+            text = http.values_of(response.headers, name: h.name).join(",")
+            shape = styles.shape_of(schema: h.schema, defs: c.defs)
+            read: json.Value? @= styles.value_of(
+                styles.header_raw(text: text, explode: h.explode, shape: shape),
+                shape: shape,
+                schema: h.schema,
+                defs: c.defs
+            )
+
+            if h.media_type != ""
+                read @ requests.content_value(text: text, media_type: h.media_type)
+
+            match read
+                .err e => out @ out.push(wrong(location: "header", name: h.name, keyword: "style", message: e.msg))
+                .ok value => requests.schema_issues(
+                    @out,
+                    code: h.code,
+                    value: value,
+                    location: "header",
+                    name: h.name,
+                    status: 500
+                )
+
+    if r.method == http.METHOD_HEAD || response.status == 204 || response.status == 304
+        return out
+
+    if answer.content.len() == 0
+        if response.body.len() > 0
+            out @ out.push(
+                wrong(location: "body", name: "", keyword: "mediaType", message: f"the response declares no body, and it has {response.body.len()} bytes")
+            )
+        return out
+    given = media.name_of(http.value_of(response.headers, name: "Content-Type").default(""))
+    names: [str] @= []
+
+    for m in answer.content
+        names @ names.push(m.media_type)
+
+    match media.best_of(names, given: given)
+        .err _ => out @ out.push(
+            wrong(location: "body", name: "", keyword: "mediaType", message: f"the body is of the type \"{given}\", and the response declares {names.join(", ")}")
+        )
+        .ok i =>
+            m = answer.content[i]
+            decoded = requests.decode(r, data: response.body, given: given, m: m, defs: c.defs)
+
+            if decoded.error != ""
+                out @ out.push(wrong(location: "body", name: "", keyword: "mediaType", message: decoded.error))
+            else if decoded.validate && m.has_schema
+                requests.schema_issues(
+                    @out,
+                    code: m.code,
+                    value: decoded.value,
+                    location: "body",
+                    name: "",
+                    status: 500
+                )
+
+    return out

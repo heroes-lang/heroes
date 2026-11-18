@@ -1,0 +1,476 @@
+# What OpenAPI 3.1 asks of a document beyond the form of each object, read
+# from its JSON: the paths' templates and their parameters, a parameter's
+# style for its location, the uniqueness of operationIds, tags and
+# parameters, references that name a component of their kind, requirements
+# whose schemes are declared, servers' variables, security schemes' fields,
+# components' names, and every schema valid against its dialect's
+# meta-schema and compiled with the components.
+
+use json
+use json/schema as jsonschema
+use openapi/internal/compiled
+use openapi/internal/objects
+use openapi/internal/rewrite
+use openapi/internal/routes
+use openapi/internal/shape
+use strings
+
+# A problem at `pointer`.
+function at(pointer: str, message: str) -> shape.Problem
+    return shape.Problem(pointer: pointer, message: message)
+
+# Whether `list` holds `s`.
+function holds(list: [str], s: str) -> bool
+    for each in list
+        if each == s
+            return true
+
+    return false
+
+# The components' field a reference of the object kind `kind` names.
+function components_key(kind: str) -> str
+    return match kind
+        "parameter"       => "parameters"
+        "request_body"    => "requestBodies"
+        "response"        => "responses"
+        "header"          => "headers"
+        "example"         => "examples"
+        "link"            => "links"
+        "callback"        => "callbacks"
+        "security_scheme" => "securitySchemes"
+        "path_item"       => "pathItems"
+        _                 => ""
+
+# The styles a parameter of `location` takes.
+function styles_of(location: str) -> [str]
+    return match location
+        "path"   => ["matrix", "label", "simple"]
+        "query"  => ["form", "spaceDelimited", "pipeDelimited", "deepObject"]
+        "header" => ["simple"]
+        "cookie" => ["form"]
+        _        => []
+
+# Whether `name` is a component's name: letters, digits, `.`, `-` and `_`.
+function is_component_name(name: str) -> bool
+    if name == ""
+        return false
+
+    for i in range(from: 0, to: name.len())
+        c = name[i]
+        good = c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '.' || c == '-' || c == '_'
+
+        if !good
+            return false
+
+    return true
+
+# Whether `key` names responses: `default`, a status of three digits from 100
+# to 599, or a range such as `2XX`.
+function is_status_key(key: str) -> bool
+    if key == "default"
+        return true
+
+    if key.len() != 3 || key[0] < '1' || key[0] > '5'
+        return false
+
+    if key[1] == 'X' && key[2] == 'X'
+        return true
+    return key[1] >= '0' && key[1] <= '9' && key[2] >= '0' && key[2] <= '9'
+
+# The rules of a parameter or a header field `v` at `pointer`.
+function value_rules(@out: [shape.Problem], v: json.Value, pointer: str, is_header: bool)
+    has_schema = objects.has(v, key: "schema")
+    has_content = objects.has(v, key: "content")
+
+    if has_schema == has_content
+        out @ out.push(at(pointer: pointer, message: "it has `schema` or `content`, and only one of them"))
+
+    if has_content && keys(objects.object_at(v, key: "content")).len() != 1
+        out @ out.push(at(pointer: pointer + "/content", message: "`content` holds exactly one media type"))
+
+    if objects.has(v, key: "example") && objects.has(v, key: "examples")
+        out @ out.push(at(pointer: pointer, message: "it has `example` or `examples`, not both"))
+
+    if is_header
+        style = objects.text_at(v, key: "style")
+
+        if style != "" && style != "simple"
+            out @ out.push(at(pointer: pointer + "/style", message: f"a header's style is `simple`, not \"{style}\""))
+        return
+    location = objects.text_at(v, key: "in")
+    allowed = styles_of(location)
+
+    if allowed.len() == 0
+        out @ out.push(
+            at(pointer: pointer + "/in", message: f"\"{location}\" is not a location: path, query, header or cookie")
+        )
+        return
+    style = objects.text_at(v, key: "style")
+
+    if style != "" && !holds(allowed, s: style)
+        out @ out.push(
+            at(pointer: pointer + "/style", message: f"a {location} parameter takes the style {allowed.join(", ")}, not \"{style}\"")
+        )
+
+    if location == "path" && !objects.bool_at(v, key: "required", otherwise: false)
+        out @ out.push(at(pointer: pointer + "/required", message: "a path parameter is required: `required` is true"))
+
+    if location != "query" && objects.has(v, key: "allowEmptyValue")
+        out @ out.push(
+            at(pointer: pointer + "/allowEmptyValue", message: "`allowEmptyValue` is a query parameter's alone")
+        )
+
+    if location != "query" && objects.has(v, key: "allowReserved")
+        out @ out.push(at(pointer: pointer + "/allowReserved", message: "`allowReserved` is a query parameter's alone"))
+
+# The rules of a server `v` at `pointer`: each variable its URL names
+# declared and each declared one named, each default among its values.
+function server_rules(@out: [shape.Problem], v: json.Value, pointer: str)
+    url = objects.text_at(v, key: "url")
+    named: [str] @= []
+    i: i64 @= 0
+
+    while i < url.len()
+        if url[i] == '{'
+            close: i64 @= i + 1
+
+            while close < url.len() && url[close] != '}'
+                close @ close + 1
+
+            if close == url.len()
+                out @ out.push(
+                    at(pointer: pointer + "/url", message: f"the URL \"{url}\" opens a `{{` it does not close")
+                )
+                return
+            named @ named.push(url.slice(from: i + 1, to: close))
+            i @ close + 1
+        else
+            i @ i + 1
+
+    variables = objects.object_at(v, key: "variables")
+
+    for name in named
+        if variables[name].is_err()
+            out @ out.push(
+                at(pointer: pointer + "/url", message: f"the URL names the variable \"{name}\", which `variables` does not declare")
+            )
+
+    for name in keys(variables)
+        where = pointer + json.pointer_of(["variables", name])
+
+        if !holds(named, s: name)
+            out @ out.push(at(pointer: where, message: f"the variable \"{name}\" is not in the URL \"{url}\""))
+        variable = variables[name].must()
+
+        if objects.has(variable, key: "enum")
+            values = objects.texts_at(variable, key: "enum")
+
+            if values.len() == 0
+                out @ out.push(at(pointer: where + "/enum", message: "`enum` holds one value at least"))
+            else if !holds(values, s: objects.text_at(variable, key: "default"))
+                out @ out.push(
+                    at(pointer: where + "/default", message: f"the default \"{objects.text_at(variable, key: "default")}\" is not one of {values.join(", ")}")
+                )
+
+# The rules of a security scheme `v` at `pointer`.
+function scheme_rules(@out: [shape.Problem], v: json.Value, pointer: str)
+    kind = objects.text_at(v, key: "type")
+
+    if kind == "apiKey"
+        if objects.text_at(v, key: "name") == ""
+            out @ out.push(at(pointer: pointer, message: "an `apiKey` names its field, parameter or cookie in `name`"))
+        location = objects.text_at(v, key: "in")
+
+        if location != "query" && location != "header" && location != "cookie"
+            out @ out.push(
+                at(pointer: pointer + "/in", message: f"an `apiKey` is sent in a query, a header or a cookie, not \"{location}\"")
+            )
+    else if kind == "http"
+        if objects.text_at(v, key: "scheme") == ""
+            out @ out.push(
+                at(pointer: pointer, message: "an `http` scheme names its scheme in `scheme`, such as `bearer`")
+            )
+    else if kind == "oauth2"
+        flows = objects.value_at(v, key: "flows")
+        count: i64 @= 0
+
+        for name in ["implicit", "password", "clientCredentials", "authorizationCode"]
+            if objects.has(flows, key: name)
+                count @ count + 1
+                flow = objects.value_at(flows, key: name)
+                where = pointer + "/flows/" + name
+                needs_authorization = name == "implicit" || name == "authorizationCode"
+                needs_token = name != "implicit"
+
+                if needs_authorization && objects.text_at(flow, key: "authorizationUrl") == ""
+                    out @ out.push(at(pointer: where, message: f"the flow `{name}` has an `authorizationUrl`"))
+
+                if needs_token && objects.text_at(flow, key: "tokenUrl") == ""
+                    out @ out.push(at(pointer: where, message: f"the flow `{name}` has a `tokenUrl`"))
+
+        if count == 0
+            out @ out.push(at(pointer: pointer, message: "an `oauth2` scheme has one flow at least in `flows`"))
+    else if kind == "openIdConnect"
+        if objects.text_at(v, key: "openIdConnectUrl") == ""
+            out @ out.push(at(pointer: pointer, message: "an `openIdConnect` scheme has an `openIdConnectUrl`"))
+    else if kind != "mutualTLS"
+        out @ out.push(
+            at(pointer: pointer + "/type", message: f"\"{kind}\" is not a scheme's type: apiKey, http, mutualTLS, oauth2 or openIdConnect")
+        )
+
+# The rules of the paths of `doc`: each template read, none the same as
+# another but for its names, each operation's path parameters those of its
+# template, and no parameter twice in a list.
+function path_rules(@out: [shape.Problem], doc: json.Value)
+    paths = objects.object_at(doc, key: "paths")
+    shapes: [str] @= []
+
+    for path in keys(paths)
+        if !objects.is_extension(path) && path != "" && path[0] == '/'
+            where = json.pointer_of(["paths", path])
+
+            template = match routes.parse_template(path)
+                .ok t => t
+                .err e =>
+                    out @ out.push(at(pointer: where, message: e.msg))
+                    continue
+
+            written: [str] @= []
+
+            for segment in template.segments
+                pieces: [str] @= []
+
+                for i in range(from: 0, to: segment.len())
+                    if segment[i].is_variable
+                        pieces @ pieces.push("{}")
+
+                        if i > 0 && segment[i - 1].is_variable
+                            out @ out.push(
+                                at(pointer: where, message: f"the path \"{path}\" has two variables with nothing between them")
+                            )
+                    else
+                        pieces @ pieces.push(segment[i].text)
+
+                written @ written.push(pieces.join(""))
+
+            normal = written.join("/")
+
+            if holds(shapes, s: normal)
+                out @ out.push(
+                    at(pointer: where, message: f"the path \"{path}\" is another's but for its variables' names")
+                )
+            shapes @ shapes.push(normal)
+
+            item = match compiled.item_resolved(doc: doc, item: paths[path].must())
+                .ok got => got
+                .err _  => continue
+
+            names = routes.names_of(template)
+            item_params = params_named(
+                @out,
+                doc: doc,
+                list: objects.items_at(item, key: "parameters"),
+                pointer: where + "/parameters"
+            )
+
+            for method in routes.methods()
+                if objects.has(item, key: method)
+                    op = objects.value_at(item, key: method)
+                    own = params_named(
+                        @out,
+                        doc: doc,
+                        list: objects.items_at(op, key: "parameters"),
+                        pointer: where + "/" + method + "/parameters"
+                    )
+                    declared: [str] @= []
+
+                    for p in item_params
+                        declared @ declared.push(p)
+
+                    for p in own
+                        if !holds(declared, s: p)
+                            declared @ declared.push(p)
+
+                    for name in names
+                        if !holds(declared, s: "path " + name)
+                            out @ out.push(
+                                at(pointer: where + "/" + method, message: f"the path \"{path}\" names `{name}`, and no path parameter of the operation is named so")
+                            )
+
+                    for p in declared
+                        if strings.has_prefix(s: p, prefix: "path ")
+                            name = p.slice(from: 5, to: p.len())
+
+                            if !holds(names, s: name)
+                                out @ out.push(
+                                    at(pointer: where + "/" + method, message: f"the path parameter \"{name}\" is not in the path \"{path}\"")
+                                )
+
+# The locations and names of the parameters `list`, as `<in> <name>`, each
+# resolved; a parameter twice in the list is a problem.
+function params_named(@out: [shape.Problem], doc: json.Value, list: [json.Value], pointer: str) -> [str]
+    named: [str] @= []
+
+    for i in range(from: 0, to: list.len())
+        match compiled.resolved(doc: doc, value: list[i], kind: "parameters")
+            .ok p =>
+                key = objects.text_at(p, key: "in") + " " + objects.text_at(p, key: "name")
+
+                if holds(named, s: key)
+                    out @ out.push(
+                        at(pointer: pointer + "/" + to_str(i), message: f"the {objects.text_at(p, key: "in")} parameter \"{objects.text_at(p, key: "name")}\" is in the list twice")
+                    )
+                else
+                    named @ named.push(key)
+            .err _ => _ = 0
+
+    return named
+
+# Every problem of the document `doc`, in the order of the document: its
+# form first, then the rules beyond it, then its schemas.
+function problems(doc: json.Value) -> [shape.Problem]
+    walked = shape.walk(doc, kind: shape.DOCUMENT)
+    out @= walked.problems
+    version = objects.text_at(doc, key: "openapi")
+
+    if !routes.is_version_31(version)
+        out @ out.push(at(pointer: "/openapi", message: f"\"{version}\" is not a version of OpenAPI 3.1"))
+
+    if !objects.has(doc, key: "paths") && !objects.has(doc, key: "components") && !objects.has(doc, key: "webhooks")
+        out @ out.push(at(pointer: "", message: "a document has `paths`, `components` or `webhooks`"))
+
+    operation_ids: [str] @= []
+    link_ids: [shape.Item] @= []
+    schemes = objects.object_at(objects.value_at(doc, key: "components"), key: "securitySchemes")
+
+    for item in walked.items
+        v = item.value
+        p = item.pointer
+        kind = item.kind
+        is_reference = shape.is_referable(kind) && objects.has(v, key: "$ref")
+
+        if is_reference || kind == shape.PATH_ITEM && objects.has(v, key: "$ref")
+            match compiled.resolved(doc: doc, value: v, kind: components_key(kind))
+                .ok _  => _ = 0
+                .err e => out @ out.push(at(pointer: p + "/$ref", message: e.msg))
+        else if kind == shape.PARAMETER
+            value_rules(@out, v: v, pointer: p, is_header: false)
+        else if kind == shape.HEADER
+            value_rules(@out, v: v, pointer: p, is_header: true)
+        else if kind == shape.MEDIA_TYPE
+            if objects.has(v, key: "example") && objects.has(v, key: "examples")
+                out @ out.push(at(pointer: p, message: "it has `example` or `examples`, not both"))
+        else if kind == shape.SERVER
+            server_rules(@out, v: v, pointer: p)
+        else if kind == shape.SECURITY_SCHEME
+            scheme_rules(@out, v: v, pointer: p)
+        else if kind == shape.EXAMPLE
+            if objects.has(v, key: "value") && objects.has(v, key: "externalValue")
+                out @ out.push(at(pointer: p, message: "an example has `value` or `externalValue`, not both"))
+        else if kind == "license"
+            if objects.has(v, key: "identifier") && objects.has(v, key: "url")
+                out @ out.push(at(pointer: p, message: "a licence has `identifier` or `url`, not both"))
+        else if kind == shape.LINK
+            if objects.has(v, key: "operationId") == objects.has(v, key: "operationRef")
+                out @ out.push(
+                    at(pointer: p, message: "a link has `operationId` or `operationRef`, and only one of them")
+                )
+            else if objects.has(v, key: "operationId")
+                link_ids @ link_ids.push(item)
+        else if kind == shape.OPERATION
+            id = objects.text_at(v, key: "operationId")
+
+            if id != ""
+                if holds(operation_ids, s: id)
+                    out @ out.push(
+                        at(pointer: p + "/operationId", message: f"the operationId \"{id}\" is another operation's already")
+                    )
+                else
+                    operation_ids @ operation_ids.push(id)
+        else if kind == shape.REQUIREMENT
+            for name in keys(objects.members_of(v))
+                if schemes[name].is_err()
+                    out @ out.push(
+                        at(pointer: p + json.pointer_of([name]), message: f"the scheme \"{name}\" is not one of the components' `securitySchemes`")
+                    )
+        else if kind == "responses"
+            for key in keys(objects.members_of(v))
+                if !objects.is_extension(key) && !is_status_key(key)
+                    out @ out.push(
+                        at(pointer: p + json.pointer_of([key]), message: f"\"{key}\" is no status: three digits from 100 to 599, a range such as `2XX`, or `default`")
+                    )
+        else if kind == shape.COMPONENTS
+            for field in keys(objects.members_of(v))
+                if !objects.is_extension(field)
+                    for name in keys(objects.object_at(v, key: field))
+                        if !is_component_name(name)
+                            out @ out.push(
+                                at(pointer: p + json.pointer_of([field, name]), message: f"\"{name}\" is no component's name: letters, digits, `.`, `-` and `_`")
+                            )
+        else if kind == shape.DOCUMENT
+            names: [str] @= []
+            tags = objects.items_at(v, key: "tags")
+
+            for i in range(from: 0, to: tags.len())
+                name = objects.text_at(tags[i], key: "name")
+
+                if holds(names, s: name)
+                    out @ out.push(
+                        at(pointer: "/tags/" + to_str(i), message: f"the tag \"{name}\" is in the list twice")
+                    )
+                names @ names.push(name)
+
+    for item in link_ids
+        id = objects.text_at(item.value, key: "operationId")
+
+        if !holds(operation_ids, s: id)
+            out @ out.push(
+                at(pointer: item.pointer + "/operationId", message: f"no operation has the operationId \"{id}\"")
+            )
+
+    path_rules(@out, doc: doc)
+    schema_rules(@out, doc: doc, items: walked.items)
+    return out
+
+# The rules of every schema of `doc`: valid against its dialect's
+# meta-schema, and compiled with the components.
+function schema_rules(@out: [shape.Problem], doc: json.Value, items: [shape.Item])
+    defs = compiled.defs_of(doc)
+
+    options = match compiled.options_of(doc: doc, defs: defs)
+        .ok got => got
+        .err e =>
+            out @ out.push(at(pointer: "/jsonSchemaDialect", message: e.msg))
+            return
+
+    for item in items
+        if item.kind == "schema" && json.kind_of(item.value) == "object"
+            given = rewrite.rewrite(item.value)
+
+            match jsonschema.schema_errors_of(given, options: options)
+                .ok errors =>
+                    if errors.len() > 0
+                        for e in errors
+                            out @ out.push(
+                                at(pointer: item.pointer + e.instance_location, message: f"{e.message} ({e.keyword})")
+                            )
+                    else
+                        match compiled.compile_schema(item.value, options: options, pointer: item.pointer)
+                            .ok _  => _ = 0
+                            .err e => out @ out.push(at(pointer: item.pointer, message: e.msg))
+                .err e => out @ out.push(at(pointer: item.pointer, message: e.msg))
+
+test "is_status_key: a status, a range, default, and what is none"
+    assert is_status_key("200")
+    assert is_status_key("5XX")
+    assert is_status_key("default")
+    assert !is_status_key("600")
+    assert !is_status_key("2xx")
+    assert !is_status_key("20")
+    assert !is_status_key("099")
+
+test "is_component_name: the characters a name takes"
+    assert is_component_name("Pet.v1-a_b")
+    assert !is_component_name("Pet Store")
+    assert !is_component_name("")
+    assert !is_component_name("é")

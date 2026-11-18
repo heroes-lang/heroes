@@ -162,7 +162,7 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 8 | `nats` | a NATS client: publish, subscribe, request and reply, over TLS | `bytes`, `crypto/keypairs`, `io`, `json`, `maps`, `net`, `os`, `poll`, `random`, `strings`, `threads`, `time`, `tls`, `url`, `websocket` |  |
 | 8 | `mqtt` | an MQTT 3.1.1 and 5 client, every quality of service | `bytes`, `io`, `maps`, `net`, `numbers`, `os`, `poll`, `random`, `strings`, `time`, `tls`, `url`, `websocket` |  |
 | 8 | `mcp` | the Model Context Protocol, server and client, over standard streams and HTTP | `bytes`, `containers/deque`, `http`, `io`, `json`, `json/schema`, `jsonrpc`, `net`, `numbers`, `oauth2`, `strings`, `threads`, `time`, `url`, `web` |  |
-| 8 | `openapi` | an OpenAPI 3.1 document built as data, written, served, and requests validated against it | `json`, `json/schema`, `yaml`, `http`, `web` |  |
+| 8 | `openapi` | an OpenAPI 3.1 document built as data, written, served, and requests validated against it | `bytes`, `http`, `json`, `json/schema`, `numbers`, `strings`, `url`, `web`, `yaml` |  |
 
 **The types other packages name**, each owned by one package and named
 qualified everywhere else, never redefined:

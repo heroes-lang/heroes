@@ -1,0 +1,207 @@
+# The members of an OpenAPI object as `json` holds them: each written only
+# where it says something, and read with the default OpenAPI gives it from a
+# value whose form `shape` has checked already.
+
+use json
+use url
+
+# The schema `{"type": <name>}`.
+function typed(name: str) -> json.Value
+    out: {str: json.Value} @= {}
+    out["type"] @ .text(v: name)
+    return .object(members: out)
+
+# `values` as a JSON list of texts.
+function texts(values: [str]) -> json.Value
+    out: [json.Value] @= []
+
+    for each in values
+        out @ out.push(.text(v: each))
+
+    return .list(items: out)
+
+# Writes the text `value` at `key` where it is not "".
+function put_text(@m: {str: json.Value}, key: str, value: str)
+    if value != ""
+        m[key] @ .text(v: value)
+
+# Writes the texts `values` at `key` where there is one.
+function put_texts(@m: {str: json.Value}, key: str, values: [str])
+    if values.len() > 0
+        m[key] @ texts(values)
+
+# Writes `true` at `key` where `value` is true.
+function put_true(@m: {str: json.Value}, key: str, value: bool)
+    if value
+        m[key] @ .boolean(v: true)
+
+# Writes `value` at `key` where it is not `null`.
+function put_value(@m: {str: json.Value}, key: str, value: json.Value)
+    if !json.is_null(value)
+        m[key] @ value
+
+# Writes the object `value` at `key` where it has a member.
+function put_object(@m: {str: json.Value}, key: str, value: {str: json.Value})
+    if keys(value).len() > 0
+        m[key] @ .object(members: value)
+
+# Writes the list `items` at `key` where it has an element.
+function put_list(@m: {str: json.Value}, key: str, items: [json.Value])
+    if items.len() > 0
+        m[key] @ .list(items: items)
+
+# Writes every `x-` field of `extensions` after the members there.
+function put_extensions(@m: {str: json.Value}, extensions: {str: json.Value})
+    for k in keys(extensions)
+        m[k] @ extensions[k].must()
+
+# A Reference object: `$ref`, then `summary` and `description` where they
+# are not "".
+function reference(ref: str, summary: str, description: str) -> json.Value
+    out: {str: json.Value} @= {}
+    out["$ref"] @ .text(v: ref)
+    put_text(@out, key: "summary", value: summary)
+    put_text(@out, key: "description", value: description)
+    return .object(members: out)
+
+# The members of `v`; none where it is not an object.
+function members_of(v: json.Value) -> {str: json.Value}
+    return json.members_of(v).default({})
+
+# The member `key` of `v`; `null` where there is none.
+function value_at(v: json.Value, key: str) -> json.Value
+    return json.member(v, key).default(.null_value)
+
+# Whether `v` has the member `key`.
+function has(v: json.Value, key: str) -> bool
+    return !json.member(v, key).is_err()
+
+# The text at `key` of `v`; "" where there is none.
+function text_at(v: json.Value, key: str) -> str
+    return json.text_of(value_at(v, key: key)).default("")
+
+# The boolean at `key` of `v`; `otherwise` where there is none.
+function bool_at(v: json.Value, key: str, otherwise: bool) -> bool
+    return json.bool_of(value_at(v, key: key)).default(otherwise)
+
+# The elements of the list at `key` of `v`; none where there is none.
+function items_at(v: json.Value, key: str) -> [json.Value]
+    return json.items_of(value_at(v, key: key)).default([])
+
+# The members of the object at `key` of `v`; none where there is none.
+function object_at(v: json.Value, key: str) -> {str: json.Value}
+    return members_of(value_at(v, key: key))
+
+# The texts of the list at `key` of `v`; none where there is none.
+function texts_at(v: json.Value, key: str) -> [str]
+    out: [str] @= []
+
+    for each in items_at(v, key: key)
+        match json.text_of(each)
+            .ok t  => out @ out.push(t)
+            .err _ => _ = 0
+
+    return out
+
+# The texts of the object at `key` of `v`, by key.
+function text_map_at(v: json.Value, key: str) -> {str: str}
+    out: {str: str} @= {}
+    m = object_at(v, key: key)
+
+    for k in keys(m)
+        match json.text_of(m[k].must())
+            .ok t  => out[k] @ t
+            .err _ => _ = 0
+
+    return out
+
+# Whether `key` names an extension: it begins with `x-`.
+function is_extension(key: str) -> bool
+    return key.len() >= 2 && key[0] == 'x' && key[1] == '-'
+
+# The `x-` fields of `v`, by name, in its order.
+function extensions_of(v: json.Value) -> {str: json.Value}
+    out: {str: json.Value} @= {}
+    m = members_of(v)
+
+    for k in keys(m)
+        if is_extension(k)
+            out[k] @ m[k].must()
+
+    return out
+
+# Adds `ref` to `seen`. Fails `invalid` where it is there already: the
+# references came back to one they left.
+function unseen(@seen: [str], ref: str) -> ()?
+    for each in seen
+        if each == ref
+            return fail(code: "invalid", msg: f"the reference \"{ref}\" comes back to one it left")
+
+    seen @ seen.push(ref)
+    return ok()
+
+# The tokens of the JSON pointer of `ref`'s fragment, unescaped:
+# `#/components/schemas/a~1b` answers `components`, `schemas` and `a/b`.
+# Fails `unsupported` where `ref` names another document, and `invalid` where
+# its fragment is no pointer.
+function ref_tokens(ref: str) -> [str]?
+    if ref == "" || ref[0] != '#'
+        return fail(code: "unsupported", msg: f"the reference \"{ref}\" names another document, which is not followed")
+    return json.pointer_tokens(url.unescape(ref.slice(from: 1, to: ref.len()))?)
+
+# The name of the component of `kind` that `ref` names, as
+# `#/components/<kind>/<name>`. Fails `not_found` where it names no
+# component of that kind, and as `ref_tokens` does.
+function component_name(ref: str, kind: str) -> str?
+    tokens = ref_tokens(ref)?
+
+    if tokens.len() != 3 || tokens[0] != "components" || tokens[1] != kind
+        return fail(code: "not_found", msg: f"the reference \"{ref}\" names no component of `{kind}`")
+    return ok(tokens[2])
+
+test "objects: written only where they say something"
+    m: {str: json.Value} @= {}
+    put_text(@m, key: "a", value: "")
+    put_text(@m, key: "b", value: "x")
+    put_true(@m, key: "c", value: false)
+    put_true(@m, key: "d", value: true)
+    put_value(@m, key: "e", value: .null_value)
+    put_texts(@m, key: "f", values: [])
+    put_object(m: @m, key: "g", value: {})
+    put_list(@m, key: "h", items: [])
+    assert json.format(.object(members: m)).must() == "{\"b\":\"x\",\"d\":true}"
+
+test "objects: read with their defaults, and the x- fields alone"
+    v = json.parse(
+        "{\"a\": \"t\", \"b\": true, \"c\": [\"x\", 1, \"y\"], \"x-one\": 1, \"xy\": 2, \"s\": {\"r\": \"read\"}}"
+    ).must()
+    assert text_at(v, key: "a") == "t"
+    assert text_at(v, key: "z") == ""
+    assert text_at(v, key: "b") == ""
+    assert bool_at(v, key: "b", otherwise: false)
+    assert bool_at(v, key: "z", otherwise: true)
+    assert texts_at(v, key: "c") == ["x", "y"]
+    assert keys(extensions_of(v)) == ["x-one"]
+    assert text_map_at(v, key: "s")["r"].must() == "read"
+    assert has(v, key: "xy")
+    assert !has(.null_value, key: "a")
+    assert !is_extension("x")
+    assert is_extension("x-")
+
+test "objects: a reference writes its summary and description where given"
+    assert json.format(reference(ref: "#/a", summary: "", description: "d")).must() == "{\"$ref\":\"#/a\",\"description\":\"d\"}"
+
+test "component_name: a name, an escaped one, another kind, another document"
+    assert component_name(ref: "#/components/schemas/Pet", kind: "schemas").must() == "Pet"
+    assert component_name(ref: "#/components/schemas/a~1b%20c", kind: "schemas").must() == "a/b c"
+    assert component_name(ref: "#/components/parameters/Pet", kind: "schemas").is_err()
+    assert component_name(ref: "#/components/schemas/Pet/properties", kind: "schemas").is_err()
+
+    match component_name(ref: "other.json#/components/schemas/Pet", kind: "schemas")
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported"
+
+test "unseen: a reference seen twice"
+    seen: [str] @= []
+    assert !unseen(@seen, ref: "#/a").is_err()
+    assert unseen(@seen, ref: "#/a").is_err()

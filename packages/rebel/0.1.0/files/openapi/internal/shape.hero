@@ -1,0 +1,620 @@
+# The form of every object of an OpenAPI 3.1 document: which fields each
+# kind of object has, of which kind each is, which are required, and which
+# objects may be a Reference object instead. `problems` walks a value on a
+# stack of its own and says where each field is missing, of another kind, or
+# not one the object has.
+
+use json
+use openapi/internal/objects
+
+# The kind of a whole document.
+constant DOCUMENT: str
+    "document"
+
+# The kinds of the objects a program reads one by one.
+constant INFO: str
+    "info"
+
+# A Server object.
+constant SERVER: str
+    "server"
+
+# A Tag object.
+constant TAG: str
+    "tag"
+
+# An External Documentation object.
+constant EXTERNAL_DOCS: str
+    "external_docs"
+
+# A Path Item object.
+constant PATH_ITEM: str
+    "path_item"
+
+# An Operation object.
+constant OPERATION: str
+    "operation"
+
+# A Parameter object, or a reference.
+constant PARAMETER: str
+    "parameter"
+
+# A Request Body object, or a reference.
+constant REQUEST_BODY: str
+    "request_body"
+
+# A Media Type object.
+constant MEDIA_TYPE: str
+    "media_type"
+
+# An Encoding object.
+constant ENCODING: str
+    "encoding"
+
+# A Response object, or a reference.
+constant RESPONSE: str
+    "response"
+
+# A Header object, or a reference.
+constant HEADER: str
+    "header"
+
+# An Example object, or a reference.
+constant EXAMPLE: str
+    "example"
+
+# A Link object, or a reference.
+constant LINK: str
+    "link"
+
+# A Callback object, or a reference.
+constant CALLBACK: str
+    "callback"
+
+# A Components object.
+constant COMPONENTS: str
+    "components"
+
+# A Security Scheme object, or a reference.
+constant SECURITY_SCHEME: str
+    "security_scheme"
+
+# A Security Requirement object.
+constant REQUIREMENT: str
+    "requirement"
+
+# The most callbacks one may stand in: reading a document follows them.
+constant MOST_CALLBACK_DEPTH: i64
+    8
+
+# What a walk found: the problems, and every value it read with its kind.
+record Walked
+    # The problems, in the order of the value.
+    problems: [Problem]
+    # Every value read, with its pointer and kind, in that order.
+    items: [Item]
+
+# One thing wrong with the form of a value.
+record Problem
+    # Where, as a JSON pointer from the value checked.
+    pointer: str
+    # What is wrong.
+    message: str
+
+# One field of a kind of object.
+record Field
+    # Its name, as OpenAPI writes it.
+    name: str
+    # Its kind: a kind of object, or `text`, `bool`, `any`, `schema`,
+    # `texts`, `map:<kind>`, `list:<kind>`, `scopes`.
+    kind: str
+    # Whether it must be there.
+    required: bool
+
+# A value waiting on the walk's stack.
+record Item
+    # Where it is.
+    pointer: str
+    # The value.
+    value: json.Value
+    # Its kind.
+    kind: str
+    # How many callbacks it stands in.
+    depth: i64
+
+# A field that may be missing.
+function optional(name: str, kind: str) -> Field
+    return Field(name: name, kind: kind, required: false)
+
+# A field that must be there.
+function required(name: str, kind: str) -> Field
+    return Field(name: name, kind: kind, required: true)
+
+# The fields of the object kind `kind`; none for a kind of another shape.
+function fields_of(kind: str) -> [Field]
+    return match kind
+        "document" =>
+            [
+                required(name: "openapi", kind: "text")
+                required(name: "info", kind: INFO)
+                optional(name: "jsonSchemaDialect", kind: "text")
+                optional(name: "servers", kind: "list:server")
+                optional(name: "paths", kind: "paths")
+                optional(name: "webhooks", kind: "map:path_item")
+                optional(name: "components", kind: COMPONENTS)
+                optional(name: "security", kind: "list:requirement")
+                optional(name: "tags", kind: "list:tag")
+                optional(name: "externalDocs", kind: EXTERNAL_DOCS)
+            ]
+        "info" =>
+            [
+                required(name: "title", kind: "text")
+                optional(name: "summary", kind: "text")
+                optional(name: "description", kind: "text")
+                optional(name: "termsOfService", kind: "text")
+                optional(name: "contact", kind: "contact")
+                optional(name: "license", kind: "license")
+                required(name: "version", kind: "text")
+            ]
+        "contact" => [
+            optional(name: "name", kind: "text")
+            optional(name: "url", kind: "text")
+            optional(name: "email", kind: "text")
+        ]
+        "license" => [
+            required(name: "name", kind: "text")
+            optional(name: "identifier", kind: "text")
+            optional(name: "url", kind: "text")
+        ]
+        "server" => [
+            required(name: "url", kind: "text")
+            optional(name: "description", kind: "text")
+            optional(name: "variables", kind: "map:server_variable")
+        ]
+        "server_variable" => [
+            optional(name: "enum", kind: "texts")
+            required(name: "default", kind: "text")
+            optional(name: "description", kind: "text")
+        ]
+        "external_docs" => [optional(name: "description", kind: "text"), required(name: "url", kind: "text")]
+        "tag" => [
+            required(name: "name", kind: "text")
+            optional(name: "description", kind: "text")
+            optional(name: "externalDocs", kind: EXTERNAL_DOCS)
+        ]
+        "path_item" =>
+            [
+                optional(name: "$ref", kind: "text")
+                optional(name: "summary", kind: "text")
+                optional(name: "description", kind: "text")
+                optional(name: "get", kind: OPERATION)
+                optional(name: "put", kind: OPERATION)
+                optional(name: "post", kind: OPERATION)
+                optional(name: "delete", kind: OPERATION)
+                optional(name: "options", kind: OPERATION)
+                optional(name: "head", kind: OPERATION)
+                optional(name: "patch", kind: OPERATION)
+                optional(name: "trace", kind: OPERATION)
+                optional(name: "servers", kind: "list:server")
+                optional(name: "parameters", kind: "list:parameter")
+            ]
+        "operation" =>
+            [
+                optional(name: "tags", kind: "texts")
+                optional(name: "summary", kind: "text")
+                optional(name: "description", kind: "text")
+                optional(name: "externalDocs", kind: EXTERNAL_DOCS)
+                optional(name: "operationId", kind: "text")
+                optional(name: "parameters", kind: "list:parameter")
+                optional(name: "requestBody", kind: REQUEST_BODY)
+                optional(name: "responses", kind: "responses")
+                optional(name: "callbacks", kind: "map:callback")
+                optional(name: "deprecated", kind: "bool")
+                optional(name: "security", kind: "list:requirement")
+                optional(name: "servers", kind: "list:server")
+            ]
+        "parameter" =>
+            [
+                required(name: "name", kind: "text")
+                required(name: "in", kind: "text")
+                optional(name: "description", kind: "text")
+                optional(name: "required", kind: "bool")
+                optional(name: "deprecated", kind: "bool")
+                optional(name: "allowEmptyValue", kind: "bool")
+                optional(name: "style", kind: "text")
+                optional(name: "explode", kind: "bool")
+                optional(name: "allowReserved", kind: "bool")
+                optional(name: "schema", kind: "schema")
+                optional(name: "example", kind: "any")
+                optional(name: "examples", kind: "map:example")
+                optional(name: "content", kind: "map:media_type")
+            ]
+        "request_body" => [
+            optional(name: "description", kind: "text")
+            required(name: "content", kind: "map:media_type")
+            optional(name: "required", kind: "bool")
+        ]
+        "media_type" => [
+            optional(name: "schema", kind: "schema")
+            optional(name: "example", kind: "any")
+            optional(name: "examples", kind: "map:example")
+            optional(name: "encoding", kind: "map:encoding")
+        ]
+        "encoding" =>
+            [
+                optional(name: "contentType", kind: "text")
+                optional(name: "headers", kind: "map:header")
+                optional(name: "style", kind: "text")
+                optional(name: "explode", kind: "bool")
+                optional(name: "allowReserved", kind: "bool")
+            ]
+        "response" => [
+            required(name: "description", kind: "text")
+            optional(name: "headers", kind: "map:header")
+            optional(name: "content", kind: "map:media_type")
+            optional(name: "links", kind: "map:link")
+        ]
+        "header" =>
+            [
+                optional(name: "description", kind: "text")
+                optional(name: "required", kind: "bool")
+                optional(name: "deprecated", kind: "bool")
+                optional(name: "style", kind: "text")
+                optional(name: "explode", kind: "bool")
+                optional(name: "schema", kind: "schema")
+                optional(name: "example", kind: "any")
+                optional(name: "examples", kind: "map:example")
+                optional(name: "content", kind: "map:media_type")
+            ]
+        "example" => [
+            optional(name: "summary", kind: "text")
+            optional(name: "description", kind: "text")
+            optional(name: "value", kind: "any")
+            optional(name: "externalValue", kind: "text")
+        ]
+        "link" =>
+            [
+                optional(name: "operationRef", kind: "text")
+                optional(name: "operationId", kind: "text")
+                optional(name: "parameters", kind: "map:any")
+                optional(name: "requestBody", kind: "any")
+                optional(name: "description", kind: "text")
+                optional(name: "server", kind: SERVER)
+            ]
+        "components" =>
+            [
+                optional(name: "schemas", kind: "map:schema")
+                optional(name: "responses", kind: "map:response")
+                optional(name: "parameters", kind: "map:parameter")
+                optional(name: "examples", kind: "map:example")
+                optional(name: "requestBodies", kind: "map:request_body")
+                optional(name: "headers", kind: "map:header")
+                optional(name: "securitySchemes", kind: "map:security_scheme")
+                optional(name: "links", kind: "map:link")
+                optional(name: "callbacks", kind: "map:callback")
+                optional(name: "pathItems", kind: "map:path_item")
+            ]
+        "security_scheme" =>
+            [
+                required(name: "type", kind: "text")
+                optional(name: "description", kind: "text")
+                optional(name: "name", kind: "text")
+                optional(name: "in", kind: "text")
+                optional(name: "scheme", kind: "text")
+                optional(name: "bearerFormat", kind: "text")
+                optional(name: "flows", kind: "oauth_flows")
+                optional(name: "openIdConnectUrl", kind: "text")
+            ]
+        "oauth_flows" =>
+            [
+                optional(name: "implicit", kind: "oauth_flow")
+                optional(name: "password", kind: "oauth_flow")
+                optional(name: "clientCredentials", kind: "oauth_flow")
+                optional(name: "authorizationCode", kind: "oauth_flow")
+            ]
+        "oauth_flow" =>
+            [
+                optional(name: "authorizationUrl", kind: "text")
+                optional(name: "tokenUrl", kind: "text")
+                optional(name: "refreshUrl", kind: "text")
+                required(name: "scopes", kind: "scopes")
+            ]
+        "reference" => [
+            required(name: "$ref", kind: "text")
+            optional(name: "summary", kind: "text")
+            optional(name: "description", kind: "text")
+        ]
+        _ => []
+
+# What OpenAPI calls the object of `kind`, for a message.
+function name_of(kind: str) -> str
+    return match kind
+        "document"        => "an OpenAPI object"
+        "info"            => "an Info object"
+        "contact"         => "a Contact object"
+        "license"         => "a License object"
+        "server"          => "a Server object"
+        "server_variable" => "a Server Variable object"
+        "external_docs"   => "an External Documentation object"
+        "tag"             => "a Tag object"
+        "path_item"       => "a Path Item object"
+        "operation"       => "an Operation object"
+        "parameter"       => "a Parameter object"
+        "request_body"    => "a Request Body object"
+        "media_type"      => "a Media Type object"
+        "encoding"        => "an Encoding object"
+        "response"        => "a Response object"
+        "header"          => "a Header object"
+        "example"         => "an Example object"
+        "link"            => "a Link object"
+        "components"      => "a Components object"
+        "security_scheme" => "a Security Scheme object"
+        "oauth_flows"     => "an OAuth Flows object"
+        "oauth_flow"      => "an OAuth Flow object"
+        "reference"       => "a Reference object"
+        "callback"        => "a Callback object"
+        "responses"       => "a Responses object"
+        "paths"           => "a Paths object"
+        "requirement"     => "a Security Requirement object"
+        _                 => "an object"
+
+# Whether an object of `kind` may be a Reference object instead.
+function is_referable(kind: str) -> bool
+    return kind == PARAMETER || kind == REQUEST_BODY || kind == RESPONSE || kind == HEADER || kind == EXAMPLE || kind == LINK || kind == CALLBACK || kind == SECURITY_SCHEME
+
+# Whether `kind` is an object whose fields `fields_of` lists, with `x-`
+# fields beside them.
+function is_object_kind(kind: str) -> bool
+    return fields_of(kind).len() > 0
+
+# The pointer of the member `key` of the value at `pointer`.
+function child(pointer: str, key: str) -> str
+    return pointer + json.pointer_of([key])
+
+# What JSON calls the kind of `v`, for a message: `a text`, `a number`.
+function found_of(v: json.Value) -> str
+    return match v
+        .null_value => "null"
+        .boolean _  => "a boolean"
+        .number _   => "a number"
+        .text _     => "a text"
+        .list _     => "a list"
+        .object _   => "an object"
+
+# Pushes `item` on the stack of `top` items.
+function push_item(@stack: [Item], @top: i64, item: Item)
+    if top < stack.len()
+        stack[top] @ item
+    else
+        stack @ stack.push(item)
+    top @ top + 1
+
+# Every problem of the form of `v`, read as an object of `kind`: an
+# object's own before its members', and its members' in their order; each
+# pointer begins at `v`.
+function problems(v: json.Value, kind: str) -> [Problem]
+    return walk(v, kind: kind).problems
+
+# The problems of the form of `v`, read as an object of `kind`, and every
+# value read on the way with its kind.
+function walk(v: json.Value, kind: str) -> Walked
+    out: [Problem] @= []
+    seen: [Item] @= []
+    stack: [Item] @= [Item(pointer: "", value: v, kind: kind, depth: 0)]
+    top: i64 @= 1
+
+    while top > 0
+        top @ top - 1
+        each = stack[top]
+        seen @ seen.push(each)
+        found: [Item] @= []
+        step(@out, @found, each)
+        at: i64 @= found.len() - 1
+
+        while at >= 0
+            push_item(@stack, @top, item: found[at])
+            at @ at - 1
+
+    return Walked(problems: out, items: seen)
+
+# The problems of `each` itself, its members to walk added to `found`.
+function step(@out: [Problem], @found: [Item], each: Item)
+    kind = each.kind
+    v = each.value
+
+    if kind == "any"
+        return
+
+    if kind == "text" || kind == "bool"
+        expected = if kind == "text"
+            "a text"
+        else
+            "a boolean"
+
+        good = json.kind_of(v) == "text" && kind == "text" || json.kind_of(v) == "boolean" && kind == "bool"
+
+        if !good
+            out @ out.push(Problem(pointer: each.pointer, message: f"{expected} is expected, found {found_of(v)}"))
+        return
+
+    if kind == "schema"
+        if json.kind_of(v) != "object" && json.kind_of(v) != "boolean"
+            out @ out.push(
+                Problem(pointer: each.pointer, message: f"a schema is an object or a boolean, found {found_of(v)}")
+            )
+        return
+
+    if kind == "texts" || strings_begin(s: kind, prefix: "list:")
+        inner = if kind == "texts"
+            "text"
+        else
+            kind.slice(from: 5, to: kind.len())
+
+        match json.items_of(v)
+            .ok items =>
+                for i in range(from: 0, to: items.len())
+                    found @ found.push(
+                        Item(pointer: each.pointer + "/" + to_str(i), value: items[i], kind: inner, depth: each.depth)
+                    )
+            .err _ =>
+                what = if kind == "texts"
+                    "a list of texts"
+                else
+                    "a list"
+                out @ out.push(Problem(pointer: each.pointer, message: f"{what} is expected, found {found_of(v)}"))
+
+        return
+
+    members = match json.members_of(v)
+        .ok m => m
+        .err _ =>
+            out @ out.push(Problem(pointer: each.pointer, message: f"{name_of(kind)} is expected, found {found_of(v)}"))
+            return
+
+    if strings_begin(s: kind, prefix: "map:")
+        inner = kind.slice(from: 4, to: kind.len())
+
+        for k in keys(members)
+            found @ found.push(
+                Item(pointer: child(pointer: each.pointer, key: k), value: members[k].must(), kind: inner, depth: each.depth)
+            )
+
+        return
+
+    if kind == "scopes"
+        for k in keys(members)
+            found @ found.push(
+                Item(pointer: child(pointer: each.pointer, key: k), value: members[k].must(), kind: "text", depth: each.depth)
+            )
+
+        return
+
+    if kind == "requirement"
+        for k in keys(members)
+            found @ found.push(
+                Item(pointer: child(pointer: each.pointer, key: k), value: members[k].must(), kind: "texts", depth: each.depth)
+            )
+
+        return
+
+    if kind == "paths" || kind == "responses" || kind == CALLBACK && !objects.has(v, key: "$ref")
+        keyed(@out, @found, each: each, members: members)
+        return
+
+    real_kind = if is_referable(kind) && objects.has(v, key: "$ref")
+        "reference"
+    else
+        kind
+    fields_checked(@out, @found, each: each, members: members, kind: real_kind)
+
+# The members of a Paths, a Responses or a Callback object, keyed by a path,
+# a status or an expression.
+function keyed(@out: [Problem], @found: [Item], each: Item, members: {str: json.Value})
+    for k in keys(members)
+        at = child(pointer: each.pointer, key: k)
+        value = members[k].must()
+
+        if objects.is_extension(k)
+            _ = 0
+        else if each.kind == "paths"
+            if k == "" || k[0] != '/'
+                out @ out.push(Problem(pointer: at, message: f"the path \"{k}\" does not begin with `/`"))
+            else
+                found @ found.push(Item(pointer: at, value: value, kind: PATH_ITEM, depth: each.depth))
+        else if each.kind == "responses"
+            found @ found.push(Item(pointer: at, value: value, kind: RESPONSE, depth: each.depth))
+        else if each.depth >= MOST_CALLBACK_DEPTH
+            out @ out.push(
+                Problem(pointer: at, message: f"callbacks stand {MOST_CALLBACK_DEPTH} deep here, the most this package reads")
+            )
+        else
+            found @ found.push(Item(pointer: at, value: value, kind: PATH_ITEM, depth: each.depth + 1))
+
+# The members of an object of `kind`: each field of its kind, each required
+# one there, and every other an `x-` field, but in a Reference object.
+function fields_checked(@out: [Problem], @found: [Item], each: Item, members: {str: json.Value}, kind: str)
+    fields = fields_of(kind)
+
+    for f in fields
+        if f.required && members[f.name].is_err()
+            out @ out.push(
+                Problem(pointer: each.pointer, message: f"{name_of(kind)} has no `{f.name}`, which it must have")
+            )
+
+    for k in keys(members)
+        value = members[k].must()
+        at = child(pointer: each.pointer, key: k)
+        known: str @= ""
+
+        for f in fields
+            if f.name == k
+                known @ f.kind
+
+        if known != ""
+            found @ found.push(Item(pointer: at, value: value, kind: known, depth: each.depth))
+        else if !objects.is_extension(k) || kind == "reference"
+            out @ out.push(Problem(pointer: at, message: f"`{k}` is not a field of {name_of(kind)}, nor an `x-` field"))
+
+# Whether `s` begins with `prefix`.
+function strings_begin(s: str, prefix: str) -> bool
+    if s.len() < prefix.len()
+        return false
+
+    for i in range(from: 0, to: prefix.len())
+        if s[i] != prefix[i]
+            return false
+
+    return true
+
+# Nothing where `v` is of the form of `kind`; else fails `invalid` with the
+# first problem, its pointer before it.
+function check(v: json.Value, kind: str) -> ()?
+    found = problems(v, kind: kind)
+
+    if found.len() == 0
+        return ok()
+    first = found[0]
+
+    where = if first.pointer == ""
+        "the value"
+    else
+        first.pointer
+    return fail(code: "invalid", msg: f"at {where}: {first.message}")
+
+test "shape: a document's required fields, kinds and unknown fields"
+    v = json.parse(
+        "{\"openapi\": \"3.1.0\", \"info\": {\"title\": 1}, \"paths\": {\"pets\": {}, \"/a\": {\"get\": {\"deprecated\": \"yes\"}, \"x-k\": 1}}, \"servers\": {}, \"extra\": 1}"
+    ).must()
+    found = problems(v, kind: DOCUMENT)
+    messages: [str] @= []
+
+    for p in found
+        messages @ messages.push(p.pointer + " " + p.message)
+
+    assert messages == ["/extra `extra` is not a field of an OpenAPI object, nor an `x-` field", "/info an Info object has no `version`, which it must have", "/info/title a text is expected, found a number", "/paths/pets the path \"pets\" does not begin with `/`", "/paths/~1a/get/deprecated a boolean is expected, found a text", "/servers a list is expected, found an object"]
+
+test "shape: a reference allows only its three fields, and no x- field"
+    v = json.parse("{\"$ref\": \"#/components/parameters/a\", \"description\": \"d\", \"x-a\": 1}").must()
+    found = problems(v, kind: PARAMETER)
+    assert found.len() == 1
+    assert found[0].pointer == "/x-a"
+    assert check(json.parse("{\"$ref\": \"#/a\"}").must(), kind: RESPONSE).is_err() == false
+
+test "shape: an empty object, a wrong root, and every element of a list"
+    assert check(json.parse("{}").must(), kind: INFO).is_err()
+    assert problems(.text(v: "x"), kind: DOCUMENT)[0].message == "an OpenAPI object is expected, found a text"
+    found = problems(
+        json.parse("{\"name\": \"a\", \"in\": \"query\", \"examples\": {\"one\": {\"value\": 1, \"summary\": 2}}}").must(),
+        kind: PARAMETER
+    )
+    assert found.len() == 1
+    assert found[0].pointer == "/examples/one/summary"
+
+test "shape: responses, callbacks and requirements by their own keys"
+    found = problems(
+        json.parse("{\"responses\": {\"200\": {}, \"x-a\": 1}, \"callbacks\": {\"c\": {\"{$url}\": {\"post\": {}}}}, \"security\": [{\"k\": [1]}]}").must(),
+        kind: OPERATION
+    )
+    assert found.len() == 2
+    assert found[0].pointer == "/responses/200"
+    assert found[1].pointer == "/security/0/k/0"

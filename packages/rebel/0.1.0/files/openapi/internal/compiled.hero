@@ -1,0 +1,495 @@
+# A document compiled for validation, read from its JSON: each operation
+# under each of its servers' paths, its parameters, body, responses and
+# security with every reference followed, and every schema compiled once by
+# `json/schema` beside the components' schemas, which `rewrite` gathers into
+# one resource.
+
+use json
+use json/schema as jsonschema
+use openapi/internal/media
+use openapi/internal/objects
+use openapi/internal/rewrite
+use openapi/internal/routes
+use strings
+
+# A parameter as validation reads it.
+record Param
+    # Its name.
+    name: str
+    # Where: `path`, `query`, `header` or `cookie`.
+    location: str
+    # Its style, its location's default where it gives none.
+    style: str
+    # Whether its values are written each as a pair.
+    explode: bool
+    # Whether a request must hold it.
+    required: bool
+    # Whether a query's may be empty.
+    allow_empty: bool
+    # The media type of its `content`; "" where it has a schema.
+    media_type: str
+    # Whether it has a schema.
+    has_schema: bool
+    # Its schema, rewritten.
+    schema: json.Value
+    # Its schema compiled; `true` where it has none.
+    code: jsonschema.Schema
+
+# A media type of a body.
+record Media
+    # Its type, as `media.name_of` reads the key.
+    media_type: str
+    # Whether it has a schema.
+    has_schema: bool
+    # Its schema, rewritten.
+    schema: json.Value
+    # Its schema compiled.
+    code: jsonschema.Schema
+    # Its encoding objects, by property.
+    encoding: {str: json.Value}
+
+# An operation's body.
+record Body
+    # Whether the operation takes one.
+    present: bool
+    # Whether a request must hold one.
+    required: bool
+    # Its media types.
+    content: [Media]
+
+# A header field a response declares.
+record HeaderSpec
+    # Its name.
+    name: str
+    # Whether a response must hold it.
+    required: bool
+    # Whether its values are written each as a pair.
+    explode: bool
+    # The media type of its `content`; "" where it has a schema.
+    media_type: str
+    # Whether it has a schema.
+    has_schema: bool
+    # Its schema, rewritten.
+    schema: json.Value
+    # Its schema compiled.
+    code: jsonschema.Schema
+
+# A response of an operation.
+record Answer
+    # Its key: a status, a range or `default`.
+    key: str
+    # The header fields it declares, `Content-Type` left out.
+    headers: [HeaderSpec]
+    # Its media types.
+    content: [Media]
+
+# A security scheme a requirement names.
+record Scheme
+    # Its name in the components.
+    name: str
+    # Its type.
+    kind: str
+    # The name of an `apiKey`'s field, parameter or cookie.
+    key_name: str
+    # Where an `apiKey` is sent.
+    location: str
+    # An `http` scheme's name, in lower case.
+    scheme: str
+
+# One alternative of an operation's security: every scheme needed.
+record Alternative
+    # The schemes.
+    schemes: [Scheme]
+
+# An operation under one of its servers' paths.
+record Op
+    # Its method, in lower case.
+    method: str
+    # Its path's template, as the document writes it.
+    path: str
+    # The server's path and the template, read together.
+    template: routes.Template
+    # The names of the variables of the server's path.
+    base_names: [str]
+    # The values each of those may take, by name; none for any.
+    base_values: {str: [str]}
+    # Its `operationId`.
+    operation_id: str
+    # Its parameters, its path's first.
+    params: [Param]
+    # Its body.
+    body: Body
+    # Its responses.
+    answers: [Answer]
+    # Its security: any one alternative is enough; none needs nothing.
+    security: [Alternative]
+    # How literal its template is.
+    rank: [i64]
+
+# A document compiled.
+record Compiled
+    # The document as JSON.
+    document: json.Value
+    # The resource of the components' schemas.
+    defs: json.Value
+    # The operations, the most literal template first.
+    operations: [Op]
+
+# The resource of the components' schemas of `doc`, each rewritten:
+# `{"$defs": {...}}`.
+function defs_of(doc: json.Value) -> json.Value
+    m: {str: json.Value} @= {}
+    schemas = objects.object_at(objects.value_at(doc, key: "components"), key: "schemas")
+
+    for name in keys(schemas)
+        m[name] @ rewrite.rewrite(schemas[name].must())
+
+    out: {str: json.Value} @= {}
+    out["$defs"] @ .object(members: m)
+    return .object(members: out)
+
+# The options every schema of `doc` is compiled with: its dialect, and the
+# components' resource. Fails `unsupported` where its dialect is neither
+# OpenAPI's, 2020-12 nor draft 7.
+function options_of(doc: json.Value, defs: json.Value) -> jsonschema.Options?
+    dialect = objects.text_at(doc, key: "jsonSchemaDialect")
+    out @= jsonschema.defaults()
+
+    if dialect == jsonschema.DRAFT_7_URI || dialect == "http://json-schema.org/draft-07/schema"
+        out.draft @ .draft_7
+    else if dialect != "" && dialect != rewrite.DIALECT_URI && dialect != jsonschema.DRAFT_2020_12_URI
+        return fail(
+            code: "unsupported",
+            msg: f"the jsonSchemaDialect \"{dialect}\": this package reads OpenAPI's, 2020-12 and draft 7"
+        )
+    out.resources @ [jsonschema.Resource(uri: rewrite.COMPONENTS_URI, document: defs)]
+    return ok(out)
+
+# `schema` compiled with `options`; `true` where it is `null`.
+#
+# Fails as `json/schema` compiles, the message naming `pointer`.
+function compile_schema(schema: json.Value, options: jsonschema.Options, pointer: str) -> jsonschema.Schema?
+    given: json.Value = if json.is_null(schema)
+        .boolean(v: true)
+    else
+        rewrite.rewrite(schema)
+
+    match jsonschema.compile_with(given, options)
+        .ok s  => return ok(s)
+        .err e => return fail(code: e.code, msg: f"the schema at {pointer}: {e.msg}")
+
+# `value` itself, or the component of `kind` its `$ref` names, followed to
+# one that holds none.
+#
+# Fails `not_found` where a reference names nothing, `unsupported` where it
+# names another document, and `invalid` where references come back.
+function resolved(doc: json.Value, value: json.Value, kind: str) -> json.Value?
+    out @= value
+    seen: [str] @= []
+
+    while objects.has(out, key: "$ref")
+        ref = objects.text_at(out, key: "$ref")
+        objects.unseen(@seen, ref: ref)?
+        name = objects.component_name(ref: ref, kind: kind)?
+        target = objects.value_at(objects.value_at(objects.value_at(doc, key: "components"), key: kind), key: name)
+
+        if json.is_null(target)
+            return fail(code: "not_found", msg: f"the reference \"{ref}\" names nothing in the components")
+        out @ target
+
+    return ok(out)
+
+# The path item `item` with the one its `$ref` names: its own members over
+# the named one's, its parameters first.
+function item_resolved(doc: json.Value, item: json.Value) -> json.Value?
+    if !objects.has(item, key: "$ref")
+        return ok(item)
+    named = resolved(doc: doc, value: item, kind: "pathItems")?
+    m @= objects.members_of(named)
+    own = objects.members_of(item)
+
+    for k in keys(own)
+        if k != "$ref" && k != "parameters"
+            m[k] @ own[k].must()
+
+    parameters @= objects.items_at(item, key: "parameters")
+
+    for p in objects.items_at(named, key: "parameters")
+        parameters @ parameters.push(p)
+
+    m["parameters"] @ .list(items: parameters)
+    return ok(.object(members: m))
+
+# The parameter `p`, resolved, as validation reads it.
+function param_of(p: json.Value, options: jsonschema.Options, pointer: str) -> Param?
+    location = objects.text_at(p, key: "in")
+    given = objects.text_at(p, key: "style")
+
+    style = if given != ""
+        given
+    else if location == "query" || location == "cookie"
+        "form"
+    else
+        "simple"
+    schema: json.Value @= objects.value_at(p, key: "schema")
+    at: str @= pointer + "/schema"
+    media_type: str @= ""
+    content = objects.object_at(p, key: "content")
+
+    if keys(content).len() > 0
+        first = keys(content)[0]
+        media_type @ media.name_of(first)
+        schema @ objects.value_at(content[first].must(), key: "schema")
+        at @ pointer + json.pointer_of(["content", first, "schema"])
+    return ok(
+        Param(name: objects.text_at(p, key: "name"), location: location, style: style, explode: objects.bool_at(p, key: "explode", otherwise: style == "form"), required: objects.bool_at(p, key: "required", otherwise: false), allow_empty: objects.bool_at(p, key: "allowEmptyValue", otherwise: false), media_type: media_type, has_schema: !json.is_null(schema), schema: rewrite.rewrite(schema), code: compile_schema(schema, options: options, pointer: at)?)
+    )
+
+# The media types of the content `content`, at `pointer`.
+function content_of(content: {str: json.Value}, options: jsonschema.Options, pointer: str) -> [Media]?
+    out: [Media] @= []
+
+    for key in keys(content)
+        m = content[key].must()
+        schema = objects.value_at(m, key: "schema")
+        code = compile_schema(schema, options: options, pointer: pointer + json.pointer_of([key, "schema"]))?
+        out @ out.push(
+            Media(media_type: media.name_of(key), has_schema: !json.is_null(schema), schema: rewrite.rewrite(schema), code: code, encoding: objects.object_at(m, key: "encoding"))
+        )
+
+    return ok(out)
+
+# The responses of `op`, each resolved, at `pointer`.
+function answers_of(doc: json.Value, op: json.Value, options: jsonschema.Options, pointer: str) -> [Answer]?
+    out: [Answer] @= []
+    responses = objects.object_at(op, key: "responses")
+
+    for key in keys(responses)
+        if !objects.is_extension(key)
+            at = pointer + json.pointer_of(["responses", key])
+            r = resolved(doc: doc, value: responses[key].must(), kind: "responses")?
+            headers: [HeaderSpec] @= []
+            declared = objects.object_at(r, key: "headers")
+
+            for name in keys(declared)
+                if strings.to_lower_ascii(name) != "content-type"
+                    h = resolved(doc: doc, value: declared[name].must(), kind: "headers")?
+                    one = param_of(h, options: options, pointer: at + json.pointer_of(["headers", name]))?
+                    headers @ headers.push(
+                        HeaderSpec(name: name, required: one.required, explode: objects.bool_at(h, key: "explode", otherwise: false), media_type: one.media_type, has_schema: one.has_schema, schema: one.schema, code: one.code)
+                    )
+
+            content = content_of(objects.object_at(r, key: "content"), options: options, pointer: at + "/content")?
+            out @ out.push(Answer(key: key, headers: headers, content: content))
+
+    return ok(out)
+
+# The alternatives of the requirements `requirements`, each scheme read from
+# the components.
+#
+# Fails `invalid` where a requirement names a scheme the components do not
+# hold.
+function security_of(doc: json.Value, requirements: [json.Value]) -> [Alternative]?
+    out: [Alternative] @= []
+    schemes = objects.object_at(objects.value_at(doc, key: "components"), key: "securitySchemes")
+
+    for each in requirements
+        needed: [Scheme] @= []
+        named = objects.members_of(each)
+
+        for name in keys(named)
+            given = match schemes[name]
+                .ok found => found
+                .err _ => return fail(
+                    code: "invalid",
+                    msg: f"a security requirement names the scheme \"{name}\", which the components do not hold"
+                )
+
+            s = resolved(doc: doc, value: given, kind: "securitySchemes")?
+            needed @ needed.push(
+                Scheme(name: name, kind: objects.text_at(s, key: "type"), key_name: objects.text_at(s, key: "name"), location: objects.text_at(s, key: "in"), scheme: strings.to_lower_ascii(objects.text_at(s, key: "scheme")))
+            )
+
+        out @ out.push(Alternative(schemes: needed))
+
+    return ok(out)
+
+# The parameters of the operation `op` of the path item `item`, resolved:
+# the item's, each replaced by the operation's of the same name and
+# location, then the operation's others.
+function params_of(doc: json.Value, item: json.Value, op: json.Value, options: jsonschema.Options, pointer: str) -> [Param]?
+    out: [Param] @= []
+    item_pointer = pointer.slice(from: 0, to: strings.index_of_last(s: pointer, substr: "/").default(0))
+    given = objects.items_at(item, key: "parameters")
+
+    for i in range(from: 0, to: given.len())
+        p = resolved(doc: doc, value: given[i], kind: "parameters")?
+        out @ out.push(param_of(p, options: options, pointer: item_pointer + "/parameters/" + to_str(i))?)
+
+    own = objects.items_at(op, key: "parameters")
+
+    for i in range(from: 0, to: own.len())
+        p = resolved(doc: doc, value: own[i], kind: "parameters")?
+        one = param_of(p, options: options, pointer: pointer + "/parameters/" + to_str(i))?
+        replaced: bool @= false
+
+        for j in range(from: 0, to: out.len())
+            if out[j].name == one.name && out[j].location == one.location
+                out[j] @ one
+                replaced @ true
+
+        if !replaced
+            out @ out.push(one)
+
+    kept: [Param] @= []
+
+    for p in out
+        lower = strings.to_lower_ascii(p.name)
+
+        if p.location != "header" || lower != "accept" && lower != "content-type" && lower != "authorization"
+            kept @ kept.push(p)
+
+    return ok(kept)
+
+# `doc` compiled.
+#
+# Fails `invalid` where a schema does not compile or a reference or a
+# template is wrong, `not_found` where a reference names nothing, and
+# `unsupported` where one names another document.
+function compile(doc: json.Value) -> Compiled?
+    defs = defs_of(doc)
+    options = options_of(doc: doc, defs: defs)?
+
+    for name in keys(objects.members_of(objects.value_at(defs, key: "$defs")))
+        _ = compile_schema(objects.value_at(objects.value_at(defs, key: "$defs"), key: name), options: options, pointer: json.pointer_of(["components", "schemas", name]))?
+
+    found: [Op] @= []
+    paths = objects.object_at(doc, key: "paths")
+    roots = objects.items_at(doc, key: "servers")
+
+    for path in keys(paths)
+        if !objects.is_extension(path)
+            item = item_resolved(doc: doc, item: paths[path].must())?
+
+            for method in routes.methods()
+                if objects.has(item, key: method)
+                    op = objects.value_at(item, key: method)
+                    pointer = json.pointer_of(["paths", path, method])
+                    params = params_of(doc: doc, item: item, op: op, options: options, pointer: pointer)?
+                    body: Body @= Body(present: false, required: false, content: [])
+
+                    if objects.has(op, key: "requestBody")
+                        b = resolved(doc: doc, value: objects.value_at(op, key: "requestBody"), kind: "requestBodies")?
+                        body @ Body(
+                            present: true,
+                            required: objects.bool_at(b, key: "required", otherwise: false),
+                            content: content_of(objects.object_at(b, key: "content"), options: options, pointer: pointer + "/requestBody/content")?
+                        )
+                    answers = answers_of(doc: doc, op: op, options: options, pointer: pointer)?
+
+                    requirements = if objects.has(op, key: "security")
+                        objects.items_at(op, key: "security")
+                    else
+                        objects.items_at(doc, key: "security")
+                    security = security_of(doc: doc, requirements: requirements)?
+                    servers: [json.Value] @= objects.items_at(op, key: "servers")
+
+                    if servers.len() == 0
+                        servers @ objects.items_at(item, key: "servers")
+
+                    if servers.len() == 0
+                        servers @ roots
+
+                    if servers.len() == 0
+                        root: {str: json.Value} @= {}
+                        root["url"] @ .text(v: "/")
+                        servers @ [.object(members: root)]
+
+                    for server in servers
+                        base = routes.base_path(objects.text_at(server, key: "url"))
+                        template = routes.parse_template(base + path)?
+                        values: {str: [str]} @= {}
+                        variables = objects.object_at(server, key: "variables")
+
+                        for name in keys(variables)
+                            values[name] @ objects.texts_at(variables[name].must(), key: "enum")
+
+                        found @ found.push(
+                            Op(method: method, path: path, template: template, base_names: routes.names_of(routes.parse_template(base)?), base_values: values, operation_id: objects.text_at(op, key: "operationId"), params: params, body: body, answers: answers, security: security, rank: routes.rank_of(template))
+                        )
+
+    order: [i64] @= []
+
+    for i in range(from: 0, to: found.len())
+        at: i64 @= order.len()
+
+        while at > 0 && routes.is_before(a: found[i].rank, b: found[order[at - 1]].rank)
+            at @ at - 1
+
+        moved: [i64] @= []
+
+        for j in range(from: 0, to: at)
+            moved @ moved.push(order[j])
+
+        moved @ moved.push(i)
+
+        for j in range(from: at, to: order.len())
+            moved @ moved.push(order[j])
+
+        order @ moved
+
+    sorted: [Op] @= []
+
+    for i in order
+        sorted @ sorted.push(found[i])
+
+    return ok(Compiled(document: doc, defs: defs, operations: sorted))
+
+test "resolved: a chain followed, a cycle and nothing named refused"
+    doc = json.parse(
+        "{\"components\": {\"parameters\": {\"a\": {\"$ref\": \"#/components/parameters/b\"}, \"b\": {\"name\": \"b\", \"in\": \"query\"}, \"c\": {\"$ref\": \"#/components/parameters/c\"}}}}"
+    ).must()
+    found = resolved(
+        doc: doc,
+        value: json.parse("{\"$ref\": \"#/components/parameters/a\"}").must(),
+        kind: "parameters"
+    ).must()
+    assert objects.text_at(found, key: "name") == "b"
+    assert resolved(
+        doc: doc,
+        value: json.parse("{\"$ref\": \"#/components/parameters/c\"}").must(),
+        kind: "parameters"
+    ).is_err()
+    assert resolved(
+        doc: doc,
+        value: json.parse("{\"$ref\": \"#/components/parameters/d\"}").must(),
+        kind: "parameters"
+    ).is_err()
+    assert resolved(
+        doc: doc,
+        value: json.parse("{\"$ref\": \"#/components/parameters/b\"}").must(),
+        kind: "headers"
+    ).is_err()
+
+test "item_resolved: the referring item's members over the named one's, its parameters first"
+    doc = json.parse(
+        "{\"components\": {\"pathItems\": {\"p\": {\"summary\": \"named\", \"get\": {}, \"parameters\": [{\"name\": \"b\", \"in\": \"query\"}]}}}}"
+    ).must()
+    item = item_resolved(
+        doc: doc,
+        item: json.parse("{\"$ref\": \"#/components/pathItems/p\", \"summary\": \"own\", \"parameters\": [{\"name\": \"a\", \"in\": \"query\"}]}").must()
+    ).must()
+    assert objects.text_at(item, key: "summary") == "own"
+    assert objects.has(item, key: "get")
+    assert objects.items_at(item, key: "parameters").len() == 2
+    assert objects.text_at(objects.items_at(item, key: "parameters")[0], key: "name") == "a"
+
+test "compile: an operation under each server's path, the most literal template first"
+    doc = json.parse(
+        "{\"openapi\": \"3.1.0\", \"servers\": [{\"url\": \"/v1\"}, {\"url\": \"https://h/v2/\"}], \"paths\": {\"/a/{id}\": {\"get\": {}}, \"/a/mine\": {\"get\": {}}}}"
+    ).must()
+    c = compile(doc).must()
+    assert c.operations.len() == 4
+    assert c.operations[0].template.text == "/v1/a/mine"
+    assert c.operations[1].template.text == "/v2/a/mine"
+    assert compile(json.parse("{\"jsonSchemaDialect\": \"urn:other\", \"paths\": {}}").must()).is_err()

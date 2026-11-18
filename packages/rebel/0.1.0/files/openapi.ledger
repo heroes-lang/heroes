@@ -1,0 +1,333 @@
+# The ledger of `openapi`: what the OpenAPI libraries of Go, Rust and Python
+# let a program do, one block per capability, and what Rebel answers. None
+# of the three standard libraries speaks OpenAPI, so the yardstick is the
+# census the author chose on 2026-11-17, measured on this machine on
+# 2026-11-18: Go's `github.com/getkin/kin-openapi` v0.153.0 (`openapi3`,
+# `openapi3filter`, `routers`, `routers/gorillamux`, `routers/legacy`,
+# `openapi3gen`, `openapi2conv`), `github.com/swaggo/swag` v1.16.6 and
+# `github.com/swaggo/echo-swagger` v1.5.2 (`go doc -all`, the modules fetched
+# into the scratch folder's module cache); Python's `fastapi` 0.165.0
+# (`fastapi.openapi.*`, `fastapi.params`, `fastapi.security`), `openapi-core`
+# 0.23.1, `openapi-spec-validator` 0.8.5 and `openapi-schema-validator` 0.8.1
+# (`dir()`, installed into the scratch folder with pip); Rust's `utoipa`,
+# `utoipa-swagger-ui` and `aide`, their items read from docs.rs's list of
+# each crate (no crate is built on this machine).
+#
+# The references the tests were held to, asked on 2026-11-18: openapi-core
+# 0.23.1 for routing, parameters, bodies, security, defaults and responses
+# (27 requests and 6 responses of the store of pets, `fixture.pets_yaml`);
+# kin-openapi 0.153.0 for every parameter style (23 requests of
+# `fixture.styles_yaml`); openapi-spec-validator 0.8.5 for documents broken
+# one rule at a time (20 cases) and for the full document,
+# `fixture.full_yaml`; FastAPI 0.165.0 for the pages of Swagger UI and Redoc.
+#
+# Measured on 2026-11-18: the driver `examples-rebel/reach_openapi.hero`,
+# built, prints a document openapi-spec-validator finds valid and openapi-core
+# loads, and with `--serve` answers its document as JSON and YAML, both
+# pages, a valid request 200, a request its document refuses 400 with a
+# problem of RFC 9457, an unknown path 404 and a method its path does not
+# take 405 with `Allow`.
+
+capability document/build  an OpenAPI 3.1 document built as data by functions, every field set directly
+  heroes  openapi.Document, openapi.new_document, openapi.OPENAPI_VERSION, openapi.DIALECT_URI
+  go      openapi3.T, openapi3.T.AddOperation, openapi3.T.AddServer, openapi3.T.AddServers, openapi3.T.Extensions, openapi3.IsOpenAPI31OrLater, openapi3.IsOpenAPI32OrLater, openapi3.Ptr, openapi3.BoolPtr, openapi3.Float64Ptr, openapi3.Int64Ptr, openapi3.Uint64Ptr
+  rust    utoipa openapi::OpenApi, OpenApiBuilder, OpenApiVersion, Modify, aide openapi::OpenApi, TransformOpenApi
+  python  fastapi.openapi.models.OpenAPI, fastapi.openapi.utils.get_openapi, fastapi.openapi.constants.REF_PREFIX, REF_TEMPLATE, METHODS_WITH_BODY
+  note    No document is derived from a program's types: the language has no reflection, so the program builds the data utoipa's derives and FastAPI's models would; a field left empty, false or null is not written
+
+capability document/info  the API's title, summary, description, terms, contact, licence and version
+  heroes  openapi.Info, openapi.Contact, openapi.License, openapi.new_contact, openapi.new_license
+  go      openapi3.Info, openapi3.Contact, openapi3.License
+  rust    utoipa openapi::info::Info, InfoBuilder, Contact, ContactBuilder, License, LicenseBuilder, aide openapi::Info, Contact, License
+  python  fastapi.openapi.models.Info, Contact, License, FastAPI(title=, summary=, description=, version=, terms_of_service=, contact=, license_info=)
+
+capability document/servers  servers and their URL templates' variables, and a URL expanded from them
+  heroes  openapi.Server, openapi.ServerVariable, openapi.new_server, openapi.server_url
+  go      openapi3.Server, openapi3.Servers, openapi3.ServerVariable, openapi3.Server.BasePath, openapi3.Server.MatchRawURL, openapi3.Server.ParameterNames, openapi3.Servers.MatchURL
+  rust    utoipa openapi::server::Server, ServerBuilder, ServerVariable, ServerVariableBuilder, aide openapi::Server, ServerVariable
+  python  fastapi.openapi.models.Server, ServerVariable, FastAPI(servers=, root_path_in_servers=)
+
+capability document/paths  paths and their path items, operations added by method and path, and listed
+  heroes  openapi.PathItem, openapi.Endpoint, openapi.new_path_item, openapi.add_operation, openapi.operations_of, openapi.endpoint_of
+  go      openapi3.Paths, openapi3.PathItem, openapi3.NewPaths, openapi3.NewPathsWithCapacity, openapi3.NewPathsOption, openapi3.WithPath, openapi3.PathItemMethods, openapi3.PathItem.GetOperation, openapi3.PathItem.SetOperation, openapi3.PathItem.Operations, openapi3.Paths.Find, openapi3.Paths.InMatchingOrder, openapi3.T.Operations, openapi3.MethodQuery
+  rust    utoipa openapi::path::Paths, PathsBuilder, PathItem, PathItemBuilder, HttpMethod, aide openapi::Paths, PathItem, iter_operations_mut
+  python  fastapi.openapi.models.PathItem, fastapi.openapi.utils.get_openapi_path
+  note    The eight methods of 3.1; 3.2's `query` and `additionalOperations` are not read
+
+capability document/operations  an operation: tags, summary, description, operationId, parameters, body, responses, callbacks, deprecated, its own security and servers
+  heroes  openapi.Operation, openapi.new_operation, openapi.has_request_body
+  go      openapi3.Operation, openapi3.NewOperation, openapi3.Operation.AddParameter, openapi3.Operation.AddResponse
+  rust    utoipa openapi::path::Operation, OperationBuilder, Deprecated, aide openapi::Operation, TransformOperation
+  python  fastapi.openapi.models.Operation, fastapi.openapi.utils.get_openapi_operation_metadata, generate_operation_summary
+
+capability document/parameters  parameters of the path, query, header and cookie, their styles, explode, required, empty values, schema or content
+  heroes  openapi.Parameter, openapi.Location, openapi.new_parameter, openapi.style_of, openapi.parse_location, openapi.format_location, openapi.parameters_of, openapi.STYLE_MATRIX, openapi.STYLE_LABEL, openapi.STYLE_SIMPLE, openapi.STYLE_FORM, openapi.STYLE_SPACE_DELIMITED, openapi.STYLE_PIPE_DELIMITED, openapi.STYLE_DEEP_OBJECT
+  go      openapi3.Parameter, openapi3.Parameters, openapi3.ParametersMap, openapi3.ParameterRef, openapi3.NewPathParameter, openapi3.NewQueryParameter, openapi3.NewHeaderParameter, openapi3.NewCookieParameter, openapi3.NewParameters, openapi3.SerializationMethod, openapi3.Parameter.SerializationMethod, openapi3.Parameters.GetByInAndName
+  rust    utoipa openapi::path::Parameter, ParameterBuilder, ParameterIn, ParameterStyle, IntoParams, aide openapi::Parameter, ParameterData, ParameterSchemaOrContent, PathStyle, QueryStyle, HeaderStyle, CookieStyle, ParamLocation
+  python  fastapi.openapi.models.Parameter, ParameterBase, ParameterInType, fastapi.params.Path, Query, Header, Cookie, Param, ParamTypes, fastapi.openapi.utils.get_flat_params
+  note    `explode` is held resolved and written only where it differs from its style's default, as 3.1 defines the default
+
+capability document/bodies  request bodies, media types and their encodings
+  heroes  openapi.RequestBody, openapi.MediaType, openapi.Encoding, openapi.json_body, openapi.no_request_body, openapi.new_media_type
+  go      openapi3.RequestBody, openapi3.RequestBodies, openapi3.NewRequestBody, openapi3.MediaType, openapi3.NewMediaType, openapi3.Content, openapi3.NewContent, openapi3.NewContentWithJSONSchema, openapi3.NewContentWithJSONSchemaRef, openapi3.NewContentWithSchema, openapi3.NewContentWithSchemaRef, openapi3.NewContentWithFormDataSchema, openapi3.NewContentWithFormDataSchemaRef, openapi3.Encoding, openapi3.Encodings, openapi3.NewEncoding
+  rust    utoipa openapi::request_body::RequestBody, RequestBodyBuilder, RequestBodyExt, content::Content, ContentBuilder, encoding::Encoding, EncodingBuilder, Required, aide openapi::RequestBody, MediaType, Encoding, set_body
+  python  fastapi.openapi.models.RequestBody, MediaType, Encoding, fastapi.params.Body, Form, File, fastapi.openapi.utils.get_openapi_operation_request_body
+
+capability document/responses  responses by status, range and default, their header fields, content and links, the one a status takes
+  heroes  openapi.Response, openapi.Header, openapi.new_response, openapi.json_response, openapi.new_header, openapi.response_for
+  go      openapi3.Responses, openapi3.Response, openapi3.NewResponses, openapi3.NewResponsesWithCapacity, openapi3.NewResponsesOption, openapi3.WithStatus, openapi3.WithName, openapi3.NewResponse, openapi3.Responses.Status, openapi3.Responses.Default, openapi3.ResponseBodies, openapi3.Header, openapi3.Headers, openapi3.HeaderRef
+  rust    utoipa openapi::response::Response, ResponseBuilder, Responses, ResponsesBuilder, ResponseExt, IntoResponses, ToResponse, header::Header, HeaderBuilder, aide openapi::Response, Responses, Header, StatusCode, TransformResponse, all_error_responses, infer_responses, inferred_empty_response_status
+  python  fastapi.openapi.models.Response, Header, FastAPI responses=
+
+capability document/examples  examples of a value, by value or by an external URL
+  heroes  openapi.Example, openapi.new_example
+  go      openapi3.Example, openapi3.Examples, openapi3.NewExample, openapi3.ExampleRef
+  rust    utoipa openapi::example::Example, ExampleBuilder, aide openapi::Example
+  python  fastapi.openapi.models.Example, fastapi.params.Example
+  note    A null example is not written: `.null_value` stands for none, so a document whose example is JSON's null reads back without it
+
+capability document/links  links from a response to the operation a client calls next
+  heroes  openapi.Link, openapi.new_link
+  go      openapi3.Link, openapi3.Links, openapi3.LinkRef
+  rust    utoipa openapi::link::Link, LinkBuilder, aide openapi::Link, LinkOperation
+  python  fastapi.openapi.models.Link
+
+capability document/callbacks  callbacks: the requests an operation may make back, by runtime expression
+  heroes  openapi.Callback, openapi.new_callback
+  go      openapi3.Callback, openapi3.Callbacks, openapi3.CallbackRef, openapi3.NewCallback, openapi3.NewCallbackWithCapacity, openapi3.NewCallbackOption, openapi3.WithCallback
+  rust    utoipa openapi::path::Callback (callbacks attribute), aide openapi::Callback, TransformCallback
+  python  FastAPI route callbacks=
+  note    Callbacks nested more than 8 deep are refused when read (`shape.MOST_CALLBACK_DEPTH`), since reading follows them
+
+capability document/webhooks  webhooks: the requests an API sends, by name (3.1)
+  heroes  openapi.add_webhook, openapi.Document
+  go      openapi3.T.Webhooks
+  rust    utoipa OpenApi webhooks, aide OpenApi.webhooks
+  python  fastapi.FastAPI.webhooks, get_openapi(webhooks=)
+
+capability document/components  the components every other part may name: schemas, responses, parameters, examples, bodies, headers, schemes, links, callbacks, path items
+  heroes  openapi.Components, openapi.new_components
+  go      openapi3.Components, openapi3.NewComponents, openapi3.Schemas, openapi3.SecuritySchemes, openapi3.RequestBodies, openapi3.ComponentRef
+  rust    utoipa openapi::schema::Components, ComponentsBuilder, aide openapi::Components, extract_schemas
+  python  fastapi.openapi.models.Components, fastapi.openapi.utils.get_definitions, get_model_name_map
+
+capability document/references  references to components made, and followed through a chain, a cycle refused
+  heroes  openapi.ref_of, openapi.schema_ref, openapi.parameter_ref, openapi.request_body_ref, openapi.response_ref, openapi.header_ref, openapi.example_ref, openapi.link_ref, openapi.callback_ref, openapi.path_item_ref, openapi.security_scheme_ref, openapi.resolve_parameter, openapi.resolve_request_body, openapi.resolve_response, openapi.resolve_header, openapi.resolve_example, openapi.resolve_link, openapi.resolve_callback, openapi.resolve_path_item, openapi.resolve_security_scheme, openapi.resolve_schema
+  go      openapi3.Ref, openapi3.SchemaRef, openapi3.NewSchemaRef, openapi3.ParameterRef, openapi3.RequestBodyRef, openapi3.ResponseRef, openapi3.SecuritySchemeRef, openapi3.MappingRef, openapi3.RefNameResolver, openapi3.DefaultRefNameResolver, openapi3.ReferencesComponentInRootDocument, openapi3.T.InternalizeRefs, openapi3.Loader.ResolveRefsIn, openapi3.UnresolvedRefError, openapi3.AllowExtensionsWithRef, openapi3.ProhibitExtensionsWithRef
+  rust    utoipa openapi::Ref, RefBuilder, RefOr, aide openapi::ReferenceOr
+  python  fastapi.openapi.models.Reference, openapi_core.OpenAPI (resolved on load)
+  note    A reference is followed within the document; one naming another document is refused `unsupported`
+
+capability document/external-refs  references into other documents, read from files or URLs or given by the program
+  heroes  pending
+  go      openapi3.Loader, openapi3.NewLoader, openapi3.ReadFromFile, openapi3.ReadFromHTTP, openapi3.ReadFromURIs, openapi3.ReadFromURIFunc, openapi3.DefaultReadFromURI, openapi3.URIMapCache, openapi3.ErrURINotSupported, openapi3.DisallowedExternalRefError, openapi3.Loader.LoadFromFile, LoadFromURI, LoadFromData, LoadFromIoReader, LoadFromDataWithPath
+  rust    -
+  python  openapi_core.OpenAPI.from_file, from_file_path, from_path, openapi_spec_validator.validate_url, validate_spec_url
+  note    A document whose references name other documents is refused; given documents, as `json/schema` takes `Resource`s, would be the robust form, not written in time
+
+capability document/schemas  JSON Schema 2020-12 schemas made: the types, arrays, objects, enums, the combinations, null allowed, any keyword
+  heroes  openapi.string_schema, openapi.integer_schema, openapi.number_schema, openapi.boolean_schema, openapi.array_schema, openapi.object_schema, openapi.enum_schema, openapi.one_of_schema, openapi.any_of_schema, openapi.all_of_schema, openapi.nullable, openapi.with_keyword, openapi.with_format, openapi.with_description
+  go      openapi3.Schema, openapi3.NewSchema, openapi3.NewStringSchema, openapi3.NewIntegerSchema, openapi3.NewInt32Schema, openapi3.NewInt64Schema, openapi3.NewFloat64Schema, openapi3.NewBoolSchema, openapi3.NewBytesSchema, openapi3.NewDateTimeSchema, openapi3.NewUUIDSchema, openapi3.NewArraySchema, openapi3.NewObjectSchema, openapi3.NewOneOfSchema, openapi3.NewAnyOfSchema, openapi3.NewAllOfSchema, openapi3.Schema.With*, openapi3.SchemaRefs, openapi3.Types, openapi3.AdditionalProperties, openapi3.BoolSchema, openapi3.ExclusiveBound, openapi3.Discriminator, openapi3.XML, openapi3.Schema.IsEmpty, openapi3.Schema.IsMatching*
+  rust    utoipa openapi::schema::Schema, Object, ObjectBuilder, Array, ArrayBuilder, ArrayItems, AllOf, AllOfBuilder, AnyOf, AnyOfBuilder, OneOf, OneOfBuilder, AdditionalProperties, Discriminator, KnownFormat, SchemaFormat, SchemaType, Type, Number, xml::Xml, XmlBuilder, empty, ToArray, TupleUnit, aide openapi::SchemaObject, Discriminator
+  python  fastapi.openapi.models.Schema, SchemaOrBool, SchemaType, Discriminator, XML
+  note    A schema is the `json.Value` it is, so every keyword of 2020-12 and OpenAPI's dialect is written; `nullable` adds `null` to a type, and to an `enum`, as 3.1 replaced 3.0's `nullable: true`
+
+capability document/security  security schemes of every type, OAuth 2.0's flows and scopes, requirements global and per operation
+  heroes  openapi.SecurityScheme, openapi.OAuthFlow, openapi.SecurityRequirement, openapi.api_key_scheme, openapi.basic_scheme, openapi.bearer_scheme, openapi.oauth2_scheme, openapi.new_oauth_flow, openapi.open_id_connect_scheme, openapi.mutual_tls_scheme, openapi.requirement, openapi.SCHEME_API_KEY, openapi.SCHEME_HTTP, openapi.SCHEME_MUTUAL_TLS, openapi.SCHEME_OAUTH2, openapi.SCHEME_OPEN_ID_CONNECT, openapi.FLOW_IMPLICIT, openapi.FLOW_PASSWORD, openapi.FLOW_CLIENT_CREDENTIALS, openapi.FLOW_AUTHORIZATION_CODE
+  go      openapi3.SecurityScheme, openapi3.NewSecurityScheme, openapi3.NewCSRFSecurityScheme, openapi3.NewJWTSecurityScheme, openapi3.NewOIDCSecurityScheme, openapi3.OAuthFlows, openapi3.OAuthFlow, openapi3.SecurityRequirement, openapi3.SecurityRequirements, openapi3.NewSecurityRequirement, openapi3.NewSecurityRequirements
+  rust    utoipa openapi::security::SecurityScheme, ApiKey, ApiKeyValue, Http, HttpBuilder, HttpAuthScheme, OAuth2, Flow, Implicit, Password, ClientCredentials, AuthorizationCode, DeviceAuthorization, Scopes, OpenIdConnect, SecurityRequirement, aide openapi::SecurityScheme, SecurityRequirement, OAuth2Flows, OAuth2Flow, ApiKeyLocation
+  python  fastapi.openapi.models.SecurityScheme, SecurityBase, APIKey, APIKeyIn, HTTPBase, HTTPBearer, OAuth2, OAuthFlow, OAuthFlows, OAuthFlowImplicit, OAuthFlowPassword, OAuthFlowClientCredentials, OAuthFlowAuthorizationCode, OpenIdConnect, fastapi.security.APIKeyHeader, APIKeyQuery, APIKeyCookie, HTTPBasic, HTTPBearer, HTTPDigest, OAuth2, OAuth2PasswordBearer, OAuth2AuthorizationCodeBearer, OpenIdConnect, SecurityScopes, fastapi.params.Security
+  note    utoipa's device authorization flow is not one of OpenAPI 3.1's four flows (3.2 adds it), and is not written
+
+capability document/tags  tags and external documentation
+  heroes  openapi.Tag, openapi.ExternalDocs, openapi.new_tag, openapi.new_external_docs
+  go      openapi3.Tag, openapi3.Tags, openapi3.Tags.Get, openapi3.ExternalDocs
+  rust    utoipa openapi::tag::Tag, TagBuilder, external_docs::ExternalDocs, ExternalDocsBuilder, aide openapi::Tag, ExternalDocumentation
+  python  fastapi.openapi.models.Tag, ExternalDocumentation, FastAPI(openapi_tags=, openapi_external_docs=)
+
+capability document/extensions  `x-` fields on every object that takes them, kept when read and written after the fixed fields
+  heroes  openapi.Document, openapi.Info and every record's `extensions` field, openapi.Document.paths_extensions, openapi.Operation.responses_extensions, openapi.SecurityScheme.flows_extensions
+  go      openapi3.Extensions on every type, openapi3.Origin, openapi3.Location, openapi3.FieldLocations
+  rust    utoipa openapi::extensions::Extensions, ExtensionsBuilder
+  python  pydantic's extra fields on fastapi.openapi.models.BaseModelWithConfig
+  note    A Reference object takes no `x-` field, as 3.1's schema says
+
+capability write/json  a document written as JSON: each object's fields in the specification's order, indented or not
+  heroes  openapi.to_json, openapi.format_json, openapi.info_json, openapi.server_json, openapi.tag_json, openapi.external_docs_json, openapi.path_item_json, openapi.operation_json, openapi.parameter_json, openapi.request_body_json, openapi.media_type_json, openapi.encoding_json, openapi.response_json, openapi.header_json, openapi.example_json, openapi.link_json, openapi.callback_json, openapi.components_json, openapi.security_scheme_json, openapi.security_requirement_json
+  go      openapi3.T.MarshalJSON and every type's MarshalJSON, MarshalYAML
+  rust    utoipa OpenApi::to_json, to_pretty_json, aide OpenApi (serde)
+  python  FastAPI.openapi(), fastapi.openapi.utils.get_openapi
+  note    The same document gives the same bytes every time
+
+capability write/yaml  a document written as YAML
+  heroes  openapi.format_yaml
+  go      openapi3.T.MarshalYAML
+  rust    utoipa OpenApi::to_yaml
+  python  -
+  note    Through `yaml`, block style; a status is written as a quoted key, `"200":`
+
+capability read/text  a document read from JSON or YAML text, every object's form checked and its pointer told
+  heroes  openapi.parse, openapi.from_json, openapi.info_of, openapi.server_of, openapi.tag_of, openapi.external_docs_of, openapi.path_item_of, openapi.operation_of, openapi.parameter_of, openapi.request_body_of, openapi.media_type_of, openapi.encoding_of, openapi.response_of, openapi.header_of, openapi.example_of, openapi.link_of, openapi.callback_of, openapi.components_of, openapi.security_scheme_of, openapi.security_requirement_of
+  go      openapi3.Loader.LoadFromData, openapi3.T.UnmarshalJSON and every type's UnmarshalJSON, UnmarshalYAML, openapi3.Loader.IsExternalRefsAllowed, openapi3.Loader.Context, openapi3.Loader.ReadFromURIFunc
+  rust    utoipa OpenApi::from_json (serde), aide OpenApi (serde)
+  python  openapi_core.OpenAPI.from_dict, openapi_spec_validator.shortcuts
+  note    A YAML document writes a status as a key in quotes, as OpenAPI asks: `yaml` refuses a key that is a number, so `200:` unquoted is refused `invalid`
+
+capability read/openapi-3.0  a document of OpenAPI 3.0 read, its schemas made 3.1's (`nullable`, boolean exclusive bounds)
+  heroes  pending
+  go      openapi3.T (3.0 and 3.1), openapi3.IsOpenAPI31OrLater
+  rust    utoipa OpenApiVersion
+  python  openapi_core.V30RequestValidator and the V30 kin, openapi_spec_validator.OpenAPIV30SpecValidator, openapi_schema_validator.OAS30Validator, OAS30ReadValidator, OAS30WriteValidator, OAS30StrictValidator, oas30_format_checker, oas30_strict_format_checker
+  note    Refused `unsupported` today; a conversion of 3.0's schema dialect to 2020-12 is the work it needs
+
+capability convert/swagger-2  Swagger 2.0 converted to OpenAPI 3 and back
+  heroes  pending
+  go      openapi2conv.ToV3, ToV3WithLoader, ToV3Headers, ToV3Operation, ToV3Parameter, ToV3PathItem, ToV3Ref, ToV3Response, ToV3SchemaRef, ToV3Schemas, ToV3SecurityRequirements, ToV3SecurityScheme, FromV3, FromV3Headers, FromV3Operation, FromV3Parameter, FromV3PathItem, FromV3Ref, FromV3RequestBody, FromV3RequestBodyFormData, FromV3Response, FromV3Responses, FromV3SchemaRef, FromV3Schemas, FromV3SecurityRequirements, FromV3SecurityScheme
+  rust    -
+  python  openapi_spec_validator.OpenAPIV2SpecValidator, openapi_v2_spec_validator
+  note    A document of 2.0 is refused `unsupported`
+
+capability check/document  a document checked against what OpenAPI 3.1 asks beyond each object's form, every problem with its pointer
+  heroes  openapi.errors_of, openapi.check, openapi.Problem
+  go      openapi3.T.Validate, openapi3.ValidationOption, openapi3.ValidationOptions, openapi3.ValidateIdentifier, openapi3.MultiError, openapi3.CodedError, openapi3.ValidationErrorCodes, openapi3.EnableMultiError, openapi3.FailFast, openapi3.ConflictingPathsError, openapi3.DuplicateOperationIDError, openapi3.DuplicateParameterError, openapi3.DuplicateTagError, openapi3.PathParametersError, openapi3.PathParameterRequiredError, openapi3.SecurityRequirementSchemeUndefinedError, openapi3.ServerURLUndeclaredVariables, openapi3.ServerURLUnusedVariables, openapi3.ServerVariableDefaultRequired, openapi3.InvalidParameterInError, openapi3.InvalidSerializationMethodError, openapi3.ComponentValidationError and every other error type of `openapi3` ending in Error, Required, Forbidden, Exclusive or FieldFor31Plus
+  rust    -
+  python  openapi_spec_validator.validate, validate_spec, OpenAPIV31SpecValidator, OpenAPIV3SpecValidator, openapi_v31_spec_validator, openapi_v3_spec_validator, openapi_spec_validator.validation.exceptions.OpenAPIValidationError, DuplicateOperationIDError, ExtraParametersError, ParameterDuplicateError, UnresolvableParameterError, ValidatorDetectError, OpenAPISpecValidatorError, openapi_core.OpenAPI.check_spec
+  note    Where openapi-spec-validator 0.8.5 is silent and the specification is not, the specification's text is taken, with kin-openapi's error kinds: a requirement naming an undeclared scheme, a default outside its `enum`, two templates equal but for their names, a server variable its URL does not use, all problems here and none there; that validator's schema lacks a Link's `server`, which is read here, and raises on a reference to nothing, a problem here
+
+capability check/schemas  every schema of a document valid against its dialect's meta-schema and compiled with the components
+  heroes  openapi.errors_of
+  go      openapi3.Schema.Validate, openapi3.SchemaError, openapi3.SchemaTypeError, openapi3.SchemaValueError, openapi3.EnableJSONSchema2020, openapi3.ErrSchemaErrorDetailsWithJSONSchema2020
+  rust    -
+  python  openapi_schema_validator.OAS31Validator, OAS32Validator, OAS31_BASE_DIALECT_ID, OAS32_BASE_DIALECT_ID, oas31_format_checker, oas32_format_checker, validate
+  note    Through `json/schema`; a reference into the components is rewritten to a resource of its own, since `json/schema` reads no schema it did not scan
+
+capability check/examples  examples and defaults validated against their schemas
+  heroes  pending
+  go      openapi3.EnableExamplesValidation, openapi3.DisableExamplesValidation, openapi3.ExampleViolatesSchema, openapi3.DefaultViolatesSchema, openapi3.EnableSchemaDefaultsValidation, openapi3.DisableSchemaDefaultsValidation
+  rust    -
+  python  -
+
+capability document/merge  two documents joined, conflicts refused
+  heroes  openapi.merge
+  go      -
+  rust    utoipa OpenApi::merge, OpenApi::nest, aide ApiRouter::nest_api_service
+  python  fastapi.openapi.utils.deep_dict_update
+  note    An equal part is kept once; a different one under the same name is `exists`
+
+capability route/match  the operation a request names: its path among the templates under each server's path, the most literal first, then its method; 404 and 405 told apart
+  heroes  openapi.read_request, openapi.request_errors_of
+  go      routers.Router, routers.Route, routers.RouteError, routers.ErrPathNotFound, routers.ErrMethodNotAllowed, gorillamux.NewRouter, gorillamux.Router, legacy.NewRouter, legacy.Router, legacy.Routers
+  rust    -
+  python  openapi_core.templating.paths.exceptions.PathNotFound, PathsNotFound, OperationNotFound, ServerNotFound, PathError
+  note    A variable's value takes the longest text that lets the rest of its segment match, as gorilla/mux does, and never splits a character
+
+capability route/web  every operation added to a `web` router, named by its operationId, under its first server's path
+  heroes  openapi.add_routes, openapi.pattern_of, openapi.route_name_of
+  go      -
+  rust    aide axum::ApiRouter, ApiMethodRouter, ApiMethodDocs, RouterExt, routing::get, get_with, post, post_with, put, put_with, patch, patch_with, delete, delete_with, head, head_with, options, options_with, trace, trace_with, TypedPath, typed_path
+  python  fastapi.openapi.utils.generate_operation_id, generate_operation_id_for_path, get_fields_from_routes
+  note    The reverse of aide's: the routes come from the document. A template with a variable beside text in one segment, `/files/{name}.json`, is refused, which a `web` pattern does not say
+
+capability validate/parameters  a request's path, query, header and cookie parameters read by their style and explode rules, typed by their schemas, validated, a default given where one is missing
+  heroes  openapi.new_validator, openapi.Validator, openapi.read_request, openapi.request_errors_of, openapi.Values, openapi.Issue
+  go      openapi3filter.ValidateParameter, openapi3filter.ValidateRequest, openapi3filter.RequestValidationInput, openapi3filter.Options, openapi3filter.ParseError, openapi3filter.ParseErrorKind, openapi3filter.ContentParameterDecoder, openapi3filter.ErrInvalidEmptyValue, openapi3filter.ErrInvalidRequired, openapi3filter.ErrEncodedPathSeparator, openapi3filter.RequestError
+  rust    -
+  python  openapi_core.OpenAPI.validate_request, unmarshal_request, iter_request_errors, request_validator, request_unmarshaller, V31RequestValidator, V31RequestUnmarshaller, V3RequestValidator, V3RequestUnmarshaller, V32RequestValidator, V32RequestUnmarshaller, openapi_core.validation.request.V31RequestParametersValidator, openapi_core.validation.request.exceptions.MissingParameter, MissingRequiredParameter, InvalidParameter, ParameterValidationError, ParametersError, openapi_core.deserializing.styles.simple_loads, label_loads, matrix_loads, form_loads, space_delimited_loads, pipe_delimited_loads, deep_object_loads, openapi_core.casting.schemas.exceptions.CastError
+  note    openapi-core 0.23.1 reads `spaceDelimited` without splitting at a space and fails `label` and `matrix` paths; kin-openapi's reading, the specification's, is taken; an empty query value where `allowEmptyValue` is not set is an issue, as openapi-core's cast is
+
+capability validate/body  a request's body read by its media type (JSON and `+json`, forms, multipart forms, text), the content entry chosen exactly, by family or `*/*`, required checked, validated
+  heroes  openapi.read_request, openapi.request_errors_of
+  go      openapi3filter.ValidateRequestBody, openapi3filter.JSONBodyDecoder, UrlencodedBodyDecoder, MultipartBodyDecoder, PlainBodyDecoder, FileBodyDecoder, CsvBodyDecoder, YamlBodyDecoder, ZipFileBodyDecoder
+  rust    -
+  python  openapi_core.validation.request.V31RequestBodyValidator, openapi_core.validation.request.exceptions.MissingRequestBody, MissingRequiredRequestBody, MissingRequestBodyError, InvalidRequestBody, RequestBodyValidationError
+  note    A body of another media type is not read and its schema not asked: a multipart part that is not text is held as its base 64; CSV, YAML and ZIP bodies, which kin-openapi decodes, are the program's to read
+
+capability validate/security  a request carries a credential of one alternative of its operation's security: a key, an Authorization of the scheme, a bearer token
+  heroes  openapi.read_request, openapi.request_errors_of
+  go      openapi3filter.ValidateSecurityRequirements, openapi3filter.AuthenticationFunc, openapi3filter.AuthenticationInput, openapi3filter.NoopAuthenticationFunc, openapi3filter.SecurityRequirementsError, openapi3filter.ErrAuthenticationServiceMissing
+  rust    -
+  python  openapi_core.validation.request.V31RequestSecurityValidator, openapi_core.validation.request.exceptions.InvalidSecurity, SecurityValidationError
+  note    Presence alone: a credential's truth is the program's to judge (`web.require_bearer`, `web.require_basic`); mutual TLS cannot be seen in a request and is taken as met
+
+capability validate/response  a response checked against the operation of its request: the status's response, its header fields, its body
+  heroes  openapi.response_errors_of, openapi.check_response
+  go      openapi3filter.ValidateResponse, openapi3filter.ResponseValidationInput, openapi3filter.ResponseError
+  rust    -
+  python  openapi_core.OpenAPI.validate_response, unmarshal_response, iter_response_errors, response_validator, response_unmarshaller, V31ResponseValidator, V31ResponseUnmarshaller, V3ResponseValidator, V32ResponseValidator, V31ResponseDataValidator, V31ResponseHeadersValidator, openapi_core.validation.response.exceptions.MissingData, MissingHeader, MissingRequiredHeader, InvalidData, InvalidHeader, DataValidationError, HeaderValidationError, HeadersError, ResponseValidationError
+
+capability validate/webhooks  a webhook's request and response validated
+  heroes  pending
+  go      -
+  rust    -
+  python  openapi_core.OpenAPI.validate_webhook_request, validate_webhook_response, unmarshal_webhook_request, unmarshal_webhook_response, iter_webhook_request_errors, iter_webhook_response_errors, V31WebhookRequestValidator and its kin
+  note    A webhook is named, not routed by path; the validator reads `paths` alone
+
+capability validate/formats  `format` asserted while a request or a response is validated
+  heroes  pending
+  go      openapi3.EnableSchemaFormatValidation, DisableSchemaFormatValidation, EnableFormatValidation, DefineStringFormat, DefineStringFormatValidator, DefineStringFormatCallback, DefineIntegerFormatValidator, DefineNumberFormatValidator, DefineIPv4Format, DefineIPv6Format, FormatValidator, StringFormatValidator, IntegerFormatValidator, NumberFormatValidator, NewRegexpFormatValidator, NewIPValidator, NewRangeFormatValidator, WithStringFormatValidator(s), WithIntegerFormatValidator(s), WithNumberFormatValidator(s)
+  rust    -
+  python  openapi_schema_validator.oas31_format_checker
+  note    `format` is an annotation here, as 2020-12 says; `json/schema` asserts it when asked, and a validator option to ask it is the work left
+
+capability validate/read-write-only  a `readOnly` property refused in a request and a `writeOnly` one in a response
+  heroes  pending
+  go      openapi3.VisitAsRequest, VisitAsResponse, DisableReadOnlyValidation, DisableWriteOnlyValidation, openapi3.SchemaReadOnlyWriteOnlyExclusive
+  rust    -
+  python  openapi_schema_validator.OAS30ReadValidator, OAS30WriteValidator
+  note    Both are annotations in 2020-12, and `json/schema` reads them so
+
+capability validate/answer  the answer to an invalid request: a problem of RFC 9457, every issue with its place, `Allow` for a 405
+  heroes  openapi.problem_response, openapi.format_issue
+  go      openapi3filter.ValidationErrorEncoder, openapi3filter.ValidationError, openapi3filter.ValidationErrorSource, openapi3filter.ValidationHandler, openapi3filter.ErrorEncoder, openapi3filter.DefaultErrorEncoder, openapi3filter.ConvertErrors, openapi3filter.Headerer, openapi3filter.StatusCoder, openapi3filter.ErrCode, openapi3filter.ErrFunc, openapi3filter.OnErr, openapi3filter.LogFunc, openapi3filter.OnLog, openapi3filter.Validator, openapi3filter.NewValidator, openapi3filter.ValidatorOption, openapi3filter.Strict
+  rust    -
+  python  FastAPI's 422 RequestValidationError, openapi_core.validation.request.exceptions.ValidateError, ValidationError, OpenAPIError
+  note    400, not FastAPI's 422, for a request a document refuses, as kin-openapi and Echo answer; 404, 405, 415 and 401 where those are the cause
+
+capability serve/document  the document served beside the program's routes, as JSON and as YAML
+  heroes  openapi.new_site, openapi.Site, openapi.add_site_routes, openapi.respond_site, openapi.is_site_route, openapi.ROUTE_DOCUMENT_JSON, openapi.ROUTE_DOCUMENT_YAML
+  go      swag.ReadDoc, swag.Register, swag.GetSwagger, swag.Swagger, swag.Spec, echoSwagger.EchoWrapHandler, EchoWrapHandlerV3, echoSwagger.URL, InstanceName
+  rust    utoipa-swagger-ui SwaggerFile, serve, aide axum (an ApiRouter route answering the document)
+  python  FastAPI(openapi_url=), fastapi.FastAPI.openapi
+  note    The document is written once by `new_site`; a program serves it with `http.serve_with`, its own state holding the site
+
+capability serve/ui  pages of Swagger UI and Redoc showing the document, their scripts loaded from a URL the program gives
+  heroes  openapi.swagger_ui_page, openapi.redoc_page, openapi.ROUTE_SWAGGER_UI, openapi.ROUTE_REDOC
+  go      echoSwagger.Config, DeepLinking, DocExpansion, DomID, PersistAuthorization, SyntaxHighlight, OAuth, OAuthConfig
+  rust    utoipa-swagger-ui SwaggerUi, Config, Url, SyntaxHighlight, BasicAuth, aide swagger::Swagger, redoc::Redoc
+  python  fastapi.openapi.docs.get_swagger_ui_html, get_redoc_html, swagger_ui_default_parameters, FastAPI(docs_url=, redoc_url=, swagger_ui_parameters=)
+  note    No third party's JavaScript is bundled: the pages are this package's HTML and load `swagger-ui-dist` 5 and `redoc` 2 from jsDelivr by default, as FastAPI does; Swagger UI's configuration beyond its document's URL is not written
+
+capability serve/ui-scalar  Scalar's page of the document
+  heroes  pending
+  go      -
+  rust    aide scalar::Scalar
+  python  -
+
+capability serve/oauth2-redirect  the page Swagger UI's OAuth 2.0 login returns to
+  heroes  refused: its script is Swagger UI's own JavaScript, which this package does not carry
+  go      echoSwagger.OAuthConfig
+  rust    utoipa-swagger-ui oauth::Config
+  python  fastapi.openapi.docs.get_swagger_ui_oauth2_redirect_html, FastAPI(swagger_ui_oauth2_redirect_url=, swagger_ui_init_oauth=)
+
+capability generate/from-types  a document's schemas and operations derived from a program's types and handlers
+  heroes  refused: the language has no reflection; a program builds its schemas with `object_schema` and its kin
+  go      openapi3gen.NewGenerator, Generator, NewSchemaRefForValue, CreateComponentSchemas, ExportComponentSchemasOptions, CreateTypeNameGenerator, CreateFieldNameGenerator, TypeNameGenerator, FieldNameGenerator, SchemaCustomizer, SchemaCustomizerFn, SetSchemar, UseAllExportedFields, ThrowErrorOnCycle, ExcludeSchemaSentinel, CycleError, Option, RefSchemaRef
+  rust    utoipa ToSchema, PartialSchema, IntoParams, IntoResponses, ToResponse, path (attribute), schema (macro), OpenApi (derive), aide OperationInput, OperationOutput, OperationIo, IntoApi, IntoApiResponse, AxumOperationHandler, ApiOverride, NoApi, UseApi, WithApi, GenContext, in_context, reset_context, on_error, parameters_from_schema, add_parameters, error::Error
+  python  fastapi.openapi.utils.get_schema_from_model_field, get_flat_models_from_fields, get_fields_from_routes, fastapi.params.Depends, Param, FieldInfo
+
+capability generate/from-comments  a document derived from comments above a program's handlers, as swaggo writes it
+  heroes  refused: the comments are the source's, which a program does not read at run time; the document is built as data
+  go      swag.New, Parser, ParseFlag, ParseUsingGoList, Operation, NewOperation, RouteProperties, FieldParser, FieldParserFactory, SetFieldParserFactory, PackageDefinitions, PackagesDefinitions, NewPackageDefinitions, NewPackagesDefinitions, TypeSpecDef, AstFileInfo, Formatter, NewFormatter, SetCodeExampleFilesDirectory, SetCodeExamplesDirectory, SetCollectionFormat, SetDebugger, Debugger, SetExcludedDirsAndFiles, SetMarkdownFileDirectory, SetOverrides, SetPackagePrefix, SetParseDependency, SetParseExtension, SetStrict, SetTags, SetUseStructName, AppendDescription, BuildCustomSchema, CheckSchemaType, IsComplexSchema, IsGolangPrimitiveType, IsInterfaceLike, IsNumericType, IsPrimitiveType, IsRefSchema, IsSimplePrimitiveType, MergeSchema, PrimitiveSchema, RefSchema, TransToValidCollectionFormat, TransToValidPrimitiveSchema, TransToValidSchemeType, TransToValidSchemeTypeWithFormat, ConstVariable, ConstVariableGlobalEvaluator, EnumValue, EvaluateBinary, EvaluateDataConversion, EvaluateEscapedChar, EvaluateEscapedString, EvaluateUnary, FieldsByAnySpace, FieldsFunc, Schema, Name, Version
+  rust    -
+  python  -
+
+dropped  hooks into the libraries' own machinery: custom decoders and encoders registered by name, regular-expression engines swapped, error message customizers, unique-item checkers, the loaders' caches, schema visitors
+  go      openapi3filter.RegisterBodyDecoder, UnregisterBodyDecoder, RegisteredBodyDecoder, RegisterBodyEncoder, UnregisterBodyEncoder, RegisteredBodyEncoder, BodyDecoder, BodyEncoder, EncodingFn, CustomSchemaErrorFunc, JSONPrefixes, TrimJSONPrefix, openapi3.SetRegexCompiler, SetSchemaRegexCompiler, RegexCompilerFunc, RegexMatcher, SetSchemaErrorMessageCustomizer, RegisterArrayUniqueItemsChecker, SliceUniqueItemsChecker, DisableSchemaErrorDetails, DisablePatternValidation, DisableSchemaPatternValidation, EnableSchemaPatternValidation, SchemaValidationOption, WalkSchemasFunc, WalkParametersFunc, SkipSubtree, DefaultsSet, AllowExtraSiblingFields, WithValidationOptions, NewCallbackValidator
+  rust    -
+  python  openapi_core.Config, openapi_core.OpenAPI.build, request_validator_cls, request_unmarshaller_cls, response_validator_cls, response_unmarshaller_cls, webhook_request_validator, webhook_request_unmarshaller, openapi_core.deserializing.styles.StyleDeserializersFactory, StyleDeserializersDict, style_deserializers, openapi_spec_validator.settings, openapi_schema_validator.settings, shortcuts, validators
+  note    `regex` is the one engine, linear in its text, and a validator holds its own decoders; a program that reads another media type reads it itself
+
+dropped  the libraries' own frameworks: the routers and dependency injection of FastAPI and Echo, which `web` and the program's own state replace
+  go      echoSwagger.EchoWrapHandler's Echo context
+  rust    aide axum::routing, RouterExt
+  python  fastapi.openapi.utils.BaseRoute, Dependant, DependencyCacheKey, ModelField, ModelNameMap, ParamTypes, DefaultPlaceholder, JSONResponse, Response, fastapi.openapi.docs.HTMLResponse, jsonable_encoder, fastapi.FastAPIDeprecationWarning, fastapi.params.AliasChoices, AliasPath, Undefined

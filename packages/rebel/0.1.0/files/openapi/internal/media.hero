@@ -1,0 +1,50 @@
+# Media types: a `Content-Type` or a content's key read as its type and
+# subtype, the key of a document's content that takes a request's type
+# chosen, and JSON told from the rest.
+
+use strings
+
+# The media type `value` names: its type and subtype in lower case, without
+# its parameters and the spaces around it.
+function name_of(value: str) -> str
+    cut = strings.index_of(s: value, substr: ";").default(value.len())
+    return strings.to_lower_ascii(strings.trim(value.slice(from: 0, to: cut)))
+
+# Whether `name` is JSON: `application/json`, or a type whose subtype ends
+# in `+json`.
+function is_json(name: str) -> bool
+    return name == "application/json" || strings.has_suffix(s: name, suffix: "+json")
+
+# Whether `name` is text: a type of `text/`.
+function is_text(name: str) -> bool
+    return strings.has_prefix(s: name, prefix: "text/")
+
+# The index in `names` of the one that takes `given`: `given` itself, else
+# its family, `text/*`, else `*/*`.
+#
+# Fails `not_found` where none does.
+function best_of(names: [str], given: str) -> i64?
+    slash = strings.index_of(s: given, substr: "/").default(given.len())
+    family = given.slice(from: 0, to: slash) + "/*"
+
+    for wanted in [given, family, "*/*"]
+        for i in range(from: 0, to: names.len())
+            if names[i] == wanted
+                return ok(i)
+
+    return fail(code: "not_found", msg: f"no media type of the operation takes \"{given}\"")
+
+test "name_of: parameters and case dropped"
+    assert name_of("Application/JSON; charset=utf-8") == "application/json"
+    assert name_of(" text/plain ") == "text/plain"
+    assert name_of("") == ""
+
+test "best_of: the type itself, its family, any, and none"
+    names = ["*/*", "text/*", "application/json"]
+    assert best_of(names, given: "application/json").must() == 2
+    assert best_of(names, given: "text/csv").must() == 1
+    assert best_of(names, given: "image/png").must() == 0
+    assert best_of(["application/json"], given: "text/plain").is_err()
+    assert is_json("application/problem+json")
+    assert !is_json("application/jsonx")
+    assert is_text("text/csv")

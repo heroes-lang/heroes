@@ -1,0 +1,78 @@
+# The two pages that show a document, Swagger UI's and Redoc's: a few lines
+# of HTML of this package's own, each loading its viewer's script from the
+# URL a program gives, so no third party's JavaScript is bundled. Every value
+# is escaped where it stands.
+
+use json
+
+# `s` escaped as HTML text or as the value of an attribute in quotes.
+function escaped(s: str) -> str
+    out: [str] @= []
+
+    for c in s.chars()
+        written = match c
+            "&"  => "&amp;"
+            "<"  => "&lt;"
+            ">"  => "&gt;"
+            "\"" => "&quot;"
+            "'"  => "&#39;"
+            _    => c
+
+        out @ out.push(written)
+
+    return out.join("")
+
+# `s` as a JavaScript string inside a `<script>`: JSON's quoting, with `<`,
+# `>` and `&` written as escapes so no `</script>` can close the element.
+function script_text(s: str) -> str
+    return json.to_html_safe(json.quote(s))
+
+# Swagger UI's page.
+function swagger_ui(title: str, document_url: str, script_url: str, style_url: str) -> str
+    lines = [
+        "<!DOCTYPE html>"
+        "<html lang=\"en\">"
+        "<head>"
+        "<meta charset=\"utf-8\">"
+        "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
+        f"<title>{escaped(title)}</title>"
+        f"<link rel=\"stylesheet\" href=\"{escaped(style_url)}\">"
+        "</head>"
+        "<body>"
+        "<div id=\"swagger-ui\"></div>"
+        f"<script src=\"{escaped(script_url)}\"></script>"
+        "<script>"
+        f"window.ui = SwaggerUIBundle({{url: {script_text(document_url)}, dom_id: \"#swagger-ui\", deepLinking: true, presets: [SwaggerUIBundle.presets.apis, SwaggerUIBundle.SwaggerUIStandalonePreset], layout: \"BaseLayout\"}});"
+        "</script>"
+        "</body>"
+        "</html>"
+        ""
+    ]
+    return lines.join("\n")
+
+# Redoc's page.
+function redoc(title: str, document_url: str, script_url: str) -> str
+    lines = [
+        "<!DOCTYPE html>"
+        "<html lang=\"en\">"
+        "<head>"
+        "<meta charset=\"utf-8\">"
+        "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">"
+        f"<title>{escaped(title)}</title>"
+        f"<style>body {{ margin: 0; padding: 0; }}</style>"
+        "</head>"
+        "<body>"
+        f"<redoc spec-url=\"{escaped(document_url)}\"></redoc>"
+        f"<script src=\"{escaped(script_url)}\"></script>"
+        "</body>"
+        "</html>"
+        ""
+    ]
+    return lines.join("\n")
+
+test "escaped: the five characters HTML reads, and text of more than one byte"
+    assert escaped("<a href=\"x\">'&'</a> é") == "&lt;a href=&quot;x&quot;&gt;&#39;&amp;&#39;&lt;/a&gt; é"
+    assert escaped("") == ""
+
+test "script_text: no element can be closed from inside the string"
+    assert script_text("/x</script>") == "\"/x\\u003c/script\\u003e\""

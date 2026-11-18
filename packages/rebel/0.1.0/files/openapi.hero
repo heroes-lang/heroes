@@ -1,0 +1,4780 @@
+# OpenAPI 3.1 documents built as data, written as JSON and YAML, read back,
+# checked, served beside a program's routes, and requests and responses
+# validated against them.
+#
+# **A document is built, never derived.** The language has no reflection, so
+# no document is made from a program's types as FastAPI makes one from
+# Pydantic's models or utoipa from Rust's: a program builds its `Document`
+# with the functions of this package, `new_document`, `new_operation`,
+# `new_parameter`, `json_response`, and sets the fields it needs. A schema is
+# a JSON Schema 2020-12 schema, held as the `json.Value` it is and made by
+# `object_schema` and its kin or read from text.
+#
+# **Requests are validated by the document.** `new_validator` compiles every
+# schema of a document once; `read_request` finds the operation a request
+# names (its path by the templates and the servers' paths, then its method),
+# reads every parameter by its location, style and explode rules, reads the
+# body by its media type, checks that a credential its security asks for is
+# there, and validates each value by `json/schema`, every error with its
+# place. `response_errors_of` does the same for a response.
+#
+# **Serving.** `add_routes` adds every operation to a `web` router, named by
+# its `operationId`, and `add_site_routes` the document as JSON and YAML and
+# two pages that show it, Swagger UI's and Redoc's. Those pages are this
+# package's own HTML, a few lines each: the viewers' scripts are loaded by the
+# browser from the address the program gives, a CDN's by default, so no
+# third party's JavaScript is bundled into a program.
+#
+# **What it does not do.** It reads and writes OpenAPI 3.1 alone: a document
+# of 3.0 or of Swagger 2.0 is refused `unsupported`. A reference is followed
+# within the document: one naming another document is refused when a
+# validator is made. A credential is checked for its presence, never for its
+# truth, which is the program's to judge (`web.require_bearer`). JSON is
+# `json`'s, YAML `yaml`'s, a schema's validation `json/schema`'s, an HTTP
+# message `http`'s, a route `web`'s.
+#
+# The codes it fails with: `invalid` (a document, a request or a response not
+# of its form), `not_found` (a reference, an operation or a route that names
+# nothing), `exists` (an operation or a component added twice), and
+# `unsupported` (an OpenAPI version other than 3.1, a reference to another
+# document).
+
+use bytes
+use http
+use json
+use openapi/internal/answers
+use openapi/internal/checks
+use openapi/internal/compiled
+use openapi/internal/fixture
+use openapi/internal/objects
+use openapi/internal/pages
+use openapi/internal/requests
+use openapi/internal/routes
+use openapi/internal/shape
+use strings
+use web
+use yaml
+
+## Codes
+
+# The code of a document, a request or a response not of its form:
+# `from_json`, `parse`, `check`, `read_request` and `check_response` fail
+# with it.
+constant INVALID: str
+    "invalid"
+
+# The code of a reference, an operation or a route that names nothing:
+# `resolve_parameter` and its kin, `endpoint_of` and `read_request` fail
+# with it.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of an operation, a webhook or a component added where one is:
+# `add_operation`, `add_webhook` and `merge` fail with it.
+constant EXISTS: str
+    "exists"
+
+# The code of an OpenAPI version other than 3.1 and of a reference to another
+# document: `from_json`, `parse` and `new_validator` fail with it.
+constant UNSUPPORTED: str
+    "unsupported"
+
+## Versions
+
+# The version `new_document` writes in a document's `openapi` field, the
+# newest of 3.1. Any `3.1.x` is read.
+constant OPENAPI_VERSION: str
+    "3.1.2"
+
+# The URI of OpenAPI 3.1's own dialect of JSON Schema, which a schema is read
+# in where a document names no other: 2020-12 with `discriminator`, `xml`,
+# `externalDocs` and `example`, which assert nothing.
+constant DIALECT_URI: str
+    "https://spec.openapis.org/oas/3.1/dialect/base"
+
+## The document
+
+# An OpenAPI 3.1 document: what an API offers, its operations and the
+# components they share. `new_document` makes one with nothing in it; a
+# program adds its operations with `add_operation` and sets the other fields
+# directly. Every map keeps the order its keys were first put in, and the
+# document is written in that order.
+record Document
+    # The OpenAPI version, `OPENAPI_VERSION` where `new_document` made it.
+    openapi: str
+    # The API's title, version and the rest.
+    info: Info
+    # The dialect a schema of the document is read in where it names none;
+    # "" for `DIALECT_URI`.
+    json_schema_dialect: str
+    # The servers, in order; none means one server at `/`.
+    servers: [Server]
+    # The paths, each a template beginning with `/`, such as `/pets/{id}`.
+    paths: {str: PathItem}
+    # The `x-` fields of the paths' object, by name.
+    paths_extensions: {str: json.Value}
+    # The webhooks the API may call, by name.
+    webhooks: {str: PathItem}
+    # What the document's other parts name by reference.
+    components: Components
+    # The security every operation needs where it says none of its own: any
+    # one requirement of the list is enough; none means none is needed.
+    security: [SecurityRequirement]
+    # The tags operations name, each once.
+    tags: [Tag]
+    # More documentation outside the document; its `url` is "" for none.
+    external_docs: ExternalDocs
+    # The `x-` fields, by name, each name beginning with `x-`.
+    extensions: {str: json.Value}
+
+# What an API is: its title and version, and what else a reader is told.
+record Info
+    # The title, not empty.
+    title: str
+    # A short summary; "" for none.
+    summary: str
+    # A description, CommonMark; "" for none.
+    description: str
+    # The URL of the terms of service; "" for none.
+    terms_of_service: str
+    # Whom to ask; every field "" for nobody.
+    contact: Contact
+    # The licence; its `name` is "" for none.
+    license: License
+    # The version of the API, not of OpenAPI: any text, not empty.
+    version: str
+    # The `x-` fields, by name.
+    extensions: {str: json.Value}
+
+# Whom to ask about an API. `new_contact` makes one.
+record Contact
+    # A name; "" for none.
+    name: str
+    # A URL; "" for none.
+    url: str
+    # An email address; "" for none.
+    email: str
+    # The `x-` fields, by name.
+    extensions: {str: json.Value}
+
+# An API's licence: its name, and either an SPDX identifier or a URL.
+# `new_license` makes one.
+record License
+    # The name, not empty where there is a licence.
+    name: str
+    # An SPDX expression, such as `Apache-2.0`; "" for none.
+    identifier: str
+    # The URL of the licence; "" for none, and "" where `identifier` is set.
+    url: str
+    # The `x-` fields, by name.
+    extensions: {str: json.Value}
+
+# A server the API is reached at. `new_server` makes one.
+record Server
+    # The URL, absolute or relative to where the document is served, with
+    # `{name}` where a variable stands: `https://{region}.example.com/v1`.
+    url: str
+    # A description; "" for none.
+    description: str
+    # The variables its URL names, by name.
+    variables: {str: ServerVariable}
+    # The `x-` fields, by name.
+    extensions: {str: json.Value}
+
+# A variable of a server's URL.
+record ServerVariable
+    # The values it may take; none for any.
+    values: [str]
+    # The value it takes where none is given, one of `values` where there are
+    # some.
+    default_value: str
+    # A description; "" for none.
+    description: str
+    # The `x-` fields, by name.
+    extensions: {str: json.Value}
+
+# Documentation outside the document. `new_external_docs` makes one.
+record ExternalDocs
+    # A description; "" for none.
+    description: str
+    # The URL; "" where there is none.
+    url: str
+    # The `x-` fields, by name.
+    extensions: {str: json.Value}
+
+# A tag operations are grouped by. `new_tag` makes one.
+record Tag
+    # The name, unique in the document.
+    name: str
+    # A description; "" for none.
+    description: str
+    # More documentation; its `url` is "" for none.
+    external_docs: ExternalDocs
+    # The `x-` fields, by name.
+    extensions: {str: json.Value}
+
+# A document with only its title and version: no server, path, component or
+# tag, written with `OPENAPI_VERSION`.
+#
+# - `title`: the API's title.
+# - `version`: the API's own version, such as `1.0.0`.
+#
+# See also `add_operation`, `to_json`.
+function new_document(title: str, version: str) -> Document
+    return Document(
+        openapi: OPENAPI_VERSION,
+        info: Info(title: title, summary: "", description: "", terms_of_service: "", contact: new_contact(name: "", url: "", email: ""), license: new_license(name: "", identifier: ""), version: version, extensions: {}),
+        json_schema_dialect: "",
+        servers: [],
+        paths: {},
+        paths_extensions: {},
+        webhooks: {},
+        components: new_components(),
+        security: [],
+        tags: [],
+        external_docs: new_external_docs(url: "", description: ""),
+        extensions: {}
+    )
+
+# A contact, its extensions none.
+#
+# - `name`: a name, or "".
+# - `url`: a URL, or "".
+# - `email`: an address, or "".
+function new_contact(name: str, url: str, email: str) -> Contact
+    return Contact(name: name, url: url, email: email, extensions: {})
+
+# A licence named by an SPDX identifier, its URL none.
+#
+# - `name`: the licence's name, such as `Apache 2.0`; "" for no licence.
+# - `identifier`: its SPDX identifier, such as `Apache-2.0`, or "".
+function new_license(name: str, identifier: str) -> License
+    return License(name: name, identifier: identifier, url: "", extensions: {})
+
+# A server with no variable.
+#
+# - `url`: its URL, absolute or relative, such as `https://api.example.com/v1`.
+# - `description`: a description, or "".
+#
+# See also `server_url`.
+function new_server(url: str, description: str) -> Server
+    return Server(url: url, description: description, variables: {}, extensions: {})
+
+# Documentation outside the document.
+#
+# - `url`: its URL; "" for none.
+# - `description`: a description, or "".
+function new_external_docs(url: str, description: str) -> ExternalDocs
+    return ExternalDocs(description: description, url: url, extensions: {})
+
+# A tag with no external documentation.
+#
+# - `name`: its name.
+# - `description`: a description, or "".
+function new_tag(name: str, description: str) -> Tag
+    return Tag(
+        name: name,
+        description: description,
+        external_docs: new_external_docs(url: "", description: ""),
+        extensions: {}
+    )
+
+# The URL of `server` with each variable replaced by its value.
+#
+# - `server`: the server.
+# - `values`: a value for each variable, by name; a variable with none takes
+#   its default.
+#
+# Fails `not_found` where the URL names a variable the server does not
+# declare, and `invalid` where a value is not one of its variable's values or
+# a `{` is not closed.
+function server_url(server: Server, values: {str: str}) -> str?
+    out: [str] @= []
+    at: i64 @= 0
+    text = server.url
+
+    while at < text.len()
+        if text[at] == '{'
+            close: i64 @= at + 1
+
+            while close < text.len() && text[close] != '}'
+                close @ close + 1
+
+            if close == text.len()
+                return fail(code: INVALID, msg: f"the server's URL \"{text}\" opens a `{{` it does not close")
+            name = text.slice(from: at + 1, to: close)
+
+            variable = match server.variables[name]
+                .ok found => found
+                .err _ => return fail(
+                    code: NOT_FOUND,
+                    msg: f"the server's URL \"{text}\" names the variable \"{name}\", which it does not declare"
+                )
+
+            value = values[name].default(variable.default_value)
+
+            if variable.values.len() > 0
+                allowed: bool @= false
+
+                for each in variable.values
+                    if each == value
+                        allowed @ true
+
+                if !allowed
+                    return fail(
+                        code: INVALID,
+                        msg: f"the variable \"{name}\" takes one of {variable.values.join(", ")}, not \"{value}\""
+                    )
+            out @ out.push(value)
+            at @ close + 1
+        else
+            next: i64 @= at + 1
+
+            while next < text.len() && text[next] != '{'
+                next @ next + 1
+
+            out @ out.push(text.slice(from: at, to: next))
+            at @ next
+
+    return ok(out.join(""))
+
+## Paths and operations
+
+# The operations of one path, and what they share.
+record PathItem
+    # A reference to a path item, as `#/components/pathItems/pets`; "" where
+    # this one is not a reference. Where it is, the other fields add to the
+    # one it names.
+    ref: str
+    # A summary of every operation; "" for none.
+    summary: str
+    # A description; "" for none.
+    description: str
+    # The operations, by method in lower case: `get`, `put`, `post`,
+    # `delete`, `options`, `head`, `patch`, `trace`.
+    operations: {str: Operation}
+    # The servers of these operations, replacing the document's; none for the
+    # document's.
+    servers: [Server]
+    # The parameters every operation takes, unless an operation says one of
+    # the same name and location itself.
+    parameters: [Parameter]
+    # The `x-` fields, by name.
+    extensions: {str: json.Value}
+
+# One operation: a method on a path. `new_operation` makes one.
+record Operation
+    # The tags it is grouped under.
+    tags: [str]
+    # A summary; "" for none.
+    summary: str
+    # A description; "" for none.
+    description: str
+    # More documentation; its `url` is "" for none.
+    external_docs: ExternalDocs
+    # The name a program calls it by, unique in the document; "" for none.
+    operation_id: str
+    # Its parameters, added to its path's.
+    parameters: [Parameter]
+    # Its body; `no_request_body` for none.
+    request_body: RequestBody
+    # Its responses, by status (`200`), range (`2XX`) or `default`.
+    responses: {str: Response}
+    # The `x-` fields of the responses' object, by name.
+    responses_extensions: {str: json.Value}
+    # The requests it may make back, by name.
+    callbacks: {str: Callback}
+    # Whether it is to be used no more.
+    deprecated: bool
+    # Whether `security` replaces the document's: where it does, an empty
+    # list says the operation needs none.
+    own_security: bool
+    # The security it needs where `own_security` is set: any one is enough.
+    security: [SecurityRequirement]
+    # Its servers, replacing its path's and the document's; none for theirs.
+    servers: [Server]
+    # The `x-` fields, by name.
+    extensions: {str: json.Value}
+
+# The requests an operation may make back: an expression, such as
+# `{$request.body#/callbackUrl}`, for each path item.
+record Callback
+    # A reference to a callback, as `#/components/callbacks/done`; "" where
+    # this one is not a reference.
+    ref: str
+    # The path items, by their runtime expression.
+    paths: {str: PathItem}
+    # The `x-` fields, by name.
+    extensions: {str: json.Value}
+
+# An operation where `add_operation` found it: its method and path, the path
+# item it belongs to, and itself.
+record Endpoint
+    # The method in upper case, as `http.METHOD_GET`.
+    method: str
+    # The path's template, as the document writes it: `/pets/{id}`.
+    path: str
+    # The path item, its operations included.
+    item: PathItem
+    # The operation.
+    operation: Operation
+
+# An empty path item.
+function new_path_item() -> PathItem
+    return PathItem(ref: "", summary: "", description: "", operations: {}, servers: [], parameters: [], extensions: {})
+
+# An operation with no parameter, body or response.
+#
+# - `operation_id`: its name, unique in the document, or "".
+# - `summary`: a summary, or "".
+#
+# See also `add_operation`, `json_response`.
+function new_operation(operation_id: str, summary: str) -> Operation
+    return Operation(
+        tags: [],
+        summary: summary,
+        description: "",
+        external_docs: new_external_docs(url: "", description: ""),
+        operation_id: operation_id,
+        parameters: [],
+        request_body: no_request_body(),
+        responses: {},
+        responses_extensions: {},
+        callbacks: {},
+        deprecated: false,
+        own_security: false,
+        security: [],
+        servers: [],
+        extensions: {}
+    )
+
+# Adds `operation` to `doc` for `method` on `path`.
+#
+# - `doc`: the document, which gains the operation, and the path where it
+#   had none.
+# - `path`: the template, beginning with `/`: `/pets/{id}`.
+# - `method`: one of the eight methods OpenAPI 3.1 names, in any case:
+#   `GET`, `put`, `Post`.
+# - `operation`: the operation.
+#
+# Fails `invalid` where `path` does not begin with `/` or `method` is not one
+# of the eight; `exists` where `doc` holds an operation for that method and
+# path, or one of the same `operation_id`.
+function add_operation(@doc: Document, path: str, method: str, operation: Operation) -> ()?
+    lower = strings.to_lower_ascii(method)
+
+    if !routes.is_method(lower)
+        return fail(
+            code: INVALID,
+            msg: f"\"{method}\" is not a method OpenAPI names: get, put, post, delete, options, head, patch or trace"
+        )
+
+    if path == "" || path[0] != '/'
+        return fail(code: INVALID, msg: f"the path \"{path}\" does not begin with `/`")
+
+    if operation.operation_id != ""
+        for e in operations_of(doc)
+            if e.operation.operation_id == operation.operation_id
+                return fail(
+                    code: EXISTS,
+                    msg: f"the operationId \"{operation.operation_id}\" is {e.method} {e.path}'s already"
+                )
+    item @= doc.paths[path].default(new_path_item())
+
+    if !item.operations[lower].is_err()
+        return fail(code: EXISTS, msg: f"{strings.to_upper_ascii(lower)} {path} has an operation already")
+    item.operations[lower] @ operation
+    doc.paths[path] @ item
+    return ok()
+
+# Adds `operation` to `doc`'s webhooks under `name` for `method`.
+#
+# - `doc`: the document, which gains the webhook.
+# - `name`: the webhook's name, any text.
+# - `method`: as `add_operation` reads it.
+# - `operation`: the request the API sends.
+#
+# Fails `invalid` where `method` is not one of the eight, and `exists` where
+# the webhook has an operation for it.
+function add_webhook(@doc: Document, name: str, method: str, operation: Operation) -> ()?
+    lower = strings.to_lower_ascii(method)
+
+    if !routes.is_method(lower)
+        return fail(
+            code: INVALID,
+            msg: f"\"{method}\" is not a method OpenAPI names: get, put, post, delete, options, head, patch or trace"
+        )
+    item @= doc.webhooks[name].default(new_path_item())
+
+    if !item.operations[lower].is_err()
+        return fail(
+            code: EXISTS,
+            msg: f"the webhook \"{name}\" has an operation for {strings.to_upper_ascii(lower)} already"
+        )
+    item.operations[lower] @ operation
+    doc.webhooks[name] @ item
+    return ok()
+
+# A callback of one path item.
+#
+# - `expression`: the runtime expression, such as
+#   `{$request.body#/callbackUrl}`.
+# - `item`: the requests made to it.
+function new_callback(expression: str, item: PathItem) -> Callback
+    paths: {str: PathItem} @= {}
+    paths[expression] @ item
+    return Callback(ref: "", paths: paths, extensions: {})
+
+# Every operation of `doc`, in the order of its paths, and on each path in
+# the order `get`, `put`, `post`, `delete`, `options`, `head`, `patch`,
+# `trace`.
+#
+# - `doc`: the document.
+#
+# A path item that is a reference is read where it names one in
+# `doc.components`, its own operations first; none where `doc` has no path.
+function operations_of(doc: Document) -> [Endpoint]
+    out: [Endpoint] @= []
+
+    for path in keys(doc.paths)
+        given = doc.paths[path].must()
+        item = resolve_path_item(doc, item: given).default(given)
+
+        for method in routes.methods()
+            match item.operations[method]
+                .ok op => out @ out.push(
+                    Endpoint(method: strings.to_upper_ascii(method), path: path, item: item, operation: op)
+                )
+                .err _ => _ = 0
+
+    return out
+
+# The operation of `doc` whose `operation_id` is `operation_id`.
+#
+# - `doc`: the document.
+# - `operation_id`: the name sought.
+#
+# Fails `not_found` where no operation has it.
+function endpoint_of(doc: Document, operation_id: str) -> Endpoint?
+    for e in operations_of(doc)
+        if e.operation.operation_id == operation_id
+            return ok(e)
+
+    return fail(code: NOT_FOUND, msg: f"no operation has the operationId \"{operation_id}\"")
+
+# The parameters of `endpoint`, its path's and its own, each reference
+# resolved.
+#
+# - `doc`: the document the references are resolved in.
+# - `endpoint`: the operation.
+#
+# An operation's parameter replaces its path's of the same name and
+# location; the path's come first, in their order. Fails as
+# `resolve_parameter` does.
+function parameters_of(doc: Document, endpoint: Endpoint) -> [Parameter]?
+    out: [Parameter] @= []
+
+    for p in endpoint.item.parameters
+        out @ out.push(resolve_parameter(doc, p)?)
+
+    for p in endpoint.operation.parameters
+        resolved = resolve_parameter(doc, p)?
+        replaced: bool @= false
+
+        for i in range(from: 0, to: out.len())
+            if out[i].name == resolved.name && format_location(out[i].location) == format_location(resolved.location)
+                out[i] @ resolved
+                replaced @ true
+
+        if !replaced
+            out @ out.push(resolved)
+
+    return ok(out)
+
+# The response of `operation` for `status`, its reference resolved: the
+# status itself, else its range (`2XX`), else `default`.
+#
+# - `doc`: the document references are resolved in.
+# - `operation`: the operation.
+# - `status`: the status, 100 to 599.
+#
+# Fails `not_found` where none of the three is there, and as
+# `resolve_response` does.
+function response_for(doc: Document, operation: Operation, status: i64) -> Response?
+    for key in [to_str(status), to_str(status / 100) + "XX", "default"]
+        match operation.responses[key]
+            .ok r  => return resolve_response(doc, response: r)
+            .err _ => _ = 0
+
+    return fail(
+        code: NOT_FOUND,
+        msg: f"the operation \"{operation.operation_id}\" has no response for {status}, nor for {status / 100}XX, nor a default"
+    )
+
+## Parameters
+
+# Where a parameter is read from.
+variant Location
+    # A part of the path, named by the template: `/pets/{id}`.
+    path
+    # The query.
+    query
+    # A field of the header.
+    header
+    # A cookie.
+    cookie
+
+# The style `matrix`, of a path: `;id=5`.
+constant STYLE_MATRIX: str
+    "matrix"
+
+# The style `label`, of a path: `.5`.
+constant STYLE_LABEL: str
+    "label"
+
+# The style `simple`, the default of a path and a header: `5`, `3,4,5`.
+constant STYLE_SIMPLE: str
+    "simple"
+
+# The style `form`, the default of a query and a cookie: `id=5`.
+constant STYLE_FORM: str
+    "form"
+
+# The style `spaceDelimited`, of a query's array: `id=3%204%205`.
+constant STYLE_SPACE_DELIMITED: str
+    "spaceDelimited"
+
+# The style `pipeDelimited`, of a query's array: `id=3|4|5`.
+constant STYLE_PIPE_DELIMITED: str
+    "pipeDelimited"
+
+# The style `deepObject`, of a query's object: `id[role]=admin`.
+constant STYLE_DEEP_OBJECT: str
+    "deepObject"
+
+# A parameter of an operation. `new_parameter` makes one; `parameter_ref`
+# makes a reference to one.
+record Parameter
+    # A reference to a parameter, as `#/components/parameters/limit`; "" where
+    # this one is not a reference. Where it is, only `description` is read
+    # beside it.
+    ref: str
+    # The name, compared as written; a header's in any case.
+    name: str
+    # Where it is read from.
+    location: Location
+    # A description; "" for none.
+    description: str
+    # Whether a request must hold it; always true for a path's.
+    required: bool
+    # Whether it is to be used no more.
+    deprecated: bool
+    # Whether a query's may be sent empty, as `?flag=`.
+    allow_empty_value: bool
+    # How it is written, one of the `STYLE_` constants; "" for its location's
+    # default, `form` for a query and a cookie and `simple` otherwise.
+    style: str
+    # Whether an array's or an object's values are written each as a pair of
+    # its own: true by default for `form`, false for the other styles; it is
+    # written only where it differs from its style's default.
+    explode: bool
+    # Whether a query's value may hold the characters RFC 3986 reserves
+    # unescaped.
+    allow_reserved: bool
+    # Its schema; `.null_value` where `content` says it instead.
+    schema: json.Value
+    # An example of its value; `.null_value` for none.
+    example: json.Value
+    # Examples of its value, by name.
+    examples: {str: Example}
+    # Its media type and schema, one entry, where `schema` is not given.
+    content: {str: MediaType}
+    # The `x-` fields, by name.
+    extensions: {str: json.Value}
+
+# A parameter of `schema` read from `location`: required where it is a
+# path's, its style its location's default.
+#
+# - `name`: its name.
+# - `location`: where it is read from.
+# - `schema`: its schema, such as `integer_schema()`.
+#
+# See also `parameter_ref`, `parse_location`.
+function new_parameter(name: str, location: Location, schema: json.Value) -> Parameter
+    is_path = match location
+        .path   => true
+        .query  => false
+        .header => false
+        .cookie => false
+
+    explode = match location
+        .query  => true
+        .cookie => true
+        .path   => false
+        .header => false
+
+    return Parameter(
+        ref: "",
+        name: name,
+        location: location,
+        description: "",
+        required: is_path,
+        deprecated: false,
+        allow_empty_value: false,
+        style: "",
+        explode: explode,
+        allow_reserved: false,
+        schema: schema,
+        example: .null_value,
+        examples: {},
+        content: {},
+        extensions: {}
+    )
+
+# The style `p` is written in: its own, or its location's default.
+#
+# - `p`: the parameter.
+function style_of(p: Parameter) -> str
+    if p.style != ""
+        return p.style
+
+    return match p.location
+        .query | .cookie => STYLE_FORM
+        .path | .header  => STYLE_SIMPLE
+
+# The location `s` names.
+#
+# - `s`: `path`, `query`, `header` or `cookie`.
+#
+# Fails `invalid` where it is another text.
+function parse_location(s: str) -> Location?
+    return match s
+        "path"   => ok(.path)
+        "query"  => ok(.query)
+        "header" => ok(.header)
+        "cookie" => ok(.cookie)
+        _        => fail(code: INVALID, msg: f"\"{s}\" is not a parameter's location: path, query, header or cookie")
+
+# The name OpenAPI writes for `l`: `path`, `query`, `header` or `cookie`.
+#
+# - `l`: the location.
+function format_location(l: Location) -> str
+    return match l
+        .path   => "path"
+        .query  => "query"
+        .header => "header"
+        .cookie => "cookie"
+
+## Bodies and responses
+
+# A request's body. `json_body` makes one, `no_request_body` an absent one,
+# and `request_body_ref` a reference.
+record RequestBody
+    # A reference to a body, as `#/components/requestBodies/pet`; "" where
+    # this one is not a reference.
+    ref: str
+    # A description; "" for none.
+    description: str
+    # Its media types, each with its schema, by the type as written:
+    # `application/json`, `image/*`; none where the operation has no body.
+    content: {str: MediaType}
+    # Whether a request must hold it.
+    required: bool
+    # The `x-` fields, by name.
+    extensions: {str: json.Value}
+
+# A media type of a body: its schema and examples.
+record MediaType
+    # Its schema; `.null_value` for none.
+    schema: json.Value
+    # An example; `.null_value` for none.
+    example: json.Value
+    # Examples, by name.
+    examples: {str: Example}
+    # How the properties of a form or a multipart body are written, by
+    # property.
+    encoding: {str: Encoding}
+    # The `x-` fields, by name.
+    extensions: {str: json.Value}
+
+# How one property of a form or a multipart body is written.
+record Encoding
+    # Its media type in a multipart body; "" for its default.
+    content_type: str
+    # Its part's header fields in a multipart body, by name.
+    headers: {str: Header}
+    # Its style in a form, one of the `STYLE_` constants a query takes; ""
+    # for `form`.
+    style: str
+    # Whether its values are written each as a pair of its own.
+    explode: bool
+    # Whether its value may hold reserved characters unescaped.
+    allow_reserved: bool
+    # The `x-` fields, by name.
+    extensions: {str: json.Value}
+
+# A response. `new_response` and `json_response` make one, `response_ref` a
+# reference.
+record Response
+    # A reference to a response, as `#/components/responses/NotFound`; ""
+    # where this one is not a reference.
+    ref: str
+    # A description, not empty where this one is not a reference.
+    description: str
+    # Its header fields, by name; a `Content-Type` is ignored.
+    headers: {str: Header}
+    # Its media types, each with its schema; none for no body.
+    content: {str: MediaType}
+    # The operations a client may call next, by name.
+    links: {str: Link}
+    # The `x-` fields, by name.
+    extensions: {str: json.Value}
+
+# A header field of a response or of a multipart body's part: a parameter
+# without a name or a location, its style `simple`.
+record Header
+    # A reference to a header, as `#/components/headers/RateLimit`; "" where
+    # this one is not a reference.
+    ref: str
+    # A description; "" for none.
+    description: str
+    # Whether a response must hold it.
+    required: bool
+    # Whether it is to be used no more.
+    deprecated: bool
+    # Whether an array's or an object's values are written each as a pair;
+    # false by default.
+    explode: bool
+    # Its schema; `.null_value` where `content` says it instead.
+    schema: json.Value
+    # An example; `.null_value` for none.
+    example: json.Value
+    # Examples, by name.
+    examples: {str: Example}
+    # Its media type and schema, one entry, where `schema` is not given.
+    content: {str: MediaType}
+    # The `x-` fields, by name.
+    extensions: {str: json.Value}
+
+# An example of a value.
+record Example
+    # A reference to an example, as `#/components/examples/cat`; "" where
+    # this one is not a reference.
+    ref: str
+    # A summary; "" for none.
+    summary: str
+    # A description; "" for none.
+    description: str
+    # The value; `.null_value` where `external_value` gives it.
+    value: json.Value
+    # The URL of the value; "" for none.
+    external_value: str
+    # The `x-` fields, by name.
+    extensions: {str: json.Value}
+
+# An operation a client may call with values of a response.
+record Link
+    # A reference to a link, as `#/components/links/next`; "" where this one
+    # is not a reference.
+    ref: str
+    # A reference to the operation, as a URI; "" where `operation_id` names it.
+    operation_ref: str
+    # The operation's `operation_id`; "" where `operation_ref` names it.
+    operation_id: str
+    # The values of its parameters, each a value or a runtime expression such
+    # as `$response.body#/id`, by name.
+    parameters: {str: json.Value}
+    # The value of its body; `.null_value` for none.
+    request_body: json.Value
+    # A description; "" for none.
+    description: str
+    # The server it is called at; its `url` is "" for the operation's own.
+    server: Server
+    # The `x-` fields, by name.
+    extensions: {str: json.Value}
+
+# A media type of `schema` with no example or encoding.
+#
+# - `schema`: the schema, or `.null_value` for none.
+function new_media_type(schema: json.Value) -> MediaType
+    return MediaType(schema: schema, example: .null_value, examples: {}, encoding: {}, extensions: {})
+
+# A body of `application/json` of `schema`.
+#
+# - `schema`: the body's schema.
+# - `required`: whether a request must hold it.
+#
+# See also `no_request_body`.
+function json_body(schema: json.Value, required: bool) -> RequestBody
+    content: {str: MediaType} @= {}
+    content["application/json"] @ new_media_type(schema)
+    return RequestBody(ref: "", description: "", content: content, required: required, extensions: {})
+
+# The body of an operation that takes none: no content and no reference.
+function no_request_body() -> RequestBody
+    return RequestBody(ref: "", description: "", content: {}, required: false, extensions: {})
+
+# Whether `operation` takes a body: a reference to one, or one with content.
+#
+# - `operation`: the operation.
+function has_request_body(operation: Operation) -> bool
+    return operation.request_body.ref != "" || keys(operation.request_body.content).len() > 0
+
+# A response with no header, body or link.
+#
+# - `description`: what it means, not empty.
+#
+# See also `json_response`.
+function new_response(description: str) -> Response
+    return Response(ref: "", description: description, headers: {}, content: {}, links: {}, extensions: {})
+
+# A response whose body is `application/json` of `schema`.
+#
+# - `description`: what it means, not empty.
+# - `schema`: the body's schema.
+function json_response(description: str, schema: json.Value) -> Response
+    content: {str: MediaType} @= {}
+    content["application/json"] @ new_media_type(schema)
+    return Response(ref: "", description: description, headers: {}, content: content, links: {}, extensions: {})
+
+# A header field of `schema`, not required.
+#
+# - `schema`: its schema, such as `integer_schema()`.
+function new_header(schema: json.Value) -> Header
+    return Header(
+        ref: "",
+        description: "",
+        required: false,
+        deprecated: false,
+        explode: false,
+        schema: schema,
+        example: .null_value,
+        examples: {},
+        content: {},
+        extensions: {}
+    )
+
+# An example of `value`, with no summary.
+#
+# - `value`: the value.
+function new_example(value: json.Value) -> Example
+    return Example(ref: "", summary: "", description: "", value: value, external_value: "", extensions: {})
+
+# A link to the operation `operation_id`, with no parameter.
+#
+# - `operation_id`: the operation's name.
+function new_link(operation_id: str) -> Link
+    return Link(
+        ref: "",
+        operation_ref: "",
+        operation_id: operation_id,
+        parameters: {},
+        request_body: .null_value,
+        description: "",
+        server: new_server(url: "", description: ""),
+        extensions: {}
+    )
+
+## Components and references
+
+# What a document's other parts name by reference, each kind by name. A name
+# holds letters, digits, `.`, `-` and `_`.
+record Components
+    # Schemas, by name: `#/components/schemas/Pet`.
+    schemas: {str: json.Value}
+    # Responses, by name.
+    responses: {str: Response}
+    # Parameters, by name.
+    parameters: {str: Parameter}
+    # Examples, by name.
+    examples: {str: Example}
+    # Request bodies, by name.
+    request_bodies: {str: RequestBody}
+    # Header fields, by name.
+    headers: {str: Header}
+    # Security schemes, by the name a requirement gives them.
+    security_schemes: {str: SecurityScheme}
+    # Links, by name.
+    links: {str: Link}
+    # Callbacks, by name.
+    callbacks: {str: Callback}
+    # Path items, by name.
+    path_items: {str: PathItem}
+    # The `x-` fields, by name.
+    extensions: {str: json.Value}
+
+# Components with nothing in them.
+function new_components() -> Components
+    return Components(
+        schemas: {},
+        responses: {},
+        parameters: {},
+        examples: {},
+        request_bodies: {},
+        headers: {},
+        security_schemes: {},
+        links: {},
+        callbacks: {},
+        path_items: {},
+        extensions: {}
+    )
+
+# The reference to the component `name` of the kind `kind`:
+# `#/components/schemas/Pet`.
+#
+# - `kind`: the components' field as OpenAPI writes it: `schemas`,
+#   `parameters`, `requestBodies`, `pathItems`.
+# - `name`: the component's name; a `~` and a `/` in it are escaped as a JSON
+#   pointer escapes them.
+function ref_of(kind: str, name: str) -> str
+    return "#" + json.pointer_of(["components", kind, name])
+
+# The schema `{"$ref": "#/components/schemas/<name>"}`.
+#
+# - `name`: the schema's name in the components.
+function schema_ref(name: str) -> json.Value
+    members: {str: json.Value} @= {}
+    members["$ref"] @ .text(v: ref_of(kind: "schemas", name: name))
+    return .object(members: members)
+
+# A reference to the parameter `name` of the components.
+#
+# - `name`: its name.
+function parameter_ref(name: str) -> Parameter
+    out @= new_parameter(name: "", location: .query, schema: .null_value)
+    out.ref @ ref_of(kind: "parameters", name: name)
+    return out
+
+# A reference to the request body `name` of the components.
+#
+# - `name`: its name.
+function request_body_ref(name: str) -> RequestBody
+    out @= no_request_body()
+    out.ref @ ref_of(kind: "requestBodies", name: name)
+    return out
+
+# A reference to the response `name` of the components.
+#
+# - `name`: its name.
+function response_ref(name: str) -> Response
+    out @= new_response("")
+    out.ref @ ref_of(kind: "responses", name: name)
+    return out
+
+# A reference to the header field `name` of the components.
+#
+# - `name`: its name.
+function header_ref(name: str) -> Header
+    out @= new_header(.null_value)
+    out.ref @ ref_of(kind: "headers", name: name)
+    return out
+
+# A reference to the example `name` of the components.
+#
+# - `name`: its name.
+function example_ref(name: str) -> Example
+    out @= new_example(.null_value)
+    out.ref @ ref_of(kind: "examples", name: name)
+    return out
+
+# A reference to the link `name` of the components.
+#
+# - `name`: its name.
+function link_ref(name: str) -> Link
+    out @= new_link("")
+    out.ref @ ref_of(kind: "links", name: name)
+    return out
+
+# A reference to the callback `name` of the components.
+#
+# - `name`: its name.
+function callback_ref(name: str) -> Callback
+    return Callback(ref: ref_of(kind: "callbacks", name: name), paths: {}, extensions: {})
+
+# A reference to the path item `name` of the components.
+#
+# - `name`: its name.
+function path_item_ref(name: str) -> PathItem
+    out @= new_path_item()
+    out.ref @ ref_of(kind: "pathItems", name: name)
+    return out
+
+# A reference to the security scheme `name` of the components.
+#
+# - `name`: its name.
+function security_scheme_ref(name: str) -> SecurityScheme
+    out @= mutual_tls_scheme()
+    out.ref @ ref_of(kind: "securitySchemes", name: name)
+    return out
+
+# `p` itself, or the parameter its reference names, followed to one that is
+# no reference; a reference's own description replaces the one it names.
+#
+# - `doc`: the document whose components are searched.
+# - `p`: the parameter.
+#
+# Fails `not_found` where a reference names no parameter of the components,
+# `unsupported` where it names another document, and `invalid` where
+# references come back to one they left.
+function resolve_parameter(doc: Document, p: Parameter) -> Parameter?
+    out @= p
+    seen: [str] @= []
+
+    while out.ref != ""
+        objects.unseen(@seen, ref: out.ref)?
+        name = objects.component_name(ref: out.ref, kind: "parameters")?
+
+        out @ match doc.components.parameters[name]
+            .ok found => found
+            .err _ => return fail(
+                code: NOT_FOUND,
+                msg: f"the reference \"{out.ref}\" names no parameter of the components"
+            )
+
+    if p.ref != "" && p.description != ""
+        out.description @ p.description
+    return ok(out)
+
+# `body` itself, or the request body its reference names, followed as
+# `resolve_parameter` follows one.
+#
+# - `doc`: the document whose components are searched.
+# - `body`: the body.
+#
+# Fails as `resolve_parameter` does.
+function resolve_request_body(doc: Document, body: RequestBody) -> RequestBody?
+    out @= body
+    seen: [str] @= []
+
+    while out.ref != ""
+        objects.unseen(@seen, ref: out.ref)?
+        name = objects.component_name(ref: out.ref, kind: "requestBodies")?
+
+        out @ match doc.components.request_bodies[name]
+            .ok found => found
+            .err _ => return fail(
+                code: NOT_FOUND,
+                msg: f"the reference \"{out.ref}\" names no request body of the components"
+            )
+
+    if body.ref != "" && body.description != ""
+        out.description @ body.description
+    return ok(out)
+
+# `response` itself, or the response its reference names, followed as
+# `resolve_parameter` follows one.
+#
+# - `doc`: the document whose components are searched.
+# - `response`: the response.
+#
+# Fails as `resolve_parameter` does.
+function resolve_response(doc: Document, response: Response) -> Response?
+    out @= response
+    seen: [str] @= []
+
+    while out.ref != ""
+        objects.unseen(@seen, ref: out.ref)?
+        name = objects.component_name(ref: out.ref, kind: "responses")?
+
+        out @ match doc.components.responses[name]
+            .ok found => found
+            .err _ => return fail(
+                code: NOT_FOUND,
+                msg: f"the reference \"{out.ref}\" names no response of the components"
+            )
+
+    if response.ref != "" && response.description != ""
+        out.description @ response.description
+    return ok(out)
+
+# `header` itself, or the header its reference names, followed as
+# `resolve_parameter` follows one.
+#
+# - `doc`: the document whose components are searched.
+# - `header`: the header field.
+#
+# Fails as `resolve_parameter` does.
+function resolve_header(doc: Document, header: Header) -> Header?
+    out @= header
+    seen: [str] @= []
+
+    while out.ref != ""
+        objects.unseen(@seen, ref: out.ref)?
+        name = objects.component_name(ref: out.ref, kind: "headers")?
+
+        out @ match doc.components.headers[name]
+            .ok found => found
+            .err _ => return fail(
+                code: NOT_FOUND,
+                msg: f"the reference \"{out.ref}\" names no header of the components"
+            )
+
+    if header.ref != "" && header.description != ""
+        out.description @ header.description
+    return ok(out)
+
+# `example` itself, or the example its reference names, followed as
+# `resolve_parameter` follows one; a reference's own summary and description
+# replace the ones it names.
+#
+# - `doc`: the document whose components are searched.
+# - `example`: the example.
+#
+# Fails as `resolve_parameter` does.
+function resolve_example(doc: Document, example: Example) -> Example?
+    out @= example
+    seen: [str] @= []
+
+    while out.ref != ""
+        objects.unseen(@seen, ref: out.ref)?
+        name = objects.component_name(ref: out.ref, kind: "examples")?
+
+        out @ match doc.components.examples[name]
+            .ok found => found
+            .err _ => return fail(
+                code: NOT_FOUND,
+                msg: f"the reference \"{out.ref}\" names no example of the components"
+            )
+
+    if example.ref != "" && example.summary != ""
+        out.summary @ example.summary
+
+    if example.ref != "" && example.description != ""
+        out.description @ example.description
+    return ok(out)
+
+# `link` itself, or the link its reference names, followed as
+# `resolve_parameter` follows one.
+#
+# - `doc`: the document whose components are searched.
+# - `link`: the link.
+#
+# Fails as `resolve_parameter` does.
+function resolve_link(doc: Document, link: Link) -> Link?
+    out @= link
+    seen: [str] @= []
+
+    while out.ref != ""
+        objects.unseen(@seen, ref: out.ref)?
+        name = objects.component_name(ref: out.ref, kind: "links")?
+
+        out @ match doc.components.links[name]
+            .ok found => found
+            .err _ => return fail(code: NOT_FOUND, msg: f"the reference \"{out.ref}\" names no link of the components")
+
+    if link.ref != "" && link.description != ""
+        out.description @ link.description
+    return ok(out)
+
+# `callback` itself, or the callback its reference names, followed as
+# `resolve_parameter` follows one.
+#
+# - `doc`: the document whose components are searched.
+# - `callback`: the callback.
+#
+# Fails as `resolve_parameter` does.
+function resolve_callback(doc: Document, callback: Callback) -> Callback?
+    out @= callback
+    seen: [str] @= []
+
+    while out.ref != ""
+        objects.unseen(@seen, ref: out.ref)?
+        name = objects.component_name(ref: out.ref, kind: "callbacks")?
+
+        out @ match doc.components.callbacks[name]
+            .ok found => found
+            .err _ => return fail(
+                code: NOT_FOUND,
+                msg: f"the reference \"{out.ref}\" names no callback of the components"
+            )
+
+    return ok(out)
+
+# `item` itself, or the path item its reference names, followed as
+# `resolve_parameter` follows one; the referring item's own operations,
+# parameters and servers come before the ones it names.
+#
+# - `doc`: the document whose components are searched.
+# - `item`: the path item.
+#
+# Fails as `resolve_parameter` does.
+function resolve_path_item(doc: Document, item: PathItem) -> PathItem?
+    if item.ref == ""
+        return ok(item)
+    seen: [str] @= []
+    named @= item
+
+    while named.ref != ""
+        objects.unseen(@seen, ref: named.ref)?
+        name = objects.component_name(ref: named.ref, kind: "pathItems")?
+
+        named @ match doc.components.path_items[name]
+            .ok found => found
+            .err _ => return fail(
+                code: NOT_FOUND,
+                msg: f"the reference \"{named.ref}\" names no path item of the components"
+            )
+
+    out @= named
+
+    for method in keys(item.operations)
+        out.operations[method] @ item.operations[method].must()
+
+    parameters @= item.parameters
+
+    for p in named.parameters
+        parameters @ parameters.push(p)
+
+    out.parameters @ parameters
+
+    if item.servers.len() > 0
+        out.servers @ item.servers
+
+    if item.summary != ""
+        out.summary @ item.summary
+
+    if item.description != ""
+        out.description @ item.description
+    return ok(out)
+
+# `scheme` itself, or the security scheme its reference names, followed as
+# `resolve_parameter` follows one.
+#
+# - `doc`: the document whose components are searched.
+# - `scheme`: the scheme.
+#
+# Fails as `resolve_parameter` does.
+function resolve_security_scheme(doc: Document, scheme: SecurityScheme) -> SecurityScheme?
+    out @= scheme
+    seen: [str] @= []
+
+    while out.ref != ""
+        objects.unseen(@seen, ref: out.ref)?
+        name = objects.component_name(ref: out.ref, kind: "securitySchemes")?
+
+        out @ match doc.components.security_schemes[name]
+            .ok found => found
+            .err _ => return fail(
+                code: NOT_FOUND,
+                msg: f"the reference \"{out.ref}\" names no security scheme of the components"
+            )
+
+    if scheme.ref != "" && scheme.description != ""
+        out.description @ scheme.description
+    return ok(out)
+
+# `schema` itself, or the schema of the components its `$ref` names, followed
+# to one that holds no `$ref`. A schema's other keywords beside a `$ref` are
+# not merged in: JSON Schema reads them beside it, and so does a validator.
+#
+# - `doc`: the document whose components are searched.
+# - `schema`: the schema.
+#
+# Fails `not_found` where a `$ref` names no schema of the components or a
+# place of one, `unsupported` where it names another document, and `invalid`
+# where references come back to one they left.
+function resolve_schema(doc: Document, schema: json.Value) -> json.Value?
+    out @= schema
+    seen: [str] @= []
+
+    while objects.has(out, key: "$ref")
+        ref = objects.text_at(out, key: "$ref")
+        objects.unseen(@seen, ref: ref)?
+
+        if ref == "" || ref[0] != '#'
+            return fail(
+                code: UNSUPPORTED,
+                msg: f"the reference \"{ref}\" names another document, which is not followed"
+            )
+        tokens = objects.ref_tokens(ref)?
+
+        if tokens.len() < 3 || tokens[0] != "components" || tokens[1] != "schemas"
+            return fail(code: NOT_FOUND, msg: f"the reference \"{ref}\" names no schema of the components")
+
+        start = match doc.components.schemas[tokens[2]]
+            .ok found => found
+            .err _    => return fail(code: NOT_FOUND, msg: f"the reference \"{ref}\" names no schema of the components")
+
+        rest = json.pointer_of(tokens.slice(from: 3, to: tokens.len()))
+
+        out @ match json.value_at(start, pointer: rest)
+            .ok found => found
+            .err _ => return fail(
+                code: NOT_FOUND,
+                msg: f"the reference \"{ref}\" names no place of the schema \"{tokens[2]}\""
+            )
+
+    return ok(out)
+
+## Schemas
+
+# The schema `{"type": "string"}`.
+function string_schema() -> json.Value
+    return objects.typed("string")
+
+# The schema `{"type": "integer"}`.
+function integer_schema() -> json.Value
+    return objects.typed("integer")
+
+# The schema `{"type": "number"}`.
+function number_schema() -> json.Value
+    return objects.typed("number")
+
+# The schema `{"type": "boolean"}`.
+function boolean_schema() -> json.Value
+    return objects.typed("boolean")
+
+# The schema of an array of `items`.
+#
+# - `items`: the schema of every element.
+function array_schema(items: json.Value) -> json.Value
+    return with_keyword(schema: objects.typed("array"), keyword: "items", value: items)
+
+# The schema of an object with `properties`, of which `required` must be
+# there.
+#
+# - `properties`: each property's schema, by name, in the order written.
+# - `required`: the names a value must hold; none writes no `required`.
+function object_schema(properties: {str: json.Value}, required: [str]) -> json.Value
+    out @= objects.typed("object")
+
+    if keys(properties).len() > 0
+        out @ with_keyword(schema: out, keyword: "properties", value: .object(members: properties))
+
+    if required.len() > 0
+        out @ with_keyword(schema: out, keyword: "required", value: objects.texts(required))
+    return out
+
+# The schema of a value that is one of `values`.
+#
+# - `values`: the values, in order.
+function enum_schema(values: [json.Value]) -> json.Value
+    return with_keyword(schema: .object(members: {}), keyword: "enum", value: .list(items: values))
+
+# The schema of a value valid against exactly one of `schemas`.
+#
+# - `schemas`: the schemas, in order.
+function one_of_schema(schemas: [json.Value]) -> json.Value
+    return with_keyword(schema: .object(members: {}), keyword: "oneOf", value: .list(items: schemas))
+
+# The schema of a value valid against at least one of `schemas`.
+#
+# - `schemas`: the schemas, in order.
+function any_of_schema(schemas: [json.Value]) -> json.Value
+    return with_keyword(schema: .object(members: {}), keyword: "anyOf", value: .list(items: schemas))
+
+# The schema of a value valid against every one of `schemas`.
+#
+# - `schemas`: the schemas, in order.
+function all_of_schema(schemas: [json.Value]) -> json.Value
+    return with_keyword(schema: .object(members: {}), keyword: "allOf", value: .list(items: schemas))
+
+# `schema` that takes `null` too, as OpenAPI 3.1 writes it: `"null"` added
+# to its `type`, or the schema made `anyOf` it and `{"type": "null"}` where it
+# names no type.
+#
+# - `schema`: the schema.
+function nullable(schema: json.Value) -> json.Value
+    t = objects.value_at(schema, key: "type")
+    names: [json.Value] @= []
+
+    match json.text_of(t)
+        .ok name => names @ [.text(v: name)]
+        .err _   => names @ json.items_of(t).default([])
+
+    if names.len() == 0
+        if json.bool_of(schema).default(false)
+            return schema
+        return any_of_schema([schema, objects.typed("null")])
+
+    for each in names
+        if json.text_of(each).default("") == "null"
+            return schema
+
+    names @ names.push(.text(v: "null"))
+    out @= with_keyword(schema: schema, keyword: "type", value: .list(items: names))
+
+    if objects.has(schema, key: "enum")
+        values @= objects.items_at(schema, key: "enum")
+        has_null: bool @= false
+
+        for each in values
+            if json.is_null(each)
+                has_null @ true
+
+        if !has_null
+            values @ values.push(.null_value)
+            out @ with_keyword(schema: out, keyword: "enum", value: .list(items: values))
+    return out
+
+# `schema` with the keyword `keyword` set to `value`, replacing the one
+# there.
+#
+# - `schema`: the schema; one that is not an object is made `{}` first, or
+#   `{"not": {}}` where it is `false`.
+# - `keyword`: the keyword, such as `minimum` or `pattern`.
+# - `value`: its value.
+function with_keyword(schema: json.Value, keyword: str, value: json.Value) -> json.Value
+    m: {str: json.Value} @= json.members_of(schema).default({})
+
+    if !json.bool_of(schema).default(true)
+        m["not"] @ .object(members: {})
+    m[keyword] @ value
+    return .object(members: m)
+
+# `schema` with its `format` set, such as `date-time`, `int64` or `uuid`.
+#
+# - `schema`: the schema.
+# - `format`: the format's name.
+function with_format(schema: json.Value, format: str) -> json.Value
+    return with_keyword(schema: schema, keyword: "format", value: .text(v: format))
+
+# `schema` with its `description` set.
+#
+# - `schema`: the schema.
+# - `description`: the description, CommonMark.
+function with_description(schema: json.Value, description: str) -> json.Value
+    return with_keyword(schema: schema, keyword: "description", value: .text(v: description))
+
+## Security
+
+# The type `apiKey`: a key in a header field, the query or a cookie.
+constant SCHEME_API_KEY: str
+    "apiKey"
+
+# The type `http`: an `Authorization` field of a scheme RFC 9110 names.
+constant SCHEME_HTTP: str
+    "http"
+
+# The type `mutualTLS`: a client's certificate.
+constant SCHEME_MUTUAL_TLS: str
+    "mutualTLS"
+
+# The type `oauth2`: a token of an OAuth 2.0 flow.
+constant SCHEME_OAUTH2: str
+    "oauth2"
+
+# The type `openIdConnect`: a token of OpenID Connect.
+constant SCHEME_OPEN_ID_CONNECT: str
+    "openIdConnect"
+
+# The flow `implicit` of OAuth 2.0.
+constant FLOW_IMPLICIT: str
+    "implicit"
+
+# The flow `password` of OAuth 2.0.
+constant FLOW_PASSWORD: str
+    "password"
+
+# The flow `clientCredentials` of OAuth 2.0.
+constant FLOW_CLIENT_CREDENTIALS: str
+    "clientCredentials"
+
+# The flow `authorizationCode` of OAuth 2.0.
+constant FLOW_AUTHORIZATION_CODE: str
+    "authorizationCode"
+
+# A way a request proves who sends it. `api_key_scheme`, `basic_scheme`,
+# `bearer_scheme`, `oauth2_scheme`, `open_id_connect_scheme` and
+# `mutual_tls_scheme` make one.
+record SecurityScheme
+    # A reference to a scheme, as `#/components/securitySchemes/key`; "" where
+    # this one is not a reference.
+    ref: str
+    # Its type, one of the `SCHEME_` constants.
+    kind: str
+    # A description; "" for none.
+    description: str
+    # The name of the header field, query parameter or cookie of an `apiKey`;
+    # "" for the other types.
+    name: str
+    # Where an `apiKey` is sent; read for that type alone.
+    location: Location
+    # The scheme of an `http`, as `basic` or `bearer`; "" for the other types.
+    scheme: str
+    # What a bearer token is, such as `JWT`; "" for none.
+    bearer_format: str
+    # The flows of an `oauth2`, by the `FLOW_` constants.
+    flows: {str: OAuthFlow}
+    # The `x-` fields of the flows' object, by name.
+    flows_extensions: {str: json.Value}
+    # The discovery URL of an `openIdConnect`; "" for the other types.
+    open_id_connect_url: str
+    # The `x-` fields, by name.
+    extensions: {str: json.Value}
+
+# One flow of OAuth 2.0.
+record OAuthFlow
+    # Where the user authorizes, for `implicit` and `authorizationCode`; ""
+    # for the others.
+    authorization_url: str
+    # Where a token is had, for `password`, `clientCredentials` and
+    # `authorizationCode`; "" for `implicit`.
+    token_url: str
+    # Where a token is refreshed; "" for none.
+    refresh_url: str
+    # The scopes, each with its description, by name.
+    scopes: {str: str}
+    # The `x-` fields, by name.
+    extensions: {str: json.Value}
+
+# What one alternative of an operation's security asks for: each scheme it
+# names, by its name in the components, with the scopes it needs.
+record SecurityRequirement
+    # The schemes, every one needed, each with its scopes; none for a request
+    # that needs nothing.
+    schemes: {str: [str]}
+
+# A key sent in a header field, the query or a cookie.
+#
+# - `name`: the field's, the parameter's or the cookie's name.
+# - `location`: where it is sent: `.header`, `.query` or `.cookie`.
+function api_key_scheme(name: str, location: Location) -> SecurityScheme
+    out @= mutual_tls_scheme()
+    out.kind @ SCHEME_API_KEY
+    out.name @ name
+    out.location @ location
+    return out
+
+# HTTP's Basic authentication.
+function basic_scheme() -> SecurityScheme
+    out @= mutual_tls_scheme()
+    out.kind @ SCHEME_HTTP
+    out.scheme @ "basic"
+    return out
+
+# HTTP's Bearer authentication.
+#
+# - `bearer_format`: what the token is, such as `JWT`, or "".
+function bearer_scheme(bearer_format: str) -> SecurityScheme
+    out @= mutual_tls_scheme()
+    out.kind @ SCHEME_HTTP
+    out.scheme @ "bearer"
+    out.bearer_format @ bearer_format
+    return out
+
+# OAuth 2.0 by `flows`.
+#
+# - `flows`: the flows, by the `FLOW_` constants.
+function oauth2_scheme(flows: {str: OAuthFlow}) -> SecurityScheme
+    out @= mutual_tls_scheme()
+    out.kind @ SCHEME_OAUTH2
+    out.flows @ flows
+    return out
+
+# A flow of OAuth 2.0 with no refresh URL.
+#
+# - `authorization_url`: where the user authorizes, or "".
+# - `token_url`: where a token is had, or "".
+# - `scopes`: each scope's description, by name.
+function new_oauth_flow(authorization_url: str, token_url: str, scopes: {str: str}) -> OAuthFlow
+    return OAuthFlow(
+        authorization_url: authorization_url,
+        token_url: token_url,
+        refresh_url: "",
+        scopes: scopes,
+        extensions: {}
+    )
+
+# OpenID Connect, discovered at `url`.
+#
+# - `url`: the discovery document's URL.
+function open_id_connect_scheme(url: str) -> SecurityScheme
+    out @= mutual_tls_scheme()
+    out.kind @ SCHEME_OPEN_ID_CONNECT
+    out.open_id_connect_url @ url
+    return out
+
+# A client's certificate, mutual TLS.
+function mutual_tls_scheme() -> SecurityScheme
+    return SecurityScheme(
+        ref: "",
+        kind: SCHEME_MUTUAL_TLS,
+        description: "",
+        name: "",
+        location: .header,
+        scheme: "",
+        bearer_format: "",
+        flows: {},
+        flows_extensions: {},
+        open_id_connect_url: "",
+        extensions: {}
+    )
+
+# A requirement of one scheme and its scopes.
+#
+# - `scheme`: the scheme's name in the components.
+# - `scopes`: the scopes it needs; none for a scheme that has none.
+function requirement(scheme: str, scopes: [str]) -> SecurityRequirement
+    schemes: {str: [str]} @= {}
+    schemes[scheme] @ scopes
+    return SecurityRequirement(schemes: schemes)
+
+## Written and read
+
+# `doc` as the JSON value OpenAPI writes: each object's fields in the order
+# the specification lists them, its `x-` fields after them, and a field that
+# is empty, false or `.null_value` left out.
+#
+# - `doc`: the document.
+#
+# See also `format_json`, `from_json`.
+function to_json(doc: Document) -> json.Value
+    m: {str: json.Value} @= {}
+    m["openapi"] @ .text(v: doc.openapi)
+    m["info"] @ info_json(doc.info)
+    objects.put_text(@m, key: "jsonSchemaDialect", value: doc.json_schema_dialect)
+    servers: [json.Value] @= []
+
+    for s in doc.servers
+        servers @ servers.push(server_json(s))
+
+    objects.put_list(@m, key: "servers", items: servers)
+    paths: {str: json.Value} @= {}
+
+    for p in keys(doc.paths)
+        paths[p] @ path_item_json(doc.paths[p].must())
+
+    objects.put_extensions(m: @paths, extensions: doc.paths_extensions)
+    m["paths"] @ .object(members: paths)
+    webhooks: {str: json.Value} @= {}
+
+    for name in keys(doc.webhooks)
+        webhooks[name] @ path_item_json(doc.webhooks[name].must())
+
+    objects.put_object(m: @m, key: "webhooks", value: webhooks)
+    objects.put_object(m: @m, key: "components", value: objects.members_of(components_json(doc.components)))
+    security: [json.Value] @= []
+
+    for each in doc.security
+        security @ security.push(security_requirement_json(each))
+
+    objects.put_list(@m, key: "security", items: security)
+    tags: [json.Value] @= []
+
+    for t in doc.tags
+        tags @ tags.push(tag_json(t))
+
+    objects.put_list(@m, key: "tags", items: tags)
+
+    if doc.external_docs.url != ""
+        m["externalDocs"] @ external_docs_json(doc.external_docs)
+    objects.put_extensions(m: @m, extensions: doc.extensions)
+    return .object(members: m)
+
+# The document `v` writes.
+#
+# - `v`: an OpenAPI document as a JSON value.
+#
+# Fails `unsupported` where its `openapi` is not a `3.1.x`, and `invalid`
+# where a field is missing, of another kind, or not one OpenAPI 3.1 names
+# and not an `x-` field, the message naming it by its JSON pointer. It
+# checks the form of every object and nothing more: `check` asks what holds
+# between them.
+function from_json(v: json.Value) -> Document?
+    version = objects.text_at(v, key: "openapi")
+
+    if version == ""
+        shape.check(v, kind: shape.DOCUMENT)?
+
+    if !routes.is_version_31(version)
+        return fail(code: UNSUPPORTED, msg: f"OpenAPI \"{version}\": this package reads 3.1 alone")
+    shape.check(v, kind: shape.DOCUMENT)?
+    servers: [Server] @= []
+
+    for s in objects.items_at(v, key: "servers")
+        servers @ servers.push(server_of(s)?)
+
+    paths: {str: PathItem} @= {}
+    given = objects.object_at(v, key: "paths")
+
+    for p in keys(given)
+        if !objects.is_extension(p)
+            paths[p] @ path_item_of(given[p].must())?
+
+    webhooks: {str: PathItem} @= {}
+    hooks = objects.object_at(v, key: "webhooks")
+
+    for name in keys(hooks)
+        webhooks[name] @ path_item_of(hooks[name].must())?
+
+    components: Components @= new_components()
+
+    if objects.has(v, key: "components")
+        components @ components_of(objects.value_at(v, key: "components"))?
+    security: [SecurityRequirement] @= []
+
+    for each in objects.items_at(v, key: "security")
+        security @ security.push(security_requirement_of(each)?)
+
+    tags: [Tag] @= []
+
+    for t in objects.items_at(v, key: "tags")
+        tags @ tags.push(tag_of(t)?)
+
+    docs: ExternalDocs @= new_external_docs(url: "", description: "")
+
+    if objects.has(v, key: "externalDocs")
+        docs @ external_docs_of(objects.value_at(v, key: "externalDocs"))?
+    return ok(
+        Document(openapi: version, info: info_of(objects.value_at(v, key: "info"))?, json_schema_dialect: objects.text_at(v, key: "jsonSchemaDialect"), servers: servers, paths: paths, paths_extensions: objects.extensions_of(objects.value_at(v, key: "paths")), webhooks: webhooks, components: components, security: security, tags: tags, external_docs: docs, extensions: objects.extensions_of(v))
+    )
+
+# `doc` as JSON text, indented by two spaces.
+#
+# - `doc`: the document.
+#
+# Fails `invalid` where a value of it is a `nan` or an infinity.
+function format_json(doc: Document) -> str?
+    return json.format_indented(to_json(doc), width: 2)
+
+# `doc` as a YAML document, in block style.
+#
+# - `doc`: the document.
+#
+# Fails as `yaml.format` does.
+function format_yaml(doc: Document) -> str?
+    return yaml.format(to_json(doc))
+
+# The document `text` writes, as JSON or as YAML.
+#
+# - `text`: the text; one whose first character past white space is `{` is
+#   read as JSON, any other as YAML.
+#
+# Fails as `json.parse`, `yaml.parse` and `from_json` do. A YAML document
+# writes a status as a key in quotes, `"200":`, as OpenAPI asks: `yaml` reads
+# a key that is a number as no text, and refuses it.
+function parse(text: str) -> Document?
+    at: i64 @= 0
+
+    while at < text.len() && (text[at] == ' ' || text[at] == '\t' || text[at] == '\n' || text[at] == '\r')
+        at @ at + 1
+
+    v: json.Value @= .null_value
+
+    if at < text.len() && text[at] == '{'
+        v @ json.parse(text)?
+    else
+        v @ yaml.parse(text)?
+    return from_json(v)
+
+## Each object as JSON
+
+# `info` as JSON.
+#
+# - `info`: the info.
+#
+# See also `info_of`.
+function info_json(info: Info) -> json.Value
+    m: {str: json.Value} @= {}
+    m["title"] @ .text(v: info.title)
+    objects.put_text(@m, key: "summary", value: info.summary)
+    objects.put_text(@m, key: "description", value: info.description)
+    objects.put_text(@m, key: "termsOfService", value: info.terms_of_service)
+    contact: {str: json.Value} @= {}
+    objects.put_text(@contact, key: "name", value: info.contact.name)
+    objects.put_text(@contact, key: "url", value: info.contact.url)
+    objects.put_text(@contact, key: "email", value: info.contact.email)
+    objects.put_extensions(m: @contact, extensions: info.contact.extensions)
+    objects.put_object(m: @m, key: "contact", value: contact)
+
+    if info.license.name != ""
+        license: {str: json.Value} @= {}
+        license["name"] @ .text(v: info.license.name)
+        objects.put_text(@license, key: "identifier", value: info.license.identifier)
+        objects.put_text(@license, key: "url", value: info.license.url)
+        objects.put_extensions(m: @license, extensions: info.license.extensions)
+        m["license"] @ .object(members: license)
+    m["version"] @ .text(v: info.version)
+    objects.put_extensions(m: @m, extensions: info.extensions)
+    return .object(members: m)
+
+# The info `v` writes.
+#
+# - `v`: an Info object.
+#
+# Fails `invalid` as `from_json` does.
+function info_of(v: json.Value) -> Info?
+    shape.check(v, kind: shape.INFO)?
+    c = objects.value_at(v, key: "contact")
+    l = objects.value_at(v, key: "license")
+    return ok(
+        Info(title: objects.text_at(v, key: "title"), summary: objects.text_at(v, key: "summary"), description: objects.text_at(v, key: "description"), terms_of_service: objects.text_at(v, key: "termsOfService"), contact: Contact(name: objects.text_at(c, key: "name"), url: objects.text_at(c, key: "url"), email: objects.text_at(c, key: "email"), extensions: objects.extensions_of(c)), license: License(name: objects.text_at(l, key: "name"), identifier: objects.text_at(l, key: "identifier"), url: objects.text_at(l, key: "url"), extensions: objects.extensions_of(l)), version: objects.text_at(v, key: "version"), extensions: objects.extensions_of(v))
+    )
+
+# `server` as JSON.
+#
+# - `server`: the server.
+function server_json(server: Server) -> json.Value
+    m: {str: json.Value} @= {}
+    m["url"] @ .text(v: server.url)
+    objects.put_text(@m, key: "description", value: server.description)
+    variables: {str: json.Value} @= {}
+
+    for name in keys(server.variables)
+        each = server.variables[name].must()
+        one: {str: json.Value} @= {}
+        objects.put_texts(@one, key: "enum", values: each.values)
+        one["default"] @ .text(v: each.default_value)
+        objects.put_text(@one, key: "description", value: each.description)
+        objects.put_extensions(m: @one, extensions: each.extensions)
+        variables[name] @ .object(members: one)
+
+    objects.put_object(m: @m, key: "variables", value: variables)
+    objects.put_extensions(m: @m, extensions: server.extensions)
+    return .object(members: m)
+
+# The server `v` writes.
+#
+# - `v`: a Server object.
+#
+# Fails `invalid` as `from_json` does.
+function server_of(v: json.Value) -> Server?
+    shape.check(v, kind: shape.SERVER)?
+    variables: {str: ServerVariable} @= {}
+    given = objects.object_at(v, key: "variables")
+
+    for name in keys(given)
+        each = given[name].must()
+        variables[name] @ ServerVariable(
+            values: objects.texts_at(each, key: "enum"),
+            default_value: objects.text_at(each, key: "default"),
+            description: objects.text_at(each, key: "description"),
+            extensions: objects.extensions_of(each)
+        )
+
+    return ok(
+        Server(url: objects.text_at(v, key: "url"), description: objects.text_at(v, key: "description"), variables: variables, extensions: objects.extensions_of(v))
+    )
+
+# `tag` as JSON.
+#
+# - `tag`: the tag.
+function tag_json(tag: Tag) -> json.Value
+    m: {str: json.Value} @= {}
+    m["name"] @ .text(v: tag.name)
+    objects.put_text(@m, key: "description", value: tag.description)
+
+    if tag.external_docs.url != ""
+        m["externalDocs"] @ external_docs_json(tag.external_docs)
+    objects.put_extensions(m: @m, extensions: tag.extensions)
+    return .object(members: m)
+
+# The tag `v` writes.
+#
+# - `v`: a Tag object.
+#
+# Fails `invalid` as `from_json` does.
+function tag_of(v: json.Value) -> Tag?
+    shape.check(v, kind: shape.TAG)?
+    docs: ExternalDocs @= new_external_docs(url: "", description: "")
+
+    if objects.has(v, key: "externalDocs")
+        docs @ external_docs_of(objects.value_at(v, key: "externalDocs"))?
+    return ok(
+        Tag(name: objects.text_at(v, key: "name"), description: objects.text_at(v, key: "description"), external_docs: docs, extensions: objects.extensions_of(v))
+    )
+
+# `docs` as JSON.
+#
+# - `docs`: the external documentation.
+function external_docs_json(docs: ExternalDocs) -> json.Value
+    m: {str: json.Value} @= {}
+    objects.put_text(@m, key: "description", value: docs.description)
+    m["url"] @ .text(v: docs.url)
+    objects.put_extensions(m: @m, extensions: docs.extensions)
+    return .object(members: m)
+
+# The external documentation `v` writes.
+#
+# - `v`: an External Documentation object.
+#
+# Fails `invalid` as `from_json` does.
+function external_docs_of(v: json.Value) -> ExternalDocs?
+    shape.check(v, kind: shape.EXTERNAL_DOCS)?
+    return ok(
+        ExternalDocs(description: objects.text_at(v, key: "description"), url: objects.text_at(v, key: "url"), extensions: objects.extensions_of(v))
+    )
+
+# `item` as JSON.
+#
+# - `item`: the path item.
+function path_item_json(item: PathItem) -> json.Value
+    m: {str: json.Value} @= {}
+    objects.put_text(@m, key: "$ref", value: item.ref)
+    objects.put_text(@m, key: "summary", value: item.summary)
+    objects.put_text(@m, key: "description", value: item.description)
+
+    for method in routes.methods()
+        match item.operations[method]
+            .ok op => m[method] @ operation_json(op)
+            .err _ => _ = 0
+
+    for method in keys(item.operations)
+        if !routes.is_method(method)
+            m[method] @ operation_json(item.operations[method].must())
+
+    servers: [json.Value] @= []
+
+    for s in item.servers
+        servers @ servers.push(server_json(s))
+
+    objects.put_list(@m, key: "servers", items: servers)
+    parameters: [json.Value] @= []
+
+    for p in item.parameters
+        parameters @ parameters.push(parameter_json(p))
+
+    objects.put_list(@m, key: "parameters", items: parameters)
+    objects.put_extensions(m: @m, extensions: item.extensions)
+    return .object(members: m)
+
+# The path item `v` writes.
+#
+# - `v`: a Path Item object.
+#
+# Fails `invalid` as `from_json` does.
+function path_item_of(v: json.Value) -> PathItem?
+    shape.check(v, kind: shape.PATH_ITEM)?
+    operations: {str: Operation} @= {}
+
+    for method in routes.methods()
+        if objects.has(v, key: method)
+            operations[method] @ operation_of(objects.value_at(v, key: method))?
+
+    servers: [Server] @= []
+
+    for s in objects.items_at(v, key: "servers")
+        servers @ servers.push(server_of(s)?)
+
+    parameters: [Parameter] @= []
+
+    for p in objects.items_at(v, key: "parameters")
+        parameters @ parameters.push(parameter_of(p)?)
+
+    return ok(
+        PathItem(ref: objects.text_at(v, key: "$ref"), summary: objects.text_at(v, key: "summary"), description: objects.text_at(v, key: "description"), operations: operations, servers: servers, parameters: parameters, extensions: objects.extensions_of(v))
+    )
+
+# `operation` as JSON.
+#
+# - `operation`: the operation.
+function operation_json(operation: Operation) -> json.Value
+    m: {str: json.Value} @= {}
+    objects.put_texts(@m, key: "tags", values: operation.tags)
+    objects.put_text(@m, key: "summary", value: operation.summary)
+    objects.put_text(@m, key: "description", value: operation.description)
+
+    if operation.external_docs.url != ""
+        m["externalDocs"] @ external_docs_json(operation.external_docs)
+    objects.put_text(@m, key: "operationId", value: operation.operation_id)
+    parameters: [json.Value] @= []
+
+    for p in operation.parameters
+        parameters @ parameters.push(parameter_json(p))
+
+    objects.put_list(@m, key: "parameters", items: parameters)
+
+    if has_request_body(operation)
+        m["requestBody"] @ request_body_json(operation.request_body)
+    responses: {str: json.Value} @= {}
+
+    for status in keys(operation.responses)
+        responses[status] @ response_json(operation.responses[status].must())
+
+    objects.put_extensions(m: @responses, extensions: operation.responses_extensions)
+    objects.put_object(m: @m, key: "responses", value: responses)
+    callbacks: {str: json.Value} @= {}
+
+    for name in keys(operation.callbacks)
+        callbacks[name] @ callback_json(operation.callbacks[name].must())
+
+    objects.put_object(m: @m, key: "callbacks", value: callbacks)
+    objects.put_true(@m, key: "deprecated", value: operation.deprecated)
+
+    if operation.own_security
+        security: [json.Value] @= []
+
+        for each in operation.security
+            security @ security.push(security_requirement_json(each))
+
+        m["security"] @ .list(items: security)
+    servers: [json.Value] @= []
+
+    for s in operation.servers
+        servers @ servers.push(server_json(s))
+
+    objects.put_list(@m, key: "servers", items: servers)
+    objects.put_extensions(m: @m, extensions: operation.extensions)
+    return .object(members: m)
+
+# The operation `v` writes.
+#
+# - `v`: an Operation object.
+#
+# Fails `invalid` as `from_json` does.
+function operation_of(v: json.Value) -> Operation?
+    shape.check(v, kind: shape.OPERATION)?
+    docs: ExternalDocs @= new_external_docs(url: "", description: "")
+
+    if objects.has(v, key: "externalDocs")
+        docs @ external_docs_of(objects.value_at(v, key: "externalDocs"))?
+    parameters: [Parameter] @= []
+
+    for p in objects.items_at(v, key: "parameters")
+        parameters @ parameters.push(parameter_of(p)?)
+
+    body: RequestBody @= no_request_body()
+
+    if objects.has(v, key: "requestBody")
+        body @ request_body_of(objects.value_at(v, key: "requestBody"))?
+    responses: {str: Response} @= {}
+    given = objects.object_at(v, key: "responses")
+
+    for status in keys(given)
+        if !objects.is_extension(status)
+            responses[status] @ response_of(given[status].must())?
+
+    callbacks: {str: Callback} @= {}
+    named = objects.object_at(v, key: "callbacks")
+
+    for name in keys(named)
+        callbacks[name] @ callback_of(named[name].must())?
+
+    security: [SecurityRequirement] @= []
+
+    for each in objects.items_at(v, key: "security")
+        security @ security.push(security_requirement_of(each)?)
+
+    servers: [Server] @= []
+
+    for s in objects.items_at(v, key: "servers")
+        servers @ servers.push(server_of(s)?)
+
+    return ok(
+        Operation(tags: objects.texts_at(v, key: "tags"), summary: objects.text_at(v, key: "summary"), description: objects.text_at(v, key: "description"), external_docs: docs, operation_id: objects.text_at(v, key: "operationId"), parameters: parameters, request_body: body, responses: responses, responses_extensions: objects.extensions_of(objects.value_at(v, key: "responses")), callbacks: callbacks, deprecated: objects.bool_at(v, key: "deprecated", otherwise: false), own_security: objects.has(v, key: "security"), security: security, servers: servers, extensions: objects.extensions_of(v))
+    )
+
+# `p` as JSON.
+#
+# - `p`: the parameter.
+function parameter_json(p: Parameter) -> json.Value
+    if p.ref != ""
+        return objects.reference(ref: p.ref, summary: "", description: p.description)
+    m: {str: json.Value} @= {}
+    m["name"] @ .text(v: p.name)
+    m["in"] @ .text(v: format_location(p.location))
+    objects.put_text(@m, key: "description", value: p.description)
+    objects.put_true(@m, key: "required", value: p.required)
+    objects.put_true(@m, key: "deprecated", value: p.deprecated)
+    objects.put_true(@m, key: "allowEmptyValue", value: p.allow_empty_value)
+    objects.put_text(@m, key: "style", value: p.style)
+
+    if p.explode != (style_of(p) == STYLE_FORM)
+        m["explode"] @ .boolean(v: p.explode)
+    objects.put_true(@m, key: "allowReserved", value: p.allow_reserved)
+    objects.put_value(@m, key: "schema", value: p.schema)
+    objects.put_value(@m, key: "example", value: p.example)
+    examples: {str: json.Value} @= {}
+
+    for name in keys(p.examples)
+        examples[name] @ example_json(p.examples[name].must())
+
+    objects.put_object(m: @m, key: "examples", value: examples)
+    content: {str: json.Value} @= {}
+
+    for t in keys(p.content)
+        content[t] @ media_type_json(p.content[t].must())
+
+    objects.put_object(m: @m, key: "content", value: content)
+    objects.put_extensions(m: @m, extensions: p.extensions)
+    return .object(members: m)
+
+# The parameter `v` writes.
+#
+# - `v`: a Parameter object or a Reference object.
+#
+# Fails `invalid` as `from_json` does.
+function parameter_of(v: json.Value) -> Parameter?
+    shape.check(v, kind: shape.PARAMETER)?
+
+    if objects.has(v, key: "$ref")
+        reference @= parameter_ref("")
+        reference.ref @ objects.text_at(v, key: "$ref")
+        reference.description @ objects.text_at(v, key: "description")
+        return ok(reference)
+    examples: {str: Example} @= {}
+    named = objects.object_at(v, key: "examples")
+
+    for name in keys(named)
+        examples[name] @ example_of(named[name].must())?
+
+    content: {str: MediaType} @= {}
+    types = objects.object_at(v, key: "content")
+
+    for t in keys(types)
+        content[t] @ media_type_of(types[t].must())?
+
+    out @= Parameter(
+        ref: "",
+        name: objects.text_at(v, key: "name"),
+        location: parse_location(objects.text_at(v, key: "in"))?,
+        description: objects.text_at(v, key: "description"),
+        required: objects.bool_at(v, key: "required", otherwise: false),
+        deprecated: objects.bool_at(v, key: "deprecated", otherwise: false),
+        allow_empty_value: objects.bool_at(v, key: "allowEmptyValue", otherwise: false),
+        style: objects.text_at(v, key: "style"),
+        explode: false,
+        allow_reserved: objects.bool_at(v, key: "allowReserved", otherwise: false),
+        schema: objects.value_at(v, key: "schema"),
+        example: objects.value_at(v, key: "example"),
+        examples: examples,
+        content: content,
+        extensions: objects.extensions_of(v)
+    )
+    out.explode @ objects.bool_at(v, key: "explode", otherwise: style_of(out) == STYLE_FORM)
+    return ok(out)
+
+# `body` as JSON.
+#
+# - `body`: the request body.
+function request_body_json(body: RequestBody) -> json.Value
+    if body.ref != ""
+        return objects.reference(ref: body.ref, summary: "", description: body.description)
+    m: {str: json.Value} @= {}
+    objects.put_text(@m, key: "description", value: body.description)
+    content: {str: json.Value} @= {}
+
+    for t in keys(body.content)
+        content[t] @ media_type_json(body.content[t].must())
+
+    m["content"] @ .object(members: content)
+    objects.put_true(@m, key: "required", value: body.required)
+    objects.put_extensions(m: @m, extensions: body.extensions)
+    return .object(members: m)
+
+# The request body `v` writes.
+#
+# - `v`: a Request Body object or a Reference object.
+#
+# Fails `invalid` as `from_json` does.
+function request_body_of(v: json.Value) -> RequestBody?
+    shape.check(v, kind: shape.REQUEST_BODY)?
+
+    if objects.has(v, key: "$ref")
+        reference @= request_body_ref("")
+        reference.ref @ objects.text_at(v, key: "$ref")
+        reference.description @ objects.text_at(v, key: "description")
+        return ok(reference)
+    content: {str: MediaType} @= {}
+    types = objects.object_at(v, key: "content")
+
+    for t in keys(types)
+        content[t] @ media_type_of(types[t].must())?
+
+    return ok(
+        RequestBody(ref: "", description: objects.text_at(v, key: "description"), content: content, required: objects.bool_at(v, key: "required", otherwise: false), extensions: objects.extensions_of(v))
+    )
+
+# `media` as JSON.
+#
+# - `media`: the media type.
+function media_type_json(media: MediaType) -> json.Value
+    m: {str: json.Value} @= {}
+    objects.put_value(@m, key: "schema", value: media.schema)
+    objects.put_value(@m, key: "example", value: media.example)
+    examples: {str: json.Value} @= {}
+
+    for name in keys(media.examples)
+        examples[name] @ example_json(media.examples[name].must())
+
+    objects.put_object(m: @m, key: "examples", value: examples)
+    encodings: {str: json.Value} @= {}
+
+    for name in keys(media.encoding)
+        encodings[name] @ encoding_json(media.encoding[name].must())
+
+    objects.put_object(m: @m, key: "encoding", value: encodings)
+    objects.put_extensions(m: @m, extensions: media.extensions)
+    return .object(members: m)
+
+# The media type `v` writes.
+#
+# - `v`: a Media Type object.
+#
+# Fails `invalid` as `from_json` does.
+function media_type_of(v: json.Value) -> MediaType?
+    shape.check(v, kind: shape.MEDIA_TYPE)?
+    examples: {str: Example} @= {}
+    named = objects.object_at(v, key: "examples")
+
+    for name in keys(named)
+        examples[name] @ example_of(named[name].must())?
+
+    encodings: {str: Encoding} @= {}
+    given = objects.object_at(v, key: "encoding")
+
+    for name in keys(given)
+        encodings[name] @ encoding_of(given[name].must())?
+
+    return ok(
+        MediaType(schema: objects.value_at(v, key: "schema"), example: objects.value_at(v, key: "example"), examples: examples, encoding: encodings, extensions: objects.extensions_of(v))
+    )
+
+# `encoding` as JSON.
+#
+# - `encoding`: the encoding.
+function encoding_json(encoding: Encoding) -> json.Value
+    m: {str: json.Value} @= {}
+    objects.put_text(@m, key: "contentType", value: encoding.content_type)
+    headers: {str: json.Value} @= {}
+
+    for name in keys(encoding.headers)
+        headers[name] @ header_json(encoding.headers[name].must())
+
+    objects.put_object(m: @m, key: "headers", value: headers)
+    objects.put_text(@m, key: "style", value: encoding.style)
+
+    if encoding.explode != (encoding.style == "" || encoding.style == STYLE_FORM)
+        m["explode"] @ .boolean(v: encoding.explode)
+    objects.put_true(@m, key: "allowReserved", value: encoding.allow_reserved)
+    objects.put_extensions(m: @m, extensions: encoding.extensions)
+    return .object(members: m)
+
+# The encoding `v` writes.
+#
+# - `v`: an Encoding object.
+#
+# Fails `invalid` as `from_json` does.
+function encoding_of(v: json.Value) -> Encoding?
+    shape.check(v, kind: shape.ENCODING)?
+    headers: {str: Header} @= {}
+    given = objects.object_at(v, key: "headers")
+
+    for name in keys(given)
+        headers[name] @ header_of(given[name].must())?
+
+    style = objects.text_at(v, key: "style")
+    return ok(
+        Encoding(content_type: objects.text_at(v, key: "contentType"), headers: headers, style: style, explode: objects.bool_at(v, key: "explode", otherwise: style == "" || style == STYLE_FORM), allow_reserved: objects.bool_at(v, key: "allowReserved", otherwise: false), extensions: objects.extensions_of(v))
+    )
+
+# `response` as JSON.
+#
+# - `response`: the response.
+function response_json(response: Response) -> json.Value
+    if response.ref != ""
+        return objects.reference(ref: response.ref, summary: "", description: response.description)
+    m: {str: json.Value} @= {}
+    m["description"] @ .text(v: response.description)
+    headers: {str: json.Value} @= {}
+
+    for name in keys(response.headers)
+        headers[name] @ header_json(response.headers[name].must())
+
+    objects.put_object(m: @m, key: "headers", value: headers)
+    content: {str: json.Value} @= {}
+
+    for t in keys(response.content)
+        content[t] @ media_type_json(response.content[t].must())
+
+    objects.put_object(m: @m, key: "content", value: content)
+    links: {str: json.Value} @= {}
+
+    for name in keys(response.links)
+        links[name] @ link_json(response.links[name].must())
+
+    objects.put_object(m: @m, key: "links", value: links)
+    objects.put_extensions(m: @m, extensions: response.extensions)
+    return .object(members: m)
+
+# The response `v` writes.
+#
+# - `v`: a Response object or a Reference object.
+#
+# Fails `invalid` as `from_json` does.
+function response_of(v: json.Value) -> Response?
+    shape.check(v, kind: shape.RESPONSE)?
+
+    if objects.has(v, key: "$ref")
+        reference @= response_ref("")
+        reference.ref @ objects.text_at(v, key: "$ref")
+        reference.description @ objects.text_at(v, key: "description")
+        return ok(reference)
+    headers: {str: Header} @= {}
+    given = objects.object_at(v, key: "headers")
+
+    for name in keys(given)
+        headers[name] @ header_of(given[name].must())?
+
+    content: {str: MediaType} @= {}
+    types = objects.object_at(v, key: "content")
+
+    for t in keys(types)
+        content[t] @ media_type_of(types[t].must())?
+
+    links: {str: Link} @= {}
+    named = objects.object_at(v, key: "links")
+
+    for name in keys(named)
+        links[name] @ link_of(named[name].must())?
+
+    return ok(
+        Response(ref: "", description: objects.text_at(v, key: "description"), headers: headers, content: content, links: links, extensions: objects.extensions_of(v))
+    )
+
+# `header` as JSON.
+#
+# - `header`: the header field.
+function header_json(header: Header) -> json.Value
+    if header.ref != ""
+        return objects.reference(ref: header.ref, summary: "", description: header.description)
+    m: {str: json.Value} @= {}
+    objects.put_text(@m, key: "description", value: header.description)
+    objects.put_true(@m, key: "required", value: header.required)
+    objects.put_true(@m, key: "deprecated", value: header.deprecated)
+    objects.put_true(@m, key: "explode", value: header.explode)
+    objects.put_value(@m, key: "schema", value: header.schema)
+    objects.put_value(@m, key: "example", value: header.example)
+    examples: {str: json.Value} @= {}
+
+    for name in keys(header.examples)
+        examples[name] @ example_json(header.examples[name].must())
+
+    objects.put_object(m: @m, key: "examples", value: examples)
+    content: {str: json.Value} @= {}
+
+    for t in keys(header.content)
+        content[t] @ media_type_json(header.content[t].must())
+
+    objects.put_object(m: @m, key: "content", value: content)
+    objects.put_extensions(m: @m, extensions: header.extensions)
+    return .object(members: m)
+
+# The header field `v` writes.
+#
+# - `v`: a Header object or a Reference object.
+#
+# Fails `invalid` as `from_json` does.
+function header_of(v: json.Value) -> Header?
+    shape.check(v, kind: shape.HEADER)?
+
+    if objects.has(v, key: "$ref")
+        reference @= header_ref("")
+        reference.ref @ objects.text_at(v, key: "$ref")
+        reference.description @ objects.text_at(v, key: "description")
+        return ok(reference)
+    style = objects.text_at(v, key: "style")
+
+    if style != "" && style != STYLE_SIMPLE
+        return fail(code: INVALID, msg: f"at /style: a header's style is `simple`, not \"{style}\"")
+    examples: {str: Example} @= {}
+    named = objects.object_at(v, key: "examples")
+
+    for name in keys(named)
+        examples[name] @ example_of(named[name].must())?
+
+    content: {str: MediaType} @= {}
+    types = objects.object_at(v, key: "content")
+
+    for t in keys(types)
+        content[t] @ media_type_of(types[t].must())?
+
+    return ok(
+        Header(ref: "", description: objects.text_at(v, key: "description"), required: objects.bool_at(v, key: "required", otherwise: false), deprecated: objects.bool_at(v, key: "deprecated", otherwise: false), explode: objects.bool_at(v, key: "explode", otherwise: false), schema: objects.value_at(v, key: "schema"), example: objects.value_at(v, key: "example"), examples: examples, content: content, extensions: objects.extensions_of(v))
+    )
+
+# `example` as JSON.
+#
+# - `example`: the example.
+function example_json(example: Example) -> json.Value
+    if example.ref != ""
+        return objects.reference(ref: example.ref, summary: example.summary, description: example.description)
+    m: {str: json.Value} @= {}
+    objects.put_text(@m, key: "summary", value: example.summary)
+    objects.put_text(@m, key: "description", value: example.description)
+    objects.put_value(@m, key: "value", value: example.value)
+    objects.put_text(@m, key: "externalValue", value: example.external_value)
+    objects.put_extensions(m: @m, extensions: example.extensions)
+    return .object(members: m)
+
+# The example `v` writes.
+#
+# - `v`: an Example object or a Reference object.
+#
+# Fails `invalid` as `from_json` does.
+function example_of(v: json.Value) -> Example?
+    shape.check(v, kind: shape.EXAMPLE)?
+    return ok(
+        Example(ref: objects.text_at(v, key: "$ref"), summary: objects.text_at(v, key: "summary"), description: objects.text_at(v, key: "description"), value: objects.value_at(v, key: "value"), external_value: objects.text_at(v, key: "externalValue"), extensions: objects.extensions_of(v))
+    )
+
+# `link` as JSON.
+#
+# - `link`: the link.
+function link_json(link: Link) -> json.Value
+    if link.ref != ""
+        return objects.reference(ref: link.ref, summary: "", description: link.description)
+    m: {str: json.Value} @= {}
+    objects.put_text(@m, key: "operationRef", value: link.operation_ref)
+    objects.put_text(@m, key: "operationId", value: link.operation_id)
+    objects.put_object(m: @m, key: "parameters", value: link.parameters)
+    objects.put_value(@m, key: "requestBody", value: link.request_body)
+    objects.put_text(@m, key: "description", value: link.description)
+
+    if link.server.url != ""
+        m["server"] @ server_json(link.server)
+    objects.put_extensions(m: @m, extensions: link.extensions)
+    return .object(members: m)
+
+# The link `v` writes.
+#
+# - `v`: a Link object or a Reference object.
+#
+# Fails `invalid` as `from_json` does.
+function link_of(v: json.Value) -> Link?
+    shape.check(v, kind: shape.LINK)?
+
+    if objects.has(v, key: "$ref")
+        reference @= link_ref("")
+        reference.ref @ objects.text_at(v, key: "$ref")
+        reference.description @ objects.text_at(v, key: "description")
+        return ok(reference)
+    server: Server @= new_server(url: "", description: "")
+
+    if objects.has(v, key: "server")
+        server @ server_of(objects.value_at(v, key: "server"))?
+    return ok(
+        Link(ref: "", operation_ref: objects.text_at(v, key: "operationRef"), operation_id: objects.text_at(v, key: "operationId"), parameters: objects.object_at(v, key: "parameters"), request_body: objects.value_at(v, key: "requestBody"), description: objects.text_at(v, key: "description"), server: server, extensions: objects.extensions_of(v))
+    )
+
+# `callback` as JSON.
+#
+# - `callback`: the callback.
+function callback_json(callback: Callback) -> json.Value
+    if callback.ref != ""
+        return objects.reference(ref: callback.ref, summary: "", description: "")
+    m: {str: json.Value} @= {}
+
+    for expression in keys(callback.paths)
+        m[expression] @ path_item_json(callback.paths[expression].must())
+
+    objects.put_extensions(m: @m, extensions: callback.extensions)
+    return .object(members: m)
+
+# The callback `v` writes.
+#
+# - `v`: a Callback object or a Reference object.
+#
+# Fails `invalid` as `from_json` does.
+function callback_of(v: json.Value) -> Callback?
+    shape.check(v, kind: shape.CALLBACK)?
+
+    if objects.has(v, key: "$ref")
+        return ok(Callback(ref: objects.text_at(v, key: "$ref"), paths: {}, extensions: {}))
+    paths: {str: PathItem} @= {}
+    given = objects.members_of(v)
+
+    for expression in keys(given)
+        if !objects.is_extension(expression)
+            paths[expression] @ path_item_of(given[expression].must())?
+
+    return ok(Callback(ref: "", paths: paths, extensions: objects.extensions_of(v)))
+
+# `components` as JSON.
+#
+# - `components`: the components.
+function components_json(components: Components) -> json.Value
+    m: {str: json.Value} @= {}
+    objects.put_object(m: @m, key: "schemas", value: components.schemas)
+    responses: {str: json.Value} @= {}
+
+    for name in keys(components.responses)
+        responses[name] @ response_json(components.responses[name].must())
+
+    objects.put_object(m: @m, key: "responses", value: responses)
+    parameters: {str: json.Value} @= {}
+
+    for name in keys(components.parameters)
+        parameters[name] @ parameter_json(components.parameters[name].must())
+
+    objects.put_object(m: @m, key: "parameters", value: parameters)
+    examples: {str: json.Value} @= {}
+
+    for name in keys(components.examples)
+        examples[name] @ example_json(components.examples[name].must())
+
+    objects.put_object(m: @m, key: "examples", value: examples)
+    bodies: {str: json.Value} @= {}
+
+    for name in keys(components.request_bodies)
+        bodies[name] @ request_body_json(components.request_bodies[name].must())
+
+    objects.put_object(m: @m, key: "requestBodies", value: bodies)
+    headers: {str: json.Value} @= {}
+
+    for name in keys(components.headers)
+        headers[name] @ header_json(components.headers[name].must())
+
+    objects.put_object(m: @m, key: "headers", value: headers)
+    schemes: {str: json.Value} @= {}
+
+    for name in keys(components.security_schemes)
+        schemes[name] @ security_scheme_json(components.security_schemes[name].must())
+
+    objects.put_object(m: @m, key: "securitySchemes", value: schemes)
+    links: {str: json.Value} @= {}
+
+    for name in keys(components.links)
+        links[name] @ link_json(components.links[name].must())
+
+    objects.put_object(m: @m, key: "links", value: links)
+    callbacks: {str: json.Value} @= {}
+
+    for name in keys(components.callbacks)
+        callbacks[name] @ callback_json(components.callbacks[name].must())
+
+    objects.put_object(m: @m, key: "callbacks", value: callbacks)
+    items: {str: json.Value} @= {}
+
+    for name in keys(components.path_items)
+        items[name] @ path_item_json(components.path_items[name].must())
+
+    objects.put_object(m: @m, key: "pathItems", value: items)
+    objects.put_extensions(m: @m, extensions: components.extensions)
+    return .object(members: m)
+
+# The components `v` writes.
+#
+# - `v`: a Components object.
+#
+# Fails `invalid` as `from_json` does.
+function components_of(v: json.Value) -> Components?
+    shape.check(v, kind: shape.COMPONENTS)?
+    out @= new_components()
+    out.schemas @ objects.object_at(v, key: "schemas")
+    responses = objects.object_at(v, key: "responses")
+
+    for name in keys(responses)
+        out.responses[name] @ response_of(responses[name].must())?
+
+    parameters = objects.object_at(v, key: "parameters")
+
+    for name in keys(parameters)
+        out.parameters[name] @ parameter_of(parameters[name].must())?
+
+    examples = objects.object_at(v, key: "examples")
+
+    for name in keys(examples)
+        out.examples[name] @ example_of(examples[name].must())?
+
+    bodies = objects.object_at(v, key: "requestBodies")
+
+    for name in keys(bodies)
+        out.request_bodies[name] @ request_body_of(bodies[name].must())?
+
+    headers = objects.object_at(v, key: "headers")
+
+    for name in keys(headers)
+        out.headers[name] @ header_of(headers[name].must())?
+
+    schemes = objects.object_at(v, key: "securitySchemes")
+
+    for name in keys(schemes)
+        out.security_schemes[name] @ security_scheme_of(schemes[name].must())?
+
+    links = objects.object_at(v, key: "links")
+
+    for name in keys(links)
+        out.links[name] @ link_of(links[name].must())?
+
+    callbacks = objects.object_at(v, key: "callbacks")
+
+    for name in keys(callbacks)
+        out.callbacks[name] @ callback_of(callbacks[name].must())?
+
+    items = objects.object_at(v, key: "pathItems")
+
+    for name in keys(items)
+        out.path_items[name] @ path_item_of(items[name].must())?
+
+    out.extensions @ objects.extensions_of(v)
+    return ok(out)
+
+# `scheme` as JSON.
+#
+# - `scheme`: the security scheme.
+function security_scheme_json(scheme: SecurityScheme) -> json.Value
+    if scheme.ref != ""
+        return objects.reference(ref: scheme.ref, summary: "", description: scheme.description)
+    m: {str: json.Value} @= {}
+    m["type"] @ .text(v: scheme.kind)
+    objects.put_text(@m, key: "description", value: scheme.description)
+
+    if scheme.kind == SCHEME_API_KEY
+        m["name"] @ .text(v: scheme.name)
+        m["in"] @ .text(v: format_location(scheme.location))
+    objects.put_text(@m, key: "scheme", value: scheme.scheme)
+    objects.put_text(@m, key: "bearerFormat", value: scheme.bearer_format)
+    flows: {str: json.Value} @= {}
+
+    for name in keys(scheme.flows)
+        f = scheme.flows[name].must()
+        one: {str: json.Value} @= {}
+        objects.put_text(@one, key: "authorizationUrl", value: f.authorization_url)
+        objects.put_text(@one, key: "tokenUrl", value: f.token_url)
+        objects.put_text(@one, key: "refreshUrl", value: f.refresh_url)
+        scopes: {str: json.Value} @= {}
+
+        for s in keys(f.scopes)
+            scopes[s] @ .text(v: f.scopes[s].must())
+
+        one["scopes"] @ .object(members: scopes)
+        objects.put_extensions(m: @one, extensions: f.extensions)
+        flows[name] @ .object(members: one)
+
+    objects.put_extensions(m: @flows, extensions: scheme.flows_extensions)
+    objects.put_object(m: @m, key: "flows", value: flows)
+    objects.put_text(@m, key: "openIdConnectUrl", value: scheme.open_id_connect_url)
+    objects.put_extensions(m: @m, extensions: scheme.extensions)
+    return .object(members: m)
+
+# The security scheme `v` writes.
+#
+# - `v`: a Security Scheme object or a Reference object.
+#
+# Fails `invalid` as `from_json` does.
+function security_scheme_of(v: json.Value) -> SecurityScheme?
+    shape.check(v, kind: shape.SECURITY_SCHEME)?
+
+    if objects.has(v, key: "$ref")
+        reference @= security_scheme_ref("")
+        reference.ref @ objects.text_at(v, key: "$ref")
+        reference.description @ objects.text_at(v, key: "description")
+        return ok(reference)
+    location: Location @= .header
+
+    if objects.has(v, key: "in")
+        location @ parse_location(objects.text_at(v, key: "in"))?
+    flows: {str: OAuthFlow} @= {}
+    given = objects.object_at(v, key: "flows")
+
+    for name in keys(given)
+        if !objects.is_extension(name)
+            f = given[name].must()
+            flows[name] @ OAuthFlow(
+                authorization_url: objects.text_at(f, key: "authorizationUrl"),
+                token_url: objects.text_at(f, key: "tokenUrl"),
+                refresh_url: objects.text_at(f, key: "refreshUrl"),
+                scopes: objects.text_map_at(f, key: "scopes"),
+                extensions: objects.extensions_of(f)
+            )
+
+    return ok(
+        SecurityScheme(ref: "", kind: objects.text_at(v, key: "type"), description: objects.text_at(v, key: "description"), name: objects.text_at(v, key: "name"), location: location, scheme: objects.text_at(v, key: "scheme"), bearer_format: objects.text_at(v, key: "bearerFormat"), flows: flows, flows_extensions: objects.extensions_of(objects.value_at(v, key: "flows")), open_id_connect_url: objects.text_at(v, key: "openIdConnectUrl"), extensions: objects.extensions_of(v))
+    )
+
+# `alternative` as JSON: each scheme's name with the list of its scopes.
+#
+# - `alternative`: the requirement.
+function security_requirement_json(alternative: SecurityRequirement) -> json.Value
+    m: {str: json.Value} @= {}
+
+    for name in keys(alternative.schemes)
+        m[name] @ objects.texts(alternative.schemes[name].must())
+
+    return .object(members: m)
+
+# The security requirement `v` writes.
+#
+# - `v`: a Security Requirement object.
+#
+# Fails `invalid` as `from_json` does.
+function security_requirement_of(v: json.Value) -> SecurityRequirement?
+    shape.check(v, kind: shape.REQUIREMENT)?
+    schemes: {str: [str]} @= {}
+    given = objects.members_of(v)
+
+    for name in keys(given)
+        scopes: [str] @= []
+
+        for s in json.items_of(given[name].must()).default([])
+            scopes @ scopes.push(json.text_of(s).default(""))
+
+        schemes[name] @ scopes
+
+    return ok(SecurityRequirement(schemes: schemes))
+
+## A document checked
+
+# One thing wrong with a document: where, and what.
+record Problem
+    # Where in the document, as a JSON pointer: `/paths/~1pets/get`.
+    pointer: str
+    # What is wrong, in words a reader can act on.
+    message: str
+
+# Every problem of `doc`: what OpenAPI 3.1 asks of a document beyond the form
+# of each object, in the order of the document.
+#
+# - `doc`: the document.
+#
+# It asks: an `info` with a title and a version; a path, a component or a
+# webhook; paths that begin with `/`, each template's parameters declared
+# for every operation and each path parameter in its template, required; two
+# templates that differ only in their parameters' names; a parameter and its
+# location once in a list, a style its location takes, `schema` or `content`
+# and not both; `example` and `examples` not both; an `operationId` once in
+# the document; a status a key of three digits, a range or `default`; a
+# reference that names a component of its kind; a requirement whose schemes
+# the components hold; a server variable in its URL, its default among its
+# values; a component's name of letters, digits, `.`, `-` and `_`; a tag's
+# name once; and every schema valid against JSON Schema 2020-12's
+# meta-schema. None where `doc` is valid.
+function errors_of(doc: Document) -> [Problem]
+    out: [Problem] @= []
+
+    for p in checks.problems(to_json(doc))
+        out @ out.push(Problem(pointer: p.pointer, message: p.message))
+
+    return out
+
+# Nothing where `doc` has no problem.
+#
+# - `doc`: the document.
+#
+# Fails `invalid` where it has one, with the first `errors_of` gives and
+# after it how many there are in all.
+function check(doc: Document) -> ()?
+    found = errors_of(doc)
+
+    if found.len() == 0
+        return ok()
+
+    where = if found[0].pointer == ""
+        "the document"
+    else
+        found[0].pointer
+
+    more = if found.len() == 1
+        "1 problem in all"
+    else
+        f"{found.len()} problems in all"
+    return fail(code: INVALID, msg: f"at {where}: {found[0].message}; {more}")
+
+# `doc` with every path, webhook, component, tag and requirement of `other`
+# added.
+#
+# - `doc`: the document added to; its `info`, servers and the rest stand.
+# - `other`: the document whose parts are added, after `doc`'s.
+#
+# Fails `exists` where both have an operation on one method and path, a
+# webhook's operation, or a component of one kind and name that are not
+# equal; a tag both have keeps `doc`'s.
+function merge(doc: Document, other: Document) -> Document?
+    out @= doc
+
+    for path in keys(other.paths)
+        incoming = other.paths[path].must()
+
+        match out.paths[path]
+            .err _ => out.paths[path] @ incoming
+            .ok mine =>
+                item @= mine
+
+                for method in keys(incoming.operations)
+                    op = incoming.operations[method].must()
+
+                    match item.operations[method]
+                        .ok there =>
+                            if there != op
+                                return fail(
+                                    code: EXISTS,
+                                    msg: f"{strings.to_upper_ascii(method)} {path} is in both documents, and differs"
+                                )
+                        .err _ => item.operations[method] @ op
+
+                out.paths[path] @ item
+
+    for name in keys(other.webhooks)
+        incoming = other.webhooks[name].must()
+
+        match out.webhooks[name]
+            .err _ => out.webhooks[name] @ incoming
+            .ok mine =>
+                item @= mine
+
+                for method in keys(incoming.operations)
+                    op = incoming.operations[method].must()
+
+                    match item.operations[method]
+                        .ok there =>
+                            if there != op
+                                return fail(
+                                    code: EXISTS,
+                                    msg: f"the webhook \"{name}\" has an operation for {strings.to_upper_ascii(method)} in both documents, and it differs"
+                                )
+                        .err _ => item.operations[method] @ op
+
+                out.webhooks[name] @ item
+
+    c @= out.components
+    given = other.components
+
+    for name in keys(given.schemas)
+        match c.schemas[name]
+            .ok there =>
+                if there != given.schemas[name].must()
+                    return fail(
+                        code: EXISTS,
+                        msg: f"the schema \"{name}\" is in both documents' components, and differs"
+                    )
+            .err _ => c.schemas[name] @ given.schemas[name].must()
+
+    for name in keys(given.responses)
+        match c.responses[name]
+            .ok there =>
+                if there != given.responses[name].must()
+                    return fail(
+                        code: EXISTS,
+                        msg: f"the response \"{name}\" is in both documents' components, and differs"
+                    )
+            .err _ => c.responses[name] @ given.responses[name].must()
+
+    for name in keys(given.parameters)
+        match c.parameters[name]
+            .ok there =>
+                if there != given.parameters[name].must()
+                    return fail(
+                        code: EXISTS,
+                        msg: f"the parameter \"{name}\" is in both documents' components, and differs"
+                    )
+            .err _ => c.parameters[name] @ given.parameters[name].must()
+
+    for name in keys(given.examples)
+        match c.examples[name]
+            .ok there =>
+                if there != given.examples[name].must()
+                    return fail(
+                        code: EXISTS,
+                        msg: f"the example \"{name}\" is in both documents' components, and differs"
+                    )
+            .err _ => c.examples[name] @ given.examples[name].must()
+
+    for name in keys(given.request_bodies)
+        match c.request_bodies[name]
+            .ok there =>
+                if there != given.request_bodies[name].must()
+                    return fail(
+                        code: EXISTS,
+                        msg: f"the request body \"{name}\" is in both documents' components, and differs"
+                    )
+            .err _ => c.request_bodies[name] @ given.request_bodies[name].must()
+
+    for name in keys(given.headers)
+        match c.headers[name]
+            .ok there =>
+                if there != given.headers[name].must()
+                    return fail(
+                        code: EXISTS,
+                        msg: f"the header \"{name}\" is in both documents' components, and differs"
+                    )
+            .err _ => c.headers[name] @ given.headers[name].must()
+
+    for name in keys(given.security_schemes)
+        match c.security_schemes[name]
+            .ok there =>
+                if there != given.security_schemes[name].must()
+                    return fail(
+                        code: EXISTS,
+                        msg: f"the security scheme \"{name}\" is in both documents' components, and differs"
+                    )
+            .err _ => c.security_schemes[name] @ given.security_schemes[name].must()
+
+    for name in keys(given.links)
+        match c.links[name]
+            .ok there =>
+                if there != given.links[name].must()
+                    return fail(code: EXISTS, msg: f"the link \"{name}\" is in both documents' components, and differs")
+            .err _ => c.links[name] @ given.links[name].must()
+
+    for name in keys(given.callbacks)
+        match c.callbacks[name]
+            .ok there =>
+                if there != given.callbacks[name].must()
+                    return fail(
+                        code: EXISTS,
+                        msg: f"the callback \"{name}\" is in both documents' components, and differs"
+                    )
+            .err _ => c.callbacks[name] @ given.callbacks[name].must()
+
+    for name in keys(given.path_items)
+        match c.path_items[name]
+            .ok there =>
+                if there != given.path_items[name].must()
+                    return fail(
+                        code: EXISTS,
+                        msg: f"the path item \"{name}\" is in both documents' components, and differs"
+                    )
+            .err _ => c.path_items[name] @ given.path_items[name].must()
+
+    out.components @ c
+    tags @= out.tags
+
+    for t in other.tags
+        known: bool @= false
+
+        for mine in tags
+            if mine.name == t.name
+                known @ true
+
+        if !known
+            tags @ tags.push(t)
+
+    out.tags @ tags
+    security @= out.security
+
+    for each in other.security
+        known: bool @= false
+
+        for mine in security
+            if mine == each
+                known @ true
+
+        if !known
+            security @ security.push(each)
+
+    out.security @ security
+    return ok(out)
+
+## Routes
+
+# The pattern `web` reads for the template `path`: `/pets/{id}` is
+# `/pets/:id`.
+#
+# - `path`: a path's template.
+#
+# Fails `invalid` where a segment holds a parameter beside other text, as
+# `/files/{name}.json`, which a `web` pattern does not say, or where a `{` is
+# not closed.
+function pattern_of(path: str) -> str?
+    return routes.pattern(path)
+
+# The name `add_routes` gives the route of `endpoint`: its `operation_id`,
+# or its method and path, `GET /pets`, where it has none.
+#
+# - `endpoint`: the operation.
+function route_name_of(endpoint: Endpoint) -> str
+    if endpoint.operation.operation_id != ""
+        return endpoint.operation.operation_id
+    return endpoint.method + " " + endpoint.path
+
+# Adds to `router` a route for every operation of `doc`, named by
+# `route_name_of`, under the path of its first server: the operation's, else
+# its path item's, else the document's, each variable at its default, so
+# `/pets` of a server `https://api.example.com/v1` is `/v1/pets`.
+#
+# - `router`: the router, which gains the routes.
+# - `doc`: the document.
+#
+# Fails as `pattern_of` and `web.add` do, adding the routes before the one
+# that fails.
+function add_routes(@router: web.Router, doc: Document) -> ()?
+    none: {str: str} = {}
+
+    for e in operations_of(doc)
+        servers: [Server] @= e.operation.servers
+
+        if servers.len() == 0
+            servers @ e.item.servers
+
+        if servers.len() == 0
+            servers @ doc.servers
+        prefix: str @= ""
+
+        if servers.len() > 0
+            prefix @ routes.base_path(server_url(servers[0], values: none)?)
+        web.add(@router, method: e.method, pattern: pattern_of(prefix + e.path)?, name: route_name_of(e))?
+
+    return ok()
+
+## Requests and responses validated
+
+# A document compiled to validate requests and responses: every schema read
+# once. `new_validator` makes one.
+record Validator
+    # The document.
+    document: Document
+    # What the validation reads, which only this package reads.
+    code: compiled.Compiled
+
+# One thing wrong with a request or a response: where, and what.
+record Issue
+    # The status a server answers it with: 404 where no path is the
+    # request's, 405 where no operation takes its method, 415 where its body
+    # is of no media type the operation takes, 401 where a credential is
+    # missing, 400 otherwise; 500 for a response's.
+    status: i64
+    # Where: `path`, `query`, `header`, `cookie`, `body`, `security`, `route`
+    # (the path or the method), or `status` (a response's status).
+    location: str
+    # The parameter's or the header field's name; for a 405, the methods the
+    # path takes, as `Allow` writes them; "" for the body and the rest.
+    name: str
+    # Where inside the value, as a JSON pointer: "" for the value itself.
+    pointer: str
+    # The keyword of the schema that failed, such as `minimum`, or the rule:
+    # `required`, `style`, `mediaType`, `security`.
+    keyword: str
+    # What was asked and what was found.
+    message: str
+
+# A request's values, read and valid.
+record Values
+    # The operation's `operation_id`; "" where it has none.
+    operation_id: str
+    # The method, in upper case.
+    method: str
+    # The path's template, as the document writes it.
+    template: str
+    # The path's parameters, by name, read by their schemas: `"7"` is `7`
+    # where the schema says `integer`.
+    path: {str: json.Value}
+    # The query's parameters given, by name, and the defaults of those not
+    # given that have one.
+    query: {str: json.Value}
+    # The header's parameters, by the names the document gives them.
+    headers: {str: json.Value}
+    # The cookies' parameters, by name.
+    cookies: {str: json.Value}
+    # The body read by its media type: JSON's value, a form's object, a
+    # text; `.null_value` where there is none.
+    body: json.Value
+    # The media type of the body, without its parameters; "" where there is
+    # none.
+    media_type: str
+
+# A validator of `doc`'s requests and responses.
+#
+# - `doc`: the document.
+#
+# Fails `invalid` where a schema does not compile, or a reference names
+# nothing, the message naming it by its JSON pointer; `unsupported` where a
+# reference names another document, and as `json/schema` compiles a schema.
+# Its cost is that of compiling each schema once, with the components it
+# names.
+function new_validator(doc: Document) -> Validator?
+    return ok(Validator(document: doc, code: compiled.compile(to_json(doc))?))
+
+# Every issue of `r` against the operation of `v`'s document that takes it.
+#
+# - `v`: the validator.
+# - `r`: the request: its method, path, query, header fields, cookies and
+#   body are read.
+#
+# One issue alone where no operation takes it (404 or 405). Then each
+# parameter's, in the order of the operation's parameters, the body's, then
+# the security's. None where `r` is valid. A query parameter or a header
+# field the operation does not name is no issue.
+function request_errors_of(v: Validator, r: http.Request) -> [Issue]
+    out: [Issue] @= []
+
+    for i in requests.check(v.code, r: r).issues
+        out @ out.push(
+            Issue(status: i.status, location: i.location, name: i.name, pointer: i.pointer, keyword: i.keyword, message: i.message)
+        )
+
+    return out
+
+# The values of `r`, read and validated.
+#
+# - `v`: the validator.
+# - `r`: the request.
+#
+# Fails `not_found` where no operation takes `r`, and `invalid` with the
+# first issue `request_errors_of` gives, and how many in all, where it is not
+# valid. See also `problem_response`.
+function read_request(v: Validator, r: http.Request) -> Values?
+    outcome = requests.check(v.code, r: r)
+
+    if outcome.issues.len() > 0
+        i = outcome.issues[0]
+        first = format_issue(
+            Issue(status: i.status, location: i.location, name: i.name, pointer: i.pointer, keyword: i.keyword, message: i.message)
+        )
+
+        if outcome.at < 0
+            return fail(code: NOT_FOUND, msg: first)
+
+        more = if outcome.issues.len() == 1
+            "1 issue in all"
+        else
+            f"{outcome.issues.len()} issues in all"
+        return fail(code: INVALID, msg: f"{first}; {more}")
+    w = outcome.values
+    return ok(
+        Values(operation_id: w.operation_id, method: w.method, template: w.template, path: w.path, query: w.query, headers: w.headers, cookies: w.cookies, body: w.body, media_type: w.media_type)
+    )
+
+# Every issue of `response` as the answer to `r`.
+#
+# - `v`: the validator.
+# - `r`: the request it answers, which names the operation.
+# - `response`: the response: its status, header fields and body are read.
+#
+# One issue alone where no operation takes `r` or the operation has no
+# response for the status, nor a range or a `default`. Then each header
+# field's the response declares, then the body's. None where it is valid.
+function response_errors_of(v: Validator, r: http.Request, response: http.Response) -> [Issue]
+    out: [Issue] @= []
+
+    for i in answers.check(v.code, r: r, response: response)
+        out @ out.push(
+            Issue(status: i.status, location: i.location, name: i.name, pointer: i.pointer, keyword: i.keyword, message: i.message)
+        )
+
+    return out
+
+# Nothing where `response` is a valid answer to `r`.
+#
+# - `v`: the validator.
+# - `r`: the request it answers.
+# - `response`: the response.
+#
+# Fails `invalid` with the first issue `response_errors_of` gives and how
+# many in all.
+function check_response(v: Validator, r: http.Request, response: http.Response) -> ()?
+    found = response_errors_of(v, r: r, response: response)
+
+    if found.len() == 0
+        return ok()
+
+    more = if found.len() == 1
+        "1 issue in all"
+    else
+        f"{found.len()} issues in all"
+    return fail(code: INVALID, msg: f"{format_issue(found[0])}; {more}")
+
+# `issue` as one line a person reads.
+#
+# - `issue`: the issue.
+function format_issue(issue: Issue) -> str
+    where: str @= issue.location
+
+    if issue.name != "" && issue.location != "route"
+        where @ f"{issue.location} \"{issue.name}\""
+
+    if issue.pointer != ""
+        where @ where + " at " + issue.pointer
+
+    if issue.keyword != ""
+        return f"{where}: {issue.message} ({issue.keyword})"
+    return f"{where}: {issue.message}"
+
+# The answer to a request whose issues are `issues`: a problem of RFC 9457,
+# `application/problem+json`, its status the first issue's, its `errors` a
+# list of each issue's location, name, pointer, keyword and message.
+#
+# - `issues`: the issues, at least one; none answers 400 with no `errors`.
+#
+# A 405 has `Allow` with the methods the path takes, read from its message's
+# issue.
+function problem_response(issues: [Issue]) -> http.Response
+    status = if issues.len() > 0
+        issues[0].status
+    else
+        http.STATUS_BAD_REQUEST
+    m: {str: json.Value} @= {}
+    m["type"] @ .text(v: "about:blank")
+    m["title"] @ .text(v: http.status_text(status).default("Error"))
+    m["status"] @ .number(v: to_f64(status))
+
+    if issues.len() > 0
+        m["detail"] @ .text(v: format_issue(issues[0]))
+        errors: [json.Value] @= []
+
+        for i in issues
+            e: {str: json.Value} @= {}
+            e["in"] @ .text(v: i.location)
+            objects.put_text(@e, key: "name", value: i.name)
+            e["pointer"] @ .text(v: i.pointer)
+            objects.put_text(@e, key: "keyword", value: i.keyword)
+            e["message"] @ .text(v: i.message)
+            errors @ errors.push(.object(members: e))
+
+        m["errors"] @ .list(items: errors)
+    out @= http.respond(
+        status,
+        content_type: "application/problem+json",
+        body: bytes.from_text(json.format(.object(members: m)).default("{}"))
+    )
+
+    if status == http.STATUS_METHOD_NOT_ALLOWED && issues.len() > 0
+        out.headers @ http.with_header(out.headers, name: "Allow", value: issues[0].name)
+    return out
+
+## Serving the document
+
+# The route name of the document as JSON.
+constant ROUTE_DOCUMENT_JSON: str
+    "openapi.json"
+
+# The route name of the document as YAML.
+constant ROUTE_DOCUMENT_YAML: str
+    "openapi.yaml"
+
+# The route name of Swagger UI's page.
+constant ROUTE_SWAGGER_UI: str
+    "openapi.swagger_ui"
+
+# The route name of Redoc's page.
+constant ROUTE_REDOC: str
+    "openapi.redoc"
+
+# Where a document and its pages are served, and what they hold. `new_site`
+# makes one; a program changes its paths and its scripts' URLs before
+# `add_site_routes`.
+record Site
+    # The path of the document as JSON; "" serves it at no path.
+    json_path: str
+    # The path of the document as YAML; "" serves it at no path.
+    yaml_path: str
+    # The path of Swagger UI's page; "" serves it at no path.
+    swagger_ui_path: str
+    # The path of Redoc's page; "" serves it at no path.
+    redoc_path: str
+    # The pages' title.
+    title: str
+    # The URL of Swagger UI's script, `swagger-ui-bundle.js`.
+    swagger_ui_script: str
+    # The URL of Swagger UI's style sheet, `swagger-ui.css`.
+    swagger_ui_style: str
+    # The URL of Redoc's script, `redoc.standalone.js`.
+    redoc_script: str
+    # The document as JSON, written once by `new_site`.
+    document_json: str
+    # The document as YAML, written once by `new_site`.
+    document_yaml: str
+
+# The site of `doc`: the document at `/openapi.json` and `/openapi.yaml`,
+# Swagger UI's page at `/docs` and Redoc's at `/redoc`, their scripts from
+# jsDelivr's copies of `swagger-ui-dist` 5 and `redoc` 2.
+#
+# - `doc`: the document, written as JSON and as YAML at once.
+# - `title`: the pages' title, any text.
+#
+# Fails as `format_json` and `format_yaml` do.
+function new_site(doc: Document, title: str) -> Site?
+    return ok(
+        Site(json_path: "/openapi.json", yaml_path: "/openapi.yaml", swagger_ui_path: "/docs", redoc_path: "/redoc", title: title, swagger_ui_script: "https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js", swagger_ui_style: "https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css", redoc_script: "https://cdn.jsdelivr.net/npm/redoc@2/bundles/redoc.standalone.js", document_json: format_json(doc)?, document_yaml: format_yaml(doc)?)
+    )
+
+# Adds to `router` a `GET` route for each path of `site` that is not "",
+# named `ROUTE_DOCUMENT_JSON`, `ROUTE_DOCUMENT_YAML`, `ROUTE_SWAGGER_UI` and
+# `ROUTE_REDOC`.
+#
+# - `router`: the router, which gains the routes.
+# - `site`: the site.
+#
+# Fails as `web.add` does.
+function add_site_routes(@router: web.Router, site: Site) -> ()?
+    if site.json_path != ""
+        web.add(@router, method: http.METHOD_GET, pattern: site.json_path, name: ROUTE_DOCUMENT_JSON)?
+
+    if site.yaml_path != ""
+        web.add(@router, method: http.METHOD_GET, pattern: site.yaml_path, name: ROUTE_DOCUMENT_YAML)?
+
+    if site.swagger_ui_path != ""
+        web.add(@router, method: http.METHOD_GET, pattern: site.swagger_ui_path, name: ROUTE_SWAGGER_UI)?
+
+    if site.redoc_path != ""
+        web.add(@router, method: http.METHOD_GET, pattern: site.redoc_path, name: ROUTE_REDOC)?
+    return ok()
+
+# Whether `name` is a route `add_site_routes` adds.
+#
+# - `name`: a route's name, as `web.route` answers it.
+function is_site_route(name: str) -> bool
+    return name == ROUTE_DOCUMENT_JSON || name == ROUTE_DOCUMENT_YAML || name == ROUTE_SWAGGER_UI || name == ROUTE_REDOC
+
+# The answer of `site` to the route `name`: the document or a page, 200.
+#
+# - `site`: the site.
+# - `name`: one of the four route names; another answers 404.
+function respond_site(site: Site, name: str) -> http.Response
+    document_url = if site.json_path != ""
+        site.json_path
+    else
+        site.yaml_path
+
+    if name == ROUTE_DOCUMENT_JSON
+        return http.respond(http.STATUS_OK, content_type: "application/json", body: bytes.from_text(site.document_json))
+
+    if name == ROUTE_DOCUMENT_YAML
+        return http.respond(http.STATUS_OK, content_type: "application/yaml", body: bytes.from_text(site.document_yaml))
+
+    if name == ROUTE_SWAGGER_UI
+        page = swagger_ui_page(
+            title: site.title,
+            document_url: document_url,
+            script_url: site.swagger_ui_script,
+            style_url: site.swagger_ui_style
+        )
+        return http.respond(http.STATUS_OK, content_type: "text/html; charset=utf-8", body: bytes.from_text(page))
+
+    if name == ROUTE_REDOC
+        page = redoc_page(title: site.title, document_url: document_url, script_url: site.redoc_script)
+        return http.respond(http.STATUS_OK, content_type: "text/html; charset=utf-8", body: bytes.from_text(page))
+    return http.respond_text(http.STATUS_NOT_FOUND, text: "Not Found\n")
+
+# Swagger UI's page of the document at `document_url`.
+#
+# - `title`: the page's title, escaped.
+# - `document_url`: where the browser reads the document, such as
+#   `/openapi.json`.
+# - `script_url`: the URL of `swagger-ui-bundle.js`.
+# - `style_url`: the URL of `swagger-ui.css`.
+#
+# Every value is escaped where it stands: as HTML in an attribute, as a
+# JavaScript string in the script. See also `redoc_page`.
+function swagger_ui_page(title: str, document_url: str, script_url: str, style_url: str) -> str
+    return pages.swagger_ui(title: title, document_url: document_url, script_url: script_url, style_url: style_url)
+
+# Redoc's page of the document at `document_url`.
+#
+# - `title`: the page's title, escaped.
+# - `document_url`: where the browser reads the document.
+# - `script_url`: the URL of `redoc.standalone.js`.
+function redoc_page(title: str, document_url: str, script_url: str) -> str
+    return pages.redoc(title: title, document_url: document_url, script_url: script_url)
+
+## Tests
+
+test "new_document and to_json: the smallest document, and the order of its fields"
+    doc @= new_document(title: "T", version: "1")
+    assert json.format(to_json(doc)).must() == "{\"openapi\":\"3.1.2\",\"info\":{\"title\":\"T\",\"version\":\"1\"},\"paths\":{}}"
+    doc.external_docs @ new_external_docs(url: "https://e.org", description: "")
+    doc.extensions["x-logo"] @ .text(v: "l.png")
+    doc.json_schema_dialect @ DIALECT_URI
+    assert json.format(to_json(doc)).must() == "{\"openapi\":\"3.1.2\",\"info\":{\"title\":\"T\",\"version\":\"1\"},\"jsonSchemaDialect\":\"https://spec.openapis.org/oas/3.1/dialect/base\",\"paths\":{},\"externalDocs\":{\"url\":\"https://e.org\"},\"x-logo\":\"l.png\"}"
+    assert errors_of(doc).len() == 0
+
+test "parse and to_json: every object of the full document read and written back, nothing lost"
+    text = fixture.full_yaml()
+    doc = parse(text).must()
+    assert to_json(doc) == yaml.parse(text).must()
+    assert from_json(to_json(doc)).must() == doc
+    assert parse(format_yaml(doc).must()).must() == doc
+    assert parse(format_json(doc).must()).must() == doc
+    assert errors_of(doc).len() == 0
+
+test "parse: the store of pets, in YAML and in JSON"
+    text = fixture.pets_yaml()
+    doc = parse(text).must()
+    assert from_json(to_json(doc)).must() == doc
+    assert !objects.has(json.value_at(to_json(doc), pointer: "/paths/~1pets/get/parameters/4").must(), key: "explode")
+    assert doc.paths["/pets"].must().operations["get"].must().parameters.len() == 9
+    assert parse("  \n" + json.format(to_json(doc)).must()).must() == doc
+    assert parse("").is_err()
+    assert parse("{").is_err()
+
+test "from_json: a version not of 3.1, a field unknown, a location unknown, and no object"
+    match from_json(json.parse("{\"openapi\": \"3.0.3\", \"info\": {\"title\": \"t\", \"version\": \"1\"}, \"paths\": {}}").must())
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+    match from_json(json.parse("{\"openapi\": \"3.1.0\", \"info\": {\"title\": \"t\", \"version\": \"1\", \"extra\": 1}, \"paths\": {}}").must())
+        .ok _ => assert false
+        .err e =>
+            assert e.code == INVALID
+            assert e.msg == "at /info/extra: `extra` is not a field of an Info object, nor an `x-` field"
+
+    assert from_json(
+        json.parse("{\"openapi\": \"3.1.0\", \"info\": {\"title\": \"t\", \"version\": \"1\"}, \"paths\": {\"/a\": {\"get\": {\"parameters\": [{\"name\": \"a\", \"in\": \"body\"}]}}}}").must()
+    ).is_err()
+
+    match from_json(.null_value)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    assert from_json(json.parse("{}").must()).is_err()
+
+test "from_json: callbacks nested deeper than the most read are refused"
+    inner: json.Value @= json.parse("{\"responses\": {\"200\": {\"description\": \"x\"}}}").must()
+
+    for _ in range(from: 0, to: 12)
+        item: {str: json.Value} @= {}
+        item["post"] @ inner
+        expression: {str: json.Value} @= {}
+        expression["{$url}"] @ .object(members: item)
+        named: {str: json.Value} @= {}
+        named["c"] @ .object(members: expression)
+        op @= json.members_of(inner).must()
+        op["callbacks"] @ .object(members: named)
+        inner @ .object(members: op)
+
+    match operation_of(inner)
+        .ok _  => assert false
+        .err e => assert strings.contains(s: e.msg, substr: "callbacks stand 8 deep")
+
+test "errors_of: the store of pets has none, as openapi-spec-validator says"
+    doc = parse(fixture.pets_yaml()).must()
+    assert errors_of(doc).len() == 0
+    assert !check(doc).is_err()
+
+test "errors_of: each rule broken alone, where openapi-spec-validator finds it too"
+    cases = [
+        fixture.doc_of(paths: ["/a:", "  get:", "    parameters: [{name: x, in: path, required: true, schema: {type: string}}]", "    responses: {\"200\": {description: x}}"], components: [])
+        fixture.doc_of(paths: ["/a/{id}:", "  get:", "    responses: {\"200\": {description: x}}"], components: [])
+        fixture.doc_of(paths: ["/a:", "  get: {operationId: one}", "/b:", "  get: {operationId: one}"], components: [])
+        fixture.doc_of(paths: ["/a:", "  get:", "    responses: {\"2xx\": {description: x}}"], components: [])
+        fixture.doc_of(paths: [], components: ["schemas: {\"Pet Store\": {type: object}}"])
+        fixture.doc_of(paths: ["/a/{id}:", "  get:", "    parameters: [{name: id, in: path, schema: {type: string}}]"], components: [])
+        fixture.doc_of(paths: [], components: ["schemas: {Pet: {minProperties: \"1\"}}"])
+        fixture.doc_of(paths: ["/a:", "  get:", "    parameters: [{name: x, in: query, style: matrix, schema: {type: string}}]"], components: [])
+        fixture.doc_of(paths: ["/a:", "  get:", "    parameters: [{name: x, in: query, schema: {type: string}}, {name: x, in: query, schema: {type: integer}}]"], components: [])
+        fixture.doc_of(paths: ["/a:", "  get:", "    parameters: [{name: x, in: query, schema: {type: string}, content: {application/json: {schema: {}}}}]"], components: [])
+    ]
+    pointers = [
+        "/paths/~1a/get"
+        "/paths/~1a~1{id}/get"
+        "/paths/~1b/get/operationId"
+        "/paths/~1a/get/responses/2xx"
+        "/components/schemas/Pet Store"
+        "/paths/~1a~1{id}/get/parameters/0/required"
+        "/components/schemas/Pet"
+        "/paths/~1a/get/parameters/0/style"
+        "/paths/~1a/get/parameters/1"
+        "/paths/~1a/get/parameters/0"
+    ]
+
+    for i in range(from: 0, to: cases.len())
+        found = errors_of(parse(cases[i]).must())
+        assert found.len() == 1
+        assert found[0].pointer == pointers[i]
+
+    match check(parse(cases[0]).must())
+        .ok _  => assert false
+        .err e => assert e.msg == "at /paths/~1a/get: the path parameter \"x\" is not in the path \"/a\"; 1 problem in all"
+
+test "errors_of: the rules the specification states and openapi-spec-validator does not ask"
+    cases = [
+        fixture.doc_of(paths: ["/a:", "  get:", "    security: [{nobody: []}]"], components: [])
+        fixture.doc_of(paths: ["/a/{x}:", "  get: {parameters: [{name: x, in: path, required: true, schema: {}}]}", "/a/{y}:", "  get: {parameters: [{name: y, in: path, required: true, schema: {}}]}"], components: [])
+        fixture.doc_of(paths: ["/a:", "  get:", "    responses: {\"200\": {$ref: \"#/components/responses/none\"}}"], components: [])
+        fixture.doc_of(paths: ["/a:", "  get:", "    responses: {\"200\": {description: x, content: {application/json: {schema: {$ref: \"#/components/schemas/None\"}}}}}"], components: [])
+        fixture.doc_of(paths: [], components: ["securitySchemes: {k: {type: apiKey, in: path, name: k}}"])
+        fixture.doc_of(paths: [], components: ["securitySchemes: {o: {type: oauth2, flows: {implicit: {scopes: {}}}}}"])
+        fixture.doc_of(paths: ["/a:", "  get:", "    responses: {\"200\": {description: x, links: {l: {operationId: nobody}}}}"], components: [])
+    ]
+    pointers = [
+        "/paths/~1a/get/security/0/nobody"
+        "/paths/~1a~1{y}"
+        "/paths/~1a/get/responses/200/$ref"
+        "/paths/~1a/get/responses/200/content/application~1json/schema"
+        "/components/securitySchemes/k/in"
+        "/components/securitySchemes/o/flows/implicit"
+        "/paths/~1a/get/responses/200/links/l/operationId"
+    ]
+
+    for i in range(from: 0, to: cases.len())
+        found = errors_of(parse(cases[i]).must())
+        assert found.len() == 1
+        assert found[0].pointer == pointers[i]
+
+    servers = parse(fixture.doc_of(paths: [], components: [])).must()
+    with_servers @= servers
+    variable = ServerVariable(values: ["dev"], default_value: "prod", description: "", extensions: {})
+    one @= new_server(url: "https://{env}.example.com/{base}", description: "")
+    one.variables["env"] @ variable
+    one.variables["unused"] @ ServerVariable(values: [], default_value: "x", description: "", extensions: {})
+    with_servers.servers @ [one]
+    found = errors_of(with_servers)
+    assert found.len() == 3
+    assert found[0].message == "the URL names the variable \"base\", which `variables` does not declare"
+    assert found[1].pointer == "/servers/0/variables/env/default"
+    assert found[2].pointer == "/servers/0/variables/unused"
+
+test "read_request: the store's requests, as openapi-core reads them"
+    v = new_validator(parse(fixture.pets_yaml()).must()).must()
+    plain = read_request(v, r: fixture.request(method: "GET", target: "/v1/pets")).must()
+    assert plain.operation_id == "listPets"
+    assert plain.template == "/pets"
+    assert plain.query["limit"].must() == .number(v: 20.0)
+    assert keys(plain.query) == ["limit"]
+    tags = read_request(v, r: fixture.request(method: "GET", target: "/v1/pets?tags=a&tags=b")).must()
+    assert json.format(tags.query["tags"].must()).must() == "[\"a\",\"b\"]"
+    ids = read_request(v, r: fixture.request(method: "GET", target: "/v1/pets?ids=1,2,3")).must()
+    assert json.format(ids.query["ids"].must()).must() == "[1,2,3]"
+    color = read_request(
+        v,
+        r: fixture.request(method: "GET", target: "/v1/pets?color%5BR%5D=100&color%5BG%5D=200")
+    ).must()
+    assert json.format(color.query["color"].must()).must() == "{\"R\":100,\"G\":200}"
+    pipes = read_request(v, r: fixture.request(method: "GET", target: "/v1/pets?pipes=1%7C2")).must()
+    assert json.format(pipes.query["pipes"].must()).must() == "[1,2]"
+    flag = read_request(v, r: fixture.request(method: "GET", target: "/v1/pets?flag=")).must()
+    assert flag.query["flag"].must() == .text(v: "")
+    header = read_request(
+        v,
+        r: fixture.with_field(fixture.request(method: "GET", target: "/v1/pets"), name: "X-Request-Ids", value: "1, 2")
+    ).must()
+    assert json.format(header.headers["X-Request-Ids"].must()).must() == "[1,2]"
+    pet = read_request(v, r: fixture.request(method: "GET", target: "/v1/pets/7")).must()
+    assert pet.operation_id == "showPetById"
+    assert pet.path["petId"].must() == .number(v: 7.0)
+    assert read_request(v, r: fixture.request(method: "GET", target: "/v1/pets/mine")).must().operation_id == "myPets"
+
+test "request_errors_of: each issue where openapi-core finds one, with its place"
+    v = new_validator(parse(fixture.pets_yaml()).must()).must()
+    targets = ["/v1/pets?limit=150", "/v1/pets?limit=abc", "/v1/pets?limit=", "/v1/pets/0", "/v1/pets/abc"]
+    keywords = ["maximum", "type", "allowEmptyValue", "minimum", "type"]
+
+    for i in range(from: 0, to: targets.len())
+        found = request_errors_of(v, r: fixture.request(method: "GET", target: targets[i]))
+        assert found.len() == 1
+        assert found[0].status == 400
+        assert found[0].keyword == keywords[i]
+
+    short = request_errors_of(
+        v,
+        r: fixture.with_field(fixture.request(method: "GET", target: "/v1/pets"), name: "Cookie", value: "session=ab")
+    )
+    assert short.len() == 1
+    assert short[0].location == "cookie"
+    assert short[0].name == "session"
+    assert short[0].keyword == "minLength"
+    deleted = request_errors_of(v, r: fixture.request(method: "DELETE", target: "/v1/pets"))
+    assert deleted[0].status == 405
+    assert deleted[0].name == "GET, POST"
+    assert request_errors_of(v, r: fixture.request(method: "GET", target: "/v1/nothing"))[0].status == 404
+    assert request_errors_of(v, r: fixture.request(method: "GET", target: "/pets"))[0].status == 404
+
+    match read_request(v, r: fixture.request(method: "GET", target: "/v1/nothing"))
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    match read_request(v, r: fixture.request(method: "GET", target: "/v1/pets?limit=150"))
+        .ok _ => assert false
+        .err e =>
+            assert e.code == INVALID
+            assert e.msg == "query \"limit\": 150, above the maximum 100 (maximum); 1 issue in all"
+
+test "read_request: bodies, media types and security, as openapi-core reads them"
+    v = new_validator(parse(fixture.pets_yaml()).must()).must()
+    post = fixture.request(method: "POST", target: "/v1/pets")
+    keyed = fixture.with_field(post, name: "X-API-Key", value: "k")
+    good = read_request(
+        v,
+        r: fixture.with_text_body(keyed, content_type: "application/json", body: "{\"name\": \"Rex\"}")
+    ).must()
+    assert good.operation_id == "createPet"
+    assert good.media_type == "application/json"
+    assert json.format(good.body).must() == "{\"name\":\"Rex\"}"
+    form = read_request(
+        v,
+        r: fixture.with_text_body(keyed, content_type: "application/x-www-form-urlencoded", body: "name=Rex&age=3")
+    ).must()
+    assert json.format(form.body).must() == "{\"name\":\"Rex\",\"age\":3}"
+    stranger = request_errors_of(
+        v,
+        r: fixture.with_text_body(post, content_type: "application/json", body: "{\"name\": \"Rex\"}")
+    )
+    assert stranger.len() == 1
+    assert stranger[0].status == 401
+    assert stranger[0].message == "the request carries no credential the operation asks for: the header `X-API-Key`, or an Authorization of the scheme `bearer`"
+    bearer = fixture.with_field(post, name: "Authorization", value: "Bearer t")
+    empty = request_errors_of(v, r: fixture.with_text_body(bearer, content_type: "application/json", body: "{}"))
+    assert empty.len() == 1
+    assert empty[0].location == "body"
+    assert empty[0].keyword == "required"
+    text = request_errors_of(v, r: fixture.with_text_body(keyed, content_type: "text/plain", body: "Rex"))
+    assert text[0].status == 415
+    missing = request_errors_of(v, r: keyed)
+    assert missing[0].keyword == "required"
+    assert missing[0].location == "body"
+    broken = request_errors_of(
+        v,
+        r: fixture.with_text_body(keyed, content_type: "application/json", body: "{\"name\": ")
+    )
+    assert broken[0].keyword == "mediaType"
+
+test "read_request: every style of a parameter, as kin-openapi reads it"
+    v = new_validator(parse(fixture.styles_yaml()).must()).must()
+    targets = [
+        "/labels/.1.2.3"
+        "/labels/.1.2.3.4"
+        "/labels/.1.x"
+        "/labels/1.2"
+        "/labelc/.1,2,3"
+        "/labelc/.1,x"
+        "/matrix/;x=1;y=2"
+        "/matrix/;x=a;y=2"
+        "/matrix/;x=1"
+        "/matrix/x=1;y=2"
+        "/matrixa/;ids=1,2,3"
+        "/matrixa/;ids=1,2,3,4"
+        "/matrixa/;other=1"
+        "/simple/1,2,3"
+        "/simple/1,2,3,4"
+        "/simple/1,x"
+        "/q?words=a%20b"
+        "/q?words=ab"
+        "/q?pipes=1%7C2"
+        "/q?pipes=1%7Cx"
+        "/q?obj=a,1,b,x"
+        "/q?obj=a,x"
+        "/q?obj=a,1,b"
+    ]
+    valid = [
+        true
+        false
+        false
+        false
+        true
+        false
+        true
+        false
+        false
+        false
+        true
+        false
+        false
+        true
+        false
+        false
+        true
+        false
+        true
+        false
+        true
+        false
+        false
+    ]
+
+    for i in range(from: 0, to: targets.len())
+        found = request_errors_of(v, r: fixture.request(method: "GET", target: targets[i]))
+        assert found.len() == 0 == valid[i]
+
+    point = read_request(v, r: fixture.request(method: "GET", target: "/matrix/;x=1;y=2")).must()
+    assert json.format(point.path["point"].must()).must() == "{\"x\":1,\"y\":2}"
+    words = read_request(v, r: fixture.request(method: "GET", target: "/q?words=a%20b")).must()
+    assert json.format(words.query["words"].must()).must() == "[\"a\",\"b\"]"
+    exploded = fixture.with_field(fixture.request(method: "GET", target: "/q"), name: "h", value: "a=1,b=x")
+    assert json.format(read_request(v, r: exploded).must().headers["h"].must()).must() == "{\"a\":1,\"b\":\"x\"}"
+    assert request_errors_of(v, r: fixture.with_field(fixture.request(method: "GET", target: "/q"), name: "h", value: "a=x")).len() == 1
+
+test "response_errors_of: the store's responses, as openapi-core reads them"
+    v = new_validator(parse(fixture.pets_yaml()).must()).must()
+    list = fixture.request(method: "GET", target: "/v1/pets")
+    good @= fixture.response(status: 200, content_type: "application/json", body: "[{\"id\": 1, \"name\": \"a\"}]")
+    without = good
+    good.headers @ http.with_header(good.headers, name: "X-Total", value: "2")
+    assert response_errors_of(v, r: list, response: good).len() == 0
+    assert !check_response(v, r: list, response: good).is_err()
+    lacking = response_errors_of(v, r: list, response: without)
+    assert lacking.len() == 1
+    assert lacking[0].location == "header"
+    assert lacking[0].keyword == "required"
+    bad @= fixture.response(status: 200, content_type: "application/json", body: "[{\"id\": \"x\"}]")
+    bad.headers @ http.with_header(bad.headers, name: "X-Total", value: "2")
+    wrong = response_errors_of(v, r: list, response: bad)
+    assert wrong.len() == 2
+    assert wrong[0].status == 500
+    assert wrong[0].location == "body"
+    assert response_errors_of(v, r: list, response: fixture.response(status: 500, content_type: "application/json", body: "{\"message\": \"x\"}")).len() == 0
+    pet = fixture.request(method: "GET", target: "/v1/pets/7")
+    none = response_errors_of(
+        v,
+        r: pet,
+        response: fixture.response(status: 404, content_type: "application/json", body: "{}")
+    )
+    assert none[0].location == "status"
+    typed = response_errors_of(
+        v,
+        r: pet,
+        response: fixture.response(status: 200, content_type: "text/plain", body: "x")
+    )
+    assert typed[0].keyword == "mediaType"
+
+    match check_response(v, r: pet, response: fixture.response(status: 200, content_type: "text/plain", body: "x"))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "new_validator: a reference to nothing, another document, a dialect unknown"
+    nothing = parse(
+        fixture.doc_of(paths: ["/a:", "  get:", "    parameters: [{$ref: \"#/components/parameters/none\"}]"], components: [])
+    ).must()
+
+    match new_validator(nothing)
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    other = parse(
+        fixture.doc_of(paths: ["/a:", "  get:", "    parameters: [{$ref: \"other.yaml#/components/parameters/a\"}]"], components: [])
+    ).must()
+
+    match new_validator(other)
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+    dialect @= parse(fixture.doc_of(paths: [], components: [])).must()
+    dialect.json_schema_dialect @ "https://example.com/dialect"
+
+    match new_validator(dialect)
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+test "resolve_parameter and its kin: a chain followed, a description kept, a cycle refused"
+    doc @= new_document(title: "t", version: "1")
+    doc.components.parameters["limit"] @ new_parameter(name: "limit", location: .query, schema: integer_schema())
+    doc.components.parameters["alias"] @ parameter_ref("limit")
+    given @= parameter_ref("alias")
+    given.description @ "How many"
+    found = resolve_parameter(doc, p: given).must()
+    assert found.name == "limit"
+    assert found.description == "How many"
+    doc.components.parameters["loop"] @ parameter_ref("loop")
+
+    match resolve_parameter(doc, p: parameter_ref("loop"))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match resolve_parameter(doc, p: parameter_ref("none"))
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    full = parse(fixture.full_yaml()).must()
+    item = resolve_path_item(full, item: path_item_ref("shared")).must()
+    assert keys(item.operations) == ["get"]
+    assert resolve_header(full, header: header_ref("Rate")).must().required
+    assert resolve_example(full, example: example_ref("two")).must().external_value == "https://example.com/two.json"
+    assert resolve_link(full, link: link_ref("other")).must().operation_ref == "#/paths/~1items~1{id}/get"
+    assert keys(resolve_callback(full, callback: callback_ref("later")).must().paths) == ["{$request.query.url}"]
+    assert resolve_request_body(full, body: request_body_ref("Item")).must().required
+    assert resolve_response(full, response: response_ref("Item")).must().description == "The item"
+    assert resolve_security_scheme(full, scheme: security_scheme_ref("jwt")).must().bearer_format == "JWT"
+    assert json.format(resolve_schema(full, schema: schema_ref("Item")).must()).must() == "{\"type\":\"object\",\"properties\":{\"id\":{\"type\":\"integer\",\"format\":\"int64\"},\"name\":{\"type\":[\"string\",\"null\"]}}}"
+    deeper = json.parse("{\"$ref\": \"#/components/schemas/Item/properties/id\"}").must()
+    assert json.format(resolve_schema(full, schema: deeper).must()).must() == "{\"type\":\"integer\",\"format\":\"int64\"}"
+
+    match resolve_schema(full, schema: json.parse("{\"$ref\": \"other.json#/a\"}").must())
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+test "operations_of, endpoint_of, parameters_of and response_for: the full document's"
+    full = parse(fixture.full_yaml()).must()
+    all_of = operations_of(full)
+    assert all_of.len() == 2
+    assert all_of[0].method == "GET"
+    assert all_of[1].operation.operation_id == "putItem"
+    read = endpoint_of(full, operation_id: "readItem").must()
+    assert parameters_of(full, endpoint: read).must()[0].name == "id"
+    assert response_for(full, operation: read.operation, status: 200).must().description == "The item"
+    assert response_for(full, operation: read.operation, status: 404).is_err()
+    assert endpoint_of(full, operation_id: "none").is_err()
+
+test "add_operation and add_webhook: methods in any case, a path, and what is there already"
+    doc @= new_document(title: "t", version: "1")
+    assert !add_operation(@doc, path: "/a", method: "Get", operation: new_operation(operation_id: "a", summary: "")).is_err()
+    assert keys(doc.paths["/a"].must().operations) == ["get"]
+
+    match add_operation(@doc, path: "/a", method: "GET", operation: new_operation(operation_id: "b", summary: ""))
+        .ok _  => assert false
+        .err e => assert e.code == EXISTS
+
+    match add_operation(@doc, path: "/b", method: "POST", operation: new_operation(operation_id: "a", summary: ""))
+        .ok _  => assert false
+        .err e => assert e.code == EXISTS
+
+    assert add_operation(
+        @doc,
+        path: "b",
+        method: "GET",
+        operation: new_operation(operation_id: "", summary: "")
+    ).is_err()
+    assert add_operation(
+        @doc,
+        path: "/b",
+        method: "QUERY",
+        operation: new_operation(operation_id: "", summary: "")
+    ).is_err()
+    assert !add_webhook(@doc, name: "created", method: "post", operation: new_operation(operation_id: "", summary: "")).is_err()
+    assert add_webhook(
+        @doc,
+        name: "created",
+        method: "POST",
+        operation: new_operation(operation_id: "", summary: "")
+    ).is_err()
+    assert errors_of(doc).len() == 0
+
+test "merge: two documents joined, an equal part kept once, a different one refused"
+    a @= new_document(title: "a", version: "1")
+    add_operation(@a, path: "/a", method: "GET", operation: new_operation(operation_id: "a", summary: "")).must()
+    a.components.schemas["S"] @ string_schema()
+    a.tags @ [new_tag(name: "t", description: "mine")]
+    b @= new_document(title: "b", version: "2")
+    add_operation(@b, path: "/a", method: "POST", operation: new_operation(operation_id: "b", summary: "")).must()
+    add_operation(@b, path: "/b", method: "GET", operation: new_operation(operation_id: "c", summary: "")).must()
+    b.components.schemas["S"] @ string_schema()
+    b.tags @ [new_tag(name: "t", description: "theirs"), new_tag(name: "u", description: "")]
+    joined = merge(doc: a, other: b).must()
+    assert joined.info.title == "a"
+    assert operations_of(joined).len() == 3
+    assert joined.tags.len() == 2
+    assert joined.tags[0].description == "mine"
+    b.components.schemas["S"] @ integer_schema()
+
+    match merge(doc: a, other: b)
+        .ok _  => assert false
+        .err e => assert e.code == EXISTS
+
+test "server_url: defaults, values given, a value not allowed, a variable undeclared"
+    s @= new_server(url: "https://{region}.example.com/{base}/x", description: "")
+    s.variables["region"] @ ServerVariable(values: ["eu", "us"], default_value: "eu", description: "", extensions: {})
+    s.variables["base"] @ ServerVariable(values: [], default_value: "v1", description: "", extensions: {})
+    none: {str: str} = {}
+    assert server_url(s, values: none).must() == "https://eu.example.com/v1/x"
+    given: {str: str} @= {}
+    given["region"] @ "us"
+    given["base"] @ "é"
+    assert server_url(s, values: given).must() == "https://us.example.com/é/x"
+    given["region"] @ "asia"
+    assert server_url(s, values: given).is_err()
+    assert server_url(new_server(url: "https://{x}.org", description: ""), values: none).is_err()
+    assert server_url(new_server(url: "https://{x.org", description: ""), values: none).is_err()
+    assert server_url(new_server(url: "", description: ""), values: none).must() == ""
+
+test "nullable and with_keyword: a type, a list of types, an enum, none, and the booleans"
+    assert json.format(nullable(string_schema())).must() == "{\"type\":[\"string\",\"null\"]}"
+    assert json.format(nullable(nullable(string_schema()))).must() == "{\"type\":[\"string\",\"null\"]}"
+    e = with_keyword(schema: string_schema(), keyword: "enum", value: .list(items: [.text(v: "a")]))
+    assert json.format(nullable(e)).must() == "{\"type\":[\"string\",\"null\"],\"enum\":[\"a\",null]}"
+    assert json.format(nullable(schema_ref("P"))).must() == "{\"anyOf\":[{\"$ref\":\"#/components/schemas/P\"},{\"type\":\"null\"}]}"
+    assert nullable(.boolean(v: true)) == .boolean(v: true)
+    assert json.format(with_keyword(schema: .boolean(v: false), keyword: "description", value: .text(v: "d"))).must() == "{\"not\":{},\"description\":\"d\"}"
+    assert json.format(with_keyword(schema: .boolean(v: true), keyword: "minimum", value: .number(v: 1.0))).must() == "{\"minimum\":1}"
+
+test "pattern_of and add_routes: the routes a router takes, under the first server's path"
+    doc = parse(fixture.pets_yaml()).must()
+    router @= web.new_router()
+    add_routes(@router, doc: doc).must()
+    found = web.route(router, r: fixture.request(method: "GET", target: "/v1/pets/7")).must()
+    assert found.name == "showPetById"
+    assert web.param_of(found, name: "petId").must() == "7"
+    assert web.route(router, r: fixture.request(method: "GET", target: "/v1/pets/mine")).must().name == "myPets"
+    assert pattern_of("/files/{name}.json").is_err()
+
+test "new_site, add_site_routes and respond_site: the document and its two pages"
+    doc = parse(fixture.pets_yaml()).must()
+    site = new_site(doc, title: "Pets <API>").must()
+    router @= web.new_router()
+    add_site_routes(@router, site: site).must()
+    found = web.route(router, r: fixture.request(method: "GET", target: "/openapi.json")).must()
+    assert is_site_route(found.name)
+    answer = respond_site(site, name: found.name)
+    assert answer.status == 200
+    assert http.value_of(answer.headers, name: "Content-Type").must() == "application/json"
+    assert parse(bytes.to_text(answer.body).must()).must() == doc
+    yaml_answer = respond_site(site, name: ROUTE_DOCUMENT_YAML)
+    assert parse(bytes.to_text(yaml_answer.body).must()).must() == doc
+    page = bytes.to_text(respond_site(site, name: ROUTE_SWAGGER_UI).body).must()
+    assert strings.contains(s: page, substr: "<title>Pets &lt;API&gt;</title>")
+    assert strings.contains(s: page, substr: "url: \"/openapi.json\"")
+    assert strings.contains(
+        s: bytes.to_text(respond_site(site, name: ROUTE_REDOC).body).must(),
+        substr: "<redoc spec-url=\"/openapi.json\"></redoc>"
+    )
+    assert respond_site(site, name: "other").status == 404
+    assert !is_site_route("listPets")
+
+test "problem_response: the status, the problem's fields, and Allow for a 405"
+    v = new_validator(parse(fixture.pets_yaml()).must()).must()
+    answer = problem_response(request_errors_of(v, r: fixture.request(method: "DELETE", target: "/v1/pets")))
+    assert answer.status == 405
+    assert http.value_of(answer.headers, name: "Allow").must() == "GET, POST"
+    assert http.value_of(answer.headers, name: "Content-Type").must() == "application/problem+json"
+    bad = problem_response(request_errors_of(v, r: fixture.request(method: "GET", target: "/v1/pets?limit=0")))
+    assert bytes.to_text(bad.body).must() == "{\"type\":\"about:blank\",\"title\":\"Bad Request\",\"status\":400,\"detail\":\"query \\\"limit\\\": 0, below the minimum 1 (minimum)\",\"errors\":[{\"in\":\"query\",\"name\":\"limit\",\"pointer\":\"\",\"keyword\":\"minimum\",\"message\":\"0, below the minimum 1\"}]}"
+    assert problem_response([]).status == 400
+
+## Examples
+
+# A document with a title and a version, and nothing else yet.
+test "new_document: an empty API"
+    doc = new_document(title: "Pets", version: "1.0.0")
+    assert doc.openapi == OPENAPI_VERSION
+    assert doc.info.title == "Pets"
+
+# Whom to ask, set on a document's info.
+test "new_contact: an email address"
+    doc @= new_document(title: "Pets", version: "1.0.0")
+    doc.info.contact @ new_contact(name: "Ann", url: "", email: "ann@example.com")
+    assert json.format(info_json(doc.info)).must() == "{\"title\":\"Pets\",\"contact\":{\"name\":\"Ann\",\"email\":\"ann@example.com\"},\"version\":\"1.0.0\"}"
+
+# A licence named by its SPDX identifier.
+test "new_license: Apache 2.0"
+    l = new_license(name: "Apache 2.0", identifier: "Apache-2.0")
+    assert l.url == ""
+
+# A server an API is reached at.
+test "new_server: the production server"
+    doc @= new_document(title: "Pets", version: "1.0.0")
+    doc.servers @ [new_server(url: "https://api.example.com/v1", description: "production")]
+    assert doc.servers.len() == 1
+
+# Documentation outside the document.
+test "new_external_docs: a guide"
+    docs = new_external_docs(url: "https://example.com/guide", description: "The guide")
+    assert json.format(external_docs_json(docs)).must() == "{\"description\":\"The guide\",\"url\":\"https://example.com/guide\"}"
+
+# A tag the document lists.
+test "new_tag: pets"
+    assert new_tag(name: "pets", description: "Everything about pets").name == "pets"
+
+# A server's URL with its variable's default.
+test "server_url: a region by default"
+    s @= new_server(url: "https://{region}.example.com", description: "")
+    s.variables["region"] @ ServerVariable(values: ["eu", "us"], default_value: "eu", description: "", extensions: {})
+    none: {str: str} = {}
+    assert server_url(s, values: none).must() == "https://eu.example.com"
+
+# A path item with no operation yet.
+test "new_path_item: empty"
+    assert keys(new_path_item().operations).len() == 0
+
+# An operation named for the program that calls it.
+test "new_operation: list the pets"
+    op = new_operation(operation_id: "listPets", summary: "List all pets")
+    assert json.format(operation_json(op)).must() == "{\"summary\":\"List all pets\",\"operationId\":\"listPets\"}"
+
+# An operation added to a document for a method and a path.
+test "add_operation: GET /pets"
+    doc @= new_document(title: "Pets", version: "1.0.0")
+    add_operation(
+        @doc,
+        path: "/pets",
+        method: "GET",
+        operation: new_operation(operation_id: "listPets", summary: "")
+    ).must()
+    assert keys(doc.paths) == ["/pets"]
+
+# A request the API sends, added as a webhook.
+test "add_webhook: a pet created"
+    doc @= new_document(title: "Pets", version: "1.0.0")
+    add_webhook(
+        @doc,
+        name: "petCreated",
+        method: "POST",
+        operation: new_operation(operation_id: "", summary: "")
+    ).must()
+    assert keys(doc.webhooks) == ["petCreated"]
+
+# A callback an operation may make to the URL the request gave.
+test "new_callback: done"
+    item @= new_path_item()
+    item.operations["post"] @ new_operation(operation_id: "", summary: "")
+    c = new_callback(expression: "{$request.body#/callbackUrl}", item: item)
+    assert keys(c.paths) == ["{$request.body#/callbackUrl}"]
+
+# Every operation of a document, in order.
+test "operations_of: two operations"
+    doc @= new_document(title: "Pets", version: "1.0.0")
+    add_operation(
+        @doc,
+        path: "/pets",
+        method: "POST",
+        operation: new_operation(operation_id: "createPet", summary: "")
+    ).must()
+    add_operation(
+        @doc,
+        path: "/pets",
+        method: "GET",
+        operation: new_operation(operation_id: "listPets", summary: "")
+    ).must()
+    found = operations_of(doc)
+    assert found[0].method == "GET"
+    assert found[1].operation.operation_id == "createPet"
+
+# An operation found by its operationId.
+test "endpoint_of: by name"
+    doc @= new_document(title: "Pets", version: "1.0.0")
+    add_operation(
+        @doc,
+        path: "/pets",
+        method: "GET",
+        operation: new_operation(operation_id: "listPets", summary: "")
+    ).must()
+    assert endpoint_of(doc, operation_id: "listPets").must().path == "/pets"
+
+# An operation's parameters with its path's.
+test "parameters_of: the path's and the operation's"
+    doc @= new_document(title: "Pets", version: "1.0.0")
+    item @= new_path_item()
+    item.parameters @ [new_parameter(name: "petId", location: .path, schema: integer_schema())]
+    op @= new_operation(operation_id: "showPet", summary: "")
+    op.parameters @ [new_parameter(name: "fields", location: .query, schema: string_schema())]
+    item.operations["get"] @ op
+    doc.paths["/pets/{petId}"] @ item
+    found = parameters_of(doc, endpoint: endpoint_of(doc, operation_id: "showPet").must()).must()
+    assert found.len() == 2
+
+# The response an operation gives for a status, by its range.
+test "response_for: 201 by 2XX"
+    doc = new_document(title: "Pets", version: "1.0.0")
+    op @= new_operation(operation_id: "createPet", summary: "")
+    op.responses["2XX"] @ new_response("Done")
+    assert response_for(doc, operation: op, status: 201).must().description == "Done"
+
+# A query parameter of an integer.
+test "new_parameter: limit"
+    p = new_parameter(name: "limit", location: .query, schema: integer_schema())
+    assert json.format(parameter_json(p)).must() == "{\"name\":\"limit\",\"in\":\"query\",\"schema\":{\"type\":\"integer\"}}"
+
+# The style a parameter is written in.
+test "style_of: a query's default"
+    assert style_of(new_parameter(name: "q", location: .query, schema: string_schema())) == STYLE_FORM
+
+# A location read from its name.
+test "parse_location: header"
+    assert format_location(parse_location("header").must()) == "header"
+
+# A location's name.
+test "format_location: cookie"
+    assert format_location(.cookie) == "cookie"
+
+# A media type of a schema.
+test "new_media_type: JSON's schema"
+    assert json.format(media_type_json(new_media_type(string_schema()))).must() == "{\"schema\":{\"type\":\"string\"}}"
+
+# A JSON body an operation requires.
+test "json_body: a new pet"
+    op @= new_operation(operation_id: "createPet", summary: "")
+    op.request_body @ json_body(schema: schema_ref("NewPet"), required: true)
+    assert has_request_body(op)
+
+# An operation with no body.
+test "no_request_body: none"
+    assert keys(no_request_body().content).len() == 0
+
+# Whether an operation takes a body.
+test "has_request_body: a GET takes none"
+    assert !has_request_body(new_operation(operation_id: "listPets", summary: ""))
+
+# A response with no body.
+test "new_response: 204"
+    op @= new_operation(operation_id: "deletePet", summary: "")
+    op.responses["204"] @ new_response("Deleted")
+    assert json.format(response_json(op.responses["204"].must())).must() == "{\"description\":\"Deleted\"}"
+
+# A response of a JSON body.
+test "json_response: the pets"
+    r = json_response(description: "The pets", schema: array_schema(schema_ref("Pet")))
+    assert keys(r.content) == ["application/json"]
+
+# A header field a response declares.
+test "new_header: a rate limit"
+    r @= new_response("OK")
+    r.headers["X-Rate-Limit"] @ new_header(integer_schema())
+    assert json.format(response_json(r)).must() == "{\"description\":\"OK\",\"headers\":{\"X-Rate-Limit\":{\"schema\":{\"type\":\"integer\"}}}}"
+
+# An example of a value.
+test "new_example: a cat"
+    e = new_example(.text(v: "cat"))
+    assert json.format(example_json(e)).must() == "{\"value\":\"cat\"}"
+
+# A link to the operation a client calls next.
+test "new_link: read it back"
+    l @= new_link("showPetById")
+    l.parameters["petId"] @ .text(v: "$response.body#/id")
+    assert json.format(link_json(l)).must() == "{\"operationId\":\"showPetById\",\"parameters\":{\"petId\":\"$response.body#/id\"}}"
+
+# Components with nothing in them.
+test "new_components: empty"
+    assert json.format(components_json(new_components())).must() == "{}"
+
+# The reference to a component.
+test "ref_of: a schema"
+    assert ref_of(kind: "schemas", name: "Pet") == "#/components/schemas/Pet"
+
+# A schema that names one of the components.
+test "schema_ref: Pet"
+    assert json.format(schema_ref("Pet")).must() == "{\"$ref\":\"#/components/schemas/Pet\"}"
+
+# A parameter that names one of the components.
+test "parameter_ref: limit"
+    assert json.format(parameter_json(parameter_ref("limit"))).must() == "{\"$ref\":\"#/components/parameters/limit\"}"
+
+# A request body that names one of the components.
+test "request_body_ref: pet"
+    assert request_body_ref("pet").ref == "#/components/requestBodies/pet"
+
+# A response that names one of the components.
+test "response_ref: not found"
+    assert json.format(response_json(response_ref("NotFound"))).must() == "{\"$ref\":\"#/components/responses/NotFound\"}"
+
+# A header field that names one of the components.
+test "header_ref: rate"
+    assert header_ref("Rate").ref == "#/components/headers/Rate"
+
+# An example that names one of the components.
+test "example_ref: cat"
+    assert example_ref("cat").ref == "#/components/examples/cat"
+
+# A link that names one of the components.
+test "link_ref: next"
+    assert link_ref("next").ref == "#/components/links/next"
+
+# A callback that names one of the components.
+test "callback_ref: done"
+    assert callback_ref("done").ref == "#/components/callbacks/done"
+
+# A path item that names one of the components.
+test "path_item_ref: shared"
+    assert path_item_ref("shared").ref == "#/components/pathItems/shared"
+
+# A security scheme that names one of the components.
+test "security_scheme_ref: key"
+    assert security_scheme_ref("key").ref == "#/components/securitySchemes/key"
+
+# A parameter's reference followed.
+test "resolve_parameter: limit"
+    doc @= new_document(title: "Pets", version: "1.0.0")
+    doc.components.parameters["limit"] @ new_parameter(name: "limit", location: .query, schema: integer_schema())
+    assert resolve_parameter(doc, p: parameter_ref("limit")).must().name == "limit"
+
+# A request body's reference followed.
+test "resolve_request_body: pet"
+    doc @= new_document(title: "Pets", version: "1.0.0")
+    doc.components.request_bodies["pet"] @ json_body(schema: schema_ref("Pet"), required: true)
+    assert resolve_request_body(doc, body: request_body_ref("pet")).must().required
+
+# A response's reference followed.
+test "resolve_response: not found"
+    doc @= new_document(title: "Pets", version: "1.0.0")
+    doc.components.responses["NotFound"] @ new_response("No such pet")
+    assert resolve_response(doc, response: response_ref("NotFound")).must().description == "No such pet"
+
+# A header field's reference followed.
+test "resolve_header: rate"
+    doc @= new_document(title: "Pets", version: "1.0.0")
+    doc.components.headers["Rate"] @ new_header(integer_schema())
+    assert resolve_header(doc, header: header_ref("Rate")).must().schema == integer_schema()
+
+# An example's reference followed.
+test "resolve_example: cat"
+    doc @= new_document(title: "Pets", version: "1.0.0")
+    doc.components.examples["cat"] @ new_example(.text(v: "cat"))
+    assert resolve_example(doc, example: example_ref("cat")).must().value == .text(v: "cat")
+
+# A link's reference followed.
+test "resolve_link: next"
+    doc @= new_document(title: "Pets", version: "1.0.0")
+    doc.components.links["next"] @ new_link("listPets")
+    assert resolve_link(doc, link: link_ref("next")).must().operation_id == "listPets"
+
+# A callback's reference followed.
+test "resolve_callback: done"
+    doc @= new_document(title: "Pets", version: "1.0.0")
+    doc.components.callbacks["done"] @ new_callback(expression: "{$url}", item: new_path_item())
+    assert keys(resolve_callback(doc, callback: callback_ref("done")).must().paths) == ["{$url}"]
+
+# A path item's reference followed.
+test "resolve_path_item: shared"
+    doc @= new_document(title: "Pets", version: "1.0.0")
+    shared @= new_path_item()
+    shared.summary @ "Shared"
+    doc.components.path_items["shared"] @ shared
+    assert resolve_path_item(doc, item: path_item_ref("shared")).must().summary == "Shared"
+
+# A security scheme's reference followed.
+test "resolve_security_scheme: key"
+    doc @= new_document(title: "Pets", version: "1.0.0")
+    doc.components.security_schemes["key"] @ api_key_scheme(name: "X-Key", location: .header)
+    assert resolve_security_scheme(doc, scheme: security_scheme_ref("key")).must().name == "X-Key"
+
+# A schema's reference followed to the component.
+test "resolve_schema: Pet"
+    doc @= new_document(title: "Pets", version: "1.0.0")
+    doc.components.schemas["Pet"] @ object_schema({}, required: [])
+    assert resolve_schema(doc, schema: schema_ref("Pet")).must() == object_schema({}, required: [])
+
+# A text's schema.
+test "string_schema: a name"
+    assert json.format(string_schema()).must() == "{\"type\":\"string\"}"
+
+# An integer's schema.
+test "integer_schema: an id"
+    assert json.format(integer_schema()).must() == "{\"type\":\"integer\"}"
+
+# A number's schema.
+test "number_schema: a price"
+    assert json.format(number_schema()).must() == "{\"type\":\"number\"}"
+
+# A boolean's schema.
+test "boolean_schema: a flag"
+    assert json.format(boolean_schema()).must() == "{\"type\":\"boolean\"}"
+
+# An array's schema.
+test "array_schema: of texts"
+    assert json.format(array_schema(string_schema())).must() == "{\"type\":\"array\",\"items\":{\"type\":\"string\"}}"
+
+# An object's schema with a required property.
+test "object_schema: a pet"
+    properties: {str: json.Value} @= {}
+    properties["name"] @ string_schema()
+    assert json.format(object_schema(properties, required: ["name"])).must() == "{\"type\":\"object\",\"properties\":{\"name\":{\"type\":\"string\"}},\"required\":[\"name\"]}"
+
+# A schema of a few values.
+test "enum_schema: a status"
+    assert json.format(enum_schema([.text(v: "available"), .text(v: "sold")])).must() == "{\"enum\":[\"available\",\"sold\"]}"
+
+# A schema of exactly one of two.
+test "one_of_schema: a cat or a dog"
+    assert json.format(one_of_schema([schema_ref("Cat"), schema_ref("Dog")])).must() == "{\"oneOf\":[{\"$ref\":\"#/components/schemas/Cat\"},{\"$ref\":\"#/components/schemas/Dog\"}]}"
+
+# A schema of at least one of two.
+test "any_of_schema: a text or a number"
+    assert json.format(any_of_schema([string_schema(), number_schema()])).must() == "{\"anyOf\":[{\"type\":\"string\"},{\"type\":\"number\"}]}"
+
+# A schema of both of two.
+test "all_of_schema: a pet with an id"
+    assert json.format(all_of_schema([schema_ref("NewPet"), schema_ref("Id")])).must() == "{\"allOf\":[{\"$ref\":\"#/components/schemas/NewPet\"},{\"$ref\":\"#/components/schemas/Id\"}]}"
+
+# A schema that takes null too.
+test "nullable: a text or null"
+    assert json.format(nullable(string_schema())).must() == "{\"type\":[\"string\",\"null\"]}"
+
+# A schema with a keyword set.
+test "with_keyword: a maximum"
+    assert json.format(with_keyword(schema: integer_schema(), keyword: "maximum", value: .number(v: 100.0))).must() == "{\"type\":\"integer\",\"maximum\":100}"
+
+# A schema with its format set.
+test "with_format: a date-time"
+    assert json.format(with_format(string_schema(), format: "date-time")).must() == "{\"type\":\"string\",\"format\":\"date-time\"}"
+
+# A schema with its description set.
+test "with_description: a name"
+    assert json.format(with_description(string_schema(), description: "The pet's name")).must() == "{\"type\":\"string\",\"description\":\"The pet's name\"}"
+
+# A key in a header field.
+test "api_key_scheme: X-API-Key"
+    assert json.format(security_scheme_json(api_key_scheme(name: "X-API-Key", location: .header))).must() == "{\"type\":\"apiKey\",\"name\":\"X-API-Key\",\"in\":\"header\"}"
+
+# Basic authentication.
+test "basic_scheme: a user and a password"
+    assert json.format(security_scheme_json(basic_scheme())).must() == "{\"type\":\"http\",\"scheme\":\"basic\"}"
+
+# A bearer token that is a JWT.
+test "bearer_scheme: JWT"
+    assert json.format(security_scheme_json(bearer_scheme("JWT"))).must() == "{\"type\":\"http\",\"scheme\":\"bearer\",\"bearerFormat\":\"JWT\"}"
+
+# OAuth 2.0 by the client credentials flow.
+test "oauth2_scheme: client credentials"
+    scopes: {str: str} @= {}
+    scopes["read"] @ "Read the pets"
+    flows: {str: OAuthFlow} @= {}
+    flows[FLOW_CLIENT_CREDENTIALS] @ new_oauth_flow(
+        authorization_url: "",
+        token_url: "https://example.com/token",
+        scopes: scopes
+    )
+    assert json.format(security_scheme_json(oauth2_scheme(flows))).must() == "{\"type\":\"oauth2\",\"flows\":{\"clientCredentials\":{\"tokenUrl\":\"https://example.com/token\",\"scopes\":{\"read\":\"Read the pets\"}}}}"
+
+# A flow of OAuth 2.0.
+test "new_oauth_flow: the authorization code"
+    f = new_oauth_flow(
+        authorization_url: "https://example.com/auth",
+        token_url: "https://example.com/token",
+        scopes: {}
+    )
+    assert f.refresh_url == ""
+
+# OpenID Connect.
+test "open_id_connect_scheme: a provider"
+    s = open_id_connect_scheme("https://example.com/.well-known/openid-configuration")
+    assert s.kind == SCHEME_OPEN_ID_CONNECT
+
+# Mutual TLS.
+test "mutual_tls_scheme: a certificate"
+    assert json.format(security_scheme_json(mutual_tls_scheme())).must() == "{\"type\":\"mutualTLS\"}"
+
+# A requirement of one scheme with its scopes.
+test "requirement: read and write"
+    assert json.format(security_requirement_json(requirement(scheme: "oauth", scopes: ["read", "write"]))).must() == "{\"oauth\":[\"read\",\"write\"]}"
+
+# A document as JSON.
+test "to_json: the smallest document"
+    assert json.format(to_json(new_document(title: "Pets", version: "1.0.0"))).must() == "{\"openapi\":\"3.1.2\",\"info\":{\"title\":\"Pets\",\"version\":\"1.0.0\"},\"paths\":{}}"
+
+# A document read from JSON.
+test "from_json: back again"
+    doc = new_document(title: "Pets", version: "1.0.0")
+    assert from_json(to_json(doc)).must() == doc
+
+# A document as JSON text.
+test "format_json: two spaces"
+    text = format_json(new_document(title: "Pets", version: "1.0.0")).must()
+    assert strings.has_prefix(s: text, prefix: "{\n  \"openapi\": \"3.1.2\"")
+
+# A document as YAML.
+test "format_yaml: block style"
+    text = format_yaml(new_document(title: "Pets", version: "1.0.0")).must()
+    assert strings.has_prefix(s: text, prefix: "openapi: \"3.1.2\"\ninfo:\n  title: Pets\n")
+
+# A document read from YAML.
+test "parse: a YAML document"
+    doc = parse("openapi: 3.1.0\ninfo:\n  title: Pets\n  version: 1.0.0\npaths: {}").must()
+    assert doc.info.title == "Pets"
+
+# An info as JSON.
+test "info_json: a title and a version"
+    assert json.format(info_json(new_document(title: "Pets", version: "1").info)).must() == "{\"title\":\"Pets\",\"version\":\"1\"}"
+
+# An info read.
+test "info_of: a summary kept"
+    assert info_of(json.parse("{\"title\": \"Pets\", \"summary\": \"A store\", \"version\": \"1\"}").must()).must().summary == "A store"
+
+# A server as JSON.
+test "server_json: a URL"
+    assert json.format(server_json(new_server(url: "/v1", description: ""))).must() == "{\"url\":\"/v1\"}"
+
+# A server read.
+test "server_of: a variable"
+    s = server_of(json.parse("{\"url\": \"/{v}\", \"variables\": {\"v\": {\"default\": \"v1\"}}}").must()).must()
+    assert s.variables["v"].must().default_value == "v1"
+
+# A tag as JSON.
+test "tag_json: pets"
+    assert json.format(tag_json(new_tag(name: "pets", description: ""))).must() == "{\"name\":\"pets\"}"
+
+# A tag read.
+test "tag_of: with its documentation"
+    t = tag_of(json.parse("{\"name\": \"pets\", \"externalDocs\": {\"url\": \"https://example.com\"}}").must()).must()
+    assert t.external_docs.url == "https://example.com"
+
+# External documentation as JSON.
+test "external_docs_json: a URL"
+    assert json.format(external_docs_json(new_external_docs(url: "https://example.com", description: ""))).must() == "{\"url\":\"https://example.com\"}"
+
+# External documentation read.
+test "external_docs_of: a description"
+    assert external_docs_of(json.parse("{\"url\": \"https://example.com\", \"description\": \"More\"}").must()).must().description == "More"
+
+# A path item as JSON, its operations in OpenAPI's order.
+test "path_item_json: get before post"
+    item @= new_path_item()
+    item.operations["post"] @ new_operation(operation_id: "b", summary: "")
+    item.operations["get"] @ new_operation(operation_id: "a", summary: "")
+    assert json.format(path_item_json(item)).must() == "{\"get\":{\"operationId\":\"a\"},\"post\":{\"operationId\":\"b\"}}"
+
+# A path item read.
+test "path_item_of: one operation"
+    item = path_item_of(json.parse("{\"get\": {\"operationId\": \"a\"}}").must()).must()
+    assert item.operations["get"].must().operation_id == "a"
+
+# An operation as JSON.
+test "operation_json: deprecated"
+    op @= new_operation(operation_id: "old", summary: "")
+    op.deprecated @ true
+    assert json.format(operation_json(op)).must() == "{\"operationId\":\"old\",\"deprecated\":true}"
+
+# An operation read, with its own empty security.
+test "operation_of: open to anyone"
+    op = operation_of(json.parse("{\"operationId\": \"health\", \"security\": []}").must()).must()
+    assert op.own_security
+    assert op.security.len() == 0
+
+# A parameter as JSON, its explode written where it differs from its style's.
+test "parameter_json: a list not exploded"
+    p @= new_parameter(name: "ids", location: .query, schema: array_schema(integer_schema()))
+    p.explode @ false
+    assert json.format(parameter_json(p)).must() == "{\"name\":\"ids\",\"in\":\"query\",\"explode\":false,\"schema\":{\"type\":\"array\",\"items\":{\"type\":\"integer\"}}}"
+
+# A parameter read.
+test "parameter_of: a header"
+    p = parameter_of(
+        json.parse("{\"name\": \"X-Id\", \"in\": \"header\", \"schema\": {\"type\": \"string\"}}").must()
+    ).must()
+    assert style_of(p) == STYLE_SIMPLE
+
+# A request body as JSON.
+test "request_body_json: required"
+    assert json.format(request_body_json(json_body(schema: string_schema(), required: true))).must() == "{\"content\":{\"application/json\":{\"schema\":{\"type\":\"string\"}}},\"required\":true}"
+
+# A request body read.
+test "request_body_of: a reference"
+    b = request_body_of(json.parse("{\"$ref\": \"#/components/requestBodies/pet\"}").must()).must()
+    assert b.ref == "#/components/requestBodies/pet"
+
+# A media type as JSON.
+test "media_type_json: with an example"
+    m @= new_media_type(string_schema())
+    m.example @ .text(v: "Rex")
+    assert json.format(media_type_json(m)).must() == "{\"schema\":{\"type\":\"string\"},\"example\":\"Rex\"}"
+
+# A media type read.
+test "media_type_of: an encoding"
+    m = media_type_of(json.parse("{\"encoding\": {\"photo\": {\"contentType\": \"image/png\"}}}").must()).must()
+    assert m.encoding["photo"].must().content_type == "image/png"
+
+# An encoding as JSON.
+test "encoding_json: a part's type"
+    e = encoding_of(json.parse("{\"contentType\": \"image/png\"}").must()).must()
+    assert json.format(encoding_json(e)).must() == "{\"contentType\":\"image/png\"}"
+
+# An encoding read: a form's default is exploded.
+test "encoding_of: exploded by default"
+    assert encoding_of(json.parse("{}").must()).must().explode
+
+# A response as JSON.
+test "response_json: a description"
+    assert json.format(response_json(new_response("OK"))).must() == "{\"description\":\"OK\"}"
+
+# A response read.
+test "response_of: with a body"
+    r = response_of(json.parse("{\"description\": \"OK\", \"content\": {\"text/plain\": {}}}").must()).must()
+    assert keys(r.content) == ["text/plain"]
+
+# A header field as JSON.
+test "header_json: required"
+    h @= new_header(integer_schema())
+    h.required @ true
+    assert json.format(header_json(h)).must() == "{\"required\":true,\"schema\":{\"type\":\"integer\"}}"
+
+# A header field read.
+test "header_of: a description"
+    assert header_of(json.parse("{\"description\": \"d\", \"schema\": {}}").must()).must().description == "d"
+
+# An example as JSON.
+test "example_json: a summary"
+    e @= new_example(.number(v: 1.0))
+    e.summary @ "One"
+    assert json.format(example_json(e)).must() == "{\"summary\":\"One\",\"value\":1}"
+
+# An example read.
+test "example_of: an external value"
+    assert example_of(json.parse("{\"externalValue\": \"https://example.com/a.json\"}").must()).must().external_value == "https://example.com/a.json"
+
+# A link as JSON.
+test "link_json: by operationId"
+    assert json.format(link_json(new_link("listPets"))).must() == "{\"operationId\":\"listPets\"}"
+
+# A link read.
+test "link_of: by operationRef"
+    assert link_of(json.parse("{\"operationRef\": \"#/paths/~1pets/get\"}").must()).must().operation_ref == "#/paths/~1pets/get"
+
+# A callback as JSON.
+test "callback_json: one expression"
+    c = new_callback(expression: "{$url}", item: new_path_item())
+    assert json.format(callback_json(c)).must() == "{\"{$url}\":{}}"
+
+# A callback read.
+test "callback_of: a reference"
+    assert callback_of(json.parse("{\"$ref\": \"#/components/callbacks/done\"}").must()).must().ref == "#/components/callbacks/done"
+
+# Components as JSON.
+test "components_json: a schema"
+    c @= new_components()
+    c.schemas["Id"] @ integer_schema()
+    assert json.format(components_json(c)).must() == "{\"schemas\":{\"Id\":{\"type\":\"integer\"}}}"
+
+# Components read.
+test "components_of: a security scheme"
+    c = components_of(
+        json.parse("{\"securitySchemes\": {\"basic\": {\"type\": \"http\", \"scheme\": \"basic\"}}}").must()
+    ).must()
+    assert c.security_schemes["basic"].must().scheme == "basic"
+
+# A security scheme as JSON.
+test "security_scheme_json: bearer"
+    assert json.format(security_scheme_json(bearer_scheme(""))).must() == "{\"type\":\"http\",\"scheme\":\"bearer\"}"
+
+# A security scheme read.
+test "security_scheme_of: a key in a cookie"
+    s = security_scheme_of(json.parse("{\"type\": \"apiKey\", \"name\": \"sid\", \"in\": \"cookie\"}").must()).must()
+    assert format_location(s.location) == "cookie"
+
+# A requirement as JSON.
+test "security_requirement_json: a key"
+    assert json.format(security_requirement_json(requirement(scheme: "key", scopes: []))).must() == "{\"key\":[]}"
+
+# A requirement read.
+test "security_requirement_of: two schemes together"
+    r = security_requirement_of(json.parse("{\"key\": [], \"oauth\": [\"read\"]}").must()).must()
+    assert keys(r.schemes) == ["key", "oauth"]
+
+# Every problem of a document.
+test "errors_of: a path parameter its path does not name"
+    doc @= new_document(title: "Pets", version: "1.0.0")
+    op @= new_operation(operation_id: "listPets", summary: "")
+    op.parameters @ [new_parameter(name: "id", location: .path, schema: integer_schema())]
+    add_operation(@doc, path: "/pets", method: "GET", operation: op).must()
+    assert errors_of(doc)[0].message == "the path parameter \"id\" is not in the path \"/pets\""
+
+# A document checked.
+test "check: a valid document"
+    assert !check(new_document(title: "Pets", version: "1.0.0")).is_err()
+
+# Two documents joined.
+test "merge: two services"
+    a @= new_document(title: "All", version: "1")
+    add_operation(
+        @a,
+        path: "/pets",
+        method: "GET",
+        operation: new_operation(operation_id: "listPets", summary: "")
+    ).must()
+    b @= new_document(title: "Users", version: "1")
+    add_operation(
+        @b,
+        path: "/users",
+        method: "GET",
+        operation: new_operation(operation_id: "listUsers", summary: "")
+    ).must()
+    assert operations_of(merge(doc: a, other: b).must()).len() == 2
+
+# A template as a pattern of `web`.
+test "pattern_of: a pet by id"
+    assert pattern_of("/pets/{petId}").must() == "/pets/:petId"
+
+# The name a route takes.
+test "route_name_of: by its operationId"
+    doc @= new_document(title: "Pets", version: "1.0.0")
+    add_operation(
+        @doc,
+        path: "/pets",
+        method: "GET",
+        operation: new_operation(operation_id: "listPets", summary: "")
+    ).must()
+    assert route_name_of(operations_of(doc)[0]) == "listPets"
+
+# Every operation added to a router.
+test "add_routes: a router of the document"
+    doc @= new_document(title: "Pets", version: "1.0.0")
+    add_operation(
+        @doc,
+        path: "/pets/{petId}",
+        method: "GET",
+        operation: new_operation(operation_id: "showPet", summary: "")
+    ).must()
+    router @= web.new_router()
+    add_routes(@router, doc: doc).must()
+    assert router.routes[0].pattern == "/pets/:petId"
+
+# A document compiled to validate requests.
+test "new_validator: a document's schemas compiled"
+    doc @= new_document(title: "Pets", version: "1.0.0")
+    add_operation(
+        @doc,
+        path: "/pets",
+        method: "GET",
+        operation: new_operation(operation_id: "listPets", summary: "")
+    ).must()
+    assert new_validator(doc).must().code.operations.len() == 1
+
+# A request's issues.
+test "request_errors_of: an integer that is none"
+    doc @= new_document(title: "Pets", version: "1.0.0")
+    op @= new_operation(operation_id: "listPets", summary: "")
+    op.parameters @ [new_parameter(name: "limit", location: .query, schema: integer_schema())]
+    add_operation(@doc, path: "/pets", method: "GET", operation: op).must()
+    r = http.request(method: "GET", target: "/pets?limit=ten").must()
+    assert format_issue(request_errors_of(new_validator(doc).must(), r: r)[0]) == "query \"limit\": a string, where the type is integer (type)"
+
+# A request's values, typed by their schemas.
+test "read_request: a limit read as a number"
+    doc @= new_document(title: "Pets", version: "1.0.0")
+    op @= new_operation(operation_id: "listPets", summary: "")
+    op.parameters @ [new_parameter(name: "limit", location: .query, schema: integer_schema())]
+    add_operation(@doc, path: "/pets", method: "GET", operation: op).must()
+    values = read_request(
+        new_validator(doc).must(),
+        r: http.request(method: "GET", target: "/pets?limit=10").must()
+    ).must()
+    assert values.query["limit"].must() == .number(v: 10.0)
+
+# A response's issues.
+test "response_errors_of: a status not declared"
+    doc @= new_document(title: "Pets", version: "1.0.0")
+    op @= new_operation(operation_id: "listPets", summary: "")
+    op.responses["200"] @ new_response("OK")
+    add_operation(@doc, path: "/pets", method: "GET", operation: op).must()
+    r = http.request(method: "GET", target: "/pets").must()
+    found = response_errors_of(new_validator(doc).must(), r: r, response: http.respond_status(404))
+    assert found[0].location == "status"
+
+# A response checked.
+test "check_response: a response declared"
+    doc @= new_document(title: "Pets", version: "1.0.0")
+    op @= new_operation(operation_id: "listPets", summary: "")
+    op.responses["200"] @ new_response("OK")
+    add_operation(@doc, path: "/pets", method: "GET", operation: op).must()
+    r = http.request(method: "GET", target: "/pets").must()
+    assert !check_response(new_validator(doc).must(), r: r, response: http.respond_status(200)).is_err()
+
+# An issue as a line.
+test "format_issue: a header field missing"
+    i = Issue(
+        status: 400,
+        location: "header",
+        name: "X-Id",
+        pointer: "",
+        keyword: "required",
+        message: "the header parameter \"X-Id\" is required, and the request has none"
+    )
+    assert format_issue(i) == "header \"X-Id\": the header parameter \"X-Id\" is required, and the request has none (required)"
+
+# The answer to an invalid request.
+test "problem_response: 400"
+    i = Issue(
+        status: 400,
+        location: "query",
+        name: "limit",
+        pointer: "",
+        keyword: "type",
+        message: "a text, where the type is integer"
+    )
+    assert problem_response([i]).status == 400
+
+# A site of the document.
+test "new_site: its paths"
+    site = new_site(new_document(title: "Pets", version: "1.0.0"), title: "Pets").must()
+    assert site.swagger_ui_path == "/docs"
+
+# The site's routes added to a router.
+test "add_site_routes: four routes"
+    router @= web.new_router()
+    add_site_routes(@router, site: new_site(new_document(title: "Pets", version: "1.0.0"), title: "Pets").must()).must()
+    assert router.routes.len() == 4
+
+# Whether a route is the site's.
+test "is_site_route: Swagger UI's page"
+    assert is_site_route(ROUTE_SWAGGER_UI)
+
+# The site's answer to one of its routes.
+test "respond_site: the document as YAML"
+    site = new_site(new_document(title: "Pets", version: "1.0.0"), title: "Pets").must()
+    assert http.value_of(respond_site(site, name: ROUTE_DOCUMENT_YAML).headers, name: "Content-Type").must() == "application/yaml"
+
+# Swagger UI's page of a document.
+test "swagger_ui_page: its script from a CDN"
+    page = swagger_ui_page(
+        title: "Pets",
+        document_url: "/openapi.json",
+        script_url: "https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js",
+        style_url: "https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css"
+    )
+    assert strings.contains(
+        s: page,
+        substr: "<script src=\"https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js\"></script>"
+    )
+
+# Redoc's page of a document.
+test "redoc_page: the document's URL"
+    page = redoc_page(
+        title: "Pets",
+        document_url: "/openapi.json",
+        script_url: "https://cdn.jsdelivr.net/npm/redoc@2/bundles/redoc.standalone.js"
+    )
+    assert strings.contains(s: page, substr: "<redoc spec-url=\"/openapi.json\"></redoc>")
