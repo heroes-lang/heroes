@@ -1,0 +1,287 @@
+# The IEEE 754 bits of an `f64` and an `f32`, and the float a pattern of bits
+# holds, made by exact arithmetic on powers of two: the language has no cast
+# between a float and its bits, and C's `memcpy` is not bound for it, since its
+# `void *` takes only bytes on both sides (spec § 13). Every step multiplies or
+# divides by a power of two where the result is representable, so each is
+# exact, and every float but a NaN goes to its bits and back unchanged, the
+# sign of a zero included. A NaN's sign and payload are not read: no
+# arithmetic shows them, and `to_str` writes every NaN as `nan`.
+
+use numbers/internal/near
+
+# 2^63, the sign bit of an `f64`'s pattern.
+constant SIGN_64: u64
+    9223372036854775808
+
+# 2^31, the sign bit of an `f32`'s pattern.
+constant SIGN_32: u32
+    2147483648
+
+# The pattern of an `f64`'s positive infinity, its exponent all ones.
+constant INFINITY_64: u64
+    9218868437227405312
+
+# The pattern of an `f32`'s positive infinity.
+constant INFINITY_32: u32
+    2139095040
+
+# The quiet NaN with its sign clear, `0x7ff8000000000000`, which every `f64`
+# NaN gives.
+constant QUIET_NAN_64: u64
+    9221120237041090560
+
+# The same for an `f32`, `0x7fc00000`.
+constant QUIET_NAN_32: u32
+    2143289344
+
+# 2^52, an `f64`'s lowest fraction bit above 1, as a number and as a step.
+constant FRACTION_64: u64
+    4503599627370496
+
+# 2^23, the same for an `f32`.
+constant FRACTION_32: u32
+    8388608
+
+# 2^64, a step that loses no bit while the value stays normal.
+constant STEP: f64
+    18446744073709551616.0
+
+# `x` times 2 to the `power`, one exact step after another: by 2^64 while
+# `power` is that far, then by 2. Exact wherever the answer and every value on
+# the way is a multiple of the smallest subnormal and below the largest float,
+# which holds for every use here.
+#
+# - `x`: a finite float.
+# - `power`: the power of two, of either sign.
+function scaled(x: f64, power: i64) -> f64
+    y: f64 @= x
+    left: i64 @= power
+
+    while left >= 64
+        y @ y * STEP
+        left @ left - 64
+
+    while left <= -64
+        y @ y / STEP
+        left @ left + 64
+
+    while left > 0
+        y @ y * 2.0
+        left @ left - 1
+
+    while left < 0
+        y @ y / 2.0
+        left @ left + 1
+
+    return y
+
+# The exponent `e` of `a`, `2^e <= a < 2^(e+1)`, found by steps of 64 and then
+# of 1, each exact.
+#
+# - `a`: a finite float above zero.
+function exponent_of(a: f64) -> i64
+    e: i64 @= 0
+    y: f64 @= a
+
+    while y >= STEP
+        y @ y / STEP
+        e @ e + 64
+
+    while y >= 2.0
+        y @ y / 2.0
+        e @ e + 1
+
+    while y < 1.0 / STEP
+        y @ y * STEP
+        e @ e - 64
+
+    while y < 1.0
+        y @ y * 2.0
+        e @ e - 1
+
+    return e
+
+# Whether `x` is below zero or minus zero: the sign bit of every float but a
+# NaN, read as `1 / x` shows it for a zero.
+#
+# - `x`: any float but a NaN.
+function has_sign(x: f64) -> bool
+    return x < 0.0 || x == 0.0 && 1.0 / x < 0.0
+
+# The 64 bits of `x`.
+#
+# - `x`: any `f64`; every NaN gives `QUIET_NAN_64`.
+function of_f64(x: f64) -> u64
+    if x != x
+        return QUIET_NAN_64
+
+    sign: u64 = if has_sign(x)
+        SIGN_64
+    else
+        0
+
+    size = if x < 0.0
+        -x
+    else
+        x
+
+    if size == near.infinity()
+        return sign + INFINITY_64
+
+    if size == 0.0
+        return sign
+    e = exponent_of(size)
+
+    if e < -1022
+        return sign + to_u64(to_i64(scaled(x: size, power: 1074)).must()).must()
+    fraction = to_u64(to_i64(scaled(x: size, power: 52 - e)).must()).must() - FRACTION_64
+    return sign + to_u64(e + 1023).must() * FRACTION_64 + fraction
+
+# The `f64` whose 64 bits are `bits`.
+#
+# - `bits`: any `u64`; an exponent of all ones with a fraction gives the
+#   language's one NaN.
+function f64_of(bits: u64) -> f64
+    negative = bits >= SIGN_64
+
+    rest = if negative
+        bits - SIGN_64
+    else
+        bits
+    exponent = to_i64(rest / FRACTION_64).must()
+    fraction = to_f64(rest % FRACTION_64)
+    size: f64 @= 0.0
+
+    if exponent == 2047
+        if fraction != 0.0
+            return near.not_a_number()
+        size @ near.infinity()
+    else if exponent == 0
+        size @ scaled(x: fraction, power: -1074)
+    else
+        size @ scaled(x: fraction + to_f64(FRACTION_64), power: exponent - 1075)
+
+    if negative
+        return -size
+    return size
+
+# The 32 bits of `x`.
+#
+# - `x`: any `f32`; every NaN gives `QUIET_NAN_32`.
+function of_f32(x: f32) -> u32
+    wide = to_f64(x)
+
+    if wide != wide
+        return QUIET_NAN_32
+
+    sign: u32 = if has_sign(wide)
+        SIGN_32
+    else
+        0
+
+    size = if wide < 0.0
+        -wide
+    else
+        wide
+
+    if size == near.infinity()
+        return sign + INFINITY_32
+
+    if size == 0.0
+        return sign
+    e = exponent_of(size)
+
+    if e < -126
+        return sign + to_u32(to_i64(scaled(x: size, power: 149)).must()).must()
+    fraction = to_u32(to_i64(scaled(x: size, power: 23 - e)).must()).must() - FRACTION_32
+    return sign + to_u32(e + 127).must() * FRACTION_32 + fraction
+
+# The `f32` whose 32 bits are `bits`.
+#
+# - `bits`: any `u32`; an exponent of all ones with a fraction gives the
+#   language's one NaN.
+function f32_of(bits: u32) -> f32
+    negative = bits >= SIGN_32
+
+    rest = if negative
+        bits - SIGN_32
+    else
+        bits
+    exponent = to_i64(rest / FRACTION_32).must()
+    fraction = to_f64(rest % FRACTION_32)
+    size: f64 @= 0.0
+
+    if exponent == 255
+        if fraction != 0.0
+            return to_f32(near.not_a_number())
+        size @ near.infinity()
+    else if exponent == 0
+        size @ scaled(x: fraction, power: -149)
+    else
+        size @ scaled(x: fraction + to_f64(FRACTION_32), power: exponent - 150)
+
+    if negative
+        return to_f32(-size)
+    return to_f32(size)
+
+## Tests
+
+# The patterns are Python 3.15's `struct.pack('>d', x)` and `'>f'` on this
+# machine, 2026-11-18, read as unsigned integers.
+test "of_f64: both zeros, one, -2.5, the smallest subnormal, the largest subnormal, the smallest normal, the largest, the infinities, a NaN"
+    assert of_f64(0.0) == 0 && of_f64(-0.0) == 9223372036854775808
+    assert of_f64(1.0) == 4607182418800017408 && of_f64(-2.5) == 13836183955189006336
+    assert of_f64(scaled(x: 1.0, power: -1074)) == 1
+    assert of_f64(scaled(x: 4503599627370495.0, power: -1074)) == 4503599627370495
+    assert of_f64(scaled(x: 1.0, power: -1022)) == 4503599627370496
+    assert of_f64(scaled(x: 9007199254740991.0, power: 971)) == 9218868437227405311
+    assert of_f64(near.infinity()) == 9218868437227405312 && of_f64(-near.infinity()) == 18442240474082181120
+    assert of_f64(near.not_a_number()) == QUIET_NAN_64 && of_f64(-near.not_a_number()) == QUIET_NAN_64
+
+test "f64_of: both zeros, one, the smallest and largest subnormals, the largest, the infinities, NaN patterns of either sign and payload"
+    assert f64_of(0) == 0.0 && !has_sign(f64_of(0)) && has_sign(f64_of(9223372036854775808))
+    assert f64_of(4607182418800017408) == 1.0 && f64_of(13836183955189006336) == -2.5
+    assert f64_of(1) == scaled(x: 1.0, power: -1074)
+    assert f64_of(4503599627370495) == scaled(x: 4503599627370495.0, power: -1074)
+    assert of_f64(f64_of(9218868437227405311)) == 9218868437227405311
+    assert f64_of(9218868437227405312) == near.infinity() && f64_of(18442240474082181120) == -near.infinity()
+
+    patterns: [u64] = [9218868437227405313, 9221120237041090560, 18446744073709551615, 18444492273895866368]
+
+    for bits in patterns
+        nan = f64_of(bits)
+        assert nan != nan
+
+test "of_f32 and f32_of: both zeros, one, -1.5, the smallest and largest subnormals, the largest, the infinities, NaN patterns"
+    assert of_f32(0.0) == 0 && of_f32(-0.0) == 2147483648
+    assert of_f32(1.0) == 1065353216 && of_f32(-1.5) == 3217031168
+    assert of_f32(to_f32(scaled(x: 1.0, power: -149))) == 1
+    assert of_f32(to_f32(scaled(x: 8388607.0, power: -149))) == 8388607
+    assert of_f32(to_f32(scaled(x: 16777215.0, power: 104))) == 2139095039
+    assert of_f32(to_f32(near.infinity())) == 2139095040 && of_f32(to_f32(-near.infinity())) == 4286578688
+    assert of_f32(to_f32(near.not_a_number())) == QUIET_NAN_32
+    assert f32_of(1065353216) == 1.0 && f32_of(3217031168) == -1.5
+    assert has_sign(to_f64(f32_of(2147483648))) && f32_of(2147483648) == 0.0
+    assert to_f64(f32_of(1)) == scaled(x: 1.0, power: -149)
+    assert to_f64(f32_of(2139095039)) == scaled(x: 16777215.0, power: 104)
+    assert to_f64(f32_of(4286578688)) == -near.infinity()
+
+    patterns: [u32] = [2139095041, 2143289344, 4294967295, 4290772992]
+
+    for bits in patterns
+        nan = f32_of(bits)
+        assert nan != nan
+
+# Every pattern of the form `k * 2^52 + f` walked from both ends of each
+# exponent and the middle of its fraction, so every exponent of both widths
+# goes to its float and back unchanged, both signs.
+test "of_f64 and f64_of, of_f32 and f32_of: every exponent's first, middle and last pattern back unchanged, both signs"
+    for exponent in range(from: 0, to: 2047)
+        for fraction in [0, 1, 2251799813685248, 4503599627370495]
+            bits = to_u64(exponent).must() * FRACTION_64 + to_u64(fraction).must()
+            assert of_f64(f64_of(bits)) == bits && of_f64(f64_of(bits + SIGN_64)) == bits + SIGN_64
+
+    for exponent in range(from: 0, to: 255)
+        for fraction in [0, 1, 4194304, 8388607]
+            bits = to_u32(exponent).must() * FRACTION_32 + to_u32(fraction).must()
+            assert of_f32(f32_of(bits)) == bits && of_f32(f32_of(bits + SIGN_32)) == bits + SIGN_32

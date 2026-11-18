@@ -68,6 +68,11 @@ constant SWITCH_PLAINTEXT: i64
 constant MARKER: i64
     -2
 
+# An entry of that list the Noah's Ark clause took out, passed over by every
+# walk of the list until the list is compacted.
+constant GONE: i64
+    -3
+
 # Tree construction, over one tree.
 record Builder
     # The tree built.
@@ -85,10 +90,25 @@ record Builder
     open: [i64]
     depth: i64
     counts: {str: i64}
-    # The list of active formatting elements, `MARKER` for a marker,
-    # `formatting_count` in use.
+    # The list of active formatting elements, `MARKER` for a marker and
+    # `GONE` for an entry taken out, `formatting_count` in use.
     formatting: [i64]
     formatting_count: i64
+    # Beside each entry of the list, the number it was given when it was put
+    # there, which an element copied into its place keeps, and its kind as
+    # `formatting.kind_of` writes it; -1 and "" beside a marker and a `GONE`.
+    tickets: [i64]
+    kinds: [str]
+    # Where the entry of each number stands in the list, by number; a number
+    # whose entry is gone keeps the place it last had and is read no more.
+    slots: [i64]
+    # The numbers of the entries after the last marker, by kind, in the
+    # list's order: three at most, as the Noah's Ark clause keeps them.
+    alike: {str: [i64]}
+    # How many markers the list holds, and how many of its entries are
+    # `GONE`.
+    markers: i64
+    gone: i64
     # The head and form element pointers, or `dom.NONE`.
     head: i64
     form: i64
@@ -134,6 +154,12 @@ function start(scripting: bool, max_depth: i64) -> Builder
         counts: {},
         formatting: numbers,
         formatting_count: 0,
+        tickets: numbers,
+        kinds: pieces,
+        slots: numbers,
+        alike: {},
+        markers: 0,
+        gone: 0,
         head: dom.NONE,
         form: dom.NONE,
         frameset_ok: true,
@@ -155,9 +181,9 @@ function start(scripting: bool, max_depth: i64) -> Builder
 
 # Notes a parse error of tree construction, about the token `t`.
 function error(@b: Builder, code: str, t: token.Token lent)
-    b.codes @ b.codes.push(code)
-    b.tags @ b.tags.push(t.name)
-    b.places @ b.places.push(t.at)
+    dom.append(items: @b.codes, item: code)
+    dom.append(items: @b.tags, item: t.name)
+    dom.append(items: @b.places, item: t.at)
 
 # Notes the parse error of a token a mode does not expect, its code by the
 # token's kind.

@@ -179,8 +179,14 @@ function list(@r: Reader) -> i64?
             break
         r.at @ r.at + 1
 
-    r.groups @ r.groups.push(complexes)
+    add_group(groups: @r.groups, complexes: complexes)
     return ok(r.groups.len() - 1)
+
+# Adds `complexes` at the end of `groups`, the reader's own list: lent as an
+# `@` parameter the list grows in place, where a push through the field would
+# copy it whole each time (`examples-rebel/README.md` § B1).
+function add_group(@groups: [[Complex]], complexes: [Complex])
+    groups @ groups.push(complexes)
 
 # A complex selector: compounds and the combinators between them.
 function complex(@r: Reader) -> Complex?

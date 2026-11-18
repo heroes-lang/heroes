@@ -4,6 +4,7 @@
 # switches to a state that will.
 
 use html/internal/ascii
+use html/internal/dom
 use html/internal/lexer
 use unicode
 
@@ -72,7 +73,7 @@ function name(@lx: lexer.Lexer)
         closed(@lx, false)
     else if b == 0
         lexer.error_here(@lx, "unexpected-null-character")
-        lx.name @ lx.name.push(unicode.REPLACEMENT_CHARACTER)
+        dom.append(items: @lx.name, item: unicode.REPLACEMENT_CHARACTER)
         lx.at @ lx.at + 1
     else
         end: i64 @= lx.at
@@ -80,7 +81,7 @@ function name(@lx: lexer.Lexer)
         while end < lx.text.len() && !ascii.is_white(lx.text[end]) && lx.text[end] != '>' && lx.text[end] != 0
             end @ end + 1
 
-        lx.name @ lx.name.push(lexer.take(@lx, end: end, lower: true))
+        dom.append(items: @lx.name, item: lexer.take(@lx, end: end, lower: true))
 
 # 13.2.5.56, after the name: `PUBLIC`, `SYSTEM`, or nothing that fits.
 function after_name(@lx: lexer.Lexer)
@@ -198,9 +199,9 @@ function id(@lx: lexer.Lexer)
             lexer.take(@lx, end: lexer.run_end(lx, stop_a: quote, stop_b: '>', stop_c: '>'), lower: false)
 
         if system
-            lx.system @ lx.system.push(piece)
+            dom.append(items: @lx.system, item: piece)
         else
-            lx.data @ lx.data.push(piece)
+            dom.append(items: @lx.data, item: piece)
 
 # 13.2.5.61 and 13.2.5.62: after the public identifier, where a system one
 # may follow.

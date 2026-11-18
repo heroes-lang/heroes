@@ -5,6 +5,7 @@
 # state that will.
 
 use html/internal/ascii
+use html/internal/dom
 use html/internal/lexer
 use unicode
 
@@ -148,7 +149,7 @@ function double_escape_edge(@lx: lexer.Lexer)
 
         at = lx.at
         written = lexer.take(@lx, end: end, lower: false)
-        lx.temp @ lx.temp.push(ascii.to_lower(written))
+        dom.append(items: @lx.temp, item: ascii.to_lower(written))
         lexer.text_out(@lx, s: written, at: at)
     else
         lx.state @ otherwise

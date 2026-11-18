@@ -1,0 +1,185 @@
+# The whole powers of complex numbers, multiplied out: `complex_exponential`'s
+# `pow` hands every whole real exponent an `i64` holds here, and takes any
+# other through the polar form.
+#
+# A finite base is raised by repeated squaring, each product held at a size
+# from 1 up to 2 by a power of two kept apart, exactly, so no step overflows or
+# underflows before the answer does, and the power is put back once at the
+# end. Only products, sums and fused multiply-adds are taken, each rounded once
+# as IEEE 754 says, so the answer is the same on every platform: exact where
+# every product it passes through is (`(1 + 1i)^2` is `2i`), and otherwise
+# within about `|n|` units in the last place of its size, since each squaring
+# doubles the error so far. The polar form, through the C library's `pow`,
+# `atan2`, `cos` and `sin`, was further from the true power at 101 and
+# answered otherwise on each platform (measured 2026-11-18, the ledger's
+# `complex/sqrt-and-pow` block).
+
+use math/internal/complex_arithmetic
+use math/internal/floats
+use math/internal/limits
+use math/internal/parts
+
+# How far the power of two a `Scaled` stands for is followed: past it every
+# finite part has gone to an infinity or a zero, and `parts.scale` holds the
+# count at 4,000 itself.
+constant POWER_HELD: i64
+    1000000
+
+# A complex number as a pair whose larger part lies from 1 up to 2 in size,
+# times 2 raised to `power`; made by `scaled`.
+record Scaled
+    # The pair, its larger part from 1 up to 2 in size.
+    value: complex_arithmetic.Pair
+    # The power of two the pair is multiplied by, from `-POWER_HELD` to
+    # `POWER_HELD`.
+    power: i64
+
+# `power` held from `-POWER_HELD` to `POWER_HELD`.
+#
+# - `power`: a power of two, at most twice `POWER_HELD` in size.
+function held(power: i64) -> i64
+    if power > POWER_HELD
+        return POWER_HELD
+
+    if power < -POWER_HELD
+        return -POWER_HELD
+    return power
+
+# `z` times 2 raised to `power`, as a `Scaled`: `z` moved by a power of two,
+# exactly, so its larger part lies from 1 up to 2, and that power added to
+# `power`.
+#
+# - `z`: a number whose parts are finite and not both zero.
+# - `power`: the power of two `z` stands beside, within `POWER_HELD`.
+function scaled(z: complex_arithmetic.Pair, power: i64) -> Scaled
+    shift = complex_arithmetic.exponent_of_larger(z)
+    return Scaled(
+        value: complex_arithmetic.Pair(re: parts.scale(x: z.re, exponent: -shift), im: parts.scale(x: z.im, exponent: -shift)),
+        power: held(power + shift)
+    )
+
+# The product of `a` and `b`: their pairs multiplied, whose parts are below 2
+# in size so every partial product is finite and `mul` takes each sum by
+# `dot2`, and their powers added.
+#
+# - `a`: one factor.
+# - `b`: the other.
+function times(a: Scaled, b: Scaled) -> Scaled
+    return scaled(z: complex_arithmetic.mul(a: a.value, b: b.value), power: held(a.power + b.power))
+
+# 1 over `z`: the conjugate of its pair over the pair's size squared, the sum
+# by `dot2`, and its power negated. The conjugate keeps the sign of a zero
+# part as the limit from that side does, so `1 / (64 - 0i)` is `1/64 + 0i`
+# and `1 / (64 + 0i)` is `1/64 - 0i`.
+#
+# - `z`: the number, its pair as `scaled` makes it.
+function inverse(z: Scaled) -> Scaled
+    size_squared = complex_arithmetic.dot2(p: z.value.re, q: z.value.re, r: z.value.im, s: z.value.im)
+    return scaled(
+        z: complex_arithmetic.Pair(re: z.value.re / size_squared, im: -z.value.im / size_squared),
+        power: held(-z.power)
+    )
+
+# `base` raised to the whole power `n`, by squaring, the bits of `n` read from
+# the lowest and the first one taking the square itself rather than 1 times
+# it, so the sign of a zero part follows the base's; a negative `n` is 1 over
+# the power of its size. A base with an infinite or a nan part is multiplied
+# as given by `mul`, which recovers Annex G's infinities.
+#
+# - `base`: the base, not zero.
+# - `n`: the exponent, of any size an `i64` holds but its smallest; zero
+#   answers 1.
+function whole_power(base: complex_arithmetic.Pair, n: i64) -> complex_arithmetic.Pair
+    if n == 0
+        return complex_arithmetic.Pair(re: 1.0, im: 0.0)
+
+    if !floats.is_finite(base.re) || !floats.is_finite(base.im)
+        return power_as_given(base: base, n: n)
+    left @= n
+
+    if n < 0
+        left @ -n
+    square @= scaled(z: base, power: 0)
+    result @= square
+    started @= false
+
+    while left > 0
+        if left % 2 == 1
+            if started
+                result @ times(a: result, b: square)
+            else
+                result @ square
+                started @ true
+        left @ left / 2
+
+        if left > 0
+            square @ times(a: square, b: square)
+
+    if n < 0
+        result @ inverse(result)
+    return complex_arithmetic.Pair(
+        re: parts.scale(x: result.value.re, exponent: result.power),
+        im: parts.scale(x: result.value.im, exponent: result.power)
+    )
+
+# `base` raised to the whole power `n` by squaring the numbers as given, where
+# a part is an infinity or a nan: `mul` and `div` recover Annex G's
+# infinities.
+#
+# - `base`: the base, a part of it an infinity or a nan.
+# - `n`: the exponent, not zero, of any size an `i64` holds but its smallest.
+function power_as_given(base: complex_arithmetic.Pair, n: i64) -> complex_arithmetic.Pair
+    one = complex_arithmetic.Pair(re: 1.0, im: 0.0)
+    left @= n
+
+    if n < 0
+        left @ -n
+    result @= one
+    square @= base
+
+    while left > 0
+        if left % 2 == 1
+            result @ complex_arithmetic.mul(a: result, b: square)
+        left @ left / 2
+
+        if left > 0
+            square @ complex_arithmetic.mul(a: square, b: square)
+
+    if n < 0
+        return complex_arithmetic.div(a: one, b: result)
+    return result
+
+## Tests
+
+test "whole_power: zero, one, a square exactly, a negative power, the sign of a zero part, an infinite base"
+    one_one = complex_arithmetic.Pair(re: 1.0, im: 1.0)
+    assert whole_power(base: one_one, n: 0) == complex_arithmetic.Pair(re: 1.0, im: 0.0)
+    assert whole_power(base: one_one, n: 1) == one_one
+    assert whole_power(base: one_one, n: 2) == complex_arithmetic.Pair(re: 0.0, im: 2.0)
+    assert whole_power(base: one_one, n: -2) == complex_arithmetic.Pair(re: 0.0, im: -0.5)
+    assert whole_power(base: one_one, n: 100) == complex_arithmetic.Pair(re: -1125899906842624.0, im: 0.0)
+    minus_eight_below = whole_power(base: complex_arithmetic.Pair(re: -8.0, im: -0.0), n: 3)
+    assert minus_eight_below.re == -512.0 && floats.has_minus_sign(minus_eight_below.im)
+    inverse_square = whole_power(base: complex_arithmetic.Pair(re: -8.0, im: -0.0), n: -2)
+    assert inverse_square.re == 0.015625 && floats.has_minus_sign(inverse_square.im)
+    positive_below = whole_power(base: complex_arithmetic.Pair(re: 3.0, im: -0.0), n: 101)
+    assert floats.has_minus_sign(positive_below.im)
+    assert whole_power(base: complex_arithmetic.Pair(re: limits.INF, im: 0.0), n: 2).re == limits.INF
+
+# The power of 2 and of i at the ends: an exponent of 62 bits multiplies out
+# to the exact answer, where the polar form's angle times the exponent has
+# lost every digit; a size past the largest float goes to the infinity with
+# its parts' signs, and below the smallest to zero, no step overflowing first.
+test "whole_power: i to an exponent of 62 bits, a size past either end, a product that would overflow on the way"
+    i = complex_arithmetic.Pair(re: 0.0, im: 1.0)
+    assert whole_power(base: i, n: 4611686018427387905) == i
+    assert whole_power(base: i, n: -4611686018427387903) == i
+    big = whole_power(base: complex_arithmetic.Pair(re: 1.5, im: 0.5), n: 4000)
+    assert big.re == limits.INF || big.re == -limits.INF
+    small = whole_power(base: complex_arithmetic.Pair(re: 0.5, im: 0.25), n: 4000)
+    assert small.re == 0.0 && small.im == 0.0
+    huge = 100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000.0
+    halfway = whole_power(base: complex_arithmetic.Pair(re: huge, im: huge), n: 2)
+    assert halfway.re == 0.0 && halfway.im == limits.INF
+    back = whole_power(base: complex_arithmetic.Pair(re: huge, im: huge), n: -1)
+    assert back.re > 0.0 && back.im < 0.0

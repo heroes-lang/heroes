@@ -3,6 +3,7 @@
 # and a scalar's event read from an occurrence, its default, and the order of
 # a map's keys.
 
+use numbers
 use protobuf/internal/bits
 use protobuf/internal/event
 use protobuf/internal/model
@@ -98,10 +99,10 @@ function scalar(f: model.Field, o: Occurrence, data: [u8] lent, path: str) -> ev
         return ok(event.signed(kind: event.BOOL, n: n))
 
     if k == model.FLOAT
-        return ok(event.real(kind: event.FLOAT, x: to_f64(bits.float_of(bits.u32_of(v)))))
+        return ok(event.real(kind: event.FLOAT, x: to_f64(numbers.bits_to_f32(bits.u32_of(v)))))
 
     if k == model.DOUBLE
-        return ok(event.real(kind: event.DOUBLE, x: bits.double_of(v)))
+        return ok(event.real(kind: event.DOUBLE, x: numbers.bits_to_f64(v)))
     raw = data.slice(from: o.from, to: o.to)
 
     if k == model.STRING

@@ -325,7 +325,7 @@ capability fs/times  the times of the last write and the last read of what a pat
   go      os.Chtimes
   rust    fs::set_times, fs::FileTimes, FileTimes::new, FileTimes::set_accessed, FileTimes::set_modified, FileTimes::set_created
   python  os.utime
-  note    both times are given; Windows' time of making is not set
+  note    both times are given; Windows' time of making is not set. As fine as the volume keeps them, measured 2026-11-18: every nanosecond on APFS and on the Linux arm64 container's own volume, the whole second on Docker Desktop's share of a Mac folder, where `utimensat`, `futimens`, `utimes`, Python's `os.utime` and GNU `touch` lose the part of a second alike on a file already there; Windows rounds down to its 100 ns (read, the box off). The floor's test of `os/hero_disk` asks the nanosecond of a file in the system's temporary folder since then, and of the working tree's volume the whole second alone, after it failed on that share in two agents' runs
 
 capability fs/link-times  the times of a link itself set
   heroes  fs.set_link_times

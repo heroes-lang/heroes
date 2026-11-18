@@ -19,6 +19,10 @@
 use bytes
 use json
 use maps
+
+# `numbers` is a word of this file's own (a group's field numbers), so the
+# package is read under another name.
+use numbers as numerics
 use protobuf/internal/bits as twos
 use protobuf/internal/carried
 use protobuf/internal/decoder
@@ -230,7 +234,7 @@ function push_varint(@to: [u8], v: u64)
 # - `to`: the bytes written so far, which this lengthens.
 # - `v`: any `u32`.
 #
-# See also `decode_fixed32`, `bits_of_float`.
+# See also `decode_fixed32`, `numbers.f32_to_bits`.
 function push_fixed32(@to: [u8], v: u32)
     wires.push_fixed32(@to, v)
 
@@ -239,7 +243,7 @@ function push_fixed32(@to: [u8], v: u32)
 # - `to`: the bytes written so far, which this lengthens.
 # - `v`: any `u64`.
 #
-# See also `decode_fixed64`, `bits_of_double`.
+# See also `decode_fixed64`, `numbers.f64_to_bits`.
 function push_fixed64(@to: [u8], v: u64)
     wires.push_fixed64(@to, v)
 
@@ -296,7 +300,7 @@ function decode_varint(data: [u8], at: i64) -> WireNumber?
 # - `at`: the index of the first, 0 to the length of `data`.
 #
 # Fails `invalid` where fewer than four bytes are left. See also
-# `push_fixed32`, `float_of_bits`.
+# `push_fixed32`, `numbers.bits_to_f32`.
 function decode_fixed32(data: [u8], at: i64) -> WireNumber?
     got = wires.fixed32(data, at: at)?
     return ok(WireNumber(value: got.value, next: got.next))
@@ -307,7 +311,7 @@ function decode_fixed32(data: [u8], at: i64) -> WireNumber?
 # - `at`: the index of the first, 0 to the length of `data`.
 #
 # Fails `invalid` where fewer than eight bytes are left. See also
-# `push_fixed64`, `double_of_bits`.
+# `push_fixed64`, `numbers.bits_to_f64`.
 function decode_fixed64(data: [u8], at: i64) -> WireNumber?
     got = wires.fixed64(data, at: at)?
     return ok(WireNumber(value: got.value, next: got.next))
@@ -370,41 +374,6 @@ function from_zigzag(n: u64) -> i64
 # See also `push_varint`.
 function size_of_varint(v: u64) -> i64
     return wires.varint_size(v)
-
-# The 32 bits of `x` as IEEE 754 lays them out, the sign highest, as a `float`
-# field writes them.
-#
-# - `x`: any `f32`; every `nan` is the quiet one with its sign clear,
-#   `0x7fc00000`, since the language reads no float's own bits.
-#
-# See also `float_of_bits`.
-function bits_of_float(x: f32) -> u32
-    return twos.of_float(x)
-
-# The `f32` whose bits are `bits`.
-#
-# - `bits`: any `u32`; every `nan` among them gives the one `nan`.
-#
-# See also `bits_of_float`.
-function float_of_bits(bits: u32) -> f32
-    return twos.float_of(bits)
-
-# The 64 bits of `x` as IEEE 754 lays them out, as a `double` field writes
-# them.
-#
-# - `x`: any `f64`; every `nan` is `0x7ff8000000000000`.
-#
-# See also `double_of_bits`.
-function bits_of_double(x: f64) -> u64
-    return twos.of_double(x)
-
-# The `f64` whose bits are `bits`.
-#
-# - `bits`: any `u64`; every `nan` among them gives the one `nan`.
-#
-# See also `bits_of_double`.
-function double_of_bits(bits: u64) -> f64
-    return twos.double_of(bits)
 
 ## Bytes read with no schema
 
@@ -1034,9 +1003,9 @@ function parse_schema_texts(texts: {str: str}) -> Schema?
             .sint64
 
         fallback: Value = if c == model.DOUBLE
-            .double(v: twos.double_of(b))
+            .double(v: numerics.bits_to_f64(b))
         else if c == model.FLOAT
-            .float(v: to_f32(twos.double_of(b)))
+            .float(v: to_f32(numerics.bits_to_f64(b)))
         else if c == model.INT64 || c == model.SINT64 || c == model.SFIXED64
             .int64(v: twos.i64_of(b))
         else if c == model.INT32 || c == model.SINT32 || c == model.SFIXED32
@@ -2653,8 +2622,8 @@ function to_wrapper(v: Value) -> Message?
         .int64 x                                           => x.v == 0
         .uint32 x                                          => x.v == 0
         .uint64 x                                          => x.v == 0
-        .float x                                           => twos.of_float(x.v) == 0
-        .double x                                          => twos.of_double(x.v) == 0
+        .float x                                           => numerics.f32_to_bits(x.v) == 0
+        .double x                                          => numerics.f64_to_bits(x.v) == 0
         .text x                                            => x.v == ""
         .binary x                                          => x.v.len() == 0
         .enumeration _ | .message _ | .list _ | .entries _ => true
@@ -3059,22 +3028,6 @@ test "from_zigzag: three"
 # How long a varint is.
 test "size_of_varint: 300"
     assert size_of_varint(300) == 2
-
-# The bits a `float` field writes for 1.0.
-test "bits_of_float: one"
-    assert bits_of_float(1.0) == 0x3f800000
-
-# The float of those bits.
-test "float_of_bits: one"
-    assert float_of_bits(0x3f800000) == 1.0
-
-# The bits a `double` field writes for 1.0.
-test "bits_of_double: one"
-    assert bits_of_double(1.0) == 0x3ff0000000000000
-
-# The double of those bits.
-test "double_of_bits: one"
-    assert double_of_bits(0x3ff0000000000000) == 1.0
 
 # A message read with no schema: a varint and a string.
 test "decode_raw: two fields"

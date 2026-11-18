@@ -155,7 +155,7 @@ function text(@b: builder.Builder, s: str)
             flush_text(@b)
             b.text_node @ previous
             b.text_pieces @ [b.tree.data[previous]]
-        b.text_pieces @ b.text_pieces.push(s)
+        dom.append(items: @b.text_pieces, item: s)
         return
     flush_text(@b)
     node = dom.add_data(@b.tree, kind: dom.TEXT, data: "")

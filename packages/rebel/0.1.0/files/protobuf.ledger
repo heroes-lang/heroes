@@ -34,11 +34,11 @@ capability wire/fixed  four and eight bytes, the lowest first
   python  -
 
 capability wire/float-bits  a float's and a double's IEEE 754 bits, as a fixed field holds them
-  heroes  protobuf.bits_of_float, protobuf.float_of_bits, protobuf.bits_of_double, protobuf.double_of_bits
+  heroes  numbers.f32_to_bits, numbers.bits_to_f32, numbers.f64_to_bits, numbers.bits_to_f64
   go      -
   rust    -
   python  -
-  note    the language reads no float's own bits, so they are made by exact arithmetic on powers of two; every `nan` is the quiet one, `0x7fc00000` and `0x7ff8000000000000`, its payload not kept (Python's `struct` gave every expected value)
+  note    `numbers`' since 2026-11-18, where this package's own four, `bits_of_float`, `float_of_bits`, `bits_of_double` and `double_of_bits`, moved so that `sql/mysql` and every other reader of a binary format share one (README A5); the same answers: exact arithmetic on powers of two, every `nan` the quiet one, `0x7fc00000` and `0x7ff8000000000000`, its sign and payload not kept, since the language reads neither
 
 capability wire/tag  a field's tag written and read: its number and its wire type
   heroes  protobuf.push_tag, protobuf.decode_tag, protobuf.WireTag, protobuf.WireType, protobuf.MAX_FIELD_NUMBER

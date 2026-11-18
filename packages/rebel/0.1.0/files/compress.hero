@@ -6,8 +6,12 @@
 #
 # It does not hold many files in one: tar and zip are `archive`'s. It opens
 # no path: `fs.open` answers the stream `reader` and `writer` take. The
-# checksums alone, CRC-32 and Adler-32, are `hash`'s. Other formats, bzip2,
-# LZW, LZMA and Zstandard, are not here.
+# checksums alone, CRC-32 and Adler-32, are `hash`'s. The other formats are
+# subpackages, so only the programs that use one carry it: Zstandard is
+# `compress/zstd`'s, Brotli `compress/brotli`'s, bzip2 `compress/bzip2`'s, xz
+# and LZMA `compress/xz`'s. LZW is in none: each format that uses it fixes its
+# own variant (GIF's codes lowest bit first, PDF's and TIFF's highest first,
+# with an early change), and the package that reads the format holds it.
 #
 # **A compressed input is not trusted.** Every function that decompresses
 # takes a `limit`, the most bytes it may produce, and fails `limit` before

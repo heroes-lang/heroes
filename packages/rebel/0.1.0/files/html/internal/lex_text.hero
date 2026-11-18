@@ -4,6 +4,7 @@
 # or switches to a state that will; a run of ordinary bytes is read at once.
 
 use html/internal/ascii
+use html/internal/dom
 use html/internal/lexer
 use html/internal/token
 use unicode
@@ -145,7 +146,7 @@ function tag_name(@lx: lexer.Lexer)
         lexer.emit_tag(@lx)
     else if b == 0
         lexer.error_here(@lx, "unexpected-null-character")
-        lx.name @ lx.name.push(unicode.REPLACEMENT_CHARACTER)
+        dom.append(items: @lx.name, item: unicode.REPLACEMENT_CHARACTER)
         lx.at @ lx.at + 1
     else
         end: i64 @= lx.at
@@ -153,7 +154,7 @@ function tag_name(@lx: lexer.Lexer)
         while end < lx.text.len() && !ascii.is_white(lx.text[end]) && lx.text[end] != '/' && lx.text[end] != '>' && lx.text[end] != 0
             end @ end + 1
 
-        lx.name @ lx.name.push(lexer.take(@lx, end: end, lower: true))
+        dom.append(items: @lx.name, item: lexer.take(@lx, end: end, lower: true))
 
 # 13.2.5.9 and 13.2.5.12: RCDATA's and RAWTEXT's `<`.
 function raw_less_than(@lx: lexer.Lexer)
@@ -194,8 +195,8 @@ function raw_end_tag_name(@lx: lexer.Lexer)
                 end @ end + 1
 
             written = lexer.take(@lx, end: end, lower: false)
-            lx.name @ lx.name.push(ascii.to_lower(written))
-            lx.temp @ lx.temp.push(written)
+            dom.append(items: @lx.name, item: ascii.to_lower(written))
+            dom.append(items: @lx.temp, item: written)
             return
 
         if (ascii.is_white(b) || b == '/' || b == '>') && lexer.is_appropriate(lx)

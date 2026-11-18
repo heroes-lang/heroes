@@ -1299,6 +1299,13 @@ test "parse: the standard's 13.2.10.6, unclosed formatting elements reopened, th
     third = "<p><b class=\"x\"><b><b class=\"x\"><b class=\"x\"><b><b><b class=\"x\"><b>X\n</b></b></b></b></b></b></b></b></p>"
     assert format(parse(text)) == "<!DOCTYPE html><html><head></head><body>" + first + second + third + "<p>X\n</p></body></html>"
 
+test "parse: the earliest of three alike taken out where it stood, and the rest reopened in order around it, as Go's x/net/html reads them"
+    first = "<p><b>1<b>2<b>3<i>4<b>5</b></i></b></b></b></p><b><b><i><b>6</b></i></b></b>"
+    assert format(parse("<p><b>1<b>2<b>3<i>4<b>5</p>6")) == "<html><head></head><body>" + first + "</body></html>"
+    open = "<p><b id=\"1\">1<b id=\"1\">2<b id=\"1\">3<b id=\"2\">4<b id=\"1\">5</b></b></b></b></b></p>"
+    again = "<b id=\"1\"><b id=\"1\"><b id=\"2\"><b id=\"1\">6</b></b></b></b>"
+    assert format(parse("<p><b id=1>1<b id=1>2<b id=1>3<b id=2>4<b id=1>5</p>6")) == "<html><head></head><body>" + open + again + "</body></html>"
+
 test "parse: the head's elements, a title's text, and text after them opening the body"
     want = [
         "| <html>"
@@ -1451,6 +1458,32 @@ test "parse: a hundred thousand elements deep read flat past 512, compared and w
     all_nodes = descendants(doc, ROOT)
     assert all_nodes.len() == 100004 && ancestors(doc, all_nodes[all_nodes.len() - 1]).len() <= DEFAULT_MAX_DEPTH + 3
     assert doc == parse(text) && format(doc).len() > 1000000
+
+# Each of these took time growing with the square of its size until
+# 2026-11-18, a list growing through a record's field copied whole at every
+# piece, each error's column counted from its line's start, each attribute
+# looked for in a walk of the tag's: a quarter of a megabyte of references
+# took 25.7 s to read, and of stray end tags on one line more than 60 s. Read
+# in time linear in the text, the whole test runs in under a second.
+test "parse_fragment: a hundred thousand references in one text, one value and one comment, a hundred thousand errors on one line, ten thousand attributes, read in time linear in the text"
+    references = parse_fragment(text: repeat("&amp;", 100000), context: "div")
+    assert text_of(references, ROOT) == repeat("&", 100000)
+    valued = parse_fragment(text: "<a title=\"" + repeat("&lt;", 100000) + "\">", context: "div")
+    assert attributes_of(valued, select(valued, ROOT, "a").must())[0].value == repeat("<", 100000)
+    commented = parse_fragment(text: "<!--" + repeat("a<", 100000) + "-->", context: "div")
+    assert node_of(commented, first_child(commented, ROOT).must()) == .comment(v: repeat("a<", 100000))
+    options: ParseOptions @= default_options()
+    options.context @ "div"
+    errors = parse_with(repeat("</x>", 100000), options).must().errors
+    assert errors.len() == 100000 && errors[99999].line == 1 && errors[99999].column == 399997
+    names: [str] @= []
+
+    for i in range(from: 0, to: 10000)
+        names @ names.push(f"a{i}=v")
+
+    many = parse_with("<p " + names.join(" ") + " a0=w>", options).must()
+    assert attributes_of(many.document, select(many.document, ROOT, "p").must()).len() == 10000
+    assert many.errors.len() == 1 && many.errors[0].code == "duplicate-attribute"
 
 test "parse: every truncated and twisted form ends with a tree and no guard firing"
     for text in ["<", "</", "<!", "<!-", "<!--", "<?", "<a", "<a b='", "<table><tr><td><table><tr><td></table>", "<frameset></frameset><p>", "<math><mi><svg><foreignObject><p></math>", "</html><p>", "<template><template><tr></template>", "<select><select><input>", "<body><body foo=1><html bar=2>", "a&#x110000;&#xD800;&#128;&nbsp", "<b><table><b></table></b>", "<plaintext></plaintext>", "<svg><script>a</script><desc><b></svg>", "<a><b><c><d><e><f><g><a>", "<p><table></p>"]

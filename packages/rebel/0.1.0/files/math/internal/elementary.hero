@@ -1,5 +1,6 @@
 # Powers, roots, exponentials and logarithms of floats, each C's own function
-# but `log` in any base, which is two of them.
+# but `log` in any base, which is two of them, and `cbrt`, C's root corrected
+# by one exact Newton step.
 #
 # The tests hold an edge (a zero, an infinity, a nan, an exact power) to the
 # bit, and a value inside the range to within two units of the last place of
@@ -17,11 +18,28 @@ use math/libm
 function sqrt(x: f64) -> f64
     return libm.c_sqrt(x)
 
-# The cube root of `x`.
+# The cube root of `x`, within a hair over half a unit in the last place on
+# every platform: C's own root, which the C libraries round differently
+# (glibc 2.41 answers -3.0000000000000004 for -27, and misses the nearest float
+# on about half of all inputs; Apple's on about one in thirteen), corrected by
+# one Newton step whose residual `x - r^3` is computed exactly by fused
+# multiply-adds. `x` is first brought near 1 by a power of 8, exactly, so no
+# step overflows or underflows, and that power's cube root is put back after,
+# exactly, since no cube root of a float is subnormal.
 #
-# - `x`: any float.
+# - `x`: any float; a zero, an infinity and a nan answer themselves.
 function cbrt(x: f64) -> f64
-    return libm.c_cbrt(x)
+    if x == 0.0 || !floats.is_finite(x)
+        return libm.c_cbrt(x)
+    thirds = parts.scaled_exponent(x) / 3
+    near = parts.scale(x: x, exponent: -3 * thirds)
+    root = libm.c_cbrt(near)
+    square = root * root
+    square_error = parts.mul_add(x: root, times: root, plus: -square)
+    cube = square * root
+    cube_error = parts.mul_add(x: square, times: root, plus: -cube)
+    residual = near - cube - cube_error - square_error * root
+    return parts.scale(x: root + residual / (3.0 * square), exponent: thirds)
 
 # The hypotenuse of the sides `x` and `y`.
 #
@@ -101,7 +119,30 @@ test "cbrt: a negative cube, minus zero, minus infinity, an irrational root"
     assert cbrt(-27.0) == -3.0
     assert floats.has_minus_sign(cbrt(-0.0))
     assert cbrt(-limits.INF) == -limits.INF
-    assert parts.within_ulps(x: cbrt(2.0), expected: 1.2599210498948732, ulps: 2.0)
+    assert floats.is_nan(cbrt(limits.NAN))
+    assert cbrt(2.0) == 1.2599210498948732
+
+# The roots are the nearest floats to the true ones, asked of mpmath 1.4.1 at
+# 300 bits on 2026-11-18; glibc 2.41's `cbrt` answered 2,264 of the 6,000
+# cubes one unit off, and the root of 802.52... and of the smallest float too,
+# Apple's the root of -10.64..., both the root of -993.16... (measured in the
+# Linux arm64 container and on this Mac, 2026-11-18).
+test "cbrt: every perfect cube to 3000 cubed of either sign, exactly, the cubes moved by powers of 8 to the ends of the range, roots the C libraries miss"
+    k @= -3000
+
+    while k <= 3000
+        if k != 0
+            whole = to_f64(k)
+            assert cbrt(to_f64(k * k * k)) == whole
+            assert cbrt(parts.scale(x: to_f64(k * k * k), exponent: -1020)) == parts.scale(x: whole, exponent: -340)
+            assert cbrt(parts.scale(x: to_f64(k * k * k), exponent: 900)) == parts.scale(x: whole, exponent: 300)
+        k @ k + 1
+
+    assert cbrt(802.5237866660932) == 9.292929403034453
+    assert cbrt(-10.64661587338071) == -2.1999046703445226
+    assert cbrt(-993.1640292820474) == -9.97716131007371
+    assert cbrt(limits.SMALLEST_F64) == 0.0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000017031839360032603
+    assert cbrt(limits.MAX_F64) == 5643803094122362000000000000000000000000000000000000000000000000000000000000000000000000000000000000000.0
 
 test "hypot: an infinity beside a nan, a nan beside a number, 3-4-5, the largest twice, minus infinity"
     assert hypot(x: limits.INF, y: limits.NAN) == limits.INF

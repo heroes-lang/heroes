@@ -179,6 +179,7 @@ capability power/cbrt  the cube root
   go      Cbrt
   rust    f64::cbrt
   python  cbrt
+  note    the C library's root corrected by one Newton step whose residual is taken exactly by `fma`, so the answer is within a hair over half a unit of the true root on every platform (repaired 2026-11-18): glibc 2.41's `cbrt` answered -3.0000000000000004 for -27 in the Linux arm64 container, missed 2,264 of the 6,000 perfect cubes to 3000 cubed and the nearest float on 19,929 of 40,000 random inputs; Apple's missed no cube and 3,054 of the same inputs; the corrected root missed none on either, mpmath at 300 bits the oracle. C11 leaves the accuracy of `cbrt` to the implementation (5.2.4.2.2), so both libraries conform; the true root rounded once is the answer taken
 
 capability power/hypot  the length of the longest side of a right triangle, with no overflow on the way
   heroes  math.hypot
@@ -290,7 +291,7 @@ capability float/bits  a float's bits as an integer and back, and the order that
   go      Float64bits, Float64frombits, Float32bits, Float32frombits
   rust    f64::to_bits, from_bits, to_be_bytes, to_le_bytes, to_ne_bytes, from_be_bytes, from_le_bytes, from_ne_bytes, total_cmp, EXPONENT_MASK, MANTISSA_MASK, SIGN_MASK
   python  -
-  note    `math.h` gives no door from a float to its bits: it needs a function of the language's own C beside the runtime, and what `frexp` could rebuild loses a nan's payload, so nothing is faked
+  note    `math.h` gives no door from a float to its bits: it needs a function of the language's own C beside the runtime, and what `frexp` could rebuild loses a nan's payload, so nothing is faked. Since 2026-11-18 the bits of every float but a NaN are `numbers.f64_to_bits`, `numbers.bits_to_f64`, `numbers.f32_to_bits` and `numbers.bits_to_f32`, by exact arithmetic; a NaN's sign and payload, and the total order that ranks NaNs by them, wait for that door
 
 capability float/rem  the remainder of a float division, with the sign of the dividend
   heroes  built-in %
@@ -596,7 +597,7 @@ capability complex/sqrt-and-pow  the square root and the powers
   python  cmath.sqrt, complex.__pow__, __rpow__, pow
   odin    cmplx.sqrt, cmplx.pow
   zig     std.math.complex.sqrt, pow
-  note    a whole real exponent from -100 to 100 is multiplied out, as Python does, so `(1 + 1i)^2` is exactly `2i` where C's `cpow` answers `2^-53 + 2i` on this machine; held to the exact power within `4 |n|` units in the last place. Zero to a power is 1 for a zero exponent (Python's, where C's `cpow(0, 0)` is a nan), zero for a positive real part, `inf + nan i` for a negative one and a nan for an imaginary one, where Python raises
+  note    a whole real exponent below 2 to the 63rd in size is multiplied out by squaring, each product held near 1 by a power of two kept apart, so `(1 + 1i)^2` is exactly `2i` where C's `cpow` answers `2^-53 + 2i` on this machine, and only correctly rounded operations are taken, so the answer is the same on every platform; Python multiplies out only to 100, and this function did so until 2026-11-18, when the Linux arm64 container answered the powers at 101 up to 121 units of their last place away from this Mac's: the polar form there goes through `pow`, `atan2`, `cos` and `sin`, which glibc and Apple round differently, and was 24 to 77 units of the size's last place from the true power on both, where squaring is 1.5 to 34. The generated test holds every power to the true one, mpmath at 600 bits, within `4 |n|` units of the last place of its size for a whole `n` and 4 for any other exponent (3 at most measured on either platform). Zero to a power is 1 for a zero exponent (Python's, where C's `cpow(0, 0)` is a nan), zero for a positive real part, `inf + nan i` for a negative one and a nan for an imaginary one, where Python raises
 
 capability complex/trigonometry  the sine, the cosine and the tangent
   heroes  math.sin_complex, math.cos_complex, math.tan_complex

@@ -1,9 +1,7 @@
 # The bits of numbers as the wire holds them: an `i64` and a `u64` read as the
-# same 64 bits in two's complement, the low 32 bits of a varint, and the
-# IEEE 754 bits of a float and a double, made by exact arithmetic on powers of
-# two since the language reads no float's own bits.
-
-use math
+# same 64 bits in two's complement, and the low 32 bits of a varint. A float's
+# and a double's IEEE 754 bits are `numbers`' (`numbers.f32_to_bits`,
+# `numbers.f64_to_bits` and back) since 2026-11-18.
 
 # 2^63, the sign bit of a `u64` read as an `i64`.
 constant SIGN_64: u64
@@ -12,18 +10,6 @@ constant SIGN_64: u64
 # 2^32.
 constant SPAN_32: u64
     4294967296
-
-# 2^64 as a double, a step that loses no bit.
-constant STEP_UP: f64
-    18446744073709551616.0
-
-# 2^52, the place of a double's lowest fraction bit above 1.
-constant FRACTION_64: f64
-    4503599627370496.0
-
-# 2^23, the same for a float.
-constant FRACTION_32: f64
-    8388608.0
 
 # The 64 bits of `n`, read as a `u64`.
 function u64_of(n: i64) -> u64
@@ -66,162 +52,6 @@ function unzigzag(v: u64) -> i64
         return half
     return -1 - half
 
-# `x` times 2 to the `power`, one exact step after another.
-function scaled(x: f64, power: i64) -> f64
-    y: f64 @= x
-    left: i64 @= power
-
-    while left >= 64
-        y @ y * STEP_UP
-        left @ left - 64
-
-    while left <= -64
-        y @ y / STEP_UP
-        left @ left + 64
-
-    while left > 0
-        y @ y * 2.0
-        left @ left - 1
-
-    while left < 0
-        y @ y / 2.0
-        left @ left + 1
-
-    return y
-
-# The exponent `e` of a finite `a` above zero, 2^e <= a < 2^(e+1).
-function exponent_of(a: f64) -> i64
-    e: i64 @= 0
-    y: f64 @= a
-
-    while y >= STEP_UP
-        y @ y / STEP_UP
-        e @ e + 64
-
-    while y >= 2.0
-        y @ y / 2.0
-        e @ e + 1
-
-    while y < 1.0 / STEP_UP
-        y @ y * STEP_UP
-        e @ e - 64
-
-    while y < 1.0
-        y @ y * 2.0
-        e @ e - 1
-
-    return e
-
-# Whether `x` is a negative number, `-0.0` included.
-function is_negative(x: f64) -> bool
-    return x < 0.0 || x == 0.0 && 1.0 / x < 0.0
-
-# The bits of the double `x`; every `nan` is `0x7ff8000000000000`.
-function of_double(x: f64) -> u64
-    if x != x
-        return 9221120237041090560
-
-    sign: u64 = if is_negative(x)
-        SIGN_64
-    else
-        0
-
-    a = if x < 0.0
-        -x
-    else
-        x
-
-    if a == math.INF
-        return sign + 9218868437227405312
-
-    if a == 0.0
-        return sign
-    e = exponent_of(a)
-
-    if e < -1022
-        return sign + to_u64(to_i64(scaled(x: a, power: 1074)).must()).must()
-    fraction = to_u64(to_i64(scaled(x: a, power: 0 - e) * FRACTION_64 - FRACTION_64).must()).must()
-    return sign + to_u64(e + 1023).must() * 4503599627370496 + fraction
-
-# The double whose bits are `v`.
-function double_of(v: u64) -> f64
-    negative = v >= SIGN_64
-
-    rest = if negative
-        v - SIGN_64
-    else
-        v
-    exp = to_i64(rest / 4503599627370496).must()
-    fraction = to_f64(to_i64(rest % 4503599627370496).must())
-    a: f64 @= 0.0
-
-    if exp == 2047
-        if fraction != 0.0
-            return math.NAN
-        a @ math.INF
-    else if exp == 0
-        a @ scaled(x: fraction, power: -1074)
-    else
-        a @ scaled(x: fraction + FRACTION_64, power: exp - 1075)
-
-    if negative
-        return -a
-    return a
-
-# The bits of the float `x`; every `nan` is `0x7fc00000`.
-function of_float(x: f32) -> u32
-    w = to_f64(x)
-
-    if w != w
-        return 2143289344
-
-    sign: u32 = if is_negative(w)
-        2147483648
-    else
-        0
-
-    a = if w < 0.0
-        -w
-    else
-        w
-
-    if a == math.INF
-        return sign + 2139095040
-
-    if a == 0.0
-        return sign
-    e = exponent_of(a)
-
-    if e < -126
-        return sign + to_u32(to_i64(scaled(x: a, power: 149)).must()).must()
-    fraction = to_u32(to_i64(scaled(x: a, power: 0 - e) * FRACTION_32 - FRACTION_32).must()).must()
-    return sign + to_u32(e + 127).must() * 8388608 + fraction
-
-# The float whose bits are `v`.
-function float_of(v: u32) -> f32
-    negative = v >= 2147483648
-
-    rest = if negative
-        v - 2147483648
-    else
-        v
-    exp = to_i64(rest / 8388608).must()
-    fraction = to_f64(to_i64(rest % 8388608).must())
-    a: f64 @= 0.0
-
-    if exp == 255
-        if fraction != 0.0
-            return to_f32(math.NAN)
-        a @ math.INF
-    else if exp == 0
-        a @ scaled(x: fraction, power: -149)
-    else
-        a @ scaled(x: fraction + FRACTION_32, power: exp - 150)
-
-    if negative
-        return to_f32(-a)
-    return to_f32(a)
-
 test "u64_of and i64_of: zero, one, minus one, and both ends of an i64"
     assert u64_of(0) == 0 && u64_of(-1) == 18446744073709551615
     assert u64_of(-9223372036854775808) == 9223372036854775808
@@ -237,24 +67,3 @@ test "zigzag and unzigzag: as Go's protowire answers, both ends included"
     assert zigzag(9223372036854775807) == 18446744073709551614
     assert zigzag(-9223372036854775808) == 18446744073709551615
     assert unzigzag(18446744073709551615) == -9223372036854775808 && unzigzag(3) == -2
-
-test "of_double and double_of: zero, minus zero, one, a subnormal, the largest, the infinities, nan"
-    assert of_double(0.0) == 0 && of_double(-0.0) == 9223372036854775808
-    assert of_double(1.0) == 4607182418800017408 && of_double(-2.5) == 13836183955189006336
-    assert of_double(math.SMALLEST_F64) == 1 && of_double(math.MAX_F64) == 9218868437227405311
-    assert of_double(math.INF) == 9218868437227405312 && of_double(math.NAN) == 9221120237041090560
-    assert of_double(math.SMALLEST_NORMAL_F64) == 4503599627370496
-    assert double_of(4607182418800017408) == 1.0 && double_of(1) == math.SMALLEST_F64
-    assert double_of(13836183955189006336) == -2.5 && double_of(9218868437227405311) == math.MAX_F64
-    assert is_negative(double_of(9223372036854775808))
-    nan = double_of(9221120237041090561)
-    assert nan != nan
-
-test "of_float and float_of: zero, one, a subnormal, the largest, an infinity, nan"
-    assert of_float(0.0) == 0 && of_float(-0.0) == 2147483648
-    assert of_float(1.0) == 1065353216 && of_float(-1.5) == 3217031168
-    assert of_float(math.SMALLEST_F32) == 1 && of_float(math.MAX_F32) == 2139095039
-    assert of_float(to_f32(math.INF)) == 2139095040 && of_float(to_f32(math.NAN)) == 2143289344
-    assert float_of(1065353216) == 1.0 && float_of(1) == math.SMALLEST_F32
-    assert float_of(3217031168) == -1.5 && float_of(2139095039) == math.MAX_F32
-    assert to_f64(float_of(4286578688)) == -math.INF

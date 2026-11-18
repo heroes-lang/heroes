@@ -178,12 +178,19 @@ capability compress/seek  a position in the decompressed bytes
   python  GzipFile.seek, GzipFile.tell, GzipFile.rewind, GzipFile.seekable
   note    -
 
-capability compress/other-formats  bzip2, LZW, LZMA, Zstandard
-  heroes  refused: not DEFLATE; this package is DEFLATE and its two wrappers (README A1)
-  go      compress/bzip2, bzip2.NewReader, bzip2.StructuralError, compress/lzw, lzw.NewReader, lzw.NewWriter, lzw.Order, lzw.LSB, lzw.MSB, lzw.Reader, lzw.Writer
+capability compress/other-formats  bzip2, LZMA and xz, Zstandard, Brotli
+  heroes  compress/zstd.compress, compress/zstd.decompress, compress/brotli.compress, compress/brotli.decompress, compress/bzip2.compress, compress/bzip2.decompress, compress/xz.compress, compress/xz.decompress, compress/xz.compress_lzma, compress/xz.decompress_lzma
+  go      compress/bzip2, bzip2.NewReader, bzip2.StructuralError
   rust    -
   python  bz2, lzma, compression.bz2, compression.lzma, compression.zstd
-  note    -
+  note    four subpackages, so only the programs that use one carry it (README A2); each has its own ledger, `compress/zstd.ledger`, `compress/brotli.ledger`, `compress/bzip2.ledger` and `compress/xz.ledger`, which name the entries of Go's `compress/bzip2` and of Python's `bz2`, `lzma` and `compression.zstd` block by block. Until 2026-11-18 this block was refused, "not DEFLATE"
+
+capability compress/lzw  LZW, compressed and decompressed
+  heroes  refused: LZW is a family whose variants each format fixes (GIF's codes lowest bit first, PDF's and TIFF's highest first, with an early change, as Go's `lzw.LSB` and `lzw.MSB` name two of them), and no format a Rebel package reads needs it apart from the package that reads the format, which holds its own variant; README A1 lists no `compress/lzw`
+  go      compress/lzw, lzw.NewReader, lzw.NewWriter, lzw.Order, lzw.LSB, lzw.MSB, lzw.Reader, lzw.Writer
+  rust    -
+  python  -
+  note    Unix `compress`'s `.Z` files are LZW too, and no package here reads them
 
 dropped
   go      flate.Writer.Reset, zlib.Writer.Reset, gzip.Writer.Reset, gzip.Reader.Reset, flate.Resetter, zlib.Resetter: reusing a writer's or reader's memory for another stream; here a new one is made

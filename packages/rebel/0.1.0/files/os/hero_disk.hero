@@ -128,6 +128,9 @@ extern "hero_os.h"
     # `.exe` on Windows alone: how a test of round 3 knows the platform whose
     # answers differ.
     function hero_run_exe_suffix() -> str
+    # This process's number, which names a test's folder in the system's
+    # temporary folder, so two runs at once never share it.
+    function hero_os_pid() -> i64
 
 # How many facts there are about what `path` names, the link itself where it
 # is one, or -1, `HERO_DISK_NOT_FOUND` where nothing is there. It fills the
@@ -187,7 +190,10 @@ function link_target(path: str, @buffer: [u8], n: u64) -> i64
 
 # 0 once the last write and the last read of what `path` names, links
 # followed, are the times given, or -1. Each is in nanoseconds since 1970
-# UTC, as `facts` gives them, and kept as fine as the volume keeps them.
+# UTC, as `facts` gives them, and kept as fine as the volume keeps them:
+# every nanosecond on APFS and on a Linux container's own volume, rounded
+# down to 100 ns on Windows, the whole second on Docker Desktop's share of a
+# folder of a Mac.
 function set_times(path: str, written: i64, read: i64) -> i64
     return hero_disk_set_times(path.cstr(), written: written, read: read)
 
@@ -351,6 +357,18 @@ function map_close(@m: Mapping) -> i64
 # run from, made new: what an earlier run left of `holds` is removed first.
 function test_folder(name: str, holds: [str]) -> str
     dir = "build/rebel-disk-" + name
+    test_clear(dir, holds: holds)
+    assert make_folder(dir, permission: 0o755) == 0
+    return dir
+
+# The folder a test works in inside the system's temporary folder, named for
+# this process and made new: what an earlier run left of `holds` is removed
+# first.
+function test_temp_folder(name: str, holds: [str]) -> str
+    room: [u8] @= []
+    need = temp_folder(@room, n: 0)
+    assert need > 0 && temp_folder(@room, n: need.to_u64().must()) == need
+    dir = room.validated_bytes().must() + f"/rebel-disk-{name}-{hero_os_pid()}"
     test_clear(dir, holds: holds)
     assert make_folder(dir, permission: 0o755) == 0
     return dir
@@ -626,8 +644,16 @@ test "link_target, and facts of a link: the link itself, what it names, one whos
     assert last_error() == HERO_DISK_NOT_FOUND
     test_clear(dir, holds: holds)
 
-test "set_times: the times facts reads back, a time before 1970, and a name not there"
-    dir = test_folder("times", holds: ["f"])
+# A time is kept as fine as the volume keeps it, so the nanosecond is asked
+# of a file in the system's temporary folder, a volume of the system's own on
+# every leg run (the Linux arm64 container's overlay, APFS on the Mac, NTFS's
+# 100 ns on Windows), and the working tree's volume is asked for the whole
+# second alone: Docker Desktop's share of a folder of the Mac keeps no part of
+# a second set on a file already there, by `utimensat`, `futimens`, `utimes`
+# and GNU `touch` alike, where the container's own volume keeps each
+# nanosecond (measured 2026-11-18).
+test "set_times: the nanosecond read back in the temporary folder, a time before 1970, at most the whole second on the working tree's volume, and a name not there"
+    dir = test_temp_folder("times", holds: ["f"])
     assert !write_file(path: dir + "/f", text: "x").is_err()
     assert set_times(dir + "/f", written: 1_500_000_000_123_456_700, read: 1_400_000_000_000_000_000) == 0
     assert test_fact(dir + "/f", place: HERO_DISK_FACT_WRITTEN) == 1_500_000_000_123_456_700
@@ -637,6 +663,13 @@ test "set_times: the times facts reads back, a time before 1970, and a name not 
     assert set_times(dir + "/none", written: 0, read: 0) == -1
     assert last_error() == HERO_DISK_NOT_FOUND
     test_clear(dir, holds: ["f"])
+
+    here = test_folder("times", holds: ["f"])
+    assert !write_file(path: here + "/f", text: "x").is_err()
+    assert set_times(here + "/f", written: 1_500_000_000_123_456_700, read: 1_400_000_000_000_000_000) == 0
+    kept_here = test_fact(here + "/f", place: HERO_DISK_FACT_WRITTEN)
+    assert kept_here >= 1_500_000_000_000_000_000 && kept_here <= 1_500_000_000_123_456_700
+    test_clear(here, holds: ["f"])
 
 test "set_length: shorter, longer with zeros, a folder, a negative length, and a name not there"
     dir = test_folder("length", holds: ["f"])

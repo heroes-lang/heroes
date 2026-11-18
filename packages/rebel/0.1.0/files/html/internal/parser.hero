@@ -170,11 +170,11 @@ function run(text: str, scripting: bool, max_depth: i64, context: str, context_s
     lines: [i64] @= []
     columns: [i64] @= []
     starts = line_starts(input)
+    column_at = columns_at(s: input, starts: starts, places: places)
 
     for place in places
-        line = line_of(starts, place)
-        lines @ lines.push(line + 1)
-        columns @ columns.push(column_of(s: input, from: starts[line], to: place) + 1)
+        lines @ lines.push(line_of(starts, place) + 1)
+        columns @ columns.push(column_at[place].must())
 
     return Result(tree: b.tree, codes: codes, tags: tags, lines: lines, columns: columns, stalls: stalls, stuck: stuck)
 
@@ -202,6 +202,41 @@ function line_of(starts: [i64] lent, at: i64) -> i64
             high @ middle - 1
 
     return low
+
+# The column of each byte index of `places` in `s`, counted in characters
+# from 1 at the start of its line. The places are sorted and walked once from
+# the start of `s`, the count restarting at each line that holds one, so the
+# work is linear in the text and the places together whatever their order;
+# counting each place from its line's start was quadratic on a long line
+# holding many errors (`examples-rebel/README.md` § B1, repaired 2026-11-18).
+#
+# - `s`: the text read.
+# - `starts`: `line_starts(s)`.
+# - `places`: byte indices, in any order, each 0 or more; one past the end of
+#   `s` stands where the end does.
+function columns_at(s: str, starts: [i64] lent, places: [i64] lent) -> {i64: i64}
+    column_at: {i64: i64} @= {}
+    cursor: i64 @= 0
+    count: i64 @= 0
+    line: i64 @= 0
+
+    for place in sort(places)
+        place_line = line_of(starts, place)
+
+        if place_line != line
+            line @ place_line
+            cursor @ starts[place_line]
+            count @ 0
+
+        reached = if place > s.len()
+            s.len()
+        else
+            place
+        count @ count + column_of(s: s, from: cursor, to: reached)
+        cursor @ reached
+        column_at[place] @ count + 1
+
+    return column_at
 
 # How many characters of `s` stand from the byte index `from` to `to`.
 function column_of(s: str, from: i64, to: i64) -> i64

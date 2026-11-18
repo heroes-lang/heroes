@@ -116,7 +116,7 @@ function in_table_text(@b: builder.Builder, t: token.Token lent) -> builder.Step
         kept = body.without_zero(@b, t)
 
         if kept != ""
-            b.pending @ b.pending.push(kept)
+            dom.append(items: @b.pending, item: kept)
         return .done
     s = b.pending.join("")
     b.pending @ []

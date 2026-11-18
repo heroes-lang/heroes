@@ -10,63 +10,146 @@ use html/internal/token
 
 # Puts a marker at the end of the list.
 function push_marker(@b: builder.Builder)
-    put_entry(@b, at: b.formatting_count, entry: builder.MARKER)
+    put_entry(@b, at: b.formatting_count, entry: builder.MARKER, ticket: -1, kind: "")
+    b.markers @ b.markers + 1
 
-# Puts `node` at the end of the list, after dropping the earliest of three
-# alike after the last marker, the Noah's Ark clause.
+# Puts `node` at the end of the list, after taking out the earliest of three
+# alike after the last marker, the Noah's Ark clause. The entries of each
+# kind are kept by number, so no push walks the list: the earliest is found
+# where its number says and left `GONE` in its place, and the list is
+# compacted once those are more than half of it.
 function push_element(@b: builder.Builder, node: i64)
-    alike: i64 @= 0
-    earliest: i64 @= -1
-    i: i64 @= b.formatting_count - 1
+    kind = kind_of(b.tree, node: node, markers: b.markers)
+    none: [i64] = []
+    same: [i64] @= b.alike[kind].default(none)
 
-    while i >= 0 && b.formatting[i] != builder.MARKER
-        if is_alike(b.tree, a: b.formatting[i], b: node)
-            alike @ alike + 1
-            earliest @ i
-        i @ i - 1
+    if same.len() >= 3
+        at = b.slots[same[0]]
+        b.formatting[at] @ builder.GONE
+        b.tickets[at] @ -1
+        b.kinds[at] @ ""
+        b.gone @ b.gone + 1
+        same @ same.slice(from: 1, to: same.len())
+    ticket = fresh_ticket(@b)
+    same @ same.push(ticket)
+    b.alike[kind] @ same
+    put_entry(@b, at: b.formatting_count, entry: node, ticket: ticket, kind: kind)
 
-    if alike >= 3
-        remove_entry(@b, earliest)
-    put_entry(@b, at: b.formatting_count, entry: node)
+    if b.gone > 8 && b.gone * 2 > b.formatting_count
+        compact(@b)
 
-# Whether `a` and `b` have one name, one namespace and the same attributes,
-# whatever their order.
-function is_alike(t: dom.Tree lent, a: i64, b: i64) -> bool
-    if t.names[a] != t.names[b] || t.spaces[a] != t.spaces[b] || t.attributes[a].len() != t.attributes[b].len()
-        return false
+# What makes the element `node` alike to another for the Noah's Ark clause:
+# its name, its namespace and its attributes whatever their order, and the
+# count of markers before it, so that no entry before the last marker is
+# ever alike to one after it. Every part is written with its length, so two
+# kinds are one text only where they are one kind.
+function kind_of(t: dom.Tree lent, node: i64, markers: i64) -> str
+    pieces: [str] @= []
 
-    for x in t.attributes[a]
-        found: bool @= false
+    for a in t.attributes[node]
+        pieces @ pieces.push(f"{a.space} {a.name.len()}:{a.name}{a.value.len()}:{a.value}")
 
-        for y in t.attributes[b]
-            if x == y
-                found @ true
-                break
+    name = t.names[node]
+    return f"{markers} {t.spaces[node]} {name.len()}:{name}" + sort(pieces).join("")
 
-        if !found
-            return false
+# A number no entry has had, its place still to be written.
+function fresh_ticket(@b: builder.Builder) -> i64
+    ticket = b.slots.len()
+    dom.append(items: @b.slots, item: -1)
+    return ticket
 
-    return true
-
-# Puts `entry` into the list at `at`, the entries from `at` moving one later.
-function put_entry(@b: builder.Builder, at: i64, entry: i64)
+# Puts `entry`, numbered `ticket` and of `kind`, into the list at `at`, the
+# entries from `at` moving one later.
+function put_entry(@b: builder.Builder, at: i64, entry: i64, ticket: i64, kind: str)
     if b.formatting_count == b.formatting.len()
         dom.append(items: @b.formatting, item: entry)
+        dom.append(items: @b.tickets, item: ticket)
+        dom.append(items: @b.kinds, item: kind)
     i: i64 @= b.formatting_count
 
     while i > at
-        b.formatting[i] @ b.formatting[i - 1]
+        place(@b, from: i - 1, to: i)
         i @ i - 1
 
     b.formatting[at] @ entry
+    b.tickets[at] @ ticket
+    b.kinds[at] @ kind
+
+    if ticket >= 0
+        b.slots[ticket] @ at
     b.formatting_count @ b.formatting_count + 1
 
-# Takes the entry at `at` out of the list.
+# Moves the entry at `from` to `to`, with its number and its kind.
+function place(@b: builder.Builder, from: i64, to: i64)
+    ticket = b.tickets[from]
+    b.formatting[to] @ b.formatting[from]
+    b.tickets[to] @ ticket
+    b.kinds[to] @ b.kinds[from]
+
+    if ticket >= 0
+        b.slots[ticket] @ to
+
+# Takes the entry at `at` out of the list, and out of its kind's.
 function remove_entry(@b: builder.Builder, at: i64)
-    for i in range(from: at, to: b.formatting_count - 1)
-        b.formatting[i] @ b.formatting[i + 1]
+    entry = b.formatting[at]
+
+    if entry == builder.GONE
+        b.gone @ b.gone - 1
+    else if entry == builder.MARKER
+        b.markers @ b.markers - 1
+    else
+        forget(@b, kind: b.kinds[at], ticket: b.tickets[at])
+    i: i64 @= at
+
+    while i < b.formatting_count - 1
+        place(@b, from: i + 1, to: i)
+        i @ i + 1
 
     b.formatting_count @ b.formatting_count - 1
+
+# Takes the number `ticket` out of the entries of `kind`.
+function forget(@b: builder.Builder, kind: str, ticket: i64)
+    none: [i64] = []
+    kept: [i64] @= []
+
+    for t in b.alike[kind].default(none)
+        if t != ticket
+            kept @ kept.push(t)
+
+    b.alike[kind] @ kept
+
+# Puts the number `ticket` among the entries of `kind`, in the list's order.
+function remember(@b: builder.Builder, kind: str, ticket: i64)
+    none: [i64] = []
+    placed: [i64] @= []
+    put: bool @= false
+
+    for t in b.alike[kind].default(none)
+        if !put && b.slots[t] > b.slots[ticket]
+            placed @ placed.push(ticket)
+            put @ true
+        placed @ placed.push(t)
+
+    if !put
+        placed @ placed.push(ticket)
+    b.alike[kind] @ placed
+
+# Takes the `GONE` entries out of the list, the others keeping their order.
+# It runs once they are more than half of it, so each walk is paid for by
+# the pushes that left them.
+function compact(@b: builder.Builder)
+    kept: i64 @= 0
+    at: i64 @= 0
+
+    while at < b.formatting_count
+        if b.formatting[at] != builder.GONE
+            if kept != at
+                place(@b, from: at, to: kept)
+            kept @ kept + 1
+        at @ at + 1
+
+    b.formatting_count @ kept
+    b.gone @ 0
 
 # The index of `node` in the list, or -1.
 function index_of_entry(b: builder.Builder lent, node: i64) -> i64
@@ -85,7 +168,7 @@ function last_named(b: builder.Builder lent, name: str) -> i64
     i: i64 @= b.formatting_count - 1
 
     while i >= 0 && b.formatting[i] != builder.MARKER
-        if dom.is_html(b.tree, b.formatting[i], name)
+        if b.formatting[i] != builder.GONE && dom.is_html(b.tree, b.formatting[i], name)
             return i
         i @ i - 1
 
@@ -95,40 +178,53 @@ function last_named(b: builder.Builder lent, name: str) -> i64
 function clear_to_marker(@b: builder.Builder)
     while b.formatting_count > 0
         b.formatting_count @ b.formatting_count - 1
+        at = b.formatting_count
+        entry = b.formatting[at]
 
-        if b.formatting[b.formatting_count] == builder.MARKER
+        if entry == builder.MARKER
+            b.markers @ b.markers - 1
             return
+
+        if entry == builder.GONE
+            b.gone @ b.gone - 1
+        else
+            forget(@b, kind: b.kinds[at], ticket: b.tickets[at])
 
 # A new HTML element like `node`, its name and attributes, held by nothing.
 function copy_of(@b: builder.Builder, node: i64) -> i64
     return insert.create(@b, space: dom.HTML, name: b.tree.names[node], attributes: b.tree.attributes[node])
 
+# Whether the entry `entry` stops reconstruction's rewind: a marker, or an
+# element open on the stack. A `GONE` entry does not.
+function stops_rewind(b: builder.Builder lent, entry: i64) -> bool
+    return entry == builder.MARKER || entry != builder.GONE && builder.index_in_stack(b, entry) >= 0
+
 # Reconstructs the active formatting elements: every entry after the last
-# marker that is not open is opened again, in order.
+# marker that is not open is opened again, in order, an entry `GONE` passed
+# over. A copy takes its entry's place, number and kind.
 function reconstruct(@b: builder.Builder)
-    if b.formatting_count == 0
+    last: i64 @= b.formatting_count - 1
+
+    while last >= 0 && b.formatting[last] == builder.GONE
+        last @ last - 1
+
+    if last < 0 || stops_rewind(b, b.formatting[last])
         return
-    last = b.formatting[b.formatting_count - 1]
+    at: i64 @= last
 
-    if last == builder.MARKER || builder.index_in_stack(b, last) >= 0
-        return
-    at: i64 @= b.formatting_count - 1
-
-    while at > 0
-        entry = b.formatting[at - 1]
-
-        if entry == builder.MARKER || builder.index_in_stack(b, entry) >= 0
-            break
+    while at > 0 && !stops_rewind(b, b.formatting[at - 1])
         at @ at - 1
 
     while at < b.formatting_count
         entry = b.formatting[at]
-        made = insert.element_for(
-            @b,
-            token.tag(kind: token.START, name: b.tree.names[entry], attributes: b.tree.attributes[entry], at: 0),
-            dom.HTML
-        )
-        b.formatting[at] @ made
+
+        if entry != builder.GONE
+            made = insert.element_for(
+                @b,
+                token.tag(kind: token.START, name: b.tree.names[entry], attributes: b.tree.attributes[entry], at: 0),
+                dom.HTML
+            )
+            b.formatting[at] @ made
         at @ at + 1
 
 # Puts `node` into the stack at `at`, the entries from `at` moving one up.
@@ -238,11 +334,14 @@ function adopt(@b: builder.Builder, t: token.Token lent) -> bool
 
         dom.append_child(@b.tree, parent: block, child: made)
         old = index_of_entry(b, element)
+        kind = b.kinds[old]
         remove_entry(@b, old)
 
         if old < bookmark
             bookmark @ bookmark - 1
-        put_entry(@b, at: bookmark, entry: made)
+        ticket = fresh_ticket(@b)
+        put_entry(@b, at: bookmark, entry: made, ticket: ticket, kind: kind)
+        remember(@b, kind: kind, ticket: ticket)
         builder.remove_from_stack(@b, element)
         insert_in_stack(@b, at: builder.index_in_stack(b, block) + 1, node: made)
 
@@ -250,7 +349,18 @@ function adopt(@b: builder.Builder, t: token.Token lent) -> bool
 
 ## Tests
 
-test "push_element: the fourth of three alike after the last marker drops the earliest"
+# The entries of the list in order, those taken out left out: the list as
+# the standard reads it.
+function live(b: builder.Builder lent) -> [i64]
+    held: [i64] @= []
+
+    for at in range(from: 0, to: b.formatting_count)
+        if b.formatting[at] != builder.GONE
+            held @ held.push(b.formatting[at])
+
+    return held
+
+test "push_element: the fourth of three alike after the last marker drops the earliest, a cleared marker's kinds forgotten"
     b: builder.Builder @= builder.start(scripting: true, max_depth: 512)
     nodes: [i64] @= []
 
@@ -260,14 +370,76 @@ test "push_element: the fourth of three alike after the last marker drops the ea
     for n in nodes
         push_element(@b, n)
 
-    assert b.formatting_count == 3 && b.formatting[0] == nodes[1]
+    assert live(b) == [nodes[1], nodes[2], nodes[3]]
     push_marker(@b)
     push_element(@b, nodes[0])
-    assert b.formatting_count == 5 && b.formatting[4] == nodes[0]
+    assert live(b) == [nodes[1], nodes[2], nodes[3], builder.MARKER, nodes[0]]
     clear_to_marker(@b)
-    assert b.formatting_count == 3
+    assert live(b) == [nodes[1], nodes[2], nodes[3]]
 
-test "is_alike: attributes in another order alike, another value not"
+    # A new marker counts none of the last one's, and the outer three stay
+    # three.
+    push_marker(@b)
+    inner: [i64] @= []
+
+    for _ in range(from: 0, to: 3)
+        inner @ inner.push(insert.create(@b, space: dom.HTML, name: "b", attributes: []))
+
+    for n in inner
+        push_element(@b, n)
+
+    assert live(b) == [nodes[1], nodes[2], nodes[3], builder.MARKER, inner[0], inner[1], inner[2]]
+    clear_to_marker(@b)
+    fifth = insert.create(@b, space: dom.HTML, name: "b", attributes: [])
+    push_element(@b, fifth)
+    assert live(b) == [nodes[2], nodes[3], fifth]
+
+test "push_element: the earliest far back taken out where it stands, nothing moved, and the list compacted once half of it is gone"
+    b: builder.Builder @= builder.start(scripting: true, max_depth: 512)
+    first: [i64] @= []
+
+    for _ in range(from: 0, to: 3)
+        n = insert.create(@b, space: dom.HTML, name: "i", attributes: [])
+        first @ first.push(n)
+        push_element(@b, n)
+
+    others: [i64] @= []
+
+    for k in range(from: 0, to: 20)
+        n = insert.create(
+            @b,
+            space: dom.HTML,
+            name: "b",
+            attributes: [dom.Attr(space: dom.NO_SPACE, name: "id", value: f"{k}")]
+        )
+        others @ others.push(n)
+        push_element(@b, n)
+
+    fourth = insert.create(@b, space: dom.HTML, name: "i", attributes: [])
+    push_element(@b, fourth)
+    assert b.formatting[0] == builder.GONE && b.formatting[1] == first[1] && b.formatting[3] == others[0]
+    wanted: [i64] @= [first[1], first[2]]
+
+    for n in others
+        wanted @ wanted.push(n)
+
+    assert live(b) == wanted.push(fourth)
+    last: [i64] @= []
+
+    for _ in range(from: 0, to: 30)
+        n = insert.create(@b, space: dom.HTML, name: "i", attributes: [])
+        last @ last.push(n)
+        push_element(@b, n)
+
+    after: [i64] @= others
+
+    for n in last.slice(from: 27, to: 30)
+        after @ after.push(n)
+
+    assert live(b) == after
+    assert b.formatting_count == live(b).len() + b.gone && b.formatting_count < 54
+
+test "kind_of: attributes in another order alike; another value, name, namespace or count of markers not"
     b: builder.Builder @= builder.start(scripting: true, max_depth: 512)
     x = dom.Attr(space: dom.NO_SPACE, name: "x", value: "1")
     y = dom.Attr(space: dom.NO_SPACE, name: "y", value: "2")
@@ -279,4 +451,16 @@ test "is_alike: attributes in another order alike, another value not"
         name: "a",
         attributes: [x, dom.Attr(space: dom.NO_SPACE, name: "y", value: "3")]
     )
-    assert is_alike(b.tree, a: first, b: second) && !is_alike(b.tree, a: first, b: third)
+    joined = insert.create(
+        @b,
+        space: dom.HTML,
+        name: "a",
+        attributes: [dom.Attr(space: dom.NO_SPACE, name: "x1", value: "")]
+    )
+    one = insert.create(@b, space: dom.HTML, name: "a", attributes: [x])
+    svg = insert.create(@b, space: dom.SVG, name: "a", attributes: [x])
+    assert kind_of(b.tree, node: first, markers: 0) == kind_of(b.tree, node: second, markers: 0)
+    assert kind_of(b.tree, node: first, markers: 0) != kind_of(b.tree, node: third, markers: 0)
+    assert kind_of(b.tree, node: first, markers: 0) != kind_of(b.tree, node: first, markers: 1)
+    assert kind_of(b.tree, node: joined, markers: 0) != kind_of(b.tree, node: one, markers: 0)
+    assert kind_of(b.tree, node: svg, markers: 0) != kind_of(b.tree, node: one, markers: 0)

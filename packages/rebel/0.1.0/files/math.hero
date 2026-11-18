@@ -412,6 +412,11 @@ function sqrt(x: f64) -> f64
 # The cube root of `x`, negative where `x` is.
 #
 # - `x`: any float; a zero, an infinity and a nan answer themselves.
+#
+# The answer is within a hair over half a unit in the last place on every
+# platform, so a perfect cube answers its root exactly: the C library's root
+# is corrected by one Newton step taken exactly, since C's libraries round it
+# differently (glibc's answers -3.0000000000000004 for -27).
 function cbrt(x: f64) -> f64
     return elementary.cbrt(x)
 
@@ -1465,8 +1470,12 @@ function sqrt_complex(z: Complex) -> Complex
 #   and the exponent is not, where Python raises for a complex or negative
 #   exponent.
 # - `exponent`: the power; zero answers 1 for every base, a nan included. A
-#   whole real exponent from -100 to 100 is multiplied out, as Python does, so
-#   `(1 + 1i)^2` is exactly `2i`; any other is taken through the polar form.
+#   whole real exponent below 2 to the 63rd in size is multiplied out by
+#   squaring, no step overflowing before the answer does, so `(1 + 1i)^2` is
+#   exactly `2i`, `i` to any whole power is exact, and the answer is the same
+#   on every platform, within about `|n|` units in the last place of its size;
+#   any other is taken through the polar form, whose last digits are the C
+#   library's. Python multiplies out only to 100.
 function pow_complex(base: Complex, exponent: Complex) -> Complex
     p = complex_exponential.pow(
         base: complex_arithmetic.Pair(re: base.re, im: base.im),

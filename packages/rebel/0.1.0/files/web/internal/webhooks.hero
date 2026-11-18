@@ -99,7 +99,7 @@ test "secret_bytes: with its prefix, without, no base 64, and empty"
     assert secret_bytes("whsec_").is_err()
     assert secret_of(secret_bytes("whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw").must()) == "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw"
 
-test "signature: the specification's example, as Python's hmac computes it"
+test "signature: the Standard Webhooks libraries' test vector, as Python's hmac computes it"
     key = secret_bytes("whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw").must()
     got = signature(
         key: key,

@@ -5,6 +5,7 @@
 # so that tree construction has seen them before it is asked where it stands.
 
 use html/internal/ascii
+use html/internal/dom
 use html/internal/lexer
 use html/internal/token
 use unicode
@@ -23,11 +24,12 @@ function bogus_comment(@lx: lexer.Lexer)
         lexer.emit_comment(@lx)
     else if b == 0
         lexer.error_here(@lx, "unexpected-null-character")
-        lx.data @ lx.data.push(unicode.REPLACEMENT_CHARACTER)
+        dom.append(items: @lx.data, item: unicode.REPLACEMENT_CHARACTER)
         lx.at @ lx.at + 1
     else
-        lx.data @ lx.data.push(
-            lexer.take(@lx, end: lexer.run_end(lx, stop_a: '>', stop_b: '>', stop_c: '>'), lower: false)
+        dom.append(
+            items: @lx.data,
+            item: lexer.take(@lx, end: lexer.run_end(lx, stop_a: '>', stop_b: '>', stop_c: '>'), lower: false)
         )
 
 # 13.2.5.42, the markup declaration open state; `<!` is read.
@@ -102,7 +104,7 @@ function comment_start(@lx: lexer.Lexer)
         lexer.emit_comment(@lx)
     else
         if dash
-            lx.data @ lx.data.push("-")
+            dom.append(items: @lx.data, item: "-")
         lx.state @ .comment
 
 # 13.2.5.45, the comment state.
@@ -115,7 +117,7 @@ function comment(@lx: lexer.Lexer)
     b = lexer.byte(lx)
 
     if b == '<'
-        lx.data @ lx.data.push("<")
+        dom.append(items: @lx.data, item: "<")
         lx.at @ lx.at + 1
         lx.state @ .comment_less_than
     else if b == '-'
@@ -123,11 +125,12 @@ function comment(@lx: lexer.Lexer)
         lx.state @ .comment_end_dash
     else if b == 0
         lexer.error_here(@lx, "unexpected-null-character")
-        lx.data @ lx.data.push(unicode.REPLACEMENT_CHARACTER)
+        dom.append(items: @lx.data, item: unicode.REPLACEMENT_CHARACTER)
         lx.at @ lx.at + 1
     else
-        lx.data @ lx.data.push(
-            lexer.take(@lx, end: lexer.run_end(lx, stop_a: '<', stop_b: '-', stop_c: '-'), lower: false)
+        dom.append(
+            items: @lx.data,
+            item: lexer.take(@lx, end: lexer.run_end(lx, stop_a: '<', stop_b: '-', stop_c: '-'), lower: false)
         )
 
 # 13.2.5.46 to 13.2.5.49: `<`, `<!`, `<!-` and `<!--` inside a comment.
@@ -140,11 +143,11 @@ function comment_less_than(@lx: lexer.Lexer)
 
     if lx.state == .comment_less_than
         if !ended && b == '!'
-            lx.data @ lx.data.push("!")
+            dom.append(items: @lx.data, item: "!")
             lx.at @ lx.at + 1
             lx.state @ .comment_less_than_bang
         else if !ended && b == '<'
-            lx.data @ lx.data.push("<")
+            dom.append(items: @lx.data, item: "<")
             lx.at @ lx.at + 1
         else
             lx.state @ .comment
@@ -179,7 +182,7 @@ function comment_end(@lx: lexer.Lexer)
             lx.at @ lx.at + 1
             lx.state @ .comment_end
         else
-            lx.data @ lx.data.push("-")
+            dom.append(items: @lx.data, item: "-")
             lx.state @ .comment
     else if lx.state == .comment_end
         if b == '>'
@@ -190,14 +193,14 @@ function comment_end(@lx: lexer.Lexer)
             lx.at @ lx.at + 1
             lx.state @ .comment_end_bang
         else if b == '-'
-            lx.data @ lx.data.push("-")
+            dom.append(items: @lx.data, item: "-")
             lx.at @ lx.at + 1
         else
-            lx.data @ lx.data.push("--")
+            dom.append(items: @lx.data, item: "--")
             lx.state @ .comment
     else
         if b == '-'
-            lx.data @ lx.data.push("--!")
+            dom.append(items: @lx.data, item: "--!")
             lx.at @ lx.at + 1
             lx.state @ .comment_end_dash
         else if b == '>'
@@ -206,7 +209,7 @@ function comment_end(@lx: lexer.Lexer)
             lx.state @ .data
             lexer.emit_comment(@lx)
         else
-            lx.data @ lx.data.push("--!")
+            dom.append(items: @lx.data, item: "--!")
             lx.state @ .comment
 
 # 13.2.5.69 to 13.2.5.71: a CDATA section, its characters emitted as text up
@@ -278,7 +281,7 @@ function instruction_target(@lx: lexer.Lexer)
         while end < lx.text.len() && (ascii.is_alnum(lx.text[end]) || lx.text[end] == '-' || lx.text[end] == '_')
             end @ end + 1
 
-        lx.temp @ lx.temp.push(lexer.take(@lx, end: end, lower: false))
+        dom.append(items: @lx.temp, item: lexer.take(@lx, end: end, lower: false))
     else
         lexer.error_here(@lx, "invalid-processing-instruction-target")
         lexer.new_comment(@lx, first: "?" + lx.temp.join(""), at: lx.begun)
@@ -298,7 +301,7 @@ function instruction_data(@lx: lexer.Lexer)
         else
             lx.state @ .instruction_data
     else if lx.state == .instruction_questionable && b != '>'
-        lx.data @ lx.data.push("?")
+        dom.append(items: @lx.data, item: "?")
         lx.state @ .instruction_data
     else if b == '>'
         lx.at @ lx.at + 1
@@ -311,8 +314,9 @@ function instruction_data(@lx: lexer.Lexer)
         lx.at @ lx.at + 1
         lx.state @ .instruction_questionable
     else
-        lx.data @ lx.data.push(
-            lexer.take(@lx, end: lexer.run_end(lx, stop_a: '?', stop_b: '>', stop_c: '>'), lower: false)
+        dom.append(
+            items: @lx.data,
+            item: lexer.take(@lx, end: lexer.run_end(lx, stop_a: '?', stop_b: '>', stop_c: '>'), lower: false)
         )
 
 ## Tests

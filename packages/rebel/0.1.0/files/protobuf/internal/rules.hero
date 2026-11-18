@@ -224,12 +224,12 @@ function default_bits(f: model.Field, values: [model.EnumValue], where: str) -> 
 
     if k == model.FLOAT
         match numbers.parse_f32(text)
-            .ok x  => return ok(bits.of_double(to_f64(x)))
+            .ok x  => return ok(numbers.f64_to_bits(to_f64(x)))
             .err _ => return fail(code: "invalid", msg: f"{where}: `{text}` is no float")
 
     if k == model.DOUBLE
         match numbers.parse_float(text)
-            .ok x  => return ok(bits.of_double(x))
+            .ok x  => return ok(numbers.f64_to_bits(x))
             .err _ => return fail(code: "invalid", msg: f"{where}: `{text}` is no double")
     negative = text.len() > 0 && text[0] == '-'
 

@@ -3223,7 +3223,7 @@ test "health_response: JSON where the Accept asks it, text where it asks text or
     )
     assert bytes.to_text(health_response(wants_image, checks: checks, detail: false).body).must() == "[-]disk failed: reason withheld\nhealth check failed\n"
 
-test "webhook_signature: the specification's example, a secret without its prefix, and one that does not read"
+test "webhook_signature: the Standard Webhooks libraries' test vector, a secret without its prefix, and one that does not read"
     payload = bytes.from_text("{\"test\": 2432232314}")
     want = "v1,g0hM9SsE+OTPJTGt/tmIKtSyZlE3uFJELVlNIOLJ1OE="
     assert webhook_signature(secret: "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw", id: "msg_p5jXN8AQM9LWM0D4loKWxJek", timestamp_s: 1614265330, payload: payload).must() == want
@@ -4026,8 +4026,8 @@ test "new_webhook_secret: a secret to share with a receiver"
     secret = new_webhook_secret().must()
     assert strings.has_prefix(s: secret, prefix: "whsec_")
 
-# The signature the specification's own example gives.
-test "webhook_signature: the specification's example"
+# The signature the Standard Webhooks project's own libraries test against.
+test "webhook_signature: the Standard Webhooks libraries' test vector"
     payload = bytes.from_text("{\"test\": 2432232314}")
     signed = webhook_signature(
         secret: "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw",

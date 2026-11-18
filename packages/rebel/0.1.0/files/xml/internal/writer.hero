@@ -81,10 +81,18 @@ function render(prolog: event.Prolog, events: [event.Event], layout: Layout) -> 
 
         if e.kind == event.START
             stack.put(items: @marks, top: depth, item: count)
-            where = place_of(names_at: names_at, depth: depth, prefix: e.prefix, local: e.local)
-            out @ out.push(
-                start_tag(e: e, where: where, prefixes: @prefixes, spaces: @spaces, hidden: @hidden, innermost: @innermost, count: @count)?
-            )
+
+            # The element's place is written into a message alone: built for
+            # every element, it cost each one the whole path above it, and a
+            # tree a hundred thousand deep 108 s.
+            match start_tag(e: e, prefixes: @prefixes, spaces: @spaces, hidden: @hidden, innermost: @innermost, count: @count)
+                .ok tag => out @ out.push(tag)
+                .err err =>
+                    return fail(
+                        code: err.code,
+                        msg: f"{place_of(names_at: names_at, depth: depth, prefix: e.prefix, local: e.local)}: {err.msg}"
+                    )
+
             written = written_name(prefix: e.prefix, local: e.local)
 
             if k + 1 < events.len() && events[k + 1].kind == event.END
@@ -125,10 +133,10 @@ function render(prolog: event.Prolog, events: [event.Event], layout: Layout) -> 
                         msg: f"the text in {path_of(names_at: names_at, depth: depth)}: {err.msg}"
                     )
         else if e.kind == event.COMMENT
-            out @ out.push(comment(text: e.text, where: path_of(names_at: names_at, depth: depth))?)
+            out @ out.push(comment(text: e.text, names_at: names_at, depth: depth)?)
         else
             out @ out.push(
-                instruction(target: e.target, data: e.text, where: path_of(names_at: names_at, depth: depth))?
+                instruction(target: e.target, data: e.text, names_at: names_at, depth: depth)?
             )
 
         begun @ true
@@ -203,20 +211,20 @@ function is_written(prefix: str, local: str) -> bool
     return characters.is_ncname(local) && (prefix == "" || characters.is_ncname(prefix))
 
 # The start tag of `e`, up to and without its `>` or `/>`, its declarations
-# added to the scope first and every name then held to them. `where` is the
-# element's place, for the messages.
-function start_tag(e: event.Event, where: str, @prefixes: [str], @spaces: [str], @hidden: [i64], @innermost: {str: i64}, @count: i64) -> str?
+# added to the scope first and every name then held to them. A message says
+# what is wrong and not where: the caller puts the element's place before it.
+function start_tag(e: event.Event, @prefixes: [str], @spaces: [str], @hidden: [i64], @innermost: {str: i64}, @count: i64) -> str?
     for a in e.attributes
         if is_declaration(a)
             name = written_name(prefix: a.prefix, local: a.local)
 
             if a.prefix == "xmlns" && !characters.is_ncname(a.local)
-                return fail(code: scan.INVALID, msg: f"{where}: `{name}` declares no prefix XML writes")
+                return fail(code: scan.INVALID, msg: f"`{name}` declares no prefix XML writes")
 
             if a.space != scope.XMLNS_SPACE
                 return fail(
                     code: scan.INVALID,
-                    msg: f"{where}: `{name}` declares a namespace, so it stands in \"{scope.XMLNS_SPACE}\", and here in \"{a.space}\": build it with `with_namespace`"
+                    msg: f"`{name}` declares a namespace, so it stands in \"{scope.XMLNS_SPACE}\", and here in \"{a.space}\": build it with `with_namespace`"
                 )
 
             declared = if a.prefix == ""
@@ -225,7 +233,7 @@ function start_tag(e: event.Event, where: str, @prefixes: [str], @spaces: [str],
                 a.local
 
             match scope.check_declaration(prefix: declared, space: a.value)
-                .err err => return fail(code: scan.INVALID, msg: f"{where}: {err.msg}")
+                .err err => return fail(code: scan.INVALID, msg: f"{err.msg}")
                 .ok _ =>
                     scope.declare(
                         prefixes: @prefixes,
@@ -240,8 +248,8 @@ function start_tag(e: event.Event, where: str, @prefixes: [str], @spaces: [str],
     written = written_name(prefix: e.prefix, local: e.local)
 
     if !is_written(prefix: e.prefix, local: e.local) || e.prefix == "xmlns"
-        return fail(code: scan.INVALID, msg: f"{where}: `{written}` is not an element's name XML writes")
-    held_to(space: e.space, prefix: e.prefix, what: f"<{written}>", where: where, spaces: spaces, innermost: innermost, is_attribute: false)?
+        return fail(code: scan.INVALID, msg: f"`{written}` is not an element's name XML writes")
+    held_to(space: e.space, prefix: e.prefix, what: f"<{written}>", spaces: spaces, innermost: innermost, is_attribute: false)?
     out: [str] @= ["<" + written]
     names: {str: i64} @= {}
     expanded: {str: i64} @= {}
@@ -251,8 +259,8 @@ function start_tag(e: event.Event, where: str, @prefixes: [str], @spaces: [str],
 
         if !is_declaration(a)
             if !is_written(prefix: a.prefix, local: a.local)
-                return fail(code: scan.INVALID, msg: f"{where}: `{name}` is not an attribute's name XML writes")
-            held_to(space: a.space, prefix: a.prefix, what: f"the attribute `{name}`", where: where, spaces: spaces, innermost: innermost, is_attribute: true)?
+                return fail(code: scan.INVALID, msg: f"`{name}` is not an attribute's name XML writes")
+            held_to(space: a.space, prefix: a.prefix, what: f"the attribute `{name}`", spaces: spaces, innermost: innermost, is_attribute: true)?
 
             if a.prefix != ""
                 key = f"{a.space.len()}:{a.space}{a.local}"
@@ -261,20 +269,20 @@ function start_tag(e: event.Event, where: str, @prefixes: [str], @spaces: [str],
                     .ok _ =>
                         return fail(
                             code: scan.INVALID,
-                            msg: f"{where}: two attributes are `{a.local}` in the namespace \"{a.space}\", and an element holds one of a name"
+                            msg: f"two attributes are `{a.local}` in the namespace \"{a.space}\", and an element holds one of a name"
                         )
                     .err _ => expanded[key] @ 0
 
         match names[name]
             .ok _ => return fail(
                 code: scan.INVALID,
-                msg: f"{where}: the attribute `{name}` stands twice, and an element holds one of a name"
+                msg: f"the attribute `{name}` stands twice, and an element holds one of a name"
             )
             .err _ => names[name] @ 0
 
         match escape.value_escaped(a.value)
             .ok value => out @ out.push(f" {name}=\"{value}\"")
-            .err err  => return fail(code: scan.INVALID, msg: f"{where}: the value of `{name}`: {err.msg}")
+            .err err  => return fail(code: scan.INVALID, msg: f"the value of `{name}`: {err.msg}")
 
     return ok(out.join(""))
 
@@ -285,14 +293,14 @@ function is_declaration(a: event.Attr) -> bool
 # Whether a name of `prefix` in the namespace `space` reads back as written:
 # its prefix declared where it stands for that namespace, an element with no
 # prefix in the default namespace, and an attribute with none in no namespace.
-# Fails `invalid` with a message that says what to declare; `what` and `where`
-# name the name and its place.
-function held_to(space: str, prefix: str, what: str, where: str, spaces: [str] lent, innermost: {str: i64} lent, is_attribute: bool) -> ()?
+# Fails `invalid` with a message that says what to declare; `what` names the
+# name, and the caller puts its place before the message.
+function held_to(space: str, prefix: str, what: str, spaces: [str] lent, innermost: {str: i64} lent, is_attribute: bool) -> ()?
     if is_attribute && prefix == ""
         if space != ""
             return fail(
                 code: scan.INVALID,
-                msg: f"{where}: {what} has no prefix, so it stands in no namespace, and here in \"{space}\": give it a prefix declared for it"
+                msg: f"{what} has no prefix, so it stands in no namespace, and here in \"{space}\": give it a prefix declared for it"
             )
         return ok()
 
@@ -300,7 +308,7 @@ function held_to(space: str, prefix: str, what: str, where: str, spaces: [str] l
         .err _ =>
             return fail(
                 code: scan.INVALID,
-                msg: f"{where}: the prefix `{prefix}` of {what} is not declared where it stands: declare it for \"{space}\" with `with_namespace`"
+                msg: f"the prefix `{prefix}` of {what} is not declared where it stands: declare it for \"{space}\" with `with_namespace`"
             )
         .ok declared =>
             if declared != space
@@ -311,37 +319,38 @@ function held_to(space: str, prefix: str, what: str, where: str, spaces: [str] l
                         f"the default namespace is \"{declared}\""
                     return fail(
                         code: scan.INVALID,
-                        msg: f"{where}: {what} stands in the namespace \"{space}\", and where it stands {said}: declare it with `with_namespace`"
+                        msg: f"{what} stands in the namespace \"{space}\", and where it stands {said}: declare it with `with_namespace`"
                     )
                 return fail(
                     code: scan.INVALID,
-                    msg: f"{where}: {what} stands in the namespace \"{space}\", and its prefix `{prefix}` is declared there for \"{declared}\""
+                    msg: f"{what} stands in the namespace \"{space}\", and its prefix `{prefix}` is declared there for \"{declared}\""
                 )
 
     return ok()
 
 # The comment holding `text`. Fails `invalid` where reading would not give back
 # `text`: a character XML cannot hold, `--`, a `-` at its end, a carriage
-# return.
-function comment(text: str, where: str) -> str?
+# return. `names_at` holds the names of the elements open around it, `depth`
+# of them, which a message names it by.
+function comment(text: str, names_at: [str] lent, depth: i64) -> str?
     bad = characters.bad_char_index(text)
 
     if bad < text.len()
         return fail(
             code: scan.INVALID,
-            msg: f"a comment in {where} holds {scan.found(text: text, at: bad)}, a character XML cannot hold"
+            msg: f"a comment in {path_of(names_at: names_at, depth: depth)} holds {scan.found(text: text, at: bad)}, a character XML cannot hold"
         )
 
     if markup.index_from(text: text, at: 0, word: "--") < text.len() || markup.holds_at(text: text, at: text.len() - 1, word: "-")
         return fail(
             code: scan.INVALID,
-            msg: f"a comment in {where} holds `--` or ends in `-`, which would end it early: \"{text}\""
+            msg: f"a comment in {path_of(names_at: names_at, depth: depth)} holds `--` or ends in `-`, which would end it early: \"{text}\""
         )
 
     if strings.contains(s: text, substr: "\r")
         return fail(
             code: scan.INVALID,
-            msg: f"a comment in {where} holds a carriage return, which reading gives back as a line feed"
+            msg: f"a comment in {path_of(names_at: names_at, depth: depth)} holds a carriage return, which reading gives back as a line feed"
         )
     return ok("<!--" + text + "-->")
 
@@ -349,31 +358,32 @@ function comment(text: str, where: str) -> str?
 # give it back: a target that is not a name with no colon or is `xml` in any
 # case, data holding `?>`, a character XML cannot hold or a carriage return, or
 # beginning with white space, which reading takes as the space after the
-# target.
-function instruction(target: str, data: str, where: str) -> str?
+# target. `names_at` and `depth` are the elements open around it, as
+# `comment` takes them.
+function instruction(target: str, data: str, names_at: [str] lent, depth: i64) -> str?
     if !characters.is_ncname(target) || strings.to_lower_ascii(target) == "xml"
         return fail(
             code: scan.INVALID,
-            msg: f"an instruction in {where} has the target \"{target}\": a name with no colon, and never `xml` in any case"
+            msg: f"an instruction in {path_of(names_at: names_at, depth: depth)} has the target \"{target}\": a name with no colon, and never `xml` in any case"
         )
     bad = characters.bad_char_index(data)
 
     if bad < data.len()
         return fail(
             code: scan.INVALID,
-            msg: f"the instruction `{target}` in {where} holds {scan.found(text: data, at: bad)}, a character XML cannot hold"
+            msg: f"the instruction `{target}` in {path_of(names_at: names_at, depth: depth)} holds {scan.found(text: data, at: bad)}, a character XML cannot hold"
         )
 
     if strings.contains(s: data, substr: "?>")
         return fail(
             code: scan.INVALID,
-            msg: f"the instruction `{target}` in {where} holds `?>`, which would end it early"
+            msg: f"the instruction `{target}` in {path_of(names_at: names_at, depth: depth)} holds `?>`, which would end it early"
         )
 
     if strings.contains(s: data, substr: "\r")
         return fail(
             code: scan.INVALID,
-            msg: f"the instruction `{target}` in {where} holds a carriage return, which reading gives back as a line feed"
+            msg: f"the instruction `{target}` in {path_of(names_at: names_at, depth: depth)} holds a carriage return, which reading gives back as a line feed"
         )
 
     if data == ""
@@ -382,7 +392,7 @@ function instruction(target: str, data: str, where: str) -> str?
     if characters.is_space(data[0])
         return fail(
             code: scan.INVALID,
-            msg: f"the data of the instruction `{target}` in {where} begins with white space, which reading takes as the space after the target"
+            msg: f"the data of the instruction `{target}` in {path_of(names_at: names_at, depth: depth)} begins with white space, which reading takes as the space after the target"
         )
     return ok("<?" + target + " " + data + "?>")
 
@@ -546,21 +556,21 @@ test "render: an indent of other characters, and a declaration naming another en
     assert render(prolog: two, events: events, layout: flat()).is_err()
 
 test "comment: as written, and `--`, a `-` at the end, a carriage return and U+0001 refused where Python writes them"
-    assert comment(text: " c ", where: "/a").must() == "<!-- c -->"
-    assert comment(text: "", where: "/a").must() == "<!---->"
-    assert comment(text: "- x", where: "/a").must() == "<!--- x-->"
+    assert comment(text: " c ", names_at: ["a"], depth: 1).must() == "<!-- c -->"
+    assert comment(text: "", names_at: ["a"], depth: 1).must() == "<!---->"
+    assert comment(text: "- x", names_at: ["a"], depth: 1).must() == "<!--- x-->"
 
     for text in ["a--b", "a-", "-", "a\rb", "\u{1}"]
-        match comment(text: text, where: "/a")
+        match comment(text: text, names_at: ["a"], depth: 1)
             .ok _  => assert false
             .err e => assert e.code == "invalid"
 
 test "instruction: data and none, and a target or data reading would not give back"
-    assert instruction(target: "t", data: "d x", where: "/a").must() == "<?t d x?>"
-    assert instruction(target: "xml-stylesheet", data: "", where: "/a").must() == "<?xml-stylesheet?>"
+    assert instruction(target: "t", data: "d x", names_at: ["a"], depth: 1).must() == "<?t d x?>"
+    assert instruction(target: "xml-stylesheet", data: "", names_at: ["a"], depth: 1).must() == "<?xml-stylesheet?>"
 
     for pair in [["xml", "x"], ["XML", ""], ["p:t", ""], ["", ""], ["t", "a?>b"], ["t", " d"], ["t", "a\rb"], ["t", "\u{1}"]]
-        match instruction(target: pair[0], data: pair[1], where: "/a")
+        match instruction(target: pair[0], data: pair[1], names_at: ["a"], depth: 1)
             .ok _  => assert false
             .err e => assert e.code == "invalid"
 

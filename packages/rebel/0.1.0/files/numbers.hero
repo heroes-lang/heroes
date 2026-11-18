@@ -16,6 +16,7 @@
 use numbers/internal/fault
 use numbers/internal/forms
 use numbers/internal/half
+use numbers/internal/ieee
 use numbers/internal/layout
 use numbers/internal/near
 use numbers/internal/radix
@@ -285,6 +286,57 @@ function format_float_hex(x: f64) -> str
 # `inf`.
 function round_to(x: f64, decimals: i64) -> f64
     return forms.round_to(x: x, decimals: decimals)
+
+## A float's bits
+
+# The 64 bits of `x` as IEEE 754 lays them out, the sign highest, then 11 bits
+# of exponent biased by 1023 and 52 of fraction: what a binary format writes
+# for a double, and what C's `memcpy` of it gives.
+#
+# - `x`: any `f64`; both zeros, the subnormals and the infinities give their
+#   own bits, `-0.0` giving `0x8000000000000000`, and every NaN the quiet NaN
+#   with its sign clear, `0x7ff8000000000000`.
+#
+# A NaN loses its sign and its payload: the language reads neither, so no
+# function of Rebel can, and Go's `math.Float64bits` and Rust's `f64::to_bits`
+# keep both. Every other float goes to its bits and back unchanged through
+# `bits_to_f64`. See also `f32_to_bits`.
+function f64_to_bits(x: f64) -> u64
+    return ieee.of_f64(x)
+
+# The `f64` whose 64 bits, as IEEE 754 lays them out, are `bits`.
+#
+# - `bits`: any `u64`, the sign highest; an exponent of all ones is an
+#   infinity with a fraction of zero, and the language's one NaN with any
+#   other.
+#
+# Every pattern that is not a NaN's gives the float `f64_to_bits` gives it
+# back for, the sign of a zero included. See also `bits_to_f32`.
+function bits_to_f64(bits: u64) -> f64
+    return ieee.f64_of(bits)
+
+# The 32 bits of `x` as IEEE 754 lays them out, the sign highest, then 8 bits
+# of exponent biased by 127 and 23 of fraction: what a binary format writes
+# for a float.
+#
+# - `x`: any `f32`; both zeros, the subnormals and the infinities give their
+#   own bits, and every NaN the quiet NaN with its sign clear, `0x7fc00000`.
+#
+# A NaN loses its sign and its payload, as `f64_to_bits` says. See also
+# `bits_to_f32`.
+function f32_to_bits(x: f32) -> u32
+    return ieee.of_f32(x)
+
+# The `f32` whose 32 bits, as IEEE 754 lays them out, are `bits`.
+#
+# - `bits`: any `u32`, the sign highest; an exponent of all ones is an
+#   infinity with a fraction of zero, and the language's one NaN with any
+#   other.
+#
+# Every pattern that is not a NaN's gives the float `f32_to_bits` gives it
+# back for. See also `f32_to_bits`.
+function bits_to_f32(bits: u32) -> f32
+    return ieee.f32_of(bits)
 
 ## Half-precision floats
 
@@ -595,6 +647,25 @@ test "with_sign, unsigned_zero and group_digits: the text of a number reshaped"
     assert group_digits(s: format_u64_literal(n: 16777215, base: 16), sep: "_", size: 4) == "0xff_ffff"
 
 ## Examples
+
+# A double's bits as a binary format writes them, and minus zero's.
+test "f64_to_bits: one and minus zero"
+    assert f64_to_bits(1.0) == 0x3ff0000000000000
+    assert f64_to_bits(-0.0) == 0x8000000000000000
+
+# Eight bytes read from a binary format as the double they hold.
+test "bits_to_f64: minus two and a half"
+    assert bits_to_f64(0xc004000000000000) == -2.5
+
+# A float's bits.
+test "f32_to_bits: minus one and a half"
+    x: f32 = -1.5
+    assert f32_to_bits(x) == 0xbfc00000
+
+# Four bytes read as the float they hold.
+test "bits_to_f32: one"
+    one: f32 = 1.0
+    assert bits_to_f32(0x3f800000) == one
 
 # A float rounded to the half-precision float nearest to it, as a GPU or a
 # model's weights store it.

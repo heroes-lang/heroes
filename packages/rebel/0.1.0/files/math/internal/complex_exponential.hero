@@ -5,6 +5,7 @@
 # answer does.
 
 use math/internal/complex_arithmetic
+use math/internal/complex_power
 use math/internal/elementary
 use math/internal/floats
 use math/internal/limits
@@ -28,10 +29,13 @@ constant LARGE: f64
 constant TINY: f64
     0.0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003054936363499605
 
-# The largest integer exponent multiplied out by `pow`; past it, the polar
-# form. Python's `**` on complex numbers draws the line at the same place.
-constant MULTIPLIED_UP_TO: i64
-    100
+# 2 to the 63rd: a whole real exponent below it in size is multiplied out by
+# `complex_power.whole_power`, any other taken through the polar form. Python's
+# `**` multiplies out only to 100; past it, its polar form was further from the
+# true power and answered otherwise on each platform (the ledger's
+# `complex/sqrt-and-pow` block).
+constant WHOLE_BELOW: f64
+    9223372036854775808.0
 
 # E raised to `x`, times `factor`, where `x` is past `LOG_LARGE`: `x` is taken
 # down by 700 at a time, exactly, and e raised to 700 multiplied back after
@@ -220,37 +224,13 @@ function sqrt_edge(re: f64, im: f64) -> complex_arithmetic.Pair
         return complex_arithmetic.Pair(re: 0.0, im: floats.with_sign(x: limits.INF, of: im))
     return complex_arithmetic.Pair(re: limits.NAN, im: limits.NAN)
 
-# `base` raised to the whole power `n`, by squaring, the bits of `n` read from
-# the lowest; a negative `n` is 1 over the power of its size.
-#
-# - `base`: the base.
-# - `n`: the exponent, from `-MULTIPLIED_UP_TO` to `MULTIPLIED_UP_TO`.
-function whole_power(base: complex_arithmetic.Pair, n: i64) -> complex_arithmetic.Pair
-    one = complex_arithmetic.Pair(re: 1.0, im: 0.0)
-    left @= n
-
-    if n < 0
-        left @ -n
-    result @= one
-    square @= base
-
-    while left > 0
-        if left % 2 == 1
-            result @ complex_arithmetic.mul(a: result, b: square)
-        left @ left / 2
-
-        if left > 0
-            square @ complex_arithmetic.mul(a: square, b: square)
-
-    if n < 0
-        return complex_arithmetic.div(a: one, b: result)
-    return result
-
 # `base` raised to `exponent`, the principal power `exp(exponent * ln(base))`:
 # a zero exponent answers 1, a zero base 0 where the exponent's real part is
 # positive, an infinity beside a nan where it is negative, and a nan where it
-# is zero; a whole real exponent from -100 to 100 is multiplied out, so
-# `(1 + 1i)^2` is exactly `2i`; any other is taken through the polar form.
+# is zero; a whole real exponent below 2 to the 63rd in size is multiplied out
+# by `complex_power.whole_power`, so `(1 + 1i)^2` is exactly `2i` and the
+# answer is the same on every platform; any other is taken through the polar
+# form, whose last digits are the C library's.
 #
 # - `base`: the base.
 # - `exponent`: the exponent.
@@ -269,8 +249,8 @@ function pow(base: complex_arithmetic.Pair, exponent: complex_arithmetic.Pair) -
             return complex_arithmetic.Pair(re: limits.INF, im: limits.NAN)
         return complex_arithmetic.Pair(re: limits.NAN, im: limits.NAN)
 
-    if exponent.im == 0.0 && floats.abs(exponent.re) <= to_f64(MULTIPLIED_UP_TO) && exponent.re == rounding.trunc(exponent.re)
-        return whole_power(base: base, n: to_i64(exponent.re).must())
+    if exponent.im == 0.0 && floats.abs(exponent.re) < WHOLE_BELOW && exponent.re == rounding.trunc(exponent.re)
+        return complex_power.whole_power(base: base, n: to_i64(exponent.re).must())
     size = elementary.hypot(x: base.re, y: base.im)
     angle = trig.atan2(y: base.im, x: base.re)
     length @= elementary.pow(base: size, exponent: exponent.re)
@@ -341,4 +321,14 @@ test "pow: a zero exponent beside a nan, a zero base, a nan exponent, a whole po
         ulps: 0.0
     )
     assert pow(base: one_one, exponent: complex_arithmetic.Pair(re: 2.0, im: 0.0)) == complex_arithmetic.Pair(re: 0.0, im: 2.0)
-    assert whole_power(base: one_one, n: -2) == complex_arithmetic.Pair(re: 0.0, im: -0.5)
+    assert pow(base: one_one, exponent: complex_arithmetic.Pair(re: -2.0, im: 0.0)) == complex_arithmetic.Pair(re: 0.0, im: -0.5)
+
+# Multiplied out past 100: Python's `**` and this function until 2026-11-18
+# took `(1 + 1i)^101` through the polar form and answered
+# `-1125899906842634.5 - 1125899906842629.5i`, and `i` to an exponent of 53
+# bits lost the angle's every digit.
+test "pow: (1 + 1i) to 101 exactly, i to the largest odd whole float and to its negative"
+    i = complex_arithmetic.Pair(re: 0.0, im: 1.0)
+    assert pow(base: complex_arithmetic.Pair(re: 1.0, im: 1.0), exponent: complex_arithmetic.Pair(re: 101.0, im: 0.0)) == complex_arithmetic.Pair(re: -1125899906842624.0, im: -1125899906842624.0)
+    assert pow(base: i, exponent: complex_arithmetic.Pair(re: 9007199254740991.0, im: 0.0)) == complex_arithmetic.Pair(re: 0.0, im: -1.0)
+    assert pow(base: i, exponent: complex_arithmetic.Pair(re: -9007199254740991.0, im: 0.0)) == i
