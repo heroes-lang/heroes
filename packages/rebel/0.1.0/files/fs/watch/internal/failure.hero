@@ -1,0 +1,126 @@
+# The codes `fs/watch` fails with, and the one place a kind of the floor
+# `fs/watch/hero_watch` becomes one: every failure of a watch's call is built
+# here, its message saying what was asked and what the system answered
+# (README § A4).
+
+use fs/watch/hero_watch
+
+constant INVALID: str
+    "invalid"
+
+constant FILE_NOT_FOUND: str
+    "file_not_found"
+
+constant PERMISSION: str
+    "permission"
+
+constant NOT_A_DIRECTORY: str
+    "not_a_directory"
+
+constant LIMIT: str
+    "limit"
+
+constant CLOSED: str
+    "closed"
+
+constant STOPPED: str
+    "stopped"
+
+constant UNSUPPORTED: str
+    "unsupported"
+
+constant FAILED: str
+    "failed"
+
+# What a code and its words are, for one kind of the floor.
+record Told
+    # The code of README § A4.
+    code: str
+    # What the layer or the system answered, in words a reader can act on.
+    why: str
+
+# The code and the words for `kind`, one of `HERO_WATCH_*`, the platform's own
+# number `os_error` in the words where the layer names no kind of its own.
+function told(kind: i64, os_error: i64) -> Told
+    if kind == hero_watch.HERO_WATCH_INVALID
+        return Told(code: INVALID, why: "the layer refuses the argument")
+
+    if kind == hero_watch.HERO_WATCH_NOT_OPEN
+        return Told(code: CLOSED, why: "the watch is closed")
+
+    if kind == hero_watch.HERO_WATCH_NOT_FOUND
+        return Told(code: FILE_NOT_FOUND, why: "the path names nothing, or a folder on its way is not there")
+
+    if kind == hero_watch.HERO_WATCH_DENIED
+        return Told(code: PERMISSION, why: "the system refuses this program the path")
+
+    if kind == hero_watch.HERO_WATCH_NOT_A_DIRECTORY
+        return Told(
+            code: NOT_A_DIRECTORY,
+            why: "a tree is watched below a folder alone, and this path names a file, or a file stands on its way"
+        )
+
+    if kind == hero_watch.HERO_WATCH_LIMIT
+        return Told(
+            code: LIMIT,
+            why: "the system or the process has no watch, descriptor, thread or memory left (on Linux, `/proc/sys/fs/inotify/max_user_watches` counts one watch per folder of a tree)"
+        )
+
+    if kind == hero_watch.HERO_WATCH_ENDED
+        return Told(
+            code: FILE_NOT_FOUND,
+            why: "the watched folder is gone, as the watch told, and nothing more will be told"
+        )
+
+    if kind == hero_watch.HERO_WATCH_STOPPED
+        return Told(code: STOPPED, why: "the program was asked to stop")
+
+    if kind == hero_watch.HERO_WATCH_UNSUPPORTED
+        return Told(code: UNSUPPORTED, why: "this system cannot watch this volume, or has no such thing")
+    return Told(code: FAILED, why: f"the system refused, its error number {os_error}")
+
+# The failure the floor's last call on this thread named, as a `T?`, its
+# message `asked` then what was answered. Called right after the floor's call,
+# before any other call of the floor on this thread, which would replace it.
+function last<T>(asked: str) -> T?
+    t = told(kind: hero_watch.last_error(), os_error: hero_watch.last_os_error())
+    return fail(code: t.code, msg: f"{asked}: {t.why}")
+
+# A failure of `code` the face itself finds before the floor is asked, its
+# message `asked` then `why`.
+function of<T>(code: str, asked: str, why: str) -> T?
+    return fail(code: code, msg: f"{asked}: {why}")
+
+test "told: every kind of the floor is a code of README § A4, and an unknown one is failed with its number"
+    assert told(kind: hero_watch.HERO_WATCH_INVALID, os_error: 0).code == INVALID
+    assert told(kind: hero_watch.HERO_WATCH_NOT_OPEN, os_error: 0).code == CLOSED
+    assert told(kind: hero_watch.HERO_WATCH_NOT_FOUND, os_error: 2).code == FILE_NOT_FOUND
+    assert told(kind: hero_watch.HERO_WATCH_DENIED, os_error: 13).code == PERMISSION
+    assert told(kind: hero_watch.HERO_WATCH_NOT_A_DIRECTORY, os_error: 0).code == NOT_A_DIRECTORY
+    assert told(kind: hero_watch.HERO_WATCH_LIMIT, os_error: 28).code == LIMIT
+    assert told(kind: hero_watch.HERO_WATCH_ENDED, os_error: 0).code == FILE_NOT_FOUND
+    assert told(kind: hero_watch.HERO_WATCH_STOPPED, os_error: 0).code == STOPPED
+    assert told(kind: hero_watch.HERO_WATCH_UNSUPPORTED, os_error: 0).code == UNSUPPORTED
+    assert told(kind: hero_watch.HERO_WATCH_OTHER, os_error: 5).code == FAILED
+    assert told(kind: hero_watch.HERO_WATCH_OTHER, os_error: 5).why == "the system refused, its error number 5"
+    assert told(kind: 99, os_error: -1).code == FAILED
+
+test "last: the floor's own failure, read right after its call, with what was asked first"
+    none: hero_watch.Watch = nullptr
+    assert hero_watch.count(none) == -1
+    r: i64? = last(asked: "counting")
+
+    match r
+        .ok _ => assert false
+        .err e =>
+            assert e.code == CLOSED
+            assert e.msg == "counting: the watch is closed"
+
+test "of: a code the face finds itself, with its words"
+    r: ()? = of(code: INVALID, asked: "watching \"\"", why: "the path is empty")
+
+    match r
+        .ok _ => assert false
+        .err e =>
+            assert e.code == INVALID
+            assert e.msg == "watching \"\": the path is empty"

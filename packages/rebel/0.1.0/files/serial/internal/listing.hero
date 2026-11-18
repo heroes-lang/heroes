@@ -1,0 +1,74 @@
+# The ports `serial.ports` lists: the floor's list of names, each ended by a
+# zero byte, read whole however long it is, and cut into names sorted by
+# their bytes.
+
+use serial/hero_serial
+use serial/internal/failure
+
+# The bytes the list is first asked into, enough for about fifty names.
+constant FIRST_ROOM: i64
+    1024
+
+# The names in the first `used` bytes of `buffer`, each ended by a zero byte,
+# sorted by their bytes. An empty name is passed over, and so is a name that
+# is not UTF-8, which `serial.open`, taking text, could not open.
+function names_in(buffer: [u8], used: i64) -> [str]
+    names: [str] @= []
+    at: i64 @= 0
+
+    while at < used
+        stop: i64 @= at
+
+        while stop < used && buffer[stop] != 0
+            stop @ stop + 1
+
+        if stop > at
+            match buffer.slice(from: at, to: stop).validated_bytes()
+                .ok name => names @ names.push(name)
+                .err _   => _ = 0
+        at @ stop + 1
+
+    return sort(names)
+
+# The names of this machine's ports, sorted. Fails `failed` where the system
+# refused the folder or the key the list is read from.
+function ports() -> [str]?
+    buffer: [u8] @= []
+    room: i64 @= FIRST_ROOM
+
+    while true
+        answer = hero_serial.ports(@buffer, count: room.to_u64().must())
+
+        if answer < 0
+            return failure.last(asked: "listing the serial ports")
+
+        if answer <= room
+            return ok(names_in(buffer, used: answer))
+
+        # The list grew past the room: asked again with as much as it said.
+        room @ answer
+
+## Tests
+
+test "names_in: nothing, one name, several unsorted, empty names and a name that is not UTF-8 passed over, a last name with no zero"
+    nothing: [u8] = []
+    assert names_in(nothing, used: 0).len() == 0
+    one: [u8] = [47, 100, 0]
+    assert names_in(one, used: 3) == ["/d"]
+    several: [u8] = [98, 0, 97, 0, 0, 99]
+    assert names_in(several, used: 6) == ["a", "b", "c"]
+    broken: [u8] = [255, 0, 120, 0]
+    assert names_in(broken, used: 4) == ["x"]
+    cut: [u8] = [97, 98, 0, 99, 100, 0]
+    assert names_in(cut, used: 4) == ["ab", "c"]
+
+test "names_in: a name of more than one byte is kept whole"
+    accented: [u8] = [99, 195, 168, 0]
+    assert names_in(accented, used: 4) == ["cè"]
+
+test "ports: the machine's list, sorted, every name a path or a COM name"
+    names = ports().must()
+    assert names == sort(names)
+
+    for name in names
+        assert name.len() > 0

@@ -1,0 +1,166 @@
+# The codes `serial` fails with, and the one place a kind of the floor
+# `serial/hero_serial` becomes one: every failure of a call on a port is built
+# here, its message saying what was asked and what the system answered
+# (README § A4). A port's reads and writes fail through `io`, whose own codes
+# they are.
+
+use serial/hero_serial
+
+constant NOT_FOUND: str
+    "not_found"
+
+constant PERMISSION: str
+    "permission"
+
+constant INVALID: str
+    "invalid"
+
+constant CLOSED: str
+    "closed"
+
+constant TIMEOUT: str
+    "timeout"
+
+constant STOPPED: str
+    "stopped"
+
+constant LIMIT: str
+    "limit"
+
+constant UNSUPPORTED: str
+    "unsupported"
+
+constant FAILED: str
+    "failed"
+
+# What a code and its words are, for one kind of the floor.
+record Told
+    # The code of README § A4.
+    code: str
+    # What the layer or the system answered, in words a reader can act on.
+    why: str
+
+# The code and the words for `kind`, one of `HERO_SERIAL_*`, the platform's
+# own number `os_error` in the words where the layer names no kind of its own.
+function told(kind: i64, os_error: i64) -> Told
+    if kind == hero_serial.HERO_SERIAL_INVALID
+        return Told(code: INVALID, why: "the layer refuses the argument")
+
+    if kind == hero_serial.HERO_SERIAL_NOT_OPEN
+        return Told(code: CLOSED, why: "the stream is closed")
+
+    if kind == hero_serial.HERO_SERIAL_NOT_FOUND
+        return Told(code: NOT_FOUND, why: "no port is at the path")
+
+    if kind == hero_serial.HERO_SERIAL_DENIED
+        return Told(
+            code: PERMISSION,
+            why: "the system refuses the port to this program (on Windows, another program may have it open)"
+        )
+
+    if kind == hero_serial.HERO_SERIAL_BUSY
+        return Told(code: PERMISSION, why: "another program has the port open")
+
+    if kind == hero_serial.HERO_SERIAL_LIMIT
+        return Told(code: LIMIT, why: "the system has no descriptor, handle or memory left")
+
+    if kind == hero_serial.HERO_SERIAL_GONE
+        return Told(code: CLOSED, why: "the port's device is gone")
+
+    if kind == hero_serial.HERO_SERIAL_UNSUPPORTED
+        return Told(code: UNSUPPORTED, why: "this platform or this port has no such thing")
+
+    if kind == hero_serial.HERO_SERIAL_NOT_A_PORT
+        return Told(code: INVALID, why: "it is no serial port")
+
+    if kind == hero_serial.HERO_SERIAL_TIMED_OUT
+        return Told(code: TIMEOUT, why: "the time allowed ran out")
+
+    if kind == hero_serial.HERO_SERIAL_STOPPED
+        return Told(code: STOPPED, why: "the program was asked to stop")
+    return Told(code: FAILED, why: f"the system failed, its error {os_error} (kind {kind})")
+
+# The failure the floor's last call on this thread named, as a `T?`, its
+# message `asked` then what was answered. Called right after the call that
+# failed, before any other call of the floor on this thread.
+function last<T>(asked: str) -> T?
+    t = told(kind: hero_serial.last_error(), os_error: hero_serial.last_os_error())
+    return fail(code: t.code, msg: f"{asked}: {t.why}")
+
+# The failure the floor's last call named where it answered below 0, its
+# words `why` where its code is `unsupported`, which says more than the
+# layer's; read as `last` reads it.
+function last_saying<T>(asked: str, unsupported_why: str) -> T?
+    t = told(kind: hero_serial.last_error(), os_error: hero_serial.last_os_error())
+
+    if t.code == UNSUPPORTED
+        return fail(code: t.code, msg: f"{asked}: {unsupported_why}")
+    return fail(code: t.code, msg: f"{asked}: {t.why}")
+
+# A failure of `code` the package finds before the floor is asked, its
+# message `asked` then `why`.
+function of<T>(code: str, asked: str, why: str) -> T?
+    return fail(code: code, msg: f"{asked}: {why}")
+
+# Nothing, or the failure the floor's call named where it answered below 0,
+# read as `last` reads it.
+function done(answer: i64, asked: str) -> ()?
+    if answer < 0
+        return last(asked: asked)
+    return ok()
+
+# `answer`, or the failure the floor's call named where it is below 0, read
+# as `last` reads it.
+function counted(answer: i64, asked: str) -> i64?
+    if answer < 0
+        return last(asked: asked)
+    return ok(answer)
+
+## Tests
+
+test "told: every kind of the floor is a code of README § A4, a busy port is permission, no port is invalid, an unknown kind failed with its number"
+    assert told(kind: hero_serial.HERO_SERIAL_INVALID, os_error: 0).code == INVALID
+    assert told(kind: hero_serial.HERO_SERIAL_NOT_OPEN, os_error: 0).code == CLOSED
+    assert told(kind: hero_serial.HERO_SERIAL_NOT_FOUND, os_error: 2).code == NOT_FOUND
+    assert told(kind: hero_serial.HERO_SERIAL_DENIED, os_error: 13).code == PERMISSION
+    assert told(kind: hero_serial.HERO_SERIAL_BUSY, os_error: 16).code == PERMISSION
+    assert told(kind: hero_serial.HERO_SERIAL_BUSY, os_error: 16).why == "another program has the port open"
+    assert told(kind: hero_serial.HERO_SERIAL_LIMIT, os_error: 24).code == LIMIT
+    assert told(kind: hero_serial.HERO_SERIAL_GONE, os_error: 5).code == CLOSED
+    assert told(kind: hero_serial.HERO_SERIAL_UNSUPPORTED, os_error: 25).code == UNSUPPORTED
+    assert told(kind: hero_serial.HERO_SERIAL_NOT_A_PORT, os_error: 25).code == INVALID
+    assert told(kind: hero_serial.HERO_SERIAL_NOT_A_PORT, os_error: 25).why == "it is no serial port"
+    assert told(kind: hero_serial.HERO_SERIAL_TIMED_OUT, os_error: 0).code == TIMEOUT
+    assert told(kind: hero_serial.HERO_SERIAL_STOPPED, os_error: 0).code == STOPPED
+    assert told(kind: hero_serial.HERO_SERIAL_OTHER, os_error: 5).code == FAILED
+    assert told(kind: hero_serial.HERO_SERIAL_OTHER, os_error: 5).why == "the system failed, its error 5 (kind 12)"
+    assert told(kind: 99, os_error: -1).code == FAILED
+    assert told(kind: -9223372036854775807 - 1, os_error: 9223372036854775807).code == FAILED
+
+test "done, counted and last: 0 and above pass, -1 is the floor's failure with what was asked before it"
+    assert done(answer: 0, asked: "x") == ok()
+    assert counted(answer: 9223372036854775807, asked: "x") == ok(9223372036854775807)
+    assert hero_serial.drain(nullptr) == -1
+
+    match done(answer: -1, asked: "draining the port \"p\"")
+        .ok _ => assert false
+        .err e =>
+            assert e.code == CLOSED
+            assert e.msg == "draining the port \"p\": the stream is closed"
+
+test "last_saying: an unsupported kind takes the caller's words, any other kind keeps the layer's"
+    assert hero_serial.drain(nullptr) == -1
+    r: i64? = last_saying(asked: "a", unsupported_why: "no lines")
+
+    match r
+        .ok _  => assert false
+        .err e => assert e.msg == "a: the stream is closed"
+
+test "of: the message is what was asked, then why"
+    r: i64? = of(code: INVALID, asked: "setting the port \"p\"", why: "a character is 5 to 8 bits, and 9 is not")
+
+    match r
+        .ok _ => assert false
+        .err e =>
+            assert e.code == INVALID
+            assert e.msg == "setting the port \"p\": a character is 5 to 8 bits, and 9 is not"

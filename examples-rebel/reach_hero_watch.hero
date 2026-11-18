@@ -1,0 +1,11 @@
+# Reaches Rebel's floor over the platform layer's watches, `hero_watch.h`, so
+# that `heroes test` on this file runs the floor's own tests (spec § 12, § 13).
+# It asks for a watch of a path that names nothing and prints the kind the
+# layer answers, 3, `HERO_WATCH_NOT_FOUND`.
+
+use <rebel>/fs/watch/hero_watch
+
+function main()
+    w @= hero_watch.open("/no/such/folder/to/watch", flags: 0, most: 4)
+    print(hero_watch.last_error())
+    _ = hero_watch.close(@w)

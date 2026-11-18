@@ -1,0 +1,68 @@
+# What the live tests of `sql/odbc` stand on: SQLite's ODBC driver, where
+# this machine's driver manager knows one by the name `SQLite3` (Debian's
+# `libsqliteodbc`), and a PostgreSQL server where `REBEL_ODBC_POSTGRES` names
+# one by a connection string, through PostgreSQL's ODBC driver. A test that
+# has neither checks what it can and says it skipped the rest.
+
+use os
+use sql/odbc/internal/fill
+
+# Whether `text` holds a line that begins with `start`.
+#
+# - `text`: lines, each ending `\n`.
+# - `start`: the beginning looked for.
+function has_line_starting(text: str, start: str) -> bool
+    at: i64 @= 0
+
+    while at + start.len() <= text.len()
+        same: i64 @= 0
+
+        while same < start.len() && text[at + same] == start[same]
+            same @ same + 1
+
+        if same == start.len()
+            return true
+
+        while at < text.len() && text[at] != '\n'
+            at @ at + 1
+
+        at @ at + 1
+
+    return false
+
+# The name this machine's driver manager knows SQLite's ODBC driver by:
+# `SQLite3`, as Debian's `libsqliteodbc` registers it, or `SQLite3 ODBC
+# Driver`, as its Windows installer does. Fails `not_found` where it knows
+# neither, and `unsupported` where no manager loads.
+function sqlite_driver() -> str?
+    lines = fill.drivers_text()?
+
+    if has_line_starting(text: lines, start: "SQLite3\t")
+        return ok("SQLite3")
+
+    if has_line_starting(text: lines, start: "SQLite3 ODBC Driver\t")
+        return ok("SQLite3 ODBC Driver")
+    return fail(code: "not_found", msg: "no SQLite ODBC driver is known to the manager")
+
+# Whether this machine's driver manager knows SQLite's ODBC driver.
+function has_sqlite() -> bool
+    return !sqlite_driver().is_err()
+
+# The connection string of a new SQLite database in memory, through the
+# SQLite ODBC driver `sqlite_driver` names, `SQLite3` where it names none.
+function sqlite_memory() -> str
+    return "Driver={" + sqlite_driver().default("SQLite3") + "};Database=:memory:"
+
+# The connection string of the PostgreSQL server `REBEL_ODBC_POSTGRES`
+# names. Fails `not_found` where it names none.
+function postgres() -> str?
+    return os.env("REBEL_ODBC_POSTGRES")
+
+## Tests
+
+test "has_line_starting: the first line, a later one, none, and a beginning longer than the text"
+    assert has_line_starting(text: "SQLite3\tDriver=x\n", start: "SQLite3\t")
+    assert has_line_starting(text: "SQLite\ta\nSQLite3\tb\n", start: "SQLite3\t")
+    assert !has_line_starting(text: "SQLite\ta\nPostgreSQL\tb\n", start: "SQLite3\t")
+    assert !has_line_starting(text: "", start: "SQLite3\t")
+    assert !has_line_starting(text: "SQL", start: "SQLite3\t")

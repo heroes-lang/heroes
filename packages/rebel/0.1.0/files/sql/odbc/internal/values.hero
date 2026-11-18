@@ -1,0 +1,292 @@
+# `sql`'s values handed to a statement as its parameters, and a column of a
+# row read back as one, by the SQL type its driver describes it with. The
+# module comment of `sql/odbc` states both tables.
+
+use bytes
+use sql
+use sql/odbc/hero_odbc
+use sql/odbc/internal/failure
+use sql/odbc/internal/fill
+use time
+
+# Where `s` first holds a zero byte, as a byte index.
+#
+# - `s`: the text searched.
+#
+# Fails `not_found` where it holds none.
+function zero_at(s: str) -> i64?
+    at: i64 @= 0
+
+    while at < s.len()
+        if s[at] == 0
+            return ok(at)
+        at @ at + 1
+
+    return fail(code: sql.NOT_FOUND, msg: "no zero byte in the text")
+
+# Every value of `params` handed to `s` as its parameter, in order from 1,
+# the values bound before forgotten.
+#
+# - `s`: the statement.
+# - `params`: the values.
+#
+# Fails `invalid` where a text holds a zero byte, which a driver may cut
+# the text at (SQLite's does), and as the floor does.
+function bind_all(s: hero_odbc.Statement, params: [sql.Value]) -> ()?
+    if hero_odbc.unbind(s) < 0
+        return failure.last()
+    place: i64 @= 0
+
+    for v in params
+        index = to_u64(place + 1).must()
+        rc: i64 @= 0
+
+        match v
+            .null_value => rc @ hero_odbc.bind_null(s, index: index)
+            .boolean b =>
+                truth: i64 = if b.v
+                    1
+                else
+                    0
+
+                rc @ hero_odbc.bind_boolean(s, index: index, value: truth)
+            .integer n => rc @ hero_odbc.bind_integer(s, index: index, value: n.v)
+            .float x   => rc @ hero_odbc.bind_float(s, index: index, value: x.v)
+            .text t =>
+                match zero_at(t.v)
+                    .ok at => return fail(
+                        code: sql.INVALID,
+                        msg: f"the text of parameter {place + 1} holds a zero byte at byte {at}, which a driver may cut the text at: send it as a blob"
+                    )
+                    .err _ => _ = 0
+
+                data @= bytes.from_text(t.v)
+                rc @ hero_odbc.bind_text(s, index: index, bytes: @data, count: to_u64(data.len()).must())
+            .blob b =>
+                data @= b.v
+                rc @ hero_odbc.bind_bytes(s, index: index, bytes: @data, count: to_u64(data.len()).must())
+            .instant t =>
+                parts @= parts_of(t.v)
+                rc @ hero_odbc.bind_timestamp(
+                    s,
+                    index: index,
+                    parts: @parts,
+                    count: hero_odbc.HERO_ODBC_TIMESTAMP_PARTS
+                )
+
+        if rc < 0
+            return failure.last()
+        place @ place + 1
+
+    return ok()
+
+# The kind a column of the SQL type `sql_type` is read as, one of the
+# floor's `HERO_ODBC_AS_*`.
+#
+# - `sql_type`: ODBC's number for the type, or one of the driver's own.
+function kind_for(sql_type: i64) -> i64
+    if sql_type == hero_odbc.HERO_ODBC_TYPE_BIT
+        return hero_odbc.HERO_ODBC_AS_BOOLEAN
+
+    if sql_type == hero_odbc.HERO_ODBC_TYPE_TINYINT || sql_type == hero_odbc.HERO_ODBC_TYPE_SMALLINT || sql_type == hero_odbc.HERO_ODBC_TYPE_INTEGER || sql_type == hero_odbc.HERO_ODBC_TYPE_BIGINT
+        return hero_odbc.HERO_ODBC_AS_INTEGER
+
+    if sql_type == hero_odbc.HERO_ODBC_TYPE_REAL || sql_type == hero_odbc.HERO_ODBC_TYPE_FLOAT || sql_type == hero_odbc.HERO_ODBC_TYPE_DOUBLE
+        return hero_odbc.HERO_ODBC_AS_FLOAT
+
+    if sql_type == hero_odbc.HERO_ODBC_TYPE_BINARY || sql_type == hero_odbc.HERO_ODBC_TYPE_VARBINARY || sql_type == hero_odbc.HERO_ODBC_TYPE_LONGVARBINARY
+        return hero_odbc.HERO_ODBC_AS_BYTES
+
+    if sql_type == hero_odbc.HERO_ODBC_TYPE_TYPE_TIMESTAMP || sql_type == hero_odbc.HERO_ODBC_TYPE_TYPE_DATE || sql_type == hero_odbc.HERO_ODBC_TYPE_TIMESTAMP || sql_type == hero_odbc.HERO_ODBC_TYPE_DATE
+        return hero_odbc.HERO_ODBC_AS_TIMESTAMP
+    return hero_odbc.HERO_ODBC_AS_TEXT
+
+# How a message names the column at `index`, from 0, called `name`:
+# `column 2 ("name")`, as `sql`'s reads name one.
+#
+# - `index`: the column's place, from 0.
+# - `name`: the column's name.
+function column_words(index: i64, name: str) -> str
+    return f"column {index} (\"{name}\")"
+
+# The value of the column at `column`, from 1, of `s`'s current row, read by
+# its SQL type.
+#
+# - `s`: the statement, on a row.
+# - `column`: the column's place, from 1; a row's columns are read in
+#   order.
+# - `sql_type`: the column's SQL type, as its driver describes it.
+# - `name`: the column's name, as a message names it.
+#
+# Fails `invalid` where a text is not UTF-8, and as the floor does,
+# `does_not_fit` where the driver says a number is past an `i64` (22003).
+function read_value(s: hero_odbc.Statement, column: i64, sql_type: i64, name: str) -> sql.Value?
+    kind = kind_for(sql_type)
+    got = hero_odbc.read(s, column: to_u64(column).must(), kind: kind)
+
+    if got < 0
+        return failure.last()
+
+    if got == 0
+        return ok(.null_value)
+
+    if kind == hero_odbc.HERO_ODBC_AS_BOOLEAN || kind == hero_odbc.HERO_ODBC_AS_INTEGER
+        n: i64 @= 0
+
+        if hero_odbc.cell_integer(s, value: @n) < 0
+            return failure.last()
+
+        if kind == hero_odbc.HERO_ODBC_AS_BOOLEAN
+            return ok(.boolean(v: n != 0))
+        return ok(.integer(v: n))
+
+    if kind == hero_odbc.HERO_ODBC_AS_FLOAT
+        x: f64 @= 0.0
+
+        if hero_odbc.cell_float(s, value: @x) < 0
+            return failure.last()
+        return ok(.float(v: x))
+
+    if kind == hero_odbc.HERO_ODBC_AS_TIMESTAMP
+        parts @= [0, 0, 0, 0, 0, 0, 0]
+
+        if hero_odbc.cell_timestamp(s, parts: @parts, count: hero_odbc.HERO_ODBC_TIMESTAMP_PARTS) < 0
+            return failure.last()
+        return ok(instant_or_text(parts))
+    data = fill.cell_bytes(s)?
+
+    if kind == hero_odbc.HERO_ODBC_AS_BYTES
+        return ok(.blob(v: data))
+
+    match data.validated_bytes()
+        .ok text => return ok(.text(v: text))
+        .err _ => return fail(
+            code: sql.INVALID,
+            msg: column_words(index: column - 1, name: name) + " holds text that is not UTF-8"
+        )
+
+# The seven parts of `t` in UTC, as the floor binds a timestamp: year,
+# month, day, hour, minute, second, nanosecond.
+#
+# - `t`: the moment.
+function parts_of(t: time.Instant) -> [i64]
+    d = time.to_date_time(t)
+    return [d.year, d.month, d.day, d.hour, d.minute, d.second, d.nanosecond]
+
+# The moment the seven `parts` name in UTC, or their text where no
+# `time.Instant` holds it: a date past 2261, a day the calendar has not.
+#
+# - `parts`: year, month, day, hour, minute, second, nanosecond, as a
+#   driver gave them.
+function instant_or_text(parts: [i64]) -> sql.Value
+    named = time.DateTime(
+        year: parts[0],
+        month: parts[1],
+        day: parts[2],
+        hour: parts[3],
+        minute: parts[4],
+        second: parts[5],
+        nanosecond: parts[6]
+    )
+
+    match time.from_date_time(named)
+        .ok t  => return .instant(v: t)
+        .err _ => return .text(v: stamp_text(parts))
+
+# The text of the seven `parts`, `2999-12-31 23:59:59`, with a fraction of
+# as many digits as its nanoseconds need, 3, 6 or 9, where they are not 0.
+#
+# - `parts`: year, month, day, hour, minute, second, nanosecond.
+function stamp_text(parts: [i64]) -> str
+    whole = f"{padded(n: parts[0], width: 4)}-{padded(n: parts[1], width: 2)}-{padded(n: parts[2], width: 2)} {padded(n: parts[3], width: 2)}:{padded(n: parts[4], width: 2)}:{padded(n: parts[5], width: 2)}"
+    ns = parts[6]
+
+    if ns == 0
+        return whole
+
+    if ns % 1000000 == 0
+        return whole + "." + padded(n: ns / 1000000, width: 3)
+
+    if ns % 1000 == 0
+        return whole + "." + padded(n: ns / 1000, width: 6)
+    return whole + "." + padded(n: ns, width: 9)
+
+# `n` written in decimal with zeros before it to `width` digits, its sign
+# before them.
+#
+# - `n`: the number.
+# - `width`: the fewest digits, from 1.
+function padded(n: i64, width: i64) -> str
+    if n < 0
+        if n == -9223372036854775807 - 1
+            return n.to_str()
+        return "-" + padded(n: -n, width: width)
+    digits = n.to_str()
+
+    if digits.len() >= width
+        return digits
+    return repeat("0", to_u64(width - digits.len()).must()) + digits
+
+## Tests
+
+test "zero_at: none, at the start, inside after a character of two bytes, the empty text"
+    assert zero_at("città").is_err()
+    assert zero_at("").is_err()
+    assert zero_at(bytes.to_text([0, 97]).must()).must() == 0
+    assert zero_at(bytes.to_text([195, 160, 0]).must()).must() == 2
+
+test "kind_for: every type of each kind, and a type of a driver's own read as text"
+    assert kind_for(hero_odbc.HERO_ODBC_TYPE_BIT) == hero_odbc.HERO_ODBC_AS_BOOLEAN
+    assert kind_for(hero_odbc.HERO_ODBC_TYPE_TINYINT) == hero_odbc.HERO_ODBC_AS_INTEGER
+    assert kind_for(hero_odbc.HERO_ODBC_TYPE_SMALLINT) == hero_odbc.HERO_ODBC_AS_INTEGER
+    assert kind_for(hero_odbc.HERO_ODBC_TYPE_INTEGER) == hero_odbc.HERO_ODBC_AS_INTEGER
+    assert kind_for(hero_odbc.HERO_ODBC_TYPE_BIGINT) == hero_odbc.HERO_ODBC_AS_INTEGER
+    assert kind_for(hero_odbc.HERO_ODBC_TYPE_REAL) == hero_odbc.HERO_ODBC_AS_FLOAT
+    assert kind_for(hero_odbc.HERO_ODBC_TYPE_FLOAT) == hero_odbc.HERO_ODBC_AS_FLOAT
+    assert kind_for(hero_odbc.HERO_ODBC_TYPE_DOUBLE) == hero_odbc.HERO_ODBC_AS_FLOAT
+    assert kind_for(hero_odbc.HERO_ODBC_TYPE_BINARY) == hero_odbc.HERO_ODBC_AS_BYTES
+    assert kind_for(hero_odbc.HERO_ODBC_TYPE_VARBINARY) == hero_odbc.HERO_ODBC_AS_BYTES
+    assert kind_for(hero_odbc.HERO_ODBC_TYPE_LONGVARBINARY) == hero_odbc.HERO_ODBC_AS_BYTES
+    assert kind_for(hero_odbc.HERO_ODBC_TYPE_TYPE_TIMESTAMP) == hero_odbc.HERO_ODBC_AS_TIMESTAMP
+    assert kind_for(hero_odbc.HERO_ODBC_TYPE_TYPE_DATE) == hero_odbc.HERO_ODBC_AS_TIMESTAMP
+    assert kind_for(hero_odbc.HERO_ODBC_TYPE_TIMESTAMP) == hero_odbc.HERO_ODBC_AS_TIMESTAMP
+    assert kind_for(hero_odbc.HERO_ODBC_TYPE_DATE) == hero_odbc.HERO_ODBC_AS_TIMESTAMP
+    assert kind_for(hero_odbc.HERO_ODBC_TYPE_TYPE_TIME) == hero_odbc.HERO_ODBC_AS_TEXT
+    assert kind_for(hero_odbc.HERO_ODBC_TYPE_DECIMAL) == hero_odbc.HERO_ODBC_AS_TEXT
+    assert kind_for(hero_odbc.HERO_ODBC_TYPE_NUMERIC) == hero_odbc.HERO_ODBC_AS_TEXT
+    assert kind_for(hero_odbc.HERO_ODBC_TYPE_WVARCHAR) == hero_odbc.HERO_ODBC_AS_TEXT
+    assert kind_for(hero_odbc.HERO_ODBC_TYPE_GUID) == hero_odbc.HERO_ODBC_AS_TEXT
+    assert kind_for(-155) == hero_odbc.HERO_ODBC_AS_TEXT
+
+test "parts_of and instant_or_text: there and back at the epoch, before it, and a date no instant holds as its text"
+    t = time.from_unix(whole_seconds: -1, extra_nanoseconds: 999999999).must()
+    assert parts_of(t) == [1969, 12, 31, 23, 59, 59, 999999999]
+    assert instant_or_text(parts_of(t)) == .instant(v: t)
+    assert parts_of(time.epoch()) == [1970, 1, 1, 0, 0, 0, 0]
+    assert instant_or_text([2999, 12, 31, 0, 0, 0, 0]) == .text(v: "2999-12-31 00:00:00")
+    assert instant_or_text([2006, 2, 30, 0, 0, 0, 0]) == .text(v: "2006-02-30 00:00:00")
+
+test "stamp_text: no fraction, milliseconds, microseconds, nanoseconds, a year of one digit"
+    assert stamp_text([2006, 1, 2, 15, 4, 5, 0]) == "2006-01-02 15:04:05"
+    assert stamp_text([2006, 1, 2, 15, 4, 5, 123000000]) == "2006-01-02 15:04:05.123"
+    assert stamp_text([2006, 1, 2, 15, 4, 5, 123456000]) == "2006-01-02 15:04:05.123456"
+    assert stamp_text([2006, 1, 2, 15, 4, 5, 1]) == "2006-01-02 15:04:05.000000001"
+    assert stamp_text([1, 1, 1, 0, 0, 0, 0]) == "0001-01-01 00:00:00"
+
+test "padded: shorter, as long, longer, zero, negative, and the smallest i64"
+    assert padded(n: 7, width: 2) == "07"
+    assert padded(n: 12, width: 2) == "12"
+    assert padded(n: 12345, width: 4) == "12345"
+    assert padded(n: 0, width: 3) == "000"
+    assert padded(n: -5, width: 3) == "-005"
+    assert padded(n: -9223372036854775807 - 1, width: 2) == "-9223372036854775808"
+
+test "column_words: a column named as sql's reads name one"
+    assert column_words(index: 0, name: "n") == "column 0 (\"n\")"
+
+test "bind_all of a statement that is none fails closed or unsupported, and a text with a zero byte invalid before any value is bound"
+    none_s: hero_odbc.Statement = nullptr
+
+    match bind_all(none_s, [.integer(v: 1)])
+        .ok _  => assert false
+        .err e => assert e.code == "closed" || e.code == "unsupported"

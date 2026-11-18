@@ -1,0 +1,286 @@
+# The platform layer's watches, `hero_watch.h`, bound thin: one function per C
+# function, in C's order, each answering what C answers. Rebel's floor of
+# `fs/watch` (`examples/packages/README.md` § 4.1): where a call fails its
+# watch or bell is `nullptr` or its count -1, and `last_error` then the kind;
+# no policy stands here, and the face above it turns every kind into a code.
+#
+# The layer is C of the language's own beside the runtime, so this group names
+# its header and no `link`: no platform type reaches it, and the same lines
+# bind it on every platform. A watch is begun by `hero_watch_open` and ended by
+# `hero_watch_close`; its bell, a stream on Darwin and Linux and a socket on
+# Windows, is the watch's own, borrowed, and closed with it.
+
+use fs
+use io/hero_stream
+use net/hero_net
+use path as paths
+use time
+
+extern "hero_watch.h"
+    # A watch the layer holds open. It is a handle the layer issues and checks:
+    # one closed already, `nullptr`, or one it never issued is
+    # `HERO_WATCH_NOT_OPEN`, never a read of freed memory.
+    record Watch tag hero_watch
+    # The kinds of failure `last_error` answers, the same numbers on every
+    # platform.
+    constant HERO_WATCH_OK: i64
+    constant HERO_WATCH_INVALID: i64
+    constant HERO_WATCH_NOT_OPEN: i64
+    constant HERO_WATCH_NOT_FOUND: i64
+    constant HERO_WATCH_DENIED: i64
+    constant HERO_WATCH_NOT_A_DIRECTORY: i64
+    constant HERO_WATCH_LIMIT: i64
+    constant HERO_WATCH_SHORT: i64
+    constant HERO_WATCH_ENDED: i64
+    constant HERO_WATCH_STOPPED: i64
+    constant HERO_WATCH_UNSUPPORTED: i64
+    constant HERO_WATCH_OTHER: i64
+    # The kinds of event, an event's first number.
+    constant HERO_WATCH_CREATED: i64
+    constant HERO_WATCH_REMOVED: i64
+    constant HERO_WATCH_CHANGED: i64
+    constant HERO_WATCH_ATTRIBUTES: i64
+    constant HERO_WATCH_RENAMED: i64
+    constant HERO_WATCH_OVERFLOW: i64
+    constant HERO_WATCH_GONE: i64
+    # The flag of a whole tree, the most events a watch holds, and the
+    # numbers one event takes.
+    constant HERO_WATCH_TREE: i64
+    constant HERO_WATCH_MOST: i64
+    constant HERO_WATCH_EVENT_NUMBERS: i64
+    function hero_watch_open(path: cstr lent, flags: i64, most: i64) -> Watch acquires hero_watch_close
+    function hero_watch_next(w: Watch, limit_ns: i64, @numbers: [i64] counted_by numbers_count lent, numbers_count: u64, @text: [u8] counted_by text_count lent, text_count: u64) -> i64
+    function hero_watch_count(w: Watch) -> i64
+    function hero_watch_bell_stream(w: Watch) -> hero_stream.Stream borrows
+    function hero_watch_bell_socket(w: Watch) -> hero_net.Socket borrows
+    function hero_watch_close(w: Watch consumes) -> i64
+    function hero_watch_last_error() -> i64
+    function hero_watch_last_os_error() -> i64
+
+# A new watch of `path`, a folder or a file, with `flags` 0 or
+# `HERO_WATCH_TREE` and room for `most` events; or `nullptr`.
+function open(path: str, flags: i64, most: i64) -> Watch
+    return hero_watch_open(path.cstr(), flags: flags, most: most)
+
+# 1 once the first event's numbers are in `numbers` and its paths in `text`,
+# 0 where `limit_ns` passed with none (0 asks without waiting, -1 waits with
+# no limit), or -1; `numbers` and `text` are left `numbers_count` and
+# `text_count` long.
+function next(w: Watch, limit_ns: i64, @numbers: [i64], numbers_count: u64, @text: [u8], text_count: u64) -> i64
+    return hero_watch_next(w, limit_ns: limit_ns, @numbers, numbers_count: numbers_count, @text, text_count: text_count)
+
+# How many events wait in the watch's queue, or -1.
+function count(w: Watch) -> i64
+    return hero_watch_count(w)
+
+# The watch's bell as a stream, ready while an event waits, borrowed; or
+# `nullptr`, `HERO_WATCH_UNSUPPORTED` on Windows.
+function bell_stream(w: Watch) -> hero_stream.Stream
+    return hero_watch_bell_stream(w)
+
+# The watch's bell as a datagram socket, borrowed; or `nullptr`,
+# `HERO_WATCH_UNSUPPORTED` but on Windows.
+function bell_socket(w: Watch) -> hero_net.Socket
+    return hero_watch_bell_socket(w)
+
+# 0, or -1 where the watch was not open; `w` is given back either way.
+function close(@w: Watch) -> i64
+    return hero_watch_close(w)
+
+# The kind of the last call's failure on this thread.
+function last_error() -> i64
+    return hero_watch_last_error()
+
+# The platform's own number for the last call's failure, 0 where the layer
+# itself refused.
+function last_os_error() -> i64
+    return hero_watch_last_os_error()
+
+# -- the floor's own tests ---------------------------------------------------
+
+# A new folder for one test, under the system's folder for temporary files.
+function scratch(name: str) -> str
+    return fs.make_temp_dir(dir: "", pattern: "hero-watch-" + name + "-*").must()
+
+# The kinds the watch tells within `ms` milliseconds of waiting for each,
+# until one wait finds none; a failure ends the list with -1 and its kind.
+function kinds_told(w: Watch, ms: i64) -> [i64]
+    numbers: [i64] @= [0, 0, 0, 0]
+    text: [u8] @= []
+    told: [i64] @= []
+
+    for _ in range(from: 0, to: 4096)
+        text @ text.push(0)
+
+    while true
+        got = next(w, limit_ns: ms * 1000000, @numbers, numbers_count: 4, @text, text_count: 4096)
+
+        if got == 0
+            break
+
+        if got < 0
+            told @ told.push(-1)
+            told @ told.push(last_error())
+            break
+        told @ told.push(numbers[0])
+
+    return told
+
+# Whether `xs` holds `x`.
+function holds(xs: [i64], x: i64) -> bool
+    for one in xs
+        if one == x
+            return true
+
+    return false
+
+test "hero_watch open: an empty path, a flag that is none, room of 0 and past the most are refused invalid"
+    made @= open("", flags: 0, most: 4)
+    assert made == nullptr
+    assert last_error() == HERO_WATCH_INVALID
+    _ = close(@made)
+    root = scratch("bad")
+    flag @= open(root, flags: 2, most: 4)
+    assert flag == nullptr
+    assert last_error() == HERO_WATCH_INVALID
+    _ = close(@flag)
+    none @= open(root, flags: 0, most: 0)
+    assert none == nullptr
+    assert last_error() == HERO_WATCH_INVALID
+    _ = close(@none)
+    past @= open(root, flags: 0, most: HERO_WATCH_MOST + 1)
+    assert past == nullptr
+    assert last_error() == HERO_WATCH_INVALID
+    _ = close(@past)
+    _ = fs.remove_all(root).is_err()
+
+test "hero_watch open: a path that names nothing, and a tree asked of a file"
+    root = scratch("missing")
+    missing @= open(root + "/nothing-here", flags: 0, most: 4)
+    assert missing == nullptr
+    assert last_error() == HERO_WATCH_NOT_FOUND
+    _ = close(@missing)
+    write_file(path: root + "/a.txt", text: "a").must()
+    tree @= open(root + "/a.txt", flags: HERO_WATCH_TREE, most: 4)
+    assert tree == nullptr
+    assert last_error() == HERO_WATCH_NOT_A_DIRECTORY
+    _ = close(@tree)
+    _ = fs.remove_all(root).is_err()
+
+test "hero_watch close: a watch closed once answers 0; a null watch is not open to every call"
+    root = scratch("close")
+    w @= open(root, flags: 0, most: 4)
+    assert w != nullptr
+    assert close(@w) == 0
+    none: Watch @= nullptr
+    assert count(none) == -1
+    assert last_error() == HERO_WATCH_NOT_OPEN
+    numbers: [i64] @= [0, 0, 0, 0]
+    text: [u8] @= [0, 0, 0, 0]
+    assert next(none, limit_ns: 0, @numbers, numbers_count: 4, @text, text_count: 4) == -1
+    assert last_error() == HERO_WATCH_NOT_OPEN
+    assert bell_stream(none) == nullptr
+    assert last_error() == HERO_WATCH_NOT_OPEN
+    assert bell_socket(none) == nullptr
+    assert last_error() == HERO_WATCH_NOT_OPEN
+    assert close(@none) == -1
+    assert last_error() == HERO_WATCH_NOT_OPEN
+    _ = fs.remove_all(root).is_err()
+
+test "hero_watch next: a limit of -2 and three numbers are refused; a limit of 0 on an empty queue answers 0"
+    root = scratch("next")
+    w @= open(root, flags: 0, most: 4)
+    numbers: [i64] @= [0, 0, 0, 0]
+    three: [i64] @= [0, 0, 0]
+    text: [u8] @= [0, 0, 0, 0]
+    assert next(w, limit_ns: -2, @numbers, numbers_count: 4, @text, text_count: 4) == -1
+    assert last_error() == HERO_WATCH_INVALID
+    assert next(w, limit_ns: 0, @three, numbers_count: 3, @text, text_count: 4) == -1
+    assert last_error() == HERO_WATCH_INVALID
+    assert next(w, limit_ns: 0, @numbers, numbers_count: 4, @text, text_count: 4) == 0
+    assert count(w) == 0
+    _ = close(@w)
+    _ = fs.remove_all(root).is_err()
+
+test "hero_watch next: a file made is told created within two seconds, and a buffer too short leaves it first, its lengths told"
+    root = scratch("short")
+    w @= open(root, flags: 0, most: 16)
+    fs.touch(root + "/made.txt").must()
+    numbers: [i64] @= [0, 0, 0, 0]
+    short: [u8] @= [0, 0, 0, 0]
+    got @= next(w, limit_ns: 2000000000, @numbers, numbers_count: 4, @short, text_count: 4)
+    assert got == -1
+    assert last_error() == HERO_WATCH_SHORT
+    made = paths.join_all([root, "made.txt"])
+    want = made.len()
+    assert numbers[0] == HERO_WATCH_CREATED
+    assert numbers[2] == want
+    assert numbers[3] == 0
+    assert count(w) >= 1
+    text: [u8] @= []
+
+    for _ in range(from: 0, to: want)
+        text @ text.push(0)
+
+    got @ next(w, limit_ns: 0, @numbers, numbers_count: 4, @text, text_count: want.to_u64().must())
+    assert got == 1
+    assert numbers[0] == HERO_WATCH_CREATED
+    assert numbers[1] == 0
+    assert text.validated_bytes().must() == made
+    _ = close(@w)
+    _ = fs.remove_all(root).is_err()
+
+test "hero_watch next: a write, a rename and a removal, each told within two seconds"
+    root = scratch("cycle")
+    w @= open(root, flags: 0, most: 64)
+    fs.touch(root + "/a.txt").must()
+    assert holds(kinds_told(w, ms: 2000), x: HERO_WATCH_CREATED)
+    fs.append_text(path: root + "/a.txt", text: "two").must()
+    assert holds(kinds_told(w, ms: 2000), x: HERO_WATCH_CHANGED)
+    fs.rename(from: root + "/a.txt", to: root + "/b.txt").must()
+    assert holds(kinds_told(w, ms: 2000), x: HERO_WATCH_RENAMED)
+    fs.remove(root + "/b.txt").must()
+    assert holds(kinds_told(w, ms: 2000), x: HERO_WATCH_REMOVED)
+    _ = close(@w)
+    _ = fs.remove_all(root).is_err()
+
+test "hero_watch next: room for 4 and 40 files made, nothing taken: four events and one overflow stand where the rest were lost"
+    root = scratch("overflow")
+    w @= open(root, flags: 0, most: 4)
+
+    for i in range(from: 0, to: 40)
+        fs.touch(f"{root}/f{i}").must()
+
+    time.sleep(time.nanoseconds(1500000000))
+    assert count(w) == 5
+    told = kinds_told(w, ms: 0)
+    assert told.len() == 5
+    assert told[4] == HERO_WATCH_OVERFLOW
+    assert told.filter(is_overflow).len() == 1
+    _ = close(@w)
+    _ = fs.remove_all(root).is_err()
+
+function is_overflow(kind: i64) -> bool
+    return kind == HERO_WATCH_OVERFLOW
+
+test "hero_watch next: the watched folder removed is told gone, and then the watch has ended"
+    root = scratch("gone")
+    w @= open(root, flags: 0, most: 16)
+    fs.remove_all(root).must()
+    told = kinds_told(w, ms: 2000)
+    assert holds(told, x: HERO_WATCH_GONE)
+    assert told[told.len() - 1] == HERO_WATCH_ENDED
+    assert told[told.len() - 2] == -1
+    assert close(@w) == 0
+
+test "hero_watch bells: the stream on Darwin and Linux, the socket on Windows, the other unsupported"
+    root = scratch("bell")
+    w @= open(root, flags: 0, most: 4)
+    stream = bell_stream(w)
+    stream_kind = last_error()
+    socket = bell_socket(w)
+    socket_kind = last_error()
+    assert stream != nullptr && socket == nullptr && socket_kind == HERO_WATCH_UNSUPPORTED || stream == nullptr && stream_kind == HERO_WATCH_UNSUPPORTED && socket != nullptr
+    assert bell_stream(w) == stream
+    _ = close(@w)
+    _ = fs.remove_all(root).is_err()

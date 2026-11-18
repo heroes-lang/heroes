@@ -1,0 +1,82 @@
+# The codes `keyring` fails with, and the one place a kind of the floor
+# `keyring/hero_keyring` becomes one, its message saying what was asked and
+# what the system answered (README § A4). The face declares the same codes;
+# a private module cannot read the face, so they are written here too, and a
+# test holds the two to one spelling.
+
+use bytes
+use keyring/hero_keyring
+
+constant INVALID: str
+    "invalid"
+
+constant NOT_FOUND: str
+    "not_found"
+
+constant PERMISSION: str
+    "permission"
+
+constant LIMIT: str
+    "limit"
+
+constant UNSUPPORTED: str
+    "unsupported"
+
+constant FAILED: str
+    "failed"
+
+# The code of README § A4 for `kind`, one of `HERO_KEYRING_*`; a kind the
+# floor does not name is `failed`.
+function code_of(kind: i64) -> str
+    if kind == hero_keyring.HERO_KEYRING_INVALID
+        return INVALID
+
+    if kind == hero_keyring.HERO_KEYRING_NOT_FOUND
+        return NOT_FOUND
+
+    if kind == hero_keyring.HERO_KEYRING_DENIED
+        return PERMISSION
+
+    if kind == hero_keyring.HERO_KEYRING_LIMIT
+        return LIMIT
+
+    if kind == hero_keyring.HERO_KEYRING_UNSUPPORTED
+        return UNSUPPORTED
+    return FAILED
+
+# The words of the floor's last failure on this thread, the system's own where
+# it gave some; never a secret, since the layer writes none into them.
+function words() -> str
+    room: [u8] @= []
+    got = hero_keyring.last_message(@room, n: 512)
+
+    if got <= 0
+        return "the keyring refused, giving no words"
+    return bytes.to_text_lossy(room.slice(from: 0, to: got))
+
+# The failure the floor's last call on this thread named, as a `T?`: its code,
+# and `asked` then the system's words.
+function last<T>(asked: str) -> T?
+    code = code_of(hero_keyring.last_error())
+    return fail(code: code, msg: f"{asked}: {words()}")
+
+test "code_of: every kind of the floor is a code of README § A4, an unknown one failed"
+    assert code_of(hero_keyring.HERO_KEYRING_INVALID) == INVALID
+    assert code_of(hero_keyring.HERO_KEYRING_NOT_FOUND) == NOT_FOUND
+    assert code_of(hero_keyring.HERO_KEYRING_DENIED) == PERMISSION
+    assert code_of(hero_keyring.HERO_KEYRING_LIMIT) == LIMIT
+    assert code_of(hero_keyring.HERO_KEYRING_UNSUPPORTED) == UNSUPPORTED
+    assert code_of(hero_keyring.HERO_KEYRING_OTHER) == FAILED
+    assert code_of(77) == FAILED
+    assert code_of(hero_keyring.HERO_KEYRING_OK) == FAILED
+
+test "last: the floor's refusal of an empty service becomes invalid, its message what was asked then the layer's words"
+    secret: [u8] @= [1]
+    assert hero_keyring.store(service: "", account: "a", @secret, n: 1) == -1
+    r: ()? = last("storing a secret")
+
+    match r
+        .ok _ => assert false
+        .err e =>
+            assert e.code == INVALID
+            assert e.msg == "storing a secret: the service is empty"

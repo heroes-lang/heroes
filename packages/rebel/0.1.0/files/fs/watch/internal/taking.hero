@@ -1,0 +1,156 @@
+# What a wait takes from a watch: the floor's events read one by one into
+# records of this module's own, which the face turns into its `Event`s (a
+# private module cannot name its face's types). The buffer the paths are read
+# into grows where a path is longer than it, and an event whose path is not
+# UTF-8 is told as an overflow of the watched path, since a program can hand
+# no such path on: it reads the folder again, as after any overflow.
+
+use fs
+use fs/watch/hero_watch
+use fs/watch/internal/failure
+use path as paths
+
+# One event as the floor told it, before the face names its kind.
+record Taken
+    # One of `hero_watch.HERO_WATCH_CREATED` to `HERO_WATCH_GONE`.
+    kind: i64
+    # Whether the entry is a folder.
+    directory: bool
+    # The entry's path, the watched path as given joined with its name.
+    path: str
+    # For a rename, the path it had before; "" for every other kind.
+    from: str
+
+# The bytes a wait's buffer starts with: a path is most often shorter.
+constant START: i64
+    4096
+
+# `text` made `to` bytes long, zeros added at its end; never shorter.
+function grow(@text: [u8], to: i64)
+    while text.len() < to
+        text @ text.push(0)
+
+# What `read` answers: a text, and whether the bytes were UTF-8.
+record Read
+    # The text, "" where the bytes are not UTF-8.
+    text: str
+    # Whether the bytes were UTF-8.
+    ok: bool
+
+# The text of `count` bytes of `text` from `from`, or "" with `ok` false
+# where they are not UTF-8. `from` and `count` stand inside `text`, which the
+# floor's lengths always do.
+function read(text: [u8] lent, from: i64, count: i64) -> Read
+    match text.slice(from: from, to: from + count).validated_bytes()
+        .ok t  => return Read(text: t, ok: true)
+        .err _ => return Read(text: "", ok: false)
+
+# Every event the watch holds, in order, waiting at most `limit_ns`
+# nanoseconds for the first (-1 waits with no limit, 0 not at all); empty
+# where the limit passed with none.
+#
+# - `w`: the floor's watch.
+# - `limit_ns`: the longest to wait for the first event.
+# - `watched`: the watched path as the program gave it, which an overflow
+#   told for a path that is not UTF-8 carries.
+# - `asked`: what a failure's message says was asked.
+#
+# A failure after the first event was taken ends the list and is told by the
+# next call, so no event taken is lost. Fails as the floor's kinds say
+# (`failure.told`): `stopped`, `closed`, `file_not_found` once the watched
+# folder is gone and told, `invalid`, `failed`.
+function taken(w: hero_watch.Watch, limit_ns: i64, watched: str, asked: str) -> [Taken]?
+    numbers: [i64] @= [0, 0, 0, 0]
+    text: [u8] @= []
+    out: [Taken] @= []
+    wait @= limit_ns
+
+    grow(@text, to: START)
+
+    while true
+        room = text.len().to_u64().must()
+        got = hero_watch.next(w, limit_ns: wait, @numbers, numbers_count: 4, @text, text_count: room)
+
+        if got == 0
+            break
+
+        if got < 0
+            if hero_watch.last_error() == hero_watch.HERO_WATCH_SHORT
+                need = numbers[2] + numbers[3]
+
+                # The floor said the event does not fit: a need that fits
+                # would ask again for ever, so it is the layer's failure.
+                if need <= text.len()
+                    return failure.of(
+                        code: failure.FAILED,
+                        asked: asked,
+                        why: f"the layer asked {need} bytes for an event and {text.len()} did not hold it"
+                    )
+                grow(@text, to: need)
+                continue
+
+            if out.len() > 0
+                break
+            return failure.last(asked: asked)
+        path = read(text, from: 0, count: numbers[2])
+        from = read(text, from: numbers[2], count: numbers[3])
+
+        if path.ok && from.ok
+            out @ out.push(Taken(kind: numbers[0], directory: numbers[1] == 1, path: path.text, from: from.text))
+        else
+            out @ out.push(Taken(kind: hero_watch.HERO_WATCH_OVERFLOW, directory: false, path: watched, from: ""))
+        wait @ 0
+
+    return ok(out)
+
+test "grow: to a length below, at and above the text's, never shorter"
+    text: [u8] @= [7, 7]
+    grow(@text, to: 1)
+    assert text == [7, 7]
+    grow(@text, to: 2)
+    assert text == [7, 7]
+    grow(@text, to: 5)
+    assert text == [7, 7, 0, 0, 0]
+
+test "read: UTF-8 of one and of two bytes a character, nothing, and bytes that are not UTF-8"
+    bytes: [u8] = [97, 195, 169, 255, 98]
+    assert read(bytes, from: 0, count: 3) == Read(text: "aé", ok: true)
+    assert read(bytes, from: 1, count: 0) == Read(text: "", ok: true)
+    assert read(bytes, from: 3, count: 1) == Read(text: "", ok: false)
+    assert read(bytes, from: 1, count: 1) == Read(text: "", ok: false)
+
+test "taken: none within a limit of 0, then a file made told created with its path, then none again"
+    root = fs.make_temp_dir(dir: "", pattern: "hero-watch-taken-*").must()
+    w @= hero_watch.open(root, flags: 0, most: 16)
+    assert taken(w, limit_ns: 0, watched: root, asked: "waiting").must().len() == 0
+    fs.touch(root + "/one").must()
+    got = taken(w, limit_ns: 2000000000, watched: root, asked: "waiting").must()
+    assert got.len() >= 1
+    assert got[0] == Taken(kind: hero_watch.HERO_WATCH_CREATED, directory: false, path: paths.join_all([root, "one"]), from: "")
+    _ = hero_watch.close(@w)
+    _ = fs.remove_all(root).is_err()
+
+test "taken: a closed watch fails closed with what was asked; one whose folder is gone ends after it told gone"
+    none: hero_watch.Watch = nullptr
+    r = taken(none, limit_ns: 0, watched: "x", asked: "waiting on \"x\"")
+
+    match r
+        .ok _ => assert false
+        .err e =>
+            assert e.code == failure.CLOSED
+            assert e.msg == "waiting on \"x\": the watch is closed"
+
+    root = fs.make_temp_dir(dir: "", pattern: "hero-watch-gone-*").must()
+    w @= hero_watch.open(root, flags: 0, most: 16)
+    fs.remove_all(root).must()
+    told = taken(w, limit_ns: 2000000000, watched: root, asked: "waiting").must()
+    assert told.len() >= 1
+    assert told[told.len() - 1].kind == hero_watch.HERO_WATCH_GONE
+    assert told[told.len() - 1].path == root
+    after = taken(w, limit_ns: 0, watched: root, asked: "waiting")
+
+    match after
+        .ok _  => assert false
+        .err e => assert e.code == failure.FILE_NOT_FOUND
+
+    _ = hero_watch.close(@w)

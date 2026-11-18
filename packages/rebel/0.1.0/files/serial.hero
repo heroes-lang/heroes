@@ -1,0 +1,723 @@
+# Serial ports: the ports this machine has, a port opened as an `io.Stream`
+# that `io`'s functions read and write, its settings (speed, size of a
+# character, parity, stop bits, flow control) set and read back, its
+# timeouts, its modem lines, a break sent, its buffers emptied or waited for,
+# and a pseudo-terminal that stands for a port where there is no hardware.
+# Reading and writing, lines of text and buffering are `io`'s; a port served
+# over TCP is `net`'s stream. Every failure is a code of the library's closed
+# list (README § A4): `not_found`, `permission`, `invalid`, `closed`,
+# `timeout`, `stopped`, `limit`, `unsupported` and `failed`. The face stands
+# on the floor `serial/hero_serial`, the thin binding of `hero_serial.h`.
+#
+# **A port is an `io.Stream`**, opened by `open` and closed with `io.close`.
+# It is this program's alone while it is open: Windows opens no port twice,
+# and Linux refuses a second open with `permission`. Its bytes pass as they
+# are, nothing echoed or translated. A read waits for one byte at most the
+# read timeout, then answers every byte there; a read or a write past its
+# timeout fails `timeout`, and one waiting when the program is asked to stop
+# (`net.catch_stop`, `net.ask_stop`) fails `stopped` within about 50 ms. A
+# port whose device is gone reads its end and refuses a write `closed`.
+#
+# **Platforms**: POSIX ports by `termios`, Windows ports by their `DCB`. Mark
+# and space parity are Linux's and Windows'; one and a half stop bits and
+# DSR/DTR flow are Windows'; Linux takes the speeds `termios` names, 50 to
+# 4,000,000; a pseudo-terminal is POSIX's. What a platform has no word for
+# fails `unsupported`.
+
+use io
+use serial/hero_serial
+use serial/internal/calls
+use serial/internal/failure
+use serial/internal/listing
+
+## Codes
+
+# A path that names nothing: `open` of a port that is not there.
+constant NOT_FOUND: str
+    failure.NOT_FOUND
+
+# The system refuses the port to this program: its permissions, or another
+# program has it open.
+constant PERMISSION: str
+    failure.PERMISSION
+
+# An argument outside what the function reads, or a path that is no serial
+# port (a file, a folder, the null device).
+constant INVALID: str
+    failure.INVALID
+
+# The stream is closed, or the port's device is gone.
+constant CLOSED: str
+    failure.CLOSED
+
+# A drain waited past the write timeout.
+constant TIMEOUT: str
+    failure.TIMEOUT
+
+# The program was asked to stop while a drain or a break waited.
+constant STOPPED: str
+    failure.STOPPED
+
+# The process or the machine has no descriptor, handle or memory left.
+constant LIMIT: str
+    failure.LIMIT
+
+# This platform, or this port, has no such thing: a setting it has no word
+# for or did not keep, the modem lines of a pseudo-terminal, a
+# pseudo-terminal on Windows.
+constant UNSUPPORTED: str
+    failure.UNSUPPORTED
+
+# The system refused for a reason none of the other codes names; the message
+# carries the system's own number.
+constant FAILED: str
+    failure.FAILED
+
+## Settings
+
+# A port's parity: the bit each character carries beside its data bits.
+variant Parity
+    # No parity bit.
+    none
+    # The bit makes the count of ones odd.
+    odd
+    # The bit makes the count of ones even.
+    even
+    # The bit always 1; Linux and Windows alone.
+    mark
+    # The bit always 0; Linux and Windows alone.
+    space
+
+# How many stop bits end a character.
+variant StopBits
+    # One.
+    one
+    # One and a half; Windows alone.
+    one_and_half
+    # Two.
+    two
+
+# A port's flow control: which ways the two ends stop and start each other.
+# Any of the three may be on together; all off is none.
+record Flow
+    # By the RTS and CTS lines.
+    rts_cts: bool
+    # By the bytes XOFF (19) and XON (17), in both directions.
+    xon_xoff: bool
+    # By the DSR and DTR lines; Windows alone.
+    dsr_dtr: bool
+
+# The settings of a port, set at once by `open` and `configure` and read back
+# by `settings_of`. Built directly, or by `defaults`.
+record Settings
+    # The speed in bits a second, 1 or more.
+    baud: i64
+    # The bits of a character, 5 to 8.
+    data_bits: i64
+    # The parity.
+    parity: Parity
+    # The stop bits.
+    stop_bits: StopBits
+    # The flow control.
+    flow: Flow
+
+# The usual settings at the speed `baud`: 8 data bits, no parity, one stop
+# bit and no flow control, as .NET's and pyserial's defaults.
+#
+# - `baud`: the speed in bits a second; 9600 and 115200 are the common ones.
+#
+# See also `open`, `configure`.
+function defaults(baud: i64) -> Settings
+    return Settings(
+        baud: baud,
+        data_bits: 8,
+        parity: .none,
+        stop_bits: .one,
+        flow: Flow(rts_cts: false, xon_xoff: false, dsr_dtr: false)
+    )
+
+## Ports
+
+# The names of the ports this machine has, sorted by their bytes: on POSIX
+# the paths under `/dev` a port's driver makes (`/dev/tty.*` and `/dev/cu.*`
+# on macOS, `/dev/ttyS*`, `/dev/ttyUSB*` and `/dev/ttyACM*` on Linux), on
+# Windows the names the registry's `SERIALCOMM` key holds, as `COM3`.
+#
+# An empty list where the machine has none. A Linux `ttyS` name is listed
+# only where a device stands behind it.
+#
+# Fails `failed` where the system refuses the folder or the key.
+#
+# See also `open`.
+function ports() -> [str]?
+    return listing.ports()
+
+# The port at `path` opened and set to `settings`, as a stream `io` reads and
+# writes and the caller closes with `io.close`.
+#
+# - `path`: the port, `/dev/ttyUSB0` or `COM3`; Windows' `\\.\COM10` form is
+#   taken too.
+# - `settings`: what the port is set to before it is handed back.
+#
+# Its timeouts start as `FOREVER` with no gap, and DTR and RTS are raised.
+#
+# Fails `not_found` where no port is at the path, `permission` where the
+# system refuses it or another program has it open, `invalid` for an empty
+# path, one holding a zero byte, or one that names no serial port, and as
+# `configure` does, the port then closed again.
+#
+# See also `ports`, `configure`, `set_timeouts`, `open_pseudo`.
+function open(path: str, settings: Settings) -> io.Stream?
+    port @= calls.open(path)?
+
+    match configure(port, settings: settings)
+        .ok _ => return ok(port)
+        .err e =>
+            match io.close(@port)
+                .ok _  => _ = 0
+                .err _ => _ = 0
+
+            return fail(code: e.code, msg: e.msg)
+
+## The settings of an open port
+
+# Sets every setting of `port` at once.
+#
+# - `port`: a port `open` opened.
+# - `settings`: what it is set to.
+#
+# The settings are read back once set: a port that kept another value fails
+# and is put back as it was (a Linux pseudo-terminal keeps 8 bits and no
+# parity whatever it is asked).
+#
+# Fails `invalid` for a speed below 1 or past 2,147,483,647, a character
+# outside 5 to 8 bits, or a stream that is no port (a pseudo-terminal's
+# controlling side among them); `unsupported` for a setting this platform
+# has no word for or the port did not keep; `closed` where `port` is closed.
+# Linux takes the speeds `termios` names, 50 to 4,000,000, and no other.
+#
+# See also `settings_of`, `open`.
+function configure(port: io.Stream, settings: Settings) -> ()?
+    parity = match settings.parity
+        .none  => hero_serial.HERO_SERIAL_PARITY_NONE
+        .odd   => hero_serial.HERO_SERIAL_PARITY_ODD
+        .even  => hero_serial.HERO_SERIAL_PARITY_EVEN
+        .mark  => hero_serial.HERO_SERIAL_PARITY_MARK
+        .space => hero_serial.HERO_SERIAL_PARITY_SPACE
+
+    stop_bits = match settings.stop_bits
+        .one          => hero_serial.HERO_SERIAL_STOP_ONE
+        .one_and_half => hero_serial.HERO_SERIAL_STOP_ONE_AND_HALF
+        .two          => hero_serial.HERO_SERIAL_STOP_TWO
+
+    flow: i64 @= 0
+
+    if settings.flow.rts_cts
+        flow @ flow | hero_serial.HERO_SERIAL_FLOW_RTS_CTS
+
+    if settings.flow.xon_xoff
+        flow @ flow | hero_serial.HERO_SERIAL_FLOW_XON_XOFF
+
+    if settings.flow.dsr_dtr
+        flow @ flow | hero_serial.HERO_SERIAL_FLOW_DSR_DTR
+    return calls.configure(
+        port,
+        baud: settings.baud,
+        data_bits: settings.data_bits,
+        parity: parity,
+        stop_bits: stop_bits,
+        flow: flow
+    )
+
+# The settings of `port` as the system holds them now.
+#
+# - `port`: a port `open` opened.
+#
+# XON/XOFF reads as on where either direction has it.
+#
+# Fails `unsupported` for a speed Linux names by no number (one another
+# program set), `invalid` for a stream that is no port, `closed` where
+# `port` is closed.
+#
+# See also `configure`.
+function settings_of(port: io.Stream) -> Settings?
+    baud = calls.setting(port, which: hero_serial.HERO_SERIAL_SETTING_BAUD)?
+    data_bits = calls.setting(port, which: hero_serial.HERO_SERIAL_SETTING_DATA_BITS)?
+    parity_number = calls.setting(port, which: hero_serial.HERO_SERIAL_SETTING_PARITY)?
+    stop_number = calls.setting(port, which: hero_serial.HERO_SERIAL_SETTING_STOP_BITS)?
+    flow = calls.setting(port, which: hero_serial.HERO_SERIAL_SETTING_FLOW)?
+    parity: Parity @= .none
+
+    if parity_number == hero_serial.HERO_SERIAL_PARITY_ODD
+        parity @ .odd
+    else if parity_number == hero_serial.HERO_SERIAL_PARITY_EVEN
+        parity @ .even
+    else if parity_number == hero_serial.HERO_SERIAL_PARITY_MARK
+        parity @ .mark
+    else if parity_number == hero_serial.HERO_SERIAL_PARITY_SPACE
+        parity @ .space
+    stop_bits: StopBits @= .one
+
+    if stop_number == hero_serial.HERO_SERIAL_STOP_TWO
+        stop_bits @ .two
+    else if stop_number == hero_serial.HERO_SERIAL_STOP_ONE_AND_HALF
+        stop_bits @ .one_and_half
+    return ok(
+        Settings(baud: baud, data_bits: data_bits, parity: parity, stop_bits: stop_bits, flow: Flow(rts_cts: flow & hero_serial.HERO_SERIAL_FLOW_RTS_CTS != 0, xon_xoff: flow & hero_serial.HERO_SERIAL_FLOW_XON_XOFF != 0, dsr_dtr: flow & hero_serial.HERO_SERIAL_FLOW_DSR_DTR != 0))
+    )
+
+## Timeouts
+
+# What a read or a write timeout takes for a wait with no bound.
+constant FOREVER: i64
+    -1
+
+# How long a port's reads and writes wait, in milliseconds.
+record Timeouts
+    # How long a read waits for its first byte: 0 not at all (nothing there
+    # fails `timeout` at once), `FOREVER` with no bound.
+    read_ms: i64
+    # How long a write waits for the port to take a byte, the same way; a
+    # drain waits as long.
+    write_ms: i64
+    # How long a read that has bytes waits for the next one before it
+    # answers, 0 for no wait: a frame ended by a silence is read whole.
+    gap_ms: i64
+
+# Sets the timeouts of `port`, which every read, write and drain begun after
+# it keeps; one already waiting keeps the timeouts it began with.
+#
+# - `port`: a port, or a pseudo-terminal's controlling side.
+# - `timeouts`: the three timeouts.
+#
+# Fails `invalid` for a read or a write timeout below 0 that is not
+# `FOREVER` or a gap below 0, or a stream that is no port; `closed` where
+# `port` is closed.
+#
+# See also `timeouts_of`.
+function set_timeouts(port: io.Stream, timeouts: Timeouts) -> ()?
+    return calls.set_timeouts(port, read_ms: timeouts.read_ms, write_ms: timeouts.write_ms, gap_ms: timeouts.gap_ms)
+
+# The timeouts of `port`, as `set_timeouts` took them.
+#
+# - `port`: a port, or a pseudo-terminal's controlling side.
+#
+# Fails `invalid` for a stream that is no port, `closed` where `port` is
+# closed.
+#
+# See also `set_timeouts`.
+function timeouts_of(port: io.Stream) -> Timeouts?
+    w = calls.timeouts(port)?
+    return ok(Timeouts(read_ms: w.read_ms, write_ms: w.write_ms, gap_ms: w.gap_ms))
+
+## Modem lines
+
+# The modem lines of a port, each on or off.
+record Lines
+    # Data Terminal Ready, this side's.
+    dtr: bool
+    # Request To Send, this side's.
+    rts: bool
+    # Clear To Send, the other side's.
+    cts: bool
+    # Data Set Ready, the other side's.
+    dsr: bool
+    # Carrier Detect, the other side's.
+    cd: bool
+    # Ring Indicator, the other side's.
+    ri: bool
+
+# The modem lines of `port`: DTR and RTS as this side holds them (on Windows
+# as this package set them last), the other four as the other side does.
+#
+# - `port`: a port `open` opened.
+#
+# Fails `unsupported` for a port with no lines, a pseudo-terminal among
+# them; `invalid` for a stream that is no port; `closed` where `port` is
+# closed.
+#
+# See also `set_dtr`, `set_rts`.
+function lines_of(port: io.Stream) -> Lines?
+    bits = calls.lines(port)?
+    return ok(
+        Lines(dtr: bits & hero_serial.HERO_SERIAL_LINE_DTR != 0, rts: bits & hero_serial.HERO_SERIAL_LINE_RTS != 0, cts: bits & hero_serial.HERO_SERIAL_LINE_CTS != 0, dsr: bits & hero_serial.HERO_SERIAL_LINE_DSR != 0, cd: bits & hero_serial.HERO_SERIAL_LINE_CD != 0, ri: bits & hero_serial.HERO_SERIAL_LINE_RI != 0)
+    )
+
+# Raises the DTR line of `port`, or drops it.
+#
+# - `port`: a port `open` opened.
+# - `on`: true to raise it, false to drop it.
+#
+# A DSR/DTR flow drives the line itself and may take it back.
+#
+# Fails as `lines_of` does.
+#
+# See also `set_rts`, `lines_of`.
+function set_dtr(port: io.Stream, on: bool) -> ()?
+    return calls.set_line(port, line: hero_serial.HERO_SERIAL_LINE_DTR, name: "DTR", on: on)
+
+# Raises the RTS line of `port`, or drops it.
+#
+# - `port`: a port `open` opened.
+# - `on`: true to raise it, false to drop it.
+#
+# An RTS/CTS flow drives the line itself and may take it back.
+#
+# Fails as `lines_of` does.
+#
+# See also `set_dtr`, `lines_of`.
+function set_rts(port: io.Stream, on: bool) -> ()?
+    return calls.set_line(port, line: hero_serial.HERO_SERIAL_LINE_RTS, name: "RTS", on: on)
+
+## Breaks
+
+# Holds the line of `port` in break, its transmit line at 0, for `ms`
+# milliseconds, then lets it go.
+#
+# - `port`: a port `open` opened.
+# - `ms`: how long, 0 or more; 250 is the usual break.
+#
+# Fails `invalid` for a negative time or a stream that is no port, `stopped`
+# where the program is asked to stop meanwhile (the line let go first),
+# `closed` where `port` is closed.
+#
+# See also `set_break`.
+function send_break(port: io.Stream, ms: i64) -> ()?
+    return calls.send_break(port, ms: ms)
+
+# Holds the line of `port` in break until it is let go.
+#
+# - `port`: a port `open` opened.
+# - `on`: true to hold it in break, false to let it go.
+#
+# Fails `invalid` for a stream that is no port, `closed` where `port` is
+# closed.
+#
+# See also `send_break`.
+function set_break(port: io.Stream, on: bool) -> ()?
+    return calls.set_break(port, on: on)
+
+## Buffers
+
+# Throws away what `port` has received and the program has not read.
+#
+# - `port`: a port, or a pseudo-terminal's controlling side.
+#
+# The system's buffer alone: what an `io.Reader` holds already is the
+# reader's.
+#
+# Fails `invalid` for a stream that is no port, `closed` where `port` is
+# closed.
+#
+# See also `discard_output`, `unread_count`.
+function discard_input(port: io.Stream) -> ()?
+    return calls.discard(port, which: hero_serial.HERO_SERIAL_INPUT, what: "input")
+
+# Throws away what the program has written to `port` and the port has not
+# sent.
+#
+# - `port`: a port, or a pseudo-terminal's controlling side.
+#
+# Fails `invalid` for a stream that is no port, `closed` where `port` is
+# closed.
+#
+# See also `discard_input`, `drain`.
+function discard_output(port: io.Stream) -> ()?
+    return calls.discard(port, which: hero_serial.HERO_SERIAL_OUTPUT, what: "output")
+
+# Waits until every byte written to `port` has been sent, at most its write
+# timeout.
+#
+# - `port`: a port, or a pseudo-terminal's controlling side.
+#
+# A byte a pseudo-terminal holds is sent once its other side reads it.
+#
+# Fails `timeout` past the write timeout, `stopped` where the program is
+# asked to stop meanwhile, `invalid` for a stream that is no port, `closed`
+# where `port` is closed.
+#
+# See also `discard_output`, `unsent_count`.
+function drain(port: io.Stream) -> ()?
+    return calls.drain(port)
+
+# How many bytes `port` has received that the program has not read.
+#
+# - `port`: a port, or a pseudo-terminal's controlling side.
+#
+# Fails `invalid` for a stream that is no port, `closed` where `port` is
+# closed.
+#
+# See also `unsent_count`, `discard_input`.
+function unread_count(port: io.Stream) -> i64?
+    return calls.waiting(port, which: hero_serial.HERO_SERIAL_INPUT, what: "bytes received and not read")
+
+# How many bytes the program has written to `port` that the port has not
+# sent.
+#
+# - `port`: a port, or a pseudo-terminal's controlling side.
+#
+# Fails `invalid` for a stream that is no port, `closed` where `port` is
+# closed.
+#
+# See also `unread_count`, `drain`.
+function unsent_count(port: io.Stream) -> i64?
+    return calls.waiting(port, which: hero_serial.HERO_SERIAL_OUTPUT, what: "bytes written and not sent")
+
+## Pseudo-terminals
+
+# A pseudo-terminal, a pair of ends that stands for a port and the device on
+# it, for a program to be tried without hardware. What one side writes the
+# other reads. It holds a stream, which the caller closes.
+record Pseudo
+    # The controlling side, the device's end: a stream the caller reads,
+    # writes and closes with `io.close`. It takes timeouts, discards, drains
+    # and counts; settings, lines and breaks are refused it, `invalid`.
+    controller: io.Stream
+    # The path of the port side, which `open` opens as a port.
+    path: str
+
+# A new pseudo-terminal: its controlling side, and the path of its port side
+# for `open`.
+#
+# Its two sides pass bytes as they are from the start. Where the port side is
+# not open, a read of the controlling side answers its end on Linux and
+# waits on macOS.
+#
+# Fails `unsupported` on Windows, `limit` where the system has no
+# pseudo-terminal left.
+#
+# See also `open`.
+function open_pseudo() -> Pseudo?
+    controller @= calls.pseudo()?
+
+    match calls.pseudo_path(controller)
+        .ok path => return ok(Pseudo(controller: controller, path: path))
+        .err e =>
+            match io.close(@controller)
+                .ok _  => _ = 0
+                .err _ => _ = 0
+
+            return fail(code: e.code, msg: e.msg)
+
+## Examples
+
+# The usual settings at 115200 bits a second.
+test "defaults: 8 data bits, no parity, one stop bit, no flow"
+    s = defaults(baud: 115200)
+    assert s.baud == 115200 && s.data_bits == 8
+    assert s.parity == .none && s.stop_bits == .one
+    assert !s.flow.rts_cts && !s.flow.xon_xoff && !s.flow.dsr_dtr
+
+# The machine's ports, sorted by their names.
+test "ports: the names of this machine's ports"
+    names = ports().must()
+    assert names == sort(names)
+
+# A pseudo-terminal stands for a port: the program opens its port side and
+# talks to the controlling side as to a device. Windows has none.
+test "open_pseudo: a port and a device without hardware"
+    match open_pseudo()
+        .err e => assert e.code == UNSUPPORTED
+        .ok pty =>
+            pair @= pty
+            port @= open(pair.path, settings: defaults(baud: 9600)).must()
+            io.write_text(port, text: "AT\r").must()
+            assert io.read(pair.controller, most: 16).must() == [65, 84, 13]
+            io.close(@port).must()
+            io.close(@pair.controller).must()
+
+# A port opened at 9600 bits a second, a line written and its answer read.
+test "open: a port set and written to, its answer read"
+    match open_pseudo()
+        .err e => assert e.code == UNSUPPORTED
+        .ok pty =>
+            pair @= pty
+            port @= open(pair.path, settings: defaults(baud: 9600)).must()
+            set_timeouts(port, timeouts: Timeouts(read_ms: 2000, write_ms: 2000, gap_ms: 0)).must()
+            io.write_text(pair.controller, text: "OK\n").must()
+            assert io.read(port, most: 16).must() == [79, 75, 10]
+            io.close(@port).must()
+            io.close(@pair.controller).must()
+
+# A port set to 19200 bits a second with two stop bits and RTS/CTS flow,
+# read back.
+test "configure: new settings, read back"
+    match open_pseudo()
+        .err e => assert e.code == UNSUPPORTED
+        .ok pty =>
+            pair @= pty
+            port @= open(pair.path, settings: defaults(baud: 9600)).must()
+            wanted @= defaults(baud: 19200)
+            wanted.stop_bits @ .two
+            wanted.flow.rts_cts @ true
+            configure(port, settings: wanted).must()
+            assert settings_of(port).must() == wanted
+            io.close(@port).must()
+            io.close(@pair.controller).must()
+
+# The settings a port holds, read back after the open.
+test "settings_of: what open set"
+    match open_pseudo()
+        .err e => assert e.code == UNSUPPORTED
+        .ok pty =>
+            pair @= pty
+            port @= open(pair.path, settings: defaults(baud: 115200)).must()
+            assert settings_of(port).must() == defaults(baud: 115200)
+            io.close(@port).must()
+            io.close(@pair.controller).must()
+
+# A read that waits at most a tenth of a second, and fails `timeout` when
+# nothing comes.
+test "set_timeouts: a read bounded to 100 ms"
+    match open_pseudo()
+        .err e => assert e.code == UNSUPPORTED
+        .ok pty =>
+            pair @= pty
+            port @= open(pair.path, settings: defaults(baud: 9600)).must()
+            set_timeouts(port, timeouts: Timeouts(read_ms: 100, write_ms: FOREVER, gap_ms: 0)).must()
+
+            match io.read(port, most: 16)
+                .ok _  => assert false
+                .err e => assert e.code == TIMEOUT
+
+            io.close(@port).must()
+            io.close(@pair.controller).must()
+
+# A port's timeouts start with no bound.
+test "timeouts_of: FOREVER and no gap after an open"
+    match open_pseudo()
+        .err e => assert e.code == UNSUPPORTED
+        .ok pty =>
+            pair @= pty
+            port @= open(pair.path, settings: defaults(baud: 9600)).must()
+            assert timeouts_of(port).must() == Timeouts(read_ms: FOREVER, write_ms: FOREVER, gap_ms: 0)
+            io.close(@port).must()
+            io.close(@pair.controller).must()
+
+# The lines of a real port; a pseudo-terminal has none and says so.
+test "lines_of: a pseudo-terminal has no modem lines"
+    match open_pseudo()
+        .err e => assert e.code == UNSUPPORTED
+        .ok pty =>
+            pair @= pty
+            port @= open(pair.path, settings: defaults(baud: 9600)).must()
+
+            match lines_of(port)
+                .ok l  => assert l.dtr || !l.dtr
+                .err e => assert e.code == UNSUPPORTED
+
+            io.close(@port).must()
+            io.close(@pair.controller).must()
+
+# DTR dropped before a device is reset, and raised again.
+test "set_dtr: dropped and raised where the port has the line"
+    match open_pseudo()
+        .err e => assert e.code == UNSUPPORTED
+        .ok pty =>
+            pair @= pty
+            port @= open(pair.path, settings: defaults(baud: 9600)).must()
+
+            match set_dtr(port, on: false)
+                .ok _  => set_dtr(port, on: true).must()
+                .err e => assert e.code == UNSUPPORTED
+
+            io.close(@port).must()
+            io.close(@pair.controller).must()
+
+# RTS dropped and raised where the port has the line.
+test "set_rts: dropped and raised where the port has the line"
+    match open_pseudo()
+        .err e => assert e.code == UNSUPPORTED
+        .ok pty =>
+            pair @= pty
+            port @= open(pair.path, settings: defaults(baud: 9600)).must()
+
+            match set_rts(port, on: false)
+                .ok _  => set_rts(port, on: true).must()
+                .err e => assert e.code == UNSUPPORTED
+
+            io.close(@port).must()
+            io.close(@pair.controller).must()
+
+# The usual break of a quarter of a second, before a device is spoken to.
+test "send_break: a break of 250 ms"
+    match open_pseudo()
+        .err e => assert e.code == UNSUPPORTED
+        .ok pty =>
+            pair @= pty
+            port @= open(pair.path, settings: defaults(baud: 9600)).must()
+            send_break(port, ms: 250).must()
+            io.close(@port).must()
+            io.close(@pair.controller).must()
+
+# A break held while something else is done, then let go.
+test "set_break: held and let go"
+    match open_pseudo()
+        .err e => assert e.code == UNSUPPORTED
+        .ok pty =>
+            pair @= pty
+            port @= open(pair.path, settings: defaults(baud: 9600)).must()
+            set_break(port, on: true).must()
+            set_break(port, on: false).must()
+            io.close(@port).must()
+            io.close(@pair.controller).must()
+
+# What a device sent before the program was ready, thrown away.
+test "discard_input: stale bytes thrown away"
+    match open_pseudo()
+        .err e => assert e.code == UNSUPPORTED
+        .ok pty =>
+            pair @= pty
+            port @= open(pair.path, settings: defaults(baud: 9600)).must()
+            discard_input(port).must()
+            assert unread_count(port).must() == 0
+            io.close(@port).must()
+            io.close(@pair.controller).must()
+
+# What the program wrote and the port has not sent, thrown away.
+test "discard_output: unsent bytes thrown away"
+    match open_pseudo()
+        .err e => assert e.code == UNSUPPORTED
+        .ok pty =>
+            pair @= pty
+            port @= open(pair.path, settings: defaults(baud: 9600)).must()
+            io.write_text(port, text: "stale").must()
+            discard_output(port).must()
+            io.close(@port).must()
+            io.close(@pair.controller).must()
+
+# A command written and waited for until sent, before the line is turned.
+test "drain: written bytes sent before going on"
+    match open_pseudo()
+        .err e => assert e.code == UNSUPPORTED
+        .ok pty =>
+            pair @= pty
+            port @= open(pair.path, settings: defaults(baud: 9600)).must()
+            set_timeouts(port, timeouts: Timeouts(read_ms: 2000, write_ms: 2000, gap_ms: 0)).must()
+            io.write_text(port, text: "go").must()
+            assert io.read(pair.controller, most: 8).must() == [103, 111]
+            drain(port).must()
+            io.close(@port).must()
+            io.close(@pair.controller).must()
+
+# How many bytes wait to be read.
+test "unread_count: bytes received and not read"
+    match open_pseudo()
+        .err e => assert e.code == UNSUPPORTED
+        .ok pty =>
+            pair @= pty
+            port @= open(pair.path, settings: defaults(baud: 9600)).must()
+            assert unread_count(port).must() >= 0
+            io.close(@port).must()
+            io.close(@pair.controller).must()
+
+# How many bytes wait to be sent.
+test "unsent_count: bytes written and not sent"
+    match open_pseudo()
+        .err e => assert e.code == UNSUPPORTED
+        .ok pty =>
+            pair @= pty
+            port @= open(pair.path, settings: defaults(baud: 9600)).must()
+            assert unsent_count(port).must() >= 0
+            io.close(@port).must()
+            io.close(@pair.controller).must()

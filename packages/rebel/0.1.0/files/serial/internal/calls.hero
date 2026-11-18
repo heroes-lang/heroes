@@ -1,0 +1,447 @@
+# The calls of `serial` on a port, in the floor's numbers: each checks what
+# the package can check before the floor is asked (a closed stream, a value
+# out of range, a path C could not read), asks the floor, and turns its
+# answer into a value or a failure whose message says what was asked. The
+# face `serial` turns its records and variants into these numbers.
+
+use io
+use serial/hero_serial
+use serial/internal/failure
+use serial/internal/words
+
+# The three timeouts of a port in milliseconds, as the floor holds them.
+record Waits
+    # How long a read waits for its first byte, `HERO_SERIAL_FOREVER` for no
+    # bound.
+    read_ms: i64
+    # How long a write waits for the port to take a byte, the same way.
+    write_ms: i64
+    # How long a read that has bytes waits for the next, 0 for none.
+    gap_ms: i64
+
+# Nothing where `port` is open, else `closed`.
+function checked_open(port: io.Stream, asked: str) -> ()?
+    if io.is_closed(port)
+        return failure.of(code: failure.CLOSED, asked: asked, why: "the stream is closed")
+    return ok()
+
+# Whether `s` holds a zero byte, which a path handed to C cannot.
+function holds_zero(s: str) -> bool
+    at: i64 @= 0
+
+    while at < s.len()
+        if s[at] == 0
+            return true
+        at @ at + 1
+
+    return false
+
+# The port at `path` opened as a stream named after it, its settings as they
+# were. Fails as `serial.open` says.
+function open(path: str) -> io.Stream?
+    asked = f"opening the port \"{path}\""
+
+    if path.len() == 0
+        return failure.of(code: failure.INVALID, asked: asked, why: "the path is empty")
+
+    if holds_zero(path)
+        return failure.of(code: failure.INVALID, asked: asked, why: "the path holds a zero byte")
+    handle = hero_serial.open(path)
+
+    if handle == nullptr
+        return failure.last(asked: asked)
+    return ok(io.of_handle(handle, name: f"the port \"{path}\""))
+
+# Sets the five settings of `port` at once, in the floor's numbers.
+function configure(port: io.Stream, baud: i64, data_bits: i64, parity: i64, stop_bits: i64, flow: i64) -> ()?
+    asked = f"setting {port.name} to {words.described(baud: baud, data_bits: data_bits, parity: parity, stop_bits: stop_bits, flow: flow)}"
+    checked_open(port, asked: asked)?
+
+    if baud < 1 || baud > hero_serial.HERO_SERIAL_BAUD_MOST
+        return failure.of(
+            code: failure.INVALID,
+            asked: asked,
+            why: f"a speed is 1 to {hero_serial.HERO_SERIAL_BAUD_MOST} bits a second, and {baud} is not"
+        )
+
+    if data_bits < 5 || data_bits > 8
+        return failure.of(
+            code: failure.INVALID,
+            asked: asked,
+            why: f"a character is 5 to 8 bits, and {data_bits} is not"
+        )
+    answer = hero_serial.configure(
+        port.handle,
+        baud: baud,
+        data_bits: data_bits,
+        parity: parity,
+        stop_bits: stop_bits,
+        flow: flow
+    )
+
+    if answer < 0
+        return failure.last_saying(
+            asked: asked,
+            unsupported_why: "this platform has no word for one of them, or the port did not keep it; the port is as it was"
+        )
+    return ok()
+
+# One setting of `port`, `which` one of `HERO_SERIAL_SETTING_*`, in the
+# floor's numbers.
+function setting(port: io.Stream, which: i64) -> i64?
+    asked = "reading the settings of " + port.name
+    checked_open(port, asked: asked)?
+    return failure.counted(hero_serial.setting(port.handle, which: which), asked: asked)
+
+# Nothing where `ms` is 0 or more or `HERO_SERIAL_FOREVER`, else `invalid`
+# saying which timeout it is.
+function checked_timeout(ms: i64, what: str, asked: str) -> ()?
+    if ms < 0 && ms != hero_serial.HERO_SERIAL_FOREVER
+        return failure.of(
+            code: failure.INVALID,
+            asked: asked,
+            why: f"a {what} timeout is 0 or more milliseconds, or FOREVER, and {ms} is neither"
+        )
+    return ok()
+
+# Sets the three timeouts of `port`.
+function set_timeouts(port: io.Stream, read_ms: i64, write_ms: i64, gap_ms: i64) -> ()?
+    asked = f"setting the timeouts of {port.name}"
+    checked_open(port, asked: asked)?
+    checked_timeout(read_ms, what: "read", asked: asked)?
+    checked_timeout(write_ms, what: "write", asked: asked)?
+
+    if gap_ms < 0
+        return failure.of(
+            code: failure.INVALID,
+            asked: asked,
+            why: f"a gap is 0 or more milliseconds, and {gap_ms} is not"
+        )
+    return failure.done(
+        hero_serial.set_timeouts(port.handle, read_ms: read_ms, write_ms: write_ms, gap_ms: gap_ms),
+        asked: asked
+    )
+
+# The three timeouts of `port`.
+function timeouts(port: io.Stream) -> Waits?
+    asked = "reading the timeouts of " + port.name
+    checked_open(port, asked: asked)?
+    read_ms: i64 @= 0
+    write_ms: i64 @= 0
+    gap_ms: i64 @= 0
+    failure.done(hero_serial.timeouts(port.handle, read_ms: @read_ms, write_ms: @write_ms, gap_ms: @gap_ms), asked: asked)?
+    return ok(Waits(read_ms: read_ms, write_ms: write_ms, gap_ms: gap_ms))
+
+# The words a port with no modem lines fails with.
+constant NO_LINES: str
+    "the port has no modem lines (a pseudo-terminal has none)"
+
+# The modem lines of `port` that are on, as `HERO_SERIAL_LINE_*` bits.
+function lines(port: io.Stream) -> i64?
+    asked = "reading the modem lines of " + port.name
+    checked_open(port, asked: asked)?
+    answer = hero_serial.lines(port.handle)
+
+    if answer < 0
+        return failure.last_saying(asked: asked, unsupported_why: NO_LINES)
+    return ok(answer)
+
+# Raises the line `line`, DTR or RTS, where `on`, else drops it; `name` is
+# the line's name in the message.
+function set_line(port: io.Stream, line: i64, name: str, on: bool) -> ()?
+    verb = if on
+        "raising"
+    else
+        "dropping"
+    asked = f"{verb} {name} of {port.name}"
+    checked_open(port, asked: asked)?
+
+    level = if on
+        1
+    else
+        0
+    answer = hero_serial.set_line(port.handle, line: line, on: level)
+
+    if answer < 0
+        return failure.last_saying(asked: asked, unsupported_why: NO_LINES)
+    return ok()
+
+# Holds the line of `port` in break for `ms` milliseconds, then lets it go.
+function send_break(port: io.Stream, ms: i64) -> ()?
+    asked = f"sending a break of {ms} ms on {port.name}"
+    checked_open(port, asked: asked)?
+
+    if ms < 0
+        return failure.of(code: failure.INVALID, asked: asked, why: "a break lasts 0 or more milliseconds")
+    return failure.done(hero_serial.send_break(port.handle, ms: ms), asked: asked)
+
+# Holds the line of `port` in break where `on`, else lets it go.
+function set_break(port: io.Stream, on: bool) -> ()?
+    asked = if on
+        "holding the line of " + port.name + " in break"
+    else
+        "letting the line of " + port.name + " go from a break"
+    checked_open(port, asked: asked)?
+
+    level = if on
+        1
+    else
+        0
+    return failure.done(hero_serial.set_break(port.handle, on: level), asked: asked)
+
+# Throws away what `port` holds of `which`, `HERO_SERIAL_INPUT` or
+# `HERO_SERIAL_OUTPUT`; `what` names it in the message.
+function discard(port: io.Stream, which: i64, what: str) -> ()?
+    asked = f"throwing away the {what} of {port.name}"
+    checked_open(port, asked: asked)?
+    return failure.done(hero_serial.discard(port.handle, which: which), asked: asked)
+
+# Waits until every byte written to `port` has been sent.
+function drain(port: io.Stream) -> ()?
+    asked = "waiting for the bytes written to " + port.name + " to be sent"
+    checked_open(port, asked: asked)?
+    return failure.done(hero_serial.drain(port.handle), asked: asked)
+
+# How many bytes `port` holds of `which`; `what` names it in the message.
+function waiting(port: io.Stream, which: i64, what: str) -> i64?
+    asked = f"counting the {what} of {port.name}"
+    checked_open(port, asked: asked)?
+    return failure.counted(hero_serial.waiting(port.handle, which: which), asked: asked)
+
+# The controlling side of a new pseudo-terminal, as a stream.
+function pseudo() -> io.Stream?
+    handle = hero_serial.pseudo()
+
+    if handle == nullptr
+        return failure.last_saying(
+            asked: "opening a pseudo-terminal",
+            unsupported_why: "this platform has none (Windows)"
+        )
+    return ok(io.of_handle(handle, name: "a pseudo-terminal's controlling side"))
+
+# The path of the port side of the pseudo-terminal whose controlling side is
+# `controller`.
+function pseudo_path(controller: io.Stream) -> str?
+    asked = "reading the path of " + controller.name
+    checked_open(controller, asked: asked)?
+    buffer: [u8] @= []
+    room: i64 @= 128
+
+    while true
+        answer = hero_serial.pseudo_path(controller.handle, @buffer, count: room.to_u64().must())
+
+        if answer < 0
+            return failure.last(asked: asked)
+
+        if answer <= room
+            match buffer.slice(from: 0, to: answer).validated_bytes()
+                .ok path => return ok(path)
+                .err _   => return failure.of(code: failure.FAILED, asked: asked, why: "the system's path is not UTF-8")
+        room @ answer
+
+## Tests
+
+# A pseudo-terminal's two sides for a test, the port side opened and set to
+# 9600 8N1 with timeouts of two seconds; none on Windows.
+record Pair
+    # The controlling side.
+    controller: io.Stream
+    # The port side.
+    port: io.Stream
+
+# The pair, or the failure `unsupported` on Windows.
+function test_pair() -> Pair?
+    controller = pseudo()?
+    port = open(pseudo_path(controller)?)?
+    configure(port, baud: 9600, data_bits: 8, parity: hero_serial.HERO_SERIAL_PARITY_NONE, stop_bits: hero_serial.HERO_SERIAL_STOP_ONE, flow: 0)?
+    set_timeouts(port, read_ms: 2000, write_ms: 2000, gap_ms: 0)?
+    set_timeouts(controller, read_ms: 2000, write_ms: 2000, gap_ms: 0)?
+    return ok(Pair(controller: controller, port: port))
+
+# Both sides of `pair` closed.
+function test_close(@pair: Pair)
+    io.close(@pair.port).must()
+    io.close(@pair.controller).must()
+
+test "holds_zero: empty, none, at the start, at the end"
+    assert !holds_zero("")
+    assert !holds_zero("/dev/ttyS0")
+    zero: [u8] = [0, 97]
+    assert holds_zero(zero.validated_bytes().must())
+    end: [u8] = [97, 0]
+    assert holds_zero(end.validated_bytes().must())
+
+test "open: an empty path and a zero byte refused before the floor, nothing at a path is not_found, a folder and the null device are invalid"
+    match open("")
+        .ok _ => assert false
+        .err e =>
+            assert e.code == failure.INVALID
+            assert e.msg == "opening the port \"\": the path is empty"
+
+    zero: [u8] = [97, 0, 98]
+
+    match open(zero.validated_bytes().must())
+        .ok _  => assert false
+        .err e => assert e.code == failure.INVALID
+
+    match open("/dev/heroes-no-such-port")
+        .ok s =>
+            s2 @= s
+            io.close(@s2).must()
+            assert false
+        .err e => assert e.code == failure.NOT_FOUND || e.code == failure.PERMISSION
+
+    match pseudo()
+        .err e => assert e.code == failure.UNSUPPORTED
+        .ok c =>
+            controller @= c
+
+            match open("/dev/null")
+                .ok s =>
+                    s2 @= s
+                    io.close(@s2).must()
+                    assert false
+                .err e =>
+                    assert e.code == failure.INVALID
+                    assert e.msg == "opening the port \"/dev/null\": it is no serial port"
+
+            io.close(@controller).must()
+
+test "configure: a speed of 0, -1 and past the most, 4 and 9 bits refused before the floor, with words"
+    match test_pair()
+        .err e => assert e.code == failure.UNSUPPORTED
+        .ok pair =>
+            p @= pair
+
+            match configure(p.port, baud: 0, data_bits: 8, parity: 0, stop_bits: 1, flow: 0)
+                .ok _ => assert false
+                .err e =>
+                    assert e.code == failure.INVALID
+                    assert e.msg.len() > 0
+
+            assert configure(p.port, baud: -1, data_bits: 8, parity: 0, stop_bits: 1, flow: 0).is_err()
+            assert configure(p.port, baud: 2147483648, data_bits: 8, parity: 0, stop_bits: 1, flow: 0).is_err()
+            assert configure(p.port, baud: 9600, data_bits: 4, parity: 0, stop_bits: 1, flow: 0).is_err()
+
+            match configure(p.port, baud: 9600, data_bits: 9, parity: 0, stop_bits: 1, flow: 0)
+                .ok _ => assert false
+                .err e =>
+                    assert e.code == failure.INVALID
+                    assert e.msg == "setting the port \"" + pseudo_path(p.controller).must() + "\" to 9600 bits a second, 9 data bits, no parity, one stop bit, no flow control: a character is 5 to 8 bits, and 9 is not"
+
+            assert setting(p.port, which: hero_serial.HERO_SERIAL_SETTING_BAUD).must() == 9600
+            test_close(@p)
+
+test "configure: one and a half stops and DSR/DTR are unsupported on POSIX, the port as it was"
+    match test_pair()
+        .err e => assert e.code == failure.UNSUPPORTED
+        .ok pair =>
+            p @= pair
+
+            match configure(p.port, baud: 19200, data_bits: 5, parity: 0, stop_bits: hero_serial.HERO_SERIAL_STOP_ONE_AND_HALF, flow: 0)
+                .ok _ => assert false
+                .err e =>
+                    assert e.code == failure.UNSUPPORTED
+                    assert e.msg.len() > 0
+
+            assert configure(
+                p.port,
+                baud: 19200,
+                data_bits: 8,
+                parity: 0,
+                stop_bits: 1,
+                flow: hero_serial.HERO_SERIAL_FLOW_DSR_DTR
+            ).is_err()
+            assert setting(p.port, which: hero_serial.HERO_SERIAL_SETTING_BAUD).must() == 9600
+            assert setting(p.port, which: hero_serial.HERO_SERIAL_SETTING_FLOW).must() == 0
+            test_close(@p)
+
+test "set_timeouts and timeouts: -2 for a read or a write and -1 for a gap refused, FOREVER and the largest i64 kept"
+    match test_pair()
+        .err e => assert e.code == failure.UNSUPPORTED
+        .ok pair =>
+            p @= pair
+
+            match set_timeouts(p.port, read_ms: -2, write_ms: 0, gap_ms: 0)
+                .ok _ => assert false
+                .err e =>
+                    assert e.code == failure.INVALID
+                    assert e.msg.len() > 0
+
+            assert set_timeouts(p.port, read_ms: 0, write_ms: -2, gap_ms: 0).is_err()
+            assert set_timeouts(p.port, read_ms: 0, write_ms: 0, gap_ms: -1).is_err()
+            assert set_timeouts(p.port, read_ms: hero_serial.HERO_SERIAL_FOREVER, write_ms: 9223372036854775807, gap_ms: 0) == ok()
+            w = timeouts(p.port).must()
+            assert w.read_ms == hero_serial.HERO_SERIAL_FOREVER && w.write_ms == 9223372036854775807 && w.gap_ms == 0
+            test_close(@p)
+
+test "lines and set_line: a pseudo-terminal has none, told as unsupported with words"
+    match test_pair()
+        .err e => assert e.code == failure.UNSUPPORTED
+        .ok pair =>
+            p @= pair
+
+            match lines(p.port)
+                .ok _ => assert false
+                .err e =>
+                    assert e.code == failure.UNSUPPORTED
+                    assert e.msg.len() > 0
+
+            match set_line(p.port, line: hero_serial.HERO_SERIAL_LINE_DTR, name: "DTR", on: false)
+                .ok _ => assert false
+                .err e =>
+                    assert e.code == failure.UNSUPPORTED
+                    assert e.msg == "dropping DTR of the port \"" + pseudo_path(p.controller).must() + "\": " + NO_LINES
+
+            test_close(@p)
+
+test "send_break and set_break: 0 ms, 5 ms, -1 refused; held and let go"
+    match test_pair()
+        .err e => assert e.code == failure.UNSUPPORTED
+        .ok pair =>
+            p @= pair
+            assert send_break(p.port, ms: 0) == ok()
+            assert send_break(p.port, ms: 5) == ok()
+            assert send_break(p.port, ms: -1).is_err()
+            assert set_break(p.port, on: true) == ok()
+            assert set_break(p.port, on: false) == ok()
+            test_close(@p)
+
+test "discard, drain and waiting: bytes counted, thrown away, and a drain once the other side read"
+    match test_pair()
+        .err e => assert e.code == failure.UNSUPPORTED
+        .ok pair =>
+            p @= pair
+            discard(p.controller, which: hero_serial.HERO_SERIAL_INPUT, what: "input").must()
+            io.write(p.controller, data: [7, 8, 9]).must()
+            seen: i64 @= 0
+            tries: i64 @= 0
+
+            while seen < 3 && tries < 1000
+                seen @ waiting(p.port, which: hero_serial.HERO_SERIAL_INPUT, what: "input").must()
+                tries @ tries + 1
+
+            assert seen == 3
+            assert discard(p.port, which: hero_serial.HERO_SERIAL_INPUT, what: "input") == ok()
+            assert waiting(p.port, which: hero_serial.HERO_SERIAL_INPUT, what: "input").must() == 0
+            io.write(p.port, data: [1]).must()
+            assert io.read(p.controller, most: 4).must() == [1]
+            assert drain(p.port) == ok()
+            test_close(@p)
+
+test "a closed stream: every call says closed before the floor is asked"
+    match test_pair()
+        .err e => assert e.code == failure.UNSUPPORTED
+        .ok pair =>
+            p @= pair
+            test_close(@p)
+
+            match setting(p.port, which: hero_serial.HERO_SERIAL_SETTING_BAUD)
+                .ok _ => assert false
+                .err e =>
+                    assert e.code == failure.CLOSED
+                    assert e.msg == "reading the settings of " + p.port.name + ": the stream is closed"
+
+            assert drain(p.port).is_err()
+            assert lines(p.port).is_err()
+            assert pseudo_path(p.controller).is_err()

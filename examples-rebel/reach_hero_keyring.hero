@@ -1,0 +1,10 @@
+# Reaches Rebel's floor over the platform layer's keyring, `hero_keyring.h`, so
+# that `heroes test` on this file runs the floor's own tests (spec § 12, § 13).
+# It asks how long the name of this machine's keyring is and prints that
+# length, or -1 where the machine has none.
+
+use <rebel>/keyring/hero_keyring
+
+function main()
+    room: [u8] @= []
+    print(hero_keyring.system(@room, n: 0))

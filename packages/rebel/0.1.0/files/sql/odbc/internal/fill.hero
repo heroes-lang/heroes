@@ -1,0 +1,260 @@
+# The floor's answers of the fill form read whole: each call is made once
+# with room for most answers, and again with the room its first answer
+# measured. A text the driver gives that is not UTF-8 fails `invalid`.
+
+use sql
+use sql/odbc/hero_odbc
+use sql/odbc/internal/connection_text
+use sql/odbc/internal/failure
+
+# The room the first call of each reading gives, in bytes.
+constant FIRST_ROOM: i64
+    256
+
+# The bytes the first `length` of `buffer` holds as text, or `invalid`
+# naming `what`.
+#
+# - `buffer`: the bytes C wrote.
+# - `length`: how many of them are the answer, at most `buffer`'s length.
+# - `what`: what the text is, as the message names it.
+function text_of(buffer: [u8], length: i64, what: str) -> str?
+    match buffer.slice(from: 0, to: length).validated_bytes()
+        .ok text => return ok(text)
+        .err _   => return fail(code: sql.INVALID, msg: f"{what} is not UTF-8")
+
+# The name of the driver manager's library, as `hero_odbc.manager` writes
+# it; fails as the floor does.
+function manager_name() -> str?
+    buffer: [u8] @= []
+    length = hero_odbc.manager(@buffer, count: 256)
+
+    if length < 0
+        return failure.last()
+
+    if length > 256
+        return fail(code: sql.FAILED, msg: f"the driver manager's name passed 256 bytes: {length}")
+    return text_of(buffer, length: length, what: "the driver manager's name")
+
+# The drivers' lines, as `hero_odbc.drivers` writes them; fails as the
+# floor does.
+function drivers_text() -> str?
+    buffer: [u8] @= []
+    first = hero_odbc.drivers(@buffer, count: 4096)
+
+    if first < 0
+        return failure.last()
+
+    if first <= 4096
+        return text_of(buffer, length: first, what: "the list of drivers")
+    buffer @ []
+    again = hero_odbc.drivers(@buffer, count: to_u64(first).must())
+
+    if again < 0
+        return failure.last()
+
+    if again > first
+        return fail(code: sql.FAILED, msg: "the list of drivers grew while it was read")
+    return text_of(buffer, length: again, what: "the list of drivers")
+
+# The data sources' lines `which` names, as `hero_odbc.data_sources` writes
+# them; fails as the floor does.
+#
+# - `which`: one of the floor's `HERO_ODBC_SOURCES_*`.
+function sources_text(which: i64) -> str?
+    buffer: [u8] @= []
+    first = hero_odbc.data_sources(which, buffer: @buffer, count: 4096)
+
+    if first < 0
+        return failure.last()
+
+    if first <= 4096
+        return text_of(buffer, length: first, what: "the list of data sources")
+    buffer @ []
+    again = hero_odbc.data_sources(which, buffer: @buffer, count: to_u64(first).must())
+
+    if again < 0
+        return failure.last()
+
+    if again > first
+        return fail(code: sql.FAILED, msg: "the list of data sources grew while it was read")
+    return text_of(buffer, length: again, what: "the list of data sources")
+
+# The driver's answer to `SQLGetInfo`'s item `which` on `c`; fails as the
+# floor does.
+#
+# - `c`: the connection asked.
+# - `which`: one of the floor's `HERO_ODBC_INFO_*`.
+function info_text(c: hero_odbc.Connection, which: i64) -> str?
+    buffer: [u8] @= []
+    first = hero_odbc.info(c, which: which, buffer: @buffer, count: 256)
+
+    if first < 0
+        return failure.last()
+
+    if first <= 256
+        return text_of(buffer, length: first, what: "the driver's answer")
+    buffer @ []
+    again = hero_odbc.info(c, which: which, buffer: @buffer, count: to_u64(first).must())
+
+    if again < 0
+        return failure.last()
+
+    if again > first
+        return fail(code: sql.FAILED, msg: "the driver's answer grew while it was read")
+    return text_of(buffer, length: again, what: "the driver's answer")
+
+# The name of the column at `column` of `s`'s current result; fails as the
+# floor does.
+#
+# - `s`: the statement.
+# - `column`: the column's place, from 1.
+function column_name(s: hero_odbc.Statement, column: u64) -> str?
+    buffer: [u8] @= []
+    first = hero_odbc.column_name(s, column: column, buffer: @buffer, count: 256)
+
+    if first < 0
+        return failure.last()
+
+    if first <= 256
+        return text_of(buffer, length: first, what: f"the name of column {column}")
+    buffer @ []
+    again = hero_odbc.column_name(s, column: column, buffer: @buffer, count: to_u64(first).must())
+
+    if again < 0
+        return failure.last()
+
+    if again > first
+        return fail(code: sql.FAILED, msg: f"the name of column {column} grew while it was read")
+    return text_of(buffer, length: again, what: f"the name of column {column}")
+
+# The database's name for the type of the column at `column`; fails as the
+# floor does.
+#
+# - `s`: the statement.
+# - `column`: the column's place, from 1.
+function column_type_name(s: hero_odbc.Statement, column: u64) -> str?
+    buffer: [u8] @= []
+    first = hero_odbc.column_type_name(s, column: column, buffer: @buffer, count: 256)
+
+    if first < 0
+        return failure.last()
+
+    if first > 256
+        return fail(code: sql.FAILED, msg: f"the type's name of column {column} passed 256 bytes")
+    return text_of(buffer, length: first, what: f"the type's name of column {column}")
+
+# The bytes of `s`'s cell, a text's or a run of bytes'; fails as the floor
+# does.
+#
+# - `s`: the statement whose cell `hero_odbc.read` filled.
+function cell_bytes(s: hero_odbc.Statement) -> [u8]?
+    buffer: [u8] @= []
+    first = hero_odbc.cell_bytes(s, buffer: @buffer, count: 256)
+
+    if first < 0
+        return failure.last()
+
+    if first <= 256
+        return ok(buffer.slice(from: 0, to: first))
+    buffer @ []
+    again = hero_odbc.cell_bytes(s, buffer: @buffer, count: to_u64(first).must())
+
+    if again != first
+        return failure.last()
+    return ok(buffer)
+
+# The pieces of `text` between each `sep`, an empty last one left out: the
+# lines of a list, the fields of a line.
+#
+# - `text`: the text.
+# - `sep`: the byte between two pieces, an ASCII one.
+function split_on(text: str, sep: u8) -> [str]
+    pieces: [str] @= []
+    start: i64 @= 0
+    at: i64 @= 0
+
+    while at < text.len()
+        if text[at] == sep
+            pieces @ pieces.push(text.slice(from: start, to: at))
+            start @ at + 1
+        at @ at + 1
+
+    if start < text.len()
+        pieces @ pieces.push(text.slice(from: start, to: text.len()))
+    return pieces
+
+# The `key=value` of `field`, split at its first `=`; a field with none is a
+# key with an empty value.
+#
+# - `field`: a driver's attribute, as `hero_odbc.drivers` writes it.
+function key_value(field: str) -> connection_text.Pair
+    at: i64 @= 0
+
+    while at < field.len()
+        if field[at] == '='
+            return connection_text.Pair(
+                key: field.slice(from: 0, to: at),
+                value: field.slice(from: at + 1, to: field.len())
+            )
+        at @ at + 1
+
+    return connection_text.Pair(key: field, value: "")
+
+# The words of a list `SQLGetInfo` answers for `which` on `c`, separated by
+# commas, each without its blanks; none where the driver answers nothing.
+#
+# - `c`: the connection.
+# - `which`: one of the floor's `HERO_ODBC_INFO_*`, a list's.
+function info_list(c: hero_odbc.Connection, which: i64) -> [str]
+    words: [str] @= []
+
+    for piece in split_on(info_text(c, which: which).default(""), sep: ',')
+        word = connection_text.trimmed(piece, from: 0, to: piece.len())
+
+        if word != ""
+            words @ words.push(word)
+
+    return words
+
+## Tests
+
+test "split_on: nothing, one piece, pieces with an empty one inside, and an ending separator left out"
+    assert split_on("", sep: '\n') == []
+    assert split_on("a", sep: '\n') == ["a"]
+    assert split_on("a\n\nb\n", sep: '\n') == ["a", "", "b"]
+    assert split_on("SQLite3\tDriver=x.so\tSetup=y.so", sep: '\t') == ["SQLite3", "Driver=x.so", "Setup=y.so"]
+
+test "key_value: a pair, a value holding `=`, a key with no value, and nothing"
+    assert key_value("Driver=libsqlite3odbc.so") == connection_text.Pair(key: "Driver", value: "libsqlite3odbc.so")
+    assert key_value("a=b=c") == connection_text.Pair(key: "a", value: "b=c")
+    assert key_value("Flag") == connection_text.Pair(key: "Flag", value: "")
+    assert key_value("") == connection_text.Pair(key: "", value: "")
+
+test "text_of: UTF-8 kept whole or cut to its length, and bytes that are not UTF-8 refused naming what"
+    assert text_of([99, 105, 116, 116, 195, 160], length: 6, what: "x").must() == "città"
+    assert text_of([97, 98, 99], length: 2, what: "x").must() == "ab"
+    assert text_of([], length: 0, what: "x").must() == ""
+
+    match text_of([97, 255], length: 2, what: "the name of column 2")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "the name of column 2 is not UTF-8"
+
+test "manager_name and drivers_text: a name and lines where a manager loads, unsupported where none does"
+    match manager_name()
+        .ok name =>
+            assert name != ""
+            assert !drivers_text().is_err()
+        .err e =>
+            assert e.code == "unsupported"
+            assert drivers_text().is_err() && sources_text(hero_odbc.HERO_ODBC_SOURCES_ALL).is_err()
+
+test "info_text, column_name, column_type_name and cell_bytes of handles that are none fail closed or unsupported"
+    none_c: hero_odbc.Connection = nullptr
+    none_s: hero_odbc.Statement = nullptr
+    assert info_text(none_c, which: hero_odbc.HERO_ODBC_INFO_DBMS_NAME).is_err()
+    assert column_name(none_s, column: 1).is_err()
+    assert column_type_name(none_s, column: 1).is_err()
+
+    match cell_bytes(none_s)
+        .ok _  => assert false
+        .err e => assert e.code == "closed" || e.code == "unsupported"

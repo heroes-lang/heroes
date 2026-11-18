@@ -1,0 +1,14 @@
+# Reaches Rebel's floor `sql/odbc/hero_odbc`, so that `heroes test` on this
+# file runs the floor's own tests (spec § 12). It prints the library of the
+# driver manager this machine loads, or why none loads.
+
+use <rebel>/sql/odbc/hero_odbc
+
+function main()
+    buffer: [u8] @= []
+    length = hero_odbc.manager(@buffer, count: 256)
+
+    if length >= 0 && length <= 256
+        print(buffer.slice(from: 0, to: length).validated_bytes().default("?"))
+    else
+        print("no ODBC driver manager")

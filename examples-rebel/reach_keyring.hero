@@ -1,0 +1,10 @@
+# Reaches Rebel's `keyring`, so that `heroes test` on this file runs the
+# package's tests (spec § 12). It prints the name of this machine's keyring,
+# or the code it fails with where the machine has none.
+
+use <rebel>/keyring
+
+function main()
+    match keyring.system()
+        .ok name => print(name)
+        .err e   => print(e.code)

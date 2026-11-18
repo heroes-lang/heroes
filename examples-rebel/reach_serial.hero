@@ -1,0 +1,8 @@
+# Reaches Rebel's `serial`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It prints the speed of the usual settings
+# at 9600 bits a second: 9600.
+
+use <rebel>/serial
+
+function main()
+    print(serial.defaults(baud: 9600).baud)

@@ -1,0 +1,183 @@
+# A failure of the floor `sql/odbc/hero_odbc` as one of `sql`'s codes. A
+# failure the driver manager or the driver reported is told by its SQLSTATE
+# (Appendix A of Microsoft's ODBC reference, "ODBC Error Codes", and the
+# server's own states a driver hands on, PostgreSQL's as `sql/postgres`
+# reads them), its message keeping the SQLSTATE in brackets, the words, and
+# the driver's native error. The module comment of `sql/odbc` states the
+# table this keeps.
+
+use sql
+use sql/odbc/hero_odbc
+
+# The code of `sql` a failure of SQLSTATE `state` is told with.
+#
+# - `state`: the five characters of the SQLSTATE; its first two are its
+#   class.
+function code_of(state: str) -> str
+    if state == "23505" || state == "42S01" || state == "42S11" || state == "42S21" || state == "42P04" || state == "42P05" || state == "42P06" || state == "42P07" || state == "42701" || state == "42710" || state == "42712" || state == "42723" || state == "42P03"
+        return sql.EXISTS
+
+    if state == "42S02" || state == "42S12" || state == "42S22" || state == "IM002" || state == "42P01" || state == "42703" || state == "42883" || state == "42704" || state == "42P02" || state == "3D000" || state == "3F000" || state == "26000" || state == "34000"
+        return sql.NOT_FOUND
+
+    if state == "42501"
+        return sql.PERMISSION
+
+    if state == "22003" || state == "22001" || state == "22008" || state == "22015"
+        return sql.DOES_NOT_FIT
+
+    if state == "HYT00" || state == "HYT01" || state == "25P03" || state == "57P05"
+        return sql.TIMEOUT
+
+    if state == "HY008" || state == "57014"
+        return sql.STOPPED
+
+    if state == "HY001" || state == "HY013" || state == "HY014"
+        return sql.LIMIT
+
+    if state == "HYC00" || state == "IM001"
+        return sql.UNSUPPORTED
+
+    if state == "57P01" || state == "57P02" || state == "57P03"
+        return sql.CLOSED
+
+    if state == "08P01" || state == "HY009" || state == "HY024" || state == "HY090" || state == "HY092"
+        return sql.INVALID
+
+    group = if state.len() >= 2
+        state.slice(from: 0, to: 2)
+    else
+        ""
+
+    if group == "28"
+        return sql.PERMISSION
+
+    if group == "08"
+        return sql.CLOSED
+
+    if group == "53" || group == "54"
+        return sql.LIMIT
+
+    if group == "0A"
+        return sql.UNSUPPORTED
+
+    if group == "07" || group == "21" || group == "22" || group == "23" || group == "24" || group == "25" || group == "34" || group == "42"
+        return sql.INVALID
+    return sql.FAILED
+
+# The code of `sql` a failure of the floor's `kind` is told with, where no
+# driver reported it.
+#
+# - `kind`: one of the floor's kinds.
+function code_of_kind(kind: i64) -> str
+    if kind == hero_odbc.HERO_ODBC_INVALID
+        return sql.INVALID
+
+    if kind == hero_odbc.HERO_ODBC_NOT_OPEN
+        return sql.CLOSED
+
+    if kind == hero_odbc.HERO_ODBC_LIMIT
+        return sql.LIMIT
+
+    if kind == hero_odbc.HERO_ODBC_UNSUPPORTED
+        return sql.UNSUPPORTED
+    return sql.FAILED
+
+# The floor's words for its last failure on this thread, "" where it gave
+# none; bytes that are not UTF-8 shown as the floor's own words never are.
+function last_words() -> str
+    buffer: [u8] @= []
+    length = hero_odbc.last_message(@buffer, count: 4096)
+
+    if length <= 0 || length > 4096
+        return ""
+    return buffer.slice(from: 0, to: length).validated_bytes().default("(words that are not UTF-8)")
+
+# The SQLSTATE of the floor's last failure on this thread, "" where there
+# was none.
+function last_state() -> str
+    buffer: [u8] @= []
+    length = hero_odbc.last_state(@buffer, count: 8)
+
+    if length <= 0 || length > 8
+        return ""
+    return buffer.slice(from: 0, to: length).validated_bytes().default("")
+
+# The message of a failure a driver reported: `[SQLSTATE] words`, then `
+# (native error N)` where the driver gave a number of its own; the words
+# alone where it gave no SQLSTATE.
+#
+# - `state`: the SQLSTATE, "" for none.
+# - `words`: the driver's words.
+# - `native`: the driver's native error, 0 for none.
+function message_of(state: str, words: str, native: i64) -> str
+    said = if native != 0
+        f"{words} (native error {native})"
+    else
+        words
+
+    if state == ""
+        return said
+    return sql.failure_message(database_code: state, message: said)
+
+# The floor's last failure on this thread, as a `T?`. It is called right
+# after the call that failed.
+function last<T>() -> T?
+    kind = hero_odbc.last_error()
+
+    if kind == hero_odbc.HERO_ODBC_DRIVER
+        state = last_state()
+        return fail(
+            code: code_of(state),
+            msg: message_of(state: state, words: last_words(), native: hero_odbc.last_os_error())
+        )
+    words = last_words()
+
+    if words == ""
+        return fail(code: code_of_kind(kind), msg: "the ODBC layer failed and gave no reason")
+    return fail(code: code_of_kind(kind), msg: words)
+
+## Tests
+
+test "code_of: one SQLSTATE of each code, ODBC's and a server's, and a class falling to its code"
+    assert code_of("23505") == "exists" && code_of("42S01") == "exists" && code_of("42S11") == "exists" && code_of("42S21") == "exists"
+    assert code_of("42S02") == "not_found" && code_of("42S22") == "not_found" && code_of("IM002") == "not_found" && code_of("3D000") == "not_found"
+    assert code_of("28000") == "permission" && code_of("28P01") == "permission" && code_of("42501") == "permission"
+    assert code_of("22003") == "does_not_fit" && code_of("22001") == "does_not_fit" && code_of("22008") == "does_not_fit"
+    assert code_of("HYT00") == "timeout" && code_of("HYT01") == "timeout" && code_of("57P05") == "timeout"
+    assert code_of("HY008") == "stopped" && code_of("57014") == "stopped"
+    assert code_of("HY001") == "limit" && code_of("HY014") == "limit" && code_of("53300") == "limit" && code_of("54000") == "limit"
+    assert code_of("HYC00") == "unsupported" && code_of("IM001") == "unsupported" && code_of("0A000") == "unsupported"
+    assert code_of("08001") == "closed" && code_of("08S01") == "closed" && code_of("57P01") == "closed"
+    assert code_of("08P01") == "invalid" && code_of("07002") == "invalid" && code_of("22018") == "invalid" && code_of("23000") == "invalid"
+    assert code_of("24000") == "invalid" && code_of("42000") == "invalid" && code_of("HY009") == "invalid" && code_of("HY092") == "invalid"
+    assert code_of("HY000") == "failed" && code_of("40001") == "failed" && code_of("IM003") == "failed" && code_of("01000") == "failed"
+    assert code_of("") == "failed" && code_of("4") == "failed"
+
+test "code_of_kind: every kind of the floor has a code, the driver's and an unknown one failed"
+    assert code_of_kind(hero_odbc.HERO_ODBC_INVALID) == "invalid"
+    assert code_of_kind(hero_odbc.HERO_ODBC_NOT_OPEN) == "closed"
+    assert code_of_kind(hero_odbc.HERO_ODBC_LIMIT) == "limit"
+    assert code_of_kind(hero_odbc.HERO_ODBC_UNSUPPORTED) == "unsupported"
+    assert code_of_kind(hero_odbc.HERO_ODBC_OTHER) == "failed"
+    assert code_of_kind(hero_odbc.HERO_ODBC_DRIVER) == "failed"
+    assert code_of_kind(99) == "failed"
+
+test "message_of: a state, the words and a native number; no number; no state"
+    assert message_of(state: "HY000", words: "[SQLite]no such table: nope (1)", native: 1) == "[HY000] [SQLite]no such table: nope (1) (native error 1)"
+    assert message_of(state: "IM002", words: "Data source name not found", native: 0) == "[IM002] Data source name not found"
+    assert message_of(state: "", words: "SQLExecute failed and the driver said nothing", native: 0) == "SQLExecute failed and the driver said nothing"
+    assert message_of(state: "HY000", words: "", native: -1) == "[HY000]  (native error -1)"
+    assert sql.database_code_of(message_of(state: "42S02", words: "x", native: 208)).must() == "42S02"
+
+test "last: a call on a connection that is none fails closed where a manager loads, unsupported where none does"
+    none_c: hero_odbc.Connection = nullptr
+    buffer: [u8] @= []
+    assert hero_odbc.info(none_c, which: hero_odbc.HERO_ODBC_INFO_DBMS_NAME, buffer: @buffer, count: 8) == -1
+    got: i64? = last()
+
+    match got
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "closed" || e.code == "unsupported"
+            assert e.msg != ""

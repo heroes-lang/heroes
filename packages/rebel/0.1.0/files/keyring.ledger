@@ -1,0 +1,86 @@
+# The ledger of `keyring`: what a program can do with the system's keyring,
+# one block per capability, and what Rebel answers. None of Go's, Rust's or
+# Python's standard libraries has a keyring, so the yardsticks are the ones the
+# author named on 2026-11-17, read on this machine on 2026-11-18: Python's
+# `keyring` 25.7.0 (installed into the scratch folder, its names read by
+# `dir()` of `keyring`, `keyring.core`, `keyring.backend`, `keyring.errors`
+# and `keyring.credentials`); Go's `github.com/zalando/go-keyring` v0.2.8
+# (fetched into the scratch folder, read by `go doc -all`); Rust's `keyring`
+# crate 4.2.0, its `v1` items as docs.rs lists them, with no source opened; and
+# .NET's `System.Security.Cryptography.ProtectedData`, as Microsoft's reference
+# names it, on the `dotnet` line, since no .NET is on this machine.
+
+capability keyring/store  a secret stored under a service and an account, replacing the one that stood there
+  heroes  keyring.store, keyring.store_text
+  go      Set
+  rust    v1::Entry::new, v1::Entry::set_password, v1::Entry::set_secret
+  python  set_password, core.set_password, KeyringBackend.set_password, errors.PasswordSetError
+  note    A secret is bytes, as Rust's `set_secret` takes it; Go and Python take text alone, which `store_text` keeps as its UTF-8. On macOS a generic password of the login keychain whose `service` and `account` attributes are the two names, and on Linux a Secret Service item whose `service` and `username` attributes are, the attribute names Python's and Go's libraries write, so an item one of them stored is the same item here (unrun across libraries: each test reads only what it stored). On Windows a generic credential of the user's logon, kept on this machine (`CRED_PERSIST_LOCAL_MACHINE`), under a target name the layer writes so that no two pairs of names meet on one, a capital letter included, since the Credential Manager compares target names without their case: the credentials are this library's own, and Python's and Go's are not read (Windows arm compiled against MinGW-w64's headers, UNRUN on Windows)
+
+capability keyring/read  the secret under a service and an account read back
+  heroes  keyring.read, keyring.read_text
+  go      Get
+  rust    v1::Entry::get_password, v1::Entry::get_secret, v1::Error::BadEncoding
+  python  get_password, core.get_password, KeyringBackend.get_password
+  note    An absent secret fails `not_found`, as Go's `ErrNotFound` and Rust's `NoEntry`, where Python answers `None`. `read_text` fails `not_text` on bytes that are no UTF-8, Rust's `BadEncoding`. A secret another program stored that is longer than `SECRET_MOST` is read whole, the buffer grown to what the system answers
+
+capability keyring/remove  the secret under a service and an account removed
+  heroes  keyring.remove
+  go      Delete
+  rust    v1::Entry::delete_credential
+  python  delete_password, core.delete_password, KeyringBackend.delete_password, errors.PasswordDeleteError
+  note    An absent secret fails `not_found`, as all three refuse it (Python by `PasswordDeleteError`). On macOS one removal took one item of the login keychain where two matched (measured 2026-11-18, two accounts of one service), so the layer removes until none matches
+
+capability keyring/remove-all  every secret of a service removed, whatever its account
+  heroes  keyring.remove_all
+  go      DeleteAll
+  rust    -
+  python  -
+  note    done also where none stood, as Go's answers no error then
+
+capability keyring/accounts  the accounts that hold a secret under a service
+  heroes  keyring.accounts
+  go      -
+  rust    -
+  python  get_credential, core.get_credential, KeyringBackend.get_credential, credentials.Credential, credentials.SimpleCredential
+  note    Python's `get_credential(service, None)` answers some one credential of the service with its user name; the list of accounts answers every one, ordered by their bytes, and `read` then gives the secret of the one wanted. On Linux the listing asks the Secret Service's own `SearchItems` and each item's `Attributes` over the bus, since libsecret's `secret_password_search_sync`, called as its documentation says, left 24 bytes per item found to LeakSanitizer (libsecret 0.21.7, measured 2026-11-18 by a program linked against it)
+
+capability keyring/which  the keyring this machine offers, asked before a program relies on it
+  heroes  keyring.system
+  go      -
+  rust    v1::Entry::store_status, cli::store_info
+  python  get_keyring, core.get_keyring, KeyringBackend.name, KeyringBackend.viable, errors.NoKeyringError, errors.InitError
+  note    the keyring is asked, by a search for a service no program names on macOS and Windows and by the Secret Service's default alias on Linux, so a machine where no call would succeed answers `unsupported` here first. Measured on Linux arm64 (Debian 13 in a container), each answered `unsupported` with its own words: no libsecret; libsecret and no machine-id; a machine-id and no session bus (no `$DISPLAY` to start one); a bus with no Secret Service on it; a bus whose gnome-keyring has no login keyring and no display to ask for one. With gnome-keyring 48.0 unlocked on a session bus every test passed
+
+capability keyring/failures  why a call failed, told apart by a program
+  heroes  keyring.NOT_FOUND, keyring.PERMISSION, keyring.UNSUPPORTED, keyring.INVALID, keyring.LIMIT, keyring.NOT_TEXT, keyring.FAILED
+  go      ErrNotFound, ErrSetDataTooBig, ErrUnsupportedPlatform
+  rust    v1::Error::NoEntry, v1::Error::NoStorageAccess, v1::Error::PlatformFailure, v1::Error::TooLong, v1::Error::Invalid, v1::Error::NotSupportedByStore, v1::Error::NoDefaultStore, v1::Error::BadDataFormat, v1::Error::BadStoreFormat, v1::Error::Ambiguous, v1::Result
+  python  errors.KeyringError, errors.KeyringLocked, errors.NoKeyringError, errors.PasswordSetError, errors.PasswordDeleteError, errors.InitError
+  note    A locked keyring, a dialog the person refused and a secret another program owns are `permission` (Rust's `NoStorageAccess`, Python's `KeyringLocked`); no keyring here is `unsupported`. Rust's `Ambiguous` has no case: one pair of names reaches one secret on every platform; where the macOS keychain held the same pair in two keychains, `read` would answer the first the system gives and `remove` remove every match (unrun: no second keychain on this machine)
+
+capability keyring/bounds  how long a name and a secret may be
+  heroes  keyring.NAME_MOST, keyring.SECRET_MOST
+  go      ErrSetDataTooBig
+  rust    v1::Error::TooLong
+  python  -
+  note    1024 bytes a name and 2560 a secret on every platform, Windows' `CRED_MAX_CREDENTIAL_BLOB_SIZE`, where Go's bound differs by platform: a program that stores a secret on one platform stores it on all. Past either is `invalid`, its message giving the bound. The service is never empty, the account may be
+
+capability keyring/protect  data encrypted so that only this user (or this machine) can decrypt it, kept by the program wherever it likes
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  dotnet  ProtectedData.Protect, ProtectedData.Unprotect, ProtectedData.TryProtect, ProtectedData.TryUnprotect, DataProtectionScope.CurrentUser, DataProtectionScope.LocalMachine
+  note    Windows' data protection (`CryptProtectData`) has no call of its own on macOS or Linux, where the same capability is a key kept in the keyring and a cipher of the system's; `keyring` stands on the layer below `crypto/seal` and may not use it, and `crypto/seal` is pending on macOS (its ledger: no AES-GCM reachable from C there). So it waits for a package above both, `keyring` holding the key and `crypto/seal` the cipher, rather than three schemes written here; .NET itself answers `PlatformNotSupportedException` off Windows (Microsoft's reference)
+
+capability keyring/choose-store  another store chosen instead of the system's: a file, a database, the kernel's keys, a mock for tests
+  heroes  refused: a machine has one keyring, and this package reaches it; a store of the program's own is a file the program writes, and a test runs against the real keyring under a service of its own that it removes, as this package's tests do
+  go      MockInit, MockInitWithError
+  rust    cli::use_native_store, cli::use_named_store, cli::use_named_store_with_modifiers, cli::use_apple_keychain_store, cli::use_apple_protected_store, cli::use_windows_native_store, cli::use_dbus_secret_service_store, cli::use_zbus_secret_service_store, cli::use_linux_keyutils_store, cli::use_sqlite_store, cli::use_sample_store, cli::use_android_native_store, cli::release_store, cli::internalize, cli::NAMED_STORES
+  python  set_keyring, core.set_keyring, core.init_backend, core.load_keyring, core.load_config, core.load_env, core.recommended, core.disable, core.fail, backend.get_all_keyring, KeyringBackend.priority, KeyringBackend.get_viable_backends, KeyringBackend.passes, KeyringBackend.with_properties, KeyringBackend.set_properties_from_env, backends
+
+dropped
+  go      Keyring (an interface: the language has none, and the package's functions are its one implementation)
+  rust    v1::Entry (a value holding the two names: here the names are the call's own arguments)
+  python  compat, util, backend.Crypter, backend.NullCrypter, backend.ExceptionTrap, backend.KeyringBackendMeta, backend.by_priority, errors.ExceptionRaisedContext, errors.ExceptionInfo (Python's plumbing); backend.SchemeSelectable (a choice between attribute names on Linux: here they are fixed, `service` and `username`, Python's default); credentials.EnvironCredential, credentials.AnonymousCredential (a credential read from environment variables, which `os` reads); KeyringBackend.get_credential's keyring-file backends (a store of the program's own, refused above)

@@ -73,6 +73,11 @@
 /* `hero_disk.c`'s files mapped in memory (2026-11-17, the small additions:
  * until then that member issued no handle). */
 #define HERO_HANDLE_TAG_DISK_MAP 12
-/* 13 to 15 are free; the next member takes 13. */
+/* `hero_odbc.c`'s connections and statements (2026-11-18), one table and one
+ * tag, a slot's kind telling the two apart. */
+#define HERO_HANDLE_TAG_ODBC 13
+/* `hero_watch.c`'s watches (2026-11-18). */
+#define HERO_HANDLE_TAG_WATCH 14
+/* 15 is free, the last of four bits; the next member takes 15. */
 
 #endif

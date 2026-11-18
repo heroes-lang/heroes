@@ -1,0 +1,594 @@
+# A folder, a folder's whole tree or one file watched, and every change the
+# system tells of it handed to the program as an `Event`, in order: an entry
+# created, removed, written, its facts changed, or renamed with both its
+# names; events lost told as one `overflow`; the watched folder itself gone.
+# What Java's `WatchService`, .NET's `FileSystemWatcher`, Go's `fsnotify` and
+# Python's `watchdog` give a program, as a wait with a limit the program's own
+# loop calls, and a watch a `poll.Set` waits on beside connections and timers.
+#
+# What it does NOT do: read, list or walk what changed (`fs`); match a path
+# against a pattern (`path.matches`, then the built-in `filter`); run a
+# function at each change, which the language's loop does: `wait`, then act.
+#
+# **How each system watches** (`hero_watch.h`): Linux's `inotify`, one of the
+# user's watches per folder, so a tree costs one per folder below it; macOS's
+# FSEvents, which keeps the whole tree below the folder whatever is asked and
+# names every path; Windows' `ReadDirectoryChangesExW`. **A file is watched as
+# its folder's entry of that name**, so a file an editor replaces by a rename
+# over it is still watched after, and told `created`. **Changes close together
+# may be told as one**: a write told again before the program took the first
+# is told once, and on macOS the system joins one path's changes within about
+# a second. A change made just before the watch began may be told. A watch
+# holds at most its room of events; past it they are lost, and one `overflow`
+# stands where they were, after which a program reads the folder again.
+#
+# It fails with `invalid`, `file_not_found`, `permission`, `not_a_directory`,
+# `limit`, `closed`, `stopped`, `unsupported` and `failed` (README § A4).
+
+use fs
+use fs/watch/hero_watch
+use fs/watch/internal/failure
+use fs/watch/internal/taking
+use io
+use net
+use path as paths
+use poll
+use time
+
+## Codes
+
+# An argument out of its range: an empty path or one holding a zero byte, a
+# room outside 1 to `MOST`, a limit below zero. `open`, `open_tree`,
+# `open_with` and `wait` fail with it.
+constant INVALID: str
+    "invalid"
+
+# The path names nothing, or a folder on its way is not there; and a watch
+# whose watched folder is gone, once its `gone` event was taken. `open`,
+# `open_tree`, `open_with`, `wait` and `wait_forever` fail with it.
+constant FILE_NOT_FOUND: str
+    "file_not_found"
+
+# The system refuses this program the path. `open`, `open_tree` and
+# `open_with` fail with it.
+constant PERMISSION: str
+    "permission"
+
+# A tree was asked of a path that names a file, or a file stands on the path's
+# way. `open_tree` and `open_with` fail with it.
+constant NOT_A_DIRECTORY: str
+    "not_a_directory"
+
+# The system or the process has no watch, descriptor, thread or memory left;
+# on Linux, `/proc/sys/fs/inotify/max_user_watches` counts one watch per
+# folder of a tree. `open`, `open_tree`, `open_with` and `add_to` fail with it.
+constant LIMIT: str
+    "limit"
+
+# The watch is closed. `close`, `wait`, `wait_forever`, `count` and `add_to`
+# fail with it.
+constant CLOSED: str
+    "closed"
+
+# The program was asked to stop (`net.catch_stop`, `net.ask_stop`), before the
+# call or while it waited. `wait` and `wait_forever` fail with it.
+constant STOPPED: str
+    "stopped"
+
+# This system cannot watch the volume the path stands on. `open`, `open_tree`
+# and `open_with` fail with it.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The system refused for a reason none of the above names; the message
+# carries its number. Every function here that can fail may fail with it.
+constant FAILED: str
+    "failed"
+
+## The watch
+
+# The room a watch is opened with by `open` and `open_tree`: the events it
+# holds before it overflows.
+constant ROOM: i64
+    65536
+
+# The most room a watch may be opened with, by `open_with`.
+constant MOST: i64
+    1048576
+
+# A watch of one path. It is an address, as an `io.Stream` is: every copy
+# reaches the same watch, and `close` empties the place it is handed. Made by
+# `open`, `open_tree` or `open_with` alone; one nobody closes is told when
+# `main` returns.
+record Watch
+    # The floor's watch, `nullptr` once `close` has emptied this place.
+    handle: hero_watch.Watch
+    # The watched path as the program gave it, which every event's path
+    # begins with.
+    path: str
+    # Whether the whole tree below the folder is watched.
+    tree: bool
+
+# What happened to an entry.
+variant Change
+    # The entry came to be: made, or moved in from outside what is watched.
+    created
+    # The entry stopped being: removed, or moved out of what is watched.
+    removed
+    # A file's content was written.
+    changed
+    # The entry's facts changed and not its content: its permission, owner,
+    # times or extended attributes. Windows tells these as `changed`, which
+    # is all its system says.
+    attributes
+    # The entry moved from one path to another, both inside what is watched;
+    # a rename with one end outside is `created` or `removed`.
+    renamed
+        # The path it had before, which `Event.path` follows.
+        from: str
+    # Events were lost here, by the system or for want of room; the event's
+    # path is the watched path. The program reads the folder again.
+    overflow
+    # The watched folder (for a file, the folder holding it) was removed or
+    # moved away; the event's path is the watched path. Told once, and last.
+    gone
+
+# One change the system told.
+record Event
+    # The entry's path: the watched path as the program gave it, joined with
+    # the entry's name below it by the system's separator; a watched file's
+    # own events carry the very path given.
+    path: str
+    # What happened to it.
+    change: Change
+    # Whether the entry is a folder. On Windows before Windows 10 1709, or on
+    # a volume that does not say, a removed entry is told not a folder.
+    directory: bool
+
+# A watch of `path`: a folder's own entries, the folder's entries and not
+# theirs, or one file, with room for `ROOM` events.
+#
+# - `path`: the folder or the file, which must be there; a link is followed
+#   to what it names.
+#
+# Every change made after the call returns is told by `wait`. Fails `invalid`
+# where `path` is empty or holds a zero byte, `file_not_found` where it names
+# nothing, `permission` where the system refuses it, `limit` where no watch is
+# left, `unsupported` where the volume cannot be watched. The watch is closed
+# with `close`. See also `open_tree`, `open_with`.
+function open(path: str) -> Watch?
+    return open_with(path, tree: false, room: ROOM)
+
+# A watch of the folder `path` and of every folder below it, with room for
+# `ROOM` events.
+#
+# - `path`: the folder, which must be there.
+#
+# A folder made in the tree, or moved in from outside it, is told `created`
+# and so is every entry found in it then, and from then it is watched too; an
+# entry made in that moment may be told twice. Links below are told as
+# entries and never followed. On Linux each folder of the tree costs one of
+# the user's watches, and opening walks the whole tree.
+#
+# Fails as `open` does, and `not_a_directory` where `path` names a file. See
+# also `open`, `open_with`.
+function open_tree(path: str) -> Watch?
+    return open_with(path, tree: true, room: ROOM)
+
+# A watch of `path`, its whole tree or not, holding at most `room` events
+# before it overflows.
+#
+# - `path`: the folder or the file, which must be there.
+# - `tree`: true for the whole tree below a folder, false for its own entries
+#   or for a file.
+# - `room`: the events the watch holds while the program does not take them,
+#   1 to `MOST`; past it they are lost and one `overflow` stands where they
+#   were. The room is taken as events come, never at once.
+#
+# Fails `invalid` where `room` is outside 1 to `MOST`, and as `open_tree`
+# does. See also `open`, `open_tree`.
+function open_with(path: str, tree: bool, room: i64) -> Watch?
+    asked = f"watching \"{path}\""
+
+    if path.len() == 0
+        return failure.of(code: INVALID, asked: asked, why: "the path is empty")
+
+    for i in range(from: 0, to: path.len())
+        if path[i] == 0
+            return failure.of(
+                code: INVALID,
+                asked: asked,
+                why: "the path holds a zero byte, which no system takes in a path"
+            )
+
+    if room < 1 || room > MOST
+        return failure.of(
+            code: INVALID,
+            asked: asked,
+            why: f"a watch holds 1 to 1,048,576 events, and {room} was asked"
+        )
+
+    flags = if tree
+        hero_watch.HERO_WATCH_TREE
+    else
+        0
+    handle = hero_watch.open(path, flags: flags, most: room)
+
+    if handle == nullptr
+        return failure.last(asked: asked)
+    return ok(Watch(handle: handle, path: path, tree: tree))
+
+# Closes the watch and empties the place, so every later call through it
+# fails `closed`: the system's watch ends, and the events not taken are let
+# go.
+#
+# - `w`: the watch; emptied by the call.
+#
+# Fails `closed` where it is closed already. See also `open`.
+function close(@w: Watch) -> ()?
+    if w.handle == nullptr
+        return failure.of(code: CLOSED, asked: f"closing the watch of \"{w.path}\"", why: "it is closed already")
+    answer = hero_watch.close(@w.handle)
+    w.handle @ nullptr
+
+    if answer < 0
+        return failure.last(asked: f"closing the watch of \"{w.path}\"")
+    return ok()
+
+## Waiting
+
+# The events the watch holds, in the order the system told them, waiting
+# until one is told, `limit` passes, or the stop is asked.
+#
+# - `w`: the watch.
+# - `limit`: the longest to wait for the first event; zero asks without
+#   waiting.
+#
+# Every event held when the first is taken, so one call answers a burst whole;
+# empty where `limit` passed with none. An event whose path is not UTF-8 is
+# told as an `overflow`, since no such path can be handed on. After `gone`,
+# nothing more is told.
+#
+# Fails `invalid` where `limit` is below zero, `stopped` where the stop was
+# asked (an event taken before the stop is answered first, the stop by the
+# next call), `closed` where the watch is closed, `file_not_found` once the
+# watched folder is gone and its `gone` was taken. See also `wait_forever`.
+function wait(w: Watch, limit: time.Duration) -> [Event]?
+    asked = f"waiting on the watch of \"{w.path}\""
+
+    if limit.nanoseconds < 0
+        return failure.of(
+            code: INVALID,
+            asked: asked,
+            why: f"a limit is zero or more, and {limit.nanoseconds} ns was asked"
+        )
+    raw = taking.taken(w.handle, limit_ns: limit.nanoseconds, watched: w.path, asked: asked)?
+    events: [Event] @= []
+
+    for t in raw
+        change: Change = if t.kind == hero_watch.HERO_WATCH_CREATED
+            .created
+        else if t.kind == hero_watch.HERO_WATCH_REMOVED
+            .removed
+        else if t.kind == hero_watch.HERO_WATCH_CHANGED
+            .changed
+        else if t.kind == hero_watch.HERO_WATCH_ATTRIBUTES
+            .attributes
+        else if t.kind == hero_watch.HERO_WATCH_RENAMED
+            .renamed(from: t.from)
+        else if t.kind == hero_watch.HERO_WATCH_GONE
+            .gone
+        else
+            .overflow
+        events @ events.push(Event(path: t.path, change: change, directory: t.directory))
+
+    return ok(events)
+
+# The events the watch holds, waiting as long as it takes: until one is told
+# or the stop is asked.
+#
+# - `w`: the watch.
+#
+# Never empty: it answers once an event is told.
+#
+# Fails `stopped`, `closed` and `file_not_found` as `wait` does. See also
+# `wait`.
+function wait_forever(w: Watch) -> [Event]?
+    # The largest limit, about 292 years: as long as it takes.
+    return wait(w, limit: time.nanoseconds(9223372036854775807))
+
+# How many events wait in the watch, an `overflow` among them, without
+# waiting.
+#
+# - `w`: the watch.
+#
+# Fails `closed` where the watch is closed. See also `wait`.
+function count(w: Watch) -> i64?
+    n = hero_watch.count(w.handle)
+
+    if n < 0
+        return failure.last(asked: f"counting the events of the watch of \"{w.path}\"")
+    return ok(n)
+
+# Adds the watch to the set `set` and answers the entry's key: a wait on the
+# set tells the key readable while an event waits in the watch, and the
+# program then takes them with `wait` and a limit of zero.
+#
+# - `set`: the set; `poll.remove` takes the watch out, and closing the set
+#   closes nothing of the watch.
+# - `w`: the watch, which stays the program's and is closed with `close`.
+#
+# The set waits on a pipe the watch rings on Darwin and Linux, and on a
+# datagram socket of the loopback on Windows, whose readiness waits on sockets
+# alone; there a datagram from another program can make the key readable with
+# no event waiting, so a `wait` of zero may answer none.
+#
+# Fails `closed` where the set or the watch is closed, `limit` where the set
+# holds the most entries it was made for or no pipe or socket can be made.
+# See also `poll.wait`.
+function add_to(set: poll.Set, w: Watch) -> i64?
+    asked = f"adding the watch of \"{w.path}\" to a set"
+    bell = hero_watch.bell_stream(w.handle)
+
+    if bell != nullptr
+        return poll.add_stream(
+            set,
+            s: io.Stream(handle: bell, borrowed: true, name: f"the watch of \"{w.path}\""),
+            interest: .read
+        )
+
+    if hero_watch.last_error() != hero_watch.HERO_WATCH_UNSUPPORTED
+        return failure.last(asked: asked)
+    socket = hero_watch.bell_socket(w.handle)
+
+    if socket == nullptr
+        return failure.last(asked: asked)
+    loopback = net.Address(bytes: [127, 0, 0, 1], zone: "", has_port: false, port: 0)
+    return poll.add_udp(set, u: net.UdpSocket(socket: socket, address: loopback), interest: .read)
+
+## Telling
+
+# An event as one line a person reads: what happened, whether to a folder,
+# and its path in double quotes as it stands; a rename names both paths.
+#
+# - `e`: the event.
+#
+# `created "a/b.txt"`, `created folder "a/c"`, `renamed "a/b.txt" from
+# "a/old.txt"`, `overflow "a"`. See also `wait`.
+function format_event(e: Event) -> str
+    what = match e.change
+        .created    => "created"
+        .removed    => "removed"
+        .changed    => "changed"
+        .attributes => "attributes"
+        .renamed _  => "renamed"
+        .overflow   => "overflow"
+        .gone       => "gone"
+
+    folder = if e.directory
+        " folder"
+    else
+        ""
+
+    tail = match e.change
+        .renamed r                                                       => f" from \"{r.from}\""
+        .created | .removed | .changed | .attributes | .overflow | .gone => ""
+
+    return f"{what}{folder} \"{e.path}\"{tail}"
+
+## Examples
+
+# A folder watched, a file made in it, and the creation told within a second.
+test "open: a folder's file made is told created"
+    root = fs.make_temp_dir(dir: "", pattern: "watch-open-*").must()
+    w @= open(root).must()
+    fs.touch(root + "/notes.txt").must()
+    told = wait(w, limit: time.seconds(2).must()).must()
+    assert told[0] == Event(path: paths.join_all([root, "notes.txt"]), change: .created, directory: false)
+    close(@w).must()
+    fs.remove_all(root).must()
+
+# A tree watched: a file made two folders down is told with its whole path.
+test "open_tree: a file made two folders down"
+    root = fs.make_temp_dir(dir: "", pattern: "watch-tree-*").must()
+    fs.make_dir_all(root + "/a/b").must()
+    w @= open_tree(root).must()
+    fs.touch(root + "/a/b/deep.txt").must()
+    seen @= false
+
+    # The folders made just before the watch began may be told first.
+    for _ in range(from: 0, to: 4)
+        for e in wait(w, limit: time.milliseconds(500).must()).must()
+            seen @ seen || e == Event(path: paths.join_all([root, "a", "b", "deep.txt"]), change: .created, directory: false)
+
+    assert seen
+    close(@w).must()
+    fs.remove_all(root).must()
+
+# A watch with room for two events: ten files made while nothing is taken
+# leave two events and one overflow.
+test "open_with: room for two, and an overflow where the rest were lost"
+    root = fs.make_temp_dir(dir: "", pattern: "watch-room-*").must()
+    w @= open_with(root, tree: false, room: 2).must()
+
+    for i in range(from: 0, to: 10)
+        fs.touch(f"{root}/f{i}").must()
+
+    time.sleep(time.milliseconds(1500).must())
+    told = wait(w, limit: time.nanoseconds(0)).must()
+    assert told.len() == 3
+    assert told[2].change == .overflow
+    close(@w).must()
+    fs.remove_all(root).must()
+
+# A watch closed, and a second close told closed.
+test "close: a watch closed, then closed again"
+    root = fs.make_temp_dir(dir: "", pattern: "watch-close-*").must()
+    w @= open(root).must()
+    close(@w).must()
+    assert close(@w).is_err()
+    fs.remove_all(root).must()
+
+# A file renamed in the watched folder is told with both its paths.
+test "wait: a rename told with the path before"
+    root = fs.make_temp_dir(dir: "", pattern: "watch-wait-*").must()
+    fs.touch(root + "/draft.txt").must()
+    w @= open(root).must()
+    fs.rename(from: root + "/draft.txt", to: root + "/final.txt").must()
+    told = wait(w, limit: time.seconds(2).must()).must()
+    assert told.len() >= 1
+    assert told[told.len() - 1] == Event(path: paths.join_all([root, "final.txt"]), change: .renamed(from: paths.join_all([root, "draft.txt"])), directory: false)
+    close(@w).must()
+    fs.remove_all(root).must()
+
+# A wait with no limit, ended by the watched file's removal.
+test "wait_forever: a watched file removed"
+    root = fs.make_temp_dir(dir: "", pattern: "watch-forever-*").must()
+    watched = paths.join_all([root, "watched.txt"])
+    fs.touch(watched).must()
+    w @= open(watched).must()
+    fs.remove(watched).must()
+    told = wait_forever(w).must()
+    assert told[told.len() - 1] == Event(path: watched, change: .removed, directory: false)
+    close(@w).must()
+    fs.remove_all(root).must()
+
+# The events waiting, counted without taking them.
+test "count: one file made, one event waiting"
+    root = fs.make_temp_dir(dir: "", pattern: "watch-count-*").must()
+    w @= open(root).must()
+    assert count(w).must() == 0
+    fs.make_dir(root + "/inbox").must()
+    time.sleep(time.milliseconds(1000).must())
+    assert count(w).must() == 1
+    close(@w).must()
+    fs.remove_all(root).must()
+
+# A watch in a readiness set beside a timer: the set tells the watch's key
+# once a file is made, and the watch's events are then taken at once.
+test "add_to: a set wakes for the watch"
+    root = fs.make_temp_dir(dir: "", pattern: "watch-poll-*").must()
+    w @= open(root).must()
+    set @= poll.make(4).must()
+    key = add_to(set, w: w).must()
+    fs.touch(root + "/ping").must()
+    ready = poll.wait(set, limit: time.seconds(2).must()).must()
+    assert ready.len() == 1
+    assert ready[0].key == key
+    assert ready[0].readable
+    assert wait(w, limit: time.nanoseconds(0)).must().len() >= 1
+    assert poll.wait(set, limit: time.nanoseconds(0)).must().len() == 0
+    poll.close(@set).must()
+    close(@w).must()
+    fs.remove_all(root).must()
+
+# An event as a line of a log.
+test "format_event: a rename and a folder made"
+    moved = Event(path: "src/new.txt", change: .renamed(from: "src/old.txt"), directory: false)
+    assert format_event(moved) == "renamed \"src/new.txt\" from \"src/old.txt\""
+    made = Event(path: "src/lib", change: .created, directory: true)
+    assert format_event(made) == "created folder \"src/lib\""
+
+test "open, open_tree and open_with: an empty path, a zero byte, room 0 and past MOST invalid, nothing there file_not_found, a tree of a file not_a_directory"
+    root = fs.make_temp_dir(dir: "", pattern: "watch-edges-*").must()
+    fs.touch(root + "/file.txt").must()
+    zero: [u8] = [97, 0, 98]
+    assert open("").is_err()
+    assert open_with(root, tree: false, room: 0).is_err()
+    assert open_with(root, tree: false, room: MOST + 1).is_err()
+
+    match open(zero.validated_bytes().must())
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match open(root + "/nothing")
+        .ok _ => assert false
+        .err e =>
+            assert e.code == FILE_NOT_FOUND
+            assert e.msg == f"watching \"{root}/nothing\": the path names nothing, or a folder on its way is not there"
+
+    match open_tree(root + "/file.txt")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_A_DIRECTORY
+
+    one @= open_with(root, tree: false, room: 1).must()
+    most @= open_with(root, tree: true, room: MOST).must()
+    close(@one).must()
+    close(@most).must()
+    fs.remove_all(root).must()
+
+test "wait: a limit below zero invalid, a closed watch closed, a folder made told a folder, a permission changed told attributes or changed"
+    root = fs.make_temp_dir(dir: "", pattern: "watch-kinds-*").must()
+    w @= open(root).must()
+
+    match wait(w, limit: time.nanoseconds(-1))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    fs.make_dir(root + "/sub").must()
+    made = wait(w, limit: time.seconds(2).must()).must()
+    assert made[made.len() - 1] == Event(path: paths.join_all([root, "sub"]), change: .created, directory: true)
+    fs.touch(root + "/plain").must()
+    _ = wait(w, limit: time.seconds(2).must()).must()
+    time.sleep(time.milliseconds(1200).must())
+    fs.set_permission(path: root + "/plain", permission: 0o600).must()
+    facts = wait(w, limit: time.seconds(2).must()).must()
+    last = facts[facts.len() - 1]
+    assert last.path == paths.join_all([root, "plain"])
+    assert last.change == .attributes || last.change == .changed
+    close(@w).must()
+
+    match wait(w, limit: time.nanoseconds(0))
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED
+
+    match count(w)
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED
+
+    fs.remove_all(root).must()
+
+test "wait and wait_forever: the watched folder removed is told gone, last, and then file_not_found"
+    root = fs.make_temp_dir(dir: "", pattern: "watch-gone-*").must()
+    w @= open(root).must()
+    fs.remove_all(root).must()
+    told = wait_forever(w).must()
+    assert told[told.len() - 1] == Event(path: root, change: .gone, directory: false)
+
+    match wait(w, limit: time.nanoseconds(0))
+        .ok _ => assert false
+        .err e =>
+            assert e.code == FILE_NOT_FOUND
+            assert e.msg == f"waiting on the watch of \"{root}\": the watched folder is gone, as the watch told, and nothing more will be told"
+
+    close(@w).must()
+
+test "a file watched: a sibling's changes not told, the file replaced by a rename over it told created, then written told changed"
+    root = fs.make_temp_dir(dir: "", pattern: "watch-file-*").must()
+    kept = paths.join_all([root, "kept.txt"])
+    fs.touch(kept).must()
+    w @= open(kept).must()
+    fs.touch(root + "/other.txt").must()
+
+    # Nothing of the sibling's; the file made just before the watch began may
+    # be told created.
+    for e in wait(w, limit: time.milliseconds(700).must()).must()
+        assert e == Event(path: kept, change: .created, directory: false)
+
+    fs.rename(from: root + "/other.txt", to: kept).must()
+    replaced = wait(w, limit: time.seconds(2).must()).must()
+    assert replaced[replaced.len() - 1] == Event(path: kept, change: .created, directory: false)
+    fs.append_text(path: kept, text: "more").must()
+    written = wait(w, limit: time.seconds(2).must()).must()
+    assert written[written.len() - 1] == Event(path: kept, change: .changed, directory: false)
+    close(@w).must()
+    fs.remove_all(root).must()
+
+test "format_event: every change, a folder, and the paths as they stand"
+    assert format_event(Event(path: "a", change: .created, directory: false)) == "created \"a\""
+    assert format_event(Event(path: "a", change: .removed, directory: true)) == "removed folder \"a\""
+    assert format_event(Event(path: "a b", change: .changed, directory: false)) == "changed \"a b\""
+    assert format_event(Event(path: "é", change: .attributes, directory: false)) == "attributes \"é\""
+    assert format_event(Event(path: "b", change: .renamed(from: "a"), directory: false)) == "renamed \"b\" from \"a\""
+    assert format_event(Event(path: "", change: .overflow, directory: false)) == "overflow \"\""
+    assert format_event(Event(path: "w", change: .gone, directory: false)) == "gone \"w\""

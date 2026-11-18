@@ -1,0 +1,575 @@
+# A statement's life on a connection: opened, read or run with its values
+# bound, its rows and its result read as `sql`'s types, and closed on every
+# path, so the floor's handle is never left owed. Each call here that opens
+# a statement closes it before it answers.
+
+use sql
+use sql/odbc/hero_odbc
+use sql/odbc/internal/failure
+use sql/odbc/internal/fill
+use sql/odbc/internal/values
+
+# What a statement's current result says of its columns.
+record Described
+    # The columns, in order.
+    columns: [sql.Column]
+    # Each column's SQL type, as its driver describes it.
+    types: [i64]
+
+# A new statement of `c`, stopped by its driver after `timeout_seconds`
+# where that is above 0.
+#
+# - `c`: the connection.
+# - `timeout_seconds`: 0 for no limit.
+#
+# The caller owes the statement a `hero_odbc.statement_close`. Fails as the
+# floor does.
+function opened(c: hero_odbc.Connection, timeout_seconds: i64) -> hero_odbc.Statement?
+    s @= hero_odbc.statement_open(c)
+
+    if s == nullptr
+        return failure.last()
+
+    if timeout_seconds > 0 && hero_odbc.set_timeout(s, seconds: timeout_seconds) < 0
+        answer: hero_odbc.Statement? = failure.last()
+        _ = hero_odbc.statement_close(@s)
+        return answer
+    return ok(s)
+
+# `n` things of the kind `one`, in words: `no parameter`, `1 parameter`, `2
+# parameters`.
+#
+# - `n`: the count, from 0.
+# - `one`: the kind's name for one.
+function counted(n: i64, one: str) -> str
+    if n == 0
+        return "no " + one
+
+    if n == 1
+        return "1 " + one
+    return f"{n} {one}s"
+
+# `ok()` where the statement `s` has prepared takes `given` values; where
+# its driver cannot count them, the run says.
+#
+# - `s`: the statement, prepared.
+# - `given`: how many values the program gave.
+#
+# Fails `invalid` where the counts differ, the message saying both.
+function checked_count(s: hero_odbc.Statement, given: i64) -> ()?
+    count = hero_odbc.parameter_count(s)
+
+    if count < 0
+        state = failure.last_state()
+
+        if state == "IM001" || state == "HYC00"
+            return ok()
+        return failure.last()
+
+    if count != given
+        were = if given == 1
+            "was"
+        else
+            "were"
+
+        return fail(
+            code: sql.INVALID,
+            msg: f"the statement takes {counted(count, one: "parameter")} and {counted(given, one: "parameter")} {were} given"
+        )
+    return ok()
+
+# The columns of `s`'s current result and their SQL types.
+#
+# - `s`: the statement.
+#
+# Fails as the floor does.
+function described(s: hero_odbc.Statement) -> Described?
+    count = hero_odbc.column_count(s)
+
+    if count < 0
+        return failure.last()
+    columns: [sql.Column] @= []
+    types: [i64] @= []
+
+    for i in range(from: 1, to: count + 1)
+        at = to_u64(i).must()
+        name = fill.column_name(s, column: at)?
+        sql_type: i64 @= 0
+
+        if hero_odbc.column_type(s, column: at, sql_type: @sql_type) < 0
+            return failure.last()
+        columns @ columns.push(sql.Column(name: name, type_name: fill.column_type_name(s, column: at)?))
+        types @ types.push(sql_type)
+
+    return ok(Described(columns: columns, types: types))
+
+# The names of `columns`, in order.
+#
+# - `columns`: the columns.
+function names_of(columns: [sql.Column]) -> [str]
+    names: [str] @= []
+
+    for c in columns
+        names @ names.push(c.name)
+
+    return names
+
+# The values of the row `s` stands on, read by the types `d` gives.
+#
+# - `s`: the statement, on a row.
+# - `d`: its result's columns.
+# - `names`: the columns' names.
+#
+# Fails as `values.read_value` does.
+function row_values(s: hero_odbc.Statement, d: Described lent, names: [str] lent) -> [sql.Value]?
+    cells: [sql.Value] @= []
+    i: i64 @= 0
+
+    while i < d.types.len()
+        cells @ cells.push(values.read_value(s, column: i + 1, sql_type: d.types[i], name: names[i])?)
+        i @ i + 1
+
+    return ok(cells)
+
+# Every row of `s`'s current result, with its columns.
+#
+# - `s`: the statement, its result not yet read.
+#
+# Fails as the floor and `values.read_value` do.
+function rows_of(s: hero_odbc.Statement) -> sql.Rows?
+    d = described(s)?
+    names = names_of(d.columns)
+    rows: [sql.Row] @= []
+
+    while true
+        moved = hero_odbc.fetch(s)
+
+        if moved < 0
+            return failure.last()
+
+        if moved == 0
+            break
+        rows @ rows.push(sql.Row(names: names, values: row_values(s, d: d, names: names)?))
+
+    return ok(sql.Rows(columns: d.columns, rows: rows))
+
+# The first row of `s`'s current result; the rest dropped unread.
+#
+# - `s`: the statement, its result not yet read.
+#
+# Fails `not_found` where the result has no row, and as `rows_of` does.
+function first_row_of(s: hero_odbc.Statement) -> sql.Row?
+    d = described(s)?
+    moved = hero_odbc.fetch(s)
+
+    if moved < 0
+        return failure.last()
+
+    if moved == 0
+        return fail(code: sql.NOT_FOUND, msg: "the statement answered no row")
+    names = names_of(d.columns)
+    row = sql.Row(names: names, values: row_values(s, d: d, names: names)?)
+
+    if hero_odbc.close_cursor(s) < 0
+        return failure.last()
+    return ok(row)
+
+# The id of the last row inserted, which ODBC does not keep.
+function no_last_id() -> i64?
+    return fail(
+        code: sql.UNSUPPORTED,
+        msg: "ODBC keeps no id of the last row inserted: ask the database for it, with `RETURNING` or a function of its own"
+    )
+
+# What a run of `s` changed: the rows of its result where it answered
+# some, read and counted, else the driver's count, 0 where it says none.
+#
+# - `s`: the statement, just run.
+#
+# Fails as the floor does.
+function result_of(s: hero_odbc.Statement) -> sql.Result?
+    count = hero_odbc.column_count(s)
+
+    if count < 0
+        return failure.last()
+
+    if count > 0
+        n: i64 @= 0
+
+        while true
+            moved = hero_odbc.fetch(s)
+
+            if moved < 0
+                return failure.last()
+
+            if moved == 0
+                break
+            n @ n + 1
+
+        return ok(sql.Result(rows_affected: n, last_id: no_last_id()))
+    rows: i64 @= 0
+
+    if hero_odbc.row_count(s, rows: @rows) < 0
+        return failure.last()
+
+    if rows < 0
+        rows @ 0
+    return ok(sql.Result(rows_affected: rows, last_id: no_last_id()))
+
+# `ok()` once every result of `s`'s run is read and dropped.
+#
+# - `s`: the statement, just run.
+#
+# Fails with the first result that fails.
+function drained(s: hero_odbc.Statement) -> ()?
+    while true
+        count = hero_odbc.column_count(s)
+
+        if count < 0
+            return failure.last()
+
+        if count > 0
+            moved: i64 @= hero_odbc.fetch(s)
+
+            while moved == 1
+                moved @ hero_odbc.fetch(s)
+
+            if moved < 0
+                return failure.last()
+        more = hero_odbc.more_results(s)
+
+        if more < 0
+            return failure.last()
+
+        if more == 0
+            break
+
+    return ok()
+
+# `ok()` once `s` has read `text`, takes as many values as `params` holds,
+# and has run with them bound.
+#
+# - `s`: the statement.
+# - `text`: one statement of SQL.
+# - `params`: the values of its placeholders.
+#
+# Fails as `checked_count`, `values.bind_all` and the floor do.
+function prepared_and_run(s: hero_odbc.Statement, text: str, params: [sql.Value]) -> ()?
+    if hero_odbc.prepare(s, text) < 0
+        return failure.last()
+    checked_count(s, given: params.len())?
+    values.bind_all(s, params)?
+
+    if hero_odbc.execute(s) < 0
+        return failure.last()
+    return ok()
+
+# `ok()` once the prepared `s`, which takes `expected` values, has run with
+# `params` bound.
+#
+# - `s`: the statement, prepared.
+# - `params`: the values of its placeholders.
+# - `expected`: how many it takes.
+#
+# Fails `invalid` where `params` holds another count, and as the floor does.
+function run_prepared(s: hero_odbc.Statement, params: [sql.Value], expected: i64) -> ()?
+    if params.len() != expected
+        were = if params.len() == 1
+            "was"
+        else
+            "were"
+
+        return fail(
+            code: sql.INVALID,
+            msg: f"the statement takes {counted(expected, one: "parameter")} and {counted(params.len(), one: "parameter")} {were} given"
+        )
+    values.bind_all(s, params)?
+
+    if hero_odbc.execute(s) < 0
+        return failure.last()
+    return ok()
+
+# What `text`, run with `params` on a new statement of `c`, changed.
+#
+# - `c`: the connection.
+# - `timeout_seconds`: the statement's limit, 0 for none.
+# - `text`: one statement of SQL.
+# - `params`: the values of its placeholders.
+function exec_on(c: hero_odbc.Connection, timeout_seconds: i64, text: str, params: [sql.Value]) -> sql.Result?
+    s @= opened(c, timeout_seconds: timeout_seconds)?
+    answer = exec_with(s, text: text, params: params)
+    _ = hero_odbc.statement_close(@s)
+    return answer
+
+# `exec_on`'s work on a statement it opened.
+#
+# - `s`: the statement.
+# - `text`: one statement of SQL.
+# - `params`: the values of its placeholders.
+function exec_with(s: hero_odbc.Statement, text: str, params: [sql.Value]) -> sql.Result?
+    prepared_and_run(s, text: text, params: params)?
+    return result_of(s)
+
+# The rows `text`, run with `params` on a new statement of `c`, answered.
+#
+# - `c`: the connection.
+# - `timeout_seconds`: the statement's limit, 0 for none.
+# - `text`: one statement of SQL.
+# - `params`: the values of its placeholders.
+function query_on(c: hero_odbc.Connection, timeout_seconds: i64, text: str, params: [sql.Value]) -> sql.Rows?
+    s @= opened(c, timeout_seconds: timeout_seconds)?
+    answer = query_with(s, text: text, params: params)
+    _ = hero_odbc.statement_close(@s)
+    return answer
+
+# `query_on`'s work on a statement it opened.
+#
+# - `s`: the statement.
+# - `text`: one statement of SQL.
+# - `params`: the values of its placeholders.
+function query_with(s: hero_odbc.Statement, text: str, params: [sql.Value]) -> sql.Rows?
+    prepared_and_run(s, text: text, params: params)?
+    return rows_of(s)
+
+# The first row `text`, run with `params` on a new statement of `c`,
+# answered.
+#
+# - `c`: the connection.
+# - `timeout_seconds`: the statement's limit, 0 for none.
+# - `text`: one statement of SQL.
+# - `params`: the values of its placeholders.
+function query_one_on(c: hero_odbc.Connection, timeout_seconds: i64, text: str, params: [sql.Value]) -> sql.Row?
+    s @= opened(c, timeout_seconds: timeout_seconds)?
+    answer = query_one_with(s, text: text, params: params)
+    _ = hero_odbc.statement_close(@s)
+    return answer
+
+# `query_one_on`'s work on a statement it opened.
+#
+# - `s`: the statement.
+# - `text`: one statement of SQL.
+# - `params`: the values of its placeholders.
+function query_one_with(s: hero_odbc.Statement, text: str, params: [sql.Value]) -> sql.Row?
+    prepared_and_run(s, text: text, params: params)?
+    return first_row_of(s)
+
+# Every result `text`, run whole with `params` on a new statement of `c`,
+# answered, in order.
+#
+# - `c`: the connection.
+# - `timeout_seconds`: the statement's limit, 0 for none.
+# - `text`: SQL the driver runs as one call.
+# - `params`: the values of its placeholders.
+function sets_on(c: hero_odbc.Connection, timeout_seconds: i64, text: str, params: [sql.Value]) -> [sql.Rows]?
+    s @= opened(c, timeout_seconds: timeout_seconds)?
+    answer = sets_with(s, text: text, params: params)
+    _ = hero_odbc.statement_close(@s)
+    return answer
+
+# `sets_on`'s work on a statement it opened.
+#
+# - `s`: the statement.
+# - `text`: SQL the driver runs as one call.
+# - `params`: the values of its placeholders.
+function sets_with(s: hero_odbc.Statement, text: str, params: [sql.Value]) -> [sql.Rows]?
+    prepared_and_run(s, text: text, params: params)?
+    sets: [sql.Rows] @= []
+
+    while true
+        sets @ sets.push(rows_of(s)?)
+        more = hero_odbc.more_results(s)
+
+        if more < 0
+            return failure.last()
+
+        if more == 0
+            break
+
+    return ok(sets)
+
+# `ok()` once each of `pieces` has run on one new statement of `c`, in
+# order, its results dropped.
+#
+# - `c`: the connection.
+# - `timeout_seconds`: each statement's limit, 0 for none.
+# - `pieces`: the statements, none holding a zero byte.
+#
+# Fails with the first failure; the pieces before it stay done.
+function script_on(c: hero_odbc.Connection, timeout_seconds: i64, pieces: [str]) -> ()?
+    if pieces.len() == 0
+        return ok()
+    s @= opened(c, timeout_seconds: timeout_seconds)?
+    answer = script_with(s, pieces)
+    _ = hero_odbc.statement_close(@s)
+    return answer
+
+# `script_on`'s work on a statement it opened.
+#
+# - `s`: the statement.
+# - `pieces`: the statements.
+function script_with(s: hero_odbc.Statement, pieces: [str]) -> ()?
+    for piece in pieces
+        if hero_odbc.execute_direct(s, piece) < 0
+            return failure.last()
+        drained(s)?
+
+    return ok()
+
+# The rows of the catalog's question `which` on a new statement of `c`.
+#
+# - `c`: the connection.
+# - `timeout_seconds`: the statement's limit, 0 for none.
+# - `which`: one of the floor's `HERO_ODBC_CATALOG_*`.
+# - `names`: six names in the floor's order, "" for one not given, which
+#   ODBC reads as every one.
+function catalog_on(c: hero_odbc.Connection, timeout_seconds: i64, which: i64, names: [str]) -> sql.Rows?
+    for name in names
+        if !values.zero_at(name).is_err()
+            return fail(code: sql.INVALID, msg: f"the name \"{name}\" handed to the catalog holds a zero byte")
+
+    s @= opened(c, timeout_seconds: timeout_seconds)?
+    answer = catalog_with(s, which: which, names: names)
+    _ = hero_odbc.statement_close(@s)
+    return answer
+
+# `catalog_on`'s work on a statement it opened.
+#
+# - `s`: the statement.
+# - `which`: one of the floor's `HERO_ODBC_CATALOG_*`.
+# - `names`: six names, "" for one not given.
+function catalog_with(s: hero_odbc.Statement, which: i64, names: [str]) -> sql.Rows?
+    given: i64 @= 0
+    bit: i64 @= 1
+
+    for name in names
+        if name != ""
+            given @ given | bit
+        bit @ bit << 1
+
+    rc = hero_odbc.catalog(
+        s,
+        which: which,
+        a: names[0],
+        b: names[1],
+        c: names[2],
+        d: names[3],
+        e: names[4],
+        f: names[5],
+        given: given
+    )
+
+    if rc < 0
+        return failure.last()
+    return rows_of(s)
+
+# `ok()` where the connection `c`, called `name`, is open.
+#
+# - `c`: the connection, `nullptr` once closed.
+# - `name`: what messages call it.
+#
+# Fails `closed` where it is `nullptr`.
+function live(c: hero_odbc.Connection, name: str) -> ()?
+    if c == nullptr
+        return fail(code: sql.CLOSED, msg: f"the connection to \"{name}\" is closed")
+    return ok()
+
+# Whether `c` commits by hand, a transaction open, as its autocommit says;
+# `before` where the driver does not say.
+#
+# - `c`: the connection.
+# - `before`: what was known before.
+function manual(c: hero_odbc.Connection, before: bool) -> bool
+    on: i64 @= 1
+
+    if hero_odbc.attribute(c, which: hero_odbc.HERO_ODBC_ATTR_AUTOCOMMIT, value: @on) < 0
+        return before
+    return on == 0
+
+# `ok()` where the statement `s`, whose text is `text`, is open and of the
+# connection `c`, called `name`.
+#
+# - `c`: the connection.
+# - `name`: what messages call it.
+# - `s`: the statement, `nullptr` once closed.
+# - `text`: the statement's text.
+#
+# Fails `closed` where either is closed, and `invalid` where the statement
+# is another connection's.
+function usable(c: hero_odbc.Connection, name: str, s: hero_odbc.Statement, text: str) -> ()?
+    live(c, name: name)?
+
+    if s == nullptr
+        return fail(code: sql.CLOSED, msg: f"the statement \"{text}\" is closed")
+    mine = hero_odbc.belongs(s, c)
+
+    if mine == 0
+        return fail(code: sql.INVALID, msg: f"the statement \"{text}\" belongs to another connection than \"{name}\"")
+
+    if mine < 0
+        return fail(code: sql.CLOSED, msg: f"the statement \"{text}\" is closed")
+    return ok()
+
+# What the prepared `s`, run with `params`, changed.
+#
+# - `s`: the statement, prepared.
+# - `params`: the values of its placeholders.
+# - `expected`: how many it takes.
+function result_prepared(s: hero_odbc.Statement, params: [sql.Value], expected: i64) -> sql.Result?
+    run_prepared(s, params: params, expected: expected)?
+    return result_of(s)
+
+# The rows the prepared `s`, run with `params`, answered.
+#
+# - `s`: the statement, prepared.
+# - `params`: the values of its placeholders.
+# - `expected`: how many it takes.
+function rows_prepared(s: hero_odbc.Statement, params: [sql.Value], expected: i64) -> sql.Rows?
+    run_prepared(s, params: params, expected: expected)?
+    return rows_of(s)
+
+## Tests
+
+test "live and usable: a connection and a statement that are none"
+    none_c: hero_odbc.Connection = nullptr
+    none_s: hero_odbc.Statement = nullptr
+
+    match live(none_c, name: "x")
+        .ok _  => assert false
+        .err e => assert e.code == "closed" && e.msg == "the connection to \"x\" is closed"
+
+    assert usable(none_c, name: "x", s: none_s, text: "SELECT 1").is_err()
+    assert manual(none_c, before: true)
+    assert manual(none_c, before: false) == false
+
+test "counted: none, one and several"
+    assert counted(0, one: "parameter") == "no parameter"
+    assert counted(1, one: "parameter") == "1 parameter"
+    assert counted(2, one: "parameter") == "2 parameters"
+
+test "names_of: none and two in order"
+    assert names_of([]) == []
+    assert names_of([sql.Column(name: "id", type_name: "INTEGER"), sql.Column(name: "name", type_name: "TEXT")]) == ["id", "name"]
+
+test "opened, and every call that opens a statement, on a connection that is none fail closed or unsupported"
+    none_c: hero_odbc.Connection = nullptr
+
+    match exec_on(none_c, timeout_seconds: 0, text: "SELECT 1", params: [])
+        .ok _  => assert false
+        .err e => assert e.code == "closed" || e.code == "unsupported"
+
+    assert query_on(none_c, timeout_seconds: 5, text: "SELECT 1", params: []).is_err()
+    assert query_one_on(none_c, timeout_seconds: 0, text: "SELECT 1", params: []).is_err()
+    assert sets_on(none_c, timeout_seconds: 0, text: "SELECT 1", params: []).is_err()
+    assert script_on(none_c, timeout_seconds: 0, pieces: ["SELECT 1"]).is_err()
+    assert !script_on(none_c, timeout_seconds: 0, pieces: []).is_err()
+    assert catalog_on(
+        none_c,
+        timeout_seconds: 0,
+        which: hero_odbc.HERO_ODBC_CATALOG_TABLES,
+        names: ["", "", "", "", "", ""]
+    ).is_err()
+
+test "no_last_id: unsupported, saying how to ask"
+    match no_last_id()
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported"

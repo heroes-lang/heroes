@@ -69,7 +69,7 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 2 | `diff` | the differences of two lists or texts, as values and as unified output, and their similarity | `lists`, `strings`, `unicode` |  |
 | 2 | `pem` | PEM blocks read and written, their labels and headers | `bytes`, `strings` |  |
 | 2 | `unicode/encodings` | the WHATWG Encoding standard's legacy encodings read and written: Windows-1252, ISO-8859, Shift_JIS, EUC-JP, GB18030, Big5, EUC-KR; its tables apart | `bytes`, `unicode` |  |
-| 2 | `keyring` | secrets kept in the system's own keyring | `bytes`, `strings` | `hero_keyring.h` |
+| 2 | `keyring` | secrets kept in the system's own keyring | `bytes` | `hero_keyring.h` |
 | 2 | `crypto/seal` | authenticated encryption by the system's own cryptography | `bytes` | `hero_crypto.h` |
 | 2 | `crypto/keypairs` | key pairs, signatures and key agreement by the system's own cryptography | `bytes` | `hero_crypto.h` |
 | 2 | `scanner` | a configurable lexer: identifiers, numbers, strings, comments, each token with its place | `numbers`, `regex`, `strings`, `unicode` |  |
@@ -94,6 +94,7 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 3 | `json/patch` | JSON Patch (RFC 6902) and JSON Merge Patch (RFC 7386) made and applied | `json`, `strings` |  |
 | 3 | `json/path` | JSONPath queries (RFC 9535) | `json`, `numbers`, `regex`, `strings`, `unicode` |  |
 | 3 | `json/jq` | the jq language run over a `json.Value`, so over YAML, TOML, CBOR, MessagePack and XML read into one | `bytes`, `json`, `math`, `numbers`, `regex`, `strings`, `unicode` |  |
+| 3 | `serial` | serial ports listed, opened, set and read and written as a stream | `io` | `hero_serial.h` |
 | 4 | `ipc` | communication between processes of one machine: a local channel by name, shared memory, a lock and a semaphore between processes | `bytes`, `io`, `os`, `process`, `threads` | `hero_ipc.h` |
 | 4 | `fs` | files and directories by path: whole reads and writes, metadata, links, trees, temporaries | `bytes`, `io`, `os`, `path`, `time` | `hero_disk.h`, `hero_os.h` |
 | 4 | `msgpack` | MessagePack read into and written from a `json.Value`, bytes and extensions kept | `bytes`, `json`, `lists`, `time` |  |
@@ -112,7 +113,6 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 4 | `asn1` | ASN.1 values read and written in DER and BER, every universal type, tagged and constructed | `big`, `bytes`, `lists`, `math`, `numbers`, `time`, `unicode` |  |
 | 4 | `i18n` | message catalogs (gettext), plural rules, numbers and dates written for a language, text ordered for a language, from CLDR; its tables in subpackages | `unicode`, `time`, `strings`, `numbers` |  |
 | 4 | `dns` | a DNS client: every record kind asked and answered over UDP and TCP | `bytes`, `io`, `net`, `os`, `strings`, `threads` |  |
-| 4 | `serial` | serial ports listed, opened, set and read and written as a stream | `io`, `time` | `hero_serial.h` |
 | 4 | `bench` | a function measured: warm-up, rounds, median and spread, two versions compared | `stats`, `time` |  |
 | 4 | `chunks` | text cut into pieces for retrieval, by characters, sentences, markdown headings or tokens, with overlap | `strings`, `unicode`, `unicode/segment`, `markdown`, `tokenizer` |  |
 | 4 | `bson` | BSON read and written exactly, every type, and Extended JSON | `bytes`, `big`, `json`, `time` |  |
@@ -130,8 +130,8 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 5 | `http2` | HTTP/2 and HPACK, client and server, beneath `http` and knowing nothing of it | `io`, `net`, `tls`, `bytes`, `numbers`, `strings`, `time`, `threads`, `poll` |  |
 | 5 | `mail/smtp` | mail sent: SMTP with STARTTLS or TLS, authentication, the extensions | `bytes`, `crypto`, `io`, `mail`, `net`, `numbers`, `strings`, `threads`, `time`, `tls` |  |
 | 5 | `x509` | certificates, requests and revocation lists read, their names, extensions and keys; a chain put in order | `asn1`, `big`, `bytes`, `crypto/keypairs`, `net`, `pem`, `strings`, `time` |  |
-| 5 | `fs/watch` | a file or a folder watched, and told what changed | `fs`, `io`, `time` | `hero_watch.h` |
-| 5 | `sql/odbc` | any database the system's ODBC manager reaches, through the one `sql` API | `sql`, `bytes`, `strings`, `time` | `hero_odbc.h` |
+| 5 | `fs/watch` | a file or a folder watched, and told what changed | `fs`, `io`, `net`, `path`, `poll`, `time` | `hero_watch.h` |
+| 5 | `sql/odbc` | any database the system's ODBC manager reaches, through the one `sql` API | `bytes`, `os`, `sql`, `time` | `hero_odbc.h` |
 | 5 | `ldap` | an LDAP client: bind, search, change, over TLS | `asn1`, `net`, `tls`, `strings` |  |
 | 5 | `config` | settings read in layers (files, the environment, flags, `.env` files) with a precedence, read by path | `flags`, `ini`, `json`, `numbers`, `os`, `path`, `strings`, `time`, `toml`, `yaml` |  |
 | 5 | `nats` | a NATS client: publish, subscribe, request and reply, over TLS | `net`, `tls`, `json`, `time` |  |

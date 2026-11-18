@@ -1,0 +1,274 @@
+# The ledger of `fs/watch`: what a program can do with a folder, a tree or a
+# file watched, one block per capability, and what Rebel answers. The census
+# the author's decision of 2026-11-17 named, each list read on this machine on
+# 2026-11-18: Java 27's `java.nio.file` (`javap` of `WatchService`, `WatchKey`,
+# `WatchEvent`, `WatchEvent$Kind`, `WatchEvent$Modifier`,
+# `StandardWatchEventKinds`, `Watchable`, `ClosedWatchServiceException`, and
+# `Path.register`); .NET's `FileSystemWatcher`, from Microsoft's reference page
+# for .NET 10 (`dotnet` is not installed here, so its answers are UNRUN); Go's
+# `github.com/fsnotify/fsnotify` v1.10.1 (`go doc -all`, the module fetched into
+# the scratch folder), the yardstick for Go; Python's `watchdog` 7.1.0 (`dir()`
+# of `watchdog.events`, `watchdog.observers`, `.api`, `.polling`,
+# `watchdog.utils.dirsnapshot`, `.patterns` and their classes), the yardstick
+# for Python. Rust's standard library has none; the `rust` lines name the
+# crates `notify` 8.2.0 and `notify-types` 2.1.0 of this machine's cargo
+# registry (public names listed, their source not read).
+#
+# OBSERVED, one script on this Mac (create a.txt, write it, chmod it, rename it
+# to b.txt, remove b.txt): `watchdog` (FSEvents) told `created`, `modified` of
+# the folder, `attrib` of a.txt; `modified`; `modified`; `moved` a.txt to b.txt
+# with `modified` of the folder; `deleted`. `fsnotify` (kqueue) told `CREATE`;
+# `WRITE`; `CHMOD`; `CREATE b.txt` then `RENAME a.txt`; `REMOVE`. Java 27 runs
+# `sun.nio.fs.PollingWatchService` on macOS: each change told about 2 s later
+# (2007, 1984, 1994, 2001 ms), the rename as `ENTRY_CREATE b.txt` and
+# `ENTRY_DELETE a.txt`, and a file registered refused `NotDirectoryException`.
+# Rebel told `created`; `changed`; `attributes`; `renamed` b.txt from a.txt;
+# `removed`, within 9 to 13 ms, on macOS (FSEvents) and in Linux arm64's
+# container (inotify) alike.
+
+capability watch/folder  a folder's own entries watched
+  heroes  fs/watch.open, fs/watch.Watch
+  java    FileSystem.newWatchService, Path.register, Watchable.register, WatchService
+  dotnet  FileSystemWatcher(String), FileSystemWatcher.Path, FileSystemWatcher.EnableRaisingEvents
+  go      fsnotify.NewWatcher, Watcher.Add
+  rust    notify::recommended_watcher, notify::RecommendedWatcher, notify::Watcher::new, notify::Watcher::watch, notify::RecursiveMode::NonRecursive
+  python  Observer, Observer.schedule (recursive=False), Observer.start
+  note    one watch per path, where Java, Go and Python hold many paths in one service: many watches wait together in a `poll.Set` (`watch/many`). macOS's FSEvents keeps the whole tree below the folder whatever is asked; the watch keeps the folder's own entries
+
+capability watch/tree  a folder and every folder below it watched
+  heroes  fs/watch.open_tree
+  java    -
+  dotnet  FileSystemWatcher.IncludeSubdirectories
+  go      -
+  rust    notify::RecursiveMode::Recursive
+  python  Observer.schedule (recursive=True)
+  note    Linux watches each folder (one of the user's inotify watches each, `limit` past them) and watches a folder made or moved in from when its creation is read, telling its entries `created` as it walks it, with a list and never recursion; macOS's FSEvents and Windows' `ReadDirectoryChangesExW` keep a tree themselves. Go's recursive path is gated off its public API (its doc, read 2026-11-18); Java's tree modifier is not public
+
+capability watch/file  one file watched, as an editor saves it
+  heroes  fs/watch.open
+  java    -
+  dotnet  FileSystemWatcher(String, String), FileSystemWatcher.Filter
+  go      Watcher.Add (a file)
+  rust    notify::Watcher::watch (a file)
+  python  Observer.schedule (a file)
+  note    watched as its folder's entry of that name, as .NET does, so a file replaced by a rename over it (an editor's save) is still watched, told `created`; measured on macOS: `kqueue` on the file itself lost the replacement's writes. Java refuses a file, `NotDirectoryException` (observed)
+
+capability watch/room  how many events a watch holds before it loses them
+  heroes  fs/watch.open_with, fs/watch.ROOM, fs/watch.MOST
+  java    -
+  dotnet  FileSystemWatcher.InternalBufferSize
+  go      fsnotify.NewBufferedWatcher, Watcher.AddWith, fsnotify.WithBufferSize
+  rust    -
+  python  -
+  note    a room of events, 1 to 1,048,576, 65,536 by default, taken as events come; the system's own buffer is the layer's (64 KB on Windows, the kernel's queue on Linux)
+
+capability watch/close  a watch ended
+  heroes  fs/watch.close
+  java    WatchService.close, WatchKey.cancel
+  dotnet  FileSystemWatcher.Dispose, FileSystemWatcher.EnableRaisingEvents
+  go      Watcher.Close, Watcher.Remove
+  rust    notify::Watcher::unwatch
+  python  Observer.stop, Observer.join, Observer.unschedule, Observer.unschedule_all
+  note    a second close fails `closed`, as Go's `ErrClosed`; .NET's `EnableRaisingEvents = false` pauses a watcher, which here is not waiting: the room fills and then overflows
+
+capability wait/limit  the changes waited for, at most so long
+  heroes  fs/watch.wait
+  java    WatchService.poll, WatchKey.pollEvents, WatchKey.reset
+  dotnet  FileSystemWatcher.WaitForChanged, WaitForChangedResult.TimedOut
+  go      Watcher.Events, Watcher.Errors
+  rust    notify::EventHandler
+  python  FileSystemEventHandler.dispatch, FileSystemEventHandler.on_any_event
+  note    one call answers every event held when the first comes, in order, empty at the limit; Java answers a key to reset, .NET one change at a time, Go and Python run a callback or fill a channel on a thread, which the language's own loop replaces
+
+capability wait/forever  the changes waited for as long as it takes
+  heroes  fs/watch.wait_forever
+  java    WatchService.take
+  dotnet  FileSystemWatcher.WaitForChanged (no time)
+  go      Watcher.Events
+  rust    notify::EventHandler
+  python  Observer.join
+  note    never empty; the stop ends it, `stopped`, as Java's `InterruptedException` ends `take`
+
+capability wait/count  how many changes wait, without waiting
+  heroes  fs/watch.count
+  java    -
+  dotnet  -
+  go      len(Watcher.Events)
+  rust    -
+  python  -
+
+capability wait/many  many watches, connections and timers waited on together
+  heroes  fs/watch.add_to
+  java    WatchService (many keys), WatchKey.watchable
+  dotnet  -
+  go      Watcher.Add (many paths), Watcher.WatchList
+  rust    notify::Watcher::paths_mut, notify::PathsMut
+  python  Observer.schedule (many), Observer.emitters
+  note    a watch joins a `poll.Set` by a bell the layer rings while an event waits: a pipe on Darwin and Linux, a datagram socket of the loopback on Windows, whose readiness waits on sockets alone, where a stranger's datagram can ring it with nothing waiting
+
+capability event/created  an entry made, or moved in from outside
+  heroes  fs/watch.Change.created
+  java    StandardWatchEventKinds.ENTRY_CREATE
+  dotnet  FileSystemWatcher.Created, WatcherChangeTypes.Created, FileSystemWatcher.OnCreated
+  go      fsnotify.Create
+  rust    notify::EventKind::Create, notify::event::CreateKind
+  python  FileCreatedEvent, DirCreatedEvent, EVENT_TYPE_CREATED, FileSystemEventHandler.on_created
+  note    a rename whose old name is outside what is watched is `created`, as .NET and `watchdog` tell it
+
+capability event/removed  an entry removed, or moved out
+  heroes  fs/watch.Change.removed
+  java    StandardWatchEventKinds.ENTRY_DELETE
+  dotnet  FileSystemWatcher.Deleted, WatcherChangeTypes.Deleted, FileSystemWatcher.OnDeleted
+  go      fsnotify.Remove
+  rust    notify::EventKind::Remove, notify::event::RemoveKind
+  python  FileDeletedEvent, DirDeletedEvent, EVENT_TYPE_DELETED, FileSystemEventHandler.on_deleted
+  note    a rename whose new name is outside is `removed`; Linux waits 20 ms for the rename's second half before telling it so
+
+capability event/changed  a file's content written
+  heroes  fs/watch.Change.changed
+  java    StandardWatchEventKinds.ENTRY_MODIFY, WatchEvent.count
+  dotnet  FileSystemWatcher.Changed, WatcherChangeTypes.Changed, NotifyFilters.LastWrite, NotifyFilters.Size, FileSystemWatcher.OnChanged
+  go      fsnotify.Write
+  rust    notify::event::ModifyKind::Data, notify::event::DataChange
+  python  FileModifiedEvent, DirModifiedEvent, EVENT_TYPE_MODIFIED, FileSystemEventHandler.on_modified
+  note    a write told again before the program took the first is one event, so no count is kept (Java's `count`); a folder's own "its entries changed" (`watchdog`'s `modified` of the folder, observed, Windows' `MODIFIED` of a folder) is not told, its entries being told themselves
+
+capability event/attributes  an entry's facts changed and not its content
+  heroes  fs/watch.Change.attributes
+  java    StandardWatchEventKinds.ENTRY_MODIFY
+  dotnet  NotifyFilters.Attributes, NotifyFilters.Security, NotifyFilters.CreationTime, NotifyFilters.LastAccess
+  go      fsnotify.Chmod
+  rust    notify::event::ModifyKind::Metadata, notify::event::MetadataKind
+  python  FileAttribEvent, DirAttribEvent, EVENT_TYPE_ATTRIB, FileSystemEventHandler.on_attrib
+  note    Linux's `IN_ATTRIB` and macOS's owner, metadata, extended-attribute and Finder flags; Windows says only `MODIFIED`, told `changed`. `watchdog` told the chmod `modified` (observed), Go `CHMOD`
+
+capability event/renamed  an entry moved, both its paths told
+  heroes  fs/watch.Change.renamed
+  java    -
+  dotnet  FileSystemWatcher.Renamed, WatcherChangeTypes.Renamed, RenamedEventArgs.OldFullPath, RenamedEventArgs.OldName, FileSystemWatcher.OnRenamed
+  go      fsnotify.Rename
+  rust    notify::event::ModifyKind::Name, notify::event::RenameMode, notify::Event::tracker
+  python  FileMovedEvent, DirMovedEvent, FileSystemMovedEvent, FileSystemEvent.dest_path, EVENT_TYPE_MOVED, FileSystemEventHandler.on_moved
+  note    one event with both paths, as .NET and `watchdog` (`moved a.txt b.txt`, observed); Go tells `CREATE b.txt` then `RENAME a.txt` and Java `ENTRY_CREATE` and `ENTRY_DELETE` (observed), leaving the program to pair them. Linux pairs `IN_MOVED_FROM` and `IN_MOVED_TO` by cookie, macOS two events of one inode in a row, Windows `RENAMED_OLD_NAME` and `RENAMED_NEW_NAME`. A folder renamed in a tree is one event; the paths below it are not told again
+
+capability event/overflow  changes lost, told where they were lost
+  heroes  fs/watch.Change.overflow
+  java    StandardWatchEventKinds.OVERFLOW
+  dotnet  FileSystemWatcher.Error, InternalBufferOverflowException
+  go      fsnotify.ErrEventOverflow
+  rust    notify::event::Flag::Rescan, notify::Event::need_rescan
+  python  -
+  note    Linux's `IN_Q_OVERFLOW`, macOS's `MustScanSubDirs`, Windows' empty buffer, and the watch's own room past it: one event where they were lost, never two in a row; an event whose path is not UTF-8 is told as one too, since no such path can be handed on
+
+capability event/gone  the watched folder itself removed or moved away
+  heroes  fs/watch.Change.gone
+  java    WatchKey.isValid
+  dotnet  FileSystemWatcher.Error
+  go      fsnotify.Remove (of the watched path)
+  rust    -
+  python  DirDeletedEvent (of the watched folder)
+  note    told once and last, then `wait` fails `file_not_found`; Linux's `IN_DELETE_SELF`, `IN_MOVE_SELF`, `IN_UNMOUNT`, macOS's `RootChanged` with the folder no longer standing, Windows' read refused or the folder's identity gone from its path. A watched folder renamed on Windows is told at its next change only
+
+capability event/directory  whether the entry is a folder
+  heroes  fs/watch.Event
+  java    -
+  dotnet  -
+  go      -
+  rust    notify::event::CreateKind::Folder, notify::event::RemoveKind::Folder
+  python  FileSystemEvent.is_directory
+  note    every system says it but Windows before 10 1709 or on a volume without the extended form, where a removed entry is told not a folder
+
+capability event/path  where the change happened, as a path the program can use
+  heroes  fs/watch.Event
+  java    WatchEvent.context, WatchEvent.kind, WatchEvent$Kind.name, WatchEvent$Kind.type
+  dotnet  FileSystemEventArgs.FullPath, FileSystemEventArgs.Name, FileSystemEventArgs.ChangeType, WaitForChangedResult.Name, WaitForChangedResult.OldName, WaitForChangedResult.ChangeType
+  go      Event.Name, Event.Op, Event.Has, Op.Has
+  rust    notify::Event::paths, notify::Event::add_path, notify::Event::kind
+  python  FileSystemEvent.src_path, FileSystemEvent.event_type
+  note    the watched path as the program gave it joined with the name below it, as Go and `watchdog` do (Java gives the name alone); a watched file's own events carry the very path given
+
+capability event/text  a change as a line a person reads
+  heroes  fs/watch.format_event
+  java    -
+  dotnet  -
+  go      Event.String, Op.String
+  rust    -
+  python  LoggingEventHandler
+  note    `created "a"`, `renamed "b" from "a"`, `created folder "c"`: the paths as they stand, nothing escaped
+
+capability filter/kinds  only some kinds of change wanted
+  heroes  built-in filter
+  java    Path.register (its kinds)
+  dotnet  FileSystemWatcher.NotifyFilter, NotifyFilters.FileName, NotifyFilters.DirectoryName, WatcherChangeTypes.All
+  go      -
+  rust    -
+  python  Observer.schedule (event_filter)
+  note    every kind is told, and the program keeps what it wants with `filter` over a wait's list
+
+capability filter/patterns  only the paths matching a pattern
+  heroes  path.matches, built-in filter
+  java    -
+  dotnet  FileSystemWatcher.Filter, FileSystemWatcher.Filters
+  go      -
+  rust    -
+  python  PatternMatchingEventHandler, RegexMatchingEventHandler, PathMatchingEventHandler, watchdog.events.match_any_paths, watchdog.utils.patterns.filter_paths, watchdog.utils.patterns.match_any_paths, PatternMatchingEventHandler.patterns, PatternMatchingEventHandler.ignore_patterns, PatternMatchingEventHandler.ignore_directories, PatternMatchingEventHandler.case_sensitive, IgnorePolicy
+  note    a glob is `path.matches`, a gitignore's lines `path.is_ignored`, a regular expression `regex`; the watch tells every path
+
+capability filter/arrived  a folder that arrives whole told with its entries
+  heroes  fs/watch.open_tree
+  java    -
+  dotnet  -
+  go      -
+  rust    -
+  python  watchdog.events.generate_sub_created_events
+  note    a folder made in a tree or moved in from outside it is walked and its entries told `created` on every system; .NET's page says it tells only the folder. An entry made in that very moment may be told twice (measured in Linux's container: a folder and a file made as their parent's watch was added)
+
+capability snapshot/diff  a tree's state kept and compared later
+  heroes  pending
+  java    -
+  dotnet  -
+  go      -
+  rust    notify::PollWatcher (compare_contents)
+  python  DirectorySnapshot, DirectorySnapshotDiff, EmptyDirectorySnapshot, DirectorySnapshot.paths, DirectorySnapshot.inode, DirectorySnapshot.isdir, DirectorySnapshot.mtime, DirectorySnapshot.size, DirectorySnapshot.stat_info, DirectorySnapshot.walk, DirectorySnapshotDiff.files_created, DirectorySnapshotDiff.files_deleted, DirectorySnapshotDiff.files_modified, DirectorySnapshotDiff.files_moved, DirectorySnapshotDiff.files_attrib, DirectorySnapshotDiff.dirs_created, DirectorySnapshotDiff.dirs_deleted, DirectorySnapshotDiff.dirs_modified, DirectorySnapshotDiff.dirs_moved, DirectorySnapshotDiff.dirs_attrib, DirectorySnapshotDiff.is_attrib_modified, DirectorySnapshotDiff.ContextManager
+  note    pending: a rename is told by an inode, which `fs.Info` does not carry today; written without it, a snapshot would tell a rename as a removal and a creation, which is half of what `watchdog` tells
+
+capability snapshot/polling  a tree watched by reading it again at an interval
+  heroes  pending
+  java    sun.nio.fs.PollingWatchService (the service on macOS, observed)
+  dotnet  -
+  go      -
+  rust    notify::PollWatcher, notify::Config::with_poll_interval, notify::Config::with_manual_polling, notify::Config::poll_interval
+  python  PollingObserver, PollingObserverVFS
+  note    pending on `snapshot/diff`: where a system cannot watch a volume (`unsupported`, a network one), a program's loop of snapshots and waits is this capability
+
+capability event/access  a file opened, read or closed told
+  heroes  refused: macOS's FSEvents and Windows' read tell no open, read or close; Linux alone does, and a capability on one system of three is not one Rebel offers
+  java    -
+  dotnet  NotifyFilters.LastAccess
+  go      -
+  rust    notify::EventKind::Access, notify::event::AccessKind, notify::event::AccessMode
+  python  FileOpenedEvent, FileClosedEvent, FileClosedNoWriteEvent, EVENT_TYPE_OPENED, EVENT_TYPE_CLOSED, EVENT_TYPE_CLOSED_NO_WRITE, FileSystemEventHandler.on_opened, FileSystemEventHandler.on_closed, FileSystemEventHandler.on_closed_no_write
+
+capability watch/links  links inside a tree followed
+  heroes  refused: a link below the watched folder is told as an entry and never followed, since a link to a folder above it would make the tree endless; the watched path itself is followed to what it names
+  java    -
+  dotnet  -
+  go      -
+  rust    notify::Config::with_follow_symlinks, notify::Config::follow_symlinks
+  python  Observer.schedule (follow_symlink)
+
+capability watch/errors  why a watch could not be made or went on
+  heroes  fs/watch.INVALID, fs/watch.FILE_NOT_FOUND, fs/watch.PERMISSION, fs/watch.NOT_A_DIRECTORY, fs/watch.LIMIT, fs/watch.CLOSED, fs/watch.STOPPED, fs/watch.UNSUPPORTED, fs/watch.FAILED
+  java    ClosedWatchServiceException
+  dotnet  FileSystemWatcher.Error
+  go      Watcher.Errors, fsnotify.ErrClosed, fsnotify.ErrNonExistentWatch
+  rust    notify::Error, notify::ErrorKind, notify::ErrorKind::Generic, notify::ErrorKind::Io, notify::ErrorKind::PathNotFound, notify::ErrorKind::WatchNotFound, notify::ErrorKind::InvalidConfig, notify::ErrorKind::MaxFilesWatch, notify::Error::path_not_found, notify::Error::watch_not_found, notify::Error::invalid_config, notify::Error::io, notify::Error::io_watch, notify::Error::generic, notify::Error::add_path
+  python  watchdog.observers.UnsupportedLibcError
+  note    Linux's watch limit is `limit` and its message names `max_user_watches`, as `notify`'s `MaxFilesWatch`
+
+dropped
+  java    WatchEvent$Modifier, WatchEvent$Modifier.name (modifiers no public implementation offers); Watchable (an interface: the language has none)
+  dotnet  FileSystemWatcher(), FileSystemWatcher.BeginInit, FileSystemWatcher.EndInit, FileSystemWatcher.Site, FileSystemWatcher.SynchronizingObject, FileSystemWatcher.Dispose(Boolean), FileSystemWatcher.OnError, FileSystemWatcher.OnRenamed (the raise methods of a subclass), and Component's own: CanRaiseEvents, Container, DesignMode, Events, Disposed, GetService, CreateObjRef, GetLifetimeService, InitializeLifetimeService, MemberwiseClone, Equals, GetHashCode, GetType, ToString (a designer's component and an object's plumbing)
+  go      fsnotify.Op (the bits as a number; the language's variant is the kind)
+  rust    notify::NullWatcher, notify::WatcherKind, notify::Watcher::kind, notify::Watcher::configure, notify::Config, notify::Config::new, notify::Config::compare_contents, notify::Config::with_compare_contents, notify::fsevent, notify::inotify, notify::kqueue, notify::windows, notify::null, notify::poll, notify::FsEventWatcher, notify::INotifyWatcher, notify::KqueueWatcher, notify::ReadDirectoryChangesWatcher (each system's backend chosen by name: the layer chooses), notify::Event::new, notify::Event::set_kind, notify::Event::set_flag, notify::Event::flag, notify::Event::info, notify::Event::set_info, notify::Event::source, notify::Event::process_id, notify::Event::set_process_id, notify::Event::set_tracker, notify::Event::add_some_path, notify::event::EventAttributes, notify::Event::is_access, notify::Event::is_create, notify::Event::is_modify, notify::Event::is_remove, notify::Event::is_other, notify::EventKind::Any, notify::EventKind::Other (a builder's plumbing, and kinds the language's `match` reads), notify::PathsMut::add, notify::PathsMut::remove, notify::PathsMut::commit (a transaction over many paths of one watcher)
+  python  FileSystemEventHandler, BaseObserver, BaseThread, EventDispatcher, EventEmitter, EventQueue, SkipRepeatsQueue, ObservedWatch, ObservedWatch.key, ObserverType, Observer.add_handler_for_watch, Observer.remove_handler_for_watch, Observer.dispatch_events, Observer.event_queue, Observer.timeout, Observer.run, Observer.on_thread_start, Observer.on_thread_stop, Observer.should_keep_running, Observer.stop_event, Observer.stopped_event, Observer.daemon, Observer.getName, Observer.setName, Observer.name, Observer.ident, Observer.native_id, Observer.is_alive, Observer.isDaemon, Observer.setDaemon, DEFAULT_EMITTER_TIMEOUT, DEFAULT_OBSERVER_TIMEOUT (a thread and its callbacks, which a closure would need: the program's own loop calls `wait`); FileSystemEvent.is_synthetic (events the library makes itself, which `filter/arrived` tells as ordinary ones); watchdog.events.generate_sub_moved_events (a folder's renamed children, told as the folder's one rename); the modules' own imports (Literal, StrEnum, TYPE_CHECKING, annotations, dataclass, field, logging, os, re, contextlib, defaultdict, queue, threading, partial, platform, warnings, Protocol, Path, PurePath, PurePosixPath, PureWindowsPath, S_ISDIR, errno, translate, logger)

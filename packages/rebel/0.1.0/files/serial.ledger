@@ -1,0 +1,308 @@
+# The ledger of `serial`: what a program can do with a serial port, one block
+# per capability, and what Rebel answers. No standard library of Go, Rust or
+# Python has serial ports, so the yardsticks are the ones the author's
+# decision of 2026-11-17 named, each read on this machine on 2026-11-18:
+# .NET's `System.IO.Ports.SerialPort`, from Microsoft Learn's reference page
+# for the class (net-11.0; no `dotnet` is installed here), on the `dotnet`
+# lines; `go.bug.st/serial` v1.8.0 and its `enumerator`, read by `go doc
+# -all` with the module fetched into the scratch folder, on the `go` lines;
+# pyserial 3.5, installed into the scratch folder and read by `dir()` of
+# `serial`, `serial.Serial`, `serial.tools.list_ports`,
+# `serial.tools.list_ports_common.ListPortInfo`, `serial.rs485` and
+# `serial.threaded`, on the `python` lines, with Python 3.15's own `os` and
+# `pty` where they reach a pseudo-terminal. Rust's standard library has
+# nothing here, so its lines say `-`.
+
+capability serial/list  the names of the ports this machine has
+  heroes  serial.ports
+  dotnet  SerialPort.GetPortNames
+  go      serial.GetPortsList
+  rust    -
+  python  serial.tools.list_ports.comports, serial.tools.list_ports.main
+  note    POSIX reads `/dev`: `tty.*` and `cu.*` on Darwin (go.bug.st's list on this Mac, 6 names; pyserial's `comports` gives the 3 `cu.*` alone), `ttyS*` (where `/sys/class/tty/<name>/device` stands), `ttyUSB*`, `ttyACM*` on Linux; Windows reads the registry's `SERIALCOMM` key, as .NET's `GetPortNames` does; sorted by bytes, as Go's
+
+capability serial/details  a port's USB vendor, product, serial number, description and location
+  heroes  pending
+  dotnet  -
+  go      enumerator.GetDetailedPortsList, enumerator.PortDetails, enumerator.PortEnumerationError
+  rust    -
+  python  ListPortInfo.description, ListPortInfo.hwid, ListPortInfo.vid, ListPortInfo.pid, ListPortInfo.serial_number, ListPortInfo.location, ListPortInfo.manufacturer, ListPortInfo.product, ListPortInfo.interface, ListPortInfo.usb_description, ListPortInfo.usb_info, ListPortInfo.apply_usb_info, ListPortInfo.name, ListPortInfo.device
+  note    pending: it needs IOKit's registry on Darwin, sysfs's `idVendor` and kin on Linux and SetupAPI on Windows, three walks of their own in the C member, none written yet
+
+capability serial/list-grep  the ports whose description matches a pattern
+  heroes  pending
+  dotnet  -
+  go      -
+  rust    -
+  python  serial.tools.list_ports.grep
+  note    follows `serial/details`: a pattern over a name alone is the built-in `filter` over `serial.ports`
+
+capability serial/open  a port opened by its name, read and written as a stream
+  heroes  serial.open
+  dotnet  SerialPort(String), SerialPort(String, Int32), SerialPort(String, Int32, Parity), SerialPort(String, Int32, Parity, Int32), SerialPort(String, Int32, Parity, Int32, StopBits), SerialPort.Open, SerialPort.BaseStream, SerialPort.PortName
+  go      serial.Open, serial.Port
+  rust    -
+  python  serial.Serial, Serial.open, Serial.port, Serial.setPort
+  note    open and settings in one call, as Go's `Open(name, mode)`; .NET's and pyserial's object set before `Open` is a record here, `serial.Settings`
+
+capability serial/exclusive  no other program opens the port while this one has it
+  heroes  serial.open
+  dotnet  - (Windows opens a port once)
+  go      -
+  rust    -
+  python  Serial.exclusive
+  note    always, never an option: Windows opens no port twice, and POSIX takes `TIOCEXCL` at every open, which Linux keeps (a second open fails `permission`) and a Darwin pseudo-terminal does not (measured 2026-11-18)
+
+capability serial/close  the port closed
+  heroes  io.close, io.is_closed
+  dotnet  SerialPort.Close, SerialPort.Dispose, SerialPort.IsOpen
+  go      Port.Close
+  rust    -
+  python  Serial.close, Serial.is_open, Serial.isOpen, Serial.closed
+  note    the port is an `io.Stream`, closed by `io.close` and asked by `io.is_closed`
+
+capability serial/read-write  bytes read and written
+  heroes  io.read, io.read_exact, io.write
+  dotnet  SerialPort.Read(Byte[], Int32, Int32), SerialPort.ReadByte, SerialPort.ReadExisting, SerialPort.Write(Byte[], Int32, Int32)
+  go      Port.Read, Port.Write
+  rust    -
+  python  Serial.read, Serial.readinto, Serial.read_all, Serial.readall, Serial.write, Serial.writelines, Serial.readable, Serial.writable
+  note    `io`'s functions over the stream: a read waits for the first byte and answers every byte there, up to the count, as Go's and .NET's `Read` do
+
+capability serial/read-text  text, lines and reads up to a separator
+  heroes  io.reader, io.read_line, io.read_until, io.write_text, io.write_line
+  dotnet  SerialPort.ReadLine, SerialPort.ReadTo, SerialPort.ReadChar, SerialPort.Read(Char[], Int32, Int32), SerialPort.WriteLine, SerialPort.Write(String), SerialPort.Write(Char[], Int32, Int32), SerialPort.NewLine, SerialPort.Encoding
+  go      -
+  rust    -
+  python  Serial.readline, Serial.readlines, Serial.read_until, Serial.iread_until
+  note    `io.Reader`'s lines and separators over the stream, written once in `io` (README § A6); the text is UTF-8, other encodings are `unicode/encodings`'
+
+capability serial/speed  the speed in bits a second, set and read
+  heroes  serial.Settings, serial.configure, serial.settings_of
+  dotnet  SerialPort.BaudRate
+  go      Mode.BaudRate
+  rust    -
+  python  Serial.baudrate, Serial.BAUDRATES
+  note    any speed on Darwin (`IOSSIOSPEED` where `termios` refuses it) and Windows; Linux the speeds `termios` names, 50 to 4,000,000, others `unsupported` (pyserial reaches them by `termios2`, which this member does not write)
+
+capability serial/character-size  5 to 8 data bits
+  heroes  serial.Settings, serial.configure, serial.settings_of
+  dotnet  SerialPort.DataBits
+  go      Mode.DataBits
+  rust    -
+  python  Serial.bytesize, Serial.BYTESIZES, serial.FIVEBITS, serial.SIXBITS, serial.SEVENBITS, serial.EIGHTBITS
+  note    a Linux pseudo-terminal keeps 8 whatever is asked, and is told `unsupported`, read back after the set
+
+capability serial/parity  none, odd, even, mark or space
+  heroes  serial.Parity, serial.configure, serial.settings_of
+  dotnet  SerialPort.Parity, Parity
+  go      Mode.Parity, serial.Parity, serial.NoParity, serial.OddParity, serial.EvenParity, serial.MarkParity, serial.SpaceParity
+  rust    -
+  python  Serial.parity, Serial.PARITIES, serial.PARITY_NONE, serial.PARITY_ODD, serial.PARITY_EVEN, serial.PARITY_MARK, serial.PARITY_SPACE, serial.PARITY_NAMES
+  note    mark and space on Linux (`CMSPAR`) and Windows; Darwin has no word for them, `unsupported`
+
+capability serial/stop-bits  one, one and a half or two stop bits
+  heroes  serial.StopBits, serial.configure, serial.settings_of
+  dotnet  SerialPort.StopBits, StopBits
+  go      Mode.StopBits, serial.StopBits, serial.OneStopBit, serial.OnePointFiveStopBits, serial.TwoStopBits
+  rust    -
+  python  Serial.stopbits, Serial.STOPBITS, serial.STOPBITS_ONE, serial.STOPBITS_ONE_POINT_FIVE, serial.STOPBITS_TWO
+  note    one and a half on Windows alone, `unsupported` on POSIX, which has no word for it (pyserial sets two there and says nothing)
+
+capability serial/flow  flow control: none, RTS/CTS, XON/XOFF, DSR/DTR
+  heroes  serial.Flow, serial.configure, serial.settings_of
+  dotnet  SerialPort.Handshake, Handshake
+  go      -
+  rust    -
+  python  Serial.rtscts, Serial.xonxoff, Serial.dsrdtr
+  note    three flags that combine, .NET's `RequestToSendXOnXOff` among them; DSR/DTR on Windows alone, `unsupported` on POSIX, which has no such flow
+
+capability serial/settings  every setting at once, and the settings read back from the system
+  heroes  serial.configure, serial.settings_of
+  dotnet  -
+  go      Port.SetMode, serial.Mode
+  rust    -
+  python  Serial.get_settings, Serial.apply_settings, Serial.getSettingsDict, Serial.applySettingsDict
+  note    set all at once and read back after the set: a value the port did not keep is `unsupported` and the port put back as it was (POSIX's `tcsetattr` succeeds where any change was made)
+
+capability serial/defaults  a port's usual settings, 9600 or another speed with 8 bits, no parity, one stop and no flow
+  heroes  serial.defaults
+  dotnet  SerialPort()
+  go      -
+  rust    -
+  python  serial.Serial
+  note    .NET's and pyserial's defaults, the speed given
+
+capability serial/timeouts  how long a read waits for its first byte and a write for the port to take one
+  heroes  serial.set_timeouts, serial.timeouts_of, serial.FOREVER
+  dotnet  SerialPort.ReadTimeout, SerialPort.WriteTimeout, SerialPort.InfiniteTimeout
+  go      Port.SetReadTimeout, serial.NoTimeout
+  rust    -
+  python  Serial.timeout, Serial.write_timeout, Serial.writeTimeout, serial.Timeout, serial.SerialTimeoutException
+  note    past it a read or a write fails `timeout`, as .NET's and pyserial's do; Go's read answers 0 bytes instead, which `io` reads as the end, so not taken
+
+capability serial/gap  a read goes on while each byte comes within a time of the one before
+  heroes  serial.set_timeouts (`Timeouts.gap_ms`)
+  dotnet  -
+  go      -
+  rust    -
+  python  Serial.inter_byte_timeout, Serial.interCharTimeout
+  note    Windows' `ReadIntervalTimeout`; on POSIX this member's own wait (`VTIME` counts tenths of a second and only past the first byte)
+
+capability serial/nonblocking  a read that answers at once with what is there
+  heroes  serial.set_timeouts (a `read_ms` of 0)
+  dotnet  -
+  go      -
+  rust    -
+  python  Serial.nonblocking
+  note    a read timeout of 0: nothing there is `timeout` at once, never an empty read, which `io` reads as the end
+
+capability serial/modem-out  DTR and RTS raised and dropped
+  heroes  serial.set_dtr, serial.set_rts
+  dotnet  SerialPort.DtrEnable, SerialPort.RtsEnable
+  go      Port.SetDTR, Port.SetRTS, serial.ModemOutputBits, Mode.InitialStatusBits
+  rust    -
+  python  Serial.dtr, Serial.rts, Serial.setDTR, Serial.setRTS
+  note    both raised at the open, as Go's default and pyserial's; .NET's start dropped
+
+capability serial/modem-in  CTS, DSR, CD and RI read
+  heroes  serial.lines_of
+  dotnet  SerialPort.CtsHolding, SerialPort.DsrHolding, SerialPort.CDHolding
+  go      Port.GetModemStatusBits, serial.ModemStatusBits
+  rust    -
+  python  Serial.cts, Serial.dsr, Serial.cd, Serial.ri, Serial.getCTS, Serial.getDSR, Serial.getCD, Serial.getRI
+  note    the six lines in one record, DTR and RTS as this side holds them; a pseudo-terminal has none, `unsupported` (unrun on hardware: no port on this machine)
+
+capability serial/break-send  a break of a given time sent
+  heroes  serial.send_break
+  dotnet  -
+  go      Port.Break
+  rust    -
+  python  Serial.send_break, Serial.sendBreak
+  note    the time is the caller's in milliseconds (pyserial's default 0.25 s is no default here); the stop ends it early, the line let go first
+
+capability serial/break-state  the line held in break until let go
+  heroes  serial.set_break
+  dotnet  SerialPort.BreakState
+  go      -
+  rust    -
+  python  Serial.break_condition
+  note    -
+
+capability serial/discard-input  what was received and not read thrown away
+  heroes  serial.discard_input
+  dotnet  SerialPort.DiscardInBuffer
+  go      Port.ResetInputBuffer
+  rust    -
+  python  Serial.reset_input_buffer, Serial.flushInput
+  note    the system's buffer; an `io.Reader`'s own bytes are the reader's
+
+capability serial/discard-output  what was written and not sent thrown away
+  heroes  serial.discard_output
+  dotnet  SerialPort.DiscardOutBuffer
+  go      Port.ResetOutputBuffer
+  rust    -
+  python  Serial.reset_output_buffer, Serial.flushOutput
+  note    -
+
+capability serial/drain  wait until every byte written has been sent
+  heroes  serial.drain
+  dotnet  -
+  go      Port.Drain
+  rust    -
+  python  Serial.flush
+  note    bounded by the write timeout, where Go's and pyserial's `tcdrain` waits without end on a port whose flow stopped
+
+capability serial/waiting  how many bytes are received and not read, written and not sent
+  heroes  serial.unread_count, serial.unsent_count
+  dotnet  SerialPort.BytesToRead, SerialPort.BytesToWrite
+  go      -
+  rust    -
+  python  Serial.in_waiting, Serial.inWaiting, Serial.out_waiting
+  note    -
+
+capability serial/pseudo  a pseudo-terminal pair standing for a port and a device, for tests without hardware
+  heroes  serial.open_pseudo
+  dotnet  -
+  go      -
+  rust    -
+  python  os.openpty, pty.openpty, serial.serial_for_url ("loop://")
+  note    POSIX alone, `unsupported` on Windows; pyserial's `loop://` is a port that reads what it writes, which a pseudo-terminal's two sides give as two streams
+
+capability serial/data-events  told when bytes arrive
+  heroes  refused: Heroes has no closure and no event loop; a thread that reads the port (`threads`) or a wait on many streams is the program's, and a read with a timeout tells the rest
+  dotnet  SerialPort.DataReceived, SerialPort.ReceivedBytesThreshold, SerialData, SerialDataReceivedEventArgs, SerialDataReceivedEventHandler
+  go      -
+  rust    -
+  python  serial.threaded.ReaderThread, serial.threaded.Protocol, serial.threaded.LineReader, serial.threaded.Packetizer, serial.threaded.FramedPacket
+  note    -
+
+capability serial/pin-events  told when CTS, DSR, CD or RI change, or a break arrives
+  heroes  pending
+  dotnet  SerialPort.PinChanged, SerialPinChange, SerialPinChangedEventArgs, SerialPinChangedEventHandler
+  go      -
+  rust    -
+  python  -
+  note    a wait for a line to change, not a callback, would be the shape: Linux's `TIOCMIWAIT` and Windows' `WaitCommEvent` have it, Darwin nothing; not written
+
+capability serial/line-errors  framing, overrun and parity errors counted, a byte with a parity error replaced or dropped
+  heroes  pending
+  dotnet  SerialPort.ErrorReceived, SerialError, SerialErrorReceivedEventArgs, SerialErrorReceivedEventHandler, SerialPort.ParityReplace, SerialPort.DiscardNull
+  go      -
+  rust    -
+  python  -
+  note    Windows' `ClearCommError` flags and Linux's `TIOCGICOUNT` counters have them, Darwin nothing; not written. A byte with a parity error reads as a zero byte on POSIX (`INPCK` with no `PARMRK`)
+
+capability serial/rs485  RS-485 half duplex: RTS driven around each write
+  heroes  pending
+  dotnet  -
+  go      -
+  rust    -
+  python  Serial.rs485_mode, serial.rs485.RS485Settings, serial.rs485.RS485
+  note    Linux's `TIOCSRS485` alone among the platforms; not written
+
+capability serial/manual-flow  the other side told to stop and go by hand, this side's output held
+  heroes  pending
+  dotnet  -
+  go      -
+  rust    -
+  python  Serial.set_input_flow_control, Serial.set_output_flow_control
+  note    POSIX's `tcflow` and Windows' `SETXOFF`/`SETXON`; not written
+
+capability serial/low-latency  the driver asked to hand bytes over at once
+  heroes  pending
+  dotnet  -
+  go      -
+  rust    -
+  python  Serial.set_low_latency_mode
+  note    Linux's `ASYNC_LOW_LATENCY` alone; not written
+
+capability serial/cancel  a read or a write another thread waits in ended
+  heroes  pending
+  dotnet  -
+  go      -
+  rust    -
+  python  Serial.cancel_read, Serial.cancel_write
+  note    the stop ends every wait (`net.ask_stop`), and a timeout bounds it; a close on another thread does not end a wait already begun (`hero_stream.h` runs it to its end), so a cancel of one stream alone is not written
+
+capability serial/remote  a port reached over the network, RFC 2217
+  heroes  pending
+  dotnet  -
+  go      -
+  rust    -
+  python  serial.serial_for_url ("rfc2217://", "socket://", "spy://", "alt://", "hwgrep://"), serial.protocol_handler_packages
+  note    a raw TCP port server is `net.connect`'s stream already, which every function of `io` takes; RFC 2217's Telnet control of the remote settings is not written
+
+capability serial/failures  why an open or a call failed
+  heroes  serial.NOT_FOUND, serial.PERMISSION, serial.INVALID, serial.CLOSED, serial.TIMEOUT, serial.STOPPED, serial.LIMIT, serial.UNSUPPORTED, serial.FAILED
+  dotnet  -
+  go      serial.PortError, PortError.Code, PortError.EncodedErrorString, PortError.Error, serial.PortErrorCode, serial.PortBusy, serial.PortNotFound, serial.InvalidSerialPort, serial.PermissionDenied, serial.InvalidSpeed, serial.InvalidDataBits, serial.InvalidParity, serial.InvalidStopBits, serial.InvalidTimeoutValue, serial.ErrorEnumeratingPorts, serial.PortClosed, serial.FunctionNotImplemented
+  rust    -
+  python  serial.SerialException, serial.PortNotOpenError
+  note    README § A4's codes: a port another program holds is `permission` with words saying so, a path that is no port `invalid`, as Go's `InvalidSerialPort`
+
+dropped
+  dotnet  SerialPort(IContainer), SerialPort.CanRaiseEvents, SerialPort.Container, SerialPort.DesignMode, SerialPort.Events, SerialPort.Site, SerialPort.Disposed, SerialPort.Dispose(Boolean), SerialPort.GetService, SerialPort.ToString, SerialPort.CreateObjRef, SerialPort.GetLifetimeService, SerialPort.InitializeLifetimeService, SerialPort.MemberwiseClone, SerialPort.Equals, SerialPort.GetHashCode, SerialPort.GetType (a component's and an object's plumbing); SerialPort.ReadBufferSize, SerialPort.WriteBufferSize (capacity hints)
+  go      -
+  rust    -
+  python  Serial.fileno, Serial.isatty (raw descriptors); Serial.seek, Serial.seekable, Serial.tell, Serial.truncate (a port has no positions); Serial.set_buffer_size (a capacity hint); Serial.BAUDRATE_CONSTANTS, Serial.TIOCSBRK, Serial.TIOCCBRK, Serial.osx_version, serial.PosixPollSerial, serial.VTIMESerial, serial.serialposix, serial.serialutil, serial.SerialBase (the implementation's own); serial.XON, serial.XOFF, serial.CR, serial.LF, serial.iterbytes, serial.to_bytes, serial.basestring, serial.unicode, serial.VERSION (helpers and constants a byte literal says); serial.absolute_import, serial.importlib, serial.io, serial.os, serial.sys, serial.time, serial.tools (the module's own imports)

@@ -1,0 +1,383 @@
+# The ledger of `sql/odbc`: any database the system's ODBC driver manager
+# reaches, measured against three libraries in the author's choice of
+# 2026-11-17. .NET's `System.Data.Odbc` (version 11.0.0: every member its
+# NuGet package's `lib/net11.0/System.Data.Odbc.xml` documents, 267 names,
+# read 2026-11-18, since no .NET runs on this machine); Python's `pyodbc`
+# (5.2.0, Debian's `python3-pyodbc` in the Linux arm64 container: `dir()` of
+# the module, of `Connection`, of `Cursor` and of `Row`, 301, 18, 31 and 1
+# names, 2026-11-18), the yardstick; and Go's `database/sql` driver for ODBC,
+# `github.com/alexbrainman/odbc` (the version of 2025-06-01, `go doc -all`
+# in a module of the scratch folder), the yardstick. Rust's standard library
+# holds no ODBC, so its lines are `-`. Go's `database/sql` itself stands in
+# the ledgers of `sql` and `sql/postgres`, whose API this driver keeps name
+# for name.
+#
+# pyodbc's 261 `SQL_*` constants stand in blocks by their use: 175 items of
+# `getinfo`, 40 SQL types, 24 attributes of a connection, 4 isolation
+# levels, 8 kinds of parameter and 9 answers of the special-columns
+# question. Expected values of the tests were observed on 2026-11-18 from
+# unixODBC 2.3.12 with SQLite's ODBC driver 0.99991 (SQLite 3.46.1) and
+# PostgreSQL's 17.00.0004 against PostgreSQL 17, in the Linux arm64
+# container, by this package's member probe and by pyodbc.
+
+capability odbc/manager  which driver manager the program loaded, and none told apart
+  heroes  sql/odbc.manager
+  go      -
+  rust    -
+  python  odbcversion, SQL_DM_VER
+  dotnet  -
+  note    the library's name, `libodbc.so.2` or `odbc32.dll`; with none installed every call fails `unsupported`, the message naming each library tried. Windows' `odbc32.dll` is loaded from the system's folder alone. The manager's version is `Info.manager_version`
+
+capability odbc/drivers  the drivers the manager knows, with their configuration
+  heroes  sql/odbc.drivers, sql/odbc.Driver
+  go      -
+  rust    -
+  python  drivers
+  dotnet  -
+  note    each driver with its attributes in the configuration's order, where pyodbc answers the names alone
+
+capability odbc/data-sources  the data sources the manager knows by name
+  heroes  sql/odbc.data_sources, sql/odbc.DataSource
+  go      -
+  rust    -
+  python  dataSources
+  dotnet  -
+  note    the user's then the system's, each saying which, where pyodbc answers one dictionary of names to drivers
+
+capability odbc/open  a connection made from a connection string, or to a data source by its name
+  heroes  sql/odbc.open, sql/odbc.options, sql/odbc.dsn_options, sql/odbc.Options, sql/odbc.Target, sql/odbc.Db
+  go      Driver, Driver.Open, Conn
+  rust    -
+  python  connect, Connection
+  dotnet  OdbcConnection.#ctor, OdbcConnection.ConnectionString, OdbcConnection.Open, OdbcConnection.DataSource, OdbcFactory, OdbcFactory.Instance, OdbcFactory.CreateConnection
+  note    `SQLDriverConnect` with no prompt for a connection string, `SQLConnect` for a data source with its user and password, as .NET and pyodbc connect; pyodbc's keywords are pairs of the connection string, written by `format_connection`. A message names a connection string with every password written `***`
+
+capability odbc/login-timeout  how long a connection waits to log in
+  heroes  sql/odbc.Options, sql/odbc.DEFAULT_LOGIN_TIMEOUT_SECONDS
+  go      -
+  rust    -
+  python  connect timeout, SQL_ATTR_LOGIN_TIMEOUT, SQL_LOGIN_TIMEOUT
+  dotnet  OdbcConnection.ConnectionTimeout
+  note    fifteen seconds unless told, .NET's default (its documentation: "The default value is 15 seconds")
+
+capability odbc/close  a connection ended, and asked whether it is
+  heroes  sql/odbc.close, sql/odbc.is_closed
+  go      Conn.Close, Driver.Close
+  rust    -
+  python  Connection.close, Connection.closed
+  dotnet  OdbcConnection.Close, OdbcConnection.State
+  note    a transaction still open is rolled back, as ODBC's `SQLDisconnect` requires; `close` refuses while a statement `prepare` made is open, as `sql/sqlite` does. The layer ends a connection's statements with it whatever the face does, so no statement's handle outlives its connection
+
+capability odbc/ping  whether a connection still works, by its driver's own knowledge
+  heroes  sql/odbc.ping
+  go      -
+  rust    -
+  python  -
+  dotnet  OdbcConnection.State
+  note    `SQL_ATTR_CONNECTION_DEAD`, which asks no statement of the database; a driver that cannot tell counts as working
+
+capability odbc/exec  one statement run with its values bound as parameters, and what it changed
+  heroes  sql/odbc.exec
+  go      Stmt.Exec, Result, Result.RowsAffected, Result.LastInsertId
+  rust    -
+  python  Cursor.execute, Connection.execute, Cursor.rowcount
+  dotnet  OdbcCommand, OdbcCommand.#ctor, OdbcCommand.CommandText, OdbcCommand.Connection, OdbcCommand.ExecuteNonQuery, OdbcConnection.CreateCommand, OdbcFactory.CreateCommand, OdbcDataReader.RecordsAffected
+  note    `rows_affected` is the driver's count, 0 where it says none (pyodbc answers -1), and the rows of a statement that answers some, read and counted (SQLite's driver counts 0 for a `SELECT`). `last_id` fails `unsupported`: ODBC keeps none, and Go's driver answers an error too. Text after the first statement is refused `invalid`, which SQLite's driver also refuses ("only one SQL statement allowed") and others would run
+
+capability odbc/query  a statement's columns and every row it answers
+  heroes  sql/odbc.query
+  go      Conn.QueryContext, Stmt.Query, Rows, Rows.Columns, Rows.Next, Rows.Close
+  rust    -
+  python  Cursor.fetchall, Cursor.description, Row, Row.cursor_description, lowercase
+  dotnet  OdbcCommand.ExecuteReader, OdbcDataReader, OdbcDataReader.Read, OdbcDataReader.GetValue, OdbcDataReader.GetValues, OdbcDataReader.GetName, OdbcDataReader.GetOrdinal, OdbcDataReader.FieldCount, OdbcDataReader.GetDataTypeName, OdbcDataReader.GetFieldType, OdbcDataReader.HasRows, OdbcDataReader.Item, OdbcDataReader.IsDBNull, OdbcDataReader.GetSchemaTable, OdbcDataReader.Close, OdbcDataReader.IsClosed, OdbcDataReader.Depth, OdbcDataReader.GetEnumerator
+  note    every row read before it answers, as every driver of Rebel answers; a column's `type_name` is the database's own name for its type. A column's name keeps the driver's case, where pyodbc's `lowercase` would fold it
+
+capability odbc/query-one  a statement's first row, and none told apart
+  heroes  sql/odbc.query_one
+  go      -
+  rust    -
+  python  Cursor.fetchone, Cursor.fetchval
+  dotnet  OdbcCommand.ExecuteScalar
+  note    no row fails `not_found` where pyodbc answers None; the rows after the first are dropped unread
+
+capability odbc/fetch-part  a statement's rows read a few at a time, or skipped
+  heroes  refused: every driver answers a query whole, the contract `sql/postgres` writes; a cursor kept between two calls would hold the database's statement in a value the program may forget
+  go      -
+  rust    -
+  python  Cursor.fetchmany, Cursor.arraysize, Cursor.skip
+  dotnet  -
+
+capability odbc/multiple-results  every result one call answers, a procedure's or a batch's
+  heroes  sql/odbc.query_sets
+  go      Rows.HasNextResultSet, Rows.NextResultSet
+  rust    -
+  python  Cursor.nextset
+  dotnet  OdbcDataReader.NextResult
+  note    the call is handed to the driver whole; SQLite's driver refuses a second statement, PostgreSQL's answers each (measured: `SELECT 1; SELECT 2, 3` answered two results)
+
+capability odbc/exec-script  several statements run in order, as a migration is
+  heroes  sql/odbc.exec_script, sql/odbc.split_script
+  go      -
+  rust    -
+  python  -
+  dotnet  -
+  note    the script is cut here, at each `;` outside a quote, a comment and a trigger's or procedure's body, and each statement handed to the driver alone, since many drivers run one statement a call (SQLite's does). A backslash escapes nothing, as standard SQL reads it; MySQL's backslash escapes are not read
+
+capability odbc/exec-many  one statement run for many lists of values
+  heroes  sql/odbc.prepare, sql/odbc.exec_prepared
+  go      -
+  rust    -
+  python  Cursor.executemany, Cursor.fast_executemany
+  dotnet  -
+  note    a loop over `exec_prepared`, the statement read once; ODBC's arrays of parameters (`SQL_ATTR_PARAMSET_SIZE`), which pyodbc's `fast_executemany` uses, are not, a speed and not a capability
+
+capability odbc/prepare  a statement read once by its driver, run many times, and given back
+  heroes  sql/odbc.prepare, sql/odbc.exec_prepared, sql/odbc.query_prepared, sql/odbc.close_statement, sql/odbc.Statement
+  go      Conn.Prepare, Conn.PrepareODBCStmt, Stmt, Stmt.NumInput, Stmt.Close, ODBCStmt, ODBCStmt.Exec, ODBCStmt.BindColumns
+  rust    -
+  python  -
+  dotnet  OdbcCommand.Prepare
+  note    pyodbc prepares behind each call and keeps the last; here a program holds one and owes it a `close_statement`. The statement's columns are read before it runs, where its driver describes them then
+
+capability odbc/parameters  values bound to a statement's placeholders, never written into its text
+  heroes  sql.Value
+  go      Parameter, Parameter.BindValue, ExtractParameters
+  rust    -
+  python  paramstyle, Cursor.setinputsizes
+  dotnet  OdbcCommand.Parameters, OdbcCommand.CreateParameter, OdbcFactory.CreateParameter, OdbcParameter, OdbcParameter.#ctor, OdbcParameter.Value, OdbcParameter.OdbcType, OdbcParameter.DbType, OdbcParameter.ResetDbType, OdbcParameter.ResetOdbcType, OdbcParameter.Size, OdbcParameter.Precision, OdbcParameter.Scale, OdbcParameter.IsNullable, OdbcParameter.ParameterName, OdbcParameterCollection, OdbcParameterCollection.Add, OdbcParameterCollection.AddRange, OdbcParameterCollection.AddWithValue, OdbcParameterCollection.Clear, OdbcParameterCollection.Contains, OdbcParameterCollection.CopyTo, OdbcParameterCollection.Count, OdbcParameterCollection.GetEnumerator, OdbcParameterCollection.IndexOf, OdbcParameterCollection.Insert, OdbcParameterCollection.IsFixedSize, OdbcParameterCollection.IsReadOnly, OdbcParameterCollection.IsSynchronized, OdbcParameterCollection.Item, OdbcParameterCollection.Remove, OdbcParameterCollection.RemoveAt, OdbcParameterCollection.SyncRoot
+  note    the placeholder is `?`, each value's SQL type chosen by its case (the module's comment), never by the program, as pyodbc chooses; a statement casts in SQL where it wants another. A text holding a zero byte is refused `invalid`, since a driver may cut it there (SQLite's cut `zero\0in` to `zero`, measured), where .NET hands it on
+
+capability odbc/values  a column read back by the SQL type its driver describes it with
+  heroes  sql.Value
+  go      Column, BaseColumn, BaseColumn.Name, BaseColumn.Value, BindableColumn, NonBindableColumn, BufferLen, NewColumn, NewVariableWidthColumn
+  rust    -
+  python  Binary, BinaryNull, Date, DateFromTicks, Time, TimeFromTicks, Timestamp, TimestampFromTicks, BINARY, DATETIME, NUMBER, STRING, ROWID, native_uuid, the 40 SQL types SQL_BIGINT to SQL_WVARCHAR, SQL_SS_TIME2, SQL_SS_VARIANT, SQL_SS_XML and SQL_INTERVAL_DAY to SQL_INTERVAL_YEAR_TO_MONTH
+  dotnet  OdbcType, OdbcType.BigInt, OdbcType.Binary, OdbcType.Bit, OdbcType.Char, OdbcType.Date, OdbcType.DateTime, OdbcType.Decimal, OdbcType.Double, OdbcType.Image, OdbcType.Int, OdbcType.NChar, OdbcType.NText, OdbcType.NVarChar, OdbcType.Numeric, OdbcType.Real, OdbcType.SmallDateTime, OdbcType.SmallInt, OdbcType.Text, OdbcType.Time, OdbcType.Timestamp, OdbcType.TinyInt, OdbcType.UniqueIdentifier, OdbcType.VarBinary, OdbcType.VarChar, OdbcDataReader.GetBoolean, OdbcDataReader.GetByte, OdbcDataReader.GetBytes, OdbcDataReader.GetChar, OdbcDataReader.GetChars, OdbcDataReader.GetDate, OdbcDataReader.GetDateTime, OdbcDataReader.GetDecimal, OdbcDataReader.GetDouble, OdbcDataReader.GetFloat, OdbcDataReader.GetGuid, OdbcDataReader.GetInt16, OdbcDataReader.GetInt32, OdbcDataReader.GetInt64, OdbcDataReader.GetString, OdbcDataReader.GetTime
+  note    a decimal, a time of day, a GUID and an interval come as their text with every digit, as `sql/postgres` gives a `numeric`; pyodbc makes a `Decimal`, a `time` and a `UUID`, .NET a `decimal`, a `TimeSpan` and a `Guid`. A timestamp or a date past what `time.Instant` holds comes as its text. A cell is read whole: .NET's `GetBytes` and `GetChars` read a piece at an offset, which `odbc/cell-pieces` keeps
+
+capability odbc/cell-pieces  one cell's bytes or text read a piece at a time
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  dotnet  OdbcDataReader.GetBytes, OdbcDataReader.GetChars
+  note    `SQLGetData` reads a long value in pieces, which the layer joins whole into the statement's cell (the member's probe read a text of 10,205 bytes); handing the pieces to the program needs a reader kept between calls, left for after the round
+
+capability odbc/encodings  the encoding text crosses the driver in
+  heroes  refused: text crosses as UTF-8 on Linux and macOS and as UTF-16 on Windows, chosen by the layer and the same for every program; a driver that speaks another is the manager's configuration, and a choice per connection would let one program read one column two ways
+  go      -
+  rust    -
+  python  Connection.setencoding, Connection.setdecoding, Connection.maxwrite, SQLWCHAR_SIZE, SQL_WMETADATA
+  dotnet  -
+
+capability odbc/decimal-separator  the character a decimal's text is read with
+  heroes  refused: a decimal comes as the text its driver writes, every digit kept, and is read by `numbers` or `big` where the program needs a number
+  go      -
+  rust    -
+  python  getDecimalSeparator, setDecimalSeparator
+  dotnet  -
+
+capability odbc/output-converters  a conversion of a program's own, chosen by a column's SQL type
+  heroes  refused: a registry of functions by type needs a function kept in a table and called later; a program converts a `sql.Value` with a function of its own, at the call
+  go      -
+  rust    -
+  python  Connection.add_output_converter, Connection.get_output_converter, Connection.remove_output_converter, Connection.clear_output_converters
+  dotnet  -
+
+capability odbc/transactions  statements that take effect together or not at all
+  heroes  sql/odbc.begin, sql/odbc.commit, sql/odbc.rollback, sql/odbc.in_transaction
+  go      Conn.Begin, Tx, Tx.Commit, Tx.Rollback
+  rust    -
+  python  Connection.autocommit, Connection.commit, Connection.rollback, Cursor.commit, Cursor.rollback, SQL_ATTR_AUTOCOMMIT, SQL_AUTOCOMMIT
+  dotnet  OdbcConnection.BeginTransaction, OdbcTransaction, OdbcTransaction.Commit, OdbcTransaction.Rollback, OdbcTransaction.Connection, OdbcCommand.Transaction
+  note    `begin` turns autocommit off and `commit` and `rollback` end the transaction by `SQLEndTran` and turn it on again, as .NET's `OdbcTransaction` does; pyodbc's default is autocommit off (measured: `autocommit` reads False), a transaction always open, and here each statement commits on its own until `begin`, as .NET and Go do
+
+capability odbc/isolation  how far a connection's transactions are kept from each other's changes
+  heroes  sql/odbc.set_isolation, sql/odbc.isolation_of, sql/odbc.Isolation
+  go      -
+  rust    -
+  python  SQL_ATTR_TXN_ISOLATION, SQL_TXN_ISOLATION, SQL_TXN_READ_UNCOMMITTED, SQL_TXN_READ_COMMITTED, SQL_TXN_REPEATABLE_READ, SQL_TXN_SERIALIZABLE, SQL_DEFAULT_TXN_ISOLATION, SQL_TXN_ISOLATION_OPTION
+  dotnet  OdbcTransaction.IsolationLevel
+  note    set between transactions only, which ODBC requires; SQLite's driver answers `serializable`
+
+capability odbc/read-only  a connection told it only reads
+  heroes  sql/odbc.set_read_only
+  go      -
+  rust    -
+  python  SQL_ATTR_ACCESS_MODE, SQL_ACCESS_MODE, SQL_DATA_SOURCE_READ_ONLY
+  dotnet  -
+  note    `SQL_ATTR_ACCESS_MODE`, a hint many drivers take and enforce nothing by; whether the data source itself is read-only is `Info.read_only`
+
+capability odbc/query-timeout  how long a statement runs before its driver stops it
+  heroes  sql/odbc.set_query_timeout, sql/odbc.Options
+  go      -
+  rust    -
+  python  Connection.timeout
+  dotnet  OdbcCommand.CommandTimeout, OdbcCommand.ResetCommandTimeout
+  note    seconds, none by default, as pyodbc's `timeout` reads 0 (measured); .NET's documentation says thirty. A statement past it fails `timeout` (HYT00)
+
+capability odbc/info  what a connection's driver says of its database and itself
+  heroes  sql/odbc.info_of, sql/odbc.Info
+  go      -
+  rust    -
+  python  Connection.getinfo, SQL_DBMS_NAME, SQL_DBMS_VER, SQL_DRIVER_NAME, SQL_DRIVER_VER, SQL_DRIVER_ODBC_VER, SQL_DATA_SOURCE_NAME, SQL_DATABASE_NAME, SQL_SERVER_NAME, SQL_USER_NAME, SQL_IDENTIFIER_QUOTE_CHAR, SQL_SEARCH_PATTERN_ESCAPE, SQL_KEYWORDS, SQL_MULT_RESULT_SETS
+  dotnet  OdbcConnection.Driver, OdbcConnection.ServerVersion, OdbcConnection.Database
+  note    fifteen items by name, each "" where the driver answers nothing; the other items of `SQLGetInfo` are `odbc/info-any`
+
+capability odbc/info-any  any item of `SQLGetInfo`, by its number
+  heroes  pending
+  go      -
+  rust    -
+  python  Connection.getinfo, the 161 other items SQL_ACCESSIBLE_PROCEDURES to SQL_XOPEN_CLI_YEAR
+  dotnet  -
+  note    an item answers a text, a 16-bit or a 32-bit number, or a mask, by its own kind; a variant naming each with its kind is the work, and the layer's `hero_odbc_info` takes an item by a table of its own today
+
+capability odbc/catalog-tables  the tables and views a database holds
+  heroes  sql/odbc.tables
+  go      -
+  rust    -
+  python  Cursor.tables
+  dotnet  OdbcConnection.GetSchema, OdbcMetaDataCollectionNames, OdbcMetaDataCollectionNames.Tables, OdbcMetaDataCollectionNames.Views
+  note    each catalog question answers `sql.Rows` with the columns ODBC defines, in the driver's order; "" for a name is every one, where pyodbc takes None
+
+capability odbc/catalog-columns  the columns of the tables asked
+  heroes  sql/odbc.table_columns
+  go      -
+  rust    -
+  python  Cursor.columns
+  dotnet  OdbcMetaDataCollectionNames.Columns
+
+capability odbc/catalog-keys  a table's primary key and the foreign keys between tables
+  heroes  sql/odbc.primary_keys, sql/odbc.foreign_keys
+  go      -
+  rust    -
+  python  Cursor.primaryKeys, Cursor.foreignKeys
+  dotnet  -
+
+capability odbc/catalog-indexes  a table's indexes
+  heroes  sql/odbc.indexes
+  go      -
+  rust    -
+  python  Cursor.statistics
+  dotnet  OdbcMetaDataCollectionNames.Indexes
+
+capability odbc/catalog-procedures  the procedures a database holds, and their parameters
+  heroes  sql/odbc.procedures, sql/odbc.procedure_columns
+  go      -
+  rust    -
+  python  Cursor.procedures, Cursor.procedureColumns
+  dotnet  OdbcMetaDataCollectionNames.Procedures, OdbcMetaDataCollectionNames.ProcedureColumns, OdbcMetaDataCollectionNames.ProcedureParameters, OdbcCommandBuilder.DeriveParameters
+
+capability odbc/catalog-types  the data types a database offers
+  heroes  sql/odbc.data_types
+  go      -
+  rust    -
+  python  Cursor.getTypeInfo
+  dotnet  OdbcMetaDataColumnNames, OdbcMetaDataColumnNames.BooleanFalseLiteral, OdbcMetaDataColumnNames.BooleanTrueLiteral, OdbcMetaDataColumnNames.SQLType
+
+capability odbc/catalog-special-columns  the columns that tell a row apart, and a row's version
+  heroes  sql/odbc.row_id_columns, sql/odbc.row_version_columns
+  go      -
+  rust    -
+  python  Cursor.rowIdColumns, Cursor.rowVerColumns, SQL_SCOPE_CURROW, SQL_SCOPE_SESSION, SQL_SCOPE_TRANSACTION, SQL_PC_NOT_PSEUDO, SQL_PC_PSEUDO, SQL_PC_UNKNOWN, SQL_NO_NULLS, SQL_NULLABLE, SQL_NULLABLE_UNKNOWN
+  dotnet  -
+  note    the scope asked is the current row's, nullable columns included; the answers' columns carry ODBC's scope and pseudo-column numbers
+
+capability odbc/catalog-privileges  who may do what to tables and columns
+  heroes  sql/odbc.table_privileges, sql/odbc.column_privileges
+  go      -
+  rust    -
+  python  -
+  dotnet  -
+  note    SQLite's driver answers `SQLColumnPrivileges` with IM001, `unsupported` (measured)
+
+capability odbc/errors  a failure told by its kind, with the driver's SQLSTATE, native error and words
+  heroes  sql.INVALID, sql.NOT_FOUND, sql.EXISTS, sql.PERMISSION, sql.DOES_NOT_FIT, sql.CLOSED, sql.TIMEOUT, sql.STOPPED, sql.LIMIT, sql.UNSUPPORTED, sql.FAILED, sql.database_code_of
+  go      Error, Error.Error, DiagRecord, DiagRecord.String, NewError, IsError
+  rust    -
+  python  Error, Warning, DatabaseError, IntegrityError, OperationalError, ProgrammingError, DataError, InternalError, NotSupportedError, InterfaceError
+  dotnet  OdbcException, OdbcException.Errors, OdbcException.Source, OdbcException.GetObjectData, OdbcError, OdbcError.Message, OdbcError.NativeError, OdbcError.SQLState, OdbcError.Source, OdbcError.ToString, OdbcErrorCollection, OdbcErrorCollection.Count, OdbcErrorCollection.Item, OdbcErrorCollection.CopyTo, OdbcErrorCollection.GetEnumerator, ODBC32, ODBC32.RETCODE, ODBC32.RETCODE.ERROR, ODBC32.RETCODE.INVALID_HANDLE, ODBC32.RETCODE.NO_DATA, ODBC32.RETCODE.SUCCESS, ODBC32.RETCODE.SUCCESS_WITH_INFO
+  note    the SQLSTATE chooses the code (the module's comment), the first record's that is no warning; the words of every record are kept, as .NET's `Errors` and Go's `Diag` keep each, and the native error after them. pyodbc's classes follow the SQLSTATE's class as DB-API asks; SQLite's driver answers HY000 for nearly every failure, so with it a unique key broken is `failed`, its words saying which
+
+capability odbc/warnings  the warnings a driver sends with a statement that succeeded
+  heroes  pending
+  go      -
+  rust    -
+  python  Cursor.messages
+  dotnet  OdbcConnection.InfoMessage, OdbcInfoMessageEventArgs, OdbcInfoMessageEventArgs.Errors, OdbcInfoMessageEventArgs.Message, OdbcInfoMessageEventArgs.ToString, OdbcInfoMessageEventHandler
+  note    a call that answers `SQL_SUCCESS_WITH_INFO` has diagnostic records the layer does not keep yet; they would be read as `sql/postgres`'s `take_notices` reads a server's notices
+
+capability odbc/connection-strings  a connection string read into its pairs and written from them
+  heroes  sql/odbc.parse_connection, sql/odbc.format_connection, sql/odbc.Attribute
+  go      -
+  rust    -
+  python  -
+  dotnet  OdbcConnectionStringBuilder, OdbcConnectionStringBuilder.#ctor, OdbcConnectionStringBuilder.Clear, OdbcConnectionStringBuilder.ContainsKey, OdbcConnectionStringBuilder.Driver, OdbcConnectionStringBuilder.Dsn, OdbcConnectionStringBuilder.Item, OdbcConnectionStringBuilder.Keys, OdbcConnectionStringBuilder.Remove, OdbcConnectionStringBuilder.TryGetValue, OdbcFactory.CreateConnectionStringBuilder
+  note    by `SQLDriverConnect`'s grammar: a value inside braces where it holds `;`, `{` or `}` or a blank at an end, a `}` in it doubled; the pairs stay a list in their order, where .NET keeps a dictionary. The braces are the manager's grammar, and each driver reads its own pairs: SQLite's reads no braces in a value (measured through pyodbc: `Database={/tmp/braced.db}` refused, `Database=/tmp/plain;x.db` opened `/tmp/plain`), while unixODBC reads `Driver={SQLite3}`
+
+capability odbc/quote-identifier  a name quoted for the database's SQL
+  heroes  sql.quote_identifier, sql/odbc.Info
+  go      -
+  rust    -
+  python  -
+  dotnet  OdbcCommandBuilder.QuoteIdentifier, OdbcCommandBuilder.UnquoteIdentifier
+  note    `sql.quote_identifier` writes standard SQL's double quotes; `Info.identifier_quote` says the character the database reads, a backtick for MySQL
+
+capability odbc/cancel  a running statement stopped from another thread
+  heroes  refused: a thread receives an `i64` or a `str` and nothing else crosses (spec § 13), so no other thread holds the statement to cancel it; `set_query_timeout` bounds a statement instead
+  go      ODBCStmt.Cancel
+  rust    -
+  python  Cursor.cancel
+  dotnet  OdbcCommand.Cancel
+
+capability odbc/output-parameters  a procedure's output and return values read back through its parameters
+  heroes  pending
+  go      -
+  rust    -
+  python  SQL_PARAM_INPUT, SQL_PARAM_INPUT_OUTPUT, SQL_PARAM_OUTPUT, SQL_PARAM_TYPE_UNKNOWN, SQL_RESULT_COL, SQL_RETURN_VALUE
+  dotnet  OdbcParameter.Direction, OdbcParameter.SourceColumn, OdbcParameter.SourceColumnNullMapping, OdbcParameter.SourceVersion
+  note    every parameter is bound as input; an output parameter is filled only once every result is read, into a buffer whose size the program must choose, and pyodbc offers none; a procedure's values are read meanwhile by a `SELECT` of them or by `query_sets`
+
+capability odbc/current-catalog  the database a connection works in, changed
+  heroes  pending
+  go      -
+  rust    -
+  python  SQL_ATTR_CURRENT_CATALOG
+  dotnet  OdbcConnection.ChangeDatabase
+  note    `SQL_ATTR_CURRENT_CATALOG` takes a text, which the layer's integer attributes do not; a `USE` statement where the database has one meanwhile
+
+capability odbc/pooling  connections kept open by the driver manager and handed out again
+  heroes  refused: pooling is the manager's own configuration (`Pooling=Yes` in unixODBC's `odbcinst.ini`, the ODBC Data Source Administrator on Windows), set for the whole machine; a program keeps its own connections open as long as it needs them
+  go      -
+  rust    -
+  python  pooling
+  dotnet  OdbcConnection.ReleaseObjectPool
+
+capability odbc/tracing  the manager's trace of every call, written to a file
+  heroes  refused: tracing is the manager's configuration (`Trace=Yes` and `TraceFile` in `odbcinst.ini`), and a program that turned it on would write every value it binds, passwords among them, to a file
+  go      -
+  rust    -
+  python  SQL_ATTR_TRACE, SQL_ATTR_TRACEFILE, SQL_OPT_TRACE, SQL_OPT_TRACEFILE
+  dotnet  -
+
+capability odbc/attributes  any attribute of a connection set by its number, before or after it connects
+  heroes  refused: an attribute takes an integer, a text or a pointer by its own kind, which a number cannot say; the attributes with a meaning have functions of their own (`set_isolation`, `set_read_only`, `set_query_timeout`, the login timeout of `Options`)
+  go      -
+  rust    -
+  python  Connection.set_attr, connect attrs_before, SQL_ATTR_ANSI_APP, SQL_ATTR_CONNECTION_TIMEOUT, SQL_ATTR_ODBC_CURSORS, SQL_ATTR_QUIET_MODE, SQL_ATTR_TRANSLATE_LIB, SQL_ATTR_TRANSLATE_OPTION, SQL_QUIET_MODE, SQL_TRANSLATE_DLL, SQL_TRANSLATE_OPTION, SQL_ODBC_CURSORS, SQL_CURRENT_QUALIFIER, SQL_PACKET_SIZE
+  dotnet  -
+
+capability odbc/data-adapter  rows kept in memory and written back by generated statements
+  heroes  refused: a table of rows in memory kept in step with the database by statements a builder writes is an object-relational layer, which `sql/build` refuses with its reason
+  go      -
+  rust    -
+  python  -
+  dotnet  OdbcDataAdapter, OdbcDataAdapter.#ctor, OdbcDataAdapter.SelectCommand, OdbcDataAdapter.InsertCommand, OdbcDataAdapter.UpdateCommand, OdbcDataAdapter.DeleteCommand, OdbcDataAdapter.RowUpdated, OdbcDataAdapter.RowUpdating, OdbcRowUpdatedEventArgs, OdbcRowUpdatedEventArgs.#ctor, OdbcRowUpdatedEventArgs.Command, OdbcRowUpdatedEventArgs.Command, OdbcRowUpdatingEventArgs, OdbcRowUpdatingEventArgs.#ctor, OdbcRowUpdatingEventArgs.Command, OdbcRowUpdatedEventHandler, OdbcRowUpdatingEventHandler, OdbcCommandBuilder, OdbcCommandBuilder.#ctor, OdbcCommandBuilder.DataAdapter, OdbcCommandBuilder.GetInsertCommand, OdbcCommandBuilder.GetUpdateCommand, OdbcCommandBuilder.GetDeleteCommand, OdbcFactory.CreateDataAdapter, OdbcFactory.CreateCommandBuilder, OdbcCommand.UpdatedRowSource
+
+dropped
+  python  apilevel, paramstyle, threadsafety, version: DB-API's descriptions of itself; the placeholder is in the module's comment, and a connection crosses no thread
+  python  Connection.cursor, Cursor, Cursor.close, Cursor.connection, Cursor.setoutputsize, Cursor.noscan: DB-API's cursor, a second handle over the connection, and its plumbing; every call here answers whole, and `{escape}` sequences reach the driver as written
+  python  Connection.searchescape: the character is `Info.search_escape`
+  go      Driver.Stats, Stats, Stats.EnvCount, Stats.ConnCount, Stats.StmtCount: counts of the handles a driver holds open, plumbing of its own
+  go      ToHandleAndType, BindableColumn.Bind, NonBindableColumn.Bind, BufferLen.Bind, BufferLen.GetData, BufferLen.IsNull, Parameter.StoreStrLen_or_IndPtr: the C boundary's plumbing, which the layer keeps in C
+  dotnet  OdbcCommand.CommandType, OdbcCommand.DesignTimeVisible, OdbcCommand.System#ICloneable#Clone, OdbcConnection.System#ICloneable#Clone, OdbcDataAdapter.System#ICloneable#Clone, OdbcParameter.System#ICloneable#Clone, OdbcParameter.ToString, OdbcDataAdapter.System#Data#IDbDataAdapter#SelectCommand, OdbcDataAdapter.System#Data#IDbDataAdapter#InsertCommand, OdbcDataAdapter.System#Data#IDbDataAdapter#UpdateCommand, OdbcDataAdapter.System#Data#IDbDataAdapter#DeleteCommand, OdbcErrorCollection.System#Collections#ICollection#IsSynchronized, OdbcErrorCollection.System#Collections#ICollection#SyncRoot, OdbcCommand.#ctor: .NET's interfaces, designers and copies, which a language with no interfaces has no use for

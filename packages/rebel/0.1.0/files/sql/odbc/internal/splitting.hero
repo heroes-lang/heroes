@@ -1,0 +1,357 @@
+# A script of SQL cut into its statements, so that each is handed to a
+# driver alone, since many drivers run one statement a call (SQLite's says
+# "only one SQL statement allowed"). A statement ends at a `;` outside a
+# quote, a comment, and the body of a `CREATE TRIGGER`, `PROCEDURE` or
+# `FUNCTION`. The quotes are standard SQL's `'...'` and `"..."`, each closed
+# by its own character and holding it doubled; SQL Server's and SQLite's
+# `[...]`; MySQL's and SQLite's backtick; and PostgreSQL's `$tag$...$tag$`.
+# A backslash escapes nothing, as standard SQL reads it. A body is the text
+# from its first `BEGIN` to the `END` that closes it, counting `BEGIN` and
+# `CASE` against `END`, and an `END IF`, `END LOOP`, `END WHILE`, `END
+# REPEAT` or `END FOR` closing none of them. The walk compares bytes and
+# cuts only at ASCII bytes, so it never splits a character.
+
+use sql
+use sql/odbc/internal/values
+
+# Whether `c` is a byte of a word: an ASCII letter, a digit, `_`, or a byte
+# of a character past ASCII.
+#
+# - `c`: the byte.
+function is_word_byte(c: u8) -> bool
+    return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '_' || c >= 128
+
+# Whether `c` is a blank: a space, a tab, a line's end or a carriage return.
+#
+# - `c`: the byte.
+function is_blank(c: u8) -> bool
+    return c == ' ' || c == '\t' || c == '\n' || c == '\r'
+
+# Whether the bytes of `s` from `from` to `to` are `word`, ASCII letters
+# compared whatever their case.
+#
+# - `s`: the text.
+# - `from`: the first byte, from 0.
+# - `to`: the byte after the last.
+# - `word`: the word, in capitals.
+function is_word(s: str, from: i64, to: i64, word: str) -> bool
+    if to - from != word.len()
+        return false
+    i: i64 @= 0
+
+    while i < word.len()
+        c = s[from + i]
+
+        upper: u8 = if c >= 'a' && c <= 'z'
+            c - 32
+        else
+            c
+
+        if upper != word[i]
+            return false
+        i @ i + 1
+
+    return true
+
+# Where the word that begins at `from` ends: the first byte after it.
+#
+# - `s`: the text.
+# - `from`: the word's first byte.
+function word_end(s: str, from: i64) -> i64
+    at: i64 @= from + 1
+
+    while at < s.len() && is_word_byte(s[at])
+        at @ at + 1
+
+    return at
+
+# Where a quote that opens at `from` and closes at `close` ends: the byte
+# after its closing one, a doubled closing byte read as one inside it; the
+# text's end where it never closes.
+#
+# - `s`: the text.
+# - `from`: the opening byte.
+# - `close`: the closing byte.
+function quoted_end(s: str, from: i64, close: u8) -> i64
+    at: i64 @= from + 1
+
+    while at < s.len()
+        if s[at] == close
+            if at + 1 < s.len() && s[at + 1] == close
+                at @ at + 2
+            else
+                return at + 1
+        else
+            at @ at + 1
+
+    return s.len()
+
+# Where a comment that opens at `from` ends: after the line's end for `--`,
+# after `*/` for `/*`; the text's end where it never does.
+#
+# - `s`: the text.
+# - `from`: the comment's first byte.
+function comment_end(s: str, from: i64) -> i64
+    at: i64 @= from + 2
+
+    if s[from] == '-'
+        while at < s.len() && s[at] != '\n'
+            at @ at + 1
+
+        return if at < s.len()
+            at + 1
+        else
+            at
+
+    while at + 1 < s.len()
+        if s[at] == '*' && s[at + 1] == '/'
+            return at + 2
+        at @ at + 1
+
+    return s.len()
+
+# Where the tag of a dollar quote that opens at `from` ends, the byte after
+# its second `$`: `$$` or `$name$`, a name being a letter or `_` then
+# letters, digits and `_`.
+#
+# - `s`: the text.
+# - `from`: the byte of the first `$`.
+#
+# Fails `not_found` where no tag opens there, as at `$1`.
+function dollar_tag_end(s: str, from: i64) -> i64?
+    at: i64 @= from + 1
+
+    while at < s.len() && s[at] != '$'
+        c = s[at]
+
+        if !(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c == '_' || at > from + 1 && c >= '0' && c <= '9')
+            return fail(code: "not_found", msg: "no dollar quote opens there")
+        at @ at + 1
+
+    if at >= s.len()
+        return fail(code: "not_found", msg: "no dollar quote opens there")
+    return ok(at + 1)
+
+# Where a dollar quote whose tag spans `from` to `tag_end` ends: after the
+# same tag closing it; the text's end where none does.
+#
+# - `s`: the text.
+# - `from`: the tag's first `$`.
+# - `tag_end`: the byte after the tag.
+function dollar_end(s: str, from: i64, tag_end: i64) -> i64
+    width = tag_end - from
+    at: i64 @= tag_end
+
+    while at + width <= s.len()
+        same: i64 @= 0
+
+        while same < width && s[at + same] == s[from + same]
+            same @ same + 1
+
+        if same == width
+            return at + width
+        at @ at + 1
+
+    return s.len()
+
+# `s` from `from` to `to` without the blanks at either end.
+#
+# - `s`: the text.
+# - `from`: the first byte.
+# - `to`: the byte after the last.
+function trimmed(s: str, from: i64, to: i64) -> str
+    first: i64 @= from
+    last: i64 @= to
+
+    while first < last && is_blank(s[first])
+        first @ first + 1
+
+    while last > first && is_blank(s[last - 1])
+        last @ last - 1
+
+    return s.slice(from: first, to: last)
+
+# The first byte of the word after `from`, blanks passed over; the text's
+# end where none comes.
+#
+# - `s`: the text.
+# - `from`: where to look from.
+function next_word_at(s: str, from: i64) -> i64
+    at: i64 @= from
+
+    while at < s.len() && is_blank(s[at])
+        at @ at + 1
+
+    return at
+
+# The statements of `script`, each without its `;` and the blanks around
+# it, in order; a piece holding nothing but blanks and comments is no
+# statement.
+#
+# - `script`: SQL, statements separated by `;`.
+function statements(script: str) -> [str]
+    pieces: [str] @= []
+    start: i64 @= 0
+    at: i64 @= 0
+    has_code: bool @= false
+    words: i64 @= 0
+    creates: bool @= false
+    body: bool @= false
+    depth: i64 @= 0
+
+    while at < script.len()
+        c = script[at]
+        opens_comment = at + 1 < script.len() && (c == '-' && script[at + 1] == '-' || c == '/' && script[at + 1] == '*')
+
+        if c == '\'' || c == '"' || c == '`'
+            at @ quoted_end(script, from: at, close: c)
+            has_code @ true
+        else if c == '['
+            at @ quoted_end(script, from: at, close: ']')
+            has_code @ true
+        else if opens_comment
+            at @ comment_end(script, from: at)
+        else if c == '$' && !dollar_tag_end(script, from: at).is_err()
+            at @ dollar_end(script, from: at, tag_end: dollar_tag_end(script, from: at).must())
+            has_code @ true
+        else if is_word_byte(c)
+            end = word_end(script, from: at)
+
+            if words == 0
+                creates @ is_word(s: script, from: at, to: end, word: "CREATE")
+            else if creates && words <= 5 && (is_word(s: script, from: at, to: end, word: "TRIGGER") || is_word(s: script, from: at, to: end, word: "PROCEDURE") || is_word(s: script, from: at, to: end, word: "FUNCTION"))
+                body @ true
+
+            if body && (is_word(s: script, from: at, to: end, word: "BEGIN") || is_word(s: script, from: at, to: end, word: "CASE"))
+                depth @ depth + 1
+                at @ end
+            else if body && is_word(s: script, from: at, to: end, word: "END")
+                after = next_word_at(script, from: end)
+
+                after_end = if after < script.len() && is_word_byte(script[after])
+                    word_end(script, from: after)
+                else
+                    after
+
+                if is_word(s: script, from: after, to: after_end, word: "IF") || is_word(s: script, from: after, to: after_end, word: "LOOP") || is_word(s: script, from: after, to: after_end, word: "WHILE") || is_word(s: script, from: after, to: after_end, word: "REPEAT") || is_word(s: script, from: after, to: after_end, word: "FOR")
+                    at @ after_end
+                else if is_word(s: script, from: after, to: after_end, word: "CASE")
+                    if depth > 0
+                        depth @ depth - 1
+                    at @ after_end
+                else
+                    if depth > 0
+                        depth @ depth - 1
+                    at @ end
+            else
+                at @ end
+            words @ words + 1
+            has_code @ true
+        else if c == ';'
+            if body && depth > 0
+                at @ at + 1
+            else
+                if has_code
+                    pieces @ pieces.push(trimmed(script, from: start, to: at))
+                at @ at + 1
+                start @ at
+                has_code @ false
+                words @ 0
+                creates @ false
+                body @ false
+                depth @ 0
+        else
+            if !is_blank(c)
+                has_code @ true
+            at @ at + 1
+
+    if has_code
+        pieces @ pieces.push(trimmed(script, from: start, to: script.len()))
+    return pieces
+
+# The one statement `text` holds, as `statements` cuts it.
+#
+# - `text`: SQL holding one statement, a `;` and comments around it
+#   allowed.
+#
+# Fails `invalid` where `text` holds a zero byte, no statement, or more than
+# one.
+function one_statement(text: str) -> str?
+    match values.zero_at(text)
+        .ok at => return fail(code: sql.INVALID, msg: f"the statement holds a zero byte at byte {at}")
+        .err _ => _ = 0
+
+    pieces = statements(text)
+
+    if pieces.len() == 0
+        return fail(code: sql.INVALID, msg: f"no statement in \"{text}\"")
+
+    if pieces.len() > 1
+        return fail(
+            code: sql.INVALID,
+            msg: f"{pieces.len()} statements in one call, where one is run: `exec_script` runs several"
+        )
+    return ok(pieces[0])
+
+## Tests
+
+test "one_statement: one with its semicolon and a comment, none, two, and a zero byte"
+    assert one_statement("SELECT 1; -- one").must() == "SELECT 1"
+
+    match one_statement("  ")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "no statement in \"  \""
+
+    match one_statement("SELECT 1; SELECT 2")
+        .ok _  => assert false
+        .err e => assert e.msg == "2 statements in one call, where one is run: `exec_script` runs several"
+
+    zero: [u8] = [83, 0]
+
+    match one_statement(zero.validated_bytes().must())
+        .ok _  => assert false
+        .err e => assert e.msg == "the statement holds a zero byte at byte 1"
+
+test "statements: none, one with and without its semicolon, several, empty ones, blanks around"
+    assert statements("") == []
+    assert statements("  ;; \n ; ") == []
+    assert statements("SELECT 1") == ["SELECT 1"]
+    assert statements("SELECT 1;") == ["SELECT 1"]
+    assert statements("  CREATE TABLE t(x);\n INSERT INTO t VALUES (1) ;;SELECT x FROM t") == ["CREATE TABLE t(x)", "INSERT INTO t VALUES (1)", "SELECT x FROM t"]
+
+test "statements: a semicolon inside each kind of quote and comment cuts nothing, and a doubled quote stays inside"
+    assert statements("SELECT 'a;b', \"c;d\", [e;f], `g;h`; SELECT 2") == ["SELECT 'a;b', \"c;d\", [e;f], `g;h`", "SELECT 2"]
+    assert statements("SELECT 'it''s; here'; SELECT 2") == ["SELECT 'it''s; here'", "SELECT 2"]
+    assert statements("SELECT 1 -- a; b\n; SELECT 2") == ["SELECT 1 -- a; b", "SELECT 2"]
+    assert statements("SELECT /* a; b */ 1; SELECT 2") == ["SELECT /* a; b */ 1", "SELECT 2"]
+    assert statements("-- only a comment;\n/* and another; */") == []
+    assert statements("SELECT 1; -- the end") == ["SELECT 1"]
+
+test "statements: a quote or a comment never closed runs to the end"
+    assert statements("SELECT 'a; b") == ["SELECT 'a; b"]
+    assert statements("SELECT 1 /* a; b") == ["SELECT 1 /* a; b"]
+
+test "statements: PostgreSQL's dollar quotes, named and not, and a placeholder that is no quote"
+    assert statements("CREATE FUNCTION f() RETURNS int AS $$ BEGIN RETURN 1; END $$ LANGUAGE plpgsql; SELECT f()") == ["CREATE FUNCTION f() RETURNS int AS $$ BEGIN RETURN 1; END $$ LANGUAGE plpgsql", "SELECT f()"]
+    assert statements("SELECT $q$a;$b$;$q$; SELECT 2") == ["SELECT $q$a;$b$;$q$", "SELECT 2"]
+    assert statements("SELECT $1; SELECT $2") == ["SELECT $1", "SELECT $2"]
+
+test "statements: a trigger's body with its semicolons, a CASE inside, and a BEGIN that is a transaction"
+    assert statements("CREATE TRIGGER t AFTER INSERT ON x BEGIN INSERT INTO y VALUES (1); UPDATE y SET a = CASE WHEN a > 0 THEN 1 ELSE 0 END; END; SELECT 1") == ["CREATE TRIGGER t AFTER INSERT ON x BEGIN INSERT INTO y VALUES (1); UPDATE y SET a = CASE WHEN a > 0 THEN 1 ELSE 0 END; END", "SELECT 1"]
+    assert statements("BEGIN; INSERT INTO t VALUES (1); COMMIT;") == ["BEGIN", "INSERT INTO t VALUES (1)", "COMMIT"]
+    assert statements("create temp trigger t after delete on x begin delete from y; end;") == ["create temp trigger t after delete on x begin delete from y; end"]
+
+test "statements: a procedure's END IF and END LOOP close nothing, and its END closes its BEGIN"
+    p = "CREATE PROCEDURE p() BEGIN IF 1 THEN SELECT 1; END IF; LOOP SELECT 2; END LOOP; END; SELECT 3"
+    assert statements(p) == ["CREATE PROCEDURE p() BEGIN IF 1 THEN SELECT 1; END IF; LOOP SELECT 2; END LOOP; END", "SELECT 3"]
+
+test "statements: text of characters past ASCII cut only at its semicolons"
+    assert statements("SELECT 'città'; SELECT città FROM é") == ["SELECT 'città'", "SELECT città FROM é"]
+
+test "is_word, word_end, quoted_end, comment_end and dollar_tag_end at their edges"
+    assert is_word(s: "begin", from: 0, to: 5, word: "BEGIN") && !is_word(s: "begins", from: 0, to: 6, word: "BEGIN")
+    assert word_end("ab cd", from: 0) == 2 && word_end("a", from: 0) == 1
+    assert quoted_end("'a''b'x", from: 0, close: '\'') == 6 && quoted_end("'a", from: 0, close: '\'') == 2
+    assert comment_end("-- x\ny", from: 0) == 5 && comment_end("-- x", from: 0) == 4 && comment_end("/* x */y", from: 0) == 7 && comment_end("/* x", from: 0) == 4
+    assert dollar_tag_end("$$x", from: 0).must() == 2 && dollar_tag_end("$ab_1$", from: 0).must() == 6
+    assert dollar_tag_end("$1", from: 0).is_err() && dollar_tag_end("$a b$", from: 0).is_err() && dollar_tag_end("$abc", from: 0).is_err()

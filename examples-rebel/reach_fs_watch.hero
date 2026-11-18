@@ -1,0 +1,25 @@
+# Reaches Rebel's `fs/watch`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It watches a folder of its own making,
+# makes a file there, and prints the line the change is told as, then
+# removes the folder.
+
+use <rebel>/fs
+use <rebel>/fs/watch
+use <rebel>/time
+
+function main()
+    match fs.make_temp_dir(dir: "", pattern: "reach-watch-*")
+        .err e => print(e.code, ": ", e.msg)
+        .ok root =>
+            match watch.open(root)
+                .err e => print(e.code, ": ", e.msg)
+                .ok made =>
+                    w @= made
+                    _ = fs.touch(root + "/hello.txt").is_err()
+
+                    for e in watch.wait(w, limit: time.nanoseconds(2000000000)).default([])
+                        print(watch.format_event(e))
+
+                    _ = watch.close(@w).is_err()
+
+            _ = fs.remove_all(root).is_err()

@@ -1,0 +1,347 @@
+# Secrets kept in the system's own keyring: a password, a token or a key
+# stored under a service and an account, read back, replaced, removed, and
+# the accounts of a service listed, so a program keeps no secret in a file of
+# its own.
+#
+# The stores: on macOS the login keychain, as generic passwords; on Windows
+# the Credential Manager, as generic credentials of the user, kept on this
+# machine; on Linux the Secret Service (GNOME Keyring, KeePassXC, KWallet's
+# bridge), reached through libsecret where it is installed. On macOS and Linux
+# a secret is the item other programs name by the same service and account
+# (Python's `keyring`, Go's `go-keyring`); on Windows the credentials are this
+# library's own, their target names written so that no two pairs of names
+# meet on one.
+#
+# What it does NOT do: encrypt data for the user alone, as Windows' data
+# protection does (the ledger says `pending`); choose among several stores or
+# write a store of its own (a machine has one keyring, and this package reaches
+# it); prompt for a secret at the terminal (`term.read_secret`).
+#
+# **A secret is bytes**, at most `SECRET_MOST` of them on every platform,
+# Windows' own bound, so a program that stores a secret on one platform stores
+# it on all; `store_text` and `read_text` keep text. No message of this package
+# ever holds a secret. **A service and an account are text** of at most
+# `NAME_MOST` bytes with no zero byte; the service is never empty. On macOS a
+# secret belongs to the program that stored it: another program, a new build of
+# the same one included, is asked about by the system, which may show the
+# person a dialog, or refuse where none can be shown.
+#
+# It fails with `invalid`, `not_found`, `permission`, `limit`, `unsupported`,
+# `not_text` and `failed` (README § A4).
+
+use bytes
+use keyring/hero_keyring
+use keyring/internal/calls
+
+## Codes
+
+# A service empty, a name holding a zero byte or past `NAME_MOST` bytes, or a
+# secret past `SECRET_MOST` bytes. Every function that takes a name fails with
+# it.
+constant INVALID: str
+    "invalid"
+
+# No secret stands under the service and account. `read`, `read_text` and
+# `remove` fail with it.
+constant NOT_FOUND: str
+    "not_found"
+
+# The keyring refuses this to the program: it is locked and may not be opened
+# here, the person refused the system's dialog, or the secret belongs to
+# another program. Every function that reaches the keyring fails with it.
+constant PERMISSION: str
+    "permission"
+
+# The system has no memory or no room left in its store. Every function that
+# reaches the keyring fails with it.
+constant LIMIT: str
+    "limit"
+
+# This machine has no keyring the package reaches: on Linux no libsecret, no
+# session bus, or no Secret Service on it (a container, a server with no
+# desktop); on Windows a logon that keeps no credentials (a service's, a
+# network logon's). Every function that reaches the keyring fails with it.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The secret read is not UTF-8. `read_text` fails with it.
+constant NOT_TEXT: str
+    "not_text"
+
+# The keyring refused for a reason none of the above names; the message
+# carries the system's words. Every function that reaches the keyring fails
+# with it.
+constant FAILED: str
+    "failed"
+
+## Bounds
+
+# The most bytes a service or an account holds.
+constant NAME_MOST: i64
+    1024
+
+# The most bytes a secret holds, on every platform: Windows' Credential Manager
+# holds no more.
+constant SECRET_MOST: i64
+    2560
+
+## The system's keyring
+
+# The name of the keyring this machine offers: "macOS Keychain", "Windows
+# Credential Manager" or "Secret Service".
+#
+# The keyring is asked whether it answers, by a search for a service no
+# program names, so a program can tell before it stores anything.
+#
+# Fails `unsupported` where the machine has none the package reaches,
+# `permission` where it refuses the program, `failed` where it refuses for
+# another reason. See also `store`.
+function system() -> str?
+    return calls.system()
+
+## Secrets
+
+# Stores `secret` under `service` and `account`, replacing the secret that
+# stood there.
+#
+# - `service`: what the secret belongs to, a program's or a site's name; not
+#   empty, at most `NAME_MOST` bytes, no zero byte.
+# - `account`: whose secret it is under that service, a user's name; may be
+#   empty, at most `NAME_MOST` bytes, no zero byte.
+# - `secret`: the bytes kept, at most `SECRET_MOST`; may be empty.
+#
+# Fails `invalid` where a name or the secret is out of its bounds,
+# `permission`, `limit`, `unsupported` and `failed` where the keyring refuses.
+# See also `store_text` and `read`.
+function store(service: str, account: str, secret: [u8]) -> ()?
+    return calls.store(service: service, account: account, secret: secret)
+
+# Stores the text `secret` under `service` and `account`, as its UTF-8,
+# replacing the secret that stood there.
+#
+# - `service`: what the secret belongs to; not empty, at most `NAME_MOST`
+#   bytes, no zero byte.
+# - `account`: whose secret it is; may be empty, at most `NAME_MOST` bytes,
+#   no zero byte.
+# - `secret`: the text kept, at most `SECRET_MOST` bytes of UTF-8; may be
+#   empty.
+#
+# Fails as `store` fails. See also `read_text`.
+function store_text(service: str, account: str, secret: str) -> ()?
+    return calls.store(service: service, account: account, secret: bytes.from_text(secret))
+
+# The secret stored under `service` and `account`.
+#
+# - `service`: what the secret belongs to; not empty, at most `NAME_MOST`
+#   bytes, no zero byte.
+# - `account`: whose secret it is; may be empty, at most `NAME_MOST` bytes,
+#   no zero byte.
+#
+# Its bytes as they were stored; empty where an empty secret was. A secret
+# another program stored may be longer than `SECRET_MOST`, and is read whole.
+#
+# Fails `not_found` where none stands, `invalid` where a name is out of its
+# bounds, `permission`, `limit`, `unsupported` and `failed` where the keyring
+# refuses. See also `read_text` and `store`.
+function read(service: str, account: str) -> [u8]?
+    return calls.read(service: service, account: account)
+
+# The secret stored under `service` and `account`, as text.
+#
+# - `service`: what the secret belongs to; not empty, at most `NAME_MOST`
+#   bytes, no zero byte.
+# - `account`: whose secret it is; may be empty, at most `NAME_MOST` bytes,
+#   no zero byte.
+#
+# Fails as `read` fails, and `not_text` where the secret is not UTF-8. See
+# also `store_text`.
+function read_text(service: str, account: str) -> str?
+    secret = calls.read(service: service, account: account)?
+    return bytes.to_text(secret)
+
+# Removes the secret stored under `service` and `account`.
+#
+# - `service`: what the secret belongs to; not empty, at most `NAME_MOST`
+#   bytes, no zero byte.
+# - `account`: whose secret it is; may be empty, at most `NAME_MOST` bytes,
+#   no zero byte.
+#
+# Fails `not_found` where none stood, `invalid` where a name is out of its
+# bounds, `permission`, `unsupported` and `failed` where the keyring refuses.
+# See also `remove_all`.
+function remove(service: str, account: str) -> ()?
+    return calls.remove(service: service, account: account)
+
+## Accounts
+
+# The accounts that hold a secret under `service`.
+#
+# - `service`: the service asked about; not empty, at most `NAME_MOST`
+#   bytes, no zero byte.
+#
+# Ordered by their bytes, each once; empty where none holds one. An account
+# another program stored that is no name this package takes (a zero byte in
+# it, past `NAME_MOST` bytes) is left out.
+#
+# Fails `invalid` where the service is out of its bounds, `permission`,
+# `limit`, `unsupported` and `failed` where the keyring refuses. See also
+# `remove_all`.
+function accounts(service: str) -> [str]?
+    return calls.accounts(service)
+
+# Removes every secret stored under `service`, whatever its account; done also
+# where none stood.
+#
+# - `service`: the service whose secrets go; not empty, at most `NAME_MOST`
+#   bytes, no zero byte.
+#
+# Fails `invalid` where the service is out of its bounds, `permission`,
+# `unsupported` and `failed` where the keyring refuses. See also `remove` and
+# `accounts`.
+function remove_all(service: str) -> ()?
+    return calls.remove_all(service)
+
+test "the face's codes and bounds are the private modules' and the layer's"
+    assert INVALID == "invalid"
+    assert NOT_FOUND == "not_found"
+    assert PERMISSION == "permission"
+    assert LIMIT == "limit"
+    assert UNSUPPORTED == "unsupported"
+    assert NOT_TEXT == "not_text"
+    assert FAILED == "failed"
+    assert NAME_MOST == hero_keyring.HERO_KEYRING_NAME_MOST
+    assert SECRET_MOST == hero_keyring.HERO_KEYRING_SECRET_MOST
+
+test "read_text: a secret that is no UTF-8 is not_text, and an absent one not_found, or the machine's refusal"
+    service = hero_keyring.test_service("face-not-text")
+    stored = store(service: service, account: "a", secret: [255, 254])
+    as_text = read_text(service: service, account: "a")
+    absent = read_text(service: service, account: "nobody")
+    cleared = remove_all(service)
+
+    match stored
+        .ok _ =>
+            assert !cleared.is_err()
+
+            match as_text
+                .ok _  => assert false
+                .err e => assert e.code == NOT_TEXT
+
+            match absent
+                .ok _  => assert false
+                .err e => assert e.code == NOT_FOUND
+        .err e => assert e.code == UNSUPPORTED || e.code == PERMISSION
+
+test "remove: an absent secret is not_found, its message naming the account and the service"
+    service = hero_keyring.test_service("face-absent")
+    removed = remove(service: service, account: "ghost")
+
+    match removed
+        .ok _ => assert false
+        .err e =>
+            assert e.code == NOT_FOUND || e.code == UNSUPPORTED || e.code == PERMISSION
+            assert e.msg.len() > 0
+
+## Examples
+
+# The keyring this machine offers, asked before a program relies on it.
+test "system: the name of this machine's keyring"
+    match system()
+        .ok name => assert name == "macOS Keychain" || name == "Windows Credential Manager" || name == "Secret Service"
+        .err e   => assert e.code == UNSUPPORTED || e.code == PERMISSION
+
+# A token kept for an account, then read back as it was stored.
+test "store: a token kept for an account"
+    service = hero_keyring.test_service("store")
+    stored = store(service: service, account: "alice", secret: [116, 111, 107, 101, 110])
+    back = read(service: service, account: "alice")
+    _ = remove_all(service).is_err()
+
+    match stored
+        .ok _  => assert back.must() == [116, 111, 107, 101, 110]
+        .err e => assert e.code == UNSUPPORTED || e.code == PERMISSION
+
+# A password kept as text, and the next store replacing it.
+test "store_text: a password kept, then replaced"
+    service = hero_keyring.test_service("store-text")
+    first = store_text(service: service, account: "alice", secret: "hunter2")
+    second = store_text(service: service, account: "alice", secret: "correct horse")
+    back = read_text(service: service, account: "alice")
+    _ = remove_all(service).is_err()
+
+    match first
+        .ok _ =>
+            assert !second.is_err()
+            assert back.must() == "correct horse"
+        .err e => assert e.code == UNSUPPORTED || e.code == PERMISSION
+
+# A key of bytes read back, and an account that holds none told apart.
+test "read: a key read back, and an account with none"
+    service = hero_keyring.test_service("read")
+    stored = store(service: service, account: "build", secret: [0, 1, 254, 255])
+    key = read(service: service, account: "build")
+    none = read(service: service, account: "nobody")
+    _ = remove_all(service).is_err()
+
+    match stored
+        .ok _ =>
+            assert key.must() == [0, 1, 254, 255]
+
+            match none
+                .ok _  => assert false
+                .err e => assert e.code == NOT_FOUND
+        .err e => assert e.code == UNSUPPORTED || e.code == PERMISSION
+
+# A password read as text, characters of more than one byte kept.
+test "read_text: a password read as text"
+    service = hero_keyring.test_service("read-text")
+    stored = store_text(service: service, account: "josé", secret: "pässwörd")
+    back = read_text(service: service, account: "josé")
+    _ = remove_all(service).is_err()
+
+    match stored
+        .ok _  => assert back.must() == "pässwörd"
+        .err e => assert e.code == UNSUPPORTED || e.code == PERMISSION
+
+# A secret removed when the account signs out, and gone after.
+test "remove: a secret removed, then not_found"
+    service = hero_keyring.test_service("remove")
+    stored = store_text(service: service, account: "alice", secret: "token")
+    removed = remove(service: service, account: "alice")
+    after = read(service: service, account: "alice")
+    _ = remove_all(service).is_err()
+
+    match stored
+        .ok _ =>
+            assert !removed.is_err()
+
+            match after
+                .ok _  => assert false
+                .err e => assert e.code == NOT_FOUND
+        .err e => assert e.code == UNSUPPORTED || e.code == PERMISSION
+
+# The accounts a service holds secrets for, in order.
+test "accounts: the accounts of a service, ordered"
+    service = hero_keyring.test_service("accounts")
+    stored = store_text(service: service, account: "bob", secret: "b")
+    _ = store_text(service: service, account: "alice", secret: "a").is_err()
+    listed = accounts(service)
+    _ = remove_all(service).is_err()
+
+    match stored
+        .ok _  => assert listed.must() == ["alice", "bob"]
+        .err e => assert e.code == UNSUPPORTED || e.code == PERMISSION
+
+# Every secret of a service removed at once, as an uninstaller does.
+test "remove_all: every secret of a service removed"
+    service = hero_keyring.test_service("remove-all")
+    stored = store_text(service: service, account: "alice", secret: "a")
+    _ = store_text(service: service, account: "bob", secret: "b").is_err()
+    cleared = remove_all(service)
+    left = accounts(service)
+
+    match stored
+        .ok _ =>
+            assert !cleared.is_err()
+            assert left.must().len() == 0
+        .err e => assert e.code == UNSUPPORTED || e.code == PERMISSION

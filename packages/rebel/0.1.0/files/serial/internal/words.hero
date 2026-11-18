@@ -1,0 +1,83 @@
+# How `serial`'s messages name a port's settings: the floor's numbers for a
+# speed, a size of character, a parity, the stops and the flow, said in words
+# a reader of the message can act on.
+
+use serial/hero_serial
+
+# A parity in words, `HERO_SERIAL_PARITY_*`; a number that is none of them is
+# said as itself.
+function parity_word(parity: i64) -> str
+    if parity == hero_serial.HERO_SERIAL_PARITY_NONE
+        return "no parity"
+
+    if parity == hero_serial.HERO_SERIAL_PARITY_ODD
+        return "odd parity"
+
+    if parity == hero_serial.HERO_SERIAL_PARITY_EVEN
+        return "even parity"
+
+    if parity == hero_serial.HERO_SERIAL_PARITY_MARK
+        return "mark parity"
+
+    if parity == hero_serial.HERO_SERIAL_PARITY_SPACE
+        return "space parity"
+    return f"parity {parity}"
+
+# The stop bits in words, `HERO_SERIAL_STOP_*`.
+function stop_word(stop_bits: i64) -> str
+    if stop_bits == hero_serial.HERO_SERIAL_STOP_ONE
+        return "one stop bit"
+
+    if stop_bits == hero_serial.HERO_SERIAL_STOP_TWO
+        return "two stop bits"
+
+    if stop_bits == hero_serial.HERO_SERIAL_STOP_ONE_AND_HALF
+        return "one and a half stop bits"
+    return f"stop bits {stop_bits}"
+
+# The flow control in words, `HERO_SERIAL_FLOW_*` bits, in the bits' order.
+function flow_word(flow: i64) -> str
+    kinds: [str] @= []
+
+    if flow & hero_serial.HERO_SERIAL_FLOW_RTS_CTS != 0
+        kinds @ kinds.push("RTS/CTS")
+
+    if flow & hero_serial.HERO_SERIAL_FLOW_XON_XOFF != 0
+        kinds @ kinds.push("XON/XOFF")
+
+    if flow & hero_serial.HERO_SERIAL_FLOW_DSR_DTR != 0
+        kinds @ kinds.push("DSR/DTR")
+
+    if kinds.len() == 0
+        return "no flow control"
+    return join(kinds, " and ") + " flow control"
+
+# The five settings in words, as a message says them.
+function described(baud: i64, data_bits: i64, parity: i64, stop_bits: i64, flow: i64) -> str
+    return f"{baud} bits a second, {data_bits} data bits, {parity_word(parity)}, {stop_word(stop_bits)}, {flow_word(flow)}"
+
+## Tests
+
+test "parity_word and stop_word: each of the floor's numbers, and one that is none of them"
+    assert parity_word(hero_serial.HERO_SERIAL_PARITY_NONE) == "no parity"
+    assert parity_word(hero_serial.HERO_SERIAL_PARITY_ODD) == "odd parity"
+    assert parity_word(hero_serial.HERO_SERIAL_PARITY_EVEN) == "even parity"
+    assert parity_word(hero_serial.HERO_SERIAL_PARITY_MARK) == "mark parity"
+    assert parity_word(hero_serial.HERO_SERIAL_PARITY_SPACE) == "space parity"
+    assert parity_word(-1) == "parity -1"
+    assert stop_word(hero_serial.HERO_SERIAL_STOP_ONE) == "one stop bit"
+    assert stop_word(hero_serial.HERO_SERIAL_STOP_TWO) == "two stop bits"
+    assert stop_word(hero_serial.HERO_SERIAL_STOP_ONE_AND_HALF) == "one and a half stop bits"
+    assert stop_word(0) == "stop bits 0"
+
+test "flow_word: none, each alone, two and all three, in the bits' order"
+    assert flow_word(0) == "no flow control"
+    assert flow_word(hero_serial.HERO_SERIAL_FLOW_RTS_CTS) == "RTS/CTS flow control"
+    assert flow_word(hero_serial.HERO_SERIAL_FLOW_XON_XOFF) == "XON/XOFF flow control"
+    assert flow_word(hero_serial.HERO_SERIAL_FLOW_DSR_DTR) == "DSR/DTR flow control"
+    assert flow_word(hero_serial.HERO_SERIAL_FLOW_RTS_CTS | hero_serial.HERO_SERIAL_FLOW_XON_XOFF) == "RTS/CTS and XON/XOFF flow control"
+    assert flow_word(7) == "RTS/CTS and XON/XOFF and DSR/DTR flow control"
+
+test "described: the usual 9600 8N1 and the largest speed"
+    assert described(baud: 9600, data_bits: 8, parity: 0, stop_bits: 1, flow: 0) == "9600 bits a second, 8 data bits, no parity, one stop bit, no flow control"
+    assert described(baud: 2147483647, data_bits: 5, parity: 2, stop_bits: 2, flow: 1) == "2147483647 bits a second, 5 data bits, even parity, two stop bits, RTS/CTS flow control"

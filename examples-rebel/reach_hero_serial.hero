@@ -1,0 +1,14 @@
+# Reaches Rebel's floor over the platform layer's serial ports,
+# `hero_serial.h`, so that `heroes test` on this file runs the floor's own
+# tests (spec § 12, § 13). It opens a path that is empty and prints the kind
+# the floor answers: 1, `HERO_SERIAL_INVALID`.
+
+use <rebel>/io/hero_stream
+use <rebel>/serial/hero_serial
+
+function main()
+    p @= hero_serial.open("")
+
+    if p != nullptr
+        _ = hero_stream.close(@p)
+    print(hero_serial.last_error())

@@ -1,0 +1,40 @@
+# Reaches Rebel's `sql/odbc`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). Where this machine has a driver manager
+# and SQLite's ODBC driver, it opens a database in memory, makes a table,
+# inserts two rows with their values as parameters, prints them back in order
+# and closes the connection; elsewhere it prints why it could not.
+
+use <rebel>/sql
+use <rebel>/sql/odbc
+
+function main()
+    match odbc.open(odbc.options("Driver={SQLite3};Database=:memory:"))
+        .err e => print(e.code, ": ", e.msg)
+        .ok first =>
+            db @= first
+            print(shown(@db))
+            print(odbc.close(@db).is_err())
+
+# The two rows the program writes and reads back, one per line, or the
+# failure that stopped it.
+function shown(@db: odbc.Db) -> str
+    made = odbc.exec_script(@db, "CREATE TABLE singer(id INTEGER PRIMARY KEY, name TEXT NOT NULL)")
+
+    if made.is_err()
+        return "no table"
+    lines: [str] @= []
+
+    for name in ["Ziggy", "Aladdin"]
+        match odbc.exec(@db, "INSERT INTO singer(name) VALUES (?)", [.text(v: name)])
+            .err e => return e.msg
+            .ok _  => _ = 0
+
+    match odbc.query(@db, "SELECT id, name FROM singer ORDER BY id", [])
+        .err e => return e.msg
+        .ok rows =>
+            for row in rows.rows
+                lines @ lines.push(
+                    sql.integer_named(row, "id").default(0).to_str() + " " + sql.text_named(row, "name").default("?")
+                )
+
+    return lines.join("\n")

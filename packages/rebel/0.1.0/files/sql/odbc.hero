@@ -1,0 +1,1930 @@
+# Any database the system's ODBC driver manager reaches, through the API
+# every driver of Rebel keeps over `sql`'s types, name for name, as
+# `sql/postgres`'s opening comment writes it: `open`, `close`, `exec`,
+# `query`, `query_one`, `exec_script`, `prepare`, `exec_prepared`,
+# `query_prepared`, `close_statement`, `begin`, `commit`, `rollback`. Only
+# `open`'s argument is this driver's own: a connection string, or a data
+# source by its name.
+#
+# **The driver manager is the system's**, loaded when a program first asks
+# for it and never linked: `odbc32.dll` on Windows, which every Windows
+# carries; unixODBC's `libodbc`, else iODBC's `libiodbc`, on Linux and macOS,
+# which a program's machine must have installed, with the driver of its
+# database (`unixodbc` and `libsqliteodbc` on Debian, for SQLite). Where
+# none is installed every call fails `unsupported`, and `manager` says which
+# libraries were tried. A driver's own behaviour, its SQL, its placeholders'
+# reach and its types, is the driver's: this package hands it statements and
+# values and reads what it answers.
+#
+# It does not run a statement apart from the thread that waits for it,
+# cancel a statement from another thread, copy rows in bulk, bind a
+# procedure's output parameters, scroll a cursor, or read a cell piece by
+# piece; the ledger says why of each. Connection pooling is the manager's,
+# set in its own configuration.
+#
+# ## How a value travels
+#
+# A value never enters the text of a statement: ODBC's placeholder is `?`,
+# and the list `params` gives the values of the `?`s in their order. A
+# parameter goes as its case says: an `integer` as `SQL_BIGINT`; a `float`
+# as `SQL_DOUBLE`; a `boolean` as `SQL_BIT`; a `text` as `SQL_VARCHAR`, past
+# 4,000 characters `SQL_LONGVARCHAR` (the wide kinds on Windows, where text
+# crosses as UTF-16); a `blob` as `SQL_VARBINARY`, past 8,000 bytes
+# `SQL_LONGVARBINARY`; an `instant` as `SQL_TYPE_TIMESTAMP` in UTC, with as
+# many fraction digits as its nanoseconds need, 0, 3, 6 or 9; and
+# `null_value` as a `NULL` of `SQL_VARCHAR`. Each driver converts them to its
+# database's types as its documentation says.
+#
+# A column comes back by the SQL type its driver describes it with: `SQL_BIT`
+# as a `boolean`; `SQL_TINYINT`, `SQL_SMALLINT`, `SQL_INTEGER` and
+# `SQL_BIGINT` as an `integer` (one past an `i64` fails `does_not_fit`);
+# `SQL_REAL`, `SQL_FLOAT` and `SQL_DOUBLE` as a `float`; `SQL_BINARY`,
+# `SQL_VARBINARY` and `SQL_LONGVARBINARY` as a `blob`; `SQL_TYPE_TIMESTAMP`
+# as an `instant` read in UTC, and `SQL_TYPE_DATE` as the `instant` of its
+# midnight in UTC, where `time.Instant` holds the moment (years 1678 to
+# 2261), else as its text, `2999-12-31 00:00:00`; and every other type,
+# `SQL_DECIMAL` and `SQL_NUMERIC` with every digit, a time of day, a GUID,
+# an interval and a type of the driver's own, as the text the driver writes
+# for it. `NULL` is `null_value` whatever the type. A text that is not UTF-8
+# fails the read `invalid`.
+#
+# ## Failures
+#
+# Each call fails with `sql`'s codes. A failure the driver manager or the
+# driver reports keeps its SQLSTATE and its words in the message, then the
+# driver's native error where it gave one, `[HY000] [SQLite]no such table:
+# nope (1) (native error 1)`, and `sql.database_code_of` reads the SQLSTATE
+# back. The SQLSTATE chooses the code, ODBC's own states and the server's
+# that a driver hands on alike: `exists` for a unique key or a name taken
+# (23505, 42S01, 42S11, 42S21, 42P07, ...); `not_found` for a table, a
+# column, an index, a function, a database or a data source unknown (42S02,
+# 42S12, 42S22, IM002, 42P01, 42703, 3D000, ...); `permission` for a login or
+# a privilege refused (class 28, 42501); `does_not_fit` for a value past its
+# type (22003, 22001, 22008, 22015); `timeout` for HYT00 and HYT01, a query's
+# or a connection's time run out; `stopped` for a statement cancelled
+# (HY008, 57014); `limit` for memory or handles exhausted (HY001, HY013,
+# HY014, classes 53 and 54); `unsupported` for a feature the driver lacks
+# (HYC00, IM001, class 0A); `closed` for a link lost (class 08 but 08P01,
+# 57P01 to 57P03); `invalid` for the rest of classes 07, 21, 22, 23, 24, 25,
+# 34 and 42, and for a function of ODBC's misused (HY009, HY024, HY090,
+# HY092); and `failed` for every other, a general error (HY000), a deadlock
+# (40001, 40P01) and a driver that would not load (IM003) among them. Many
+# drivers report most failures as HY000, a general error: SQLite's does, so
+# with it a unique key broken is `failed`, its words saying which. A call on
+# a connection `close` ended fails `closed`.
+
+use sql
+use sql/odbc/hero_odbc
+use sql/odbc/internal/connection_text
+use sql/odbc/internal/failure
+use sql/odbc/internal/fill
+use sql/odbc/internal/fixture
+use sql/odbc/internal/running
+use sql/odbc/internal/splitting
+use sql/odbc/internal/values
+use time
+
+## Connecting
+
+# How long `open` waits to log in unless `Options` says another, in
+# seconds: fifteen, .NET's `OdbcConnection`'s default.
+constant DEFAULT_LOGIN_TIMEOUT_SECONDS: i64
+    15
+
+# What names the database a connection is made to.
+variant Target
+    # A connection string, `Driver={SQLite3};Database=shop.db` or
+    # `DSN=shop;UID=ana;PWD=s3cret`, handed to the manager whole
+    # (`SQLDriverConnect`), which never asks a person for what is missing.
+    connection_string
+        # The string, `key=value` pairs separated by `;`, as
+        # `format_connection` writes one.
+        text: str
+    # A data source the manager knows by its name (`SQLConnect`).
+    data_source
+        # The data source's name, as `data_sources` lists it.
+        name: str
+        # The user who logs in, "" for the data source's own.
+        user: str
+        # The user's password, "" for the data source's own.
+        password: str
+
+# Where a database is and how long to wait for it. `options` and
+# `dsn_options` make one; a program changes the fields it needs with `@`.
+record Options
+    # What names the database.
+    target: Target
+    # How long to wait to log in, in seconds; 0 waits as long as the driver
+    # does.
+    login_timeout_seconds: i64
+    # How long a statement runs before the driver stops it, in seconds,
+    # failing `timeout`; 0 for no limit.
+    query_timeout_seconds: i64
+
+# The options of a connection made from the connection string `connection`,
+# waiting `DEFAULT_LOGIN_TIMEOUT_SECONDS` to log in and with no limit on a
+# statement.
+#
+# - `connection`: the connection string, `key=value` pairs separated by `;`;
+#   a value holding `;`, `{` or `}` is written inside braces, as
+#   `format_connection` writes it.
+#
+# See also `dsn_options`, `open`, `format_connection`.
+function options(connection: str) -> Options
+    return Options(
+        target: .connection_string(text: connection),
+        login_timeout_seconds: DEFAULT_LOGIN_TIMEOUT_SECONDS,
+        query_timeout_seconds: 0
+    )
+
+# The options of a connection to the data source `dsn`, as `options` sets
+# the rest.
+#
+# - `dsn`: the data source's name, as the manager's configuration names it.
+# - `user`: who logs in, "" for the data source's own.
+# - `password`: the user's password, "" for the data source's own.
+#
+# See also `options`, `data_sources`.
+function dsn_options(dsn: str, user: str, password: str) -> Options
+    return Options(
+        target: .data_source(name: dsn, user: user, password: password),
+        login_timeout_seconds: DEFAULT_LOGIN_TIMEOUT_SECONDS,
+        query_timeout_seconds: 0
+    )
+
+# A connection to the database `opts` names, ready for a statement, each
+# statement committed on its own until `begin`.
+#
+# - `opts`: what names the database and how long to wait.
+#
+# The program owes the connection a `close`.
+#
+# Fails `invalid` where the connection string, the data source's name, the
+# user or the password holds a zero byte, or a timeout is below 0 or past
+# 4,294,967,295; `unsupported` where no driver manager is installed;
+# `not_found` where the manager knows no such driver or data source
+# (IM002); `timeout` where the login took longer than allowed; and as the
+# driver reports its own refusal (the module's comment), a password refused
+# `permission` where the driver says 28000. See also `close`, `options`.
+function open(opts: Options) -> Db?
+    if opts.login_timeout_seconds < 0 || opts.login_timeout_seconds > 4294967295
+        return fail(
+            code: sql.INVALID,
+            msg: f"a login timeout of {opts.login_timeout_seconds} seconds is outside 0 to 4294967295"
+        )
+
+    if opts.query_timeout_seconds < 0 || opts.query_timeout_seconds > 4294967295
+        return fail(
+            code: sql.INVALID,
+            msg: f"a query timeout of {opts.query_timeout_seconds} seconds is outside 0 to 4294967295"
+        )
+
+    match opts.target
+        .connection_string t =>
+            if !values.zero_at(t.text).is_err()
+                return fail(code: sql.INVALID, msg: "the connection string holds a zero byte")
+            c = hero_odbc.connect(t.text, login_seconds: opts.login_timeout_seconds)
+
+            if c == nullptr
+                return failure.last()
+            return ok(
+                Db(connection: c, name: connection_text.hidden(t.text), transaction_open: false, query_timeout_seconds: opts.query_timeout_seconds, prepared: 0)
+            )
+        .data_source d =>
+            if !values.zero_at(d.name).is_err() || !values.zero_at(d.user).is_err() || !values.zero_at(d.password).is_err()
+                return fail(
+                    code: sql.INVALID,
+                    msg: "the data source's name, the user or the password holds a zero byte"
+                )
+            c = hero_odbc.connect_dsn(
+                dsn: d.name,
+                user: d.user,
+                password: d.password,
+                login_seconds: opts.login_timeout_seconds
+            )
+
+            if c == nullptr
+                return failure.last()
+            return ok(
+                Db(connection: c, name: d.name, transaction_open: false, query_timeout_seconds: opts.query_timeout_seconds, prepared: 0)
+            )
+
+# Ends the connection: a transaction still open is rolled back and the
+# connection is given back; the place is emptied, so every later call
+# through it fails `closed`.
+#
+# - `db`: the connection, emptied.
+#
+# Fails `closed` where it is closed already, and `invalid` where a statement
+# `prepare` made on it is not closed yet: the connection then stays open
+# and usable until each is closed. A driver that refuses to disconnect fails
+# as it reports, and the connection is ended all the same. See also `open`,
+# `close_statement`, `is_closed`.
+function close(@db: Db) -> ()?
+    running.live(db.connection, name: db.name)?
+
+    if db.prepared > 0
+        return fail(
+            code: sql.INVALID,
+            msg: f"{db.prepared} statement(s) `prepare` made on \"{db.name}\" are not closed: `close_statement` each, then `close`"
+        )
+    rc = hero_odbc.disconnect(@db.connection)
+    db.connection @ nullptr
+    db.transaction_open @ false
+
+    if rc < 0
+        return failure.last()
+    return ok()
+
+# Whether `close` has ended `db`.
+#
+# - `db`: the connection asked about.
+#
+# See also `close`.
+function is_closed(db: Db) -> bool
+    return db.connection == nullptr
+
+# Answers whether the connection still works, as its driver knows without a
+# statement (`SQL_ATTR_CONNECTION_DEAD`).
+#
+# - `db`: the connection.
+#
+# A driver that cannot tell answers nothing, and the connection counts as
+# working. Fails `closed` where the connection is closed or its driver knows
+# it lost the database. See also `open`.
+function ping(db: Db) -> ()?
+    running.live(db.connection, name: db.name)?
+    dead: i64 @= 0
+
+    if hero_odbc.attribute(db.connection, which: hero_odbc.HERO_ODBC_ATTR_DEAD, value: @dead) < 0
+        state = failure.last_state()
+
+        if state == "HYC00" || state == "HY092" || state == "HY024" || state == "IM001"
+            return ok()
+        return failure.last()
+
+    if dead == 1
+        return fail(code: sql.CLOSED, msg: f"the connection to \"{db.name}\" is lost, as its driver says")
+    return ok()
+
+## The connection
+
+# A connection to a data source, which `open` makes and `close` ends. Every
+# call that runs a statement works on the caller's own place, through `@`. A
+# program keeps one place per connection; a copy made before `close` reaches
+# a connection that is ended, and using it aborts.
+record Db
+    # The manager's connection, which `close` gives back; `nullptr` once it
+    # has.
+    connection: hero_odbc.Connection
+    # What messages call the connection: the data source's name, or the
+    # connection string with every password written `***`.
+    name: str
+    # Whether `begin` opened a transaction that `commit` or `rollback` has
+    # not ended.
+    transaction_open: bool
+    # How long a statement runs before the driver stops it, in seconds, 0 for
+    # no limit.
+    query_timeout_seconds: i64
+    # How many statements `prepare` made on it that `close_statement` has not
+    # ended; `close` refuses while one is.
+    prepared: i64
+
+# Whether a transaction `begin` opened is open on `db`.
+#
+# - `db`: the connection asked about; a closed one has none.
+#
+# See also `begin`.
+function in_transaction(db: Db) -> bool
+    return db.connection != nullptr && db.transaction_open
+
+# Sets how long each later statement on `db` runs before its driver stops
+# it, failing `timeout`.
+#
+# - `db`: the connection.
+# - `seconds`: from 0, no limit, to 4,294,967,295.
+#
+# A driver that has no such limit fails the next statement `unsupported`.
+# Fails `invalid` where `seconds` is outside its range, and `closed` where
+# the connection is closed. See also `Options`.
+function set_query_timeout(@db: Db, seconds: i64) -> ()?
+    running.live(db.connection, name: db.name)?
+
+    if seconds < 0 || seconds > 4294967295
+        return fail(code: sql.INVALID, msg: f"a query timeout of {seconds} seconds is outside 0 to 4294967295")
+    db.query_timeout_seconds @ seconds
+    return ok()
+
+# How far the transactions of a connection are kept from each other's
+# changes, SQL's four levels.
+variant Isolation
+    # A transaction may read what another has not committed.
+    read_uncommitted
+    # A transaction reads only what others committed.
+    read_committed
+    # A row a transaction read reads the same until it ends.
+    repeatable_read
+    # Transactions behave as if they ran one after another.
+    serializable
+
+# Sets the isolation of `db`'s later transactions.
+#
+# - `db`: the connection; no transaction may be open on it.
+# - `level`: the isolation asked for.
+#
+# Fails `invalid` where a transaction is open, `closed` where the connection
+# is closed, and as the driver reports where it refuses the level,
+# `unsupported` where it says HYC00. See also `isolation_of`, `begin`.
+function set_isolation(db: Db, level: Isolation) -> ()?
+    running.live(db.connection, name: db.name)?
+
+    if db.transaction_open
+        return fail(
+            code: sql.INVALID,
+            msg: f"a transaction is open on \"{db.name}\": the isolation is set before `begin`"
+        )
+
+    number = match level
+        .read_uncommitted => hero_odbc.HERO_ODBC_READ_UNCOMMITTED
+        .read_committed   => hero_odbc.HERO_ODBC_READ_COMMITTED
+        .repeatable_read  => hero_odbc.HERO_ODBC_REPEATABLE_READ
+        .serializable     => hero_odbc.HERO_ODBC_SERIALIZABLE
+
+    if hero_odbc.set_attribute(db.connection, which: hero_odbc.HERO_ODBC_ATTR_ISOLATION, value: number) < 0
+        return failure.last()
+    return ok()
+
+# The isolation of `db`'s transactions, as its driver reports it.
+#
+# - `db`: the connection.
+#
+# Fails `closed` where the connection is closed, `unsupported` where the
+# driver answers a level of none of the four, and as the driver reports.
+# See also `set_isolation`.
+function isolation_of(db: Db) -> Isolation?
+    running.live(db.connection, name: db.name)?
+    number: i64 @= 0
+
+    if hero_odbc.attribute(db.connection, which: hero_odbc.HERO_ODBC_ATTR_ISOLATION, value: @number) < 0
+        return failure.last()
+
+    if number == hero_odbc.HERO_ODBC_READ_UNCOMMITTED
+        return ok(.read_uncommitted)
+
+    if number == hero_odbc.HERO_ODBC_READ_COMMITTED
+        return ok(.read_committed)
+
+    if number == hero_odbc.HERO_ODBC_REPEATABLE_READ
+        return ok(.repeatable_read)
+
+    if number == hero_odbc.HERO_ODBC_SERIALIZABLE
+        return ok(.serializable)
+    return fail(code: sql.UNSUPPORTED, msg: f"the driver answers an isolation of {number}, none of SQL's four")
+
+# Tells `db`'s driver whether the program only reads through it, so that
+# it may read faster or refuse a change (`SQL_ATTR_ACCESS_MODE`).
+#
+# - `db`: the connection.
+# - `read_only`: true to read only, false to read and write.
+#
+# Many drivers take the hint and refuse nothing. Fails `closed` where the
+# connection is closed, and as the driver reports. See also `info_of`.
+function set_read_only(db: Db, read_only: bool) -> ()?
+    running.live(db.connection, name: db.name)?
+
+    value: i64 = if read_only
+        1
+    else
+        0
+
+    if hero_odbc.set_attribute(db.connection, which: hero_odbc.HERO_ODBC_ATTR_READ_ONLY, value: value) < 0
+        return failure.last()
+    return ok()
+
+# What a connection's driver says of its database and itself, as
+# `SQLGetInfo` answers; each text is "" where the driver says nothing.
+record Info
+    # The database's product, `SQLite` or `PostgreSQL`.
+    dbms_name: str
+    # The database's version, as the driver writes it, `3.46.1`.
+    dbms_version: str
+    # The driver's file, `sqlite3odbc.so`.
+    driver_name: str
+    # The driver's version, as it writes it.
+    driver_version: str
+    # The version of ODBC the driver speaks, `03.00`.
+    odbc_version: str
+    # The version of the driver manager, as it writes it.
+    manager_version: str
+    # The data source's name, "" for a connection string that named none.
+    data_source: str
+    # The database the connection works in.
+    database: str
+    # The server's name, where the database has one.
+    server: str
+    # The user the connection logged in as.
+    user: str
+    # The character that quotes an identifier in the database's SQL, `"`
+    # mostly and a backtick for MySQL; "" where it quotes none.
+    identifier_quote: str
+    # The character that escapes `%` and `_` in a catalog's pattern.
+    search_escape: str
+    # The words the database keeps for itself beyond ODBC's own, in its
+    # spelling.
+    keywords: [str]
+    # Whether one statement may answer several results.
+    multiple_results: bool
+    # Whether the data source can only be read.
+    read_only: bool
+
+# What `db`'s driver says of its database and itself.
+#
+# - `db`: the connection.
+#
+# Fails `closed` where the connection is closed. An item the driver does not
+# answer is "" or false, never a failure. See also `Info`.
+function info_of(db: Db) -> Info?
+    running.live(db.connection, name: db.name)?
+    c = db.connection
+    return ok(
+        Info(dbms_name: fill.info_text(c, which: hero_odbc.HERO_ODBC_INFO_DBMS_NAME).default(""), dbms_version: fill.info_text(c, which: hero_odbc.HERO_ODBC_INFO_DBMS_VERSION).default(""), driver_name: fill.info_text(c, which: hero_odbc.HERO_ODBC_INFO_DRIVER_NAME).default(""), driver_version: fill.info_text(c, which: hero_odbc.HERO_ODBC_INFO_DRIVER_VERSION).default(""), odbc_version: fill.info_text(c, which: hero_odbc.HERO_ODBC_INFO_DRIVER_ODBC_VERSION).default(""), manager_version: fill.info_text(c, which: hero_odbc.HERO_ODBC_INFO_MANAGER_VERSION).default(""), data_source: fill.info_text(c, which: hero_odbc.HERO_ODBC_INFO_DATA_SOURCE_NAME).default(""), database: fill.info_text(c, which: hero_odbc.HERO_ODBC_INFO_DATABASE_NAME).default(""), server: fill.info_text(c, which: hero_odbc.HERO_ODBC_INFO_SERVER_NAME).default(""), user: fill.info_text(c, which: hero_odbc.HERO_ODBC_INFO_USER_NAME).default(""), identifier_quote: fill.info_text(c, which: hero_odbc.HERO_ODBC_INFO_IDENTIFIER_QUOTE).default(""), search_escape: fill.info_text(c, which: hero_odbc.HERO_ODBC_INFO_SEARCH_ESCAPE).default(""), keywords: fill.info_list(c, which: hero_odbc.HERO_ODBC_INFO_KEYWORDS), multiple_results: fill.info_text(c, which: hero_odbc.HERO_ODBC_INFO_MULTIPLE_RESULTS).default("") == "Y", read_only: fill.info_text(c, which: hero_odbc.HERO_ODBC_INFO_READ_ONLY).default("") == "Y")
+    )
+
+## Running a statement
+
+# Runs `statement`, one statement that answers no rows, with `params` bound
+# to its placeholders, and answers how many rows it changed.
+#
+# - `db`: the connection.
+# - `statement`: one statement of SQL, its values written as `?`; a
+#   statement after it, a comment aside, is refused.
+# - `params`: the placeholders' values in order, `[]` for none.
+#
+# A statement that answers rows may run here too: its rows are read and
+# dropped, and `rows_affected` counts them. `rows_affected` is 0 for a
+# statement that changes no row, a `CREATE TABLE` among them, and where the
+# driver does not say. `last_id` fails `unsupported`: ODBC keeps no last id,
+# and a database answers one by `RETURNING` or a function of its own.
+#
+# Fails with the driver's failure (the module's comment), `invalid` where
+# `statement` is empty, holds a zero byte or more than one statement, or
+# where `params` holds more or fewer values than its placeholders, and
+# `closed` where the connection is closed. See also `query`,
+# `exec_prepared`, `exec_script`.
+function exec(@db: Db, statement: str, params: [sql.Value]) -> sql.Result?
+    running.live(db.connection, name: db.name)?
+    text = splitting.one_statement(statement)?
+    answer = running.exec_on(db.connection, timeout_seconds: db.query_timeout_seconds, text: text, params: params)
+    db.transaction_open @ running.manual(db.connection, before: db.transaction_open)
+    return answer
+
+# Runs `statement` with `params` bound to its placeholders, and answers its
+# columns and every row it answered.
+#
+# - `db`: the connection.
+# - `statement`: one statement of SQL, its values written as `?`.
+# - `params`: the placeholders' values in order, `[]` for none.
+#
+# Every row is read before it answers, so a statement answering a million
+# rows holds a million in memory. Each column's `type_name` is the
+# database's own name for its type, as the driver gives it.
+#
+# Fails as `exec` does, and `invalid` where a text is not UTF-8. See also
+# `query_one`, `query_prepared`, `query_sets`.
+function query(@db: Db, statement: str, params: [sql.Value]) -> sql.Rows?
+    running.live(db.connection, name: db.name)?
+    text = splitting.one_statement(statement)?
+    answer = running.query_on(db.connection, timeout_seconds: db.query_timeout_seconds, text: text, params: params)
+    db.transaction_open @ running.manual(db.connection, before: db.transaction_open)
+    return answer
+
+# The first row `statement` answers, with `params` bound to its
+# placeholders.
+#
+# - `db`: the connection.
+# - `statement`: one statement of SQL, its values written as `?`.
+# - `params`: the placeholders' values in order, `[]` for none.
+#
+# The rows after the first are dropped unread.
+#
+# Fails `not_found` where the statement answers no row, and as `query` does.
+# See also `query`.
+function query_one(@db: Db, statement: str, params: [sql.Value]) -> sql.Row?
+    running.live(db.connection, name: db.name)?
+    text = splitting.one_statement(statement)?
+    answer = running.query_one_on(db.connection, timeout_seconds: db.query_timeout_seconds, text: text, params: params)
+    db.transaction_open @ running.manual(db.connection, before: db.transaction_open)
+    return answer
+
+# Every result `statement` answers, in order: a procedure or a batch the
+# driver runs whole may answer several.
+#
+# - `db`: the connection.
+# - `statement`: SQL the driver runs as one call, its values written as
+#   `?`; it is not cut into statements here.
+# - `params`: the placeholders' values in order, `[]` for none.
+#
+# A result that answers no rows, an `INSERT` in the batch, comes as a
+# `sql.Rows` of no columns. A driver that runs one statement a call refuses
+# a second, as SQLite's does.
+#
+# Fails as `query` does, with the failure of the first result that fails.
+# See also `query`.
+function query_sets(@db: Db, statement: str, params: [sql.Value]) -> [sql.Rows]?
+    running.live(db.connection, name: db.name)?
+
+    match values.zero_at(statement)
+        .ok at => return fail(code: sql.INVALID, msg: f"the statement holds a zero byte at byte {at}")
+        .err _ => _ = 0
+
+    answer = running.sets_on(db.connection, timeout_seconds: db.query_timeout_seconds, text: statement, params: params)
+    db.transaction_open @ running.manual(db.connection, before: db.transaction_open)
+    return answer
+
+# Runs every statement of `script`, in order and with no parameters, as a
+# migration does; their rows are dropped.
+#
+# - `db`: the connection.
+# - `script`: statements of SQL separated by `;`; "" runs nothing.
+#
+# The script is cut at each `;` outside a quote (`'...'`, `"..."`,
+# `[...]`, a backtick's and PostgreSQL's `$tag$...$tag$`), a comment
+# (`--` to the line's end, `/* ... */`), and the `BEGIN` ... `END` body of a
+# `CREATE TRIGGER`, `PROCEDURE` or `FUNCTION`, and each statement is handed
+# to the driver alone, since many drivers run one statement a call. A
+# statement that fails leaves the ones before it done, unless a transaction
+# `begin` opened is rolled back.
+#
+# Fails with the first failure, as `exec` does, and `invalid` where `script`
+# holds a zero byte. See also `exec`, `split_script`.
+function exec_script(@db: Db, script: str) -> ()?
+    running.live(db.connection, name: db.name)?
+
+    match values.zero_at(script)
+        .ok at => return fail(code: sql.INVALID, msg: f"the script holds a zero byte at byte {at}")
+        .err _ => _ = 0
+
+    answer = running.script_on(
+        db.connection,
+        timeout_seconds: db.query_timeout_seconds,
+        pieces: splitting.statements(script)
+    )
+    db.transaction_open @ running.manual(db.connection, before: db.transaction_open)
+    return answer
+
+# The statements of `script`, cut as `exec_script` cuts it, each without its
+# `;` and the blanks around it, a comment before it kept as part of it; a
+# piece holding nothing but blanks and comments is left out.
+#
+# - `script`: statements of SQL separated by `;`.
+#
+# An unended quote or comment runs to the end of the script, which is the
+# last statement. See also `exec_script`.
+function split_script(script: str) -> [str]
+    return splitting.statements(script)
+
+## Prepared statements
+
+# A statement its driver has read once, which `prepare` makes and
+# `close_statement` ends. It belongs to the connection that prepared it.
+record Statement
+    # The manager's statement, which `close_statement` gives back; `nullptr`
+    # once it has.
+    handle: hero_odbc.Statement
+    # The statement's text, as it was prepared.
+    text: str
+    # How many values it takes, as its driver counts its placeholders.
+    parameter_count: i64
+    # The columns it answers, as its driver describes them before it runs;
+    # none for a statement that answers no rows.
+    columns: [sql.Column]
+
+# `statement` read by its driver once, to be run many times with
+# `exec_prepared` and `query_prepared`.
+#
+# - `db`: the connection, which the statement belongs to.
+# - `statement`: one statement of SQL, its values written as `?`.
+#
+# The program owes the statement a `close_statement`, and `close` refuses
+# while it is owed. A driver that reads a statement only when it runs it
+# fails a mistake in it at the first run instead.
+#
+# Fails as `exec` does where the driver refuses the statement. See also
+# `exec_prepared`, `close_statement`.
+function prepare(@db: Db, statement: str) -> Statement?
+    running.live(db.connection, name: db.name)?
+    text = splitting.one_statement(statement)?
+    s @= running.opened(db.connection, timeout_seconds: db.query_timeout_seconds)?
+
+    if hero_odbc.prepare(s, text) < 0
+        refused: Statement? = failure.last()
+        _ = hero_odbc.statement_close(@s)
+        return refused
+    count = hero_odbc.parameter_count(s)
+
+    if count < 0
+        refused: Statement? = failure.last()
+        _ = hero_odbc.statement_close(@s)
+        return refused
+
+    columns_seen: [sql.Column] = match running.described(s)
+        .ok d  => d.columns
+        .err _ => []
+
+    db.prepared @ db.prepared + 1
+    return ok(Statement(handle: s, text: text, parameter_count: count, columns: columns_seen))
+
+# Runs `prepared` with `params` bound to its placeholders, as `exec` runs a
+# statement.
+#
+# - `db`: the connection that prepared it.
+# - `prepared`: the statement, from `prepare` on this connection.
+# - `params`: the placeholders' values in order, as many as `prepared`'s
+#   `parameter_count`.
+#
+# Fails `invalid` where `params` holds more or fewer values than the
+# statement's placeholders or `prepared` belongs to another connection,
+# `closed` where `close_statement` ended it, and as `exec` does. See also
+# `query_prepared`.
+function exec_prepared(@db: Db, prepared: Statement, params: [sql.Value]) -> sql.Result?
+    running.usable(db.connection, name: db.name, s: prepared.handle, text: prepared.text)?
+    answer = running.result_prepared(prepared.handle, params: params, expected: prepared.parameter_count)
+    db.transaction_open @ running.manual(db.connection, before: db.transaction_open)
+    return answer
+
+# Runs `prepared` with `params` bound to its placeholders, and answers its
+# rows, as `query` does.
+#
+# - `db`: the connection that prepared it.
+# - `prepared`: the statement, from `prepare` on this connection.
+# - `params`: the placeholders' values in order, as many as `prepared`'s
+#   `parameter_count`.
+#
+# Fails as `exec_prepared` does. See also `exec_prepared`.
+function query_prepared(@db: Db, prepared: Statement, params: [sql.Value]) -> sql.Rows?
+    running.usable(db.connection, name: db.name, s: prepared.handle, text: prepared.text)?
+    answer = running.rows_prepared(prepared.handle, params: params, expected: prepared.parameter_count)
+    db.transaction_open @ running.manual(db.connection, before: db.transaction_open)
+    return answer
+
+# Gives `prepared` back and empties it, so every later run of it fails
+# `closed`.
+#
+# - `db`: the connection that prepared it.
+# - `prepared`: the statement, emptied.
+#
+# Fails `closed` where it was ended already or the connection is closed, and
+# `invalid` where it belongs to another connection. See also `prepare`.
+function close_statement(@db: Db, @prepared: Statement) -> ()?
+    running.usable(db.connection, name: db.name, s: prepared.handle, text: prepared.text)?
+    _ = hero_odbc.statement_close(@prepared.handle)
+    prepared.handle @ nullptr
+    db.prepared @ db.prepared - 1
+    return ok()
+
+## Transactions
+
+# Opens a transaction: the statements after it commit together at `commit`,
+# or none of them does, at `rollback`. ODBC opens it by turning the
+# connection's autocommit off; a transaction begun by a `BEGIN` statement
+# instead is the driver's to keep, and many drivers lose it.
+#
+# - `db`: the connection.
+#
+# Fails `invalid` where a transaction is open already, `closed` where the
+# connection is closed, and as the driver reports, `unsupported` where its
+# database keeps no transactions. See also `commit`, `rollback`,
+# `in_transaction`.
+function begin(@db: Db) -> ()?
+    running.live(db.connection, name: db.name)?
+
+    if db.transaction_open
+        return fail(code: sql.INVALID, msg: f"a transaction is open already on \"{db.name}\"")
+
+    if hero_odbc.set_attribute(db.connection, which: hero_odbc.HERO_ODBC_ATTR_AUTOCOMMIT, value: 0) < 0
+        return failure.last()
+    db.transaction_open @ true
+    return ok()
+
+# Commits the open transaction: every statement since `begin` takes effect,
+# and each statement after it commits on its own again.
+#
+# - `db`: the connection.
+#
+# Fails `invalid` where no transaction is open, and as the driver reports
+# where it refuses the commit: the transaction then stays open, and a later
+# `commit` may succeed or `rollback` end it. See also `begin`, `rollback`.
+function commit(@db: Db) -> ()?
+    running.live(db.connection, name: db.name)?
+
+    if !db.transaction_open
+        return fail(code: sql.INVALID, msg: f"no transaction is open on \"{db.name}\" to commit")
+
+    if hero_odbc.end_transaction(db.connection, commit: 1) < 0
+        return failure.last()
+
+    if hero_odbc.set_attribute(db.connection, which: hero_odbc.HERO_ODBC_ATTR_AUTOCOMMIT, value: 1) < 0
+        return failure.last()
+    db.transaction_open @ false
+    return ok()
+
+# Rolls the open transaction back: no statement since `begin` takes effect.
+#
+# - `db`: the connection.
+#
+# Fails `invalid` where no transaction is open, and as the driver reports.
+# See also `begin`, `commit`.
+function rollback(@db: Db) -> ()?
+    running.live(db.connection, name: db.name)?
+
+    if !db.transaction_open
+        return fail(code: sql.INVALID, msg: f"no transaction is open on \"{db.name}\" to roll back")
+
+    if hero_odbc.end_transaction(db.connection, commit: 0) < 0
+        return failure.last()
+
+    if hero_odbc.set_attribute(db.connection, which: hero_odbc.HERO_ODBC_ATTR_AUTOCOMMIT, value: 1) < 0
+        return failure.last()
+    db.transaction_open @ false
+    return ok()
+
+## The catalog
+
+# The tables the database holds, as ODBC's catalog answers them
+# (`SQLTables`): the columns `TABLE_CAT`, `TABLE_SCHEM`, `TABLE_NAME`,
+# `TABLE_TYPE` and `REMARKS`, in the driver's order.
+#
+# - `db`: the connection.
+# - `catalog`: the catalog's name, "" for every one.
+# - `schema`: a pattern of schemas' names, `%` any run of characters and `_`
+#   any one, "" for every one.
+# - `table`: a pattern of tables' names, "" for every one.
+# - `kinds`: the kinds asked, `'TABLE','VIEW'`, "" for every kind.
+#
+# Fails `closed` where the connection is closed, `invalid` where a name
+# holds a zero byte, and as the driver reports. See also `table_columns`.
+function tables(db: Db, catalog: str, schema: str, table: str, kinds: str) -> sql.Rows?
+    running.live(db.connection, name: db.name)?
+    return running.catalog_on(
+        db.connection,
+        timeout_seconds: db.query_timeout_seconds,
+        which: hero_odbc.HERO_ODBC_CATALOG_TABLES,
+        names: [catalog, schema, table, kinds, "", ""]
+    )
+
+# The columns of the tables asked, as ODBC's catalog answers them
+# (`SQLColumns`): `TABLE_NAME`, `COLUMN_NAME`, `DATA_TYPE`, `TYPE_NAME`,
+# `COLUMN_SIZE`, `NULLABLE` and the rest of ODBC's eighteen.
+#
+# - `db`: the connection.
+# - `catalog`: the catalog's name, "" for every one.
+# - `schema`: a pattern of schemas' names, "" for every one.
+# - `table`: a pattern of tables' names, "" for every one.
+# - `column`: a pattern of columns' names, "" for every one.
+#
+# Fails as `tables` does. See also `tables`.
+function table_columns(db: Db, catalog: str, schema: str, table: str, column: str) -> sql.Rows?
+    running.live(db.connection, name: db.name)?
+    return running.catalog_on(
+        db.connection,
+        timeout_seconds: db.query_timeout_seconds,
+        which: hero_odbc.HERO_ODBC_CATALOG_COLUMNS,
+        names: [catalog, schema, table, column, "", ""]
+    )
+
+# The columns of `table`'s primary key, in the key's order
+# (`SQLPrimaryKeys`): `COLUMN_NAME`, `KEY_SEQ` and `PK_NAME` among them.
+#
+# - `db`: the connection.
+# - `catalog`: the catalog's name, "" for every one.
+# - `schema`: the schema's name, "" for every one.
+# - `table`: the table's name, never a pattern.
+#
+# Fails as `tables` does. See also `foreign_keys`.
+function primary_keys(db: Db, catalog: str, schema: str, table: str) -> sql.Rows?
+    running.live(db.connection, name: db.name)?
+    return running.catalog_on(
+        db.connection,
+        timeout_seconds: db.query_timeout_seconds,
+        which: hero_odbc.HERO_ODBC_CATALOG_PRIMARY_KEYS,
+        names: [catalog, schema, table, "", "", ""]
+    )
+
+# The foreign keys between tables (`SQLForeignKeys`): those of
+# `foreign_table` where it is given, those that point at `table` where it is
+# given, the one between them where both are.
+#
+# - `db`: the connection.
+# - `catalog`: the catalog of the table pointed at, "" for every one.
+# - `schema`: the schema of the table pointed at, "" for every one.
+# - `table`: the table pointed at, "" for any.
+# - `foreign_catalog`: the catalog of the table that points, "" for every
+#   one.
+# - `foreign_schema`: the schema of the table that points, "" for every
+#   one.
+# - `foreign_table`: the table that points, "" for any.
+#
+# Fails `invalid` where both tables are "", and as `tables` does. See also
+# `primary_keys`.
+function foreign_keys(db: Db, catalog: str, schema: str, table: str, foreign_catalog: str, foreign_schema: str, foreign_table: str) -> sql.Rows?
+    running.live(db.connection, name: db.name)?
+
+    if table == "" && foreign_table == ""
+        return fail(
+            code: sql.INVALID,
+            msg: "foreign keys are asked of a table that points, a table pointed at, or both: neither was named"
+        )
+    return running.catalog_on(
+        db.connection,
+        timeout_seconds: db.query_timeout_seconds,
+        which: hero_odbc.HERO_ODBC_CATALOG_FOREIGN_KEYS,
+        names: [catalog, schema, table, foreign_catalog, foreign_schema, foreign_table]
+    )
+
+# The indexes of `table` and the counts the driver keeps of it
+# (`SQLStatistics`): `INDEX_NAME`, `NON_UNIQUE`, `COLUMN_NAME` and
+# `ORDINAL_POSITION` among them.
+#
+# - `db`: the connection.
+# - `catalog`: the catalog's name, "" for every one.
+# - `schema`: the schema's name, "" for every one.
+# - `table`: the table's name, never a pattern.
+# - `unique_only`: true for the unique indexes alone.
+#
+# Fails as `tables` does. See also `primary_keys`.
+function indexes(db: Db, catalog: str, schema: str, table: str, unique_only: bool) -> sql.Rows?
+    running.live(db.connection, name: db.name)?
+
+    which = if unique_only
+        hero_odbc.HERO_ODBC_CATALOG_UNIQUE_INDEXES
+    else
+        hero_odbc.HERO_ODBC_CATALOG_INDEXES
+
+    return running.catalog_on(
+        db.connection,
+        timeout_seconds: db.query_timeout_seconds,
+        which: which,
+        names: [catalog, schema, table, "", "", ""]
+    )
+
+# The procedures the database holds (`SQLProcedures`): `PROCEDURE_NAME` and
+# `PROCEDURE_TYPE` among them.
+#
+# - `db`: the connection.
+# - `catalog`: the catalog's name, "" for every one.
+# - `schema`: a pattern of schemas' names, "" for every one.
+# - `procedure`: a pattern of procedures' names, "" for every one.
+#
+# Fails as `tables` does. See also `procedure_columns`.
+function procedures(db: Db, catalog: str, schema: str, procedure: str) -> sql.Rows?
+    running.live(db.connection, name: db.name)?
+    return running.catalog_on(
+        db.connection,
+        timeout_seconds: db.query_timeout_seconds,
+        which: hero_odbc.HERO_ODBC_CATALOG_PROCEDURES,
+        names: [catalog, schema, procedure, "", "", ""]
+    )
+
+# The parameters and result columns of the procedures asked
+# (`SQLProcedureColumns`).
+#
+# - `db`: the connection.
+# - `catalog`: the catalog's name, "" for every one.
+# - `schema`: a pattern of schemas' names, "" for every one.
+# - `procedure`: a pattern of procedures' names, "" for every one.
+# - `column`: a pattern of the columns' names, "" for every one.
+#
+# Fails as `tables` does. See also `procedures`.
+function procedure_columns(db: Db, catalog: str, schema: str, procedure: str, column: str) -> sql.Rows?
+    running.live(db.connection, name: db.name)?
+    return running.catalog_on(
+        db.connection,
+        timeout_seconds: db.query_timeout_seconds,
+        which: hero_odbc.HERO_ODBC_CATALOG_PROCEDURE_COLUMNS,
+        names: [catalog, schema, procedure, column, "", ""]
+    )
+
+# The data types the database offers (`SQLGetTypeInfo`): `TYPE_NAME`,
+# `DATA_TYPE`, `COLUMN_SIZE` and the rest, one row a type.
+#
+# - `db`: the connection.
+#
+# Fails as `tables` does. See also `table_columns`.
+function data_types(db: Db) -> sql.Rows?
+    running.live(db.connection, name: db.name)?
+    return running.catalog_on(
+        db.connection,
+        timeout_seconds: db.query_timeout_seconds,
+        which: hero_odbc.HERO_ODBC_CATALOG_TYPES,
+        names: ["", "", "", "", "", ""]
+    )
+
+# The columns that best tell a row of `table` apart (`SQLSpecialColumns`,
+# `SQL_BEST_ROWID`), a row id where the database has one.
+#
+# - `db`: the connection.
+# - `catalog`: the catalog's name, "" for every one.
+# - `schema`: the schema's name, "" for every one.
+# - `table`: the table's name, never a pattern.
+#
+# Fails as `tables` does. See also `row_version_columns`.
+function row_id_columns(db: Db, catalog: str, schema: str, table: str) -> sql.Rows?
+    running.live(db.connection, name: db.name)?
+    return running.catalog_on(
+        db.connection,
+        timeout_seconds: db.query_timeout_seconds,
+        which: hero_odbc.HERO_ODBC_CATALOG_ROW_ID_COLUMNS,
+        names: [catalog, schema, table, "", "", ""]
+    )
+
+# The columns of `table` the database changes itself whenever a row changes
+# (`SQLSpecialColumns`, `SQL_ROWVER`), a row's version.
+#
+# - `db`: the connection.
+# - `catalog`: the catalog's name, "" for every one.
+# - `schema`: the schema's name, "" for every one.
+# - `table`: the table's name, never a pattern.
+#
+# Fails as `tables` does. See also `row_id_columns`.
+function row_version_columns(db: Db, catalog: str, schema: str, table: str) -> sql.Rows?
+    running.live(db.connection, name: db.name)?
+    return running.catalog_on(
+        db.connection,
+        timeout_seconds: db.query_timeout_seconds,
+        which: hero_odbc.HERO_ODBC_CATALOG_ROW_VERSION_COLUMNS,
+        names: [catalog, schema, table, "", "", ""]
+    )
+
+# Who may do what to the tables asked (`SQLTablePrivileges`): `GRANTEE` and
+# `PRIVILEGE` among the columns.
+#
+# - `db`: the connection.
+# - `catalog`: the catalog's name, "" for every one.
+# - `schema`: a pattern of schemas' names, "" for every one.
+# - `table`: a pattern of tables' names, "" for every one.
+#
+# Fails as `tables` does. See also `column_privileges`.
+function table_privileges(db: Db, catalog: str, schema: str, table: str) -> sql.Rows?
+    running.live(db.connection, name: db.name)?
+    return running.catalog_on(
+        db.connection,
+        timeout_seconds: db.query_timeout_seconds,
+        which: hero_odbc.HERO_ODBC_CATALOG_TABLE_PRIVILEGES,
+        names: [catalog, schema, table, "", "", ""]
+    )
+
+# Who may do what to the columns of `table` (`SQLColumnPrivileges`).
+#
+# - `db`: the connection.
+# - `catalog`: the catalog's name, "" for every one.
+# - `schema`: the schema's name, "" for every one.
+# - `table`: the table's name, never a pattern.
+# - `column`: a pattern of columns' names, "" for every one.
+#
+# Fails as `tables` does. See also `table_privileges`.
+function column_privileges(db: Db, catalog: str, schema: str, table: str, column: str) -> sql.Rows?
+    running.live(db.connection, name: db.name)?
+    return running.catalog_on(
+        db.connection,
+        timeout_seconds: db.query_timeout_seconds,
+        which: hero_odbc.HERO_ODBC_CATALOG_COLUMN_PRIVILEGES,
+        names: [catalog, schema, table, column, "", ""]
+    )
+
+## The driver manager
+
+# The library of the driver manager this program loaded: `odbc32.dll`,
+# `libodbc.so.2`, `libiodbc.2.dylib`.
+#
+# Fails `unsupported` where none would load, the message naming every
+# library tried. See also `drivers`.
+function manager() -> str?
+    return fill.manager_name()
+
+# A driver the manager knows, and what its configuration says of it.
+record Driver
+    # The driver's name, which `Driver={...}` in a connection string names.
+    name: str
+    # The driver's attributes in the configuration's order, `Driver` its
+    # library's file and `Setup` its setup's among them.
+    attributes: [Attribute]
+
+# The drivers the manager knows, in its order (`SQLDrivers`).
+#
+# Fails `unsupported` where no driver manager is installed, and as the
+# manager reports. An empty list is a manager with no driver. See also
+# `data_sources`, `manager`.
+function drivers() -> [Driver]?
+    listed: [Driver] @= []
+
+    for line in fill.split_on(fill.drivers_text()?, sep: '\n')
+        fields = fill.split_on(line, sep: '\t')
+
+        if fields.len() == 0
+            continue
+        pairs: [Attribute] @= []
+
+        for field in fields.slice(from: 1, to: fields.len())
+            pair = fill.key_value(field)
+            pairs @ pairs.push(Attribute(key: pair.key, value: pair.value))
+
+        listed @ listed.push(Driver(name: fields[0], attributes: pairs))
+
+    return ok(listed)
+
+# A data source the manager knows by its name.
+record DataSource
+    # The data source's name, which `dsn_options` and `DSN=` take.
+    name: str
+    # The description of the data source's driver.
+    driver: str
+    # Whether the data source is the system's, every user's, rather than the
+    # user's own.
+    system: bool
+
+# The data sources the manager knows (`SQLDataSources`): the user's own
+# first, then the system's.
+#
+# Fails `unsupported` where no driver manager is installed, and as the
+# manager reports. See also `drivers`, `dsn_options`.
+function data_sources() -> [DataSource]?
+    listed: [DataSource] @= []
+    users = fill.sources_text(hero_odbc.HERO_ODBC_SOURCES_USER)?
+    systems = fill.sources_text(hero_odbc.HERO_ODBC_SOURCES_SYSTEM)?
+
+    for line in fill.split_on(users, sep: '\n')
+        fields = fill.split_on(line, sep: '\t')
+
+        if fields.len() > 0
+            listed @ listed.push(
+                DataSource(name: fields[0], driver: fields.slice(from: 1, to: fields.len()).join("\t"), system: false)
+            )
+
+    for line in fill.split_on(systems, sep: '\n')
+        fields = fill.split_on(line, sep: '\t')
+
+        if fields.len() > 0
+            listed @ listed.push(
+                DataSource(name: fields[0], driver: fields.slice(from: 1, to: fields.len()).join("\t"), system: true)
+            )
+
+    return ok(listed)
+
+## Connection strings
+
+# One `key=value` pair of a connection string.
+record Attribute
+    # The key, `Driver`, `DSN`, `UID`, `PWD` or one of the driver's own; a
+    # manager compares keys whatever their case.
+    key: str
+    # The value, as the driver reads it, without the braces that may quote
+    # it.
+    value: str
+
+# The pairs of the connection string `text`, in its order.
+#
+# - `text`: `key=value` pairs separated by `;`; a value inside braces holds
+#   any character, a `}` in it written `}}`, and blanks around a key and
+#   around an unbraced value are dropped.
+#
+# A `;` at the end, and between two pairs twice, adds nothing. Fails
+# `invalid` where a pair has no `=`, a key is empty, or a brace is opened
+# and never closed, the message saying where. See also `format_connection`.
+function parse_connection(text: str) -> [Attribute]?
+    listed: [Attribute] @= []
+
+    for pair in connection_text.parse(text)?
+        listed @ listed.push(Attribute(key: pair.key, value: pair.value))
+
+    return ok(listed)
+
+# The connection string of `attributes`, each `key=value` and `;` between
+# them, a value inside braces where it holds `;`, `{`, `}`, `=` or a blank
+# at either end, or is empty.
+#
+# - `attributes`: the pairs in order.
+#
+# The braces are the driver manager's grammar, and each driver reads the
+# pairs it is handed itself: SQLite's ODBC driver reads no braces in a
+# value, so a value holding `;` cannot reach it.
+#
+# Fails `invalid` where a key is empty, holds `;`, `{`, `}`, `=`, a blank at
+# either end or a zero byte, or a value holds a zero byte, the message
+# naming the pair. See also `parse_connection`.
+function format_connection(attributes: [Attribute]) -> str?
+    pairs: [connection_text.Pair] @= []
+
+    for a in attributes
+        pairs @ pairs.push(connection_text.Pair(key: a.key, value: a.value))
+
+    return connection_text.written(pairs)
+
+## Tests
+
+test "options and dsn_options: the target, the default login timeout, no query timeout"
+    o = options("Driver={SQLite3};Database=:memory:")
+    assert o.target == .connection_string(text: "Driver={SQLite3};Database=:memory:")
+    assert o.login_timeout_seconds == 15 && o.query_timeout_seconds == 0
+    d = dsn_options(dsn: "shop", user: "ana", password: "s3cret")
+    assert d.target == .data_source(name: "shop", user: "ana", password: "s3cret")
+    assert d.login_timeout_seconds == DEFAULT_LOGIN_TIMEOUT_SECONDS
+
+test "open: timeouts out of range and a zero byte refused before the manager is asked"
+    o @= options("DSN=x")
+    o.login_timeout_seconds @ -1
+
+    match open(o)
+        .ok _  => assert false
+        .err e => assert e.code == sql.INVALID && e.msg == "a login timeout of -1 seconds is outside 0 to 4294967295"
+
+    o.login_timeout_seconds @ 1
+    o.query_timeout_seconds @ 4294967296
+    assert open(o).is_err()
+    zero: [u8] = [0]
+
+    match open(options("DSN=x" + zero.validated_bytes().must()))
+        .ok _  => assert false
+        .err e => assert e.code == sql.INVALID && e.msg == "the connection string holds a zero byte"
+
+    match open(dsn_options(dsn: "x", user: zero.validated_bytes().must(), password: ""))
+        .ok _  => assert false
+        .err e => assert e.code == sql.INVALID
+
+test "open: no data source of that name is not_found where a manager loads, and every open unsupported where none does"
+    match open(dsn_options(dsn: "rebel-no-such-source", user: "", password: ""))
+        .ok _ => assert false
+        .err e =>
+            match manager()
+                .ok _  => assert e.code == sql.NOT_FOUND && sql.database_code_of(e.msg).must() == "IM002"
+                .err _ => assert e.code == sql.UNSUPPORTED
+
+    match open(options("Driver={Rebel No Such Driver};Database=x"))
+        .ok _  => assert false
+        .err e => assert e.code == sql.FAILED || e.code == sql.NOT_FOUND || e.code == sql.UNSUPPORTED
+
+test "manager, drivers and data_sources: the library, SQLite's driver with its attributes, the sources; or unsupported where no manager loads"
+    match manager()
+        .err e =>
+            assert e.code == sql.UNSUPPORTED && e.msg != ""
+            assert drivers().is_err() && data_sources().is_err()
+        .ok name =>
+            assert name != ""
+            listed = drivers().must()
+            assert !data_sources().is_err()
+
+            if fixture.has_sqlite()
+                found: bool @= false
+
+                for d in listed
+                    if d.name == "SQLite3" || d.name == "SQLite3 ODBC Driver"
+                        found @ true
+                        assert d.attributes.len() > 0 && d.attributes[0].key != ""
+
+                assert found
+
+test "every value travels to SQLite's driver as a parameter and comes back by its column's type"
+    if fixture.has_sqlite()
+        db @= open(options(fixture.sqlite_memory())).must()
+        exec_script(
+            @db,
+            "CREATE TABLE v(id INTEGER PRIMARY KEY, b BOOLEAN, n INTEGER, x REAL, s TEXT, data BLOB, at TIMESTAMP, day DATE)"
+        ).must()
+        at = time.from_unix(whole_seconds: 1136214245, extra_nanoseconds: 123000000).must()
+        day = time.date(year: 1972, month: 6, day: 16).must()
+        insert = "INSERT INTO v(b, n, x, s, data, at, day) VALUES (?, ?, ?, ?, ?, ?, ?)"
+        params: [sql.Value] = [
+            .boolean(v: true)
+            .integer(v: -9223372036854775807 - 1)
+            .float(v: -0.5)
+            .text(v: "città")
+            .blob(v: [0, 1, 255])
+            .instant(v: at)
+            .instant(v: day)
+        ]
+        assert exec(@db, insert, params).must().rows_affected == 1
+        nulls: [sql.Value] = [
+            .null_value
+            .null_value
+            .null_value
+            .text(v: "")
+            .blob(v: [])
+            .null_value
+            .null_value
+        ]
+        assert exec(@db, insert, nulls).must().rows_affected == 1
+        answer = query(@db, "SELECT b, n, x, s, data, at, day, 1 + 1 AS two FROM v ORDER BY id", []).must()
+        assert answer.columns.len() == 8
+        assert answer.columns[0] == sql.Column(name: "b", type_name: "BOOLEAN")
+        assert answer.columns[3] == sql.Column(name: "s", type_name: "TEXT")
+        first = answer.rows[0]
+        assert sql.boolean_named(first, "b").must()
+        assert sql.integer_named(first, "n").must() == -9223372036854775807 - 1
+        assert sql.float_named(first, "x").must() == -0.5
+        assert sql.text_named(first, "s").must() == "città"
+        assert sql.blob_named(first, "data").must() == [0, 1, 255]
+        assert sql.instant_named(first, "at").must() == at
+        assert sql.instant_named(first, "day").must() == day
+        assert sql.integer_named(first, "two").must() == 2
+        second = answer.rows[1]
+        assert sql.is_null_named(second, "b").must() && sql.is_null_named(second, "n").must() && sql.is_null_named(second, "at").must()
+        assert sql.text_named(second, "s").must() == "" && sql.blob_named(second, "data").must() == []
+        close(@db).must()
+    else
+        print("values through SQLite's ODBC driver: skipped, no driver named SQLite3 here")
+
+test "exec: rows_affected for an insert of three, an update of two, an update of none, a create and a select; last_id unsupported"
+    if fixture.has_sqlite()
+        db @= open(options(fixture.sqlite_memory())).must()
+        made = exec(@db, "CREATE TABLE t(id INTEGER PRIMARY KEY, n INTEGER)", []).must()
+        assert made.rows_affected == 0
+
+        match made.last_id
+            .ok _  => assert false
+            .err e => assert e.code == sql.UNSUPPORTED
+
+        assert exec(@db, "INSERT INTO t(n) VALUES (?), (?), (?)", [.integer(v: 1), .integer(v: 2), .integer(v: 3)]).must().rows_affected == 3
+        assert exec(@db, "UPDATE t SET n = n + 10 WHERE n >= ?", [.integer(v: 2)]).must().rows_affected == 2
+        assert exec(@db, "UPDATE t SET n = 0 WHERE id = ?", [.integer(v: 99)]).must().rows_affected == 0
+        assert exec(@db, "SELECT * FROM t", []).must().rows_affected == 3
+        close(@db).must()
+
+test "exec: what the driver refuses, told by its SQLSTATE and words, and what this package refuses before it"
+    if fixture.has_sqlite()
+        db @= open(options(fixture.sqlite_memory())).must()
+        exec_script(@db, "CREATE TABLE t(id INTEGER PRIMARY KEY, name TEXT NOT NULL UNIQUE)").must()
+        _ = exec(@db, "INSERT INTO t(name) VALUES (?)", [.text(v: "a")]).must()
+
+        match exec(@db, "INSERT INTO t(name) VALUES (?)", [.text(v: "a")])
+            .ok _  => assert false
+            .err e => assert e.code == sql.FAILED && e.msg == "[HY000] [SQLite]UNIQUE constraint failed: t.name (19) (native error 19)"
+
+        match exec(@db, "SELECT * FROM nope", [])
+            .ok _  => assert false
+            .err e => assert e.code == sql.FAILED && sql.database_code_of(e.msg).must() == "HY000"
+
+        match exec(@db, "INSERT INTO t(name) VALUES (?)", [])
+            .ok _  => assert false
+            .err e => assert e.code == sql.INVALID && e.msg == "the statement takes 1 parameter and no parameter were given"
+
+        match exec(@db, "INSERT INTO t(name) VALUES (?)", [.text(v: "b"), .text(v: "c")])
+            .ok _  => assert false
+            .err e => assert e.msg == "the statement takes 1 parameter and 2 parameters were given"
+
+        match exec(@db, "SELECT 1; SELECT 2", [])
+            .ok _  => assert false
+            .err e => assert e.code == sql.INVALID
+
+        match exec(@db, "", [])
+            .ok _  => assert false
+            .err e => assert e.code == sql.INVALID && e.msg == "no statement in \"\""
+
+        zero: [u8] = [97, 0, 98]
+
+        match exec(@db, "INSERT INTO t(name) VALUES (?)", [.text(v: zero.validated_bytes().must())])
+            .ok _  => assert false
+            .err e => assert e.code == sql.INVALID && e.msg == "the text of parameter 1 holds a zero byte at byte 1, which a driver may cut the text at: send it as a blob"
+
+        close(@db).must()
+
+test "query and query_one: rows in order, no row, a parameter in a select, and the rest of the rows dropped"
+    if fixture.has_sqlite()
+        db @= open(options(fixture.sqlite_memory())).must()
+        exec_script(
+            @db,
+            "CREATE TABLE n(v INTEGER); INSERT INTO n VALUES (3); INSERT INTO n VALUES (1); INSERT INTO n VALUES (2)"
+        ).must()
+        rows = query(@db, "SELECT v FROM n ORDER BY v", []).must()
+        assert rows.rows.len() == 3 && sql.integer_at(rows.rows[0], 0).must() == 1 && sql.integer_at(rows.rows[2], 0).must() == 3
+        assert sql.integer_at(query_one(@db, "SELECT v FROM n ORDER BY v DESC", []).must(), 0).must() == 3
+        assert sql.integer_named(query_one(@db, "SELECT ? + 1 AS next", [.integer(v: 41)]).must(), "next").must() == 42
+        empty = query(@db, "SELECT v FROM n WHERE v > 9", []).must()
+        assert empty.rows.len() == 0 && empty.columns.len() == 1
+
+        match query_one(@db, "SELECT v FROM n WHERE v > ?", [.integer(v: 9)])
+            .ok _  => assert false
+            .err e => assert e.code == sql.NOT_FOUND && e.msg == "the statement answered no row"
+
+        assert query_sets(@db, "SELECT v FROM n", []).must().len() == 1
+        close(@db).must()
+
+test "exec_script: statements in order, a trigger's body whole, a failure leaving the ones before done, nothing, and a zero byte"
+    if fixture.has_sqlite()
+        db @= open(options(fixture.sqlite_memory())).must()
+        exec_script(
+            @db,
+            "CREATE TABLE t(x UNIQUE); CREATE TABLE log(y); CREATE TRIGGER t_in AFTER INSERT ON t BEGIN INSERT INTO log VALUES (new.x); INSERT INTO log VALUES (new.x * 10); END; INSERT INTO t VALUES (1);"
+        ).must()
+        assert sql.integer_at(query_one(@db, "SELECT count(*) FROM log", []).must(), 0).must() == 2
+        exec_script(@db, "").must()
+        assert exec_script(@db, "INSERT INTO t VALUES (2); INSERT INTO t VALUES (1); INSERT INTO t VALUES (3)").is_err()
+        assert sql.integer_at(query_one(@db, "SELECT count(*) FROM t", []).must(), 0).must() == 2
+        zero: [u8] = [59, 0]
+
+        match exec_script(@db, "SELECT 1" + zero.validated_bytes().must())
+            .ok _  => assert false
+            .err e => assert e.code == sql.INVALID && e.msg == "the script holds a zero byte at byte 9"
+
+        close(@db).must()
+
+test "prepare: run many times, its columns and parameters, a count refused, another connection's statement, and close refused while one is open"
+    if fixture.has_sqlite()
+        db @= open(options(fixture.sqlite_memory())).must()
+        other @= open(options(fixture.sqlite_memory())).must()
+        exec_script(@db, "CREATE TABLE t(id INTEGER PRIMARY KEY, name TEXT UNIQUE)").must()
+        insert @= prepare(@db, "INSERT INTO t(name) VALUES (?)").must()
+        assert insert.parameter_count == 1 && insert.columns.len() == 0
+        reading @= prepare(@db, "SELECT id, name FROM t WHERE id >= ? ORDER BY id").must()
+        assert reading.columns.len() == 2 && reading.columns[1].name == "name"
+
+        for name in ["a", "b", "c"]
+            assert exec_prepared(@db, insert, [.text(v: name)]).must().rows_affected == 1
+
+        assert exec_prepared(@db, insert, [.text(v: "a")]).is_err()
+        assert query_prepared(@db, reading, [.integer(v: 2)]).must().rows.len() == 2
+        assert query_prepared(@db, reading, [.integer(v: 1)]).must().rows.len() == 3
+
+        match exec_prepared(@db, insert, [])
+            .ok _  => assert false
+            .err e => assert e.code == sql.INVALID && e.msg == "the statement takes 1 parameter and no parameter were given"
+
+        match query_prepared(@other, reading, [.integer(v: 1)])
+            .ok _  => assert false
+            .err e => assert e.code == sql.INVALID && e.msg == f"the statement \"SELECT id, name FROM t WHERE id >= ? ORDER BY id\" belongs to another connection than \"{db.name}\""
+
+        match close(@db)
+            .ok _  => assert false
+            .err e => assert e.code == sql.INVALID && e.msg == f"2 statement(s) `prepare` made on \"{db.name}\" are not closed: `close_statement` each, then `close`"
+
+        assert close_statement(@other, @reading).is_err()
+        close_statement(@db, @insert).must()
+        close_statement(@db, @reading).must()
+
+        match exec_prepared(@db, insert, [.text(v: "d")])
+            .ok _  => assert false
+            .err e => assert e.code == sql.CLOSED && e.msg == "the statement \"INSERT INTO t(name) VALUES (?)\" is closed"
+
+        assert close_statement(@db, @insert).is_err()
+        assert prepare(@db, "SELECT * FROM nope").is_err() && db.prepared == 0
+        close(@db).must()
+        close(@other).must()
+
+test "transactions: begin twice, commit and rollback with none open, a rollback undoing, a failure leaving it open, a commit keeping"
+    if fixture.has_sqlite()
+        db @= open(options(fixture.sqlite_memory())).must()
+        exec_script(@db, "CREATE TABLE t(x UNIQUE)").must()
+        assert !in_transaction(db)
+        begin(@db).must()
+        assert in_transaction(db)
+
+        match begin(@db)
+            .ok _  => assert false
+            .err e => assert e.code == sql.INVALID && e.msg == f"a transaction is open already on \"{db.name}\""
+
+        _ = exec(@db, "INSERT INTO t VALUES (1)", []).must()
+        rollback(@db).must()
+        assert !in_transaction(db)
+        assert sql.integer_at(query_one(@db, "SELECT count(*) FROM t", []).must(), 0).must() == 0
+
+        match commit(@db)
+            .ok _  => assert false
+            .err e => assert e.code == sql.INVALID && e.msg == f"no transaction is open on \"{db.name}\" to commit"
+
+        assert rollback(@db).is_err()
+        begin(@db).must()
+        _ = exec(@db, "INSERT INTO t VALUES (2)", []).must()
+        assert exec(@db, "INSERT INTO t VALUES (2)", []).is_err()
+        assert in_transaction(db)
+        commit(@db).must()
+        assert sql.integer_at(query_one(@db, "SELECT count(*) FROM t", []).must(), 0).must() == 1
+        close(@db).must()
+
+test "close: twice fails closed, and every call on a closed connection fails closed"
+    if fixture.has_sqlite()
+        db @= open(options(fixture.sqlite_memory())).must()
+        close(@db).must()
+        assert is_closed(db) && !in_transaction(db)
+
+        match close(@db)
+            .ok _  => assert false
+            .err e => assert e.code == sql.CLOSED && e.msg == f"the connection to \"{db.name}\" is closed"
+
+        assert exec(@db, "SELECT 1", []).is_err() && query(@db, "SELECT 1", []).is_err() && query_one(@db, "SELECT 1", []).is_err()
+        assert exec_script(@db, "SELECT 1").is_err() && prepare(@db, "SELECT 1").is_err() && set_query_timeout(@db, 1).is_err()
+        assert begin(@db).is_err() && commit(@db).is_err() && rollback(@db).is_err() && ping(db).is_err() && info_of(db).is_err()
+        assert tables(db, catalog: "", schema: "", table: "", kinds: "").is_err() && isolation_of(db).is_err()
+
+test "the connection's settings: a query timeout in and out of range, the isolation SQLite keeps, reading only, ping and the driver's info"
+    if fixture.has_sqlite()
+        db @= open(options(fixture.sqlite_memory())).must()
+        set_query_timeout(@db, 30).must()
+        assert db.query_timeout_seconds == 30
+        assert set_query_timeout(@db, -1).is_err() && set_query_timeout(@db, 4294967296).is_err()
+        assert sql.integer_at(query_one(@db, "SELECT 1", []).must(), 0).must() == 1
+        assert isolation_of(db).must() == .serializable
+        set_read_only(db, read_only: false).must()
+        ping(db).must()
+        facts = info_of(db).must()
+        assert facts.dbms_name == "SQLite" && facts.driver_name != "" && facts.odbc_version != ""
+        begin(@db).must()
+        assert set_isolation(db, level: .serializable).is_err()
+        rollback(@db).must()
+        close(@db).must()
+
+test "the catalog: a table, its columns, its key, its indexes, a foreign key between two tables, the types, and none named refused"
+    if fixture.has_sqlite()
+        db @= open(options(fixture.sqlite_memory())).must()
+        exec_script(
+            @db,
+            "CREATE TABLE singer(id INTEGER PRIMARY KEY, name TEXT UNIQUE); CREATE TABLE song(id INTEGER PRIMARY KEY, singer INTEGER REFERENCES singer(id))"
+        ).must()
+        found = tables(db, catalog: "", schema: "", table: "singer", kinds: "").must()
+        assert found.rows.len() == 1 && sql.text_named(found.rows[0], "TABLE_NAME").must() == "singer"
+        assert tables(db, catalog: "", schema: "", table: "", kinds: "").must().rows.len() == 2
+        assert table_columns(db, catalog: "", schema: "", table: "singer", column: "").must().rows.len() == 2
+        assert sql.text_named(primary_keys(db, catalog: "", schema: "", table: "singer").must().rows[0], "COLUMN_NAME").must() == "id"
+        assert indexes(db, catalog: "", schema: "", table: "singer", unique_only: true).must().rows.len() >= 1
+        pointing = foreign_keys(
+            db,
+            catalog: "",
+            schema: "",
+            table: "",
+            foreign_catalog: "",
+            foreign_schema: "",
+            foreign_table: "song"
+        ).must()
+        assert pointing.rows.len() == 1 && sql.text_named(pointing.rows[0], "PKTABLE_NAME").must() == "singer"
+        assert data_types(db).must().rows.len() > 0
+        assert !procedures(db, catalog: "", schema: "", procedure: "").is_err()
+
+        match foreign_keys(db, catalog: "", schema: "", table: "", foreign_catalog: "", foreign_schema: "", foreign_table: "")
+            .ok _  => assert false
+            .err e => assert e.code == sql.INVALID
+
+        close(@db).must()
+
+test "split_script, parse_connection and format_connection: the module's own walks, there and back"
+    assert split_script("SELECT 'a;b'; -- c\nSELECT 2;") == ["SELECT 'a;b'", "-- c\nSELECT 2"]
+    pairs = parse_connection("Driver={SQLite3};Database={/tmp/a;b.db};PWD={x}}y}").must()
+    assert pairs == [Attribute(key: "Driver", value: "SQLite3"), Attribute(key: "Database", value: "/tmp/a;b.db"), Attribute(key: "PWD", value: "x}y")]
+    assert format_connection(pairs).must() == "Driver=SQLite3;Database={/tmp/a;b.db};PWD={x}}y}"
+    assert parse_connection("nokey").is_err() && format_connection([Attribute(key: "", value: "x")]).is_err()
+
+test "open live against the PostgreSQL server REBEL_ODBC_POSTGRES names, through PostgreSQL's ODBC driver, where one is named"
+    match fixture.postgres()
+        .err _ => print("PostgreSQL through ODBC: skipped, REBEL_ODBC_POSTGRES names no server")
+        .ok connection =>
+            db @= open(options(connection)).must()
+            exec_script(
+                @db,
+                "DROP TABLE IF EXISTS rebel_odbc_v; CREATE TABLE rebel_odbc_v(id serial PRIMARY KEY, b boolean, n bigint, x float8, s text UNIQUE, data bytea, at timestamp)"
+            ).must()
+            at = time.from_unix(whole_seconds: 1136214245, extra_nanoseconds: 123456000).must()
+            insert = "INSERT INTO rebel_odbc_v(b, n, x, s, data, at) VALUES (?, ?, ?, ?, ?, ?)"
+            _ = exec(
+                @db,
+                insert,
+                [.boolean(v: true), .integer(v: -9223372036854775807 - 1), .float(v: 0.25), .text(v: "città"), .blob(v: [0, 1, 255]), .instant(v: at)]
+            ).must()
+            row = query_one(@db, "SELECT b, n, x, s, data, at FROM rebel_odbc_v", []).must()
+            assert sql.integer_named(row, "n").must() == -9223372036854775807 - 1
+            assert sql.float_named(row, "x").must() == 0.25
+            assert sql.text_named(row, "s").must() == "città"
+            assert sql.blob_named(row, "data").must() == [0, 1, 255]
+            assert sql.instant_named(row, "at").must() == at
+
+            match exec(@db, insert, [.boolean(v: false), .integer(v: 1), .float(v: 1.0), .text(v: "città"), .blob(v: []), .instant(v: at)])
+                .ok _  => assert false
+                .err e => assert e.code == sql.EXISTS && sql.database_code_of(e.msg).must() == "23505"
+
+            match exec(@db, "SELECT * FROM rebel_odbc_nope", [])
+                .ok _  => assert false
+                .err e => assert e.code == sql.NOT_FOUND && sql.database_code_of(e.msg).must() == "42P01"
+
+            match exec(@db, "SELEC 1", [])
+                .ok _  => assert false
+                .err e => assert e.code == sql.INVALID && sql.database_code_of(e.msg).must() == "42601"
+
+            begin(@db).must()
+            _ = exec(@db, "DELETE FROM rebel_odbc_v", []).must()
+            rollback(@db).must()
+            assert sql.integer_at(query_one(@db, "SELECT count(*) FROM rebel_odbc_v", []).must(), 0).must() == 1
+            assert query_sets(@db, "SELECT 1; SELECT 2, 3", []).must().len() == 2
+            exec_script(@db, "DROP TABLE rebel_odbc_v").must()
+            close(@db).must()
+
+## Examples
+
+# The options of a connection made from a connection string, and one field
+# changed.
+test "options: SQLite's ODBC driver and a file, with a statement's limit"
+    opts @= options("Driver={SQLite3};Database=shop.db")
+    opts.query_timeout_seconds @ 30
+    assert opts.login_timeout_seconds == DEFAULT_LOGIN_TIMEOUT_SECONDS
+
+# The options of a connection to a data source the manager knows.
+test "dsn_options: a data source, a user and a password"
+    opts = dsn_options(dsn: "shop", user: "ana", password: "s3cret")
+    assert opts.target == .data_source(name: "shop", user: "ana", password: "s3cret")
+
+# A connection opened and closed, where this machine has SQLite's ODBC
+# driver; elsewhere it shows nothing.
+test "open: a database in memory through SQLite's ODBC driver"
+    match open(options("Driver={SQLite3};Database=:memory:"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            assert !is_closed(db)
+            close(@db).must()
+
+# A connection closed, after which every call fails `closed`.
+test "close: the end of a connection"
+    match open(options("Driver={SQLite3};Database=:memory:"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            close(@db).must()
+            assert ping(db).is_err()
+
+# Whether a connection is still open.
+test "is_closed: before and after close"
+    match open(options("Driver={SQLite3};Database=:memory:"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            assert !is_closed(db)
+            close(@db).must()
+            assert is_closed(db)
+
+# A connection asked whether it still works.
+test "ping: a live connection"
+    match open(options("Driver={SQLite3};Database=:memory:"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            ping(db).must()
+            close(@db).must()
+
+# Whether a transaction is open.
+test "in_transaction: inside begin and commit"
+    match open(options("Driver={SQLite3};Database=:memory:"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            begin(@db).must()
+            assert in_transaction(db)
+            commit(@db).must()
+            close(@db).must()
+
+# A connection whose statements give up after ten seconds.
+test "set_query_timeout: ten seconds"
+    match open(options("Driver={SQLite3};Database=:memory:"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            set_query_timeout(@db, 10).must()
+            close(@db).must()
+
+# Transactions that behave as if they ran one after another.
+test "set_isolation: serializable"
+    match open(options("Driver={SQLite3};Database=:memory:"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            set_isolation(db, level: .serializable).must()
+            close(@db).must()
+
+# The isolation a connection's transactions have.
+test "isolation_of: SQLite's"
+    match open(options("Driver={SQLite3};Database=:memory:"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            assert isolation_of(db).must() == .serializable
+            close(@db).must()
+
+# A connection that only reads, told to its driver.
+test "set_read_only: a reading connection"
+    match open(options("Driver={SQLite3};Database=:memory:"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            set_read_only(db, read_only: true).must()
+            close(@db).must()
+
+# The database a connection reaches, as its driver names it.
+test "info_of: the database's name"
+    match open(options("Driver={SQLite3};Database=:memory:"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            assert info_of(db).must().dbms_name == "SQLite"
+            close(@db).must()
+
+# A row inserted, its value bound as a parameter.
+test "exec: an insert with a parameter"
+    match open(options("Driver={SQLite3};Database=:memory:"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            _ = exec(@db, "CREATE TABLE singer(name TEXT)", []).must()
+            assert exec(@db, "INSERT INTO singer(name) VALUES (?)", [.text(v: "Ziggy")]).must().rows_affected == 1
+            close(@db).must()
+
+# Every row a query answers, in order.
+test "query: rows in order"
+    match open(options("Driver={SQLite3};Database=:memory:"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            exec_script(@db, "CREATE TABLE n(v INTEGER); INSERT INTO n VALUES (2); INSERT INTO n VALUES (1)").must()
+            rows = query(@db, "SELECT v FROM n ORDER BY v", []).must()
+            assert sql.integer_at(rows.rows[0], 0).must() == 1
+            close(@db).must()
+
+# The one row a query answers.
+test "query_one: a sum of two parameters"
+    match open(options("Driver={SQLite3};Database=:memory:"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            row = query_one(@db, "SELECT ? + ? AS total", [.integer(v: 2), .integer(v: 3)]).must()
+            assert sql.integer_named(row, "total").must() == 5
+            close(@db).must()
+
+# The results of one call, where the driver answers one.
+test "query_sets: one result"
+    match open(options("Driver={SQLite3};Database=:memory:"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            assert query_sets(@db, "SELECT 1", []).must().len() == 1
+            close(@db).must()
+
+# A schema made by a script of several statements.
+test "exec_script: a migration"
+    match open(options("Driver={SQLite3};Database=:memory:"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            exec_script(@db, "CREATE TABLE a(x); CREATE TABLE b(y); CREATE INDEX b_y ON b(y);").must()
+            close(@db).must()
+
+# A script cut into its statements.
+test "split_script: two statements, a semicolon quoted"
+    assert split_script("INSERT INTO t VALUES ('a;b'); SELECT 1;") == ["INSERT INTO t VALUES ('a;b')", "SELECT 1"]
+
+# A statement read once by its driver.
+test "prepare: an insert read once"
+    match open(options("Driver={SQLite3};Database=:memory:"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            exec_script(@db, "CREATE TABLE t(x)").must()
+            insert @= prepare(@db, "INSERT INTO t VALUES (?)").must()
+            assert insert.parameter_count == 1
+            close_statement(@db, @insert).must()
+            close(@db).must()
+
+# A prepared insert run for each value of a list.
+test "exec_prepared: one insert, many rows"
+    match open(options("Driver={SQLite3};Database=:memory:"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            exec_script(@db, "CREATE TABLE t(x)").must()
+            insert @= prepare(@db, "INSERT INTO t VALUES (?)").must()
+
+            for x in [1, 2, 3]
+                _ = exec_prepared(@db, insert, [.integer(v: x)]).must()
+
+            close_statement(@db, @insert).must()
+            close(@db).must()
+
+# A prepared query run with two values.
+test "query_prepared: one query, two lookups"
+    match open(options("Driver={SQLite3};Database=:memory:"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            exec_script(@db, "CREATE TABLE t(x); INSERT INTO t VALUES (1); INSERT INTO t VALUES (2)").must()
+            above @= prepare(@db, "SELECT x FROM t WHERE x > ?").must()
+            assert query_prepared(@db, above, [.integer(v: 0)]).must().rows.len() == 2
+            assert query_prepared(@db, above, [.integer(v: 1)]).must().rows.len() == 1
+            close_statement(@db, @above).must()
+            close(@db).must()
+
+# A prepared statement given back.
+test "close_statement: the end of a prepared statement"
+    match open(options("Driver={SQLite3};Database=:memory:"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            s @= prepare(@db, "SELECT 1").must()
+            close_statement(@db, @s).must()
+            close(@db).must()
+
+# Two inserts that take effect together.
+test "begin: two inserts in one transaction"
+    match open(options("Driver={SQLite3};Database=:memory:"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            exec_script(@db, "CREATE TABLE t(x)").must()
+            begin(@db).must()
+            _ = exec(@db, "INSERT INTO t VALUES (1)", []).must()
+            _ = exec(@db, "INSERT INTO t VALUES (2)", []).must()
+            commit(@db).must()
+            close(@db).must()
+
+# A transaction's changes made to stay.
+test "commit: an insert kept"
+    match open(options("Driver={SQLite3};Database=:memory:"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            exec_script(@db, "CREATE TABLE t(x)").must()
+            begin(@db).must()
+            _ = exec(@db, "INSERT INTO t VALUES (1)", []).must()
+            commit(@db).must()
+            assert sql.integer_at(query_one(@db, "SELECT count(*) FROM t", []).must(), 0).must() == 1
+            close(@db).must()
+
+# A transaction's changes undone.
+test "rollback: an insert undone"
+    match open(options("Driver={SQLite3};Database=:memory:"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            exec_script(@db, "CREATE TABLE t(x)").must()
+            begin(@db).must()
+            _ = exec(@db, "INSERT INTO t VALUES (1)", []).must()
+            rollback(@db).must()
+            assert sql.integer_at(query_one(@db, "SELECT count(*) FROM t", []).must(), 0).must() == 0
+            close(@db).must()
+
+# The tables a database holds, by a pattern of names.
+test "tables: the tables whose names begin with s"
+    match open(options("Driver={SQLite3};Database=:memory:"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            exec_script(@db, "CREATE TABLE singer(x); CREATE TABLE album(y)").must()
+            assert tables(db, catalog: "", schema: "", table: "s%", kinds: "").must().rows.len() == 1
+            close(@db).must()
+
+# The columns of a table.
+test "table_columns: a table's two columns"
+    match open(options("Driver={SQLite3};Database=:memory:"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            exec_script(@db, "CREATE TABLE singer(id INTEGER, name TEXT)").must()
+            assert table_columns(db, catalog: "", schema: "", table: "singer", column: "").must().rows.len() == 2
+            close(@db).must()
+
+# The column of a table's primary key.
+test "primary_keys: a key of one column"
+    match open(options("Driver={SQLite3};Database=:memory:"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            exec_script(@db, "CREATE TABLE singer(id INTEGER PRIMARY KEY, name TEXT)").must()
+            key = primary_keys(db, catalog: "", schema: "", table: "singer").must()
+            assert sql.text_named(key.rows[0], "COLUMN_NAME").must() == "id"
+            close(@db).must()
+
+# The foreign keys a table holds.
+test "foreign_keys: a song's singer"
+    match open(options("Driver={SQLite3};Database=:memory:"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            exec_script(
+                @db,
+                "CREATE TABLE singer(id INTEGER PRIMARY KEY); CREATE TABLE song(singer INTEGER REFERENCES singer(id))"
+            ).must()
+            pointing = foreign_keys(
+                db,
+                catalog: "",
+                schema: "",
+                table: "",
+                foreign_catalog: "",
+                foreign_schema: "",
+                foreign_table: "song"
+            ).must()
+            assert pointing.rows.len() == 1
+            close(@db).must()
+
+# The unique indexes of a table.
+test "indexes: a unique name"
+    match open(options("Driver={SQLite3};Database=:memory:"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            exec_script(@db, "CREATE TABLE singer(name TEXT UNIQUE)").must()
+            assert indexes(db, catalog: "", schema: "", table: "singer", unique_only: true).must().rows.len() == 1
+            close(@db).must()
+
+# The procedures a database holds, none in SQLite.
+test "procedures: SQLite's none"
+    match open(options("Driver={SQLite3};Database=:memory:"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            assert procedures(db, catalog: "", schema: "", procedure: "").must().rows.len() == 0
+            close(@db).must()
+
+# A procedure's parameters, none where it has none.
+test "procedure_columns: no procedure, no column"
+    match open(options("Driver={SQLite3};Database=:memory:"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            assert procedure_columns(db, catalog: "", schema: "", procedure: "", column: "").must().rows.len() == 0
+            close(@db).must()
+
+# The data types a database offers.
+test "data_types: SQLite's types"
+    match open(options("Driver={SQLite3};Database=:memory:"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            assert data_types(db).must().rows.len() > 0
+            close(@db).must()
+
+# The columns that tell a row apart.
+test "row_id_columns: a table's key"
+    match open(options("Driver={SQLite3};Database=:memory:"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            exec_script(@db, "CREATE TABLE singer(id INTEGER PRIMARY KEY)").must()
+            assert !row_id_columns(db, catalog: "", schema: "", table: "singer").is_err()
+            close(@db).must()
+
+# The columns a database changes with every row's change, none in SQLite.
+test "row_version_columns: none"
+    match open(options("Driver={SQLite3};Database=:memory:"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            exec_script(@db, "CREATE TABLE singer(id INTEGER PRIMARY KEY)").must()
+            assert !row_version_columns(db, catalog: "", schema: "", table: "singer").is_err()
+            close(@db).must()
+
+# Who may do what to a table.
+test "table_privileges: a table's grants"
+    match open(options("Driver={SQLite3};Database=:memory:"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            exec_script(@db, "CREATE TABLE singer(id INTEGER)").must()
+            assert !table_privileges(db, catalog: "", schema: "", table: "singer").is_err()
+            close(@db).must()
+
+# Who may do what to a table's columns, which SQLite's ODBC driver does not
+# answer.
+test "column_privileges: a column's grants, or unsupported"
+    match open(options("Driver={SQLite3};Database=:memory:"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            exec_script(@db, "CREATE TABLE singer(id INTEGER)").must()
+
+            match column_privileges(db, catalog: "", schema: "", table: "singer", column: "")
+                .ok grants => assert grants.columns.len() > 0
+                .err e     => assert e.code == sql.UNSUPPORTED && sql.database_code_of(e.msg).must() == "IM001"
+
+            close(@db).must()
+
+# The driver manager this program loaded, where one is installed.
+test "manager: its library"
+    match manager()
+        .err e   => assert e.code == sql.UNSUPPORTED
+        .ok name => assert name != ""
+
+# The drivers the manager knows, by their names.
+test "drivers: their names"
+    match drivers()
+        .err e => assert e.code == sql.UNSUPPORTED
+        .ok listed =>
+            for d in listed
+                assert d.name != ""
+
+# The data sources the manager knows.
+test "data_sources: their names"
+    match data_sources()
+        .err e => assert e.code == sql.UNSUPPORTED
+        .ok listed =>
+            for s in listed
+                assert s.name != ""
+
+# A connection string read into its pairs.
+test "parse_connection: a driver and a file"
+    pairs = parse_connection("Driver={SQLite3};Database=shop.db").must()
+    assert pairs == [Attribute(key: "Driver", value: "SQLite3"), Attribute(key: "Database", value: "shop.db")]
+
+# A connection string written from its pairs, a password quoted.
+test "format_connection: a password with a semicolon"
+    text = format_connection([Attribute(key: "DSN", value: "shop"), Attribute(key: "PWD", value: "a;b")]).must()
+    assert text == "DSN=shop;PWD={a;b}"
