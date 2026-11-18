@@ -1,0 +1,91 @@
+# The ledger of `compress/brotli`. Neither Go's, Rust's nor Python's
+# standard library has Brotli (Go 1.27's `go doc` lists no such package,
+# Rust 1.100's `std` none, and Python 3.15's `import brotli` fails, on this
+# machine, 2026-11-18), so every block's three lines are `-` and the
+# capabilities are RFC 7932's and the `brotli` tool's (1.2.1, `brotli
+# --help`). Every stream in the package's tests was made by the tool or by
+# hand and given to the tool first; the cross-check in the scratch folder
+# read 28 of the tool's streams (qualities 0, 5, 11 and 9 with a window of
+# 10 bits; text, random bytes, runs, zeros, one byte, none, a repeated
+# pair), RFC 7932's own text at qualities 1, 2, 5, 9 and 11 and bytes of a
+# skewed distribution, all alike; had the tool read what Rebel wrote of
+# each and of RFC 7932's text, all alike; and compared 700 corrupted streams
+# with the tool: both refused 498, both read 202 the same, none differently.
+
+capability brotli/at-once  bytes compressed whole into one stream
+  heroes  compress/brotli.compress
+  go      -
+  rust    -
+  python  -
+  note    one block type, one literal tree and one distance tree per meta-block of at most 1 MiB, the repeats found greedily, the last distance said by code 0 or implied; no dictionary word is named. On RFC 7932's text it writes 16% more than `brotli -q 11`; on random bytes as much as the tool
+
+capability brotli/decompress-at-once  a stream decompressed whole under a limit
+  heroes  compress/brotli.decompress
+  go      -
+  rust    -
+  python  -
+  note    every part of RFC 7932: stored, metadata and compressed meta-blocks, block switches, the four context modes and both context maps, simple and complex prefix codes, the distance parameters, and the static dictionary with its 121 transforms. A meta-block whose length would pass the `limit` fails before a byte of it is decoded. Bytes after the stream fail `invalid`, as the tool refuses them
+
+capability brotli/leading  a stream at the start of other bytes, and where it ended
+  heroes  compress/brotli.decompress_leading
+  go      -
+  rust    -
+  python  -
+  note    Brotli has no length in a header; the last meta-block ends it
+
+capability brotli/quality  how hard the compressor works
+  heroes  compress/brotli.Options, compress/brotli.defaults, compress/brotli.MIN_QUALITY, compress/brotli.MAX_QUALITY
+  go      -
+  rust    -
+  python  -
+  note    0 to 11 as the tool's `-q`, 11 the usual; 0 stores every meta-block, 1 to 11 try 4 to 512 earlier places
+
+capability brotli/window  how far back a repeat may reach
+  heroes  compress/brotli.Options, compress/brotli.MIN_WINDOW_BITS, compress/brotli.MAX_WINDOW_BITS
+  go      -
+  rust    -
+  python  -
+  note    10 to 24 bits as the tool's `-w`, 22 the usual; read from every stream's first bits
+
+capability brotli/large-window  windows past 24 bits, the extension outside RFC 7932
+  heroes  refused: not RFC 7932; its header is the RFC's reserved code 0010001, which a reader of the RFC refuses `invalid`, as this one does
+  go      -
+  rust    -
+  python  -
+  note    the tool's `--large_window`
+
+capability brotli/encoder-hints  the kind of data (text, a font) and an expected size given to the compressor
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  note    the reference library's `BROTLI_PARAM_MODE` and `BROTLI_PARAM_SIZE_HINT`, which tune context modeling this encoder does not do; not written in this round
+
+capability brotli/shared-dictionary  a dictionary of the caller's own beside the static one
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  note    the tool's `-D`, the shared dictionaries of Shared Brotli, a format beyond RFC 7932; not written in this round
+
+capability brotli/compress-incremental  bytes compressed piece by piece, flushed
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  note    meta-blocks are independent of each other's codes, so a writer can hand out one meta-block at a time; not written in this round
+
+capability brotli/decompress-incremental  a stream decompressed piece by piece, or through a stream
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  note    not written in this round
+
+capability brotli/failures  what a broken stream answers
+  heroes  compress/brotli.INVALID, compress/brotli.LIMIT
+  go      -
+  rust    -
+  python  -
+  note    `invalid` names the byte where the stream stopped being Brotli
+

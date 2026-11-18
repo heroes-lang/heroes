@@ -1,0 +1,61 @@
+# Streams to test with, made by the `xz` tool 5.8.4 on this machine
+# (2026-11-18) and written as hexadecimal text; Python's `lzma` (3.15)
+# reads each but `SHORT_X86` the same. Made by hand at a shell; no program
+# calls it.
+
+use bytes
+
+# The text the samples hold, with characters of two bytes at its end.
+constant SHORT_TEXT: str
+    "ziggy played guitar, jamming good with weird and gilly, and the spiders from mars; été"
+
+# `xz -6` of the 88 bytes of `SHORT_TEXT`, its check CRC-64.
+constant SHORT: str
+    "fd377a585a000004e6d6b44604c05c58210116000000000000000000408b2b8ae0005700545d003d1a492d34664d1ed984c1b40534d15019fb199833e07a911097c977c9f9eb1a7a73551ee208acd5ddaa83e67575f5a94336431cb58dfe8b99771d544461fcbfec73fc69b17d5bd45bb7bec0a939e5398e1b2c400099e8e4c1fdcee71300017858139fd0a21fb6f37d010000000004595a"
+
+# `xz --check=sha256` of the one byte "a".
+constant ONE_SHA256: str
+    "fd377a585a00000ae1fb0ca104c005012101160000000000000000000482698d0100006100000000ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb0001390107080559189b4b9a01000000000a595a"
+
+# `xz --delta=dist=3 --lzma2` of `SHORT_TEXT`: two filters in its block.
+constant SHORT_DELTA: str
+    "fd377a585a000004e6d6b44604c15c58030102210116000000000000d70bb1b40100577a6967ed10b909f34109f903a70211490dec09b8bff8354d030801fab7f9084ffdb1080554f1b703fd49fbffb7ef0a44bff9054c0510c0b4e84244bf060445ac0b0b49f1f5090fbbf4ff4f07aefef45206daae506e5400000099e8e4c1fdcee71300017858139fd0a21fb6f37d010000000004595a"
+
+# `xz --block-size=30` of `SHORT_TEXT`: three blocks, their index listing three.
+constant SHORT_BLOCKS: str
+    "fd377a585a000004e6d6b44602c0221e21011600fadd7a7b01001d7a6967677920706c61796564206775697461722c206a616d6d696e6720670000002b4a461c2fadac3102c0221e21011600fadd7a7b01001d6f6f64207769746820776569726420616e642067696c6c792c20616e64200000006b242e1b61419a0c02c0201c21011600912f724c01001b74686520737069646572732066726f6d206d6172733b20c3a974c3a90056b9073aede683de0003361e361e341c188eea35b1c467fb020000000004595a"
+
+# `xz --x86 --lzma2` of `SHORT_TEXT`: a branch converter before LZMA2.
+constant SHORT_X86: str
+    "fd377a585a000004e6d6b44604c15c580400210116000000000000002e964c55e0005700545d003d1a492d34664d1ed984c1b40534d15019fb199833e07a911097c977c9f9eb1a7a73551ee208acd5ddaa83e67575f5a94336431cb58dfe8b99771d544461fcbfec73fc69b17d5bd45bb7bec0a939e5398e1b2c400099e8e4c1fdcee71300017858139fd0a21fb6f37d010000000004595a"
+
+# `xz --format=lzma` of `SHORT_TEXT`: its size unknown, ended by the end marker.
+constant SHORT_LZMA: str
+    "5d00008000ffffffffffffffff003d1a492d34664d1ed984c1b40534d15019fb199833e07a911097c977c9f9eb1a7a73551ee208acd5ddaa83e67575f5a94336431cb58dfe8b99771d544461fcbfec73fc69b17d5bd45bb7bec0a939e53996fed8fd88fc4471c0"
+
+# `xz -0 --check=crc32` of the one byte "a".
+constant ONE_CRC32: str
+    "fd377a585a0000016922de3603c0050121010c0000000000ef4ed9b8010000610000000043beb7e800011901a52c81cc9042990d010000000001595a"
+
+# The bytes of a sample's hexadecimal text.
+function of(hex: str) -> [u8]
+    return bytes.parse_hex(hex).must()
+
+# The bytes of `SHORT_TEXT`.
+function short_text() -> [u8]
+    return bytes.from_text(SHORT_TEXT)
+
+# `data` with byte `at` flipped by `mask`.
+function flipped(data: [u8], at: i64, mask: u8) -> [u8]
+    changed @= data
+    changed[at] @ to_u8(to_i64(changed[at]).must() ^ to_i64(mask).must()).must()
+    return changed
+
+# `data` followed by `more`.
+function followed(data: [u8], more: [u8]) -> [u8]
+    joined @= data
+
+    for b in more
+        joined @ joined.push(b)
+
+    return joined

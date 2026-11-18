@@ -1,0 +1,219 @@
+# The Huffman codes of Zstandard's literals: a tree's description, its
+# weights written directly or compressed with FSE, turned into a table read
+# by the next `max_bits` bits of a backward stream; one stream or four
+# decoded with it; and, for the encoder, the weights and codes of a set of
+# code lengths.
+
+use compress/internal/codes
+use compress/zstd/internal/bits
+use compress/zstd/internal/fse
+
+# The longest code a literal may have.
+constant MAX_BITS: i64
+    11
+
+# A decoding table: by the next `max_bits` bits, the symbol and how many of
+# them its code takes. `max_bits` 0 where no table is held.
+record Table
+    # The symbol of each entry.
+    symbols: [i64]
+    # How many bits each entry's code takes.
+    bits: [i64]
+    # How many bits are looked at once.
+    max_bits: i64
+
+# What `describe` answers: the table and how many bytes the description
+# took.
+record Described
+    # The table.
+    table: Table
+    # The bytes of the description.
+    used: i64
+
+# A table that holds nothing.
+function empty() -> Table
+    return Table(symbols: [], bits: [], max_bits: 0)
+
+# The weights of a description compressed with FSE: two states taking turns
+# until the stream overflows.
+function fse_weights(input: [u8] lent, at: i64, end: i64) -> [i64]?
+    c = fse.describe(input, at: at, end: end, max_symbol: 255, max_log: 6)?
+    t = fse.build(c.counts, log: c.log, at: at)?
+    b @= bits.back(input, from: at + c.used, to: end)?
+    one: i64 @= bits.read(@b, input: input, n: t.log)
+    two: i64 @= bits.read(@b, input: input, n: t.log)
+    weights: [i64] @= []
+
+    while true
+        if weights.len() > 255
+            return codes.invalid_at(at: at, why: "Huffman weights for more than 255 symbols")
+        weights @ weights.push(t.symbols[one])
+        one @ t.base[one] + bits.read(@b, input: input, n: t.bits[one])
+
+        if b.pos < 0
+            weights @ weights.push(t.symbols[two])
+            break
+        weights @ weights.push(t.symbols[two])
+        two @ t.base[two] + bits.read(@b, input: input, n: t.bits[two])
+
+        if b.pos < 0
+            weights @ weights.push(t.symbols[one])
+            break
+
+    return ok(weights)
+
+# The tree described at `at` of `input`, which may run to `end`.
+function describe(input: [u8] lent, at: i64, end: i64) -> Described?
+    if at >= end
+        return codes.invalid_at(at: at, why: "a Huffman tree description cut short")
+    header = to_i64(input[at]).must()
+    weights: [i64] @= []
+    used: i64 @= 0
+
+    if header >= 128
+        n = header - 127
+        size = (n + 1) / 2
+
+        if end - at - 1 < size
+            return codes.invalid_at(at: at, why: "a Huffman tree description cut short")
+
+        for i in range(from: 0, to: n)
+            byte = to_i64(input[at + 1 + i / 2]).must()
+
+            if i % 2 == 0
+                weights @ weights.push(byte >> 4)
+            else
+                weights @ weights.push(byte & 15)
+
+        used @ 1 + size
+    else
+        if header == 0 || end - at - 1 < header
+            return codes.invalid_at(at: at, why: "a Huffman tree description cut short")
+        weights @ fse_weights(input, at: at + 1, end: at + 1 + header)?
+        used @ 1 + header
+    t = from_weights(weights, at: at)?
+    return ok(Described(table: t, used: used))
+
+# The table `weights` make, the last symbol's weight found from the
+# others'. `at` is where they were read.
+function from_weights(weights: [i64] lent, at: i64) -> Table?
+    if weights.len() > 255
+        return codes.invalid_at(at: at, why: "Huffman weights for more than 255 symbols")
+    total: i64 @= 0
+
+    for w in weights
+        if w > MAX_BITS
+            return codes.invalid_at(at: at, why: f"a Huffman weight of {w}, past 11")
+
+        if w > 0
+            total @ total + (1 << w - 1)
+
+    if total == 0
+        return codes.invalid_at(at: at, why: "Huffman weights all 0")
+    max_bits = fse.high_bit(total) + 1
+
+    if max_bits > MAX_BITS
+        return codes.invalid_at(at: at, why: "Huffman codes longer than 11 bits")
+    left = (1 << max_bits) - total
+
+    if left & left - 1 != 0
+        return codes.invalid_at(at: at, why: "Huffman weights that leave no weight for the last symbol")
+    every: [i64] @= weights
+    every @ every.push(fse.high_bit(left) + 1)
+    symbols: [i64] @= []
+    widths: [i64] @= []
+
+    for w in range(from: 1, to: MAX_BITS + 1)
+        for s in range(from: 0, to: every.len())
+            if every[s] == w
+                for _ in range(from: 0, to: 1 << w - 1)
+                    symbols @ symbols.push(s)
+                    widths @ widths.push(max_bits + 1 - w)
+
+    return ok(Table(symbols: symbols, bits: widths, max_bits: max_bits))
+
+# Decodes `count` literals of the backward stream from `from` to `to` onto
+# `out`, the stream read exactly to its first bit.
+function stream(t: Table lent, input: [u8] lent, from: i64, to: i64, count: i64, @out: [u8]) -> ()?
+    b @= bits.back(input, from: from, to: to)?
+
+    for _ in range(from: 0, to: count)
+        v = bits.peek(b, input: input, n: t.max_bits)
+        b.pos @ b.pos - t.bits[v]
+        out @ out.push(to_u8(t.symbols[v]).must())
+
+    if b.pos != 0
+        return codes.invalid_at(at: from, why: "a Huffman stream not read exactly to its start")
+    return ok()
+
+# What the encoder needs of a set of code lengths, 0 to 11 each: by symbol
+# its weight and its code.
+record Codes
+    # The weight of each symbol, 0 where it has no code.
+    weights: [i64]
+    # The code of each symbol, `max_bits + 1 - weight` bits.
+    codes: [i64]
+    # The longest code.
+    max_bits: i64
+
+# The weights and codes of `lengths`, a complete code.
+function codes_for(lengths: [i64] lent) -> Codes
+    max_bits: i64 @= 0
+
+    for n in lengths
+        if n > max_bits
+            max_bits @ n
+
+    weights: [i64] @= []
+    made: [i64] @= []
+
+    for n in lengths
+        if n > 0
+            weights @ weights.push(max_bits + 1 - n)
+        else
+            weights @ weights.push(0)
+        made @ made.push(0)
+
+    pos: i64 @= 0
+
+    for w in range(from: 1, to: max_bits + 1)
+        for s in range(from: 0, to: lengths.len())
+            if weights[s] == w
+                made[s] @ pos >> w - 1
+                pos @ pos + (1 << w - 1)
+
+    return Codes(weights: weights, codes: made, max_bits: max_bits)
+
+test "from_weights: RFC 8878's example of weights 4 3 2 0 1, the last found"
+    t = from_weights([4, 3, 2, 0, 1], at: 0).must()
+    assert t.max_bits == 4
+
+    # literal 4 is 0000, 5 is 0001, 2 is 001x, 1 is 01xx, 0 is 1xxx.
+    assert t.symbols[0] == 4 && t.symbols[1] == 5 && t.symbols[2] == 2 && t.symbols[4] == 1 && t.symbols[8] == 0
+    assert t.bits[0] == 4 && t.bits[2] == 3 && t.bits[8] == 1
+
+test "from_weights: no weight, a weight past 11, and nothing left for the last"
+    for bad in [[0, 0], [12, 1], [3, 1]]
+        match from_weights(bad, at: 0)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+test "codes_for and stream: literals written with their codes, read back"
+    c = codes_for([1, 2, 3, 0, 4, 4])
+    assert c.weights == [4, 3, 2, 0, 1, 1]
+    assert c.codes == [1, 1, 1, 0, 0, 1]
+    t = from_weights(c.weights.slice(from: 0, to: 5), at: 0).must()
+    text: [i64] = [0, 1, 2, 4, 5, 0, 0, 1]
+    out: [u8] @= []
+    w @= bits.writer()
+    i: i64 @= text.len() - 1
+
+    while i >= 0
+        s = text[i]
+        bits.put(@out, @w, value: c.codes[s], n: c.max_bits + 1 - c.weights[s])
+        i @ i - 1
+
+    bits.close(@out, @w)
+    back: [u8] @= []
+    stream(t, input: out, from: 0, to: out.len(), count: text.len(), out: @back).must()
+    assert back == [0, 1, 2, 4, 5, 0, 0, 1]

@@ -1,0 +1,321 @@
+# Zstandard's frames read: the magic, the header's descriptor, window,
+# dictionary id and content size; each block stored, repeated or
+# compressed, held to the block's most and the caller's limit; the
+# checksum; skippable frames passed over; frames one after another.
+
+use compress/internal/codes
+use compress/zstd/internal/literals
+use compress/zstd/internal/samples
+use compress/zstd/internal/sequences
+use compress/zstd/internal/xxh64
+
+# The most bytes a block may hold.
+constant BLOCK_MOST: i64
+    131072
+
+# What a frame's header says.
+record Header
+    # Whether the frame is skippable: its data is not Zstandard.
+    skippable: bool
+    # How many bytes the header takes, the magic included; for a skippable
+    # frame, the whole frame.
+    size: i64
+    # How far back a repeat may reach, in bytes.
+    window: i64
+    # The dictionary the frame was made with, 0 for none.
+    dictionary_id: i64
+    # How many bytes the frame decompresses to, -1 where it does not say.
+    content_size: i64
+    # Whether a checksum of four bytes follows the last block.
+    has_checksum: bool
+
+# The dictionary a frame is read with: its content and the tables and
+# offsets it starts the frame with. Empty content and fresh tables where
+# none was given.
+record Dict
+    # The dictionary's id, 0 for one without.
+    id: i64
+    # The bytes repeats may reach back into before the frame.
+    content: [u8]
+    # The tables and offsets a frame starts with.
+    entropy: sequences.Entropy
+
+# No dictionary.
+function no_dict() -> Dict
+    return Dict(id: 0, content: [], entropy: sequences.fresh())
+
+# Whether the four bytes at `at` of `input` are a skippable frame's magic.
+function is_skippable(input: [u8] lent, at: i64) -> bool
+    return input.len() - at >= 4 && to_i64(input[at]).must() & 0xf0 == 0x50 && input[at + 1] == 0x2a && input[at + 2] == 0x4d && input[at + 3] == 0x18
+
+# The header of the frame at `at` of `input`.
+function header_at(input: [u8] lent, at: i64) -> Header?
+    if is_skippable(input, at: at)
+        if input.len() - at < 8
+            return codes.invalid_at(at: at, why: "a skippable frame cut short")
+        size = literals.little(input, at: at + 4, width: 4)
+
+        if size > input.len() - at - 8
+            return codes.invalid_at(at: at, why: "a skippable frame cut short")
+        return ok(
+            Header(skippable: true, size: 8 + size, window: 0, dictionary_id: 0, content_size: 0, has_checksum: false)
+        )
+
+    if input.len() - at < 5 || input[at] != 0x28 || input[at + 1] != 0xb5 || input[at + 2] != 0x2f || input[at + 3] != 0xfd
+        return codes.invalid_at(at: at, why: "no Zstandard frame, which begins 28 B5 2F FD")
+    desc = to_i64(input[at + 4]).must()
+
+    if desc & 8 != 0
+        return codes.invalid_at(at: at + 4, why: "a frame header whose reserved bit is set")
+    single = desc & 0x20 != 0
+    widths: [i64] = [0, 1, 2, 4]
+    dict_width = widths[desc & 3]
+    fcs_flag = desc >> 6
+    sizes: [i64] = [0, 2, 4, 8]
+    fcs_width: i64 @= sizes[fcs_flag]
+
+    if fcs_flag == 0 && single
+        fcs_width @ 1
+    p: i64 @= at + 5
+    window: i64 @= 0
+    window_bytes: i64 @= 1
+
+    if single
+        window_bytes @ 0
+
+    if input.len() - p < window_bytes + dict_width + fcs_width
+        return codes.invalid_at(at: p, why: "a frame header cut short")
+
+    if !single
+        w = to_i64(input[p]).must()
+        log = 10 + (w >> 3)
+        window @ (1 << log) + (1 << log >> 3) * (w & 7)
+        p @ p + 1
+    dict_id = literals.little(input, at: p, width: dict_width)
+    p @ p + dict_width
+    content_size: i64 @= -1
+
+    if fcs_width == 8 && input[p + 7] >= 0x80
+        content_size @ 9223372036854775807
+    else if fcs_width > 0
+        content_size @ literals.little(input, at: p, width: fcs_width)
+
+        if fcs_width == 2
+            content_size @ content_size + 256
+    p @ p + fcs_width
+
+    if single
+        window @ content_size
+    return ok(
+        Header(skippable: false, size: p - at, window: window, dictionary_id: dict_id, content_size: content_size, has_checksum: desc & 4 != 0)
+    )
+
+# Decodes the frame at `at` of `input` onto `out`, which may hold at most
+# `limit` bytes, read with `dict`; answers the index after it.
+function frame_into(@out: [u8], input: [u8] lent, at: i64, limit: i64, dict: Dict lent) -> i64?
+    if limit < 0
+        return fail(code: codes.INVALID, msg: f"a limit of {limit} bytes, where a limit is 0 or more")
+    h = header_at(input, at: at)?
+
+    if h.skippable
+        return ok(at + h.size)
+
+    if h.dictionary_id != 0 && h.dictionary_id != dict.id
+        if dict.id == 0
+            return codes.invalid_at(
+                at: at,
+                why: f"a frame made with dictionary {h.dictionary_id}, which none was given to read"
+            )
+        return codes.invalid_at(
+            at: at,
+            why: f"a frame made with dictionary {h.dictionary_id}, read with dictionary {dict.id}"
+        )
+    start = out.len()
+
+    if h.content_size >= 0 && h.content_size > limit - start
+        return codes.past_limit(limit: limit, at: at)
+    block_most: i64 @= BLOCK_MOST
+
+    if h.window < block_most
+        block_most @ h.window
+    e @= dict.entropy
+    p: i64 @= at + h.size
+    place = sequences.Place(frame_start: start, limit: limit, block_most: block_most)
+
+    while true
+        if input.len() - p < 3
+            return codes.invalid_at(at: p, why: "a frame cut short before a block's header")
+        bh = literals.little(input, at: p, width: 3)
+        kind = bh >> 1 & 3
+        size = bh >> 3
+        body = p + 3
+
+        if kind == 3
+            return codes.invalid_at(at: p, why: "a block of the reserved kind 3")
+
+        if size > block_most
+            return codes.invalid_at(at: p, why: f"a block of {size} bytes, past the frame's {block_most}")
+
+        if kind == 1
+            if body >= input.len()
+                return codes.invalid_at(at: body, why: "a repeated block cut short")
+
+            if out.len() + size > limit
+                return codes.past_limit(limit: limit, at: body)
+            b = input[body]
+
+            for _ in range(from: 0, to: size)
+                out @ out.push(b)
+
+            p @ body + 1
+        else
+            if input.len() - body < size
+                return codes.invalid_at(at: body, why: "a block cut short")
+
+            if kind == 0
+                if out.len() + size > limit
+                    return codes.past_limit(limit: limit, at: body)
+
+                for k in range(from: body, to: body + size)
+                    out @ out.push(input[k])
+            else
+                section = literals.read(input, at: body, end: body + size, tree: @e.tree)?
+                sequences.run(input: input, at: body + section.used, end: body + size, literals: section.literals, out: @out, e: @e, dict: dict.content, place: place)?
+            p @ body + size
+
+        if h.content_size >= 0 && out.len() - start > h.content_size
+            return codes.invalid_at(at: p, why: f"a frame past the {h.content_size} bytes its header says")
+
+        if bh & 1 == 1
+            break
+
+    if h.content_size >= 0 && out.len() - start != h.content_size
+        return codes.invalid_at(
+            at: p,
+            why: f"a frame of {out.len() - start} bytes, where its header says {h.content_size}"
+        )
+
+    if h.has_checksum
+        if input.len() - p < 4
+            return codes.invalid_at(at: p, why: "a frame cut short inside its checksum")
+
+        if xxh64.checksum(out, from: start, to: out.len()) != literals.little(input, at: p, width: 4)
+            return codes.invalid_at(at: p, why: "a frame whose checksum does not match its bytes")
+        p @ p + 4
+    return ok(p)
+
+# Every frame of `input`, one after another, decompressed whole.
+function every_frame(input: [u8] lent, limit: i64, dict: Dict lent) -> [u8]?
+    if input.len() == 0
+        return codes.invalid_at(at: 0, why: "an empty input, where a Zstandard frame begins 28 B5 2F FD")
+    out: [u8] @= []
+    at: i64 @= 0
+
+    while at < input.len()
+        at @ frame_into(out: @out, input: input, at: at, limit: limit, dict: dict)?
+
+    return ok(out)
+
+# How many bytes the frame at `at` of `input` takes, its blocks walked and
+# not decoded.
+function size_of(input: [u8] lent, at: i64) -> i64?
+    h = header_at(input, at: at)?
+
+    if h.skippable
+        return ok(h.size)
+    p: i64 @= at + h.size
+
+    while true
+        if input.len() - p < 3
+            return codes.invalid_at(at: p, why: "a frame cut short before a block's header")
+        bh = literals.little(input, at: p, width: 3)
+        kind = bh >> 1 & 3
+
+        if kind == 3
+            return codes.invalid_at(at: p, why: "a block of the reserved kind 3")
+        size: i64 @= bh >> 3
+
+        if kind == 1
+            size @ 1
+
+        if input.len() - p - 3 < size
+            return codes.invalid_at(at: p, why: "a block cut short")
+        p @ p + 3 + size
+
+        if bh & 1 == 1
+            break
+
+    if h.has_checksum
+        if input.len() - p < 4
+            return codes.invalid_at(at: p, why: "a frame cut short inside its checksum")
+        p @ p + 4
+    return ok(p - at)
+
+test "every_frame: the tool's frames, Huffman weights compressed, a repeated block, and no size said"
+    text = samples.text(samples.SHORT_TEXT)
+    assert every_frame(samples.of(samples.SHORT), limit: 88, dict: no_dict()).must() == text
+    assert every_frame(samples.of(samples.SHORT_STREAM), limit: 88, dict: no_dict()).must() == text
+    assert every_frame(samples.of(samples.SKEW), limit: 1200, dict: no_dict()).must().len() == 1200
+    zeros = every_frame(samples.of(samples.ZEROS), limit: 300, dict: no_dict()).must()
+    assert zeros.len() == 300 && zeros[0] == 0 && zeros[299] == 0
+
+test "every_frame: two frames and a skippable one between them"
+    skippable: [u8] = [0x5a, 0x2a, 0x4d, 0x18, 2, 0, 0, 0, 7, 7]
+    joined = samples.followed(
+        data: samples.followed(data: samples.of(samples.SHORT), more: skippable),
+        more: samples.of(samples.ZEROS)
+    )
+    whole = every_frame(joined, limit: 388, dict: no_dict()).must()
+    assert whole.len() == 388 && whole[87] == 0xa9 && whole[88] == 0
+
+test "every_frame: a checksum, a reserved bit, bytes after, a cut, nothing, and a limit said before"
+    short = samples.of(samples.SHORT)
+
+    match every_frame(samples.flipped(short, at: short.len() - 1, mask: 1), limit: 1000, dict: no_dict())
+        .ok _  => assert false
+        .err e => assert e.msg == "not a valid compressed stream at byte 86: a frame whose checksum does not match its bytes"
+
+    match every_frame(samples.flipped(short, at: 4, mask: 8), limit: 1000, dict: no_dict())
+        .ok _  => assert false
+        .err e => assert e.msg == "not a valid compressed stream at byte 4: a frame header whose reserved bit is set"
+
+    nothing: [u8] = []
+
+    for bad in [nothing, short.slice(from: 0, to: short.len() - 6), samples.followed(data: short, more: [0x78]), samples.flipped(short, at: 0, mask: 1)]
+        match every_frame(bad, limit: 1000, dict: no_dict())
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+    match every_frame(short, limit: 87, dict: no_dict())
+        .ok _  => assert false
+        .err e => assert e.msg == "the output would pass the limit of 87 bytes, reading byte 0 of the input"
+
+    match every_frame(samples.of(samples.SHORT_STREAM), limit: 87, dict: no_dict())
+        .ok _  => assert false
+        .err e => assert e.code == "limit"
+
+    match every_frame(short, limit: -1, dict: no_dict())
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+test "every_frame: each byte of a frame changed, never an abort"
+    short = samples.of(samples.SHORT)
+
+    for at in range(from: 0, to: short.len())
+        for mask in [1, 0x10, 0x80]
+            match every_frame(samples.flipped(short, at: at, mask: to_u8(mask).must()), limit: 1000, dict: no_dict())
+                .ok out => assert out.len() <= 1000
+                .err e  => assert e.code == "invalid" || e.code == "limit"
+
+test "size_of and header_at: a frame's length walked, a skippable frame, a header cut short"
+    short = samples.of(samples.SHORT)
+    assert size_of(samples.followed(data: short, more: [1, 2]), at: 0).must() == short.len()
+    h = header_at(short, at: 0).must()
+    assert h.content_size == 88 && h.has_checksum && h.window == 88 && !h.skippable
+    stream = header_at(samples.of(samples.SHORT_STREAM), at: 0).must()
+    assert stream.content_size == -1 && stream.window >= 1024
+    assert size_of([0x50, 0x2a, 0x4d, 0x18, 1, 0, 0, 0, 9], at: 0).must() == 9
+
+    match header_at(short.slice(from: 0, to: 5), at: 0)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"

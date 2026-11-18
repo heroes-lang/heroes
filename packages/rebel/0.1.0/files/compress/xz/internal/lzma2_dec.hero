@@ -1,0 +1,188 @@
+# LZMA2's chunks read, and the `.lzma` format's header: each chunk stored
+# or LZMA, resetting the dictionary, the state or the properties as its
+# control byte says, its sizes held to what its range coder used.
+
+use compress/internal/codes
+use compress/xz/internal/lzma_dec
+use compress/xz/internal/samples
+
+# What `alone` answers: the bytes and where the stream ended.
+record Alone
+    # The bytes the stream decompressed to.
+    data: [u8]
+    # The index after the stream's last byte.
+    used: i64
+
+# The number of `width` bytes at `at` of `input`, the lowest first.
+function little(input: [u8] lent, at: i64, width: i64) -> i64
+    value: i64 @= 0
+    k: i64 @= width - 1
+
+    while k >= 0
+        value @ value << 8 | to_i64(input[at + k]).must()
+        k @ k - 1
+
+    return value
+
+# Decodes the LZMA2 data that begins at `at` of `input`, which may run to
+# `end`, onto `out`, which may hold at most `limit` bytes; answers the index
+# after its end, the byte 0.
+function lzma2(input: [u8] lent, at: i64, end: i64, @out: [u8], limit: i64) -> i64?
+    pos: i64 @= at
+    dict_start: i64 @= out.len()
+    need_reset: bool @= true
+    need_props: bool @= true
+    d: lzma_dec.Decoder @= lzma_dec.fresh(lzma_dec.Props(lc: 0, lp: 0, pb: 0))
+
+    while true
+        if pos >= end
+            return codes.invalid_at(at: end, why: "LZMA2 data cut short before its end byte")
+        control = to_i64(input[pos]).must()
+
+        if control == 0
+            return ok(pos + 1)
+
+        if control >= 0xe0 || control == 1
+            need_props @ true
+            need_reset @ false
+            dict_start @ out.len()
+        else if need_reset
+            return codes.invalid_at(at: pos, why: "LZMA2 data whose first chunk does not reset the dictionary")
+
+        if control < 0x80
+            if control > 2
+                return codes.invalid_at(at: pos, why: f"an LZMA2 chunk of control byte {control}, which no chunk has")
+
+            if end - pos < 3
+                return codes.invalid_at(at: end, why: "LZMA2 data cut short inside a chunk's header")
+            size = little(input, at: pos + 1, width: 1) << 8 | little(input, at: pos + 2, width: 1)
+            pos @ pos + 3
+
+            if end - pos < size + 1
+                return codes.invalid_at(at: end, why: "LZMA2 data cut short inside a stored chunk")
+
+            if out.len() + size + 1 > limit
+                return codes.past_limit(limit: limit, at: pos)
+
+            for k in range(from: pos, to: pos + size + 1)
+                out @ out.push(input[k])
+
+            pos @ pos + size + 1
+            continue
+
+        if end - pos < 5
+            return codes.invalid_at(at: end, why: "LZMA2 data cut short inside a chunk's header")
+        unpacked = ((control & 0x1f) << 16 | little(input, at: pos + 1, width: 1) << 8 | little(input, at: pos + 2, width: 1)) + 1
+        packed = (little(input, at: pos + 3, width: 1) << 8 | little(input, at: pos + 4, width: 1)) + 1
+        reset = control >> 5 & 3
+        pos @ pos + 5
+
+        if reset >= 2
+            if pos >= end
+                return codes.invalid_at(at: end, why: "LZMA2 data cut short before a chunk's properties")
+            props = lzma_dec.props_of(byte: to_i64(input[pos]).must(), at: pos)?
+
+            if props.lc + props.lp > 4
+                return codes.invalid_at(at: pos, why: "LZMA2 properties whose lc and lp add past 4")
+            pos @ pos + 1
+            need_props @ false
+            d @ lzma_dec.fresh(props)
+        else if need_props
+            return codes.invalid_at(at: pos - 5, why: "an LZMA chunk before any properties")
+        else if reset == 1
+            d @ lzma_dec.fresh(d.props)
+
+        if end - pos < packed
+            return codes.invalid_at(at: end, why: "LZMA2 data cut short inside an LZMA chunk")
+        rc @= lzma_dec.range_at(input, at: pos, end: pos + packed)?
+        status = lzma_dec.run(@d, @rc, input: input, out: @out, dict_start: dict_start, target: out.len() + unpacked, limit: limit)?
+
+        if status == lzma_dec.MARKED
+            return codes.invalid_at(at: rc.pos, why: "an end marker inside LZMA2 data")
+
+        if rc.code != 0 || rc.pos != pos + packed
+            return codes.invalid_at(at: pos, why: "an LZMA chunk whose size does not match its range coder's end")
+        pos @ pos + packed
+
+    return ok(pos)
+
+# The `.lzma` stream at the start of `input`: its 13 bytes of header (the
+# properties, the dictionary size, the size or 2^64 - 1 for none), then the
+# LZMA data, ended by its size or by the end marker.
+function alone(input: [u8] lent, limit: i64) -> Alone?
+    if limit < 0
+        return fail(code: codes.INVALID, msg: f"a limit of {limit} bytes, where a limit is 0 or more")
+
+    if input.len() < 13
+        return codes.invalid_at(at: input.len(), why: "an .lzma stream shorter than its 13 bytes of header")
+    props = lzma_dec.props_of(byte: to_i64(input[0]).must(), at: 0)?
+    unknown: bool @= true
+
+    for k in range(from: 5, to: 13)
+        if input[k] != 0xff
+            unknown @ false
+
+    size: i64 @= -1
+
+    if !unknown
+        if input[12] >= 0x80
+            return codes.invalid_at(at: 5, why: "an .lzma size past 2^63 bytes")
+        size @ little(input, at: 5, width: 8)
+
+        if size > limit
+            return codes.past_limit(limit: limit, at: 5)
+    d @= lzma_dec.fresh(props)
+    rc @= lzma_dec.range_at(input, at: 13, end: input.len())?
+    out: [u8] @= []
+    status = lzma_dec.run(@d, @rc, input: input, out: @out, dict_start: 0, target: size, limit: limit)?
+
+    if size >= 0 && status == lzma_dec.MARKED
+        return codes.invalid_at(at: rc.pos, why: "an end marker before the size the header says")
+
+    if rc.code != 0
+        return codes.invalid_at(at: rc.pos, why: "an LZMA stream that does not end where its range coder does")
+    return ok(Alone(data: out, used: rc.pos))
+
+test "alone: the tool's stream with an end marker, a cut one, and limits"
+    assert alone(samples.of(samples.SHORT_LZMA), limit: 88).must().data == samples.short_text()
+    short = samples.of(samples.SHORT_LZMA)
+
+    match alone(short.slice(from: 0, to: short.len() - 2), limit: 1000)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    match alone(short, limit: 87)
+        .ok _  => assert false
+        .err e => assert e.code == "limit"
+
+    match alone(short.slice(from: 0, to: 12), limit: 1000)
+        .ok _  => assert false
+        .err e => assert e.msg == "not a valid compressed stream at byte 12: an .lzma stream shorter than its 13 bytes of header"
+
+test "alone: a properties byte past 224, and a size the limit refuses before decoding"
+    bad = samples.flipped(samples.of(samples.SHORT_LZMA), at: 0, mask: 0xc0)
+
+    match alone(bad, limit: 1000)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    sized: [u8] = [0x5d, 0, 0, 1, 0, 0xff, 0xff, 0xff, 0x7f, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+    match alone(sized, limit: 1000)
+        .ok _  => assert false
+        .err e => assert e.msg == "the output would pass the limit of 1000 bytes, reading byte 5 of the input"
+
+test "lzma2: no chunk resetting the dictionary first, a control byte no chunk has, and stored chunks"
+    scratch: [u8] @= []
+
+    match lzma2(input: [2, 0, 0, 0x61, 0], at: 0, end: 5, out: @scratch, limit: 10)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    match lzma2(input: [3, 0], at: 0, end: 2, out: @scratch, limit: 10)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    out: [u8] @= []
+    assert lzma2(input: [1, 0, 1, 0x61, 0x62, 2, 0, 0, 0x63, 0], at: 0, end: 10, out: @out, limit: 10).must() == 10
+    assert out == [0x61, 0x62, 0x63]

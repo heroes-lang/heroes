@@ -1,0 +1,247 @@
+# What the Zstandard encoder writes: a frame of blocks of at most 128 KiB,
+# each block's repeats found greedily along hash chains (a dictionary's
+# content searched as the bytes before the input), its literals stored,
+# repeated or Huffman-coded (the tree written weight by weight, or its
+# weights compressed with FSE), its sequences coded with the predefined
+# tables; a block that would not shrink stored instead, one of a single
+# byte repeated said so.
+
+use compress/internal/codes
+use compress/internal/finder
+use compress/zstd/internal/frame
+use compress/zstd/internal/samples
+use compress/zstd/internal/sections
+use compress/zstd/internal/sequences
+use compress/zstd/internal/xxh64
+
+# How the encoder works: the frame it writes and its effort.
+record Plan
+    # 1 to 22: how many earlier positions are tried for each one.
+    level: i64
+    # Whether the frame ends with its checksum.
+    checksum: bool
+    # Whether the header says the frame's size.
+    content_size: bool
+
+# Fails `invalid` where `level` is outside 1 to 22.
+function check_level(level: i64) -> ()?
+    if level < 1 || level > 22
+        return fail(code: codes.INVALID, msg: f"a level of {level}, where this package's are 1 to 22")
+    return ok()
+
+# The compressed body of the block from `from` to `to` of `data`, whose
+# earlier bytes the chains of `f` hold.
+function block_body(data: [u8] lent, from: i64, to: i64, @f: finder.Finder) -> [u8]
+    found: [sections.Found] @= []
+    lits: [u8] @= []
+    pos: i64 @= from
+    literal_start: i64 @= from
+
+    while pos < to
+        finder.insert_upto(@f, data: data, upto: pos)
+        best = finder.longest(f, data: data, at: pos, most: to - pos)
+
+        if best.length >= 4
+            for k in range(from: literal_start, to: pos)
+                lits @ lits.push(data[k])
+
+            found @ found.push(
+                sections.Found(literal_length: pos - literal_start, match_length: best.length, offset: best.distance)
+            )
+            pos @ pos + best.length
+            literal_start @ pos
+        else
+            pos @ pos + 1
+
+    finder.insert_upto(@f, data: data, upto: to)
+
+    for k in range(from: literal_start, to: to)
+        lits @ lits.push(data[k])
+
+    body: [u8] @= []
+    sections.put_literals(out: @body, lits: lits)
+    sections.put_sequences(@body, found: found)
+    return body
+
+# One frame of `input`, `prefix` (a dictionary's content, of id
+# `dictionary_id`, 0 for none) searched before it.
+function frame_of(input: [u8] lent, prefix: [u8] lent, dictionary_id: i64, plan: Plan) -> [u8]
+    n = input.len()
+    out: [u8] @= [0x28, 0xb5, 0x2f, 0xfd]
+    dict_flag: i64 @= 0
+    dict_width: i64 @= 0
+
+    if dictionary_id > 0
+        dict_flag @ 3
+        dict_width @ 4
+
+        if dictionary_id < 256
+            dict_flag @ 1
+            dict_width @ 1
+        else if dictionary_id < 65536
+            dict_flag @ 2
+            dict_width @ 2
+    checksum_flag: i64 @= 0
+
+    if plan.checksum
+        checksum_flag @ 4
+    window: i64 @= n
+    block_most: i64 @= frame.BLOCK_MOST
+
+    if plan.content_size
+        fcs_flag: i64 @= 3
+        fcs_width: i64 @= 8
+        fcs: i64 @= n
+
+        if n < 256
+            fcs_flag @ 0
+            fcs_width @ 1
+        else if n < 65792
+            fcs_flag @ 1
+            fcs_width @ 2
+            fcs @ n - 256
+        else if n < 4294967296
+            fcs_flag @ 2
+            fcs_width @ 4
+        out @ out.push(to_u8(fcs_flag << 6 | 0x20 | checksum_flag | dict_flag).must())
+        sections.put_little(@out, value: dictionary_id, width: dict_width)
+        sections.put_little(@out, value: fcs, width: fcs_width)
+    else
+        log: i64 @= 10
+        most_log: i64 @= 23
+
+        if prefix.len() > 0
+            most_log @ 30
+
+        while 1 << log < n && log < most_log
+            log @ log + 1
+
+        window @ 1 << log
+        out @ out.push(to_u8(checksum_flag | dict_flag).must())
+        out @ out.push(to_u8(log - 10 << 3).must())
+        sections.put_little(@out, value: dictionary_id, width: dict_width)
+
+    if window < block_most
+        block_most @ window
+    data: [u8] @= prefix
+
+    for b in input
+        data @ data.push(b)
+
+    chains = [2, 4, 8, 12, 16, 24, 32, 48, 64, 96, 128, 160, 192, 256, 320, 384, 512, 640, 768, 1024, 1536, 2048]
+    nices = [
+        16
+        24
+        32
+        32
+        48
+        64
+        64
+        96
+        128
+        128
+        192
+        192
+        256
+        256
+        512
+        512
+        1024
+        1024
+        2048
+        4096
+        8192
+        16384
+    ]
+    f @= finder.start(
+        size: data.len(),
+        window: window,
+        shortest: 4,
+        chain: chains[plan.level - 1],
+        nice: nices[plan.level - 1]
+    )
+    pos: i64 @= prefix.len()
+
+    while true
+        to: i64 @= pos + block_most
+
+        if to > data.len()
+            to @ data.len()
+        last: i64 @= 0
+
+        if to == data.len()
+            last @ 1
+        size = to - pos
+        same: bool @= size > 1
+
+        for k in range(from: pos, to: to)
+            if data[k] != data[pos]
+                same @ false
+                break
+
+        if same
+            finder.insert_upto(@f, data: data, upto: to)
+            sections.put_little(@out, value: last | 1 << 1 | size << 3, width: 3)
+            out @ out.push(data[pos])
+        else
+            body: [u8] @= []
+
+            if size > 0
+                body @ block_body(data, from: pos, to: to, f: @f)
+
+            if size == 0 || body.len() >= size
+                sections.put_little(@out, value: last | size << 3, width: 3)
+
+                for k in range(from: pos, to: to)
+                    out @ out.push(data[k])
+            else
+                sections.put_little(@out, value: last | 2 << 1 | body.len() << 3, width: 3)
+
+                for b in body
+                    out @ out.push(b)
+
+        pos @ to
+
+        if last == 1
+            break
+
+    if plan.checksum
+        sections.put_little(@out, value: xxh64.checksum(input, from: 0, to: n), width: 4)
+    return out
+
+test "frame_of: round trips of nothing, one byte, text, runs, every byte and bytes no repeat shrinks"
+    text = samples.text(
+        "ground control to major tom, ground control to major tom; été, ☃, and more text to repeat, to repeat"
+    )
+    runs: [u8] @= []
+
+    for i in range(from: 0, to: 5000)
+        runs @ runs.push(to_u8(i / 900 % 3 * 100).must())
+
+    every: [u8] @= []
+
+    for v in range(from: 0, to: 256)
+        every @ every.push(to_u8(v).must())
+
+    noise: [u8] @= []
+    x: i64 @= 12345
+
+    for _ in range(from: 0, to: 140000)
+        x @ (x * 1103515245 + 12345) % 2147483648
+        noise @ noise.push(to_u8(x >> 16 & 63).must())
+
+    nothing: [u8] = []
+
+    for data in [nothing, [0x61], text, runs, every, noise]
+        for content_size in [true, false]
+            plan = Plan(level: 3, checksum: true, content_size: content_size)
+            packed = frame_of(input: data, prefix: [], dictionary_id: 0, plan: plan)
+            assert frame.every_frame(packed, limit: data.len(), dict: frame.no_dict()).must() == data
+
+test "frame_of: a prefix of content and the dictionary id in the header"
+    d = frame.Dict(id: 300, content: samples.text("heroes, just for one day; heroes"), entropy: sequences.fresh())
+    data = samples.text("we can be heroes, just for one day")
+    plan = Plan(level: 9, checksum: false, content_size: false)
+    packed = frame_of(input: data, prefix: d.content, dictionary_id: 300, plan: plan)
+    assert frame.header_at(packed, at: 0).must().dictionary_id == 300
+    assert frame.every_frame(packed, limit: 100, dict: d).must() == data

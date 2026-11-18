@@ -1,0 +1,151 @@
+# The Burrows-Wheeler transform of a block: its rotations sorted by
+# doubling the length of the prefix that orders them, each round a counting
+# sort by the class of a rotation's first half, the second halves ordered
+# already by the round before. A round costs time linear in the block and
+# there are at most log2 of its length, whatever the block holds, so a run
+# of one byte costs no more than text.
+
+# What the transform answers: the last byte of each rotation in sorted
+# order, and where the block itself stands among them.
+record Transformed
+    # The last column: the byte before each sorted rotation's first.
+    last: [u8]
+    # The index of the rotation that begins at the block's first byte.
+    origin: i64
+
+# The rotations of `block`, one byte or more, sorted, as the start of each.
+# Equal rotations, which a block repeating a shorter one has, keep no order
+# the decoder needs: any order of them inverts to the same bytes.
+function sorted(block: [u8] lent) -> [i64]
+    n = block.len()
+    counts: [i64] @= []
+
+    for _ in range(from: 0, to: 256)
+        counts @ counts.push(0)
+
+    for b in block
+        k = to_i64(b).must()
+        counts[k] @ counts[k] + 1
+
+    for k in range(from: 1, to: 256)
+        counts[k] @ counts[k] + counts[k - 1]
+
+    order: [i64] @= []
+    rank: [i64] @= []
+
+    for _ in range(from: 0, to: n)
+        order @ order.push(0)
+        rank @ rank.push(0)
+
+    i: i64 @= n - 1
+
+    while i >= 0
+        k = to_i64(block[i]).must()
+        counts[k] @ counts[k] - 1
+        order[counts[k]] @ i
+        i @ i - 1
+
+    classes: i64 @= 1
+
+    for j in range(from: 1, to: n)
+        if block[order[j]] != block[order[j - 1]]
+            classes @ classes + 1
+        rank[order[j]] @ classes - 1
+
+    shifted: [i64] @= order
+    fresh: [i64] @= rank
+    tally: [i64] @= []
+    half: i64 @= 1
+
+    while half < n && classes < n
+        for j in range(from: 0, to: n)
+            s: i64 @= order[j] - half
+
+            if s < 0
+                s @ s + n
+            shifted[j] @ s
+
+        while tally.len() < classes
+            tally @ tally.push(0)
+
+        for c in range(from: 0, to: classes)
+            tally[c] @ 0
+
+        for j in range(from: 0, to: n)
+            c = rank[shifted[j]]
+            tally[c] @ tally[c] + 1
+
+        for c in range(from: 1, to: classes)
+            tally[c] @ tally[c] + tally[c - 1]
+
+        j: i64 @= n - 1
+
+        while j >= 0
+            c = rank[shifted[j]]
+            tally[c] @ tally[c] - 1
+            order[tally[c]] @ shifted[j]
+            j @ j - 1
+
+        fresh[order[0]] @ 0
+        classes @ 1
+
+        for k in range(from: 1, to: n)
+            now = order[k]
+            before = order[k - 1]
+            now_second: i64 @= now + half
+            before_second: i64 @= before + half
+
+            if now_second >= n
+                now_second @ now_second - n
+
+            if before_second >= n
+                before_second @ before_second - n
+
+            if rank[now] != rank[before] || rank[now_second] != rank[before_second]
+                classes @ classes + 1
+            fresh[now] @ classes - 1
+
+        for k in range(from: 0, to: n)
+            rank[k] @ fresh[k]
+
+        half @ half * 2
+
+    return order
+
+# The transform of `block`, one byte or more.
+function transform(block: [u8] lent) -> Transformed
+    order = sorted(block)
+    n = block.len()
+    last: [u8] @= []
+    origin: i64 @= 0
+
+    for k in range(from: 0, to: n)
+        start = order[k]
+
+        if start == 0
+            origin @ k
+            last @ last.push(block[n - 1])
+        else
+            last @ last.push(block[start - 1])
+
+    return Transformed(last: last, origin: origin)
+
+test "transform: banana, one byte, and a run of one byte"
+    t = transform([0x62, 0x61, 0x6e, 0x61, 0x6e, 0x61])
+
+    # The rotations of "banana" in order: abanan, anaban, ananab, banana,
+    # nabana, nanaba; their last bytes "nnbaaa", "banana" fourth.
+    assert t.last == [0x6e, 0x6e, 0x62, 0x61, 0x61, 0x61]
+    assert t.origin == 3
+    one = transform([0x7a])
+    assert one.last == [0x7a] && one.origin == 0
+    run = transform([0x61, 0x61, 0x61, 0x61])
+    assert run.last == [0x61, 0x61, 0x61, 0x61]
+
+test "sorted: every rotation in order, on a block that repeats a shorter one"
+    block: [u8] = [0x61, 0x62, 0x61, 0x62, 0x61, 0x63]
+    order = sorted(block)
+    assert order.len() == 6
+
+    # abab ac < abac ab < acab ab < baba ca < baca ba < caba ba
+    assert order == [0, 2, 4, 1, 3, 5]

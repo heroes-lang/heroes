@@ -1,0 +1,35 @@
+# Streams to test with, made by the `bzip2` tool 1.0.8 on this machine
+# (2026-11-18) and written as hexadecimal text, with what Python's `bz2`
+# (3.15) answers for each. Made by hand at a shell; no program calls it.
+
+use bytes
+
+# `bzip2 -9` of the 88 bytes of `SHORT_TEXT`.
+constant SHORT: str
+    "425a68393141592653595e69d40400002999944004000827f7deb000200800200048a9e4d4c6a7889e51934220c4d0000085c6c136c99201941dd25e75dd1d4222eb9c2d683c3b4bdd4f0da4b55f6a8a6d44378e5c67c9b5c0440bea3017131f015fe2ee48a70a120bcd3a8080"
+
+# The text `SHORT` holds, with characters of two bytes at its end.
+constant SHORT_TEXT: str
+    "ziggy played guitar, jamming good with weird and gilly, and the spiders from mars; été"
+
+# `bzip2 -9` of the one byte "a".
+constant ONE: str
+    "425a683931415926535919939b6b00000001002000200021184682ee48a70a120332736d60"
+
+# `bzip2 -1` of 284 bytes "a" and one "b": runs of four and their counts.
+constant RUN: str
+    "425a683131415926535910e5d9c6000002a1008020300000082000219a68334d091754e2ee48a70a12021cbb38c0"
+
+# The bytes of a sample's hexadecimal text.
+function of(hex: str) -> [u8]
+    return bytes.parse_hex(hex).must()
+
+# The bytes of `SHORT_TEXT`.
+function short_text() -> [u8]
+    return bytes.from_text(SHORT_TEXT)
+
+# `data` with byte `at` flipped by `mask`.
+function flipped(data: [u8], at: i64, mask: u8) -> [u8]
+    changed @= data
+    changed[at] @ to_u8(to_i64(changed[at]).must() ^ to_i64(mask).must()).must()
+    return changed

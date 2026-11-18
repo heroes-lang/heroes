@@ -1,0 +1,143 @@
+# bzip2 compressed and decompressed, all at once over a `[u8]`: the
+# Burrows-Wheeler transform, the move to front, the runs and the Huffman
+# codes of Julian Seward's format, each block's CRC and the stream's. What it
+# writes, the `bzip2` tool and Python's `bz2` read, and what they write, it
+# reads, every stream of a file one after another.
+#
+# It does not read or write piece by piece, nor through a stream: a program
+# reads the whole input first (`io.read_all`, `fs.read_bytes`). DEFLATE,
+# gzip and zlib are `compress`'s, Zstandard `compress/zstd`'s, xz and LZMA
+# `compress/xz`'s, Brotli `compress/brotli`'s.
+#
+# **A compressed input is not trusted.** Every function that decompresses
+# takes a `limit`, the most bytes it may produce, and fails `limit` before
+# it would write one more, so a few bytes that expand to gigabytes cost a
+# program at most `limit` bytes. An input that is not bzip2 fails `invalid`,
+# its message naming the byte where it stopped being one. Nothing an input
+# holds makes a call abort, loop without end, or read past the input.
+#
+# It fails with `invalid`, `limit` and `unsupported`.
+
+use compress/bzip2/internal/decoder
+use compress/bzip2/internal/encoder
+use compress/internal/codes
+
+## Codes
+
+# The code of an input that is not bzip2 (a wrong header, a block no
+# decoder reads, a CRC that does not match, a stream cut short, bytes after
+# its end), the message naming the byte; and of a level out of its range.
+# `compress`, `decompress` and `decompress_leading` fail with it.
+constant INVALID: str
+    codes.INVALID
+
+# The code of an output that would pass the `limit` the caller set.
+# `decompress` and `decompress_leading` fail with it.
+constant LIMIT: str
+    codes.LIMIT
+
+# The code of a block written in the randomised form of bzip2 0.9.0, which
+# no compressor has written since 0.9.5 and which this package does not
+# read, as Go's `compress/bzip2` does not. `decompress` and
+# `decompress_leading` fail with it.
+constant UNSUPPORTED: str
+    decoder.UNSUPPORTED
+
+## Levels
+
+# The smallest level: blocks of 100,000 bytes, the least memory.
+constant MIN_LEVEL: i64
+    1
+
+# The largest level and the usual one, as the `bzip2` tool's and Python's:
+# blocks of 900,000 bytes.
+constant MAX_LEVEL: i64
+    9
+
+## All at once
+
+# `data` compressed whole into one bzip2 stream, in blocks of `level` times
+# 100,000 bytes.
+#
+# - `data`: the bytes to compress; none make a stream of 14 bytes that
+#   decompresses to none.
+# - `level`: 1 (`MIN_LEVEL`) to 9 (`MAX_LEVEL`): the block size in hundreds
+#   of thousands of bytes. A larger block finds more repeats and takes more
+#   memory to write and to read.
+#
+# The same `data` and `level` answer the same bytes every time.
+#
+# Fails `invalid` where `level` is outside 1 to 9.
+#
+# The transform of each block sorts its rotations by doubling their prefix,
+# so the time grows as n log n in the block's size whatever it holds. See
+# also `decompress`.
+function compress(data: [u8], level: i64) -> [u8]?
+    return encoder.stream(data, level: level)
+
+# The bytes `data` decompresses to: one bzip2 stream or several, one after
+# another, as the `bzip2` tool writes them for files joined by `cat`.
+#
+# - `data`: the compressed bytes, nothing before the first stream and
+#   nothing after the last.
+# - `limit`: the most bytes the answer may hold, 0 or more.
+#
+# Fails `limit` where the answer would pass `limit` bytes. Fails `invalid`
+# where `data` is not bzip2, the message naming the byte: a wrong header or
+# block magic, a Huffman table no decoder reads, a run past the block's
+# size, a block or stream CRC that does not match, a stream cut short, bytes
+# after the last stream, an empty input; and where `limit` is below 0. Fails
+# `unsupported` on a randomised block.
+#
+# It holds the answer whole, up to `limit` bytes. See also
+# `decompress_leading`.
+function decompress(data: [u8], limit: i64) -> [u8]?
+    return decoder.every_stream(data, limit: limit)
+
+# What `decompress_leading` answers: a stream's bytes, and where it ended.
+record Leading
+    # The bytes the stream decompresses to.
+    data: [u8]
+    # How many bytes of the input the stream took, its last padding bits
+    # included: what follows it begins at this index.
+    used: i64
+
+# The stream at the start of `data` decompressed, and how many bytes of
+# `data` it took: for a stream followed by something else.
+#
+# - `data`: bytes that begin with one bzip2 stream; what follows it is not
+#   read.
+# - `limit`: the most bytes the answer's `data` may hold, 0 or more.
+#
+# Fails as `decompress` does, but never for bytes after the stream.
+#
+# See also `decompress`.
+function decompress_leading(data: [u8], limit: i64) -> Leading?
+    one = decoder.one_stream(data, at: 0, limit: limit)?
+    return ok(Leading(data: one.data, used: one.used))
+
+## Examples
+
+# A line compressed at the usual level and read back.
+test "compress: a line, and back"
+    line: [u8] = [0x68, 0x65, 0x72, 0x6f, 0x65, 0x73, 0x20, 0x68, 0x65, 0x72, 0x6f, 0x65, 0x73]
+    packed = compress(line, level: MAX_LEVEL).must()
+    assert decompress(packed, limit: 100).must() == line
+
+# A stream read whole, under a limit on what it may expand to.
+test "decompress: under a limit"
+    packed = compress([0x61, 0x61, 0x61, 0x61, 0x61, 0x61], level: MIN_LEVEL).must()
+    assert decompress(packed, limit: 6).must().len() == 6
+
+    match decompress(packed, limit: 5)
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+# A stream followed by bytes of the caller's own.
+test "decompress_leading: a stream, then other bytes"
+    packed @= compress([0x7a, 0x69, 0x67, 0x67, 0x79], level: MAX_LEVEL).must()
+    size = packed.len()
+    packed @ packed.push(0x21)
+    led = decompress_leading(packed, limit: 100).must()
+    assert led.data == [0x7a, 0x69, 0x67, 0x67, 0x79]
+    assert led.used == size

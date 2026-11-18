@@ -1,0 +1,169 @@
+# Brotli (RFC 7932) compressed and decompressed, all at once over a `[u8]`:
+# every stream read whole, its meta-blocks stored or compressed, block
+# types and their switches, context modes and maps, every prefix code, the
+# distances and the 121 transforms of the static dictionary's 122,784 bytes
+# (carried here, so only the programs that use this package carry them);
+# and streams written at a basic level. What it writes, the `brotli` tool
+# reads, and what the tool writes, it reads.
+#
+# What it does not do: it writes no stream as small as the reference
+# encoder's (its repeats are found greedily, and it never names a
+# dictionary word, a block switch or a context), reads no large window (the
+# extension past RFC 7932's 24 bits), and neither reads nor writes piece by
+# piece or through a stream: a program reads the whole input first
+# (`io.read_all`, `fs.read_bytes`). DEFLATE, gzip and zlib are
+# `compress`'s, bzip2 `compress/bzip2`'s, Zstandard `compress/zstd`'s, xz
+# and LZMA `compress/xz`'s.
+#
+# **A compressed input is not trusted.** Every function that decompresses
+# takes a `limit`, the most bytes it may produce, and fails `limit` before
+# it would write one more, before a byte of a meta-block is decoded where
+# its length would pass. An input that is not Brotli fails `invalid`, its
+# message naming the byte. Nothing an input holds makes a call abort, loop
+# without end, or read past the input.
+#
+# It fails with `invalid` and `limit`.
+
+use compress/brotli/internal/decoder
+use compress/brotli/internal/encoder
+use compress/internal/codes
+
+## Codes
+
+# The code of an input that is not Brotli (a reserved window, a prefix code
+# that is not complete, a distance before the start, a count past the
+# meta-block, fill bits that are not zeros, a stream cut short, bytes after
+# its end), the message naming the byte; and of options out of their range.
+# Every function fails with it but `defaults`.
+constant INVALID: str
+    codes.INVALID
+
+# The code of an output that would pass the `limit` the caller set.
+# `decompress` and `decompress_leading` fail with it.
+constant LIMIT: str
+    codes.LIMIT
+
+## Options
+
+# The quality that stores every meta-block as it is.
+constant MIN_QUALITY: i64
+    0
+
+# The highest quality, the `brotli` tool's usual: 512 earlier places tried
+# for each byte.
+constant MAX_QUALITY: i64
+    11
+
+# The narrowest window: 2^10 - 16 bytes.
+constant MIN_WINDOW_BITS: i64
+    10
+
+# The widest window RFC 7932 allows: 2^24 - 16 bytes.
+constant MAX_WINDOW_BITS: i64
+    24
+
+# How `compress` writes a stream. `defaults` makes the usual one.
+record Options
+    # 0 (`MIN_QUALITY`) to 11 (`MAX_QUALITY`): 0 stores the bytes as they
+    # are; 1 to 11 try from 4 to 512 earlier places for each byte.
+    quality: i64
+    # 10 to 24: a repeat reaches back at most 2^window_bits - 16 bytes, and
+    # a reader needs that much memory.
+    window_bits: i64
+
+# Options of quality 11 and a window of 22 bits, as the `brotli` tool's
+# usual.
+#
+# See also `compress`.
+function defaults() -> Options
+    return Options(quality: MAX_QUALITY, window_bits: 22)
+
+## All at once
+
+# `data` compressed whole into one Brotli stream.
+#
+# - `data`: the bytes to compress; none make a stream of one byte.
+# - `options`: the quality and the window; `defaults` makes the usual ones.
+#
+# The same `data` and `options` answer the same bytes every time.
+#
+# Fails `invalid` where `options.quality` is outside 0 to 11 or
+# `options.window_bits` outside 10 to 24.
+#
+# It holds `data`, the answer, and chains of up to 4 Mi entries for its
+# repeats. See also `decompress`.
+function compress(data: [u8], options: Options) -> [u8]?
+    encoder.check_options(quality: options.quality, window_bits: options.window_bits)?
+    return ok(encoder.stream(data, quality: options.quality, window_bits: options.window_bits))
+
+# The bytes the Brotli stream `data` decompresses to.
+#
+# - `data`: one stream and nothing after it.
+# - `limit`: the most bytes the answer may hold, 0 or more.
+#
+# Fails `limit` where the answer would pass `limit` bytes. Fails `invalid`
+# where `data` is not one Brotli stream, the message naming the byte, an
+# empty input among them, and where `limit` is below 0.
+#
+# It holds the answer whole, up to `limit` bytes, and loads the static
+# dictionary only when a stream names a word of it. See also
+# `decompress_leading`.
+function decompress(data: [u8], limit: i64) -> [u8]?
+    one = decoder.stream(data, limit: limit)?
+
+    if one.used != data.len()
+        return codes.invalid_at(at: one.used, why: "bytes after the end of the Brotli stream")
+    return ok(one.data)
+
+# What `decompress_leading` answers: a stream's bytes, and where it ended.
+record Leading
+    # The bytes the stream decompresses to.
+    data: [u8]
+    # How many bytes of the input the stream took: what follows it begins
+    # at this index.
+    used: i64
+
+# The stream at the start of `data` decompressed, and how many bytes of
+# `data` it took: Brotli has no header that says its length, so the stream
+# itself says where it ends.
+#
+# - `data`: bytes that begin with one Brotli stream.
+# - `limit`: the most bytes the answer's `data` may hold, 0 or more.
+#
+# Fails as `decompress` does, but never for bytes after the stream.
+#
+# See also `decompress`.
+function decompress_leading(data: [u8], limit: i64) -> Leading?
+    one = decoder.stream(data, limit: limit)?
+    return ok(Leading(data: one.data, used: one.used))
+
+## Examples
+
+# The usual options, with a narrower window.
+test "defaults: quality 11 and 22 bits, then 16"
+    o @= defaults()
+    assert o.quality == MAX_QUALITY && o.window_bits == 22
+    o.window_bits @ 16
+    assert decompress(compress([0x61, 0x62], o).must(), limit: 2).must() == [0x61, 0x62]
+
+# A line compressed and read back.
+test "compress: a line, and back"
+    line: [u8] = [0x72, 0x65, 0x62, 0x65, 0x6c, 0x20, 0x72, 0x65, 0x62, 0x65, 0x6c, 0x20, 0x72, 0x65, 0x62, 0x65, 0x6c]
+    assert decompress(compress(line, defaults()).must(), limit: 100).must() == line
+
+# A stream read whole, under a limit on what it may expand to.
+test "decompress: under a limit"
+    packed = compress([0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a], defaults()).must()
+    assert decompress(packed, limit: 6).must().len() == 6
+
+    match decompress(packed, limit: 5)
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+# A stream followed by bytes of the caller's own.
+test "decompress_leading: a stream, then other bytes"
+    packed @= compress([0x6b, 0x6f, 0x6f, 0x6b, 0x73], defaults()).must()
+    size = packed.len()
+    packed @ packed.push(0x21)
+    led = decompress_leading(packed, limit: 100).must()
+    assert led.data == [0x6b, 0x6f, 0x6f, 0x6b, 0x73] && led.used == size

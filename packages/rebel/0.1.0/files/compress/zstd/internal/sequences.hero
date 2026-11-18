@@ -1,0 +1,374 @@
+# A compressed block's sequences: how many, the table of each of literal
+# lengths, offsets and match lengths (predefined, one symbol, described, or
+# kept from before), then the backward stream that holds them, each
+# sequence executed as it is read: its literals copied, its repeat copied
+# from the frame's output or from the dictionary before it.
+
+use compress/internal/codes
+use compress/zstd/internal/bits
+use compress/zstd/internal/fse
+use compress/zstd/internal/huff
+
+# The baseline of each literal length code.
+constant LL_BASE: [i64]
+    [
+        0
+        1
+        2
+        3
+        4
+        5
+        6
+        7
+        8
+        9
+        10
+        11
+        12
+        13
+        14
+        15
+        16
+        18
+        20
+        22
+        24
+        28
+        32
+        40
+        48
+        64
+        128
+        256
+        512
+        1024
+        2048
+        4096
+        8192
+        16384
+        32768
+        65536
+    ]
+
+# How many bits follow each literal length code.
+constant LL_BITS: [i64]
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 3, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+
+# The baseline of each match length code.
+constant ML_BASE: [i64]
+    [
+        3
+        4
+        5
+        6
+        7
+        8
+        9
+        10
+        11
+        12
+        13
+        14
+        15
+        16
+        17
+        18
+        19
+        20
+        21
+        22
+        23
+        24
+        25
+        26
+        27
+        28
+        29
+        30
+        31
+        32
+        33
+        34
+        35
+        37
+        39
+        41
+        43
+        47
+        51
+        59
+        67
+        83
+        99
+        131
+        259
+        515
+        1027
+        2051
+        4099
+        8195
+        16387
+        32771
+        65539
+    ]
+
+# How many bits follow each match length code.
+constant ML_BITS: [i64]
+    [
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        1
+        1
+        1
+        1
+        2
+        2
+        3
+        3
+        4
+        4
+        5
+        7
+        8
+        9
+        10
+        11
+        12
+        13
+        14
+        15
+        16
+    ]
+
+# What a frame carries from block to block: the last tables of each kind
+# and the three repeated offsets.
+record Entropy
+    # The literals' Huffman table.
+    tree: huff.Table
+    # The literal lengths' table.
+    ll: fse.Table
+    # The offsets' table.
+    of: fse.Table
+    # The match lengths' table.
+    ml: fse.Table
+    # The three repeated offsets, the most recent first.
+    reps: [i64]
+
+# What a frame starts with when no dictionary gives it more: no table, and
+# the offsets 1, 4 and 8.
+function fresh() -> Entropy
+    return Entropy(tree: huff.empty(), ll: fse.empty(), of: fse.empty(), ml: fse.empty(), reps: [1, 4, 8])
+
+# Where the frame's output began, and the dictionary before it.
+record Place
+    # The index in the output of the frame's first byte.
+    frame_start: i64
+    # The most bytes the output may hold.
+    limit: i64
+    # The most bytes the block may add.
+    block_most: i64
+
+# The table a mode byte's two bits choose, read from `at` where it is
+# described; answers it and moves `at` past what it read.
+function table_for(input: [u8] lent, @at: i64, end: i64, mode: i64, kept: fse.Table lent, defaults: [i64] lent, default_log: i64, max_symbol: i64, max_log: i64) -> fse.Table?
+    if mode == 0
+        return ok(fse.predefined(defaults, log: default_log))
+
+    if mode == 1
+        if at >= end
+            return codes.invalid_at(at: at, why: "a sequence table's one symbol cut short")
+        s = to_i64(input[at]).must()
+
+        if s > max_symbol
+            return codes.invalid_at(at: at, why: f"a sequence code of {s}, past {max_symbol}")
+        at @ at + 1
+        return ok(fse.single(s))
+
+    if mode == 2
+        c = fse.describe(input, at: at, end: end, max_symbol: max_symbol, max_log: max_log)?
+        t = fse.build(c.counts, log: c.log, at: at)?
+        at @ at + c.used
+        return ok(t)
+
+    if kept.symbols.len() == 0
+        return codes.invalid_at(at: at, why: "a sequence table that repeats one before any came")
+    return ok(kept)
+
+# Decodes and executes the sequences section at `at` of `input`, which ends
+# at `end`, with `literals`, onto `out`.
+function run(input: [u8] lent, at: i64, end: i64, literals: [u8] lent, @out: [u8], @e: Entropy, dict: [u8] lent, place: Place) -> ()?
+    block_start = out.len()
+
+    if at >= end
+        return codes.invalid_at(at: at, why: "a block with no sequences section")
+    b0 = to_i64(input[at]).must()
+    count: i64 @= b0
+    p: i64 @= at + 1
+
+    if b0 >= 128 && b0 < 255
+        if end - at < 2
+            return codes.invalid_at(at: at, why: "a sequence count cut short")
+        count @ (b0 - 128 << 8) + to_i64(input[at + 1]).must()
+        p @ at + 2
+    else if b0 == 255
+        if end - at < 3
+            return codes.invalid_at(at: at, why: "a sequence count cut short")
+        count @ to_i64(input[at + 1]).must() + (to_i64(input[at + 2]).must() << 8) + 0x7f00
+        p @ at + 3
+
+    if count == 0
+        if p != end
+            return codes.invalid_at(at: p, why: "bytes after a sequences section of no sequence")
+        return copy_literals(literals: literals, from: 0, out: @out, place: place, block_start: block_start, at: p)
+
+    if p >= end
+        return codes.invalid_at(at: p, why: "a sequences section cut short before its modes")
+    modes = to_i64(input[p]).must()
+
+    if modes & 3 != 0
+        return codes.invalid_at(at: p, why: "sequence modes whose reserved bits are not 0")
+    p @ p + 1
+    e.ll @ table_for(input, at: @p, end: end, mode: modes >> 6, kept: e.ll, defaults: fse.LL_DEFAULT, default_log: 6, max_symbol: 35, max_log: 9)?
+    e.of @ table_for(input, at: @p, end: end, mode: modes >> 4 & 3, kept: e.of, defaults: fse.OF_DEFAULT, default_log: 5, max_symbol: 31, max_log: 8)?
+    e.ml @ table_for(input, at: @p, end: end, mode: modes >> 2 & 3, kept: e.ml, defaults: fse.ML_DEFAULT, default_log: 6, max_symbol: 52, max_log: 9)?
+    b @= bits.back(input, from: p, to: end)?
+    ll_state: i64 @= bits.read(@b, input: input, n: e.ll.log)
+    of_state: i64 @= bits.read(@b, input: input, n: e.of.log)
+    ml_state: i64 @= bits.read(@b, input: input, n: e.ml.log)
+    used: i64 @= 0
+
+    for i in range(from: 0, to: count)
+        of_code = e.of.symbols[of_state]
+        ll_code = e.ll.symbols[ll_state]
+        ml_code = e.ml.symbols[ml_state]
+        value = (1 << of_code) + bits.read(@b, input: input, n: of_code)
+        match_length = ML_BASE[ml_code] + bits.read(@b, input: input, n: ML_BITS[ml_code])
+        literal_length = LL_BASE[ll_code] + bits.read(@b, input: input, n: LL_BITS[ll_code])
+
+        if i < count - 1
+            ll_state @ e.ll.base[ll_state] + bits.read(@b, input: input, n: e.ll.bits[ll_state])
+            ml_state @ e.ml.base[ml_state] + bits.read(@b, input: input, n: e.ml.bits[ml_state])
+            of_state @ e.of.base[of_state] + bits.read(@b, input: input, n: e.of.bits[of_state])
+
+        if b.pos < 0
+            return codes.invalid_at(at: p, why: "a sequences stream read past its start")
+
+        if literal_length > literals.len() - used
+            return codes.invalid_at(at: p, why: "a sequence asking more literals than the block holds")
+
+        if out.len() - block_start + literal_length + match_length > place.block_most
+            return codes.invalid_at(at: p, why: f"a block of more than {place.block_most} bytes")
+
+        if out.len() + literal_length + match_length > place.limit
+            return codes.past_limit(limit: place.limit, at: p)
+
+        for k in range(from: used, to: used + literal_length)
+            out @ out.push(literals[k])
+
+        used @ used + literal_length
+        offset = offset_of(@e.reps, value: value, literal_length: literal_length)
+
+        if offset == 0
+            return codes.invalid_at(at: p, why: "a repeated offset of 0")
+        history = out.len() - place.frame_start + dict.len()
+
+        if offset > history
+            return codes.invalid_at(at: p, why: f"an offset of {offset}, where {history} bytes come before")
+        src: i64 @= out.len() - offset
+
+        for _ in range(from: 0, to: match_length)
+            if src >= place.frame_start
+                out @ out.push(out[src])
+            else
+                out @ out.push(dict[dict.len() - (place.frame_start - src)])
+            src @ src + 1
+
+    if b.pos != 0
+        return codes.invalid_at(at: p, why: "a sequences stream not read exactly to its start")
+    return copy_literals(literals: literals, from: used, out: @out, place: place, block_start: block_start, at: p)
+
+# The offset `value` stands for, the repeated offsets moved on as it says.
+function offset_of(@reps: [i64], value: i64, literal_length: i64) -> i64
+    if value > 3
+        reps[2] @ reps[1]
+        reps[1] @ reps[0]
+        reps[0] @ value - 3
+        return value - 3
+    index: i64 @= value - 1
+
+    if literal_length == 0
+        index @ value
+    chosen: i64 @= 0
+
+    if index == 0
+        return reps[0]
+
+    if index == 3
+        chosen @ reps[0] - 1
+    else
+        chosen @ reps[index]
+
+    if index != 1
+        reps[2] @ reps[1]
+    reps[1] @ reps[0]
+    reps[0] @ chosen
+    return chosen
+
+# Copies the literals from `from` to their end onto `out`.
+function copy_literals(literals: [u8] lent, from: i64, @out: [u8], place: Place, block_start: i64, at: i64) -> ()?
+    rest = literals.len() - from
+
+    if out.len() - block_start + rest > place.block_most
+        return codes.invalid_at(at: at, why: f"a block of more than {place.block_most} bytes")
+
+    if out.len() + rest > place.limit
+        return codes.past_limit(limit: place.limit, at: at)
+
+    for k in range(from: from, to: literals.len())
+        out @ out.push(literals[k])
+
+    return ok()
+
+test "offset_of: a new offset, each repeat, and the literal length of 0"
+    reps: [i64] @= [1, 4, 8]
+    assert offset_of(@reps, value: 13, literal_length: 5) == 10
+    assert reps == [10, 1, 4]
+    assert offset_of(@reps, value: 1, literal_length: 5) == 10
+    assert reps == [10, 1, 4]
+    assert offset_of(@reps, value: 2, literal_length: 5) == 1
+    assert reps == [1, 10, 4]
+    assert offset_of(@reps, value: 3, literal_length: 5) == 4
+    assert reps == [4, 1, 10]
+    assert offset_of(@reps, value: 1, literal_length: 0) == 1
+    assert reps == [1, 4, 10]
+    assert offset_of(@reps, value: 3, literal_length: 0) == 0

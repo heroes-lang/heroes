@@ -1,0 +1,147 @@
+# The bits of a bzip2 stream, read and written highest bit first, and its
+# CRC-32: the polynomial 0x04c11db7 taken highest bit first, the register
+# starting and ending with every bit flipped (the CRC of POSIX `cksum`
+# without the length). A reader never reads past its input: where the bits
+# run out it fails `invalid` naming the byte.
+
+use compress/internal/codes
+
+# Where reading stands in an input.
+record Reader
+    # The index of the next byte not yet taken into `held`.
+    pos: i64
+    # The bits taken and not used, the next one highest.
+    held: i64
+    # How many there are: 0 to 32.
+    count: i64
+
+# A reader at the first bit of the byte `at`.
+function reader_at(at: i64) -> Reader
+    return Reader(pos: at, held: 0, count: 0)
+
+# The next `n` bits of `r`, 1 to 24, the first read highest. Fails `invalid`
+# where `data` ends first.
+function read(@r: Reader, data: [u8] lent, n: i64) -> i64?
+    while r.count < n
+        if r.pos >= data.len()
+            return codes.invalid_at(at: data.len(), why: "the bzip2 stream ends inside a block")
+        r.held @ (r.held << 8 | to_i64(data[r.pos]).must()) & (1 << r.count + 8) - 1
+        r.pos @ r.pos + 1
+        r.count @ r.count + 8
+
+    r.count @ r.count - n
+    value = r.held >> r.count & (1 << n) - 1
+    r.held @ r.held & (1 << r.count) - 1
+    return ok(value)
+
+# The next 32 bits of `r`: a CRC.
+function read32(@r: Reader, data: [u8] lent) -> i64?
+    high = read(@r, data, n: 16)?
+    low = read(@r, data, n: 16)?
+    return ok(high << 16 | low)
+
+# Drops the bits left in the byte being read.
+function align(@r: Reader)
+    r.count @ r.count - r.count % 8
+    r.held @ r.held & (1 << r.count) - 1
+
+# How many bytes of the input are behind `r` on a byte boundary, the bits it
+# holds given back.
+function used(r: Reader) -> i64
+    return r.pos - r.count / 8
+
+# The index of the byte that held the last bit `r` read: where a message
+# says the input went wrong.
+function here(r: Reader) -> i64
+    back = r.pos - (r.count + 7) / 8
+
+    if back > 0
+        return back
+    return 0
+
+# The bits written and not yet a whole byte.
+record Writer
+    # The bytes written so far.
+    out: [u8]
+    # The pending bits, the first written highest.
+    held: i64
+    # How many there are: 0 to 7 between calls.
+    count: i64
+
+# A writer holding nothing.
+function writer() -> Writer
+    return Writer(out: [], held: 0, count: 0)
+
+# Writes the `n` lowest bits of `value`, 0 to 32, highest first.
+function put(@out: [u8], @w: Writer, value: i64, n: i64)
+    w.held @ w.held << n | value & (1 << n) - 1
+    w.count @ w.count + n
+
+    while w.count >= 8
+        w.count @ w.count - 8
+        out @ out.push(to_u8(w.held >> w.count & 255).must())
+
+    w.held @ w.held & (1 << w.count) - 1
+
+# Pads the pending bits with zeros to a whole byte.
+function flush(@out: [u8], @w: Writer)
+    if w.count > 0
+        put(@out, @w, value: 0, n: 8 - w.count)
+
+# The 256 entries of the CRC's table, by the byte that leaves the register.
+function crc_table() -> [i64]
+    table: [i64] @= []
+
+    for n in range(from: 0, to: 256)
+        c: i64 @= n << 24
+
+        for _ in range(from: 0, to: 8)
+            if c & 0x80000000 != 0
+                c @ (c << 1 ^ 0x04c11db7) & 0xffffffff
+            else
+                c @ c << 1 & 0xffffffff
+
+        table @ table.push(c)
+
+    return table
+
+# The register `crc` after the byte `b`; it starts at 0xffffffff and is
+# flipped at the end.
+function crc_byte(crc: i64, b: i64, table: [i64] lent) -> i64
+    at = (crc >> 24 ^ b) & 255
+    return crc << 8 & 0xffffffff ^ table[at]
+
+# The CRC of `data` whole.
+function crc_of(data: [u8] lent, table: [i64] lent) -> i64
+    crc: i64 @= 0xffffffff
+
+    for b in data
+        crc @ crc_byte(crc: crc, b: to_i64(b).must(), table: table)
+
+    return crc ^ 0xffffffff
+
+test "crc_of: what Python's binascii.crc32 of POSIX cksum would not give, and the check value"
+    table = crc_table()
+    assert crc_of([], table: table) == 0
+
+    # CRC-32/BZIP2's check value, the CRC of the nine digits "123456789".
+    assert crc_of([0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39], table: table) == 0xfc891918
+
+test "read and put: bits across bytes, a reader that runs out, and align"
+    out: [u8] @= []
+    w @= writer()
+    put(@out, @w, value: 5, n: 3)
+    put(@out, @w, value: 0x1234, n: 16)
+    put(@out, @w, value: 1, n: 1)
+    flush(@out, @w)
+    assert out.len() == 3
+    r @= reader_at(0)
+    assert read(@r, data: out, n: 3).must() == 5
+    assert read(@r, data: out, n: 16).must() == 0x1234
+    assert read(@r, data: out, n: 1).must() == 1
+    align(@r)
+    assert used(r) == 3
+
+    match read(@r, data: out, n: 1)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"

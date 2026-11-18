@@ -78,6 +78,9 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 2 | `tokenizer` | byte-pair encoding as tiktoken does it: encode, decode, count; its tables in a subpackage | `regex`, `bytes`, `unicode`, `strings` |  |
 | 2 | `search` | an inverted index in memory, ranked by BM25, with phrase and prefix queries | `strings`, `unicode` |  |
 | 2 | `http/suffixes` | the Public Suffix List, so cookies for a public suffix are refused and a site's registrable domain is known; its data apart | `strings` |  |
+| 2 | `compress/zstd` | Zstandard (RFC 8878) read, and written at a basic level | `bytes` |  |
+| 2 | `compress/brotli` | Brotli (RFC 7932) read, and written at a basic level | `bytes` |  |
+| 2 | `compress/bzip2` | bzip2 read and written | `bytes` |  |
 | 3 | `time` | an instant, a duration, the calendar, time zones (the system's files, or the IANA data Rebel carries), text of a time, sleeping | `bytes`, `io`, `numbers`, `os`, `strings` | `hero_time.h`, `hero_stream.h`, `hero_disk.h` |
 | 3 | `process` | another program run, fed, read and waited for | `io`, `os`, `path`, `strings`, `unicode` | `hero_proc.h` |
 | 3 | `net` | TCP, UDP, names, addresses | `io`, `numbers`, `strings` | `hero_net.h`, `hero_stream_net.h` |
@@ -95,6 +98,7 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 3 | `json/path` | JSONPath queries (RFC 9535) | `json`, `numbers`, `regex`, `strings`, `unicode` |  |
 | 3 | `json/jq` | the jq language run over a `json.Value`, so over YAML, TOML, CBOR, MessagePack and XML read into one | `bytes`, `json`, `math`, `numbers`, `regex`, `strings`, `unicode` |  |
 | 3 | `serial` | serial ports listed, opened, set and read and written as a stream | `io` | `hero_serial.h` |
+| 3 | `compress/xz` | xz and LZMA2 read, and written at a basic level | `bytes`, `crypto`, `hash` |  |
 | 4 | `ipc` | communication between processes of one machine: a local channel by name, shared memory, a lock and a semaphore between processes | `bytes`, `io`, `os`, `process`, `threads` | `hero_ipc.h` |
 | 4 | `fs` | files and directories by path: whole reads and writes, metadata, links, trees, temporaries | `bytes`, `io`, `os`, `path`, `time` | `hero_disk.h`, `hero_os.h` |
 | 4 | `msgpack` | MessagePack read into and written from a `json.Value`, bytes and extensions kept | `bytes`, `json`, `lists`, `time` |  |
@@ -103,10 +107,6 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 4 | `log` | lines with a time and a level, to a stream | `io`, `json`, `strings`, `time` |  |
 | 4 | `uuid` | identifiers of versions 4 and 7, parsed and written | `bytes`, `random`, `time` |  |
 | 4 | `toml` | TOML documents read and written, and converted to and from `json` | `json`, `numbers`, `strings`, `time`, `unicode` |  |
-| 4 | `compress/zstd` | Zstandard (RFC 8878) read, and written at a basic level | `compress`, `bytes`, `hash` |  |
-| 4 | `compress/brotli` | Brotli (RFC 7932) read, and written at a basic level | `compress`, `bytes` |  |
-| 4 | `compress/bzip2` | bzip2 read and written | `compress`, `bytes`, `hash` |  |
-| 4 | `compress/xz` | xz and LZMA2 read, and written at a basic level | `compress`, `bytes`, `hash` |  |
 | 4 | `sql` | what does not depend on the database: values, parameters, rows, results, codes | `bytes`, `time` |  |
 | 4 | `protobuf` | Protocol Buffers: the wire format, `.proto` files read at run time, dynamic messages bound to records, the JSON mapping, the well-known types | `bytes`, `json`, `maps`, `math`, `numbers`, `strings`, `time` |  |
 | 4 | `mail` | messages (RFC 5322) and MIME read and written: addresses, encoded words, parts and attachments | `bytes`, `hash`, `io`, `numbers`, `os`, `strings`, `time` |  |

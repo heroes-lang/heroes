@@ -1,0 +1,126 @@
+# A compressed block's literals section: its header, then the literals
+# stored, one byte repeated, or Huffman-coded in one stream or four with a
+# tree described here or kept from before.
+
+use compress/internal/codes
+use compress/zstd/internal/huff
+
+# The most literals a block may hold.
+constant MOST: i64
+    131072
+
+# What `read` answers: the literals and how many bytes the section took.
+record Section
+    # The literals, in order.
+    literals: [u8]
+    # The bytes of the section, its header included.
+    used: i64
+
+# The number of `width` bytes at `at` of `input`, the lowest first.
+function little(input: [u8] lent, at: i64, width: i64) -> i64
+    value: i64 @= 0
+    k: i64 @= width - 1
+
+    while k >= 0
+        value @ value << 8 | to_i64(input[at + k]).must()
+        k @ k - 1
+
+    return value
+
+# The literals section at `at` of `input`, which may run to `end`. A tree
+# it describes replaces `tree`; one it does not describe is `tree`'s.
+function read(input: [u8] lent, at: i64, end: i64, @tree: huff.Table) -> Section?
+    if at >= end
+        return codes.invalid_at(at: at, why: "a block with no literals section")
+    first = to_i64(input[at]).must()
+    kind = first & 3
+    format = first >> 2 & 3
+
+    if kind <= 1
+        header: i64 @= 1
+        size: i64 @= first >> 3
+
+        if format == 1
+            header @ 2
+        else if format == 3
+            header @ 3
+
+        if end - at < header
+            return codes.invalid_at(at: at, why: "a literals header cut short")
+
+        if header > 1
+            size @ little(input, at: at, width: header) >> 4
+        p = at + header
+
+        if size > MOST
+            return codes.invalid_at(at: at, why: f"{size} literals, past a block's 131072")
+
+        if kind == 0
+            if end - p < size
+                return codes.invalid_at(at: p, why: "stored literals cut short")
+            return ok(Section(literals: input.slice(from: p, to: p + size), used: header + size))
+
+        if p >= end
+            return codes.invalid_at(at: p, why: "a repeated literal cut short")
+        literals: [u8] @= []
+        b = input[p]
+
+        for _ in range(from: 0, to: size)
+            literals @ literals.push(b)
+
+        return ok(Section(literals: literals, used: header + 1))
+    header: i64 @= 3
+    width: i64 @= 10
+
+    if format == 2
+        header @ 4
+        width @ 14
+    else if format == 3
+        header @ 5
+        width @ 18
+
+    if end - at < header
+        return codes.invalid_at(at: at, why: "a literals header cut short")
+    fields = little(input, at: at, width: header)
+    regenerated = fields >> 4 & (1 << width) - 1
+    compressed = fields >> 4 + width & (1 << width) - 1
+    p: i64 @= at + header
+
+    if end - p < compressed
+        return codes.invalid_at(at: p, why: "Huffman literals cut short")
+
+    if regenerated > MOST
+        return codes.invalid_at(at: at, why: f"{regenerated} literals, past a block's 131072")
+    stop = p + compressed
+
+    if kind == 2
+        d = huff.describe(input, at: p, end: stop)?
+        tree @ d.table
+        p @ p + d.used
+    else if tree.max_bits == 0
+        return codes.invalid_at(at: at, why: "Huffman literals that reuse a tree before any came")
+    literals: [u8] @= []
+
+    if format == 0
+        huff.stream(tree, input: input, from: p, to: stop, count: regenerated, out: @literals)?
+        return ok(Section(literals: literals, used: header + compressed))
+
+    if stop - p < 6
+        return codes.invalid_at(at: p, why: "a jump table cut short")
+    one = little(input, at: p, width: 2)
+    two = little(input, at: p + 2, width: 2)
+    three = little(input, at: p + 4, width: 2)
+    start = p + 6
+
+    if one + two + three > stop - start
+        return codes.invalid_at(at: p, why: "a jump table past its literals")
+    each = (regenerated + 3) / 4
+    last = regenerated - 3 * each
+
+    if last < 0
+        return codes.invalid_at(at: at, why: f"{regenerated} literals in four streams, too few to share")
+    huff.stream(tree, input: input, from: start, to: start + one, count: each, out: @literals)?
+    huff.stream(tree, input: input, from: start + one, to: start + one + two, count: each, out: @literals)?
+    huff.stream(tree, input: input, from: start + one + two, to: start + one + two + three, count: each, out: @literals)?
+    huff.stream(tree, input: input, from: start + one + two + three, to: stop, count: last, out: @literals)?
+    return ok(Section(literals: literals, used: header + compressed))

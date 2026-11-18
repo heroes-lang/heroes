@@ -1,0 +1,181 @@
+# Huffman weights compressed with FSE, for the encoder's literals when a
+# byte past 127 is among them and the weights cannot be written one by one:
+# the weights' counts normalized to a table of 64 states, its description
+# written as the decoder reads it, and the weights coded by two states
+# taking turns, chosen backward so that the decoder's stream overflows
+# exactly after the last weight but one.
+
+use compress/zstd/internal/bits
+use compress/zstd/internal/fse
+use compress/zstd/internal/huff
+
+# The accuracy of the weights' table.
+constant LOG: i64
+    6
+
+# The counts of `weights`' values normalized to 2^`LOG`, every value present
+# at least 1; empty where fewer than two values are present.
+function normalized(weights: [i64] lent) -> [i64]
+    top: i64 @= 0
+
+    for w in weights
+        if w > top
+            top @ w
+
+    raw: [i64] @= []
+
+    for _ in range(from: 0, to: top + 1)
+        raw @ raw.push(0)
+
+    for w in weights
+        raw[w] @ raw[w] + 1
+
+    present: i64 @= 0
+    largest: i64 @= 0
+    counts: [i64] @= []
+    total: i64 @= 0
+
+    for v in range(from: 0, to: top + 1)
+        c: i64 @= 0
+
+        if raw[v] > 0
+            present @ present + 1
+            c @ raw[v] * 64 / weights.len()
+
+            if c == 0
+                c @ 1
+
+            if raw[v] > raw[largest]
+                largest @ v
+        counts @ counts.push(c)
+        total @ total + c
+
+    nothing: [i64] = []
+
+    if present < 2 || counts[largest] + 64 - total < 1
+        return nothing
+    counts[largest] @ counts[largest] + 64 - total
+    return counts
+
+# Writes the description of `counts`, normalized to 2^`LOG`, forward.
+function put_description(@out: [u8], counts: [i64] lent)
+    w @= bits.writer()
+    bits.put(@out, @w, value: LOG - 5, n: 4)
+    remaining: i64 @= (1 << LOG) + 1
+    threshold: i64 @= 1 << LOG
+    width: i64 @= LOG + 1
+    s: i64 @= 0
+
+    while remaining > 1 && s < counts.len()
+        count = counts[s]
+        value = count + 1
+        most = 2 * threshold - 1 - remaining
+
+        if value < most
+            bits.put(@out, @w, value: value, n: width - 1)
+        else if value < threshold
+            bits.put(@out, @w, value: value, n: width)
+        else
+            bits.put(@out, @w, value: value + most, n: width)
+        remaining @ remaining - count
+
+        while remaining < threshold
+            width @ width - 1
+            threshold @ threshold >> 1
+
+        s @ s + 1
+
+        if count == 0
+            run: i64 @= 0
+
+            while s + run < counts.len() && counts[s + run] == 0
+                run @ run + 1
+
+            s @ s + run
+
+            while run >= 3
+                bits.put(@out, @w, value: 3, n: 2)
+                run @ run - 3
+
+            bits.put(@out, @w, value: run, n: 2)
+
+    if w.count > 0
+        bits.put(@out, @w, value: 0, n: 8 - w.count)
+
+# `weights`, two or more, as the bytes a tree description of header below
+# 128 holds: the table's description, then the stream. Empty where they
+# cannot be so written.
+function compressed(weights: [i64] lent) -> [u8]
+    nothing: [u8] = []
+    counts = normalized(weights)
+
+    if counts.len() == 0 || weights.len() < 2
+        return nothing
+    t = fse.build(counts, log: LOG, at: 0).must()
+    from = fse.encoding(t, alphabet: counts.len())
+    size = 1 << LOG
+    n = weights.len()
+    states: [i64] @= []
+
+    for _ in range(from: 0, to: n)
+        states @ states.push(0)
+
+    states[n - 1] @ fse.first_state(t, symbol: weights[n - 1])
+    second: i64 @= -1
+
+    for u in range(from: 0, to: size)
+        if second < 0 && t.symbols[u] == weights[n - 2] && t.bits[u] > 0
+            second @ u
+
+    if second < 0
+        return nothing
+    states[n - 2] @ second
+    out: [u8] = []
+    stream: [u8] @= out
+    w @= bits.writer()
+    k: i64 @= n - 3
+
+    while k >= 0
+        next = states[k + 2]
+        u = from[weights[k] * size + next]
+        bits.put(@stream, @w, value: next - t.base[u], n: t.bits[u])
+        states[k] @ u
+        k @ k - 1
+
+    bits.put(@stream, @w, value: states[1], n: LOG)
+    bits.put(@stream, @w, value: states[0], n: LOG)
+    bits.close(@stream, @w)
+    described: [u8] @= []
+    put_description(@described, counts: counts)
+
+    for b in stream
+        described @ described.push(b)
+
+    return described
+
+test "compressed: weights read back by the decoder's own reader"
+    weights: [i64] @= []
+
+    for i in range(from: 0, to: 200)
+        if i % 3 == 0
+            weights @ weights.push(0)
+        else if i % 5 == 0
+            weights @ weights.push(2)
+        else
+            weights @ weights.push(1)
+
+    packed = compressed(weights)
+    assert packed.len() > 0
+    c = fse.describe(packed, at: 0, end: packed.len(), max_symbol: 255, max_log: 6).must()
+    assert c.counts == normalized(weights)
+    assert huff.fse_weights(packed, at: 0, end: packed.len()).must() == weights
+
+test "normalized: one value only, and counts that add up to 64"
+    assert normalized([3, 3, 3]).len() == 0
+    counts = normalized([0, 0, 0, 1, 2, 2])
+    total: i64 @= 0
+
+    for c in counts
+        total @ total + c
+
+    assert total == 64 && counts[1] >= 1

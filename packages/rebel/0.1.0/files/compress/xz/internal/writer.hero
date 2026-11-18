@@ -1,0 +1,341 @@
+# What the xz encoder writes: the input parsed into literals and repeats,
+# each position taking the last distance where it repeats as far as a new
+# one, a new one where the chains find three bytes or more, and a literal
+# otherwise; LZMA2's chunks around it, each at most 64 KiB compressed and
+# stored instead where LZMA would not shrink it; and the xz container, or
+# the `.lzma` header, around that.
+
+use bytes
+use compress/internal/codes
+use compress/internal/finder
+use compress/xz/internal/container
+use compress/xz/internal/lzma2_dec
+use compress/xz/internal/lzma_dec
+use compress/xz/internal/lzma_enc
+use crypto
+use hash
+
+# The properties this encoder writes: lc 3, lp 0, pb 2, as xz's presets.
+constant PROPS_BYTE: i64
+    0x5d
+
+# The longest repeat LZMA can say.
+constant MAX_LEN: i64
+    273
+
+# Most bytes of an LZMA2 chunk before it is decompressed.
+constant CHUNK_UNPACKED: i64
+    2097152
+
+# Most bytes of an LZMA2 chunk compressed, less room for the range coder's
+# last bytes and one more symbol.
+constant CHUNK_PACKED: i64
+    65000
+
+# Fails `invalid` where `level` is outside 0 to 9.
+function check_level(level: i64) -> ()?
+    if level < 0 || level > 9
+        return fail(code: codes.INVALID, msg: f"a level of {level}, where xz's are 0 to 9")
+    return ok()
+
+# How the encoder works at one level.
+record Plan
+    # The dictionary: how far back a repeat may reach, in bytes.
+    dict_size: i64
+    # How many earlier positions are tried for each one.
+    chain: i64
+    # A repeat this long ends the search at once.
+    nice: i64
+
+# How the encoder works at `level`, 0 to 9: the dictionary of xz's preset
+# of that level, and more positions tried the higher it is.
+function plan_for(level: i64) -> Plan
+    sizes: [i64] = [262144, 1048576, 2097152, 4194304, 4194304, 8388608, 8388608, 16777216, 33554432, 67108864]
+    chains: [i64] = [4, 8, 16, 24, 32, 48, 64, 128, 256, 512]
+    nices: [i64] = [32, 64, 64, 96, 128, 160, 192, 273, 273, 273]
+    return Plan(dict_size: sizes[level], chain: chains[level], nice: nices[level])
+
+# The byte LZMA2's properties give a dictionary of at least `size` bytes:
+# 0 to 40, the size `2 | b & 1` shifted by `b / 2 + 11`.
+function dict_byte(size: i64) -> i64
+    for b in range(from: 0, to: 40)
+        if (2 | b & 1) << b / 2 + 11 >= size
+            return b
+
+    return 40
+
+# Writes the one symbol the parse chooses at `pos` of `data`, which may run
+# to `to`, and answers how many bytes it covers.
+function step(@out: [u8], @rc: lzma_enc.Range, @e: lzma_dec.Decoder, @f: finder.Finder, data: [u8] lent, pos: i64, to: i64) -> i64
+    finder.insert_upto(@f, data: data, upto: pos)
+    most: i64 @= to - pos
+
+    if most > MAX_LEN
+        most @ MAX_LEN
+    back = e.reps[0] + 1
+    rep_len: i64 @= 0
+
+    if back <= pos
+        rep_len @ finder.length_at(data, at: pos, distance: back, most: most)
+    found = finder.longest(f, data: data, at: pos, most: most)
+
+    if rep_len >= 2 && rep_len + 1 >= found.length
+        lzma_enc.put_repeat(@out, @rc, @e, here: pos, dist: e.reps[0], size: rep_len)
+        return rep_len
+
+    if found.length >= 4 || found.length == 3 && found.distance <= 65536
+        lzma_enc.put_repeat(@out, @rc, @e, here: pos, dist: found.distance - 1, size: found.length)
+        return found.length
+
+    if rep_len == 1 && e.state >= 7
+        lzma_enc.put_repeat(@out, @rc, @e, here: pos, dist: e.reps[0], size: 1)
+        return 1
+    lzma_enc.literal(out: @out, @rc, @e, data: data, at: pos, dict_start: 0)
+    return 1
+
+# `data` as LZMA2 data, its end byte included.
+function lzma2(data: [u8] lent, plan: Plan) -> [u8]
+    out: [u8] @= []
+    n = data.len()
+    props = lzma_dec.props_of(byte: PROPS_BYTE, at: 0).must()
+    e @= lzma_enc.fresh(props)
+    f @= finder.start(size: n, window: plan.dict_size, shortest: 3, chain: plan.chain, nice: plan.nice)
+    first: bool @= true
+    need_props: bool @= false
+    need_state: bool @= false
+    pos: i64 @= 0
+
+    while pos < n
+        body: [u8] @= []
+        rc @= lzma_enc.range_start()
+        start = pos
+        to: i64 @= start + CHUNK_UNPACKED
+
+        if to > n
+            to @ n
+
+        while pos < to && body.len() + rc.cache_size + 5 < CHUNK_PACKED
+            pos @ pos + step(out: @body, @rc, @e, @f, data: data, pos: pos, to: to)
+
+        lzma_enc.flush(@body, @rc)
+        unpacked = pos - start
+
+        if body.len() >= unpacked
+            k: i64 @= start
+
+            while k < pos
+                size: i64 @= pos - k
+
+                if size > 65536
+                    size @ 65536
+
+                if first
+                    out @ out.push(1)
+                    need_props @ true
+                else
+                    out @ out.push(2)
+                out @ out.push(to_u8(size - 1 >> 8).must())
+                out @ out.push(to_u8(size - 1 & 255).must())
+
+                for i in range(from: k, to: k + size)
+                    out @ out.push(data[i])
+
+                k @ k + size
+                first @ false
+
+            e @ lzma_enc.fresh(props)
+            need_state @ true
+            continue
+        control: i64 @= 0x80
+
+        if first
+            control @ 0xe0
+        else if need_props
+            control @ 0xc0
+        else if need_state
+            control @ 0xa0
+        out @ out.push(to_u8(control | unpacked - 1 >> 16).must())
+        out @ out.push(to_u8(unpacked - 1 >> 8 & 255).must())
+        out @ out.push(to_u8(unpacked - 1 & 255).must())
+        out @ out.push(to_u8(body.len() - 1 >> 8).must())
+        out @ out.push(to_u8(body.len() - 1 & 255).must())
+
+        if control >= 0xc0
+            out @ out.push(to_u8(PROPS_BYTE).must())
+
+        for b in body
+            out @ out.push(b)
+
+        first @ false
+        need_props @ false
+        need_state @ false
+
+    out @ out.push(0)
+    return out
+
+# Adds `value` to `out` as an xz number: seven bits a byte, the lowest first.
+function put_number(@out: [u8], value: i64)
+    left: i64 @= value
+
+    while left >= 0x80
+        out @ out.push(to_u8(left & 0x7f | 0x80).must())
+        left @ left >> 7
+
+    out @ out.push(to_u8(left).must())
+
+# Adds the `width` bytes of `value` to `out`, the lowest first.
+function put_little(@out: [u8], value: i64, width: i64)
+    for k in range(from: 0, to: width)
+        out @ out.push(to_u8(value >> 8 * k & 255).must())
+
+# The check of id `check` over `data`, as the block's last bytes.
+function check_bytes(data: [u8] lent, check: i64) -> [u8]
+    if check == container.CHECK_CRC32
+        return bytes.encode_u32_le(hash.crc32(data))
+
+    if check == container.CHECK_CRC64
+        return bytes.encode_u64_le(hash.crc64_ecma(data))
+
+    if check == container.CHECK_SHA256
+        return crypto.sha256(data)
+    return []
+
+# `data` as one xz stream of at most one block, LZMA2 at `level`, its check
+# of id `check`.
+function xz(data: [u8] lent, level: i64, check: i64) -> [u8]
+    plan = plan_for(level)
+    out: [u8] @= container.MAGIC
+    out @ out.push(0)
+    out @ out.push(to_u8(check).must())
+    put_little(@out, value: container.crc32_of(out, from: 6, to: 8), width: 4)
+    records: [i64] @= []
+
+    if data.len() > 0
+        body = lzma2(data, plan: plan)
+        header: [u8] @= [0, 0xc0]
+        put_number(@header, value: body.len())
+        put_number(@header, value: data.len())
+        header @ header.push(0x21)
+        header @ header.push(1)
+        header @ header.push(to_u8(dict_byte(plan.dict_size)).must())
+
+        while (header.len() + 4) % 4 != 0
+            header @ header.push(0)
+
+        header[0] @ to_u8((header.len() + 4) / 4 - 1).must()
+        put_little(@header, value: container.crc32_of(header, from: 0, to: header.len()), width: 4)
+        start = out.len()
+
+        for b in header
+            out @ out.push(b)
+
+        for b in body
+            out @ out.push(b)
+
+        while (out.len() - start) % 4 != 0
+            out @ out.push(0)
+
+        check_part = check_bytes(data, check: check)
+
+        for b in check_part
+            out @ out.push(b)
+
+        records @ records.push(header.len() + body.len() + check_part.len())
+        records @ records.push(data.len())
+    index: [u8] @= [0]
+    put_number(@index, value: records.len() / 2)
+
+    for value in records
+        put_number(@index, value: value)
+
+    while index.len() % 4 != 0
+        index @ index.push(0)
+
+    put_little(@index, value: container.crc32_of(index, from: 0, to: index.len()), width: 4)
+
+    for b in index
+        out @ out.push(b)
+
+    tail: [u8] @= []
+    put_little(@tail, value: index.len() / 4 - 1, width: 4)
+    tail @ tail.push(0)
+    tail @ tail.push(to_u8(check).must())
+    put_little(@out, value: container.crc32_of(tail, from: 0, to: 6), width: 4)
+
+    for b in tail
+        out @ out.push(b)
+
+    out @ out.push(0x59)
+    out @ out.push(0x5a)
+    return out
+
+# `data` as one `.lzma` stream: its header with the size known, then the
+# LZMA data, at `level`.
+function alone(data: [u8] lent, level: i64) -> [u8]
+    plan = plan_for(level)
+    out: [u8] @= [to_u8(PROPS_BYTE).must()]
+    put_little(@out, value: plan.dict_size, width: 4)
+    put_little(@out, value: data.len(), width: 8)
+    props = lzma_dec.props_of(byte: PROPS_BYTE, at: 0).must()
+    e @= lzma_enc.fresh(props)
+    f @= finder.start(size: data.len(), window: plan.dict_size, shortest: 3, chain: plan.chain, nice: plan.nice)
+    rc @= lzma_enc.range_start()
+    pos: i64 @= 0
+
+    while pos < data.len()
+        pos @ pos + step(out: @out, @rc, @e, @f, data: data, pos: pos, to: data.len())
+
+    lzma_enc.flush(@out, @rc)
+    return out
+
+test "dict_byte: xz's sizes and the ones between"
+    assert dict_byte(4096) == 0
+    assert dict_byte(8388608) == 22
+    assert dict_byte(8388609) == 23
+    assert dict_byte(67108864) == 28
+
+test "put_number: one byte, two bytes, and 2^35"
+    out: [u8] @= []
+    put_number(@out, value: 5)
+    put_number(@out, value: 300)
+    assert out == [5, 0xac, 2]
+    p: i64 @= 3
+    put_number(@out, value: 1 << 35)
+    assert container.number(out, at: @p, end: out.len()).must() == 1 << 35
+
+test "xz and alone: round trips of nothing, one byte, text, runs and bytes no repeat shrinks"
+    text = bytes.from_text("ground control to major tom, ground control to major tom; été, ☃")
+    runs: [u8] @= []
+
+    for i in range(from: 0, to: 5000)
+        runs @ runs.push(to_u8(i / 900 % 3 * 100).must())
+
+    noise: [u8] @= []
+    x: i64 @= 12345
+
+    for _ in range(from: 0, to: 140000)
+        x @ (x * 1103515245 + 12345) % 2147483648
+        noise @ noise.push(to_u8(x >> 16 & 255).must())
+
+    nothing: [u8] = []
+
+    for data in [nothing, [0x61], text, runs, noise]
+        for check in [container.CHECK_NONE, container.CHECK_CRC32, container.CHECK_CRC64, container.CHECK_SHA256]
+            assert container.every_stream(xz(data, level: 1, check: check), limit: data.len()).must() == data
+
+        assert lzma2_dec.alone(alone(data, level: 6), limit: data.len()).must().data == data
+
+test "lzma2: chunks of text past 64 KiB compressed, each after the one before"
+    words: [str] = ["ziggy", "stardust", "mars", "spiders", "guitar", "jamming", "weird", "gilly", "été"]
+    pieces: [u8] @= []
+    x: i64 @= 7
+
+    for _ in range(from: 0, to: 60000)
+        x @ (x * 1103515245 + 12345) % 2147483648
+        bytes.push_text(@pieces, s: words[(x >> 16) % 9])
+        pieces @ pieces.push(0x20)
+
+    packed = lzma2(pieces, plan: plan_for(0))
+    out: [u8] @= []
+    assert lzma2_dec.lzma2(input: packed, at: 0, end: packed.len(), out: @out, limit: pieces.len()).must() == packed.len()
+    assert out == pieces

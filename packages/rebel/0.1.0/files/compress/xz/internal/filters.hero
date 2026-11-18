@@ -1,0 +1,123 @@
+# The filters an xz block may name before LZMA2, and how each is undone on
+# a block's bytes in place. Delta is undone here. The branch converters
+# (x86, PowerPC, IA-64, ARM, ARM-Thumb, SPARC, ARM64, RISC-V), which turn
+# the absolute addresses an executable's calls hold back into relative
+# ones, are known by their ids and refused `unsupported`: the xz format's
+# specification names them and leaves their algorithms to liblzma's source,
+# which Rebel is not written from (README A5). The chain is checked whole
+# before a byte is decoded.
+
+use compress/internal/codes
+
+# The code of a filter this package does not undo.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The filter of LZMA2, which ends every chain.
+constant LZMA2: i64
+    0x21
+
+# The delta filter: each byte the difference from the one `distance`
+# before.
+constant DELTA: i64
+    0x03
+
+# The branch converter of x86's 32-bit and 64-bit code.
+constant X86: i64
+    0x04
+
+# The branch converter of PowerPC, big-endian.
+constant POWERPC: i64
+    0x05
+
+# The branch converter of Itanium.
+constant IA64: i64
+    0x06
+
+# The branch converter of 32-bit ARM, little-endian.
+constant ARM: i64
+    0x07
+
+# The branch converter of ARM's Thumb code, little-endian.
+constant ARMTHUMB: i64
+    0x08
+
+# The branch converter of SPARC.
+constant SPARC: i64
+    0x09
+
+# The branch converter of ARM64.
+constant ARM64: i64
+    0x0a
+
+# The branch converter of RISC-V.
+constant RISCV: i64
+    0x0b
+
+# A filter of a block's chain: its id and the bytes of its properties.
+record Filter
+    # The filter's id.
+    id: i64
+    # Its properties, as the block header holds them.
+    props: [u8]
+
+# The name of the filter `id`, for a message.
+function name_of(id: i64) -> str
+    names: [str] = ["", "", "", "delta", "x86", "PowerPC", "IA-64", "ARM", "ARM-Thumb", "SPARC", "ARM64", "RISC-V"]
+
+    if id == LZMA2
+        return "LZMA2"
+
+    if id >= 3 && id < names.len()
+        return names[id]
+    return f"{id}"
+
+# Fails unless `chain` is one an xz block may hold: one to four filters,
+# LZMA2 last and only last, each with properties of its size. `at` is the
+# block header's first byte.
+function check_chain(chain: [Filter] lent, at: i64) -> ()?
+    last = chain.len() - 1
+
+    for i in range(from: 0, to: chain.len())
+        f = chain[i]
+
+        if f.id == LZMA2
+            if i != last
+                return codes.invalid_at(at: at, why: "LZMA2 before the last filter of a block")
+
+            if f.props.len() != 1 || f.props[0] > 40
+                return codes.invalid_at(at: at, why: "LZMA2 properties that are not one dictionary size of 0 to 40")
+        else if i == last
+            return codes.invalid_at(
+                at: at,
+                why: f"a block whose last filter is {name_of(f.id)}, where it must be LZMA2"
+            )
+        else if f.id == DELTA
+            if f.props.len() != 1
+                return codes.invalid_at(at: at, why: "delta properties that are not one byte")
+        else if f.id >= X86 && f.id <= RISCV
+            if f.props.len() != 0 && f.props.len() != 4
+                return codes.invalid_at(
+                    at: at,
+                    why: f"{name_of(f.id)} properties of {f.props.len()} bytes, where they are 0 or 4"
+                )
+            return fail(
+                code: UNSUPPORTED,
+                msg: f"a block filtered by the {name_of(f.id)} branch converter, which this package does not undo"
+            )
+        else
+            return fail(
+                code: UNSUPPORTED,
+                msg: f"a block filtered by the filter of id {f.id}, which this package does not know"
+            )
+
+    return ok()
+
+# Undoes the delta filter `f` on the bytes of `out` from `from`: each byte
+# the sum of itself and the byte `distance` before, the first `distance`
+# bytes as they are.
+function undo(@out: [u8], from: i64, f: Filter lent)
+    distance = to_i64(f.props[0]).must() + 1
+
+    for i in range(from: from + distance, to: out.len())
+        out[i] @ to_u8(to_i64(out[i]).must() + to_i64(out[i - distance]).must() & 255).must()

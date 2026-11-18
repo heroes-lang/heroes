@@ -1,0 +1,86 @@
+# The ledger of `compress/bzip2`: what Go's `compress/bzip2` (Go 1.27, a
+# reader only) and Python's `bz2` (3.15; `compression.bz2` is the same
+# module again) let a program do, one block per capability, and what Rebel
+# answers. Rust's standard library has no compression, so its line is `-`
+# in every block. The lists are this machine's, 2026-11-18: `go doc -all
+# compress/bzip2` and `dir()` of `bz2` and of its classes. Every stream in
+# the package's tests was made by the `bzip2` tool 1.0.8 or by hand and
+# given to Python first; the cross-check in the scratch folder read 14 of
+# the tool's streams (levels 1 and 9; text, random bytes, runs, zeros, one
+# byte, none, a repeated pair) and two streams joined, had the tool read
+# what Rebel wrote of each at levels 1 and 9, all alike, and fed 400
+# corrupted streams to the decoder, every one refused with `invalid`.
+
+capability bzip2/at-once  bytes compressed whole into one bzip2 stream
+  heroes  compress/bzip2.compress
+  go      -
+  rust    -
+  python  bz2.compress
+  note    the same bytes give the same stream. The sizes are the tool's within a tenth of a percent on text and random bytes (the scratch folder's cross-check), its tables chosen the same way, four rounds of fitting
+
+capability bzip2/decompress-at-once  a stream, or several joined, decompressed whole under a limit
+  heroes  compress/bzip2.decompress
+  go      bzip2.NewReader, io.ReadAll
+  rust    -
+  python  bz2.decompress
+  note    a `limit` is required, where neither Go nor Python asks for one. Streams joined are read one after another, as both read them. Bytes after the last stream fail `invalid`, where Python ignores them (observed: `bz2.decompress(s + b'xyz')` answers the stream's bytes); `decompress_leading` is the call that allows them. An empty input fails `invalid`, where Python answers no bytes
+
+capability bzip2/leading  a stream at the start of other bytes, and where it ended
+  heroes  compress/bzip2.decompress_leading
+  go      -
+  rust    -
+  python  bz2.BZ2Decompressor, BZ2Decompressor.unused_data, BZ2Decompressor.eof
+  note    -
+
+capability bzip2/levels  the block size, 100,000 to 900,000 bytes
+  heroes  compress/bzip2.MIN_LEVEL, compress/bzip2.MAX_LEVEL
+  go      -
+  rust    -
+  python  bz2.compress(compresslevel=), BZ2Compressor(compresslevel=), BZ2File(compresslevel=), bz2.open(compresslevel=)
+  note    1 to 9, 9 the usual as in Python and the tool; a level out of range fails `invalid`, where Python raises `ValueError`
+
+capability bzip2/failures  what a broken stream answers
+  heroes  compress/bzip2.INVALID, compress/bzip2.LIMIT, compress/bzip2.UNSUPPORTED
+  go      bzip2.StructuralError, StructuralError.Error
+  rust    -
+  python  OSError("Invalid data stream"), ValueError
+  note    `invalid` names the byte where the stream stopped being bzip2
+
+capability bzip2/randomised  blocks in the randomised form of bzip2 0.9.0
+  heroes  refused: no compressor has written the form since bzip2 0.9.5 (1999), and undoing it needs a table of 512 numbers that only bzip2's own source holds, which Rebel is not written from (README A5); such a block fails `unsupported`, as Go's reader refuses it
+  go      -
+  rust    -
+  python  bz2.decompress
+  note    Python's `bz2`, which links the C library, reads it
+
+capability bzip2/compress-incremental  bytes compressed piece by piece
+  heroes  pending
+  go      -
+  rust    -
+  python  bz2.BZ2Compressor, BZ2Compressor.compress, BZ2Compressor.flush
+  note    a block is sorted whole, so a compressor holds up to 900,000 bytes before it writes; not written in this round
+
+capability bzip2/decompress-incremental  a stream decompressed piece by piece, or through a stream
+  heroes  pending
+  go      bzip2.NewReader
+  rust    -
+  python  bz2.BZ2Decompressor.decompress, BZ2Decompressor.needs_input, bz2.BZ2File.read, BZ2File.read1, BZ2File.readinto, BZ2File.readinto1, BZ2File.peek
+  note    each block is independent, so a reader can hand out one block at a time; not written in this round
+
+capability bzip2/file  a bzip2 file opened by its path, read and written as a file
+  heroes  refused: a path is `fs`'s, and a file's bytes are read whole by `fs.read_bytes` and written by `fs.write_bytes`
+  go      -
+  rust    -
+  python  bz2.open, bz2.BZ2File, BZ2File.write, BZ2File.writelines, BZ2File.close, BZ2File.mode, BZ2File.name, BZ2File.closed
+  note    -
+
+capability bzip2/lines  a compressed text read line by line, or sought in
+  heroes  refused: lines are `io`'s and `bytes.lines`'s over the bytes read whole; seeking is decompressing again from the start
+  go      -
+  rust    -
+  python  BZ2File.readline, BZ2File.readlines, BZ2File.seek, BZ2File.tell, BZ2File.seekable
+  note    -
+
+dropped
+  python  BZ2File.fileno, BZ2File.isatty, BZ2File.readable, BZ2File.writable, BZ2File.detach, BZ2File.truncate, BZ2File.flush: what every Python file object has
+  python  bz2.io, bz2.os: modules Python's own `bz2` imports

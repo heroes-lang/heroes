@@ -1,0 +1,366 @@
+# The Brotli decoder (RFC 7932): the window, then meta-blocks, each
+# metadata skipped, stored, or compressed: its block types and counts, its
+# context modes and maps, its prefix codes, then commands of literals and
+# a copy from before or from the static dictionary, until the meta-block's
+# length is made exactly. Every count the stream says is held to what the
+# meta-block may hold, and the meta-block to the caller's limit before a
+# byte of it is written.
+
+use compress/brotli/internal/dictionary
+use compress/brotli/internal/header
+use compress/brotli/internal/prefix
+use compress/brotli/internal/samples
+use compress/internal/codes
+use compress/internal/cursor
+
+# The shortest insert length of each insert length code.
+constant INSERT_BASE: [i64]
+    [0, 1, 2, 3, 4, 5, 6, 8, 10, 14, 18, 26, 34, 50, 66, 98, 130, 194, 322, 578, 1090, 2114, 6210, 22594]
+
+# How many bits follow each insert length code.
+constant INSERT_EXTRA: [i64]
+    [0, 0, 0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8, 9, 10, 12, 14, 24]
+
+# The shortest copy length of each copy length code.
+constant COPY_BASE: [i64]
+    [2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 18, 22, 30, 38, 54, 70, 102, 134, 198, 326, 582, 1094, 2118]
+
+# How many bits follow each copy length code.
+constant COPY_EXTRA: [i64]
+    [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8, 9, 10, 24]
+
+# By the 64-symbol cell of an insert-and-copy symbol: the first insert
+# length code, the first copy length code, and whether the distance is the
+# last one, implied.
+constant CELL_INSERT: [i64]
+    [0, 0, 0, 0, 8, 8, 0, 16, 8, 16, 16]
+
+# The first copy length code of each cell.
+constant CELL_COPY: [i64]
+    [0, 8, 0, 8, 0, 8, 16, 0, 16, 8, 16]
+
+# What a stream gave: its bytes and where it ended.
+record Result
+    # The bytes it decompressed to.
+    data: [u8]
+    # The index after its last byte.
+    used: i64
+
+# Fails unless the bits left in the byte being read are zeros, then drops
+# them.
+function align_zeros(@c: cursor.Cursor) -> ()?
+    left = c.count % 8
+
+    if c.bits & (1 << left) - 1 != 0
+        return codes.invalid_at(at: cursor.last_byte(c), why: "fill bits that are not zeros")
+    cursor.align(@c)
+    return ok()
+
+# The window's bits, 10 to 24.
+function window_bits(@c: cursor.Cursor, input: [u8] lent) -> i64?
+    if prefix.bits(@c, input: input, n: 1)? == 0
+        return ok(16)
+    n = prefix.bits(@c, input: input, n: 3)?
+
+    if n != 0
+        return ok(17 + n)
+    m = prefix.bits(@c, input: input, n: 3)?
+
+    if m == 1
+        return codes.invalid_at(at: 0, why: "a window of the reserved code 0010001")
+
+    if m == 0
+        return ok(17)
+    return ok(8 + m)
+
+# The stream at the start of `input` decoded, at most `limit` bytes.
+function stream(input: [u8] lent, limit: i64) -> Result?
+    if limit < 0
+        return fail(code: codes.INVALID, msg: f"a limit of {limit} bytes, where a limit is 0 or more")
+
+    if input.len() == 0
+        return codes.invalid_at(at: 0, why: "an empty input, where a Brotli stream holds one byte or more")
+    c @= cursor.start()
+    window = (1 << window_bits(@c, input: input)?) - 16
+    out: [u8] @= []
+    distances: [i64] @= [4, 11, 15, 16]
+    loaded: [dictionary.Loaded] @= []
+    lookup = header.contexts()
+
+    while true
+        last = prefix.bits(@c, input: input, n: 1)? == 1
+
+        if last && prefix.bits(@c, input: input, n: 1)? == 1
+            break
+        nibbles_codes: [i64] = [4, 5, 6, 0]
+        nibbles = nibbles_codes[prefix.bits(@c, input: input, n: 2)?]
+
+        if nibbles == 0
+            skip_metadata(@c, input: input)?
+
+            if last
+                break
+            continue
+        length: i64 @= 0
+
+        for i in range(from: 0, to: nibbles)
+            nibble = prefix.bits(@c, input: input, n: 4)?
+
+            if i == nibbles - 1 && nibbles > 4 && nibble == 0
+                return codes.invalid_at(at: cursor.last_byte(c), why: "a meta-block length with a needless last nibble")
+            length @ length | nibble << 4 * i
+
+        length @ length + 1
+
+        if out.len() + length > limit
+            return codes.past_limit(limit: limit, at: cursor.last_byte(c))
+
+        if !last && prefix.bits(@c, input: input, n: 1)? == 1
+            align_zeros(@c)?
+
+            for _ in range(from: 0, to: length)
+                b = cursor.next_byte(@c, input)
+
+                if b < 0
+                    return codes.invalid_at(at: input.len(), why: "a stored meta-block cut short")
+                out @ out.push(to_u8(b).must())
+
+            continue
+        meta_block(@c, input: input, out: @out, length: length, window: window, distances: @distances, loaded: @loaded, lookup: lookup)?
+
+        if last
+            break
+
+    align_zeros(@c)?
+    return ok(Result(data: out, used: cursor.used(c)))
+
+# Skips a metadata meta-block after its MNIBBLES: a reserved bit, its
+# length, fill bits and its bytes.
+function skip_metadata(@c: cursor.Cursor, input: [u8] lent) -> ()?
+    if prefix.bits(@c, input: input, n: 1)? != 0
+        return codes.invalid_at(at: cursor.last_byte(c), why: "a metadata block whose reserved bit is set")
+    width = prefix.bits(@c, input: input, n: 2)?
+    size: i64 @= 0
+
+    for i in range(from: 0, to: width)
+        b = prefix.bits(@c, input: input, n: 8)?
+
+        if i == width - 1 && width > 1 && b == 0
+            return codes.invalid_at(at: cursor.last_byte(c), why: "a metadata length with a needless last byte")
+        size @ size | b << 8 * i
+
+    if width > 0
+        size @ size + 1
+    align_zeros(@c)?
+
+    for _ in range(from: 0, to: size)
+        if cursor.next_byte(@c, input) < 0
+            return codes.invalid_at(at: input.len(), why: "metadata cut short")
+
+    return ok()
+
+# A compressed meta-block of `length` bytes onto `out`.
+function meta_block(@c: cursor.Cursor, input: [u8] lent, @out: [u8], length: i64, window: i64, @distances: [i64], @loaded: [dictionary.Loaded], lookup: header.Contexts lent) -> ()?
+    lit @= header.category(@c, input: input)?
+    cmd @= header.category(@c, input: input)?
+    dst @= header.category(@c, input: input)?
+    postfix = prefix.bits(@c, input: input, n: 2)?
+    direct = prefix.bits(@c, input: input, n: 4)? << postfix
+    modes: [i64] @= []
+
+    for _ in range(from: 0, to: lit.types)
+        modes @ modes.push(prefix.bits(@c, input: input, n: 2)?)
+
+    lit_trees = header.count_of(@c, input: input)?
+    lit_map = header.context_map(@c, input: input, size: 64 * lit.types, trees: lit_trees)?
+    dst_trees = header.count_of(@c, input: input)?
+    dst_map = header.context_map(@c, input: input, size: 4 * dst.types, trees: dst_trees)?
+    lit_codes: [prefix.Code] @= []
+
+    for _ in range(from: 0, to: lit_trees)
+        lit_codes @ lit_codes.push(prefix.read(@c, input: input, size: 256)?)
+
+    cmd_codes: [prefix.Code] @= []
+
+    for _ in range(from: 0, to: cmd.types)
+        cmd_codes @ cmd_codes.push(prefix.read(@c, input: input, size: 704)?)
+
+    dst_codes: [prefix.Code] @= []
+    dst_size = 16 + direct + (48 << postfix)
+
+    for _ in range(from: 0, to: dst_trees)
+        dst_codes @ dst_codes.push(prefix.read(@c, input: input, size: dst_size)?)
+
+    end = out.len() + length
+
+    while out.len() < end
+        if cmd.left == 0
+            header.switch_block(@cmd, @c, input: input)?
+        cmd.left @ cmd.left - 1
+        symbol = prefix.symbol(cmd_codes[cmd.current], @c, input: input)?
+        cell = symbol >> 6
+        insert_code = CELL_INSERT[cell] + (symbol >> 3 & 7)
+        copy_code = CELL_COPY[cell] + (symbol & 7)
+        insert = INSERT_BASE[insert_code] + prefix.bits(@c, input: input, n: INSERT_EXTRA[insert_code])?
+        copy = COPY_BASE[copy_code] + prefix.bits(@c, input: input, n: COPY_EXTRA[copy_code])?
+
+        if insert > end - out.len()
+            return codes.invalid_at(at: cursor.last_byte(c), why: "literals past the meta-block's length")
+
+        for _ in range(from: 0, to: insert)
+            if lit.left == 0
+                header.switch_block(@lit, @c, input: input)?
+            lit.left @ lit.left - 1
+            p1: i64 @= 0
+            p2: i64 @= 0
+
+            if out.len() > 0
+                p1 @ to_i64(out[out.len() - 1]).must()
+
+            if out.len() > 1
+                p2 @ to_i64(out[out.len() - 2]).must()
+            mode = modes[lit.current]
+            context: i64 @= p1 & 0x3f
+
+            if mode == 1
+                context @ p1 >> 2
+            else if mode == 2
+                context @ lookup.lut0[p1] | lookup.lut1[p2]
+            else if mode == 3
+                context @ lookup.lut2[p1] << 3 | lookup.lut2[p2]
+            tree = lit_map[64 * lit.current + context]
+            out @ out.push(to_u8(prefix.symbol(lit_codes[tree], @c, input: input)?).must())
+
+        if out.len() == end
+            break
+        code: i64 @= 0
+
+        if cell >= 2
+            if dst.left == 0
+                header.switch_block(@dst, @c, input: input)?
+            dst.left @ dst.left - 1
+            context: i64 @= 3
+
+            if copy <= 4
+                context @ copy - 2
+            tree = dst_map[4 * dst.current + context]
+            code @ prefix.symbol(dst_codes[tree], @c, input: input)?
+        distance = distance_of(code: code, distances: distances, direct: direct, postfix: postfix, @c, input: input)?
+        reach: i64 @= window
+
+        if out.len() < reach
+            reach @ out.len()
+
+        if distance > reach
+            word(@out, @loaded, distance: distance, reach: reach, copy: copy, end: end, at: cursor.last_byte(c))?
+            continue
+
+        if copy > end - out.len()
+            return codes.invalid_at(at: cursor.last_byte(c), why: "a copy past the meta-block's length")
+
+        for _ in range(from: 0, to: copy)
+            out @ out.push(out[out.len() - distance])
+
+        if code != 0
+            distances[3] @ distances[2]
+            distances[2] @ distances[1]
+            distances[1] @ distances[0]
+            distances[0] @ distance
+
+    return ok()
+
+# The distance of the distance code `code`, reading its extra bits.
+function distance_of(code: i64, distances: [i64] lent, direct: i64, postfix: i64, @c: cursor.Cursor, input: [u8] lent) -> i64?
+    if code < 16
+        nearer: [i64] = [0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1]
+        change: [i64] = [0, 0, 0, 0, -1, 1, -2, 2, -3, 3, -1, 1, -2, 2, -3, 3]
+        d = distances[nearer[code]] + change[code]
+
+        if d <= 0
+            return codes.invalid_at(at: cursor.last_byte(c), why: f"a distance of {d} from the last ones")
+        return ok(d)
+
+    if code < 16 + direct
+        return ok(code - 15)
+    x = code - direct - 16
+    width = 1 + (x >> postfix + 1)
+    high = x >> postfix
+    low = x & (1 << postfix) - 1
+    offset = (2 + (high & 1) << width) - 4
+    extra = prefix.bits(@c, input: input, n: width)?
+    return ok((offset + extra << postfix) + low + direct + 1)
+
+# The static dictionary's word that `distance`, past the `reach` a copy
+# may reach, names, transformed, onto `out`.
+function word(@out: [u8], @loaded: [dictionary.Loaded], distance: i64, reach: i64, copy: i64, end: i64, at: i64) -> ()?
+    if copy < 4 || copy > 24
+        return codes.invalid_at(at: at, why: f"a dictionary word of {copy} bytes, where words are 4 to 24")
+
+    if loaded.len() == 0
+        loaded @ loaded.push(dictionary.load())
+    id = distance - reach - 1
+    bits = dictionary.NDBITS[copy]
+    index = id & (1 << bits) - 1
+    transform = id >> bits
+
+    if transform > 120
+        return codes.invalid_at(at: at, why: f"a dictionary word with transform {transform}, past 120")
+    piece: [u8] @= []
+    dictionary.put_word(@piece, d: loaded[0], length: copy, index: index, id: transform)
+
+    if piece.len() > end - out.len()
+        return codes.invalid_at(at: at, why: "a dictionary word past the meta-block's length")
+
+    for b in piece
+        out @ out.push(b)
+
+    return ok()
+
+test "stream: the tool's streams, with dictionary words, context maps, a narrow window, and bytes of every value"
+    assert stream(samples.of(samples.HELLO), limit: 84).must().data == samples.text(samples.HELLO_TEXT)
+
+    for hex in [samples.PROSE, samples.PROSE_W10]
+        prose = stream(samples.of(hex), limit: samples.PROSE_LENGTH).must().data
+        assert prose.len() == samples.PROSE_LENGTH && samples.weight(prose) == samples.PROSE_WEIGHT
+
+    skew = stream(samples.of(samples.SKEW), limit: 2000).must().data
+    assert skew.len() == 2000 && samples.weight(skew) == samples.SKEW_WEIGHT
+
+test "stream: an empty stream, and a metadata block skipped"
+    assert stream([6], limit: 0).must().data.len() == 0
+    meta = stream(samples.of(samples.METADATA), limit: 0).must()
+    assert meta.data.len() == 0 && meta.used == 6
+
+test "stream: fill bits, a reserved window, a cut, nothing, and limits"
+    match stream(samples.flipped(samples.of(samples.METADATA), at: 5, mask: 4), limit: 10)
+        .ok _  => assert false
+        .err e => assert e.msg == "not a valid compressed stream at byte 5: fill bits that are not zeros"
+
+    match stream([0x11], limit: 10)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    hello = samples.of(samples.HELLO)
+    nothing: [u8] = []
+
+    for bad in [nothing, hello.slice(from: 0, to: hello.len() - 3)]
+        match stream(bad, limit: 1000)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+    match stream(hello, limit: 83)
+        .ok _  => assert false
+        .err e => assert e.code == "limit"
+
+    match stream(hello, limit: -1)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+test "stream: each byte of a stream changed, never an abort"
+    hello = samples.of(samples.HELLO)
+
+    for at in range(from: 0, to: hello.len())
+        for mask in [1, 0x08, 0x40]
+            match stream(samples.flipped(hello, at: at, mask: to_u8(mask).must()), limit: 1000)
+                .ok out => assert out.data.len() <= 1000
+                .err e  => assert e.code == "invalid" || e.code == "limit"

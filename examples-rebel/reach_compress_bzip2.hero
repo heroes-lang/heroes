@@ -1,0 +1,14 @@
+# Reaches Rebel's `compress/bzip2`, so that `heroes test` on this file runs
+# the package's own tests (spec § 12). It compresses a line as bzip2, reads
+# it back, and prints both sizes.
+
+use <rebel>/compress/bzip2
+
+function main()
+    line: [u8] = [0x5a, 0x69, 0x67, 0x67, 0x79, 0x20, 0x5a, 0x69, 0x67, 0x67, 0x79, 0x20, 0x5a, 0x69, 0x67, 0x67, 0x79]
+
+    match bzip2.compress(line, level: bzip2.MAX_LEVEL)
+        .err e => print(e.code, ": ", e.msg)
+        .ok packed =>
+            back = bzip2.decompress(packed, limit: 1000).default([])
+            print(line.len(), " bytes, ", packed.len(), " compressed, ", back.len(), " read back")

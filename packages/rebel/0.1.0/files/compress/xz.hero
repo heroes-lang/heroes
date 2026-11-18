@@ -1,0 +1,292 @@
+# xz and LZMA compressed and decompressed, all at once over a `[u8]`: the
+# xz container (its blocks, index, footer and checks, several streams one
+# after another with their padding) holding LZMA2 data, and the older
+# `.lzma` format of a header and LZMA data. What it writes, the `xz` tool
+# and Python's `lzma` read, and what they write, it reads.
+#
+# What it does not do: a block filtered by a branch converter (`xz --x86`
+# and the seven others), which turns an executable's call addresses into
+# relative ones, fails `unsupported`; their algorithms are written down only
+# in liblzma's source, which Rebel is not written from. It does not read or
+# write piece by piece, nor through a stream: a program reads the whole
+# input first (`io.read_all`, `fs.read_bytes`). DEFLATE, gzip and zlib are
+# `compress`'s, bzip2 `compress/bzip2`'s, Zstandard `compress/zstd`'s,
+# Brotli `compress/brotli`'s.
+#
+# **A compressed input is not trusted.** Every function that decompresses
+# takes a `limit`, the most bytes it may produce, and fails `limit` before
+# it would write one more. An input that is not what its format says fails
+# `invalid`, its message naming the byte. Nothing an input holds makes a
+# call abort, loop without end, or read past the input.
+#
+# It fails with `invalid`, `limit` and `unsupported`.
+
+use compress/internal/codes
+use compress/xz/internal/container
+use compress/xz/internal/filters
+use compress/xz/internal/lzma2_dec
+use compress/xz/internal/writer
+
+## Codes
+
+# The code of an input that is not xz or `.lzma` (a wrong header, a block
+# or index whose CRC-32 does not match, a check that does not match its
+# bytes, a size that is not the one the container says, LZMA data no
+# decoder reads, a stream cut short, bytes after its end), the message
+# naming the byte; and of options out of their range. Every function fails
+# with it.
+constant INVALID: str
+    codes.INVALID
+
+# The code of an output that would pass the `limit` the caller set. Every
+# function that decompresses fails with it.
+constant LIMIT: str
+    codes.LIMIT
+
+# The code of a block filtered by a branch converter or by a filter this
+# package does not know, and of a check this format reserves asked of by
+# `check_of`. `decompress`, `decompress_leading` and `check_of` fail with
+# it.
+constant UNSUPPORTED: str
+    filters.UNSUPPORTED
+
+## Levels and checks
+
+# The fastest level: a dictionary of 256 KiB, four earlier places tried for
+# each byte.
+constant MIN_LEVEL: i64
+    0
+
+# The level `defaults` sets, as the `xz` tool's and Python's: a dictionary
+# of 8 MiB.
+constant DEFAULT_LEVEL: i64
+    6
+
+# The level that compresses most: a dictionary of 64 MiB, 512 earlier places
+# tried for each byte.
+constant MAX_LEVEL: i64
+    9
+
+# What an xz stream checks its blocks' bytes with.
+variant Check
+    # No check: only the CRC-32 of the headers and index guards the stream.
+    none
+    # CRC-32, four bytes.
+    crc32
+    # CRC-64 of ECMA-182, eight bytes: the `xz` tool's and Python's usual.
+    crc64
+    # SHA-256, 32 bytes.
+    sha256
+
+# How `compress` writes an xz stream. `defaults` makes the usual one.
+record Options
+    # 0 (`MIN_LEVEL`) to 9 (`MAX_LEVEL`): the dictionary, from 256 KiB to 64
+    # MiB as the `xz` tool's presets, and how many earlier places are tried.
+    level: i64
+    # What each block's bytes are checked with.
+    check: Check
+
+# Options at level 6 with a CRC-64 check, as the `xz` tool's and Python's
+# usual.
+#
+# See also `compress`.
+function defaults() -> Options
+    return Options(level: DEFAULT_LEVEL, check: .crc64)
+
+## All at once
+
+# `data` compressed whole into one xz stream of one LZMA2 block, or of none
+# where `data` is empty.
+#
+# - `data`: the bytes to compress.
+# - `options`: the level and the check; `defaults` makes the usual ones.
+#
+# The same `data` and `options` answer the same bytes every time.
+#
+# Fails `invalid` where `options.level` is outside 0 to 9.
+#
+# It holds `data`, the answer, and chains of up to 4 MiB entries for its
+# repeats. See also `decompress` and `compress_lzma`.
+function compress(data: [u8], options: Options) -> [u8]?
+    writer.check_level(options.level)?
+
+    check = match options.check
+        .none   => container.CHECK_NONE
+        .crc32  => container.CHECK_CRC32
+        .crc64  => container.CHECK_CRC64
+        .sha256 => container.CHECK_SHA256
+
+    return ok(writer.xz(data, level: options.level, check: check))
+
+# The bytes `data` decompresses to: one xz stream or several, one after
+# another, with stream padding (zero bytes in fours) between and after
+# them.
+#
+# - `data`: the xz file's bytes, nothing before the first stream.
+# - `limit`: the most bytes the answer may hold, 0 or more.
+#
+# Fails `limit` where the answer would pass `limit` bytes. Fails `invalid`
+# where `data` is not xz, the message naming the byte, an empty input among
+# them, and where `limit` is below 0. Fails `unsupported` on a block
+# filtered by a branch converter. A check this format reserves (ids 2, 3,
+# 5 to 9, 11 to 15) is skipped unverified, as the `xz` tool does.
+#
+# It holds the answer whole, up to `limit` bytes. See also
+# `decompress_leading`.
+function decompress(data: [u8], limit: i64) -> [u8]?
+    return container.every_stream(data, limit: limit)
+
+# What `decompress_leading` and `decompress_lzma_leading` answer: a
+# stream's bytes, and where it ended.
+record Leading
+    # The bytes the stream decompresses to.
+    data: [u8]
+    # How many bytes of the input the stream took, its footer included and
+    # any padding after it not: what follows begins at this index.
+    used: i64
+
+# The xz stream at the start of `data` decompressed, and how many bytes of
+# `data` it took.
+#
+# - `data`: bytes that begin with one xz stream; what follows it is not
+#   read.
+# - `limit`: the most bytes the answer's `data` may hold, 0 or more.
+#
+# Fails as `decompress` does, but never for bytes after the stream.
+#
+# See also `decompress`.
+function decompress_leading(data: [u8], limit: i64) -> Leading?
+    out: [u8] @= []
+    used = container.stream_into(out: @out, input: data, at: 0, limit: limit)?
+    return ok(Leading(data: out, used: used))
+
+# The check the xz stream at the start of `data` writes after each block,
+# read from its header.
+#
+# - `data`: an xz stream, or at least its first 12 bytes.
+#
+# Fails `invalid` where `data` does not begin with an xz stream header, and
+# `unsupported` where the check is one this format reserves.
+#
+# See also `Options`.
+function check_of(data: [u8]) -> Check?
+    check = container.check_of(data, at: 0)?
+
+    if check == container.CHECK_NONE
+        return ok(.none)
+
+    if check == container.CHECK_CRC32
+        return ok(.crc32)
+
+    if check == container.CHECK_CRC64
+        return ok(.crc64)
+
+    if check == container.CHECK_SHA256
+        return ok(.sha256)
+    return fail(code: UNSUPPORTED, msg: f"an xz stream whose check is of id {check}, which this format reserves")
+
+## The `.lzma` format
+
+# `data` compressed whole into one `.lzma` stream: 13 bytes of header that
+# say its size, then LZMA data.
+#
+# - `data`: the bytes to compress.
+# - `level`: 0 (`MIN_LEVEL`) to 9 (`MAX_LEVEL`), as `Options.level`.
+#
+# Fails `invalid` where `level` is outside 0 to 9.
+#
+# See also `decompress_lzma` and `compress`.
+function compress_lzma(data: [u8], level: i64) -> [u8]?
+    writer.check_level(level)?
+    return ok(writer.alone(data, level: level))
+
+# The bytes the `.lzma` stream `data` decompresses to: its size said in its
+# header, or ended by the end marker where the header says none.
+#
+# - `data`: one `.lzma` stream and nothing after it.
+# - `limit`: the most bytes the answer may hold, 0 or more.
+#
+# Fails `limit` where the answer would pass `limit` bytes, before a byte
+# is decoded where the header says so. Fails `invalid` where `data` is not
+# one `.lzma` stream, the message naming the byte, and where `limit` is
+# below 0.
+#
+# See also `decompress_lzma_leading` and `compress_lzma`.
+function decompress_lzma(data: [u8], limit: i64) -> [u8]?
+    one = lzma2_dec.alone(data, limit: limit)?
+
+    if one.used != data.len()
+        return codes.invalid_at(at: one.used, why: "bytes after the end of the .lzma stream")
+    return ok(one.data)
+
+# The `.lzma` stream at the start of `data` decompressed, and how many bytes
+# of `data` it took.
+#
+# - `data`: bytes that begin with one `.lzma` stream.
+# - `limit`: the most bytes the answer's `data` may hold, 0 or more.
+#
+# Fails as `decompress_lzma` does, but never for bytes after the stream.
+#
+# See also `decompress_lzma`.
+function decompress_lzma_leading(data: [u8], limit: i64) -> Leading?
+    one = lzma2_dec.alone(data, limit: limit)?
+    return ok(Leading(data: one.data, used: one.used))
+
+## Examples
+
+# The usual options, with the check changed.
+test "defaults: level 6 and CRC-64, then SHA-256"
+    o @= defaults()
+    assert o.level == DEFAULT_LEVEL && o.check == .crc64
+    o.check @ .sha256
+    assert check_of(compress([0x61], o).must()).must() == .sha256
+
+# A line compressed as xz and read back.
+test "compress: a line, and back"
+    line: [u8] = [0x6c, 0x6f, 0x77, 0x20, 0x6c, 0x6f, 0x77, 0x20, 0x6c, 0x6f, 0x77]
+    packed = compress(line, defaults()).must()
+    assert decompress(packed, limit: 100).must() == line
+
+# A stream read whole, under a limit on what it may expand to.
+test "decompress: under a limit"
+    packed = compress([0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a], defaults()).must()
+    assert decompress(packed, limit: 8).must().len() == 8
+
+    match decompress(packed, limit: 7)
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+# A stream followed by bytes of the caller's own.
+test "decompress_leading: a stream, then other bytes"
+    packed @= compress([0x6b, 0x6f, 0x6f, 0x6b, 0x73], defaults()).must()
+    size = packed.len()
+    packed @ packed.push(0x21)
+    led = decompress_leading(packed, limit: 100).must()
+    assert led.data == [0x6b, 0x6f, 0x6f, 0x6b, 0x73] && led.used == size
+
+# The check a stream was written with.
+test "check_of: CRC-32"
+    o @= defaults()
+    o.check @ .crc32
+    assert check_of(compress([], o).must()).must() == .crc32
+
+# A line as `.lzma`, and back.
+test "compress_lzma: a line, and back"
+    line: [u8] = [0x66, 0x61, 0x6d, 0x65, 0x20, 0x66, 0x61, 0x6d, 0x65]
+    assert decompress_lzma(compress_lzma(line, level: DEFAULT_LEVEL).must(), limit: 100).must() == line
+
+# A `.lzma` stream read under a limit.
+test "decompress_lzma: under a limit"
+    packed = compress_lzma([0x61, 0x61, 0x61, 0x61], level: MIN_LEVEL).must()
+
+    match decompress_lzma(packed, limit: 3)
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+# A `.lzma` stream followed by other bytes.
+test "decompress_lzma_leading: a stream, then other bytes"
+    packed @= compress_lzma([0x6c, 0x6f, 0x77], level: MAX_LEVEL).must()
+    size = packed.len()
+    packed @ packed.push(0)
+    led = decompress_lzma_leading(packed, limit: 10).must()
+    assert led.data == [0x6c, 0x6f, 0x77] && led.used == size

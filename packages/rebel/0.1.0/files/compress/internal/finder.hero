@@ -1,0 +1,166 @@
+# The repeats a compressor of `compress/zstd`, `compress/brotli` or
+# `compress/xz` finds in an input held whole in memory: every position goes
+# into a chain of the earlier positions whose next few bytes hash alike, and
+# the longest repeat at a position is looked for along its chain, as far as
+# the compressor's effort allows. DEFLATE's own, with its window of 32,768
+# bytes, is `matcher`'s.
+
+# The most entries the chains hold: a window wider than this reaches only as
+# far back as the chains remember.
+constant MOST_REMEMBERED: i64
+    4194304
+
+# The chains of earlier positions, and how far they are searched.
+record Finder
+    # By the hash of a position's first `shortest` bytes, the latest
+    # position holding them plus 1, or 0 for none.
+    head: [i64]
+    # By a position modulo `remembered`, the position before it with the same
+    # hash plus 1, or 0 for none.
+    prev: [i64]
+    # How many positions `prev` holds: a power of two.
+    remembered: i64
+    # How many bits the hash has.
+    bits: i64
+    # How far back a repeat may reach, in bytes.
+    window: i64
+    # How many earlier positions are tried for each one.
+    chain: i64
+    # A repeat this long ends the search at once.
+    nice: i64
+    # The shortest repeat found, and how many bytes are hashed: 3 or 4.
+    shortest: i64
+    # Every position below this one is in the chains.
+    inserted: i64
+
+# A repeat found: `length` 0 where none was.
+record Found
+    # How many bytes repeat.
+    length: i64
+    # How far back they begin, 1 or more.
+    distance: i64
+
+# Chains for an input of `size` bytes that find repeats of `shortest` (3 or
+# 4) bytes or more reaching back at most `window` bytes, trying `chain`
+# positions for each and stopping at a repeat of `nice` bytes.
+function start(size: i64, window: i64, shortest: i64, chain: i64, nice: i64) -> Finder
+    remembered: i64 @= 256
+
+    while remembered < size && remembered < window && remembered < MOST_REMEMBERED
+        remembered @ remembered * 2
+
+    bits: i64 @= 8
+
+    while 1 << bits < remembered && bits < 20
+        bits @ bits + 1
+
+    head: [i64] @= []
+
+    for _ in range(from: 0, to: 1 << bits)
+        head @ head.push(0)
+
+    prev: [i64] @= []
+
+    for _ in range(from: 0, to: remembered)
+        prev @ prev.push(0)
+
+    return Finder(
+        head: head,
+        prev: prev,
+        remembered: remembered,
+        bits: bits,
+        window: window,
+        chain: chain,
+        nice: nice,
+        shortest: shortest,
+        inserted: 0
+    )
+
+# The hash of the `shortest` bytes at `at` of `data`, `bits` bits wide.
+function hash_at(data: [u8] lent, at: i64, shortest: i64, bits: i64) -> i64
+    x: i64 @= to_i64(data[at]).must() ^ to_i64(data[at + 1]).must() << 6 ^ to_i64(data[at + 2]).must() << 12
+
+    if shortest == 4
+        x @ x ^ to_i64(data[at + 3]).must() << 18
+    return x * 2654435761 >> 13 & (1 << bits) - 1
+
+# Puts every position below `upto` into the chains of `f`, as far as
+# `shortest` bytes follow it in `data`.
+function insert_upto(@f: Finder, data: [u8] lent, upto: i64)
+    last = data.len() - f.shortest
+
+    while f.inserted < upto
+        at = f.inserted
+
+        if at <= last
+            h = hash_at(data, at: at, shortest: f.shortest, bits: f.bits)
+            slot = at & f.remembered - 1
+            f.prev[slot] @ f.head[h]
+            f.head[h] @ at + 1
+        f.inserted @ at + 1
+
+# How many bytes from `at` of `data` repeat those `distance` bytes before,
+# at most `most`.
+function length_at(data: [u8] lent, at: i64, distance: i64, most: i64) -> i64
+    if distance < 1 || distance > at
+        return 0
+    n: i64 @= 0
+    limit: i64 @= most
+
+    if limit > data.len() - at
+        limit @ data.len() - at
+
+    while n < limit && data[at + n] == data[at + n - distance]
+        n @ n + 1
+
+    return n
+
+# The longest repeat at `at` of `data` that the chains of `f` find, at most
+# `most` bytes long; the nearest of the longest. `at` must be in the chains'
+# reach: every position below it inserted, `at` itself not.
+function longest(f: Finder lent, data: [u8] lent, at: i64, most: i64) -> Found
+    best = Found(length: 0, distance: 0)
+
+    if at + f.shortest > data.len() || most < f.shortest
+        return best
+    h = hash_at(data, at: at, shortest: f.shortest, bits: f.bits)
+    candidate: i64 @= f.head[h]
+    tries: i64 @= 0
+    length: i64 @= 0
+    distance: i64 @= 0
+
+    while candidate > 0 && tries < f.chain
+        p = candidate - 1
+        d = at - p
+
+        if d > f.window || d > f.remembered || d < 1
+            break
+        n = length_at(data, at: at, distance: d, most: most)
+
+        if n > length
+            length @ n
+            distance @ d
+
+            if n >= f.nice || n >= most
+                break
+        slot = p & f.remembered - 1
+        candidate @ f.prev[slot]
+        tries @ tries + 1
+
+    if length < f.shortest
+        return best
+    return Found(length: length, distance: distance)
+
+test "longest: a repeat found, the nearest of two, and none"
+    data: [u8] = [1, 2, 3, 4, 9, 1, 2, 3, 4, 8, 1, 2, 3, 4, 7]
+    f @= start(size: data.len(), window: 100, shortest: 4, chain: 16, nice: 100)
+    insert_upto(@f, data: data, upto: 10)
+    found = longest(f, data: data, at: 10, most: 100)
+    assert found.length == 4 && found.distance == 5
+    assert longest(f, data: data, at: 4, most: 100).length == 0
+
+test "length_at: a run against itself, held to `most` and to the input"
+    data: [u8] = [5, 5, 5, 5, 5, 5]
+    assert length_at(data, at: 1, distance: 1, most: 100) == 5
+    assert length_at(data, at: 1, distance: 1, most: 3) == 3
+    assert length_at(data, at: 1, distance: 2, most: 100) == 0

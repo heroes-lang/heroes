@@ -1,0 +1,131 @@
+# The ledger of `compress/xz`: what Python's `lzma` (3.15; `compression.lzma`
+# is the same module again) lets a program do, one block per capability,
+# and what Rebel answers. Go's and Rust's standard libraries have no xz and
+# no LZMA, so their lines are `-` in every block. The lists are this
+# machine's, 2026-11-18: `dir()` of `lzma` and of its classes. Every stream
+# in the package's tests was made by the `xz` tool 5.8.4 or by hand and
+# given to Python first; the cross-check in the scratch folder read 21 of
+# the tool's streams (presets 0 and 6 and `.lzma`; text, random bytes,
+# runs, zeros, one byte, none, a repeated pair), streams with each check,
+# delta filters, many blocks, two streams with padding and `-e -9`, had the
+# tool read what Rebel wrote of each at levels 0 and 6 and as `.lzma`, all
+# alike, and fed 600 corrupted xz streams and 400 corrupted `.lzma` streams
+# to the decoder, every one refused with `invalid` but one whose change left
+# its bytes as they were.
+
+capability xz/at-once  bytes compressed whole into one xz stream
+  heroes  compress/xz.compress
+  go      -
+  rust    -
+  python  lzma.compress, lzma.compress(format=FORMAT_XZ)
+  note    one LZMA2 block, its sizes in its header. The parse is greedy: each position takes the last distance where it repeats as far as a new one, else the longest repeat the chains find. On the scratch folder's text it writes 25% more than `xz -6` and as much as `xz -0`; on random bytes as much as the tool
+
+capability xz/decompress-at-once  streams decompressed whole under a limit
+  heroes  compress/xz.decompress
+  go      -
+  rust    -
+  python  lzma.decompress, lzma.decompress(format=FORMAT_XZ), lzma.decompress(format=FORMAT_AUTO), lzma.FORMAT_AUTO, lzma.FORMAT_XZ
+  note    a `limit` is required, where Python asks for none (`memlimit` bounds liblzma's dictionary, not the output). Stream padding, zero bytes in fours between and after streams, is read as the xz format and the `xz` tool read it, where Python's `decompress` refuses it (observed: four zero bytes after a stream fail "Compressed data ended before the end-of-stream marker was reached"). Bytes after the last stream fail `invalid`, where Python ignores what does not begin a stream once one has been read; an empty input fails `invalid`, as Python's does. The format is named by the call, `decompress` or `decompress_lzma`, never guessed
+
+capability xz/leading  a stream at the start of other bytes, and where it ended
+  heroes  compress/xz.decompress_leading, compress/xz.decompress_lzma_leading
+  go      -
+  rust    -
+  python  lzma.LZMADecompressor, LZMADecompressor.unused_data, LZMADecompressor.eof
+  note    -
+
+capability xz/checks  what an xz stream checks its blocks with
+  heroes  compress/xz.Check, compress/xz.Options, compress/xz.check_of
+  go      -
+  rust    -
+  python  lzma.CHECK_NONE, lzma.CHECK_CRC32, lzma.CHECK_CRC64, lzma.CHECK_SHA256, lzma.CHECK_ID_MAX, lzma.CHECK_UNKNOWN, lzma.is_check_supported, LZMADecompressor.check, lzma.compress(check=)
+  note    every check is supported, so `is_check_supported` has nothing to answer. A check id the format reserves is skipped unverified when decompressing, as the `xz` tool does, and fails `unsupported` where `check_of` is asked
+
+capability xz/levels  how hard the compressor works, and its dictionary
+  heroes  compress/xz.Options, compress/xz.defaults, compress/xz.MIN_LEVEL, compress/xz.DEFAULT_LEVEL, compress/xz.MAX_LEVEL
+  go      -
+  rust    -
+  python  lzma.compress(preset=), lzma.PRESET_DEFAULT, LZMACompressor(preset=)
+  note    0 to 9 with the dictionaries of the `xz` tool's presets, 256 KiB to 64 MiB; a level out of range fails `invalid`
+
+capability xz/extreme  the slower presets that search harder for a smaller output
+  heroes  pending
+  go      -
+  rust    -
+  python  lzma.PRESET_EXTREME, lzma.MODE_NORMAL, lzma.MODE_FAST
+  note    liblzma's normal mode prices every choice and parses optimally; this encoder's greedy parse has no slower mode to offer. Not written in this round
+
+capability xz/lzma-alone  the older `.lzma` format
+  heroes  compress/xz.compress_lzma, compress/xz.decompress_lzma, compress/xz.decompress_lzma_leading
+  go      -
+  rust    -
+  python  lzma.FORMAT_ALONE, lzma.compress(format=FORMAT_ALONE), lzma.decompress(format=FORMAT_ALONE)
+  note    Rebel writes the size in the header and no end marker; Python and the `xz` tool write no size and the marker. Both forms are read
+
+capability xz/delta  the delta filter before LZMA2
+  heroes  compress/xz.decompress
+  go      -
+  rust    -
+  python  lzma.FILTER_DELTA, lzma.decompress(filters=)
+  note    read wherever a block names it; `compress` writes no filter but LZMA2 (see xz/filter-chains)
+
+capability xz/branch-converters  the filters that turn an executable's call addresses relative
+  heroes  pending
+  go      -
+  rust    -
+  python  lzma.FILTER_X86, lzma.FILTER_POWERPC, lzma.FILTER_IA64, lzma.FILTER_ARM, lzma.FILTER_ARMTHUMB, lzma.FILTER_SPARC
+  note    the xz format's specification names the eight converters (ARM64 and RISC-V beside these six) and leaves their algorithms to liblzma's source, which Rebel is not written from (README A5); a block that names one fails `unsupported`. It needs each converter's behaviour written down from somewhere other than a library's code
+
+capability xz/filter-chains  a chain of filters and the encoder's own options named by the caller
+  heroes  pending
+  go      -
+  rust    -
+  python  lzma.compress(filters=), LZMACompressor(filters=), lzma.FILTER_LZMA1, lzma.FILTER_LZMA2, lzma.MF_BT2, lzma.MF_BT3, lzma.MF_BT4, lzma.MF_HC3, lzma.MF_HC4
+  note    the dictionary size, lc, lp, pb, nice_len, depth and match finder of a chain; this encoder takes a level only. Not written in this round
+
+capability xz/raw  LZMA or LZMA2 data with no container, its filters named by the caller, as zip and 7z hold it
+  heroes  pending
+  go      -
+  rust    -
+  python  lzma.FORMAT_RAW, lzma.compress(format=FORMAT_RAW), lzma.decompress(format=FORMAT_RAW)
+  note    the decoder of a block's LZMA2 data is written; a public call for it is not, in this round
+
+capability xz/compress-incremental  bytes compressed piece by piece
+  heroes  pending
+  go      -
+  rust    -
+  python  lzma.LZMACompressor, LZMACompressor.compress, LZMACompressor.flush
+  note    not written in this round
+
+capability xz/decompress-incremental  a stream decompressed piece by piece, or through a stream
+  heroes  pending
+  go      -
+  rust    -
+  python  LZMADecompressor.decompress, LZMADecompressor.needs_input, lzma.LZMAFile.read, LZMAFile.read1, LZMAFile.readinto, LZMAFile.peek
+  note    not written in this round
+
+capability xz/failures  what a broken stream answers
+  heroes  compress/xz.INVALID, compress/xz.LIMIT, compress/xz.UNSUPPORTED
+  go      -
+  rust    -
+  python  lzma.LZMAError
+  note    `invalid` names the byte where the stream stopped being xz
+
+capability xz/file  an xz file opened by its path, read and written as a file
+  heroes  refused: a path is `fs`'s, and a file's bytes are read whole by `fs.read_bytes` and written by `fs.write_bytes`
+  go      -
+  rust    -
+  python  lzma.open, lzma.LZMAFile, LZMAFile.write, LZMAFile.close, LZMAFile.mode, LZMAFile.name, LZMAFile.closed
+  note    -
+
+capability xz/lines  a compressed text read line by line, or sought in
+  heroes  refused: lines are `io`'s and `bytes.lines`'s over the bytes read whole; seeking is decompressing again from the start
+  go      -
+  rust    -
+  python  LZMAFile.readline, LZMAFile.readlines, LZMAFile.seek, LZMAFile.tell, LZMAFile.seekable
+  note    -
+
+dropped
+  python  LZMAFile.fileno, LZMAFile.isatty, LZMAFile.readable, LZMAFile.writable, LZMAFile.detach, LZMAFile.truncate, LZMAFile.flush, LZMAFile.writelines: what every Python file object has
+  python  lzma.decompress(memlimit=), LZMADecompressor(memlimit=): a bound on liblzma's dictionary memory; the output's `limit` bounds what Rebel holds
+  python  lzma.builtins, lzma.io, lzma.os: modules Python's own `lzma` imports

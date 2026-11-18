@@ -1,0 +1,142 @@
+# Brotli's static dictionary as the decoder reaches it: the words by
+# length (RFC 7932 section 8), and each of the 121 transforms of Appendix B
+# applied to a word, its prefix, its elementary change and its suffix.
+
+use bytes
+use compress/brotli/internal/tables
+use compress/brotli/internal/words
+
+# How many bits index the words of each length, 0 to 24.
+constant NDBITS: [i64]
+    [0, 0, 0, 0, 10, 10, 11, 11, 10, 10, 10, 10, 10, 9, 9, 8, 7, 7, 8, 7, 7, 6, 6, 5, 5]
+
+# The dictionary loaded: its bytes, where each length's words begin, and
+# the transforms.
+record Loaded
+    # The 122,784 bytes.
+    words: [u8]
+    # By length 0 to 24, the index of its first word.
+    offsets: [i64]
+    # By transform, the bytes put before the word.
+    prefixes: [[u8]]
+    # By transform, its kind: 0 identity, 1 the first letter upper, 2 every
+    # letter upper, 3 to 11 the first 1 to 9 bytes dropped, 12 to 20 the
+    # last 1 to 9.
+    kinds: [i64]
+    # By transform, the bytes put after the word.
+    suffixes: [[u8]]
+
+# The dictionary and the transforms, read from their tables.
+function load() -> Loaded
+    offsets: [i64] @= [0]
+
+    for n in range(from: 0, to: 24)
+        count: i64 @= 0
+
+        if n >= 4
+            count @ 1 << NDBITS[n]
+        offsets @ offsets.push(offsets[n] + n * count)
+
+    serial = bytes.parse_hex(tables.TRANSFORMS).must()
+    prefixes: [[u8]] @= []
+    kinds: [i64] @= []
+    suffixes: [[u8]] @= []
+    p: i64 @= 0
+
+    while p < serial.len()
+        prefix: [u8] @= []
+
+        while serial[p] != 0
+            prefix @ prefix.push(serial[p])
+            p @ p + 1
+
+        kinds @ kinds.push(to_i64(serial[p + 1]).must())
+        p @ p + 2
+        suffix: [u8] @= []
+
+        while serial[p] != 0
+            suffix @ suffix.push(serial[p])
+            p @ p + 1
+
+        p @ p + 1
+        prefixes @ prefixes.push(prefix)
+        suffixes @ suffixes.push(suffix)
+
+    return Loaded(words: words.bytes_of(), offsets: offsets, prefixes: prefixes, kinds: kinds, suffixes: suffixes)
+
+# Upper-cases the character at `at` of `word` as Brotli's Ferment does, and
+# answers how many bytes it spans: an ASCII letter flipped, the second
+# byte of a two-byte character flipped by 32, the third of a longer one by 5.
+function ferment(@word: [u8], at: i64) -> i64
+    b = to_i64(word[at]).must()
+
+    if b < 192
+        if b >= 97 && b <= 122
+            word[at] @ to_u8(b ^ 32).must()
+        return 1
+
+    if b < 224
+        if at + 1 < word.len()
+            word[at + 1] @ to_u8(to_i64(word[at + 1]).must() ^ 32).must()
+        return 2
+
+    if at + 2 < word.len()
+        word[at + 2] @ to_u8(to_i64(word[at + 2]).must() ^ 5).must()
+    return 3
+
+# The word of `length` at `index` with transform `id` applied, onto `out`.
+function put_word(@out: [u8], d: Loaded lent, length: i64, index: i64, id: i64)
+    start = d.offsets[length] + index * length
+    word: [u8] @= d.words.slice(from: start, to: start + length)
+    kind = d.kinds[id]
+
+    if kind == 1 && word.len() > 0
+        _ = ferment(@word, at: 0)
+    else if kind == 2
+        i: i64 @= 0
+
+        while i < word.len()
+            i @ i + ferment(@word, at: i)
+    else if kind >= 3 && kind <= 11
+        k = kind - 2
+
+        if k >= word.len()
+            word @ []
+        else
+            word @ word.slice(from: k, to: word.len())
+    else if kind >= 12
+        k = kind - 11
+
+        if k >= word.len()
+            word @ []
+        else
+            word @ word.slice(from: 0, to: word.len() - k)
+
+    for b in d.prefixes[id]
+        out @ out.push(b)
+
+    for b in word
+        out @ out.push(b)
+
+    for b in d.suffixes[id]
+        out @ out.push(b)
+
+test "load: every length's words end where the next begin, and 121 transforms"
+    d = load()
+    assert d.offsets[24] + 24 * 32 == words.SIZE
+    assert d.kinds.len() == 121 && d.prefixes.len() == 121
+
+test "put_word: the first word, identity, a suffix, upper case, and a byte dropped"
+    d = load()
+    out: [u8] @= []
+    put_word(@out, d: d, length: 4, index: 0, id: 0)
+    assert out == bytes.from_text("time")
+    more: [u8] @= []
+    put_word(@more, d: d, length: 4, index: 0, id: 1)
+    assert more == bytes.from_text("time ")
+    upper: [u8] @= []
+    put_word(@upper, d: d, length: 4, index: 0, id: 44)
+    assert upper == bytes.from_text("TIME")
+    dropped: [u8] @= []
+    put_word(@dropped, d: d, length: 4, index: 0, id: 3)
+    assert dropped == bytes.from_text("ime")

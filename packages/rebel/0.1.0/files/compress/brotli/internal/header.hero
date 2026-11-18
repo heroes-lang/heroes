@@ -1,0 +1,172 @@
+# The parts of a Brotli meta-block header the decoder reads before its
+# commands: the number of block types of a category and its codes, a
+# block switch, a context map with its runs and its move to front, and the
+# context tables of RFC 7932 section 7.1.
+
+use bytes
+use compress/brotli/internal/prefix
+use compress/brotli/internal/tables
+use compress/internal/codes
+use compress/internal/cursor
+
+# The shortest count of each block count code.
+constant COUNT_BASE: [i64]
+    [
+        1
+        5
+        9
+        13
+        17
+        25
+        33
+        41
+        49
+        65
+        81
+        97
+        113
+        145
+        177
+        209
+        241
+        305
+        369
+        497
+        753
+        1265
+        2289
+        4337
+        8433
+        16625
+    ]
+
+# How many bits follow each block count code.
+constant COUNT_EXTRA: [i64]
+    [2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 7, 8, 9, 10, 11, 12, 13, 24]
+
+# The block types of one category, literals, commands or distances, and
+# where the current block stands.
+record Category
+    # How many types.
+    types: i64
+    # The code of the next block's type.
+    type_code: prefix.Code
+    # The code of the next block's count.
+    count_code: prefix.Code
+    # The type in use.
+    current: i64
+    # The type before it.
+    previous: i64
+    # How many more symbols the current block holds.
+    left: i64
+
+# The context tables of section 7.1, read once.
+record Contexts
+    # Lut0, by byte.
+    lut0: [i64]
+    # Lut1, by byte.
+    lut1: [i64]
+    # Lut2, by byte.
+    lut2: [i64]
+
+# The context tables.
+function contexts() -> Contexts
+    a: [i64] @= []
+    b: [i64] @= []
+    c: [i64] @= []
+
+    for x in bytes.parse_hex(tables.LUT0).must()
+        a @ a.push(to_i64(x).must())
+
+    for x in bytes.parse_hex(tables.LUT1).must()
+        b @ b.push(to_i64(x).must())
+
+    for x in bytes.parse_hex(tables.LUT2).must()
+        c @ c.push(to_i64(x).must())
+
+    return Contexts(lut0: a, lut1: b, lut2: c)
+
+# A number of 1 to 256, in one to eleven bits.
+function count_of(@c: cursor.Cursor, input: [u8] lent) -> i64?
+    if prefix.bits(@c, input: input, n: 1)? == 0
+        return ok(1)
+    n = prefix.bits(@c, input: input, n: 3)?
+    return ok((1 << n) + prefix.bits(@c, input: input, n: n)? + 1)
+
+# A block count, its code then its extra bits.
+function block_count(code: prefix.Code lent, @c: cursor.Cursor, input: [u8] lent) -> i64?
+    k = prefix.symbol(code, @c, input: input)?
+    return ok(COUNT_BASE[k] + prefix.bits(@c, input: input, n: COUNT_EXTRA[k])?)
+
+# A category's types and first count, from the meta-block header.
+function category(@c: cursor.Cursor, input: [u8] lent) -> Category?
+    types = count_of(@c, input: input)?
+    none = prefix.Code(table: prefix.empty_table(), single: 0)
+
+    if types < 2
+        return ok(Category(types: 1, type_code: none, count_code: none, current: 0, previous: 1, left: 16777216))
+    type_code = prefix.read(@c, input: input, size: types + 2)?
+    count_code = prefix.read(@c, input: input, size: 26)?
+    left = block_count(count_code, @c, input: input)?
+    return ok(Category(types: types, type_code: type_code, count_code: count_code, current: 0, previous: 1, left: left))
+
+# Moves `k` to its next block: its type, then its count.
+function switch_block(@k: Category, @c: cursor.Cursor, input: [u8] lent) -> ()?
+    code = prefix.symbol(k.type_code, @c, input: input)?
+    next: i64 @= code - 2
+
+    if code == 0
+        next @ k.previous
+    else if code == 1
+        next @ (k.current + 1) % k.types
+    k.previous @ k.current
+    k.current @ next
+    k.left @ block_count(k.count_code, @c, input: input)?
+    return ok()
+
+# A context map of `size` entries over `trees` trees: runs of zeros, and
+# the inverse move to front where its last bit says so.
+function context_map(@c: cursor.Cursor, input: [u8] lent, size: i64, trees: i64) -> [i64]?
+    cmap: [i64] @= []
+
+    if trees < 2
+        for _ in range(from: 0, to: size)
+            cmap @ cmap.push(0)
+
+        return ok(cmap)
+    longest: i64 @= 0
+
+    if prefix.bits(@c, input: input, n: 1)? == 1
+        longest @ prefix.bits(@c, input: input, n: 4)? + 1
+    code = prefix.read(@c, input: input, size: trees + longest)?
+
+    while cmap.len() < size
+        s = prefix.symbol(code, @c, input: input)?
+
+        if s == 0
+            cmap @ cmap.push(0)
+        else if s <= longest
+            run = (1 << s) + prefix.bits(@c, input: input, n: s)?
+
+            if cmap.len() + run > size
+                return codes.invalid_at(at: cursor.last_byte(c), why: "a context cmap whose zeros run past its end")
+
+            for _ in range(from: 0, to: run)
+                cmap @ cmap.push(0)
+        else
+            cmap @ cmap.push(s - longest)
+
+    if prefix.bits(@c, input: input, n: 1)? == 1
+        front: [i64] @= range(from: 0, to: 256)
+
+        for i in range(from: 0, to: size)
+            j: i64 @= cmap[i]
+            value = front[j]
+            cmap[i] @ value
+
+            while j > 0
+                front[j] @ front[j - 1]
+                j @ j - 1
+
+            front[0] @ value
+    return ok(cmap)

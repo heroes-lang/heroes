@@ -1,0 +1,420 @@
+# The bzip2 decoder: a stream's header, each block's tables and symbols,
+# the move to front and its runs undone, the Burrows-Wheeler transform
+# inverted, the runs of four undone, and every CRC checked. Each block is
+# held to the size its stream's header allows, and the output to the
+# caller's limit, before a byte is written past either.
+
+use compress/bzip2/internal/bitio
+use compress/bzip2/internal/samples
+use compress/internal/codes
+
+# The code of a randomised block.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The longest code a table may give a symbol.
+constant MAX_CODE: i64
+    20
+
+# How many symbols one selector covers.
+constant GROUP: i64
+    50
+
+# A code as the decoder reads it: how many symbols have each length, and
+# the symbols in the order of their codes.
+record Table
+    # By length 0 to 20, how many symbols have a code that long.
+    counts: [i64]
+    # The symbols of non-zero length, by length and then by value.
+    symbols: [i64]
+
+# What one stream gave: where it ended.
+record One
+    # The bytes the stream decompressed to.
+    data: [u8]
+    # The index of the first byte after the stream.
+    used: i64
+
+# Every stream of `data`, one after another, decompressed whole.
+function every_stream(data: [u8] lent, limit: i64) -> [u8]?
+    if data.len() == 0
+        return codes.invalid_at(at: 0, why: "an empty input, where a bzip2 stream begins with BZh")
+    out: [u8] @= []
+    at: i64 @= 0
+
+    while at < data.len()
+        at @ stream_into(out: @out, data: data, at: at, limit: limit)?
+
+    return ok(out)
+
+# The one stream that begins at `at` of `data`.
+function one_stream(data: [u8] lent, at: i64, limit: i64) -> One?
+    out: [u8] @= []
+    used = stream_into(out: @out, data: data, at: at, limit: limit)?
+    return ok(One(data: out, used: used))
+
+# Decompresses the stream at `at` of `data` onto the end of `out`, which
+# may hold at most `limit` bytes, and answers the index after it.
+function stream_into(@out: [u8], data: [u8] lent, at: i64, limit: i64) -> i64?
+    if limit < 0
+        return fail(code: codes.INVALID, msg: f"a limit of {limit} bytes, where a limit is 0 or more")
+
+    if data.len() - at < 4 || data[at] != 'B' || data[at + 1] != 'Z' || data[at + 2] != 'h'
+        return codes.invalid_at(at: at, why: "no bzip2 header, which begins BZh")
+    level = to_i64(data[at + 3]).must() - '0'
+
+    if level < 1 || level > 9
+        return codes.invalid_at(at: at + 3, why: "a block size other than 1 to 9")
+    table = bitio.crc_table()
+    r @= bitio.reader_at(at + 4)
+    combined: i64 @= 0
+
+    while true
+        high = bitio.read(@r, data, n: 24)?
+        low = bitio.read(@r, data, n: 24)?
+        start = bitio.here(r)
+
+        if high == 0x314159 && low == 0x265359
+            stored = bitio.read32(@r, data)?
+            crc = block(@r, data: data, out: @out, most: level * 100000, limit: limit, table: table)?
+
+            if crc != stored
+                return codes.invalid_at(at: start, why: "a block whose CRC does not match its bytes")
+            combined @ (combined << 1 | combined >> 31) & 0xffffffff ^ crc
+        else if high == 0x177245 && low == 0x385090
+            stored = bitio.read32(@r, data)?
+
+            if stored != combined
+                return codes.invalid_at(at: start, why: "a stream whose CRC does not match its blocks'")
+            bitio.align(@r)
+            return ok(bitio.used(r))
+        else
+            return codes.invalid_at(at: start, why: "neither a block nor the end of the stream")
+
+    return ok(0)
+
+# The table that reads the code `lengths`, each 1 to 20. A code with more
+# codes of a length than its bits allow fails; one that leaves some bits
+# meaning nothing is read, those bits failing where they come.
+function table_for(lengths: [i64] lent, at: i64) -> Table?
+    counts: [i64] @= []
+
+    for _ in range(from: 0, to: MAX_CODE + 1)
+        counts @ counts.push(0)
+
+    for bits in lengths
+        counts[bits] @ counts[bits] + 1
+
+    room: i64 @= 1
+
+    for bits in range(from: 1, to: MAX_CODE + 1)
+        room @ room * 2 - counts[bits]
+
+        if room < 0
+            return codes.invalid_at(at: at, why: "a Huffman table with more codes of some length than its bits allow")
+
+    symbols: [i64] @= []
+
+    for bits in range(from: 1, to: MAX_CODE + 1)
+        for symbol in range(from: 0, to: lengths.len())
+            if lengths[symbol] == bits
+                symbols @ symbols.push(symbol)
+
+    return ok(Table(counts: counts, symbols: symbols))
+
+# The next symbol of `t` in `data`, read bit by bit.
+function decode(t: Table lent, @r: bitio.Reader, data: [u8] lent) -> i64?
+    code: i64 @= 0
+    first: i64 @= 0
+    index: i64 @= 0
+
+    for bits in range(from: 1, to: MAX_CODE + 1)
+        code @ code | bitio.read(@r, data, n: 1)?
+        count = t.counts[bits]
+
+        if code - first < count
+            return ok(t.symbols[index + code - first])
+        index @ index + count
+        first @ first + count << 1
+        code @ code << 1
+
+    return codes.invalid_at(at: bitio.here(r), why: "bits that are no code of the block's Huffman table")
+
+# The bytes in use, from the block's map of them.
+function bytes_in_use(@r: bitio.Reader, data: [u8] lent) -> [i64]?
+    used: [i64] @= []
+    sixteens = bitio.read(@r, data, n: 16)?
+
+    for i in range(from: 0, to: 16)
+        if sixteens >> 15 - i & 1 == 1
+            each = bitio.read(@r, data, n: 16)?
+
+            for j in range(from: 0, to: 16)
+                if each >> 15 - j & 1 == 1
+                    used @ used.push(i * 16 + j)
+
+    if used.len() == 0
+        return codes.invalid_at(at: bitio.here(r), why: "a block that uses no byte")
+    return ok(used)
+
+# The table of each 50 symbols, written moved to front.
+function selectors(@r: bitio.Reader, data: [u8] lent, groups: i64) -> [i64]?
+    count = bitio.read(@r, data, n: 15)?
+
+    if count == 0
+        return codes.invalid_at(at: bitio.here(r), why: "a block with no selector")
+    front: [i64] @= range(from: 0, to: groups)
+    chosen: [i64] @= []
+
+    for _ in range(from: 0, to: count)
+        j: i64 @= 0
+
+        while bitio.read(@r, data, n: 1)? == 1
+            j @ j + 1
+
+            if j >= groups
+                return codes.invalid_at(at: bitio.here(r), why: f"a selector past the block's {groups} tables")
+
+        value = front[j]
+
+        while j > 0
+            front[j] @ front[j - 1]
+            j @ j - 1
+
+        front[0] @ value
+        chosen @ chosen.push(value)
+
+    return ok(chosen)
+
+# The tables of a block, each its code lengths as differences.
+function tables(@r: bitio.Reader, data: [u8] lent, groups: i64, alphabet: i64) -> [Table]?
+    made: [Table] @= []
+
+    for _ in range(from: 0, to: groups)
+        length: i64 @= bitio.read(@r, data, n: 5)?
+        lengths: [i64] @= []
+
+        for _ in range(from: 0, to: alphabet)
+            while true
+                if length < 1 || length > MAX_CODE
+                    return codes.invalid_at(at: bitio.here(r), why: "a code length outside 1 to 20")
+
+                if bitio.read(@r, data, n: 1)? == 0
+                    break
+
+                if bitio.read(@r, data, n: 1)? == 0
+                    length @ length + 1
+                else
+                    length @ length - 1
+
+            lengths @ lengths.push(length)
+
+        made @ made.push(table_for(lengths, at: bitio.here(r))?)
+
+    return ok(made)
+
+# Decodes one block, its magic and CRC read, onto `out`, and answers the CRC
+# of its bytes. `most` is the most bytes the block may hold before its runs
+# of four are undone.
+function block(@r: bitio.Reader, data: [u8] lent, @out: [u8], most: i64, limit: i64, table: [i64] lent) -> i64?
+    if bitio.read(@r, data, n: 1)? == 1
+        return fail(
+            code: UNSUPPORTED,
+            msg: f"a randomised block at byte {bitio.here(r)}, a form no bzip2 has written since 0.9.5, which this package does not read"
+        )
+    origin = bitio.read(@r, data, n: 24)?
+    used = bytes_in_use(@r, data)?
+    alphabet = used.len() + 2
+    groups = bitio.read(@r, data, n: 3)?
+
+    if groups < 2 || groups > 6
+        return codes.invalid_at(at: bitio.here(r), why: f"{groups} Huffman tables, where a block has 2 to 6")
+    chosen = selectors(@r, data, groups: groups)?
+    codes_of = tables(@r, data, groups: groups, alphabet: alphabet)?
+    moved = read_symbols(@r, data: data, used: used, chosen: chosen, codes_of: codes_of, most: most)?
+
+    if origin >= moved.len()
+        return codes.invalid_at(
+            at: bitio.here(r),
+            why: f"a block of {moved.len()} bytes whose first is said to stand at {origin}"
+        )
+    return unsort(moved: moved, origin: origin, out: @out, limit: limit, at: bitio.here(r), table: table)
+
+# The bytes of a block before the transform is inverted: its symbols read,
+# their runs of the front byte undone and the move to front undone.
+function read_symbols(@r: bitio.Reader, data: [u8] lent, used: [i64] lent, chosen: [i64] lent, codes_of: [Table] lent, most: i64) -> [u8]?
+    front: [i64] @= used
+    moved: [u8] @= []
+    end = used.len() + 1
+    group: i64 @= -1
+    left: i64 @= 0
+    run: i64 @= 0
+    weight: i64 @= 1
+    which: i64 @= 0
+
+    while true
+        if left == 0
+            group @ group + 1
+
+            if group >= chosen.len()
+                return codes.invalid_at(at: bitio.here(r), why: "a block with more symbols than its selectors cover")
+            which @ chosen[group]
+            left @ GROUP
+        left @ left - 1
+        symbol = decode(codes_of[which], @r, data)?
+
+        if symbol <= 1
+            run @ run + (symbol + 1) * weight
+            weight @ weight * 2
+
+            if run > most
+                return codes.invalid_at(at: bitio.here(r), why: f"a run past the block's {most} bytes")
+            continue
+
+        if run > 0
+            if moved.len() + run > most
+                return codes.invalid_at(at: bitio.here(r), why: f"a run past the block's {most} bytes")
+            b = to_u8(front[0]).must()
+
+            for _ in range(from: 0, to: run)
+                moved @ moved.push(b)
+
+            run @ 0
+            weight @ 1
+
+        if symbol == end
+            return ok(moved)
+
+        if moved.len() >= most
+            return codes.invalid_at(at: bitio.here(r), why: f"a block past its {most} bytes")
+        j: i64 @= symbol - 1
+        value = front[j]
+
+        while j > 0
+            front[j] @ front[j - 1]
+            j @ j - 1
+
+        front[0] @ value
+        moved @ moved.push(to_u8(value).must())
+
+    return ok(moved)
+
+# The block's bytes: the transform inverted from `origin`, and each run of
+# four equal bytes followed by its count undone, onto `out`. Answers the
+# CRC of the bytes it wrote.
+function unsort(moved: [u8] lent, origin: i64, @out: [u8], limit: i64, at: i64, table: [i64] lent) -> i64?
+    n = moved.len()
+    starts: [i64] @= []
+
+    for _ in range(from: 0, to: 256)
+        starts @ starts.push(0)
+
+    for b in moved
+        k = to_i64(b).must()
+        starts[k] @ starts[k] + 1
+
+    total: i64 @= 0
+
+    for k in range(from: 0, to: 256)
+        count = starts[k]
+        starts[k] @ total
+        total @ total + count
+
+    next: [i64] @= []
+
+    for _ in range(from: 0, to: n)
+        next @ next.push(0)
+
+    for i in range(from: 0, to: n)
+        k = to_i64(moved[i]).must()
+        next[starts[k]] @ i
+        starts[k] @ starts[k] + 1
+
+    crc: i64 @= 0xffffffff
+    p: i64 @= next[origin]
+    last: i64 @= -1
+    same: i64 @= 0
+
+    for _ in range(from: 0, to: n)
+        b = to_i64(moved[p]).must()
+        p @ next[p]
+
+        if same == 4
+            if out.len() + b > limit
+                return codes.past_limit(limit: limit, at: at)
+            repeated = to_u8(last).must()
+
+            for _ in range(from: 0, to: b)
+                out @ out.push(repeated)
+                crc @ bitio.crc_byte(crc: crc, b: last, table: table)
+
+            same @ 0
+            last @ -1
+            continue
+
+        if out.len() + 1 > limit
+            return codes.past_limit(limit: limit, at: at)
+        out @ out.push(to_u8(b).must())
+        crc @ bitio.crc_byte(crc: crc, b: b, table: table)
+
+        if b == last
+            same @ same + 1
+        else
+            last @ b
+            same @ 1
+
+    return ok(crc ^ 0xffffffff)
+
+test "every_stream: the tool's streams, one byte, runs, and two streams joined"
+    assert every_stream(samples.of(samples.SHORT), limit: 1000).must() == samples.short_text()
+    assert every_stream(samples.of(samples.ONE), limit: 1).must() == [0x61]
+    run = every_stream(samples.of(samples.RUN), limit: 285).must()
+    assert run.len() == 285 && run[0] == 0x61 && run[283] == 0x61 && run[284] == 0x62
+    joined: [u8] @= samples.of(samples.SHORT)
+
+    for b in samples.of(samples.ONE)
+        joined @ joined.push(b)
+
+    whole = every_stream(joined, limit: 1000).must()
+    assert whole.len() == 89 && whole[88] == 0x61
+
+test "every_stream: an empty input, a cut stream, bytes after it, and a wrong header"
+    short = samples.of(samples.SHORT)
+    trailing: [u8] @= short
+    trailing @ trailing.push(0x78)
+    nothing: [u8] = []
+
+    for bad in [nothing, short.slice(from: 0, to: short.len() - 5), trailing, samples.flipped(short, at: 3, mask: 0x09)]
+        match every_stream(bad, limit: 1000)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+test "every_stream: a CRC, a block magic and a randomised block, as Python reads them"
+    short = samples.of(samples.SHORT)
+
+    match every_stream(samples.flipped(short, at: 10, mask: 1), limit: 1000)
+        .ok _  => assert false
+        .err e => assert e.msg == "not a valid compressed stream at byte 10: a block whose CRC does not match its bytes"
+
+    match every_stream(samples.flipped(short, at: 4, mask: 0x10), limit: 1000)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    # Python's `bz2` reads a randomised block; this package refuses it, as Go's does.
+    match every_stream(samples.flipped(short, at: 14, mask: 0x80), limit: 1000)
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+test "every_stream and one_stream: a limit passed, a limit below 0, and where a stream ends"
+    match every_stream(samples.of(samples.RUN), limit: 284)
+        .ok _  => assert false
+        .err e => assert e.code == "limit"
+
+    match every_stream(samples.of(samples.ONE), limit: -1)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    followed: [u8] @= samples.of(samples.ONE)
+    followed @ followed.push(0x7a)
+    one = one_stream(followed, at: 0, limit: 10).must()
+    assert one.data == [0x61] && one.used == 37

@@ -1,0 +1,340 @@
+# The xz container read: a stream's header, its blocks (each header with
+# its CRC-32, its filters, its sizes where it says them, the LZMA2 data, the
+# padding and the check), the index that lists them, and the footer that
+# names the index; streams one after another, with zeros between them in
+# fours. Every size the container says is held to what was read.
+
+use bytes
+use compress/internal/codes
+use compress/xz/internal/filters
+use compress/xz/internal/lzma2_dec
+use compress/xz/internal/samples
+use crypto
+use hash
+
+# How many bytes of check each of the sixteen check ids holds.
+constant CHECK_SIZES: [i64]
+    [0, 4, 4, 4, 8, 8, 8, 16, 16, 16, 32, 32, 32, 64, 64, 64]
+
+# The check id of no check.
+constant CHECK_NONE: i64
+    0
+
+# The check id of CRC-32.
+constant CHECK_CRC32: i64
+    1
+
+# The check id of CRC-64.
+constant CHECK_CRC64: i64
+    4
+
+# The check id of SHA-256.
+constant CHECK_SHA256: i64
+    10
+
+# The six bytes every stream begins with.
+constant MAGIC: [u8]
+    [0xfd, 0x37, 0x7a, 0x58, 0x5a, 0]
+
+# The number of `width` bytes at `at`, the lowest first.
+function little(input: [u8] lent, at: i64, width: i64) -> i64
+    return lzma2_dec.little(input, at: at, width: width)
+
+# The CRC-32 of `input` from `from` to `to`.
+function crc32_of(input: [u8] lent, from: i64, to: i64) -> i64
+    return to_i64(hash.crc32(input.slice(from: from, to: to))).must()
+
+# A variable-length number at `at` of `input`, seven bits a byte, the lowest
+# first, which must end before `end`; answers it and moves `at` past it.
+function number(input: [u8] lent, @at: i64, end: i64) -> i64?
+    value: i64 @= 0
+
+    for i in range(from: 0, to: 9)
+        if at >= end
+            return codes.invalid_at(at: at, why: "an xz number cut short")
+        b = to_i64(input[at]).must()
+        at @ at + 1
+        value @ value | (b & 0x7f) << 7 * i
+
+        if b & 0x80 == 0
+            if i > 0 && b == 0
+                return codes.invalid_at(at: at - 1, why: "an xz number written with a needless last byte")
+            return ok(value)
+
+    return codes.invalid_at(at: at, why: "an xz number longer than nine bytes")
+
+# The check id of the stream whose header begins at `at`.
+function check_of(input: [u8] lent, at: i64) -> i64?
+    if input.len() - at < 12
+        return codes.invalid_at(at: at, why: "an xz stream shorter than its 12 bytes of header")
+
+    for k in range(from: 0, to: 6)
+        if input[at + k] != MAGIC[k]
+            return codes.invalid_at(at: at, why: "no xz header, which begins FD 37 7A 58 5A 00")
+
+    if input[at + 6] != 0 || input[at + 7] > 0x0f
+        return codes.invalid_at(at: at + 6, why: "xz stream flags this format does not define")
+
+    if crc32_of(input, from: at + 6, to: at + 8) != little(input, at: at + 8, width: 4)
+        return codes.invalid_at(at: at + 8, why: "an xz stream header whose CRC-32 does not match")
+    return ok(to_i64(input[at + 7]).must())
+
+# Whether the check of `check` id over `out` from `from` matches the bytes at
+# `at` of `input`. An id this format reserves is not verified.
+function check_matches(out: [u8] lent, from: i64, check: i64, input: [u8] lent, at: i64) -> bool
+    if check == CHECK_CRC32
+        return to_i64(hash.crc32(out.slice(from: from, to: out.len()))).must() == little(input, at: at, width: 4)
+
+    if check == CHECK_CRC64
+        return hash.crc64_ecma(out.slice(from: from, to: out.len())) == bytes.decode_u64_le(input, at: at).must()
+
+    if check == CHECK_SHA256
+        return crypto.sha256(out.slice(from: from, to: out.len())) == input.slice(from: at, to: at + 32)
+    return true
+
+# The filters of a block header whose first byte is at `start` and whose
+# filter flags begin at `at`, there being `count` of them before `end`.
+function chain_of(input: [u8] lent, @at: i64, end: i64, count: i64, start: i64) -> [filters.Filter]?
+    chain: [filters.Filter] @= []
+
+    for _ in range(from: 0, to: count)
+        id = number(input, at: @at, end: end)?
+        size = number(input, at: @at, end: end)?
+
+        if size > end - at
+            return codes.invalid_at(at: at, why: "filter properties past the block header")
+        chain @ chain.push(filters.Filter(id: id, props: input.slice(from: at, to: at + size)))
+        at @ at + size
+
+    filters.check_chain(chain, at: start)?
+    return ok(chain)
+
+# Decodes the stream at `at` of `input` onto `out`, which may hold at most
+# `limit` bytes, and answers the index after its footer.
+function stream_into(@out: [u8], input: [u8] lent, at: i64, limit: i64) -> i64?
+    if limit < 0
+        return fail(code: codes.INVALID, msg: f"a limit of {limit} bytes, where a limit is 0 or more")
+    check = check_of(input, at: at)?
+    check_size = CHECK_SIZES[check]
+    pos: i64 @= at + 12
+    records: [i64] @= []
+
+    while true
+        if pos >= input.len()
+            return codes.invalid_at(at: pos, why: "an xz stream cut short before its index")
+
+        if input[pos] == 0
+            break
+        start = pos
+        header_size = (to_i64(input[pos]).must() + 1) * 4
+
+        if input.len() - pos < header_size
+            return codes.invalid_at(at: pos, why: "an xz block header cut short")
+        crc_at = pos + header_size - 4
+
+        if crc32_of(input, from: pos, to: crc_at) != little(input, at: crc_at, width: 4)
+            return codes.invalid_at(at: crc_at, why: "an xz block header whose CRC-32 does not match")
+        flags = to_i64(input[pos + 1]).must()
+
+        if flags & 0x3c != 0
+            return codes.invalid_at(at: pos + 1, why: "xz block flags this format does not define")
+        p: i64 @= pos + 2
+        compressed: i64 @= -1
+        uncompressed: i64 @= -1
+
+        if flags & 0x40 != 0
+            compressed @ number(input, at: @p, end: crc_at)?
+
+            if compressed == 0
+                return codes.invalid_at(at: pos, why: "an xz block whose compressed size is 0")
+
+        if flags & 0x80 != 0
+            uncompressed @ number(input, at: @p, end: crc_at)?
+        chain = chain_of(input, at: @p, end: crc_at, count: (flags & 3) + 1, start: start)?
+
+        while p < crc_at
+            if input[p] != 0
+                return codes.invalid_at(at: p, why: "an xz block header whose padding is not zeros")
+            p @ p + 1
+
+        data_start = start + header_size
+        end: i64 @= input.len()
+
+        if compressed >= 0
+            if compressed > input.len() - data_start
+                return codes.invalid_at(at: input.len(), why: "an xz block cut short")
+            end @ data_start + compressed
+        from = out.len()
+        data_end = lzma2_dec.lzma2(input: input, at: data_start, end: end, out: @out, limit: limit)?
+
+        if compressed >= 0 && data_end != end
+            return codes.invalid_at(at: data_end, why: "an xz block whose compressed size is not its header's")
+
+        if uncompressed >= 0 && out.len() - from != uncompressed
+            return codes.invalid_at(at: data_end, why: "an xz block whose size is not its header's")
+        k: i64 @= chain.len() - 2
+
+        while k >= 0
+            filters.undo(@out, from: from, f: chain[k])
+            k @ k - 1
+
+        p @ data_end
+
+        while (p - start) % 4 != 0
+            if p >= input.len() || input[p] != 0
+                return codes.invalid_at(at: p, why: "an xz block whose padding is not zeros")
+            p @ p + 1
+
+        if input.len() - p < check_size
+            return codes.invalid_at(at: p, why: "an xz block cut short inside its check")
+
+        if !check_matches(out: out, from: from, check: check, input: input, at: p)
+            return codes.invalid_at(at: p, why: "an xz block whose check does not match its bytes")
+        records @ records.push(header_size + data_end - data_start + check_size)
+        records @ records.push(out.len() - from)
+        pos @ p + check_size
+
+    return index_and_footer(input, at: pos, records: records, stream: at)
+
+# Reads the index at `at` against the `records` the blocks gave, two numbers
+# a block, and the footer after it; answers the index after the footer.
+function index_and_footer(input: [u8] lent, at: i64, records: [i64] lent, stream: i64) -> i64?
+    p: i64 @= at + 1
+    count = number(input, at: @p, end: input.len())?
+
+    if count != records.len() / 2
+        return codes.invalid_at(
+            at: at,
+            why: f"an xz index of {count} blocks, where the stream holds {records.len() / 2}"
+        )
+
+    for i in range(from: 0, to: count)
+        unpadded = number(input, at: @p, end: input.len())?
+        size = number(input, at: @p, end: input.len())?
+
+        if unpadded != records[2 * i] || size != records[2 * i + 1]
+            return codes.invalid_at(at: p, why: "an xz index whose sizes are not its blocks'")
+
+    while (p - at) % 4 != 0
+        if p >= input.len() || input[p] != 0
+            return codes.invalid_at(at: p, why: "an xz index whose padding is not zeros")
+        p @ p + 1
+
+    if input.len() - p < 16
+        return codes.invalid_at(at: p, why: "an xz stream cut short after its index")
+
+    if crc32_of(input, from: at, to: p) != little(input, at: p, width: 4)
+        return codes.invalid_at(at: p, why: "an xz index whose CRC-32 does not match")
+    footer = p + 4
+
+    if crc32_of(input, from: footer + 4, to: footer + 10) != little(input, at: footer, width: 4)
+        return codes.invalid_at(at: footer, why: "an xz stream footer whose CRC-32 does not match")
+
+    if (little(input, at: footer + 4, width: 4) + 1) * 4 != footer - at
+        return codes.invalid_at(at: footer + 4, why: "an xz footer that does not name its index's size")
+
+    if input[footer + 8] != input[stream + 6] || input[footer + 9] != input[stream + 7]
+        return codes.invalid_at(at: footer + 8, why: "an xz footer whose flags are not its header's")
+
+    if input[footer + 10] != 0x59 || input[footer + 11] != 0x5a
+        return codes.invalid_at(at: footer + 10, why: "an xz footer that does not end with YZ")
+    return ok(footer + 12)
+
+# Every stream of `input`, with zeros in fours between and after them,
+# decompressed whole.
+function every_stream(input: [u8] lent, limit: i64) -> [u8]?
+    if input.len() == 0
+        return codes.invalid_at(at: 0, why: "an empty input, where an xz stream begins FD 37 7A 58 5A 00")
+    out: [u8] @= []
+    at: i64 @= stream_into(out: @out, input: input, at: 0, limit: limit)?
+
+    while at < input.len()
+        zeros: i64 @= 0
+
+        while at + zeros < input.len() && input[at + zeros] == 0
+            zeros @ zeros + 1
+
+        if zeros % 4 != 0
+            return codes.invalid_at(at: at, why: "xz stream padding that is not a multiple of four bytes")
+        at @ at + zeros
+
+        if at < input.len()
+            at @ stream_into(out: @out, input: input, at: at, limit: limit)?
+
+    return ok(out)
+
+test "every_stream: the tool's checks, a delta filter, three blocks, and two streams with padding"
+    text = samples.short_text()
+    assert every_stream(samples.of(samples.SHORT), limit: 1000).must() == text
+    assert every_stream(samples.of(samples.ONE_SHA256), limit: 1).must() == [0x61]
+    assert every_stream(samples.of(samples.ONE_CRC32), limit: 1).must() == [0x61]
+    assert every_stream(samples.of(samples.SHORT_DELTA), limit: 1000).must() == text
+    assert every_stream(samples.of(samples.SHORT_BLOCKS), limit: 1000).must() == text
+    two = samples.followed(
+        data: samples.followed(data: samples.of(samples.SHORT), more: [0, 0, 0, 0]),
+        more: samples.of(samples.ONE_CRC32)
+    )
+    whole = every_stream(samples.followed(data: two, more: [0, 0, 0, 0]), limit: 1000).must()
+    assert whole.len() == 89 && whole[88] == 0x61
+
+test "every_stream: a branch converter, which Python reads and this package refuses"
+    match every_stream(samples.of(samples.SHORT_X86), limit: 1000)
+        .ok _  => assert false
+        .err e => assert e.code == filters.UNSUPPORTED
+
+test "every_stream: CRCs, a check, padding, bytes after, a cut, nothing, and limits"
+    short = samples.of(samples.SHORT)
+
+    match every_stream(samples.flipped(short, at: 8, mask: 1), limit: 1000)
+        .ok _  => assert false
+        .err e => assert e.msg == "not a valid compressed stream at byte 8: an xz stream header whose CRC-32 does not match"
+
+    match every_stream(samples.flipped(short, at: 14, mask: 1), limit: 1000)
+        .ok _  => assert false
+        .err e => assert e.msg == "not a valid compressed stream at byte 28: an xz block header whose CRC-32 does not match"
+
+    match every_stream(samples.flipped(short, at: short.len() - 3, mask: 1), limit: 1000)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    nothing: [u8] = []
+
+    for bad in [nothing, short.slice(from: 0, to: short.len() - 1), samples.followed(data: short, more: [0, 0, 0]), samples.followed(data: short, more: [0x78])]
+        match every_stream(bad, limit: 1000)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+    match every_stream(short, limit: 87)
+        .ok _  => assert false
+        .err e => assert e.code == "limit"
+
+    match every_stream(short, limit: -1)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+test "every_stream: a byte of LZMA2 data changed, caught by the data or by the check"
+    short = samples.of(samples.SHORT)
+
+    for at in range(from: 32, to: 120)
+        match every_stream(samples.flipped(short, at: at, mask: 4), limit: 1000)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+test "number: one byte, nine, too many, and a needless last byte"
+    p: i64 @= 0
+    assert number([0x7f], at: @p, end: 1).must() == 127 && p == 1
+    nine: [u8] = [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f]
+    q: i64 @= 0
+    assert number(nine, at: @q, end: 9).must() == 9223372036854775807
+    ten: [u8] = [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x01]
+    r: i64 @= 0
+
+    match number(ten, at: @r, end: 10)
+        .ok _  => assert false
+        .err e => assert e.msg == "not a valid compressed stream at byte 9: an xz number longer than nine bytes"
+
+    s: i64 @= 0
+
+    match number([0x80, 0], at: @s, end: 2)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"

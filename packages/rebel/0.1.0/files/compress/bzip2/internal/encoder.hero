@@ -1,0 +1,355 @@
+# The bzip2 encoder: the input cut into blocks, each block's runs of four
+# or more bytes shortened, its rotations sorted, its last column moved to
+# front with the runs of the front byte counted, and its symbols written
+# with two to six Huffman tables chosen for each 50 of them, the way the
+# `bzip2` tool lays them out.
+
+use bytes
+use compress/bzip2/internal/bitio
+use compress/bzip2/internal/decoder
+use compress/bzip2/internal/rotations
+use compress/internal/codes
+use compress/internal/huffman
+
+# The longest code this encoder gives a symbol, as the `bzip2` tool's.
+constant MAX_CODE: i64
+    17
+
+# How many symbols one selector covers.
+constant GROUP: i64
+    50
+
+# How many times the tables are fitted to the groups that chose them.
+constant ROUNDS: i64
+    4
+
+# `data` as one bzip2 stream in blocks of `level` times 100,000 bytes.
+function stream(data: [u8] lent, level: i64) -> [u8]?
+    if level < 1 || level > 9
+        return fail(code: codes.INVALID, msg: f"a level of {level}, where bzip2's are 1 to 9")
+    table = bitio.crc_table()
+    out: [u8] @= [0x42, 0x5a, 0x68, to_u8(level + '0').must()]
+    w @= bitio.writer()
+    capacity = level * 100000 - 19
+    combined: i64 @= 0
+    n = data.len()
+    i: i64 @= 0
+
+    while i < n
+        block: [u8] @= []
+        crc: i64 @= 0xffffffff
+
+        while i < n
+            b = data[i]
+            run: i64 @= 1
+
+            while i + run < n && run < 255 && data[i + run] == b
+                run @ run + 1
+
+            need: i64 @= run
+
+            if run >= 4
+                need @ 5
+
+            if block.len() + need > capacity
+                break
+
+            if run < 4
+                for _ in range(from: 0, to: run)
+                    block @ block.push(b)
+            else
+                for _ in range(from: 0, to: 4)
+                    block @ block.push(b)
+
+                block @ block.push(to_u8(run - 4).must())
+
+            k = to_i64(b).must()
+
+            for _ in range(from: 0, to: run)
+                crc @ bitio.crc_byte(crc: crc, b: k, table: table)
+
+            i @ i + run
+
+        crc @ crc ^ 0xffffffff
+        write_block(out: @out, @w, block: block, crc: crc)
+        combined @ (combined << 1 | combined >> 31) & 0xffffffff ^ crc
+
+    bitio.put(@out, @w, value: 0x177245, n: 24)
+    bitio.put(@out, @w, value: 0x385090, n: 24)
+    bitio.put(@out, @w, value: combined >> 16, n: 16)
+    bitio.put(@out, @w, value: combined & 0xffff, n: 16)
+    bitio.flush(@out, @w)
+    return ok(out)
+
+# Adds a run of `count` front bytes to `symbols`, in bijective base 2: RUNA
+# (0) for a digit 1, RUNB (1) for a digit 2, the lowest digit first.
+function put_run(@symbols: [i64], count: i64)
+    left: i64 @= count
+
+    while left > 0
+        if left & 1 == 1
+            symbols @ symbols.push(0)
+            left @ (left - 1) / 2
+        else
+            symbols @ symbols.push(1)
+            left @ (left - 2) / 2
+
+# The canonical code of each symbol for `lengths`, highest bit first: the
+# shorter codes first, and among codes of one length the lower symbols.
+function canonical(lengths: [i64] lent) -> [i64]
+    made: [i64] @= []
+
+    for _ in lengths
+        made @ made.push(0)
+
+    code: i64 @= 0
+
+    for bits in range(from: 1, to: MAX_CODE + 1)
+        for symbol in range(from: 0, to: lengths.len())
+            if lengths[symbol] == bits
+                made[symbol] @ code
+                code @ code + 1
+
+        code @ code << 1
+
+    return made
+
+# The code lengths of each table for the symbols the groups that chose it
+# hold; a symbol none of them holds still gets a code.
+function fit(symbols: [i64] lent, chosen: [i64] lent, groups: i64, alphabet: i64) -> [[i64]]
+    counts: [i64] @= []
+
+    for _ in range(from: 0, to: groups * alphabet)
+        counts @ counts.push(1)
+
+    for g in range(from: 0, to: chosen.len())
+        base = chosen[g] * alphabet
+        end = min_of(a: g * GROUP + GROUP, b: symbols.len())
+
+        for k in range(from: g * GROUP, to: end)
+            at = base + symbols[k]
+            counts[at] @ counts[at] + 1
+
+    made: [[i64]] @= []
+
+    for t in range(from: 0, to: groups)
+        made @ made.push(
+            huffman.lengths_for(counts.slice(from: t * alphabet, to: t * alphabet + alphabet), limit: MAX_CODE)
+        )
+
+    return made
+
+# The smaller of `a` and `b`.
+function min_of(a: i64, b: i64) -> i64
+    if a < b
+        return a
+    return b
+
+# Writes one block of `block`'s bytes, whose CRC is `crc`.
+function write_block(@out: [u8], @w: bitio.Writer, block: [u8] lent, crc: i64)
+    t = rotations.transform(block)
+    bitio.put(@out, @w, value: 0x314159, n: 24)
+    bitio.put(@out, @w, value: 0x265359, n: 24)
+    bitio.put(@out, @w, value: crc >> 16, n: 16)
+    bitio.put(@out, @w, value: crc & 0xffff, n: 16)
+    bitio.put(@out, @w, value: 0, n: 1)
+    bitio.put(@out, @w, value: t.origin, n: 24)
+    in_use: [i64] @= []
+
+    for _ in range(from: 0, to: 256)
+        in_use @ in_use.push(-1)
+
+    for b in block
+        in_use[to_i64(b).must()] @ 0
+
+    used: i64 @= 0
+    sixteens: i64 @= 0
+
+    for v in range(from: 0, to: 256)
+        if in_use[v] == 0
+            in_use[v] @ used
+            used @ used + 1
+            sixteens @ sixteens | 1 << 15 - v / 16
+
+    bitio.put(@out, @w, value: sixteens, n: 16)
+
+    for i in range(from: 0, to: 16)
+        if sixteens >> 15 - i & 1 == 1
+            each: i64 @= 0
+
+            for j in range(from: 0, to: 16)
+                if in_use[i * 16 + j] >= 0
+                    each @ each | 1 << 15 - j
+
+            bitio.put(@out, @w, value: each, n: 16)
+
+    front: [i64] @= range(from: 0, to: used)
+    symbols: [i64] @= []
+    zeros: i64 @= 0
+
+    for c in t.last
+        v = in_use[to_i64(c).must()]
+        j: i64 @= 0
+
+        while front[j] != v
+            j @ j + 1
+
+        moved = j
+
+        while j > 0
+            front[j] @ front[j - 1]
+            j @ j - 1
+
+        front[0] @ v
+
+        if moved == 0
+            zeros @ zeros + 1
+        else
+            if zeros > 0
+                put_run(@symbols, count: zeros)
+                zeros @ 0
+            symbols @ symbols.push(moved + 1)
+
+    if zeros > 0
+        put_run(@symbols, count: zeros)
+    alphabet = used + 2
+    symbols @ symbols.push(alphabet - 1)
+    write_symbols(@out, @w, symbols: symbols, alphabet: alphabet)
+
+# How many tables a block of `count` symbols is written with, as the
+# `bzip2` tool chooses.
+function groups_for(count: i64) -> i64
+    if count < 200
+        return 2
+
+    if count < 600
+        return 3
+
+    if count < 1200
+        return 4
+
+    if count < 2400
+        return 5
+    return 6
+
+# Writes the tables, the selectors and the symbols of a block.
+function write_symbols(@out: [u8], @w: bitio.Writer, symbols: [i64] lent, alphabet: i64)
+    groups = groups_for(symbols.len())
+    selectors = (symbols.len() + GROUP - 1) / GROUP
+    chosen: [i64] @= []
+
+    for g in range(from: 0, to: selectors)
+        chosen @ chosen.push(g * groups / selectors)
+
+    for _ in range(from: 0, to: ROUNDS)
+        lengths = fit(symbols: symbols, chosen: chosen, groups: groups, alphabet: alphabet)
+
+        for g in range(from: 0, to: selectors)
+            end = min_of(a: g * GROUP + GROUP, b: symbols.len())
+            best: i64 @= 0
+            best_cost: i64 @= -1
+
+            for t in range(from: 0, to: groups)
+                cost: i64 @= 0
+
+                for k in range(from: g * GROUP, to: end)
+                    cost @ cost + lengths[t][symbols[k]]
+
+                if best_cost < 0 || cost < best_cost
+                    best @ t
+                    best_cost @ cost
+
+            chosen[g] @ best
+
+    lengths = fit(symbols: symbols, chosen: chosen, groups: groups, alphabet: alphabet)
+    bitio.put(@out, @w, value: groups, n: 3)
+    bitio.put(@out, @w, value: selectors, n: 15)
+    front: [i64] @= range(from: 0, to: groups)
+
+    for value in chosen
+        j: i64 @= 0
+
+        while front[j] != value
+            j @ j + 1
+
+        bitio.put(@out, @w, value: (1 << j) - 1 << 1, n: j + 1)
+
+        while j > 0
+            front[j] @ front[j - 1]
+            j @ j - 1
+
+        front[0] @ value
+
+    for t in range(from: 0, to: groups)
+        current: i64 @= lengths[t][0]
+        bitio.put(@out, @w, value: current, n: 5)
+
+        for bits in lengths[t]
+            while current < bits
+                bitio.put(@out, @w, value: 2, n: 2)
+                current @ current + 1
+
+            while current > bits
+                bitio.put(@out, @w, value: 3, n: 2)
+                current @ current - 1
+
+            bitio.put(@out, @w, value: 0, n: 1)
+
+    made: [[i64]] @= []
+
+    for t in range(from: 0, to: groups)
+        made @ made.push(canonical(lengths[t]))
+
+    for g in range(from: 0, to: selectors)
+        t = chosen[g]
+        end = min_of(a: g * GROUP + GROUP, b: symbols.len())
+
+        for k in range(from: g * GROUP, to: end)
+            s = symbols[k]
+            bitio.put(@out, @w, value: made[t][s], n: lengths[t][s])
+
+test "put_run: one to six in bijective base 2"
+    for count in range(from: 1, to: 7)
+        symbols: [i64] @= []
+        put_run(@symbols, count: count)
+        back: i64 @= 0
+        weight: i64 @= 1
+
+        for s in symbols
+            back @ back + (s + 1) * weight
+            weight @ weight * 2
+
+        assert back == count
+
+test "canonical: the shorter codes first"
+    assert canonical([2, 1, 3, 3]) == [2, 0, 6, 7]
+
+test "stream: a level out of range, and nothing at all"
+    for level in [0, 10]
+        match stream([], level: level)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+    # What `bzip2 -9` writes for no input: the header and the end of a stream.
+    assert stream([], level: 9).must() == [0x42, 0x5a, 0x68, 0x39, 0x17, 0x72, 0x45, 0x38, 0x50, 0x90, 0, 0, 0, 0]
+
+test "stream: round trips of text, runs, every byte, and blocks at level 1"
+    text = bytes.from_text("ground control to major tom, ground control to major tom; été, ☃")
+    every: [u8] @= []
+
+    for v in range(from: 0, to: 256)
+        every @ every.push(to_u8(v).must())
+
+    runs: [u8] @= []
+
+    for i in range(from: 0, to: 3000)
+        runs @ runs.push(to_u8(i / 700 % 3 * 100).must())
+
+    many: [u8] @= []
+
+    for i in range(from: 0, to: 230000)
+        many @ many.push(to_u8(i * 7919 % 251).must())
+
+    for data in [text, every, runs, [0x61], many]
+        for level in [1, 9]
+            assert decoder.every_stream(stream(data, level: level).must(), limit: data.len()).must() == data

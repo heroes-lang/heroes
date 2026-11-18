@@ -1,0 +1,242 @@
+# The LZMA encoder: a range encoder over the probabilities the decoder
+# keeps, at the same offsets, and the literals, repeats and repeated
+# distances written with it. Which symbol stands at each position is
+# `writer`'s choice; this module writes it as the decoder will read it.
+
+use compress/xz/internal/lzma_dec
+
+# Where the range encoder stands: the low end of the range, 33 bits, and the
+# bytes held back until a carry can no longer reach them.
+record Range
+    # The low end of the range.
+    low: i64
+    # The width of the range, 32 bits.
+    range: i64
+    # The byte held back.
+    cache: i64
+    # How many bytes are held back: the cache and the 0xff bytes after it.
+    cache_size: i64
+
+# What the encoder carries from symbol to symbol: the decoder's own record,
+# since both must agree on every probability.
+function fresh(props: lzma_dec.Props) -> lzma_dec.Decoder
+    return lzma_dec.fresh(props)
+
+# A range encoder holding nothing.
+function range_start() -> Range
+    return Range(low: 0, range: 0xffffffff, cache: 0, cache_size: 1)
+
+# Moves the top byte of `rc.low` out, or holds it back where a carry may
+# still change it.
+function shift_low(@out: [u8], @rc: Range)
+    if rc.low < 0xff000000 || rc.low >= 0x100000000
+        carry = rc.low >> 32
+        held: i64 @= rc.cache
+
+        while rc.cache_size > 0
+            out @ out.push(to_u8(held + carry & 255).must())
+            held @ 0xff
+            rc.cache_size @ rc.cache_size - 1
+
+        rc.cache @ rc.low >> 24 & 255
+    rc.cache_size @ rc.cache_size + 1
+    rc.low @ (rc.low & 0xffffff) << 8
+
+# Writes the bit `b` by the probability at `at` of `probs`, which it adapts
+# as the decoder will.
+function bit(@out: [u8], @rc: Range, @probs: [i64], at: i64, b: i64)
+    p = probs[at]
+    bound = (rc.range >> 11) * p
+
+    if b == 0
+        rc.range @ bound
+        probs[at] @ p + (2048 - p >> 5)
+    else
+        rc.low @ rc.low + bound
+        rc.range @ rc.range - bound
+        probs[at] @ p - (p >> 5)
+
+    while rc.range < 0x1000000
+        rc.range @ rc.range << 8
+        shift_low(@out, @rc)
+
+# Writes the `count` low bits of `value`, the highest first, each of
+# probability one half.
+function direct(@out: [u8], @rc: Range, value: i64, count: i64)
+    i: i64 @= count - 1
+
+    while i >= 0
+        rc.range @ rc.range >> 1
+
+        if value >> i & 1 == 1
+            rc.low @ rc.low + rc.range
+
+        while rc.range < 0x1000000
+            rc.range @ rc.range << 8
+            shift_low(@out, @rc)
+
+        i @ i - 1
+
+# Writes the last bytes of the range: what the decoder reads to its end.
+function flush(@out: [u8], @rc: Range)
+    for _ in range(from: 0, to: 5)
+        shift_low(@out, @rc)
+
+# Writes `value`'s `count` bits through the tree at `base`, the highest
+# first.
+function tree(@out: [u8], @rc: Range, @probs: [i64], base: i64, count: i64, value: i64)
+    m: i64 @= 1
+    i: i64 @= count - 1
+
+    while i >= 0
+        b = value >> i & 1
+        bit(@out, @rc, @probs, at: base + m, b: b)
+        m @ m << 1 | b
+        i @ i - 1
+
+# Writes `value`'s `count` bits through the tree at `base`, the lowest first.
+function reverse_tree(@out: [u8], @rc: Range, @probs: [i64], base: i64, count: i64, value: i64)
+    m: i64 @= 1
+
+    for i in range(from: 0, to: count)
+        b = value >> i & 1
+        bit(@out, @rc, @probs, at: base + m, b: b)
+        m @ m << 1 | b
+
+# Writes a repeat's length `len`, 2 to 273, by the coder at `base`.
+function length(@out: [u8], @rc: Range, @probs: [i64], base: i64, pos_state: i64, size: i64)
+    l = size - 2
+
+    if l < 8
+        bit(@out, @rc, @probs, at: base, b: 0)
+        tree(@out, @rc, @probs, base: base + 2 + pos_state * 8, count: 3, value: l)
+    else if l < 16
+        bit(@out, @rc, @probs, at: base, b: 1)
+        bit(@out, @rc, @probs, at: base + 1, b: 0)
+        tree(@out, @rc, @probs, base: base + 130 + pos_state * 8, count: 3, value: l - 8)
+    else
+        bit(@out, @rc, @probs, at: base, b: 1)
+        bit(@out, @rc, @probs, at: base + 1, b: 1)
+        tree(@out, @rc, @probs, base: base + 258, count: 8, value: l - 16)
+
+# The index of the highest bit set in `x`, 1 or more.
+function top_bit(x: i64) -> i64
+    n: i64 @= 0
+
+    while x >> n + 1 > 0
+        n @ n + 1
+
+    return n
+
+# Writes a new repeat's distance less one, `dist`, for a repeat `len` long.
+function distance(@out: [u8], @rc: Range, @probs: [i64], dist: i64, size: i64)
+    len_state: i64 @= size - 2
+
+    if len_state > 3
+        len_state @ 3
+    slot: i64 @= dist
+
+    if dist >= 4
+        n = top_bit(dist)
+        slot @ 2 * n + (dist >> n - 1 & 1)
+    tree(@out, @rc, @probs, base: lzma_dec.POS_SLOT + len_state * 64, count: 6, value: slot)
+
+    if slot >= 4
+        footer = (slot >> 1) - 1
+        base = (2 | slot & 1) << footer
+        reduced = dist - base
+
+        if slot < 14
+            reverse_tree(@out, @rc, @probs, base: lzma_dec.SPEC_POS + base - slot - 1, count: footer, value: reduced)
+        else
+            direct(@out, @rc, value: reduced >> 4, count: footer - 4)
+            reverse_tree(@out, @rc, @probs, base: lzma_dec.ALIGN, count: 4, value: reduced & 15)
+
+# Writes the literal at `at` of `data`, the dictionary beginning at
+# `dict_start`, and moves the state on.
+function literal(@out: [u8], @rc: Range, @e: lzma_dec.Decoder, data: [u8] lent, at: i64, dict_start: i64)
+    here = at - dict_start
+    pos_state = here & (1 << e.props.pb) - 1
+    bit(@out, @rc, @e.probs, at: lzma_dec.IS_MATCH + e.state * 16 + pos_state, b: 0)
+    previous: i64 @= 0
+
+    if here > 0
+        previous @ to_i64(data[at - 1]).must()
+    lc = e.props.lc
+    base = lzma_dec.LITERAL + 768 * ((here & (1 << e.props.lp) - 1) << lc | previous >> 8 - lc)
+    value = to_i64(data[at]).must()
+    m: i64 @= 1
+    i: i64 @= 7
+
+    if e.state >= 7
+        matched = to_i64(data[at - e.reps[0] - 1]).must()
+
+        while i >= 0
+            b = value >> i & 1
+            match_bit = matched >> i & 1
+            bit(@out, @rc, @e.probs, at: base + (1 + match_bit << 8) + m, b: b)
+            m @ m << 1 | b
+            i @ i - 1
+
+            if b != match_bit
+                break
+
+    while i >= 0
+        b = value >> i & 1
+        bit(@out, @rc, @e.probs, at: base + m, b: b)
+        m @ m << 1 | b
+        i @ i - 1
+
+    if e.state < 4
+        e.state @ 0
+    else if e.state < 10
+        e.state @ e.state - 3
+    else
+        e.state @ e.state - 6
+
+# Writes a repeat of `len` bytes reaching `dist` + 1 back, at position
+# `here` of the dictionary: of the last distance where it is that one, else
+# a new one.
+function put_repeat(@out: [u8], @rc: Range, @e: lzma_dec.Decoder, here: i64, dist: i64, size: i64)
+    pos_state = here & (1 << e.props.pb) - 1
+    state = e.state
+    bit(@out, @rc, @e.probs, at: lzma_dec.IS_MATCH + state * 16 + pos_state, b: 1)
+
+    if dist == e.reps[0]
+        bit(@out, @rc, @e.probs, at: lzma_dec.IS_REP + state, b: 1)
+        bit(@out, @rc, @e.probs, at: lzma_dec.IS_REP_G0 + state, b: 0)
+
+        if size == 1
+            bit(@out, @rc, @e.probs, at: lzma_dec.IS_REP0_LONG + state * 16 + pos_state, b: 0)
+
+            if state < 7
+                e.state @ 9
+            else
+                e.state @ 11
+            return
+        bit(@out, @rc, @e.probs, at: lzma_dec.IS_REP0_LONG + state * 16 + pos_state, b: 1)
+        length(@out, @rc, @e.probs, base: lzma_dec.REP_LEN, pos_state: pos_state, size: size)
+
+        if state < 7
+            e.state @ 8
+        else
+            e.state @ 11
+        return
+    bit(@out, @rc, @e.probs, at: lzma_dec.IS_REP + state, b: 0)
+    length(@out, @rc, @e.probs, base: lzma_dec.LEN, pos_state: pos_state, size: size)
+    distance(@out, @rc, @e.probs, dist: dist, size: size)
+    e.reps[3] @ e.reps[2]
+    e.reps[2] @ e.reps[1]
+    e.reps[1] @ e.reps[0]
+    e.reps[0] @ dist
+
+    if state < 7
+        e.state @ 7
+    else
+        e.state @ 10
+
+test "top_bit: one, two, a power of two and the one below"
+    assert top_bit(1) == 0
+    assert top_bit(2) == 1
+    assert top_bit(1024) == 10
+    assert top_bit(1023) == 9

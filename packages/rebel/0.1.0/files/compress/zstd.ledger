@@ -1,0 +1,139 @@
+# The ledger of `compress/zstd`: what Python's `compression.zstd` (3.15)
+# lets a program do, one block per capability, and what Rebel answers. Go's
+# and Rust's standard libraries have no Zstandard, so their lines are `-` in
+# every block. The lists are this machine's, 2026-11-18: `dir()` of
+# `compression.zstd` and of its classes and enums. Every frame in the
+# package's tests was made by the `zstd` tool 1.5.7 or by hand and given to
+# Python first; the cross-check in the scratch folder read 21 of the tool's
+# frames (levels 1, 3 and 19; text, random bytes, runs, zeros, one byte,
+# none, a repeated pair) and frames of `--ultra -22 --long`, `--fast=5`,
+# `-B4096`, `--no-content-size`, a pipe, two joined, bytes of a skewed
+# distribution and a trained dictionary's, all alike; had the tool read
+# what Rebel wrote of each, with and without a dictionary, all alike; fed
+# 800 corrupted frames to the decoder, every one answered with `invalid` or
+# with bytes, never an abort; and compared 600 corrupted frames with
+# Python: no frame both read differently.
+
+capability zstd/at-once  bytes compressed whole into one frame
+  heroes  compress/zstd.compress
+  go      -
+  rust    -
+  python  compression.zstd.compress
+  note    the parse is greedy over hash chains of four bytes, the sequences coded with the predefined tables, the literals Huffman-coded where they are 64 or more (the tree's weights written one by one, or compressed with FSE where a byte past 127 is among them), stored otherwise. Against `zstd -3` on the scratch folder's files it writes 54% more on its text, 33% more on RFC 7932's, 2% more on bytes of a skewed distribution, and as much on random bytes
+
+capability zstd/decompress-at-once  frames decompressed whole under a limit
+  heroes  compress/zstd.decompress
+  go      -
+  rust    -
+  python  compression.zstd.decompress
+  note    a `limit` is required, where Python asks for none; a frame whose header says a size past it fails before a byte is decoded. Frames one after another and skippable frames between them are read as Python reads them. Bytes after the last frame and an empty input fail `invalid`, as Python's do. A Huffman stream not read exactly to its first bit fails `invalid`, as RFC 8878 section 4.2.2 says, where libzstd reads some (observed: 25 of 600 corrupted frames Python read and Rebel refused, and none read differently)
+
+capability zstd/leading  a frame at the start of other bytes, and where it ended
+  heroes  compress/zstd.decompress_leading
+  go      -
+  rust    -
+  python  compression.zstd.ZstdDecompressor, ZstdDecompressor.unused_data, ZstdDecompressor.eof
+  note    -
+
+capability zstd/frame-info  what a frame's header says, read without decompressing
+  heroes  compress/zstd.frame_info, compress/zstd.FrameInfo, compress/zstd.ContentSize
+  go      -
+  rust    -
+  python  compression.zstd.get_frame_info, compression.zstd.FrameInfo, FrameInfo.decompressed_size, FrameInfo.dictionary_id
+  note    an unknown size is a case of its own, where Python answers `None`; the window and the checksum flag are said too
+
+capability zstd/frame-size  where a frame ends, its blocks walked
+  heroes  compress/zstd.frame_size
+  go      -
+  rust    -
+  python  compression.zstd.get_frame_size
+  note    -
+
+capability zstd/skippable  a skippable frame written, and read past
+  heroes  compress/zstd.skippable_frame, compress/zstd.decompress
+  go      -
+  rust    -
+  python  -
+  note    libzstd's `ZSTD_writeSkippableFrame`, which Python does not offer; its reader passes such frames over
+
+capability zstd/levels  how hard the compressor works
+  heroes  compress/zstd.Options, compress/zstd.defaults, compress/zstd.MIN_LEVEL, compress/zstd.DEFAULT_LEVEL, compress/zstd.MAX_LEVEL
+  go      -
+  rust    -
+  python  compression.zstd.COMPRESSION_LEVEL_DEFAULT, compress(level=), ZstdCompressor(level=), CompressionParameter.compression_level
+  note    1 to 22, 3 the usual as in Python; each level tries more earlier places, 2 to 2,048. Python's negative levels, faster still, are not offered; a level outside 1 to 22 fails `invalid`
+
+capability zstd/frame-flags  the checksum and the content size written or not
+  heroes  compress/zstd.Options
+  go      -
+  rust    -
+  python  CompressionParameter.checksum_flag, CompressionParameter.content_size_flag, CompressionParameter.dict_id_flag
+  note    the checksum off and the size on by default, as Python's; the dictionary's id is always written where it has one
+
+capability zstd/parameters  the compressor's own parameters: window, hash and chain sizes, strategy, long matching, threads
+  heroes  pending
+  go      -
+  rust    -
+  python  compression.zstd.CompressionParameter, CompressionParameter.window_log, CompressionParameter.hash_log, CompressionParameter.chain_log, CompressionParameter.search_log, CompressionParameter.min_match, CompressionParameter.target_length, CompressionParameter.strategy, CompressionParameter.enable_long_distance_matching, CompressionParameter.ldm_hash_log, CompressionParameter.ldm_min_match, CompressionParameter.ldm_bucket_size_log, CompressionParameter.ldm_hash_rate_log, CompressionParameter.job_size, CompressionParameter.overlap_log, CompressionParameter.nb_workers, CompressionParameter.bounds, compression.zstd.Strategy, Strategy.fast, Strategy.dfast, Strategy.greedy, Strategy.lazy, Strategy.lazy2, Strategy.btlazy2, Strategy.btopt, Strategy.btultra, Strategy.btultra2
+  note    libzstd's search strategies and their sizes; this encoder has one strategy, greedy, and a level. Not written in this round
+
+capability zstd/window-limit  a bound on the window a reader accepts
+  heroes  refused: the reader holds the whole output, bounded by `limit`; the window bounds only how far back a repeat reaches, which is held to the bytes before it
+  go      -
+  rust    -
+  python  compression.zstd.DecompressionParameter, DecompressionParameter.window_log_max, DecompressionParameter.bounds
+  note    -
+
+capability zstd/dictionaries  a dictionary read, its id and content, frames written and read with it
+  heroes  compress/zstd.Dictionary, compress/zstd.dictionary, compress/zstd.raw_dictionary, compress/zstd.id_of, compress/zstd.content_of, compress/zstd.compress_with, compress/zstd.decompress_with
+  go      -
+  rust    -
+  python  compression.zstd.ZstdDict, ZstdDict.dict_id, ZstdDict.dict_content, ZstdDict.as_digested_dict, ZstdDict.as_undigested_dict, ZstdDict.as_prefix, ZstdDict(is_raw=), compress(zstd_dict=), decompress(zstd_dict=)
+  note    a dictionary `zstd --train` wrote gives its tables and offsets to the frames read with it; the compressor reaches back into its content and names its id, its own tables staying the predefined ones. Python's digested and undigested forms are libzstd's caches of the same dictionary, and its prefix is `raw_dictionary`. A frame that names a dictionary other than the one given fails `invalid`
+
+capability zstd/train  a dictionary trained from samples, or finished from content
+  heroes  pending
+  go      -
+  rust    -
+  python  compression.zstd.train_dict, compression.zstd.finalize_dict
+  note    libzstd's COVER trainer; not written in this round
+
+capability zstd/compress-incremental  bytes compressed piece by piece, flushed by block or by frame
+  heroes  pending
+  go      -
+  rust    -
+  python  compression.zstd.ZstdCompressor, ZstdCompressor.compress, ZstdCompressor.flush, ZstdCompressor.set_pledged_input_size, ZstdCompressor.last_mode, ZstdCompressor.CONTINUE, ZstdCompressor.FLUSH_BLOCK, ZstdCompressor.FLUSH_FRAME
+  note    not written in this round
+
+capability zstd/decompress-incremental  frames decompressed piece by piece, or through a stream
+  heroes  pending
+  go      -
+  rust    -
+  python  ZstdDecompressor.decompress, ZstdDecompressor.needs_input, compression.zstd.ZstdFile.read, ZstdFile.read1, ZstdFile.readinto, ZstdFile.readinto1, ZstdFile.peek
+  note    a frame's blocks are at most 128 KiB, so a reader holding the window can hand out a block at a time; not written in this round
+
+capability zstd/failures  what a broken frame answers
+  heroes  compress/zstd.INVALID, compress/zstd.LIMIT
+  go      -
+  rust    -
+  python  compression.zstd.ZstdError
+  note    `invalid` names the byte where the frame stopped being Zstandard
+
+capability zstd/file  a Zstandard file opened by its path, read and written as a file
+  heroes  refused: a path is `fs`'s, and a file's bytes are read whole by `fs.read_bytes` and written by `fs.write_bytes`
+  go      -
+  rust    -
+  python  compression.zstd.open, compression.zstd.ZstdFile, ZstdFile.write, ZstdFile.flush, ZstdFile.close, ZstdFile.mode, ZstdFile.name, ZstdFile.closed, ZstdFile.FLUSH_BLOCK, ZstdFile.FLUSH_FRAME
+  note    -
+
+capability zstd/lines  a compressed text read line by line, or sought in
+  heroes  refused: lines are `io`'s and `bytes.lines`'s over the bytes read whole; seeking is decompressing again from the start
+  go      -
+  rust    -
+  python  ZstdFile.readline, ZstdFile.readlines, ZstdFile.seek, ZstdFile.tell, ZstdFile.seekable
+  note    -
+
+dropped
+  python  ZstdFile.fileno, ZstdFile.isatty, ZstdFile.readable, ZstdFile.writable, ZstdFile.detach, ZstdFile.truncate, ZstdFile.writelines: what every Python file object has
+  python  compression.zstd.zstd_version, compression.zstd.zstd_version_info: which C library Python links; Rebel stands on none
+  python  compression.zstd.enum: a module Python's own `compression.zstd` imports

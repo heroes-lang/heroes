@@ -1,0 +1,262 @@
+# The sections of a Zstandard block the encoder writes: the literals
+# section (stored, one byte repeated, or Huffman-coded with its tree) and
+# the sequences section (its count, its modes, and the sequences coded with
+# the predefined tables, written backward as the decoder reads them).
+
+use compress/internal/huffman
+use compress/zstd/internal/bits
+use compress/zstd/internal/fse
+use compress/zstd/internal/huff
+use compress/zstd/internal/sequences
+use compress/zstd/internal/weights
+
+# A sequence found: so many literals, then a repeat.
+record Found
+    # How many literals come before the repeat.
+    literal_length: i64
+    # How many bytes repeat, 4 or more.
+    match_length: i64
+    # How far back they begin.
+    offset: i64
+
+# Adds the `width` bytes of `value` to `out`, the lowest first.
+function put_little(@out: [u8], value: i64, width: i64)
+    for k in range(from: 0, to: width)
+        out @ out.push(to_u8(value >> 8 * k & 255).must())
+
+# The literal length code of `n`.
+function ll_code(n: i64) -> i64
+    if n < 16
+        return n
+    c: i64 @= 35
+
+    while sequences.LL_BASE[c] > n
+        c @ c - 1
+
+    return c
+
+# The match length code of `n`, 3 or more.
+function ml_code(n: i64) -> i64
+    if n < 35
+        return n - 3
+    c: i64 @= 52
+
+    while sequences.ML_BASE[c] > n
+        c @ c - 1
+
+    return c
+
+# The header of a literals section of `kind` 0 or 1 holding `n` literals.
+function put_plain_header(@out: [u8], kind: i64, n: i64)
+    if n < 32
+        out @ out.push(to_u8(kind | n << 3).must())
+    else if n < 4096
+        put_little(@out, value: kind | 1 << 2 | n << 4, width: 2)
+    else
+        put_little(@out, value: kind | 3 << 2 | n << 4, width: 3)
+
+# `lits` Huffman-coded as a literals section, or empty where they cannot be:
+# fewer than 64, or one value only, or weights FSE cannot write in 127 bytes.
+function huffman_section(lits: [u8] lent) -> [u8]
+    n = lits.len()
+    nothing: [u8] = []
+
+    if n < 64
+        return nothing
+    counts: [i64] @= []
+
+    for _ in range(from: 0, to: 256)
+        counts @ counts.push(0)
+
+    top: i64 @= 0
+    distinct: i64 @= 0
+
+    for b in lits
+        v = to_i64(b).must()
+
+        if counts[v] == 0
+            distinct @ distinct + 1
+        counts[v] @ counts[v] + 1
+
+        if v > top
+            top @ v
+
+    if distinct < 2
+        return nothing
+    lengths = huffman.lengths_for(counts.slice(from: 0, to: top + 1), limit: huff.MAX_BITS)
+    c = huff.codes_for(lengths)
+    tree: [u8] @= []
+
+    if top <= 127
+        tree @ tree.push(to_u8(127 + top).must())
+        i: i64 @= 0
+
+        while i < top
+            high = c.weights[i] << 4
+            low: i64 @= 0
+
+            if i + 1 < top
+                low @ c.weights[i + 1]
+            tree @ tree.push(to_u8(high | low).must())
+            i @ i + 2
+    else
+        packed = weights.compressed(c.weights.slice(from: 0, to: top))
+
+        if packed.len() == 0 || packed.len() > 127
+            return nothing
+        tree @ tree.push(to_u8(packed.len()).must())
+
+        for b in packed
+            tree @ tree.push(b)
+
+    streams: [[u8]] @= []
+
+    if n <= 1023
+        streams @ streams.push(huffman_stream(lits, from: 0, to: n, c: c))
+    else
+        each = (n + 3) / 4
+
+        for k in range(from: 0, to: 3)
+            streams @ streams.push(huffman_stream(lits, from: k * each, to: k * each + each, c: c))
+
+        streams @ streams.push(huffman_stream(lits, from: 3 * each, to: n, c: c))
+    body: [u8] @= tree
+
+    if streams.len() == 4
+        for k in range(from: 0, to: 3)
+            put_little(@body, value: streams[k].len(), width: 2)
+
+    for s in streams
+        for b in s
+            body @ body.push(b)
+
+    compressed = body.len()
+    format: i64 @= 0
+    width: i64 @= 10
+    header: i64 @= 3
+
+    if streams.len() == 4
+        format @ 1
+
+        if compressed > 1023 || n > 1023
+            format @ 2
+            width @ 14
+            header @ 4
+
+        if compressed > 16383 || n > 16383
+            format @ 3
+            width @ 18
+            header @ 5
+    else if compressed > 1023
+        return nothing
+    section: [u8] @= []
+    put_little(@section, value: 2 | format << 2 | n << 4 | compressed << 4 + width, width: header)
+
+    for b in body
+        section @ section.push(b)
+
+    return section
+
+# The backward stream of the literals from `from` to `to` of `lits`, the
+# last written first.
+function huffman_stream(lits: [u8] lent, from: i64, to: i64, c: huff.Codes lent) -> [u8]
+    out: [u8] @= []
+    w @= bits.writer()
+    i: i64 @= to - 1
+
+    while i >= from
+        s = to_i64(lits[i]).must()
+        bits.put(@out, @w, value: c.codes[s], n: c.max_bits + 1 - c.weights[s])
+        i @ i - 1
+
+    bits.close(@out, @w)
+    return out
+
+# Adds the literals section of `lits` to `out`: Huffman where that is
+# smaller, one byte repeated where they are all one, stored otherwise.
+function put_literals(@out: [u8], lits: [u8] lent)
+    n = lits.len()
+    same: bool @= n > 2
+
+    for b in lits
+        if b != lits[0]
+            same @ false
+
+    if same
+        put_plain_header(@out, kind: 1, n: n)
+        out @ out.push(lits[0])
+        return
+    coded = huffman_section(lits)
+
+    if coded.len() > 0 && coded.len() < n
+        for b in coded
+            out @ out.push(b)
+
+        return
+    put_plain_header(@out, kind: 0, n: n)
+
+    for b in lits
+        out @ out.push(b)
+
+# Adds the sequences section of `found` to `out`, its tables predefined.
+function put_sequences(@out: [u8], found: [Found] lent)
+    n = found.len()
+
+    if n < 128
+        out @ out.push(to_u8(n).must())
+    else if n < 0x7f00
+        out @ out.push(to_u8((n >> 8) + 128).must())
+        out @ out.push(to_u8(n & 255).must())
+    else
+        out @ out.push(255)
+        put_little(@out, value: n - 0x7f00, width: 2)
+
+    if n == 0
+        return
+    out @ out.push(0)
+    ll = fse.predefined(fse.LL_DEFAULT, log: 6)
+    of = fse.predefined(fse.OF_DEFAULT, log: 5)
+    ml = fse.predefined(fse.ML_DEFAULT, log: 6)
+    ll_from = fse.encoding(ll, alphabet: 36)
+    of_from = fse.encoding(of, alphabet: 29)
+    ml_from = fse.encoding(ml, alphabet: 53)
+    w @= bits.writer()
+    ll_state: i64 @= 0
+    of_state: i64 @= 0
+    ml_state: i64 @= 0
+    i: i64 @= n - 1
+
+    while i >= 0
+        s = found[i]
+        llc = ll_code(s.literal_length)
+        mlc = ml_code(s.match_length)
+        value = s.offset + 3
+        ofc = fse.high_bit(value)
+
+        if i == n - 1
+            ll_state @ fse.first_state(ll, symbol: llc)
+            ml_state @ fse.first_state(ml, symbol: mlc)
+            of_state @ fse.first_state(of, symbol: ofc)
+        else
+            before_of = of_from[ofc * 32 + of_state]
+            bits.put(@out, @w, value: of_state - of.base[before_of], n: of.bits[before_of])
+            of_state @ before_of
+            before_ml = ml_from[mlc * 64 + ml_state]
+            bits.put(@out, @w, value: ml_state - ml.base[before_ml], n: ml.bits[before_ml])
+            ml_state @ before_ml
+            before_ll = ll_from[llc * 64 + ll_state]
+            bits.put(@out, @w, value: ll_state - ll.base[before_ll], n: ll.bits[before_ll])
+            ll_state @ before_ll
+        bits.put(@out, @w, value: s.literal_length - sequences.LL_BASE[llc], n: sequences.LL_BITS[llc])
+        bits.put(@out, @w, value: s.match_length - sequences.ML_BASE[mlc], n: sequences.ML_BITS[mlc])
+        bits.put(@out, @w, value: value - (1 << ofc), n: ofc)
+        i @ i - 1
+
+    bits.put(@out, @w, value: ml_state, n: 6)
+    bits.put(@out, @w, value: of_state, n: 5)
+    bits.put(@out, @w, value: ll_state, n: 6)
+    bits.close(@out, @w)
+
+test "ll_code and ml_code: each side of a baseline"
+    assert ll_code(15) == 15 && ll_code(16) == 16 && ll_code(17) == 16 && ll_code(65536) == 35 && ll_code(131071) == 35
+    assert ml_code(3) == 0 && ml_code(34) == 31 && ml_code(35) == 32 && ml_code(36) == 32 && ml_code(131074) == 52

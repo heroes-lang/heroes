@@ -1,0 +1,95 @@
+# A Zstandard dictionary read: its magic and id, its tables (the literals'
+# Huffman tree, then the offsets', match lengths' and literal lengths' FSE
+# tables), its three repeated offsets and its content; or bytes taken whole
+# as the content of a dictionary with no id.
+
+use compress/internal/codes
+use compress/zstd/internal/frame
+use compress/zstd/internal/fse
+use compress/zstd/internal/huff
+use compress/zstd/internal/literals
+use compress/zstd/internal/samples
+use compress/zstd/internal/sequences
+
+# Whether `data` begins with a formatted dictionary's magic, 37 A4 30 EC.
+function is_formatted(data: [u8] lent) -> bool
+    return data.len() >= 8 && data[0] == 0x37 && data[1] == 0xa4 && data[2] == 0x30 && data[3] == 0xec
+
+# `content` as a dictionary of no id and no table.
+function raw(content: [u8]) -> frame.Dict
+    return frame.Dict(id: 0, content: content, entropy: sequences.fresh())
+
+# The dictionary `data` holds: formatted where it begins with the magic,
+# raw content otherwise.
+function read(data: [u8] lent) -> frame.Dict?
+    if !is_formatted(data)
+        if data.len() < 8
+            return codes.invalid_at(at: 0, why: f"a dictionary of {data.len()} bytes, where one holds 8 or more")
+        return ok(raw(data))
+    id = literals.little(data, at: 4, width: 4)
+
+    if id == 0
+        return codes.invalid_at(at: 4, why: "a formatted dictionary whose id is 0")
+    p: i64 @= 8
+    tree = huff.describe(data, at: p, end: data.len())?
+    p @ p + tree.used
+    of = fse.describe(data, at: p, end: data.len(), max_symbol: 31, max_log: 8)?
+    of_table = fse.build(of.counts, log: of.log, at: p)?
+    p @ p + of.used
+    ml = fse.describe(data, at: p, end: data.len(), max_symbol: 52, max_log: 9)?
+    ml_table = fse.build(ml.counts, log: ml.log, at: p)?
+    p @ p + ml.used
+    ll = fse.describe(data, at: p, end: data.len(), max_symbol: 35, max_log: 9)?
+    ll_table = fse.build(ll.counts, log: ll.log, at: p)?
+    p @ p + ll.used
+
+    if data.len() - p < 12
+        return codes.invalid_at(at: p, why: "a dictionary cut short before its repeated offsets")
+    content = data.slice(from: p + 12, to: data.len())
+    reps: [i64] @= []
+
+    for k in range(from: 0, to: 3)
+        r = literals.little(data, at: p + 4 * k, width: 4)
+
+        if r == 0 || r > content.len()
+            return codes.invalid_at(
+                at: p + 4 * k,
+                why: f"a repeated offset of {r}, where the content holds {content.len()} bytes"
+            )
+        reps @ reps.push(r)
+
+    e = sequences.Entropy(tree: tree.table, ll: ll_table, of: of_table, ml: ml_table, reps: reps)
+    return ok(frame.Dict(id: id, content: content, entropy: e))
+
+test "read: the tool's dictionary, its frame read with it and refused without it"
+    d = read(samples.of(samples.DICTIONARY)).must()
+    assert d.id == 15533371
+    framed = samples.of(samples.WITH_DICTIONARY)
+    assert frame.every_frame(framed, limit: 1000, dict: d).must() == samples.text(samples.DICTIONARY_TEXT)
+
+    match frame.every_frame(framed, limit: 1000, dict: frame.no_dict())
+        .ok _  => assert false
+        .err e => assert e.msg == "not a valid compressed stream at byte 0: a frame made with dictionary 15533371, which none was given to read"
+
+    match frame.every_frame(framed, limit: 1000, dict: raw(samples.of(samples.DICTIONARY)))
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+test "read: too short, an id of 0, a dictionary cut short, and raw content"
+    match read([1, 2, 3])
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    whole = samples.of(samples.DICTIONARY)
+    zero_id: [u8] @= whole
+    zero_id[4] @ 0
+    zero_id[5] @ 0
+    zero_id[6] @ 0
+    zero_id[7] @ 0
+
+    for bad in [zero_id, whole.slice(from: 0, to: 40)]
+        match read(bad)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+    assert read([9, 9, 9, 9, 9, 9, 9, 9]).must().id == 0

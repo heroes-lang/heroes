@@ -1,0 +1,290 @@
+# Finite State Entropy, as Zstandard uses it: a table's description read
+# into normalized counts, the decoding table those counts spread into, the
+# predefined distributions of literal lengths, match lengths and offsets,
+# and, for the encoder, which state each symbol leaves for each next state.
+
+use compress/internal/codes
+use compress/zstd/internal/bits
+
+# The predefined distribution of literal length codes, accuracy 6.
+constant LL_DEFAULT: [i64]
+    [4, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 1, 1, 1, 1, 1, -1, -1, -1, -1]
+
+# The predefined distribution of match length codes, accuracy 6.
+constant ML_DEFAULT: [i64]
+    [
+        1
+        4
+        3
+        2
+        2
+        2
+        2
+        2
+        2
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        1
+        -1
+        -1
+        -1
+        -1
+        -1
+        -1
+        -1
+    ]
+
+# The predefined distribution of offset codes, accuracy 5.
+constant OF_DEFAULT: [i64]
+    [1, 1, 1, 1, 1, 1, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, -1, -1]
+
+# A decoding table: by state, the symbol it gives, how many bits the next
+# state reads, and what they are added to. Empty where no table is held.
+record Table
+    # The symbol of each state.
+    symbols: [i64]
+    # How many bits each state reads for the next.
+    bits: [i64]
+    # What each state adds those bits to.
+    base: [i64]
+    # The accuracy: the table holds 2^log states.
+    log: i64
+
+# A table that holds nothing: what "repeat" finds before any table came.
+function empty() -> Table
+    return Table(symbols: [], bits: [], base: [], log: 0)
+
+# The table of one state that always gives `symbol` and reads no bits: the
+# mode RLE.
+function single(symbol: i64) -> Table
+    return Table(symbols: [symbol], bits: [0], base: [0], log: 0)
+
+# How many bits `x`, 1 or more, needs less one: the index of its highest 1.
+function high_bit(x: i64) -> i64
+    n: i64 @= 0
+
+    while x >> n + 1 > 0
+        n @ n + 1
+
+    return n
+
+# What `describe` answers: the counts, the accuracy, and the bytes it took.
+record Counts
+    # The normalized count of each symbol; -1 for "less than one".
+    counts: [i64]
+    # The accuracy log.
+    log: i64
+    # How many whole bytes the description took.
+    used: i64
+
+# The normalized counts a table description at `at` of `input` gives, no
+# symbol past `max_symbol` and no accuracy past `max_log`; it may run to
+# `end`.
+function describe(input: [u8] lent, at: i64, end: i64, max_symbol: i64, max_log: i64) -> Counts?
+    a @= bits.Ahead(start: at, pos: 0, end: end)
+    log = bits.take(@a, input: input, n: 4)? + 5
+
+    if log > max_log
+        return codes.invalid_at(at: at, why: f"an FSE accuracy of {log}, past {max_log}")
+    remaining: i64 @= (1 << log) + 1
+    threshold: i64 @= 1 << log
+    width: i64 @= log + 1
+    counts: [i64] @= []
+    previous_zero: bool @= false
+
+    while remaining > 1 && counts.len() <= max_symbol
+        if previous_zero
+            repeat_count: i64 @= bits.take(@a, input: input, n: 2)?
+            zeros: i64 @= repeat_count
+
+            while repeat_count == 3
+                repeat_count @ bits.take(@a, input: input, n: 2)?
+                zeros @ zeros + repeat_count
+
+            if counts.len() + zeros > max_symbol
+                return codes.invalid_at(at: at, why: "an FSE description of more symbols than its alphabet")
+
+            for _ in range(from: 0, to: zeros)
+                counts @ counts.push(0)
+        most = 2 * threshold - 1 - remaining
+        low = bits.look(a, input: input, n: width - 1)
+        count: i64 @= 0
+
+        if low & threshold - 1 < most
+            count @ low & threshold - 1
+            _ = bits.take(@a, input: input, n: width - 1)?
+        else
+            count @ bits.take(@a, input: input, n: width)?
+
+            if count >= threshold
+                count @ count - most
+        count @ count - 1
+
+        if count < 0
+            remaining @ remaining + count
+        else
+            remaining @ remaining - count
+        counts @ counts.push(count)
+        previous_zero @ count == 0
+
+        while remaining < threshold
+            width @ width - 1
+            threshold @ threshold >> 1
+
+    if remaining != 1
+        return codes.invalid_at(at: at, why: "an FSE description whose counts do not add up to its table")
+    return ok(Counts(counts: counts, log: log, used: a.pos + 7 >> 3))
+
+# The decoding table `counts` spread into, 2^`log` states. Fails where the
+# counts do not fill it exactly. `at` is where they were read.
+function build(counts: [i64] lent, log: i64, at: i64) -> Table?
+    size = 1 << log
+    symbols: [i64] @= []
+
+    for _ in range(from: 0, to: size)
+        symbols @ symbols.push(-1)
+
+    next: [i64] @= []
+    high: i64 @= size - 1
+    total: i64 @= 0
+
+    for s in range(from: 0, to: counts.len())
+        c = counts[s]
+
+        if c == -1
+            if high < 0
+                return codes.invalid_at(at: at, why: "an FSE table with more symbols than states")
+            symbols[high] @ s
+            high @ high - 1
+            next @ next.push(1)
+            total @ total + 1
+        else
+            next @ next.push(c)
+            total @ total + c
+
+    if total != size
+        return codes.invalid_at(at: at, why: "an FSE table whose counts do not fill it")
+    step = (size >> 1) + (size >> 3) + 3
+    pos: i64 @= 0
+
+    for s in range(from: 0, to: counts.len())
+        for _ in range(from: 0, to: counts[s])
+            symbols[pos] @ s
+            pos @ pos + step & size - 1
+
+            while pos > high
+                pos @ pos + step & size - 1
+
+    if pos != 0
+        return codes.invalid_at(at: at, why: "an FSE table whose counts do not spread over it")
+    widths: [i64] @= []
+    base: [i64] @= []
+
+    for u in range(from: 0, to: size)
+        s = symbols[u]
+        state = next[s]
+        next[s] @ state + 1
+        n = log - high_bit(state)
+        widths @ widths.push(n)
+        base @ base.push((state << n) - size)
+
+    return ok(Table(symbols: symbols, bits: widths, base: base, log: log))
+
+# The table of a predefined distribution.
+function predefined(counts: [i64] lent, log: i64) -> Table
+    return build(counts, log: log, at: 0).must()
+
+# For an encoder over table `t`: by symbol and then by the state the
+# decoder is in after it, the state the decoder was in to give it, or -1
+# where no state of that symbol leads there. A flat list, `2^log` entries a
+# symbol, for symbols 0 to `alphabet` - 1.
+function encoding(t: Table lent, alphabet: i64) -> [i64]
+    size = 1 << t.log
+    from: [i64] @= []
+
+    for _ in range(from: 0, to: alphabet * size)
+        from @ from.push(-1)
+
+    for u in range(from: 0, to: size)
+        s = t.symbols[u]
+        low = t.base[u]
+
+        for next in range(from: low, to: low + (1 << t.bits[u]))
+            from[s * size + next] @ u
+
+    return from
+
+# The first state of `t` that gives `symbol`, or -1 where none does.
+function first_state(t: Table lent, symbol: i64) -> i64
+    for u in range(from: 0, to: t.symbols.len())
+        if t.symbols[u] == symbol
+            return u
+
+    return -1
+
+test "predefined: every distribution fills its table, every symbol given"
+    ll = predefined(LL_DEFAULT, log: 6)
+    assert ll.symbols.len() == 64
+    ml = predefined(ML_DEFAULT, log: 6)
+    of = predefined(OF_DEFAULT, log: 5)
+    assert of.symbols.len() == 32
+
+    for s in range(from: 0, to: 36)
+        assert first_state(ll, symbol: s) >= 0
+
+    for s in range(from: 0, to: 53)
+        assert first_state(ml, symbol: s) >= 0
+
+test "encoding: each next state reached from exactly one state of each symbol"
+    t = predefined(OF_DEFAULT, log: 5)
+    from = encoding(t, alphabet: 29)
+
+    for s in range(from: 0, to: 29)
+        for next in range(from: 0, to: 32)
+            u = from[s * 32 + next]
+            assert u >= 0 && t.symbols[u] == s
+            assert t.base[u] <= next && next < t.base[u] + (1 << t.bits[u])
+
+test "describe: a description written by hand, and one whose counts overflow"
+    # accuracy 5; counts 1 and 31 for symbols 0 and 1 (values 2 and 32).
+    a = describe([0x20, 0x7e], at: 0, end: 2, max_symbol: 35, max_log: 9).must()
+    assert a.log == 5
+    assert a.counts == [1, 31] && a.used == 2
+
+    match describe([0x0f, 0xff, 0xff], at: 0, end: 3, max_symbol: 35, max_log: 9)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"

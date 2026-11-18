@@ -1,0 +1,393 @@
+# Zstandard (RFC 8878) compressed and decompressed, all at once over a
+# `[u8]`: every frame read, its blocks stored, repeated or compressed with
+# Huffman-coded literals and FSE-coded sequences, its checksum checked,
+# skippable frames passed over, with or without a dictionary; and frames
+# written at a basic level. What it writes, the `zstd` tool and Python's
+# `compression.zstd` read, and what they write, it reads.
+#
+# What it does not do: it writes no frame as small as the reference
+# library's (its repeats are found greedily, its sequences coded with the
+# predefined tables), trains no dictionary, and neither reads nor writes
+# piece by piece or through a stream: a program reads the whole input first
+# (`io.read_all`, `fs.read_bytes`). DEFLATE, gzip and zlib are
+# `compress`'s, bzip2 `compress/bzip2`'s, xz and LZMA `compress/xz`'s,
+# Brotli `compress/brotli`'s.
+#
+# **A compressed input is not trusted.** Every function that decompresses
+# takes a `limit`, the most bytes it may produce, and fails `limit` before
+# it would write one more, before a byte is decoded where a frame's header
+# says it would pass. An input that is not Zstandard fails `invalid`, its
+# message naming the byte. Nothing an input holds makes a call abort, loop
+# without end, or read past the input.
+#
+# It fails with `invalid` and `limit`.
+
+use bytes
+use compress/internal/codes
+use compress/zstd/internal/dict
+use compress/zstd/internal/encoder
+use compress/zstd/internal/frame
+use compress/zstd/internal/sections
+
+## Codes
+
+# The code of an input that is not Zstandard (a wrong magic, a reserved bit
+# set, a table no decoder reads, an offset before the start, a size or
+# checksum that does not match, a frame cut short, bytes after its end, a
+# frame made with another dictionary), the message naming the byte; and of
+# options out of their range. Every function fails with it but
+# `raw_dictionary`, `id_of` and `content_of`.
+constant INVALID: str
+    codes.INVALID
+
+# The code of an output that would pass the `limit` the caller set.
+# `decompress`, `decompress_leading` and `decompress_with` fail with it.
+constant LIMIT: str
+    codes.LIMIT
+
+## Levels and options
+
+# The fastest level: two earlier places tried for each byte.
+constant MIN_LEVEL: i64
+    1
+
+# The level `defaults` sets, as the `zstd` tool's and Python's.
+constant DEFAULT_LEVEL: i64
+    3
+
+# The level that tries most: 2,048 earlier places for each byte.
+constant MAX_LEVEL: i64
+    22
+
+# How `compress` and `compress_with` write a frame. `defaults` makes the
+# usual one.
+record Options
+    # 1 (`MIN_LEVEL`) to 22 (`MAX_LEVEL`): how many earlier places are
+    # tried for each byte, from 2 to 2,048.
+    level: i64
+    # Whether the frame ends with the low 32 bits of the XXH64 of its bytes,
+    # which a reader checks.
+    checksum: bool
+    # Whether the frame's header says how many bytes it decompresses to.
+    content_size: bool
+
+# Options at level 3, the size said and no checksum, as Python's usual.
+#
+# See also `compress`.
+function defaults() -> Options
+    return Options(level: DEFAULT_LEVEL, checksum: false, content_size: true)
+
+## All at once
+
+# `data` compressed whole into one Zstandard frame.
+#
+# - `data`: the bytes to compress; none make a frame of one empty block.
+# - `options`: the level, the checksum and the size; `defaults` makes the
+#   usual ones.
+#
+# The same `data` and `options` answer the same bytes every time.
+#
+# Fails `invalid` where `options.level` is outside 1 to 22.
+#
+# It holds `data`, the answer, and chains of up to 4 Mi entries for its
+# repeats; the time grows with the level. See also `decompress` and
+# `compress_with`.
+function compress(data: [u8], options: Options) -> [u8]?
+    encoder.check_level(options.level)?
+    plan = encoder.Plan(level: options.level, checksum: options.checksum, content_size: options.content_size)
+    return ok(encoder.frame_of(input: data, prefix: [], dictionary_id: 0, plan: plan))
+
+# The bytes `data` decompresses to: every frame of it one after another,
+# skippable frames passed over.
+#
+# - `data`: the compressed bytes, nothing before the first frame and
+#   nothing after the last.
+# - `limit`: the most bytes the answer may hold, 0 or more.
+#
+# Fails `limit` where the answer would pass `limit` bytes. Fails `invalid`
+# where `data` is not Zstandard, the message naming the byte, an empty
+# input and a frame made with a dictionary among them, and where `limit` is
+# below 0.
+#
+# It holds the answer whole, up to `limit` bytes. See also
+# `decompress_leading` and `decompress_with`.
+function decompress(data: [u8], limit: i64) -> [u8]?
+    return frame.every_frame(data, limit: limit, dict: frame.no_dict())
+
+# What `decompress_leading` answers: a frame's bytes, and where it ended.
+record Leading
+    # The bytes the frame decompresses to; none for a skippable frame.
+    data: [u8]
+    # How many bytes of the input the frame took: what follows it begins at
+    # this index.
+    used: i64
+
+# The frame at the start of `data` decompressed, and how many bytes of
+# `data` it took.
+#
+# - `data`: bytes that begin with one frame; what follows it is not read.
+# - `limit`: the most bytes the answer's `data` may hold, 0 or more.
+#
+# A skippable frame answers no bytes and its length. Fails as `decompress`
+# does, but never for bytes after the frame.
+#
+# See also `decompress` and `frame_size`.
+function decompress_leading(data: [u8], limit: i64) -> Leading?
+    out: [u8] @= []
+    used = frame.frame_into(out: @out, input: data, at: 0, limit: limit, dict: frame.no_dict())?
+    return ok(Leading(data: out, used: used))
+
+## Frames
+
+# How many bytes a frame says it decompresses to.
+variant ContentSize
+    # The header says it.
+    known
+        # How many bytes.
+        bytes: u64
+    # The header does not say it: a frame written as it was streamed.
+    unknown
+
+# What a frame's header says, read without decompressing it.
+record FrameInfo
+    # How many bytes the frame decompresses to.
+    content_size: ContentSize
+    # How far back a repeat may reach, in bytes: the memory a reader of the
+    # frame piece by piece needs. For a frame that says its size in a
+    # single segment, that size.
+    window_size: u64
+    # The dictionary the frame was made with, 0 for none.
+    dictionary_id: u32
+    # Whether the frame ends with a checksum.
+    has_checksum: bool
+    # Whether the frame is skippable: its bytes are not Zstandard, and the
+    # other fields say nothing.
+    is_skippable: bool
+
+# What the header of the frame at the start of `data` says.
+#
+# - `data`: a frame, or at least its header.
+#
+# Fails `invalid` where `data` does not begin with a whole frame header.
+#
+# See also `frame_size`.
+function frame_info(data: [u8]) -> FrameInfo?
+    h = frame.header_at(data, at: 0)?
+
+    if h.skippable
+        return ok(
+            FrameInfo(content_size: .known(bytes: 0), window_size: 0, dictionary_id: 0, has_checksum: false, is_skippable: true)
+        )
+    size: ContentSize @= .unknown
+
+    if h.content_size >= 0
+        if h.content_size == 9223372036854775807
+            size @ .known(bytes: bytes.decode_u64_le(data, at: h.size - 8).must())
+        else
+            size @ .known(bytes: to_u64(h.content_size).must())
+    window: u64 @= 0
+
+    if h.window >= 0
+        window @ to_u64(h.window).must()
+    return ok(
+        FrameInfo(content_size: size, window_size: window, dictionary_id: to_u32(h.dictionary_id).must(), has_checksum: h.has_checksum, is_skippable: false)
+    )
+
+# How many bytes the frame at the start of `data` takes, its blocks walked
+# and not decoded: where the next frame begins.
+#
+# - `data`: bytes that begin with a frame, skippable or not.
+#
+# Fails `invalid` where `data` does not begin with a whole frame.
+#
+# See also `frame_info` and `decompress_leading`.
+function frame_size(data: [u8]) -> i64?
+    return frame.size_of(data, at: 0)
+
+# `data` wrapped in a skippable frame, which every reader passes over: a
+# place for the program's own bytes beside Zstandard frames.
+#
+# - `data`: the bytes the frame holds, at most 4,294,967,295.
+# - `magic`: 0 to 15, the low four bits of the frame's magic number, for
+#   the program's own use.
+#
+# Fails `invalid` where `magic` is outside 0 to 15 or `data` is too long.
+#
+# See also `frame_info`.
+function skippable_frame(data: [u8], magic: i64) -> [u8]?
+    if magic < 0 || magic > 15
+        return fail(code: INVALID, msg: f"a skippable frame's magic of {magic}, where it is 0 to 15")
+
+    if data.len() > 4294967295
+        return fail(code: INVALID, msg: f"{data.len()} bytes, past the 4,294,967,295 a skippable frame holds")
+    out: [u8] @= [to_u8(0x50 + magic).must(), 0x2a, 0x4d, 0x18]
+    sections.put_little(@out, value: data.len(), width: 4)
+
+    for b in data
+        out @ out.push(b)
+
+    return ok(out)
+
+## Dictionaries
+
+# A dictionary: bytes a compressor and a decompressor both hold, which the
+# data is likely to repeat, and, for one `zstd --train` made, the tables
+# and offsets its frames start with. Made by `dictionary` or
+# `raw_dictionary`.
+record Dictionary
+    # Its id, content, tables and offsets.
+    state: frame.Dict
+
+# The dictionary `data` holds: one `zstd --train` wrote, which begins with
+# 37 A4 30 EC, its id, tables and offsets read; or any other bytes, taken
+# as the content of a dictionary of no id.
+#
+# - `data`: the dictionary's bytes, at least 8.
+#
+# Fails `invalid` where `data` holds fewer than 8 bytes, or begins as a
+# formatted dictionary and is not one.
+#
+# See also `raw_dictionary`, `decompress_with` and `compress_with`.
+function dictionary(data: [u8]) -> Dictionary?
+    return ok(Dictionary(state: dict.read(data)?))
+
+# `content` as the content of a dictionary of no id and no table, even
+# where it begins as a formatted one: what Python calls a raw dictionary or
+# a prefix.
+#
+# - `content`: the bytes repeats may reach back into; any number.
+#
+# See also `dictionary`.
+function raw_dictionary(content: [u8]) -> Dictionary
+    return Dictionary(state: dict.raw(content))
+
+# The id of `d`, 0 for a raw one.
+#
+# - `d`: the dictionary asked.
+#
+# See also `frame_info`.
+function id_of(d: Dictionary) -> u32
+    return to_u32(d.state.id).must()
+
+# The content of `d`: the bytes repeats may reach back into.
+#
+# - `d`: the dictionary asked.
+#
+# See also `dictionary`.
+function content_of(d: Dictionary) -> [u8]
+    return d.state.content
+
+# The bytes `data` decompresses to, its frames read with `d`.
+#
+# - `data`: the compressed bytes, every frame of them.
+# - `d`: the dictionary the frames were made with; a frame that names
+#   another id fails.
+# - `limit`: the most bytes the answer may hold, 0 or more.
+#
+# Fails as `decompress` does, and `invalid` where a frame names a
+# dictionary other than `d`.
+#
+# See also `compress_with`.
+function decompress_with(data: [u8], d: Dictionary, limit: i64) -> [u8]?
+    return frame.every_frame(data, limit: limit, dict: d.state)
+
+# `data` compressed into one frame that reaches back into `d`'s content and
+# names its id.
+#
+# - `data`: the bytes to compress.
+# - `d`: the dictionary; a reader needs the same one.
+# - `options`: as `compress` takes them.
+#
+# Fails `invalid` where `options.level` is outside 1 to 22.
+#
+# See also `decompress_with`.
+function compress_with(data: [u8], d: Dictionary, options: Options) -> [u8]?
+    encoder.check_level(options.level)?
+    plan = encoder.Plan(level: options.level, checksum: options.checksum, content_size: options.content_size)
+    return ok(encoder.frame_of(input: data, prefix: d.state.content, dictionary_id: d.state.id, plan: plan))
+
+## Examples
+
+# The usual options, with a checksum asked for.
+test "defaults: level 3, then a checksum"
+    o @= defaults()
+    assert o.level == DEFAULT_LEVEL
+    o.checksum @ true
+    assert frame_info(compress([0x61], o).must()).must().has_checksum
+
+# A line compressed and read back.
+test "compress: a line, and back"
+    line: [u8] = [0x6c, 0x6f, 0x77, 0x20, 0x6c, 0x6f, 0x77, 0x20, 0x6c, 0x6f, 0x77, 0x20, 0x6c, 0x6f, 0x77]
+    assert decompress(compress(line, defaults()).must(), limit: 100).must() == line
+
+# A frame read whole, under a limit on what it may expand to.
+test "decompress: under a limit"
+    packed = compress([0x7a, 0x7a, 0x7a, 0x7a, 0x7a, 0x7a], defaults()).must()
+    assert decompress(packed, limit: 6).must().len() == 6
+
+    match decompress(packed, limit: 5)
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+# A frame followed by bytes of the caller's own.
+test "decompress_leading: a frame, then other bytes"
+    packed @= compress([0x6b, 0x6f, 0x6f, 0x6b, 0x73], defaults()).must()
+    size = packed.len()
+    packed @ packed.push(0x21)
+    led = decompress_leading(packed, limit: 100).must()
+    assert led.data == [0x6b, 0x6f, 0x6f, 0x6b, 0x73] && led.used == size
+
+# The size a frame says it holds.
+test "frame_info: the content size"
+    info = frame_info(compress([1, 2, 3], defaults()).must()).must()
+    assert info.content_size == .known(bytes: 3)
+    assert !info.is_skippable
+
+# Where one frame ends and the next begins.
+test "frame_size: two frames, one after the other"
+    first = compress([1, 2, 3], defaults()).must()
+    two @= first
+
+    for b in compress([4, 5], defaults()).must()
+        two @ two.push(b)
+
+    assert frame_size(two).must() == first.len()
+
+# The program's own bytes in a frame every reader passes over.
+test "skippable_frame: bytes a reader skips"
+    skipped @= skippable_frame([9, 9, 9], magic: 0).must()
+
+    for b in compress([1], defaults()).must()
+        skipped @ skipped.push(b)
+
+    assert decompress(skipped, limit: 10).must() == [1]
+
+# Any bytes taken as a dictionary of no id.
+test "dictionary: bytes that are no formatted dictionary"
+    d = dictionary([0x73, 0x70, 0x61, 0x63, 0x65, 0x20, 0x6f, 0x64, 0x64, 0x69, 0x74, 0x79]).must()
+    assert id_of(d) == 0
+
+# A dictionary's content, whatever it begins with.
+test "raw_dictionary: content of no id"
+    d = raw_dictionary([0x37, 0xa4, 0x30, 0xec, 1, 2, 3, 4])
+    assert content_of(d).len() == 8
+
+# A raw dictionary's id.
+test "id_of: a raw dictionary has none"
+    assert id_of(raw_dictionary([1, 2, 3])) == 0
+
+# A dictionary's content read back.
+test "content_of: the bytes given"
+    assert content_of(raw_dictionary([1, 2, 3])) == [1, 2, 3]
+
+# A frame made with a dictionary and read with it.
+test "decompress_with: the dictionary the frame was made with"
+    d = raw_dictionary([0x68, 0x65, 0x72, 0x6f, 0x65, 0x73, 0x20, 0x68, 0x65, 0x72, 0x6f, 0x65, 0x73])
+    packed = compress_with([0x68, 0x65, 0x72, 0x6f, 0x65, 0x73, 0x21], d: d, options: defaults()).must()
+    assert decompress_with(packed, d: d, limit: 100).must() == [0x68, 0x65, 0x72, 0x6f, 0x65, 0x73, 0x21]
+
+# Data compressed against a dictionary's content.
+test "compress_with: a line that repeats the dictionary"
+    d = raw_dictionary([0x6d, 0x61, 0x6a, 0x6f, 0x72, 0x20, 0x74, 0x6f, 0x6d, 0x20, 0x6d, 0x61, 0x6a, 0x6f, 0x72])
+    line: [u8] = [0x6d, 0x61, 0x6a, 0x6f, 0x72, 0x20, 0x74, 0x6f, 0x6d]
+    assert decompress_with(compress_with(line, d: d, options: defaults()).must(), d: d, limit: 100).must() == line
