@@ -1,0 +1,385 @@
+# What the cluster keeps of groups: the coordinator a group's requests go
+# to (`FindCoordinator` 2), its offsets kept and read (`OffsetCommit` 7,
+# `OffsetFetch` 5), and the groups listed, described and deleted.
+
+use kafka/internal/cluster
+use kafka/internal/errors
+use kafka/internal/model
+use kafka/internal/protocol
+use kafka/internal/state
+use kafka/internal/wire
+
+# The key of `OffsetCommit`.
+constant OFFSET_COMMIT: i64
+    8
+
+# The key of `OffsetFetch`.
+constant OFFSET_FETCH: i64
+    9
+
+# The key of `FindCoordinator`.
+constant FIND_COORDINATOR: i64
+    10
+
+# The key of `DescribeGroups`.
+constant DESCRIBE_GROUPS: i64
+    15
+
+# The key of `ListGroups`.
+constant LIST_GROUPS: i64
+    16
+
+# The key of `DeleteGroups`.
+constant DELETE_GROUPS: i64
+    42
+
+# Whether a coordinator's error says to find it again: loading, not
+# available, or moved.
+#
+# - `code`: the error.
+function coordinator_moved(code: i64) -> bool
+    return code == 14 || code == 15 || code == 16
+
+# The broker that coordinates `group_id`, kept among the brokers known.
+#
+# - `s`: the session.
+# - `group_id`: the group.
+function find_coordinator(@s: state.Session, group_id: str) -> model.Broker?
+    if group_id == ""
+        return fail(code: model.INVALID, msg: "a group's identifier is empty")
+    until = cluster.now_ms() + s.options.wait_ms
+
+    while true
+        body: [u8] @= []
+        wire.put_string(out: @body, s: group_id, what: "the group's identifier")?
+        wire.put_i8(out: @body, v: 0)
+        r @= cluster.send_any(@s, key: FIND_COORDINATOR, version: 2, body: body)?
+        _ = wire.take_i32(@r, what: "FindCoordinator")?
+        error = wire.take_i16(@r, what: "FindCoordinator's error")?
+        said = wire.take_string(@r, what: "FindCoordinator's message")?
+        node = wire.take_i32(@r, what: "FindCoordinator's node")?
+        host = wire.take_string(@r, what: "FindCoordinator's host")?
+        port = wire.take_i32(@r, what: "FindCoordinator's port")?
+
+        if error == 0
+            b = model.Broker(id: node, host: host, port: port, rack: "")
+            known: bool @= false
+
+            for k in s.brokers
+                if k.id == node
+                    known @ true
+
+            if !known
+                add_broker(brokers: @s.brokers, b: b)
+            return ok(b)
+
+        if !errors.is_retriable(error) || cluster.now_ms() >= until
+            return errors.failure(error, what: f"finding the coordinator of the group \"{group_id}\"", said_too: said)
+        cluster.pause_ms(200)
+
+# Adds `b` to the brokers known.
+#
+# - `brokers`: the brokers.
+# - `b`: one more.
+function add_broker(@brokers: [model.Broker], b: model.Broker)
+    brokers @ brokers.push(b)
+
+# Sends a request to the coordinator of `group_id`, found first.
+#
+# - `s`: the session.
+# - `group_id`: the group.
+# - `key`: the API.
+# - `version`: its version.
+# - `body`: the request.
+# - `extra_ms`: milliseconds added to the wait.
+function to_coordinator(@s: state.Session, group_id: str, key: i64, version: i64, body: [u8] lent, extra_ms: i64) -> wire.Reader?
+    c = find_coordinator(@s, group_id: group_id)?
+    return cluster.send(@s, node_id: c.id, key: key, version: version, body: body, extra_ms: extra_ms, answered: true)
+
+# The body of an `OffsetCommit` 7.
+#
+# - `group_id`: the group.
+# - `generation_id`: the generation, -1 outside a membership.
+# - `member_id`: the member, "" outside a membership.
+# - `instance_id`: the static identifier, "" for none.
+# - `offsets`: the offsets.
+function commit_body(group_id: str, generation_id: i64, member_id: str, instance_id: str, offsets: [model.Offset]) -> [u8]?
+    out: [u8] @= []
+    wire.put_string(out: @out, s: group_id, what: "the group's identifier")?
+    wire.put_i32(out: @out, v: generation_id)
+    wire.put_string(out: @out, s: member_id, what: "the member's identifier")?
+    wire.put_string_or_null(out: @out, s: instance_id, what: "the instance's identifier")?
+    topics: [str] @= []
+
+    for o in offsets
+        if o.offset < 0
+            return fail(
+                code: model.INVALID,
+                msg: f"the offset {o.offset} of the partition {o.partition} of \"{o.topic}\" is below 0"
+            )
+        seen: bool @= false
+
+        for t in topics
+            if t == o.topic
+                seen @ true
+
+        if !seen
+            topics @ topics.push(o.topic)
+
+    wire.put_i32(out: @out, v: topics.len())
+
+    for t in topics
+        wire.put_string(out: @out, s: t, what: "a topic's name")?
+        mine: [model.Offset] @= []
+
+        for o in offsets
+            if o.topic == t
+                mine @ mine.push(o)
+
+        wire.put_i32(out: @out, v: mine.len())
+
+        for o in mine
+            wire.put_i32(out: @out, v: o.partition)
+            wire.put_i64(out: @out, v: o.offset)
+            wire.put_i32(out: @out, v: -1)
+            wire.put_string_or_null(out: @out, s: o.metadata, what: "an offset's metadata")?
+
+    return ok(out)
+
+# Keeps `offsets` as the group's, answering the first error a partition got.
+#
+# - `s`: the session.
+# - `group_id`: the group.
+# - `generation_id`: the generation, -1 outside a membership.
+# - `member_id`: the member, "" outside a membership.
+# - `instance_id`: the static identifier, "" for none.
+# - `offsets`: the offsets.
+function commit(@s: state.Session, group_id: str, generation_id: i64, member_id: str, instance_id: str, offsets: [model.Offset]) -> i64?
+    body = commit_body(group_id: group_id, generation_id: generation_id, member_id: member_id, instance_id: instance_id, offsets: offsets)?
+    until = cluster.now_ms() + s.options.wait_ms
+
+    while true
+        r @= to_coordinator(@s, group_id: group_id, key: OFFSET_COMMIT, version: 7, body: body, extra_ms: 0)?
+        _ = wire.take_i32(@r, what: "OffsetCommit")?
+        topics = wire.take_count(@r, what: "OffsetCommit's topics")?
+        first: i64 @= 0
+
+        for _ in range(from: 0, to: topics)
+            _ = wire.take_string(@r, what: "OffsetCommit's topic")?
+            partitions = wire.take_count(@r, what: "OffsetCommit's partitions")?
+
+            for _ in range(from: 0, to: partitions)
+                _ = wire.take_i32(@r, what: "OffsetCommit's partition")?
+                error = wire.take_i16(@r, what: "OffsetCommit's error")?
+
+                if first == 0
+                    first @ error
+
+        if !coordinator_moved(first) || cluster.now_ms() >= until
+            return ok(first)
+        cluster.pause_ms(200)
+
+# The offsets the group keeps, for every partition, or for `topics`'
+# partitions where it names some.
+#
+# - `s`: the session.
+# - `group_id`: the group.
+function fetch_offsets(@s: state.Session, group_id: str) -> [model.Offset]?
+    until = cluster.now_ms() + s.options.wait_ms
+
+    while true
+        body: [u8] @= []
+        wire.put_string(out: @body, s: group_id, what: "the group's identifier")?
+        wire.put_i32(out: @body, v: -1)
+        r @= to_coordinator(@s, group_id: group_id, key: OFFSET_FETCH, version: 5, body: body, extra_ms: 0)?
+        _ = wire.take_i32(@r, what: "OffsetFetch")?
+        topics = wire.take_count(@r, what: "OffsetFetch's topics")?
+        out: [model.Offset] @= []
+        first: i64 @= 0
+
+        for _ in range(from: 0, to: topics)
+            name = wire.take_string(@r, what: "OffsetFetch's topic")?
+            partitions = wire.take_count(@r, what: "OffsetFetch's partitions")?
+
+            for _ in range(from: 0, to: partitions)
+                index = wire.take_i32(@r, what: "OffsetFetch's partition")?
+                offset = wire.take_i64(@r, what: "OffsetFetch's offset")?
+                _ = wire.take_i32(@r, what: "OffsetFetch's epoch")?
+                metadata = wire.take_string(@r, what: "OffsetFetch's metadata")?
+                error = wire.take_i16(@r, what: "OffsetFetch's error")?
+
+                if error != 0 && first == 0
+                    first @ error
+
+                if error == 0 && offset >= 0
+                    out @ out.push(model.Offset(topic: name, partition: index, offset: offset, metadata: metadata))
+
+        top = wire.take_i16(@r, what: "OffsetFetch's error")?
+
+        if top != 0 && first == 0
+            first @ top
+
+        if first == 0
+            return ok(ordered(out))
+
+        if !coordinator_moved(first) || cluster.now_ms() >= until
+            return errors.failure(first, what: f"reading the offsets of the group \"{group_id}\"", said_too: "")
+        cluster.pause_ms(200)
+
+# `offsets` by topic, then by partition.
+#
+# - `offsets`: the offsets.
+function ordered(offsets: [model.Offset]) -> [model.Offset]
+    names: [str] @= []
+
+    for o in offsets
+        names @ names.push(o.topic)
+
+    out: [model.Offset] @= []
+    last: str @= ""
+    first_name: bool @= true
+
+    for name in sort(names)
+        if first_name || name != last
+            numbers: [i64] @= []
+
+            for o in offsets
+                if o.topic == name
+                    numbers @ numbers.push(o.partition)
+
+            for n in sort(numbers)
+                for o in offsets
+                    if o.topic == name && o.partition == n
+                        out @ out.push(o)
+        last @ name
+        first_name @ false
+
+    return out
+
+# The groups every broker coordinates.
+#
+# - `s`: the session.
+function list_groups(@s: state.Session) -> [model.GroupListing]?
+    _ = cluster.refresh(@s, topics: [], every: false)?
+    out: [model.GroupListing] @= []
+    nodes: [i64] @= []
+
+    for b in s.brokers
+        nodes @ nodes.push(b.id)
+
+    for node in nodes
+        r @= cluster.send(@s, node_id: node, key: LIST_GROUPS, version: 2, body: [], extra_ms: 0, answered: true)?
+        _ = wire.take_i32(@r, what: "ListGroups")?
+        error = wire.take_i16(@r, what: "ListGroups' error")?
+
+        if error != 0
+            return errors.failure(error, what: f"listing the groups of the broker {node}", said_too: "")
+        count = wire.take_count(@r, what: "ListGroups' groups")?
+
+        for _ in range(from: 0, to: count)
+            id = wire.take_string(@r, what: "a group")?
+            kind = wire.take_string(@r, what: "a group's protocol type")?
+            out @ out.push(model.GroupListing(group_id: id, protocol_type: kind))
+
+    return ok(out)
+
+# What the coordinator says of `group_id`.
+#
+# - `s`: the session.
+# - `group_id`: the group.
+function describe_group(@s: state.Session, group_id: str) -> model.GroupDescription?
+    body: [u8] @= []
+    wire.put_i32(out: @body, v: 1)
+    wire.put_string(out: @body, s: group_id, what: "the group's identifier")?
+    wire.put_bool(out: @body, v: false)
+    r @= to_coordinator(@s, group_id: group_id, key: DESCRIBE_GROUPS, version: 4, body: body, extra_ms: 0)?
+    _ = wire.take_i32(@r, what: "DescribeGroups")?
+    count = wire.take_count(@r, what: "DescribeGroups' groups")?
+
+    if count != 1
+        return fail(code: model.INVALID, msg: f"the coordinator described {count} groups, not one")
+    error = wire.take_i16(@r, what: "a group's error")?
+    id = wire.take_string(@r, what: "a group")?
+    group_state = wire.take_string(@r, what: "a group's state")?
+    kind = wire.take_string(@r, what: "a group's protocol type")?
+    assignor = wire.take_string(@r, what: "a group's protocol")?
+    member_count = wire.take_count(@r, what: "a group's members")?
+    members: [model.GroupMember] @= []
+
+    for _ in range(from: 0, to: member_count)
+        member_id = wire.take_string(@r, what: "a member")?
+        instance = wire.take_string(@r, what: "a member's instance")?
+        client_id = wire.take_string(@r, what: "a member's client")?
+        host = wire.take_string(@r, what: "a member's host")?
+        metadata = wire.take_bytes(@r, what: "a member's metadata")?
+        assigned_bytes = wire.take_bytes(@r, what: "a member's assignment")?
+
+        topics: [str] = if kind == "consumer"
+            protocol.subscription_topics(metadata).default([])
+        else
+            []
+
+        assigned: [model.TopicPartition] = if kind == "consumer"
+            protocol.assignment_partitions(assigned_bytes).default([])
+        else
+            []
+
+        members @ members.push(
+            model.GroupMember(member_id: member_id, group_instance_id: instance, client_id: client_id, client_host: host, topics: topics, assignment: assigned)
+        )
+
+    _ = wire.take_i32(@r, what: "a group's operations")?
+
+    if error != 0
+        return errors.failure(error, what: f"describing the group \"{group_id}\"", said_too: "")
+    return ok(
+        model.GroupDescription(group_id: id, state: group_state, protocol_type: kind, protocol: assignor, members: members)
+    )
+
+# Deletes the groups `group_ids`, each at its coordinator.
+#
+# - `s`: the session.
+# - `group_ids`: the groups.
+function delete_groups(@s: state.Session, group_ids: [str]) -> ()?
+    if group_ids.len() == 0
+        return fail(code: model.INVALID, msg: "no group to delete")
+
+    for g in group_ids
+        body: [u8] @= []
+        wire.put_i32(out: @body, v: 1)
+        wire.put_string(out: @body, s: g, what: "a group's identifier")?
+        r @= to_coordinator(@s, group_id: g, key: DELETE_GROUPS, version: 1, body: body, extra_ms: 0)?
+        _ = wire.take_i32(@r, what: "DeleteGroups")?
+        count = wire.take_count(@r, what: "DeleteGroups' results")?
+
+        for _ in range(from: 0, to: count)
+            _ = wire.take_string(@r, what: "a group")?
+            error = wire.take_i16(@r, what: "a group's error")?
+
+            if error != 0
+                return errors.failure(error, what: f"deleting the group \"{g}\"", said_too: "")
+
+    return ok()
+
+test "commit_body: the bytes of OffsetCommit 7 outside a membership, a negative offset refused"
+    body = commit_body(
+        group_id: "g",
+        generation_id: -1,
+        member_id: "",
+        instance_id: "",
+        offsets: [model.Offset(topic: "t", partition: 0, offset: 5, metadata: "")]
+    ).must()
+    assert body == [0, 1, 'g', 255, 255, 255, 255, 0, 0, 255, 255, 0, 0, 0, 1, 0, 1, 't', 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 255, 255, 255, 255, 255, 255]
+    assert commit_body(
+        group_id: "g",
+        generation_id: -1,
+        member_id: "",
+        instance_id: "",
+        offsets: [model.Offset(topic: "t", partition: 0, offset: -1, metadata: "")]
+    ).is_err()
+
+test "ordered: by topic then partition"
+    a = model.Offset(topic: "b", partition: 2, offset: 1, metadata: "")
+    b = model.Offset(topic: "a", partition: 1, offset: 1, metadata: "")
+    c = model.Offset(topic: "b", partition: 0, offset: 1, metadata: "")
+    assert ordered([a, b, c]) == [b, c, a] && ordered([]) == []

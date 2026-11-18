@@ -1,0 +1,32 @@
+# Reaches Rebel's `amqp`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It reads a server's options from a URL
+# and, where a server answers there, declares a queue the server names,
+# publishes a message to it and gets it back; where none answers it says why.
+
+use <rebel>/amqp
+
+function main()
+    match amqp.parse_url("amqp://localhost")
+        .err e => print(e.code, ": ", e.msg)
+        .ok opts =>
+            match amqp.connect(opts)
+                .err e => print("no server: ", e.code, ": ", e.msg)
+                .ok first =>
+                    c @= first
+
+                    match amqp.open_channel(@c)
+                        .err e => print("no channel: ", e.code, ": ", e.msg)
+                        .ok ch =>
+                            q = amqp.declare_queue(@c, ch, q: amqp.queue("")).must()
+                            _ = amqp.publish(
+                                @c,
+                                ch,
+                                exchange_name: "",
+                                routing_key: q.name,
+                                m: amqp.message([104, 105]),
+                                mandatory: false
+                            ).must()
+                            got = amqp.get(@c, ch, queue_name: q.name, auto_ack: true)
+                            print(got.is_err())
+
+                    print(amqp.close(@c).is_err())

@@ -1,0 +1,225 @@
+# Kafka's errors: the name of each code a broker answers, -1 to 136 as Kafka
+# 4.1 names them, the code of Rebel's vocabulary each means, and which ones
+# a retry with fresh metadata can cure.
+
+use kafka/internal/model
+
+# The names, from the code -1 on.
+function names() -> [str]
+    return [
+        "UNKNOWN_SERVER_ERROR"
+        "NONE"
+        "OFFSET_OUT_OF_RANGE"
+        "CORRUPT_MESSAGE"
+        "UNKNOWN_TOPIC_OR_PARTITION"
+        "INVALID_FETCH_SIZE"
+        "LEADER_NOT_AVAILABLE"
+        "NOT_LEADER_FOR_PARTITION"
+        "REQUEST_TIMED_OUT"
+        "BROKER_NOT_AVAILABLE"
+        "REPLICA_NOT_AVAILABLE"
+        "MESSAGE_TOO_LARGE"
+        "STALE_CONTROLLER_EPOCH"
+        "OFFSET_METADATA_TOO_LARGE"
+        "NETWORK_EXCEPTION"
+        "COORDINATOR_LOAD_IN_PROGRESS"
+        "COORDINATOR_NOT_AVAILABLE"
+        "NOT_COORDINATOR"
+        "INVALID_TOPIC_EXCEPTION"
+        "RECORD_LIST_TOO_LARGE"
+        "NOT_ENOUGH_REPLICAS"
+        "NOT_ENOUGH_REPLICAS_AFTER_APPEND"
+        "INVALID_REQUIRED_ACKS"
+        "ILLEGAL_GENERATION"
+        "INCONSISTENT_GROUP_PROTOCOL"
+        "INVALID_GROUP_ID"
+        "UNKNOWN_MEMBER_ID"
+        "INVALID_SESSION_TIMEOUT"
+        "REBALANCE_IN_PROGRESS"
+        "INVALID_COMMIT_OFFSET_SIZE"
+        "TOPIC_AUTHORIZATION_FAILED"
+        "GROUP_AUTHORIZATION_FAILED"
+        "CLUSTER_AUTHORIZATION_FAILED"
+        "INVALID_TIMESTAMP"
+        "UNSUPPORTED_SASL_MECHANISM"
+        "ILLEGAL_SASL_STATE"
+        "UNSUPPORTED_VERSION"
+        "TOPIC_ALREADY_EXISTS"
+        "INVALID_PARTITIONS"
+        "INVALID_REPLICATION_FACTOR"
+        "INVALID_REPLICA_ASSIGNMENT"
+        "INVALID_CONFIG"
+        "NOT_CONTROLLER"
+        "INVALID_REQUEST"
+        "UNSUPPORTED_FOR_MESSAGE_FORMAT"
+        "POLICY_VIOLATION"
+        "OUT_OF_ORDER_SEQUENCE_NUMBER"
+        "DUPLICATE_SEQUENCE_NUMBER"
+        "INVALID_PRODUCER_EPOCH"
+        "INVALID_TXN_STATE"
+        "INVALID_PRODUCER_ID_MAPPING"
+        "INVALID_TRANSACTION_TIMEOUT"
+        "CONCURRENT_TRANSACTIONS"
+        "TRANSACTION_COORDINATOR_FENCED"
+        "TRANSACTIONAL_ID_AUTHORIZATION_FAILED"
+        "SECURITY_DISABLED"
+        "OPERATION_NOT_ATTEMPTED"
+        "KAFKA_STORAGE_ERROR"
+        "LOG_DIR_NOT_FOUND"
+        "SASL_AUTHENTICATION_FAILED"
+        "UNKNOWN_PRODUCER_ID"
+        "REASSIGNMENT_IN_PROGRESS"
+        "DELEGATION_TOKEN_AUTH_DISABLED"
+        "DELEGATION_TOKEN_NOT_FOUND"
+        "DELEGATION_TOKEN_OWNER_MISMATCH"
+        "DELEGATION_TOKEN_REQUEST_NOT_ALLOWED"
+        "DELEGATION_TOKEN_AUTHORIZATION_FAILED"
+        "DELEGATION_TOKEN_EXPIRED"
+        "INVALID_PRINCIPAL_TYPE"
+        "NON_EMPTY_GROUP"
+        "GROUP_ID_NOT_FOUND"
+        "FETCH_SESSION_ID_NOT_FOUND"
+        "INVALID_FETCH_SESSION_EPOCH"
+        "LISTENER_NOT_FOUND"
+        "TOPIC_DELETION_DISABLED"
+        "FENCED_LEADER_EPOCH"
+        "UNKNOWN_LEADER_EPOCH"
+        "UNSUPPORTED_COMPRESSION_TYPE"
+        "STALE_BROKER_EPOCH"
+        "OFFSET_NOT_AVAILABLE"
+        "MEMBER_ID_REQUIRED"
+        "PREFERRED_LEADER_NOT_AVAILABLE"
+        "GROUP_MAX_SIZE_REACHED"
+        "FENCED_INSTANCE_ID"
+        "ELIGIBLE_LEADERS_NOT_AVAILABLE"
+        "ELECTION_NOT_NEEDED"
+        "NO_REASSIGNMENT_IN_PROGRESS"
+        "GROUP_SUBSCRIBED_TO_TOPIC"
+        "INVALID_RECORD"
+        "UNSTABLE_OFFSET_COMMIT"
+        "THROTTLING_QUOTA_EXCEEDED"
+        "PRODUCER_FENCED"
+        "RESOURCE_NOT_FOUND"
+        "DUPLICATE_RESOURCE"
+        "UNACCEPTABLE_CREDENTIAL"
+        "INCONSISTENT_VOTER_SET"
+        "INVALID_UPDATE_VERSION"
+        "FEATURE_UPDATE_FAILED"
+        "PRINCIPAL_DESERIALIZATION_FAILURE"
+        "SNAPSHOT_NOT_FOUND"
+        "POSITION_OUT_OF_RANGE"
+        "UNKNOWN_TOPIC_ID"
+        "DUPLICATE_BROKER_REGISTRATION"
+        "BROKER_ID_NOT_REGISTERED"
+        "INCONSISTENT_TOPIC_ID"
+        "INCONSISTENT_CLUSTER_ID"
+        "TRANSACTIONAL_ID_NOT_FOUND"
+        "FETCH_SESSION_TOPIC_ID_ERROR"
+        "INELIGIBLE_REPLICA"
+        "NEW_LEADER_ELECTED"
+        "OFFSET_MOVED_TO_TIERED_STORAGE"
+        "FENCED_MEMBER_EPOCH"
+        "UNRELEASED_INSTANCE_ID"
+        "UNSUPPORTED_ASSIGNOR"
+        "STALE_MEMBER_EPOCH"
+        "MISMATCHED_ENDPOINT_TYPE"
+        "UNSUPPORTED_ENDPOINT_TYPE"
+        "UNKNOWN_CONTROLLER_ID"
+        "UNKNOWN_SUBSCRIPTION_ID"
+        "TELEMETRY_TOO_LARGE"
+        "INVALID_REGISTRATION"
+        "TRANSACTION_ABORTABLE"
+        "INVALID_RECORD_STATE"
+        "SHARE_SESSION_NOT_FOUND"
+        "INVALID_SHARE_SESSION_EPOCH"
+        "FENCED_STATE_EPOCH"
+        "INVALID_VOTER_KEY"
+        "DUPLICATE_VOTER"
+        "VOTER_NOT_FOUND"
+        "INVALID_REGULAR_EXPRESSION"
+        "REBOOTSTRAP_REQUIRED"
+        "STREAMS_INVALID_TOPOLOGY"
+        "STREAMS_INVALID_TOPOLOGY_EPOCH"
+        "STREAMS_TOPOLOGY_FENCED"
+        "SHARE_SESSION_LIMIT_REACHED"
+        "GROUP_DELETION_FAILED"
+        "STREAMS_TOPOLOGY_DESCRIPTION_UPDATE_FAILED"
+        "CONTROLLER_ID_NOT_REGISTERED"
+    ]
+
+# The name of `code`.
+#
+# - `code`: the error's number.
+function name_of(code: i64) -> str?
+    table = names()
+
+    if code < -1 || code + 1 >= table.len()
+        return fail(code: model.NOT_FOUND, msg: f"Kafka names no error {code}")
+    return ok(table[code + 1])
+
+# The name of `code`, or its number where Kafka names none.
+#
+# - `code`: the error's number.
+function said(code: i64) -> str
+    return name_of(code).default(f"the error {code}")
+
+# Whether a retry, after the metadata is asked again, may succeed: a leader
+# moved or not ready, a coordinator loading or moved, a replica short, a
+# request timed out, a quota.
+#
+# - `code`: the error's number.
+function is_retriable(code: i64) -> bool
+    for c in [5, 6, 7, 8, 9, 13, 14, 15, 16, 19, 20, 41, 51, 56, 74, 75, 78, 89]
+        if c == code
+            return true
+
+    return false
+
+# The code of Rebel's vocabulary the error `code` means.
+#
+# - `code`: the error's number, not 0.
+function code_of(code: i64) -> str
+    if code == 3 || code == 69 || code == 15 || code == 16
+        return model.NOT_FOUND
+
+    if code == 36
+        return model.EXISTS
+
+    if code == 29 || code == 30 || code == 31 || code == 53 || code == 58 || code == 44
+        return model.PERMISSION
+
+    if code == 10 || code == 12 || code == 18
+        return model.LIMIT
+
+    if code == 33 || code == 35 || code == 43 || code == 76
+        return model.UNSUPPORTED
+
+    if code == 7
+        return model.TIMEOUT
+
+    for c in [1, 2, 4, 17, 21, 24, 26, 28, 32, 37, 38, 39, 40, 42, 87]
+        if c == code
+            return model.INVALID
+
+    return model.FAILED
+
+# The failure a broker's error `code` means, `what` saying what was asked.
+#
+# - `code`: the error's number, not 0.
+# - `what`: what was asked: `producing to t-0`.
+# - `said_too`: the broker's own words, "" for none.
+function failure<T>(code: i64, what: str, said_too: str) -> T?
+    if said_too == ""
+        return fail(code: code_of(code), msg: f"{what}: the broker answered {said(code)}")
+    return fail(code: code_of(code), msg: f"{what}: the broker answered {said(code)}: {said_too}")
+
+test "name_of, said: -1, 0, the first and the last named, none past them, as franz-go's kerr names them"
+    assert name_of(-1).must() == "UNKNOWN_SERVER_ERROR" && name_of(0).must() == "NONE"
+    assert name_of(3).must() == "UNKNOWN_TOPIC_OR_PARTITION" && name_of(10).must() == "MESSAGE_TOO_LARGE"
+    assert name_of(79).must() == "MEMBER_ID_REQUIRED" && name_of(136).must() == "CONTROLLER_ID_NOT_REGISTERED"
+    assert name_of(137).is_err() && name_of(-2).is_err() && said(500) == "the error 500"
+
+test "is_retriable, code_of: a leader moved, a topic unknown, a topic made already, an authorization, an offset outside the log"
+    assert is_retriable(6) && is_retriable(15) && !is_retriable(3) && !is_retriable(36)
+    assert code_of(3) == "not_found" && code_of(36) == "exists" && code_of(29) == "permission" && code_of(1) == "invalid"
+    assert code_of(10) == "limit" && code_of(35) == "unsupported" && code_of(27) == "failed"

@@ -1,0 +1,2023 @@
+# A Kafka client written in Heroes, speaking the wire protocol over TCP
+# connections of `net` or TLS of `tls`, linking no library. It learns the
+# cluster from its metadata, produces record batches (format 2, CRC-32C,
+# compressed by gzip) to each partition's leader, fetches them back, asks a
+# partition's offsets by time, keeps a group's offsets, and consumes as a
+# member of a group: joined, its partitions assigned by the range assignor,
+# its heartbeat sent, its offsets committed. It logs in by SASL PLAIN or
+# SCRAM-SHA-256 and SCRAM-SHA-512, over TLS or not, and creates and deletes
+# topics, partitions, records and groups.
+#
+# **One thread**: a call waits for its answer, and a consumer's `poll`
+# sends the group's heartbeat and commits its offsets as they fall due, so a
+# program that does not call `poll` within the session's timeout leaves the
+# group, which gives its partitions to others.
+#
+# **Every wait has a deadline and every read is bounded**: a call waits
+# `Options.wait_ms`, a fetch also the time it asks the broker to wait, and an
+# answer is read up to `Options.most_response_bytes`.
+#
+# It speaks the versions of each request that Kafka 2.4 to 4.x all read, so a
+# broker older than 2.4 is told `unsupported`. It does not produce
+# idempotently or in transactions: both need a producer's identity and
+# sequence numbers kept across retries and a coordinator of transactions,
+# which wait for their own work; a batch retried after a lost answer may
+# therefore be written twice. It does not compress by Snappy, LZ4 or
+# Zstandard, nor read batches so compressed, nor read the message formats 0
+# and 1 written before Kafka 0.11. It fails with `invalid` (an argument
+# refused, bytes that are no Kafka, an offset outside the log), `not_found`
+# (a topic, a partition, a group or a coordinator unknown), `exists` (a topic
+# made already), `permission` (a login or an authorization refused),
+# `closed`, `timeout`, `stopped`, `limit` (an answer or a batch past a
+# bound), `unsupported` (a version, a mechanism or a compression the broker
+# or this client does not speak) and `failed`, the broker's error named in
+# the message.
+
+use bytes
+use kafka/internal/admin
+use kafka/internal/cluster
+use kafka/internal/consuming
+use kafka/internal/errors
+use kafka/internal/fetching
+use kafka/internal/groups
+use kafka/internal/live
+use kafka/internal/membership
+use kafka/internal/model
+use kafka/internal/murmur
+use kafka/internal/producing
+use kafka/internal/protocol
+use kafka/internal/records
+use kafka/internal/state
+use numbers
+use os
+use strings
+use threads
+
+## Codes
+
+# An argument refused, bytes from a broker that are no Kafka, or an offset
+# outside a partition's log: every function.
+constant INVALID: str
+    "invalid"
+
+# A topic, a partition, a group or a coordinator the cluster does not know.
+constant NOT_FOUND: str
+    "not_found"
+
+# A topic made already: `create_topics`.
+constant EXISTS: str
+    "exists"
+
+# A login or an authorization refused: every function that talks to a
+# broker.
+constant PERMISSION: str
+    "permission"
+
+# The client or a broker's connection is closed: every function that talks
+# to a broker.
+constant CLOSED: str
+    "closed"
+
+# The time a call allowed ran out, the broker's last error, where a retry
+# met one, in the message: every function that waits.
+constant TIMEOUT: str
+    "timeout"
+
+# The program was asked to stop while the call waited (`net.ask_stop`).
+constant STOPPED: str
+    "stopped"
+
+# An answer or a batch past a bound, the broker's or this client's.
+constant LIMIT: str
+    "limit"
+
+# A version, a login mechanism or a compression the broker or this client
+# does not speak.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# A failure none of the above names, the broker's error named in the
+# message: a group rebalanced under a commit.
+constant FAILED: str
+    "failed"
+
+## Constants
+
+# The port a Kafka broker listens on unless told another.
+constant DEFAULT_PORT: i64
+    9092
+
+# The offset `list_offset` answers for the start of a partition's log.
+constant EARLIEST: i64
+    -2
+
+# The offset `list_offset` answers for the end of a partition's log: the
+# offset the next record will take.
+constant LATEST: i64
+    -1
+
+## Messages
+
+# One header of a message: a key and bytes.
+record Header
+    # The key, any text; a message may hold one key several times.
+    key: str
+    # The value, any bytes; a null value is read as none.
+    value: [u8]
+
+# A message as it is produced and fetched. `message` makes one with no key;
+# `with_key` and `with_header` add to it.
+record Message
+    # The topic: where `send` writes it; where `fetch` and `poll` read it.
+    topic: str
+    # The partition: where `send` writes it, -1 to choose by the key (as
+    # Java's client does, `partition_of`) or one after the other where it
+    # has none; where it was read from.
+    partition: i64
+    # The offset in its partition: where it was written, as `send` answers
+    # it; -1 before.
+    offset: i64
+    # The time it was made, in milliseconds since 1970: -1 for the broker's
+    # or the producer's clock at the moment it is sent; where it was read,
+    # the batch's time where the topic keeps the broker's.
+    timestamp_ms: i64
+    # The key, any bytes; the partition is chosen by it.
+    key: [u8]
+    # Whether the key is null rather than the bytes in `key`, which are then
+    # empty.
+    null_key: bool
+    # The value, any bytes.
+    value: [u8]
+    # Whether the value is null, a tombstone that a compacted topic keeps in
+    # place of the key's last value; `value` is then empty.
+    null_value: bool
+    # The headers, in order.
+    headers: [Header]
+
+# What a broker answered a batch written to one partition.
+record Produced
+    # The offset the batch's first message took; -1 where `Acks` asked no
+    # answer.
+    base_offset: i64
+    # The broker's time the batch was appended at, in milliseconds since
+    # 1970, where the topic keeps the broker's time; -1 elsewhere.
+    log_append_time_ms: i64
+    # The partition's first offset after the append.
+    log_start_offset: i64
+
+# What a fetch of one partition answered.
+record Fetched
+    # The messages, in the order of their offsets, from the offset asked;
+    # the control records of transactions left out.
+    messages: [Message]
+    # The offset after the last message every replica holds: a consumer
+    # that reaches it has read everything.
+    high_watermark: i64
+    # The offset after the last message of a transaction that is decided.
+    last_stable_offset: i64
+    # The partition's first offset.
+    log_start_offset: i64
+    # The offset to fetch next: one past the last message answered, or the
+    # offset asked where none was.
+    next_offset: i64
+
+## The cluster
+
+# A broker of the cluster.
+record Broker
+    # Its node's identifier.
+    id: i64
+    # Its host.
+    host: str
+    # Its port.
+    port: i64
+    # Its rack, "" for none.
+    rack: str
+
+# A partition of a topic, as the metadata describes it.
+record Partition
+    # Its number, 0 or more.
+    id: i64
+    # The node that leads it, -1 where none does now.
+    leader: i64
+    # The leader's epoch.
+    leader_epoch: i64
+    # The nodes that hold a copy.
+    replicas: [i64]
+    # The nodes whose copy is in step with the leader.
+    isr: [i64]
+    # The nodes whose copy is offline.
+    offline: [i64]
+
+# A topic of the cluster, as the metadata describes it.
+record Topic
+    # Its name.
+    name: str
+    # Whether Kafka keeps it for itself: `__consumer_offsets`.
+    internal: bool
+    # Its partitions, in the order of their numbers.
+    partitions: [Partition]
+
+# What the cluster says of itself.
+record Metadata
+    # The cluster's identifier.
+    cluster_id: str
+    # The node that is the controller, -1 where it is not told.
+    controller_id: i64
+    # The brokers, in the order the broker answered them.
+    brokers: [Broker]
+    # The topics asked, in the order the broker answered them.
+    topics: [Topic]
+
+# The versions a broker reads of one request.
+record ApiVersion
+    # The request's key: 0 for Produce, 1 for Fetch, 3 for Metadata.
+    key: i64
+    # The oldest version it reads.
+    min: i64
+    # The newest version it reads.
+    max: i64
+
+# A topic to make.
+record NewTopic
+    # Its name: 1 to 249 letters, digits, `.`, `_` and `-`.
+    name: str
+    # Its partitions, 1 or more, or -1 for the broker's default.
+    partitions: i64
+    # The copies of each partition, 1 or more, or -1 for the broker's
+    # default.
+    replication: i64
+    # Its configuration: `cleanup.policy`, `retention.ms`; [] for none.
+    configs: [Config]
+
+# One entry of a topic's configuration.
+record Config
+    # The name: `retention.ms`.
+    name: str
+    # The value, as text.
+    value: str
+
+## Offsets and groups
+
+# A partition of a topic.
+record TopicPartition
+    # The topic.
+    topic: str
+    # The partition.
+    partition: i64
+
+# An offset a group keeps for a partition: where its next read begins.
+record Offset
+    # The topic.
+    topic: str
+    # The partition.
+    partition: i64
+    # The offset of the next message to read, 0 or more.
+    offset: i64
+    # Text the group keeps beside it, "" for none.
+    metadata: str
+
+# A group the cluster knows.
+record GroupListing
+    # The group's identifier.
+    group_id: str
+    # Its protocol's type, `consumer` for consumers' groups; "" for a group
+    # that only keeps offsets.
+    protocol_type: str
+
+# A member of a group, as `describe_group` describes it.
+record GroupMember
+    # Its identifier, which the coordinator gave it.
+    member_id: str
+    # Its static identifier, "" for none.
+    group_instance_id: str
+    # The client's identifier.
+    client_id: str
+    # The client's host, as the coordinator saw it.
+    client_host: str
+    # The topics it subscribed to, where the group is of consumers.
+    topics: [str]
+    # The partitions it was assigned, where the group is of consumers.
+    assignment: [TopicPartition]
+
+# A group, as `describe_group` describes it.
+record GroupDescription
+    # The group's identifier.
+    group_id: str
+    # Its state: `Stable`, `PreparingRebalance`, `CompletingRebalance`,
+    # `Empty`, `Dead`.
+    state: str
+    # Its protocol's type, `consumer`.
+    protocol_type: str
+    # The assignor its members agreed: `range`.
+    protocol: str
+    # Its members.
+    members: [GroupMember]
+
+# A member's subscription, as the range assignor reads it.
+record Subscription
+    # The member's identifier.
+    member_id: str
+    # The topics it subscribes to.
+    topics: [str]
+
+# The partitions the assignor gave one member.
+record Assignment
+    # The member's identifier.
+    member_id: str
+    # Its partitions, by topic in the order of their names, then by number.
+    partitions: [TopicPartition]
+
+# A consumer's place in its group.
+record Member
+    # The group.
+    group_id: str
+    # The consumer's identifier in it.
+    member_id: str
+    # The generation of the group's membership it joined.
+    generation_id: i64
+    # Whether it led the last assignment.
+    leader: bool
+
+## Settings
+
+# How a client logs in.
+variant Sasl
+    # No login.
+    none
+    # SASL PLAIN: the name and the password, which only TLS hides.
+    plain
+        # The user's name.
+        username: str
+        # The password.
+        password: str
+    # SCRAM-SHA-256 (RFC 5802, RFC 7677): the password proven, never sent.
+    scram_sha256
+        # The user's name.
+        username: str
+        # The password.
+        password: str
+    # SCRAM-SHA-512: the same, by SHA-512.
+    scram_sha512
+        # The user's name.
+        username: str
+        # The password.
+        password: str
+
+# How a batch is compressed.
+variant Compression
+    # Not.
+    none
+    # gzip, by `compress`.
+    gzip
+
+# The acknowledgement a produce waits for.
+variant Acks
+    # None: the broker answers nothing, and a message lost is not told.
+    none
+    # The leader's, once it has written the batch.
+    leader
+    # Every copy in step's, as `min.insync.replicas` asks.
+    all
+
+# What a fetch reads.
+variant Isolation
+    # Every message written, those of transactions not yet decided too.
+    read_uncommitted
+    # Only messages outside transactions and those of transactions
+    # committed, up to the last stable offset.
+    read_committed
+
+# Where a consumer begins a partition its group kept no offset for.
+variant Start
+    # At the start of the partition's log.
+    earliest
+    # At its end: only messages written after.
+    latest
+    # Nowhere: `poll` fails `not_found`.
+    none
+
+# Where the cluster is and how to talk to it. `options` makes one; a program
+# changes the fields it needs with `@`.
+record Options
+    # The brokers asked first, each `host:port` (`[::1]:9092` for an IPv6
+    # address); the first that answers tells the others.
+    brokers: [str]
+    # The client's identifier, which brokers log and quotas count.
+    client_id: str
+    # Whether TLS carries every connection from its first byte.
+    tls: bool
+    # The PEM of the only authorities a broker's certificate is checked
+    # against; "" for the system's own store.
+    roots: str
+    # How the client logs in.
+    sasl: Sasl
+    # Milliseconds a connection may take, its login included, 1 or more.
+    connect_ms: i64
+    # Milliseconds a request may take, its retries included, 1 or more.
+    wait_ms: i64
+    # The largest answer read, in bytes, 1,024 or more.
+    most_response_bytes: i64
+    # The acknowledgement a produce waits for.
+    acks: Acks
+    # How a batch is compressed.
+    compression: Compression
+    # What a fetch reads.
+    isolation: Isolation
+    # The most bytes a fetch asks of one partition, 1 or more; a batch
+    # larger than it is still answered whole.
+    most_fetch_bytes: i64
+    # Whether a topic the metadata is asked for is made where it does not
+    # exist, as the broker's `auto.create.topics.enable` allows.
+    auto_create_topics: bool
+
+# How a consumer takes part in its group. `group_options` makes one; a
+# program changes the fields it needs with `@`.
+record GroupOptions
+    # The group's identifier, 1 byte or more.
+    group_id: str
+    # The topics the consumer reads, one or more.
+    topics: [str]
+    # Milliseconds the coordinator waits for a heartbeat before it counts the
+    # consumer gone, within the broker's bounds (6,000 to 300,000 by default).
+    session_ms: i64
+    # Milliseconds the coordinator waits for every member to join again when
+    # the group changes, 1 or more.
+    rebalance_ms: i64
+    # Milliseconds between two heartbeats, 1 or more, below `session_ms`.
+    heartbeat_ms: i64
+    # Where a partition the group kept no offset for begins.
+    start: Start
+    # Milliseconds between two commits `poll` makes of the offsets it
+    # answered; 0 for none, the program calling `commit`.
+    auto_commit_ms: i64
+    # The consumer's static identifier, so a restart within `session_ms`
+    # keeps its partitions; "" for none.
+    instance_id: str
+
+# A client of a cluster, which `connect` makes and `close` ends. Its one
+# field is the client's private state. Every call that talks to a broker
+# works on the caller's own place, through `@`.
+record Client
+    # The client's state, which only this package reads and writes.
+    session: state.Session
+
+# A consumer, a member of a group, which `subscribe` makes and
+# `close_consumer` ends. Its one field is its private state.
+record Consumer
+    # The consumer's state, which only this package reads and writes.
+    group: state.Group
+
+## Connecting
+
+# The options of a client of the brokers `brokers`: the client `rebel`, no
+# TLS, no login, 10 seconds to connect and for each request, answers of 100
+# MiB at most, the leader's acknowledgement, no compression, every message
+# read, 1 MiB fetched of a partition at most, and no topic made by asking.
+#
+# - `brokers`: the brokers, each `host:port`, one or more.
+#
+# See also `connect`.
+function options(brokers: [str]) -> Options
+    return Options(
+        brokers: brokers,
+        client_id: "rebel",
+        tls: false,
+        roots: "",
+        sasl: .none,
+        connect_ms: 10000,
+        wait_ms: 10000,
+        most_response_bytes: 104857600,
+        acks: .leader,
+        compression: .none,
+        isolation: .read_uncommitted,
+        most_fetch_bytes: 1048576,
+        auto_create_topics: false
+    )
+
+# A client of the cluster `opts` names: the first broker that answers asked
+# its versions, logged in where `opts.sasl` asks, and asked the cluster's
+# brokers.
+#
+# - `opts`: where the cluster is and how to talk to it.
+#
+# The program owes the client a `close`. Fails `permission` where a login is
+# refused; `unsupported` where a broker reads none of the versions this
+# client speaks, or not the mechanism asked; `invalid` where an option is
+# out of range or a broker sends bytes that are no Kafka; and as
+# `net.connect` and `tls.connect` fail where no broker answers, the last
+# broker's failure. See also `options`, `close`.
+function connect(opts: Options) -> Client?
+    sasl: model.Sasl = match opts.sasl
+        .none           => .none
+        .plain p        => .plain(username: p.username, password: p.password)
+        .scram_sha256 p => .scram_sha256(username: p.username, password: p.password)
+        .scram_sha512 p => .scram_sha512(username: p.username, password: p.password)
+
+    acks: model.Acks = match opts.acks
+        .none   => .none
+        .leader => .leader
+        .all    => .all
+
+    compression: model.Compression = match opts.compression
+        .none => .none
+        .gzip => .gzip
+
+    isolation: model.Isolation = match opts.isolation
+        .read_uncommitted => .read_uncommitted
+        .read_committed   => .read_committed
+
+    inner = model.Options(
+        brokers: opts.brokers,
+        client_id: opts.client_id,
+        tls: opts.tls,
+        roots: opts.roots,
+        sasl: sasl,
+        connect_ms: opts.connect_ms,
+        wait_ms: opts.wait_ms,
+        most_response_bytes: opts.most_response_bytes,
+        acks: acks,
+        compression: compression,
+        isolation: isolation,
+        most_fetch_bytes: opts.most_fetch_bytes,
+        auto_create_topics: opts.auto_create_topics
+    )
+    return ok(Client(session: cluster.open(inner)?))
+
+# Closes every connection of the client; every later call through it fails
+# `closed`.
+#
+# - `c`: the client, emptied.
+#
+# Fails `closed` where it is closed already. See also `connect`.
+function close(@c: Client) -> ()?
+    if c.session.closed
+        return fail(code: CLOSED, msg: "the client is closed already")
+    cluster.close(@c.session)
+    return ok()
+
+# Whether the client is closed.
+#
+# - `c`: the client.
+function is_closed(c: Client) -> bool
+    return c.session.closed
+
+# The versions of each request the broker first reached reads, in the order
+# of their keys.
+#
+# - `c`: the client.
+#
+# See also `connect`.
+function api_versions_of(c: Client) -> [ApiVersion]
+    out: [ApiVersion] @= []
+
+    for v in c.session.versions
+        out @ out.push(ApiVersion(key: v.key, min: v.min, max: v.max))
+
+    return out
+
+## The cluster
+
+# What the cluster says of itself and of the topics `topics`.
+#
+# - `c`: the client; what it knows of the cluster is renewed.
+# - `topics`: the topics asked; [] for every one.
+#
+# Fails `not_found` where a topic named does not exist (and
+# `Options.auto_create_topics` made none), `permission`, and as every call
+# that talks to a broker fails. See also `partitions_of`.
+function metadata(@c: Client, topics: [str]) -> Metadata?
+    m = cluster.describe(@c.session, topics: topics, every: topics.len() == 0)?
+    brokers: [Broker] @= []
+
+    for b in m.brokers
+        brokers @ brokers.push(Broker(id: b.id, host: b.host, port: b.port, rack: b.rack))
+
+    out: [Topic] @= []
+
+    for t in m.topics
+        parts: [Partition] @= []
+
+        for p in t.partitions
+            parts @ parts.push(
+                Partition(id: p.id, leader: p.leader, leader_epoch: p.leader_epoch, replicas: p.replicas, isr: p.isr, offline: p.offline)
+            )
+
+        out @ out.push(Topic(name: t.name, internal: t.internal, partitions: parts))
+
+    return ok(Metadata(cluster_id: m.cluster_id, controller_id: m.controller_id, brokers: brokers, topics: out))
+
+# The numbers of the partitions of `topic`, ascending.
+#
+# - `c`: the client.
+# - `topic`: the topic.
+#
+# Fails as `metadata` does. See also `metadata`.
+function partitions_of(@c: Client, topic: str) -> [i64]?
+    m = cluster.describe(@c.session, topics: [topic], every: false)?
+    out: [i64] @= []
+
+    for t in m.topics
+        if t.name == topic
+            for p in t.partitions
+                out @ out.push(p.id)
+
+    return ok(sort(out))
+
+# A topic named `name` of `partitions` partitions, each copied as the
+# broker's default asks, with no configuration.
+#
+# - `name`: the name.
+# - `partitions`: the partitions, 1 or more, or -1 for the broker's default.
+#
+# See also `create_topics`.
+function new_topic(name: str, partitions: i64) -> NewTopic
+    return NewTopic(name: name, partitions: partitions, replication: -1, configs: [])
+
+# Makes the topics `topics`, waiting until the controller has made them.
+#
+# - `c`: the client.
+# - `topics`: the topics, one or more.
+#
+# Fails `exists` where one exists already (the others are made), `invalid`
+# where a name, a count or a configuration is refused, `permission`, and as
+# every call that talks to a broker fails; the message names each topic that
+# failed. See also `delete_topics`.
+function create_topics(@c: Client, topics: [NewTopic]) -> ()?
+    inner: [model.NewTopic] @= []
+
+    for t in topics
+        configs: [model.Config] @= []
+
+        for k in t.configs
+            configs @ configs.push(model.Config(name: k.name, value: k.value))
+
+        inner @ inner.push(
+            model.NewTopic(name: t.name, partitions: t.partitions, replication: t.replication, configs: configs)
+        )
+
+    return admin.create_topics(@c.session, topics: inner)
+
+# Deletes the topics `names`, every message in them.
+#
+# - `c`: the client.
+# - `names`: the topics, one or more.
+#
+# Fails `not_found` where one does not exist (the others are deleted),
+# `permission`, and as every call that talks to a broker fails. See also
+# `create_topics`.
+function delete_topics(@c: Client, names: [str]) -> ()?
+    return admin.delete_topics(@c.session, names: names)
+
+# Gives `topic` more partitions, `count` in all.
+#
+# - `c`: the client.
+# - `topic`: the topic.
+# - `count`: the partitions it will have, more than it has.
+#
+# Fails `invalid` where `count` is not more than it has, `not_found` where
+# it does not exist, and as every call that talks to a broker fails. See also
+# `create_topics`.
+function create_partitions(@c: Client, topic: str, count: i64) -> ()?
+    return admin.create_partitions(@c.session, topic: topic, count: count)
+
+# Deletes the messages of a partition before the offset `before`, and
+# answers the partition's first offset after.
+#
+# - `c`: the client.
+# - `topic`: the topic.
+# - `partition`: the partition.
+# - `before`: the first offset kept, up to the high watermark, or `LATEST`
+#   for every message.
+#
+# Fails `invalid` where `before` is past the high watermark, `not_found`,
+# and as every call that talks to a broker fails. See also `list_offset`.
+function delete_records(@c: Client, topic: str, partition: i64, before: i64) -> i64?
+    return admin.delete_records(@c.session, topic: topic, partition: partition, before: before)
+
+## Producing
+
+# A message holding `value`, with no key and no header, for the partition
+# its producer chooses, its time the moment it is sent.
+#
+# - `value`: the value, any bytes.
+#
+# See also `with_key`, `send`.
+function message(value: [u8]) -> Message
+    return Message(
+        topic: "",
+        partition: -1,
+        offset: -1,
+        timestamp_ms: -1,
+        key: [],
+        null_key: true,
+        value: value,
+        null_value: false,
+        headers: []
+    )
+
+# `m` with the key `key`, so the partition is chosen by it.
+#
+# - `m`: the message.
+# - `key`: the key, any bytes; empty is a key, not a null one.
+#
+# See also `partition_of`.
+function with_key(m: Message, key: [u8]) -> Message
+    out @= m
+    out.key @ key
+    out.null_key @ false
+    return out
+
+# `m` with the header `key` and `value` added after the others.
+#
+# - `m`: the message.
+# - `key`: the header's key.
+# - `value`: its value.
+#
+# See also `message`.
+function with_header(m: Message, key: str, value: [u8]) -> Message
+    out @= m
+    headers @= m.headers
+    headers @ headers.push(Header(key: key, value: value))
+    out.headers @ headers
+    return out
+
+# The partition Java's client chooses for a message keyed `key` among
+# `partitions`: the key's 32-bit MurmurHash2, its sign bit cleared, modulo
+# their number.
+#
+# - `key`: the key.
+# - `partitions`: the number of partitions, 1 or more.
+#
+# Aborts where `partitions` is below 1. See also `send`.
+function partition_of(key: [u8], partitions: i64) -> i64
+    assert partitions >= 1
+    return murmur.partition_of(key, partitions: partitions)
+
+# Writes `messages` to `partition` of `topic` in one batch, and answers what
+# the leader said.
+#
+# - `c`: the client.
+# - `topic`: the topic.
+# - `partition`: the partition.
+# - `messages`: the messages, one or more; their `topic`, `partition` and
+#   `offset` are not read.
+#
+# Retries where the leader moved or was not ready, within `Options.wait_ms`.
+# Fails `limit` where the batch is too large for the broker, `not_found`
+# where the topic or the partition does not exist, `invalid` where a message
+# is refused, `permission`, and as every call that talks to a broker fails.
+# See also `send`.
+function produce(@c: Client, topic: str, partition: i64, messages: [Message]) -> Produced?
+    inner: [model.Message] @= []
+
+    for m in messages
+        headers: [model.Header] @= []
+
+        for h in m.headers
+            headers @ headers.push(model.Header(key: h.key, value: h.value))
+
+        inner @ inner.push(
+            model.Message(topic: topic, partition: partition, offset: -1, timestamp_ms: m.timestamp_ms, key: m.key, null_key: m.null_key, value: m.value, null_value: m.null_value, headers: headers)
+        )
+
+    p = producing.produce(@c.session, topic: topic, partition: partition, messages: inner)?
+    return ok(
+        Produced(base_offset: p.base_offset, log_append_time_ms: p.log_append_time_ms, log_start_offset: p.log_start_offset)
+    )
+
+# Writes each message of `messages` to its topic and partition, a batch for
+# each partition and a request for each leader, and answers them in the same
+# order, their partition and offset set.
+#
+# - `c`: the client.
+# - `messages`: the messages, one or more, each naming its topic; a
+#   partition of -1 is chosen by the key, or one after the other per topic
+#   where the key is null.
+#
+# Where `Acks` asks no answer, every offset answered is -1. Fails as
+# `produce` does, after every partition that could be written was. See also
+# `produce`, `partition_of`.
+function send(@c: Client, messages: [Message]) -> [Message]?
+    inner: [model.Message] @= []
+
+    for m in messages
+        headers: [model.Header] @= []
+
+        for h in m.headers
+            headers @ headers.push(model.Header(key: h.key, value: h.value))
+
+        inner @ inner.push(
+            model.Message(topic: m.topic, partition: m.partition, offset: -1, timestamp_ms: m.timestamp_ms, key: m.key, null_key: m.null_key, value: m.value, null_value: m.null_value, headers: headers)
+        )
+
+    sent = producing.send(@c.session, messages: inner)?
+    out @= messages
+
+    for i in range(from: 0, to: sent.len())
+        out[i].partition @ sent[i].partition
+        out[i].offset @ sent[i].offset
+
+    return ok(out)
+
+## Fetching
+
+# The messages of `partition` of `topic` from the offset `offset`, the
+# broker waiting up to `wait_ms` for one to come.
+#
+# - `c`: the client.
+# - `topic`: the topic.
+# - `partition`: the partition.
+# - `offset`: the first offset read, 0 or more.
+# - `wait_ms`: milliseconds the broker waits where nothing is there yet, 0
+#   or more.
+#
+# Fails `invalid` where `offset` is outside the log, `not_found` where the
+# topic or the partition does not exist, `unsupported` where a batch is
+# compressed other than by gzip or in a format before 2, and as every call
+# that talks to a broker fails. See also `list_offset`, `poll`.
+function fetch(@c: Client, topic: str, partition: i64, offset: i64, wait_ms: i64) -> Fetched?
+    f = fetching.fetch(@c.session, topic: topic, partition: partition, offset: offset, wait_ms: wait_ms)?
+    out: [Message] @= []
+
+    for m in f.messages
+        headers: [Header] @= []
+
+        for h in m.headers
+            headers @ headers.push(Header(key: h.key, value: h.value))
+
+        out @ out.push(
+            Message(topic: m.topic, partition: m.partition, offset: m.offset, timestamp_ms: m.timestamp_ms, key: m.key, null_key: m.null_key, value: m.value, null_value: m.null_value, headers: headers)
+        )
+
+    return ok(
+        Fetched(messages: out, high_watermark: f.high_watermark, last_stable_offset: f.last_stable_offset, log_start_offset: f.log_start_offset, next_offset: f.next_offset)
+    )
+
+# The offset of the first message of `partition` of `topic` written at
+# `at` or after.
+#
+# - `c`: the client.
+# - `topic`: the topic.
+# - `partition`: the partition.
+# - `at`: milliseconds since 1970, or `EARLIEST` for the log's first
+#   offset, or `LATEST` for the offset the next message will take.
+#
+# Fails `not_found` where no message was written at `at` or after, or the
+# topic or the partition does not exist, and as every call that talks to a
+# broker fails. See also `fetch`.
+function list_offset(@c: Client, topic: str, partition: i64, at: i64) -> i64?
+    return fetching.list_offset(@c.session, topic: topic, partition: partition, at: at)
+
+## Offsets of groups
+
+# The broker that coordinates the group `group_id`: its offsets and its
+# members.
+#
+# - `c`: the client.
+# - `group_id`: the group.
+#
+# Fails `permission` where the group is refused this client, and as every
+# call that talks to a broker fails; the coordinator not yet ready is waited
+# for within `Options.wait_ms`. See also `commit_offsets`.
+function find_coordinator(@c: Client, group_id: str) -> Broker?
+    b = groups.find_coordinator(@c.session, group_id: group_id)?
+    return ok(Broker(id: b.id, host: b.host, port: b.port, rack: b.rack))
+
+# Keeps `offsets` as the group `group_id`'s, outside any membership, as a
+# program that assigns its own partitions does.
+#
+# - `c`: the client.
+# - `group_id`: the group.
+# - `offsets`: the offsets, one or more.
+#
+# Fails `failed` where the group has members, which own its offsets,
+# `permission`, and as every call that talks to a broker fails. See also
+# `fetch_offsets`, `commit`.
+function commit_offsets(@c: Client, group_id: str, offsets: [Offset]) -> ()?
+    if offsets.len() == 0
+        return fail(code: INVALID, msg: "no offset to commit")
+    inner: [model.Offset] @= []
+
+    for o in offsets
+        inner @ inner.push(model.Offset(topic: o.topic, partition: o.partition, offset: o.offset, metadata: o.metadata))
+
+    error = groups.commit(@c.session, group_id: group_id, generation_id: -1, member_id: "", instance_id: "", offsets: inner)?
+
+    if error != 0
+        return fail(
+            code: FAILED,
+            msg: f"committing the offsets of the group \"{group_id}\": the broker answered {error_name(error).default(to_str(error))}"
+        )
+    return ok()
+
+# The offsets the group `group_id` keeps, for every partition it kept one
+# for, by topic and partition.
+#
+# - `c`: the client.
+# - `group_id`: the group.
+#
+# An empty list where it keeps none. Fails `permission`, and as every call
+# that talks to a broker fails. See also `commit_offsets`.
+function fetch_offsets(@c: Client, group_id: str) -> [Offset]?
+    kept = groups.fetch_offsets(@c.session, group_id: group_id)?
+    out: [Offset] @= []
+
+    for o in kept
+        out @ out.push(Offset(topic: o.topic, partition: o.partition, offset: o.offset, metadata: o.metadata))
+
+    return ok(out)
+
+# The groups the cluster knows, by group and broker in the order they
+# answered.
+#
+# - `c`: the client.
+#
+# Fails as every call that talks to a broker fails. See also
+# `describe_group`.
+function list_groups(@c: Client) -> [GroupListing]?
+    listed = groups.list_groups(@c.session)?
+    out: [GroupListing] @= []
+
+    for g in listed
+        out @ out.push(GroupListing(group_id: g.group_id, protocol_type: g.protocol_type))
+
+    return ok(out)
+
+# What the coordinator of the group `group_id` says of it: its state, its
+# assignor, its members and their partitions.
+#
+# - `c`: the client.
+# - `group_id`: the group.
+#
+# A group the cluster does not know is answered `Dead` with no member. Fails
+# `permission`, and as every call that talks to a broker fails. See also
+# `list_groups`.
+function describe_group(@c: Client, group_id: str) -> GroupDescription?
+    d = groups.describe_group(@c.session, group_id: group_id)?
+    members: [GroupMember] @= []
+
+    for m in d.members
+        assigned: [TopicPartition] @= []
+
+        for p in m.assignment
+            assigned @ assigned.push(TopicPartition(topic: p.topic, partition: p.partition))
+
+        members @ members.push(
+            GroupMember(member_id: m.member_id, group_instance_id: m.group_instance_id, client_id: m.client_id, client_host: m.client_host, topics: m.topics, assignment: assigned)
+        )
+
+    return ok(
+        GroupDescription(group_id: d.group_id, state: d.state, protocol_type: d.protocol_type, protocol: d.protocol, members: members)
+    )
+
+# Deletes the groups `group_ids` and the offsets they keep.
+#
+# - `c`: the client.
+# - `group_ids`: the groups, one or more, each with no member.
+#
+# Fails `not_found` where one does not exist, `failed` where one has
+# members, and as every call that talks to a broker fails. See also
+# `list_groups`.
+function delete_groups(@c: Client, group_ids: [str]) -> ()?
+    return groups.delete_groups(@c.session, group_ids: group_ids)
+
+## Consuming as a group
+
+# The options of a consumer of `topics` in the group `group_id`: a session
+# of 45 seconds, five minutes to join again, a heartbeat every three
+# seconds, the earliest offset where the group kept none, offsets committed
+# every five seconds, and no static identifier.
+#
+# - `group_id`: the group.
+# - `topics`: the topics, one or more.
+#
+# See also `subscribe`.
+function group_options(group_id: str, topics: [str]) -> GroupOptions
+    return GroupOptions(
+        group_id: group_id,
+        topics: topics,
+        session_ms: 45000,
+        rebalance_ms: 300000,
+        heartbeat_ms: 3000,
+        start: .earliest,
+        auto_commit_ms: 5000,
+        instance_id: ""
+    )
+
+# A consumer in the group `group.group_id`: connected as `opts` says,
+# joined, its partitions assigned by the range assignor (by this consumer
+# where it leads the group), its positions read from the group's offsets.
+#
+# - `opts`: where the cluster is and how to talk to it.
+# - `group`: how the consumer takes part in the group.
+#
+# The program owes the consumer a `close_consumer`. Fails `invalid` where an
+# option is out of range or the coordinator refuses the session's time,
+# `not_found` where a topic does not exist, `permission`, and as `connect`
+# fails; joining waits up to `GroupOptions.rebalance_ms` for the other
+# members. See also `poll`, `close_consumer`.
+function subscribe(opts: Options, group: GroupOptions) -> Consumer?
+    sasl: model.Sasl = match opts.sasl
+        .none           => .none
+        .plain p        => .plain(username: p.username, password: p.password)
+        .scram_sha256 p => .scram_sha256(username: p.username, password: p.password)
+        .scram_sha512 p => .scram_sha512(username: p.username, password: p.password)
+
+    acks: model.Acks = match opts.acks
+        .none   => .none
+        .leader => .leader
+        .all    => .all
+
+    compression: model.Compression = match opts.compression
+        .none => .none
+        .gzip => .gzip
+
+    isolation: model.Isolation = match opts.isolation
+        .read_uncommitted => .read_uncommitted
+        .read_committed   => .read_committed
+
+    start: model.Start = match group.start
+        .earliest => .earliest
+        .latest   => .latest
+        .none     => .none
+
+    inner = model.Options(
+        brokers: opts.brokers,
+        client_id: opts.client_id,
+        tls: opts.tls,
+        roots: opts.roots,
+        sasl: sasl,
+        connect_ms: opts.connect_ms,
+        wait_ms: opts.wait_ms,
+        most_response_bytes: opts.most_response_bytes,
+        acks: acks,
+        compression: compression,
+        isolation: isolation,
+        most_fetch_bytes: opts.most_fetch_bytes,
+        auto_create_topics: opts.auto_create_topics
+    )
+    g = model.GroupOptions(
+        group_id: group.group_id,
+        topics: group.topics,
+        session_ms: group.session_ms,
+        rebalance_ms: group.rebalance_ms,
+        heartbeat_ms: group.heartbeat_ms,
+        start: start,
+        auto_commit_ms: group.auto_commit_ms,
+        instance_id: group.instance_id
+    )
+    return ok(Consumer(group: membership.subscribe(inner, g: g)?))
+
+# The messages of the consumer's partitions from its positions, waiting up
+# to `wait_ms` for one, its positions moved past them; the heartbeat and the
+# commit sent where they fall due, the group joined again where it changed.
+#
+# - `k`: the consumer.
+# - `wait_ms`: milliseconds to wait where nothing is there yet, 0 or more.
+#
+# An empty list where nothing came in time. Fails `not_found` where a
+# partition has no offset and `GroupOptions.start` is `none`, `unsupported`
+# where a batch is compressed other than by gzip, and as `fetch` fails. See
+# also `commit`.
+function poll(@k: Consumer, wait_ms: i64) -> [Message]?
+    got = consuming.poll(@k.group, wait_ms: wait_ms)?
+    out: [Message] @= []
+
+    for m in got
+        headers: [Header] @= []
+
+        for h in m.headers
+            headers @ headers.push(Header(key: h.key, value: h.value))
+
+        out @ out.push(
+            Message(topic: m.topic, partition: m.partition, offset: m.offset, timestamp_ms: m.timestamp_ms, key: m.key, null_key: m.null_key, value: m.value, null_value: m.null_value, headers: headers)
+        )
+
+    return ok(out)
+
+# Commits the consumer's positions as its group's offsets, so a consumer
+# that takes its partitions over begins after the messages `poll` answered.
+#
+# - `k`: the consumer.
+#
+# Fails `failed` where the group changed and gave the partitions to others
+# before the commit, and as every call that talks to a broker fails. See also
+# `poll`.
+function commit(@k: Consumer) -> ()?
+    return consuming.commit(@k.group)
+
+# Moves the consumer's position in a partition it was assigned.
+#
+# - `k`: the consumer.
+# - `topic`: the topic.
+# - `partition`: the partition.
+# - `offset`: the next offset read, 0 or more.
+#
+# Fails `not_found` where the partition is not the consumer's. See also
+# `position_of`.
+function seek(@k: Consumer, topic: str, partition: i64, offset: i64) -> ()?
+    if offset < 0
+        return fail(code: INVALID, msg: f"the offset {offset} is below 0")
+    i = consuming.owned_at(k.group, topic: topic, partition: partition)?
+    k.group.owned[i].position @ offset
+    return ok()
+
+# The consumer's position in a partition it was assigned: the offset of the
+# next message `poll` answers.
+#
+# - `k`: the consumer.
+# - `topic`: the topic.
+# - `partition`: the partition.
+#
+# Fails `not_found` where the partition is not the consumer's. See also
+# `seek`.
+function position_of(k: Consumer, topic: str, partition: i64) -> i64?
+    i = consuming.owned_at(k.group, topic: topic, partition: partition)?
+    return ok(k.group.owned[i].position)
+
+# The partitions the consumer was assigned, by topic then number.
+#
+# - `k`: the consumer.
+#
+# See also `member_of`.
+function assignment_of(k: Consumer) -> [TopicPartition]
+    out: [TopicPartition] @= []
+
+    for o in k.group.owned
+        out @ out.push(TopicPartition(topic: o.topic, partition: o.partition))
+
+    return out
+
+# The consumer's place in its group.
+#
+# - `k`: the consumer.
+#
+# See also `assignment_of`.
+function member_of(k: Consumer) -> Member
+    return Member(
+        group_id: k.group.options.group_id,
+        member_id: k.group.member_id,
+        generation_id: k.group.generation_id,
+        leader: k.group.leader
+    )
+
+# Stops `poll` reading a partition the consumer was assigned, its position
+# kept.
+#
+# - `k`: the consumer.
+# - `topic`: the topic.
+# - `partition`: the partition.
+#
+# Fails `not_found` where the partition is not the consumer's. See also
+# `resume`.
+function pause(@k: Consumer, topic: str, partition: i64) -> ()?
+    i = consuming.owned_at(k.group, topic: topic, partition: partition)?
+    k.group.owned[i].paused @ true
+    return ok()
+
+# Lets `poll` read a partition `pause` stopped.
+#
+# - `k`: the consumer.
+# - `topic`: the topic.
+# - `partition`: the partition.
+#
+# Fails `not_found` where the partition is not the consumer's. See also
+# `pause`.
+function resume(@k: Consumer, topic: str, partition: i64) -> ()?
+    i = consuming.owned_at(k.group, topic: topic, partition: partition)?
+    k.group.owned[i].paused @ false
+    return ok()
+
+# Commits where `GroupOptions.auto_commit_ms` asks it, leaves the group so
+# its partitions go to others at once, and closes the consumer's
+# connections.
+#
+# - `k`: the consumer, emptied.
+#
+# Fails `closed` where it is closed already, and as `commit` fails; the
+# consumer is closed whatever fails. See also `subscribe`.
+function close_consumer(@k: Consumer) -> ()?
+    return consuming.close(@k.group)
+
+# The range assignor's answer: each topic's partitions cut into runs, one
+# for each member that subscribes to it in the order of their identifiers,
+# the first members one partition longer where they do not divide evenly.
+#
+# - `subscriptions`: the members and their topics.
+# - `partition_counts`: each topic's number of partitions; a topic missing
+#   from it gives nobody anything.
+#
+# An assignment for every member, in the order of their identifiers. See
+# also `subscribe`.
+function assign_range(subscriptions: [Subscription], partition_counts: {str: i64}) -> [Assignment]
+    inner: [model.Subscription] @= []
+
+    for m in subscriptions
+        inner @ inner.push(model.Subscription(member_id: m.member_id, topics: m.topics))
+
+    out: [Assignment] @= []
+
+    for a in protocol.assign_range(inner, counts: partition_counts)
+        parts: [TopicPartition] @= []
+
+        for p in a.partitions
+            parts @ parts.push(TopicPartition(topic: p.topic, partition: p.partition))
+
+        out @ out.push(Assignment(member_id: a.member_id, partitions: parts))
+
+    return out
+
+## The wire
+
+# The record batch, format 2, that `messages` make: their offsets counted
+# from 0, their times from the first, its CRC-32C computed.
+#
+# - `messages`: the messages, one or more; a time of -1 is the moment of
+#   the call.
+# - `compression`: how the records are compressed.
+#
+# Fails `invalid` where `messages` is empty or a time is below -1. See also
+# `decode_batches`.
+function encode_batch(messages: [Message], compression: Compression) -> [u8]?
+    inner: [model.Message] @= []
+
+    for m in messages
+        headers: [model.Header] @= []
+
+        for h in m.headers
+            headers @ headers.push(model.Header(key: h.key, value: h.value))
+
+        inner @ inner.push(
+            model.Message(topic: m.topic, partition: m.partition, offset: -1, timestamp_ms: m.timestamp_ms, key: m.key, null_key: m.null_key, value: m.value, null_value: m.null_value, headers: headers)
+        )
+
+    how: model.Compression = match compression
+        .none => .none
+        .gzip => .gzip
+
+    return records.encode(inner, compression: how, now_ms: producing.wall_ms())
+
+# The messages the record batches `data` hold, as a fetch answers them; the
+# control records of transactions left out, a batch cut short at the end
+# left out too.
+#
+# - `data`: one batch or several, one after the other.
+#
+# Fails `invalid` where a batch is no batch or its CRC-32C disagrees,
+# `unsupported` where it is compressed other than by gzip or in a format
+# before 2. See also `encode_batch`.
+function decode_batches(data: [u8]) -> [Message]?
+    batches = records.decode(data, limit: 104857600)?
+    out: [Message] @= []
+
+    for m in records.readable(batches, aborted_producers: [], aborted_firsts: [], from: 0)
+        headers: [Header] @= []
+
+        for h in m.headers
+            headers @ headers.push(Header(key: h.key, value: h.value))
+
+        out @ out.push(
+            Message(topic: "", partition: -1, offset: m.offset, timestamp_ms: m.timestamp_ms, key: m.key, null_key: m.null_key, value: m.value, null_value: m.null_value, headers: headers)
+        )
+
+    return ok(out)
+
+# The name Kafka gives the error `code`: `UNKNOWN_TOPIC_OR_PARTITION` for 3.
+#
+# - `code`: the error's number, as a broker answers it.
+#
+# Fails `not_found` where Kafka names no such error. See also `fetch`.
+function error_name(code: i64) -> str?
+    return errors.name_of(code)
+
+## Tests
+
+test "options, group_options, message, with_key, with_header: the defaults and a message built"
+    o = options(["localhost:9092"])
+    assert o.client_id == "rebel" && o.acks == .leader && o.compression == .none && o.most_fetch_bytes == 1048576 && !o.auto_create_topics
+    g = group_options("g", topics: ["t"])
+    assert g.session_ms == 45000 && g.heartbeat_ms == 3000 && g.start == .earliest && g.auto_commit_ms == 5000
+    m = message([1]).with_key([]).with_header(key: "h", value: [2])
+    assert !m.null_key && m.key == [] && m.headers == [Header(key: "h", value: [2])] && m.partition == -1 && m.timestamp_ms == -1
+
+test "encode_batch, decode_batches: messages written and read back, gzip, an empty list refused"
+    m1 @= message([1, 2]).with_key([9])
+    m1.timestamp_ms @ 1700000000000
+    m2 @= message([])
+    m2.null_value @ true
+    m2.timestamp_ms @ 1700000000009
+    hows: [Compression] = [.none, .gzip]
+
+    for how in hows
+        data = encode_batch([m1, m2], compression: how).must()
+        back = decode_batches(data).must()
+        assert back.len() == 2 && back[0].key == [9] && back[0].offset == 0 && back[1].null_value && back[1].timestamp_ms == 1700000000009
+
+    assert encode_batch([], compression: .none).is_err()
+    assert decode_batches([1, 2, 3]).must() == []
+
+test "error_name: the names Kafka gives, none past them"
+    assert error_name(0).must() == "NONE" && error_name(36).must() == "TOPIC_ALREADY_EXISTS" && error_name(1000).is_err()
+
+test "connect: an option out of range refused before anything is sent, a broker that is no host:port, nothing listening"
+    o @= options(["localhost"])
+    assert connect(o).is_err()
+    o.brokers @ ["127.0.0.1:1"]
+    o.connect_ms @ 2000
+
+    match connect(o)
+        .ok _  => assert false
+        .err e => assert e.code == "closed" || e.code == "timeout" || e.code == "failed"
+
+    o.wait_ms @ 0
+    assert connect(o).is_err()
+
+test "connect live, against the brokers REBEL_KAFKA_BROKERS names: topics made and deleted, keyed messages where Java's client puts them, batches with headers and nulls, offsets by time, gzip, a large message, records deleted, partitions added, a group's offsets"
+    match os.env("REBEL_KAFKA_BROKERS")
+        .err _ => print("connect live: skipped, REBEL_KAFKA_BROKERS names no broker")
+        .ok text =>
+            o @= options([text])
+            o.acks @ .all
+            c @= connect(o).must()
+            assert !is_closed(c) && api_versions_of(c).len() > 10
+            topic = f"rebel-live-{os.pid()}"
+            other = topic + "-z"
+            create_topics(@c, topics: [new_topic(topic, partitions: 3), new_topic(other, partitions: 1)]).must()
+
+            match create_topics(@c, topics: [new_topic(topic, partitions: 3)])
+                .ok _  => assert false
+                .err e => assert e.code == "exists"
+
+            m = metadata(@c, topics: [topic]).must()
+            assert m.topics.len() == 1 && m.topics[0].partitions.len() == 3 && m.brokers.len() == 1 && m.cluster_id != ""
+            assert partitions_of(@c, topic: topic).must() == [0, 1, 2]
+
+            match metadata(@c, topics: ["rebel-no-such-topic"])
+                .ok _  => assert false
+                .err e => assert e.code == "not_found"
+
+            batch: [Message] @= []
+
+            for i in range(from: 0, to: 300)
+                one @= message(bytes.from_text(f"v{i}")).with_key(bytes.from_text(f"k{i % 10}"))
+                one.topic @ topic
+                batch @ batch.push(one)
+
+            sent = send(@c, messages: batch).must()
+            counts: [i64] @= [0, 0, 0]
+
+            for s in sent
+                assert s.partition == partition_of(s.key, partitions: 3) && s.offset == counts[s.partition]
+                counts[s.partition] @ counts[s.partition] + 1
+
+            assert counts[0] + counts[1] + counts[2] == 300
+            plain @= message([7]).with_header(key: "h", value: [1, 2]).with_header(key: "e", value: [])
+            plain.timestamp_ms @ 1700000000000
+            tomb @= message([]).with_key([3])
+            tomb.null_value @ true
+            produced = produce(@c, topic: topic, partition: 0, messages: [plain, tomb]).must()
+            assert produced.base_offset == counts[0]
+            got = fetch(@c, topic: topic, partition: 0, offset: produced.base_offset, wait_ms: 1000).must()
+            assert got.messages.len() == 2 && got.messages[0].headers == plain.headers && got.messages[0].timestamp_ms == 1700000000000
+            assert got.messages[1].null_value && got.messages[1].key == [3] && got.next_offset == produced.base_offset + 2 && got.high_watermark == produced.base_offset + 2
+            assert list_offset(@c, topic: topic, partition: 0, at: EARLIEST).must() == 0
+            assert list_offset(@c, topic: topic, partition: 0, at: LATEST).must() == counts[0] + 2
+            assert list_offset(@c, topic: topic, partition: 0, at: 1700000000000).must() == 0
+
+            match list_offset(@c, topic: topic, partition: 0, at: 9000000000000)
+                .ok _  => assert false
+                .err e => assert e.code == "not_found"
+
+            match fetch(@c, topic: topic, partition: 0, offset: 1000000, wait_ms: 0)
+                .ok _  => assert false
+                .err e => assert e.code == "invalid"
+
+            assert fetch(@c, topic: topic, partition: 7, offset: 0, wait_ms: 0).is_err()
+            zipped @= options([text])
+            zipped.compression @ .gzip
+            z @= connect(zipped).must()
+            big: [u8] @= []
+
+            for at in range(from: 0, to: 500000)
+                big @ big.push(to_u8(at % 249).must())
+
+            many: [Message] @= []
+
+            for i in range(from: 0, to: 50)
+                many @ many.push(message(bytes.from_text(f"zipped {i}")))
+
+            many @ many.push(message(big))
+            put = produce(@z, topic: other, partition: 0, messages: many).must()
+            back = fetch(@z, topic: other, partition: 0, offset: put.base_offset, wait_ms: 1000).must()
+            assert back.messages.len() == 51 && back.messages[50].value == big && back.messages[3].value == bytes.from_text("zipped 3")
+            close(@z).must()
+            assert delete_records(@c, topic: topic, partition: 0, before: 5).must() == 5
+            assert list_offset(@c, topic: topic, partition: 0, at: EARLIEST).must() == 5
+            create_partitions(@c, topic: topic, count: 4).must()
+            assert partitions_of(@c, topic: topic).must() == [0, 1, 2, 3]
+            assert create_partitions(@c, topic: topic, count: 2).is_err()
+            group = topic + "-offsets"
+            commit_offsets(
+                @c,
+                group_id: group,
+                offsets: [Offset(topic: topic, partition: 1, offset: 7, metadata: "seen"), Offset(topic: topic, partition: 2, offset: 3, metadata: "")]
+            ).must()
+            kept = fetch_offsets(@c, group_id: group).must()
+            assert kept.len() == 2 && kept[0].offset == 7 && kept[0].metadata == "seen" && kept[1].partition == 2
+            coordinator = find_coordinator(@c, group_id: group).must()
+            assert coordinator.port > 0
+            delete_groups(@c, group_ids: [group]).must()
+            assert fetch_offsets(@c, group_id: group).must() == []
+            delete_topics(@c, names: [topic, other]).must()
+
+            match delete_topics(@c, names: [topic])
+                .ok _  => assert false
+                .err e => assert e.code == "not_found"
+
+            close(@c).must()
+            assert is_closed(c) && close(@c).is_err() && metadata(@c, topics: []).is_err()
+
+test "subscribe live: a consumer of a group joined, its partitions assigned, read, committed, described and listed, joined again from its offsets, and two members sharing the partitions"
+    match os.env("REBEL_KAFKA_BROKERS")
+        .err _ => print("group live: skipped, REBEL_KAFKA_BROKERS names no broker")
+        .ok text =>
+            o @= options([text])
+            o.acks @ .all
+            c @= connect(o).must()
+            topic = f"rebel-group-{os.pid()}"
+            group = topic + "-g"
+            create_topics(@c, topics: [new_topic(topic, partitions: 2)]).must()
+            first: [Message] @= []
+
+            for i in range(from: 0, to: 100)
+                one @= message(bytes.from_text(f"m{i}"))
+                one.topic @ topic
+                first @ first.push(one)
+
+            _ = send(@c, messages: first).must()
+            g @= group_options(group, topics: [topic])
+            g.session_ms @ 6000
+            g.rebalance_ms @ 6000
+            g.heartbeat_ms @ 500
+            g.auto_commit_ms @ 0
+            k @= subscribe(o, group: g).must()
+            assert assignment_of(k) == [TopicPartition(topic: topic, partition: 0), TopicPartition(topic: topic, partition: 1)]
+            assert member_of(k).leader && member_of(k).generation_id >= 1 && member_of(k).group_id == group
+            read: i64 @= 0
+            rounds: i64 @= 0
+
+            while read < 100 && rounds < 50
+                read @ read + poll(@k, wait_ms: 500).must().len()
+                rounds @ rounds + 1
+
+            assert read == 100
+            commit(@k).must()
+            described = describe_group(@c, group_id: group).must()
+            assert described.state == "Stable" && described.protocol == "range" && described.members.len() == 1 && described.members[0].assignment.len() == 2
+            assert describe_group(@c, group_id: group).must().members[0].topics == [topic]
+            listed: bool @= false
+
+            for l in list_groups(@c).must()
+                if l.group_id == group && l.protocol_type == "consumer"
+                    listed @ true
+
+            assert listed
+            p0 = position_of(k, topic: topic, partition: 0).must()
+            seek(@k, topic: topic, partition: 0, offset: 0).must()
+            assert position_of(k, topic: topic, partition: 0).must() == 0
+            pause(@k, topic: topic, partition: 1).must()
+            again = poll(@k, wait_ms: 500).must()
+            assert again.len() == p0 && again[0].partition == 0
+            resume(@k, topic: topic, partition: 1).must()
+            assert pause(@k, topic: "nowhere", partition: 0).is_err() && seek(@k, topic: topic, partition: 9, offset: 0).is_err()
+            close_consumer(@k).must()
+            assert close_consumer(@k).is_err() && poll(@k, wait_ms: 0).is_err()
+            later: [Message] @= []
+
+            for i in range(from: 0, to: 10)
+                one @= message(bytes.from_text(f"n{i}"))
+                one.topic @ topic
+                later @ later.push(one)
+
+            _ = send(@c, messages: later).must()
+            j @= subscribe(o, group: g).must()
+            fresh: i64 @= 0
+            tries: i64 @= 0
+
+            while fresh < 10 && tries < 30
+                fresh @ fresh + poll(@j, wait_ms: 500).must().len()
+                tries @ tries + 1
+
+            assert fresh == 10
+            commit(@j).must()
+            other = threads.spawn_text(live.second_member, arg: f"{text}|{group}|{topic}|10")
+            more: [Message] @= []
+
+            for i in range(from: 0, to: 20)
+                one @= message(bytes.from_text(f"o{i}"))
+                one.topic @ topic
+                more @ more.push(one)
+
+            _ = send(@c, messages: more).must()
+            mine: i64 @= 0
+            shared: bool @= false
+            spins: i64 @= 0
+
+            while spins < 80
+                spins @ spins + 1
+                mine @ mine + poll(@j, wait_ms: 200).must().len()
+
+                if assignment_of(j).len() == 1
+                    shared @ true
+
+            waited @= other
+            answer = threads.wait_text(@waited)
+            parts = strings.split(s: answer, sep: " ")
+            assert parts.len() == 2 && shared && parts[1] == "1"
+            assert mine + numbers.parse_int(parts[0]).must() >= 20
+            close_consumer(@j).must()
+            delete_topics(@c, names: [topic]).must()
+            close(@c).must()
+
+test "connect live, a login by PLAIN, SCRAM-SHA-256 and SCRAM-SHA-512, a password refused, and TLS, as the variables name them"
+    match os.env("REBEL_KAFKA_SASL_BROKERS")
+        .err _ => print("login live: skipped, REBEL_KAFKA_SASL_BROKERS names no broker")
+        .ok text =>
+            for way in [0, 1, 2]
+                o @= options([text])
+
+                o.sasl @ if way == 0
+                    .plain(username: "rebel", password: "secret")
+                else if way == 1
+                    .scram_sha256(username: "rebel", password: "secret")
+                else
+                    .scram_sha512(username: "rebel", password: "secret")
+
+                c @= connect(o).must()
+                assert metadata(@c, topics: []).must().brokers.len() == 1
+                close(@c).must()
+
+            wrong @= options([text])
+            wrong.sasl @ .scram_sha256(username: "rebel", password: "not the password")
+
+            match connect(wrong)
+                .ok _  => assert false
+                .err e => assert e.code == "permission"
+
+            plain_wrong @= options([text])
+            plain_wrong.sasl @ .plain(username: "rebel", password: "nope")
+
+            match connect(plain_wrong)
+                .ok _  => assert false
+                .err e => assert e.code == "permission"
+
+    match os.env("REBEL_KAFKA_TLS_BROKERS")
+        .err _ => print("TLS live: skipped, REBEL_KAFKA_TLS_BROKERS names no broker")
+        .ok text =>
+            o @= options([text])
+            o.tls @ true
+            o.roots @ read_file(os.env("REBEL_KAFKA_CA").must()).must()
+            c @= connect(o).must()
+            topic = f"rebel-tls-{os.pid()}"
+            create_topics(@c, topics: [new_topic(topic, partitions: 1)]).must()
+            p = produce(@c, topic: topic, partition: 0, messages: [message([42])]).must()
+            assert fetch(@c, topic: topic, partition: 0, offset: p.base_offset, wait_ms: 1000).must().messages[0].value == [42]
+            delete_topics(@c, names: [topic]).must()
+            close(@c).must()
+            untrusted @= options([text])
+            untrusted.tls @ true
+
+            match connect(untrusted)
+                .ok _  => assert false
+                .err e => assert e.code == "invalid"
+
+## Examples
+
+# The options of a local broker, the acknowledgement of every copy asked.
+test "options: a local broker"
+    o @= options(["localhost:9092"])
+    o.acks @ .all
+    assert o.brokers == ["localhost:9092"] && o.acks == .all
+
+# A client of a local broker, where one answers; elsewhere it shows nothing.
+test "connect: a local broker"
+    match connect(options(["localhost:9092"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            assert !is_closed(c)
+            close(@c).must()
+
+# A client closed.
+test "close: the end of a client"
+    match connect(options(["localhost:9092"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            close(@c).must()
+            assert is_closed(c)
+
+# Whether a client is closed.
+test "is_closed: before and after close"
+    match connect(options(["localhost:9092"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            assert !is_closed(c)
+            close(@c).must()
+
+# The versions of Produce the broker reads.
+test "api_versions_of: Produce's versions"
+    match connect(options(["localhost:9092"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+
+            for v in api_versions_of(c)
+                if v.key == 0
+                    assert v.min <= 8 && v.max >= 8
+
+            close(@c).must()
+
+# The brokers of the cluster.
+test "metadata: the brokers and every topic"
+    match connect(options(["localhost:9092"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            assert metadata(@c, topics: []).must().brokers.len() >= 1
+            close(@c).must()
+
+# A topic's partitions.
+test "partitions_of: a topic made with two"
+    match connect(options(["localhost:9092"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            name = f"rebel-example-{os.pid()}-a"
+            create_topics(@c, topics: [new_topic(name, partitions: 2)]).must()
+            assert partitions_of(@c, topic: name).must() == [0, 1]
+            delete_topics(@c, names: [name]).must()
+            close(@c).must()
+
+# A topic of three partitions, kept a day.
+test "new_topic: three partitions and a retention"
+    t @= new_topic("events", partitions: 3)
+    t.configs @ [Config(name: "retention.ms", value: "86400000")]
+    assert t.replication == -1 && t.partitions == 3
+
+# A topic made.
+test "create_topics: one topic"
+    match connect(options(["localhost:9092"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            name = f"rebel-example-{os.pid()}-b"
+            create_topics(@c, topics: [new_topic(name, partitions: 1)]).must()
+            delete_topics(@c, names: [name]).must()
+            close(@c).must()
+
+# A topic deleted.
+test "delete_topics: one topic"
+    match connect(options(["localhost:9092"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            name = f"rebel-example-{os.pid()}-c"
+            create_topics(@c, topics: [new_topic(name, partitions: 1)]).must()
+            delete_topics(@c, names: [name]).must()
+            close(@c).must()
+
+# A topic given a second partition.
+test "create_partitions: from one to two"
+    match connect(options(["localhost:9092"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            name = f"rebel-example-{os.pid()}-d"
+            create_topics(@c, topics: [new_topic(name, partitions: 1)]).must()
+            create_partitions(@c, topic: name, count: 2).must()
+            delete_topics(@c, names: [name]).must()
+            close(@c).must()
+
+# The first message of a partition deleted.
+test "delete_records: before the second offset"
+    match connect(options(["localhost:9092"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            name = f"rebel-example-{os.pid()}-e"
+            create_topics(@c, topics: [new_topic(name, partitions: 1)]).must()
+            _ = produce(@c, topic: name, partition: 0, messages: [message([1]), message([2])]).must()
+            assert delete_records(@c, topic: name, partition: 0, before: 1).must() == 1
+            delete_topics(@c, names: [name]).must()
+            close(@c).must()
+
+# A message of text.
+test "message: a value"
+    m = message(bytes.from_text("hello"))
+    assert m.null_key && !m.null_value && m.partition == -1
+
+# A message keyed by a user's identifier.
+test "with_key: a user's identifier"
+    m = with_key(message([1]), key: bytes.from_text("user-42"))
+    assert !m.null_key && m.key == bytes.from_text("user-42")
+
+# A message with a header.
+test "with_header: a trace's identifier"
+    m = with_header(message([1]), key: "trace", value: [7])
+    assert m.headers == [Header(key: "trace", value: [7])]
+
+# The partition Java's client chooses for a key.
+test "partition_of: the key a among seven partitions"
+    assert partition_of([97], partitions: 7) == 5
+
+# A batch written to one partition.
+test "produce: two messages to the partition 0"
+    match connect(options(["localhost:9092"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            name = f"rebel-example-{os.pid()}-f"
+            create_topics(@c, topics: [new_topic(name, partitions: 1)]).must()
+            assert produce(@c, topic: name, partition: 0, messages: [message([1]), message([2])]).must().base_offset == 0
+            delete_topics(@c, names: [name]).must()
+            close(@c).must()
+
+# Messages written to the partitions their keys choose.
+test "send: a keyed message"
+    match connect(options(["localhost:9092"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            name = f"rebel-example-{os.pid()}-g"
+            create_topics(@c, topics: [new_topic(name, partitions: 3)]).must()
+            m @= message([1]).with_key([97])
+            m.topic @ name
+            assert send(@c, messages: [m]).must()[0].partition == partition_of([97], partitions: 3)
+            delete_topics(@c, names: [name]).must()
+            close(@c).must()
+
+# A partition's messages read from its start.
+test "fetch: from the offset 0"
+    match connect(options(["localhost:9092"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            name = f"rebel-example-{os.pid()}-h"
+            create_topics(@c, topics: [new_topic(name, partitions: 1)]).must()
+            _ = produce(@c, topic: name, partition: 0, messages: [message([1])]).must()
+            assert fetch(@c, topic: name, partition: 0, offset: 0, wait_ms: 500).must().messages[0].value == [1]
+            delete_topics(@c, names: [name]).must()
+            close(@c).must()
+
+# The end of a partition's log.
+test "list_offset: the latest"
+    match connect(options(["localhost:9092"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            name = f"rebel-example-{os.pid()}-i"
+            create_topics(@c, topics: [new_topic(name, partitions: 1)]).must()
+            assert list_offset(@c, topic: name, partition: 0, at: LATEST).must() == 0
+            delete_topics(@c, names: [name]).must()
+            close(@c).must()
+
+# The broker that coordinates a group.
+test "find_coordinator: a group's coordinator"
+    match connect(options(["localhost:9092"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            assert find_coordinator(@c, group_id: "rebel-example").must().port > 0
+            close(@c).must()
+
+# A group's offset kept by a program that assigns its own partitions.
+test "commit_offsets: one partition's offset"
+    match connect(options(["localhost:9092"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            name = f"rebel-example-{os.pid()}-j"
+            create_topics(@c, topics: [new_topic(name, partitions: 1)]).must()
+            commit_offsets(
+                @c,
+                group_id: name,
+                offsets: [Offset(topic: name, partition: 0, offset: 0, metadata: "")]
+            ).must()
+            delete_groups(@c, group_ids: [name]).must()
+            delete_topics(@c, names: [name]).must()
+            close(@c).must()
+
+# The offsets a group keeps.
+test "fetch_offsets: a group that keeps none"
+    match connect(options(["localhost:9092"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            assert fetch_offsets(@c, group_id: f"rebel-example-{os.pid()}-none").must() == []
+            close(@c).must()
+
+# The groups of the cluster.
+test "list_groups: every group"
+    match connect(options(["localhost:9092"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            _ = list_groups(@c).must()
+            close(@c).must()
+
+# A group the cluster does not know.
+test "describe_group: a group nobody joined"
+    match connect(options(["localhost:9092"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            assert describe_group(@c, group_id: f"rebel-example-{os.pid()}-nobody").must().members == []
+            close(@c).must()
+
+# A group deleted.
+test "delete_groups: a group that kept an offset"
+    match connect(options(["localhost:9092"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            name = f"rebel-example-{os.pid()}-k"
+            create_topics(@c, topics: [new_topic(name, partitions: 1)]).must()
+            commit_offsets(
+                @c,
+                group_id: name,
+                offsets: [Offset(topic: name, partition: 0, offset: 0, metadata: "")]
+            ).must()
+            delete_groups(@c, group_ids: [name]).must()
+            delete_topics(@c, names: [name]).must()
+            close(@c).must()
+
+# The options of a consumer that commits by hand.
+test "group_options: commits by hand"
+    g @= group_options("billing", topics: ["orders"])
+    g.auto_commit_ms @ 0
+    assert g.topics == ["orders"] && g.auto_commit_ms == 0
+
+# A consumer joined to its group.
+test "subscribe: a group of one"
+    match connect(options(["localhost:9092"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            name = f"rebel-example-{os.pid()}-l"
+            create_topics(@c, topics: [new_topic(name, partitions: 1)]).must()
+            k @= subscribe(options(["localhost:9092"]), group: group_options(name, topics: [name])).must()
+            close_consumer(@k).must()
+            delete_topics(@c, names: [name]).must()
+            close(@c).must()
+
+# Messages read by a consumer.
+test "poll: what the partitions hold"
+    match connect(options(["localhost:9092"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            name = f"rebel-example-{os.pid()}-m"
+            create_topics(@c, topics: [new_topic(name, partitions: 1)]).must()
+            _ = produce(@c, topic: name, partition: 0, messages: [message([1])]).must()
+            k @= subscribe(options(["localhost:9092"]), group: group_options(name, topics: [name])).must()
+            assert poll(@k, wait_ms: 1000).must().len() == 1
+            close_consumer(@k).must()
+            delete_topics(@c, names: [name]).must()
+            close(@c).must()
+
+# A consumer's positions committed.
+test "commit: after a poll"
+    match connect(options(["localhost:9092"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            name = f"rebel-example-{os.pid()}-n"
+            create_topics(@c, topics: [new_topic(name, partitions: 1)]).must()
+            k @= subscribe(options(["localhost:9092"]), group: group_options(name, topics: [name])).must()
+            _ = poll(@k, wait_ms: 100).must()
+            commit(@k).must()
+            close_consumer(@k).must()
+            delete_topics(@c, names: [name]).must()
+            close(@c).must()
+
+# A consumer sent back to the start of a partition.
+test "seek: the offset 0"
+    match connect(options(["localhost:9092"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            name = f"rebel-example-{os.pid()}-o"
+            create_topics(@c, topics: [new_topic(name, partitions: 1)]).must()
+            k @= subscribe(options(["localhost:9092"]), group: group_options(name, topics: [name])).must()
+            seek(@k, topic: name, partition: 0, offset: 0).must()
+            close_consumer(@k).must()
+            delete_topics(@c, names: [name]).must()
+            close(@c).must()
+
+# A consumer's position in a partition.
+test "position_of: at the start of an empty partition"
+    match connect(options(["localhost:9092"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            name = f"rebel-example-{os.pid()}-p"
+            create_topics(@c, topics: [new_topic(name, partitions: 1)]).must()
+            k @= subscribe(options(["localhost:9092"]), group: group_options(name, topics: [name])).must()
+            assert position_of(k, topic: name, partition: 0).must() == 0
+            close_consumer(@k).must()
+            delete_topics(@c, names: [name]).must()
+            close(@c).must()
+
+# The partitions a consumer was assigned.
+test "assignment_of: every partition of a group of one"
+    match connect(options(["localhost:9092"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            name = f"rebel-example-{os.pid()}-q"
+            create_topics(@c, topics: [new_topic(name, partitions: 2)]).must()
+            k @= subscribe(options(["localhost:9092"]), group: group_options(name, topics: [name])).must()
+            assert assignment_of(k).len() == 2
+            close_consumer(@k).must()
+            delete_topics(@c, names: [name]).must()
+            close(@c).must()
+
+# A consumer's place in its group.
+test "member_of: the leader of a group of one"
+    match connect(options(["localhost:9092"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            name = f"rebel-example-{os.pid()}-r"
+            create_topics(@c, topics: [new_topic(name, partitions: 1)]).must()
+            k @= subscribe(options(["localhost:9092"]), group: group_options(name, topics: [name])).must()
+            assert member_of(k).leader
+            close_consumer(@k).must()
+            delete_topics(@c, names: [name]).must()
+            close(@c).must()
+
+# A partition paused.
+test "pause: a partition left unread"
+    match connect(options(["localhost:9092"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            name = f"rebel-example-{os.pid()}-s"
+            create_topics(@c, topics: [new_topic(name, partitions: 1)]).must()
+            k @= subscribe(options(["localhost:9092"]), group: group_options(name, topics: [name])).must()
+            pause(@k, topic: name, partition: 0).must()
+            close_consumer(@k).must()
+            delete_topics(@c, names: [name]).must()
+            close(@c).must()
+
+# A partition read again.
+test "resume: a partition paused, then read"
+    match connect(options(["localhost:9092"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            name = f"rebel-example-{os.pid()}-t"
+            create_topics(@c, topics: [new_topic(name, partitions: 1)]).must()
+            k @= subscribe(options(["localhost:9092"]), group: group_options(name, topics: [name])).must()
+            pause(@k, topic: name, partition: 0).must()
+            resume(@k, topic: name, partition: 0).must()
+            close_consumer(@k).must()
+            delete_topics(@c, names: [name]).must()
+            close(@c).must()
+
+# A consumer that leaves its group.
+test "close_consumer: the group left"
+    match connect(options(["localhost:9092"]))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            name = f"rebel-example-{os.pid()}-u"
+            create_topics(@c, topics: [new_topic(name, partitions: 1)]).must()
+            k @= subscribe(options(["localhost:9092"]), group: group_options(name, topics: [name])).must()
+            close_consumer(@k).must()
+            delete_topics(@c, names: [name]).must()
+            close(@c).must()
+
+# Two members sharing a topic of three partitions.
+test "assign_range: two members, three partitions"
+    out = assign_range(
+        [Subscription(member_id: "a", topics: ["t"]), Subscription(member_id: "b", topics: ["t"])],
+        partition_counts: {"t": 3}
+    )
+    assert out[0].partitions.len() == 2 && out[1].partitions == [TopicPartition(topic: "t", partition: 2)]
+
+# A batch of one message.
+test "encode_batch: one message, read back"
+    assert decode_batches(encode_batch([message([1])], compression: .none).must()).must()[0].value == [1]
+
+# The messages of a batch.
+test "decode_batches: one batch"
+    data = encode_batch([message([1]), message([2])], compression: .gzip).must()
+    assert decode_batches(data).must().len() == 2
+
+# The name of an error a broker answers.
+test "error_name: an unknown topic"
+    assert error_name(3).must() == "UNKNOWN_TOPIC_OR_PARTITION"

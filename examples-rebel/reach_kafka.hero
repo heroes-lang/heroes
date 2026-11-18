@@ -1,0 +1,28 @@
+# Reaches Rebel's `kafka`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). Where a broker answers at
+# `localhost:9092`, it writes a message to the topic `reach-kafka` and reads
+# it back; where none answers it says why.
+
+use <rebel>/kafka
+
+function main()
+    match kafka.connect(kafka.options(["localhost:9092"]))
+        .err e => print("no broker: ", e.code, ": ", e.msg)
+        .ok first =>
+            c @= first
+            m @= kafka.message([104, 105])
+            m.topic @ "reach-kafka"
+
+            match kafka.send(@c, messages: [m])
+                .err e => print("not written: ", e.code, ": ", e.msg)
+                .ok sent =>
+                    got = kafka.fetch(
+                        @c,
+                        topic: "reach-kafka",
+                        partition: sent[0].partition,
+                        offset: sent[0].offset,
+                        wait_ms: 1000
+                    )
+                    print(got.is_err())
+
+            print(kafka.close(@c).is_err())

@@ -1,0 +1,273 @@
+# The ledger of `amqp`: what a program does with an AMQP 0-9-1 server,
+# measured against Go's github.com/rabbitmq/amqp091-go v1.17.0 (its `go doc
+# -all`, fetched into the scratch folder on 2026-11-18), Python's pika 1.5.0
+# (`dir` of `pika`, `BlockingConnection`, `BlockingChannel`,
+# `ConnectionParameters`, `BasicProperties`, `pika.exceptions`, installed into
+# the scratch folder the same day) and Rust's lapin 4.12.3 (its docs.rs pages
+# read the same day: the crate's items, `Channel` and `Connection`).
+#
+# The expected values of the tests were asked of pika: the bytes of every
+# method the client sends (`pika.frame.Method(...).marshal()`), of a content
+# header with every property (`pika.frame.Header`), of a field table with
+# every type (`pika.data.encode_table`) and what it reads for each letter
+# (`pika.data.decode_table`); and of amqp091-go and pika both, how a URL is
+# read (`amqp.ParseURI`, `pika.URLParameters`). The live run, on 2026-11-18,
+# reached RabbitMQ 4.0.5 of Debian 13 in a container of this Mac: PLAIN and
+# AMQPLAIN, a virtual host, permissions refused, TLS.
+
+capability amqp/connect  a connection made: the protocol's header, the login, the settings agreed, the virtual host opened
+  heroes  amqp.connect, amqp.options, amqp.Options, amqp.Connection, amqp.DEFAULT_PORT, amqp.DEFAULT_TLS_PORT
+  go      Dial, DialConfig, Config, Config.Vhost, Open, Connection
+  rust    Connection::connect, Connection::connect_with_config, Connection::connect_uri, Connection::connect_uri_with_config, Connection::connect_with_runtime, Connection::connect_uri_with_runtime, ConnectionProperties, Configuration, Connection::configuration, ConnectionBuilder, DefaultConnectionBuilder
+  python  BlockingConnection, ConnectionParameters, ConnectionParameters.host, ConnectionParameters.port, ConnectionParameters.virtual_host, ConnectionParameters.socket_timeout, ConnectionParameters.stack_timeout, AMQPConnectionWorkflow
+  note    one blocking client, as pika's BlockingConnection; the callback adapters (SelectConnection and the others) are the `poll` capability's
+
+capability amqp/url  the options a URL names, as RabbitMQ writes one
+  heroes  amqp.parse_url
+  go      ParseURI, URI, URI.String, URI.PlainAuth, URI.AMQPlainAuth
+  rust    Connection::connect_uri
+  python  URLParameters
+  note    an empty path and `/` are the virtual host `/` (Go and pika agree); a path of two segments is refused, where Go joins them and pika keeps the first; a frame of 4096 bytes is taken, AMQP's own minimum, where pika asks 8192
+
+capability amqp/tls  TLS from the first byte, the server's certificate checked against the system's store or the roots given
+  heroes  amqp.Options (tls, roots)
+  go      DialTLS, Config.TLSClientConfig, Connection.ConnectionState
+  rust    Connection::connector, Connect
+  python  SSLOptions, ConnectionParameters.ssl_options
+  note    a client certificate is not presented, which `tls` does not offer; ConnectionState's details are `tls.version_of` and `tls.protocol_of`'s, which take the stream `stream_of` answers
+
+capability amqp/login  a user's name and a password, by PLAIN or RabbitMQ's AMQPLAIN
+  heroes  amqp.Options (username, password, mechanism), amqp.Mechanism
+  go      PlainAuth, AMQPlainAuth, Config.SASL, Authentication
+  rust    auth::AuthProvider, auth::DefaultTokenProvider
+  python  PlainCredentials, ConnectionParameters.credentials
+  note    a login refused is `permission`: RabbitMQ closes the connection with 403 where the client says it reads authentication_failure_close, which this one does
+
+capability amqp/login-external  a login by the TLS client's certificate (EXTERNAL)
+  heroes  refused: `tls` presents no client certificate, so there is nothing for EXTERNAL to name
+  go      DialTLS_ExternalAuth, ExternalAuth
+  rust    -
+  python  pika.credentials.ExternalCredentials
+
+capability amqp/login-token  a login by a token that expires, renewed on an open connection
+  heroes  amqp.update_secret
+  go      Connection.UpdateSecret
+  rust    Connection::update_secret, auth::TokenProvider, auth::TokenAuthProvider
+  python  BlockingConnection.update_secret
+
+capability amqp/tune  the heartbeat, the largest frame and the channels agreed, and what the server said of itself
+  heroes  amqp.Options (heartbeat_s, frame_max, channel_max), amqp.server_of, amqp.Server
+  go      Config.Heartbeat, Config.FrameSize, Config.ChannelMax, FrameSizeUnlimited, Connection.Properties, Connection.Major, Connection.Minor, Connection.Locales, Connection.Config
+  rust    Configuration
+  python  ConnectionParameters.heartbeat, ConnectionParameters.frame_max, ConnectionParameters.channel_max, BlockingConnection.publisher_confirms_supported, BlockingConnection.basic_nack_supported, BlockingConnection.consumer_cancel_notify_supported, BlockingConnection.exchange_exchange_bindings_supported, BlockingConnection.publisher_confirms, BlockingConnection.basic_nack, BlockingConnection.consumer_cancel_notify, BlockingConnection.exchange_exchange_bindings
+  note    each setting is the smaller of the two where neither side says 0, the other's where one does, as amqp091-go agrees them; the capabilities pika asks one by one are `server_of`'s properties, `capabilities` among them
+
+capability amqp/client-properties  the client's properties, its name and its locale told to the server
+  heroes  amqp.Options (connection_name, properties, locale)
+  go      Config.Properties, Config.Locale, NewConnectionProperties, Table.SetClientConnectionName
+  rust    ConnectionProperties
+  python  ConnectionParameters.client_properties, ConnectionParameters.locale
+
+capability amqp/close  a connection closed, by the program or the server, and why
+  heroes  amqp.close, amqp.is_closed, amqp.closing_of, amqp.Closing
+  go      Connection.Close, Connection.CloseDeadline, Connection.IsClosed, Connection.NotifyClose, Error, Error.Code, Error.Reason, Error.Server
+  rust    Connection::close, Connection::status, ConnectionStatus, ConnectionState, Error, ErrorKind
+  python  BlockingConnection.close, BlockingConnection.is_closed, BlockingConnection.is_open, ConnectionClosed, ConnectionClosedByBroker, ConnectionClosedByClient, AMQPConnectionError
+  note    `close` waits `Options.wait_ms` for the answer, as CloseDeadline's deadline
+
+capability amqp/blocked  whether the server holds the connection's publishes back, as RabbitMQ does when its memory or disk runs short
+  heroes  amqp.blocked_of, amqp.Blocked
+  go      Connection.NotifyBlocked, Blocking
+  rust    -
+  python  BlockingConnection.add_on_connection_blocked_callback, BlockingConnection.add_on_connection_unblocked_callback, ConnectionParameters.blocked_connection_timeout, ConnectionBlockedTimeout
+
+capability amqp/heartbeat  the heartbeat sent and read while the program waits, and the connection kept with nothing else to do
+  heroes  amqp.idle
+  go      -
+  rust    Connection::run
+  python  BlockingConnection.process_data_events, BlockingConnection.sleep, AMQPHeartbeatTimeout
+  note    the heartbeat is sent while a call waits, the program's own loop being the only one, as pika's blocking connection does
+
+capability amqp/poll  many connections waited on by one thread, each read when its stream is readable
+  heroes  amqp.stream_of, amqp.read_ready, amqp.held_of
+  go      -
+  rust    runtime::default_runtime
+  python  SelectConnection, BlockingConnection.call_later, BlockingConnection.remove_timeout, BlockingConnection.add_callback_threadsafe
+  note    `poll` waits; this package reads what the stream holds and keeps what it brings
+
+capability amqp/addresses  the connection's own address and the server's
+  heroes  pending: `net.Conn` holds both, and the session keeps only the stream; a field of the connection's addresses waits for a face change
+  go      Connection.LocalAddr, Connection.RemoteAddr
+  rust    -
+  python  -
+
+capability amqp/channels  a channel opened, closed, and why the server closed it
+  heroes  amqp.open_channel, amqp.close_channel, amqp.is_channel_open, amqp.channel_closing_of, amqp.Channel
+  go      Connection.Channel, Channel.Close, Channel.IsClosed, Channel.NotifyClose
+  rust    Connection::create_channel, Channel::close, Channel::id, Channel::status, ChannelStatus, ChannelState
+  python  BlockingConnection.channel, BlockingChannel.close, BlockingChannel.is_closed, BlockingChannel.is_open, BlockingChannel.channel_number, ChannelClosed, ChannelClosedByBroker, ChannelClosedByClient, ChannelWrongStateError, NoFreeChannels
+  note    a channel the server closes (a queue not found, a declaration that disagrees) stays closed and says why; the program opens another
+
+capability amqp/qos  the prefetch: how much the server sends before the consumer acknowledges
+  heroes  amqp.qos
+  go      Channel.Qos
+  rust    Channel::basic_qos, options::BasicQosOptions, ChannelQos
+  python  BlockingChannel.basic_qos
+
+capability amqp/flow  the server asked to stop or go on sending to a channel, and its own asking told
+  heroes  amqp.flow
+  go      Channel.Flow, Channel.NotifyFlow
+  rust    Channel::channel_flow, options::ChannelFlowOptions, options::ChannelFlowOkOptions
+  python  BlockingChannel.flow
+  note    RabbitMQ refuses active false with 540 (`unsupported`); a channel.flow from the server is answered and kept
+
+capability amqp/exchanges  an exchange declared, of each kind, or only asked about
+  heroes  amqp.declare_exchange, amqp.exchange, amqp.Exchange, amqp.DIRECT, amqp.FANOUT, amqp.TOPIC, amqp.HEADERS
+  go      Channel.ExchangeDeclare, Channel.ExchangeDeclarePassive, ExchangeDirect, ExchangeFanout, ExchangeTopic, ExchangeHeaders, DefaultExchange
+  rust    Channel::exchange_declare, options::ExchangeDeclareOptions, ExchangeKind
+  python  BlockingChannel.exchange_declare, pika.exchange_type.ExchangeType
+
+capability amqp/exchange-delete  an exchange deleted
+  heroes  amqp.delete_exchange
+  go      Channel.ExchangeDelete
+  rust    Channel::exchange_delete, options::ExchangeDeleteOptions
+  python  BlockingChannel.exchange_delete
+
+capability amqp/exchange-bindings  an exchange bound to another and unbound (RabbitMQ's extension)
+  heroes  amqp.bind_exchange, amqp.unbind_exchange
+  go      Channel.ExchangeBind, Channel.ExchangeUnbind
+  rust    Channel::exchange_bind, Channel::exchange_unbind, options::ExchangeBindOptions, options::ExchangeUnbindOptions
+  python  BlockingChannel.exchange_bind, BlockingChannel.exchange_unbind
+
+capability amqp/queues  a queue declared, named by the server or the program, or only asked about, with its arguments
+  heroes  amqp.declare_queue, amqp.queue, amqp.Queue, amqp.Declared
+  go      Channel.QueueDeclare, Channel.QueueDeclarePassive, Channel.QueueInspect, Queue, QueueTypeArg, QueueMaxLenArg, QueueMaxLenBytesArg, StreamMaxLenBytesArg, QueueOverflowArg, QueueMessageTTLArg, QueueTTLArg, StreamMaxAgeArg, StreamMaxSegmentSizeBytesArg, QueueVersionArg, ConsumerTimeoutArg, SingleActiveConsumerArg, QueueTypeClassic, QueueTypeQuorum, QueueTypeStream, QueueOverflowDropHead, QueueOverflowRejectPublish, QueueOverflowRejectPublishDLX
+  rust    Channel::queue_declare, options::QueueDeclareOptions, Queue
+  python  BlockingChannel.queue_declare
+  note    the arguments are a field table the program writes, `x-queue-type` and the others by their names; Go's constants for them are text the program writes
+
+capability amqp/queue-bindings  a queue bound to an exchange and unbound
+  heroes  amqp.bind_queue, amqp.unbind_queue
+  go      Channel.QueueBind, Channel.QueueUnbind
+  rust    Channel::queue_bind, Channel::queue_unbind, options::QueueBindOptions
+  python  BlockingChannel.queue_bind, BlockingChannel.queue_unbind
+
+capability amqp/queue-purge  a queue emptied, its messages counted
+  heroes  amqp.purge_queue
+  go      Channel.QueuePurge
+  rust    Channel::queue_purge, options::QueuePurgeOptions
+  python  BlockingChannel.queue_purge
+
+capability amqp/queue-delete  a queue deleted, if unused or empty where asked
+  heroes  amqp.delete_queue
+  go      Channel.QueueDelete
+  rust    Channel::queue_delete, options::QueueDeleteOptions
+  python  BlockingChannel.queue_delete
+
+capability amqp/publish  a message published with its properties, its body cut into frames
+  heroes  amqp.publish, amqp.message, amqp.Message, amqp.TRANSIENT, amqp.PERSISTENT
+  go      Channel.Publish, Channel.PublishWithContext, Publishing, Transient, Persistent, NeverExpire, ImmediatelyExpire, MimeTextPlain, MimeApplicationJSON, MimeApplicationOctetStream, MimeApplicationXML, MimeTextXML, MimeApplicationProtobuf, MimeApplicationXProtobuf, MimeApplicationMsgPack, MimeApplicationAvro, MimeApplicationCloudEventsJSON, MimeApplicationFormURLEncoded
+  rust    Channel::basic_publish, options::BasicPublishOptions, BasicProperties, AMQPProperties
+  python  BlockingChannel.basic_publish, BasicProperties, DeliveryMode, BodyTooLongError, MessageBodyTooLargeError
+  note    a property AMQP leaves out is the empty text, the empty list or 0, as amqp091-go reads it; a timestamp of 0 is left out, where pika writes it; the MIME types and expirations are text the program writes
+
+capability amqp/mandatory  a mandatory message no queue takes, handed back and read
+  heroes  amqp.next_return, amqp.Return, amqp.REPLY_NO_ROUTE
+  go      Channel.NotifyReturn, Return
+  rust    message::BasicReturnMessage
+  python  BlockingChannel.add_on_return_callback, UnroutableError
+
+capability amqp/immediate  a message dropped where no consumer takes it at once (the immediate flag)
+  heroes  refused: RabbitMQ refuses it since 3.0, closing the connection; a message's time to live of 0 does what it did
+  go      Channel.Publish (immediate)
+  rust    options::BasicPublishOptions (immediate)
+  python  -
+
+capability amqp/confirms  publisher confirms: a channel in confirm mode, each publish numbered, confirmed or refused, waited for one or all
+  heroes  amqp.select_confirms, amqp.next_confirmation, amqp.wait_confirms, amqp.Confirmation, amqp.publish
+  go      Channel.Confirm, Channel.NotifyConfirm, Channel.NotifyPublish, Confirmation, Channel.PublishWithDeferredConfirm, Channel.PublishWithDeferredConfirmWithContext, DeferredConfirmation, DeferredConfirmation.Acked, DeferredConfirmation.Done, DeferredConfirmation.Wait, DeferredConfirmation.WaitContext, Channel.GetNextPublishSeqNo
+  rust    Channel::confirm_select, options::ConfirmSelectOptions, PublisherConfirm, Confirmation, Channel::wait_for_confirms
+  python  BlockingChannel.confirm_delivery, NackError
+  note    `publish` answers the sequence number, Go's GetNextPublishSeqNo; a confirmation of several at once is answered one publish at a time
+
+capability amqp/consume  a consumer started and its deliveries read, from every channel in the order they came
+  heroes  amqp.consume, amqp.consumer, amqp.Consumer, amqp.next_delivery, amqp.Delivery
+  go      Channel.Consume, Channel.ConsumeWithContext, Delivery
+  rust    Channel::basic_consume, options::BasicConsumeOptions, options::BasicDeliverOptions, Consumer, message::Delivery, message::DeliveryResult, ConsumerDelegate
+  python  BlockingChannel.basic_consume, BlockingChannel.consume, BlockingChannel.start_consuming, BlockingChannel.stop_consuming, BlockingChannel.get_waiting_message_count, BlockingChannel.consumer_tags, DuplicateConsumerTag
+  note    the deliveries held are bounded by `Options.most_held`, past which the connection closes failing `limit`; `qos` keeps the server from sending more
+
+capability amqp/cancel  a consumer ended by the program, or by the server where its queue goes
+  heroes  amqp.cancel, amqp.cancellations_of, amqp.Cancellation
+  go      Channel.Cancel, Channel.NotifyCancel
+  rust    Channel::basic_cancel, options::BasicCancelOptions
+  python  BlockingChannel.basic_cancel, BlockingChannel.cancel, BlockingChannel.add_on_cancel_callback, ConsumerCancelled
+
+capability amqp/get  one message taken from a queue
+  heroes  amqp.get
+  go      Channel.Get
+  rust    Channel::basic_get, options::BasicGetOptions, options::BasicGetOkOptions, message::BasicGetMessage
+  python  BlockingChannel.basic_get
+  note    an empty queue is `not_found`, where Go answers ok false and pika (None, None, None)
+
+capability amqp/acknowledge  a delivery acknowledged, refused, or requeued, one or every one up to it
+  heroes  amqp.ack, amqp.nack, amqp.reject
+  go      Channel.Ack, Channel.Nack, Channel.Reject, Delivery.Ack, Delivery.Nack, Delivery.Reject, Acknowledger
+  rust    Channel::basic_ack, Channel::basic_nack, Channel::basic_reject, options::BasicAckOptions, options::BasicNackOptions, options::BasicRejectOptions, Acker
+  python  BlockingChannel.basic_ack, BlockingChannel.basic_nack, BlockingChannel.basic_reject
+
+capability amqp/recover  what a channel did not acknowledge sent again
+  heroes  amqp.recover
+  go      Channel.Recover
+  rust    Channel::basic_recover, Channel::basic_recover_async, options::BasicRecoverOptions, options::BasicRecoverAsyncOptions
+  python  BlockingChannel.basic_recover
+  note    `basic.recover-async`, which AMQP 0-9-1 itself deprecates, is not sent
+
+capability amqp/transactions  a channel made transactional, committed, rolled back
+  heroes  amqp.select_transactions, amqp.commit, amqp.rollback
+  go      Channel.Tx, Channel.TxCommit, Channel.TxRollback
+  rust    Channel::tx_select, Channel::tx_commit, Channel::tx_rollback
+  python  BlockingChannel.tx_select, BlockingChannel.tx_commit, BlockingChannel.tx_rollback
+
+capability amqp/field-tables  field tables read and written, every type RabbitMQ knows, a field found by its name
+  heroes  amqp.encode_table, amqp.decode_table, amqp.value_of, amqp.Field, amqp.Value
+  go      Table, Table.Validate, Decimal
+  rust    amq_protocol_types::FieldTable, amq_protocol_types::AMQPValue
+  python  pika.data.encode_table, pika.data.decode_table, pika.data.encode_value, pika.data.decode_value, InvalidFieldTypeException, UnsupportedAMQPFieldException, UnencodableDecimalError, UnencodableFloatError, UnencodableLongError, UnencodableTimestampError
+  note    RabbitMQ's letters, as pika and Go write them (`s` a 16-bit integer, `l` a 64-bit one, `x` bytes); the standard's own `U` and `L` are read too; a long string that is not UTF-8 is read as bytes, as pika does; nesting is 64 deep at most, read without the stack
+
+capability amqp/reply-codes  the reply codes of the protocol, and the code of Rebel's each one fails with
+  heroes  amqp.REPLY_SUCCESS, amqp.REPLY_CONTENT_TOO_LARGE, amqp.REPLY_NO_ROUTE, amqp.REPLY_NO_CONSUMERS, amqp.REPLY_CONNECTION_FORCED, amqp.REPLY_INVALID_PATH, amqp.REPLY_ACCESS_REFUSED, amqp.REPLY_NOT_FOUND, amqp.REPLY_RESOURCE_LOCKED, amqp.REPLY_PRECONDITION_FAILED, amqp.REPLY_FRAME_ERROR, amqp.REPLY_SYNTAX_ERROR, amqp.REPLY_COMMAND_INVALID, amqp.REPLY_CHANNEL_ERROR, amqp.REPLY_UNEXPECTED_FRAME, amqp.REPLY_RESOURCE_ERROR, amqp.REPLY_NOT_ALLOWED, amqp.REPLY_NOT_IMPLEMENTED, amqp.REPLY_INTERNAL_ERROR
+  go      ContentTooLarge, NoRoute, NoConsumers, ConnectionForced, InvalidPath, AccessRefused, NotFound, ResourceLocked, PreconditionFailed, FrameError, SyntaxError, CommandInvalid, ChannelError, UnexpectedFrame, ResourceError, NotAllowed, NotImplemented, InternalError, Error.Recover, Error.Recoverable, Error.Temporary
+  rust    AMQPError, AMQPErrorKind, AMQPHardError, AMQPSoftError
+  python  AMQPError, AMQPChannelError, ChannelError, ProbableAccessDeniedError, ProbableAuthenticationError, AuthenticationError, IncompatibleProtocolError, ProtocolVersionMismatch, ProtocolSyntaxError, InvalidChannelNumber, InvalidFrameError, FrameTooLargeError, UnexpectedFrameError, MethodNotImplemented, StreamLostError, ConnectionOpenAborted, ConnectionWrongStateError, ReentrancyError
+  note    403 and 530 are `permission`; 404, 312 and 313 `not_found`; 311 `limit`; 320 `closed`; 540 `unsupported`; 402, 406 and 501 to 506 `invalid`; the rest `failed`; the message carries the code and the server's text
+
+capability amqp/methods  the protocol's methods written and read one by one, as values
+  heroes  refused: the frames are this client's to write and read, each function above sends the method it names; a second surface of the same methods would let a program write a frame that leaves the connection's state unknown to the client
+  go      -
+  rust    every gen_* and parse_* of the classes access, basic, channel, confirm, connection, exchange, queue and tx, AMQPClass, each class's AMQPMethod and the records of its methods
+  python  pika.spec, pika.frame, pika.amqp_object
+
+capability amqp/access-request  the access.request of AMQP 0-8
+  heroes  refused: AMQP 0-9-1 deprecates it and RabbitMQ ignores it
+  go      -
+  rust    Channel::access_request, options::AccessRequestOptions
+  python  -
+
+capability amqp/no-wait  a declaration, binding or consumer sent without awaiting its answer
+  heroes  refused: the server's refusal then closes the channel under a later call, which cannot say which request it was; every request here waits for its answer
+  go      the noWait parameters of ExchangeDeclare, QueueDeclare, QueueBind, Consume and the others
+  rust    the nowait fields of the options records
+  python  -
+
+capability amqp/recovery  a lost connection made again by the client, its channels, consumers and declarations redone
+  heroes  refused: a connection lost takes its unacknowledged deliveries and unconfirmed publishes with it, so redoing the rest in silence would deliver some messages twice and lose the count of others; the program connects and declares anew, which it can see
+  go      Recovery, ReconnectionConfig, ReconnectionConfig.Clone, ConnectionRecovery, DefaultConnectionRecovery, TopologyRecovery, DefaultTopologyRecovery, TopologyConfiguration, TopologyConfiguration.Clone, TopologyRecoveryEntity, TopologyRecoveryEntityType, TopologyRecoveryMode, Channel.TopologyConfiguration, Connection.Reconnect, Channel.Reconnect, Connection.IsRecoveryEnabled, Connection.IsConnectionRecoveryEnabled, Connection.IsTopologyRecoveryEnabled, Connection.MaxRetryCount, Connection.RetryInterval, Connection.NotifyRecoveryCancel, Channel.NotifyRecoveryCancel, Connection.NotifyStateChange, Channel.NotifyStateChange, StateChanged, LifeCycleState, DefaultMaxRetryCount, DefaultRetryInterval, BindingConfig, ExchangeConfig, ExchangeBindingConfig, QueueConfig, QosConfig
+  rust    Channel::wait_for_recovery
+  python  ConnectionParameters.connection_attempts, ConnectionParameters.retry_delay
+
+dropped
+  go      SetLogger, Logging, NullLogger (logging; a failure here is a value), DefaultDial, Config.Dial (a dialer the program writes, which needs a closure), Authentication's methods Mechanism and Response (an interface), Error.Error, Error.GoString (Go's error interface), Config.Recovery (the recovery refused above)
+  rust    Connection::events_listener, Event (a listener of the connection's events, which needs a closure), runtime::default_runtime's executors, Connect (a trait for the program's own socket), auth::TokenProvider's implementations beyond the token itself, Result, Error's conversions
+  python  every callback of SelectConnection and the adapters (on_open, on_close and the others), pika.logging, pika.diagnostic_utils, pika.tcp_socket_opts, ConnectionParameters.tcp_options, ConnectionParameters.max_inbound_message_body_size (here `Options.most_body_bytes`), ConnectionParameters.MAX_INBOUND_MESSAGE_BODY_SIZE_LIMIT, pika.validators, pika.callback, pika.heartbeat (the heartbeat checker, here the waiting call's), WorkQueueFullError, DuplicateGetOkCallback (callback plumbing)

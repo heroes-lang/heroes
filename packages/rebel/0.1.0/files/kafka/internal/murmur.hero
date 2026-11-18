@@ -1,0 +1,72 @@
+# The partition Java's client chooses for a key: the 32-bit MurmurHash2 of
+# its bytes with Kafka's seed, its sign bit cleared, modulo the partitions.
+# The hash is computed in 32-bit arithmetic held in an `i64`, every product
+# masked to its low 32 bits, since nothing wraps in Heroes.
+
+# The low 32 bits.
+constant MASK: i64
+    4294967295
+
+# The multiplier.
+constant M: i64
+    1540483477
+
+# The seed Kafka's client gives the hash.
+constant SEED: i64
+    2538058380
+
+# `a` times `M`, its low 32 bits.
+#
+# - `a`: 0 to 4294967295.
+function times_m(a: i64) -> i64
+    return a * M & MASK
+
+# The 32-bit MurmurHash2 of `data` with Kafka's seed, as an unsigned
+# number.
+#
+# - `data`: the bytes.
+function murmur2(data: [u8] lent) -> i64
+    n = data.len()
+    h: i64 @= (SEED ^ n) & MASK
+    whole = n / 4
+
+    for i in range(from: 0, to: whole)
+        at = i * 4
+        k0 = to_i64(data[at]).must() | to_i64(data[at + 1]).must() << 8 | to_i64(data[at + 2]).must() << 16 | to_i64(data[at + 3]).must() << 24
+        k1 = times_m(k0)
+        k2 = k1 ^ k1 >> 24
+        k3 = times_m(k2)
+        h @ times_m(h) ^ k3
+
+    tail = n % 4
+    base = whole * 4
+
+    if tail == 3
+        h @ h ^ to_i64(data[base + 2]).must() << 16
+
+    if tail >= 2
+        h @ h ^ to_i64(data[base + 1]).must() << 8
+
+    if tail >= 1
+        h @ times_m(h ^ to_i64(data[base]).must())
+    h @ h ^ h >> 13
+    h @ times_m(h)
+    h @ h ^ h >> 15
+    return h
+
+# The partition of `key` among `partitions`.
+#
+# - `key`: the key.
+# - `partitions`: 1 or more.
+function partition_of(key: [u8] lent, partitions: i64) -> i64
+    return (murmur2(key) & 2147483647) % partitions
+
+test "murmur2, partition_of: empty, one byte to four, eleven, bytes past 127, as kafka-python and confluent-kafka answer"
+    assert murmur2([]) == 275646681 && partition_of([], partitions: 7) == 2
+    assert murmur2([97]) == 2731586172 && partition_of([97], partitions: 7) == 5
+    assert murmur2([97, 98]) == 316155434 && partition_of([97, 98], partitions: 1000) == 434
+    assert murmur2([97, 98, 99]) == 479470107 && partition_of([97, 98, 99], partitions: 7) == 4
+    assert murmur2([97, 98, 99, 100]) == 2971317748 && partition_of([97, 98, 99, 100], partitions: 1000) == 100
+    assert murmur2([104, 101, 108, 108, 111, 32, 119, 111, 114, 108, 100]) == 1221641059
+    assert murmur2([255, 254, 253]) == 998637092 && partition_of([195, 169], partitions: 1000) == 271
+    assert partition_of([97], partitions: 1) == 0

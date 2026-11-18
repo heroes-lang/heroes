@@ -1,0 +1,209 @@
+# The consumer protocol of Kafka's groups, as members exchange it through
+# the coordinator: a member's subscription (its topics) and its assignment
+# (its partitions) as bytes of any version, and the range assignor the
+# leader runs.
+
+use kafka/internal/model
+use kafka/internal/wire
+
+# The consumer protocol's subscription, version 0: the topics, no user data.
+#
+# - `topics`: the topics.
+function subscription(topics: [str]) -> [u8]?
+    out: [u8] @= []
+    wire.put_i16(out: @out, v: 0)
+    wire.put_i32(out: @out, v: topics.len())
+
+    for t in topics
+        wire.put_string(out: @out, s: t, what: "a topic's name")?
+
+    wire.put_i32(out: @out, v: -1)
+    return ok(out)
+
+# The topics of a subscription of any version, what follows them unread.
+#
+# - `data`: the subscription.
+function subscription_topics(data: [u8]) -> [str]?
+    r @= wire.reader(data)
+    _ = wire.take_i16(@r, what: "a subscription's version")?
+    count = wire.take_count(@r, what: "a subscription's topics")?
+    out: [str] @= []
+
+    for _ in range(from: 0, to: count)
+        out @ out.push(wire.take_string(@r, what: "a subscription's topic")?)
+
+    return ok(out)
+
+# The consumer protocol's assignment, version 0: each topic's partitions, no
+# user data.
+#
+# - `partitions`: the partitions, by topic.
+function assignment(partitions: [model.TopicPartition]) -> [u8]?
+    out: [u8] @= []
+    wire.put_i16(out: @out, v: 0)
+    topics: [str] @= []
+
+    for p in partitions
+        seen: bool @= false
+
+        for t in topics
+            if t == p.topic
+                seen @ true
+
+        if !seen
+            topics @ topics.push(p.topic)
+
+    wire.put_i32(out: @out, v: topics.len())
+
+    for t in topics
+        wire.put_string(out: @out, s: t, what: "a topic's name")?
+        mine: [i64] @= []
+
+        for p in partitions
+            if p.topic == t
+                mine @ mine.push(p.partition)
+
+        wire.put_i32(out: @out, v: mine.len())
+
+        for n in mine
+            wire.put_i32(out: @out, v: n)
+
+    wire.put_i32(out: @out, v: -1)
+    return ok(out)
+
+# The partitions of an assignment of any version.
+#
+# - `data`: the assignment; none for none.
+function assignment_partitions(data: [u8]) -> [model.TopicPartition]?
+    if data.len() == 0
+        return ok([])
+    r @= wire.reader(data)
+    _ = wire.take_i16(@r, what: "an assignment's version")?
+    topics = wire.take_count(@r, what: "an assignment's topics")?
+    out: [model.TopicPartition] @= []
+
+    for _ in range(from: 0, to: topics)
+        name = wire.take_string(@r, what: "an assignment's topic")?
+        count = wire.take_count(@r, what: "an assignment's partitions")?
+
+        for _ in range(from: 0, to: count)
+            out @ out.push(
+                model.TopicPartition(topic: name, partition: wire.take_i32(@r, what: "an assignment's partition")?)
+            )
+
+    return ok(out)
+
+# The range assignor: each topic's partitions cut into runs among the members
+# that subscribe to it, ordered by their identifiers, the first one longer
+# where they do not divide evenly.
+#
+# - `subscriptions`: the members and their topics.
+# - `counts`: each topic's partitions.
+function assign_range(subscriptions: [model.Subscription], counts: {str: i64}) -> [model.Assignment]
+    ids: [str] @= []
+
+    for m in subscriptions
+        ids @ ids.push(m.member_id)
+
+    ids @ sort(ids)
+    topics: [str] @= []
+
+    for m in subscriptions
+        for t in m.topics
+            seen: bool @= false
+
+            for k in topics
+                if k == t
+                    seen @ true
+
+            if !seen
+                topics @ topics.push(t)
+
+    topics @ sort(topics)
+    given: [[model.TopicPartition]] @= []
+
+    for _ in ids
+        given @ given.push([])
+
+    for t in topics
+        count = counts[t].default(0)
+        takers: [i64] @= []
+
+        for i in range(from: 0, to: ids.len())
+            for m in subscriptions
+                if m.member_id == ids[i]
+                    for wanted in m.topics
+                        if wanted == t
+                            taken: bool @= false
+
+                            for already in takers
+                                if already == i
+                                    taken @ true
+
+                            if !taken
+                                takers @ takers.push(i)
+
+        if takers.len() > 0 && count > 0
+            each = count / takers.len()
+            extra = count % takers.len()
+
+            for k in range(from: 0, to: takers.len())
+                start = if k < extra
+                    each * k + k
+                else
+                    each * k + extra
+
+                length = if k < extra
+                    each + 1
+                else
+                    each
+
+                mine @= given[takers[k]]
+
+                for p in range(from: start, to: start + length)
+                    mine @ mine.push(model.TopicPartition(topic: t, partition: p))
+
+                given[takers[k]] @ mine
+
+    out: [model.Assignment] @= []
+
+    for i in range(from: 0, to: ids.len())
+        out @ out.push(model.Assignment(member_id: ids[i], partitions: given[i]))
+
+    return out
+
+test "assign_range: Java's example of two topics of three, uneven runs and a topic unknown, more members than partitions, as kafka-python's assignor answers"
+    two = assign_range(
+        [model.Subscription(member_id: "C1", topics: ["t0", "t1"]), model.Subscription(member_id: "C0", topics: ["t0", "t1"])],
+        counts: {"t0": 3, "t1": 3}
+    )
+    assert two[0].member_id == "C0" && two[0].partitions == [model.TopicPartition(topic: "t0", partition: 0), model.TopicPartition(topic: "t0", partition: 1), model.TopicPartition(topic: "t1", partition: 0), model.TopicPartition(topic: "t1", partition: 1)]
+    assert two[1].partitions == [model.TopicPartition(topic: "t0", partition: 2), model.TopicPartition(topic: "t1", partition: 2)]
+    three = assign_range(
+        [model.Subscription(member_id: "m2", topics: ["a"]), model.Subscription(member_id: "m1", topics: ["a", "b"]), model.Subscription(member_id: "m3", topics: ["a", "b", "missing"])],
+        counts: {"a": 7, "b": 2}
+    )
+    assert three[0].partitions == [model.TopicPartition(topic: "a", partition: 0), model.TopicPartition(topic: "a", partition: 1), model.TopicPartition(topic: "a", partition: 2), model.TopicPartition(topic: "b", partition: 0)]
+    assert three[1].partitions == [model.TopicPartition(topic: "a", partition: 3), model.TopicPartition(topic: "a", partition: 4)]
+    assert three[2].partitions == [model.TopicPartition(topic: "a", partition: 5), model.TopicPartition(topic: "a", partition: 6), model.TopicPartition(topic: "b", partition: 1)]
+    many = assign_range(
+        [model.Subscription(member_id: "x", topics: ["a"]), model.Subscription(member_id: "y", topics: ["a"])],
+        counts: {"a": 1}
+    )
+    assert many[0].partitions == [model.TopicPartition(topic: "a", partition: 0)] && many[1].partitions == []
+    assert assign_range([], counts: {}) == []
+
+test "subscription, subscription_topics: the bytes kafka-python's ConsumerProtocolSubscription writes, read back"
+    data = subscription(["a", "b"]).must()
+    assert data == [0, 0, 0, 0, 0, 2, 0, 1, 97, 0, 1, 98, 255, 255, 255, 255]
+    assert subscription_topics(data).must() == ["a", "b"]
+    assert subscription_topics([0, 1]).is_err()
+
+test "assignment, assignment_partitions: two topics read back in order, none empty"
+    parts = [
+        model.TopicPartition(topic: "a", partition: 0)
+        model.TopicPartition(topic: "a", partition: 2)
+        model.TopicPartition(topic: "b", partition: 1)
+    ]
+    assert assignment_partitions(assignment(parts).must()).must() == parts
+    assert assignment_partitions([]).must() == [] && assignment_partitions([0, 0, 0, 0, 0, 1]).is_err()

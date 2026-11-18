@@ -1,0 +1,372 @@
+# The frames of the server acted on: a synchronous answer handed to the call
+# that waits for it, a delivery and its content held, a returned message
+# held, a confirmation counted, a channel or the connection closed as the
+# server asks. What the server sends for a channel the client has closed is
+# dropped, as AMQP asks.
+
+use amqp/internal/content
+use amqp/internal/decoding
+use amqp/internal/encoding
+use amqp/internal/fixture
+use amqp/internal/frames
+use amqp/internal/model
+use amqp/internal/reading
+use amqp/internal/state
+use bytes
+use io
+
+# Counts the server's confirmation of `tag` on channel `n`: each publish it
+# settles leaves the outstanding ones and is held, in order.
+#
+# - `s`: the session.
+# - `n`: the channel.
+# - `tag`: the publish's sequence number.
+# - `multiple`: whether every publish up to it is meant.
+# - `ack`: whether the server took them.
+function confirm(@s: state.Session, n: i64, tag: i64, multiple: bool, ack: bool) -> ()?
+    kept: [i64] @= []
+    settled: [i64] @= []
+
+    for seq in s.chans[n].outstanding
+        if seq == tag || multiple && seq < tag
+            settled @ settled.push(seq)
+        else
+            kept @ kept.push(seq)
+
+    s.chans[n].outstanding @ kept
+
+    for seq in settled
+        reading.hold_confirmation(@s.chans[n].confirmations, c: model.Confirmation(channel: n, tag: seq, ack: ack))
+
+        if !ack
+            reading.hold_number(@s.chans[n].nacked, n: seq)
+
+    return reading.check_held(@s)
+
+# Acts on a method on channel `n`.
+#
+# - `s`: the session.
+# - `n`: the channel, 1 or more.
+# - `m`: the method.
+function on_channel(@s: state.Session, n: i64, m: decoding.Incoming) -> reading.Event?
+    if n >= s.chans.len()
+        return ok(.other)
+
+    if !s.chans[n].open
+        return match m
+            .close _ =>
+                reading.send(@s, channel: n, payload: encoding.close_ok(20))?
+                ok(.reply(channel: n, method: m))
+            .reply _ => ok(.reply(channel: n, method: m))
+            .start _ | .secure _ | .tune _ | .blocked _ | .unblocked | .flow _ | .declare_ok _ | .count _ | .tagged _ | .cancelled _ | .returned _ | .deliver _ | .get_ok _ | .get_empty | .confirm _ => ok(
+                .other
+            )
+
+    match m
+        .close c =>
+            reading.send(@s, channel: n, payload: encoding.close_ok(20))?
+            consumers = s.chans[n].consumers
+            s.chans[n] @ state.closed_chan()
+            s.chans[n].closed_by_server @ true
+            s.chans[n].closing @ c.closing
+
+            for tag in consumers
+                reading.hold_cancellation(@s.cancellations, c: model.Cancellation(channel: n, consumer_tag: tag))
+
+            return ok(.reply(channel: n, method: m))
+        .flow f =>
+            s.chans[n].flow_stopped @ !f.active
+            reading.send(@s, channel: n, payload: encoding.flow(21, active: f.active))?
+            return ok(.other)
+        .deliver d =>
+            s.chans[n].reading @ state.READING_DELIVER
+            s.chans[n].body_size @ -1
+            s.chans[n].delivery @ model.Delivery(
+                channel: n,
+                consumer_tag: d.consumer_tag,
+                tag: d.tag,
+                redelivered: d.redelivered,
+                exchange: d.exchange,
+                routing_key: d.routing_key,
+                remaining: 0,
+                message: state.empty_message()
+            )
+            return ok(.other)
+        .get_ok g =>
+            s.chans[n].reading @ state.READING_GET
+            s.chans[n].body_size @ -1
+            s.chans[n].delivery @ model.Delivery(
+                channel: n,
+                consumer_tag: "",
+                tag: g.tag,
+                redelivered: g.redelivered,
+                exchange: g.exchange,
+                routing_key: g.routing_key,
+                remaining: g.remaining,
+                message: state.empty_message()
+            )
+            return ok(.other)
+        .returned r =>
+            s.chans[n].reading @ state.READING_RETURN
+            s.chans[n].body_size @ -1
+            s.chans[n].returned @ model.Return(
+                channel: n,
+                code: r.code,
+                text: r.text,
+                exchange: r.exchange,
+                routing_key: r.routing_key,
+                message: state.empty_message()
+            )
+            return ok(.other)
+        .confirm c =>
+            confirm(@s, n: n, tag: c.tag, multiple: c.multiple, ack: c.ack)?
+            return ok(.other)
+        .cancelled c =>
+            kept: [str] @= []
+
+            for tag in s.chans[n].consumers
+                if tag != c.tag
+                    kept @ kept.push(tag)
+
+            s.chans[n].consumers @ kept
+            reading.hold_cancellation(@s.cancellations, c: model.Cancellation(channel: n, consumer_tag: c.tag))
+            return ok(.other)
+        .start _ | .secure _ | .tune _ | .blocked _ | .unblocked | .declare_ok _ | .count _ | .tagged _ | .get_empty | .reply _ => return ok(
+            .reply(channel: n, method: m)
+        )
+
+# Acts on a method on channel 0, the connection's own.
+#
+# - `s`: the session.
+# - `m`: the method.
+function on_connection(@s: state.Session, m: decoding.Incoming) -> reading.Event?
+    match m
+        .close c =>
+            _ = reading.send(@s, channel: 0, payload: encoding.close_ok(10)).is_err()
+            s.closed_by_server @ true
+            s.closing @ c.closing
+            return reading.lose(
+                @s,
+                code: reading.code_of(c.closing.code),
+                msg: f"{s.target} closed the connection: {c.closing.code} {c.closing.text}"
+            )
+        .blocked b =>
+            s.blocked @ model.Blocked(active: true, reason: b.reason)
+            return ok(.other)
+        .unblocked =>
+            s.blocked @ model.Blocked(active: false, reason: "")
+            return ok(.other)
+        .start _ | .secure _ | .tune _ | .flow _ | .declare_ok _ | .count _ | .tagged _ | .cancelled _ | .returned _ | .deliver _ | .get_ok _ | .get_empty | .confirm _ | .reply _ => return ok(
+            .reply(channel: 0, method: m)
+        )
+
+# Ends the content channel `n` reads: a delivery held, a returned message
+# held, or the message `basic.get` asked for handed on.
+#
+# - `s`: the session.
+# - `n`: the channel.
+function completed(@s: state.Session, n: i64) -> reading.Event?
+    kind = s.chans[n].reading
+    body = s.chans[n].body
+    s.chans[n].body @ []
+    s.chans[n].reading @ state.READING_NONE
+
+    if kind == state.READING_RETURN
+        r @= s.chans[n].returned
+        r.message.body @ body
+        reading.hold_return(@s.returns, r: r)
+        reading.check_held(@s)?
+        return ok(.other)
+    d @= s.chans[n].delivery
+    d.message.body @ body
+
+    if kind == state.READING_GET
+        return ok(.got(channel: n, delivery: d))
+    reading.hold_delivery(@s.deliveries, d: d)
+    reading.check_held(@s)?
+    return ok(.other)
+
+# Acts on a content header on channel `n`.
+#
+# - `s`: the session.
+# - `n`: the channel.
+# - `payload`: the header.
+function on_header(@s: state.Session, n: i64, payload: [u8]) -> reading.Event?
+    if n == 0 || n >= s.chans.len() || !s.chans[n].open
+        return ok(.other)
+
+    if s.chans[n].reading == state.READING_NONE || s.chans[n].body_size != -1
+        return reading.lose(
+            @s,
+            code: model.INVALID,
+            msg: f"{s.target} sent a content header on channel {n} where none was due"
+        )
+
+    h = match content.decode_header(payload)
+        .ok got => got
+        .err e  => return reading.lose(@s, code: e.code, msg: f"{s.target} sent {e.msg}")
+
+    if h.body_size > s.options.most_body_bytes
+        return reading.lose(
+            @s,
+            code: model.LIMIT,
+            msg: f"{s.target} sent a body of {h.body_size} bytes, past the {s.options.most_body_bytes} read"
+        )
+    s.chans[n].body_size @ h.body_size
+
+    if s.chans[n].reading == state.READING_RETURN
+        s.chans[n].returned.message @ h.message
+    else
+        s.chans[n].delivery.message @ h.message
+
+    if h.body_size == 0
+        return completed(@s, n: n)
+    return ok(.other)
+
+# Acts on a piece of a body on channel `n`.
+#
+# - `s`: the session.
+# - `n`: the channel.
+# - `payload`: the piece.
+function on_body(@s: state.Session, n: i64, payload: [u8]) -> reading.Event?
+    if n == 0 || n >= s.chans.len() || !s.chans[n].open
+        return ok(.other)
+
+    if s.chans[n].reading == state.READING_NONE || s.chans[n].body_size < 0
+        return reading.lose(@s, code: model.INVALID, msg: f"{s.target} sent a body on channel {n} where none was due")
+    bytes.push_all(to: @s.chans[n].body, from: payload)
+
+    if s.chans[n].body.len() > s.chans[n].body_size
+        return reading.lose(
+            @s,
+            code: model.INVALID,
+            msg: f"{s.target} sent a body on channel {n} longer than its header said"
+        )
+
+    if s.chans[n].body.len() == s.chans[n].body_size
+        return completed(@s, n: n)
+    return ok(.other)
+
+# Acts on the frame `t`.
+#
+# - `s`: the session.
+# - `t`: a frame whole.
+function apply(@s: state.Session, t: reading.Taken) -> reading.Event?
+    if t.kind == frames.HEARTBEAT
+        if t.channel != 0
+            return reading.lose(@s, code: model.INVALID, msg: f"{s.target} sent a heartbeat on channel {t.channel}")
+        return ok(.other)
+
+    if t.kind == frames.HEADER
+        return on_header(@s, n: t.channel, payload: t.payload)
+
+    if t.kind == frames.BODY
+        return on_body(@s, n: t.channel, payload: t.payload)
+
+    m = match decoding.decode(t.payload)
+        .ok got => got
+        .err e  => return reading.lose(@s, code: e.code, msg: f"{s.target} sent {e.msg}")
+
+    if t.channel == 0
+        return on_connection(@s, m: m)
+    return on_channel(@s, n: t.channel, m: m)
+
+test "apply: confirmations one at a time and several at once, a refusal counted"
+    w @= fixture.wired()
+    w.session.chans[1].confirming @ true
+    w.session.chans[1].outstanding @ [1, 2, 3, 4]
+    acked: [u8] = [0, 0, 0, 0, 0, 0, 0, 3, 1]
+    nacked: [u8] = [0, 0, 0, 0, 0, 0, 0, 4, 0]
+    io.write(
+        w.peer,
+        data: bytes.concat([fixture.method(channel: 1, class_id: 60, method_id: 80, fields: acked), fixture.method(channel: 1, class_id: 60, method_id: 120, fields: nacked)])
+    ).must()
+    reading.fill(@w.session).must()
+    _ = apply(@w.session, t: reading.taken(@w.session).must()).must()
+    _ = apply(@w.session, t: reading.taken(@w.session).must()).must()
+    assert w.session.chans[1].outstanding == [] && w.session.chans[1].nacked == [4]
+    assert w.session.chans[1].confirmations.len() == 4 && w.session.chans[1].confirmations[3].ack == false
+    fixture.unwire(@w)
+
+test "apply: the server's channel.close answered by close-ok, the channel closed, its consumers counted cancelled"
+    w @= fixture.wired()
+    w.session.chans[1].consumers @ ["a"]
+    io.write(
+        w.peer,
+        data: fixture.method(channel: 1, class_id: 20, method_id: 40, fields: [1, 148, 1, 'x', 0, 50, 0, 10])
+    ).must()
+    reading.fill(@w.session).must()
+    event = apply(@w.session, t: reading.taken(@w.session).must()).must()
+    assert event == .reply(channel: 1, method: .close(class_of: 20, closing: model.Closing(code: 404, text: "x", class_id: 50, method_id: 10)))
+    assert !w.session.chans[1].open && w.session.chans[1].closed_by_server && w.session.cancellations.len() == 1
+    assert fixture.written(w.peer) == [1, 0, 1, 0, 0, 0, 4, 0, 20, 0, 41, 206]
+    fixture.unwire(@w)
+
+test "apply: the server's connection.close answered and the connection lost with the code its reply means; a frame of an unknown type"
+    w @= fixture.wired()
+    io.write(
+        w.peer,
+        data: fixture.method(channel: 0, class_id: 10, method_id: 50, fields: [1, 64, 1, 'f', 0, 0, 0, 0])
+    ).must()
+    reading.fill(@w.session).must()
+
+    match apply(@w.session, t: reading.taken(@w.session).must())
+        .ok _  => assert false
+        .err e => assert e.code == "closed" && w.session.closed_by_server && !w.session.open
+
+    v @= fixture.wired()
+    io.write(v.peer, data: [9, 0, 0, 0, 0, 0, 0, 206]).must()
+    reading.fill(@v.session).must()
+    assert reading.taken(@v.session).is_err() && !v.session.open
+    fixture.unwire(@w)
+    fixture.unwire(@v)
+
+test "check_held: the deliveries past the bound lose the connection with limit"
+    w @= fixture.wired()
+    w.session.options.most_held @ 1
+    io.write(
+        w.peer,
+        data: bytes.concat([fixture.delivery(channel: 1, tag: 1, body: [1]), fixture.delivery(channel: 1, tag: 2, body: [2])])
+    ).must()
+    failed: bool @= false
+    rounds: i64 @= 0
+
+    while !failed && rounds < 20
+        rounds @ rounds + 1
+
+        match reading.taken(@w.session)
+            .err _ => failed @ true
+            .ok t =>
+                if t.complete
+                    match apply(@w.session, t: t)
+                        .ok _ => _ = 0
+                        .err e =>
+                            assert e.code == "limit"
+                            failed @ true
+                else
+                    reading.fill(@w.session).must()
+
+    assert failed && !w.session.open
+    fixture.unwire(@w)
+
+test "taken, apply: a delivery's method, header and body held as one, a heartbeat, an empty body, content on a channel not open dropped"
+    w @= fixture.wired()
+    io.write(
+        w.peer,
+        data: bytes.concat([fixture.delivery(channel: 1, tag: 7, body: [1, 2, 3]), frames.heartbeat(), fixture.delivery(channel: 1, tag: 8, body: []), fixture.delivery(channel: 3, tag: 9, body: [5])])
+    ).must()
+    events: i64 @= 0
+
+    while w.session.deliveries.len() < 2 && events < 20
+        t = reading.taken(@w.session).must()
+
+        if t.complete
+            _ = apply(@w.session, t: t).must()
+        else
+            reading.fill(@w.session).must()
+        events @ events + 1
+
+    assert w.session.deliveries.len() == 2
+    assert w.session.deliveries[0].tag == 7 && w.session.deliveries[0].message.body == [1, 2, 3] && w.session.deliveries[0].consumer_tag == "t"
+    assert w.session.deliveries[1].tag == 8 && w.session.deliveries[1].message.body == []
+    fixture.unwire(@w)

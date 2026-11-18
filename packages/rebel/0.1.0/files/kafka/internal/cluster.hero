@@ -1,0 +1,492 @@
+# The cluster as the client knows it: a connection per broker, made when a
+# request first goes there; the metadata asked and kept, each topic's
+# partitions and leaders; and a request sent to a broker, retried with fresh
+# metadata where the error says a retry may cure it, within the call's time.
+
+use kafka/internal/broker
+use kafka/internal/errors
+use kafka/internal/model
+use kafka/internal/state
+use kafka/internal/wire
+use net
+use time
+
+# The key of `Metadata`.
+constant METADATA: i64
+    3
+
+# The monotonic clock, in milliseconds.
+function now_ms() -> i64
+    return match time.mark()
+        .ok m  => m.nanoseconds / 1000000
+        .err _ => 0
+
+# Waits `ms` milliseconds before a retry.
+#
+# - `ms`: milliseconds.
+function pause_ms(ms: i64)
+    match time.milliseconds(ms)
+        .ok d  => time.sleep(d)
+        .err _ => _ = 0
+
+# Fails `invalid` where an option is out of its range.
+#
+# - `o`: the options.
+function check(o: model.Options) -> ()?
+    if o.brokers.len() == 0
+        return fail(code: model.INVALID, msg: "the options name no broker")
+
+    for b in o.brokers
+        _ = address_of(b)?
+
+    if o.connect_ms < 1 || o.wait_ms < 1
+        return fail(code: model.INVALID, msg: "a time to connect or to wait is below 1 millisecond")
+
+    if o.most_response_bytes < 1024 || o.most_fetch_bytes < 1
+        return fail(code: model.INVALID, msg: "the largest answer is below 1024 bytes or the fetch's below 1")
+    return ok()
+
+# The host and the port of `host:port`.
+#
+# - `text`: `host:port`, an IPv6 address in brackets.
+function address_of(text: str) -> net.HostPort?
+    hp = match net.split_host_port(text)
+        .ok got => got
+        .err _  => return fail(code: model.INVALID, msg: f"the broker \"{text}\" is not host:port")
+
+    port = hp.port
+
+    if hp.host == "" || port < 1 || port > 65535
+        return fail(code: model.INVALID, msg: f"the broker \"{text}\" is not host:port with a port of 1 to 65535")
+    return ok(hp)
+
+# Adds `c` to the connections.
+#
+# - `conns`: the connections.
+# - `c`: one more.
+function add_conn(@conns: [broker.Conn], c: broker.Conn)
+    conns @ conns.push(c)
+
+# A session for `o`, the first broker that answers reached and the cluster's
+# brokers asked of it.
+#
+# - `o`: the options.
+function open(o: model.Options) -> state.Session?
+    check(o)?
+    s @= state.fresh(o)
+    last: str @= ""
+    last_code: str @= model.CLOSED
+
+    for text in o.brokers
+        if s.conns.len() == 0
+            hp = address_of(text)?
+
+            match broker.dial(o, host: hp.host, port: hp.port, node_id: -1)
+                .ok c =>
+                    s.versions @ c.versions
+                    add_conn(conns: @s.conns, c: c)
+                .err e =>
+                    if e.code == model.PERMISSION || e.code == model.UNSUPPORTED || e.code == model.INVALID
+                        return fail(code: e.code, msg: e.msg)
+                    last @ e.msg
+                    last_code @ e.code
+
+    if s.conns.len() == 0
+        return fail(code: last_code, msg: f"no broker answered: {last}")
+    _ = refresh(@s, topics: [], every: false)?
+    return ok(s)
+
+# Closes every connection.
+#
+# - `s`: the session, closed after.
+function close(@s: state.Session)
+    for i in range(from: 0, to: s.conns.len())
+        broker.close(@s.conns[i])
+
+    s.closed @ true
+
+# The index of an open connection to the node `node_id`, made where there is
+# none.
+#
+# - `s`: the session.
+# - `node_id`: the node.
+function conn_to(@s: state.Session, node_id: i64) -> i64?
+    if s.closed
+        return fail(code: model.CLOSED, msg: "the client is closed")
+
+    for i in range(from: 0, to: s.conns.len())
+        if s.conns[i].node_id == node_id && s.conns[i].open
+            return ok(i)
+
+    for b in s.brokers
+        if b.id == node_id
+            c = broker.dial(s.options, host: b.host, port: b.port, node_id: node_id)?
+
+            for i in range(from: 0, to: s.conns.len())
+                if s.conns[i].node_id == node_id
+                    s.conns[i] @ c
+                    return ok(i)
+
+            add_conn(conns: @s.conns, c: c)
+            return ok(s.conns.len() - 1)
+
+    return fail(code: model.NOT_FOUND, msg: f"the cluster names no broker {node_id}")
+
+# The index of any open connection, one made to a broker known where none is
+# open.
+#
+# - `s`: the session.
+function any_conn(@s: state.Session) -> i64?
+    if s.closed
+        return fail(code: model.CLOSED, msg: "the client is closed")
+
+    for i in range(from: 0, to: s.conns.len())
+        if s.conns[i].open
+            return ok(i)
+
+    last: str @= "no broker is known"
+
+    for b in s.brokers
+        match conn_to(@s, node_id: b.id)
+            .ok i  => return ok(i)
+            .err e => last @ e.msg
+
+    for text in s.options.brokers
+        hp = address_of(text)?
+
+        match broker.dial(s.options, host: hp.host, port: hp.port, node_id: -1)
+            .ok c =>
+                add_conn(conns: @s.conns, c: c)
+                return ok(s.conns.len() - 1)
+            .err e => last @ e.msg
+
+    return fail(code: model.CLOSED, msg: f"no broker answered: {last}")
+
+# Sends a request to the connection at `index` and answers its answer.
+#
+# - `s`: the session.
+# - `index`: the connection's index.
+# - `key`: the API.
+# - `version`: its version.
+# - `body`: the request's body.
+# - `extra_ms`: milliseconds added to the wait, as a fetch's own wait.
+# - `answered`: whether an answer comes.
+function send_to(@s: state.Session, index: i64, key: i64, version: i64, body: [u8] lent, extra_ms: i64, answered: bool) -> wire.Reader?
+    return broker.request(
+        c: @s.conns[index],
+        key: key,
+        version: version,
+        body: body,
+        client_id: s.options.client_id,
+        wait_ms: s.options.wait_ms + extra_ms,
+        most: s.options.most_response_bytes,
+        answered: answered
+    )
+
+# Sends a request to the node `node_id`.
+#
+# - `s`: the session.
+# - `node_id`: the node.
+# - `key`: the API.
+# - `version`: its version.
+# - `body`: the request's body.
+# - `extra_ms`: milliseconds added to the wait.
+# - `answered`: whether an answer comes.
+function send(@s: state.Session, node_id: i64, key: i64, version: i64, body: [u8] lent, extra_ms: i64, answered: bool) -> wire.Reader?
+    i = conn_to(@s, node_id: node_id)?
+    return send_to(@s, index: i, key: key, version: version, body: body, extra_ms: extra_ms, answered: answered)
+
+# Sends a request to any broker.
+#
+# - `s`: the session.
+# - `key`: the API.
+# - `version`: its version.
+# - `body`: the request's body.
+function send_any(@s: state.Session, key: i64, version: i64, body: [u8] lent) -> wire.Reader?
+    i = any_conn(@s)?
+    return send_to(@s, index: i, key: key, version: version, body: body, extra_ms: 0, answered: true)
+
+# Asks the metadata of `topics`, or of every topic, keeps what it says, and
+# answers it.
+#
+# - `s`: the session.
+# - `topics`: the topics; [] with `every` false asks none, only the brokers.
+# - `every`: whether every topic is asked.
+function refresh(@s: state.Session, topics: [str], every: bool) -> Described?
+    body: [u8] @= []
+
+    if every
+        wire.put_i32(out: @body, v: -1)
+    else
+        wire.put_i32(out: @body, v: topics.len())
+
+        for t in topics
+            wire.put_string(out: @body, s: t, what: "a topic's name")?
+    wire.put_bool(out: @body, v: s.options.auto_create_topics)
+    wire.put_bool(out: @body, v: false)
+    wire.put_bool(out: @body, v: false)
+    r @= send_any(@s, key: METADATA, version: 8, body: body)?
+    d = take_metadata(@r)?
+    m = d.metadata
+    s.brokers @ m.brokers
+    s.cluster_id @ m.cluster_id
+    s.controller_id @ m.controller_id
+
+    for t in m.topics
+        ordered: [model.Partition] @= []
+
+        for i in range(from: 0, to: t.partitions.len())
+            for p in t.partitions
+                if p.id == i
+                    ordered @ ordered.push(p)
+
+        meta = state.TopicMeta(name: t.name, internal: t.internal, partitions: ordered)
+
+        match s.topic_index[t.name]
+            .ok at => s.topics[at] @ meta
+            .err _ =>
+                s.topic_index[t.name] @ s.topics.len()
+                add_topic(topics: @s.topics, t: meta)
+
+    for i in range(from: 0, to: s.conns.len())
+        if s.conns[i].node_id == -1
+            for b in s.brokers
+                if b.port == port_of_target(s.conns[i].target) && host_of_target(s.conns[i].target) == b.host
+                    s.conns[i].node_id @ b.id
+
+    return ok(d)
+
+# The metadata of `topics`, or of every topic, asked again while a topic's
+# error is one a retry may cure, within `Options.wait_ms`.
+#
+# - `s`: the session.
+# - `topics`: the topics.
+# - `every`: whether every topic is asked.
+#
+# Fails as the first topic's error says where it is not cured: `not_found`
+# for a topic that does not exist.
+function describe(@s: state.Session, topics: [str], every: bool) -> model.Metadata?
+    until = now_ms() + s.options.wait_ms
+
+    while true
+        d = refresh(@s, topics: topics, every: every)?
+        worst: i64 @= 0
+        named: str @= ""
+
+        for i in range(from: 0, to: d.errors.len())
+            if d.errors[i] != 0 && (worst == 0 || !errors.is_retriable(d.errors[i]))
+                worst @ d.errors[i]
+                named @ d.metadata.topics[i].name
+
+        if worst == 0
+            return ok(d.metadata)
+
+        if !errors.is_retriable(worst) || now_ms() >= until
+            return errors.failure(worst, what: f"asking the metadata of the topic \"{named}\"", said_too: "")
+        pause_ms(100)
+
+# Adds `t` to the topics known.
+#
+# - `topics`: the topics.
+# - `t`: one more.
+function add_topic(@topics: [state.TopicMeta], t: state.TopicMeta)
+    topics @ topics.push(t)
+
+# The host of `host:port`.
+#
+# - `target`: the text.
+function host_of_target(target: str) -> str
+    return match net.split_host_port(target)
+        .ok hp => hp.host
+        .err _ => ""
+
+# The port of `host:port`, 0 where it has none.
+#
+# - `target`: the text.
+function port_of_target(target: str) -> i64
+    return match net.split_host_port(target)
+        .ok hp => hp.port
+        .err _ => 0
+
+# What an answer to `Metadata` says: the metadata, and each topic's error.
+record Described
+    # The metadata.
+    metadata: model.Metadata
+    # Each topic's error, 0 for none, in the order of `metadata.topics`.
+    errors: [i64]
+
+# What an answer to `Metadata` 8 holds; a topic or a partition whose error is
+# not 0 kept with what it says.
+#
+# - `r`: the answer.
+function take_metadata(@r: wire.Reader) -> Described?
+    _ = wire.take_i32(@r, what: "Metadata")?
+    broker_count = wire.take_count(@r, what: "Metadata's brokers")?
+    brokers: [model.Broker] @= []
+
+    for _ in range(from: 0, to: broker_count)
+        id = wire.take_i32(@r, what: "a broker")?
+        host = wire.take_string(@r, what: "a broker's host")?
+        port = wire.take_i32(@r, what: "a broker's port")?
+        rack = wire.take_string(@r, what: "a broker's rack")?
+        brokers @ brokers.push(model.Broker(id: id, host: host, port: port, rack: rack))
+
+    cluster_id = wire.take_string(@r, what: "the cluster's identifier")?
+    controller_id = wire.take_i32(@r, what: "the controller")?
+    topic_count = wire.take_count(@r, what: "Metadata's topics")?
+    topics: [model.Topic] @= []
+    errors_seen: [i64] @= []
+
+    for _ in range(from: 0, to: topic_count)
+        error = wire.take_i16(@r, what: "a topic's error")?
+        name = wire.take_string(@r, what: "a topic's name")?
+        internal = wire.take_bool(@r, what: "a topic")?
+        partition_count = wire.take_count(@r, what: "a topic's partitions")?
+        partitions: [model.Partition] @= []
+
+        for _ in range(from: 0, to: partition_count)
+            _ = wire.take_i16(@r, what: "a partition's error")?
+            id = wire.take_i32(@r, what: "a partition")?
+            leader = wire.take_i32(@r, what: "a partition's leader")?
+            epoch = wire.take_i32(@r, what: "a partition's leader epoch")?
+            replicas = take_ints(@r, what: "a partition's replicas")?
+            isr = take_ints(@r, what: "a partition's in-sync replicas")?
+            offline = take_ints(@r, what: "a partition's offline replicas")?
+            partitions @ partitions.push(
+                model.Partition(id: id, leader: leader, leader_epoch: epoch, replicas: replicas, isr: isr, offline: offline)
+            )
+
+        _ = wire.take_i32(@r, what: "a topic's operations")?
+
+        errors_seen @ errors_seen.push(error)
+        topics @ topics.push(model.Topic(name: name, internal: internal, partitions: partitions))
+
+    _ = wire.take_i32(@r, what: "the cluster's operations")?
+    return ok(
+        Described(metadata: model.Metadata(cluster_id: cluster_id, controller_id: controller_id, brokers: brokers, topics: topics), errors: errors_seen)
+    )
+
+# An array of int32s.
+#
+# - `r`: the cursor.
+# - `what`: what is read.
+function take_ints(@r: wire.Reader, what: str) -> [i64]?
+    n = wire.take_count(@r, what: what)?
+    out: [i64] @= []
+
+    for _ in range(from: 0, to: n)
+        out @ out.push(wire.take_i32(@r, what: what)?)
+
+    return ok(out)
+
+# The index of `topic` among the topics known, its metadata asked where it
+# is not known.
+#
+# - `s`: the session.
+# - `topic`: the topic.
+function topic_at(@s: state.Session, topic: str) -> i64?
+    match s.topic_index[topic]
+        .ok at => return ok(at)
+        .err _ => _ = describe(@s, topics: [topic], every: false)?
+
+    return match s.topic_index[topic]
+        .ok at => ok(at)
+        .err _ => fail(code: model.NOT_FOUND, msg: f"the cluster has no topic \"{topic}\"")
+
+# The node that leads `partition` of `topic`, the metadata asked again while
+# none does, within `Options.wait_ms`.
+#
+# - `s`: the session.
+# - `topic`: the topic.
+# - `partition`: the partition.
+function leader_of(@s: state.Session, topic: str, partition: i64) -> i64?
+    until = now_ms() + s.options.wait_ms
+
+    while true
+        at = topic_at(@s, topic: topic)?
+        count = s.topics[at].partitions.len()
+
+        if partition < 0 || partition >= count
+            return fail(
+                code: model.NOT_FOUND,
+                msg: f"the topic \"{topic}\" has {count} partitions, and no partition {partition}"
+            )
+        leader = s.topics[at].partitions[partition].leader
+
+        if leader >= 0
+            return ok(leader)
+
+        if now_ms() >= until
+            return fail(code: model.TIMEOUT, msg: f"no broker leads the partition {partition} of \"{topic}\"")
+        pause_ms(100)
+        _ = describe(@s, topics: [topic], every: false)?
+
+test "address_of, check: host and port, an IPv6 address, no port, a port of 0, no broker, a time below 1"
+    hp = address_of("[::1]:9092").must()
+    assert hp.host == "::1" && hp.port == 9092
+    assert address_of("localhost").is_err() && address_of("h:0").is_err() && address_of(":9092").is_err()
+    o = model.Options(
+        brokers: ["localhost:9092"],
+        client_id: "rebel",
+        tls: false,
+        roots: "",
+        sasl: .none,
+        connect_ms: 1000,
+        wait_ms: 1000,
+        most_response_bytes: 1048576,
+        acks: .leader,
+        compression: .none,
+        isolation: .read_uncommitted,
+        most_fetch_bytes: 1048576,
+        auto_create_topics: false
+    )
+    check(o).must()
+    none @= o
+    none.brokers @ []
+    assert check(none).is_err()
+    slow @= o
+    slow.wait_ms @ 0
+    assert check(slow).is_err()
+
+test "take_metadata: a broker, a topic with a partition, a topic's error kept"
+    out: [u8] @= []
+    wire.put_i32(out: @out, v: 0)
+    wire.put_i32(out: @out, v: 1)
+    wire.put_i32(out: @out, v: 1)
+    wire.put_string(out: @out, s: "h", what: "h").must()
+    wire.put_i32(out: @out, v: 9092)
+    wire.put_null_string(out: @out)
+    wire.put_string(out: @out, s: "c", what: "c").must()
+    wire.put_i32(out: @out, v: 1)
+    wire.put_i32(out: @out, v: 2)
+
+    for name in ["t", "u"]
+        if name == "t"
+            wire.put_i16(out: @out, v: 0)
+        else
+            wire.put_i16(out: @out, v: 3)
+        wire.put_string(out: @out, s: name, what: "n").must()
+        wire.put_bool(out: @out, v: false)
+
+        if name == "t"
+            wire.put_i32(out: @out, v: 1)
+
+            wire.put_i16(out: @out, v: 0)
+            wire.put_i32(out: @out, v: 0)
+            wire.put_i32(out: @out, v: 1)
+            wire.put_i32(out: @out, v: 0)
+            wire.put_i32(out: @out, v: 1)
+            wire.put_i32(out: @out, v: 1)
+            wire.put_i32(out: @out, v: 1)
+            wire.put_i32(out: @out, v: 1)
+            wire.put_i32(out: @out, v: 0)
+        else
+            wire.put_i32(out: @out, v: 0)
+        wire.put_i32(out: @out, v: 0)
+
+    wire.put_i32(out: @out, v: 0)
+    r @= wire.reader(out)
+    d = take_metadata(@r).must()
+    assert d.metadata.brokers == [model.Broker(id: 1, host: "h", port: 9092, rack: "")] && d.metadata.cluster_id == "c"
+    assert d.metadata.topics.len() == 2 && d.metadata.topics[0].partitions[0].leader == 1 && d.metadata.topics[0].partitions[0].isr == [1]
+    assert d.errors == [0, 3] && d.metadata.controller_id == 1 && wire.left(r) == 0

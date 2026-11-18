@@ -1,0 +1,241 @@
+# AMQP's numbers and strings, read from bytes by a cursor and written to the
+# end of a list: integers in network order, a short string's one byte of
+# length, a long string's four. Every read checks the bytes are there, so a
+# read past the end is a failure `invalid` and never an abort.
+
+use amqp/internal/model
+use bytes
+
+# Bytes read from `at` on, up to `end`.
+record Reader
+    # The bytes.
+    data: [u8]
+    # The index of the next byte read.
+    at: i64
+    # The index past the last byte that may be read.
+    end: i64
+
+# A cursor over the whole of `data`.
+#
+# - `data`: the bytes.
+function reader(data: [u8]) -> Reader
+    return Reader(data: data, at: 0, end: data.len())
+
+# The bytes left to read.
+#
+# - `r`: the cursor.
+function left(r: Reader lent) -> i64
+    return r.end - r.at
+
+# Fails `invalid` unless `n` bytes are left.
+#
+# - `r`: the cursor.
+# - `n`: the bytes asked.
+# - `what`: what is read, for the message.
+function need(r: Reader lent, n: i64, what: str) -> ()?
+    if n < 0 || r.end - r.at < n
+        return fail(code: model.INVALID, msg: f"{what} is cut short at byte {r.at}")
+    return ok()
+
+# The next `n` bytes, read as an unsigned number in network order.
+#
+# - `r`: the cursor, moved past them.
+# - `n`: 1 to 7.
+# - `what`: what is read.
+function unsigned(@r: Reader, n: i64, what: str) -> i64?
+    need(r, n: n, what: what)?
+    v: i64 @= 0
+
+    for i in range(from: 0, to: n)
+        v @ v << 8 | to_i64(r.data[r.at + i]).must()
+
+    r.at @ r.at + n
+    return ok(v)
+
+# The next byte.
+#
+# - `r`: the cursor.
+# - `what`: what is read.
+function take_u8(@r: Reader, what: str) -> i64?
+    return unsigned(@r, n: 1, what: what)
+
+# The next two bytes, unsigned.
+#
+# - `r`: the cursor.
+# - `what`: what is read.
+function take_u16(@r: Reader, what: str) -> i64?
+    return unsigned(@r, n: 2, what: what)
+
+# The next four bytes, unsigned.
+#
+# - `r`: the cursor.
+# - `what`: what is read.
+function take_u32(@r: Reader, what: str) -> i64?
+    return unsigned(@r, n: 4, what: what)
+
+# The next eight bytes, unsigned, which must fit an `i64`.
+#
+# - `r`: the cursor.
+# - `what`: what is read.
+function take_u64(@r: Reader, what: str) -> i64?
+    need(r, n: 8, what: what)?
+
+    if r.data[r.at] >= 128
+        return fail(code: model.INVALID, msg: f"{what} at byte {r.at} is past 9223372036854775807")
+    return unsigned(@r, n: 8, what: what)
+
+# The next eight bytes, a signed number in two's complement.
+#
+# - `r`: the cursor.
+# - `what`: what is read.
+function take_i64(@r: Reader, what: str) -> i64?
+    need(r, n: 8, what: what)?
+    v = bytes.decode_i64_be(r.data, at: r.at)?
+    r.at @ r.at + 8
+    return ok(v)
+
+# The next `n` bytes.
+#
+# - `r`: the cursor.
+# - `n`: how many, 0 or more.
+# - `what`: what is read.
+function take_bytes(@r: Reader, n: i64, what: str) -> [u8]?
+    need(r, n: n, what: what)?
+    got = r.data.slice(from: r.at, to: r.at + n)
+    r.at @ r.at + n
+    return ok(got)
+
+# A short string: one byte of length, then that many bytes of UTF-8.
+#
+# - `r`: the cursor.
+# - `what`: what is read.
+#
+# Fails `invalid` where the bytes are not UTF-8.
+function take_shortstr(@r: Reader, what: str) -> str?
+    n = take_u8(@r, what: what)?
+    raw = take_bytes(@r, n: n, what: what)?
+
+    return match bytes.to_text(raw)
+        .ok s  => ok(s)
+        .err _ => fail(code: model.INVALID, msg: f"{what} is not UTF-8")
+
+# A short string, its bytes that are not UTF-8 read as U+FFFD: a message's
+# property, which the server passes on unread.
+#
+# - `r`: the cursor.
+# - `what`: what is read.
+function take_shortstr_lossy(@r: Reader, what: str) -> str?
+    n = take_u8(@r, what: what)?
+    raw = take_bytes(@r, n: n, what: what)?
+    return ok(bytes.to_text_lossy(raw))
+
+# A long string's bytes: four bytes of length, then that many bytes.
+#
+# - `r`: the cursor.
+# - `what`: what is read.
+function take_longstr(@r: Reader, what: str) -> [u8]?
+    n = take_u32(@r, what: what)?
+    return take_bytes(@r, n: n, what: what)
+
+# Writes the low `n` bytes of `v` in network order.
+#
+# - `out`: the bytes, written at their end.
+# - `v`: the number, 0 or more.
+# - `n`: 1 to 8.
+function put_unsigned(@out: [u8], v: i64, n: i64)
+    shift: i64 @= (n - 1) * 8
+
+    while shift >= 0
+        out @ out.push(to_u8(v >> shift & 255).must())
+        shift @ shift - 8
+
+# Writes one byte.
+#
+# - `out`: the bytes.
+# - `v`: 0 to 255.
+function put_u8(@out: [u8], v: i64)
+    put_unsigned(@out, v: v, n: 1)
+
+# Writes two bytes.
+#
+# - `out`: the bytes.
+# - `v`: 0 to 65535.
+function put_u16(@out: [u8], v: i64)
+    put_unsigned(@out, v: v, n: 2)
+
+# Writes four bytes.
+#
+# - `out`: the bytes.
+# - `v`: 0 to 4294967295.
+function put_u32(@out: [u8], v: i64)
+    put_unsigned(@out, v: v, n: 4)
+
+# Writes eight bytes, `v` in two's complement.
+#
+# - `out`: the bytes.
+# - `v`: any number.
+function put_i64(@out: [u8], v: i64)
+    bytes.push_all(to: @out, from: bytes.encode_i64_be(v))
+
+# Writes a short string.
+#
+# - `out`: the bytes.
+# - `s`: the text, 0 to 255 bytes.
+# - `what`: what is written, for the message.
+#
+# Fails `invalid` where `s` is longer.
+function put_shortstr(@out: [u8], s: str, what: str) -> ()?
+    if s.len() > 255
+        return fail(code: model.INVALID, msg: f"{what} is {s.len()} bytes, and AMQP writes 255 at most")
+    put_u8(@out, v: s.len())
+    bytes.push_text(to: @out, s: s)
+    return ok()
+
+# Writes a long string.
+#
+# - `out`: the bytes.
+# - `data`: the bytes, 0 to 4294967295 of them.
+function put_longstr(@out: [u8], data: [u8])
+    put_u32(@out, v: data.len())
+    bytes.push_all(to: @out, from: data)
+
+test "take_u8, take_u16, take_u32, take_u64, take_i64: the edges of each width, and a read cut short"
+    r @= reader(
+        [255, 0, 1, 255, 255, 255, 255, 127, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 254]
+    )
+    assert take_u8(@r, what: "a").must() == 255
+    assert take_u16(@r, what: "b").must() == 1
+    assert take_u32(@r, what: "c").must() == 4294967295
+    assert take_u64(@r, what: "d").must() == 9223372036854775807
+    assert take_u64(@r, what: "e").is_err()
+    assert take_i64(@r, what: "f").must() == -2
+    assert left(r) == 0
+
+    match take_u8(@r, what: "the frame's type")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "the frame's type is cut short at byte 23"
+
+test "take_shortstr, take_shortstr_lossy, take_longstr: empty, UTF-8 of several bytes, bytes that are not UTF-8, a length past the end"
+    r @= reader([0, 2, 195, 169, 1, 255, 1, 255, 0, 0, 0, 3, 1, 2, 3, 0, 0, 0, 9, 1])
+    assert take_shortstr(@r, what: "a").must() == ""
+    assert take_shortstr(@r, what: "b").must() == "é"
+    assert take_shortstr(@r, what: "c").is_err()
+    assert take_shortstr_lossy(@r, what: "d").must() == "�"
+    assert take_longstr(@r, what: "e").must() == [1, 2, 3]
+    assert take_longstr(@r, what: "f").is_err()
+
+test "put_u8, put_u16, put_u32, put_i64, put_shortstr, put_longstr: each width, a text of 255 bytes and one of 256"
+    out: [u8] @= []
+    put_u8(@out, v: 255)
+    put_u16(@out, v: 258)
+    put_u32(@out, v: 4294967295)
+    put_i64(@out, v: -1)
+    put_longstr(out: @out, data: [7])
+    assert out == [255, 1, 2, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 1, 7]
+    long: [u8] @= []
+    put_shortstr(@long, s: repeat("a", 255), what: "a name").must()
+    assert long.len() == 256 && long[0] == 255
+
+    match put_shortstr(@long, s: repeat("a", 256), what: "the queue's name")
+        .ok _  => assert false
+        .err e => assert e.msg == "the queue's name is 256 bytes, and AMQP writes 255 at most"

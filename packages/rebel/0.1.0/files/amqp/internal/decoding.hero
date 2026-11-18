@@ -1,0 +1,314 @@
+# The methods a server sends, read from a method frame's payload into a
+# value: the handshake's, the answers to the client's requests, and what
+# comes unasked (a delivery, a returned message, a confirmation, a close, a
+# consumer cancelled, a connection blocked). A method a client never
+# receives is refused as bytes that are no AMQP.
+
+use amqp/internal/model
+use amqp/internal/table
+use amqp/internal/wire
+use bytes
+
+# A method the server sent.
+variant Incoming
+    # `connection.start`.
+    start
+        # The protocol's major version.
+        major: i64
+        # Its minor version.
+        minor: i64
+        # The server's properties, a table, its length first.
+        properties: [u8]
+        # The mechanisms, separated by spaces.
+        mechanisms: str
+        # The locales, separated by spaces.
+        locales: str
+    # `connection.secure`.
+    secure
+        # The challenge.
+        challenge: [u8]
+    # `connection.tune`.
+    tune
+        # The highest channel number, 0 for none.
+        channel_max: i64
+        # The largest frame, 0 for none.
+        frame_max: i64
+        # The heartbeat's seconds, 0 for none.
+        heartbeat_s: i64
+    # `connection.close` or `channel.close`.
+    close
+        # 10 for the connection, 20 for a channel.
+        class_of: i64
+        # Why.
+        closing: model.Closing
+    # `connection.blocked`.
+    blocked
+        # Why.
+        reason: str
+    # `connection.unblocked`.
+    unblocked
+    # `channel.flow`, the server asking.
+    flow
+        # Whether the channel may go on publishing.
+        active: bool
+    # `queue.declare-ok`.
+    declare_ok
+        # The queue.
+        queue_name: str
+        # Its messages ready.
+        messages: i64
+        # Its consumers.
+        consumers: i64
+    # `queue.purge-ok` or `queue.delete-ok`.
+    count
+        # The method: 31 or 41.
+        method_id: i64
+        # The messages.
+        messages: i64
+    # `basic.consume-ok` or `basic.cancel-ok`.
+    tagged
+        # The method: 21 or 31.
+        method_id: i64
+        # The consumer's tag.
+        tag: str
+    # `basic.cancel`, the server cancelling a consumer.
+    cancelled
+        # The consumer's tag.
+        tag: str
+    # `basic.return`.
+    returned
+        # The reply code.
+        code: i64
+        # The reply text.
+        text: str
+        # The exchange.
+        exchange: str
+        # The routing key.
+        routing_key: str
+    # `basic.deliver`.
+    deliver
+        # The consumer's tag.
+        consumer_tag: str
+        # The delivery tag.
+        tag: i64
+        # Whether it was delivered before.
+        redelivered: bool
+        # The exchange.
+        exchange: str
+        # The routing key.
+        routing_key: str
+    # `basic.get-ok`.
+    get_ok
+        # The delivery tag.
+        tag: i64
+        # Whether it was delivered before.
+        redelivered: bool
+        # The exchange.
+        exchange: str
+        # The routing key.
+        routing_key: str
+        # The messages left.
+        remaining: i64
+    # `basic.get-empty`.
+    get_empty
+    # `basic.ack` or `basic.nack`, a confirmation.
+    confirm
+        # The publish's sequence number.
+        tag: i64
+        # Whether every one up to it is meant.
+        multiple: bool
+        # Whether the server took it.
+        ack: bool
+    # Any other answer with no field the client reads: `connection.open-ok`,
+    # `close-ok`s, `channel.open-ok`, `flow-ok`, the `-ok`s of exchanges,
+    # bindings, `qos`, `recover`, `confirm.select` and transactions.
+    reply
+        # The class.
+        class_id: i64
+        # The method.
+        method_id: i64
+
+# The number a method's class and method make together.
+#
+# - `class_id`: the class.
+# - `method_id`: the method.
+function key(class_id: i64, method_id: i64) -> i64
+    return class_id * 65536 + method_id
+
+# The number of the class and method of `m`.
+#
+# - `m`: the method.
+function key_of(m: Incoming lent) -> i64
+    return match m
+        .start _      => key(class_id: 10, method_id: 10)
+        .secure _     => key(class_id: 10, method_id: 20)
+        .tune _       => key(class_id: 10, method_id: 30)
+        .close c      => if c.class_of == 10
+            key(class_id: 10, method_id: 50)
+        else
+            key(class_id: 20, method_id: 40)
+        .blocked _    => key(class_id: 10, method_id: 60)
+        .unblocked    => key(class_id: 10, method_id: 61)
+        .flow _       => key(class_id: 20, method_id: 20)
+        .declare_ok _ => key(class_id: 50, method_id: 11)
+        .count c      => key(class_id: 50, method_id: c.method_id)
+        .tagged t     => key(class_id: 60, method_id: t.method_id)
+        .cancelled _  => key(class_id: 60, method_id: 30)
+        .returned _   => key(class_id: 60, method_id: 50)
+        .deliver _    => key(class_id: 60, method_id: 60)
+        .get_ok _     => key(class_id: 60, method_id: 71)
+        .get_empty    => key(class_id: 60, method_id: 72)
+        .confirm c    => if c.ack
+            key(class_id: 60, method_id: 80)
+        else
+            key(class_id: 60, method_id: 120)
+        .reply r      => key(class_id: r.class_id, method_id: r.method_id)
+
+# The bit `n` of the byte `b`.
+#
+# - `b`: the byte.
+# - `n`: 0 to 7.
+function bit(b: i64, n: i64) -> bool
+    return b >> n & 1 == 1
+
+# The method `payload` holds.
+#
+# - `payload`: a method frame's payload.
+#
+# Fails `invalid` where it is cut short, its texts are not UTF-8, or it is a
+# method a client never receives.
+function decode(payload: [u8]) -> Incoming?
+    r @= wire.reader(payload)
+    class_id = wire.take_u16(@r, what: "a method's class")?
+    method_id = wire.take_u16(@r, what: "a method's number")?
+    k = key(class_id: class_id, method_id: method_id)
+
+    if k == key(class_id: 10, method_id: 10)
+        major = wire.take_u8(@r, what: "connection.start")?
+        minor = wire.take_u8(@r, what: "connection.start")?
+        properties = table.take_table(@r, what: "the server's properties")?
+        mechanisms = wire.take_longstr(@r, what: "the mechanisms")?
+        locales = wire.take_longstr(@r, what: "the locales")?
+        return ok(
+            .start(major: major, minor: minor, properties: properties, mechanisms: bytes.to_text_lossy(mechanisms), locales: bytes.to_text_lossy(locales))
+        )
+
+    if k == key(class_id: 10, method_id: 20)
+        return ok(.secure(challenge: wire.take_longstr(@r, what: "connection.secure")?))
+
+    if k == key(class_id: 10, method_id: 30)
+        channel_max = wire.take_u16(@r, what: "connection.tune")?
+        frame_max = wire.take_u32(@r, what: "connection.tune")?
+        heartbeat_s = wire.take_u16(@r, what: "connection.tune")?
+        return ok(.tune(channel_max: channel_max, frame_max: frame_max, heartbeat_s: heartbeat_s))
+
+    if k == key(class_id: 10, method_id: 50) || k == key(class_id: 20, method_id: 40)
+        code = wire.take_u16(@r, what: "a close")?
+        text = wire.take_shortstr_lossy(@r, what: "a close's text")?
+        cause_class = wire.take_u16(@r, what: "a close")?
+        cause_method = wire.take_u16(@r, what: "a close")?
+        return ok(
+            .close(class_of: class_id, closing: model.Closing(code: code, text: text, class_id: cause_class, method_id: cause_method))
+        )
+
+    if k == key(class_id: 10, method_id: 60)
+        return ok(.blocked(reason: wire.take_shortstr_lossy(@r, what: "connection.blocked")?))
+
+    if k == key(class_id: 10, method_id: 61)
+        return ok(.unblocked)
+
+    if k == key(class_id: 20, method_id: 20)
+        return ok(.flow(active: bit(b: wire.take_u8(@r, what: "channel.flow")?, n: 0)))
+
+    if k == key(class_id: 50, method_id: 11)
+        queue_name = wire.take_shortstr(@r, what: "queue.declare-ok")?
+        messages = wire.take_u32(@r, what: "queue.declare-ok")?
+        consumers = wire.take_u32(@r, what: "queue.declare-ok")?
+        return ok(.declare_ok(queue_name: queue_name, messages: messages, consumers: consumers))
+
+    if k == key(class_id: 50, method_id: 31) || k == key(class_id: 50, method_id: 41)
+        return ok(.count(method_id: method_id, messages: wire.take_u32(@r, what: "a count of messages")?))
+
+    if k == key(class_id: 60, method_id: 21) || k == key(class_id: 60, method_id: 31)
+        return ok(.tagged(method_id: method_id, tag: wire.take_shortstr(@r, what: "a consumer's tag")?))
+
+    if k == key(class_id: 60, method_id: 30)
+        return ok(.cancelled(tag: wire.take_shortstr(@r, what: "basic.cancel")?))
+
+    if k == key(class_id: 60, method_id: 50)
+        code = wire.take_u16(@r, what: "basic.return")?
+        text = wire.take_shortstr_lossy(@r, what: "basic.return")?
+        exchange = wire.take_shortstr(@r, what: "basic.return's exchange")?
+        routing_key = wire.take_shortstr_lossy(@r, what: "basic.return's routing key")?
+        return ok(.returned(code: code, text: text, exchange: exchange, routing_key: routing_key))
+
+    if k == key(class_id: 60, method_id: 60)
+        consumer_tag = wire.take_shortstr(@r, what: "basic.deliver's consumer tag")?
+        tag = wire.take_u64(@r, what: "basic.deliver's delivery tag")?
+        redelivered = bit(b: wire.take_u8(@r, what: "basic.deliver")?, n: 0)
+        exchange = wire.take_shortstr(@r, what: "basic.deliver's exchange")?
+        routing_key = wire.take_shortstr_lossy(@r, what: "basic.deliver's routing key")?
+        return ok(
+            .deliver(consumer_tag: consumer_tag, tag: tag, redelivered: redelivered, exchange: exchange, routing_key: routing_key)
+        )
+
+    if k == key(class_id: 60, method_id: 71)
+        tag = wire.take_u64(@r, what: "basic.get-ok's delivery tag")?
+        redelivered = bit(b: wire.take_u8(@r, what: "basic.get-ok")?, n: 0)
+        exchange = wire.take_shortstr(@r, what: "basic.get-ok's exchange")?
+        routing_key = wire.take_shortstr_lossy(@r, what: "basic.get-ok's routing key")?
+        remaining = wire.take_u32(@r, what: "basic.get-ok's count")?
+        return ok(
+            .get_ok(tag: tag, redelivered: redelivered, exchange: exchange, routing_key: routing_key, remaining: remaining)
+        )
+
+    if k == key(class_id: 60, method_id: 72)
+        return ok(.get_empty)
+
+    if k == key(class_id: 60, method_id: 80)
+        tag = wire.take_u64(@r, what: "basic.ack's delivery tag")?
+        flags = wire.take_u8(@r, what: "basic.ack")?
+        return ok(.confirm(tag: tag, multiple: bit(b: flags, n: 0), ack: true))
+
+    if k == key(class_id: 60, method_id: 120)
+        tag = wire.take_u64(@r, what: "basic.nack's delivery tag")?
+        flags = wire.take_u8(@r, what: "basic.nack")?
+        return ok(.confirm(tag: tag, multiple: bit(b: flags, n: 0), ack: false))
+
+    for answered in [key(class_id: 10, method_id: 41), key(class_id: 10, method_id: 51), key(class_id: 10, method_id: 71), key(class_id: 20, method_id: 11), key(class_id: 20, method_id: 21), key(class_id: 20, method_id: 41), key(class_id: 40, method_id: 11), key(class_id: 40, method_id: 21), key(class_id: 40, method_id: 31), key(class_id: 40, method_id: 51), key(class_id: 50, method_id: 21), key(class_id: 50, method_id: 51), key(class_id: 60, method_id: 11), key(class_id: 60, method_id: 111), key(class_id: 85, method_id: 11), key(class_id: 90, method_id: 11), key(class_id: 90, method_id: 21), key(class_id: 90, method_id: 31)]
+        if k == answered
+            return ok(.reply(class_id: class_id, method_id: method_id))
+
+    return fail(code: model.INVALID, msg: f"the method {class_id}.{method_id}, which a client never receives")
+
+test "decode: connection.start, tune, close and blocked as RabbitMQ sends them"
+    start = decode(
+        [0, 10, 0, 10, 0, 9, 0, 0, 0, 0, 0, 0, 0, 5, 'P', 'L', 'A', 'I', 'N', 0, 0, 0, 5, 'e', 'n', '_', 'U', 'S']
+    ).must()
+    assert start == .start(major: 0, minor: 9, properties: [0, 0, 0, 0], mechanisms: "PLAIN", locales: "en_US")
+    assert decode([0, 10, 0, 30, 7, 255, 0, 2, 0, 0, 0, 60]).must() == .tune(channel_max: 2047, frame_max: 131072, heartbeat_s: 60)
+    closing = model.Closing(code: 404, text: "NOT_FOUND", class_id: 50, method_id: 10)
+    assert decode([0, 20, 0, 40, 1, 148, 9, 'N', 'O', 'T', '_', 'F', 'O', 'U', 'N', 'D', 0, 50, 0, 10]).must() == .close(class_of: 20, closing: closing)
+    assert decode([0, 10, 0, 60, 1, 'x']).must() == .blocked(reason: "x") && decode([0, 10, 0, 61]).must() == .unblocked
+    assert key_of(.close(class_of: 10, closing: closing)) == key(class_id: 10, method_id: 50)
+    assert key_of(.close(class_of: 20, closing: closing)) == key(class_id: 20, method_id: 40)
+
+test "decode: the answers with fields, deliveries, returns and confirmations"
+    assert decode([0, 50, 0, 11, 1, 'q', 0, 0, 0, 3, 0, 0, 0, 1]).must() == .declare_ok(queue_name: "q", messages: 3, consumers: 1)
+    assert decode([0, 50, 0, 41, 0, 0, 0, 7]).must() == .count(method_id: 41, messages: 7)
+    assert decode([0, 60, 0, 21, 1, 't']).must() == .tagged(method_id: 21, tag: "t")
+    assert decode([0, 60, 0, 30, 1, 't', 1]).must() == .cancelled(tag: "t")
+    assert decode([0, 60, 0, 50, 1, 56, 1, 'N', 1, 'x', 1, 'k']).must() == .returned(code: 312, text: "N", exchange: "x", routing_key: "k")
+    assert decode([0, 60, 0, 60, 1, 't', 0, 0, 0, 0, 0, 0, 0, 9, 1, 0, 1, 'k']).must() == .deliver(consumer_tag: "t", tag: 9, redelivered: true, exchange: "", routing_key: "k")
+    assert decode([0, 60, 0, 71, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 'q', 0, 0, 0, 4]).must() == .get_ok(tag: 1, redelivered: false, exchange: "", routing_key: "q", remaining: 4)
+    assert decode([0, 60, 0, 72, 0]).must() == .get_empty
+    assert decode([0, 60, 0, 80, 0, 0, 0, 0, 0, 0, 0, 5, 1]).must() == .confirm(tag: 5, multiple: true, ack: true)
+    assert decode([0, 60, 0, 120, 0, 0, 0, 0, 0, 0, 0, 5, 2]).must() == .confirm(tag: 5, multiple: false, ack: false)
+    assert decode([0, 90, 0, 21]).must() == .reply(class_id: 90, method_id: 21)
+
+test "decode: cut short, a method a client never receives, a tag past an i64, a name that is not UTF-8"
+    assert decode([0, 10]).is_err()
+    assert decode([0, 60, 0, 40, 0, 0, 0, 0, 0]).is_err()
+    assert decode([0, 60, 0, 80, 128, 0, 0, 0, 0, 0, 0, 0, 0]).is_err()
+    assert decode([0, 50, 0, 11, 1, 255, 0, 0, 0, 0, 0, 0, 0, 0]).is_err()
+    assert decode([0, 50, 0, 11, 1, 'q', 0, 0, 0]).is_err()

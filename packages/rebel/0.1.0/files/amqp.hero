@@ -1,0 +1,2868 @@
+# An AMQP 0-9-1 client written in Heroes, as RabbitMQ speaks it, over a TCP
+# connection of `net` or TLS of `tls`, linking no library. It connects with a
+# login (PLAIN or AMQPLAIN), agrees the heartbeat, the largest frame and the
+# number of channels, opens channels, declares, binds, unbinds, purges and
+# deletes exchanges and queues, publishes (with publisher confirms and
+# mandatory messages returned), consumes and gets messages, acknowledges,
+# refuses and requeues them, sets the prefetch, runs transactions, and reads
+# and writes the field tables AMQP carries in arguments and headers.
+#
+# **One thread, many channels**: every channel of a connection shares it,
+# and a call on one channel holds what the server sends for the others: the
+# deliveries of every consumer, which `next_delivery` answers in the order
+# they came, the messages returned, the publishes confirmed, the consumers the
+# server cancelled. A program waiting on several connections and sockets adds
+# each connection's stream to a `poll.Set`, calls `read_ready` when the stream
+# is readable, and reads what `held_of` says is held.
+#
+# **Every wait has a deadline and every read is bounded**: a call waits
+# `Options.wait_ms` or its own `wait_ms`, a frame is read up to the size the
+# server agreed, a body up to `Options.most_body_bytes`, and the values held
+# unread up to `Options.most_held`, past which the connection is closed
+# failing `limit`: a consumer sets a prefetch with `qos` so the server never
+# sends more than the program reads. The heartbeat is sent while a call
+# waits, so a program that calls nothing for longer than two heartbeats is
+# dropped by the server; `idle` waits doing nothing else.
+#
+# It does not make a lost connection again: a connection lost takes its
+# channels, consumers and unconfirmed publishes with it, and the program
+# connects and declares anew. It does not offer EXTERNAL's login by a client
+# certificate, which `tls` does not present, nor `no_wait`, nor the
+# `immediate` flag RabbitMQ refuses. It fails with `invalid` (an argument
+# refused, bytes that are no AMQP, a precondition the server refused),
+# `not_found` (a queue, an exchange or a consumer the server does not know, a
+# queue empty), `permission` (a login, a virtual host or a resource refused),
+# `closed`, `timeout`, `stopped`, `limit` (a frame, a body or the values held
+# past a bound), `unsupported` (what the server or the platform does not
+# offer) and `failed`, the server's reply code and text in the message.
+
+use amqp/internal/channels
+use amqp/internal/encoding
+use amqp/internal/link
+use amqp/internal/model
+use amqp/internal/reading
+use amqp/internal/session
+use amqp/internal/state
+use amqp/internal/waiting
+use bytes
+use io
+use numbers
+use os
+use poll
+use time
+use url
+
+## Codes
+
+# An argument refused, bytes from the server that are no AMQP, or a
+# precondition the server refused (its 406, 402 and 5xx codes): every
+# function.
+constant INVALID: str
+    "invalid"
+
+# A queue, an exchange or a consumer the server does not know (its 404),
+# a mandatory message no queue took (`next_return`), a queue empty (`get`),
+# or nothing held (`next_return`, `next_confirmation`).
+constant NOT_FOUND: str
+    "not_found"
+
+# A login, a virtual host or a resource refused (its 403 and 530):
+# `connect` and every function that touches a resource.
+constant PERMISSION: str
+    "permission"
+
+# The connection or the channel is closed, by the program or the server:
+# every function that talks to the server.
+constant CLOSED: str
+    "closed"
+
+# The time a call allowed ran out: every function that waits.
+constant TIMEOUT: str
+    "timeout"
+
+# The program was asked to stop while the call waited (`net.ask_stop`).
+constant STOPPED: str
+    "stopped"
+
+# A frame, a body or the values held past a bound, or a body the server
+# finds too large (its 311).
+constant LIMIT: str
+    "limit"
+
+# What the server or the platform does not offer: another protocol's
+# version, a login mechanism the server does not take.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# A failure none of the above names, the server's reply code and text in
+# the message: a resource locked (405), a publish the server refused
+# (`wait_confirms`).
+constant FAILED: str
+    "failed"
+
+## Ports
+
+# The port an AMQP server listens on unless told another.
+constant DEFAULT_PORT: i64
+    5672
+
+# The port an AMQP server listens on for TLS unless told another.
+constant DEFAULT_TLS_PORT: i64
+    5671
+
+## Exchange kinds
+
+# An exchange that routes a message to the queues bound with its routing key
+# exactly.
+constant DIRECT: str
+    "direct"
+
+# An exchange that routes a message to every queue bound to it.
+constant FANOUT: str
+    "fanout"
+
+# An exchange that routes a message to the queues whose binding's pattern
+# its routing key matches: words separated by `.`, `*` one word, `#` any.
+constant TOPIC: str
+    "topic"
+
+# An exchange that routes a message by its headers, the binding's
+# `x-match` saying `all` or `any`.
+constant HEADERS: str
+    "headers"
+
+## Delivery modes
+
+# A message the server keeps in memory only.
+constant TRANSIENT: i64
+    1
+
+# A message the server writes to disk where its queue is durable.
+constant PERSISTENT: i64
+    2
+
+## Reply codes
+
+# A connection or a channel closed at the program's own asking.
+constant REPLY_SUCCESS: i64
+    200
+
+# A body too large for the server.
+constant REPLY_CONTENT_TOO_LARGE: i64
+    311
+
+# A mandatory message no queue took.
+constant REPLY_NO_ROUTE: i64
+    312
+
+# An immediate message no consumer took.
+constant REPLY_NO_CONSUMERS: i64
+    313
+
+# A connection the server's operator closed.
+constant REPLY_CONNECTION_FORCED: i64
+    320
+
+# A virtual host that does not exist.
+constant REPLY_INVALID_PATH: i64
+    402
+
+# A login or a resource refused.
+constant REPLY_ACCESS_REFUSED: i64
+    403
+
+# A queue, an exchange or a consumer the server does not know.
+constant REPLY_NOT_FOUND: i64
+    404
+
+# A resource another connection holds exclusively.
+constant REPLY_RESOURCE_LOCKED: i64
+    405
+
+# A request whose precondition is false: a declaration that disagrees with
+# what exists, a delivery tag unknown.
+constant REPLY_PRECONDITION_FAILED: i64
+    406
+
+# A frame the server could not read.
+constant REPLY_FRAME_ERROR: i64
+    501
+
+# A method whose fields the server could not read.
+constant REPLY_SYNTAX_ERROR: i64
+    502
+
+# A method sent where it is not allowed.
+constant REPLY_COMMAND_INVALID: i64
+    503
+
+# A channel used before it is opened, or after.
+constant REPLY_CHANNEL_ERROR: i64
+    504
+
+# A frame the server did not expect.
+constant REPLY_UNEXPECTED_FRAME: i64
+    505
+
+# A resource the server has run out of.
+constant REPLY_RESOURCE_ERROR: i64
+    506
+
+# A method the server does not allow here, a virtual host refused.
+constant REPLY_NOT_ALLOWED: i64
+    530
+
+# A method the server does not implement.
+constant REPLY_NOT_IMPLEMENTED: i64
+    540
+
+# A fault of the server itself.
+constant REPLY_INTERNAL_ERROR: i64
+    541
+
+## Field tables
+
+# One value of a field table, by the types RabbitMQ reads and writes: AMQP
+# carries arguments, headers and properties in such tables.
+variant Value
+    # A boolean, written `t`.
+    boolean
+        # The value.
+        v: bool
+    # A signed byte, written `b`.
+    int8
+        # The value.
+        v: i8
+    # An unsigned byte, written `B`.
+    uint8
+        # The value.
+        v: u8
+    # A signed 16-bit integer, written `s`.
+    int16
+        # The value.
+        v: i16
+    # An unsigned 16-bit integer, written `u`.
+    uint16
+        # The value.
+        v: u16
+    # A signed 32-bit integer, written `I`: RabbitMQ reads an argument's
+    # number as this.
+    int32
+        # The value.
+        v: i32
+    # An unsigned 32-bit integer, written `i`.
+    uint32
+        # The value.
+        v: u32
+    # A signed 64-bit integer, written `l`.
+    int64
+        # The value.
+        v: i64
+    # A 32-bit float, written `f`.
+    float32
+        # The value.
+        v: f32
+    # A 64-bit float, written `d`.
+    float64
+        # The value.
+        v: f64
+    # A decimal, written `D`: `digits` divided by ten to the `scale`.
+    decimal
+        # The digits after the point, 0 to 255.
+        scale: u8
+        # The value times ten to the `scale`.
+        digits: i32
+    # A text, written `S` as a long string.
+    text
+        # The text.
+        v: str
+    # Bytes, written `x`; a long string read that is not UTF-8 is read as
+    # this.
+    binary
+        # The bytes.
+        v: [u8]
+    # A time, written `T`: whole seconds since 1970-01-01T00:00:00Z.
+    timestamp
+        # The seconds, 0 or more.
+        seconds: i64
+    # A list of values, written `A`.
+    array
+        # The values, in order.
+        items: [Value]
+    # A nested table, written `F`.
+    table
+        # The fields, in order.
+        fields: [Field]
+    # No value, written `V`.
+    void
+
+# One named value of a field table.
+record Field
+    # The name, 1 to 255 bytes of UTF-8 as RabbitMQ asks; a table holds a
+    # name once.
+    name: str
+    # The value.
+    value: Value
+
+## Messages
+
+# A message as it is published and delivered: its properties and its body.
+# `message` makes one with no property; a program sets the fields it needs.
+# A property AMQP leaves out is the empty text, the empty list or 0 here.
+record Message
+    # The MIME type of the body, "" for none: `application/json`.
+    content_type: str
+    # The MIME encoding of the body, "" for none: `gzip`.
+    content_encoding: str
+    # The headers, [] for none; a `HEADERS` exchange routes by them.
+    headers: [Field]
+    # `TRANSIENT` or `PERSISTENT`, 0 for none, which the server reads as
+    # transient.
+    delivery_mode: i64
+    # 0 to 255, 0 for none; a queue with `x-max-priority` orders by it.
+    priority: i64
+    # The identifier that ties an answer to its request, "" for none.
+    correlation_id: str
+    # The queue an answer goes to, "" for none.
+    reply_to: str
+    # The milliseconds the message lives in a queue, as decimal digits, ""
+    # for no limit.
+    expiration: str
+    # The message's identifier, "" for none.
+    message_id: str
+    # When the message was made, in whole seconds since 1970, 0 for none.
+    timestamp: i64
+    # The message's type, "" for none.
+    message_type: str
+    # The user that published it, "" for none; RabbitMQ refuses one that is
+    # not the connection's own.
+    user_id: str
+    # The application that published it, "" for none.
+    app_id: str
+    # The body, any bytes.
+    body: [u8]
+
+# A message the server delivered to a consumer or answered to `get`.
+record Delivery
+    # The channel it came on.
+    channel: Channel
+    # The consumer's tag, "" for an answer to `get`.
+    consumer_tag: str
+    # The tag `ack`, `nack` and `reject` name it by, 1 or more, counted per
+    # channel.
+    tag: i64
+    # Whether the server delivered it before and it was not acknowledged.
+    redelivered: bool
+    # The exchange it was published to, "" for the default exchange.
+    exchange: str
+    # The routing key it was published with.
+    routing_key: str
+    # The messages left in the queue after an answer to `get`; 0 for a
+    # consumer's.
+    remaining: i64
+    # The message.
+    message: Message
+
+# A mandatory message no queue took, which the server handed back.
+record Return
+    # The channel it was published on.
+    channel: Channel
+    # The reply code, `REPLY_NO_ROUTE` for a message no queue took.
+    code: i64
+    # The reply text: `NO_ROUTE`.
+    text: str
+    # The exchange it was published to.
+    exchange: str
+    # The routing key it was published with.
+    routing_key: str
+    # The message.
+    message: Message
+
+# The server's answer to a publish on a channel in confirm mode.
+record Confirmation
+    # The channel it was published on.
+    channel: Channel
+    # The publish's sequence number, as `publish` answered it.
+    tag: i64
+    # Whether the server took the message; false where it refused it.
+    ack: bool
+
+# A consumer the server cancelled, as where its queue was deleted.
+record Cancellation
+    # The channel it consumed on.
+    channel: Channel
+    # The consumer's tag.
+    consumer_tag: str
+
+## Connecting
+
+# How the login is sent.
+variant Mechanism
+    # SASL PLAIN: the user's name and the password, which only TLS hides.
+    plain
+    # RabbitMQ's AMQPLAIN: the same two as a field table.
+    amqplain
+
+# Where the server is and how to talk to it. `options` makes one; a program
+# changes the fields it needs with `@`, or `parse_url` reads one.
+record Options
+    # The server's name or address, without brackets.
+    host: str
+    # The server's port, 1 to 65535.
+    port: i64
+    # Whether TLS carries the connection from its first byte.
+    tls: bool
+    # The PEM of the only authorities a server's certificate is checked
+    # against; "" for the system's own store.
+    roots: str
+    # The virtual host, `/` for RabbitMQ's own.
+    vhost: str
+    # The user's name.
+    username: str
+    # The password.
+    password: str
+    # How the login is sent.
+    mechanism: Mechanism
+    # The heartbeat asked, in seconds, 0 to 65535: the server's own where it
+    # is 0, the smaller of the two where neither is.
+    heartbeat_s: i64
+    # The largest frame asked, in bytes, 4096 to 4294967295, or 0 for the
+    # server's own: the smaller of the two where neither is 0.
+    frame_max: i64
+    # The highest channel number asked, 1 to 65535, or 0 for the server's
+    # own: the smaller of the two where neither is 0.
+    channel_max: i64
+    # The connection's name, which RabbitMQ shows, "" for none.
+    connection_name: str
+    # Properties of the client added to those it sends (its product, version,
+    # platform and capabilities), [] for none.
+    properties: [Field]
+    # The locale asked, `en_US`.
+    locale: str
+    # Milliseconds a connection may take, its login included, 1 or more.
+    connect_ms: i64
+    # Milliseconds a write, and an answer of the server, may take, 1 or more.
+    wait_ms: i64
+    # The largest body read, in bytes, 0 or more; past it the connection is
+    # closed failing `limit`.
+    most_body_bytes: i64
+    # The most deliveries, returned messages and confirmations held unread
+    # together, 1 or more; past it the connection is closed failing `limit`.
+    most_held: i64
+
+# What the server said of itself and agreed when the connection was made.
+record Server
+    # Its properties: `product`, `version`, `platform`, `capabilities`,
+    # `cluster_name`.
+    properties: [Field]
+    # The login mechanisms it offers.
+    mechanisms: [str]
+    # The locales it offers.
+    locales: [str]
+    # The protocol's major version, 0.
+    version_major: i64
+    # The protocol's minor version, 9.
+    version_minor: i64
+    # The highest channel number agreed.
+    channel_max: i64
+    # The largest frame agreed, in bytes.
+    frame_max: i64
+    # The heartbeat agreed, in seconds, 0 for none.
+    heartbeat_s: i64
+
+# Why the server closed a connection or a channel.
+record Closing
+    # The reply code: `REPLY_NOT_FOUND`, `REPLY_ACCESS_REFUSED`.
+    code: i64
+    # The reply text: `NOT_FOUND - no queue 'q' in vhost '/'`.
+    text: str
+    # The class of the method that caused it, 0 for none.
+    class_id: i64
+    # The method that caused it, 0 for none.
+    method_id: i64
+
+# Whether the server holds the connection's publishes back, as RabbitMQ
+# does when its memory or disk runs short.
+record Blocked
+    # Whether it holds them back now.
+    active: bool
+    # Why, as the server said; "" when it does not.
+    reason: str
+
+# A connection to an AMQP server, which `connect` makes and `close` ends.
+# Its one field is the conversation's private state. Every call that talks
+# to the server works on the caller's own place, through `@`.
+record Connection
+    # The conversation's state, which only this package reads and writes.
+    session: state.Session
+
+# A channel of a connection, which `open_channel` makes and `close_channel`
+# ends; a channel the server closes stays closed.
+record Channel
+    # The channel's number, 1 or more.
+    id: i64
+
+## Exchanges and queues
+
+# An exchange to declare. `exchange` makes one; a program sets the fields
+# it needs.
+record Exchange
+    # The name, 1 to 255 bytes; `amq.` begins only the server's own.
+    name: str
+    # The kind: `DIRECT`, `FANOUT`, `TOPIC`, `HEADERS`, or a plugin's.
+    kind: str
+    # Whether it outlives a restart of the server.
+    durable: bool
+    # Whether the server deletes it when its last binding goes.
+    auto_delete: bool
+    # Whether only other exchanges publish to it.
+    internal: bool
+    # Whether the declaration only asks that it exists, failing `not_found`
+    # where it does not, and changes nothing.
+    passive: bool
+    # Its arguments: `alternate-exchange`; [] for none.
+    arguments: [Field]
+
+# A queue to declare. `queue` makes one; a program sets the fields it needs.
+record Queue
+    # The name, 0 to 255 bytes; "" asks the server to name it.
+    name: str
+    # Whether it outlives a restart of the server.
+    durable: bool
+    # Whether only this connection uses it, and the server deletes it when
+    # the connection closes.
+    exclusive: bool
+    # Whether the server deletes it when its last consumer goes.
+    auto_delete: bool
+    # Whether the declaration only asks that it exists, failing `not_found`
+    # where it does not, and changes nothing.
+    passive: bool
+    # Its arguments: `x-queue-type`, `x-message-ttl`, `x-max-length`,
+    # `x-dead-letter-exchange`, `x-max-priority`; [] for none.
+    arguments: [Field]
+
+# What the server answered a queue's declaration.
+record Declared
+    # The queue's name, the server's own where it was asked to name it.
+    name: str
+    # The messages ready in it.
+    messages: i64
+    # The consumers reading it.
+    consumers: i64
+
+# A consumer to start. `consumer` makes one; a program sets the fields it
+# needs.
+record Consumer
+    # The queue it reads.
+    queue_name: str
+    # Its tag, unique on its channel; "" asks the server to name it.
+    tag: str
+    # Whether the server counts each message acknowledged as it sends it,
+    # so the program never acknowledges and a message lost in a crash is
+    # lost.
+    auto_ack: bool
+    # Whether it is the queue's only consumer.
+    exclusive: bool
+    # Whether it is not sent what its own connection publishes; RabbitMQ
+    # ignores it.
+    no_local: bool
+    # Its arguments: `x-priority`; [] for none.
+    arguments: [Field]
+
+## Connecting
+
+# The options of a connection to `host` at `DEFAULT_PORT`: the virtual host
+# `/`, the user `guest` with the password `guest` over PLAIN, a heartbeat of
+# 60 seconds, frames of 131,072 bytes, 2,047 channels, the locale `en_US`, 10
+# seconds to connect and for each answer, bodies of 128 MiB at most, and
+# 65,536 values held unread.
+#
+# - `host`: the server's name or address, without brackets.
+#
+# See also `parse_url`, `connect`.
+function options(host: str) -> Options
+    return Options(
+        host: host,
+        port: DEFAULT_PORT,
+        tls: false,
+        roots: "",
+        vhost: "/",
+        username: "guest",
+        password: "guest",
+        mechanism: .plain,
+        heartbeat_s: 60,
+        frame_max: 131072,
+        channel_max: 2047,
+        connection_name: "",
+        properties: [],
+        locale: "en_US",
+        connect_ms: 10000,
+        wait_ms: 10000,
+        most_body_bytes: 134217728,
+        most_held: 65536
+    )
+
+# The options a URL names, as RabbitMQ writes one:
+# `amqp://user:password@host:5672/vhost?heartbeat=10`.
+#
+# - `text`: the URL: `amqp://` (port 5672) or `amqps://` (TLS, 5671); its
+#   user and password, percent-decoded, are the login, `guest` and `guest`
+#   where it names none; its host, `localhost` where it names none; its
+#   path's one segment, percent-decoded, is the virtual host, `/` where it
+#   names none. Its query may set `heartbeat`, `frame_max`, `channel_max`
+#   and `connection_timeout` (milliseconds) as numbers, and
+#   `auth_mechanism` as `plain` or `amqplain`.
+#
+# Fails `invalid` where it is no such URL: another scheme, a port outside 1
+# to 65535, a path of two segments, a fragment, a query's key unknown or its
+# value out of range. See also `options`.
+function parse_url(text: str) -> Options?
+    u = match url.parse(text)
+        .ok got => got
+        .err e  => return fail(code: INVALID, msg: f"\"{text}\" is no URL: {e.msg}")
+
+    if u.fragment != "" || u.empty_fragment
+        return fail(code: INVALID, msg: f"\"{text}\" holds a fragment")
+
+    host = if u.host == ""
+        "localhost"
+    else
+        u.host
+
+    opts @= options(host)
+
+    if u.scheme == "amqps"
+        opts.tls @ true
+        opts.port @ DEFAULT_TLS_PORT
+    else if u.scheme != "amqp"
+        return fail(code: INVALID, msg: f"\"{text}\" names the scheme \"{u.scheme}\": a server is amqp:// or amqps://")
+
+    if u.port != ""
+        port = numbers.parse_int(u.port).default(0)
+
+        if port < 1 || port > 65535
+            return fail(code: INVALID, msg: f"the port of \"{text}\" is outside 1 to 65535")
+        opts.port @ port
+
+    if u.user != "" || u.empty_userinfo
+        opts.username @ u.user
+        opts.password @ u.password
+
+    if u.path != "" && u.path != "/"
+        segments = match url.parse_path(u.path)
+            .ok got => got
+            .err e  => return fail(code: INVALID, msg: f"the path of \"{text}\" is no path: {e.msg}")
+
+        if segments.len() != 1
+            return fail(
+                code: INVALID,
+                msg: f"the path of \"{text}\" holds {segments.len()} segments, and a virtual host is one: write a / inside it as %2f"
+            )
+        opts.vhost @ segments[0]
+
+    if u.query != ""
+        pairs = match url.parse_query(u.query)
+            .ok got => got
+            .err e  => return fail(code: INVALID, msg: f"the query of \"{text}\" is no query: {e.msg}")
+
+        for p in pairs
+            if p.key == "auth_mechanism"
+                if p.value == "plain" || p.value == "PLAIN"
+                    opts.mechanism @ .plain
+                else if p.value == "amqplain" || p.value == "AMQPLAIN"
+                    opts.mechanism @ .amqplain
+                else
+                    return fail(
+                        code: INVALID,
+                        msg: f"the mechanism \"{p.value}\" of \"{text}\" is neither plain nor amqplain"
+                    )
+            else
+                n = match numbers.parse_int(p.value)
+                    .ok got => got
+                    .err _  => return fail(code: INVALID, msg: f"the value of \"{p.key}\" in \"{text}\" is no number")
+
+                if p.key == "heartbeat" && n >= 0 && n <= 65535
+                    opts.heartbeat_s @ n
+                else if p.key == "frame_max" && (n == 0 || n >= 4096 && n <= 4294967295)
+                    opts.frame_max @ n
+                else if p.key == "channel_max" && n >= 0 && n <= 65535
+                    opts.channel_max @ n
+                else if p.key == "connection_timeout" && n >= 1
+                    opts.connect_ms @ n
+                else if p.key == "heartbeat" || p.key == "frame_max" || p.key == "channel_max" || p.key == "connection_timeout"
+                    return fail(code: INVALID, msg: f"the value {n} of \"{p.key}\" in \"{text}\" is out of its range")
+                else
+                    return fail(
+                        code: INVALID,
+                        msg: f"\"{text}\" asks \"{p.key}\", which is not heartbeat, frame_max, channel_max, connection_timeout or auth_mechanism"
+                    )
+    return ok(opts)
+
+# A connection to the server `opts` names, its handshake done: the protocol's
+# header sent, the login taken, the heartbeat, frame size and channels
+# agreed, the virtual host opened.
+#
+# - `opts`: where the server is and how to talk to it.
+#
+# The program owes the connection a `close`. Fails `permission` where the
+# server refuses the login or the virtual host; `unsupported` where it speaks
+# another version of AMQP or takes neither login mechanism; `invalid` where an
+# option is out of range or the server sends bytes that are no AMQP; and as
+# `net.connect` and `tls.connect` fail where nothing answers. See also
+# `options`, `close`.
+function connect(opts: Options) -> Connection?
+    extra: [u8] = if opts.properties.len() == 0
+        []
+    else
+        encode_table(opts.properties)?
+
+    mechanism: model.Mechanism = match opts.mechanism
+        .plain    => .plain
+        .amqplain => .amqplain
+
+    inner = model.Options(
+        host: opts.host,
+        port: opts.port,
+        tls: opts.tls,
+        roots: opts.roots,
+        vhost: opts.vhost,
+        username: opts.username,
+        password: opts.password,
+        mechanism: mechanism,
+        heartbeat_s: opts.heartbeat_s,
+        frame_max: opts.frame_max,
+        channel_max: opts.channel_max,
+        connection_name: opts.connection_name,
+        properties: extra,
+        locale: opts.locale,
+        connect_ms: opts.connect_ms,
+        wait_ms: opts.wait_ms,
+        most_body_bytes: opts.most_body_bytes,
+        most_held: opts.most_held
+    )
+    return ok(Connection(session: session.open(inner)?))
+
+# Closes the connection with `connection.close` and its answer, which ends
+# every channel; every later call through it fails `closed`.
+#
+# - `c`: the connection, emptied.
+#
+# Fails `closed` where it is closed already; the connection is closed even
+# where the server does not answer in time. See also `connect`.
+function close(@c: Connection) -> ()?
+    return session.close(@c.session)
+
+# Whether the connection is closed, by the program, the server or a loss.
+#
+# - `c`: the connection.
+#
+# See also `closing_of`.
+function is_closed(c: Connection) -> bool
+    return !c.session.open
+
+# Why the server closed the connection.
+#
+# - `c`: the connection.
+#
+# Fails `not_found` where the server did not close it. See also
+# `channel_closing_of`.
+function closing_of(c: Connection) -> Closing?
+    if !c.session.closed_by_server
+        return fail(code: NOT_FOUND, msg: "the server did not close the connection")
+    k = c.session.closing
+    return ok(Closing(code: k.code, text: k.text, class_id: k.class_id, method_id: k.method_id))
+
+# What the server said of itself and agreed.
+#
+# - `c`: the connection.
+#
+# See also `connect`.
+function server_of(c: Connection) -> Server
+    v = c.session.server
+    return Server(
+        properties: decode_table(v.properties).default([]),
+        mechanisms: v.mechanisms,
+        locales: v.locales,
+        version_major: v.version_major,
+        version_minor: v.version_minor,
+        channel_max: v.channel_max,
+        frame_max: v.frame_max,
+        heartbeat_s: v.heartbeat_s
+    )
+
+# Whether the server holds the connection's publishes back now, and why.
+#
+# - `c`: the connection.
+function blocked_of(c: Connection) -> Blocked
+    return Blocked(active: c.session.blocked.active, reason: c.session.blocked.reason)
+
+# Replaces the secret the connection logged in with, as an OAuth 2 token
+# that expires asks (`connection.update-secret`).
+#
+# - `c`: the connection.
+# - `secret`: the new secret.
+# - `reason`: why, which the server logs.
+#
+# Fails `permission` where the server refuses the secret, and as every
+# call that waits fails. See also `connect`.
+function update_secret(@c: Connection, secret: str, reason: str) -> ()?
+    return session.update_secret(@c.session, secret: secret, reason: reason)
+
+# Waits `wait_ms` milliseconds doing nothing but what the connection needs:
+# the heartbeat sent and read, and what the server sends held.
+#
+# - `c`: the connection.
+# - `wait_ms`: milliseconds, 0 or more.
+#
+# Fails `closed` where the connection is lost meanwhile, `stopped`. See also
+# `read_ready`.
+function idle(@c: Connection, wait_ms: i64) -> ()?
+    if wait_ms < 0
+        return fail(code: INVALID, msg: f"the wait {wait_ms} is below 0")
+    until = waiting.deadline(wait_ms)
+
+    while true
+        match waiting.step(@c.session, until: until)
+            .ok _ => _ = 0
+            .err e =>
+                if e.code == TIMEOUT
+                    return ok()
+                return fail(code: e.code, msg: e.msg)
+
+# The stream under the connection, for a program that waits on it with
+# `poll`; only this package reads and writes it.
+#
+# - `c`: the connection.
+#
+# Fails `closed` where the connection is closed. See also `read_ready`.
+function stream_of(c: Connection) -> io.Stream?
+    if !c.session.open
+        return fail(code: CLOSED, msg: f"the connection to {c.session.target} is closed")
+    return link.stream_of(c.session.link)
+
+# Reads what the stream holds now, without waiting longer, and holds what it
+# brings; for a program `poll` has told the stream is readable.
+#
+# - `c`: the connection.
+#
+# Fails `closed` where the connection is lost. See also `held_of`,
+# `next_delivery`.
+function read_ready(@c: Connection) -> ()?
+    if !c.session.open
+        return waiting.closed_failure(c.session)
+    link.arm(c.session.link, ms: 1)?
+
+    match reading.fill(@c.session)
+        .ok _ => _ = 0
+        .err e =>
+            if e.code != TIMEOUT
+                return fail(code: e.code, msg: e.msg)
+
+    return waiting.drain(@c.session)
+
+# The values held unread: deliveries, returned messages and confirmations.
+#
+# - `c`: the connection.
+#
+# See also `read_ready`.
+function held_of(c: Connection) -> i64
+    return state.held(c.session)
+
+## Channels
+
+# A new channel of the connection, the lowest number free.
+#
+# - `c`: the connection.
+#
+# Fails `limit` where every number agreed is taken, and as every call that
+# waits fails. See also `close_channel`.
+function open_channel(@c: Connection) -> Channel?
+    return ok(Channel(id: channels.open_channel(@c.session)?))
+
+# Closes `ch` with `channel.close` and its answer; its consumers end and the
+# messages it was delivered and did not acknowledge go back to their queues.
+#
+# - `c`: the connection.
+# - `ch`: the channel.
+#
+# Fails `closed` where `ch` is closed already. See also `open_channel`.
+function close_channel(@c: Connection, ch: Channel) -> ()?
+    return channels.close_channel(@c.session, n: ch.id)
+
+# Whether `ch` is open.
+#
+# - `c`: the connection.
+# - `ch`: the channel.
+#
+# See also `channel_closing_of`.
+function is_channel_open(c: Connection, ch: Channel) -> bool
+    return state.is_open(c.session, channel: ch.id)
+
+# Why the server closed `ch`, as it does where a call on it fails: a queue
+# not found, a declaration that disagrees, an acknowledgement unknown.
+#
+# - `c`: the connection.
+# - `ch`: the channel.
+#
+# Fails `not_found` where the server did not close it. See also
+# `closing_of`.
+function channel_closing_of(c: Connection, ch: Channel) -> Closing?
+    if ch.id < 1 || ch.id >= c.session.chans.len() || !c.session.chans[ch.id].closed_by_server
+        return fail(code: NOT_FOUND, msg: f"the server did not close channel {ch.id}")
+    k = c.session.chans[ch.id].closing
+    return ok(Closing(code: k.code, text: k.text, class_id: k.class_id, method_id: k.method_id))
+
+# Sets how much the server sends `ch`'s consumers before they acknowledge
+# (`basic.qos`).
+#
+# - `c`: the connection.
+# - `ch`: the channel.
+# - `prefetch_count`: the most messages unacknowledged, 0 to 65535, 0 for
+#   no limit.
+# - `prefetch_size`: the most bytes unacknowledged, 0 for no limit, which is
+#   all RabbitMQ takes.
+# - `global`: whether the limit is shared by every consumer of the channel,
+#   rather than each consumer's own.
+#
+# Fails `invalid` where a number is out of range, and as every call that
+# waits fails. See also `consume`.
+function qos(@c: Connection, ch: Channel, prefetch_count: i64, prefetch_size: i64, global: bool) -> ()?
+    return channels.qos(
+        @c.session,
+        n: ch.id,
+        prefetch_count: prefetch_count,
+        prefetch_size: prefetch_size,
+        global: global
+    )
+
+# Asks the server to stop or go on sending to `ch` (`channel.flow`).
+#
+# - `c`: the connection.
+# - `ch`: the channel.
+# - `active`: true to go on, false to stop.
+#
+# Fails `unsupported` where the server does not implement it, as RabbitMQ
+# does not for false, and as every call that waits fails. See also `qos`.
+function flow(@c: Connection, ch: Channel, active: bool) -> ()?
+    return channels.flow(@c.session, n: ch.id, active: active)
+
+## Exchanges
+
+# An exchange named `name` of the kind `kind`, not durable, not deleted
+# with its last binding, not internal, declared and not only asked about,
+# with no argument.
+#
+# - `name`: the name.
+# - `kind`: `DIRECT`, `FANOUT`, `TOPIC`, `HEADERS`, or a plugin's.
+#
+# See also `declare_exchange`.
+function exchange(name: str, kind: str) -> Exchange
+    return Exchange(
+        name: name,
+        kind: kind,
+        durable: false,
+        auto_delete: false,
+        internal: false,
+        passive: false,
+        arguments: []
+    )
+
+# Declares the exchange `e`, made where it does not exist.
+#
+# - `c`: the connection.
+# - `ch`: the channel.
+# - `e`: the exchange.
+#
+# Fails `invalid` where it exists with other properties or a field is
+# refused (the server closes the channel), `not_found` where it is passive
+# and does not exist, `permission`, and as every call that waits fails. See
+# also `delete_exchange`, `bind_queue`.
+function declare_exchange(@c: Connection, ch: Channel, e: Exchange) -> ()?
+    payload = encoding.exchange_declare(name: e.name, kind: e.kind, passive: e.passive, durable: e.durable, auto_delete: e.auto_delete, internal: e.internal, arguments: encode_table(e.arguments)?)?
+    return channels.declare_exchange(@c.session, n: ch.id, payload: payload)
+
+# Deletes the exchange `name`.
+#
+# - `c`: the connection.
+# - `ch`: the channel.
+# - `name`: the exchange.
+# - `if_unused`: whether to delete it only where no queue or exchange is
+#   bound to it.
+#
+# Fails `invalid` where it is used and `if_unused` asks otherwise,
+# `permission`, and as every call that waits fails; an exchange that does
+# not exist is deleted without failing. See also `declare_exchange`.
+function delete_exchange(@c: Connection, ch: Channel, name: str, if_unused: bool) -> ()?
+    return channels.delete_exchange(@c.session, n: ch.id, name: name, if_unused: if_unused)
+
+# Binds the exchange `destination` to the exchange `source`, so `source`
+# routes to it what the key matches, as a queue's binding does (RabbitMQ's
+# extension).
+#
+# - `c`: the connection.
+# - `ch`: the channel.
+# - `destination`: the exchange routed to.
+# - `source`: the exchange routed from.
+# - `routing_key`: the binding's key or pattern.
+# - `arguments`: the binding's arguments, as a `HEADERS` exchange reads
+#   them; [] for none.
+#
+# Fails `not_found` where either exchange does not exist, and as every call
+# that waits fails. See also `unbind_exchange`.
+function bind_exchange(@c: Connection, ch: Channel, destination: str, source: str, routing_key: str, arguments: [Field]) -> ()?
+    payload = encoding.exchange_binding(30, destination: destination, source: source, routing_key: routing_key, arguments: encode_table(arguments)?)?
+    return channels.exchange_binding(@c.session, n: ch.id, payload: payload, method_id: 30)
+
+# Takes back a binding `bind_exchange` made.
+#
+# - `c`: the connection.
+# - `ch`: the channel.
+# - `destination`: the exchange routed to.
+# - `source`: the exchange routed from.
+# - `routing_key`: the binding's key.
+# - `arguments`: the binding's arguments.
+#
+# Fails as `bind_exchange` does. See also `bind_exchange`.
+function unbind_exchange(@c: Connection, ch: Channel, destination: str, source: str, routing_key: str, arguments: [Field]) -> ()?
+    payload = encoding.exchange_binding(40, destination: destination, source: source, routing_key: routing_key, arguments: encode_table(arguments)?)?
+    return channels.exchange_binding(@c.session, n: ch.id, payload: payload, method_id: 40)
+
+## Queues
+
+# A queue named `name`, "" for one the server names, not durable, not
+# exclusive, not deleted with its last consumer, declared and not only asked
+# about, with no argument.
+#
+# - `name`: the name.
+#
+# See also `declare_queue`.
+function queue(name: str) -> Queue
+    return Queue(name: name, durable: false, exclusive: false, auto_delete: false, passive: false, arguments: [])
+
+# Declares the queue `q`, made where it does not exist, and answers its
+# name and counts.
+#
+# - `c`: the connection.
+# - `ch`: the channel.
+# - `q`: the queue.
+#
+# Fails `invalid` where it exists with other properties or an argument is
+# refused, `not_found` where it is passive and does not exist, `failed`
+# where another connection holds it exclusively, `permission`, and as every
+# call that waits fails; the server then closes the channel. See also
+# `bind_queue`, `delete_queue`.
+function declare_queue(@c: Connection, ch: Channel, q: Queue) -> Declared?
+    payload = encoding.queue_declare(q.name, passive: q.passive, durable: q.durable, exclusive: q.exclusive, auto_delete: q.auto_delete, arguments: encode_table(q.arguments)?)?
+    d = channels.declare_queue(@c.session, n: ch.id, payload: payload)?
+    return ok(Declared(name: d.name, messages: d.messages, consumers: d.consumers))
+
+# Binds the queue `queue_name` to the exchange `exchange_name`, so the
+# exchange routes to it what the key matches.
+#
+# - `c`: the connection.
+# - `ch`: the channel.
+# - `queue_name`: the queue.
+# - `exchange_name`: the exchange.
+# - `routing_key`: the binding's key or pattern.
+# - `arguments`: the binding's arguments, as a `HEADERS` exchange reads
+#   them; [] for none.
+#
+# Fails `not_found` where the queue or the exchange does not exist, and as
+# every call that waits fails. See also `unbind_queue`.
+function bind_queue(@c: Connection, ch: Channel, queue_name: str, exchange_name: str, routing_key: str, arguments: [Field]) -> ()?
+    payload = encoding.queue_binding(20, queue_name: queue_name, exchange_name: exchange_name, routing_key: routing_key, arguments: encode_table(arguments)?)?
+    return channels.queue_binding(@c.session, n: ch.id, payload: payload, method_id: 20)
+
+# Takes back a binding `bind_queue` made.
+#
+# - `c`: the connection.
+# - `ch`: the channel.
+# - `queue_name`: the queue.
+# - `exchange_name`: the exchange.
+# - `routing_key`: the binding's key.
+# - `arguments`: the binding's arguments.
+#
+# Fails as `bind_queue` does. See also `bind_queue`.
+function unbind_queue(@c: Connection, ch: Channel, queue_name: str, exchange_name: str, routing_key: str, arguments: [Field]) -> ()?
+    payload = encoding.queue_binding(50, queue_name: queue_name, exchange_name: exchange_name, routing_key: routing_key, arguments: encode_table(arguments)?)?
+    return channels.queue_binding(@c.session, n: ch.id, payload: payload, method_id: 50)
+
+# Removes every message ready in the queue `name`, and answers how many.
+#
+# - `c`: the connection.
+# - `ch`: the channel.
+# - `name`: the queue.
+#
+# Fails `not_found` where it does not exist, and as every call that waits
+# fails. See also `delete_queue`.
+function purge_queue(@c: Connection, ch: Channel, name: str) -> i64?
+    return channels.queue_count(@c.session, n: ch.id, payload: encoding.queue_purge(name)?, method_id: 30)
+
+# Deletes the queue `name`, and answers how many messages it held.
+#
+# - `c`: the connection.
+# - `ch`: the channel.
+# - `name`: the queue.
+# - `if_unused`: whether to delete it only where no consumer reads it.
+# - `if_empty`: whether to delete it only where it holds no message.
+#
+# Fails `invalid` where it is used or holds messages and a flag asks
+# otherwise, and as every call that waits fails; a queue that does not exist
+# is deleted without failing. See also `declare_queue`.
+function delete_queue(@c: Connection, ch: Channel, name: str, if_unused: bool, if_empty: bool) -> i64?
+    return channels.queue_count(
+        @c.session,
+        n: ch.id,
+        payload: encoding.queue_delete(name, if_unused: if_unused, if_empty: if_empty)?,
+        method_id: 40
+    )
+
+## Publishing
+
+# A message holding `body` and no property.
+#
+# - `body`: the body, any bytes.
+#
+# See also `publish`.
+function message(body: [u8]) -> Message
+    return Message(
+        content_type: "",
+        content_encoding: "",
+        headers: [],
+        delivery_mode: 0,
+        priority: 0,
+        correlation_id: "",
+        reply_to: "",
+        expiration: "",
+        message_id: "",
+        timestamp: 0,
+        message_type: "",
+        user_id: "",
+        app_id: "",
+        body: body
+    )
+
+# Publishes `m` to the exchange `exchange_name` with the routing key
+# `routing_key`, and answers its sequence number where `ch` is in confirm
+# mode, 0 elsewhere.
+#
+# - `c`: the connection.
+# - `ch`: the channel.
+# - `exchange_name`: the exchange, "" for the default one, which routes to
+#   the queue the key names.
+# - `routing_key`: the key, 0 to 255 bytes.
+# - `m`: the message; its body is cut into frames of the size agreed.
+# - `mandatory`: whether a message no queue takes is handed back, for
+#   `next_return`, rather than dropped.
+#
+# A publish waits for no answer: an exchange that does not exist closes the
+# channel, which a later call on it tells. Fails `invalid` where a property
+# is out of range (a priority past 255, a text past 255 bytes), `limit` where
+# the body passes `Options.most_body_bytes`, and as a write fails. See also
+# `select_confirms`, `next_return`.
+function publish(@c: Connection, ch: Channel, exchange_name: str, routing_key: str, m: Message, mandatory: bool) -> i64?
+    headers: [u8] = if m.headers.len() == 0
+        []
+    else
+        encode_table(m.headers)?
+
+    inner = model.Message(
+        content_type: m.content_type,
+        content_encoding: m.content_encoding,
+        headers: headers,
+        delivery_mode: m.delivery_mode,
+        priority: m.priority,
+        correlation_id: m.correlation_id,
+        reply_to: m.reply_to,
+        expiration: m.expiration,
+        message_id: m.message_id,
+        timestamp: m.timestamp,
+        message_type: m.message_type,
+        user_id: m.user_id,
+        app_id: m.app_id,
+        body: m.body
+    )
+    return channels.publish(
+        @c.session,
+        n: ch.id,
+        exchange_name: exchange_name,
+        routing_key: routing_key,
+        m: inner,
+        mandatory: mandatory
+    )
+
+# Puts `ch` in confirm mode (`confirm.select`): the server then confirms or
+# refuses every publish, numbered from 1.
+#
+# - `c`: the connection.
+# - `ch`: the channel.
+#
+# Fails `invalid` where `ch` is transactional, and as every call that waits
+# fails. See also `wait_confirms`, `next_confirmation`.
+function select_confirms(@c: Connection, ch: Channel) -> ()?
+    return channels.select_confirms(@c.session, n: ch.id)
+
+# The next confirmation of a publish on `ch`, waiting for one; a
+# confirmation of several publishes at once is answered one publish at a
+# time, in order.
+#
+# - `c`: the connection.
+# - `ch`: the channel, in confirm mode.
+# - `wait_ms`: milliseconds to wait, 0 to answer only what is held.
+#
+# Fails `not_found` where nothing is held and `wait_ms` is 0, `invalid`
+# where `ch` is not in confirm mode, and as every call that waits fails. See
+# also `wait_confirms`.
+function next_confirmation(@c: Connection, ch: Channel, wait_ms: i64) -> Confirmation?
+    if state.is_open(c.session, channel: ch.id) && !c.session.chans[ch.id].confirming
+        return fail(code: INVALID, msg: f"channel {ch.id} is not in confirm mode")
+
+    if wait_ms == 0
+        waiting.drain(@c.session)?
+
+        if state.is_open(c.session, channel: ch.id) && c.session.chans[ch.id].confirmation_at >= c.session.chans[ch.id].confirmations.len()
+            return fail(code: NOT_FOUND, msg: f"no confirmation is held for channel {ch.id}")
+    k = waiting.next_confirmation(@c.session, n: ch.id, until: waiting.deadline(wait_ms))?
+    return ok(Confirmation(channel: Channel(id: k.channel), tag: k.tag, ack: k.ack))
+
+# Waits until the server has confirmed or refused every publish of `ch`
+# so far, and forgets the confirmations held.
+#
+# - `c`: the connection.
+# - `ch`: the channel, in confirm mode.
+# - `wait_ms`: milliseconds to wait, 1 or more.
+#
+# Fails `failed` where the server refused any of them, the message naming
+# their sequence numbers; `invalid` where `ch` is not in confirm mode; and as
+# every call that waits fails. See also `next_confirmation`, `publish`.
+function wait_confirms(@c: Connection, ch: Channel, wait_ms: i64) -> ()?
+    if wait_ms < 1
+        return fail(code: INVALID, msg: f"the wait {wait_ms} is below 1 millisecond")
+
+    if state.is_open(c.session, channel: ch.id) && !c.session.chans[ch.id].confirming
+        return fail(code: INVALID, msg: f"channel {ch.id} is not in confirm mode")
+    refused = waiting.settle_all(@c.session, n: ch.id, until: waiting.deadline(wait_ms))?
+
+    if refused.len() > 0
+        named: [str] @= []
+
+        for t in refused
+            named @ named.push(to_str(t))
+
+        return fail(
+            code: FAILED,
+            msg: f"the server refused {refused.len()} publishes of channel {ch.id}: {named.join(", ")}"
+        )
+    return ok()
+
+# The next mandatory message the server handed back, waiting for one.
+#
+# - `c`: the connection.
+# - `wait_ms`: milliseconds to wait, 0 to answer only what is held.
+#
+# Fails `not_found` where nothing is held and `wait_ms` is 0, and as every
+# call that waits fails. See also `publish`.
+function next_return(@c: Connection, wait_ms: i64) -> Return?
+    if wait_ms == 0
+        waiting.drain(@c.session)?
+
+        if c.session.return_at >= c.session.returns.len()
+            return fail(code: NOT_FOUND, msg: "no returned message is held")
+    r = waiting.next_return(@c.session, until: waiting.deadline(wait_ms))?
+    v = r.message
+    return ok(
+        Return(channel: Channel(id: r.channel), code: r.code, text: r.text, exchange: r.exchange, routing_key: r.routing_key, message: Message(content_type: v.content_type, content_encoding: v.content_encoding, headers: decode_table(v.headers).default([]), delivery_mode: v.delivery_mode, priority: v.priority, correlation_id: v.correlation_id, reply_to: v.reply_to, expiration: v.expiration, message_id: v.message_id, timestamp: v.timestamp, message_type: v.message_type, user_id: v.user_id, app_id: v.app_id, body: v.body))
+    )
+
+## Consuming
+
+# A consumer of the queue `queue_name`, named by the server, acknowledging
+# by the program's own `ack`, not exclusive, with no argument.
+#
+# - `queue_name`: the queue.
+#
+# See also `consume`.
+function consumer(queue_name: str) -> Consumer
+    return Consumer(queue_name: queue_name, tag: "", auto_ack: false, exclusive: false, no_local: false, arguments: [])
+
+# Starts the consumer `k` on `ch`, and answers its tag; its messages come
+# by `next_delivery`.
+#
+# - `c`: the connection.
+# - `ch`: the channel.
+# - `k`: the consumer.
+#
+# Fails `not_found` where the queue does not exist, `failed` where another
+# consumer holds it exclusively, `invalid` where the tag is taken on `ch`,
+# and as every call that waits fails. See also `cancel`, `qos`.
+function consume(@c: Connection, ch: Channel, k: Consumer) -> str?
+    payload = encoding.consume(queue_name: k.queue_name, tag: k.tag, no_local: k.no_local, no_ack: k.auto_ack, exclusive: k.exclusive, arguments: encode_table(k.arguments)?)?
+    return channels.consume(@c.session, n: ch.id, payload: payload)
+
+# Ends the consumer `tag` of `ch`; the messages delivered before stay to be
+# acknowledged.
+#
+# - `c`: the connection.
+# - `ch`: the channel.
+# - `tag`: the consumer's tag.
+#
+# Fails as every call that waits fails; a tag unknown is ended without
+# failing. See also `consume`.
+function cancel(@c: Connection, ch: Channel, tag: str) -> ()?
+    return channels.cancel(@c.session, n: ch.id, tag: tag)
+
+# The next message delivered to any consumer of the connection, waiting for
+# one; those held come first, in the order they came.
+#
+# - `c`: the connection.
+# - `wait_ms`: milliseconds to wait, 0 to answer only what is held.
+#
+# Fails `timeout` where none comes in time, `closed` where the connection is
+# lost, `stopped`. See also `ack`, `consume`.
+function next_delivery(@c: Connection, wait_ms: i64) -> Delivery?
+    if wait_ms < 0
+        return fail(code: INVALID, msg: f"the wait {wait_ms} is below 0")
+    d = waiting.next_delivery(@c.session, until: waiting.deadline(wait_ms))?
+    v = d.message
+    return ok(
+        Delivery(channel: Channel(id: d.channel), consumer_tag: d.consumer_tag, tag: d.tag, redelivered: d.redelivered, exchange: d.exchange, routing_key: d.routing_key, remaining: d.remaining, message: Message(content_type: v.content_type, content_encoding: v.content_encoding, headers: decode_table(v.headers).default([]), delivery_mode: v.delivery_mode, priority: v.priority, correlation_id: v.correlation_id, reply_to: v.reply_to, expiration: v.expiration, message_id: v.message_id, timestamp: v.timestamp, message_type: v.message_type, user_id: v.user_id, app_id: v.app_id, body: v.body))
+    )
+
+# Takes one message from the queue `queue_name` (`basic.get`).
+#
+# - `c`: the connection.
+# - `ch`: the channel.
+# - `queue_name`: the queue.
+# - `auto_ack`: whether the server counts it acknowledged as it sends it.
+#
+# Fails `not_found` where the queue is empty or does not exist, and as
+# every call that waits fails. See also `next_delivery`.
+function get(@c: Connection, ch: Channel, queue_name: str, auto_ack: bool) -> Delivery?
+    d = waiting.call_get(@c.session, n: ch.id, payload: encoding.get(queue_name, no_ack: auto_ack)?)?
+    v = d.message
+    return ok(
+        Delivery(channel: Channel(id: d.channel), consumer_tag: d.consumer_tag, tag: d.tag, redelivered: d.redelivered, exchange: d.exchange, routing_key: d.routing_key, remaining: d.remaining, message: Message(content_type: v.content_type, content_encoding: v.content_encoding, headers: decode_table(v.headers).default([]), delivery_mode: v.delivery_mode, priority: v.priority, correlation_id: v.correlation_id, reply_to: v.reply_to, expiration: v.expiration, message_id: v.message_id, timestamp: v.timestamp, message_type: v.message_type, user_id: v.user_id, app_id: v.app_id, body: v.body))
+    )
+
+# Acknowledges `d`: the server forgets it.
+#
+# - `c`: the connection.
+# - `d`: the delivery.
+# - `multiple`: whether every delivery of its channel up to it is
+#   acknowledged too.
+#
+# Fails `closed` where its channel is closed, and as a write fails; a tag the
+# server does not know closes the channel, which a later call tells. See also
+# `nack`, `reject`.
+function ack(@c: Connection, d: Delivery lent, multiple: bool) -> ()?
+    return channels.settle(@c.session, n: d.channel.id, method_id: 80, tag: d.tag, flags: [multiple])
+
+# Refuses `d` (`basic.nack`, RabbitMQ's extension).
+#
+# - `c`: the connection.
+# - `d`: the delivery.
+# - `multiple`: whether every delivery of its channel up to it is refused
+#   too.
+# - `requeue`: whether it goes back to its queue rather than to the
+#   dead-letter exchange or nowhere.
+#
+# Fails as `ack` does. See also `reject`.
+function nack(@c: Connection, d: Delivery lent, multiple: bool, requeue: bool) -> ()?
+    return channels.settle(@c.session, n: d.channel.id, method_id: 120, tag: d.tag, flags: [multiple, requeue])
+
+# Refuses `d` alone (`basic.reject`).
+#
+# - `c`: the connection.
+# - `d`: the delivery.
+# - `requeue`: whether it goes back to its queue.
+#
+# Fails as `ack` does. See also `nack`.
+function reject(@c: Connection, d: Delivery lent, requeue: bool) -> ()?
+    return channels.settle(@c.session, n: d.channel.id, method_id: 90, tag: d.tag, flags: [requeue])
+
+# Asks the server to send `ch` again every message delivered and not
+# acknowledged (`basic.recover`).
+#
+# - `c`: the connection.
+# - `ch`: the channel.
+# - `requeue`: whether they go back to their queues, for any consumer,
+#   rather than to the same one; RabbitMQ takes only true.
+#
+# Fails `unsupported` where the server refuses false, and as every call that
+# waits fails. See also `nack`.
+function recover(@c: Connection, ch: Channel, requeue: bool) -> ()?
+    return channels.recover(@c.session, n: ch.id, requeue: requeue)
+
+# The consumers the server cancelled since the connection was made, in the
+# order it cancelled them: a queue deleted ends its consumers.
+#
+# - `c`: the connection.
+#
+# See also `consume`.
+function cancellations_of(c: Connection) -> [Cancellation]
+    out: [Cancellation] @= []
+
+    for k in c.session.cancellations
+        out @ out.push(Cancellation(channel: Channel(id: k.channel), consumer_tag: k.consumer_tag))
+
+    return out
+
+## Transactions
+
+# Makes `ch` transactional (`tx.select`): its publishes and acknowledgements
+# take effect at `commit`, or never at `rollback`.
+#
+# - `c`: the connection.
+# - `ch`: the channel.
+#
+# Fails `invalid` where `ch` is in confirm mode, and as every call that
+# waits fails. See also `commit`, `rollback`.
+function select_transactions(@c: Connection, ch: Channel) -> ()?
+    return channels.select_transactions(@c.session, n: ch.id)
+
+# Commits the transaction of `ch`; the next begins at once.
+#
+# - `c`: the connection.
+# - `ch`: the channel, transactional.
+#
+# Fails `invalid` where `ch` is not transactional, and as every call that
+# waits fails. See also `rollback`.
+function commit(@c: Connection, ch: Channel) -> ()?
+    return channels.end_transaction(@c.session, n: ch.id, method_id: 20)
+
+# Takes back the transaction of `ch`; the next begins at once.
+#
+# - `c`: the connection.
+# - `ch`: the channel, transactional.
+#
+# Fails as `commit` does. See also `commit`.
+function rollback(@c: Connection, ch: Channel) -> ()?
+    return channels.end_transaction(@c.session, n: ch.id, method_id: 30)
+
+## Field tables
+
+# The value of the field `name`.
+#
+# - `fields`: the table.
+# - `name`: the name, compared byte for byte.
+#
+# Fails `not_found` where no field has the name. See also `decode_table`.
+function value_of(fields: [Field], name: str) -> Value?
+    for f in fields
+        if f.name == name
+            return ok(f.value)
+
+    return fail(code: NOT_FOUND, msg: f"no field \"{name}\" in the table")
+
+# The bytes AMQP writes for the table `fields`: its length in four bytes,
+# then each field's name and typed value.
+#
+# - `fields`: the fields, in order; nested tables and arrays 64 deep at
+#   most.
+#
+# Fails `invalid` where a name is empty, past 255 bytes or written twice, a
+# timestamp is negative, the nesting passes 64 or the table passes
+# 4,294,967,295 bytes. See also `decode_table`.
+function encode_table(fields: [Field]) -> [u8]?
+    out: [u8] @= [0, 0, 0, 0]
+    tables: [[Field]] @= [fields]
+    arrays: [[Value]] @= [[]]
+    in_table: [bool] @= [true]
+    positions: [i64] @= [0]
+    starts: [i64] @= [0]
+    seen: [{str: bool}] @= [{}]
+
+    while positions.len() > 0
+        top = positions.len() - 1
+
+        count = if in_table[top]
+            tables[top].len()
+        else
+            arrays[top].len()
+
+        if positions[top] == count
+            size = out.len() - starts[top] - 4
+
+            if size > 4294967295
+                return fail(code: INVALID, msg: f"a table or an array of {size} bytes, past AMQP's 4294967295")
+            length = bytes.encode_u32_be(to_u32(size).must())
+
+            for i in range(from: 0, to: 4)
+                out[starts[top] + i] @ length[i]
+
+            tables @ tables.slice(from: 0, to: top)
+            arrays @ arrays.slice(from: 0, to: top)
+            in_table @ in_table.slice(from: 0, to: top)
+            positions @ positions.slice(from: 0, to: top)
+            starts @ starts.slice(from: 0, to: top)
+            seen @ seen.slice(from: 0, to: top)
+            continue
+        at = positions[top]
+        positions[top] @ at + 1
+
+        value: Value = if in_table[top]
+            f = tables[top][at]
+
+            if f.name == "" || f.name.len() > 255
+                return fail(code: INVALID, msg: f"the field name \"{f.name}\" is not 1 to 255 bytes")
+
+            if seen[top][f.name].default(false)
+                return fail(code: INVALID, msg: f"the field \"{f.name}\" is written twice in one table")
+            seen[top][f.name] @ true
+            out @ out.push(to_u8(f.name.len()).must())
+
+            for b in bytes.from_text(f.name)
+                out @ out.push(b)
+
+            f.value
+        else
+            arrays[top][at]
+
+        match value
+            .boolean v =>
+                out @ out.push('t')
+
+                if v.v
+                    out @ out.push(1)
+                else
+                    out @ out.push(0)
+            .int8 v =>
+                out @ out.push('b')
+
+                for b in bytes.encode_i8(v.v)
+                    out @ out.push(b)
+            .uint8 v =>
+                out @ out.push('B')
+                out @ out.push(v.v)
+            .int16 v =>
+                out @ out.push('s')
+
+                for b in bytes.encode_i16_be(v.v)
+                    out @ out.push(b)
+            .uint16 v =>
+                out @ out.push('u')
+
+                for b in bytes.encode_u16_be(v.v)
+                    out @ out.push(b)
+            .int32 v =>
+                out @ out.push('I')
+
+                for b in bytes.encode_i32_be(v.v)
+                    out @ out.push(b)
+            .uint32 v =>
+                out @ out.push('i')
+
+                for b in bytes.encode_u32_be(v.v)
+                    out @ out.push(b)
+            .int64 v =>
+                out @ out.push('l')
+
+                for b in bytes.encode_i64_be(v.v)
+                    out @ out.push(b)
+            .float32 v =>
+                out @ out.push('f')
+
+                for b in bytes.encode_u32_be(numbers.f32_to_bits(v.v))
+                    out @ out.push(b)
+            .float64 v =>
+                out @ out.push('d')
+
+                for b in bytes.encode_u64_be(numbers.f64_to_bits(v.v))
+                    out @ out.push(b)
+            .decimal v =>
+                out @ out.push('D')
+                out @ out.push(v.scale)
+
+                for b in bytes.encode_i32_be(v.digits)
+                    out @ out.push(b)
+            .text v =>
+                out @ out.push('S')
+
+                for b in bytes.encode_u32_be(to_u32(v.v.len()).must())
+                    out @ out.push(b)
+
+                for b in bytes.from_text(v.v)
+                    out @ out.push(b)
+            .binary v =>
+                out @ out.push('x')
+
+                for b in bytes.encode_u32_be(to_u32(v.v.len()).must())
+                    out @ out.push(b)
+
+                for b in v.v
+                    out @ out.push(b)
+            .timestamp v =>
+                if v.seconds < 0
+                    return fail(code: INVALID, msg: f"the timestamp {v.seconds} is before 1970")
+                out @ out.push('T')
+
+                for b in bytes.encode_i64_be(v.seconds)
+                    out @ out.push(b)
+            .array v =>
+                if positions.len() > 64
+                    return fail(code: INVALID, msg: "tables and arrays are nested past 64")
+                out @ out.push('A')
+                starts @ starts.push(out.len())
+                out @ out.push(0)
+                out @ out.push(0)
+                out @ out.push(0)
+                out @ out.push(0)
+                tables @ tables.push([])
+                arrays @ arrays.push(v.items)
+                in_table @ in_table.push(false)
+                positions @ positions.push(0)
+                seen @ seen.push({})
+            .table v =>
+                if positions.len() > 64
+                    return fail(code: INVALID, msg: "tables and arrays are nested past 64")
+                out @ out.push('F')
+                starts @ starts.push(out.len())
+                out @ out.push(0)
+                out @ out.push(0)
+                out @ out.push(0)
+                out @ out.push(0)
+                tables @ tables.push(v.fields)
+                arrays @ arrays.push([])
+                in_table @ in_table.push(true)
+                positions @ positions.push(0)
+                seen @ seen.push({})
+            .void => out @ out.push('V')
+
+    return ok(out)
+
+# The table `data` holds, as `encode_table` writes it; `U` and `L`, the
+# standard's own letters for 16-bit and 64-bit integers, are read too.
+#
+# - `data`: the bytes, the table's length first and nothing after it.
+#
+# Fails `invalid` where they are no such table: a length that disagrees, a
+# type unknown, a name that is not UTF-8, a timestamp past what an `i64`
+# holds, nesting past 64. See also `encode_table`.
+function decode_table(data: [u8]) -> [Field]?
+    if data.len() < 4
+        return fail(code: INVALID, msg: f"a table of {data.len()} bytes holds no length")
+    total = to_i64(bytes.decode_u32_be(data, at: 0).must()).must()
+
+    if total + 4 != data.len()
+        return fail(code: INVALID, msg: f"a table whose length says {total} bytes holds {data.len() - 4}")
+    ends: [i64] @= [data.len()]
+    in_table: [bool] @= [true]
+    names: [str] @= [""]
+    saved_fields: [[Field]] @= []
+    saved_items: [[Value]] @= []
+    fields_now: [Field] @= []
+    items_now: [Value] @= []
+    pos: i64 @= 4
+
+    while true
+        top = ends.len() - 1
+
+        if pos == ends[top]
+            if top == 0
+                return ok(fields_now)
+
+            done: Value = if in_table[top]
+                .table(fields: fields_now)
+            else
+                .array(items: items_now)
+
+            name = names[top]
+            fields_now @ saved_fields[top - 1]
+            items_now @ saved_items[top - 1]
+            saved_fields @ saved_fields.slice(from: 0, to: top - 1)
+            saved_items @ saved_items.slice(from: 0, to: top - 1)
+            ends @ ends.slice(from: 0, to: top)
+            in_table @ in_table.slice(from: 0, to: top)
+            names @ names.slice(from: 0, to: top)
+
+            if in_table[top - 1]
+                fields_now @ fields_now.push(Field(name: name, value: done))
+            else
+                items_now @ items_now.push(done)
+            continue
+        limit = ends[top]
+        name: str @= ""
+
+        if in_table[top]
+            n = to_i64(data[pos]).must()
+
+            if pos + 1 + n >= limit
+                return fail(code: INVALID, msg: f"the field at byte {pos} runs past its table")
+
+            name @ match bytes.to_text(data.slice(from: pos + 1, to: pos + 1 + n))
+                .ok got => got
+                .err _  => return fail(code: INVALID, msg: f"the field's name at byte {pos} is not UTF-8")
+
+            pos @ pos + 1 + n
+
+        if pos >= limit
+            return fail(code: INVALID, msg: f"the value at byte {pos} is missing")
+        kind = data[pos]
+        at = pos + 1
+
+        size: i64 @= if kind == 't' || kind == 'b' || kind == 'B'
+            1
+        else if kind == 's' || kind == 'u' || kind == 'U'
+            2
+        else if kind == 'I' || kind == 'i' || kind == 'f'
+            4
+        else if kind == 'l' || kind == 'L' || kind == 'd' || kind == 'T'
+            8
+        else if kind == 'D'
+            5
+        else if kind == 'V'
+            0
+        else if kind == 'S' || kind == 'x' || kind == 'A' || kind == 'F'
+            4
+        else
+            return fail(
+                code: INVALID,
+                msg: f"the value at byte {pos} has the type byte {kind}, which AMQP does not write"
+            )
+
+        if at + size > limit
+            return fail(code: INVALID, msg: f"the value at byte {pos} runs past its table")
+
+        if kind == 'S' || kind == 'x' || kind == 'A' || kind == 'F'
+            n = to_i64(bytes.decode_u32_be(data, at: at).must()).must()
+
+            if at + 4 + n > limit
+                return fail(code: INVALID, msg: f"the value at byte {pos} is {n} bytes, past its table")
+
+            if kind == 'A' || kind == 'F'
+                if ends.len() > 64
+                    return fail(code: INVALID, msg: f"the value at byte {pos} is nested past 64 tables and arrays")
+                saved_fields @ saved_fields.push(fields_now)
+                saved_items @ saved_items.push(items_now)
+                fields_now @ []
+                items_now @ []
+                ends @ ends.push(at + 4 + n)
+                in_table @ in_table.push(kind == 'F')
+                names @ names.push(name)
+                pos @ at + 4
+                continue
+            size @ 4 + n
+
+        value: Value = if kind == 't'
+            .boolean(v: data[at] != 0)
+        else if kind == 'b'
+            .int8(v: bytes.decode_i8(data, at: at).must())
+        else if kind == 'B'
+            .uint8(v: data[at])
+        else if kind == 's' || kind == 'U'
+            .int16(v: bytes.decode_i16_be(data, at: at).must())
+        else if kind == 'u'
+            .uint16(v: bytes.decode_u16_be(data, at: at).must())
+        else if kind == 'I'
+            .int32(v: bytes.decode_i32_be(data, at: at).must())
+        else if kind == 'i'
+            .uint32(v: bytes.decode_u32_be(data, at: at).must())
+        else if kind == 'l' || kind == 'L'
+            .int64(v: bytes.decode_i64_be(data, at: at).must())
+        else if kind == 'f'
+            .float32(v: numbers.bits_to_f32(bytes.decode_u32_be(data, at: at).must()))
+        else if kind == 'd'
+            .float64(v: numbers.bits_to_f64(bytes.decode_u64_be(data, at: at).must()))
+        else if kind == 'D'
+            .decimal(scale: data[at], digits: bytes.decode_i32_be(data, at: at + 1).must())
+        else if kind == 'T'
+            seconds = bytes.decode_i64_be(data, at: at).must()
+
+            if seconds < 0
+                return fail(code: INVALID, msg: f"the timestamp at byte {pos} is past 9223372036854775807 seconds")
+
+            .timestamp(seconds: seconds)
+        else if kind == 'S'
+            raw = data.slice(from: at + 4, to: at + size)
+
+            match bytes.to_text(raw)
+                .ok s  => .text(v: s)
+                .err _ => .binary(v: raw)
+        else if kind == 'x'
+            .binary(v: data.slice(from: at + 4, to: at + size))
+        else
+            .void
+
+        if in_table[top]
+            fields_now @ fields_now.push(Field(name: name, value: value))
+        else
+            items_now @ items_now.push(value)
+        pos @ at + size
+
+## Tests
+
+test "encode_table, decode_table: every type in one table, the bytes pika's encoder writes, read back the same"
+    fields = [
+        Field(name: "a", value: .boolean(v: true))
+        Field(name: "s", value: .text(v: "é"))
+        Field(name: "n", value: .int32(v: 5))
+        Field(name: "big", value: .int64(v: 1099511627776))
+        Field(name: "neg", value: .int32(v: -3))
+        Field(name: "f", value: .float64(v: 1.5))
+        Field(name: "dec", value: .decimal(scale: 2, digits: 314))
+        Field(name: "ts", value: .timestamp(seconds: 1700000000))
+        Field(name: "arr", value: .array(items: [.int32(v: 1), .text(v: "x"), .void]))
+        Field(name: "t", value: .table(fields: [Field(name: "in", value: .boolean(v: false))]))
+        Field(name: "b", value: .binary(v: [0, 255]))
+    ]
+    data = encode_table(fields).must()
+    assert data == [0, 0, 0, 117, 1, 97, 116, 1, 1, 115, 83, 0, 0, 0, 2, 195, 169, 1, 110, 73, 0, 0, 0, 5, 3, 98, 105, 103, 108, 0, 0, 1, 0, 0, 0, 0, 0, 3, 110, 101, 103, 73, 255, 255, 255, 253, 1, 102, 100, 63, 248, 0, 0, 0, 0, 0, 0, 3, 100, 101, 99, 68, 2, 0, 0, 1, 58, 2, 116, 115, 84, 0, 0, 0, 0, 101, 83, 241, 0, 3, 97, 114, 114, 65, 0, 0, 0, 12, 73, 0, 0, 0, 1, 83, 0, 0, 0, 1, 120, 86, 1, 116, 70, 0, 0, 0, 5, 2, 105, 110, 116, 0, 1, 98, 120, 0, 0, 0, 2, 0, 255]
+    assert decode_table(data).must() == fields
+    assert encode_table([]).must() == [0, 0, 0, 0] && decode_table([0, 0, 0, 0]).must() == []
+
+test "encode_table, decode_table: the widths' edges, floats of 32 bits, and the letters only read"
+    fields = [
+        Field(name: "i8", value: .int8(v: -128))
+        Field(name: "u8", value: .uint8(v: 255))
+        Field(name: "i16", value: .int16(v: -32768))
+        Field(name: "u16", value: .uint16(v: 65535))
+        Field(name: "i32", value: .int32(v: 2147483647))
+        Field(name: "u32", value: .uint32(v: 4294967295))
+        Field(name: "i64", value: .int64(v: -9223372036854775808))
+        Field(name: "f32", value: .float32(v: 1.5))
+        Field(name: "dec", value: .decimal(scale: 255, digits: -2147483648))
+    ]
+    assert decode_table(encode_table(fields).must()).must() == fields
+    assert decode_table([0, 0, 0, 5, 1, 'k', 'U', 255, 254]).must() == [Field(name: "k", value: .int16(v: -2))]
+    assert decode_table([0, 0, 0, 11, 1, 'k', 'L', 255, 255, 255, 255, 255, 255, 255, 254]).must() == [Field(name: "k", value: .int64(v: -2))]
+    assert decode_table([0, 0, 0, 8, 1, 'k', 'S', 0, 0, 0, 1, 255]).must() == [Field(name: "k", value: .binary(v: [255]))]
+    assert decode_table([0, 0, 0, 8, 1, 'k', 'D', 2, 255, 255, 255, 254]).must() == [Field(name: "k", value: .decimal(scale: 2, digits: -2))]
+
+test "encode_table: a name empty, past 255 bytes or written twice, a timestamp before 1970, nesting past 64"
+    assert encode_table([Field(name: "", value: .void)]).is_err()
+    assert encode_table([Field(name: repeat("n", 256), value: .void)]).is_err()
+    assert encode_table([Field(name: "n", value: .void), Field(name: "n", value: .void)]).is_err()
+    assert encode_table([Field(name: "t", value: .timestamp(seconds: -1))]).is_err()
+    assert encode_table([Field(name: "n", value: .table(fields: [Field(name: "n", value: .void)]))]).must().len() == 14
+    deep: Value @= .void
+
+    for _ in range(from: 0, to: 65)
+        deep @ .array(items: [deep])
+
+    assert encode_table([Field(name: "d", value: deep)]).is_err()
+    shallow: Value @= .void
+
+    for _ in range(from: 0, to: 64)
+        shallow @ .array(items: [shallow])
+
+    data = encode_table([Field(name: "d", value: shallow)]).must()
+    assert decode_table(data).must() == [Field(name: "d", value: shallow)]
+
+test "decode_table: a length that disagrees, a type unknown, a name not UTF-8, a timestamp past an i64, cut short, nesting past 64"
+    assert decode_table([0, 0, 0]).is_err()
+    assert decode_table([0, 0, 0, 1]).is_err()
+    assert decode_table([0, 0, 0, 3, 1, 'k', 'Z']).is_err()
+    assert decode_table([0, 0, 0, 3, 1, 255, 'V']).is_err()
+    assert decode_table([0, 0, 0, 11, 1, 'k', 'T', 128, 0, 0, 0, 0, 0, 0, 0]).is_err()
+    assert decode_table([0, 0, 0, 4, 1, 'k', 'I', 0]).is_err()
+    assert decode_table([0, 0, 0, 2, 1, 'k']).is_err()
+    nested: [u8] @= [1, 'd']
+
+    for depth in range(from: 0, to: 65)
+        nested @ nested.push('A')
+        nested @ bytes.concat([nested, bytes.encode_u32_be(to_u32((64 - depth) * 5).must())])
+
+    assert decode_table(bytes.concat([bytes.encode_u32_be(to_u32(nested.len()).must()), nested])).is_err()
+
+test "parse_url: RabbitMQ's defaults, a login, a virtual host escaped, the query's settings, as amqp091-go and pika read them"
+    plain = parse_url("amqp://").must()
+    assert plain.host == "localhost" && plain.port == 5672 && plain.username == "guest" && plain.password == "guest" && plain.vhost == "/" && !plain.tls
+    assert parse_url("amqp://h/").must().vhost == "/" && parse_url("amqp://h/%2f").must().vhost == "/"
+    assert parse_url("amqp://h/v%2fx").must().vhost == "v/x"
+    full = parse_url(
+        "amqps://u:p@h:1234/vh?heartbeat=5&channel_max=9&frame_max=4096&connection_timeout=300&auth_mechanism=amqplain"
+    ).must()
+    assert full.tls && full.host == "h" && full.port == 1234 && full.username == "u" && full.password == "p" && full.vhost == "vh"
+    assert full.heartbeat_s == 5 && full.channel_max == 9 && full.frame_max == 4096 && full.connect_ms == 300 && full.mechanism == .amqplain
+    escaped = parse_url("amqp://u%40x:p%3a@h").must()
+    assert escaped.username == "u@x" && escaped.password == "p:"
+    assert parse_url("amqp://[::1]:99/x").must().host == "::1"
+
+test "parse_url: another scheme, a port of 0, a path of two segments, a fragment, a key unknown, a value out of range"
+    assert parse_url("http://h").is_err()
+    assert parse_url("amqp://h:0").is_err()
+    assert parse_url("amqp://h/a/b").is_err()
+    assert parse_url("amqp://h/v#f").is_err()
+    assert parse_url("amqp://h?nope=1").is_err()
+    assert parse_url("amqp://h?heartbeat=65536").is_err()
+    assert parse_url("amqp://h?frame_max=100").is_err()
+    assert parse_url("amqp://h?auth_mechanism=external").is_err()
+
+test "connect: an option out of range is refused before anything is sent, and nothing listening is closed"
+    o @= options("127.0.0.1")
+    o.heartbeat_s @ 70000
+    assert connect(o).is_err()
+    o @ options("127.0.0.1")
+    o.port @ 1
+    o.connect_ms @ 2000
+
+    match connect(o)
+        .ok _  => assert false
+        .err e => assert e.code == "closed" || e.code == "timeout" || e.code == "failed"
+
+test "value_of: present, absent"
+    fields = [Field(name: "a", value: .int32(v: 1))]
+    assert value_of(fields, name: "a").must() == .int32(v: 1)
+    assert value_of(fields, name: "b").is_err()
+
+test "connect live, against the server REBEL_AMQP_URL names: the handshake, a queue, messages with every property, gets, consumers, acknowledgements, a large body"
+    match os.env("REBEL_AMQP_URL")
+        .err _ => print("connect live: skipped, REBEL_AMQP_URL names no server")
+        .ok text =>
+            o @= parse_url(text).must()
+            o.connection_name @ "rebel-live"
+            o.properties @ [Field(name: "rebel", value: .boolean(v: true))]
+            c @= connect(o).must()
+            info = server_of(c)
+            assert value_of(info.properties, name: "product").must() == .text(v: "RabbitMQ")
+            assert info.version_major == 0 && info.version_minor == 9 && info.frame_max == 131072 && info.heartbeat_s == 60
+            assert !is_closed(c) && !blocked_of(c).active && closing_of(c).is_err()
+            ch = open_channel(@c).must()
+            assert ch.id == 1 && is_channel_open(c, ch: ch)
+            q @= queue("")
+            q.exclusive @ true
+            declared = declare_queue(@c, ch, q: q).must()
+            assert declared.name.len() > 0 && declared.messages == 0
+            m @= message(bytes.from_text("hello"))
+            m.content_type @ "text/plain"
+            m.content_encoding @ "identity"
+            m.headers @ [
+                Field(name: "n", value: .int32(v: 7))
+                Field(name: "t", value: .table(fields: [Field(name: "a", value: .array(items: [.text(v: "x"), .int64(v: -1), .float64(v: 2.5), .void, .binary(v: [0, 255])]))]))
+            ]
+            m.delivery_mode @ PERSISTENT
+            m.priority @ 3
+            m.correlation_id @ "c-1"
+            m.reply_to @ "r"
+            m.expiration @ "60000"
+            m.message_id @ "m-1"
+            m.timestamp @ 1700000000
+            m.message_type @ "greeting"
+            m.app_id @ "rebel"
+            assert publish(@c, ch, exchange_name: "", routing_key: declared.name, m: m, mandatory: false).must() == 0
+            got = get(@c, ch, queue_name: declared.name, auto_ack: false).must()
+            assert got.message == m && got.routing_key == declared.name && got.remaining == 0 && !got.redelivered && got.channel == ch
+            nack(@c, d: got, multiple: false, requeue: true).must()
+            again = get(@c, ch, queue_name: declared.name, auto_ack: false).must()
+            assert again.redelivered && again.message.body == m.body
+            reject(@c, d: again, requeue: false).must()
+
+            match get(@c, ch, queue_name: declared.name, auto_ack: true)
+                .ok _  => assert false
+                .err e => assert e.code == "not_found"
+
+            big: [u8] @= []
+
+            for at in range(from: 0, to: 1000000)
+                big @ big.push(to_u8(at % 251).must())
+
+            _ = publish(@c, ch, exchange_name: "", routing_key: declared.name, m: message(big), mandatory: false).must()
+            assert get(@c, ch, queue_name: declared.name, auto_ack: true).must().message.body == big
+            _ = publish(@c, ch, exchange_name: "", routing_key: declared.name, m: message([]), mandatory: false).must()
+            assert get(@c, ch, queue_name: declared.name, auto_ack: true).must().message.body == []
+            qos(@c, ch, prefetch_count: 100, prefetch_size: 0, global: false).must()
+            k @= consumer(declared.name)
+            k.tag @ "rebel-consumer"
+            assert consume(@c, ch, k: k).must() == "rebel-consumer"
+
+            for n in range(from: 0, to: 2000)
+                _ = publish(
+                    @c,
+                    ch,
+                    exchange_name: "",
+                    routing_key: declared.name,
+                    m: message([to_u8(n % 256).must()]),
+                    mandatory: false
+                ).must()
+
+            for n in range(from: 0, to: 2000)
+                d = next_delivery(@c, wait_ms: 5000).must()
+                assert d.message.body == [to_u8(n % 256).must()] && d.consumer_tag == "rebel-consumer"
+
+                if n % 100 == 99
+                    ack(@c, d: d, multiple: true).must()
+
+            match next_delivery(@c, wait_ms: 200)
+                .ok _  => assert false
+                .err e => assert e.code == "timeout"
+
+            cancel(@c, ch, tag: "rebel-consumer").must()
+            _ = publish(@c, ch, exchange_name: "", routing_key: declared.name, m: message([1]), mandatory: false).must()
+            assert purge_queue(@c, ch, name: declared.name).must() == 1
+            recover(@c, ch, requeue: true).must()
+            assert delete_queue(@c, ch, name: declared.name, if_unused: false, if_empty: false).must() == 0
+            close_channel(@c, ch: ch).must()
+            assert !is_channel_open(c, ch: ch) && close_channel(@c, ch: ch).is_err()
+            idle(@c, wait_ms: 50).must()
+            close(@c).must()
+            assert is_closed(c) && close(@c).is_err() && open_channel(@c).is_err()
+
+test "connect live, confirms, returns, a channel the server closes, exchanges of every kind, transactions, a consumer the server cancels"
+    match os.env("REBEL_AMQP_URL")
+        .err _ => print("confirms live: skipped, REBEL_AMQP_URL names no server")
+        .ok text =>
+            c @= connect(parse_url(text).must()).must()
+            ch = open_channel(@c).must()
+            q @= queue("")
+            q.exclusive @ true
+            name = declare_queue(@c, ch, q: q).must().name
+            select_confirms(@c, ch).must()
+            assert select_transactions(@c, ch).is_err()
+
+            for n in range(from: 1, to: 501)
+                assert publish(@c, ch, exchange_name: "", routing_key: name, m: message([1]), mandatory: false).must() == n
+
+            wait_confirms(@c, ch, wait_ms: 10000).must()
+            assert publish(@c, ch, exchange_name: "", routing_key: name, m: message([2]), mandatory: false).must() == 501
+            first = next_confirmation(@c, ch, wait_ms: 5000).must()
+            assert first.tag == 501 && first.ack && first.channel == ch
+
+            match next_confirmation(@c, ch, wait_ms: 0)
+                .ok _  => assert false
+                .err e => assert e.code == "not_found"
+
+            assert purge_queue(@c, ch, name: name).must() == 501
+            _ = publish(
+                @c,
+                ch,
+                exchange_name: "",
+                routing_key: "rebel-nowhere",
+                m: message([3]),
+                mandatory: true
+            ).must()
+            back = next_return(@c, wait_ms: 5000).must()
+            assert back.code == REPLY_NO_ROUTE && back.text == "NO_ROUTE" && back.routing_key == "rebel-nowhere" && back.message.body == [3]
+            wait_confirms(@c, ch, wait_ms: 5000).must()
+            assert next_return(@c, wait_ms: 0).is_err()
+            x = open_channel(@c).must()
+            declare_exchange(@c, x, e: exchange(name: "rebel-topic", kind: TOPIC)).must()
+            declare_exchange(@c, x, e: exchange(name: "rebel-fan", kind: FANOUT)).must()
+            mine @= queue("")
+            mine.exclusive @ true
+            routed = declare_queue(@c, x, q: mine).must().name
+            bind_queue(
+                @c,
+                x,
+                queue_name: routed,
+                exchange_name: "rebel-topic",
+                routing_key: "a.*.c",
+                arguments: []
+            ).must()
+            bind_exchange(@c, x, destination: "rebel-topic", source: "rebel-fan", routing_key: "", arguments: []).must()
+            _ = publish(
+                @c,
+                x,
+                exchange_name: "rebel-topic",
+                routing_key: "a.b.c",
+                m: message([4]),
+                mandatory: false
+            ).must()
+            _ = publish(
+                @c,
+                x,
+                exchange_name: "rebel-topic",
+                routing_key: "a.b",
+                m: message([5]),
+                mandatory: false
+            ).must()
+            _ = publish(
+                @c,
+                x,
+                exchange_name: "rebel-fan",
+                routing_key: "a.z.c",
+                m: message([6]),
+                mandatory: false
+            ).must()
+            assert get(@c, x, queue_name: routed, auto_ack: true).must().message.body == [4]
+            assert get(@c, x, queue_name: routed, auto_ack: true).must().message.body == [6]
+            assert get(@c, x, queue_name: routed, auto_ack: true).is_err()
+            unbind_exchange(
+                @c,
+                x,
+                destination: "rebel-topic",
+                source: "rebel-fan",
+                routing_key: "",
+                arguments: []
+            ).must()
+            unbind_queue(
+                @c,
+                x,
+                queue_name: routed,
+                exchange_name: "rebel-topic",
+                routing_key: "a.*.c",
+                arguments: []
+            ).must()
+            heads @= exchange(name: "rebel-headers", kind: HEADERS)
+            heads.auto_delete @ true
+            declare_exchange(@c, x, e: heads).must()
+            bind_queue(
+                @c,
+                x,
+                queue_name: routed,
+                exchange_name: "rebel-headers",
+                routing_key: "",
+                arguments: [Field(name: "x-match", value: .text(v: "all")), Field(name: "kind", value: .text(v: "a"))]
+            ).must()
+            hm @= message([7])
+            hm.headers @ [Field(name: "kind", value: .text(v: "a"))]
+            _ = publish(@c, x, exchange_name: "rebel-headers", routing_key: "", m: hm, mandatory: false).must()
+            assert get(@c, x, queue_name: routed, auto_ack: true).must().message.body == [7]
+            delete_exchange(@c, x, name: "rebel-fan", if_unused: false).must()
+            delete_exchange(@c, x, name: "rebel-topic", if_unused: false).must()
+            different = exchange(name: "rebel-headers", kind: DIRECT)
+
+            match declare_exchange(@c, x, e: different)
+                .ok _  => assert false
+                .err e => assert e.code == "invalid"
+
+            assert !is_channel_open(c, ch: x) && channel_closing_of(c, ch: x).must().code == REPLY_PRECONDITION_FAILED
+            y = open_channel(@c).must()
+            assert y.id == 2
+            _ = publish(
+                @c,
+                y,
+                exchange_name: "rebel-no-such-exchange",
+                routing_key: "k",
+                m: message([1]),
+                mandatory: false
+            ).must()
+
+            match declare_queue(@c, y, q: mine)
+                .ok _  => assert false
+                .err e => assert e.code == "not_found"
+
+            assert channel_closing_of(c, ch: y).must().code == REPLY_NOT_FOUND
+            z = open_channel(@c).must()
+            missing @= queue("rebel-no-such-queue")
+            missing.passive @ true
+
+            match declare_queue(@c, z, q: missing)
+                .ok _  => assert false
+                .err e => assert e.code == "not_found"
+
+            t = open_channel(@c).must()
+            select_transactions(@c, t).must()
+            assert select_confirms(@c, t).is_err()
+            _ = publish(@c, t, exchange_name: "", routing_key: routed, m: message([8]), mandatory: false).must()
+            rollback(@c, t).must()
+            assert get(@c, t, queue_name: routed, auto_ack: true).is_err()
+            _ = publish(@c, t, exchange_name: "", routing_key: routed, m: message([9]), mandatory: false).must()
+            commit(@c, t).must()
+            assert get(@c, t, queue_name: routed, auto_ack: true).must().message.body == [9]
+            commit(@c, t).must()
+            u = open_channel(@c).must()
+            assert commit(@c, u).is_err()
+            doomed @= queue("rebel-doomed")
+            doomed.auto_delete @ false
+            _ = declare_queue(@c, u, q: doomed).must()
+            _ = consume(@c, u, k: consumer("rebel-doomed")).must()
+            _ = delete_queue(@c, ch, name: "rebel-doomed", if_unused: false, if_empty: false).must()
+            idle(@c, wait_ms: 300).must()
+            gone = cancellations_of(c)
+            assert gone.len() == 1 && gone[0].channel == u
+            flow(@c, u, active: true).must()
+            update_secret(@c, secret: "guest", reason: "rotated").must()
+            assert held_of(c) == 0
+            close(@c).must()
+
+test "connect live, many connections waited on by poll, each read when ready"
+    match os.env("REBEL_AMQP_URL")
+        .err _ => print("poll live: skipped, REBEL_AMQP_URL names no server")
+        .ok text =>
+            a @= connect(parse_url(text).must()).must()
+            b @= connect(parse_url(text).must()).must()
+            ca = open_channel(@a).must()
+            cb = open_channel(@b).must()
+            qa @= queue("rebel-poll-a")
+            qa.auto_delete @ true
+            qb @= queue("rebel-poll-b")
+            qb.auto_delete @ true
+            _ = declare_queue(@a, ca, q: qa).must()
+            _ = declare_queue(@b, cb, q: qb).must()
+            ka @= consumer("rebel-poll-a")
+            ka.auto_ack @ true
+            kb @= consumer("rebel-poll-b")
+            kb.auto_ack @ true
+            _ = consume(@a, ca, k: ka).must()
+            _ = consume(@b, cb, k: kb).must()
+            _ = publish(
+                @a,
+                ca,
+                exchange_name: "",
+                routing_key: "rebel-poll-b",
+                m: message([2]),
+                mandatory: false
+            ).must()
+            _ = publish(
+                @b,
+                cb,
+                exchange_name: "",
+                routing_key: "rebel-poll-a",
+                m: message([1]),
+                mandatory: false
+            ).must()
+            set @= poll.make(4).must()
+            key_a = poll.add_stream(set, s: stream_of(a).must(), interest: .read).must()
+            key_b = poll.add_stream(set, s: stream_of(b).must(), interest: .read).must()
+            seen: [u8] @= []
+            rounds: i64 @= 0
+
+            while seen.len() < 2 && rounds < 50
+                rounds @ rounds + 1
+
+                for ev in poll.wait(set, limit: time.milliseconds(500).must()).must()
+                    if ev.key == key_a
+                        read_ready(@a).must()
+
+                    if ev.key == key_b
+                        read_ready(@b).must()
+
+                while held_of(a) > 0
+                    seen @ seen.push(next_delivery(@a, wait_ms: 0).must().message.body[0])
+
+                while held_of(b) > 0
+                    seen @ seen.push(next_delivery(@b, wait_ms: 0).must().message.body[0])
+
+            assert sort(seen) == [1, 2]
+            poll.close(@set).must()
+            close(@a).must()
+            close(@b).must()
+
+test "connect live, a login by AMQPLAIN into a virtual host, permissions refused, a password refused, TLS, as the variables name them"
+    match os.env("REBEL_AMQP_AUTH_URL")
+        .err _ => print("login live: skipped, REBEL_AMQP_AUTH_URL names no server")
+        .ok text =>
+            o @= parse_url(text).must()
+            o.mechanism @ .amqplain
+            c @= connect(o).must()
+            ch = open_channel(@c).must()
+            q @= queue("")
+            q.exclusive @ true
+            _ = declare_queue(@c, ch, q: q).must()
+            close(@c).must()
+            outside @= o
+            outside.vhost @ "/"
+            d @= connect(outside).must()
+            dch = open_channel(@d).must()
+
+            match declare_queue(@d, dch, q: queue("not-rebel-own"))
+                .ok _  => assert false
+                .err e => assert e.code == "permission"
+
+            close(@d).must()
+            wrong @= o
+            wrong.password @ "not the password"
+
+            match connect(wrong)
+                .ok _  => assert false
+                .err e => assert e.code == "permission"
+
+            nowhere @= o
+            nowhere.vhost @ "rebel-no-such-vhost"
+
+            match connect(nowhere)
+                .ok _  => assert false
+                .err e => assert e.code == "permission" || e.code == "invalid"
+
+    match os.env("REBEL_AMQP_TLS_URL")
+        .err _ => print("TLS live: skipped, REBEL_AMQP_TLS_URL names no server")
+        .ok text =>
+            o @= parse_url(text).must()
+            o.roots @ read_file(os.env("REBEL_AMQP_CA").must()).must()
+            c @= connect(o).must()
+            ch = open_channel(@c).must()
+            q @= queue("")
+            q.exclusive @ true
+            name = declare_queue(@c, ch, q: q).must().name
+            _ = publish(@c, ch, exchange_name: "", routing_key: name, m: message([42]), mandatory: false).must()
+            assert get(@c, ch, queue_name: name, auto_ack: true).must().message.body == [42]
+            close(@c).must()
+            untrusted = parse_url(text).must()
+
+            match connect(untrusted)
+                .ok _  => assert false
+                .err e => assert e.code == "invalid"
+
+## Examples
+
+# The options of a local server, with a heartbeat of 10 seconds.
+test "options: a local server"
+    o @= options("localhost")
+    o.heartbeat_s @ 10
+    assert o.port == 5672 && o.vhost == "/" && o.username == "guest"
+
+# The options a URL names.
+test "parse_url: a login and a virtual host over TLS"
+    o = parse_url("amqps://app:pw@broker.lan/orders").must()
+    assert o.tls && o.port == 5671 && o.username == "app" && o.vhost == "orders"
+
+# A connection to a local server, where one answers; elsewhere it shows
+# nothing.
+test "connect: a local server"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            assert !is_closed(c)
+            close(@c).must()
+
+# A connection closed.
+test "close: the end of a connection"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            close(@c).must()
+            assert is_closed(c)
+
+# Whether a connection is closed.
+test "is_closed: before and after close"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            assert !is_closed(c)
+            close(@c).must()
+            assert is_closed(c)
+
+# Why the server closed a connection: here it did not.
+test "closing_of: a connection the program closed"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            close(@c).must()
+            assert closing_of(c).is_err()
+
+# What the server says of itself.
+test "server_of: the product and the heartbeat agreed"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            assert server_of(c).version_minor == 9
+            close(@c).must()
+
+# Whether the server holds publishes back.
+test "blocked_of: a server with room"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            assert !blocked_of(c).active
+            close(@c).must()
+
+# A secret replaced, as an expiring token asks.
+test "update_secret: the same password again"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            update_secret(@c, secret: "guest", reason: "rotated").must()
+            close(@c).must()
+
+# A connection kept alive for a moment.
+test "idle: a tenth of a second"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            idle(@c, wait_ms: 100).must()
+            close(@c).must()
+
+# The stream a program gives `poll`.
+test "stream_of: an open connection's stream"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            assert !stream_of(c).is_err()
+            close(@c).must()
+
+# What a readable stream brought, held.
+test "read_ready: nothing brought"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            read_ready(@c).must()
+            close(@c).must()
+
+# The values held unread.
+test "held_of: none at first"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            assert held_of(c) == 0
+            close(@c).must()
+
+# A channel opened.
+test "open_channel: the first channel"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            ch = open_channel(@c).must()
+            assert ch.id == 1
+            close(@c).must()
+
+# A channel closed.
+test "close_channel: the end of a channel"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            ch = open_channel(@c).must()
+            close_channel(@c, ch: ch).must()
+            close(@c).must()
+
+# Whether a channel is open.
+test "is_channel_open: before and after its close"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            ch = open_channel(@c).must()
+            assert is_channel_open(c, ch: ch)
+            close_channel(@c, ch: ch).must()
+            assert !is_channel_open(c, ch: ch)
+            close(@c).must()
+
+# Why the server closed a channel: a passive declaration of a queue that
+# does not exist.
+test "channel_closing_of: a queue not found"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            ch = open_channel(@c).must()
+            q @= queue("rebel-example-missing")
+            q.passive @ true
+            assert declare_queue(@c, ch, q: q).is_err()
+            assert channel_closing_of(c, ch: ch).must().code == REPLY_NOT_FOUND
+            close(@c).must()
+
+# A prefetch of ten messages.
+test "qos: ten unacknowledged messages at most"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            ch = open_channel(@c).must()
+            qos(@c, ch, prefetch_count: 10, prefetch_size: 0, global: false).must()
+            close(@c).must()
+
+# A channel told to go on.
+test "flow: go on"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            ch = open_channel(@c).must()
+            flow(@c, ch, active: true).must()
+            close(@c).must()
+
+# A durable topic exchange to declare.
+test "exchange: a durable topic exchange"
+    e @= exchange(name: "events", kind: TOPIC)
+    e.durable @ true
+    assert e.kind == "topic" && e.durable && !e.passive
+
+# An exchange declared.
+test "declare_exchange: a fanout exchange"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            ch = open_channel(@c).must()
+            declare_exchange(@c, ch, e: exchange(name: "rebel-example-fan", kind: FANOUT)).must()
+            delete_exchange(@c, ch, name: "rebel-example-fan", if_unused: false).must()
+            close(@c).must()
+
+# An exchange deleted.
+test "delete_exchange: an exchange no longer needed"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            ch = open_channel(@c).must()
+            declare_exchange(@c, ch, e: exchange(name: "rebel-example-gone", kind: DIRECT)).must()
+            delete_exchange(@c, ch, name: "rebel-example-gone", if_unused: false).must()
+            close(@c).must()
+
+# One exchange routing everything to another.
+test "bind_exchange: a fanout feeding a topic exchange"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            ch = open_channel(@c).must()
+            declare_exchange(@c, ch, e: exchange(name: "rebel-example-a", kind: FANOUT)).must()
+            declare_exchange(@c, ch, e: exchange(name: "rebel-example-b", kind: TOPIC)).must()
+            bind_exchange(
+                @c,
+                ch,
+                destination: "rebel-example-b",
+                source: "rebel-example-a",
+                routing_key: "",
+                arguments: []
+            ).must()
+            delete_exchange(@c, ch, name: "rebel-example-a", if_unused: false).must()
+            delete_exchange(@c, ch, name: "rebel-example-b", if_unused: false).must()
+            close(@c).must()
+
+# An exchange binding taken back.
+test "unbind_exchange: the binding of two exchanges taken back"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            ch = open_channel(@c).must()
+            declare_exchange(@c, ch, e: exchange(name: "rebel-example-c", kind: FANOUT)).must()
+            declare_exchange(@c, ch, e: exchange(name: "rebel-example-d", kind: FANOUT)).must()
+            bind_exchange(
+                @c,
+                ch,
+                destination: "rebel-example-d",
+                source: "rebel-example-c",
+                routing_key: "",
+                arguments: []
+            ).must()
+            unbind_exchange(
+                @c,
+                ch,
+                destination: "rebel-example-d",
+                source: "rebel-example-c",
+                routing_key: "",
+                arguments: []
+            ).must()
+            delete_exchange(@c, ch, name: "rebel-example-c", if_unused: false).must()
+            delete_exchange(@c, ch, name: "rebel-example-d", if_unused: false).must()
+            close(@c).must()
+
+# A durable queue to declare.
+test "queue: a durable queue"
+    q @= queue("orders")
+    q.durable @ true
+    assert q.name == "orders" && q.durable && !q.exclusive
+
+# A queue the server names, declared.
+test "declare_queue: a queue the server names"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            ch = open_channel(@c).must()
+            q @= queue("")
+            q.exclusive @ true
+            assert declare_queue(@c, ch, q: q).must().name.len() > 0
+            close(@c).must()
+
+# A queue bound to the exchange `amq.direct`.
+test "bind_queue: a queue bound by its key"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            ch = open_channel(@c).must()
+            q @= queue("")
+            q.exclusive @ true
+            name = declare_queue(@c, ch, q: q).must().name
+            bind_queue(@c, ch, queue_name: name, exchange_name: "amq.direct", routing_key: "k", arguments: []).must()
+            close(@c).must()
+
+# A queue's binding taken back.
+test "unbind_queue: a binding taken back"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            ch = open_channel(@c).must()
+            q @= queue("")
+            q.exclusive @ true
+            name = declare_queue(@c, ch, q: q).must().name
+            bind_queue(@c, ch, queue_name: name, exchange_name: "amq.direct", routing_key: "k", arguments: []).must()
+            unbind_queue(@c, ch, queue_name: name, exchange_name: "amq.direct", routing_key: "k", arguments: []).must()
+            close(@c).must()
+
+# A queue emptied.
+test "purge_queue: the messages counted"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            ch = open_channel(@c).must()
+            q @= queue("")
+            q.exclusive @ true
+            name = declare_queue(@c, ch, q: q).must().name
+            assert purge_queue(@c, ch, name: name).must() == 0
+            close(@c).must()
+
+# A queue deleted.
+test "delete_queue: a queue with no message"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            ch = open_channel(@c).must()
+            _ = declare_queue(@c, ch, q: queue("rebel-example-delete")).must()
+            assert delete_queue(@c, ch, name: "rebel-example-delete", if_unused: false, if_empty: false).must() == 0
+            close(@c).must()
+
+# A persistent message of JSON.
+test "message: a body and two properties"
+    m @= message(bytes.from_text("{}"))
+    m.content_type @ "application/json"
+    m.delivery_mode @ PERSISTENT
+    assert m.body == [123, 125] && m.priority == 0
+
+# A message published to a queue by the default exchange.
+test "publish: to a queue by its name"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            ch = open_channel(@c).must()
+            q @= queue("")
+            q.exclusive @ true
+            name = declare_queue(@c, ch, q: q).must().name
+            assert publish(@c, ch, exchange_name: "", routing_key: name, m: message([1]), mandatory: false).must() == 0
+            close(@c).must()
+
+# A channel in confirm mode.
+test "select_confirms: publishes numbered from 1"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            ch = open_channel(@c).must()
+            select_confirms(@c, ch).must()
+            assert publish(@c, ch, exchange_name: "amq.fanout", routing_key: "", m: message([1]), mandatory: false).must() == 1
+            close(@c).must()
+
+# The confirmation of one publish.
+test "next_confirmation: the first publish taken"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            ch = open_channel(@c).must()
+            select_confirms(@c, ch).must()
+            _ = publish(@c, ch, exchange_name: "amq.fanout", routing_key: "", m: message([1]), mandatory: false).must()
+            assert next_confirmation(@c, ch, wait_ms: 5000).must().ack
+            close(@c).must()
+
+# Every publish confirmed.
+test "wait_confirms: three publishes taken"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            ch = open_channel(@c).must()
+            select_confirms(@c, ch).must()
+
+            for _ in range(from: 0, to: 3)
+                _ = publish(
+                    @c,
+                    ch,
+                    exchange_name: "amq.fanout",
+                    routing_key: "",
+                    m: message([1]),
+                    mandatory: false
+                ).must()
+
+            wait_confirms(@c, ch, wait_ms: 5000).must()
+            close(@c).must()
+
+# A mandatory message no queue took, handed back.
+test "next_return: a key no queue is bound by"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            ch = open_channel(@c).must()
+            _ = publish(
+                @c,
+                ch,
+                exchange_name: "",
+                routing_key: "rebel-example-nowhere",
+                m: message([1]),
+                mandatory: true
+            ).must()
+            assert next_return(@c, wait_ms: 5000).must().code == REPLY_NO_ROUTE
+            close(@c).must()
+
+# A consumer that acknowledges by itself.
+test "consumer: a consumer of orders"
+    k @= consumer("orders")
+    k.exclusive @ true
+    assert k.queue_name == "orders" && !k.auto_ack
+
+# A consumer started.
+test "consume: a tag the server gives"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            ch = open_channel(@c).must()
+            q @= queue("")
+            q.exclusive @ true
+            name = declare_queue(@c, ch, q: q).must().name
+            assert consume(@c, ch, k: consumer(name)).must().len() > 0
+            close(@c).must()
+
+# A consumer ended.
+test "cancel: a consumer ended"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            ch = open_channel(@c).must()
+            q @= queue("")
+            q.exclusive @ true
+            name = declare_queue(@c, ch, q: q).must().name
+            tag = consume(@c, ch, k: consumer(name)).must()
+            cancel(@c, ch, tag: tag).must()
+            close(@c).must()
+
+# The next message of a consumer, acknowledged.
+test "next_delivery: one message read and acknowledged"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            ch = open_channel(@c).must()
+            q @= queue("")
+            q.exclusive @ true
+            name = declare_queue(@c, ch, q: q).must().name
+            _ = consume(@c, ch, k: consumer(name)).must()
+            _ = publish(@c, ch, exchange_name: "", routing_key: name, m: message([1]), mandatory: false).must()
+            d = next_delivery(@c, wait_ms: 5000).must()
+            ack(@c, d: d, multiple: false).must()
+            close(@c).must()
+
+# One message taken from a queue.
+test "get: a message, then an empty queue"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            ch = open_channel(@c).must()
+            q @= queue("")
+            q.exclusive @ true
+            name = declare_queue(@c, ch, q: q).must().name
+            _ = publish(@c, ch, exchange_name: "", routing_key: name, m: message([1]), mandatory: false).must()
+            assert get(@c, ch, queue_name: name, auto_ack: true).must().message.body == [1]
+            assert get(@c, ch, queue_name: name, auto_ack: true).is_err()
+            close(@c).must()
+
+# A message acknowledged.
+test "ack: a message the program has dealt with"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            ch = open_channel(@c).must()
+            q @= queue("")
+            q.exclusive @ true
+            name = declare_queue(@c, ch, q: q).must().name
+            _ = publish(@c, ch, exchange_name: "", routing_key: name, m: message([1]), mandatory: false).must()
+            ack(@c, d: get(@c, ch, queue_name: name, auto_ack: false).must(), multiple: false).must()
+            close(@c).must()
+
+# A message refused and put back.
+test "nack: a message back in its queue"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            ch = open_channel(@c).must()
+            q @= queue("")
+            q.exclusive @ true
+            name = declare_queue(@c, ch, q: q).must().name
+            _ = publish(@c, ch, exchange_name: "", routing_key: name, m: message([1]), mandatory: false).must()
+            nack(@c, d: get(@c, ch, queue_name: name, auto_ack: false).must(), multiple: false, requeue: true).must()
+            assert get(@c, ch, queue_name: name, auto_ack: true).must().redelivered
+            close(@c).must()
+
+# A message refused for good.
+test "reject: a message dropped"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            ch = open_channel(@c).must()
+            q @= queue("")
+            q.exclusive @ true
+            name = declare_queue(@c, ch, q: q).must().name
+            _ = publish(@c, ch, exchange_name: "", routing_key: name, m: message([1]), mandatory: false).must()
+            reject(@c, d: get(@c, ch, queue_name: name, auto_ack: false).must(), requeue: false).must()
+            assert get(@c, ch, queue_name: name, auto_ack: true).is_err()
+            close(@c).must()
+
+# What a channel did not acknowledge, sent again.
+test "recover: the unacknowledged requeued"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            ch = open_channel(@c).must()
+            recover(@c, ch, requeue: true).must()
+            close(@c).must()
+
+# The consumers the server cancelled: none yet.
+test "cancellations_of: none on a new connection"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            assert cancellations_of(c) == []
+            close(@c).must()
+
+# A channel made transactional.
+test "select_transactions: publishes held until a commit"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            ch = open_channel(@c).must()
+            select_transactions(@c, ch).must()
+            close(@c).must()
+
+# A transaction committed.
+test "commit: a publish made visible"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            ch = open_channel(@c).must()
+            select_transactions(@c, ch).must()
+            _ = publish(@c, ch, exchange_name: "amq.fanout", routing_key: "", m: message([1]), mandatory: false).must()
+            commit(@c, ch).must()
+            close(@c).must()
+
+# A transaction taken back.
+test "rollback: a publish that never happened"
+    match connect(options("localhost"))
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            ch = open_channel(@c).must()
+            select_transactions(@c, ch).must()
+            _ = publish(@c, ch, exchange_name: "amq.fanout", routing_key: "", m: message([1]), mandatory: false).must()
+            rollback(@c, ch).must()
+            close(@c).must()
+
+# One field of a table read.
+test "value_of: a header's value"
+    headers = [Field(name: "attempt", value: .int32(v: 2))]
+    assert value_of(headers, name: "attempt").must() == .int32(v: 2)
+
+# A table as AMQP writes it.
+test "encode_table: one field"
+    assert encode_table([Field(name: "a", value: .boolean(v: true))]).must() == [0, 0, 0, 4, 1, 'a', 't', 1]
+
+# A table read from AMQP's bytes.
+test "decode_table: one field"
+    assert decode_table([0, 0, 0, 4, 1, 'a', 't', 1]).must() == [Field(name: "a", value: .boolean(v: true))]

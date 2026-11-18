@@ -1,0 +1,267 @@
+# A connection made and ended: the protocol's header, `connection.start` and
+# the login, `connection.tune` and what both sides agree, `connection.open`
+# and its virtual host; `connection.close` and its answer; and a secret
+# replaced.
+
+use amqp/internal/decoding
+use amqp/internal/encoding
+use amqp/internal/frames
+use amqp/internal/link
+use amqp/internal/model
+use amqp/internal/reading
+use amqp/internal/state
+use amqp/internal/table
+use amqp/internal/waiting
+use bytes
+use strings
+use url
+
+# The smallest frame AMQP 0-9-1 lets a peer agree.
+constant FRAME_MIN: i64
+    4096
+
+# The number a client and a server agree of one setting: the other's where
+# either says 0, the smaller where neither does.
+#
+# - `client`: what the client asks.
+# - `server`: what the server offers.
+function agreed(client: i64, server: i64) -> i64
+    if client == 0
+        return server
+
+    if server == 0 || client < server
+        return client
+    return server
+
+# Fails `invalid` where an option is out of its range.
+#
+# - `o`: the options.
+function check(o: model.Options) -> ()?
+    if o.host == ""
+        return fail(code: model.INVALID, msg: "the options name no host")
+
+    if o.port < 1 || o.port > 65535
+        return fail(code: model.INVALID, msg: f"the port {o.port} is outside 1 to 65535")
+
+    if o.heartbeat_s < 0 || o.heartbeat_s > 65535
+        return fail(code: model.INVALID, msg: f"the heartbeat {o.heartbeat_s} is outside 0 to 65535 seconds")
+
+    if o.frame_max != 0 && (o.frame_max < FRAME_MIN || o.frame_max > 4294967295)
+        return fail(code: model.INVALID, msg: f"the frame size {o.frame_max} is outside 4096 to 4294967295")
+
+    if o.channel_max < 0 || o.channel_max > 65535
+        return fail(code: model.INVALID, msg: f"the channel count {o.channel_max} is outside 0 to 65535")
+
+    if o.connect_ms < 1 || o.wait_ms < 1
+        return fail(code: model.INVALID, msg: "a time to connect or to wait is below 1 millisecond")
+
+    if o.most_body_bytes < 0 || o.most_held < 1
+        return fail(code: model.INVALID, msg: "the largest body is below 0 or the values held below 1")
+
+    if o.vhost.len() > 255 || o.locale.len() > 255
+        return fail(code: model.INVALID, msg: "the virtual host or the locale passes 255 bytes")
+    return ok()
+
+# A connection made as `o` says, its handshake done.
+#
+# - `o`: the options.
+function open(o: model.Options) -> state.Session?
+    check(o)?
+    target = url.format_host_port(host: o.host, port: to_str(o.port))
+    s @= state.fresh(o, target: target)
+
+    s.link @ if o.tls
+        link.open_tls(host: o.host, port: o.port, ms: o.connect_ms, roots: o.roots)?
+    else
+        link.open_plain(o.host, port: o.port, ms: o.connect_ms)?
+
+    s.open @ true
+    s.last_read @ reading.now_ms()
+    s.last_write @ s.last_read
+
+    match handshake(@s)
+        .ok _ => return ok(s)
+        .err e =>
+            link.close(@s.link)
+            s.open @ false
+            return fail(code: e.code, msg: e.msg)
+
+# The handshake on a connection just made.
+#
+# - `s`: the session, its link open.
+function handshake(@s: state.Session) -> ()?
+    o = s.options
+    until = waiting.deadline(o.connect_ms)
+    reading.write(@s, data: frames.protocol_header())?
+    started = waiting.await_reply(@s, n: 0, awaited: [decoding.key(class_id: 10, method_id: 10)], until: until)?
+
+    start = match started
+        .start got => got
+        .secure _ | .tune _ | .close _ | .blocked _ | .unblocked | .flow _ | .declare_ok _ | .count _ | .tagged _ | .cancelled _ | .returned _ | .deliver _ | .get_ok _ | .get_empty | .confirm _ | .reply _ => return fail(
+            code: model.INVALID,
+            msg: f"{s.target} began with another method than connection.start"
+        )
+
+    if start.major != 0 || start.minor != 9
+        return fail(code: model.UNSUPPORTED, msg: f"{s.target} speaks AMQP {start.major}-{start.minor}, not 0-9")
+    offered = strings.split(s: start.mechanisms, sep: " ")
+
+    mechanism = match o.mechanism
+        .plain    => "PLAIN"
+        .amqplain => "AMQPLAIN"
+
+    if !offered.any(is_plain) && mechanism == "PLAIN" || !offered.any(is_amqplain) && mechanism == "AMQPLAIN"
+        return fail(
+            code: model.UNSUPPORTED,
+            msg: f"{s.target} offers the mechanisms \"{start.mechanisms}\", not {mechanism}"
+        )
+
+    response = match o.mechanism
+        .plain    => bytes.concat([[0], bytes.from_text(o.username), [0], bytes.from_text(o.password)])
+        .amqplain => table.amqplain(username: o.username, password: o.password)?
+
+    properties = table.client_properties(o.connection_name, extra: o.properties)?
+    reading.send(@s, channel: 0, payload: encoding.start_ok(properties: properties, mechanism: mechanism, response: response, locale: o.locale)?)?
+
+    tuned = match waiting.await_reply(@s, n: 0, awaited: [decoding.key(class_id: 10, method_id: 30), decoding.key(class_id: 10, method_id: 20)], until: until)
+        .ok got => got
+        .err e =>
+            if e.code == model.CLOSED && !s.closed_by_server
+                return fail(
+                    code: model.PERMISSION,
+                    msg: f"{s.target} closed the connection after the login, which it refused: {e.msg}"
+                )
+            return fail(code: e.code, msg: e.msg)
+
+    tune = match tuned
+        .tune got => got
+        .start _ | .secure _ | .close _ | .blocked _ | .unblocked | .flow _ | .declare_ok _ | .count _ | .tagged _ | .cancelled _ | .returned _ | .deliver _ | .get_ok _ | .get_empty | .confirm _ | .reply _ => return fail(
+            code: model.UNSUPPORTED,
+            msg: f"{s.target} asked a challenge of {mechanism}, which has none"
+        )
+
+    channel_max = agreed(client: o.channel_max, server: tune.channel_max)
+    frame_max = agreed(client: o.frame_max, server: tune.frame_max)
+    heartbeat_s = agreed(client: o.heartbeat_s, server: tune.heartbeat_s)
+
+    if frame_max != 0 && frame_max < FRAME_MIN
+        return fail(code: model.INVALID, msg: f"{s.target} offers frames of {frame_max} bytes, below AMQP's 4096")
+
+    s.channel_max @ if channel_max == 0
+        65535
+    else
+        channel_max
+
+    reading.send(@s, channel: 0, payload: encoding.tune_ok(channel_max: channel_max, frame_max: frame_max, heartbeat_s: heartbeat_s))?
+    s.frame_max @ frame_max
+    s.heartbeat_ms @ heartbeat_s * 1000
+    s.server @ model.Server(
+        properties: start.properties,
+        mechanisms: offered,
+        locales: strings.split(s: start.locales, sep: " "),
+        version_major: start.major,
+        version_minor: start.minor,
+        channel_max: s.channel_max,
+        frame_max: frame_max,
+        heartbeat_s: heartbeat_s
+    )
+    reading.send(@s, channel: 0, payload: encoding.open(o.vhost)?)?
+    _ = waiting.await_reply(@s, n: 0, awaited: [decoding.key(class_id: 10, method_id: 41)], until: until)?
+    return ok()
+
+# Whether `m` is `PLAIN`.
+#
+# - `m`: a mechanism's name.
+function is_plain(m: str) -> bool
+    return m == "PLAIN"
+
+# Whether `m` is `AMQPLAIN`.
+#
+# - `m`: a mechanism's name.
+function is_amqplain(m: str) -> bool
+    return m == "AMQPLAIN"
+
+# Closes the connection with `connection.close` and its answer, and the
+# link whatever comes.
+#
+# - `s`: the session, closed after.
+function close(@s: state.Session) -> ()?
+    if !s.open
+        return waiting.closed_failure(s)
+    until = waiting.deadline(s.options.wait_ms)
+
+    for n in range(from: 1, to: s.chans.len())
+        s.chans[n].open @ false
+
+    sent = reading.send(@s, channel: 0, payload: encoding.close(class_id: 10, code: 200, text: "Goodbye")?)
+
+    answered: decoding.Incoming? = match sent
+        .ok _  => waiting.await_reply(@s, n: 0, awaited: [decoding.key(class_id: 10, method_id: 51)], until: until)
+        .err e => fail(code: e.code, msg: e.msg)
+
+    link.close(@s.link)
+    s.open @ false
+
+    return match answered
+        .ok _ => ok()
+        .err e =>
+            if e.code == model.CLOSED
+                ok()
+            else
+                fail(code: e.code, msg: e.msg)
+
+# Replaces the connection's secret.
+#
+# - `s`: the session.
+# - `secret`: the secret.
+# - `reason`: why.
+function update_secret(@s: state.Session, secret: str, reason: str) -> ()?
+    _ = waiting.call(@s, n: 0, payload: encoding.update_secret(secret: secret, reason: reason)?, awaited: [decoding.key(class_id: 10, method_id: 71)])?
+    return ok()
+
+test "agreed: 0 on either side, the smaller of two"
+    assert agreed(client: 0, server: 60) == 60 && agreed(client: 10, server: 0) == 10 && agreed(client: 10, server: 60) == 10 && agreed(client: 90, server: 60) == 60
+    assert agreed(client: 0, server: 0) == 0
+
+test "check: no host, a port, a heartbeat, a frame below 4096 and 0, a time, a bound"
+    base = model.Options(
+        host: "h",
+        port: 5672,
+        tls: false,
+        roots: "",
+        vhost: "/",
+        username: "guest",
+        password: "guest",
+        mechanism: .plain,
+        heartbeat_s: 60,
+        frame_max: 131072,
+        channel_max: 2047,
+        connection_name: "",
+        properties: [],
+        locale: "en_US",
+        connect_ms: 1000,
+        wait_ms: 1000,
+        most_body_bytes: 1000,
+        most_held: 10
+    )
+    check(base).must()
+    o @= base
+    o.host @ ""
+    assert check(o).is_err()
+    o @ base
+    o.port @ 65536
+    assert check(o).is_err()
+    o @ base
+    o.heartbeat_s @ -1
+    assert check(o).is_err()
+    o @ base
+    o.frame_max @ 4095
+    assert check(o).is_err()
+    o.frame_max @ 0
+    check(o).must()
+    o @ base
+    o.wait_ms @ 0
+    assert check(o).is_err()
+    o @ base
+    o.most_held @ 0
+    assert check(o).is_err()

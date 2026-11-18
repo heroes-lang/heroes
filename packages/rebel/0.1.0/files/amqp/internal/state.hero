@@ -1,0 +1,212 @@
+# The state of a connection: its options, its link and the bytes read and
+# not yet taken, what the server agreed, each channel's own state, and what
+# the server sent that no call has taken yet: deliveries, returned messages,
+# cancelled consumers. A queue of held values is a list and the index of its
+# first value still held, so taking one copies nothing.
+
+use amqp/internal/link
+use amqp/internal/model
+
+# What a channel is reading: nothing, or the content after a method.
+constant READING_NONE: i64
+    0
+
+# The content of a `basic.deliver`.
+constant READING_DELIVER: i64
+    1
+
+# The content of a `basic.get-ok`.
+constant READING_GET: i64
+    2
+
+# The content of a `basic.return`.
+constant READING_RETURN: i64
+    3
+
+# One channel's state, at the index of its number in `Session.chans`.
+record Chan
+    # Whether the channel is open.
+    open: bool
+    # Whether the server closed it, `closing` saying why.
+    closed_by_server: bool
+    # The server's `channel.close`, where it sent one.
+    closing: model.Closing
+    # Whether `confirm.select` was taken.
+    confirming: bool
+    # The sequence number of the next publish, 1 first, in confirm mode.
+    next_seq: i64
+    # The sequence numbers published and not yet confirmed, ascending.
+    outstanding: [i64]
+    # The confirmations the server sent and no call has taken.
+    confirmations: [model.Confirmation]
+    # The index of the first confirmation still held.
+    confirmation_at: i64
+    # The sequence numbers the server refused since the last wait.
+    nacked: [i64]
+    # Whether `tx.select` was taken.
+    transactional: bool
+    # Whether the server asked the channel to stop publishing.
+    flow_stopped: bool
+    # The tags of the consumers open on the channel.
+    consumers: [str]
+    # What content the channel reads now, one of `READING_*`.
+    reading: i64
+    # The delivery whose content is read, its body empty.
+    delivery: model.Delivery
+    # The returned message whose content is read, its body empty.
+    returned: model.Return
+    # The body's size the content header announced, in bytes.
+    body_size: i64
+    # The body's bytes read so far.
+    body: [u8]
+
+# A connection's whole state.
+record Session
+    # The options it was made with.
+    options: model.Options
+    # How the server is named in messages: `host:port`.
+    target: str
+    # What carries the frames.
+    link: link.Link
+    # The bytes read and not yet taken from `at` on.
+    buf: [u8]
+    # The index of the first byte of `buf` not yet taken.
+    at: i64
+    # Whether the connection can be used.
+    open: bool
+    # Whether the server closed the connection, `closing` saying why.
+    closed_by_server: bool
+    # The server's `connection.close`, where it sent one.
+    closing: model.Closing
+    # What the server said and agreed.
+    server: model.Server
+    # The largest frame agreed, in bytes, 0 for none.
+    frame_max: i64
+    # The highest channel number agreed.
+    channel_max: i64
+    # The heartbeat agreed, in milliseconds, 0 for none.
+    heartbeat_ms: i64
+    # When the last bytes were read, on the monotonic clock in milliseconds.
+    last_read: i64
+    # When the last bytes were written, the same way.
+    last_write: i64
+    # Each channel's state, at the index of its number; index 0 unused.
+    chans: [Chan]
+    # The deliveries no call has taken.
+    deliveries: [model.Delivery]
+    # The index of the first delivery still held.
+    delivery_at: i64
+    # The returned messages no call has taken.
+    returns: [model.Return]
+    # The index of the first returned message still held.
+    return_at: i64
+    # The consumers the server cancelled.
+    cancellations: [model.Cancellation]
+    # Whether the server holds publishes back.
+    blocked: model.Blocked
+
+# A closing that says nothing.
+function no_closing() -> model.Closing
+    return model.Closing(code: 0, text: "", class_id: 0, method_id: 0)
+
+# A message with nothing in it.
+function empty_message() -> model.Message
+    return model.Message(
+        content_type: "",
+        content_encoding: "",
+        headers: [],
+        delivery_mode: 0,
+        priority: 0,
+        correlation_id: "",
+        reply_to: "",
+        expiration: "",
+        message_id: "",
+        timestamp: 0,
+        message_type: "",
+        user_id: "",
+        app_id: "",
+        body: []
+    )
+
+# A channel's state before it is opened.
+function closed_chan() -> Chan
+    return Chan(
+        open: false,
+        closed_by_server: false,
+        closing: no_closing(),
+        confirming: false,
+        next_seq: 1,
+        outstanding: [],
+        confirmations: [],
+        confirmation_at: 0,
+        nacked: [],
+        transactional: false,
+        flow_stopped: false,
+        consumers: [],
+        reading: READING_NONE,
+        delivery: model.Delivery(channel: 0, consumer_tag: "", tag: 0, redelivered: false, exchange: "", routing_key: "", remaining: 0, message: empty_message()),
+        returned: model.Return(channel: 0, code: 0, text: "", exchange: "", routing_key: "", message: empty_message()),
+        body_size: 0,
+        body: []
+    )
+
+# A channel's state as `channel.open-ok` leaves it.
+function opened_chan() -> Chan
+    c @= closed_chan()
+    c.open @ true
+    return c
+
+# The state of a connection not made yet, for the options `o`.
+#
+# - `o`: the options.
+# - `target`: how the server is named.
+function fresh(o: model.Options, target: str) -> Session
+    return Session(
+        options: o,
+        target: target,
+        link: .gone,
+        buf: [],
+        at: 0,
+        open: false,
+        closed_by_server: false,
+        closing: no_closing(),
+        server: model.Server(properties: [], mechanisms: [], locales: [], version_major: 0, version_minor: 0, channel_max: 0, frame_max: 0, heartbeat_s: 0),
+        frame_max: 0,
+        channel_max: 0,
+        heartbeat_ms: 0,
+        last_read: 0,
+        last_write: 0,
+        chans: [closed_chan()],
+        deliveries: [],
+        delivery_at: 0,
+        returns: [],
+        return_at: 0,
+        cancellations: [],
+        blocked: model.Blocked(active: false, reason: "")
+    )
+
+# The values held unread: deliveries, returned messages and confirmations.
+#
+# - `s`: the session.
+function held(s: Session lent) -> i64
+    n: i64 @= s.deliveries.len() - s.delivery_at + s.returns.len() - s.return_at
+
+    for c in s.chans
+        n @ n + c.confirmations.len() - c.confirmation_at
+
+    return n
+
+# Whether `channel` names a channel of `s` that is open.
+#
+# - `s`: the session.
+# - `channel`: the number.
+function is_open(s: Session lent, channel: i64) -> bool
+    return channel >= 1 && channel < s.chans.len() && s.chans[channel].open
+
+test "fresh: a session that holds nothing, its channel 0 unused"
+    s = fresh(
+        model.Options(host: "h", port: 5672, tls: false, roots: "", vhost: "/", username: "guest", password: "guest", mechanism: .plain, heartbeat_s: 60, frame_max: 131072, channel_max: 2047, connection_name: "", properties: [], locale: "en_US", connect_ms: 1000, wait_ms: 1000, most_body_bytes: 1000, most_held: 10),
+        target: "h:5672"
+    )
+    assert held(s) == 0 && s.chans.len() == 1 && !is_open(s, channel: 0) && !is_open(s, channel: 1)
+    assert opened_chan().open && !closed_chan().open && closed_chan().next_seq == 1

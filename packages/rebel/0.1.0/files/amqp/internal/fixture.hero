@@ -1,0 +1,105 @@
+# For the tests of the private modules: a session already through its
+# handshake over one end of a pair of connections, whose other end the test
+# writes the server's frames to and reads the client's from, and the frames
+# a server sends, written by hand.
+
+use amqp/internal/frames
+use amqp/internal/link
+use amqp/internal/model
+use amqp/internal/state
+use amqp/internal/wire
+use bytes
+use io
+use net
+use time
+
+# A session and the other end of its connection.
+record Wired
+    # The session, open, its channel 1 open.
+    session: state.Session
+    # The server's end.
+    peer: io.Stream
+
+# Options for a test's session.
+function options() -> model.Options
+    return model.Options(
+        host: "127.0.0.1",
+        port: 5672,
+        tls: false,
+        roots: "",
+        vhost: "/",
+        username: "guest",
+        password: "guest",
+        mechanism: .plain,
+        heartbeat_s: 0,
+        frame_max: 4096,
+        channel_max: 8,
+        connection_name: "",
+        properties: [],
+        locale: "en_US",
+        connect_ms: 2000,
+        wait_ms: 2000,
+        most_body_bytes: 100000,
+        most_held: 100
+    )
+
+# A session through its handshake, frames of 4,096 bytes, eight channels,
+# no heartbeat, its channel 1 open.
+function wired() -> Wired
+    two = net.pair(5000).must()
+    s @= state.fresh(options(), target: "server")
+    s.link @ .plain(conn: two.first)
+    s.open @ true
+    s.frame_max @ 4096
+    s.channel_max @ 8
+    s.server.version_minor @ 9
+    s.chans @ [state.closed_chan(), state.opened_chan()]
+    s.last_read @ time.mark().must().nanoseconds / 1000000
+    s.last_write @ s.last_read
+    return Wired(session: s, peer: two.second.stream)
+
+# A method frame on `channel`: `class_id`, `method_id`, then `fields`.
+#
+# - `channel`: the channel.
+# - `class_id`: the class.
+# - `method_id`: the method.
+# - `fields`: the fields' bytes.
+function method(channel: i64, class_id: i64, method_id: i64, fields: [u8]) -> [u8]
+    payload: [u8] @= []
+    wire.put_u16(out: @payload, v: class_id)
+    wire.put_u16(out: @payload, v: method_id)
+    bytes.push_all(to: @payload, from: fields)
+    return frames.frame(kind: frames.METHOD, channel: channel, payload: payload)
+
+# A `basic.deliver` on `channel` of the delivery tag `tag` for the consumer
+# `t`, its header and its body in one frame.
+#
+# - `channel`: the channel.
+# - `tag`: the delivery tag.
+# - `body`: the body, under 4,088 bytes.
+function delivery(channel: i64, tag: i64, body: [u8]) -> [u8]
+    fields: [u8] @= [1, 't']
+    wire.put_i64(out: @fields, v: tag)
+    bytes.push_all(to: @fields, from: [0, 0, 1, 'k'])
+    header: [u8] @= [0, 60, 0, 0]
+    wire.put_i64(out: @header, v: body.len())
+    bytes.push_all(to: @header, from: [0, 0])
+    out @= method(channel: channel, class_id: 60, method_id: 60, fields: fields)
+    bytes.push_all(to: @out, from: frames.frame(kind: frames.HEADER, channel: channel, payload: header))
+
+    if body.len() > 0
+        bytes.push_all(to: @out, from: frames.frame(kind: frames.BODY, channel: channel, payload: body))
+    return out
+
+# The bytes the client wrote, as many as one read brings.
+#
+# - `peer`: the server's end.
+function written(peer: io.Stream) -> [u8]
+    return io.read(peer, most: 65536).must()
+
+# Closes both ends of a test's connection.
+#
+# - `w`: the session and the server's end, both closed after.
+function unwire(@w: Wired)
+    link.close(@w.session.link)
+    _ = io.close(@w.peer).is_err()

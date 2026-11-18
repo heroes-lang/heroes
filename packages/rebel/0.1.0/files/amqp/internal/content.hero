@@ -1,0 +1,243 @@
+# A message's content as AMQP carries it: a header frame holding the class,
+# the body's size and the properties that are present, each flagged by a
+# bit from the highest down, then the body cut into frames no larger than the
+# size agreed. A property that is the empty text, the empty list or 0 is
+# left out, and read back as that.
+
+use amqp/internal/frames
+use amqp/internal/model
+use amqp/internal/state
+use amqp/internal/table
+use amqp/internal/wire
+use bytes
+
+# What a content header says: the body's size, and the message's properties
+# with an empty body.
+record Header
+    # The body's size, in bytes.
+    body_size: i64
+    # The properties.
+    message: model.Message
+
+# The flags of the properties of `basic`, from the highest bit down.
+#
+# - `n`: 0 for the content type, up to 13 for the cluster's identifier.
+function flag(n: i64) -> i64
+    return 1 << 15 - n
+
+# The header frame's payload of `m`, whose body is `body_size` bytes.
+#
+# - `m`: the message; its body is not read.
+# - `body_size`: the body's size.
+#
+# Fails `invalid` where a delivery mode or a priority is outside 0 to 255, a
+# timestamp is below 0, or a text passes 255 bytes.
+function encode_header(m: model.Message lent, body_size: i64) -> [u8]?
+    if m.delivery_mode < 0 || m.delivery_mode > 255
+        return fail(code: model.INVALID, msg: f"the delivery mode {m.delivery_mode} is outside 0 to 255")
+
+    if m.priority < 0 || m.priority > 255
+        return fail(code: model.INVALID, msg: f"the priority {m.priority} is outside 0 to 255")
+
+    if m.timestamp < 0
+        return fail(code: model.INVALID, msg: f"the timestamp {m.timestamp} is before 1970")
+    flags: i64 @= 0
+    props: [u8] @= []
+
+    if m.content_type != ""
+        flags @ flags | flag(0)
+        wire.put_shortstr(@props, s: m.content_type, what: "the content type")?
+
+    if m.content_encoding != ""
+        flags @ flags | flag(1)
+        wire.put_shortstr(@props, s: m.content_encoding, what: "the content encoding")?
+
+    if m.headers.len() > 0
+        flags @ flags | flag(2)
+        bytes.push_all(to: @props, from: m.headers)
+
+    if m.delivery_mode != 0
+        flags @ flags | flag(3)
+        wire.put_u8(@props, v: m.delivery_mode)
+
+    if m.priority != 0
+        flags @ flags | flag(4)
+        wire.put_u8(@props, v: m.priority)
+
+    if m.correlation_id != ""
+        flags @ flags | flag(5)
+        wire.put_shortstr(@props, s: m.correlation_id, what: "the correlation identifier")?
+
+    if m.reply_to != ""
+        flags @ flags | flag(6)
+        wire.put_shortstr(@props, s: m.reply_to, what: "the reply-to queue")?
+
+    if m.expiration != ""
+        flags @ flags | flag(7)
+        wire.put_shortstr(@props, s: m.expiration, what: "the expiration")?
+
+    if m.message_id != ""
+        flags @ flags | flag(8)
+        wire.put_shortstr(@props, s: m.message_id, what: "the message's identifier")?
+
+    if m.timestamp != 0
+        flags @ flags | flag(9)
+        wire.put_i64(@props, v: m.timestamp)
+
+    if m.message_type != ""
+        flags @ flags | flag(10)
+        wire.put_shortstr(@props, s: m.message_type, what: "the message's type")?
+
+    if m.user_id != ""
+        flags @ flags | flag(11)
+        wire.put_shortstr(@props, s: m.user_id, what: "the user's identifier")?
+
+    if m.app_id != ""
+        flags @ flags | flag(12)
+        wire.put_shortstr(@props, s: m.app_id, what: "the application's identifier")?
+    out: [u8] @= []
+    wire.put_u16(@out, v: 60)
+    wire.put_u16(@out, v: 0)
+    wire.put_i64(@out, v: body_size)
+    wire.put_u16(@out, v: flags)
+    bytes.push_all(to: @out, from: props)
+    return ok(out)
+
+# The content header `payload` holds.
+#
+# - `payload`: a header frame's payload.
+#
+# Fails `invalid` where it is cut short, its class is not `basic`'s, it
+# flags a property `basic` does not have, or its headers are no table.
+function decode_header(payload: [u8]) -> Header?
+    r @= wire.reader(payload)
+    class_id = wire.take_u16(@r, what: "a content header")?
+
+    if class_id != 60
+        return fail(code: model.INVALID, msg: f"a content header of the class {class_id}, not basic's 60")
+    _ = wire.take_u16(@r, what: "a content header")?
+    size = wire.take_u64(@r, what: "a content header's body size")?
+    flags = wire.take_u16(@r, what: "a content header's flags")?
+
+    if flags & 3 != 0
+        return fail(code: model.INVALID, msg: "a content header flags a property basic does not have")
+    m @= state.empty_message()
+
+    if flags & flag(0) != 0
+        m.content_type @ wire.take_shortstr_lossy(@r, what: "the content type")?
+
+    if flags & flag(1) != 0
+        m.content_encoding @ wire.take_shortstr_lossy(@r, what: "the content encoding")?
+
+    if flags & flag(2) != 0
+        m.headers @ table.take_table(@r, what: "the headers")?
+
+    if flags & flag(3) != 0
+        m.delivery_mode @ wire.take_u8(@r, what: "the delivery mode")?
+
+    if flags & flag(4) != 0
+        m.priority @ wire.take_u8(@r, what: "the priority")?
+
+    if flags & flag(5) != 0
+        m.correlation_id @ wire.take_shortstr_lossy(@r, what: "the correlation identifier")?
+
+    if flags & flag(6) != 0
+        m.reply_to @ wire.take_shortstr_lossy(@r, what: "the reply-to queue")?
+
+    if flags & flag(7) != 0
+        m.expiration @ wire.take_shortstr_lossy(@r, what: "the expiration")?
+
+    if flags & flag(8) != 0
+        m.message_id @ wire.take_shortstr_lossy(@r, what: "the message's identifier")?
+
+    if flags & flag(9) != 0
+        m.timestamp @ wire.take_u64(@r, what: "the timestamp")?
+
+    if flags & flag(10) != 0
+        m.message_type @ wire.take_shortstr_lossy(@r, what: "the message's type")?
+
+    if flags & flag(11) != 0
+        m.user_id @ wire.take_shortstr_lossy(@r, what: "the user's identifier")?
+
+    if flags & flag(12) != 0
+        m.app_id @ wire.take_shortstr_lossy(@r, what: "the application's identifier")?
+
+    if flags & flag(13) != 0
+        _ = wire.take_shortstr_lossy(@r, what: "the cluster's identifier")?
+    return ok(Header(body_size: size, message: m))
+
+# The body frames of `body` on `channel`, each payload `frame_max` less the
+# frame's own bytes at most, written one after the other.
+#
+# - `out`: the bytes to write, the frames added at their end.
+# - `channel`: the channel.
+# - `body`: the body; none makes no frame.
+# - `frame_max`: the largest frame agreed, 0 for none.
+function put_body(@out: [u8], channel: i64, body: [u8] lent, frame_max: i64)
+    piece = if frame_max == 0
+        body.len()
+    else
+        frame_max - frames.OVERHEAD
+
+    at: i64 @= 0
+
+    while at < body.len()
+        end = if body.len() - at > piece
+            at + piece
+        else
+            body.len()
+
+        bytes.push_all(
+            to: @out,
+            from: frames.frame(kind: frames.BODY, channel: channel, payload: body.slice(from: at, to: end))
+        )
+        at @ end
+
+test "encode_header: no property, every property, and the bytes pika's encoder writes"
+    m @= state.empty_message()
+    assert encode_header(m, body_size: 5).must() == [0, 60, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0]
+    m.content_type @ "a"
+    m.content_encoding @ "b"
+    m.headers @ [0, 0, 0, 8, 1, 'k', 'S', 0, 0, 0, 1, 'v']
+    m.delivery_mode @ 2
+    m.priority @ 9
+    m.correlation_id @ "c"
+    m.reply_to @ "r"
+    m.expiration @ "60"
+    m.message_id @ "m"
+    m.timestamp @ 1700000000
+    m.message_type @ "t"
+    m.user_id @ "u"
+    m.app_id @ "p"
+    whole = encode_header(m, body_size: 3).must()
+    assert whole == [0, 60, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 255, 248, 1, 97, 1, 98, 0, 0, 0, 8, 1, 107, 83, 0, 0, 0, 1, 118, 2, 9, 1, 99, 1, 114, 2, 54, 48, 1, 109, 0, 0, 0, 0, 101, 83, 241, 0, 1, 116, 1, 117, 1, 112]
+    back = decode_header(whole).must()
+    assert back.body_size == 3 && back.message == m
+
+test "encode_header: a priority of 256, a delivery mode below 0, a timestamp before 1970"
+    m @= state.empty_message()
+    m.priority @ 256
+    assert encode_header(m, body_size: 0).is_err()
+    m.priority @ 255
+    m.delivery_mode @ -1
+    assert encode_header(m, body_size: 0).is_err()
+    m.delivery_mode @ 0
+    m.timestamp @ -1
+    assert encode_header(m, body_size: 0).is_err()
+
+test "decode_header: the cluster's identifier read and dropped, another class, a flag basic has not, headers that are no table"
+    pika = decode_header([0, 60, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16, 68, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 'z']).must()
+    assert pika.message.delivery_mode == 1 && pika.message.timestamp == 0 && pika.body_size == 0
+    assert decode_header([0, 50, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]).is_err()
+    assert decode_header([0, 60, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]).is_err()
+    assert decode_header([0, 60, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32, 0, 0, 0, 0, 3, 1, 'k', 'Z']).is_err()
+
+test "put_body: none, one frame, a body cut at the size agreed, no size agreed"
+    out: [u8] @= []
+    put_body(out: @out, channel: 1, body: [], frame_max: 4096)
+    assert out == []
+    put_body(out: @out, channel: 1, body: [1, 2, 3], frame_max: 10)
+    assert out == [3, 0, 1, 0, 0, 0, 2, 1, 2, 206, 3, 0, 1, 0, 0, 0, 1, 3, 206]
+    whole: [u8] @= []
+    put_body(out: @whole, channel: 2, body: [1, 2, 3], frame_max: 0)
+    assert whole == [3, 0, 2, 0, 0, 0, 3, 1, 2, 3, 206]

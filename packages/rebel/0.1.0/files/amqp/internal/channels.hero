@@ -1,0 +1,358 @@
+# What a program does on a channel: opened and closed; exchanges and queues
+# declared, bound, purged and deleted; the prefetch and the flow set;
+# messages published, consumed, got, acknowledged, refused and recovered;
+# confirm mode and transactions taken. Each request with an answer waits for
+# it; a publish and an acknowledgement wait for nothing.
+
+use amqp/internal/content
+use amqp/internal/decoding
+use amqp/internal/encoding
+use amqp/internal/fixture
+use amqp/internal/frames
+use amqp/internal/model
+use amqp/internal/reading
+use amqp/internal/state
+use amqp/internal/waiting
+use bytes
+use io
+
+# What `queue.declare-ok` said.
+record Declared
+    # The queue's name.
+    name: str
+    # Its messages ready.
+    messages: i64
+    # Its consumers.
+    consumers: i64
+
+# Adds `c` to the channels' states.
+#
+# - `chans`: the states.
+# - `c`: one more.
+function add_chan(@chans: [state.Chan], c: state.Chan)
+    chans @ chans.push(c)
+
+# Adds `tag` to a channel's consumers.
+#
+# - `tags`: the consumers.
+# - `tag`: one more.
+function add_tag(@tags: [str], tag: str)
+    tags @ tags.push(tag)
+
+# Opens a channel, the lowest number free, and answers it.
+#
+# - `s`: the session.
+function open_channel(@s: state.Session) -> i64?
+    if !s.open
+        return waiting.closed_failure(s)
+    n: i64 @= 1
+
+    while n < s.chans.len() && s.chans[n].open
+        n @ n + 1
+
+    if n > s.channel_max
+        return fail(code: model.LIMIT, msg: f"every one of the {s.channel_max} channels agreed with {s.target} is open")
+
+    if n == s.chans.len()
+        add_chan(@s.chans, c: state.closed_chan())
+    s.chans[n] @ state.closed_chan()
+    until = waiting.deadline(s.options.wait_ms)
+    reading.send(@s, channel: n, payload: encoding.channel_open())?
+    _ = waiting.await_reply(@s, n: n, awaited: [decoding.key(class_id: 20, method_id: 11)], until: until)?
+    s.chans[n] @ state.opened_chan()
+    return ok(n)
+
+# Closes channel `n` with `channel.close` and its answer.
+#
+# - `s`: the session.
+# - `n`: the channel.
+function close_channel(@s: state.Session, n: i64) -> ()?
+    if !s.open
+        return waiting.closed_failure(s)
+
+    if !state.is_open(s, channel: n)
+        return waiting.channel_closed(s, n: n)
+    s.chans[n] @ state.closed_chan()
+    until = waiting.deadline(s.options.wait_ms)
+    reading.send(@s, channel: n, payload: encoding.close(class_id: 20, code: 200, text: "Goodbye")?)?
+    _ = waiting.await_reply(@s, n: n, awaited: [decoding.key(class_id: 20, method_id: 41), decoding.key(class_id: 20, method_id: 40)], until: until)?
+    return ok()
+
+# Sends a request on channel `n` and waits for its one answer.
+#
+# - `s`: the session.
+# - `n`: the channel.
+# - `payload`: the request.
+# - `class_id`: the answer's class.
+# - `method_id`: the answer's method.
+function request(@s: state.Session, n: i64, payload: [u8] lent, class_id: i64, method_id: i64) -> decoding.Incoming?
+    return waiting.call(@s, n: n, payload: payload, awaited: [decoding.key(class_id: class_id, method_id: method_id)])
+
+# Sets the prefetch of channel `n`.
+#
+# - `s`: the session.
+# - `n`: the channel.
+# - `prefetch_count`: messages, 0 to 65535.
+# - `prefetch_size`: bytes, 0 to 4294967295.
+# - `global`: whether the limit is the channel's.
+function qos(@s: state.Session, n: i64, prefetch_count: i64, prefetch_size: i64, global: bool) -> ()?
+    if prefetch_count < 0 || prefetch_count > 65535
+        return fail(code: model.INVALID, msg: f"the prefetch count {prefetch_count} is outside 0 to 65535")
+
+    if prefetch_size < 0 || prefetch_size > 4294967295
+        return fail(code: model.INVALID, msg: f"the prefetch size {prefetch_size} is outside 0 to 4294967295")
+    _ = request(@s, n: n, payload: encoding.qos(prefetch_size: prefetch_size, prefetch_count: prefetch_count, global: global), class_id: 60, method_id: 11)?
+    return ok()
+
+# Asks the server to stop or go on sending to channel `n`.
+#
+# - `s`: the session.
+# - `n`: the channel.
+# - `active`: whether it goes on.
+function flow(@s: state.Session, n: i64, active: bool) -> ()?
+    _ = request(@s, n: n, payload: encoding.flow(20, active: active), class_id: 20, method_id: 21)?
+    return ok()
+
+# Declares an exchange.
+#
+# - `s`: the session.
+# - `n`: the channel.
+# - `payload`: its `exchange.declare`.
+function declare_exchange(@s: state.Session, n: i64, payload: [u8]) -> ()?
+    _ = request(@s, n: n, payload: payload, class_id: 40, method_id: 11)?
+    return ok()
+
+# Deletes an exchange.
+#
+# - `s`: the session.
+# - `n`: the channel.
+# - `name`: the exchange.
+# - `if_unused`: whether only an exchange with no binding goes.
+function delete_exchange(@s: state.Session, n: i64, name: str, if_unused: bool) -> ()?
+    _ = request(@s, n: n, payload: encoding.exchange_delete(name, if_unused: if_unused)?, class_id: 40, method_id: 21)?
+    return ok()
+
+# Binds (30) or unbinds (40) an exchange to another.
+#
+# - `s`: the session.
+# - `n`: the channel.
+# - `payload`: its `exchange.bind` or `exchange.unbind`.
+# - `method_id`: 30 or 40.
+function exchange_binding(@s: state.Session, n: i64, payload: [u8], method_id: i64) -> ()?
+    answer = if method_id == 30
+        31
+    else
+        51
+
+    _ = request(@s, n: n, payload: payload, class_id: 40, method_id: answer)?
+    return ok()
+
+# Declares a queue and answers what the server said of it.
+#
+# - `s`: the session.
+# - `n`: the channel.
+# - `payload`: its `queue.declare`.
+function declare_queue(@s: state.Session, n: i64, payload: [u8]) -> Declared?
+    answer = request(@s, n: n, payload: payload, class_id: 50, method_id: 11)?
+
+    return match answer
+        .declare_ok d => ok(Declared(name: d.queue_name, messages: d.messages, consumers: d.consumers))
+        .start _ | .secure _ | .tune _ | .close _ | .blocked _ | .unblocked | .flow _ | .count _ | .tagged _ | .cancelled _ | .returned _ | .deliver _ | .get_ok _ | .get_empty | .confirm _ | .reply _ => fail(
+            code: model.INVALID,
+            msg: f"{s.target} answered queue.declare with another method"
+        )
+
+# Binds (20) or unbinds (50) a queue.
+#
+# - `s`: the session.
+# - `n`: the channel.
+# - `payload`: its `queue.bind` or `queue.unbind`.
+# - `method_id`: 20 or 50.
+function queue_binding(@s: state.Session, n: i64, payload: [u8], method_id: i64) -> ()?
+    _ = request(@s, n: n, payload: payload, class_id: 50, method_id: method_id + 1)?
+    return ok()
+
+# Purges (30) or deletes (40) a queue and answers the messages it held.
+#
+# - `s`: the session.
+# - `n`: the channel.
+# - `payload`: its `queue.purge` or `queue.delete`.
+# - `method_id`: 30 or 40.
+function queue_count(@s: state.Session, n: i64, payload: [u8], method_id: i64) -> i64?
+    answer = request(@s, n: n, payload: payload, class_id: 50, method_id: method_id + 1)?
+
+    return match answer
+        .count c => ok(c.messages)
+        .start _ | .secure _ | .tune _ | .close _ | .blocked _ | .unblocked | .flow _ | .declare_ok _ | .tagged _ | .cancelled _ | .returned _ | .deliver _ | .get_ok _ | .get_empty | .confirm _ | .reply _ => fail(
+            code: model.INVALID,
+            msg: f"{s.target} answered with another method than a count"
+        )
+
+# Publishes `m` and answers its sequence number in confirm mode, 0
+# elsewhere.
+#
+# - `s`: the session.
+# - `n`: the channel.
+# - `exchange_name`: the exchange.
+# - `routing_key`: the key.
+# - `m`: the message.
+# - `mandatory`: whether a message no queue takes comes back.
+function publish(@s: state.Session, n: i64, exchange_name: str, routing_key: str, m: model.Message lent, mandatory: bool) -> i64?
+    if !s.open
+        return waiting.closed_failure(s)
+
+    if !state.is_open(s, channel: n)
+        return waiting.channel_closed(s, n: n)
+
+    if m.body.len() > s.options.most_body_bytes
+        return fail(
+            code: model.LIMIT,
+            msg: f"a body of {m.body.len()} bytes, past the {s.options.most_body_bytes} allowed"
+        )
+    method = encoding.publish(exchange_name: exchange_name, routing_key: routing_key, mandatory: mandatory)?
+    header = content.encode_header(m, body_size: m.body.len())?
+    out: [u8] @= frames.frame(kind: frames.METHOD, channel: n, payload: method)
+    bytes.push_all(to: @out, from: frames.frame(kind: frames.HEADER, channel: n, payload: header))
+    content.put_body(out: @out, channel: n, body: m.body, frame_max: s.frame_max)
+    reading.write(@s, data: out)?
+
+    if !s.chans[n].confirming
+        return ok(0)
+    seq = s.chans[n].next_seq
+    s.chans[n].next_seq @ seq + 1
+    reading.hold_number(@s.chans[n].outstanding, n: seq)
+    return ok(seq)
+
+# Puts channel `n` in confirm mode.
+#
+# - `s`: the session.
+# - `n`: the channel.
+function select_confirms(@s: state.Session, n: i64) -> ()?
+    if state.is_open(s, channel: n) && s.chans[n].transactional
+        return fail(
+            code: model.INVALID,
+            msg: f"channel {n} is transactional, and a channel is either that or in confirm mode"
+        )
+    _ = request(@s, n: n, payload: encoding.bare(class_id: 85, method_id: 10), class_id: 85, method_id: 11)?
+    s.chans[n].confirming @ true
+    return ok()
+
+# Makes channel `n` transactional.
+#
+# - `s`: the session.
+# - `n`: the channel.
+function select_transactions(@s: state.Session, n: i64) -> ()?
+    if state.is_open(s, channel: n) && s.chans[n].confirming
+        return fail(
+            code: model.INVALID,
+            msg: f"channel {n} is in confirm mode, and a channel is either that or transactional"
+        )
+    _ = request(@s, n: n, payload: encoding.bare(class_id: 90, method_id: 10), class_id: 90, method_id: 11)?
+    s.chans[n].transactional @ true
+    return ok()
+
+# Commits (20) or rolls back (30) the transaction of channel `n`.
+#
+# - `s`: the session.
+# - `n`: the channel.
+# - `method_id`: 20 or 30.
+function end_transaction(@s: state.Session, n: i64, method_id: i64) -> ()?
+    if state.is_open(s, channel: n) && !s.chans[n].transactional
+        return fail(code: model.INVALID, msg: f"channel {n} is not transactional")
+    _ = request(@s, n: n, payload: encoding.bare(class_id: 90, method_id: method_id), class_id: 90, method_id: method_id + 1)?
+    return ok()
+
+# Starts a consumer and answers its tag.
+#
+# - `s`: the session.
+# - `n`: the channel.
+# - `payload`: its `basic.consume`.
+function consume(@s: state.Session, n: i64, payload: [u8]) -> str?
+    answer = request(@s, n: n, payload: payload, class_id: 60, method_id: 21)?
+
+    tag = match answer
+        .tagged t => t.tag
+        .start _ | .secure _ | .tune _ | .close _ | .blocked _ | .unblocked | .flow _ | .declare_ok _ | .count _ | .cancelled _ | .returned _ | .deliver _ | .get_ok _ | .get_empty | .confirm _ | .reply _ => return fail(
+            code: model.INVALID,
+            msg: f"{s.target} answered basic.consume with another method"
+        )
+
+    add_tag(@s.chans[n].consumers, tag: tag)
+    return ok(tag)
+
+# Ends the consumer `tag` of channel `n`.
+#
+# - `s`: the session.
+# - `n`: the channel.
+# - `tag`: the consumer's tag.
+function cancel(@s: state.Session, n: i64, tag: str) -> ()?
+    _ = request(@s, n: n, payload: encoding.cancel(tag)?, class_id: 60, method_id: 31)?
+    kept: [str] @= []
+
+    for t in s.chans[n].consumers
+        if t != tag
+            kept @ kept.push(t)
+
+    s.chans[n].consumers @ kept
+    return ok()
+
+# Acknowledges (80), rejects (90) or refuses (120) a delivery on channel
+# `n`, waiting for nothing.
+#
+# - `s`: the session.
+# - `n`: the channel.
+# - `method_id`: 80, 90 or 120.
+# - `tag`: the delivery tag.
+# - `flags`: the bits after the tag.
+function settle(@s: state.Session, n: i64, method_id: i64, tag: i64, flags: [bool]) -> ()?
+    if !s.open
+        return waiting.closed_failure(s)
+
+    if !state.is_open(s, channel: n)
+        return waiting.channel_closed(s, n: n)
+
+    if tag < 0
+        return fail(code: model.INVALID, msg: f"the delivery tag {tag} is below 0")
+    return reading.send(@s, channel: n, payload: encoding.settle(method_id: method_id, tag: tag, flags: flags))
+
+# Asks the server to send again what channel `n` did not acknowledge.
+#
+# - `s`: the session.
+# - `n`: the channel.
+# - `requeue`: whether the messages go back to their queues.
+function recover(@s: state.Session, n: i64, requeue: bool) -> ()?
+    _ = request(@s, n: n, payload: encoding.recover(requeue), class_id: 60, method_id: 111)?
+    return ok()
+
+test "open_channel, publish, settle, close_channel: the frames written, a body cut at the frame size, a channel closed refused"
+    w @= fixture.wired()
+    io.write(w.peer, data: fixture.method(channel: 2, class_id: 20, method_id: 11, fields: [0, 0, 0, 0])).must()
+    assert open_channel(@w.session).must() == 2
+    assert fixture.written(w.peer) == [1, 0, 2, 0, 0, 0, 5, 0, 20, 0, 10, 0, 206]
+    big: [u8] @= []
+
+    for at in range(from: 0, to: 5000)
+        big @ big.push(to_u8(at % 256).must())
+
+    m @= state.empty_message()
+    m.body @ big
+    assert publish(@w.session, n: 2, exchange_name: "", routing_key: "q", m: m, mandatory: false).must() == 0
+    sent: [u8] @= []
+
+    while sent.len() < 18 + 22 + 4096 + 920
+        bytes.push_all(to: @sent, from: fixture.written(w.peer))
+
+    assert sent.len() == 18 + 22 + 4096 + 920 && sent[40] == 3 && sent[40 + 4096] == 3
+    settle(@w.session, n: 2, method_id: 80, tag: 5, flags: [false]).must()
+    assert fixture.written(w.peer) == [1, 0, 2, 0, 0, 0, 13, 0, 60, 0, 80, 0, 0, 0, 0, 0, 0, 0, 5, 0, 206]
+    io.write(w.peer, data: fixture.method(channel: 2, class_id: 20, method_id: 41, fields: [])).must()
+    close_channel(@w.session, n: 2).must()
+    assert settle(@w.session, n: 2, method_id: 80, tag: 5, flags: [false]).is_err()
+    assert publish(@w.session, n: 3, exchange_name: "", routing_key: "q", m: m, mandatory: false).is_err()
+    fixture.unwire(@w)
+
+test "open_channel: every number agreed taken"
+    w @= fixture.wired()
+    w.session.channel_max @ 1
+    assert open_channel(@w.session).is_err()
+    fixture.unwire(@w)

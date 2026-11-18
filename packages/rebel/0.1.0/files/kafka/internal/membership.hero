@@ -1,0 +1,331 @@
+# A consumer's membership of its group: the options checked, the group
+# joined (`JoinGroup` 5, again where the coordinator asks a member
+# identifier first), the leader's assignment made and handed out
+# (`SyncGroup` 3), the positions read from the group's offsets or from either
+# end of the log, and the heartbeat (`Heartbeat` 3) that says the member is
+# alive and hears that the group changed.
+
+use kafka/internal/cluster
+use kafka/internal/errors
+use kafka/internal/fetching
+use kafka/internal/groups
+use kafka/internal/model
+use kafka/internal/protocol
+use kafka/internal/state
+use kafka/internal/wire
+
+# The key of `JoinGroup`.
+constant JOIN_GROUP: i64
+    11
+
+# The key of `Heartbeat`.
+constant HEARTBEAT: i64
+    12
+
+# The key of `SyncGroup`.
+constant SYNC_GROUP: i64
+    14
+
+# Fails `invalid` where a group option is out of range.
+#
+# - `g`: the group options.
+function check(g: model.GroupOptions) -> ()?
+    if g.group_id == ""
+        return fail(code: model.INVALID, msg: "the group's identifier is empty")
+
+    if g.topics.len() == 0
+        return fail(code: model.INVALID, msg: "the consumer names no topic")
+
+    if g.session_ms < 1 || g.rebalance_ms < 1 || g.heartbeat_ms < 1 || g.heartbeat_ms >= g.session_ms
+        return fail(
+            code: model.INVALID,
+            msg: f"the session of {g.session_ms} ms, the rebalance of {g.rebalance_ms} ms and the heartbeat of {g.heartbeat_ms} ms are not each 1 or more with the heartbeat below the session"
+        )
+
+    if g.auto_commit_ms < 0
+        return fail(code: model.INVALID, msg: f"the commit's interval {g.auto_commit_ms} is below 0")
+    return ok()
+
+# A consumer of the group `g` names, joined, through a client `o` makes.
+#
+# - `o`: the options.
+# - `g`: the group options.
+function subscribe(o: model.Options, g: model.GroupOptions) -> state.Group?
+    check(g)?
+    s = cluster.open(o)?
+    k @= state.Group(
+        session: s,
+        options: g,
+        closed: false,
+        coordinator: -1,
+        member_id: "",
+        generation_id: -1,
+        leader: false,
+        owned: [],
+        heartbeat_due: 0,
+        commit_due: 0,
+        rejoin: true
+    )
+
+    match join_group(@k)
+        .ok _ => return ok(k)
+        .err e =>
+            cluster.close(@k.session)
+            return fail(code: e.code, msg: e.msg)
+
+# What `JoinGroup` answered.
+record Joined
+    # The error, 0 for none.
+    error: i64
+    # The generation.
+    generation_id: i64
+    # The leader's identifier.
+    leader: str
+    # This member's identifier.
+    member_id: str
+    # The members' identifiers, where this one leads.
+    members: [str]
+    # Their subscriptions.
+    metadata: [[u8]]
+
+# Sends `JoinGroup` 5 and reads its answer.
+#
+# - `k`: the consumer.
+function join_once(@k: state.Group) -> Joined?
+    g = k.options
+    body: [u8] @= []
+    wire.put_string(out: @body, s: g.group_id, what: "the group's identifier")?
+    wire.put_i32(out: @body, v: g.session_ms)
+    wire.put_i32(out: @body, v: g.rebalance_ms)
+    wire.put_string(out: @body, s: k.member_id, what: "the member's identifier")?
+    wire.put_string_or_null(out: @body, s: g.instance_id, what: "the instance's identifier")?
+    wire.put_string(out: @body, s: "consumer", what: "the protocol's type")?
+    wire.put_i32(out: @body, v: 1)
+    wire.put_string(out: @body, s: "range", what: "the assignor")?
+    wire.put_bytes(out: @body, data: protocol.subscription(g.topics)?)
+    c = groups.find_coordinator(@k.session, group_id: g.group_id)?
+    k.coordinator @ c.id
+    r @= cluster.send(@k.session, node_id: c.id, key: JOIN_GROUP, version: 5, body: body, extra_ms: g.rebalance_ms, answered: true)?
+    _ = wire.take_i32(@r, what: "JoinGroup")?
+    error = wire.take_i16(@r, what: "JoinGroup's error")?
+    generation = wire.take_i32(@r, what: "JoinGroup's generation")?
+    _ = wire.take_string(@r, what: "JoinGroup's protocol")?
+    leader = wire.take_string(@r, what: "JoinGroup's leader")?
+    member = wire.take_string(@r, what: "JoinGroup's member")?
+    count = wire.take_count(@r, what: "JoinGroup's members")?
+    members: [str] @= []
+    metadata: [[u8]] @= []
+
+    for _ in range(from: 0, to: count)
+        members @ members.push(wire.take_string(@r, what: "a member")?)
+        _ = wire.take_string(@r, what: "a member's instance")?
+        metadata @ metadata.push(wire.take_bytes(@r, what: "a member's subscription")?)
+
+    return ok(
+        Joined(error: error, generation_id: generation, leader: leader, member_id: member, members: members, metadata: metadata)
+    )
+
+# The assignments the leader hands out: each member's subscription read,
+# their topics' partitions counted, the range assignor run.
+#
+# - `k`: the consumer.
+# - `j`: what `JoinGroup` answered.
+function lead(@k: state.Group, j: Joined) -> [model.Assignment]?
+    subscriptions: [model.Subscription] @= []
+    topics: [str] @= []
+
+    for i in range(from: 0, to: j.members.len())
+        wanted = protocol.subscription_topics(j.metadata[i])?
+        subscriptions @ subscriptions.push(model.Subscription(member_id: j.members[i], topics: wanted))
+
+        for t in wanted
+            seen: bool @= false
+
+            for k2 in topics
+                if k2 == t
+                    seen @ true
+
+            if !seen
+                topics @ topics.push(t)
+
+    m = cluster.describe(@k.session, topics: topics, every: false)?
+    counts: {str: i64} @= {}
+
+    for t in m.topics
+        counts[t.name] @ t.partitions.len()
+
+    return ok(protocol.assign_range(subscriptions, counts: counts))
+
+# Sends `SyncGroup` 3 and answers the error and this member's partitions.
+#
+# - `k`: the consumer.
+# - `assignments`: what the leader hands out, [] for another member.
+function sync(@k: state.Group, assignments: [model.Assignment]) -> Synced?
+    g = k.options
+    body: [u8] @= []
+    wire.put_string(out: @body, s: g.group_id, what: "the group's identifier")?
+    wire.put_i32(out: @body, v: k.generation_id)
+    wire.put_string(out: @body, s: k.member_id, what: "the member's identifier")?
+    wire.put_string_or_null(out: @body, s: g.instance_id, what: "the instance's identifier")?
+    wire.put_i32(out: @body, v: assignments.len())
+
+    for a in assignments
+        wire.put_string(out: @body, s: a.member_id, what: "a member's identifier")?
+        wire.put_bytes(out: @body, data: protocol.assignment(a.partitions)?)
+
+    r @= cluster.send(@k.session, node_id: k.coordinator, key: SYNC_GROUP, version: 3, body: body, extra_ms: g.rebalance_ms, answered: true)?
+    _ = wire.take_i32(@r, what: "SyncGroup")?
+    error = wire.take_i16(@r, what: "SyncGroup's error")?
+    data = wire.take_bytes(@r, what: "SyncGroup's assignment")?
+
+    if error != 0
+        return ok(Synced(error: error, partitions: []))
+    return ok(Synced(error: 0, partitions: protocol.assignment_partitions(data)?))
+
+# What `SyncGroup` answered.
+record Synced
+    # The error, 0 for none.
+    error: i64
+    # This member's partitions.
+    partitions: [model.TopicPartition]
+
+# Joins the group, again until it is joined or the rebalance's time runs out,
+# then takes the partitions assigned and their positions.
+#
+# - `k`: the consumer.
+function join_group(@k: state.Group) -> ()?
+    g = k.options
+    until = cluster.now_ms() + g.rebalance_ms + k.session.options.wait_ms
+
+    while true
+        if cluster.now_ms() >= until
+            return fail(code: model.TIMEOUT, msg: f"the group \"{g.group_id}\" was not joined in time")
+        j = join_once(@k)?
+
+        if j.error == 79
+            k.member_id @ j.member_id
+            continue
+
+        if j.error == 25
+            k.member_id @ ""
+            continue
+
+        if j.error == 27 || groups.coordinator_moved(j.error)
+            cluster.pause_ms(200)
+            continue
+
+        if j.error != 0
+            return errors.failure(j.error, what: f"joining the group \"{g.group_id}\"", said_too: "")
+        k.member_id @ j.member_id
+        k.generation_id @ j.generation_id
+        k.leader @ j.leader == j.member_id
+
+        assignments: [model.Assignment] = if k.leader
+            lead(@k, j: j)?
+        else
+            []
+
+        synced = sync(@k, assignments: assignments)?
+
+        if synced.error == 25
+            k.member_id @ ""
+            continue
+
+        if synced.error == 27 || synced.error == 22 || groups.coordinator_moved(synced.error)
+            cluster.pause_ms(200)
+            continue
+
+        if synced.error != 0
+            return errors.failure(synced.error, what: f"joining the group \"{g.group_id}\"", said_too: "")
+        owned: [state.Owned] @= []
+
+        for p in synced.partitions
+            owned @ owned.push(
+                state.Owned(topic: p.topic, partition: p.partition, position: -1, committed: -1, paused: false)
+            )
+
+        k.owned @ owned
+        positions(@k)?
+        k.rejoin @ false
+        k.heartbeat_due @ cluster.now_ms() + g.heartbeat_ms
+
+        if g.auto_commit_ms > 0
+            k.commit_due @ cluster.now_ms() + g.auto_commit_ms
+        return ok()
+
+# Sets each partition's position: the group's offset, or the start the
+# options name where it keeps none.
+#
+# - `k`: the consumer.
+function positions(@k: state.Group) -> ()?
+    if k.owned.len() == 0
+        return ok()
+    kept = groups.fetch_offsets(@k.session, group_id: k.options.group_id)?
+
+    for i in range(from: 0, to: k.owned.len())
+        for o in kept
+            if o.topic == k.owned[i].topic && o.partition == k.owned[i].partition
+                k.owned[i].position @ o.offset
+                k.owned[i].committed @ o.offset
+
+        if k.owned[i].position < 0
+            topic = k.owned[i].topic
+            partition = k.owned[i].partition
+
+            match k.options.start
+                .earliest => k.owned[i].position @ fetching.list_offset(@k.session, topic: topic, partition: partition, at: -2)?
+                .latest   => k.owned[i].position @ fetching.list_offset(@k.session, topic: topic, partition: partition, at: -1)?
+                .none     => _ = 0
+
+    return ok()
+
+# Sends `Heartbeat` 3, noting where the group changed.
+#
+# - `k`: the consumer.
+function heartbeat(@k: state.Group) -> ()?
+    g = k.options
+    body: [u8] @= []
+    wire.put_string(out: @body, s: g.group_id, what: "the group's identifier")?
+    wire.put_i32(out: @body, v: k.generation_id)
+    wire.put_string(out: @body, s: k.member_id, what: "the member's identifier")?
+    wire.put_string_or_null(out: @body, s: g.instance_id, what: "the instance's identifier")?
+    r @= cluster.send(@k.session, node_id: k.coordinator, key: HEARTBEAT, version: 3, body: body, extra_ms: 0, answered: true)?
+    _ = wire.take_i32(@r, what: "Heartbeat")?
+    error = wire.take_i16(@r, what: "Heartbeat's error")?
+    k.heartbeat_due @ cluster.now_ms() + g.heartbeat_ms
+
+    if error == 0
+        return ok()
+
+    if error == 25
+        k.member_id @ ""
+
+    if error == 25 || error == 22 || error == 27 || groups.coordinator_moved(error)
+        k.rejoin @ true
+        return ok()
+    return errors.failure(error, what: f"the heartbeat of the group \"{g.group_id}\"", said_too: "")
+
+test "check: a group's identifier empty, no topic, a heartbeat not below the session, a commit's interval below 0"
+    g = model.GroupOptions(
+        group_id: "g",
+        topics: ["t"],
+        session_ms: 45000,
+        rebalance_ms: 300000,
+        heartbeat_ms: 3000,
+        start: .earliest,
+        auto_commit_ms: 5000,
+        instance_id: ""
+    )
+    check(g).must()
+    empty @= g
+    empty.group_id @ ""
+    assert check(empty).is_err()
+    none @= g
+    none.topics @ []
+    assert check(none).is_err()
+    slow @= g
+    slow.heartbeat_ms @ 45000
+    assert check(slow).is_err()
+    never @= g
+    never.auto_commit_ms @ -1
+    assert check(never).is_err()

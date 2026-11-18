@@ -1,0 +1,357 @@
+# The methods a client sends, each written as a method frame's payload: its
+# class and method numbers, then its fields in the order AMQP 0-9-1 lays
+# them out, the bits of one field after another packed into one byte, the
+# first in the lowest bit. A text past 255 bytes is refused here, before
+# anything is sent.
+
+use amqp/internal/wire
+use bytes
+
+# A payload begun with `class_id` and `method_id`.
+#
+# - `class_id`: the class.
+# - `method_id`: the method.
+function begun(class_id: i64, method_id: i64) -> [u8]
+    out: [u8] @= []
+    wire.put_u16(@out, v: class_id)
+    wire.put_u16(@out, v: method_id)
+    return out
+
+# The byte holding `flags`, the first in the lowest bit.
+#
+# - `flags`: the bits, eight at most.
+function packed(flags: [bool]) -> u8
+    v: i64 @= 0
+    bit: i64 @= 1
+
+    for f in flags
+        if f
+            v @ v | bit
+        bit @ bit << 1
+
+    return to_u8(v).must()
+
+# `connection.start-ok`: the client's properties, the mechanism, its
+# response and the locale.
+#
+# - `properties`: a table, its length first.
+# - `mechanism`: `PLAIN` or `AMQPLAIN`.
+# - `response`: the mechanism's response.
+# - `locale`: the locale.
+function start_ok(properties: [u8], mechanism: str, response: [u8], locale: str) -> [u8]?
+    out @= begun(class_id: 10, method_id: 11)
+    bytes.push_all(to: @out, from: properties)
+    wire.put_shortstr(@out, s: mechanism, what: "the mechanism")?
+    wire.put_longstr(out: @out, data: response)
+    wire.put_shortstr(@out, s: locale, what: "the locale")?
+    return ok(out)
+
+# `connection.tune-ok`: what the client agrees.
+#
+# - `channel_max`: the highest channel number.
+# - `frame_max`: the largest frame.
+# - `heartbeat_s`: the heartbeat's seconds.
+function tune_ok(channel_max: i64, frame_max: i64, heartbeat_s: i64) -> [u8]
+    out @= begun(class_id: 10, method_id: 31)
+    wire.put_u16(@out, v: channel_max)
+    wire.put_u32(@out, v: frame_max)
+    wire.put_u16(@out, v: heartbeat_s)
+    return out
+
+# `connection.open`: the virtual host.
+#
+# - `vhost`: the virtual host.
+function open(vhost: str) -> [u8]?
+    out @= begun(class_id: 10, method_id: 40)
+    wire.put_shortstr(@out, s: vhost, what: "the virtual host")?
+    out @ out.push(0)
+    out @ out.push(0)
+    return ok(out)
+
+# `connection.close` (class 10, method 50) or `channel.close` (20, 40):
+# why, and what caused it, nothing here.
+#
+# - `class_id`: 10 for the connection, 20 for a channel.
+# - `code`: the reply code.
+# - `text`: the reply text.
+function close(class_id: i64, code: i64, text: str) -> [u8]?
+    method_id = if class_id == 10
+        50
+    else
+        40
+
+    out @= begun(class_id: class_id, method_id: method_id)
+    wire.put_u16(@out, v: code)
+    wire.put_shortstr(@out, s: text, what: "the reply text")?
+    wire.put_u16(@out, v: 0)
+    wire.put_u16(@out, v: 0)
+    return ok(out)
+
+# `connection.close-ok` (10, 51) or `channel.close-ok` (20, 41).
+#
+# - `class_id`: 10 or 20.
+function close_ok(class_id: i64) -> [u8]
+    if class_id == 10
+        return begun(class_id: 10, method_id: 51)
+    return begun(class_id: 20, method_id: 41)
+
+# `connection.update-secret`: a new secret and why.
+#
+# - `secret`: the secret.
+# - `reason`: why.
+function update_secret(secret: str, reason: str) -> [u8]?
+    out @= begun(class_id: 10, method_id: 70)
+    wire.put_longstr(out: @out, data: bytes.from_text(secret))
+    wire.put_shortstr(@out, s: reason, what: "the reason")?
+    return ok(out)
+
+# `channel.open`.
+function channel_open() -> [u8]
+    out @= begun(class_id: 20, method_id: 10)
+    out @ out.push(0)
+    return out
+
+# `channel.flow` (20, 20) or its answer `channel.flow-ok` (20, 21).
+#
+# - `method_id`: 20 or 21.
+# - `active`: whether the flow goes on.
+function flow(method_id: i64, active: bool) -> [u8]
+    out @= begun(class_id: 20, method_id: method_id)
+    out @ out.push(packed([active]))
+    return out
+
+# `exchange.declare`.
+#
+# - `name`: the exchange.
+# - `kind`: its kind.
+# - `passive`: whether it is only asked about.
+# - `durable`: whether it outlives a restart.
+# - `auto_delete`: whether it goes with its last binding.
+# - `internal`: whether only exchanges publish to it.
+# - `arguments`: a table, its length first.
+function exchange_declare(name: str, kind: str, passive: bool, durable: bool, auto_delete: bool, internal: bool, arguments: [u8]) -> [u8]?
+    out @= begun(class_id: 40, method_id: 10)
+    wire.put_u16(@out, v: 0)
+    wire.put_shortstr(@out, s: name, what: "the exchange's name")?
+    wire.put_shortstr(@out, s: kind, what: "the exchange's kind")?
+    out @ out.push(packed([passive, durable, auto_delete, internal, false]))
+    bytes.push_all(to: @out, from: arguments)
+    return ok(out)
+
+# `exchange.delete`.
+#
+# - `name`: the exchange.
+# - `if_unused`: whether only an exchange with no binding goes.
+function exchange_delete(name: str, if_unused: bool) -> [u8]?
+    out @= begun(class_id: 40, method_id: 20)
+    wire.put_u16(@out, v: 0)
+    wire.put_shortstr(@out, s: name, what: "the exchange's name")?
+    out @ out.push(packed([if_unused, false]))
+    return ok(out)
+
+# `exchange.bind` (40, 30) or `exchange.unbind` (40, 40).
+#
+# - `method_id`: 30 or 40.
+# - `destination`: the exchange routed to.
+# - `source`: the exchange routed from.
+# - `routing_key`: the key.
+# - `arguments`: a table, its length first.
+function exchange_binding(method_id: i64, destination: str, source: str, routing_key: str, arguments: [u8]) -> [u8]?
+    out @= begun(class_id: 40, method_id: method_id)
+    wire.put_u16(@out, v: 0)
+    wire.put_shortstr(@out, s: destination, what: "the destination's name")?
+    wire.put_shortstr(@out, s: source, what: "the source's name")?
+    wire.put_shortstr(@out, s: routing_key, what: "the routing key")?
+    out @ out.push(0)
+    bytes.push_all(to: @out, from: arguments)
+    return ok(out)
+
+# `queue.declare`.
+#
+# - `name`: the queue, "" for one the server names.
+# - `passive`: whether it is only asked about.
+# - `durable`: whether it outlives a restart.
+# - `exclusive`: whether only this connection uses it.
+# - `auto_delete`: whether it goes with its last consumer.
+# - `arguments`: a table, its length first.
+function queue_declare(name: str, passive: bool, durable: bool, exclusive: bool, auto_delete: bool, arguments: [u8]) -> [u8]?
+    out @= begun(class_id: 50, method_id: 10)
+    wire.put_u16(@out, v: 0)
+    wire.put_shortstr(@out, s: name, what: "the queue's name")?
+    out @ out.push(packed([passive, durable, exclusive, auto_delete, false]))
+    bytes.push_all(to: @out, from: arguments)
+    return ok(out)
+
+# `queue.bind` (50, 20) or `queue.unbind` (50, 50), which has no no-wait.
+#
+# - `method_id`: 20 or 50.
+# - `queue_name`: the queue.
+# - `exchange_name`: the exchange.
+# - `routing_key`: the key.
+# - `arguments`: a table, its length first.
+function queue_binding(method_id: i64, queue_name: str, exchange_name: str, routing_key: str, arguments: [u8]) -> [u8]?
+    out @= begun(class_id: 50, method_id: method_id)
+    wire.put_u16(@out, v: 0)
+    wire.put_shortstr(@out, s: queue_name, what: "the queue's name")?
+    wire.put_shortstr(@out, s: exchange_name, what: "the exchange's name")?
+    wire.put_shortstr(@out, s: routing_key, what: "the routing key")?
+
+    if method_id == 20
+        out @ out.push(0)
+    bytes.push_all(to: @out, from: arguments)
+    return ok(out)
+
+# `queue.purge`.
+#
+# - `name`: the queue.
+function queue_purge(name: str) -> [u8]?
+    out @= begun(class_id: 50, method_id: 30)
+    wire.put_u16(@out, v: 0)
+    wire.put_shortstr(@out, s: name, what: "the queue's name")?
+    out @ out.push(0)
+    return ok(out)
+
+# `queue.delete`.
+#
+# - `name`: the queue.
+# - `if_unused`: whether only a queue with no consumer goes.
+# - `if_empty`: whether only an empty queue goes.
+function queue_delete(name: str, if_unused: bool, if_empty: bool) -> [u8]?
+    out @= begun(class_id: 50, method_id: 40)
+    wire.put_u16(@out, v: 0)
+    wire.put_shortstr(@out, s: name, what: "the queue's name")?
+    out @ out.push(packed([if_unused, if_empty, false]))
+    return ok(out)
+
+# `basic.qos`.
+#
+# - `prefetch_size`: bytes, 0 for no limit.
+# - `prefetch_count`: messages, 0 for no limit.
+# - `global`: whether the limit is the channel's.
+function qos(prefetch_size: i64, prefetch_count: i64, global: bool) -> [u8]
+    out @= begun(class_id: 60, method_id: 10)
+    wire.put_u32(@out, v: prefetch_size)
+    wire.put_u16(@out, v: prefetch_count)
+    out @ out.push(packed([global]))
+    return out
+
+# `basic.consume`.
+#
+# - `queue_name`: the queue.
+# - `tag`: the consumer's tag, "" for the server's.
+# - `no_local`: whether its own connection's messages are left out.
+# - `no_ack`: whether the server counts each delivery acknowledged.
+# - `exclusive`: whether it is the queue's only consumer.
+# - `arguments`: a table, its length first.
+function consume(queue_name: str, tag: str, no_local: bool, no_ack: bool, exclusive: bool, arguments: [u8]) -> [u8]?
+    out @= begun(class_id: 60, method_id: 20)
+    wire.put_u16(@out, v: 0)
+    wire.put_shortstr(@out, s: queue_name, what: "the queue's name")?
+    wire.put_shortstr(@out, s: tag, what: "the consumer's tag")?
+    out @ out.push(packed([no_local, no_ack, exclusive, false]))
+    bytes.push_all(to: @out, from: arguments)
+    return ok(out)
+
+# `basic.cancel`.
+#
+# - `tag`: the consumer's tag.
+function cancel(tag: str) -> [u8]?
+    out @= begun(class_id: 60, method_id: 30)
+    wire.put_shortstr(@out, s: tag, what: "the consumer's tag")?
+    out @ out.push(0)
+    return ok(out)
+
+# `basic.publish`.
+#
+# - `exchange_name`: the exchange.
+# - `routing_key`: the key.
+# - `mandatory`: whether a message no queue takes comes back.
+function publish(exchange_name: str, routing_key: str, mandatory: bool) -> [u8]?
+    out @= begun(class_id: 60, method_id: 40)
+    wire.put_u16(@out, v: 0)
+    wire.put_shortstr(@out, s: exchange_name, what: "the exchange's name")?
+    wire.put_shortstr(@out, s: routing_key, what: "the routing key")?
+    out @ out.push(packed([mandatory, false]))
+    return ok(out)
+
+# `basic.get`.
+#
+# - `queue_name`: the queue.
+# - `no_ack`: whether the server counts it acknowledged.
+function get(queue_name: str, no_ack: bool) -> [u8]?
+    out @= begun(class_id: 60, method_id: 70)
+    wire.put_u16(@out, v: 0)
+    wire.put_shortstr(@out, s: queue_name, what: "the queue's name")?
+    out @ out.push(packed([no_ack]))
+    return ok(out)
+
+# `basic.ack` (60, 80), `basic.reject` (60, 90) or `basic.nack` (60, 120):
+# a delivery tag and the bits after it.
+#
+# - `method_id`: 80, 90 or 120.
+# - `tag`: the delivery tag.
+# - `flags`: `multiple` for an ack, `requeue` for a reject, both for a
+#   nack.
+function settle(method_id: i64, tag: i64, flags: [bool]) -> [u8]
+    out @= begun(class_id: 60, method_id: method_id)
+    wire.put_i64(@out, v: tag)
+    out @ out.push(packed(flags))
+    return out
+
+# `basic.recover`.
+#
+# - `requeue`: whether the messages go back to their queues.
+function recover(requeue: bool) -> [u8]
+    out @= begun(class_id: 60, method_id: 110)
+    out @ out.push(packed([requeue]))
+    return out
+
+# A method of no field: `confirm.select` (85, 10) with no no-wait,
+# `tx.select` (90, 10), `tx.commit` (90, 20), `tx.rollback` (90, 30).
+#
+# - `class_id`: the class.
+# - `method_id`: the method.
+function bare(class_id: i64, method_id: i64) -> [u8]
+    out @= begun(class_id: class_id, method_id: method_id)
+
+    if class_id == 85
+        out @ out.push(0)
+    return out
+
+test "packed: no bit, the first, the fifth, every one"
+    assert packed([]) == 0 && packed([true]) == 1 && packed([false, false, false, false, true]) == 16
+    assert packed([true, true, true, true, true, true, true, true]) == 255
+
+test "start_ok, tune_ok, open, close, close_ok: the bytes pika's encoder writes"
+    assert start_ok(properties: [0, 0, 0, 0], mechanism: "PLAIN", response: [0, 'u', 0, 'p'], locale: "en_US").must() == [0, 10, 0, 11, 0, 0, 0, 0, 5, 'P', 'L', 'A', 'I', 'N', 0, 0, 0, 4, 0, 'u', 0, 'p', 5, 'e', 'n', '_', 'U', 'S']
+    assert tune_ok(channel_max: 2047, frame_max: 131072, heartbeat_s: 60) == [0, 10, 0, 31, 7, 255, 0, 2, 0, 0, 0, 60]
+    assert open("/").must() == [0, 10, 0, 40, 1, '/', 0, 0]
+    assert close(class_id: 10, code: 200, text: "ok").must() == [0, 10, 0, 50, 0, 200, 2, 'o', 'k', 0, 0, 0, 0]
+    assert close(class_id: 20, code: 200, text: "").must() == [0, 20, 0, 40, 0, 200, 0, 0, 0, 0, 0]
+    assert close_ok(10) == [0, 10, 0, 51] && close_ok(20) == [0, 20, 0, 41]
+    assert open(repeat("v", 256)).is_err()
+
+test "exchange_declare, exchange_delete, exchange_binding: the bytes pika's encoder writes"
+    assert exchange_declare(name: "x", kind: "topic", passive: false, durable: true, auto_delete: false, internal: false, arguments: [0, 0, 0, 0]).must() == [0, 40, 0, 10, 0, 0, 1, 'x', 5, 't', 'o', 'p', 'i', 'c', 2, 0, 0, 0, 0]
+    assert exchange_delete("x", if_unused: true).must() == [0, 40, 0, 20, 0, 0, 1, 'x', 1]
+    assert exchange_binding(30, destination: "d", source: "s", routing_key: "k", arguments: [0, 0, 0, 0]).must() == [0, 40, 0, 30, 0, 0, 1, 'd', 1, 's', 1, 'k', 0, 0, 0, 0, 0]
+
+test "queue_declare, queue_binding, queue_purge, queue_delete: the bytes pika's encoder writes, unbind without its bit"
+    assert queue_declare("", passive: false, durable: false, exclusive: true, auto_delete: true, arguments: [0, 0, 0, 0]).must() == [0, 50, 0, 10, 0, 0, 0, 12, 0, 0, 0, 0]
+    assert queue_binding(20, queue_name: "q", exchange_name: "x", routing_key: "k", arguments: [0, 0, 0, 0]).must() == [0, 50, 0, 20, 0, 0, 1, 'q', 1, 'x', 1, 'k', 0, 0, 0, 0, 0]
+    assert queue_binding(50, queue_name: "q", exchange_name: "x", routing_key: "k", arguments: [0, 0, 0, 0]).must() == [0, 50, 0, 50, 0, 0, 1, 'q', 1, 'x', 1, 'k', 0, 0, 0, 0]
+    assert queue_purge("q").must() == [0, 50, 0, 30, 0, 0, 1, 'q', 0]
+    assert queue_delete("q", if_unused: false, if_empty: true).must() == [0, 50, 0, 40, 0, 0, 1, 'q', 2]
+
+test "qos, consume, cancel, publish, get, settle, recover, bare: the bytes pika's encoder writes"
+    assert qos(prefetch_size: 0, prefetch_count: 10, global: false) == [0, 60, 0, 10, 0, 0, 0, 0, 0, 10, 0]
+    assert consume(queue_name: "q", tag: "t", no_local: false, no_ack: true, exclusive: false, arguments: [0, 0, 0, 0]).must() == [0, 60, 0, 20, 0, 0, 1, 'q', 1, 't', 2, 0, 0, 0, 0]
+    assert cancel("t").must() == [0, 60, 0, 30, 1, 't', 0]
+    assert publish(exchange_name: "", routing_key: "q", mandatory: true).must() == [0, 60, 0, 40, 0, 0, 0, 1, 'q', 1]
+    assert get("q", no_ack: true).must() == [0, 60, 0, 70, 0, 0, 1, 'q', 1]
+    assert settle(method_id: 80, tag: 1, flags: [true]) == [0, 60, 0, 80, 0, 0, 0, 0, 0, 0, 0, 1, 1]
+    assert settle(method_id: 120, tag: 258, flags: [false, true]) == [0, 60, 0, 120, 0, 0, 0, 0, 0, 0, 1, 2, 2]
+    assert recover(true) == [0, 60, 0, 110, 1]
+    assert bare(class_id: 85, method_id: 10) == [0, 85, 0, 10, 0] && bare(class_id: 90, method_id: 20) == [0, 90, 0, 20]
+    assert flow(20, active: true) == [0, 20, 0, 20, 1] && channel_open() == [0, 20, 0, 10, 0]
+    assert update_secret(secret: "s", reason: "r").must() == [0, 10, 0, 70, 0, 0, 0, 1, 's', 1, 'r']

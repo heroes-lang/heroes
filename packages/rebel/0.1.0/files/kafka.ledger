@@ -1,0 +1,306 @@
+# The ledger of `kafka`: what a program does with a Kafka cluster, measured
+# against Go's github.com/segmentio/kafka-go v0.4.51 and
+# github.com/twmb/franz-go v1.22.3 (`kgo`, and `kerr` for the errors; their
+# `go doc -all`, fetched into the scratch folder on 2026-11-18), Python's
+# kafka-python 3.0.13 and confluent-kafka 2.16.2 (`dir` of their producers,
+# consumers, admin clients and messages, installed into the scratch folder
+# the same day), and Rust's rdkafka 0.39.0 (its docs.rs items, read the same
+# day).
+#
+# The layout of each request and answer was read from the message
+# definitions Apache Kafka publishes, which kafka-python carries as JSON, at
+# the version this client speaks: ApiVersions 2, Metadata 8, Produce 8, Fetch
+# 11, ListOffsets 5, FindCoordinator 2, OffsetCommit 7, OffsetFetch 5,
+# JoinGroup 5, SyncGroup 3, Heartbeat 3, LeaveGroup 3, SaslHandshake 1,
+# SaslAuthenticate 1, CreateTopics 4, DeleteTopics 3, CreatePartitions 1,
+# DeleteRecords 1, ListGroups 2, DescribeGroups 4, DeleteGroups 1: the
+# newest of each that is not flexible, all of them read by Kafka 2.4 to 4.x.
+# The expected values of the tests were asked of kafka-python (a record
+# batch's bytes, a gzip batch, a transactional batch, MurmurHash2's
+# partitions, the range assignor, a subscription's bytes), of confluent-kafka
+# (MurmurHash2's partitions), of franz-go's `kerr` (the errors' names) and of
+# RFC 7677 (SCRAM-SHA-256's example). The live run, on 2026-11-18, reached
+# Apache Kafka 4.1.1 (the image apache/kafka:4.1.1, KRaft, one node) in a
+# container of this Mac: plain, SASL PLAIN, SCRAM-SHA-256 and SCRAM-SHA-512,
+# and TLS.
+
+capability kafka/connect  a client of a cluster: the first broker that answers, its versions asked, the cluster's brokers learned
+  heroes  kafka.connect, kafka.options, kafka.Options, kafka.Client, kafka.close, kafka.is_closed, kafka.DEFAULT_PORT
+  go      Dial, DialContext, Dialer, Dialer.Dial, Dialer.DialContext, NewConn, NewConnWith, Conn, ConnConfig, Conn.Close, Client, Transport, Transport.CloseIdleConnections, kgo.NewClient, kgo.SeedBrokers, kgo.ClientID, kgo.DialTimeout, kgo.RequestRetries, kgo.RetryTimeout, kgo.Client.Close, kgo.Client.SeedBrokers, kgo.Client.UpdateSeedBrokers, kgo.Client.Ping, kgo.Client.DiscoveredBrokers, kgo.Client.Broker
+  rust    config::ClientConfig, client::Client, config::FromClientConfig
+  python  KafkaProducer, KafkaConsumer, KafkaAdminClient, KafkaProducer.close, KafkaConsumer.close, KafkaAdminClient.close, KafkaProducer.bootstrap_connected, KafkaConsumer.bootstrap_connected, confluent_kafka.Producer, confluent_kafka.Consumer, confluent_kafka.admin.AdminClient
+  note    one client for producing, fetching and the cluster's administration, as kafka-go's Client and franz-go's kgo.Client are; a consumer of a group is its own value, `subscribe`'s
+
+capability kafka/tls  TLS on every connection, the broker's certificate checked
+  heroes  kafka.Options (tls, roots)
+  go      Dialer.TLS, kgo.DialTLS, kgo.DialTLSConfig
+  rust    ClientConfig (security.protocol ssl)
+  python  KafkaProducer(security_protocol, ssl_cafile), confluent_kafka (security.protocol)
+  note    a client certificate is not presented, which `tls` does not offer
+
+capability kafka/sasl  SASL PLAIN, SCRAM-SHA-256 and SCRAM-SHA-512, over TLS or not
+  heroes  kafka.Options (sasl), kafka.Sasl
+  go      Dialer.SASLMechanism, ScramMechanism, sasl/plain.Mechanism, sasl/scram.Mechanism, sasl/scram.SHA256, sasl/scram.SHA512, kgo.SASL
+  rust    ClientConfig (sasl.mechanism, sasl.username, sasl.password)
+  python  KafkaProducer(sasl_mechanism, sasl_plain_username, sasl_plain_password), confluent_kafka.Producer.set_sasl_credentials, confluent_kafka.Consumer.set_sasl_credentials, confluent_kafka.admin.AdminClient.set_sasl_credentials
+  note    the server's SCRAM signature is checked, so a server that does not know the password cannot pass for one that does
+
+capability kafka/sasl-other  SASL GSSAPI (Kerberos), OAUTHBEARER, AWS's MSK IAM
+  heroes  pending: OAUTHBEARER is one message carrying a token, which waits for a variant of `Sasl` and its refresh; GSSAPI needs the system's Kerberos library, which no package of Rebel binds; MSK IAM signs with AWS's Signature Version 4, `s3`'s, above this package's layer
+  go      -
+  rust    client::OAuthToken
+  python  KafkaProducer(sasl_mechanism="GSSAPI" or "OAUTHBEARER"), confluent_kafka (sasl.oauthbearer.*)
+
+capability kafka/api-versions  the versions each request a broker reads, and this client's checked against them
+  heroes  kafka.api_versions_of, kafka.ApiVersion
+  go      ApiVersion, ApiVersion.Format, Conn.ApiVersions, Client.ApiVersions, Version, Version.Marshal, Version.Unmarshal, kgo.MaxVersions, kgo.MinVersions
+  rust    types::RDKafkaApiKey
+  python  KafkaAdminClient.api_versions, KafkaAdminClient.get_broker_version_data
+  note    a broker that does not read the version this client speaks is `unsupported`, naming its range
+
+capability kafka/metadata  the cluster's brokers, controller, topics, partitions, leaders and replicas
+  heroes  kafka.metadata, kafka.partitions_of, kafka.Metadata, kafka.Broker, kafka.Topic, kafka.Partition
+  go      Conn.Brokers, Conn.Broker, Conn.Controller, Conn.ReadPartitions, Dialer.LookupLeader, Dialer.LookupPartition, Dialer.LookupPartitions, LookupPartition, LookupPartitions, Client.Metadata, Broker, Partition, Topic, kgo.Client.ForceMetadataRefresh, kgo.Client.RequestCachedMetadata, kgo.Client.PartitionLeader, kgo.BrokerMetadata, kgo.TopicMetadata, kgo.PartitionMetadata, kgo.MetadataMaxAge, kgo.MetadataMinAge, kgo.AllowAutoTopicCreation
+  rust    metadata::Metadata, metadata::MetadataBroker, metadata::MetadataTopic, metadata::MetadataPartition, consumer::Consumer::fetch_metadata, producer::Producer::client
+  python  KafkaProducer.partitions_for, KafkaConsumer.partitions_for_topic, KafkaConsumer.topics, KafkaAdminClient.describe_cluster, KafkaAdminClient.describe_topics, KafkaAdminClient.list_topics, KafkaAdminClient.describe_topic_partitions, confluent_kafka.Producer.list_topics, confluent_kafka.Consumer.list_topics, confluent_kafka.Producer.cluster_id, confluent_kafka.admin.AdminClient.describe_cluster, confluent_kafka.admin.AdminClient.describe_topics, confluent_kafka.admin.AdminClient.list_topics, confluent_kafka.TopicPartitionInfo, confluent_kafka.Node
+  note    a topic asked that does not exist is `not_found`; a leader not chosen yet is asked again within the call's time
+
+capability kafka/topics  topics made with their partitions, copies and configuration, and deleted
+  heroes  kafka.create_topics, kafka.delete_topics, kafka.new_topic, kafka.NewTopic, kafka.Config
+  go      Conn.CreateTopics, Conn.DeleteTopics, Client.CreateTopics, Client.DeleteTopics, TopicConfig, ConfigEntry, ReplicaAssignment
+  rust    admin::AdminClient::create_topics, admin::AdminClient::delete_topics, admin::NewTopic, admin::TopicReplication, admin::AdminOptions
+  python  KafkaAdminClient.create_topics, KafkaAdminClient.delete_topics, KafkaAdminClient.wait_for_topics, confluent_kafka.admin.AdminClient.create_topics, confluent_kafka.admin.AdminClient.delete_topics
+  note    a topic made already is `exists`, the others of the call still made; replicas placed by hand are not asked, the brokers place them
+
+capability kafka/partitions  partitions added to a topic
+  heroes  kafka.create_partitions
+  go      Client.CreatePartitions, TopicPartitionsConfig
+  rust    admin::AdminClient::create_partitions, admin::NewPartitions
+  python  KafkaAdminClient.create_partitions, confluent_kafka.admin.AdminClient.create_partitions
+
+capability kafka/delete-records  the start of a partition's log moved, the messages before it deleted
+  heroes  kafka.delete_records
+  go      -
+  rust    admin::AdminClient::delete_records
+  python  KafkaAdminClient.delete_records, confluent_kafka.admin.AdminClient.delete_records
+
+capability kafka/configs  the configuration of topics and brokers read and changed
+  heroes  pending: DescribeConfigs, AlterConfigs and IncrementalAlterConfigs are requests of their own, not yet written
+  go      Client.DescribeConfigs, Client.AlterConfigs, Client.IncrementalAlterConfigs, ConfigOperation
+  rust    admin::AdminClient::describe_configs, admin::AdminClient::alter_configs, admin::AlterConfig, admin::ConfigEntry, admin::ConfigResource, admin::ConfigSource, admin::ResourceSpecifier, admin::OwnedResourceSpecifier
+  python  KafkaAdminClient.describe_configs, KafkaAdminClient.alter_configs, KafkaAdminClient.list_config_resources, KafkaAdminClient.reset_configs, confluent_kafka.admin.AdminClient.describe_configs, confluent_kafka.admin.AdminClient.alter_configs, confluent_kafka.admin.AdminClient.incremental_alter_configs
+
+capability kafka/acls  access control lists made, described and deleted
+  heroes  pending: CreateAcls, DescribeAcls and DeleteAcls are requests of their own, not yet written
+  go      Client.CreateACLs, Client.DescribeACLs, Client.DeleteACLs, ACLEntry, ACLFilter, ACLDescription, ACLResource, ACLOperationType, ACLPermissionType, PatternType, ResourceType, DeleteACLsFilter, DeleteACLsMatchingACLs, DeleteACLsResult
+  rust    -
+  python  KafkaAdminClient.create_acls, KafkaAdminClient.describe_acls, KafkaAdminClient.delete_acls, confluent_kafka.admin.AdminClient.create_acls, confluent_kafka.admin.AdminClient.describe_acls, confluent_kafka.admin.AdminClient.delete_acls
+
+capability kafka/cluster-operations  quotas, SCRAM credentials, partition reassignments, leader elections, log directories, features, the KRaft quorum
+  heroes  pending: each is a request of its own an operator's tool sends, not yet written
+  go      Client.AlterClientQuotas, Client.DescribeClientQuotas, AlterClientQuotaEntity, AlterClientQuotaEntry, AlterClientQuotaOps, DescribeClientQuotasEntity, DescribeClientQuotasValue, Client.AlterUserScramCredentials, Client.DescribeUserScramCredentials, UserScramCredentialsDeletion, UserScramCredentialsUpsertion, UserScramCredentialsUser, DescribeUserScramCredentialsCredentialInfo, Client.AlterPartitionReassignments, Client.ListPartitionReassignments, Client.ElectLeaders
+  rust    -
+  python  KafkaAdminClient.alter_partition_reassignments, KafkaAdminClient.list_partition_reassignments, KafkaAdminClient.alter_replica_log_dirs, KafkaAdminClient.describe_log_dirs, KafkaAdminClient.alter_user_scram_credentials, KafkaAdminClient.describe_user_scram_credentials, KafkaAdminClient.elect_leaders, KafkaAdminClient.describe_features, KafkaAdminClient.update_features, KafkaAdminClient.describe_metadata_quorum, confluent_kafka.admin.AdminClient.alter_user_scram_credentials, confluent_kafka.admin.AdminClient.describe_user_scram_credentials, confluent_kafka.admin.AdminClient.elect_leaders
+
+capability kafka/produce  messages written to one partition in one batch, the leader's answer read
+  heroes  kafka.produce, kafka.Produced
+  go      Conn.WriteMessages, Conn.WriteCompressedMessages, Conn.WriteCompressedMessagesAt, Conn.Write, Conn.SetRequiredAcks, DialLeader, Dialer.DialLeader, Client.Produce, Client.RawProduce, kgo.Client.ProduceSync, kgo.ProduceResult, kgo.ProduceResults, kgo.ProduceResults.First, kgo.ProduceResults.FirstErr
+  rust    producer::BaseProducer, producer::BaseRecord, producer::Producer
+  python  -
+  note    a leader moved or not ready is retried within `Options.wait_ms`; without idempotence a batch whose answer was lost may be written twice
+
+capability kafka/send  messages written to their topics and partitions, a batch for each partition and a request for each leader, their offsets answered
+  heroes  kafka.send, kafka.message, kafka.with_key, kafka.with_header, kafka.Message
+  go      Writer, NewWriter, WriterConfig, WriterConfig.Validate, Writer.WriteMessages, Writer.Close, Message, WriteErrors, WriteErrors.Count, WriteErrors.Error, MessageTooLargeError, kgo.Client.Produce, kgo.Client.TryProduce, kgo.Record, kgo.KeySliceRecord, kgo.KeyStringRecord, kgo.SliceRecord, kgo.StringRecord, kgo.DefaultProduceTopic, kgo.DefaultProduceTopicAlways, kgo.ProducerBatchMaxBytes, kgo.ProduceRequestTimeout, kgo.RecordRetries, kgo.RecordDeliveryTimeout, kgo.UnknownTopicRetries
+  rust    producer::FutureProducer, producer::FutureRecord, producer::ThreadedProducer, producer::future_producer::Delivery, producer::DeliveryFuture, producer::DeliveryResult
+  python  KafkaProducer.send, confluent_kafka.Producer.produce, confluent_kafka.Producer.produce_batch, confluent_kafka.Message
+  note    a call writes what it is given and answers when every partition answered, so batching is the program's list; Go's Writer and Python's send batch in the background
+
+capability kafka/linger  a producer that buffers messages and writes them in the background after a linger
+  heroes  refused: a write in the background needs a thread the program does not own, and its failure would come back to no call; the program collects its messages and calls `send` once
+  go      WriterConfig (BatchSize, BatchBytes, BatchTimeout, Async), kgo.ProducerLinger, kgo.ManualFlushing, kgo.MaxBufferedRecords, kgo.MaxBufferedBytes, kgo.MaxProduceRequestsInflightPerBroker, kgo.Client.Flush, kgo.Client.BufferedProduceRecords, kgo.Client.BufferedProduceBytes, kgo.Client.AbortBufferedRecords, kgo.Client.UnsafeAbortBufferedRecords, kgo.Client.EnsureProduceConnectionIsOpen
+  rust    producer::Producer::flush, producer::Producer::purge, producer::PurgeConfig
+  python  KafkaProducer.flush, confluent_kafka.Producer.flush, confluent_kafka.Producer.poll, confluent_kafka.Producer.purge
+
+capability kafka/partitioner  the partition a message goes to: by its key as Java's client hashes it, one after another without a key, or the program's own
+  heroes  kafka.partition_of, kafka.send
+  go      Murmur2Balancer, Murmur2Balancer.Balance, RoundRobin, RoundRobin.Balance, Balancer, BalancerFunc, BalancerFunc.Balance, kgo.StickyKeyPartitioner, kgo.KafkaHasher, kgo.RoundRobinPartitioner, kgo.ManualPartitioner, kgo.RecordPartitioner, kgo.Partitioner, kgo.TopicPartitioner, kgo.PartitionerHasher
+  rust    producer::Partitioner, producer::NoCustomPartitioner, producer::PARTITION_UA
+  python  kafka.partitioner (DefaultPartitioner, murmur2), confluent_kafka.murmur2
+  note    a keyed message goes where Java's client puts it, MurmurHash2 with its sign bit cleared; a keyless one goes one partition after another per topic, as kafka-go's RoundRobin does, where Java's client sticks to one per batch
+
+capability kafka/partitioner-other  the other hashes of the partition: CRC-32 (librdkafka's), FNV-1a, Sarama's, least bytes, sticky, rack aware
+  heroes  refused: a message names its partition, so a program with another rule computes it, `hash.crc32` and `hash.fnv1a_32` at hand; a second rule here would be one more way to do what the field does
+  go      CRC32Balancer, CRC32Balancer.Balance, Hash, Hash.Balance, ReferenceHash, ReferenceHash.Balance, LeastBytes, LeastBytes.Balance, kgo.BasicConsistentPartitioner, kgo.LeastBackupPartitioner, kgo.StickyPartitioner, kgo.UniformBytesPartitioner, kgo.SaramaHasher, kgo.SaramaCompatHasher, kgo.TopicBackupPartitioner, kgo.TopicBackupIter, kgo.TopicPartitionerOnNewBatch, kgo.RackAwarePartitioning
+  rust    -
+  python  confluent_kafka.fnv1a, confluent_kafka.consistent
+
+capability kafka/acks  the acknowledgement a produce waits for: none, the leader's, every copy in step's
+  heroes  kafka.Options (acks), kafka.Acks
+  go      RequiredAcks, RequiredAcks.String, RequiredAcks.MarshalText, RequiredAcks.UnmarshalText, kgo.RequiredAcks, kgo.Acks, kgo.NoAck, kgo.LeaderAck, kgo.AllISRAcks
+  rust    ClientConfig (acks)
+  python  KafkaProducer(acks)
+
+capability kafka/compression-gzip  batches compressed by gzip, written and read
+  heroes  kafka.Options (compression), kafka.Compression
+  go      Compression, CompressionCodec, compress/gzip, kgo.GzipCompression, kgo.NoCompression, kgo.CompressionCodec, kgo.CompressionCodec.WithLevel, kgo.ProducerBatchCompression, kgo.MaxDecompressBatchBytes
+  rust    ClientConfig (compression.type)
+  python  KafkaProducer(compression_type="gzip")
+
+capability kafka/compression-other  batches compressed by Snappy, LZ4 or Zstandard
+  heroes  pending: Kafka's Snappy is xerial's framing, for which Rebel has no codec; LZ4 and Zstandard have packages of their own, `compress/lz4` and `compress/zstd`, not yet wired here; a batch so compressed is read `unsupported`
+  go      compress/snappy, compress/lz4, compress/zstd, kgo.SnappyCompression, kgo.Lz4Compression, kgo.ZstdCompression, kgo.Compressor, kgo.DefaultCompressor, kgo.Decompressor, kgo.DefaultDecompressor, kgo.WithCompressor, kgo.WithDecompressor, kgo.StreamingCompression
+  rust    ClientConfig (compression.type)
+  python  KafkaProducer(compression_type="snappy", "lz4" or "zstd")
+
+capability kafka/idempotence  an idempotent producer: retries the broker deduplicates by the producer's identity and each batch's sequence
+  heroes  pending: InitProducerId, the producer's epoch and a sequence per partition kept across retries and reconnections, with the broker's errors of sequence answered, wait for their own work; without them a retried batch may be written twice
+  go      InitProducerID, ProducerSession, kgo.DisableIdempotentWrite, kgo.AllowIdempotentProduceCancellation, kgo.Client.ProducerID, kgo.ProducerOnDataLossDetected, kgo.StopProducerOnDataLossDetected, kgo.ErrDataLoss
+  rust    ClientConfig (enable.idempotence)
+  python  KafkaProducer(enable_idempotence)
+
+capability kafka/transactions  writes and offsets committed or aborted together across partitions
+  heroes  pending: they need the idempotent producer above, a transactional identity and its coordinator, AddPartitionsToTxn, AddOffsetsToTxn, TxnOffsetCommit and EndTxn; a consumer's `read_committed` already leaves aborted transactions out
+  go      AddOffsetsToTxn, AddPartitionsToTxn, AddPartitionToTxn, AddPartitionToTxnPartition, Client.AddOffsetsToTxn, Client.AddPartitionsToTxn, Client.EndTxn, Client.TxnOffsetCommit, TxnOffsetCommit, TxnOffsetCommitPartition, Client.InitProducerID, kgo.TransactionalID, kgo.TransactionTimeout, kgo.Client.BeginTransaction, kgo.Client.EndTransaction, kgo.Client.EndAndBeginTransaction, kgo.EndBeginTxnHow, kgo.TransactionEndTry, kgo.GroupTransactSession, kgo.NewGroupTransactSession, kgo.PreTxnCommitFnContext, kgo.ConcurrentTransactionsBackoff
+  rust    producer::Producer::init_transactions, producer::Producer::begin_transaction, producer::Producer::commit_transaction, producer::Producer::abort_transaction, producer::Producer::send_offsets_to_transaction, consumer::ConsumerGroupMetadata
+  python  KafkaProducer.init_transactions, KafkaProducer.begin_transaction, KafkaProducer.commit_transaction, KafkaProducer.abort_transaction, KafkaProducer.send_offsets_to_transaction, KafkaAdminClient.describe_transactions, KafkaAdminClient.list_transactions, KafkaAdminClient.abort_transaction, KafkaAdminClient.describe_producers, KafkaAdminClient.find_hanging_transactions, confluent_kafka.Producer.init_transactions, confluent_kafka.Producer.begin_transaction, confluent_kafka.Producer.commit_transaction, confluent_kafka.Producer.abort_transaction, confluent_kafka.Producer.send_offsets_to_transaction
+
+capability kafka/fetch  a partition's messages read from an offset, the broker waiting for them, its watermarks answered
+  heroes  kafka.fetch, kafka.Fetched
+  go      DialPartition, Dialer.DialPartition, Conn.ReadMessage, Conn.ReadBatch, Conn.ReadBatchWith, ReadBatchConfig, Conn.Read, Conn.Seek, Conn.Offset, Batch, Batch.Read, Batch.ReadMessage, Batch.Close, Batch.Err, Batch.HighWaterMark, Batch.Offset, Batch.Partition, Batch.Throttle, Client.Fetch, kgo.ConsumePartitions, kgo.Client.AddConsumePartitions, kgo.Client.RemoveConsumePartitions, kgo.FetchMaxBytes, kgo.FetchMaxPartitionBytes, kgo.FetchMaxWait, kgo.FetchMinBytes, kgo.Fetch, kgo.Fetches, kgo.FetchTopic, kgo.FetchPartition, kgo.FetchTopicPartition, kgo.FetchError, kgo.Fetches.Records, kgo.Fetches.EachRecord, kgo.Fetches.Errors
+  rust    consumer::BaseConsumer::assign (with a partition list), consumer::Consumer::fetch_watermarks, message::OwnedMessage, message::BorrowedMessage, message::Message
+  python  KafkaConsumer.assign, KafkaConsumer.highwater, confluent_kafka.Consumer.assign, confluent_kafka.Consumer.get_watermark_offsets, confluent_kafka.Message
+  note    a partition read by the program's own choice is this function and `list_offset`, a consumer of no group; the messages before the offset asked in the first batch are left out
+
+capability kafka/offsets-by-time  a partition's offset at a time, or at either end of its log
+  heroes  kafka.list_offset, kafka.EARLIEST, kafka.LATEST
+  go      Conn.ReadFirstOffset, Conn.ReadLastOffset, Conn.ReadOffset, Conn.ReadOffsets, Client.ListOffsets, FirstOffsetOf, LastOffsetOf, TimeOffsetOf, PartitionOffsets, kgo.NewOffset, kgo.Offset.AtStart, kgo.Offset.AtEnd, kgo.Offset.AfterMilli
+  rust    consumer::Consumer::offsets_for_times, consumer::Consumer::fetch_watermarks, topic_partition_list::Offset
+  python  KafkaConsumer.beginning_offsets, KafkaConsumer.end_offsets, KafkaConsumer.offsets_for_times, KafkaAdminClient.list_partition_offsets, OffsetSpec, confluent_kafka.Consumer.offsets_for_times, confluent_kafka.admin.AdminClient.list_offsets, confluent_kafka.OFFSET_BEGINNING, confluent_kafka.OFFSET_END
+  note    a time after every message is `not_found`, where the broker answers -1
+
+capability kafka/batches  record batches (format 2) written and read as bytes: offsets, times, keys and values null or not, headers, CRC-32C, gzip, control batches
+  heroes  kafka.encode_batch, kafka.decode_batches, kafka.Header
+  go      RecordReader, NewRecordReader, Record, Header, Bytes, NewBytes, Marshal, Unmarshal, ReadAll, kgo.RecordReader, kgo.NewRecordReader, kgo.RecordFormatter, kgo.NewRecordFormatter, kgo.RecordAttrs, kgo.NewRecordAttrs, kgo.RecordHeader, kgo.KeepControlRecords, kgo.DisableFetchCRCValidation
+  rust    message::Headers, message::OwnedHeaders, message::BorrowedHeaders, message::Header, message::HeadersIter, message::ToBytes, message::FromBytes, message::Timestamp
+  python  kafka.record (DefaultRecordBatchBuilder, DefaultRecordBatch), confluent_kafka.Message.headers, confluent_kafka.TIMESTAMP_CREATE_TIME, confluent_kafka.TIMESTAMP_LOG_APPEND_TIME, confluent_kafka.TIMESTAMP_NOT_AVAILABLE
+  note    a header's null value is read as none; the leader epoch is written 0, as kafka-python writes it, the broker setting its own
+
+capability kafka/old-formats  the message sets of formats 0 and 1, written before Kafka 0.11
+  heroes  refused: Kafka 4.0 removed them (KIP-724), and a broker of 2.4 or later converts what it holds in them when a client asks format 2; a batch of them is read `unsupported`
+  go      -
+  rust    -
+  python  kafka.record.legacy_records, KafkaProducer.max_usable_produce_magic
+
+capability kafka/isolation  what a fetch reads: every message, or only those outside transactions and those committed
+  heroes  kafka.Options (isolation), kafka.Isolation
+  go      IsolationLevel, kgo.FetchIsolationLevel, kgo.IsolationLevel, kgo.ReadCommitted, kgo.ReadUncommitted
+  rust    ClientConfig (isolation.level)
+  python  IsolationLevel, KafkaConsumer(isolation_level), confluent_kafka.IsolationLevel
+  note    under read_committed the batches of the aborted transactions a fetch names are left out, and control batches always
+
+capability kafka/coordinator  the broker that coordinates a group
+  heroes  kafka.find_coordinator
+  go      Client.FindCoordinator, CoordinatorKeyType
+  rust    -
+  python  -
+
+capability kafka/group-offsets  a group's offsets kept and read, outside any membership
+  heroes  kafka.commit_offsets, kafka.fetch_offsets, kafka.Offset
+  go      Client.OffsetCommit, Client.OffsetFetch, Client.ConsumerOffsets, OffsetCommit, OffsetCommitPartition, OffsetFetchPartition, TopicAndGroup, kgo.Client.CommitOffsets, kgo.Client.CommitOffsetsSync, kgo.Client.CommittedOffsets, kgo.Client.SetOffsets
+  rust    consumer::Consumer::commit, consumer::Consumer::committed, consumer::Consumer::committed_offsets, consumer::CommitMode, topic_partition_list::TopicPartitionList, topic_partition_list::TopicPartitionListElem
+  python  KafkaConsumer.committed, KafkaAdminClient.list_group_offsets, KafkaAdminClient.alter_group_offsets, KafkaAdminClient.reset_group_offsets, OffsetAndMetadata, TopicPartition, confluent_kafka.admin.AdminClient.list_consumer_group_offsets, confluent_kafka.admin.AdminClient.alter_consumer_group_offsets, confluent_kafka.TopicPartition
+  note    the offsets answered are by topic, then by partition
+
+capability kafka/group-offsets-delete  a group's offsets for some partitions deleted
+  heroes  pending: OffsetDelete is a request of its own, not yet written; `delete_groups` deletes a group's offsets whole
+  go      Client.OffsetDelete, OffsetDelete, OffsetDeletePartition
+  rust    -
+  python  KafkaAdminClient.delete_group_offsets
+
+capability kafka/groups  the groups listed, described with their members and partitions, and deleted
+  heroes  kafka.list_groups, kafka.describe_group, kafka.delete_groups, kafka.GroupListing, kafka.GroupDescription, kafka.GroupMember
+  go      Client.ListGroups, Client.DescribeGroups, Client.DeleteGroups
+  rust    groups::GroupList, groups::GroupInfo, groups::GroupMemberInfo, consumer::Consumer::fetch_group_list, admin::AdminClient::delete_groups, admin::GroupResult
+  python  KafkaAdminClient.list_groups, KafkaAdminClient.describe_groups, KafkaAdminClient.delete_groups, KafkaAdminClient.remove_group_members, confluent_kafka.admin.AdminClient.list_groups, confluent_kafka.admin.AdminClient.list_consumer_groups, confluent_kafka.admin.AdminClient.describe_consumer_groups, confluent_kafka.admin.AdminClient.delete_consumer_groups, confluent_kafka.ConsumerGroupState, confluent_kafka.ConsumerGroupType, confluent_kafka.ConsumerGroupTopicPartitions
+  note    a member's subscription and assignment are read where the group is of consumers
+
+capability kafka/consumer-group  a consumer in a group: joined, assigned by the range assignor, its heartbeat and commits sent as they fall due, joined again where the group changes, left at the end
+  heroes  kafka.subscribe, kafka.poll, kafka.commit, kafka.close_consumer, kafka.group_options, kafka.GroupOptions, kafka.Consumer, kafka.Start
+  go      ConsumerGroup, NewConsumerGroup, ConsumerGroupConfig, ConsumerGroupConfig.Validate, ConsumerGroup.Next, ConsumerGroup.Close, Generation, Generation.Start, Generation.CommitOffsets, Reader, NewReader, ReaderConfig, ReaderConfig.Validate, Reader.ReadMessage, Reader.FetchMessage, Reader.CommitMessages, Reader.Close, Reader.Config, Client.JoinGroup, Client.SyncGroup, Client.Heartbeat, Client.LeaveGroup, GroupMember, GroupMemberAssignments, GroupMemberTopic, GroupProtocol, GroupProtocolAssignment, GroupProtocolSubscription, PartitionAssignment, kgo.ConsumerGroup, kgo.ConsumeTopics, kgo.Client.PollFetches, kgo.Client.PollRecords, kgo.Client.CommitRecords, kgo.Client.CommitUncommittedOffsets, kgo.Client.CommitMarkedOffsets, kgo.Client.MarkCommitRecords, kgo.Client.MarkCommitOffsets, kgo.Client.MarkedOffsets, kgo.Client.UncommittedOffsets, kgo.Client.LeaveGroup, kgo.Client.LeaveGroupContext, kgo.Client.GroupMetadata, kgo.Client.GetConsumeTopics, kgo.Client.AddConsumeTopics, kgo.SessionTimeout, kgo.RebalanceTimeout, kgo.HeartbeatInterval, kgo.AutoCommitInterval, kgo.DisableAutoCommit, kgo.AutoCommitMarks, kgo.GreedyAutoCommit, kgo.ConsumeResetOffset, kgo.ConsumeStartOffset, kgo.NoResetOffset, kgo.InstanceID, kgo.GroupProtocol, kgo.RequireStableFetchOffsets, kgo.ParseConsumerSyncAssignment, kgo.ErrGroupSession
+  rust    consumer::StreamConsumer, consumer::BaseConsumer, consumer::Consumer::subscribe, consumer::Consumer::unsubscribe, consumer::Consumer::subscription, consumer::Consumer::poll, consumer::Consumer::commit_consumer_state, consumer::Consumer::store_offset, consumer::Consumer::group_metadata, consumer::MessageStream
+  python  KafkaConsumer.subscribe, KafkaConsumer.subscription, KafkaConsumer.unsubscribe, KafkaConsumer.poll, KafkaConsumer.commit, KafkaConsumer.commit_async, KafkaConsumer.group_metadata, ConsumerGroupMetadata, confluent_kafka.Consumer.subscribe, confluent_kafka.Consumer.unsubscribe, confluent_kafka.Consumer.poll, confluent_kafka.Consumer.consume, confluent_kafka.Consumer.commit, confluent_kafka.Consumer.store_offsets, confluent_kafka.Consumer.close, confluent_kafka.Consumer.memberid, confluent_kafka.Consumer.consumer_group_metadata
+  note    the heartbeat goes while `poll` runs, the program's own loop being the only one: a program that does not poll within the session's time leaves the group; the commit is `poll`'s every `auto_commit_ms`, or the program's own `commit`, at least once and never at most once
+
+capability kafka/static-membership  a consumer's static identity, so a restart within the session keeps its partitions
+  heroes  kafka.GroupOptions (instance_id)
+  go      -
+  rust    ClientConfig (group.instance.id)
+  python  KafkaConsumer(group_instance_id)
+
+capability kafka/range-assignor  the range assignor, run by the leader and offered as a function
+  heroes  kafka.assign_range, kafka.Subscription, kafka.Assignment
+  go      RangeGroupBalancer, RangeGroupBalancer.AssignGroups, RangeGroupBalancer.ProtocolName, RangeGroupBalancer.UserData, GroupBalancer, kgo.RangeBalancer, kgo.GroupBalancer, kgo.Balancers
+  rust    consumer::RebalanceProtocol
+  python  kafka.coordinator.assignors.range.RangePartitionAssignor
+
+capability kafka/other-assignors  the round robin, sticky, cooperative sticky and rack aware assignors, and the broker-side assignment of KIP-848
+  heroes  pending: each is an assignor of its own; the cooperative one also needs the incremental protocol, a consumer giving up only the partitions it loses; KIP-848's ConsumerGroupHeartbeat is a protocol of its own
+  go      RoundRobinGroupBalancer, RoundRobinGroupBalancer.AssignGroups, RoundRobinGroupBalancer.ProtocolName, RoundRobinGroupBalancer.UserData, RackAffinityGroupBalancer, RackAffinityGroupBalancer.AssignGroups, RackAffinityGroupBalancer.ProtocolName, RackAffinityGroupBalancer.UserData, kgo.RoundRobinBalancer, kgo.StickyBalancer, kgo.CooperativeStickyBalancer, kgo.ServerSideBalancer, kgo.ConsumerBalancer, kgo.NewConsumerBalancer, kgo.ConsumerBalancerBalance, kgo.BalancePlan, kgo.BalanceInfo, kgo.GroupMemberBalancer, kgo.GroupMemberBalancerInfo, kgo.GroupMemberBalancerOrError, kgo.IntoSyncAssignment, kgo.BalanceRacks, kgo.Rack, kgo.Client.ForceRebalance, kgo.Client.AllowRebalance, kgo.BlockRebalanceOnPoll
+  rust    consumer::Rebalance
+  python  confluent_kafka.Consumer.incremental_assign, confluent_kafka.Consumer.incremental_unassign
+
+capability kafka/position  a consumer's partitions, its position in each moved and read, its place in its group
+  heroes  kafka.seek, kafka.position_of, kafka.assignment_of, kafka.member_of, kafka.TopicPartition, kafka.Member
+  go      Reader.SetOffset, Reader.SetOffsetAt, Reader.Offset, Reader.Lag, Reader.ReadLag, kgo.Client.SetOffsets, kgo.Offset, kgo.Offset.At, kgo.Offset.Relative, kgo.Offset.WithEpoch, kgo.Offset.AtCommitted, kgo.EpochOffset, kgo.EpochOffset.Less, kgo.RewindOffset, kgo.LookbackOffset
+  rust    consumer::Consumer::seek, consumer::Consumer::seek_partitions, consumer::Consumer::position, consumer::Consumer::assignment
+  python  KafkaConsumer.seek, KafkaConsumer.seek_to_beginning, KafkaConsumer.seek_to_end, KafkaConsumer.position, KafkaConsumer.assignment, confluent_kafka.Consumer.seek, confluent_kafka.Consumer.position, confluent_kafka.Consumer.assignment
+  note    a consumer's lag is `fetch`'s high watermark less `position_of`; to the start or the end is `seek` to `list_offset`'s answer
+
+capability kafka/pause  a consumer's partitions paused and resumed, their positions kept
+  heroes  kafka.pause, kafka.resume
+  go      kgo.Client.PauseFetchPartitions, kgo.Client.PauseFetchTopics, kgo.Client.ResumeFetchPartitions, kgo.Client.ResumeFetchTopics
+  rust    consumer::Consumer::pause, consumer::Consumer::resume
+  python  KafkaConsumer.pause, KafkaConsumer.paused, KafkaConsumer.resume, confluent_kafka.Consumer.pause, confluent_kafka.Consumer.resume
+
+capability kafka/subscribe-pattern  a consumer of every topic a regular expression matches
+  heroes  pending: the topics would be matched by `regex` against the metadata, and the group joined again when a matching topic is made
+  go      ReaderConfig (GroupTopics), kgo.ConsumeRegex, kgo.ConsumeExcludeTopics, kgo.Client.PurgeTopicsFromConsuming, kgo.Client.PurgeTopicsFromClient, kgo.Client.PurgeTopicsFromProducing
+  rust    consumer::Consumer::subscribe (with a pattern)
+  python  KafkaConsumer.subscribe(pattern)
+
+capability kafka/share-groups  share groups (KIP-932): records acknowledged one by one, as a queue
+  heroes  pending: a protocol of its own, Kafka 4.1's, with requests of its own (ShareGroupHeartbeat, ShareFetch, ShareAcknowledge)
+  go      kgo.ShareGroup, kgo.ShareMaxRecords, kgo.ShareMaxRecordsStrict, kgo.ShareAckCallback, kgo.ShareAckResult, kgo.ShareAckResults, kgo.ShareAckResults.Error, kgo.ShareAckResults.Ok, kgo.Client.MarkAcks, kgo.Client.FlushAcks, kgo.AckStatus, kgo.Record.Ack, kgo.Record.AcquisitionDeadline, kgo.Record.DeliveryCount
+  rust    -
+  python  confluent_kafka.ShareConsumer, confluent_kafka.DeserializingShareConsumer, confluent_kafka.AcknowledgeType, confluent_kafka.Message.delivery_count
+
+capability kafka/stats  counters of what a client wrote and read, and its latencies
+  heroes  pending: no counter is kept yet
+  go      ReaderStats, WriterStats, Reader.Stats, Writer.Stats, DurationStats, SummaryStats, kgo.Client.BufferedFetchRecords, kgo.Client.BufferedFetchBytes, kgo.Metric, kgo.MetricType, kgo.UserMetricsFn, kgo.DisableClientMetrics, kgo.FetchBatchMetrics, kgo.ProduceBatchMetrics
+  rust    statistics::Statistics, statistics::Broker, statistics::Topic, statistics::Partition, statistics::ConsumerGroup, statistics::ExactlyOnceSemantics, statistics::TopicPartition, statistics::Window
+  python  KafkaProducer.metrics, KafkaConsumer.metrics, kafka.metrics
+
+capability kafka/errors  Kafka's errors named, and each failure's code in Rebel's vocabulary
+  heroes  kafka.error_name
+  go      Error, Error.Title, Error.Description, Error.Error, Error.Temporary, Error.Timeout, kerr (every error and ErrorForCode), kgo.IsRetryableBrokerErr
+  rust    error::KafkaError, error::RDKafkaErrorCode, error::RDKafkaError, error::IsError, error::KafkaResult, types::RDKafkaRespErr
+  python  kafka.errors, confluent_kafka.KafkaError, confluent_kafka.KafkaException
+  note    the names are Kafka 4.1's, -1 to 136, as franz-go's `kerr` names them; kafka-python's stop at 127 and spell three otherwise (MESSAGE_SIZE_TOO_LARGE, INVALID_TOPIC, INVALID_REPLICATION_ASSIGNMENT)
+
+capability kafka/raw-requests  any request of the protocol sent as the program writes it
+  heroes  refused: the requests are this client's to write, each function above sends the one it names; a request the program writes could leave a connection's correlation or a group's membership in a state the client does not know
+  go      Client.RoundTrip (by its Request), RoundTripper, Request, Response, every *Request and *Response record, RawProduceRequest, kgo.Client.Request, kgo.Client.RequestSharded, kgo.ResponseShard, kgo.Broker.Request, kgo.Broker.RetriableRequest, kmsg
+  rust    -
+  python  kafka.protocol
+
+capability kafka/mock-cluster  a cluster in memory, for tests
+  heroes  refused: the tests here run against a real broker or say they skipped; a broker in memory would be a second Kafka to keep true
+  go      -
+  rust    mocking::MockCluster, mocking::MockCoordinator
+  python  -
+
+dropped
+  go      Logger, LoggerFunc, LoggerFunc.Printf, kgo.Logger, kgo.BasicLogger, kgo.LogLevel, kgo.WithLogger (logging; a failure here is a value), every kgo.Hook* type and kgo.WithHooks (callbacks, which need a closure), kgo.OnPartitionsAssigned, kgo.OnPartitionsRevoked, kgo.OnPartitionsLost, kgo.OnPartitionsCallbackBlocked, kgo.OnOffsetsFetched, kgo.AutoCommitCallback, kgo.AdjustFetchOffsetsFn, kgo.PreCommitFnContext, kgo.RetryBackoffFn, kgo.RetryTimeoutFn, kgo.ConsumePreferringLagFn, kgo.PreferLagFn, kgo.PreferLagAt, kgo.OnRebootstrapRequired (functions the client calls back), kgo.Dialer, Dialer.Resolver, Resolver, BrokerResolver, NewBrokerResolver (a dialer or resolver the program writes), kgo.WithContext, kgo.Client.Context, kgo.WithPools, kgo.Pool* (Go's contexts and pools), kgo.Opt, kgo.ConsumerOpt, kgo.GroupOpt, kgo.ProducerOpt, kgo.ValidateOpts, kgo.Client.Opts, kgo.Client.OptValue, kgo.Client.OptValues (the options are a record), kgo.ConnIdleTimeout, kgo.BrokerMaxReadBytes, kgo.BrokerMaxWriteBytes (here `Options.most_response_bytes`), kgo.RequestTimeoutOverhead, kgo.MaxConcurrentFetches, kgo.DisableFetchSessions, kgo.KeepRetryableFetchErrors, kgo.AlwaysRetryEOF, kgo.RecheckPreferredReplicaInterval, kgo.ConsiderMissingTopicDeletedAfter, kgo.SoftwareNameAndVersion, kgo.UpdateFetchMaxBytes (tuning of a client that fetches in the background), kgo.FirstErrPromise, kgo.AbortingFirstErrPromise, kgo.FetchesRecordIter, kgo.Fetches.RecordIter, kgo.Fetches.EachError, kgo.Fetches.EachPartition, kgo.Fetches.EachTopic, kgo.Fetches.Empty, kgo.Fetches.Err, kgo.Fetches.Err0, kgo.Fetches.IsClientClosed, kgo.Fetches.NumRecords, kgo.Fetches.RecordsAll, kgo.NewErrFetch, kgo.ProcessFetchPartition, kgo.ProcessFetchPartitionOpts, kgo.FetchTopic.EachPartition, kgo.FetchTopic.EachRecord, kgo.FetchTopic.Records, kgo.FetchPartition.EachRecord, kgo.FetchTopicPartition.EachRecord (iteration over a list the program walks itself), kgo.Record.AppendFormat, kgo.Record.Recycle, kgo.ErrFirstReadEOF, kgo.ErrDecompressTooLarge, kgo.CompressFlag, kgo.CompressionCodecType, kgo.BrokerE2E, kgo.NodeName, kgo.Client.CloseAllowingRebalance, kgo.CloseAllowingRebalance, kgo.MaxVersions (the versions are this client's), Conn.LocalAddr, Conn.RemoteAddr, Conn.SetDeadline, Conn.SetReadDeadline, Conn.SetWriteDeadline (here `Options.wait_ms`), TCP, ReaderConfig's and WriterConfig's tuning fields, MessageTooLargeError.Unwrap, ApiVersion.Format, Version (Go's interfaces and formatting)
+  rust    every item of `bindings` (librdkafka's C functions, records and constants), client::ClientContext, client::DefaultClientContext, client::NativeClient, config::NativeClientConfig, config::FromClientConfigAndContext, config::RDKafkaLogLevel, consumer::ConsumerContext, consumer::DefaultConsumerContext, producer::ProducerContext, producer::DefaultProducerContext, producer::future_producer::FutureProducerContext (contexts of callbacks), util::AsyncRuntime, util::NaiveRuntime, util::TokioRuntime, util::DefaultRuntime, util::IntoOpaque, util::Timeout, util::cstr_to_owned, util::current_time_millis, util::get_rdkafka_version, util::millis_to_epoch, helpers::rd_kafka_resp_err_t_to_rdkafka_error, every `types::RDKafka*` alias (the C library's own types), consumer::base_consumer::Iter, consumer::base_consumer::PartitionQueue, consumer::stream_consumer::StreamPartitionQueue (iteration and queues of the C library)
+  python  every callback and serializer: ConsumerRebalanceListener, AsyncConsumerRebalanceListener, Serializer, Deserializer, DefaultSerializer, JsonSerializer, confluent_kafka.SerializingProducer, confluent_kafka.DeserializingConsumer, confluent_kafka.serialization (the program turns its values into bytes), KafkaProducer.DEFAULT_CONFIG, KafkaConsumer.DEFAULT_CONFIG, KafkaAdminClient.DEFAULT_CONFIG, KafkaProducer.DEPRECATED_CONFIGS, KafkaConsumer.DEFAULT_SESSION_TIMEOUT_MS_PRE_KIP_735 (configuration tables), KafkaConsumer.bootstrap, kafka.future, kafka.util, kafka.net, kafka.cluster, kafka.coordinator (the client's own machinery), confluent_kafka.ThrottleEvent, confluent_kafka.libversion, confluent_kafka.version, confluent_kafka.cimpl, confluent_kafka.Uuid, confluent_kafka.TopicCollection, confluent_kafka.ElectionType, confluent_kafka.ConcurrentModificationException, confluent_kafka.IllegalStateException, confluent_kafka.Messages, confluent_kafka.Message.set_error, confluent_kafka.Message.set_headers, confluent_kafka.Message.set_key, confluent_kafka.Message.set_topic, confluent_kafka.Message.set_value, confluent_kafka.Message.latency, confluent_kafka.Message.leader_epoch, confluent_kafka.Message.deserialized_key, confluent_kafka.Message.deserialized_value, confluent_kafka.Message.error (a message is a record the program builds), confluent_kafka.Consumer.unassign, confluent_kafka.Consumer.cluster_id, confluent_kafka.admin.AdminClient.poll, confluent_kafka.admin.AdminClient.cluster_id, confluent_kafka.OFFSET_INVALID, confluent_kafka.OFFSET_STORED (librdkafka's offsets that stand for none and for the group's)

@@ -1,0 +1,149 @@
+# What carries a connection's frames: a TCP connection of `net` or a TLS
+# stream of `tls`, read, written, given a deadline and closed alike. A read
+# answers what one read brings; the end of the connection is a failure
+# `closed`, so a caller never stands still on it.
+
+use amqp/internal/model
+use io
+use net
+use tls
+
+# The bytes asked of a stream at a time.
+constant CHUNK: i64
+    65536
+
+# What carries the bytes.
+variant Link
+    # A TCP connection, whose deadline `net` moves.
+    plain
+        # The connection.
+        conn: net.Conn
+    # A TLS stream, whose deadline `tls` moves.
+    secured
+        # The stream.
+        stream: io.Stream
+    # Nothing: closed, or not connected yet.
+    gone
+
+# A TCP connection to `host` at `port`, made within `ms`.
+#
+# - `host`: the host.
+# - `port`: the port.
+# - `ms`: milliseconds, 1 or more.
+function open_plain(host: str, port: i64, ms: i64) -> Link?
+    c = net.connect_timeout(host, port: port, timeout_ms: ms, deadline_ms: 0)?
+    _ = net.set_no_delay(c, on: true).is_err()
+    return ok(.plain(conn: c))
+
+# A TLS connection to `host` at `port`, TLS from its first byte.
+#
+# - `host`: the host, which the certificate must name.
+# - `port`: the port.
+# - `ms`: milliseconds the connection and its handshake may take.
+# - `roots`: the authorities trusted, "" for the system's.
+function open_tls(host: str, port: i64, ms: i64, roots: str) -> Link?
+    s = tls.connect(host: host, port: port, deadline_ms: ms, client: tls.Client(roots: roots, protocols: []))?
+    return ok(.secured(stream: s))
+
+# Whether `l` is TLS.
+#
+# - `l`: the link.
+function is_secured(l: Link) -> bool
+    return match l
+        .plain _   => false
+        .secured _ => true
+        .gone      => false
+
+# Makes every read and write of `l` end by `ms` milliseconds from now, 0
+# for none.
+#
+# - `l`: the link.
+# - `ms`: milliseconds, 0 or more.
+function arm(l: Link, ms: i64) -> ()?
+    return match l
+        .plain p   => net.set_deadline(p.conn, ms: ms)
+        .secured s => tls.set_deadline(s.stream, ms: ms)
+        .gone      => fail(code: model.CLOSED, msg: "the connection is closed")
+
+# The bytes one read of `l` brings, at least one.
+#
+# - `l`: the link.
+# - `target`: how the server is named.
+#
+# Fails `closed` where the server ended the connection, and as the read
+# fails.
+function read(l: Link, target: str) -> [u8]?
+    got = match l
+        .plain p   => io.read(p.conn.stream, most: CHUNK)?
+        .secured s => io.read(s.stream, most: CHUNK)?
+        .gone      => return fail(code: model.CLOSED, msg: f"the connection to {target} is closed")
+
+    if got.len() == 0
+        return fail(code: model.CLOSED, msg: f"{target} closed the connection")
+    return ok(got)
+
+# Writes `data` to `l`.
+#
+# - `l`: the link.
+# - `data`: the bytes.
+function write(l: Link, data: [u8]) -> ()?
+    return match l
+        .plain p   => io.write(p.conn.stream, data: data)
+        .secured s => io.write(s.stream, data: data)
+        .gone      => fail(code: model.CLOSED, msg: "the connection is closed")
+
+# Closes `l`, whatever it holds, and leaves it `gone`.
+#
+# - `l`: the link.
+function close(@l: Link)
+    match l
+        .plain p =>
+            s @= p.conn.stream
+            _ = io.close(@s).is_err()
+        .secured t =>
+            s @= t.stream
+            _ = io.close(@s).is_err()
+        .gone => _ = 0
+
+    l @ .gone
+
+# Whether `l` carries nothing.
+#
+# - `l`: the link.
+function is_gone(l: Link) -> bool
+    return match l
+        .gone                 => true
+        .plain _ | .secured _ => false
+
+# The stream under `l`, for a program that waits on it.
+#
+# - `l`: the link.
+function stream_of(l: Link) -> io.Stream?
+    return match l
+        .plain p   => ok(p.conn.stream)
+        .secured s => ok(s.stream)
+        .gone      => fail(code: model.CLOSED, msg: "the connection is closed")
+
+test "a link over a pair of connections: written, read, armed, closed, and gone after"
+    two = net.pair(5000).must()
+    l: Link @= .plain(conn: two.first)
+    peer @= two.second.stream
+    write(l, data: [1, 2, 3]).must()
+    assert io.read_exact(peer, count: 3).must() == [1, 2, 3]
+    io.write(peer, data: [9]).must()
+    assert read(l, target: "t").must() == [9]
+    arm(l, ms: 50).must()
+
+    match read(l, target: "t")
+        .ok _  => assert false
+        .err e => assert e.code == "timeout"
+
+    io.close(@peer).must()
+    arm(l, ms: 0).must()
+
+    match read(l, target: "t")
+        .ok _  => assert false
+        .err e => assert e.code == "closed"
+
+    close(@l)
+    assert is_gone(l) && stream_of(l).is_err() && write(l, data: [1]).is_err() && !is_secured(l)

@@ -1,0 +1,365 @@
+# A connection to one broker: made, its versions asked by `ApiVersions`, its
+# login done by `SaslHandshake` and `SaslAuthenticate`; then a request
+# written with its header (key, version, correlation, client) and its answer
+# read whole, its size bounded, its correlation checked. One request is in
+# flight at a time; a failure in the middle of one closes the connection, so
+# a late answer is never read as the next one's.
+
+use bytes
+use crypto
+use io
+use kafka/internal/link
+use kafka/internal/model
+use kafka/internal/sasl
+use kafka/internal/wire
+use net
+use url
+
+# The key of `ApiVersions`.
+constant API_VERSIONS: i64
+    18
+
+# The key of `SaslHandshake`.
+constant SASL_HANDSHAKE: i64
+    17
+
+# The key of `SaslAuthenticate`.
+constant SASL_AUTHENTICATE: i64
+    36
+
+# A connection to a broker.
+record Conn
+    # The broker's node, -1 for a broker known only by its address.
+    node_id: i64
+    # How it is named in messages: `host:port`.
+    target: str
+    # What carries the bytes.
+    link: link.Link
+    # The bytes read past the last answer.
+    buf: [u8]
+    # The correlation of the last request.
+    correlation: i64
+    # The versions it reads, by key.
+    versions: [model.ApiVersion]
+    # Whether it can be used.
+    open: bool
+
+# A connection that is closed.
+#
+# - `node_id`: the node.
+# - `target`: how it is named.
+function closed(node_id: i64, target: str) -> Conn
+    return Conn(node_id: node_id, target: target, link: .gone, buf: [], correlation: 0, versions: [], open: false)
+
+# The name of an API's key, for messages.
+#
+# - `key`: the key.
+function api_name(key: i64) -> str
+    names = [
+        "Produce"
+        "Fetch"
+        "ListOffsets"
+        "Metadata"
+        "LeaderAndIsr"
+        "StopReplica"
+        "UpdateMetadata"
+        "ControlledShutdown"
+        "OffsetCommit"
+        "OffsetFetch"
+        "FindCoordinator"
+        "JoinGroup"
+        "Heartbeat"
+        "LeaveGroup"
+        "SyncGroup"
+        "DescribeGroups"
+        "ListGroups"
+        "SaslHandshake"
+        "ApiVersions"
+        "CreateTopics"
+        "DeleteTopics"
+        "DeleteRecords"
+        "InitProducerId"
+        "OffsetForLeaderEpoch"
+        "AddPartitionsToTxn"
+        "AddOffsetsToTxn"
+        "EndTxn"
+        "WriteTxnMarkers"
+        "TxnOffsetCommit"
+        "DescribeAcls"
+        "CreateAcls"
+        "DeleteAcls"
+        "DescribeConfigs"
+        "AlterConfigs"
+        "AlterReplicaLogDirs"
+        "DescribeLogDirs"
+        "SaslAuthenticate"
+        "CreatePartitions"
+    ]
+
+    if key >= 0 && key < names.len()
+        return names[key]
+    return f"the API {key}"
+
+# Fails `unsupported` unless the broker reads `version` of the API `key`.
+#
+# - `c`: the connection.
+# - `key`: the API.
+# - `version`: the version this client speaks.
+function check_version(c: Conn lent, key: i64, version: i64) -> ()?
+    for v in c.versions
+        if v.key == key
+            if version < v.min || version > v.max
+                return fail(
+                    code: model.UNSUPPORTED,
+                    msg: f"{c.target} reads {api_name(key)} {v.min} to {v.max}, and this client speaks {version}: a broker of Kafka 2.4 or later reads it"
+                )
+            return ok()
+
+    return fail(code: model.UNSUPPORTED, msg: f"{c.target} does not read {api_name(key)}")
+
+# Closes the connection and answers the failure.
+#
+# - `c`: the connection, closed after.
+# - `code`: the failure's code.
+# - `msg`: its message.
+function lose<T>(@c: Conn, code: str, msg: str) -> T?
+    link.close(@c.link)
+    c.open @ false
+    c.buf @ []
+    return fail(code: code, msg: msg)
+
+# Sends the request `body` of the API `key` at `version` and answers a cursor
+# over its answer's body, after the correlation; an empty cursor where
+# `answered` is false, as for a produce that asks no acknowledgement.
+#
+# - `c`: the connection.
+# - `key`: the API.
+# - `version`: the version.
+# - `body`: the request's body.
+# - `client_id`: the client's identifier.
+# - `wait_ms`: milliseconds the request may take, 1 or more.
+# - `most`: the largest answer read, in bytes.
+# - `answered`: whether an answer comes.
+function request(@c: Conn, key: i64, version: i64, body: [u8] lent, client_id: str, wait_ms: i64, most: i64, answered: bool) -> wire.Reader?
+    if !c.open
+        return fail(code: model.CLOSED, msg: f"the connection to {c.target} is closed")
+
+    if key != API_VERSIONS
+        check_version(c, key: key, version: version)?
+    c.correlation @ c.correlation + 1
+    head: [u8] @= []
+    wire.put_i16(out: @head, v: key)
+    wire.put_i16(out: @head, v: version)
+    wire.put_i32(out: @head, v: c.correlation)
+    wire.put_string(out: @head, s: client_id, what: "the client's identifier")?
+    out: [u8] @= []
+    wire.put_i32(out: @out, v: head.len() + body.len())
+    bytes.push_all(to: @out, from: head)
+    bytes.push_all(to: @out, from: body)
+
+    match link.arm(c.link, ms: wait_ms)
+        .ok _  => _ = 0
+        .err e => return lose(@c, code: e.code, msg: e.msg)
+
+    match link.write(c.link, data: out)
+        .ok _  => _ = 0
+        .err e => return lose(@c, code: e.code, msg: f"writing {api_name(key)} to {c.target}: {e.msg}")
+
+    if !answered
+        return ok(wire.reader([]))
+
+    while c.buf.len() < 4
+        fill(@c, what: api_name(key))?
+
+    size = bytes.decode_i32_be(c.buf, at: 0).must()
+
+    if size < 4 || to_i64(size).must() > most
+        return lose(
+            @c,
+            code: model.LIMIT,
+            msg: f"{c.target} answered {api_name(key)} with {size} bytes, past the {most} read"
+        )
+    whole = to_i64(size).must() + 4
+
+    while c.buf.len() < whole
+        fill(@c, what: api_name(key))?
+
+    answer = c.buf.slice(from: 4, to: whole)
+    c.buf @ c.buf.slice(from: whole, to: c.buf.len())
+    r @= wire.reader(answer)
+    correlation = wire.take_i32(@r, what: "an answer's correlation")?
+
+    if correlation != c.correlation
+        return lose(
+            @c,
+            code: model.INVALID,
+            msg: f"{c.target} answered the request {c.correlation} with the correlation {correlation}"
+        )
+    return ok(r)
+
+# Reads once into the connection's bytes.
+#
+# - `c`: the connection.
+# - `what`: the request awaited, for the message.
+function fill(@c: Conn, what: str) -> ()?
+    match link.read(c.link, target: c.target)
+        .ok got =>
+            bytes.push_all(to: @c.buf, from: got)
+            return ok()
+        .err e => return lose(@c, code: e.code, msg: f"awaiting {c.target}'s answer to {what}: {e.msg}")
+
+# The versions a broker reads, from its answer to `ApiVersions` 2.
+#
+# - `r`: the answer.
+function take_versions(@r: wire.Reader) -> [model.ApiVersion]?
+    error = wire.take_i16(@r, what: "ApiVersions")?
+    count = wire.take_count(@r, what: "ApiVersions")?
+    out: [model.ApiVersion] @= []
+
+    for _ in range(from: 0, to: count)
+        key = wire.take_i16(@r, what: "ApiVersions")?
+        min = wire.take_i16(@r, what: "ApiVersions")?
+        max = wire.take_i16(@r, what: "ApiVersions")?
+        out @ out.push(model.ApiVersion(key: key, min: min, max: max))
+
+    if error != 0
+        return fail(code: model.UNSUPPORTED, msg: f"the broker refused ApiVersions 2 with the error {error}")
+    return ok(out)
+
+# A connection to `host` at `port`, its versions asked and its login done.
+#
+# - `o`: the options.
+# - `host`: the broker's host.
+# - `port`: its port.
+# - `node_id`: its node, -1 for one known only by its address.
+function dial(o: model.Options, host: str, port: i64, node_id: i64) -> Conn?
+    target = url.format_host_port(host: host, port: to_str(port))
+    c @= closed(node_id, target: target)
+
+    c.link @ if o.tls
+        link.open_tls(host: host, port: port, ms: o.connect_ms, roots: o.roots)?
+    else
+        link.open_plain(host, port: port, ms: o.connect_ms)?
+
+    c.open @ true
+    r @= request(@c, key: API_VERSIONS, version: 2, body: [], client_id: o.client_id, wait_ms: o.connect_ms, most: 1048576, answered: true)?
+
+    c.versions @ match take_versions(@r)
+        .ok got => got
+        .err e  => return lose(@c, code: e.code, msg: f"{target}: {e.msg}")
+
+    match login(@c, o: o)
+        .ok _  => return ok(c)
+        .err e => return lose(@c, code: e.code, msg: e.msg)
+
+# The login `o.sasl` asks, done on the connection.
+#
+# - `c`: the connection.
+# - `o`: the options.
+function login(@c: Conn, o: model.Options) -> ()?
+    mechanism = match o.sasl
+        .none           => return ok()
+        .plain _        => "PLAIN"
+        .scram_sha256 _ => "SCRAM-SHA-256"
+        .scram_sha512 _ => "SCRAM-SHA-512"
+
+    body: [u8] @= []
+    wire.put_string(out: @body, s: mechanism, what: "the mechanism")?
+    r @= request(@c, key: SASL_HANDSHAKE, version: 1, body: body, client_id: o.client_id, wait_ms: o.connect_ms, most: 65536, answered: true)?
+    error = wire.take_i16(@r, what: "SaslHandshake")?
+
+    if error != 0
+        count = wire.take_count(@r, what: "SaslHandshake")?
+        offered: [str] @= []
+
+        for _ in range(from: 0, to: count)
+            offered @ offered.push(wire.take_string(@r, what: "SaslHandshake")?)
+
+        return fail(code: model.UNSUPPORTED, msg: f"{c.target} does not take {mechanism}, only: {offered.join(", ")}")
+
+    match o.sasl
+        .none => return ok()
+        .plain p =>
+            _ = authenticate(@c, o: o, data: sasl.plain(username: p.username, password: p.password))?
+            return ok()
+        .scram_sha256 s => return scram(@c, o: o, algorithm: .sha256, username: s.username, password: s.password)
+        .scram_sha512 s => return scram(@c, o: o, algorithm: .sha512, username: s.username, password: s.password)
+
+# One `SaslAuthenticate`, answering the server's bytes.
+#
+# - `c`: the connection.
+# - `o`: the options.
+# - `data`: the client's bytes.
+function authenticate(@c: Conn, o: model.Options, data: [u8]) -> [u8]?
+    body: [u8] @= []
+    wire.put_bytes(out: @body, data: data)
+    r @= request(@c, key: SASL_AUTHENTICATE, version: 1, body: body, client_id: o.client_id, wait_ms: o.connect_ms, most: 65536, answered: true)?
+    error = wire.take_i16(@r, what: "SaslAuthenticate")?
+    said = wire.take_string(@r, what: "SaslAuthenticate")?
+    answer = wire.take_bytes(@r, what: "SaslAuthenticate")?
+
+    if error != 0
+        return fail(code: model.PERMISSION, msg: f"{c.target} refused the login: {said}")
+    return ok(answer)
+
+# A SCRAM login.
+#
+# - `c`: the connection.
+# - `o`: the options.
+# - `algorithm`: SHA-256 or SHA-512.
+# - `username`: the user's name.
+# - `password`: the password.
+function scram(@c: Conn, o: model.Options, algorithm: crypto.Algorithm, username: str, password: str) -> ()?
+    s @= sasl.begin(algorithm, username: username, password: password, nonce: sasl.fresh_nonce()?)
+    server_first = authenticate(@c, o: o, data: sasl.first(s))?
+    server_final = authenticate(@c, o: o, data: sasl.respond(s: @s, answer: server_first)?)?
+    return sasl.verify(s, answer: server_final)
+
+# Closes the connection.
+#
+# - `c`: the connection, closed after.
+function close(@c: Conn)
+    link.close(@c.link)
+    c.open @ false
+    c.buf @ []
+
+test "api_name, check_version: a name known and not, a version inside the range, outside it, an API the broker does not read"
+    assert api_name(0) == "Produce" && api_name(37) == "CreatePartitions" && api_name(99) == "the API 99"
+    c @= closed(1, target: "b:9092")
+    c.versions @ [model.ApiVersion(key: 0, min: 3, max: 13)]
+    check_version(c, key: 0, version: 8).must()
+
+    match check_version(c, key: 0, version: 2)
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported" && e.msg == "b:9092 reads Produce 3 to 13, and this client speaks 2: a broker of Kafka 2.4 or later reads it"
+
+    assert check_version(c, key: 1, version: 11).is_err()
+
+test "request: the header written, the answer read whole across reads, a correlation that disagrees, an answer past the bound"
+    two = net.pair(5000).must()
+    c @= closed(1, target: "peer")
+    c.link @ .plain(conn: two.first)
+    c.open @ true
+    c.versions @ [model.ApiVersion(key: 3, min: 0, max: 12)]
+    peer @= two.second.stream
+    io.write(peer, data: [0, 0, 0, 7, 0, 0, 0, 1, 9, 8, 7]).must()
+    r @= request(@c, key: 3, version: 8, body: [5], client_id: "id", wait_ms: 2000, most: 100, answered: true).must()
+    assert wire.take_raw(@r, n: 3, what: "x").must() == [9, 8, 7]
+    assert io.read(peer, most: 100).must() == [0, 0, 0, 13, 0, 3, 0, 8, 0, 0, 0, 1, 0, 2, 'i', 'd', 5]
+    io.write(peer, data: [0, 0, 0, 4, 0, 0, 0, 9]).must()
+    assert request(@c, key: 3, version: 8, body: [], client_id: "", wait_ms: 2000, most: 100, answered: true).is_err() && !c.open
+    c.link @ .gone
+    io.close(@peer).must()
+    three = net.pair(5000).must()
+    d @= closed(1, target: "peer")
+    d.link @ .plain(conn: three.first)
+    d.open @ true
+    d.versions @ [model.ApiVersion(key: 3, min: 0, max: 12)]
+    other @= three.second.stream
+    io.write(other, data: [0, 1, 0, 0]).must()
+
+    match request(@d, key: 3, version: 8, body: [], client_id: "", wait_ms: 2000, most: 100, answered: true)
+        .ok _  => assert false
+        .err e => assert e.code == "limit"
+
+    io.close(@other).must()

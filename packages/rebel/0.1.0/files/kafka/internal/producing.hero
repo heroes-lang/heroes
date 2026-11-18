@@ -1,0 +1,362 @@
+# Messages written: each partition's messages as one batch, the batches of
+# the partitions one broker leads sent in one `Produce` 8, the leader's
+# answers read, and a partition whose leader moved or was not ready sent
+# again with fresh metadata within the call's time. A message with no
+# partition goes where its key's hash says, or one partition after another
+# where its key is null.
+
+use kafka/internal/cluster
+use kafka/internal/errors
+use kafka/internal/model
+use kafka/internal/murmur
+use kafka/internal/records
+use kafka/internal/state
+use kafka/internal/wire
+use time
+
+# The key of `Produce`.
+constant PRODUCE: i64
+    0
+
+# The messages of one partition, sent as one batch.
+record Bucket
+    # The topic.
+    topic: str
+    # The partition.
+    partition: i64
+    # The indices of its messages in the call's list, in order.
+    indices: [i64]
+    # The batch.
+    batch: [u8]
+    # What the leader answered, once it did.
+    produced: model.Produced
+    # Whether it was answered.
+    done: bool
+    # The error that ended it, 0 for none.
+    error: i64
+    # The broker's words beside the error.
+    said: str
+
+# The number `acks` writes.
+#
+# - `a`: the acknowledgement.
+function acks_of(a: model.Acks) -> i64
+    return match a
+        .none   => 0
+        .leader => 1
+        .all    => -1
+
+# The wall clock, in milliseconds since 1970.
+function wall_ms() -> i64
+    return match time.now()
+        .ok t  => time.unix_milliseconds(t)
+        .err _ => 0
+
+# The body of a `Produce` 8 of the buckets at `chosen`.
+#
+# - `s`: the session.
+# - `buckets`: the buckets.
+# - `chosen`: the indices of those sent.
+function body_of(s: state.Session lent, buckets: [Bucket] lent, chosen: [i64]) -> [u8]?
+    out: [u8] @= []
+    wire.put_null_string(out: @out)
+    wire.put_i16(out: @out, v: acks_of(s.options.acks))
+    wire.put_i32(out: @out, v: s.options.wait_ms)
+    topics: [str] @= []
+
+    for i in chosen
+        seen: bool @= false
+
+        for t in topics
+            if t == buckets[i].topic
+                seen @ true
+
+        if !seen
+            topics @ topics.push(buckets[i].topic)
+
+    wire.put_i32(out: @out, v: topics.len())
+
+    for t in topics
+        wire.put_string(out: @out, s: t, what: "a topic's name")?
+        mine: [i64] @= []
+
+        for i in chosen
+            if buckets[i].topic == t
+                mine @ mine.push(i)
+
+        wire.put_i32(out: @out, v: mine.len())
+
+        for i in mine
+            wire.put_i32(out: @out, v: buckets[i].partition)
+            wire.put_bytes(out: @out, data: buckets[i].batch)
+
+    return ok(out)
+
+# Reads a `Produce` 8 answer into the buckets it names.
+#
+# - `r`: the answer.
+# - `buckets`: the buckets.
+# - `chosen`: the indices of those sent.
+function take_answer(@r: wire.Reader, @buckets: [Bucket], chosen: [i64]) -> ()?
+    topic_count = wire.take_count(@r, what: "Produce's topics")?
+
+    for _ in range(from: 0, to: topic_count)
+        name = wire.take_string(@r, what: "Produce's topic")?
+        partition_count = wire.take_count(@r, what: "Produce's partitions")?
+
+        for _ in range(from: 0, to: partition_count)
+            index = wire.take_i32(@r, what: "Produce's partition")?
+            error = wire.take_i16(@r, what: "Produce's error")?
+            base = wire.take_i64(@r, what: "Produce's offset")?
+            append = wire.take_i64(@r, what: "Produce's time")?
+            start = wire.take_i64(@r, what: "Produce's start")?
+            record_errors = wire.take_count(@r, what: "Produce's record errors")?
+            said: [str] @= []
+
+            for _ in range(from: 0, to: record_errors)
+                _ = wire.take_i32(@r, what: "a record error")?
+                said @ said.push(wire.take_string(@r, what: "a record error")?)
+
+            message = wire.take_string(@r, what: "Produce's message")?
+
+            if message != ""
+                said @ said.push(message)
+
+            for i in chosen
+                if buckets[i].topic == name && buckets[i].partition == index
+                    buckets[i].error @ error
+                    buckets[i].said @ said.join("; ")
+
+                    if error == 0
+                        buckets[i].done @ true
+                        buckets[i].produced @ model.Produced(
+                            base_offset: base,
+                            log_append_time_ms: append,
+                            log_start_offset: start
+                        )
+
+    _ = wire.take_i32(@r, what: "Produce's throttle")?
+    return ok()
+
+# Adds a bucket.
+#
+# - `buckets`: the buckets.
+# - `b`: one more.
+function add_bucket(@buckets: [Bucket], b: Bucket)
+    buckets @ buckets.push(b)
+
+# Sends every bucket not yet done to its leader, again while the errors may
+# be cured, within `Options.wait_ms`.
+#
+# - `s`: the session.
+# - `buckets`: the buckets, each done or ended by an error after.
+function send_buckets(@s: state.Session, @buckets: [Bucket]) -> ()?
+    until = cluster.now_ms() + s.options.wait_ms
+    answered = acks_of(s.options.acks) != 0
+    first: bool @= true
+
+    while true
+        open: [i64] @= []
+
+        for i in range(from: 0, to: buckets.len())
+            if !buckets[i].done && (buckets[i].error == 0 || errors.is_retriable(buckets[i].error))
+                open @ open.push(i)
+
+        if open.len() == 0
+            return ok()
+
+        if !first
+            if cluster.now_ms() >= until
+                for i in open
+                    if buckets[i].error == 0
+                        buckets[i].error @ 7
+
+                return ok()
+            cluster.pause_ms(100)
+            names: [str] @= []
+
+            for i in open
+                names @ names.push(buckets[i].topic)
+
+            _ = cluster.describe(@s, topics: names, every: false)?
+        first @ false
+        leaders: [i64] @= []
+
+        for i in open
+            leaders @ leaders.push(cluster.leader_of(@s, topic: buckets[i].topic, partition: buckets[i].partition)?)
+
+        done_leaders: [i64] @= []
+
+        for k in range(from: 0, to: open.len())
+            leader = leaders[k]
+            seen: bool @= false
+
+            for d in done_leaders
+                if d == leader
+                    seen @ true
+
+            if !seen
+                done_leaders @ done_leaders.push(leader)
+                chosen: [i64] @= []
+
+                for j in range(from: 0, to: open.len())
+                    if leaders[j] == leader
+                        chosen @ chosen.push(open[j])
+
+                body = body_of(s, buckets: buckets, chosen: chosen)?
+
+                match cluster.send(@s, node_id: leader, key: PRODUCE, version: 8, body: body, extra_ms: 0, answered: answered)
+                    .ok got =>
+                        if answered
+                            r @= got
+                            take_answer(@r, buckets: @buckets, chosen: chosen)?
+                        else
+                            for i in chosen
+                                buckets[i].done @ true
+                    .err e =>
+                        if e.code == model.CLOSED || e.code == model.TIMEOUT
+                            for i in chosen
+                                buckets[i].error @ 13
+                                buckets[i].said @ e.msg
+                        else
+                            return fail(code: e.code, msg: e.msg)
+
+# Writes `messages` to one partition and answers what its leader said.
+#
+# - `s`: the session.
+# - `topic`: the topic.
+# - `partition`: the partition.
+# - `messages`: the messages.
+function produce(@s: state.Session, topic: str, partition: i64, messages: [model.Message]) -> model.Produced?
+    batch = records.encode(messages, compression: s.options.compression, now_ms: wall_ms())?
+    none = model.Produced(base_offset: -1, log_append_time_ms: -1, log_start_offset: -1)
+    buckets: [Bucket] @= [
+        Bucket(topic: topic, partition: partition, indices: [], batch: batch, produced: none, done: false, error: 0, said: "")
+    ]
+    _ = cluster.leader_of(@s, topic: topic, partition: partition)?
+    send_buckets(@s, buckets: @buckets)?
+
+    if !buckets[0].done
+        return errors.failure(
+            buckets[0].error,
+            what: f"producing to the partition {partition} of \"{topic}\"",
+            said_too: buckets[0].said
+        )
+    return ok(buckets[0].produced)
+
+# The partition `m` goes to among `count`.
+#
+# - `s`: the session; a topic's counter moves for a null key.
+# - `m`: the message.
+# - `count`: the topic's partitions.
+function choose(@s: state.Session, m: model.Message lent, count: i64) -> i64?
+    if m.partition >= 0
+        if m.partition >= count
+            return fail(
+                code: model.NOT_FOUND,
+                msg: f"the topic \"{m.topic}\" has {count} partitions, and no partition {m.partition}"
+            )
+        return ok(m.partition)
+
+    if m.partition != -1
+        return fail(code: model.INVALID, msg: f"the partition {m.partition} is below -1")
+
+    if !m.null_key
+        return ok(murmur.partition_of(m.key, partitions: count))
+    next = s.round_robin[m.topic].default(0)
+    s.round_robin[m.topic] @ (next + 1) % count
+    return ok(next % count)
+
+# Writes each message to its topic and partition and answers them with their
+# partition and offset set.
+#
+# - `s`: the session.
+# - `messages`: the messages.
+function send(@s: state.Session, messages: [model.Message]) -> [model.Message]?
+    if messages.len() == 0
+        return fail(code: model.INVALID, msg: "no message to send")
+    out @= messages
+    buckets: [Bucket] @= []
+    none = model.Produced(base_offset: -1, log_append_time_ms: -1, log_start_offset: -1)
+
+    for i in range(from: 0, to: messages.len())
+        if messages[i].topic == ""
+            return fail(code: model.INVALID, msg: f"the message {i} names no topic")
+        at = cluster.topic_at(@s, topic: messages[i].topic)?
+        p = choose(@s, m: messages[i], count: s.topics[at].partitions.len())?
+        out[i].partition @ p
+        found: i64 @= -1
+
+        for b in range(from: 0, to: buckets.len())
+            if buckets[b].topic == messages[i].topic && buckets[b].partition == p
+                found @ b
+
+        if found == -1
+            add_bucket(
+                buckets: @buckets,
+                b: Bucket(topic: messages[i].topic, partition: p, indices: [i], batch: [], produced: none, done: false, error: 0, said: "")
+            )
+        else
+            buckets[found].indices @ buckets[found].indices.push(i)
+
+    now = wall_ms()
+
+    for b in range(from: 0, to: buckets.len())
+        mine: [model.Message] @= []
+
+        for i in buckets[b].indices
+            mine @ mine.push(messages[i])
+
+        buckets[b].batch @ records.encode(mine, compression: s.options.compression, now_ms: now)?
+
+    send_buckets(@s, buckets: @buckets)?
+
+    for b in buckets
+        if !b.done
+            return errors.failure(
+                b.error,
+                what: f"producing to the partition {b.partition} of \"{b.topic}\"",
+                said_too: b.said
+            )
+
+        for k in range(from: 0, to: b.indices.len())
+            i = b.indices[k]
+
+            if b.produced.base_offset >= 0
+                out[i].offset @ b.produced.base_offset + k
+            else
+                out[i].offset @ -1
+
+    return ok(out)
+
+test "acks_of: none, the leader, every copy"
+    assert acks_of(.none) == 0 && acks_of(.leader) == 1 && acks_of(.all) == -1
+
+test "take_answer: a partition answered, another refused with the broker's words"
+    none = model.Produced(base_offset: -1, log_append_time_ms: -1, log_start_offset: -1)
+    buckets: [Bucket] @= [
+        Bucket(topic: "t", partition: 0, indices: [], batch: [], produced: none, done: false, error: 0, said: "")
+        Bucket(topic: "t", partition: 1, indices: [], batch: [], produced: none, done: false, error: 0, said: "")
+    ]
+    answer: [u8] @= []
+    wire.put_i32(out: @answer, v: 1)
+    wire.put_string(out: @answer, s: "t", what: "t").must()
+    wire.put_i32(out: @answer, v: 2)
+
+    for p in [0, 1]
+        wire.put_i32(out: @answer, v: p)
+        wire.put_i16(out: @answer, v: p * 10)
+        wire.put_i64(out: @answer, v: 42)
+        wire.put_i64(out: @answer, v: -1)
+        wire.put_i64(out: @answer, v: 0)
+        wire.put_i32(out: @answer, v: 0)
+
+        if p == 1
+            wire.put_string(out: @answer, s: "too big", what: "m").must()
+        else
+            wire.put_null_string(out: @answer)
+
+    wire.put_i32(out: @answer, v: 0)
+    r @= wire.reader(answer)
+    take_answer(@r, buckets: @buckets, chosen: [0, 1]).must()
+    assert buckets[0].done && buckets[0].produced.base_offset == 42 && !buckets[1].done && buckets[1].error == 10 && buckets[1].said == "too big"

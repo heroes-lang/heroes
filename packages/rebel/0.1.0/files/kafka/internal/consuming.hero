@@ -1,0 +1,219 @@
+# A consumer reading its partitions: `poll` fetching from each leader, the
+# heartbeat, the commit and a new join done as they fall due, a position
+# outside its log moved where the options say; the positions committed; and
+# at the end the group left (`LeaveGroup` 3).
+
+use kafka/internal/cluster
+use kafka/internal/errors
+use kafka/internal/fetching
+use kafka/internal/groups
+use kafka/internal/membership
+use kafka/internal/model
+use kafka/internal/state
+use kafka/internal/wire
+
+# The key of `LeaveGroup`.
+constant LEAVE_GROUP: i64
+    13
+
+# Commits each position that moved since its last commit.
+#
+# - `k`: the consumer.
+function commit(@k: state.Group) -> ()?
+    if k.closed
+        return fail(code: model.CLOSED, msg: "the consumer is closed")
+    offsets: [model.Offset] @= []
+
+    for o in k.owned
+        if o.position >= 0 && o.position != o.committed
+            offsets @ offsets.push(
+                model.Offset(topic: o.topic, partition: o.partition, offset: o.position, metadata: "")
+            )
+
+    if k.options.auto_commit_ms > 0
+        k.commit_due @ cluster.now_ms() + k.options.auto_commit_ms
+
+    if offsets.len() == 0
+        return ok()
+    error = groups.commit(@k.session, group_id: k.options.group_id, generation_id: k.generation_id, member_id: k.member_id, instance_id: k.options.instance_id, offsets: offsets)?
+
+    if error == 25 || error == 22 || error == 27
+        if error == 25
+            k.member_id @ ""
+        k.rejoin @ true
+        return fail(
+            code: model.FAILED,
+            msg: f"the group \"{k.options.group_id}\" rebalanced before the commit: {errors.said(error)}; it is joined again at the next poll"
+        )
+
+    if error != 0
+        return errors.failure(
+            error,
+            what: f"committing the offsets of the group \"{k.options.group_id}\"",
+            said_too: ""
+        )
+
+    for i in range(from: 0, to: k.owned.len())
+        k.owned[i].committed @ k.owned[i].position
+
+    return ok()
+
+# The messages of the consumer's partitions from their positions, the
+# heartbeat, the commit and a new join done where they fall due.
+#
+# - `k`: the consumer.
+# - `wait_ms`: milliseconds the brokers wait for a message.
+function poll(@k: state.Group, wait_ms: i64) -> [model.Message]?
+    if k.closed
+        return fail(code: model.CLOSED, msg: "the consumer is closed")
+
+    if wait_ms < 0
+        return fail(code: model.INVALID, msg: f"the wait {wait_ms} is below 0")
+
+    if cluster.now_ms() >= k.heartbeat_due
+        membership.heartbeat(@k)?
+
+    if k.rejoin
+        membership.join_group(@k)?
+
+    if k.commit_due > 0 && cluster.now_ms() >= k.commit_due
+        match commit(@k)
+            .ok _ => _ = 0
+            .err e =>
+                if !k.rejoin
+                    return fail(code: e.code, msg: e.msg)
+                membership.join_group(@k)?
+    leaders: [i64] @= []
+    asks: [fetching.Ask] @= []
+
+    for o in k.owned
+        if !o.paused
+            if o.position < 0
+                return fail(
+                    code: model.NOT_FOUND,
+                    msg: f"the group \"{k.options.group_id}\" keeps no offset for the partition {o.partition} of \"{o.topic}\", and the consumer begins nowhere"
+                )
+            leaders @ leaders.push(cluster.leader_of(@k.session, topic: o.topic, partition: o.partition)?)
+            asks @ asks.push(fetching.Ask(topic: o.topic, partition: o.partition, offset: o.position))
+
+    out: [model.Message] @= []
+
+    if asks.len() == 0
+        cluster.pause_ms(min_ms(a: wait_ms, b: k.options.heartbeat_ms))
+        return ok(out)
+    distinct: [i64] @= []
+
+    for l in leaders
+        seen: bool @= false
+
+        for d in distinct
+            if d == l
+                seen @ true
+
+        if !seen
+            distinct @ distinct.push(l)
+
+    each_ms = min_ms(a: wait_ms, b: k.options.heartbeat_ms) / distinct.len()
+
+    for leader in distinct
+        mine: [fetching.Ask] @= []
+
+        for i in range(from: 0, to: asks.len())
+            if leaders[i] == leader
+                mine @ mine.push(asks[i])
+
+        answers = fetching.fetch_from(@k.session, leader: leader, asks: mine, wait_ms: each_ms)?
+
+        for a in answers
+            for i in range(from: 0, to: k.owned.len())
+                if k.owned[i].topic == a.topic && k.owned[i].partition == a.partition
+                    if a.error == 0
+                        for m in a.messages
+                            out @ out.push(m)
+
+                        k.owned[i].position @ a.next_offset
+                    else if a.error == 1
+                        reset(@k, i: i)?
+                    else if errors.is_retriable(a.error)
+                        _ = cluster.describe(@k.session, topics: [a.topic], every: false)?
+                    else
+                        return errors.failure(
+                            a.error,
+                            what: f"fetching the partition {a.partition} of \"{a.topic}\"",
+                            said_too: ""
+                        )
+
+    return ok(out)
+
+# The smaller of `a` and `b`.
+#
+# - `a`: a number.
+# - `b`: another.
+function min_ms(a: i64, b: i64) -> i64
+    if a < b
+        return a
+    return b
+
+# Moves the position of the partition at `i`, which fell outside its log, to
+# where the options say a consumer begins.
+#
+# - `k`: the consumer.
+# - `i`: the partition's index.
+function reset(@k: state.Group, i: i64) -> ()?
+    topic = k.owned[i].topic
+    partition = k.owned[i].partition
+
+    match k.options.start
+        .earliest => k.owned[i].position @ fetching.list_offset(@k.session, topic: topic, partition: partition, at: -2)?
+        .latest   => k.owned[i].position @ fetching.list_offset(@k.session, topic: topic, partition: partition, at: -1)?
+        .none => return fail(
+            code: model.INVALID,
+            msg: f"the position {k.owned[i].position} of the partition {partition} of \"{topic}\" is outside its log"
+        )
+
+    return ok()
+
+# The index of a partition the consumer owns.
+#
+# - `k`: the consumer.
+# - `topic`: the topic.
+# - `partition`: the partition.
+function owned_at(k: state.Group lent, topic: str, partition: i64) -> i64?
+    for i in range(from: 0, to: k.owned.len())
+        if k.owned[i].topic == topic && k.owned[i].partition == partition
+            return ok(i)
+
+    return fail(code: model.NOT_FOUND, msg: f"the partition {partition} of \"{topic}\" is not the consumer's")
+
+# Commits where the options ask it, leaves the group and closes the client.
+#
+# - `k`: the consumer, closed after.
+function close(@k: state.Group) -> ()?
+    if k.closed
+        return fail(code: model.CLOSED, msg: "the consumer is closed already")
+    committed: ()? @= ok()
+
+    if k.options.auto_commit_ms > 0 && !k.rejoin
+        committed @ commit(@k)
+
+    if k.member_id != "" && k.coordinator >= 0
+        body: [u8] @= []
+        _ = wire.put_string(out: @body, s: k.options.group_id, what: "the group's identifier").is_err()
+        wire.put_i32(out: @body, v: 1)
+        _ = wire.put_string(out: @body, s: k.member_id, what: "the member's identifier").is_err()
+        _ = wire.put_string_or_null(out: @body, s: k.options.instance_id, what: "the instance's identifier").is_err()
+        _ = cluster.send(
+            @k.session,
+            node_id: k.coordinator,
+            key: LEAVE_GROUP,
+            version: 3,
+            body: body,
+            extra_ms: 0,
+            answered: true
+        ).is_err()
+    cluster.close(@k.session)
+    k.closed @ true
+    return committed
+
+test "min_ms: either side"
+    assert min_ms(a: 1, b: 2) == 1 && min_ms(a: 5, b: 3) == 3

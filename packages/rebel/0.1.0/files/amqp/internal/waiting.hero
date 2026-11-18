@@ -1,0 +1,349 @@
+# Waiting on the server within a deadline: for a frame, for the answer to a
+# request on a channel, for a delivery, a returned message or a
+# confirmation; the heartbeat sent where it is due, and the connection lost
+# where the server has been silent for two heartbeats.
+
+use amqp/internal/decoding
+use amqp/internal/dispatch
+use amqp/internal/fixture
+use amqp/internal/link
+use amqp/internal/model
+use amqp/internal/reading
+use amqp/internal/state
+use bytes
+use io
+
+# The moment `wait_ms` from now on the monotonic clock, a wait of 0 given one
+# millisecond to read what has come.
+#
+# - `wait_ms`: the wait.
+function deadline(wait_ms: i64) -> i64
+    if wait_ms < 1
+        return reading.now_ms() + 1
+    return reading.now_ms() + wait_ms
+
+# The failure of a connection that is not open.
+#
+# - `s`: the session.
+function closed_failure<T>(s: state.Session lent) -> T?
+    if s.closed_by_server
+        return fail(code: model.CLOSED, msg: f"{s.target} closed the connection: {s.closing.code} {s.closing.text}")
+    return fail(code: model.CLOSED, msg: f"the connection to {s.target} is closed")
+
+# Waits once for bytes, within `until`, sending a heartbeat where one is due
+# and losing the connection where the server has been silent too long.
+#
+# - `s`: the session, open.
+# - `until`: when the wait ends, in milliseconds.
+function wait_once(@s: state.Session, until: i64) -> ()?
+    now = reading.now_ms()
+    left = until - now
+
+    if left <= 0
+        return fail(code: model.TIMEOUT, msg: f"no answer of {s.target} came in time")
+    arm: i64 @= left
+
+    if s.heartbeat_ms > 0
+        if now - s.last_read >= 2 * s.heartbeat_ms
+            return reading.lose(@s, code: model.CLOSED, msg: f"{s.target} sent nothing for two heartbeats")
+        beat = s.heartbeat_ms / 2
+
+        if now - s.last_write >= beat
+            reading.write(@s, data: [8, 0, 0, 0, 0, 0, 0, 206])?
+        next_beat = s.last_write + beat - reading.now_ms()
+        silent = s.last_read + 2 * s.heartbeat_ms - reading.now_ms()
+
+        if next_beat < arm
+            arm @ next_beat
+
+        if silent < arm
+            arm @ silent
+
+    if arm < 1
+        arm @ 1
+
+    match link.arm(s.link, ms: arm)
+        .ok _  => _ = 0
+        .err e => return reading.lose(@s, code: e.code, msg: e.msg)
+
+    match reading.fill(@s)
+        .ok _ => return ok()
+        .err e =>
+            if e.code == model.TIMEOUT
+                return ok()
+            return fail(code: e.code, msg: e.msg)
+
+# One frame of the server acted on, within the wait that ends at `until`.
+#
+# - `s`: the session.
+# - `until`: when the wait ends, in milliseconds.
+function step(@s: state.Session, until: i64) -> reading.Event?
+    while true
+        if !s.open
+            return closed_failure(s)
+        t = reading.taken(@s)?
+
+        if t.complete
+            return dispatch.apply(@s, t: t)
+        wait_once(@s, until: until)?
+
+# Acts on every frame whole in the bytes read, without waiting.
+#
+# - `s`: the session.
+function drain(@s: state.Session) -> ()?
+    while true
+        if !s.open
+            return closed_failure(s)
+        t = reading.taken(@s)?
+
+        if !t.complete
+            return ok()
+        _ = dispatch.apply(@s, t: t)?
+
+# The failure of a channel the server closed.
+#
+# - `s`: the session.
+# - `n`: the channel.
+# - `c`: the server's close.
+function channel_failure<T>(s: state.Session lent, n: i64, c: model.Closing) -> T?
+    return fail(code: reading.code_of(c.code), msg: f"{s.target} closed channel {n}: {c.code} {c.text}")
+
+# The answer on channel `n` whose class and method `keys` name, waiting until
+# `until`.
+#
+# - `s`: the session.
+# - `n`: the channel, 0 for the connection.
+# - `keys`: the answers awaited, as `decoding.key` makes them.
+# - `until`: when the wait ends.
+#
+# Fails as the server's close of the channel says, where it closes it.
+function await_reply(@s: state.Session, n: i64, awaited: [i64], until: i64) -> decoding.Incoming?
+    while true
+        event = step(@s, until: until)?
+
+        match event
+            .reply r =>
+                if r.channel == n
+                    match r.method
+                        .close c =>
+                            if n == 0
+                                return fail(
+                                    code: reading.code_of(c.closing.code),
+                                    msg: f"{s.target} closed the connection: {c.closing.code} {c.closing.text}"
+                                )
+
+                            if !awaited.any(is_close_key)
+                                return channel_failure(s, n: n, c: c.closing)
+                        .start _ | .secure _ | .tune _ | .blocked _ | .unblocked | .flow _ | .declare_ok _ | .count _ | .tagged _ | .cancelled _ | .returned _ | .deliver _ | .get_ok _ | .get_empty | .confirm _ | .reply _ => _ = 0
+
+                    k = decoding.key_of(r.method)
+
+                    for want in awaited
+                        if k == want
+                            return ok(r.method)
+            .got _ | .other => _ = 0
+
+# Whether `k` is the key of `channel.close`.
+#
+# - `k`: a key.
+function is_close_key(k: i64) -> bool
+    return k == decoding.key(class_id: 20, method_id: 40)
+
+# Sends the method `payload` on channel `n` and waits for one of its answers.
+#
+# - `s`: the session.
+# - `n`: the channel, open, or 0.
+# - `payload`: the method.
+# - `keys`: the answers awaited.
+function call(@s: state.Session, n: i64, payload: [u8] lent, awaited: [i64]) -> decoding.Incoming?
+    if !s.open
+        return closed_failure(s)
+
+    if n > 0 && !state.is_open(s, channel: n)
+        return channel_closed(s, n: n)
+    until = deadline(s.options.wait_ms)
+    reading.send(@s, channel: n, payload: payload)?
+    return await_reply(@s, n: n, awaited: awaited, until: until)
+
+# The failure of a channel that is not open.
+#
+# - `s`: the session.
+# - `n`: the channel.
+function channel_closed<T>(s: state.Session lent, n: i64) -> T?
+    if n >= 1 && n < s.chans.len() && s.chans[n].closed_by_server
+        return channel_failure(s, n: n, c: s.chans[n].closing)
+    return fail(code: model.CLOSED, msg: f"channel {n} of {s.target} is not open")
+
+# The message `basic.get` asked for on channel `n`, or `not_found` where the
+# queue is empty.
+#
+# - `s`: the session.
+# - `n`: the channel, open.
+# - `payload`: the `basic.get`.
+function call_get(@s: state.Session, n: i64, payload: [u8] lent) -> model.Delivery?
+    if !s.open
+        return closed_failure(s)
+
+    if !state.is_open(s, channel: n)
+        return channel_closed(s, n: n)
+    until = deadline(s.options.wait_ms)
+    reading.send(@s, channel: n, payload: payload)?
+
+    while true
+        event = step(@s, until: until)?
+
+        match event
+            .got g =>
+                if g.channel == n
+                    return ok(g.delivery)
+            .reply r =>
+                if r.channel == n
+                    match r.method
+                        .get_empty => return fail(code: model.NOT_FOUND, msg: "the queue is empty")
+                        .close c => return channel_failure(s, n: n, c: c.closing)
+                        .start _ | .secure _ | .tune _ | .blocked _ | .unblocked | .flow _ | .declare_ok _ | .count _ | .tagged _ | .cancelled _ | .returned _ | .deliver _ | .get_ok _ | .confirm _ | .reply _ => _ = 0
+            .other => _ = 0
+
+# The first delivery held, taken; waiting until `until` for one.
+#
+# - `s`: the session.
+# - `until`: when the wait ends.
+function next_delivery(@s: state.Session, until: i64) -> model.Delivery?
+    while s.delivery_at >= s.deliveries.len()
+        _ = step(@s, until: until)?
+
+    d = s.deliveries[s.delivery_at]
+    s.delivery_at @ s.delivery_at + 1
+
+    if s.delivery_at == s.deliveries.len()
+        s.deliveries @ []
+        s.delivery_at @ 0
+    else if s.delivery_at > 1024 && s.delivery_at * 2 > s.deliveries.len()
+        s.deliveries @ s.deliveries.slice(from: s.delivery_at, to: s.deliveries.len())
+        s.delivery_at @ 0
+    return ok(d)
+
+# The first returned message held, taken; waiting until `until` for one.
+#
+# - `s`: the session.
+# - `until`: when the wait ends.
+function next_return(@s: state.Session, until: i64) -> model.Return?
+    while s.return_at >= s.returns.len()
+        _ = step(@s, until: until)?
+
+    r = s.returns[s.return_at]
+    s.return_at @ s.return_at + 1
+
+    if s.return_at == s.returns.len()
+        s.returns @ []
+        s.return_at @ 0
+    return ok(r)
+
+# The first confirmation held on channel `n`, taken; waiting until `until`.
+#
+# - `s`: the session.
+# - `n`: the channel.
+# - `until`: when the wait ends.
+function next_confirmation(@s: state.Session, n: i64, until: i64) -> model.Confirmation?
+    while state.is_open(s, channel: n) && s.chans[n].confirmation_at >= s.chans[n].confirmations.len()
+        _ = step(@s, until: until)?
+
+    if !state.is_open(s, channel: n)
+        return channel_closed(s, n: n)
+    at = s.chans[n].confirmation_at
+    c = s.chans[n].confirmations[at]
+    s.chans[n].confirmation_at @ at + 1
+
+    if at + 1 == s.chans[n].confirmations.len()
+        s.chans[n].confirmations @ []
+        s.chans[n].confirmation_at @ 0
+    return ok(c)
+
+# Waits until no publish of channel `n` is outstanding, then forgets the
+# confirmations held and answers the sequence numbers the server refused.
+#
+# - `s`: the session.
+# - `n`: the channel.
+# - `until`: when the wait ends.
+function settle_all(@s: state.Session, n: i64, until: i64) -> [i64]?
+    while state.is_open(s, channel: n) && s.chans[n].outstanding.len() > 0
+        _ = step(@s, until: until)?
+
+    if !state.is_open(s, channel: n)
+        return channel_closed(s, n: n)
+    refused = s.chans[n].nacked
+    s.chans[n].nacked @ []
+    s.chans[n].confirmations @ []
+    s.chans[n].confirmation_at @ 0
+    return ok(refused)
+
+test "await_reply: a delivery for a consumer held while the answer is awaited, then the answer"
+    w @= fixture.wired()
+    io.write(
+        w.peer,
+        data: bytes.concat([fixture.delivery(channel: 1, tag: 1, body: [7]), fixture.method(channel: 1, class_id: 60, method_id: 11, fields: [])])
+    ).must()
+    answer = await_reply(
+        @w.session,
+        n: 1,
+        awaited: [decoding.key(class_id: 60, method_id: 11)],
+        until: deadline(2000)
+    ).must()
+    assert answer == .reply(class_id: 60, method_id: 11) && w.session.deliveries.len() == 1
+    fixture.unwire(@w)
+
+test "await_reply: no answer in time, and a channel the server closes"
+    w @= fixture.wired()
+
+    match await_reply(@w.session, n: 1, awaited: [decoding.key(class_id: 60, method_id: 11)], until: deadline(50))
+        .ok _  => assert false
+        .err e => assert e.code == "timeout"
+
+    io.write(
+        w.peer,
+        data: fixture.method(channel: 1, class_id: 20, method_id: 40, fields: [1, 150, 1, 'p', 0, 50, 0, 10])
+    ).must()
+
+    match await_reply(@w.session, n: 1, awaited: [decoding.key(class_id: 50, method_id: 11)], until: deadline(2000))
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "server closed channel 1: 406 p"
+
+    fixture.unwire(@w)
+
+test "wait_once: a heartbeat sent when half of one has passed, and the connection lost after two silent ones"
+    w @= fixture.wired()
+    w.session.heartbeat_ms @ 100
+    w.session.last_write @ reading.now_ms() - 60
+    wait_once(@w.session, until: deadline(20)).must()
+    assert fixture.written(w.peer) == [8, 0, 0, 0, 0, 0, 0, 206]
+    w.session.last_read @ reading.now_ms() - 250
+
+    match wait_once(@w.session, until: deadline(20))
+        .ok _  => assert false
+        .err e => assert e.code == "closed" && !w.session.open
+
+    fixture.unwire(@w)
+
+test "next_delivery, next_confirmation, settle_all, call_get: what is held taken in order, a queue empty"
+    w @= fixture.wired()
+    io.write(
+        w.peer,
+        data: bytes.concat([fixture.delivery(channel: 1, tag: 1, body: [1]), fixture.delivery(channel: 1, tag: 2, body: [2])])
+    ).must()
+    assert next_delivery(@w.session, until: deadline(2000)).must().tag == 1
+    assert next_delivery(@w.session, until: deadline(2000)).must().tag == 2
+    assert next_delivery(@w.session, until: deadline(30)).is_err()
+    w.session.chans[1].confirming @ true
+    w.session.chans[1].outstanding @ [1]
+    io.write(
+        w.peer,
+        data: fixture.method(channel: 1, class_id: 60, method_id: 80, fields: [0, 0, 0, 0, 0, 0, 0, 1, 0])
+    ).must()
+    assert settle_all(@w.session, n: 1, until: deadline(2000)).must() == []
+    io.write(w.peer, data: fixture.method(channel: 1, class_id: 60, method_id: 72, fields: [0])).must()
+
+    match call_get(@w.session, n: 1, payload: [0, 60, 0, 70, 0, 0, 1, 'q', 0])
+        .ok _  => assert false
+        .err e => assert e.code == "not_found"
+
+    fixture.unwire(@w)

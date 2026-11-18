@@ -1,0 +1,212 @@
+# The values the private modules of `amqp` share: a mirror of each type the
+# face declares, field for field, since a private module cannot `use` its own
+# face. The face turns its own values into these at its edge and back; the
+# meaning of every field is the face's. A field table travels here as the
+# bytes AMQP writes for it, which the face's `encode_table` makes and
+# `decode_table` reads, so no mirror of a value nested without bound is kept.
+
+## Codes
+
+# An argument refused, or bytes from the server that are no AMQP.
+constant INVALID: str
+    "invalid"
+
+# A queue, an exchange or a consumer the server does not know.
+constant NOT_FOUND: str
+    "not_found"
+
+# A login, a virtual host or a resource refused.
+constant PERMISSION: str
+    "permission"
+
+# The connection or the channel is closed.
+constant CLOSED: str
+    "closed"
+
+# The time allowed ran out.
+constant TIMEOUT: str
+    "timeout"
+
+# The program was asked to stop.
+constant STOPPED: str
+    "stopped"
+
+# A bound passed.
+constant LIMIT: str
+    "limit"
+
+# What the server or the platform does not offer.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# A failure none of the others names.
+constant FAILED: str
+    "failed"
+
+## Values
+
+# The face's `Message`.
+record Message
+    # The MIME type.
+    content_type: str
+    # The MIME encoding.
+    content_encoding: str
+    # The headers: a field table as AMQP writes it, its length first; [] for
+    # none.
+    headers: [u8]
+    # 1 or 2, 0 for none.
+    delivery_mode: i64
+    # 0 to 255, 0 for none.
+    priority: i64
+    # The correlation identifier.
+    correlation_id: str
+    # The queue an answer goes to.
+    reply_to: str
+    # The milliseconds it lives, as text.
+    expiration: str
+    # The message's identifier.
+    message_id: str
+    # Seconds since 1970, 0 for none.
+    timestamp: i64
+    # The message's type.
+    message_type: str
+    # The user that published it.
+    user_id: str
+    # The application that published it.
+    app_id: str
+    # The body.
+    body: [u8]
+
+# The face's `Delivery`.
+record Delivery
+    # The channel's number.
+    channel: i64
+    # The consumer's tag, "" for a `get`.
+    consumer_tag: str
+    # The delivery tag.
+    tag: i64
+    # Whether it was delivered before.
+    redelivered: bool
+    # The exchange it was published to.
+    exchange: str
+    # The routing key.
+    routing_key: str
+    # The messages left in the queue after a `get`, 0 for a consumer's.
+    remaining: i64
+    # The message.
+    message: Message
+
+# The face's `Return`.
+record Return
+    # The channel's number.
+    channel: i64
+    # The reply code.
+    code: i64
+    # The reply text.
+    text: str
+    # The exchange.
+    exchange: str
+    # The routing key.
+    routing_key: str
+    # The message.
+    message: Message
+
+# The face's `Confirmation`.
+record Confirmation
+    # The channel's number.
+    channel: i64
+    # The publish's sequence number.
+    tag: i64
+    # Whether the server took it.
+    ack: bool
+
+# The face's `Cancellation`.
+record Cancellation
+    # The channel's number.
+    channel: i64
+    # The consumer's tag.
+    consumer_tag: str
+
+# The face's `Closing`.
+record Closing
+    # The reply code.
+    code: i64
+    # The reply text.
+    text: str
+    # The class of the method that caused it, 0 for none.
+    class_id: i64
+    # The method that caused it, 0 for none.
+    method_id: i64
+
+# The face's `Blocked`.
+record Blocked
+    # Whether the server holds publishes back.
+    active: bool
+    # Why.
+    reason: str
+
+# The face's `Server`.
+record Server
+    # The server's properties: a field table as AMQP writes it.
+    properties: [u8]
+    # The mechanisms it offers.
+    mechanisms: [str]
+    # The locales it offers.
+    locales: [str]
+    # The protocol's major version.
+    version_major: i64
+    # The protocol's minor version.
+    version_minor: i64
+    # The channels agreed.
+    channel_max: i64
+    # The largest frame agreed.
+    frame_max: i64
+    # The heartbeat agreed, in seconds.
+    heartbeat_s: i64
+
+# The face's `Mechanism`.
+variant Mechanism
+    # SASL PLAIN.
+    plain
+    # RabbitMQ's AMQPLAIN.
+    amqplain
+
+# The face's `Options`.
+record Options
+    # The host.
+    host: str
+    # The port.
+    port: i64
+    # Whether TLS carries the connection.
+    tls: bool
+    # The authorities trusted, "" for the system's.
+    roots: str
+    # The virtual host.
+    vhost: str
+    # The user's name.
+    username: str
+    # The password.
+    password: str
+    # The mechanism.
+    mechanism: Mechanism
+    # The heartbeat asked, in seconds.
+    heartbeat_s: i64
+    # The largest frame asked.
+    frame_max: i64
+    # The most channels asked.
+    channel_max: i64
+    # The connection's name.
+    connection_name: str
+    # The client's properties added: a field table as AMQP writes it, its
+    # length first; [] for none.
+    properties: [u8]
+    # The locale.
+    locale: str
+    # The milliseconds a connection may take.
+    connect_ms: i64
+    # The milliseconds an answer may take.
+    wait_ms: i64
+    # The largest body read.
+    most_body_bytes: i64
+    # The most deliveries, returns and confirmations held.
+    most_held: i64

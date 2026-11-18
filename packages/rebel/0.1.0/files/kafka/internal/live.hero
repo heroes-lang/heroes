@@ -1,0 +1,72 @@
+# What the live tests of `kafka` share: a second member of a group, run on a
+# thread of its own, since a group's members must each answer the
+# coordinator while the other joins.
+
+use kafka/internal/consuming
+use kafka/internal/membership
+use kafka/internal/model
+use strings
+
+# The options of a test's client of `brokers`.
+#
+# - `brokers`: `host:port`.
+function options(brokers: str) -> model.Options
+    return model.Options(
+        brokers: [brokers],
+        client_id: "rebel-live",
+        tls: false,
+        roots: "",
+        sasl: .none,
+        connect_ms: 5000,
+        wait_ms: 10000,
+        most_response_bytes: 104857600,
+        acks: .all,
+        compression: .none,
+        isolation: .read_uncommitted,
+        most_fetch_bytes: 1048576,
+        auto_create_topics: false
+    )
+
+# For the live tests: a member of the group `arg` names, which polls until
+# it has read some messages and the group has two members, then commits and
+# leaves, and answers how many messages it read and its partitions, or the
+# failure.
+#
+# - `arg`: `brokers|group|topic|seconds`.
+function second_member(arg: str) -> str
+    parts = strings.split(s: arg, sep: "|")
+
+    if parts.len() != 4
+        return "bad argument"
+    g = model.GroupOptions(
+        group_id: parts[1],
+        topics: [parts[2]],
+        session_ms: 6000,
+        rebalance_ms: 6000,
+        heartbeat_ms: 500,
+        start: .earliest,
+        auto_commit_ms: 0,
+        instance_id: ""
+    )
+
+    k @= match membership.subscribe(options(parts[0]), g: g)
+        .ok got => got
+        .err e  => return "subscribe: " + e.msg
+
+    read: i64 @= 0
+    rounds: i64 @= 0
+
+    while rounds < 60
+        rounds @ rounds + 1
+
+        match consuming.poll(@k, wait_ms: 200)
+            .ok got => read @ read + got.len()
+            .err e  => return "poll: " + e.msg
+
+        if read > 0 && k.owned.len() == 1 && rounds > 20
+            break
+
+    owned = k.owned.len()
+    _ = consuming.commit(@k).is_err()
+    _ = consuming.close(@k).is_err()
+    return f"{read} {owned}"

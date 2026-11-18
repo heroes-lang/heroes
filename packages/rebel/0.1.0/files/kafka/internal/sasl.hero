@@ -1,0 +1,179 @@
+# SASL's exchanges as Kafka carries them in `SaslAuthenticate`: PLAIN's one
+# message, and SCRAM's three (RFC 5802, RFC 7677): the client's first with
+# its nonce, the server's salt and count answered by the client's proof, the
+# server's signature checked, so a server that does not know the password
+# cannot pass for one that does.
+
+use bytes
+use crypto
+use kafka/internal/model
+use numbers
+use os
+use strings
+
+# PLAIN's message: no identity to act as, the user's name and the password,
+# each after a zero byte.
+#
+# - `username`: the user's name.
+# - `password`: the password.
+function plain(username: str, password: str) -> [u8]
+    return bytes.concat([[0], bytes.from_text(username), [0], bytes.from_text(password)])
+
+# A name as SCRAM writes it: `=` as `=3D` and `,` as `=2C`.
+#
+# - `name`: the name.
+function escaped(name: str) -> str
+    return strings.replace_all(s: strings.replace_all(s: name, old: "=", new: "=3D"), old: ",", new: "=2C")
+
+# What a SCRAM exchange keeps between its messages.
+record Scram
+    # SHA-256 or SHA-512.
+    algorithm: crypto.Algorithm
+    # The password.
+    password: str
+    # The client's nonce.
+    nonce: str
+    # The client's first message without its header, `n=...,r=...`.
+    first_bare: str
+    # The server's signature the server's last message must hold.
+    server_signature: [u8]
+
+# A SCRAM exchange begun with the nonce `nonce`.
+#
+# - `algorithm`: SHA-256 or SHA-512.
+# - `username`: the user's name.
+# - `password`: the password.
+# - `nonce`: printable text, no `,`.
+function begin(algorithm: crypto.Algorithm, username: str, password: str, nonce: str) -> Scram
+    return Scram(
+        algorithm: algorithm,
+        password: password,
+        nonce: nonce,
+        first_bare: f"n={escaped(username)},r={nonce}",
+        server_signature: []
+    )
+
+# A nonce of 24 random bytes, in base 64.
+function fresh_nonce() -> str?
+    return ok(bytes.format_base64(os.random_bytes(24)?))
+
+# The client's first message.
+#
+# - `s`: the exchange.
+function first(s: Scram lent) -> [u8]
+    return bytes.from_text("n,," + s.first_bare)
+
+# The value of the attribute `name` in a SCRAM message, `name=value`
+# separated by `,`.
+#
+# - `message`: the message.
+# - `name`: one letter.
+function attribute(message: str, name: str) -> str?
+    for part in strings.split(s: message, sep: ",")
+        if strings.has_prefix(s: part, prefix: name + "=")
+            return ok(part.slice(from: name.len() + 1, to: part.len()))
+
+    return fail(code: model.INVALID, msg: f"the server's SCRAM message holds no \"{name}\"")
+
+# The client's last message, answering the server's first; the server's
+# signature to come kept in `s`.
+#
+# - `s`: the exchange.
+# - `answer`: the server's first message.
+#
+# Fails `invalid` where the server's message is not SCRAM's or its nonce
+# does not extend the client's, `permission` where it carries an error.
+function respond(@s: Scram, answer: [u8]) -> [u8]?
+    text = match bytes.to_text(answer)
+        .ok got => got
+        .err _  => return fail(code: model.INVALID, msg: "the server's SCRAM message is not UTF-8")
+
+    match attribute(message: text, name: "e")
+        .ok e  => return fail(code: model.PERMISSION, msg: f"the server refused the login: {e}")
+        .err _ => _ = 0
+
+    nonce = attribute(message: text, name: "r")?
+    salt = bytes.parse_base64(attribute(message: text, name: "s")?)?
+
+    count = match numbers.parse_int(attribute(message: text, name: "i")?)
+        .ok got => got
+        .err _  => return fail(code: model.INVALID, msg: "the server's SCRAM iteration count is no number")
+
+    if !strings.has_prefix(s: nonce, prefix: s.nonce) || nonce.len() == s.nonce.len()
+        return fail(code: model.INVALID, msg: "the server's SCRAM nonce does not extend the client's")
+
+    if count < 1 || count > 10000000
+        return fail(code: model.INVALID, msg: f"the server asks {count} iterations of SCRAM")
+    size = crypto.digest_size(s.algorithm)
+    salted = crypto.pbkdf2(s.algorithm, password: bytes.from_text(s.password), salt: salt, iterations: count, length: size)?
+    client_key = crypto.hmac_text(s.algorithm, key: salted, s: "Client Key")
+    stored_key = crypto.digest(hashed(s.algorithm, data: client_key))
+    without_proof = f"c=biws,r={nonce}"
+    auth = s.first_bare + "," + text + "," + without_proof
+    signature = crypto.hmac_text(s.algorithm, key: stored_key, s: auth)
+    proof: [u8] @= []
+
+    for i in range(from: 0, to: client_key.len())
+        proof @ proof.push(to_u8(to_i64(client_key[i]).must() ^ to_i64(signature[i]).must()).must())
+
+    server_key = crypto.hmac_text(s.algorithm, key: salted, s: "Server Key")
+    s.server_signature @ crypto.hmac_text(s.algorithm, key: server_key, s: auth)
+    return ok(bytes.from_text(without_proof + ",p=" + bytes.format_base64(proof)))
+
+# A digest's state fed `data`.
+#
+# - `algorithm`: the hash.
+# - `data`: the bytes.
+function hashed(algorithm: crypto.Algorithm, data: [u8]) -> crypto.State
+    st @= crypto.start(algorithm)
+    crypto.update(state: @st, data: data)
+    return st
+
+# Checks the server's last message.
+#
+# - `s`: the exchange.
+# - `answer`: the server's last message.
+#
+# Fails `permission` where it carries an error, `invalid` where its
+# signature is not the one the password makes.
+function verify(s: Scram lent, answer: [u8]) -> ()?
+    text = bytes.to_text_lossy(answer)
+
+    match attribute(message: text, name: "e")
+        .ok e  => return fail(code: model.PERMISSION, msg: f"the server refused the login: {e}")
+        .err _ => _ = 0
+
+    given = bytes.parse_base64(attribute(message: text, name: "v")?)?
+
+    if !crypto.equals_constant_time(a: given, b: s.server_signature)
+        return fail(
+            code: model.INVALID,
+            msg: "the server's SCRAM signature is not the one the password makes: it does not know the password"
+        )
+    return ok()
+
+test "plain: no identity, the name and the password"
+    assert plain(username: "u", password: "p") == [0, 'u', 0, 'p']
+
+test "escaped: = and , written as SCRAM asks"
+    assert escaped("a=b,c") == "a=3Db=2Cc" && escaped("plain") == "plain"
+
+test "begin, first, respond, verify: RFC 7677's example of SCRAM-SHA-256, and a signature that disagrees"
+    s @= begin(.sha256, username: "user", password: "pencil", nonce: "rOprNGfwEbeRWgbNEkqO")
+    assert first(s) == bytes.from_text("n,,n=user,r=rOprNGfwEbeRWgbNEkqO")
+    server_first = bytes.from_text(
+        "r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0,s=W22ZaJ0SNY7soEsUEjb6gQ==,i=4096"
+    )
+    final = respond(@s, answer: server_first).must()
+    assert final == bytes.from_text("c=biws,r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0,p=dHzbZapWIk4jUhN+Ute9ytag9zjfMHgsqmmiz7AndVQ=")
+    verify(s, answer: bytes.from_text("v=6rriTRBi23WpRR/wtup+mMhUZUn/dB5nLTJRsjl95G4=")).must()
+    assert verify(s, answer: bytes.from_text("v=AAAATRBi23WpRR/wtup+mMhUZUn/dB5nLTJRsjl95G4=")).is_err()
+    assert verify(s, answer: bytes.from_text("e=invalid-proof")).is_err()
+
+test "respond: a nonce that does not extend the client's, an error, a count of 0, no salt"
+    s @= begin(.sha512, username: "u", password: "p", nonce: "abc")
+    assert respond(@s, answer: bytes.from_text("r=xyz1,s=AAAA,i=4096")).is_err()
+    assert respond(@s, answer: bytes.from_text("r=abc,s=AAAA,i=4096")).is_err()
+    assert respond(@s, answer: bytes.from_text("e=unknown-user")).is_err()
+    assert respond(@s, answer: bytes.from_text("r=abcd,s=AAAA,i=0")).is_err()
+    assert respond(@s, answer: bytes.from_text("r=abcd,i=4096")).is_err()

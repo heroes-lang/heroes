@@ -1,0 +1,230 @@
+# The cluster changed: topics made (`CreateTopics` 4) and deleted
+# (`DeleteTopics` 3), partitions added (`CreatePartitions` 1), and the start
+# of a partition's log moved (`DeleteRecords` 1). A topic's request goes to
+# the controller, which a broker of Kafka 2.8 or later reaches for any; a
+# controller moved is asked again within the call's time.
+
+use kafka/internal/cluster
+use kafka/internal/errors
+use kafka/internal/model
+use kafka/internal/state
+use kafka/internal/wire
+
+# The key of `CreateTopics`.
+constant CREATE_TOPICS: i64
+    19
+
+# The key of `DeleteTopics`.
+constant DELETE_TOPICS: i64
+    20
+
+# The key of `DeleteRecords`.
+constant DELETE_RECORDS: i64
+    21
+
+# The key of `CreatePartitions`.
+constant CREATE_PARTITIONS: i64
+    37
+
+# What a request about topics answered for one topic.
+record Outcome
+    # The topic.
+    name: str
+    # The error, 0 for none.
+    error: i64
+    # The broker's words.
+    said: str
+
+# Sends a request about topics to the controller, or to any broker where
+# none is told, again while the controller moved, and answers each topic's
+# outcome.
+#
+# - `s`: the session.
+# - `key`: the API.
+# - `version`: its version.
+# - `body`: the request.
+# - `messages`: whether each outcome carries the broker's words.
+function to_controller(@s: state.Session, key: i64, version: i64, body: [u8], messages: bool) -> [Outcome]?
+    until = cluster.now_ms() + s.options.wait_ms
+
+    while true
+        r @= if s.controller_id >= 0
+            cluster.send(@s, node_id: s.controller_id, key: key, version: version, body: body, extra_ms: 0, answered: true)?
+        else
+            cluster.send_any(@s, key: key, version: version, body: body)?
+
+        _ = wire.take_i32(@r, what: "an answer's throttle")?
+        count = wire.take_count(@r, what: "an answer's topics")?
+        out: [Outcome] @= []
+        retry: bool @= false
+
+        for _ in range(from: 0, to: count)
+            name = wire.take_string(@r, what: "a topic's name")?
+            error = wire.take_i16(@r, what: "a topic's error")?
+
+            said = if messages
+                wire.take_string(@r, what: "a topic's message")?
+            else
+                ""
+
+            if error == 41
+                retry @ true
+            out @ out.push(Outcome(name: name, error: error, said: said))
+
+        if !retry || cluster.now_ms() >= until
+            return ok(out)
+        cluster.pause_ms(100)
+        _ = cluster.refresh(@s, topics: [], every: false)?
+
+# Fails as the first outcome with an error, naming every topic that failed.
+#
+# - `outcomes`: the outcomes.
+# - `what`: what was asked.
+function settled(outcomes: [Outcome], what: str) -> ()?
+    first: i64 @= 0
+    named: [str] @= []
+
+    for o in outcomes
+        if o.error != 0
+            if first == 0
+                first @ o.error
+
+            if o.said == ""
+                named @ named.push(f"\"{o.name}\" {errors.said(o.error)}")
+            else
+                named @ named.push(f"\"{o.name}\" {errors.said(o.error)}: {o.said}")
+
+    if first == 0
+        return ok()
+    return fail(code: errors.code_of(first), msg: f"{what}: {named.join("; ")}")
+
+# Makes the topics `topics`.
+#
+# - `s`: the session.
+# - `topics`: the topics.
+function create_topics(@s: state.Session, topics: [model.NewTopic]) -> ()?
+    if topics.len() == 0
+        return fail(code: model.INVALID, msg: "no topic to make")
+    body: [u8] @= []
+    wire.put_i32(out: @body, v: topics.len())
+
+    for t in topics
+        if t.partitions == 0 || t.partitions < -1 || t.replication == 0 || t.replication < -1 || t.replication > 32767
+            return fail(
+                code: model.INVALID,
+                msg: f"the topic \"{t.name}\" asks {t.partitions} partitions and {t.replication} copies"
+            )
+        wire.put_string(out: @body, s: t.name, what: "a topic's name")?
+        wire.put_i32(out: @body, v: t.partitions)
+        wire.put_i16(out: @body, v: t.replication)
+        wire.put_i32(out: @body, v: 0)
+        wire.put_i32(out: @body, v: t.configs.len())
+
+        for c in t.configs
+            wire.put_string(out: @body, s: c.name, what: "a configuration's name")?
+            wire.put_string(out: @body, s: c.value, what: "a configuration's value")?
+
+    wire.put_i32(out: @body, v: s.options.wait_ms)
+    wire.put_bool(out: @body, v: false)
+    outcomes = to_controller(@s, key: CREATE_TOPICS, version: 4, body: body, messages: true)?
+    return settled(outcomes, what: "making topics")
+
+# Deletes the topics `names`.
+#
+# - `s`: the session.
+# - `names`: the topics.
+function delete_topics(@s: state.Session, names: [str]) -> ()?
+    if names.len() == 0
+        return fail(code: model.INVALID, msg: "no topic to delete")
+    body: [u8] @= []
+    wire.put_i32(out: @body, v: names.len())
+
+    for n in names
+        wire.put_string(out: @body, s: n, what: "a topic's name")?
+
+    wire.put_i32(out: @body, v: s.options.wait_ms)
+    outcomes = to_controller(@s, key: DELETE_TOPICS, version: 3, body: body, messages: false)?
+    forgotten: [state.TopicMeta] @= []
+    s.topic_index @ {}
+
+    for t in s.topics
+        gone: bool @= false
+
+        for n in names
+            if n == t.name
+                gone @ true
+
+        if !gone
+            s.topic_index[t.name] @ forgotten.len()
+            forgotten @ forgotten.push(t)
+
+    s.topics @ forgotten
+    return settled(outcomes, what: "deleting topics")
+
+# Gives `topic` `count` partitions in all.
+#
+# - `s`: the session.
+# - `topic`: the topic.
+# - `count`: the partitions it will have.
+function create_partitions(@s: state.Session, topic: str, count: i64) -> ()?
+    if count < 1
+        return fail(code: model.INVALID, msg: f"the count {count} is below 1")
+    body: [u8] @= []
+    wire.put_i32(out: @body, v: 1)
+    wire.put_string(out: @body, s: topic, what: "the topic's name")?
+    wire.put_i32(out: @body, v: count)
+    wire.put_i32(out: @body, v: -1)
+    wire.put_i32(out: @body, v: s.options.wait_ms)
+    wire.put_bool(out: @body, v: false)
+    outcomes = to_controller(@s, key: CREATE_PARTITIONS, version: 1, body: body, messages: true)?
+    settled(outcomes, what: f"adding partitions to \"{topic}\"")?
+    _ = cluster.describe(@s, topics: [topic], every: false)?
+    return ok()
+
+# Deletes the messages of a partition before `before` and answers its first
+# offset after.
+#
+# - `s`: the session.
+# - `topic`: the topic.
+# - `partition`: the partition.
+# - `before`: the first offset kept, or -1 for the high watermark.
+function delete_records(@s: state.Session, topic: str, partition: i64, before: i64) -> i64?
+    if before < -1
+        return fail(code: model.INVALID, msg: f"the offset {before} is below -1")
+    leader = cluster.leader_of(@s, topic: topic, partition: partition)?
+    body: [u8] @= []
+    wire.put_i32(out: @body, v: 1)
+    wire.put_string(out: @body, s: topic, what: "the topic's name")?
+    wire.put_i32(out: @body, v: 1)
+    wire.put_i32(out: @body, v: partition)
+    wire.put_i64(out: @body, v: before)
+    wire.put_i32(out: @body, v: s.options.wait_ms)
+    r @= cluster.send(@s, node_id: leader, key: DELETE_RECORDS, version: 1, body: body, extra_ms: 0, answered: true)?
+    _ = wire.take_i32(@r, what: "DeleteRecords")?
+    topics = wire.take_count(@r, what: "DeleteRecords' topics")?
+    low: i64 @= -1
+    error: i64 @= -1
+
+    for _ in range(from: 0, to: topics)
+        _ = wire.take_string(@r, what: "DeleteRecords' topic")?
+        partitions = wire.take_count(@r, what: "DeleteRecords' partitions")?
+
+        for _ in range(from: 0, to: partitions)
+            _ = wire.take_i32(@r, what: "DeleteRecords' partition")?
+            low @ wire.take_i64(@r, what: "DeleteRecords' low watermark")?
+            error @ wire.take_i16(@r, what: "DeleteRecords' error")?
+
+    if error != 0
+        return errors.failure(
+            error,
+            what: f"deleting the records of the partition {partition} of \"{topic}\" before {before}",
+            said_too: ""
+        )
+    return ok(low)
+
+test "settled: no error, one topic refused among two, the code of the first"
+    settled([Outcome(name: "a", error: 0, said: "")], what: "x").must()
+
+    match settled([Outcome(name: "a", error: 0, said: ""), Outcome(name: "b", error: 36, said: "Topic 'b' already exists.")], what: "making topics")
+        .ok _  => assert false
+        .err e => assert e.code == "exists" && e.msg == "making topics: \"b\" TOPIC_ALREADY_EXISTS: Topic 'b' already exists."

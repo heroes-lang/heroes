@@ -1,0 +1,162 @@
+# AMQP's frames: a type, a channel, a payload's size and the payload, then
+# the byte 206. A frame is written whole, and found whole in the bytes read
+# without cutting it out until it is complete; a frame larger than the size
+# agreed, or one whose last byte is not 206, is refused.
+
+use amqp/internal/model
+use amqp/internal/wire
+use bytes
+
+# A frame carrying a method.
+constant METHOD: i64
+    1
+
+# A frame carrying a content's header: its class, size and properties.
+constant HEADER: i64
+    2
+
+# A frame carrying a piece of a content's body.
+constant BODY: i64
+    3
+
+# A frame that only says the peer is alive.
+constant HEARTBEAT: i64
+    8
+
+# The byte that ends every frame.
+constant FRAME_END: u8
+    206
+
+# The bytes of a frame around its payload: seven before, one after.
+constant OVERHEAD: i64
+    8
+
+# The bytes a client sends first: `AMQP`, then 0, 0, 9, 1.
+function protocol_header() -> [u8]
+    return ['A', 'M', 'Q', 'P', 0, 0, 9, 1]
+
+# Where a frame stands in the bytes read.
+record Extent
+    # Whether the frame is whole in the bytes.
+    complete: bool
+    # Its type.
+    kind: i64
+    # Its channel.
+    channel: i64
+    # The index of its payload's first byte.
+    payload_at: i64
+    # The index past its payload's last byte.
+    payload_end: i64
+    # The index past the frame.
+    next: i64
+
+# The frame `kind` on `channel` carrying `payload`.
+#
+# - `kind`: `METHOD`, `HEADER`, `BODY` or `HEARTBEAT`.
+# - `channel`: 0 to 65535.
+# - `payload`: the payload.
+function frame(kind: i64, channel: i64, payload: [u8] lent) -> [u8]
+    out: [u8] @= []
+    wire.put_u8(@out, v: kind)
+    wire.put_u16(@out, v: channel)
+    wire.put_u32(@out, v: payload.len())
+    bytes.push_all(to: @out, from: payload)
+    out @ out.push(FRAME_END)
+    return out
+
+# A heartbeat's frame.
+function heartbeat() -> [u8]
+    return [8, 0, 0, 0, 0, 0, 0, FRAME_END]
+
+# Where the frame at `at` in `data` stands; incomplete where the bytes do not
+# hold it whole yet.
+#
+# - `data`: the bytes read.
+# - `at`: the frame's first byte.
+# - `most`: the largest payload taken, in bytes.
+#
+# Fails `invalid` where the type is unknown or the last byte is not 206,
+# `unsupported` where the bytes are a protocol header (the server speaks
+# another version), `limit` where the payload passes `most`.
+function scan(data: [u8] lent, at: i64, most: i64) -> Extent?
+    none = Extent(complete: false, kind: 0, channel: 0, payload_at: 0, payload_end: 0, next: at)
+
+    if data.len() - at < 7
+        if data.len() > at && data[at] == 'A'
+            return refused_header(data, at: at)
+        return ok(none)
+    kind = to_i64(data[at]).must()
+
+    if kind != METHOD && kind != HEADER && kind != BODY && kind != HEARTBEAT
+        if data[at] == 'A'
+            return refused_header(data, at: at)
+        return fail(code: model.INVALID, msg: f"a frame of the type {kind}, which AMQP 0-9-1 does not have")
+    channel = to_i64(data[at + 1]).must() << 8 | to_i64(data[at + 2]).must()
+    size: i64 @= 0
+
+    for i in range(from: 3, to: 7)
+        size @ size << 8 | to_i64(data[at + i]).must()
+
+    if size > most
+        return fail(code: model.LIMIT, msg: f"a frame of {size} bytes, past the {most} agreed")
+
+    if data.len() - at < size + OVERHEAD
+        return ok(none)
+
+    if data[at + 7 + size] != FRAME_END
+        return fail(
+            code: model.INVALID,
+            msg: f"a frame of the type {kind} whose last byte is {data[at + 7 + size]}, not 206"
+        )
+    return ok(
+        Extent(complete: true, kind: kind, channel: channel, payload_at: at + 7, payload_end: at + 7 + size, next: at + 8 + size)
+    )
+
+# The failure of bytes that begin as a protocol header: the server refused
+# this version and names its own, or more bytes are needed to tell.
+#
+# - `data`: the bytes read.
+# - `at`: where they begin.
+function refused_header(data: [u8] lent, at: i64) -> Extent?
+    if data.len() - at < 8
+        return ok(Extent(complete: false, kind: 0, channel: 0, payload_at: 0, payload_end: 0, next: at))
+
+    if data[at + 1] == 'M' && data[at + 2] == 'Q' && data[at + 3] == 'P'
+        return fail(
+            code: model.UNSUPPORTED,
+            msg: f"the server speaks AMQP {data[at + 5]}-{data[at + 6]}-{data[at + 7]}, not 0-9-1"
+        )
+    return fail(code: model.INVALID, msg: "the server sent bytes that are no AMQP frame")
+
+test "frame, heartbeat: the type, the channel, the size, the payload and 206"
+    assert frame(kind: METHOD, channel: 258, payload: [9, 8]) == [1, 1, 2, 0, 0, 0, 2, 9, 8, 206]
+    assert frame(kind: BODY, channel: 0, payload: []) == [3, 0, 0, 0, 0, 0, 0, 206]
+    assert heartbeat() == frame(kind: HEARTBEAT, channel: 0, payload: [])
+    assert protocol_header() == [65, 77, 81, 80, 0, 0, 9, 1]
+
+test "scan: whole, cut short, two in a row, past the size agreed, a wrong end, an unknown type, a protocol header"
+    two = bytes.concat([frame(kind: METHOD, channel: 1, payload: [1, 2, 3]), heartbeat()])
+    first = scan(two, at: 0, most: 3).must()
+    assert first.complete && first.kind == 1 && first.channel == 1 && first.payload_at == 7 && first.payload_end == 10 && first.next == 11
+    second = scan(two, at: first.next, most: 0).must()
+    assert second.complete && second.kind == 8 && second.next == two.len()
+    assert !scan(two.slice(from: 0, to: 10), at: 0, most: 3).must().complete
+    assert !scan([1, 0], at: 0, most: 3).must().complete
+
+    match scan(two, at: 0, most: 2)
+        .ok _  => assert false
+        .err e => assert e.code == "limit"
+
+    match scan([1, 0, 1, 0, 0, 0, 0, 205], at: 0, most: 10)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    match scan([4, 0, 1, 0, 0, 0, 0, 206], at: 0, most: 10)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    match scan(['A', 'M', 'Q', 'P', 0, 0, 9, 1], at: 0, most: 10)
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported" && e.msg == "the server speaks AMQP 0-9-1, not 0-9-1"
+
+    assert !scan(['A', 'M', 'Q'], at: 0, most: 10).must().complete

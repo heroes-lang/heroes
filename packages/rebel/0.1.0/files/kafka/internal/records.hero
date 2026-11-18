@@ -1,0 +1,712 @@
+# Record batches, the format Kafka 0.11 brought (magic 2): a batch's header
+# with its first offset, its CRC-32C over everything after the CRC, its
+# attributes (compression, the time's kind, a transaction, a control batch),
+# its first and largest times, its producer, then the records, each a
+# varint-led entry of deltas, key, value and headers. The records after the
+# count are compressed whole where the attributes say so; gzip is read and
+# written, the other codecs refused.
+
+use bytes
+use compress
+use hash
+use kafka/internal/model
+use kafka/internal/wire
+
+# The bytes of a batch before its first record, its offset and length
+# included.
+constant HEADER_BYTES: i64
+    61
+
+# A batch read: what its header says, and its messages.
+record Batch
+    # The offset of its first record.
+    base_offset: i64
+    # The offset of its last record.
+    last_offset: i64
+    # The producer that wrote it, -1 for none.
+    producer_id: i64
+    # Whether it belongs to a transaction.
+    transactional: bool
+    # Whether it is a control batch, a transaction's marker.
+    control: bool
+    # For a control batch, whether its marker commits rather than aborts.
+    commits: bool
+    # Its messages, offsets and times resolved, topic and partition empty.
+    messages: [model.Message]
+
+# The number the attributes write for a compression.
+#
+# - `c`: the compression.
+function codec_of(c: model.Compression) -> i64
+    return match c
+        .none => 0
+        .gzip => 1
+
+# The name of a codec's number.
+#
+# - `codec`: 0 to 7.
+function codec_name(codec: i64) -> str
+    if codec == 2
+        return "Snappy"
+
+    if codec == 3
+        return "LZ4"
+
+    if codec == 4
+        return "Zstandard"
+    return f"the codec {codec}"
+
+# The record of `m` at `offset_delta` of a batch whose first time is
+# `base_ms`, its length first.
+#
+# - `out`: the bytes, the record added at their end.
+# - `m`: the message.
+# - `offset_delta`: its offset in the batch.
+# - `delta_ms`: its time less the batch's first.
+function put_record(@out: [u8], m: model.Message lent, offset_delta: i64, delta_ms: i64) -> ()?
+    body: [u8] @= [0]
+    wire.put_varlong(out: @body, v: delta_ms)
+    wire.put_varlong(out: @body, v: offset_delta)
+
+    if m.null_key
+        wire.put_varlong(out: @body, v: -1)
+    else
+        wire.put_varlong(out: @body, v: m.key.len())
+        bytes.push_all(to: @body, from: m.key)
+
+    if m.null_value
+        wire.put_varlong(out: @body, v: -1)
+    else
+        wire.put_varlong(out: @body, v: m.value.len())
+        bytes.push_all(to: @body, from: m.value)
+    wire.put_varlong(out: @body, v: m.headers.len())
+
+    for h in m.headers
+        wire.put_varlong(out: @body, v: h.key.len())
+        bytes.push_text(to: @body, s: h.key)
+        wire.put_varlong(out: @body, v: h.value.len())
+        bytes.push_all(to: @body, from: h.value)
+
+    if body.len() > 2147483647
+        return fail(code: model.LIMIT, msg: f"a record of {body.len()} bytes, past what a varint counts")
+    wire.put_varlong(out: @out, v: body.len())
+    bytes.push_all(to: @out, from: body)
+    return ok()
+
+# The batch `messages` make, its first offset 0, its times as they say, -1
+# taking `now_ms`.
+#
+# - `messages`: the messages, one or more.
+# - `compression`: how the records are compressed.
+# - `now_ms`: the time of a message whose time is -1, milliseconds since
+#   1970.
+function encode(messages: [model.Message], compression: model.Compression, now_ms: i64) -> [u8]?
+    if messages.len() == 0
+        return fail(code: model.INVALID, msg: "a batch of no message")
+    times: [i64] @= []
+
+    for m in messages
+        if m.timestamp_ms < -1
+            return fail(code: model.INVALID, msg: f"the time {m.timestamp_ms} is below -1")
+
+        t = if m.timestamp_ms == -1
+            now_ms
+        else
+            m.timestamp_ms
+
+        times @ times.push(t)
+
+    base_ms = times[0]
+    most_ms: i64 @= base_ms
+
+    for t in times
+        if t > most_ms
+            most_ms @ t
+
+    records: [u8] @= []
+
+    for i in range(from: 0, to: messages.len())
+        put_record(out: @records, m: messages[i], offset_delta: i, delta_ms: times[i] - base_ms)?
+
+    codec = codec_of(compression)
+
+    stored = if codec == 1
+        compress.compress(records, options: compress.defaults(.gzip))?
+    else
+        records
+
+    tail: [u8] @= []
+    wire.put_i16(out: @tail, v: codec)
+    wire.put_i32(out: @tail, v: messages.len() - 1)
+    wire.put_i64(out: @tail, v: base_ms)
+    wire.put_i64(out: @tail, v: most_ms)
+    wire.put_i64(out: @tail, v: -1)
+    wire.put_i16(out: @tail, v: -1)
+    wire.put_i32(out: @tail, v: -1)
+    wire.put_i32(out: @tail, v: messages.len())
+    bytes.push_all(to: @tail, from: stored)
+    out: [u8] @= []
+    wire.put_i64(out: @out, v: 0)
+    wire.put_i32(out: @out, v: tail.len() + 9)
+    wire.put_i32(out: @out, v: 0)
+    wire.put_i8(out: @out, v: 2)
+    wire.put_i32(out: @out, v: to_i64(hash.crc32c(tail)).must())
+    bytes.push_all(to: @out, from: tail)
+    return ok(out)
+
+# `n`, or 0 where it is below: a null's length read as none.
+#
+# - `n`: a length.
+function at_least_zero(n: i64) -> i64
+    if n < 0
+        return 0
+    return n
+
+# The records of one batch, read from `r`.
+#
+# - `r`: the cursor over the records, moved past them.
+# - `count`: how many.
+# - `base_offset`: the batch's first offset.
+# - `base_ms`: its first time.
+# - `append_ms`: the time every record takes, where the topic keeps the
+#   broker's, or -1.
+function take_records(@r: wire.Reader, count: i64, base_offset: i64, base_ms: i64, append_ms: i64) -> [model.Message]?
+    out: [model.Message] @= []
+
+    for _ in range(from: 0, to: count)
+        size = wire.take_varint(@r, what: "a record's length")?
+        wire.need(r, n: size, what: "a record")?
+        end = r.at + size
+        rec @= wire.Reader(data: r.data.slice(from: r.at, to: end), at: 0, end: size)
+        r.at @ end
+        _ = wire.take_i8(@rec, what: "a record's attributes")?
+        delta_ms = wire.take_varlong(@rec, most_bytes: 10, what: "a record's time")?
+        delta = wire.take_varint(@rec, what: "a record's offset")?
+        key_len = wire.take_varint(@rec, what: "a record's key")?
+        key = wire.take_raw(@rec, n: at_least_zero(key_len), what: "a record's key")?
+        value_len = wire.take_varint(@rec, what: "a record's value")?
+        value = wire.take_raw(@rec, n: at_least_zero(value_len), what: "a record's value")?
+        header_count = wire.take_varint(@rec, what: "a record's headers")?
+
+        if header_count < 0 || header_count > wire.left(rec)
+            return fail(code: model.INVALID, msg: f"a record counts {header_count} headers")
+        headers: [model.Header] @= []
+
+        for _ in range(from: 0, to: header_count)
+            name_len = wire.take_varint(@rec, what: "a header's key")?
+
+            if name_len < 0
+                return fail(code: model.INVALID, msg: "a header has a null key")
+
+            name = match bytes.to_text(wire.take_raw(@rec, n: name_len, what: "a header's key")?)
+                .ok got => got
+                .err _  => return fail(code: model.INVALID, msg: "a header's key is not UTF-8")
+
+            header_len = wire.take_varint(@rec, what: "a header's value")?
+            header_value = wire.take_raw(@rec, n: at_least_zero(header_len), what: "a header's value")?
+            headers @ headers.push(model.Header(key: name, value: header_value))
+
+        if wire.left(rec) != 0
+            return fail(code: model.INVALID, msg: "a record holds bytes past its headers")
+
+        time = if append_ms >= 0
+            append_ms
+        else
+            base_ms + delta_ms
+
+        out @ out.push(
+            model.Message(topic: "", partition: -1, offset: base_offset + delta, timestamp_ms: time, key: key, null_key: key_len < 0, value: value, null_value: value_len < 0, headers: headers)
+        )
+
+    return ok(out)
+
+# The batches `data` holds, one after the other; a batch cut short at the
+# end, as a fetch may answer one, left out.
+#
+# - `data`: the bytes.
+# - `limit`: the most bytes the records of one batch may decompress to.
+#
+# Fails `invalid` where a batch is no batch or its CRC-32C disagrees,
+# `unsupported` where it is of an older format or compressed other than by
+# gzip.
+function decode(data: [u8], limit: i64) -> [Batch]?
+    out: [Batch] @= []
+    at: i64 @= 0
+    r @= wire.reader(data)
+
+    while data.len() - at >= 17
+        r.at @ at
+        base_offset = wire.take_i64(@r, what: "a batch's offset")?
+        length = wire.take_i32(@r, what: "a batch's length")?
+
+        if length < 9
+            return fail(code: model.INVALID, msg: f"a batch at offset {base_offset} of {length} bytes")
+
+        if data.len() - at - 12 < length
+            return ok(out)
+        _ = wire.take_i32(@r, what: "a batch's leader epoch")?
+        magic = wire.take_i8(@r, what: "a batch's magic")?
+
+        if magic != 2
+            return fail(
+                code: model.UNSUPPORTED,
+                msg: f"a batch at offset {base_offset} of the format {magic}, written before Kafka 0.11; this client reads the format 2"
+            )
+
+        if length < HEADER_BYTES - 12
+            return fail(code: model.INVALID, msg: f"a batch at offset {base_offset} of {length} bytes")
+        crc = wire.take_i32(@r, what: "a batch's CRC")? & 4294967295
+        end = at + 12 + length
+        body_crc = to_i64(hash.crc32c(r.data.slice(from: r.at, to: end))).must()
+
+        if crc != body_crc
+            return fail(
+                code: model.INVALID,
+                msg: f"the batch at offset {base_offset} has the CRC-32C {crc}, and its bytes {body_crc}"
+            )
+        attributes = wire.take_i16(@r, what: "a batch's attributes")?
+        last_delta = wire.take_i32(@r, what: "a batch")?
+        base_ms = wire.take_i64(@r, what: "a batch")?
+        most_ms = wire.take_i64(@r, what: "a batch")?
+        producer_id = wire.take_i64(@r, what: "a batch")?
+        _ = wire.take_i16(@r, what: "a batch")?
+        _ = wire.take_i32(@r, what: "a batch")?
+        count = wire.take_i32(@r, what: "a batch's count")?
+        codec = attributes & 7
+
+        if count < 0
+            return fail(code: model.INVALID, msg: f"the batch at offset {base_offset} counts {count} records")
+
+        stored = r.data.slice(from: r.at, to: end)
+
+        plain = if codec == 0
+            stored
+        else if codec == 1
+            compress.decompress(stored, format: .gzip, limit: limit)?
+        else
+            return fail(
+                code: model.UNSUPPORTED,
+                msg: f"the batch at offset {base_offset} is compressed by {codec_name(codec)}; this client reads gzip"
+            )
+
+        if count > plain.len()
+            return fail(
+                code: model.INVALID,
+                msg: f"the batch at offset {base_offset} counts {count} records in {plain.len()} bytes"
+            )
+
+        append_ms = if attributes & 8 != 0
+            most_ms
+        else
+            -1
+
+        records @= wire.reader(plain)
+        messages = take_records(@records, count: count, base_offset: base_offset, base_ms: base_ms, append_ms: append_ms)?
+        control = attributes & 32 != 0
+        commits: bool @= false
+
+        if control && messages.len() > 0 && messages[0].key.len() >= 4
+            commits @ messages[0].key[3] == 1
+        out @ out.push(
+            Batch(base_offset: base_offset, last_offset: base_offset + last_delta, producer_id: producer_id, transactional: attributes & 16 != 0, control: control, commits: commits, messages: messages)
+        )
+        at @ end
+
+    return ok(out)
+
+# The messages of `batches` a consumer reads: control batches left out, and
+# under `read_committed` the batches of the transactions `aborted` names.
+#
+# - `batches`: the batches, in order.
+# - `aborted_producers`: the producers of the aborted transactions, in the
+#   order of their first offsets.
+# - `aborted_firsts`: the first offsets of those transactions.
+# - `from`: the first offset asked; earlier messages are left out.
+function readable(batches: [Batch], aborted_producers: [i64], aborted_firsts: [i64], from: i64) -> [model.Message]
+    out: [model.Message] @= []
+    active: [i64] @= []
+    next_aborted: i64 @= 0
+
+    for b in batches
+        while next_aborted < aborted_firsts.len() && aborted_firsts[next_aborted] <= b.last_offset
+            active @ active.push(aborted_producers[next_aborted])
+            next_aborted @ next_aborted + 1
+
+        if b.control
+            if !b.commits
+                kept: [i64] @= []
+
+                for p in active
+                    if p != b.producer_id
+                        kept @ kept.push(p)
+
+                active @ kept
+            continue
+
+        if b.transactional
+            dropped: bool @= false
+
+            for p in active
+                if p == b.producer_id
+                    dropped @ true
+
+            if dropped
+                continue
+
+        for m in b.messages
+            if m.offset >= from
+                out @ out.push(m)
+
+    return out
+
+test "encode: two messages, a null key, a null value, headers, as kafka-python's DefaultRecordBatchBuilder writes them"
+    first = model.Message(
+        topic: "",
+        partition: -1,
+        offset: -1,
+        timestamp_ms: 1700000000000,
+        key: [],
+        null_key: true,
+        value: [104, 105],
+        null_value: false,
+        headers: []
+    )
+    second = model.Message(
+        topic: "",
+        partition: -1,
+        offset: -1,
+        timestamp_ms: 1700000000005,
+        key: [107],
+        null_key: false,
+        value: [],
+        null_value: true,
+        headers: [model.Header(key: "h", value: [118]), model.Header(key: "e", value: [])]
+    )
+    data = encode([first, second], compression: .none, now_ms: 0).must()
+    assert data == [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 73, 0, 0, 0, 0, 2, 41, 148, 134, 68, 0, 0, 0, 0, 0, 1, 0, 0, 1, 139, 207, 229, 104, 0, 0, 0, 1, 139, 207, 229, 104, 5, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 2, 16, 0, 0, 0, 1, 4, 104, 105, 0, 28, 0, 10, 2, 2, 107, 1, 4, 2, 104, 2, 118, 2, 101, 0]
+    back = decode(data, limit: 1000).must()
+    assert back.len() == 1 && back[0].messages.len() == 2 && back[0].last_offset == 1
+    assert back[0].messages[0].null_key && back[0].messages[0].value == [104, 105] && back[0].messages[1].null_value
+    assert back[0].messages[1].offset == 1 && back[0].messages[1].timestamp_ms == 1700000000005
+    assert back[0].messages[1].headers == [model.Header(key: "h", value: [118]), model.Header(key: "e", value: [])]
+    assert encode([], compression: .none, now_ms: 0).is_err()
+
+test "decode: kafka-python's batch with a null header value, its gzip batch, a CRC that disagrees, the format 1, a batch cut short"
+    python: [u8] = [
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        73
+        0
+        0
+        0
+        0
+        2
+        219
+        255
+        5
+        71
+        0
+        0
+        0
+        0
+        0
+        1
+        0
+        0
+        1
+        139
+        207
+        229
+        104
+        0
+        0
+        0
+        1
+        139
+        207
+        229
+        104
+        5
+        255
+        255
+        255
+        255
+        255
+        255
+        255
+        255
+        255
+        255
+        255
+        255
+        255
+        255
+        0
+        0
+        0
+        2
+        16
+        0
+        0
+        0
+        1
+        4
+        104
+        105
+        0
+        28
+        0
+        10
+        2
+        2
+        107
+        1
+        4
+        2
+        104
+        2
+        118
+        2
+        101
+        1
+    ]
+    read = decode(python, limit: 1000).must()
+    assert read[0].messages[1].headers[1] == model.Header(key: "e", value: [])
+    gzipped: [u8] = [
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        89
+        0
+        0
+        0
+        0
+        2
+        204
+        79
+        149
+        142
+        0
+        1
+        0
+        0
+        0
+        2
+        0
+        0
+        1
+        139
+        207
+        229
+        104
+        0
+        0
+        0
+        1
+        139
+        207
+        229
+        104
+        2
+        255
+        255
+        255
+        255
+        255
+        255
+        255
+        255
+        255
+        255
+        255
+        255
+        255
+        255
+        0
+        0
+        0
+        3
+        31
+        139
+        8
+        0
+        242
+        11
+        254
+        106
+        2
+        255
+        43
+        96
+        96
+        96
+        96
+        76
+        169
+        32
+        25
+        48
+        20
+        48
+        48
+        49
+        145
+        169
+        145
+        133
+        133
+        44
+        141
+        0
+        42
+        156
+        72
+        193
+        171
+        0
+        0
+        0
+    ]
+    unzipped = decode(gzipped, limit: 1000).must()
+    assert unzipped[0].messages.len() == 3 && unzipped[0].messages[2].value == bytes.from_text(repeat("x", 50)) && unzipped[0].messages[2].timestamp_ms == 1700000000002
+    broken @= python
+    broken[30] @ 0
+    assert decode(broken, limit: 1000).is_err()
+    old @= python
+    old[16] @ 1
+
+    match decode(old, limit: 1000)
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported"
+
+    assert decode(python.slice(from: 0, to: 60), limit: 1000).must() == []
+    assert decode(bytes.concat([python, python.slice(from: 0, to: 40)]), limit: 1000).must().len() == 1
+
+test "encode, decode: gzip both ways, and a decompression past its limit refused"
+    many: [model.Message] @= []
+
+    for i in range(from: 0, to: 100)
+        many @ many.push(
+            model.Message(topic: "", partition: -1, offset: -1, timestamp_ms: 1000 + i, key: [], null_key: true, value: [1, 2, 3, 4, 5, 6, 7, 8], null_value: false, headers: [])
+        )
+
+    data = encode(many, compression: .gzip, now_ms: 0).must()
+    assert data[22] == 1
+    back = decode(data, limit: 100000).must()
+    assert back[0].messages.len() == 100 && back[0].messages[99].offset == 99 && back[0].messages[99].timestamp_ms == 1099
+    assert decode(data, limit: 10).is_err()
+
+test "readable: a control batch left out, an aborted transaction's batch left out under read_committed, offsets before the one asked left out"
+    txn: [u8] = [
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        58
+        0
+        0
+        0
+        0
+        2
+        191
+        116
+        233
+        144
+        0
+        16
+        0
+        0
+        0
+        0
+        0
+        0
+        1
+        139
+        207
+        229
+        104
+        0
+        0
+        0
+        1
+        139
+        207
+        229
+        104
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        7
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        1
+        16
+        0
+        0
+        0
+        2
+        97
+        2
+        49
+        0
+    ]
+    batches = decode(txn, limit: 1000).must()
+    assert batches[0].transactional && batches[0].producer_id == 7
+    assert readable(batches, aborted_producers: [], aborted_firsts: [], from: 0).len() == 1
+    assert readable(batches, aborted_producers: [7], aborted_firsts: [0], from: 0) == []
+    assert readable(batches, aborted_producers: [], aborted_firsts: [], from: 1) == []
+    marker = Batch(
+        base_offset: 1,
+        last_offset: 1,
+        producer_id: 7,
+        transactional: true,
+        control: true,
+        commits: false,
+        messages: []
+    )
+    later = Batch(
+        base_offset: 2,
+        last_offset: 2,
+        producer_id: 7,
+        transactional: true,
+        control: false,
+        commits: false,
+        messages: batches[0].messages
+    )
+    assert readable([batches[0], marker, later], aborted_producers: [7], aborted_firsts: [0], from: 0).len() == 1

@@ -1,0 +1,352 @@
+# The values the private modules of `kafka` share: a mirror of each type the
+# face declares, field for field, since a private module cannot `use` its own
+# face. The face turns its own values into these at its edge and back; the
+# meaning of every field is the face's.
+
+## Codes
+
+# An argument refused, bytes that are no Kafka, an offset outside the log.
+constant INVALID: str
+    "invalid"
+
+# A topic, a partition, a group or a coordinator unknown.
+constant NOT_FOUND: str
+    "not_found"
+
+# A topic made already.
+constant EXISTS: str
+    "exists"
+
+# A login or an authorization refused.
+constant PERMISSION: str
+    "permission"
+
+# The client or a connection is closed.
+constant CLOSED: str
+    "closed"
+
+# The time allowed ran out.
+constant TIMEOUT: str
+    "timeout"
+
+# The program was asked to stop.
+constant STOPPED: str
+    "stopped"
+
+# A bound passed.
+constant LIMIT: str
+    "limit"
+
+# What a broker or this client does not speak.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# A failure none of the others names.
+constant FAILED: str
+    "failed"
+
+## Values
+
+# The face's `Header`.
+record Header
+    # The key.
+    key: str
+    # The value.
+    value: [u8]
+
+# The face's `Message`.
+record Message
+    # The topic.
+    topic: str
+    # The partition, -1 to choose.
+    partition: i64
+    # The offset, -1 before it is written.
+    offset: i64
+    # Milliseconds since 1970, -1 for now.
+    timestamp_ms: i64
+    # The key.
+    key: [u8]
+    # Whether the key is null.
+    null_key: bool
+    # The value.
+    value: [u8]
+    # Whether the value is null.
+    null_value: bool
+    # The headers.
+    headers: [Header]
+
+# The face's `Produced`.
+record Produced
+    # The batch's first offset.
+    base_offset: i64
+    # The broker's time of the append, -1 for none.
+    log_append_time_ms: i64
+    # The partition's first offset.
+    log_start_offset: i64
+
+# The face's `Fetched`.
+record Fetched
+    # The messages.
+    messages: [Message]
+    # The high watermark.
+    high_watermark: i64
+    # The last stable offset.
+    last_stable_offset: i64
+    # The partition's first offset.
+    log_start_offset: i64
+    # The offset to fetch next.
+    next_offset: i64
+
+# The face's `Broker`.
+record Broker
+    # The node's identifier.
+    id: i64
+    # The host.
+    host: str
+    # The port.
+    port: i64
+    # The rack, "" for none.
+    rack: str
+
+# The face's `Partition`.
+record Partition
+    # Its number.
+    id: i64
+    # Its leader, -1 for none.
+    leader: i64
+    # The leader's epoch.
+    leader_epoch: i64
+    # The nodes with a copy.
+    replicas: [i64]
+    # The nodes in step.
+    isr: [i64]
+    # The nodes offline.
+    offline: [i64]
+
+# The face's `Topic`.
+record Topic
+    # Its name.
+    name: str
+    # Whether Kafka keeps it for itself.
+    internal: bool
+    # Its partitions.
+    partitions: [Partition]
+
+# The face's `Metadata`.
+record Metadata
+    # The cluster's identifier.
+    cluster_id: str
+    # The controller, -1 for none told.
+    controller_id: i64
+    # The brokers.
+    brokers: [Broker]
+    # The topics.
+    topics: [Topic]
+
+# The face's `ApiVersion`.
+record ApiVersion
+    # The request's key.
+    key: i64
+    # The oldest version read.
+    min: i64
+    # The newest version read.
+    max: i64
+
+# The face's `Config`.
+record Config
+    # The name.
+    name: str
+    # The value.
+    value: str
+
+# The face's `NewTopic`.
+record NewTopic
+    # Its name.
+    name: str
+    # Its partitions, -1 for the default.
+    partitions: i64
+    # Its copies, -1 for the default.
+    replication: i64
+    # Its configuration.
+    configs: [Config]
+
+# The face's `TopicPartition`.
+record TopicPartition
+    # The topic.
+    topic: str
+    # The partition.
+    partition: i64
+
+# The face's `Offset`.
+record Offset
+    # The topic.
+    topic: str
+    # The partition.
+    partition: i64
+    # The offset.
+    offset: i64
+    # The text kept beside it.
+    metadata: str
+
+# The face's `GroupListing`.
+record GroupListing
+    # The group.
+    group_id: str
+    # Its protocol's type.
+    protocol_type: str
+
+# The face's `GroupMember`.
+record GroupMember
+    # Its identifier.
+    member_id: str
+    # Its static identifier.
+    group_instance_id: str
+    # The client's identifier.
+    client_id: str
+    # The client's host.
+    client_host: str
+    # Its topics.
+    topics: [str]
+    # Its partitions.
+    assignment: [TopicPartition]
+
+# The face's `GroupDescription`.
+record GroupDescription
+    # The group.
+    group_id: str
+    # Its state.
+    state: str
+    # Its protocol's type.
+    protocol_type: str
+    # Its assignor.
+    protocol: str
+    # Its members.
+    members: [GroupMember]
+
+# The face's `Subscription`.
+record Subscription
+    # The member.
+    member_id: str
+    # Its topics.
+    topics: [str]
+
+# The face's `Assignment`.
+record Assignment
+    # The member.
+    member_id: str
+    # Its partitions.
+    partitions: [TopicPartition]
+
+# The face's `Member`.
+record Member
+    # The group.
+    group_id: str
+    # The member.
+    member_id: str
+    # The generation.
+    generation_id: i64
+    # Whether it led.
+    leader: bool
+
+# The face's `Sasl`.
+variant Sasl
+    # No login.
+    none
+    # PLAIN.
+    plain
+        # The user.
+        username: str
+        # The password.
+        password: str
+    # SCRAM-SHA-256.
+    scram_sha256
+        # The user.
+        username: str
+        # The password.
+        password: str
+    # SCRAM-SHA-512.
+    scram_sha512
+        # The user.
+        username: str
+        # The password.
+        password: str
+
+# The face's `Compression`.
+variant Compression
+    # Not.
+    none
+    # gzip.
+    gzip
+
+# The face's `Acks`.
+variant Acks
+    # None.
+    none
+    # The leader's.
+    leader
+    # Every copy in step's.
+    all
+
+# The face's `Isolation`.
+variant Isolation
+    # Everything.
+    read_uncommitted
+    # Committed only.
+    read_committed
+
+# The face's `Start`.
+variant Start
+    # The log's start.
+    earliest
+    # The log's end.
+    latest
+    # Nowhere.
+    none
+
+# The face's `Options`.
+record Options
+    # The brokers asked first.
+    brokers: [str]
+    # The client's identifier.
+    client_id: str
+    # Whether TLS carries the connections.
+    tls: bool
+    # The authorities trusted.
+    roots: str
+    # The login.
+    sasl: Sasl
+    # Milliseconds to connect.
+    connect_ms: i64
+    # Milliseconds for a request.
+    wait_ms: i64
+    # The largest answer.
+    most_response_bytes: i64
+    # The acknowledgement awaited.
+    acks: Acks
+    # The compression.
+    compression: Compression
+    # What a fetch reads.
+    isolation: Isolation
+    # The bytes a fetch asks of a partition.
+    most_fetch_bytes: i64
+    # Whether asking makes a topic.
+    auto_create_topics: bool
+
+# The face's `GroupOptions`.
+record GroupOptions
+    # The group.
+    group_id: str
+    # The topics.
+    topics: [str]
+    # The session's milliseconds.
+    session_ms: i64
+    # The rebalance's milliseconds.
+    rebalance_ms: i64
+    # The heartbeat's milliseconds.
+    heartbeat_ms: i64
+    # Where a partition with no offset begins.
+    start: Start
+    # The milliseconds between commits, 0 for none.
+    auto_commit_ms: i64
+    # The static identifier.
+    instance_id: str

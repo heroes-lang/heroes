@@ -1,0 +1,398 @@
+# Field tables as bytes: a table read from the server checked whole before it
+# is held, by a walk that keeps the ends of the tables and arrays it is
+# inside in a list rather than on the stack, and the few tables the client
+# writes itself (its properties, AMQPLAIN's login) built entry by entry. The
+# face's `encode_table` and `decode_table` turn tables into values and back.
+
+use amqp/internal/model
+use amqp/internal/wire
+use bytes
+
+# The deepest nesting of tables and arrays read or written.
+constant MOST_DEPTH: i64
+    64
+
+# The bytes a value of the type `kind` takes after its type byte, -1 for a
+# type whose length comes first, -2 for a type unknown.
+#
+# - `kind`: the type byte.
+function fixed_size(kind: u8) -> i64
+    if kind == 't' || kind == 'b' || kind == 'B'
+        return 1
+
+    if kind == 's' || kind == 'u' || kind == 'U'
+        return 2
+
+    if kind == 'I' || kind == 'i' || kind == 'f'
+        return 4
+
+    if kind == 'l' || kind == 'L' || kind == 'd' || kind == 'T'
+        return 8
+
+    if kind == 'D'
+        return 5
+
+    if kind == 'V'
+        return 0
+
+    if kind == 'S' || kind == 'x' || kind == 'A' || kind == 'F'
+        return -1
+    return -2
+
+# The four bytes of `data` at `at`, an unsigned number in network order.
+#
+# - `data`: the bytes, four of them at `at` at least.
+# - `at`: the first.
+function u32_at(data: [u8] lent, at: i64) -> i64
+    v: i64 @= 0
+
+    for i in range(from: 0, to: 4)
+        v @ v << 8 | to_i64(data[at + i]).must()
+
+    return v
+
+# Checks that `data` from `at` to `end` holds a table's entries: each a name
+# of UTF-8 and a value of a known type, nested tables and arrays inside their
+# lengths and at most `MOST_DEPTH` deep, a timestamp that fits an `i64`.
+#
+# - `data`: the bytes.
+# - `at`: the first byte of the entries.
+# - `end`: the index past the last.
+#
+# Fails `invalid` naming the byte where they are not.
+function check_entries(data: [u8] lent, at: i64, end: i64) -> ()?
+    ends: [i64] @= [end]
+    in_table: [bool] @= [true]
+    pos: i64 @= at
+
+    while ends.len() > 0
+        top = ends.len() - 1
+        limit = ends[top]
+
+        if pos == limit
+            ends @ ends.slice(from: 0, to: top)
+            in_table @ in_table.slice(from: 0, to: top)
+            continue
+
+        if in_table[top]
+            n = to_i64(data[pos]).must()
+
+            if pos + 1 + n > limit
+                return fail(code: model.INVALID, msg: f"a field's name at byte {pos} runs past its table")
+
+            if bytes.to_text(data.slice(from: pos + 1, to: pos + 1 + n)).is_err()
+                return fail(code: model.INVALID, msg: f"a field's name at byte {pos} is not UTF-8")
+            pos @ pos + 1 + n
+
+            if pos >= limit
+                return fail(code: model.INVALID, msg: f"the field at byte {pos} has a name and no value")
+        kind = data[pos]
+        size = fixed_size(kind)
+
+        if size == -2
+            return fail(
+                code: model.INVALID,
+                msg: f"the value at byte {pos} has the type byte {kind}, which AMQP does not write"
+            )
+
+        if size >= 0
+            if pos + 1 + size > limit
+                return fail(code: model.INVALID, msg: f"the value at byte {pos} runs past its table")
+
+            if kind == 'T' && data[pos + 1] >= 128
+                return fail(
+                    code: model.INVALID,
+                    msg: f"the timestamp at byte {pos} is past 9223372036854775807 seconds"
+                )
+            pos @ pos + 1 + size
+        else
+            if pos + 5 > limit
+                return fail(code: model.INVALID, msg: f"the length at byte {pos} runs past its table")
+            n = u32_at(data, at: pos + 1)
+            inner_end = pos + 5 + n
+
+            if inner_end > limit
+                return fail(code: model.INVALID, msg: f"the value at byte {pos} is {n} bytes, past its table")
+
+            if kind == 'A' || kind == 'F'
+                if ends.len() > MOST_DEPTH
+                    return fail(
+                        code: model.INVALID,
+                        msg: f"the value at byte {pos} is nested past {MOST_DEPTH} tables and arrays"
+                    )
+                ends @ ends.push(inner_end)
+                in_table @ in_table.push(kind == 'F')
+                pos @ pos + 5
+            else
+                pos @ inner_end
+
+    return ok()
+
+# Reads a whole table, its length first, from `r`, checked, and answers its
+# bytes, the length with them.
+#
+# - `r`: the cursor, moved past it.
+# - `what`: what is read, for the message.
+function take_table(@r: wire.Reader, what: str) -> [u8]?
+    start = r.at
+    n = wire.take_u32(@r, what: what)?
+    wire.need(r, n: n, what: what)?
+    check_entries(r.data, at: r.at, end: r.at + n)?
+    r.at @ r.at + n
+    return ok(r.data.slice(from: start, to: r.at))
+
+# The entries of a table, without its length; [] for the empty list, which
+# stands for no table.
+#
+# - `table`: a table checked, its length first.
+function entries_of(table: [u8]) -> [u8]
+    if table.len() < 4
+        return []
+    return table.slice(from: 4, to: table.len())
+
+# The table holding `entries`: their length, then them.
+#
+# - `entries`: the entries.
+function with_length(entries: [u8]) -> [u8]
+    out: [u8] @= []
+    wire.put_u32(@out, v: entries.len())
+    bytes.push_all(to: @out, from: entries)
+    return out
+
+# The names of the entries of a table checked, at its top level.
+#
+# - `entries`: the entries, without the table's length.
+function names_of(entries: [u8]) -> [str]
+    names: [str] @= []
+    r @= wire.reader(entries)
+
+    while wire.left(r) > 0
+        name = match wire.take_shortstr(@r, what: "a name")
+            .ok got => got
+            .err _  => return names
+
+        names @ names.push(name)
+
+        if wire.left(r) < 1
+            return names
+        kind = r.data[r.at]
+        r.at @ r.at + 1
+        size = fixed_size(kind)
+
+        if size >= 0
+            r.at @ r.at + size
+        else
+            n = wire.take_u32(@r, what: "a length").default(wire.left(r))
+            r.at @ r.at + n
+
+        if r.at > r.end
+            return names
+
+    return names
+
+# Writes an entry whose value is a text, as a long string.
+#
+# - `out`: the entries.
+# - `name`: the name, 1 to 255 bytes.
+# - `text`: the text.
+function put_text(@out: [u8], name: str, text: str) -> ()?
+    wire.put_shortstr(@out, s: name, what: "a field's name")?
+    out @ out.push('S')
+    wire.put_longstr(out: @out, data: bytes.from_text(text))
+    return ok()
+
+# Writes an entry whose value is a boolean.
+#
+# - `out`: the entries.
+# - `name`: the name.
+# - `v`: the value.
+function put_bool(@out: [u8], name: str, v: bool) -> ()?
+    wire.put_shortstr(@out, s: name, what: "a field's name")?
+    out @ out.push('t')
+
+    if v
+        out @ out.push(1)
+    else
+        out @ out.push(0)
+    return ok()
+
+# Writes an entry whose value is a table of `entries`.
+#
+# - `out`: the entries.
+# - `name`: the name.
+# - `entries`: the nested table's entries.
+function put_table(@out: [u8], name: str, entries: [u8]) -> ()?
+    wire.put_shortstr(@out, s: name, what: "a field's name")?
+    out @ out.push('F')
+    wire.put_longstr(out: @out, data: entries)
+    return ok()
+
+# The properties the client tells the server: its product, version and
+# platform, the capabilities it reads, the connection's name, and `extra`'s
+# entries, which replace any of the client's own of the same name.
+#
+# - `connection_name`: the connection's name, "" for none.
+# - `extra`: a table of more properties, its length first; [] for none.
+function client_properties(connection_name: str, extra: [u8]) -> [u8]?
+    added = entries_of(extra)
+    taken = names_of(added)
+    capabilities: [u8] @= []
+
+    for name in ["publisher_confirms", "exchange_exchange_bindings", "basic.nack", "consumer_cancel_notify", "connection.blocked", "authentication_failure_close", "per_consumer_qos"]
+        put_bool(@capabilities, name: name, v: true)?
+
+    out: [u8] @= []
+
+    if !taken.any(is_product)
+        put_text(@out, name: "product", text: "Rebel")?
+
+    if !taken.any(is_version)
+        put_text(@out, name: "version", text: "0.1.0")?
+
+    if !taken.any(is_platform)
+        put_text(@out, name: "platform", text: "Heroes")?
+
+    if !taken.any(is_capabilities)
+        put_table(out: @out, name: "capabilities", entries: capabilities)?
+
+    if connection_name != "" && !taken.any(is_connection_name)
+        put_text(@out, name: "connection_name", text: connection_name)?
+    bytes.push_all(to: @out, from: added)
+    return ok(with_length(out))
+
+# Whether `name` is `product`.
+#
+# - `name`: a name.
+function is_product(name: str) -> bool
+    return name == "product"
+
+# Whether `name` is `version`.
+#
+# - `name`: a name.
+function is_version(name: str) -> bool
+    return name == "version"
+
+# Whether `name` is `platform`.
+#
+# - `name`: a name.
+function is_platform(name: str) -> bool
+    return name == "platform"
+
+# Whether `name` is `capabilities`.
+#
+# - `name`: a name.
+function is_capabilities(name: str) -> bool
+    return name == "capabilities"
+
+# Whether `name` is `connection_name`.
+#
+# - `name`: a name.
+function is_connection_name(name: str) -> bool
+    return name == "connection_name"
+
+# AMQPLAIN's response: the entries `LOGIN` and `PASSWORD`, without a
+# table's length, as RabbitMQ reads them.
+#
+# - `username`: the user's name.
+# - `password`: the password.
+function amqplain(username: str, password: str) -> [u8]?
+    out: [u8] @= []
+    put_text(@out, name: "LOGIN", text: username)?
+    put_text(@out, name: "PASSWORD", text: password)?
+    return ok(out)
+
+test "check_entries: empty, every fixed type, nested tables and arrays, and the edges a walk must refuse"
+    check_entries([], at: 0, end: 0).must()
+    flat: [u8] = [
+        1
+        'a'
+        't'
+        1
+        1
+        'b'
+        'b'
+        0
+        1
+        'c'
+        'u'
+        0
+        1
+        1
+        'd'
+        'I'
+        0
+        0
+        0
+        1
+        1
+        'e'
+        'l'
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        1
+        1
+        'f'
+        'D'
+        2
+        0
+        0
+        0
+        5
+        1
+        'g'
+        'V'
+    ]
+    check_entries(flat, at: 0, end: flat.len()).must()
+    nested: [u8] = [1, 'n', 'F', 0, 0, 0, 12, 1, 'm', 'A', 0, 0, 0, 5, 'S', 0, 0, 0, 0]
+    check_entries(nested, at: 0, end: nested.len()).must()
+    assert check_entries([1, 'a', 'Z'], at: 0, end: 3).is_err()
+    assert check_entries([1, 'a'], at: 0, end: 2).is_err()
+    assert check_entries([5, 'a'], at: 0, end: 2).is_err()
+    assert check_entries([1, 'a', 'I', 0, 0], at: 0, end: 5).is_err()
+    assert check_entries([1, 'a', 'S', 0, 0, 0, 9], at: 0, end: 7).is_err()
+    assert check_entries([1, 'a', 'T', 128, 0, 0, 0, 0, 0, 0, 0], at: 0, end: 11).is_err()
+    assert check_entries([1, 255, 't', 1], at: 0, end: 4).is_err()
+
+test "check_entries: arrays nested 64 deep are read, and 65 refused, without a frame of the stack for each"
+    deep: [u8] @= [1, 'a']
+    tail: [u8] @= []
+
+    for depth in range(from: 0, to: 65)
+        deep @ deep.push('A')
+        wire.put_u32(@deep, v: (64 - depth) * 5)
+
+    match check_entries(deep, at: 0, end: deep.len())
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    for depth in range(from: 0, to: 64)
+        tail @ tail.push('A')
+        wire.put_u32(@tail, v: (63 - depth) * 5)
+
+    shallow = bytes.concat([[1, 'a'], tail])
+    check_entries(shallow, at: 0, end: shallow.len()).must()
+
+test "take_table, entries_of, with_length, names_of: a table read whole and its names"
+    r @= wire.reader([0, 0, 0, 6, 1, 'k', 't', 1, 1, 'z', 9])
+    assert take_table(@r, what: "t").is_err()
+    good @= wire.reader([0, 0, 0, 7, 1, 'k', 't', 1, 1, 'z', 'V', 9])
+    t = take_table(@good, what: "t").must()
+    assert t == [0, 0, 0, 7, 1, 'k', 't', 1, 1, 'z', 'V'] && good.at == 11
+    assert names_of(entries_of(t)) == ["k", "z"] && with_length(entries_of(t)) == t && entries_of([]) == []
+
+test "client_properties: the client's own, a name, and a property of the program's that replaces one"
+    own = client_properties("", extra: []).must()
+    assert names_of(entries_of(own)) == ["product", "version", "platform", "capabilities"]
+    extra: [u8] @= []
+    put_text(@extra, name: "product", text: "mine").must()
+    put_text(@extra, name: "x", text: "y").must()
+    named = client_properties("job", extra: with_length(extra)).must()
+    assert names_of(entries_of(named)) == ["version", "platform", "capabilities", "connection_name", "product", "x"]
+
+test "amqplain: LOGIN and PASSWORD as long strings, no length before them"
+    assert amqplain(username: "u", password: "p").must() == [5, 'L', 'O', 'G', 'I', 'N', 'S', 0, 0, 0, 1, 'u', 8, 'P', 'A', 'S', 'S', 'W', 'O', 'R', 'D', 'S', 0, 0, 0, 1, 'p']

@@ -1,0 +1,314 @@
+# Messages read: `Fetch` 11 of one or several partitions a broker leads, its
+# answer's batches read and, under `read_committed`, the aborted
+# transactions' left out; and `ListOffsets` 5, a partition's offset at a time
+# or at either end of its log. A leader moved or not ready is asked again
+# with fresh metadata within the call's time.
+
+use kafka/internal/cluster
+use kafka/internal/errors
+use kafka/internal/model
+use kafka/internal/records
+use kafka/internal/state
+use kafka/internal/wire
+
+# The key of `Fetch`.
+constant FETCH: i64
+    1
+
+# The key of `ListOffsets`.
+constant LIST_OFFSETS: i64
+    2
+
+# One partition to fetch.
+record Ask
+    # The topic.
+    topic: str
+    # The partition.
+    partition: i64
+    # The first offset read.
+    offset: i64
+
+# What a fetch answered for one partition.
+record Answer
+    # The topic.
+    topic: str
+    # The partition.
+    partition: i64
+    # The broker's error, 0 for none.
+    error: i64
+    # The high watermark.
+    high_watermark: i64
+    # The last stable offset.
+    last_stable_offset: i64
+    # The log's first offset.
+    log_start_offset: i64
+    # The messages a consumer reads, from the offset asked.
+    messages: [model.Message]
+    # The offset to fetch next.
+    next_offset: i64
+
+# The number `isolation` writes.
+#
+# - `i`: the isolation.
+function isolation_of(i: model.Isolation) -> i64
+    return match i
+        .read_uncommitted => 0
+        .read_committed   => 1
+
+# The body of a `Fetch` 11 of `asks`.
+#
+# - `s`: the session.
+# - `asks`: the partitions, one or more.
+# - `wait_ms`: milliseconds the broker waits for a message.
+function fetch_body(s: state.Session lent, asks: [Ask], wait_ms: i64) -> [u8]?
+    out: [u8] @= []
+    wire.put_i32(out: @out, v: -1)
+    wire.put_i32(out: @out, v: wait_ms)
+    wire.put_i32(out: @out, v: 1)
+    wire.put_i32(out: @out, v: s.options.most_response_bytes - 1024)
+    wire.put_i8(out: @out, v: isolation_of(s.options.isolation))
+    wire.put_i32(out: @out, v: 0)
+    wire.put_i32(out: @out, v: -1)
+    topics: [str] @= []
+
+    for a in asks
+        seen: bool @= false
+
+        for t in topics
+            if t == a.topic
+                seen @ true
+
+        if !seen
+            topics @ topics.push(a.topic)
+
+    wire.put_i32(out: @out, v: topics.len())
+
+    for t in topics
+        wire.put_string(out: @out, s: t, what: "a topic's name")?
+        mine: [Ask] @= []
+
+        for a in asks
+            if a.topic == t
+                mine @ mine.push(a)
+
+        wire.put_i32(out: @out, v: mine.len())
+
+        for a in mine
+            wire.put_i32(out: @out, v: a.partition)
+            wire.put_i32(out: @out, v: -1)
+            wire.put_i64(out: @out, v: a.offset)
+            wire.put_i64(out: @out, v: -1)
+            wire.put_i32(out: @out, v: s.options.most_fetch_bytes)
+
+    wire.put_i32(out: @out, v: 0)
+    wire.put_string(out: @out, s: "", what: "the rack")?
+    return ok(out)
+
+# The answers a `Fetch` 11 holds, for the partitions `asks` named.
+#
+# - `r`: the answer.
+# - `asks`: the partitions asked, each answer's first offset.
+# - `limit`: the most bytes a batch decompresses to.
+# - `committed_only`: whether the aborted transactions are left out.
+function take_fetch(@r: wire.Reader, asks: [Ask], limit: i64, committed_only: bool) -> [Answer]?
+    _ = wire.take_i32(@r, what: "Fetch")?
+    top = wire.take_i16(@r, what: "Fetch's error")?
+    _ = wire.take_i32(@r, what: "Fetch's session")?
+
+    if top != 0
+        return errors.failure(top, what: "fetching", said_too: "")
+    topic_count = wire.take_count(@r, what: "Fetch's topics")?
+    out: [Answer] @= []
+
+    for _ in range(from: 0, to: topic_count)
+        topic = wire.take_string(@r, what: "Fetch's topic")?
+        partition_count = wire.take_count(@r, what: "Fetch's partitions")?
+
+        for _ in range(from: 0, to: partition_count)
+            partition = wire.take_i32(@r, what: "Fetch's partition")?
+            error = wire.take_i16(@r, what: "Fetch's error")?
+            high = wire.take_i64(@r, what: "Fetch's high watermark")?
+            stable = wire.take_i64(@r, what: "Fetch's last stable offset")?
+            start = wire.take_i64(@r, what: "Fetch's log start")?
+            aborted_count = wire.take_count(@r, what: "Fetch's aborted transactions")?
+            producers: [i64] @= []
+            firsts: [i64] @= []
+
+            for _ in range(from: 0, to: aborted_count)
+                producers @ producers.push(wire.take_i64(@r, what: "an aborted transaction")?)
+                firsts @ firsts.push(wire.take_i64(@r, what: "an aborted transaction")?)
+
+            _ = wire.take_i32(@r, what: "Fetch's preferred replica")?
+            raw = wire.take_bytes(@r, what: "Fetch's records")?
+            asked: i64 @= 0
+
+            for a in asks
+                if a.topic == topic && a.partition == partition
+                    asked @ a.offset
+
+            messages: [model.Message] @= []
+            next: i64 @= asked
+
+            if error == 0
+                batches = records.decode(raw, limit: limit)?
+
+                kept = if committed_only
+                    records.readable(batches, aborted_producers: producers, aborted_firsts: firsts, from: asked)
+                else
+                    records.readable(batches, aborted_producers: [], aborted_firsts: [], from: asked)
+
+                for m in kept
+                    named @= m
+                    named.topic @ topic
+                    named.partition @ partition
+                    messages @ messages.push(named)
+
+                if batches.len() > 0 && batches[batches.len() - 1].last_offset + 1 > next
+                    next @ batches[batches.len() - 1].last_offset + 1
+            out @ out.push(
+                Answer(topic: topic, partition: partition, error: error, high_watermark: high, last_stable_offset: stable, log_start_offset: start, messages: messages, next_offset: next)
+            )
+
+    return ok(out)
+
+# Fetches `asks` from the node `leader`, the broker waiting up to `wait_ms`.
+#
+# - `s`: the session.
+# - `leader`: the node that leads every partition of `asks`.
+# - `asks`: the partitions.
+# - `wait_ms`: milliseconds the broker waits.
+function fetch_from(@s: state.Session, leader: i64, asks: [Ask], wait_ms: i64) -> [Answer]?
+    body = fetch_body(s, asks: asks, wait_ms: wait_ms)?
+    r @= cluster.send(@s, node_id: leader, key: FETCH, version: 11, body: body, extra_ms: wait_ms, answered: true)?
+    committed_only = isolation_of(s.options.isolation) == 1
+    return take_fetch(@r, asks: asks, limit: s.options.most_response_bytes, committed_only: committed_only)
+
+# The messages of one partition from `offset`.
+#
+# - `s`: the session.
+# - `topic`: the topic.
+# - `partition`: the partition.
+# - `offset`: the first offset, 0 or more.
+# - `wait_ms`: milliseconds the broker waits, 0 or more.
+function fetch(@s: state.Session, topic: str, partition: i64, offset: i64, wait_ms: i64) -> model.Fetched?
+    if offset < 0
+        return fail(code: model.INVALID, msg: f"the offset {offset} is below 0")
+
+    if wait_ms < 0
+        return fail(code: model.INVALID, msg: f"the wait {wait_ms} is below 0")
+    until = cluster.now_ms() + s.options.wait_ms + wait_ms
+
+    while true
+        leader = cluster.leader_of(@s, topic: topic, partition: partition)?
+        answers = fetch_from(@s, leader: leader, asks: [Ask(topic: topic, partition: partition, offset: offset)], wait_ms: wait_ms)?
+
+        for a in answers
+            if a.topic == topic && a.partition == partition
+                if a.error == 0
+                    return ok(
+                        model.Fetched(messages: a.messages, high_watermark: a.high_watermark, last_stable_offset: a.last_stable_offset, log_start_offset: a.log_start_offset, next_offset: a.next_offset)
+                    )
+
+                if !errors.is_retriable(a.error) || cluster.now_ms() >= until
+                    return errors.failure(
+                        a.error,
+                        what: f"fetching the partition {partition} of \"{topic}\" from {offset}",
+                        said_too: ""
+                    )
+
+        cluster.pause_ms(100)
+        _ = cluster.describe(@s, topics: [topic], every: false)?
+
+# The offset `ListOffsets` 5 answers for one partition at `at`.
+#
+# - `s`: the session.
+# - `topic`: the topic.
+# - `partition`: the partition.
+# - `at`: milliseconds since 1970, -2 for the earliest, -1 for the latest.
+function list_offset(@s: state.Session, topic: str, partition: i64, at: i64) -> i64?
+    if at < -2
+        return fail(code: model.INVALID, msg: f"the time {at} is below -2")
+    until = cluster.now_ms() + s.options.wait_ms
+
+    while true
+        leader = cluster.leader_of(@s, topic: topic, partition: partition)?
+        body: [u8] @= []
+        wire.put_i32(out: @body, v: -1)
+        wire.put_i8(out: @body, v: isolation_of(s.options.isolation))
+        wire.put_i32(out: @body, v: 1)
+        wire.put_string(out: @body, s: topic, what: "the topic's name")?
+        wire.put_i32(out: @body, v: 1)
+        wire.put_i32(out: @body, v: partition)
+        wire.put_i32(out: @body, v: -1)
+        wire.put_i64(out: @body, v: at)
+        r @= cluster.send(@s, node_id: leader, key: LIST_OFFSETS, version: 5, body: body, extra_ms: 0, answered: true)?
+        _ = wire.take_i32(@r, what: "ListOffsets")?
+        topic_count = wire.take_count(@r, what: "ListOffsets' topics")?
+        error: i64 @= -1
+        offset: i64 @= -1
+
+        for _ in range(from: 0, to: topic_count)
+            _ = wire.take_string(@r, what: "ListOffsets' topic")?
+            partition_count = wire.take_count(@r, what: "ListOffsets' partitions")?
+
+            for _ in range(from: 0, to: partition_count)
+                _ = wire.take_i32(@r, what: "ListOffsets' partition")?
+                error @ wire.take_i16(@r, what: "ListOffsets' error")?
+                _ = wire.take_i64(@r, what: "ListOffsets' time")?
+                offset @ wire.take_i64(@r, what: "ListOffsets' offset")?
+                _ = wire.take_i32(@r, what: "ListOffsets' epoch")?
+
+        if error == 0
+            if offset < 0
+                return fail(
+                    code: model.NOT_FOUND,
+                    msg: f"no message of the partition {partition} of \"{topic}\" was written at {at} or after"
+                )
+            return ok(offset)
+
+        if error == -1 || !errors.is_retriable(error) || cluster.now_ms() >= until
+            return errors.failure(
+                error,
+                what: f"asking the offset of the partition {partition} of \"{topic}\" at {at}",
+                said_too: ""
+            )
+        cluster.pause_ms(100)
+        _ = cluster.describe(@s, topics: [topic], every: false)?
+
+test "isolation_of: both"
+    assert isolation_of(.read_uncommitted) == 0 && isolation_of(.read_committed) == 1
+
+test "take_fetch: a partition's batch read from the offset asked, an error kept, the offset to fetch next"
+    batch = records.encode(
+        [model.Message(topic: "", partition: -1, offset: -1, timestamp_ms: 5, key: [], null_key: true, value: [1], null_value: false, headers: []), model.Message(topic: "", partition: -1, offset: -1, timestamp_ms: 6, key: [], null_key: true, value: [2], null_value: false, headers: [])],
+        compression: .none,
+        now_ms: 0
+    ).must()
+    answer: [u8] @= [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    wire.put_i32(out: @answer, v: 1)
+    wire.put_string(out: @answer, s: "t", what: "t").must()
+    wire.put_i32(out: @answer, v: 2)
+
+    for p in [0, 1]
+        wire.put_i32(out: @answer, v: p)
+        wire.put_i16(out: @answer, v: p * 6)
+        wire.put_i64(out: @answer, v: 2)
+        wire.put_i64(out: @answer, v: 2)
+        wire.put_i64(out: @answer, v: 0)
+        wire.put_i32(out: @answer, v: -1)
+        wire.put_i32(out: @answer, v: -1)
+
+        if p == 0
+            wire.put_bytes(out: @answer, data: batch)
+        else
+            wire.put_i32(out: @answer, v: -1)
+
+    r @= wire.reader(answer)
+    got = take_fetch(
+        @r,
+        asks: [Ask(topic: "t", partition: 0, offset: 1), Ask(topic: "t", partition: 1, offset: 0)],
+        limit: 1000,
+        committed_only: false
+    ).must()
+    assert got.len() == 2 && got[0].messages.len() == 1 && got[0].messages[0].value == [2] && got[0].messages[0].topic == "t"
+    assert got[0].next_offset == 2 && got[1].error == 6 && got[1].next_offset == 0

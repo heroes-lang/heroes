@@ -1,0 +1,211 @@
+# The bytes read from the server and written to it: a frame taken whole from
+# the bytes read without waiting, a method written, the connection lost where
+# a read or a write fails; and the lists of what the server sent that no call
+# has taken yet, grown in place and bounded.
+
+use amqp/internal/decoding
+use amqp/internal/frames
+use amqp/internal/link
+use amqp/internal/model
+use amqp/internal/state
+use bytes
+use time
+
+# The largest frame read before the size is agreed.
+constant FIRST_FRAME_MAX: i64
+    1048576
+
+# What one frame did.
+variant Event
+    # A synchronous answer on a channel, or the server's close of it.
+    reply
+        # The channel, 0 for the connection.
+        channel: i64
+        # The method.
+        method: decoding.Incoming
+    # The message `basic.get` asked for, its content read.
+    got
+        # The channel.
+        channel: i64
+        # The message.
+        delivery: model.Delivery
+    # Anything held or done: a delivery, a heartbeat, a confirmation.
+    other
+
+# A frame whole in the bytes read, or nothing yet.
+record Taken
+    # Whether a frame was whole.
+    complete: bool
+    # Its type.
+    kind: i64
+    # Its channel.
+    channel: i64
+    # Its payload.
+    payload: [u8]
+
+# The monotonic clock, in milliseconds.
+function now_ms() -> i64
+    return match time.mark()
+        .ok m  => m.nanoseconds / 1000000
+        .err _ => 0
+
+# The code of a failure the server's reply code `reply` means.
+#
+# - `reply`: the reply code.
+function code_of(reply: i64) -> str
+    if reply == 403 || reply == 530
+        return model.PERMISSION
+
+    if reply == 404 || reply == 312 || reply == 313
+        return model.NOT_FOUND
+
+    if reply == 311
+        return model.LIMIT
+
+    if reply == 320
+        return model.CLOSED
+
+    if reply == 540
+        return model.UNSUPPORTED
+
+    if reply == 402 || reply == 406 || reply >= 501 && reply <= 506
+        return model.INVALID
+    return model.FAILED
+
+# Loses the connection: closes the link and answers the failure.
+#
+# - `s`: the session, no longer open.
+# - `code`: the failure's code.
+# - `msg`: its message.
+function lose<T>(@s: state.Session, code: str, msg: str) -> T?
+    link.close(@s.link)
+    s.open @ false
+    return fail(code: code, msg: msg)
+
+# Writes `data` to the server, the connection lost where the write fails.
+#
+# - `s`: the session.
+# - `data`: the bytes.
+function write(@s: state.Session, data: [u8] lent) -> ()?
+    if !s.open
+        return fail(code: model.CLOSED, msg: f"the connection to {s.target} is closed")
+
+    match link.write(s.link, data: data)
+        .ok _ =>
+            s.last_write @ now_ms()
+            return ok()
+        .err e =>
+            if e.code == model.STOPPED
+                return fail(code: e.code, msg: e.msg)
+            return lose(@s, code: e.code, msg: e.msg)
+
+# Writes a method frame on `channel`.
+#
+# - `s`: the session.
+# - `channel`: the channel, 0 for the connection.
+# - `payload`: the method.
+function send(@s: state.Session, channel: i64, payload: [u8] lent) -> ()?
+    return write(@s, data: frames.frame(kind: frames.METHOD, channel: channel, payload: payload))
+
+# Reads once, the bytes kept; a timeout or a stop answered as such, any
+# other failure losing the connection.
+#
+# - `s`: the session.
+function fill(@s: state.Session) -> ()?
+    match link.read(s.link, target: s.target)
+        .ok got =>
+            bytes.push_all(to: @s.buf, from: got)
+            s.last_read @ now_ms()
+            return ok()
+        .err e =>
+            if e.code == model.TIMEOUT || e.code == model.STOPPED
+                return fail(code: e.code, msg: e.msg)
+            return lose(@s, code: e.code, msg: e.msg)
+
+# The largest payload read now: the size agreed less the frame's own bytes,
+# or `FIRST_FRAME_MAX` before it is agreed, or the largest body where none was.
+#
+# - `s`: the session.
+function most_payload(s: state.Session lent) -> i64
+    if s.frame_max > 0
+        return s.frame_max - frames.OVERHEAD
+
+    if s.server.version_minor == 0
+        return FIRST_FRAME_MAX
+    return s.options.most_body_bytes + FIRST_FRAME_MAX
+
+# The next frame whole in the bytes read, without reading.
+#
+# - `s`: the session; the connection lost where the bytes are no AMQP.
+function taken(@s: state.Session) -> Taken?
+    if s.at == s.buf.len()
+        s.buf @ []
+        s.at @ 0
+    else if s.at > 65536 && s.at * 2 > s.buf.len()
+        s.buf @ s.buf.slice(from: s.at, to: s.buf.len())
+        s.at @ 0
+
+    e = match frames.scan(s.buf, at: s.at, most: most_payload(s))
+        .ok got => got
+        .err e  => return lose(@s, code: e.code, msg: f"{s.target} sent {e.msg}")
+
+    if !e.complete
+        return ok(Taken(complete: false, kind: 0, channel: 0, payload: []))
+    s.at @ e.next
+    return ok(
+        Taken(complete: true, kind: e.kind, channel: e.channel, payload: s.buf.slice(from: e.payload_at, to: e.payload_end))
+    )
+
+# Adds `d` to the deliveries held.
+#
+# - `held`: the deliveries held.
+# - `d`: the delivery.
+function hold_delivery(@held: [model.Delivery], d: model.Delivery)
+    held @ held.push(d)
+
+# Adds `r` to the returned messages held.
+#
+# - `held`: the returned messages held.
+# - `r`: the message.
+function hold_return(@held: [model.Return], r: model.Return)
+    held @ held.push(r)
+
+# Adds a confirmation to those held.
+#
+# - `held`: the confirmations held.
+# - `c`: the confirmation.
+function hold_confirmation(@held: [model.Confirmation], c: model.Confirmation)
+    held @ held.push(c)
+
+# Adds a consumer the server cancelled to those held.
+#
+# - `held`: the cancellations.
+# - `c`: the cancellation.
+function hold_cancellation(@held: [model.Cancellation], c: model.Cancellation)
+    held @ held.push(c)
+
+# Adds `n` to a list of numbers.
+#
+# - `list`: the numbers.
+# - `n`: the number.
+function hold_number(@list: [i64], n: i64)
+    list @ list.push(n)
+
+# Fails, losing the connection, where the values held pass the bound.
+#
+# - `s`: the session.
+function check_held(@s: state.Session) -> ()?
+    if state.held(s) > s.options.most_held
+        return lose(
+            @s,
+            code: model.LIMIT,
+            msg: f"{s.target} sent more than the {s.options.most_held} deliveries, returns and confirmations held unread"
+        )
+    return ok()
+
+test "code_of: every reply code AMQP names a failure by"
+    assert code_of(403) == "permission" && code_of(530) == "permission"
+    assert code_of(404) == "not_found" && code_of(312) == "not_found" && code_of(313) == "not_found"
+    assert code_of(311) == "limit" && code_of(320) == "closed" && code_of(540) == "unsupported"
+    assert code_of(402) == "invalid" && code_of(406) == "invalid" && code_of(501) == "invalid" && code_of(506) == "invalid"
+    assert code_of(405) == "failed" && code_of(541) == "failed" && code_of(0) == "failed"

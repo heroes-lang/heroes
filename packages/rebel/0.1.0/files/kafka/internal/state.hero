@@ -1,0 +1,94 @@
+# The state of a client and of a consumer of a group: the options, the
+# connections to brokers, what the metadata said of the cluster and its
+# topics, the counters that send a keyless message to one partition after
+# another; and a consumer's membership, assignment and positions.
+
+use kafka/internal/broker
+use kafka/internal/model
+
+# What the client knows of one topic.
+record TopicMeta
+    # The topic.
+    name: str
+    # Whether Kafka keeps it for itself.
+    internal: bool
+    # Its partitions, at the index of their numbers.
+    partitions: [model.Partition]
+
+# A client's whole state.
+record Session
+    # The options it was made with.
+    options: model.Options
+    # Whether it is closed.
+    closed: bool
+    # The connections, one per broker reached, and the first one's.
+    conns: [broker.Conn]
+    # The brokers the metadata named.
+    brokers: [model.Broker]
+    # The cluster's identifier.
+    cluster_id: str
+    # The controller, -1 for none told.
+    controller_id: i64
+    # The topics the metadata described.
+    topics: [TopicMeta]
+    # Each topic's index in `topics`.
+    topic_index: {str: i64}
+    # The next partition of each topic a keyless message goes to.
+    round_robin: {str: i64}
+    # The versions the first broker reached reads.
+    versions: [model.ApiVersion]
+
+# One partition a consumer reads.
+record Owned
+    # The topic.
+    topic: str
+    # The partition.
+    partition: i64
+    # The offset of the next message `poll` answers, -1 before it is known.
+    position: i64
+    # The offset last committed, -1 for none.
+    committed: i64
+    # Whether `pause` stopped it.
+    paused: bool
+
+# A consumer's whole state.
+record Group
+    # The client it reads through.
+    session: Session
+    # How it takes part in its group.
+    options: model.GroupOptions
+    # Whether it is closed.
+    closed: bool
+    # The coordinator's node, -1 before it is found.
+    coordinator: i64
+    # The member's identifier, "" before the first join.
+    member_id: str
+    # The generation joined, -1 before.
+    generation_id: i64
+    # Whether it led the last assignment.
+    leader: bool
+    # The partitions assigned, by topic then number.
+    owned: [Owned]
+    # When the next heartbeat is due, on the monotonic clock in milliseconds.
+    heartbeat_due: i64
+    # When the next commit is due, 0 for none.
+    commit_due: i64
+    # Whether the group must be joined again.
+    rejoin: bool
+
+# A session for `o`, before any broker is reached.
+#
+# - `o`: the options.
+function fresh(o: model.Options) -> Session
+    return Session(
+        options: o,
+        closed: false,
+        conns: [],
+        brokers: [],
+        cluster_id: "",
+        controller_id: -1,
+        topics: [],
+        topic_index: {},
+        round_robin: {},
+        versions: []
+    )
