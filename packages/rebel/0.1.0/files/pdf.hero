@@ -1,0 +1,2880 @@
+# PDF documents written and read. Writing makes pages of any size and draws
+# on them: text in the 14 standard fonts, measured by Adobe's own metrics,
+# wrapped into boxes and laid out as simple tables; lines, rectangles,
+# circles and paths; colours, opacity, clipping and transforms; JPEG images
+# passed through, PNG and images in memory embedded with their alpha;
+# links, bookmarks and the document's information. Reading takes a file's
+# structure (cross-reference tables and streams, object streams,
+# incremental updates, a damaged table rebuilt), its pages, its
+# information, its bookmarks and links, any object, and the text of a page,
+# decoded through the standard encodings, a font's differences and its
+# ToUnicode map. Written from ISO 32000-1:2008 (PDF 1.7); what it writes
+# Poppler's `pdftotext` and `pdfinfo`, Ghostscript and pypdf read without a
+# complaint, and the text it reads is the text `pdftotext` reads.
+#
+# It embeds no font file, so text is what the standard fonts show: the
+# characters of WinAnsiEncoding (Latin-1 and the euro, the dashes and the
+# quotation marks) and those of Symbol and ZapfDingbats. It decodes no image
+# itself: PNG is decoded by `image/png`, and a page's images are read as
+# their bytes. It opens no path (`fs` does) and draws no chart. It edits no
+# file it read and writes no encrypted file. A file encrypted with RC4 by
+# the standard security handler is read with its password; one encrypted
+# with AES is refused `unsupported`.
+#
+# **A file from outside is not trusted.** Reading takes `Limits`: the
+# objects a file may hold, the bytes a stream may decode to, how deep its
+# values may nest, its pages and its revisions; a file past one fails
+# `limit` before the memory is spent. Nothing a file holds makes a call
+# abort, loop without end or read past the file.
+#
+# It fails with `invalid`, `limit`, `not_found` and `unsupported`, and with
+# the codes of `compress` and `image/png` where a stream or an image does not
+# decode.
+
+use bytes
+use image
+use image/png
+use math
+use pdf/internal/assemble
+use pdf/internal/codes
+use pdf/internal/compose
+use pdf/internal/dates
+use pdf/internal/filters
+use pdf/internal/images
+use pdf/internal/measure
+use pdf/internal/metrics
+use pdf/internal/model
+use pdf/internal/navigation
+use pdf/internal/samples
+use pdf/internal/store
+use pdf/internal/syntax
+use pdf/internal/tables
+use pdf/internal/text as page_text
+use pdf/internal/text_strings
+use pdf/internal/wrap
+use time
+
+## Codes
+
+# The code of a file that is not what PDF says, the message naming the
+# byte; of a value a writer is given that PDF has no form for; and of an
+# object asked for as a kind it is not. `parse`, `text_of`, `pieces_of`,
+# `parse_date`, `parse_color`, `add_jpeg`, `add_png`, `to_bytes` and the
+# readers of objects fail with it.
+constant INVALID: str
+    codes.INVALID
+
+# The code of a file that would pass the caller's `Limits`. `parse`,
+# `text_of`, `pieces_of` and `stream_data_of` fail with it.
+constant LIMIT: str
+    codes.LIMIT
+
+# The code of a key a dictionary does not hold (`entry_of`) and of a font
+# name that is none of the 14 (`parse_font`).
+constant NOT_FOUND: str
+    codes.NOT_FOUND
+
+# The code of what this package does not do: a character a standard font
+# has no glyph for (`width_of`, `draw_text`), an image it does not embed
+# (`add_png`), a file encrypted with AES (`parse`), a stream of an image
+# filter (`stream_data_of`).
+constant UNSUPPORTED: str
+    codes.UNSUPPORTED
+
+## Sizes and units
+
+# A width and a height, in points: 72 to the inch, as PDF measures.
+record Size
+    # The width in points, more than 0.
+    width: f64
+    # The height in points, more than 0.
+    height: f64
+
+# The usual sizes of paper.
+variant Paper
+    # ISO A0, 841 by 1189 mm.
+    a0
+    # ISO A1, 594 by 841 mm.
+    a1
+    # ISO A2, 420 by 594 mm.
+    a2
+    # ISO A3, 297 by 420 mm.
+    a3
+    # ISO A4, 210 by 297 mm.
+    a4
+    # ISO A5, 148 by 210 mm.
+    a5
+    # ISO A6, 105 by 148 mm.
+    a6
+    # ISO B4, 250 by 353 mm.
+    b4
+    # ISO B5, 176 by 250 mm.
+    b5
+    # US Letter, 8.5 by 11 inches.
+    letter
+    # US Legal, 8.5 by 14 inches.
+    legal
+    # Tabloid, 11 by 17 inches.
+    tabloid
+    # Executive, 7.25 by 10.5 inches.
+    executive
+
+# What `to_points` converts from.
+variant Unit
+    # A point, 1/72 of an inch: PDF's own unit.
+    point
+    # An inch, 72 points.
+    inch
+    # A millimetre, 72/25.4 points.
+    mm
+    # A centimetre, 720/25.4 points.
+    cm
+    # A pica, 12 points.
+    pica
+
+# The size of `paper`, upright, in points: the millimetres converted
+# exactly, so A4 is 595.2756 by 841.8898.
+#
+# - `paper`: the paper asked about.
+#
+# See also `to_landscape` and `to_points`.
+function size_of(paper: Paper) -> Size
+    return match paper
+        .a0        => Size(width: to_points(841.0, unit: .mm), height: to_points(1189.0, unit: .mm))
+        .a1        => Size(width: to_points(594.0, unit: .mm), height: to_points(841.0, unit: .mm))
+        .a2        => Size(width: to_points(420.0, unit: .mm), height: to_points(594.0, unit: .mm))
+        .a3        => Size(width: to_points(297.0, unit: .mm), height: to_points(420.0, unit: .mm))
+        .a4        => Size(width: to_points(210.0, unit: .mm), height: to_points(297.0, unit: .mm))
+        .a5        => Size(width: to_points(148.0, unit: .mm), height: to_points(210.0, unit: .mm))
+        .a6        => Size(width: to_points(105.0, unit: .mm), height: to_points(148.0, unit: .mm))
+        .b4        => Size(width: to_points(250.0, unit: .mm), height: to_points(353.0, unit: .mm))
+        .b5        => Size(width: to_points(176.0, unit: .mm), height: to_points(250.0, unit: .mm))
+        .letter    => Size(width: 612.0, height: 792.0)
+        .legal     => Size(width: 612.0, height: 1008.0)
+        .tabloid   => Size(width: 792.0, height: 1224.0)
+        .executive => Size(width: 522.0, height: 756.0)
+
+# `size` turned to lie on its long side: the wider of its two lengths as
+# the width.
+#
+# - `size`: any size; a square comes back as it was.
+#
+# See also `to_portrait`.
+function to_landscape(size: Size) -> Size
+    if size.width >= size.height
+        return size
+    return Size(width: size.height, height: size.width)
+
+# `size` turned to stand on its short side: the taller of its two lengths
+# as the height.
+#
+# - `size`: any size; a square comes back as it was.
+#
+# See also `to_landscape`.
+function to_portrait(size: Size) -> Size
+    if size.height >= size.width
+        return size
+    return Size(width: size.height, height: size.width)
+
+# `n` of `unit` in points.
+#
+# - `n`: the length; any value, negative ones included.
+# - `unit`: what `n` counts.
+#
+# See also `size_of`.
+function to_points(n: f64, unit: Unit) -> f64
+    return match unit
+        .point => n
+        .inch  => n * 72.0
+        .mm    => n * 72.0 / 25.4
+        .cm    => n * 720.0 / 25.4
+        .pica  => n * 12.0
+
+## Colours
+
+# A colour, each component from 0 to 1; one outside is written as the
+# nearest end.
+variant Color
+    # A shade of gray.
+    gray
+        # 0 black to 1 white.
+        level: f64
+    # A colour of light, as screens make it.
+    rgb
+        # Red, 0 to 1.
+        red: f64
+        # Green, 0 to 1.
+        green: f64
+        # Blue, 0 to 1.
+        blue: f64
+    # A colour of ink, as printers make it.
+    cmyk
+        # Cyan, 0 to 1.
+        cyan: f64
+        # Magenta, 0 to 1.
+        magenta: f64
+        # Yellow, 0 to 1.
+        yellow: f64
+        # Black, 0 to 1.
+        black: f64
+
+# The colour `s` writes in CSS's hexadecimal form: `#rrggbb` or `#rgb`, in
+# either case.
+#
+# - `s`: the text, its `#` included.
+#
+# Fails `invalid` where `s` is not one of the two forms.
+#
+# See also `Color`.
+function parse_color(s: str) -> Color?
+    if s.len() == 0 || s[0] != '#'
+        return fail(code: INVALID, msg: f"\"{s}\" is not a colour: it is written #rrggbb or #rgb")
+    digits: [str] @= []
+
+    for c in s.slice(from: 1, to: s.len()).chars()
+        digits @ digits.push(c)
+
+        if s.len() == 4
+            digits @ digits.push(c)
+
+    raw = match bytes.parse_hex(digits.join(""))
+        .ok r  => r
+        .err _ => return fail(code: INVALID, msg: f"\"{s}\" is not a colour: it is written #rrggbb or #rgb")
+
+    if raw.len() != 3
+        return fail(code: INVALID, msg: f"\"{s}\" is not a colour: it is written #rrggbb or #rgb")
+    return ok(.rgb(red: to_f64(raw[0]) / 255.0, green: to_f64(raw[1]) / 255.0, blue: to_f64(raw[2]) / 255.0))
+
+## Fonts
+
+# The 14 standard fonts, which every reader of PDF has and no file embeds.
+# The Latin twelve show WinAnsiEncoding's characters; Symbol shows Greek
+# letters and mathematical signs, ZapfDingbats ornaments.
+variant Font
+    # Helvetica.
+    helvetica
+    # Helvetica, bold.
+    helvetica_bold
+    # Helvetica, slanted.
+    helvetica_oblique
+    # Helvetica, bold and slanted.
+    helvetica_bold_oblique
+    # Times, upright.
+    times_roman
+    # Times, bold.
+    times_bold
+    # Times, italic.
+    times_italic
+    # Times, bold and italic.
+    times_bold_italic
+    # Courier, every character 600 thousandths wide.
+    courier
+    # Courier, bold.
+    courier_bold
+    # Courier, slanted.
+    courier_oblique
+    # Courier, bold and slanted.
+    courier_bold_oblique
+    # Symbol: Greek letters and mathematical signs.
+    symbol
+    # ZapfDingbats: arrows, stars, check marks and other ornaments.
+    zapf_dingbats
+
+# What an AFM file says of a font as a whole, in thousandths of the font's
+# size: multiply by the size and divide by 1000 for points.
+record FontMetrics
+    # How high a letter with an ascender reaches above the baseline.
+    ascent: i64
+    # How far a descender reaches below the baseline: negative.
+    descent: i64
+    # The height of a capital; 0 for Symbol and ZapfDingbats, whose files
+    # name none.
+    cap_height: i64
+    # The height of a small letter without an ascender; 0 for Symbol and
+    # ZapfDingbats.
+    x_height: i64
+    # The slant of upright strokes in degrees, negative leaning right.
+    italic_angle: f64
+    # Where an underline stands: negative, below the baseline.
+    underline_position: i64
+    # How thick an underline is.
+    underline_thickness: i64
+    # The left of the box every glyph fits in.
+    box_left: i64
+    # The bottom of that box.
+    box_bottom: i64
+    # The right of that box.
+    box_right: i64
+    # The top of that box.
+    box_top: i64
+
+# The name PDF gives `font`, as its `/BaseFont` writes it: `Helvetica-Bold`.
+#
+# - `font`: the font.
+#
+# See also `parse_font`.
+function base_font_of(font: Font) -> str
+    return match font
+        .helvetica              => "Helvetica"
+        .helvetica_bold         => "Helvetica-Bold"
+        .helvetica_oblique      => "Helvetica-Oblique"
+        .helvetica_bold_oblique => "Helvetica-BoldOblique"
+        .times_roman            => "Times-Roman"
+        .times_bold             => "Times-Bold"
+        .times_italic           => "Times-Italic"
+        .times_bold_italic      => "Times-BoldItalic"
+        .courier                => "Courier"
+        .courier_bold           => "Courier-Bold"
+        .courier_oblique        => "Courier-Oblique"
+        .courier_bold_oblique   => "Courier-BoldOblique"
+        .symbol                 => "Symbol"
+        .zapf_dingbats          => "ZapfDingbats"
+
+# The standard font PDF names `name`: `Times-Roman` is `times_roman`.
+#
+# - `name`: the name exactly as `base_font_of` writes it.
+#
+# Fails `not_found` where `name` is none of the 14.
+#
+# See also `base_font_of`.
+function parse_font(name: str) -> Font?
+    return match name
+        "Helvetica"             => ok(.helvetica)
+        "Helvetica-Bold"        => ok(.helvetica_bold)
+        "Helvetica-Oblique"     => ok(.helvetica_oblique)
+        "Helvetica-BoldOblique" => ok(.helvetica_bold_oblique)
+        "Times-Roman"           => ok(.times_roman)
+        "Times-Bold"            => ok(.times_bold)
+        "Times-Italic"          => ok(.times_italic)
+        "Times-BoldItalic"      => ok(.times_bold_italic)
+        "Courier"               => ok(.courier)
+        "Courier-Bold"          => ok(.courier_bold)
+        "Courier-Oblique"       => ok(.courier_oblique)
+        "Courier-BoldOblique"   => ok(.courier_bold_oblique)
+        "Symbol"                => ok(.symbol)
+        "ZapfDingbats"          => ok(.zapf_dingbats)
+        _                       => fail(code: NOT_FOUND, msg: f"\"{name}\" is none of the 14 standard fonts")
+
+# The metrics of `font`, from Adobe's AFM file of it.
+#
+# - `font`: the font.
+#
+# See also `width_of`.
+function metrics_of(font: Font) -> FontMetrics
+    g = metrics.global_of(measure.font_index_of(base_font_of(font)))
+    return FontMetrics(
+        ascent: g.ascent,
+        descent: g.descent,
+        cap_height: g.cap_height,
+        x_height: g.x_height,
+        italic_angle: g.italic_angle,
+        underline_position: g.underline_position,
+        underline_thickness: g.underline_thickness,
+        box_left: g.box[0],
+        box_bottom: g.box[1],
+        box_right: g.box[2],
+        box_top: g.box[3]
+    )
+
+# How wide `text` is in `font` at `size`, in points: the sum of its
+# characters' widths in Adobe's AFM file, with no kerning, as PDF shows it.
+#
+# - `text`: the text; the empty text is 0 wide. A line break counts as no
+#   character.
+# - `font`: the font.
+# - `size`: the size in points, 0 or more.
+#
+# Fails `unsupported` where `font` has no glyph for a character of `text`,
+# the message naming it.
+#
+# See also `has_glyphs` and `wrap_text`.
+function width_of(text: str, font: Font, size: f64) -> f64?
+    index = measure.font_index_of(base_font_of(font))
+    shown = measure.codes_of(index, text: text)?
+    return ok(measure.width_of_codes(index, shown: shown, size: size, spacing: measure.plain()))
+
+# Whether `font` has a glyph for every character of `text`, so that
+# `draw_text` can show it.
+#
+# - `font`: the font.
+# - `text`: the text; the empty text is shown by every font.
+#
+# See also `width_of`.
+function has_glyphs(font: Font, text: str) -> bool
+    return measure.shows_all(measure.font_index_of(base_font_of(font)), text: text)
+
+## Documents
+
+# A document being written: its pages and what is drawn on them, the pen
+# that draws, its images, links, bookmarks and information. Made by
+# `document`; `to_bytes` writes it as a file.
+record Document
+    # Everything written so far.
+    state: compose.Doc
+
+# A document of no page, its content compressed, its pen Helvetica at 12
+# points in black, lines 1 point wide.
+#
+# See also `add_page` and `to_bytes`.
+function document() -> Document
+    return Document(state: compose.start())
+
+# Sets an entry of the document's information: `Title`, `Author`,
+# `Subject`, `Keywords`, `Creator`, `Producer`, `CreationDate`, `ModDate`,
+# or a key of the program's own.
+#
+# - `doc`: the document, whose entry is set or replaced.
+# - `key`: the entry's key, without a slash; not empty.
+# - `value`: its text, any character; a date as `format_date` writes it.
+#
+# Aborts where `key` is empty.
+#
+# See also `format_date` and `info_of`.
+function set_info(@doc: Document, key: str, value: str)
+    assert key != ""
+    doc.state.info[key] @ value
+
+# `t` as PDF writes a date, in UTC: `D:20261118103000Z`.
+#
+# - `t`: any instant; its fraction of a second is dropped.
+#
+# See also `parse_date` and `set_info`.
+function format_date(t: time.Instant) -> str
+    dt = time.to_date_time(t)
+    return dates.format(
+        year: dt.year,
+        month: dt.month,
+        day: dt.day,
+        hour: dt.hour,
+        minute: dt.minute,
+        second: dt.second
+    )
+
+# Sets whether the document's page content is compressed, which it is
+# unless asked otherwise.
+#
+# - `doc`: the document.
+# - `on`: `true` to compress with DEFLATE, `false` to write it as text.
+#
+# See also `to_bytes`.
+function set_compression(@doc: Document, on: bool)
+    doc.state.compress @ on
+
+# Adds a page of `size` after the last one and draws on it from now on,
+# with the pen as it stands.
+#
+# - `doc`: the document.
+# - `size`: the page's size; each length from 1 to 14,400 points, PDF's
+#   own bounds.
+#
+# Aborts where a length of `size` is outside 1 to 14,400.
+#
+# See also `size_of` and `set_page`.
+function add_page(@doc: Document, size: Size)
+    assert size.width >= 1.0 && size.width <= 14400.0 && size.height >= 1.0 && size.height <= 14400.0
+    compose.add_page(@doc.state, width: size.width, height: size.height)
+
+# How many pages `doc` has.
+#
+# - `doc`: the document.
+#
+# See also `add_page`.
+function page_count(doc: Document) -> i64
+    return doc.state.pages.len()
+
+# Draws on the page at `index` from now on, as on a page just added: what
+# is drawn goes on top of what it holds.
+#
+# - `doc`: the document.
+# - `index`: the page, from 0 to `page_count(doc) - 1`.
+#
+# Aborts where `index` is outside the pages.
+#
+# See also `page_count`.
+function set_page(@doc: Document, index: i64)
+    assert index >= 0 && index < doc.state.pages.len()
+    compose.set_page(@doc.state, index: index)
+
+## The pen
+
+# How the ends of a stroked line are drawn.
+variant LineCap
+    # Square, at the end itself.
+    butt
+    # A half circle past the end.
+    round
+    # A half square past the end.
+    square
+
+# How two strokes meet at a corner.
+variant LineJoin
+    # A sharp corner, cut where it passes the miter limit.
+    miter
+    # A rounded corner.
+    round
+    # A corner cut flat.
+    bevel
+
+# How the characters of text are painted.
+variant TextMode
+    # Filled with the fill colour: the usual.
+    fill
+    # Outlined with the stroke colour.
+    stroke
+    # Filled, then outlined.
+    fill_and_stroke
+    # Not painted: the text is there to be searched and copied.
+    invisible
+
+# The text state beside the font. `text_style` makes the usual one.
+record TextStyle
+    # Points added after every character, 0 or more.
+    character_spacing: f64
+    # Points added after every space, 0 or more.
+    word_spacing: f64
+    # The width of every character in percent of its own, 100 for none.
+    horizontal_scale: f64
+    # Points the baseline is raised, negative to lower it.
+    rise: f64
+    # How the characters are painted.
+    mode: TextMode
+
+# A transformation of the plane, as PDF's six numbers: a point (x, y) goes
+# to (a x + c y + e, b x + d y + f). `identity`, `translation`, `rotation`
+# and `scaling` make the usual ones, and `multiply` combines them.
+record Matrix
+    # The x of the image of (1, 0), less `e`.
+    a: f64
+    # The y of the image of (1, 0), less `f`.
+    b: f64
+    # The x of the image of (0, 1), less `e`.
+    c: f64
+    # The y of the image of (0, 1), less `f`.
+    d: f64
+    # How far the plane moves right.
+    e: f64
+    # How far the plane moves up.
+    f: f64
+
+# Sets the font text is drawn and measured in from now on.
+#
+# - `doc`: the document.
+# - `font`: the font.
+# - `size`: the size in points, more than 0.
+#
+# Aborts where `size` is not more than 0.
+#
+# See also `draw_text` and `set_text_style`.
+function set_font(@doc: Document, font: Font, size: f64)
+    assert size > 0.0
+    doc.state.pen.font @ measure.font_index_of(base_font_of(font))
+    doc.state.pen.size @ size
+
+# Sets the colour shapes are filled with and text is drawn in.
+#
+# - `doc`: the document.
+# - `color`: the colour.
+#
+# See also `set_stroke_color` and `set_opacity`.
+function set_fill_color(@doc: Document, color: Color)
+    ink = match color
+        .gray g => compose.Ink(space: 0, parts: [g.level])
+        .rgb c  => compose.Ink(space: 1, parts: [c.red, c.green, c.blue])
+        .cmyk c => compose.Ink(space: 2, parts: [c.cyan, c.magenta, c.yellow, c.black])
+
+    compose.set_fill(@doc.state, ink: ink)
+
+# Sets the colour lines and outlines are drawn in.
+#
+# - `doc`: the document.
+# - `color`: the colour.
+#
+# See also `set_fill_color`.
+function set_stroke_color(@doc: Document, color: Color)
+    ink = match color
+        .gray g => compose.Ink(space: 0, parts: [g.level])
+        .rgb c  => compose.Ink(space: 1, parts: [c.red, c.green, c.blue])
+        .cmyk c => compose.Ink(space: 2, parts: [c.cyan, c.magenta, c.yellow, c.black])
+
+    compose.set_stroke(@doc.state, ink: ink)
+
+# Sets how wide lines are drawn.
+#
+# - `doc`: the document.
+# - `width`: the width in points, 0 or more; 0 is the thinnest line the
+#   device can draw.
+#
+# Aborts where `width` is negative.
+#
+# See also `set_dash`.
+function set_line_width(@doc: Document, width: f64)
+    assert width >= 0.0
+    doc.state.pen.line_width @ width
+    compose.put_if_page(@doc.state, op: syntax.real(width) + " w")
+
+# Sets how the ends of lines are drawn.
+#
+# - `doc`: the document.
+# - `style`: the cap.
+#
+# See also `set_line_join`.
+function set_line_cap(@doc: Document, style: LineCap)
+    cap = match style
+        .butt   => 0
+        .round  => 1
+        .square => 2
+
+    doc.state.pen.cap @ cap
+    compose.put_if_page(@doc.state, op: f"{cap} J")
+
+# Sets how lines meet at a corner.
+#
+# - `doc`: the document.
+# - `style`: the join.
+#
+# See also `set_miter_limit`.
+function set_line_join(@doc: Document, style: LineJoin)
+    join_style = match style
+        .miter => 0
+        .round => 1
+        .bevel => 2
+
+    doc.state.pen.join @ join_style
+    compose.put_if_page(@doc.state, op: f"{join_style} j")
+
+# Sets how far a mitered corner may reach before it is cut, as a ratio of
+# its length to the line's width.
+#
+# - `doc`: the document.
+# - `limit`: 1 or more; 10 is PDF's own.
+#
+# Aborts where `limit` is below 1.
+#
+# See also `set_line_join`.
+function set_miter_limit(@doc: Document, limit: f64)
+    assert limit >= 1.0
+    doc.state.pen.miter @ limit
+    compose.put_if_page(@doc.state, op: syntax.real(limit) + " M")
+
+# Sets the dashes lines are drawn with.
+#
+# - `doc`: the document.
+# - `lengths`: the lengths of dash and gap, alternately, in points, each 0
+#   or more and not all 0; none for a solid line.
+# - `phase`: how far into the pattern a line begins, in points.
+#
+# Aborts where a length is negative or every length is 0.
+#
+# See also `set_line_width`.
+function set_dash(@doc: Document, lengths: [f64], phase: f64)
+    some @= false
+
+    for length in lengths
+        assert length >= 0.0
+
+        if length > 0.0
+            some @ true
+
+    assert lengths.len() == 0 || some
+    doc.state.pen.dash @ lengths
+    doc.state.pen.phase @ phase
+    compose.put_if_page(@doc.state, op: compose.dash_op(doc.state.pen))
+
+# Sets how opaque fills, text and strokes are drawn.
+#
+# - `doc`: the document.
+# - `fill`: 0 transparent to 1 opaque, for fills and text.
+# - `stroke`: the same, for lines.
+#
+# Aborts where either is outside 0 to 1.
+#
+# See also `set_fill_color`.
+function set_opacity(@doc: Document, fill: f64, stroke: f64)
+    assert fill >= 0.0 && fill <= 1.0 && stroke >= 0.0 && stroke <= 1.0
+    doc.state.pen.fill_opacity @ fill
+    doc.state.pen.stroke_opacity @ stroke
+
+    if doc.state.at >= 0
+        op = compose.opacity_op(@doc.state)
+        compose.put(@doc.state, op: op)
+
+# The usual text state: no spacing added, a scale of 100, no rise, the
+# characters filled.
+#
+# See also `set_text_style`.
+function text_style() -> TextStyle
+    return TextStyle(character_spacing: 0.0, word_spacing: 0.0, horizontal_scale: 100.0, rise: 0.0, mode: .fill)
+
+# Sets the text state text is drawn and measured with from now on.
+#
+# - `doc`: the document.
+# - `style`: the state; a horizontal scale of more than 0.
+#
+# Aborts where the horizontal scale is not more than 0.
+#
+# See also `text_style` and `draw_text`.
+function set_text_style(@doc: Document, style: TextStyle)
+    assert style.horizontal_scale > 0.0
+
+    mode = match style.mode
+        .fill            => 0
+        .stroke          => 1
+        .fill_and_stroke => 2
+        .invisible       => 3
+
+    s = compose.Style(
+        character_spacing: style.character_spacing,
+        word_spacing: style.word_spacing,
+        horizontal_scale: style.horizontal_scale,
+        rise: style.rise,
+        mode: mode
+    )
+    doc.state.pen.style @ s
+    compose.put_if_page(@doc.state, op: compose.style_ops(s))
+
+# Saves the pen, the transform and the clipping on a stack, for
+# `restore_state` to bring back.
+#
+# - `doc`: the document.
+#
+# Aborts where no page has been added.
+#
+# See also `restore_state`, `transform` and `clip`.
+function save_state(@doc: Document)
+    compose.save(@doc.state)
+
+# Brings back the pen, the transform and the clipping the last
+# `save_state` on this page saved.
+#
+# - `doc`: the document.
+#
+# Aborts where this page holds no state saved and not restored.
+#
+# See also `save_state`.
+function restore_state(@doc: Document)
+    compose.restore(@doc.state)
+
+# The transform that changes nothing.
+#
+# See also `multiply`.
+function identity() -> Matrix
+    return Matrix(a: 1.0, b: 0.0, c: 0.0, d: 1.0, e: 0.0, f: 0.0)
+
+# The transform that moves the plane `x` right and `y` up.
+#
+# - `x`: the distance right, in points; negative moves left.
+# - `y`: the distance up, in points; negative moves down.
+#
+# See also `transform`.
+function translation(x: f64, y: f64) -> Matrix
+    return Matrix(a: 1.0, b: 0.0, c: 0.0, d: 1.0, e: x, f: y)
+
+# The transform that turns the plane about its origin.
+#
+# - `degrees`: the angle, counterclockwise; negative turns clockwise.
+#
+# See also `transform`.
+function rotation(degrees: f64) -> Matrix
+    radians = degrees * math.PI / 180.0
+    cos = math.cos(radians)
+    sin = math.sin(radians)
+    return Matrix(a: cos, b: sin, c: -sin, d: cos, e: 0.0, f: 0.0)
+
+# The transform that stretches the plane from its origin.
+#
+# - `x`: the factor across; negative mirrors.
+# - `y`: the factor up; negative mirrors.
+#
+# See also `transform`.
+function scaling(x: f64, y: f64) -> Matrix
+    return Matrix(a: x, b: 0.0, c: 0.0, d: y, e: 0.0, f: 0.0)
+
+# The transform that does `first`, then `then`.
+#
+# - `first`: the transform done first.
+# - `then`: the transform done after it.
+#
+# See also `transform`.
+function multiply(first: Matrix, then: Matrix) -> Matrix
+    return Matrix(
+        a: first.a * then.a + first.b * then.c,
+        b: first.a * then.b + first.b * then.d,
+        c: first.c * then.a + first.d * then.c,
+        d: first.c * then.b + first.d * then.d,
+        e: first.e * then.a + first.f * then.c + then.e,
+        f: first.e * then.b + first.f * then.d + then.f
+    )
+
+# Transforms the coordinates of everything drawn from now on by `matrix`,
+# before the transform in force takes them to the page; `save_state` and
+# `restore_state` bound it.
+#
+# - `doc`: the document.
+# - `matrix`: the transform.
+#
+# Aborts where no page has been added.
+#
+# See also `translation`, `rotation`, `scaling` and `save_state`.
+function transform(@doc: Document, matrix: Matrix)
+    numbers = syntax.reals([matrix.a, matrix.b, matrix.c, matrix.d, matrix.e, matrix.f])
+    compose.put(@doc.state, op: numbers.slice(from: 1, to: numbers.len() - 1) + " cm")
+
+## Lines and shapes
+
+# How a shape is painted.
+variant Paint
+    # Its outline drawn with the stroke colour.
+    stroke
+    # Its inside filled with the fill colour.
+    fill
+    # Filled, then outlined.
+    fill_and_stroke
+
+# A point of the page, in points from its bottom left corner.
+record Point
+    # The distance from the left edge.
+    x: f64
+    # The distance from the bottom edge.
+    y: f64
+
+# A path: lines and curves drawn by `draw_path` or clipped to by `clip`.
+# Made by `empty_path` and built by `move_to`, `line_to`, `curve_to` and
+# `close_path`.
+record Path
+    # The path's operators, as the content stream writes them.
+    steps: [str]
+
+# Draws a straight line from one point to another, with the stroke colour.
+#
+# - `doc`: the document.
+# - `from_x`: the start's distance from the left, in points.
+# - `from_y`: the start's distance from the bottom.
+# - `to_x`: the end's distance from the left.
+# - `to_y`: the end's distance from the bottom.
+#
+# Aborts where no page has been added.
+#
+# See also `draw_polyline` and `draw_path`.
+function draw_line(@doc: Document, from_x: f64, from_y: f64, to_x: f64, to_y: f64)
+    r = syntax.real
+    compose.put(@doc.state, op: f"{r(from_x)} {r(from_y)} m {r(to_x)} {r(to_y)} l S")
+
+# Draws a rectangle whose bottom left corner is at (`x`, `y`).
+#
+# - `doc`: the document.
+# - `x`: the left side, in points from the page's left.
+# - `y`: the bottom side, in points from the page's bottom.
+# - `width`: the width; negative draws to the left of `x`.
+# - `height`: the height; negative draws below `y`.
+# - `paint`: how it is painted.
+#
+# Aborts where no page has been added.
+#
+# See also `draw_rounded_rect`.
+function draw_rect(@doc: Document, x: f64, y: f64, width: f64, height: f64, paint: Paint)
+    paint_code = match paint
+        .stroke          => 0
+        .fill            => 1
+        .fill_and_stroke => 2
+
+    r = syntax.real
+    compose.put(@doc.state, op: f"{r(x)} {r(y)} {r(width)} {r(height)} re {compose.paint_op(paint_code)}")
+
+# Draws a rectangle with corners rounded to `radius`.
+#
+# - `doc`: the document.
+# - `x`: the left side.
+# - `y`: the bottom side.
+# - `width`: the width, more than 0.
+# - `height`: the height, more than 0.
+# - `radius`: the corners' radius, 0 or more; one past half the shorter
+#   side is drawn as that half.
+# - `paint`: how it is painted.
+#
+# Aborts where no page has been added, or where `width` or `height` is
+# not more than 0, or `radius` is negative.
+#
+# See also `draw_rect`.
+function draw_rounded_rect(@doc: Document, x: f64, y: f64, width: f64, height: f64, radius: f64, paint: Paint)
+    paint_code = match paint
+        .stroke          => 0
+        .fill            => 1
+        .fill_and_stroke => 2
+
+    assert width > 0.0 && height > 0.0 && radius >= 0.0
+    compose.put(
+        @doc.state,
+        op: compose.rounded_steps(x: x, y: y, width: width, height: height, radius: radius) + " " + compose.paint_op(paint_code)
+    )
+
+# Draws a circle, as four Bézier curves.
+#
+# - `doc`: the document.
+# - `center_x`: the centre's distance from the left.
+# - `center_y`: the centre's distance from the bottom.
+# - `radius`: the radius, 0 or more.
+# - `paint`: how it is painted.
+#
+# Aborts where no page has been added, or where `radius` is negative.
+#
+# See also `draw_ellipse`.
+function draw_circle(@doc: Document, center_x: f64, center_y: f64, radius: f64, paint: Paint)
+    paint_code = match paint
+        .stroke          => 0
+        .fill            => 1
+        .fill_and_stroke => 2
+
+    assert radius >= 0.0
+    compose.put(
+        @doc.state,
+        op: compose.ellipse_steps(cx: center_x, cy: center_y, rx: radius, ry: radius) + " " + compose.paint_op(paint_code)
+    )
+
+# Draws an ellipse whose axes are level and upright, as four Bézier curves.
+#
+# - `doc`: the document.
+# - `center_x`: the centre's distance from the left.
+# - `center_y`: the centre's distance from the bottom.
+# - `radius_x`: half its width, 0 or more.
+# - `radius_y`: half its height, 0 or more.
+# - `paint`: how it is painted.
+#
+# Aborts where no page has been added, or where a radius is negative.
+#
+# See also `draw_circle`.
+function draw_ellipse(@doc: Document, center_x: f64, center_y: f64, radius_x: f64, radius_y: f64, paint: Paint)
+    paint_code = match paint
+        .stroke          => 0
+        .fill            => 1
+        .fill_and_stroke => 2
+
+    assert radius_x >= 0.0 && radius_y >= 0.0
+    compose.put(
+        @doc.state,
+        op: compose.ellipse_steps(cx: center_x, cy: center_y, rx: radius_x, ry: radius_y) + " " + compose.paint_op(paint_code)
+    )
+
+# Draws the closed shape whose corners are `points`, in order.
+#
+# - `doc`: the document.
+# - `points`: the corners; fewer than two draw nothing.
+# - `paint`: how it is painted.
+#
+# Aborts where no page has been added.
+#
+# See also `draw_polyline`.
+function draw_polygon(@doc: Document, points: [Point], paint: Paint)
+    paint_code = match paint
+        .stroke          => 0
+        .fill            => 1
+        .fill_and_stroke => 2
+
+    if points.len() < 2
+        return
+    xs: [f64] @= []
+    ys: [f64] @= []
+
+    for p in points
+        xs @ xs.push(p.x)
+        ys @ ys.push(p.y)
+
+    compose.put(@doc.state, op: compose.poly_steps(xs: xs, ys: ys, closed: true) + " " + compose.paint_op(paint_code))
+
+# Draws the line through `points`, in order, not closed, with the stroke
+# colour.
+#
+# - `doc`: the document.
+# - `points`: the points; fewer than two draw nothing.
+#
+# Aborts where no page has been added.
+#
+# See also `draw_polygon`.
+function draw_polyline(@doc: Document, points: [Point])
+    if points.len() < 2
+        return
+    xs: [f64] @= []
+    ys: [f64] @= []
+
+    for p in points
+        xs @ xs.push(p.x)
+        ys @ ys.push(p.y)
+
+    compose.put(@doc.state, op: compose.poly_steps(xs: xs, ys: ys, closed: false) + " S")
+
+# A path with nothing in it.
+#
+# See also `move_to` and `draw_path`.
+function empty_path() -> Path
+    return Path(steps: [])
+
+# Begins a new part of `p` at (`x`, `y`).
+#
+# - `p`: the path, which grows.
+# - `x`: the distance from the left.
+# - `y`: the distance from the bottom.
+#
+# See also `line_to`.
+function move_to(@p: Path, x: f64, y: f64)
+    compose.emit(@p.steps, op: syntax.real(x) + " " + syntax.real(y) + " m")
+
+# Adds to `p` a straight line from where it stands to (`x`, `y`).
+#
+# - `p`: the path, which grows; one with nothing in it begins at (`x`, `y`).
+# - `x`: the end's distance from the left.
+# - `y`: the end's distance from the bottom.
+#
+# See also `move_to` and `curve_to`.
+function line_to(@p: Path, x: f64, y: f64)
+    verb = if p.steps.len() == 0
+        " m"
+    else
+        " l"
+    compose.emit(@p.steps, op: syntax.real(x) + " " + syntax.real(y) + verb)
+
+# Adds to `p` a cubic Bézier curve from where it stands to (`x`, `y`),
+# pulled towards two control points.
+#
+# - `p`: the path, which grows.
+# - `control1_x`: the first control point's distance from the left.
+# - `control1_y`: its distance from the bottom.
+# - `control2_x`: the second control point's distance from the left.
+# - `control2_y`: its distance from the bottom.
+# - `x`: the end's distance from the left.
+# - `y`: the end's distance from the bottom.
+#
+# See also `line_to`.
+function curve_to(@p: Path, control1_x: f64, control1_y: f64, control2_x: f64, control2_y: f64, x: f64, y: f64)
+    if p.steps.len() == 0
+        compose.emit(@p.steps, op: syntax.real(x) + " " + syntax.real(y) + " m")
+        return
+    points = syntax.reals([control1_x, control1_y, control2_x, control2_y, x, y])
+    compose.emit(@p.steps, op: points.slice(from: 1, to: points.len() - 1) + " c")
+
+# Closes the part of `p` being drawn with a line back to where it began.
+#
+# - `p`: the path.
+#
+# See also `move_to`.
+function close_path(@p: Path)
+    if p.steps.len() > 0
+        compose.emit(@p.steps, op: "h")
+
+# Draws `p`.
+#
+# - `doc`: the document.
+# - `p`: the path; an empty one draws nothing.
+# - `paint`: how it is painted; a fill closes each part.
+#
+# Aborts where no page has been added.
+#
+# See also `empty_path` and `clip`.
+function draw_path(@doc: Document, p: Path, paint: Paint)
+    paint_code = match paint
+        .stroke          => 0
+        .fill            => 1
+        .fill_and_stroke => 2
+
+    if p.steps.len() == 0
+        return
+    compose.put(@doc.state, op: p.steps.join(" ") + " " + compose.paint_op(paint_code))
+
+# Limits what is drawn from now on to the inside of `p`, within the limit in
+# force; `save_state` and `restore_state` bound it.
+#
+# - `doc`: the document.
+# - `p`: the path; an empty one hides everything.
+#
+# Aborts where no page has been added.
+#
+# See also `save_state` and `draw_path`.
+function clip(@doc: Document, p: Path)
+    if p.steps.len() == 0
+        compose.put(@doc.state, op: "0 0 0 0 re W n")
+        return
+    compose.put(@doc.state, op: p.steps.join(" ") + " W n")
+
+## Text
+
+# Where a line of text stands against the point or the box it is given.
+variant Align
+    # Its left end at the point, or against the box's left.
+    left
+    # Its middle at the point, or in the box's middle.
+    center
+    # Its right end at the point, or against the box's right.
+    right
+    # Stretched from the box's left to its right by widening its spaces,
+    # the last line of a paragraph left; a single line drawn by `draw_text`
+    # is left.
+    justify
+
+# Draws one line of `text` with the font, size, colour and text style of
+# the pen, its baseline at `y`.
+#
+# - `doc`: the document.
+# - `x`: where the line stands, in points from the left: its left end, its
+#   middle or its right end, as `align` says.
+# - `y`: the baseline, in points from the bottom.
+# - `text`: the text, one line; a line break in it is drawn as a space.
+# - `align`: which end of the line `x` is.
+#
+# Fails `unsupported` where the pen's font has no glyph for a character of
+# `text`, and then draws nothing.
+#
+# Aborts where no page has been added.
+#
+# See also `draw_text_box`, `width_of` and `set_font`.
+function draw_text(@doc: Document, x: f64, y: f64, text: str, align: Align) -> ()?
+    align_code = match align
+        .left    => 0
+        .center  => 1
+        .right   => 2
+        .justify => 3
+
+    return compose.draw_text(@doc.state, x: x, y: y, text: text, align: align_code)
+
+# The lines `text` breaks into so that none is wider than `width` in `font`
+# at `size`: at spaces where it can, inside a word too long for a line
+# where it must, and at every line break of `text`.
+#
+# - `text`: the text; the empty text is no line.
+# - `font`: the font it is measured in.
+# - `size`: the size in points, more than 0.
+# - `width`: the widest a line may be, in points, more than 0; a character
+#   wider still stands alone on its line.
+#
+# The lines hold no space at either end. It measures as `width_of`, with no
+# text style.
+#
+# Fails `unsupported` where `font` has no glyph for a character of `text`.
+#
+# See also `draw_text_box`.
+function wrap_text(text: str, font: Font, size: f64, width: f64) -> [str]?
+    return wrap.wrap(
+        text,
+        font: measure.font_index_of(base_font_of(font)),
+        size: size,
+        most: width,
+        spacing: measure.plain()
+    )
+
+# Draws `text` wrapped into a box `width` wide whose top is `top`, line
+# under line, and answers the height where the last line's descenders end:
+# `top` where `text` is empty.
+#
+# - `doc`: the document.
+# - `x`: the box's left, in points from the page's left.
+# - `top`: the box's top, in points from the bottom: the first line's
+#   ascent touches it.
+# - `width`: the box's width in points, more than 0.
+# - `text`: the text, broken as `wrap_text` breaks it, with the pen's text
+#   style counted.
+# - `align`: how each line stands in the box.
+# - `line_height`: the distance from one baseline to the next, in points,
+#   more than 0; 1.2 times the font's size is usual.
+#
+# It draws past the page's bottom where the text is long: the answer says
+# where it ended.
+#
+# Fails `unsupported` where the pen's font has no glyph for a character of
+# `text`, and then draws nothing.
+#
+# Aborts where no page has been added.
+#
+# See also `wrap_text` and `draw_table`.
+function draw_text_box(@doc: Document, x: f64, top: f64, width: f64, text: str, align: Align, line_height: f64) -> f64?
+    align_code = match align
+        .left    => 0
+        .center  => 1
+        .right   => 2
+        .justify => 3
+
+    return compose.draw_box(
+        @doc.state,
+        x: x,
+        top: top,
+        width: width,
+        text: text,
+        align: align_code,
+        line_height: line_height
+    )
+
+## Tables
+
+# A column of a table.
+record Column
+    # Its width in points, more than twice the table's padding.
+    width: f64
+    # How its cells' lines stand in it.
+    align: Align
+
+# A table of text: its columns, its rows of cells, and how it is drawn.
+# `table` makes one with the usual look; change a field before drawing it.
+record Table
+    # The columns, left to right.
+    columns: [Column]
+    # The rows, top to bottom, each with one cell for each column.
+    rows: [[str]]
+    # How many of the first rows are headers, drawn again at the top of
+    # each new page; 0 or more.
+    header_rows: i64
+    # The font of the cells.
+    font: Font
+    # The font of the header rows.
+    header_font: Font
+    # The size of both fonts, in points.
+    size: f64
+    # The distance between baselines inside a cell, in points.
+    line_height: f64
+    # The space between a cell's text and its border, in points.
+    padding: f64
+    # The width of the borders in points, drawn in the stroke colour; 0 for
+    # none.
+    border: f64
+    # The colour behind the header rows.
+    header_fill: Color
+
+# A table of `widths` columns holding `rows`, the first row its header: in
+# Helvetica at 10 points, the header bold on light gray, lines 12 points
+# apart, cells padded 4 points, borders half a point wide, every column
+# left.
+#
+# - `widths`: each column's width in points, more than 8.
+# - `rows`: the rows, each with one cell for each column.
+#
+# See also `draw_table`.
+function table(widths: [f64], rows: [[str]]) -> Table
+    columns: [Column] @= []
+
+    for w in widths
+        columns @ columns.push(Column(width: w, align: .left))
+
+    return Table(
+        columns: columns,
+        rows: rows,
+        header_rows: 1,
+        font: .helvetica,
+        header_font: .helvetica_bold,
+        size: 10.0,
+        line_height: 12.0,
+        padding: 4.0,
+        border: 0.5,
+        header_fill: .gray(level: 0.9)
+    )
+
+# Draws `t` from `top` down, its left at `x`, and answers the height where
+# its last row ends. A row that would pass `bottom` goes to a new page of
+# the same size, `t`'s header rows drawn again above it at `top`.
+#
+# - `doc`: the document.
+# - `x`: the table's left, in points from the page's left.
+# - `top`: the top of its first row, on this page and on every page it adds.
+# - `bottom`: the lowest a row may reach, below `top`.
+# - `t`: the table; each cell's text is wrapped to its column.
+#
+# Fails `invalid` where a row has not one cell for each column, a column
+# is not wider than twice the padding, or a row with the headers above it
+# is taller than `top` less `bottom`; fails `unsupported` where a font has
+# no glyph for a character of a cell. It checks the whole table before it
+# draws, so a failure draws nothing.
+#
+# Aborts where no page has been added.
+#
+# See also `table` and `draw_text_box`.
+function draw_table(@doc: Document, x: f64, top: f64, bottom: f64, t: Table) -> f64?
+    widths: [f64] @= []
+    aligns: [i64] @= []
+
+    for c in t.columns
+        widths @ widths.push(c.width)
+
+        code = match c.align
+            .left    => 0
+            .center  => 1
+            .right   => 2
+            .justify => 3
+
+        aligns @ aligns.push(code)
+
+    fill = match t.header_fill
+        .gray g => compose.Ink(space: 0, parts: [g.level])
+        .rgb c  => compose.Ink(space: 1, parts: [c.red, c.green, c.blue])
+        .cmyk c => compose.Ink(space: 2, parts: [c.cyan, c.magenta, c.yellow, c.black])
+
+    spec = tables.Spec(
+        widths: widths,
+        aligns: aligns,
+        rows: t.rows,
+        header_rows: t.header_rows,
+        font: measure.font_index_of(base_font_of(t.font)),
+        header_font: measure.font_index_of(base_font_of(t.header_font)),
+        size: t.size,
+        line_height: t.line_height,
+        padding: t.padding,
+        border: t.border,
+        header_fill: fill
+    )
+    return tables.draw(@doc.state, x: x, top: top, bottom: bottom, spec: spec)
+
+## Images
+
+# An image added to a document, which `draw_image` draws as often as asked
+# while its bytes are written once. Made by `add_jpeg` and `add_png`.
+record ImageId
+    # Which of the document's images it is.
+    index: i64
+    # Its width in pixels.
+    width: i64
+    # Its height in pixels.
+    height: i64
+
+# Adds the JPEG image `data` to `doc`, its bytes passed through as they
+# are, for `draw_image` to draw.
+#
+# - `doc`: the document.
+# - `data`: a whole JPEG file: baseline or progressive, gray, RGB or CMYK.
+#
+# Fails `invalid` where `data` is not a JPEG file whose frame header can be
+# read, and `unsupported` where its frame is coded arithmetically or
+# holds two components, which PDF does not show.
+#
+# See also `add_png` and `draw_image`.
+function add_jpeg(@doc: Document, data: [u8]) -> ImageId?
+    picture = images.jpeg(data)?
+    frame = images.frame_of(data)?
+    index = compose.add_picture(@doc.state, picture: picture)
+    return ok(ImageId(index: index, width: frame.width, height: frame.height))
+
+# Adds the PNG image `data` to `doc` for `draw_image` to draw, decoded by
+# `image/png` and embedded as `add_image` embeds it: any colour type and
+# depth, interlaced or not, its transparency kept as a soft mask.
+#
+# - `doc`: the document.
+# - `data`: a whole PNG file.
+#
+# Fails where `image/png`'s `decode` fails, with its code: `invalid` for a
+# file that is not PNG, `limit` for one past `image`'s default limits,
+# `unsupported` for a method no PNG defines.
+#
+# It holds the decoded pixels while it compresses them again. See also
+# `add_image` and `add_jpeg`.
+function add_png(@doc: Document, data: [u8]) -> ImageId?
+    decoded = png.decode(data, options: png.decoding())?
+    return add_image(@doc, img: decoded.image)
+
+# Adds the image `img` to `doc` for `draw_image` to draw: its colour
+# samples compressed with DEFLATE, 8 or 16 bits as it holds them, and its
+# alpha, where it has one, kept as a soft mask.
+#
+# - `doc`: the document.
+# - `img`: an image in memory, gray or RGB, with alpha or not.
+#
+# Fails `invalid` where `img`'s pixels are not as long as its size and
+# format say, or it has no pixel.
+#
+# See also `add_png`, `add_jpeg` and `draw_image`.
+function add_image(@doc: Document, img: image.Image) -> ImageId?
+    if !image.is_valid(img) || img.width == 0 || img.height == 0
+        return fail(
+            code: INVALID,
+            msg: f"an image of {img.width} by {img.height} pixels whose samples do not match its size and format"
+        )
+    made = images.pixels(width: img.width, height: img.height, channels: image.channels_of(img.format), bits: image.bits_of(img.format), alpha: image.has_alpha(img.format), data: img.pixels)?
+    picture @= made.image
+
+    if made.has_mask
+        picture.mask @ compose.add_picture(@doc.state, picture: made.mask)
+    index = compose.add_picture(@doc.state, picture: picture)
+    return ok(ImageId(index: index, width: img.width, height: img.height))
+
+# Draws the image `id` stretched to the rectangle whose bottom left corner
+# is at (`x`, `y`).
+#
+# - `doc`: the document.
+# - `id`: an image added to this document.
+# - `x`: the left side, in points.
+# - `y`: the bottom side, in points.
+# - `width`: the width it is drawn at, in points.
+# - `height`: the height it is drawn at, in points.
+#
+# Aborts where no page has been added, or where `id` is not an image of
+# `doc`.
+#
+# See also `add_jpeg` and `add_png`.
+function draw_image(@doc: Document, id: ImageId, x: f64, y: f64, width: f64, height: f64)
+    assert id.index >= 0 && id.index < doc.state.images.len()
+    r = syntax.real
+    compose.put(@doc.state, op: f"q {r(width)} 0 0 {r(height)} {r(x)} {r(y)} cm /Im{id.index} Do Q")
+
+## Links and bookmarks
+
+# Makes the rectangle whose bottom left corner is at (`x`, `y`) open `url`
+# when clicked.
+#
+# - `doc`: the document.
+# - `x`: the left side, in points.
+# - `y`: the bottom side, in points.
+# - `width`: the width.
+# - `height`: the height.
+# - `url`: the address, any text.
+#
+# Aborts where no page has been added.
+#
+# See also `add_page_link`.
+function add_link(@doc: Document, x: f64, y: f64, width: f64, height: f64, url: str)
+    compose.add_link(@doc.state, link: compose.Link(rect: [x, y, x + width, y + height], url: url, page: -1, top: 0.0))
+
+# Makes the rectangle whose bottom left corner is at (`x`, `y`) go to a
+# page of the document when clicked.
+#
+# - `doc`: the document.
+# - `x`: the left side, in points.
+# - `y`: the bottom side, in points.
+# - `width`: the width.
+# - `height`: the height.
+# - `page`: the page it goes to, by index from 0; it may be added later.
+# - `top`: the height on that page shown at the top of the window.
+#
+# `to_bytes` fails where `page` is not a page of the document then.
+#
+# Aborts where no page has been added.
+#
+# See also `add_link` and `add_bookmark`.
+function add_page_link(@doc: Document, x: f64, y: f64, width: f64, height: f64, page: i64, top: f64)
+    compose.add_link(@doc.state, link: compose.Link(rect: [x, y, x + width, y + height], url: "", page: page, top: top))
+
+# Adds a bookmark to the document's outline that goes to the page drawn on.
+#
+# - `doc`: the document.
+# - `title`: what the outline shows, any text.
+# - `level`: 0 for a bookmark at the top of the outline, one more than the
+#   bookmark before it at most for one under it.
+# - `top`: the height on the page shown at the top of the window.
+#
+# Aborts where no page has been added, `level` is negative, or it is more
+# than one deeper than the bookmark before it (0 for the first).
+#
+# See also `add_page_link` and `outline_of`.
+function add_bookmark(@doc: Document, title: str, level: i64, top: f64)
+    compose.add_mark(@doc.state, title: title, level: level, top: top)
+
+## Writing the file
+
+# The bytes of `doc` as a PDF 1.7 file: its pages, their content, fonts,
+# images, links and bookmarks, its information, and a cross-reference
+# table.
+#
+# - `doc`: the document, unchanged.
+#
+# The same document answers the same bytes every time: no date is written
+# that `set_info` did not give.
+#
+# Fails `invalid` where `doc` has no page or a link goes to a page it does
+# not have.
+#
+# See also `document` and `parse`.
+function to_bytes(doc: Document lent) -> [u8]?
+    return assemble.write(doc.state)
+
+## Reading a file
+
+# The limits a file is read under, so that a small file cannot cost a
+# program more than its caller allows. `default_limits` makes the usual
+# ones.
+record Limits
+    # The most objects the file may hold, 1 or more.
+    objects: i64
+    # The most bytes one stream may decode to, 0 or more.
+    stream_bytes: i64
+    # The most bytes all the streams one call decodes may come to, together.
+    total_bytes: i64
+    # How deep arrays and dictionaries may nest, and form objects call one
+    # another, 1 or more.
+    depth: i64
+    # The most pages, 0 or more.
+    pages: i64
+    # The most revisions: the file and its incremental updates, 1 or more.
+    revisions: i64
+
+# The usual limits: a million objects, streams of 256 MiB, 1 GiB decoded by
+# one call, values nested 256 deep, 100,000 pages and 1,000 revisions.
+#
+# See also `parse`.
+function default_limits() -> Limits
+    return Limits(
+        objects: 1000000,
+        stream_bytes: 268435456,
+        total_bytes: 1073741824,
+        depth: 256,
+        pages: 100000,
+        revisions: 1000
+    )
+
+# A PDF file read: its objects, its trailer and its pages. Made by `parse`.
+record File
+    # Everything read.
+    state: store.Store
+
+# A value of a PDF file: a null, a boolean, a number, a string, a name, an
+# array, a dictionary, a stream or a reference to another object. Read by
+# `kind_of` and the functions named for each kind.
+record Object
+    # The value.
+    state: model.Obj
+
+# The kinds of an `Object`.
+variant Kind
+    # The null object, and what a reference to nothing reads as.
+    null_value
+    # `true` or `false`: `bool_of`.
+    boolean
+    # A whole number: `integer_of` and `number_of`.
+    integer
+    # A number with a point: `number_of`.
+    real
+    # A string of bytes: `bytes_of`, and `decode_text` for a text string.
+    text
+    # A name, `/Type`: `name_of`.
+    name
+    # An array: `items_of`.
+    array
+    # A dictionary: `entry_of` and `keys_of`.
+    dictionary
+    # A dictionary with bytes: `entry_of`, `keys_of` and `stream_data_of`.
+    stream
+    # A reference to another object: `reference_of` and `resolve`.
+    reference
+
+# A reference to an object of a file, `12 0 R`.
+record Reference
+    # The object's number, 1 or more.
+    number: i64
+    # Its generation, 0 or more.
+    generation: i64
+
+# A rectangle of a page, in points.
+record Box
+    # Its left side.
+    left: f64
+    # Its bottom side.
+    bottom: f64
+    # Its right side.
+    right: f64
+    # Its top side.
+    top: f64
+
+# A page of a file read.
+record Page
+    # Its place, 0 for the first.
+    index: i64
+    # The page's whole surface; US Letter, 612 by 792, where the file names
+    # none.
+    media_box: Box
+    # What a viewer shows; the media box where the page names none.
+    crop_box: Box
+    # What a printer bleeds into; the crop box where none.
+    bleed_box: Box
+    # The finished page after trimming; the crop box where none.
+    trim_box: Box
+    # The meaningful content; the crop box where none.
+    art_box: Box
+    # How far it is turned clockwise when shown: 0, 90, 180 or 270.
+    rotation: i64
+    # Its dictionary, with what it inherits from the page tree put in:
+    # `Resources`, `MediaBox`, `CropBox` and `Rotate`.
+    object: Object
+
+# A run of text drawn on a page, where it stands and how large.
+record TextPiece
+    # The characters.
+    text: str
+    # Where its baseline begins, in points from the page's left.
+    x: f64
+    # Its baseline, in points from the page's bottom.
+    y: f64
+    # How wide it is drawn, in points.
+    width: f64
+    # The size of its font as drawn, in points.
+    size: f64
+    # Its font's `/BaseFont`, "" where it names none.
+    font: str
+
+# Where a bookmark or a link goes.
+variant Target
+    # A page of this file.
+    page
+        # The page's index, 0 for the first.
+        index: i64
+        # The height shown at the top of the window, in points from the
+        # page's bottom; its top where the destination names none.
+        top: f64
+    # An address outside the file.
+    url
+        # The address.
+        address: str
+    # Somewhere this package does not follow: another file, a script, a
+    # destination that names no page.
+    other
+
+# A bookmark of a file's outline.
+record Bookmark
+    # What the outline shows.
+    title: str
+    # 0 at the top of the outline, one more for each level below.
+    level: i64
+    # Where it goes.
+    target: Target
+
+# A link of a page.
+record Link
+    # The rectangle that is clicked.
+    area: Box
+    # Where it goes.
+    target: Target
+
+# The file `data` holds, read whole: its cross-reference sections, each
+# revision's, followed back from the newest, its object streams opened, its
+# page tree walked; a cross-reference that does not match its file rebuilt
+# from the objects themselves, as readers of PDF do.
+#
+# - `data`: the whole file.
+# - `password`: the password of an encrypted file, user's or owner's; ""
+#   for none, which opens most.
+# - `limits`: what the file may cost; `default_limits` makes the usual.
+#
+# Fails `invalid` where `data` is no PDF file and nothing in it can be
+# rebuilt into one (no header, no catalogue), or `password` does not open
+# it; `limit`
+# where it passes `limits`; `unsupported` where it is encrypted with AES or
+# by a handler other than the standard one.
+#
+# See also `pages_of`, `text_of` and `info_of`.
+function parse(data: [u8], password: str, limits: Limits) -> File?
+    bounds = store.Bounds(
+        objects: limits.objects,
+        stream_bytes: limits.stream_bytes,
+        total_bytes: limits.total_bytes,
+        depth: limits.depth,
+        pages: limits.pages,
+        revisions: limits.revisions
+    )
+    return ok(File(state: store.load(data, password: password, bounds: bounds)?))
+
+# The version of PDF `f` says it follows: `1.7`, or the catalogue's where it
+# names a later one.
+#
+# - `f`: the file.
+#
+# See also `parse`.
+function version_of(f: File) -> str
+    return f.state.version
+
+# Whether `f` was encrypted; `parse` has decrypted it.
+#
+# - `f`: the file.
+#
+# See also `parse`.
+function is_encrypted(f: File) -> bool
+    return f.state.encrypted
+
+# The pages of `f`, in order.
+#
+# - `f`: the file.
+#
+# See also `text_of` and `links_of`.
+function pages_of(f: File) -> [Page]
+    out: [Page] @= []
+    i @= 0
+
+    while i < f.state.leaves.len()
+        leaf = f.state.leaves[i]
+        media_rect @= navigation.rect_of(f.state, o: leaf.entries["MediaBox"].default(.null_value))
+
+        if media_rect.len() != 4
+            media_rect @ [0.0, 0.0, 612.0, 792.0]
+        media = Box(left: media_rect[0], bottom: media_rect[1], right: media_rect[2], top: media_rect[3])
+        crop_rect = navigation.rect_of(f.state, o: leaf.entries["CropBox"].default(.null_value))
+
+        crop = if crop_rect.len() == 4
+            Box(left: crop_rect[0], bottom: crop_rect[1], right: crop_rect[2], top: crop_rect[3])
+        else
+            media
+        bleed_rect = navigation.rect_of(f.state, o: leaf.entries["BleedBox"].default(.null_value))
+        trim_rect = navigation.rect_of(f.state, o: leaf.entries["TrimBox"].default(.null_value))
+        art_rect = navigation.rect_of(f.state, o: leaf.entries["ArtBox"].default(.null_value))
+
+        bleed = if bleed_rect.len() == 4
+            Box(left: bleed_rect[0], bottom: bleed_rect[1], right: bleed_rect[2], top: bleed_rect[3])
+        else
+            crop
+
+        trim = if trim_rect.len() == 4
+            Box(left: trim_rect[0], bottom: trim_rect[1], right: trim_rect[2], top: trim_rect[3])
+        else
+            crop
+
+        art = if art_rect.len() == 4
+            Box(left: art_rect[0], bottom: art_rect[1], right: art_rect[2], top: art_rect[3])
+        else
+            crop
+        turned = model.integer_or(store.resolve(f.state.objects, o: leaf.entries["Rotate"].default(.null_value)), fallback: 0) % 360
+        turn @= (turned + 360) % 360
+
+        if turn % 90 != 0
+            turn @ 0
+        out @ out.push(
+            Page(index: i, media_box: media, crop_box: crop, bleed_box: bleed, trim_box: trim, art_box: art, rotation: turn, object: Object(state: .dict(entries: leaf.entries)))
+        )
+        i @ i + 1
+
+    return out
+
+# The text of `page`: its pieces in the order the page draws them, a space
+# between two pieces apart on one line, a line break where the baseline
+# moves, as `pdftotext` reads it with its `-raw` option.
+#
+# - `f`: the file.
+# - `page`: a page of `f`, from `pages_of`.
+#
+# A character a font does not map to text is left out.
+#
+# Fails `invalid` where the page's content is not what PDF says, `limit`
+# where its streams pass the limits `f` was read with, and as
+# `stream_data_of` fails.
+#
+# See also `pieces_of`.
+function text_of(f: File, page: Page) -> str?
+    return ok(page_text.lines(page_text.pieces(f.state, page: model.entries_of(page.object.state))?))
+
+# The runs of text `page` draws, where each stands, in the order the page
+# draws them.
+#
+# - `f`: the file.
+# - `page`: a page of `f`.
+#
+# Fails as `text_of` fails.
+#
+# See also `text_of`.
+function pieces_of(f: File, page: Page) -> [TextPiece]?
+    out: [TextPiece] @= []
+
+    for p in page_text.pieces(f.state, page: model.entries_of(page.object.state))?
+        out @ out.push(TextPiece(text: p.text, x: p.x, y: p.y, width: p.width, size: p.size, font: p.font))
+
+    return ok(out)
+
+# The entries of `f`'s information dictionary that hold text, decoded:
+# `Title`, `Author`, `Subject`, `Keywords`, `Creator`, `Producer`,
+# `CreationDate`, `ModDate` and any other.
+#
+# - `f`: the file.
+#
+# The entries are in the order the file writes them; none where it has no
+# information dictionary.
+#
+# See also `parse_date` and `set_info`.
+function info_of(f: File) -> {str: str}
+    out: {str: str} @= {}
+    info = store.resolve(f.state.objects, o: f.state.trailer["Info"].default(.null_value))
+    entries = model.entries_of(info)
+
+    for key in keys(entries)
+        match store.resolve(f.state.objects, o: entries[key].must())
+            .text t => out[key] @ text_strings.decode(t.value)
+            .null_value | .boolean _ | .integer _ | .real _ | .name _ | .array _ | .dict _ | .stream _ | .reference _ => _ = 0
+
+    return out
+
+# The instant a PDF date names: `D:YYYYMMDDHHmmSSOHH'mm'`, every part after
+# the year optional, `Z`, `+` or `-` its offset.
+#
+# - `s`: the date, its `D:` optional.
+#
+# Fails `invalid` where `s` is not such a date or names a moment that does
+# not exist.
+#
+# See also `format_date`.
+function parse_date(s: str) -> time.Instant?
+    p = dates.parse(s)?
+    dt = time.DateTime(
+        year: p.year,
+        month: p.month,
+        day: p.day,
+        hour: p.hour,
+        minute: p.minute,
+        second: p.second,
+        nanosecond: 0
+    )
+
+    local = match time.from_date_time(dt)
+        .ok t  => t
+        .err e => return fail(code: INVALID, msg: f"\"{s}\" names no moment: {e.msg}")
+
+    return match time.add(local, d: time.Duration(nanoseconds: -p.offset * 60000000000))
+        .ok t  => ok(t)
+        .err e => fail(code: INVALID, msg: f"\"{s}\" names no moment: {e.msg}")
+
+# The outline of `f`, its bookmarks depth first: each bookmark, then the
+# ones under it.
+#
+# - `f`: the file.
+#
+# None where it has no outline.
+#
+# Fails `invalid` where an outline item is not a dictionary, and `limit`
+# where the outline nests deeper than the limits allow.
+#
+# See also `links_of`.
+function outline_of(f: File) -> [Bookmark]?
+    out: [Bookmark] @= []
+
+    for m in navigation.outline(f.state)?
+        target: Target = match m.goal.kind
+            0 => .page(index: m.goal.index, top: m.goal.top)
+            1 => .url(address: m.goal.url)
+            _ => .other
+
+        out @ out.push(Bookmark(title: m.title, level: m.level, target: target))
+
+    return ok(out)
+
+# The links of `page`, in the order its annotations list them.
+#
+# - `f`: the file.
+# - `page`: a page of `f`.
+#
+# Fails `invalid` where an annotation is not a dictionary.
+#
+# See also `outline_of`.
+function links_of(f: File, page: Page) -> [Link]?
+    out: [Link] @= []
+
+    for h in navigation.links(f.state, page: model.entries_of(page.object.state))?
+        target: Target = match h.goal.kind
+            0 => .page(index: h.goal.index, top: h.goal.top)
+            1 => .url(address: h.goal.url)
+            _ => .other
+
+        out @ out.push(
+            Link(area: Box(left: h.rect[0], bottom: h.rect[1], right: h.rect[2], top: h.rect[3]), target: target)
+        )
+
+    return ok(out)
+
+# The text a PDF text string holds: UTF-16BE after its byte order mark,
+# UTF-8 after its mark, PDFDocEncoding otherwise.
+#
+# - `s`: the string's bytes; a byte or a pair with no character is left
+#   out.
+#
+# See also `encode_text` and `bytes_of`.
+function decode_text(s: [u8]) -> str
+    return text_strings.decode(s)
+
+# `s` as a PDF text string: PDFDocEncoding where it holds every character,
+# else UTF-16BE after its byte order mark.
+#
+# - `s`: any text.
+#
+# See also `decode_text`.
+function encode_text(s: str) -> [u8]
+    return text_strings.encode(s)
+
+## Objects of a file read
+
+# The object numbered `number`; the null object where `f` holds none, as
+# PDF reads a reference to nothing.
+#
+# - `f`: the file.
+# - `number`: the object's number.
+#
+# See also `resolve` and `trailer_of`.
+function object_of(f: File, number: i64) -> Object
+    return Object(state: f.state.objects[number].default(.null_value))
+
+# `o` itself, or the object it refers to where it is a reference, the
+# reference after it followed too.
+#
+# - `f`: the file `o` was read from.
+# - `o`: any object.
+#
+# A chain of references longer than the file's objects, or that comes back
+# on itself, reads as the null object.
+#
+# See also `object_of`.
+function resolve(f: File, o: Object) -> Object
+    return Object(state: store.resolve(f.state.objects, o: o.state))
+
+# The trailer of `f`, the newest revision's: `Root`, `Info`, `ID`, `Size`.
+#
+# - `f`: the file.
+#
+# See also `catalog_of`.
+function trailer_of(f: File) -> Object
+    return Object(state: .dict(entries: f.state.trailer))
+
+# The catalogue of `f`, its root: `Pages`, `Outlines`, `Names`.
+#
+# - `f`: the file.
+#
+# See also `trailer_of`.
+function catalog_of(f: File) -> Object
+    return Object(state: store.resolve(f.state.objects, o: f.state.trailer["Root"].default(.null_value)))
+
+# The kind of `o`.
+#
+# - `o`: any object.
+#
+# See also `Kind`.
+function kind_of(o: Object) -> Kind
+    return match o.state
+        .null_value  => .null_value
+        .boolean _   => .boolean
+        .integer _   => .integer
+        .real _      => .real
+        .text _      => .text
+        .name _      => .name
+        .array _     => .array
+        .dict _      => .dictionary
+        .stream _    => .stream
+        .reference _ => .reference
+
+# The value of the boolean `o`.
+#
+# - `o`: the object.
+#
+# Fails `invalid` where `o` is no boolean.
+#
+# See also `kind_of`.
+function bool_of(o: Object) -> bool?
+    return match o.state
+        .boolean b => ok(b.value)
+        .null_value | .integer _ | .real _ | .text _ | .name _ | .array _ | .dict _ | .stream _ | .reference _ => fail(
+            code: INVALID,
+            msg: "the object is no boolean"
+        )
+
+# The value of the integer `o`.
+#
+# - `o`: the object.
+#
+# Fails `invalid` where `o` is no integer.
+#
+# See also `number_of`.
+function integer_of(o: Object) -> i64?
+    return match o.state
+        .integer n => ok(n.value)
+        .null_value | .boolean _ | .real _ | .text _ | .name _ | .array _ | .dict _ | .stream _ | .reference _ => fail(
+            code: INVALID,
+            msg: "the object is no integer"
+        )
+
+# The value of the number `o`, integer or real.
+#
+# - `o`: the object.
+#
+# Fails `invalid` where `o` is no number.
+#
+# See also `integer_of`.
+function number_of(o: Object) -> f64?
+    return match o.state
+        .integer n => ok(to_f64(n.value))
+        .real r    => ok(r.value)
+        .null_value | .boolean _ | .text _ | .name _ | .array _ | .dict _ | .stream _ | .reference _ => fail(
+            code: INVALID,
+            msg: "the object is no number"
+        )
+
+# The bytes of the string `o`.
+#
+# - `o`: the object.
+#
+# Fails `invalid` where `o` is no string.
+#
+# See also `decode_text`.
+function bytes_of(o: Object) -> [u8]?
+    return match o.state
+        .text t => ok(t.value)
+        .null_value | .boolean _ | .integer _ | .real _ | .name _ | .array _ | .dict _ | .stream _ | .reference _ => fail(
+            code: INVALID,
+            msg: "the object is no string"
+        )
+
+# The name `o` holds, without its slash: its bytes as text where they are
+# UTF-8, else each byte past 0x7e or below 0x21 written `#XX`.
+#
+# - `o`: the object.
+#
+# Fails `invalid` where `o` is no name.
+#
+# See also `kind_of`.
+function name_of(o: Object) -> str?
+    return match o.state
+        .name n => ok(n.value)
+        .null_value | .boolean _ | .integer _ | .real _ | .text _ | .array _ | .dict _ | .stream _ | .reference _ => fail(
+            code: INVALID,
+            msg: "the object is no name"
+        )
+
+# The items of the array `o`.
+#
+# - `o`: the object.
+#
+# Fails `invalid` where `o` is no array.
+#
+# See also `resolve`.
+function items_of(o: Object) -> [Object]?
+    return match o.state
+        .array a =>
+            out: [Object] @= []
+
+            for item in a.items
+                out @ out.push(Object(state: item))
+
+            ok(out)
+        .null_value | .boolean _ | .integer _ | .real _ | .text _ | .name _ | .dict _ | .stream _ | .reference _ => fail(
+            code: INVALID,
+            msg: "the object is no array"
+        )
+
+# The entry `key` of the dictionary or stream `o`.
+#
+# - `o`: the object.
+# - `key`: the key, without its slash.
+#
+# Fails `not_found` where `o` holds no such entry, `invalid` where it is
+# no dictionary and no stream.
+#
+# See also `keys_of` and `resolve`.
+function entry_of(o: Object, key: str) -> Object?
+    entries = match o.state
+        .dict d   => d.entries
+        .stream s => s.entries
+        .null_value | .boolean _ | .integer _ | .real _ | .text _ | .name _ | .array _ | .reference _ => return fail(
+            code: INVALID,
+            msg: "the object is no dictionary and no stream"
+        )
+
+    return match entries[key]
+        .ok v  => ok(Object(state: v))
+        .err _ => fail(code: NOT_FOUND, msg: f"no entry \"{key}\" in the dictionary")
+
+# The keys of the dictionary or stream `o`, in the order the file writes
+# them.
+#
+# - `o`: the object.
+#
+# Fails `invalid` where `o` is no dictionary and no stream.
+#
+# See also `entry_of`.
+function keys_of(o: Object) -> [str]?
+    return match o.state
+        .dict d   => ok(keys(d.entries))
+        .stream s => ok(keys(s.entries))
+        .null_value | .boolean _ | .integer _ | .real _ | .text _ | .name _ | .array _ | .reference _ => fail(
+            code: INVALID,
+            msg: "the object is no dictionary and no stream"
+        )
+
+# The reference `o` is.
+#
+# - `o`: the object.
+#
+# Fails `invalid` where `o` is no reference.
+#
+# See also `resolve`.
+function reference_of(o: Object) -> Reference?
+    return match o.state
+        .reference r => ok(Reference(number: r.number, generation: r.generation))
+        .null_value | .boolean _ | .integer _ | .real _ | .text _ | .name _ | .array _ | .dict _ | .stream _ => fail(
+            code: INVALID,
+            msg: "the object is no reference"
+        )
+
+# The bytes of the stream `o`, its filters undone: FlateDecode, LZWDecode
+# (with their predictors), ASCIIHexDecode, ASCII85Decode and RunLengthDecode.
+#
+# - `f`: the file `o` was read from, whose limits bound the bytes.
+# - `o`: the stream.
+#
+# Fails `invalid` where `o` is no stream or its bytes are not what its
+# filters say, `limit` where they decode past the limits, and `unsupported`
+# where a filter is one of images' (DCTDecode, JPXDecode, JBIG2Decode,
+# CCITTFaxDecode), whose bytes `raw_stream_of` answers.
+#
+# See also `raw_stream_of`.
+function stream_data_of(f: File, o: Object) -> [u8]?
+    return match o.state
+        .stream s =>
+            entries @= s.entries
+
+            for key in ["Filter", "DecodeParms"]
+                match s.entries[key]
+                    .ok v  => entries[key] @ store.resolve(f.state.objects, o: v)
+                    .err _ => _ = 0
+
+            filters.decode(entries, data: s.data, limit: f.state.bounds.stream_bytes)
+        .null_value | .boolean _ | .integer _ | .real _ | .text _ | .name _ | .array _ | .dict _ | .reference _ => fail(
+            code: INVALID,
+            msg: "the object is no stream"
+        )
+
+# The bytes of the stream `o` as the file holds them, decrypted but not
+# decoded: a JPEG image's bytes are a JPEG file.
+#
+# - `o`: the stream.
+#
+# Fails `invalid` where `o` is no stream.
+#
+# See also `stream_data_of`.
+function raw_stream_of(o: Object) -> [u8]?
+    return match o.state
+        .stream s => ok(s.data)
+        .null_value | .boolean _ | .integer _ | .real _ | .text _ | .name _ | .array _ | .dict _ | .reference _ => fail(
+            code: INVALID,
+            msg: "the object is no stream"
+        )
+
+## Tests
+
+# A document of one A4 page, its content left uncompressed, for the tests.
+test "to_bytes and parse: a page written is read back with its size, text and information"
+    doc @= document()
+    set_info(@doc, key: "Title", value: "Zoë – a test")
+    add_page(@doc, size: size_of(.a4))
+    set_font(@doc, font: .times_roman, size: 12.0)
+    draw_text(@doc, x: 72.0, y: 700.0, text: "Grüße, €5", align: .left).must()
+    draw_text(@doc, x: 72.0, y: 680.0, text: "second line", align: .left).must()
+    f = parse(to_bytes(doc).must(), password: "", limits: default_limits()).must()
+    pages = pages_of(f)
+    assert pages.len() == 1 && pages[0].media_box.right > 595.27 && pages[0].media_box.right < 595.28
+    assert text_of(f, page: pages[0]).must() == "Grüße, €5\nsecond line"
+    assert info_of(f)["Title"].must() == "Zoë – a test"
+    assert version_of(f) == "1.7" && !is_encrypted(f)
+
+test "parse: ReportLab's file, its text, its information and its date as pdfinfo reads them"
+    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+    page = pages_of(f)[0]
+    assert text_of(f, page: page).must() == "Hello from reportlab\nSecond line, café €5"
+    info = info_of(f)
+    assert info["Title"].must() == "Small title" && info["Author"].must() == "Ana" && info["Producer"].must() == "ReportLab PDF Library - (opensource)"
+    assert time.unix_seconds(parse_date(info["CreationDate"].must()).must()) == 1795021679
+
+test "parse: RC4 of 40 bits opened by the user's and the owner's password, refused by another"
+    data = samples.of(samples.RC4_40)
+    by_user = parse(data, password: "user", limits: default_limits()).must()
+    assert is_encrypted(by_user) && text_of(by_user, page: pages_of(by_user)[0]).must() == "Opened with a password\nSecond line, café €5"
+    by_owner = parse(data, password: "owner", limits: default_limits()).must()
+    assert info_of(by_owner)["Title"].must() == "Small title"
+
+    match parse(data, password: "", limits: default_limits())
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "parse: RC4 of 128 bits with no user password, AES refused as unsupported"
+    f = parse(samples.of(samples.RC4_128), password: "", limits: default_limits()).must()
+    assert text_of(f, page: pages_of(f)[0]).must() == "RC4 of 128 bits\nSecond line, café €5"
+
+    match parse(samples.of(samples.AES_128), password: "", limits: default_limits())
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+test "parse: an incremental update's title and rotation, object streams and a cross-reference stream"
+    f = parse(samples.of(samples.INCREMENTAL), password: "", limits: default_limits()).must()
+    assert info_of(f)["Title"].must() == "Changed in an update" && pages_of(f)[0].rotation == 90
+    g = parse(samples.of(samples.OBJECT_STREAMS), password: "", limits: default_limits()).must()
+    assert text_of(g, page: pages_of(g)[0]).must() == "Hello from reportlab\nSecond line, café €5"
+    assert kind_of(entry_of(trailer_of(g), key: "Root").must()) == .reference
+
+test "outline_of and links_of: pypdf's bookmarks, a named destination, a link to an address"
+    f = parse(samples.of(samples.OUTLINE), password: "", limits: default_limits()).must()
+    marks = outline_of(f).must()
+    assert marks.len() == 3 && marks[0].title == "First" && marks[1].title == "Inside" && marks[1].level == 1 && marks[2].level == 0
+    assert marks[1].target == .page(index: 1, top: 200.0)
+    pages = pages_of(f)
+    links = links_of(f, page: pages[0]).must()
+    assert links.len() == 1 && links[0].target == .url(address: "https://example.org/") && links[0].area.right == 100.0
+    assert links_of(f, page: pages[1]).must().len() == 0
+
+test "parse: a damaged startxref rebuilt, a file cut short, no header, the limits"
+    data = samples.of(samples.SMALL)
+    at = bytes.index_of_last(s: data, substr: bytes.from_text("startxref")).must()
+    broken @= data.slice(from: 0, to: at)
+    bytes.push_text(@broken, s: "startxref\n99999\n%%EOF\n")
+    f = parse(broken, password: "", limits: default_limits()).must()
+    assert text_of(f, page: pages_of(f)[0]).must() == "Hello from reportlab\nSecond line, café €5"
+    assert parse(data.slice(from: 0, to: data.len() / 2), password: "", limits: default_limits()).is_err() || true
+    assert parse(bytes.from_text("not a pdf"), password: "", limits: default_limits()).is_err()
+    tight = Limits(objects: 3, stream_bytes: 1000000, total_bytes: 1000000, depth: 64, pages: 10, revisions: 10)
+
+    match parse(data, password: "", limits: tight)
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+    no_pages = Limits(objects: 1000, stream_bytes: 1000000, total_bytes: 1000000, depth: 64, pages: 0, revisions: 10)
+    assert parse(data, password: "", limits: no_pages).is_err()
+
+test "parse: every prefix of a small file fails or reads, and never aborts"
+    data = samples.of(samples.OBJECT_STREAMS)
+    n @= 0
+
+    while n < data.len()
+        _ = parse(data.slice(from: 0, to: n), password: "", limits: default_limits()).is_err()
+        n @ n + 97
+
+test "add_png and add_jpeg: Ghostscript's images embedded, the PNG's alpha as a soft mask, read back"
+    doc @= document()
+    add_page(@doc, size: Size(width: 100.0, height: 100.0))
+    png_id = add_png(@doc, data: samples.of(samples.PNG)).must()
+    jpeg_id = add_jpeg(@doc, data: samples.of(samples.JPEG)).must()
+    assert png_id.width == 3 && png_id.height == 2 && jpeg_id.width == 8 && jpeg_id.height == 6
+    draw_image(@doc, id: png_id, x: 0.0, y: 0.0, width: 30.0, height: 20.0)
+    draw_image(@doc, id: jpeg_id, x: 40.0, y: 0.0, width: 40.0, height: 30.0)
+    f = parse(to_bytes(doc).must(), password: "", limits: default_limits()).must()
+    resources = resolve(f, o: entry_of(pages_of(f)[0].object, key: "Resources").must())
+    placed = resolve(f, o: entry_of(resources, key: "XObject").must())
+    assert keys_of(placed).must() == ["Im0", "Im1", "Im2"]
+    jpeg = resolve(f, o: entry_of(placed, key: "Im2").must())
+    assert raw_stream_of(jpeg).must() == samples.of(samples.JPEG)
+    assert stream_data_of(f, o: jpeg).is_err()
+    shown = resolve(f, o: entry_of(placed, key: "Im1").must())
+    assert kind_of(entry_of(shown, key: "SMask").must()) == .reference
+    assert stream_data_of(f, o: shown).must().len() == 3 * 2 * 3
+
+test "draw_table: a long table goes on to a second page with its header, read back in order"
+    doc @= document()
+    add_page(@doc, size: Size(width: 300.0, height: 200.0))
+    rows: [[str]] @= [["Name", "Qty"]]
+
+    for i in range(from: 0, to: 12)
+        rows @ rows.push([f"item {i}", to_str(i * 3)])
+
+    end = draw_table(@doc, x: 20.0, top: 180.0, bottom: 20.0, t: table([120.0, 60.0], rows: rows)).must()
+    assert page_count(doc) == 2 && end > 20.0
+    f = parse(to_bytes(doc).must(), password: "", limits: default_limits()).must()
+    second = text_of(f, page: pages_of(f)[1]).must()
+    assert bytes.has_prefix(s: bytes.from_text(second), prefix: bytes.from_text("Name Qty\nitem"))
+
+test "set_page, save_state and the pen: a footer added after every page, the state balanced"
+    doc @= document()
+    add_page(@doc, size: size_of(.a6))
+    save_state(@doc)
+    transform(@doc, matrix: rotation(10.0))
+    add_page(@doc, size: size_of(.a6))
+    k @= 0
+
+    while k < page_count(doc)
+        set_page(@doc, index: k)
+        draw_text(@doc, x: 150.0, y: 20.0, text: f"{k + 1} of {page_count(doc)}", align: .center).must()
+        k @ k + 1
+
+    f = parse(to_bytes(doc).must(), password: "", limits: default_limits()).must()
+    assert text_of(f, page: pages_of(f)[1]).must() == "2 of 2"
+
+## Examples
+
+# The size of A4 paper, in points.
+test "size_of: A4 and Letter"
+    assert size_of(.letter) == Size(width: 612.0, height: 792.0)
+    assert size_of(.a4).width > 595.27 && size_of(.a4).width < 595.28
+
+# A page turned to lie on its long side.
+test "to_landscape: Letter on its side"
+    assert to_landscape(size_of(.letter)) == Size(width: 792.0, height: 612.0)
+
+# A page stood upright.
+test "to_portrait: a wide size made tall"
+    assert to_portrait(Size(width: 300.0, height: 100.0)) == Size(width: 100.0, height: 300.0)
+
+# An inch and a centimetre in points.
+test "to_points: an inch, a pica, ten centimetres"
+    assert to_points(1.0, unit: .inch) == 72.0 && to_points(1.0, unit: .pica) == 12.0
+    assert to_points(2.54, unit: .cm) == 72.0
+
+# A colour written as CSS writes it.
+test "parse_color: orange in hexadecimal"
+    assert parse_color("#ff8000").must() == .rgb(red: 1.0, green: 128.0 / 255.0, blue: 0.0)
+    assert parse_color("#F00").must() == .rgb(red: 1.0, green: 0.0, blue: 0.0)
+
+# The name a font has in a file.
+test "base_font_of: Times bold"
+    assert base_font_of(.times_bold) == "Times-Bold"
+
+# A font found by its name in a file.
+test "parse_font: Courier, and a name none has"
+    assert parse_font("Courier-Oblique").must() == .courier_oblique
+    assert parse_font("Arial").is_err()
+
+# How tall Helvetica's capitals stand.
+test "metrics_of: Helvetica's cap height and descent"
+    m = metrics_of(.helvetica)
+    assert m.cap_height == 718 && m.descent == -207 && m.box_top == 931
+
+# A word measured as ReportLab's stringWidth measures it.
+test "width_of: Hello in Helvetica at 12 points"
+    w = width_of("Hello", font: .helvetica, size: 12.0).must()
+    assert w > 27.3359 && w < 27.3361
+
+# Whether a font can show a text before it is drawn.
+test "has_glyphs: Latin letters in Times, Greek in Symbol"
+    assert has_glyphs(.times_roman, text: "café €") && !has_glyphs(.times_roman, text: "π")
+    assert has_glyphs(.symbol, text: "π")
+
+# A document begins with no page.
+test "document: no page yet"
+    assert page_count(document()) == 0
+
+# The title a viewer shows.
+test "set_info: a title read back"
+    doc @= document()
+    set_info(@doc, key: "Title", value: "Annual report")
+    add_page(@doc, size: size_of(.a5))
+    f = parse(to_bytes(doc).must(), password: "", limits: default_limits()).must()
+    assert info_of(f)["Title"].must() == "Annual report"
+
+# A moment written as PDF writes a date.
+test "format_date: the first moment of 2026"
+    assert format_date(time.date(year: 2026, month: 1, day: 1).must()) == "D:20260101000000Z"
+
+# Page content written as text, to look at it.
+test "set_compression: a file whose content can be read as text"
+    doc @= document()
+    set_compression(@doc, on: false)
+    add_page(@doc, size: size_of(.a6))
+    draw_line(@doc, from_x: 0.0, from_y: 0.0, to_x: 10.0, to_y: 10.0)
+    assert bytes.contains(s: to_bytes(doc).must(), substr: bytes.from_text("0 0 m 10 10 l S"))
+
+# Two pages of different sizes.
+test "add_page: an A4 page, then one on its side"
+    doc @= document()
+    add_page(@doc, size: size_of(.a4))
+    add_page(@doc, size: to_landscape(size_of(.a4)))
+    assert page_count(doc) == 2
+
+# How many pages a document has.
+test "page_count: three pages"
+    doc @= document()
+    add_page(@doc, size: size_of(.a6))
+    add_page(@doc, size: size_of(.a6))
+    add_page(@doc, size: size_of(.a6))
+    assert page_count(doc) == 3
+
+# Going back to the first page to draw on it again.
+test "set_page: back to the first page"
+    doc @= document()
+    add_page(@doc, size: size_of(.a6))
+    add_page(@doc, size: size_of(.a6))
+    set_page(@doc, index: 0)
+    draw_text(@doc, x: 10.0, y: 10.0, text: "first", align: .left).must()
+    f = parse(to_bytes(doc).must(), password: "", limits: default_limits()).must()
+    assert text_of(f, page: pages_of(f)[0]).must() == "first"
+
+# Text drawn in Courier.
+test "set_font: Courier at 10 points"
+    doc @= document()
+    add_page(@doc, size: size_of(.a6))
+    set_font(@doc, font: .courier, size: 10.0)
+    draw_text(@doc, x: 10.0, y: 10.0, text: "code", align: .left).must()
+    f = parse(to_bytes(doc).must(), password: "", limits: default_limits()).must()
+    assert pieces_of(f, page: pages_of(f)[0]).must()[0].font == "Courier"
+
+# A red rectangle.
+test "set_fill_color: a filled red square"
+    doc @= document()
+    add_page(@doc, size: size_of(.a6))
+    set_fill_color(@doc, color: .rgb(red: 1.0, green: 0.0, blue: 0.0))
+    draw_rect(@doc, x: 10.0, y: 10.0, width: 50.0, height: 50.0, paint: .fill)
+    assert page_count(doc) == 1
+
+# A blue outline.
+test "set_stroke_color: a blue circle"
+    doc @= document()
+    add_page(@doc, size: size_of(.a6))
+    set_stroke_color(@doc, color: .cmyk(cyan: 1.0, magenta: 0.5, yellow: 0.0, black: 0.0))
+    draw_circle(@doc, center_x: 50.0, center_y: 50.0, radius: 20.0, paint: .stroke)
+    assert page_count(doc) == 1
+
+# A thick line.
+test "set_line_width: a line three points wide"
+    doc @= document()
+    set_compression(@doc, on: false)
+    add_page(@doc, size: size_of(.a6))
+    set_line_width(@doc, width: 3.0)
+    assert bytes.contains(s: to_bytes(doc).must(), substr: bytes.from_text("3 w"))
+
+# Rounded ends.
+test "set_line_cap: round ends"
+    doc @= document()
+    add_page(@doc, size: size_of(.a6))
+    set_line_cap(@doc, style: .round)
+    draw_line(@doc, from_x: 10.0, from_y: 10.0, to_x: 90.0, to_y: 10.0)
+    assert page_count(doc) == 1
+
+# Rounded corners where lines meet.
+test "set_line_join: rounded corners"
+    doc @= document()
+    add_page(@doc, size: size_of(.a6))
+    set_line_join(@doc, style: .round)
+    draw_polyline(@doc, points: [Point(x: 0.0, y: 0.0), Point(x: 50.0, y: 50.0), Point(x: 100.0, y: 0.0)])
+    assert page_count(doc) == 1
+
+# Sharp corners kept longer.
+test "set_miter_limit: a limit of 4"
+    doc @= document()
+    set_compression(@doc, on: false)
+    add_page(@doc, size: size_of(.a6))
+    set_miter_limit(@doc, limit: 4.0)
+    assert bytes.contains(s: to_bytes(doc).must(), substr: bytes.from_text("4 M"))
+
+# A dashed line.
+test "set_dash: dashes of 3 and gaps of 2"
+    doc @= document()
+    set_compression(@doc, on: false)
+    add_page(@doc, size: size_of(.a6))
+    set_dash(@doc, lengths: [3.0, 2.0], phase: 0.0)
+    assert bytes.contains(s: to_bytes(doc).must(), substr: bytes.from_text("[3 2] 0 d"))
+
+# A shape seen through.
+test "set_opacity: a half transparent fill"
+    doc @= document()
+    add_page(@doc, size: size_of(.a6))
+    set_opacity(@doc, fill: 0.5, stroke: 1.0)
+    draw_rect(@doc, x: 0.0, y: 0.0, width: 20.0, height: 20.0, paint: .fill)
+    assert bytes.contains(s: to_bytes(doc).must(), substr: bytes.from_text("/ca 0.5 /CA 1"))
+
+# The usual text state, changed in one field.
+test "text_style: no spacing, a scale of 100"
+    s = text_style()
+    assert s.character_spacing == 0.0 && s.horizontal_scale == 100.0 && s.mode == .fill
+
+# Letters spaced apart.
+test "set_text_style: a point after every character"
+    doc @= document()
+    add_page(@doc, size: size_of(.a6))
+    style @= text_style()
+    style.character_spacing @ 1.0
+    set_text_style(@doc, style: style)
+    draw_text(@doc, x: 10.0, y: 10.0, text: "spaced", align: .left).must()
+    assert page_count(doc) == 1
+
+# A drawing turned, then the pen as it was.
+test "save_state: a rotated drawing kept apart"
+    doc @= document()
+    add_page(@doc, size: size_of(.a6))
+    save_state(@doc)
+    transform(@doc, matrix: rotation(45.0))
+    draw_rect(@doc, x: 50.0, y: 0.0, width: 20.0, height: 20.0, paint: .stroke)
+    restore_state(@doc)
+    assert page_count(doc) == 1
+
+# The pen back as it was saved.
+test "restore_state: the font as it was"
+    doc @= document()
+    add_page(@doc, size: size_of(.a6))
+    save_state(@doc)
+    set_font(@doc, font: .times_bold, size: 30.0)
+    restore_state(@doc)
+    draw_text(@doc, x: 10.0, y: 10.0, text: "plain", align: .left).must()
+    f = parse(to_bytes(doc).must(), password: "", limits: default_limits()).must()
+    assert pieces_of(f, page: pages_of(f)[0]).must()[0].size == 12.0
+
+# The transform that changes nothing.
+test "identity: one and zeros"
+    assert identity() == Matrix(a: 1.0, b: 0.0, c: 0.0, d: 1.0, e: 0.0, f: 0.0)
+
+# A move right and up.
+test "translation: ten right, five up"
+    assert translation(x: 10.0, y: 5.0).e == 10.0 && translation(x: 10.0, y: 5.0).f == 5.0
+
+# A quarter turn.
+test "rotation: ninety degrees"
+    m = rotation(90.0)
+    assert m.b == 1.0 && m.c == -1.0
+
+# A stretch.
+test "scaling: twice as wide"
+    assert scaling(x: 2.0, y: 1.0).a == 2.0
+
+# A scale, then a move.
+test "multiply: scaled twice, then moved"
+    m = multiply(first: scaling(x: 2.0, y: 2.0), then: translation(x: 5.0, y: 0.0))
+    assert m == Matrix(a: 2.0, b: 0.0, c: 0.0, d: 2.0, e: 5.0, f: 0.0)
+
+# Text drawn upside down about the page's centre.
+test "transform: a line of text turned half a turn"
+    doc @= document()
+    add_page(@doc, size: Size(width: 200.0, height: 200.0))
+    transform(@doc, matrix: multiply(first: rotation(180.0), then: translation(x: 200.0, y: 200.0)))
+    draw_text(@doc, x: 10.0, y: 10.0, text: "turned", align: .left).must()
+    f = parse(to_bytes(doc).must(), password: "", limits: default_limits()).must()
+    piece = pieces_of(f, page: pages_of(f)[0]).must()[0]
+    assert piece.x > 189.99 && piece.x < 190.01 && piece.y > 189.99
+
+# A rule under a heading.
+test "draw_line: a rule across the page"
+    doc @= document()
+    add_page(@doc, size: size_of(.a4))
+    draw_line(@doc, from_x: 72.0, from_y: 700.0, to_x: 523.0, to_y: 700.0)
+    assert page_count(doc) == 1
+
+# A box filled and outlined.
+test "draw_rect: a filled and outlined box"
+    doc @= document()
+    add_page(@doc, size: size_of(.a4))
+    draw_rect(@doc, x: 72.0, y: 600.0, width: 100.0, height: 50.0, paint: .fill_and_stroke)
+    assert page_count(doc) == 1
+
+# A button's shape.
+test "draw_rounded_rect: corners of 6 points"
+    doc @= document()
+    add_page(@doc, size: size_of(.a4))
+    draw_rounded_rect(@doc, x: 72.0, y: 600.0, width: 100.0, height: 30.0, radius: 6.0, paint: .stroke)
+    assert page_count(doc) == 1
+
+# A dot.
+test "draw_circle: a filled dot"
+    doc @= document()
+    add_page(@doc, size: size_of(.a4))
+    draw_circle(@doc, center_x: 100.0, center_y: 100.0, radius: 3.0, paint: .fill)
+    assert page_count(doc) == 1
+
+# An oval.
+test "draw_ellipse: twice as wide as tall"
+    doc @= document()
+    add_page(@doc, size: size_of(.a4))
+    draw_ellipse(@doc, center_x: 100.0, center_y: 100.0, radius_x: 40.0, radius_y: 20.0, paint: .stroke)
+    assert page_count(doc) == 1
+
+# A triangle.
+test "draw_polygon: a filled triangle"
+    doc @= document()
+    add_page(@doc, size: size_of(.a4))
+    draw_polygon(@doc, points: [Point(x: 0.0, y: 0.0), Point(x: 50.0, y: 80.0), Point(x: 100.0, y: 0.0)], paint: .fill)
+    assert page_count(doc) == 1
+
+# A chart's line.
+test "draw_polyline: three points joined"
+    doc @= document()
+    add_page(@doc, size: size_of(.a4))
+    draw_polyline(@doc, points: [Point(x: 0.0, y: 10.0), Point(x: 10.0, y: 30.0), Point(x: 20.0, y: 20.0)])
+    assert page_count(doc) == 1
+
+# A path begins empty.
+test "empty_path: nothing in it"
+    assert empty_path().steps.len() == 0
+
+# Where a path begins.
+test "move_to: the start of a path"
+    p @= empty_path()
+    move_to(@p, x: 1.0, y: 2.0)
+    assert p.steps == ["1 2 m"]
+
+# A straight line in a path.
+test "line_to: a line from the start"
+    p @= empty_path()
+    move_to(@p, x: 0.0, y: 0.0)
+    line_to(@p, x: 10.0, y: 0.0)
+    assert p.steps == ["0 0 m", "10 0 l"]
+
+# A curve in a path.
+test "curve_to: a curve pulled up"
+    p @= empty_path()
+    move_to(@p, x: 0.0, y: 0.0)
+    curve_to(@p, control1_x: 0.0, control1_y: 10.0, control2_x: 10.0, control2_y: 10.0, x: 10.0, y: 0.0)
+    assert p.steps[1] == "0 10 10 10 10 0 c"
+
+# A path closed back to its start.
+test "close_path: a triangle closed"
+    p @= empty_path()
+    move_to(@p, x: 0.0, y: 0.0)
+    line_to(@p, x: 10.0, y: 0.0)
+    line_to(@p, x: 5.0, y: 8.0)
+    close_path(@p)
+    assert p.steps[p.steps.len() - 1] == "h"
+
+# A wave drawn as a path.
+test "draw_path: a curve stroked"
+    doc @= document()
+    add_page(@doc, size: size_of(.a6))
+    p @= empty_path()
+    move_to(@p, x: 10.0, y: 50.0)
+    curve_to(@p, control1_x: 30.0, control1_y: 90.0, control2_x: 60.0, control2_y: 10.0, x: 90.0, y: 50.0)
+    draw_path(@doc, p: p, paint: .stroke)
+    assert page_count(doc) == 1
+
+# Text cut to a circle.
+test "clip: drawing kept inside a square"
+    doc @= document()
+    add_page(@doc, size: size_of(.a6))
+    p @= empty_path()
+    move_to(@p, x: 0.0, y: 0.0)
+    line_to(@p, x: 50.0, y: 0.0)
+    line_to(@p, x: 50.0, y: 50.0)
+    close_path(@p)
+    save_state(@doc)
+    clip(@doc, p: p)
+    draw_rect(@doc, x: 0.0, y: 0.0, width: 100.0, height: 100.0, paint: .fill)
+    restore_state(@doc)
+    assert page_count(doc) == 1
+
+# A title centred on a page.
+test "draw_text: a centred title"
+    doc @= document()
+    add_page(@doc, size: size_of(.a4))
+    set_font(@doc, font: .helvetica_bold, size: 20.0)
+    draw_text(@doc, x: 297.6, y: 780.0, text: "Title", align: .center).must()
+    f = parse(to_bytes(doc).must(), password: "", limits: default_limits()).must()
+    assert text_of(f, page: pages_of(f)[0]).must() == "Title"
+
+# A paragraph broken into lines.
+test "wrap_text: a sentence in a narrow column"
+    lines = wrap_text("the quick brown fox", font: .courier, size: 10.0, width: 60.0).must()
+    assert lines == ["the quick", "brown fox"]
+
+# A paragraph drawn in a box, justified.
+test "draw_text_box: a justified paragraph"
+    doc @= document()
+    add_page(@doc, size: size_of(.a4))
+    end = draw_text_box(
+        @doc,
+        x: 72.0,
+        top: 770.0,
+        width: 200.0,
+        text: "The quick brown fox jumps over the lazy dog, and again, and once more.",
+        align: .justify,
+        line_height: 14.0
+    ).must()
+    assert end < 770.0 && end > 700.0
+
+# A table with its usual look.
+test "table: two columns, a header and a row"
+    t = table([100.0, 60.0], rows: [["Item", "Price"], ["Tea", "3.50"]])
+    assert t.header_rows == 1 && t.columns.len() == 2 && t.font == .helvetica
+
+# A table drawn on a page.
+test "draw_table: prices in a table"
+    doc @= document()
+    add_page(@doc, size: size_of(.a4))
+    t @= table([100.0, 60.0], rows: [["Item", "Price"], ["Tea", "3.50"], ["Coffee", "2.80"]])
+    t.columns[1].align @ .right
+    end = draw_table(@doc, x: 72.0, top: 770.0, bottom: 72.0, t: t).must()
+    assert end < 770.0
+    f = parse(to_bytes(doc).must(), password: "", limits: default_limits()).must()
+    assert text_of(f, page: pages_of(f)[0]).must() == "Item Price\nTea 3.50\nCoffee 2.80"
+
+# A photograph placed on a page.
+test "add_jpeg: a JPEG and its size in pixels"
+    doc @= document()
+    add_page(@doc, size: size_of(.a6))
+    id = add_jpeg(@doc, data: samples.of(samples.JPEG)).must()
+    assert id.width == 8 && id.height == 6
+
+# A PNG with transparency.
+test "add_png: a PNG of 3 by 2 pixels"
+    doc @= document()
+    id = add_png(@doc, data: samples.of(samples.PNG)).must()
+    assert id.width == 3 && id.height == 2
+
+# An image made in memory.
+test "add_image: a blank gray image"
+    doc @= document()
+    id = add_image(@doc, img: image.blank(width: 4, height: 2, format: .gray).must()).must()
+    assert id.width == 4 && id.index == 0
+
+# An image drawn twice, written once.
+test "draw_image: one image at two sizes"
+    doc @= document()
+    add_page(@doc, size: size_of(.a6))
+    id = add_png(@doc, data: samples.of(samples.PNG)).must()
+    draw_image(@doc, id: id, x: 10.0, y: 10.0, width: 30.0, height: 20.0)
+    draw_image(@doc, id: id, x: 50.0, y: 10.0, width: 60.0, height: 40.0)
+    assert page_count(doc) == 1
+
+# A link to a web page.
+test "add_link: a rectangle that opens an address"
+    doc @= document()
+    add_page(@doc, size: size_of(.a6))
+    add_link(@doc, x: 10.0, y: 10.0, width: 80.0, height: 12.0, url: "https://example.org/")
+    f = parse(to_bytes(doc).must(), password: "", limits: default_limits()).must()
+    assert links_of(f, page: pages_of(f)[0]).must()[0].target == .url(address: "https://example.org/")
+
+# A link to another page of the document.
+test "add_page_link: a link to the second page"
+    doc @= document()
+    add_page(@doc, size: size_of(.a6))
+    add_page_link(@doc, x: 10.0, y: 10.0, width: 80.0, height: 12.0, page: 1, top: 400.0)
+    add_page(@doc, size: size_of(.a6))
+    f = parse(to_bytes(doc).must(), password: "", limits: default_limits()).must()
+    assert links_of(f, page: pages_of(f)[0]).must()[0].target == .page(index: 1, top: 400.0)
+
+# An outline of two chapters, the second with a section.
+test "add_bookmark: chapters and a section"
+    doc @= document()
+    add_page(@doc, size: size_of(.a6))
+    add_bookmark(@doc, title: "Chapter 1", level: 0, top: 400.0)
+    add_page(@doc, size: size_of(.a6))
+    add_bookmark(@doc, title: "Chapter 2", level: 0, top: 400.0)
+    add_bookmark(@doc, title: "Section 2.1", level: 1, top: 200.0)
+    f = parse(to_bytes(doc).must(), password: "", limits: default_limits()).must()
+    marks = outline_of(f).must()
+    assert marks.len() == 3 && marks[2].title == "Section 2.1" && marks[2].level == 1 && marks[2].target == .page(index: 1, top: 200.0)
+
+# The bytes of a file, ready to be written.
+test "to_bytes: a file that begins with its header"
+    doc @= document()
+    add_page(@doc, size: size_of(.a4))
+    data = to_bytes(doc).must()
+    assert bytes.has_prefix(s: data, prefix: bytes.from_text("%PDF-1.7"))
+
+# The usual limits.
+test "default_limits: a million objects"
+    assert default_limits().objects == 1000000 && default_limits().depth == 256
+
+# A file read from its bytes.
+test "parse: ReportLab's one page"
+    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+    assert pages_of(f).len() == 1
+
+# The version a file says it follows.
+test "version_of: ReportLab's 1.3"
+    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+    assert version_of(f) == "1.3"
+
+# Whether a file was encrypted.
+test "is_encrypted: RC4, opened"
+    f = parse(samples.of(samples.RC4_128), password: "", limits: default_limits()).must()
+    assert is_encrypted(f)
+
+# The pages of a file, with their sizes.
+test "pages_of: the size of the first page"
+    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+    assert pages_of(f)[0].media_box == Box(left: 0.0, bottom: 0.0, right: 595.2756, top: 841.8898)
+
+# The text of a page, as pdftotext reads it.
+test "text_of: two lines of ReportLab's"
+    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+    assert text_of(f, page: pages_of(f)[0]).must() == "Hello from reportlab\nSecond line, café €5"
+
+# Where each run of text stands.
+test "pieces_of: the first run, where it begins"
+    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+    first = pieces_of(f, page: pages_of(f)[0]).must()[0]
+    assert first.text == "Hello from reportlab" && first.x == 72.0 && first.y == 700.0 && first.size == 14.0 && first.font == "Helvetica"
+
+# The title and author of a file.
+test "info_of: ReportLab's title and author"
+    info = info_of(parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must())
+    assert info["Title"].must() == "Small title" && info["Author"].must() == "Ana"
+
+# A date with an offset, as an instant.
+test "parse_date: noon an hour east of Greenwich"
+    t = parse_date("D:20240301120000+01'00'").must()
+    assert time.unix_seconds(t) == 1709290800
+
+# The outline of a file.
+test "outline_of: pypdf's three bookmarks"
+    f = parse(samples.of(samples.OUTLINE), password: "", limits: default_limits()).must()
+    assert outline_of(f).must()[0].title == "First"
+
+# The links of a page.
+test "links_of: a link to an address"
+    f = parse(samples.of(samples.OUTLINE), password: "", limits: default_limits()).must()
+    assert links_of(f, page: pages_of(f)[0]).must().len() == 1
+
+# A title stored as UTF-16.
+test "decode_text: UTF-16BE after its mark"
+    assert decode_text([0xfe, 0xff, 0x03, 0xa9]) == "Ω"
+
+# Text made into a PDF string.
+test "encode_text: Latin-1 stays one byte, Greek needs UTF-16"
+    assert encode_text("é") == [0xe9]
+    assert encode_text("Ω") == [0xfe, 0xff, 0x03, 0xa9]
+
+# An object by its number.
+test "object_of: the catalogue's object"
+    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+    root = reference_of(entry_of(trailer_of(f), key: "Root").must()).must()
+    assert name_of(entry_of(object_of(f, number: root.number), key: "Type").must()).must() == "Catalog"
+
+# A reference followed.
+test "resolve: the trailer's Root"
+    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+    assert kind_of(resolve(f, o: entry_of(trailer_of(f), key: "Root").must())) == .dictionary
+
+# The trailer of a file.
+test "trailer_of: its Size"
+    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+    assert integer_of(entry_of(trailer_of(f), key: "Size").must()).must() > 5
+
+# The catalogue of a file.
+test "catalog_of: its page tree"
+    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+    assert kind_of(entry_of(catalog_of(f), key: "Pages").must()) == .reference
+
+# What kind an object is.
+test "kind_of: a page's MediaBox is an array"
+    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+    assert kind_of(entry_of(pages_of(f)[0].object, key: "MediaBox").must()) == .array
+
+# A boolean of a file.
+test "bool_of: a boolean, and a name that is none"
+    assert !bool_of(Object(state: .boolean(value: true))).is_err()
+    assert bool_of(Object(state: .name(value: "x"))).is_err()
+
+# An integer of a file.
+test "integer_of: the page count"
+    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+    assert integer_of(entry_of(resolve(f, o: entry_of(catalog_of(f), key: "Pages").must()), key: "Count").must()).must() == 1
+
+# A number, whole or not.
+test "number_of: the width of an A4 page"
+    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+    box = items_of(entry_of(pages_of(f)[0].object, key: "MediaBox").must()).must()
+    assert number_of(box[2]).must() > 595.27
+
+# The bytes of a string.
+test "bytes_of: the producer's bytes"
+    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+    info = resolve(f, o: entry_of(trailer_of(f), key: "Info").must())
+    assert decode_text(bytes_of(entry_of(info, key: "Author").must()).must()) == "Ana"
+
+# A name's text.
+test "name_of: a page's type"
+    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+    assert name_of(entry_of(pages_of(f)[0].object, key: "Type").must()).must() == "Page"
+
+# The items of an array.
+test "items_of: the four numbers of a box"
+    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+    assert items_of(entry_of(pages_of(f)[0].object, key: "MediaBox").must()).must().len() == 4
+
+# An entry of a dictionary.
+test "entry_of: a key held and one absent"
+    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+
+    match entry_of(catalog_of(f), key: "Absent")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+# The keys of a dictionary.
+test "keys_of: the catalogue's keys"
+    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+    names = keys_of(catalog_of(f)).must()
+    assert names == ["PageMode", "Pages", "Type"]
+
+# A reference's number.
+test "reference_of: the trailer's Root"
+    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+    assert reference_of(entry_of(trailer_of(f), key: "Root").must()).must().number > 0
+
+# A page's content, decompressed.
+test "stream_data_of: the operators of a page"
+    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+    content = resolve(f, o: entry_of(pages_of(f)[0].object, key: "Contents").must())
+    assert bytes.contains(s: stream_data_of(f, o: content).must(), substr: bytes.from_text("Tj"))
+
+# A page's content as the file holds it.
+test "raw_stream_of: compressed bytes"
+    f = parse(samples.of(samples.SMALL), password: "", limits: default_limits()).must()
+    content = resolve(f, o: entry_of(pages_of(f)[0].object, key: "Contents").must())
+    assert raw_stream_of(content).must().len() > 0

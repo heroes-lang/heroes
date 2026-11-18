@@ -1,0 +1,379 @@
+# A PDF file once read: its objects by number, its trailer, its pages with
+# what they inherit, and the limits it was read under. `load` makes one:
+# the header, the cross-reference (rebuilt where it does not hold), the
+# encryption, every object and every object stream, the page tree.
+
+use bytes
+use pdf/internal/codes
+use pdf/internal/crypt
+use pdf/internal/filters
+use pdf/internal/model
+use pdf/internal/objects
+use pdf/internal/xref
+
+# The limits a file is read under; the face's `Limits` copied.
+record Bounds
+    # The most objects the file may hold.
+    objects: i64
+    # The most bytes one stream may decode to.
+    stream_bytes: i64
+    # The most bytes all the streams one call decodes may come to.
+    total_bytes: i64
+    # The deepest arrays and dictionaries may nest.
+    depth: i64
+    # The most pages.
+    pages: i64
+    # The most revisions, the file and its incremental updates.
+    revisions: i64
+
+# A page: the number of its dictionary's object and its entries, with what
+# it inherits from the tree above it put in.
+record Leaf
+    # The object number of the page's dictionary.
+    number: i64
+    # The entries, `Resources`, `MediaBox`, `CropBox` and `Rotate` inherited.
+    entries: {str: model.Obj}
+
+# A file read.
+record Store
+    # The version its header, or its catalogue, names: "1.7".
+    version: str
+    # Every object, by number.
+    objects: {i64: model.Obj}
+    # The trailer's entries, the newest revision's.
+    trailer: {str: model.Obj}
+    # The pages, in order.
+    leaves: [Leaf]
+    # Whether the file was encrypted.
+    encrypted: bool
+    # The limits it was read under.
+    bounds: Bounds
+
+# The version the header `%PDF-x.y` names, found in the first 1,024 bytes.
+#
+# Fails `invalid` where there is none.
+function header_version(data: [u8] lent) -> str?
+    head = if data.len() > 1024
+        data.slice(from: 0, to: 1024)
+    else
+        data
+
+    at = match bytes.index_of(s: head, substr: bytes.from_text("%PDF-"))
+        .ok i  => i
+        .err _ => return codes.invalid_at(at: 0, why: "no `%PDF-` header in the first 1,024 bytes")
+
+    i @= at + 5
+    out: [u8] @= []
+
+    while i < data.len() && out.len() < 8 && (data[i] >= '0' && data[i] <= '9' || data[i] == '.')
+        out @ out.push(data[i])
+        i @ i + 1
+
+    if out.len() == 0
+        return codes.invalid_at(at: at, why: "the header names no version")
+    return ok(bytes.to_text_lossy(out))
+
+# Puts `v` as object `number` into `pool`, the caller's own map.
+function put(@pool: {i64: model.Obj}, number: i64, v: model.Obj)
+    pool[number] @ v
+
+# `o` itself, or what it refers to, followed through references at most as
+# many times as the file has objects; the null object for a chain that does
+# not end.
+function resolve(pool: {i64: model.Obj} lent, o: model.Obj) -> model.Obj
+    v @= o
+    hops @= 0
+
+    while hops <= pool.len()
+        match v
+            .reference r =>
+                v @ pool[r.number].default(.null_value)
+                hops @ hops + 1
+            .null_value | .boolean _ | .integer _ | .real _ | .text _ | .name _ | .array _ | .dict _ | .stream _ =>
+                return v
+
+    return .null_value
+
+# The limits the cross-reference is read under, from `bounds`.
+function caps_of(bounds: Bounds) -> xref.Caps
+    return xref.Caps(
+        objects: bounds.objects,
+        stream_bytes: bounds.stream_bytes,
+        depth: bounds.depth,
+        revisions: bounds.revisions
+    )
+
+# The objects of the object stream `stream`, decoded within `limit` bytes,
+# with how many bytes it decoded to.
+record Members
+    # The objects.
+    list: [objects.Read]
+    # The bytes the stream decoded to.
+    decoded: i64
+
+# The members of the object stream `o`.
+function members_of(o: model.Obj, limit: i64, bounds: Bounds) -> Members?
+    match o
+        .stream s =>
+            plain = filters.decode(s.entries, data: s.data, limit: limit)?
+            list = objects.members(s.entries, data: plain, depth: bounds.depth, most: bounds.objects)?
+            return ok(Members(list: list, decoded: plain.len()))
+        .null_value | .boolean _ | .integer _ | .real _ | .text _ | .name _ | .array _ | .dict _ | .reference _ =>
+            return ok(Members(list: [], decoded: 0))
+
+# The least of two numbers.
+function least(a: i64, b: i64) -> i64
+    if a < b
+        return a
+    return b
+
+# The file `data` holds, read whole under `bounds`, opened with `password`.
+#
+# Fails `invalid` where it is no PDF file and nothing in it can be rebuilt
+# into one, or `password` does not open it; `limit` where it passes
+# `bounds`; `unsupported` where its encryption is not RC4's.
+function load(data: [u8], password: str, bounds: Bounds) -> Store?
+    version @= header_version(data)?
+    caps = caps_of(bounds)
+
+    table @= match xref.read(data, caps: caps)
+        .ok t => t
+        .err e =>
+            if e.code == codes.LIMIT
+                return fail(code: e.code, msg: e.msg)
+            xref.scan(data, caps: caps)?
+
+    if table.trailer["Root"].is_err() && !table.rebuilt
+        table @ xref.scan(data, caps: caps)?
+    offsets: {i64: i64} @= {}
+
+    for number in keys(table.entries)
+        e = table.entries[number].must()
+
+        if e.kind == 1
+            offsets[number] @ e.a
+
+    handler @= crypt.none()
+    skip @= 0
+    encrypted @= false
+    trailer_dict: model.Obj = .dict(entries: table.trailer)
+
+    match model.entry(trailer_dict, key: "Encrypt")
+        .null_value => _ = 0
+        .reference r =>
+            encrypted @ true
+            skip @ r.number
+            read = objects.read_at(data, offset: offsets[r.number].default(-1), depth: bounds.depth, offsets: offsets, handler: crypt.none(), skip: 0)?
+            id = crypt.bytes_or_none(model.default_first(model.items_or_none(model.entry(trailer_dict, key: "ID"))))
+            handler @ crypt.open(read.value, id: id, password: password)?
+        .dict d =>
+            encrypted @ true
+            id = crypt.bytes_or_none(model.default_first(model.items_or_none(model.entry(trailer_dict, key: "ID"))))
+            handler @ crypt.open(.dict(entries: d.entries), id: id, password: password)?
+        .boolean _ | .integer _ | .real _ | .text _ | .name _ | .array _ | .stream _ =>
+            return codes.invalid(why: "the trailer's Encrypt is no dictionary")
+
+    found: {i64: model.Obj} @= {}
+    failed: [i64] @= []
+
+    for number in keys(offsets)
+        match objects.read_at(data, offset: offsets[number].must(), depth: bounds.depth, offsets: offsets, handler: handler, skip: skip)
+            .ok r =>
+                if r.number == number
+                    put(@found, number: number, v: r.value)
+                else
+                    failed @ failed.push(number)
+            .err e =>
+                if e.code == codes.LIMIT
+                    return fail(code: e.code, msg: e.msg)
+                failed @ failed.push(number)
+
+    if failed.len() > 0 && !table.rebuilt
+        scanned = xref.scan(data, caps: caps)?
+
+        for number in keys(scanned.entries)
+            if found[number].is_err()
+                e = scanned.entries[number].must()
+
+                match objects.read_at(data, offset: e.a, depth: bounds.depth, offsets: offsets, handler: handler, skip: skip)
+                    .ok r =>
+                        if r.number == number
+                            put(@found, number: number, v: r.value)
+                    .err err =>
+                        if err.code == codes.LIMIT
+                            return fail(code: err.code, msg: err.msg)
+
+        if table.trailer["Root"].is_err()
+            table.trailer @ scanned.trailer
+    decoded @= table.decoded
+    containers: {i64: bool} @= {}
+
+    for number in keys(table.entries)
+        e = table.entries[number].must()
+
+        if e.kind == 2
+            containers[e.a] @ true
+
+    if table.rebuilt || failed.len() > 0
+        for number in keys(found)
+            o = found[number].must()
+
+            if model.name_or_empty(model.entry(o, key: "Type")) == "ObjStm"
+                containers[number] @ true
+
+    for s in keys(containers)
+        room = least(a: bounds.stream_bytes, b: bounds.total_bytes - decoded)
+
+        if room < 0
+            return codes.over(what: "the bytes the file's streams decode to", most: bounds.total_bytes)
+        held = members_of(found[s].default(.null_value), limit: room, bounds: bounds)?
+        decoded @ decoded + held.decoded
+
+        for m in held.list
+            match table.entries[m.number]
+                .ok e =>
+                    if e.kind == 2 && e.a == s
+                        put(@found, number: m.number, v: m.value)
+                .err _ =>
+                    if found[m.number].is_err()
+                        put(@found, number: m.number, v: m.value)
+
+        if found.len() > bounds.objects
+            return codes.over(what: "the objects of the file", most: bounds.objects)
+
+    if decoded > bounds.total_bytes
+        return codes.over(what: "the bytes the file's streams decode to", most: bounds.total_bytes)
+    root @= resolve(found, o: model.entry(.dict(entries: table.trailer), key: "Root"))
+
+    if model.entries_of(root).len() == 0
+        for number in keys(found)
+            o = found[number].must()
+
+            if model.name_or_empty(model.entry(o, key: "Type")) == "Catalog"
+                root @ o
+                table.trailer["Root"] @ .reference(number: number, generation: 0)
+
+    if model.entries_of(root).len() == 0
+        return codes.invalid(why: "the file has no catalogue: its trailer names no Root that is a dictionary")
+    later = model.name_or_empty(model.entry(root, key: "Version"))
+
+    if later.len() == 3 && version.len() == 3 && later[0] == version[0] && later[2] > version[2]
+        version @ later
+    else if later.len() == 3 && version.len() == 3 && later[0] > version[0]
+        version @ later
+    leaves = walk(found, root: root, bounds: bounds)?
+    return ok(
+        Store(version: version, objects: found, trailer: table.trailer, leaves: leaves, encrypted: encrypted, bounds: bounds)
+    )
+
+# A node of the page tree waiting to be read, with what it inherits.
+record Node
+    # The node, or a reference to it.
+    node: model.Obj
+    # What it inherits.
+    inherited: {str: model.Obj}
+    # How deep in the tree it stands.
+    depth: i64
+
+# Adds `n` to `nodes`, the caller's own list.
+function add_node(@nodes: [Node], n: Node)
+    nodes @ nodes.push(n)
+
+# Adds `leaf` to `leaves`, the caller's own list.
+function add_leaf(@leaves: [Leaf], leaf: Leaf)
+    leaves @ leaves.push(leaf)
+
+# The pages of the tree under `root`'s `Pages`, in order, each with what it
+# inherits; a node met twice is read once, so a cycle ends.
+#
+# Fails `limit` where the tree nests deeper than `bounds.depth` or holds
+# more than `bounds.pages` pages.
+function walk(pool: {i64: model.Obj} lent, root: model.Obj, bounds: Bounds) -> [Leaf]?
+    pending: [Node] @= [Node(node: model.entry(root, key: "Pages"), inherited: {}, depth: 0)]
+    visited: {i64: bool} @= {}
+    leaves: [Leaf] @= []
+
+    while pending.len() > 0
+        last = pending.len() - 1
+        item = pending[last]
+        pending @ pending.slice(from: 0, to: last)
+
+        number = match item.node
+            .reference r => r.number
+            .null_value | .boolean _ | .integer _ | .real _ | .text _ | .name _ | .array _ | .dict _ | .stream _ => 0
+
+        if number > 0
+            if visited[number].default(false)
+                continue
+            visited[number] @ true
+        node = resolve(pool, o: item.node)
+        entries = model.entries_of(node)
+
+        if entries.len() == 0
+            continue
+        inherited @= item.inherited
+
+        for key in ["Resources", "MediaBox", "CropBox", "Rotate"]
+            match entries[key]
+                .ok v  => inherited[key] @ v
+                .err _ => _ = 0
+
+        kind = model.name_or_empty(resolve(pool, o: entries["Type"].default(.null_value)))
+        kids = model.items_or_none(resolve(pool, o: entries["Kids"].default(.null_value)))
+
+        if kind == "Pages" || kind != "Page" && kids.len() > 0
+            if item.depth >= bounds.depth
+                return codes.over(what: "the depth of the page tree", most: bounds.depth)
+            k @= kids.len() - 1
+
+            while k >= 0
+                add_node(@pending, n: Node(node: kids[k], inherited: inherited, depth: item.depth + 1))
+                k @ k - 1
+        else
+            whole @= entries
+
+            for key in keys(inherited)
+                whole[key] @ inherited[key].must()
+
+            add_leaf(@leaves, leaf: Leaf(number: number, entries: whole))
+
+            if leaves.len() > bounds.pages
+                return codes.over(what: "the pages of the file", most: bounds.pages)
+
+    return ok(leaves)
+
+# The limits of the tests.
+function test_bounds() -> Bounds
+    return Bounds(objects: 1000, stream_bytes: 100000, total_bytes: 1000000, depth: 16, pages: 100, revisions: 8)
+
+test "header_version: found after junk, none"
+    assert header_version(bytes.from_text("junk%PDF-1.5\n")).must() == "1.5"
+    assert header_version(bytes.from_text("%!PS")).is_err()
+
+test "resolve: a chain, a reference to nothing, a cycle"
+    pool: {i64: model.Obj} = {
+        1: .reference(number: 2, generation: 0)
+        2: .integer(value: 7)
+        3: .reference(number: 3, generation: 0)
+    }
+    assert resolve(pool, o: .reference(number: 1, generation: 0)) == .integer(value: 7)
+    assert resolve(pool, o: .reference(number: 9, generation: 0)) == .null_value
+    assert resolve(pool, o: .reference(number: 3, generation: 0)) == .null_value
+
+test "walk: pages in order, inheritance, a cycle read once, a page past the limit"
+    kids: [model.Obj] = [
+        .reference(number: 3, generation: 0)
+        .reference(number: 4, generation: 0)
+        .reference(number: 2, generation: 0)
+    ]
+    pool: {i64: model.Obj} = {
+        2: .dict(entries: {"Type": .name(value: "Pages"), "Kids": .array(items: kids), "Rotate": .integer(value: 90)})
+        3: .dict(entries: {"Type": .name(value: "Page")})
+        4: .dict(entries: {"Type": .name(value: "Page"), "Rotate": .integer(value: 0)})
+    }
+    root: model.Obj = .dict(entries: {"Pages": .reference(number: 2, generation: 0)})
+    leaves = walk(pool, root: root, bounds: test_bounds()).must()
+    assert leaves.len() == 2 && leaves[0].number == 3 && leaves[1].number == 4
+    assert model.integer_or(leaves[0].entries["Rotate"].default(.null_value), fallback: -1) == 90
+    tight = Bounds(objects: 1000, stream_bytes: 100000, total_bytes: 1000000, depth: 16, pages: 1, revisions: 8)
+    assert walk(pool, root: root, bounds: tight).is_err()

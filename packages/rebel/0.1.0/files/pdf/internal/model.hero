@@ -1,0 +1,108 @@
+# The objects of a PDF file as this package holds them once read (ISO
+# 32000-1:2008 section 7.3): the eight kinds of value, the stream and the
+# reference. The face's `Object` wraps one; the reader builds them.
+
+# A value of a PDF file. A name is held decoded: its bytes as text where
+# they are UTF-8, else every byte past 0x7e or below 0x21 written `#XX`,
+# as the file may write it, so two different names never meet.
+variant Obj
+    # The null object, and what a reference to nothing reads as.
+    null_value
+    # `true` or `false`.
+    boolean
+        # The value.
+        value: bool
+    # A whole number.
+    integer
+        # The value.
+        value: i64
+    # A number with a point.
+    real
+        # The value.
+        value: f64
+    # A string: bytes, which a text string decodes (`text_strings`).
+    text
+        # The bytes, decrypted.
+        value: [u8]
+    # A name, `/Type`, without its slash.
+    name
+        # The name, decoded as the variant's comment says.
+        value: str
+    # An array.
+    array
+        # The items, in order.
+        items: [Obj]
+    # A dictionary.
+    dict
+        # The entries by key, the keys without their slash.
+        entries: {str: Obj}
+    # A stream: its dictionary and its bytes as the file holds them.
+    stream
+        # The dictionary.
+        entries: {str: Obj}
+        # The bytes between `stream` and `endstream`, decrypted, not decoded.
+        data: [u8]
+    # A reference to an object of the file, `12 0 R`.
+    reference
+        # The object's number, 1 or more.
+        number: i64
+        # Its generation, 0 or more.
+        generation: i64
+
+# The entries of `o` where it is a dictionary or a stream, else none.
+function entries_of(o: Obj) -> {str: Obj}
+    empty: {str: Obj} = {}
+
+    return match o
+        .dict d                                                                                       => d.entries
+        .stream s                                                                                     => s.entries
+        .null_value | .boolean _ | .integer _ | .real _ | .text _ | .name _ | .array _ | .reference _ => empty
+
+# The entry `key` of `o`, the null object where `o` holds none or is no
+# dictionary.
+function entry(o: Obj, key: str) -> Obj
+    return entries_of(o)[key].default(.null_value)
+
+# The name `o` holds, "" where it is no name.
+function name_or_empty(o: Obj) -> str
+    return match o
+        .name n => n.value
+        .null_value | .boolean _ | .integer _ | .real _ | .text _ | .array _ | .dict _ | .stream _ | .reference _ => ""
+
+# The number `o` holds as an `f64`, `fallback` where it is no number.
+function number_or(o: Obj, fallback: f64) -> f64
+    return match o
+        .integer n                                                                                   => to_f64(n.value)
+        .real r                                                                                      => r.value
+        .null_value | .boolean _ | .text _ | .name _ | .array _ | .dict _ | .stream _ | .reference _ => fallback
+
+# The whole number `o` holds, `fallback` where it is no integer.
+function integer_or(o: Obj, fallback: i64) -> i64
+    return match o
+        .integer n => n.value
+        .null_value | .boolean _ | .real _ | .text _ | .name _ | .array _ | .dict _ | .stream _ | .reference _ => fallback
+
+# The items of `o` where it is an array, else none.
+function items_or_none(o: Obj) -> [Obj]
+    none: [Obj] = []
+
+    return match o
+        .array a => a.items
+        .null_value | .boolean _ | .integer _ | .real _ | .text _ | .name _ | .dict _ | .stream _ | .reference _ => none
+
+# The first of `items`, the null object where there is none.
+function default_first(items: [Obj]) -> Obj
+    if items.len() == 0
+        return .null_value
+    return items[0]
+
+test "entry, name_or_empty, number_or, integer_or, items_or_none: each kind and the others"
+    d: Obj = .dict(entries: {"Type": .name(value: "Page"), "N": .integer(value: 3), "R": .real(value: 1.5)})
+    assert name_or_empty(entry(d, key: "Type")) == "Page"
+    assert entry(d, key: "Absent") == .null_value
+    assert number_or(entry(d, key: "N"), fallback: 0.0) == 3.0
+    assert number_or(entry(d, key: "R"), fallback: 0.0) == 1.5
+    assert number_or(entry(d, key: "Type"), fallback: -1.0) == -1.0
+    assert integer_or(entry(d, key: "R"), fallback: 9) == 9
+    assert items_or_none(d).len() == 0
+    assert entry(.integer(value: 1), key: "Type") == .null_value

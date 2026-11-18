@@ -1,0 +1,362 @@
+# Where a file's outline and links go (ISO 32000-1:2008 section 12.3):
+# destinations explicit or named, through the catalogue's `Dests` or its
+# name tree, and the actions GoTo and URI; the outline walked depth first and
+# the name tree searched on stacks of this module's own.
+
+use bytes
+use pdf/internal/codes
+use pdf/internal/model
+use pdf/internal/store
+use pdf/internal/text_strings
+
+# Where something goes: 0 a page, 1 an address, 2 elsewhere.
+record Goal
+    # 0 a page of the file, 1 an address, 2 somewhere not followed.
+    kind: i64
+    # The page's index, for a page.
+    index: i64
+    # The height shown at the top, for a page.
+    top: f64
+    # The address, for an address.
+    url: str
+
+# A bookmark read.
+record Mark
+    # Its title.
+    title: str
+    # Its depth, 0 at the top.
+    level: i64
+    # Where it goes.
+    goal: Goal
+
+# A link read.
+record Hit
+    # Its rectangle: left, bottom, right, top.
+    rect: [f64]
+    # Where it goes.
+    goal: Goal
+
+# Somewhere not followed.
+function elsewhere() -> Goal
+    return Goal(kind: 2, index: 0, top: 0.0, url: "")
+
+# The index of each page by the number of its dictionary's object.
+function page_numbers(st: store.Store lent) -> {i64: i64}
+    out: {i64: i64} @= {}
+    i @= 0
+
+    while i < st.leaves.len()
+        number = st.leaves[i].number
+
+        if number > 0
+            out[number] @ i
+        i @ i + 1
+
+    return out
+
+# The four numbers of the rectangle `o`, its corners put in order; none
+# where it is not four numbers.
+function rect_of(st: store.Store lent, o: model.Obj) -> [f64]
+    items = model.items_or_none(store.resolve(st.objects, o: o))
+
+    if items.len() != 4
+        return []
+    n: [f64] @= []
+
+    for item in items
+        n @ n.push(model.number_or(store.resolve(st.objects, o: item), fallback: 0.0))
+
+    left = if n[0] < n[2]
+        n[0]
+    else
+        n[2]
+
+    right = if n[0] < n[2]
+        n[2]
+    else
+        n[0]
+
+    bottom = if n[1] < n[3]
+        n[1]
+    else
+        n[3]
+
+    top = if n[1] < n[3]
+        n[3]
+    else
+        n[1]
+    return [left, bottom, right, top]
+
+# The key of a name tree's entry, as bytes: a string's, or a name's text.
+function key_bytes(o: model.Obj) -> [u8]
+    return match o
+        .text t => t.value
+        .name n => bytes.from_text(n.value)
+        .null_value | .boolean _ | .integer _ | .real _ | .array _ | .dict _ | .stream _ | .reference _ => []
+
+# The destination named `name`: in the catalogue's `Dests`, or in the name
+# tree of its `Names`' `Dests`; the null object where neither holds it.
+function named(st: store.Store lent, name: [u8]) -> model.Obj
+    catalog = store.resolve(st.objects, o: st.trailer["Root"].default(.null_value))
+    old = store.resolve(st.objects, o: model.entry(catalog, key: "Dests"))
+
+    match bytes.to_text(name)
+        .ok text =>
+            found = store.resolve(st.objects, o: model.entry(old, key: text))
+
+            if found != .null_value
+                return found
+        .err _ => _ = 0
+
+    root = store.resolve(
+        st.objects,
+        o: model.entry(store.resolve(st.objects, o: model.entry(catalog, key: "Names")), key: "Dests")
+    )
+    pending: [model.Obj] @= [root]
+    visited: {i64: bool} @= {}
+    steps @= 0
+
+    while pending.len() > 0 && steps <= st.objects.len() + 1
+        steps @ steps + 1
+        last = pending.len() - 1
+        item = pending[last]
+        pending @ pending.slice(from: 0, to: last)
+
+        match item
+            .reference r =>
+                if visited[r.number].default(false)
+                    continue
+                visited[r.number] @ true
+            .null_value | .boolean _ | .integer _ | .real _ | .text _ | .name _ | .array _ | .dict _ | .stream _ => _ = 0
+
+        node = store.resolve(st.objects, o: item)
+        names = model.items_or_none(store.resolve(st.objects, o: model.entry(node, key: "Names")))
+        i @= 0
+
+        while i + 1 < names.len()
+            if key_bytes(store.resolve(st.objects, o: names[i])) == name
+                return store.resolve(st.objects, o: names[i + 1])
+            i @ i + 2
+
+        for kid in model.items_or_none(store.resolve(st.objects, o: model.entry(node, key: "Kids")))
+            pending @ pending.push(kid)
+
+    return .null_value
+
+# Where the destination `dest` goes: an array naming a page, a name or a
+# string naming one, a dictionary holding one under `D`.
+function goal_of(st: store.Store lent, pages: {i64: i64} lent, dest: model.Obj) -> Goal
+    v @= store.resolve(st.objects, o: dest)
+
+    match v
+        .text t                                                                                         => v @ named(
+            st,
+            name: t.value
+        )
+        .name n                                                                                         => v @ named(
+            st,
+            name: bytes.from_text(n.value)
+        )
+        .null_value | .boolean _ | .integer _ | .real _ | .array _ | .dict _ | .stream _ | .reference _ => _ = 0
+
+    match v
+        .dict d                                                                                                   => v @ store.resolve(
+            st.objects,
+            o: d.entries["D"].default(.null_value)
+        )
+        .null_value | .boolean _ | .integer _ | .real _ | .text _ | .name _ | .array _ | .stream _ | .reference _ => _ = 0
+
+    items = model.items_or_none(v)
+
+    if items.len() == 0
+        return elsewhere()
+
+    index = match items[0]
+        .reference r => pages[r.number].default(-1)
+        .null_value | .boolean _ | .integer _ | .real _ | .text _ | .name _ | .array _ | .dict _ | .stream _ => -1
+
+    if index < 0
+        return elsewhere()
+    box = rect_of(st, o: st.leaves[index].entries["MediaBox"].default(.null_value))
+
+    page_top = if box.len() == 4
+        box[3]
+    else
+        792.0
+
+    kind = if items.len() > 1
+        model.name_or_empty(items[1])
+    else
+        ""
+
+    top = if kind == "XYZ" && items.len() > 3
+        model.number_or(store.resolve(st.objects, o: items[3]), fallback: page_top)
+    else if (kind == "FitH" || kind == "FitBH") && items.len() > 2
+        model.number_or(store.resolve(st.objects, o: items[2]), fallback: page_top)
+    else if kind == "FitR" && items.len() > 5
+        model.number_or(store.resolve(st.objects, o: items[5]), fallback: page_top)
+    else
+        page_top
+    return Goal(kind: 0, index: index, top: top, url: "")
+
+# Where the action `action` goes: GoTo's destination, URI's address.
+function action_goal(st: store.Store lent, pages: {i64: i64} lent, action: model.Obj) -> Goal
+    a = store.resolve(st.objects, o: action)
+    kind = model.name_or_empty(store.resolve(st.objects, o: model.entry(a, key: "S")))
+
+    if kind == "GoTo"
+        return goal_of(st, pages: pages, dest: model.entry(a, key: "D"))
+
+    if kind == "URI"
+        address = match store.resolve(st.objects, o: model.entry(a, key: "URI"))
+            .text t => bytes.to_text_lossy(t.value)
+            .null_value | .boolean _ | .integer _ | .real _ | .name _ | .array _ | .dict _ | .stream _ | .reference _ => ""
+
+        return Goal(kind: 1, index: 0, top: 0.0, url: address)
+    return elsewhere()
+
+# Where the dictionary `o`, an outline item or a link, goes: its `Dest`, or
+# its `A`.
+function target_of(st: store.Store lent, pages: {i64: i64} lent, o: model.Obj) -> Goal
+    dest = model.entry(o, key: "Dest")
+
+    if dest != .null_value
+        return goal_of(st, pages: pages, dest: dest)
+    action = model.entry(o, key: "A")
+
+    if action != .null_value
+        return action_goal(st, pages: pages, action: action)
+    return elsewhere()
+
+# An outline item waiting to be read, and its depth.
+record Waiting
+    # The item, or a reference to it.
+    item: model.Obj
+    # Its depth.
+    level: i64
+
+# The outline of `st`, depth first.
+#
+# Fails `invalid` where an item is not a dictionary, `limit` where it nests
+# deeper than the file's limits.
+function outline(st: store.Store lent) -> [Mark]?
+    catalog = store.resolve(st.objects, o: st.trailer["Root"].default(.null_value))
+    root = store.resolve(st.objects, o: model.entry(catalog, key: "Outlines"))
+    pages = page_numbers(st)
+    out: [Mark] @= []
+    pending: [Waiting] @= []
+    first = model.entry(root, key: "First")
+
+    if first != .null_value
+        pending @ pending.push(Waiting(item: first, level: 0))
+    visited: {i64: bool} @= {}
+
+    while pending.len() > 0
+        last = pending.len() - 1
+        w = pending[last]
+        pending @ pending.slice(from: 0, to: last)
+
+        match w.item
+            .reference r =>
+                if visited[r.number].default(false)
+                    continue
+                visited[r.number] @ true
+            .null_value | .boolean _ | .integer _ | .real _ | .text _ | .name _ | .array _ | .dict _ | .stream _ => _ = 0
+
+        node = store.resolve(st.objects, o: w.item)
+
+        if model.entries_of(node).len() == 0
+            return codes.invalid(why: "an outline item is not a dictionary")
+
+        if w.level >= st.bounds.depth
+            return codes.over(what: "the depth of the outline", most: st.bounds.depth)
+
+        title = match store.resolve(st.objects, o: model.entry(node, key: "Title"))
+            .text t => text_strings.decode(t.value)
+            .null_value | .boolean _ | .integer _ | .real _ | .name _ | .array _ | .dict _ | .stream _ | .reference _ => ""
+
+        out @ out.push(Mark(title: title, level: w.level, goal: target_of(st, pages: pages, o: node)))
+        next = model.entry(node, key: "Next")
+
+        if next != .null_value
+            pending @ pending.push(Waiting(item: next, level: w.level))
+        child = model.entry(node, key: "First")
+
+        if child != .null_value
+            pending @ pending.push(Waiting(item: child, level: w.level + 1))
+
+    return ok(out)
+
+# The links of the page whose entries are `page`.
+#
+# Fails `invalid` where an annotation is not a dictionary.
+function links(st: store.Store lent, page: {str: model.Obj}) -> [Hit]?
+    pages = page_numbers(st)
+    out: [Hit] @= []
+
+    for item in model.items_or_none(store.resolve(st.objects, o: page["Annots"].default(.null_value)))
+        a = store.resolve(st.objects, o: item)
+
+        if model.entries_of(a).len() == 0
+            return codes.invalid(why: "an annotation is not a dictionary")
+
+        if model.name_or_empty(store.resolve(st.objects, o: model.entry(a, key: "Subtype"))) != "Link"
+            continue
+        rect = rect_of(st, o: model.entry(a, key: "Rect"))
+
+        if rect.len() != 4
+            continue
+        out @ out.push(Hit(rect: rect, goal: target_of(st, pages: pages, o: a)))
+
+    return ok(out)
+
+# A file of the objects `objects` whose pages are `leaves`, for the tests.
+function test_store(objects: {i64: model.Obj}, leaves: [store.Leaf]) -> store.Store
+    return store.Store(
+        version: "1.7",
+        objects: objects,
+        trailer: {"Root": .reference(number: 1, generation: 0)},
+        leaves: leaves,
+        encrypted: false,
+        bounds: store.test_bounds()
+    )
+
+test "goal_of: an explicit destination, a named one in the name tree, a page none has"
+    names: model.Obj = .dict(
+        entries: {"Names": .array(items: [.text(value: bytes.from_text("ch1")), .array(items: [.reference(number: 5, generation: 0), .name(value: "FitH"), .integer(value: 400)])])}
+    )
+    objects: {i64: model.Obj} = {
+        1: .dict(entries: {"Names": .dict(entries: {"Dests": .reference(number: 9, generation: 0)})})
+        9: names
+    }
+    leaves = [
+        store.Leaf(number: 5, entries: {"MediaBox": .array(items: [.integer(value: 0), .integer(value: 0), .integer(value: 100), .integer(value: 200)])})
+    ]
+    st = test_store(objects, leaves: leaves)
+    pages = page_numbers(st)
+    explicit = goal_of(
+        st,
+        pages: pages,
+        dest: .array(items: [.reference(number: 5, generation: 0), .name(value: "XYZ"), .null_value, .integer(value: 150), .null_value])
+    )
+    assert explicit.kind == 0 && explicit.index == 0 && explicit.top == 150.0
+    fit = goal_of(st, pages: pages, dest: .array(items: [.reference(number: 5, generation: 0), .name(value: "Fit")]))
+    assert fit.top == 200.0
+    by_name = goal_of(st, pages: pages, dest: .text(value: bytes.from_text("ch1")))
+    assert by_name.kind == 0 && by_name.top == 400.0
+    assert goal_of(st, pages: pages, dest: .array(items: [.reference(number: 77, generation: 0)])).kind == 2
+    assert goal_of(st, pages: pages, dest: .text(value: bytes.from_text("none"))).kind == 2
+
+test "outline: depth first, a cycle read once, an item that is no dictionary"
+    objects: {i64: model.Obj} = {
+        1: .dict(entries: {"Outlines": .reference(number: 2, generation: 0)})
+        2: .dict(entries: {"First": .reference(number: 3, generation: 0)})
+        3: .dict(entries: {"Title": .text(value: bytes.from_text("A")), "First": .reference(number: 4, generation: 0), "Next": .reference(number: 5, generation: 0)})
+        4: .dict(entries: {"Title": .text(value: bytes.from_text("A.1")), "Next": .reference(number: 3, generation: 0)})
+        5: .dict(entries: {"Title": .text(value: [0xfe, 0xff, 0x00, 0x42]), "A": .dict(entries: {"S": .name(value: "URI"), "URI": .text(value: bytes.from_text("http://x"))})})
+    }
+    marks = outline(test_store(objects, leaves: [])).must()
+    assert marks.len() == 3 && marks[0].title == "A" && marks[1].title == "A.1" && marks[1].level == 1 && marks[2].title == "B"
+    assert marks[2].goal.kind == 1 && marks[2].goal.url == "http://x"
+    broken: {i64: model.Obj} = {1: .dict(entries: {"Outlines": .dict(entries: {"First": .integer(value: 3)})})}
+    assert outline(test_store(broken, leaves: [])).is_err()

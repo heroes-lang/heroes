@@ -1,0 +1,126 @@
+# Text turned into the codes a standard font shows, and measured: the twelve
+# Latin fonts by WinAnsiEncoding, Symbol and ZapfDingbats by their built-in
+# encodings, every width from `metrics`.
+
+use pdf/internal/codes
+use pdf/internal/encodings
+use pdf/internal/metrics
+use unicode
+
+# How text is spaced beside its font: what `Style` holds, in points and
+# percent.
+record Spacing
+    # Points added after every character.
+    character: f64
+    # Points added after every space.
+    word: f64
+    # The horizontal scale in percent.
+    scale: f64
+
+# The spacing of plain text: none added, a scale of 100.
+function plain() -> Spacing
+    return Spacing(character: 0.0, word: 0.0, scale: 100.0)
+
+# The code of the character `point` in the font numbered `font`, -1 where
+# it has no glyph for it.
+function code_of(font: i64, point: i64) -> i64
+    if font == 12
+        return encodings.symbol_code_of(point)
+
+    if font == 13
+        return encodings.dingbats_code_of(point)
+    code = encodings.win_ansi_code_of(point)
+
+    if code < 0
+        return -1
+
+    if metrics.widths_of(font)[code] == 0
+        return -1
+    return code
+
+# The codes `text` is shown with in the font numbered `font`, a line break
+# left out.
+#
+# Fails `unsupported` where the font has no glyph for a character, the
+# message naming it and its code point.
+function codes_of(font: i64, text: str) -> [i64]?
+    out: [i64] @= []
+
+    for c in text.chars()
+        if c == "\n" || c == "\r"
+            continue
+        point = unicode.code_point(c)
+        code = code_of(font: font, point: point)
+
+        if code < 0
+            hex = codes.format_point(point)
+            return codes.unsupported(
+                why: f"{metrics.base_font_of(font)} has no glyph for \"{c}\" ({hex}); the 14 standard fonts show WinAnsiEncoding's characters, Symbol's and ZapfDingbats'"
+            )
+        out @ out.push(code)
+
+    return ok(out)
+
+# How wide the codes `shown` are in the font numbered `font` at `size`, with
+# `spacing`, in points.
+function width_of_codes(font: i64, shown: [i64], size: f64, spacing: Spacing) -> f64
+    widths = metrics.widths_of(font)
+    total @= 0.0
+
+    for code in shown
+        total @ total + to_f64(widths[code]) * size / 1000.0 + spacing.character
+
+        if code == 32
+            total @ total + spacing.word
+
+    return total * spacing.scale / 100.0
+
+# Whether the font numbered `font` shows every character of `text`.
+function shows_all(font: i64, text: str) -> bool
+    for c in text.chars()
+        if c != "\n" && c != "\r" && code_of(font: font, point: unicode.code_point(c)) < 0
+            return false
+
+    return true
+
+test "code_of: ASCII, the euro, a character none has, Symbol's alpha, a dingbat"
+    assert code_of(font: 0, point: 0x41) == 0x41
+    assert code_of(font: 0, point: 0x20ac) == 0x80
+    assert code_of(font: 0, point: 0x3b1) == -1
+    assert code_of(font: 12, point: 0x3b1) == 0x61
+    assert code_of(font: 13, point: 0x2701) == 0x21
+    assert code_of(font: 13, point: 0x41) == -1
+    assert code_of(font: 0, point: 0x1f) == -1
+
+test "codes_of: a line break left out, the empty text, a character refused"
+    assert codes_of(0, text: "A\nb").must() == [0x41, 0x62]
+    assert codes_of(0, text: "").must() == []
+
+    match codes_of(4, text: "αβ")
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported" && e.msg == "Times-Roman has no glyph for \"α\" (U+03B1); the 14 standard fonts show WinAnsiEncoding's characters, Symbol's and ZapfDingbats'"
+
+test "width_of_codes: Helvetica's Hello at 12, Courier at 10, spacing and scale counted"
+    hello = codes_of(0, text: "Hello").must()
+    w = width_of_codes(0, shown: hello, size: 12.0, spacing: plain())
+    assert w > 27.33599 && w < 27.33601
+    assert width_of_codes(8, shown: codes_of(8, text: "abc").must(), size: 10.0, spacing: plain()) == 18.0
+    spaced = Spacing(character: 1.0, word: 2.0, scale: 50.0)
+    assert width_of_codes(8, shown: codes_of(8, text: "a b").must(), size: 10.0, spacing: spaced) == 11.5
+    assert width_of_codes(0, shown: [], size: 12.0, spacing: plain()) == 0.0
+    assert shows_all(0, text: "Grüße €") && !shows_all(0, text: "Ω") && shows_all(12, text: "Ω")
+
+# The number of the standard font PDF names `base`, 0 to 13 in the order of
+# the face's `Font`; -1 for a name that is none of them.
+function font_index_of(base: str) -> i64
+    i @= 0
+
+    while i < 14
+        if metrics.base_font_of(i) == base
+            return i
+        i @ i + 1
+
+    return -1
+
+test "font_index_of: the first, the last, a name none has"
+    assert font_index_of("Helvetica") == 0 && font_index_of("ZapfDingbats") == 13 && font_index_of("Arial") == -1

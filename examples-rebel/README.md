@@ -144,11 +144,11 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 5 | `kafka` | a Kafka client: produce, fetch, offsets and consumer groups over the wire protocol | `net`, `tls`, `bytes`, `compress`, `hash`, `time` |  |
 | 5 | `mongodb` | a MongoDB client over its wire protocol: SCRAM, CRUD, cursors, aggregation, transactions | `bson`, `net`, `tls`, `dns`, `crypto`, `io`, `strings`, `time` |  |
 | 5 | `log/files` | logs written to files that rotate by size or by day, the old ones kept, counted and compressed | `compress`, `fs`, `io`, `log`, `path`, `strings`, `time` |  |
+| 5 | `pdf` | PDF documents written (text, standard fonts, images, simple tables) and their text read | `bytes`, `compress`, `crypto`, `image`, `image/png`, `math`, `time`, `unicode` |  |
 | 6 | `http` | HTTP/1.1, client and server, over `net` | `bytes`, `compress`, `http2`, `io`, `json`, `net`, `numbers`, `os`, `strings`, `threads`, `time`, `tls`, `url` |  |
 | 6 | `sql/migrate` | numbered migrations applied in transactions, the versions applied kept in a table, the step back | `bytes`, `crypto`, `fs`, `numbers`, `path`, `sql`, `sql/build`, `strings`, `time` |  |
 | 6 | `grpc` | gRPC calls of the four kinds, client and server, over `http2` and `protobuf` | `bytes`, `compress`, `http2`, `io`, `net`, `numbers`, `protobuf`, `threads`, `time`, `tls` |  |
 | 6 | `xlsx` | spreadsheets of Office Open XML read and written: sheets, cells, types, styles | `archive`, `xml`, `time`, `numbers` |  |
-| 6 | `pdf` | PDF documents written (text, standard fonts, images, simple tables) and their text read | `compress`, `bytes`, `image`, `time` |  |
 | 6 | `jobs` | background jobs kept in PostgreSQL or Redis, claimed by workers, retried, scheduled | `sql/postgres`, `json`, `time` |  |
 | 7 | `web` | a router in the manner of Echo: routes with methods and parameters, groups, middleware as functions over a request and a response, the right 404 and 405, responses for JSON, text, redirects and static files; the program calls its own handler with its own state | `bytes`, `compress`, `crypto`, `crypto/seal`, `fs`, `http`, `io`, `json`, `log`, `net`, `numbers`, `os`, `path`, `strings`, `template`, `time`, `tls`, `url`, `uuid` |  |
 | 7 | `websocket` | WebSocket (RFC 6455) client and server, compressed or not, many connections on one thread | `bytes`, `compress`, `crypto`, `http`, `io`, `json`, `net`, `os`, `poll`, `strings`, `threads`, `time`, `tls`, `unicode`, `url` |  |

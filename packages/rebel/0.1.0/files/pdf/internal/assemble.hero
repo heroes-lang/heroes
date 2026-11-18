@@ -1,0 +1,436 @@
+# A document written out as a PDF 1.7 file (ISO 32000-1:2008 section 7.5):
+# the header, the objects in order (catalogue, page tree, resources, fonts,
+# images, pages with their content and links, outline, information), the
+# cross-reference table and the trailer.
+
+use bytes
+use compress
+use pdf/internal/codes
+use pdf/internal/compose
+use pdf/internal/metrics
+use pdf/internal/syntax
+use pdf/internal/text_strings
+
+# The numbers given to the document's objects.
+record Numbers
+    # The fonts used, by font number, and their objects.
+    fonts: {i64: i64}
+    # Each image's object.
+    images: [i64]
+    # Each page's dictionary.
+    pages: [i64]
+    # Each page's content stream.
+    contents: [i64]
+    # The outline's root, 0 for none.
+    outline: i64
+    # Each bookmark's object.
+    marks: [i64]
+    # The information dictionary, 0 for none.
+    info: i64
+    # One past the last number: the cross-reference table's size.
+    size: i64
+
+# `n` written in ten digits, zeros before it.
+function pad10(n: i64) -> str
+    text = to_str(n)
+    return repeat("0", to_u64(10 - text.len()).default(0)) + text
+
+# The numbers of `d`'s objects: 1 the catalogue, 2 the page tree, 3 the
+# resources, then the fonts, the images, each page and its content, the
+# outline and the information.
+function number(d: compose.Doc lent) -> Numbers
+    next @= 4
+    fonts: {i64: i64} @= {}
+    f @= 0
+
+    while f < 14
+        if d.fonts[f].default(false)
+            fonts[f] @ next
+            next @ next + 1
+        f @ f + 1
+
+    images: [i64] @= []
+
+    for _ in d.images
+        images @ images.push(next)
+        next @ next + 1
+
+    pages: [i64] @= []
+    contents: [i64] @= []
+
+    for _ in d.pages
+        pages @ pages.push(next)
+        contents @ contents.push(next + 1)
+        next @ next + 2
+
+    outline @= 0
+    marks: [i64] @= []
+
+    if d.marks.len() > 0
+        outline @ next
+        next @ next + 1
+
+        for _ in d.marks
+            marks @ marks.push(next)
+            next @ next + 1
+
+    info @= 0
+
+    if d.info.len() > 0
+        info @ next
+        next @ next + 1
+    return Numbers(
+        fonts: fonts,
+        images: images,
+        pages: pages,
+        contents: contents,
+        outline: outline,
+        marks: marks,
+        info: info,
+        size: next
+    )
+
+# A text string as a PDF string: a literal where its bytes are printable
+# ASCII, else hexadecimal.
+function text_string(s: str) -> str
+    data = text_strings.encode(s)
+
+    for b in data
+        if b < 0x20 || b > 0x7e
+            return syntax.hex(data)
+
+    return syntax.literal(data)
+
+# The file under construction: its bytes and where each object begins.
+record Out
+    # The bytes so far.
+    data: [u8]
+    # The offset of each object, by number; 0 for number 0.
+    offsets: [i64]
+
+# Adds the object `n` holding `body` to `out`.
+function put_object(@out: Out, n: i64, body: str)
+    put_offset(@out.offsets, n: n, at: out.data.len())
+    bytes.push_text(@out.data, s: f"{n} 0 obj\n{body}\nendobj\n")
+
+# Notes that object `n` begins at `at`.
+function put_offset(@offsets: [i64], n: i64, at: i64)
+    offsets[n] @ at
+
+# Adds the stream object `n` with the entries `entries` and the bytes `data`.
+function put_stream(@out: Out, n: i64, entries: str, data: [u8])
+    put_offset(@out.offsets, n: n, at: out.data.len())
+    bytes.push_text(@out.data, s: f"{n} 0 obj\n<< {entries} /Length {data.len()} >>\nstream\n")
+    bytes.push_all(to: @out.data, from: data)
+    bytes.push_text(@out.data, s: "\nendstream\nendobj\n")
+
+# The destination of a page link or a bookmark: the page's object, shown
+# from `top`.
+function destination(page: i64, top: f64) -> str
+    return f"[{page} 0 R /XYZ 0 {syntax.real(top)} 0]"
+
+# A rectangle's four numbers, its corners put in order.
+function rect_of(r: [f64]) -> str
+    left = if r[0] < r[2]
+        r[0]
+    else
+        r[2]
+
+    right = if r[0] < r[2]
+        r[2]
+    else
+        r[0]
+
+    bottom = if r[1] < r[3]
+        r[1]
+    else
+        r[3]
+
+    top = if r[1] < r[3]
+        r[3]
+    else
+        r[1]
+    return syntax.reals([left, bottom, right, top])
+
+# The annotations of a page: one link dictionary each.
+function annotations(links: [compose.Link], numbers: Numbers lent) -> str?
+    parts: [str] @= []
+
+    for link in links
+        action = if link.url != ""
+            "/A << /S /URI /URI " + syntax.literal(bytes.from_text(link.url)) + " >>"
+        else if link.page >= 0 && link.page < numbers.pages.len()
+            "/Dest " + destination(page: numbers.pages[link.page], top: link.top)
+        else
+            return codes.invalid(why: f"a link goes to page {link.page}, and the document has {numbers.pages.len()}")
+        parts @ parts.push(
+            "<< /Type /Annot /Subtype /Link /Rect " + rect_of(link.rect) + " /Border [0 0 0] " + action + " >>"
+        )
+
+    return ok(parts.join(" "))
+
+# The resources every page shares: the fonts used, the images, the
+# opacities.
+function resources(d: compose.Doc lent, numbers: Numbers lent) -> str
+    parts: [str] @= ["/ProcSet [/PDF /Text /ImageB /ImageC /ImageI]"]
+
+    if numbers.fonts.len() > 0
+        fonts: [str] @= []
+
+        for f in keys(numbers.fonts)
+            fonts @ fonts.push(f"/F{f} {numbers.fonts[f].must()} 0 R")
+
+        parts @ parts.push("/Font << " + fonts.join(" ") + " >>")
+
+    if numbers.images.len() > 0
+        images: [str] @= []
+        i @= 0
+
+        while i < numbers.images.len()
+            images @ images.push(f"/Im{i} {numbers.images[i]} 0 R")
+            i @ i + 1
+
+        parts @ parts.push("/XObject << " + images.join(" ") + " >>")
+
+    if d.states.len() > 0
+        states: [str] @= []
+        i @= 0
+
+        while i < d.states.len()
+            pair = d.states[i]
+            states @ states.push(f"/GS{i} << /Type /ExtGState /ca {first_of(pair)} /CA {second_of(pair)} >>")
+            i @ i + 1
+
+        parts @ parts.push("/ExtGState << " + states.join(" ") + " >>")
+    return "<< " + parts.join(" ") + " >>"
+
+# The text of `pair` before its space.
+function first_of(pair: str) -> str
+    i @= 0
+
+    while i < pair.len() && pair[i] != ' '
+        i @ i + 1
+
+    return pair.slice(from: 0, to: i)
+
+# The text of `pair` after its space.
+function second_of(pair: str) -> str
+    i @= 0
+
+    while i < pair.len() && pair[i] != ' '
+        i @ i + 1
+
+    if i >= pair.len()
+        return ""
+    return pair.slice(from: i + 1, to: pair.len())
+
+# The outline's objects: the root and one per bookmark, linked as a tree by
+# their levels, every item open.
+function put_outline(@out: Out, marks: [compose.Mark] lent, numbers: Numbers lent)
+    count = marks.len()
+    parent: [i64] @= []
+    stack: [i64] @= []
+
+    for m in marks
+        while stack.len() > m.level
+            stack @ stack.slice(from: 0, to: stack.len() - 1)
+
+        p = if stack.len() == 0
+            -1
+        else
+            stack[stack.len() - 1]
+        parent @ parent.push(p)
+        stack @ stack.push(parent.len() - 1)
+
+    tops: [i64] @= []
+    i @= 0
+
+    while i < count
+        if parent[i] == -1
+            tops @ tops.push(numbers.marks[i])
+        i @ i + 1
+
+    put_object(
+        @out,
+        n: numbers.outline,
+        body: f"<< /Type /Outlines /First {tops[0]} 0 R /Last {tops[tops.len() - 1]} 0 R /Count {count} >>"
+    )
+    i @ 0
+
+    while i < count
+        m = marks[i]
+        entries: [str] @= ["/Title " + text_string(m.title)]
+
+        up = if parent[i] == -1
+            numbers.outline
+        else
+            numbers.marks[parent[i]]
+        entries @ entries.push(f"/Parent {up} 0 R")
+        prev @= -1
+        next @= -1
+        children: [i64] @= []
+        descendants @= 0
+        j @= 0
+
+        while j < count
+            if parent[j] == parent[i] && j < i
+                prev @ j
+
+            if parent[j] == parent[i] && j > i && next == -1
+                next @ j
+
+            if parent[j] == i
+                children @ children.push(j)
+            j @ j + 1
+
+        j @ i + 1
+
+        while j < count && marks[j].level > m.level
+            descendants @ descendants + 1
+            j @ j + 1
+
+        if prev >= 0
+            entries @ entries.push(f"/Prev {numbers.marks[prev]} 0 R")
+
+        if next >= 0
+            entries @ entries.push(f"/Next {numbers.marks[next]} 0 R")
+
+        if children.len() > 0
+            entries @ entries.push(
+                f"/First {numbers.marks[children[0]]} 0 R /Last {numbers.marks[children[children.len() - 1]]} 0 R /Count {descendants}"
+            )
+        entries @ entries.push("/Dest " + destination(page: numbers.pages[m.page], top: m.top))
+        put_object(@out, n: numbers.marks[i], body: "<< " + entries.join(" ") + " >>")
+        i @ i + 1
+
+# The bytes of `d` as a PDF file.
+#
+# Fails `invalid` where it has no page or a link goes to a page it does not
+# have.
+function write(d: compose.Doc lent) -> [u8]?
+    if d.pages.len() == 0
+        return codes.invalid(why: "a document of no page: add one with `add_page` before `to_bytes`")
+    numbers = number(d)
+    offsets: [i64] @= []
+    i @= 0
+
+    while i < numbers.size
+        offsets @ offsets.push(0)
+        i @ i + 1
+
+    out @= Out(data: [], offsets: offsets)
+    bytes.push_text(@out.data, s: "%PDF-1.7\n%")
+    bytes.push_all(to: @out.data, from: [0xe2, 0xe3, 0xcf, 0xd3, 0x0a])
+    kids: [str] @= []
+
+    for p in numbers.pages
+        kids @ kids.push(f"{p} 0 R")
+
+    catalog @= "<< /Type /Catalog /Pages 2 0 R"
+
+    if numbers.outline > 0
+        catalog @ catalog + f" /Outlines {numbers.outline} 0 R /PageMode /UseOutlines"
+    put_object(@out, n: 1, body: catalog + " >>")
+    put_object(@out, n: 2, body: f"<< /Type /Pages /Kids [{kids.join(" ")}] /Count {d.pages.len()} >>")
+    put_object(@out, n: 3, body: resources(d, numbers: numbers))
+
+    for f in keys(numbers.fonts)
+        encoding = if f < 12
+            " /Encoding /WinAnsiEncoding"
+        else
+            ""
+        put_object(
+            @out,
+            n: numbers.fonts[f].must(),
+            body: f"<< /Type /Font /Subtype /Type1 /BaseFont /{metrics.base_font_of(f)}{encoding} >>"
+        )
+
+    i @ 0
+
+    while i < d.images.len()
+        picture = d.images[i]
+
+        mask = if picture.mask >= 0
+            f" /SMask {numbers.images[picture.mask]} 0 R"
+        else
+            ""
+        put_stream(@out, n: numbers.images[i], entries: picture.entries + mask, data: picture.data)
+        i @ i + 1
+
+    i @ 0
+
+    while i < d.pages.len()
+        sheet = d.pages[i]
+        page @= f"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {syntax.real(sheet.width)} {syntax.real(sheet.height)}] /Resources 3 0 R /Contents {numbers.contents[i]} 0 R"
+
+        if sheet.links.len() > 0
+            page @ page + " /Annots [" + annotations(sheet.links, numbers: numbers)? + "]"
+        put_object(@out, n: numbers.pages[i], body: page + " >>")
+        text = sheet.ops.join("\n") + repeat("\nQ", to_u64(sheet.depth).default(0))
+        plain = bytes.from_text(text)
+
+        if d.compress
+            packed = compress.compress(plain, options: compress.defaults(.zlib))?
+            put_stream(@out, n: numbers.contents[i], entries: "/Filter /FlateDecode", data: packed)
+        else
+            put_stream(@out, n: numbers.contents[i], entries: "", data: plain)
+        i @ i + 1
+
+    if numbers.outline > 0
+        put_outline(@out, marks: d.marks, numbers: numbers)
+
+    if numbers.info > 0
+        entries: [str] @= []
+
+        for key in keys(d.info)
+            entries @ entries.push(syntax.name(key) + " " + text_string(d.info[key].must()))
+
+        put_object(@out, n: numbers.info, body: "<< " + entries.join(" ") + " >>")
+    start = out.data.len()
+    bytes.push_text(@out.data, s: f"xref\n0 {numbers.size}\n0000000000 65535 f \n")
+    i @ 1
+
+    while i < numbers.size
+        bytes.push_text(@out.data, s: pad10(out.offsets[i]) + " 00000 n \n")
+        i @ i + 1
+
+    info = if numbers.info > 0
+        f" /Info {numbers.info} 0 R"
+    else
+        ""
+    bytes.push_text(@out.data, s: f"trailer\n<< /Size {numbers.size} /Root 1 0 R{info} >>\nstartxref\n{start}\n%%EOF\n")
+    return ok(out.data)
+
+test "pad10: zero, a number, the widest"
+    assert pad10(0) == "0000000000" && pad10(1234) == "0000001234" && pad10(9999999999) == "9999999999"
+
+test "text_string: ASCII as a literal, the rest as UTF-16BE in hexadecimal"
+    assert text_string("A (b)") == "(A \\(b\\))"
+    assert text_string("é") == "<E9>"
+    assert text_string("Ω") == "<FEFF03A9>"
+
+test "write: no page fails, one empty page is a whole file with its cross-reference table"
+    d @= compose.start()
+    assert write(d).is_err()
+    d.compress @ false
+    compose.add_page(@d, width: 200.0, height: 100.0)
+    data = write(d).must()
+    text = bytes.to_text_lossy(data)
+    assert bytes.has_prefix(s: data, prefix: bytes.from_text("%PDF-1.7\n%"))
+    assert bytes.has_suffix(s: data, suffix: bytes.from_text("%%EOF\n"))
+    assert bytes.contains(s: data, substr: bytes.from_text("/MediaBox [0 0 200 100]"))
+    assert bytes.contains(s: data, substr: bytes.from_text("xref\n0 6\n0000000000 65535 f \n0000000015 00000 n \n"))
+    assert text.len() > 0
+
+test "write: a link to a page the document lacks fails"
+    d @= compose.start()
+    compose.add_page(@d, width: 200.0, height: 100.0)
+    compose.add_link(@d, link: compose.Link(rect: [0.0, 0.0, 1.0, 1.0], url: "", page: 3, top: 0.0))
+
+    match write(d)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "a link goes to page 3, and the document has 1"
+
+test "rect_of and first_of, second_of: corners in order, the halves of a pair"
+    assert rect_of([10.0, 20.0, 0.0, 5.0]) == "[0 5 10 20]"
+    assert first_of("0.5 1") == "0.5" && second_of("0.5 1") == "1" && second_of("x") == ""

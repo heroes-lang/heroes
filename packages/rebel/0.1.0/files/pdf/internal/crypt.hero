@@ -1,0 +1,307 @@
+# PDF's standard security handler (ISO 32000-1:2008 section 7.6.3), the
+# revisions whose cipher is RC4: 2, 3, and 4 with the crypt filter V2. The
+# file's key is computed from a password, user's or owner's, checked
+# against the file, and each object's key made from it. AES (revision 4's
+# AESV2, and revisions 5 and 6) is refused: `crypto` offers no AES in CBC
+# mode, which those revisions need.
+
+use crypto
+use pdf/internal/codes
+use pdf/internal/model
+use pdf/internal/rc4
+
+# The 32 bytes a password is padded with (Algorithm 2, step a).
+constant PAD: [u8]
+    [
+        0x28
+        0xbf
+        0x4e
+        0x5e
+        0x4e
+        0x75
+        0x8a
+        0x41
+        0x64
+        0x00
+        0x4e
+        0x56
+        0xff
+        0xfa
+        0x01
+        0x08
+        0x2e
+        0x2e
+        0x00
+        0xb6
+        0xd0
+        0x68
+        0x3e
+        0x80
+        0x2f
+        0x0c
+        0xa9
+        0xfe
+        0x64
+        0x53
+        0x69
+        0x7a
+    ]
+
+# What decrypts a file: its key, and whether its strings and streams are
+# encrypted at all.
+record Handler
+    # The file's key, empty where nothing is encrypted.
+    key: [u8]
+    # Whether the metadata stream is encrypted too.
+    metadata: bool
+
+# A handler that decrypts nothing.
+function none() -> Handler
+    return Handler(key: [], metadata: false)
+
+# `password`'s bytes padded or cut to 32.
+function padded(password: [u8]) -> [u8]
+    out: [u8] @= []
+
+    for b in password
+        if out.len() < 32
+            out @ out.push(b)
+
+    for b in PAD
+        if out.len() < 32
+            out @ out.push(b)
+
+    return out
+
+# `data`'s bytes, then `more`'s.
+function joined(data: [u8], more: [u8]) -> [u8]
+    out @= data
+
+    for b in more
+        out @ out.push(b)
+
+    return out
+
+# The first `n` bytes of `data`, or all where it holds fewer.
+function first(data: [u8], n: i64) -> [u8]
+    if data.len() <= n
+        return data
+    return data.slice(from: 0, to: n)
+
+# `key` with every byte xored with `i`.
+function xored(key: [u8], i: i64) -> [u8]
+    out: [u8] @= []
+
+    for b in key
+        out @ out.push(to_u8(to_i64(b).must() ^ i).must())
+
+    return out
+
+# What the file's encryption dictionary says.
+record Params
+    # The revision, 2 to 4.
+    revision: i64
+    # The key's length in bytes, 5 to 16.
+    length: i64
+    # The owner's entry, 32 bytes.
+    owner: [u8]
+    # The user's entry, 32 bytes.
+    user: [u8]
+    # The permissions, as a signed 32-bit number.
+    permissions: i64
+    # The first part of the file's identifier.
+    id: [u8]
+    # Whether the metadata is encrypted.
+    metadata: bool
+
+# The file's key from the padded password `pad` (Algorithm 2).
+function file_key(pad: [u8], p: Params) -> [u8]
+    p32 = p.permissions & 0xffffffff
+    input @= joined(data: pad, more: p.owner)
+    input @ joined(
+        data: input,
+        more: [to_u8(p32 & 0xff).must(), to_u8(p32 >> 8 & 0xff).must(), to_u8(p32 >> 16 & 0xff).must(), to_u8(p32 >> 24 & 0xff).must()]
+    )
+    input @ joined(data: input, more: p.id)
+
+    if p.revision >= 4 && !p.metadata
+        input @ joined(data: input, more: [0xff, 0xff, 0xff, 0xff])
+    key @= crypto.md5(input)
+
+    if p.revision >= 3
+        i @= 0
+
+        while i < 50
+            key @ crypto.md5(first(key, n: p.length))
+            i @ i + 1
+
+    return first(key, n: p.length)
+
+# Whether `key` is the file's key: its user entry is what it encrypts
+# (Algorithms 4 and 5).
+function opens(key: [u8], p: Params) -> bool
+    if p.revision == 2
+        return rc4.apply(key: key, data: PAD) == first(p.user, n: 32)
+    x @= rc4.apply(key: key, data: crypto.md5(joined(data: PAD, more: p.id)))
+    i @= 1
+
+    while i < 20
+        x @ rc4.apply(key: xored(key, i: i), data: x)
+        i @ i + 1
+
+    return x == first(p.user, n: 16)
+
+# The padded user password the owner's `password` hides in the file
+# (Algorithm 7).
+function user_of_owner(password: [u8], p: Params) -> [u8]
+    k @= crypto.md5(padded(password))
+
+    if p.revision >= 3
+        i @= 0
+
+        while i < 50
+            k @ crypto.md5(k)
+            i @ i + 1
+
+    k @ first(k, n: p.length)
+
+    if p.revision == 2
+        return rc4.apply(key: k, data: p.owner)
+    x @= p.owner
+    i @= 19
+
+    while i >= 0
+        x @ rc4.apply(key: xored(k, i: i), data: x)
+        i @ i - 1
+
+    return x
+
+# The bytes of the string `o`, none where it is no string.
+function bytes_or_none(o: model.Obj) -> [u8]
+    return match o
+        .text t => t.value
+        .null_value | .boolean _ | .integer _ | .real _ | .name _ | .array _ | .dict _ | .stream _ | .reference _ => []
+
+# The handler of a file whose encryption dictionary is `dict` and whose
+# identifier is `id`, opened with `password`.
+#
+# Fails `unsupported` where its handler is not the standard one or its
+# cipher is AES, `invalid` where `password` opens it neither as user nor as
+# owner.
+function open(dict: model.Obj, id: [u8], password: str) -> Handler?
+    handler_name = model.name_or_empty(model.entry(dict, key: "Filter"))
+
+    if handler_name != "Standard"
+        return codes.unsupported(
+            why: f"the file is encrypted by the security handler \"{handler_name}\"; only the standard one is read"
+        )
+    v = model.integer_or(model.entry(dict, key: "V"), fallback: 0)
+    revision = model.integer_or(model.entry(dict, key: "R"), fallback: 0)
+
+    if v == 4
+        filters = model.entry(dict, key: "CF")
+        method = model.name_or_empty(model.entry(model.entry(filters, key: "StdCF"), key: "CFM"))
+
+        if method == "AESV2" || method == "AESV3"
+            return codes.unsupported(
+                why: f"the file is encrypted with AES ({method}), which this package does not decrypt: `crypto` offers no AES in CBC mode"
+            )
+
+    if v >= 5 || revision >= 5
+        return codes.unsupported(
+            why: f"the file is encrypted with AES-256 (revision {revision}), which this package does not decrypt: `crypto` offers no AES in CBC mode"
+        )
+
+    if revision < 2 || revision > 4 || v != 1 && v != 2 && v != 4
+        return codes.unsupported(
+            why: f"the file is encrypted by revision {revision}, version {v}, of the standard handler, which PDF 1.7 does not name"
+        )
+
+    bits = if v == 1
+        40
+    else
+        model.integer_or(model.entry(dict, key: "Length"), fallback: 40)
+
+    if bits < 40 || bits > 128 || bits % 8 != 0
+        return codes.invalid(why: f"the encryption dictionary gives a key of {bits} bits")
+
+    encrypt_metadata = match model.entry(dict, key: "EncryptMetadata")
+        .boolean b => b.value
+        .null_value | .integer _ | .real _ | .text _ | .name _ | .array _ | .dict _ | .stream _ | .reference _ => true
+
+    length = if revision == 2
+        5
+    else
+        bits / 8
+    p = Params(
+        revision: revision,
+        length: length,
+        owner: bytes_or_none(model.entry(dict, key: "O")),
+        user: bytes_or_none(model.entry(dict, key: "U")),
+        permissions: model.integer_or(model.entry(dict, key: "P"), fallback: 0),
+        id: id,
+        metadata: encrypt_metadata
+    )
+
+    if p.owner.len() < 32 || p.user.len() < 32
+        return codes.invalid(why: "the encryption dictionary's O or U is shorter than 32 bytes")
+    secret = bytes_of_text(password)
+    as_user = file_key(padded(secret), p: p)
+
+    if opens(as_user, p: p)
+        return ok(Handler(key: as_user, metadata: encrypt_metadata))
+    as_owner = file_key(first(user_of_owner(secret, p: p), n: 32), p: p)
+
+    if opens(as_owner, p: p)
+        return ok(Handler(key: as_owner, metadata: encrypt_metadata))
+    return codes.invalid(why: "the password opens this file neither as its user nor as its owner")
+
+# The bytes of `s`.
+function bytes_of_text(s: str) -> [u8]
+    out: [u8] @= []
+    i @= 0
+
+    while i < s.len()
+        out @ out.push(s[i])
+        i @ i + 1
+
+    return out
+
+# The key of the object numbered `number`, of generation `generation`
+# (Algorithm 1); none where `h` decrypts nothing.
+function object_key(h: Handler, number: i64, generation: i64) -> [u8]
+    if h.key.len() == 0
+        return []
+    input = joined(
+        data: h.key,
+        more: [to_u8(number & 0xff).must(), to_u8(number >> 8 & 0xff).must(), to_u8(number >> 16 & 0xff).must(), to_u8(generation & 0xff).must(), to_u8(generation >> 8 & 0xff).must()]
+    )
+    return first(crypto.md5(input), n: h.key.len() + 5)
+
+test "padded: the empty password is PAD, a long one is cut"
+    assert padded([]) == PAD
+    assert padded([0x61]).len() == 32 && padded([0x61])[0] == 0x61 && padded([0x61])[1] == 0x28
+    long: [u8] @= []
+
+    while long.len() < 40
+        long @ long.push(0x78)
+
+    assert padded(long).len() == 32 && padded(long)[31] == 0x78
+
+test "object_key: none without a key, five bytes more than the key, at most 16"
+    assert object_key(none(), number: 1, generation: 0) == []
+    h = Handler(key: [1, 2, 3, 4, 5], metadata: true)
+    assert object_key(h, number: 7, generation: 0).len() == 10
+    wide = Handler(key: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16], metadata: true)
+    assert object_key(wide, number: 7, generation: 0).len() == 16
+
+test "open: a handler this package does not read, AES, a revision past 4"
+    other: model.Obj = .dict(entries: {"Filter": .name(value: "Adobe.PubSec")})
+    assert open(other, id: [], password: "").is_err()
+    aes: model.Obj = .dict(
+        entries: {"Filter": .name(value: "Standard"), "V": .integer(value: 5), "R": .integer(value: 6)}
+    )
+
+    match open(aes, id: [], password: "")
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported"

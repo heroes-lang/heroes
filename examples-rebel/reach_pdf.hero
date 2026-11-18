@@ -1,0 +1,22 @@
+# Reaches Rebel's `pdf`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It writes a page with a line of text and
+# reads the text back.
+
+use <rebel>/pdf
+
+function main()
+    doc @= pdf.document()
+    pdf.add_page(@doc, size: pdf.size_of(.a4))
+
+    match pdf.draw_text(@doc, x: 72.0, y: 770.0, text: "Hello, PDF", align: .left)
+        .ok _  => _ = 0
+        .err e => print(e.code, ": ", e.msg)
+
+    match pdf.to_bytes(doc)
+        .err e => print(e.code, ": ", e.msg)
+        .ok data =>
+            match pdf.parse(data, password: "", limits: pdf.default_limits())
+                .err e => print(e.code, ": ", e.msg)
+                .ok f =>
+                    pages = pdf.pages_of(f)
+                    print(pages.len(), " page: ", pdf.text_of(f, page: pages[0]).default("?"))

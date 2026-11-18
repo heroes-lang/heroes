@@ -1,0 +1,574 @@
+# The state of a document being written: its pages and what is drawn on
+# each as content-stream operators, the pen, the images, links and
+# bookmarks; and the functions that change it. `assemble` turns it into a
+# file. A function that draws aborts where no page has been added: the face
+# says so beside each.
+
+use pdf/internal/measure
+use pdf/internal/metrics
+use pdf/internal/syntax
+use pdf/internal/wrap
+
+# A colour as the content stream writes it: 0 gray, 1 RGB, 2 CMYK, and its
+# components from 0 to 1.
+record Ink
+    # 0 gray, 1 RGB, 2 CMYK.
+    space: i64
+    # One, three or four components.
+    parts: [f64]
+
+# The text state beside the font: spacing, scale, rise and the mode.
+record Style
+    # Points added after every character.
+    character_spacing: f64
+    # Points added after every space.
+    word_spacing: f64
+    # The horizontal scale in percent, 100 for none.
+    horizontal_scale: f64
+    # Points the baseline is raised.
+    rise: f64
+    # The rendering mode, 0 to 7 as PDF's `Tr` takes it.
+    mode: i64
+
+# What the next drawing is made with.
+record Pen
+    # The font, 0 to 13 in the order of the face's `Font`.
+    font: i64
+    # The font's size in points.
+    size: f64
+    # The colour of fills and of text.
+    fill: Ink
+    # The colour of strokes.
+    stroke: Ink
+    # The width of a stroke, in points.
+    line_width: f64
+    # 0 butt, 1 round, 2 square.
+    cap: i64
+    # 0 miter, 1 round, 2 bevel.
+    join: i64
+    # The miter limit.
+    miter: f64
+    # The dash's lengths, none for a solid line.
+    dash: [f64]
+    # Where in the dash a line begins.
+    phase: f64
+    # The opacity of fills, 0 to 1.
+    fill_opacity: f64
+    # The opacity of strokes, 0 to 1.
+    stroke_opacity: f64
+    # The text state.
+    style: Style
+
+# A link on a page: its rectangle and where it goes.
+record Link
+    # Left, bottom, right, top, in points.
+    rect: [f64]
+    # The address it opens, "" where it goes to a page.
+    url: str
+    # The page it goes to, by index, where `url` is "".
+    page: i64
+    # The height on that page it shows at the top.
+    top: f64
+
+# One page being written.
+record Sheet
+    # The width in points.
+    width: f64
+    # The height in points.
+    height: f64
+    # The content stream, one operator or more a piece.
+    ops: [str]
+    # The links on it.
+    links: [Link]
+    # How many states saved on it are not restored.
+    depth: i64
+
+# An image ready to be written: its dictionary's entries but `/Length`, and
+# its bytes.
+record Picture
+    # The entries, written as PDF writes a dictionary's inside.
+    entries: str
+    # The stream's bytes.
+    data: [u8]
+    # The index of the image that is its soft mask, -1 for none.
+    mask: i64
+
+# A bookmark: its title, its depth and where it goes.
+record Mark
+    # The title.
+    title: str
+    # 0 for a top bookmark, one more for each level below.
+    level: i64
+    # The page, by index.
+    page: i64
+    # The height shown at the top.
+    top: f64
+
+# A document being written.
+record Doc
+    # The pages, in order.
+    pages: [Sheet]
+    # The page drawn on, -1 before the first.
+    at: i64
+    # Whether content streams are compressed.
+    compress: bool
+    # The Info dictionary's entries, as text.
+    info: {str: str}
+    # The pen.
+    pen: Pen
+    # The pens saved by `save`, innermost last.
+    saved: [Pen]
+    # The fonts some text was drawn in, by number.
+    fonts: {i64: bool}
+    # The images, by index.
+    images: [Picture]
+    # The opacities used, as their `gs` key, by index.
+    states: [str]
+    # The bookmarks, in the order they were added.
+    marks: [Mark]
+
+## Making and changing the state
+
+# Black, as PDF's own default.
+function black() -> Ink
+    return Ink(space: 0, parts: [0.0])
+
+# The usual text state.
+function plain_style() -> Style
+    return Style(character_spacing: 0.0, word_spacing: 0.0, horizontal_scale: 100.0, rise: 0.0, mode: 0)
+
+# A document of no page, compressed, its pen Helvetica at 12 in black.
+function start() -> Doc
+    pen = Pen(
+        font: 0,
+        size: 12.0,
+        fill: black(),
+        stroke: black(),
+        line_width: 1.0,
+        cap: 0,
+        join: 0,
+        miter: 10.0,
+        dash: [],
+        phase: 0.0,
+        fill_opacity: 1.0,
+        stroke_opacity: 1.0,
+        style: plain_style()
+    )
+    return Doc(
+        pages: [],
+        at: -1,
+        compress: true,
+        info: {},
+        pen: pen,
+        saved: [],
+        fonts: {},
+        images: [],
+        states: [],
+        marks: []
+    )
+
+# Adds `op` to `ops`, the caller's own list.
+function emit(@ops: [str], op: str)
+    ops @ ops.push(op)
+
+# Adds `op` to the content of the page drawn on. Aborts where no page has
+# been added.
+function put(@d: Doc, op: str)
+    k = d.at
+    assert k >= 0
+    emit(@d.pages[k].ops, op: op)
+
+# Whether `d` has a page to draw on.
+function has_page(d: Doc lent) -> bool
+    return d.at >= 0
+
+# `x` held between 0 and 1.
+function unit(x: f64) -> f64
+    if x < 0.0 || x != x
+        return 0.0
+
+    if x > 1.0
+        return 1.0
+    return x
+
+# The operator that sets `ink` for strokes or for fills.
+function ink_op(ink: Ink, stroke: bool) -> str
+    parts: [str] @= []
+
+    for p in ink.parts
+        parts @ parts.push(syntax.real(unit(p)))
+
+    op = match ink.space
+        0 => "g"
+        1 => "rg"
+        _ => "k"
+
+    upper = match ink.space
+        0 => "G"
+        1 => "RG"
+        _ => "K"
+
+    if stroke
+        return parts.join(" ") + " " + upper
+    return parts.join(" ") + " " + op
+
+# The operator that sets the dash of `pen`.
+function dash_op(pen: Pen) -> str
+    return syntax.reals(pen.dash) + " " + syntax.real(pen.phase) + " d"
+
+# The operators that set the text state `s`.
+function style_ops(s: Style) -> str
+    return f"{syntax.real(s.character_spacing)} Tc {syntax.real(s.word_spacing)} Tw {syntax.real(s.horizontal_scale)} Tz {syntax.real(s.rise)} Ts {s.mode} Tr"
+
+# The index of the opacity state `key`, added to `states` where new.
+function state_index(@states: [str], key: str) -> i64
+    i @= 0
+
+    while i < states.len()
+        if states[i] == key
+            return i
+        i @ i + 1
+
+    states @ states.push(key)
+    return states.len() - 1
+
+# The operator that sets the opacity of the pen, registering its state.
+function opacity_op(@d: Doc) -> str
+    key = syntax.real(d.pen.fill_opacity) + " " + syntax.real(d.pen.stroke_opacity)
+    i = state_index(@d.states, key: key)
+    return f"/GS{i} gs"
+
+# Writes on the page drawn on every part of the pen that differs from PDF's
+# defaults, as a page begins with those.
+function put_pen(@d: Doc)
+    pen = d.pen
+
+    if pen.fill != black()
+        put(@d, op: ink_op(pen.fill, stroke: false))
+
+    if pen.stroke != black()
+        put(@d, op: ink_op(pen.stroke, stroke: true))
+
+    if pen.line_width != 1.0
+        put(@d, op: syntax.real(pen.line_width) + " w")
+
+    if pen.cap != 0
+        put(@d, op: f"{pen.cap} J")
+
+    if pen.join != 0
+        put(@d, op: f"{pen.join} j")
+
+    if pen.miter != 10.0
+        put(@d, op: syntax.real(pen.miter) + " M")
+
+    if pen.dash.len() > 0
+        put(@d, op: dash_op(pen))
+
+    if pen.fill_opacity != 1.0 || pen.stroke_opacity != 1.0
+        op = opacity_op(@d)
+        put(@d, op: op)
+
+    if pen.style != plain_style()
+        put(@d, op: style_ops(pen.style))
+
+# Adds a page `width` by `height` and draws on it from now on.
+function add_page(@d: Doc, width: f64, height: f64)
+    sheet = Sheet(width: width, height: height, ops: [], links: [], depth: 0)
+    add_sheet(@d.pages, sheet: sheet)
+    d.at @ d.pages.len() - 1
+    d.saved @ []
+    put_pen(@d)
+
+# Adds `sheet` to `pages`, the caller's own list.
+function add_sheet(@pages: [Sheet], sheet: Sheet)
+    pages @ pages.push(sheet)
+
+# Draws on the page at `index` from now on.
+function set_page(@d: Doc, index: i64)
+    assert index >= 0 && index < d.pages.len()
+    d.at @ index
+    d.saved @ []
+    put_pen(@d)
+
+# Sets the fill colour.
+function set_fill(@d: Doc, ink: Ink)
+    d.pen.fill @ ink
+
+    if has_page(d)
+        put(@d, op: ink_op(ink, stroke: false))
+
+# Sets the stroke colour.
+function set_stroke(@d: Doc, ink: Ink)
+    d.pen.stroke @ ink
+
+    if has_page(d)
+        put(@d, op: ink_op(ink, stroke: true))
+
+# Writes `op` where a page is drawn on.
+function put_if_page(@d: Doc, op: str)
+    if has_page(d)
+        put(@d, op: op)
+
+# Saves the pen and the graphics state.
+function save(@d: Doc)
+    k = d.at
+    assert k >= 0
+    put(@d, op: "q")
+    push_pen(@d.saved, pen: d.pen)
+    d.pages[k].depth @ d.pages[k].depth + 1
+
+# Adds `pen` to `pens`, the caller's own list.
+function push_pen(@pens: [Pen], pen: Pen)
+    pens @ pens.push(pen)
+
+# Brings back the pen and the graphics state the last `save` saved.
+function restore(@d: Doc)
+    k = d.at
+    assert k >= 0 && d.pages[k].depth > 0 && d.saved.len() > 0
+    put(@d, op: "Q")
+    last = d.saved.len() - 1
+    d.pen @ d.saved[last]
+    d.saved @ d.saved.slice(from: 0, to: last)
+    d.pages[k].depth @ d.pages[k].depth - 1
+
+# Notes that the font numbered `font` is used.
+function use_font(@fonts: {i64: bool}, font: i64)
+    fonts[font] @ true
+
+# The spacing of the pen's text state.
+function spacing_of(s: Style) -> measure.Spacing
+    return measure.Spacing(character: s.character_spacing, word: s.word_spacing, scale: s.horizontal_scale)
+
+# Shows the codes `shown` in the font numbered `font` at `size`, their
+# baseline beginning at (`x`, `y`), the word spacing raised by `extra`
+# points.
+function show(@d: Doc, font: i64, size: f64, x: f64, y: f64, shown: [i64], extra: f64)
+    use_font(@d.fonts, font: font)
+    bytes: [u8] @= []
+
+    for code in shown
+        bytes @ bytes.push(to_u8(code).must())
+
+    op @= f"BT /F{font} {syntax.real(size)} Tf {syntax.real(x)} {syntax.real(y)} Td "
+
+    if extra != 0.0
+        op @ op + syntax.real(d.pen.style.word_spacing + extra) + " Tw " + syntax.literal(bytes) + " Tj " + syntax.real(d.pen.style.word_spacing) + " Tw ET"
+    else
+        op @ op + syntax.literal(bytes) + " Tj ET"
+    put(@d, op: op)
+
+# `text` with every line break and tab written as a space.
+function one_line(text: str) -> str
+    out: [str] @= []
+
+    for c in text.chars()
+        if c == "\n" || c == "\r" || c == "\t"
+            out @ out.push(" ")
+        else
+            out @ out.push(c)
+
+    return out.join("")
+
+# Draws `text` on one line, `x` its left, middle or right end as `align`
+# says: 0 left or justified, 1 centred, 2 right.
+function draw_text(@d: Doc, x: f64, y: f64, text: str, align: i64) -> ()?
+    assert d.at >= 0
+    shown = measure.codes_of(d.pen.font, text: one_line(text))?
+    w = measure.width_of_codes(d.pen.font, shown: shown, size: d.pen.size, spacing: spacing_of(d.pen.style))
+
+    left = match align
+        1 => x - w / 2.0
+        2 => x - w
+        _ => x
+
+    show(@d, font: d.pen.font, size: d.pen.size, x: left, y: y, shown: shown, extra: 0.0)
+    return ok()
+
+# Draws `text` wrapped into a box, as the face's `draw_text_box` says; align
+# 0 left, 1 centred, 2 right, 3 justified.
+function draw_box(@d: Doc, x: f64, top: f64, width: f64, text: str, align: i64, line_height: f64) -> f64?
+    assert d.at >= 0
+    pen = d.pen
+    spacing = spacing_of(pen.style)
+    lines = wrap.lines_of(text, font: pen.font, size: pen.size, most: width, spacing: spacing)?
+
+    if lines.len() == 0
+        return ok(top)
+    global = metrics.global_of(pen.font)
+    ascent = to_f64(global.ascent) * pen.size / 1000.0
+    descent = to_f64(global.descent) * pen.size / 1000.0
+    baseline @= top - ascent
+
+    for line in lines
+        shown = measure.codes_of(pen.font, text: line.text)?
+        w = measure.width_of_codes(pen.font, shown: shown, size: pen.size, spacing: spacing)
+        spaces @= 0
+
+        for code in shown
+            if code == 32
+                spaces @ spaces + 1
+
+        if line.text != ""
+            if align == 3 && !line.ends && spaces > 0
+                extra = (width - w) / to_f64(spaces) / (pen.style.horizontal_scale / 100.0)
+                show(@d, font: pen.font, size: pen.size, x: x, y: baseline, shown: shown, extra: extra)
+            else
+                left = match align
+                    1 => x + (width - w) / 2.0
+                    2 => x + width - w
+                    _ => x
+
+                show(@d, font: pen.font, size: pen.size, x: left, y: baseline, shown: shown, extra: 0.0)
+        baseline @ baseline - line_height
+
+    return ok(baseline + line_height + descent)
+
+# The operator that paints a path: 0 stroke, 1 fill, 2 fill and stroke.
+function paint_op(paint: i64) -> str
+    return match paint
+        0 => "S"
+        1 => "f"
+        _ => "B"
+
+# The four Bezier curves of an ellipse, as path operators.
+function ellipse_steps(cx: f64, cy: f64, rx: f64, ry: f64) -> str
+    k = 0.5522847498307936
+    kx = rx * k
+    ky = ry * k
+    r = syntax.real
+    return f"{r(cx + rx)} {r(cy)} m {r(cx + rx)} {r(cy + ky)} {r(cx + kx)} {r(cy + ry)} {r(cx)} {r(cy + ry)} c {r(cx - kx)} {r(cy + ry)} {r(cx - rx)} {r(cy + ky)} {r(cx - rx)} {r(cy)} c {r(cx - rx)} {r(cy - ky)} {r(cx - kx)} {r(cy - ry)} {r(cx)} {r(cy - ry)} c {r(cx + kx)} {r(cy - ry)} {r(cx + rx)} {r(cy - ky)} {r(cx + rx)} {r(cy)} c h"
+
+# The path of a rectangle with rounded corners.
+function rounded_steps(x: f64, y: f64, width: f64, height: f64, radius: f64) -> str
+    half = if width < height
+        width / 2.0
+    else
+        height / 2.0
+
+    rr = if radius > half
+        half
+    else
+        radius
+    k = rr * 0.4477152501692064
+    r = syntax.real
+    x1 = x + width
+    y1 = y + height
+    return f"{r(x + rr)} {r(y)} m {r(x1 - rr)} {r(y)} l {r(x1 - k)} {r(y)} {r(x1)} {r(y + k)} {r(x1)} {r(y + rr)} c {r(x1)} {r(y1 - rr)} l {r(x1)} {r(y1 - k)} {r(x1 - k)} {r(y1)} {r(x1 - rr)} {r(y1)} c {r(x + rr)} {r(y1)} l {r(x + k)} {r(y1)} {r(x)} {r(y1 - k)} {r(x)} {r(y1 - rr)} c {r(x)} {r(y + rr)} l {r(x)} {r(y + k)} {r(x + k)} {r(y)} {r(x + rr)} {r(y)} c h"
+
+# The path through `xs` and `ys`, pairwise, closed where `closed`.
+function poly_steps(xs: [f64], ys: [f64], closed: bool) -> str
+    parts: [str] @= []
+    i @= 0
+
+    while i < xs.len()
+        verb = if i == 0
+            "m"
+        else
+            "l"
+        parts @ parts.push(syntax.real(xs[i]) + " " + syntax.real(ys[i]) + " " + verb)
+        i @ i + 1
+
+    if closed
+        parts @ parts.push("h")
+    return parts.join(" ")
+
+# Adds a link to the page drawn on.
+function add_link(@d: Doc, link: Link)
+    k = d.at
+    assert k >= 0
+    push_link(@d.pages[k].links, link: link)
+
+# Adds `link` to `links`, the caller's own list.
+function push_link(@links: [Link], link: Link)
+    links @ links.push(link)
+
+# Adds an image, answering its index.
+function add_picture(@d: Doc, picture: Picture) -> i64
+    push_picture(@d.images, picture: picture)
+    return d.images.len() - 1
+
+# Adds `picture` to `pictures`, the caller's own list.
+function push_picture(@pictures: [Picture], picture: Picture)
+    pictures @ pictures.push(picture)
+
+# Adds a bookmark to the page drawn on.
+function add_mark(@d: Doc, title: str, level: i64, top: f64)
+    assert d.at >= 0 && level >= 0
+    last = d.marks.len()
+
+    deepest = if last == 0
+        0
+    else
+        d.marks[last - 1].level + 1
+    assert level <= deepest
+    push_mark(@d.marks, mark: Mark(title: title, level: level, page: d.at, top: top))
+
+# Adds `mark` to `marks`, the caller's own list.
+function push_mark(@marks: [Mark], mark: Mark)
+    marks @ marks.push(mark)
+
+test "start and add_page: no page, then one with nothing drawn at PDF's defaults"
+    d @= start()
+    assert d.at == -1 && d.pages.len() == 0
+    add_page(@d, width: 100.0, height: 200.0)
+    assert d.at == 0 && d.pages[0].ops == [] && d.pages[0].width == 100.0
+
+test "put_pen: a new page takes the pen's colours, width and text state"
+    d @= start()
+    set_fill(@d, ink: Ink(space: 1, parts: [1.0, 0.0, 0.5]))
+    d.pen.line_width @ 2.0
+    d.pen.style.character_spacing @ 1.0
+    add_page(@d, width: 10.0, height: 10.0)
+    assert d.pages[0].ops == ["1 0 0.5 rg", "2 w", "1 Tc 0 Tw 100 Tz 0 Ts 0 Tr"]
+
+test "ink_op: gray, RGB and CMYK, for fills and strokes, values held to 0 to 1"
+    assert ink_op(Ink(space: 0, parts: [0.5]), stroke: false) == "0.5 g"
+    assert ink_op(Ink(space: 1, parts: [2.0, -1.0, 0.25]), stroke: true) == "1 0 0.25 RG"
+    assert ink_op(Ink(space: 2, parts: [0.0, 0.1, 0.2, 0.3]), stroke: false) == "0 0.1 0.2 0.3 k"
+
+test "save and restore: the pen comes back, the depth counts"
+    d @= start()
+    add_page(@d, width: 10.0, height: 10.0)
+    save(@d)
+    d.pen.size @ 30.0
+    assert d.pages[0].depth == 1
+    restore(@d)
+    assert d.pen.size == 12.0 && d.pages[0].depth == 0 && d.pages[0].ops == ["q", "Q"]
+
+test "draw_text: left, centred and right, a refused character draws nothing"
+    d @= start()
+    add_page(@d, width: 600.0, height: 800.0)
+    draw_text(@d, x: 10.0, y: 20.0, text: "Hi", align: 0).must()
+    draw_text(@d, x: 100.0, y: 20.0, text: "Hi", align: 1).must()
+    draw_text(@d, x: 100.0, y: 20.0, text: "Hi", align: 2).must()
+    assert d.pages[0].ops[0] == "BT /F0 12 Tf 10 20 Td (Hi) Tj ET"
+    assert d.pages[0].ops[1] == "BT /F0 12 Tf 94.336 20 Td (Hi) Tj ET"
+    assert d.pages[0].ops[2] == "BT /F0 12 Tf 88.672 20 Td (Hi) Tj ET"
+    assert draw_text(@d, x: 0.0, y: 0.0, text: "Ω", align: 0).is_err()
+    assert d.pages[0].ops.len() == 3 && d.fonts[0].must()
+
+test "draw_box: two lines, the answer under the last, justified spaces, the empty text"
+    d @= start()
+    add_page(@d, width: 600.0, height: 800.0)
+    d.pen.font @ 8
+    d.pen.size @ 10.0
+    end = draw_box(@d, x: 0.0, top: 100.0, width: 36.0, text: "ab cd ef", align: 3, line_height: 12.0).must()
+    assert d.pages[0].ops.len() == 2
+    assert d.pages[0].ops[0] == "BT /F8 10 Tf 0 93.71 Td 6 Tw (ab cd) Tj 0 Tw ET"
+    assert d.pages[0].ops[1] == "BT /F8 10 Tf 0 81.71 Td (ef) Tj ET"
+    assert end > 80.1399 && end < 80.1401
+    assert draw_box(@d, x: 0.0, top: 50.0, width: 30.0, text: "", align: 0, line_height: 12.0).must() == 50.0
+
+test "the paths: an ellipse closes, a rounded rectangle's radius is held to half a side, a polygon"
+    assert ellipse_steps(cx: 0.0, cy: 0.0, rx: 1.0, ry: 1.0) == "1 0 m 1 0.5523 0.5523 1 0 1 c -0.5523 1 -1 0.5523 -1 0 c -1 -0.5523 -0.5523 -1 0 -1 c 0.5523 -1 1 -0.5523 1 0 c h"
+    assert rounded_steps(x: 0.0, y: 0.0, width: 10.0, height: 4.0, radius: 9.0).slice(from: 0, to: 9) == "2 0 m 8 0"
+    assert poly_steps(xs: [0.0, 1.0, 2.0], ys: [0.0, 1.0, 0.0], closed: true) == "0 0 m 1 1 l 2 0 l h"
+    assert poly_steps(xs: [], ys: [], closed: false) == ""
+
+test "add_mark: levels one deeper at most"
+    d @= start()
+    add_page(@d, width: 10.0, height: 10.0)
+    add_mark(@d, title: "A", level: 0, top: 10.0)
+    add_mark(@d, title: "B", level: 1, top: 5.0)
+    add_mark(@d, title: "C", level: 0, top: 1.0)
+    assert d.marks.len() == 3 && d.marks[1].page == 0

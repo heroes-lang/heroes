@@ -1,0 +1,83 @@
+# The failure codes `pdf` answers, which the face names its constants from,
+# since a private module cannot `use` the face; and the messages built
+# around them.
+
+# A file that is not what PDF says, or a value given to a writer that PDF
+# has no form for.
+constant INVALID: str
+    "invalid"
+
+# A file that would pass a limit the caller set.
+constant LIMIT: str
+    "limit"
+
+# What this package does not read or write: a security handler other than
+# RC4's, a filter of images, a character a standard font has no glyph for.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# A key a dictionary does not hold, a font or a page that is not there.
+constant NOT_FOUND: str
+    "not_found"
+
+# A failure of code `invalid` about the file at byte `at`.
+function invalid_at<T>(at: i64, why: str) -> T?
+    return fail(code: INVALID, msg: f"not a valid PDF file at byte {at}: {why}")
+
+# A failure of code `invalid` saying `why`.
+function invalid<T>(why: str) -> T?
+    return fail(code: INVALID, msg: why)
+
+# A failure of code `limit`: `what` passes `most`.
+function over<T>(what: str, most: i64) -> T?
+    return fail(code: LIMIT, msg: f"{what} passes the limit of {most}")
+
+# A failure of code `unsupported` saying `why`.
+function unsupported<T>(why: str) -> T?
+    return fail(code: UNSUPPORTED, msg: why)
+
+test "invalid_at, invalid, over and unsupported: the codes and the messages"
+    a: i64? = invalid_at(at: 7, why: "no header")
+
+    match a
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "not a valid PDF file at byte 7: no header"
+
+    b: i64? = over(what: "the stream's bytes", most: 10)
+
+    match b
+        .ok _  => assert false
+        .err e => assert e.code == "limit" && e.msg == "the stream's bytes passes the limit of 10"
+
+    c: i64? = unsupported(why: "AES")
+    assert c.is_err()
+    d: i64? = invalid(why: "x")
+    assert d.is_err()
+
+# The code point `point` as Unicode writes it: `U+00E9`, at least four
+# hexadecimal digits.
+function format_point(point: i64) -> str
+    digits = "0123456789ABCDEF"
+    out: [str] @= []
+    n @= point
+
+    while n > 0
+        out @ out.push(digits.slice(from: n % 16, to: n % 16 + 1))
+        n @ n / 16
+
+    while out.len() < 4
+        out @ out.push("0")
+
+    reversed: [str] @= []
+    i @= out.len() - 1
+
+    while i >= 0
+        reversed @ reversed.push(out[i])
+        i @ i - 1
+
+    return "U+" + reversed.join("")
+
+test "format_point: zero, four digits, five digits"
+    assert format_point(0) == "U+0000"
+    assert format_point(0xe9) == "U+00E9"
+    assert format_point(0x1f600) == "U+1F600"

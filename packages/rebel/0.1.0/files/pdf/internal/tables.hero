@@ -1,0 +1,258 @@
+# Simple tables drawn on a document: columns of fixed widths, each cell's
+# text wrapped to its column, rows as tall as their tallest cell, the header
+# rows filled and drawn again at the top of each page a long table goes on
+# to. Everything is measured and checked before the first stroke.
+
+use pdf/internal/codes
+use pdf/internal/compose
+use pdf/internal/measure
+use pdf/internal/metrics
+use pdf/internal/syntax
+use pdf/internal/wrap
+
+# A table as the face's `Table` holds it, fonts and alignments as numbers.
+record Spec
+    # Each column's width.
+    widths: [f64]
+    # Each column's alignment: 0 left, 1 centred, 2 right, 3 justified.
+    aligns: [i64]
+    # The rows of cells.
+    rows: [[str]]
+    # How many of the first rows are headers.
+    header_rows: i64
+    # The cells' font.
+    font: i64
+    # The headers' font.
+    header_font: i64
+    # The size of both.
+    size: f64
+    # The distance between baselines in a cell.
+    line_height: f64
+    # The space inside a cell's border.
+    padding: f64
+    # The borders' width, 0 for none.
+    border: f64
+    # The headers' fill.
+    header_fill: compose.Ink
+
+# Draws one row whose top is `top`: its fill, its borders and its lines.
+function draw_row(@d: compose.Doc, spec: Spec lent, x: f64, top: f64, height: f64, cells: [[wrap.Line]], header: bool)
+    r = syntax.real
+
+    font = if header
+        spec.header_font
+    else
+        spec.font
+    ascent = to_f64(metrics.global_of(font).ascent) * spec.size / 1000.0
+    left @= x
+    c @= 0
+
+    while c < spec.widths.len()
+        w = spec.widths[c]
+
+        if header
+            compose.put(
+                @d,
+                op: f"q {compose.ink_op(spec.header_fill, stroke: false)} {r(left)} {r(top - height)} {r(w)} {r(height)} re f Q"
+            )
+
+        if spec.border > 0.0
+            compose.put(@d, op: f"q {r(spec.border)} w {r(left)} {r(top - height)} {r(w)} {r(height)} re S Q")
+        baseline @= top - spec.padding - ascent
+        inner = w - 2.0 * spec.padding
+
+        for line in cells[c]
+            if line.text != ""
+                shown = measure.codes_of(font, text: line.text).default([])
+                lw = measure.width_of_codes(font, shown: shown, size: spec.size, spacing: measure.plain())
+                spaces @= 0
+
+                for code in shown
+                    if code == 32
+                        spaces @ spaces + 1
+
+                align = spec.aligns[c]
+
+                if align == 3 && !line.ends && spaces > 0
+                    compose.show(
+                        @d,
+                        font: font,
+                        size: spec.size,
+                        x: left + spec.padding,
+                        y: baseline,
+                        shown: shown,
+                        extra: (inner - lw) / to_f64(spaces)
+                    )
+                else
+                    at = match align
+                        1 => left + spec.padding + (inner - lw) / 2.0
+                        2 => left + w - spec.padding - lw
+                        _ => left + spec.padding
+
+                    compose.show(@d, font: font, size: spec.size, x: at, y: baseline, shown: shown, extra: 0.0)
+            baseline @ baseline - spec.line_height
+
+        left @ left + w
+        c @ c + 1
+
+# Adds `cells` to `table`, the caller's own list.
+function add_cells(@table: [[[wrap.Line]]], cells: [[wrap.Line]])
+    table @ table.push(cells)
+
+# Draws `spec` from `top` down, its left at `x`, a new page where a row
+# would pass `bottom`; answers the height where its last row ends.
+#
+# Fails `invalid` where a row's cells do not match the columns, a column is
+# not wider than twice the padding, or a row with the headers is taller than
+# `top` less `bottom`; `unsupported` where a font has no glyph for a cell's
+# character. Nothing is drawn before every cell is measured.
+function draw(@d: compose.Doc, x: f64, top: f64, bottom: f64, spec: Spec) -> f64?
+    assert d.at >= 0
+
+    for w in spec.widths
+        if w <= 2.0 * spec.padding
+            return codes.invalid(
+                why: f"a column {syntax.real(w)} points wide is not wider than twice the padding, {syntax.real(spec.padding)}"
+            )
+
+    wrapped: [[[wrap.Line]]] @= []
+    heights: [f64] @= []
+    r @= 0
+
+    while r < spec.rows.len()
+        row = spec.rows[r]
+
+        if row.len() != spec.widths.len()
+            return codes.invalid(why: f"row {r} has {row.len()} cells, and the table {spec.widths.len()} columns")
+
+        font = if r < spec.header_rows
+            spec.header_font
+        else
+            spec.font
+        cells: [[wrap.Line]] @= []
+        most @= 1
+        c @= 0
+
+        while c < row.len()
+            lines = wrap.lines_of(row[c], font: font, size: spec.size, most: spec.widths[c] - 2.0 * spec.padding, spacing: measure.plain())?
+            cells @ cells.push(lines)
+
+            if lines.len() > most
+                most @ lines.len()
+            c @ c + 1
+
+        add_cells(@wrapped, cells: cells)
+        heights @ heights.push(to_f64(most) * spec.line_height + 2.0 * spec.padding)
+        r @ r + 1
+
+    headers = if spec.header_rows < spec.rows.len()
+        spec.header_rows
+    else
+        spec.rows.len()
+    header_height @= 0.0
+    r @ 0
+
+    while r < headers
+        header_height @ header_height + heights[r]
+        r @ r + 1
+
+    room = top - bottom
+
+    if header_height > room
+        return codes.invalid(
+            why: f"the header rows are {syntax.real(header_height)} points tall, and the table has {syntax.real(room)}"
+        )
+    r @ headers
+
+    while r < spec.rows.len()
+        if header_height + heights[r] > room
+            return codes.invalid(
+                why: f"row {r} with the headers is {syntax.real(header_height + heights[r])} points tall, and the table has {syntax.real(room)}"
+            )
+        r @ r + 1
+
+    y @= top
+    r @ 0
+
+    while r < headers
+        draw_row(@d, spec: spec, x: x, top: y, height: heights[r], cells: wrapped[r], header: true)
+        y @ y - heights[r]
+        r @ r + 1
+
+    while r < spec.rows.len()
+        if y - heights[r] < bottom
+            page = d.pages[d.at]
+            compose.add_page(@d, width: page.width, height: page.height)
+            y @ top
+            h @= 0
+
+            while h < headers
+                draw_row(@d, spec: spec, x: x, top: y, height: heights[h], cells: wrapped[h], header: true)
+                y @ y - heights[h]
+                h @ h + 1
+        draw_row(@d, spec: spec, x: x, top: y, height: heights[r], cells: wrapped[r], header: false)
+        y @ y - heights[r]
+        r @ r + 1
+
+    return ok(y)
+
+# A table of `widths` and `rows` in Courier at 10, for the tests.
+function test_spec(widths: [f64], rows: [[str]]) -> Spec
+    aligns: [i64] @= []
+
+    for _ in widths
+        aligns @ aligns.push(0)
+
+    return Spec(
+        widths: widths,
+        aligns: aligns,
+        rows: rows,
+        header_rows: 1,
+        font: 8,
+        header_font: 9,
+        size: 10.0,
+        line_height: 12.0,
+        padding: 2.0,
+        border: 1.0,
+        header_fill: compose.Ink(space: 0, parts: [0.9])
+    )
+
+test "draw: a header and two rows, a wrapped cell, the height used"
+    d @= compose.start()
+    compose.add_page(@d, width: 300.0, height: 300.0)
+    end = draw(
+        @d,
+        x: 10.0,
+        top: 290.0,
+        bottom: 10.0,
+        spec: test_spec(widths: [40.0, 40.0], rows: [["A", "B"], ["one", "two three"], ["x", "y"]])
+    ).must()
+    assert end == 290.0 - 16.0 - 28.0 - 16.0
+    assert d.pages.len() == 1
+
+test "draw: rows go on to a new page with the header drawn again"
+    d @= compose.start()
+    compose.add_page(@d, width: 300.0, height: 100.0)
+    rows: [[str]] @= [["H"]]
+
+    for i in range(from: 0, to: 6)
+        rows @ rows.push([to_str(i)])
+
+    end = draw(@d, x: 0.0, top: 90.0, bottom: 10.0, spec: test_spec(widths: [50.0], rows: rows)).must()
+    assert d.pages.len() == 2
+    assert end == 90.0 - 16.0 * 3.0
+
+test "draw: a row of the wrong width, a narrow column, a row too tall, a character none has"
+    d @= compose.start()
+    compose.add_page(@d, width: 300.0, height: 300.0)
+    assert draw(@d, x: 0.0, top: 290.0, bottom: 10.0, spec: test_spec(widths: [40.0, 40.0], rows: [["A"]])).is_err()
+    assert draw(@d, x: 0.0, top: 290.0, bottom: 10.0, spec: test_spec(widths: [4.0], rows: [["A"]])).is_err()
+    assert draw(
+        @d,
+        x: 0.0,
+        top: 30.0,
+        bottom: 10.0,
+        spec: test_spec(widths: [40.0], rows: [["A"], ["a b c d e"]])
+    ).is_err()
+    assert draw(@d, x: 0.0, top: 290.0, bottom: 10.0, spec: test_spec(widths: [40.0], rows: [["Ω"]])).is_err()
+    assert d.pages[0].ops.len() == 0

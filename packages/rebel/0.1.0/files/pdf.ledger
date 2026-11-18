@@ -1,0 +1,423 @@
+# The ledger of `pdf`: what Go's gofpdf (github.com/jung-kurt/gofpdf 1.16.2)
+# and pdfcpu (github.com/pdfcpu/pdfcpu 0.16.4, its `api` package), Python's
+# pypdf (7.1.1) and ReportLab (5.1.0, its canvas, text and path objects,
+# page sizes, units and font metrics), and Rust's printpdf (0.12.9) and
+# lopdf (0.47.0) let a program do, one block per capability, and what Rebel
+# answers. The lists are this machine's, 2026-11-18: `go doc -all` on both
+# Go packages, `dir()` of pypdf's and ReportLab's modules and classes from
+# their wheels, and the items `cargo doc` wrote for both crates. None of the
+# three languages' standard libraries holds PDF.
+#
+# What the tests read was made by ReportLab, pypdf and Ghostscript 10.08,
+# and the text expected is what Poppler's `pdftotext -raw` 26.11 reads; qpdf
+# is not on this machine, and pypdf is not installed (its wheel was run from
+# the scratch folder as an oracle). The differential of 2026-11-18 read 57
+# files, 40 of them the PDF files this machine's system and applications
+# carry, and Poppler read the same words from 49 of them. Of the other
+# eight, two are encrypted with AES and refused, two need a password the run
+# did not give (the tests give it), and four differ: a file cut to two
+# thirds that Poppler gives up on and this package rebuilds, the raised A of
+# the LaTeX logo that Poppler splits, a page whose words Poppler runs
+# together, and a licence whose Japanese and Korean pages use composite
+# fonts with no ToUnicode map (below) and whose ligatures Poppler expands.
+# A fuzzer read 32,000 mutated and truncated files plain, in at most 9 MB,
+# and 3,000 more under the sanitizers: every one read or failed with a
+# code, none aborted.
+
+capability pdf/pages  pages of a size, added, counted and drawn on again
+  heroes  pdf.document, pdf.Document, pdf.add_page, pdf.page_count, pdf.set_page, pdf.Size
+  go      gofpdf.New, gofpdf.NewCustom, gofpdf.InitType, gofpdf.Fpdf.AddPage, Fpdf.AddPageFormat, Fpdf.SetPage, Fpdf.PageNo, Fpdf.PageCount, Fpdf.PageSize, Fpdf.GetPageSize, Fpdf.GetPageSizeStr, gofpdf.SizeType, SizeType.Orientation, SizeType.ScaleBy, SizeType.ScaleToHeight, SizeType.ScaleToWidth, gofpdf.Fpdf.SetPageBox, Fpdf.SetPageBoxRec, gofpdf.PageBox
+  rust    printpdf::PdfDocument::new, PdfDocument::with_pages, PdfDocument::page_count, printpdf::ops::PdfPage
+  python  reportlab Canvas, Canvas.showPage, Canvas.setPageSize, Canvas.getPageNumber, Canvas.pageHasData, Canvas.getCurrentPageContent, PdfWriter.add_blank_page, PdfWriter.insert_blank_page, PageObject.create_blank_page
+  note    a page is added with its size, and `set_page` turns back to one already there, as gofpdf's SetPage, so a footer that says "page 2 of 5" is drawn once every page exists; page boxes other than the media box are read (`pdf.Page`) and not written
+
+capability pdf/page-sizes  the usual sizes of paper, turned either way
+  heroes  pdf.size_of, pdf.Paper, pdf.to_landscape, pdf.to_portrait
+  go      Fpdf.AddPageFormat (orientation "P" or "L"), gofpdf.New's size names "A3", "A4", "A5", "Letter", "Legal", "Tabloid"
+  rust    -
+  python  reportlab.lib.pagesizes A0 to A10, B0 to B10, C0 to C10, LETTER, LEGAL, TABLOID, LEDGER, ELEVENSEVENTEEN, HALF_LETTER, JUNIOR_LEGAL, GOV_LETTER, GOV_LEGAL, letter, legal, elevenSeventeen, landscape, portrait; pypdf.PaperSize A0 to A8, C4
+  note    A0 to A6, B4, B5, Letter, Legal, Tabloid and Executive; sizes are computed from millimetres exactly, as ReportLab's (595.2756 by 841.8898 for A4), where gofpdf rounds them; another size is a `Size` built directly
+
+capability pdf/units  lengths in points, inches, millimetres, centimetres and picas
+  heroes  pdf.to_points, pdf.Unit
+  go      gofpdf.New's unit, Fpdf.GetConversionRatio, Fpdf.PointConvert, Fpdf.PointToUnitConvert, Fpdf.UnitToPointConvert
+  rust    printpdf::units::Mm, printpdf::units::Pt, printpdf::units::Px
+  python  reportlab.lib.units cm, inch, mm, pica, toLength; reportlab.lib.pagesizes inch, mm
+  note    every call takes points, PDF's own unit, with the origin at the bottom left as PDF has it; gofpdf's document-wide unit and its origin at the top would be a second way to say every length
+
+capability pdf/fonts-standard  the 14 standard fonts, named and chosen
+  heroes  pdf.Font, pdf.base_font_of, pdf.parse_font, pdf.set_font
+  go      Fpdf.SetFont, Fpdf.SetFontStyle, Fpdf.SetFontSize, Fpdf.SetFontUnitSize, Fpdf.GetFontSize, Fpdf.RegisterAlias
+  rust    printpdf::font::BuiltinFont, printpdf::ops::Op::SetFont, printpdf::ops::PdfFontHandle
+  python  pdfmetrics.standardFonts, Canvas.setFont, Canvas.setFontSize, Canvas.getAvailableFonts, PDFTextObject.setFont, pdfmetrics.getFont, pdfmetrics.getTypeFace, pdfmetrics.Font, pdfmetrics.TypeFace, pdfmetrics.BaseFontName
+  note    the Latin twelve are written with WinAnsiEncoding, Symbol and ZapfDingbats with their own; a font's glyphs past WinAnsiEncoding (ł, ı, ﬁ) are not reached, as ReportLab's and gofpdf's default encodings do not reach them
+
+capability pdf/font-metrics  text measured, and a font's ascent, descent and heights
+  heroes  pdf.width_of, pdf.has_glyphs, pdf.metrics_of, pdf.FontMetrics
+  go      Fpdf.GetStringWidth, Fpdf.GetStringSymbolWidth, Fpdf.GetFontDesc, gofpdf.FontDescType
+  rust    printpdf::font::FontMetrics
+  python  pdfmetrics.stringWidth, Canvas.stringWidth, pdfmetrics.getAscent, pdfmetrics.getDescent, pdfmetrics.getAscentDescent, pdfmetrics.parseAFMFile, pdfmetrics.unicode2T1, pdfmetrics.instanceStringWidthT1
+  note    widths from Adobe's Core 14 AFM files (1997), as ReportLab's stringWidth measures: Helvetica's "Hello" at 12 points is 27.336 in both; no kerning, as neither ReportLab nor gofpdf kerns the standard fonts by default
+
+capability pdf/fonts-embedded  TrueType and Type 1 fonts embedded, subset, any character
+  heroes  pending
+  go      Fpdf.AddFont, Fpdf.AddFontFromBytes, Fpdf.AddFontFromReader, Fpdf.AddUTF8Font, Fpdf.AddUTF8FontFromBytes, Fpdf.UTF8CutFont, gofpdf.MakeFont, gofpdf.TtfParse, gofpdf.TtfType, Fpdf.SetFontLoader, Fpdf.SetFontLocation, gofpdf.FontLoader, gofpdf.UnicodeTranslator, UnicodeTranslatorFromDescriptor, UnicodeTranslatorFromFile
+  rust    PdfDocument::add_font, printpdf::font::ParsedFont, PdfFont, SubsetFont, subset_font, FontEmbeddingMode, FontType, generate_cmap_string, get_normalized_widths_ttf, get_normalized_widths_codes, cff_charset_gid_to_cid_map, extract_cid_keyed_cff, extract_collection_face, PdfFontMap, AzulParsedFont, OwnedGlyph, PrintpdfFontMeta, PdfFontParseWarning
+  python  pdfmetrics.registerFont, registerFontFamily, registerTypeFace, registerEncoding, EmbeddedType1Face, faceFromAFM, findFontAndRegister, getRegisteredFontNames, Canvas.listLoadedFonts0
+  note    reading a TrueType file, subsetting it and writing its ToUnicode map is a package of its own; until it exists, text past the standard fonts' characters fails `unsupported`, never shown as boxes
+
+capability pdf/text  a line of text drawn at a point, left, centred or right
+  heroes  pdf.draw_text, pdf.Align
+  go      Fpdf.Text, Fpdf.Cell, Fpdf.CellFormat, Fpdf.Cellf, Fpdf.Write, Fpdf.Writef, Fpdf.WriteAligned, Fpdf.ClipText
+  rust    Op::StartTextSection, Op::EndTextSection, Op::SetTextCursor, Op::ShowText, Op::AddLineBreak, Op::MoveTextCursorAndSetLeading, Op::MoveToNextLineShowText, Op::SetSpacingMoveAndShowText, Op::SetTextMatrix, Op::SetLineHeight, printpdf::text::TextItem, encode_text_items, win_ansi_char, Codepoint
+  python  Canvas.drawString, drawCentredString, drawRightString, drawAlignedString, drawText, beginText, PDFTextObject.textOut, textLine, textLines, setTextOrigin, setTextTransform, moveCursor, getCursor, getStartOfLine, getX, getY, setXPos, getCode
+  note    a character the font cannot show fails `unsupported` and draws nothing, where gofpdf writes a wrong glyph and ReportLab substitutes
+
+capability pdf/text-state  character and word spacing, horizontal scale, rise, rendering mode
+  heroes  pdf.set_text_style, pdf.text_style, pdf.TextStyle, pdf.TextMode
+  go      Fpdf.SetWordSpacing, Fpdf.SetTextRenderingMode
+  rust    Op::SetCharacterSpacing, Op::SetWordSpacing, Op::SetHorizontalScaling, Op::SetLineOffset, Op::SetTextRenderingMode, printpdf::graphics::TextRenderingMode
+  python  PDFTextObject.setCharSpace, setWordSpace, setHorizScale, setRise, setLeading, setTextRenderMode
+  note    fill, stroke, both, invisible; the clipping modes are not offered: `clip` takes a path
+
+capability pdf/text-wrap  text broken into lines of a width and drawn in a box, justified or not
+  heroes  pdf.wrap_text, pdf.draw_text_box
+  go      Fpdf.MultiCell, Fpdf.SplitLines, Fpdf.SplitText, Fpdf.Write (flowing)
+  rust    printpdf::text_boxes::PageTextBoxes (read), from_html (laid out from HTML)
+  python  -
+  note    breaks at spaces, inside a word only where it is wider than the line, at every line break; justified lines widen their spaces with word spacing, the last line of a paragraph left, as MultiCell's "J"
+
+capability pdf/tables  simple tables: columns, wrapped cells, headers repeated across pages
+  heroes  pdf.table, pdf.draw_table, pdf.Table, pdf.Column
+  go      -
+  rust    -
+  python  -
+  note    gofpdf builds tables of Cell calls and ReportLab's platypus Table is a layout engine; here a table is one call that checks every cell before it draws, and goes on to new pages of the same size
+
+capability pdf/shapes  lines, rectangles, rounded rectangles, circles, ellipses, polygons
+  heroes  pdf.draw_line, pdf.draw_rect, pdf.draw_rounded_rect, pdf.draw_circle, pdf.draw_ellipse, pdf.draw_polygon, pdf.draw_polyline, pdf.Paint, pdf.Point
+  go      Fpdf.Line, Fpdf.Rect, Fpdf.RoundedRect, Fpdf.RoundedRectExt, Fpdf.Circle, Fpdf.Ellipse, Fpdf.Arc, Fpdf.Polygon, Fpdf.Beziergon, Fpdf.Curve, Fpdf.CurveCubic, Fpdf.CurveBezierCubic, gofpdf.PointType, PointType.XY, Fpdf.Grid (and gofpdf.GridType with its methods)
+  rust    Op::DrawLine, Op::DrawPolygon, Op::DrawRectangle, printpdf::graphics::Line, Polygon, PolygonRing, Rect, LinePoint, Point, PaintMode, WindingOrder
+  python  Canvas.line, lines, rect, roundRect, circle, ellipse, arc, wedge, bezier, grid, cross, drawBoundary
+  note    an arc and a wedge are drawn with `curve_to`; gofpdf's GridType, a chart's axes and ticks, is a chart, which is not here
+
+capability pdf/paths  paths of lines and curves, stroked, filled or clipped to
+  heroes  pdf.Path, pdf.empty_path, pdf.move_to, pdf.line_to, pdf.curve_to, pdf.close_path, pdf.draw_path, pdf.clip
+  go      Fpdf.MoveTo, Fpdf.LineTo, Fpdf.CurveTo, Fpdf.CurveBezierCubicTo, Fpdf.ArcTo, Fpdf.ClosePath, Fpdf.DrawPath, Fpdf.ClipRect, Fpdf.ClipRoundedRect, Fpdf.ClipRoundedRectExt, Fpdf.ClipEllipse, Fpdf.ClipCircle, Fpdf.ClipPolygon, Fpdf.ClipEnd
+  rust    PolygonRing, LinePoint (paths), WindingOrder
+  python  Canvas.beginPath, drawPath, clipPath, PDFPathObject.moveTo, lineTo, curveTo, arc, arcTo, rect, roundRect, circle, ellipse, close, getCode
+  note    the non-zero winding rule; the even-odd rule is not offered
+
+capability pdf/line-style  line width, caps, joins, miter limit, dashes
+  heroes  pdf.set_line_width, pdf.set_line_cap, pdf.set_line_join, pdf.set_miter_limit, pdf.set_dash, pdf.LineCap, pdf.LineJoin
+  go      Fpdf.SetLineWidth, Fpdf.GetLineWidth, Fpdf.SetLineCapStyle, Fpdf.SetLineJoinStyle, Fpdf.SetDashPattern
+  rust    Op::SetOutlineThickness, Op::SetLineCapStyle, Op::SetLineJoinStyle, Op::SetMiterLimit, Op::SetLineDashPattern, LineCapStyle, LineJoinStyle, LineDashPattern
+  python  Canvas.setLineWidth, setLineCap, setLineJoin, setMiterLimit, setDash
+  note    the pen's state is the program's: it set it, so no getter is offered
+
+capability pdf/colors  gray, RGB and CMYK colours for fills, strokes and text
+  heroes  pdf.Color, pdf.parse_color, pdf.set_fill_color, pdf.set_stroke_color
+  go      Fpdf.SetDrawColor, Fpdf.SetFillColor, Fpdf.SetTextColor, Fpdf.GetDrawColor, Fpdf.GetFillColor, Fpdf.GetTextColor, gofpdf.RGBType, gofpdf.RGBAType
+  rust    printpdf::color::Color, Rgb, Cmyk, Greyscale, ColorSpace, ColorBits, Op::SetFillColor, Op::SetOutlineColor, Op::SetColorSpaceFill, Op::SetColorSpaceStroke
+  python  Canvas.setFillColor, setFillColorRGB, setFillColorCMYK, setFillGray, setStrokeColor, setStrokeColorRGB, setStrokeColorCMYK, setStrokeGray, PDFTextObject.setFillColor and its kin
+  note    text is drawn in the fill colour, as PDF draws it; gofpdf's separate text colour is the fill colour set before the text
+
+capability pdf/spot-colors  spot colours and ICC colour spaces
+  heroes  pending
+  go      Fpdf.AddSpotColor, Fpdf.SetDrawSpotColor, Fpdf.SetFillSpotColor, Fpdf.SetTextSpotColor, Fpdf.GetDrawSpotColor, Fpdf.GetFillSpotColor, Fpdf.GetTextSpotColor
+  rust    printpdf::color::SpotColor, IccProfile, IccProfileType, IccProfileId
+  python  Canvas.setFillOverprint, setStrokeOverprint, setOverprintMask
+  note    -
+
+capability pdf/opacity  fills and strokes drawn partly transparent
+  heroes  pdf.set_opacity
+  go      Fpdf.SetAlpha, Fpdf.GetAlpha
+  rust    printpdf::graphics::ExtendedGraphicsState, PdfDocument::add_graphics_state, Op::LoadGraphicsState, ExtendedGraphicsStateId, ExtendedGraphicsStateMap
+  python  Canvas.setFillAlpha, Canvas.setStrokeAlpha
+  note    blend modes and soft masks of the graphics state are the next block
+
+capability pdf/blend-modes  blend modes, overprint and soft masks of the graphics state
+  heroes  pending
+  go      Fpdf.SetAlpha's blend mode
+  rust    BlendMode, SeperableBlendMode, NonSeperableBlendMode, OverprintMode, SoftMask, SoftMaskFunction, RenderingIntent, Op::SetRenderingIntent, HalftoneType, SpotFunction, TransferFunction, TransferExtraFunction, BlackGenerationFunction, BlackGenerationExtraFunction, UnderColorRemovalFunction, UnderColorRemovalExtraFunction, ChangedField, extgstate_to_dict
+  python  Canvas.setBlendMode
+  note    -
+
+capability pdf/transforms  the graphics state saved and restored, and transforms of the plane
+  heroes  pdf.save_state, pdf.restore_state, pdf.transform, pdf.Matrix, pdf.identity, pdf.translation, pdf.rotation, pdf.scaling, pdf.multiply
+  go      Fpdf.TransformBegin, Fpdf.TransformEnd, Fpdf.Transform, gofpdf.TransformMatrix, Fpdf.TransformRotate, TransformScale, TransformScaleX, TransformScaleY, TransformScaleXY, TransformTranslate, TransformTranslateX, TransformTranslateY, TransformSkew, TransformSkewX, TransformSkewY, TransformMirrorHorizontal, TransformMirrorVertical, TransformMirrorLine, TransformMirrorPoint
+  rust    Op::SaveGraphicsState, Op::RestoreGraphicsState, Op::SetTransformationMatrix, printpdf::matrix module
+  python  Canvas.saveState, restoreState, transform, translate, rotate, scale, skew, resetTransforms, absolutePosition, push_state_stack, pop_state_stack, init_graphics_state; pypdf.Transformation, Transformation.translate, rotate, scale, transform, matrix, compress, apply_on; pypdf.mult
+  note    a skew and a mirror are a `Matrix` built directly; restoring with nothing saved aborts, as a caller's fault it could see
+
+capability pdf/images-jpeg  JPEG images embedded as they are and drawn
+  heroes  pdf.add_jpeg, pdf.draw_image, pdf.ImageId
+  go      Fpdf.Image, Fpdf.ImageOptions, gofpdf.ImageOptions, Fpdf.RegisterImage, Fpdf.RegisterImageOptions, Fpdf.RegisterImageReader, Fpdf.RegisterImageOptionsReader, Fpdf.GetImageInfo, gofpdf.ImageInfoType (and its methods), gofpdf.ImageTypeFromMime
+  rust    PdfDocument::add_image, printpdf::image_types::RawImage, RawImageData, RawImageFormat, ImageCompression, OutputImageFormat, ImageOptimizationOptions, Op::UseXobject, XObjectId, XObjectMap
+  python  Canvas.drawImage, Canvas.drawInlineImage
+  note    baseline and progressive, gray, RGB and CMYK (inverted where an Adobe marker says so); an image added once is drawn as often as asked
+
+capability pdf/images-png  PNG and pixels in memory embedded, alpha as a soft mask
+  heroes  pdf.add_png, pdf.add_image
+  go      Fpdf.Image and RegisterImage with PNG
+  rust    PdfDocument::add_image, RawImage::decode_from_bytes
+  python  Canvas.drawImage with a PNG (through Pillow)
+  note    PNG is decoded by `image/png`, so every colour type and interlacing is read, and written again with DEFLATE; gofpdf passes a non-interlaced PNG's rows through, which saves the time and the memory of decoding it, at the price of refusing what it cannot pass through
+
+capability pdf/images-gif  GIF and other images
+  heroes  pdf.add_image
+  go      Fpdf.Image with GIF
+  rust    -
+  python  Canvas.drawImage with any format Pillow reads
+  note    any format `image` decodes into an `image.Image` (GIF, BMP, the netpbm family) is embedded by `add_image`
+
+capability pdf/links  links to an address and to a page
+  heroes  pdf.add_link, pdf.add_page_link
+  go      Fpdf.Link, Fpdf.LinkString, Fpdf.WriteLinkString, Fpdf.WriteLinkID, Fpdf.AddLink, Fpdf.SetLink
+  rust    Op::LinkAnnotation, printpdf::annotation::LinkAnnotation, Actions, Destination, BorderArray, ColorArray, DashPhase, HighlightingMode, PageAnnotation, PageAnnotId, PageAnnotMap
+  python  Canvas.linkURL, Canvas.linkAbsolute, Canvas.linkRect, Canvas.bookmarkPage, bookmarkHorizontal, bookmarkHorizontalAbsolute; PdfWriter.add_uri, PdfWriter.add_annotation (a link)
+  note    a link to a page names it by index and may be added before the page exists; `to_bytes` fails `invalid` where it never does
+
+capability pdf/bookmarks-write  an outline of bookmarks, nested
+  heroes  pdf.add_bookmark
+  go      Fpdf.Bookmark
+  rust    PdfDocument::add_bookmark, lopdf::Document::add_bookmark, lopdf::Bookmark, Document::build_outline, Document::renumber_bookmarks
+  python  Canvas.addOutlineEntry, Canvas.showOutline, Canvas.setOutlineNames0; PdfWriter.add_outline_item, add_outline_item_destination, add_outline_item_dict, add_outline, find_outline_item, get_outline_root, pypdf.generic.OutlineItem, OutlineFontFlag
+  note    every item open; colours and styles of items are not offered
+
+capability pdf/info-write  the document's information: title, author, dates
+  heroes  pdf.set_info, pdf.format_date
+  go      Fpdf.SetTitle, SetAuthor, SetSubject, SetKeywords, SetCreator, SetProducer, SetCreationDate, SetModificationDate, SetDefaultCreationDate, SetDefaultModificationDate
+  rust    printpdf::PdfDocumentInfo, printpdf::PdfMetadata, printpdf::date module
+  python  Canvas.setTitle, setAuthor, setSubject, setKeywords, setCreator, setProducer, setDateFormatter; PdfWriter.add_metadata
+  note    any key, written as a text string; no date is written unasked, so a document gives the same bytes every time, where gofpdf and ReportLab stamp the time
+
+capability pdf/xmp  XMP metadata streams
+  heroes  pending
+  go      Fpdf.SetXmpMetadata
+  rust    printpdf::XmpMetadata
+  python  PdfReader.xmp_metadata, PdfWriter.xmp_metadata, PageObject.xmp_metadata, pypdf.xmp
+  note    the stream is read as any object (`entry_of(catalog_of(f), key: "Metadata")`); writing one is pending
+
+capability pdf/compression  content streams compressed or not
+  heroes  pdf.set_compression
+  go      Fpdf.SetCompression, gofpdf.SetDefaultCompression
+  rust    printpdf::GeneratePdfOptions, lopdf::Document::compress, Document::decompress
+  python  Canvas.setPageCompression, PageObject.compress_content_streams
+  note    DEFLATE through `compress`, on by default
+
+capability pdf/output  the document written as a file's bytes
+  heroes  pdf.to_bytes
+  go      Fpdf.Output, Fpdf.OutputAndClose, Fpdf.OutputFileAndClose, Fpdf.Close, Fpdf.Err, Fpdf.Error, Fpdf.Ok, Fpdf.ClearError, Fpdf.SetError, Fpdf.SetErrorf
+  rust    PdfDocument::save, save_writer, save_async, printpdf::serialize module, lopdf::Document::save, save_to, save_with_options, save_modern, lopdf::SaveOptions, SaveOptionsBuilder, lopdf::Writer
+  python  Canvas.save, Canvas.getpdfdata, PdfWriter.write, PdfWriter.write_stream
+  note    a PDF 1.7 file with a cross-reference table; the bytes are the program's to write with `fs`. gofpdf's error kept in the document is a `T?` here, at the call that fails
+
+capability pdf/flow-layout  a cursor that moves as cells are written, margins, automatic page breaks, headers and footers by callback
+  heroes  refused: every call takes its position, so one way says where a thing goes; `draw_text_box` and `draw_table` answer where they ended and break pages themselves, and a header or footer is drawn on each page with `set_page` once they all exist
+  go      Fpdf.GetX, GetY, GetXY, SetX, SetY, SetXY, SetHomeXY, Ln, SetMargins, SetLeftMargin, SetTopMargin, SetRightMargin, GetMargins, SetCellMargin, GetCellMargin, SetAutoPageBreak, GetAutoPageBreak, SetAcceptPageBreakFunc, SetHeaderFunc, SetHeaderFuncMode, SetFooterFunc, SetFooterFuncLpi, AliasNbPages, RTL, LTR, Fpdf.SetDpi
+  rust    -
+  python  Canvas.setPageCallBack
+  note    -
+
+capability pdf/forms-templates  reusable form objects (templates)
+  heroes  pending
+  go      Fpdf.CreateTemplate, CreateTemplateCustom, CreateTpl, UseTemplate, UseTemplateScaled, UseImportedTemplate, ImportTemplates, ImportObjects, ImportObjPos, Templates, gofpdf.Template, FpdfTpl (and its methods), DeserializeTemplate
+  rust    printpdf::xobject module, PdfDocument::add_xobject, lopdf::xobject::form, Document::insert_form_object
+  python  Canvas.beginForm, endForm, doForm, hasForm
+  note    form objects are read (text inside them is extracted); writing them is pending
+
+capability pdf/layers  optional content: layers shown or hidden
+  heroes  pending
+  go      Fpdf.AddLayer, BeginLayer, EndLayer, OpenLayerPane
+  rust    PdfDocument::add_layer, printpdf::ops::Layer, LayerIntent, LayerSubtype, Op::BeginLayer, Op::EndLayer, Op::BeginOptionalContent, Op::EndOptionalContent, LayerInternalId, PdfLayerMap
+  python  -
+  note    -
+
+capability pdf/gradients  linear and radial gradients, shadings
+  heroes  pending
+  go      Fpdf.LinearGradient, Fpdf.RadialGradient
+  rust    PdfDocument::add_shading, printpdf::shading module, Op::PaintShading, ShadingMap
+  python  Canvas.linearGradient, Canvas.radialGradient, Canvas.shade
+  note    -
+
+capability pdf/attachments  files attached to a document
+  heroes  pending
+  go      Fpdf.SetAttachments, Fpdf.AddAttachmentAnnotation, gofpdf.Attachment
+  rust    -
+  python  PdfReader.attachments, attachment_list, PdfWriter.add_attachment, pypdf.generic.EmbeddedFile; pdfcpu AddAttachments, ExtractAttachments, ExtractAttachmentsRaw, RemoveAttachments, Attachments
+  note    attachments are read as objects of the name tree; listing and writing them is pending
+
+capability pdf/annotations-other  text notes, highlights, free text, ink, and other annotations
+  heroes  pending
+  go      -
+  rust    -
+  python  Canvas.textAnnotation, highlightAnnotation, freeTextAnnotation, inkAnnotation, textAnnotation0, inkAnnotation0; PdfWriter.add_annotation, remove_annotations; pdfcpu AddAnnotations, AddAnnotationsMap, AddAnnotationsAsIncrement, AddAnnotationsMapAsIncrement, Annotations, RemoveAnnotations, RemoveAnnotationsAsIncrement
+  note    a page's annotations are read as objects (`entry_of(page.object, key: "Annots")`), links among them by `links_of`
+
+capability pdf/forms-acroform  interactive forms: fields read, filled, flattened
+  heroes  pending
+  go      -
+  rust    -
+  python  Canvas.acroForm; PdfReader.get_fields, get_form_text_fields, get_pages_showing_field, add_form_topname, rename_form_topname, xfa; PdfWriter.update_page_form_field_values, set_need_appearances_writer, reattach_fields, FFBITS_NUL, pypdf.generic.Field; pdfcpu FormFields, ListFormFields, FillForm, MultiFillForm, ExportForm, ExportFormJSON, ResetFormFields, RemoveFormFields, LockFormFields, UnlockFormFields
+  note    -
+
+capability pdf/viewer  how a viewer opens the document: page mode, layout, preferences, labels, open action
+  heroes  pending
+  go      Fpdf.SetDisplayMode, Fpdf.SetCatalogSort, gofpdf.SetDefaultCatalogSort
+  rust    -
+  python  Canvas.setViewerPreference, getViewerPreference, delViewerPreference, showFullScreen0, setPageDuration, setPageTransition, setPageRotation, addPageLabel, setCatalogEntry, getCatalogEntry, delCatalogEntry; PdfReader.page_layout, page_mode, viewer_preferences, page_labels; PdfWriter.set_page_layout, create_viewer_preferences, set_page_label, add_open_action, pypdf.generic.ViewerPreferences; pdfcpu PageLayout, PageMode, SetPageLayout, SetPageMode, ResetPageLayout, ResetPageMode, ListPageLayout, ListPageMode, ViewerPreferences, ListViewerPreferences, ListViewerPreferencesJSON, ListViewerPreferencesFileJSON, SetViewerPreferences, SetViewerPreferencesFromJSONBytes, SetViewerPreferencesFromJSONReader, SetViewerPreferencesFileFromJSONBytes, ResetViewerPreferences
+  note    an outline written opens with the outline shown; the rest is read as the catalogue's entries
+
+capability pdf/javascript  scripts run by the viewer
+  heroes  refused: a script in a document runs in the reader of whoever opens it; Rebel writes documents, not programs for a viewer, and reads none
+  go      Fpdf.SetJavascript
+  rust    -
+  python  PdfWriter.add_js
+  note    -
+
+capability pdf/encrypt-write  documents written encrypted, with passwords and permissions
+  heroes  pending
+  go      Fpdf.SetProtection
+  rust    lopdf::Document::encrypt, lopdf::encryption::encrypt_object, EncryptionState, EncryptionVersion, PasswordAlgorithm, Permissions
+  python  Canvas.setEncrypt, reportlab.lib.pdfencrypt; PdfWriter.encrypt; pdfcpu Encrypt, ChangeOwnerPassword, ChangeUserPassword, SetPermissions, GetPermissions, Permissions, PermissionsList
+  note    RC4 protects nothing and AES needs a CBC mode `crypto` does not offer; written when `crypto` offers AES-CBC
+
+capability pdf/svg-html  SVG paths and HTML laid out into a document, a page rendered to SVG
+  heroes  refused: another format's renderer; SVG and HTML are read by their own packages, and a program draws what it reads with the calls above
+  go      gofpdf.SVGBasicParse, SVGBasicFileParse, SVGBasicWrite, SVGBasicType, SVGBasicSegmentType, HTMLBasicNew, HTMLBasicTokenize, HTMLBasicType, HTMLBasicSegmentType
+  rust    PdfDocument::from_html (and its variants), render_to_svg, render_to_svg_async, page_to_svg, page_to_svg_async, PdfToSvgOptions, printpdf::html, printpdf::render, printpdf::components, printpdf::wasm
+  python  -
+  note    -
+
+capability pdf/read-open  a file read whole, under limits
+  heroes  pdf.parse, pdf.File, pdf.Limits, pdf.default_limits
+  go      pdfcpu ReadContext, ReadAndValidate, ReadValidateAndOptimize, PDFInfo, pdfcpu.ReadSeekerAt
+  rust    lopdf::Document::load, load_mem, load_from, load_with_options, load_mem_with_options, load_filtered, lopdf::LoadOptions, lopdf::Reader, lopdf::DEFAULT_MAX_DECOMPRESSED_SIZE, PdfDocument::parse, parse_async
+  python  pypdf.PdfReader, PdfReader.read, PdfReader.strict, PdfReader.pdf_header, PdfReader.close, PdfReader.flattened_pages, pypdf.generic.StreamParsingBudget
+  note    the whole file is given as bytes and every object is read at once, as lopdf loads it; limits bound the objects, the bytes streams decode to, the nesting of values and of the page tree, the pages and the revisions
+
+capability pdf/read-structure  cross-reference tables and streams, object streams, incremental updates, a damaged table rebuilt
+  heroes  pdf.parse, pdf.version_of
+  go      pdfcpu Validate, ValidateContext, ValidateWithReport, ValidateContextWithReport, ValidateFileWithReport, ValidateFiles
+  rust    lopdf::xref module, lopdf::ObjectStream, ObjectStreamBuilder, ObjectStreamConfig, lopdf::IncrementalDocument, Document::revision_count, lopdf::Linearization, lopdf::parser, lopdf::parser_aux
+  python  PdfWriter.list_objects_in_increment, PdfReader.read_object_header, pypdf.errors
+  note    every revision is followed back through Prev and XRefStm, the newest entry of each object kept; where the table does not hold (a wrong startxref, offsets that miss their objects, no trailer), the file is scanned for its objects and its trailers, as pypdf's non-strict reader and Poppler do; pdfcpu's full validation against ISO 32000 is not offered: a file that reads is not thereby declared conforming
+
+capability pdf/read-objects  any object of a file: dictionaries, arrays, names, strings, numbers, references
+  heroes  pdf.Object, pdf.Kind, pdf.Reference, pdf.object_of, pdf.resolve, pdf.trailer_of, pdf.catalog_of, pdf.kind_of, pdf.bool_of, pdf.integer_of, pdf.number_of, pdf.bytes_of, pdf.name_of, pdf.items_of, pdf.entry_of, pdf.keys_of, pdf.reference_of
+  go      -
+  rust    lopdf::Object, Dictionary, ObjectId, StringFormat, Document::get_object, get_dictionary, get_dict_in_dict, dereference, catalog, has_object, traverse_objects, get_encrypted, lopdf::Document
+  python  PdfReader.get_object, root_object, cache_get_indirect_object, cache_indirect_object, PdfReader.trailer; pypdf.generic ArrayObject, BooleanObject, ByteStringObject, DictionaryObject, FloatObject, IndirectObject, NameObject, NullObject, NumberObject, PdfObject, TextStringObject, RectangleObject, TreeObject, read_object, is_null_or_none, DirectReferenceLink, NamedReferenceLink, ReferenceLink
+  note    a name is held as text where its bytes are UTF-8, else with `#XX` for each other byte, so two names never meet; a reference to nothing reads as the null object, as PDF says
+
+capability pdf/read-streams  a stream's bytes, its filters undone
+  heroes  pdf.stream_data_of, pdf.raw_stream_of
+  go      pdfcpu ExtractContent
+  rust    lopdf::Stream, Document::extract_stream, lopdf::filters, lopdf::FilterFunc, lopdf::DecompressError, Document::get_page_content, get_page_content_with_limit, get_and_decode_page_content, get_page_contents, lopdf::content::Content, ContentOperations, Operation
+  python  pypdf.generic.StreamObject, DecodedStreamObject, EncodedStreamObject, ContentStream, PageObject.get_contents
+  note    FlateDecode and LZWDecode with PNG and TIFF predictors, ASCIIHexDecode, ASCII85Decode, RunLengthDecode; a FlateDecode stream cut short gives what it holds before the fault, as pypdf and Poppler do; DCTDecode, JPXDecode, JBIG2Decode and CCITTFaxDecode fail `unsupported`, their bytes answered by `raw_stream_of`; a content stream's operators are parsed inside `text_of` and not offered apart
+
+capability pdf/read-pages  the pages, their boxes and rotation
+  heroes  pdf.pages_of, pdf.Page, pdf.Box
+  go      pdfcpu PageCount, PageDims, PageBoundaries, PageBoundariesFromBoxList, Box, Boxes, ListBoxes
+  rust    lopdf::Document::get_pages, page_iter, get_object_page, get_page_resources, get_or_create_resources, get_page_fonts
+  python  PdfReader.pages, get_page, get_num_pages, get_page_number, PageObject.mediabox, cropbox, bleedbox, trimbox, artbox, rotation, user_unit, page_number, get_inherited
+  note    resources, boxes and rotation inherited from the page tree are put in each page's dictionary; a tree that comes back on itself is read once
+
+capability pdf/read-text  the text of a page
+  heroes  pdf.text_of, pdf.pieces_of, pdf.TextPiece
+  go      pdfcpu ExtractContent (the content, not its text)
+  rust    lopdf::Document::extract_text, extract_text_with_limit, extract_text_chunks, extract_text_chunks_with_limit, PdfDocument::extract_text, extract_text_boxes, printpdf::text_boxes::PageTextBoxes, TextLine, TextWord, GlyphBox, decode_pdf_string, decode_simple_font_bytes, decode_tj_operands, decode_tj_operands_as_glyph_ids, decode_tj_string_as_glyph_ids, lopdf::Encoding
+  python  PageObject.extract_text, extract_xform_text
+  note    simple fonts by their base encoding (Standard, WinAnsi, MacRoman, Symbol, ZapfDingbats), their Differences through the Adobe Glyph List, and their ToUnicode map; composite fonts by their CMap and ToUnicode map, or UCS-2 codes; form objects followed; runs put on lines as `pdftotext -raw` does; text outside the page's box is kept, where Poppler drops it
+
+capability pdf/read-text-cid-without-tounicode  the text of a composite font that gives no ToUnicode map, read from the embedded font's own cmap table, and of the predefined CJK CMaps
+  heroes  pending
+  go      -
+  rust    -
+  python  PageObject.extract_text (pypdf's own CMap files)
+  note    Poppler reads such a font's TrueType cmap table and carries the predefined CMaps; until a package reads font files, such text is left out, as the differential found on the Japanese and Korean pages of one licence file
+
+capability pdf/read-info  the document's information, dates read
+  heroes  pdf.info_of, pdf.parse_date
+  go      pdfcpu Properties, AddProperties, RemoveProperties, Keywords, AddKeywords, RemoveKeywords, ExtractMetadata
+  rust    lopdf::Document::load_metadata, load_metadata_mem, load_metadata_from, load_metadata_with_password, load_metadata_mem_with_password, load_metadata_from_with_password, lopdf::PdfMetadata, lopdf::DateTime, lopdf::datetime module
+  python  PdfReader.metadata, pypdf.DocumentInformation, DocumentInformation.title, title_raw, author, author_raw, subject, subject_raw, creator, creator_raw, producer, producer_raw, keywords, keywords_raw, creation_date, creation_date_raw, modification_date, modification_date_raw
+  note    every text entry decoded; dates stay text, read by `parse_date` with their offset, so a raw date is never lost
+
+capability pdf/text-strings  PDF's text strings decoded and encoded
+  heroes  pdf.decode_text, pdf.encode_text
+  go      -
+  rust    lopdf::decode_text_string, text_string, encode_utf16_be, encode_utf8, Document::decode_text, Document::encode_text, printpdf::text::encode_pdf_string_hex, encode_pdf_string_literal, encode_pdf_string_minimal
+  python  pypdf.generic.create_string_object, decode_pdfdocencoding, encode_pdfdocencoding
+  note    PDFDocEncoding, checked byte by byte against what Poppler's pdfinfo decodes; UTF-16BE and PDF 2.0's UTF-8 after their marks
+
+capability pdf/read-outline  the outline of a file, its destinations resolved
+  heroes  pdf.outline_of, pdf.Bookmark, pdf.Target
+  go      pdfcpu Bookmarks, ListBookmarks, ExportBookmarksJSON, ImportBookmarks, AddBookmarks, RemoveBookmarks
+  rust    lopdf::Document::get_outline, get_outlines, get_toc, lopdf::Outline, lopdf::Toc, lopdf::TocType, lopdf::Destination, Document::get_named_destinations, delete_outlines
+  python  PdfReader.outline, get_destination_page_number, named_destinations, get_named_dest_root, open_destination, threads, pypdf.generic.Destination, pypdf.generic.Fit, PAGE_FIT
+  note    explicit destinations and named ones, through the catalogue's Dests and its name tree, and GoTo and URI actions; depth first, an item met twice read once
+
+capability pdf/read-links  the links of a page
+  heroes  pdf.links_of, pdf.Link
+  go      -
+  rust    lopdf::Document::get_page_annotations
+  python  pypdf.generic.extract_links, PageObject.annotations
+  note    -
+
+capability pdf/read-encrypted  files encrypted by the standard handler, opened with a password
+  heroes  pdf.parse, pdf.is_encrypted
+  go      pdfcpu Decrypt
+  rust    lopdf::Document::decrypt, decrypt_raw, authenticate_password, authenticate_user_password, authenticate_owner_password, authenticate_raw_password, authenticate_raw_user_password, authenticate_raw_owner_password, is_encrypted, was_encrypted, load_with_password, load_mem_with_password, get_crypt_filters, lopdf::encryption::decrypt_object, DecryptionError
+  python  PdfReader.decrypt, is_encrypted, user_access_permissions, are_permissions_valid, pypdf.PasswordType, pypdf.crypt_provider
+  note    RC4 of 40 to 128 bits (revisions 2 to 4), by the user's or the owner's password; AES (AESV2, AESV3, revisions 5 and 6) fails `unsupported`: see the next block
+
+capability pdf/read-encrypted-aes  files encrypted with AES
+  heroes  pending
+  go      pdfcpu Decrypt
+  rust    lopdf::Document::decrypt
+  python  PdfReader.decrypt
+  note    `crypto` offers AES only in GCM mode (`crypto/seal`) and PDF needs CBC; reading these waits for AES-CBC there, never for a copy of AES here
+
+capability pdf/read-images  the images a page draws, their bytes
+  heroes  pending
+  go      pdfcpu Images, ListImages, ExtractImages, ExtractImagesRaw, UpdateImages, ImportImages
+  rust    lopdf::Document::get_page_images, lopdf::xobject::PdfImage, Document::insert_image
+  python  PageObject.images, PageObject.inline_images, pypdf.ImageType
+  note    a page's image objects are reached through its resources (`entry_of`, `resolve`) and their bytes by `raw_stream_of`, a JPEG's being a JPEG file; a listing of them, inline images included, is pending
+
+capability pdf/read-fonts  the fonts a file uses, listed and extracted
+  heroes  pending
+  go      pdfcpu ListFonts, ExtractFonts, InstallFonts, InstallFontsWithResult, CreateCheatSheetsUserFonts, CreateCheatSheetsUserFontsWithResult, CreateUserFontCheatSheets, CreateUserFontCheatSheetsWithResult
+  rust    lopdf::Document::get_page_fonts
+  python  -
+  note    -
+
+capability pdf/edit  a file read changed and written again: pages merged, split, inserted, removed, rotated, cropped; objects changed, renumbered, pruned; incremental updates written
+  heroes  pending
+  go      pdfcpu Merge, MergeRaw, MergeCreateZip, Split, SplitRaw, SplitByPageNr, Collect, Trim, InsertPages, RemovePages, ExtractPage, ExtractPages, Rotate, Crop, Resize, Zoom, AddBoxes, RemoveBoxes, Write, WriteContext, WriteIncr, WriteIncrement, Optimize, OptimizeContext, PagesForPageSelection, PagesForPageRange, PagesForPageCollection, PagesForSelection, ParsePageSelection, RemainingPagesForPageRemoval, RemainingPagesForRemoval, Create, Import, PageSpan
+  rust    lopdf::Document::add_object, set_object, delete_object, remove_object, new_object_id, try_new_object_id, add_page_contents, add_to_page_content, change_page_content, change_content_stream, delete_pages, delete_zero_length_streams, prune_objects, renumber_objects, renumber_objects_with, adjust_zero_pages, change_producer, replace_text, replace_partial_text, remove_annot, get_page_annotations_mut, get_object_mut, get_dictionary_mut, catalog_mut, add_xobject, add_graphics_state, IncrementalDocument, PdfDocument::append_document, insert_document, PdfDocument::to_lopdf_document, printpdf::optimize, printpdf::deserialize
+  python  PdfWriter, PdfWriter.add_page, insert_page, append, merge, append_pages_from_reader, clone_document_from_reader, clone_reader_document_root, remove_page, remove_images, remove_links, remove_text, remove_objects_from_page, clean_page, compress_identical_objects, generate_file_identifiers, get_reference, add_named_destination, add_named_destination_array, add_named_destination_object, add_filtered_articles, reset_translation, PdfReader.remove_page, PageObject.add_transformation, merge_page, merge_rotated_page, merge_scaled_page, merge_transformed_page, merge_translated_page, rotate, scale, scale_by, scale_to, transfer_rotation_to_content, replace_contents, clone, add_action, delete_action, pypdf.PageRange, PageRange.indices, to_slice, valid, parse_filename_page_ranges, pypdf.ObjectDeletionFlag
+  note    the objects are read whole, so a writer of read objects is the missing half; it is the next capability of this package
+
+capability pdf/page-tools  watermarks, n-up, booklets, posters, grids, stamps over pages
+  heroes  refused: tools of pdfcpu's command line built from editing pages (`pdf/edit`) and drawing on them; a program composes them from those two
+  go      pdfcpu AddWatermarks, AddWatermarksMap, AddWatermarksSliceMap, RemoveWatermarks, HasWatermarks, TextWatermark, ImageWatermark, ImageWatermarkForReader, PDFWatermark, PDFWatermarkForReadSeeker, PDFMultiWatermarkForReadSeeker, WatermarkContext, NUp, NUpFromImage, NUpValues, NUpValuesForBooklets, ParseNUpDetails, ParseNUpGridDefinition, ParseNUpValue, PDFNUpConfig, ImageNUpConfig, NDown, Booklet, BookletFromImages, DefaultBookletConfig, PDFBookletConfig, ImageBookletConfig, Poster, Cut, Grid, GridFromImage, ParseGridDefinition, PDFGridConfig, ImageGridConfig, DefaultImportConfig, PrepareImportConfiguration, ImportImages, ValidateImportImagesOutput, ValidateUpdateImagesOutput
+  rust    -
+  python  -
+  note    -
+
+capability pdf/signatures  digital signatures and certificates
+  heroes  pending
+  go      pdfcpu ValidateSignatures, ValidateSignaturesRaw, RemoveSignatures, ImportCertificates, InspectCertificates, ListCertificates
+  rust    -
+  python  -
+  note    reading a signature's bytes needs only the objects; checking it needs `x509` and `crypto/keypairs`, and CMS, which no package reads yet
+
+dropped
+  go      gofpdf.Fpdf.RawWriteStr, RawWriteBuf, Fpdf.String, Fpdf.SetFontLoader's paths, Fpdf.SetCatalogSort's ordering, gofpdf.StateType, Fpdf.StateGet (and its methods), Fpdf.GobEncode, GobDecode, Serialize, Fpdf.SubWrite, Fpdf.SetUnderlineThickness, Fpdf.TickmarkPrecision, Tickmarks, TickmarksContainX, TickmarksContainY, TickmarksExtentX, TickmarksExtentY, gofpdf.CompareBytes, ComparePDFs, ComparePDFFiles, gofpdf.Pdf (the interface): writing raw bytes into a page, the encoder's internal state and its serialisation, test helpers of gofpdf's own, and a chart's tick marks, which belong to a chart and not to PDF
+  go      pdfcpu LoadConfiguration, DisableConfigDir, EnsureDefaultConfigAt, InitializeConfigurationWithOptions, ResetConfigurationWithOptions, InspectConfiguration, and the types ConfigurationInitialization, ConfigurationInspection, ConfigurationLimitsInspection, ConfigurationMode, ConfigurationNetworkInspection, ConfigurationOptions, ConfigurationPathInspection, ConfigurationPathsInspection, ConfigurationSchemaCompatibilityError, ConfigurationSchemaInspection, ConfigurationSource, FontCheatSheetResult, FontInstallResult, ProgressError, ProgressEvent, ProgressObserver, ProgressOptions, ProgressStage, UnsupportedResourceError, VersionRequirementError; WriteContentToDisk, WriteFontToDisk, WriteImageToDisk, WriteMetadataToDisk, WritePageToDisk; every function's `File` twin: pdfcpu's configuration directory, its progress reporting, and files on the disk, which `fs` reads and writes
+  rust    printpdf::PdfResources, FontId, IccProfileId, PdfFontMap, Base64OrRaw, Op::Marker, Op::Unknown, Op::BeginMarkedContent, BeginMarkedContentWithProperties, EndMarkedContent, EndMarkedContentWithProperties, DefineMarkedContentPoint, BeginCompatibilitySection, EndCompatibilitySection, BeginInlineImage, BeginInlineImageData, EndInlineImage, printpdf::conformance, printpdf::text_shaping, printpdf::utils, BuiltinOrExternalFontId; lopdf::Result, lopdf::Error, ParseError, Object conversions (From, TryFrom), fn.substr, fn.substring: the resource maps a writer keeps, marked content and compatibility sections, PDF/A conformance profiles, shaping, and the conversions and errors of each crate's own types
+  python  pypdf.Configuration, apply_configuration, get_configuration, overwrite_configuration, pil_version, pypdf.constants, pypdf.types, pypdf.papersizes, pypdf.pagerange, pypdf.actions, PageObject's dictionary methods (clear, copy, fromkeys, get, items, keys, pop, popitem, setdefault, update, values, raw_get, hash_bin, hash_func, hash_value, hash_value_data, replicate, read_from_stream, write_to_stream, get_object); DocumentInformation's same methods; PdfReader.decode_permissions-like plumbing; reportlab Canvas.STATE_ATTRIBUTES, STATE_RANGE, addLiteral, addPostScriptCommand, getNamedCB, setNamedCB, pdfmetrics.dumpFontData, test, test3widths, testStringWidthAlgorithms, warnOnce, bruteForceSearchForAFM, bruteForceSearchForFile, findInPaths, open_and_read, open_and_readlines, rl_glob, rl_isdir, rl_isfile, rl_codecs, rl_config, reportlab_fonts_dir, isSeq, isStr, os, sys, PFB_ASCII, PFB_BINARY, PFB_EOF, PFB_MARKER, font2fnrMap, standardEncodings, standardT1SubstitutionFonts, getEncoding, encodings, baseCFont, baseGFont, FontError, FontNotFoundError, faceFromRLFD: configuration of the interpreter's library, a dictionary's own methods, raw PostScript, font files searched on the disk, and modules the libraries import

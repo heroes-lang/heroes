@@ -1,0 +1,369 @@
+# CMaps (Adobe Technical Note 5014 and 5411; ISO 32000-1:2008 section
+# 9.7.5 and 9.10.3): the code space that cuts a string into codes, the
+# characters a ToUnicode map gives each code, and the CIDs an encoding CMap
+# gives them. Ranges are kept as ranges, never spread into a table, so a
+# map of 0000 to FFFF costs one entry.
+
+use pdf/internal/codes
+use pdf/internal/glyphs
+use pdf/internal/model
+use pdf/internal/parse
+use unicode
+
+# Codes of `size` bytes from `low` to `high`.
+record Space
+    # How many bytes a code takes, 1 to 4.
+    size: i64
+    # The lowest code.
+    low: i64
+    # The highest code.
+    high: i64
+
+# Codes of `size` bytes from `low` to `high` mapped from one start: the
+# characters `points`, the last raised by each code past `low`, or the CID
+# `cid` raised the same way.
+record Span
+    # How many bytes a code takes.
+    size: i64
+    # The lowest code.
+    low: i64
+    # The highest code.
+    high: i64
+    # The characters of `low`, for a ToUnicode range given a string.
+    points: [i64]
+    # The texts of each code in order, for a range given an array.
+    texts: [str]
+    # The CID of `low`, for an encoding CMap.
+    cid: i64
+
+# A CMap read.
+record CMap
+    # The code space.
+    spaces: [Space]
+    # Single codes' characters, by key (`key_of`).
+    chars: {i64: str}
+    # Ranges of characters.
+    ranges: [Span]
+    # Single codes' CIDs, by key.
+    cids: {i64: i64}
+    # Ranges of CIDs.
+    cid_ranges: [Span]
+
+# A CMap that holds nothing.
+function empty() -> CMap
+    return CMap(spaces: [], chars: {}, ranges: [], cids: {}, cid_ranges: [])
+
+# The CMap Identity-H: codes of two bytes, each its own CID.
+function identity() -> CMap
+    return CMap(
+        spaces: [Space(size: 2, low: 0, high: 0xffff)],
+        chars: {},
+        ranges: [],
+        cids: {},
+        cid_ranges: [Span(size: 2, low: 0, high: 0xffff, points: [], texts: [], cid: 0)]
+    )
+
+# The key a code of `size` bytes and value `value` is kept under, so that a
+# one-byte 41 and a two-byte 0041 differ.
+function key_of(size: i64, value: i64) -> i64
+    return size * 4294967296 + value
+
+# A code: its value and its size in bytes.
+record Code
+    # The value, the bytes read big-endian.
+    value: i64
+    # How many bytes it took.
+    size: i64
+
+# The big-endian value of `s`'s bytes, at most four.
+function value_of(s: [u8]) -> i64
+    n @= 0
+
+    for b in s
+        n @ n * 256 + to_i64(b).must()
+
+    return n
+
+# The string of `o`, none where it is no string.
+function string_of(o: model.Obj) -> [u8]
+    return match o
+        .text t => t.value
+        .null_value | .boolean _ | .integer _ | .real _ | .name _ | .array _ | .dict _ | .stream _ | .reference _ => []
+
+# The characters UTF-16BE bytes `s` write, pairs joined, a lone half kept
+# out.
+function utf16(s: [u8]) -> [i64]
+    points: [i64] @= []
+    i @= 0
+
+    while i + 1 < s.len()
+        unit = to_i64(s[i]).must() * 256 + to_i64(s[i + 1]).must()
+        i @ i + 2
+
+        if unit >= 0xd800 && unit <= 0xdbff && i + 1 < s.len()
+            low = to_i64(s[i]).must() * 256 + to_i64(s[i + 1]).must()
+
+            if low >= 0xdc00 && low <= 0xdfff
+                points @ points.push(0x10000 + (unit - 0xd800) * 1024 + (low - 0xdc00))
+                i @ i + 2
+        else if unit < 0xd800 || unit > 0xdfff
+            points @ points.push(unit)
+
+    if s.len() == 1
+        points @ points.push(to_i64(s[0]).must())
+    return points
+
+# The text a ToUnicode destination writes: a string of UTF-16BE, or a
+# glyph's name.
+function destination(o: model.Obj) -> str
+    return match o
+        .text t => unicode.from_code_points(utf16(t.value)).default("")
+        .name n => glyphs.text_of(n.value)
+        .null_value | .boolean _ | .integer _ | .real _ | .array _ | .dict _ | .stream _ | .reference _ => ""
+
+# Puts the text of the code `key` into `table`, the caller's own map.
+function put_char(@table: {i64: str}, key: i64, text: str)
+    table[key] @ text
+
+# Puts the CID of the code `key` into `cids`, the caller's own map.
+function put_cid(@cids: {i64: i64}, key: i64, cid: i64)
+    cids[key] @ cid
+
+# Adds `s` to `spaces`, the caller's own list.
+function add_space(@spaces: [Space], s: Space)
+    spaces @ spaces.push(s)
+
+# Adds `s` to `spans`, the caller's own list.
+function add_span(@spans: [Span], s: Span)
+    spans @ spans.push(s)
+
+# The CMap `data` writes; what it does not write as a CMap is stepped over.
+#
+# Fails `limit` where a value in it nests deeper than `depth`.
+function read(data: [u8] lent, depth: i64) -> CMap?
+    m @= empty()
+    operands: [model.Obj] @= []
+    at @= 0
+
+    while true
+        parse.skip_space(data, @at)
+
+        if at >= data.len()
+            break
+        b = data[at]
+
+        if parse.is_regular(b) && !(b >= '0' && b <= '9') && b != '-' && b != '+' && b != '.'
+            w = parse.word(data, @at)
+
+            if w == "endcodespacerange"
+                i @= 0
+
+                while i + 1 < operands.len()
+                    low = string_of(operands[i])
+                    high = string_of(operands[i + 1])
+
+                    if low.len() >= 1 && low.len() <= 4 && low.len() == high.len()
+                        add_space(@m.spaces, s: Space(size: low.len(), low: value_of(low), high: value_of(high)))
+                    i @ i + 2
+            else if w == "endbfchar"
+                i @= 0
+
+                while i + 1 < operands.len()
+                    source = string_of(operands[i])
+
+                    if source.len() >= 1 && source.len() <= 4
+                        put_char(
+                            @m.chars,
+                            key: key_of(size: source.len(), value: value_of(source)),
+                            text: destination(operands[i + 1])
+                        )
+                    i @ i + 2
+            else if w == "endbfrange"
+                i @= 0
+
+                while i + 2 < operands.len()
+                    low = string_of(operands[i])
+                    high = string_of(operands[i + 1])
+
+                    if low.len() >= 1 && low.len() <= 4 && low.len() == high.len() && value_of(low) <= value_of(high)
+                        span = match operands[i + 2]
+                            .array a =>
+                                texts: [str] @= []
+
+                                for item in a.items
+                                    texts @ texts.push(destination(item))
+
+                                Span(
+                                    size: low.len(),
+                                    low: value_of(low),
+                                    high: value_of(high),
+                                    points: [],
+                                    texts: texts,
+                                    cid: 0
+                                )
+                            .null_value | .boolean _ | .integer _ | .real _ | .text _ | .name _ | .dict _ | .stream _ | .reference _ =>
+                                Span(
+                                    size: low.len(),
+                                    low: value_of(low),
+                                    high: value_of(high),
+                                    points: utf16(string_of(operands[i + 2])),
+                                    texts: [],
+                                    cid: 0
+                                )
+
+                        add_span(@m.ranges, s: span)
+                    i @ i + 3
+            else if w == "endcidchar"
+                i @= 0
+
+                while i + 1 < operands.len()
+                    source = string_of(operands[i])
+
+                    if source.len() >= 1 && source.len() <= 4
+                        put_cid(
+                            @m.cids,
+                            key: key_of(size: source.len(), value: value_of(source)),
+                            cid: model.integer_or(operands[i + 1], fallback: 0)
+                        )
+                    i @ i + 2
+            else if w == "endcidrange"
+                i @= 0
+
+                while i + 2 < operands.len()
+                    low = string_of(operands[i])
+                    high = string_of(operands[i + 1])
+
+                    if low.len() >= 1 && low.len() <= 4 && low.len() == high.len() && value_of(low) <= value_of(high)
+                        add_span(
+                            @m.cid_ranges,
+                            s: Span(size: low.len(), low: value_of(low), high: value_of(high), points: [], texts: [], cid: model.integer_or(operands[i + 2], fallback: 0))
+                        )
+                    i @ i + 3
+            else if w == "usecmap"
+                last = operands.len() - 1
+
+                if last >= 0 && (model.name_or_empty(operands[last]) == "Identity-H" || model.name_or_empty(operands[last]) == "Identity-V")
+                    base = identity()
+
+                    for s in base.spaces
+                        add_space(@m.spaces, s: s)
+
+                    for s in base.cid_ranges
+                        add_span(@m.cid_ranges, s: s)
+            operands @ []
+            continue
+        start = at
+
+        match parse.value(data: data, at: @at, depth: depth, key: [])
+            .ok v => operands @ operands.push(v)
+            .err e =>
+                if e.code == codes.LIMIT
+                    return fail(code: e.code, msg: e.msg)
+                at @ start + 1
+
+    return ok(m)
+
+# The codes `s` holds, cut by `m`'s code space: at each place the shortest
+# code its space holds, one byte where none does. With no space at all, codes
+# of `fallback` bytes.
+function split(m: CMap lent, s: [u8], fallback: i64) -> [Code]
+    out: [Code] @= []
+    i @= 0
+
+    while i < s.len()
+        taken @= 0
+
+        if m.spaces.len() == 0
+            taken @ fallback
+        else
+            n @= 1
+
+            while n <= 4 && taken == 0 && i + n <= s.len()
+                v = value_of(s.slice(from: i, to: i + n))
+
+                for space in m.spaces
+                    if space.size == n && v >= space.low && v <= space.high
+                        taken @ n
+
+                n @ n + 1
+
+            if taken == 0
+                taken @ 1
+
+        if i + taken > s.len()
+            taken @ s.len() - i
+        out @ out.push(Code(value: value_of(s.slice(from: i, to: i + taken)), size: taken))
+        i @ i + taken
+
+    return out
+
+# The text `m` gives `code`, failing `not_found` where it gives none.
+function text_of(m: CMap lent, code: Code) -> str?
+    match m.chars[key_of(size: code.size, value: code.value)]
+        .ok s  => return ok(s)
+        .err _ => _ = 0
+
+    for r in m.ranges
+        if r.size == code.size && code.value >= r.low && code.value <= r.high
+            offset = code.value - r.low
+
+            if r.texts.len() > 0
+                if offset < r.texts.len()
+                    return ok(r.texts[offset])
+                return fail(code: codes.NOT_FOUND, msg: "past the range's array")
+
+            if r.points.len() == 0
+                return ok("")
+            points @= r.points
+            points[points.len() - 1] @ points[points.len() - 1] + offset
+            return ok(unicode.from_code_points(points).default(""))
+
+    return fail(code: codes.NOT_FOUND, msg: f"no character for the code {code.value}")
+
+# The CID `m` gives `code`, the code itself where it gives none.
+function cid_of(m: CMap lent, code: Code) -> i64
+    match m.cids[key_of(size: code.size, value: code.value)]
+        .ok c  => return c
+        .err _ => _ = 0
+
+    for r in m.cid_ranges
+        if r.size == code.size && code.value >= r.low && code.value <= r.high
+            return r.cid + code.value - r.low
+
+    return code.value
+
+test "read and text_of: a code space, single codes, a range by string and by array"
+    text = "/CIDInit /ProcSet findresource begin 12 dict begin begincmap 1 begincodespacerange <0000> <FFFF> endcodespacerange 2 beginbfchar <0003> <0020> <0024> <00410042> endbfchar 2 beginbfrange <0010> <0012> <0061> <0020> <0021> [<03A9> <D83DDE00>] endbfrange endcmap"
+    m = read(bytes_of(text), depth: 8).must()
+    assert m.spaces.len() == 1 && m.spaces[0].size == 2
+    assert text_of(m, code: Code(value: 3, size: 2)).must() == " "
+    assert text_of(m, code: Code(value: 0x24, size: 2)).must() == "AB"
+    assert text_of(m, code: Code(value: 0x11, size: 2)).must() == "b"
+    assert text_of(m, code: Code(value: 0x21, size: 2)).must() == "😀"
+    assert text_of(m, code: Code(value: 0x99, size: 2)).is_err()
+    assert text_of(m, code: Code(value: 3, size: 1)).is_err()
+
+test "split: two-byte codes, mixed sizes, no space at all"
+    m = read(bytes_of("2 begincodespacerange <00> <80> <8140> <9FFC> endcodespacerange"), depth: 8).must()
+    codes_found = split(m, s: [0x41, 0x81, 0x40, 0x42], fallback: 1)
+    assert codes_found.len() == 3 && codes_found[1].value == 0x8140 && codes_found[1].size == 2
+    assert split(empty(), s: [1, 2, 3], fallback: 2).len() == 2
+    assert split(identity(), s: [0, 65, 0], fallback: 1)[1].size == 1
+
+test "cid_of: a single code, a range, Identity, none"
+    m = read(bytes_of("1 begincidchar <21> 5 endcidchar 1 begincidrange <30> <39> 100 endcidrange"), depth: 8).must()
+    assert cid_of(m, code: Code(value: 0x21, size: 1)) == 5
+    assert cid_of(m, code: Code(value: 0x33, size: 1)) == 103
+    assert cid_of(m, code: Code(value: 0x77, size: 1)) == 0x77
+    assert cid_of(identity(), code: Code(value: 0x1234, size: 2)) == 0x1234
+
+# The bytes of `s`, for the tests.
+function bytes_of(s: str) -> [u8]
+    out: [u8] @= []
+    i @= 0
+
+    while i < s.len()
+        out @ out.push(s[i])
+        i @ i + 1
+
+    return out

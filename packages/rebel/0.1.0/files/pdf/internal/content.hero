@@ -1,0 +1,133 @@
+# A content stream cut into its operations (ISO 32000-1:2008 section 7.8.2):
+# operands, then the operator that takes them; an inline image's
+# dictionary kept and its bytes stepped over. Bytes that are no value are
+# stepped over one at a time, as readers of PDF do, so a damaged stream
+# gives what it can.
+
+use bytes
+use pdf/internal/codes
+use pdf/internal/model
+use pdf/internal/parse
+
+# An operation: its operator, and the operands before it.
+record Op
+    # The operator, `Tj`.
+    name: str
+    # Its operands, in order; an inline image's dictionary for `BI`.
+    operands: [model.Obj]
+
+# Adds `op` to `ops`, the caller's own list.
+function add_op(@ops: [Op], op: Op)
+    ops @ ops.push(op)
+
+# Adds `v` to `operands`, the caller's own list.
+function add_operand(@operands: [model.Obj], v: model.Obj)
+    operands @ operands.push(v)
+
+# The word at `at` without moving: "" where no regular byte stands there.
+function peek_word(data: [u8] lent, at: i64) -> str
+    i @= at
+    return parse.word(data, @i)
+
+# Moves `at` past an inline image's bytes, after its `ID`: to just after
+# the first `EI` that whitespace stands before and after, or to the end.
+function skip_image(data: [u8] lent, @at: i64)
+    if at < data.len() && parse.is_white(data[at])
+        at @ at + 1
+    i @= at
+
+    while i + 1 < data.len()
+        if data[i] == 'E' && data[i + 1] == 'I' && i > 0 && parse.is_white(data[i - 1]) && (i + 2 >= data.len() || parse.is_white(data[i + 2]))
+            at @ i + 2
+            return
+        i @ i + 1
+
+    at @ data.len()
+
+# The operations of `data`, values nested no deeper than `depth`.
+#
+# Fails `limit` where a value nests deeper than `depth`; nothing else in a
+# content stream fails.
+function ops_of(data: [u8] lent, depth: i64) -> [Op]?
+    ops: [Op] @= []
+    operands: [model.Obj] @= []
+    at @= 0
+
+    while true
+        parse.skip_space(data, @at)
+
+        if at >= data.len()
+            break
+        b = data[at]
+
+        w = if parse.is_regular(b) && !(b >= '0' && b <= '9') && b != '+' && b != '-' && b != '.'
+            peek_word(data, at: at)
+        else
+            ""
+
+        if w != "" && w != "true" && w != "false" && w != "null"
+            at @ at + w.len()
+
+            if w == "BI"
+                entries: {str: model.Obj} @= {}
+
+                while true
+                    parse.skip_space(data, @at)
+
+                    if at >= data.len()
+                        break
+
+                    if peek_word(data, at: at) == "ID"
+                        at @ at + 2
+                        break
+
+                    match parse.value(data: data, at: @at, depth: depth, key: [])
+                        .ok k =>
+                            match parse.value(data: data, at: @at, depth: depth, key: [])
+                                .ok v => entries[model.name_or_empty(k)] @ v
+                                .err e =>
+                                    if e.code == codes.LIMIT
+                                        return fail(code: e.code, msg: e.msg)
+                                    at @ at + 1
+                        .err e =>
+                            if e.code == codes.LIMIT
+                                return fail(code: e.code, msg: e.msg)
+                            at @ at + 1
+
+                skip_image(data, @at)
+                add_op(@ops, op: Op(name: "BI", operands: [.dict(entries: entries)]))
+            else
+                add_op(@ops, op: Op(name: w, operands: operands))
+            operands @ []
+            continue
+        start = at
+
+        match parse.value(data: data, at: @at, depth: depth, key: [])
+            .ok v => add_operand(@operands, v: v)
+            .err e =>
+                if e.code == codes.LIMIT
+                    return fail(code: e.code, msg: e.msg)
+                at @ start + 1
+
+    return ok(ops)
+
+# The operations `text` writes, for the tests.
+function ops_text(text: str) -> [Op]
+    return ops_of(bytes.from_text(text), depth: 8).must()
+
+test "ops_of: text operators and their operands, a TJ array, quotes"
+    ops = ops_text("BT /F1 12 Tf 10 20 Td (Hi) Tj [(a) -250 (b)] TJ (x) ' 1 2 (y) \" ET")
+    assert ops.len() == 8
+    assert ops[1].name == "Tf" && ops[1].operands == [.name(value: "F1"), .integer(value: 12)]
+    assert ops[3].name == "Tj" && ops[3].operands == [.text(value: [0x48, 0x69])]
+    assert ops[4].name == "TJ" && model.items_or_none(ops[4].operands[0]).len() == 3
+    assert ops[5].name == "'" && ops[6].name == "\"" && ops[6].operands.len() == 3
+
+test "ops_of: an inline image stepped over, true as an operand, junk stepped over, nothing"
+    ops = ops_text("q BI /W 2 /H 1 /BPC 8 /CS /G ID \u{1}EI\u{2} EI Q true )) T*")
+    assert ops.len() == 4
+    assert ops[0].name == "q" && ops[1].name == "BI" && ops[2].name == "Q"
+    assert model.integer_or(model.entry(ops[1].operands[0], key: "W"), fallback: 0) == 2
+    assert ops[3].name == "T*" && ops[3].operands == [.boolean(value: true)]
+    assert ops_text("").len() == 0
+    assert ops_of(bytes.from_text("[[[[[[[[[[1]]]]]]]]]] Tj"), depth: 4).is_err()

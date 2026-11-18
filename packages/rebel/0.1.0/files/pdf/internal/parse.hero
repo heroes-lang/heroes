@@ -1,0 +1,454 @@
+# The values of PDF's syntax read from bytes (ISO 32000-1:2008 section
+# 7.2 and 7.3): whitespace and comments, numbers, strings literal and
+# hexadecimal, names, arrays, dictionaries and references. Arrays and
+# dictionaries nest on a stack of the reader's own, never on the call stack,
+# and every pass of every loop moves at least one byte.
+
+use bytes
+use pdf/internal/codes
+use pdf/internal/model
+use pdf/internal/rc4
+
+# Whether `b` is PDF whitespace: NUL, tab, line feed, form feed, carriage
+# return or space.
+function is_white(b: u8) -> bool
+    return b == 0x00 || b == 0x09 || b == 0x0a || b == 0x0c || b == 0x0d || b == 0x20
+
+# Whether `b` is one of PDF's delimiters.
+function is_delimiter(b: u8) -> bool
+    return b == '(' || b == ')' || b == '<' || b == '>' || b == '[' || b == ']' || b == '{' || b == '}' || b == '/' || b == '%'
+
+# Whether `b` belongs to a regular token: neither whitespace nor delimiter.
+function is_regular(b: u8) -> bool
+    return !is_white(b) && !is_delimiter(b)
+
+# Moves `at` past whitespace and comments.
+function skip_space(data: [u8] lent, @at: i64)
+    while at < data.len()
+        b = data[at]
+
+        if is_white(b)
+            at @ at + 1
+        else if b == '%'
+            while at < data.len() && data[at] != 0x0a && data[at] != 0x0d
+                at @ at + 1
+        else
+            return
+
+# The value of the hexadecimal digit `b`, -1 for another byte.
+function hex_value(b: u8) -> i64
+    if b >= '0' && b <= '9'
+        return to_i64(b - '0').must()
+
+    if b >= 'a' && b <= 'f'
+        return to_i64(b - 'a').must() + 10
+
+    if b >= 'A' && b <= 'F'
+        return to_i64(b - 'A').must() + 10
+    return -1
+
+# The regular token at `at`, which moves past it.
+function word(data: [u8] lent, @at: i64) -> str
+    start = at
+
+    while at < data.len() && is_regular(data[at])
+        at @ at + 1
+
+    return bytes.to_text_lossy(data.slice(from: start, to: at))
+
+# A name's bytes as this package holds a name: as text where they are UTF-8,
+# else each byte past 0x7e or below 0x21 written `#XX`.
+function name_text(raw: [u8]) -> str
+    match bytes.to_text(raw)
+        .ok s  => return s
+        .err _ => _ = 0
+
+    out: [str] @= []
+
+    for b in raw
+        if b < 0x21 || b > 0x7e || b == '#'
+            out @ out.push("#" + bytes.format_hex_upper([b]))
+        else
+            out @ out.push(bytes.to_text_lossy([b]))
+
+    return out.join("")
+
+# The name at `at`, its slash first; `at` moves past it.
+function read_name(data: [u8] lent, @at: i64) -> str
+    at @ at + 1
+    raw: [u8] @= []
+
+    while at < data.len() && is_regular(data[at])
+        b = data[at]
+
+        if b == '#' && at + 2 < data.len() && hex_value(data[at + 1]) >= 0 && hex_value(data[at + 2]) >= 0
+            raw @ raw.push(to_u8(hex_value(data[at + 1]) * 16 + hex_value(data[at + 2])).must())
+            at @ at + 3
+        else
+            raw @ raw.push(b)
+            at @ at + 1
+
+    return name_text(raw)
+
+# The literal string at `at`, its `(` first, escapes and line ends read as
+# PDF says; `at` moves past its `)`.
+#
+# Fails `invalid` where the file ends inside it.
+function read_literal(data: [u8] lent, @at: i64) -> [u8]?
+    start = at
+    at @ at + 1
+    out: [u8] @= []
+    depth @= 1
+
+    while at < data.len()
+        b = data[at]
+        at @ at + 1
+
+        if b == '('
+            depth @ depth + 1
+            out @ out.push(b)
+        else if b == ')'
+            depth @ depth - 1
+
+            if depth == 0
+                return ok(out)
+            out @ out.push(b)
+        else if b == 0x0d
+            out @ out.push(0x0a)
+
+            if at < data.len() && data[at] == 0x0a
+                at @ at + 1
+        else if b == '\\'
+            if at >= data.len()
+                break
+            e = data[at]
+            at @ at + 1
+
+            if e == 'n'
+                out @ out.push(0x0a)
+            else if e == 'r'
+                out @ out.push(0x0d)
+            else if e == 't'
+                out @ out.push(0x09)
+            else if e == 'b'
+                out @ out.push(0x08)
+            else if e == 'f'
+                out @ out.push(0x0c)
+            else if e == 0x0d
+                if at < data.len() && data[at] == 0x0a
+                    at @ at + 1
+            else if e == 0x0a
+                _ = 0
+            else if e >= '0' && e <= '7'
+                n @= to_i64(e - '0').must()
+                k @= 1
+
+                while k < 3 && at < data.len() && data[at] >= '0' && data[at] <= '7'
+                    n @ n * 8 + to_i64(data[at] - '0').must()
+                    at @ at + 1
+                    k @ k + 1
+
+                out @ out.push(to_u8(n % 256).must())
+            else
+                out @ out.push(e)
+        else
+            out @ out.push(b)
+
+    return codes.invalid_at(at: start, why: "the file ends inside a string")
+
+# The hexadecimal string at `at`, its `<` first; whitespace inside is
+# skipped and an odd last digit is followed by 0. `at` moves past its `>`.
+#
+# Fails `invalid` where a byte inside is no digit or the file ends.
+function read_hex(data: [u8] lent, @at: i64) -> [u8]?
+    start = at
+    at @ at + 1
+    out: [u8] @= []
+    high @= -1
+
+    while at < data.len()
+        b = data[at]
+        at @ at + 1
+
+        if b == '>'
+            if high >= 0
+                out @ out.push(to_u8(high * 16).must())
+            return ok(out)
+
+        if is_white(b)
+            continue
+        v = hex_value(b)
+
+        if v < 0
+            return codes.invalid_at(at: at - 1, why: "a hexadecimal string holds a byte that is no digit")
+
+        if high < 0
+            high @ v
+        else
+            out @ out.push(to_u8(high * 16 + v).must())
+            high @ -1
+
+    return codes.invalid_at(at: start, why: "the file ends inside a hexadecimal string")
+
+# The number at `at`: an integer, or a real where it has a point or is too
+# long for an `i64`. A sign or a point alone reads as 0, as readers of PDF
+# take them.
+function read_number(data: [u8] lent, @at: i64) -> model.Obj
+    negative @= false
+
+    while at < data.len() && (data[at] == '+' || data[at] == '-')
+        if data[at] == '-'
+            negative @ !negative
+        at @ at + 1
+
+    whole @= 0
+    real @= 0.0
+    is_real @= false
+
+    while at < data.len() && data[at] >= '0' && data[at] <= '9'
+        d = to_i64(data[at] - '0').must()
+
+        if !is_real && whole > (9223372036854775807 - d) / 10
+            is_real @ true
+            real @ to_f64(whole)
+
+        if is_real
+            real @ real * 10.0 + to_f64(d)
+        else
+            whole @ whole * 10 + d
+        at @ at + 1
+
+    if at < data.len() && data[at] == '.'
+        at @ at + 1
+
+        if !is_real
+            real @ to_f64(whole)
+            is_real @ true
+        scale @= 0.1
+
+        while at < data.len() && data[at] >= '0' && data[at] <= '9'
+            real @ real + to_f64(data[at] - '0') * scale
+            scale @ scale / 10.0
+            at @ at + 1
+
+    if is_real
+        if negative
+            return .real(value: -real)
+        return .real(value: real)
+
+    if negative
+        return .integer(value: -whole)
+    return .integer(value: whole)
+
+# Where a reference's tail ends, where the bytes at `at` are an unsigned
+# integer then `R`, else -1; `at` is left where it was.
+function reference_tail(data: [u8] lent, at: i64) -> i64
+    i @= at
+    skip_space(data, @i)
+    start = i
+
+    while i < data.len() && data[i] >= '0' && data[i] <= '9'
+        i @ i + 1
+
+    if i == start || i - start > 9
+        return -1
+    skip_space(data, @i)
+
+    if i < data.len() && data[i] == 'R' && (i + 1 >= data.len() || !is_regular(data[i + 1]))
+        return i + 1
+    return -1
+
+# A container being read: an array or a dictionary, what it holds so far.
+record Frame
+    # Whether it is a dictionary.
+    is_dict: bool
+    # An array's items.
+    items: [model.Obj]
+    # A dictionary's entries.
+    entries: {str: model.Obj}
+    # The key read and waiting for its value, "" where none.
+    key: str
+    # Whether `key` is waiting.
+    has_key: bool
+    # Where it began, for a message.
+    at: i64
+
+# Adds `v` to `items`, the caller's own list.
+function add_item(@items: [model.Obj], v: model.Obj)
+    items @ items.push(v)
+
+# Adds the entry `key` to `entries`, the caller's own map.
+function add_entry(@entries: {str: model.Obj}, key: str, v: model.Obj)
+    entries[key] @ v
+
+# Adds `frame` to `stack`, the caller's own list.
+function add_frame(@stack: [Frame], frame: Frame)
+    stack @ stack.push(frame)
+
+# The value at `at`, which moves past it; arrays and dictionaries no deeper
+# than `depth`, every string decrypted with the RC4 key `key` where it is not
+# empty.
+#
+# Fails `invalid` where the bytes are no value, `limit` where they nest
+# deeper than `depth`.
+function value(data: [u8] lent, @at: i64, depth: i64, key: [u8]) -> model.Obj?
+    stack: [Frame] @= []
+
+    while true
+        skip_space(data, @at)
+
+        if at >= data.len()
+            return codes.invalid_at(at: at, why: "the file ends inside a value")
+        b = data[at]
+        v: model.Obj @= .null_value
+
+        if b == '['
+            if stack.len() >= depth
+                return codes.over(what: "the nesting of arrays and dictionaries", most: depth)
+            add_frame(@stack, frame: Frame(is_dict: false, items: [], entries: {}, key: "", has_key: false, at: at))
+            at @ at + 1
+            continue
+        else if b == '<' && at + 1 < data.len() && data[at + 1] == '<'
+            if stack.len() >= depth
+                return codes.over(what: "the nesting of arrays and dictionaries", most: depth)
+            add_frame(@stack, frame: Frame(is_dict: true, items: [], entries: {}, key: "", has_key: false, at: at))
+            at @ at + 2
+            continue
+        else if b == ']'
+            last = stack.len() - 1
+
+            if last < 0 || stack[last].is_dict
+                return codes.invalid_at(at: at, why: "a ] closes no array")
+            at @ at + 1
+            v @ .array(items: stack[last].items)
+            stack @ stack.slice(from: 0, to: last)
+        else if b == '>' && at + 1 < data.len() && data[at + 1] == '>'
+            last = stack.len() - 1
+
+            if last < 0 || !stack[last].is_dict
+                return codes.invalid_at(at: at, why: "a >> closes no dictionary")
+            at @ at + 2
+            v @ .dict(entries: stack[last].entries)
+            stack @ stack.slice(from: 0, to: last)
+        else if b == '<'
+            raw = read_hex(data, @at)?
+            v @ .text(value: rc4.apply(key: key, data: raw))
+        else if b == '('
+            raw = read_literal(data, @at)?
+            v @ .text(value: rc4.apply(key: key, data: raw))
+        else if b == '/'
+            v @ .name(value: read_name(data, @at))
+        else if b >= '0' && b <= '9' || b == '+' || b == '-' || b == '.'
+            n = read_number(data, @at)
+            v @ n
+
+            match n
+                .integer i =>
+                    tail = reference_tail(data, at: at)
+
+                    if tail > 0 && i.value > 0
+                        i2 @= at
+                        skip_space(data, @i2)
+                        generation = read_number(data, @i2)
+                        v @ .reference(number: i.value, generation: model.integer_or(generation, fallback: 0))
+                        at @ tail
+                .null_value | .boolean _ | .real _ | .text _ | .name _ | .array _ | .dict _ | .stream _ | .reference _ => _ = 0
+        else if is_regular(b)
+            start = at
+            w = word(data, @at)
+
+            if w == "true"
+                v @ .boolean(value: true)
+            else if w == "false"
+                v @ .boolean(value: false)
+            else if w == "null"
+                v @ .null_value
+            else if stack.len() > 0
+                return codes.invalid_at(at: start, why: f"\"{w}\" stands where a value is read")
+            else
+                return codes.invalid_at(at: start, why: f"\"{w}\" is no value")
+        else
+            return codes.invalid_at(at: at, why: f"the byte {b} begins no value")
+
+        if stack.len() == 0
+            return ok(v)
+        top = stack.len() - 1
+
+        if !stack[top].is_dict
+            add_item(@stack[top].items, v: v)
+        else if stack[top].has_key
+            waiting = stack[top].key
+            add_entry(@stack[top].entries, key: waiting, v: v)
+            stack[top].has_key @ false
+        else
+            match v
+                .name n =>
+                    stack[top].key @ n.value
+                    stack[top].has_key @ true
+                .null_value | .boolean _ | .integer _ | .real _ | .text _ | .array _ | .dict _ | .stream _ | .reference _ =>
+                    return codes.invalid_at(at: at, why: "a dictionary's key is no name")
+
+    return codes.invalid_at(at: at, why: "no value")
+
+# The value `text` writes, for the tests.
+function value_of(text: str) -> model.Obj?
+    at @= 0
+    return value(data: bytes.from_text(text), at: @at, depth: 16, key: [])
+
+test "skip_space and word: whitespace, a comment to the end of its line, a word"
+    data = bytes.from_text(" \t% note\r\n  obj<<")
+    at @= 0
+    skip_space(data, @at)
+    assert at == 12
+    assert word(data, @at) == "obj" && at == 15
+
+test "value: the scalars, a name with escapes and one not UTF-8, true and null"
+    assert value_of("42").must() == .integer(value: 42)
+    assert value_of("-3.5").must() == .real(value: -3.5)
+    assert value_of(".5").must() == .real(value: 0.5)
+    assert value_of("4.").must() == .real(value: 4.0)
+    assert value_of("--7").must() == .integer(value: 7)
+    assert value_of("-").must() == .integer(value: 0)
+    assert value_of("99999999999999999999").must() == .real(value: 100000000000000000000.0)
+    assert value_of("/A#20B").must() == .name(value: "A B")
+    assert value_of("/#82#A0").must() == .name(value: "#82#A0")
+    assert value_of("/").must() == .name(value: "")
+    assert value_of("true").must() == .boolean(value: true)
+    assert value_of("null").must() == .null_value
+
+test "value: literal strings with nesting, escapes, octal, line ends"
+    assert value_of("(a(b)c)").must() == .text(value: bytes.from_text("a(b)c"))
+    assert value_of("(\\n\\(\\)\\\\\\101\\7x)").must() == .text(value: [0x0a, '(', ')', '\\', 'A', 0x07, 'x'])
+    assert value_of("(a\\\r\nb)").must() == .text(value: bytes.from_text("ab"))
+    assert value_of("(a\r\nb)").must() == .text(value: bytes.from_text("a\nb"))
+    assert value_of("(\\q)").must() == .text(value: bytes.from_text("q"))
+    assert value_of("(abc").is_err()
+
+test "value: hexadecimal strings, whitespace inside, an odd digit, a bad byte"
+    assert value_of("<48 65 6c>").must() == .text(value: bytes.from_text("Hel"))
+    assert value_of("<414>").must() == .text(value: [0x41, 0x40])
+    assert value_of("<>").must() == .text(value: [])
+    assert value_of("<4G>").is_err()
+    assert value_of("<41").is_err()
+
+test "value: arrays, dictionaries, references, nesting and its limit"
+    assert value_of("[1 0 R 2 /x]").must() == .array(items: [.reference(number: 1, generation: 0), .integer(value: 2), .name(value: "x")])
+    d = value_of("<< /Type /Page /Kids [3 0 R] /N << /x 1 >> >>").must()
+    assert model.name_or_empty(model.entry(d, key: "Type")) == "Page"
+    assert model.entry(model.entry(d, key: "N"), key: "x") == .integer(value: 1)
+    assert value_of("[]").must() == .array(items: [])
+    assert value_of("<<>>").must() == .dict(entries: {})
+    assert value_of("[1 2 R]").must() == .array(items: [.reference(number: 1, generation: 2)])
+    assert value_of("[0 0 R]").is_err()
+    assert value_of(repeat("[", 17) + repeat("]", 17)).is_err()
+    assert !value_of(repeat("[", 16) + repeat("]", 16)).is_err()
+
+test "value: what is no value"
+    assert value_of("]").is_err()
+    assert value_of(">>").is_err()
+    assert value_of("<< 1 2 >>").is_err()
+    assert value_of("obj").is_err()
+    assert value_of("[1 obj]").is_err()
+    assert value_of("").is_err()
+    assert value_of("[1 2").is_err()
+    assert value_of(")").is_err()

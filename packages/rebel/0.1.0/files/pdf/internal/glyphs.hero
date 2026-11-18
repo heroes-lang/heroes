@@ -1,0 +1,158 @@
+# A glyph's name turned into the characters it stands for, by the Adobe
+# Glyph List's rules (its specification, "Unicode and Glyph Names" 2.0):
+# the list itself, then `uniXXXX`, then `uXXXX` to `uXXXXXX`, a suffix after
+# a full stop dropped and a ligature's parts after `_` read one by one.
+
+use pdf/internal/glyph_list
+use unicode
+
+# Whether the text `a` comes before `b`, byte by byte.
+function is_before(a: str, b: str) -> bool
+    i @= 0
+
+    while i < a.len() && i < b.len()
+        if a[i] != b[i]
+            return a[i] < b[i]
+        i @ i + 1
+
+    return a.len() < b.len()
+
+# The value of the hexadecimal digit `b`, -1 for another byte; capitals
+# alone, as the list's rules write them.
+function upper_hex(b: u8) -> i64
+    if b >= '0' && b <= '9'
+        return to_i64(b - '0').must()
+
+    if b >= 'A' && b <= 'F'
+        return to_i64(b - 'A').must() + 10
+    return -1
+
+# The number the hexadecimal digits of `s` from `at` to `to` write, -1 where
+# one is not a capital digit.
+function hex_of(s: str, at: i64, to: i64) -> i64
+    n @= 0
+    i @= at
+
+    while i < to
+        d = upper_hex(s[i])
+
+        if d < 0
+            return -1
+        n @ n * 16 + d
+        i @ i + 1
+
+    return n
+
+# The characters the list gives `name`, "" where it gives none.
+function listed(name: str) -> str
+    firsts = glyph_list.FIRSTS
+    part @= -1
+    k @= 0
+
+    while k < firsts.len()
+        if !is_before(a: name, b: firsts[k])
+            part @ k
+        k @ k + 1
+
+    if part < 0
+        return ""
+    text = glyph_list.part_of(part)
+    i @= 0
+
+    while i < text.len()
+        j @= 0
+
+        while j < name.len() && i + j < text.len() && text[i + j] == name[j]
+            j @ j + 1
+
+        if j == name.len() && i + j < text.len() && text[i + j] == ';'
+            at @= i + j + 1
+            points: [i64] @= []
+            value @= 0
+            digits @= 0
+
+            while at < text.len() && text[at] != '|'
+                if text[at] == ' '
+                    points @ points.push(value)
+                    value @ 0
+                    digits @ 0
+                else
+                    value @ value * 16 + upper_hex(text[at])
+                    digits @ digits + 1
+                at @ at + 1
+
+            if digits > 0
+                points @ points.push(value)
+            return unicode.from_code_points(points).default("")
+
+        while i < text.len() && text[i] != '|'
+            i @ i + 1
+
+        i @ i + 1
+
+    return ""
+
+# The characters one component of a glyph's name stands for.
+function component(name: str) -> str
+    found = listed(name)
+
+    if found != ""
+        return found
+
+    if name.len() >= 7 && (name.len() - 3) % 4 == 0 && name.slice(from: 0, to: 3) == "uni"
+        points: [i64] @= []
+        i @= 3
+
+        while i < name.len()
+            n = hex_of(name, at: i, to: i + 4)
+
+            if n < 0 || n >= 0xd800 && n <= 0xdfff
+                return ""
+            points @ points.push(n)
+            i @ i + 4
+
+        return unicode.from_code_points(points).default("")
+
+    if name.len() >= 5 && name.len() <= 7 && name[0] == 'u'
+        n = hex_of(name, at: 1, to: name.len())
+
+        if n >= 0 && (n < 0xd800 || n > 0xdfff && n <= 0x10ffff)
+            return unicode.from_code_points([n]).default("")
+    return ""
+
+# The characters the glyph named `name` stands for, "" where its name says
+# none.
+function text_of(name: str) -> str
+    base @= name
+    i @= 0
+
+    while i < name.len()
+        if name[i] == '.'
+            base @ name.slice(from: 0, to: i)
+            break
+        i @ i + 1
+
+    parts: [str] @= []
+    start @= 0
+    i @ 0
+
+    while i <= base.len()
+        if i == base.len() || base[i] == '_'
+            if i > start
+                parts @ parts.push(component(base.slice(from: start, to: i)))
+            start @ i + 1
+        i @ i + 1
+
+    return parts.join("")
+
+test "text_of: listed names, the first and the last of the list, a dingbat"
+    assert text_of("A") == "A" && text_of("eacute") == "é" && text_of("space") == " "
+    assert text_of("fi") == "ﬁ" && text_of("Euro") == "€" && text_of("quoteright") == "’"
+    assert text_of("a1") == "✁"
+    assert text_of("A") == "A" && text_of("zukatakana") == "ズ"
+
+test "text_of: uni and u forms, suffixes, ligatures of parts, names none has"
+    assert text_of("uni0041") == "A" && text_of("uni00410042") == "AB" && text_of("u1F600") == "😀"
+    assert text_of("uniD800") == "" && text_of("uni004") == ""
+    assert text_of("a.sc") == "a" && text_of("f_f_i") == "ffi" && text_of("T_h.liga") == "Th"
+    assert text_of("g123") == "" && text_of("") == "" && text_of(".notdef") == ""

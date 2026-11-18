@@ -1,0 +1,429 @@
+# The text a page draws (ISO 32000-1:2008 section 9.4): its content streams
+# run through the operators of text, of the graphics state and of form
+# objects, each string shown turned into a run of text where it stands on
+# the page; and the runs put together as lines. Form objects nest on a stack
+# of this module's own, each at most once on the way down.
+
+use math
+use pdf/internal/codes
+use pdf/internal/content
+use pdf/internal/filters
+use pdf/internal/fonts
+use pdf/internal/model
+use pdf/internal/store
+
+# A run of text where it stands, as the face's `TextPiece`.
+record Piece
+    # The characters.
+    text: str
+    # Where its baseline begins, from the page's left.
+    x: f64
+    # Its baseline, from the page's bottom.
+    y: f64
+    # How wide it is drawn.
+    width: f64
+    # The size of its font as drawn.
+    size: f64
+    # Its font's name.
+    font: str
+
+# The graphics state text reads.
+record Gs
+    # The transform from user space to the page.
+    ctm: [f64]
+    # The font in use, an index into the decoders; -1 for none.
+    font: i64
+    # Its size.
+    size: f64
+    # Character spacing.
+    tc: f64
+    # Word spacing.
+    tw: f64
+    # Horizontal scale, 1 for none.
+    th: f64
+    # Leading.
+    tl: f64
+    # Rise.
+    rise: f64
+
+# A content stream being run: its operations, where it stands, and its
+# resources.
+record Frame
+    # The operations.
+    ops: [content.Op]
+    # The next one to run.
+    at: i64
+    # The resources' fonts.
+    fonts: model.Obj
+    # The resources' external objects.
+    xobjects: model.Obj
+    # How many states were saved when it began.
+    saved: i64
+    # The form object it runs, 0 for the page.
+    form: i64
+
+# `m` then `n`: the product of two transforms.
+function mul(m: [f64], n: [f64]) -> [f64]
+    return [
+        m[0] * n[0] + m[1] * n[2]
+        m[0] * n[1] + m[1] * n[3]
+        m[2] * n[0] + m[3] * n[2]
+        m[2] * n[1] + m[3] * n[3]
+        m[4] * n[0] + m[5] * n[2] + n[4]
+        m[4] * n[1] + m[5] * n[3] + n[5]
+    ]
+
+# The transform that changes nothing.
+function identity() -> [f64]
+    return [1.0, 0.0, 0.0, 1.0, 0.0, 0.0]
+
+# The numbers of `operands`, 0 for one that is none.
+function numbers(operands: [model.Obj]) -> [f64]
+    out: [f64] @= []
+
+    for o in operands
+        out @ out.push(model.number_or(o, fallback: 0.0))
+
+    return out
+
+# The transform `operands` write, six numbers; none where they are not six.
+function matrix_of(operands: [model.Obj]) -> [f64]
+    n = numbers(operands)
+
+    if n.len() < 6
+        return identity()
+    return n.slice(from: n.len() - 6, to: n.len())
+
+# The decoded content of `o`, a stream or an array of them, put one after
+# another with a line end between, within `room` bytes.
+function content_of(st: store.Store lent, o: model.Obj, room: i64) -> [u8]?
+    v = store.resolve(st.objects, o: o)
+    parts: [model.Obj] @= []
+
+    match v
+        .array a =>
+            for item in a.items
+                parts @ parts.push(store.resolve(st.objects, o: item))
+        .stream _                                                                                    => parts @ parts.push(
+            v
+        )
+        .null_value | .boolean _ | .integer _ | .real _ | .text _ | .name _ | .dict _ | .reference _ => _ = 0
+
+    out: [u8] @= []
+
+    for p in parts
+        match p
+            .stream s =>
+                limit = if room - out.len() < st.bounds.stream_bytes
+                    room - out.len()
+                else
+                    st.bounds.stream_bytes
+
+                if limit < 0
+                    return codes.over(what: "the bytes a page's streams decode to", most: st.bounds.total_bytes)
+
+                empty: [u8] = []
+
+                plain = match filters.decode(s.entries, data: s.data, limit: limit)
+                    .ok d => d
+                    .err e =>
+                        if e.code == codes.LIMIT
+                            return fail(code: e.code, msg: e.msg)
+                        empty
+
+                for b in plain
+                    out @ out.push(b)
+
+                out @ out.push(0x0a)
+            .null_value | .boolean _ | .integer _ | .real _ | .text _ | .name _ | .array _ | .dict _ | .reference _ => _ = 0
+
+    return ok(out)
+
+# Adds `f` to `frames`, the caller's own list.
+function add_frame(@frames: [Frame], f: Frame)
+    frames @ frames.push(f)
+
+# Adds `p` to `runs`, the caller's own list.
+function add_piece(@runs: [Piece], p: Piece)
+    runs @ runs.push(p)
+
+# Adds `d` to `decoders`, the caller's own list.
+function add_decoder(@decoders: [fonts.Decoder], d: fonts.Decoder)
+    decoders @ decoders.push(d)
+
+# Adds `g` to `states`, the caller's own list.
+function add_state(@states: [Gs], g: Gs)
+    states @ states.push(g)
+
+# The runs of text the page whose entries are `page` draws, in the order it
+# draws them.
+#
+# Fails `limit` where its streams decode past the limits of `st` or its
+# forms nest deeper; nothing else in a page's content fails.
+function pieces(st: store.Store lent, page: {str: model.Obj}) -> [Piece]?
+    budget @= st.bounds.total_bytes
+    first = content_of(st, o: page["Contents"].default(.null_value), room: budget)?
+    budget @ budget - first.len()
+    resources = store.resolve(st.objects, o: page["Resources"].default(.null_value))
+    frames: [Frame] @= []
+    add_frame(
+        @frames,
+        f: Frame(ops: content.ops_of(first, depth: st.bounds.depth)?, at: 0, fonts: store.resolve(st.objects, o: model.entry(resources, key: "Font")), xobjects: store.resolve(st.objects, o: model.entry(resources, key: "XObject")), saved: 0, form: 0)
+    )
+    states: [Gs] @= []
+    gs @= Gs(ctm: identity(), font: -1, size: 0.0, tc: 0.0, tw: 0.0, th: 1.0, tl: 0.0, rise: 0.0)
+    tm @= identity()
+    tlm @= identity()
+    decoders: [fonts.Decoder] @= []
+    by_number: {i64: i64} @= {}
+    out: [Piece] @= []
+
+    while frames.len() > 0
+        k = frames.len() - 1
+
+        if frames[k].at >= frames[k].ops.len()
+            while states.len() > frames[k].saved
+                gs @ states[states.len() - 1]
+                states @ states.slice(from: 0, to: states.len() - 1)
+
+            frames @ frames.slice(from: 0, to: k)
+            continue
+        op = frames[k].ops[frames[k].at]
+        frames[k].at @ frames[k].at + 1
+        name = op.name
+        n = numbers(op.operands)
+
+        if name == "q"
+            add_state(@states, g: gs)
+        else if name == "Q"
+            if states.len() > frames[k].saved
+                gs @ states[states.len() - 1]
+                states @ states.slice(from: 0, to: states.len() - 1)
+        else if name == "cm"
+            gs.ctm @ mul(m: matrix_of(op.operands), n: gs.ctm)
+        else if name == "BT"
+            tm @ identity()
+            tlm @ identity()
+        else if name == "Tc" && n.len() > 0
+            gs.tc @ n[n.len() - 1]
+        else if name == "Tw" && n.len() > 0
+            gs.tw @ n[n.len() - 1]
+        else if name == "Tz" && n.len() > 0
+            gs.th @ n[n.len() - 1] / 100.0
+        else if name == "TL" && n.len() > 0
+            gs.tl @ n[n.len() - 1]
+        else if name == "Ts" && n.len() > 0
+            gs.rise @ n[n.len() - 1]
+        else if name == "Tf" && op.operands.len() >= 2
+            gs.size @ n[1]
+            resource = model.name_or_empty(op.operands[0])
+            entry = model.entry(frames[k].fonts, key: resource)
+
+            number = match entry
+                .reference r => r.number
+                .null_value | .boolean _ | .integer _ | .real _ | .text _ | .name _ | .array _ | .dict _ | .stream _ => 0
+
+            known = by_number[number].default(-1)
+
+            if number > 0 && known >= 0
+                gs.font @ known
+            else
+                add_decoder(@decoders, d: fonts.build(st, font: store.resolve(st.objects, o: entry)))
+                gs.font @ decoders.len() - 1
+
+                if number > 0
+                    by_number[number] @ decoders.len() - 1
+        else if (name == "Td" || name == "TD") && n.len() >= 2
+            if name == "TD"
+                gs.tl @ -n[1]
+            tlm @ mul(m: [1.0, 0.0, 0.0, 1.0, n[0], n[1]], n: tlm)
+            tm @ tlm
+        else if name == "Tm"
+            tlm @ matrix_of(op.operands)
+            tm @ tlm
+        else if name == "T*"
+            tlm @ mul(m: [1.0, 0.0, 0.0, 1.0, 0.0, -gs.tl], n: tlm)
+            tm @ tlm
+        else if name == "Tj" || name == "'" || name == "\""
+            if name == "\"" && n.len() >= 3
+                gs.tw @ n[0]
+                gs.tc @ n[1]
+
+            if name != "Tj"
+                tlm @ mul(m: [1.0, 0.0, 0.0, 1.0, 0.0, -gs.tl], n: tlm)
+                tm @ tlm
+            last = op.operands.len() - 1
+
+            if last >= 0 && gs.font >= 0
+                shown = show(decoders[gs.font], s: string_of(op.operands[last]), gs: gs, tm: tm)
+                tm @ shown.tm
+
+                if shown.piece.text != ""
+                    add_piece(@out, p: shown.piece)
+        else if name == "TJ" && op.operands.len() > 0 && gs.font >= 0
+            for item in model.items_or_none(op.operands[op.operands.len() - 1])
+                match item
+                    .text t =>
+                        shown = show(decoders[gs.font], s: t.value, gs: gs, tm: tm)
+                        tm @ shown.tm
+
+                        if shown.piece.text != ""
+                            add_piece(@out, p: shown.piece)
+                    .integer i                                                                         => tm @ mul(
+                        m: [1.0, 0.0, 0.0, 1.0, -to_f64(i.value) / 1000.0 * gs.size * gs.th, 0.0],
+                        n: tm
+                    )
+                    .real r                                                                            => tm @ mul(
+                        m: [1.0, 0.0, 0.0, 1.0, -r.value / 1000.0 * gs.size * gs.th, 0.0],
+                        n: tm
+                    )
+                    .null_value | .boolean _ | .name _ | .array _ | .dict _ | .stream _ | .reference _ => _ = 0
+        else if name == "Do" && op.operands.len() > 0
+            entry = model.entry(frames[k].xobjects, key: model.name_or_empty(op.operands[0]))
+
+            number = match entry
+                .reference r => r.number
+                .null_value | .boolean _ | .integer _ | .real _ | .text _ | .name _ | .array _ | .dict _ | .stream _ => 0
+
+            form = store.resolve(st.objects, o: entry)
+            entries = model.entries_of(form)
+            active @= false
+
+            for f in frames
+                if number > 0 && f.form == number
+                    active @ true
+
+            if model.name_or_empty(entries["Subtype"].default(.null_value)) == "Form" && !active
+                if frames.len() >= st.bounds.depth
+                    return codes.over(what: "the nesting of form objects", most: st.bounds.depth)
+                data = content_of(st, o: form, room: budget)?
+                budget @ budget - data.len()
+                own = store.resolve(st.objects, o: entries["Resources"].default(.null_value))
+
+                fonts_dict = if model.entries_of(own).len() > 0
+                    store.resolve(st.objects, o: model.entry(own, key: "Font"))
+                else
+                    frames[k].fonts
+
+                xobjects = if model.entries_of(own).len() > 0
+                    store.resolve(st.objects, o: model.entry(own, key: "XObject"))
+                else
+                    frames[k].xobjects
+                add_state(@states, g: gs)
+                gs.ctm @ mul(
+                    m: matrix_of(model.items_or_none(store.resolve(st.objects, o: entries["Matrix"].default(.null_value)))),
+                    n: gs.ctm
+                )
+                add_frame(
+                    @frames,
+                    f: Frame(ops: content.ops_of(data, depth: st.bounds.depth)?, at: 0, fonts: fonts_dict, xobjects: xobjects, saved: states.len(), form: number)
+                )
+
+    return ok(out)
+
+# The bytes of the string `o`, none where it is none.
+function string_of(o: model.Obj) -> [u8]
+    return match o
+        .text t => t.value
+        .null_value | .boolean _ | .integer _ | .real _ | .name _ | .array _ | .dict _ | .stream _ | .reference _ => []
+
+# What showing a string makes: its run of text, and the text matrix after
+# it.
+record Shown
+    # The run.
+    piece: Piece
+    # The text matrix after the string.
+    tm: [f64]
+
+# The string `s` shown in the font `d` with the state `gs` from the text
+# matrix `tm`.
+function show(d: fonts.Decoder lent, s: [u8], gs: Gs, tm: [f64]) -> Shown
+    glyphs = fonts.decode(d, s: s)
+    start = mul(m: [gs.size * gs.th, 0.0, 0.0, gs.size, 0.0, gs.rise], n: mul(m: tm, n: gs.ctm))
+    m @= tm
+    text: [str] @= []
+
+    for g in glyphs
+        space = if g.space
+            gs.tw
+        else
+            0.0
+        advance = (g.width / 1000.0 * gs.size + gs.tc + space) * gs.th
+        m @ mul(m: [1.0, 0.0, 0.0, 1.0, advance, 0.0], n: m)
+        text @ text.push(g.text)
+
+    end = mul(m: [gs.size * gs.th, 0.0, 0.0, gs.size, 0.0, gs.rise], n: mul(m: m, n: gs.ctm))
+    dx = end[4] - start[4]
+    dy = end[5] - start[5]
+    whole = mul(m: tm, n: gs.ctm)
+    scale = math.sqrt(whole[2] * whole[2] + whole[3] * whole[3])
+    piece = Piece(
+        text: text.join(""),
+        x: start[4],
+        y: start[5],
+        width: math.sqrt(dx * dx + dy * dy),
+        size: gs.size * scale,
+        font: d.name
+    )
+    return Shown(piece: piece, tm: m)
+
+# Whether `s` ends with a space.
+function ends_with_space(s: str) -> bool
+    return s.len() > 0 && (s[s.len() - 1] == ' ' || s[s.len() - 1] == 0x0a)
+
+# Whether `s` begins with a space.
+function begins_with_space(s: str) -> bool
+    return s.len() > 0 && s[0] == ' '
+
+# The absolute value of `x`.
+function magnitude(x: f64) -> f64
+    if x < 0.0
+        return -x
+    return x
+
+# `runs` put together as text: a line end where the baseline moves by more
+# than half the size, a space where two runs on a line stand apart by more
+# than 0.15 of it or the second stands well before the first ends.
+function lines(runs: [Piece]) -> str
+    out: [str] @= []
+    i @= 0
+
+    while i < runs.len()
+        p = runs[i]
+
+        if i > 0
+            prev = runs[i - 1]
+
+            size @= if p.size > prev.size
+                p.size
+            else
+                prev.size
+
+            if size <= 0.0
+                size @ 1.0
+
+            if magnitude(p.y - prev.y) > size * 0.5
+                out @ out.push("\n")
+            else
+                gap = p.x - (prev.x + prev.width)
+
+                if (gap > size * 0.15 || gap < -size) && !ends_with_space(prev.text) && !begins_with_space(p.text)
+                    out @ out.push(" ")
+        out @ out.push(p.text)
+        i @ i + 1
+
+    return out.join("")
+
+test "mul and matrix_of: a translation after a scale, six numbers, too few"
+    assert mul(m: [2.0, 0.0, 0.0, 2.0, 0.0, 0.0], n: [1.0, 0.0, 0.0, 1.0, 5.0, 6.0]) == [2.0, 0.0, 0.0, 2.0, 5.0, 6.0]
+    assert mul(m: [1.0, 0.0, 0.0, 1.0, 5.0, 6.0], n: [2.0, 0.0, 0.0, 2.0, 0.0, 0.0]) == [2.0, 0.0, 0.0, 2.0, 10.0, 12.0]
+    assert matrix_of([.integer(value: 1), .integer(value: 0), .integer(value: 0), .integer(value: 1), .real(value: 2.5), .integer(value: 3)]) == [1.0, 0.0, 0.0, 1.0, 2.5, 3.0]
+    assert matrix_of([]) == identity()
+
+test "lines: one line with a gap, a new line, runs that touch, nothing"
+    a = Piece(text: "Hello", x: 0.0, y: 100.0, width: 30.0, size: 10.0, font: "F")
+    b = Piece(text: "world", x: 33.0, y: 100.0, width: 30.0, size: 10.0, font: "F")
+    c = Piece(text: "next", x: 0.0, y: 88.0, width: 20.0, size: 10.0, font: "F")
+    d = Piece(text: "s", x: 20.0, y: 88.0, width: 5.0, size: 10.0, font: "F")
+    assert lines([a, b, c, d]) == "Hello world\nnexts"
+    assert lines([]) == ""

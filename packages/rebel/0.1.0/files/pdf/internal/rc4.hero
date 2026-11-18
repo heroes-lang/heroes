@@ -1,0 +1,48 @@
+# RC4, the stream cipher of PDF's standard security handler in its
+# revisions 2 to 4 (ISO 32000-1:2008 section 7.6.2). It is broken as a
+# cipher; it is here to read the files encrypted with it, never to protect
+# anything.
+
+# `data` encrypted, or decrypted, with the RC4 key `key`: the same
+# operation both ways. An empty key answers `data` as it is.
+function apply(key: [u8], data: [u8]) -> [u8]
+    if key.len() == 0 || data.len() == 0
+        return data
+    s: [i64] @= []
+    i @= 0
+
+    while i < 256
+        s @ s.push(i)
+        i @ i + 1
+
+    j @= 0
+    i @ 0
+
+    while i < 256
+        j @ (j + s[i] + to_i64(key[i % key.len()]).must()) % 256
+        t = s[i]
+        s[i] @ s[j]
+        s[j] @ t
+        i @ i + 1
+
+    out: [u8] @= []
+    i @ 0
+    j @ 0
+
+    for b in data
+        i @ (i + 1) % 256
+        j @ (j + s[i]) % 256
+        t = s[i]
+        s[i] @ s[j]
+        s[j] @ t
+        k = s[(s[i] + s[j]) % 256]
+        out @ out.push(to_u8(to_i64(b).must() ^ k).must())
+
+    return out
+
+test "apply: the published vectors, Key and Plaintext, Wiki and pedia, the empty key"
+    assert apply(key: [0x4b, 0x65, 0x79], data: [0x50, 0x6c, 0x61, 0x69, 0x6e, 0x74, 0x65, 0x78, 0x74]) == [0xbb, 0xf3, 0x16, 0xe8, 0xd9, 0x40, 0xaf, 0x0a, 0xd3]
+    assert apply(key: [0x57, 0x69, 0x6b, 0x69], data: [0x70, 0x65, 0x64, 0x69, 0x61]) == [0x10, 0x21, 0xbf, 0x04, 0x20]
+    assert apply(key: [], data: [1, 2]) == [1, 2]
+    assert apply(key: [1], data: []) == []
+    assert apply(key: [9, 8, 7], data: apply(key: [9, 8, 7], data: [0, 255, 3])) == [0, 255, 3]

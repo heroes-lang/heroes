@@ -1,0 +1,131 @@
+# How the writer spells PDF's values (ISO 32000-1:2008 section 7.3): a
+# number with at most four decimals and never an exponent, a name with its
+# `#XX` escapes, a string as a literal of ASCII or as hexadecimal.
+
+use bytes
+use math
+
+# `x` as PDF writes a real: rounded to four decimals, no trailing zeros, no
+# exponent; a value that is not finite is written 0 and one past a billion
+# is written a billion, so a file is never broken by a number.
+function real(x: f64) -> str
+    v @= x
+
+    if !math.is_finite(v)
+        v @ 0.0
+    else if v > 1000000000.0
+        v @ 1000000000.0
+    else if v < -1000000000.0
+        v @ -1000000000.0
+    scaled = math.round(v * 10000.0)
+    n = to_i64(scaled).default(0)
+
+    if n == 0
+        return "0"
+
+    sign = if n < 0
+        "-"
+    else
+        ""
+
+    m = if n < 0
+        -n
+    else
+        n
+    whole = m / 10000
+    frac @= m % 10000
+
+    if frac == 0
+        return f"{sign}{whole}"
+    digits @= 4
+
+    while frac % 10 == 0
+        frac @ frac / 10
+        digits @ digits - 1
+
+    text = to_str(frac)
+    pad = repeat("0", to_u64(digits - text.len()).default(0))
+    return f"{sign}{whole}.{pad}{text}"
+
+# Whether the byte `b` stands for itself in a name: a printable byte that is
+# none of PDF's delimiters and not `#`.
+function is_regular(b: u8) -> bool
+    if b < 0x21 || b > 0x7e
+        return false
+    return b != '#' && b != '(' && b != ')' && b != '<' && b != '>' && b != '[' && b != ']' && b != '{' && b != '}' && b != '/' && b != '%'
+
+# `s` as a PDF name, its slash first: every byte that does not stand for
+# itself written `#XX`.
+function name(s: str) -> str
+    out: [str] @= ["/"]
+
+    for b in bytes.from_text(s)
+        if is_regular(b)
+            out @ out.push(bytes.to_text_lossy([b]))
+        else
+            out @ out.push("#" + bytes.format_hex_upper([b]))
+
+    return out.join("")
+
+# `data` as a PDF literal string of ASCII alone: `(`, `)` and `\` escaped,
+# every byte outside the printable ones written as three octal digits.
+function literal(data: [u8]) -> str
+    out: [str] @= ["("]
+
+    for b in data
+        if b == '(' || b == ')' || b == '\\'
+            out @ out.push("\\" + bytes.to_text_lossy([b]))
+        else if b < 0x20 || b > 0x7e
+            n = to_i64(b).must()
+            out @ out.push(f"\\{n / 64}{n / 8 % 8}{n % 8}")
+        else
+            out @ out.push(bytes.to_text_lossy([b]))
+
+    out @ out.push(")")
+    return out.join("")
+
+# `data` as a PDF hexadecimal string, `<48656C6C6F>`.
+function hex(data: [u8]) -> str
+    return "<" + bytes.format_hex_upper(data) + ">"
+
+# The bytes of a list of reals, `[1 0 0 1 0 0]`.
+function reals(xs: [f64]) -> str
+    parts: [str] @= []
+
+    for x in xs
+        parts @ parts.push(real(x))
+
+    return "[" + parts.join(" ") + "]"
+
+test "real: zero, whole numbers, decimals rounded to four, negatives, the edges"
+    assert real(0.0) == "0"
+    assert real(-0.0) == "0"
+    assert real(12.0) == "12"
+    assert real(0.5) == "0.5"
+    assert real(-2.25) == "-2.25"
+    assert real(595.2755905511812) == "595.2756"
+    assert real(0.00004) == "0"
+    assert real(0.00005) == "0.0001"
+    assert real(1.0 / 3.0) == "0.3333"
+    assert real(-0.12) == "-0.12"
+    assert real(10000000000000.0) == "1000000000"
+    assert real(-10000000000000.0) == "-1000000000"
+    assert real(0.0 / 0.0) == "0"
+    assert real(1.0 / 0.0) == "0"
+
+test "name: plain, with a space, a delimiter, a hash and a character of two bytes"
+    assert name("Type") == "/Type"
+    assert name("A B") == "/A#20B"
+    assert name("a/b(c)") == "/a#2Fb#28c#29"
+    assert name("#1") == "/#231"
+    assert name("é") == "/#C3#A9"
+    assert name("") == "/"
+
+test "literal and hex: escapes, octal for bytes outside ASCII, the empty string"
+    assert literal(bytes.from_text("a(b)c\\")) == "(a\\(b\\)c\\\\)"
+    assert literal([0x0a, 0xe9, 0x41]) == "(\\012\\351A)"
+    assert literal([]) == "()"
+    assert hex([0xfe, 0xff, 0x00, 0x41]) == "<FEFF0041>"
+    assert hex([]) == "<>"
+    assert reals([1.0, 0.0, 0.5]) == "[1 0 0.5]"
+    assert reals([]) == "[]"

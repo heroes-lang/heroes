@@ -1,0 +1,167 @@
+# Text broken into lines no wider than a width: at spaces where it can,
+# inside a word too long for a line where it must, at every line break.
+
+use pdf/internal/measure
+
+# Whether a width fits in `most`, with room for the rounding of a sum.
+function fits(width: f64, most: f64) -> bool
+    return width <= most + 0.000001
+
+# The words of `line`, apart by spaces and tabs, none empty.
+function words_of(line: str) -> [str]
+    out: [str] @= []
+    word: [str] @= []
+
+    for c in line.chars()
+        if c == " " || c == "\t" || c == "\r"
+            if word.len() > 0
+                out @ out.push(word.join(""))
+                word @ []
+        else
+            word @ word.push(c)
+
+    if word.len() > 0
+        out @ out.push(word.join(""))
+    return out
+
+# What `break_word` answers: the full lines a long word made, and the piece
+# left over that begins the next line, with its width.
+record Broken
+    # The lines filled by the word's first characters.
+    lines: [str]
+    # The characters left, which begin a line.
+    rest: str
+    # The width of `rest`.
+    width: f64
+
+# `word`, too wide for a line, cut into lines of as many characters as fit,
+# at least one each.
+function break_word(word: str, font: i64, size: f64, most: f64, spacing: measure.Spacing) -> Broken?
+    lines: [str] @= []
+    piece: [str] @= []
+    piece_width @= 0.0
+
+    for c in word.chars()
+        w = measure.width_of_codes(font, shown: measure.codes_of(font, text: c)?, size: size, spacing: spacing)
+
+        if piece.len() > 0 && !fits(width: piece_width + w, most: most)
+            lines @ lines.push(piece.join(""))
+            piece @ []
+            piece_width @ 0.0
+        piece @ piece.push(c)
+        piece_width @ piece_width + w
+
+    return ok(Broken(lines: lines, rest: piece.join(""), width: piece_width))
+
+# A line of wrapped text, and whether it ends its paragraph.
+record Line
+    # The line, no space at either end.
+    text: str
+    # Whether it is the last line of its paragraph.
+    ends: bool
+
+# The lines `text` breaks into, as `lines_of` makes them, without their
+# marks.
+#
+# Fails `unsupported` where the font has no glyph for a character.
+function wrap(text: str, font: i64, size: f64, most: f64, spacing: measure.Spacing) -> [str]?
+    out: [str] @= []
+
+    for line in lines_of(text, font: font, size: size, most: most, spacing: spacing)?
+        out @ out.push(line.text)
+
+    return ok(out)
+
+# Adds `text` to `lines`, marked as ending its paragraph or not.
+function add_line(@lines: [Line], text: str, ends: bool)
+    lines @ lines.push(Line(text: text, ends: ends))
+
+# The lines `text` breaks into in the font numbered `font` at `size`, none
+# wider than `most` points with `spacing` counted, each marked where it ends
+# its paragraph.
+#
+# Fails `unsupported` where the font has no glyph for a character.
+function lines_of(text: str, font: i64, size: f64, most: f64, spacing: measure.Spacing) -> [Line]?
+    lines: [Line] @= []
+
+    if text == ""
+        return ok(lines)
+    space = measure.width_of_codes(font, shown: [32], size: size, spacing: spacing)
+    paragraph: [str] @= []
+    paragraphs: [str] @= []
+
+    for c in text.chars()
+        if c == "\n"
+            paragraphs @ paragraphs.push(paragraph.join(""))
+            paragraph @ []
+        else
+            paragraph @ paragraph.push(c)
+
+    paragraphs @ paragraphs.push(paragraph.join(""))
+
+    for p in paragraphs
+        words = words_of(p)
+
+        if words.len() == 0
+            add_line(@lines, text: "", ends: true)
+            continue
+        current: [str] @= []
+        current_width @= 0.0
+
+        for word in words
+            w = measure.width_of_codes(font, shown: measure.codes_of(font, text: word)?, size: size, spacing: spacing)
+
+            if current.len() > 0 && fits(width: current_width + space + w, most: most)
+                current @ current.push(word)
+                current_width @ current_width + space + w
+                continue
+
+            if current.len() > 0
+                add_line(@lines, text: current.join(" "), ends: false)
+                current @ []
+                current_width @ 0.0
+
+            if fits(width: w, most: most)
+                current @ current.push(word)
+                current_width @ w
+            else
+                broken = break_word(word, font: font, size: size, most: most, spacing: spacing)?
+
+                for line in broken.lines
+                    add_line(@lines, text: line, ends: false)
+
+                current @ current.push(broken.rest)
+                current_width @ broken.width
+
+        if current.len() > 0
+            add_line(@lines, text: current.join(" "), ends: true)
+
+    return ok(lines)
+
+test "words_of: spaces at either end, runs of spaces, tabs, nothing"
+    assert words_of("  a  bc\td ") == ["a", "bc", "d"]
+    assert words_of("") == []
+    assert words_of("   ") == []
+
+test "wrap: the empty text, one line that fits, a break at a space, a blank line kept"
+    plain = measure.plain()
+    assert wrap("", font: 8, size: 10.0, most: 100.0, spacing: plain).must() == []
+    assert wrap("ab cd", font: 8, size: 10.0, most: 30.0, spacing: plain).must() == ["ab cd"]
+    assert wrap("ab cd", font: 8, size: 10.0, most: 29.0, spacing: plain).must() == ["ab", "cd"]
+    assert wrap("ab\n\ncd", font: 8, size: 10.0, most: 100.0, spacing: plain).must() == ["ab", "", "cd"]
+    assert wrap("  ab  ", font: 8, size: 10.0, most: 100.0, spacing: plain).must() == ["ab"]
+
+test "wrap: a word longer than a line cut by characters, a character wider than a line alone"
+    plain = measure.plain()
+    assert wrap("abcdefg hi", font: 8, size: 10.0, most: 18.0, spacing: plain).must() == ["abc", "def", "g", "hi"]
+    assert wrap("ab", font: 8, size: 10.0, most: 1.0, spacing: plain).must() == ["a", "b"]
+    assert wrap("ä é", font: 8, size: 10.0, most: 6.0, spacing: plain).must() == ["ä", "é"]
+
+test "lines_of: the marks of a paragraph's last line"
+    lines = lines_of("ab cd\nef", font: 8, size: 10.0, most: 20.0, spacing: measure.plain()).must()
+    assert lines.len() == 3 && !lines[0].ends && lines[1].ends && lines[2].ends && lines[2].text == "ef"
+
+test "wrap: spacing counted, a character no font has refused"
+    wide = measure.Spacing(character: 0.0, word: 20.0, scale: 100.0)
+    assert wrap("a b", font: 8, size: 10.0, most: 30.0, spacing: wide).must() == ["a", "b"]
+    assert wrap("a ✓", font: 0, size: 10.0, most: 100.0, spacing: measure.plain()).is_err()

@@ -1,0 +1,167 @@
+# PDF's text strings (ISO 32000-1:2008 section 7.9.2): UTF-16BE after the
+# byte order mark FE FF, UTF-8 after EF BB BF (PDF 2.0), PDFDocEncoding
+# otherwise. PDFDocEncoding's table is Annex D.2's, checked against what
+# Poppler's `pdfinfo` 26.11 decodes for each byte of a title (2026-11-18).
+
+use bytes
+use unicode
+
+# The code point PDFDocEncoding gives the byte `b`, 0 for one it leaves
+# undefined: Latin-1 but for 0x18 to 0x1F, 0x80 to 0xA0 and 0xAD.
+function doc_point_of(b: u8) -> i64
+    n = to_i64(b).must()
+
+    if n == 0x09 || n == 0x0a || n == 0x0d || n >= 0x20 && n <= 0x7e
+        return n
+
+    if n >= 0xa1 && n != 0xad
+        return n
+
+    return match n
+        0x18 => 0x02d8
+        0x19 => 0x02c7
+        0x1a => 0x02c6
+        0x1b => 0x02d9
+        0x1c => 0x02dd
+        0x1d => 0x02db
+        0x1e => 0x02da
+        0x1f => 0x02dc
+        0x80 => 0x2022
+        0x81 => 0x2020
+        0x82 => 0x2021
+        0x83 => 0x2026
+        0x84 => 0x2014
+        0x85 => 0x2013
+        0x86 => 0x0192
+        0x87 => 0x2044
+        0x88 => 0x2039
+        0x89 => 0x203a
+        0x8a => 0x2212
+        0x8b => 0x2030
+        0x8c => 0x201e
+        0x8d => 0x201c
+        0x8e => 0x201d
+        0x8f => 0x2018
+        0x90 => 0x2019
+        0x91 => 0x201a
+        0x92 => 0x2122
+        0x93 => 0xfb01
+        0x94 => 0xfb02
+        0x95 => 0x0141
+        0x96 => 0x0152
+        0x97 => 0x0160
+        0x98 => 0x0178
+        0x99 => 0x017d
+        0x9a => 0x0131
+        0x9b => 0x0142
+        0x9c => 0x0153
+        0x9d => 0x0161
+        0x9e => 0x017e
+        0xa0 => 0x20ac
+        _    => 0
+
+# The PDFDocEncoding byte of the code point `point`, -1 where it has none.
+function doc_byte_of(point: i64) -> i64
+    if point == 0x09 || point == 0x0a || point == 0x0d || point >= 0x20 && point <= 0x7e
+        return point
+
+    if point >= 0xa1 && point <= 0xff && point != 0xad
+        return point
+    b @= 0x18
+
+    while b <= 0xa0
+        if doc_point_of(to_u8(b).must()) == point
+            return b
+        b @ b + 1
+
+    return -1
+
+# The text `s` holds, decoded as its first bytes say; a byte or a pair with
+# no character is left out.
+function decode(s: [u8]) -> str
+    points: [i64] @= []
+
+    if s.len() >= 2 && s[0] == 0xfe && s[1] == 0xff
+        at @= 2
+
+        while at + 1 < s.len()
+            unit = to_i64(s[at]).must() * 256 + to_i64(s[at + 1]).must()
+            at @ at + 2
+
+            if unit >= 0xd800 && unit <= 0xdbff && at + 1 < s.len()
+                low = to_i64(s[at]).must() * 256 + to_i64(s[at + 1]).must()
+
+                if low >= 0xdc00 && low <= 0xdfff
+                    points @ points.push(0x10000 + (unit - 0xd800) * 1024 + (low - 0xdc00))
+                    at @ at + 2
+            else if unit < 0xd800 || unit > 0xdfff
+                points @ points.push(unit)
+
+        return unicode.from_code_points(points).default("")
+
+    if s.len() >= 3 && s[0] == 0xef && s[1] == 0xbb && s[2] == 0xbf
+        rest: [u8] @= []
+
+        for b in s.slice(from: 3, to: s.len())
+            rest @ rest.push(b)
+
+        return bytes.to_text_lossy(rest)
+
+    for b in s
+        p = doc_point_of(b)
+
+        if p != 0
+            points @ points.push(p)
+
+    return unicode.from_code_points(points).default("")
+
+# `s` as a text string: PDFDocEncoding where it holds every character, else
+# UTF-16BE after FE FF.
+function encode(s: str) -> [u8]
+    out: [u8] @= []
+    every @= true
+
+    for p in unicode.code_points(s)
+        b = doc_byte_of(p)
+
+        if b < 0
+            every @ false
+            break
+        out @ out.push(to_u8(b).must())
+
+    if every
+        return out
+    wide: [u8] @= [0xfe, 0xff]
+
+    for p in unicode.code_points(s)
+        if p >= 0x10000
+            v = p - 0x10000
+            high = 0xd800 + v / 1024
+            low = 0xdc00 + v % 1024
+            wide @ wide.push(to_u8(high / 256).must())
+            wide @ wide.push(to_u8(high % 256).must())
+            wide @ wide.push(to_u8(low / 256).must())
+            wide @ wide.push(to_u8(low % 256).must())
+        else
+            wide @ wide.push(to_u8(p / 256).must())
+            wide @ wide.push(to_u8(p % 256).must())
+
+    return wide
+
+test "decode: PDFDocEncoding, its own bytes, UTF-16BE with a pair, UTF-8, the empty string"
+    assert decode([0x41, 0x42]) == "AB"
+    assert decode([0x80, 0xa0, 0x93, 0xe9]) == "•€ﬁé"
+    assert decode([0x18, 0x7f, 0xad, 0x9f]) == "˘"
+    assert decode([0xfe, 0xff, 0x00, 0x41, 0xd8, 0x3d, 0xde, 0x00]) == "A😀"
+    assert decode([0xfe, 0xff, 0x00, 0x41, 0xdc, 0x00]) == "A"
+    assert decode([0xfe, 0xff, 0x00]) == ""
+    assert decode([0xef, 0xbb, 0xbf, 0xc3, 0xa9]) == "é"
+    assert decode([]) == ""
+
+test "encode: ASCII and Latin-1 in PDFDocEncoding, the euro, a character past it in UTF-16BE"
+    assert encode("Ab") == [0x41, 0x62]
+    assert encode("é€") == [0xe9, 0xa0]
+    assert encode("Ω") == [0xfe, 0xff, 0x03, 0xa9]
+    assert encode("😀") == [0xfe, 0xff, 0xd8, 0x3d, 0xde, 0x00]
+    assert encode("") == []
+    assert decode(encode("Zoë – “x” 😀")) == "Zoë – “x” 😀"

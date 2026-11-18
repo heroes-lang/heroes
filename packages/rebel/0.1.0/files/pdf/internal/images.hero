@@ -1,0 +1,195 @@
+# Images made ready for a document: a JPEG file's frame header read so that
+# its bytes pass through as a DCTDecode stream (ISO 32000-1:2008 section
+# 7.4.8), and pixels in memory compressed with DEFLATE, an alpha channel
+# split off as a soft mask (section 11.6.5.3).
+
+use compress
+use pdf/internal/codes
+use pdf/internal/compose
+
+# What a JPEG frame header says.
+record Frame
+    # The width in pixels.
+    width: i64
+    # The height in pixels.
+    height: i64
+    # The components: 1 gray, 3 colour, 4 CMYK.
+    components: i64
+    # Whether an Adobe marker stands before it, which inverts CMYK.
+    adobe: bool
+
+# The big-endian number of the two bytes of `data` at `at`.
+function two(data: [u8] lent, at: i64) -> i64
+    return to_i64(data[at]).must() * 256 + to_i64(data[at + 1]).must()
+
+# The frame header of the JPEG file `data`.
+#
+# Fails `invalid` where `data` is no JPEG file or ends before its frame
+# header, `unsupported` where the frame is lossless, hierarchical or coded
+# arithmetically, or holds two components.
+function frame_of(data: [u8] lent) -> Frame?
+    if data.len() < 4 || data[0] != 0xff || data[1] != 0xd8
+        return codes.invalid_at(at: 0, why: "no JPEG start of image, FF D8")
+    at @= 2
+    adobe @= false
+
+    while at + 4 <= data.len()
+        if data[at] != 0xff
+            return codes.invalid_at(at: at, why: "a JPEG segment does not begin with FF")
+        marker = data[at + 1]
+
+        if marker == 0xff
+            at @ at + 1
+            continue
+
+        if marker == 0x01 || marker >= 0xd0 && marker <= 0xd7
+            at @ at + 2
+            continue
+        length = two(data, at: at + 2)
+
+        if length < 2 || at + 2 + length > data.len()
+            return codes.invalid_at(at: at, why: "a JPEG segment's length passes the file")
+
+        if marker == 0xee && length >= 7 && data[at + 4] == 'A' && data[at + 5] == 'd' && data[at + 6] == 'o' && data[at + 7] == 'b' && data[at + 8] == 'e'
+            adobe @ true
+
+        if marker == 0xc0 || marker == 0xc1 || marker == 0xc2
+            if length < 8
+                return codes.invalid_at(at: at, why: "a JPEG frame header is too short")
+            height = two(data, at: at + 5)
+            width = two(data, at: at + 7)
+            components = to_i64(data[at + 9]).must()
+
+            if width == 0 || height == 0
+                return codes.unsupported(why: "a JPEG frame whose height comes after its scan (DNL) is not read")
+
+            if components != 1 && components != 3 && components != 4
+                return codes.unsupported(
+                    why: f"a JPEG frame of {components} components, which PDF shows in no colour space"
+                )
+            return ok(Frame(width: width, height: height, components: components, adobe: adobe))
+
+        if marker >= 0xc3 && marker <= 0xcf && marker != 0xc4 && marker != 0xc8 && marker != 0xcc
+            return codes.unsupported(
+                why: "a JPEG frame lossless, hierarchical or coded arithmetically, which PDF's DCTDecode does not read"
+            )
+
+        if marker == 0xda || marker == 0xd9
+            return codes.invalid_at(at: at, why: "a JPEG file reaches its scan before a frame header")
+        at @ at + 2 + length
+
+    return codes.invalid_at(at: at, why: "a JPEG file ends before its frame header")
+
+# The JPEG file `data` as an image of a document: its bytes as they are.
+function jpeg(data: [u8]) -> compose.Picture?
+    f = frame_of(data)?
+
+    space = match f.components
+        1 => "/DeviceGray"
+        3 => "/DeviceRGB"
+        _ => "/DeviceCMYK"
+
+    invert = if f.components == 4 && f.adobe
+        " /Decode [1 0 1 0 1 0 1 0]"
+    else
+        ""
+    entries = f"/Type /XObject /Subtype /Image /Width {f.width} /Height {f.height} /ColorSpace {space} /BitsPerComponent 8 /Filter /DCTDecode{invert}"
+    return ok(compose.Picture(entries: entries, data: data, mask: -1))
+
+# What `pixels` makes: the image, and its soft mask where it has alpha.
+record Made
+    # The image of its colours.
+    image: compose.Picture
+    # Its alpha as a gray image; meaningful where `has_mask`.
+    mask: compose.Picture
+    # Whether there is a mask.
+    has_mask: bool
+
+# Pixels as images of a document: `channels` samples of `bits` bits each, the
+# last of them alpha where `alpha`, row after row.
+function pixels(width: i64, height: i64, channels: i64, bits: i64, alpha: bool, data: [u8]) -> Made?
+    sample = bits / 8
+    pixel = channels * sample
+
+    colours = if alpha
+        channels - 1
+    else
+        channels
+    colour: [u8] @= []
+    shade: [u8] @= []
+
+    if alpha
+        i @= 0
+
+        while i + pixel <= data.len()
+            k @= 0
+
+            while k < colours * sample
+                colour @ colour.push(data[i + k])
+                k @ k + 1
+
+            while k < pixel
+                shade @ shade.push(data[i + k])
+                k @ k + 1
+
+            i @ i + pixel
+
+    space = if colours == 1
+        "/DeviceGray"
+    else
+        "/DeviceRGB"
+    level = compress.defaults(.zlib)
+
+    packed = if alpha
+        compress.compress(colour, options: level)?
+    else
+        compress.compress(data, options: level)?
+    entries = f"/Type /XObject /Subtype /Image /Width {width} /Height {height} /ColorSpace {space} /BitsPerComponent {bits} /Filter /FlateDecode"
+    image = compose.Picture(entries: entries, data: packed, mask: -1)
+
+    if !alpha
+        return ok(Made(image: image, mask: image, has_mask: false))
+    mask_entries = f"/Type /XObject /Subtype /Image /Width {width} /Height {height} /ColorSpace /DeviceGray /BitsPerComponent {bits} /Filter /FlateDecode"
+    mask = compose.Picture(entries: mask_entries, data: compress.compress(shade, options: level)?, mask: -1)
+    return ok(Made(image: image, mask: mask, has_mask: true))
+
+test "frame_of: Python's smallest baseline JPEG header, a progressive one, not a JPEG"
+    baseline: [u8] = [
+        0xff
+        0xd8
+        0xff
+        0xe0
+        0x00
+        0x04
+        0x00
+        0x00
+        0xff
+        0xc0
+        0x00
+        0x0b
+        0x08
+        0x00
+        0x02
+        0x00
+        0x03
+        0x01
+        0x01
+        0x11
+        0x00
+        0xff
+        0xd9
+    ]
+    f = frame_of(baseline).must()
+    assert f.width == 3 && f.height == 2 && f.components == 1 && !f.adobe
+    assert frame_of([0x89, 0x50]).is_err()
+    assert frame_of([0xff, 0xd8, 0xff, 0xda, 0x00, 0x02]).is_err()
+    lossless: [u8] = [0xff, 0xd8, 0xff, 0xc3, 0x00, 0x0b, 0x08, 0x00, 0x02, 0x00, 0x03, 0x01, 0x01, 0x11, 0x00]
+    assert frame_of(lossless).is_err()
+
+test "pixels: RGB as it is, gray and alpha split into an image and its mask"
+    plain = pixels(width: 1, height: 1, channels: 3, bits: 8, alpha: false, data: [1, 2, 3]).must()
+    assert !plain.has_mask && compress.decompress(plain.image.data, format: .zlib, limit: 10).must() == [1, 2, 3]
+    split = pixels(width: 2, height: 1, channels: 2, bits: 8, alpha: true, data: [10, 255, 20, 0]).must()
+    assert split.has_mask
+    assert compress.decompress(split.image.data, format: .zlib, limit: 10).must() == [10, 20]
+    assert compress.decompress(split.mask.data, format: .zlib, limit: 10).must() == [255, 0]

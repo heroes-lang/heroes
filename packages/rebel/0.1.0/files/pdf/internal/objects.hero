@@ -1,0 +1,230 @@
+# The indirect objects of a file read where they stand (ISO 32000-1:2008
+# section 7.3.10 and 7.5.7): `12 0 obj`, its value, and a stream's bytes,
+# whose `/Length` is checked against the `endstream` that must follow it and
+# searched for where it does not match; and the objects an object stream
+# holds.
+
+use bytes
+use pdf/internal/codes
+use pdf/internal/crypt
+use pdf/internal/model
+use pdf/internal/parse
+use pdf/internal/rc4
+
+# An object read: its number, its generation and its value.
+record Read
+    # The object's number.
+    number: i64
+    # Its generation.
+    generation: i64
+    # Its value; a stream's bytes decrypted, not decoded.
+    value: model.Obj
+
+# The unsigned integer at `at`, which moves past it; -1 where none stands
+# there.
+function unsigned(data: [u8] lent, @at: i64) -> i64
+    start = at
+    n @= 0
+
+    while at < data.len() && data[at] >= '0' && data[at] <= '9' && at - start < 18
+        n @ n * 10 + to_i64(data[at] - '0').must()
+        at @ at + 1
+
+    if at == start
+        return -1
+    return n
+
+# Moves `at` past the end of line that follows `stream`: CR LF, LF, or a CR
+# alone, as some writers leave it.
+function past_line_end(data: [u8] lent, @at: i64)
+    if at < data.len() && data[at] == 0x0d
+        at @ at + 1
+
+    if at < data.len() && data[at] == 0x0a
+        at @ at + 1
+
+# Whether `endstream` follows `at`, after an end of line or whitespace.
+function ends_there(data: [u8] lent, at: i64) -> bool
+    i @= at
+    parse.skip_space(data, @i)
+    return bytes.has_prefix_at(s: data, prefix: bytes.from_text("endstream"), at: i)
+
+# The integer object `number` holds where it stands at `offsets`, -1 where
+# it is none: a stream's length kept apart.
+function length_object(data: [u8] lent, number: i64, offsets: {i64: i64} lent) -> i64
+    at @= offsets[number].default(-1)
+
+    if at < 0 || at >= data.len()
+        return -1
+    parse.skip_space(data, @at)
+
+    if unsigned(data, @at) != number
+        return -1
+    parse.skip_space(data, @at)
+
+    if unsigned(data, @at) < 0
+        return -1
+    parse.skip_space(data, @at)
+
+    if parse.word(data, @at) != "obj"
+        return -1
+    parse.skip_space(data, @at)
+    n = unsigned(data, @at)
+    return n
+
+# The object that begins at `offset`: `N G obj`, its value, and where the
+# value is a dictionary followed by `stream`, its bytes.
+#
+# - `offsets`: the offsets of the file's objects, to read a `/Length` given
+#   by reference.
+# - `handler`: what decrypts its strings and stream; `skip` is the number of
+#   the encryption dictionary, never decrypted.
+#
+# Fails `invalid` where no object begins there, `limit` where its values nest
+# deeper than `depth`.
+function read_at(data: [u8] lent, offset: i64, depth: i64, offsets: {i64: i64} lent, handler: crypt.Handler, skip: i64) -> Read?
+    if offset < 0 || offset >= data.len()
+        return codes.invalid_at(at: offset, why: "an object's offset is outside the file")
+    at @= offset
+    parse.skip_space(data, @at)
+    number = unsigned(data, @at)
+    parse.skip_space(data, @at)
+    generation = unsigned(data, @at)
+    parse.skip_space(data, @at)
+    keyword = parse.word(data, @at)
+
+    if number < 0 || generation < 0 || keyword != "obj"
+        return codes.invalid_at(at: offset, why: "no `N G obj` begins an object here")
+
+    none: [u8] = []
+
+    key = if number == skip
+        none
+    else
+        crypt.object_key(handler, number: number, generation: generation)
+    v = parse.value(data: data, at: @at, depth: depth, key: key)?
+    after @= at
+    parse.skip_space(data, @after)
+
+    if !bytes.has_prefix_at(s: data, prefix: bytes.from_text("stream"), at: after)
+        return ok(Read(number: number, generation: generation, value: v))
+    entries = model.entries_of(v)
+    start @= after + 6
+    past_line_end(data, @start)
+
+    stated = match entries["Length"].default(.null_value)
+        .integer n => n.value
+        .reference r => length_object(data, number: r.number, offsets: offsets)
+        .null_value | .boolean _ | .real _ | .text _ | .name _ | .array _ | .dict _ | .stream _ => -1
+
+    end @= -1
+
+    if stated >= 0 && start + stated <= data.len() && ends_there(data, at: start + stated)
+        end @ start + stated
+    else
+        match bytes.index_of_from(s: data, substr: bytes.from_text("endstream"), from: start)
+            .ok found =>
+                e @= found
+
+                if e > start && data[e - 1] == 0x0a
+                    e @ e - 1
+
+                if e > start && data[e - 1] == 0x0d
+                    e @ e - 1
+                end @ e
+            .err _ =>
+                return codes.invalid_at(at: start, why: "a stream has no `endstream`")
+    raw = data.slice(from: start, to: end)
+    kind = model.name_or_empty(entries["Type"].default(.null_value))
+    plain = kind == "XRef" || kind == "Metadata" && !handler.metadata
+
+    content = if plain
+        raw
+    else
+        rc4.apply(key: key, data: raw)
+    return ok(Read(number: number, generation: generation, value: .stream(entries: entries, data: content)))
+
+# The objects the decoded object stream `data` holds, as its dictionary's
+# `N` and `First` place them; at most `most` of them.
+#
+# Fails `invalid` where its header does not hold `N` pairs or an object is
+# no value, `limit` where `N` passes `most`.
+function members(entries: {str: model.Obj}, data: [u8] lent, depth: i64, most: i64) -> [Read]?
+    n = model.integer_or(entries["N"].default(.null_value), fallback: -1)
+    first = model.integer_or(entries["First"].default(.null_value), fallback: -1)
+
+    if n < 0 || first < 0 || first > data.len()
+        return codes.invalid(why: "an object stream's N or First is missing or out of range")
+
+    if n > most
+        return codes.over(what: "the objects of an object stream", most: most)
+    numbers: [i64] @= []
+    places: [i64] @= []
+    at @= 0
+    k @= 0
+
+    while k < n
+        parse.skip_space(data, @at)
+        number = unsigned(data, @at)
+        parse.skip_space(data, @at)
+        place = unsigned(data, @at)
+
+        if number < 0 || place < 0
+            return codes.invalid(why: f"an object stream's header holds {k} pairs where it says {n}")
+        numbers @ numbers.push(number)
+        places @ places.push(place)
+        k @ k + 1
+
+    out: [Read] @= []
+    k @ 0
+
+    while k < n
+        p @= first + places[k]
+
+        if p < data.len()
+            match parse.value(data: data, at: @p, depth: depth, key: [])
+                .ok v => out @ out.push(Read(number: numbers[k], generation: 0, value: v))
+                .err e =>
+                    if e.code == codes.LIMIT
+                        return fail(code: e.code, msg: e.msg)
+        k @ k + 1
+
+    return ok(out)
+
+test "read_at: an object, a stream with its length, one whose length is wrong, none"
+    text = "1 0 obj\n<< /A 1 >>\nendobj\n2 0 obj << /Length 3 >>\nstream\nabc\nendstream\nendobj\n3 0 obj<</Length 99>>stream\r\nxy\r\nendstream endobj"
+    data = bytes.from_text(text)
+    offsets: {i64: i64} = {}
+    first = read_at(data, offset: 0, depth: 8, offsets: offsets, handler: crypt.none(), skip: 0).must()
+    assert first.number == 1 && model.entry(first.value, key: "A") == .integer(value: 1)
+    second = read_at(data, offset: 26, depth: 8, offsets: offsets, handler: crypt.none(), skip: 0).must()
+
+    match second.value
+        .stream s                                                                                               => assert s.data == bytes.from_text("abc")
+        .null_value | .boolean _ | .integer _ | .real _ | .text _ | .name _ | .array _ | .dict _ | .reference _ => assert false
+
+    third = read_at(data, offset: 78, depth: 8, offsets: offsets, handler: crypt.none(), skip: 0).must()
+
+    match third.value
+        .stream s                                                                                               => assert s.data == bytes.from_text("xy")
+        .null_value | .boolean _ | .integer _ | .real _ | .text _ | .name _ | .array _ | .dict _ | .reference _ => assert false
+
+    assert read_at(data, offset: 3, depth: 8, offsets: offsets, handler: crypt.none(), skip: 0).is_err()
+    assert read_at(data, offset: 9999, depth: 8, offsets: offsets, handler: crypt.none(), skip: 0).is_err()
+
+test "read_at: a length given by reference"
+    data = bytes.from_text("4 0 obj << /Length 5 0 R >> stream\nhello\nendstream endobj 5 0 obj 5 endobj")
+    offsets: {i64: i64} = {5: 58}
+    r = read_at(data, offset: 0, depth: 8, offsets: offsets, handler: crypt.none(), skip: 0).must()
+
+    match r.value
+        .stream s                                                                                               => assert s.data == bytes.from_text("hello")
+        .null_value | .boolean _ | .integer _ | .real _ | .text _ | .name _ | .array _ | .dict _ | .reference _ => assert false
+
+test "members: two objects, a header too short, N past the limit"
+    data = bytes.from_text("10 0 11 4 /A [1 2]")
+    entries: {str: model.Obj} = {"N": .integer(value: 2), "First": .integer(value: 10)}
+    got = members(entries, data: data, depth: 8, most: 10).must()
+    assert got.len() == 2 && got[0].number == 10 && got[0].value == .name(value: "A") && got[1].number == 11
+    assert members({"N": .integer(value: 3), "First": .integer(value: 10)}, data: data, depth: 8, most: 10).is_err()
+    assert members(entries, data: data, depth: 8, most: 1).is_err()

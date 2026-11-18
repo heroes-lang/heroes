@@ -1,0 +1,365 @@
+# A font of a file read, made into what turns a string's bytes into text
+# and widths (ISO 32000-1:2008 section 9.6 to 9.10): a simple font through
+# its base encoding, its differences and its ToUnicode map; a composite font
+# through its encoding CMap, its ToUnicode map, or codes that are UCS-2
+# themselves; the widths from the font, or from the AFM metrics of a
+# standard font that gives none.
+
+use pdf/internal/cmap
+use pdf/internal/encodings
+use pdf/internal/filters
+use pdf/internal/glyphs
+use pdf/internal/measure
+use pdf/internal/metrics
+use pdf/internal/model
+use pdf/internal/store
+use unicode
+
+# Widths for the codes or CIDs from `low` to `high`.
+record Run
+    # The first.
+    low: i64
+    # The last.
+    high: i64
+    # Their width, in thousandths of the font's size.
+    width: f64
+
+# What turns a font's strings into text and widths.
+record Decoder
+    # The font's `/BaseFont`, its subset tag dropped.
+    name: str
+    # Whether it is a composite font, `Type0`.
+    composite: bool
+    # The encoding CMap of a composite font.
+    encoding: cmap.CMap
+    # The ToUnicode map, where the font has one.
+    unicode: cmap.CMap
+    # Whether it has one.
+    has_unicode: bool
+    # Whether a composite font's codes are UCS-2 themselves.
+    ucs2: bool
+    # A simple font's text for each code, 256 of them.
+    texts: [str]
+    # Widths of single codes or CIDs.
+    widths: {i64: f64}
+    # Widths of ranges.
+    runs: [Run]
+    # The width of a code or CID none of them gives.
+    default_width: f64
+    # What a width is multiplied by to be in thousandths of the size: 1,
+    # or a Type 3 font's matrix times 1000.
+    scale: f64
+
+# A glyph shown: its text, its width and whether it is a single-byte space.
+record Glyph
+    # The characters it stands for, "" where none.
+    text: str
+    # Its width, in thousandths of the font's size.
+    width: f64
+    # Whether it is the single-byte code 32, which word spacing widens.
+    space: bool
+
+# `name` without the six capitals and `+` of a subset's tag.
+function untagged(name: str) -> str
+    if name.len() > 7 && name[6] == '+'
+        i @= 0
+
+        while i < 6
+            if name[i] < 'A' || name[i] > 'Z'
+                return name
+            i @ i + 1
+
+        return name.slice(from: 7, to: name.len())
+    return name
+
+# The code points of the encoding PDF names `name`, none for a name it does
+# not define.
+function table_of(name: str) -> [i64]
+    if name == "WinAnsiEncoding"
+        return encodings.WIN_ANSI
+
+    if name == "MacRomanEncoding"
+        return encodings.MAC_ROMAN
+
+    if name == "StandardEncoding"
+        return encodings.STANDARD
+    return []
+
+# The texts of a simple font's 256 codes.
+function texts_of(base: [i64]) -> [str]
+    out: [str] @= []
+
+    for p in base
+        if p == 0
+            out @ out.push("")
+        else
+            out @ out.push(unicode.from_code_points([p]).default(""))
+
+    return out
+
+# The decoded bytes of the stream `o`, none where it is none or does not
+# decode within `limit`.
+function stream_bytes(st: store.Store lent, o: model.Obj, limit: i64) -> [u8]
+    match store.resolve(st.objects, o: o)
+        .stream s =>
+            match filters.decode(s.entries, data: s.data, limit: limit)
+                .ok plain => return plain
+                .err _    => return []
+        .null_value | .boolean _ | .integer _ | .real _ | .text _ | .name _ | .array _ | .dict _ | .reference _ =>
+            return []
+
+# Adds `r` to `runs`, the caller's own list.
+function add_run(@runs: [Run], r: Run)
+    runs @ runs.push(r)
+
+# Puts the width `w` of `code` into `widths`, the caller's own map.
+function put_width(@widths: {i64: f64}, code: i64, w: f64)
+    widths[code] @ w
+
+# The decoder of the font dictionary `font`.
+function build(st: store.Store lent, font: model.Obj) -> Decoder
+    name = untagged(model.name_or_empty(store.resolve(st.objects, o: model.entry(font, key: "BaseFont"))))
+    subtype = model.name_or_empty(store.resolve(st.objects, o: model.entry(font, key: "Subtype")))
+    limit = st.bounds.stream_bytes
+    unicode_bytes = stream_bytes(st, o: model.entry(font, key: "ToUnicode"), limit: limit)
+    to_unicode = cmap.read(unicode_bytes, depth: st.bounds.depth).default(cmap.empty())
+    has_unicode = unicode_bytes.len() > 0
+    widths: {i64: f64} @= {}
+    runs: [Run] @= []
+
+    if subtype == "Type0"
+        descendant = store.resolve(
+            st.objects,
+            o: model.default_first(model.items_or_none(store.resolve(st.objects, o: model.entry(font, key: "DescendantFonts"))))
+        )
+        dw = model.number_or(store.resolve(st.objects, o: model.entry(descendant, key: "DW")), fallback: 1000.0)
+        w = model.items_or_none(store.resolve(st.objects, o: model.entry(descendant, key: "W")))
+        i @= 0
+
+        while i < w.len()
+            first = model.integer_or(store.resolve(st.objects, o: w[i]), fallback: -1)
+
+            if i + 1 >= w.len() || first < 0
+                break
+            next = store.resolve(st.objects, o: w[i + 1])
+
+            match next
+                .array a =>
+                    k @= 0
+
+                    for item in a.items
+                        put_width(
+                            @widths,
+                            code: first + k,
+                            w: model.number_or(store.resolve(st.objects, o: item), fallback: dw)
+                        )
+                        k @ k + 1
+
+                    i @ i + 2
+                .null_value | .boolean _ | .integer _ | .real _ | .text _ | .name _ | .dict _ | .stream _ | .reference _ =>
+                    if i + 2 >= w.len()
+                        break
+                    last = model.integer_or(next, fallback: -1)
+                    add_run(
+                        @runs,
+                        r: Run(low: first, high: last, width: model.number_or(store.resolve(st.objects, o: w[i + 2]), fallback: dw))
+                    )
+                    i @ i + 3
+
+        encoding_obj = store.resolve(st.objects, o: model.entry(font, key: "Encoding"))
+        encoding_name = model.name_or_empty(encoding_obj)
+        ucs2 = encoding_name.len() > 7 && (has_suffix(s: encoding_name, end: "-UCS2-H") || has_suffix(s: encoding_name, end: "-UCS2-V") || has_suffix(s: encoding_name, end: "-UTF16-H") || has_suffix(s: encoding_name, end: "-UTF16-V"))
+
+        encoding = match encoding_obj
+            .stream s =>
+                match filters.decode(s.entries, data: s.data, limit: limit)
+                    .ok plain => cmap.read(plain, depth: st.bounds.depth).default(cmap.identity())
+                    .err _    => cmap.identity()
+            .null_value | .boolean _ | .integer _ | .real _ | .text _ | .name _ | .array _ | .dict _ | .reference _ => cmap.identity()
+
+        return Decoder(
+            name: name,
+            composite: true,
+            encoding: encoding,
+            unicode: to_unicode,
+            has_unicode: has_unicode,
+            ucs2: ucs2,
+            texts: [],
+            widths: widths,
+            runs: runs,
+            default_width: dw,
+            scale: 1.0
+        )
+    encoding = store.resolve(st.objects, o: model.entry(font, key: "Encoding"))
+    standard = measure.font_index_of(name)
+
+    base_name = match encoding
+        .name n => n.value
+        .dict d => model.name_or_empty(store.resolve(st.objects, o: d.entries["BaseEncoding"].default(.null_value)))
+        .null_value | .boolean _ | .integer _ | .real _ | .text _ | .array _ | .stream _ | .reference _ => ""
+
+    table @= table_of(base_name)
+
+    if table.len() == 0
+        table @ if standard == 12 || name == "Symbol"
+            encodings.SYMBOL
+        else if standard == 13 || name == "ZapfDingbats"
+            encodings.DINGBATS
+        else if subtype == "TrueType"
+            encodings.WIN_ANSI
+        else
+            encodings.STANDARD
+    texts @= texts_of(table)
+    differences = model.items_or_none(store.resolve(st.objects, o: model.entry(encoding, key: "Differences")))
+    code @= 0
+
+    for item in differences
+        match store.resolve(st.objects, o: item)
+            .integer n => code @ n.value
+            .name g =>
+                if code >= 0 && code < 256
+                    texts[code] @ glyphs.text_of(g.value)
+                code @ code + 1
+            .null_value | .boolean _ | .real _ | .text _ | .array _ | .dict _ | .stream _ | .reference _ => _ = 0
+
+    first_char = model.integer_or(store.resolve(st.objects, o: model.entry(font, key: "FirstChar")), fallback: 0)
+    listed = model.items_or_none(store.resolve(st.objects, o: model.entry(font, key: "Widths")))
+    k @= 0
+
+    for item in listed
+        put_width(@widths, code: first_char + k, w: model.number_or(store.resolve(st.objects, o: item), fallback: 0.0))
+        k @ k + 1
+
+    descriptor = store.resolve(st.objects, o: model.entry(font, key: "FontDescriptor"))
+    missing = model.number_or(store.resolve(st.objects, o: model.entry(descriptor, key: "MissingWidth")), fallback: 0.0)
+    default_width @= missing
+
+    if listed.len() == 0 && standard >= 0
+        afm = metrics.widths_of(standard)
+        c @= 0
+
+        while c < 256
+            point = if texts[c] == ""
+                -1
+            else
+                unicode.code_point(texts[c])
+            shown = measure.code_of(font: standard, point: point)
+
+            if shown >= 0
+                put_width(@widths, code: c, w: to_f64(afm[shown]))
+            c @ c + 1
+
+    if default_width == 0.0 && listed.len() == 0
+        default_width @ 500.0
+    matrix = model.items_or_none(store.resolve(st.objects, o: model.entry(font, key: "FontMatrix")))
+
+    scale = if subtype == "Type3" && matrix.len() == 6
+        model.number_or(store.resolve(st.objects, o: matrix[0]), fallback: 0.001) * 1000.0
+    else
+        1.0
+    return Decoder(
+        name: name,
+        composite: false,
+        encoding: cmap.empty(),
+        unicode: to_unicode,
+        has_unicode: has_unicode,
+        ucs2: false,
+        texts: texts,
+        widths: widths,
+        runs: runs,
+        default_width: default_width,
+        scale: scale
+    )
+
+# Whether `s` ends with `end`.
+function has_suffix(s: str, end: str) -> bool
+    if end.len() > s.len()
+        return false
+    i @= 0
+
+    while i < end.len()
+        if s[s.len() - end.len() + i] != end[i]
+            return false
+        i @ i + 1
+
+    return true
+
+# The width `d` gives the code or CID `n`.
+function width_of(d: Decoder lent, n: i64) -> f64
+    match d.widths[n]
+        .ok w  => return w * d.scale
+        .err _ => _ = 0
+
+    for run in d.runs
+        if n >= run.low && n <= run.high
+            return run.width * d.scale
+
+    return d.default_width * d.scale
+
+# The glyphs the string `s` shows in the font `d` decodes.
+function decode(d: Decoder lent, s: [u8]) -> [Glyph]
+    out: [Glyph] @= []
+
+    if !d.composite
+        for b in s
+            code = to_i64(b).must()
+
+            text = if d.has_unicode
+                cmap.text_of(d.unicode, code: cmap.Code(value: code, size: 1)).default(d.texts[code])
+            else
+                d.texts[code]
+            out @ out.push(Glyph(text: text, width: width_of(d, n: code), space: code == 32))
+
+        return out
+
+    for code in cmap.split(d.encoding, s: s, fallback: 2)
+        cid = cmap.cid_of(d.encoding, code: code)
+
+        text = if d.has_unicode
+            cmap.text_of(d.unicode, code: code).default("")
+        else if d.ucs2
+            unicode.from_code_points([code.value]).default("")
+        else
+            ""
+        out @ out.push(Glyph(text: text, width: width_of(d, n: cid), space: code.size == 1 && code.value == 32))
+
+    return out
+
+# A file of no object, for the tests.
+function no_file() -> store.Store
+    return store.Store(
+        version: "1.7",
+        objects: {},
+        trailer: {},
+        leaves: [],
+        encrypted: false,
+        bounds: store.test_bounds()
+    )
+
+test "untagged and has_suffix: a subset's tag dropped, a name without one kept"
+    assert untagged("ABCDEF+Times-Roman") == "Times-Roman" && untagged("AbCDEF+X") == "AbCDEF+X" && untagged("Helvetica") == "Helvetica"
+    assert has_suffix(s: "UniJIS-UCS2-H", end: "-UCS2-H") && !has_suffix(s: "H", end: "-UCS2-H")
+
+test "build and decode: a standard font by WinAnsi with its AFM widths, differences, the euro"
+    font: model.Obj = .dict(
+        entries: {"Type": .name(value: "Font"), "Subtype": .name(value: "Type1"), "BaseFont": .name(value: "Helvetica"), "Encoding": .dict(entries: {"BaseEncoding": .name(value: "WinAnsiEncoding"), "Differences": .array(items: [.integer(value: 65), .name(value: "B"), .name(value: "uni00E9")])})}
+    )
+    d = build(no_file(), font: font)
+    glyphs_shown = decode(d, s: [65, 66, 0x80, 32])
+    assert glyphs_shown[0].text == "B" && glyphs_shown[1].text == "é" && glyphs_shown[2].text == "€" && glyphs_shown[3].space
+    assert glyphs_shown[0].width == 667.0 && glyphs_shown[2].width == 556.0
+
+test "build and decode: a composite font with Identity-H, its widths, no ToUnicode"
+    descendant: model.Obj = .dict(
+        entries: {"W": .array(items: [.integer(value: 1), .array(items: [.integer(value: 500), .integer(value: 600)]), .integer(value: 10), .integer(value: 20), .integer(value: 300)]), "DW": .integer(value: 900)}
+    )
+    font: model.Obj = .dict(
+        entries: {"Subtype": .name(value: "Type0"), "BaseFont": .name(value: "X"), "Encoding": .name(value: "Identity-H"), "DescendantFonts": .array(items: [descendant])}
+    )
+    d = build(no_file(), font: font)
+    shown = decode(d, s: [0, 2, 0, 15, 0, 99])
+    assert shown.len() == 3 && shown[0].width == 600.0 && shown[1].width == 300.0 && shown[2].width == 900.0 && shown[0].text == ""
+    ucs: model.Obj = .dict(
+        entries: {"Subtype": .name(value: "Type0"), "Encoding": .name(value: "UniJIS-UCS2-H"), "DescendantFonts": .array(items: [descendant])}
+    )
+    assert decode(build(no_file(), font: ucs), s: [0x30, 0x42])[0].text == "あ"

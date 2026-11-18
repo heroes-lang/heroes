@@ -1,0 +1,409 @@
+# A file's cross-reference (ISO 32000-1:2008 section 7.5.4, 7.5.6 and
+# 7.5.8): found from `startxref`, read as tables or as streams, followed back
+# through each revision's `/Prev` and a hybrid file's `/XRefStm`, the newest
+# entry of each object kept; and, where that fails, rebuilt by scanning the
+# file for its objects, as readers of PDF do.
+
+use bytes
+use pdf/internal/codes
+use pdf/internal/crypt
+use pdf/internal/filters
+use pdf/internal/model
+use pdf/internal/objects
+use pdf/internal/parse
+
+# Where an object is: at an offset of the file, or inside an object stream.
+record Entry
+    # 1 at an offset, 2 inside an object stream.
+    kind: i64
+    # The offset, or the object stream's number.
+    a: i64
+    # The generation, or the index inside the object stream.
+    b: i64
+
+# A cross-reference read: each object's newest entry, and the trailer.
+record Table
+    # The entries by object number.
+    entries: {i64: Entry}
+    # The objects the newest revision that names them frees.
+    freed: {i64: bool}
+    # The trailer's entries, the newest revision's first.
+    trailer: {str: model.Obj}
+    # Whether it was rebuilt by a scan.
+    rebuilt: bool
+    # The bytes its streams decoded to, together.
+    decoded: i64
+
+# The limits a reading of the cross-reference keeps to.
+record Caps
+    # The most objects.
+    objects: i64
+    # The most bytes one stream decodes to.
+    stream_bytes: i64
+    # The deepest values nest.
+    depth: i64
+    # The most revisions.
+    revisions: i64
+
+# The offset `startxref` names, read in the last 4,096 bytes of the file.
+#
+# Fails `invalid` where none stands there.
+function start_of(data: [u8] lent) -> i64?
+    from = if data.len() > 4096
+        data.len() - 4096
+    else
+        0
+    tail = data.slice(from: from, to: data.len())
+
+    found = match bytes.index_of_last(s: tail, substr: bytes.from_text("startxref"))
+        .ok i  => i
+        .err _ => return codes.invalid_at(at: data.len(), why: "no `startxref` in the last 4,096 bytes")
+
+    at @= from + found + 9
+    parse.skip_space(data, @at)
+    n = objects.unsigned(data, @at)
+
+    if n < 0 || n >= data.len()
+        return codes.invalid_at(at: from + found, why: "`startxref` names no offset inside the file")
+    return ok(n)
+
+# One section of the cross-reference: its entries, the objects it frees,
+# its trailer.
+record Section
+    # The entries it gives.
+    entries: {i64: Entry}
+    # The objects it frees.
+    freed: [i64]
+    # Its trailer, or its stream's dictionary.
+    trailer: {str: model.Obj}
+    # The bytes its stream decoded to; 0 for a table.
+    decoded: i64
+
+# Adds `n` to `list`, the caller's own.
+function add_number(@list: [i64], n: i64)
+    list @ list.push(n)
+
+# The table at `at`, `xref` first, and the trailer after it.
+function read_table(data: [u8] lent, at: i64, caps: Caps) -> Section?
+    i @= at
+    parse.skip_space(data, @i)
+    _ = parse.word(data, @i)
+    entries: {i64: Entry} @= {}
+    freed: [i64] @= []
+
+    while true
+        parse.skip_space(data, @i)
+
+        if i >= data.len()
+            return codes.invalid_at(at: i, why: "a cross-reference table has no trailer")
+
+        if bytes.has_prefix_at(s: data, prefix: bytes.from_text("trailer"), at: i)
+            i @ i + 7
+            v = parse.value(data: data, at: @i, depth: caps.depth, key: [])?
+            return ok(Section(entries: entries, freed: freed, trailer: model.entries_of(v), decoded: 0))
+        first = objects.unsigned(data, @i)
+        parse.skip_space(data, @i)
+        count = objects.unsigned(data, @i)
+
+        if first < 0 || count < 0
+            return codes.invalid_at(at: i, why: "a cross-reference table's subsection has no first number and count")
+
+        if count > caps.objects || entries.len() + count > caps.objects
+            return codes.over(what: "the objects of the file", most: caps.objects)
+        k @= 0
+
+        while k < count
+            parse.skip_space(data, @i)
+            offset = objects.unsigned(data, @i)
+            parse.skip_space(data, @i)
+            generation = objects.unsigned(data, @i)
+            parse.skip_space(data, @i)
+
+            if offset < 0 || generation < 0 || i >= data.len() || data[i] != 'n' && data[i] != 'f'
+                return codes.invalid_at(at: i, why: "a cross-reference entry is not `offset generation n|f`")
+            used = data[i] == 'n'
+            i @ i + 1
+            number = first + k
+
+            if used && offset > 0
+                entries[number] @ Entry(kind: 1, a: offset, b: generation)
+            else if number > 0
+                add_number(@freed, n: number)
+            k @ k + 1
+
+    return codes.invalid_at(at: i, why: "no trailer")
+
+# The big-endian number of `width` bytes of `data` at `at`.
+function field(data: [u8] lent, at: i64, width: i64) -> i64
+    n @= 0
+    k @= 0
+
+    while k < width
+        n @ n * 256 + to_i64(data[at + k]).must()
+        k @ k + 1
+
+    return n
+
+# The cross-reference stream at `at`, an object of type `XRef`.
+function read_stream(data: [u8] lent, at: i64, caps: Caps) -> Section?
+    none: {i64: i64} = {}
+    r = objects.read_at(data, offset: at, depth: caps.depth, offsets: none, handler: crypt.none(), skip: 0)?
+    dict = model.entries_of(r.value)
+
+    if model.name_or_empty(dict["Type"].default(.null_value)) != "XRef"
+        return codes.invalid_at(at: at, why: "no cross-reference table or stream begins here")
+
+    raw = match r.value
+        .stream s => s.data
+        .null_value | .boolean _ | .integer _ | .real _ | .text _ | .name _ | .array _ | .dict _ | .reference _ => return codes.invalid_at(
+            at: at,
+            why: "a cross-reference stream holds no stream"
+        )
+
+    plain = filters.decode(dict, data: raw, limit: caps.stream_bytes)?
+    widths = model.items_or_none(dict["W"].default(.null_value))
+
+    if widths.len() != 3
+        return codes.invalid_at(at: at, why: "a cross-reference stream's W does not hold three widths")
+    w0 = model.integer_or(widths[0], fallback: -1)
+    w1 = model.integer_or(widths[1], fallback: -1)
+    w2 = model.integer_or(widths[2], fallback: -1)
+
+    if w0 < 0 || w1 < 0 || w2 < 0 || w0 > 8 || w1 > 8 || w2 > 8 || w0 + w1 + w2 == 0
+        return codes.invalid_at(at: at, why: "a cross-reference stream's widths are out of range")
+    size = model.integer_or(dict["Size"].default(.null_value), fallback: 0)
+    index @= model.items_or_none(dict["Index"].default(.null_value))
+
+    if index.len() == 0
+        index @ [.integer(value: 0), .integer(value: size)]
+    row = w0 + w1 + w2
+    entries: {i64: Entry} @= {}
+    freed: [i64] @= []
+    p @= 0
+    s @= 0
+
+    while s + 1 < index.len()
+        first = model.integer_or(index[s], fallback: -1)
+        count = model.integer_or(index[s + 1], fallback: -1)
+
+        if first < 0 || count < 0
+            return codes.invalid_at(at: at, why: "a cross-reference stream's Index is not pairs of numbers")
+
+        if count > caps.objects || entries.len() + count > caps.objects
+            return codes.over(what: "the objects of the file", most: caps.objects)
+        k @= 0
+
+        while k < count && p + row <= plain.len()
+            kind = if w0 == 0
+                1
+            else
+                field(plain, at: p, width: w0)
+            a = field(plain, at: p + w0, width: w1)
+            b = field(plain, at: p + w0 + w1, width: w2)
+            number = first + k
+
+            if kind == 1 && a > 0
+                entries[number] @ Entry(kind: 1, a: a, b: b)
+            else if kind == 2
+                entries[number] @ Entry(kind: 2, a: a, b: b)
+            else if kind == 0 && number > 0
+                add_number(@freed, n: number)
+            p @ p + row
+            k @ k + 1
+
+        s @ s + 2
+
+    return ok(Section(entries: entries, freed: freed, trailer: dict, decoded: plain.len()))
+
+# The section at `at`: a table where `xref` stands there, else a stream.
+function read_section(data: [u8] lent, at: i64, caps: Caps) -> Section?
+    i @= at
+    parse.skip_space(data, @i)
+
+    if bytes.has_prefix_at(s: data, prefix: bytes.from_text("xref"), at: i)
+        return read_table(data, at: i, caps: caps)
+    return read_stream(data, at: i, caps: caps)
+
+# The cross-reference from `startxref` back through every revision.
+#
+# Fails `invalid` where a section is not one, `limit` where the revisions or
+# the objects pass `caps`.
+function read(data: [u8] lent, caps: Caps) -> Table?
+    start = start_of(data)?
+    entries: {i64: Entry} @= {}
+    freed: {i64: bool} @= {}
+    trailer: {str: model.Obj} @= {}
+    visited: {i64: bool} @= {}
+    pending: [i64] @= [start]
+    revisions @= 0
+    decoded @= 0
+
+    while pending.len() > 0
+        at = pending[pending.len() - 1]
+        pending @ pending.slice(from: 0, to: pending.len() - 1)
+
+        if visited[at].default(false)
+            continue
+        visited[at] @ true
+        revisions @ revisions + 1
+
+        if revisions > caps.revisions
+            return codes.over(what: "the revisions of the file", most: caps.revisions)
+        section = read_section(data, at: at, caps: caps)?
+        decoded @ decoded + section.decoded
+
+        for number in keys(section.entries)
+            if entries[number].is_err() && !freed[number].default(false)
+                entries[number] @ section.entries[number].must()
+
+        for number in section.freed
+            if entries[number].is_err()
+                freed[number] @ true
+
+        for key in keys(section.trailer)
+            if trailer[key].is_err()
+                trailer[key] @ section.trailer[key].must()
+
+        prev = model.integer_or(section.trailer["Prev"].default(.null_value), fallback: -1)
+
+        if prev >= 0 && prev < data.len()
+            add_number(@pending, n: prev)
+        hidden = model.integer_or(section.trailer["XRefStm"].default(.null_value), fallback: -1)
+
+        if hidden >= 0 && hidden < data.len()
+            add_number(@pending, n: hidden)
+
+        if entries.len() > caps.objects
+            return codes.over(what: "the objects of the file", most: caps.objects)
+
+    return ok(Table(entries: entries, freed: freed, trailer: trailer, rebuilt: false, decoded: decoded))
+
+# Whether `b` may stand just before an object's number: the file's start
+# aside, whitespace or a delimiter.
+function is_boundary(b: u8) -> bool
+    return parse.is_white(b) || parse.is_delimiter(b)
+
+# The cross-reference rebuilt from the objects themselves: every `N G obj`
+# found, the last of a number kept as the newest, and every `trailer`
+# dictionary's entries, the last first, with those of each cross-reference
+# stream found.
+#
+# Fails `limit` where it finds more objects than `caps` allows.
+function scan(data: [u8] lent, caps: Caps) -> Table?
+    entries: {i64: Entry} @= {}
+    trailers: [{str: model.Obj}] @= []
+    word = bytes.from_text("obj")
+    from @= 0
+
+    while from < data.len()
+        found = match bytes.index_of_from(s: data, substr: word, from: from)
+            .ok i  => i
+            .err _ => break
+
+        from @ found + 3
+
+        if found + 3 < data.len() && parse.is_regular(data[found + 3])
+            continue
+        i @= found - 1
+
+        while i >= 0 && parse.is_white(data[i])
+            i @ i - 1
+
+        end_generation = i + 1
+
+        while i >= 0 && data[i] >= '0' && data[i] <= '9'
+            i @ i - 1
+
+        if i + 1 == end_generation || i < 0 || !parse.is_white(data[i])
+            continue
+        generation_at = i + 1
+
+        while i >= 0 && parse.is_white(data[i])
+            i @ i - 1
+
+        end_number = i + 1
+
+        while i >= 0 && data[i] >= '0' && data[i] <= '9'
+            i @ i - 1
+
+        if i + 1 == end_number || end_number - (i + 1) > 10
+            continue
+
+        if i >= 0 && !is_boundary(data[i])
+            continue
+        at @= i + 1
+        number = objects.unsigned(data, @at)
+        g @= generation_at
+        generation = objects.unsigned(data, @g)
+
+        if number > 0
+            entries[number] @ Entry(kind: 1, a: i + 1, b: generation)
+
+            if entries.len() > caps.objects
+                return codes.over(what: "the objects of the file", most: caps.objects)
+
+    word_trailer = bytes.from_text("trailer")
+    from @ 0
+
+    while from < data.len()
+        found = match bytes.index_of_from(s: data, substr: word_trailer, from: from)
+            .ok i  => i
+            .err _ => break
+
+        from @ found + 7
+        at @= found + 7
+
+        match parse.value(data: data, at: @at, depth: caps.depth, key: [])
+            .ok v  => trailers @ trailers.push(model.entries_of(v))
+            .err _ => _ = 0
+
+    trailer: {str: model.Obj} @= {}
+    k @= trailers.len() - 1
+
+    while k >= 0
+        for key in keys(trailers[k])
+            if trailer[key].is_err() && key != "Prev" && key != "XRefStm"
+                trailer[key] @ trailers[k][key].must()
+
+        k @ k - 1
+
+    return ok(Table(entries: entries, freed: {}, trailer: trailer, rebuilt: true, decoded: 0))
+
+# The limits of the tests.
+function test_caps() -> Caps
+    return Caps(objects: 1000, stream_bytes: 100000, depth: 16, revisions: 8)
+
+test "start_of: the offset after startxref, none, one past the file"
+    assert start_of(bytes.from_text("%PDF-1.4\nstartxref\n3\n%%EOF")).must() == 3
+    assert start_of(bytes.from_text("%PDF-1.4\n")).is_err()
+    assert start_of(bytes.from_text("startxref 999")).is_err()
+
+test "read: a table with a free entry, two revisions, the newest entry kept"
+    one = "%PDF-1.4\n1 0 obj 1 endobj\nxref\n0 2\n0000000000 65535 f \n0000000009 00000 n \ntrailer << /Size 2 /Root 1 0 R >>\n"
+    two = "1 0 obj 2 endobj\nxref\n1 1\n" + offset_text(one.len()) + " 00000 n \ntrailer << /Size 2 /Prev " + to_str(find_xref(one)) + " >>\nstartxref\n" + to_str(one.len() + 17) + "\n%%EOF"
+    data = bytes.from_text(one + two)
+    t = read(data, caps: test_caps()).must()
+    assert t.entries[1].must().a == one.len()
+    assert model.integer_or(t.trailer["Size"].default(.null_value), fallback: 0) == 2
+    assert !t.trailer["Root"].is_err()
+
+test "read: a cycle of Prev is read once, a section that is none fails"
+    text = "xref\n0 1\n0000000000 65535 f \ntrailer << /Size 1 /Prev 0 >>\nstartxref\n0\n%%EOF"
+    t = read(bytes.from_text(text), caps: test_caps()).must()
+    assert t.entries.len() == 0
+    assert read(bytes.from_text("junk\nstartxref\n0\n%%EOF"), caps: test_caps()).is_err()
+
+test "scan: objects found by their headers, the last kept, a trailer found"
+    text = "%PDF-1.4\n1 0 obj << >> endobj\n2 0 obj (endobj) endobj\n1 0 obj 5 endobj\ntrailer << /Root 1 0 R >>\n%%EOF"
+    t = scan(bytes.from_text(text), caps: test_caps()).must()
+    assert t.entries.len() == 2 && t.entries[1].must().a == 54 && t.entries[2].must().a == 30
+    assert !t.trailer["Root"].is_err() && t.rebuilt
+
+# `n` in ten digits, for the tests.
+function offset_text(n: i64) -> str
+    s = to_str(n)
+    return repeat("0", to_u64(10 - s.len()).default(0)) + s
+
+# Where `xref` begins in `s`, for the tests.
+function find_xref(s: str) -> i64
+    return bytes.index_of(s: bytes.from_text(s), substr: bytes.from_text("xref")).must()
