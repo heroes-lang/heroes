@@ -1,0 +1,317 @@
+# A document validated against a schema: first the limits a program states
+# on what an operation selects once its fragments are followed, then every
+# rule of graphql-js's `specifiedRules`, run together over `walk`'s events in
+# its order, each node's rules in the order of the list, so that the errors
+# come as graphql-js reports them.
+
+use graphql/internal/depth
+use graphql/internal/fixture
+use graphql/internal/model
+use graphql/internal/overlap
+use graphql/internal/rules_doc
+use graphql/internal/rules_values
+use graphql/internal/tree
+use graphql/internal/typeinfo
+use graphql/internal/vcontext
+use graphql/internal/walk
+
+# The names of the rules `validate` runs by default, in their order.
+function rule_names() -> [str]
+    return [
+        "ExecutableDefinitionsRule"
+        "UniqueOperationNamesRule"
+        "LoneAnonymousOperationRule"
+        "SingleFieldSubscriptionsRule"
+        "KnownTypeNamesRule"
+        "FragmentsOnCompositeTypesRule"
+        "VariablesAreInputTypesRule"
+        "ScalarLeafsRule"
+        "FieldsOnCorrectTypeRule"
+        "UniqueFragmentNamesRule"
+        "KnownFragmentNamesRule"
+        "NoUnusedFragmentsRule"
+        "PossibleFragmentSpreadsRule"
+        "NoFragmentCyclesRule"
+        "UniqueVariableNamesRule"
+        "NoUndefinedVariablesRule"
+        "NoUnusedVariablesRule"
+        "KnownDirectivesRule"
+        "UniqueDirectivesPerLocationRule"
+        "KnownArgumentNamesRule"
+        "UniqueArgumentNamesRule"
+        "ValuesOfCorrectTypeRule"
+        "ProvidedRequiredArgumentsRule"
+        "VariablesInAllowedPositionRule"
+        "OverlappingFieldsCanBeMergedRule"
+        "UniqueInputFieldNamesRule"
+        "MaxIntrospectionDepthRule"
+    ]
+
+# The names of the rules outside the specification's that `validate_with`
+# also runs.
+function custom_rule_names() -> [str]
+    return ["NoDeprecatedCustomRule", "NoSchemaIntrospectionCustomRule"]
+
+# Whether `name` is a rule `validate_with` runs.
+function is_rule(name: str) -> bool
+    for r in rule_names()
+        if r == name
+            return true
+
+    for r in custom_rule_names()
+        if r == name
+            return true
+
+    return false
+
+# The errors of `t` against `m` by the rules `rules` names, each 1 to 29 in
+# the order of `rule_names` then `custom_rule_names`, after the limits.
+function validate(t: tree.Tree lent, m: model.Model lent, rules: [str], most_errors: i64, most_fields: i64, most_aliases: i64, most_depth: i64, suggest: bool) -> [tree.Err]
+    run @= vcontext.run_of(t, most: most_errors, suggest: suggest)
+    limited = depth.check_limits(
+        t,
+        fragments: run.fragments,
+        most_fields: most_fields,
+        most_aliases: most_aliases,
+        most_depth: most_depth
+    )
+
+    if limited.len() > 0
+        return limited
+    on: [bool] @= [false]
+    names = rule_names()
+    extra = custom_rule_names()
+
+    for name in names
+        on @ on.push(contains(rules, word: name))
+
+    for name in extra
+        on @ on.push(contains(rules, word: name))
+
+    info = typeinfo.info_of(t, m: m)
+    state @= overlap.state_of()
+
+    for e in walk.events_of(t)
+        if run.stopped
+            return run.errors
+        n = e.node
+        k = t.nodes[n].kind
+
+        if e.kind == walk.TYPE
+            if on[5]
+                rules_doc.known_type_name(
+                    t,
+                    m: m,
+                    @run,
+                    n: n,
+                    name: model.named_of(t.nodes[n].type),
+                    at: t.nodes[n].type_at
+                )
+        else if e.kind == walk.ENTER
+            enter(t, m: m, info: info, on: on, @run, @state, n: n, k: k)
+        else
+            leave(t, m: m, info: info, on: on, @run, n: n, k: k)
+
+    return run.errors
+
+# Whether `words` holds `word`.
+function contains(words: [str], word: str) -> bool
+    for w in words
+        if w == word
+            return true
+
+    return false
+
+# The rules that act on entering node `n`, of kind `k`, in their order.
+function enter(t: tree.Tree lent, m: model.Model lent, info: typeinfo.Info lent, on: [bool] lent, @run: vcontext.Run, @state: overlap.State, n: i64, k: i64)
+    has_directives = tree.kid_of(t, n: n, kind: tree.DIRECTIVE) >= 0
+
+    if k == tree.DOCUMENT
+        if on[1]
+            rules_doc.executable_definitions(t, @run)
+    else if k == tree.OPERATION
+        if on[2]
+            rules_doc.unique_operation_names(t, @run, n: n)
+
+        if on[3]
+            rules_doc.lone_anonymous(t, @run, n: n)
+
+        if on[4]
+            rules_doc.single_field_subscription(t, m: m, @run, n: n)
+
+        if on[15]
+            rules_doc.unique_variable_names(t, @run, n: n)
+    else if k == tree.VARIABLE_DEFINITION
+        if on[7]
+            rules_doc.variable_is_input(t, m: m, @run, n: n)
+    else if k == tree.SELECTION_SET
+        if on[25]
+            fragments = run.fragments
+            overlap.check_set(t, m: m, @state, fragments: fragments, @run, parent: info.parent[n], set: n)
+    else if k == tree.FIELD
+        if on[8]
+            rules_doc.scalar_leafs(t, m: m, info: info, @run, n: n)
+
+        if on[9]
+            rules_doc.field_on_correct_type(t, m: m, info: info, @run, n: n)
+    else if k == tree.FRAGMENT_DEFINITION
+        if on[6]
+            rules_doc.fragment_on_composite(t, m: m, @run, n: n)
+
+        if on[10]
+            rules_doc.unique_fragment_names(t, @run, n: n)
+
+        if on[14]
+            rules_doc.no_fragment_cycles(t, @run, n: n)
+    else if k == tree.INLINE_FRAGMENT
+        if on[6]
+            rules_doc.fragment_on_composite(t, m: m, @run, n: n)
+
+        if on[13]
+            rules_doc.possible_fragment_spread(t, m: m, info: info, @run, n: n)
+    else if k == tree.FRAGMENT_SPREAD
+        if on[11]
+            rules_doc.known_fragment_name(t, @run, n: n)
+
+        if on[13]
+            rules_doc.possible_fragment_spread(t, m: m, info: info, @run, n: n)
+    else if k == tree.IMPLEMENTS || k == tree.UNION_MEMBER
+        if on[5]
+            rules_doc.known_type_name(t, m: m, @run, n: n, name: t.nodes[n].name, at: t.nodes[n].at)
+    else if k == tree.DIRECTIVE
+        if on[18]
+            rules_values.known_directive(t, m: m, @run, n: n)
+
+        if on[20]
+            rules_values.known_directive_arguments(t, m: m, @run, n: n)
+
+        if on[21]
+            rules_values.unique_arguments(t, @run, n: n)
+    else if k == tree.ARGUMENT
+        if on[20]
+            rules_values.known_field_argument(t, m: m, info: info, @run, n: n)
+
+        if on[28]
+            rules_values.no_deprecated(t, m: m, info: info, @run, n: n)
+
+    if has_directives && k != tree.DIRECTIVE && on[19]
+        rules_values.unique_directives(t, m: m, @run, n: n)
+
+    if k == tree.FIELD
+        if on[21]
+            rules_values.unique_arguments(t, @run, n: n)
+
+        if on[27]
+            if run.introspection_skip >= 0 && !vcontext.is_within(t, n: n, root: run.introspection_skip)
+                run.introspection_skip @ -1
+            name = t.nodes[n].name
+
+            if run.introspection_skip < 0 && (name == "__schema" || name == "__type")
+                fragments = run.fragments
+
+                if depth.is_introspection_too_deep(t, fragments: fragments, memo: @run.introspection_memo, field: n)
+                    vcontext.report(
+                        @run,
+                        e: tree.err_at(t, message: "Maximum introspection depth exceeded", nodes: [n])
+                    )
+                    run.introspection_skip @ n
+
+        if on[28]
+            rules_values.no_deprecated(t, m: m, info: info, @run, n: n)
+
+        if on[29]
+            rules_values.no_introspection(t, info: info, @run, n: n)
+
+    if tree.is_value(k) || k == tree.OBJECT_FIELD
+        if on[22] && k != tree.VARIABLE
+            rules_values.value_of_correct_type(t, m: m, info: info, @run, n: n)
+
+        if on[26]
+            if k == tree.OBJECT
+                rules_values.open_object(@run)
+
+            if k == tree.OBJECT_FIELD
+                rules_values.unique_input_field(t, @run, n: n)
+
+        if on[28] && (k == tree.OBJECT_FIELD || k == tree.ENUM)
+            rules_values.no_deprecated(t, m: m, info: info, @run, n: n)
+
+# The rules that act on leaving node `n`, of kind `k`, in their order.
+function leave(t: tree.Tree lent, m: model.Model lent, info: typeinfo.Info lent, on: [bool] lent, @run: vcontext.Run, n: i64, k: i64)
+    if k == tree.DOCUMENT
+        if on[12]
+            rules_doc.no_unused_fragments(t, @run)
+    else if k == tree.OPERATION
+        if on[16]
+            rules_doc.no_undefined_variables(t, @run, n: n)
+
+        if on[17]
+            rules_doc.no_unused_variables(t, @run, n: n)
+
+        if on[24]
+            rules_values.variables_in_allowed_position(t, m: m, info: info, @run, n: n)
+    else if k == tree.FIELD || k == tree.DIRECTIVE
+        if on[23]
+            rules_values.required_arguments(t, m: m, info: info, @run, n: n)
+    else if k == tree.OBJECT
+        if on[26] && run.object_count > 0
+            run.object_count @ run.object_count - 1
+
+test "validate: every rule's error on the specification's pets, as graphql-js reports it"
+    m = fixture.pets()
+    cases = [
+        ["{ dog { name } }"]
+        ["query A { dog { name } } query A { cat { name } }", "There can be only one operation named \"A\". @1:7"]
+        ["{ dog { name } } { cat { name } }", "This anonymous operation must be the only defined operation. @1:1", "This anonymous operation must be the only defined operation. @1:18"]
+        ["subscription S { newMessage disallowedSecondRootField }", "Subscription \"S\" must select only one top level field. @1:29"]
+        ["{ dog { meowVolume } }", "Cannot query field \"meowVolume\" on type \"Dog\". Did you mean \"barkVolume\"? @1:9"]
+        ["{ pet { meowVolume } }", "Cannot query field \"meowVolume\" on type \"Pet\". Did you mean to use an inline fragment on \"Cat\"? @1:9"]
+        ["{ dog { name { first } } }", "Field \"name\" must not have a selection since type \"String!\" has no subfields. @1:14"]
+        ["{ dog }", "Field \"dog\" of type \"Dog\" must have a selection of subfields. Did you mean \"dog { ... }\"? @1:3"]
+        ["fragment F on Dog { ...G } fragment G on Dog { ...F } { dog { ...F } }", "Cannot spread fragment \"F\" within itself via \"G\". @1:21"]
+        ["query ($x: Int) { dog { name } }", "Variable \"$x\" is never used. @1:8"]
+        ["{ dog { isHouseTrained(atOtherHomes: $x) } }", "Variable \"$x\" is not defined. @1:38"]
+        ["{ dog { doesKnowCommand } }", "Field \"doesKnowCommand\" argument \"dogCommand\" of type \"DogCommand!\" is required, but it was not provided. @1:9"]
+        ["{ dog { doesKnowCommand(dogCommand: SIT, dogCommand: DOWN) } }", "There can be only one argument named \"dogCommand\". @1:25"]
+        ["{ dog { doesKnowCommand(dogCommand: FLY) } }", "Value \"FLY\" does not exist in \"DogCommand\" enum. @1:37"]
+        ["{ dog @unknown { name @include(if: true) @include(if: false) } }", "Unknown directive \"@unknown\". @1:7", "The directive \"@include\" can only be used once at this location. @1:23"]
+        ["{ find(by: {limit: 1}) { name } }", "Field \"Find.name\" of required type \"String!\" was not provided. @1:12"]
+        ["{ find(by: {name: \"x\", nmae: \"y\"}) { name } }", "Field \"nmae\" is not defined by type \"Find\". Did you mean \"name\"? @1:24"]
+        ["query ($b: Boolean) { dog { isHouseTrained(atOtherHomes: $b) } }"]
+        ["query ($b: Boolean) { dog { doesKnowCommand(dogCommand: $b) } }", "Variable \"$b\" of type \"Boolean\" used in position expecting type \"DogCommand!\". @1:8"]
+        ["{ dog { name: nickname name } }", "Fields \"name\" conflict because \"nickname\" and \"name\" are different fields. Use different aliases on the fields to fetch both if this was intentional. @1:9"]
+        ["{ dog { ...on Cat { name } } }", "Fragment cannot be spread here as objects of type \"Dog\" can never be of type \"Cat\". @1:9"]
+        ["{ dog { ...on Boolean { name } } }", "Fragment cannot condition on non composite type \"Boolean\". @1:15"]
+        ["query ($d: Dog) { dog { name } }", "Variable \"$d\" cannot be non-input type \"Dog\". @1:12", "Variable \"$d\" is never used. @1:8"]
+        ["{ __schema { types { fields { type { fields { type { fields { name } } } } } } } }", "Maximum introspection depth exceeded @1:3"]
+        ["type T { a: Int } { dog { name } }", "The \"T\" definition is not executable. @1:1"]
+        ["{ find(by: {name: \"x\", name: \"y\"}) { name } }", "There can be only one input field named \"name\". @1:13"]
+        ["{ human(id: 1) { pets { name } } }"]
+        ["{ catOrDog { name } }", "Cannot query field \"name\" on type \"CatOrDog\". Did you mean to use an inline fragment on \"Pet\", \"Cat\", or \"Dog\"? @1:14"]
+    ]
+
+    for c in cases
+        t = fixture.tree_of(c[0])
+        got = fixture.messages_of(
+            validate(t, m: m, rules: rule_names(), most_errors: 100, most_fields: 20000, most_aliases: 500, most_depth: 64, suggest: true)
+        )
+        assert got == c.slice(from: 1, to: c.len())
+
+test "validate: the limits refuse before any rule runs, and errors stop at the most"
+    m = fixture.pets()
+    t = fixture.tree_of(
+        "query Q { ...A ...A } fragment A on Query { dog { ...B ...B } } fragment B on Dog { name nickname }"
+    )
+    assert fixture.messages_of(validate(t, m: m, rules: rule_names(), most_errors: 100, most_fields: 6, most_aliases: 500, most_depth: 64, suggest: true)) == ["Operation \"Q\" selects more than 6 fields once its fragments are spread. @1:1"]
+    assert validate(t, m: m, rules: rule_names(), most_errors: 100, most_fields: 10, most_aliases: 500, most_depth: 64, suggest: true).len() == 0
+    many = fixture.tree_of("{ a b c }")
+    got = fixture.messages_of(
+        validate(many, m: m, rules: rule_names(), most_errors: 2, most_fields: 100, most_aliases: 500, most_depth: 64, suggest: true)
+    )
+    assert got == ["Cannot query field \"a\" on type \"Query\". @1:3", "Cannot query field \"b\" on type \"Query\". @1:5", "Too many validation errors, error limit reached. Validation aborted."]
+
+test "is_rule: the specification's rules and graphql-js's two custom ones, and no other"
+    assert is_rule("ScalarLeafsRule")
+    assert is_rule("NoDeprecatedCustomRule")
+    assert !is_rule("Scalar")
+    assert custom_rule_names().len() == 2

@@ -1,0 +1,595 @@
+# The tokens of a GraphQL text, read once before the parser walks them, as
+# the specification's section 2.1 writes them and graphql-js reads them: the
+# ignored characters (a byte order mark, white space, line ends, commas and
+# comments) passed over, names, numbers, strings and block strings with their
+# escapes read, and every punctuator. A text that cannot be read ends with an
+# `ERROR` token holding graphql-js's message at the byte it names; past the
+# limit of tokens it ends with a `LIMIT` token. Every pass of every loop moves
+# at least one byte.
+
+use unicode
+
+## Kinds of token
+
+# The end of the text.
+constant EOF: i64
+    0
+
+# A punctuator; its text is the token's `value`.
+constant PUNCTUATOR: i64
+    1
+
+# A name.
+constant NAME: i64
+    2
+
+# An integer.
+constant INT: i64
+    3
+
+# A float.
+constant FLOAT: i64
+    4
+
+# A string between `"`.
+constant STRING: i64
+    5
+
+# A block string between `"""`.
+constant BLOCK_STRING: i64
+    6
+
+# A text that cannot be read: `value` is the message.
+constant ERROR: i64
+    7
+
+# The first token past the limit.
+constant LIMIT: i64
+    8
+
+# One token.
+record Token
+    # Its kind.
+    kind: i64
+    # The byte it starts at, or the byte an `ERROR` names.
+    start: i64
+    # The byte after it.
+    end: i64
+    # A punctuator's or a name's text, a number as written, a string with its
+    # escapes read, an error's message.
+    value: str
+
+# The tokens of `source`, at most `most` before a `LIMIT` token, ending with
+# `EOF`, `ERROR` or `LIMIT`.
+function lex(source: str, most: i64) -> [Token]
+    tokens: [Token] @= []
+    at @= 0
+    count @= 0
+
+    while true
+        at @ skip_ignored(source, at: at)
+
+        if at >= source.len()
+            tokens @ tokens.push(Token(kind: EOF, start: at, end: at, value: ""))
+            return tokens
+        t = read_token(source, at: at)
+
+        if t.kind == ERROR
+            tokens @ tokens.push(t)
+            return tokens
+        count @ count + 1
+
+        if count > most
+            tokens @ tokens.push(Token(kind: LIMIT, start: t.start, end: t.end, value: ""))
+            return tokens
+        tokens @ tokens.push(t)
+        at @ t.end
+
+# The first byte at or after `at` that is not ignored.
+function skip_ignored(source: str, at: i64) -> i64
+    i @= at
+
+    while i < source.len()
+        b = source[i]
+
+        if b == ' ' || b == '\t' || b == ',' || b == '\n' || b == '\r'
+            i @ i + 1
+        else if b == 0xef && i + 2 < source.len() && source[i + 1] == 0xbb && source[i + 2] == 0xbf
+            i @ i + 3
+        else if b == '#'
+            i @ i + 1
+
+            while i < source.len() && source[i] != '\n' && source[i] != '\r'
+                i @ i + 1
+        else
+            return i
+
+    return i
+
+# Whether `b` may begin a name.
+function is_name_start(b: u8) -> bool
+    return b == '_' || b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z'
+
+# Whether `b` may continue a name.
+function is_name_continue(b: u8) -> bool
+    return is_name_start(b) || b >= '0' && b <= '9'
+
+# Whether `b` is a decimal digit.
+function is_digit(b: u8) -> bool
+    return b >= '0' && b <= '9'
+
+# The token that starts at `at`, which is not ignored.
+function read_token(source: str, at: i64) -> Token
+    b = source[at]
+
+    if b == '!' || b == '$' || b == '&' || b == '(' || b == ')' || b == ':' || b == '=' || b == '@' || b == '[' || b == ']' || b == '{' || b == '|' || b == '}'
+        return Token(kind: PUNCTUATOR, start: at, end: at + 1, value: source.slice(from: at, to: at + 1))
+
+    if b == '.'
+        if at + 2 < source.len() && source[at + 1] == '.' && source[at + 2] == '.'
+            return Token(kind: PUNCTUATOR, start: at, end: at + 3, value: "...")
+        return error_at(source: source, at: at, what: "Unexpected character: ")
+
+    if is_name_start(b)
+        end @= at + 1
+
+        while end < source.len() && is_name_continue(source[end])
+            end @ end + 1
+
+        return Token(kind: NAME, start: at, end: end, value: source.slice(from: at, to: end))
+
+    if is_digit(b) || b == '-'
+        return read_number(source, at: at)
+
+    if b == '"'
+        if at + 2 < source.len() && source[at + 1] == '"' && source[at + 2] == '"'
+            return read_block_string(source, at: at)
+        return read_string(source, at: at)
+
+    if b == '\''
+        return Token(
+            kind: ERROR,
+            start: at,
+            end: at,
+            value: "Unexpected single quote character ('), did you mean to use a double quote (\")?"
+        )
+    return error_at(source: source, at: at, what: "Unexpected character: ")
+
+# An `ERROR` token at `at`, its message `what` and the character there as
+# graphql-js prints it.
+function error_at(source: str, at: i64, what: str) -> Token
+    return Token(kind: ERROR, start: at, end: at, value: f"{what}{describe_at(source, at: at)}.")
+
+# The character at `at` as graphql-js names it: `"c"` for a printable ASCII
+# character, `'"'` for a quote, `U+XXXX` for any other, `<EOF>` past the end.
+function describe_at(source: str, at: i64) -> str
+    if at >= source.len()
+        return "<EOF>"
+    b = source[at]
+
+    if b == '"'
+        return "'\"'"
+
+    if b >= 0x20 && b <= 0x7e
+        return f"\"{source.slice(from: at, to: at + 1)}\""
+    width = unicode.utf8_width(b).default(1)
+
+    end = if at + width <= source.len()
+        at + width
+    else
+        source.len()
+
+    code = unicode.code_point(source.slice(from: at, to: end))
+    return f"U+{hex_of(n: code, digits: 4)}"
+
+# `n` in upper-case hexadecimal, at least `digits` digits.
+function hex_of(n: i64, digits: i64) -> str
+    alphabet = "0123456789ABCDEF"
+    out: [str] @= []
+    v @= n
+
+    while v > 0 || out.len() < digits
+        d = v % 16
+        out @ out.push(alphabet.slice(from: d, to: d + 1))
+        v @ v / 16
+
+    reversed: [str] @= []
+    i @= out.len() - 1
+
+    while i >= 0
+        reversed @ reversed.push(out[i])
+        i @ i - 1
+
+    return reversed.join("")
+
+# The number that starts at `at`: an integer, or a float with a fraction, an
+# exponent or both.
+function read_number(source: str, at: i64) -> Token
+    i @= at
+    is_float @= false
+
+    if source[i] == '-'
+        i @ i + 1
+
+    if i < source.len() && source[i] == '0'
+        i @ i + 1
+
+        if i < source.len() && is_digit(source[i])
+            return error_at(source: source, at: i, what: "Invalid number, unexpected digit after 0: ")
+    else
+        if i >= source.len() || !is_digit(source[i])
+            return error_at(source: source, at: i, what: "Invalid number, expected digit but got: ")
+        i @ skip_digits(source, at: i)
+
+    if i < source.len() && source[i] == '.'
+        is_float @ true
+        i @ i + 1
+
+        if i >= source.len() || !is_digit(source[i])
+            return error_at(source: source, at: i, what: "Invalid number, expected digit but got: ")
+        i @ skip_digits(source, at: i)
+
+    if i < source.len() && (source[i] == 'e' || source[i] == 'E')
+        is_float @ true
+        i @ i + 1
+
+        if i < source.len() && (source[i] == '+' || source[i] == '-')
+            i @ i + 1
+
+        if i >= source.len() || !is_digit(source[i])
+            return error_at(source: source, at: i, what: "Invalid number, expected digit but got: ")
+        i @ skip_digits(source, at: i)
+
+    if i < source.len() && (source[i] == '.' || is_name_start(source[i]))
+        return error_at(source: source, at: i, what: "Invalid number, expected digit but got: ")
+
+    kind = if is_float
+        FLOAT
+    else
+        INT
+    return Token(kind: kind, start: at, end: i, value: source.slice(from: at, to: i))
+
+# The first byte at or after `at` that is not a digit.
+function skip_digits(source: str, at: i64) -> i64
+    i @= at
+
+    while i < source.len() && is_digit(source[i])
+        i @ i + 1
+
+    return i
+
+# The string that starts at `at`, its escapes read.
+function read_string(source: str, at: i64) -> Token
+    pieces: [str] @= []
+    i @= at + 1
+    run @= i
+
+    while i < source.len()
+        b = source[i]
+
+        if b == '"'
+            pieces @ pieces.push(source.slice(from: run, to: i))
+            return Token(kind: STRING, start: at, end: i + 1, value: pieces.join(""))
+
+        if b == '\n' || b == '\r'
+            return Token(kind: ERROR, start: i, end: i, value: "Unterminated string.")
+
+        if b == '\\'
+            pieces @ pieces.push(source.slice(from: run, to: i))
+            escaped = read_escape(source, at: i)
+
+            if escaped.kind == ERROR
+                return escaped
+            pieces @ pieces.push(escaped.value)
+            i @ escaped.end
+            run @ i
+        else
+            i @ i + 1
+
+    return Token(kind: ERROR, start: i, end: i, value: "Unterminated string.")
+
+# The escape that starts at the backslash at `at`: its character in `value`
+# and the byte after it in `end`, or an `ERROR`.
+function read_escape(source: str, at: i64) -> Token
+    if at + 1 >= source.len()
+        return Token(kind: ERROR, start: at, end: at, value: "Unterminated string.")
+    c = source[at + 1]
+
+    simple = if c == '"'
+        "\""
+    else if c == '\\'
+        "\\"
+    else if c == '/'
+        "/"
+    else if c == 'b'
+        "\u{8}"
+    else if c == 'f'
+        "\u{c}"
+    else if c == 'n'
+        "\n"
+    else if c == 'r'
+        "\r"
+    else if c == 't'
+        "\t"
+    else
+        ""
+
+    if simple != ""
+        return Token(kind: STRING, start: at, end: at + 2, value: simple)
+
+    if c != 'u'
+        return Token(
+            kind: ERROR,
+            start: at,
+            end: at,
+            value: f"Invalid character escape sequence: \"{cut_chars(source, at: at, count: 2)}\"."
+        )
+
+    if at + 2 < source.len() && source[at + 2] == '{'
+        return read_braced_escape(source, at: at)
+    first = hex4(source, at: at + 2)
+
+    if first < 0
+        return Token(
+            kind: ERROR,
+            start: at,
+            end: at,
+            value: f"Invalid Unicode escape sequence: \"{cut_chars(source, at: at, count: 6)}\"."
+        )
+
+    if first >= 0xd800 && first <= 0xdbff
+        if at + 7 < source.len() && source[at + 6] == '\\' && source[at + 7] == 'u'
+            second = hex4(source, at: at + 8)
+
+            if second >= 0xdc00 && second <= 0xdfff
+                code = 0x10000 + (first - 0xd800) * 0x400 + (second - 0xdc00)
+                return Token(kind: STRING, start: at, end: at + 12, value: unicode.from_code_point(code).must())
+        return Token(
+            kind: ERROR,
+            start: at,
+            end: at,
+            value: f"Invalid Unicode escape sequence: \"{cut_chars(source, at: at, count: 6)}\"."
+        )
+
+    if first >= 0xdc00 && first <= 0xdfff
+        return Token(
+            kind: ERROR,
+            start: at,
+            end: at,
+            value: f"Invalid Unicode escape sequence: \"{cut_chars(source, at: at, count: 6)}\"."
+        )
+    return Token(kind: STRING, start: at, end: at + 6, value: unicode.from_code_point(first).must())
+
+# The escape `\u{...}` at `at`.
+function read_braced_escape(source: str, at: i64) -> Token
+    i @= at + 3
+    code @= 0
+
+    while i < source.len() && source[i] != '}'
+        d = hex_digit(source[i])
+
+        if d < 0 || code > 0x10ffff
+            return Token(
+                kind: ERROR,
+                start: at,
+                end: at,
+                value: f"Invalid Unicode escape sequence: \"{cut_bytes(source, from: at, to: i + 1)}\"."
+            )
+        code @ code * 16 + d
+        i @ i + 1
+
+    if i >= source.len() || i == at + 3 || !unicode.is_scalar_value(code)
+        to = if i < source.len()
+            i + 1
+        else
+            i
+        return Token(
+            kind: ERROR,
+            start: at,
+            end: at,
+            value: f"Invalid Unicode escape sequence: \"{cut_bytes(source, from: at, to: to)}\"."
+        )
+    return Token(kind: STRING, start: at, end: i + 1, value: unicode.from_code_point(code).must())
+
+# The value of hexadecimal digit `b`, -1 where it is none.
+function hex_digit(b: u8) -> i64
+    if b >= '0' && b <= '9'
+        return to_i64(b - '0').must()
+
+    if b >= 'a' && b <= 'f'
+        return to_i64(b - 'a').must() + 10
+
+    if b >= 'A' && b <= 'F'
+        return to_i64(b - 'A').must() + 10
+    return -1
+
+# The value of the four hexadecimal digits at `at`, -1 where they are not.
+function hex4(source: str, at: i64) -> i64
+    if at + 4 > source.len()
+        return -1
+    n @= 0
+    i @= at
+
+    while i < at + 4
+        d = hex_digit(source[i])
+
+        if d < 0
+            return -1
+        n @ n * 16 + d
+        i @ i + 1
+
+    return n
+
+# The text of `source` from `at`, at most `count` characters, never past the
+# end and never splitting a character.
+function cut_chars(source: str, at: i64, count: i64) -> str
+    i @= at
+    n @= 0
+
+    while i < source.len() && n < count
+        i @ i + unicode.utf8_width(source[i]).default(1)
+        n @ n + 1
+
+    if i > source.len()
+        i @ source.len()
+    return source.slice(from: at, to: i)
+
+# The text of `source` from `from` to `to`, `to` moved forward to the end of
+# a character it would split.
+function cut_bytes(source: str, from: i64, to: i64) -> str
+    end @= to
+
+    if end > source.len()
+        end @ source.len()
+
+    while end < source.len() && source[end] >= 0x80 && source[end] < 0xc0
+        end @ end + 1
+
+    return source.slice(from: from, to: end)
+
+# The block string that starts at `at`: its raw lines dedented as the
+# specification's `BlockStringValue` writes it.
+function read_block_string(source: str, at: i64) -> Token
+    i @= at + 3
+    pieces: [str] @= []
+    run @= i
+
+    while i < source.len()
+        if source[i] == '"' && i + 2 < source.len() && source[i + 1] == '"' && source[i + 2] == '"'
+            pieces @ pieces.push(source.slice(from: run, to: i))
+            return Token(kind: BLOCK_STRING, start: at, end: i + 3, value: block_value(pieces.join("")))
+
+        if source[i] == '\\' && i + 3 < source.len() && source[i + 1] == '"' && source[i + 2] == '"' && source[i + 3] == '"'
+            pieces @ pieces.push(source.slice(from: run, to: i))
+            pieces @ pieces.push("\"\"\"")
+            i @ i + 4
+            run @ i
+        else
+            i @ i + 1
+
+    return Token(kind: ERROR, start: i, end: i, value: "Unterminated string.")
+
+# The value of a block string's raw text: the common indentation of its lines
+# after the first removed, and its first and last blank lines.
+function block_value(raw: str) -> str
+    lines = split_lines(raw)
+    common @= -1
+    n @= 1
+
+    while n < lines.len()
+        indent = indent_of(lines[n])
+
+        if indent < lines[n].len() && (common < 0 || indent < common)
+            common @ indent
+        n @ n + 1
+
+    kept: [str] @= []
+    k @= 0
+
+    while k < lines.len()
+        line = lines[k]
+
+        if k > 0 && common > 0
+            if line.len() >= common
+                kept @ kept.push(line.slice(from: common, to: line.len()))
+            else
+                kept @ kept.push("")
+        else
+            kept @ kept.push(line)
+        k @ k + 1
+
+    first @= 0
+
+    while first < kept.len() && indent_of(kept[first]) == kept[first].len()
+        first @ first + 1
+
+    last @= kept.len()
+
+    while last > first && indent_of(kept[last - 1]) == kept[last - 1].len()
+        last @ last - 1
+
+    return kept.slice(from: first, to: last).join("\n")
+
+# How many spaces and tabs begin `line`.
+function indent_of(line: str) -> i64
+    i @= 0
+
+    while i < line.len() && (line[i] == ' ' || line[i] == '\t')
+        i @ i + 1
+
+    return i
+
+# `text` cut at each `\n`, `\r\n` or `\r`.
+function split_lines(text: str) -> [str]
+    lines: [str] @= []
+    start @= 0
+    i @= 0
+
+    while i < text.len()
+        if text[i] == '\n'
+            lines @ lines.push(text.slice(from: start, to: i))
+            i @ i + 1
+            start @ i
+        else if text[i] == '\r'
+            lines @ lines.push(text.slice(from: start, to: i))
+
+            if i + 1 < text.len() && text[i + 1] == '\n'
+                i @ i + 1
+            i @ i + 1
+            start @ i
+        else
+            i @ i + 1
+
+    lines @ lines.push(text.slice(from: start, to: text.len()))
+    return lines
+
+test "lex: punctuators, names, numbers, a spread and the ignored characters"
+    bom = unicode.from_code_point(0xfeff).must()
+    tokens = lex(bom + "{ a, ...b(x: -1.5e3) } # done", most: 100)
+    kinds: [i64] @= []
+    values: [str] @= []
+
+    for t in tokens
+        kinds @ kinds.push(t.kind)
+        values @ values.push(t.value)
+
+    assert kinds == [PUNCTUATOR, NAME, PUNCTUATOR, NAME, PUNCTUATOR, NAME, PUNCTUATOR, FLOAT, PUNCTUATOR, PUNCTUATOR, EOF]
+    assert values == ["{", "a", "...", "b", "(", "x", ":", "-1.5e3", ")", "}", ""]
+
+test "lex: strings with every escape, a surrogate pair and a braced code point"
+    tokens = lex("\"a\\\"\\\\\\/\\b\\f\\n\\r\\t\\u00e9\\uD83D\\uDE00\\u{1F600}é\"", most: 10)
+    assert tokens[0].kind == STRING
+    assert tokens[0].value == "a\"\\/\u{8}\u{c}\n\r\té😀😀é"
+
+test "lex: graphql-js's messages for numbers, characters and strings it cannot read"
+    assert lex("01", most: 10)[0].value == "Invalid number, unexpected digit after 0: \"1\"."
+    assert lex("1.)", most: 10)[0].value == "Invalid number, expected digit but got: \")\"."
+    assert lex("1_0", most: 10)[0].value == "Invalid number, expected digit but got: \"_\"."
+    assert lex("-", most: 10)[0].value == "Invalid number, expected digit but got: <EOF>."
+    assert lex("?", most: 10)[0].value == "Unexpected character: \"?\"."
+    assert lex("\u{7}", most: 10)[0].value == "Unexpected character: U+0007."
+    assert lex("é", most: 10)[0].value == "Unexpected character: U+00E9."
+    assert lex(".a", most: 10)[0].value == "Unexpected character: \".\"."
+    assert lex("'x'", most: 10)[0].value == "Unexpected single quote character ('), did you mean to use a double quote (\")?"
+    assert lex("\"a\nb\"", most: 10)[0].value == "Unterminated string."
+    assert lex("\"\\x\"", most: 10)[0].value == "Invalid character escape sequence: \"\\x\"."
+    assert lex("\"\\u12\")", most: 10)[0].value == "Invalid Unicode escape sequence: \"\\u12\")\"."
+    assert lex("\"\\uD800\"", most: 10)[0].value == "Invalid Unicode escape sequence: \"\\uD800\"."
+    assert lex("\"\\u{110000}\"", most: 10)[0].value == "Invalid Unicode escape sequence: \"\\u{110000}\"."
+    assert lex("\"\\u{zz}\"", most: 10)[0].value == "Invalid Unicode escape sequence: \"\\u{z\"."
+    assert lex("\"\\u{12\"", most: 10)[0].value == "Invalid Unicode escape sequence: \"\\u{12\"\"."
+
+test "lex: the error's byte, and the limit of tokens"
+    assert lex("{ a(x: 01) }", most: 10)[5].start == 8
+    limited = lex("a b c", most: 2)
+    assert limited.len() == 3
+    assert limited[2].kind == LIMIT
+    assert limited[2].start == 4
+    assert lex("a b", most: 2)[2].kind == EOF
+
+test "block_value: the common indentation and the blank lines around removed"
+    assert lex("\"\"\"  a\n   b\n\n\"\"\"", most: 10)[0].value == "  a\nb"
+    assert block_value("\n    Hello,\n      World!\n\n    Yours,\n      GraphQL.\n  ") == "Hello,\n  World!\n\nYours,\n  GraphQL."
+    assert lex("\"\"\"a \\\"\"\" b\"\"\"", most: 10)[0].value == "a \"\"\" b"
+    assert block_value("") == ""
+    assert block_value("   \n  \n") == ""

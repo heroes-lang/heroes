@@ -1,0 +1,271 @@
+# The names an error suggests, as graphql-js suggests them: each option within
+# a distance of the name asked (its edits, a transposition counting one,
+# upper and lower case alike costing one), the nearest first and equal ones
+# in natural order, and the sentence ` Did you mean "a", "b", or "c"?` that
+# names at most five of them.
+
+## Suggestions
+
+# The options of `options` near enough to `input`, the nearest first.
+function suggestions_of(input: str, options: [str]) -> [str]
+    threshold = input.len() * 4 / 10 + 1
+    names: [str] @= []
+    distances: [i64] @= []
+
+    for option in options
+        repeated @= false
+
+        for n in names
+            if n == option
+                repeated @ true
+
+        if repeated
+            continue
+        d = distance_of(input: input, option: option, threshold: threshold)
+
+        if d >= 0
+            at @= names.len()
+
+            while at > 0 && is_after(name: names[at - 1], distance: distances[at - 1], other: option, other_distance: d)
+                at @ at - 1
+
+            names @ insert_at(names, at: at, value: option)
+            distances @ insert_number_at(distances, at: at, value: d)
+
+    return names
+
+# Whether `name` at `distance` stands after `other` at `other_distance`.
+function is_after(name: str, distance: i64, other: str, other_distance: i64) -> bool
+    if distance != other_distance
+        return distance > other_distance
+    return natural_compare(a: name, b: other) > 0
+
+# `xs` with `value` inserted at `at`.
+function insert_at(xs: [str], at: i64, value: str) -> [str]
+    out: [str] @= []
+    i @= 0
+
+    while i < xs.len()
+        if i == at
+            out @ out.push(value)
+        out @ out.push(xs[i])
+        i @ i + 1
+
+    if at >= xs.len()
+        out @ out.push(value)
+    return out
+
+# `xs` with `value` inserted at `at`.
+function insert_number_at(xs: [i64], at: i64, value: i64) -> [i64]
+    out: [i64] @= []
+    i @= 0
+
+    while i < xs.len()
+        if i == at
+            out @ out.push(value)
+        out @ out.push(xs[i])
+        i @ i + 1
+
+    if at >= xs.len()
+        out @ out.push(value)
+    return out
+
+# The lower case of an ASCII letter `b`, any other byte as it is.
+function lower_of(b: u8) -> u8
+    if b >= 'A' && b <= 'Z'
+        return b + 32
+    return b
+
+# The distance from `input` to `option`: 0 for the same name, 1 for the same
+# in another case, else their edits; -1 where it is past `threshold`.
+function distance_of(input: str, option: str, threshold: i64) -> i64
+    if input == option
+        return 0
+    lower_input @= ""
+    lower_option @= ""
+    a_parts: [str] @= []
+
+    for c in option.chars()
+        a_parts @ a_parts.push(lower_text(c))
+
+    b_parts: [str] @= []
+
+    for c in input.chars()
+        b_parts @ b_parts.push(lower_text(c))
+
+    lower_option @ a_parts.join("")
+    lower_input @ b_parts.join("")
+
+    if lower_input == lower_option
+        return 1
+    a @= a_parts
+    b @= b_parts
+
+    if a.len() < b.len()
+        a @ b_parts
+        b @ a_parts
+
+    if a.len() - b.len() > threshold
+        return -1
+    previous_previous: [i64] @= []
+    previous: [i64] @= []
+    j @= 0
+
+    while j <= b.len()
+        previous @ previous.push(j)
+        previous_previous @ previous_previous.push(0)
+        j @ j + 1
+
+    i @= 1
+
+    while i <= a.len()
+        current: [i64] @= [i]
+        smallest @= i
+        k @= 1
+
+        while k <= b.len()
+            cost = if a[i - 1] == b[k - 1]
+                0
+            else
+                1
+            best @= previous[k] + 1
+
+            if current[k - 1] + 1 < best
+                best @ current[k - 1] + 1
+
+            if previous[k - 1] + cost < best
+                best @ previous[k - 1] + cost
+
+            if i > 1 && k > 1 && a[i - 1] == b[k - 2] && a[i - 2] == b[k - 1]
+                if previous_previous[k - 2] + 1 < best
+                    best @ previous_previous[k - 2] + 1
+            current @ current.push(best)
+
+            if best < smallest
+                smallest @ best
+            k @ k + 1
+
+        if smallest > threshold
+            return -1
+        previous_previous @ previous
+        previous @ current
+        i @ i + 1
+
+    d = previous[b.len()]
+
+    if d <= threshold
+        return d
+    return -1
+
+# One character, an ASCII letter in lower case.
+function lower_text(c: str) -> str
+    if c.len() == 1 && c[0] >= 'A' && c[0] <= 'Z'
+        return to_lower_letter(c)
+    return c
+
+# The ASCII letter `c` in lower case.
+function to_lower_letter(c: str) -> str
+    letters = "abcdefghijklmnopqrstuvwxyz"
+    at = to_i64(c[0] - 'A').must()
+    return letters.slice(from: at, to: at + 1)
+
+# Whether `b` is an ASCII digit.
+function is_digit(b: u8) -> bool
+    return b >= '0' && b <= '9'
+
+# The order of `a` and `b` with the runs of digits read as numbers: negative
+# where `a` comes first.
+function natural_compare(a: str, b: str) -> i64
+    i @= 0
+    k @= 0
+
+    while i < a.len() && k < b.len()
+        x = a[i]
+        y = b[k]
+
+        if is_digit(x) && is_digit(y)
+            m @= 0
+            first_a @= true
+
+            while i < a.len() && is_digit(a[i]) && (first_a || m > 0)
+                first_a @ false
+                m @ m * 10 + to_i64(a[i] - '0').must()
+                i @ i + 1
+
+            n @= 0
+            first_b @= true
+
+            while k < b.len() && is_digit(b[k]) && (first_b || n > 0)
+                first_b @ false
+                n @ n * 10 + to_i64(b[k] - '0').must()
+                k @ k + 1
+
+            if m != n
+                return m - n
+        else
+            if x != y
+                return to_i64(x).must() - to_i64(y).must()
+            i @ i + 1
+            k @ k + 1
+
+    return a.len() - b.len()
+
+# ` Did you mean "a", "b", or "c"?` for `names`, the words `what` before them
+# where it is not "", or "" where there are none.
+function did_you_mean(what: str, names: [str]) -> str
+    if names.len() == 0
+        return ""
+
+    lead = if what == ""
+        " Did you mean "
+    else
+        f" Did you mean {what} "
+    quoted: [str] @= []
+
+    for name in names
+        if quoted.len() < 5
+            quoted @ quoted.push(f"\"{name}\"")
+
+    if quoted.len() == 1
+        return lead + quoted[0] + "?"
+
+    if quoted.len() == 2
+        return lead + quoted[0] + " or " + quoted[1] + "?"
+    last = quoted[quoted.len() - 1]
+    return lead + quoted.slice(from: 0, to: quoted.len() - 1).join(", ") + ", or " + last + "?"
+
+# `names` quoted and joined as `"a", "b", or "c"`, at most five.
+function quoted_or_list(names: [str]) -> str
+    quoted: [str] @= []
+
+    for name in names
+        if quoted.len() < 5
+            quoted @ quoted.push(f"\"{name}\"")
+
+    if quoted.len() == 1
+        return quoted[0]
+
+    if quoted.len() == 2
+        return quoted[0] + " or " + quoted[1]
+    return quoted.slice(from: 0, to: quoted.len() - 1).join(", ") + ", or " + quoted[quoted.len() - 1]
+
+test "suggestions_of: graphql-js's choices and their order"
+    assert suggestions_of("name", ["nam", "names", "nmae", "nome", "zzzz"]) == ["nam", "names", "nmae", "nome"]
+    assert suggestions_of("RED", ["red", "GREEN"]) == ["red"]
+    assert suggestions_of("", ["a"]) == ["a"]
+    assert suggestions_of("abc", []) == []
+    assert suggestions_of("B", ["A", "A"]) == ["A"]
+    assert suggestions_of("f2", ["f10", "f1"]) == ["f1"]
+    assert suggestions_of("fa", ["fb", "Fa"]) == ["Fa", "fb"]
+
+test "did_you_mean: none, one, two, and more than five"
+    assert did_you_mean(what: "", names: []) == ""
+    assert did_you_mean(what: "", names: ["a"]) == " Did you mean \"a\"?"
+    assert did_you_mean(what: "the enum value", names: ["a", "b"]) == " Did you mean the enum value \"a\" or \"b\"?"
+    assert did_you_mean(what: "", names: ["a", "b", "c", "d", "e", "f"]) == " Did you mean \"a\", \"b\", \"c\", \"d\", or \"e\"?"
+
+test "natural_compare: digits as numbers, then bytes, then lengths"
+    assert natural_compare(a: "a2", b: "a10") < 0
+    assert natural_compare(a: "b", b: "a") > 0
+    assert natural_compare(a: "ab", b: "a") > 0
+    assert natural_compare(a: "x", b: "x") == 0

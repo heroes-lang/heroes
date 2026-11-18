@@ -1,0 +1,741 @@
+# The executor: an operation's fields found level by level and handed out to
+# the program, their answers completed into the response as the
+# specification's section 6 completes them, with graphql-js's messages. The
+# response is a list of slots, a parent before its children and the children
+# of an object or a list side by side, so a field that may not be null and is
+# nulls the nearest slot that may be by walking up, and the data is built at
+# the end from the last slot to the first. A query's fields are handed out a
+# level at a time; a mutation's root fields one at a time, each with all it
+# selects. Nothing recurses.
+
+use graphql/internal/collect
+use graphql/internal/exec_prep
+use graphql/internal/fixture
+use graphql/internal/introspect
+use graphql/internal/model
+use graphql/internal/tree
+use graphql/internal/values
+use json
+
+## Slots
+
+# A slot waiting for its value.
+constant PENDING: i64
+    0
+
+# A slot that is null.
+constant NULL: i64
+    1
+
+# A slot holding a scalar's or an enum's value.
+constant LEAF: i64
+    2
+
+# A slot holding an object, its children its fields.
+constant OBJECT: i64
+    3
+
+# A slot holding a list, its children its elements.
+constant LIST: i64
+    4
+
+# One place in the response.
+record Slot
+    # The slot it stands in, -1 for the data itself.
+    parent: i64
+    # Its key in an object, "" in a list.
+    key: str
+    # Its index in a list, -1 in an object.
+    index: i64
+    # Its state, one of the constants above.
+    kind: i64
+    # A leaf's value.
+    value: json.Value
+    # Its first child, -1 for none.
+    first: i64
+    # How many children it has, side by side.
+    count: i64
+    # Whether it may be null.
+    nullable: bool
+
+# A field to resolve.
+record Task
+    # Its slot.
+    slot: i64
+    # The object type it is selected on.
+    type_name: str
+    # The field's name.
+    field_name: str
+    # The field nodes that answer under its key.
+    fields: [i64]
+    # The value its parent was answered with.
+    parent: json.Value
+    # Its type.
+    return_type: str
+    # Its arguments, coerced when it is reached.
+    arguments: {str: json.Value}
+
+# An execution's state.
+record State
+    # The document.
+    tree: tree.Tree
+    # The schema.
+    model: model.Model
+    # Each fragment's node by name.
+    fragments: {str: i64}
+    # The variables, coerced.
+    variables: {str: json.Value}
+    # The operation's kind.
+    operation: str
+    # The slots.
+    slots: [Slot]
+    # Every task.
+    tasks: [Task]
+    # The tasks of the level being resolved.
+    level: [i64]
+    # The tasks found for the level after it.
+    later: [i64]
+    # The tasks handed out and waiting for their answers.
+    handed: [i64]
+    # A mutation's root tasks waiting their turn, and the next one's index.
+    serial: [i64]
+    # The index of the next of `serial`.
+    serial_at: i64
+    # The errors so far.
+    errors: [tree.Err]
+    # Whether it is over.
+    over: bool
+    # Whether execution began, so that the response holds data.
+    has_data: bool
+    # Whether the data is null: a root field that may not be null was.
+    data_null: bool
+    # The data, once over.
+    data: json.Value
+
+# A state that is over before it began, with `errors`.
+function refused(errors: [tree.Err]) -> State
+    t = tree.Tree(source: "", nodes: [], lines: [0])
+    m = model.Model(
+        types: {},
+        query: "",
+        mutation: "",
+        subscription: "",
+        directives: [],
+        description: "",
+        described: false,
+        implementations: {},
+        at: -1
+    )
+    return State(
+        tree: t,
+        model: m,
+        fragments: {},
+        variables: {},
+        operation: "",
+        slots: [],
+        tasks: [],
+        level: [],
+        later: [],
+        handed: [],
+        serial: [],
+        serial_at: 0,
+        errors: errors,
+        over: true,
+        has_data: false,
+        data_null: false,
+        data: .null_value
+    )
+
+# An execution of `t`'s operation `operation_name` against `m`, its variables
+# `given`, its root fields resolved from `root`; `t` is valid.
+function start(t: tree.Tree, m: model.Model, operation_name: str, given: json.Value, root: json.Value, suggest_names: bool) -> State
+    n = match exec_prep.operation_of(t, name: operation_name)
+        .ok got => got
+        .err e  => return refused([tree.err_of(e.msg)])
+
+    vars = exec_prep.coerce_variables(t, m: m, n: n, given: given, suggest_names: suggest_names)
+
+    if vars.errors.len() > 0
+        return refused(vars.errors)
+    kind = t.nodes[n].text
+    s @= State(
+        tree: t,
+        model: m,
+        fragments: collect.fragments_of(t),
+        variables: vars.values,
+        operation: kind,
+        slots: [],
+        tasks: [],
+        level: [],
+        later: [],
+        handed: [],
+        serial: [],
+        serial_at: 0,
+        errors: [],
+        over: false,
+        has_data: true,
+        data_null: false,
+        data: .null_value
+    )
+
+    root_type = if kind == "mutation"
+        m.mutation
+    else if kind == "subscription"
+        m.subscription
+    else
+        m.query
+
+    if root_type == ""
+        s.errors @ [tree.err_at(t, message: f"Schema is not configured to execute {kind} operation.", nodes: [n])]
+        s.over @ true
+        s.data_null @ true
+        return s
+    add_slot(
+        @s.slots,
+        slot: Slot(parent: -1, key: "", index: -1, kind: PENDING, value: .null_value, first: -1, count: 0, nullable: true)
+    )
+    made = expand(@s, slot: 0, type_name: root_type, nodes: [n], parent: root)
+
+    if kind == "mutation"
+        s.serial @ made
+    else
+        s.level @ made
+    return s
+
+# Adds `slot` at the end of `slots`.
+function add_slot(@slots: [Slot], slot: Slot)
+    slots @ slots.push(slot)
+
+# Adds `task` at the end of `tasks`.
+function add_task(@tasks: [Task], task: Task)
+    tasks @ tasks.push(task)
+
+# Adds `n` at the end of `xs`.
+function add_index(@xs: [i64], n: i64)
+    xs @ xs.push(n)
+
+# Makes the slot `slot` an object of `type_name`, its children the fields the
+# selection sets of `nodes` select, each a task resolved from `parent`, and
+# answers the tasks.
+function expand(@s: State, slot: i64, type_name: str, nodes: [i64], parent: json.Value) -> [i64]
+    sets: [i64] @= []
+
+    for n in nodes
+        sets @ sets.push(tree.kid_of(s.tree, n: n, kind: tree.SELECTION_SET))
+
+    fragments = s.fragments
+    variables = s.variables
+    found = collect.collect_fields(
+        s.tree,
+        m: s.model,
+        fragments: fragments,
+        variables: variables,
+        object_type: type_name,
+        sets: sets
+    )
+    first = s.slots.len()
+    made: [i64] @= []
+    count @= 0
+
+    for key in found.keys
+        fields = found.fields[key].must()
+        name = s.tree.nodes[fields[0]].name
+
+        match model.field_of(s.model, type_name: type_name, name: name)
+            .ok f =>
+                at = s.slots.len()
+                add_slot(
+                    @s.slots,
+                    slot: Slot(parent: slot, key: key, index: -1, kind: PENDING, value: .null_value, first: -1, count: 0, nullable: !model.is_non_null(f.type))
+                )
+                made @ made.push(s.tasks.len())
+                add_task(
+                    @s.tasks,
+                    task: Task(slot: at, type_name: type_name, field_name: name, fields: fields, parent: parent, return_type: f.type, arguments: {})
+                )
+                count @ count + 1
+            .err _ => _ = 0
+
+    s.slots[slot].kind @ OBJECT
+    s.slots[slot].first @ first
+    s.slots[slot].count @ count
+    return made
+
+# Whether slot `at` lies below a slot nulled after its children were made.
+function is_dead(s: State lent, at: i64) -> bool
+    up @= s.slots[at].parent
+
+    while up >= 0
+        if s.slots[up].kind == NULL
+            return true
+        up @ s.slots[up].parent
+
+    return false
+
+# The path of slot `at` in the response.
+function path_of(s: State lent, at: i64) -> [json.Value]
+    reversed: [json.Value] @= []
+    i @= at
+
+    while i > 0
+        slot = s.slots[i]
+
+        if slot.index >= 0
+            reversed @ reversed.push(.number(v: to_f64(slot.index)))
+        else
+            reversed @ reversed.push(.text(v: slot.key))
+        i @ slot.parent
+
+    path: [json.Value] @= []
+    k @= reversed.len() - 1
+
+    while k >= 0
+        path @ path.push(reversed[k])
+        k @ k - 1
+
+    return path
+
+# Records a field error of `message` at slot `at` of task `task`, and nulls
+# the nearest slot that may be null.
+function field_error(@s: State, task: i64, at: i64, message: str)
+    nodes = s.tasks[task].fields
+    e @= tree.err_at(s.tree, message: message, nodes: [nodes[0]])
+    e.path @ path_of(s, at: at)
+    add_error(@s.errors, e: e)
+    nullify(@s, at: at)
+
+# Records `e`, already placed, and nulls the nearest slot that may be null
+# from `at`.
+function placed_error(@s: State, e: tree.Err, at: i64)
+    placed @= e
+    placed.path @ path_of(s, at: at)
+    add_error(@s.errors, e: placed)
+    nullify(@s, at: at)
+
+# Adds `e` at the end of `errors`.
+function add_error(@errors: [tree.Err], e: tree.Err)
+    errors @ errors.push(e)
+
+# Nulls slot `at`, or the nearest slot above it that may be null; past the
+# data's own slot the data is null.
+function nullify(@s: State, at: i64)
+    i @= at
+
+    while i >= 0
+        if s.slots[i].nullable
+            s.slots[i].kind @ NULL
+
+            if i == 0
+                s.data_null @ true
+            return
+        i @ s.slots[i].parent
+
+    s.data_null @ true
+
+# What `next_step` answers: the tasks handed out, none where the execution is
+# over.
+function next_step(@s: State) -> [i64]
+    assert s.handed.len() == 0
+
+    while !s.over
+        if s.level.len() == 0
+            if s.later.len() > 0
+                s.level @ s.later
+                s.later @ []
+            else if s.serial_at < s.serial.len()
+                s.level @ [s.serial[s.serial_at]]
+                s.serial_at @ s.serial_at + 1
+            else
+                finish(@s)
+                return []
+        level = s.level
+        s.level @ []
+        out: [i64] @= []
+
+        for id in level
+            task = s.tasks[id]
+
+            if is_dead(s, at: task.slot)
+                continue
+            outcome = resolve_inside(@s, id: id)
+
+            if outcome == HANDED
+                out @ out.push(id)
+
+        if out.len() > 0
+            s.handed @ out
+            return out
+
+    return []
+
+# What `resolve_inside` answers: the task is handed to the program.
+constant HANDED: i64
+    1
+
+# The task was resolved here.
+constant RESOLVED: i64
+    0
+
+# Coerces task `id`'s arguments, and resolves it where the program need not:
+# introspection, `__typename`, or a parent object holding a member of the
+# field's name.
+function resolve_inside(@s: State, id: i64) -> i64
+    task = s.tasks[id]
+    field = model.field_of(s.model, type_name: task.type_name, name: task.field_name).must()
+    variables = s.variables
+    coerced = exec_prep.coerce_arguments(
+        s.tree,
+        m: s.model,
+        n: task.fields[0],
+        definitions: field.arguments,
+        variables: variables
+    )
+
+    if !coerced.ok
+        placed_error(@s, e: coerced.error, at: task.slot)
+        return RESOLVED
+    s.tasks[id].arguments @ coerced.values
+
+    if task.field_name == "__typename"
+        complete(@s, id: id, value: .text(v: task.type_name))
+        return RESOLVED
+
+    if task.type_name.len() >= 2 && task.type_name[0] == '_' && task.type_name[1] == '_'
+        complete(
+            @s,
+            id: id,
+            value: introspect.resolve(s.model, type_name: task.type_name, field_name: task.field_name, arguments: coerced.values, parent: task.parent)
+        )
+        return RESOLVED
+
+    if task.type_name == s.model.query && (task.field_name == "__schema" || task.field_name == "__type")
+        complete(
+            @s,
+            id: id,
+            value: introspect.root_field(s.model, field_name: task.field_name, arguments: coerced.values)
+        )
+        return RESOLVED
+
+    match task.parent
+        .object o =>
+            match o.members[task.field_name]
+                .ok v =>
+                    complete(@s, id: id, value: v)
+                    return RESOLVED
+                .err _ => _ = 0
+        .null_value | .boolean _ | .number _ | .text _ | .list _ => _ = 0
+
+    return HANDED
+
+# Gives the tasks handed out their answers, in order.
+function answer(@s: State, answers: [json.Value?])
+    assert answers.len() == s.handed.len()
+    handed = s.handed
+    s.handed @ []
+    i @= 0
+
+    while i < handed.len()
+        match answers[i]
+            .ok v  => complete(@s, id: handed[i], value: v)
+            .err e => field_error(@s, task: handed[i], at: s.tasks[handed[i]].slot, message: e.msg)
+
+        i @ i + 1
+
+# Completes task `id` with `value` by its type: null where it may be, each
+# element of a list, a leaf written by its type, an object's fields found for
+# the level after.
+function complete(@s: State, id: i64, value: json.Value)
+    task = s.tasks[id]
+    slots: [i64] @= [task.slot]
+    types: [str] @= [task.return_type]
+    vals: [json.Value] @= [value]
+    top @= 1
+
+    while top > 0
+        top @ top - 1
+        at = slots[top]
+        type = types[top]
+        v = vals[top]
+
+        if is_dead(s, at: at) || s.slots[at].kind == NULL
+            continue
+        inner = model.nullable_of(type)
+
+        if v == .null_value
+            if model.is_non_null(type)
+                field_error(
+                    @s,
+                    task: id,
+                    at: at,
+                    message: f"Cannot return null for non-nullable field {task.type_name}.{task.field_name}."
+                )
+            else
+                s.slots[at].kind @ NULL
+            continue
+
+        if model.is_list(inner)
+            items: [json.Value] = match v
+                .list l                                                    => l.items
+                .null_value | .boolean _ | .number _ | .text _ | .object _ => []
+
+            if !is_list_value(v)
+                field_error(
+                    @s,
+                    task: id,
+                    at: at,
+                    message: f"Expected Iterable, but did not find one for field \"{task.type_name}.{task.field_name}\"."
+                )
+                continue
+            item_type = model.item_of(inner)
+            first = s.slots.len()
+            k @= 0
+
+            while k < items.len()
+                add_slot(
+                    @s.slots,
+                    slot: Slot(parent: at, key: "", index: k, kind: PENDING, value: .null_value, first: -1, count: 0, nullable: !model.is_non_null(item_type))
+                )
+                k @ k + 1
+
+            s.slots[at].kind @ LIST
+            s.slots[at].first @ first
+            s.slots[at].count @ items.len()
+            k @ items.len() - 1
+
+            while k >= 0
+                place(@slots, @types, @vals, top: top, slot: first + k, type: item_type, value: items[k])
+                top @ top + 1
+                k @ k - 1
+
+            continue
+        named = model.named_of(inner)
+
+        if model.is_leaf_name(s.model, name: named)
+            match values.serialize(s.model, named: named, v: v)
+                .ok written =>
+                    s.slots[at].kind @ LEAF
+                    s.slots[at].value @ written
+                .err e => field_error(@s, task: id, at: at, message: e.msg)
+
+            continue
+
+        runtime = match runtime_type(s.model, abstract: named, v: v, field: task.type_name + "." + task.field_name)
+            .ok got => got
+            .err e =>
+                field_error(@s, task: id, at: at, message: e.msg)
+                continue
+
+        made = expand(@s, slot: at, type_name: runtime, nodes: task.fields, parent: v)
+
+        for t in made
+            add_index(@s.later, n: t)
+
+# Whether `v` is a list.
+function is_list_value(v: json.Value) -> bool
+    match v
+        .list _                                                    => return true
+        .null_value | .boolean _ | .number _ | .text _ | .object _ => return false
+
+# Puts one pending completion at `top` of the explicit stack.
+function place(@slots: [i64], @types: [str], @vals: [json.Value], top: i64, slot: i64, type: str, value: json.Value)
+    if top < slots.len()
+        slots[top] @ slot
+        types[top] @ type
+        vals[top] @ value
+    else
+        slots @ slots.push(slot)
+        types @ types.push(type)
+        vals @ vals.push(value)
+
+# The object type a value of `abstract` is: `abstract` itself where it is an
+# object type, else the type the value's member `__typename` names. Fails
+# `invalid` with graphql-js's message where there is none.
+function runtime_type(m: model.Model lent, abstract: str, v: json.Value, field: str) -> str?
+    if model.kind_of(m, name: abstract) == model.OBJECT
+        return ok(abstract)
+
+    named = match v
+        .object o =>
+            match o.members["__typename"]
+                .ok got =>
+                    match got
+                        .text s                                                    => s.v
+                        .null_value | .boolean _ | .number _ | .list _ | .object _ => ""
+                .err _ => ""
+        .null_value | .boolean _ | .number _ | .text _ | .list _ => ""
+
+    if named == ""
+        return fail(
+            code: INVALID,
+            msg: f"Abstract type \"{abstract}\" must resolve to an Object type at runtime for field \"{field}\". Either the \"{abstract}\" type should provide a \"resolveType\" function or each possible type should provide an \"isTypeOf\" function."
+        )
+
+    if !model.has_type(m, name: named)
+        return fail(
+            code: INVALID,
+            msg: f"Abstract type \"{abstract}\" was resolved to a type \"{named}\" that does not exist inside the schema."
+        )
+
+    if model.kind_of(m, name: named) != model.OBJECT
+        return fail(code: INVALID, msg: f"Abstract type \"{abstract}\" was resolved to a non-object type \"{named}\".")
+
+    if !model.is_sub_type(m, abstract: abstract, sub: named)
+        return fail(code: INVALID, msg: f"Runtime Object type \"{named}\" is not a possible type for \"{abstract}\".")
+    return ok(named)
+
+# The code of a value its type refuses.
+constant INVALID: str
+    "invalid"
+
+# Builds the data from the slots, the last first, and ends the execution.
+function finish(@s: State)
+    built: [json.Value] @= []
+
+    for _ in s.slots
+        built @ built.push(.null_value)
+
+    i @= s.slots.len() - 1
+
+    while i >= 0
+        slot = s.slots[i]
+
+        if slot.kind == LEAF
+            built[i] @ slot.value
+        else if slot.kind == OBJECT
+            members: {str: json.Value} @= {}
+            k @= 0
+
+            while k < slot.count
+                child = slot.first + k
+                members[s.slots[child].key] @ built[child]
+                k @ k + 1
+
+            built[i] @ .object(members: members)
+        else if slot.kind == LIST
+            items: [json.Value] @= []
+            k @= 0
+
+            while k < slot.count
+                items @ items.push(built[slot.first + k])
+                k @ k + 1
+
+            built[i] @ .list(items: items)
+        i @ i - 1
+
+    if !s.data_null && built.len() > 0
+        s.data @ built[0]
+    s.over @ true
+
+# The names of the fields selected below the field of task `id`, each once,
+# over every object type its value can be.
+function selected_of(s: State lent, id: i64) -> [str]
+    task = s.tasks[id]
+    named = model.named_of(task.return_type)
+
+    if !model.is_composite_name(s.model, name: named)
+        return []
+    sets: [i64] @= []
+
+    for n in task.fields
+        sets @ sets.push(tree.kid_of(s.tree, n: n, kind: tree.SELECTION_SET))
+
+    names: [str] @= []
+    seen: {str: bool} @= {}
+
+    for type_name in model.possible_of(s.model, name: named)
+        found = collect.collect_fields(
+            s.tree,
+            m: s.model,
+            fragments: s.fragments,
+            variables: s.variables,
+            object_type: type_name,
+            sets: sets
+        )
+
+        for key in found.keys
+            name = s.tree.nodes[found.fields[key].must()[0]].name
+
+            if !seen[name].default(false)
+                seen[name] @ true
+                names @ names.push(name)
+
+    return names
+
+# The data and the errors of `query` run against `sdl` from `root`, nothing
+# handed out.
+function run_of(sdl: str, query: str, root: str) -> str
+    s @= start(
+        fixture.tree_of(query),
+        m: fixture.schema_of(sdl),
+        operation_name: "",
+        given: .null_value,
+        root: json.parse(root).must(),
+        suggest_names: true
+    )
+    assert next_step(@s).len() == 0
+
+    data = if s.data_null
+        "null"
+    else
+        json.format(s.data).must()
+    return data + " " + fixture.messages_of(s.errors).join(" | ")
+
+test "complete: a null in a list of non-nulls, a list that is none, lists of lists, and a non-null root field"
+    sdl = "type Query { l: [Int!] nn: Int! m: [[Int]] o: O } type O { a: Int }"
+    assert run_of(sdl: sdl, query: "{ l }", root: "{\"l\": [1, null]}") == "{\"l\":null} Cannot return null for non-nullable field Query.l. @1:3"
+    assert run_of(sdl: sdl, query: "{ m }", root: "{\"m\": [[1, null], [], null]}") == "{\"m\":[[1,null],[],null]} "
+    assert run_of(sdl: sdl, query: "{ l }", root: "{\"l\": 5}") == "{\"l\":null} Expected Iterable, but did not find one for field \"Query.l\". @1:3"
+    assert run_of(sdl: sdl, query: "{ o { a } nn }", root: "{\"o\": {\"a\": 1}, \"nn\": null}") == "null Cannot return null for non-nullable field Query.nn. @1:11"
+    assert run_of(sdl: sdl, query: "{ o { __typename } }", root: "{\"o\": 1}") == "{\"o\":{\"__typename\":\"O\"}} "
+
+test "runtime_type: graphql-js's four messages"
+    m = fixture.pets()
+    assert runtime_type(m, abstract: "Pet", v: json.parse("{\"__typename\": \"Dog\"}").must(), field: "Query.pet").must() == "Dog"
+    assert runtime_type(m, abstract: "Pet", v: .text(v: "x"), field: "Query.pet").is_err()
+    assert code_of(runtime_type(m, abstract: "Pet", v: json.parse("{\"__typename\": \"Nope\"}").must(), field: "Query.pet")) == INVALID
+    assert message_of(runtime_type(m, abstract: "Pet", v: json.parse("{\"__typename\": \"Human\"}").must(), field: "Query.pet")) == "Runtime Object type \"Human\" is not a possible type for \"Pet\"."
+    assert message_of(runtime_type(m, abstract: "Pet", v: json.parse("{\"__typename\": \"Sentient\"}").must(), field: "Query.pet")) == "Abstract type \"Pet\" was resolved to a non-object type \"Sentient\"."
+
+# The code of `v`'s failure, "" where it holds a value.
+function code_of(v: str?) -> str
+    match v
+        .ok _  => return ""
+        .err e => return e.code
+
+# The message of `v`'s failure, "" where it holds a value.
+function message_of(v: str?) -> str
+    match v
+        .ok _  => return ""
+        .err e => return e.msg
+
+test "next_step and answer: the program's fields, their paths, and selected_of"
+    s @= start(
+        fixture.tree_of("{ dog { name owner { name } } }"),
+        m: fixture.pets(),
+        operation_name: "",
+        given: .null_value,
+        root: .null_value,
+        suggest_names: true
+    )
+    first = next_step(@s)
+    assert first.len() == 1
+    assert selected_of(s, id: first[0]) == ["name", "owner"]
+    answer(@s, answers: [ok(json.parse("{\"name\": \"Rex\"}").must())])
+    second = next_step(@s)
+    assert path_of(s, at: s.tasks[second[0]].slot) == [.text(v: "dog"), .text(v: "owner")]
+    answer(@s, answers: [ok(json.parse("{\"name\": \"Ann\"}").must())])
+    assert next_step(@s).len() == 0
+    assert json.format(s.data).must() == "{\"dog\":{\"name\":\"Rex\",\"owner\":{\"name\":\"Ann\"}}}"
+
+test "start: a schema with no root for the operation, and a request refused"
+    s = start(
+        fixture.tree_of("mutation { a }"),
+        m: fixture.pets(),
+        operation_name: "",
+        given: .null_value,
+        root: .null_value,
+        suggest_names: true
+    )
+    assert s.over
+    assert fixture.messages_of(s.errors) == ["Schema is not configured to execute mutation operation. @1:1"]
+    assert refused([]).over

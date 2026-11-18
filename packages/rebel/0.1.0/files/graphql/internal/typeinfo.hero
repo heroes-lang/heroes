@@ -1,0 +1,354 @@
+# What graphql-js's `TypeInfo` knows at each node of a document, computed
+# once over `walk`'s events with explicit stacks and kept by node: the type
+# a selection set's selections are on, a field's type and whether the schema
+# defines it, an argument's definition, and the input type a value must be,
+# with the type above it and whether its place has a default.
+
+use graphql/internal/fixture
+use graphql/internal/model
+use graphql/internal/tree
+use graphql/internal/walk
+
+# What is known at each node, by index.
+record Info
+    # The composite type the node's selections are on, for a selection set
+    # and each selection; "" where it is unknown.
+    parent: [str]
+    # A field's type, the type of an operation, a fragment or an inline
+    # fragment; "" where it is unknown or not an output type.
+    out: [str]
+    # Whether the schema defines the field, or the directive.
+    known: [bool]
+    # The input type a value, an argument, an object's field or a variable
+    # definition must be; "" where it is unknown.
+    input: [str]
+    # The input type above it: a list's, an input object's.
+    parent_input: [str]
+    # Whether the place of a value has a default: an argument's or an input
+    # field's.
+    has_default: [bool]
+    # The field definition's owner and name a field or an argument reads,
+    # `Type.field`, or a directive's `@name`; "" for none.
+    owner: [str]
+
+# The info of every node of `t` against `m`.
+function info_of(t: tree.Tree lent, m: model.Model lent) -> Info
+    count = t.nodes.len()
+    parent: [str] @= []
+    out: [str] @= []
+    known: [bool] @= []
+    input: [str] @= []
+    parent_input: [str] @= []
+    has_default: [bool] @= []
+    owner: [str] @= []
+    i @= 0
+
+    while i < count
+        parent @ parent.push("")
+        out @ out.push("")
+        known @ known.push(false)
+        input @ input.push("")
+        parent_input @ parent_input.push("")
+        has_default @ has_default.push(false)
+        owner @ owner.push("")
+        i @ i + 1
+
+    types = Stack(items: [], count: 0)
+    parents = Stack(items: [], count: 0)
+    inputs = Stack(items: [], count: 0)
+    owners = Stack(items: [], count: 0)
+    stacks @= Stacks(types: types, parents: parents, inputs: inputs, owners: owners, defaults: [], default_count: 0)
+    directive @= ""
+
+    for e in walk.events_of(t)
+        if e.kind == walk.TYPE
+            continue
+        n = e.node
+        node = t.nodes[n]
+        k = node.kind
+
+        if e.kind == walk.ENTER
+            if k == tree.SELECTION_SET
+                named = model.named_of(top(stacks.types))
+                put(@stacks.parents, v: composite_or_none(m, name: named))
+                parent[n] @ top(stacks.parents)
+            else if k == tree.FIELD
+                on = top(stacks.parents)
+                parent[n] @ on
+                found = field_type_of(m, on: on, name: node.name)
+                known[n] @ found != ""
+                via @= ""
+
+                if found != ""
+                    via @ on + "." + node.name
+                put(@stacks.owners, v: via)
+                put(@stacks.types, v: output_or_none(m, type: found))
+                out[n] @ top(stacks.types)
+                owner[n] @ via
+            else if k == tree.DIRECTIVE
+                directive @ "@" + node.name
+                known[n] @ has_directive(m, name: node.name)
+            else if k == tree.OPERATION
+                root = root_of(m, operation: node.text)
+                object @= ""
+
+                if model.kind_of(m, name: root) == model.OBJECT
+                    object @ root
+                put(@stacks.types, v: object)
+                out[n] @ object
+            else if k == tree.INLINE_FRAGMENT || k == tree.FRAGMENT_DEFINITION
+                parent[n] @ top(stacks.parents)
+                condition @= model.named_of(top(stacks.types))
+
+                if node.type != ""
+                    condition @ ""
+
+                    if model.has_type(m, name: node.type)
+                        condition @ node.type
+                put(@stacks.types, v: output_or_none(m, type: condition))
+                out[n] @ top(stacks.types)
+            else if k == tree.FRAGMENT_SPREAD
+                parent[n] @ top(stacks.parents)
+            else if k == tree.VARIABLE_DEFINITION
+                declared @= ""
+
+                if model.has_type(m, name: model.named_of(node.type))
+                    declared @ node.type
+                put(@stacks.inputs, v: input_or_none(m, type: declared))
+                input[n] @ top(stacks.inputs)
+            else if k == tree.ARGUMENT
+                via @= top(stacks.owners)
+
+                if t.nodes[node.parent].kind == tree.DIRECTIVE
+                    via @ directive
+                argument = argument_of(m, owner: via, name: node.name)
+                known[n] @ argument.found
+                owner[n] @ via
+                put_flag(@stacks, v: argument.has_default)
+                put(@stacks.inputs, v: input_or_none(m, type: argument.type))
+                input[n] @ top(stacks.inputs)
+            else if k == tree.LIST
+                list = model.nullable_of(top(stacks.inputs))
+                item @= list
+
+                if model.is_list(list)
+                    item @ model.item_of(list)
+                put_flag(@stacks, v: false)
+                put(@stacks.inputs, v: input_or_none(m, type: item))
+            else if k == tree.OBJECT_FIELD
+                object = model.named_of(top(stacks.inputs))
+                field = input_field_of(m, type_name: object, name: node.name)
+                put_flag(@stacks, v: field.has_default)
+                put(@stacks.inputs, v: input_or_none(m, type: field.type))
+
+            if tree.is_value(k) || k == tree.OBJECT_FIELD
+                input[n] @ top(stacks.inputs)
+                parent_input[n] @ second(stacks.inputs)
+                has_default[n] @ top_flag(stacks)
+        else
+            if k == tree.SELECTION_SET
+                stacks.parents.count @ stacks.parents.count - 1
+            else if k == tree.FIELD
+                stacks.owners.count @ stacks.owners.count - 1
+                stacks.types.count @ stacks.types.count - 1
+            else if k == tree.DIRECTIVE
+                directive @ ""
+            else if k == tree.OPERATION || k == tree.INLINE_FRAGMENT || k == tree.FRAGMENT_DEFINITION
+                stacks.types.count @ stacks.types.count - 1
+            else if k == tree.VARIABLE_DEFINITION
+                stacks.inputs.count @ stacks.inputs.count - 1
+            else if k == tree.ARGUMENT || k == tree.LIST || k == tree.OBJECT_FIELD
+                stacks.default_count @ stacks.default_count - 1
+                stacks.inputs.count @ stacks.inputs.count - 1
+
+    return Info(
+        parent: parent,
+        out: out,
+        known: known,
+        input: input,
+        parent_input: parent_input,
+        has_default: has_default,
+        owner: owner
+    )
+
+# A stack of names, its live part the first `count`.
+record Stack
+    # The names, some past `count` left from earlier pushes.
+    items: [str]
+    # How many are live.
+    count: i64
+
+# The stacks `info_of` keeps.
+record Stacks
+    # The output types of the fields and fragments open.
+    types: Stack
+    # The composite types of the selection sets open.
+    parents: Stack
+    # The input types of the values open.
+    inputs: Stack
+    # The field definitions of the fields open, as `Type.field`.
+    owners: Stack
+    # Whether the place of each value open has a default.
+    defaults: [bool]
+    # How many of `defaults` are live.
+    default_count: i64
+
+# Pushes `v` on `s`.
+function put(@s: Stack, v: str)
+    if s.count < s.items.len()
+        s.items[s.count] @ v
+    else
+        grow(@s.items, v: v)
+    s.count @ s.count + 1
+
+# Adds `v` to the end of `xs`.
+function grow(@xs: [str], v: str)
+    xs @ xs.push(v)
+
+# Pushes `v` on the stack of defaults.
+function put_flag(@s: Stacks, v: bool)
+    if s.default_count < s.defaults.len()
+        s.defaults[s.default_count] @ v
+    else
+        grow_flags(@s.defaults, v: v)
+    s.default_count @ s.default_count + 1
+
+# Adds `v` to the end of `xs`.
+function grow_flags(@xs: [bool], v: bool)
+    xs @ xs.push(v)
+
+# The type of the field `name` of `on`, "" where it is unknown.
+function field_type_of(m: model.Model lent, on: str, name: str) -> str
+    if on == ""
+        return ""
+
+    match model.field_of(m, type_name: on, name: name)
+        .ok f  => return f.type
+        .err _ => return ""
+
+# The top of `s`, "" for none.
+function top(s: Stack lent) -> str
+    if s.count == 0
+        return ""
+    return s.items[s.count - 1]
+
+# The one below the top of `s`, "" for none.
+function second(s: Stack lent) -> str
+    if s.count < 2
+        return ""
+    return s.items[s.count - 2]
+
+# The top of the stack of defaults, false for none.
+function top_flag(s: Stacks lent) -> bool
+    if s.default_count == 0
+        return false
+    return s.defaults[s.default_count - 1]
+
+# `name` where it names a type with fields, else "".
+function composite_or_none(m: model.Model lent, name: str) -> str
+    if model.is_composite_name(m, name: name)
+        return name
+    return ""
+
+# `type` where it is an output type, else "".
+function output_or_none(m: model.Model lent, type: str) -> str
+    if type != "" && model.is_output_name(m, name: model.named_of(type))
+        return type
+    return ""
+
+# `type` where it is an input type, else "".
+function input_or_none(m: model.Model lent, type: str) -> str
+    if type != "" && model.is_input_name(m, name: model.named_of(type))
+        return type
+    return ""
+
+# The root type of `operation`, "" for none.
+function root_of(m: model.Model lent, operation: str) -> str
+    if operation == "mutation"
+        return m.mutation
+
+    if operation == "subscription"
+        return m.subscription
+    return m.query
+
+# Whether `m` defines the directive `name`.
+function has_directive(m: model.Model lent, name: str) -> bool
+    for d in m.directives
+        if d.name == name
+            return true
+
+    return false
+
+# What `argument_of` answers.
+record Argument
+    # Whether the owner defines it.
+    found: bool
+    # Its type.
+    type: str
+    # Whether it has a default.
+    has_default: bool
+
+# The argument `name` of `owner`: a field as `Type.field`, or a directive
+# as `@name`.
+function argument_of(m: model.Model lent, owner: str, name: str) -> Argument
+    for a in arguments_of(m, owner: owner)
+        if a.name == name
+            return Argument(found: true, type: a.type, has_default: a.has_default)
+
+    return Argument(found: false, type: "", has_default: false)
+
+# The arguments `owner` defines: a field as `Type.field`, a directive as
+# `@name`; none where it is "" or unknown.
+function arguments_of(m: model.Model lent, owner: str) -> [model.InputValue]
+    if owner == ""
+        return []
+
+    if owner[0] == '@'
+        name = owner.slice(from: 1, to: owner.len())
+
+        for d in m.directives
+            if d.name == name
+                return d.arguments
+
+        return []
+    dot @= 0
+
+    while dot < owner.len() && owner[dot] != '.'
+        dot @ dot + 1
+
+    match model.field_of(m, type_name: owner.slice(from: 0, to: dot), name: owner.slice(from: dot + 1, to: owner.len()))
+        .ok f  => return f.arguments
+        .err _ => return []
+
+# The input field `name` of the input object `type_name`, as an argument
+# answers it.
+function input_field_of(m: model.Model lent, type_name: str, name: str) -> Argument
+    match m.types[type_name]
+        .ok t =>
+            if t.kind == model.INPUT_OBJECT
+                for f in t.inputs
+                    if f.name == name
+                        return Argument(found: true, type: f.type, has_default: f.has_default)
+        .err _ => _ = 0
+
+    return Argument(found: false, type: "", has_default: false)
+
+test "info_of: the parent type of a field, its type, an argument's input type and a list's elements"
+    m = fixture.pets()
+    t = fixture.tree_of("{ dog { doesKnowCommand(dogCommand: SIT) } find(by: {name: \"x\"}) { name } }")
+    info = info_of(t, m: m)
+    field = 5
+    assert t.nodes[field].name == "doesKnowCommand"
+    assert info.parent[field] == "Dog"
+    assert info.out[field] == "Boolean!"
+    assert info.known[field]
+    argument = 6
+    assert info.input[argument] == "DogCommand!"
+    assert info.input[argument + 1] == "DogCommand!"
+    assert info.owner[argument] == "Dog.doesKnowCommand"
+    name_field = 11
+    assert t.nodes[name_field].kind == tree.OBJECT_FIELD
+    assert info.input[name_field] == "String!"
+    assert info.parent_input[name_field] == "Find"
+    assert top(Stack(items: ["a", "b"], count: 1)) == "a"
+    assert second(Stack(items: ["a"], count: 1)) == ""

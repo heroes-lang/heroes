@@ -1,0 +1,533 @@
+# The rules of section 5 about a document's definitions, names, fragments
+# and variables, each as graphql-js words its errors: executable definitions,
+# unique and lone operations, one root field for a subscription, known types,
+# fragments on composite types, variables of input types, leaves without and
+# objects with selections, fields their type defines, unique and known
+# fragments, fragments used, spread where they can apply and in no cycle, and
+# variables unique, defined and used.
+
+use graphql/internal/collect
+use graphql/internal/fixture
+use graphql/internal/model
+use graphql/internal/schema_check
+use graphql/internal/suggest
+use graphql/internal/tree
+use graphql/internal/typeinfo
+use graphql/internal/vcontext
+use json
+
+# Reports each definition of `t` that is not executable.
+function executable_definitions(t: tree.Tree lent, @run: vcontext.Run)
+    for n in tree.kids(t, n: 0)
+        k = t.nodes[n].kind
+
+        if k != tree.OPERATION && k != tree.FRAGMENT_DEFINITION
+            name = if k == tree.SCHEMA_DEFINITION || k == tree.SCHEMA_EXTENSION
+                "schema"
+            else
+                f"\"{t.nodes[n].name}\""
+            vcontext.report(@run, e: tree.err_at(t, message: f"The {name} definition is not executable.", nodes: [n]))
+
+# Reports an operation whose name another took first.
+function unique_operation_names(t: tree.Tree lent, @run: vcontext.Run, n: i64)
+    node = t.nodes[n]
+
+    if node.name == ""
+        return
+
+    match run.operation_names[node.name]
+        .ok first => vcontext.report(
+            @run,
+            e: tree.err_bytes(t, message: f"There can be only one operation named \"{node.name}\".", offsets: [first, node.name_at])
+        )
+        .err _ => run.operation_names[node.name] @ node.name_at
+
+# Reports an anonymous operation beside others.
+function lone_anonymous(t: tree.Tree lent, @run: vcontext.Run, n: i64)
+    if t.nodes[n].name == "" && run.operations > 1
+        vcontext.report(
+            @run,
+            e: tree.err_at(t, message: "This anonymous operation must be the only defined operation.", nodes: [n])
+        )
+
+# Reports a subscription that selects more than one root field, or an
+# introspection field at its root.
+function single_field_subscription(t: tree.Tree lent, m: model.Model lent, @run: vcontext.Run, n: i64)
+    node = t.nodes[n]
+
+    if node.text != "subscription" || m.subscription == ""
+        return
+    variables: {str: json.Value} = {}
+    found = collect.collect_fields(
+        t,
+        m: m,
+        fragments: run.fragments,
+        variables: variables,
+        object_type: m.subscription,
+        sets: [tree.kid_of(t, n: n, kind: tree.SELECTION_SET)]
+    )
+
+    who = if node.name != ""
+        f"Subscription \"{node.name}\""
+    else
+        "Anonymous Subscription"
+
+    if found.keys.len() > 1
+        extra: [i64] @= []
+        i @= 1
+
+        while i < found.keys.len()
+            for f in found.fields[found.keys[i]].must()
+                extra @ extra.push(f)
+
+            i @ i + 1
+
+        vcontext.report(@run, e: tree.err_at(t, message: f"{who} must select only one top level field.", nodes: extra))
+
+    for key in found.keys
+        nodes = found.fields[key].must()
+        name = t.nodes[nodes[0]].name
+
+        if name.len() >= 2 && name[0] == '_' && name[1] == '_'
+            vcontext.report(
+                @run,
+                e: tree.err_at(t, message: f"{who} must not select an introspection top level field.", nodes: nodes)
+            )
+
+# Whether node `n` lies within a definition of a schema.
+function is_in_schema_text(t: tree.Tree lent, n: i64) -> bool
+    at @= n
+
+    while t.nodes[at].parent > 0
+        at @ t.nodes[at].parent
+
+    k = t.nodes[at].kind
+    return k != tree.OPERATION && k != tree.FRAGMENT_DEFINITION
+
+# Reports the named type `name` at byte `at` of node `n` where the schema
+# holds no such type and the document defines none.
+function known_type_name(t: tree.Tree lent, m: model.Model lent, @run: vcontext.Run, n: i64, name: str, at: i64)
+    if model.has_type(m, name: name)
+        return
+    defined: [str] @= []
+
+    for d in tree.kids(t, n: 0)
+        if schema_check.is_type_definition(t.nodes[d].kind)
+            if t.nodes[d].name == name
+                return
+            defined @ defined.push(t.nodes[d].name)
+
+    in_schema = is_in_schema_text(t, n: n)
+
+    if in_schema
+        for s in schema_check.standard_names()
+            if s == name
+                return
+    hint @= ""
+
+    if run.suggest
+        options: [str] @= []
+
+        if in_schema
+            options @ schema_check.standard_names()
+
+        for type_name in keys(m.types)
+            options @ options.push(type_name)
+
+        for d in defined
+            options @ options.push(d)
+
+        hint @ suggest.did_you_mean(what: "", names: suggest.suggestions_of(name, options: options))
+    vcontext.report(@run, e: tree.err_bytes(t, message: f"Unknown type \"{name}\".{hint}", offsets: [at]))
+
+# Reports a fragment whose condition is a type with no fields.
+function fragment_on_composite(t: tree.Tree lent, m: model.Model lent, @run: vcontext.Run, n: i64)
+    node = t.nodes[n]
+
+    if node.type == "" || !model.has_type(m, name: node.type) || model.is_composite_name(m, name: node.type)
+        return
+
+    if node.kind == tree.INLINE_FRAGMENT
+        vcontext.report(
+            @run,
+            e: tree.err_bytes(t, message: f"Fragment cannot condition on non composite type \"{node.type}\".", offsets: [node.type_start])
+        )
+    else
+        vcontext.report(
+            @run,
+            e: tree.err_bytes(t, message: f"Fragment \"{node.name}\" cannot condition on non composite type \"{node.type}\".", offsets: [node.type_start])
+        )
+
+# Reports a variable whose type is not an input type.
+function variable_is_input(t: tree.Tree lent, m: model.Model lent, @run: vcontext.Run, n: i64)
+    node = t.nodes[n]
+    named = model.named_of(node.type)
+
+    if model.has_type(m, name: named) && !model.is_input_name(m, name: named)
+        vcontext.report(
+            @run,
+            e: tree.err_bytes(t, message: f"Variable \"${node.name}\" cannot be non-input type \"{node.type}\".", offsets: [node.type_start])
+        )
+
+# Reports a leaf with a selection, and a field of fields without one.
+function scalar_leafs(t: tree.Tree lent, m: model.Model lent, info: typeinfo.Info lent, @run: vcontext.Run, n: i64)
+    type = info.out[n]
+
+    if type == ""
+        return
+    node = t.nodes[n]
+    set = tree.kid_of(t, n: n, kind: tree.SELECTION_SET)
+
+    if model.is_leaf_name(m, name: model.named_of(type))
+        if set >= 0
+            vcontext.report(
+                @run,
+                e: tree.err_at(t, message: f"Field \"{node.name}\" must not have a selection since type \"{type}\" has no subfields.", nodes: [set])
+            )
+    else if set < 0
+        vcontext.report(
+            @run,
+            e: tree.err_at(t, message: f"Field \"{node.name}\" of type \"{type}\" must have a selection of subfields. Did you mean \"{node.name} {{ ... }}\"?", nodes: [n])
+        )
+
+# Reports a field its parent type does not define, with what it may have
+# meant.
+function field_on_correct_type(t: tree.Tree lent, m: model.Model lent, info: typeinfo.Info lent, @run: vcontext.Run, n: i64)
+    parent = info.parent[n]
+
+    if parent == "" || info.known[n]
+        return
+    name = t.nodes[n].name
+    hint @= ""
+
+    if run.suggest
+        hint @ suggest.did_you_mean(
+            what: "to use an inline fragment on",
+            names: suggested_types(m, parent: parent, field: name)
+        )
+
+        if hint == ""
+            options: [str] @= []
+
+            match m.types[parent]
+                .ok ty =>
+                    for f in ty.fields
+                        options @ options.push(f.name)
+                .err _ => _ = 0
+
+            hint @ suggest.did_you_mean(what: "", names: suggest.suggestions_of(name, options: options))
+    vcontext.report(
+        @run,
+        e: tree.err_at(t, message: f"Cannot query field \"{name}\" on type \"{parent}\".{hint}", nodes: [n])
+    )
+
+# Whether the type `type_name` defines a field `field`.
+function defines(m: model.Model lent, type_name: str, field: str) -> bool
+    match m.types[type_name]
+        .ok ty =>
+            for f in ty.fields
+                if f.name == field
+                    return true
+        .err _ => _ = 0
+
+    return false
+
+# The types below the interface or union `parent` that define `field`, the
+# most used first, as graphql-js suggests an inline fragment.
+function suggested_types(m: model.Model lent, parent: str, field: str) -> [str]
+    if !model.is_abstract_name(m, name: parent)
+        return []
+    names: [str] @= []
+    counts: {str: i64} @= {}
+
+    for p in model.possible_of(m, name: parent)
+        if defines(m, type_name: p, field: field)
+            if counts[p].is_err()
+                names @ names.push(p)
+            counts[p] @ 1
+
+            for i in m.types[p].must().interfaces
+                if defines(m, type_name: i, field: field)
+                    if counts[i].is_err()
+                        names @ names.push(i)
+                    counts[i] @ counts[i].default(0) + 1
+
+    sorted: [str] @= []
+
+    for name in names
+        at @= sorted.len()
+
+        while at > 0 && is_before(m, a: name, b: sorted[at - 1], counts: counts)
+            at @ at - 1
+
+        out: [str] @= []
+        k @= 0
+
+        while k < sorted.len()
+            if k == at
+                out @ out.push(name)
+            out @ out.push(sorted[k])
+            k @ k + 1
+
+        if at >= sorted.len()
+            out @ out.push(name)
+        sorted @ out
+
+    return sorted
+
+# Whether `a` comes before `b` among suggested types: more used, an
+# interface before what implements it, then the natural order.
+function is_before(m: model.Model lent, a: str, b: str, counts: {str: i64} lent) -> bool
+    ca = counts[a].default(0)
+    cb = counts[b].default(0)
+
+    if ca != cb
+        return ca > cb
+
+    if model.kind_of(m, name: a) == model.INTERFACE && model.is_sub_type(m, abstract: a, sub: b)
+        return true
+
+    if model.kind_of(m, name: b) == model.INTERFACE && model.is_sub_type(m, abstract: b, sub: a)
+        return false
+    return suggest.natural_compare(a: a, b: b) < 0
+
+# Reports a fragment whose name another took first.
+function unique_fragment_names(t: tree.Tree lent, @run: vcontext.Run, n: i64)
+    node = t.nodes[n]
+
+    match run.fragment_names[node.name]
+        .ok first => vcontext.report(
+            @run,
+            e: tree.err_bytes(t, message: f"There can be only one fragment named \"{node.name}\".", offsets: [first, node.name_at])
+        )
+        .err _ => run.fragment_names[node.name] @ node.name_at
+
+# Reports a spread of a fragment the document does not define.
+function known_fragment_name(t: tree.Tree lent, @run: vcontext.Run, n: i64)
+    node = t.nodes[n]
+
+    if run.fragments[node.name].is_err()
+        vcontext.report(
+            @run,
+            e: tree.err_bytes(t, message: f"Unknown fragment \"{node.name}\".", offsets: [node.name_at])
+        )
+
+# Reports each fragment no operation reaches.
+function no_unused_fragments(t: tree.Tree lent, @run: vcontext.Run)
+    used: {str: bool} @= {}
+
+    for n in tree.kids_of(t, n: 0, kind: tree.OPERATION)
+        for f in vcontext.referenced_fragments(t, run: run, n: n)
+            used[t.nodes[f].name] @ true
+
+    for n in tree.kids_of(t, n: 0, kind: tree.FRAGMENT_DEFINITION)
+        if !used[t.nodes[n].name].default(false)
+            vcontext.report(
+                @run,
+                e: tree.err_at(t, message: f"Fragment \"{t.nodes[n].name}\" is never used.", nodes: [n])
+            )
+
+# Whether a value of `a` can ever be of `b`, as graphql-js's `doTypesOverlap`
+# answers.
+function do_types_overlap(m: model.Model lent, a: str, b: str) -> bool
+    if a == b
+        return true
+
+    if model.is_abstract_name(m, name: a)
+        if model.is_abstract_name(m, name: b)
+            for p in model.possible_of(m, name: a)
+                if model.is_sub_type(m, abstract: b, sub: p)
+                    return true
+
+            return false
+        return model.is_sub_type(m, abstract: a, sub: b)
+
+    if model.is_abstract_name(m, name: b)
+        return model.is_sub_type(m, abstract: b, sub: a)
+    return false
+
+# Reports a fragment spread where its type can never apply.
+function possible_fragment_spread(t: tree.Tree lent, m: model.Model lent, info: typeinfo.Info lent, @run: vcontext.Run, n: i64)
+    node = t.nodes[n]
+    parent = info.parent[n]
+
+    if node.kind == tree.INLINE_FRAGMENT
+        type = model.named_of(info.out[n])
+
+        if model.is_composite_name(m, name: type) && model.is_composite_name(m, name: parent) && !do_types_overlap(m, a: type, b: parent)
+            vcontext.report(
+                @run,
+                e: tree.err_at(t, message: f"Fragment cannot be spread here as objects of type \"{parent}\" can never be of type \"{type}\".", nodes: [n])
+            )
+        return
+
+    f = match run.fragments[node.name]
+        .ok got => got
+        .err _  => return
+
+    type = t.nodes[f].type
+
+    if model.is_composite_name(m, name: type) && model.is_composite_name(m, name: parent) && !do_types_overlap(m, a: type, b: parent)
+        vcontext.report(
+            @run,
+            e: tree.err_at(t, message: f"Fragment \"{node.name}\" cannot be spread here as objects of type \"{parent}\" can never be of type \"{type}\".", nodes: [n])
+        )
+
+# Reports each cycle of fragment spreads that starts from the fragment at
+# `n`, depth first on an explicit stack, as graphql-js's `NoFragmentCycles`.
+function no_fragment_cycles(t: tree.Tree lent, @run: vcontext.Run, n: i64)
+    if run.cycles_seen[t.nodes[n].name].default(false)
+        return
+    names: [str] @= [t.nodes[n].name]
+    spreads: [[i64]] @= [vcontext.fragment_spreads(t, set: tree.kid_of(t, n: n, kind: tree.SELECTION_SET))]
+    next: [i64] @= [0]
+    path: [i64] @= []
+    path_len @= 0
+    index_of: {str: i64} @= {}
+    run.cycles_seen[t.nodes[n].name] @ true
+    index_of[t.nodes[n].name] @ 0
+    top @= 1
+
+    while top > 0
+        frame = top - 1
+        i = next[frame]
+
+        if i >= spreads[frame].len()
+            index_of[names[frame]] @ -1
+            top @ top - 1
+
+            if top > 0
+                path_len @ path_len - 1
+            continue
+        next[frame] @ i + 1
+        spread = spreads[frame][i]
+        name = t.nodes[spread].name
+        cycle = index_of[name].default(-1)
+
+        if path_len < path.len()
+            path[path_len] @ spread
+        else
+            path @ path.push(spread)
+        path_len @ path_len + 1
+
+        if cycle >= 0
+            nodes = path.slice(from: cycle, to: path_len)
+            via: [str] @= []
+            k @= 0
+
+            while k < nodes.len() - 1
+                via @ via.push(f"\"{t.nodes[nodes[k]].name}\"")
+                k @ k + 1
+
+            tail = if via.len() > 0
+                f" via {via.join(", ")}."
+            else
+                "."
+            vcontext.report(
+                @run,
+                e: tree.err_at(t, message: f"Cannot spread fragment \"{name}\" within itself{tail}", nodes: nodes)
+            )
+            path_len @ path_len - 1
+            continue
+
+        f = match run.fragments[name]
+            .ok got => got
+            .err _  => -1
+
+        if f < 0 || run.cycles_seen[name].default(false)
+            path_len @ path_len - 1
+            continue
+        run.cycles_seen[name] @ true
+        list = vcontext.fragment_spreads(t, set: tree.kid_of(t, n: f, kind: tree.SELECTION_SET))
+
+        if list.len() == 0
+            path_len @ path_len - 1
+            continue
+        index_of[name] @ path_len
+
+        if top < names.len()
+            names[top] @ name
+            spreads[top] @ list
+            next[top] @ 0
+        else
+            names @ names.push(name)
+            spreads @ spreads.push(list)
+            next @ next.push(0)
+        top @ top + 1
+
+# Reports each variable an operation defines twice.
+function unique_variable_names(t: tree.Tree lent, @run: vcontext.Run, n: i64)
+    order: [str] @= []
+    places: {str: [i64]} @= {}
+
+    for v in tree.kids_of(t, n: n, kind: tree.VARIABLE_DEFINITION)
+        name = t.nodes[v].name
+
+        match places[name]
+            .ok got => places[name] @ got.push(t.nodes[v].name_at)
+            .err _ =>
+                places[name] @ [t.nodes[v].name_at]
+                order @ order.push(name)
+
+    for name in order
+        at = places[name].must()
+
+        if at.len() > 1
+            vcontext.report(
+                @run,
+                e: tree.err_bytes(t, message: f"There can be only one variable named \"${name}\".", offsets: at)
+            )
+
+# The names of the variables the operation at `n` defines.
+function defined_variables(t: tree.Tree lent, n: i64) -> {str: i64}
+    defined: {str: i64} @= {}
+
+    for v in tree.kids_of(t, n: n, kind: tree.VARIABLE_DEFINITION)
+        if defined[t.nodes[v].name].is_err()
+            defined[t.nodes[v].name] @ v
+
+    return defined
+
+# Reports each variable the operation at `n` uses, itself or through its
+# fragments, that it does not define.
+function no_undefined_variables(t: tree.Tree lent, @run: vcontext.Run, n: i64)
+    defined = defined_variables(t, n: n)
+    operation = t.nodes[n].name
+
+    for v in vcontext.recursive_usages(t, run: run, n: n)
+        name = t.nodes[v].name
+
+        if defined[name].is_err()
+            message = if operation != ""
+                f"Variable \"${name}\" is not defined by operation \"{operation}\"."
+            else
+                f"Variable \"${name}\" is not defined."
+            vcontext.report(@run, e: tree.err_at(t, message: message, nodes: [v, n]))
+
+# Reports each variable the operation at `n` defines and never uses.
+function no_unused_variables(t: tree.Tree lent, @run: vcontext.Run, n: i64)
+    used: {str: bool} @= {}
+
+    for v in vcontext.recursive_usages(t, run: run, n: n)
+        used[t.nodes[v].name] @ true
+
+    operation = t.nodes[n].name
+
+    for v in tree.kids_of(t, n: n, kind: tree.VARIABLE_DEFINITION)
+        name = t.nodes[v].name
+
+        if !used[name].default(false)
+            message = if operation != ""
+                f"Variable \"${name}\" is never used in operation \"{operation}\"."
+            else
+                f"Variable \"${name}\" is never used."
+            vcontext.report(@run, e: tree.err_at(t, message: message, nodes: [v]))
+
+test "do_types_overlap and suggested_types: graphql-js's answers on the pets"
+    m = fixture.pets()
+    assert do_types_overlap(m, a: "Pet", b: "CatOrDog")
+    assert do_types_overlap(m, a: "Dog", b: "Pet")
+    assert !do_types_overlap(m, a: "Dog", b: "Cat")
+    assert suggested_types(m, parent: "CatOrDog", field: "name") == ["Pet", "Cat", "Dog"]
+    assert suggested_types(m, parent: "Dog", field: "name") == []
+    assert defines(m, type_name: "Dog", field: "barkVolume")

@@ -1,0 +1,389 @@
+# The schema as values: its types by name in graphql-js's order of its type
+# map, each type's fields, arguments, values and members, its directives and
+# its roots; and the questions every other module asks of it, a type
+# reference held as the text it is written as (`[ID!]!`) and read by its
+# brackets. It names no type of the face, which a private module cannot
+# reach.
+
+use json
+
+## Kinds of type
+
+# A scalar.
+constant SCALAR: i64
+    1
+
+# An object type.
+constant OBJECT: i64
+    2
+
+# An interface.
+constant INTERFACE: i64
+    3
+
+# A union.
+constant UNION: i64
+    4
+
+# An enum.
+constant ENUM: i64
+    5
+
+# An input object.
+constant INPUT_OBJECT: i64
+    6
+
+## The values
+
+# An argument or an input field.
+record InputValue
+    # Its name.
+    name: str
+    # Its description.
+    description: str
+    # Whether it has one.
+    described: bool
+    # Its type.
+    type: str
+    # Whether it has a default.
+    has_default: bool
+    # The default, coerced to its type.
+    default: json.Value
+    # Whether `@deprecated` marks it.
+    deprecated: bool
+    # The reason `@deprecated` gives.
+    reason: str
+    # The byte of its definition in the text being built, -1 for none.
+    at: i64
+    # The byte of its type's name, -1 for none.
+    type_at: i64
+
+# A field of an object type or an interface.
+record Field
+    # Its name.
+    name: str
+    # Its description.
+    description: str
+    # Whether it has one.
+    described: bool
+    # Its arguments, in order.
+    arguments: [InputValue]
+    # Its type.
+    type: str
+    # Whether `@deprecated` marks it.
+    deprecated: bool
+    # The reason `@deprecated` gives.
+    reason: str
+    # The byte of its definition, -1 for none.
+    at: i64
+    # The byte of its type's name, -1 for none.
+    type_at: i64
+
+# A value of an enum.
+record EnumValue
+    # Its name.
+    name: str
+    # Its description.
+    description: str
+    # Whether it has one.
+    described: bool
+    # Whether `@deprecated` marks it.
+    deprecated: bool
+    # The reason `@deprecated` gives.
+    reason: str
+    # The byte of its definition, -1 for none.
+    at: i64
+
+# A named type.
+record Type
+    # Its name.
+    name: str
+    # Its kind, one of the constants above.
+    kind: i64
+    # Its description.
+    description: str
+    # Whether it has one.
+    described: bool
+    # An object type's or an interface's fields, in order.
+    fields: [Field]
+    # The interfaces an object type or an interface implements, in order.
+    interfaces: [str]
+    # A union's members, in order.
+    members: [str]
+    # An enum's values, in order.
+    values: [EnumValue]
+    # An input object's fields, in order.
+    inputs: [InputValue]
+    # A scalar's `@specifiedBy` URL.
+    specified_by: str
+    # Whether it has one.
+    has_specified_by: bool
+    # Whether `@oneOf` marks an input object.
+    one_of: bool
+    # Whether the specification defines it: a specified scalar or an
+    # introspection type.
+    builtin: bool
+    # The byte of its definition, -1 for none.
+    at: i64
+    # The bytes of its extensions' definitions.
+    extended_at: [i64]
+
+# A directive the schema defines.
+record Directive
+    # Its name, without `@`.
+    name: str
+    # Its description.
+    description: str
+    # Whether it has one.
+    described: bool
+    # Its arguments, in order.
+    arguments: [InputValue]
+    # Whether it may stand more than once on one place.
+    repeatable: bool
+    # The places it may stand, as the specification names them: `FIELD`.
+    locations: [str]
+    # Whether the specification defines it.
+    builtin: bool
+    # The byte of its definition, -1 for none.
+    at: i64
+
+# A schema.
+record Model
+    # Its types by name, in graphql-js's order of its type map.
+    types: {str: Type}
+    # The query root's name, "" for none.
+    query: str
+    # The mutation root's name, "" for none.
+    mutation: str
+    # The subscription root's name, "" for none.
+    subscription: str
+    # Its directives: the program's in order, then the specified ones it did
+    # not define.
+    directives: [Directive]
+    # Its description.
+    description: str
+    # Whether it has one.
+    described: bool
+    # Each interface's implementations, objects and interfaces, by name.
+    implementations: {str: [str]}
+    # The byte of its `schema` definition, -1 for none.
+    at: i64
+
+## Type references
+
+# Whether `t` is non-null: ends with `!`.
+function is_non_null(t: str) -> bool
+    return t.len() > 0 && t[t.len() - 1] == '!'
+
+# `t` without its last `!`.
+function nullable_of(t: str) -> str
+    if is_non_null(t)
+        return t.slice(from: 0, to: t.len() - 1)
+    return t
+
+# Whether `t`, past its `!`, is a list.
+function is_list(t: str) -> bool
+    return t.len() > 0 && t[0] == '['
+
+# The type of the elements of the list `t`, its `!` aside.
+function item_of(t: str) -> str
+    inner = nullable_of(t)
+    return inner.slice(from: 1, to: inner.len() - 1)
+
+# The named type at the heart of `t`: `ID` of `[ID!]!`.
+function named_of(t: str) -> str
+    from @= 0
+    to @= t.len()
+
+    while from < to && t[from] == '['
+        from @ from + 1
+
+    while to > from && (t[to - 1] == ']' || t[to - 1] == '!')
+        to @ to - 1
+
+    return t.slice(from: from, to: to)
+
+# How many lists deep the heart of `t` stands.
+function list_depth(t: str) -> i64
+    n @= 0
+
+    while n < t.len() && t[n] == '['
+        n @ n + 1
+
+    return n
+
+## Questions of a schema
+
+# Whether `m` holds a type named `name`.
+function has_type(m: Model lent, name: str) -> bool
+    return !m.types[name].is_err()
+
+# The kind of the type `name`, 0 where `m` holds none.
+function kind_of(m: Model lent, name: str) -> i64
+    match m.types[name]
+        .ok t  => return t.kind
+        .err _ => return 0
+
+# Whether a value of the named type `name` is an input: a scalar, an enum or
+# an input object.
+function is_input_name(m: Model lent, name: str) -> bool
+    k = kind_of(m, name: name)
+    return k == SCALAR || k == ENUM || k == INPUT_OBJECT
+
+# Whether a value of the named type `name` is an output: anything but an
+# input object.
+function is_output_name(m: Model lent, name: str) -> bool
+    k = kind_of(m, name: name)
+    return k != 0 && k != INPUT_OBJECT
+
+# Whether the named type `name` is a leaf: a scalar or an enum.
+function is_leaf_name(m: Model lent, name: str) -> bool
+    k = kind_of(m, name: name)
+    return k == SCALAR || k == ENUM
+
+# Whether the named type `name` has fields to select: an object type, an
+# interface or a union.
+function is_composite_name(m: Model lent, name: str) -> bool
+    k = kind_of(m, name: name)
+    return k == OBJECT || k == INTERFACE || k == UNION
+
+# Whether the named type `name` is an interface or a union.
+function is_abstract_name(m: Model lent, name: str) -> bool
+    k = kind_of(m, name: name)
+    return k == INTERFACE || k == UNION
+
+# The object types a value of the type `name` can be: itself for an object
+# type, the members of a union, the objects implementing an interface.
+function possible_of(m: Model lent, name: str) -> [str]
+    t = match m.types[name]
+        .ok got => got
+        .err _  => return []
+
+    if t.kind == OBJECT
+        return [name]
+
+    if t.kind == UNION
+        return t.members
+
+    if t.kind != INTERFACE
+        return []
+    found: [str] @= []
+
+    for n in m.implementations[name].default([])
+        if kind_of(m, name: n) == OBJECT
+            found @ found.push(n)
+
+    return found
+
+# Whether `sub` is `abstract` or one of its possible types, or an interface
+# implementing it.
+function is_sub_type(m: Model lent, abstract: str, sub: str) -> bool
+    if abstract == sub
+        return true
+    k = kind_of(m, name: abstract)
+
+    if k == UNION
+        for n in m.types[abstract].must().members
+            if n == sub
+                return true
+
+        return false
+
+    if k == INTERFACE
+        for n in m.implementations[abstract].default([])
+            if n == sub
+                return true
+    return false
+
+# The field `name` of the type `type_name`: one of its fields, `__typename`
+# of any type with fields, or `__schema` and `__type` of the query root.
+# Fails `not_found` where there is none.
+function field_of(m: Model lent, type_name: str, name: str) -> Field?
+    t = match m.types[type_name]
+        .ok got => got
+        .err _  => return fail(code: NOT_FOUND, msg: f"no type \"{type_name}\"")
+
+    if name == "__typename" && (t.kind == OBJECT || t.kind == INTERFACE || t.kind == UNION)
+        return ok(
+            meta(name: name, type: "String!", text: "The name of the current Object type at runtime.", arguments: [])
+        )
+
+    if type_name == m.query && name == "__schema"
+        return ok(
+            meta(name: name, type: "__Schema!", text: "Access the current type schema of this server.", arguments: [])
+        )
+
+    if type_name == m.query && name == "__type"
+        argument = InputValue(
+            name: "name",
+            description: "",
+            described: false,
+            type: "String!",
+            has_default: false,
+            default: .null_value,
+            deprecated: false,
+            reason: "",
+            at: -1,
+            type_at: -1
+        )
+        return ok(
+            meta(name: name, type: "__Type", text: "Request the type information of a single type.", arguments: [argument])
+        )
+
+    for f in t.fields
+        if f.name == name
+            return ok(f)
+
+    return fail(code: NOT_FOUND, msg: f"no field \"{name}\" on \"{type_name}\"")
+
+# A meta-field: one the specification defines on every schema.
+function meta(name: str, type: str, text: str, arguments: [InputValue]) -> Field
+    return Field(
+        name: name,
+        description: text,
+        described: true,
+        arguments: arguments,
+        type: type,
+        deprecated: false,
+        reason: "",
+        at: -1,
+        type_at: -1
+    )
+
+# The code of a name that names nothing.
+constant NOT_FOUND: str
+    "not_found"
+
+test "is_non_null, nullable_of, is_list, item_of, named_of and list_depth: a named type, lists, non-nulls and nothing"
+    assert is_non_null("[ID!]!")
+    assert !is_non_null("ID")
+    assert !is_non_null("")
+    assert nullable_of("[ID!]!") == "[ID!]"
+    assert nullable_of("ID") == "ID"
+    assert is_list("[ID!]")
+    assert !is_list("ID!")
+    assert item_of("[[ID!]]!") == "[ID!]"
+    assert named_of("[[ID!]]!") == "ID"
+    assert named_of("ID") == "ID"
+    assert list_depth("[[ID!]]!") == 2
+    assert list_depth("ID") == 0
+
+test "field_of: a field, the meta-fields of the query root and of any type, and none"
+    m = Model(
+        types: {"Q": Type(name: "Q", kind: OBJECT, description: "", described: false, fields: [Field(name: "a", description: "", described: false, arguments: [], type: "Int", deprecated: false, reason: "", at: -1, type_at: -1)], interfaces: [], members: [], values: [], inputs: [], specified_by: "", has_specified_by: false, one_of: false, builtin: false, at: -1, extended_at: [])},
+        query: "Q",
+        mutation: "",
+        subscription: "",
+        directives: [],
+        description: "",
+        described: false,
+        implementations: {},
+        at: -1
+    )
+    assert field_of(m, type_name: "Q", name: "a").must().type == "Int"
+    assert field_of(m, type_name: "Q", name: "__typename").must().type == "String!"
+    assert field_of(m, type_name: "Q", name: "__type").must().arguments[0].type == "String!"
+    assert field_of(m, type_name: "Q", name: "b").is_err()
+    assert field_of(m, type_name: "Nope", name: "a").is_err()
+    assert possible_of(m, name: "Q") == ["Q"]
+    assert !is_abstract_name(m, name: "Q")

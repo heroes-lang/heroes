@@ -1,0 +1,235 @@
+# What the rules of validation share while they walk a document: the errors
+# so far, cut at the most allowed with graphql-js's last message, the
+# fragments by name, and the questions graphql-js's `ValidationContext`
+# answers: the fragment spreads of a selection set, the fragments an
+# operation reaches, and the variables it uses with the types their places
+# ask. Every walk here is a loop over node indices or an explicit stack.
+
+use graphql/internal/fixture
+use graphql/internal/tree
+
+# The state of one validation.
+record Run
+    # The errors so far.
+    errors: [tree.Err]
+    # The most errors before validation stops.
+    most: i64
+    # Whether it stopped.
+    stopped: bool
+    # Whether errors may suggest names.
+    suggest: bool
+    # Each fragment's first definition, by name.
+    fragments: {str: i64}
+    # The operations' names seen, with the byte of the first.
+    operation_names: {str: i64}
+    # The fragments' names seen, with the byte of the first.
+    fragment_names: {str: i64}
+    # How many operations the document holds.
+    operations: i64
+    # The node whose subtree the values rule passes over, -1 for none.
+    values_skip: i64
+    # The node whose subtree the introspection depth rule passes over, -1
+    # for none.
+    introspection_skip: i64
+    # The names of the fields of each object value open, and how many are
+    # open.
+    object_fields: [{str: i64}]
+    # How many of `object_fields` are open.
+    object_count: i64
+    # The fragments the cycles rule has searched.
+    cycles_seen: {str: bool}
+    # How deep each fragment nests introspection's lists.
+    introspection_memo: {str: i64}
+
+# The state of a validation of `t` stopping after `most` errors.
+function run_of(t: tree.Tree lent, most: i64, suggest: bool) -> Run
+    fragments: {str: i64} @= {}
+    operations @= 0
+
+    for n in tree.kids(t, n: 0)
+        k = t.nodes[n].kind
+
+        if k == tree.FRAGMENT_DEFINITION && fragments[t.nodes[n].name].is_err()
+            fragments[t.nodes[n].name] @ n
+
+        if k == tree.OPERATION
+            operations @ operations + 1
+
+    return Run(
+        errors: [],
+        most: most,
+        stopped: false,
+        suggest: suggest,
+        fragments: fragments,
+        operation_names: {},
+        fragment_names: {},
+        operations: operations,
+        values_skip: -1,
+        introspection_skip: -1,
+        object_fields: [],
+        object_count: 0,
+        cycles_seen: {},
+        introspection_memo: {}
+    )
+
+# Reports `e`, unless validation stopped; past `most` errors it reports
+# graphql-js's last one and stops.
+function report(@run: Run, e: tree.Err)
+    if run.stopped
+        return
+
+    if run.errors.len() >= run.most
+        add_error(@run.errors, e: tree.err_of("Too many validation errors, error limit reached. Validation aborted."))
+        run.stopped @ true
+        return
+    add_error(@run.errors, e: e)
+
+# Adds `e` to `errors`.
+function add_error(@errors: [tree.Err], e: tree.Err)
+    errors @ errors.push(e)
+
+# Whether node `n` lies within the subtree of node `root`.
+function is_within(t: tree.Tree lent, n: i64, root: i64) -> bool
+    at @= n
+
+    while at >= 0
+        if at == root
+            return true
+        at @ t.nodes[at].parent
+
+    return false
+
+# The fragment spreads of the selection set `set` and of every selection set
+# within it, in the order graphql-js's `getFragmentSpreads` finds them: a set's
+# own spreads, then the sets within, the last first.
+function fragment_spreads(t: tree.Tree lent, set: i64) -> [i64]
+    spreads: [i64] @= []
+    sets: [i64] @= [set]
+    top @= 1
+
+    while top > 0
+        top @ top - 1
+        current = sets[top]
+
+        for s in tree.kids(t, n: current)
+            if t.nodes[s].kind == tree.FRAGMENT_SPREAD
+                spreads @ spreads.push(s)
+            else
+                inner = tree.kid_of(t, n: s, kind: tree.SELECTION_SET)
+
+                if inner >= 0
+                    if top < sets.len()
+                        sets[top] @ inner
+                    else
+                        sets @ sets.push(inner)
+                    top @ top + 1
+
+    return spreads
+
+# The fragments the definition at `n` reaches through its spreads and theirs,
+# each once, in graphql-js's order.
+function referenced_fragments(t: tree.Tree lent, run: Run lent, n: i64) -> [i64]
+    found: [i64] @= []
+    collected: {str: bool} @= {}
+    sets: [i64] @= [tree.kid_of(t, n: n, kind: tree.SELECTION_SET)]
+    top @= 1
+
+    while top > 0
+        top @ top - 1
+        current = sets[top]
+
+        if current < 0
+            continue
+
+        for s in fragment_spreads(t, set: current)
+            name = t.nodes[s].name
+
+            if !collected[name].default(false)
+                collected[name] @ true
+
+                match run.fragments[name]
+                    .ok f =>
+                        found @ found.push(f)
+
+                        if top < sets.len()
+                            sets[top] @ tree.kid_of(t, n: f, kind: tree.SELECTION_SET)
+                        else
+                            sets @ sets.push(tree.kid_of(t, n: f, kind: tree.SELECTION_SET))
+                        top @ top + 1
+                    .err _ => _ = 0
+
+    return found
+
+# The variables the definition at `n` uses itself, in the order they stand.
+function variable_usages(t: tree.Tree lent, n: i64) -> [i64]
+    found: [i64] @= []
+    end = subtree_end(t, n: n)
+    i @= n
+
+    while i < end
+        if t.nodes[i].kind == tree.VARIABLE_DEFINITION
+            i @ subtree_end(t, n: i)
+        else
+            if t.nodes[i].kind == tree.VARIABLE
+                found @ found.push(i)
+            i @ i + 1
+
+    return found
+
+# The index after the last node of the subtree at `n`.
+function subtree_end(t: tree.Tree lent, n: i64) -> i64
+    d @= n
+
+    while t.nodes[d].last >= 0
+        d @ t.nodes[d].last
+
+    return d + 1
+
+# The variables the operation at `n` uses, itself and through every fragment
+# it reaches.
+function recursive_usages(t: tree.Tree lent, run: Run lent, n: i64) -> [i64]
+    found @= variable_usages(t, n: n)
+
+    for f in referenced_fragments(t, run: run, n: n)
+        for v in variable_usages(t, n: f)
+            found @ found.push(v)
+
+    return found
+
+test "fragment_spreads: a set's own spreads, then the sets within, the last first"
+    t = fixture.tree_of("{ a { ...X } ...Y b { ...Z } }")
+    names: [str] @= []
+
+    for s in fragment_spreads(t, set: 2)
+        names @ names.push(t.nodes[s].name)
+
+    assert names == ["Y", "Z", "X"]
+
+test "referenced_fragments and recursive_usages: the fragments an operation reaches and their variables"
+    t = fixture.tree_of(
+        "query ($a: Int, $b: Int) { f(x: $a) ...A } fragment A on Q { ...B g(y: $b) } fragment B on Q { h(z: $a) }"
+    )
+    run = run_of(t, most: 10, suggest: true)
+    found: [str] @= []
+
+    for f in referenced_fragments(t, run: run, n: 1)
+        found @ found.push(t.nodes[f].name)
+
+    assert found == ["A", "B"]
+    used: [str] @= []
+
+    for v in recursive_usages(t, run: run, n: 1)
+        used @ used.push(t.nodes[v].name)
+
+    assert used == ["a", "b", "a"]
+
+test "report: the errors cut at the most with graphql-js's last message"
+    t = fixture.tree_of("{ a }")
+    run @= run_of(t, most: 1, suggest: true)
+    report(@run, e: tree.err_of("one"))
+    report(@run, e: tree.err_of("two"))
+    report(@run, e: tree.err_of("three"))
+    assert run.stopped
+    assert fixture.messages_of(run.errors) == ["one", "Too many validation errors, error limit reached. Validation aborted."]
+    assert is_within(t, n: 3, root: 1)
+    assert !is_within(t, n: 1, root: 3)

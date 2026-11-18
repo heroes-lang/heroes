@@ -1,0 +1,328 @@
+# What a document may not ask however its fields are written: graphql-js's
+# limit on introspection nested through `fields`, `interfaces`,
+# `possibleTypes` and `inputFields`, and the limits a program states on the
+# fields, aliases and levels an operation holds once every fragment spread is
+# followed, counted for each fragment once and saturated past the limit, so
+# that fragments spread into each other a thousand times cost nothing to
+# count. Both walk on explicit stacks.
+
+use graphql/internal/fixture
+use graphql/internal/tree
+use graphql/internal/vcontext
+
+# Whether the introspection field at `field` nests its lists three deep, as
+# graphql-js's `MaxIntrospectionDepthRule` counts them: `memo` keeps how deep
+# each fragment nests, counted once, a spread back into a fragment being
+# counted adding nothing.
+function is_introspection_too_deep(t: tree.Tree lent, fragments: {str: i64} lent, @memo: {str: i64}, field: i64) -> bool
+    shape = shape_of(t, root: field)
+    best @= shape.own
+    i @= 0
+
+    while i < shape.spreads.len()
+        d = fragment_depth(t, fragments: fragments, memo: @memo, name: shape.spreads[i])
+
+        if d >= 0 && shape.offsets[i] + d > best
+            best @ shape.offsets[i] + d
+        i @ i + 1
+
+    return best >= 3
+
+# How a selection nests its lists: the deepest count of `fields`,
+# `interfaces`, `possibleTypes` and `inputFields` on a path below its root,
+# and each fragment spread with the count above it.
+record Shape
+    # The deepest count.
+    own: i64
+    # The fragments spread.
+    spreads: [str]
+    # The count above each.
+    offsets: [i64]
+
+# Whether `name` is a field of introspection that answers a list of types or
+# fields.
+function is_list_field(name: str) -> bool
+    return name == "fields" || name == "interfaces" || name == "possibleTypes" || name == "inputFields"
+
+# The shape of the selections below node `root`.
+function shape_of(t: tree.Tree lent, root: i64) -> Shape
+    end = vcontext.subtree_end(t, n: root)
+    own @= 0
+    spreads: [str] @= []
+    offsets: [i64] @= []
+    i @= root + 1
+
+    while i < end
+        k = t.nodes[i].kind
+
+        if k == tree.FIELD || k == tree.FRAGMENT_SPREAD
+            count @= 0
+            up @= i
+
+            while up > root
+                if t.nodes[up].kind == tree.FIELD && is_list_field(t.nodes[up].name)
+                    count @ count + 1
+                up @ t.nodes[up].parent
+
+            if k == tree.FIELD
+                if count > own
+                    own @ count
+            else
+                spreads @ spreads.push(t.nodes[i].name)
+                offsets @ offsets.push(count)
+        i @ i + 1
+
+    return Shape(own: own, spreads: spreads, offsets: offsets)
+
+# How deep the fragment `name` nests its lists, -1 where the document
+# defines none, counted once into `memo` with an explicit stack.
+function fragment_depth(t: tree.Tree lent, fragments: {str: i64} lent, @memo: {str: i64}, name: str) -> i64
+    match memo[name]
+        .ok got => return got
+        .err _  => _ = 0
+
+    if fragments[name].is_err()
+        return -1
+    names: [str] @= [name]
+    shapes: [Shape] @= [shape_of(t, root: fragments[name].must())]
+    next: [i64] @= [0]
+    bests: [i64] @= [shapes[0].own]
+    offsets: [i64] @= [0]
+    on_path: {str: bool} @= {}
+    on_path[name] @ true
+    top @= 1
+
+    while top > 0
+        frame = top - 1
+        shape = shapes[frame]
+        i = next[frame]
+
+        if i >= shape.spreads.len()
+            result = bests[frame]
+            memo[names[frame]] @ result
+            on_path[names[frame]] @ false
+            top @ top - 1
+
+            if top > 0 && offsets[frame] + result > bests[top - 1]
+                bests[top - 1] @ offsets[frame] + result
+            continue
+        next[frame] @ i + 1
+        g = shape.spreads[i]
+        o = shape.offsets[i]
+
+        match memo[g]
+            .ok got =>
+                if o + got > bests[frame]
+                    bests[frame] @ o + got
+                continue
+            .err _ => _ = 0
+
+        if on_path[g].default(false) || fragments[g].is_err()
+            continue
+        on_path[g] @ true
+        child = shape_of(t, root: fragments[g].must())
+
+        if top < names.len()
+            names[top] @ g
+            shapes[top] @ child
+            next[top] @ 0
+            bests[top] @ child.own
+            offsets[top] @ o
+        else
+            names @ names.push(g)
+            shapes @ shapes.push(child)
+            next @ next.push(0)
+            bests @ bests.push(child.own)
+            offsets @ offsets.push(o)
+        top @ top + 1
+
+    return memo[name].default(0)
+
+# What one definition holds by itself, and the fragments it spreads.
+record Own
+    # Its fields.
+    fields: i64
+    # Its fields written under an alias.
+    aliases: i64
+    # The deepest level a field of it stands at, a top field at 1.
+    depth: i64
+    # The fragments it spreads.
+    spreads: [str]
+    # The level of each spread.
+    levels: [i64]
+
+# What one definition holds with its fragments followed.
+record Total
+    # Fields.
+    fields: i64
+    # Aliases.
+    aliases: i64
+    # Levels.
+    depth: i64
+
+# `a + b`, at most `most`.
+function capped(a: i64, b: i64, most: i64) -> i64
+    if a >= most || b >= most || a + b >= most
+        return most
+    return a + b
+
+# What the definition at `n` holds by itself.
+function own_of(t: tree.Tree lent, n: i64) -> Own
+    end = vcontext.subtree_end(t, n: n)
+    fields @= 0
+    aliases @= 0
+    depth @= 0
+    spreads: [str] @= []
+    levels: [i64] @= []
+    i @= n
+
+    while i < end
+        k = t.nodes[i].kind
+
+        if k == tree.FIELD || k == tree.FRAGMENT_SPREAD
+            level @= 0
+            up @= t.nodes[i].parent
+
+            while up >= 0 && up != n
+                if t.nodes[up].kind == tree.SELECTION_SET
+                    level @ level + 1
+                up @ t.nodes[up].parent
+
+            if k == tree.FIELD
+                fields @ fields + 1
+
+                if t.nodes[i].alias != ""
+                    aliases @ aliases + 1
+
+                if level > depth
+                    depth @ level
+            else
+                spreads @ spreads.push(t.nodes[i].name)
+                levels @ levels.push(level)
+        i @ i + 1
+
+    return Own(fields: fields, aliases: aliases, depth: depth, spreads: spreads, levels: levels)
+
+# The totals of `own` with each fragment's total in `totals` added, at most
+# `most` each; a fragment with no total yet adds nothing.
+function total_of(own: Own, totals: {str: Total} lent, most: i64) -> Total
+    fields @= own.fields
+    aliases @= own.aliases
+    depth @= own.depth
+    i @= 0
+
+    while i < own.spreads.len()
+        match totals[own.spreads[i]]
+            .ok got =>
+                fields @ capped(a: fields, b: got.fields, most: most)
+                aliases @ capped(a: aliases, b: got.aliases, most: most)
+                d = capped(a: own.levels[i] - 1, b: got.depth, most: most)
+
+                if d > depth
+                    depth @ d
+            .err _ => _ = 0
+
+        i @ i + 1
+
+    return Total(fields: fields, aliases: aliases, depth: depth)
+
+# The errors of the operations of `t` past the limits of fields, aliases and
+# levels once their fragments are followed.
+function check_limits(t: tree.Tree lent, fragments: {str: i64} lent, most_fields: i64, most_aliases: i64, most_depth: i64) -> [tree.Err]
+    most = most_fields + most_aliases + most_depth + 3
+    owns: {str: Own} @= {}
+
+    for name in keys(fragments)
+        owns[name] @ own_of(t, n: fragments[name].must())
+
+    totals: {str: Total} @= {}
+    on_path: {str: bool} @= {}
+
+    for start in keys(fragments)
+        names: [str] @= [start]
+        phases: [i64] @= [0]
+        top @= 1
+
+        while top > 0
+            top @ top - 1
+            name = names[top]
+            phase = phases[top]
+
+            if phase == 1
+                totals[name] @ total_of(owns[name].must(), totals: totals, most: most)
+                on_path[name] @ false
+                continue
+
+            if !totals[name].is_err() || on_path[name].default(false) || owns[name].is_err()
+                continue
+            on_path[name] @ true
+            place(@names, @phases, top: top, name: name, phase: 1)
+            top @ top + 1
+
+            for spread in owns[name].must().spreads
+                place(@names, @phases, top: top, name: spread, phase: 0)
+                top @ top + 1
+
+    errors: [tree.Err] @= []
+
+    for n in tree.kids_of(t, n: 0, kind: tree.OPERATION)
+        total = total_of(own_of(t, n: n), totals: totals, most: most)
+
+        who = if t.nodes[n].name != ""
+            f"Operation \"{t.nodes[n].name}\""
+        else
+            "The operation"
+
+        if total.fields > most_fields
+            errors @ errors.push(
+                tree.err_at(t, message: f"{who} selects more than {most_fields} fields once its fragments are spread.", nodes: [n])
+            )
+
+        if total.aliases > most_aliases
+            errors @ errors.push(
+                tree.err_at(t, message: f"{who} holds more than {most_aliases} aliases once its fragments are spread.", nodes: [n])
+            )
+
+        if total.depth > most_depth
+            errors @ errors.push(
+                tree.err_at(t, message: f"{who} nests more than {most_depth} levels once its fragments are spread.", nodes: [n])
+            )
+
+    return errors
+
+# Puts a name and its phase at `top` of the explicit stack.
+function place(@names: [str], @phases: [i64], top: i64, name: str, phase: i64)
+    if top < names.len()
+        names[top] @ name
+        phases[top] @ phase
+    else
+        names @ names.push(name)
+        phases @ phases.push(phase)
+
+test "is_introspection_too_deep: three lists deep through a fragment, and two"
+    t = fixture.tree_of(
+        "{ __schema { types { ...T } } } fragment T on __Type { fields { type { fields { type { fields { name } } } } } }"
+    )
+    memo: {str: i64} @= {}
+    assert is_introspection_too_deep(
+        t,
+        fragments: {"T": tree.kids_of(t, n: 0, kind: tree.FRAGMENT_DEFINITION)[0]},
+        memo: @memo,
+        field: 3
+    )
+    shallow = fixture.tree_of("{ __type(name: \"Q\") { fields { type { name } } } }")
+    none: {str: i64} @= {}
+    assert !is_introspection_too_deep(shallow, fragments: {}, memo: @none, field: 3)
+
+test "check_limits: fields doubled by each spread, saturated past the limit"
+    t = fixture.tree_of(
+        "query Q { ...A ...A } fragment A on Q { ...B ...B } fragment B on Q { ...C ...C } fragment C on Q { a: x }"
+    )
+    fragments = {
+        "A": tree.kids_of(t, n: 0, kind: tree.FRAGMENT_DEFINITION)[0]
+        "B": tree.kids_of(t, n: 0, kind: tree.FRAGMENT_DEFINITION)[1]
+        "C": tree.kids_of(t, n: 0, kind: tree.FRAGMENT_DEFINITION)[2]
+    }
+    assert check_limits(t, fragments: fragments, most_fields: 8, most_aliases: 8, most_depth: 64).len() == 0
+    assert fixture.messages_of(check_limits(t, fragments: fragments, most_fields: 7, most_aliases: 100, most_depth: 64)) == ["Operation \"Q\" selects more than 7 fields once its fragments are spread. @1:1"]
+    assert capped(a: 9223372036854775000, b: 9223372036854775000, most: 100) == 100

@@ -1,0 +1,404 @@
+# A schema built from what a server answered to the introspection query, as
+# graphql-js's `buildClientSchema` builds it: each type of the answer in its
+# order, a specified scalar or introspection type taken as the specification
+# defines it, type references read down their `ofType` chain in a loop,
+# defaults read from their literals, then the type map ordered and the type
+# system's rules checked as for a schema read from text.
+
+use graphql/internal/build
+use graphql/internal/model
+use graphql/internal/parser
+use graphql/internal/schema_valid
+use graphql/internal/tree
+use graphql/internal/values
+use graphql/internal/vtree
+use json
+
+# The member `key` of `v`, `.null_value` for none.
+function member(v: json.Value, key: str) -> json.Value
+    return json.member(v, key: key).default(.null_value)
+
+# The text member `key` of `v`, "" for none.
+function text_of(v: json.Value, key: str) -> str
+    return json.text_of(member(v, key: key)).default("")
+
+# Whether `v` holds the text member `key`.
+function has_text(v: json.Value, key: str) -> bool
+    return !json.text_of(member(v, key: key)).is_err()
+
+# The schema `data` describes, `data` holding `__schema`.
+function build_client(data: json.Value, most_depth: i64) -> model.Model?
+    schema = member(data, key: "__schema")
+
+    if json.members_of(schema).is_err()
+        return fail(
+            code: INVALID,
+            msg: f"Invalid or incomplete introspection result. Ensure that you are passing \"data\" property of introspection response and no \"errors\" was returned alongside: {vtree.inspect(data)}."
+        )
+    lib = build.library()
+    types: {str: model.Type} @= lib.types
+    config: [str] @= []
+    defaults: [Pending] @= []
+
+    for t in json.items_of(member(schema, key: "types")).default([])
+        name = text_of(t, key: "name")
+
+        if name == ""
+            return fail(code: INVALID, msg: f"Invalid or incomplete schema, a type has no name: {vtree.inspect(t)}.")
+        config @ add_name(config, name: name)
+
+        if build.is_standard(name)
+            continue
+        built = type_of(t, most_depth: most_depth, @defaults)?
+        types[name] @ built
+
+    directives: [model.Directive] @= []
+
+    for d in json.items_of(member(schema, key: "directives")).default([])
+        directives @ directives.push(directive_of(d, most_depth: most_depth, @defaults)?)
+
+    m @= model.Model(
+        types: types,
+        query: root_name(schema, key: "queryType"),
+        mutation: root_name(schema, key: "mutationType"),
+        subscription: root_name(schema, key: "subscriptionType"),
+        directives: directives,
+        description: text_of(schema, key: "description"),
+        described: has_text(schema, key: "description"),
+        implementations: {},
+        at: -1
+    )
+    check_references(m)?
+
+    for p in defaults
+        set_default(@m, p: p, most_depth: most_depth)
+
+    m.types @ build.ordered(m, config: config)
+    m.implementations @ build.implementations_of(m)
+    t = tree.Tree(source: "", nodes: [], lines: [0])
+    errors = schema_valid.validate(t, m: m)
+
+    if errors.len() > 0
+        lines: [str] @= []
+
+        for e in errors
+            lines @ lines.push(e.message)
+
+        return fail(code: INVALID, msg: lines.join("\n"))
+    return ok(m)
+
+# The code of an answer that describes no schema.
+constant INVALID: str
+    "invalid"
+
+# `names` with `name` added at its end where it is not there.
+function add_name(names: [str], name: str) -> [str]
+    for n in names
+        if n == name
+            return names
+
+    out @= names
+    out @ out.push(name)
+    return out
+
+# The name of the root `key` of the answer, "" for none.
+function root_name(schema: json.Value, key: str) -> str
+    return text_of(member(schema, key: key), key: "name")
+
+# A default written as a literal, waiting until every type is known.
+record Pending
+    # Where it stands: a type's name, or `@` and a directive's.
+    owner: str
+    # The field whose argument it is, "" for an input field or a directive's
+    # argument.
+    field: str
+    # The argument's or input field's name.
+    name: str
+    # Its type.
+    type: str
+    # The literal.
+    literal: str
+
+# The type a reference of the answer writes: `[ID!]!` for a non-null list of
+# non-null IDs, read down its `ofType` chain at most `most_depth` deep.
+function reference_of(v: json.Value, most_depth: i64) -> str?
+    wrappers: [str] @= []
+    at @= v
+    depth @= 0
+
+    while true
+        kind = text_of(at, key: "kind")
+
+        if kind == "LIST" || kind == "NON_NULL"
+            depth @ depth + 1
+
+            if depth > most_depth
+                return fail(code: INVALID, msg: "Decorated type deeper than introspection query.")
+            wrappers @ wrappers.push(kind)
+            at @ member(at, key: "ofType")
+
+            if at == .null_value
+                return fail(code: INVALID, msg: "Decorated type deeper than introspection query.")
+        else
+            name = text_of(at, key: "name")
+
+            if name == ""
+                return fail(code: INVALID, msg: f"Unknown type reference: {vtree.inspect(at)}.")
+            text @= name
+            i @= wrappers.len() - 1
+
+            while i >= 0
+                if wrappers[i] == "LIST"
+                    text @ "[" + text + "]"
+                else
+                    text @ text + "!"
+                i @ i - 1
+
+            return ok(text)
+
+    return fail(code: INVALID, msg: "Unknown type reference.")
+
+# The names a list member `key` of `v` holds, each the `name` of an object.
+function names_of(v: json.Value, key: str) -> [str]
+    found: [str] @= []
+
+    for item in json.items_of(member(v, key: key)).default([])
+        found @ found.push(text_of(item, key: "name"))
+
+    return found
+
+# The arguments or input fields the list member `key` of `v` describes, their
+# defaults left in `defaults` under `owner` and `field`.
+function inputs_of(v: json.Value, key: str, owner: str, field: str, most_depth: i64, @defaults: [Pending]) -> [model.InputValue]?
+    found: [model.InputValue] @= []
+
+    for a in json.items_of(member(v, key: key)).default([])
+        name = text_of(a, key: "name")
+        type = reference_of(member(a, key: "type"), most_depth: most_depth)?
+
+        if has_text(a, key: "defaultValue")
+            defaults @ defaults.push(
+                Pending(owner: owner, field: field, name: name, type: type, literal: text_of(a, key: "defaultValue"))
+            )
+        deprecated = member(a, key: "isDeprecated") == .boolean(v: true)
+        found @ found.push(
+            model.InputValue(name: name, description: text_of(a, key: "description"), described: has_text(a, key: "description"), type: type, has_default: false, default: .null_value, deprecated: deprecated, reason: text_of(a, key: "deprecationReason"), at: -1, type_at: -1)
+        )
+
+    return ok(found)
+
+# The type `v` describes.
+function type_of(v: json.Value, most_depth: i64, @defaults: [Pending]) -> model.Type?
+    name = text_of(v, key: "name")
+    kind_name = text_of(v, key: "kind")
+
+    kind = if kind_name == "SCALAR"
+        model.SCALAR
+    else if kind_name == "OBJECT"
+        model.OBJECT
+    else if kind_name == "INTERFACE"
+        model.INTERFACE
+    else if kind_name == "UNION"
+        model.UNION
+    else if kind_name == "ENUM"
+        model.ENUM
+    else if kind_name == "INPUT_OBJECT"
+        model.INPUT_OBJECT
+    else
+        0
+
+    if kind == 0
+        return fail(
+            code: INVALID,
+            msg: f"Invalid or incomplete introspection result. Ensure that a full introspection query is used in order to build a client schema: {vtree.inspect(v)}."
+        )
+    t @= model.Type(
+        name: name,
+        kind: kind,
+        description: text_of(v, key: "description"),
+        described: has_text(v, key: "description"),
+        fields: [],
+        interfaces: [],
+        members: [],
+        values: [],
+        inputs: [],
+        specified_by: text_of(v, key: "specifiedByURL"),
+        has_specified_by: has_text(v, key: "specifiedByURL"),
+        one_of: member(v, key: "isOneOf") == .boolean(v: true),
+        builtin: false,
+        at: -1,
+        extended_at: []
+    )
+
+    if kind == model.OBJECT || kind == model.INTERFACE
+        if json.items_of(member(v, key: "fields")).is_err()
+            return fail(code: INVALID, msg: f"Introspection result missing fields: {vtree.inspect(v)}.")
+
+        if json.items_of(member(v, key: "interfaces")).is_err() && kind == model.OBJECT
+            return fail(code: INVALID, msg: f"Introspection result missing interfaces: {vtree.inspect(v)}.")
+        t.interfaces @ names_of(v, key: "interfaces")
+
+        for f in json.items_of(member(v, key: "fields")).default([])
+            field_name = text_of(f, key: "name")
+            arguments = inputs_of(f, key: "args", owner: name, field: field_name, most_depth: most_depth, @defaults)?
+            t.fields @ t.fields.push(
+                model.Field(name: field_name, description: text_of(f, key: "description"), described: has_text(f, key: "description"), arguments: arguments, type: reference_of(member(f, key: "type"), most_depth: most_depth)?, deprecated: member(f, key: "isDeprecated") == .boolean(v: true), reason: text_of(f, key: "deprecationReason"), at: -1, type_at: -1)
+            )
+    else if kind == model.UNION
+        if json.items_of(member(v, key: "possibleTypes")).is_err()
+            return fail(code: INVALID, msg: f"Introspection result missing possibleTypes: {vtree.inspect(v)}.")
+        t.members @ names_of(v, key: "possibleTypes")
+    else if kind == model.ENUM
+        if json.items_of(member(v, key: "enumValues")).is_err()
+            return fail(code: INVALID, msg: f"Introspection result missing enumValues: {vtree.inspect(v)}.")
+
+        for e in json.items_of(member(v, key: "enumValues")).default([])
+            t.values @ t.values.push(
+                model.EnumValue(name: text_of(e, key: "name"), description: text_of(e, key: "description"), described: has_text(e, key: "description"), deprecated: member(e, key: "isDeprecated") == .boolean(v: true), reason: text_of(e, key: "deprecationReason"), at: -1)
+            )
+    else if kind == model.INPUT_OBJECT
+        if json.items_of(member(v, key: "inputFields")).is_err()
+            return fail(code: INVALID, msg: f"Introspection result missing inputFields: {vtree.inspect(v)}.")
+        t.inputs @ inputs_of(v, key: "inputFields", owner: name, field: "", most_depth: most_depth, @defaults)?
+    return ok(t)
+
+# The directive `v` describes.
+function directive_of(v: json.Value, most_depth: i64, @defaults: [Pending]) -> model.Directive?
+    name = text_of(v, key: "name")
+
+    if json.items_of(member(v, key: "args")).is_err()
+        return fail(code: INVALID, msg: f"Introspection result missing directive args: {vtree.inspect(v)}.")
+    locations: [str] @= []
+
+    for l in json.items_of(member(v, key: "locations")).default([])
+        locations @ locations.push(json.text_of(l).default(""))
+
+    arguments = inputs_of(v, key: "args", owner: "@" + name, field: "", most_depth: most_depth, @defaults)?
+    builtin = name == "include" || name == "skip" || name == "deprecated" || name == "specifiedBy" || name == "oneOf"
+    return ok(
+        model.Directive(name: name, description: text_of(v, key: "description"), described: has_text(v, key: "description"), arguments: arguments, repeatable: member(v, key: "isRepeatable") == .boolean(v: true), locations: locations, builtin: builtin, at: -1)
+    )
+
+# Fails where a type of `m` refers to a type it does not hold.
+function check_references(m: model.Model lent) -> ()?
+    for name in keys(m.types)
+        t = m.types[name].must()
+        refs: [str] @= []
+
+        for i in t.interfaces
+            refs @ refs.push(i)
+
+        for member_name in t.members
+            refs @ refs.push(member_name)
+
+        for f in t.fields
+            refs @ refs.push(model.named_of(f.type))
+
+            for a in f.arguments
+                refs @ refs.push(model.named_of(a.type))
+
+        for i in t.inputs
+            refs @ refs.push(model.named_of(i.type))
+
+        for r in refs
+            if !model.has_type(m, name: r)
+                return fail(
+                    code: INVALID,
+                    msg: f"Invalid or incomplete schema, unknown type: {r}. Ensure that a full introspection query is used in order to build a client schema."
+                )
+
+    for root in [m.query, m.mutation, m.subscription]
+        if root != "" && !model.has_type(m, name: root)
+            return fail(
+                code: INVALID,
+                msg: f"Invalid or incomplete schema, unknown type: {root}. Ensure that a full introspection query is used in order to build a client schema."
+            )
+
+    return ok()
+
+# Sets the default `p` writes, where its literal reads and its type takes it.
+function set_default(@m: model.Model, p: Pending, most_depth: i64)
+    parsed = parser.parse_value(p.literal, most_depth: most_depth)
+
+    if parsed.code != ""
+        return
+    coerced = values.coerce(
+        m,
+        vs: vtree.from_literal(parsed.tree, n: 1),
+        type: p.type,
+        literal: true,
+        variables: {},
+        suggest_names: false
+    )
+
+    if !coerced.ok
+        return
+
+    if p.owner.len() > 0 && p.owner[0] == '@'
+        d @= 0
+
+        while d < m.directives.len()
+            if "@" + m.directives[d].name == p.owner
+                a @= 0
+
+                while a < m.directives[d].arguments.len()
+                    if m.directives[d].arguments[a].name == p.name
+                        m.directives[d].arguments[a].has_default @ true
+                        m.directives[d].arguments[a].default @ coerced.value
+                    a @ a + 1
+            d @ d + 1
+
+        return
+
+    t @= match m.types[p.owner]
+        .ok got => got
+        .err _  => return
+
+    if p.field == ""
+        i @= 0
+
+        while i < t.inputs.len()
+            if t.inputs[i].name == p.name
+                t.inputs[i].has_default @ true
+                t.inputs[i].default @ coerced.value
+            i @ i + 1
+    else
+        f @= 0
+
+        while f < t.fields.len()
+            if t.fields[f].name == p.field
+                a @= 0
+
+                while a < t.fields[f].arguments.len()
+                    if t.fields[f].arguments[a].name == p.name
+                        t.fields[f].arguments[a].has_default @ true
+                        t.fields[f].arguments[a].default @ coerced.value
+                    a @ a + 1
+            f @ f + 1
+    m.types[p.owner] @ t
+
+test "reference_of: the ofType chain read into a type's text, and one cut short"
+    v = json.parse(
+        "{\"kind\": \"NON_NULL\", \"ofType\": {\"kind\": \"LIST\", \"ofType\": {\"kind\": \"SCALAR\", \"name\": \"Int\"}}}"
+    ).must()
+    assert reference_of(v, most_depth: 64).must() == "[Int]!"
+    assert reference_of(v, most_depth: 1).is_err()
+    cut = json.parse("{\"kind\": \"LIST\", \"ofType\": null}").must()
+    assert reference_of(cut, most_depth: 64).is_err()
+
+test "build_client: an answer with no __schema, and one naming a type it does not hold"
+    assert build_client(.null_value, most_depth: 64).is_err()
+    data = json.parse(
+        "{\"__schema\": {\"queryType\": {\"name\": \"Query\"}, \"types\": [{\"kind\": \"OBJECT\", \"name\": \"Query\", \"fields\": [{\"name\": \"a\", \"args\": [], \"type\": {\"kind\": \"OBJECT\", \"name\": \"Gone\"}}], \"interfaces\": []}], \"directives\": []}}"
+    ).must()
+
+    match build_client(data, most_depth: 64)
+        .ok _  => assert false
+        .err e => assert e.msg == "Invalid or incomplete schema, unknown type: Gone. Ensure that a full introspection query is used in order to build a client schema."
+
+    fine = json.parse(
+        "{\"__schema\": {\"queryType\": {\"name\": \"Query\"}, \"types\": [{\"kind\": \"OBJECT\", \"name\": \"Query\", \"fields\": [{\"name\": \"a\", \"args\": [{\"name\": \"x\", \"type\": {\"kind\": \"SCALAR\", \"name\": \"Int\"}, \"defaultValue\": \"3\"}], \"type\": {\"kind\": \"SCALAR\", \"name\": \"Int\"}}], \"interfaces\": []}], \"directives\": []}}"
+    ).must()
+    m = build_client(fine, most_depth: 64).must()
+    assert model.field_of(m, type_name: "Query", name: "a").must().arguments[0].default == .number(v: 3.0)
+    assert add_name(["a"], name: "a") == ["a"]

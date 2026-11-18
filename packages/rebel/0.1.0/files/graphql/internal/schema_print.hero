@@ -1,0 +1,273 @@
+# A schema written in the schema definition language, as graphql-js's
+# `printSchema` writes it: the `schema` definition only where its roots are
+# not named `Query`, `Mutation` and `Subscription` or it has a description,
+# the program's directives, then its types in the order of the type map, the
+# specified ones left out; descriptions as block strings where one can hold
+# them, defaults as literals of their types.
+
+use graphql/internal/fixture
+use graphql/internal/model
+use graphql/internal/printer
+use graphql/internal/values
+
+# `m` as text.
+function print_schema(m: model.Model lent) -> str
+    parts: [str] @= []
+    head = schema_definition(m)
+
+    if head != ""
+        parts @ parts.push(head)
+
+    for d in m.directives
+        if !d.builtin
+            parts @ parts.push(directive_text(m, d: d))
+
+    for name in keys(m.types)
+        t = m.types[name].must()
+
+        if !t.builtin
+            parts @ parts.push(type_text(m, t: t))
+
+    return parts.join("\n\n")
+
+# The `schema` definition, "" where graphql-js leaves it out.
+function schema_definition(m: model.Model lent) -> str
+    common = (m.query == "" || m.query == "Query") && (m.mutation == "" || m.mutation == "Mutation") && (m.subscription == "" || m.subscription == "Subscription")
+
+    if common && !m.described
+        return ""
+    lines: [str] @= []
+
+    if m.query != ""
+        lines @ lines.push("  query: " + m.query)
+
+    if m.mutation != ""
+        lines @ lines.push("  mutation: " + m.mutation)
+
+    if m.subscription != ""
+        lines @ lines.push("  subscription: " + m.subscription)
+    return description_text(described: m.described, text: m.description, indent: "", first: true) + "schema {\n" + lines.join("\n") + "\n}"
+
+# Whether graphql-js writes `value` as a block string.
+function is_printable_as_block(value: str) -> bool
+    if value == ""
+        return true
+    empty_line @= true
+    indented @= false
+    common_indent @= true
+    seen_line @= false
+    i @= 0
+
+    while i < value.len()
+        b = value[i]
+
+        if b == '\r' || b < 0x20 && b != '\n' && b != '\t'
+            return false
+
+        if b == '\n'
+            if empty_line && !seen_line
+                return false
+            seen_line @ true
+            empty_line @ true
+            indented @ false
+        else if b == '\t' || b == ' '
+            if empty_line
+                indented @ true
+        else
+            common_indent @ common_indent && indented
+            empty_line @ false
+        i @ i + 1
+
+    if empty_line
+        return false
+
+    if common_indent && seen_line
+        return false
+    return true
+
+# A description as graphql-js writes it above a definition: indented by
+# `indent`, after a blank line where it is not `first` in its block.
+function description_text(described: bool, text: str, indent: str, first: bool) -> str
+    if !described
+        return ""
+
+    written = if is_printable_as_block(text)
+        printer.print_block_string(text)
+    else
+        printer.print_string(text)
+
+    prefix = if indent != "" && !first
+        "\n" + indent
+    else
+        indent
+    return prefix + reindent(s: written, indent: indent) + "\n"
+
+# `s` with `indent` after each line end.
+function reindent(s: str, indent: str) -> str
+    if indent == ""
+        return s
+    pieces: [str] @= []
+    start @= 0
+    i @= 0
+
+    while i < s.len()
+        if s[i] == '\n'
+            pieces @ pieces.push(s.slice(from: start, to: i))
+            start @ i + 1
+        i @ i + 1
+
+    pieces @ pieces.push(s.slice(from: start, to: s.len()))
+    return pieces.join("\n" + indent)
+
+# ` @deprecated` with its reason where it is not the default, "" where
+# `deprecated` is false.
+function deprecated_text(deprecated: bool, reason: str) -> str
+    if !deprecated
+        return ""
+
+    if reason == "No longer supported"
+        return " @deprecated"
+    return " @deprecated(reason: " + printer.print_string(reason) + ")"
+
+# An argument or an input field: its name, type, default and deprecation.
+function input_value_text(m: model.Model lent, a: model.InputValue) -> str
+    text @= a.name + ": " + a.type
+
+    if a.has_default
+        written = values.literal_of(m, v: a.default, type: a.type)
+
+        if written != ""
+            text @ text + " = " + written
+    return text + deprecated_text(deprecated: a.deprecated, reason: a.reason)
+
+# Arguments in parentheses: on one line where none has a description, else
+# one a line, indented below `indent`.
+function arguments_text(m: model.Model lent, arguments: [model.InputValue], indent: str) -> str
+    if arguments.len() == 0
+        return ""
+    described @= false
+
+    for a in arguments
+        if a.described
+            described @ true
+
+    if !described
+        parts: [str] @= []
+
+        for a in arguments
+            parts @ parts.push(input_value_text(m, a: a))
+
+        return "(" + parts.join(", ") + ")"
+    lines: [str] @= []
+    i @= 0
+
+    while i < arguments.len()
+        a = arguments[i]
+        lines @ lines.push(
+            description_text(described: a.described, text: a.description, indent: "  " + indent, first: i == 0) + "  " + indent + input_value_text(m, a: a)
+        )
+        i @ i + 1
+
+    return "(\n" + lines.join("\n") + "\n" + indent + ")"
+
+# A directive's definition.
+function directive_text(m: model.Model lent, d: model.Directive) -> str
+    repeatable = if d.repeatable
+        " repeatable"
+    else
+        ""
+    return description_text(described: d.described, text: d.description, indent: "", first: true) + "directive @" + d.name + arguments_text(m, arguments: d.arguments, indent: "") + repeatable + " on " + d.locations.join(" | ")
+
+# `items` in a block, " {" first, or "" for none.
+function block(items: [str]) -> str
+    if items.len() == 0
+        return ""
+    return " {\n" + items.join("\n") + "\n}"
+
+# A type's definition.
+function type_text(m: model.Model lent, t: model.Type) -> str
+    head = description_text(described: t.described, text: t.description, indent: "", first: true)
+
+    if t.kind == model.SCALAR
+        url = if t.has_specified_by
+            " @specifiedBy(url: " + printer.print_string(t.specified_by) + ")"
+        else
+            ""
+        return head + "scalar " + t.name + url
+
+    if t.kind == model.OBJECT || t.kind == model.INTERFACE
+        keyword = if t.kind == model.OBJECT
+            "type "
+        else
+            "interface "
+
+        implements = if t.interfaces.len() > 0
+            " implements " + t.interfaces.join(" & ")
+        else
+            ""
+        lines: [str] @= []
+        i @= 0
+
+        while i < t.fields.len()
+            f = t.fields[i]
+            lines @ lines.push(
+                description_text(described: f.described, text: f.description, indent: "  ", first: i == 0) + "  " + f.name + arguments_text(m, arguments: f.arguments, indent: "  ") + ": " + f.type + deprecated_text(deprecated: f.deprecated, reason: f.reason)
+            )
+            i @ i + 1
+
+        return head + keyword + t.name + implements + block(lines)
+
+    if t.kind == model.UNION
+        members = if t.members.len() > 0
+            " = " + t.members.join(" | ")
+        else
+            ""
+        return head + "union " + t.name + members
+
+    if t.kind == model.ENUM
+        lines: [str] @= []
+        i @= 0
+
+        while i < t.values.len()
+            v = t.values[i]
+            lines @ lines.push(
+                description_text(described: v.described, text: v.description, indent: "  ", first: i == 0) + "  " + v.name + deprecated_text(deprecated: v.deprecated, reason: v.reason)
+            )
+            i @ i + 1
+
+        return head + "enum " + t.name + block(lines)
+
+    one_of = if t.one_of
+        " @oneOf"
+    else
+        ""
+    lines: [str] @= []
+    i @= 0
+
+    while i < t.inputs.len()
+        f = t.inputs[i]
+        lines @ lines.push(
+            description_text(described: f.described, text: f.description, indent: "  ", first: i == 0) + "  " + input_value_text(m, a: f)
+        )
+        i @ i + 1
+
+    return head + "input " + t.name + one_of + block(lines)
+
+test "print_schema: graphql-js's printSchema of every kind of definition"
+    m = fixture.schema_of(
+        "\"\"\"Root of all\"\"\"\nschema { query: Q mutation: M }\n\"\"\"A custom\ndirective\"\"\"\ndirective @custom(\n  \"the level\"\n  level: Int = 2\n  tags: [String!] = [\"a\"]\n) repeatable on FIELD | OBJECT\n\"\"\"Q has a description\"\"\"\ntype Q implements Node & Thing {\n  \"\"\"\n  the id\n  \"\"\"\n  id: ID!\n  thing(first: Int = 10, after: String, kind: Kind = A, filter: Filter = {a: 1}): [Thing] @deprecated(reason: \"no\")\n  old: String @deprecated\n  \"  leading space\"\n  lead: String\n  multi: String\n}\ninterface Node { id: ID! }\ninterface Thing { id: ID! }\ntype M { do(x: Float = 1): Boolean }\nscalar Date @specifiedBy(url: \"https://example.com/date\")\nenum Kind { A \"the b\" B @deprecated(reason: \"B is gone\") C }\nunion U = Q | M\ninput Filter @oneOf { a: Int, b: String }\ninput In { x: Int! = 3, y: [Int] = 1, z: Kind = B @deprecated }\n"
+    )
+    assert print_schema(m) == "\"\"\"Root of all\"\"\"\nschema {\n  query: Q\n  mutation: M\n}\n\n\"\"\"\nA custom\ndirective\n\"\"\"\ndirective @custom(\n  \"\"\"the level\"\"\"\n  level: Int = 2\n  tags: [String!] = [\"a\"]\n) repeatable on FIELD | OBJECT\n\n\"\"\"Q has a description\"\"\"\ntype Q implements Node & Thing {\n  \"\"\"the id\"\"\"\n  id: ID!\n  thing(first: Int = 10, after: String, kind: Kind = A, filter: Filter = {a: 1}): [Thing] @deprecated(reason: \"no\")\n  old: String @deprecated\n\n  \"\"\"  leading space\"\"\"\n  lead: String\n  multi: String\n}\n\ninterface Node {\n  id: ID!\n}\n\ninterface Thing {\n  id: ID!\n}\n\ntype M {\n  do(x: Float = 1): Boolean\n}\n\nscalar Date @specifiedBy(url: \"https://example.com/date\")\n\nenum Kind {\n  A\n\n  \"\"\"the b\"\"\"\n  B @deprecated(reason: \"B is gone\")\n  C\n}\n\nunion U = Q | M\n\ninput Filter @oneOf {\n  a: Int\n  b: String\n}\n\ninput In {\n  x: Int! = 3\n  y: [Int] = [1]\n  z: Kind = B @deprecated\n}"
+
+test "is_printable_as_block: what graphql-js writes as a block string"
+    assert is_printable_as_block("")
+    assert is_printable_as_block("plain")
+    assert is_printable_as_block("  leading space")
+    assert !is_printable_as_block("\nleading line")
+    assert !is_printable_as_block("trailing\n")
+    assert !is_printable_as_block("a\r\nb")
+    assert !is_printable_as_block("  a\n  b")
+
+test "schema_definition: left out for the usual names, written for others"
+    assert schema_definition(fixture.schema_of("type Query { a: Int }")) == ""
+    assert schema_definition(fixture.schema_of("schema { query: R } type R { a: Int }")) == "schema {\n  query: R\n}"

@@ -1,0 +1,243 @@
+# What the face's transports share and no program names: errors joined into
+# one message, the members of a JSON object read, the media types of GraphQL
+# over HTTP, a request's parameters read as JSON, the kind of the operation a
+# request runs, and a subscription's source stream found, each failure as a
+# list of the tree's errors.
+
+use graphql/internal/collect
+use graphql/internal/exec_prep
+use graphql/internal/fixture
+use graphql/internal/model
+use graphql/internal/parser
+use graphql/internal/tree
+use graphql/internal/validate as checks
+use http
+use json
+use strings
+
+# The media type of a GraphQL response as GraphQL over HTTP names it.
+constant GRAPHQL_RESPONSE_JSON: str
+    "application/graphql-response+json"
+
+# The media type of JSON.
+constant APPLICATION_JSON: str
+    "application/json"
+
+# The code of a request that is no GraphQL request.
+constant INVALID: str
+    "invalid"
+
+# The messages of `errors`, one a line, each with the line and column of its
+# first place.
+function joined(errors: [tree.Err]) -> str
+    lines: [str] @= []
+
+    for e in errors
+        if e.locations.len() > 0
+            lines @ lines.push(f"{e.message} ({e.locations[0].line}:{e.locations[0].column})")
+        else
+            lines @ lines.push(e.message)
+
+    return lines.join("\n")
+
+# The member `key` of the object `v`, `.null_value` where it holds none.
+function member_of(v: json.Value, key: str) -> json.Value
+    return json.member(v, key: key).default(.null_value)
+
+# Whether the object `v` holds a member `key`.
+function has_member(v: json.Value, key: str) -> bool
+    return !json.member(v, key: key).is_err()
+
+# Whether `v` is an object or `null`.
+function is_object_or_null(v: json.Value) -> bool
+    match v
+        .object _ | .null_value                    => return true
+        .boolean _ | .number _ | .text _ | .list _ => return false
+
+# The media type of a `Content-Type` value, its parameters and its case left
+# out.
+function media_of(value: str) -> str
+    end @= 0
+
+    while end < value.len() && value[end] != ';'
+        end @ end + 1
+
+    return strings.to_lower(strings.trim(value.slice(from: 0, to: end)))
+
+# The media type of a response `r` accepts: `application/json` where it
+# names none. Fails `not_found` where it accepts neither type.
+function media_accepted(r: http.Request) -> str?
+    if !http.has_header(r.headers, name: "Accept")
+        return ok(APPLICATION_JSON)
+    return http.negotiate_type(r, offered: [GRAPHQL_RESPONSE_JSON, APPLICATION_JSON])
+
+# The JSON a request's parameter `name` writes: an object or `null`.
+function parameter_json(text: str, name: str) -> json.Value?
+    v = match json.parse(text)
+        .ok got => got
+        .err e  => return fail(code: INVALID, msg: f"the request's \"{name}\" is no JSON: {e.msg}")
+
+    if !is_object_or_null(v)
+        return fail(code: INVALID, msg: f"the request's \"{name}\" is not an object")
+    return ok(v)
+
+# Whether the operation `operation_name` of the document `query` is a
+# mutation; false where the document does not parse or names no such
+# operation, which execution then reports.
+function is_mutation(query: str, operation_name: str, most_tokens: i64, most_depth: i64, most_directives: i64) -> bool
+    got = parser.parse(query, most_tokens: most_tokens, most_depth: most_depth, most_directives: most_directives)
+
+    if got.code != ""
+        return false
+
+    match exec_prep.operation_of(got.tree, name: operation_name)
+        .ok n  => return got.tree.nodes[n].text == "mutation"
+        .err _ => return false
+
+# What `subscription_of` answers: the root field and its arguments, or the
+# errors that refuse it.
+record Subscription
+    # The errors, none where the stream opens.
+    errors: [tree.Err]
+    # The root field's name.
+    field_name: str
+    # Its arguments, coerced.
+    arguments: {str: json.Value}
+
+# How large a document may be, as the face's limits say.
+record Bounds
+    # The most bytes.
+    bytes: i64
+    # The most tokens.
+    tokens: i64
+    # The most levels.
+    depth: i64
+    # The most directives on one place.
+    directives: i64
+    # The most errors of validation.
+    errors: i64
+    # The most fields selected.
+    fields: i64
+    # The most aliases.
+    aliases: i64
+    # Whether introspection is allowed and names suggested.
+    introspection: bool
+
+# A refusal of a subscription with `errors`.
+function refused(errors: [tree.Err]) -> Subscription
+    return Subscription(errors: errors, field_name: "", arguments: {})
+
+# The source stream the subscription `query` asks for against `m`: its
+# document parsed and validated, its variables `given` coerced, its one root
+# field and that field's arguments.
+function subscription_of(m: model.Model lent, query: str, operation_name: str, given: json.Value, bounds: Bounds) -> Subscription
+    if query.len() > bounds.bytes
+        return refused(
+            [tree.err_of(f"Syntax Error: Document of {query.len()} bytes is past the limit of {bounds.bytes}. Parsing aborted.")]
+        )
+    got = parser.parse(query, most_tokens: bounds.tokens, most_depth: bounds.depth, most_directives: bounds.directives)
+
+    if got.code != ""
+        return refused([tree.Err(message: got.message, locations: [got.at], path: [])])
+    t = got.tree
+    rules @= checks.rule_names()
+
+    if !bounds.introspection
+        rules @ rules.push("NoSchemaIntrospectionCustomRule")
+    errors = checks.validate(
+        t,
+        m: m,
+        rules: rules,
+        most_errors: bounds.errors,
+        most_fields: bounds.fields,
+        most_aliases: bounds.aliases,
+        most_depth: bounds.depth,
+        suggest: bounds.introspection
+    )
+
+    if errors.len() > 0
+        return refused(errors)
+
+    n = match exec_prep.operation_of(t, name: operation_name)
+        .ok at => at
+        .err e => return refused([tree.err_of(e.msg)])
+
+    if t.nodes[n].text != "subscription" || m.subscription == ""
+        return refused(
+            [tree.err_at(t, message: "Schema is not configured to execute subscription operation.", nodes: [n])]
+        )
+    vars = exec_prep.coerce_variables(t, m: m, n: n, given: given, suggest_names: bounds.introspection)
+
+    if vars.errors.len() > 0
+        return refused(vars.errors)
+    fragments = collect.fragments_of(t)
+    found = collect.collect_fields(
+        t,
+        m: m,
+        fragments: fragments,
+        variables: vars.values,
+        object_type: m.subscription,
+        sets: [tree.kid_of(t, n: n, kind: tree.SELECTION_SET)]
+    )
+
+    if found.keys.len() == 0
+        return refused([tree.err_at(t, message: "Subscription must select one top level field.", nodes: [n])])
+    nodes = found.fields[found.keys[0]].must()
+    name = t.nodes[nodes[0]].name
+
+    field = match model.field_of(m, type_name: m.subscription, name: name)
+        .ok f => f
+        .err _ => return refused(
+            [tree.err_at(t, message: f"The subscription field \"{name}\" is not defined.", nodes: nodes)]
+        )
+
+    coerced = exec_prep.coerce_arguments(t, m: m, n: nodes[0], definitions: field.arguments, variables: vars.values)
+
+    if !coerced.ok
+        return refused([coerced.error])
+    return Subscription(errors: [], field_name: name, arguments: coerced.values)
+
+test "joined, media_of and parameter_json: errors one a line, a type's parameters dropped, JSON parameters"
+    assert joined([tree.err_of("a"), tree.Err(message: "b", locations: [tree.Loc(line: 2, column: 3)], path: [])]) == "a\nb (2:3)"
+    assert media_of(" Application/JSON ; charset=utf-8") == "application/json"
+    assert parameter_json(text: "{\"a\": 1}", name: "variables").must() == json.parse("{\"a\": 1}").must()
+    assert parameter_json(text: "[1]", name: "variables").is_err()
+    assert parameter_json(text: "{", name: "variables").is_err()
+    assert member_of(json.parse("{\"a\": 1}").must(), key: "b") == .null_value
+    assert has_member(json.parse("{\"a\": 1}").must(), key: "a")
+    assert is_object_or_null(.null_value)
+    assert !is_object_or_null(.number(v: 1.0))
+
+test "is_mutation: a mutation, a query, and a document that does not parse"
+    assert is_mutation(
+        query: "mutation { a }",
+        operation_name: "",
+        most_tokens: 100,
+        most_depth: 64,
+        most_directives: 50
+    )
+    assert !is_mutation(query: "query A { a } mutation B { b }", operation_name: "A", most_tokens: 100, most_depth: 64, most_directives: 50)
+    assert !is_mutation(query: "{", operation_name: "", most_tokens: 100, most_depth: 64, most_directives: 50)
+
+test "subscription_of: the root field, and graphql-js's refusals"
+    m = fixture.pets()
+    bounds = Bounds(
+        bytes: 10000,
+        tokens: 1000,
+        depth: 64,
+        directives: 50,
+        errors: 100,
+        fields: 1000,
+        aliases: 100,
+        introspection: true
+    )
+    found = subscription_of(
+        m,
+        query: "subscription { newMessage }",
+        operation_name: "",
+        given: .null_value,
+        bounds: bounds
+    )
+    assert found.field_name == "newMessage"
+    assert fixture.messages_of(subscription_of(m, query: "{ dog { name } }", operation_name: "", given: .null_value, bounds: bounds).errors) == ["Schema is not configured to execute subscription operation. @1:1"]
+    assert fixture.messages_of(subscription_of(m, query: "{", operation_name: "", given: .null_value, bounds: bounds).errors) == ["Syntax Error: Expected Name, found <EOF>. @1:2"]

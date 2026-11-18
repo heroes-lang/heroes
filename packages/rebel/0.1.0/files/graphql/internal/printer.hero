@@ -1,0 +1,498 @@
+# A document's tree written back as text, as graphql-js's `print` writes it:
+# two spaces a level, one selection a line, the definitions a blank line
+# apart, a field's arguments broken over lines past 80 characters and an
+# argument's description putting each on its own. Every node is written
+# after its children, from the last node to the first, so nothing recurses.
+
+use graphql/internal/parser
+use graphql/internal/tree
+
+# `t` as text.
+function print_tree(t: tree.Tree lent) -> str
+    printed: [str] @= []
+    i @= 0
+
+    while i < t.nodes.len()
+        printed @ printed.push("")
+        i @ i + 1
+
+    n @= t.nodes.len() - 1
+
+    while n >= 0
+        printed[n] @ render(t, n: n, printed: printed)
+        n @ n - 1
+
+    return printed[0]
+
+# The children of `n` of `kind`, each as `printed` holds it.
+function texts(t: tree.Tree lent, n: i64, kind: i64, printed: [str] lent) -> [str]
+    found: [str] @= []
+    c @= t.nodes[n].first
+
+    while c >= 0
+        if t.nodes[c].kind == kind
+            found @ found.push(printed[c])
+        c @ t.nodes[c].next
+
+    return found
+
+# The pieces of `parts` that are not empty, joined by `sep`.
+function join_kept(parts: [str], sep: str) -> str
+    kept: [str] @= []
+
+    for part in parts
+        if part != ""
+            kept @ kept.push(part)
+
+    return kept.join(sep)
+
+# `before`, `middle` and `after` where `middle` is not empty, else "".
+function wrap(before: str, middle: str, after: str) -> str
+    if middle == ""
+        return ""
+    return before + middle + after
+
+# `s` with two spaces after each line end, and before its first line.
+function indent(s: str) -> str
+    if s == ""
+        return ""
+    return "  " + split_join(s)
+
+# `s` with `\n` written as `\n` and two spaces.
+function split_join(s: str) -> str
+    pieces: [str] @= []
+    start @= 0
+    i @= 0
+
+    while i < s.len()
+        if s[i] == '\n'
+            pieces @ pieces.push(s.slice(from: start, to: i))
+            start @ i + 1
+        i @ i + 1
+
+    pieces @ pieces.push(s.slice(from: start, to: s.len()))
+    return pieces.join("\n  ")
+
+# The selections or definitions `items` in a block of braces, "" for none.
+function block(items: [str]) -> str
+    if items.len() == 0
+        return ""
+    return "{\n" + indent(items.join("\n")) + "\n}"
+
+# Whether any of `items` holds a line end.
+function has_multiline(items: [str]) -> bool
+    for item in items
+        for c in item.chars()
+            if c == "\n"
+                return true
+
+    return false
+
+# The arguments `items` of a definition: on one line in parentheses, or one a
+# line where any spans several.
+function definition_arguments(items: [str]) -> str
+    if has_multiline(items)
+        return wrap(before: "(\n", middle: indent(items.join("\n")), after: "\n)")
+    return wrap(before: "(", middle: items.join(", "), after: ")")
+
+# The description of `n` and a line end, "" where it has none.
+function description_of(t: tree.Tree lent, n: i64) -> str
+    node = t.nodes[n]
+
+    if !node.described
+        return ""
+
+    if node.block_description
+        return print_block_string(node.description) + "\n"
+    return print_string(node.description) + "\n"
+
+# How many UTF-16 code units `s` takes, as graphql-js measures a line.
+function width_of(s: str) -> i64
+    n @= 0
+    i @= 0
+
+    while i < s.len()
+        b = s[i]
+
+        if b < 0x80 || b >= 0xc0
+            n @ n + 1
+
+            if b >= 0xf0
+                n @ n + 1
+        i @ i + 1
+
+    return n
+
+# Node `n` as text, its children already written in `printed`.
+function render(t: tree.Tree lent, n: i64, printed: [str] lent) -> str
+    node = t.nodes[n]
+    k = node.kind
+    directives = texts(t, n: n, kind: tree.DIRECTIVE, printed: printed).join(" ")
+
+    if k == tree.DOCUMENT
+        parts: [str] @= []
+
+        for c in tree.kids(t, n: n)
+            parts @ parts.push(printed[c])
+
+        return parts.join("\n\n")
+
+    if k == tree.OPERATION
+        variables = texts(t, n: n, kind: tree.VARIABLE_DEFINITION, printed: printed)
+
+        list = if has_multiline(variables)
+            wrap(before: "(\n", middle: variables.join("\n"), after: "\n)")
+        else
+            wrap(before: "(", middle: variables.join(", "), after: ")")
+        prefix = description_of(t, n: n) + join_kept([node.text, node.name + list, directives], sep: " ")
+        set = printed[tree.kid_of(t, n: n, kind: tree.SELECTION_SET)]
+
+        if prefix == "query"
+            return set
+        return prefix + " " + set
+
+    if k == tree.VARIABLE_DEFINITION
+        given = value_text(t, n: n, printed: printed)
+        return description_of(t, n: n) + "$" + node.name + ": " + node.type + wrap(before: " = ", middle: given, after: "") + wrap(before: " ", middle: directives, after: "")
+
+    if k == tree.SELECTION_SET || k == tree.SCHEMA_DEFINITION || k == tree.SCHEMA_EXTENSION
+        items: [str] @= []
+
+        for c in tree.kids(t, n: n)
+            if t.nodes[c].kind != tree.DIRECTIVE
+                items @ items.push(printed[c])
+
+        if k == tree.SELECTION_SET
+            return block(items)
+
+        keyword = if k == tree.SCHEMA_DEFINITION
+            description_of(t, n: n) + "schema"
+        else
+            "extend schema"
+        return join_kept([keyword, directives, block(items)], sep: " ")
+
+    if k == tree.FIELD
+        prefix = wrap(before: "", middle: node.alias, after: ": ") + node.name
+        arguments = texts(t, n: n, kind: tree.ARGUMENT, printed: printed)
+        line @= prefix + wrap(before: "(", middle: arguments.join(", "), after: ")")
+
+        if width_of(line) > 80
+            line @ prefix + wrap(before: "(\n", middle: indent(arguments.join("\n")), after: "\n)")
+        set = set_text(t, n: n, printed: printed)
+        return join_kept([line, directives, set], sep: " ")
+
+    if k == tree.ARGUMENT || k == tree.OBJECT_FIELD
+        return node.name + ": " + value_text(t, n: n, printed: printed)
+
+    if k == tree.FRAGMENT_SPREAD
+        return "..." + node.name + wrap(before: " ", middle: directives, after: "")
+
+    if k == tree.INLINE_FRAGMENT
+        return join_kept(
+            ["...", wrap(before: "on ", middle: node.type, after: ""), directives, set_text(t, n: n, printed: printed)],
+            sep: " "
+        )
+
+    if k == tree.FRAGMENT_DEFINITION
+        return description_of(t, n: n) + "fragment " + node.name + " on " + node.type + " " + wrap(before: "", middle: directives, after: " ") + set_text(t, n: n, printed: printed)
+
+    if k == tree.DIRECTIVE
+        arguments = texts(t, n: n, kind: tree.ARGUMENT, printed: printed)
+        return "@" + node.name + wrap(before: "(", middle: arguments.join(", "), after: ")")
+    return render_value_or_type(t, n: n, printed: printed, directives: directives)
+
+# The selection set of `n` as `printed` holds it, "" for none.
+function set_text(t: tree.Tree lent, n: i64, printed: [str] lent) -> str
+    at = tree.kid_of(t, n: n, kind: tree.SELECTION_SET)
+
+    if at < 0
+        return ""
+    return printed[at]
+
+# The value child of `n` as `printed` holds it, "" for none.
+function value_text(t: tree.Tree lent, n: i64, printed: [str] lent) -> str
+    at = tree.value_of(t, n: n)
+
+    if at < 0
+        return ""
+    return printed[at]
+
+# Node `n`, a value or a definition of a schema, as text.
+function render_value_or_type(t: tree.Tree lent, n: i64, printed: [str] lent, directives: str) -> str
+    node = t.nodes[n]
+    k = node.kind
+
+    if k == tree.VARIABLE
+        return "$" + node.name
+
+    if k == tree.INT || k == tree.FLOAT || k == tree.BOOLEAN || k == tree.ENUM
+        return node.text
+
+    if k == tree.NULL
+        return "null"
+
+    if k == tree.STRING
+        if node.block
+            return print_block_string(node.text)
+        return print_string(node.text)
+
+    if k == tree.LIST || k == tree.OBJECT
+        items: [str] @= []
+
+        for c in tree.kids(t, n: n)
+            items @ items.push(printed[c])
+
+        if k == tree.LIST
+            return "[" + items.join(", ") + "]"
+        return "{" + items.join(", ") + "}"
+
+    if k == tree.OPERATION_TYPE
+        return node.text + ": " + node.type
+    description = description_of(t, n: n)
+    extending = k == tree.SCALAR_EXTENSION || k == tree.OBJECT_EXTENSION || k == tree.INTERFACE_EXTENSION || k == tree.UNION_EXTENSION || k == tree.ENUM_EXTENSION || k == tree.INPUT_EXTENSION
+
+    lead = if extending
+        "extend "
+    else
+        description
+
+    if k == tree.SCALAR_DEFINITION || k == tree.SCALAR_EXTENSION
+        return lead + join_kept(["scalar", node.name, directives], sep: " ")
+
+    if k == tree.OBJECT_DEFINITION || k == tree.OBJECT_EXTENSION || k == tree.INTERFACE_DEFINITION || k == tree.INTERFACE_EXTENSION
+        keyword = if k == tree.OBJECT_DEFINITION || k == tree.OBJECT_EXTENSION
+            "type"
+        else
+            "interface"
+        interfaces: [str] @= []
+
+        for c in tree.kids_of(t, n: n, kind: tree.IMPLEMENTS)
+            interfaces @ interfaces.push(t.nodes[c].name)
+
+        fields = texts(t, n: n, kind: tree.FIELD_DEFINITION, printed: printed)
+        return lead + join_kept([keyword, node.name, wrap(before: "implements ", middle: interfaces.join(" & "), after: ""), directives, block(fields)], sep: " ")
+
+    if k == tree.FIELD_DEFINITION
+        arguments = texts(t, n: n, kind: tree.INPUT_VALUE_DEFINITION, printed: printed)
+        return description + node.name + definition_arguments(arguments) + ": " + node.type + wrap(before: " ", middle: directives, after: "")
+
+    if k == tree.INPUT_VALUE_DEFINITION
+        given = value_text(t, n: n, printed: printed)
+        return description + join_kept([node.name + ": " + node.type, wrap(before: "= ", middle: given, after: ""), directives], sep: " ")
+
+    if k == tree.UNION_DEFINITION || k == tree.UNION_EXTENSION
+        members: [str] @= []
+
+        for c in tree.kids_of(t, n: n, kind: tree.UNION_MEMBER)
+            members @ members.push(t.nodes[c].name)
+
+        return lead + join_kept(["union", node.name, directives, wrap(before: "= ", middle: members.join(" | "), after: "")], sep: " ")
+
+    if k == tree.ENUM_DEFINITION || k == tree.ENUM_EXTENSION
+        values = texts(t, n: n, kind: tree.ENUM_VALUE_DEFINITION, printed: printed)
+        return lead + join_kept(["enum", node.name, directives, block(values)], sep: " ")
+
+    if k == tree.ENUM_VALUE_DEFINITION
+        return description + join_kept([node.name, directives], sep: " ")
+
+    if k == tree.INPUT_DEFINITION || k == tree.INPUT_EXTENSION
+        fields = texts(t, n: n, kind: tree.INPUT_VALUE_DEFINITION, printed: printed)
+        return lead + join_kept(["input", node.name, directives, block(fields)], sep: " ")
+
+    if k == tree.DIRECTIVE_DEFINITION
+        arguments = texts(t, n: n, kind: tree.INPUT_VALUE_DEFINITION, printed: printed)
+        locations: [str] @= []
+
+        for c in tree.kids_of(t, n: n, kind: tree.LOCATION)
+            locations @ locations.push(t.nodes[c].name)
+
+        repeatable = if node.flag
+            " repeatable"
+        else
+            ""
+        return description + "directive @" + node.name + definition_arguments(arguments) + repeatable + " on " + locations.join(" | ")
+    return ""
+
+# `s` as a string literal: quotes and backslashes escaped, and every control
+# character, U+0000 to U+001F and U+007F to U+009F, as graphql-js escapes it.
+function print_string(s: str) -> str
+    pieces: [str] @= ["\""]
+
+    for c in s.chars()
+        b = c[0]
+
+        if c == "\""
+            pieces @ pieces.push("\\\"")
+        else if c == "\\"
+            pieces @ pieces.push("\\\\")
+        else if c == "\n"
+            pieces @ pieces.push("\\n")
+        else if c == "\t"
+            pieces @ pieces.push("\\t")
+        else if c == "\r"
+            pieces @ pieces.push("\\r")
+        else if b == 0x08
+            pieces @ pieces.push("\\b")
+        else if b == 0x0c
+            pieces @ pieces.push("\\f")
+        else if b < 0x20 || b == 0x7f
+            pieces @ pieces.push(f"\\u{hex4(to_i64(b).must())}")
+        else if b == 0xc2 && c.len() == 2 && c[1] < 0xa0
+            pieces @ pieces.push(f"\\u{hex4(to_i64(c[1]).must())}")
+        else
+            pieces @ pieces.push(c)
+
+    pieces @ pieces.push("\"")
+    return pieces.join("")
+
+# `n`, below 65536, as four upper-case hexadecimal digits.
+function hex4(n: i64) -> str
+    alphabet = "0123456789ABCDEF"
+    out: [str] @= []
+    shift @= 12
+
+    while shift >= 0
+        d = n >> shift & 15
+        out @ out.push(alphabet.slice(from: d, to: d + 1))
+        shift @ shift - 4
+
+    return out.join("")
+
+# Whether the first byte of `s` is a space or a tab.
+function starts_with_space(s: str) -> bool
+    return s.len() > 0 && (s[0] == ' ' || s[0] == '\t')
+
+# `value` as a block string, as graphql-js writes it: `"""` inside escaped, on
+# its own lines where it spans several, is long, or would end or begin in a
+# way a reader would misread.
+function print_block_string(value: str) -> str
+    escaped = replace_triple(value)
+    lines = split_lines(escaped)
+    single = lines.len() == 1
+    leading @= lines.len() > 1
+
+    if leading
+        k @= 1
+
+        while k < lines.len()
+            if lines[k].len() > 0 && !starts_with_space(lines[k])
+                leading @ false
+            k @ k + 1
+    triple_end = ends_with(s: escaped, tail: "\\\"\"\"")
+    quote_end = ends_with(s: value, tail: "\"") && !triple_end
+    slash_end = ends_with(s: value, tail: "\\")
+    trailing = quote_end || slash_end
+    multiple = !single || width_of(value) > 70 || trailing || leading || triple_end
+    skip_leading = single && starts_with_space(value)
+    out: [str] @= ["\"\"\""]
+
+    if multiple && !skip_leading || leading
+        out @ out.push("\n")
+    out @ out.push(escaped)
+
+    if multiple || trailing
+        out @ out.push("\n")
+    out @ out.push("\"\"\"")
+    return out.join("")
+
+# `s` with every `"""` written `\"""`.
+function replace_triple(s: str) -> str
+    pieces: [str] @= []
+    start @= 0
+    i @= 0
+
+    while i + 2 < s.len()
+        if s[i] == '"' && s[i + 1] == '"' && s[i + 2] == '"'
+            pieces @ pieces.push(s.slice(from: start, to: i))
+            pieces @ pieces.push("\\\"\"\"")
+            i @ i + 3
+            start @ i
+        else
+            i @ i + 1
+
+    pieces @ pieces.push(s.slice(from: start, to: s.len()))
+    return pieces.join("")
+
+# Whether `s` ends with `tail`.
+function ends_with(s: str, tail: str) -> bool
+    if tail.len() > s.len()
+        return false
+    at = s.len() - tail.len()
+    i @= 0
+
+    while i < tail.len()
+        if s[at + i] != tail[i]
+            return false
+        i @ i + 1
+
+    return true
+
+# `text` cut at each `\n`, `\r\n` or `\r`.
+function split_lines(text: str) -> [str]
+    lines: [str] @= []
+    start @= 0
+    i @= 0
+
+    while i < text.len()
+        if text[i] == '\n' || text[i] == '\r'
+            lines @ lines.push(text.slice(from: start, to: i))
+
+            if text[i] == '\r' && i + 1 < text.len() && text[i + 1] == '\n'
+                i @ i + 1
+            i @ i + 1
+            start @ i
+        else
+            i @ i + 1
+
+    lines @ lines.push(text.slice(from: start, to: text.len()))
+    return lines
+
+# The subtree at node `n` of `t` as text: a value as a message shows it.
+function print_node(t: tree.Tree lent, n: i64) -> str
+    d @= n
+
+    while t.nodes[d].last >= 0
+        d @ t.nodes[d].last
+
+    end = d + 1
+    printed: [str] @= []
+    i @= 0
+
+    while i < end
+        printed @ printed.push("")
+        i @ i + 1
+
+    k @= end - 1
+
+    while k >= n
+        printed[k] @ render(t, n: k, printed: printed)
+        k @ k - 1
+
+    return printed[n]
+
+test "print_tree: graphql-js's print of operations, values, block strings and every definition of a schema"
+    cases = [
+        ["{ a(aaaaaaaaaaaaaaaaaaa: 1, bbbbbbbbbbbbbbbbbbbbbb: 2, cccccccccccccccccccccc: 3, ddddddddddd: 4) }", "{\n  a(\n    aaaaaaaaaaaaaaaaaaa: 1\n    bbbbbbbbbbbbbbbbbbbbbb: 2\n    cccccccccccccccccccccc: 3\n    ddddddddddd: 4\n  )\n}"]
+        ["\"\"\"desc\"\"\" type A implements B & C @d { \"f\" a(\"x\" x: Int = 1, y: [Int!]): Int @deprecated b(x: Int): Int } \"s\" scalar S @specifiedBy(url: \"u\") union U @d = A | B enum E { \"v\" A @d B } input I @oneOf { a: Int = 1 @d, b: String } directive @x(a: Int) repeatable on FIELD | QUERY schema @d { query: Q mutation: M } extend schema @e extend type A @d extend union U = C extend enum E { C } extend input I { c: Int } extend scalar S @d extend interface X { a: Int } interface X implements Y { a: Int }", "\"\"\"desc\"\"\"\ntype A implements B & C @d {\n  \"f\"\n  a(\n    \"x\"\n    x: Int = 1\n    y: [Int!]\n  ): Int @deprecated\n  b(x: Int): Int\n}\n\n\"s\"\nscalar S @specifiedBy(url: \"u\")\n\nunion U @d = A | B\n\nenum E {\n  \"v\"\n  A @d\n  B\n}\n\ninput I @oneOf {\n  a: Int = 1 @d\n  b: String\n}\n\ndirective @x(a: Int) repeatable on FIELD | QUERY\n\nschema @d {\n  query: Q\n  mutation: M\n}\n\nextend schema @e\n\nextend type A @d\n\nextend union U = C\n\nextend enum E {\n  C\n}\n\nextend input I {\n  c: Int\n}\n\nextend scalar S @d\n\nextend interface X {\n  a: Int\n}\n\ninterface X implements Y {\n  a: Int\n}"]
+        ["query Q($a: Int, $b: [String!]! = [\"x\"]) @d { ...F } fragment F on T @d { a }", "query Q($a: Int, $b: [String!]! = [\"x\"]) @d {\n  ...F\n}\n\nfragment F on T @d {\n  a\n}"]
+        ["{ a(x: {}, y: [], z: {a: {b: 1}}) }", "{\n  a(x: {}, y: [], z: {a: {b: 1}})\n}"]
+        ["\"\"\"\n  multi\n    line\n\"\"\"\ntype A { a: Int }", "\"\"\"\nmulti\n  line\n\"\"\"\ntype A {\n  a: Int\n}"]
+        ["type A { a(x: Int, \"\"\"d\"\"\" y: Int): Int }", "type A {\n  a(\n    x: Int\n    \"\"\"d\"\"\"\n    y: Int\n  ): Int\n}"]
+        ["directive @d(\"a\" a: Int) on FIELD", "directive @d(\n  \"a\"\n  a: Int\n) on FIELD"]
+        ["{ a(x: \"\"\"a very long block string that goes on and on and on and on and on and on and on\"\"\") }\n", "{\n  a(\n    x: \"\"\"\n    a very long block string that goes on and on and on and on and on and on and on\n    \"\"\"\n  )\n}"]
+    ]
+
+    for c in cases
+        assert print_tree(parser.parse(c[0], most_tokens: 10000, most_depth: 64, most_directives: 50).tree) == c[1]
+
+test "print_string and print_block_string: escapes, and block strings on one line and several"
+    assert print_string("q\"b\\s\n\t\u{1}\u{7f}é😀") == "\"q\\\"b\\\\s\\n\\t\\u0001\\u007Fé😀\""
+    assert print_block_string("one line") == "\"\"\"one line\"\"\""
+    assert print_block_string(" lead") == "\"\"\" lead\"\"\""
+    assert print_block_string("  a\nb") == "\"\"\"\n  a\nb\n\"\"\""
+    assert print_block_string("has \"\"\" triple") == "\"\"\"has \\\"\"\" triple\"\"\""
+    assert print_block_string("") == "\"\"\"\"\"\""
+
+test "print_node: a value alone, as a message shows it"
+    t = parser.parse("{ f(x: [1, {a: \"s\"}]) }", most_tokens: 100, most_depth: 64, most_directives: 50).tree
+    assert print_node(t, n: 5) == "[1, {a: \"s\"}]"

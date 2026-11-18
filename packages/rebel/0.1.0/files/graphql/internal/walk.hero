@@ -1,0 +1,94 @@
+# The order graphql-js's visitor meets a document's nodes in, as one list of
+# events: a node entered, its named type met, a node left. A type is met
+# where graphql-js's tree holds it among a node's children: after a field
+# definition's arguments, before an input value's default, a fragment's
+# condition before its directives. Rules that report in that order read the
+# list front to back; it is made with an explicit stack.
+
+use graphql/internal/parser
+use graphql/internal/tree
+
+# A node entered.
+constant ENTER: i64
+    1
+
+# The named type of a node met.
+constant TYPE: i64
+    2
+
+# A node left.
+constant LEAVE: i64
+    3
+
+# One event.
+record Event
+    # `ENTER`, `TYPE` or `LEAVE`.
+    kind: i64
+    # The node.
+    node: i64
+
+# Whether node `n` holds a named type graphql-js visits.
+function has_type(t: tree.Tree lent, n: i64) -> bool
+    k = t.nodes[n].kind
+    return t.nodes[n].type != "" && (k == tree.FIELD_DEFINITION || k == tree.INPUT_VALUE_DEFINITION || k == tree.VARIABLE_DEFINITION || k == tree.FRAGMENT_DEFINITION || k == tree.INLINE_FRAGMENT || k == tree.OPERATION_TYPE)
+
+# Whether the type of node `n` is met after its child `c`: a field
+# definition's arguments come first.
+function is_before_type(t: tree.Tree lent, n: i64, c: i64) -> bool
+    return t.nodes[n].kind == tree.FIELD_DEFINITION && t.nodes[c].kind == tree.INPUT_VALUE_DEFINITION
+
+# The events of the whole of `t`, from node 0.
+function events_of(t: tree.Tree lent) -> [Event]
+    out: [Event] @= []
+
+    if t.nodes.len() == 0
+        return out
+    stack: [i64] @= [0]
+    step: [i64] @= [-2]
+    typed: [bool] @= [false]
+    top @= 1
+
+    while top > 0
+        n = stack[top - 1]
+        c = step[top - 1]
+
+        if c == -2
+            out @ out.push(Event(kind: ENTER, node: n))
+            step[top - 1] @ t.nodes[n].first
+        else if c == -1
+            if has_type(t, n: n) && !typed[top - 1]
+                out @ out.push(Event(kind: TYPE, node: n))
+            out @ out.push(Event(kind: LEAVE, node: n))
+            top @ top - 1
+        else
+            if has_type(t, n: n) && !typed[top - 1] && !is_before_type(t, n: n, c: c)
+                out @ out.push(Event(kind: TYPE, node: n))
+                typed[top - 1] @ true
+            step[top - 1] @ t.nodes[c].next
+
+            if top < stack.len()
+                stack[top] @ c
+                step[top] @ -2
+                typed[top] @ false
+            else
+                stack @ stack.push(c)
+                step @ step.push(-2)
+                typed @ typed.push(false)
+            top @ top + 1
+
+    return out
+
+test "events_of: a field definition's type met after its arguments, before its directives"
+    t = parser.parse("type T { f(a: Int): String @d }", most_tokens: 100, most_depth: 64, most_directives: 50).tree
+    seen: [str] @= []
+
+    for e in events_of(t)
+        mark = if e.kind == ENTER
+            "E"
+        else if e.kind == TYPE
+            "T"
+        else
+            "L"
+        seen @ seen.push(f"{mark}{e.node}")
+
+    assert seen == ["E0", "E1", "E2", "E3", "T3", "L3", "T2", "E4", "L4", "L2", "L1", "L0"]

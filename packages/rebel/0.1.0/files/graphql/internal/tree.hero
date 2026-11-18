@@ -1,0 +1,431 @@
+# The tree of a GraphQL document as one list of nodes: each node knows its
+# parent, its first and last child and its next sibling by index, so that the
+# parser builds it with an explicit stack and every walk over it is a loop. A
+# node's children stand in the order the text writes them. The places a
+# node starts are byte offsets into the text, turned into a line and a
+# column, counted in UTF-16 code units as graphql-js counts them, only where
+# an error names them. It names no type of the face, which a private module
+# cannot reach.
+
+use json
+
+## Kinds of node
+
+# The document, always node 0.
+constant DOCUMENT: i64
+    1
+
+# An operation: `text` its kind, `name` its name or "".
+constant OPERATION: i64
+    2
+
+# A variable an operation defines: `name`, `type`, a default value child.
+constant VARIABLE_DEFINITION: i64
+    3
+
+# A selection set, its children the selections.
+constant SELECTION_SET: i64
+    4
+
+# A field: `alias`, `name`, its arguments, directives and selection set.
+constant FIELD: i64
+    5
+
+# An argument: `name` and its value, the one child.
+constant ARGUMENT: i64
+    6
+
+# A fragment spread: `name`, its directives.
+constant FRAGMENT_SPREAD: i64
+    7
+
+# An inline fragment: `type` its condition or "", its directives and
+# selection set.
+constant INLINE_FRAGMENT: i64
+    8
+
+# A fragment: `name`, `type` its condition, directives and selection set.
+constant FRAGMENT_DEFINITION: i64
+    9
+
+# A directive written on a place: `name`, its arguments.
+constant DIRECTIVE: i64
+    10
+
+# A variable written as a value: `name`.
+constant VARIABLE: i64
+    11
+
+# An integer value: `text` as written.
+constant INT: i64
+    12
+
+# A float value: `text` as written.
+constant FLOAT: i64
+    13
+
+# A string value: `text` with its escapes read, `block` for `"""`.
+constant STRING: i64
+    14
+
+# `true` or `false`: `text`.
+constant BOOLEAN: i64
+    15
+
+# `null`.
+constant NULL: i64
+    16
+
+# An enum value: `text`.
+constant ENUM: i64
+    17
+
+# A list value, its children the elements.
+constant LIST: i64
+    18
+
+# An object value, its children its fields.
+constant OBJECT: i64
+    19
+
+# A field of an object value: `name`, its value the one child.
+constant OBJECT_FIELD: i64
+    20
+
+# A `schema` definition, its children directives and operation types.
+constant SCHEMA_DEFINITION: i64
+    21
+
+# An `extend schema`.
+constant SCHEMA_EXTENSION: i64
+    22
+
+# An operation type of a schema: `text` the operation, `type` the type.
+constant OPERATION_TYPE: i64
+    23
+
+# A `scalar` definition.
+constant SCALAR_DEFINITION: i64
+    24
+
+# An `extend scalar`.
+constant SCALAR_EXTENSION: i64
+    25
+
+# A `type` definition: implements, directives, field definitions.
+constant OBJECT_DEFINITION: i64
+    26
+
+# An `extend type`.
+constant OBJECT_EXTENSION: i64
+    27
+
+# An `interface` definition.
+constant INTERFACE_DEFINITION: i64
+    28
+
+# An `extend interface`.
+constant INTERFACE_EXTENSION: i64
+    29
+
+# A `union` definition: directives and members.
+constant UNION_DEFINITION: i64
+    30
+
+# An `extend union`.
+constant UNION_EXTENSION: i64
+    31
+
+# An `enum` definition: directives and values.
+constant ENUM_DEFINITION: i64
+    32
+
+# An `extend enum`.
+constant ENUM_EXTENSION: i64
+    33
+
+# An `input` definition: directives and fields.
+constant INPUT_DEFINITION: i64
+    34
+
+# An `extend input`.
+constant INPUT_EXTENSION: i64
+    35
+
+# A `directive` definition: `flag` for `repeatable`, its arguments and
+# locations.
+constant DIRECTIVE_DEFINITION: i64
+    36
+
+# A field of a type: `name`, `type`, arguments and directives.
+constant FIELD_DEFINITION: i64
+    37
+
+# An argument or an input field defined: `name`, `type`, a default value
+# child and directives.
+constant INPUT_VALUE_DEFINITION: i64
+    38
+
+# A value of an enum defined: `name` and directives.
+constant ENUM_VALUE_DEFINITION: i64
+    39
+
+# An interface a type implements: `name`.
+constant IMPLEMENTS: i64
+    40
+
+# A member of a union: `name`.
+constant UNION_MEMBER: i64
+    41
+
+# A place a directive may stand: `name`.
+constant LOCATION: i64
+    42
+
+## The tree
+
+# One node.
+record Node
+    # Its kind, one of the constants above.
+    kind: i64
+    # Its parent's index, -1 for the document.
+    parent: i64
+    # Its first child's index, -1 for none.
+    first: i64
+    # Its last child's index, -1 for none.
+    last: i64
+    # Its next sibling's index, -1 for none.
+    next: i64
+    # Its name, as each kind says.
+    name: str
+    # A field's alias, "" for none.
+    alias: str
+    # A literal's text, an operation's kind.
+    text: str
+    # A type as written (`[ID!]!`), a fragment's type condition.
+    type: str
+    # A definition's description, its escapes read.
+    description: str
+    # Whether the definition writes a description.
+    described: bool
+    # Whether a string value is a block string.
+    block: bool
+    # Whether the description is a block string.
+    block_description: bool
+    # Whether a directive defined is repeatable.
+    flag: bool
+    # The byte where the node starts.
+    at: i64
+    # The byte where its name starts.
+    name_at: i64
+    # The byte where the named type of `type` starts.
+    type_at: i64
+    # The byte where `type` starts, its brackets included.
+    type_start: i64
+
+# A document: its text, its nodes and where each line starts.
+record Tree
+    # The text.
+    source: str
+    # The nodes, the document first; a parent always before its children.
+    nodes: [Node]
+    # The byte each line starts at, the first 0.
+    lines: [i64]
+
+# A node of `kind` with no relation yet, starting at `at`.
+function node_of(kind: i64, at: i64) -> Node
+    return Node(
+        kind: kind,
+        parent: -1,
+        first: -1,
+        last: -1,
+        next: -1,
+        name: "",
+        alias: "",
+        text: "",
+        type: "",
+        description: "",
+        described: false,
+        block: false,
+        block_description: false,
+        flag: false,
+        at: at,
+        name_at: at,
+        type_at: at,
+        type_start: at
+    )
+
+# Adds `n` to `nodes` under `parent` (-1 for none) as its last child and
+# answers its index.
+function add(@nodes: [Node], parent: i64, n: Node) -> i64
+    at = nodes.len()
+    linked @= n
+    linked.parent @ parent
+    nodes @ nodes.push(linked)
+
+    if parent >= 0
+        before = nodes[parent].last
+
+        if before < 0
+            nodes[parent].first @ at
+        else
+            nodes[before].next @ at
+        nodes[parent].last @ at
+    return at
+
+# The children of node `n`, in order.
+function kids(t: Tree lent, n: i64) -> [i64]
+    found: [i64] @= []
+    c @= t.nodes[n].first
+
+    while c >= 0
+        found @ found.push(c)
+        c @ t.nodes[c].next
+
+    return found
+
+# The children of node `n` of kind `kind`, in order.
+function kids_of(t: Tree lent, n: i64, kind: i64) -> [i64]
+    found: [i64] @= []
+    c @= t.nodes[n].first
+
+    while c >= 0
+        if t.nodes[c].kind == kind
+            found @ found.push(c)
+        c @ t.nodes[c].next
+
+    return found
+
+# The first child of node `n` of kind `kind`, -1 for none.
+function kid_of(t: Tree lent, n: i64, kind: i64) -> i64
+    c @= t.nodes[n].first
+
+    while c >= 0
+        if t.nodes[c].kind == kind
+            return c
+        c @ t.nodes[c].next
+
+    return -1
+
+# Whether `kind` is a value's.
+function is_value(kind: i64) -> bool
+    return kind >= VARIABLE && kind <= OBJECT
+
+# The first child of node `n` that is a value, -1 for none.
+function value_of(t: Tree lent, n: i64) -> i64
+    c @= t.nodes[n].first
+
+    while c >= 0
+        if is_value(t.nodes[c].kind)
+            return c
+        c @ t.nodes[c].next
+
+    return -1
+
+# The byte each line of `source` starts at: after `\n`, `\r\n` or `\r`.
+function lines_of(source: str) -> [i64]
+    starts: [i64] @= [0]
+    i @= 0
+
+    while i < source.len()
+        b = source[i]
+
+        if b == '\n'
+            starts @ starts.push(i + 1)
+        else if b == '\r'
+            if i + 1 < source.len() && source[i + 1] == '\n'
+                i @ i + 1
+            starts @ starts.push(i + 1)
+        i @ i + 1
+
+    return starts
+
+## Errors
+
+# A place in a text, as an error names it.
+record Loc
+    # The line, from 1.
+    line: i64
+    # The column, from 1, in UTF-16 code units.
+    column: i64
+
+# An error as a response carries it.
+record Err
+    # Its message.
+    message: str
+    # The places it names.
+    locations: [Loc]
+    # Its path in the response, keys and indices.
+    path: [json.Value]
+
+# The line and column of byte `at` of `t`'s text.
+function loc_of(t: Tree lent, at: i64) -> Loc
+    low @= 0
+    high @= t.lines.len() - 1
+
+    while low < high
+        middle = (low + high + 1) / 2
+
+        if t.lines[middle] <= at
+            low @ middle
+        else
+            high @ middle - 1
+
+    start = t.lines[low]
+    column @= 1
+    i @= start
+
+    while i < at && i < t.source.len()
+        b = t.source[i]
+
+        if b < 0x80 || b >= 0xc0
+            column @ column + 1
+
+            if b >= 0xf0
+                column @ column + 1
+        i @ i + 1
+
+    return Loc(line: low + 1, column: column)
+
+# An error of `message` naming the starts of nodes `nodes` of `t`.
+function err_at(t: Tree lent, message: str, nodes: [i64]) -> Err
+    places: [Loc] @= []
+
+    for n in nodes
+        places @ places.push(loc_of(t, at: t.nodes[n].at))
+
+    return Err(message: message, locations: places, path: [])
+
+# An error of `message` naming the bytes `offsets` of `t`.
+function err_bytes(t: Tree lent, message: str, offsets: [i64]) -> Err
+    places: [Loc] @= []
+
+    for at in offsets
+        places @ places.push(loc_of(t, at: at))
+
+    return Err(message: message, locations: places, path: [])
+
+# An error of `message` naming no place.
+function err_of(message: str) -> Err
+    return Err(message: message, locations: [], path: [])
+
+test "lines_of: none, each ending, and a CRLF counted once"
+    assert lines_of("") == [0]
+    assert lines_of("a\nb\r\nc\rd") == [0, 2, 5, 7]
+
+test "loc_of: the first line, a later one, and characters of more than one byte"
+    t = Tree(source: "{\n  é𝄞x", nodes: [], lines: lines_of("{\n  é𝄞x"))
+    assert loc_of(t, at: 0) == Loc(line: 1, column: 1)
+    assert loc_of(t, at: 4) == Loc(line: 2, column: 3)
+    assert loc_of(t, at: 10) == Loc(line: 2, column: 6)
+
+test "add: children linked in order under their parent"
+    nodes: [Node] @= []
+    root = add(@nodes, parent: -1, n: node_of(kind: DOCUMENT, at: 0))
+    a = add(@nodes, parent: root, n: node_of(kind: OPERATION, at: 1))
+    b = add(@nodes, parent: root, n: node_of(kind: FRAGMENT_DEFINITION, at: 2))
+    t = Tree(source: "", nodes: nodes, lines: [0])
+    assert kids(t, n: root) == [a, b]
+    assert kids_of(t, n: root, kind: FRAGMENT_DEFINITION) == [b]
+    assert kid_of(t, n: root, kind: FIELD) == -1
+    assert t.nodes[b].parent == root

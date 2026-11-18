@@ -1,0 +1,500 @@
+# The type system's rules a built schema must keep, graphql-js's
+# `validateSchema` in its order: the roots, the directives, then each type of
+# the type map, its name, fields, arguments, interfaces implemented whole,
+# union members, enum values, input fields and the input objects that would
+# hold themselves through fields that may not be null. Places are named
+# where the text being built wrote them.
+
+use graphql/internal/model
+use graphql/internal/tree
+
+# The errors of `m`, the places of `t`'s text named where `m` holds them.
+function validate(t: tree.Tree lent, m: model.Model lent) -> [tree.Err]
+    errors: [tree.Err] @= []
+    check_roots(t, m: m, @errors)
+
+    for d in m.directives
+        check_name(t, name: d.name, at: d.at, @errors)
+
+        for a in d.arguments
+            check_name(t, name: a.name, at: a.at, @errors)
+
+            if !is_input(m, type: a.type)
+                errors @ errors.push(
+                    err(t, message: f"The type of @{d.name}({a.name}:) must be Input Type but got: {a.type}.", places: [a.type_at])
+                )
+
+            if model.is_non_null(a.type) && !a.has_default && a.deprecated
+                errors @ errors.push(
+                    err(t, message: f"Required argument @{d.name}({a.name}:) cannot be deprecated.", places: [a.at, a.type_at])
+                )
+
+    visited: {str: bool} @= {}
+
+    for name in keys(m.types)
+        ty = m.types[name].must()
+
+        if !ty.builtin
+            check_name(t, name: ty.name, at: ty.at, @errors)
+
+        if ty.kind == model.OBJECT || ty.kind == model.INTERFACE
+            check_fields(t, m: m, ty: ty, @errors)
+            check_interfaces(t, m: m, ty: ty, @errors)
+        else if ty.kind == model.UNION
+            check_union(t, m: m, ty: ty, @errors)
+        else if ty.kind == model.ENUM
+            if ty.values.len() == 0
+                errors @ errors.push(
+                    err(t, message: f"Enum type {ty.name} must define one or more values.", places: places_of(ty))
+                )
+
+            for v in ty.values
+                check_name(t, name: v.name, at: v.at, @errors)
+        else if ty.kind == model.INPUT_OBJECT
+            check_inputs(t, m: m, ty: ty, @errors)
+            check_cycles(t, m: m, start: ty.name, @visited, @errors)
+
+    return errors
+
+# An error naming the places of `places` that the text holds.
+function err(t: tree.Tree lent, message: str, places: [i64]) -> tree.Err
+    known: [i64] @= []
+
+    for p in places
+        if p >= 0
+            known @ known.push(p)
+
+    return tree.err_bytes(t, message: message, offsets: known)
+
+# The places a type's definition and extensions stand.
+function places_of(ty: model.Type) -> [i64]
+    places: [i64] @= [ty.at]
+
+    for p in ty.extended_at
+        places @ places.push(p)
+
+    return places
+
+# Whether the type `type` is an input's: a scalar, an enum or an input
+# object.
+function is_input(m: model.Model lent, type: str) -> bool
+    return model.is_input_name(m, name: model.named_of(type))
+
+# Whether the type `type` is an output's.
+function is_output(m: model.Model lent, type: str) -> bool
+    return model.is_output_name(m, name: model.named_of(type))
+
+# Reports a name that begins with `__`.
+function check_name(t: tree.Tree lent, name: str, at: i64, @errors: [tree.Err])
+    if name.len() >= 2 && name[0] == '_' && name[1] == '_'
+        errors @ errors.push(
+            err(t, message: f"Name \"{name}\" must not begin with \"__\", which is reserved by GraphQL introspection.", places: [at])
+        )
+
+# The byte where `t`'s `schema` definition or extension names the root of
+# `word`, -1 for none.
+function root_place(t: tree.Tree lent, word: str) -> i64
+    for n in tree.kids(t, n: 0)
+        k = t.nodes[n].kind
+
+        if k == tree.SCHEMA_DEFINITION || k == tree.SCHEMA_EXTENSION
+            for op in tree.kids_of(t, n: n, kind: tree.OPERATION_TYPE)
+                if t.nodes[op].text == word
+                    return t.nodes[op].type_at
+
+    return -1
+
+# Reports a missing query root, and a root that is not an object type.
+function check_roots(t: tree.Tree lent, m: model.Model lent, @errors: [tree.Err])
+    if m.query == ""
+        errors @ errors.push(err(t, message: "Query root type must be provided.", places: [m.at]))
+    else if model.kind_of(m, name: m.query) != model.OBJECT
+        errors @ errors.push(
+            err(t, message: f"Query root type must be Object type, it cannot be {m.query}.", places: [root_place(t, word: "query")])
+        )
+
+    if m.mutation != "" && model.kind_of(m, name: m.mutation) != model.OBJECT
+        errors @ errors.push(
+            err(t, message: f"Mutation root type must be Object type if provided, it cannot be {m.mutation}.", places: [root_place(t, word: "mutation")])
+        )
+
+    if m.subscription != "" && model.kind_of(m, name: m.subscription) != model.OBJECT
+        errors @ errors.push(
+            err(t, message: f"Subscription root type must be Object type if provided, it cannot be {m.subscription}.", places: [root_place(t, word: "subscription")])
+        )
+
+# Reports a type with no field, and each field and argument of a kind or a
+# name the type system refuses.
+function check_fields(t: tree.Tree lent, m: model.Model lent, ty: model.Type, @errors: [tree.Err])
+    if ty.fields.len() == 0
+        errors @ errors.push(err(t, message: f"Type {ty.name} must define one or more fields.", places: places_of(ty)))
+
+    for f in ty.fields
+        check_name(t, name: f.name, at: f.at, @errors)
+
+        if !is_output(m, type: f.type)
+            errors @ errors.push(
+                err(t, message: f"The type of {ty.name}.{f.name} must be Output Type but got: {f.type}.", places: [f.type_at])
+            )
+
+        for a in f.arguments
+            check_name(t, name: a.name, at: a.at, @errors)
+
+            if !is_input(m, type: a.type)
+                errors @ errors.push(
+                    err(t, message: f"The type of {ty.name}.{f.name}({a.name}:) must be Input Type but got: {a.type}.", places: [a.type_at])
+                )
+
+            if model.is_non_null(a.type) && !a.has_default && a.deprecated
+                errors @ errors.push(
+                    err(t, message: f"Required argument {ty.name}.{f.name}({a.name}:) cannot be deprecated.", places: [deprecated_place(t, at: a.at), a.type_at])
+                )
+
+# The byte of the `@deprecated` written on the node starting at `at`, -1
+# for none.
+function deprecated_place(t: tree.Tree lent, at: i64) -> i64
+    if at < 0
+        return -1
+    i @= 0
+
+    while i < t.nodes.len()
+        if t.nodes[i].kind == tree.DIRECTIVE && t.nodes[i].name == "deprecated" && t.nodes[t.nodes[i].parent].at == at
+            return t.nodes[i].at
+        i @ i + 1
+
+    return -1
+
+# The bytes where the definitions and extensions of `type_name` in `t` name
+# `iface` among their interfaces.
+function implements_places(t: tree.Tree lent, type_name: str, iface: str) -> [i64]
+    places: [i64] @= []
+
+    for n in tree.kids(t, n: 0)
+        if t.nodes[n].name == type_name
+            for c in tree.kids_of(t, n: n, kind: tree.IMPLEMENTS)
+                if t.nodes[c].name == iface
+                    places @ places.push(t.nodes[c].at)
+
+    return places
+
+# The bytes where the definitions and extensions of the union `union_name`
+# in `t` name `member`.
+function member_places(t: tree.Tree lent, union_name: str, member: str) -> [i64]
+    places: [i64] @= []
+
+    for n in tree.kids(t, n: 0)
+        if t.nodes[n].name == union_name
+            for c in tree.kids_of(t, n: n, kind: tree.UNION_MEMBER)
+                if t.nodes[c].name == member
+                    places @ places.push(t.nodes[c].at)
+
+    return places
+
+# The field `name` of `ty`, its index, -1 for none.
+function field_index(ty: model.Type, name: str) -> i64
+    i @= 0
+
+    while i < ty.fields.len()
+        if ty.fields[i].name == name
+            return i
+        i @ i + 1
+
+    return -1
+
+# Reports each interface `ty` implements that is not one, is itself, is
+# named twice, or is implemented in part.
+function check_interfaces(t: tree.Tree lent, m: model.Model lent, ty: model.Type, @errors: [tree.Err])
+    named: {str: bool} @= {}
+
+    for iface in ty.interfaces
+        if model.kind_of(m, name: iface) != model.INTERFACE
+            errors @ errors.push(
+                err(t, message: f"Type {ty.name} must only implement Interface types, it cannot implement {iface}.", places: implements_places(t, type_name: ty.name, iface: iface))
+            )
+            continue
+
+        if iface == ty.name
+            errors @ errors.push(
+                err(t, message: f"Type {ty.name} cannot implement itself because it would create a circular reference.", places: implements_places(t, type_name: ty.name, iface: iface))
+            )
+            continue
+
+        if named[iface].default(false)
+            errors @ errors.push(
+                err(t, message: f"Type {ty.name} can only implement {iface} once.", places: implements_places(t, type_name: ty.name, iface: iface))
+            )
+            continue
+        named[iface] @ true
+        check_ancestors(t, m: m, ty: ty, iface: iface, @errors)
+        check_implementation(t, m: m, ty: ty, iface: m.types[iface].must(), @errors)
+
+# Reports each interface `iface` implements that `ty` does not.
+function check_ancestors(t: tree.Tree lent, m: model.Model lent, ty: model.Type, iface: str, @errors: [tree.Err])
+    for transitive in m.types[iface].must().interfaces
+        mine @= false
+
+        for i in ty.interfaces
+            if i == transitive
+                mine @ true
+
+        if !mine
+            places @= implements_places(t, type_name: iface, iface: transitive)
+
+            for p in implements_places(t, type_name: ty.name, iface: iface)
+                places @ places.push(p)
+
+            if transitive == ty.name
+                errors @ errors.push(
+                    err(t, message: f"Type {ty.name} cannot implement {iface} because it would create a circular reference.", places: places)
+                )
+            else
+                errors @ errors.push(
+                    err(t, message: f"Type {ty.name} must implement {transitive} because it is implemented by {iface}.", places: places)
+                )
+
+# Reports each field and argument of `iface` that `ty` does not provide, or
+# provides with another type, and each required argument `ty` adds.
+function check_implementation(t: tree.Tree lent, m: model.Model lent, ty: model.Type, iface: model.Type, @errors: [tree.Err])
+    for want in iface.fields
+        at = field_index(ty, name: want.name)
+
+        if at < 0
+            places @= [want.at]
+
+            for p in places_of(ty)
+                places @ places.push(p)
+
+            errors @ errors.push(
+                err(t, message: f"Interface field {iface.name}.{want.name} expected but {ty.name} does not provide it.", places: places)
+            )
+            continue
+        have = ty.fields[at]
+
+        if !is_sub_type_of(m, sub: have.type, super: want.type)
+            errors @ errors.push(
+                err(t, message: f"Interface field {iface.name}.{want.name} expects type {want.type} but {ty.name}.{want.name} is type {have.type}.", places: [want.type_at, have.type_at])
+            )
+
+        for wanted in want.arguments
+            found @= -1
+            i @= 0
+
+            while i < have.arguments.len()
+                if have.arguments[i].name == wanted.name
+                    found @ i
+                i @ i + 1
+
+            if found < 0
+                errors @ errors.push(
+                    err(t, message: f"Interface field argument {iface.name}.{want.name}({wanted.name}:) expected but {ty.name}.{want.name} does not provide it.", places: [wanted.at, have.at])
+                )
+            else if have.arguments[found].type != wanted.type
+                errors @ errors.push(
+                    err(t, message: f"Interface field argument {iface.name}.{want.name}({wanted.name}:) expects type {wanted.type} but {ty.name}.{want.name}({wanted.name}:) is type {have.arguments[found].type}.", places: [wanted.type_at, have.arguments[found].type_at])
+                )
+
+        for extra in have.arguments
+            declared @= false
+
+            for wanted in want.arguments
+                if wanted.name == extra.name
+                    declared @ true
+
+            if !declared && model.is_non_null(extra.type) && !extra.has_default
+                errors @ errors.push(
+                    err(t, message: f"Object field {ty.name}.{want.name} includes required argument {extra.name} that is missing from the Interface field {iface.name}.{want.name}.", places: [extra.at, want.at])
+                )
+
+# Whether a value of `sub` may stand where `super` is asked: the same type,
+# a non-null one for a nullable one, a list of sub types, or a possible type
+# of an interface or a union.
+function is_sub_type_of(m: model.Model lent, sub: str, super: str) -> bool
+    a @= sub
+    b @= super
+
+    while true
+        if a == b
+            return true
+
+        if model.is_non_null(b)
+            if !model.is_non_null(a)
+                return false
+            a @ model.nullable_of(a)
+            b @ model.nullable_of(b)
+        else if model.is_non_null(a)
+            a @ model.nullable_of(a)
+        else if model.is_list(b)
+            if !model.is_list(a)
+                return false
+            a @ model.item_of(a)
+            b @ model.item_of(b)
+        else if model.is_list(a)
+            return false
+        else
+            return model.is_abstract_name(m, name: b) && model.is_composite_name(m, name: a) && model.is_sub_type(m, abstract: b, sub: a)
+
+    return false
+
+# Reports a union with no member, a member named twice, and one that is not
+# an object type.
+function check_union(t: tree.Tree lent, m: model.Model lent, ty: model.Type, @errors: [tree.Err])
+    if ty.members.len() == 0
+        errors @ errors.push(
+            err(t, message: f"Union type {ty.name} must define one or more member types.", places: places_of(ty))
+        )
+    included: {str: bool} @= {}
+
+    for member in ty.members
+        if included[member].default(false)
+            errors @ errors.push(
+                err(t, message: f"Union type {ty.name} can only include type {member} once.", places: member_places(t, union_name: ty.name, member: member))
+            )
+            continue
+        included[member] @ true
+
+        if model.kind_of(m, name: member) != model.OBJECT
+            errors @ errors.push(
+                err(t, message: f"Union type {ty.name} can only include Object types, it cannot include {member}.", places: member_places(t, union_name: ty.name, member: member))
+            )
+
+# Reports an input object with no field, and each field of a kind, a name or
+# a mark the type system refuses.
+function check_inputs(t: tree.Tree lent, m: model.Model lent, ty: model.Type, @errors: [tree.Err])
+    if ty.inputs.len() == 0
+        errors @ errors.push(
+            err(t, message: f"Input Object type {ty.name} must define one or more fields.", places: places_of(ty))
+        )
+
+    for f in ty.inputs
+        check_name(t, name: f.name, at: f.at, @errors)
+
+        if !is_input(m, type: f.type)
+            errors @ errors.push(
+                err(t, message: f"The type of {ty.name}.{f.name} must be Input Type but got: {f.type}.", places: [f.type_at])
+            )
+
+        if model.is_non_null(f.type) && !f.has_default && f.deprecated
+            errors @ errors.push(
+                err(t, message: f"Required input field {ty.name}.{f.name} cannot be deprecated.", places: [deprecated_place(t, at: f.at), f.type_at])
+            )
+
+        if ty.one_of
+            if model.is_non_null(f.type)
+                errors @ errors.push(
+                    err(t, message: f"OneOf input field {ty.name}.{f.name} must be nullable.", places: [f.type_at])
+                )
+
+            if f.has_default
+                errors @ errors.push(
+                    err(t, message: f"OneOf input field {ty.name}.{f.name} cannot have a default value.", places: [f.at])
+                )
+
+# Reports each input object that holds itself through fields that may not be
+# null, from `start`, depth first on an explicit stack; `visited` holds the
+# input objects already searched.
+function check_cycles(t: tree.Tree lent, m: model.Model lent, start: str, @visited: {str: bool}, @errors: [tree.Err])
+    if visited[start].default(false)
+        return
+    names: [str] @= [start]
+    next_field: [i64] @= [0]
+    path_names: [str] @= []
+    path_places: [i64] @= []
+    path_len @= 0
+    depth_of: {str: i64} @= {}
+    visited[start] @ true
+    depth_of[start] @ 0
+    top @= 1
+
+    while top > 0
+        name = names[top - 1]
+        ty = m.types[name].must()
+        i = next_field[top - 1]
+
+        if i >= ty.inputs.len()
+            depth_of[name] @ -1
+            top @ top - 1
+
+            if top > 0
+                path_len @ path_len - 1
+            continue
+        next_field[top - 1] @ i + 1
+        f = ty.inputs[i]
+
+        if !model.is_non_null(f.type) || model.is_list(model.nullable_of(f.type))
+            continue
+        target = model.named_of(f.type)
+
+        if model.kind_of(m, name: target) != model.INPUT_OBJECT
+            continue
+        cycle = depth_of[target].default(-1)
+
+        if cycle >= 0
+            cut_names @= path_names.slice(from: cycle, to: path_len)
+            cut_names @ cut_names.push(f.name)
+            cut_places @= path_places.slice(from: cycle, to: path_len)
+            cut_places @ cut_places.push(f.at)
+            errors @ errors.push(
+                err(t, message: f"Cannot reference Input Object \"{target}\" within itself through a series of non-null fields: \"{cut_names.join(".")}\".", places: cut_places)
+            )
+            continue
+
+        if visited[target].default(false)
+            continue
+        visited[target] @ true
+
+        if path_len < path_names.len()
+            path_names[path_len] @ f.name
+            path_places[path_len] @ f.at
+        else
+            path_names @ path_names.push(f.name)
+            path_places @ path_places.push(f.at)
+        path_len @ path_len + 1
+        depth_of[target] @ path_len
+
+        if top < names.len()
+            names[top] @ target
+            next_field[top] @ 0
+        else
+            names @ names.push(target)
+            next_field @ next_field.push(0)
+        top @ top + 1
+
+test "validate: a schema with no query root, and a type with no field"
+    t = tree.Tree(source: "", nodes: [], lines: [0])
+    empty = model.Type(
+        name: "T",
+        kind: model.OBJECT,
+        description: "",
+        described: false,
+        fields: [],
+        interfaces: [],
+        members: [],
+        values: [],
+        inputs: [],
+        specified_by: "",
+        has_specified_by: false,
+        one_of: false,
+        builtin: false,
+        at: -1,
+        extended_at: []
+    )
+    m = model.Model(
+        types: {"T": empty},
+        query: "",
+        mutation: "",
+        subscription: "",
+        directives: [],
+        description: "",
+        described: false,
+        implementations: {},
+        at: -1
+    )
+    messages: [str] @= []
+
+    for e in validate(t, m: m)
+        messages @ messages.push(e.message)
+
+    assert messages == ["Query root type must be provided.", "Type T must define one or more fields."]
+    assert is_sub_type_of(m, sub: "[Int!]!", super: "[Int]")
+    assert !is_sub_type_of(m, sub: "[Int]", super: "[Int!]")
+    assert !is_sub_type_of(m, sub: "Int", super: "[Int]")

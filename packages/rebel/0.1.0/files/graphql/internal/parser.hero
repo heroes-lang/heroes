@@ -1,0 +1,359 @@
+# A GraphQL document read into its tree, as the specification's section 2
+# writes it and graphql-js reads it: operations, fragments and the
+# definitions of a schema, with graphql-js's message at the first token that
+# breaks the grammar. Selection sets nest on an explicit stack, values on
+# theirs (`cursor`), so no text, however deep, recurses.
+
+use graphql/internal/cursor
+use graphql/internal/lexer
+use graphql/internal/parse_sdl
+use graphql/internal/tree
+
+# What `parse` answers: the tree, or the failure and where it is.
+record Parsed
+    # The tree, its nodes as far as they were read where the text failed.
+    tree: tree.Tree
+    # The failure's code, "" where the text was read whole.
+    code: str
+    # The failure's message, graphql-js's.
+    message: str
+    # Where the failure is.
+    at: tree.Loc
+
+# The tree of `source`, read under the limits of tokens, levels and
+# directives on one place.
+function parse(source: str, most_tokens: i64, most_depth: i64, most_directives: i64) -> Parsed
+    p @= cursor.P(
+        source: source,
+        tokens: lexer.lex(source, most: most_tokens),
+        pos: 0,
+        nodes: [],
+        error: "",
+        error_at: 0,
+        depth: 0,
+        most_depth: most_depth,
+        most_directives: most_directives,
+        most_tokens: most_tokens
+    )
+
+    code = match read_document(@p)
+        .ok _  => ""
+        .err e => e.code
+
+    t = tree.Tree(source: source, nodes: p.nodes, lines: tree.lines_of(source))
+
+    if code == ""
+        return Parsed(tree: t, code: "", message: "", at: tree.Loc(line: 0, column: 0))
+    return Parsed(tree: t, code: code, message: p.error, at: tree.loc_of(t, at: p.error_at))
+
+# Reads the whole document: one definition or more.
+function read_document(@p: cursor.P) -> ()?
+    doc = cursor.add(@p, parent: -1, n: tree.node_of(kind: tree.DOCUMENT, at: 0))
+    cursor.check_token(@p, t: cursor.token(p))?
+
+    if cursor.token(p).kind == lexer.EOF
+        cursor.unexpected(@p, t: cursor.token(p))?
+
+    while cursor.token(p).kind != lexer.EOF
+        read_definition(@p, doc: doc)?
+
+    return ok()
+
+# Reads one definition under `doc`.
+function read_definition(@p: cursor.P, doc: i64) -> ()?
+    t = cursor.token(p)
+
+    if cursor.is_punct(p, v: "{")
+        return read_operation(@p, doc: doc)
+    described = cursor.is_description(p)
+
+    keyword = if described
+        cursor.ahead(@p)?
+    else
+        t
+
+    if keyword.kind == lexer.NAME
+        if parse_sdl.is_definition_keyword(keyword.value)
+            return parse_sdl.read_definition(@p, parent: doc, keyword: keyword.value, start: t.start)
+
+        if keyword.value == "query" || keyword.value == "mutation" || keyword.value == "subscription"
+            return read_operation(@p, doc: doc)
+
+        if keyword.value == "fragment"
+            return read_fragment(@p, doc: doc)
+
+        if described
+            return cursor.stop(
+                @p,
+                message: "Unexpected description, only GraphQL definitions support descriptions.",
+                at: t.start
+            )
+
+        if keyword.value == "extend"
+            return parse_sdl.read_extension(@p, parent: doc)
+
+    if described && keyword.kind == lexer.PUNCTUATOR && keyword.value == "{"
+        return cursor.stop(
+            @p,
+            message: "Unexpected description, descriptions are not supported on shorthand queries.",
+            at: t.start
+        )
+    return cursor.unexpected(@p, t: keyword)
+
+# Reads an operation under `doc`: its description, kind, name, variables,
+# directives and selection set, or a selection set alone.
+function read_operation(@p: cursor.P, doc: i64) -> ()?
+    at = cursor.add(@p, parent: doc, n: tree.node_of(kind: tree.OPERATION, at: cursor.token(p).start))
+
+    if cursor.is_punct(p, v: "{")
+        p.nodes[at].text @ "query"
+        return read_selection_set(@p, parent: at)
+    cursor.read_description(@p, at: at)?
+    kind = cursor.token(p)
+    cursor.advance(@p)?
+    p.nodes[at].text @ kind.value
+
+    if cursor.is_name(p)
+        name = cursor.expect_name(@p)?
+        p.nodes[at].name @ name.value
+        p.nodes[at].name_at @ name.start
+
+    if cursor.is_punct(p, v: "(")
+        cursor.advance(@p)?
+        first @= true
+
+        while first || !cursor.is_punct(p, v: ")")
+            first @ false
+            read_variable(@p, operation: at)?
+
+        cursor.advance(@p)?
+    cursor.read_directives(@p, parent: at, fixed: false)?
+    return read_selection_set(@p, parent: at)
+
+# Reads a variable definition under `operation`: `$name: Type = default
+# @directives`, its description first.
+function read_variable(@p: cursor.P, operation: i64) -> ()?
+    at = cursor.add(@p, parent: operation, n: tree.node_of(kind: tree.VARIABLE_DEFINITION, at: cursor.token(p).start))
+    cursor.read_description(@p, at: at)?
+
+    if !p.nodes[at].described
+        p.nodes[at].at @ cursor.token(p).start
+    cursor.expect_punct(@p, v: "$")?
+    name = cursor.expect_name(@p)?
+    p.nodes[at].name @ name.value
+    p.nodes[at].name_at @ name.start
+    cursor.expect_punct(@p, v: ":")?
+    cursor.read_type(@p, at: at)?
+
+    if cursor.is_punct(p, v: "=")
+        cursor.advance(@p)?
+        cursor.read_value(@p, parent: at, fixed: true)?
+    cursor.read_directives(@p, parent: at, fixed: true)?
+    return ok()
+
+# Reads a fragment under `doc`: `fragment Name on Type @directives { ... }`.
+function read_fragment(@p: cursor.P, doc: i64) -> ()?
+    at = cursor.add(@p, parent: doc, n: tree.node_of(kind: tree.FRAGMENT_DEFINITION, at: cursor.token(p).start))
+    cursor.read_description(@p, at: at)?
+    cursor.expect_keyword(@p, v: "fragment")?
+
+    if cursor.is_keyword(p, v: "on")
+        cursor.unexpected(@p, t: cursor.token(p))?
+    name = cursor.expect_name(@p)?
+    p.nodes[at].name @ name.value
+    p.nodes[at].name_at @ name.start
+    cursor.expect_keyword(@p, v: "on")?
+    condition = cursor.expect_name(@p)?
+    p.nodes[at].type @ condition.value
+    p.nodes[at].type_at @ condition.start
+    p.nodes[at].type_start @ condition.start
+    cursor.read_directives(@p, parent: at, fixed: false)?
+    return read_selection_set(@p, parent: at)
+
+# Reads the selection set at the current `{` under `parent`, and every
+# selection set it holds, on an explicit stack of the sets open.
+function read_selection_set(@p: cursor.P, parent: i64) -> ()?
+    open: [i64] @= []
+    top @= 0
+    under @= parent
+    opening @= true
+
+    while true
+        if opening
+            opening @ false
+            brace = cursor.token(p)
+
+            if p.depth + 1 > p.most_depth
+                cursor.too_deep(@p)?
+            cursor.expect_punct(@p, v: "{")?
+            set = cursor.add(@p, parent: under, n: tree.node_of(kind: tree.SELECTION_SET, at: brace.start))
+
+            if top < open.len()
+                open[top] @ set
+            else
+                open @ open.push(set)
+            top @ top + 1
+            p.depth @ p.depth + 1
+            opening @ read_selection(@p, set: set)?
+
+            if opening
+                under @ p.nodes[set].last
+        else if cursor.is_punct(p, v: "}")
+            cursor.advance(@p)?
+            top @ top - 1
+            p.depth @ p.depth - 1
+
+            if top == 0
+                return ok()
+        else
+            set = open[top - 1]
+            opening @ read_selection(@p, set: set)?
+
+            if opening
+                under @ p.nodes[set].last
+
+# Reads one selection into `set`: a field, a fragment spread or an inline
+# fragment, and answers whether a selection set of its own opens next.
+function read_selection(@p: cursor.P, set: i64) -> bool?
+    t = cursor.token(p)
+
+    if cursor.is_punct(p, v: "...")
+        cursor.advance(@p)?
+
+        if cursor.is_name(p) && !cursor.is_keyword(p, v: "on")
+            name = cursor.expect_name(@p)?
+            spread @= tree.node_of(kind: tree.FRAGMENT_SPREAD, at: t.start)
+            spread.name @ name.value
+            spread.name_at @ name.start
+            at = cursor.add(@p, parent: set, n: spread)
+            cursor.read_directives(@p, parent: at, fixed: false)?
+            return ok(false)
+        at = cursor.add(@p, parent: set, n: tree.node_of(kind: tree.INLINE_FRAGMENT, at: t.start))
+
+        if cursor.is_keyword(p, v: "on")
+            cursor.advance(@p)?
+            condition = cursor.expect_name(@p)?
+            p.nodes[at].type @ condition.value
+            p.nodes[at].type_at @ condition.start
+            p.nodes[at].type_start @ condition.start
+        cursor.read_directives(@p, parent: at, fixed: false)?
+
+        if !cursor.is_punct(p, v: "{")
+            here = cursor.token(p)
+            cursor.stop(@p, message: f"Expected \"{{\", found {cursor.describe(here)}.", at: here.start)?
+        return ok(true)
+    first = cursor.expect_name(@p)?
+    field @= tree.node_of(kind: tree.FIELD, at: first.start)
+    field.name @ first.value
+    field.name_at @ first.start
+
+    if cursor.is_punct(p, v: ":")
+        cursor.advance(@p)?
+        name = cursor.expect_name(@p)?
+        field.alias @ first.value
+        field.name @ name.value
+        field.name_at @ name.start
+    at = cursor.add(@p, parent: set, n: field)
+    cursor.read_arguments(@p, parent: at, fixed: false)?
+    cursor.read_directives(@p, parent: at, fixed: false)?
+    return ok(cursor.is_punct(p, v: "{"))
+
+test "parse: graphql-js's message and place for each kind of mistake"
+    cases = [
+        ["", "Syntax Error: Unexpected <EOF>.", "1:1"]
+        ["{", "Syntax Error: Expected Name, found <EOF>.", "1:2"]
+        ["{ a ? }", "Syntax Error: Unexpected character: \"?\".", "1:5"]
+        ["\"d\" foo", "Syntax Error: Unexpected description, only GraphQL definitions support descriptions.", "1:1"]
+        ["\"d\" {", "Syntax Error: Unexpected description, descriptions are not supported on shorthand queries.", "1:1"]
+        ["\"d\" 1", "Syntax Error: Unexpected Int \"1\".", "1:5"]
+        ["query Q", "Syntax Error: Expected \"{\", found <EOF>.", "1:8"]
+        ["foo { a }", "Syntax Error: Unexpected Name \"foo\".", "1:1"]
+        ["fragment F { a }", "Syntax Error: Expected \"on\", found \"{\".", "1:12"]
+        ["fragment on on T { a }", "Syntax Error: Unexpected Name \"on\".", "1:10"]
+        ["type A implements B C { a: Int }", "Syntax Error: Unexpected Name \"C\".", "1:21"]
+        ["enum E { true }", "Syntax Error: Name \"true\" is reserved and cannot be used for an enum value.", "1:10"]
+        ["directive @d on FOO", "Syntax Error: Unexpected Name \"FOO\".", "1:17"]
+        ["extend schema", "Syntax Error: Unexpected <EOF>.", "1:14"]
+        ["extend foo", "Syntax Error: Unexpected Name \"foo\".", "1:8"]
+        ["schema { foo: Q }", "Syntax Error: Unexpected Name \"foo\".", "1:10"]
+        ["query Q() { a }", "Syntax Error: Expected \"$\", found \")\".", "1:9"]
+        ["type A { a(x: Int = $v): Int }", "Syntax Error: Unexpected variable \"$v\" in constant value.", "1:21"]
+        ["{ a(x: [1, 2) }", "Syntax Error: Unexpected \")\".", "1:13"]
+        ["{ ... @d }", "Syntax Error: Expected \"{\", found \"}\".", "1:10"]
+        ["{ ...on }", "Syntax Error: Expected Name, found \"}\".", "1:9"]
+        ["{ a: b: c }", "Syntax Error: Expected Name, found \":\".", "1:7"]
+    ]
+
+    for c in cases
+        got = parse(c[0], most_tokens: 100, most_depth: 64, most_directives: 50)
+        assert got.message == c[1]
+        assert f"{got.at.line}:{got.at.column}" == c[2]
+
+test "parse: an operation with every part, read into its nodes"
+    got = parse(
+        "query Q($v: [Int!]! = [1] @d) @q { x: a(b: $v, c: {d: [true, null, E, \"s\", 1.5]}) @skip(if: false) { ...F ... on T { c } } }",
+        most_tokens: 1000,
+        most_depth: 64,
+        most_directives: 50
+    )
+    assert got.code == ""
+    t = got.tree
+    operation = t.nodes[0].first
+    assert t.nodes[operation].kind == tree.OPERATION
+    assert t.nodes[operation].name == "Q"
+    variable = tree.kid_of(t, n: operation, kind: tree.VARIABLE_DEFINITION)
+    assert t.nodes[variable].type == "[Int!]!"
+    assert t.nodes[tree.value_of(t, n: variable)].kind == tree.LIST
+    set = tree.kid_of(t, n: operation, kind: tree.SELECTION_SET)
+    field = t.nodes[set].first
+    assert t.nodes[field].alias == "x"
+    assert t.nodes[field].name == "a"
+    assert tree.kids_of(t, n: field, kind: tree.ARGUMENT).len() == 2
+    inner = tree.kid_of(t, n: field, kind: tree.SELECTION_SET)
+    assert tree.kids(t, n: inner).len() == 2
+    assert t.nodes[t.nodes[inner].last].type == "T"
+
+test "parse: the limits of tokens, levels and directives"
+    assert parse("{ a b c }", most_tokens: 3, most_depth: 64, most_directives: 50).message == "Syntax Error: Document contains more that 3 tokens. Parsing aborted."
+    assert parse("{ a { b { c } } }", most_tokens: 100, most_depth: 2, most_directives: 50).code == "limit"
+    assert parse("{ a { b } }", most_tokens: 100, most_depth: 2, most_directives: 50).code == ""
+    assert parse("{ a(x: [[[1]]]) }", most_tokens: 100, most_depth: 3, most_directives: 50).code == "limit"
+    assert parse("{ a @a @b @c }", most_tokens: 100, most_depth: 3, most_directives: 2).code == "limit"
+    deep = repeat("{ a ", 100000) + repeat("}", 100000)
+    assert parse(deep, most_tokens: 1000000, most_depth: 64, most_directives: 50).code == "limit"
+
+# The value literal `source` writes alone, a constant: in the tree, node 1
+# under the document.
+function parse_value(source: str, most_depth: i64) -> Parsed
+    p @= cursor.P(
+        source: source,
+        tokens: lexer.lex(source, most: 100000),
+        pos: 0,
+        nodes: [],
+        error: "",
+        error_at: 0,
+        depth: 0,
+        most_depth: most_depth,
+        most_directives: 0,
+        most_tokens: 100000
+    )
+
+    code = match read_lone_value(@p)
+        .ok _  => ""
+        .err e => e.code
+
+    t = tree.Tree(source: source, nodes: p.nodes, lines: tree.lines_of(source))
+
+    if code == ""
+        return Parsed(tree: t, code: "", message: "", at: tree.Loc(line: 0, column: 0))
+    return Parsed(tree: t, code: code, message: p.error, at: tree.loc_of(t, at: p.error_at))
+
+# Reads one constant value and the end of the text.
+function read_lone_value(@p: cursor.P) -> ()?
+    doc = cursor.add(@p, parent: -1, n: tree.node_of(kind: tree.DOCUMENT, at: 0))
+    cursor.check_token(@p, t: cursor.token(p))?
+    cursor.read_value(@p, parent: doc, fixed: true)?
+
+    if cursor.token(p).kind != lexer.EOF
+        cursor.unexpected(@p, t: cursor.token(p))?
+    return ok()

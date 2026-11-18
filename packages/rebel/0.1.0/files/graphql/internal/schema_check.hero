@@ -1,0 +1,663 @@
+# The rules a schema's text must keep before it is built, graphql-js's
+# `specifiedSDLRules` in their order: one schema definition, each operation
+# type once, each type, enum value, field, argument and directive defined
+# once, every type and directive known, a directive where it may stand and
+# once there unless repeatable, an extension of a type that exists and is of
+# its kind, a directive's arguments known, given once and given where
+# required. They run together over `walk`'s events, so their errors come in
+# graphql-js's order.
+
+use graphql/internal/model
+use graphql/internal/parser
+use graphql/internal/suggest
+use graphql/internal/tree
+use graphql/internal/walk
+
+# The names of the specified scalars and the introspection types, in
+# graphql-js's order.
+function standard_names() -> [str]
+    return [
+        "String"
+        "Int"
+        "Float"
+        "Boolean"
+        "ID"
+        "__Schema"
+        "__Type"
+        "__TypeKind"
+        "__Field"
+        "__InputValue"
+        "__EnumValue"
+        "__Directive"
+        "__DirectiveLocation"
+    ]
+
+# Whether `k` is a type definition's kind.
+function is_type_definition(k: i64) -> bool
+    return k == tree.SCALAR_DEFINITION || k == tree.OBJECT_DEFINITION || k == tree.INTERFACE_DEFINITION || k == tree.UNION_DEFINITION || k == tree.ENUM_DEFINITION || k == tree.INPUT_DEFINITION
+
+# Whether `k` is a type extension's kind.
+function is_type_extension(k: i64) -> bool
+    return k == tree.SCALAR_EXTENSION || k == tree.OBJECT_EXTENSION || k == tree.INTERFACE_EXTENSION || k == tree.UNION_EXTENSION || k == tree.ENUM_EXTENSION || k == tree.INPUT_EXTENSION
+
+# The extension kind of the definition kind `k`.
+function extension_of(k: i64) -> i64
+    return k + 1
+
+# The kind of type an extension of `k` extends, as a message names it.
+function kind_word(k: i64) -> str
+    if k == tree.SCALAR_EXTENSION
+        return "scalar"
+
+    if k == tree.OBJECT_EXTENSION
+        return "object"
+
+    if k == tree.INTERFACE_EXTENSION
+        return "interface"
+
+    if k == tree.UNION_EXTENSION
+        return "union"
+
+    if k == tree.ENUM_EXTENSION
+        return "enum"
+    return "input object"
+
+# The extension kind of a type of the model's `kind`.
+function extension_of_model(kind: i64) -> i64
+    if kind == model.SCALAR
+        return tree.SCALAR_EXTENSION
+
+    if kind == model.OBJECT
+        return tree.OBJECT_EXTENSION
+
+    if kind == model.INTERFACE
+        return tree.INTERFACE_EXTENSION
+
+    if kind == model.UNION
+        return tree.UNION_EXTENSION
+
+    if kind == model.ENUM
+        return tree.ENUM_EXTENSION
+    return tree.INPUT_EXTENSION
+
+# The place a directive written on node `on` stands, as the specification
+# names it; "" for none.
+function location_of(t: tree.Tree lent, on: i64) -> str
+    k = t.nodes[on].kind
+
+    if k == tree.OPERATION
+        op = t.nodes[on].text
+
+        if op == "mutation"
+            return "MUTATION"
+
+        if op == "subscription"
+            return "SUBSCRIPTION"
+        return "QUERY"
+
+    if k == tree.FIELD
+        return "FIELD"
+
+    if k == tree.FRAGMENT_SPREAD
+        return "FRAGMENT_SPREAD"
+
+    if k == tree.INLINE_FRAGMENT
+        return "INLINE_FRAGMENT"
+
+    if k == tree.FRAGMENT_DEFINITION
+        return "FRAGMENT_DEFINITION"
+
+    if k == tree.VARIABLE_DEFINITION
+        return "VARIABLE_DEFINITION"
+
+    if k == tree.SCHEMA_DEFINITION || k == tree.SCHEMA_EXTENSION
+        return "SCHEMA"
+
+    if k == tree.SCALAR_DEFINITION || k == tree.SCALAR_EXTENSION
+        return "SCALAR"
+
+    if k == tree.OBJECT_DEFINITION || k == tree.OBJECT_EXTENSION
+        return "OBJECT"
+
+    if k == tree.FIELD_DEFINITION
+        return "FIELD_DEFINITION"
+
+    if k == tree.INTERFACE_DEFINITION || k == tree.INTERFACE_EXTENSION
+        return "INTERFACE"
+
+    if k == tree.UNION_DEFINITION || k == tree.UNION_EXTENSION
+        return "UNION"
+
+    if k == tree.ENUM_DEFINITION || k == tree.ENUM_EXTENSION
+        return "ENUM"
+
+    if k == tree.ENUM_VALUE_DEFINITION
+        return "ENUM_VALUE"
+
+    if k == tree.INPUT_DEFINITION || k == tree.INPUT_EXTENSION
+        return "INPUT_OBJECT"
+
+    if k == tree.INPUT_VALUE_DEFINITION
+        up = t.nodes[t.nodes[on].parent].kind
+
+        if up == tree.INPUT_DEFINITION || up == tree.INPUT_EXTENSION
+            return "INPUT_FIELD_DEFINITION"
+        return "ARGUMENT_DEFINITION"
+
+    if k == tree.DIRECTIVE_DEFINITION
+        return "DIRECTIVE_DEFINITION"
+    return ""
+
+# What a directive is to these rules: where it may stand, whether it is
+# repeatable, its arguments and those required.
+record Known
+    # The places it may stand.
+    locations: [str]
+    # Whether it may stand more than once on one place.
+    repeatable: bool
+    # Its arguments' names, in order.
+    arguments: [str]
+    # The types of its required arguments, by name, in order.
+    required: {str: str}
+
+# The directives these rules know: `directives`', then those the text
+# defines.
+function known_directives(t: tree.Tree lent, directives: [model.Directive]) -> {str: Known}
+    known: {str: Known} @= {}
+
+    for d in directives
+        names: [str] @= []
+        required: {str: str} @= {}
+
+        for a in d.arguments
+            names @ names.push(a.name)
+
+            if model.is_non_null(a.type) && !a.has_default
+                required[a.name] @ a.type
+
+        known[d.name] @ Known(locations: d.locations, repeatable: d.repeatable, arguments: names, required: required)
+
+    for n in tree.kids_of(t, n: 0, kind: tree.DIRECTIVE_DEFINITION)
+        names: [str] @= []
+        required: {str: str} @= {}
+
+        for a in tree.kids_of(t, n: n, kind: tree.INPUT_VALUE_DEFINITION)
+            names @ names.push(t.nodes[a].name)
+
+            if model.is_non_null(t.nodes[a].type) && tree.value_of(t, n: a) < 0
+                required[t.nodes[a].name] @ t.nodes[a].type
+
+        locations: [str] @= []
+
+        for l in tree.kids_of(t, n: n, kind: tree.LOCATION)
+            locations @ locations.push(t.nodes[l].name)
+
+        known[t.nodes[n].name] @ Known(
+            locations: locations,
+            repeatable: t.nodes[n].flag,
+            arguments: names,
+            required: required
+        )
+
+    return known
+
+# The errors of the schema text `t` by every SDL rule: `old` the schema it
+# extends, or the specified directives alone with no types where
+# `extending` is false.
+function check(t: tree.Tree lent, old: model.Model lent, extending: bool, suggest_names: bool) -> [tree.Err]
+    errors: [tree.Err] @= []
+    events = walk.events_of(t)
+    known = known_directives(t, directives: old.directives)
+    defined: {str: i64} @= {}
+    names_for_types: [str] @= []
+
+    if extending
+        for name in keys(old.types)
+            names_for_types @ names_for_types.push(name)
+
+    for n in tree.kids(t, n: 0)
+        if is_type_definition(t.nodes[n].kind)
+            if defined[t.nodes[n].name].is_err()
+                defined[t.nodes[n].name] @ n
+            names_for_types @ names_for_types.push(t.nodes[n].name)
+
+    old_defined = extending && (old.at >= 0 || old.query != "" || old.mutation != "" || old.subscription != "")
+    schemas @= 0
+    operation_types: {str: i64} @= {}
+    type_names: {str: i64} @= {}
+    enum_values: {str: i64} @= {}
+    field_names: {str: i64} @= {}
+    directive_names: {str: i64} @= {}
+    schema_directives: {str: i64} @= {}
+    type_directives: {str: i64} @= {}
+    object_fields: [{str: i64}] @= []
+    object_top @= 0
+
+    for e in events
+        n = e.node
+        node = t.nodes[n]
+        k = node.kind
+
+        if e.kind == walk.ENTER
+            if k == tree.SCHEMA_DEFINITION
+                if old_defined
+                    errors @ errors.push(
+                        tree.err_at(t, message: "Cannot define a new schema within a schema extension.", nodes: [n])
+                    )
+                else
+                    if schemas > 0
+                        errors @ errors.push(
+                            tree.err_at(t, message: "Must provide only one schema definition.", nodes: [n])
+                        )
+                    schemas @ schemas + 1
+
+            if k == tree.SCHEMA_DEFINITION || k == tree.SCHEMA_EXTENSION
+                for op in tree.kids_of(t, n: n, kind: tree.OPERATION_TYPE)
+                    word = t.nodes[op].text
+
+                    existing = if word == "query"
+                        old.query
+                    else if word == "mutation"
+                        old.mutation
+                    else
+                        old.subscription
+
+                    if extending && existing != ""
+                        errors @ errors.push(
+                            tree.err_at(t, message: f"Type for {word} already defined in the schema. It cannot be redefined.", nodes: [op])
+                        )
+                    else
+                        match operation_types[word]
+                            .ok first => errors @ errors.push(
+                                tree.err_at(t, message: f"There can be only one {word} type in schema.", nodes: [first, op])
+                            )
+                            .err _    => operation_types[word] @ op
+
+            if is_type_definition(k)
+                if extending && model.has_type(old, name: node.name)
+                    errors @ errors.push(
+                        tree.err_bytes(t, message: f"Type \"{node.name}\" already exists in the schema. It cannot also be defined in this type definition.", offsets: [node.name_at])
+                    )
+                else
+                    match type_names[node.name]
+                        .ok first => errors @ errors.push(
+                            tree.err_bytes(t, message: f"There can be only one type named \"{node.name}\".", offsets: [first, node.name_at])
+                        )
+                        .err _    => type_names[node.name] @ node.name_at
+
+            if k == tree.ENUM_DEFINITION || k == tree.ENUM_EXTENSION
+                check_enum_values(t, n: n, old: old, extending: extending, @enum_values, @errors)
+
+            if k == tree.OBJECT_DEFINITION || k == tree.OBJECT_EXTENSION || k == tree.INTERFACE_DEFINITION || k == tree.INTERFACE_EXTENSION || k == tree.INPUT_DEFINITION || k == tree.INPUT_EXTENSION
+                check_field_names(t, n: n, old: old, extending: extending, @field_names, @errors)
+
+            if k == tree.OBJECT_DEFINITION || k == tree.OBJECT_EXTENSION || k == tree.INTERFACE_DEFINITION || k == tree.INTERFACE_EXTENSION
+                for f in tree.kids_of(t, n: n, kind: tree.FIELD_DEFINITION)
+                    check_argument_definitions(t, owner: f"{node.name}.{t.nodes[f].name}", n: f, @errors)
+
+            if k == tree.DIRECTIVE_DEFINITION
+                check_argument_definitions(t, owner: f"@{node.name}", n: n, @errors)
+                directive_exists @= false
+
+                for d in old.directives
+                    if extending && d.name == node.name
+                        directive_exists @ true
+
+                if directive_exists
+                    errors @ errors.push(
+                        tree.err_bytes(t, message: f"Directive \"@{node.name}\" already exists in the schema. It cannot be redefined.", offsets: [node.name_at])
+                    )
+                else
+                    match directive_names[node.name]
+                        .ok first => errors @ errors.push(
+                            tree.err_bytes(t, message: f"There can be only one directive named \"@{node.name}\".", offsets: [first, node.name_at])
+                        )
+                        .err _    => directive_names[node.name] @ node.name_at
+
+            if k == tree.IMPLEMENTS || k == tree.UNION_MEMBER
+                check_type_name(
+                    t,
+                    name: node.name,
+                    at: node.at,
+                    old: old,
+                    extending: extending,
+                    defined: defined,
+                    names_for_types: names_for_types,
+                    suggest_names: suggest_names,
+                    @errors
+                )
+
+            if k == tree.DIRECTIVE
+                check_directive(t, n: n, known: known, suggest_names: suggest_names, @errors)
+
+            if k != tree.DIRECTIVE && tree.kid_of(t, n: n, kind: tree.DIRECTIVE) >= 0
+                if k == tree.SCHEMA_DEFINITION || k == tree.SCHEMA_EXTENSION
+                    check_unique_directives(t, n: n, known: known, @schema_directives, prefix: "", @errors)
+                else if is_type_definition(k) || is_type_extension(k)
+                    check_unique_directives(t, n: n, known: known, @type_directives, prefix: node.name + ".", @errors)
+                else
+                    fresh: {str: i64} @= {}
+                    check_unique_directives(t, n: n, known: known, @fresh, prefix: "", @errors)
+
+            if is_type_extension(k)
+                check_extension(
+                    t,
+                    n: n,
+                    old: old,
+                    extending: extending,
+                    defined: defined,
+                    names_for_types: names_for_types,
+                    suggest_names: suggest_names,
+                    @errors
+                )
+
+            if k == tree.DIRECTIVE
+                check_unique_arguments(t, n: n, @errors)
+
+            if k == tree.OBJECT
+                if object_top < object_fields.len()
+                    object_fields[object_top] @ {}
+                else
+                    object_fields @ object_fields.push({})
+                object_top @ object_top + 1
+
+            if k == tree.OBJECT_FIELD && object_top > 0
+                match object_fields[object_top - 1][node.name]
+                    .ok first => errors @ errors.push(
+                        tree.err_bytes(t, message: f"There can be only one input field named \"{node.name}\".", offsets: [first, node.at])
+                    )
+                    .err _    => object_fields[object_top - 1][node.name] @ node.at
+        else if e.kind == walk.TYPE
+            check_type_name(
+                t,
+                name: model.named_of(node.type),
+                at: node.type_at,
+                old: old,
+                extending: extending,
+                defined: defined,
+                names_for_types: names_for_types,
+                suggest_names: suggest_names,
+                @errors
+            )
+        else
+            if k == tree.OBJECT
+                object_top @ object_top - 1
+
+            if k == tree.DIRECTIVE
+                check_required_arguments(t, n: n, known: known, @errors)
+
+    return errors
+
+# Reports the values of the enum at `n` defined twice, or defined by an
+# extension where the schema extended has them.
+function check_enum_values(t: tree.Tree lent, n: i64, old: model.Model lent, extending: bool, @seen: {str: i64}, @errors: [tree.Err])
+    name = t.nodes[n].name
+
+    for v in tree.kids_of(t, n: n, kind: tree.ENUM_VALUE_DEFINITION)
+        value = t.nodes[v].name
+        key = name + "." + value
+        exists @= false
+
+        if extending
+            match old.types[name]
+                .ok ty =>
+                    if ty.kind == model.ENUM
+                        for x in ty.values
+                            if x.name == value
+                                exists @ true
+                .err _ => _ = 0
+
+        if exists
+            errors @ errors.push(
+                tree.err_bytes(t, message: f"Enum value \"{key}\" already exists in the schema. It cannot also be defined in this type extension.", offsets: [t.nodes[v].name_at])
+            )
+        else
+            match seen[key]
+                .ok first => errors @ errors.push(
+                    tree.err_bytes(t, message: f"Enum value \"{key}\" can only be defined once.", offsets: [first, t.nodes[v].name_at])
+                )
+                .err _    => seen[key] @ t.nodes[v].name_at
+
+# Reports the fields of the type at `n` defined twice, or defined by an
+# extension where the schema extended has them.
+function check_field_names(t: tree.Tree lent, n: i64, old: model.Model lent, extending: bool, @seen: {str: i64}, @errors: [tree.Err])
+    name = t.nodes[n].name
+
+    kind = if t.nodes[n].kind == tree.INPUT_DEFINITION || t.nodes[n].kind == tree.INPUT_EXTENSION
+        tree.INPUT_VALUE_DEFINITION
+    else
+        tree.FIELD_DEFINITION
+
+    for f in tree.kids_of(t, n: n, kind: kind)
+        field = t.nodes[f].name
+        key = name + "." + field
+        exists @= false
+
+        if extending
+            match old.types[name]
+                .ok ty =>
+                    for x in ty.fields
+                        if x.name == field
+                            exists @ true
+
+                    for x in ty.inputs
+                        if x.name == field
+                            exists @ true
+                .err _ => _ = 0
+
+        if exists
+            errors @ errors.push(
+                tree.err_bytes(t, message: f"Field \"{key}\" already exists in the schema. It cannot also be defined in this type extension.", offsets: [t.nodes[f].name_at])
+            )
+        else
+            match seen[key]
+                .ok first => errors @ errors.push(
+                    tree.err_bytes(t, message: f"Field \"{key}\" can only be defined once.", offsets: [first, t.nodes[f].name_at])
+                )
+                .err _    => seen[key] @ t.nodes[f].name_at
+
+# Reports the arguments `n` defines twice, every place each stands.
+function check_argument_definitions(t: tree.Tree lent, owner: str, n: i64, @errors: [tree.Err])
+    arguments = tree.kids_of(t, n: n, kind: tree.INPUT_VALUE_DEFINITION)
+    order: [str] @= []
+    places: {str: [i64]} @= {}
+
+    for a in arguments
+        name = t.nodes[a].name
+
+        match places[name]
+            .ok got => places[name] @ got.push(t.nodes[a].name_at)
+            .err _ =>
+                places[name] @ [t.nodes[a].name_at]
+                order @ order.push(name)
+
+    for name in order
+        at = places[name].must()
+
+        if at.len() > 1
+            errors @ errors.push(
+                tree.err_bytes(t, message: f"Argument \"{owner}({name}:)\" can only be defined once.", offsets: at)
+            )
+
+# Reports a named type that neither the schema extended nor the text defines.
+function check_type_name(t: tree.Tree lent, name: str, at: i64, old: model.Model lent, extending: bool, defined: {str: i64} lent, names_for_types: [str] lent, suggest_names: bool, @errors: [tree.Err])
+    if extending && model.has_type(old, name: name) || !defined[name].is_err()
+        return
+
+    for s in standard_names()
+        if s == name
+            return
+
+    hint = if suggest_names
+        options @= standard_names()
+
+        for x in names_for_types
+            options @ options.push(x)
+
+        suggest.did_you_mean(what: "", names: suggest.suggestions_of(name, options: options))
+    else
+        ""
+    errors @ errors.push(tree.err_bytes(t, message: f"Unknown type \"{name}\".{hint}", offsets: [at]))
+
+# Reports a directive no definition names, or written where it may not
+# stand, and its arguments its definition does not name.
+function check_directive(t: tree.Tree lent, n: i64, known: {str: Known} lent, suggest_names: bool, @errors: [tree.Err])
+    name = t.nodes[n].name
+
+    match known[name]
+        .ok d =>
+            place = location_of(t, on: t.nodes[n].parent)
+
+            if place != "" && !has_word(d.locations, word: place)
+                errors @ errors.push(
+                    tree.err_at(t, message: f"Directive \"@{name}\" may not be used on {place}.", nodes: [n])
+                )
+        .err _ => errors @ errors.push(tree.err_at(t, message: f"Unknown directive \"@{name}\".", nodes: [n]))
+
+    match known[name]
+        .ok d =>
+            for a in tree.kids_of(t, n: n, kind: tree.ARGUMENT)
+                given = t.nodes[a].name
+
+                if !has_word(d.arguments, word: given)
+                    hint = if suggest_names
+                        suggest.did_you_mean(what: "", names: suggest.suggestions_of(given, options: d.arguments))
+                    else
+                        ""
+                    errors @ errors.push(
+                        tree.err_at(t, message: f"Unknown argument \"{given}\" on directive \"@{name}\".{hint}", nodes: [a])
+                    )
+        .err _ => _ = 0
+
+# Whether `words` holds `word`.
+function has_word(words: [str], word: str) -> bool
+    for w in words
+        if w == word
+            return true
+
+    return false
+
+# Reports the directives of `n` that are not repeatable and stand twice on
+# one place, `seen` the place's directives so far keyed after `prefix`.
+function check_unique_directives(t: tree.Tree lent, n: i64, known: {str: Known} lent, @seen: {str: i64}, prefix: str, @errors: [tree.Err])
+    for d in tree.kids_of(t, n: n, kind: tree.DIRECTIVE)
+        name = t.nodes[d].name
+
+        match known[name]
+            .ok k =>
+                if !k.repeatable
+                    match seen[prefix + name]
+                        .ok first => errors @ errors.push(
+                            tree.err_at(t, message: f"The directive \"@{name}\" can only be used once at this location.", nodes: [first, d])
+                        )
+                        .err _    => seen[prefix + name] @ d
+            .err _ => _ = 0
+
+# Reports an extension of a type that is not defined, or of a type of
+# another kind.
+function check_extension(t: tree.Tree lent, n: i64, old: model.Model lent, extending: bool, defined: {str: i64} lent, names_for_types: [str] lent, suggest_names: bool, @errors: [tree.Err])
+    node = t.nodes[n]
+    expected @= 0
+    definition @= -1
+
+    match defined[node.name]
+        .ok d =>
+            definition @ d
+            expected @ extension_of(t.nodes[d].kind)
+        .err _ =>
+            if extending && model.has_type(old, name: node.name)
+                expected @ extension_of_model(model.kind_of(old, name: node.name))
+
+    if expected == 0
+        hint = if suggest_names
+            suggest.did_you_mean(what: "", names: suggest.suggestions_of(node.name, options: names_for_types))
+        else
+            ""
+        errors @ errors.push(
+            tree.err_bytes(t, message: f"Cannot extend type \"{node.name}\" because it is not defined.{hint}", offsets: [node.name_at])
+        )
+    else if expected != node.kind
+        places = if definition >= 0
+            [definition, n]
+        else
+            [n]
+        errors @ errors.push(
+            tree.err_at(t, message: f"Cannot extend non-{kind_word(node.kind)} type \"{node.name}\".", nodes: places)
+        )
+
+# Reports the arguments a field or a directive at `n` is given twice.
+function check_unique_arguments(t: tree.Tree lent, n: i64, @errors: [tree.Err])
+    order: [str] @= []
+    places: {str: [i64]} @= {}
+
+    for a in tree.kids_of(t, n: n, kind: tree.ARGUMENT)
+        name = t.nodes[a].name
+
+        match places[name]
+            .ok got => places[name] @ got.push(t.nodes[a].at)
+            .err _ =>
+                places[name] @ [t.nodes[a].at]
+                order @ order.push(name)
+
+    for name in order
+        at = places[name].must()
+
+        if at.len() > 1
+            errors @ errors.push(
+                tree.err_bytes(t, message: f"There can be only one argument named \"{name}\".", offsets: at)
+            )
+
+# Reports the required arguments a directive at `n` is not given.
+function check_required_arguments(t: tree.Tree lent, n: i64, known: {str: Known} lent, @errors: [tree.Err])
+    name = t.nodes[n].name
+
+    match known[name]
+        .ok d =>
+            given: [str] @= []
+
+            for a in tree.kids_of(t, n: n, kind: tree.ARGUMENT)
+                given @ given.push(t.nodes[a].name)
+
+            for argument in keys(d.required)
+                if !has_word(given, word: argument)
+                    errors @ errors.push(
+                        tree.err_at(t, message: f"Directive \"@{name}\" argument \"{argument}\" of type \"{d.required[argument].must()}\" is required, but it was not provided.", nodes: [n])
+                    )
+        .err _ => _ = 0
+
+# A schema of no type and no directive, as a new schema's rules start from.
+function empty_model() -> model.Model
+    return model.Model(
+        types: {},
+        query: "",
+        mutation: "",
+        subscription: "",
+        directives: [],
+        description: "",
+        described: false,
+        implementations: {},
+        at: -1
+    )
+
+test "check: types defined twice, an unknown type and an unknown directive"
+    t = parser.parse("type A { a: B @d } type A { b: Int }", most_tokens: 100, most_depth: 64, most_directives: 50).tree
+    messages: [str] @= []
+
+    for e in check(t, old: empty_model(), extending: false, suggest_names: true)
+        messages @ messages.push(e.message)
+
+    assert messages == ["Unknown type \"B\". Did you mean \"A\"?", "Unknown directive \"@d\".", "There can be only one type named \"A\"."]
+
+test "location_of and kind_word: where a directive stands, what an extension extends"
+    t = parser.parse("query Q @a { f @b } input I { x: Int @c } type T { f(x: Int @e): Int }", most_tokens: 100, most_depth: 64, most_directives: 50).tree
+    places: [str] @= []
+    i @= 0
+
+    while i < t.nodes.len()
+        if t.nodes[i].kind == tree.DIRECTIVE
+            places @ places.push(location_of(t, on: t.nodes[i].parent))
+        i @ i + 1
+
+    assert places == ["QUERY", "FIELD", "INPUT_FIELD_DEFINITION", "ARGUMENT_DEFINITION"]
+    assert kind_word(tree.INPUT_EXTENSION) == "input object"
+    assert has_word(["a", "b"], word: "b")

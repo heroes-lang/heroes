@@ -1,0 +1,665 @@
+# Introspection answered by the executor itself, as the specification's
+# section 4 writes it and graphql-js answers it: `__schema` and `__type` on
+# the query root give values that describe the schema, and every field of the
+# introspection types is resolved from such a value, the program never asked.
+# A value describing a part of the schema is a JSON object naming it: `t` a
+# type as written, `f` a field as `Type.field`, `iv` an argument or input
+# field with its `owner`, `ev` an enum value as `Enum.VALUE`, `d` a
+# directive.
+
+use graphql/internal/fixture
+use graphql/internal/model
+use graphql/internal/values
+use json
+
+# The value describing the type written `type`.
+function type_value(type: str) -> json.Value
+    members: {str: json.Value} @= {}
+    members["t"] @ .text(v: type)
+    return .object(members: members)
+
+# A value describing one part of the schema: `kind` its kind's key, `name`
+# what names it, `owner` an input value's owner or "".
+function part(kind: str, name: str, owner: str) -> json.Value
+    members: {str: json.Value} @= {}
+    members[kind] @ .text(v: name)
+
+    if owner != ""
+        members["owner"] @ .text(v: owner)
+    return .object(members: members)
+
+# The text member `key` of `v`, "" for none.
+function text_of(v: json.Value, key: str) -> str
+    match v
+        .object o =>
+            match o.members[key]
+                .ok got =>
+                    match got
+                        .text s                                                    => return s.v
+                        .null_value | .boolean _ | .number _ | .list _ | .object _ => return ""
+                .err _ => return ""
+        .null_value | .boolean _ | .number _ | .text _ | .list _ => return ""
+
+# Whether the argument `includeDeprecated` holds true.
+function includes_deprecated(arguments: {str: json.Value}) -> bool
+    return arguments["includeDeprecated"].default(.boolean(v: false)) == .boolean(v: true)
+
+# `text` as a value, `null` where `has` is false.
+function maybe_text(has: bool, text: str) -> json.Value
+    if has
+        return .text(v: text)
+    return .null_value
+
+# The value of the meta-field `field_name` of the query root: `__schema` or
+# `__type`.
+function root_field(m: model.Model lent, field_name: str, arguments: {str: json.Value}) -> json.Value
+    if field_name == "__schema"
+        return part(kind: "s", name: "schema", owner: "")
+
+    name = match arguments["name"]
+        .ok got =>
+            match got
+                .text s                                                    => s.v
+                .null_value | .boolean _ | .number _ | .list _ | .object _ => ""
+        .err _ => ""
+
+    if model.has_type(m, name: name)
+        return type_value(name)
+    return .null_value
+
+# The value of the field `field_name` of the introspection type `type_name`,
+# its parent `parent`, as graphql-js answers it.
+function resolve(m: model.Model lent, type_name: str, field_name: str, arguments: {str: json.Value}, parent: json.Value) -> json.Value
+    if type_name == "__Schema"
+        return schema_field(m, field_name: field_name, arguments: arguments)
+
+    if type_name == "__Type"
+        return type_field(m, type: text_of(parent, key: "t"), field_name: field_name, arguments: arguments)
+
+    if type_name == "__Field"
+        return field_field(m, path: text_of(parent, key: "f"), field_name: field_name, arguments: arguments)
+
+    if type_name == "__InputValue"
+        return input_field(
+            m,
+            owner: text_of(parent, key: "owner"),
+            name: text_of(parent, key: "iv"),
+            field_name: field_name
+        )
+
+    if type_name == "__EnumValue"
+        return enum_value_field(m, path: text_of(parent, key: "ev"), field_name: field_name)
+    return directive_field(m, name: text_of(parent, key: "d"), field_name: field_name, arguments: arguments)
+
+# A field of `__Schema`.
+function schema_field(m: model.Model lent, field_name: str, arguments: {str: json.Value}) -> json.Value
+    if field_name == "description"
+        return maybe_text(has: m.described, text: m.description)
+
+    if field_name == "types"
+        items: [json.Value] @= []
+
+        for name in keys(m.types)
+            items @ items.push(type_value(name))
+
+        return .list(items: items)
+
+    if field_name == "queryType"
+        return type_value(m.query)
+
+    if field_name == "mutationType"
+        if m.mutation == ""
+            return .null_value
+        return type_value(m.mutation)
+
+    if field_name == "subscriptionType"
+        if m.subscription == ""
+            return .null_value
+        return type_value(m.subscription)
+
+    if field_name == "directives"
+        items: [json.Value] @= []
+
+        for d in m.directives
+            items @ items.push(part(kind: "d", name: d.name, owner: ""))
+
+        return .list(items: items)
+    _ = arguments
+    return .null_value
+
+# The kind of the type written `type`, as `__TypeKind` names it.
+function kind_name(m: model.Model lent, type: str) -> str
+    if model.is_non_null(type)
+        return "NON_NULL"
+
+    if model.is_list(type)
+        return "LIST"
+    k = model.kind_of(m, name: type)
+
+    if k == model.SCALAR
+        return "SCALAR"
+
+    if k == model.OBJECT
+        return "OBJECT"
+
+    if k == model.INTERFACE
+        return "INTERFACE"
+
+    if k == model.UNION
+        return "UNION"
+
+    if k == model.ENUM
+        return "ENUM"
+    return "INPUT_OBJECT"
+
+# A field of `__Type`, for the type written `type`.
+function type_field(m: model.Model lent, type: str, field_name: str, arguments: {str: json.Value}) -> json.Value
+    if field_name == "kind"
+        return .text(v: kind_name(m, type: type))
+    wrapped = model.is_non_null(type) || model.is_list(type)
+
+    if field_name == "ofType"
+        if model.is_non_null(type)
+            return type_value(model.nullable_of(type))
+
+        if model.is_list(type)
+            return type_value(model.item_of(type))
+        return .null_value
+
+    if wrapped
+        return .null_value
+
+    t = match m.types[type]
+        .ok got => got
+        .err _  => return .null_value
+
+    if field_name == "name"
+        return .text(v: t.name)
+
+    if field_name == "description"
+        return maybe_text(has: t.described, text: t.description)
+
+    if field_name == "specifiedByURL"
+        return maybe_text(has: t.kind == model.SCALAR && t.has_specified_by, text: t.specified_by)
+
+    if field_name == "isOneOf"
+        if t.kind == model.INPUT_OBJECT
+            return .boolean(v: t.one_of)
+        return .null_value
+    all_too = includes_deprecated(arguments)
+
+    if field_name == "fields"
+        if t.kind != model.OBJECT && t.kind != model.INTERFACE
+            return .null_value
+        items: [json.Value] @= []
+
+        for f in t.fields
+            if all_too || !f.deprecated
+                items @ items.push(part(kind: "f", name: t.name + "." + f.name, owner: ""))
+
+        return .list(items: items)
+
+    if field_name == "interfaces"
+        if t.kind != model.OBJECT && t.kind != model.INTERFACE
+            return .null_value
+        items: [json.Value] @= []
+
+        for i in t.interfaces
+            items @ items.push(type_value(i))
+
+        return .list(items: items)
+
+    if field_name == "possibleTypes"
+        if t.kind != model.INTERFACE && t.kind != model.UNION
+            return .null_value
+        items: [json.Value] @= []
+
+        for p in model.possible_of(m, name: t.name)
+            items @ items.push(type_value(p))
+
+        return .list(items: items)
+
+    if field_name == "enumValues"
+        if t.kind != model.ENUM
+            return .null_value
+        items: [json.Value] @= []
+
+        for v in t.values
+            if all_too || !v.deprecated
+                items @ items.push(part(kind: "ev", name: t.name + "." + v.name, owner: ""))
+
+        return .list(items: items)
+
+    if field_name == "inputFields"
+        if t.kind != model.INPUT_OBJECT
+            return .null_value
+        items: [json.Value] @= []
+
+        for f in t.inputs
+            if all_too || !f.deprecated
+                items @ items.push(part(kind: "iv", name: f.name, owner: t.name))
+
+        return .list(items: items)
+    return .null_value
+
+# The field `path` names, `Type.field`.
+function field_at(m: model.Model lent, path: str) -> model.Field?
+    dot @= 0
+
+    while dot < path.len() && path[dot] != '.'
+        dot @ dot + 1
+
+    return model.field_of(m, type_name: path.slice(from: 0, to: dot), name: path.slice(from: dot + 1, to: path.len()))
+
+# A field of `__Field`, for the field `path` names.
+function field_field(m: model.Model lent, path: str, field_name: str, arguments: {str: json.Value}) -> json.Value
+    f = match field_at(m, path: path)
+        .ok got => got
+        .err _  => return .null_value
+
+    if field_name == "name"
+        return .text(v: f.name)
+
+    if field_name == "description"
+        return maybe_text(has: f.described, text: f.description)
+
+    if field_name == "args"
+        items: [json.Value] @= []
+
+        for a in f.arguments
+            if includes_deprecated(arguments) || !a.deprecated
+                items @ items.push(part(kind: "iv", name: a.name, owner: path))
+
+        return .list(items: items)
+
+    if field_name == "type"
+        return type_value(f.type)
+
+    if field_name == "isDeprecated"
+        return .boolean(v: f.deprecated)
+
+    if field_name == "deprecationReason"
+        return maybe_text(has: f.deprecated, text: f.reason)
+    return .null_value
+
+# The argument or input field `name` of `owner`: a field `Type.field`, a
+# directive `@name`, or an input object.
+function input_value_of(m: model.Model lent, owner: str, name: str) -> model.InputValue?
+    list: [model.InputValue] @= []
+
+    if owner.len() > 0 && owner[0] == '@'
+        for d in m.directives
+            if "@" + d.name == owner
+                list @ d.arguments
+    else
+        has_dot @= false
+
+        for c in owner.chars()
+            if c == "."
+                has_dot @ true
+
+        if has_dot
+            match field_at(m, path: owner)
+                .ok f  => list @ f.arguments
+                .err _ => _ = 0
+        else
+            match m.types[owner]
+                .ok t  => list @ t.inputs
+                .err _ => _ = 0
+
+    for a in list
+        if a.name == name
+            return ok(a)
+
+    return fail(code: "not_found", msg: f"no input value \"{name}\" of \"{owner}\"")
+
+# A field of `__InputValue`.
+function input_field(m: model.Model lent, owner: str, name: str, field_name: str) -> json.Value
+    a = match input_value_of(m, owner: owner, name: name)
+        .ok got => got
+        .err _  => return .null_value
+
+    if field_name == "name"
+        return .text(v: a.name)
+
+    if field_name == "description"
+        return maybe_text(has: a.described, text: a.description)
+
+    if field_name == "type"
+        return type_value(a.type)
+
+    if field_name == "defaultValue"
+        if !a.has_default
+            return .null_value
+        written = values.literal_of(m, v: a.default, type: a.type)
+        return maybe_text(has: written != "", text: written)
+
+    if field_name == "isDeprecated"
+        return .boolean(v: a.deprecated)
+
+    if field_name == "deprecationReason"
+        return maybe_text(has: a.deprecated, text: a.reason)
+    return .null_value
+
+# A field of `__EnumValue`, for the value `path` names, `Enum.VALUE`.
+function enum_value_field(m: model.Model lent, path: str, field_name: str) -> json.Value
+    dot @= 0
+
+    while dot < path.len() && path[dot] != '.'
+        dot @ dot + 1
+
+    t = match m.types[path.slice(from: 0, to: dot)]
+        .ok got => got
+        .err _  => return .null_value
+
+    name = path.slice(from: dot + 1, to: path.len())
+
+    for v in t.values
+        if v.name == name
+            if field_name == "name"
+                return .text(v: v.name)
+
+            if field_name == "description"
+                return maybe_text(has: v.described, text: v.description)
+
+            if field_name == "isDeprecated"
+                return .boolean(v: v.deprecated)
+
+            if field_name == "deprecationReason"
+                return maybe_text(has: v.deprecated, text: v.reason)
+
+    return .null_value
+
+# A field of `__Directive`.
+function directive_field(m: model.Model lent, name: str, field_name: str, arguments: {str: json.Value}) -> json.Value
+    for d in m.directives
+        if d.name == name
+            if field_name == "name"
+                return .text(v: d.name)
+
+            if field_name == "description"
+                return maybe_text(has: d.described, text: d.description)
+
+            if field_name == "isRepeatable"
+                return .boolean(v: d.repeatable)
+
+            if field_name == "locations"
+                items: [json.Value] @= []
+
+                for l in d.locations
+                    items @ items.push(.text(v: l))
+
+                return .list(items: items)
+
+            if field_name == "args"
+                items: [json.Value] @= []
+
+                for a in d.arguments
+                    if includes_deprecated(arguments) || !a.deprecated
+                        items @ items.push(part(kind: "iv", name: a.name, owner: "@" + d.name))
+
+                return .list(items: items)
+
+            if field_name == "isDeprecated"
+                return .boolean(v: false)
+
+            if field_name == "deprecationReason"
+                return .null_value
+
+    return .null_value
+
+# The introspection query graphql-js 16.15 writes with every option on, its
+# text kept as graphql-js writes it.
+function query_text() -> str
+    lines = [
+        ""
+        "    query IntrospectionQuery {"
+        "      __schema {"
+        "        description"
+        "        queryType { name kind }"
+        "        mutationType { name kind }"
+        "        subscriptionType { name kind }"
+        "        types {"
+        "          ...FullType"
+        "        }"
+        "        directives {"
+        "          name"
+        "          description"
+        "          isRepeatable"
+        "          "
+        "          "
+        "          locations"
+        "          args(includeDeprecated: true) {"
+        "            ...InputValue"
+        "          }"
+        "        }"
+        "      }"
+        "    }"
+        ""
+        "    fragment FullType on __Type {"
+        "      kind"
+        "      name"
+        "      description"
+        "      specifiedByURL"
+        "      isOneOf"
+        "      fields(includeDeprecated: true) {"
+        "        name"
+        "        description"
+        "        args(includeDeprecated: true) {"
+        "          ...InputValue"
+        "        }"
+        "        type {"
+        "          ...TypeRef"
+        "        }"
+        "        isDeprecated"
+        "        deprecationReason"
+        "      }"
+        "      inputFields(includeDeprecated: true) {"
+        "        ...InputValue"
+        "      }"
+        "      interfaces {"
+        "        ...TypeRef"
+        "      }"
+        "      enumValues(includeDeprecated: true) {"
+        "        name"
+        "        description"
+        "        isDeprecated"
+        "        deprecationReason"
+        "      }"
+        "      possibleTypes {"
+        "        ...TypeRef"
+        "      }"
+        "    }"
+        ""
+        "    fragment InputValue on __InputValue {"
+        "      name"
+        "      description"
+        "      type { ...TypeRef }"
+        "      defaultValue"
+        "      isDeprecated"
+        "      deprecationReason"
+        "    }"
+        ""
+        "    fragment TypeRef on __Type {"
+        "      kind"
+        "      name"
+        "      ofType {"
+        "        name"
+        "        kind"
+        "        ofType {"
+        "          name"
+        "          kind"
+        "          ofType {"
+        "            name"
+        "            kind"
+        "            ofType {"
+        "              name"
+        "              kind"
+        "              ofType {"
+        "                name"
+        "                kind"
+        "                ofType {"
+        "                  name"
+        "                  kind"
+        "                  ofType {"
+        "                    name"
+        "                    kind"
+        "                    ofType {"
+        "                      name"
+        "                      kind"
+        "                      ofType {"
+        "                        name"
+        "                        kind"
+        "                      }"
+        "                    }"
+        "                  }"
+        "                }"
+        "              }"
+        "            }"
+        "          }"
+        "        }"
+        "      }"
+        "    }"
+        "  "
+    ]
+    return lines.join("\n")
+
+# The query graphql-js 16.15's `introspectionFromSchema` asks: every option
+# of `query_text` and the deprecation of directives, still experimental.
+function query_text_full() -> str
+    lines = [
+        ""
+        "    query IntrospectionQuery {"
+        "      __schema {"
+        "        description"
+        "        queryType { name kind }"
+        "        mutationType { name kind }"
+        "        subscriptionType { name kind }"
+        "        types {"
+        "          ...FullType"
+        "        }"
+        "        directives(includeDeprecated: true) {"
+        "          name"
+        "          description"
+        "          isRepeatable"
+        "          isDeprecated"
+        "          deprecationReason"
+        "          locations"
+        "          args(includeDeprecated: true) {"
+        "            ...InputValue"
+        "          }"
+        "        }"
+        "      }"
+        "    }"
+        ""
+        "    fragment FullType on __Type {"
+        "      kind"
+        "      name"
+        "      description"
+        "      specifiedByURL"
+        "      isOneOf"
+        "      fields(includeDeprecated: true) {"
+        "        name"
+        "        description"
+        "        args(includeDeprecated: true) {"
+        "          ...InputValue"
+        "        }"
+        "        type {"
+        "          ...TypeRef"
+        "        }"
+        "        isDeprecated"
+        "        deprecationReason"
+        "      }"
+        "      inputFields(includeDeprecated: true) {"
+        "        ...InputValue"
+        "      }"
+        "      interfaces {"
+        "        ...TypeRef"
+        "      }"
+        "      enumValues(includeDeprecated: true) {"
+        "        name"
+        "        description"
+        "        isDeprecated"
+        "        deprecationReason"
+        "      }"
+        "      possibleTypes {"
+        "        ...TypeRef"
+        "      }"
+        "    }"
+        ""
+        "    fragment InputValue on __InputValue {"
+        "      name"
+        "      description"
+        "      type { ...TypeRef }"
+        "      defaultValue"
+        "      isDeprecated"
+        "      deprecationReason"
+        "    }"
+        ""
+        "    fragment TypeRef on __Type {"
+        "      kind"
+        "      name"
+        "      ofType {"
+        "        name"
+        "        kind"
+        "        ofType {"
+        "          name"
+        "          kind"
+        "          ofType {"
+        "            name"
+        "            kind"
+        "            ofType {"
+        "              name"
+        "              kind"
+        "              ofType {"
+        "                name"
+        "                kind"
+        "                ofType {"
+        "                  name"
+        "                  kind"
+        "                  ofType {"
+        "                    name"
+        "                    kind"
+        "                    ofType {"
+        "                      name"
+        "                      kind"
+        "                      ofType {"
+        "                        name"
+        "                        kind"
+        "                      }"
+        "                    }"
+        "                  }"
+        "                }"
+        "              }"
+        "            }"
+        "          }"
+        "        }"
+        "      }"
+        "    }"
+        "  "
+    ]
+    return lines.join("\n")
+
+test "type_field: the kind and the type within of named, list and non-null types"
+    m = fixture.schema_of("type Query { a: [Int!]! } enum E { A B @deprecated }")
+    assert type_field(m, type: "[Int!]!", field_name: "kind", arguments: {}) == .text(v: "NON_NULL")
+    assert type_field(m, type: "[Int!]!", field_name: "ofType", arguments: {}) == type_value("[Int!]")
+    assert type_field(m, type: "[Int!]", field_name: "ofType", arguments: {}) == type_value("Int!")
+    assert type_field(m, type: "Int", field_name: "kind", arguments: {}) == .text(v: "SCALAR")
+    assert type_field(m, type: "[Int!]", field_name: "name", arguments: {}) == .null_value
+    assert type_field(m, type: "E", field_name: "enumValues", arguments: {}) == .list(items: [part(kind: "ev", name: "E.A", owner: "")])
+    assert type_field(m, type: "Query", field_name: "enumValues", arguments: {}) == .null_value
+
+test "root_field: __type of a type and of none, and __schema"
+    m = fixture.schema_of("type Query { a: Int }")
+    assert root_field(m, field_name: "__type", arguments: {"name": .text(v: "Query")}) == type_value("Query")
+    assert root_field(m, field_name: "__type", arguments: {"name": .text(v: "Nope")}) == .null_value
+    assert root_field(m, field_name: "__schema", arguments: {}) == part(kind: "s", name: "schema", owner: "")
+
+test "resolve: an input value's default written as a literal, and a directive's locations"
+    m = fixture.schema_of("type Query { a(x: [Int] = 1, e: E = A): Int } enum E { A }")
+    assert input_field(m, owner: "Query.a", name: "x", field_name: "defaultValue") == .text(v: "[1]")
+    assert input_field(m, owner: "Query.a", name: "e", field_name: "defaultValue") == .text(v: "A")
+    assert resolve(m, type_name: "__Directive", field_name: "locations", arguments: {}, parent: part(kind: "d", name: "skip", owner: "")) == json.parse("[\"FIELD\", \"FRAGMENT_SPREAD\", \"INLINE_FRAGMENT\"]").must()
+    assert query_text().len() > 1000
+    assert query_text_full().len() > query_text().len()

@@ -1,0 +1,368 @@
+# A value as one list of nodes, whether it came as JSON or as a literal of a
+# document: each node knows its parent, its first and last child and its
+# next sibling, a parent always before its children and every subtree
+# contiguous, so that coercion walks types down by index and builds values up
+# from the last node to the first, recursing nowhere. A literal keeps the
+# kinds of `tree`; a JSON number is `NUMBER`.
+
+use graphql/internal/tree
+use json
+
+# The kind of a JSON number.
+constant NUMBER: i64
+    100
+
+# One node of a value.
+record V
+    # Its kind: `tree.NULL`, `tree.BOOLEAN`, `tree.INT`, `tree.FLOAT`,
+    # `tree.STRING`, `tree.ENUM`, `tree.LIST`, `tree.OBJECT`,
+    # `tree.VARIABLE`, or `NUMBER`.
+    kind: i64
+    # A literal's text, a string, an enum value, a variable's name, a
+    # boolean's `true` or `false`.
+    text: str
+    # A JSON number.
+    number: f64
+    # Its key in the object above it, "" in a list or at the top.
+    key: str
+    # Its parent, -1 at the top.
+    parent: i64
+    # Its first child, -1 for none.
+    first: i64
+    # Its last child, -1 for none.
+    last: i64
+    # Its next sibling, -1 for none.
+    next: i64
+    # The tree node a literal came from, -1 for JSON.
+    at: i64
+
+# A node of `kind` with nothing linked.
+function v_of(kind: i64, text: str, number: f64, key: str, at: i64) -> V
+    return V(kind: kind, text: text, number: number, key: key, parent: -1, first: -1, last: -1, next: -1, at: at)
+
+# Adds `v` under `parent` as its last child and answers its index.
+function link(@vs: [V], parent: i64, v: V) -> i64
+    at = vs.len()
+    linked @= v
+    linked.parent @ parent
+    vs @ vs.push(linked)
+
+    if parent >= 0
+        before = vs[parent].last
+
+        if before < 0
+            vs[parent].first @ at
+        else
+            vs[before].next @ at
+        vs[parent].last @ at
+    return at
+
+# `v` as nodes, read with an explicit stack.
+function from_json(v: json.Value) -> [V]
+    vs: [V] @= []
+    values: [json.Value] @= [v]
+    parents: [i64] @= [-1]
+    keys_of: [str] @= [""]
+    top @= 1
+
+    while top > 0
+        top @ top - 1
+        current = values[top]
+        parent = parents[top]
+        key = keys_of[top]
+
+        match current
+            .null_value =>
+                _ = link(@vs, parent: parent, v: v_of(kind: tree.NULL, text: "null", number: 0.0, key: key, at: -1))
+            .boolean b =>
+                text = if b.v
+                    "true"
+                else
+                    "false"
+                _ = link(@vs, parent: parent, v: v_of(kind: tree.BOOLEAN, text: text, number: 0.0, key: key, at: -1))
+            .number n =>
+                _ = link(@vs, parent: parent, v: v_of(kind: NUMBER, text: "", number: n.v, key: key, at: -1))
+            .text t =>
+                _ = link(@vs, parent: parent, v: v_of(kind: tree.STRING, text: t.v, number: 0.0, key: key, at: -1))
+            .list l =>
+                at = link(@vs, parent: parent, v: v_of(kind: tree.LIST, text: "", number: 0.0, key: key, at: -1))
+                i @= l.items.len() - 1
+
+                while i >= 0
+                    place(@values, @parents, @keys_of, top: top, value: l.items[i], parent: at, key: "")
+                    top @ top + 1
+                    i @ i - 1
+            .object o =>
+                at = link(@vs, parent: parent, v: v_of(kind: tree.OBJECT, text: "", number: 0.0, key: key, at: -1))
+                names = keys(o.members)
+                i @= names.len() - 1
+
+                while i >= 0
+                    place(
+                        @values,
+                        @parents,
+                        @keys_of,
+                        top: top,
+                        value: o.members[names[i]].must(),
+                        parent: at,
+                        key: names[i]
+                    )
+                    top @ top + 1
+                    i @ i - 1
+
+    return vs
+
+# Puts one pending value at `top` of the explicit stack, overwriting or
+# growing it.
+function place(@values: [json.Value], @parents: [i64], @keys_of: [str], top: i64, value: json.Value, parent: i64, key: str)
+    if top < values.len()
+        values[top] @ value
+        parents[top] @ parent
+        keys_of[top] @ key
+    else
+        values @ values.push(value)
+        parents @ parents.push(parent)
+        keys_of @ keys_of.push(key)
+
+# The index after the last node of `t`'s subtree at `n`.
+function subtree_end(t: tree.Tree lent, n: i64) -> i64
+    d @= n
+
+    while t.nodes[d].last >= 0
+        d @ t.nodes[d].last
+
+    return d + 1
+
+# The literal at node `n` of `t` as nodes: an object's fields become its
+# children, each keyed by its name.
+function from_literal(t: tree.Tree lent, n: i64) -> [V]
+    vs: [V] @= []
+    end = subtree_end(t, n: n)
+    mapping: [i64] @= []
+    i @= n
+
+    while i < end
+        node = t.nodes[i]
+
+        if node.kind == tree.OBJECT_FIELD
+            mapping @ mapping.push(-1)
+        else
+            parent @= -1
+            key @= ""
+
+            if i > n
+                up = node.parent
+
+                if t.nodes[up].kind == tree.OBJECT_FIELD
+                    key @ t.nodes[up].name
+                    parent @ mapping[t.nodes[up].parent - n]
+                else
+                    parent @ mapping[up - n]
+
+            text = if node.kind == tree.VARIABLE
+                node.name
+            else
+                node.text
+            mapping @ mapping.push(
+                link(@vs, parent: parent, v: v_of(kind: node.kind, text: text, number: 0.0, key: key, at: i))
+            )
+        i @ i + 1
+
+    return vs
+
+# The children of node `i`, in order.
+function kids(vs: [V] lent, i: i64) -> [i64]
+    found: [i64] @= []
+    c @= vs[i].first
+
+    while c >= 0
+        found @ found.push(c)
+        c @ vs[c].next
+
+    return found
+
+# Where node `i` stands below the top: keys as `.text`, list indices as
+# `.number`.
+function path_of(vs: [V] lent, i: i64) -> [json.Value]
+    reversed: [json.Value] @= []
+    at @= i
+
+    while vs[at].parent >= 0
+        up = vs[at].parent
+
+        if vs[up].kind == tree.LIST
+            index @= 0
+            c @= vs[up].first
+
+            while c != at
+                index @ index + 1
+                c @ vs[c].next
+
+            reversed @ reversed.push(.number(v: to_f64(index)))
+        else
+            reversed @ reversed.push(.text(v: vs[at].key))
+        at @ up
+
+    path: [json.Value] @= []
+    k @= reversed.len() - 1
+
+    while k >= 0
+        path @ path.push(reversed[k])
+        k @ k - 1
+
+    return path
+
+# The plain JSON of every node of `vs` whose kind `typed` leaves out, built
+# from the last node to the first: lists and objects of their children, a
+# literal's numbers read, an enum value its name, a variable `variables`
+# holds its value and one it does not `null`.
+function plain_of(vs: [V] lent, variables: {str: json.Value}) -> [json.Value]
+    built: [json.Value] @= []
+    i @= 0
+
+    while i < vs.len()
+        built @ built.push(.null_value)
+        i @ i + 1
+
+    n @= vs.len() - 1
+
+    while n >= 0
+        built[n] @ plain_one(vs, n: n, built: built, variables: variables)
+        n @ n - 1
+
+    return built
+
+# The plain JSON of node `n`, its children already in `built`.
+function plain_one(vs: [V] lent, n: i64, built: [json.Value] lent, variables: {str: json.Value}) -> json.Value
+    node = vs[n]
+    k = node.kind
+
+    if k == tree.LIST
+        items: [json.Value] @= []
+
+        for c in kids(vs, i: n)
+            items @ items.push(built[c])
+
+        return .list(items: items)
+
+    if k == tree.OBJECT
+        members: {str: json.Value} @= {}
+
+        for c in kids(vs, i: n)
+            members[vs[c].key] @ built[c]
+
+        return .object(members: members)
+
+    if k == tree.BOOLEAN
+        return .boolean(v: node.text == "true")
+
+    if k == NUMBER
+        return .number(v: node.number)
+
+    if k == tree.INT || k == tree.FLOAT
+        return .number(v: number_of(node.text))
+
+    if k == tree.STRING || k == tree.ENUM
+        return .text(v: node.text)
+
+    if k == tree.VARIABLE
+        return variables[node.text].default(.null_value)
+    return .null_value
+
+# The number a literal's text writes, 0 where it writes none.
+function number_of(text: str) -> f64
+    return json.parse(text).default(.number(v: 0.0)).must_number()
+
+# The number of `v`, 0 for any other value.
+function must_number(v: json.Value) -> f64
+    match v
+        .number n                                                => return n.v
+        .null_value | .boolean _ | .text _ | .list _ | .object _ => return 0.0
+
+## Writing a value as graphql-js's `inspect` writes it
+
+# `x` as JavaScript writes a number: `1`, `1.5`, `1e+21`, `0` for minus zero.
+function js_number(x: f64) -> str
+    if x != x
+        return "NaN"
+
+    if x == 0.0
+        return "0"
+    return json.format(.number(v: x)).default("Infinity")
+
+# Node `i` of `vs` as graphql-js's `inspect` writes it: strings quoted,
+# objects `{ a: 1 }`, lists `[1, 2]`, past two levels `[Object]` or
+# `[Array]`, past ten elements `... 2 more items`.
+function inspect_at(vs: [V] lent, i: i64, depth: i64) -> str
+    node = vs[i]
+    k = node.kind
+
+    if k == tree.NULL
+        return "null"
+
+    if k == tree.BOOLEAN || k == tree.INT || k == tree.FLOAT || k == tree.ENUM
+        return node.text
+
+    if k == NUMBER
+        return js_number(node.number)
+
+    if k == tree.STRING
+        return json.quote(node.text)
+
+    if k == tree.VARIABLE
+        return "$" + node.text
+    children = kids(vs, i: i)
+
+    if k == tree.LIST
+        if children.len() == 0
+            return "[]"
+
+        if depth >= 2
+            return "[Array]"
+        items: [str] @= []
+
+        for c in children
+            if items.len() < 10
+                items @ items.push(inspect_at(vs, i: c, depth: depth + 1))
+
+        if children.len() > 11
+            items @ items.push(f"... {children.len() - 10} more items")
+        else if children.len() == 11
+            items @ items.push("... 1 more item")
+        return "[" + items.join(", ") + "]"
+
+    if children.len() == 0
+        return "{}"
+
+    if depth >= 2
+        return "[Object]"
+    members: [str] @= []
+
+    for c in children
+        members @ members.push(vs[c].key + ": " + inspect_at(vs, i: c, depth: depth + 1))
+
+    return "{ " + members.join(", ") + " }"
+
+# `v` as graphql-js's `inspect` writes it.
+function inspect(v: json.Value) -> str
+    vs = from_json(v)
+    return inspect_at(vs, i: 0, depth: 0)
+
+test "inspect: every kind, two levels, and more than ten elements"
+    assert inspect(json.parse("{\"a\":{\"b\":{\"c\":1}}}").must()) == "{ a: { b: [Object] } }"
+    assert inspect(json.parse("[[[[1]]]]").must()) == "[[[Array]]]"
+    assert inspect(json.parse("[1,2,3,4,5,6,7,8,9,10,11,12]").must()) == "[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ... 2 more items]"
+    assert inspect(json.parse("{}").must()) == "{}"
+    assert inspect(json.parse("[]").must()) == "[]"
+    assert inspect(json.parse("\"x\\\"y\"").must()) == "\"x\\\"y\""
+    assert inspect(json.parse("[1.5, true, null, -0]").must()) == "[1.5, true, null, 0]"
+
+test "path_of: keys and indices from the top"
+    vs = from_json(json.parse("{\"a\": [1, {\"b\": 2}]}").must())
+    assert path_of(vs, i: vs.len() - 1) == [.text(v: "a"), .number(v: 1.0), .text(v: "b")]
+    assert path_of(vs, i: 0) == []
+
+test "plain_of: a JSON value read back whole"
+    v = json.parse("{\"a\": [1, {\"b\": null}, \"s\", true]}").must()
+    vs = from_json(v)
+    assert plain_of(vs, variables: {})[0] == v

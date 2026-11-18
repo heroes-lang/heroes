@@ -1,0 +1,285 @@
+# The ledger of `graphql`: what the GraphQL libraries of Go, Rust and Python
+# let a program do, one block per capability, and what Rebel answers. None of
+# the three standard libraries speaks GraphQL, so the yardstick is the census
+# the author chose on 2026-11-17, measured on this machine on 2026-11-18: Go's
+# `github.com/graphql-go/graphql` v0.8.1, `github.com/99designs/gqlgen`
+# v0.17.98 and the parser and validator it stands on,
+# `github.com/vektah/gqlparser/v2` v2.5.64 (`go doc -all`, the modules
+# fetched into the scratch folder's module cache); Python's `graphql-core`
+# 3.3.2 and `strawberry-graphql` 0.341.2 (`dir()`, installed into the scratch
+# folder with pip); Rust's `async-graphql` and `juniper`, their items read
+# from docs.rs's list of each crate (no crate is built on this machine).
+# graphql-js 16.15.0, installed into the scratch folder with npm, is the
+# reference: every message and every answer the tests hold was asked of it.
+
+capability document/parse  a document's text read into operations, fragments and the definitions of a schema
+  heroes  graphql.parse, graphql.Document, graphql.Limits
+  go      graphql-go parser.Parse, parser.ParseParams, parser.ParseOptions, parser.Parser, gqlparser.LoadQuery, gqlparser.MustLoadQuery, gqlparser parser.ParseQuery
+  rust    async-graphql Request (its query parsed on execution), juniper parser::Token, parser::LexerError, parser::ParseError, parser::Spanning, parser::Span, parser::SourcePosition, parser::ScalarToken, parser::StringLiteral
+  python  graphql.parse, graphql.Source, graphql.Lexer, graphql.Token, graphql.TokenKind, graphql.GraphQLSyntaxError, graphql.Location, graphql.SourceLocation, graphql.get_location, graphql.print_location, graphql.print_source_location
+  note    Messages and places are graphql-js 16.15's, checked against its parser on 75 texts; descriptions on operations, fragments and variables are read as 16.15 reads them. A failure is one `invalid` whose message ends with its line and column; a request's failure reaches the response as an error with `locations`
+
+capability document/limits  a document refused past limits the program states: bytes, tokens, nesting, aliases, directives, fields selected
+  heroes  graphql.Limits, graphql.default_limits
+  go      gqlparser parser.ParseQueryWithTokenLimit, gqlgen handler.Server.SetParserTokenLimit, gqlgen extension.ComplexityLimit, extension.FixedComplexityLimit, extension.ComplexityStats, extension.GetComplexityStats, gqlgen complexity.Calculate, complexity.Option, complexity.WithFixedScalarValue, complexity.WithIgnoreFields
+  rust    async-graphql SchemaBuilder.limit_depth, limit_complexity, limit_recursive_depth, limit_directives, extensions::Analyzer
+  python  graphql.parse(max_tokens=), graphql.validate(max_errors=), graphql.MaxIntrospectionDepthRule
+  note    Bytes, tokens (graphql-js's `maxTokens` and its message), levels, aliases, directives on one place and fields selected with every fragment spread followed, counted once a fragment and saturated, so a document of fragments spread into each other is refused before the quadratic rule runs; none of the three libraries bounds the expanded count by default, gqlgen's complexity and async-graphql's limits are the nearest
+
+capability document/format  a document written back as text
+  heroes  graphql.format
+  go      graphql-go printer.Print, gqlparser formatter.NewFormatter, formatter.Formatter, formatter.FormatterOption, formatter.WithIndent, formatter.WithComments, formatter.WithCompacted, formatter.WithoutDescription, formatter.WithBuiltin, formatter.WithNonIntrospectionBuiltin
+  rust    -
+  python  graphql.print_ast
+  note    graphql-js's `print`, byte for byte on the probed documents: block strings, a field's arguments broken past 80 characters, SDL definitions
+
+capability document/strip  a document's text with every ignored character a parser may lose left out
+  heroes  pending
+  go      -
+  rust    -
+  python  graphql.strip_ignored_characters
+  note    graphql-js's `stripIgnoredCharacters` keeps exactly the separators a lexer needs between two tokens and rewrites block strings; not written in this round
+
+capability document/operations  the operations a document holds, their kinds, names and variables
+  heroes  graphql.operations_of, graphql.Operation, graphql.Variable
+  go      gqlparser ast.QueryDocument.Operations, ast.OperationList.ForName
+  rust    juniper OperationType, Operation
+  python  graphql.get_operation_ast, graphql.OperationType
+
+capability document/tree  the document's tree read and rewritten by a visitor
+  heroes  refused: the tree is the package's own value, read by its functions; a visitor needs closures carrying the visitor's state, which the language refuses, and `operations_of`, `format` and `selected_of` answer what programs read of a document
+  go      graphql-go language/ast (every node type), gqlparser ast (every node type), gqlparser validator.Walk, validator.Walker, validator.Events
+  rust    juniper Selection, LookAheadSelection
+  python  graphql.visit, graphql.Visitor, graphql.ParallelVisitor, graphql.TypeInfo, graphql.TypeInfoVisitor, graphql.VisitorAction, graphql.VisitorKeyMap, graphql.BREAK, graphql.SKIP, graphql.REMOVE, graphql.IDLE, graphql.Node, every `*Node` class of `graphql.language.ast`, graphql.ast_to_dict, graphql.concat_ast, graphql.separate_operations, graphql.is_definition_node, is_executable_definition_node, is_selection_node, is_value_node, is_const_value_node, is_type_node, is_type_system_definition_node, is_type_definition_node, is_type_system_extension_node, is_type_extension_node, is_subscription_operation_definition_node, is_schema_coordinate_node
+
+capability schema/parse  a schema read from the schema definition language and checked by the type system's rules
+  heroes  graphql.parse_schema, graphql.Schema
+  go      gqlparser.LoadSchema, gqlparser.MustLoadSchema, gqlparser parser.ParseSchema, parser.ParseSchemas, parser.ParseSchemaWithLimit, parser.ParseSchemasWithLimit, gqlparser validator.LoadSchema, validator.ValidateSchemaDocument, validator.PreludeDocument
+  rust    async-graphql dynamic::Schema (from parts), juniper RootNode
+  python  graphql.build_schema, graphql.build_ast_schema, graphql.validate_schema, graphql.assert_valid_schema, graphql.LoneSchemaDefinitionRule, UniqueOperationTypesRule, UniqueTypeNamesRule, UniqueEnumValueNamesRule, UniqueFieldDefinitionNamesRule, UniqueArgumentDefinitionNamesRule, UniqueDirectiveNamesRule, PossibleTypeExtensionsRule, graphql.SDLValidationRule, graphql.specified_scalar_types, graphql.specified_directives, graphql.GraphQLInt, GraphQLFloat, GraphQLString, GraphQLBoolean, GraphQLID, GraphQLIncludeDirective, GraphQLSkipDirective, GraphQLDeprecatedDirective, GraphQLSpecifiedByDirective, GraphQLOneOfDirective, GRAPHQL_MAX_INT, GRAPHQL_MIN_INT, DEFAULT_DEPRECATION_REASON, graphql.is_specified_scalar_type, is_specified_directive
+  note    graphql-js's `buildSchema` and then `validateSchema`: a schema that breaks a rule is refused at once, where graphql-js builds it and refuses it on first use. The SDL rules' messages match graphql-js on the 189 SDL cases of its test suite that do not start from an invalid schema
+
+capability schema/extend  a schema extended with new types and `extend` definitions
+  heroes  graphql.extend_schema
+  go      graphql-go Schema.AppendType, Schema.AddImplementation, Schema.AddExtensions
+  rust    -
+  python  graphql.extend_schema
+
+capability schema/format  a schema written in the schema definition language
+  heroes  graphql.format_schema
+  go      gqlparser formatter.Formatter.FormatSchema
+  rust    async-graphql Schema.sdl, Schema.sdl_with_options, SDLExportOptions
+  python  graphql.print_schema, graphql.print_type, graphql.print_directive, graphql.print_introspection_schema, strawberry.printer
+  note    graphql-js's `printSchema`, byte for byte on the probed schemas
+
+capability schema/code-first  a schema built from the program's own types and functions
+  heroes  refused: a schema is written in GraphQL's own schema language and read by `parse_schema`; deriving it from the program's types needs the reflection, macros or decorators the language refuses, and building it from values would be a second way to write the same text
+  go      graphql-go NewSchema, SchemaConfig, Schema, NewObject, ObjectConfig, Object, NewInterface, InterfaceConfig, Interface, NewUnion, UnionConfig, Union, NewEnum, EnumConfig, Enum, EnumValueConfig, EnumValueConfigMap, EnumValueDefinition, NewInputObject, InputObjectConfig, InputObject, InputObjectField, InputObjectFieldConfig, InputObjectConfigFieldMap, NewScalar, ScalarConfig, Scalar, NewList, List, NewNonNull, NonNull, NewDirective, DirectiveConfig, Directive, Fields, Field, FieldConfigArgument, ArgumentConfig, Argument, FieldArgument, FieldDefinition, FieldDefinitionMap, BindFields, BindArg, FieldsThunk, InterfacesThunk, UnionTypesThunk, InputObjectConfigFieldMapThunk, SerializeFn, ParseValueFn, ParseLiteralFn, Type, Input, Output, Leaf, Composite, Abstract, Nullable, Named, GetNamed, GetNullable, TypeMap
+  rust    async-graphql attributes Object, ComplexObject, Subscription, Scalar, Directive, TypeDirective, derives SimpleObject, InputObject, Enum, Interface, Union, OneofObject, MergedObject, MergedSubscription, NewType, Description, traits ObjectType, InputType, OutputType, InterfaceType, UnionType, InputObjectType, OneofObjectType, SubscriptionType, TypeName, ContainerType, EnumType, ScalarType, macros scalar, dynamic::Schema, SchemaBuilder, Object, Field, FieldFuture, FieldValue, InputObject, InputValue, Interface, InterfaceField, Union, Enum, EnumItem, Scalar, Directive, Subscription, SubscriptionField, SubscriptionFieldFuture, TypeRef, Type, ResolverContext, ValueAccessor, ObjectAccessor, ListAccessor, DynamicRequest, DynamicRequestExt, SchemaError, EmptyMutation, EmptySubscription; juniper attributes graphql_object, graphql_interface, graphql_union, graphql_scalar, graphql_subscription, derives GraphQLObject, GraphQLInputObject, GraphQLEnum, GraphQLInterface, GraphQLUnion, GraphQLScalar, ScalarValue, traits GraphQLType, GraphQLValue, GraphQLTypeAsync, GraphQLValueAsync, GraphQLObject, GraphQLInterface, GraphQLUnion, GraphQLSubscriptionType, GraphQLSubscriptionValue, FromInputValue, ToInputValue, IntoInputValue, IntoValue, IsInputType, IsOutputType, ParseScalarValue, FromScalarValue, ToScalarValue, ScalarValue, TryToPrimitive, Registry, EmptyMutation, EmptySubscription, the `meta` types
+  python  graphql.GraphQLSchema, GraphQLObjectType, GraphQLInterfaceType, GraphQLUnionType, GraphQLEnumType, GraphQLEnumValue, GraphQLInputObjectType, GraphQLInputField, GraphQLScalarType, GraphQLList, GraphQLNonNull, GraphQLField, GraphQLArgument, GraphQLDirective, every `*Kwargs`, `*Map` and `Thunk*` of them, GraphQLNamedType, GraphQLWrappingType, GraphQLType and the other type unions, graphql.resolve_thunk, strawberry.type, field, input, interface, union, enum, enum_value, scalar, directive, directive_field, schema_directive, argument, mutation, subscription, Schema, lazy, LazyType, auto, ID, Private, Parent, annotation, types, scalars, schema
+
+capability schema/introspection  a schema asked about itself, and a schema built from what a server answered
+  heroes  graphql.introspection_of, graphql.introspection_query, graphql.schema_from_introspection
+  go      gqlgen introspection.Schema, Type, Field, InputValue, EnumValue, Directive, WrapSchema, WrapTypeFromDef, WrapTypeFromType, NewQuery, QueryOptions, gqlparser validator.QueryIntrospectionFields
+  rust    async-graphql IntrospectionMode, juniper introspect, IntrospectionFormat, TypeKind
+  python  graphql.get_introspection_query, graphql.IntrospectionQuery, graphql.introspection_from_schema, graphql.build_client_schema, graphql.introspection_types, graphql.TypeKind, graphql.SchemaMetaFieldDef, TypeMetaFieldDef, TypeNameMetaFieldDef, graphql.is_introspection_type
+  note    `introspection_of` answers byte for byte what graphql-js's `introspectionFromSchema` answers on the probed schemas, the experimental deprecation of directives included as 16.15 includes it; `introspection_query` is `getIntrospectionQuery` with the settled options only
+
+capability schema/compare  the changes from one schema to another that break or endanger a client
+  heroes  pending
+  go      -
+  rust    -
+  python  graphql.find_breaking_changes, graphql.find_dangerous_changes, graphql.find_schema_changes, graphql.BreakingChange, BreakingChangeType, DangerousChange, DangerousChangeType, SafeChange, SafeChangeType, SchemaChange
+  note    graphql-js's `findBreakingChanges` and `findDangerousChanges`: a list of kinds of change, each to be held to its words; not written in this round
+
+capability schema/sort  a schema with its types, fields and values in the order of their names
+  heroes  pending
+  go      -
+  rust    -
+  python  graphql.lexicographic_sort_schema
+  note    graphql-js's `lexicographicSortSchema`; not written in this round
+
+capability schema/coordinates  a schema coordinate (`Type.field(arg:)`) read and resolved
+  heroes  pending
+  go      -
+  rust    -
+  python  graphql.parse_schema_coordinate, graphql.resolve_schema_coordinate, graphql.resolve_ast_schema_coordinate, ResolvedSchemaElement, ResolvedNamedType, ResolvedField, ResolvedFieldArgument, ResolvedInputField, ResolvedEnumValue, ResolvedDirective, ResolvedDirectiveArgument
+  note    schema coordinates are in the working draft of 2025 and graphql-core 3.3 alone; not written in this round
+
+capability validation/all  a document checked against a schema by every rule of the specification's section 5
+  heroes  graphql.validate, graphql.rule_names
+  go      graphql-go ValidateDocument, ValidationResult, ValidationContext, VisitUsingRules, the 24 `*Rule` functions, CycleErrorMessage, MisplaceDirectiveMessage, UndefinedFieldMessage, UndefinedVarMessage, UnusedVariableMessage, gqlparser validator.Validate, validator.ValidateWithSources
+  rust    async-graphql ValidationMode, ValidationResult, juniper validation::RuleError, ValidatedOperation
+  python  graphql.validate, graphql.specified_rules, graphql.recommended_rules, graphql.ValidationContext, graphql.ValidationRule, graphql.ASTValidationRule, every `*Rule` of section 5
+  note    graphql-js 16.15's 27 `specifiedRules`, run together in its visitor's order with its messages: 529 of its 556 validation test cases agree whole with every rule run, and the 27 others start from a schema that is itself invalid, which `parse_schema` refuses (the test cases read as data from graphql-js's repository, fetched into the scratch folder). One departure, for robustness: past 100 fields under one response key, fields written alike on one type are compared once, so ten thousand copies of a field cost one comparison where graphql-js's pairwise comparison costs fifty million; below 100 the comparisons are graphql-js's pair by pair
+
+capability validation/choose  a document checked by some rules alone
+  heroes  graphql.validate_with, graphql.rule_names
+  go      gqlparser validator.ValidateWithRules, validator.ValidateWithRulesWithSources, validator.AddRule, validator.RemoveRule, validator.ReplaceRule, validator.Rule, gqlgen handler.Server.SetValidationRulesFn
+  rust    -
+  python  graphql.validate(rules=), graphql.NoDeprecatedCustomRule, graphql.NoSchemaIntrospectionCustomRule
+  note    447 of the 450 one-rule test cases agree; the three others build a schema or a document as values (a scalar whose literal parser throws, an empty selection set) that no text writes
+
+capability validation/custom  a rule the program writes, run among the specification's
+  heroes  refused: a rule of the program's own needs a visitor with closures carrying its state; a program checks what it needs on the document before `start_document`, or chooses among the rules with `validate_with`
+  go      graphql-go ValidationRuleFn, ValidationRuleInstance, gqlparser validator.RuleFunc, validator.AddErrFunc, validator.ErrorOption
+  rust    async-graphql CustomValidator
+  python  graphql.ValidationRule subclasses, graphql.ValidationContext.report_error
+
+capability execute/run  an operation executed, the program answering each field
+  heroes  graphql.start, graphql.start_document, graphql.next_step, graphql.answer, graphql.execute, graphql.execute_with, graphql.Execution, graphql.Field, graphql.Step
+  go      graphql-go Do, Execute, Params, ExecuteParams, Result, Result.HasErrors, FieldResolveFn, ResolveParams, ResolveInfo, FieldResolver, ResponsePath, gqlgen graphql.ExecutableSchema, Resolver, ResolveField, FieldContext, GetFieldContext, PathContext, GetPath, OperationContext, GetOperationContext
+  rust    async-graphql Schema.execute, Request, Response, Context, Executor, juniper execute, execute_sync, ExecutionOutput, Executor, Arguments, Variables
+  python  graphql.graphql, graphql.graphql_sync, graphql.execute, graphql.execute_sync, graphql.ExecutionResult, graphql.FormattedExecutionResult, graphql.GraphQLResolveInfo, graphql.GraphQLFieldResolver, graphql.ResponsePath, graphql.Executor, graphql.execution, strawberry.Info
+  note    the executor hands out each field the program must resolve and takes its answer back, since no resolver can carry the program's state; a query's fields a level at a time, a mutation's root fields one at a time. 25 of 26 probed executions answer byte for byte as graphql-js does over the same data; the 26th hands a field the parent lacks to the program where graphql-js answers null
+
+capability execute/default-resolver  a field answered from its parent's member of the same name
+  heroes  graphql.answer
+  go      graphql-go DefaultResolveFn
+  rust    -
+  python  graphql.default_field_resolver
+  note    a field whose parent is a JSON object holding a member of its name is answered from it, as graphql-js's default resolver answers it, and never handed out
+
+capability execute/abstract  the object type of an interface's or a union's value
+  heroes  graphql.answer
+  go      graphql-go ResolveTypeFn, ResolveTypeParams, IsTypeOfFn, IsTypeOfParams
+  rust    -
+  python  graphql.default_type_resolver, graphql.GraphQLTypeResolver, graphql.GraphQLIsTypeOfFn
+  note    the value of an interface or a union names its object type in a member `__typename`, as graphql-js's default type resolver reads it, with its four messages
+
+capability execute/batch  the fields ready at once handed out together, so that a program loads them in one query
+  heroes  graphql.next_step
+  go      gqlgen graphql.BatchParents, BatchParentsFor, BatchParentGroup, GetBatchParentGroup, BatchFieldResult, BatchErrors, BatchErrorList, ResolveBatchGroupResult, ResolveBatchSingleResult, WithBatchParents, WithBatchParentValues, BatchParentIndex, BatchPathWithIndex, AddBatchError
+  rust    async-graphql dataloader::DataLoader, Loader, CacheFactory, CacheStorage, HashMapCache, LruCache, NoCache
+  python  -
+  note    every field ready at once is handed out in one step, so the program loads the friends of every hero together: the DataLoader's work without its cache
+
+capability execute/lookahead  the fields selected below a field, read by its resolver
+  heroes  graphql.selected_of
+  go      gqlgen graphql.CollectFields, CollectFieldsCtx, CollectAllFields, CollectedField, FieldRequested, AnyFieldRequested
+  rust    async-graphql Lookahead, context::SelectionField, juniper LookAheadSelection, LookAheadChildren, LookAheadList, LookAheadObject, LookAheadArgument, LookAheadValue, Applies
+  python  graphql.GraphQLResolveInfo.field_nodes
+
+capability execute/variables  variables' values coerced to their types, and arguments with them
+  heroes  graphql.start
+  go      gqlparser validator.VariableValues
+  rust    async-graphql Variables, juniper Variables
+  python  graphql.get_variable_values, graphql.get_argument_values, graphql.get_directive_values, graphql.VariableValues, graphql.coerce_input_value, graphql.value_from_ast
+  note    graphql-js's `getVariableValues` and `getArgumentValues`, their messages held to graphql-js on 30 values
+
+capability execute/errors  a field's error nulling it up to the nearest field that may be null, with its path and its places
+  heroes  graphql.Error, graphql.Location, graphql.Response
+  go      graphql-go gqlerrors.Error, FormattedError, FormattedErrors, NewError, NewErrorWithPath, NewLocatedError, NewLocatedErrorWithPath, NewSyntaxError, FormatError, FormatErrors, ExtendedError, gqlparser gqlerror.Error, List, Location, Errorf, ErrorPathf, ErrorPosf, ErrorLocf, Wrap, WrapPath, WrapPos, WrapIfUnwrapped, gqlgen graphql.AddError, AddErrorf, GetErrors, GetFieldErrors, HasFieldError, ErrorOnPath, InvalidNullError, AddInvalidNullError, MarkNonNull
+  rust    async-graphql Error, ServerError, ErrorExtensions, ErrorExtensionValues, ResultExt, PathSegment, juniper GraphQLError, ExecutionError, FieldError, IntoFieldError, FieldPath
+  python  graphql.GraphQLError, graphql.GraphQLFormattedError, graphql.GraphQLErrorExtensions, graphql.located_error
+  note    a field's error nulls the nearest field that may be null; `Cannot return null for non-nullable field` and the other messages are graphql-js's
+
+capability execute/leaves  a scalar's and an enum's value written by its type's rules, and refused where it cannot be
+  heroes  graphql.answer
+  go      gqlgen graphql.MarshalInt, MarshalFloat, MarshalString, MarshalBoolean, MarshalID, MarshalIntID, UnmarshalInt, UnmarshalFloat, UnmarshalString, UnmarshalBoolean, UnmarshalID, IntegerError, NumberOverflowError
+  rust    async-graphql ID, Number, Value, Name, juniper ID, Value, InputValue, DefaultScalarValue
+  python  graphql.GraphQLScalarSerializer, GraphQLScalarValueParser, GraphQLScalarLiteralParser
+  note    Int, Float, String, Boolean and ID written as graphql-js serializes them, their messages held to graphql-js on 15 values; a scalar the program defines passes as its JSON
+
+capability execute/introspection  `__schema`, `__type` and `__typename` answered by the executor, and introspection turned off
+  heroes  graphql.Limits.introspection
+  go      gqlgen extension.Introspection, ExecutionContextState.IntrospectSchema, IntrospectType
+  rust    async-graphql IntrospectionMode, SchemaBuilder.disable_introspection, juniper validation::rules::disable_introspection::DisableIntrospection
+  python  graphql.NoSchemaIntrospectionCustomRule
+  note    `__schema`, `__type` and `__typename` answered by the executor; introspection off refuses `__schema` and `__type` by graphql-js's `NoSchemaIntrospectionCustomRule` and stops suggesting names
+
+capability execute/persisted  a document parsed once and run again, as a persisted query
+  heroes  graphql.start_document, graphql.Request.extensions
+  go      gqlgen handler.Server.SetQueryCache, lru.LRU, extension.AutomaticPersistedQuery, extension.ApqStats, extension.GetApqStats, graphql.Cache, MapCache, NoCache
+  rust    async-graphql extensions::apollo_persisted_queries::ApolloPersistedQueries, LruCacheStorage, CacheStorage
+  python  -
+  note    a program keeps a parsed `Document` and runs it again; a persisted query's hash arrives in `extensions`, the query text left out, and the program looks it up
+
+capability subscribe/events  a subscription's source stream described, and each of its events executed
+  heroes  graphql.subscribe, graphql.Subscribed, graphql.start_event
+  go      graphql-go Subscribe, ExecuteSubscription, SubscribeParams, gqlgen graphql.ResponseHandler, SubscriptionResponseHandler, OneShot, NullStream
+  rust    async-graphql Schema.execute_stream, juniper resolve_into_stream, SubscriptionCoordinator, SubscriptionConnection
+  python  graphql.subscribe, graphql.create_source_event_stream, graphql.map_source_to_response_event, graphql.execute_subscription_event, graphql.map_async_iterable, graphql.SingleFieldSubscriptionsRule
+  note    the program owns the stream: `subscribe` names its root field and arguments, `start_event` executes each event
+
+capability subscribe/websocket  the `graphql-transport-ws` protocol's messages read and written
+  heroes  graphql.parse_message, graphql.format_message, graphql.Message, graphql.WEBSOCKET_PROTOCOL
+  go      gqlgen transport.Websocket, WebsocketInitFunc, WebsocketErrorFunc, WebsocketCloseFunc, InitPayload, GetInitPayload, AddSubscriptionError, SendError, SendErrorf, WebsocketError, AppendCloseReason, WithWebsocketCloseCode
+  rust    async-graphql http::WebSocket, WsMessage, ClientMessage, WebSocketProtocols, ALL_WEBSOCKET_PROTOCOLS, default_on_connection_init, default_on_ping, juniper http::tests WsIntegration
+  python  -
+  note    the messages of `graphql-transport-ws`; the frames are `websocket`'s and the program's loop carries them
+
+capability subscribe/legacy-websocket  the older `graphql-ws` protocol of `subscriptions-transport-ws`
+  heroes  refused: `subscriptions-transport-ws` is archived by its authors, who point to `graphql-transport-ws`, which this package speaks
+  go      gqlgen transport.Websocket (both protocols)
+  rust    async-graphql WebSocketProtocols::SubscriptionsTransportWS
+  python  -
+
+capability subscribe/sse  a subscription's results sent as server-sent events
+  heroes  pending
+  go      gqlgen transport.SSE, client.Client.SSE, client.SSE, client.SSEResponse
+  rust    -
+  python  -
+  note    the GraphQL over Server-Sent Events protocol's two modes; not written in this round
+
+capability http/server  a request read from HTTP by GET and POST and answered in the media type the client accepts
+  heroes  graphql.read_http, graphql.respond_http, graphql.refusal_http, graphql.serve_http
+  go      gqlgen handler.Server, handler.New, NewDefaultServer, Server.ServeHTTP, Server.AddTransport, transport.GET, transport.POST, transport.Options, transport.GRAPHQL, transport.UrlEncodedForm, graphql.Transport, graphql.RawParams
+  rust    async-graphql http::receive_body, receive_json, receive_cbor, parse_query_string, ParseRequestError, juniper http::GraphQLRequest, http::GraphQLResponse
+  python  -
+  note    GraphQL over HTTP: GET and POST, `application/graphql-response+json` (400 for a request refused) or `application/json` (200), 405 for a mutation by GET, 406, 413 and 415; an `application/graphql` body and a form are refused as the draft leaves them out
+
+capability http/client  a request sent to a server and its response read
+  heroes  graphql.call_http, graphql.format_request, graphql.parse_response
+  go      gqlgen client.Client, client.New, Client.Post, Client.MustPost, Client.RawPost, client.Request, client.Response, client.Option, client.Var, client.Operation, client.Path, client.Extensions, client.AddHeader, client.AddCookie, client.BasicAuth, client.RawJsonError, client.SetCustomTarget, client.SetCustomDecodeConfig
+  rust    -
+  python  -
+
+capability http/batch  several requests in one body, answered in one list
+  heroes  refused: GraphQL over HTTP sends one request a body; a JSON array is refused as no request, and a program that batches sends several requests over one connection
+  go      -
+  rust    async-graphql BatchRequest, BatchResponse, http::receive_batch_body, receive_batch_json, receive_batch_cbor, juniper GraphQLBatchRequest, GraphQLBatchResponse
+  python  -
+
+capability http/uploads  files sent with a request in a multipart body
+  heroes  refused: files travel in the multipart request specification of a third party, outside GraphQL over HTTP; a program reads the parts with `http.parts_of` and passes what it needs as variables
+  go      gqlgen transport.MultipartForm, graphql.Upload, MarshalUpload, UnmarshalUpload, RawParams.AddUpload, client.WithFiles
+  rust    async-graphql Upload, UploadValue, http::MultipartOptions
+  python  strawberry.file_uploads
+
+capability http/ide  a page of GraphiQL or another explorer that sends queries to the server
+  heroes  pending
+  go      gqlgen playground.Handler, HandlerWithHeaders, AltairHandler, ApolloSandboxHandler, GraphiqlConfig, every `WithGraphiql*` and `WithApolloSandbox*` option
+  rust    async-graphql http::GraphiQLSource, graphiql_source, playground_source, GraphQLPlaygroundConfig, GraphiQLPlugin, graphiql_plugin_explorer, AltairSource, every `Altair*` option, juniper http::graphiql::graphiql_source, http::playground::playground_source
+  python  -
+  note    a page of GraphiQL served from a CDN; not written in this round
+
+capability response/json  a request and a response written as JSON and read back
+  heroes  graphql.parse_request, graphql.format_request, graphql.parse_response, graphql.format_response, graphql.request_of, graphql.request_value, graphql.response_of, graphql.response_value, graphql.error_of, graphql.error_value
+  go      gqlgen graphql.Response, ErrorResponse, client.Response
+  rust    async-graphql Request, Response, juniper http::GraphQLRequest, GraphQLResponse
+  python  graphql.ExecutionResult.formatted, graphql.GraphQLError.formatted
+  note    members in graphql-js's order: `errors` first where there are any
+
+capability execute/incremental  results delivered in parts by `@defer` and `@stream`
+  heroes  refused: `@defer` and `@stream` are an RFC not yet in the specification or its working draft; graphql-js 16 does not ship them
+  go      gqlgen transport.MultipartMixed, graphql.Deferrable, DeferredGroup, DeferredResult, NewDeferredGroup, client.IncrementalHTTP, IncrementalHandler, IncrementalData, IncrementalInitialResponse, IncrementalResponse
+  rust    async-graphql http::create_multipart_mixed_stream, is_accept_multipart_mixed
+  python  graphql.experimental_execute_incrementally, ExperimentalIncrementalExecutionResults, InitialIncrementalExecutionResult, SubsequentIncrementalExecutionResult, IncrementalResult, IncrementalDeferResult, IncrementalStreamResult, every `Formatted*Incremental*` type, GraphQLDeferDirective, GraphQLStreamDirective, DeferStreamDirectiveLabel, DeferStreamDirectiveOnRootField, DeferStreamDirectiveOnValidOperationsRule, StreamDirectiveOnListField, streamable, Streamable
+
+capability execute/federation  the Apollo Federation's entities and service queries
+  heroes  refused: Apollo Federation is Apollo's, not the specification's
+  go      gqlgen graphql.FederationRequiresForBatch
+  rust    async-graphql types::Any
+  python  strawberry.federation
+
+capability execute/relay  Relay's connections, edges and cursors
+  heroes  refused: Relay's connections are a convention a schema writes in its own text, `PageInfo` and edges as types; nothing in execution changes
+  go      -
+  rust    async-graphql types::connection (Connection, Edge, PageInfo, OpaqueCursor, CursorType, query, query_with, the name types)
+  python  strawberry.relay
+
+dropped  the plumbing of each language's types: contexts, futures, marshalers, thunks and the internal steps of execution a program never calls
+  go      graphql-go FieldASTsToNodeASTs, NewLocatedError, Extension, ExecutionFinishFunc, ParseFinishFunc, ResolveFieldFinishFunc, ValidationFinishFunc, IsAbstractType, IsCompositeType, IsInputType, IsLeafType, IsOutputType, HasSelectionSet, TypeInfo, NewTypeInfo, TypeInfoConfig, DefaultTypeInfoFieldDef, VariableUsage, gqlgen graphql.Array, MarshalSliceConcurrently, FieldSet, NewFieldSet, FieldSetView, Marshaler, ContextMarshaler, Unmarshaler, ContextUnmarshaler, WriterFunc, ContextWriterFunc, WrapContextMarshaler, every `Marshal*` and `Unmarshal*` of Go's own types (Int8 to Uint64, Time, Date, Duration, UUID, Map, Any), Omittable, OmittableOf, InputUnmarshaler, InputUnmarshalerIndex, BuildUnmarshalerMap, BindUnmarshaler, CoerceList, ProcessArgField, NewScalarFieldContext, ExecutableSchemaMock, ExecutableSchemaState, ExecutionContextState, Config, Event, Status, Stats, TraceTiming, StartOperationTrace, GetStartTime, RequestContext, ResolverContext, RootFieldContext, ResponseContext, every `With*Context`, Recover, DefaultRecover, RecoverFunc, ErrorPresenterFunc, DefaultErrorPresenter, GetExtension, GetExtensions, RegisterExtension, Query, Mutation, Subscription, RootResolver, NullSource, UintSignError, Upload marshaling, gqlgen handler.Server.SetErrorPresenter, SetRecoverFunc, SetDisableSuggestion, Use, AroundFields, AroundOperations, AroundResponses, AroundRootFields, FieldFunc, OperationFunc, ResponseFunc, every interceptor and middleware type, gqlparser gqlerror.Error.SetFile, CollectAttrs, ErrorWithSources, SourceList, validator.IsValidIntString, IsValidFloatString, validator.EmptyDefinitionError
+  rust    async-graphql CacheControl, Extensions, extensions::Extension, ExtensionFactory, ExtensionContext, NextExecute, NextParseQuery, NextPrepareRequest, NextRequest, NextResolve, NextSubscribe, NextValidation, ResolveInfo, ResolveFut, ApolloTracing, Logger, OpenTelemetry, Tracing, Guard, GuardExt, CustomDirective, Data, DataContext, ContextBase, ContextDirective, ContextSelectionSet, Parents, QueryPathNode, QueryPathSegment, resolver_utils (resolve_container, resolve_container_serial, resolve_list, enum_value, parse_enum, EnumItem, Fields), InputValueError, InputValueResult, DeserializerError, SerializerError, FieldError, FieldResult, Result, ServerResult, from_value, to_value, value macro, Json, StringNumber, MaybeUndefined, juniper Object, Type, Scalar, ArcStr, SchemaType, Nullable, WrongInputScalarTypeError, AnyExt, ExtractTypeFromStream, IntoFieldResult, BoxFuture, LocalBoxFuture, ParseScalarResult, ExecutionResult, FieldResult, ValuesStream, OwnedExecutor, Context, FromContext, InputValueParseFn, ScalarTokenParseFn, DeprecationStatus, MetaType, every assert_* and const_concat, format_type, graphql_value, graphql_input_value, graphql_vars macros, the integrations of chrono, chrono_tz, jiff, time and ruint, the starwars test fixtures, http::tests run_http_test_suite, run_test_suite, HttpIntegration, TestResponse, WsIntegrationMessage, WS_INTEGRATION_EXPECT_DEFAULT_TIMEOUT
+  python  graphql.GraphQLHarness, default_harness, harness, ExecutionHooks, Middleware, MiddlewareManager, AbortController, AbortSignal, AbortError, AbortedGraphQLExecutionError, AsyncWorkFinishedInfo, GraphQLExecuteFn, GraphQLSubscribeFn, GraphQLValidateFn, GraphQLParseFn, RootSelectionSetExecutor, execute_root_selection_set, GraphQLResolveInfoHelpers, Undefined, UndefinedType, INVALID, ast_from_value, value_to_literal, value_from_ast_untyped, coerce_input_literal, validate_input_value, validate_input_literal, replace_variables, type_from_ast, parse_value, parse_const_value, parse_type, get_named_type, get_nullable_type, do_types_overlap, is_type_sub_type_of, is_equal_type, every is_* predicate of a type, field, argument, directive or schema, every assert_* of them, GraphQLDefaultInput, GraphQLScalarInputLiteralCoercer, GraphQLScalarInputValueCoercer, GraphQLScalarOutputValueCoercer, GraphQLScalarValueToLiteral, assert_name, assert_enum_value_name, is_required_argument, is_required_input_field, DirectiveLocation, error, language, pyutils, type, utilities, validation, version, version_info, version_js, version_info_js, strawberry.asdict, UNSET, Some, Maybe, cast, TYPE_CHECKING, ExceptionHandler, exceptions, execution, experimental, extensions, permission, BasePermission, utils

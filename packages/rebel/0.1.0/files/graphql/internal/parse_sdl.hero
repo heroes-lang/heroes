@@ -1,0 +1,372 @@
+# The definitions of a schema's text, as the specification's section 3 writes
+# them: `schema`, `scalar`, `type`, `interface`, `union`, `enum`, `input` and
+# `directive`, each with its description, and their `extend` forms, which
+# must add something. None nests but through its values and types, so each
+# is read in one pass of loops.
+
+use graphql/internal/cursor
+use graphql/internal/lexer
+use graphql/internal/tree
+
+# The places a directive may stand, as the specification names them.
+constant LOCATIONS: str
+    " QUERY MUTATION SUBSCRIPTION FIELD FRAGMENT_DEFINITION FRAGMENT_SPREAD INLINE_FRAGMENT VARIABLE_DEFINITION SCHEMA SCALAR OBJECT FIELD_DEFINITION ARGUMENT_DEFINITION INTERFACE UNION ENUM ENUM_VALUE INPUT_OBJECT INPUT_FIELD_DEFINITION DIRECTIVE_DEFINITION "
+
+# Whether `word` begins a definition of a schema's text.
+function is_definition_keyword(word: str) -> bool
+    return word == "schema" || word == "scalar" || word == "type" || word == "interface" || word == "union" || word == "enum" || word == "input" || word == "directive"
+
+# Reads the definition at the current token, its description first where it
+# has one, under `parent`; `start` is the byte it starts at.
+function read_definition(@p: cursor.P, parent: i64, keyword: str, start: i64) -> ()?
+    if keyword == "schema"
+        return read_schema(@p, parent: parent, start: start, extension: false)
+
+    if keyword == "scalar"
+        return read_scalar(@p, parent: parent, start: start, extension: false)
+
+    if keyword == "type"
+        return read_object(@p, parent: parent, start: start, kind: tree.OBJECT_DEFINITION, extension: false)
+
+    if keyword == "interface"
+        return read_object(@p, parent: parent, start: start, kind: tree.INTERFACE_DEFINITION, extension: false)
+
+    if keyword == "union"
+        return read_union(@p, parent: parent, start: start, extension: false)
+
+    if keyword == "enum"
+        return read_enum(@p, parent: parent, start: start, extension: false)
+
+    if keyword == "input"
+        return read_input(@p, parent: parent, start: start, extension: false)
+    return read_directive_definition(@p, parent: parent, start: start)
+
+# Reads the `extend` definition at the current token under `parent`.
+function read_extension(@p: cursor.P, parent: i64) -> ()?
+    start = cursor.token(p).start
+    keyword = cursor.ahead(@p)?
+
+    if keyword.kind == lexer.NAME
+        if keyword.value == "schema"
+            return read_schema(@p, parent: parent, start: start, extension: true)
+
+        if keyword.value == "scalar"
+            return read_scalar(@p, parent: parent, start: start, extension: true)
+
+        if keyword.value == "type"
+            return read_object(@p, parent: parent, start: start, kind: tree.OBJECT_EXTENSION, extension: true)
+
+        if keyword.value == "interface"
+            return read_object(@p, parent: parent, start: start, kind: tree.INTERFACE_EXTENSION, extension: true)
+
+        if keyword.value == "union"
+            return read_union(@p, parent: parent, start: start, extension: true)
+
+        if keyword.value == "enum"
+            return read_enum(@p, parent: parent, start: start, extension: true)
+
+        if keyword.value == "input"
+            return read_input(@p, parent: parent, start: start, extension: true)
+    return cursor.unexpected(@p, t: keyword)
+
+# Adds the definition of `kind` at `start` under `parent`, reads its
+# description, or `extend` where `extension`, then its keyword, and answers
+# its index.
+function open(@p: cursor.P, parent: i64, start: i64, kind: i64, keyword: str, extension: bool) -> i64?
+    at = cursor.add(@p, parent: parent, n: tree.node_of(kind: kind, at: start))
+
+    if extension
+        cursor.expect_keyword(@p, v: "extend")?
+    else
+        cursor.read_description(@p, at: at)?
+    cursor.expect_keyword(@p, v: keyword)?
+    return ok(at)
+
+# Reads a name into node `at`.
+function read_name(@p: cursor.P, at: i64) -> ()?
+    name = cursor.expect_name(@p)?
+    p.nodes[at].name @ name.value
+    p.nodes[at].name_at @ name.start
+    return ok()
+
+# Reads `schema` or `extend schema`: directives and operation types.
+function read_schema(@p: cursor.P, parent: i64, start: i64, extension: bool) -> ()?
+    kind = if extension
+        tree.SCHEMA_EXTENSION
+    else
+        tree.SCHEMA_DEFINITION
+    at = open(@p, parent: parent, start: start, kind: kind, keyword: "schema", extension: extension)?
+    cursor.read_directives(@p, parent: at, fixed: true)?
+
+    if extension && !cursor.is_punct(p, v: "{")
+        if p.nodes[at].first < 0
+            cursor.unexpected(@p, t: cursor.token(p))?
+        return ok()
+    cursor.expect_punct(@p, v: "{")?
+    first @= true
+
+    while first || !cursor.is_punct(p, v: "}")
+        first @ false
+        operation = cursor.token(p)
+        word = cursor.expect_name(@p)?
+
+        if word.value != "query" && word.value != "mutation" && word.value != "subscription"
+            cursor.unexpected(@p, t: operation)?
+        cursor.expect_punct(@p, v: ":")?
+        type = cursor.expect_name(@p)?
+        n @= tree.node_of(kind: tree.OPERATION_TYPE, at: operation.start)
+        n.text @ word.value
+        n.type @ type.value
+        n.type_at @ type.start
+        n.type_start @ type.start
+        _ = cursor.add(@p, parent: at, n: n)
+
+    cursor.advance(@p)?
+    return ok()
+
+# Reads `scalar` or `extend scalar`.
+function read_scalar(@p: cursor.P, parent: i64, start: i64, extension: bool) -> ()?
+    kind = if extension
+        tree.SCALAR_EXTENSION
+    else
+        tree.SCALAR_DEFINITION
+    at = open(@p, parent: parent, start: start, kind: kind, keyword: "scalar", extension: extension)?
+    read_name(@p, at: at)?
+    cursor.read_directives(@p, parent: at, fixed: true)?
+
+    if extension && p.nodes[at].first < 0
+        cursor.unexpected(@p, t: cursor.token(p))?
+    return ok()
+
+# Reads `type` or `interface`, or their `extend`: interfaces, directives and
+# fields.
+function read_object(@p: cursor.P, parent: i64, start: i64, kind: i64, extension: bool) -> ()?
+    keyword = if kind == tree.OBJECT_DEFINITION || kind == tree.OBJECT_EXTENSION
+        "type"
+    else
+        "interface"
+    at = open(@p, parent: parent, start: start, kind: kind, keyword: keyword, extension: extension)?
+    read_name(@p, at: at)?
+
+    if cursor.is_keyword(p, v: "implements")
+        cursor.advance(@p)?
+
+        if cursor.is_punct(p, v: "&")
+            cursor.advance(@p)?
+        more @= true
+
+        while more
+            read_member(@p, parent: at, kind: tree.IMPLEMENTS)?
+            more @ cursor.is_punct(p, v: "&")
+
+            if more
+                cursor.advance(@p)?
+    cursor.read_directives(@p, parent: at, fixed: true)?
+
+    if cursor.is_punct(p, v: "{")
+        cursor.advance(@p)?
+        first @= true
+
+        while first || !cursor.is_punct(p, v: "}")
+            first @ false
+            read_field(@p, parent: at)?
+
+        cursor.advance(@p)?
+    else if extension && p.nodes[at].first < 0
+        cursor.unexpected(@p, t: cursor.token(p))?
+    return ok()
+
+# Reads one name as a node of `kind` under `parent`: an interface
+# implemented, a union's member.
+function read_member(@p: cursor.P, parent: i64, kind: i64) -> ()?
+    name = cursor.expect_name(@p)?
+    n @= tree.node_of(kind: kind, at: name.start)
+    n.name @ name.value
+    _ = cursor.add(@p, parent: parent, n: n)
+    return ok()
+
+# Reads a field definition under `parent`: its description, name, arguments,
+# type and directives.
+function read_field(@p: cursor.P, parent: i64) -> ()?
+    at = cursor.add(@p, parent: parent, n: tree.node_of(kind: tree.FIELD_DEFINITION, at: cursor.token(p).start))
+    cursor.read_description(@p, at: at)?
+    read_name(@p, at: at)?
+
+    if cursor.is_punct(p, v: "(")
+        cursor.advance(@p)?
+        first @= true
+
+        while first || !cursor.is_punct(p, v: ")")
+            first @ false
+            read_input_value(@p, parent: at)?
+
+        cursor.advance(@p)?
+    cursor.expect_punct(@p, v: ":")?
+    cursor.read_type(@p, at: at)?
+    cursor.read_directives(@p, parent: at, fixed: true)?
+    return ok()
+
+# Reads an argument or an input field definition under `parent`: its
+# description, name, type, default and directives.
+function read_input_value(@p: cursor.P, parent: i64) -> ()?
+    at = cursor.add(@p, parent: parent, n: tree.node_of(kind: tree.INPUT_VALUE_DEFINITION, at: cursor.token(p).start))
+    cursor.read_description(@p, at: at)?
+    read_name(@p, at: at)?
+    cursor.expect_punct(@p, v: ":")?
+    cursor.read_type(@p, at: at)?
+
+    if cursor.is_punct(p, v: "=")
+        cursor.advance(@p)?
+        cursor.read_value(@p, parent: at, fixed: true)?
+    cursor.read_directives(@p, parent: at, fixed: true)?
+    return ok()
+
+# Reads `union` or `extend union`: directives and members.
+function read_union(@p: cursor.P, parent: i64, start: i64, extension: bool) -> ()?
+    kind = if extension
+        tree.UNION_EXTENSION
+    else
+        tree.UNION_DEFINITION
+    at = open(@p, parent: parent, start: start, kind: kind, keyword: "union", extension: extension)?
+    read_name(@p, at: at)?
+    cursor.read_directives(@p, parent: at, fixed: true)?
+
+    if cursor.is_punct(p, v: "=")
+        cursor.advance(@p)?
+
+        if cursor.is_punct(p, v: "|")
+            cursor.advance(@p)?
+        more @= true
+
+        while more
+            read_member(@p, parent: at, kind: tree.UNION_MEMBER)?
+            more @ cursor.is_punct(p, v: "|")
+
+            if more
+                cursor.advance(@p)?
+    else if extension && p.nodes[at].first < 0
+        cursor.unexpected(@p, t: cursor.token(p))?
+    return ok()
+
+# Reads `enum` or `extend enum`: directives and values.
+function read_enum(@p: cursor.P, parent: i64, start: i64, extension: bool) -> ()?
+    kind = if extension
+        tree.ENUM_EXTENSION
+    else
+        tree.ENUM_DEFINITION
+    at = open(@p, parent: parent, start: start, kind: kind, keyword: "enum", extension: extension)?
+    read_name(@p, at: at)?
+    cursor.read_directives(@p, parent: at, fixed: true)?
+
+    if cursor.is_punct(p, v: "{")
+        cursor.advance(@p)?
+        first @= true
+
+        while first || !cursor.is_punct(p, v: "}")
+            first @ false
+            value = cursor.add(
+                @p,
+                parent: at,
+                n: tree.node_of(kind: tree.ENUM_VALUE_DEFINITION, at: cursor.token(p).start)
+            )
+            cursor.read_description(@p, at: value)?
+            t = cursor.token(p)
+
+            if t.kind == lexer.NAME && (t.value == "true" || t.value == "false" || t.value == "null")
+                cursor.stop(@p, message: f"{cursor.describe(t)} is reserved and cannot be used for an enum value.", at: t.start)?
+            read_name(@p, at: value)?
+            cursor.read_directives(@p, parent: value, fixed: true)?
+
+        cursor.advance(@p)?
+    else if extension && p.nodes[at].first < 0
+        cursor.unexpected(@p, t: cursor.token(p))?
+    return ok()
+
+# Reads `input` or `extend input`: directives and fields.
+function read_input(@p: cursor.P, parent: i64, start: i64, extension: bool) -> ()?
+    kind = if extension
+        tree.INPUT_EXTENSION
+    else
+        tree.INPUT_DEFINITION
+    at = open(@p, parent: parent, start: start, kind: kind, keyword: "input", extension: extension)?
+    read_name(@p, at: at)?
+    cursor.read_directives(@p, parent: at, fixed: true)?
+
+    if cursor.is_punct(p, v: "{")
+        cursor.advance(@p)?
+        first @= true
+
+        while first || !cursor.is_punct(p, v: "}")
+            first @ false
+            read_input_value(@p, parent: at)?
+
+        cursor.advance(@p)?
+    else if extension && p.nodes[at].first < 0
+        cursor.unexpected(@p, t: cursor.token(p))?
+    return ok()
+
+# Reads `directive @name(...) repeatable on LOCATIONS`.
+function read_directive_definition(@p: cursor.P, parent: i64, start: i64) -> ()?
+    at = open(@p, parent: parent, start: start, kind: tree.DIRECTIVE_DEFINITION, keyword: "directive", extension: false)?
+    cursor.expect_punct(@p, v: "@")?
+    read_name(@p, at: at)?
+
+    if cursor.is_punct(p, v: "(")
+        cursor.advance(@p)?
+        first @= true
+
+        while first || !cursor.is_punct(p, v: ")")
+            first @ false
+            read_input_value(@p, parent: at)?
+
+        cursor.advance(@p)?
+
+    if cursor.is_keyword(p, v: "repeatable")
+        p.nodes[at].flag @ true
+        cursor.advance(@p)?
+    cursor.expect_keyword(@p, v: "on")?
+
+    if cursor.is_punct(p, v: "|")
+        cursor.advance(@p)?
+    more @= true
+
+    while more
+        t = cursor.token(p)
+        name = cursor.expect_name(@p)?
+
+        if !strings_has(words: LOCATIONS, word: name.value)
+            cursor.unexpected(@p, t: t)?
+        n @= tree.node_of(kind: tree.LOCATION, at: t.start)
+        n.name @ name.value
+        _ = cursor.add(@p, parent: at, n: n)
+        more @ cursor.is_punct(p, v: "|")
+
+        if more
+            cursor.advance(@p)?
+
+    return ok()
+
+# Whether `words`, words between spaces, holds `word`.
+function strings_has(words: str, word: str) -> bool
+    needle = f" {word} "
+    last = words.len() - needle.len()
+    at @= 0
+
+    while at <= last
+        matched @= 0
+
+        while matched < needle.len() && words[at + matched] == needle[matched]
+            matched @ matched + 1
+
+        if matched == needle.len()
+            return true
+        at @ at + 1
+
+    return false
+
+test "strings_has and is_definition_keyword: the places of directives, and the words that begin a definition"
+    assert strings_has(words: LOCATIONS, word: "FIELD")
+    assert strings_has(words: LOCATIONS, word: "DIRECTIVE_DEFINITION")
+    assert !strings_has(words: LOCATIONS, word: "FIEL")
+    assert is_definition_keyword("directive")
+    assert !is_definition_keyword("extend")

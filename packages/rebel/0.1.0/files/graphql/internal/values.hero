@@ -1,0 +1,954 @@
+# Input values coerced to their types, and leaves written by theirs, as the
+# specification's sections 3.5 to 3.10 and 6.4 write them and graphql-js
+# words their failures: a variable's JSON (`coerceInputValue`), a literal of
+# a document with the variables in hand (`valueFromAST`, which says only
+# that it failed), and a field's answer written as its scalar or enum. The
+# value is walked as `vtree`'s nodes: types go down by index and values up
+# from the last node, so nothing recurses.
+
+use graphql/internal/model
+use graphql/internal/suggest
+use graphql/internal/tree
+use graphql/internal/vtree
+use json
+use numbers
+
+# One failure of a coercion.
+record Problem
+    # The node that failed.
+    node: i64
+    # Where it stands below the top.
+    path: [json.Value]
+    # The value shown as invalid, as `inspect` writes it.
+    shown: str
+    # graphql-js's message.
+    message: str
+
+# What `coerce` answers.
+record Coerced
+    # The value coerced; `.null_value` where it failed.
+    value: json.Value
+    # Whether it was coerced.
+    ok: bool
+    # Why not, in the order the value holds them; none for a literal.
+    problems: [Problem]
+
+# Whether `name` is one of the specified scalars.
+function is_specified_scalar(name: str) -> bool
+    return name == "Int" || name == "Float" || name == "String" || name == "Boolean" || name == "ID"
+
+# Whether the named type `name` is a scalar the program defined, whose values
+# pass as they are.
+function is_custom_scalar(m: model.Model lent, name: str) -> bool
+    return model.kind_of(m, name: name) == model.SCALAR && !is_specified_scalar(name)
+
+# `vs` coerced to `type`: from JSON where `literal` is false, from a literal
+# with `variables` in hand where it is true.
+function coerce(m: model.Model lent, vs: [vtree.V] lent, type: str, literal: bool, variables: {str: json.Value}, suggest_names: bool) -> Coerced
+    count = vs.len()
+    want: [str] @= []
+    core: [str] @= []
+    wraps: [i64] @= []
+    mode: [i64] @= []
+    i @= 0
+
+    while i < count
+        want @ want.push("")
+        core @ core.push("")
+        wraps @ wraps.push(0)
+        mode @ mode.push(2)
+        i @ i + 1
+
+    want[0] @ type
+    mode[0] @ 0
+    n @= 0
+
+    while n < count
+        spread_types(m, vs: vs, n: n, want: @want, core: @core, wraps: @wraps, mode: @mode)
+        n @ n + 1
+
+    results: [json.Value] @= []
+    bad: [bool] @= []
+    missing: [bool] @= []
+    problems: [Problem] @= []
+    k @= 0
+
+    while k < count
+        results @ results.push(.null_value)
+        bad @ bad.push(false)
+        missing @ missing.push(false)
+        k @ k + 1
+
+    plain = vtree.plain_of(vs, variables: variables)
+    n @ count - 1
+
+    while n >= 0
+        if mode[n] == 1
+            results[n] @ plain[n]
+        else if mode[n] == 0
+            one = coerce_one(
+                m,
+                vs: vs,
+                n: n,
+                want: want[n],
+                core: core[n],
+                literal: literal,
+                variables: variables,
+                results: results,
+                bad: bad,
+                missing: missing,
+                mode: mode,
+                plain: plain,
+                suggest_names: suggest_names
+            )
+            results[n] @ one.value
+            bad[n] @ !one.ok
+            missing[n] @ one.missing
+
+            for p in one.problems
+                problems @ problems.push(p)
+
+            w @= 0
+
+            while w < wraps[n]
+                results[n] @ .list(items: [results[n]])
+                w @ w + 1
+        n @ n - 1
+
+    ordered = order_problems(problems)
+
+    if bad[0] || missing[0]
+        return Coerced(value: .null_value, ok: false, problems: ordered)
+    return Coerced(value: results[0], ok: true, problems: ordered)
+
+# `problems` in the order of their nodes, those of one node in the order
+# they were found.
+function order_problems(problems: [Problem]) -> [Problem]
+    ordered: [Problem] @= []
+    k @= problems.len() - 1
+
+    while k >= 0
+        p = problems[k]
+        at @= ordered.len()
+
+        while at > 0 && ordered[at - 1].node > p.node
+            at @ at - 1
+
+        out: [Problem] @= []
+        j @= 0
+
+        while j < ordered.len()
+            if j == at
+                out @ out.push(p)
+            out @ out.push(ordered[j])
+            j @ j + 1
+
+        if at >= ordered.len()
+            out @ out.push(p)
+        ordered @ out
+        k @ k - 1
+
+    return ordered
+
+# Gives the children of node `n` the types they are coerced to, from the type
+# `n` is given: elements of a list, fields of an input object, and anything
+# below a scalar the program defined passing as it is.
+function spread_types(m: model.Model lent, vs: [vtree.V] lent, n: i64, @want: [str], @core: [str], @wraps: [i64], @mode: [i64])
+    node = vs[n]
+
+    if mode[n] != 0
+        c @= node.first
+
+        while c >= 0
+            mode[c] @ mode[n]
+            c @ vs[c].next
+
+        return
+    w = want[n]
+
+    if node.kind == tree.NULL || node.kind == tree.VARIABLE
+        core[n] @ w
+        return
+    cur @= w
+    count @= 0
+
+    while model.is_list(model.nullable_of(cur)) && node.kind != tree.LIST
+        cur @ model.item_of(cur)
+        count @ count + 1
+
+    core[n] @ cur
+    wraps[n] @ count
+    named = model.named_of(cur)
+    kind = model.kind_of(m, name: named)
+    c @= node.first
+
+    while c >= 0
+        if node.kind == tree.LIST && model.is_list(model.nullable_of(cur))
+            want[c] @ model.item_of(cur)
+            mode[c] @ 0
+        else if is_custom_scalar(m, name: named)
+            mode[c] @ 1
+        else if node.kind == tree.OBJECT && kind == model.INPUT_OBJECT
+            field = input_of(m, type_name: named, name: vs[c].key)
+
+            if field >= 0
+                want[c] @ m.types[named].must().inputs[field].type
+                mode[c] @ 0
+            else
+                mode[c] @ 2
+        else
+            mode[c] @ 2
+        c @ vs[c].next
+
+# The index of the input field `name` of `type_name`, -1 for none.
+function input_of(m: model.Model lent, type_name: str, name: str) -> i64
+    t = match m.types[type_name]
+        .ok got => got
+        .err _  => return -1
+
+    i @= 0
+
+    while i < t.inputs.len()
+        if t.inputs[i].name == name
+            return i
+        i @ i + 1
+
+    return -1
+
+# What `coerce_one` answers of one node.
+record One
+    # Its value.
+    value: json.Value
+    # Whether it was coerced.
+    ok: bool
+    # Whether it is a variable the variables do not hold.
+    missing: bool
+    # Its failures.
+    problems: [Problem]
+
+# A failure of node `n`, `shown` its value.
+function problem(vs: [vtree.V] lent, n: i64, message: str) -> Problem
+    return Problem(
+        node: n,
+        path: vtree.path_of(vs, i: n),
+        shown: vtree.inspect_at(vs, i: n, depth: 0),
+        message: message
+    )
+
+# Node `n` coerced to `core`, the type `want` with the lists a single value
+# stands for taken off, its children's values already in `results`.
+function coerce_one(m: model.Model lent, vs: [vtree.V] lent, n: i64, want: str, core: str, literal: bool, variables: {str: json.Value}, results: [json.Value] lent, bad: [bool] lent, missing: [bool] lent, mode: [i64] lent, plain: [json.Value] lent, suggest_names: bool) -> One
+    node = vs[n]
+
+    if node.kind == tree.VARIABLE
+        match variables[node.text]
+            .ok v =>
+                if v == .null_value && model.is_non_null(want)
+                    return One(value: .null_value, ok: false, missing: false, problems: [])
+                return One(value: v, ok: true, missing: false, problems: [])
+            .err _ => return One(value: .null_value, ok: false, missing: true, problems: [])
+
+    if node.kind == tree.NULL
+        if model.is_non_null(want)
+            if literal
+                return One(value: .null_value, ok: false, missing: false, problems: [])
+            return One(
+                value: .null_value,
+                ok: false,
+                missing: false,
+                problems: [problem(vs, n: n, message: f"Expected non-nullable type \"{want}\" not to be null.")]
+            )
+        return One(value: .null_value, ok: true, missing: false, problems: [])
+    named = model.named_of(core)
+    kind = model.kind_of(m, name: named)
+
+    if is_custom_scalar(m, name: named)
+        return One(value: plain[n], ok: true, missing: false, problems: [])
+
+    if node.kind == tree.LIST && model.is_list(model.nullable_of(core))
+        items: [json.Value] @= []
+        fine @= true
+        item_type = model.item_of(core)
+
+        for c in vtree.kids(vs, i: n)
+            if missing[c]
+                if model.is_non_null(item_type)
+                    fine @ false
+                items @ items.push(.null_value)
+            else
+                if bad[c]
+                    fine @ false
+                items @ items.push(results[c])
+
+        return One(value: .list(items: items), ok: fine, missing: false, problems: [])
+
+    if kind == model.INPUT_OBJECT
+        return coerce_object(
+            m,
+            vs: vs,
+            n: n,
+            named: named,
+            literal: literal,
+            results: results,
+            bad: bad,
+            missing: missing,
+            mode: mode,
+            suggest_names: suggest_names
+        )
+
+    if kind == model.SCALAR || kind == model.ENUM
+        parsed = if literal
+            leaf_from_literal(
+                m,
+                named: named,
+                kind: node.kind,
+                text: node.text,
+                shown: node.text,
+                suggest_names: suggest_names
+            )
+        else
+            leaf_from_json(m, named: named, vs: vs, n: n, suggest_names: suggest_names)
+
+        match parsed
+            .ok v => return One(value: v, ok: true, missing: false, problems: [])
+            .err e =>
+                if literal
+                    return One(value: .null_value, ok: false, missing: false, problems: [])
+                return One(value: .null_value, ok: false, missing: false, problems: [problem(vs, n: n, message: e.msg)])
+    return One(value: .null_value, ok: false, missing: false, problems: [])
+
+# The input object at node `n` coerced to `named`: its fields in the type's
+# order, defaults where they are left out, and every field the type does not
+# define or requires and lacks a failure.
+function coerce_object(m: model.Model lent, vs: [vtree.V] lent, n: i64, named: str, literal: bool, results: [json.Value] lent, bad: [bool] lent, missing: [bool] lent, mode: [i64] lent, suggest_names: bool) -> One
+    if vs[n].kind != tree.OBJECT
+        if literal
+            return One(value: .null_value, ok: false, missing: false, problems: [])
+        return One(
+            value: .null_value,
+            ok: false,
+            missing: false,
+            problems: [problem(vs, n: n, message: f"Expected type \"{named}\" to be an object.")]
+        )
+    t = m.types[named].must()
+    members: {str: json.Value} @= {}
+    fine @= true
+    problems: [Problem] @= []
+    children = vtree.kids(vs, i: n)
+
+    for field in t.inputs
+        child @= -1
+
+        for c in children
+            if child < 0 && vs[c].key == field.name
+                child @ c
+
+        if child < 0 || missing[child]
+            if field.has_default
+                members[field.name] @ field.default
+            else if model.is_non_null(field.type)
+                fine @ false
+
+                if !literal
+                    problems @ problems.push(
+                        problem(vs, n: n, message: f"Field \"{field.name}\" of required type \"{field.type}\" was not provided.")
+                    )
+        else if bad[child]
+            fine @ false
+        else
+            members[field.name] @ results[child]
+
+    if !literal
+        names: [str] @= []
+
+        for field in t.inputs
+            names @ names.push(field.name)
+
+        for c in children
+            if mode[c] == 2
+                fine @ false
+
+                hint = if suggest_names
+                    suggest.did_you_mean(what: "", names: suggest.suggestions_of(vs[c].key, options: names))
+                else
+                    ""
+                problems @ problems.push(
+                    problem(vs, n: n, message: f"Field \"{vs[c].key}\" is not defined by type \"{named}\".{hint}")
+                )
+
+    if t.one_of && fine
+        given = keys(members)
+
+        if given.len() != 1
+            fine @ false
+
+            if !literal
+                problems @ problems.push(
+                    problem(vs, n: n, message: f"Exactly one key must be specified for OneOf type \"{named}\".")
+                )
+        else if members[given[0]].must() == .null_value
+            fine @ false
+
+            if !literal
+                path @= vtree.path_of(vs, i: n)
+                path @ path.push(.text(v: given[0]))
+                problems @ problems.push(
+                    Problem(node: n, path: path, shown: "null", message: f"Field \"{given[0]}\" must be non-null.")
+                )
+    return One(value: .object(members: members), ok: fine, missing: false, problems: problems)
+
+## Leaves
+
+# The value of an enum or a scalar `named` from a literal of `kind` and
+# `text`, as graphql-js's `parseLiteral` reads it; `shown` is the literal as
+# printed, for the message.
+function leaf_from_literal(m: model.Model lent, named: str, kind: i64, text: str, shown: str, suggest_names: bool) -> json.Value?
+    if named == "Int"
+        if kind != tree.INT
+            return fail(code: INVALID, msg: f"Int cannot represent non-integer value: {shown}")
+        n = numbers.parse_int(text).default(4294967296)
+
+        if n < -2147483648 || n > 2147483647
+            return fail(code: INVALID, msg: f"Int cannot represent non 32-bit signed integer value: {text}")
+        return ok(.number(v: to_f64(n)))
+
+    if named == "Float"
+        if kind != tree.INT && kind != tree.FLOAT
+            return fail(code: INVALID, msg: f"Float cannot represent non numeric value: {shown}")
+        x = vtree.number_of(text)
+
+        if x - x != 0.0
+            return fail(code: INVALID, msg: f"Float cannot represent non numeric value: {shown}")
+        return ok(.number(v: x))
+
+    if named == "String"
+        if kind != tree.STRING
+            return fail(code: INVALID, msg: f"String cannot represent a non string value: {shown}")
+        return ok(.text(v: text))
+
+    if named == "Boolean"
+        if kind != tree.BOOLEAN
+            return fail(code: INVALID, msg: f"Boolean cannot represent a non boolean value: {shown}")
+        return ok(.boolean(v: text == "true"))
+
+    if named == "ID"
+        if kind != tree.STRING && kind != tree.INT
+            return fail(code: INVALID, msg: f"ID cannot represent a non-string and non-integer value: {shown}")
+        return ok(.text(v: text))
+    t = m.types[named].must()
+
+    if t.kind == model.ENUM
+        names = value_names(t)
+
+        if kind != tree.ENUM
+            hint = hint_of(suggest_names: suggest_names, what: "the enum value", input: shown, names: names)
+            return fail(code: INVALID, msg: f"Enum \"{named}\" cannot represent non-enum value: {shown}.{hint}")
+
+        for name in names
+            if name == text
+                return ok(.text(v: text))
+
+        hint = hint_of(suggest_names: suggest_names, what: "the enum value", input: text, names: names)
+        return fail(code: INVALID, msg: f"Value \"{text}\" does not exist in \"{named}\" enum.{hint}")
+    return fail(code: INVALID, msg: f"\"{named}\" is not a leaf type")
+
+# ` Did you mean ...?` naming the names near `input`, or "" where names are
+# not suggested.
+function hint_of(suggest_names: bool, what: str, input: str, names: [str]) -> str
+    if !suggest_names
+        return ""
+    return suggest.did_you_mean(what: what, names: suggest.suggestions_of(input, options: names))
+
+# The names of the values of the enum `t`, in order.
+function value_names(t: model.Type) -> [str]
+    names: [str] @= []
+
+    for v in t.values
+        names @ names.push(v.name)
+
+    return names
+
+# The value of an enum or a scalar `named` from node `n` of a JSON value, as
+# graphql-js's `parseValue` reads it.
+function leaf_from_json(m: model.Model lent, named: str, vs: [vtree.V] lent, n: i64, suggest_names: bool) -> json.Value?
+    node = vs[n]
+    shown = vtree.inspect_at(vs, i: n, depth: 0)
+
+    if named == "Int"
+        if node.kind != vtree.NUMBER || !is_integral(node.number)
+            return fail(code: INVALID, msg: f"Int cannot represent non-integer value: {shown}")
+
+        if node.number < -2147483648.0 || node.number > 2147483647.0
+            return fail(code: INVALID, msg: f"Int cannot represent non 32-bit signed integer value: {shown}")
+        return ok(.number(v: node.number + 0.0))
+
+    if named == "Float"
+        if node.kind != vtree.NUMBER || node.number - node.number != 0.0
+            return fail(code: INVALID, msg: f"Float cannot represent non numeric value: {shown}")
+        return ok(.number(v: node.number))
+
+    if named == "String"
+        if node.kind != tree.STRING
+            return fail(code: INVALID, msg: f"String cannot represent a non string value: {shown}")
+        return ok(.text(v: node.text))
+
+    if named == "Boolean"
+        if node.kind != tree.BOOLEAN
+            return fail(code: INVALID, msg: f"Boolean cannot represent a non boolean value: {shown}")
+        return ok(.boolean(v: node.text == "true"))
+
+    if named == "ID"
+        if node.kind == tree.STRING
+            return ok(.text(v: node.text))
+
+        if node.kind == vtree.NUMBER && is_integral(node.number)
+            return ok(.text(v: vtree.js_number(node.number)))
+        return fail(code: INVALID, msg: f"ID cannot represent value: {shown}")
+    t = m.types[named].must()
+
+    if t.kind == model.ENUM
+        names = value_names(t)
+
+        if node.kind != tree.STRING
+            return fail(code: INVALID, msg: f"Enum \"{named}\" cannot represent non-string value: {shown}.")
+
+        for name in names
+            if name == node.text
+                return ok(.text(v: node.text))
+
+        hint = hint_of(suggest_names: suggest_names, what: "the enum value", input: node.text, names: names)
+        return fail(code: INVALID, msg: f"Value \"{node.text}\" does not exist in \"{named}\" enum.{hint}")
+    return fail(code: INVALID, msg: f"\"{named}\" is not a leaf type")
+
+# Whether `x` is a whole number, finite.
+function is_integral(x: f64) -> bool
+    if x - x != 0.0
+        return false
+
+    if x > 9007199254740992.0 || x < -9007199254740992.0
+        return true
+    return to_f64(to_i64(x).must()) == x
+
+# The code of a value its type refuses.
+constant INVALID: str
+    "invalid"
+
+## Leaves written
+
+# A field's answer `v` written as the scalar or enum `named` writes it, as
+# graphql-js's `serialize` writes it: a number from a boolean or a numeric
+# string, text from a number, an ID from a whole number. Fails `invalid`
+# with graphql-js's message where the type cannot write it.
+function serialize(m: model.Model lent, named: str, v: json.Value) -> json.Value?
+    shown = vtree.inspect(v)
+
+    if named == "Int"
+        x = match number_like(v)
+            .ok n  => n
+            .err _ => return fail(code: INVALID, msg: f"Int cannot represent non-integer value: {shown}")
+
+        if !is_integral(x)
+            return fail(code: INVALID, msg: f"Int cannot represent non-integer value: {shown}")
+
+        if x < -2147483648.0 || x > 2147483647.0
+            return fail(code: INVALID, msg: f"Int cannot represent non 32-bit signed integer value: {shown}")
+        return ok(.number(v: x + 0.0))
+
+    if named == "Float"
+        x = match number_like(v)
+            .ok n  => n
+            .err _ => return fail(code: INVALID, msg: f"Float cannot represent non numeric value: {shown}")
+
+        if x - x != 0.0
+            return fail(code: INVALID, msg: f"Float cannot represent non numeric value: {shown}")
+        return ok(.number(v: x + 0.0))
+
+    if named == "String"
+        match v
+            .text t => return ok(.text(v: t.v))
+            .boolean b =>
+                if b.v
+                    return ok(.text(v: "true"))
+                return ok(.text(v: "false"))
+            .number n =>
+                if n.v - n.v != 0.0
+                    return fail(code: INVALID, msg: f"String cannot represent value: {shown}")
+                return ok(.text(v: vtree.js_number(n.v)))
+            .null_value | .list _ | .object _ => return fail(
+                code: INVALID,
+                msg: f"String cannot represent value: {shown}"
+            )
+
+    if named == "Boolean"
+        match v
+            .boolean b => return ok(.boolean(v: b.v))
+            .number n =>
+                if n.v - n.v != 0.0
+                    return fail(code: INVALID, msg: f"Boolean cannot represent a non boolean value: {shown}")
+                return ok(.boolean(v: n.v != 0.0))
+            .null_value | .text _ | .list _ | .object _ => return fail(
+                code: INVALID,
+                msg: f"Boolean cannot represent a non boolean value: {shown}"
+            )
+
+    if named == "ID"
+        match v
+            .text t => return ok(.text(v: t.v))
+            .number n =>
+                if is_integral(n.v)
+                    return ok(.text(v: vtree.js_number(n.v)))
+                return fail(code: INVALID, msg: f"ID cannot represent value: {shown}")
+            .null_value | .boolean _ | .list _ | .object _ => return fail(
+                code: INVALID,
+                msg: f"ID cannot represent value: {shown}"
+            )
+
+    t = match m.types[named]
+        .ok got => got
+        .err _  => return fail(code: INVALID, msg: f"no type \"{named}\"")
+
+    if t.kind == model.ENUM
+        match v
+            .text s =>
+                for value in t.values
+                    if value.name == s.v
+                        return ok(.text(v: s.v))
+            .null_value | .boolean _ | .number _ | .list _ | .object _ => _ = 0
+
+        return fail(code: INVALID, msg: f"Enum \"{named}\" cannot represent value: {shown}")
+    return ok(v)
+
+# The number `v` stands for as graphql-js reads one for `Int` and `Float`: a
+# number, a boolean as 1 or 0, a string that writes a number.
+function number_like(v: json.Value) -> f64?
+    match v
+        .number n => return ok(n.v)
+        .boolean b =>
+            if b.v
+                return ok(1.0)
+            return ok(0.0)
+        .text t =>
+            if t.v == "" || has_space_edge(t.v)
+                return fail(code: INVALID, msg: "not a number")
+            return numbers.parse_float(t.v)
+        .null_value | .list _ | .object _ => return fail(code: INVALID, msg: "not a number")
+
+# Whether `s` begins or ends with white space, which a number written for
+# `Int` or `Float` may not.
+function has_space_edge(s: str) -> bool
+    first = s[0]
+    last = s[s.len() - 1]
+    return first == ' ' || first == '\t' || first == '\n' || last == ' ' || last == '\t' || last == '\n'
+
+## Values written as literals
+
+# The literal that writes `v` of type `type`, as graphql-js's `astFromValue`
+# and `print` write it; "" where none does.
+function literal_of(m: model.Model lent, v: json.Value, type: str) -> str
+    vs = vtree.from_json(v)
+    count = vs.len()
+    want: [str] @= []
+    i @= 0
+
+    while i < count
+        want @ want.push("")
+        i @ i + 1
+
+    want[0] @ type
+    n @= 0
+
+    while n < count
+        give_literal_types(m, vs: vs, n: n, @want)
+        n @ n + 1
+
+    texts: [str] @= []
+    k @= 0
+
+    while k < count
+        texts @ texts.push("")
+        k @ k + 1
+
+    plain = vtree.plain_of(vs, variables: {})
+    n @ count - 1
+
+    while n >= 0
+        texts[n] @ literal_one(m, vs: vs, n: n, want: want[n], texts: texts, plain: plain)
+        n @ n - 1
+
+    return texts[0]
+
+# Gives the children of node `n` the types their literals are written as.
+function give_literal_types(m: model.Model lent, vs: [vtree.V] lent, n: i64, @want: [str])
+    w = want[n]
+
+    if w == ""
+        return
+    inner = model.nullable_of(w)
+    c @= vs[n].first
+
+    while c >= 0
+        if model.is_list(inner)
+            if vs[n].kind == tree.LIST
+                want[c] @ model.item_of(inner)
+        else
+            named = model.named_of(inner)
+
+            if model.kind_of(m, name: named) == model.INPUT_OBJECT
+                at = input_of(m, type_name: named, name: vs[c].key)
+
+                if at >= 0
+                    want[c] @ m.types[named].must().inputs[at].type
+        c @ vs[c].next
+
+# Node `n` written as a literal of `want`, its children already in `texts`.
+function literal_one(m: model.Model lent, vs: [vtree.V] lent, n: i64, want: str, texts: [str] lent, plain: [json.Value] lent) -> str
+    if want == ""
+        return ""
+    node = vs[n]
+
+    if node.kind == tree.NULL
+        if model.is_non_null(want)
+            return ""
+        return "null"
+    inner = model.nullable_of(want)
+
+    if model.is_list(inner)
+        if node.kind == tree.LIST
+            items: [str] @= []
+
+            for c in vtree.kids(vs, i: n)
+                if texts[c] != ""
+                    items @ items.push(texts[c])
+
+            return "[" + items.join(", ") + "]"
+        return literal_of(m, v: plain[n], type: model.item_of(inner))
+    named = model.named_of(inner)
+    kind = model.kind_of(m, name: named)
+
+    if kind == model.INPUT_OBJECT
+        if node.kind != tree.OBJECT
+            return ""
+        fields: [str] @= []
+
+        for field in m.types[named].must().inputs
+            for c in vtree.kids(vs, i: n)
+                if vs[c].key == field.name && texts[c] != ""
+                    fields @ fields.push(field.name + ": " + texts[c])
+
+        return "{" + fields.join(", ") + "}"
+
+    written = match serialize(m, named: named, v: plain[n])
+        .ok got => got
+        .err _  => return ""
+
+    match written
+        .boolean b =>
+            if b.v
+                return "true"
+            return "false"
+        .number x => return vtree.js_number(x.v)
+        .text s =>
+            if kind == model.ENUM
+                return s.v
+
+            if named == "ID" && is_integer_text(s.v)
+                return s.v
+            return json.quote(s.v)
+        .null_value | .list _ | .object _ => return ""
+
+# Whether `s` writes an integer as GraphQL writes one: `-?(0|[1-9][0-9]*)`.
+function is_integer_text(s: str) -> bool
+    i @= 0
+
+    if i < s.len() && s[0] == '-'
+        i @ 1
+
+    if i >= s.len()
+        return false
+
+    if s[i] == '0'
+        return i + 1 == s.len()
+
+    while i < s.len()
+        if s[i] < '0' || s[i] > '9'
+            return false
+        i @ i + 1
+
+    return true
+
+# A schema of an enum `Color`, an input object `In` and a `@oneOf` one, for
+# the tests.
+function sample_model() -> model.Model
+    color = model.Type(
+        name: "Color",
+        kind: model.ENUM,
+        description: "",
+        described: false,
+        fields: [],
+        interfaces: [],
+        members: [],
+        values: [model.EnumValue(name: "RED", description: "", described: false, deprecated: false, reason: "", at: -1), model.EnumValue(name: "GREEN", description: "", described: false, deprecated: false, reason: "", at: -1)],
+        inputs: [],
+        specified_by: "",
+        has_specified_by: false,
+        one_of: false,
+        builtin: false,
+        at: -1,
+        extended_at: []
+    )
+    a = model.InputValue(
+        name: "a",
+        description: "",
+        described: false,
+        type: "Int!",
+        has_default: false,
+        default: .null_value,
+        deprecated: false,
+        reason: "",
+        at: -1,
+        type_at: -1
+    )
+    b = model.InputValue(
+        name: "b",
+        description: "",
+        described: false,
+        type: "String",
+        has_default: true,
+        default: .text(v: "d"),
+        deprecated: false,
+        reason: "",
+        at: -1,
+        type_at: -1
+    )
+    input = model.Type(
+        name: "In",
+        kind: model.INPUT_OBJECT,
+        description: "",
+        described: false,
+        fields: [],
+        interfaces: [],
+        members: [],
+        values: [],
+        inputs: [a, b],
+        specified_by: "",
+        has_specified_by: false,
+        one_of: false,
+        builtin: false,
+        at: -1,
+        extended_at: []
+    )
+    scalars: {str: model.Type} @= {"Color": color, "In": input}
+
+    for name in ["Int", "Float", "String", "Boolean", "ID", "Json"]
+        scalars[name] @ model.Type(
+            name: name,
+            kind: model.SCALAR,
+            description: "",
+            described: false,
+            fields: [],
+            interfaces: [],
+            members: [],
+            values: [],
+            inputs: [],
+            specified_by: "",
+            has_specified_by: false,
+            one_of: false,
+            builtin: false,
+            at: -1,
+            extended_at: []
+        )
+
+    return model.Model(
+        types: scalars,
+        query: "",
+        mutation: "",
+        subscription: "",
+        directives: [],
+        description: "",
+        described: false,
+        implementations: {},
+        at: -1
+    )
+
+test "serialize: graphql-js's answers and messages for each scalar and an enum"
+    m = sample_model()
+    assert serialize(m, named: "Int", v: .text(v: "12")).must() == .number(v: 12.0)
+    assert serialize(m, named: "Int", v: .boolean(v: true)).must() == .number(v: 1.0)
+    assert message_of(serialize(m, named: "Int", v: .number(v: 1.5))) == "Int cannot represent non-integer value: 1.5"
+    assert message_of(serialize(m, named: "Int", v: .number(v: 2147483648.0))) == "Int cannot represent non 32-bit signed integer value: 2147483648"
+    assert message_of(serialize(m, named: "Float", v: .text(v: "abc"))) == "Float cannot represent non numeric value: \"abc\""
+    assert serialize(m, named: "String", v: .number(v: 1.5)).must() == .text(v: "1.5")
+    assert message_of(serialize(m, named: "String", v: json.parse("[1, 2]").must())) == "String cannot represent value: [1, 2]"
+    assert serialize(m, named: "Boolean", v: .number(v: 0.0)).must() == .boolean(v: false)
+    assert message_of(serialize(m, named: "Boolean", v: .text(v: "12"))) == "Boolean cannot represent a non boolean value: \"12\""
+    assert serialize(m, named: "ID", v: .number(v: 12.0)).must() == .text(v: "12")
+    assert message_of(serialize(m, named: "ID", v: .boolean(v: true))) == "ID cannot represent value: true"
+    assert message_of(serialize(m, named: "Color", v: .number(v: 1.0))) == "Enum \"Color\" cannot represent value: 1"
+    assert serialize(m, named: "Json", v: json.parse("{\"a\": [1]}").must()).must() == json.parse("{\"a\": [1]}").must()
+
+# The message of `v`'s failure, "" where it holds a value.
+function message_of(v: json.Value?) -> str
+    match v
+        .ok _  => return ""
+        .err e => return e.msg
+
+test "coerce: a JSON value to an input object, a single value to a list, and the problems in order"
+    m = sample_model()
+    good = coerce(
+        m,
+        vs: vtree.from_json(json.parse("{\"a\": 1}").must()),
+        type: "In",
+        literal: false,
+        variables: {},
+        suggest_names: true
+    )
+    assert good.value == json.parse("{\"a\": 1, \"b\": \"d\"}").must()
+    single = coerce(
+        m,
+        vs: vtree.from_json(.number(v: 3.0)),
+        type: "[[Int]]",
+        literal: false,
+        variables: {},
+        suggest_names: true
+    )
+    assert single.value == json.parse("[[3]]").must()
+    bad = coerce(
+        m,
+        vs: vtree.from_json(json.parse("{\"a\": \"x\", \"z\": 1}").must()),
+        type: "In",
+        literal: false,
+        variables: {},
+        suggest_names: true
+    )
+    assert !bad.ok
+    messages: [str] @= []
+
+    for p in bad.problems
+        messages @ messages.push(p.message)
+
+    assert messages == ["Field \"z\" is not defined by type \"In\". Did you mean \"a\" or \"b\"?", "Int cannot represent non-integer value: \"x\""]
+
+test "leaf_from_literal: graphql-js's parseLiteral messages"
+    m = sample_model()
+    assert leaf_from_literal(
+        m,
+        named: "Int",
+        kind: tree.INT,
+        text: "829384293849283498239482938",
+        shown: "829384293849283498239482938",
+        suggest_names: true
+    ).is_err()
+    assert leaf_from_literal(m, named: "Float", kind: tree.INT, text: "1", shown: "1", suggest_names: true).must() == .number(v: 1.0)
+    assert message_of(leaf_from_literal(m, named: "Color", kind: tree.STRING, text: "RED", shown: "\"RED\"", suggest_names: true)) == "Enum \"Color\" cannot represent non-enum value: \"RED\". Did you mean the enum value \"RED\" or \"GREEN\"?"
+    assert message_of(leaf_from_literal(m, named: "ID", kind: tree.BOOLEAN, text: "true", shown: "true", suggest_names: true)) == "ID cannot represent a non-string and non-integer value: true"
+
+test "literal_of: a value written as the literal of its type"
+    m = sample_model()
+    assert literal_of(m, v: .number(v: 1.0), type: "[Int]") == "1"
+    assert literal_of(m, v: json.parse("[1, null]").must(), type: "[Int]") == "[1, null]"
+    assert literal_of(m, v: .text(v: "RED"), type: "Color") == "RED"
+    assert literal_of(m, v: json.parse("{\"b\": \"x\", \"a\": 1}").must(), type: "In") == "{a: 1, b: \"x\"}"
+    assert literal_of(m, v: .text(v: "12"), type: "ID") == "12"
+    assert literal_of(m, v: .null_value, type: "Int!") == ""
+    assert is_integer_text("-0")
+    assert !is_integer_text("01")

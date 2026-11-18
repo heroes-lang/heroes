@@ -1,0 +1,47 @@
+# What the tests of the private modules build their inputs from: a schema from
+# its text, through every rule, and a document's tree from its text. A text
+# that does not parse or a schema that breaks a rule aborts the test that
+# asked for it.
+
+use graphql/internal/build
+use graphql/internal/model
+use graphql/internal/parser
+use graphql/internal/tree
+
+# The schema `sdl` writes.
+function schema_of(sdl: str) -> model.Model
+    parsed = parser.parse(sdl, most_tokens: 100000, most_depth: 64, most_directives: 50)
+    assert parsed.code == ""
+    built = build.build(parsed.tree, old: build.library(), extending: false, suggest_names: true)
+    assert built.errors.len() == 0
+    return built.model
+
+# The tree of `text`.
+function tree_of(text: str) -> tree.Tree
+    parsed = parser.parse(text, most_tokens: 100000, most_depth: 64, most_directives: 50)
+    assert parsed.code == ""
+    return parsed.tree
+
+# The messages of `errors`, each with its first place as `line:column`.
+function messages_of(errors: [tree.Err]) -> [str]
+    out: [str] @= []
+
+    for e in errors
+        if e.locations.len() > 0
+            out @ out.push(f"{e.message} @{e.locations[0].line}:{e.locations[0].column}")
+        else
+            out @ out.push(e.message)
+
+    return out
+
+# The schema of the tests: pets and the people who own them, as the
+# specification's section 5 writes its examples.
+function pets() -> model.Model
+    return schema_of(
+        "enum DogCommand { SIT DOWN HEEL } type Dog implements Pet { name: String! nickname: String barkVolume: Int doesKnowCommand(dogCommand: DogCommand!): Boolean! isHouseTrained(atOtherHomes: Boolean): Boolean! owner: Human } interface Sentient { name: String! } interface Pet { name: String! } type Alien implements Sentient { name: String! homePlanet: String } type Human implements Sentient { name: String! pets: [Pet!] } enum CatCommand { JUMP } type Cat implements Pet { name: String! nickname: String doesKnowCommand(catCommand: CatCommand!): Boolean! meowVolume: Int } union CatOrDog = Cat | Dog union DogOrHuman = Dog | Human union HumanOrAlien = Human | Alien input Find { name: String! limit: Int = 10 } type Query { dog: Dog cat: Cat human(id: ID): Human pet: Pet catOrDog: CatOrDog find(by: Find): [Pet] } type Subscription { newMessage: String disallowedSecondRootField: Boolean }"
+    )
+
+test "schema_of and tree_of: the specification's pets, and a query of them"
+    m = pets()
+    assert model.kind_of(m, name: "CatOrDog") == model.UNION
+    assert tree_of("{ dog { name } }").nodes.len() == 6

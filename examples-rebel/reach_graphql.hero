@@ -1,0 +1,27 @@
+# Reaches Rebel's package `graphql`, so that `heroes test` on this file runs
+# the tests of its face and its private modules (spec § 12). It prints the
+# answer to the specification's own first example, `{ user(id: 4) { name } }`,
+# on every run, its one field answered from the root value.
+
+use <rebel>/graphql
+use <rebel>/json
+
+function main()
+    schema = graphql.parse_schema(
+        "type Query { user(id: ID): User } type User { name: String }",
+        limits: graphql.default_limits()
+    ).must()
+    root = json.parse("{\"user\": {\"name\": \"Mark Zuckerberg\"}}").must()
+    r = graphql.Request(
+        query: "{ user(id: 4) { name } }",
+        operation_name: "",
+        variables: .null_value,
+        extensions: .null_value
+    )
+    response = graphql.execute(schema, r: r, root: root, limits: graphql.default_limits(), resolver: refuse)
+    print(graphql.format_response(response).must())
+
+# The resolver of a program whose root value answers every field: it is never
+# called, and answers an error where it would be.
+function refuse(field: graphql.Field) -> json.Value?
+    return fail(code: "not_found", msg: f"nothing resolves {field.type_name}.{field.field_name}")

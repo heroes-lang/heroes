@@ -1,0 +1,366 @@
+# The parser's cursor over the tokens, and the pieces of the grammar that
+# every definition shares: a type reference read in a loop, a value read with
+# an explicit stack of the lists and objects it opens, arguments and
+# directives. A failure records graphql-js's message and the byte it names in
+# the cursor, and answers `invalid` or `limit`; nothing here recurses.
+
+use graphql/internal/lexer
+use graphql/internal/tree
+
+# The code of a text that does not parse.
+constant INVALID: str
+    "invalid"
+
+# The code of a text past a limit.
+constant LIMIT: str
+    "limit"
+
+# The parser's state.
+record P
+    # The text.
+    source: str
+    # Its tokens, ending with `EOF`, `ERROR` or `LIMIT`.
+    tokens: [lexer.Token]
+    # The current token's index.
+    pos: i64
+    # The nodes built so far.
+    nodes: [tree.Node]
+    # The message of the failure, "" while there is none.
+    error: str
+    # The byte the failure names.
+    error_at: i64
+    # The levels of selection sets open.
+    depth: i64
+    # The most levels allowed.
+    most_depth: i64
+    # The most directives one place may carry.
+    most_directives: i64
+    # The most tokens allowed, for the message past it.
+    most_tokens: i64
+
+# The current token.
+function token(p: P lent) -> lexer.Token
+    return p.tokens[p.pos]
+
+# Whether the current token is the punctuator `v`.
+function is_punct(p: P lent, v: str) -> bool
+    t = p.tokens[p.pos]
+    return t.kind == lexer.PUNCTUATOR && t.value == v
+
+# Whether the current token is the name `v`.
+function is_keyword(p: P lent, v: str) -> bool
+    t = p.tokens[p.pos]
+    return t.kind == lexer.NAME && t.value == v
+
+# Whether the current token is a name.
+function is_name(p: P lent) -> bool
+    return p.tokens[p.pos].kind == lexer.NAME
+
+# Records the failure `message` at byte `at`, and answers its code.
+function stop(@p: P, message: str, at: i64) -> ()?
+    p.error @ f"Syntax Error: {message}"
+    p.error_at @ at
+    return fail(code: INVALID, msg: p.error)
+
+# Fails with the error the token at `t` holds, where it is an `ERROR` or a
+# `LIMIT` token.
+function check_token(@p: P, t: lexer.Token) -> ()?
+    if t.kind == lexer.ERROR
+        p.error @ f"Syntax Error: {t.value}"
+        p.error_at @ t.start
+        return fail(code: INVALID, msg: p.error)
+
+    if t.kind == lexer.LIMIT
+        p.error @ f"Syntax Error: Document contains more that {p.most_tokens} tokens. Parsing aborted."
+        p.error_at @ t.start
+        return fail(code: LIMIT, msg: p.error)
+    return ok()
+
+# Moves to the next token. Fails where it is an error or past the limit.
+function advance(@p: P) -> ()?
+    if p.tokens[p.pos].kind != lexer.EOF
+        p.pos @ p.pos + 1
+    check_token(@p, t: p.tokens[p.pos])?
+    return ok()
+
+# The token after the current one. Fails where it is an error or past the
+# limit.
+function ahead(@p: P) -> lexer.Token?
+    at = if p.pos + 1 < p.tokens.len()
+        p.pos + 1
+    else
+        p.pos
+    t = p.tokens[at]
+    check_token(@p, t: t)?
+    return ok(t)
+
+# A token as graphql-js names it in a message: `Name "a"`, `"{"`, `<EOF>`.
+function describe(t: lexer.Token) -> str
+    if t.kind == lexer.EOF
+        return "<EOF>"
+
+    if t.kind == lexer.PUNCTUATOR
+        return f"\"{t.value}\""
+
+    kind = if t.kind == lexer.NAME
+        "Name"
+    else if t.kind == lexer.INT
+        "Int"
+    else if t.kind == lexer.FLOAT
+        "Float"
+    else if t.kind == lexer.STRING
+        "String"
+    else
+        "BlockString"
+    return f"{kind} \"{t.value}\""
+
+# Fails `Unexpected <token>.` at the token `t`.
+function unexpected(@p: P, t: lexer.Token) -> ()?
+    return stop(@p, message: f"Unexpected {describe(t)}.", at: t.start)
+
+# Moves past the punctuator `v`. Fails where the current token is another.
+function expect_punct(@p: P, v: str) -> ()?
+    if !is_punct(p, v: v)
+        t = token(p)
+        return stop(@p, message: f"Expected \"{v}\", found {describe(t)}.", at: t.start)
+    advance(@p)?
+    return ok()
+
+# Moves past the name `v`. Fails where the current token is another.
+function expect_keyword(@p: P, v: str) -> ()?
+    if !is_keyword(p, v: v)
+        t = token(p)
+        return stop(@p, message: f"Expected \"{v}\", found {describe(t)}.", at: t.start)
+    advance(@p)?
+    return ok()
+
+# The current token, a name, moved past. Fails where it is none.
+function expect_name(@p: P) -> lexer.Token?
+    t = token(p)
+
+    if t.kind != lexer.NAME
+        stop(@p, message: f"Expected Name, found {describe(t)}.", at: t.start)?
+    advance(@p)?
+    return ok(t)
+
+# Adds `n` under `parent` and answers its index.
+function add(@p: P, parent: i64, n: tree.Node) -> i64
+    return tree.add(@p.nodes, parent: parent, n: n)
+
+# Reads the description at the current token, where there is one, into the
+# node `at`.
+function read_description(@p: P, at: i64) -> ()?
+    t = token(p)
+
+    if t.kind == lexer.STRING || t.kind == lexer.BLOCK_STRING
+        p.nodes[at].description @ t.value
+        p.nodes[at].described @ true
+        p.nodes[at].block_description @ t.kind == lexer.BLOCK_STRING
+        advance(@p)?
+    return ok()
+
+# Whether the current token is a description.
+function is_description(p: P lent) -> bool
+    k = p.tokens[p.pos].kind
+    return k == lexer.STRING || k == lexer.BLOCK_STRING
+
+## Types
+
+# Reads a type reference into node `at`'s `type` and `type_at`: a name, a list
+# of a type, either non-null.
+function read_type(@p: P, at: i64) -> ()?
+    opened @= 0
+    p.nodes[at].type_start @ token(p).start
+
+    while is_punct(p, v: "[")
+        opened @ opened + 1
+
+        if opened + p.depth > p.most_depth
+            too_deep(@p)?
+        advance(@p)?
+
+    name = expect_name(@p)?
+    pieces: [str] @= []
+    i @= 0
+
+    while i < opened
+        pieces @ pieces.push("[")
+        i @ i + 1
+
+    pieces @ pieces.push(name.value)
+
+    if is_punct(p, v: "!")
+        pieces @ pieces.push("!")
+        advance(@p)?
+
+    while opened > 0
+        expect_punct(@p, v: "]")?
+        pieces @ pieces.push("]")
+
+        if is_punct(p, v: "!")
+            pieces @ pieces.push("!")
+            advance(@p)?
+        opened @ opened - 1
+
+    p.nodes[at].type @ pieces.join("")
+    p.nodes[at].type_at @ name.start
+    return ok()
+
+# Fails: the text nests deeper than the limit.
+function too_deep(@p: P) -> ()?
+    t = token(p)
+    p.error @ f"Syntax Error: Document nests more than {p.most_depth} levels. Parsing aborted."
+    p.error_at @ t.start
+    return fail(code: LIMIT, msg: p.error)
+
+## Values
+
+# Reads one value under node `parent`, a variable refused where `fixed`.
+# Lists and objects open their own levels on an explicit stack.
+function read_value(@p: P, parent: i64, fixed: bool) -> ()?
+    open: [i64] @= []
+    top @= 0
+    under @= parent
+    want @= true
+
+    while true
+        if want
+            want @ false
+            opened = read_one(@p, parent: under, fixed: fixed)?
+
+            if opened >= 0
+                if top + p.depth + 1 > p.most_depth
+                    too_deep(@p)?
+
+                if top < open.len()
+                    open[top] @ opened
+                else
+                    open @ open.push(opened)
+                top @ top + 1
+
+        if top == 0
+            return ok()
+        container = open[top - 1]
+
+        if p.nodes[container].kind == tree.LIST
+            if is_punct(p, v: "]")
+                advance(@p)?
+                top @ top - 1
+            else
+                under @ container
+                want @ true
+        else
+            if is_punct(p, v: "}")
+                advance(@p)?
+                top @ top - 1
+            else
+                name = expect_name(@p)?
+                expect_punct(@p, v: ":")?
+                field @= tree.node_of(kind: tree.OBJECT_FIELD, at: name.start)
+                field.name @ name.value
+                under @ add(@p, parent: container, n: field)
+                want @ true
+
+# Reads the value at the current token under `parent`: a scalar, a variable
+# or an enum value whole, or the opening of a list or an object, whose index
+# it answers; -1 for a value read whole.
+function read_one(@p: P, parent: i64, fixed: bool) -> i64?
+    t = token(p)
+
+    if t.kind == lexer.PUNCTUATOR
+        if t.value == "["
+            advance(@p)?
+            return ok(add(@p, parent: parent, n: tree.node_of(kind: tree.LIST, at: t.start)))
+
+        if t.value == "{"
+            advance(@p)?
+            return ok(add(@p, parent: parent, n: tree.node_of(kind: tree.OBJECT, at: t.start)))
+
+        if t.value == "$"
+            advance(@p)?
+
+            if fixed
+                if is_name(p)
+                    stop(@p, message: f"Unexpected variable \"${token(p).value}\" in constant value.", at: t.start)?
+                unexpected(@p, t: t)?
+            name = expect_name(@p)?
+            v @= tree.node_of(kind: tree.VARIABLE, at: t.start)
+            v.name @ name.value
+            v.name_at @ name.start
+            _ = add(@p, parent: parent, n: v)
+            return ok(-1)
+        unexpected(@p, t: t)?
+
+    kind = if t.kind == lexer.INT
+        tree.INT
+    else if t.kind == lexer.FLOAT
+        tree.FLOAT
+    else if t.kind == lexer.STRING || t.kind == lexer.BLOCK_STRING
+        tree.STRING
+    else if t.kind == lexer.NAME && (t.value == "true" || t.value == "false")
+        tree.BOOLEAN
+    else if t.kind == lexer.NAME && t.value == "null"
+        tree.NULL
+    else if t.kind == lexer.NAME
+        tree.ENUM
+    else
+        0
+
+    if kind == 0
+        unexpected(@p, t: t)?
+    v @= tree.node_of(kind: kind, at: t.start)
+    v.text @ t.value
+    v.block @ t.kind == lexer.BLOCK_STRING
+    _ = add(@p, parent: parent, n: v)
+    advance(@p)?
+    return ok(-1)
+
+## Arguments and directives
+
+# Reads the arguments in parentheses under `parent`, where they open.
+function read_arguments(@p: P, parent: i64, fixed: bool) -> ()?
+    if !is_punct(p, v: "(")
+        return ok()
+    advance(@p)?
+    first @= true
+
+    while first || !is_punct(p, v: ")")
+        first @ false
+        name = expect_name(@p)?
+        expect_punct(@p, v: ":")?
+        argument @= tree.node_of(kind: tree.ARGUMENT, at: name.start)
+        argument.name @ name.value
+        at = add(@p, parent: parent, n: argument)
+        read_value(@p, parent: at, fixed: fixed)?
+
+    advance(@p)?
+    return ok()
+
+# Reads the directives at the current token under `parent`, each with its
+# arguments. Fails `limit` past the most one place may carry.
+function read_directives(@p: P, parent: i64, fixed: bool) -> ()?
+    count @= 0
+
+    while is_punct(p, v: "@")
+        start = token(p)
+        count @ count + 1
+
+        if count > p.most_directives
+            p.error @ f"Syntax Error: A place carries more than {p.most_directives} directives. Parsing aborted."
+            p.error_at @ start.start
+            return fail(code: LIMIT, msg: p.error)
+        advance(@p)?
+        name = expect_name(@p)?
+        d @= tree.node_of(kind: tree.DIRECTIVE, at: start.start)
+        d.name @ name.value
+        d.name_at @ name.start
+        at = add(@p, parent: parent, n: d)
+        read_arguments(@p, parent: at, fixed: fixed)?
+
+    return ok()
+
+test "describe: a token as graphql-js names it in a message"
+    assert describe(lexer.Token(kind: lexer.EOF, start: 0, end: 0, value: "")) == "<EOF>"
+    assert describe(lexer.Token(kind: lexer.PUNCTUATOR, start: 0, end: 1, value: "{")) == "\"{\""
+    assert describe(lexer.Token(kind: lexer.NAME, start: 0, end: 1, value: "a")) == "Name \"a\""
+    assert describe(lexer.Token(kind: lexer.BLOCK_STRING, start: 0, end: 1, value: "s")) == "BlockString \"s\""

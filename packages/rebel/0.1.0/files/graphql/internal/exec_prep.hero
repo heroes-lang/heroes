@@ -1,0 +1,291 @@
+# What execution needs before its first field, as the specification's section
+# 6 and graphql-js prepare it: the operation a request names, its variables'
+# values coerced to their types (`CoerceVariableValues`), and a field's
+# arguments coerced with those variables in hand (`CoerceArgumentValues`),
+# each failure in graphql-js's words.
+
+use graphql/internal/fixture
+use graphql/internal/model
+use graphql/internal/printer
+use graphql/internal/tree
+use graphql/internal/values
+use graphql/internal/vtree
+use json
+
+# The most errors the coercion of variables reports, as graphql-js stops.
+constant MOST_VARIABLE_ERRORS: i64
+    50
+
+# The operation of `t` that `name` names, or its only one where `name` is
+# "". Fails `invalid` with graphql-js's message.
+function operation_of(t: tree.Tree lent, name: str) -> i64?
+    found @= -1
+    count @= 0
+
+    for n in tree.kids_of(t, n: 0, kind: tree.OPERATION)
+        count @ count + 1
+
+        if name == ""
+            if found < 0
+                found @ n
+        else if t.nodes[n].name == name && found < 0
+            found @ n
+
+    if name != ""
+        if found < 0
+            return fail(code: INVALID, msg: f"Unknown operation named \"{name}\".")
+        return ok(found)
+
+    if count == 0
+        return fail(code: INVALID, msg: "Must provide an operation.")
+
+    if count > 1
+        return fail(code: INVALID, msg: "Must provide operation name if query contains multiple operations.")
+    return ok(found)
+
+# The code of a request execution refuses.
+constant INVALID: str
+    "invalid"
+
+# What `coerce_variables` answers.
+record Variables
+    # The values coerced, by name: those given and those defaulted.
+    values: {str: json.Value}
+    # The errors, none where every value stands.
+    errors: [tree.Err]
+
+# The variables of the operation at `n` coerced from `given`, an object of
+# values by name or `.null_value`.
+function coerce_variables(t: tree.Tree lent, m: model.Model lent, n: i64, given: json.Value, suggest_names: bool) -> Variables
+    inputs: {str: json.Value} = match given
+        .object o                                                => o.members
+        .null_value | .boolean _ | .number _ | .text _ | .list _ => {}
+
+    coerced: {str: json.Value} @= {}
+    errors: [tree.Err] @= []
+
+    for v in tree.kids_of(t, n: n, kind: tree.VARIABLE_DEFINITION)
+        if errors.len() >= MOST_VARIABLE_ERRORS
+            errors @ errors.push(
+                tree.err_of("Too many errors processing variables, error limit reached. Execution aborted.")
+            )
+            return Variables(values: coerced, errors: errors)
+        node = t.nodes[v]
+        name = node.name
+        type = node.type
+
+        if !model.is_input_name(m, name: model.named_of(type))
+            errors @ errors.push(
+                tree.err_at(t, message: f"Variable \"${name}\" expected value of type \"{type}\" which cannot be used as an input type.", nodes: [v])
+            )
+            continue
+
+        match inputs[name]
+            .err _ =>
+                given_default = tree.value_of(t, n: v)
+
+                if given_default >= 0
+                    c = values.coerce(
+                        m,
+                        vs: vtree.from_literal(t, n: given_default),
+                        type: type,
+                        literal: true,
+                        variables: {},
+                        suggest_names: false
+                    )
+
+                    if c.ok
+                        coerced[name] @ c.value
+                else if model.is_non_null(type)
+                    errors @ errors.push(
+                        tree.err_at(t, message: f"Variable \"${name}\" of required type \"{type}\" was not provided.", nodes: [v])
+                    )
+            .ok value =>
+                if value == .null_value && model.is_non_null(type)
+                    errors @ errors.push(
+                        tree.err_at(t, message: f"Variable \"${name}\" of non-null type \"{type}\" must not be null.", nodes: [v])
+                    )
+                else
+                    c = values.coerce(
+                        m,
+                        vs: vtree.from_json(value),
+                        type: type,
+                        literal: false,
+                        variables: {},
+                        suggest_names: suggest_names
+                    )
+
+                    if c.ok
+                        coerced[name] @ c.value
+
+                    for p in c.problems
+                        place = if p.path.len() > 0
+                            f" at \"{name}{path_text(p.path)}\""
+                        else
+                            ""
+                        errors @ errors.push(
+                            tree.err_at(t, message: f"Variable \"${name}\" got invalid value {p.shown}{place}; {p.message}", nodes: [v])
+                        )
+
+    return Variables(values: coerced, errors: errors)
+
+# A path as graphql-js writes it after a variable's name: `.key` and `[0]`.
+function path_text(path: [json.Value]) -> str
+    parts: [str] @= []
+
+    for p in path
+        match p
+            .number x                                      => parts @ parts.push(f"[{vtree.js_number(x.v)}]")
+            .text s                                        => parts @ parts.push("." + s.v)
+            .null_value | .boolean _ | .list _ | .object _ => _ = 0
+
+    return parts.join("")
+
+# What `coerce_arguments` answers.
+record Arguments
+    # The values coerced, by name.
+    values: {str: json.Value}
+    # Whether they stand.
+    ok: bool
+    # The error where they do not.
+    error: tree.Err
+
+# The arguments the node `n`, a field or a directive, gives for `definitions`,
+# coerced with `variables` in hand.
+function coerce_arguments(t: tree.Tree lent, m: model.Model lent, n: i64, definitions: [model.InputValue], variables: {str: json.Value} lent) -> Arguments
+    coerced: {str: json.Value} @= {}
+    given = tree.kids_of(t, n: n, kind: tree.ARGUMENT)
+
+    for d in definitions
+        node @= -1
+
+        for a in given
+            if node < 0 && t.nodes[a].name == d.name
+                node @ a
+
+        if node < 0
+            if d.has_default
+                coerced[d.name] @ d.default
+            else if model.is_non_null(d.type)
+                return refused(
+                    t,
+                    message: f"Argument \"{d.name}\" of required type \"{d.type}\" was not provided.",
+                    at: n
+                )
+            continue
+        value = tree.value_of(t, n: node)
+        is_null @= t.nodes[value].kind == tree.NULL
+
+        if t.nodes[value].kind == tree.VARIABLE
+            variable = t.nodes[value].name
+
+            match variables[variable]
+                .err _ =>
+                    if d.has_default
+                        coerced[d.name] @ d.default
+                    else if model.is_non_null(d.type)
+                        return refused(
+                            t,
+                            message: f"Argument \"{d.name}\" of required type \"{d.type}\" was provided the variable \"${variable}\" which was not provided a runtime value.",
+                            at: value
+                        )
+                    continue
+                .ok got => is_null @ got == .null_value
+
+        if is_null && model.is_non_null(d.type)
+            return refused(
+                t,
+                message: f"Argument \"{d.name}\" of non-null type \"{d.type}\" must not be null.",
+                at: value
+            )
+        c = values.coerce(
+            m,
+            vs: vtree.from_literal(t, n: value),
+            type: d.type,
+            literal: true,
+            variables: variables,
+            suggest_names: false
+        )
+
+        if !c.ok
+            return refused(
+                t,
+                message: f"Argument \"{d.name}\" has invalid value {printer.print_node(t, n: value)}.",
+                at: value
+            )
+        coerced[d.name] @ c.value
+
+    return Arguments(values: coerced, ok: true, error: tree.err_of(""))
+
+# Arguments refused with `message` at node `at`.
+function refused(t: tree.Tree lent, message: str, at: i64) -> Arguments
+    return Arguments(values: {}, ok: false, error: tree.err_at(t, message: message, nodes: [at]))
+
+test "operation_of: graphql-js's three messages"
+    assert operation_of(fixture.tree_of("{ a }"), name: "").must() == 1
+    assert operation_of(fixture.tree_of("query A { a } query B { b }"), name: "B").must() > 1
+    assert operation_of(fixture.tree_of("query A { a } query B { b }"), name: "").message_of_err() == "Must provide operation name if query contains multiple operations."
+    assert operation_of(fixture.tree_of("query A { a }"), name: "C").message_of_err() == "Unknown operation named \"C\"."
+    assert operation_of(fixture.tree_of("fragment F on Q { a }"), name: "").message_of_err() == "Must provide an operation."
+
+test "coerce_variables: graphql-js's message for each value it refuses"
+    m = fixture.schema_of(
+        "input In { a: Int!, b: String = \"d\", c: [Int!], e: Color } input One @oneOf { x: Int, y: String } enum Color { RED GREEN } type Query { f(i: Int, n: Int!, l: [Int], o: In, c: Color, id: ID, one: One): String }"
+    )
+    t = fixture.tree_of(
+        "query($i: Int, $n: Int!, $l: [Int], $o: In, $c: Color, $id: ID, $one: One) { f(i: $i, n: $n, l: $l, o: $o, c: $c, id: $id, one: $one) }"
+    )
+    cases = [
+        ["{}", "Variable \"$n\" of required type \"Int!\" was not provided."]
+        ["{\"n\": null}", "Variable \"$n\" of non-null type \"Int!\" must not be null."]
+        ["{\"n\": 1, \"i\": 1.5}", "Variable \"$i\" got invalid value 1.5; Int cannot represent non-integer value: 1.5"]
+        ["{\"n\": 1, \"i\": 2147483648}", "Variable \"$i\" got invalid value 2147483648; Int cannot represent non 32-bit signed integer value: 2147483648"]
+        ["{\"n\": 1, \"l\": [1, \"x\", 3]}", "Variable \"$l\" got invalid value \"x\" at \"l[1]\"; Int cannot represent non-integer value: \"x\""]
+        ["{\"n\": 1, \"o\": {\"a\": 1, \"z\": 2}}", "Variable \"$o\" got invalid value { a: 1, z: 2 }; Field \"z\" is not defined by type \"In\". Did you mean \"a\", \"b\", \"c\", or \"e\"?"]
+        ["{\"n\": 1, \"o\": {\"b\": \"x\"}}", "Variable \"$o\" got invalid value { b: \"x\" }; Field \"a\" of required type \"Int!\" was not provided."]
+        ["{\"n\": 1, \"o\": \"str\"}", "Variable \"$o\" got invalid value \"str\"; Expected type \"In\" to be an object."]
+        ["{\"n\": 1, \"c\": \"red\"}", "Variable \"$c\" got invalid value \"red\"; Value \"red\" does not exist in \"Color\" enum. Did you mean the enum value \"RED\"?"]
+        ["{\"n\": 1, \"c\": 1}", "Variable \"$c\" got invalid value 1; Enum \"Color\" cannot represent non-string value: 1."]
+        ["{\"n\": 1, \"id\": 1.5}", "Variable \"$id\" got invalid value 1.5; ID cannot represent value: 1.5"]
+        ["{\"n\": 1, \"one\": {\"x\": 1, \"y\": \"a\"}}", "Variable \"$one\" got invalid value { x: 1, y: \"a\" }; Exactly one key must be specified for OneOf type \"One\"."]
+        ["{\"n\": 1, \"one\": {\"x\": null}}", "Variable \"$one\" got invalid value null at \"one.x\"; Field \"x\" must be non-null."]
+        ["{\"n\": 1, \"o\": {\"a\": 1, \"c\": [1, null]}}", "Variable \"$o\" got invalid value null at \"o.c[1]\"; Expected non-nullable type \"Int!\" not to be null."]
+    ]
+
+    for c in cases
+        got = coerce_variables(t, m: m, n: 1, given: json.parse(c[0]).must(), suggest_names: true)
+        assert fixture.messages_of(got.errors)[0].slice(from: 0, to: c[1].len()) == c[1]
+
+    fine = coerce_variables(
+        t,
+        m: m,
+        n: 1,
+        given: json.parse("{\"n\": 1, \"l\": 3, \"id\": 12, \"o\": {\"a\": 1}}").must(),
+        suggest_names: true
+    )
+    assert fine.errors.len() == 0
+    assert fine.values["l"].must() == json.parse("[3]").must()
+    assert fine.values["id"].must() == .text(v: "12")
+    assert fine.values["o"].must() == json.parse("{\"a\": 1, \"b\": \"d\"}").must()
+
+test "coerce_arguments: defaults, a variable not given, and graphql-js's messages"
+    m = fixture.schema_of("type Query { f(a: Int = 3, b: Int!, c: [Int]): Int }")
+    f = model.field_of(m, type_name: "Query", name: "f").must()
+    t = fixture.tree_of("query ($v: Int) { f(b: $v, c: 1) }")
+    field = tree.kids_of(t, n: tree.kid_of(t, n: 1, kind: tree.SELECTION_SET), kind: tree.FIELD)[0]
+    unbound = coerce_arguments(t, m: m, n: field, definitions: f.arguments, variables: {})
+    assert unbound.error.message == "Argument \"b\" of required type \"Int!\" was provided the variable \"$v\" which was not provided a runtime value."
+    given = coerce_arguments(t, m: m, n: field, definitions: f.arguments, variables: {"v": .number(v: 7.0)})
+    assert given.values == {"a": .number(v: 3.0), "b": .number(v: 7.0), "c": json.parse("[1]").must()}
+    null_given = coerce_arguments(t, m: m, n: field, definitions: f.arguments, variables: {"v": .null_value})
+    assert null_given.error.message == "Argument \"b\" of non-null type \"Int!\" must not be null."
+
+# The message of `v`'s failure, "" where it holds a value.
+function message_of_err(v: i64?) -> str
+    match v
+        .ok _  => return ""
+        .err e => return e.msg
+
+test "path_text: keys and indices as graphql-js writes them"
+    assert path_text([.text(v: "o"), .text(v: "c"), .number(v: 1.0)]) == ".o.c[1]"
+    assert path_text([]) == ""

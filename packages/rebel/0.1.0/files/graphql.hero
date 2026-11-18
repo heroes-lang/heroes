@@ -1,0 +1,2027 @@
+# GraphQL, as its specification of October 2021 writes it and as its working
+# draft has settled since (`@oneOf` input objects, Unicode escapes past U+FFFF,
+# the check that an operation's kind exists): a document's text parsed into
+# operations and fragments, a schema's text parsed into a schema, a document
+# validated against a schema by every rule of the specification's section 5,
+# and an operation executed with the program answering every field, its
+# result and its errors the specification's JSON response. Introspection is
+# answered by the package itself, and a request is read from and answered to
+# HTTP as the GraphQL over HTTP draft writes it, and over a WebSocket as the
+# `graphql-transport-ws` protocol writes it.
+#
+# **The executor finds, the program answers.** The language has no closure,
+# so no schema this package held could carry a resolver with the program's
+# state. `start` begins an execution; each `next_step` hands out every field
+# that is ready to be resolved, its type, its name, its arguments coerced and
+# the value its parent was answered with; the program answers each with its
+# own state and gives the answers back with `answer`. A field whose parent is
+# a JSON object holding a member of the field's name is answered from it,
+# as graphql-js's default resolver answers it, and never handed out. A
+# program with no state hands `execute` one function instead.
+#
+# **Every read is bounded.** `Limits` states the most bytes, tokens, levels of
+# nesting, aliases, directives and fields a document may hold, so a document
+# built to exhaust a server (nested a thousand levels deep, a field asked
+# under ten thousand aliases, fragments spread into each other to select
+# millions of fields) is refused before anything runs.
+#
+# **What it does not do.** A JSON value is `json`'s, an HTTP request and
+# response `http`'s, a WebSocket `websocket`'s: this package reads and writes
+# their messages and the program's loop carries them. A schema is written in
+# GraphQL's own schema language, never derived from the program's types,
+# which would need the reflection the language refuses. Results are delivered
+# whole: `@defer` and `@stream` are not in the specification yet.
+#
+# The codes it fails with: `invalid` (a text that does not parse, a schema or
+# a document that breaks a rule, a request that is no GraphQL request),
+# `limit` (a text past `Limits`), `not_found` (no operation of that name),
+# `unsupported` (an HTTP method or a media type refused), `failed` (an answer
+# over HTTP whose status is not a success).
+
+use bytes
+use graphql/internal/build
+use graphql/internal/client_schema
+use graphql/internal/exec
+use graphql/internal/introspect
+use graphql/internal/model
+use graphql/internal/parser
+use graphql/internal/printer
+use graphql/internal/schema_print
+use graphql/internal/tree
+use graphql/internal/validate as checks
+use graphql/internal/wire
+use http
+use json
+
+## Codes
+
+# The code of a text that does not parse, a schema or a document that breaks
+# a rule, and a request or a message that is not what GraphQL sends.
+constant INVALID: str
+    "invalid"
+
+# The code of a text past what `Limits` allows.
+constant LIMIT: str
+    "limit"
+
+# The code of an operation name a document does not hold.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of an HTTP method or a media type a server refuses.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The code of an answer over HTTP whose status is not a success: what
+# `call_http` fails with.
+constant FAILED: str
+    "failed"
+
+## Operation kinds
+
+# The kind of an operation that reads.
+constant QUERY: str
+    "query"
+
+# The kind of an operation that writes, its root fields run one after another.
+constant MUTATION: str
+    "mutation"
+
+# The kind of an operation that answers each event of a stream.
+constant SUBSCRIPTION: str
+    "subscription"
+
+## Limits
+
+# What a document may hold and ask, so that a text built to exhaust a server
+# is refused before it runs. Made by `default_limits` or built directly.
+record Limits
+    # The most bytes a document's or a schema's text may hold, 1 or more.
+    bytes: i64
+    # The most tokens a text may hold, its comments not counted, 1 or more:
+    # graphql-js's `maxTokens`.
+    tokens: i64
+    # The most levels of nesting, 1 or more: of selection sets, list and
+    # object values and list types in the text, and of selection sets with
+    # every fragment spread followed when a document is validated.
+    depth: i64
+    # The most fields written under an alias that an operation may hold,
+    # with every fragment spread followed, 0 or more.
+    aliases: i64
+    # The most directives one place of a document may carry, 0 or more.
+    directives: i64
+    # The most fields an operation may select, with every fragment spread
+    # followed as often as it is written, 1 or more: it bounds the work of
+    # validation and execution alike.
+    fields: i64
+    # The most errors validation reports before it stops, 1 or more:
+    # graphql-js's `maxErrors`.
+    errors: i64
+    # Whether a document may ask the schema about itself (`__schema` and
+    # `__type`), and errors may suggest the names the schema holds. A server
+    # that hides its schema sets it false; `__typename` is answered either way.
+    introspection: bool
+
+# The usual limits: a text of at most 1 MiB and 20,000 tokens, 64 levels, 500
+# aliases, 50 directives on one place, 20,000 fields and 100 errors, and
+# introspection allowed.
+function default_limits() -> Limits
+    return Limits(
+        bytes: 1048576,
+        tokens: 20000,
+        depth: 64,
+        aliases: 500,
+        directives: 50,
+        fields: 20000,
+        errors: 100,
+        introspection: true
+    )
+
+## Errors
+
+# A place in a text: where an error was found.
+record Location
+    # The line, from 1.
+    line: i64
+    # The column, from 1, counted in UTF-16 code units as graphql-js and the
+    # specification's examples count it.
+    column: i64
+
+# An error as a GraphQL response carries it.
+record Error
+    # What went wrong, in graphql-js's words where it has them.
+    message: str
+    # The places in the document the error points at: none for an error of
+    # the request as a whole.
+    locations: [Location]
+    # The path of the field in the response that the error nulled, its keys
+    # `.text` and its list indices `.number`: none for an error raised
+    # before execution.
+    path: [json.Value]
+    # The members the server adds, an object, or `.null_value` for none.
+    extensions: json.Value
+
+## Schemas
+
+# A schema: its types, its directives and its roots, checked by every rule of
+# the specification's type system. Made by `parse_schema`, `extend_schema` or
+# `schema_from_introspection`.
+record Schema
+    # The schema's own value, read by this package's functions alone.
+    model: model.Model
+
+# The schema `text` writes, in the schema definition language.
+#
+# - `text`: the definitions: types, directives, a `schema` definition and
+#   extensions of what the text itself defines. The specified scalars and
+#   directives need not be written. A root left out is the type named
+#   `Query`, `Mutation` or `Subscription`, where there is one.
+# - `limits`: what the text may hold; its `bytes`, `tokens` and `depth`.
+#
+# Fails `invalid` where the text does not parse or breaks a rule of the type
+# system, each error's message with its line and column, one per line;
+# `limit` where it is past `limits`. See also `extend_schema`,
+# `format_schema`.
+function parse_schema(text: str, limits: Limits) -> Schema?
+    document = parse(text, limits: limits)?
+    built = build.build(document.tree, old: build.library(), extending: false, suggest_names: limits.introspection)
+
+    if built.errors.len() > 0
+        return fail(code: INVALID, msg: wire.joined(built.errors))
+    return ok(Schema(model: built.model))
+
+# `schema` with the definitions and extensions of `text` added.
+#
+# - `schema`: the schema extended, which is not changed.
+# - `text`: new types and directives, and `extend` definitions of types old
+#   or new.
+# - `limits`: what the text may hold.
+#
+# Fails `invalid` and `limit` as `parse_schema` does. See also `parse_schema`.
+function extend_schema(schema: Schema, text: str, limits: Limits) -> Schema?
+    document = parse(text, limits: limits)?
+    built = build.build(document.tree, old: schema.model, extending: true, suggest_names: limits.introspection)
+
+    if built.errors.len() > 0
+        return fail(code: INVALID, msg: wire.joined(built.errors))
+    return ok(Schema(model: built.model))
+
+# `schema` written in the schema definition language, as graphql-js's
+# `printSchema` writes it: the types the program defined in their order, the
+# specified scalars, directives and the introspection types left out.
+#
+# - `schema`: the schema.
+#
+# See also `parse_schema`.
+function format_schema(schema: Schema) -> str
+    return schema_print.print_schema(schema.model)
+
+# What the specification's introspection query answers about `schema`: the
+# `data` of a response to `introspection_query`, as graphql-js's
+# `introspectionFromSchema` answers it.
+#
+# - `schema`: the schema.
+#
+# See also `schema_from_introspection`.
+function introspection_of(schema: Schema) -> json.Value
+    r = Request(
+        query: introspect.query_text_full(),
+        operation_name: "",
+        variables: .null_value,
+        extensions: .null_value
+    )
+    limits @= default_limits()
+    limits.tokens @ 1000000
+    limits.fields @ 1000000
+    limits.depth @ 1000
+    e @= start(schema, r: r, root: .null_value, limits: limits)
+
+    while true
+        match next_step(@e)
+            .done d => return d.response.data
+            .resolve step =>
+                answers: [json.Value?] @= []
+
+                for _ in step.fields
+                    answers @ answers.push(ok(.null_value))
+
+                answer(@e, answers: answers)
+
+# The schema an answer to `introspection_query` describes, as a client builds
+# it from a server's answer: graphql-js's `buildClientSchema`.
+#
+# - `data`: the response's `data`, an object holding `__schema`.
+# - `limits`: how many levels of type references it may hold.
+#
+# Fails `invalid` where `data` is no such answer or describes a schema that
+# breaks a rule. See also `introspection_of`.
+function schema_from_introspection(data: json.Value, limits: Limits) -> Schema?
+    return ok(Schema(model: client_schema.build_client(data, most_depth: limits.depth)?))
+
+# The introspection query of graphql-js's `getIntrospectionQuery` with every
+# option on: descriptions, the schema's own, `specifiedByURL`, repeatable
+# directives and deprecated arguments and input fields.
+function introspection_query() -> str
+    return introspect.query_text()
+
+## Documents
+
+# A document parsed: its operations, its fragments and any other definition
+# it holds, kept with its text so that an error can name its line. Made by
+# `parse`.
+record Document
+    # The document's own value, read by this package's functions alone.
+    tree: tree.Tree
+
+# What `operations_of` answers about one operation.
+record Operation
+    # `QUERY`, `MUTATION` or `SUBSCRIPTION`.
+    kind: str
+    # The operation's name, "" where it has none.
+    name: str
+    # Its variables, in the order they are defined.
+    variables: [Variable]
+
+# A variable an operation defines.
+record Variable
+    # The variable's name, without its `$`.
+    name: str
+    # Its type, as written: `ID!`, `[String]`.
+    type: str
+    # Whether the operation gives it a default.
+    has_default: bool
+
+# The document `text` writes.
+#
+# - `text`: a GraphQL document: operations and fragments, or the definitions
+#   of a schema, or both; validation refuses what an executable document may
+#   not hold.
+# - `limits`: what the text may hold: its `bytes`, `tokens`, `depth` and
+#   `directives`.
+#
+# Fails `invalid` where the text does not parse, the message graphql-js's with
+# its line and column; `limit` where it is past `limits`. See also `format`,
+# `validate`.
+function parse(text: str, limits: Limits) -> Document?
+    if text.len() > limits.bytes
+        return fail(code: LIMIT, msg: f"a text of {text.len()} bytes is past the limit of {limits.bytes}")
+    got = parser.parse(text, most_tokens: limits.tokens, most_depth: limits.depth, most_directives: limits.directives)
+
+    if got.code != ""
+        return fail(code: got.code, msg: f"{got.message} ({got.at.line}:{got.at.column})")
+    return ok(Document(tree: got.tree))
+
+# `document` written as graphql-js's `print` writes it: two spaces a level, one
+# selection a line, the definitions a blank line apart, the comments and the
+# commas left out.
+#
+# - `document`: the document.
+#
+# See also `parse`.
+function format(document: Document) -> str
+    return printer.print_tree(document.tree)
+
+# The operations `document` holds, in their order.
+#
+# - `document`: the document.
+#
+# None where it holds only fragments or a schema's definitions. See also
+# `start`.
+function operations_of(document: Document) -> [Operation]
+    found: [Operation] @= []
+    t = document.tree
+
+    for n in tree.kids_of(t, n: 0, kind: tree.OPERATION)
+        variables: [Variable] @= []
+
+        for v in tree.kids_of(t, n: n, kind: tree.VARIABLE_DEFINITION)
+            variables @ variables.push(
+                Variable(name: t.nodes[v].name, type: t.nodes[v].type, has_default: tree.value_of(t, n: v) >= 0)
+            )
+
+        found @ found.push(Operation(kind: t.nodes[n].text, name: t.nodes[n].name, variables: variables))
+
+    return found
+
+# The errors of `document` against `schema` by every rule of the
+# specification's section 5, in graphql-js's words and order: none where it is
+# valid.
+#
+# - `schema`: the schema.
+# - `document`: the document.
+# - `limits`: its `depth`, `aliases`, `fields` and `errors`, and whether
+#   `introspection` is allowed and names may be suggested.
+#
+# At most `limits.errors` errors, the last one saying that validation stopped
+# there. See also `validate_with`, `rule_names`.
+function validate(schema: Schema, document: Document, limits: Limits) -> [Error]
+    rules @= checks.rule_names()
+
+    if !limits.introspection
+        rules @ rules.push("NoSchemaIntrospectionCustomRule")
+    return validate_with(schema, document: document, limits: limits, rules: rules)
+
+# The errors of `document` against `schema` by the rules `rules` names alone.
+#
+# - `schema`: the schema.
+# - `document`: the document.
+# - `limits`: as `validate` reads them; the limits of `depth`, `aliases` and
+#   `fields` are checked whatever `rules` holds.
+# - `rules`: the rules' names, graphql-js's (`FieldsOnCorrectTypeRule`): any
+#   of `rule_names`, and `NoDeprecatedCustomRule` and
+#   `NoSchemaIntrospectionCustomRule`, which `validate` does not run.
+#
+# Aborts where a name is none of these. See also `validate`.
+function validate_with(schema: Schema, document: Document, limits: Limits, rules: [str]) -> [Error]
+    for name in rules
+        assert checks.is_rule(name)
+
+    found = checks.validate(
+        document.tree,
+        m: schema.model,
+        rules: rules,
+        most_errors: limits.errors,
+        most_fields: limits.fields,
+        most_aliases: limits.aliases,
+        most_depth: limits.depth,
+        suggest: limits.introspection
+    )
+    errors: [Error] @= []
+
+    for e in found
+        places: [Location] @= []
+
+        for l in e.locations
+            places @ places.push(Location(line: l.line, column: l.column))
+
+        errors @ errors.push(Error(message: e.message, locations: places, path: e.path, extensions: .null_value))
+
+    return errors
+
+# The names of the rules `validate` runs, in the order it runs them.
+function rule_names() -> [str]
+    return checks.rule_names()
+
+## Requests and responses
+
+# What a client asks of a server: the parameters GraphQL over HTTP names.
+record Request
+    # The document's text.
+    query: str
+    # The name of the operation to run, "" to run the document's only one.
+    operation_name: str
+    # The variables' values by name, an object, or `.null_value` for none.
+    variables: json.Value
+    # The members the client adds (a persisted query's hash), an object, or
+    # `.null_value` for none.
+    extensions: json.Value
+
+# What a server answers: the specification's response.
+record Response
+    # The result, an object, or `.null_value` where a non-null root field
+    # failed; read only where `has_data` holds.
+    data: json.Value
+    # Whether execution began, so that the response holds `data`: false for
+    # a request refused before it ran.
+    has_data: bool
+    # The errors, in the order they were found.
+    errors: [Error]
+    # The members the server adds, an object, or `.null_value` for none.
+    extensions: json.Value
+
+# The request a JSON body writes, as GraphQL over HTTP sends it by `POST`.
+#
+# - `text`: the body: an object as `request_of` reads one.
+#
+# Fails `invalid` where the text is no such object. See also
+# `format_request`.
+function parse_request(text: str) -> Request?
+    v = match json.parse(text)
+        .ok got => got
+        .err e  => return fail(code: INVALID, msg: f"the body is no JSON: {e.msg}")
+
+    return request_of(v)
+
+# `r` written as the JSON body GraphQL over HTTP sends, its members in the
+# order `query`, `operationName`, `variables`, `extensions`, each but `query`
+# left out where it is empty.
+#
+# - `r`: the request.
+#
+# Fails `invalid` where a variable holds `nan` or an infinity. See also
+# `parse_request`.
+function format_request(r: Request) -> str?
+    members: {str: json.Value} @= {}
+    members["query"] @ .text(v: r.query)
+
+    if r.operation_name != ""
+        members["operationName"] @ .text(v: r.operation_name)
+
+    if r.variables != .null_value
+        members["variables"] @ r.variables
+
+    if r.extensions != .null_value
+        members["extensions"] @ r.extensions
+    return json.format(.object(members: members))
+
+# The response a JSON text writes, as a client reads a server's answer.
+#
+# - `text`: an object holding `data`, `errors` or both, and `extensions` at
+#   will.
+#
+# Fails `invalid` where the text is no such object, or an error in it has no
+# `message`. See also `format_response`.
+function parse_response(text: str) -> Response?
+    v = match json.parse(text)
+        .ok got => got
+        .err e  => return fail(code: INVALID, msg: f"the response is no JSON: {e.msg}")
+
+    return response_of(v)
+
+# `response` written as JSON, its members in the order graphql-js writes
+# them: `errors` where there are any, `data` where execution began, then
+# `extensions`; each error's `message`, `locations`, `path` and `extensions`.
+#
+# - `response`: the response.
+#
+# Fails `invalid` where a value holds `nan` or an infinity, which the
+# program's own answers alone can hold. See also `parse_response`.
+function format_response(response: Response) -> str?
+    return json.format(response_value(response))
+
+# The request the JSON value `v` writes, as `parse_request` reads a body: what
+# a transport reads that carries requests inside its own messages.
+#
+# - `v`: an object whose `query` is a string, whose `operationName` is a
+#   string or `null` and whose `variables` and `extensions` are objects or
+#   `null`; `query` may be left out where `extensions` is given, as a
+#   persisted query sends it.
+#
+# Fails `invalid` where it is no such object. See also `request_value`.
+function request_of(v: json.Value) -> Request?
+    members = match v
+        .object o => o.members
+        .null_value | .boolean _ | .number _ | .text _ | .list _ =>
+            return fail(code: INVALID, msg: f"a GraphQL request is a JSON object, and this is {json.kind_of(v)}")
+
+    extensions = members["extensions"].default(.null_value)
+
+    if !wire.is_object_or_null(extensions)
+        return fail(code: INVALID, msg: "the request's \"extensions\" is not an object")
+
+    query = match members["query"]
+        .ok got =>
+            match got
+                .text s => s.v
+                .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+                    return fail(code: INVALID, msg: "the request's \"query\" is not a string")
+        .err _ =>
+            if extensions == .null_value
+                return fail(code: INVALID, msg: "the request holds no \"query\"")
+            ""
+
+    name = match members["operationName"].default(.null_value)
+        .text s     => s.v
+        .null_value => ""
+        .boolean _ | .number _ | .list _ | .object _ =>
+            return fail(code: INVALID, msg: "the request's \"operationName\" is not a string")
+
+    variables = members["variables"].default(.null_value)
+
+    if !wire.is_object_or_null(variables)
+        return fail(code: INVALID, msg: "the request's \"variables\" is not an object")
+    return ok(Request(query: query, operation_name: name, variables: variables, extensions: extensions))
+
+# `r` as a JSON value, as `format_request` writes it.
+#
+# - `r`: the request.
+#
+# See also `request_of`.
+function request_value(r: Request) -> json.Value
+    members: {str: json.Value} @= {}
+    members["query"] @ .text(v: r.query)
+
+    if r.operation_name != ""
+        members["operationName"] @ .text(v: r.operation_name)
+
+    if r.variables != .null_value
+        members["variables"] @ r.variables
+
+    if r.extensions != .null_value
+        members["extensions"] @ r.extensions
+    return .object(members: members)
+
+# The response the JSON value `v` writes.
+#
+# - `v`: an object holding `data`, `errors` or both, and `extensions` at will.
+#
+# Fails `invalid` where it is no such object, or an error in it has no
+# `message`. See also `response_value`.
+function response_of(v: json.Value) -> Response?
+    match v
+        .object _ => _ = 0
+        .null_value | .boolean _ | .number _ | .text _ | .list _ =>
+            return fail(code: INVALID, msg: f"a GraphQL response is a JSON object, and this is {json.kind_of(v)}")
+
+    if !wire.has_member(v, key: "data") && !wire.has_member(v, key: "errors")
+        return fail(code: INVALID, msg: "the response holds neither \"data\" nor \"errors\"")
+    errors: [Error] @= []
+
+    for e in json.items_of(wire.member_of(v, key: "errors")).default([])
+        errors @ errors.push(error_of(e)?)
+
+    return ok(
+        Response(data: wire.member_of(v, key: "data"), has_data: wire.has_member(v, key: "data"), errors: errors, extensions: wire.member_of(v, key: "extensions"))
+    )
+
+# `response` as a JSON value, its members in graphql-js's order: `errors`
+# where there are any, `data` where execution began, then `extensions`.
+#
+# - `response`: the response.
+#
+# See also `response_of`.
+function response_value(response: Response) -> json.Value
+    members: {str: json.Value} @= {}
+
+    if response.errors.len() > 0
+        errors: [json.Value] @= []
+
+        for e in response.errors
+            errors @ errors.push(error_value(e))
+
+        members["errors"] @ .list(items: errors)
+
+    if response.has_data
+        members["data"] @ response.data
+
+    if response.extensions != .null_value
+        members["extensions"] @ response.extensions
+    return .object(members: members)
+
+# The error the JSON value `v` writes.
+#
+# - `v`: an object holding `message`, a string, and `locations`, `path` and
+#   `extensions` at will.
+#
+# Fails `invalid` where it holds no `message`. See also `error_value`.
+function error_of(v: json.Value) -> Error?
+    message = match wire.member_of(v, key: "message")
+        .text s => s.v
+        .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+            return fail(code: INVALID, msg: "an error of the response has no \"message\"")
+
+    places: [Location] @= []
+
+    for p in json.items_of(wire.member_of(v, key: "locations")).default([])
+        line = json.int_of(wire.member_of(p, key: "line")).default(0)
+        column = json.int_of(wire.member_of(p, key: "column")).default(0)
+        places @ places.push(Location(line: line, column: column))
+
+    path = json.items_of(wire.member_of(v, key: "path")).default([])
+    return ok(Error(message: message, locations: places, path: path, extensions: wire.member_of(v, key: "extensions")))
+
+# `e` as a JSON value: `message`, then `locations`, `path` and `extensions`
+# where it has them.
+#
+# - `e`: the error.
+#
+# See also `error_of`.
+function error_value(e: Error) -> json.Value
+    members: {str: json.Value} @= {}
+    members["message"] @ .text(v: e.message)
+
+    if e.locations.len() > 0
+        places: [json.Value] @= []
+
+        for l in e.locations
+            place: {str: json.Value} @= {}
+            place["line"] @ .number(v: to_f64(l.line))
+            place["column"] @ .number(v: to_f64(l.column))
+            places @ places.push(.object(members: place))
+
+        members["locations"] @ .list(items: places)
+
+    if e.path.len() > 0
+        members["path"] @ .list(items: e.path)
+
+    if e.extensions != .null_value
+        members["extensions"] @ e.extensions
+    return .object(members: members)
+
+## Execution
+
+# An operation being executed: what is answered so far and what waits. Made by
+# `start` or `start_document`, and driven by `next_step` and `answer`.
+record Execution
+    # The execution's own value, read by this package's functions alone.
+    state: exec.State
+
+# A field the program is asked to resolve.
+record Field
+    # Which field of its execution it is, for `selected_of`.
+    id: i64
+    # The object type the field is selected on: `Query`, `Human`.
+    type_name: str
+    # The field's name in the schema.
+    field_name: str
+    # Its arguments by name, coerced to their types: every argument the
+    # field defines that the document or a default gives, an enum value as
+    # its name, an input object as an object.
+    arguments: {str: json.Value}
+    # The value the field's parent was answered with: the root value for a
+    # root field.
+    parent: json.Value
+    # Where its value stands in the response: keys as `.text`, list indices
+    # as `.number`.
+    path: [json.Value]
+    # The type of its value, as written: `[Character]!`.
+    return_type: str
+
+# What `next_step` answers: fields to resolve, or the response.
+variant Step
+    # Every field that is ready to be resolved, in the order their values
+    # stand in the response; `answer` gives one answer for each, in their
+    # order.
+    resolve
+        # The fields, one or more.
+        fields: [Field]
+    # The execution is over.
+    done
+        # The response.
+        response: Response
+
+# An execution of the operation `r` asks for, its document parsed and
+# validated and its variables coerced. A request that fails any of these
+# makes an execution whose first step is `.done`, its errors in the response.
+#
+# - `schema`: the schema.
+# - `r`: the request.
+# - `root`: the value the root fields are resolved with as their parent: an
+#   object whose members answer the root fields of the same names, or
+#   `.null_value`.
+# - `limits`: what the document may hold.
+#
+# See also `next_step`, `start_document`, `execute`.
+function start(schema: Schema, r: Request, root: json.Value, limits: Limits) -> Execution
+    if r.query.len() > limits.bytes
+        return Execution(
+            state: exec.refused([tree.err_of(f"Syntax Error: Document of {r.query.len()} bytes is past the limit of {limits.bytes}. Parsing aborted.")])
+        )
+    got = parser.parse(
+        r.query,
+        most_tokens: limits.tokens,
+        most_depth: limits.depth,
+        most_directives: limits.directives
+    )
+
+    if got.code != ""
+        return Execution(state: exec.refused([tree.Err(message: got.message, locations: [got.at], path: [])]))
+    return start_document(
+        schema,
+        document: Document(tree: got.tree),
+        operation_name: r.operation_name,
+        variables: r.variables,
+        root: root,
+        limits: limits
+    )
+
+# An execution of an operation of a document already parsed, as a server that
+# keeps its documents (persisted queries) runs it: validated, its variables
+# coerced.
+#
+# - `schema`: the schema.
+# - `document`: the document.
+# - `operation_name`: the operation to run, "" for the document's only one.
+# - `variables`: the variables' values, an object, or `.null_value`.
+# - `root`: the root fields' parent.
+# - `limits`: what the document may hold.
+#
+# See also `start`.
+function start_document(schema: Schema, document: Document, operation_name: str, variables: json.Value, root: json.Value, limits: Limits) -> Execution
+    rules @= checks.rule_names()
+
+    if !limits.introspection
+        rules @ rules.push("NoSchemaIntrospectionCustomRule")
+    errors = checks.validate(
+        document.tree,
+        m: schema.model,
+        rules: rules,
+        most_errors: limits.errors,
+        most_fields: limits.fields,
+        most_aliases: limits.aliases,
+        most_depth: limits.depth,
+        suggest: limits.introspection
+    )
+
+    if errors.len() > 0
+        return Execution(state: exec.refused(errors))
+    return Execution(
+        state: exec.start(document.tree, m: schema.model, operation_name: operation_name, given: variables, root: root, suggest_names: limits.introspection)
+    )
+
+# The next step of `e`: the fields ready to be resolved, or the response.
+#
+# - `e`: the execution, which records that the fields were handed out.
+#
+# A query's fields are handed out a level at a time, every field whose parent
+# is answered in one step, so that a program can load them together; a
+# mutation's root fields one at a time, each with everything below it
+# answered before the next. After `.done` every call answers `.done` again.
+# Aborts where the fields of the step before were not answered.
+# See also `answer`.
+function next_step(@e: Execution) -> Step
+    ids = exec.next_step(@e.state)
+
+    if ids.len() == 0
+        errors: [Error] @= []
+
+        for err in e.state.errors
+            places: [Location] @= []
+
+            for l in err.locations
+                places @ places.push(Location(line: l.line, column: l.column))
+
+            errors @ errors.push(
+                Error(message: err.message, locations: places, path: err.path, extensions: .null_value)
+            )
+
+        data: json.Value = if e.state.data_null
+            .null_value
+        else
+            e.state.data
+        return .done(
+            response: Response(data: data, has_data: e.state.has_data, errors: errors, extensions: .null_value)
+        )
+    fields: [Field] @= []
+
+    for id in ids
+        task = e.state.tasks[id]
+        fields @ fields.push(
+            Field(id: id, type_name: task.type_name, field_name: task.field_name, arguments: task.arguments, parent: task.parent, path: exec.path_of(e.state, at: task.slot), return_type: task.return_type)
+        )
+
+    return .resolve(fields: fields)
+
+# Gives `e` the answers to the fields of its last step.
+#
+# - `e`: the execution, which goes on with them.
+# - `answers`: one for each field, in their order: the field's value, its
+#   type's shape: a scalar or an enum value for a leaf, `.null_value` for
+#   none, a list for a list, and for an object any value its own fields are
+#   resolved from: an object whose members answer them, or a key the
+#   program reads them by. The value of an interface or a union names its
+#   type in a member `__typename`. A failure is the field's error: its
+#   message is the error's, and the field is null.
+#
+# Aborts where `e` has no step waiting or `answers` holds another number of
+# answers. See also `next_step`.
+function answer(@e: Execution, answers: [json.Value?])
+    exec.answer(@e.state, answers: answers)
+
+# The names of the fields selected below `field`, so that its resolver loads
+# only what is asked: each once, in the order the document selects them,
+# `__typename` among them, over every type an interface's or a union's value
+# can be.
+#
+# - `e`: the execution.
+# - `field`: a field `e` handed out.
+#
+# None for a field whose type is a scalar or an enum.
+function selected_of(e: Execution, field: Field) -> [str]
+    return exec.selected_of(e.state, id: field.id)
+
+# The response to `r`, every field `resolver` must answer handed to it.
+#
+# - `schema`: the schema.
+# - `r`: the request.
+# - `root`: the root fields' parent.
+# - `limits`: what the document may hold.
+# - `resolver`: called once for each field handed out, in the order
+#   `next_step` hands them; it answers as `answer` takes an answer.
+#
+# See also `start`, `execute_with`.
+function execute(schema: Schema, r: Request, root: json.Value, limits: Limits, resolver: (function(Field) -> json.Value?)) -> Response
+    e @= start(schema, r: r, root: root, limits: limits)
+
+    while true
+        match next_step(@e)
+            .done d => return d.response
+            .resolve step =>
+                answers: [json.Value?] @= []
+
+                for f in step.fields
+                    answers @ answers.push(resolver(f))
+
+                answer(@e, answers: answers)
+
+# The response to `r`, every field handed to `resolver` with the program's
+# own value.
+#
+# - `schema`: the schema.
+# - `r`: the request.
+# - `root`: the root fields' parent.
+# - `limits`: what the document may hold.
+# - `state`: the program's value, handed to `resolver` with each field.
+# - `resolver`: called once for each field handed out, with `state`; it
+#   answers as `answer` takes an answer.
+#
+# See also `execute`.
+function execute_with<S>(schema: Schema, r: Request, root: json.Value, limits: Limits, state: S, resolver: (function(S, Field) -> json.Value?)) -> Response
+    e @= start(schema, r: r, root: root, limits: limits)
+
+    while true
+        match next_step(@e)
+            .done d => return d.response
+            .resolve step =>
+                answers: [json.Value?] @= []
+
+                for f in step.fields
+                    answers @ answers.push(resolver(state, f))
+
+                answer(@e, answers: answers)
+
+## Subscriptions
+
+# What `subscribe` answers: the source stream to open, or why none opens.
+variant Subscribed
+    # The subscription is valid: the program opens the stream its root field
+    # names and runs `start_event` for each event.
+    stream
+        # The root field's name.
+        field_name: str
+        # Its arguments, coerced as a `Field`'s are.
+        arguments: {str: json.Value}
+    # The request was refused before any stream opened.
+    refused
+        # The response holding its errors.
+        response: Response
+
+# The source stream a subscription asks for: its root field and its
+# arguments, the specification's `CreateSourceEventStream`.
+#
+# - `schema`: the schema.
+# - `r`: the request: a document whose operation is a subscription.
+# - `limits`: what the document may hold.
+#
+# `.refused` where the document does not parse or validate, the operation is
+# not a subscription or its variables are refused. See also `start_event`.
+function subscribe(schema: Schema, r: Request, limits: Limits) -> Subscribed
+    bounds = wire.Bounds(
+        bytes: limits.bytes,
+        tokens: limits.tokens,
+        depth: limits.depth,
+        directives: limits.directives,
+        errors: limits.errors,
+        fields: limits.fields,
+        aliases: limits.aliases,
+        introspection: limits.introspection
+    )
+    found = wire.subscription_of(
+        schema.model,
+        query: r.query,
+        operation_name: r.operation_name,
+        given: r.variables,
+        bounds: bounds
+    )
+
+    if found.errors.len() == 0
+        return .stream(field_name: found.field_name, arguments: found.arguments)
+    errors: [Error] @= []
+
+    for err in found.errors
+        places: [Location] @= []
+
+        for l in err.locations
+            places @ places.push(Location(line: l.line, column: l.column))
+
+        errors @ errors.push(Error(message: err.message, locations: places, path: err.path, extensions: .null_value))
+
+    return .refused(response: Response(data: .null_value, has_data: false, errors: errors, extensions: .null_value))
+
+# An execution of the subscription `r` asks for over one event of its
+# stream, the specification's `ExecuteSubscriptionEvent`: the root field is
+# resolved with `event` as its parent.
+#
+# - `schema`: the schema.
+# - `r`: the request, which `subscribe` accepted.
+# - `event`: the event's value: an object whose member of the root field's
+#   name answers it, or a value the program resolves the root field from.
+# - `limits`: what the document may hold.
+#
+# See also `subscribe`.
+function start_event(schema: Schema, r: Request, event: json.Value, limits: Limits) -> Execution
+    return start(schema, r: r, root: event, limits: limits)
+
+## Over HTTP
+
+# The request an HTTP request carries, as GraphQL over HTTP writes it: by
+# `GET`, its parameters in the query; by `POST`, a JSON body.
+#
+# - `r`: the HTTP request.
+# - `limits`: its `bytes` bounds the body and the query.
+#
+# Fails `unsupported` where the method is neither, or the body's type is not
+# `application/json`; `invalid` where the parameters are no GraphQL
+# request; `limit` where the body is past `limits.bytes`. `refusal_http`
+# answers each. See also `respond_http`, `serve_http`.
+function read_http(r: http.Request, limits: Limits) -> Request?
+    if r.method == http.METHOD_GET
+        pairs = match http.query_of(r)
+            .ok got => got
+            .err e  => return fail(code: INVALID, msg: f"the query of the request does not read: {e.msg}")
+
+        if r.url.query.len() > limits.bytes
+            return fail(code: LIMIT, msg: f"a query of {r.url.query.len()} bytes is past the limit of {limits.bytes}")
+        query @= ""
+        has_query @= false
+        name @= ""
+        variables: json.Value @= .null_value
+        extensions: json.Value @= .null_value
+
+        for p in pairs
+            if p.key == "query"
+                query @ p.value
+                has_query @ true
+            else if p.key == "operationName"
+                name @ p.value
+            else if p.key == "variables" && p.value != ""
+                variables @ wire.parameter_json(text: p.value, name: "variables")?
+            else if p.key == "extensions" && p.value != ""
+                extensions @ wire.parameter_json(text: p.value, name: "extensions")?
+
+        if !has_query && extensions == .null_value
+            return fail(code: INVALID, msg: "the request's query names no \"query\"")
+        return ok(Request(query: query, operation_name: name, variables: variables, extensions: extensions))
+
+    if r.method != http.METHOD_POST
+        return fail(code: UNSUPPORTED, msg: f"GraphQL over HTTP is sent by GET or POST, and this is {r.method}")
+    kind = http.value_of(r.headers, name: "Content-Type").default("")
+
+    if wire.media_of(kind) != "application/json"
+        return fail(code: UNSUPPORTED, msg: f"a GraphQL request is sent as application/json, and this is \"{kind}\"")
+
+    if r.body.len() > limits.bytes
+        return fail(code: LIMIT, msg: f"a body of {r.body.len()} bytes is past the limit of {limits.bytes}")
+
+    text = match bytes.to_text(r.body)
+        .ok got => got
+        .err _  => return fail(code: INVALID, msg: f"a body of {r.body.len()} bytes is not UTF-8")
+
+    return parse_request(text)
+
+# The HTTP response that carries `response`, in the media type `r` accepts:
+# `application/graphql-response+json`, whose status is 200 where execution
+# began and 400 where the request was refused, or `application/json`, whose
+# status is 200 either way.
+#
+# - `r`: the HTTP request answered; its `Accept` fields choose the type, and
+#   none at all chooses `application/json`.
+# - `response`: the response.
+#
+# A request that accepts neither type is answered 406. See also
+# `refusal_http`.
+function respond_http(r: http.Request, response: Response) -> http.Response
+    media = match wire.media_accepted(r)
+        .ok got => got
+        .err _ =>
+            return http.respond_text(
+                status: http.STATUS_NOT_ACCEPTABLE,
+                text: "a GraphQL response is application/graphql-response+json or application/json"
+            )
+
+    body = match format_response(response)
+        .ok got => got
+        .err e  => return http.respond_text(status: http.STATUS_INTERNAL_SERVER_ERROR, text: e.msg)
+
+    status = if media == wire.GRAPHQL_RESPONSE_JSON && !response.has_data
+        http.STATUS_BAD_REQUEST
+    else
+        http.STATUS_OK
+    return http.respond(status: status, content_type: media + "; charset=utf-8", body: bytes.from_text(body))
+
+# The HTTP response to a request `read_http` refused.
+#
+# - `r`: the HTTP request.
+# - `code`: the failure's code: `unsupported` for a method is 405 with the
+#   methods allowed, for a body's type 415; `limit` is 413; any other is
+#   400 with the error in the body.
+# - `msg`: the failure's message.
+function refusal_http(r: http.Request, code: str, msg: str) -> http.Response
+    if code == UNSUPPORTED
+        if r.method == http.METHOD_GET || r.method == http.METHOD_POST
+            return http.respond_text(status: http.STATUS_UNSUPPORTED_MEDIA_TYPE, text: msg)
+        refused @= http.respond_text(status: http.STATUS_METHOD_NOT_ALLOWED, text: msg)
+        refused.headers @ http.with_header(refused.headers, name: "Allow", value: "GET, POST")
+        return refused
+
+    if code == LIMIT
+        return http.respond_text(status: http.STATUS_CONTENT_TOO_LARGE, text: msg)
+    body = format_response(
+        Response(data: .null_value, has_data: false, errors: [Error(message: msg, locations: [], path: [], extensions: .null_value)], extensions: .null_value)
+    ).must()
+    media = wire.media_accepted(r).default(wire.APPLICATION_JSON)
+    return http.respond(
+        status: http.STATUS_BAD_REQUEST,
+        content_type: media + "; charset=utf-8",
+        body: bytes.from_text(body)
+    )
+
+# The answer of a GraphQL server to an HTTP request, every field handed to
+# `resolver` with the program's own value: `read_http`, `execute_with` and
+# `respond_http` in one call. A mutation asked by `GET` is answered 405, as
+# GraphQL over HTTP asks.
+#
+# - `r`: the HTTP request.
+# - `schema`: the schema.
+# - `root`: the root fields' parent.
+# - `limits`: what the request may hold.
+# - `state`: the program's value, handed to `resolver` with each field.
+# - `resolver`: called once for each field handed out, as `execute_with`
+#   calls it.
+#
+# See also `read_http`, `respond_http`.
+function serve_http<S>(r: http.Request, schema: Schema, root: json.Value, limits: Limits, state: S, resolver: (function(S, Field) -> json.Value?)) -> http.Response
+    request = match read_http(r, limits: limits)
+        .ok got => got
+        .err e  => return refusal_http(r, code: e.code, msg: e.msg)
+
+    if r.method == http.METHOD_GET && wire.is_mutation(query: request.query, operation_name: request.operation_name, most_tokens: limits.tokens, most_depth: limits.depth, most_directives: limits.directives)
+        refused @= http.respond_text(status: http.STATUS_METHOD_NOT_ALLOWED, text: "a mutation is sent by POST")
+        refused.headers @ http.with_header(refused.headers, name: "Allow", value: "POST")
+        return refused
+    return respond_http(
+        r,
+        response: execute_with(schema, r: request, root: root, limits: limits, state: state, resolver: resolver)
+    )
+
+# Sends `r` to the server at `target` by `POST` and reads its response.
+#
+# - `transport`: how the request is sent.
+# - `target`: the server's absolute URL.
+# - `r`: the request.
+#
+# Fails `failed` where the status is not 2xx and the body is no GraphQL
+# response, its status and body in the message; `invalid` where a 2xx body
+# is no GraphQL response; and as `http.send` fails. See also `read_http`.
+function call_http(transport: http.Client, target: str, r: Request) -> Response?
+    text = format_request(r)?
+    sent @= http.request(method: http.METHOD_POST, target: target)?
+    sent.headers @ http.with_header(sent.headers, name: "Content-Type", value: "application/json")
+    sent.headers @ http.with_header(
+        sent.headers,
+        name: "Accept",
+        value: "application/graphql-response+json, application/json"
+    )
+    sent.body @ bytes.from_text(text)
+    response = http.send(transport, r: sent)?
+    body = bytes.to_text_lossy(response.body)
+    succeeded = response.status >= 200 && response.status <= 299
+
+    match parse_response(body)
+        .ok got => return ok(got)
+        .err e =>
+            if succeeded
+                return fail(code: INVALID, msg: f"the server answered something that is no GraphQL response: {e.msg}")
+            return fail(code: FAILED, msg: f"the server answered {response.status}: {body}")
+
+## Over a WebSocket
+
+# The subprotocol a WebSocket carrying `Message`s names.
+constant WEBSOCKET_PROTOCOL: str
+    "graphql-transport-ws"
+
+# A message of the `graphql-transport-ws` protocol, a text frame each.
+variant Message
+    # The client's first message.
+    connection_init
+        # What the client adds (a token), an object, or `.null_value`.
+        payload: json.Value
+    # The server's answer to `connection_init`.
+    connection_ack
+        # What the server adds, an object, or `.null_value`.
+        payload: json.Value
+    # Either side asks whether the other is there.
+    ping
+        # An object, or `.null_value`.
+        payload: json.Value
+    # The answer to `ping`.
+    pong
+        # An object, or `.null_value`.
+        payload: json.Value
+    # The client starts an operation.
+    subscribe
+        # The operation's id, unique among the connection's running ones.
+        id: str
+        # The request.
+        request: Request
+    # The server sends one result of an operation.
+    next
+        # The operation's id.
+        id: str
+        # The result.
+        response: Response
+    # The server refuses an operation before it runs.
+    error
+        # The operation's id.
+        id: str
+        # The errors, one or more.
+        errors: [Error]
+    # Either side ends an operation.
+    complete
+        # The operation's id.
+        id: str
+
+# The message `text` writes.
+#
+# - `text`: a text frame's text.
+#
+# Fails `invalid` where it is no message of the protocol: no `type`, one it
+# does not name, or a member of the wrong kind. See also `format_message`.
+function parse_message(text: str) -> Message?
+    v = match json.parse(text)
+        .ok got => got
+        .err e  => return fail(code: INVALID, msg: f"the message is no JSON: {e.msg}")
+
+    kind = match json.member(v, key: "type")
+        .ok got => json.text_of(got).default("")
+        .err _  => return fail(code: INVALID, msg: "the message holds no \"type\"")
+
+    payload = wire.member_of(v, key: "payload")
+
+    if kind == "connection_init" || kind == "connection_ack" || kind == "ping" || kind == "pong"
+        if !wire.is_object_or_null(payload)
+            return fail(code: INVALID, msg: f"the payload of \"{kind}\" is not an object")
+
+        if kind == "connection_init"
+            return ok(.connection_init(payload: payload))
+
+        if kind == "connection_ack"
+            return ok(.connection_ack(payload: payload))
+
+        if kind == "ping"
+            return ok(.ping(payload: payload))
+        return ok(.pong(payload: payload))
+
+    id = match json.member(v, key: "id")
+        .ok got =>
+            match got
+                .text s => s.v
+                .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+                    return fail(code: INVALID, msg: "the message's \"id\" is not a string")
+        .err _ => return fail(code: INVALID, msg: f"the message \"{kind}\" holds no \"id\"")
+
+    if kind == "subscribe"
+        return ok(.subscribe(id: id, request: request_of(payload)?))
+
+    if kind == "next"
+        return ok(.next(id: id, response: response_of(payload)?))
+
+    if kind == "error"
+        errors: [Error] @= []
+
+        for e in json.items_of(payload).default([])
+            errors @ errors.push(error_of(e)?)
+
+        if errors.len() == 0
+            return fail(code: INVALID, msg: "the message \"error\" holds no error")
+        return ok(.error(id: id, errors: errors))
+
+    if kind == "complete"
+        return ok(.complete(id: id))
+    return fail(code: INVALID, msg: f"no message of the protocol is \"{kind}\"")
+
+# `m` written as a text frame's text.
+#
+# - `m`: the message.
+#
+# Fails `invalid` where a value holds `nan` or an infinity. See also
+# `parse_message`.
+function format_message(m: Message) -> str?
+    members: {str: json.Value} @= {}
+
+    match m
+        .connection_init x =>
+            members["type"] @ .text(v: "connection_init")
+
+            if x.payload != .null_value
+                members["payload"] @ x.payload
+        .connection_ack x =>
+            members["type"] @ .text(v: "connection_ack")
+
+            if x.payload != .null_value
+                members["payload"] @ x.payload
+        .ping x =>
+            members["type"] @ .text(v: "ping")
+
+            if x.payload != .null_value
+                members["payload"] @ x.payload
+        .pong x =>
+            members["type"] @ .text(v: "pong")
+
+            if x.payload != .null_value
+                members["payload"] @ x.payload
+        .subscribe x =>
+            members["id"] @ .text(v: x.id)
+            members["type"] @ .text(v: "subscribe")
+            members["payload"] @ request_value(x.request)
+        .next x =>
+            members["id"] @ .text(v: x.id)
+            members["type"] @ .text(v: "next")
+            members["payload"] @ response_value(x.response)
+        .error x =>
+            members["id"] @ .text(v: x.id)
+            members["type"] @ .text(v: "error")
+            errors: [json.Value] @= []
+
+            for e in x.errors
+                errors @ errors.push(error_value(e))
+
+            members["payload"] @ .list(items: errors)
+        .complete x =>
+            members["id"] @ .text(v: x.id)
+            members["type"] @ .text(v: "complete")
+
+    return json.format(.object(members: members))
+
+## Tests
+
+# The schema of the tests and examples: the specification's characters of
+# Star Wars, a review written by a mutation and one announced by a
+# subscription.
+constant SPEC_SCHEMA: str
+    "enum Episode { NEWHOPE EMPIRE JEDI } interface Character { id: ID! name: String friends: [Character] } type Human implements Character { id: ID! name: String friends: [Character] homePlanet: String } type Droid implements Character { id: ID! name: String friends: [Character] primaryFunction: String } input ReviewInput { stars: Int! commentary: String } type Review { stars: Int! commentary: String } type Query { hero(episode: Episode): Character human(id: ID!): Human } type Mutation { createReview(episode: Episode, review: ReviewInput!): Review } type Subscription { reviewAdded(episode: Episode): Review }"
+
+# The characters of `SPEC_SCHEMA` by id, as JSON: each names its type in
+# `__typename` and leaves its friends to the resolver.
+constant SPEC_PEOPLE: str
+    "{\"1000\": {\"__typename\": \"Human\", \"id\": \"1000\", \"name\": \"Luke Skywalker\", \"homePlanet\": \"Tatooine\", \"friends\": [\"1002\", \"2001\"]}, \"1002\": {\"__typename\": \"Human\", \"id\": \"1002\", \"name\": \"Han Solo\", \"friends\": [\"1000\"]}, \"2001\": {\"__typename\": \"Droid\", \"id\": \"2001\", \"name\": \"R2-D2\", \"primaryFunction\": \"Astromech\", \"friends\": [\"1000\", \"1002\"]}}"
+
+# The resolver of `SPEC_SCHEMA` over the characters `SPEC_PEOPLE` holds, as a
+# program with state writes one.
+#
+# - `people`: the characters by id.
+# - `field`: the field handed out.
+#
+# A character is answered without its `friends`, which are handed out in
+# turn. Fails `not_found` for a field it does not know.
+function spec_resolver_with(people: {str: json.Value}, field: Field) -> json.Value?
+    if field.field_name == "hero"
+        id = if field.arguments["episode"].default(.null_value) == .text(v: "EMPIRE")
+            "1000"
+        else
+            "2001"
+        return ok(spec_without_friends(people[id].must()))
+
+    if field.field_name == "human"
+        id = json.text_of(field.arguments["id"].must()).must()
+
+        match people[id]
+            .ok p  => return ok(spec_without_friends(p))
+            .err _ => return ok(.null_value)
+
+    if field.field_name == "friends"
+        id = json.text_of(json.member(field.parent, key: "id").must()).must()
+        found: [json.Value] @= []
+
+        for friend in json.items_of(json.member(people[id].must(), key: "friends").must()).must()
+            found @ found.push(spec_without_friends(people[json.text_of(friend).must()].must()))
+
+        return ok(.list(items: found))
+
+    if field.field_name == "createReview"
+        return ok(field.arguments["review"].must())
+    return fail(code: NOT_FOUND, msg: f"no resolver for {field.type_name}.{field.field_name}")
+
+# `person` without its member `friends`, so that the executor hands them out.
+#
+# - `person`: a character of `SPEC_PEOPLE`.
+function spec_without_friends(person: json.Value) -> json.Value
+    members: {str: json.Value} @= {}
+
+    for key in keys(json.members_of(person).default({}))
+        if key != "friends"
+            members[key] @ json.member(person, key: key).must()
+
+    return .object(members: members)
+
+# The resolver of `SPEC_SCHEMA` for a program with no state of its own: it
+# reads `SPEC_PEOPLE` each time.
+#
+# - `field`: the field handed out.
+#
+# Fails as `spec_resolver_with` fails.
+function spec_resolver(field: Field) -> json.Value?
+    people = json.members_of(json.parse(SPEC_PEOPLE).must()).must()
+    return spec_resolver_with(people, field: field)
+
+# The schema `SPEC_SCHEMA` writes.
+function spec_schema() -> Schema
+    return parse_schema(SPEC_SCHEMA, limits: default_limits()).must()
+
+# A request of `query` alone.
+#
+# - `query`: the document's text.
+function spec_request(query: str) -> Request
+    return Request(query: query, operation_name: "", variables: .null_value, extensions: .null_value)
+
+# `r` executed against `spec_schema()` by `spec_resolver`, written as JSON.
+#
+# - `r`: the request.
+function spec_run(r: Request) -> str
+    return format_response(
+        execute(spec_schema(), r: r, root: .null_value, limits: default_limits(), resolver: spec_resolver)
+    ).must()
+
+# The code of `v`'s failure, "" where it holds a value.
+#
+# - `v`: the value or the failure.
+function code_of<T>(v: T?) -> str
+    match v
+        .ok _  => return ""
+        .err e => return e.code
+
+# The message of `v`'s failure, "" where it holds a value.
+#
+# - `v`: the value or the failure.
+function message_of<T>(v: T?) -> str
+    match v
+        .ok _  => return ""
+        .err e => return e.msg
+
+test "execute: graphql-js's answers for the specification's characters"
+    assert spec_run(spec_request("{ hero { name friends { name } } }")) == "{\"data\":{\"hero\":{\"name\":\"R2-D2\",\"friends\":[{\"name\":\"Luke Skywalker\"},{\"name\":\"Han Solo\"}]}}}"
+    by_episode = Request(
+        query: "query ($ep: Episode) { hero(episode: $ep) { __typename name ... on Human { homePlanet } } }",
+        operation_name: "",
+        variables: json.parse("{\"ep\": \"EMPIRE\"}").must(),
+        extensions: .null_value
+    )
+    assert spec_run(by_episode) == "{\"data\":{\"hero\":{\"__typename\":\"Human\",\"name\":\"Luke Skywalker\",\"homePlanet\":\"Tatooine\"}}}"
+    assert spec_run(spec_request("{ human(id: \"404\") { name } }")) == "{\"data\":{\"human\":null}}"
+    assert spec_run(spec_request("mutation { createReview(episode: JEDI, review: {stars: 5, commentary: \"Great\"}) { stars commentary } }")) == "{\"data\":{\"createReview\":{\"stars\":5,\"commentary\":\"Great\"}}}"
+    assert spec_run(spec_request("{ hero { friends { friends { name } } } }")) == "{\"data\":{\"hero\":{\"friends\":[{\"friends\":[{\"name\":\"Han Solo\"},{\"name\":\"R2-D2\"}]},{\"friends\":[{\"name\":\"Luke Skywalker\"}]}]}}}"
+
+test "execute: request errors carry no data, a non-null field's null nulls its parent"
+    assert spec_run(spec_request("{ hero { nope } }")) == "{\"errors\":[{\"message\":\"Cannot query field \\\"nope\\\" on type \\\"Character\\\". Did you mean \\\"name\\\"?\",\"locations\":[{\"line\":1,\"column\":10}]}]}"
+    assert spec_run(spec_request("{")) == "{\"errors\":[{\"message\":\"Syntax Error: Expected Name, found <EOF>.\",\"locations\":[{\"line\":1,\"column\":2}]}]}"
+    assert spec_run(spec_request("query ($ep: Episode!) { hero(episode: $ep) { name } }")) == "{\"errors\":[{\"message\":\"Variable \\\"$ep\\\" of required type \\\"Episode!\\\" was not provided.\",\"locations\":[{\"line\":1,\"column\":8}]}]}"
+    assert spec_run(spec_request("query A { hero { id } } query B { hero { id } }")) == "{\"errors\":[{\"message\":\"Must provide operation name if query contains multiple operations.\"}]}"
+    assert spec_run(spec_request("mutation { createReview(review: {stars: 1}) { stars } }")) == "{\"data\":{\"createReview\":{\"stars\":1}}}"
+
+test "next_step: a level at a time, the friends of every hero in one step"
+    r = spec_request("{ a: hero { friends { name } } b: hero(episode: EMPIRE) { friends { name } } }")
+    e @= start(spec_schema(), r: r, root: .null_value, limits: default_limits())
+    sizes: [i64] @= []
+    done @= false
+
+    while !done
+        match next_step(@e)
+            .done d =>
+                assert d.response.errors.len() == 0
+                done @ true
+            .resolve step =>
+                sizes @ sizes.push(step.fields.len())
+                answers: [json.Value?] @= []
+
+                for f in step.fields
+                    answers @ answers.push(spec_resolver(f))
+
+                answer(@e, answers: answers)
+
+    assert sizes == [2, 2]
+
+test "next_step: a mutation's root fields one at a time"
+    r = spec_request(
+        "mutation { a: createReview(review: {stars: 1}) { stars } b: createReview(review: {stars: 2}) { stars } }"
+    )
+    e @= start(spec_schema(), r: r, root: .null_value, limits: default_limits())
+    order: [str] @= []
+    done @= false
+
+    while !done
+        match next_step(@e)
+            .done d =>
+                assert format_response(d.response).must() == "{\"data\":{\"a\":{\"stars\":1},\"b\":{\"stars\":2}}}"
+                done @ true
+            .resolve step =>
+                assert step.fields.len() == 1
+                order @ order.push(json.text_of(step.fields[0].path[0]).must())
+                answer(@e, answers: [spec_resolver(step.fields[0])])
+
+    assert order == ["a", "b"]
+
+test "answer: a failure nulls the field and is reported with its path"
+    r = spec_request("{ hero { name friends { name } } }")
+    e @= start(spec_schema(), r: r, root: .null_value, limits: default_limits())
+    response @= Response(data: .null_value, has_data: false, errors: [], extensions: .null_value)
+    done @= false
+
+    while !done
+        match next_step(@e)
+            .done d =>
+                response @ d.response
+                done @ true
+            .resolve step =>
+                answers: [json.Value?] @= []
+
+                for f in step.fields
+                    if f.field_name == "friends"
+                        answers @ answers.push(fail(code: "failed", msg: "the friends are away"))
+                    else
+                        answers @ answers.push(spec_resolver(f))
+
+                answer(@e, answers: answers)
+
+    assert format_response(response).must() == "{\"errors\":[{\"message\":\"the friends are away\",\"locations\":[{\"line\":1,\"column\":15}],\"path\":[\"hero\",\"friends\"]}],\"data\":{\"hero\":{\"name\":\"R2-D2\",\"friends\":null}}}"
+
+test "execute: an interface's value naming no type, and arguments refused at run time"
+    schema = spec_schema()
+    root = json.parse("{\"hero\": {\"name\": \"nobody\"}}").must()
+    got = execute(
+        schema,
+        r: spec_request("{ hero { name } }"),
+        root: root,
+        limits: default_limits(),
+        resolver: spec_resolver
+    )
+    assert got.errors[0].message == "Abstract type \"Character\" must resolve to an Object type at runtime for field \"Query.hero\". Either the \"Character\" type should provide a \"resolveType\" function or each possible type should provide an \"isTypeOf\" function."
+    assert got.data == json.parse("{\"hero\": null}").must()
+
+test "validate: the limits of fields, aliases and levels, counted with fragments spread"
+    schema = spec_schema()
+    limits @= default_limits()
+    limits.fields @ 5
+    nested = parse(
+        "query Q { ...A ...A } fragment A on Query { hero { ...B ...B } } fragment B on Character { ...C ...C } fragment C on Character { id }",
+        limits: limits
+    ).must()
+    assert validate(schema, document: nested, limits: limits)[0].message == "Operation \"Q\" selects more than 5 fields once its fragments are spread."
+    limits.fields @ 1000
+    limits.aliases @ 1
+    aliased = parse("{ a: hero { id } b: hero { id } }", limits: limits).must()
+    assert validate(schema, document: aliased, limits: limits)[0].message == "The operation holds more than 1 aliases once its fragments are spread."
+    limits.depth @ 2
+    deep = parse("{ hero { ...F } } fragment F on Character { friends { id } }", limits: limits).must()
+    assert validate(schema, document: deep, limits: limits)[0].message == "The operation nests more than 2 levels once its fragments are spread."
+
+test "validate: introspection refused, and its names not suggested, where it is off"
+    limits @= default_limits()
+    limits.introspection @ false
+    document = parse("{ __schema { queryType { name } } hero { nam } }", limits: limits).must()
+    messages: [str] @= []
+
+    for e in validate(spec_schema(), document: document, limits: limits)
+        messages @ messages.push(e.message)
+
+    assert messages == ["GraphQL introspection has been disabled, but the requested query contained the field \"__schema\".", "GraphQL introspection has been disabled, but the requested query contained the field \"queryType\".", "Cannot query field \"nam\" on type \"Character\"."]
+
+test "read_http: GET's parameters, POST's body, and what each refuses"
+    get = http.request(
+        method: "GET",
+        target: "http://localhost/graphql?query=%7Bhero%7Bname%7D%7D&operationName=&variables=%7B%22a%22%3A1%7D"
+    ).must()
+    got = read_http(get, limits: default_limits()).must()
+    assert got.query == "{hero{name}}"
+    assert got.variables == json.parse("{\"a\": 1}").must()
+    put = http.request(method: "PUT", target: "http://localhost/graphql").must()
+    assert read_http(put, limits: default_limits()).code_of() == UNSUPPORTED
+    text = http.with_body(
+        http.request(method: "POST", target: "http://localhost/graphql").must(),
+        content_type: "text/plain",
+        body: bytes.from_text("{}")
+    )
+    assert read_http(text, limits: default_limits()).code_of() == UNSUPPORTED
+    small @= default_limits()
+    small.bytes @ 4
+    post = http.with_body(
+        http.request(method: "POST", target: "http://localhost/graphql").must(),
+        content_type: "application/json; charset=utf-8",
+        body: bytes.from_text("{\"query\": \"{ hero { id } }\"}")
+    )
+    assert read_http(post, limits: small).code_of() == LIMIT
+    assert read_http(post, limits: default_limits()).must().query == "{ hero { id } }"
+    no_query = http.with_body(
+        http.request(method: "POST", target: "http://localhost/graphql").must(),
+        content_type: "application/json",
+        body: bytes.from_text("{\"query\": 1}")
+    )
+    assert read_http(no_query, limits: default_limits()).code_of() == INVALID
+
+test "respond_http: each media type's status, and 406 where neither is accepted"
+    r = http.request(method: "POST", target: "http://localhost/graphql").must()
+    refused = Response(
+        data: .null_value,
+        has_data: false,
+        errors: [Error(message: "no", locations: [], path: [], extensions: .null_value)],
+        extensions: .null_value
+    )
+    plain = respond_http(r, response: refused)
+    assert plain.status == 200
+    assert http.value_of(plain.headers, name: "Content-Type").must() == "application/json; charset=utf-8"
+    modern @= r
+    modern.headers @ http.with_header(r.headers, name: "Accept", value: "application/graphql-response+json")
+    assert respond_http(modern, response: refused).status == 400
+    ran = Response(data: .null_value, has_data: true, errors: refused.errors, extensions: .null_value)
+    assert respond_http(modern, response: ran).status == 200
+    odd @= r
+    odd.headers @ http.with_header(r.headers, name: "Accept", value: "text/html")
+    assert respond_http(odd, response: ran).status == 406
+
+test "serve_http: a mutation asked by GET is answered 405"
+    get = http.request(
+        method: "GET",
+        target: "http://localhost/graphql?query=mutation%7BcreateReview(review%3A%7Bstars%3A1%7D)%7Bstars%7D%7D"
+    ).must()
+    people = json.members_of(json.parse(SPEC_PEOPLE).must()).must()
+    response = serve_http(
+        get,
+        schema: spec_schema(),
+        root: .null_value,
+        limits: default_limits(),
+        state: people,
+        resolver: spec_resolver_with
+    )
+    assert response.status == 405
+    assert http.value_of(response.headers, name: "Allow").must() == "POST"
+
+test "parse_message and format_message: every message of the protocol, read back"
+    messages: [Message] = [
+        .connection_init(payload: json.parse("{\"token\": \"t\"}").must())
+        .connection_ack(payload: .null_value)
+        .ping(payload: .null_value)
+        .pong(payload: .null_value)
+        .subscribe(id: "1", request: spec_request("subscription { reviewAdded { stars } }"))
+        .next(id: "1", response: Response(data: json.parse("{\"a\": 1}").must(), has_data: true, errors: [], extensions: .null_value))
+        .error(id: "1", errors: [Error(message: "no", locations: [Location(line: 1, column: 2)], path: [], extensions: .null_value)])
+        .complete(id: "1")
+    ]
+
+    for m in messages
+        assert parse_message(format_message(m).must()).must() == m
+
+    assert parse_message("{\"type\": \"subscribe\", \"payload\": {}}").message_of() == "the message \"subscribe\" holds no \"id\""
+    assert parse_message("{\"type\": \"start\", \"id\": \"1\"}").message_of() == "no message of the protocol is \"start\""
+    assert parse_message("[]").code_of() == INVALID
+
+test "parse_request: a persisted query's hash without its text, and members of the wrong kind"
+    persisted = parse_request("{\"extensions\": {\"persistedQuery\": {\"version\": 1}}}").must()
+    assert persisted.query == ""
+    assert parse_request("{}").message_of() == "the request holds no \"query\""
+    assert parse_request("{\"query\": \"{a}\", \"variables\": []}").message_of() == "the request's \"variables\" is not an object"
+    assert parse_request("{\"query\": \"{a}\", \"operationName\": 1}").message_of() == "the request's \"operationName\" is not a string"
+    assert parse_request("[1]").code_of() == INVALID
+
+## Examples
+
+# The usual limits allow a megabyte of text, 64 levels and introspection.
+test "default_limits: the usual bounds"
+    limits = default_limits()
+    assert limits.bytes == 1048576
+    assert limits.depth == 64
+    assert limits.introspection
+
+# A schema read from its text, and one that breaks a rule of the type system.
+test "parse_schema: a schema, and an interface implemented in part"
+    schema = parse_schema("type Query { a: Int }", limits: default_limits()).must()
+    assert format_schema(schema) == "type Query {\n  a: Int\n}"
+    broken = parse_schema(
+        "type Query { a: I } interface I { x: Int } type T implements I { y: Int }",
+        limits: default_limits()
+    )
+    assert broken.message_of() == "Interface field I.x expected but T does not provide it. (1:35)"
+
+# A field added to a schema by an extension.
+test "extend_schema: a field added to the query root"
+    schema = parse_schema("type Query { a: Int }", limits: default_limits()).must()
+    extended = extend_schema(schema, text: "extend type Query { b: String }", limits: default_limits()).must()
+    assert format_schema(extended) == "type Query {\n  a: Int\n  b: String\n}"
+
+# A schema written back, its description as a block string.
+test "format_schema: a described type and an enum"
+    schema = parse_schema("\"\"\"The root\"\"\" type Query { e: E } enum E { A B }", limits: default_limits()).must()
+    assert format_schema(schema) == "\"\"\"The root\"\"\"\ntype Query {\n  e: E\n}\n\nenum E {\n  A\n  B\n}"
+
+# What the introspection query answers about a schema.
+test "introspection_of: the query root's name"
+    data = introspection_of(spec_schema())
+    schema_part = json.member(data, key: "__schema").must()
+    assert json.member(schema_part, key: "queryType").must() == json.parse("{\"name\": \"Query\", \"kind\": \"OBJECT\"}").must()
+
+# A client's schema built from a server's answer, written back the same.
+test "schema_from_introspection: a schema read back from its introspection"
+    schema = spec_schema()
+    back = schema_from_introspection(introspection_of(schema), limits: default_limits()).must()
+    assert format_schema(back) == format_schema(schema)
+    assert schema_from_introspection(.null_value, limits: default_limits()).code_of() == INVALID
+
+# The text of the introspection query a client sends.
+test "introspection_query: graphql-js's query, named IntrospectionQuery"
+    document = parse(introspection_query(), limits: default_limits()).must()
+    assert operations_of(document)[0].name == "IntrospectionQuery"
+
+# A document read from its text, and graphql-js's message where it does not
+# parse.
+test "parse: a query, and a selection set never closed"
+    assert parse("{ hero { name } }", limits: default_limits()).must().tree.nodes.len() > 0
+    assert parse("{", limits: default_limits()).message_of() == "Syntax Error: Expected Name, found <EOF>. (1:2)"
+
+# A document written as graphql-js prints it.
+test "format: two spaces a level"
+    document = parse("query Q($id:ID!){human(id:$id){name ...on Human{homePlanet}}}", limits: default_limits()).must()
+    assert format(document) == "query Q($id: ID!) {\n  human(id: $id) {\n    name\n    ... on Human {\n      homePlanet\n    }\n  }\n}"
+
+# The operations of a document, their kinds and variables.
+test "operations_of: a query and a mutation"
+    document = parse("query Q($ep: Episode = JEDI) { hero { id } } mutation { a }", limits: default_limits()).must()
+    found = operations_of(document)
+    assert found.len() == 2
+    assert found[0].kind == QUERY
+    assert found[0].variables == [Variable(name: "ep", type: "Episode", has_default: true)]
+    assert found[1].kind == MUTATION
+    assert found[1].name == ""
+
+# A document validated against a schema: a field the type does not have.
+test "validate: a misspelt field, its name suggested"
+    document = parse("{ hero { nam } }", limits: default_limits()).must()
+    errors = validate(spec_schema(), document: document, limits: default_limits())
+    assert errors.len() == 1
+    assert errors[0].message == "Cannot query field \"nam\" on type \"Character\". Did you mean \"name\"?"
+    assert errors[0].locations == [Location(line: 1, column: 10)]
+
+# One rule alone: the other rule's error is not reported.
+test "validate_with: unused variables alone"
+    document = parse("query ($a: Int) { hero { nope } }", limits: default_limits()).must()
+    errors = validate_with(
+        spec_schema(),
+        document: document,
+        limits: default_limits(),
+        rules: ["NoUnusedVariablesRule"]
+    )
+    assert errors.len() == 1
+    assert errors[0].message == "Variable \"$a\" is never used."
+
+# The rules `validate` runs, in graphql-js's order.
+test "rule_names: the specification's rules and graphql-js's limit on introspection"
+    names = rule_names()
+    assert names.len() == 27
+    assert names[0] == "ExecutableDefinitionsRule"
+    assert names[26] == "MaxIntrospectionDepthRule"
+
+# A request's JSON body read.
+test "parse_request: a body with variables"
+    r = parse_request(
+        "{\"query\": \"{ hero { name } }\", \"operationName\": null, \"variables\": {\"ep\": \"JEDI\"}}"
+    ).must()
+    assert r.query == "{ hero { name } }"
+    assert r.operation_name == ""
+    assert r.variables == json.parse("{\"ep\": \"JEDI\"}").must()
+
+# A request written as the JSON body a client sends.
+test "format_request: what is empty left out"
+    r = Request(query: "{ a }", operation_name: "Q", variables: .null_value, extensions: .null_value)
+    assert format_request(r).must() == "{\"query\":\"{ a }\",\"operationName\":\"Q\"}"
+
+# A server's response read.
+test "parse_response: data and an error with its place"
+    r = parse_response(
+        "{\"errors\": [{\"message\": \"no\", \"locations\": [{\"line\": 1, \"column\": 3}], \"path\": [\"a\", 0]}], \"data\": {\"a\": null}}"
+    ).must()
+    assert r.has_data
+    assert r.errors[0].locations == [Location(line: 1, column: 3)]
+    assert r.errors[0].path == [.text(v: "a"), .number(v: 0.0)]
+    assert parse_response("{}").code_of() == INVALID
+
+# A response written as JSON, its errors first.
+test "format_response: errors, then data"
+    r = Response(
+        data: json.parse("{\"a\": 1}").must(),
+        has_data: true,
+        errors: [Error(message: "late", locations: [], path: [.text(v: "b")], extensions: .null_value)],
+        extensions: .null_value
+    )
+    assert format_response(r).must() == "{\"errors\":[{\"message\":\"late\",\"path\":[\"b\"]}],\"data\":{\"a\":1}}"
+
+# A request read from a JSON value a transport carries.
+test "request_of: a value with an operation's name"
+    r = request_of(json.parse("{\"query\": \"query Q { a }\", \"operationName\": \"Q\"}").must()).must()
+    assert r.operation_name == "Q"
+
+# A request as the JSON value a transport carries.
+test "request_value: the members given"
+    assert request_value(spec_request("{ a }")) == json.parse("{\"query\": \"{ a }\"}").must()
+
+# A response read from a JSON value.
+test "response_of: data alone"
+    r = response_of(json.parse("{\"data\": {\"a\": 1}}").must()).must()
+    assert r.errors.len() == 0
+    assert r.data == json.parse("{\"a\": 1}").must()
+
+# A response as a JSON value.
+test "response_value: a request refused, with no data"
+    r = Response(
+        data: .null_value,
+        has_data: false,
+        errors: [Error(message: "no", locations: [], path: [], extensions: .null_value)],
+        extensions: .null_value
+    )
+    assert response_value(r) == json.parse("{\"errors\": [{\"message\": \"no\"}]}").must()
+
+# An error read from a JSON value, its extensions kept.
+test "error_of: a message and extensions"
+    e = error_of(json.parse("{\"message\": \"no\", \"extensions\": {\"code\": \"X\"}}").must()).must()
+    assert e.message == "no"
+    assert e.extensions == json.parse("{\"code\": \"X\"}").must()
+
+# An error as a JSON value.
+test "error_value: a message and its place"
+    e = Error(message: "no", locations: [Location(line: 2, column: 5)], path: [], extensions: .null_value)
+    assert error_value(e) == json.parse("{\"message\": \"no\", \"locations\": [{\"line\": 2, \"column\": 5}]}").must()
+
+# The specification's first example, `{ user(id: 4) { name } }`, its one
+# field handed out and answered by the program.
+test "start: the specification's first example"
+    schema = parse_schema(
+        "type Query { user(id: ID): User } type User { name: String }",
+        limits: default_limits()
+    ).must()
+    e @= start(schema, r: spec_request("{ user(id: 4) { name } }"), root: .null_value, limits: default_limits())
+
+    match next_step(@e)
+        .resolve step =>
+            assert step.fields[0].field_name == "user"
+            assert step.fields[0].arguments["id"].must() == .text(v: "4")
+            answer(@e, answers: [ok(json.parse("{\"name\": \"Mark Zuckerberg\"}").must())])
+        .done _ => assert false
+
+    match next_step(@e)
+        .done d    => assert format_response(d.response).must() == "{\"data\":{\"user\":{\"name\":\"Mark Zuckerberg\"}}}"
+        .resolve _ => assert false
+
+# A document parsed once and run with its operation named.
+test "start_document: a kept document, its second operation run"
+    document = parse(
+        "query A { hero { name } } query B { hero(episode: EMPIRE) { name } }",
+        limits: default_limits()
+    ).must()
+    e @= start_document(
+        spec_schema(),
+        document: document,
+        operation_name: "B",
+        variables: .null_value,
+        root: .null_value,
+        limits: default_limits()
+    )
+
+    match next_step(@e)
+        .resolve step =>
+            assert step.fields[0].arguments["episode"].must() == .text(v: "EMPIRE")
+            answer(@e, answers: [spec_resolver(step.fields[0])])
+        .done _ => assert false
+
+    match next_step(@e)
+        .done d    => assert format_response(d.response).must() == "{\"data\":{\"hero\":{\"name\":\"Luke Skywalker\"}}}"
+        .resolve _ => assert false
+
+# The fields handed out, their parents and paths.
+test "next_step: the hero, then its friends with the hero as their parent"
+    e @= start(
+        spec_schema(),
+        r: spec_request("{ hero { friends { name } } }"),
+        root: .null_value,
+        limits: default_limits()
+    )
+
+    match next_step(@e)
+        .resolve step =>
+            assert step.fields.len() == 1
+            assert step.fields[0].return_type == "Character"
+            answer(@e, answers: [spec_resolver(step.fields[0])])
+        .done _ => assert false
+
+    match next_step(@e)
+        .resolve step =>
+            assert step.fields[0].type_name == "Droid"
+            assert step.fields[0].path == [.text(v: "hero"), .text(v: "friends")]
+            assert json.member(step.fields[0].parent, key: "id").must() == .text(v: "2001")
+        .done _ => assert false
+
+# Answers given back, a failure among them.
+test "answer: a value and a failure"
+    schema = parse_schema("type Query { a: Int b: Int! }", limits: default_limits()).must()
+    e @= start(schema, r: spec_request("{ a b }"), root: .null_value, limits: default_limits())
+
+    match next_step(@e)
+        .resolve _ => answer(@e, answers: [ok(.number(v: 1.0)), fail(code: "failed", msg: "b is lost")])
+        .done _    => assert false
+
+    match next_step(@e)
+        .done d    => assert format_response(d.response).must() == "{\"errors\":[{\"message\":\"b is lost\",\"locations\":[{\"line\":1,\"column\":5}],\"path\":[\"b\"]}],\"data\":null}"
+        .resolve _ => assert false
+
+# The fields selected below a field, over every type its value can be.
+test "selected_of: what the hero's resolver will be asked for"
+    query = "{ hero { name ... on Human { homePlanet } ... on Droid { primaryFunction name } } }"
+    e @= start(spec_schema(), r: spec_request(query), root: .null_value, limits: default_limits())
+
+    match next_step(@e)
+        .resolve step => assert selected_of(e, field: step.fields[0]) == ["name", "homePlanet", "primaryFunction"]
+        .done _       => assert false
+
+# A request answered by one resolver of no state.
+test "execute: the hero and its friends"
+    assert spec_run(spec_request("{ hero { name } }")) == "{\"data\":{\"hero\":{\"name\":\"R2-D2\"}}}"
+
+# A request answered by a resolver handed the program's own value.
+test "execute_with: the characters handed to the resolver"
+    people = json.members_of(json.parse(SPEC_PEOPLE).must()).must()
+    response = execute_with(
+        spec_schema(),
+        r: spec_request("{ human(id: \"1002\") { name } }"),
+        root: .null_value,
+        limits: default_limits(),
+        state: people,
+        resolver: spec_resolver_with
+    )
+    assert format_response(response).must() == "{\"data\":{\"human\":{\"name\":\"Han Solo\"}}}"
+
+# The source stream a subscription asks for, and one refused.
+test "subscribe: the root field and its arguments"
+    match subscribe(spec_schema(), r: spec_request("subscription { reviewAdded(episode: JEDI) { stars } }"), limits: default_limits())
+        .stream s =>
+            assert s.field_name == "reviewAdded"
+            assert s.arguments["episode"].must() == .text(v: "JEDI")
+        .refused _ => assert false
+
+    match subscribe(spec_schema(), r: spec_request("subscription { reviewAdded { stars } hero { id } }"), limits: default_limits())
+        .stream _  => assert false
+        .refused r => assert r.response.errors[0].message == "Anonymous Subscription must select only one top level field."
+
+# One event of a subscription executed, the event answering the root field.
+test "start_event: a review announced"
+    event = json.parse("{\"reviewAdded\": {\"stars\": 4, \"commentary\": \"Good\"}}").must()
+    e @= start_event(
+        spec_schema(),
+        r: spec_request("subscription { reviewAdded { stars commentary } }"),
+        event: event,
+        limits: default_limits()
+    )
+
+    match next_step(@e)
+        .done d    => assert format_response(d.response).must() == "{\"data\":{\"reviewAdded\":{\"stars\":4,\"commentary\":\"Good\"}}}"
+        .resolve _ => assert false
+
+# A request read from an HTTP `POST`.
+test "read_http: a JSON body"
+    r = http.with_body(
+        http.request(method: "POST", target: "http://localhost/graphql").must(),
+        content_type: "application/json",
+        body: bytes.from_text("{\"query\": \"{ hero { id } }\"}")
+    )
+    assert read_http(r, limits: default_limits()).must().query == "{ hero { id } }"
+
+# A response sent back as the client accepts it.
+test "respond_http: application/json, the type of a client that names none"
+    r = http.request(method: "POST", target: "http://localhost/graphql").must()
+    response = respond_http(
+        r,
+        response: Response(data: json.parse("{\"a\": 1}").must(), has_data: true, errors: [], extensions: .null_value)
+    )
+    assert response.status == 200
+    assert bytes.to_text(response.body).must() == "{\"data\":{\"a\":1}}"
+
+# The answer to a request `read_http` refused.
+test "refusal_http: a method GraphQL over HTTP does not use"
+    r = http.request(method: "DELETE", target: "http://localhost/graphql").must()
+    response = refusal_http(r, code: UNSUPPORTED, msg: "no")
+    assert response.status == 405
+    assert http.value_of(response.headers, name: "Allow").must() == "GET, POST"
+
+# A server's handler: a request read, executed and answered.
+test "serve_http: a query by POST"
+    people = json.members_of(json.parse(SPEC_PEOPLE).must()).must()
+    r = http.with_body(
+        http.request(method: "POST", target: "http://localhost/graphql").must(),
+        content_type: "application/json",
+        body: bytes.from_text("{\"query\": \"{ hero { name } }\"}")
+    )
+    response = serve_http(
+        r,
+        schema: spec_schema(),
+        root: .null_value,
+        limits: default_limits(),
+        state: people,
+        resolver: spec_resolver_with
+    )
+    assert response.status == 200
+    assert bytes.to_text(response.body).must() == "{\"data\":{\"hero\":{\"name\":\"R2-D2\"}}}"
+
+# A client's call refused before anything is sent: a target that is no URL.
+test "call_http: a target that is no URL"
+    assert call_http(http.default_client(), target: "no url", r: spec_request("{ a }")).is_err()
+
+# A message of the WebSocket protocol read.
+test "parse_message: a subscription started"
+    m = parse_message(
+        "{\"id\": \"7\", \"type\": \"subscribe\", \"payload\": {\"query\": \"subscription { reviewAdded { stars } }\"}}"
+    ).must()
+    assert m == .subscribe(id: "7", request: spec_request("subscription { reviewAdded { stars } }"))
+
+# A message of the WebSocket protocol written.
+test "format_message: a result sent"
+    m: Message = .next(
+        id: "7",
+        response: Response(data: json.parse("{\"a\": 1}").must(), has_data: true, errors: [], extensions: .null_value)
+    )
+    assert format_message(m).must() == "{\"id\":\"7\",\"type\":\"next\",\"payload\":{\"data\":{\"a\":1}}}"
+
+# The resolver of the tests answering the hero.
+test "spec_resolver_with: the hero of The Empire Strikes Back"
+    people = json.members_of(json.parse(SPEC_PEOPLE).must()).must()
+    field = Field(
+        id: 0,
+        type_name: "Query",
+        field_name: "hero",
+        arguments: {"episode": .text(v: "EMPIRE")},
+        parent: .null_value,
+        path: [.text(v: "hero")],
+        return_type: "Character"
+    )
+    assert json.member(spec_resolver_with(people, field: field).must(), key: "name").must() == .text(v: "Luke Skywalker")
+
+# A character with its friends left to the resolver.
+test "spec_without_friends: Han Solo's own members"
+    han = spec_without_friends(json.parse("{\"id\": \"1002\", \"friends\": [\"1000\"]}").must())
+    assert han == json.parse("{\"id\": \"1002\"}").must()
+
+# The resolver of a program with no state.
+test "spec_resolver: a field it does not know"
+    field = Field(
+        id: 0,
+        type_name: "Query",
+        field_name: "nope",
+        arguments: {},
+        parent: .null_value,
+        path: [],
+        return_type: "Int"
+    )
+    assert spec_resolver(field).code_of() == NOT_FOUND
+
+# The schema of the tests.
+test "spec_schema: its roots"
+    assert format_schema(spec_schema()) != ""
+
+# A request of a query alone.
+test "spec_request: no operation named, no variable"
+    assert spec_request("{ a }").variables == .null_value
+
+# A request run against the schema of the tests.
+test "spec_run: the hero's name"
+    assert spec_run(spec_request("{ hero { id } }")) == "{\"data\":{\"hero\":{\"id\":\"2001\"}}}"
+
+# A failure's code read in a test.
+test "code_of: a document that does not parse"
+    assert parse("{", limits: default_limits()).code_of() == INVALID
+
+# A failure's message read in a test.
+test "message_of: a value holds none"
+    assert parse("{ a }", limits: default_limits()).message_of() == ""

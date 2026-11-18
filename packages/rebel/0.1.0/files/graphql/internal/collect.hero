@@ -1,0 +1,157 @@
+# The fields a selection set selects for one object type, grouped by the key
+# each answers under, as the specification's `CollectFields` groups them:
+# `@skip` and `@include` heeded, inline fragments and fragment spreads whose
+# condition the type meets followed in place, each fragment once. Several
+# selection sets may be collected together, as `CollectSubfields` does for
+# the fields that share a key. The walk is depth first on an explicit stack.
+
+use graphql/internal/fixture
+use graphql/internal/model
+use graphql/internal/tree
+use json
+
+# What `collect_fields` answers.
+record Collected
+    # The response keys, in the order their first field stands.
+    keys: [str]
+    # The fields of each key, in order.
+    fields: {str: [i64]}
+
+# Whether the directives on node `n` let it be selected: no `@skip` whose
+# `if` holds, no `@include` whose `if` does not; a variable `variables` does
+# not hold counts as letting it be.
+function is_included(t: tree.Tree lent, n: i64, variables: {str: json.Value} lent) -> bool
+    for d in tree.kids_of(t, n: n, kind: tree.DIRECTIVE)
+        name = t.nodes[d].name
+
+        if name == "skip" || name == "include"
+            for a in tree.kids_of(t, n: d, kind: tree.ARGUMENT)
+                if t.nodes[a].name == "if"
+                    v = tree.value_of(t, n: a)
+                    holds @= true
+                    known @= false
+
+                    if t.nodes[v].kind == tree.BOOLEAN
+                        holds @ t.nodes[v].text == "true"
+                        known @ true
+                    else if t.nodes[v].kind == tree.VARIABLE
+                        match variables[t.nodes[v].name]
+                            .ok value =>
+                                if value == .boolean(v: true) || value == .boolean(v: false)
+                                    holds @ value == .boolean(v: true)
+                                    known @ true
+                            .err _ => _ = 0
+
+                    if known && name == "skip" && holds
+                        return false
+
+                    if known && name == "include" && !holds
+                        return false
+
+    return true
+
+# Whether a fragment whose condition is `condition` applies to the object
+# type `object_type`: none, the type itself, or an interface or union it
+# belongs to.
+function does_condition_match(m: model.Model lent, condition: str, object_type: str) -> bool
+    if condition == "" || condition == object_type
+        return true
+
+    if model.is_abstract_name(m, name: condition)
+        return model.is_sub_type(m, abstract: condition, sub: object_type)
+    return false
+
+# The fields the selection sets `sets` select for `object_type`, grouped by
+# response key; `fragments` holds each fragment's node by name.
+function collect_fields(t: tree.Tree lent, m: model.Model lent, fragments: {str: i64} lent, variables: {str: json.Value} lent, object_type: str, sets: [i64]) -> Collected
+    order: [str] @= []
+    fields: {str: [i64]} @= {}
+    visited: {str: bool} @= {}
+    stack: [i64] @= []
+    top @= 0
+
+    for set in sets
+        if set >= 0
+            if top < stack.len()
+                stack[top] @ t.nodes[set].first
+            else
+                stack @ stack.push(t.nodes[set].first)
+            top @ top + 1
+
+        while top > 0
+            s = stack[top - 1]
+
+            if s < 0
+                top @ top - 1
+                continue
+            stack[top - 1] @ t.nodes[s].next
+            node = t.nodes[s]
+
+            if !is_included(t, n: s, variables: variables)
+                continue
+            inner @= -1
+
+            if node.kind == tree.FIELD
+                key = if node.alias != ""
+                    node.alias
+                else
+                    node.name
+
+                match fields[key]
+                    .ok list => fields[key] @ list.push(s)
+                    .err _ =>
+                        order @ order.push(key)
+                        fields[key] @ [s]
+            else if node.kind == tree.INLINE_FRAGMENT
+                if does_condition_match(m, condition: node.type, object_type: object_type)
+                    inner @ tree.kid_of(t, n: s, kind: tree.SELECTION_SET)
+            else if node.kind == tree.FRAGMENT_SPREAD
+                if !visited[node.name].default(false)
+                    visited[node.name] @ true
+
+                    match fragments[node.name]
+                        .ok f =>
+                            if does_condition_match(m, condition: t.nodes[f].type, object_type: object_type)
+                                inner @ tree.kid_of(t, n: f, kind: tree.SELECTION_SET)
+                        .err _ => _ = 0
+
+            if inner >= 0
+                if top < stack.len()
+                    stack[top] @ t.nodes[inner].first
+                else
+                    stack @ stack.push(t.nodes[inner].first)
+                top @ top + 1
+
+    return Collected(keys: order, fields: fields)
+
+# The fragments of `t` by name, each its first definition.
+function fragments_of(t: tree.Tree lent) -> {str: i64}
+    found: {str: i64} @= {}
+
+    for n in tree.kids_of(t, n: 0, kind: tree.FRAGMENT_DEFINITION)
+        if found[t.nodes[n].name].is_err()
+            found[t.nodes[n].name] @ n
+
+    return found
+
+test "collect_fields: keys in order, @skip and @include, fragments that apply once each"
+    m = fixture.pets()
+    t = fixture.tree_of(
+        "{ dog { a: name name @skip(if: true) nickname @include(if: $x) ...F ...F ... on Cat { meowVolume } ... on Pet { name } } } fragment F on Dog { barkVolume }"
+    )
+    dog = tree.kids_of(t, n: tree.kid_of(t, n: 1, kind: tree.SELECTION_SET), kind: tree.FIELD)[0]
+    set = tree.kid_of(t, n: dog, kind: tree.SELECTION_SET)
+    hidden = collect_fields(
+        t,
+        m: m,
+        fragments: fragments_of(t),
+        variables: {"x": .boolean(v: false)},
+        object_type: "Dog",
+        sets: [set]
+    )
+    assert hidden.keys == ["a", "barkVolume", "name"]
+    shown = collect_fields(t, m: m, fragments: fragments_of(t), variables: {}, object_type: "Dog", sets: [set])
+    assert shown.keys == ["a", "nickname", "barkVolume", "name"]
+    assert does_condition_match(m, condition: "Pet", object_type: "Dog")
+    assert !does_condition_match(m, condition: "Cat", object_type: "Dog")
+    assert does_condition_match(m, condition: "", object_type: "Dog")

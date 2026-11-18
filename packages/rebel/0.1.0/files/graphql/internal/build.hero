@@ -1,0 +1,682 @@
+# A schema built from its text, as graphql-js's `buildASTSchema` and
+# `extendSchema` build it: the SDL rules first (`schema_check`), then each
+# type from its definition and its extensions in the order the text writes
+# them, defaults coerced once every type is known, the roots from a `schema`
+# definition or the names `Query`, `Mutation` and `Subscription`, the type map
+# in graphql-js's order, and last the type system's rules (`schema_valid`).
+
+use graphql/internal/builtins
+use graphql/internal/model
+use graphql/internal/parser
+use graphql/internal/schema_check
+use graphql/internal/schema_valid
+use graphql/internal/tree
+use graphql/internal/values
+use graphql/internal/vtree
+use json
+
+# What `build` answers.
+record Built
+    # The schema, or the one extended where there are errors.
+    model: model.Model
+    # The errors, none where the schema stands.
+    errors: [tree.Err]
+
+# The reason `@deprecated` gives where it names none.
+constant DEFAULT_REASON: str
+    "No longer supported"
+
+# A schema of nothing but what the specification defines on every one.
+function library() -> model.Model
+    parsed = parser.parse(builtins.builtins_text(), most_tokens: 100000, most_depth: 64, most_directives: 50)
+    assert parsed.code == ""
+    t = parsed.tree
+    types: {str: model.Type} @= {}
+    directives: [model.Directive] @= []
+
+    for n in tree.kids(t, n: 0)
+        if t.nodes[n].kind == tree.DIRECTIVE_DEFINITION
+            d @= directive_from(t, n: n)
+            d.builtin @ true
+            d.at @ -1
+            directives @ directives.push(d)
+        else
+            ty @= type_from(t, n: n)
+            ty.builtin @ true
+            ty.at @ -1
+            types[ty.name] @ ty
+
+    m @= model.Model(
+        types: types,
+        query: "",
+        mutation: "",
+        subscription: "",
+        directives: directives,
+        description: "",
+        described: false,
+        implementations: {},
+        at: -1
+    )
+    m @ with_defaults(t, m: m)
+    return forget_places(m)
+
+# Whether `name` is a specified scalar or an introspection type.
+function is_standard(name: str) -> bool
+    for s in schema_check.standard_names()
+        if s == name
+            return true
+
+    return false
+
+# The schema `t` writes, or `old` extended by it where `extending`.
+function build(t: tree.Tree lent, old: model.Model, extending: bool, suggest_names: bool) -> Built
+    lib = library()
+
+    against = if extending
+        old
+    else
+        lib
+    errors = schema_check.check(t, old: against, extending: extending, suggest_names: suggest_names)
+
+    if errors.len() > 0
+        return Built(model: old, errors: errors)
+    every_type: {str: model.Type} @= lib.types
+    config: [str] @= []
+    directives: [model.Directive] @= []
+    m @= model.Model(
+        types: {},
+        query: "",
+        mutation: "",
+        subscription: "",
+        directives: [],
+        description: "",
+        described: false,
+        implementations: {},
+        at: -1
+    )
+
+    if extending
+        m @ forget_places(old)
+
+        for name in keys(m.types)
+            every_type[name] @ m.types[name].must()
+            config @ config.push(name)
+
+        directives @ m.directives
+
+    for n in tree.kids(t, n: 0)
+        node = t.nodes[n]
+
+        if schema_check.is_type_definition(node.kind)
+            if !is_standard(node.name)
+                every_type[node.name] @ type_from(t, n: n)
+
+            if !has(config, word: node.name)
+                config @ config.push(node.name)
+        else if node.kind == tree.DIRECTIVE_DEFINITION
+            directives @ directives.push(directive_from(t, n: n))
+
+    if !extending
+        for d in lib.directives
+            if !has_directive(directives, name: d.name)
+                directives @ directives.push(d)
+
+    for n in tree.kids(t, n: 0)
+        node = t.nodes[n]
+
+        if schema_check.is_type_extension(node.kind) && !is_standard(node.name)
+            match every_type[node.name]
+                .ok found =>
+                    ty @= found
+                    ty.extended_at @ ty.extended_at.push(node.at)
+                    add_members(t, n: n, @ty)
+                    every_type[node.name] @ ty
+                .err _ => _ = 0
+
+    m.types @ every_type
+    m.directives @ directives
+    read_roots(t, @m, extending: extending)
+    m @ with_defaults(t, m: m)
+    m.types @ ordered(m, config: config)
+    m.implementations @ implementations_of(m)
+    found = schema_valid.validate(t, m: m)
+
+    if found.len() > 0
+        return Built(model: old, errors: found)
+    return Built(model: m, errors: [])
+
+# Whether `words` holds `word`.
+function has(words: [str], word: str) -> bool
+    for w in words
+        if w == word
+            return true
+
+    return false
+
+# Whether `directives` holds one named `name`.
+function has_directive(directives: [model.Directive], name: str) -> bool
+    for d in directives
+        if d.name == name
+            return true
+
+    return false
+
+# Reads the roots and the description from `t`'s `schema` definition and
+# extensions, or takes the types named `Query`, `Mutation` and `Subscription`
+# where a new schema has no definition.
+function read_roots(t: tree.Tree lent, @m: model.Model, extending: bool)
+    defined @= false
+
+    for n in tree.kids(t, n: 0)
+        k = t.nodes[n].kind
+
+        if k == tree.SCHEMA_DEFINITION || k == tree.SCHEMA_EXTENSION
+            if k == tree.SCHEMA_DEFINITION
+                defined @ true
+                m.at @ t.nodes[n].at
+
+                if t.nodes[n].described
+                    m.description @ t.nodes[n].description
+                    m.described @ true
+
+            for op in tree.kids_of(t, n: n, kind: tree.OPERATION_TYPE)
+                word = t.nodes[op].text
+
+                if word == "query"
+                    m.query @ t.nodes[op].type
+                else if word == "mutation"
+                    m.mutation @ t.nodes[op].type
+                else
+                    m.subscription @ t.nodes[op].type
+
+    if !defined && !extending
+        if model.has_type(m, name: "Query")
+            m.query @ "Query"
+
+        if model.has_type(m, name: "Mutation")
+            m.mutation @ "Mutation"
+
+        if model.has_type(m, name: "Subscription")
+            m.subscription @ "Subscription"
+
+# The type node `n` of `t` defines.
+function type_from(t: tree.Tree lent, n: i64) -> model.Type
+    node = t.nodes[n]
+    k = node.kind
+
+    kind = if k == tree.SCALAR_DEFINITION
+        model.SCALAR
+    else if k == tree.OBJECT_DEFINITION
+        model.OBJECT
+    else if k == tree.INTERFACE_DEFINITION
+        model.INTERFACE
+    else if k == tree.UNION_DEFINITION
+        model.UNION
+    else if k == tree.ENUM_DEFINITION
+        model.ENUM
+    else
+        model.INPUT_OBJECT
+    ty @= model.Type(
+        name: node.name,
+        kind: kind,
+        description: node.description,
+        described: node.described,
+        fields: [],
+        interfaces: [],
+        members: [],
+        values: [],
+        inputs: [],
+        specified_by: "",
+        has_specified_by: false,
+        one_of: false,
+        builtin: false,
+        at: node.at,
+        extended_at: []
+    )
+    add_members(t, n: n, @ty)
+    return ty
+
+# Adds to `ty` what definition or extension `n` writes: interfaces, fields,
+# members, values, input fields and the directives `@specifiedBy` and
+# `@oneOf`.
+function add_members(t: tree.Tree lent, n: i64, @ty: model.Type)
+    for c in tree.kids(t, n: n)
+        node = t.nodes[c]
+        k = node.kind
+
+        if k == tree.IMPLEMENTS
+            ty.interfaces @ ty.interfaces.push(node.name)
+        else if k == tree.UNION_MEMBER
+            ty.members @ ty.members.push(node.name)
+        else if k == tree.FIELD_DEFINITION
+            ty.fields @ ty.fields.push(field_from(t, n: c))
+        else if k == tree.INPUT_VALUE_DEFINITION
+            ty.inputs @ ty.inputs.push(input_from(t, n: c))
+        else if k == tree.ENUM_VALUE_DEFINITION
+            reason = deprecation_of(t, n: c)
+            ty.values @ ty.values.push(
+                model.EnumValue(name: node.name, description: node.description, described: node.described, deprecated: reason.deprecated, reason: reason.text, at: node.at)
+            )
+        else if k == tree.DIRECTIVE && node.name == "specifiedBy"
+            url = argument_text(t, directive: c, name: "url")
+
+            if url.deprecated
+                ty.specified_by @ url.text
+                ty.has_specified_by @ true
+        else if k == tree.DIRECTIVE && node.name == "oneOf"
+            ty.one_of @ true
+
+# What `deprecation_of` and `argument_text` answer.
+record Text
+    # Whether it is there.
+    deprecated: bool
+    # Its text.
+    text: str
+
+# Whether `@deprecated` marks node `n`, and its reason: the one it names,
+# or `DEFAULT_REASON`; a `null` reason marks nothing.
+function deprecation_of(t: tree.Tree lent, n: i64) -> Text
+    for d in tree.kids_of(t, n: n, kind: tree.DIRECTIVE)
+        if t.nodes[d].name == "deprecated"
+            for a in tree.kids_of(t, n: d, kind: tree.ARGUMENT)
+                if t.nodes[a].name == "reason"
+                    v = tree.value_of(t, n: a)
+
+                    if t.nodes[v].kind == tree.NULL
+                        return Text(deprecated: false, text: "")
+
+                    if t.nodes[v].kind == tree.STRING
+                        return Text(deprecated: true, text: t.nodes[v].text)
+
+            return Text(deprecated: true, text: DEFAULT_REASON)
+
+    return Text(deprecated: false, text: "")
+
+# The string the argument `name` of the directive at `directive` gives:
+# `deprecated` set where it gives one.
+function argument_text(t: tree.Tree lent, directive: i64, name: str) -> Text
+    for a in tree.kids_of(t, n: directive, kind: tree.ARGUMENT)
+        if t.nodes[a].name == name
+            v = tree.value_of(t, n: a)
+
+            if t.nodes[v].kind == tree.STRING
+                return Text(deprecated: true, text: t.nodes[v].text)
+
+    return Text(deprecated: false, text: "")
+
+# The field node `n` defines.
+function field_from(t: tree.Tree lent, n: i64) -> model.Field
+    node = t.nodes[n]
+    arguments: [model.InputValue] @= []
+
+    for a in tree.kids_of(t, n: n, kind: tree.INPUT_VALUE_DEFINITION)
+        arguments @ arguments.push(input_from(t, n: a))
+
+    reason = deprecation_of(t, n: n)
+    return model.Field(
+        name: node.name,
+        description: node.description,
+        described: node.described,
+        arguments: arguments,
+        type: node.type,
+        deprecated: reason.deprecated,
+        reason: reason.text,
+        at: node.at,
+        type_at: node.type_start
+    )
+
+# The argument or input field node `n` defines, its default not yet read.
+function input_from(t: tree.Tree lent, n: i64) -> model.InputValue
+    node = t.nodes[n]
+    reason = deprecation_of(t, n: n)
+    return model.InputValue(
+        name: node.name,
+        description: node.description,
+        described: node.described,
+        type: node.type,
+        has_default: false,
+        default: .null_value,
+        deprecated: reason.deprecated,
+        reason: reason.text,
+        at: node.at,
+        type_at: node.type_start
+    )
+
+# The directive node `n` defines.
+function directive_from(t: tree.Tree lent, n: i64) -> model.Directive
+    node = t.nodes[n]
+    arguments: [model.InputValue] @= []
+
+    for a in tree.kids_of(t, n: n, kind: tree.INPUT_VALUE_DEFINITION)
+        arguments @ arguments.push(input_from(t, n: a))
+
+    locations: [str] @= []
+
+    for l in tree.kids_of(t, n: n, kind: tree.LOCATION)
+        locations @ locations.push(t.nodes[l].name)
+
+    return model.Directive(
+        name: node.name,
+        description: node.description,
+        described: node.described,
+        arguments: arguments,
+        repeatable: node.flag,
+        locations: locations,
+        builtin: false,
+        at: node.at
+    )
+
+# `m` with the defaults `t` writes coerced to their types: a default its type
+# refuses is no default, as graphql-js's `valueFromAST` leaves it.
+function with_defaults(t: tree.Tree lent, m: model.Model) -> model.Model
+    out @= m
+    i @= 0
+
+    while i < t.nodes.len()
+        node = t.nodes[i]
+
+        if node.kind == tree.INPUT_VALUE_DEFINITION && tree.value_of(t, n: i) >= 0
+            coerced = values.coerce(
+                out,
+                vs: vtree.from_literal(t, n: tree.value_of(t, n: i)),
+                type: node.type,
+                literal: true,
+                variables: {},
+                suggest_names: false
+            )
+
+            if coerced.ok
+                set_default(t, n: i, @out, value: coerced.value)
+        i @ i + 1
+
+    return out
+
+# Sets the default of the argument or input field node `n` defines in `m`.
+function set_default(t: tree.Tree lent, n: i64, @m: model.Model, value: json.Value)
+    up = t.nodes[n].parent
+    name = t.nodes[n].name
+    k = t.nodes[up].kind
+
+    if k == tree.DIRECTIVE_DEFINITION
+        d @= 0
+
+        while d < m.directives.len()
+            if m.directives[d].name == t.nodes[up].name
+                a @= 0
+
+                while a < m.directives[d].arguments.len()
+                    if m.directives[d].arguments[a].name == name
+                        m.directives[d].arguments[a].has_default @ true
+                        m.directives[d].arguments[a].default @ value
+                    a @ a + 1
+            d @ d + 1
+
+        return
+
+    if k == tree.FIELD_DEFINITION
+        owner = t.nodes[t.nodes[up].parent].name
+
+        ty @= match m.types[owner]
+            .ok got => got
+            .err _  => return
+
+        f @= 0
+
+        while f < ty.fields.len()
+            if ty.fields[f].name == t.nodes[up].name
+                a @= 0
+
+                while a < ty.fields[f].arguments.len()
+                    if ty.fields[f].arguments[a].name == name
+                        ty.fields[f].arguments[a].has_default @ true
+                        ty.fields[f].arguments[a].default @ value
+                    a @ a + 1
+            f @ f + 1
+
+        m.types[owner] @ ty
+        return
+
+    ty @= match m.types[t.nodes[up].name]
+        .ok got => got
+        .err _  => return
+
+    a @= 0
+
+    while a < ty.inputs.len()
+        if ty.inputs[a].name == name
+            ty.inputs[a].has_default @ true
+            ty.inputs[a].default @ value
+        a @ a + 1
+
+    m.types[t.nodes[up].name] @ ty
+
+# `m` with every place in a text forgotten: a schema extended keeps its
+# types, but not where an older text wrote them.
+function forget_places(m: model.Model) -> model.Model
+    out @= m
+    names = keys(out.types)
+
+    for name in names
+        ty @= out.types[name].must()
+        ty.at @ -1
+        ty.extended_at @ []
+        f @= 0
+
+        while f < ty.fields.len()
+            ty.fields[f].at @ -1
+            ty.fields[f].type_at @ -1
+            a @= 0
+
+            while a < ty.fields[f].arguments.len()
+                ty.fields[f].arguments[a].at @ -1
+                ty.fields[f].arguments[a].type_at @ -1
+                a @ a + 1
+
+            f @ f + 1
+
+        i @= 0
+
+        while i < ty.inputs.len()
+            ty.inputs[i].at @ -1
+            ty.inputs[i].type_at @ -1
+            i @ i + 1
+
+        v @= 0
+
+        while v < ty.values.len()
+            ty.values[v].at @ -1
+            v @ v + 1
+
+        out.types[name] @ ty
+
+    d @= 0
+
+    while d < out.directives.len()
+        out.directives[d].at @ -1
+        a @= 0
+
+        while a < out.directives[d].arguments.len()
+            out.directives[d].arguments[a].at @ -1
+            out.directives[d].arguments[a].type_at @ -1
+            a @ a + 1
+
+        d @ d + 1
+
+    out.at @ -1
+    return out
+
+# The names the type `name` refers to, in graphql-js's order: a union's
+# members; an object's or an interface's interfaces, then each field's type
+# and its arguments' types; an input object's fields' types.
+function references_of(m: model.Model lent, name: str) -> [str]
+    found: [str] @= []
+
+    match m.types[name]
+        .ok ty =>
+            for member in ty.members
+                found @ found.push(member)
+
+            for i in ty.interfaces
+                found @ found.push(i)
+
+            for f in ty.fields
+                found @ found.push(model.named_of(f.type))
+
+                for a in f.arguments
+                    found @ found.push(model.named_of(a.type))
+
+            for i in ty.inputs
+                found @ found.push(model.named_of(i.type))
+        .err _ => _ = 0
+
+    return found
+
+# `m`'s types in graphql-js's order of its type map: the types of `config`
+# in their order, each followed by the specified ones it first refers to,
+# then those the directives and the introspection types refer to.
+function ordered(m: model.Model lent, config: [str]) -> {str: model.Type}
+    in_config: {str: bool} @= {}
+
+    for name in config
+        in_config[name] @ true
+
+    seen: {str: bool} @= {}
+    order: [str] @= []
+
+    for name in config
+        visit(m, start: name, in_config: in_config, seen: @seen, order: @order)
+
+    for root in [m.query, m.mutation, m.subscription]
+        if root != ""
+            visit(m, start: root, in_config: in_config, seen: @seen, order: @order)
+
+    for d in m.directives
+        for a in d.arguments
+            visit(m, start: model.named_of(a.type), in_config: in_config, seen: @seen, order: @order)
+
+    visit(m, start: "__Schema", in_config: in_config, seen: @seen, order: @order)
+    types: {str: model.Type} @= {}
+
+    for name in order
+        match m.types[name]
+            .ok ty => types[name] @ ty
+            .err _ => _ = 0
+
+    return types
+
+# Adds `start`, unless seen, and then every type it refers to that is not in
+# `config` and not seen, depth first, with an explicit stack.
+function visit(m: model.Model lent, start: str, in_config: {str: bool} lent, @seen: {str: bool}, @order: [str])
+    stack: [str] @= [start]
+    top @= 1
+
+    while top > 0
+        top @ top - 1
+        name = stack[top]
+
+        if seen[name].default(false) || name != start && in_config[name].default(false)
+            continue
+        seen[name] @ true
+        order @ order.push(name)
+        refs = references_of(m, name: name)
+        i @= refs.len() - 1
+
+        while i >= 0
+            if top < stack.len()
+                stack[top] @ refs[i]
+            else
+                stack @ stack.push(refs[i])
+            top @ top + 1
+            i @ i - 1
+
+# Each interface's implementations, objects and interfaces, in the order of
+# the type map.
+function implementations_of(m: model.Model lent) -> {str: [str]}
+    found: {str: [str]} @= {}
+
+    for name in keys(m.types)
+        ty = m.types[name].must()
+
+        if ty.kind == model.OBJECT || ty.kind == model.INTERFACE
+            for i in ty.interfaces
+                list @= found[i].default([])
+                list @ list.push(name)
+                found[i] @ list
+
+    return found
+
+test "build: graphql-js's order of the type map, the specified scalars where first referred to"
+    m = schema_from_text(
+        "type Query { a: Foo } union Foo = A | B type B { x: ID } type A { y: Float, b: Bar } enum Bar { X } directive @dd(a: Int) on FIELD"
+    )
+    assert keys(m.types) == ["Query", "Foo", "B", "ID", "A", "Float", "Bar", "Int", "Boolean", "String", "__Schema", "__Type", "__TypeKind", "__Field", "__InputValue", "__EnumValue", "__Directive", "__DirectiveLocation"]
+    names: [str] @= []
+
+    for d in m.directives
+        names @ names.push(d.name)
+
+    assert names == ["dd", "include", "skip", "deprecated", "specifiedBy", "oneOf"]
+
+test "build: graphql-js's errors of a text that breaks the SDL rules or the type system's"
+    cases = [
+        ["type Query { a: Foo }", "Unknown type \"Foo\". @1:17"]
+        ["type Query { a: Int } type Query { b: Int }", "There can be only one type named \"Query\". @1:6"]
+        ["type Mutation { a: Int }", "Query root type must be provided."]
+        ["schema { query: In } input In { a: Int }", "Query root type must be Object type, it cannot be In. @1:17"]
+        ["type Query { __a: Int }", "Name \"__a\" must not begin with \"__\", which is reserved by GraphQL introspection. @1:14"]
+        ["type Query { a: Int } interface I { a: Int } type T implements I & I { b: Int }", "Interface field I.a expected but T does not provide it. @1:37"]
+        ["type Query { a: Int } interface I implements I { a: Int }", "Type I cannot implement itself because it would create a circular reference. @1:46"]
+        ["type Query { a: Int } union U = Query | Query | In input In { a: Int }", "Union type U can only include type Query once. @1:33"]
+        ["type Query { a: Int } input A { b: B! } input B { a: A! }", "Cannot reference Input Object \"A\" within itself through a series of non-null fields: \"b.a\". @1:33"]
+        ["type Query { a: Int } input O @oneOf { a: Int!, b: Int = 1 }", "OneOf input field O.a must be nullable. @1:43"]
+        ["type Query { a(x: Int! @deprecated): Int }", "Required argument Query.a(x:) cannot be deprecated. @1:24"]
+        ["type Query { a: Int @unknown @deprecated(reason: \"x\") @deprecated }", "The directive \"@deprecated\" can only be used once at this location. @1:30"]
+        ["type Query { a: Int } extend type Query { a: Int }", "Field \"Query.a\" can only be defined once. @1:14"]
+        ["type Query { a: Int } enum E { A A } scalar S extend union S = Query", "Enum value \"E.A\" can only be defined once. @1:32"]
+    ]
+
+    for c in cases
+        parsed = parser.parse(c[0], most_tokens: 1000, most_depth: 64, most_directives: 50)
+        built = build(parsed.tree, old: library(), extending: false, suggest_names: true)
+        assert messages_with_places(built.errors)[0] == c[1]
+
+test "build: an extension of a schema, and the reason @deprecated gives by default"
+    parsed = parser.parse(
+        "extend type Query { b: Int @deprecated }",
+        most_tokens: 1000,
+        most_depth: 64,
+        most_directives: 50
+    )
+    built = build(parsed.tree, old: schema_from_text("type Query { a: Int }"), extending: true, suggest_names: true)
+    assert built.errors.len() == 0
+    b = model.field_of(built.model, type_name: "Query", name: "b").must()
+    assert b.deprecated
+    assert b.reason == DEFAULT_REASON
+    again = build(parsed.tree, old: built.model, extending: true, suggest_names: true)
+    assert messages_with_places(again.errors) == ["Field \"Query.b\" already exists in the schema. It cannot also be defined in this type extension. @1:21"]
+
+test "library: what every schema holds, its places forgotten"
+    lib = library()
+    assert model.has_type(lib, name: "__Schema")
+    assert lib.directives.len() == 5
+    assert lib.types["String"].must().builtin
+
+# The schema `sdl` writes, for the tests: a text that breaks a rule aborts.
+function schema_from_text(sdl: str) -> model.Model
+    parsed = parser.parse(sdl, most_tokens: 100000, most_depth: 64, most_directives: 50)
+    assert parsed.code == ""
+    built = build(parsed.tree, old: library(), extending: false, suggest_names: true)
+    assert built.errors.len() == 0
+    return built.model
+
+# The messages of `errors`, each with its first place, for the tests.
+function messages_with_places(errors: [tree.Err]) -> [str]
+    out: [str] @= []
+
+    for e in errors
+        if e.locations.len() > 0
+            out @ out.push(f"{e.message} @{e.locations[0].line}:{e.locations[0].column}")
+        else
+            out @ out.push(e.message)
+
+    return out

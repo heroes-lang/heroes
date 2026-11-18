@@ -1,0 +1,908 @@
+# The rule that fields answering under one key can be merged (section
+# 5.3.2), as graphql-js's `OverlappingFieldsCanBeMergedRule` finds and words
+# its conflicts: the fields of each selection set compared among themselves,
+# with those of each fragment it spreads and between the fragments, and the
+# selections of two fields compared in turn, a conflict below wrapped as
+# `subfields "x" conflict because ...`. graphql-js recurses; here every call
+# is a frame of work on an explicit stack, each loop a frame that resumes at
+# its index, so the comparisons and the pairs they remember happen in the
+# same order and nothing recurses.
+
+use graphql/internal/fixture
+use graphql/internal/model
+use graphql/internal/printer
+use graphql/internal/suggest
+use graphql/internal/tree
+use graphql/internal/vcontext
+
+# One field of a field map: where it stands and what defines it.
+record Ref
+    # The type it is selected on, "" where unknown.
+    parent: str
+    # The field's node.
+    node: i64
+    # Whether its parent defines it.
+    has_def: bool
+    # Its type, where it does.
+    type: str
+
+# The fields of a selection set by response key, and the fragments it
+# spreads.
+record FieldMap
+    # The keys, in order.
+    names: [str]
+    # The refs of each key, as indices of `State.refs`.
+    refs: {str: [i64]}
+    # The fragments spread, each once, in order.
+    fragments: [str]
+
+# A conflict found.
+record Conflict
+    # The key the fields share.
+    response: str
+    # Why they conflict, worded whole.
+    reason: str
+    # The first side's fields.
+    fields1: [i64]
+    # The second side's fields.
+    fields2: [i64]
+    # The next conflict of the same list, -1 for none.
+    next: i64
+
+# A frame of work.
+record Work
+    # Its kind, one of the constants below.
+    kind: i64
+    # The list of conflicts it adds to.
+    list: i64
+    # The first field map.
+    map1: i64
+    # The second field map.
+    map2: i64
+    # A fragment's name, or a key.
+    a: str
+    # A fragment's name.
+    b: str
+    # Whether the parents are mutually exclusive.
+    exclusive: bool
+    # Where a loop stands.
+    stage: i64
+    # A loop's first index.
+    i: i64
+    # A loop's second index.
+    j: i64
+    # A loop's third index.
+    k: i64
+    # The first field.
+    ref1: i64
+    # The second field.
+    ref2: i64
+    # The list of conflicts below a field pair.
+    child: i64
+
+# Frame kinds.
+constant WITHIN: i64
+    1
+
+# Between two field maps.
+constant BETWEEN: i64
+    2
+
+# Between a field map and a fragment.
+constant FIELDS_FRAGMENT: i64
+    3
+
+# Between two fragments.
+constant FRAGMENTS: i64
+    4
+
+# One pair of fields.
+constant FIND: i64
+    5
+
+# The selections of two fields.
+constant SUBSETS: i64
+    6
+
+# The conflicts below a pair wrapped into one.
+constant FINISH: i64
+    7
+
+# A selection set and its fragments.
+constant TOP: i64
+    8
+
+# The state of the rule over one document.
+record State
+    # Every field ref.
+    refs: [Ref]
+    # Every field map.
+    maps: [FieldMap]
+    # The field map of each selection set, by node.
+    map_of_set: {i64: i64}
+    # The fragment pairs compared, with whether they were compared as
+    # mutually exclusive.
+    compared: {str: bool}
+    # The pairs of a field map and a fragment compared, the same way.
+    compared_maps: {str: bool}
+    # Every conflict.
+    conflicts: [Conflict]
+    # The first conflict of each list, -1 for none.
+    first: [i64]
+    # The last conflict of each list, -1 for none.
+    last: [i64]
+    # The work, its live part the first `top`.
+    work: [Work]
+    # How much work is live.
+    top: i64
+
+# A new state.
+function state_of() -> State
+    return State(
+        refs: [],
+        maps: [],
+        map_of_set: {},
+        compared: {},
+        compared_maps: {},
+        conflicts: [],
+        first: [],
+        last: [],
+        work: [],
+        top: 0
+    )
+
+# A frame of `kind` with nothing set.
+function frame(kind: i64, list: i64) -> Work
+    return Work(
+        kind: kind,
+        list: list,
+        map1: -1,
+        map2: -1,
+        a: "",
+        b: "",
+        exclusive: false,
+        stage: 0,
+        i: 0,
+        j: 0,
+        k: 0,
+        ref1: -1,
+        ref2: -1,
+        child: -1
+    )
+
+# Pushes `w` on the work.
+function push_work(@s: State, w: Work)
+    if s.top < s.work.len()
+        s.work[s.top] @ w
+    else
+        grow_work(@s.work, w: w)
+    s.top @ s.top + 1
+
+# Adds `w` at the end of `work`.
+function grow_work(@pending: [Work], w: Work)
+    pending @ pending.push(w)
+
+# A new empty list of conflicts, its index.
+function new_list(@s: State) -> i64
+    add_number(@s.first, v: -1)
+    add_number(@s.last, v: -1)
+    return s.first.len() - 1
+
+# Adds `v` at the end of `xs`.
+function add_number(@xs: [i64], v: i64)
+    xs @ xs.push(v)
+
+# Adds `c` at the end of the list `list`.
+function add_conflict(@s: State, list: i64, c: Conflict)
+    at = s.conflicts.len()
+    grow_conflicts(@s.conflicts, c: c)
+
+    if s.last[list] < 0
+        s.first[list] @ at
+    else
+        s.conflicts[s.last[list]].next @ at
+    s.last[list] @ at
+
+# Adds `c` at the end of `conflicts`.
+function grow_conflicts(@conflicts: [Conflict], c: Conflict)
+    conflicts @ conflicts.push(c)
+
+# The conflicts of `list`, in order.
+function list_of(s: State lent, list: i64) -> [i64]
+    found: [i64] @= []
+    c @= s.first[list]
+
+    while c >= 0
+        found @ found.push(c)
+        c @ s.conflicts[c].next
+
+    return found
+
+# The key of the pair of fragments `a` and `b`, in either order.
+function pair_key(a: str, b: str) -> str
+    if suggest.natural_compare(a: a, b: b) < 0
+        return a + "\n" + b
+    return b + "\n" + a
+
+# Whether the pair was compared, as graphql-js's `PairSet.has` answers: one
+# compared as not exclusive answers for both.
+function has_pair(s: State lent, a: str, b: str, exclusive: bool) -> bool
+    match s.compared[pair_key(a: a, b: b)]
+        .ok was =>
+            if exclusive
+                return true
+            return !was
+        .err _ => return false
+
+# How many fields under one key a field map keeps before it keeps only those
+# that differ: past it, two fields written alike on the same type are kept
+# once, so that ten thousand copies of one field cost one comparison and not
+# fifty million. Below it the comparisons are graphql-js's, pair by pair.
+constant MANY: i64
+    100
+
+# The key, the type and the text of the field at `n`: two fields with one
+# signature are compared alike with every other field.
+function signature_of(t: tree.Tree lent, key: str, on: str, n: i64) -> str
+    return key + "\n" + on + "\n" + printer.print_node(t, n: n)
+
+# The field map of the selection set `set` on `parent`, made once and kept.
+function field_map(t: tree.Tree lent, m: model.Model lent, @s: State, parent: str, set: i64) -> i64
+    match s.map_of_set[set]
+        .ok got => return got
+        .err _  => _ = 0
+
+    names: [str] @= []
+    refs: {str: [i64]} @= {}
+    fragments: [str] @= []
+    seen: {str: bool} @= {}
+    signed: {str: bool} @= {}
+    signatures: {str: bool} @= {}
+    stack: [i64] @= [t.nodes[set].first]
+    parents: [str] @= [parent]
+    top @= 1
+
+    while top > 0
+        c = stack[top - 1]
+
+        if c < 0
+            top @ top - 1
+            continue
+        stack[top - 1] @ t.nodes[c].next
+        node = t.nodes[c]
+
+        if node.kind == tree.FIELD
+            on = parents[top - 1]
+
+            key = if node.alias != ""
+                node.alias
+            else
+                node.name
+            defined_type = def_of(m, on: on, name: node.name)
+            at = s.refs.len()
+            grow_refs(@s.refs, r: Ref(parent: on, node: c, has_def: defined_type != "", type: defined_type))
+
+            match refs[key]
+                .ok list =>
+                    if list.len() < MANY
+                        refs[key] @ list.push(at)
+                    else
+                        if !signed[key].default(false)
+                            signed[key] @ true
+
+                            for r in list
+                                signatures[signature_of(t, key: key, on: s.refs[r].parent, n: s.refs[r].node)] @ true
+                        mark = signature_of(t, key: key, on: on, n: c)
+
+                        if !signatures[mark].default(false)
+                            signatures[mark] @ true
+                            refs[key] @ list.push(at)
+                .err _ =>
+                    names @ names.push(key)
+                    refs[key] @ [at]
+        else if node.kind == tree.FRAGMENT_SPREAD
+            if !seen[node.name].default(false)
+                seen[node.name] @ true
+                fragments @ fragments.push(node.name)
+        else if node.kind == tree.INLINE_FRAGMENT
+            inner = tree.kid_of(t, n: c, kind: tree.SELECTION_SET)
+
+            on = if node.type == ""
+                parents[top - 1]
+            else if model.has_type(m, name: node.type)
+                node.type
+            else
+                ""
+
+            if inner >= 0
+                if top < stack.len()
+                    stack[top] @ t.nodes[inner].first
+                    parents[top] @ on
+                else
+                    stack @ stack.push(t.nodes[inner].first)
+                    parents @ parents.push(on)
+                top @ top + 1
+
+    index = s.maps.len()
+    grow_maps(@s.maps, f: FieldMap(names: names, refs: refs, fragments: fragments))
+    s.map_of_set[set] @ index
+    return index
+
+# Adds `r` at the end of `refs`.
+function grow_refs(@refs: [Ref], r: Ref)
+    refs @ refs.push(r)
+
+# Adds `f` at the end of `maps`.
+function grow_maps(@maps: [FieldMap], f: FieldMap)
+    maps @ maps.push(f)
+
+# The type of the field `name` the object type or interface `on` defines,
+# "" where none does: a meta-field has no definition here.
+function def_of(m: model.Model lent, on: str, name: str) -> str
+    match m.types[on]
+        .ok ty =>
+            if ty.kind == model.OBJECT || ty.kind == model.INTERFACE
+                for f in ty.fields
+                    if f.name == name
+                        return f.type
+        .err _ => _ = 0
+
+    return ""
+
+# The field map of the fragment `name`, -1 where the document defines none.
+function fragment_map(t: tree.Tree lent, m: model.Model lent, @s: State, fragments: {str: i64} lent, name: str) -> i64
+    f = match fragments[name]
+        .ok got => got
+        .err _  => return -1
+
+    condition = t.nodes[f].type
+
+    parent = if model.has_type(m, name: condition)
+        condition
+    else
+        ""
+    return field_map(t, m: m, @s, parent: parent, set: tree.kid_of(t, n: f, kind: tree.SELECTION_SET))
+
+# The conflicts within the selection set `set` on `parent`, each reported.
+function check_set(t: tree.Tree lent, m: model.Model lent, @s: State, fragments: {str: i64} lent, @run: vcontext.Run, parent: str, set: i64)
+    list = new_list(@s)
+    top_frame @= frame(kind: TOP, list: list)
+    top_frame.map1 @ field_map(t, m: m, @s, parent: parent, set: set)
+    push_work(@s, w: top_frame)
+    work(t, m: m, @s, fragments: fragments)
+
+    for c in list_of(s, list: list)
+        conflict = s.conflicts[c]
+        places: [i64] @= []
+
+        for n in conflict.fields1
+            places @ places.push(n)
+
+        for n in conflict.fields2
+            places @ places.push(n)
+
+        vcontext.report(
+            @run,
+            e: tree.err_at(t, message: f"Fields \"{conflict.response}\" conflict because {conflict.reason}. Use different aliases on the fields to fetch both if this was intentional.", nodes: places)
+        )
+
+# Runs the work until none is left.
+function work(t: tree.Tree lent, m: model.Model lent, @s: State, fragments: {str: i64} lent)
+    while s.top > 0
+        s.top @ s.top - 1
+        w = s.work[s.top]
+
+        if w.kind == TOP
+            step_top(@s, w: w)
+        else if w.kind == WITHIN
+            step_within(@s, w: w)
+        else if w.kind == BETWEEN
+            step_between(@s, w: w)
+        else if w.kind == FIELDS_FRAGMENT
+            step_fields_fragment(t, m: m, @s, fragments: fragments, w: w)
+        else if w.kind == FRAGMENTS
+            step_fragments(t, m: m, @s, fragments: fragments, w: w)
+        else if w.kind == FIND
+            step_find(t, m: m, @s, w: w)
+        else if w.kind == SUBSETS
+            step_subsets(@s, w: w)
+        else
+            step_finish(@s, w: w)
+
+# A selection set's own fields, then each fragment it spreads against them
+# and against the fragments after it.
+function step_top(@s: State, w: Work)
+    names = s.maps[w.map1].fragments
+
+    if w.stage == 0
+        again @= w
+        again.stage @ 1
+        push_work(@s, w: again)
+        within @= frame(kind: WITHIN, list: w.list)
+        within.map1 @ w.map1
+        push_work(@s, w: within)
+        return
+
+    if w.i >= names.len()
+        return
+    again @= w
+
+    if w.j < 0 || w.j <= w.i
+        again.j @ w.i + 1
+        push_work(@s, w: again)
+        f @= frame(kind: FIELDS_FRAGMENT, list: w.list)
+        f.map1 @ w.map1
+        f.b @ names[w.i]
+        f.stage @ -1
+        push_work(@s, w: f)
+        return
+
+    if w.j >= names.len()
+        again.i @ w.i + 1
+        again.j @ -1
+        push_work(@s, w: again)
+        return
+    again.j @ w.j + 1
+    push_work(@s, w: again)
+    pair @= frame(kind: FRAGMENTS, list: w.list)
+    pair.a @ names[w.i]
+    pair.b @ names[w.j]
+    pair.stage @ -1
+    push_work(@s, w: pair)
+
+# The next pair of fields under one key of a field map.
+function step_within(@s: State, w: Work)
+    fm = s.maps[w.map1]
+    i @= w.i
+    j @= w.j
+    k @= w.k
+
+    while i < fm.names.len()
+        refs = fm.refs[fm.names[i]].must()
+
+        if k == 0
+            k @ j + 1
+
+        if j < refs.len() && k < refs.len()
+            again @= w
+            again.i @ i
+            again.j @ j
+            again.k @ k + 1
+            push_work(@s, w: again)
+            pair_find @= frame(kind: FIND, list: w.list)
+            pair_find.ref1 @ refs[j]
+            pair_find.ref2 @ refs[k]
+            pair_find.a @ fm.names[i]
+            push_work(@s, w: pair_find)
+            return
+
+        if j + 1 < refs.len()
+            j @ j + 1
+            k @ 0
+        else
+            i @ i + 1
+            j @ 0
+            k @ 0
+
+# The next pair of fields under one key of two field maps.
+function step_between(@s: State, w: Work)
+    one = s.maps[w.map1]
+    two = s.maps[w.map2]
+    i @= w.i
+    j @= w.j
+    k @= w.k
+
+    while i < one.names.len()
+        name = one.names[i]
+        left = one.refs[name].must()
+        right = two.refs[name].default([])
+
+        if j < left.len() && k < right.len()
+            again @= w
+            again.i @ i
+            again.j @ j
+            again.k @ k + 1
+            push_work(@s, w: again)
+            pair_find @= frame(kind: FIND, list: w.list)
+            pair_find.ref1 @ left[j]
+            pair_find.ref2 @ right[k]
+            pair_find.a @ name
+            pair_find.exclusive @ w.exclusive
+            push_work(@s, w: pair_find)
+            return
+
+        if j + 1 < left.len() && right.len() > 0
+            j @ j + 1
+            k @ 0
+        else
+            i @ i + 1
+            j @ 0
+            k @ 0
+
+# A field map against a fragment, then against each fragment it spreads.
+function step_fields_fragment(t: tree.Tree lent, m: model.Model lent, @s: State, fragments: {str: i64} lent, w: Work)
+    if w.stage == -1
+        key = f"{w.map1}\n{w.b}"
+
+        match s.compared_maps[key]
+            .ok was =>
+                if w.exclusive || !was
+                    return
+            .err _ => _ = 0
+
+        s.compared_maps[key] @ w.exclusive
+        other = fragment_map(t, m: m, @s, fragments: fragments, name: w.b)
+
+        if other < 0 || other == w.map1
+            return
+        again @= w
+        again.stage @ 0
+        again.map2 @ other
+        again.i @ 0
+        push_work(@s, w: again)
+        between @= frame(kind: BETWEEN, list: w.list)
+        between.map1 @ w.map1
+        between.map2 @ other
+        between.exclusive @ w.exclusive
+        push_work(@s, w: between)
+        return
+    names = s.maps[w.map2].fragments
+
+    if w.i >= names.len()
+        return
+    again @= w
+    again.i @ w.i + 1
+    push_work(@s, w: again)
+    referenced = names[w.i]
+    next @= frame(kind: FIELDS_FRAGMENT, list: w.list)
+    next.map1 @ w.map1
+    next.b @ referenced
+    next.exclusive @ w.exclusive
+    next.stage @ -1
+    push_work(@s, w: next)
+
+# Two fragments against each other, then the first against the fragments the
+# second spreads, then the fragments the first spreads against the second.
+function step_fragments(t: tree.Tree lent, m: model.Model lent, @s: State, fragments: {str: i64} lent, w: Work)
+    if w.stage == -1
+        if w.a == w.b || has_pair(s, a: w.a, b: w.b, exclusive: w.exclusive)
+            return
+        s.compared[pair_key(a: w.a, b: w.b)] @ w.exclusive
+        one = fragment_map(t, m: m, @s, fragments: fragments, name: w.a)
+        two = fragment_map(t, m: m, @s, fragments: fragments, name: w.b)
+
+        if one < 0 || two < 0
+            return
+        again @= w
+        again.stage @ 0
+        again.map1 @ one
+        again.map2 @ two
+        again.i @ 0
+        push_work(@s, w: again)
+        between @= frame(kind: BETWEEN, list: w.list)
+        between.map1 @ one
+        between.map2 @ two
+        between.exclusive @ w.exclusive
+        push_work(@s, w: between)
+        return
+
+    if w.stage == 0
+        names = s.maps[w.map2].fragments
+
+        if w.i >= names.len()
+            again @= w
+            again.stage @ 1
+            again.i @ 0
+            push_work(@s, w: again)
+            return
+        again @= w
+        again.i @ w.i + 1
+        push_work(@s, w: again)
+        next @= frame(kind: FRAGMENTS, list: w.list)
+        next.a @ w.a
+        next.b @ names[w.i]
+        next.exclusive @ w.exclusive
+        next.stage @ -1
+        push_work(@s, w: next)
+        return
+    names = s.maps[w.map1].fragments
+
+    if w.i >= names.len()
+        return
+    again @= w
+    again.i @ w.i + 1
+    push_work(@s, w: again)
+    next @= frame(kind: FRAGMENTS, list: w.list)
+    next.a @ names[w.i]
+    next.b @ w.b
+    next.exclusive @ w.exclusive
+    next.stage @ -1
+    push_work(@s, w: next)
+
+# One pair of fields: different names or arguments where their parents can
+# meet, conflicting types, or conflicts among their selections.
+function step_find(t: tree.Tree lent, m: model.Model lent, @s: State, w: Work)
+    r1 = s.refs[w.ref1]
+    r2 = s.refs[w.ref2]
+    exclusive = w.exclusive || r1.parent != r2.parent && model.kind_of(m, name: r1.parent) == model.OBJECT && model.kind_of(m, name: r2.parent) == model.OBJECT
+
+    if !exclusive
+        name1 = t.nodes[r1.node].name
+        name2 = t.nodes[r2.node].name
+
+        if name1 != name2
+            add_conflict(
+                @s,
+                list: w.list,
+                c: Conflict(response: w.a, reason: f"\"{name1}\" and \"{name2}\" are different fields", fields1: [r1.node], fields2: [r2.node], next: -1)
+            )
+            return
+
+        if !same_arguments(t, a: r1.node, b: r2.node)
+            add_conflict(
+                @s,
+                list: w.list,
+                c: Conflict(response: w.a, reason: "they have differing arguments", fields1: [r1.node], fields2: [r2.node], next: -1)
+            )
+            return
+
+    if r1.has_def && r2.has_def && types_conflict(m, a: r1.type, b: r2.type)
+        add_conflict(
+            @s,
+            list: w.list,
+            c: Conflict(response: w.a, reason: f"they return conflicting types \"{r1.type}\" and \"{r2.type}\"", fields1: [r1.node], fields2: [r2.node], next: -1)
+        )
+        return
+    set1 = tree.kid_of(t, n: r1.node, kind: tree.SELECTION_SET)
+    set2 = tree.kid_of(t, n: r2.node, kind: tree.SELECTION_SET)
+
+    if set1 < 0 || set2 < 0
+        return
+    child = new_list(@s)
+    finish @= frame(kind: FINISH, list: w.list)
+    finish.child @ child
+    finish.a @ w.a
+    finish.ref1 @ w.ref1
+    finish.ref2 @ w.ref2
+    push_work(@s, w: finish)
+    subsets @= frame(kind: SUBSETS, list: child)
+    subsets.exclusive @ exclusive
+    subsets.map1 @ field_map(t, m: m, @s, parent: model.named_of(r1.type), set: set1)
+    subsets.map2 @ field_map(t, m: m, @s, parent: model.named_of(r2.type), set: set2)
+    push_work(@s, w: subsets)
+
+# The selections of two fields: their fields, each against the other's
+# fragments, and the fragments against each other.
+function step_subsets(@s: State, w: Work)
+    if w.stage == 0
+        again @= w
+        again.stage @ 1
+        push_work(@s, w: again)
+        between @= frame(kind: BETWEEN, list: w.list)
+        between.map1 @ w.map1
+        between.map2 @ w.map2
+        between.exclusive @ w.exclusive
+        push_work(@s, w: between)
+        return
+    names1 = s.maps[w.map1].fragments
+    names2 = s.maps[w.map2].fragments
+
+    if w.stage == 1 || w.stage == 2
+        names = if w.stage == 1
+            names2
+        else
+            names1
+
+        if w.i >= names.len()
+            again @= w
+            again.stage @ w.stage + 1
+            again.i @ 0
+            push_work(@s, w: again)
+            return
+        again @= w
+        again.i @ w.i + 1
+        push_work(@s, w: again)
+        next @= frame(kind: FIELDS_FRAGMENT, list: w.list)
+        next.map1 @ if_map(w)
+        next.b @ names[w.i]
+        next.exclusive @ w.exclusive
+        next.stage @ -1
+        push_work(@s, w: next)
+        return
+
+    if w.i >= names1.len()
+        return
+    again @= w
+
+    if w.j + 1 < names2.len()
+        again.j @ w.j + 1
+    else
+        again.i @ w.i + 1
+        again.j @ 0
+
+    if names2.len() > 0
+        push_work(@s, w: again)
+        next @= frame(kind: FRAGMENTS, list: w.list)
+        next.a @ names1[w.i]
+        next.b @ names2[w.j]
+        next.exclusive @ w.exclusive
+        next.stage @ -1
+        push_work(@s, w: next)
+
+# The field map stage 1 compares against the second's fragments, the first;
+# stage 2, the second.
+function if_map(w: Work) -> i64
+    if w.stage == 1
+        return w.map1
+    return w.map2
+
+# The conflicts found below a pair, wrapped into one conflict of the pair.
+function step_finish(@s: State, w: Work)
+    below = list_of(s, list: w.child)
+
+    if below.len() == 0
+        return
+    reasons: [str] @= []
+    fields1: [i64] @= [s.refs[w.ref1].node]
+    fields2: [i64] @= [s.refs[w.ref2].node]
+
+    for c in below
+        conflict = s.conflicts[c]
+        reasons @ reasons.push(f"subfields \"{conflict.response}\" conflict because {conflict.reason}")
+
+        for n in conflict.fields1
+            fields1 @ fields1.push(n)
+
+        for n in conflict.fields2
+            fields2 @ fields2.push(n)
+
+    add_conflict(
+        @s,
+        list: w.list,
+        c: Conflict(response: w.a, reason: reasons.join(" and "), fields1: fields1, fields2: fields2, next: -1)
+    )
+
+# Whether two types conflict for fields under one key: lists and non-nulls
+# at different places, or different leaves.
+function types_conflict(m: model.Model lent, a: str, b: str) -> bool
+    x @= a
+    y @= b
+
+    while true
+        if model.is_list(x) && !model.is_non_null(x)
+            if !(model.is_list(y) && !model.is_non_null(y))
+                return true
+            x @ model.item_of(x)
+            y @ model.item_of(y)
+        else if model.is_list(y) && !model.is_non_null(y)
+            return true
+        else if model.is_non_null(x)
+            if !model.is_non_null(y)
+                return true
+            x @ model.nullable_of(x)
+            y @ model.nullable_of(y)
+        else if model.is_non_null(y)
+            return true
+        else if model.is_leaf_name(m, name: x) || model.is_leaf_name(m, name: y)
+            return x != y
+        else
+            return false
+
+    return false
+
+# Whether the fields at `a` and `b` are given the same arguments, each once,
+# their values alike once an object's fields are put in order of their names.
+function same_arguments(t: tree.Tree lent, a: i64, b: i64) -> bool
+    one = tree.kids_of(t, n: a, kind: tree.ARGUMENT)
+    two = tree.kids_of(t, n: b, kind: tree.ARGUMENT)
+
+    if one.len() != two.len()
+        return false
+
+    for x in one
+        found @= -1
+
+        for y in two
+            if found < 0 && t.nodes[y].name == t.nodes[x].name
+                found @ y
+
+        if found < 0
+            return false
+
+        if sorted_value(t, n: tree.value_of(t, n: x)) != sorted_value(t, n: tree.value_of(t, n: found))
+            return false
+
+    return true
+
+# The value at `n` written with each object's fields in the order of their
+# names, built from its last node to its first.
+function sorted_value(t: tree.Tree lent, n: i64) -> str
+    d @= n
+
+    while t.nodes[d].last >= 0
+        d @ t.nodes[d].last
+
+    end = d + 1
+    texts: [str] @= []
+    i @= n
+
+    while i < end
+        texts @ texts.push("")
+        i @ i + 1
+
+    k @= end - 1
+
+    while k >= n
+        node = t.nodes[k]
+
+        if node.kind == tree.OBJECT
+            names: [str] @= []
+            parts: [str] @= []
+
+            for c in tree.kids(t, n: k)
+                at @= names.len()
+
+                while at > 0 && suggest.natural_compare(a: names[at - 1], b: t.nodes[c].name) > 0
+                    at @ at - 1
+
+                names @ insert(names, at: at, v: t.nodes[c].name)
+                parts @ insert(parts, at: at, v: t.nodes[c].name + ": " + texts[tree.value_of(t, n: c) - n])
+
+            texts[k - n] @ "{" + parts.join(", ") + "}"
+        else if node.kind == tree.LIST
+            parts: [str] @= []
+
+            for c in tree.kids(t, n: k)
+                parts @ parts.push(texts[c - n])
+
+            texts[k - n] @ "[" + parts.join(", ") + "]"
+        else if node.kind == tree.VARIABLE
+            texts[k - n] @ "$" + node.name
+        else if node.kind == tree.STRING
+            texts[k - n] @ "\"" + node.text + "\""
+        else if node.kind == tree.NULL
+            texts[k - n] @ "null"
+        else
+            texts[k - n] @ node.text
+        k @ k - 1
+
+    return texts[0]
+
+# `xs` with `v` inserted at `at`.
+function insert(xs: [str], at: i64, v: str) -> [str]
+    out: [str] @= []
+    i @= 0
+
+    while i < xs.len()
+        if i == at
+            out @ out.push(v)
+        out @ out.push(xs[i])
+        i @ i + 1
+
+    if at >= xs.len()
+        out @ out.push(v)
+    return out
+
+test "types_conflict: lists and non-nulls at different places, and different leaves"
+    m = fixture.pets()
+    assert !types_conflict(m, a: "[Int!]", b: "[Int!]")
+    assert types_conflict(m, a: "[Int]", b: "Int")
+    assert types_conflict(m, a: "Int!", b: "Int")
+    assert types_conflict(m, a: "Int", b: "String")
+    assert !types_conflict(m, a: "Dog", b: "Cat")
+
+test "same_arguments and sorted_value: the same arguments in any order, an object's fields sorted"
+    t = fixture.tree_of("{ a(x: 1, y: {b: 2, a: 1}) a(y: {a: 1, b: 2}, x: 1) a(x: 2) }")
+    fields = tree.kids_of(t, n: 2, kind: tree.FIELD)
+    assert same_arguments(t, a: fields[0], b: fields[1])
+    assert !same_arguments(t, a: fields[0], b: fields[2])
+    assert sorted_value(t, n: tree.value_of(t, n: tree.kids_of(t, n: fields[0], kind: tree.ARGUMENT)[1])) == "{a: 1, b: 2}"
+    assert pair_key(a: "B", b: "A") == pair_key(a: "A", b: "B")
+
+test "field_map: past the most under one key, fields written alike are kept once"
+    copies = repeat(" a", 3000)
+    t = fixture.tree_of("{" + copies + " a: b }")
+    m = fixture.pets()
+    s @= state_of()
+    at = field_map(t, m: m, @s, parent: "Query", set: 2)
+    assert s.maps[at].refs["a"].must().len() == MANY + 1

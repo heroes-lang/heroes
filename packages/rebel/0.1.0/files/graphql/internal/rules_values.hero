@@ -1,0 +1,476 @@
+# The rules of section 5 about directives, arguments and values, each as
+# graphql-js words its errors: directives known, where they may stand and
+# once, arguments known, given once and given where required, values of the
+# types their places ask, input fields once, variables where their types fit;
+# and graphql-js's two rules outside the specification's, against deprecated
+# names and against introspection.
+
+use graphql/internal/fixture
+use graphql/internal/model
+use graphql/internal/printer
+use graphql/internal/schema_check
+use graphql/internal/suggest
+use graphql/internal/tree
+use graphql/internal/typeinfo
+use graphql/internal/values
+use graphql/internal/vcontext
+
+# The directive `name` of `m`, its index, -1 for none.
+function directive_index(m: model.Model lent, name: str) -> i64
+    i @= 0
+
+    while i < m.directives.len()
+        if m.directives[i].name == name
+            return i
+        i @ i + 1
+
+    return -1
+
+# Reports a directive the schema does not define, or one written where it
+# may not stand.
+function known_directive(t: tree.Tree lent, m: model.Model lent, @run: vcontext.Run, n: i64)
+    name = t.nodes[n].name
+    d = directive_index(m, name: name)
+
+    if d < 0
+        for c in tree.kids_of(t, n: 0, kind: tree.DIRECTIVE_DEFINITION)
+            if t.nodes[c].name == name
+                return
+
+        vcontext.report(@run, e: tree.err_at(t, message: f"Unknown directive \"@{name}\".", nodes: [n]))
+        return
+    place = schema_check.location_of(t, on: t.nodes[n].parent)
+
+    if place != "" && !schema_check.has_word(m.directives[d].locations, word: place)
+        vcontext.report(
+            @run,
+            e: tree.err_at(t, message: f"Directive \"@{name}\" may not be used on {place}.", nodes: [n])
+        )
+
+# Reports each directive on node `n` that is not repeatable and stands there
+# twice.
+function unique_directives(t: tree.Tree lent, m: model.Model lent, @run: vcontext.Run, n: i64)
+    seen: {str: i64} @= {}
+
+    for d in tree.kids_of(t, n: n, kind: tree.DIRECTIVE)
+        name = t.nodes[d].name
+        at = directive_index(m, name: name)
+
+        if at >= 0 && !m.directives[at].repeatable
+            match seen[name]
+                .ok first => vcontext.report(
+                    @run,
+                    e: tree.err_at(t, message: f"The directive \"@{name}\" can only be used once at this location.", nodes: [first, d])
+                )
+                .err _ => seen[name] @ d
+
+# Reports each argument of the directive at `n` it does not define.
+function known_directive_arguments(t: tree.Tree lent, m: model.Model lent, @run: vcontext.Run, n: i64)
+    name = t.nodes[n].name
+    d = directive_index(m, name: name)
+
+    if d < 0
+        return
+    names: [str] @= []
+
+    for a in m.directives[d].arguments
+        names @ names.push(a.name)
+
+    for a in tree.kids_of(t, n: n, kind: tree.ARGUMENT)
+        given = t.nodes[a].name
+
+        if !schema_check.has_word(names, word: given)
+            hint = if run.suggest
+                suggest.did_you_mean(what: "", names: suggest.suggestions_of(given, options: names))
+            else
+                ""
+            vcontext.report(
+                @run,
+                e: tree.err_at(t, message: f"Unknown argument \"{given}\" on directive \"@{name}\".{hint}", nodes: [a])
+            )
+
+# Reports an argument of a field that the field does not define.
+function known_field_argument(t: tree.Tree lent, m: model.Model lent, info: typeinfo.Info lent, @run: vcontext.Run, n: i64)
+    up = t.nodes[n].parent
+
+    if t.nodes[up].kind != tree.FIELD || info.known[n] || !info.known[up] || info.parent[up] == ""
+        return
+    given = t.nodes[n].name
+    names: [str] @= []
+
+    for a in typeinfo.arguments_of(m, owner: info.owner[up])
+        names @ names.push(a.name)
+
+    hint = if run.suggest
+        suggest.did_you_mean(what: "", names: suggest.suggestions_of(given, options: names))
+    else
+        ""
+    vcontext.report(
+        @run,
+        e: tree.err_at(t, message: f"Unknown argument \"{given}\" on field \"{info.owner[up]}\".{hint}", nodes: [n])
+    )
+
+# Reports each argument a field or a directive at `n` is given twice.
+function unique_arguments(t: tree.Tree lent, @run: vcontext.Run, n: i64)
+    order: [str] @= []
+    places: {str: [i64]} @= {}
+
+    for a in tree.kids_of(t, n: n, kind: tree.ARGUMENT)
+        name = t.nodes[a].name
+
+        match places[name]
+            .ok got => places[name] @ got.push(t.nodes[a].at)
+            .err _ =>
+                places[name] @ [t.nodes[a].at]
+                order @ order.push(name)
+
+    for name in order
+        at = places[name].must()
+
+        if at.len() > 1
+            vcontext.report(
+                @run,
+                e: tree.err_bytes(t, message: f"There can be only one argument named \"{name}\".", offsets: at)
+            )
+
+# Reports each required argument a field or a directive at `n` is not given.
+function required_arguments(t: tree.Tree lent, m: model.Model lent, info: typeinfo.Info lent, @run: vcontext.Run, n: i64)
+    node = t.nodes[n]
+    given: [str] @= []
+
+    for a in tree.kids_of(t, n: n, kind: tree.ARGUMENT)
+        given @ given.push(t.nodes[a].name)
+
+    if node.kind == tree.FIELD
+        if !info.known[n]
+            return
+
+        for a in typeinfo.arguments_of(m, owner: info.owner[n])
+            if model.is_non_null(a.type) && !a.has_default && !schema_check.has_word(given, word: a.name)
+                vcontext.report(
+                    @run,
+                    e: tree.err_at(t, message: f"Field \"{node.name}\" argument \"{a.name}\" of type \"{a.type}\" is required, but it was not provided.", nodes: [n])
+                )
+
+        return
+    d = directive_index(m, name: node.name)
+
+    if d < 0
+        return
+
+    for a in m.directives[d].arguments
+        if model.is_non_null(a.type) && !a.has_default && !schema_check.has_word(given, word: a.name)
+            vcontext.report(
+                @run,
+                e: tree.err_at(t, message: f"Directive \"@{node.name}\" argument \"{a.name}\" of type \"{a.type}\" is required, but it was not provided.", nodes: [n])
+            )
+
+# Opens a level of input field names for the object value at `n`.
+function open_object(@run: vcontext.Run)
+    if run.object_count < run.object_fields.len()
+        run.object_fields[run.object_count] @ {}
+    else
+        grow_maps(@run.object_fields)
+    run.object_count @ run.object_count + 1
+
+# Adds an empty map to `maps`.
+function grow_maps(@maps: [{str: i64}])
+    maps @ maps.push({})
+
+# Reports an input field written twice in one object value.
+function unique_input_field(t: tree.Tree lent, @run: vcontext.Run, n: i64)
+    if run.object_count == 0
+        return
+    node = t.nodes[n]
+    level = run.object_count - 1
+
+    match run.object_fields[level][node.name]
+        .ok first => vcontext.report(
+            @run,
+            e: tree.err_bytes(t, message: f"There can be only one input field named \"{node.name}\".", offsets: [first, node.at])
+        )
+        .err _ => run.object_fields[level][node.name] @ node.at
+
+# The literal at `n` as graphql-js prints it in a message.
+function shown(t: tree.Tree lent, n: i64) -> str
+    return printer.print_node(t, n: n)
+
+# Checks the value at `n` against the type its place asks, as graphql-js's
+# `ValuesOfCorrectType` does on entering it; a list or an object it cannot
+# be is reported whole and its inside passed over.
+function value_of_correct_type(t: tree.Tree lent, m: model.Model lent, info: typeinfo.Info lent, @run: vcontext.Run, n: i64)
+    if run.values_skip >= 0
+        if vcontext.is_within(t, n: n, root: run.values_skip)
+            return
+        run.values_skip @ -1
+    node = t.nodes[n]
+    k = node.kind
+
+    if k == tree.LIST
+        list = model.nullable_of(info.parent_input[n])
+
+        if !model.is_list(list)
+            check_leaf(t, m: m, location: info.input[n], @run, n: n)
+            run.values_skip @ n
+        return
+
+    if k == tree.OBJECT
+        location = info.input[n]
+        named = model.named_of(location)
+
+        if model.kind_of(m, name: named) != model.INPUT_OBJECT
+            check_leaf(t, m: m, location: location, @run, n: n)
+            run.values_skip @ n
+            return
+        ty = m.types[named].must()
+        given: [str] @= []
+        first_value: {str: i64} @= {}
+
+        for f in tree.kids_of(t, n: n, kind: tree.OBJECT_FIELD)
+            if first_value[t.nodes[f].name].is_err()
+                given @ given.push(t.nodes[f].name)
+                first_value[t.nodes[f].name] @ tree.value_of(t, n: f)
+
+        for f in ty.inputs
+            if model.is_non_null(f.type) && !f.has_default && !schema_check.has_word(given, word: f.name)
+                vcontext.report(
+                    @run,
+                    e: tree.err_at(t, message: f"Field \"{named}.{f.name}\" of required type \"{f.type}\" was not provided.", nodes: [n])
+                )
+
+        if ty.one_of
+            if given.len() != 1
+                vcontext.report(
+                    @run,
+                    e: tree.err_at(t, message: f"OneOf Input Object \"{named}\" must specify exactly one key.", nodes: [n])
+                )
+            else
+                v = first_value[given[0]].must()
+
+                if v < 0 || t.nodes[v].kind == tree.NULL
+                    vcontext.report(
+                        @run,
+                        e: tree.err_at(t, message: f"Field \"{named}.{given[0]}\" must be non-null.", nodes: [n])
+                    )
+        return
+
+    if k == tree.OBJECT_FIELD
+        parent = model.named_of(info.parent_input[n])
+
+        if info.input[n] == "" && model.kind_of(m, name: parent) == model.INPUT_OBJECT
+            names: [str] @= []
+
+            for f in m.types[parent].must().inputs
+                names @ names.push(f.name)
+
+            hint = if run.suggest
+                suggest.did_you_mean(what: "", names: suggest.suggestions_of(node.name, options: names))
+            else
+                ""
+            vcontext.report(
+                @run,
+                e: tree.err_at(t, message: f"Field \"{node.name}\" is not defined by type \"{parent}\".{hint}", nodes: [n])
+            )
+        return
+
+    if k == tree.NULL
+        if model.is_non_null(info.input[n])
+            vcontext.report(
+                @run,
+                e: tree.err_at(t, message: f"Expected value of type \"{info.input[n]}\", found null.", nodes: [n])
+            )
+        return
+
+    if k == tree.ENUM || k == tree.INT || k == tree.FLOAT || k == tree.STRING || k == tree.BOOLEAN
+        check_leaf(t, m: m, location: info.input[n], @run, n: n)
+
+# Reports the value at `n` where its place asks the type `location` and the
+# value is not one: graphql-js's `isValidValueNode`.
+function check_leaf(t: tree.Tree lent, m: model.Model lent, location: str, @run: vcontext.Run, n: i64)
+    if location == ""
+        return
+    named = model.named_of(location)
+
+    if !model.is_leaf_name(m, name: named)
+        vcontext.report(
+            @run,
+            e: tree.err_at(t, message: f"Expected value of type \"{location}\", found {shown(t, n: n)}.", nodes: [n])
+        )
+        return
+
+    if values.is_custom_scalar(m, name: named)
+        return
+    node = t.nodes[n]
+
+    match values.leaf_from_literal(m, named: named, kind: node.kind, text: node.text, shown: shown(t, n: n), suggest_names: run.suggest)
+        .ok _  => _ = 0
+        .err e => vcontext.report(@run, e: tree.err_at(t, message: e.msg, nodes: [n]))
+
+# Reports each variable the operation at `n` uses where its type does not
+# fit the place, and a nullable one given to a `@oneOf` input field.
+function variables_in_allowed_position(t: tree.Tree lent, m: model.Model lent, info: typeinfo.Info lent, @run: vcontext.Run, n: i64)
+    defined: {str: i64} @= {}
+
+    for v in tree.kids_of(t, n: n, kind: tree.VARIABLE_DEFINITION)
+        defined[t.nodes[v].name] @ v
+
+    for usage in vcontext.recursive_usages(t, run: run, n: n)
+        name = t.nodes[usage].name
+        location = info.input[usage]
+
+        d = match defined[name]
+            .ok got => got
+            .err _  => -1
+
+        if d < 0 || location == ""
+            continue
+        declared = t.nodes[d].type
+
+        if !model.has_type(m, name: model.named_of(declared))
+            continue
+        has_variable_default = tree.value_of(t, n: d) >= 0 && t.nodes[tree.value_of(t, n: d)].kind != tree.NULL
+
+        if !is_allowed(m, declared: declared, has_variable_default: has_variable_default, location: location, has_location_default: info.has_default[usage])
+            vcontext.report(
+                @run,
+                e: tree.err_at(t, message: f"Variable \"${name}\" of type \"{declared}\" used in position expecting type \"{location}\".", nodes: [d, usage])
+            )
+            continue
+        parent = model.named_of(info.parent_input[usage])
+
+        if t.nodes[t.nodes[usage].parent].kind == tree.OBJECT_FIELD && model.kind_of(m, name: parent) == model.INPUT_OBJECT && m.types[parent].must().one_of && !model.is_non_null(declared)
+            vcontext.report(
+                @run,
+                e: tree.err_at(t, message: f"Variable \"${name}\" is of type \"{declared}\" but must be non-nullable to be used for OneOf Input Object \"{parent}\".", nodes: [d, usage])
+            )
+
+# Whether a variable of `declared` may stand where `location` is asked: a
+# nullable one in a non-null place only where it or the place has a default.
+function is_allowed(m: model.Model lent, declared: str, has_variable_default: bool, location: str, has_location_default: bool) -> bool
+    if model.is_non_null(location) && !model.is_non_null(declared)
+        if !has_variable_default && !has_location_default
+            return false
+        return is_sub_type_of(m, sub: declared, super: model.nullable_of(location))
+    return is_sub_type_of(m, sub: declared, super: location)
+
+# Whether a value of `sub` may stand where `super` is asked.
+function is_sub_type_of(m: model.Model lent, sub: str, super: str) -> bool
+    a @= sub
+    b @= super
+
+    while true
+        if a == b
+            return true
+
+        if model.is_non_null(b)
+            if !model.is_non_null(a)
+                return false
+            a @ model.nullable_of(a)
+            b @ model.nullable_of(b)
+        else if model.is_non_null(a)
+            a @ model.nullable_of(a)
+        else if model.is_list(b)
+            if !model.is_list(a)
+                return false
+            a @ model.item_of(a)
+            b @ model.item_of(b)
+        else if model.is_list(a)
+            return false
+        else
+            return model.is_abstract_name(m, name: b) && model.is_sub_type(m, abstract: b, sub: a)
+
+    return false
+
+# Reports a deprecated field, argument, input field or enum value the
+# document uses: graphql-js's `NoDeprecatedCustomRule`.
+function no_deprecated(t: tree.Tree lent, m: model.Model lent, info: typeinfo.Info lent, @run: vcontext.Run, n: i64)
+    node = t.nodes[n]
+    k = node.kind
+
+    if k == tree.FIELD && info.known[n]
+        f = model.field_of(m, type_name: info.parent[n], name: node.name).must()
+
+        if f.deprecated
+            vcontext.report(
+                @run,
+                e: tree.err_at(t, message: f"The field {info.parent[n]}.{node.name} is deprecated. {f.reason}", nodes: [n])
+            )
+        return
+
+    if k == tree.ARGUMENT && info.known[n]
+        for a in typeinfo.arguments_of(m, owner: info.owner[n])
+            if a.name == node.name && a.deprecated
+                if info.owner[n][0] == '@'
+                    vcontext.report(
+                        @run,
+                        e: tree.err_at(t, message: f"Directive \"{info.owner[n]}\" argument \"{a.name}\" is deprecated. {a.reason}", nodes: [n])
+                    )
+                else
+                    vcontext.report(
+                        @run,
+                        e: tree.err_at(t, message: f"Field \"{info.owner[n]}\" argument \"{a.name}\" is deprecated. {a.reason}", nodes: [n])
+                    )
+
+        return
+
+    if k == tree.OBJECT_FIELD
+        parent = model.named_of(info.parent_input[n])
+
+        if model.kind_of(m, name: parent) == model.INPUT_OBJECT
+            for f in m.types[parent].must().inputs
+                if f.name == node.name && f.deprecated
+                    vcontext.report(
+                        @run,
+                        e: tree.err_at(t, message: f"The input field {parent}.{f.name} is deprecated. {f.reason}", nodes: [n])
+                    )
+        return
+
+    if k == tree.ENUM
+        named = model.named_of(info.input[n])
+
+        if model.kind_of(m, name: named) == model.ENUM
+            for v in m.types[named].must().values
+                if v.name == node.text && v.deprecated
+                    vcontext.report(
+                        @run,
+                        e: tree.err_at(t, message: f"The enum value \"{named}.{v.name}\" is deprecated. {v.reason}", nodes: [n])
+                    )
+
+# Reports a field whose type is an introspection type: graphql-js's
+# `NoSchemaIntrospectionCustomRule`, run where introspection is off.
+function no_introspection(t: tree.Tree lent, info: typeinfo.Info lent, @run: vcontext.Run, n: i64)
+    named = model.named_of(info.out[n])
+
+    if named.len() >= 2 && named[0] == '_' && named[1] == '_'
+        vcontext.report(
+            @run,
+            e: tree.err_at(t, message: f"GraphQL introspection has been disabled, but the requested query contained the field \"{t.nodes[n].name}\".", nodes: [n])
+        )
+
+test "is_allowed: a nullable variable where a non-null is asked, with and without a default"
+    m = fixture.pets()
+    assert !is_allowed(m, declared: "Boolean", has_variable_default: false, location: "Boolean!", has_location_default: false)
+    assert is_allowed(
+        m,
+        declared: "Boolean",
+        has_variable_default: true,
+        location: "Boolean!",
+        has_location_default: false
+    )
+    assert is_allowed(
+        m,
+        declared: "Boolean!",
+        has_variable_default: false,
+        location: "Boolean",
+        has_location_default: false
+    )
+    assert is_allowed(
+        m,
+        declared: "[Dog!]",
+        has_variable_default: false,
+        location: "[Pet]",
+        has_location_default: false
+    )
+    assert !is_allowed(m, declared: "Int", has_variable_default: false, location: "[Int]!", has_location_default: true)
+    assert directive_index(m, name: "skip") >= 0
+    assert directive_index(m, name: "nope") < 0
