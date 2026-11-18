@@ -1,0 +1,165 @@
+# A cell's text as the file holds it: ECMA-376's `_xHHHH_` escapes, which
+# carry the characters XML cannot hold, read and written, and the text
+# escaped for XML around them. A `_` that would begin such an escape is
+# written `_x005F_`, so every text reads back as itself.
+
+use strings
+use unicode
+use xml
+
+# The value of the hexadecimal digit `b`, or -1 where it is none.
+function hex_value(b: u8) -> i64
+    if b >= '0' && b <= '9'
+        return to_i64(b - '0').must()
+
+    if b >= 'a' && b <= 'f'
+        return to_i64(b - 'a').must() + 10
+
+    if b >= 'A' && b <= 'F'
+        return to_i64(b - 'A').must() + 10
+    return -1
+
+# The code `_xHHHH_` writes where it begins at `at` of `s`, or -1 where no
+# escape begins there.
+function escape_at(s: str, at: i64) -> i64
+    if at + 7 > s.len() || s[at] != '_' || s[at + 1] != 'x' && s[at + 1] != 'X' || s[at + 6] != '_'
+        return -1
+    n: i64 @= 0
+    k: i64 @= at + 2
+
+    while k < at + 6
+        d = hex_value(s[k])
+
+        if d < 0
+            return -1
+        n @ n * 16 + d
+        k @ k + 1
+
+    return n
+
+# `s` with each `_xHHHH_` read as its character; a pair of surrogates read as
+# one, and an escape of a code no character has kept as it is written.
+function decoded(s: str) -> str
+    if !strings.contains(s: s, substr: "_x") && !strings.contains(s: s, substr: "_X")
+        return s
+    out: [str] @= []
+    start: i64 @= 0
+    at: i64 @= 0
+
+    while at < s.len()
+        n = escape_at(s, at: at)
+
+        if n < 0
+            at @ at + 1
+        else
+            code: i64 @= n
+            width: i64 @= 7
+
+            if n >= 0xd800 && n <= 0xdbff
+                low = escape_at(s, at: at + 7)
+
+                if low >= 0xdc00 && low <= 0xdfff
+                    code @ 0x10000 + (n - 0xd800) * 0x400 + (low - 0xdc00)
+                    width @ 14
+
+            match unicode.from_code_point(code)
+                .ok c =>
+                    out @ out.push(s.slice(from: start, to: at))
+                    out @ out.push(c)
+                    at @ at + width
+                    start @ at
+                .err _ => at @ at + 1
+
+    out @ out.push(s.slice(from: start, to: s.len()))
+    return out.join("")
+
+# Whether the character `c` cannot stand in XML and is written as an escape:
+# a control character but tab, line feed and carriage return, U+FFFE and
+# U+FFFF.
+function needs_escape(c: str) -> bool
+    if c.len() == 1
+        return c[0] < 0x20 && c[0] != '\t' && c[0] != '\n' && c[0] != '\r'
+    n = unicode.code_point(c)
+    return n == 0xfffe || n == 0xffff
+
+# `_xHHHH_` for the code `n`, four upper-case hexadecimal digits.
+function escape_of(n: i64) -> str
+    digits = "0123456789ABCDEF"
+    out: [str] @= ["_x"]
+    shift: i64 @= 12
+
+    while shift >= 0
+        d = n >> shift & 15
+        out @ out.push(digits.slice(from: d, to: d + 1))
+        shift @ shift - 4
+
+    out @ out.push("_")
+    return out.join("")
+
+# `s` with the characters XML cannot hold written `_xHHHH_`, and each `_`
+# that begins what would read as an escape written `_x005F_`.
+function encoded(s: str) -> str
+    plain: bool @= true
+
+    for c in s.chars()
+        if needs_escape(c)
+            plain @ false
+
+    if plain && !strings.contains(s: s, substr: "_x") && !strings.contains(s: s, substr: "_X")
+        return s
+    out: [str] @= []
+    at: i64 @= 0
+
+    for c in s.chars()
+        if needs_escape(c)
+            out @ out.push(escape_of(unicode.code_point(c)))
+        else if c == "_" && escape_at(s, at: at) >= 0
+            out @ out.push("_x005F_")
+        else
+            out @ out.push(c)
+        at @ at + c.len()
+
+    return out.join("")
+
+# `s` as an element's text in a part: escaped as `encoded` says, then for
+# XML.
+function element_text(s: str) -> str
+    return xml.escape_text(encoded(s)).must()
+
+# `s` as an attribute's value between `"`: escaped as `encoded` says, then
+# for XML.
+function attribute_text(s: str) -> str
+    return xml.quote_attribute(encoded(s)).must()
+
+# Whether `s` needs `xml:space="preserve"` to keep its white space: it opens
+# or ends with a space, a tab or a line end.
+function needs_preserve(s: str) -> bool
+    if s.len() == 0
+        return false
+    first = s[0]
+    last = s[s.len() - 1]
+    return first == ' ' || first == '\t' || first == '\n' || first == '\r' || last == ' ' || last == '\t' || last == '\n' || last == '\r'
+
+test "decoded: an escape, a carriage return, a pair of surrogates, a lone one, a code no character has, and none"
+    assert decoded("a_x0041_b") == "aAb"
+    assert decoded("_x000D_") == "\r"
+    assert decoded("_x005F_x0041_") == "_x0041_"
+    assert decoded("_xD83D__xDE00_") == "😀"
+    assert decoded("_xD83D_") == "_xD83D_"
+    assert decoded("_x00G1_") == "_x00G1_"
+    assert decoded("_x004") == "_x004"
+    assert decoded("plain") == "plain"
+    assert decoded("") == ""
+
+test "encoded: a control character, a text that reads as an escape, plain text, and U+FFFF"
+    assert encoded("bell\u{7}") == "bell_x0007_"
+    assert encoded("a_x0041_b") == "a_x005F_x0041_b"
+    assert encoded("a_xb") == "a_xb"
+    assert encoded("tab\there") == "tab\there"
+    assert encoded(unicode.from_code_point(0xffff).must()) == "_xFFFF_"
+    assert decoded(encoded("a_x0041_b\u{1}")) == "a_x0041_b\u{1}"
+
+test "element_text, attribute_text and needs_preserve: escapes, quotes and white space at the ends"
+    assert element_text("a<b & c\u{1}") == "a&lt;b &amp; c_x0001_"
+    assert attribute_text("say \"hi\"") == "\"say &quot;hi&quot;\""
+    assert needs_preserve(" a") && needs_preserve("a\n") && !needs_preserve("a b") && !needs_preserve("")

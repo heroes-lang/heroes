@@ -1,0 +1,26 @@
+# Reaches Rebel's `xlsx`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It builds a workbook of one sheet, writes
+# it as bytes, reads them back and prints the sheet's rows.
+
+use <rebel>/xlsx
+
+function main()
+    sheet @= xlsx.new_sheet("Low")
+    xlsx.add_row(@sheet, values: [.text(v: "track"), .text(v: "minutes")]).must()
+    xlsx.add_row(@sheet, values: [.text(v: "Speed of Life"), .number(v: 2.75)]).must()
+    book @= xlsx.new_workbook()
+    xlsx.add_sheet(@book, sheet).must()
+
+    match xlsx.to_bytes(book)
+        .err e => print(e.msg)
+        .ok data =>
+            match xlsx.read_bytes(data, options: xlsx.default_read_options())
+                .err e => print(e.msg)
+                .ok again =>
+                    for row in xlsx.rows_of(again.sheets[0], limit: 100).must()
+                        cells: [str] @= []
+
+                        for v in row
+                            cells @ cells.push(xlsx.format_value(v))
+
+                        print(cells.join(", "))

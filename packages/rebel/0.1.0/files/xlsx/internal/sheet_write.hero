@@ -1,0 +1,504 @@
+# One worksheet part written: its dimension, its frozen pane, its columns'
+# widths, its rows with their heights and cells, its merged areas. Each cell
+# is checked as it is written: its place, its order, its text and its style;
+# a text goes to the shared strings, written once whatever the cells holding
+# it.
+
+use lists
+use xlsx/internal/checks
+use xlsx/internal/model
+use xlsx/internal/names
+use xlsx/internal/styles_write
+use xlsx/internal/text
+use xml
+
+constant INVALID: str
+    "invalid"
+
+# The characters a link's target may hold: Excel opens none longer.
+constant MAX_LINK_CHARS: i64
+    2079
+
+# The part's namespaces.
+constant HEAD: str
+    "<worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">"
+
+# The shared strings as writing collects them.
+record Strings
+    # Each text, in the order first met.
+    list: [str]
+    # Where each text stands in `list`.
+    at: {str: i64}
+    # How many cells name one of them.
+    count: i64
+
+# The index of `s` among `strings`, added where it is not there.
+function string_index(@strings: Strings, s: str) -> i64
+    strings.count @ strings.count + 1
+
+    match strings.at[s]
+        .ok n => return n
+        .err _ =>
+            n = strings.list.len()
+            add_string(@strings.list, s: s)
+            put_at(@strings.at, key: s, n: n)
+            return n
+
+# Adds `s` to `list` in place.
+function add_string(@list: [str], s: str)
+    list @ list.push(s)
+
+# Sets `key` to `n` in `at`, in place.
+function put_at(@at: {str: i64}, key: str, n: i64)
+    at[key] @ n
+
+# Whether a cell holds anything worth writing: a value, a formula or a style.
+function is_worth(c: model.Cell) -> bool
+    return c.kind != model.EMPTY || c.formula != "" || c.style != 0
+
+# The name of `c`'s place, or `?` where it is outside a sheet.
+function place_of(c: model.Cell) -> str
+    return names.name_of(row: c.row, column: c.column).default("?")
+
+# The `<c>` of `c`, its text added to `strings`.
+function cell_xml(c: model.Cell, @strings: Strings, styles: i64, sheet: str) -> str?
+    checks.place(row: c.row, column: c.column)?
+
+    if c.style < 0 || c.style >= styles
+        return fail(
+            code: INVALID,
+            msg: f"the cell {place_of(c)} of the sheet \"{sheet}\" names the style {c.style}, of {styles}"
+        )
+    out: [str] @= ["<c r=\"", place_of(c), "\""]
+
+    if c.style != 0
+        out @ out.push(f" s=\"{c.style}\"")
+    value: str @= ""
+    has_value: bool @= true
+
+    if c.kind == model.NUMBER || c.kind == model.DATE
+        checks.number(c.number)?
+        value @ styles_write.number_text(c.number)
+    else if c.kind == model.TEXT
+        checks.cell_text(c.text)?
+
+        if c.formula != ""
+            out @ out.push(" t=\"str\"")
+            value @ text.element_text(c.text)
+        else
+            out @ out.push(" t=\"s\"")
+            value @ to_str(string_index(@strings, s: c.text))
+    else if c.kind == model.BOOLEAN
+        out @ out.push(" t=\"b\"")
+
+        if c.number != 0.0
+            value @ "1"
+        else
+            value @ "0"
+    else if c.kind == model.ERROR
+        out @ out.push(" t=\"e\"")
+        value @ text.element_text(c.text)
+    else
+        has_value @ false
+
+    if c.formula == "" && !has_value
+        out @ out.push("/>")
+        return ok(out.join(""))
+    out @ out.push(">")
+
+    if c.formula != ""
+        out @ out.push("<f>" + text.element_text(c.formula) + "</f>")
+
+    if has_value
+        out @ out.push("<v>" + value + "</v>")
+    out @ out.push("</c>")
+    return ok(out.join(""))
+
+# Whether `a` stands before `b` by its first column.
+function column_before(a: model.Column, b: model.Column) -> bool
+    return a.first < b.first
+
+# Whether `a` stands before `b` by its row.
+function row_before(a: model.Row, b: model.Row) -> bool
+    return a.row < b.row
+
+# Whether `a` stands before `b` by its top row.
+function box_before(a: names.Box, b: names.Box) -> bool
+    return a.first_row < b.first_row
+
+# Whether `a` stands before `b`, by row and then by column.
+function cell_before(a: model.Cell, b: model.Cell) -> bool
+    return a.row < b.row || a.row == b.row && a.column < b.column
+
+# The `<sheetView>` of a sheet, its pane frozen at `rows` and `columns`.
+function view_of(rows: i64, columns: i64, selected: bool) -> str?
+    checks.place(row: rows, column: columns)?
+    out: [str] @= ["<sheetViews><sheetView"]
+
+    if selected
+        out @ out.push(" tabSelected=\"1\"")
+    out @ out.push(" workbookViewId=\"0\"")
+
+    if rows == 0 && columns == 0
+        out @ out.push("/></sheetViews>")
+        return ok(out.join(""))
+    corner = names.name_of(row: rows, column: columns)?
+    pane: str @= "bottomRight"
+
+    if rows == 0
+        pane @ "topRight"
+    else if columns == 0
+        pane @ "bottomLeft"
+    out @ out.push("><pane")
+
+    if columns > 0
+        out @ out.push(f" xSplit=\"{columns}\"")
+
+    if rows > 0
+        out @ out.push(f" ySplit=\"{rows}\"")
+    out @ out.push(f" topLeftCell=\"{corner}\" activePane=\"{pane}\" state=\"frozen\"/>")
+
+    if rows > 0 && columns > 0
+        out @ out.push("<selection pane=\"topRight\"/><selection pane=\"bottomLeft\"/>")
+    out @ out.push(f"<selection pane=\"{pane}\" activeCell=\"{corner}\" sqref=\"{corner}\"/></sheetView></sheetViews>")
+    return ok(out.join(""))
+
+# The `<cols>` of `columns`, checked and in order; empty where there are none.
+function cols_of(columns: [model.Column], sheet: str) -> str?
+    if columns.len() == 0
+        return ok("")
+    sorted = lists.sort_by(columns, less: column_before)
+    out: [str] @= ["<cols>"]
+    last: i64 @= -1
+
+    for c in sorted
+        if c.first < 0 || c.last >= names.COLUMNS || c.last < c.first
+            return fail(
+                code: INVALID,
+                msg: f"the sheet \"{sheet}\" sets the columns {c.first} to {c.last}, not a run inside a sheet"
+            )
+
+        if c.first <= last
+            return fail(code: INVALID, msg: f"the sheet \"{sheet}\" sets the column {c.first} twice")
+
+        if c.width < 0.0 || c.width > 255.0 || c.width != c.width
+            return fail(code: INVALID, msg: f"the sheet \"{sheet}\" sets a width of {c.width}, outside 0 to 255")
+        last @ c.last
+        out @ out.push(f"<col min=\"{c.first + 1}\" max=\"{c.last + 1}\"")
+
+        if c.width > 0.0
+            out @ out.push(" width=\"" + styles_write.number_text(c.width) + "\" customWidth=\"1\"")
+        else
+            out @ out.push(" width=\"8.43\"")
+
+        if c.hidden
+            out @ out.push(" hidden=\"1\"")
+        out @ out.push("/>")
+
+    out @ out.push("</cols>")
+    return ok(out.join(""))
+
+# The `<mergeCells>` of `merged`, checked: each of two cells or more, inside
+# the sheet, none overlapping another; empty where there are none.
+function merges_of(merged: [names.Box], sheet: str) -> str?
+    if merged.len() == 0
+        return ok("")
+    sorted = lists.sort_by(merged, less: box_before)
+    out: [str] @= [f"<mergeCells count=\"{merged.len()}\">"]
+    at: i64 @= 0
+
+    while at < sorted.len()
+        b = sorted[at]
+        ref = names.box_name(b)?
+
+        if b.first_row == b.last_row && b.first_column == b.last_column
+            return fail(code: INVALID, msg: f"the sheet \"{sheet}\" merges the one cell {ref}")
+        checks.place(row: b.first_row, column: b.first_column)?
+        checks.place(row: b.last_row, column: b.last_column)?
+        next: i64 @= at + 1
+
+        while next < sorted.len() && sorted[next].first_row <= b.last_row
+            o = sorted[next]
+
+            if o.first_column <= b.last_column && o.last_column >= b.first_column
+                return fail(
+                    code: INVALID,
+                    msg: f"the sheet \"{sheet}\" merges {ref} and {names.box_name(o).default("?")}, which overlap"
+                )
+            next @ next + 1
+
+        out @ out.push(f"<mergeCell ref=\"{ref}\"/>")
+        at @ at + 1
+
+    out @ out.push("</mergeCells>")
+    return ok(out.join(""))
+
+# The `<hyperlinks>` of `links`, checked, each leading outside the workbook
+# naming its relationship `rId1`, `rId2` in order; empty where there are
+# none.
+function links_of(links: [model.Link], sheet: str) -> str?
+    if links.len() == 0
+        return ok("")
+    out: [str] @= ["<hyperlinks>"]
+    k: i64 @= 0
+
+    for l in links
+        ref = names.box_name(l.box)?
+
+        if l.target == "" && l.location == ""
+            return fail(
+                code: INVALID,
+                msg: f"the sheet \"{sheet}\" links {ref} to nothing: a link has a target or a location"
+            )
+
+        if l.target.chars().len() > MAX_LINK_CHARS
+            return fail(
+                code: INVALID,
+                msg: f"the sheet \"{sheet}\" links {ref} to a target of more than {MAX_LINK_CHARS} characters, which Excel does not open"
+            )
+
+        match xml.quote_attribute(l.target)
+            .ok _  => _ = 0
+            .err e => return fail(code: INVALID, msg: f"the sheet \"{sheet}\" links {ref}: {e.msg}")
+
+        out @ out.push(f"<hyperlink ref=\"{ref}\"")
+
+        if l.target != ""
+            k @ k + 1
+            out @ out.push(f" r:id=\"rId{k}\"")
+
+        if l.location != ""
+            out @ out.push(" location=" + text.attribute_text(l.location))
+
+        if l.tooltip != ""
+            out @ out.push(" tooltip=" + text.attribute_text(l.tooltip))
+
+        if l.display != ""
+            out @ out.push(" display=" + text.attribute_text(l.display))
+        out @ out.push("/>")
+
+    out @ out.push("</hyperlinks>")
+    return ok(out.join(""))
+
+# The relationships part of a sheet whose `links` lead outside the workbook,
+# in the order `links_of` names them; empty where none does.
+function link_rels(links: [model.Link]) -> str
+    out: [str] @= []
+    k: i64 @= 0
+
+    for l in links
+        if l.target != ""
+            k @ k + 1
+            out @ out.push(
+                f"<Relationship Id=\"rId{k}\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink\" Target=" + xml.quote_attribute(l.target).default("\"\"") + " TargetMode=\"External\"/>"
+            )
+
+    if k == 0
+        return ""
+    return "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">" + out.join("") + "</Relationships>"
+
+# The `<row>` opening for `row`, with its height where `rows` sets one.
+function row_open(row: i64, format: model.Row, has_format: bool) -> str
+    out: [str] @= [f"<row r=\"{row + 1}\""]
+
+    if has_format
+        if format.height > 0.0
+            out @ out.push(" ht=\"" + styles_write.number_text(format.height) + "\" customHeight=\"1\"")
+
+        if format.hidden
+            out @ out.push(" hidden=\"1\"")
+    out @ out.push(">")
+    return out.join("")
+
+# The worksheet part of `s`, its texts added to `strings`.
+function sheet_part(s: model.Sheet, @strings: Strings, styles: i64, selected: bool) -> str?
+    cells: [model.Cell] @= []
+    in_order: bool @= true
+
+    for c in s.cells
+        if is_worth(c)
+            if cells.len() > 0 && !cell_before(a: cells[cells.len() - 1], b: c)
+                in_order @ false
+            cells @ cells.push(c)
+
+    if !in_order
+        cells @ lists.sort_by(cells, less: cell_before)
+    at: i64 @= 1
+
+    while at < cells.len()
+        if !cell_before(a: cells[at - 1], b: cells[at])
+            return fail(code: INVALID, msg: f"the sheet \"{s.name}\" holds two cells at {place_of(cells[at])}")
+        at @ at + 1
+
+    rows = lists.sort_by(s.rows, less: row_before)
+    at @ 1
+
+    while at < rows.len()
+        if rows[at - 1].row == rows[at].row
+            return fail(code: INVALID, msg: f"the sheet \"{s.name}\" sets the row {rows[at].row} twice")
+        at @ at + 1
+
+    for r in rows
+        if r.row < 0 || r.row >= names.ROWS || r.height < 0.0 || r.height > 409.0 || r.height != r.height
+            return fail(
+                code: INVALID,
+                msg: f"the sheet \"{s.name}\" sets the row {r.row} to a height of {r.height}: rows are 0 to {names.ROWS - 1}, heights 0 to 409"
+            )
+
+    out: [str] @= ["<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n", HEAD]
+
+    if cells.len() > 0
+        first_column: i64 @= names.COLUMNS
+        last_column: i64 @= 0
+
+        for c in cells
+            if c.column < first_column
+                first_column @ c.column
+
+            if c.column > last_column
+                last_column @ c.column
+
+        box = names.Box(
+            first_row: cells[0].row,
+            first_column: first_column,
+            last_row: cells[cells.len() - 1].row,
+            last_column: last_column
+        )
+        out @ out.push("<dimension ref=\"" + names.box_name(box)? + "\"/>")
+    else
+        out @ out.push("<dimension ref=\"A1\"/>")
+    out @ out.push(view_of(rows: s.frozen_rows, columns: s.frozen_columns, selected: selected)?)
+    out @ out.push("<sheetFormatPr defaultRowHeight=\"15\"/>")
+    out @ out.push(cols_of(s.columns, sheet: s.name)?)
+    out @ out.push("<sheetData>")
+    cell_at: i64 @= 0
+    row_at: i64 @= 0
+
+    while cell_at < cells.len() || row_at < rows.len()
+        row: i64 @= names.ROWS
+
+        if cell_at < cells.len()
+            row @ cells[cell_at].row
+
+        if row_at < rows.len() && rows[row_at].row < row
+            row @ rows[row_at].row
+        has_format = row_at < rows.len() && rows[row_at].row == row
+        format: model.Row @= model.Row(row: row, height: 0.0, hidden: false)
+
+        if has_format
+            format @ rows[row_at]
+            row_at @ row_at + 1
+        out @ out.push(row_open(row, format: format, has_format: has_format))
+
+        while cell_at < cells.len() && cells[cell_at].row == row
+            out @ out.push(cell_xml(cells[cell_at], @strings, styles: styles, sheet: s.name)?)
+            cell_at @ cell_at + 1
+
+        out @ out.push("</row>")
+
+    out @ out.push("</sheetData>")
+    out @ out.push(merges_of(s.merged, sheet: s.name)?)
+    out @ out.push(links_of(s.links, sheet: s.name)?)
+    out @ out.push(
+        "<pageMargins left=\"0.7\" right=\"0.7\" top=\"0.75\" bottom=\"0.75\" header=\"0.3\" footer=\"0.3\"/></worksheet>"
+    )
+    return ok(out.join(""))
+
+# An empty collection of shared strings.
+function no_strings() -> Strings
+    at: {str: i64} = {}
+    return Strings(list: [], at: at, count: 0)
+
+# A cell for the tests.
+function test_cell(row: i64, column: i64, kind: i64, number: f64, s: str) -> model.Cell
+    return model.Cell(row: row, column: column, kind: kind, number: number, text: s, formula: "", style: 0)
+
+test "sheet_part: every kind of cell, a formula, a shared text twice, a height, a width, a pane and a merge"
+    cells: [model.Cell] @= [
+        test_cell(row: 0, column: 0, kind: model.TEXT, number: 0.0, s: "a<b")
+        test_cell(row: 0, column: 1, kind: model.NUMBER, number: 3.5, s: "")
+        test_cell(row: 0, column: 2, kind: model.BOOLEAN, number: 1.0, s: "")
+        test_cell(row: 1, column: 0, kind: model.ERROR, number: 0.0, s: "#N/A")
+        test_cell(row: 1, column: 1, kind: model.TEXT, number: 0.0, s: "a<b")
+        test_cell(row: 2, column: 0, kind: model.DATE, number: 61.0, s: "")
+    ]
+    formula @= test_cell(row: 2, column: 1, kind: model.EMPTY, number: 0.0, s: "")
+    formula.formula @ "SUM(B1:B2)"
+    cells @ cells.push(formula)
+    s = model.Sheet(
+        name: "S",
+        state: "visible",
+        cells: cells,
+        merged: [names.Box(first_row: 4, first_column: 0, last_row: 5, last_column: 1)],
+        columns: [model.Column(first: 0, last: 1, width: 20.0, hidden: false)],
+        rows: [model.Row(row: 3, height: 30.0, hidden: true)],
+        frozen_rows: 1,
+        frozen_columns: 0,
+        links: []
+    )
+    strings @= no_strings()
+    part = sheet_part(s, @strings, styles: 1, selected: true).must()
+    assert strings.list == ["a<b"] && strings.count == 2
+    expected = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n" + HEAD + "<dimension ref=\"A1:C3\"/><sheetViews><sheetView tabSelected=\"1\" workbookViewId=\"0\"><pane ySplit=\"1\" topLeftCell=\"A2\" activePane=\"bottomLeft\" state=\"frozen\"/><selection pane=\"bottomLeft\" activeCell=\"A2\" sqref=\"A2\"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight=\"15\"/><cols><col min=\"1\" max=\"2\" width=\"20\" customWidth=\"1\"/></cols><sheetData><row r=\"1\"><c r=\"A1\" t=\"s\"><v>0</v></c><c r=\"B1\"><v>3.5</v></c><c r=\"C1\" t=\"b\"><v>1</v></c></row><row r=\"2\"><c r=\"A2\" t=\"e\"><v>#N/A</v></c><c r=\"B2\" t=\"s\"><v>0</v></c></row><row r=\"3\"><c r=\"A3\"><v>61</v></c><c r=\"B3\"><f>SUM(B1:B2)</f></c></row><row r=\"4\" ht=\"30\" customHeight=\"1\" hidden=\"1\"></row></sheetData><mergeCells count=\"1\"><mergeCell ref=\"A5:B6\"/></mergeCells><pageMargins left=\"0.7\" right=\"0.7\" top=\"0.75\" bottom=\"0.75\" header=\"0.3\" footer=\"0.3\"/></worksheet>"
+    assert part == expected
+
+test "links_of and link_rels: a link outside, one inside with a tip and a display, none, and one to nothing"
+    out = names.Box(first_row: 0, first_column: 0, last_row: 0, last_column: 0)
+    inside = names.Box(first_row: 1, first_column: 1, last_row: 2, last_column: 2)
+    links = [
+        model.Link(box: out, target: "https://example.com/?a=1&b=2", location: "", tooltip: "", display: "")
+        model.Link(box: inside, target: "", location: "Other!A1", tooltip: "a \"tip\"", display: "go")
+    ]
+    assert links_of(links, sheet: "S").must() == "<hyperlinks><hyperlink ref=\"A1\" r:id=\"rId1\"/><hyperlink ref=\"B2:C3\" location=\"Other!A1\" tooltip=\"a &quot;tip&quot;\" display=\"go\"/></hyperlinks>"
+    assert link_rels(links) == "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink\" Target=\"https://example.com/?a=1&amp;b=2\" TargetMode=\"External\"/></Relationships>"
+    assert links_of([], sheet: "S").must() == "" && link_rels([links[1]]) == ""
+    assert links_of([model.Link(box: out, target: "", location: "", tooltip: "", display: "")], sheet: "S").is_err()
+    assert links_of(
+        [model.Link(box: out, target: repeat("a", 2080), location: "", tooltip: "", display: "")],
+        sheet: "S"
+    ).is_err()
+
+test "sheet_part: two cells at one place, a style not there, a NaN, overlapping merges, one cell merged, and columns set twice"
+    one = test_cell(row: 0, column: 0, kind: model.NUMBER, number: 1.0, s: "")
+    base = model.Sheet(
+        name: "S",
+        state: "visible",
+        cells: [one, one],
+        merged: [],
+        columns: [],
+        rows: [],
+        frozen_rows: 0,
+        frozen_columns: 0,
+        links: []
+    )
+    strings @= no_strings()
+    assert sheet_part(base, @strings, styles: 1, selected: false).is_err()
+    styled @= one
+    styled.style @ 3
+    bad_style @= base
+    bad_style.cells @ [styled]
+    assert sheet_part(bad_style, @strings, styles: 1, selected: false).is_err()
+    nan @= base
+    nan.cells @ [test_cell(row: 0, column: 0, kind: model.NUMBER, number: 0.0 / 0.0, s: "")]
+
+    match sheet_part(nan, @strings, styles: 1, selected: false)
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported"
+
+    overlap @= base
+    overlap.cells @ [one]
+    overlap.merged @ [
+        names.Box(first_row: 0, first_column: 0, last_row: 2, last_column: 2)
+        names.Box(first_row: 2, first_column: 2, last_row: 3, last_column: 3)
+    ]
+    assert sheet_part(overlap, @strings, styles: 1, selected: false).is_err()
+    single @= overlap
+    single.merged @ [names.Box(first_row: 0, first_column: 0, last_row: 0, last_column: 0)]
+    assert sheet_part(single, @strings, styles: 1, selected: false).is_err()
+    twice @= overlap
+    twice.merged @ []
+    twice.columns @ [
+        model.Column(first: 0, last: 3, width: 9.0, hidden: false)
+        model.Column(first: 2, last: 4, width: 9.0, hidden: false)
+    ]
+    assert sheet_part(twice, @strings, styles: 1, selected: false).is_err()

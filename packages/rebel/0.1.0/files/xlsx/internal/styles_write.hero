@@ -1,0 +1,212 @@
+# The styles part written: each style's font, fill and border written once
+# and named by its index, its number format by the built-in number where it
+# has one and from 164 where it does not, and one cell format a style. The
+# first two fills are the two Excel reserves, none and `gray125`.
+
+use numbers
+use strings
+use xlsx/internal/model
+use xlsx/internal/numfmt
+use xlsx/internal/text
+
+# The part's namespace.
+constant MAIN: str
+    "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+
+# `x` written as a part writes a number: the fewest digits, no point for a
+# whole number.
+function number_text(x: f64) -> str
+    abs: f64 @= x
+
+    if abs < 0.0
+        abs @ 0.0 - x
+
+    if abs != 0.0 && (abs >= 10000000000000000.0 || abs < 0.00001)
+        return numbers.format_float_exp_shortest(x)
+    s = numbers.format_float_shortest(x)
+
+    if s.len() > 2 && s[s.len() - 2] == '.' && s[s.len() - 1] == '0'
+        return s.slice(from: 0, to: s.len() - 2)
+    return s
+
+# A `<color>`-shaped element named `tag` for `color`: by `rgb` with an opaque
+# alpha, or `fallback`'s attribute where `color` is empty; nothing where both
+# are.
+function color_element(tag: str, color: str, fallback: str) -> str
+    if color != ""
+        return f"<{tag} rgb=\"FF{color}\"/>"
+
+    if fallback != ""
+        return f"<{tag} {fallback}/>"
+    return ""
+
+# The `<font>` of `s`.
+function font_of(s: model.Style) -> str
+    out: [str] @= ["<font>"]
+
+    if s.bold
+        out @ out.push("<b/>")
+
+    if s.italic
+        out @ out.push("<i/>")
+
+    if s.strike
+        out @ out.push("<strike/>")
+
+    if s.underline == "single"
+        out @ out.push("<u/>")
+    else if s.underline != ""
+        out @ out.push("<u val=" + text.attribute_text(s.underline) + "/>")
+    out @ out.push("<sz val=\"" + number_text(s.font_size) + "\"/>")
+    out @ out.push(color_element(tag: "color", color: s.font_color, fallback: "theme=\"1\""))
+    out @ out.push("<name val=" + text.attribute_text(s.font_name) + "/>")
+
+    if s.font_name == "Calibri"
+        out @ out.push("<family val=\"2\"/><scheme val=\"minor\"/>")
+    out @ out.push("</font>")
+    return out.join("")
+
+# The `<fill>` of `s`.
+function fill_of(s: model.Style) -> str
+    if s.pattern == "none" || s.pattern == ""
+        return "<fill><patternFill patternType=\"none\"/></fill>"
+
+    if s.pattern == "gray125" && s.fill_color == "" && s.fill_background == ""
+        return "<fill><patternFill patternType=\"gray125\"/></fill>"
+    fg = color_element(tag: "fgColor", color: s.fill_color, fallback: "indexed=\"64\"")
+    bg = color_element(tag: "bgColor", color: s.fill_background, fallback: "indexed=\"64\"")
+    return "<fill><patternFill patternType=" + text.attribute_text(s.pattern) + ">" + fg + bg + "</patternFill></fill>"
+
+# One edge `tag` of a border, drawn as `line` in `color`.
+function edge_of(tag: str, line: str, color: str) -> str
+    if line == ""
+        return f"<{tag}/>"
+    return f"<{tag} style=" + text.attribute_text(line) + ">" + color_element(tag: "color", color: color, fallback: "") + f"</{tag}>"
+
+# The `<border>` of `s`.
+function border_of(s: model.Style) -> str
+    return "<border>" + edge_of(tag: "left", line: s.left_line, color: s.left_color) + edge_of(tag: "right", line: s.right_line, color: s.right_color) + edge_of(tag: "top", line: s.top_line, color: s.top_color) + edge_of(tag: "bottom", line: s.bottom_line, color: s.bottom_color) + "<diagonal/></border>"
+
+# The index of `item` in `items`, added at the end where it is not there; the
+# map `at` says where each is.
+function index_in(@items: [str], @at: {str: i64}, item: str) -> i64
+    match at[item]
+        .ok n => return n
+        .err _ =>
+            n = items.len()
+            items @ items.push(item)
+            at[item] @ n
+            return n
+
+# The styles part for `styles`.
+function styles_part(styles: [model.Style]) -> str
+    fonts: [str] @= []
+    font_at: {str: i64} @= {}
+    fills: [str] @= []
+    fill_at: {str: i64} @= {}
+    _ = index_in(@fills, @fill_at, item: "<fill><patternFill patternType=\"none\"/></fill>")
+    _ = index_in(@fills, @fill_at, item: "<fill><patternFill patternType=\"gray125\"/></fill>")
+    borders: [str] @= []
+    border_at: {str: i64} @= {}
+    _ = index_in(@borders, @border_at, item: border_of(model.default_style()))
+    custom: [str] @= []
+    custom_at: {str: i64} @= {}
+    xfs: [str] @= []
+
+    for s in styles
+        font = index_in(@fonts, @font_at, item: font_of(s))
+        fill = index_in(@fills, @fill_at, item: fill_of(s))
+        border = index_in(@borders, @border_at, item: border_of(s))
+        format: i64 @= numfmt.id_of(s.number_format)
+
+        if format < 0
+            format @ 164 + index_in(@custom, @custom_at, item: s.number_format)
+        xf: [str] @= [f"<xf numFmtId=\"{format}\" fontId=\"{font}\" fillId=\"{fill}\" borderId=\"{border}\" xfId=\"0\""]
+
+        if format != 0
+            xf @ xf.push(" applyNumberFormat=\"1\"")
+
+        if font != 0
+            xf @ xf.push(" applyFont=\"1\"")
+
+        if fill != 0
+            xf @ xf.push(" applyFill=\"1\"")
+
+        if border != 0
+            xf @ xf.push(" applyBorder=\"1\"")
+        aligned = s.horizontal != "general" || s.vertical != "bottom" || s.wrap
+
+        if aligned
+            xf @ xf.push(" applyAlignment=\"1\"><alignment")
+
+            if s.horizontal != "general"
+                xf @ xf.push(" horizontal=" + text.attribute_text(s.horizontal))
+
+            if s.vertical != "bottom"
+                xf @ xf.push(" vertical=" + text.attribute_text(s.vertical))
+
+            if s.wrap
+                xf @ xf.push(" wrapText=\"1\"")
+            xf @ xf.push("/></xf>")
+        else
+            xf @ xf.push("/>")
+        xfs @ xfs.push(xf.join(""))
+
+    out: [str] @= ["<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n", f"<styleSheet xmlns=\"{MAIN}\">"]
+
+    if custom.len() > 0
+        out @ out.push(f"<numFmts count=\"{custom.len()}\">")
+        at: i64 @= 0
+
+        for code in custom
+            out @ out.push(f"<numFmt numFmtId=\"{164 + at}\" formatCode=" + text.attribute_text(code) + "/>")
+            at @ at + 1
+
+        out @ out.push("</numFmts>")
+    out @ out.push(f"<fonts count=\"{fonts.len()}\">" + fonts.join("") + "</fonts>")
+    out @ out.push(f"<fills count=\"{fills.len()}\">" + fills.join("") + "</fills>")
+    out @ out.push(f"<borders count=\"{borders.len()}\">" + borders.join("") + "</borders>")
+    out @ out.push(
+        "<cellStyleXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\"/></cellStyleXfs>"
+    )
+    out @ out.push(f"<cellXfs count=\"{xfs.len()}\">" + xfs.join("") + "</cellXfs>")
+    out @ out.push("<cellStyles count=\"1\"><cellStyle name=\"Normal\" xfId=\"0\" builtinId=\"0\"/></cellStyles>")
+    out @ out.push(
+        "<dxfs count=\"0\"/><tableStyles count=\"0\" defaultTableStyle=\"TableStyleMedium9\" defaultPivotStyle=\"PivotStyleLight16\"/></styleSheet>"
+    )
+    return out.join("")
+
+test "number_text: whole, fractional, negative, large and small, and zero"
+    assert number_text(42.0) == "42"
+    assert number_text(3.5) == "3.5"
+    assert number_text(-0.000123) == "-0.000123"
+    assert number_text(1000000000000000000000.0) == "1e+21"
+    assert number_text(0.000001) == "1e-06"
+    assert number_text(0.0) == "0"
+    assert number_text(46344.57326967592) == "46344.57326967592"
+
+test "styles_part: the default alone, then a bold font, a solid fill, a border, alignment and a custom format"
+    plain = styles_part([model.default_style()])
+    assert plain == "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<styleSheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><fonts count=\"1\"><font><sz val=\"11\"/><color theme=\"1\"/><name val=\"Calibri\"/><family val=\"2\"/><scheme val=\"minor\"/></font></fonts><fills count=\"2\"><fill><patternFill patternType=\"none\"/></fill><fill><patternFill patternType=\"gray125\"/></fill></fills><borders count=\"1\"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\"/></cellStyleXfs><cellXfs count=\"1\"><xf numFmtId=\"0\" fontId=\"0\" fillId=\"0\" borderId=\"0\" xfId=\"0\"/></cellXfs><cellStyles count=\"1\"><cellStyle name=\"Normal\" xfId=\"0\" builtinId=\"0\"/></cellStyles><dxfs count=\"0\"/><tableStyles count=\"0\" defaultTableStyle=\"TableStyleMedium9\" defaultPivotStyle=\"PivotStyleLight16\"/></styleSheet>"
+    s @= model.default_style()
+    s.bold @ true
+    s.pattern @ "solid"
+    s.fill_color @ "FFFF00"
+    s.left_line @ "thin"
+    s.left_color @ "00FF00"
+    s.horizontal @ "center"
+    s.wrap @ true
+    s.number_format @ "yyyy-mm-dd"
+    two = styles_part([model.default_style(), s, s])
+    assert strings.contains(s: two, substr: "<numFmt numFmtId=\"164\" formatCode=\"yyyy-mm-dd\"/>")
+    assert strings.contains(s: two, substr: "<font><b/><sz val=\"11\"/>")
+    assert strings.contains(
+        s: two,
+        substr: "<patternFill patternType=\"solid\"><fgColor rgb=\"FFFFFF00\"/><bgColor indexed=\"64\"/></patternFill>"
+    )
+    assert strings.contains(s: two, substr: "<left style=\"thin\"><color rgb=\"FF00FF00\"/></left>")
+    assert strings.contains(s: two, substr: "<cellXfs count=\"3\">")
+    assert strings.contains(
+        s: two,
+        substr: "<xf numFmtId=\"164\" fontId=\"1\" fillId=\"2\" borderId=\"1\" xfId=\"0\" applyNumberFormat=\"1\" applyFont=\"1\" applyFill=\"1\" applyBorder=\"1\" applyAlignment=\"1\"><alignment horizontal=\"center\" wrapText=\"1\"/></xf>"
+    )

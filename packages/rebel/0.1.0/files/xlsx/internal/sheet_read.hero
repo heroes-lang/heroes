@@ -1,0 +1,533 @@
+# One worksheet part read: its cells with their kinds, its shared formulas
+# given the text each cell's place makes of them, its merged areas, its
+# columns' widths, its rows' heights and its frozen panes. Every cell is taken
+# from the cells allowed and every text from the bytes allowed before it is
+# kept; cells written out of order are put in order, the last of two at one
+# place kept.
+
+use lists
+use numbers
+use strings
+use time
+use xlsx/internal/dates
+use xlsx/internal/formula
+use xlsx/internal/model
+use xlsx/internal/names
+use xlsx/internal/parts
+use xlsx/internal/rows_scan
+use xlsx/internal/shared
+use xlsx/internal/text
+use xml
+
+constant INVALID: str
+    "invalid"
+
+constant LIMIT: str
+    "limit"
+
+# What a sheet is read with that the workbook's other parts give.
+record Given
+    # The shared strings.
+    strings: [str]
+    # Whether each style shows a date.
+    dates: [bool]
+    # Whether serials count from 1904.
+    from_1904: bool
+
+# The cell that writes a shared formula's text, and where it stands.
+record Master
+    # The formula's text.
+    text: str
+    # Its row.
+    row: i64
+    # Its column.
+    column: i64
+
+# Whether `a` stands before `b`, by row and then by column.
+function is_before(a: model.Cell, b: model.Cell) -> bool
+    return a.row < b.row || a.row == b.row && a.column < b.column
+
+# The value of the attribute `name` of `e` as an integer, or `fallback`.
+function int_attribute(e: xml.Element, name: str, fallback: i64) -> i64
+    match xml.attribute(e, name: name)
+        .ok written => return numbers.parse_int(strings.trim(written)).default(fallback)
+        .err _      => return fallback
+
+# The value of the attribute `name` of `e` as a float, or `fallback`.
+function float_attribute(e: xml.Element, name: str, fallback: f64) -> f64
+    match xml.attribute(e, name: name)
+        .ok written => return numbers.parse_float(strings.trim(written)).default(fallback)
+        .err _      => return fallback
+
+# Whether the attribute `name` of `e` is `1` or `true`.
+function flag(e: xml.Element, name: str) -> bool
+    v = xml.attribute(e, name: name).default("0")
+    return v == "1" || v == "true"
+
+# The digits of `s` from `from` to `to` as a number, or -1 where any is not a
+# digit.
+function number_at(s: str, from: i64, to: i64) -> i64
+    if to > s.len() || from >= to
+        return -1
+    n: i64 @= 0
+    at: i64 @= from
+
+    while at < to
+        if !names.is_digit(s[at])
+            return -1
+        n @ n * 10 + to_i64(s[at] - '0').must()
+        at @ at + 1
+
+    return n
+
+# The moment an ISO 8601 text names, `2026-11-18`, `2026-11-18T13:45:30.5Z`,
+# its zone not read; fails where it is none.
+function iso_date(s: str) -> time.DateTime?
+    year = number_at(s, from: 0, to: 4)
+    month = number_at(s, from: 5, to: 7)
+    day = number_at(s, from: 8, to: 10)
+
+    if year < 0 || month < 0 || day < 0 || s[4] != '-' || s[7] != '-'
+        return fail(code: INVALID, msg: f"\"{s}\" is no ISO 8601 date")
+    at = time.DateTime(year: year, month: month, day: day, hour: 0, minute: 0, second: 0, nanosecond: 0)
+
+    if s.len() == 10
+        return ok(at)
+
+    if s.len() < 16 || s[10] != 'T' && s[10] != ' ' || s[13] != ':'
+        return fail(code: INVALID, msg: f"\"{s}\" is no ISO 8601 date and time")
+    full @= at
+    full.hour @ number_at(s, from: 11, to: 13)
+    full.minute @ number_at(s, from: 14, to: 16)
+    full.second @ 0
+
+    if s.len() >= 19 && s[16] == ':'
+        full.second @ number_at(s, from: 17, to: 19)
+
+        if s.len() > 20 && s[19] == '.'
+            end: i64 @= 20
+
+            while end < s.len() && names.is_digit(s[end])
+                end @ end + 1
+
+            digits: i64 @= end - 20
+
+            if digits > 9
+                digits @ 9
+            fraction: i64 @= number_at(s, from: 20, to: 20 + digits)
+            scale: i64 @= digits
+
+            while scale < 9
+                fraction @ fraction * 10
+                scale @ scale + 1
+
+            full.nanosecond @ fraction
+
+    if full.hour < 0 || full.minute < 0 || full.second < 0 || full.nanosecond < 0
+        return fail(code: INVALID, msg: f"\"{s}\" is no ISO 8601 date and time")
+    return ok(full)
+
+# The first child of `e` named `local`.
+function child_of(e: xml.Element, local: str) -> xml.Element?
+    for c in xml.elements_of(e)
+        if c.name.local == local
+            return ok(c)
+
+    return fail(code: "not_found", msg: f"no <{local}>")
+
+# Takes `n` from what `left` allows, failing `limit` with `what` where it
+# passes.
+function spend(@left: i64, n: i64, what: str) -> ()?
+    if n > left
+        return fail(code: LIMIT, msg: f"{what}: past the bound the reading allows")
+    left @ left - n
+    return ok()
+
+# `got`, its failure's message naming the sheet `sheet`.
+function in_sheet<T>(got: T?, sheet: str) -> T?
+    match got
+        .ok v  => return ok(v)
+        .err e => return fail(code: e.code, msg: f"the sheet \"{sheet}\": {e.msg}")
+
+# The root element of the XML `s`, a piece of the sheet `sheet`.
+function parse_piece(s: str, sheet: str) -> xml.Element?
+    doc = in_sheet(xml.parse_with(s, xml.ParseOptions(max_depth: xml.DEFAULT_MAX_DEPTH, max_bytes: s.len() + 1)), sheet: sheet)?
+    return ok(doc.root)
+
+# The sheet whose part's text is `part_text`, named `name`, its tab `state`: its
+# rows read one at a time, each as a tree of its own, and the rest of it as
+# one.
+function read_sheet(part_text: str, name: str, state: str, given: Given, rels: [parts.Rel], @budget: i64, @cells_left: i64) -> model.Sheet?
+    layout = in_sheet(rows_scan.layout_of(part_text), sheet: name)?
+    rest: str @= part_text
+
+    if layout.data.start >= 0
+        rest @ part_text.slice(from: 0, to: layout.data.start) + part_text.slice(from: layout.data.end, to: part_text.len())
+    root = parse_piece(s: rest, sheet: name)?
+    cells: [model.Cell] @= []
+    merged: [names.Box] @= []
+    columns: [model.Column] @= []
+    rows: [model.Row] @= []
+    frozen_rows: i64 @= 0
+    frozen_columns: i64 @= 0
+    masters: {i64: Master} @= {}
+    in_order: bool @= true
+    links: [model.Link] @= []
+    row_at: i64 @= -1
+    close = "</" + layout.root_name + ">"
+
+    for span in layout.rows
+        piece = parse_piece(s: layout.root_open + part_text.slice(from: span.start, to: span.end) + close, sheet: name)?
+
+        for r in xml.elements_of(piece)
+            if r.name.local == "row"
+                row_at @ int_attribute(r, name: "r", fallback: row_at + 2) - 1
+
+                if row_at < 0 || row_at >= names.ROWS
+                    return fail(
+                        code: INVALID,
+                        msg: f"the sheet \"{name}\" holds a row numbered {row_at + 1}, outside 1 to {names.ROWS}"
+                    )
+                custom = flag(r, name: "customHeight")
+                hidden = flag(r, name: "hidden")
+
+                if custom || hidden
+                    height: f64 @= 0.0
+
+                    if custom
+                        height @ float_attribute(r, name: "ht", fallback: 0.0)
+                    rows @ rows.push(model.Row(row: row_at, height: height, hidden: hidden))
+                column_at: i64 @= -1
+
+                for c in xml.elements_of(r)
+                    if c.name.local == "c"
+                        row: i64 @= row_at
+
+                        match xml.attribute(c, name: "r")
+                            .ok ref =>
+                                match names.spot_of(ref)
+                                    .ok spot =>
+                                        row @ spot.row
+                                        column_at @ spot.column
+                                    .err e => return fail(code: INVALID, msg: f"the sheet \"{name}\": {e.msg}")
+                            .err _ => column_at @ column_at + 1
+
+                        if column_at >= names.COLUMNS
+                            return fail(code: INVALID, msg: f"the sheet \"{name}\" holds a cell past the last column")
+                        got = read_cell(c, row: row, column: column_at, given: given, @masters, sheet: name)?
+
+                        if got.kind != model.EMPTY || got.formula != "" || got.style != 0
+                            spend(left: @cells_left, n: 1, what: f"the cells of the sheet \"{name}\"")?
+                            spend(left: @budget, n: got.text.len() + got.formula.len(), what: f"the text of the sheet \"{name}\"")?
+
+                            if cells.len() > 0 && !is_before(a: cells[cells.len() - 1], b: got)
+                                in_order @ false
+                            cells @ cells.push(got)
+
+    for part in xml.elements_of(root)
+        local = part.name.local
+
+        if local == "mergeCells"
+            for m in xml.elements_of(part)
+                if m.name.local == "mergeCell"
+                    match names.box_of(xml.attribute(m, name: "ref").default(""))
+                        .ok box => merged @ merged.push(box)
+                        .err e  => return fail(code: INVALID, msg: f"the sheet \"{name}\" merges {e.msg}")
+        else if local == "hyperlinks"
+            for h in xml.elements_of(part)
+                if h.name.local == "hyperlink"
+                    match names.box_of(xml.attribute(h, name: "ref").default(""))
+                        .ok box =>
+                            target: str @= ""
+                            id = parts.namespaced(h, local: "id")
+
+                            if id != ""
+                                match parts.rel_of_id(rels, id: id)
+                                    .ok r  => target @ r.target
+                                    .err _ => _ = 0
+                            links @ links.push(
+                                model.Link(box: box, target: target, location: text.decoded(xml.attribute(h, name: "location").default("")), tooltip: text.decoded(xml.attribute(h, name: "tooltip").default("")), display: text.decoded(xml.attribute(h, name: "display").default("")))
+                            )
+                        .err e => return fail(code: INVALID, msg: f"the sheet \"{name}\" links {e.msg}")
+        else if local == "cols"
+            for col in xml.elements_of(part)
+                if col.name.local == "col"
+                    first = int_attribute(col, name: "min", fallback: 0) - 1
+                    last: i64 @= int_attribute(col, name: "max", fallback: first + 1) - 1
+
+                    if last >= names.COLUMNS
+                        last @ names.COLUMNS - 1
+
+                    if first >= 0 && first <= last
+                        columns @ columns.push(
+                            model.Column(first: first, last: last, width: float_attribute(col, name: "width", fallback: 0.0), hidden: flag(col, name: "hidden"))
+                        )
+        else if local == "sheetViews"
+            for view in xml.elements_of(part)
+                match child_of(view, local: "pane")
+                    .ok pane =>
+                        pane_state = xml.attribute(pane, name: "state").default("split")
+
+                        if pane_state == "frozen" || pane_state == "frozenSplit"
+                            frozen_columns @ to_i64(float_attribute(pane, name: "xSplit", fallback: 0.0)).default(0)
+                            frozen_rows @ to_i64(float_attribute(pane, name: "ySplit", fallback: 0.0)).default(0)
+                    .err _ => _ = 0
+
+    if !in_order
+        cells @ in_place_order(cells)
+    return ok(
+        model.Sheet(name: name, state: state, cells: cells, merged: merged, columns: columns, rows: rows, frozen_rows: frozen_rows, frozen_columns: frozen_columns, links: links)
+    )
+
+# `cells` in order by row and column, the last of two at one place kept.
+function in_place_order(cells: [model.Cell]) -> [model.Cell]
+    sorted = lists.sort_by(cells, less: is_before)
+    kept: [model.Cell] @= []
+
+    for c in sorted
+        if kept.len() > 0 && !is_before(a: kept[kept.len() - 1], b: c)
+            kept[kept.len() - 1] @ c
+        else
+            kept @ kept.push(c)
+
+    return kept
+
+# The cell `c` at `row` and `column`, its value read by its type, its style,
+# and its formula, a shared one's text moved to its place.
+function read_cell(c: xml.Element, row: i64, column: i64, given: Given, @masters: {i64: Master}, sheet: str) -> model.Cell?
+    style: i64 @= int_attribute(c, name: "s", fallback: 0)
+
+    if style < 0 || style >= given.dates.len()
+        style @ 0
+    kind = xml.attribute(c, name: "t").default("n")
+    value: str @= ""
+    has_value: bool @= false
+    formula_text: str @= ""
+    inline: str @= ""
+    has_inline: bool @= false
+
+    for e in xml.elements_of(c)
+        local = e.name.local
+
+        if local == "v"
+            value @ xml.text_of(e)
+            has_value @ true
+        else if local == "is"
+            inline @ shared.item_text(e)
+            has_inline @ true
+        else if local == "f"
+            written = text.decoded(xml.text_of(e))
+
+            if xml.attribute(e, name: "t").default("normal") == "shared"
+                si = int_attribute(e, name: "si", fallback: -1)
+
+                if written != ""
+                    formula_text @ written
+                    masters[si] @ Master(text: written, row: row, column: column)
+                else
+                    match masters[si]
+                        .ok m  => formula_text @ formula.shifted(m.text, rows: row - m.row, columns: column - m.column)
+                        .err _ => formula_text @ ""
+            else
+                formula_text @ written
+
+    cell @= model.Cell(
+        row: row,
+        column: column,
+        kind: model.EMPTY,
+        number: 0.0,
+        text: "",
+        formula: formula_text,
+        style: style
+    )
+    place = names.name_of(row: row, column: column).default("?")
+
+    if kind == "s"
+        if has_value
+            at = numbers.parse_int(strings.trim(value)).default(-1)
+
+            if at < 0 || at >= given.strings.len()
+                return fail(
+                    code: INVALID,
+                    msg: f"the cell {place} of the sheet \"{sheet}\" names the shared string {value}, of {given.strings.len()}"
+                )
+            cell.kind @ model.TEXT
+            cell.text @ given.strings[at]
+    else if kind == "inlineStr"
+        if has_inline
+            cell.kind @ model.TEXT
+            cell.text @ inline
+        else if has_value
+            cell.kind @ model.TEXT
+            cell.text @ text.decoded(value)
+    else if kind == "str"
+        if has_value
+            cell.kind @ model.TEXT
+            cell.text @ text.decoded(value)
+    else if kind == "b"
+        if has_value
+            v = strings.trim(value)
+            cell.kind @ model.BOOLEAN
+
+            if v == "1" || v == "true"
+                cell.number @ 1.0
+            else if v != "0" && v != "false"
+                return fail(
+                    code: INVALID,
+                    msg: f"the cell {place} of the sheet \"{sheet}\" holds \"{value}\" as a boolean"
+                )
+    else if kind == "e"
+        if has_value
+            cell.kind @ model.ERROR
+            cell.text @ value
+    else if kind == "d"
+        if has_value
+            match iso_date(strings.trim(value))
+                .ok date =>
+                    match dates.serial_of(date, from_1904: given.from_1904)
+                        .ok serial =>
+                            cell.kind @ model.DATE
+                            cell.number @ serial
+                        .err _ =>
+                            cell.kind @ model.TEXT
+                            cell.text @ value
+                .err _ =>
+                    cell.kind @ model.TEXT
+                    cell.text @ value
+    else if has_value && strings.trim(value) != ""
+        match numbers.parse_float(strings.trim(value))
+            .ok n =>
+                if n != n || n - n != 0.0
+                    return fail(
+                        code: INVALID,
+                        msg: f"the cell {place} of the sheet \"{sheet}\" holds \"{value}\", which no cell holds"
+                    )
+                cell.kind @ model.NUMBER
+                cell.number @ n
+
+                if given.dates[style] && !dates.date_of(n, from_1904: given.from_1904).is_err()
+                    cell.kind @ model.DATE
+            .err _ => return fail(
+                code: INVALID,
+                msg: f"the cell {place} of the sheet \"{sheet}\" holds \"{value}\" as a number"
+            )
+    return ok(cell)
+
+test "iso_date: a date, a date and time with a fraction and a zone, and what is none"
+    assert iso_date("2026-11-18").must() == time.DateTime(year: 2026, month: 11, day: 18, hour: 0, minute: 0, second: 0, nanosecond: 0)
+    t = iso_date("2026-11-18T13:45:30.25Z").must()
+    assert t.hour == 13 && t.minute == 45 && t.second == 30 && t.nanosecond == 250000000
+    assert iso_date("2026-11-18T13:45").must().minute == 45
+    assert iso_date("2026/11/18").is_err()
+    assert iso_date("26-11-18").is_err()
+    assert iso_date("").is_err()
+
+test "read_sheet: every type of cell, a shared formula, merged areas, widths, heights, a frozen pane and cells out of order"
+    sheet_text = "<worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><sheetViews><sheetView workbookViewId=\"0\"><pane xSplit=\"1\" ySplit=\"2\" topLeftCell=\"B3\" state=\"frozen\"/></sheetView></sheetViews><cols><col min=\"1\" max=\"2\" width=\"20.5\" customWidth=\"1\"/><col min=\"5\" max=\"16384\" width=\"9\" hidden=\"1\"/></cols><sheetData><row r=\"1\" ht=\"30\" customHeight=\"1\"><c r=\"A1\" t=\"s\"><v>1</v></c><c r=\"B1\" t=\"inlineStr\"><is><t>in</t></is></c><c r=\"C1\" t=\"b\"><v>1</v></c><c r=\"D1\" t=\"e\"><v>#N/A</v></c><c r=\"E1\" s=\"1\"><v>61</v></c><c r=\"F1\" t=\"d\"><v>1900-03-01</v></c></row><row r=\"3\"><c r=\"B3\"><f t=\"shared\" ref=\"B3:B4\" si=\"0\">A3*2</f><v>4</v></c><c r=\"C3\" t=\"str\"><f>\"x\"&amp;A3</f><v>x2</v></c><c><v>1e+21</v></c></row><row r=\"4\"><c r=\"B4\"><f t=\"shared\" si=\"0\"/><v>6</v></c><c r=\"A4\" s=\"1\"/></row></sheetData><mergeCells count=\"1\"><mergeCell ref=\"A7:C8\"/></mergeCells></worksheet>"
+    given = Given(strings: ["zero", "one"], dates: [false, true], from_1904: false)
+    budget: i64 @= 1000
+    cells_left: i64 @= 100
+    s = read_sheet(
+        part_text: sheet_text,
+        name: "S",
+        state: "visible",
+        given: given,
+        rels: [],
+        budget: @budget,
+        cells_left: @cells_left
+    ).must()
+    assert s.cells.len() == 11
+    assert s.cells[0].kind == model.TEXT && s.cells[0].text == "one"
+    assert s.cells[1].text == "in" && s.cells[2].kind == model.BOOLEAN && s.cells[2].number == 1.0
+    assert s.cells[3].kind == model.ERROR && s.cells[3].text == "#N/A"
+    assert s.cells[4].kind == model.DATE && s.cells[4].number == 61.0
+    assert s.cells[5].kind == model.DATE && s.cells[5].number == 61.0
+    assert s.cells[6].row == 2 && s.cells[6].column == 1 && s.cells[6].formula == "A3*2" && s.cells[6].number == 4.0
+    assert s.cells[7].kind == model.TEXT && s.cells[7].formula == "\"x\"&A3"
+    assert s.cells[8].column == 3 && s.cells[8].number == 1000000000000000000000.0
+    assert s.cells[9].row == 3 && s.cells[9].column == 0 && s.cells[9].kind == model.EMPTY && s.cells[9].style == 1
+    assert s.cells[10].formula == "A4*2"
+    assert s.merged == [names.Box(first_row: 6, first_column: 0, last_row: 7, last_column: 2)]
+    assert s.columns.len() == 2 && s.columns[0].width == 20.5 && s.columns[1].last == 16383 && s.columns[1].hidden
+    assert s.rows == [model.Row(row: 0, height: 30.0, hidden: false)]
+    assert s.frozen_rows == 2 && s.frozen_columns == 1
+    assert cells_left == 89
+
+test "read_sheet: cells past the bound, text past the bytes, a shared string that is not there, a NaN, and a row outside"
+    given = Given(strings: ["a"], dates: [false], from_1904: false)
+    many = "<worksheet><sheetData><row r=\"1\"><c r=\"A1\"><v>1</v></c><c r=\"B1\"><v>2</v></c></row></sheetData></worksheet>"
+    budget: i64 @= 1000
+    one: i64 @= 1
+
+    match read_sheet(part_text: many, name: "S", state: "visible", given: given, rels: [], budget: @budget, cells_left: @one)
+        .ok _  => assert false
+        .err e => assert e.code == "limit"
+
+    text_root = "<worksheet><sheetData><row><c t=\"inlineStr\"><is><t>abcdef</t></is></c></row></sheetData></worksheet>"
+    few: i64 @= 3
+    plenty: i64 @= 10
+
+    match read_sheet(part_text: text_root, name: "S", state: "visible", given: given, rels: [], budget: @few, cells_left: @plenty)
+        .ok _  => assert false
+        .err e => assert e.code == "limit"
+
+    for bad in ["<c t=\"s\"><v>5</v></c>", "<c><v>nan</v></c>", "<c><v>x</v></c>", "<c t=\"b\"><v>2</v></c>"]
+        b = "<worksheet><sheetData><row>" + bad + "</row></sheetData></worksheet>"
+        more: i64 @= 1000
+        cells: i64 @= 10
+        assert read_sheet(
+            part_text: b,
+            name: "S",
+            state: "visible",
+            given: given,
+            rels: [],
+            budget: @more,
+            cells_left: @cells
+        ).is_err()
+
+    far = "<worksheet><sheetData><row r=\"1048577\"/></sheetData></worksheet>"
+    last: i64 @= 1000
+    room: i64 @= 10
+    assert read_sheet(
+        part_text: far,
+        name: "S",
+        state: "visible",
+        given: given,
+        rels: [],
+        budget: @last,
+        cells_left: @room
+    ).is_err()
+
+test "read_sheet: an external link and one inside the workbook, a tip and a display, and a link to no cell"
+    sheet_text = "<worksheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><sheetData/><hyperlinks><hyperlink xmlns:r=\"urn:r\" ref=\"A1\" tooltip=\"a tip\" r:id=\"rId1\"/><hyperlink ref=\"B2:C3\" location=\"Other!A1\" display=\"go\"/></hyperlinks></worksheet>"
+    given = Given(strings: [], dates: [false], from_1904: false)
+    rels = [parts.Rel(id: "rId1", kind: "hyperlink", target: "https://example.com/?a=1&b=2", external: true)]
+    budget: i64 @= 1000
+    cells_left: i64 @= 10
+    s = read_sheet(
+        part_text: sheet_text,
+        name: "S",
+        state: "visible",
+        given: given,
+        rels: rels,
+        budget: @budget,
+        cells_left: @cells_left
+    ).must()
+    assert s.links == [model.Link(box: names.Box(first_row: 0, first_column: 0, last_row: 0, last_column: 0), target: "https://example.com/?a=1&b=2", location: "", tooltip: "a tip", display: ""), model.Link(box: names.Box(first_row: 1, first_column: 1, last_row: 2, last_column: 2), target: "", location: "Other!A1", tooltip: "", display: "go")]
+    bad = "<worksheet><hyperlinks><hyperlink ref=\"A0\" location=\"x\"/></hyperlinks></worksheet>"
+    assert read_sheet(
+        part_text: bad,
+        name: "S",
+        state: "visible",
+        given: given,
+        rels: rels,
+        budget: @budget,
+        cells_left: @cells_left
+    ).is_err()
+
+test "in_place_order: out of order, and two at one place, the last kept"
+    a = model.Cell(row: 1, column: 0, kind: model.NUMBER, number: 1.0, text: "", formula: "", style: 0)
+    b = model.Cell(row: 0, column: 2, kind: model.NUMBER, number: 2.0, text: "", formula: "", style: 0)
+    c = model.Cell(row: 1, column: 0, kind: model.NUMBER, number: 3.0, text: "", formula: "", style: 0)
+    got = in_place_order([a, b, c])
+    assert got.len() == 2 && got[0].number == 2.0 && got[1].number == 3.0

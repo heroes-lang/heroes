@@ -1,0 +1,543 @@
+# The styles part read: every cell format of `cellXfs` as a `model.Style`,
+# its font, fill, border, alignment and number format found by their indices,
+# and every colour as `RRGGBB`: written so, taken from the palette by its
+# index, or from the theme by its index and tint. An index that names nothing
+# reads as the default, as Excel reads it, rather than refusing the file.
+
+use math
+use numbers
+use strings
+use xlsx/internal/model
+use xlsx/internal/numfmt
+use xml
+
+# A font as the part writes it.
+record FontPart
+    # Its name.
+    name: str
+    # Its size.
+    size: f64
+    # Its colour.
+    color: str
+    # Bold.
+    bold: bool
+    # Italic.
+    italic: bool
+    # The underline's word, empty for none.
+    underline: str
+    # Struck.
+    strike: bool
+
+# A fill as the part writes it.
+record FillPart
+    # The pattern's word.
+    pattern: str
+    # The foreground colour.
+    color: str
+    # The background colour.
+    background: str
+
+# A border as the part writes it: each edge's style word and colour.
+record BorderPart
+    # The left edge's word.
+    left_line: str
+    # The left edge's colour.
+    left_color: str
+    # The right edge's word.
+    right_line: str
+    # The right edge's colour.
+    right_color: str
+    # The top edge's word.
+    top_line: str
+    # The top edge's colour.
+    top_color: str
+    # The bottom edge's word.
+    bottom_line: str
+    # The bottom edge's colour.
+    bottom_color: str
+
+# What the styles part answers: the styles, and which of them show a date.
+record Read
+    # Every cell format, in order.
+    styles: [model.Style]
+    # Whether each shows a date, in the same order.
+    dates: [bool]
+
+# The palette Excel's indices 0 to 63 name.
+function default_palette() -> [str]
+    return [
+        "000000"
+        "FFFFFF"
+        "FF0000"
+        "00FF00"
+        "0000FF"
+        "FFFF00"
+        "FF00FF"
+        "00FFFF"
+        "000000"
+        "FFFFFF"
+        "FF0000"
+        "00FF00"
+        "0000FF"
+        "FFFF00"
+        "FF00FF"
+        "00FFFF"
+        "800000"
+        "008000"
+        "000080"
+        "808000"
+        "800080"
+        "008080"
+        "C0C0C0"
+        "808080"
+        "9999FF"
+        "993366"
+        "FFFFCC"
+        "CCFFFF"
+        "660066"
+        "FF8080"
+        "0066CC"
+        "CCCCFF"
+        "000080"
+        "FF00FF"
+        "FFFF00"
+        "00FFFF"
+        "800080"
+        "800000"
+        "008080"
+        "0000FF"
+        "00CCFF"
+        "CCFFFF"
+        "CCFFCC"
+        "FFFF99"
+        "99CCFF"
+        "FF99CC"
+        "CC99FF"
+        "FFCC99"
+        "3366FF"
+        "33CCCC"
+        "99CC00"
+        "FFCC00"
+        "FF9900"
+        "FF6600"
+        "666699"
+        "969696"
+        "003366"
+        "339966"
+        "003300"
+        "333300"
+        "993300"
+        "993366"
+        "333399"
+        "333333"
+    ]
+
+# The theme's twelve colours in the order a style's `theme` index names them,
+# light 1 and dark 1 first: the theme openpyxl writes, where a file has none.
+function default_theme() -> [str]
+    return [
+        "FFFFFF"
+        "000000"
+        "EEECE1"
+        "1F497D"
+        "4F81BD"
+        "C0504D"
+        "9BBB59"
+        "8064A2"
+        "4BACC6"
+        "F79646"
+        "0000FF"
+        "800080"
+    ]
+
+# The theme part's colours in the order a style's index names them: its
+# scheme writes dark 1, light 1, dark 2, light 2, and Excel's index 0 is
+# light 1.
+function theme_colors(root: xml.Element) -> [str]
+    found: [str] @= []
+
+    for scheme in xml.descendants_of(root)
+        if scheme.name.local == "clrScheme"
+            for slot in xml.elements_of(scheme)
+                color: str @= ""
+
+                for c in xml.elements_of(slot)
+                    if c.name.local == "srgbClr"
+                        color @ hex6(xml.attribute(c, name: "val").default(""))
+                    else if c.name.local == "sysClr"
+                        color @ hex6(xml.attribute(c, name: "lastClr").default(""))
+
+                found @ found.push(color)
+
+            if found.len() >= 12
+                swapped: [str] @= [found[1], found[0], found[3], found[2]]
+
+                for c in found.slice(from: 4, to: 12)
+                    swapped @ swapped.push(c)
+
+                return swapped
+            found @ []
+
+    return default_theme()
+
+# The last six hexadecimal digits of `s`, upper-case: the colour of an ARGB
+# or an RGB text; empty where `s` is no colour.
+function hex6(s: str) -> str
+    if s.len() != 6 && s.len() != 8
+        return ""
+
+    for c in s.chars()
+        if !(c[0] >= '0' && c[0] <= '9' || c[0] >= 'a' && c[0] <= 'f' || c[0] >= 'A' && c[0] <= 'F')
+            return ""
+
+    return strings.to_upper_ascii(s.slice(from: s.len() - 6, to: s.len()))
+
+# The colour `e`, a `<color>`, `<fgColor>` or `<bgColor>`, names: by `rgb`,
+# by `indexed` in `palette`, or by `theme` and `tint`; empty for the automatic
+# colour and what names none.
+function color_of(e: xml.Element, palette: [str], theme: [str]) -> str
+    match xml.attribute(e, name: "rgb")
+        .ok rgb => return hex6(rgb)
+        .err _  => _ = 0
+
+    match xml.attribute(e, name: "indexed")
+        .ok text =>
+            n = numbers.parse_int(text).default(-1)
+
+            if n >= 0 && n < palette.len()
+                return palette[n]
+            return ""
+        .err _ => _ = 0
+
+    match xml.attribute(e, name: "theme")
+        .ok text =>
+            n = numbers.parse_int(text).default(-1)
+
+            if n < 0 || n >= theme.len() || theme[n] == ""
+                return ""
+            tint = numbers.parse_float(xml.attribute(e, name: "tint").default("0")).default(0.0)
+            return tinted(color: theme[n], tint: tint)
+        .err _ => return ""
+
+# The value of the two hexadecimal digits of `s` at `at`, 0 to 255.
+function byte_at(s: str, at: i64) -> f64
+    return to_f64(numbers.parse_int_base(s.slice(from: at, to: at + 2), base: 16).default(0))
+
+# Two upper-case hexadecimal digits for `x`, 0 to 255, rounded.
+function two_hex(x: f64) -> str
+    n = to_i64(math.round(math.clamp(x: x, low: 0.0, high: 255.0))).must()
+    return strings.pad_zeros(strings.to_upper_ascii(numbers.format_int(n: n, base: 16)), 2)
+
+# `color`, `RRGGBB`, lightened by a positive `tint` or darkened by a negative
+# one, as Excel applies a tint to a theme's colour: its lightness in HSL
+# moved toward white or black by that fraction.
+function tinted(color: str, tint: f64) -> str
+    if tint == 0.0
+        return color
+    r = byte_at(color, at: 0) / 255.0
+    g = byte_at(color, at: 2) / 255.0
+    b = byte_at(color, at: 4) / 255.0
+    high = math.max(a: math.max(a: r, b: g), b: b)
+    low = math.min(a: math.min(a: r, b: g), b: b)
+    light: f64 @= (high + low) / 2.0
+    hue: f64 @= 0.0
+    saturation: f64 @= 0.0
+
+    if high != low
+        spread = high - low
+
+        if light > 0.5
+            saturation @ spread / (2.0 - high - low)
+        else
+            saturation @ spread / (high + low)
+
+        if high == r
+            hue @ (g - b) / spread
+
+            if g < b
+                hue @ hue + 6.0
+        else if high == g
+            hue @ (b - r) / spread + 2.0
+        else
+            hue @ (r - g) / spread + 4.0
+        hue @ hue / 6.0
+
+    if tint < 0.0
+        light @ light * (1.0 + tint)
+    else
+        light @ light * (1.0 - tint) + tint
+
+    if saturation == 0.0
+        v = two_hex(light * 255.0)
+        return v + v + v
+    q: f64 @= light * (1.0 + saturation)
+
+    if light >= 0.5
+        q @ light + saturation - light * saturation
+    p = 2.0 * light - q
+    return two_hex(channel(p: p, q: q, t: hue + 1.0 / 3.0) * 255.0) + two_hex(channel(p: p, q: q, t: hue) * 255.0) + two_hex(channel(p: p, q: q, t: hue - 1.0 / 3.0) * 255.0)
+
+# One channel of a colour from its hue's place `t`, as HSL's conversion takes
+# it.
+function channel(p: f64, q: f64, t: f64) -> f64
+    h: f64 @= t
+
+    if h < 0.0
+        h @ h + 1.0
+
+    if h > 1.0
+        h @ h - 1.0
+
+    if h < 1.0 / 6.0
+        return p + (q - p) * 6.0 * h
+
+    if h < 0.5
+        return q
+
+    if h < 2.0 / 3.0
+        return p + (q - p) * (2.0 / 3.0 - h) * 6.0
+    return p
+
+# Whether the element `e`, a font's `<b>`, `<i>` or `<strike>`, is set: with
+# no `val`, or a `val` of `1` or `true`.
+function is_on(e: xml.Element) -> bool
+    v = xml.attribute(e, name: "val").default("1")
+    return v == "1" || v == "true"
+
+# The elements of `root` named `local`'s children, in order: the fonts of
+# `<fonts>`.
+function items_of(root: xml.Element, local: str) -> [xml.Element]
+    for e in xml.elements_of(root)
+        if e.name.local == local
+            return xml.elements_of(e)
+
+    return []
+
+# The fonts of `root`.
+function fonts_of(root: xml.Element, palette: [str], theme: [str]) -> [FontPart]
+    found: [FontPart] @= []
+
+    for f in items_of(root, local: "fonts")
+        font @= FontPart(name: "", size: 11.0, color: "", bold: false, italic: false, underline: "", strike: false)
+
+        for e in xml.elements_of(f)
+            local = e.name.local
+
+            if local == "name"
+                font.name @ xml.attribute(e, name: "val").default("")
+            else if local == "sz"
+                font.size @ numbers.parse_float(xml.attribute(e, name: "val").default("11")).default(11.0)
+            else if local == "color"
+                font.color @ color_of(e, palette: palette, theme: theme)
+            else if local == "b"
+                font.bold @ is_on(e)
+            else if local == "i"
+                font.italic @ is_on(e)
+            else if local == "strike"
+                font.strike @ is_on(e)
+            else if local == "u"
+                u = xml.attribute(e, name: "val").default("single")
+
+                if u == "none"
+                    font.underline @ ""
+                else
+                    font.underline @ u
+
+        found @ found.push(font)
+
+    return found
+
+# The fills of `root`.
+function fills_of(root: xml.Element, palette: [str], theme: [str]) -> [FillPart]
+    found: [FillPart] @= []
+
+    for f in items_of(root, local: "fills")
+        fill @= FillPart(pattern: "none", color: "", background: "")
+
+        for p in xml.elements_of(f)
+            if p.name.local == "patternFill"
+                fill.pattern @ xml.attribute(p, name: "patternType").default("none")
+
+                for c in xml.elements_of(p)
+                    if c.name.local == "fgColor"
+                        fill.color @ color_of(c, palette: palette, theme: theme)
+                    else if c.name.local == "bgColor"
+                        fill.background @ color_of(c, palette: palette, theme: theme)
+
+        found @ found.push(fill)
+
+    return found
+
+# The edge `side` of the border `b`: its style word and its colour.
+function edge_of(b: xml.Element, side: str, palette: [str], theme: [str]) -> [str]
+    for e in xml.elements_of(b)
+        if e.name.local == side
+            line = xml.attribute(e, name: "style").default("")
+            color: str @= ""
+
+            for c in xml.elements_of(e)
+                if c.name.local == "color"
+                    color @ color_of(c, palette: palette, theme: theme)
+
+            if line == "none"
+                return ["", color]
+            return [line, color]
+
+    return ["", ""]
+
+# The borders of `root`.
+function borders_of(root: xml.Element, palette: [str], theme: [str]) -> [BorderPart]
+    found: [BorderPart] @= []
+
+    for b in items_of(root, local: "borders")
+        left = edge_of(b, side: "left", palette: palette, theme: theme)
+        right = edge_of(b, side: "right", palette: palette, theme: theme)
+        top = edge_of(b, side: "top", palette: palette, theme: theme)
+        bottom = edge_of(b, side: "bottom", palette: palette, theme: theme)
+        found @ found.push(
+            BorderPart(left_line: left[0], left_color: left[1], right_line: right[0], right_color: right[1], top_line: top[0], top_color: top[1], bottom_line: bottom[0], bottom_color: bottom[1])
+        )
+
+    return found
+
+# The palette of `root`: its own `<indexedColors>` where it writes them, the
+# default otherwise.
+function palette_of(root: xml.Element) -> [str]
+    for e in xml.elements_of(root)
+        if e.name.local == "colors"
+            for list in xml.elements_of(e)
+                if list.name.local == "indexedColors"
+                    own: [str] @= []
+
+                    for c in xml.elements_of(list)
+                        own @ own.push(hex6(xml.attribute(c, name: "rgb").default("")))
+
+                    if own.len() > 0
+                        return own
+
+    return default_palette()
+
+# The index `xf` names in its attribute `name`, or 0 where it names none.
+function index_of_attribute(xf: xml.Element, name: str) -> i64
+    n = numbers.parse_int(xml.attribute(xf, name: name).default("0")).default(0)
+
+    if n < 0
+        return 0
+    return n
+
+# The styles `root`, a styles part, holds, its colours read with `theme`.
+function read_styles(root: xml.Element, theme: [str]) -> Read
+    palette = palette_of(root)
+    fonts = fonts_of(root, palette: palette, theme: theme)
+    fills = fills_of(root, palette: palette, theme: theme)
+    borders = borders_of(root, palette: palette, theme: theme)
+    codes: {i64: str} @= {}
+
+    for f in items_of(root, local: "numFmts")
+        id = numbers.parse_int(xml.attribute(f, name: "numFmtId").default("-1")).default(-1)
+        codes[id] @ xml.attribute(f, name: "formatCode").default("")
+
+    styles: [model.Style] @= []
+    dates: [bool] @= []
+
+    for xf in items_of(root, local: "cellXfs")
+        style @= model.default_style()
+        font_at = index_of_attribute(xf, name: "fontId")
+
+        if font_at < fonts.len()
+            font = fonts[font_at]
+            style.font_name @ font.name
+            style.font_size @ font.size
+            style.font_color @ font.color
+            style.bold @ font.bold
+            style.italic @ font.italic
+            style.underline @ font.underline
+            style.strike @ font.strike
+        fill_at = index_of_attribute(xf, name: "fillId")
+
+        if fill_at < fills.len()
+            fill = fills[fill_at]
+            style.pattern @ fill.pattern
+            style.fill_color @ fill.color
+            style.fill_background @ fill.background
+        border_at = index_of_attribute(xf, name: "borderId")
+
+        if border_at < borders.len()
+            b = borders[border_at]
+            style.left_line @ b.left_line
+            style.left_color @ b.left_color
+            style.right_line @ b.right_line
+            style.right_color @ b.right_color
+            style.top_line @ b.top_line
+            style.top_color @ b.top_color
+            style.bottom_line @ b.bottom_line
+            style.bottom_color @ b.bottom_color
+
+        for a in xml.elements_of(xf)
+            if a.name.local == "alignment"
+                style.horizontal @ xml.attribute(a, name: "horizontal").default("general")
+                style.vertical @ xml.attribute(a, name: "vertical").default("bottom")
+                style.wrap @ is_on_attribute(a, name: "wrapText")
+
+        id = index_of_attribute(xf, name: "numFmtId")
+        is_date: bool @= false
+
+        match codes[id]
+            .ok code =>
+                style.number_format @ code
+                is_date @ numfmt.is_date(code)
+            .err _ =>
+                match numfmt.code_of(id)
+                    .ok code =>
+                        style.number_format @ code
+                        is_date @ numfmt.is_date(code)
+                    .err _ =>
+                        style.number_format @ "General"
+                        is_date @ numfmt.is_date_id(id)
+
+        styles @ styles.push(style)
+        dates @ dates.push(is_date)
+
+    if styles.len() == 0
+        styles @ styles.push(model.default_style())
+        dates @ dates.push(false)
+    return Read(styles: styles, dates: dates)
+
+# Whether the attribute `name` of `e` is `1` or `true`.
+function is_on_attribute(e: xml.Element, name: str) -> bool
+    v = xml.attribute(e, name: name).default("0")
+    return v == "1" || v == "true"
+
+test "hex6: ARGB, RGB, lower case, and what is no colour"
+    assert hex6("FFFF0000") == "FF0000"
+    assert hex6("00ff00") == "00FF00"
+    assert hex6("FFF") == ""
+    assert hex6("GG0000") == ""
+
+test "tinted: excelize's answers for an accent lightened and darkened, white darkened, black lightened, and no tint"
+    assert tinted(color: "4472C4", tint: 0.3999755851924192) == "8FAADC"
+    assert tinted(color: "4472C4", tint: -0.249977111117893) == "2F5597"
+    assert tinted(color: "FFFFFF", tint: -0.1499984740745262) == "D9D9D9"
+    assert tinted(color: "000000", tint: 0.499984740745262) == "7F7F7F"
+    assert tinted(color: "44546A", tint: 0.7999816888943144) == "D6DCE5"
+    assert tinted(color: "ED7D31", tint: 0.0) == "ED7D31"
+    assert tinted(color: "70AD47", tint: -0.5) == "385723"
+    assert tinted(color: "FFC000", tint: 0.5) == "FFE080"
+
+test "read_styles: openpyxl's fonts, fills, borders, alignment and number formats, and an empty part"
+    text = "<styleSheet xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\"><numFmts count=\"1\"><numFmt numFmtId=\"164\" formatCode=\"yyyy-mm-dd\"/></numFmts><fonts><font><name val=\"Calibri\"/><color theme=\"1\"/><sz val=\"11\"/></font><font><name val=\"Arial\"/><b val=\"1\"/><i/><strike val=\"0\"/><color rgb=\"00FF0000\"/><sz val=\"14\"/><u/></font></fonts><fills><fill><patternFill/></fill><fill><patternFill patternType=\"gray125\"/></fill><fill><patternFill patternType=\"solid\"><fgColor indexed=\"5\"/></patternFill></fill></fills><borders><border/><border><left style=\"thin\"><color rgb=\"0000FF00\"/></left><bottom style=\"double\"/></border></borders><cellXfs><xf/><xf fontId=\"1\" fillId=\"2\" borderId=\"1\" numFmtId=\"164\"><alignment horizontal=\"center\" wrapText=\"1\"/></xf><xf numFmtId=\"21\"/><xf numFmtId=\"27\"/><xf numFmtId=\"46\" fontId=\"9\"/></cellXfs></styleSheet>"
+    root = xml.parse(text).must().root
+    got = read_styles(root, theme: default_theme())
+    assert got.styles.len() == 5
+    assert got.styles[0].font_name == "Calibri" && got.styles[0].font_color == "000000" && got.styles[0].number_format == "General"
+    s = got.styles[1]
+    assert s.font_name == "Arial" && s.bold && s.italic && !s.strike && s.font_size == 14.0 && s.font_color == "FF0000" && s.underline == "single"
+    assert s.pattern == "solid" && s.fill_color == "FFFF00"
+    assert s.left_line == "thin" && s.left_color == "00FF00" && s.bottom_line == "double" && s.top_line == ""
+    assert s.horizontal == "center" && s.vertical == "bottom" && s.wrap
+    assert s.number_format == "yyyy-mm-dd" && got.dates[1]
+    assert got.styles[2].number_format == "h:mm:ss" && got.dates[2]
+    assert got.styles[3].number_format == "General" && got.dates[3]
+    assert got.styles[4].number_format == "[h]:mm:ss" && !got.dates[4] && got.styles[4].font_name == "Calibri"
+    none = read_styles(xml.parse("<styleSheet/>").must().root, theme: default_theme())
+    assert none.styles.len() == 1 && !none.dates[0]

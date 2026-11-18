@@ -1,0 +1,190 @@
+# Where a worksheet's rows stand in its text, found by walking its markup
+# once, so that each row can be read as a tree of its own and let go: a sheet
+# read as one tree holds about seventy-five bytes of memory for each byte of
+# its text, measured on 2026-11-18. Comments, CDATA sections, instructions, a
+# document type and quoted attribute values are stepped over, so no `<` inside
+# them is taken for a tag; what the walk does not check, `xml` does when each
+# piece is read.
+
+use strings
+
+constant INVALID: str
+    "invalid"
+
+# Where one piece of the text begins and where it ends, the end excluded.
+record Span
+    # The index of its first byte.
+    start: i64
+    # The index past its last byte.
+    end: i64
+
+# What the walk finds: the root's start tag, the `<sheetData>` element's
+# place, and every row inside it.
+record Layout
+    # The root's start tag as written, `<worksheet xmlns="...">`, always open.
+    root_open: str
+    # The root's name as written, `worksheet` or `x:worksheet`.
+    root_name: str
+    # The `<sheetData>` element, a start of -1 where the sheet has none.
+    data: Span
+    # Each `<row>` inside it, in order.
+    rows: [Span]
+
+# The index past the first `pattern` at or after `from` in `text`, failing
+# where there is none.
+function past(text: str, pattern: str, from: i64, what: str) -> i64?
+    match strings.index_of_from(s: text, substr: pattern, from: from)
+        .ok at => return ok(at + pattern.len())
+        .err _ => return fail(code: INVALID, msg: f"{what} opened at byte {from} is never closed")
+
+# The index past the `>` that ends the tag opened at `at`, quoted attribute
+# values stepped over.
+function tag_end(text: str, at: i64) -> i64?
+    i: i64 @= at + 1
+
+    while i < text.len()
+        b = text[i]
+
+        if b == '"' || b == '\''
+            i @ past(text: text, pattern: text.slice(from: i, to: i + 1), from: i + 1, what: "an attribute's value")?
+        else if b == '>'
+            return ok(i + 1)
+        else
+            i @ i + 1
+
+    return fail(code: INVALID, msg: f"the tag opened at byte {at} is never closed")
+
+# The index past a document type opened at `at`, its internal subset in
+# brackets stepped over.
+function doctype_end(text: str, at: i64) -> i64?
+    depth: i64 @= 0
+    i: i64 @= at + 2
+
+    while i < text.len()
+        b = text[i]
+
+        if b == '"' || b == '\''
+            i @ past(text: text, pattern: text.slice(from: i, to: i + 1), from: i + 1, what: "a quoted text")?
+        else
+            if b == '['
+                depth @ depth + 1
+            else if b == ']'
+                depth @ depth - 1
+            else if b == '>' && depth <= 0
+                return ok(i + 1)
+            i @ i + 1
+
+    return fail(code: INVALID, msg: f"the document type opened at byte {at} is never closed")
+
+# The name of the tag whose name begins at `at`, up to white space, `/` or
+# `>`.
+function name_at(text: str, at: i64) -> str
+    i: i64 @= at
+
+    while i < text.len() && text[i] != ' ' && text[i] != '\t' && text[i] != '\n' && text[i] != '\r' && text[i] != '/' && text[i] != '>'
+        i @ i + 1
+
+    return text.slice(from: at, to: i)
+
+# Whether `name`, a tag's name with its prefix or none, has the local name
+# `local`.
+function is_local(name: str, local: str) -> bool
+    if name == local
+        return true
+    return name.len() > local.len() && strings.has_suffix(s: name, suffix: local) && name[name.len() - local.len() - 1] == ':'
+
+# Where the rows of the worksheet `text` stand.
+function layout_of(text: str) -> Layout?
+    root_open: str @= ""
+    root_name: str @= ""
+    data_start: i64 @= -1
+    data_end: i64 @= -1
+    row_start: i64 @= -1
+    rows: [Span] @= []
+    depth: i64 @= 0
+    at: i64 @= 0
+
+    while at < text.len()
+        if text[at] != '<'
+            match strings.index_of_from(s: text, substr: "<", from: at)
+                .ok next => at @ next
+                .err _   => at @ text.len()
+        else if strings.has_prefix_at(s: text, prefix: "<!--", at: at)
+            at @ past(text: text, pattern: "-->", from: at + 4, what: "a comment")?
+        else if strings.has_prefix_at(s: text, prefix: "<![CDATA[", at: at)
+            at @ past(text: text, pattern: "]]>", from: at + 9, what: "a CDATA section")?
+        else if strings.has_prefix_at(s: text, prefix: "<?", at: at)
+            at @ past(text: text, pattern: "?>", from: at + 2, what: "an instruction")?
+        else if strings.has_prefix_at(s: text, prefix: "<!", at: at)
+            at @ doctype_end(text: text, at: at)?
+        else if at + 1 < text.len() && text[at + 1] == '/'
+            end = tag_end(text: text, at: at)?
+            name = name_at(text: text, at: at + 2)
+            depth @ depth - 1
+
+            if depth < 0
+                return fail(code: INVALID, msg: f"the end tag </{name}> at byte {at} closes nothing")
+
+            if depth == 1 && data_start >= 0 && data_end < 0 && is_local(name: name, local: "sheetData")
+                data_end @ end
+
+            if depth == 2 && data_start >= 0 && data_end < 0 && row_start >= 0 && is_local(name: name, local: "row")
+                rows @ rows.push(Span(start: row_start, end: end))
+                row_start @ -1
+            at @ end
+        else
+            end = tag_end(text: text, at: at)?
+            name = name_at(text: text, at: at + 1)
+            closed = text[end - 2] == '/'
+
+            if depth == 0 && root_name == ""
+                root_name @ name
+
+                if closed
+                    root_open @ text.slice(from: at, to: end - 2) + ">"
+                else
+                    root_open @ text.slice(from: at, to: end)
+            else if depth == 1 && data_start < 0 && is_local(name: name, local: "sheetData")
+                data_start @ at
+
+                if closed
+                    data_end @ end
+            else if depth == 2 && data_start >= 0 && data_end < 0 && is_local(name: name, local: "row")
+                if closed
+                    rows @ rows.push(Span(start: at, end: end))
+                else
+                    row_start @ at
+
+            if !closed
+                depth @ depth + 1
+            at @ end
+
+    if root_name == ""
+        return fail(code: INVALID, msg: "the worksheet holds no element")
+
+    if data_start >= 0 && data_end < 0
+        return fail(code: INVALID, msg: "the sheet's <sheetData> is never closed")
+    return ok(
+        Layout(root_open: root_open, root_name: root_name, data: Span(start: data_start, end: data_end), rows: rows)
+    )
+
+test "layout_of: the rows of a sheet, a prefix, a comment and CDATA holding tags, an empty row, and an empty sheet"
+    text = "<?xml version=\"1.0\"?><x:worksheet xmlns:x=\"urn:s\"><x:dimension ref=\"A1\"/><x:sheetData><x:row r=\"1\"><!-- <row> --><x:c r=\"A1\"><x:v>1</x:v></x:c></x:row><x:row r=\"2\" a='>'/><x:row r=\"3\"><x:c><x:is><x:t><![CDATA[</x:row>]]></x:t></x:is></x:c></x:row></x:sheetData><x:cols/></x:worksheet>"
+    got = layout_of(text).must()
+    assert got.root_name == "x:worksheet" && got.root_open == "<x:worksheet xmlns:x=\"urn:s\">"
+    assert got.rows.len() == 3
+    assert text.slice(from: got.rows[0].start, to: got.rows[0].end) == "<x:row r=\"1\"><!-- <row> --><x:c r=\"A1\"><x:v>1</x:v></x:c></x:row>"
+    assert text.slice(from: got.rows[1].start, to: got.rows[1].end) == "<x:row r=\"2\" a='>'/>"
+    assert text.slice(from: got.data.start, to: got.data.end).len() > 0
+    empty = layout_of("<worksheet><sheetData/></worksheet>").must()
+    assert empty.rows.len() == 0 && empty.data.start == 11 && empty.data.end == 23
+    none = layout_of("<worksheet/>").must()
+    assert none.data.start == -1 && none.root_open == "<worksheet>"
+
+test "layout_of: what is never closed, an end tag closing nothing, and no element"
+    for bad in ["<worksheet><sheetData><row>", "<worksheet a=\"x>", "<worksheet><!-- x", "</a>", "", "text alone", "<worksheet><sheetData>"]
+        assert layout_of(bad).is_err()
+
+test "is_local: a name with a prefix, with none, and another"
+    assert is_local(name: "x:row", local: "row") && is_local(name: "row", local: "row")
+    assert !is_local(name: "xrow", local: "row") && !is_local(name: "rows", local: "row")

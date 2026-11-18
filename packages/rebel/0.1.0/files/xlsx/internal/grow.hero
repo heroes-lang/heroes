@@ -1,0 +1,16 @@
+# A list of the caller's grown or changed in place, whatever its elements:
+# what the face does to a list held in a record it was lent with `@`, since a
+# `push` reached through a field copies the whole list.
+
+# Adds `item` at the end of `items`, in place.
+function add_item<T>(@items: [T], item: T)
+    items @ items.push(item)
+
+test "add_item: a list grown in place, of numbers and of texts"
+    numbers: [i64] @= []
+    add_item(@numbers, item: 1)
+    add_item(@numbers, item: 2)
+    assert numbers == [1, 2]
+    words: [str] @= ["a"]
+    add_item(@words, item: "b")
+    assert words == ["a", "b"]

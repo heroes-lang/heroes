@@ -1,0 +1,2337 @@
+# Spreadsheets of Office Open XML, the `.xlsx` files of Excel, read and
+# written. Reading takes every sheet's cells with their types (numbers, text
+# from the shared strings or written inline, booleans, errors, and dates told
+# by the workbook's 1900 or 1904 epoch and the cell's number format), the
+# formulas as text beside the values Excel last computed for them, the merged
+# areas, the column widths, the row heights, the frozen panes, the links, the
+# defined names, the document's properties and every cell's style. Writing
+# makes the same workbook again: sheets, typed cells, dates, formulas as text,
+# a small style set (fonts, fills, borders, alignment, number formats),
+# widths, heights, merged areas, links and frozen panes. Written from ECMA-376
+# (fifth edition) Part 1; what it writes openpyxl reads, and what openpyxl
+# writes it reads.
+#
+# It computes no formula: a formula is text, and its value is the one the file
+# holds. It writes no chart, image, comment, table, validation or conditional
+# format, and a workbook read keeps none of them; it reads no `.xls`, `.xlsb`
+# or `.ods`, and no workbook encrypted with a password. A value is not written
+# the way its number format shows it: `format_value` writes the value itself.
+# The zip is `archive`'s and the XML is `xml`'s.
+#
+# **A file from outside is not trusted.** Reading takes `ReadOptions`: the
+# bytes the parts may hold once decompressed and the cells' text with them,
+# and the cells the sheets may hold; a file past one fails `limit` before the
+# memory is spent. An XML part declaring an entity is refused by `xml`, so no
+# part grows by expansion, and nothing a file holds makes a call abort.
+#
+# It fails with `invalid`, `limit`, `not_found` and `unsupported`, and with
+# the codes of `io`, `fs` and `archive` where they fail.
+
+use bytes
+use fs
+use io
+use lists
+use strings
+use time
+use xlsx/internal/book_read
+use xlsx/internal/book_write
+use xlsx/internal/checks
+use xlsx/internal/dates
+use xlsx/internal/grow
+use xlsx/internal/model
+use xlsx/internal/names
+use xlsx/internal/numfmt
+use xlsx/internal/samples
+use xlsx/internal/styles_write
+
+## Codes and limits
+
+# The code of a file that is not a workbook, the message naming the part and
+# what was wrong there; of a name, a cell, an area or a value a sheet cannot
+# hold; and of text that is no cell name or area. Reading, building and the
+# names fail with it.
+constant INVALID: str
+    "invalid"
+
+# The code of a file past a bound its `ReadOptions` set, and of rows that
+# would pass the `limit` `rows_of` is given.
+constant LIMIT: str
+    "limit"
+
+# The code of a name the workbook does not hold: `sheet_of`, `cell_at`,
+# `dimension_of` and `format_code_of` fail with it.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a value the format has no form for, a NaN, an infinity or a date
+# before the epoch, and of a workbook this package does not read: one
+# encrypted with a password, or a binary `.xlsb`.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The rows a sheet holds: 1,048,576, so the last row is 1,048,575.
+constant MAX_ROWS: i64
+    1048576
+
+# The columns a sheet holds: 16,384, so the last column, `XFD`, is 16,383.
+constant MAX_COLUMNS: i64
+    16384
+
+# The characters one cell's text may hold: 32,767, Excel's own bound.
+constant MAX_TEXT_CHARS: i64
+    32767
+
+# The bytes `default_read_options` lets a file's parts hold once
+# decompressed, the text of its cells counted with them: 64 MiB.
+constant DEFAULT_MAX_BYTES: i64
+    67108864
+
+# The cells `default_read_options` lets a file's sheets hold together:
+# 1,048,576. A workbook read holds about half a kilobyte of memory a cell,
+# measured on 2026-11-18 on a sheet of 100,000, so this bound keeps a file
+# from outside to about half a gigabyte; a program that reads larger ones
+# raises it.
+constant DEFAULT_MAX_CELLS: i64
+    1048576
+
+## Workbooks, sheets and cells
+
+# What a cell holds.
+variant Value
+    # Nothing: a cell with a style and no value, or no cell at all.
+    empty
+    # A number.
+    number
+        # The number, never a NaN or an infinity in a file read.
+        v: f64
+    # Text.
+    text
+        # The text, at most `MAX_TEXT_CHARS` characters.
+        v: str
+    # `TRUE` or `FALSE`.
+    boolean
+        # The value.
+        v: bool
+    # A date and a time: a number whose number format shows a date, or a
+    # date written as ISO 8601 text.
+    date
+        # The moment, read to the millisecond, as the calendar names it with
+        # no zone; a time alone stands on the epoch's first day, 1899-12-30
+        # or 1904-01-01.
+        v: time.DateTime
+    # An error a formula answered: `#DIV/0!`, `#N/A`, `#NAME?`, `#NULL!`,
+    # `#NUM!`, `#REF!`, `#VALUE!` and Excel's newer ones.
+    error
+        # The error as Excel writes it, `#N/A`.
+        v: str
+
+# One cell: where it stands, what it holds, its formula and its style.
+#
+# Built directly, or by `set_value`, `set_formula` and `set_style`, which
+# keep a sheet's cells in their order.
+record Cell
+    # The row, from 0 for the sheet's row 1 to `MAX_ROWS` - 1.
+    row: i64
+    # The column, from 0 for column `A` to `MAX_COLUMNS` - 1.
+    column: i64
+    # The value, or for a formula the value Excel last computed; `.empty`
+    # where the file holds none.
+    value: Value
+    # The formula as text with no `=` before it, `SUM(A1:A3)`; empty where
+    # the cell holds none.
+    formula: str
+    # The cell's style, an index into its workbook's `styles`; 0 is the
+    # default style.
+    style: i64
+
+# A rectangle of cells, its corners included: `B2:C3` is rows 1 to 2 and
+# columns 1 to 2. `first_row` is at most `last_row` and `first_column` at
+# most `last_column`.
+record Area
+    # The top row, from 0.
+    first_row: i64
+    # The left column, from 0.
+    first_column: i64
+    # The bottom row, `first_row` or more.
+    last_row: i64
+    # The right column, `first_column` or more.
+    last_column: i64
+
+# Where one cell stands, as `parse_cell_name` reads it.
+record Position
+    # The row, from 0 for row 1.
+    row: i64
+    # The column, from 0 for column `A`.
+    column: i64
+
+# The width of a run of columns, and whether they are hidden.
+record ColumnFormat
+    # The first column of the run, from 0.
+    first: i64
+    # The last column of the run, `first` or more.
+    last: i64
+    # The width in characters of the default font's digit, 0 to 255, as
+    # Excel shows it; 0 where the file sets none.
+    width: f64
+    # Whether the columns are hidden.
+    hidden: bool
+
+# The height of one row, and whether it is hidden.
+record RowFormat
+    # The row, from 0.
+    row: i64
+    # The height in points, 0 to 409; 0 where the file sets none.
+    height: f64
+    # Whether the row is hidden.
+    hidden: bool
+
+# The rows at the top and the columns at the left that stay in view while the
+# rest of a sheet scrolls; 0 and 0 where nothing is frozen.
+record Frozen
+    # The rows frozen at the top, 0 or more.
+    rows: i64
+    # The columns frozen at the left, 0 or more.
+    columns: i64
+
+# A link from a cell, or an area of cells, to a web address, a file, or a
+# place in the workbook. Built directly and added by `add_link`.
+record Link
+    # The cells it covers; most links cover one.
+    area: Area
+    # Where it leads outside the workbook: a URL, `mailto:` an address, or a
+    # file's path; empty where it leads inside. At most 2,079 characters.
+    target: str
+    # The place inside the workbook it leads to, `Sheet2!A1` or a defined
+    # name; empty where it leads outside, or beside a target, the place in
+    # the document the target names.
+    location: str
+    # The tip shown while the pointer rests on it; empty for none.
+    tooltip: str
+    # The text the file says the cell shows; empty for none. The cell's own
+    # value is what Excel shows.
+    display: str
+
+# Whether a sheet's tab is shown.
+variant Visibility
+    # Shown.
+    visible
+    # Hidden; Excel's menu shows it again.
+    hidden
+    # Hidden so that only a program shows it again.
+    very_hidden
+
+# One sheet of cells.
+#
+# Built by `new_sheet` and the `set_` functions, which keep `cells` in order. A
+# program that builds `cells` itself keeps the same order; `write` refuses two
+# cells at one place.
+record Sheet
+    # The sheet's name: 1 to 31 characters, none of `[ ] : * ? / \`, not
+    # opening or ending with `'`.
+    name: str
+    # Whether its tab is shown.
+    visibility: Visibility
+    # Its cells, by row and then by column, at most one at a place. A cell
+    # with no value, no formula and the default style is not written.
+    cells: [Cell]
+    # Its merged areas, no two overlapping, each of more than one cell.
+    merged: [Area]
+    # The widths of its columns, by `first`, no two runs overlapping.
+    column_formats: [ColumnFormat]
+    # The heights of its rows, by `row`, at most one a row.
+    row_formats: [RowFormat]
+    # Its frozen panes.
+    frozen: Frozen
+    # Its links, in the order they were added or read.
+    links: [Link]
+
+# Which day a serial number counts from: Excel's two epochs.
+variant Epoch
+    # Windows' system: 1 is 1900-01-01, and 60 is the 29th of February 1900
+    # that never was, read as the 28th.
+    from_1900
+    # The old Macintosh system: 0 is 1904-01-01.
+    from_1904
+
+# A name defined over a workbook or one of its sheets: a cell, an area, a
+# formula. Excel's own names, `_xlnm.Print_Area`, are among them.
+record DefinedName
+    # The name: a letter, `_` or `\` first, then letters, digits, `_`, `.`
+    # and `\`; not a cell's name.
+    name: str
+    # What it names, as a formula with no `=` before it: `Sheet1!$A$1:$B$4`.
+    refers_to: str
+    # The sheet it is local to; empty where it names over the whole
+    # workbook.
+    sheet: str
+    # Whether Excel hides it from the person.
+    hidden: bool
+
+# What the document says of itself, its core properties; empty text where it
+# says nothing.
+record Properties
+    # Its title.
+    title: str
+    # Its subject.
+    subject: str
+    # Who made it.
+    creator: str
+    # Its keywords, as one text.
+    keywords: str
+    # Its description.
+    description: str
+    # Who changed it last.
+    last_modified_by: str
+    # Its category.
+    category: str
+    # When it was made, in W3C's date and time form,
+    # `2026-11-18T09:30:00Z`.
+    created: str
+    # When it was last changed, in the same form.
+    modified: str
+
+# A workbook: its sheets, the styles its cells name, its epoch, its defined
+# names and its properties.
+#
+# Made by `new_workbook` or `read`; sheets are added by `add_sheet` and styles by
+# `add_style`, which keep its fields consistent.
+record Workbook
+    # The sheets, in the order their tabs stand.
+    sheets: [Sheet]
+    # The styles a cell names by its index; the first is the default style
+    # and is always there.
+    styles: [Style]
+    # The day serial numbers count from.
+    epoch: Epoch
+    # The defined names, in the file's order.
+    names: [DefinedName]
+    # The sheet shown when the workbook opens, an index into `sheets`.
+    active: i64
+    # The document's properties.
+    properties: Properties
+
+## Styles
+
+# How a line under a font is drawn.
+variant Underline
+    # None.
+    none
+    # One line.
+    single
+    # Two lines.
+    double
+    # One line, below the descenders, as accountants rule a figure.
+    single_accounting
+    # Two lines, as accountants rule a total.
+    double_accounting
+
+# A font.
+record Font
+    # The font's name, `Calibri`.
+    name: str
+    # Its size in points, 1 to 409.
+    size: f64
+    # Its colour, `RRGGBB` in upper-case hexadecimal; empty for the
+    # automatic colour, the theme's text.
+    color: str
+    # Whether it is bold.
+    bold: bool
+    # Whether it is italic.
+    italic: bool
+    # How it is underlined.
+    underline: Underline
+    # Whether a line strikes it through.
+    strike: bool
+
+# How a cell's background is filled.
+variant Pattern
+    # Not at all.
+    none
+    # With `color` alone.
+    solid
+    # A sixteenth of `color` over `background`.
+    gray_0625
+    # An eighth.
+    gray_125
+    # A quarter.
+    light_gray
+    # Half.
+    medium_gray
+    # Three quarters.
+    dark_gray
+    # Thick horizontal stripes.
+    dark_horizontal
+    # Thick vertical stripes.
+    dark_vertical
+    # Thick stripes falling to the right.
+    dark_down
+    # Thick stripes rising to the right.
+    dark_up
+    # A thick grid.
+    dark_grid
+    # A thick trellis.
+    dark_trellis
+    # Thin horizontal stripes.
+    light_horizontal
+    # Thin vertical stripes.
+    light_vertical
+    # Thin stripes falling to the right.
+    light_down
+    # Thin stripes rising to the right.
+    light_up
+    # A thin grid.
+    light_grid
+    # A thin trellis.
+    light_trellis
+
+# A cell's fill: a pattern of one colour over another.
+record Fill
+    # The pattern; `.solid` paints `color` alone.
+    pattern: Pattern
+    # The pattern's colour, `RRGGBB`; empty for the automatic one.
+    color: str
+    # The colour under the pattern, `RRGGBB`; empty for the automatic one.
+    background: str
+
+# How one edge of a cell is drawn.
+variant Line
+    # Not at all.
+    none
+    # A thin line.
+    thin
+    # A medium line.
+    medium
+    # A thick line.
+    thick
+    # Dashes.
+    dashed
+    # Dots.
+    dotted
+    # Two thin lines.
+    double
+    # The thinnest line.
+    hair
+    # Medium dashes.
+    medium_dashed
+    # Dashes and dots.
+    dash_dot
+    # Medium dashes and dots.
+    medium_dash_dot
+    # Dashes and two dots.
+    dash_dot_dot
+    # Medium dashes and two dots.
+    medium_dash_dot_dot
+    # Slanted dashes and dots.
+    slant_dash_dot
+
+# One edge of a cell.
+record Edge
+    # How it is drawn.
+    line: Line
+    # Its colour, `RRGGBB`; empty for the automatic one.
+    color: str
+
+# The four edges of a cell.
+record Border
+    # The left edge.
+    left: Edge
+    # The right edge.
+    right: Edge
+    # The top edge.
+    top: Edge
+    # The bottom edge.
+    bottom: Edge
+
+# Where a cell's content stands across it.
+variant Horizontal
+    # Text to the left, numbers to the right, as Excel does by default.
+    general
+    # To the left.
+    left
+    # In the middle.
+    center
+    # To the right.
+    right
+    # Repeated to fill the cell.
+    fill
+    # Spread to both edges, line by line.
+    justify
+    # In the middle of the selection of cells to its right that are empty.
+    center_continuous
+    # Spread evenly, with space at the edges.
+    distributed
+
+# Where a cell's content stands up and down it.
+variant Vertical
+    # At the bottom, as Excel does by default.
+    bottom
+    # In the middle.
+    center
+    # At the top.
+    top
+    # Spread to both edges.
+    justify
+    # Spread evenly.
+    distributed
+
+# A cell's style: the small set this package reads and writes.
+#
+# Built from `default_style` by changing its fields, and added to a workbook
+# by `add_style`, whose index a cell names.
+record Style
+    # The font.
+    font: Font
+    # The fill.
+    fill: Fill
+    # The four edges.
+    border: Border
+    # Where the content stands across the cell.
+    horizontal: Horizontal
+    # Where it stands up and down.
+    vertical: Vertical
+    # Whether text wraps onto several lines.
+    wrap: bool
+    # The number format's code, `General`, `0.00`, `yyyy-mm-dd`; a date
+    # format makes a number read as `.date`.
+    number_format: str
+
+## Reading
+
+# How much of a file reading may spend: a file past either bound fails
+# `limit`.
+record ReadOptions
+    # The bytes the parts read may hold together once decompressed, the text
+    # of every cell counted with them, 1 or more.
+    max_bytes: i64
+    # The cells the sheets may hold together, 1 or more.
+    max_cells: i64
+
+# The options `load` reads with: `DEFAULT_MAX_BYTES` and
+# `DEFAULT_MAX_CELLS`.
+function default_read_options() -> ReadOptions
+    return ReadOptions(max_bytes: DEFAULT_MAX_BYTES, max_cells: DEFAULT_MAX_CELLS)
+
+# The workbook in the file at `path`, read with `default_read_options`.
+#
+# - `path`: the file's path.
+#
+# Fails as `read` does, and as `fs.open` fails.
+#
+# See also `load_with`, `read`, `read_bytes`.
+function load(path: str) -> Workbook?
+    return load_with(path, options: default_read_options())
+
+# The workbook in the file at `path`, read within the bounds `options` set.
+#
+# - `path`: the file's path.
+# - `options`: the bounds; `default_read_options()` gives `load`'s.
+#
+# Fails as `read` does, and as `fs.open` fails.
+function load_with(path: str, options: ReadOptions) -> Workbook?
+    from @= fs.open(path)?
+    got = read(from, options: options)
+    closed = io.close(@from)
+    book = got?
+    closed?
+    return ok(book)
+
+# The workbook in `from`, every sheet read whole.
+#
+# - `from`: the file's stream, which can seek; the caller closes it.
+# - `options`: the bounds reading may not pass.
+#
+# Fails `invalid` where `from` is not a zip of a workbook, or a part of it is
+# not what its place says, the message naming the part; `limit` where the
+# parts' bytes, the cells' text or the cells pass `options`; `unsupported` on
+# a workbook encrypted with a password or a binary one; and as
+# `archive.zip_reader` and `xml.parse` fail.
+#
+# A sheet's cells are in order whatever order the file wrote them in; a value
+# is `.date` where its style's number format shows a date (`is_date_format`),
+# read by the workbook's epoch.
+#
+# See also `load`, `read_bytes`, `write`.
+function read(from: io.Stream, options: ReadOptions) -> Workbook?
+    if options.max_bytes < 1 || options.max_cells < 1
+        return fail(
+            code: INVALID,
+            msg: f"reading within {options.max_bytes} bytes and {options.max_cells} cells: both bounds are 1 or more"
+        )
+    book = book_read.read(from, max_bytes: options.max_bytes, max_cells: options.max_cells)?
+    sheets: [Sheet] @= []
+
+    for raw in book.sheets
+        cells: [Cell] @= []
+
+        for c in raw.cells
+            value: Value @= .empty
+
+            if c.kind == model.NUMBER
+                value @ .number(v: c.number)
+            else if c.kind == model.TEXT
+                value @ .text(v: c.text)
+            else if c.kind == model.BOOLEAN
+                value @ .boolean(v: c.number != 0.0)
+            else if c.kind == model.ERROR
+                value @ .error(v: c.text)
+            else if c.kind == model.DATE
+                match dates.date_of(c.number, from_1904: book.from_1904)
+                    .ok d  => value @ .date(v: d)
+                    .err _ => value @ .number(v: c.number)
+            cells @ cells.push(Cell(row: c.row, column: c.column, value: value, formula: c.formula, style: c.style))
+
+        merged: [Area] @= []
+
+        for b in raw.merged
+            merged @ merged.push(
+                Area(first_row: b.first_row, first_column: b.first_column, last_row: b.last_row, last_column: b.last_column)
+            )
+
+        columns: [ColumnFormat] @= []
+
+        for col in raw.columns
+            columns @ columns.push(ColumnFormat(first: col.first, last: col.last, width: col.width, hidden: col.hidden))
+
+        rows: [RowFormat] @= []
+
+        for r in raw.rows
+            rows @ rows.push(RowFormat(row: r.row, height: r.height, hidden: r.hidden))
+
+        links: [Link] @= []
+
+        for l in raw.links
+            area = Area(
+                first_row: l.box.first_row,
+                first_column: l.box.first_column,
+                last_row: l.box.last_row,
+                last_column: l.box.last_column
+            )
+            links @ links.push(
+                Link(area: area, target: l.target, location: l.location, tooltip: l.tooltip, display: l.display)
+            )
+
+        visibility: Visibility = match raw.state
+            "hidden"     => .hidden
+            "veryHidden" => .very_hidden
+            _            => .visible
+
+        sheets @ sheets.push(
+            Sheet(name: raw.name, visibility: visibility, cells: cells, merged: merged, column_formats: columns, row_formats: rows, frozen: Frozen(rows: raw.frozen_rows, columns: raw.frozen_columns), links: links)
+        )
+
+    styles: [Style] @= []
+
+    for s in book.styles
+        underline: Underline = match s.underline
+            "single"           => .single
+            "double"           => .double
+            "singleAccounting" => .single_accounting
+            "doubleAccounting" => .double_accounting
+            _                  => .none
+
+        pattern: Pattern = match s.pattern
+            "solid"           => .solid
+            "gray0625"        => .gray_0625
+            "gray125"         => .gray_125
+            "lightGray"       => .light_gray
+            "mediumGray"      => .medium_gray
+            "darkGray"        => .dark_gray
+            "darkHorizontal"  => .dark_horizontal
+            "darkVertical"    => .dark_vertical
+            "darkDown"        => .dark_down
+            "darkUp"          => .dark_up
+            "darkGrid"        => .dark_grid
+            "darkTrellis"     => .dark_trellis
+            "lightHorizontal" => .light_horizontal
+            "lightVertical"   => .light_vertical
+            "lightDown"       => .light_down
+            "lightUp"         => .light_up
+            "lightGrid"       => .light_grid
+            "lightTrellis"    => .light_trellis
+            _                 => .none
+
+        edges: [Edge] @= []
+
+        for pair in [[s.left_line, s.left_color], [s.right_line, s.right_color], [s.top_line, s.top_color], [s.bottom_line, s.bottom_color]]
+            line: Line = match pair[0]
+                "thin"             => .thin
+                "medium"           => .medium
+                "thick"            => .thick
+                "dashed"           => .dashed
+                "dotted"           => .dotted
+                "double"           => .double
+                "hair"             => .hair
+                "mediumDashed"     => .medium_dashed
+                "dashDot"          => .dash_dot
+                "mediumDashDot"    => .medium_dash_dot
+                "dashDotDot"       => .dash_dot_dot
+                "mediumDashDotDot" => .medium_dash_dot_dot
+                "slantDashDot"     => .slant_dash_dot
+                _                  => .none
+
+            edges @ edges.push(Edge(line: line, color: pair[1]))
+
+        horizontal: Horizontal = match s.horizontal
+            "left"             => .left
+            "center"           => .center
+            "right"            => .right
+            "fill"             => .fill
+            "justify"          => .justify
+            "centerContinuous" => .center_continuous
+            "distributed"      => .distributed
+            _                  => .general
+
+        vertical: Vertical = match s.vertical
+            "center"      => .center
+            "top"         => .top
+            "justify"     => .justify
+            "distributed" => .distributed
+            _             => .bottom
+
+        styles @ styles.push(
+            Style(font: Font(name: s.font_name, size: s.font_size, color: s.font_color, bold: s.bold, italic: s.italic, underline: underline, strike: s.strike), fill: Fill(pattern: pattern, color: s.fill_color, background: s.fill_background), border: Border(left: edges[0], right: edges[1], top: edges[2], bottom: edges[3]), horizontal: horizontal, vertical: vertical, wrap: s.wrap, number_format: s.number_format)
+        )
+
+    defined_names: [DefinedName] @= []
+
+    for n in book.names
+        defined_names @ defined_names.push(
+            DefinedName(name: n.name, refers_to: n.refers_to, sheet: n.sheet, hidden: n.hidden)
+        )
+
+    epoch: Epoch @= .from_1900
+
+    if book.from_1904
+        epoch @ .from_1904
+    p = book.props
+    return ok(
+        Workbook(sheets: sheets, styles: styles, epoch: epoch, names: defined_names, active: book.active, properties: Properties(title: p.title, subject: p.subject, creator: p.creator, keywords: p.keywords, description: p.description, last_modified_by: p.last_modified_by, category: p.category, created: p.created, modified: p.modified))
+    )
+
+# The workbook whose file's bytes are `data`.
+#
+# - `data`: the whole file.
+# - `options`: the bounds reading may not pass.
+#
+# Fails as `read` does, and as `fs` fails to write a temporary file.
+#
+# It writes `data` to a temporary file in the system's folder for them, since
+# a zip is read by seeking, and removes it before it answers.
+function read_bytes(data: [u8], options: ReadOptions) -> Workbook?
+    temp @= fs.make_temp_file(dir: "", pattern: "rebel-xlsx-*.xlsx")?
+    wrote = io.write(temp.stream, data: data)
+    closed = io.close(@temp.stream)
+    got: Workbook? @= fail(code: INVALID, msg: "the bytes were not read")
+
+    match wrote
+        .err e => got @ fail(code: e.code, msg: e.msg)
+        .ok _ =>
+            match closed
+                .err e => got @ fail(code: e.code, msg: e.msg)
+                .ok _  => got @ load_with(temp.path, options: options)
+
+    removed = fs.remove(temp.path)
+    book = got?
+    removed?
+    return ok(book)
+
+## Writing
+
+# Writes `wb` to a new file at `path`, or over the file there.
+#
+# - `wb`: the workbook.
+# - `path`: the file's path.
+#
+# Fails as `write` does, and as `fs.create` fails.
+#
+# See also `write`, `to_bytes`.
+function save(wb: Workbook, path: str) -> ()?
+    to @= fs.create(path)?
+    wrote = write(wb, to: to)
+    closed = io.close(@to)
+    wrote?
+    closed?
+    return ok()
+
+# Writes `wb` to `to` as an `.xlsx` file: its sheets, cells, styles, names and
+# properties.
+#
+# - `wb`: the workbook, holding one sheet or more.
+# - `to`: the stream; the caller closes it.
+#
+# Fails `invalid` where `wb` holds no sheet, two sheets of one name, a name
+# `add_sheet` refuses, two cells at one place, a cell outside a sheet, a text
+# past `MAX_TEXT_CHARS`, a style index outside `styles`, merged areas that
+# overlap, or a defined name `add_name` refuses; `unsupported` on a NaN, an
+# infinity or a date before the epoch; and as the stream fails.
+#
+# A text is written once among the shared strings; a `.date` cell whose style
+# shows no date is written with that style and the number format
+# `yyyy-mm-dd`, or `yyyy-mm-dd hh:mm:ss` where it has a time, so that it reads
+# back as a date. A workbook with formulas asks Excel to compute them on
+# opening. The same workbook always gives the same bytes.
+#
+# See also `save`, `read`.
+function write(wb: Workbook, to: io.Stream) -> ()?
+    from_1904 = match wb.epoch
+        .from_1900 => false
+        .from_1904 => true
+
+    sheets: [model.Sheet] @= []
+
+    for s in wb.sheets
+        cells: [model.Cell] @= []
+
+        for c in s.cells
+            cell @= model.Cell(
+                row: c.row,
+                column: c.column,
+                kind: model.EMPTY,
+                number: 0.0,
+                text: "",
+                formula: c.formula,
+                style: c.style
+            )
+
+            if c.formula.len() > 0 && c.formula[0] == '='
+                cell.formula @ c.formula.slice(from: 1, to: c.formula.len())
+
+            match c.value
+                .empty => _ = 0
+                .number n =>
+                    cell.kind @ model.NUMBER
+                    cell.number @ n.v
+                .text t =>
+                    cell.kind @ model.TEXT
+                    cell.text @ t.v
+                .boolean b =>
+                    cell.kind @ model.BOOLEAN
+
+                    if b.v
+                        cell.number @ 1.0
+                .error e =>
+                    cell.kind @ model.ERROR
+                    cell.text @ e.v
+                .date d =>
+                    match dates.serial_of(d.v, from_1904: from_1904)
+                        .ok serial =>
+                            cell.kind @ model.DATE
+                            cell.number @ serial
+                        .err e => return fail(
+                            code: e.code,
+                            msg: f"the cell {names.name_of(row: c.row, column: c.column).default("?")} of the sheet \"{s.name}\": {e.msg}"
+                        )
+
+            cells @ cells.push(cell)
+
+        merged: [names.Box] @= []
+
+        for a in s.merged
+            merged @ merged.push(
+                names.Box(first_row: a.first_row, first_column: a.first_column, last_row: a.last_row, last_column: a.last_column)
+            )
+
+        columns: [model.Column] @= []
+
+        for col in s.column_formats
+            columns @ columns.push(model.Column(first: col.first, last: col.last, width: col.width, hidden: col.hidden))
+
+        rows: [model.Row] @= []
+
+        for r in s.row_formats
+            rows @ rows.push(model.Row(row: r.row, height: r.height, hidden: r.hidden))
+
+        links: [model.Link] @= []
+
+        for l in s.links
+            box = names.Box(
+                first_row: l.area.first_row,
+                first_column: l.area.first_column,
+                last_row: l.area.last_row,
+                last_column: l.area.last_column
+            )
+            links @ links.push(
+                model.Link(box: box, target: l.target, location: l.location, tooltip: l.tooltip, display: l.display)
+            )
+
+        state = match s.visibility
+            .visible     => "visible"
+            .hidden      => "hidden"
+            .very_hidden => "veryHidden"
+
+        sheets @ sheets.push(
+            model.Sheet(name: s.name, state: state, cells: cells, merged: merged, columns: columns, rows: rows, frozen_rows: s.frozen.rows, frozen_columns: s.frozen.columns, links: links)
+        )
+
+    styles: [model.Style] @= []
+
+    for s in wb.styles
+        checks.color(s.font.color)?
+        checks.color(s.fill.color)?
+        checks.color(s.fill.background)?
+
+        if s.font.size < 1.0 || s.font.size > 409.0 || s.font.name == ""
+            return fail(
+                code: INVALID,
+                msg: f"a font of {s.font.size} points named \"{s.font.name}\": a font is 1 to 409 points and has a name"
+            )
+
+        underline = match s.font.underline
+            .none              => ""
+            .single            => "single"
+            .double            => "double"
+            .single_accounting => "singleAccounting"
+            .double_accounting => "doubleAccounting"
+
+        pattern = match s.fill.pattern
+            .none             => "none"
+            .solid            => "solid"
+            .gray_0625        => "gray0625"
+            .gray_125         => "gray125"
+            .light_gray       => "lightGray"
+            .medium_gray      => "mediumGray"
+            .dark_gray        => "darkGray"
+            .dark_horizontal  => "darkHorizontal"
+            .dark_vertical    => "darkVertical"
+            .dark_down        => "darkDown"
+            .dark_up          => "darkUp"
+            .dark_grid        => "darkGrid"
+            .dark_trellis     => "darkTrellis"
+            .light_horizontal => "lightHorizontal"
+            .light_vertical   => "lightVertical"
+            .light_down       => "lightDown"
+            .light_up         => "lightUp"
+            .light_grid       => "lightGrid"
+            .light_trellis    => "lightTrellis"
+
+        words: [str] @= []
+
+        for edge in [s.border.left, s.border.right, s.border.top, s.border.bottom]
+            checks.color(edge.color)?
+
+            word = match edge.line
+                .none                => ""
+                .thin                => "thin"
+                .medium              => "medium"
+                .thick               => "thick"
+                .dashed              => "dashed"
+                .dotted              => "dotted"
+                .double              => "double"
+                .hair                => "hair"
+                .medium_dashed       => "mediumDashed"
+                .dash_dot            => "dashDot"
+                .medium_dash_dot     => "mediumDashDot"
+                .dash_dot_dot        => "dashDotDot"
+                .medium_dash_dot_dot => "mediumDashDotDot"
+                .slant_dash_dot      => "slantDashDot"
+
+            words @ words.push(word)
+
+        horizontal = match s.horizontal
+            .general           => "general"
+            .left              => "left"
+            .center            => "center"
+            .right             => "right"
+            .fill              => "fill"
+            .justify           => "justify"
+            .center_continuous => "centerContinuous"
+            .distributed       => "distributed"
+
+        vertical = match s.vertical
+            .bottom      => "bottom"
+            .center      => "center"
+            .top         => "top"
+            .justify     => "justify"
+            .distributed => "distributed"
+
+        styles @ styles.push(
+            model.Style(font_name: s.font.name, font_size: s.font.size, font_color: strings.to_upper_ascii(s.font.color), bold: s.font.bold, italic: s.font.italic, underline: underline, strike: s.font.strike, pattern: pattern, fill_color: strings.to_upper_ascii(s.fill.color), fill_background: strings.to_upper_ascii(s.fill.background), left_line: words[0], left_color: strings.to_upper_ascii(s.border.left.color), right_line: words[1], right_color: strings.to_upper_ascii(s.border.right.color), top_line: words[2], top_color: strings.to_upper_ascii(s.border.top.color), bottom_line: words[3], bottom_color: strings.to_upper_ascii(s.border.bottom.color), horizontal: horizontal, vertical: vertical, wrap: s.wrap, number_format: s.number_format)
+        )
+
+    defined: [model.Name] @= []
+
+    for n in wb.names
+        defined @ defined.push(model.Name(name: n.name, refers_to: n.refers_to, sheet: n.sheet, hidden: n.hidden))
+
+    p = wb.properties
+    book = model.Book(
+        sheets: sheets,
+        styles: styles,
+        from_1904: from_1904,
+        names: defined,
+        active: wb.active,
+        props: model.Props(title: p.title, subject: p.subject, creator: p.creator, keywords: p.keywords, description: p.description, last_modified_by: p.last_modified_by, category: p.category, created: p.created, modified: p.modified)
+    )
+    return book_write.write(to, book: book)
+
+# `wb` as the bytes of an `.xlsx` file.
+#
+# - `wb`: the workbook.
+#
+# Fails as `write` does, and as `fs` fails to write a temporary file.
+#
+# It writes the file to a temporary file in the system's folder for them,
+# reads it back and removes it.
+function to_bytes(wb: Workbook) -> [u8]?
+    temp @= fs.make_temp_file(dir: "", pattern: "rebel-xlsx-*.xlsx")?
+    wrote = write(wb, to: temp.stream)
+    closed = io.close(@temp.stream)
+    got: [u8]? @= fail(code: INVALID, msg: "the workbook was not written")
+
+    match wrote
+        .err e => got @ fail(code: e.code, msg: e.msg)
+        .ok _ =>
+            match closed
+                .err e => got @ fail(code: e.code, msg: e.msg)
+                .ok _  => got @ fs.read_bytes(temp.path)
+
+    removed = fs.remove(temp.path)
+    data = got?
+    removed?
+    return ok(data)
+
+## Building
+
+# A workbook with no sheet, the default style alone, the 1900 epoch, no name
+# and no property.
+#
+# See also `new_sheet`, `add_sheet`, `add_style`.
+function new_workbook() -> Workbook
+    return Workbook(
+        sheets: [],
+        styles: [default_style()],
+        epoch: .from_1900,
+        names: [],
+        active: 0,
+        properties: Properties(title: "", subject: "", creator: "", keywords: "", description: "", last_modified_by: "", category: "", created: "", modified: "")
+    )
+
+# An empty sheet named `name`, shown, with no cell and nothing frozen.
+#
+# - `name`: its name, which `add_sheet` checks.
+#
+# See also `set_value`, `add_sheet`.
+function new_sheet(name: str) -> Sheet
+    return Sheet(
+        name: name,
+        visibility: .visible,
+        cells: [],
+        merged: [],
+        column_formats: [],
+        row_formats: [],
+        frozen: Frozen(rows: 0, columns: 0),
+        links: []
+    )
+
+# Adds `s` after the sheets of `wb`.
+#
+# - `wb`: the workbook it is added to.
+# - `s`: the sheet, copied in whole.
+#
+# Fails `invalid` where its name is empty, longer than 31 characters, holds
+# one of `[ ] : * ? / \`, opens or ends with `'`, or is the name of a sheet
+# of `wb` in any case of ASCII letters; or where a cell of it names a style
+# `wb` does not hold.
+#
+# See also `new_sheet`, `sheet_of`.
+function add_sheet(@wb: Workbook, s: Sheet) -> ()?
+    checks.sheet_name(s.name)?
+
+    for other in wb.sheets
+        if checks.same_name(a: other.name, b: s.name)
+            return fail(code: INVALID, msg: f"the workbook holds a sheet named \"{other.name}\" already")
+
+    for c in s.cells
+        if c.style < 0 || c.style >= wb.styles.len()
+            return fail(
+                code: INVALID,
+                msg: f"a cell of the sheet \"{s.name}\" names the style {c.style}, of the {wb.styles.len()} the workbook holds"
+            )
+
+    grow.add_item(@wb.sheets, item: s)
+    return ok()
+
+# The style of a cell `default_style` answers: Calibri of 11 points, no fill,
+# no border, aligned by default, the number format `General`.
+function default_style() -> Style
+    no_edge = Edge(line: .none, color: "")
+    return Style(
+        font: Font(name: "Calibri", size: 11.0, color: "", bold: false, italic: false, underline: .none, strike: false),
+        fill: Fill(pattern: .none, color: "", background: ""),
+        border: Border(left: no_edge, right: no_edge, top: no_edge, bottom: no_edge),
+        horizontal: .general,
+        vertical: .bottom,
+        wrap: false,
+        number_format: "General"
+    )
+
+# The index in `wb.styles` of a style equal to `style`, added at the end
+# where none is.
+#
+# - `wb`: the workbook whose styles are searched and grown.
+# - `style`: the style.
+#
+# See also `default_style`, `set_style`.
+function add_style(@wb: Workbook, style: Style) -> i64
+    at: i64 @= 0
+
+    for s in wb.styles
+        if s == style
+            return at
+        at @ at + 1
+
+    grow.add_item(@wb.styles, item: style)
+    return at
+
+# Adds a defined name to `wb`.
+#
+# - `wb`: the workbook.
+# - `name`: the name, what it names, the sheet it is local to and whether it
+#   is hidden.
+#
+# Fails `invalid` where the name is not one, `name.sheet` names no sheet of
+# `wb`, or `wb` holds the same name at the same scope in any case of ASCII
+# letters.
+function add_name(@wb: Workbook, name: DefinedName) -> ()?
+    checks.defined_name(name.name)?
+
+    if name.sheet != ""
+        found: bool @= false
+
+        for s in wb.sheets
+            if s.name == name.sheet
+                found @ true
+
+        if !found
+            return fail(
+                code: INVALID,
+                msg: f"the defined name \"{name.name}\" is local to the sheet \"{name.sheet}\", which the workbook does not hold"
+            )
+
+    for n in wb.names
+        if n.sheet == name.sheet && checks.same_name(a: n.name, b: name.name)
+            return fail(code: INVALID, msg: f"the workbook defines \"{n.name}\" over that scope already")
+
+    grow.add_item(@wb.names, item: name)
+    return ok()
+
+# Sets the value of the cell at `row` and `column` of `s`, made where it is
+# not there; its formula and its style are kept.
+#
+# - `s`: the sheet.
+# - `row`: the row, from 0 to `MAX_ROWS` - 1.
+# - `column`: the column, from 0 to `MAX_COLUMNS` - 1.
+# - `value`: the value; `.empty` leaves the cell its style alone.
+#
+# Fails `invalid` where `row` or `column` is outside the sheet, or a text
+# passes `MAX_TEXT_CHARS`; `unsupported` on a NaN or an infinity.
+#
+# A cell after the last is added in constant time; one before it moves the
+# cells after it.
+#
+# See also `set_formula`, `set_style`, `add_row`, `value_at`.
+function set_value(@s: Sheet, row: i64, column: i64, value: Value) -> ()?
+    checks.place(row: row, column: column)?
+
+    match value
+        .text t                        => checks.cell_text(t.v)?
+        .number n                      => checks.number(n.v)?
+        .date d                        => dates.check_fields(d.v)?
+        .empty | .boolean _ | .error _ => _ = 0
+
+    probe = Cell(row: row, column: column, value: .empty, formula: "", style: 0)
+    at = lists.lower_bound(s.cells, value: probe, less: is_before)
+
+    if at == s.cells.len()
+        grow.add_item(@s.cells, item: probe)
+    else if s.cells[at].row != row || s.cells[at].column != column
+        s.cells @ lists.insert(s.cells, at: at, value: probe)
+    s.cells[at].value @ value
+    return ok()
+
+# Sets the formula of the cell at `row` and `column` of `s`, made where it is
+# not there; its value is kept as the value last computed.
+#
+# - `s`: the sheet.
+# - `row`: the row, from 0.
+# - `column`: the column, from 0.
+# - `formula`: the formula, with or without an `=` before it; empty takes
+#   the cell's formula away.
+#
+# Fails `invalid` where `row` or `column` is outside the sheet.
+#
+# See also `set_value`.
+function set_formula(@s: Sheet, row: i64, column: i64, formula: str) -> ()?
+    checks.place(row: row, column: column)?
+    probe = Cell(row: row, column: column, value: .empty, formula: "", style: 0)
+    at = lists.lower_bound(s.cells, value: probe, less: is_before)
+
+    if at == s.cells.len()
+        grow.add_item(@s.cells, item: probe)
+    else if s.cells[at].row != row || s.cells[at].column != column
+        s.cells @ lists.insert(s.cells, at: at, value: probe)
+
+    if formula.len() > 0 && formula[0] == '='
+        s.cells[at].formula @ formula.slice(from: 1, to: formula.len())
+    else
+        s.cells[at].formula @ formula
+    return ok()
+
+# Sets the style of the cell at `row` and `column` of `s`, made where it is
+# not there; its value and its formula are kept.
+#
+# - `s`: the sheet.
+# - `row`: the row, from 0.
+# - `column`: the column, from 0.
+# - `style`: the style's index in its workbook's `styles`, from `add_style`.
+#
+# Fails `invalid` where `row` or `column` is outside the sheet, or `style` is
+# below 0.
+#
+# See also `add_style`, `set_value`.
+function set_style(@s: Sheet, row: i64, column: i64, style: i64) -> ()?
+    checks.place(row: row, column: column)?
+
+    if style < 0
+        return fail(code: INVALID, msg: f"the style {style}: a style's index is 0 or more")
+    probe = Cell(row: row, column: column, value: .empty, formula: "", style: 0)
+    at = lists.lower_bound(s.cells, value: probe, less: is_before)
+
+    if at == s.cells.len()
+        grow.add_item(@s.cells, item: probe)
+    else if s.cells[at].row != row || s.cells[at].column != column
+        s.cells @ lists.insert(s.cells, at: at, value: probe)
+    s.cells[at].style @ style
+    return ok()
+
+# Writes `values` into the row after the last row of `s` that holds a cell,
+# from column 0; into row 0 of a sheet with none.
+#
+# - `s`: the sheet.
+# - `values`: the row's values, in order; `.empty` makes no cell.
+#
+# Fails `invalid` where the sheet's rows are all taken, `values` is longer
+# than `MAX_COLUMNS`, or a text passes `MAX_TEXT_CHARS`; `unsupported` on a
+# NaN or an infinity.
+#
+# See also `set_value`.
+function add_row(@s: Sheet, values: [Value]) -> ()?
+    row: i64 @= 0
+
+    if s.cells.len() > 0
+        row @ s.cells[s.cells.len() - 1].row + 1
+
+    if row >= MAX_ROWS
+        return fail(
+            code: INVALID,
+            msg: f"the sheet \"{s.name}\" holds a cell in its last row, so no row is left after it"
+        )
+
+    if values.len() > MAX_COLUMNS
+        return fail(code: INVALID, msg: f"a row of {values.len()} values, past the {MAX_COLUMNS} columns of a sheet")
+
+    for v in values
+        match v
+            .text t                        => checks.cell_text(t.v)?
+            .number n                      => checks.number(n.v)?
+            .date d                        => dates.check_fields(d.v)?
+            .empty | .boolean _ | .error _ => _ = 0
+
+    column: i64 @= 0
+
+    for v in values
+        if v != .empty
+            grow.add_item(@s.cells, item: Cell(row: row, column: column, value: v, formula: "", style: 0))
+        column @ column + 1
+
+    return ok()
+
+# Merges the cells of `area` of `s` into one, which shows the value of its
+# top-left cell.
+#
+# - `s`: the sheet.
+# - `area`: the area, of two cells or more, inside the sheet.
+#
+# Fails `invalid` where `area` is one cell, is outside the sheet, has a last
+# row or column before its first, or overlaps an area already merged.
+function merge(@s: Sheet, area: Area) -> ()?
+    checks.place(row: area.first_row, column: area.first_column)?
+    checks.place(row: area.last_row, column: area.last_column)?
+
+    if area.last_row < area.first_row || area.last_column < area.first_column
+        return fail(
+            code: INVALID,
+            msg: f"an area whose last row {area.last_row} or column {area.last_column} is before its first"
+        )
+
+    if area.first_row == area.last_row && area.first_column == area.last_column
+        return fail(code: INVALID, msg: "merging one cell: an area merged holds two cells or more")
+
+    for m in s.merged
+        if m.first_row <= area.last_row && m.last_row >= area.first_row && m.first_column <= area.last_column && m.last_column >= area.first_column
+            return fail(code: INVALID, msg: f"the area overlaps {format_area(m).default("?")}, merged already")
+
+    grow.add_item(@s.merged, item: area)
+    return ok()
+
+# Sets the width of the columns `first` to `last` of `s`, splitting or
+# replacing the runs already set over them.
+#
+# - `s`: the sheet.
+# - `first`: the first column, from 0.
+# - `last`: the last column, `first` or more.
+# - `width`: the width in characters, 0 to 255.
+#
+# Fails `invalid` where a column is outside the sheet, `last` is before
+# `first`, or `width` is outside 0 to 255.
+function set_column_width(@s: Sheet, first: i64, last: i64, width: f64) -> ()?
+    checks.place(row: 0, column: first)?
+    checks.place(row: 0, column: last)?
+
+    if last < first
+        return fail(code: INVALID, msg: f"the columns {first} to {last}: the last is before the first")
+
+    if width < 0.0 || width > 255.0 || width != width
+        return fail(code: INVALID, msg: f"a width of {width}, outside 0 to 255")
+    kept: [ColumnFormat] @= []
+    added: bool @= false
+
+    for c in s.column_formats
+        if c.last < first || c.first > last
+            if !added && c.first > last
+                kept @ kept.push(ColumnFormat(first: first, last: last, width: width, hidden: false))
+                added @ true
+            kept @ kept.push(c)
+        else
+            if c.first < first
+                left @= c
+                left.last @ first - 1
+                kept @ kept.push(left)
+
+            if !added
+                kept @ kept.push(ColumnFormat(first: first, last: last, width: width, hidden: c.hidden))
+                added @ true
+
+            if c.last > last
+                right @= c
+                right.first @ last + 1
+                kept @ kept.push(right)
+
+    if !added
+        kept @ kept.push(ColumnFormat(first: first, last: last, width: width, hidden: false))
+    s.column_formats @ kept
+    return ok()
+
+# Sets the height of the row `row` of `s`.
+#
+# - `s`: the sheet.
+# - `row`: the row, from 0.
+# - `height`: the height in points, 0 to 409.
+#
+# Fails `invalid` where `row` is outside the sheet or `height` outside 0 to
+# 409.
+function set_row_height(@s: Sheet, row: i64, height: f64) -> ()?
+    checks.place(row: row, column: 0)?
+
+    if height < 0.0 || height > 409.0 || height != height
+        return fail(code: INVALID, msg: f"a height of {height}, outside 0 to 409 points")
+    kept: [RowFormat] @= []
+    added: bool @= false
+
+    for r in s.row_formats
+        if r.row == row
+            kept @ kept.push(RowFormat(row: row, height: height, hidden: r.hidden))
+            added @ true
+        else
+            if !added && r.row > row
+                kept @ kept.push(RowFormat(row: row, height: height, hidden: false))
+                added @ true
+            kept @ kept.push(r)
+
+    if !added
+        kept @ kept.push(RowFormat(row: row, height: height, hidden: false))
+    s.row_formats @ kept
+    return ok()
+
+# Freezes the first `rows` rows and the first `columns` columns of `s`; 0 and
+# 0 unfreezes it.
+#
+# - `s`: the sheet.
+# - `rows`: the rows frozen at the top, 0 to `MAX_ROWS` - 1.
+# - `columns`: the columns frozen at the left, 0 to `MAX_COLUMNS` - 1.
+#
+# Fails `invalid` where either is outside its range.
+function freeze(@s: Sheet, rows: i64, columns: i64) -> ()?
+    if rows < 0 || rows >= MAX_ROWS || columns < 0 || columns >= MAX_COLUMNS
+        return fail(
+            code: INVALID,
+            msg: f"freezing {rows} rows and {columns} columns: rows are 0 to {MAX_ROWS - 1}, columns 0 to {MAX_COLUMNS - 1}"
+        )
+    s.frozen @ Frozen(rows: rows, columns: columns)
+    return ok()
+
+# Adds `link` to the links of `s`.
+#
+# - `s`: the sheet.
+# - `link`: the link: the area it covers, and a target, a location or both.
+#
+# Fails `invalid` where its area is outside the sheet or has a last row or
+# column before its first, it has neither a target nor a location, or its
+# target passes 2,079 characters, which Excel does not open.
+#
+# See also `Link`.
+function add_link(@s: Sheet, link: Link) -> ()?
+    checks.place(row: link.area.first_row, column: link.area.first_column)?
+    checks.place(row: link.area.last_row, column: link.area.last_column)?
+
+    if link.area.last_row < link.area.first_row || link.area.last_column < link.area.first_column
+        return fail(
+            code: INVALID,
+            msg: f"a link whose last row {link.area.last_row} or column {link.area.last_column} is before its first"
+        )
+
+    if link.target == "" && link.location == ""
+        return fail(code: INVALID, msg: "a link that leads nowhere: it has a target, a location or both")
+    count = link.target.chars().len()
+
+    if count > 2079
+        return fail(code: INVALID, msg: f"a link's target of {count} characters, past the 2,079 Excel opens")
+    grow.add_item(@s.links, item: link)
+    return ok()
+
+## Asking
+
+# The sheet of `wb` named `name`, its name compared byte for byte.
+#
+# - `wb`: the workbook.
+# - `name`: the sheet's name.
+#
+# Fails `not_found` where `wb` holds none, and the message names the sheets it
+# holds.
+#
+# See also `sheet_names`.
+function sheet_of(wb: Workbook, name: str) -> Sheet?
+    for s in wb.sheets
+        if s.name == name
+            return ok(s)
+
+    return fail(
+        code: NOT_FOUND,
+        msg: f"no sheet \"{name}\" in the workbook, whose sheets are \"{sheet_names(wb).join("\", \"")}\""
+    )
+
+# The names of the sheets of `wb`, in the order their tabs stand.
+#
+# - `wb`: the workbook.
+function sheet_names(wb: Workbook) -> [str]
+    found: [str] @= []
+
+    for s in wb.sheets
+        found @ found.push(s.name)
+
+    return found
+
+# The cell of `s` at `row` and `column`.
+#
+# - `s`: the sheet, its cells in order.
+# - `row`: the row, from 0.
+# - `column`: the column, from 0.
+#
+# Fails `not_found` where `s` holds no cell there. It searches by halves, so
+# its time grows with the logarithm of the cells.
+#
+# See also `value_at`.
+function cell_at(s: Sheet, row: i64, column: i64) -> Cell?
+    probe = Cell(row: row, column: column, value: .empty, formula: "", style: 0)
+    at = lists.lower_bound(s.cells, value: probe, less: is_before)
+
+    if at < s.cells.len() && s.cells[at].row == row && s.cells[at].column == column
+        return ok(s.cells[at])
+    return fail(
+        code: NOT_FOUND,
+        msg: f"the sheet \"{s.name}\" holds no cell at {format_cell_name(row: row, column: column).default("?")}"
+    )
+
+# Whether `a` stands before `b` in a sheet's order: by row, then by column.
+# Two cells at one place stand before neither.
+#
+# - `a`: a cell.
+# - `b`: another.
+#
+# See also `cell_at`, `lists.sort_by`.
+function is_before(a: Cell, b: Cell) -> bool
+    return a.row < b.row || a.row == b.row && a.column < b.column
+
+# The value of the cell of `s` at `row` and `column`, `.empty` where there is
+# none.
+#
+# - `s`: the sheet, its cells in order.
+# - `row`: the row, from 0.
+# - `column`: the column, from 0.
+#
+# See also `cell_at`, `rows_of`.
+function value_at(s: Sheet, row: i64, column: i64) -> Value
+    match cell_at(s, row: row, column: column)
+        .ok c  => return c.value
+        .err _ => return .empty
+
+# The values of `s` as rows from row 0 to its last row holding a value or a
+# formula, every row from column 0 to the last column any such cell reaches;
+# `.empty` where no value is.
+#
+# - `s`: the sheet, its cells in order.
+# - `limit`: the most values answered, rows times columns, 0 or more.
+#
+# Fails `limit` where the rows would hold more than `limit` values: a sheet of
+# two cells, at `A1` and at `XFD1048576`, holds more than seventeen thousand
+# million. Empty where `s` holds no cell.
+#
+# See also `value_at`, `dimension_of`.
+function rows_of(s: Sheet, limit: i64) -> [[Value]]?
+    last_row: i64 @= -1
+    last_column: i64 @= -1
+
+    for c in s.cells
+        if c.value != .empty || c.formula != ""
+            if c.row > last_row
+                last_row @ c.row
+
+            if c.column > last_column
+                last_column @ c.column
+
+    found: [[Value]] @= []
+
+    if last_row < 0
+        return ok(found)
+    width = last_column + 1
+    size = (last_row + 1) * width
+
+    if size > limit
+        return fail(
+            code: LIMIT,
+            msg: f"the rows of the sheet \"{s.name}\" hold {size} values, {last_row + 1} rows of {width}, past the limit of {limit}"
+        )
+    at: i64 @= 0
+    row: i64 @= 0
+
+    while row <= last_row
+        values: [Value] @= []
+        k: i64 @= 0
+
+        while k < width
+            values @ values.push(.empty)
+            k @ k + 1
+
+        while at < s.cells.len() && s.cells[at].row < row
+            at @ at + 1
+
+        while at < s.cells.len() && s.cells[at].row == row
+            c = s.cells[at]
+
+            if c.column < width
+                values[c.column] @ c.value
+            at @ at + 1
+
+        found @ found.push(values)
+        row @ row + 1
+
+    return ok(found)
+
+# The smallest area that holds every cell of `s` with a value or a formula.
+#
+# - `s`: the sheet.
+#
+# Fails `not_found` where `s` holds no such cell.
+function dimension_of(s: Sheet) -> Area?
+    found: bool @= false
+    area @= Area(first_row: 0, first_column: 0, last_row: 0, last_column: 0)
+
+    for c in s.cells
+        if c.value != .empty || c.formula != ""
+            if !found
+                area @ Area(first_row: c.row, first_column: c.column, last_row: c.row, last_column: c.column)
+                found @ true
+            else
+                if c.row < area.first_row
+                    area.first_row @ c.row
+
+                if c.row > area.last_row
+                    area.last_row @ c.row
+
+                if c.column < area.first_column
+                    area.first_column @ c.column
+
+                if c.column > area.last_column
+                    area.last_column @ c.column
+
+    if !found
+        return fail(code: NOT_FOUND, msg: f"the sheet \"{s.name}\" holds no value and no formula")
+    return ok(area)
+
+## Names, dates and formats
+
+# The position the cell name `s` names, `B3` as row 2 and column 1.
+#
+# - `s`: a column's letters in either case, then a row's number from 1, each
+#   with a `$` before it or not: `B3`, `$B$3`.
+#
+# Fails `invalid` where `s` is not such a name or names a cell outside a
+# sheet.
+#
+# See also `format_cell_name`, `parse_area`.
+function parse_cell_name(s: str) -> Position?
+    spot = names.spot_of(s)?
+    return ok(Position(row: spot.row, column: spot.column))
+
+# The name of the cell at `row` and `column`: row 2 and column 1 is `B3`.
+#
+# - `row`: the row, from 0.
+# - `column`: the column, from 0.
+#
+# Fails `invalid` where either is outside a sheet.
+#
+# See also `parse_cell_name`.
+function format_cell_name(row: i64, column: i64) -> str?
+    return names.name_of(row: row, column: column)
+
+# The column the letters `s` name, `A` as 0 and `AA` as 26.
+#
+# - `s`: one to three letters in either case.
+#
+# Fails `invalid` where `s` is not such letters or names a column past `XFD`.
+#
+# See also `format_column_name`.
+function parse_column_name(s: str) -> i64?
+    return names.column_of(s)
+
+# The letters of `column`: 0 is `A`, 26 is `AA`, 16,383 is `XFD`.
+#
+# - `column`: the column, from 0 to `MAX_COLUMNS` - 1.
+#
+# Fails `invalid` where `column` is outside that range.
+function format_column_name(column: i64) -> str?
+    return names.letters_of(column)
+
+# The area `s` names: `A1:C3`, or one cell `B2`, the corners in either order.
+#
+# - `s`: two cell names joined by `:`, or one; a `$` may stand before each
+#   part.
+#
+# Fails `invalid` where `s` is not such a text or names a cell outside a
+# sheet.
+#
+# See also `format_area`, `parse_cell_name`.
+function parse_area(s: str) -> Area?
+    b = names.box_of(s)?
+    return ok(
+        Area(first_row: b.first_row, first_column: b.first_column, last_row: b.last_row, last_column: b.last_column)
+    )
+
+# The name of `a`: `A1:C3`, or `B2` for an area of one cell.
+#
+# - `a`: the area.
+#
+# Fails `invalid` where a corner is outside a sheet or the last row or column
+# is before the first.
+function format_area(a: Area) -> str?
+    return names.box_name(
+        names.Box(first_row: a.first_row, first_column: a.first_column, last_row: a.last_row, last_column: a.last_column)
+    )
+
+# The serial number Excel holds for `date` by `epoch`: the days since the
+# epoch, the time of day their fraction.
+#
+# - `date`: the moment; its nanoseconds count.
+# - `epoch`: the epoch counted from.
+#
+# Fails `invalid` where a field of `date` is outside its range, and
+# `unsupported` where `date` is before 1900-01-01 by `from_1900` or before
+# 1904-01-01 by `from_1904`, or after 9999-12-31.
+#
+# In the 1900 system a day from the 1st of March 1900 counts the 29th of
+# February that never was, as Excel does: 1900-03-01 is 61.
+#
+# See also `date_of`.
+function serial_of(date: time.DateTime, epoch: Epoch) -> f64?
+    from_1904 = match epoch
+        .from_1900 => false
+        .from_1904 => true
+
+    return dates.serial_of(date, from_1904: from_1904)
+
+# The moment the serial number `serial` names by `epoch`, rounded to the
+# millisecond.
+#
+# - `serial`: the days since the epoch, 0 or more; below 1 a time of day on
+#   the epoch's first day, 1899-12-30 or 1904-01-01.
+# - `epoch`: the epoch counted from.
+#
+# Fails `invalid` where `serial` is negative, a NaN, or after 9999-12-31.
+#
+# In the 1900 system 60, the 29th of February 1900 that never was, is read
+# as the 28th.
+#
+# See also `serial_of`.
+function date_of(serial: f64, epoch: Epoch) -> time.DateTime?
+    from_1904 = match epoch
+        .from_1900 => false
+        .from_1904 => true
+
+    return dates.date_of(serial, from_1904: from_1904)
+
+# Whether the number format `code` shows a date or a time: a `y`, `m`, `d`,
+# `h` or `s` outside quotes, brackets and escapes, or `AM/PM`. An elapsed time,
+# `[h]:mm`, is not one: it shows a count of hours.
+#
+# - `code`: the format's code; `General` and the empty text are not dates.
+#
+# See also `format_code_of`.
+function is_date_format(code: str) -> bool
+    return numfmt.is_date(code)
+
+# The code of the built-in number format numbered `id`: 14 is `mm-dd-yy`.
+#
+# - `id`: the format's number, from 0 to 49, as ECMA-376 numbers them.
+#
+# Fails `not_found` where no built-in format has that number.
+function format_code_of(id: i64) -> str?
+    return numfmt.code_of(id)
+
+# `v` as plain text: a number in the fewest digits that read back as it, a
+# whole one with no point; `TRUE` or `FALSE`; a date as
+# `yyyy-mm-ddThh:mm:ss`, with milliseconds where it has any; an error as
+# Excel writes it; nothing for `.empty`. The number format is not applied.
+#
+# - `v`: the value.
+function format_value(v: Value) -> str
+    match v
+        .empty    => return ""
+        .number n => return styles_write.number_text(n.v)
+        .text t   => return t.v
+        .boolean b =>
+            if b.v
+                return "TRUE"
+            return "FALSE"
+        .error e => return e.v
+        .date d =>
+            t = d.v
+            base = f"{strings.pad_zeros(to_str(t.year), 4)}-{strings.pad_zeros(to_str(t.month), 2)}-{strings.pad_zeros(to_str(t.day), 2)}T{strings.pad_zeros(to_str(t.hour), 2)}:{strings.pad_zeros(to_str(t.minute), 2)}:{strings.pad_zeros(to_str(t.second), 2)}"
+
+            if t.nanosecond == 0
+                return base
+            return base + "." + strings.pad_zeros(to_str(t.nanosecond / 1000000), 3)
+
+## Tests
+
+test "read_bytes: openpyxl's workbook, every value and type, the styles, the merged area, the width, the height, the pane, the name and the properties"
+    wb = read_bytes(samples.of(samples.PY_BOOK), options: default_read_options()).must()
+    assert sheet_names(wb) == ["Data", "Hidden"]
+    assert wb.sheets[1].visibility == .hidden && wb.active == 0 && wb.epoch == .from_1900
+    assert wb.names == [DefinedName(name: "rate", refers_to: "Data!$B$2", sheet: "", hidden: false)]
+    assert wb.properties.title == "Low" && wb.properties.creator == "openpyxl" && wb.properties.created == "2026-11-18T09:30:00Z"
+    s = sheet_of(wb, name: "Data").must()
+    assert value_at(s, row: 0, column: 0) == .text(v: "name")
+    assert value_at(s, row: 1, column: 0) == .text(v: "été")
+    assert value_at(s, row: 1, column: 1) == .number(v: 3.5)
+    assert value_at(s, row: 1, column: 2) == .date(v: time.DateTime(year: 2026, month: 11, day: 18, hour: 13, minute: 45, second: 30, nanosecond: 0))
+    assert value_at(s, row: 1, column: 3) == .boolean(v: false)
+    assert value_at(s, row: 2, column: 0) == .text(v: "  spaced  ")
+    assert value_at(s, row: 2, column: 1) == .number(v: 42.0)
+    assert value_at(s, row: 2, column: 2) == .date(v: time.DateTime(year: 1999, month: 12, day: 31, hour: 0, minute: 0, second: 0, nanosecond: 0))
+    assert value_at(s, row: 3, column: 0) == .boolean(v: true)
+    formula = cell_at(s, row: 3, column: 1).must()
+    assert formula.formula == "SUM(B2:B3)" && formula.value == .empty
+    assert value_at(s, row: 3, column: 2) == .date(v: time.DateTime(year: 1899, month: 12, day: 30, hour: 12, minute: 30, second: 0, nanosecond: 0))
+    assert value_at(s, row: 4, column: 0) == .text(v: "line\nbreak")
+    assert value_at(s, row: 4, column: 1) == .number(v: -0.000123)
+    assert value_at(s, row: 4, column: 2) == .number(v: 1000000000000000000000.0)
+    title = wb.styles[cell_at(s, row: 0, column: 0).must().style]
+    assert title.font == Font(name: "Arial", size: 14.0, color: "FF0000", bold: true, italic: true, underline: .single, strike: true)
+    fill = wb.styles[cell_at(s, row: 0, column: 1).must().style].fill
+    assert fill.pattern == .solid && fill.color == "FFFF00"
+    edge = wb.styles[cell_at(s, row: 0, column: 2).must().style].border
+    assert edge.left == Edge(line: .thin, color: "00FF00") && edge.bottom.line == .double && edge.top.line == .none
+    aligned = wb.styles[cell_at(s, row: 1, column: 0).must().style]
+    assert aligned.horizontal == .center && aligned.vertical == .top && aligned.wrap
+    assert wb.styles[cell_at(s, row: 1, column: 1).must().style].number_format == "0.00"
+    assert wb.styles[0].font.name == "Calibri" && wb.styles[0].font.color == "000000"
+    assert s.merged == [Area(first_row: 6, first_column: 0, last_row: 7, last_column: 2)]
+    assert s.column_formats == [ColumnFormat(first: 0, last: 0, width: 20.0, hidden: false)]
+    assert s.row_formats == [RowFormat(row: 1, height: 30.0, hidden: false)]
+    assert s.frozen == Frozen(rows: 1, columns: 1)
+    assert dimension_of(s).must() == Area(first_row: 0, first_column: 0, last_row: 4, last_column: 3)
+
+test "read_bytes: openpyxl's workbook of the 1904 epoch, its date and its number"
+    wb = read_bytes(samples.of(samples.PY_1904), options: default_read_options()).must()
+    assert wb.epoch == .from_1904
+    s = wb.sheets[0]
+    assert value_at(s, row: 0, column: 0) == .date(v: time.DateTime(year: 2026, month: 11, day: 18, hour: 0, minute: 0, second: 0, nanosecond: 0))
+    assert value_at(s, row: 1, column: 0) == .number(v: 1.0)
+
+test "read_bytes: excelize's shared strings, a rich text, a formula with no value, the built-in date format and a name local to a sheet"
+    wb = read_bytes(samples.of(samples.GO_BOOK), options: default_read_options()).must()
+    s = wb.sheets[0]
+    assert value_at(s, row: 0, column: 0) == .text(v: "shared") && value_at(s, row: 1, column: 0) == .text(v: "shared")
+    assert value_at(s, row: 2, column: 0) == .text(v: "Heroes")
+    assert value_at(s, row: 0, column: 1) == .number(v: 7.0) && value_at(s, row: 0, column: 2) == .boolean(v: true)
+    assert cell_at(s, row: 2, column: 1).must().formula == "B1*B2"
+    assert value_at(s, row: 0, column: 3) == .date(v: time.DateTime(year: 2026, month: 11, day: 18, hour: 0, minute: 0, second: 0, nanosecond: 0))
+    assert wb.styles[cell_at(s, row: 0, column: 3).must().style].number_format == "mm-dd-yy"
+    assert wb.names == [DefinedName(name: "local", refers_to: "Second!$C$5", sheet: "Second", hidden: false)]
+    assert value_at(sheet_of(wb, name: "Second").must(), row: 4, column: 2) == .text(v: "far")
+    assert wb.properties.title == "Go" && wb.properties.creator == "excelize"
+
+test "to_bytes and read_bytes: a workbook built with every feature reads back as it was built"
+    wb @= new_workbook()
+    style @= default_style()
+    style.font.bold @ true
+    style.font.color @ "1F497D"
+    style.font.underline @ .double
+    style.fill @ Fill(pattern: .solid, color: "FFFF00", background: "")
+    style.border.bottom @ Edge(line: .medium_dashed, color: "FF0000")
+    style.horizontal @ .center_continuous
+    style.vertical @ .distributed
+    style.wrap @ true
+    style.number_format @ "0.000%"
+    bold = add_style(@wb, style: style)
+    s @= new_sheet("Données")
+    add_row(
+        @s,
+        values: [.text(v: "été"), .number(v: 1.5), .boolean(v: true), .error(v: "#N/A"), .empty, .text(v: "a_x0041_b\u{1}")]
+    ).must()
+    set_value(
+        @s,
+        row: 1,
+        column: 0,
+        value: .date(v: time.DateTime(year: 2026, month: 11, day: 18, hour: 13, minute: 45, second: 30, nanosecond: 500000000))
+    ).must()
+    set_value(@s, row: 1, column: 1, value: .number(v: 0.1)).must()
+    set_formula(@s, row: 1, column: 2, formula: "=B1*2").must()
+    set_value(@s, row: 1, column: 2, value: .number(v: 3.0)).must()
+    set_style(@s, row: 0, column: 0, style: bold).must()
+    set_formula(@s, row: 2, column: 0, formula: "\"x\"&A1").must()
+    set_value(@s, row: 2, column: 0, value: .text(v: "xété")).must()
+    set_value(@s, row: 3, column: 3, value: .text(v: " lead")).must()
+    merge(@s, area: parse_area("A5:B6").must()).must()
+    set_column_width(@s, first: 0, last: 2, width: 12.5).must()
+    set_row_height(@s, row: 2, height: 24.0).must()
+    freeze(@s, rows: 1, columns: 2).must()
+    add_sheet(@wb, s).must()
+    hidden @= new_sheet("Hidden")
+    hidden.visibility @ .very_hidden
+    set_value(@hidden, row: 0, column: 0, value: .number(v: -2.0)).must()
+    add_sheet(@wb, hidden).must()
+    add_name(@wb, name: DefinedName(name: "rate", refers_to: "'Données'!$B$2", sheet: "", hidden: false)).must()
+    add_name(
+        @wb,
+        name: DefinedName(name: "_xlnm.Print_Area", refers_to: "Hidden!$A$1", sheet: "Hidden", hidden: true)
+    ).must()
+    wb.properties.title @ "Low & Lodger"
+    wb.properties.created @ "2026-11-18T09:30:00Z"
+    again = read_bytes(to_bytes(wb).must(), options: default_read_options()).must()
+    assert again.sheets.len() == 2 && again.names == wb.names && again.properties == wb.properties
+    back = again.sheets[0]
+    assert back.name == "Données" && back.merged == s.merged && back.column_formats == s.column_formats && back.row_formats == s.row_formats && back.frozen == s.frozen
+    assert again.sheets[1].visibility == .very_hidden && value_at(again.sheets[1], row: 0, column: 0) == .number(v: -2.0)
+    assert back.cells.len() == s.cells.len()
+    at: i64 @= 0
+
+    while at < s.cells.len()
+        assert back.cells[at].value == s.cells[at].value
+        assert back.cells[at].formula == s.cells[at].formula
+        at @ at + 1
+
+    assert again.styles[back.cells[0].style] == style
+    assert again.styles[cell_at(back, row: 1, column: 0).must().style].number_format == "yyyy-mm-dd hh:mm:ss"
+    assert to_bytes(wb).must() == to_bytes(wb).must()
+
+test "read_bytes: a zip bomb, too many cells, an entity declared, not a zip, an OLE file, a zip of no workbook, a binary workbook and bounds below 1"
+    big @= new_workbook()
+    s @= new_sheet("S")
+    set_value(@s, row: 0, column: 0, value: .text(v: repeat("a", 30000))).must()
+    set_value(@s, row: 1, column: 0, value: .text(v: repeat("b", 30000))).must()
+    set_value(@s, row: 2, column: 0, value: .text(v: repeat("c", 30000))).must()
+    set_value(@s, row: 3, column: 0, value: .number(v: 1.0)).must()
+    add_sheet(@big, s).must()
+    data = to_bytes(big).must()
+
+    match read_bytes(data, options: ReadOptions(max_bytes: 50000, max_cells: 100))
+        .ok _  => assert false
+        .err e => assert e.code == "limit"
+
+    match read_bytes(data, options: ReadOptions(max_bytes: 10000000, max_cells: 1))
+        .ok _  => assert false
+        .err e => assert e.code == "limit"
+
+    assert !read_bytes(data, options: ReadOptions(max_bytes: 10000000, max_cells: 4)).is_err()
+    rels = "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"xl/workbook.xml\"/></Relationships>"
+    bomb = samples.zip_of(
+        names: ["_rels/.rels", "xl/workbook.xml"],
+        bodies: [rels, "<!DOCTYPE w [<!ENTITY a \"aaaaaaaaaa\"><!ENTITY b \"&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;\">]><workbook>&b;</workbook>"]
+    )
+    assert read_bytes(bomb, options: default_read_options()).is_err()
+
+    match read_bytes(bytes.from_text("not a zip at all"), options: default_read_options())
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    ole: [u8] @= [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]
+
+    for _ in range(from: 0, to: 64)
+        ole @ ole.push(0)
+
+    match read_bytes(ole, options: default_read_options())
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported"
+
+    match read_bytes(samples.zip_of(names: ["a.txt"], bodies: ["a"]), options: default_read_options())
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    binary = samples.zip_of(
+        names: ["_rels/.rels"],
+        bodies: [strings.replace_all(s: rels, old: "workbook.xml", new: "workbook.bin")]
+    )
+
+    match read_bytes(binary, options: default_read_options())
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported"
+
+    assert read_bytes(data, options: ReadOptions(max_bytes: 0, max_cells: 1)).is_err()
+
+test "to_bytes: no sheet, a NaN, a date before the epoch, a colour that is none, a text too long, two cells at one place and a hidden sheet shown first"
+    assert to_bytes(new_workbook()).is_err()
+    wb @= new_workbook()
+    s = new_sheet("S")
+    add_sheet(@wb, s).must()
+    nan @= wb
+    nan.sheets[0].cells @ [Cell(row: 0, column: 0, value: .number(v: 0.0 / 0.0), formula: "", style: 0)]
+
+    match to_bytes(nan)
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported"
+
+    early @= wb
+    early.sheets[0].cells @ [
+        Cell(row: 0, column: 0, value: .date(v: time.DateTime(year: 1899, month: 1, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0)), formula: "", style: 0)
+    ]
+
+    match to_bytes(early)
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported"
+
+    colour @= wb
+    colour.styles[0].font.color @ "red"
+    assert to_bytes(colour).is_err()
+    long @= wb
+    long.sheets[0].cells @ [Cell(row: 0, column: 0, value: .text(v: repeat("a", 32768)), formula: "", style: 0)]
+    assert to_bytes(long).is_err()
+    twice @= wb
+    one = Cell(row: 0, column: 0, value: .number(v: 1.0), formula: "", style: 0)
+    twice.sheets[0].cells @ [one, one]
+    assert to_bytes(twice).is_err()
+    hidden @= wb
+    hidden.sheets[0].visibility @ .hidden
+    assert to_bytes(hidden).is_err()
+
+test "set_value, set_formula and set_style: before the last, replacing, the far corner, outside the sheet and what no cell holds"
+    s @= new_sheet("S")
+    set_value(@s, row: 5, column: 5, value: .number(v: 1.0)).must()
+    set_value(@s, row: 0, column: 0, value: .number(v: 2.0)).must()
+    set_value(@s, row: 5, column: 0, value: .number(v: 3.0)).must()
+    set_value(@s, row: 5, column: 5, value: .number(v: 4.0)).must()
+    set_value(@s, row: 1048575, column: 16383, value: .text(v: "corner")).must()
+    assert s.cells.len() == 4
+    assert lists.is_sorted_by(s.cells, less: is_before)
+    assert value_at(s, row: 5, column: 5) == .number(v: 4.0)
+    set_style(@s, row: 5, column: 5, style: 2).must()
+    set_formula(@s, row: 5, column: 5, formula: "A1+1").must()
+    c = cell_at(s, row: 5, column: 5).must()
+    assert c.value == .number(v: 4.0) && c.style == 2 && c.formula == "A1+1"
+    assert set_value(@s, row: 1048576, column: 0, value: .empty).is_err()
+    assert set_value(@s, row: 0, column: 16384, value: .empty).is_err()
+    assert set_style(@s, row: 0, column: 0, style: -1).is_err()
+    assert set_value(@s, row: 0, column: 0, value: .text(v: repeat("é", 32768))).is_err()
+
+    match set_value(@s, row: 0, column: 0, value: .number(v: 1.0 / 0.0))
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported"
+
+    assert set_value(
+        @s,
+        row: 0,
+        column: 0,
+        value: .date(v: time.DateTime(year: 2026, month: 2, day: 30, hour: 0, minute: 0, second: 0, nanosecond: 0))
+    ).is_err()
+
+test "add_row, set_column_width, set_row_height, merge and freeze: runs split, a height replaced, merges refused and the last row"
+    s @= new_sheet("S")
+    add_row(@s, values: []).must()
+    add_row(@s, values: [.number(v: 1.0)]).must()
+    add_row(@s, values: [.empty, .number(v: 2.0)]).must()
+    assert value_at(s, row: 0, column: 0) == .number(v: 1.0) && value_at(s, row: 1, column: 1) == .number(v: 2.0)
+    set_column_width(@s, first: 0, last: 9, width: 10.0).must()
+    set_column_width(@s, first: 3, last: 4, width: 20.0).must()
+    assert s.column_formats == [ColumnFormat(first: 0, last: 2, width: 10.0, hidden: false), ColumnFormat(first: 3, last: 4, width: 20.0, hidden: false), ColumnFormat(first: 5, last: 9, width: 10.0, hidden: false)]
+    assert set_column_width(@s, first: 2, last: 1, width: 1.0).is_err() && set_column_width(@s, first: 0, last: 0, width: 256.0).is_err()
+    set_row_height(@s, row: 4, height: 20.0).must()
+    set_row_height(@s, row: 2, height: 10.0).must()
+    set_row_height(@s, row: 4, height: 30.0).must()
+    assert s.row_formats == [RowFormat(row: 2, height: 10.0, hidden: false), RowFormat(row: 4, height: 30.0, hidden: false)]
+    assert set_row_height(@s, row: 0, height: 410.0).is_err()
+    merge(@s, area: Area(first_row: 0, first_column: 0, last_row: 1, last_column: 1)).must()
+    assert merge(@s, area: Area(first_row: 1, first_column: 1, last_row: 2, last_column: 2)).is_err()
+    assert merge(@s, area: Area(first_row: 5, first_column: 5, last_row: 5, last_column: 5)).is_err()
+    assert merge(@s, area: Area(first_row: 5, first_column: 5, last_row: 4, last_column: 6)).is_err()
+    freeze(@s, rows: 0, columns: 3).must()
+    assert s.frozen == Frozen(rows: 0, columns: 3)
+    assert freeze(@s, rows: -1, columns: 0).is_err()
+    full @= new_sheet("F")
+    set_value(@full, row: 1048575, column: 0, value: .number(v: 1.0)).must()
+    assert add_row(@full, values: [.number(v: 2.0)]).is_err()
+
+test "rows_of: an empty sheet, the limit, a style alone, and a formula with no value"
+    empty = new_sheet("S")
+    assert rows_of(empty, limit: 0).must().len() == 0
+    s @= new_sheet("S")
+    set_value(@s, row: 0, column: 1, value: .text(v: "b")).must()
+    set_style(@s, row: 9, column: 9, style: 1).must()
+    set_formula(@s, row: 1, column: 0, formula: "B1").must()
+    grid = rows_of(s, limit: 4).must()
+    assert grid == [[.empty, .text(v: "b")], [.empty, .empty]]
+
+    match rows_of(s, limit: 3)
+        .ok _  => assert false
+        .err e => assert e.code == "limit"
+
+    match dimension_of(empty)
+        .ok _  => assert false
+        .err e => assert e.code == "not_found"
+
+test "add_sheet and add_name: a name taken in another case, a bad name, a style not there, a name local to no sheet, and a name twice"
+    wb @= new_workbook()
+    add_sheet(@wb, new_sheet("Low")).must()
+    assert add_sheet(@wb, new_sheet("LOW")).is_err()
+    assert add_sheet(@wb, new_sheet("a/b")).is_err()
+    styled @= new_sheet("Styled")
+    set_style(@styled, row: 0, column: 0, style: 5).must()
+    assert add_sheet(@wb, styled).is_err()
+    assert add_name(@wb, name: DefinedName(name: "x", refers_to: "Low!A1", sheet: "Absent", hidden: false)).is_err()
+    add_name(@wb, name: DefinedName(name: "x", refers_to: "Low!A1", sheet: "", hidden: false)).must()
+    assert add_name(@wb, name: DefinedName(name: "X", refers_to: "Low!A2", sheet: "", hidden: false)).is_err()
+    add_name(@wb, name: DefinedName(name: "X", refers_to: "Low!A2", sheet: "Low", hidden: false)).must()
+    assert add_name(@wb, name: DefinedName(name: "B2", refers_to: "Low!A2", sheet: "", hidden: false)).is_err()
+
+    match sheet_of(wb, name: "low")
+        .ok _  => assert false
+        .err e => assert e.code == "not_found"
+
+test "parse_cell_name, format_column_name, parse_area and format_value: the first and last, both cases, dollars, a time with milliseconds, and what is none"
+    assert parse_cell_name("XFD1048576").must() == Position(row: 1048575, column: 16383)
+    assert parse_cell_name("$c$7").must() == Position(row: 6, column: 2)
+    assert parse_cell_name("A0").is_err() && parse_cell_name("").is_err()
+    assert format_cell_name(row: 1048576, column: 0).is_err()
+    assert format_column_name(16384).is_err() && parse_column_name("XFE").is_err()
+    assert parse_area("C3:A1").must() == Area(first_row: 0, first_column: 0, last_row: 2, last_column: 2)
+    assert format_area(Area(first_row: 2, first_column: 0, last_row: 1, last_column: 0)).is_err()
+    assert format_value(.date(v: time.DateTime(year: 1900, month: 1, day: 1, hour: 0, minute: 0, second: 1, nanosecond: 5000000))) == "1900-01-01T00:00:01.005"
+    assert format_value(.number(v: -0.5)) == "-0.5" && format_value(.empty) == "" && format_value(.boolean(v: false)) == "FALSE"
+
+test "save and load: a workbook on the disk, and a path that is not there"
+    dir = fs.make_temp_dir(dir: "", pattern: "rebel-xlsx-*").must()
+    file = dir + "/book.xlsx"
+    wb @= new_workbook()
+    s @= new_sheet("S")
+    add_row(@s, values: [.text(v: "a")]).must()
+    add_sheet(@wb, s).must()
+    save(wb, path: file).must()
+    assert value_at(load(file).must().sheets[0], row: 0, column: 0) == .text(v: "a")
+
+    match load(dir + "/absent.xlsx")
+        .ok _  => assert false
+        .err e => assert e.code == "file_not_found"
+
+    fs.remove_all(dir).must()
+
+test "read_bytes and to_bytes: openpyxl's links, read, written and read back, and links refused"
+    wb = read_bytes(samples.of(samples.PY_LINKS), options: default_read_options()).must()
+    s = sheet_of(wb, name: "Links").must()
+    one = Area(first_row: 0, first_column: 0, last_row: 0, last_column: 0)
+    two = Area(first_row: 1, first_column: 1, last_row: 1, last_column: 1)
+    assert s.links == [Link(area: one, target: "https://example.com/a?b=1&c=2", location: "", tooltip: "a tip", display: ""), Link(area: two, target: "", location: "Other!A1", tooltip: "", display: "go")]
+    again = read_bytes(to_bytes(wb).must(), options: default_read_options()).must()
+    assert sheet_of(again, name: "Links").must().links == s.links
+    t @= new_sheet("T")
+    assert add_link(@t, link: Link(area: one, target: "", location: "", tooltip: "", display: "")).is_err()
+    assert add_link(
+        @t,
+        link: Link(area: Area(first_row: 0, first_column: 0, last_row: 1048576, last_column: 0), target: "x", location: "", tooltip: "", display: "")
+    ).is_err()
+    assert add_link(
+        @t,
+        link: Link(area: one, target: repeat("a", 2080), location: "", tooltip: "", display: "")
+    ).is_err()
+    add_link(@t, link: Link(area: one, target: "mailto:a@example.com", location: "", tooltip: "", display: "")).must()
+    assert t.links.len() == 1
+
+## Examples
+
+# The bounds reading takes unless a program sets its own.
+test "default_read_options: 64 MiB and a million cells"
+    assert default_read_options() == ReadOptions(max_bytes: 67108864, max_cells: 1048576)
+
+# A workbook saved and loaded back by its path.
+test "load: a workbook from its file"
+    temp @= fs.make_temp_file(dir: "", pattern: "rebel-xlsx-*.xlsx").must()
+    io.write(temp.stream, data: samples.of(samples.PY_BOOK)).must()
+    io.close(@temp.stream).must()
+    wb = load(temp.path).must()
+    assert sheet_names(wb) == ["Data", "Hidden"]
+    fs.remove(temp.path).must()
+
+# A file read within bounds a program chose.
+test "load_with: a workbook read within small bounds"
+    temp @= fs.make_temp_file(dir: "", pattern: "rebel-xlsx-*.xlsx").must()
+    io.write(temp.stream, data: samples.of(samples.PY_BOOK)).must()
+    io.close(@temp.stream).must()
+
+    match load_with(temp.path, options: ReadOptions(max_bytes: 100000, max_cells: 5))
+        .ok _  => assert false
+        .err e => assert e.code == "limit"
+
+    fs.remove(temp.path).must()
+
+# A workbook read from a stream the program opened.
+test "read: a workbook from a stream"
+    temp @= fs.make_temp_file(dir: "", pattern: "rebel-xlsx-*.xlsx").must()
+    io.write(temp.stream, data: samples.of(samples.GO_BOOK)).must()
+    io.close(@temp.stream).must()
+    from @= fs.open(temp.path).must()
+    wb = read(from, options: default_read_options()).must()
+    io.close(@from).must()
+    assert value_at(wb.sheets[0], row: 0, column: 0) == .text(v: "shared")
+    fs.remove(temp.path).must()
+
+# A workbook read from bytes in memory.
+test "read_bytes: openpyxl's workbook from its bytes"
+    wb = read_bytes(samples.of(samples.PY_1904), options: default_read_options()).must()
+    assert wb.epoch == .from_1904
+
+# A workbook written to a file.
+test "save: a workbook of one cell"
+    wb @= new_workbook()
+    s @= new_sheet("Sheet1")
+    set_value(@s, row: 0, column: 0, value: .number(v: 42.0)).must()
+    add_sheet(@wb, s).must()
+    dir = fs.make_temp_dir(dir: "", pattern: "rebel-xlsx-*").must()
+    save(wb, path: dir + "/one.xlsx").must()
+    assert value_at(load(dir + "/one.xlsx").must().sheets[0], row: 0, column: 0) == .number(v: 42.0)
+    fs.remove_all(dir).must()
+
+# A workbook written to a stream the program opened.
+test "write: a workbook to a stream"
+    wb @= new_workbook()
+    add_sheet(@wb, new_sheet("S")).must()
+    temp @= fs.make_temp_file(dir: "", pattern: "rebel-xlsx-*.xlsx").must()
+    write(wb, to: temp.stream).must()
+    io.close(@temp.stream).must()
+    assert sheet_names(load(temp.path).must()) == ["S"]
+    fs.remove(temp.path).must()
+
+# A workbook as bytes, to send or to keep.
+test "to_bytes: a zip's first bytes"
+    wb @= new_workbook()
+    add_sheet(@wb, new_sheet("S")).must()
+    data = to_bytes(wb).must()
+    assert data[0] == 'P' && data[1] == 'K'
+
+# A new workbook holds the default style alone.
+test "new_workbook: no sheet and one style"
+    wb = new_workbook()
+    assert wb.sheets.len() == 0 && wb.styles == [default_style()] && wb.epoch == .from_1900
+
+# A sheet made empty, named.
+test "new_sheet: an empty sheet"
+    s = new_sheet("Sales")
+    assert s.name == "Sales" && s.cells.len() == 0 && s.visibility == .visible
+
+# Sheets added in order.
+test "add_sheet: two sheets"
+    wb @= new_workbook()
+    add_sheet(@wb, new_sheet("One")).must()
+    add_sheet(@wb, new_sheet("Two")).must()
+    assert sheet_names(wb) == ["One", "Two"]
+
+# The style every cell has until it is given another.
+test "default_style: Calibri of 11 points"
+    s = default_style()
+    assert s.font.name == "Calibri" && s.font.size == 11.0 && s.number_format == "General"
+
+# A bold style added once, its index the same the second time.
+test "add_style: a bold style"
+    wb @= new_workbook()
+    bold @= default_style()
+    bold.font.bold @ true
+    assert add_style(@wb, style: bold) == 1
+    assert add_style(@wb, style: bold) == 1
+    assert add_style(@wb, style: default_style()) == 0
+
+# A name for a cell, over the whole workbook.
+test "add_name: a rate named"
+    wb @= new_workbook()
+    add_sheet(@wb, new_sheet("Rates")).must()
+    add_name(@wb, name: DefinedName(name: "rate", refers_to: "Rates!$B$1", sheet: "", hidden: false)).must()
+    assert wb.names.len() == 1
+
+# Values of each kind set in a sheet.
+test "set_value: a number and a text"
+    s @= new_sheet("S")
+    set_value(@s, row: 0, column: 0, value: .number(v: 3.5)).must()
+    set_value(@s, row: 0, column: 1, value: .text(v: "Low")).must()
+    assert value_at(s, row: 0, column: 1) == .text(v: "Low")
+
+# A formula set as text, Excel computing it on opening.
+test "set_formula: a sum"
+    s @= new_sheet("S")
+    set_formula(@s, row: 2, column: 0, formula: "=SUM(A1:A2)").must()
+    assert cell_at(s, row: 2, column: 0).must().formula == "SUM(A1:A2)"
+
+# A cell given a style the workbook holds.
+test "set_style: a bold heading"
+    wb @= new_workbook()
+    bold @= default_style()
+    bold.font.bold @ true
+    s @= new_sheet("S")
+    set_style(@s, row: 0, column: 0, style: add_style(@wb, style: bold)).must()
+    assert cell_at(s, row: 0, column: 0).must().style == 1
+
+# Rows written one after the other.
+test "add_row: a header and a row"
+    s @= new_sheet("S")
+    add_row(@s, values: [.text(v: "album"), .text(v: "year")]).must()
+    add_row(@s, values: [.text(v: "Low"), .number(v: 1977.0)]).must()
+    assert value_at(s, row: 1, column: 1) == .number(v: 1977.0)
+
+# Two cells merged into one.
+test "merge: a heading across two columns"
+    s @= new_sheet("S")
+    merge(@s, area: parse_area("A1:B1").must()).must()
+    assert s.merged.len() == 1
+
+# Columns made wider.
+test "set_column_width: the first three columns"
+    s @= new_sheet("S")
+    set_column_width(@s, first: 0, last: 2, width: 18.0).must()
+    assert s.column_formats == [ColumnFormat(first: 0, last: 2, width: 18.0, hidden: false)]
+
+# A row made taller.
+test "set_row_height: the first row"
+    s @= new_sheet("S")
+    set_row_height(@s, row: 0, height: 28.5).must()
+    assert s.row_formats == [RowFormat(row: 0, height: 28.5, hidden: false)]
+
+# A cell linked to a web page.
+test "add_link: a web address from A1"
+    s @= new_sheet("S")
+    set_value(@s, row: 0, column: 0, value: .text(v: "Rebel")).must()
+    add_link(
+        @s,
+        link: Link(area: parse_area("A1").must(), target: "https://example.com/", location: "", tooltip: "", display: "")
+    ).must()
+    assert s.links.len() == 1
+
+# The header row kept in view.
+test "freeze: the first row"
+    s @= new_sheet("S")
+    freeze(@s, rows: 1, columns: 0).must()
+    assert s.frozen == Frozen(rows: 1, columns: 0)
+
+# A sheet found by its name.
+test "sheet_of: a sheet by its name"
+    wb @= new_workbook()
+    add_sheet(@wb, new_sheet("Totals")).must()
+    assert sheet_of(wb, name: "Totals").must().name == "Totals"
+
+# The names of a workbook's sheets.
+test "sheet_names: in the order of their tabs"
+    wb = read_bytes(samples.of(samples.GO_BOOK), options: default_read_options()).must()
+    assert sheet_names(wb) == ["Sheet1", "Second"]
+
+# A cell found by its place.
+test "cell_at: the cell at B1"
+    s @= new_sheet("S")
+    set_value(@s, row: 0, column: 1, value: .boolean(v: true)).must()
+    assert cell_at(s, row: 0, column: 1).must().value == .boolean(v: true)
+
+# Cells sorted into a sheet's order.
+test "is_before: by row, then by column"
+    a = Cell(row: 0, column: 5, value: .empty, formula: "", style: 0)
+    b = Cell(row: 1, column: 0, value: .empty, formula: "", style: 0)
+    assert is_before(a: a, b: b) && !is_before(a: b, b: a)
+
+# A value, or nothing, at a place.
+test "value_at: a value and an empty place"
+    s @= new_sheet("S")
+    set_value(@s, row: 0, column: 0, value: .number(v: 1.0)).must()
+    assert value_at(s, row: 0, column: 0) == .number(v: 1.0) && value_at(s, row: 9, column: 9) == .empty
+
+# A sheet's values as rows, like a table read from CSV.
+test "rows_of: a small table"
+    s @= new_sheet("S")
+    add_row(@s, values: [.text(v: "a"), .text(v: "b")]).must()
+    add_row(@s, values: [.number(v: 1.0)]).must()
+    assert rows_of(s, limit: 100).must() == [[.text(v: "a"), .text(v: "b")], [.number(v: 1.0), .empty]]
+
+# The area a sheet's values cover.
+test "dimension_of: from B2 to C3"
+    s @= new_sheet("S")
+    set_value(@s, row: 1, column: 1, value: .number(v: 1.0)).must()
+    set_value(@s, row: 2, column: 2, value: .number(v: 2.0)).must()
+    assert format_area(dimension_of(s).must()).must() == "B2:C3"
+
+# A cell's name read.
+test "parse_cell_name: B3"
+    assert parse_cell_name("B3").must() == Position(row: 2, column: 1)
+
+# A cell's name written.
+test "format_cell_name: row 2, column 1"
+    assert format_cell_name(row: 2, column: 1).must() == "B3"
+
+# A column's letters read.
+test "parse_column_name: AA"
+    assert parse_column_name("AA").must() == 26
+
+# A column's letters written.
+test "format_column_name: the last column"
+    assert format_column_name(16383).must() == "XFD"
+
+# An area's name read.
+test "parse_area: A1:C3"
+    assert parse_area("A1:C3").must() == Area(first_row: 0, first_column: 0, last_row: 2, last_column: 2)
+
+# An area's name written.
+test "format_area: one cell and a rectangle"
+    assert format_area(Area(first_row: 0, first_column: 0, last_row: 0, last_column: 0)).must() == "A1"
+    assert format_area(Area(first_row: 0, first_column: 0, last_row: 9, last_column: 1)).must() == "A1:B10"
+
+# A date as Excel's serial number.
+test "serial_of: the 1st of March 1900, after the day that never was"
+    assert serial_of(time.DateTime(year: 1900, month: 3, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0), epoch: .from_1900).must() == 61.0
+
+# Excel's serial number as a date.
+test "date_of: 46344.5 is noon on 2026-11-18"
+    assert date_of(46344.5, epoch: .from_1900).must() == time.DateTime(year: 2026, month: 11, day: 18, hour: 12, minute: 0, second: 0, nanosecond: 0)
+
+# Number formats that show dates, and some that do not.
+test "is_date_format: a date, a currency and an elapsed time"
+    assert is_date_format("yyyy-mm-dd") && !is_date_format("\"$\"#,##0.00") && !is_date_format("[h]:mm:ss")
+
+# A built-in format's code by its number.
+test "format_code_of: 14"
+    assert format_code_of(14).must() == "mm-dd-yy"
+
+# Values written as plain text.
+test "format_value: a whole number, a boolean and a date"
+    assert format_value(.number(v: 42.0)) == "42"
+    assert format_value(.boolean(v: true)) == "TRUE"
+    assert format_value(.date(v: time.DateTime(year: 2026, month: 11, day: 18, hour: 9, minute: 5, second: 0, nanosecond: 0))) == "2026-11-18T09:05:00"

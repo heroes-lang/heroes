@@ -1,0 +1,261 @@
+# The names of cells, columns and areas: `B3`, `AB`, `A1:C3` read into rows
+# and columns counted from 0, and written back. Every reading walks bytes and
+# cuts no slice, so no text from a file can make it abort.
+
+constant INVALID: str
+    "invalid"
+
+# The rows of a sheet.
+constant ROWS: i64
+    1048576
+
+# The columns of a sheet.
+constant COLUMNS: i64
+    16384
+
+# A cell's place, both counted from 0.
+record Spot
+    # The row.
+    row: i64
+    # The column.
+    column: i64
+
+# A rectangle of cells, its corners included, the first corner the top left.
+record Box
+    # The top row.
+    first_row: i64
+    # The left column.
+    first_column: i64
+    # The bottom row.
+    last_row: i64
+    # The right column.
+    last_column: i64
+
+# Whether `b` is an ASCII letter.
+function is_letter(b: u8) -> bool
+    return b >= 'A' && b <= 'Z' || b >= 'a' && b <= 'z'
+
+# Whether `b` is an ASCII digit.
+function is_digit(b: u8) -> bool
+    return b >= '0' && b <= '9'
+
+# The value of the letter `b`, `A` and `a` as 1.
+function letter_value(b: u8) -> i64
+    if b >= 'a'
+        return to_i64(b - 'a').must() + 1
+    return to_i64(b - 'A').must() + 1
+
+# The column the letters of `s` from `from` to `to` name, or -1 where there
+# are none or they name a column past `XFD`.
+function letters_at(s: str, from: i64, to: i64) -> i64
+    if to <= from || to - from > 3
+        return -1
+    n: i64 @= 0
+    at: i64 @= from
+
+    while at < to
+        n @ n * 26 + letter_value(s[at])
+        at @ at + 1
+
+    if n > COLUMNS
+        return -1
+    return n - 1
+
+# The row the digits of `s` from `from` to `to` name, from 0, or -1 where
+# there are none, the first is 0, or they name a row past the last.
+function digits_at(s: str, from: i64, to: i64) -> i64
+    if to <= from || to - from > 7 || s[from] == '0'
+        return -1
+    n: i64 @= 0
+    at: i64 @= from
+
+    while at < to
+        n @ n * 10 + to_i64(s[at] - '0').must()
+        at @ at + 1
+
+    if n > ROWS
+        return -1
+    return n - 1
+
+# The column the letters `s` name, `A` as 0.
+function column_of(s: str) -> i64?
+    at: i64 @= 0
+
+    while at < s.len() && is_letter(s[at])
+        at @ at + 1
+
+    if at != s.len() || at == 0
+        return fail(code: INVALID, msg: f"\"{s}\" is no column's name: one to three letters, `A` to `XFD`")
+    n = letters_at(s, from: 0, to: at)
+
+    if n < 0
+        return fail(code: INVALID, msg: f"\"{s}\" names a column past `XFD`, the last of a sheet")
+    return ok(n)
+
+# The letters of `column`, 0 as `A`.
+function letters_of(column: i64) -> str?
+    if column < 0 || column >= COLUMNS
+        return fail(code: INVALID, msg: f"the column {column} is outside a sheet, whose columns are 0 to {COLUMNS - 1}")
+    letters: [str] @= []
+    n: i64 @= column + 1
+
+    while n > 0
+        d = (n - 1) % 26
+        letters @ letters.push("ABCDEFGHIJKLMNOPQRSTUVWXYZ".slice(from: d, to: d + 1))
+        n @ (n - 1) / 26
+
+    out: [str] @= []
+    at: i64 @= letters.len()
+
+    while at > 0
+        at @ at - 1
+        out @ out.push(letters[at])
+
+    return ok(out.join(""))
+
+# The place the cell name in `s` from `from` to `to` names, `$` allowed
+# before each part; a row of -1 where it is none.
+function spot_at(s: str, from: i64, to: i64) -> Spot
+    none = Spot(row: -1, column: -1)
+    at: i64 @= from
+
+    if at < to && s[at] == '$'
+        at @ at + 1
+    letters = at
+
+    while at < to && is_letter(s[at])
+        at @ at + 1
+
+    column = letters_at(s, from: letters, to: at)
+
+    if at < to && s[at] == '$'
+        at @ at + 1
+    digits = at
+
+    while at < to && is_digit(s[at])
+        at @ at + 1
+
+    if at != to || column < 0
+        return none
+    row = digits_at(s, from: digits, to: at)
+
+    if row < 0
+        return none
+    return Spot(row: row, column: column)
+
+# The place the cell name `s` names, `B3` as row 2 and column 1.
+function spot_of(s: str) -> Spot?
+    spot = spot_at(s, from: 0, to: s.len())
+
+    if spot.row < 0
+        return fail(
+            code: INVALID,
+            msg: f"\"{s}\" is no cell's name: a column's letters, `A` to `XFD`, then a row's number, 1 to {ROWS}"
+        )
+    return ok(spot)
+
+# The name of the cell at `row` and `column`, row 0 and column 0 as `A1`.
+function name_of(row: i64, column: i64) -> str?
+    if row < 0 || row >= ROWS
+        return fail(code: INVALID, msg: f"the row {row} is outside a sheet, whose rows are 0 to {ROWS - 1}")
+    return ok(letters_of(column)? + to_str(row + 1))
+
+# The area `s` names: two cell names joined by `:`, or one.
+function box_of(s: str) -> Box?
+    colon: i64 @= -1
+    at: i64 @= 0
+
+    while at < s.len()
+        if s[at] == ':'
+            if colon >= 0
+                return fail(code: INVALID, msg: f"\"{s}\" holds two `:`; an area is two cell names joined by one")
+            colon @ at
+        at @ at + 1
+
+    if colon < 0
+        one = spot_of(s)?
+        return ok(Box(first_row: one.row, first_column: one.column, last_row: one.row, last_column: one.column))
+    a = spot_at(s, from: 0, to: colon)
+    b = spot_at(s, from: colon + 1, to: s.len())
+
+    if a.row < 0 || b.row < 0
+        return fail(code: INVALID, msg: f"\"{s}\" is no area: two cell names joined by `:`, `A1:C3`")
+    return ok(
+        Box(first_row: smaller(n: a.row, than: b.row), first_column: smaller(n: a.column, than: b.column), last_row: larger(n: a.row, than: b.row), last_column: larger(n: a.column, than: b.column))
+    )
+
+# The smaller of `n` and `than`.
+function smaller(n: i64, than: i64) -> i64
+    if n < than
+        return n
+    return than
+
+# The larger of `n` and `than`.
+function larger(n: i64, than: i64) -> i64
+    if n > than
+        return n
+    return than
+
+# The name of `b`, `A1:C3`, or one cell's name where it is one cell.
+function box_name(b: Box) -> str?
+    if b.last_row < b.first_row || b.last_column < b.first_column
+        return fail(
+            code: INVALID,
+            msg: f"an area whose last row {b.last_row} or column {b.last_column} is before its first, {b.first_row} or {b.first_column}"
+        )
+    first = name_of(row: b.first_row, column: b.first_column)?
+
+    if b.first_row == b.last_row && b.first_column == b.last_column
+        return ok(first)
+    return ok(first + ":" + name_of(row: b.last_row, column: b.last_column)?)
+
+test "column_of: one, two and three letters, either case, the last, and what is none"
+    assert column_of("A").must() == 0
+    assert column_of("z").must() == 25
+    assert column_of("AA").must() == 26
+    assert column_of("aB").must() == 27
+    assert column_of("XFD").must() == 16383
+    assert column_of("XFE").is_err()
+    assert column_of("AAAA").is_err()
+    assert column_of("").is_err()
+    assert column_of("A1").is_err()
+    assert column_of("é").is_err()
+
+test "letters_of: the first, the edges of each length, the last, and outside"
+    assert letters_of(0).must() == "A"
+    assert letters_of(25).must() == "Z"
+    assert letters_of(26).must() == "AA"
+    assert letters_of(701).must() == "ZZ"
+    assert letters_of(702).must() == "AAA"
+    assert letters_of(16383).must() == "XFD"
+    assert letters_of(16384).is_err()
+    assert letters_of(-1).is_err()
+
+test "spot_of: a name, a name with dollars, the last cell, and names that are none"
+    assert spot_of("A1").must() == Spot(row: 0, column: 0)
+    assert spot_of("$B$3").must() == Spot(row: 2, column: 1)
+    assert spot_of("b$3").must() == Spot(row: 2, column: 1)
+    assert spot_of("XFD1048576").must() == Spot(row: 1048575, column: 16383)
+
+    for bad in ["", "A", "1", "A0", "A01", "A1048577", "XFE1", "A1B", "$$A1", "A 1", "A1:", "é1", "A-1", "A99999999999999999999"]
+        assert spot_of(bad).is_err()
+
+test "name_of: the first cell, a far one, the last, and outside"
+    assert name_of(row: 0, column: 0).must() == "A1"
+    assert name_of(row: 2, column: 27).must() == "AB3"
+    assert name_of(row: 1048575, column: 16383).must() == "XFD1048576"
+    assert name_of(row: 1048576, column: 0).is_err()
+    assert name_of(row: -1, column: 0).is_err()
+    assert name_of(row: 0, column: -1).is_err()
+
+test "box_of and box_name: an area, its corners reversed, one cell, and what is none"
+    assert box_of("A1:C3").must() == Box(first_row: 0, first_column: 0, last_row: 2, last_column: 2)
+    assert box_of("C3:A1").must() == Box(first_row: 0, first_column: 0, last_row: 2, last_column: 2)
+    assert box_of("$B$2:$B$2").must() == Box(first_row: 1, first_column: 1, last_row: 1, last_column: 1)
+    assert box_of("B2").must() == Box(first_row: 1, first_column: 1, last_row: 1, last_column: 1)
+    assert box_of("A1:B2:C3").is_err()
+    assert box_of(":").is_err()
+    assert box_of("A1:").is_err()
+    assert box_name(Box(first_row: 0, first_column: 0, last_row: 2, last_column: 2)).must() == "A1:C3"
+    assert box_name(Box(first_row: 1, first_column: 1, last_row: 1, last_column: 1)).must() == "B2"
+    assert box_name(Box(first_row: 2, first_column: 0, last_row: 1, last_column: 0)).is_err()

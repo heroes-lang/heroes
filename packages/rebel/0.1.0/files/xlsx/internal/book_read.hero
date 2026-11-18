@@ -1,0 +1,201 @@
+# A workbook read whole from its zip: the package's relationships lead to the
+# workbook part, whose own lead to its sheets, its styles, its shared strings
+# and its theme; the core properties are read beside it. Parts are found by
+# their relationships, never by a fixed path, and elements by their local
+# names, so both the transitional and the strict namespaces read.
+
+use io
+use numbers
+use strings
+use xlsx/internal/model
+use xlsx/internal/parts
+use xlsx/internal/shared
+use xlsx/internal/sheet_read
+use xlsx/internal/styles_read
+use xml
+
+constant INVALID: str
+    "invalid"
+
+constant UNSUPPORTED: str
+    "unsupported"
+
+# One sheet as the workbook part lists it.
+record Listed
+    # Its name.
+    name: str
+    # Its tab's state word.
+    state: str
+    # Its relationship's id.
+    id: str
+
+# The part the package's relationships name as the workbook, or the usual
+# path where they name none.
+function workbook_part(@p: parts.Package) -> str?
+    rels = parts.rels_of(@p, part: "")?
+
+    match parts.rel_of_kind(rels, kind: "officeDocument")
+        .ok r =>
+            if strings.has_suffix(s: strings.to_lower_ascii(r.target), suffix: ".bin")
+                return fail(
+                    code: UNSUPPORTED,
+                    msg: f"the workbook part \"{r.target}\" is binary, an `.xlsb`, which this package does not read"
+                )
+            return ok(r.target)
+        .err _ =>
+            if parts.has_part(p, name: "xl/workbook.xml")
+                return ok("xl/workbook.xml")
+            return fail(code: INVALID, msg: "the file names no workbook part: it is a zip, but not of a workbook")
+
+# The core properties the part `root` holds.
+function props_of(root: xml.Element) -> model.Props
+    props @= model.no_props()
+
+    for e in xml.elements_of(root)
+        v = xml.text_of(e)
+        local = e.name.local
+
+        if local == "title"
+            props.title @ v
+        else if local == "subject"
+            props.subject @ v
+        else if local == "creator"
+            props.creator @ v
+        else if local == "keywords"
+            props.keywords @ v
+        else if local == "description"
+            props.description @ v
+        else if local == "lastModifiedBy"
+            props.last_modified_by @ v
+        else if local == "category"
+            props.category @ v
+        else if local == "created"
+            props.created @ v
+        else if local == "modified"
+            props.modified @ v
+
+    return props
+
+# The workbook in `from`, read within `max_bytes` and `max_cells`.
+function read(from: io.Stream, max_bytes: i64, max_cells: i64) -> model.Book?
+    p @= parts.open(from, budget: max_bytes)?
+    book_part = workbook_part(@p)?
+    package_rels = parts.rels_of(@p, part: "")?
+    props @= model.no_props()
+
+    match parts.rel_of_kind(package_rels, kind: "core-properties")
+        .ok r =>
+            if parts.has_part(p, name: r.target)
+                props @ props_of(parts.part_xml(@p, name: r.target)?)
+        .err _ => _ = 0
+
+    root = parts.part_xml(@p, name: book_part)?
+
+    if root.name.local != "workbook"
+        return fail(code: INVALID, msg: f"the part \"{book_part}\" holds <{root.name.local}>, not a workbook")
+    rels = parts.rels_of(@p, part: book_part)?
+    from_1904: bool @= false
+    active: i64 @= 0
+    listed: [Listed] @= []
+    defined: [xml.Element] @= []
+
+    for e in xml.elements_of(root)
+        local = e.name.local
+
+        if local == "workbookPr"
+            v = xml.attribute(e, name: "date1904").default("0")
+            from_1904 @ v == "1" || v == "true"
+        else if local == "bookViews"
+            for view in xml.elements_of(e)
+                if view.name.local == "workbookView"
+                    active @ numbers.parse_int(xml.attribute(view, name: "activeTab").default("0")).default(0)
+        else if local == "sheets"
+            for s in xml.elements_of(e)
+                if s.name.local == "sheet"
+                    listed @ listed.push(
+                        Listed(name: xml.attribute(s, name: "name").default(""), state: xml.attribute(s, name: "state").default("visible"), id: parts.namespaced(s, local: "id"))
+                    )
+        else if local == "definedNames"
+            for d in xml.elements_of(e)
+                if d.name.local == "definedName"
+                    defined @ defined.push(d)
+
+    theme: [str] @= styles_read.default_theme()
+
+    match parts.rel_of_kind(rels, kind: "theme")
+        .ok r =>
+            if parts.has_part(p, name: r.target)
+                theme @ styles_read.theme_colors(parts.part_xml(@p, name: r.target)?)
+        .err _ => _ = 0
+
+    styles: [model.Style] @= [model.default_style()]
+    is_date: [bool] @= [false]
+
+    match parts.rel_of_kind(rels, kind: "styles")
+        .ok r =>
+            if parts.has_part(p, name: r.target)
+                got = styles_read.read_styles(parts.part_xml(@p, name: r.target)?, theme: theme)
+                styles @ got.styles
+                is_date @ got.dates
+        .err _ => _ = 0
+
+    strings_found: [str] @= []
+
+    match parts.rel_of_kind(rels, kind: "sharedStrings")
+        .ok r =>
+            if parts.has_part(p, name: r.target)
+                strings_found @ shared.read_shared(parts.part_xml(@p, name: r.target)?)
+        .err _ => _ = 0
+
+    given = sheet_read.Given(strings: strings_found, dates: is_date, from_1904: from_1904)
+    sheets: [model.Sheet] @= []
+    cells_left: i64 @= max_cells
+    shown: i64 @= 0
+    at: i64 @= 0
+
+    for s in listed
+        match parts.rel_of_id(rels, id: s.id)
+            .ok r =>
+                if r.kind == "worksheet"
+                    if at == active
+                        shown @ sheets.len()
+                    sheet_text = parts.part_text(@p, name: r.target)?
+                    budget: i64 @= p.budget
+                    sheet_rels = parts.rels_of(@p, part: r.target)?
+                    got_sheet = sheet_read.read_sheet(part_text: sheet_text, name: s.name, state: s.state, given: given, rels: sheet_rels, budget: @budget, cells_left: @cells_left)?
+                    p.budget @ budget
+                    sheets @ sheets.push(got_sheet)
+            .err _ => return fail(
+                code: INVALID,
+                msg: f"the sheet \"{s.name}\" names the relationship \"{s.id}\", which the workbook does not hold"
+            )
+
+        at @ at + 1
+
+    names: [model.Name] @= []
+
+    for d in defined
+        sheet: str @= ""
+
+        match xml.attribute(d, name: "localSheetId")
+            .ok text =>
+                n = numbers.parse_int(text).default(-1)
+
+                if n >= 0 && n < listed.len()
+                    sheet @ listed[n].name
+            .err _ => _ = 0
+
+        hidden = xml.attribute(d, name: "hidden").default("0")
+        names @ names.push(
+            model.Name(name: xml.attribute(d, name: "name").default(""), refers_to: xml.text_of(d), sheet: sheet, hidden: hidden == "1" || hidden == "true")
+        )
+
+    return ok(
+        model.Book(sheets: sheets, styles: styles, from_1904: from_1904, names: names, active: shown, props: props)
+    )
+
+test "props_of: the core properties openpyxl writes, and an empty part"
+    text = "<cp:coreProperties xmlns:cp=\"http://schemas.openxmlformats.org/package/2006/metadata/core-properties\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\"><dc:title>Low</dc:title><dc:creator>openpyxl</dc:creator><cp:lastModifiedBy>Rebel</cp:lastModifiedBy><dcterms:created>2026-11-18T09:30:00Z</dcterms:created></cp:coreProperties>"
+    props = props_of(xml.parse(text).must().root)
+    assert props.title == "Low" && props.creator == "openpyxl" && props.last_modified_by == "Rebel" && props.created == "2026-11-18T09:30:00Z" && props.subject == ""
+    assert props_of(xml.parse("<x/>").must().root) == model.no_props()

@@ -1,0 +1,399 @@
+# The ledger of `xlsx`: what Go's excelize (github.com/xuri/excelize/v2
+# 2.11.1), Python's openpyxl (3.1.5) and Rust's calamine (0.38.0, a reader)
+# and rust_xlsxwriter (0.102.0, a writer) let a program do with a
+# spreadsheet of Office Open XML, one block per capability, and what Rebel
+# answers. The lists are this machine's, 2026-11-18: `go doc -all` on
+# excelize, `dir()` of openpyxl's modules and classes from its wheel, and the
+# items `cargo doc` wrote for both crates. None of the three languages'
+# standard libraries reads or writes a spreadsheet.
+#
+# The workbooks the tests read were made by openpyxl 3.1.5 and excelize
+# 2.11.1, and the values expected are what openpyxl reads from them. The
+# differential of 2026-11-18 had openpyxl write 330 random workbooks (text of
+# every plane, numbers of every size, booleans, dates, formulas) that this
+# package read, and this package write 330 that openpyxl read: of 23,432
+# cells, every one agreed but 88, each one of the two disagreements written
+# below (`_xHHHH_` read, and a serial below 0 kept a number); excelize opened
+# all 300 workbooks of the second half. 2,000 workbooks with a part mutated
+# were read plain and 500 more built with `--sanitize`, and every one was
+# read or failed with a code.
+
+capability xlsx/open  a workbook read from a file, a stream that can seek, or bytes in memory
+  heroes  xlsx.load, xlsx.load_with, xlsx.read, xlsx.read_bytes
+  go      excelize.OpenFile, excelize.OpenReader, File.ReadZipReader, excelize.Options, File.Close, File.CharsetTranscoder
+  rust    calamine::open_workbook, open_workbook_from_rs, Xlsx::new, Reader::new, trait.Reader, trait.ReaderRef
+  python  openpyxl.load_workbook, openpyxl.open, openpyxl.reader, Workbook.close, Workbook.path, Workbook.read_only, Workbook.data_only
+  note    a stream must seek, since a zip is read from its end, as calamine's Read + Seek; bytes in memory go through a temporary file the call removes; formulas and their values are both kept, so openpyxl's data_only and read_only modes have nothing to choose
+
+capability xlsx/bounded  a hostile file refused within bounds the caller sets: a zip bomb, an XML bomb, too many cells
+  heroes  xlsx.ReadOptions, xlsx.default_read_options, xlsx.DEFAULT_MAX_BYTES, xlsx.DEFAULT_MAX_CELLS
+  go      Options.UnzipSizeLimit, Options.UnzipXMLSizeLimit, ErrOptionsUnzipSizeLimit
+  rust    -
+  python  openpyxl.DEFUSEDXML
+  note    one bound counts every part decompressed and every cell's text, so a shared string named by a million cells is counted a million times; excelize's bound is 16 GB of parts by default, here 64 MiB; an entity declared in a part is refused by `xml`, which is what defusedxml adds to openpyxl
+
+capability xlsx/sheets  the sheets of a workbook, in order, found by name, with their visibility and the sheet shown first
+  heroes  xlsx.Workbook (sheets, active), xlsx.Sheet, xlsx.Visibility, xlsx.sheet_of, xlsx.sheet_names
+  go      File.GetSheetList, File.GetSheetMap, File.GetSheetName, File.GetSheetIndex, File.GetSheetVisible, File.GetActiveSheetIndex, ErrSheetNotExist
+  rust    Reader.sheet_names, Reader.sheets_metadata, Reader.worksheets, Sheet.name, Sheet.typ, Sheet.visible, SheetVisible, SheetType, Sheets (the enum), Xlsx.metadata, Reader.metadata, Sheets.metadata
+  python  Workbook.sheetnames, Workbook.worksheets, Workbook.get_sheet_by_name, Workbook.get_sheet_names, Workbook.index, Workbook.get_index, Workbook.active, Worksheet.title, Worksheet.sheet_state, Worksheet.SHEETSTATE_VISIBLE, SHEETSTATE_HIDDEN, SHEETSTATE_VERYHIDDEN
+  note    a name is found byte for byte, as openpyxl finds it, where excelize ignores the case; a chart sheet holds no cell and is not read (`xlsx/charts`)
+
+capability xlsx/values  a cell's value read with its type: number, text from the shared strings or inline, boolean, error
+  heroes  xlsx.Value, xlsx.Cell, xlsx.cell_at, xlsx.value_at, xlsx.format_value
+  go      File.GetCellValue, File.GetCellType, excelize.CellType, excelize.Cell, Options.RawCellValue
+  rust    calamine::Data, DataRef, DataType (every is_ and get_ and as_ method), CellErrorType, Range.get_value, Range.get, Cell, Cell.get_position, Cell.get_value, Data.Bool, Data.Float, Data.Int, Data.String, Data.Empty, Data.Error, Data.get_bool, get_datetime, get_datetime_iso, get_duration_iso, get_error, get_float, get_int, get_string, as_i64, as_string, as_f64, is_bool, is_datetime_iso, is_duration_iso, is_error, is_float, is_int, is_string, CellErrorType.Div0, NA, Name, Null, Num, Ref, Value, GettingData
+  python  Cell.value, Cell.data_type, Cell.internal_value, Cell.check_error, Cell.check_string, Worksheet.cell, Worksheet.__getitem__
+  note    an error is its text, `#N/A`; an ISO 8601 cell (`t="d"`) reads as a date; `_xHHHH_` escapes are read, as ECMA-376 and calamine read them, where openpyxl keeps them as written; a number that is a NaN or an infinity in a file is refused `invalid`; `format_value` writes a value as plain text, as excelize's GetCellValue with RawCellValue, the number format left to `xlsx/display`
+
+capability xlsx/rows  a sheet's values as rows, every row as long as the widest, empty cells as empty values
+  heroes  xlsx.rows_of, xlsx.Sheet (cells)
+  go      File.GetRows, File.Rows, Rows.Next, Rows.Columns, Rows.Error, Rows.Close, Rows.GetRowOpts, File.GetCols, File.Cols, Cols.Next, Cols.Rows, Cols.Error
+  rust    Reader.worksheet_range, worksheet_range_at, worksheet_range_ref, worksheet_range_at_ref, Range.rows, Range.cells, Range.used_cells, Range.start, Range.end, Range.width, Range.height, Range.get_size, Range.is_empty, Range.headers, Range.range, Range.new, Range.empty, Range.from_sparse, Range.set_value, Rows, Cells, UsedCells, Reader.with_header_row, HeaderRow
+  python  Worksheet.iter_rows, Worksheet.iter_cols, Worksheet.rows, Worksheet.columns, Worksheet.values
+  note    the rows start at `A1` and every row is as long as the widest, as openpyxl's iter_rows, where calamine's range starts at the first cell used; a `limit` on the values, since two cells far apart would make seventeen thousand million
+
+capability xlsx/dates  a number whose format is a date read as a date, by the workbook's 1900 or 1904 epoch
+  heroes  xlsx.Value (date), xlsx.Epoch, xlsx.Workbook (epoch), xlsx.is_date_format
+  go      excelize.ExcelDateToTime, File.GetWorkbookProps (Date1904)
+  rust    calamine::ExcelDateTime, ExcelDateTime.as_f64, is_datetime, is_duration, to_ymd_hms_milli, ExcelDateTimeType, Data.DateTime, Data.DateTimeIso, Data.DurationIso, Xlsx.has_1904_epoch
+  python  openpyxl.utils.datetime.from_excel, CALENDAR_WINDOWS_1900, CALENDAR_MAC_1904, WINDOWS_EPOCH, MAC_EPOCH, SECS_PER_DAY, days_to_time, Workbook.epoch, Workbook.excel_base_date, Cell.is_date, Cell.base_date
+  note    a moment is rounded to the millisecond, as openpyxl (45000.123456789 is 02:57:46.667), where excelize rounds to the second; a serial below 1 is a time on 1899-12-30, as excelize, where openpyxl answers a time with no day; a serial below 0 stays a number, where openpyxl reads a day before 1900; 60 is 1900-02-28 in both; an elapsed format, `[h]:mm`, leaves a number of days, where openpyxl answers a timedelta and calamine a duration, since a `Value` has no duration
+
+capability xlsx/serials  a date turned into Excel's serial number and back, by either epoch
+  heroes  xlsx.serial_of, xlsx.date_of
+  go      excelize.ExcelDateToTime
+  rust    rust_xlsxwriter::ExcelDateTime, ExcelDateTime.from_serial_datetime, to_excel, to_excel_serial_date, from_ymd, from_hms, from_hms_milli, and_hms, and_hms_milli, from_timestamp, parse_from_str, utc_datetime, IntoExcelDateTime, IntoCustomDateTime
+  python  openpyxl.utils.datetime.to_excel, from_excel, time_to_days, timedelta_to_days, to_ISO8601, from_ISO8601, ISO_FORMAT, ISO_REGEX, ISO_DURATION
+  note    a date before 1900-01-01 (1904-01-01) has no serial and fails `unsupported`, but the day zero, 1899-12-30, which a time alone stands on; openpyxl writes 1899-12-31 as 0 as well, refused here
+
+capability xlsx/formulas-read  a cell's formula read as text, beside the value Excel last computed for it, a shared formula's text for every cell it covers
+  heroes  xlsx.Cell (formula, value)
+  go      File.GetCellFormula
+  rust    Reader.worksheet_formula, XlsxCellFormula, XlsxCellFormulaMetadataRecord, XlsxFormulaMetadata, calamine::expand_shared_formula, expand_shared_formula_into, XlsxCellReader.next_formula, next_cell_with_formula, next_cell_with_formula_metadata
+  python  Cell.value (a text opening with `=`), load_workbook's data_only, openpyxl.formula, openpyxl.formula.translate.Translator, openpyxl.utils.FORMULAE
+  note    a shared formula is given its text at every cell it covers, its references moved as Excel moves them, as calamine's expand_shared_formula and openpyxl's Translator; an array formula is read as the text of its first cell
+
+capability xlsx/merged  the merged areas of a sheet read
+  heroes  xlsx.Sheet (merged), xlsx.Area
+  go      File.GetMergeCells, MergeCell, MergeCell.GetCellValue, MergeCell.GetStartAxis, MergeCell.GetEndAxis
+  rust    Xlsx.merge_cells_by_sheet_name, merge_cells_by_sheet_id, Dimensions
+  python  Worksheet.merged_cells, Worksheet.merged_cell_ranges, MergedCellRange (every attribute), MergedCellRange.bottom, coord, cols, max_col, min_col, expand, shrink, shift, intersection, union, isdisjoint, issubset, issuperset
+  note    -
+
+capability xlsx/dimension  the area a sheet's cells hold, from the first row and column used to the last
+  heroes  xlsx.dimension_of
+  go      File.GetSheetDimension, File.SetSheetDimension
+  rust    calamine::Dimensions (start, end, len, contains, clamp_to, compare, new), XlsxCellReader.dimensions
+  python  Worksheet.dimensions, Worksheet.calculate_dimension, Worksheet.min_row, max_row, min_column, max_column
+  note    computed from the cells with a value or a formula, as calamine, never taken from the file's `<dimension>`, which a writer may leave out or get wrong
+
+capability xlsx/cell-names  a cell's name, `B3`, turned into its row and column and back; column letters; areas `A1:C3`
+  heroes  xlsx.parse_cell_name, xlsx.format_cell_name, xlsx.parse_column_name, xlsx.format_column_name, xlsx.parse_area, xlsx.format_area, xlsx.Position, xlsx.Area, xlsx.is_before
+  go      excelize.CellNameToCoordinates, CoordinatesToCellName, ColumnNameToNumber, ColumnNumberToName, SplitCellName, JoinCellName
+  rust    rust_xlsxwriter::utility::column_name_to_number, column_number_to_name, row_col_to_cell, row_col_to_cell_absolute, cell_range, cell_range_absolute, worksheet_range, worksheet_range_absolute, quote_sheet_name, check_sheet_name, check_name, ColNum, RowNum
+  python  openpyxl.utils.cell.get_column_letter, column_index_from_string, coordinate_from_string, coordinate_to_tuple, absolute_coordinate, range_boundaries, range_to_tuple, rows_from_range, cols_from_range, get_column_interval, quote_sheetname, COORD_RE, ABSOLUTE_RE, RANGE_EXPR, COL_RANGE, ROW_RANGE, SHEETRANGE_RE, SHEET_TITLE, CellCoordinatesException, CellRange (every attribute), Cell.coordinate, Cell.row, Cell.column, Cell.col_idx, Cell.column_letter, Cell.offset, CellRange.bottom, coord, cols, max_col, min_col, expand, shrink, shift, intersection, union, isdisjoint, issubset, issuperset
+  note    rows and columns count from 0, as calamine and rust_xlsxwriter, so a row is an index into `rows_of`; excelize and openpyxl count from 1; a sheet's name in a reference is quoted by the program
+
+capability xlsx/write  a workbook written to a file, a stream or bytes in memory
+  heroes  xlsx.save, xlsx.write, xlsx.to_bytes
+  go      excelize.NewFile, File.Save, File.SaveAs, File.Write, File.WriteTo, File.WriteToBuffer, File.SetZipWriter, excelize.ZipWriter
+  rust    Workbook::new, Workbook.save, save_to_buffer, save_to_writer, set_zip_compression_level, use_zip_large_file
+  python  openpyxl.Workbook, Workbook.save, openpyxl.writer, Workbook.template, Workbook.mime_type, Worksheet.mime_type
+  note    the same workbook gives the same bytes: every member is stamped 1980-01-01, as rust_xlsxwriter does; texts go to the shared strings, as Excel and rust_xlsxwriter write them, where openpyxl writes them inline
+
+capability xlsx/build-sheets  sheets added to a workbook, named, hidden, the one shown first chosen
+  heroes  xlsx.new_workbook, xlsx.new_sheet, xlsx.add_sheet, xlsx.Sheet (visibility), xlsx.Workbook (active)
+  go      File.NewSheet, File.SetSheetName, File.SetSheetVisible, File.SetActiveSheet
+  rust    Workbook.add_worksheet, push_worksheet, worksheet_from_index, worksheet_from_name, worksheets, worksheets_mut, Worksheet::new, Worksheet.name, set_name, set_active, set_hidden, set_very_hidden, set_first_tab, set_selected
+  python  Workbook.create_sheet, Worksheet.title, Worksheet.sheet_state, Workbook.active
+  note    the sheet shown first may not be hidden, which Excel requires and `write` checks; names are compared in any case of ASCII letters, as Excel compares them
+
+capability xlsx/sheet-edit  sheets removed, copied, moved; rows and columns inserted, removed, duplicated, an area moved, the references of formulas moved with them
+  heroes  pending
+  go      File.DeleteSheet, File.CopySheet, File.MoveSheet, File.GroupSheets, File.UngroupSheets, File.InsertRows, File.RemoveRow, File.InsertCols, File.RemoveCol, File.DuplicateRow, File.DuplicateRowTo, File.UpdateLinkedValue
+  rust    -
+  python  Workbook.remove, Workbook.remove_sheet, Workbook.copy_worksheet, Workbook.move_sheet, Worksheet.insert_rows, delete_rows, insert_cols, delete_cols, move_range
+  note    rows and columns inserted or removed move the references of every formula and defined name that names them, which needs `xlsx/formulas-read`'s mover across sheets; a sheet removed or moved is `lists.remove_at` and `lists.insert` on `Workbook.sheets`, with nothing to keep the defined names and `active` in step
+
+capability xlsx/write-values  cells written with a type: number, text, boolean, error, empty; a whole row at once
+  heroes  xlsx.set_value, xlsx.add_row, xlsx.Value
+  go      File.SetCellValue, File.SetCellStr, SetCellInt, SetCellUint, SetCellFloat, SetCellBool, SetCellDefault, SetSheetRow, SetSheetCol
+  rust    Worksheet.write, write_number, write_string, write_boolean, write_blank, write_row, write_column, write_row_matrix, write_column_matrix, clear_cell, clear_cell_format, set_nan_value, set_infinity_value, set_neg_infinity_value, IntoExcelData, every `_with_format` twin, Worksheet.write_with_format, write_number_with_format, write_string_with_format, write_boolean_with_format, write_row_with_format, write_column_with_format
+  python  Worksheet.cell, Cell.value, Worksheet.append, Worksheet.__setitem__
+  note    a NaN or an infinity fails `unsupported`: the format has no number for it, where rust_xlsxwriter writes a text or an error in its place; a text past 32,767 characters fails `invalid`, as rust_xlsxwriter refuses it; a control character is written `_xHHHH_`, as Excel writes it, where openpyxl refuses it
+
+capability xlsx/write-dates  dates and times written as serial numbers with a date format, by the workbook's epoch
+  heroes  xlsx.set_value (a `.date`), xlsx.Workbook (epoch)
+  go      File.SetCellValue (a time.Time), File.SetWorkbookProps (Date1904), WorkbookPropsOptions
+  rust    Worksheet.write_datetime, write_datetime_with_format, ExcelDateTime, ExcelDateTime.new_value, to_string_value, write_with_format
+  python  Cell.value (a datetime, date or time), Workbook.epoch
+  note    a date whose style shows no date is given `yyyy-mm-dd`, or `yyyy-mm-dd hh:mm:ss` where it has a time, as openpyxl gives its own (`yyyy-mm-dd h:mm:ss`), so it reads back as a date
+
+capability xlsx/write-formulas  a formula written as text, its last value given or left for Excel to compute on opening
+  heroes  xlsx.set_formula
+  go      File.SetCellFormula, FormulaOpts, File.SetCalcProps, File.GetCalcProps, CalcPropsOptions
+  rust    Worksheet.write_formula, write_formula_with_format, set_formula_result, set_formula_result_default, write_array_formula, write_dynamic_formula, write_dynamic_array_formula (and their `_with_format` twins), Formula, Formula.new, set_result, Workbook.set_calculation_mode, CalculationMode, Worksheet.write_array_formula_with_format, write_dynamic_formula_with_format, write_dynamic_array_formula_with_format, Formula.new_value, to_string_value, write_with_format, CalculationMode.Automatic, Manual, Partial
+  python  Cell.value (a text opening with `=`), openpyxl.worksheet.formula.ArrayFormula, Worksheet.array_formulae, Workbook.calculation
+  note    a workbook holding a formula asks Excel to compute every formula on opening (`fullCalcOnLoad`), as openpyxl; a value set beside the formula is written as its last result, as rust_xlsxwriter's set_formula_result; array and dynamic array formulas are written as ordinary ones, and a calculation mode is not chosen
+
+capability xlsx/styles  a small style set: font (name, size, colour, bold, italic, underline, struck), a fill, four borders, the alignment, wrapping, and a number format; read with each cell and written
+  heroes  xlsx.Style, xlsx.Font, xlsx.Underline, xlsx.Fill, xlsx.Pattern, xlsx.Border, xlsx.Edge, xlsx.Line, xlsx.Horizontal, xlsx.Vertical, xlsx.default_style, xlsx.add_style, xlsx.set_style, xlsx.Workbook (styles), xlsx.Cell (style)
+  go      File.NewStyle, File.GetStyle, File.SetCellStyle, File.GetCellStyle, File.SetColStyle, File.GetColStyle, File.SetRowStyle, excelize.Style, Font, Fill, Border, Alignment, Protection, File.GetDefaultFont, File.SetDefaultFont, File.GetBaseColor
+  rust    rust_xlsxwriter::Format (every set_ and unset_ method, merge), Color, FormatAlign, FormatBorder, FormatDiagonalBorder, FormatPattern, FormatUnderline, FormatScript, FontScheme, Worksheet.set_cell_format, set_range_format, set_range_format_with_border, set_column_format, set_column_range_format, set_row_format, set_default_format, Workbook.set_default_format; calamine::Style, Font, Fill, Border, Borders, Alignment, Color, Protection, BorderStyle, FillPattern, FontStyle, FontWeight, UnderlineStyle, HorizontalAlignment, VerticalAlignment, TextRotation, StyleRange, Reader.worksheet_style, XlsxCellReader.next_cell_with_style_id, next_style_id, styles, calamine Font.color, is_bold, is_italic, has_underline, has_strikethrough, strikethrough, weight, Fill.foreground_color, background_color, get_color, is_visible, Border.color, is_visible, Alignment.horizontal, vertical, wrap_text, Style.has_visible_properties; rust_xlsxwriter Format.set_align, set_background_color, set_foreground_color, set_pattern, set_bold, unset_bold, set_italic, unset_italic, set_underline, set_font_color, set_font_name, set_font_size, set_font_strikethrough, unset_font_strikethrough, set_text_wrap, unset_text_wrap, set_border, set_border_color, set_border_bottom, set_border_bottom_color, set_border_left, set_border_left_color, set_border_right, set_border_right_color, set_border_top, set_border_top_color, Color.Automatic, Default, Black, Blue, Brown, Cyan, Gray, Green, Lime, Magenta, Navy, Orange, Pink, Purple, Red, Silver, White, Yellow, RGB, FormatBorder.Thin, Medium, Thick, Dashed, Dotted, Double, Hair, MediumDashed, DashDot, MediumDashDot, DashDotDot, MediumDashDotDot, SlantDashDot, FormatPattern.Solid, Gray0625, Gray125, LightGray, MediumGray, DarkGray, DarkHorizontal, DarkVertical, DarkDown, DarkUp, DarkGrid, DarkTrellis, LightHorizontal, LightVertical, LightDown, LightUp, LightGrid, LightTrellis, FormatAlign.General, Left, Center, Right, Fill, Justify, CenterAcross, Distributed, Top, Bottom, VerticalCenter, VerticalJustify, VerticalDistributed, FormatUnderline.Single, Double, SingleAccounting, DoubleAccounting
+  python  openpyxl.styles.Font, PatternFill, GradientFill, Fill, Border, Side, Alignment, Color, Protection, NamedStyle, DEFAULT_FONT, Cell.font, Cell.fill, Cell.border, Cell.alignment, Cell.protection, Cell.style, Cell.style_id, Cell.has_style, Cell.quotePrefix, Cell.pivotButton, Workbook.add_named_style, Workbook.named_styles, Workbook.style_names, openpyxl.styles (its modules alignment, borders, builtins, cell_style, colors, differential, fills, fonts, named_styles, protection, proxy, styleable, stylesheet, table), Font.b, i, u, sz, strike, strikethrough, color, UNDERLINE_SINGLE, UNDERLINE_DOUBLE, UNDERLINE_SINGLE_ACCOUNTING, UNDERLINE_DOUBLE_ACCOUNTING, PatternFill.patternType, fill_type, fgColor, bgColor, start_color, end_color, Border.bottom, Side.border_style, Side.color, Alignment.horizontal, vertical, wrapText, wrap_text
+  note    a colour is read as `RRGGBB`: written so, from the palette by its index, or from the theme by its index and tint, as excelize's ThemeColor lightens it (4472C4 at 0.4 is 8FAADC); the rest of Excel's formats is `xlsx/styles-more`
+
+capability xlsx/styles-more  the rest of a cell's format: diagonal borders, rotation, indent, shrinking to fit, reading order, sub- and superscript, a font's family, scheme and character set, gradient fills, named styles, a row's and a column's own style
+  heroes  pending
+  go      Alignment.Indent, Alignment.TextRotation, Alignment.ShrinkToFit, Alignment.ReadingOrder, Alignment.RelativeIndent, Alignment.JustifyLastLine, Font.VertAlign, Font.Family, Fill.Shading (gradients), File.SetColStyle, File.SetRowStyle, File.GetColStyle
+  rust    Format.set_rotation, set_indent, set_shrink, set_reading_direction, set_font_script, set_font_family, set_font_scheme, set_font_charset, set_border_diagonal, set_border_diagonal_color, set_border_diagonal_type, FormatDiagonalBorder, FormatScript, FontScheme, Worksheet.set_row_format, set_column_format, set_column_range_format; calamine::TextRotation, calamine Alignment.shrink_to_fit, text_rotation; rust_xlsxwriter Format.set_quote_prefix, unset_quote_prefix, unset_shrink, FormatScript.Subscript, Superscript, FormatDiagonalBorder.BorderUp, BorderDown, BorderUpDown
+  python  openpyxl.styles.GradientFill, NamedStyle, Workbook.add_named_style, named_styles, style_names, Font.vertAlign, family, scheme, charset, Border.diagonal, diagonalUp, diagonalDown, Alignment.textRotation, indent, shrinkToFit, readingOrder, justifyLastLine, relativeIndent, ColumnDimension.style, RowDimension.style, Font.condense, extend, shadow, Alignment.shrink_to_fit, text_rotation, Border.horizontal, Border.vertical
+  note    read as their absence and written as nothing: each is a field more of `Style` and a word of the styles part, not written in this round
+
+capability xlsx/number-formats  number formats by their code, the built-in ones by their number, and which of them are dates
+  heroes  xlsx.Style (number_format), xlsx.is_date_format, xlsx.format_code_of
+  go      Style.NumFmt, Style.CustomNumFmt, Style.DecimalPlaces, Style.NegRed
+  rust    Format.set_num_format, set_num_format_index; calamine::NumberFormat, NumberFormat.format_code, format_id
+  python  openpyxl.styles.numbers (BUILTIN_FORMATS, BUILTIN_FORMATS_MAX_SIZE, BUILTIN_FORMATS_REVERSE, every FORMAT_ constant, is_date_format, is_builtin, is_datetime, is_timedelta_format, builtin_format_code, builtin_format_id, NumberFormat, NumberFormatList, NumberFormatDescriptor), openpyxl.styles.is_date_format, Cell.number_format, FORMAT_GENERAL, FORMAT_TEXT, FORMAT_NUMBER, FORMAT_NUMBER_00, FORMAT_NUMBER_COMMA_SEPARATED1, FORMAT_NUMBER_COMMA_SEPARATED2, FORMAT_PERCENTAGE, FORMAT_PERCENTAGE_00, FORMAT_CURRENCY_USD, FORMAT_CURRENCY_USD_SIMPLE, FORMAT_CURRENCY_EUR_SIMPLE, FORMAT_DATE_DATETIME, FORMAT_DATE_DDMMYY, FORMAT_DATE_DMMINUS, FORMAT_DATE_DMYMINUS, FORMAT_DATE_DMYSLASH, FORMAT_DATE_MYMINUS, FORMAT_DATE_TIME1 to FORMAT_DATE_TIME8, FORMAT_DATE_TIMEDELTA, FORMAT_DATE_XLSX14, FORMAT_DATE_XLSX15, FORMAT_DATE_XLSX16, FORMAT_DATE_XLSX17, FORMAT_DATE_XLSX22, FORMAT_DATE_YYMMDD, FORMAT_DATE_YYMMDDSLASH, FORMAT_DATE_YYYYMMDD2
+  note    the built-in codes are ECMA-376 § 18.8.30's with openpyxl's for the currencies 5 to 8 and 41 to 44 (openpyxl's 44 lacks its `;`, which this one has); a built-in East Asian date, 27 to 36 and 50 to 58, reads as a date with no code of its own
+
+capability xlsx/display  a value written as text the way its number format shows it, `3.14159` under `0.00` as `3.14`
+  heroes  pending
+  go      File.GetCellValue and File.GetRows without RawCellValue, Options.ShortDatePattern, LongDatePattern, LongTimePattern, CultureInfo, CultureName
+  rust    -
+  python  -
+  note    Excel's number format language rendered as Excel renders it (sections and conditions, colours, fractions, padding and repeated characters, the language's names of months and days, elapsed times) is a formatter of its own, not written in this round; the value itself is `format_value`
+
+capability xlsx/columns  column widths and hidden columns, read and written
+  heroes  xlsx.ColumnFormat, xlsx.Sheet (column_formats), xlsx.set_column_width
+  go      File.SetColWidth, File.GetColWidth, File.SetColVisible, File.GetColVisible
+  rust    Worksheet.set_column_width, set_column_width_pixels, set_column_range_width, set_column_range_width_pixels, set_column_hidden, set_column_range_hidden
+  python  Worksheet.column_dimensions, ColumnDimension (width, hidden, min, max, customWidth, bestFit, index, range, reindex)
+  note    -
+
+capability xlsx/autofit  a column's width fitted to its widest text
+  heroes  pending
+  go      File.AutoFitColWidth
+  rust    Worksheet.autofit, set_autofit_max_row, set_autofit_max_width, set_column_autofit_width, rust_xlsxwriter::utility::cell_autofit_width
+  python  ColumnDimension.auto_size
+  note    a width fitted to a text needs the widths of each font's characters, which no package carries for Calibri or any font a workbook names
+
+capability xlsx/rows-format  row heights and hidden rows, read and written
+  heroes  xlsx.RowFormat, xlsx.Sheet (row_formats), xlsx.set_row_height
+  go      File.SetRowHeight, File.GetRowHeight, File.SetRowVisible, File.GetRowVisible, RowOpts
+  rust    Worksheet.set_row_height, set_row_height_pixels, set_row_hidden, set_row_unhidden, set_default_row_height, set_default_row_height_pixels, hide_unused_rows
+  python  Worksheet.row_dimensions, RowDimension (height, ht, hidden, customHeight, index, r, thickBot, thickTop), RowDimension.customFormat
+  note    a height is read only where the file says it is the program's own (`customHeight`), since Excel writes the height it computed on many rows
+
+capability xlsx/freeze  frozen panes: rows at the top and columns at the left that stay while the rest scrolls, read and written
+  heroes  xlsx.Frozen, xlsx.Sheet (frozen), xlsx.freeze
+  go      File.SetPanes, File.GetPanes, excelize.Panes, Selection
+  rust    Worksheet.set_freeze_panes, set_freeze_panes_top_cell
+  python  Worksheet.freeze_panes
+  note    a pane split and not frozen is read as nothing frozen
+
+capability xlsx/merge  cells merged into one area when written, two areas overlapping refused
+  heroes  xlsx.merge
+  go      File.MergeCell, File.UnmergeCell
+  rust    Worksheet.merge_range
+  python  Worksheet.merge_cells, Worksheet.unmerge_cells
+  note    one cell, and two areas overlapping, are refused, as rust_xlsxwriter refuses them (MergeRangeSingleCell, MergeRangeOverlaps); unmerging is taking an area out of `Sheet.merged`
+
+capability xlsx/defined-names  names defined over a workbook or a sheet, read and written: a range's name, a print area
+  heroes  xlsx.DefinedName, xlsx.Workbook (names), xlsx.add_name
+  go      File.SetDefinedName, File.GetDefinedName, File.DeleteDefinedName, excelize.DefinedName
+  rust    Reader.defined_names, Workbook.define_name, Worksheet.set_print_area, set_repeat_rows, set_repeat_columns
+  python  Workbook.defined_names, Workbook.create_named_range, Worksheet.print_area, print_title_rows, print_title_cols, print_titles
+  note    a print area and the titles printed are the names `_xlnm.Print_Area` and `_xlnm.Print_Titles`, as Excel keeps them
+
+capability xlsx/properties  the document's properties: title, subject, author, keywords, description, who changed it last, when made and changed
+  heroes  xlsx.Properties, xlsx.Workbook (properties)
+  go      File.SetDocProps, File.GetDocProps, DocProperties, File.SetAppProps, File.GetAppProps, AppProperties
+  rust    rust_xlsxwriter::DocProperties (every set_ method but set_custom_property), Workbook.set_properties; calamine::WorkbookProperties (every field), Xlsx.workbook_properties, calamine WorkbookProperties.creator, created, modified, last_modified_by, category; rust_xlsxwriter DocProperties.set_title, set_subject, set_author, set_keywords, set_category, set_creation_datetime
+  python  Workbook.properties (openpyxl.packaging.core.DocumentProperties)
+  note    the nine core properties; the application's own (company, manager, the application's name) are not read, and the written one names Rebel
+
+capability xlsx/app-properties  the application's properties: company, manager, status, hyperlink base, the application and its version, the revision
+  heroes  pending
+  go      AppProperties (Application, ScaleCrop, DocSecurity, Company, LinksUpToDate, HyperlinksChanged, AppVersion)
+  rust    DocProperties.set_company, set_manager, set_status, set_hyperlink_base, set_comment; calamine WorkbookProperties.application, app_version, company, manager, content_status, revision, version, template
+  python  -
+  note    the core properties are read and written (`xlsx/properties`); `docProps/app.xml` is written naming Rebel and not read, in this round
+
+capability xlsx/custom-properties  properties a program names itself, kept in the document
+  heroes  pending
+  go      File.SetCustomProps, File.GetCustomProps, CustomProperty
+  rust    DocProperties.set_custom_property, CustomProperty, IntoCustomProperty, ExcelDateTime.new_custom_property, calamine WorkbookProperties.custom_properties
+  python  Workbook.custom_doc_props
+  note    `docProps/custom.xml`, its values typed by Office's own variant types, not read or written in this round
+
+capability xlsx/rich-text  a text of several runs, each with its own font, read and written
+  heroes  pending
+  go      File.SetCellRichText, File.GetCellRichText, RichTextRun
+  rust    Worksheet.write_rich_string, write_rich_string_with_format
+  python  openpyxl.cell.rich_text.CellRichText, TextBlock, openpyxl.cell.text.InlineFont
+  note    read as plain text, the runs joined, so a rich text is never lost as text; its fonts are not read, and none is written
+
+capability xlsx/hyperlinks  links from a cell to a web address, a file or a place in the workbook
+  heroes  xlsx.Link, xlsx.Sheet (links), xlsx.add_link
+  go      File.SetCellHyperLink, File.GetCellHyperLink, File.GetHyperLinkCells, HyperlinkOpts
+  rust    Worksheet.write_url, write_url_with_text, write_url_with_format, Url (new, set_text, set_tip), Format.set_hyperlink, unset_hyperlink_style; calamine::Hyperlink, Xlsx.hyperlinks_by_sheet_name, hyperlinks_by_sheet_id, calamine Hyperlink.target, location, tooltip, displayed_text, Url.write_with_format
+  python  Cell.hyperlink, openpyxl.worksheet.hyperlink.Hyperlink
+  note    a link covers an area, as calamine's and excelize's, and openpyxl reads it from its first cell; its target is written as an external relationship and its place as `location`, as Excel writes them; a target past 2,079 characters is refused, as rust_xlsxwriter refuses one (MaxUrlLengthExceeded)
+
+capability xlsx/comments  notes attached to cells, read and written
+  heroes  pending
+  go      File.AddComment, File.GetComments, File.DeleteComment, Comment
+  rust    Worksheet.insert_note, set_default_note_author, show_all_notes, Note (every method), Note.add_author_prefix, reset_text, set_alt_text, set_author, set_background_color, set_font_name, set_font_size, set_height, set_width, set_object_movement, set_visible
+  python  Cell.comment, openpyxl.comments.Comment
+  note    a note is a part of its own beside a VML drawing that Excel needs to show it; not read or written in this round
+
+capability xlsx/validation  data validation: lists to choose from, numbers and dates within bounds, messages
+  heroes  pending
+  go      File.AddDataValidation, File.GetDataValidations, File.DeleteDataValidation, excelize.NewDataValidation, DataValidation (every method), DataValidationType, DataValidationOperator, DataValidationErrorStyle, DataValidation.SetDropList, SetError, SetInput, SetRange, SetSqref, SetSqrefDropList
+  rust    Worksheet.add_data_validation, DataValidation (every method), DataValidationRule, DataValidationErrorStyle, IntoDataValidationValue, DataValidation.allow_any_value, allow_custom, allow_date, allow_date_formula, allow_decimal_number, allow_decimal_number_formula, allow_list_formula, allow_list_strings, allow_text_length, allow_text_length_formula, allow_time, allow_time_formula, allow_whole_number, allow_whole_number_formula, ignore_blank, set_error_message, set_error_style, set_error_title, set_input_message, set_input_title, set_multi_range, show_dropdown, show_error_message, show_input_message
+  python  Worksheet.add_data_validation, openpyxl.worksheet.datavalidation.DataValidation
+  note    `<dataValidations>` of a sheet, its rules and their formulas, not read or written in this round
+
+capability xlsx/conditional  conditional formats: colour scales, data bars, icon sets, rules by value, text, date, formula
+  heroes  pending
+  go      File.SetConditionalFormat, File.GetConditionalFormats, File.UnsetConditionalFormat, File.NewConditionalStyle, File.GetConditionalStyle, ConditionalFormatOptions
+  rust    Worksheet.add_conditional_format, rust_xlsxwriter::conditional_format (every type of the module)
+  python  Worksheet.conditional_formatting, openpyxl.formatting (every rule and its module)
+  note    `<conditionalFormatting>` and the differential formats of the styles part, not read or written in this round
+
+capability xlsx/tables  tables over an area: a name, a header row, a style, totals
+  heroes  pending
+  go      File.AddTable, File.GetTables, File.DeleteTable, excelize.Table, StreamWriter.AddTable
+  rust    Worksheet.add_table, rust_xlsxwriter::Table (every method), TableColumn, TableFunction, TableStyle; calamine::Table (name, sheet_name, columns, data), Xlsx.load_tables, table_names, table_names_in_sheet, table_by_name, table_by_name_ref, Table.set_alt_text, set_alt_text_title, set_autofilter, set_banded_columns, set_banded_rows, set_columns, set_first_column, set_last_column, set_header_row, set_total_row, set_name, set_style
+  python  Worksheet.add_table, Worksheet.tables, openpyxl.worksheet.table.Table, TableStyleInfo
+  note    a table is a part of its own named from the sheet, with its columns, style and totals; not read or written in this round
+
+capability xlsx/autofilter  a filter over an area's header, with its criteria
+  heroes  pending
+  go      File.AutoFilter, AutoFilterOptions
+  rust    Worksheet.autofilter, filter_column, filter_automatic_off, FilterCondition, FilterCriteria, FilterData, IntoFilterData
+  python  Worksheet.auto_filter
+  note    `<autoFilter>` and its criteria, not read or written in this round
+
+capability xlsx/charts  charts drawn from a sheet's areas, in a sheet or a sheet of their own
+  heroes  pending
+  go      File.AddChart, File.AddChartSheet, File.DeleteChart, excelize.Chart and every Chart type (ChartAxis, ChartDataLabel, ChartDataLabelPositionType, ChartDataPoint, ChartDimension, ChartLegend, ChartMarker, ChartNumFmt, ChartPlotArea, ChartSeries, ChartTickLabelPositionType, ChartTitle, ChartType, ChartUpDownBar, LineOptions, LineType, LineDashType)
+  rust    Worksheet.insert_chart, insert_chart_with_offset, Workbook.add_chartsheet, Worksheet::new_chartsheet, rust_xlsxwriter::chart (every type of the module)
+  python  Worksheet.add_chart, Workbook.create_chartsheet, Workbook.chartsheets, openpyxl.chart (every chart and its module), openpyxl.chartsheet
+  note    a chart is DrawingML in a drawing part of its own, a format as large as the workbook's; not read or written
+
+capability xlsx/images  pictures placed over cells, read and written; a sheet's background
+  heroes  pending
+  go      File.AddPicture, File.AddPictureFromBytes, File.GetPictures, File.GetPictureCells, File.DeletePicture, File.SetSheetBackground, File.SetSheetBackgroundFromBytes, Picture, PictureInsertType, GraphicOptions
+  rust    Worksheet.insert_image, insert_image_with_offset, insert_image_fit_to_cell, insert_image_fit_to_cell_centered, embed_image, embed_image_with_format, insert_background_image, rust_xlsxwriter::Image (every method), ObjectMovement, Image.new_from_buffer, height_dpi, width_dpi, set_alt_text, set_decorative, set_height, set_width, set_object_movement, set_scale_height, set_scale_width, set_scale_to_size, set_url
+  python  Worksheet.add_image, openpyxl.drawing.image.Image, openpyxl.drawing
+  note    an image is placed by a DrawingML drawing part with its own relationships; not read or written in this round
+
+capability xlsx/shapes-controls  shapes, buttons, checkboxes, form controls, slicers, sparklines, embedded objects
+  heroes  pending
+  go      File.AddShape, File.GetShapes, Shape, File.AddFormControl, File.GetFormControls, File.DeleteFormControl, FormControl, FormControlType, File.AddSlicer, File.GetSlicers, File.DeleteSlicer, SlicerOptions, File.AddSparkline, SparklineOptions, File.AddEmbeddedObjects, File.GetEmbeddedObjects, File.DeleteEmbeddedObjects, EmbeddedObject
+  rust    Worksheet.insert_shape, insert_shape_with_offset, Shape and every Shape type (ShapeFont, ShapeFormat, ShapeGradientFill, ShapeGradientStop, ShapeLine, ShapePatternFill, ShapeSolidFill, ShapeText, ShapeGradientFillType, ShapeLineDashType, ShapePatternFillType, ShapeTextDirection, ShapeTextHorizontalAlignment, ShapeTextVerticalAlignment, IntoShapeFormat), insert_button, insert_button_with_offset, Button, insert_checkbox, insert_checkbox_with_format, Format.set_checkbox, unset_checkbox, add_sparkline, add_sparkline_group, rust_xlsxwriter::sparkline (every type)
+  python  -
+  note    DrawingML shapes, VML controls, slicers and sparklines' extension lists, not read or written
+
+capability xlsx/pivot  pivot tables made and read
+  heroes  pending
+  go      File.AddPivotTable, File.GetPivotTables, File.DeletePivotTable, PivotTableOptions, PivotTableField, PivotTableShowValuesAs, PivotTableShowValuesAsType
+  rust    Xlsx.pivot_tables, pivot_table_data
+  python  Worksheet.add_pivot, openpyxl.pivot
+  note    a pivot table is two parts of their own, a cache of the data and the table's layout; not read or written
+
+capability xlsx/protection  a sheet or a workbook protected, with or without a password; cells locked and hidden
+  heroes  pending
+  go      File.ProtectSheet, File.UnprotectSheet, File.GetSheetProtection, SheetProtectionOptions, File.ProtectWorkbook, File.UnprotectWorkbook, WorkbookProtectionOptions, excelize.Protection, ErrUnprotectSheetPassword, ErrUnprotectWorkbookPassword
+  rust    Worksheet.protect, protect_with_password, protect_with_options, unprotect_range, unprotect_range_with_options, ProtectionOptions, Format.set_locked, set_unlocked, set_hidden, unset_hidden, Workbook.read_only_recommended; calamine::Protection
+  python  Worksheet.protection, Workbook.security, openpyxl.styles.Protection, openpyxl.utils.protection
+  note    `<sheetProtection>` and `<workbookProtection>`, a password kept as a SHA-512 hash of many rounds, and the cells' locked and hidden flags; not read or written in this round
+
+capability xlsx/page-setup  printing: paper, orientation, margins, scale, headers and footers, page breaks, print options
+  heroes  pending
+  go      File.SetPageLayout, File.GetPageLayout, PageLayoutOptions, File.SetPageMargins, File.GetPageMargins, PageLayoutMarginsOptions, File.SetHeaderFooter, File.GetHeaderFooter, HeaderFooterOptions, File.AddHeaderFooterImage, HeaderFooterImageOptions, HeaderFooterImagePositionType, File.InsertPageBreak, File.RemovePageBreak, StreamWriter.InsertPageBreak
+  rust    Worksheet.set_landscape, set_portrait, set_paper_size, set_margins, set_header, set_footer, set_header_image, set_footer_image, set_header_footer_align_with_page, set_header_footer_scale_with_doc, set_page_breaks, set_vertical_page_breaks, set_page_order, set_print_scale, set_print_fit_to_pages, set_print_first_page_number, set_print_gridlines, set_print_headings, set_print_black_and_white, set_print_draft, set_print_center_horizontally, set_print_center_vertically, HeaderImagePosition
+  python  Worksheet.page_setup, print_options, page_margins, HeaderFooter (oddHeader, oddFooter, evenHeader, evenFooter, firstHeader, firstFooter), row_breaks, col_breaks, set_printer_settings, BREAK_NONE, BREAK_ROW, BREAK_COLUMN, ORIENTATION_PORTRAIT, ORIENTATION_LANDSCAPE, every PAPERSIZE_ constant
+  note    `<pageSetup>`, `<pageMargins>`, `<headerFooter>`, `<printOptions>` and the page breaks, not read; fixed margins are written
+
+capability xlsx/sheet-view  how a sheet is shown: zoom, grid lines, right to left, the tab's colour, the cells selected, the view mode
+  heroes  pending
+  go      File.SetSheetView, File.GetSheetView, ViewOptions, File.SetSheetProps, File.GetSheetProps, SheetPropsOptions
+  rust    Worksheet.set_zoom, set_zoom_to_fit, set_screen_gridlines, set_right_to_left, set_tab_color, set_selection, set_top_left_cell, set_view_normal, set_view_page_layout, set_view_page_break_preview, set_hidden_zeroes, Workbook.set_tab_ratio
+  python  Worksheet.sheet_view, Worksheet.show_gridlines, Worksheet.active_cell, Worksheet.selected_cell, Worksheet.sheet_properties
+  note    the rest of `<sheetView>`: zoom, grid lines, right to left, the tab's colour, the selection, the view mode; only the frozen pane is read and written in this round
+
+capability xlsx/outline  rows and columns grouped into levels that fold
+  heroes  pending
+  go      File.SetRowOutlineLevel, File.GetRowOutlineLevel, File.SetColOutlineLevel, File.GetColOutlineLevel, StreamWriter.SetColOutlineLevel
+  rust    Worksheet.group_rows, group_rows_collapsed, group_columns, group_columns_collapsed, group_symbols_above, group_symbols_to_left, MaxGroupLevelExceeded
+  python  Worksheet.column_groups, ColumnDimension.outlineLevel, outline_level, collapsed, RowDimension.outlineLevel, outline_level, collapsed
+  note    the outline levels of `<row>` and `<col>` and the sheet's outline properties, not read or written in this round
+
+capability xlsx/ignored-errors  Excel's green warnings switched off over an area
+  heroes  pending
+  go      File.AddIgnoredErrors, IgnoredErrorsType
+  rust    Worksheet.ignore_error, ignore_error_range, IgnoreError, IgnoreError.DataValidationError, FormulaDiffers, FormulaError, FormulaOmitsCells, FormulaRefersToEmptyCells, InconsistentColumnFormula, NumberStoredAsText, TwoDigitTextYear, UnlockedCellsWithFormula
+  python  -
+  note    `<ignoredErrors>`, not read or written in this round
+
+capability xlsx/streaming  a sheet written row by row, or read cell by cell, without the whole sheet in memory
+  heroes  pending
+  go      File.NewStreamWriter, StreamWriter (Flush, SetRow, MergeCell, SetColWidth, SetColStyle, SetColVisible, SetPanes), File.Rows
+  rust    calamine::XlsxCellReader (new, next_cell), Xlsx.worksheet_cells_reader
+  python  load_workbook's read_only, Workbook(write_only=True), Workbook.write_only
+  note    a sheet is read row by row, each row a tree of its own let go once read (about 0.5 KB of memory a cell, measured on 100,000 cells), but the whole workbook is answered at once; a reader handing rows to the program one at a time needs an iterator the language has no form for but a record and a function called again
+
+capability xlsx/search  the cells whose value matches a text or a pattern
+  heroes  refused: a walk over `Sheet.cells` matching each value with `strings` or `regex` is the whole of it, and excelize's SearchSheet is that walk; a function here would be a second way to write a loop
+  go      File.SearchSheet
+  rust    -
+  python  -
+  note    -
+
+capability xlsx/calculate  a formula computed: Excel's functions run over the cells
+  heroes  refused: computing a formula is running Excel's language of four hundred functions over the cells, a spreadsheet and not a file format; the value Excel last computed is read, and a workbook written asks Excel to compute its formulas on opening
+  go      File.CalcCellValue, Options.MaxCalcIterations, excelize.ArgType, excelize.NewStack, Stack (Empty, Len, Peek, Pop, Push)
+  rust    -
+  python  -
+  note    -
+
+capability xlsx/themes  the theme's colours read and a theme chosen; colours by theme and tint, HSL
+  heroes  pending
+  go      excelize.ThemeColor, HSLToRGB, RGBToHSL, HSL, HSL.RGBA, ColorMappingType
+  rust    Workbook.use_custom_theme, use_excel_2023_theme, Color.Theme, FontScheme
+  python  openpyxl.styles.colors.Color (theme, tint, indexed), Workbook.loaded_theme
+  note    a theme's colours are read and applied to every colour that names them; no theme part is written, so a colour written is always `RRGGBB`
+
+capability xlsx/encryption  a workbook protected by a password to open: encrypted and decrypted
+  heroes  pending
+  go      excelize.Encrypt, Decrypt, Options.Password, Encryption, EncryptedKey, KeyData, KeyEncryptor, KeyEncryptors, DataIntegrity, StandardEncryptionHeader, StandardEncryptionVerifier, ErrWorkbookPassword
+  rust    -
+  python  -
+  note    a workbook protected by a password is an OLE compound file holding the zip encrypted by ECMA-376's agile encryption (AES, SHA-512); no package reads a compound file, and such a file fails `unsupported`
+
+capability xlsx/macros  VBA projects kept, added and read
+  heroes  refused: a VBA project is a program for Excel to run, a binary of its own inside the zip; this package reads and writes a workbook's data, and a workbook with macros it reads is written back without them
+  go      File.AddVBAProject
+  rust    Workbook.add_vba_project, add_vba_project_with_signature, set_vba_name, Worksheet.set_vba_name; calamine::vba (VbaProject, Reference, VbaError), Reader.vba_project
+  python  Workbook.vba_archive (load_workbook's keep_vba)
+  note    -
+
+capability xlsx/other-formats  the older binary `.xls`, the binary `.xlsb`, OpenDocument's `.ods`
+  heroes  refused: each is another format, not Office Open XML: `.xls` a compound binary file of BIFF records, `.xlsb` binary records in the zip, `.ods` OpenDocument's XML; a reader of one is its own package, and this one fails `unsupported` on the first two
+  go      -
+  rust    calamine::Xls, XlsOptions, XlsError, Xlsb, XlsbError, Ods, OdsError, open_workbook_auto, open_workbook_auto_from_rs, Sheets (its Xls, Xlsb and Ods cases)
+  python  -
+  note    -
+
+dropped
+  go      excelize.Options.TmpDir, File.Close: the temporary folder excelize spills large parts into and the call that removes it; this package holds a workbook in memory and leaves no file behind
+  go      excelize.ErrSheetNotExist.Error and the error variables (ErrParameterInvalid and the rest): Go's error values; a failure here is a code of § A4 and a message
+  rust    calamine::Error, XlsxError, DeError, Metadata, RangeDeserializer, RangeDeserializerBuilder, RowDeserializer, ToCellDeserializer, CellType, deserialize_as_f64_or_none, deserialize_as_f64_or_string, deserialize_as_i64_or_none, deserialize_as_i64_or_string, Data.to_cell_deserializer: errors of the crate's own types, and serde's deserialisation into a struct by its field names, which the language's lack of reflection leaves to the program
+  rust    rust_xlsxwriter::XlsxError (every case): the crate's own errors, each a code of § A4 here with its message
+  python  openpyxl.DEBUG, LXML, NUMPY, openpyxl.compat, openpyxl.descriptors, openpyxl.xml, openpyxl.packaging (but its core properties), Cell.parent, Cell.encoding, Worksheet.parent, Worksheet.encoding, Worksheet.path, Workbook.mime_type, every class's from_tree, to_tree, tagname, namespace, idx_base: the interpreter's XML back ends, the descriptor machinery openpyxl builds its classes with, and the parts' own serialisation
+  rust    clone_to_uninit of every calamine type, and Range.clone_to_uninit: Rust's own copying, which every value of the language does
+  python  openpyxl.constants, openpyxl.utils.bound_dictionary, escape, exceptions, indexed_list, units, openpyxl.utils.cell's re, ascii_uppercase, chain, digits, lru_cache, product, openpyxl.utils.datetime's re and isnan, openpyxl.styles.numbers' COLORS, Integer, Sequence, Serialisable, String, re, STRIP_RE, TIMEDELTA_RE, LITERAL_GROUP, LOCALE_GROUP: the library's own helpers, regular expressions and the modules it imports

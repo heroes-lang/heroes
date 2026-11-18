@@ -1,0 +1,252 @@
+# The workbook as the private modules read and write it: the face's records
+# with every choice among cases held as the word the file writes for it, so
+# that reading and writing need nothing of the face. The face turns these
+# into its own records and back; nothing else does.
+
+use xlsx/internal/names
+
+# A cell with nothing in it.
+constant EMPTY: i64
+    0
+
+# A number, in `Cell.number`.
+constant NUMBER: i64
+    1
+
+# Text, in `Cell.text`.
+constant TEXT: i64
+    2
+
+# A boolean, `Cell.number` 1 or 0.
+constant BOOLEAN: i64
+    3
+
+# A date, its serial in `Cell.number`.
+constant DATE: i64
+    4
+
+# An error, its text in `Cell.text`.
+constant ERROR: i64
+    5
+
+# One cell.
+record Cell
+    # The row, from 0.
+    row: i64
+    # The column, from 0.
+    column: i64
+    # What it holds: `EMPTY` to `ERROR`.
+    kind: i64
+    # A number, a date's serial, or a boolean as 1 or 0.
+    number: f64
+    # Text, or an error as Excel writes it.
+    text: str
+    # The formula with no `=`, or empty.
+    formula: str
+    # The style's index.
+    style: i64
+
+# The width of a run of columns.
+record Column
+    # The first column, from 0.
+    first: i64
+    # The last column.
+    last: i64
+    # The width in characters, 0 where none is set.
+    width: f64
+    # Whether they are hidden.
+    hidden: bool
+
+# The height of a row.
+record Row
+    # The row, from 0.
+    row: i64
+    # The height in points, 0 where none is set.
+    height: f64
+    # Whether it is hidden.
+    hidden: bool
+
+# A link from an area of cells.
+record Link
+    # The cells it covers.
+    box: names.Box
+    # Where it leads outside the workbook, or empty.
+    target: str
+    # The place inside the workbook it leads to, or empty.
+    location: str
+    # The tip shown over it, or empty.
+    tooltip: str
+    # The text the file says it shows, or empty.
+    display: str
+
+# One sheet.
+record Sheet
+    # Its name.
+    name: str
+    # `visible`, `hidden` or `veryHidden`, as `<sheet state>` writes it.
+    state: str
+    # Its cells in order.
+    cells: [Cell]
+    # Its merged areas.
+    merged: [names.Box]
+    # Its columns' widths.
+    columns: [Column]
+    # Its rows' heights.
+    rows: [Row]
+    # The rows frozen at the top.
+    frozen_rows: i64
+    # The columns frozen at the left.
+    frozen_columns: i64
+    # Its links.
+    links: [Link]
+
+# A defined name.
+record Name
+    # The name.
+    name: str
+    # What it names, with no `=`.
+    refers_to: str
+    # The sheet it is local to, or empty.
+    sheet: str
+    # Whether it is hidden.
+    hidden: bool
+
+# The core properties.
+record Props
+    # The title.
+    title: str
+    # The subject.
+    subject: str
+    # The creator.
+    creator: str
+    # The keywords.
+    keywords: str
+    # The description.
+    description: str
+    # Who changed it last.
+    last_modified_by: str
+    # The category.
+    category: str
+    # When it was made, W3CDTF.
+    created: str
+    # When it was changed, W3CDTF.
+    modified: str
+
+# One style: every word as styles.xml writes it, empty for none.
+record Style
+    # The font's name.
+    font_name: str
+    # The font's size in points.
+    font_size: f64
+    # The font's colour, `RRGGBB` or empty.
+    font_color: str
+    # Bold.
+    bold: bool
+    # Italic.
+    italic: bool
+    # `single`, `double`, `singleAccounting`, `doubleAccounting`, or empty.
+    underline: str
+    # Struck through.
+    strike: bool
+    # The fill's `patternType`, `none` where there is none.
+    pattern: str
+    # The fill's colour.
+    fill_color: str
+    # The colour under the pattern.
+    fill_background: str
+    # The left edge's style word, empty for none.
+    left_line: str
+    # The left edge's colour.
+    left_color: str
+    # The right edge's style word.
+    right_line: str
+    # The right edge's colour.
+    right_color: str
+    # The top edge's style word.
+    top_line: str
+    # The top edge's colour.
+    top_color: str
+    # The bottom edge's style word.
+    bottom_line: str
+    # The bottom edge's colour.
+    bottom_color: str
+    # `general`, `left`, `center`, `right`, `fill`, `justify`,
+    # `centerContinuous` or `distributed`.
+    horizontal: str
+    # `bottom`, `center`, `top`, `justify` or `distributed`.
+    vertical: str
+    # Whether text wraps.
+    wrap: bool
+    # The number format's code.
+    number_format: str
+
+# A whole workbook.
+record Book
+    # The sheets in order.
+    sheets: [Sheet]
+    # The styles, the default first.
+    styles: [Style]
+    # Whether serials count from 1904.
+    from_1904: bool
+    # The defined names.
+    names: [Name]
+    # The sheet shown first.
+    active: i64
+    # The core properties.
+    props: Props
+
+# The default style: Calibri of 11 points, nothing else.
+function default_style() -> Style
+    return Style(
+        font_name: "Calibri",
+        font_size: 11.0,
+        font_color: "",
+        bold: false,
+        italic: false,
+        underline: "",
+        strike: false,
+        pattern: "none",
+        fill_color: "",
+        fill_background: "",
+        left_line: "",
+        left_color: "",
+        right_line: "",
+        right_color: "",
+        top_line: "",
+        top_color: "",
+        bottom_line: "",
+        bottom_color: "",
+        horizontal: "general",
+        vertical: "bottom",
+        wrap: false,
+        number_format: "General"
+    )
+
+# Properties that say nothing.
+function no_props() -> Props
+    return Props(
+        title: "",
+        subject: "",
+        creator: "",
+        keywords: "",
+        description: "",
+        last_modified_by: "",
+        category: "",
+        created: "",
+        modified: ""
+    )
+
+# Adds `c` to `cells`, which the caller owns, in place.
+function push_cell(@cells: [Cell], c: Cell)
+    cells @ cells.push(c)
+
+test "default_style: Calibri of 11 points, no fill, no border, General"
+    s = default_style()
+    assert s.font_name == "Calibri" && s.font_size == 11.0 && s.pattern == "none" && s.left_line == ""
+    assert s.number_format == "General" && s.horizontal == "general" && s.vertical == "bottom"
+
+test "push_cell: grows the caller's list in place"
+    cells: [Cell] @= []
+    push_cell(@cells, c: Cell(row: 0, column: 0, kind: EMPTY, number: 0.0, text: "", formula: "", style: 0))
+    assert cells.len() == 1
+    assert no_props().title == ""

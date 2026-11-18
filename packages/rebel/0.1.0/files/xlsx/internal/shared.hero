@@ -1,0 +1,45 @@
+# Text as a workbook's parts hold it: the shared strings part read into its
+# list, and the text of a string item, `<si>` or `<is>`, whether written whole
+# in `<t>` or in rich runs of `<r>`, the phonetic runs left out and the
+# `_xHHHH_` escapes read.
+
+use xlsx/internal/text
+use xml
+
+# The text of `e`, a string item: its `<t>` and the `<t>` of each of its
+# runs, in order, joined; `<rPh>`, the phonetic guide, left out.
+function item_text(e: xml.Element) -> str
+    pieces: [str] @= []
+
+    for c in xml.elements_of(e)
+        if c.name.local == "t"
+            pieces @ pieces.push(xml.text_of(c))
+        else if c.name.local == "r"
+            for t in xml.elements_of(c)
+                if t.name.local == "t"
+                    pieces @ pieces.push(xml.text_of(t))
+
+    return text.decoded(pieces.join(""))
+
+# The strings of the shared strings part whose root is `root`, in order.
+function read_shared(root: xml.Element) -> [str]
+    found: [str] @= []
+
+    for si in xml.elements_of(root)
+        if si.name.local == "si"
+            found @ found.push(item_text(si))
+
+    return found
+
+test "item_text: plain, rich runs, a phonetic guide left out, an escape and an empty item"
+    plain = xml.parse("<si><t>Low</t></si>").must().root
+    assert item_text(plain) == "Low"
+    rich = xml.parse("<si><r><rPr><b/></rPr><t>He</t></r><r><t xml:space=\"preserve\">roes </t></r><rPh sb=\"0\" eb=\"1\"><t>x</t></rPh></si>").must().root
+    assert item_text(rich) == "Heroes "
+    escaped = xml.parse("<si><t>a_x000D_b</t></si>").must().root
+    assert item_text(escaped) == "a\rb"
+    assert item_text(xml.parse("<si/>").must().root) == ""
+
+test "read_shared: the items in order, other elements left out"
+    root = xml.parse("<sst xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" count=\"2\"><si><t>a</t></si><extLst/><si><t>é</t></si></sst>").must().root
+    assert read_shared(root) == ["a", "é"]

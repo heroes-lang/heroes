@@ -1,0 +1,437 @@
+# A workbook written whole as a zip: the content types, the package's and
+# the workbook's relationships, the core and the application properties, the
+# workbook part with its sheets and defined names, the styles, one part for
+# each sheet and the shared strings. The workbook is checked before a byte is
+# written, and every member is stamped with one fixed time, so a workbook
+# always gives the same bytes.
+
+use archive
+use bytes
+use io
+use xlsx/internal/checks
+use xlsx/internal/model
+use xlsx/internal/numfmt
+use xlsx/internal/sheet_write
+use xlsx/internal/styles_write
+use xlsx/internal/text
+use xml
+
+constant INVALID: str
+    "invalid"
+
+# The XML declaration every part opens with.
+constant DECLARATION: str
+    "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
+
+# The relationship types of the office documents' namespace.
+constant OFFICE_RELS: str
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/"
+
+# The relationships part's namespace.
+constant RELS_SPACE: str
+    "http://schemas.openxmlformats.org/package/2006/relationships"
+
+# The start of the content types this package writes.
+constant SHEET_TYPES: str
+    "application/vnd.openxmlformats-officedocument.spreadsheetml."
+
+# One part, its name in the zip and its text.
+record Part
+    # Its name, with no `/` before it.
+    name: str
+    # Its text.
+    body: str
+
+# Adds `p` to `found` in place.
+function add_part(@found: [Part], p: Part)
+    found @ found.push(p)
+
+# The `[Content_Types].xml` part for `sheets` sheets, with the shared strings
+# where `shared` says so.
+function content_types(sheets: i64, shared: bool) -> str
+    out: [str] @= [
+        DECLARATION
+        "<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\">"
+        "<Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/>"
+        "<Default Extension=\"xml\" ContentType=\"application/xml\"/>"
+        f"<Override PartName=\"/xl/workbook.xml\" ContentType=\"{SHEET_TYPES}sheet.main+xml\"/>"
+    ]
+    at: i64 @= 1
+
+    while at <= sheets
+        out @ out.push(
+            f"<Override PartName=\"/xl/worksheets/sheet{at}.xml\" ContentType=\"{SHEET_TYPES}worksheet+xml\"/>"
+        )
+        at @ at + 1
+
+    out @ out.push(f"<Override PartName=\"/xl/styles.xml\" ContentType=\"{SHEET_TYPES}styles+xml\"/>")
+
+    if shared
+        out @ out.push(f"<Override PartName=\"/xl/sharedStrings.xml\" ContentType=\"{SHEET_TYPES}sharedStrings+xml\"/>")
+    out @ out.push(
+        "<Override PartName=\"/docProps/core.xml\" ContentType=\"application/vnd.openxmlformats-package.core-properties+xml\"/>"
+    )
+    out @ out.push(
+        "<Override PartName=\"/docProps/app.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.extended-properties+xml\"/>"
+    )
+    out @ out.push("</Types>")
+    return out.join("")
+
+# The package's own relationships part.
+function package_rels() -> str
+    return DECLARATION + f"<Relationships xmlns=\"{RELS_SPACE}\">" + f"<Relationship Id=\"rId1\" Type=\"{OFFICE_RELS}officeDocument\" Target=\"xl/workbook.xml\"/>" + "<Relationship Id=\"rId2\" Type=\"http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties\" Target=\"docProps/core.xml\"/>" + f"<Relationship Id=\"rId3\" Type=\"{OFFICE_RELS}extended-properties\" Target=\"docProps/app.xml\"/>" + "</Relationships>"
+
+# The workbook's relationships part: each sheet, the styles and the shared
+# strings where `shared` says so.
+function workbook_rels(sheets: i64, shared: bool) -> str
+    out: [str] @= [DECLARATION, f"<Relationships xmlns=\"{RELS_SPACE}\">"]
+    at: i64 @= 1
+
+    while at <= sheets
+        out @ out.push(
+            f"<Relationship Id=\"rId{at}\" Type=\"{OFFICE_RELS}worksheet\" Target=\"worksheets/sheet{at}.xml\"/>"
+        )
+        at @ at + 1
+
+    out @ out.push(f"<Relationship Id=\"rId{sheets + 1}\" Type=\"{OFFICE_RELS}styles\" Target=\"styles.xml\"/>")
+
+    if shared
+        out @ out.push(
+            f"<Relationship Id=\"rId{sheets + 2}\" Type=\"{OFFICE_RELS}sharedStrings\" Target=\"sharedStrings.xml\"/>"
+        )
+    out @ out.push("</Relationships>")
+    return out.join("")
+
+# The application's properties part.
+function app_part() -> str
+    return DECLARATION + "<Properties xmlns=\"http://schemas.openxmlformats.org/officeDocument/2006/extended-properties\" xmlns:vt=\"http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes\"><Application>Rebel</Application></Properties>"
+
+# `<tag>value</tag>`, or nothing where `value` is empty.
+function property(tag: str, value: str, attributes: str) -> str?
+    if value == ""
+        return ok("")
+
+    match xml.escape_text(value)
+        .ok escaped => return ok(f"<{tag}{attributes}>{escaped}</{tag}>")
+        .err e      => return fail(code: INVALID, msg: f"the property {tag}: {e.msg}")
+
+# The core properties part of `props`.
+function core_part(props: model.Props) -> str?
+    w3c = " xsi:type=\"dcterms:W3CDTF\""
+    return ok(
+        DECLARATION + "<cp:coreProperties xmlns:cp=\"http://schemas.openxmlformats.org/package/2006/metadata/core-properties\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:dcmitype=\"http://purl.org/dc/dcmitype/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">" + property(tag: "dc:title", value: props.title, attributes: "")? + property(tag: "dc:subject", value: props.subject, attributes: "")? + property(tag: "dc:creator", value: props.creator, attributes: "")? + property(tag: "cp:keywords", value: props.keywords, attributes: "")? + property(tag: "dc:description", value: props.description, attributes: "")? + property(tag: "cp:lastModifiedBy", value: props.last_modified_by, attributes: "")? + property(tag: "cp:category", value: props.category, attributes: "")? + property(tag: "dcterms:created", value: props.created, attributes: w3c)? + property(tag: "dcterms:modified", value: props.modified, attributes: w3c)? + "</cp:coreProperties>"
+    )
+
+# The index of the sheet of `book` named `name`, or -1.
+function sheet_index(book: model.Book, name: str) -> i64
+    at: i64 @= 0
+
+    for s in book.sheets
+        if s.name == name
+            return at
+        at @ at + 1
+
+    return -1
+
+# The `<definedNames>` of `book`, checked; empty where it has none.
+function names_part(book: model.Book) -> str?
+    if book.names.len() == 0
+        return ok("")
+    out: [str] @= ["<definedNames>"]
+    at: i64 @= 0
+
+    for n in book.names
+        checks.defined_name(n.name)?
+        local: i64 @= -1
+
+        if n.sheet != ""
+            local @ sheet_index(book, name: n.sheet)
+
+            if local < 0
+                return fail(
+                    code: INVALID,
+                    msg: f"the defined name \"{n.name}\" is local to the sheet \"{n.sheet}\", which the workbook does not hold"
+                )
+        k: i64 @= 0
+
+        while k < at
+            other = book.names[k]
+
+            if other.sheet == n.sheet && checks.same_name(a: other.name, b: n.name)
+                return fail(code: INVALID, msg: f"the defined name \"{n.name}\" is defined twice over one scope")
+            k @ k + 1
+
+        out @ out.push("<definedName name=" + text.attribute_text(n.name))
+
+        if local >= 0
+            out @ out.push(f" localSheetId=\"{local}\"")
+
+        if n.hidden
+            out @ out.push(" hidden=\"1\"")
+        refers = n.refers_to
+
+        if refers.len() > 0 && refers[0] == '='
+            out @ out.push(">" + text.element_text(refers.slice(from: 1, to: refers.len())) + "</definedName>")
+        else
+            out @ out.push(">" + text.element_text(refers) + "</definedName>")
+        at @ at + 1
+
+    out @ out.push("</definedNames>")
+    return ok(out.join(""))
+
+# The workbook part of `book`, a formula among its cells or not.
+function workbook_part(book: model.Book, formulas: bool) -> str?
+    out: [str] @= [
+        DECLARATION
+        "<workbook xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">"
+    ]
+
+    if book.from_1904
+        out @ out.push("<workbookPr date1904=\"1\"/>")
+    else
+        out @ out.push("<workbookPr/>")
+    out @ out.push(f"<bookViews><workbookView activeTab=\"{book.active}\"/></bookViews><sheets>")
+    at: i64 @= 1
+
+    for s in book.sheets
+        out @ out.push("<sheet name=" + text.attribute_text(s.name) + f" sheetId=\"{at}\"")
+
+        if s.state != "visible"
+            out @ out.push(" state=" + text.attribute_text(s.state))
+        out @ out.push(f" r:id=\"rId{at}\"/>")
+        at @ at + 1
+
+    out @ out.push("</sheets>")
+    out @ out.push(names_part(book)?)
+
+    if formulas
+        out @ out.push("<calcPr calcId=\"191029\" fullCalcOnLoad=\"1\"/>")
+    else
+        out @ out.push("<calcPr calcId=\"191029\"/>")
+    out @ out.push("</workbook>")
+    return ok(out.join(""))
+
+# The shared strings part of `strings`.
+function shared_part(strings: sheet_write.Strings) -> str
+    out: [str] @= [
+        DECLARATION
+        f"<sst xmlns=\"http://schemas.openxmlformats.org/spreadsheetml/2006/main\" count=\"{strings.count}\" uniqueCount=\"{strings.list.len()}\">"
+    ]
+
+    for s in strings.list
+        if text.needs_preserve(s)
+            out @ out.push("<si><t xml:space=\"preserve\">" + text.element_text(s) + "</t></si>")
+        else
+            out @ out.push("<si><t>" + text.element_text(s) + "</t></si>")
+
+    out @ out.push("</sst>")
+    return out.join("")
+
+# The index of the style `base` with the number format `code`, added to
+# `styles` where none is; `made` remembers each one made.
+function dated_style(@styles: [model.Style], @made: {str: i64}, base: i64, code: str) -> i64
+    key = f"{base}:{code}"
+
+    match made[key]
+        .ok n => return n
+        .err _ =>
+            style @= styles[base]
+            style.number_format @ code
+            n = styles.len()
+            styles @ styles.push(style)
+            made[key] @ n
+            return n
+
+# `book`'s sheets with every date cell whose style shows no date given the
+# same style with a date's format, and the styles that takes.
+record Dated
+    # The sheets.
+    sheets: [model.Sheet]
+    # The styles, the new ones at the end.
+    styles: [model.Style]
+
+# `book` with its date cells given a style that shows a date.
+function with_dates(book: model.Book) -> Dated
+    styles: [model.Style] @= book.styles
+    made: {str: i64} @= {}
+    sheets: [model.Sheet] @= []
+
+    for s in book.sheets
+        needs: bool @= false
+
+        for c in s.cells
+            if c.kind == model.DATE && c.style >= 0 && c.style < styles.len() && !numfmt.is_date(styles[c.style].number_format)
+                needs @ true
+
+        if !needs
+            sheets @ sheets.push(s)
+        else
+            cells: [model.Cell] @= []
+
+            for c in s.cells
+                if c.kind == model.DATE && c.style >= 0 && c.style < styles.len() && !numfmt.is_date(styles[c.style].number_format)
+                    code: str @= "yyyy-mm-dd hh:mm:ss"
+
+                    if c.number == to_f64(to_i64(c.number).default(0))
+                        code @ "yyyy-mm-dd"
+                    moved @= c
+                    moved.style @ dated_style(@styles, @made, base: c.style, code: code)
+                    cells @ cells.push(moved)
+                else
+                    cells @ cells.push(c)
+
+            changed @= s
+            changed.cells @ cells
+            sheets @ sheets.push(changed)
+
+    return Dated(sheets: sheets, styles: styles)
+
+# The parts of `book`, checked.
+function parts_of(book: model.Book) -> [Part]?
+    if book.sheets.len() == 0
+        return fail(code: INVALID, msg: "a workbook of no sheet: a workbook holds one or more")
+
+    if book.styles.len() == 0
+        return fail(code: INVALID, msg: "a workbook of no style: its first style is the default")
+
+    if book.active < 0 || book.active >= book.sheets.len()
+        return fail(code: INVALID, msg: f"the sheet shown first is {book.active}, of {book.sheets.len()}")
+
+    if book.sheets[book.active].state != "visible"
+        return fail(code: INVALID, msg: f"the sheet shown first, \"{book.sheets[book.active].name}\", is hidden")
+    at: i64 @= 0
+
+    for s in book.sheets
+        checks.sheet_name(s.name)?
+
+        if s.state != "visible" && s.state != "hidden" && s.state != "veryHidden"
+            return fail(code: INVALID, msg: f"the sheet \"{s.name}\" is in the state \"{s.state}\"")
+        k: i64 @= 0
+
+        while k < at
+            if checks.same_name(a: book.sheets[k].name, b: s.name)
+                return fail(code: INVALID, msg: f"two sheets are named \"{s.name}\"")
+            k @ k + 1
+
+        at @ at + 1
+
+    dated = with_dates(book)
+    strings @= sheet_write.Strings(list: [], at: {}, count: 0)
+    found: [Part] @= []
+    formulas: bool @= false
+    at @ 0
+
+    for s in dated.sheets
+        add_part(
+            @found,
+            p: Part(name: f"xl/worksheets/sheet{at + 1}.xml", body: sheet_write.sheet_part(s, @strings, styles: dated.styles.len(), selected: at == book.active)?)
+        )
+
+        sheet_rels = sheet_write.link_rels(s.links)
+
+        if sheet_rels != ""
+            add_part(@found, p: Part(name: f"xl/worksheets/_rels/sheet{at + 1}.xml.rels", body: sheet_rels))
+
+        if !formulas
+            for c in s.cells
+                if c.formula != ""
+                    formulas @ true
+
+        at @ at + 1
+
+    shared = strings.list.len() > 0
+    first: [Part] @= [
+        Part(name: "[Content_Types].xml", body: content_types(book.sheets.len(), shared: shared))
+        Part(name: "_rels/.rels", body: package_rels())
+        Part(name: "docProps/app.xml", body: app_part())
+        Part(name: "docProps/core.xml", body: core_part(book.props)?)
+        Part(name: "xl/workbook.xml", body: workbook_part(book, formulas: formulas)?)
+        Part(name: "xl/_rels/workbook.xml.rels", body: workbook_rels(book.sheets.len(), shared: shared))
+        Part(name: "xl/styles.xml", body: styles_write.styles_part(dated.styles))
+    ]
+
+    for p in found
+        first @ first.push(p)
+
+    if shared
+        first @ first.push(Part(name: "xl/sharedStrings.xml", body: shared_part(strings)))
+    return ok(first)
+
+# Writes `book` to `to` as a zip of its parts.
+function write(to: io.Stream, book: model.Book) -> ()?
+    found_parts = parts_of(book)?
+    w @= archive.zip_writer(to)
+
+    for p in found_parts
+        archive.write_zip_entry(@w, entry: archive.zip_entry(p.name, kind: .file), data: bytes.from_text(p.body))?
+
+    archive.finish_zip(@w, comment: "")?
+    return ok()
+
+test "content_types and workbook_rels: two sheets, with the shared strings and without"
+    types = content_types(2, shared: true)
+    assert types.len() > 0
+    rels = workbook_rels(2, shared: false)
+    assert rels == DECLARATION + "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" Target=\"worksheets/sheet1.xml\"/><Relationship Id=\"rId2\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet\" Target=\"worksheets/sheet2.xml\"/><Relationship Id=\"rId3\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles\" Target=\"styles.xml\"/></Relationships>"
+
+test "core_part: the properties given, escaped, and nothing for the empty ones"
+    props @= model.no_props()
+    props.title @ "Low & Lodger"
+    props.created @ "2026-11-18T09:30:00Z"
+    core = core_part(props).must()
+    assert core == DECLARATION + "<cp:coreProperties xmlns:cp=\"http://schemas.openxmlformats.org/package/2006/metadata/core-properties\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:dcmitype=\"http://purl.org/dc/dcmitype/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"><dc:title>Low &amp; Lodger</dc:title><dcterms:created xsi:type=\"dcterms:W3CDTF\">2026-11-18T09:30:00Z</dcterms:created></cp:coreProperties>"
+    bad @= props
+    bad.subject @ "a\u{1}"
+    assert core_part(bad).is_err()
+
+# A workbook of one sheet for the tests.
+function test_book() -> model.Book
+    sheet = model.Sheet(
+        name: "S",
+        state: "visible",
+        cells: [],
+        merged: [],
+        columns: [],
+        rows: [],
+        frozen_rows: 0,
+        frozen_columns: 0,
+        links: []
+    )
+    return model.Book(
+        sheets: [sheet],
+        styles: [model.default_style()],
+        from_1904: false,
+        names: [],
+        active: 0,
+        props: model.no_props()
+    )
+
+test "parts_of: no sheet, two of one name, a hidden sheet shown first, a bad name, a defined name twice, and a date given its style"
+    empty @= test_book()
+    empty.sheets @ []
+    assert parts_of(empty).is_err()
+    twice @= test_book()
+    twice.sheets @ [twice.sheets[0], twice.sheets[0]]
+    assert parts_of(twice).is_err()
+    hidden @= test_book()
+    hidden.sheets[0].state @ "hidden"
+    assert parts_of(hidden).is_err()
+    named @= test_book()
+    named.sheets[0].name @ "a:b"
+    assert parts_of(named).is_err()
+    names_twice @= test_book()
+    names_twice.names @ [
+        model.Name(name: "rate", refers_to: "S!$A$1", sheet: "", hidden: false)
+        model.Name(name: "RATE", refers_to: "S!$A$2", sheet: "", hidden: false)
+    ]
+    assert parts_of(names_twice).is_err()
+    local @= test_book()
+    local.names @ [model.Name(name: "rate", refers_to: "S!$A$1", sheet: "Absent", hidden: false)]
+    assert parts_of(local).is_err()
+    dated @= test_book()
+    dated.sheets[0].cells @ [
+        model.Cell(row: 0, column: 0, kind: model.DATE, number: 61.5, text: "", formula: "", style: 0)
+    ]
+    got = with_dates(dated)
+    assert got.styles.len() == 2 && got.styles[1].number_format == "yyyy-mm-dd hh:mm:ss" && got.sheets[0].cells[0].style == 1
+    assert parts_of(dated).must().len() == 8

@@ -1,0 +1,244 @@
+# The parts of a workbook's zip, read within a budget of bytes: a part by its
+# name, as bytes or as an XML tree, and the relationships a part names, with
+# their targets resolved to the parts' names. Every byte a part holds once
+# decompressed is taken from the budget before it is read, so a zip bomb is
+# refused by its size and an XML bomb by `xml`, which expands no entity.
+
+use archive
+use bytes
+use io
+use strings
+use xml
+
+constant INVALID: str
+    "invalid"
+
+constant LIMIT: str
+    "limit"
+
+constant NOT_FOUND: str
+    "not_found"
+
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The relationship types' common start, before the kind.
+constant OFFICE_RELS: str
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/"
+
+# The package's own relationship types' start, the core properties'.
+constant PACKAGE_RELS: str
+    "http://schemas.openxmlformats.org/package/2006/relationships/metadata/"
+
+# A workbook's zip open to read, and the bytes it may still decompress.
+record Package
+    # The zip.
+    zip: archive.ZipReader
+    # The bytes still allowed.
+    budget: i64
+
+# One relationship of a part.
+record Rel
+    # Its id, `rId1`.
+    id: str
+    # The last word of its type, `worksheet`, `styles`, `officeDocument`.
+    kind: str
+    # The part it names, its path in the zip with no `/` before it; the
+    # target as written where it is external.
+    target: str
+    # Whether it names something outside the package.
+    external: bool
+
+# The package in `from`, its zip's directory read; refuses a file that is an
+# OLE compound file, which an encrypted workbook and an `.xls` are.
+function open(from: io.Stream, budget: i64) -> Package?
+    _ = io.seek(from, offset: 0, from: .start)?
+    head = io.read(from, most: 8)?
+    _ = io.seek(from, offset: 0, from: .start)?
+
+    if head.len() == 8 && head[0] == 0xd0 && head[1] == 0xcf && head[2] == 0x11 && head[3] == 0xe0 && head[4] == 0xa1 && head[5] == 0xb1 && head[6] == 0x1a && head[7] == 0xe1
+        return fail(
+            code: UNSUPPORTED,
+            msg: "the file is an OLE compound file: a workbook encrypted with a password, or an `.xls`, neither of which this package reads"
+        )
+
+    match archive.zip_reader(from)
+        .ok zip => return ok(Package(zip: zip, budget: budget))
+        .err e  => return fail(code: e.code, msg: f"the file is not a workbook's zip: {e.msg}")
+
+# The entry of `p` whose name is `name`, compared byte for byte and then in
+# any case of ASCII letters, as the package's names are.
+function entry_of(p: Package, name: str) -> archive.ZipEntry?
+    for e in p.zip.entries
+        if e.name == name
+            return ok(e)
+
+    lower = strings.to_lower_ascii(name)
+
+    for e in p.zip.entries
+        if strings.to_lower_ascii(e.name) == lower
+            return ok(e)
+
+    return fail(code: NOT_FOUND, msg: f"the workbook holds no part \"{name}\"")
+
+# Whether `p` holds the part `name`.
+function has_part(p: Package, name: str) -> bool
+    return !entry_of(p, name: name).is_err()
+
+# The bytes of the part `name`, taken from the budget.
+function part_bytes(@p: Package, name: str) -> [u8]?
+    entry = entry_of(p, name: name)?
+
+    if entry.size > p.budget
+        return fail(
+            code: LIMIT,
+            msg: f"the part \"{name}\" holds {entry.size} bytes, past the {p.budget} the reading still allows"
+        )
+
+    match archive.read_zip_entry(p.zip, entry: entry, limit: p.budget)
+        .err e => return fail(code: e.code, msg: f"the part \"{name}\": {e.msg}")
+        .ok data =>
+            p.budget @ p.budget - data.len()
+            return ok(data)
+
+# The root element of the part `name`, read as XML.
+function part_xml(@p: Package, name: str) -> xml.Element?
+    data = part_bytes(@p, name: name)?
+
+    match xml.parse_bytes(data, xml.ParseOptions(max_depth: xml.DEFAULT_MAX_DEPTH, max_bytes: data.len() + 1))
+        .ok doc => return ok(doc.root)
+        .err e  => return fail(code: e.code, msg: f"the part \"{name}\": {e.msg}")
+
+# The text of the part `name`, its bytes taken from the budget.
+function part_text(@p: Package, name: str) -> str?
+    data = part_bytes(@p, name: name)?
+
+    match bytes.to_text(data)
+        .ok text => return ok(text)
+        .err e   => return fail(code: e.code, msg: f"the part \"{name}\": {e.msg}")
+
+# The name of the relationships part of `part`: `xl/_rels/workbook.xml.rels`
+# for `xl/workbook.xml`, `_rels/.rels` for the package, named "".
+function rels_name(part: str) -> str
+    slash = last_slash(part)
+
+    if slash < 0
+        return "_rels/" + part + ".rels"
+    return part.slice(from: 0, to: slash + 1) + "_rels/" + part.slice(from: slash + 1, to: part.len()) + ".rels"
+
+# The relationships of `part`, "" for the package's own; empty where it has
+# none.
+function rels_of(@p: Package, part: str) -> [Rel]?
+    name = rels_name(part)
+    found: [Rel] @= []
+
+    if !has_part(p, name: name)
+        return ok(found)
+    root = part_xml(@p, name: name)?
+
+    for e in xml.elements_of(root)
+        if e.name.local == "Relationship"
+            id = xml.attribute(e, name: "Id").default("")
+            kind_uri = xml.attribute(e, name: "Type").default("")
+            target = xml.attribute(e, name: "Target").default("")
+            external = xml.attribute(e, name: "TargetMode").default("") == "External"
+            resolved: str @= target
+
+            if !external
+                resolved @ resolve(base: part, target: target)
+            found @ found.push(Rel(id: id, kind: last_word(kind_uri), target: resolved, external: external))
+
+    return ok(found)
+
+# The value of the attribute of `e` whose local name is `local` and whose
+# namespace is not empty: `r:id`, whichever namespace the file writes it in.
+function namespaced(e: xml.Element, local: str) -> str
+    for a in e.attributes
+        if a.name.local == local && a.name.space != ""
+            return a.value
+
+    return ""
+
+# The first relationship of `rels` of the kind `kind`.
+function rel_of_kind(rels: [Rel], kind: str) -> Rel?
+    for r in rels
+        if r.kind == kind
+            return ok(r)
+
+    return fail(code: NOT_FOUND, msg: f"no relationship of the kind `{kind}`")
+
+# The relationship of `rels` whose id is `id`.
+function rel_of_id(rels: [Rel], id: str) -> Rel?
+    for r in rels
+        if r.id == id
+            return ok(r)
+
+    return fail(code: NOT_FOUND, msg: f"no relationship of the id `{id}`")
+
+# The last word of a relationship's type, after its last `/`.
+function last_word(uri: str) -> str
+    slash = last_slash(uri)
+    return uri.slice(from: slash + 1, to: uri.len())
+
+# Where the last `/` of `s` stands, or -1.
+function last_slash(s: str) -> i64
+    at: i64 @= s.len()
+
+    while at > 0
+        at @ at - 1
+
+        if s[at] == '/'
+            return at
+
+    return -1
+
+# `target`, written in the part `base`, as a part's name: from the root where
+# it opens with `/`, else from `base`'s folder, `.` and `..` read.
+function resolve(base: str, target: str) -> str
+    parts: [str] @= []
+    from_root = target.len() > 0 && target[0] == '/'
+
+    if !from_root
+        slash = last_slash(base)
+
+        if slash > 0
+            add_parts(@parts, s: base.slice(from: 0, to: slash))
+    add_parts(@parts, s: target)
+    return parts.join("/")
+
+# Adds the parts of the path `s` to `parts`, `.` dropped and `..` taking the
+# last away.
+function add_parts(@parts: [str], s: str)
+    start: i64 @= 0
+    at: i64 @= 0
+
+    while at <= s.len()
+        if at == s.len() || s[at] == '/'
+            piece = s.slice(from: start, to: at)
+
+            if piece == ".."
+                if parts.len() > 0
+                    parts @ parts.slice(from: 0, to: parts.len() - 1)
+            else if piece != "" && piece != "."
+                parts @ parts.push(piece)
+            start @ at + 1
+        at @ at + 1
+
+test "resolve: a target beside its part, from the root, up a folder, and the package's own"
+    assert resolve(base: "xl/workbook.xml", target: "worksheets/sheet1.xml") == "xl/worksheets/sheet1.xml"
+    assert resolve(base: "xl/workbook.xml", target: "/xl/worksheets/sheet1.xml") == "xl/worksheets/sheet1.xml"
+    assert resolve(base: "xl/worksheets/sheet1.xml", target: "../drawings/d.xml") == "xl/drawings/d.xml"
+    assert resolve(base: "", target: "xl/workbook.xml") == "xl/workbook.xml"
+    assert resolve(base: "", target: "./xl/../xl/workbook.xml") == "xl/workbook.xml"
+    assert resolve(base: "a.xml", target: "../../b.xml") == "b.xml"
+
+test "namespaced: an attribute in a namespace, whatever its prefix, and one in none"
+    e = xml.parse("<sheet xmlns:q=\"urn:r\" name=\"a\" id=\"no\" q:id=\"rId7\"/>").must().root
+    assert namespaced(e, local: "id") == "rId7"
+    assert namespaced(e, local: "name") == ""
+
+test "rels_name and last_word: the package's, a part's, and a type's word"
+    assert rels_name("") == "_rels/.rels"
+    assert rels_name("xl/workbook.xml") == "xl/_rels/workbook.xml.rels"
+    assert last_word(OFFICE_RELS + "worksheet") == "worksheet"
+    assert last_word("x") == "x"
