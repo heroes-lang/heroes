@@ -1,0 +1,392 @@
+# The name of a code point, made from `name_table`'s words or by a rule, and
+# the character a name gives, found through the index of loose names: UAX
+# #44's rule LM2, case, spaces, underscores and medial hyphens ignored.
+
+use unicode/names/internal/name_table
+
+# The first Hangul syllable, U+AC00.
+constant S_BASE: i64
+    0xac00
+
+# How many Hangul syllables there are.
+constant S_COUNT: i64
+    11172
+
+# The number of the rule that names the Hangul syllables.
+constant HANGUL_RULE: i64
+    1
+
+# The capitals of ASCII, in order.
+constant CAPITALS: str
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+# The hexadecimal digits in capitals.
+constant HEX: str
+    "0123456789ABCDEF"
+
+# How many entries of `table`, which ascends, are at or below `key`.
+function count_at_or_below(table: [i64] lent, key: i64) -> i64
+    low: i64 @= 0
+    high: i64 @= table.len()
+
+    while low < high
+        middle = low + (high - low) / 2
+
+        if table[middle] <= key
+            low @ middle + 1
+        else
+            high @ middle
+
+    return low
+
+# `n` in hexadecimal capitals, four digits at least.
+function hex_of(n: i64) -> str
+    digits: [str] @= []
+    rest: i64 @= n
+
+    while rest > 0 || digits.len() < 4
+        digits @ digits.push(HEX.slice(from: rest % 16, to: rest % 16 + 1))
+        rest @ rest / 16
+
+    out: [str] @= []
+    at: i64 @= digits.len() - 1
+
+    while at >= 0
+        out @ out.push(digits[at])
+        at @ at - 1
+
+    return out.join("")
+
+# The name of the Hangul syllable `n`.
+function syllable_name(n: i64) -> str
+    index = n - S_BASE
+    return "HANGUL SYLLABLE " + name_table.JAMO_LEADING[index / 588] + name_table.JAMO_VOWELS[index % 588 / 28] + name_table.JAMO_TRAILING[index % 28]
+
+# The token `at` of `name_table.TOKENS`, a word's index.
+function token(at: i64) -> i64
+    return name_table.TOKENS[at / 4] >> 15 * (3 - at % 4) & 0x7fff
+
+# The word `index` of `name_table.WORD_TEXT`.
+function word_at(index: i64) -> str
+    shift = if index % 2 == 0
+        32
+    else
+        0
+    span = name_table.WORD_SPANS[index / 2] >> shift & 0xffffffff
+    offset = span >> 5
+    within = offset % name_table.CHUNK
+    return name_table.WORD_TEXT[offset / name_table.CHUNK].slice(from: within, to: within + (span & 31))
+
+# How many words name `index` holds.
+function count_of(index: i64) -> i64
+    return name_table.TOKEN_COUNTS[index / 15] >> 4 * (index % 15) & 15
+
+# The name `index`, in the order of the named code points.
+function name_at(index: i64) -> str
+    start: i64 @= name_table.TOKEN_STARTS[index / 16]
+    before: i64 @= index / 16 * 16
+
+    while before < index
+        start @ start + count_of(before)
+        before @ before + 1
+
+    words: [str] @= []
+    at: i64 @= start
+
+    while at < start + count_of(index)
+        words @ words.push(word_at(token(at)))
+        at @ at + 1
+
+    return words.join(" ")
+
+# The index of the name the database lists for `n`. Fails `not_found` where
+# it lists none.
+function index_of_point(n: i64) -> i64?
+    runs = name_table.NAME_RUNS
+    count = count_at_or_below(runs, n << 21 | 0x1fffff)
+
+    if count > 0
+        first = runs[count - 1] >> 21
+        start = runs[count - 1] & 0x1fffff
+
+        end = if count < runs.len()
+            runs[count] & 0x1fffff
+        else
+            name_table.NAMED_COUNT
+
+        if n - first < end - start
+            return ok(start + n - first)
+    return fail(code: "not_found", msg: "no name")
+
+# The code point whose name is name `index`.
+function point_of_index(index: i64) -> i64
+    runs = name_table.NAME_RUNS
+    low: i64 @= 0
+    high: i64 @= runs.len()
+
+    while low < high
+        middle = low + (high - low) / 2
+
+        if runs[middle] & 0x1fffff <= index
+            low @ middle + 1
+        else
+            high @ middle
+
+    entry = runs[low - 1]
+    return (entry >> 21) + index - (entry & 0x1fffff)
+
+# The name of the code point `n`. Fails `not_found` where it has none.
+function name_of(n: i64) -> str?
+    if n < 0 || n > 0x10ffff
+        return fail(code: "not_found", msg: "no name")
+    rule_count = count_at_or_below(name_table.RULES, n << 24 | 0xffffff)
+
+    if rule_count > 0
+        entry = name_table.RULES[rule_count - 1]
+
+        if n <= entry >> 3 & 0x1fffff
+            rule = entry & 7
+
+            if rule == HANGUL_RULE
+                return ok(syllable_name(n))
+            return ok(name_table.RULE_PREFIXES[rule] + hex_of(n))
+    index = index_of_point(n)?
+    return ok(name_at(index))
+
+# Whether the byte `b` is a letter or a digit of ASCII.
+function is_alphanumeric(b: u8) -> bool
+    return b >= '0' && b <= '9' || b >= 'A' && b <= 'Z' || b >= 'a' && b <= 'z'
+
+# `text` in its loose form by UAX #44's rule LM2: letters in capitals,
+# spaces, tabs, line breaks and underscores taken out, and a hyphen between
+# two letters or digits taken out, but the one of "HANGUL JUNGSEONG O-E",
+# which tells U+1180 from U+116C.
+function loose(text: str) -> str
+    kept: [str] @= []
+    hyphened: [str] @= []
+    at: i64 @= 0
+
+    for c in text.chars()
+        byte = c[0]
+
+        if byte == ' ' || byte == '_' || byte == '\t' || byte == '\n' || byte == '\r'
+            at @ at + 1
+            continue
+
+        shown = if byte >= 'a' && byte <= 'z'
+            CAPITALS.slice(from: to_i64(byte - 'a').must(), to: to_i64(byte - 'a').must() + 1)
+        else
+            c
+        hyphened @ hyphened.push(shown)
+        medial = byte == '-' && at > 0 && at + 1 < text.len() && is_alphanumeric(text[at - 1]) && is_alphanumeric(text[at + 1])
+
+        if !medial
+            kept @ kept.push(shown)
+        at @ at + c.len()
+
+    whole = hyphened.join("")
+
+    if whole == "HANGULJUNGSEONGO-E"
+        return whole
+    return kept.join("")
+
+# The hash of a loose name the index is ordered by: its bytes read as a
+# number in base `HASH_FACTOR` modulo `HASH_PRIME`, then multiplied by
+# `HASH_SPREAD` modulo it, every product staying below 2 to the 62nd.
+function hashed(key: str) -> i64
+    h: i64 @= 0
+    at: i64 @= 0
+
+    while at < key.len()
+        h @ (h * name_table.HASH_FACTOR + to_i64(key[at]).must()) % name_table.HASH_PRIME
+        at @ at + 1
+
+    return h * name_table.HASH_SPREAD % name_table.HASH_PRIME
+
+# Entry `at` of a table of 16-bit entries packed three to an `i64`, the
+# first in the highest bits.
+function packed16(table: [i64] lent, at: i64) -> i64
+    return table[at / 3] >> 16 * (2 - at % 3) & 0xffff
+
+# The code points of the named sequence `index`.
+function sequence_points(index: i64) -> [i64]
+    entry = name_table.SEQUENCES[index]
+    offset = entry >> 5
+    return name_table.SEQUENCE_POINTS.slice(from: offset, to: offset + (entry & 31))
+
+# The code points the loose name `key` names through the index: a name, an
+# alias or a named sequence. Fails `not_found` where the index holds none.
+function indexed(key: str) -> [i64]?
+    bucket = hashed(key) >> name_table.BUCKET_SHIFT
+
+    at: i64 @= if bucket > 0
+        packed16(name_table.BUCKET_ENDS, at: bucket - 1)
+    else
+        0
+    end = packed16(name_table.BUCKET_ENDS, at: bucket)
+    aliases = name_table.ALIAS_NAMES.len()
+
+    while at < end
+        target = packed16(name_table.ENTRY_TARGETS, at: at)
+
+        if target < name_table.NAMED_COUNT
+            if loose(name_at(target)) == key
+                return ok([point_of_index(target)])
+        else if target < name_table.NAMED_COUNT + aliases
+            if loose(name_table.ALIAS_NAMES[target - name_table.NAMED_COUNT]) == key
+                return ok([name_table.ALIASES[target - name_table.NAMED_COUNT] >> 3])
+        else if loose(name_table.SEQUENCE_NAMES[target - name_table.NAMED_COUNT - aliases]) == key
+            return ok(sequence_points(target - name_table.NAMED_COUNT - aliases))
+        at @ at + 1
+
+    return fail(code: "not_found", msg: "no such name")
+
+# The value of `digits`, hexadecimal capitals, four or five of them. Fails
+# `not_found` where they are not.
+function hex_value(digits: str) -> i64?
+    if digits.len() < 4 || digits.len() > 5
+        return fail(code: "not_found", msg: "not a code point")
+    value: i64 @= 0
+
+    for c in digits.chars()
+        byte = c[0]
+
+        digit = if byte >= '0' && byte <= '9'
+            to_i64(byte - '0').must()
+        else if byte >= 'A' && byte <= 'F'
+            to_i64(byte - 'A').must() + 10
+        else
+            -1
+
+        if digit < 0
+            return fail(code: "not_found", msg: "not a code point")
+        value @ value * 16 + digit
+
+    return ok(value)
+
+# The code point the loose name `key` names by a rule. Fails `not_found`
+# where it names none.
+function by_rule(key: str) -> i64?
+    rule: i64 @= 0
+
+    while rule < name_table.RULE_PREFIXES.len()
+        prefix = loose(name_table.RULE_PREFIXES[rule] + "0")
+        stem = prefix.slice(from: 0, to: prefix.len() - 1)
+
+        if key.len() > stem.len() && key.slice(from: 0, to: stem.len()) == stem
+            rest = key.slice(from: stem.len(), to: key.len())
+
+            if rule == HANGUL_RULE
+                return syllable_of(rest)
+            n = hex_value(rest)?
+
+            match name_of(n)
+                .ok found =>
+                    if loose(found) == key
+                        return ok(n)
+                .err _ => _ = 0
+
+            return fail(code: "not_found", msg: "no such name")
+        rule @ rule + 1
+
+    return fail(code: "not_found", msg: "no such name")
+
+# Whether `s` begins with `prefix` at byte `at`.
+function has_at(s: str, prefix: str, at: i64) -> bool
+    if at + prefix.len() > s.len()
+        return false
+    index: i64 @= 0
+
+    while index < prefix.len()
+        if s[at + index] != prefix[index]
+            return false
+        index @ index + 1
+
+    return true
+
+# The Hangul syllable whose jamo's short names are `rest`. Fails `not_found`
+# where none is.
+function syllable_of(rest: str) -> i64?
+    leading: i64 @= 0
+
+    while leading < name_table.JAMO_LEADING.len()
+        first = name_table.JAMO_LEADING[leading]
+
+        if has_at(s: rest, prefix: first, at: 0)
+            vowel: i64 @= 0
+
+            while vowel < name_table.JAMO_VOWELS.len()
+                middle = name_table.JAMO_VOWELS[vowel]
+
+                if has_at(s: rest, prefix: middle, at: first.len())
+                    tail = rest.slice(from: first.len() + middle.len(), to: rest.len())
+                    trailing: i64 @= 0
+
+                    while trailing < name_table.JAMO_TRAILING.len()
+                        if name_table.JAMO_TRAILING[trailing] == tail
+                            return ok(S_BASE + leading * 588 + vowel * 28 + trailing)
+                        trailing @ trailing + 1
+                vowel @ vowel + 1
+        leading @ leading + 1
+
+    return fail(code: "not_found", msg: "no such syllable")
+
+# The code points `text` names: a name, an alias, a named sequence, or a
+# name made by a rule, matched loosely. Fails `not_found` where it names
+# none.
+function points_named(text: str) -> [i64]?
+    key = loose(text)
+
+    match indexed(key)
+        .ok found => return ok(found)
+        .err _    => _ = 0
+
+    n = by_rule(key)?
+    return ok([n])
+
+## Tests
+
+# Python 3.15.2's `unicodedata.name`, observed 2026-11-17.
+test "name_of: a letter, a control, the edges of each rule, a noncharacter, and past the last code point"
+    assert name_of('a').must() == "LATIN SMALL LETTER A"
+    assert name_of(0).is_err()
+    assert name_of(0x4e00).must() == "CJK UNIFIED IDEOGRAPH-4E00"
+    assert name_of(0x20000).must() == "CJK UNIFIED IDEOGRAPH-20000"
+    assert name_of(0xac00).must() == "HANGUL SYLLABLE GA"
+    assert name_of(0xd7a3).must() == "HANGUL SYLLABLE HIH"
+    assert name_of(0xf900).must() == "CJK COMPATIBILITY IDEOGRAPH-F900"
+    assert name_of(0x17000).must() == "TANGUT IDEOGRAPH-17000"
+    assert name_of(0x13460).must() == "EGYPTIAN HIEROGLYPH-13460"
+    assert name_of(0x1f600).must() == "GRINNING FACE"
+    assert name_of(0xfffe).is_err()
+    assert name_of(0x10ffff).is_err()
+    assert name_of(0x110000).is_err()
+    assert name_of(-1).is_err()
+
+test "loose: case, spaces, underscores, a medial hyphen, a hyphen after a space, and O-E"
+    assert loose("latin small_letter A") == "LATINSMALLLETTERA"
+    assert loose("HYPHEN-MINUS") == "HYPHENMINUS"
+    assert loose("TIBETAN MARK TSA -PHRU") == "TIBETANMARKTSA-PHRU"
+    assert loose("hangul jungseong o-e") == "HANGULJUNGSEONGO-E"
+    assert loose("HANGUL JUNGSEONG OE") == "HANGULJUNGSEONGOE"
+    assert loose("") == ""
+
+# Python 3.15.2's `unicodedata.lookup`, observed 2026-11-17, answers each
+# but the loose spellings, which it refuses and LM2 reads.
+test "points_named: a name, a loose name, an alias, a sequence, the rules, O-E, and nothing"
+    assert points_named("LATIN SMALL LETTER A").must() == ['a']
+    assert points_named("latin_small_letter_a").must() == ['a']
+    assert points_named("LatinSmallLetterA").must() == ['a']
+    assert points_named("NULL").must() == [0]
+    assert points_named("BYTE ORDER MARK").must() == [0xfeff]
+    assert points_named("KEYCAP NUMBER SIGN").must() == [0x23, 0xfe0f, 0x20e3]
+    assert points_named("CJK UNIFIED IDEOGRAPH-4E00").must() == [0x4e00]
+    assert points_named("cjk unified ideograph 4e00").must() == [0x4e00]
+    assert points_named("HANGUL SYLLABLE GAG").must() == [0xac01]
+    assert points_named("hangul syllable hih").must() == [0xd7a3]
+    assert points_named("HANGUL JUNGSEONG O-E").must() == [0x1180]
+    assert points_named("HANGUL JUNGSEONG OE").must() == [0x116c]
+    assert points_named("CJK UNIFIED IDEOGRAPH-0041").is_err()
+    assert points_named("HANGUL SYLLABLE XYZ").is_err()
+    assert points_named("NO SUCH CHARACTER").is_err()
+    assert points_named("").is_err()

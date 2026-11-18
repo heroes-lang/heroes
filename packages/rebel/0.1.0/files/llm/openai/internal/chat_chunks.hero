@@ -1,0 +1,287 @@
+# A chat completion read as its chunks come, by the reference's streaming
+# events (developers.openai.com, read 2026-11-18): data-only events, each a
+# `chat.completion.chunk` whose choices carry deltas of content, refusal and
+# tool calls, a `finish_reason` at each choice's end, a last chunk holding
+# the usage with no choice where it was asked, and `[DONE]`. Every piece is
+# kept in a flat list with the place it belongs to, joined once when the
+# completion is read, so a long answer costs a copy of each piece.
+
+use http
+use json
+use llm/openai/internal/failures
+use llm/openai/internal/fields
+use llm/openai/internal/transport
+
+# A chat stream being read: its connection and what has arrived.
+record State
+    # The connection, its head read; `close` closes it.
+    opened: transport.Opened
+    # The event stream's reader.
+    events: http.EventReader
+    # The longest wait for the next bytes, in milliseconds, 0 for none.
+    idle_ms: i64
+    # Whether `[DONE]` came, or the stream ended once every choice finished.
+    ended: bool
+    # Whether it ended as a completion ends, rather than cut.
+    finished: bool
+    # The first chunk's id, created and model.
+    head: json.Value
+    # The usage, null until a chunk tells it.
+    usage: json.Value
+    # The index of each choice, in the order seen.
+    choices: [i64]
+    # Each choice's finish reason, by its place in `choices`, "" before it.
+    finishes: [str]
+    # The pieces of content, and the place in `choices` each belongs to.
+    content: [str]
+    # The choice of each piece of `content`.
+    content_owner: [i64]
+    # The pieces of refusal.
+    refusal: [str]
+    # The choice of each piece of `refusal`.
+    refusal_owner: [i64]
+    # The choice of each tool call, by its place in these lists.
+    call_owner: [i64]
+    # Each tool call's index within its choice.
+    call_index: [i64]
+    # Each tool call's id.
+    call_id: [str]
+    # Each tool call's function's name.
+    call_name: [str]
+    # The pieces of the calls' arguments.
+    arguments: [str]
+    # The call, by its place, each piece of `arguments` belongs to.
+    argument_owner: [i64]
+
+# The state of a chat stream whose head `o` read. Fails as
+# `http.event_reader` fails on the head.
+function begin(o: transport.Opened, limits: http.Limits, idle_ms: i64) -> State?
+    events = http.event_reader(o.head, limits: limits)?
+    return ok(
+        State(opened: o, events: events, idle_ms: idle_ms, ended: false, finished: false, head: .object(members: {}), usage: .null_value, choices: [], finishes: [], content: [], content_owner: [], refusal: [], refusal_owner: [], call_owner: [], call_index: [], call_id: [], call_name: [], arguments: [], argument_owner: [])
+    )
+
+# Adds `s` to `xs`, the caller's own.
+function add_text(@xs: [str], s: str)
+    xs @ xs.push(s)
+
+# Adds `n` to `xs`, the caller's own.
+function add_int(@xs: [i64], n: i64)
+    xs @ xs.push(n)
+
+# Where `x` stands in `xs`, -1 where it does not.
+function place(xs: [i64] lent, x: i64) -> i64
+    at: i64 @= 0
+
+    while at < xs.len()
+        if xs[at] == x
+            return at
+        at @ at + 1
+
+    return -1
+
+# Where the call `index` of the choice at `owner` stands, -1 where none.
+function call_place(st: State lent, owner: i64, index: i64) -> i64
+    at: i64 @= 0
+
+    while at < st.call_owner.len()
+        if st.call_owner[at] == owner && st.call_index[at] == index
+            return at
+        at @ at + 1
+
+    return -1
+
+# The pieces of `pieces` whose owner is `owner`, joined.
+function joined(pieces: [str] lent, owners: [i64] lent, owner: i64) -> str
+    out: [str] @= []
+    at: i64 @= 0
+
+    while at < pieces.len()
+        if owners[at] == owner
+            out @ out.push(pieces[at])
+        at @ at + 1
+
+    return out.join("")
+
+# Adds a tool call's delta `tc` to the choice at `owner`.
+function add_call(@st: State, owner: i64, tc: json.Value)
+    index = fields.int_at(tc, key: "index")
+    at: i64 @= call_place(st, owner: owner, index: index)
+
+    if at < 0
+        add_int(@st.call_owner, n: owner)
+        add_int(@st.call_index, n: index)
+        add_text(@st.call_id, s: "")
+        add_text(@st.call_name, s: "")
+        at @ st.call_owner.len() - 1
+    id = fields.text_at(tc, key: "id")
+
+    if id != ""
+        st.call_id[at] @ id
+    function_part = fields.value_at_key(tc, key: "function")
+    name = fields.text_at(function_part, key: "name")
+
+    if name != ""
+        st.call_name[at] @ name
+    piece = fields.text_at(function_part, key: "arguments")
+
+    if piece != ""
+        add_text(@st.arguments, s: piece)
+        add_int(@st.argument_owner, n: at)
+
+# Adds the chunk `v` to what has arrived. Fails with the server's failure
+# where the chunk is an error.
+function apply(@st: State, v: json.Value) -> ()?
+    e = fields.value_at_key(v, key: "error")
+
+    if !json.is_null(e)
+        parts = failures.error_parts(json.format(v).default("{}"))
+        status = failures.status_of_kind(parts[0])
+        retryable = failures.is_retryable(status)
+        return transport.told(
+            failures.Failure(status: status, kind: parts[0], code: parts[1], message: parts[2], request_id: "-", retryable: retryable, wait_ms: 0)
+        )
+
+    if fields.text_at(st.head, key: "id") == ""
+        st.head @ fields.only(v, names: ["id", "created", "model", "system_fingerprint", "service_tier"])
+    u = fields.value_at_key(v, key: "usage")
+
+    if !json.is_null(u)
+        st.usage @ u
+
+    for c in fields.list_at(v, key: "choices")
+        index = fields.int_at(c, key: "index")
+        at: i64 @= place(st.choices, x: index)
+
+        if at < 0
+            add_int(@st.choices, n: index)
+            add_text(@st.finishes, s: "")
+            at @ st.choices.len() - 1
+        delta = fields.value_at_key(c, key: "delta")
+        text = fields.text_at(delta, key: "content")
+
+        if text != ""
+            add_text(@st.content, s: text)
+            add_int(@st.content_owner, n: at)
+        refused = fields.text_at(delta, key: "refusal")
+
+        if refused != ""
+            add_text(@st.refusal, s: refused)
+            add_int(@st.refusal_owner, n: at)
+
+        for tc in fields.list_at(delta, key: "tool_calls")
+            add_call(@st, owner: at, tc: tc)
+
+        reason = fields.text_at(c, key: "finish_reason")
+
+        if reason != ""
+            st.finishes[at] @ reason
+
+    return ok()
+
+# Whether every choice seen has finished, and one at least was seen.
+function all_finished(st: State lent) -> bool
+    if st.finishes.len() == 0
+        return false
+
+    for f in st.finishes
+        if f == ""
+            return false
+
+    return true
+
+# The next chunk of `st`, added to what has arrived. Fails `closed` at
+# `[DONE]`, at every read after, and where the stream ends before; with the
+# server's failure where a chunk is an error; `invalid` where a chunk is not
+# JSON; and as `http.read_event` fails.
+function next(@st: State) -> json.Value?
+    if st.ended
+        return fail(code: "closed", msg: "the stream has ended: its [DONE] came")
+    transport.set_deadline(st.opened, ms: st.idle_ms)?
+
+    match http.read_event(@st.opened.reader, @st.events)
+        .err e =>
+            st.ended @ true
+
+            if e.code == "closed"
+                st.finished @ all_finished(st)
+
+                if st.finished
+                    return fail(code: "closed", msg: "the stream has ended: every choice finished")
+                return fail(code: "closed", msg: "the stream ended before its [DONE]")
+            return fail(code: e.code, msg: e.msg)
+        .ok event =>
+            if event.data == "[DONE]"
+                st.ended @ true
+                st.finished @ true
+                return fail(code: "closed", msg: "the stream has ended: its [DONE] came")
+
+            match json.parse(event.data)
+                .err e =>
+                    st.ended @ true
+                    return fail(code: "invalid", msg: f"a chunk is not JSON: {e.msg}")
+                .ok v =>
+                    match apply(@st, v: v)
+                        .ok _ => return ok(v)
+                        .err e =>
+                            st.ended @ true
+                            return fail(code: e.code, msg: e.msg)
+
+# The completion so far, as the API writes one whole: each choice's content,
+# refusal and tool calls joined.
+function completion_json(st: State lent) -> json.Value
+    choices: [json.Value] @= []
+    at: i64 @= 0
+
+    while at < st.choices.len()
+        text = joined(st.content, owners: st.content_owner, owner: at)
+        refused = joined(st.refusal, owners: st.refusal_owner, owner: at)
+        calls: [json.Value] @= []
+        k: i64 @= 0
+
+        while k < st.call_owner.len()
+            if st.call_owner[k] == at
+                function_part = fields.object(
+                    names: ["name", "arguments"],
+                    values: [fields.text(st.call_name[k]), fields.text(joined(st.arguments, owners: st.argument_owner, owner: k))]
+                )
+                calls @ calls.push(
+                    fields.object(names: ["id", "type", "function"], values: [fields.text(st.call_id[k]), fields.text("function"), function_part])
+                )
+            k @ k + 1
+
+        content: json.Value @= .null_value
+
+        if text != ""
+            content @ fields.text(text)
+        names: [str] @= ["role", "content"]
+        values: [json.Value] @= [fields.text("assistant"), content]
+
+        if refused != ""
+            names @ names.push("refusal")
+            values @ values.push(fields.text(refused))
+
+        if calls.len() > 0
+            names @ names.push("tool_calls")
+            values @ values.push(.list(items: calls))
+        reason: json.Value @= .null_value
+
+        if st.finishes[at] != ""
+            reason @ fields.text(st.finishes[at])
+        message = fields.object(names: names, values: values)
+        choices @ choices.push(
+            fields.object(names: ["index", "message", "finish_reason"], values: [fields.number(st.choices[at]), message, reason])
+        )
+        at @ at + 1
+
+    out @= fields.with_member(v: st.head, key: "object", value: fields.text("chat.completion"))
+    out @ fields.with_member(v: out, key: "choices", value: .list(items: choices))
+    return fields.with_member(v: out, key: "usage", value: st.usage)
+
+# Closes the connection of `st`.
+function close(@st: State)
+    transport.close(@st.opened)
+
+test "place and joined: present, absent, and the pieces of one owner in order"
+    assert place([3, 1], x: 1) == 1 && place([3, 1], x: 2) == -1 && place([], x: 0) == -1
+    assert joined(["a", "b", "c"], owners: [0, 1, 0], owner: 0) == "ac" && joined([], owners: [], owner: 0) == ""

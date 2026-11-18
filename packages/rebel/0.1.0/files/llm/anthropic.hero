@@ -1,0 +1,2284 @@
+# Claude's Messages API spoken over `http`, with no SDK: a conversation sent
+# and its answer read whole or as it streams, tools whose calls the program
+# runs itself, tokens counted, batches of requests, the models listed, and
+# every failure the API answers told with its status, its type, its request
+# id and the wait it advises. Written from the API's reference
+# (platform.claude.com/docs, read 2026-11-18) at version `2026-10-21`.
+#
+# **A request and an answer are records over `json.Value`.** The fields
+# every request has are typed (`Request`); every other parameter, `thinking`,
+# `output_config`, `tool_choice`, `stop_sequences`, `metadata`, is a JSON
+# value the program sets by name (`with_field`), so a parameter the API adds
+# tomorrow needs nothing new here. A content block is a JSON value too, made
+# by `text_block`, `tool_result` and their kind or written by hand, and an
+# answer keeps its blocks as the API wrote them, so a thinking block goes
+# back unchanged (`turn_of`). `blocks_of` reads them as a variant.
+#
+# **The program drives its tools.** `tool_calls_of` hands out the calls of
+# an answer; the program runs its own function for each, makes each result
+# with `tool_result`, and sends them all back in one turn with
+# `with_tool_results`. Nothing here calls a function of the program. A tool's
+# input that streamed may be cut short: `input_of` checks it is whole JSON
+# before the program reads it.
+#
+# **Check the stop before the content**: `stop_reason` says `refusal` or
+# `max_tokens` as a normal answer, and `require_complete` turns those into
+# failures.
+#
+# **What it does not do.** It does not choose a model: a program names its
+# own. It does not upload files, run Managed Agents, or administer an
+# organization: `send_raw` reaches any endpoint with this client's key and
+# version, its answer read as `http` and `json` read it. The temperature, top
+# p and top k parameters are not offered, since version `2026-10-21` refuses
+# them. HTTPS is `tls`'s, with the system's own authorities.
+#
+# A key is read from `ANTHROPIC_API_KEY`, or given; it travels in a header
+# and is written in no message. The codes it fails with: `invalid` (400,
+# 422, an answer not of the API's shape), `permission` (401, 402, 403, a
+# refusal), `not_found` (404, a key unset), `limit` (413, 429, 529, an
+# answer cut at `max_tokens`), `timeout` (408, 504, the deadline),
+# `failed` (409, 500 and the other statuses), and from the connection
+# `closed`, `stopped` and `unsupported`. A failure the API answered carries
+# its status, type, request id and advised wait in its message, which
+# `failure_of` reads back.
+
+use bytes
+use http
+use json
+use llm/anthropic/internal/canned
+use llm/anthropic/internal/failures
+use llm/anthropic/internal/fields
+use llm/anthropic/internal/lines
+use llm/anthropic/internal/streaming
+use llm/anthropic/internal/transport
+use os
+use strings
+use url
+
+## Codes
+
+# A request or an argument not of the API's form (400, 422), and an answer
+# not of the shape the API documents.
+constant INVALID: str
+    "invalid"
+
+# A key refused or a resource it may not use (401, 402, 403), and a request
+# the model refused (`stop_reason` `refusal`, by `require_complete`).
+constant PERMISSION: str
+    "permission"
+
+# A model, a batch or a path the API does not know (404), and a key set
+# nowhere.
+constant NOT_FOUND: str
+    "not_found"
+
+# A request too large (413), a rate limit or a spend cap reached (429), the
+# API overloaded (529), and an answer cut at `max_tokens` or at the model's
+# context window (`require_complete`).
+constant LIMIT: str
+    "limit"
+
+# A request the API gave up on (408, 504), and the client's deadline passed.
+constant TIMEOUT: str
+    "timeout"
+
+# Every other status the API answers (409, 500, and the 5xx it does not
+# name): the message carries its type and its words.
+constant FAILED: str
+    "failed"
+
+# The connection closed before an answer was whole, or a stream read past
+# its end.
+constant CLOSED: str
+    "closed"
+
+## The API
+
+# The version of the API this package speaks, sent as `anthropic-version`.
+constant API_VERSION: str
+    "2026-10-21"
+
+# The address of the Claude API.
+constant BASE_URL: str
+    "https://api.anthropic.com"
+
+# The model reached a natural stopping point.
+constant STOP_END_TURN: str
+    "end_turn"
+
+# The answer reached the request's `max_tokens`, or the model's most.
+constant STOP_MAX_TOKENS: str
+    "max_tokens"
+
+# The answer met one of the request's `stop_sequences`, which
+# `Message.stop_sequence` names.
+constant STOP_STOP_SEQUENCE: str
+    "stop_sequence"
+
+# The model called one or more tools, which `tool_calls_of` hands out.
+constant STOP_TOOL_USE: str
+    "tool_use"
+
+# The API paused a long turn of server tools: the answer is sent back as it
+# is, by `with_reply`, and the model goes on.
+constant STOP_PAUSE_TURN: str
+    "pause_turn"
+
+# The model declined the request; `Message.stop_details` says why.
+constant STOP_REFUSAL: str
+    "refusal"
+
+# The answer filled the model's context window.
+constant STOP_CONTEXT_WINDOW: str
+    "model_context_window_exceeded"
+
+# A batch whose requests are still being processed.
+constant BATCH_IN_PROGRESS: str
+    "in_progress"
+
+# A batch whose cancelling has begun.
+constant BATCH_CANCELING: str
+    "canceling"
+
+# A batch whose every request has ended, and whose results can be read.
+constant BATCH_ENDED: str
+    "ended"
+
+## The client
+
+# How requests reach the API: the credentials, the address, the version,
+# and how a request is sent again. Made by `default_client` or
+# `client_from_env`, its fields changed by the program.
+record Client
+    # The API key, sent as `x-api-key`; "" where `auth_token` is used.
+    api_key: str
+    # An OAuth access token, sent as `Authorization: Bearer` where `api_key`
+    # is "".
+    auth_token: str
+    # The address requests go to, `BASE_URL` or a proxy's or a test's;
+    # `/v1/messages` and the other paths are put after it.
+    base_url: str
+    # The version sent as `anthropic-version`, `API_VERSION`.
+    version: str
+    # The betas named in `anthropic-beta`, none for a plain request.
+    betas: [str]
+    # Fields added to every request, replacing any of the same name.
+    headers: [http.Header]
+    # How many times a request is sent again after its first, 0 for never:
+    # after a connection that failed, and after 408, 409, 429 and every 5xx
+    # unless the answer's `x-should-retry` says `false`.
+    max_retries: i64
+    # The longest wait, in milliseconds, the client sleeps before a retry; an
+    # answer asking a longer one fails with its advice instead.
+    max_wait_ms: i64
+    # The milliseconds one attempt may take; for a stream, the longest wait
+    # for its next bytes. 0 for no limit.
+    deadline_ms: i64
+    # The PEM of the only authorities trusted for `https://`, "" for the
+    # system's own store.
+    roots: str
+    # What an answer may hold; a batch's results are read a line at a time,
+    # each within `limits.body_bytes`.
+    limits: http.Limits
+
+# A client of the Claude API with the key `api_key`: version `API_VERSION`,
+# 2 retries waiting at most a minute each, 10 minutes for an attempt, as the
+# official SDKs wait, and `http`'s limits.
+#
+# - `api_key`: the key, sent as `x-api-key`; "" sends none.
+#
+# See also `client_from_env`.
+function default_client(api_key: str) -> Client
+    return Client(
+        api_key: api_key,
+        auth_token: "",
+        base_url: BASE_URL,
+        version: API_VERSION,
+        betas: [],
+        headers: [],
+        max_retries: 2,
+        max_wait_ms: 60_000,
+        deadline_ms: 600_000,
+        roots: "",
+        limits: http.default_limits()
+    )
+
+# A client as `default_client` makes one, its key read from the environment:
+# `ANTHROPIC_API_KEY`, else `ANTHROPIC_AUTH_TOKEN` as a token, and its
+# address from `ANTHROPIC_BASE_URL` where that is set.
+#
+# Fails `not_found` where neither variable is set, or both are empty; the
+# message names the variables and never a value. See also `default_client`.
+function client_from_env() -> Client?
+    key = os.env("ANTHROPIC_API_KEY").default("")
+    token = os.env("ANTHROPIC_AUTH_TOKEN").default("")
+
+    if key == "" && token == ""
+        return fail(code: NOT_FOUND, msg: "neither ANTHROPIC_API_KEY nor ANTHROPIC_AUTH_TOKEN is set")
+    c @= default_client(key)
+    c.auth_token @ token
+    base = os.env("ANTHROPIC_BASE_URL").default("")
+
+    if base != ""
+        c.base_url @ base
+    return ok(c)
+
+## A request
+
+# One turn of a conversation: who speaks, and the content blocks said.
+record Turn
+    # `user` or `assistant`.
+    role: str
+    # The blocks, in order: each a JSON object with its `type`, as
+    # `text_block`, `image_block`, `tool_result` make them or as an answer
+    # holds them.
+    content: [json.Value]
+
+# A tool the model may call, which the program runs itself.
+record Tool
+    # Its name, 1 to 128 of `a`-`z`, `A`-`Z`, `0`-`9`, `_` and `-`.
+    name: str
+    # What it does and when to call it; "" sends none, which the API allows
+    # and its guide advises against.
+    description: str
+    # The JSON Schema of its input, an object schema.
+    input_schema: json.Value
+    # Whether the API holds the input to the schema exactly (`strict`).
+    strict: bool
+    # Whether its input streams as it is made, unchecked, rather than whole
+    # (`eager_input_streaming`); `input_of` then checks it.
+    eager_input_streaming: bool
+
+# What is sent to make a message: the fields every request has, and every
+# other parameter by name. Made by `new_request` or built directly.
+record Request
+    # The model, `claude-opus-5-5`; the program's own choice.
+    model: str
+    # The most tokens the answer may take, at least 1, thinking included.
+    max_tokens: i64
+    # The system prompt; "" sends none. A prompt of several blocks, with
+    # their `cache_control`, is set as the field `system` instead.
+    system: str
+    # The conversation so far, a `user` turn first and last.
+    turns: [Turn]
+    # The tools of the program the model may call, none for none.
+    tools: [Tool]
+    # Tools written as JSON, sent after `tools`: the API's server tools,
+    # `{"type": "web_search_20260209", "name": "web_search"}`, and any tool
+    # whose fields `Tool` does not hold.
+    server_tools: [json.Value]
+    # Every other parameter of the API by its name, in the order written:
+    # `thinking`, `output_config`, `tool_choice`, `stop_sequences`,
+    # `metadata`, `cache_control`, `service_tier`, `inference_geo`, `speed`.
+    fields: {str: json.Value}
+
+# A request to `model` for at most `max_tokens` tokens, holding `turns` and
+# nothing else.
+#
+# - `model`: the model's id, `claude-opus-5-5`.
+# - `max_tokens`: the most tokens of the answer, at least 1.
+# - `turns`: the conversation, a `user` turn last.
+#
+# See also `with_field`, `create`.
+function new_request(model: str, max_tokens: i64, turns: [Turn]) -> Request
+    return Request(
+        model: model,
+        max_tokens: max_tokens,
+        system: "",
+        turns: turns,
+        tools: [],
+        server_tools: [],
+        fields: {}
+    )
+
+# A user's turn holding the text `text`.
+#
+# - `text`: what the user says; the API refuses an empty text block.
+#
+# See also `assistant`, `text_block`.
+function user(text: str) -> Turn
+    return Turn(role: "user", content: [text_block(text)])
+
+# An assistant's turn holding the text `text`, for a conversation written by
+# hand; an answer's own turn is `turn_of`'s.
+#
+# - `text`: what the assistant said.
+#
+# See also `user`, `turn_of`.
+function assistant(text: str) -> Turn
+    return Turn(role: "assistant", content: [text_block(text)])
+
+# A text block: `{"type": "text", "text": ...}`.
+#
+# - `text`: the text, which the API wants not empty.
+function text_block(text: str) -> json.Value
+    return fields.object(names: ["type", "text"], values: [fields.text("text"), fields.text(text)])
+
+# An image block of `data` in base 64.
+#
+# - `media_type`: `image/jpeg`, `image/png`, `image/gif` or `image/webp`.
+# - `data`: the image's bytes.
+#
+# See also `document_block`.
+function image_block(media_type: str, data: [u8]) -> json.Value
+    source = fields.object(
+        names: ["type", "media_type", "data"],
+        values: [fields.text("base64"), fields.text(media_type), fields.text(bytes.format_base64(data))]
+    )
+    return fields.object(names: ["type", "source"], values: [fields.text("image"), source])
+
+# A document block of the PDF `data` in base 64.
+#
+# - `data`: the PDF's bytes.
+#
+# See also `image_block`.
+function document_block(data: [u8]) -> json.Value
+    source = fields.object(
+        names: ["type", "media_type", "data"],
+        values: [fields.text("base64"), fields.text("application/pdf"), fields.text(bytes.format_base64(data))]
+    )
+    return fields.object(names: ["type", "source"], values: [fields.text("document"), source])
+
+# `block` marked as the end of a prefix the API caches: its `cache_control`
+# set to `{"type": "ephemeral"}`, with `ttl` where it is not "".
+#
+# - `block`: a content block, or a tool's or a system block's JSON.
+# - `ttl`: `5m` or `1h`; "" leaves the API's default, five minutes.
+function cached(block: json.Value, ttl: str) -> json.Value
+    names: [str] @= ["type"]
+    values: [json.Value] @= [fields.text("ephemeral")]
+
+    if ttl != ""
+        names @ names.push("ttl")
+        values @ values.push(fields.text(ttl))
+    return fields.with_member(v: block, key: "cache_control", value: fields.object(names: names, values: values))
+
+# A copy of `r` with the parameter `name` set to `value`, replacing one of
+# that name.
+#
+# - `r`: the request.
+# - `name`: the parameter's name in the API, `thinking`.
+# - `value`: its value, written as `json.format` writes it.
+#
+# A name the request types itself (`model`, `max_tokens`, `messages`,
+# `stream`, and `system` or `tools` where the record sets them) is refused
+# by `to_json`. See also `with_effort`.
+function with_field(r: Request, name: str, value: json.Value) -> Request
+    out @= r
+    out.fields[name] @ value
+    return out
+
+# A copy of `r` whose `output_config.effort` is `effort`, the rest of its
+# `output_config` kept.
+#
+# - `r`: the request.
+# - `effort`: `low`, `medium`, `high`, `xhigh` or `max`.
+#
+# See also `with_field`.
+function with_effort(r: Request, effort: str) -> Request
+    config = r.fields["output_config"].default(.object(members: {}))
+    return with_field(
+        r,
+        name: "output_config",
+        value: fields.with_member(v: config, key: "effort", value: fields.text(effort))
+    )
+
+# A copy of `r` with `turn` after its turns.
+#
+# - `r`: the request.
+# - `turn`: the turn added.
+#
+# See also `with_reply`, `with_tool_results`.
+function with_turn(r: Request, turn: Turn) -> Request
+    out @= r
+    turns @= r.turns
+    turns @ turns.push(turn)
+    out.turns @ turns
+    return out
+
+# The body `create` sends for `r`, as the API reads it: `model`,
+# `max_tokens`, `messages`, `system` and `tools` where set, `tools` holding
+# `r.tools` then `r.server_tools`, then `r.fields` in their order.
+#
+# - `r`: the request.
+#
+# Fails `invalid` where `max_tokens` is below 1, a turn's role is neither
+# `user` nor `assistant`, or a field names what the record types; fails
+# `does_not_fit` where `max_tokens` is past `json.MAX_EXACT_INT`.
+function to_json(r: Request) -> json.Value?
+    if r.max_tokens < 1
+        return fail(code: INVALID, msg: f"max_tokens is {r.max_tokens}, where the API asks at least 1")
+    names: [str] @= ["model", "max_tokens", "messages"]
+    values: [json.Value] @= [fields.text(r.model), json.from_int(r.max_tokens)?]
+    turns: [json.Value] @= []
+
+    for t in r.turns
+        if t.role != "user" && t.role != "assistant"
+            return fail(code: INVALID, msg: f"a turn's role is \"{t.role}\", where the API reads user or assistant")
+        turns @ turns.push(
+            fields.object(names: ["role", "content"], values: [fields.text(t.role), .list(items: t.content)])
+        )
+
+    values @ values.push(.list(items: turns))
+
+    if r.system != ""
+        names @ names.push("system")
+        values @ values.push(fields.text(r.system))
+
+    if r.tools.len() > 0 || r.server_tools.len() > 0
+        tools: [json.Value] @= []
+
+        for t in r.tools
+            tool_names: [str] @= ["name"]
+            tool_values: [json.Value] @= [fields.text(t.name)]
+
+            if t.description != ""
+                tool_names @ tool_names.push("description")
+                tool_values @ tool_values.push(fields.text(t.description))
+            tool_names @ tool_names.push("input_schema")
+            tool_values @ tool_values.push(t.input_schema)
+
+            if t.strict
+                tool_names @ tool_names.push("strict")
+                tool_values @ tool_values.push(.boolean(v: true))
+
+            if t.eager_input_streaming
+                tool_names @ tool_names.push("eager_input_streaming")
+                tool_values @ tool_values.push(.boolean(v: true))
+            tools @ tools.push(fields.object(names: tool_names, values: tool_values))
+
+        for v in r.server_tools
+            tools @ tools.push(v)
+
+        names @ names.push("tools")
+        values @ values.push(.list(items: tools))
+
+    for k in keys(r.fields)
+        for typed in names
+            if typed == k
+                return fail(code: INVALID, msg: f"the field \"{k}\" is one the request sets itself")
+
+        if k == "stream"
+            return fail(code: INVALID, msg: "the field \"stream\" is the package's: `stream` sends it")
+        names @ names.push(k)
+        values @ values.push(r.fields[k].must())
+
+    return ok(fields.object(names: names, values: values))
+
+## An answer
+
+# The tokens an answer counted.
+record Usage
+    # The input tokens not read from the cache nor written to it.
+    input_tokens: i64
+    # The tokens of the answer, its thinking included.
+    output_tokens: i64
+    # The input tokens written to the cache.
+    cache_creation_input_tokens: i64
+    # The input tokens read from the cache.
+    cache_read_input_tokens: i64
+
+# A message the model answered: what `create` reads, what a stream builds,
+# and what a batch's result holds.
+record Message
+    # Its id, `msg_...`.
+    id: str
+    # The model that answered.
+    model: str
+    # `assistant`.
+    role: str
+    # Its content blocks as the API wrote them, which `blocks_of` reads and
+    # `turn_of` sends back unchanged.
+    content: [json.Value]
+    # Why it stopped, one of the `STOP_` constants, or a value the API added
+    # since; "" for a stream before its `message_delta`.
+    stop_reason: str
+    # The stop sequence met, "" where none.
+    stop_sequence: str
+    # Why the model refused, `{type, category, explanation}`, where
+    # `stop_reason` is `refusal`; null otherwise.
+    stop_details: json.Value
+    # The tokens counted.
+    usage: Usage
+    # The JSON text of each `tool_use` block's input, by the block's id: as
+    # it streamed, which may be cut short, or as `json.format` writes an
+    # input read whole. `input_of` reads one.
+    inputs: {str: str}
+
+# A content block of an answer, read by `blocks_of`.
+variant Block
+    # Text the model wrote.
+    text
+        # The text.
+        text: str
+    # The model's thinking, summarized or empty as the request's `display`
+    # asks.
+    thinking
+        # The thinking's text, "" where it is omitted.
+        thinking: str
+        # What the API checks when the block comes back.
+        signature: str
+    # Thinking the API encrypted.
+    redacted_thinking
+        # The encrypted data.
+        data: str
+    # A call of one of the request's tools, which the program runs.
+    tool_use
+        # The call's id, which its result names.
+        id: str
+        # The tool's name.
+        name: str
+        # Its input, as the answer holds it.
+        input: json.Value
+    # A call of a server tool, which the API runs itself.
+    server_tool_use
+        # The call's id.
+        id: str
+        # The server tool's name, `web_search`.
+        name: str
+        # Its input.
+        input: json.Value
+    # Any other block, a server tool's result among them.
+    other
+        # Its `type`.
+        kind: str
+        # The block whole.
+        value: json.Value
+
+# A call of a tool of the program's, as `tool_calls_of` hands it out.
+record ToolCall
+    # The call's id, which `tool_result` names.
+    id: str
+    # The tool's name.
+    name: str
+    # Its input as JSON text, as it arrived; `input_of` reads it.
+    input_json: str
+
+# The message the JSON `v` holds, as the API writes one.
+#
+# - `v`: an object whose `type` is `message`.
+#
+# Fails `invalid` where `v` is no message or its `content` is no list. See
+# also `parse_message`.
+function to_message(v: json.Value) -> Message?
+    kind = fields.text_at(v, key: "type")
+
+    if kind != "message"
+        return fail(code: INVALID, msg: f"expected a message, found a {json.kind_of(v)} of type \"{kind}\"")
+    content = json.items_of(json.member(v, key: "content")?)?
+    inputs: {str: str} @= {}
+
+    for b in content
+        if fields.text_at(b, key: "type") == "tool_use"
+            inputs[fields.text_at(b, key: "id")] @ json.format(fields.value_at_key(b, key: "input"))?
+
+    counts = fields.usage_counts(fields.value_at_key(v, key: "usage"))
+    return ok(
+        Message(id: fields.text_at(v, key: "id"), model: fields.text_at(v, key: "model"), role: fields.text_at(v, key: "role"), content: content, stop_reason: fields.text_at(v, key: "stop_reason"), stop_sequence: fields.text_at(v, key: "stop_sequence"), stop_details: fields.value_at_key(v, key: "stop_details"), usage: Usage(input_tokens: counts[0], output_tokens: counts[1], cache_creation_input_tokens: counts[2], cache_read_input_tokens: counts[3]), inputs: inputs)
+    )
+
+# The message the JSON text `text` holds.
+#
+# - `text`: a message as the API writes one.
+#
+# Fails `invalid` where `text` is not JSON or no message. See also
+# `to_message`.
+function parse_message(text: str) -> Message?
+    return to_message(json.parse(text)?)
+
+# The content blocks of `m` as a variant, in order.
+#
+# - `m`: the message.
+function blocks_of(m: Message) -> [Block]
+    out: [Block] @= []
+
+    for b in m.content
+        kind = fields.text_at(b, key: "type")
+
+        if kind == "text"
+            out @ out.push(.text(text: fields.text_at(b, key: "text")))
+        else if kind == "thinking"
+            out @ out.push(
+                .thinking(thinking: fields.text_at(b, key: "thinking"), signature: fields.text_at(b, key: "signature"))
+            )
+        else if kind == "redacted_thinking"
+            out @ out.push(.redacted_thinking(data: fields.text_at(b, key: "data")))
+        else if kind == "tool_use"
+            out @ out.push(
+                .tool_use(id: fields.text_at(b, key: "id"), name: fields.text_at(b, key: "name"), input: fields.value_at_key(b, key: "input"))
+            )
+        else if kind == "server_tool_use"
+            out @ out.push(
+                .server_tool_use(id: fields.text_at(b, key: "id"), name: fields.text_at(b, key: "name"), input: fields.value_at_key(b, key: "input"))
+            )
+        else
+            out @ out.push(.other(kind: kind, value: b))
+
+    return out
+
+# The text of `m`'s text blocks, joined with nothing between them.
+#
+# - `m`: the message; check `stop_reason` before, a refusal holding none.
+#
+# "" where it holds no text block. See also `require_complete`.
+function text_of(m: Message) -> str
+    out: [str] @= []
+
+    for b in m.content
+        if fields.text_at(b, key: "type") == "text"
+            out @ out.push(fields.text_at(b, key: "text"))
+
+    return out.join("")
+
+# `m` where it stopped as a turn ends: at its end, at a stop sequence, to
+# call tools, or paused for the program to send it back.
+#
+# - `m`: the message.
+#
+# Fails `permission` where the model refused, the message naming the
+# refusal's category and explanation; `limit` where the answer was cut at
+# `max_tokens` or at the context window. A stop reason the API added since
+# passes. See also `STOP_REFUSAL`.
+function require_complete(m: Message) -> Message?
+    if m.stop_reason == STOP_REFUSAL
+        category = fields.text_at(m.stop_details, key: "category")
+        why = fields.text_at(m.stop_details, key: "explanation")
+        return fail(code: PERMISSION, msg: f"the model refused (category \"{category}\"): {why}")
+
+    if m.stop_reason == STOP_MAX_TOKENS
+        return fail(code: LIMIT, msg: f"the answer was cut at max_tokens, after {m.usage.output_tokens} output tokens")
+
+    if m.stop_reason == STOP_CONTEXT_WINDOW
+        return fail(code: LIMIT, msg: "the answer filled the model's context window")
+    return ok(m)
+
+# The assistant's turn `m` is, its blocks unchanged, to send back.
+#
+# - `m`: the message.
+#
+# See also `with_reply`.
+function turn_of(m: Message) -> Turn
+    return Turn(role: "assistant", content: m.content)
+
+# A copy of `r` with the answer `reply` after its turns: what goes back
+# after `pause_turn`.
+#
+# - `r`: the request `reply` answered.
+# - `reply`: the answer.
+#
+# See also `with_tool_results`.
+function with_reply(r: Request, reply: Message) -> Request
+    return with_turn(r, turn: turn_of(reply))
+
+## Tools
+
+# The calls of the program's tools `m` holds, in order: what the program runs
+# where `stop_reason` is `tool_use`.
+#
+# - `m`: the message.
+#
+# None where it calls none; a server tool's call is the API's and not here.
+# See also `input_of`, `tool_result`.
+function tool_calls_of(m: Message) -> [ToolCall]
+    out: [ToolCall] @= []
+
+    for b in m.content
+        if fields.text_at(b, key: "type") == "tool_use"
+            id = fields.text_at(b, key: "id")
+            given = json.format(fields.value_at_key(b, key: "input")).default("{}")
+            out @ out.push(
+                ToolCall(id: id, name: fields.text_at(b, key: "name"), input_json: m.inputs[id].default(given))
+            )
+
+    return out
+
+# The input of `call`, checked whole: a JSON object.
+#
+# - `call`: a call `tool_calls_of` handed out.
+#
+# Fails `invalid` where its text is not whole JSON, as a stream cut at
+# `max_tokens` leaves it or an input streamed unchecked may be, or is JSON
+# other than an object; the program then answers the call with an error
+# result. See also `tool_result`.
+function input_of(call: ToolCall) -> json.Value?
+    match json.parse(call.input_json)
+        .err e => return fail(
+            code: INVALID,
+            msg: f"the input of the call {call.id} of \"{call.name}\" is not whole JSON: {e.msg}"
+        )
+        .ok v =>
+            match v
+                .object _ => return ok(v)
+                .null_value | .boolean _ | .number _ | .text _ | .list _ =>
+                    return fail(
+                        code: INVALID,
+                        msg: f"the input of the call {call.id} of \"{call.name}\" is JSON of the kind {json.kind_of(v)}, not an object"
+                    )
+
+# The block that answers the call `tool_use_id`: `content` as its text, and
+# `is_error` where the tool failed.
+#
+# - `tool_use_id`: the call's id, `ToolCall.id`.
+# - `content`: what the tool answered, or what went wrong; "" sends none.
+# - `is_error`: whether the tool failed; the model reads `content` as why.
+#
+# See also `with_tool_results`.
+function tool_result(tool_use_id: str, content: str, is_error: bool) -> json.Value
+    names: [str] @= ["type", "tool_use_id"]
+    values: [json.Value] @= [fields.text("tool_result"), fields.text(tool_use_id)]
+
+    if content != ""
+        names @ names.push("content")
+        values @ values.push(fields.text(content))
+
+    if is_error
+        names @ names.push("is_error")
+        values @ values.push(.boolean(v: true))
+    return fields.object(names: names, values: values)
+
+# A copy of `r` with the answer `reply` and then one user turn holding
+# `results`: the next request of a tool loop, every result of one turn in
+# one message, as the API asks.
+#
+# - `r`: the request `reply` answered.
+# - `reply`: the answer whose calls were run.
+# - `results`: a `tool_result` for each of its calls, first in the turn as
+#   the API asks; any text after them.
+#
+# See also `tool_calls_of`.
+function with_tool_results(r: Request, reply: Message, results: [json.Value]) -> Request
+    return with_turn(with_reply(r, reply: reply), turn: Turn(role: "user", content: results))
+
+## Failures
+
+# A failure the API answered, as `failure_of` reads it from a message.
+record ApiError
+    # The HTTP status, or the one its type stands for where a stream's
+    # `error` event or a batch's result carried it: 529 for
+    # `overloaded_error`.
+    status: i64
+    # The error's type, `rate_limit_error`; "-" where the answer named none.
+    kind: str
+    # The API's own words.
+    message: str
+    # The answer's `request-id`, for support; "-" where none.
+    request_id: str
+    # Whether the same request sent again may succeed: 408, 409, 429 and
+    # every 5xx, unless the answer's `x-should-retry` said otherwise.
+    retryable: bool
+    # The milliseconds to wait before sending it again: the answer's
+    # `retry-after`, else a backoff from 500 ms; 0 where it is not retryable.
+    wait_ms: i64
+
+# The failure the API answered that `msg` tells, as every call of this
+# package writes one: `[429 rate_limit_error req_01 1500] words`.
+#
+# - `msg`: a failure's message, `e.msg`.
+#
+# Fails `not_found` where `msg` is not of that form: a failure of the
+# connection, or one this package found itself, carries none.
+function failure_of(msg: str) -> ApiError?
+    f = failures.read_back(msg)?
+    return ok(
+        ApiError(status: f.status, kind: f.kind, message: f.message, request_id: f.request_id, retryable: f.retryable, wait_ms: f.wait_ms)
+    )
+
+## Sending
+
+# The answer of any endpoint of the API, read whole, with this client's key,
+# version, betas and retries: what this package does not wrap, the Files and
+# Skills APIs and the betas, reached by hand.
+#
+# - `c`: the client.
+# - `method`: `GET`, `POST`, `DELETE`.
+# - `path`: the path after `c.base_url`, with its query: `/v1/files`.
+# - `body`: the JSON body; `null_value` sends none.
+#
+# The answer's status is from 200 to 299. Fails as the API answers, each
+# status with its code and its `ApiError` in the message, and as `http.send`
+# fails. See also `failure_of`.
+function send_raw(c: Client, method: str, path: str, body: json.Value) -> http.Response?
+    text: str @= ""
+
+    if !json.is_null(body)
+        text @ json.format(body)?
+    s = transport.settings(
+        base_url: c.base_url,
+        api_key: c.api_key,
+        auth_token: c.auth_token,
+        version: c.version,
+        betas: c.betas,
+        headers: c.headers,
+        max_retries: c.max_retries,
+        max_wait_ms: c.max_wait_ms,
+        deadline_ms: c.deadline_ms,
+        roots: c.roots,
+        limits: c.limits
+    )
+    return transport.send(s, method: method, path: path, body: text)
+
+# The message the model answers to `r`, read whole.
+#
+# - `c`: the client.
+# - `r`: the request.
+#
+# Check `stop_reason` before reading its content (`require_complete`). Fails
+# as `to_json` fails on `r`, as `send_raw` fails, and `invalid` where the
+# answer is no message. A long answer is safer streamed (`stream`): an
+# attempt waits at most `c.deadline_ms`. See also `stream`.
+function create(c: Client, r: Request) -> Message?
+    answer = send_raw(c, method: http.METHOD_POST, path: "/v1/messages", body: to_json(r)?)?
+    return to_message(http.json_of(answer)?)
+
+# The input tokens `r` would cost, as the API counts them before it is sent:
+# its turns, its system prompt and its tools.
+#
+# - `c`: the client.
+# - `r`: the request; its `max_tokens` and the fields counting does not
+#   read (`metadata`, `stop_sequences`, `service_tier`) are not sent.
+#
+# Fails as `create` fails. See also `create`.
+function count_tokens(c: Client, r: Request) -> i64?
+    body = fields.only(
+        to_json(r)?,
+        names: ["model", "messages", "system", "tools", "thinking", "tool_choice", "output_config", "cache_control", "speed"]
+    )
+    answer = send_raw(c, method: http.METHOD_POST, path: "/v1/messages/count_tokens", body: body)?
+    counted = http.json_of(answer)?
+    return json.int_of(json.member(counted, key: "input_tokens")?)
+
+## Streaming
+
+# A message being read as its events come, made by `stream`: what has
+# arrived, and the connection it arrives on. `close_stream` closes it, even
+# after its end.
+record Stream
+    # The connection, the events read, and the message so far. Only this
+    # package reads it.
+    state: streaming.State
+
+# One event of a stream, as `next_event` reads it.
+variant Event
+    # The message begins: its id, model and usage, no content yet.
+    message_start
+        # The message as it begins.
+        message: Message
+    # A content block begins.
+    block_start
+        # Its index in the message's content.
+        index: i64
+        # The block as it begins: its `type`, a tool call's id and name.
+        block: json.Value
+    # Text added to a text block.
+    text_delta
+        # The block's index.
+        index: i64
+        # The text added.
+        text: str
+    # Thinking added to a thinking block.
+    thinking_delta
+        # The block's index.
+        index: i64
+        # The thinking added.
+        thinking: str
+    # A thinking block's signature, just before its end.
+    signature_delta
+        # The block's index.
+        index: i64
+        # The signature.
+        signature: str
+    # A piece of a tool call's input, partial JSON: `input_so_far` reads what
+    # has come.
+    input_delta
+        # The block's index.
+        index: i64
+        # The piece, any part of the JSON text.
+        partial_json: str
+    # A citation added to a text block.
+    citation_delta
+        # The block's index.
+        index: i64
+        # The citation.
+        citation: json.Value
+    # A content block ends.
+    block_stop
+        # Its index.
+        index: i64
+        # The block whole: its text joined, a tool's input read as far as
+        # it came.
+        block: json.Value
+    # The message's top level changes: why it stopped, the tokens so far.
+    message_delta
+        # The stop reason, one of the `STOP_` constants.
+        stop_reason: str
+        # The tokens counted so far, every count cumulative.
+        usage: Usage
+    # The message ends; no event follows.
+    message_stop
+    # Nothing but a sign that the stream lives.
+    ping
+    # An event this package does not name, as the API's versions may add.
+    other
+        # Its name.
+        name: str
+        # Its data.
+        data: json.Value
+
+# A stream of the message the model answers to `r`, its head read and no
+# event yet.
+#
+# - `c`: the client; `c.deadline_ms` bounds each wait for the next bytes.
+# - `r`: the request, sent with `stream: true`.
+#
+# The stream is the caller's to close with `close_stream`. Fails as `create`
+# fails before the first event, a failure of the connection or a status the
+# API calls transient sent again as `c.max_retries` says; `invalid` where
+# the answer is no event stream. See also `next_event`, `final_message`.
+function stream(c: Client, r: Request) -> Stream?
+    body = fields.with_member(v: to_json(r)?, key: "stream", value: .boolean(v: true))
+    s = transport.settings(
+        base_url: c.base_url,
+        api_key: c.api_key,
+        auth_token: c.auth_token,
+        version: c.version,
+        betas: c.betas,
+        headers: c.headers,
+        max_retries: c.max_retries,
+        max_wait_ms: c.max_wait_ms,
+        deadline_ms: c.deadline_ms,
+        roots: c.roots,
+        limits: c.limits
+    )
+    o @= transport.open(s, method: http.METHOD_POST, path: "/v1/messages", body: json.format(body)?)?
+
+    match streaming.begin(o, limits: c.limits, idle_ms: c.deadline_ms)
+        .ok st => return ok(Stream(state: st))
+        .err e =>
+            transport.close(@o)
+            return fail(code: e.code, msg: e.msg)
+
+# The next event of `s`, waiting for it, added to the message so far.
+#
+# - `s`: the stream, advanced past the event.
+#
+# Fails `closed` after `message_stop`, or where the stream ends before it;
+# an `error` event as the API's failure (`overloaded_error` is `limit`, its
+# status 529); `invalid` where an event's data is not JSON or comes out of
+# its order; `timeout` where no byte comes within the client's deadline.
+# See also `final_message`.
+function next_event(@s: Stream) -> Event?
+    step = streaming.next(@s.state)?
+    d = step.data
+    index = fields.int_at(d, key: "index")
+
+    if step.name == "message_start"
+        return ok(.message_start(message: to_message(fields.value_at_key(d, key: "message"))?))
+
+    if step.name == "content_block_start"
+        return ok(.block_start(index: index, block: fields.value_at_key(d, key: "content_block")))
+
+    if step.name == "content_block_delta"
+        delta = fields.value_at_key(d, key: "delta")
+        kind = fields.text_at(delta, key: "type")
+
+        if kind == "text_delta"
+            return ok(.text_delta(index: index, text: fields.text_at(delta, key: "text")))
+
+        if kind == "thinking_delta"
+            return ok(.thinking_delta(index: index, thinking: fields.text_at(delta, key: "thinking")))
+
+        if kind == "signature_delta"
+            return ok(.signature_delta(index: index, signature: fields.text_at(delta, key: "signature")))
+
+        if kind == "input_json_delta"
+            return ok(.input_delta(index: index, partial_json: fields.text_at(delta, key: "partial_json")))
+
+        if kind == "citations_delta"
+            return ok(.citation_delta(index: index, citation: fields.value_at_key(delta, key: "citation")))
+        return ok(.other(name: step.name, data: d))
+
+    if step.name == "content_block_stop"
+        return ok(.block_stop(index: index, block: s.state.content[index]))
+
+    if step.name == "message_delta"
+        counts = fields.usage_counts(s.state.usage)
+        return ok(
+            .message_delta(stop_reason: s.state.stop_reason, usage: Usage(input_tokens: counts[0], output_tokens: counts[1], cache_creation_input_tokens: counts[2], cache_read_input_tokens: counts[3]))
+        )
+
+    if step.name == "message_stop"
+        return ok(.message_stop)
+
+    if step.name == "ping"
+        return ok(.ping)
+    return ok(.other(name: step.name, data: d))
+
+# The message of `s` as far as it has arrived: the blocks ended whole, the
+# open one as far as it has come, a tool's input read as far as it is JSON.
+#
+# - `s`: the stream.
+#
+# Fails `invalid` before `message_start`. See also `final_message`.
+function message_of(s: Stream) -> Message?
+    m @= to_message(streaming.message_json(s.state))?
+
+    for id in keys(s.state.inputs)
+        m.inputs[id] @ s.state.inputs[id].must()
+
+    return ok(m)
+
+# The whole message of `s`, its remaining events read: what the SDKs call the
+# final message.
+#
+# - `s`: the stream, read to its `message_stop`.
+#
+# Fails as `next_event` fails, before the message is whole. See also
+# `message_of`.
+function final_message(@s: Stream) -> Message?
+    while !s.state.ended
+        _ = next_event(@s)?
+
+    return message_of(s)
+
+# What the input of the tool call streaming now holds so far, read as
+# `json.parse_partial` reads a text still arriving.
+#
+# - `s`: the stream, between a tool call's `block_start` and `block_stop`.
+#
+# Fails `not_found` where no tool call is streaming, and as
+# `json.parse_partial` fails. See also `input_of`.
+function input_so_far(s: Stream) -> json.Partial?
+    if s.state.open_index < 0 || !streaming.is_tool(s.state.open_kind)
+        return fail(code: NOT_FOUND, msg: "no tool call is streaming its input")
+    return json.parse_partial(s.state.pieces.join(""))
+
+# Closes the connection of `s`; a stream not read to its end is cut there.
+#
+# - `s`: the stream, which nothing reads after.
+function close_stream(@s: Stream)
+    streaming.close(@s.state)
+
+## Models
+
+# A model the API serves, as the Models API describes it.
+record ModelInfo
+    # Its id, which a request names.
+    id: str
+    # A name for people.
+    display_name: str
+    # When it was released, RFC 3339.
+    created_at: str
+    # Its context window in tokens, 0 where the API says none.
+    max_input_tokens: i64
+    # The most tokens of an answer, 0 where the API says none.
+    max_tokens: i64
+    # The object whole: its `capabilities`, `lifecycle` and what else the API
+    # writes.
+    raw: json.Value
+
+# Where a page of a list begins, and how long it is.
+record Cursor
+    # The id after which the page begins, "" for the first page.
+    after_id: str
+    # The id before which the page ends, "" for none.
+    before_id: str
+    # The most items of the page, 1 to 1000; the API's default is 20.
+    limit: i64
+
+# A page of models.
+record ModelPage
+    # The models, newest first.
+    models: [ModelInfo]
+    # Whether a page follows, which `Cursor(after_id: last_id, ...)` reads.
+    has_more: bool
+    # The first model's id, "" for an empty page.
+    first_id: str
+    # The last model's id, "" for an empty page.
+    last_id: str
+
+# The first page of a list, of 20 items.
+function first_page() -> Cursor
+    return Cursor(after_id: "", before_id: "", limit: 20)
+
+# The model the JSON `v` describes.
+#
+# - `v`: an object of the Models API.
+#
+# Fails `invalid` where it holds no `id`. See also `model_of`.
+function to_model_info(v: json.Value) -> ModelInfo?
+    id = fields.text_at(v, key: "id")
+
+    if id == ""
+        return fail(code: INVALID, msg: "a model with no id")
+    return ok(
+        ModelInfo(id: id, display_name: fields.text_at(v, key: "display_name"), created_at: fields.text_at(v, key: "created_at"), max_input_tokens: fields.int_at(v, key: "max_input_tokens"), max_tokens: fields.int_at(v, key: "max_tokens"), raw: v)
+    )
+
+# A page of the models the API serves.
+#
+# - `c`: the client.
+# - `cursor`: where the page begins; `first_page()` for the first.
+#
+# Fails as `send_raw` fails, and `invalid` where the answer is not a page.
+# See also `model_of`.
+function list_models(c: Client, cursor: Cursor) -> ModelPage?
+    answer = http.json_of(send_raw(c, method: http.METHOD_GET, path: "/v1/models" + transport.query(after_id: cursor.after_id, before_id: cursor.before_id, limit: cursor.limit), body: .null_value)?)?
+    models: [ModelInfo] @= []
+
+    for v in json.items_of(json.member(answer, key: "data")?)?
+        models @ models.push(to_model_info(v)?)
+
+    return ok(
+        ModelPage(models: models, has_more: fields.bool_at(answer, key: "has_more"), first_id: fields.text_at(answer, key: "first_id"), last_id: fields.text_at(answer, key: "last_id"))
+    )
+
+# The model whose id or alias is `id`.
+#
+# - `c`: the client.
+# - `id`: the model's id, `claude-opus-5-5`.
+#
+# Fails `not_found` where the API knows none, and as `send_raw` fails. See
+# also `list_models`.
+function model_of(c: Client, id: str) -> ModelInfo?
+    answer = send_raw(c, method: http.METHOD_GET, path: "/v1/models/" + url.escape_segment(id), body: .null_value)?
+    return to_model_info(http.json_of(answer)?)
+
+## Batches
+
+# One request of a batch, named so its result can be found.
+record BatchRequest
+    # Its name, unique in the batch: 1 to 64 of `a`-`z`, `A`-`Z`, `0`-`9`,
+    # `_` and `-`.
+    custom_id: str
+    # The request.
+    request: Request
+
+# How many requests of a batch stand in each state.
+record RequestCounts
+    # Still being processed.
+    processing: i64
+    # Answered; 0 until the whole batch ends.
+    succeeded: i64
+    # Failed; 0 until the whole batch ends.
+    errored: i64
+    # Cancelled; 0 until the whole batch ends.
+    canceled: i64
+    # Expired, past 24 hours; 0 until the whole batch ends.
+    expired: i64
+
+# A batch of requests the API answers within a day, at half the price.
+record Batch
+    # Its id, `msgbatch_...`.
+    id: str
+    # `BATCH_IN_PROGRESS`, `BATCH_CANCELING` or `BATCH_ENDED`.
+    processing_status: str
+    # Its requests by state.
+    request_counts: RequestCounts
+    # When it was made, RFC 3339.
+    created_at: str
+    # When it ended, "" before.
+    ended_at: str
+    # When it expires unfinished, 24 hours after it was made.
+    expires_at: str
+    # When its cancelling began, "" where none.
+    cancel_initiated_at: str
+    # When it was archived, "" where it was not.
+    archived_at: str
+    # Where its results are, "" before it ends.
+    results_url: str
+
+# A page of batches.
+record BatchPage
+    # The batches, newest first.
+    batches: [Batch]
+    # Whether a page follows.
+    has_more: bool
+    # The first batch's id, "" for an empty page.
+    first_id: str
+    # The last batch's id, "" for an empty page.
+    last_id: str
+
+# How one request of a batch ended.
+variant Outcome
+    # It was answered.
+    succeeded
+        # The answer.
+        message: Message
+    # It failed, as `ApiError` tells a failure.
+    errored
+        # The failure.
+        error: ApiError
+    # The batch was cancelled before it was sent.
+    canceled
+    # The batch expired before it was sent.
+    expired
+
+# The result of one request of a batch.
+record BatchResult
+    # The request's `custom_id`.
+    custom_id: str
+    # How it ended.
+    outcome: Outcome
+
+# The batch the JSON `v` describes.
+#
+# - `v`: an object whose `type` is `message_batch`.
+#
+# Fails `invalid` where it is not one. See also `batch_of`.
+function to_batch(v: json.Value) -> Batch?
+    if fields.text_at(v, key: "type") != "message_batch"
+        return fail(
+            code: INVALID,
+            msg: f"expected a message_batch, found {json.kind_of(v)} of type \"{fields.text_at(v, key: "type")}\""
+        )
+    n = fields.value_at_key(v, key: "request_counts")
+    return ok(
+        Batch(id: fields.text_at(v, key: "id"), processing_status: fields.text_at(v, key: "processing_status"), request_counts: RequestCounts(processing: fields.int_at(n, key: "processing"), succeeded: fields.int_at(n, key: "succeeded"), errored: fields.int_at(n, key: "errored"), canceled: fields.int_at(n, key: "canceled"), expired: fields.int_at(n, key: "expired")), created_at: fields.text_at(v, key: "created_at"), ended_at: fields.text_at(v, key: "ended_at"), expires_at: fields.text_at(v, key: "expires_at"), cancel_initiated_at: fields.text_at(v, key: "cancel_initiated_at"), archived_at: fields.text_at(v, key: "archived_at"), results_url: fields.text_at(v, key: "results_url"))
+    )
+
+# Sends `requests` as one batch.
+#
+# - `c`: the client.
+# - `requests`: 1 or more, each `custom_id` unique and of the API's form.
+#
+# Fails `invalid` where `requests` is empty, a `custom_id` is not of the
+# form or repeats, or a request fails `to_json`; and as `send_raw` fails.
+# See also `batch_of`, `batch_results`.
+function create_batch(c: Client, requests: [BatchRequest]) -> Batch?
+    if requests.len() == 0
+        return fail(code: INVALID, msg: "a batch of no request")
+    seen: {str: bool} @= {}
+    items: [json.Value] @= []
+
+    for q in requests
+        if !fields.is_name(q.custom_id, most: 64)
+            return fail(code: INVALID, msg: f"the custom_id \"{q.custom_id}\" is not 1 to 64 letters, digits, _ and -")
+
+        if seen[q.custom_id].default(false)
+            return fail(code: INVALID, msg: f"the custom_id \"{q.custom_id}\" stands twice")
+        seen[q.custom_id] @ true
+        items @ items.push(
+            fields.object(names: ["custom_id", "params"], values: [fields.text(q.custom_id), to_json(q.request)?])
+        )
+
+    body = fields.object(names: ["requests"], values: [.list(items: items)])
+    return to_batch(http.json_of(send_raw(c, method: http.METHOD_POST, path: "/v1/messages/batches", body: body)?)?)
+
+# The batch `id` as it stands now: what a program polls until it has ended.
+#
+# - `c`: the client.
+# - `id`: the batch's id.
+#
+# Fails `not_found` where the API knows none, and as `send_raw` fails. See
+# also `batch_results`.
+function batch_of(c: Client, id: str) -> Batch?
+    answer = send_raw(c, method: http.METHOD_GET, path: "/v1/messages/batches/" + url.escape_segment(id), body: .null_value)?
+    return to_batch(http.json_of(answer)?)
+
+# A page of the workspace's batches.
+#
+# - `c`: the client.
+# - `cursor`: where the page begins; `first_page()` for the first.
+#
+# Fails as `send_raw` fails, and `invalid` where the answer is not a page.
+# See also `batch_of`.
+function list_batches(c: Client, cursor: Cursor) -> BatchPage?
+    answer = http.json_of(send_raw(c, method: http.METHOD_GET, path: "/v1/messages/batches" + transport.query(after_id: cursor.after_id, before_id: cursor.before_id, limit: cursor.limit), body: .null_value)?)?
+    batches: [Batch] @= []
+
+    for v in json.items_of(json.member(answer, key: "data")?)?
+        batches @ batches.push(to_batch(v)?)
+
+    return ok(
+        BatchPage(batches: batches, has_more: fields.bool_at(answer, key: "has_more"), first_id: fields.text_at(answer, key: "first_id"), last_id: fields.text_at(answer, key: "last_id"))
+    )
+
+# Begins cancelling the batch `id`; the requests not yet sent end
+# `canceled`.
+#
+# - `c`: the client.
+# - `id`: the batch's id.
+#
+# The batch answered is `canceling` until it ends. Fails as `batch_of` fails.
+function cancel_batch(c: Client, id: str) -> Batch?
+    path = "/v1/messages/batches/" + url.escape_segment(id) + "/cancel"
+    return to_batch(http.json_of(send_raw(c, method: http.METHOD_POST, path: path, body: .null_value)?)?)
+
+# Deletes the ended batch `id` and its results.
+#
+# - `c`: the client.
+# - `id`: the batch's id; one still processing is refused, `invalid`.
+#
+# Fails as `batch_of` fails.
+function delete_batch(c: Client, id: str) -> ()?
+    _ = send_raw(c, method: http.METHOD_DELETE, path: "/v1/messages/batches/" + url.escape_segment(id), body: .null_value)?
+    return ok()
+
+# The result one line of a batch's results holds.
+#
+# - `line`: a JSON object, `{custom_id, result}`.
+#
+# Fails `invalid` where it is not one, or its result's type is none of the
+# four. See also `parse_batch_results`.
+function to_batch_result(line: json.Value) -> BatchResult?
+    custom_id = fields.text_at(line, key: "custom_id")
+    result = fields.value_at_key(line, key: "result")
+    kind = fields.text_at(result, key: "type")
+
+    if kind == "succeeded"
+        return ok(
+            BatchResult(custom_id: custom_id, outcome: .succeeded(message: to_message(fields.value_at_key(result, key: "message"))?))
+        )
+
+    if kind == "errored"
+        whole = fields.value_at_key(result, key: "error")
+        e = fields.value_at_key(whole, key: "error")
+        error_kind = fields.text_at(e, key: "type")
+        status = failures.status_of_kind(error_kind)
+        request_id: str @= fields.text_at(whole, key: "request_id")
+
+        if request_id == ""
+            request_id @ "-"
+        error = ApiError(
+            status: status,
+            kind: error_kind,
+            message: fields.text_at(e, key: "message"),
+            request_id: request_id,
+            retryable: failures.is_retryable(status),
+            wait_ms: 0
+        )
+        return ok(BatchResult(custom_id: custom_id, outcome: .errored(error: error)))
+
+    if kind == "canceled"
+        return ok(BatchResult(custom_id: custom_id, outcome: .canceled))
+
+    if kind == "expired"
+        return ok(BatchResult(custom_id: custom_id, outcome: .expired))
+    return fail(code: INVALID, msg: f"the result of \"{custom_id}\" is of type \"{kind}\", none of the four")
+
+# The results a batch's `.jsonl` text holds, one object a line, in the order
+# written: not the order of the requests, so a program finds each by its
+# `custom_id`.
+#
+# - `text`: the results, empty lines skipped.
+#
+# Fails `invalid` where a line is not JSON or no result, the message naming
+# the line, counted from 1. See also `batch_results`.
+function parse_batch_results(text: str) -> [BatchResult]?
+    out: [BatchResult] @= []
+    number: i64 @= 0
+
+    for line in strings.lines(text)
+        number @ number + 1
+
+        if strings.trim(line) != ""
+            match json.parse(line)
+                .err e => return fail(code: INVALID, msg: f"line {number} of the results: {e.msg}")
+                .ok v  => out @ out.push(to_batch_result(v)?)
+
+    return ok(out)
+
+# The results of the ended batch `id`, read a line at a time as they come.
+#
+# - `c`: the client; each line is read within `c.limits.body_bytes`.
+# - `id`: the batch's id.
+#
+# Fails `not_found` where the API knows no such batch, `invalid` where it
+# has not ended or a line is not a result, and as `send_raw` fails. See also
+# `parse_batch_results`.
+function batch_results(c: Client, id: str) -> [BatchResult]?
+    s = transport.settings(
+        base_url: c.base_url,
+        api_key: c.api_key,
+        auth_token: c.auth_token,
+        version: c.version,
+        betas: c.betas,
+        headers: c.headers,
+        max_retries: c.max_retries,
+        max_wait_ms: c.max_wait_ms,
+        deadline_ms: c.deadline_ms,
+        roots: c.roots,
+        limits: c.limits
+    )
+    o = transport.open(s, method: http.METHOD_GET, path: "/v1/messages/batches/" + url.escape_segment(id) + "/results", body: "")?
+    reading @= lines.open(o, most: c.limits.body_bytes)?
+    out: [BatchResult] @= []
+    number: i64 @= 0
+
+    while true
+        match lines.next(@reading)
+            .err e =>
+                lines.close(@reading)
+
+                if e.code == CLOSED
+                    return ok(out)
+                return fail(code: e.code, msg: e.msg)
+            .ok line =>
+                number @ number + 1
+
+                if strings.trim(line) != ""
+                    match json.parse(line)
+                        .err e =>
+                            lines.close(@reading)
+                            return fail(code: INVALID, msg: f"line {number} of the results: {e.msg}")
+                        .ok v =>
+                            match to_batch_result(v)
+                                .ok r => out @ out.push(r)
+                                .err e =>
+                                    lines.close(@reading)
+                                    return fail(code: e.code, msg: e.msg)
+
+## Tests
+
+test "to_json: max_tokens of 0, a role unknown, a field the record types, stream, and the order of the rest"
+    r = new_request(model: "m", max_tokens: 0, turns: [user("x")])
+
+    match to_json(r)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    odd = new_request(model: "m", max_tokens: 1, turns: [Turn(role: "system", content: [])])
+
+    match to_json(odd)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    clash = with_field(new_request(model: "m", max_tokens: 1, turns: []), name: "model", value: fields.text("x"))
+
+    match to_json(clash)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && strings.contains(s: e.msg, substr: "\"model\"")
+
+    streamed = with_field(new_request(model: "m", max_tokens: 1, turns: []), name: "stream", value: .boolean(v: true))
+
+    match to_json(streamed)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    big = new_request(model: "m", max_tokens: 9_007_199_254_740_992, turns: [])
+
+    match to_json(big)
+        .ok _  => assert false
+        .err e => assert e.code == "does_not_fit"
+
+test "with_effort: an output_config's format kept, the effort replaced"
+    q = with_field(
+        new_request(model: "m", max_tokens: 1, turns: []),
+        name: "output_config",
+        value: json.parse("{\"format\":{\"type\":\"json_schema\"},\"effort\":\"max\"}").must()
+    )
+    v = with_effort(q, effort: "low").fields["output_config"].must()
+    assert json.format(v).must() == "{\"format\":{\"type\":\"json_schema\"},\"effort\":\"low\"}"
+
+test "to_message: no message, content that is no list, a tool_use's input kept as text, null usage counts as 0"
+    match to_message(json.parse("{\"type\":\"error\"}").must())
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match to_message(json.parse("{\"type\":\"message\",\"content\":3}").must())
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    m = parse_message(
+        "{\"type\":\"message\",\"content\":[{\"type\":\"tool_use\",\"id\":\"t1\",\"name\":\"n\",\"input\":{\"a\":[1,2]}}],\"usage\":{\"input_tokens\":null}}"
+    ).must()
+    assert m.inputs["t1"].must() == "{\"a\":[1,2]}" && m.usage.input_tokens == 0 && m.stop_reason == "" && json.is_null(m.stop_details)
+
+    match parse_message("{")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "blocks_of: every kind of block, and one no version names yet"
+    m = parse_message(
+        canned.message(content: "[{\"type\":\"thinking\",\"thinking\":\"t\",\"signature\":\"s\"},{\"type\":\"redacted_thinking\",\"data\":\"d\"},{\"type\":\"text\",\"text\":\"x\"},{\"type\":\"tool_use\",\"id\":\"1\",\"name\":\"n\",\"input\":{}},{\"type\":\"server_tool_use\",\"id\":\"2\",\"name\":\"web_search\",\"input\":{\"query\":\"q\"}},{\"type\":\"web_search_tool_result\",\"tool_use_id\":\"2\",\"content\":[]}]", stop_reason: "end_turn")
+    ).must()
+    b = blocks_of(m)
+    assert b.len() == 6
+    assert b[0] == .thinking(thinking: "t", signature: "s") && b[1] == .redacted_thinking(data: "d") && b[2] == .text(text: "x")
+
+    match b[4]
+        .server_tool_use u                                                    => assert u.name == "web_search" && u.id == "2"
+        .text _ | .thinking _ | .redacted_thinking _ | .tool_use _ | .other _ => assert false
+
+    match b[5]
+        .other o                                                                        => assert o.kind == "web_search_tool_result"
+        .text _ | .thinking _ | .redacted_thinking _ | .tool_use _ | .server_tool_use _ => assert false
+
+    assert tool_calls_of(m).len() == 1 && text_of(m) == "x"
+
+test "require_complete: a cut answer and a full context window fail limit, a pause and a stop the API added since pass"
+    cut = parse_message(canned.message(content: "[]", stop_reason: "max_tokens")).must()
+
+    match require_complete(cut)
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT && e.msg == "the answer was cut at max_tokens, after 15 output tokens"
+
+    full = parse_message(canned.message(content: "[]", stop_reason: "model_context_window_exceeded")).must()
+
+    match require_complete(full)
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+    assert require_complete(parse_message(canned.message(content: "[]", stop_reason: "pause_turn")).must()).must().id == "msg_01"
+    assert require_complete(parse_message(canned.message(content: "[]", stop_reason: "new_reason")).must()).must().id == "msg_01"
+
+test "input_of: an input that is a list, and one that is a text"
+    match input_of(ToolCall(id: "1", name: "n", input_json: "[1]"))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && strings.contains(s: e.msg, substr: "of the kind list")
+
+    match input_of(ToolCall(id: "1", name: "n", input_json: ""))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "tool_result: no content, and an error"
+    assert json.format(tool_result(tool_use_id: "t", content: "", is_error: false)).must() == "{\"type\":\"tool_result\",\"tool_use_id\":\"t\"}"
+    assert json.format(tool_result(tool_use_id: "t", content: "boom", is_error: true)).must() == "{\"type\":\"tool_result\",\"tool_use_id\":\"t\",\"content\":\"boom\",\"is_error\":true}"
+
+test "failure_of: a failure of the connection carries none"
+    match failure_of("nothing listens on 127.0.0.1:1")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+test "create: a 429 with no retry left fails limit, its status, type, request id and wait read back, the key in no message"
+    t @= canned.start(
+        [canned.json_answer(status: 429, body: canned.error_body(kind: "rate_limit_error", words: "Number of requests has exceeded your rate limit"), fields: ["retry-after: 7", "request-id: req_018E"])]
+    )
+    c @= default_client("sk-secret-1")
+    c.base_url @ canned.base(t.port)
+    c.max_retries @ 0
+
+    match create(c, r: new_request(model: "m", max_tokens: 1, turns: [user("x")]))
+        .ok _ => assert false
+        .err e =>
+            f = failure_of(e.msg).must()
+            assert e.code == LIMIT && f.status == 429 && f.kind == "rate_limit_error" && f.request_id == "req_018E"
+            assert f.retryable && f.wait_ms == 7000 && f.message == "Number of requests has exceeded your rate limit"
+            assert !strings.contains(s: e.msg, substr: "sk-secret-1")
+
+    assert canned.requests_of(@t).len() == 1
+
+test "create: a wait past max_wait_ms told rather than slept, a 400 never sent again, a 529 told not to retry"
+    t @= canned.start(
+        [canned.json_answer(status: 429, body: canned.error_body(kind: "rate_limit_error", words: "later"), fields: ["retry-after: 120"]), canned.json_answer(status: 400, body: canned.error_body(kind: "invalid_request_error", words: "bad"), fields: []), canned.json_answer(status: 529, body: canned.error_body(kind: "overloaded_error", words: "Overloaded"), fields: ["x-should-retry: false"]), canned.json_answer(status: 502, body: "<html>bad gateway</html>", fields: [])]
+    )
+    c @= default_client("k")
+    c.base_url @ canned.base(t.port)
+    r = new_request(model: "m", max_tokens: 1, turns: [user("x")])
+
+    match create(c, r: r)
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT && failure_of(e.msg).must().wait_ms == 120_000
+
+    match create(c, r: r)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && !failure_of(e.msg).must().retryable
+
+    match create(c, r: r)
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT && !failure_of(e.msg).must().retryable
+
+    c.max_retries @ 0
+
+    match create(c, r: r)
+        .ok _ => assert false
+        .err e =>
+            f = failure_of(e.msg).must()
+            assert e.code == FAILED && f.kind == "-" && f.message == "<html>bad gateway</html>" && f.retryable
+
+    assert canned.requests_of(@t).len() == 4
+
+test "create: a refusal over the wire, an answer that is no message, and nothing listening"
+    refused = "{\"id\":\"msg_05\",\"type\":\"message\",\"role\":\"assistant\",\"model\":\"m\",\"content\":[],\"stop_reason\":\"refusal\",\"stop_sequence\":null,\"stop_details\":{\"type\":\"refusal\",\"category\":\"cyber\",\"explanation\":\"This could enable harm.\"},\"usage\":{\"input_tokens\":12,\"output_tokens\":0}}"
+    t @= canned.start(
+        [canned.json_answer(status: 200, body: refused, fields: []), canned.json_answer(status: 200, body: "{\"type\":\"other\"}", fields: [])]
+    )
+    c @= default_client("k")
+    c.base_url @ canned.base(t.port)
+    r = new_request(model: "m", max_tokens: 1, turns: [user("x")])
+    m = create(c, r: r).must()
+    assert m.stop_reason == STOP_REFUSAL && text_of(m) == ""
+
+    match require_complete(m)
+        .ok _  => assert false
+        .err e => assert e.code == PERMISSION && e.msg == "the model refused (category \"cyber\"): This could enable harm."
+
+    match create(c, r: r)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    _ = canned.requests_of(@t)
+    gone @= default_client("k")
+    gone.base_url @ "http://127.0.0.1:1"
+    gone.max_retries @ 0
+
+    match create(gone, r: r)
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED || e.code == FAILED
+
+test "stream: a 401 before the first event is permission and not sent again, a 529 then the stream"
+    t @= canned.start(
+        [canned.json_answer(status: 401, body: canned.error_body(kind: "authentication_error", words: "invalid x-api-key"), fields: []), canned.json_answer(status: 529, body: canned.error_body(kind: "overloaded_error", words: "Overloaded"), fields: ["retry-after: 0"]), canned.stream_answer(content_type: "text/event-stream", body: canned.cut_input())]
+    )
+    c @= default_client("k")
+    c.base_url @ canned.base(t.port)
+    r = new_request(model: "m", max_tokens: 16, turns: [user("x")])
+
+    match stream(c, r: r)
+        .ok _  => assert false
+        .err e => assert e.code == PERMISSION && failure_of(e.msg).must().kind == "authentication_error"
+
+    s @= stream(c, r: r).must()
+    m = final_message(@s).must()
+    close_stream(@s)
+    assert m.id == "msg_03" && canned.requests_of(@t).len() == 3
+
+test "stream: an answer that is no event stream is invalid"
+    t @= canned.start(
+        [canned.json_answer(status: 200, body: canned.message(content: "[]", stop_reason: "end_turn"), fields: [])]
+    )
+    c @= default_client("k")
+    c.base_url @ canned.base(t.port)
+
+    match stream(c, r: new_request(model: "m", max_tokens: 1, turns: [user("x")]))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    _ = canned.requests_of(@t)
+
+test "next_event: a stream that ends before its message_stop is closed, and so is every read after it"
+    t @= canned.start(
+        [canned.stream_answer(content_type: "text/event-stream", body: canned.events(["message_start", "{\"type\":\"message_start\",\"message\":{\"id\":\"m\",\"type\":\"message\",\"content\":[]}}"]))]
+    )
+    c @= default_client("k")
+    c.base_url @ canned.base(t.port)
+    s @= stream(c, r: new_request(model: "m", max_tokens: 1, turns: [user("x")])).must()
+    _ = next_event(@s).must()
+
+    match final_message(@s)
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED && e.msg == "the stream ended before its message_stop"
+
+    match next_event(@s)
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED
+
+    close_stream(@s)
+    _ = canned.requests_of(@t)
+
+test "next_event: an event whose data is not JSON, and a delta for a block that is not open"
+    bad = canned.events(["message_start", "{nope"])
+    wrong = canned.events(
+        ["message_start", "{\"type\":\"message_start\",\"message\":{\"type\":\"message\",\"content\":[]}}", "content_block_delta", "{\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"x\"}}"]
+    )
+    t @= canned.start(
+        [canned.stream_answer(content_type: "text/event-stream", body: bad), canned.stream_answer(content_type: "text/event-stream", body: wrong)]
+    )
+    c @= default_client("k")
+    c.base_url @ canned.base(t.port)
+    r = new_request(model: "m", max_tokens: 1, turns: [user("x")])
+    s @= stream(c, r: r).must()
+
+    match next_event(@s)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    close_stream(@s)
+    w @= stream(c, r: r).must()
+    _ = next_event(@w).must()
+
+    match next_event(@w)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && strings.contains(s: e.msg, substr: "block 4")
+
+    close_stream(@w)
+    _ = canned.requests_of(@t)
+
+test "input_so_far: no tool call streaming is not_found"
+    t @= canned.start([canned.stream_answer(content_type: "text/event-stream", body: canned.every_event())])
+    c @= default_client("k")
+    c.base_url @ canned.base(t.port)
+    s @= stream(c, r: new_request(model: "m", max_tokens: 1, turns: [user("x")])).must()
+
+    match input_so_far(s)
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    close_stream(@s)
+    _ = canned.requests_of(@t)
+
+test "batch_results: a batch that has not ended, and a line that is no result"
+    t @= canned.start(
+        [canned.json_answer(status: 400, body: canned.error_body(kind: "invalid_request_error", words: "not ended"), fields: []), canned.stream_answer(content_type: "application/x-jsonl", body: "{\"custom_id\":\"a\",\"result\":{\"type\":\"canceled\"}}\n[1]\n")]
+    )
+    c @= default_client("k")
+    c.base_url @ canned.base(t.port)
+
+    match batch_results(c, id: "msgbatch_1")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match batch_results(c, id: "msgbatch_1")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && strings.contains(s: e.msg, substr: "none of the four")
+
+    _ = canned.requests_of(@t)
+
+test "create_batch: no request, a custom_id of a dot, one twice"
+    c = default_client("k")
+    q = BatchRequest(custom_id: "a", request: new_request(model: "m", max_tokens: 1, turns: [user("x")]))
+
+    match create_batch(c, requests: [])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match create_batch(c, requests: [BatchRequest(custom_id: "a.b", request: q.request)])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match create_batch(c, requests: [q, q])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && strings.contains(s: e.msg, substr: "twice")
+
+test "parse_batch_results: no line, a line that is not JSON, and to_batch on another object"
+    assert parse_batch_results("").must().len() == 0
+
+    match parse_batch_results("{\"custom_id\":\"a\",\"result\":{\"type\":\"expired\"}}\n{")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && strings.has_prefix(s: e.msg, prefix: "line 2 of the results")
+
+    match to_batch(json.parse("{\"type\":\"model\"}").must())
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match to_model_info(json.parse("{}").must())
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "client_from_env: a key read, or not_found naming the variables and no value"
+    match client_from_env()
+        .ok c  => assert c.api_key != "" || c.auth_token != ""
+        .err e => assert e.code == NOT_FOUND && e.msg == "neither ANTHROPIC_API_KEY nor ANTHROPIC_AUTH_TOKEN is set"
+
+test "live: the smallest request, where REBEL_ANTHROPIC_LIVE_KEY gives a key of its own"
+    key = os.env("REBEL_ANTHROPIC_LIVE_KEY").default("")
+
+    if key == ""
+        print("live llm/anthropic: skipped, REBEL_ANTHROPIC_LIVE_KEY is not set")
+    else
+        c = default_client(key)
+        model = os.env("REBEL_ANTHROPIC_LIVE_MODEL").default("claude-haiku-5-5")
+        r = new_request(model: model, max_tokens: 16, turns: [user("Say ok.")])
+
+        match count_tokens(c, r: r)
+            .err e => print("live llm/anthropic: skipped, the API did not count: " + e.code)
+            .ok n =>
+                m = require_complete(create(c, r: r).must()).must()
+                print(f"live llm/anthropic: {n} input tokens counted, {m.usage.output_tokens} output tokens answered")
+                assert n > 0 && m.usage.output_tokens > 0
+
+## Examples
+
+# A client of the API with a key the program holds.
+test "default_client: the version, the address and two retries"
+    c = default_client("sk-example")
+    assert c.version == API_VERSION && c.base_url == BASE_URL && c.max_retries == 2 && c.deadline_ms == 600_000
+
+# A client whose key the environment holds, or the program told it is unset.
+test "client_from_env: a key from ANTHROPIC_API_KEY"
+    match client_from_env()
+        .ok c  => assert c.version == API_VERSION
+        .err e => assert e.code == NOT_FOUND
+
+# A request of one turn.
+test "new_request: a model, a ceiling of tokens and one turn"
+    r = new_request(model: "claude-opus-5-5", max_tokens: 1024, turns: [user("Hello, Claude")])
+    assert r.turns.len() == 1 && r.tools.len() == 0 && r.system == ""
+
+# What a user says.
+test "user: one text block"
+    assert json.format(.list(items: user("Hello").content)).must() == "[{\"type\":\"text\",\"text\":\"Hello\"}]"
+
+# A turn of the assistant written by hand.
+test "assistant: the role and one text block"
+    t = assistant("Hi.")
+    assert t.role == "assistant" && t.content == [text_block("Hi.")]
+
+# A text block.
+test "text_block: its type and its text"
+    assert json.format(text_block("Zürich")).must() == "{\"type\":\"text\",\"text\":\"Zürich\"}"
+
+# An image sent in base 64.
+test "image_block: a PNG's bytes"
+    b = image_block(media_type: "image/png", data: [137, 80, 78, 71])
+    assert json.format(b).must() == "{\"type\":\"image\",\"source\":{\"type\":\"base64\",\"media_type\":\"image/png\",\"data\":\"iVBORw==\"}}"
+
+# A PDF sent in base 64.
+test "document_block: a PDF's bytes"
+    b = document_block([37, 80, 68, 70])
+    assert json.format(b).must() == "{\"type\":\"document\",\"source\":{\"type\":\"base64\",\"media_type\":\"application/pdf\",\"data\":\"JVBERg==\"}}"
+
+# The end of a prefix the API caches for an hour.
+test "cached: a text block cached for an hour"
+    assert json.format(cached(text_block("x"), ttl: "1h")).must() == "{\"type\":\"text\",\"text\":\"x\",\"cache_control\":{\"type\":\"ephemeral\",\"ttl\":\"1h\"}}"
+    assert json.format(cached(text_block("x"), ttl: "")).must() == "{\"type\":\"text\",\"text\":\"x\",\"cache_control\":{\"type\":\"ephemeral\"}}"
+
+# Adaptive thinking asked for by its field.
+test "with_field: thinking"
+    r = with_field(
+        new_request(model: "m", max_tokens: 1, turns: []),
+        name: "thinking",
+        value: json.parse("{\"type\":\"adaptive\"}").must()
+    )
+    assert json.format(to_json(r).must()).must() == "{\"model\":\"m\",\"max_tokens\":1,\"messages\":[],\"thinking\":{\"type\":\"adaptive\"}}"
+
+# The effort of an answer.
+test "with_effort: high"
+    r = with_effort(new_request(model: "m", max_tokens: 1, turns: []), effort: "high")
+    assert json.format(r.fields["output_config"].must()).must() == "{\"effort\":\"high\"}"
+
+# A conversation carried on by hand.
+test "with_turn: a second user turn"
+    r = with_turn(new_request(model: "m", max_tokens: 1, turns: [user("a"), assistant("b")]), turn: user("c"))
+    assert r.turns.len() == 3 && r.turns[2].role == "user"
+
+# The body a request sends: the typed fields, then the others in order.
+test "to_json: a system prompt, a tool and two fields"
+    q @= with_field(
+        new_request(model: "claude-opus-5-5", max_tokens: 8, turns: [user("Hi")]),
+        name: "thinking",
+        value: json.parse("{\"type\":\"adaptive\"}").must()
+    )
+    q.system @ "Be brief."
+    q.tools @ [
+        Tool(name: "t", description: "", input_schema: json.parse("{\"type\":\"object\"}").must(), strict: false, eager_input_streaming: true)
+    ]
+    q @ with_effort(q, effort: "low")
+    expected = "{\"model\":\"claude-opus-5-5\",\"max_tokens\":8,\"messages\":[{\"role\":\"user\",\"content\":[{\"type\":\"text\",\"text\":\"Hi\"}]}],\"system\":\"Be brief.\",\"tools\":[{\"name\":\"t\",\"input_schema\":{\"type\":\"object\"},\"eager_input_streaming\":true}],\"thinking\":{\"type\":\"adaptive\"},\"output_config\":{\"effort\":\"low\"}}"
+    assert json.format(to_json(q).must()).must() == expected
+
+# A server tool beside a tool of the program's.
+test "to_json: web search beside a tool of the program's"
+    q @= new_request(model: "m", max_tokens: 8, turns: [])
+    q.tools @ [
+        Tool(name: "t", description: "d", input_schema: json.parse("{\"type\":\"object\"}").must(), strict: false, eager_input_streaming: false)
+    ]
+    q.server_tools @ [json.parse("{\"type\":\"web_search_20260209\",\"name\":\"web_search\",\"max_uses\":3}").must()]
+    expected = "{\"model\":\"m\",\"max_tokens\":8,\"messages\":[],\"tools\":[{\"name\":\"t\",\"description\":\"d\",\"input_schema\":{\"type\":\"object\"}},{\"type\":\"web_search_20260209\",\"name\":\"web_search\",\"max_uses\":3}]}"
+    assert json.format(to_json(q).must()).must() == expected
+
+# An answer read from its JSON.
+test "to_message: the answer of the reference's example"
+    m = to_message(
+        json.parse(canned.message(content: "[{\"type\":\"text\",\"text\":\"Hi!\"}]", stop_reason: "end_turn")).must()
+    ).must()
+    assert m.id == "msg_01" && m.usage.output_tokens == 15 && text_of(m) == "Hi!"
+
+# An answer read from its text.
+test "parse_message: a message's text"
+    assert parse_message(canned.message(content: "[]", stop_reason: "end_turn")).must().stop_reason == STOP_END_TURN
+
+# The blocks of an answer, matched.
+test "blocks_of: a text block"
+    m = parse_message(canned.message(content: "[{\"type\":\"text\",\"text\":\"Hi\"}]", stop_reason: "end_turn")).must()
+    assert blocks_of(m) == [.text(text: "Hi")]
+
+# The text of an answer.
+test "text_of: two text blocks joined"
+    m = parse_message(
+        canned.message(content: "[{\"type\":\"text\",\"text\":\"a\"},{\"type\":\"text\",\"text\":\"b\"}]", stop_reason: "end_turn")
+    ).must()
+    assert text_of(m) == "ab"
+
+# An answer checked before its content is read.
+test "require_complete: an answer that ended its turn"
+    m = parse_message(canned.message(content: "[]", stop_reason: "end_turn")).must()
+    assert require_complete(m).must().id == "msg_01"
+
+# An answer sent back as the assistant's turn.
+test "turn_of: the blocks unchanged"
+    m = parse_message(
+        canned.message(content: "[{\"type\":\"thinking\",\"thinking\":\"\",\"signature\":\"s\"}]", stop_reason: "end_turn")
+    ).must()
+    assert turn_of(m) == Turn(role: "assistant", content: m.content)
+
+# A paused turn sent back so the model goes on.
+test "with_reply: a pause_turn answer after the turns"
+    m = parse_message(canned.message(content: "[]", stop_reason: "pause_turn")).must()
+    r = with_reply(new_request(model: "m", max_tokens: 1, turns: [user("search")]), reply: m)
+    assert r.turns.len() == 2 && r.turns[1].role == "assistant"
+
+# The calls of an answer the program runs.
+test "tool_calls_of: one call and its input"
+    m = parse_message(
+        canned.message(content: "[{\"type\":\"tool_use\",\"id\":\"toolu_1\",\"name\":\"get_weather\",\"input\":{\"location\":\"Paris\"}}]", stop_reason: "tool_use")
+    ).must()
+    calls = tool_calls_of(m)
+    assert calls == [ToolCall(id: "toolu_1", name: "get_weather", input_json: "{\"location\":\"Paris\"}")]
+
+# The input of a call, checked whole.
+test "input_of: an object"
+    v = input_of(ToolCall(id: "1", name: "n", input_json: "{\"a\": 1}")).must()
+    assert json.int_of(json.member(v, key: "a").must()).must() == 1
+
+# A tool's answer.
+test "tool_result: a result"
+    v = tool_result(tool_use_id: "toolu_1", content: "15 degrees", is_error: false)
+    assert json.format(v).must() == "{\"type\":\"tool_result\",\"tool_use_id\":\"toolu_1\",\"content\":\"15 degrees\"}"
+
+# A tool loop of two requests: the model calls a tool, the program runs it and
+# sends the result back, the model answers.
+test "with_tool_results: a tool loop the program drives"
+    first = canned.message(
+        content: "[{\"type\":\"text\",\"text\":\"Checking.\"},{\"type\":\"tool_use\",\"id\":\"toolu_01\",\"name\":\"get_weather\",\"input\":{\"location\":\"Paris\"}}]",
+        stop_reason: "tool_use"
+    )
+    second = canned.message(content: "[{\"type\":\"text\",\"text\":\"Sunny in Paris.\"}]", stop_reason: "end_turn")
+    t @= canned.start(
+        [canned.json_answer(status: 200, body: first, fields: []), canned.json_answer(status: 200, body: second, fields: [])]
+    )
+    c @= default_client("k")
+    c.base_url @ canned.base(t.port)
+    schema = json.parse(
+        "{\"type\":\"object\",\"properties\":{\"location\":{\"type\":\"string\"}},\"required\":[\"location\"]}"
+    ).must()
+    r @= new_request(model: "claude-opus-5-5", max_tokens: 1024, turns: [user("Weather in Paris?")])
+    r.tools @ [
+        Tool(name: "get_weather", description: "The weather of a city.", input_schema: schema, strict: true, eager_input_streaming: false)
+    ]
+    reply @= create(c, r: r).must()
+    rounds: i64 @= 0
+
+    while reply.stop_reason == STOP_TOOL_USE && rounds < 5
+        results: [json.Value] @= []
+
+        for call in tool_calls_of(reply)
+            city = fields.text_at(input_of(call).must(), key: "location")
+            results @ results.push(tool_result(tool_use_id: call.id, content: "sunny in " + city, is_error: false))
+
+        r @ with_tool_results(r, reply: reply, results: results)
+        reply @ create(c, r: r).must()
+        rounds @ rounds + 1
+
+    seen = canned.requests_of(@t)
+    assert text_of(reply) == "Sunny in Paris." && rounds == 1 && seen.len() == 2
+    assert strings.contains(
+        s: seen[0],
+        substr: "\"tools\":[{\"name\":\"get_weather\",\"description\":\"The weather of a city.\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"location\":{\"type\":\"string\"}},\"required\":[\"location\"]},\"strict\":true}]"
+    )
+    assert strings.contains(
+        s: seen[1],
+        substr: "{\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"Checking.\"},{\"type\":\"tool_use\",\"id\":\"toolu_01\",\"name\":\"get_weather\",\"input\":{\"location\":\"Paris\"}}]},{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"toolu_01\",\"content\":\"sunny in Paris\"}]}"
+    )
+
+# The advice of a failure the API answered, read back from its message.
+test "failure_of: a rate limit's advice"
+    f = failure_of("[429 rate_limit_error req_01 1500] slow down").must()
+    assert f.status == 429 && f.retryable && f.wait_ms == 1500 && f.message == "slow down"
+
+# An endpoint this package does not wrap, reached with the client's key.
+test "send_raw: GET /v1/files"
+    t @= canned.start([canned.json_answer(status: 200, body: "{\"data\":[],\"has_more\":false}", fields: [])])
+    c @= default_client("k")
+    c.base_url @ canned.base(t.port)
+    answer = send_raw(c, method: "GET", path: "/v1/files", body: .null_value).must()
+    seen = canned.requests_of(@t)
+    assert answer.status == 200 && strings.has_prefix(s: seen[0], prefix: "GET /v1/files\n")
+
+# One question, one answer, and what was sent.
+test "create: a request and its answer"
+    t @= canned.start(
+        [canned.json_answer(status: 200, body: canned.message(content: "[{\"type\":\"text\",\"text\":\"Hi\"}]", stop_reason: "end_turn"), fields: [])]
+    )
+    c @= default_client("test-key")
+    c.base_url @ canned.base(t.port)
+    m = create(c, r: new_request(model: "claude-opus-5-5", max_tokens: 64, turns: [user("Hello")])).must()
+    seen = canned.requests_of(@t)
+    assert text_of(require_complete(m).must()) == "Hi" && m.usage.input_tokens == 25 && m.usage.cache_read_input_tokens == 3
+    assert strings.has_prefix(s: seen[0], prefix: "POST /v1/messages\n")
+    assert strings.contains(s: seen[0], substr: "\nx-api-key: test-key\n") && strings.contains(s: seen[0], substr: "\nanthropic-version: 2026-10-21\n")
+    assert strings.has_suffix(
+        s: seen[0],
+        suffix: "\n\n{\"model\":\"claude-opus-5-5\",\"max_tokens\":64,\"messages\":[{\"role\":\"user\",\"content\":[{\"type\":\"text\",\"text\":\"Hello\"}]}]}"
+    )
+
+# A 429 sent again after the wait its retry-after asks, then answered.
+test "create: a rate limit waited out"
+    t @= canned.start(
+        [canned.json_answer(status: 429, body: canned.error_body(kind: "rate_limit_error", words: "slow"), fields: ["retry-after: 0"]), canned.json_answer(status: 200, body: canned.message(content: "[]", stop_reason: "end_turn"), fields: [])]
+    )
+    c @= default_client("k")
+    c.base_url @ canned.base(t.port)
+    m = create(c, r: new_request(model: "m", max_tokens: 1, turns: [user("x")])).must()
+    assert m.id == "msg_01" && canned.requests_of(@t).len() == 2
+
+# The tokens a request would cost.
+test "count_tokens: a request counted, its max_tokens not sent"
+    t @= canned.start([canned.json_answer(status: 200, body: "{\"input_tokens\":14}", fields: [])])
+    c @= default_client("k")
+    c.base_url @ canned.base(t.port)
+    n = count_tokens(c, r: new_request(model: "claude-opus-5-5", max_tokens: 64, turns: [user("Hello")])).must()
+    seen = canned.requests_of(@t)
+    assert n == 14 && strings.has_prefix(s: seen[0], prefix: "POST /v1/messages/count_tokens\n")
+    assert strings.has_suffix(
+        s: seen[0],
+        suffix: "\n\n{\"model\":\"claude-opus-5-5\",\"messages\":[{\"role\":\"user\",\"content\":[{\"type\":\"text\",\"text\":\"Hello\"}]}]}"
+    )
+
+# Every kind of event of a stream, in order, and the message they make.
+test "stream: every kind of event, read to the end"
+    t @= canned.start(
+        [canned.stream_answer(content_type: "text/event-stream; charset=utf-8", body: canned.every_event())]
+    )
+    c @= default_client("k")
+    c.base_url @ canned.base(t.port)
+    s @= stream(
+        c,
+        r: new_request(model: "claude-opus-5-5", max_tokens: 1024, turns: [user("Weather in Zürich?")])
+    ).must()
+    seen: [str] @= []
+    texts: [str] @= []
+
+    while true
+        match next_event(@s)
+            .err e =>
+                assert e.code == CLOSED
+                break
+            .ok event =>
+                match event
+                    .message_start m   => seen @ seen.push("start " + m.message.id)
+                    .block_start b     => seen @ seen.push(f"block {b.index}")
+                    .text_delta d      => texts @ texts.push(d.text)
+                    .thinking_delta d  => seen @ seen.push("thinking " + d.thinking)
+                    .signature_delta d => seen @ seen.push("signature " + d.signature)
+                    .input_delta d     => seen @ seen.push("input " + d.partial_json)
+                    .citation_delta d  => seen @ seen.push("citation " + fields.text_at(d.citation, key: "type"))
+                    .block_stop b      => seen @ seen.push(f"stop {b.index}")
+                    .message_delta d   => seen @ seen.push(
+                        f"delta {d.stop_reason} {d.usage.output_tokens} {d.usage.input_tokens}"
+                    )
+                    .message_stop      => seen @ seen.push("end")
+                    .ping              => seen @ seen.push("ping")
+                    .other o           => seen @ seen.push("other " + o.name)
+
+    m = final_message(@s).must()
+    close_stream(@s)
+    sent = canned.requests_of(@t)
+    assert seen == ["start msg_02", "block 0", "thinking Weather ", "thinking first.", "signature EqQB", "stop 0", "block 1", "ping", "citation char_location", "stop 1", "block 2", "input ", "input {\"location\":", "input  \"Zür", "input ich\"}", "stop 2", "other future_event", "delta tool_use 89 472", "end"]
+    assert texts == ["Let's check ", "Zürich:"]
+    assert blocks_of(m)[0] == .thinking(thinking: "Weather first.", signature: "EqQB") && blocks_of(m)[1] == .text(text: "Let's check Zürich:")
+    assert fields.list_at(m.content[1], key: "citations").len() == 1
+    calls = tool_calls_of(m)
+    assert calls.len() == 1 && calls[0].input_json == "{\"location\": \"Zürich\"}"
+    assert fields.text_at(input_of(calls[0]).must(), key: "location") == "Zürich"
+    assert m.stop_reason == STOP_TOOL_USE && m.usage.output_tokens == 89 && m.usage.input_tokens == 472
+    assert strings.has_suffix(s: sent[0], suffix: ",\"stream\":true}") && strings.contains(s: sent[0], substr: "\nconnection: close\n")
+
+# The next event of a stream.
+test "next_event: the message_start of a stream"
+    t @= canned.start([canned.stream_answer(content_type: "text/event-stream", body: canned.every_event())])
+    c @= default_client("k")
+    c.base_url @ canned.base(t.port)
+    s @= stream(c, r: new_request(model: "m", max_tokens: 1, turns: [user("x")])).must()
+
+    match next_event(@s).must()
+        .message_start m => assert m.message.id == "msg_02" && m.message.usage.input_tokens == 472
+        .block_start _ | .text_delta _ | .thinking_delta _ | .signature_delta _ | .input_delta _ | .citation_delta _ | .block_stop _ | .message_delta _ | .message_stop | .ping | .other _ =>
+            assert false
+
+    close_stream(@s)
+    _ = canned.requests_of(@t)
+
+# What has arrived of a message, while it arrives.
+test "message_of: the thinking block ended, the text block begun"
+    t @= canned.start([canned.stream_answer(content_type: "text/event-stream", body: canned.every_event())])
+    c @= default_client("k")
+    c.base_url @ canned.base(t.port)
+    s @= stream(c, r: new_request(model: "m", max_tokens: 1, turns: [user("x")])).must()
+    step: i64 @= 0
+
+    while step < 9
+        _ = next_event(@s).must()
+        step @ step + 1
+
+    m = message_of(s).must()
+    assert blocks_of(m) == [.thinking(thinking: "Weather first.", signature: "EqQB"), .text(text: "Let's check ")]
+    close_stream(@s)
+    _ = canned.requests_of(@t)
+
+# A stream read to its end, as one message.
+test "final_message: a stream whose tool input was cut at max_tokens"
+    t @= canned.start([canned.stream_answer(content_type: "text/event-stream", body: canned.cut_input())])
+    c @= default_client("k")
+    c.base_url @ canned.base(t.port)
+    s @= stream(c, r: new_request(model: "m", max_tokens: 16, turns: [user("x")])).must()
+    m = final_message(@s).must()
+    close_stream(@s)
+    _ = canned.requests_of(@t)
+    calls = tool_calls_of(m)
+    assert calls.len() == 1 && calls[0].input_json == "{\"path\": \"a.txt\", \"text\": \"hel"
+    assert json.format(fields.value_at_key(m.content[0], key: "input")).must() == "{\"path\":\"a.txt\",\"text\":\"hel\"}"
+
+    match input_of(calls[0])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match require_complete(m)
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+# The input of a tool call, read while it streams.
+test "input_so_far: a path whole and a text cut"
+    t @= canned.start([canned.stream_answer(content_type: "text/event-stream", body: canned.cut_input())])
+    c @= default_client("k")
+    c.base_url @ canned.base(t.port)
+    s @= stream(c, r: new_request(model: "m", max_tokens: 16, turns: [user("x")])).must()
+    _ = next_event(@s).must()
+    _ = next_event(@s).must()
+    _ = next_event(@s).must()
+    so_far = input_so_far(s).must()
+    assert json.format(so_far.value).must() == "{\"path\":\"a.txt\",\"text\":\"hel\"}" && so_far.pointer == "/text"
+    close_stream(@s)
+    _ = canned.requests_of(@t)
+
+# A stream closed before its end.
+test "close_stream: after the first event"
+    t @= canned.start([canned.stream_answer(content_type: "text/event-stream", body: canned.overloaded_midway())])
+    c @= default_client("k")
+    c.base_url @ canned.base(t.port)
+    s @= stream(c, r: new_request(model: "m", max_tokens: 1, turns: [user("x")])).must()
+    _ = next_event(@s).must()
+
+    match next_event(@s)
+        .ok _ => assert false
+        .err e =>
+            f = failure_of(e.msg).must()
+            assert e.code == LIMIT && f.status == 529 && f.kind == "overloaded_error" && f.retryable && f.message == "Overloaded"
+
+    close_stream(@s)
+    _ = canned.requests_of(@t)
+
+# The first page of a list.
+test "first_page: 20 from the start"
+    assert first_page() == Cursor(after_id: "", before_id: "", limit: 20)
+
+# A model read from its JSON.
+test "to_model_info: a model of the Models API"
+    m = to_model_info(json.parse(canned.model_json("claude-opus-5-5")).must()).must()
+    assert m.id == "claude-opus-5-5" && m.max_input_tokens == 1_000_000 && m.max_tokens == 128_000
+
+# A page of the models.
+test "list_models: two models after a cursor"
+    page = "{\"data\":[" + canned.model_json("claude-opus-5-5") + "," + canned.model_json("claude-haiku-5-5") + "],\"has_more\":true,\"first_id\":\"claude-opus-5-5\",\"last_id\":\"claude-haiku-5-5\"}"
+    t @= canned.start([canned.json_answer(status: 200, body: page, fields: [])])
+    c @= default_client("k")
+    c.base_url @ canned.base(t.port)
+    p = list_models(c, cursor: Cursor(after_id: "claude-x", before_id: "", limit: 2)).must()
+    seen = canned.requests_of(@t)
+    assert p.models.len() == 2 && p.has_more && p.last_id == "claude-haiku-5-5"
+    assert strings.has_prefix(s: seen[0], prefix: "GET /v1/models?after_id=claude-x&limit=2\n")
+
+# One model by its id.
+test "model_of: claude-opus-5-5"
+    t @= canned.start([canned.json_answer(status: 200, body: canned.model_json("claude-opus-5-5"), fields: [])])
+    c @= default_client("k")
+    c.base_url @ canned.base(t.port)
+    m = model_of(c, id: "claude-opus-5-5").must()
+    seen = canned.requests_of(@t)
+    assert m.display_name == "Claude" && strings.has_prefix(s: seen[0], prefix: "GET /v1/models/claude-opus-5-5\n")
+
+# A batch read from its JSON.
+test "to_batch: a batch's counts"
+    b = to_batch(json.parse(canned.batch_json(id: "msgbatch_1", status: "ended")).must()).must()
+    assert b.processing_status == BATCH_ENDED && b.request_counts.succeeded == 2 && b.ended_at == ""
+
+# Two requests sent as one batch.
+test "create_batch: two requests"
+    t @= canned.start(
+        [canned.json_answer(status: 200, body: canned.batch_json(id: "msgbatch_1", status: "in_progress"), fields: [])]
+    )
+    c @= default_client("k")
+    c.base_url @ canned.base(t.port)
+    r = new_request(model: "m", max_tokens: 4, turns: [user("x")])
+    b = create_batch(
+        c,
+        requests: [BatchRequest(custom_id: "a", request: r), BatchRequest(custom_id: "b-2", request: r)]
+    ).must()
+    seen = canned.requests_of(@t)
+    assert b.id == "msgbatch_1" && b.processing_status == BATCH_IN_PROGRESS
+    assert strings.has_suffix(
+        s: seen[0],
+        suffix: "\n\n{\"requests\":[{\"custom_id\":\"a\",\"params\":{\"model\":\"m\",\"max_tokens\":4,\"messages\":[{\"role\":\"user\",\"content\":[{\"type\":\"text\",\"text\":\"x\"}]}]}},{\"custom_id\":\"b-2\",\"params\":{\"model\":\"m\",\"max_tokens\":4,\"messages\":[{\"role\":\"user\",\"content\":[{\"type\":\"text\",\"text\":\"x\"}]}]}}]}"
+    )
+
+# A batch polled.
+test "batch_of: a batch by its id"
+    t @= canned.start(
+        [canned.json_answer(status: 200, body: canned.batch_json(id: "msgbatch_1", status: "ended"), fields: [])]
+    )
+    c @= default_client("k")
+    c.base_url @ canned.base(t.port)
+    b = batch_of(c, id: "msgbatch_1").must()
+    seen = canned.requests_of(@t)
+    assert b.processing_status == BATCH_ENDED && strings.has_prefix(s: seen[0], prefix: "GET /v1/messages/batches/msgbatch_1\n")
+
+# A page of batches.
+test "list_batches: one batch"
+    page = "{\"data\":[" + canned.batch_json(id: "msgbatch_1", status: "ended") + "],\"has_more\":false,\"first_id\":\"msgbatch_1\",\"last_id\":\"msgbatch_1\"}"
+    t @= canned.start([canned.json_answer(status: 200, body: page, fields: [])])
+    c @= default_client("k")
+    c.base_url @ canned.base(t.port)
+    p = list_batches(c, cursor: first_page()).must()
+    seen = canned.requests_of(@t)
+    assert p.batches.len() == 1 && !p.has_more && strings.has_prefix(s: seen[0], prefix: "GET /v1/messages/batches?limit=20\n")
+
+# A batch cancelled.
+test "cancel_batch: canceling"
+    t @= canned.start(
+        [canned.json_answer(status: 200, body: canned.batch_json(id: "msgbatch_1", status: "canceling"), fields: [])]
+    )
+    c @= default_client("k")
+    c.base_url @ canned.base(t.port)
+    b = cancel_batch(c, id: "msgbatch_1").must()
+    seen = canned.requests_of(@t)
+    assert b.processing_status == BATCH_CANCELING && strings.has_prefix(s: seen[0], prefix: "POST /v1/messages/batches/msgbatch_1/cancel\n")
+
+# A batch deleted.
+test "delete_batch: an ended batch"
+    t @= canned.start(
+        [canned.json_answer(status: 200, body: "{\"id\":\"msgbatch_1\",\"type\":\"message_batch_deleted\"}", fields: [])]
+    )
+    c @= default_client("k")
+    c.base_url @ canned.base(t.port)
+    delete_batch(c, id: "msgbatch_1").must()
+    seen = canned.requests_of(@t)
+    assert strings.has_prefix(s: seen[0], prefix: "DELETE /v1/messages/batches/msgbatch_1\n")
+
+# A line of a batch's results.
+test "to_batch_result: a request cancelled"
+    r = to_batch_result(json.parse("{\"custom_id\":\"c\",\"result\":{\"type\":\"canceled\"}}").must()).must()
+    assert r == BatchResult(custom_id: "c", outcome: .canceled)
+
+# The results of a batch, from their text.
+test "parse_batch_results: one of each kind"
+    results = parse_batch_results(canned.results_jsonl()).must()
+    assert results.len() == 4 && results[0].custom_id == "b"
+
+    match results[1].outcome
+        .errored e                          => assert e.error.kind == "invalid_request_error" && e.error.status == 400 && e.error.message == "bad"
+        .succeeded _ | .canceled | .expired => assert false
+
+    assert results[2].outcome == .canceled && results[3].outcome == .expired
+
+# The results of an ended batch, read as they come.
+test "batch_results: one of each kind, each found by its custom_id"
+    t @= canned.start([canned.stream_answer(content_type: "application/x-jsonl", body: canned.results_jsonl())])
+    c @= default_client("k")
+    c.base_url @ canned.base(t.port)
+    results = batch_results(c, id: "msgbatch_1").must()
+    seen = canned.requests_of(@t)
+    assert results.len() == 4 && strings.has_prefix(s: seen[0], prefix: "GET /v1/messages/batches/msgbatch_1/results\n")
+
+    match results[0].outcome
+        .succeeded s                      => assert text_of(s.message) == "two"
+        .errored _ | .canceled | .expired => assert false

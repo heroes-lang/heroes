@@ -1,0 +1,163 @@
+# A server for this package's tests alone, on the loopback and a thread of
+# its own while the test's thread is the client: it answers each request it
+# reads, one connection each, with the next answer written ahead, a whole
+# HTTP response as text, and gives back what it read. No test reaches the
+# network, and none spends a token.
+
+use bytes
+use http
+use io
+use net
+use numbers
+use strings
+use threads
+use url
+
+# What parts the pieces of a script and of `serve`'s answer.
+constant SEPARATOR: str
+    "\u{1e}"
+
+# A server running on its thread, and the port it listens on.
+record Started
+    # The port it listens on, which the system chose.
+    port: i64
+    # Its thread, whose answer `threads.wait_text` gives.
+    thread: threads.TextThread
+
+# A response of `status` holding the JSON text `body`, with its length.
+function json_answer(status: i64, body: str, fields: [str]) -> str
+    head = f"HTTP/1.1 {status} {http.status_text(status).default("Unknown")}\r\ncontent-type: application/json\r\ncontent-length: {body.len()}\r\n"
+    extra: [str] @= []
+
+    for f in fields
+        extra @ extra.push(f + "\r\n")
+
+    return head + extra.join("") + "\r\n" + body
+
+# A response of `content_type` holding `body`, ended by the connection's
+# end, as a stream of events is.
+function stream_answer(content_type: str, body: str) -> str
+    return f"HTTP/1.1 200 OK\r\ncontent-type: {content_type}\r\ncache-control: no-cache\r\nconnection: close\r\n\r\n" + body
+
+# The events `pairs` as a `text/event-stream` body: each name then its data.
+function events(pairs: [str]) -> str
+    out: [str] @= []
+    at: i64 @= 0
+
+    while at + 1 < pairs.len()
+        out @ out.push("event: " + pairs[at] + "\ndata: " + pairs[at + 1] + "\n\n")
+        at @ at + 2
+
+    return out.join("")
+
+# `serve` started with `answers` on a thread: the port it listens on is told
+# over a connection to a listener of this thread, so none is assumed free.
+function start(answers: [str]) -> Started
+    control @= net.listen(host: "127.0.0.1", port: 0).must()
+    t = threads.spawn_text(body: serve, arg: f"{control.address.port}" + SEPARATOR + answers.join(SEPARATOR))
+    told = net.accept(control, deadline_ms: 10_000).must()
+    r @= io.reader(told.stream)
+    port = numbers.parse_int(io.read_rest_text(@r).must()).must()
+    io.close(@r.stream).must()
+    net.close_listener(@control).must()
+    return Started(port: port, thread: t)
+
+# What `serve` read: each request as `METHOD target`, its fields as
+# `name: value`, an empty line and its body.
+function requests_of(@s: Started) -> [str]
+    seen = threads.wait_text(@s.thread)
+
+    if seen == ""
+        return []
+    return strings.split(s: seen, sep: SEPARATOR)
+
+# Listens on a port the system chooses, tells it to the control port that
+# begins `arg`, and answers each request it reads with the next answer,
+# closing each connection after; gives back what it read once every answer
+# is written or 10 s pass with no connection.
+function serve(arg: str) -> str
+    parts = strings.split(s: arg, sep: SEPARATOR)
+    control = numbers.parse_int(parts[0]).must()
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    c @= net.connect("127.0.0.1", port: control, deadline_ms: 10_000).must()
+    io.write_text(c.stream, text: f"{l.address.port}").must()
+    io.close(@c.stream).must()
+    net.set_accept_deadline(l, ms: 10_000).must()
+    seen: [str] @= []
+    at: i64 @= 1
+
+    while at < parts.len()
+        match net.accept(l, deadline_ms: 10_000)
+            .err _ => break
+            .ok conn =>
+                r @= io.reader(conn.stream)
+
+                match http.read_request(@r, limits: http.default_limits())
+                    .ok q =>
+                        lines: [str] @= [q.method + " " + url.request_target(q.url)]
+
+                        for h in q.headers
+                            lines @ lines.push(strings.to_lower(h.name) + ": " + h.value)
+
+                        seen @ seen.push(lines.join("\n") + "\n\n" + bytes.to_text_lossy(q.body))
+
+                        match io.write_text(r.stream, text: parts[at])
+                            .ok _  => _ = 0
+                            .err _ => _ = 0
+
+                        at @ at + 1
+                    .err _ => _ = 0
+
+                match io.close(@r.stream)
+                    .ok _  => _ = 0
+                    .err _ => _ = 0
+
+    net.close_listener(@l).must()
+    return seen.join(SEPARATOR)
+
+# The address of a server `start` started on `port`.
+function base(port: i64) -> str
+    return f"http://127.0.0.1:{port}"
+
+# The data-only events `datas` as a `text/event-stream` body, as Chat
+# Completions streams them.
+function data_events(datas: [str]) -> str
+    out: [str] @= []
+
+    for d in datas
+        out @ out.push("data: " + d + "\n\n")
+
+    return out.join("")
+
+# A chat completion as the API writes one, of one choice holding `message`,
+# a JSON object's text, finished by `finish_reason`.
+function completion(message: str, finish_reason: str) -> str
+    return "{\"id\":\"chatcmpl-1\",\"object\":\"chat.completion\",\"created\":1694268190,\"model\":\"gpt-test\",\"choices\":[{\"index\":0,\"message\":" + message + ",\"logprobs\":null,\"finish_reason\":\"" + finish_reason + "\"}],\"usage\":{\"prompt_tokens\":9,\"completion_tokens\":12,\"total_tokens\":21,\"prompt_tokens_details\":{\"cached_tokens\":4},\"completion_tokens_details\":{\"reasoning_tokens\":2}}}"
+
+# An error body as OpenAI writes one.
+function error_body(kind: str, code: str, words: str) -> str
+    return "{\"error\":{\"message\":\"" + words + "\",\"type\":\"" + kind + "\",\"param\":null,\"code\":\"" + code + "\"}}"
+
+# The chunks of a completion of every kind: the role, content in pieces, two
+# tool calls whose arguments come in pieces interleaved, the finish, the
+# usage with no choice, and `[DONE]`.
+function every_chunk() -> str
+    head = "{\"id\":\"chatcmpl-2\",\"object\":\"chat.completion.chunk\",\"created\":1694268190,\"model\":\"gpt-test\",\"choices\":"
+    return data_events(
+        [head + "[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\"},\"finish_reason\":null}]}", head + "[{\"index\":0,\"delta\":{\"content\":\"Checking \"},\"finish_reason\":null}]}", head + "[{\"index\":0,\"delta\":{\"content\":\"Zürich.\"},\"finish_reason\":null}]}", head + "[{\"index\":0,\"delta\":{\"tool_calls\":[{\"index\":0,\"id\":\"call_a\",\"type\":\"function\",\"function\":{\"name\":\"get_weather\",\"arguments\":\"\"}}]},\"finish_reason\":null}]}", head + "[{\"index\":0,\"delta\":{\"tool_calls\":[{\"index\":0,\"function\":{\"arguments\":\"{\\\"city\\\":\"}}]},\"finish_reason\":null}]}", head + "[{\"index\":0,\"delta\":{\"tool_calls\":[{\"index\":1,\"id\":\"call_b\",\"type\":\"function\",\"function\":{\"name\":\"get_time\",\"arguments\":\"{}\"}}]},\"finish_reason\":null}]}", head + "[{\"index\":0,\"delta\":{\"tool_calls\":[{\"index\":0,\"function\":{\"arguments\":\"\\\"Zürich\\\"}\"}}]},\"finish_reason\":null}]}", head + "[{\"index\":0,\"delta\":{},\"finish_reason\":\"tool_calls\"}]}", head + "[],\"usage\":{\"prompt_tokens\":30,\"completion_tokens\":40,\"total_tokens\":70}}", "[DONE]"]
+    )
+
+# A response of the Responses API holding `output`, a JSON list's text, in
+# `status`.
+function response(output: str, status: str) -> str
+    return "{\"id\":\"resp_1\",\"object\":\"response\",\"created_at\":1741290958,\"status\":\"" + status + "\",\"error\":null,\"incomplete_details\":null,\"model\":\"gpt-test\",\"output\":" + output + ",\"usage\":{\"input_tokens\":36,\"input_tokens_details\":{\"cached_tokens\":0},\"output_tokens\":87,\"output_tokens_details\":{\"reasoning_tokens\":5},\"total_tokens\":123}}"
+
+# The events of a response with a text and a function call.
+function response_events() -> str
+    whole = response(
+        output: "[{\"id\":\"msg_1\",\"type\":\"message\",\"status\":\"completed\",\"role\":\"assistant\",\"content\":[{\"type\":\"output_text\",\"text\":\"Hi there\",\"annotations\":[]}]},{\"id\":\"fc_1\",\"type\":\"function_call\",\"call_id\":\"call_1\",\"name\":\"get_weather\",\"arguments\":\"{\\\"city\\\":\\\"Paris\\\"}\",\"status\":\"completed\"}]",
+        status: "completed"
+    )
+    return events(
+        ["response.created", "{\"type\":\"response.created\",\"response\":" + response(output: "[]", status: "in_progress") + ",\"sequence_number\":0}", "response.output_item.added", "{\"type\":\"response.output_item.added\",\"output_index\":0,\"item\":{\"id\":\"msg_1\",\"type\":\"message\",\"status\":\"in_progress\",\"role\":\"assistant\",\"content\":[]},\"sequence_number\":1}", "response.output_text.delta", "{\"type\":\"response.output_text.delta\",\"item_id\":\"msg_1\",\"output_index\":0,\"content_index\":0,\"delta\":\"Hi\",\"sequence_number\":2}", "response.output_text.delta", "{\"type\":\"response.output_text.delta\",\"item_id\":\"msg_1\",\"output_index\":0,\"content_index\":0,\"delta\":\" there\",\"sequence_number\":3}", "response.output_text.done", "{\"type\":\"response.output_text.done\",\"item_id\":\"msg_1\",\"output_index\":0,\"content_index\":0,\"text\":\"Hi there\",\"sequence_number\":4}", "response.output_item.done", "{\"type\":\"response.output_item.done\",\"output_index\":0,\"item\":{\"id\":\"msg_1\",\"type\":\"message\",\"status\":\"completed\",\"role\":\"assistant\",\"content\":[{\"type\":\"output_text\",\"text\":\"Hi there\",\"annotations\":[]}]},\"sequence_number\":5}", "response.output_item.added", "{\"type\":\"response.output_item.added\",\"output_index\":1,\"item\":{\"id\":\"fc_1\",\"type\":\"function_call\",\"call_id\":\"call_1\",\"name\":\"get_weather\",\"arguments\":\"\",\"status\":\"in_progress\"},\"sequence_number\":6}", "response.function_call_arguments.delta", "{\"type\":\"response.function_call_arguments.delta\",\"item_id\":\"fc_1\",\"output_index\":1,\"delta\":\"{\\\"city\\\":\",\"sequence_number\":7}", "response.function_call_arguments.delta", "{\"type\":\"response.function_call_arguments.delta\",\"item_id\":\"fc_1\",\"output_index\":1,\"delta\":\"\\\"Paris\\\"}\",\"sequence_number\":8}", "response.function_call_arguments.done", "{\"type\":\"response.function_call_arguments.done\",\"item_id\":\"fc_1\",\"output_index\":1,\"arguments\":\"{\\\"city\\\":\\\"Paris\\\"}\",\"sequence_number\":9}", "response.completed", "{\"type\":\"response.completed\",\"response\":" + whole + ",\"sequence_number\":10}"]
+    )

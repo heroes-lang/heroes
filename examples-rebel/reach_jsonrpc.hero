@@ -1,0 +1,9 @@
+# Reaches Rebel's package `jsonrpc`, so that `heroes test` on this file runs
+# the tests of its face and its private modules (spec § 12). It prints the
+# answer to the specification's own first example, a call of `subtract` with
+# 42 and 23, on every run, touching no stream.
+
+use <rebel>/jsonrpc
+
+function main()
+    print(jsonrpc.format(jsonrpc.result_of(.number(v: 1.0), value: .number(v: 19.0))).must())

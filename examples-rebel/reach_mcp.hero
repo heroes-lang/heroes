@@ -1,0 +1,207 @@
+# Reaches Rebel's package `mcp`, so that `heroes test` on this file runs the
+# tests of its face and its private modules (spec § 12), and is itself an
+# MCP server a model can call: over standard streams as it starts, one
+# message a line, until its input ends; over Streamable HTTP on
+# 127.0.0.1:<port> with `--http <port>`, until it is stopped.
+#
+# Its tools: `add` (two numbers, a structured result), `echo`, `count` (how
+# many times it was called, the program's own state lent to its handler by
+# `@`), and `greet`, which asks the user's name by an elicitation where the
+# call gives none. A resource `notes://readme`, a template
+# `greeting://{name}` whose names complete, and a prompt `review`.
+
+use <rebel>/http
+use <rebel>/io
+use <rebel>/json
+use <rebel>/jsonrpc
+use <rebel>/mcp
+use <rebel>/net
+use <rebel>/numbers
+
+# What the server keeps between requests: the program's own state.
+record State
+    # How many times `count` was called.
+    calls: i64
+
+# The server this program is: its tools, resources, template and prompt.
+function server() -> mcp.Server
+    s @= mcp.new_server(mcp.implementation(name: "heroes-example", version: "0.1.0"))
+    s.instructions @ "Arithmetic, an echo, a counter and a greeting, from a server written in Heroes."
+    add @= mcp.new_tool(
+        name: "add",
+        description: "Adds two numbers and answers their sum.",
+        input_schema: json.parse("{\"type\": \"object\", \"properties\": {\"a\": {\"type\": \"number\"}, \"b\": {\"type\": \"number\"}}, \"required\": [\"a\", \"b\"], \"additionalProperties\": false}").must()
+    )
+    add.output_schema @ json.parse(
+        "{\"type\": \"object\", \"properties\": {\"sum\": {\"type\": \"number\"}}, \"required\": [\"sum\"]}"
+    ).must()
+    add.hints.read_only @ true
+    add.hints.destructive @ false
+    add.hints.open_world @ false
+    echo = mcp.new_tool(
+        name: "echo",
+        description: "Answers the text it is given.",
+        input_schema: json.parse("{\"type\": \"object\", \"properties\": {\"text\": {\"type\": \"string\", \"x-mcp-header\": \"Text\"}}, \"required\": [\"text\"]}").must()
+    )
+    count = mcp.new_tool(
+        name: "count",
+        description: "Counts its own calls since the server started.",
+        input_schema: json.parse("{\"type\": \"object\", \"additionalProperties\": false}").must()
+    )
+    greet = mcp.new_tool(
+        name: "greet",
+        description: "Greets a person, asking the user for a name where none is given.",
+        input_schema: json.parse("{\"type\": \"object\", \"properties\": {\"name\": {\"type\": \"string\"}}}").must()
+    )
+    s.tools @ [add, echo, count, greet]
+    readme @= mcp.new_resource(uri: "notes://readme", name: "readme")
+    readme.mime_type @ "text/plain"
+    s.resources @ [readme]
+    s.templates @ [mcp.new_template(uri_template: "greeting://{name}", name: "greeting")]
+    review = mcp.new_prompt(
+        name: "review",
+        description: "Asks for a review of a piece of code.",
+        arguments: [mcp.PromptArgument(name: "code", title: "", description: "The code to review.", required: true)]
+    )
+    s.prompts @ [review]
+    s.completions @ true
+    return s
+
+# The answer to `call`, the program's own function for each tool.
+function answer_tool(s: mcp.Server, @state: State, call: mcp.ToolCall) -> jsonrpc.Message
+    if call.name == "add"
+        a = json.number_of(json.member(call.arguments, key: "a").must()).must()
+        b = json.number_of(json.member(call.arguments, key: "b").must()).must()
+        sum: {str: json.Value} @= {}
+        sum["sum"] @ .number(v: a + b)
+        return mcp.answer_tool(s, call: call, result: mcp.structured_result(.object(members: sum)).must())
+
+    if call.name == "echo"
+        return mcp.answer_tool(
+            s,
+            call: call,
+            result: mcp.text_result(json.text_of(json.member(call.arguments, key: "text").must()).must())
+        )
+
+    if call.name == "count"
+        state.calls @ state.calls + 1
+        return mcp.answer_tool(s, call: call, result: mcp.text_result(f"called {state.calls} times"))
+
+    match json.member(call.arguments, key: "name")
+        .ok given => return mcp.answer_tool(
+            s,
+            call: call,
+            result: mcp.text_result(f"Hello, {json.text_of(given).default("you")}!")
+        )
+        .err _ => _ = 0
+
+    match mcp.elicited_of(call.inputs, key: "who")
+        .ok answer =>
+            if answer.action != "accept"
+                return mcp.answer_tool(s, call: call, result: mcp.error_result("The user would not say who to greet."))
+            name = json.text_of(answer.content["name"].default(.text(v: "you"))).default("you")
+            return mcp.answer_tool(s, call: call, result: mcp.text_result(f"Hello, {name}!"))
+        .err _ =>
+            ask: {str: mcp.InputRequest} @= {}
+            ask["who"] @ .form(
+                message: "Who should be greeted?",
+                schema: json.parse("{\"type\": \"object\", \"properties\": {\"name\": {\"type\": \"string\"}}, \"required\": [\"name\"]}").must()
+            )
+            return mcp.answer_input_required(
+                s,
+                id: call.id,
+                meta: call.meta,
+                input: mcp.InputRequired(requests: ask, state: "")
+            )
+
+# The answer to `request`, or a failure `not_found` where nothing answers it.
+function answer_of(s: mcp.Server, @state: State, request: mcp.Request) -> jsonrpc.Message?
+    match request
+        .answered a  => return ok(a.answer)
+        .call_tool c => return ok(answer_tool(s, state: @state, call: c.call))
+        .read_resource r =>
+            text = if r.read.template == ""
+                "A server written in Heroes, speaking MCP 2026-07-28."
+            else
+                f"Greetings, {r.read.values["name"].default("stranger")}."
+            return ok(
+                mcp.answer_resource(s, read: r.read, contents: [.text(uri: r.read.uri, mime_type: "text/plain", text: text)])
+            )
+        .get_prompt g =>
+            message = mcp.PromptMessage(
+                role: "user",
+                content: mcp.text_content(f"Please review this code:\n{g.get.arguments["code"].default("")}")
+            )
+            return ok(
+                mcp.answer_prompt(s, get: g.get, result: mcp.PromptResult(description: "A code review", messages: [message]))
+            )
+        .complete c =>
+            values: [str] @= []
+
+            for name in ["Ada", "Alan", "Grace", "Barbara"]
+                if name.len() >= c.completion.value.len() && name.slice(from: 0, to: c.completion.value.len()) == c.completion.value
+                    values @ values.push(name)
+
+            return ok(mcp.answer_completion(s, completion: c.completion, values: values))
+        .listen l                            => return ok(mcp.acknowledge(s, listen: l.listen))
+        .respond _ | .cancelled _ | .ignored => return fail(code: "not_found", msg: "nothing answers it")
+
+# Serves Streamable HTTP on 127.0.0.1:`port`, one connection after another.
+function serve_http(s: mcp.Server, @state: State, port: i64)
+    l @= net.listen(host: "127.0.0.1", port: port).must()
+    io.write_line(io.stderr(), line: f"serving MCP on http://127.0.0.1:{l.address.port}/mcp").must()
+
+    while true
+        conn = match net.accept(l, deadline_ms: 30_000)
+            .ok got => got
+            .err _  => break
+
+        reader @= io.reader(conn.stream)
+
+        while true
+            r = match http.next_request(@reader, limits: http.default_limits())
+                .ok got => got
+                .err _  => break
+
+            handled = mcp.read_http(s, r: r)
+
+            response = match handled
+                .respond x => x.response
+                .answered _ | .cancelled _ | .ignored | .call_tool _ | .read_resource _ | .get_prompt _ | .complete _ | .listen _ =>
+                    match answer_of(s, state: @state, request: handled)
+                        .ok m  => mcp.respond_http(m)
+                        .err _ => http.respond_status(http.STATUS_ACCEPTED)
+
+            match http.write_answer(reader.stream, r: r, response: response)
+                .ok _  => _ = 0
+                .err _ => break
+
+            if r.closing || response.closing
+                break
+
+        io.close(@reader.stream).must()
+
+    net.close_listener(@l).must()
+
+function main()
+    given = args()
+    s = server()
+    state @= State(calls: 0)
+
+    if given.len() == 2 && given[0] == "--http"
+        serve_http(s, state: @state, port: numbers.parse_int(given[1]).default(0))
+        return
+    reader @= io.reader(io.stdin())
+    out = io.stdout()
+
+    while true
+        request = match mcp.read_request(@reader, s: s)
+            .ok got => got
+            .err _  => break
+
+        match answer_of(s, state: @state, request: request)
+            .ok m =>
+                match jsonrpc.write_message(out, m: m, framing: .lines)
+                    .ok _  => _ = 0
+                    .err _ => break
+            .err _ => _ = 0

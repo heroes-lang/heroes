@@ -1,0 +1,363 @@
+# Every call, variable and `break` of a program tied to what it names, by
+# jq's lexical scoping: a call to the nearest definition or parameter of its
+# name and arity in scope, else to a builtin written in Heroes; a variable to
+# the nearest binding of its name, else to the run's own variables, read by
+# name when it runs; a `break` to the nearest `label`. It writes into each
+# node how many frames up its target stands at run time, since every binding,
+# parameter, local definition and label pushes exactly one frame. A
+# definition at the program's top level, which captures nothing, pushes none.
+# It walks the program on a stack of its own.
+
+use json/jq/internal/natives
+use json/jq/internal/parser
+use json/jq/internal/syntax
+use json/jq/internal/values
+
+# A variable in scope.
+constant VARIABLE_ENTRY: i64
+    1
+
+# A definition with a frame.
+constant LOCAL_ENTRY: i64
+    2
+
+# A definition at the top level, with none.
+constant GLOBAL_ENTRY: i64
+    3
+
+# A parameter.
+constant PARAMETER_ENTRY: i64
+    4
+
+# A label.
+constant LABEL_ENTRY: i64
+    5
+
+# A call resolved to a variable the run gives by name.
+constant DYNAMIC: i64
+    1
+
+# One name in scope.
+record Entry
+    # The entry below it, -1 for none.
+    parent: i64
+    # One of the `_ENTRY` constants.
+    kind: i64
+    # Its name.
+    name: str
+    # A definition's arity.
+    arity: i64
+    # A definition's node.
+    node: i64
+    # Whether it stands for a frame at run time.
+    frame: bool
+
+# A node to resolve, in its scope.
+record Work
+    # The node.
+    node: i64
+    # The innermost entry of its scope, -1 for none.
+    scope: i64
+    # Whether a frame stands between it and the top level.
+    local: bool
+
+# Adds an entry to `entries`, answering its index.
+function enter(@entries: [Entry], e: Entry) -> i64
+    entries @ entries.push(e)
+    return entries.len() - 1
+
+# Pushes `w` on the stack, answering the new top.
+function stack_push(@stack: [Work], top: i64, w: Work) -> i64
+    if top == stack.len()
+        stack @ stack.push(w)
+    else
+        stack[top] @ w
+    return top + 1
+
+# The variables `pattern` binds, in order, added to `names` where new.
+function pattern_names(nodes: [syntax.Node] lent, pattern: i64, @names: [str])
+    left: [i64] @= [pattern]
+
+    while left.len() > 0
+        p = left[left.len() - 1]
+        left @ left.slice(from: 0, to: left.len() - 1)
+
+        if p >= 0
+            n = nodes[p]
+
+            if n.kind == syntax.PATTERN_VARIABLE || n.kind == syntax.PATTERN_ENTRY && n.text != ""
+                seen: bool @= false
+
+                for name in names
+                    if name == n.text
+                        seen @ true
+
+                if !seen
+                    names @ names.push(n.text)
+
+            if n.kind == syntax.PATTERN_ENTRY
+                left @ left.push(n.b)
+            else if n.kind == syntax.PATTERN_ARRAY || n.kind == syntax.PATTERN_OBJECT
+                at: i64 @= n.items.len()
+
+                while at > 0
+                    at @ at - 1
+                    left @ left.push(n.items[at])
+
+# The key expressions of `pattern`'s object entries, in order, added to
+# `key_nodes`.
+function pattern_keys(nodes: [syntax.Node] lent, pattern: i64, @key_nodes: [i64])
+    left: [i64] @= [pattern]
+
+    while left.len() > 0
+        p = left[left.len() - 1]
+        left @ left.slice(from: 0, to: left.len() - 1)
+
+        if p >= 0
+            n = nodes[p]
+
+            if n.kind == syntax.PATTERN_ENTRY
+                if n.a >= 0
+                    key_nodes @ key_nodes.push(n.a)
+                left @ left.push(n.b)
+            else if n.kind == syntax.PATTERN_ARRAY || n.kind == syntax.PATTERN_OBJECT
+                at: i64 @= n.items.len()
+
+                while at > 0
+                    at @ at - 1
+                    left @ left.push(n.items[at])
+
+# `scope` with a variable entry for each of `names`.
+function with_variables(@entries: [Entry], scope: i64, names: [str]) -> i64
+    s: i64 @= scope
+
+    for name in names
+        s @ enter(@entries, Entry(parent: s, kind: VARIABLE_ENTRY, name: name, arity: 0, node: -1, frame: true))
+
+    return s
+
+# A failure saying `what`, at the line of node `at`.
+function refuse(text: str, at: i64, what: str) -> ()?
+    return values.raised(f"{what} at line {syntax.line_of(text, at: at)}")
+
+# Every node reached from `root` resolved; `text` is the user's filter, for
+# the lines of the messages, and `first_user` the first node of it.
+#
+# Fails `invalid` where a call names no definition and no builtin, or a
+# `break` no label.
+function resolve(@nodes: [syntax.Node], root: i64, text: str, first_user: i64) -> ()?
+    entries: [Entry] @= []
+    stack: [Work] @= [Work(node: root, scope: -1, local: false)]
+    top: i64 @= 1
+
+    while top > 0
+        top @ top - 1
+        w = stack[top]
+        id = w.node
+
+        if id >= 0
+            n = nodes[id]
+            k = n.kind
+
+            line_text = if id >= first_user
+                text
+            else
+                ""
+
+            if k == syntax.CALL
+                found: bool @= false
+                frames: i64 @= 0
+                s: i64 @= w.scope
+                arity = n.items.len()
+
+                while !found && s >= 0
+                    e = entries[s]
+
+                    if e.kind == PARAMETER_ENTRY && e.name == n.text && arity == 0
+                        nodes[id].c @ syntax.TO_PARAMETER
+                        nodes[id].b @ frames
+                        found @ true
+                    else if (e.kind == LOCAL_ENTRY || e.kind == GLOBAL_ENTRY) && e.name == n.text && e.arity == arity
+                        nodes[id].c @ if e.kind == LOCAL_ENTRY
+                            syntax.TO_LOCAL
+                        else
+                            syntax.TO_GLOBAL
+                        nodes[id].d @ e.node
+                        nodes[id].b @ frames
+                        found @ true
+                    else
+                        if e.frame
+                            frames @ frames + 1
+                        s @ e.parent
+
+                if !found
+                    native = natives.id_of(name: n.text, arity: arity)
+
+                    if native < 0
+                        refuse(text: line_text, at: n.at, what: f"{n.text}/{arity} is not defined")?
+                    nodes[id].c @ syntax.TO_NATIVE
+                    nodes[id].d @ native
+
+                for arg in n.items
+                    top @ stack_push(@stack, top: top, w: Work(node: arg, scope: w.scope, local: w.local))
+            else if k == syntax.VARIABLE
+                found: bool @= false
+                frames: i64 @= 0
+                s: i64 @= w.scope
+
+                while !found && s >= 0
+                    e = entries[s]
+
+                    if e.kind == VARIABLE_ENTRY && e.name == n.text
+                        nodes[id].b @ frames
+                        found @ true
+                    else
+                        if e.frame
+                            frames @ frames + 1
+                        s @ e.parent
+
+                if !found
+                    nodes[id].c @ DYNAMIC
+            else if k == syntax.BREAK
+                found: bool @= false
+                frames: i64 @= 0
+                s: i64 @= w.scope
+
+                while !found && s >= 0
+                    e = entries[s]
+
+                    if e.kind == LABEL_ENTRY && e.name == n.text
+                        nodes[id].b @ frames
+                        found @ true
+                    else
+                        if e.frame
+                            frames @ frames + 1
+                        s @ e.parent
+
+                if !found
+                    refuse(text: line_text, at: n.at, what: f"$*label-{n.text} is not defined")?
+            else if k == syntax.BIND
+                names: [str] @= []
+                key_nodes: [i64] @= []
+
+                for p in n.items
+                    pattern_names(nodes, pattern: p, @names)
+                    pattern_keys(nodes, pattern: p, @key_nodes)
+
+                nodes[id].names @ names
+                holder = register_keys(@nodes, key_nodes: key_nodes, at: n.at)
+                nodes[id].extra @ holder
+                inner = with_variables(@entries, scope: w.scope, names: names)
+                top @ stack_push(@stack, top: top, w: Work(node: n.a, scope: w.scope, local: w.local))
+                top @ stack_push(@stack, top: top, w: Work(node: holder, scope: w.scope, local: w.local))
+                top @ stack_push(@stack, top: top, w: Work(node: n.b, scope: inner, local: true))
+            else if k == syntax.REDUCE || k == syntax.FOREACH
+                names: [str] @= []
+                key_nodes: [i64] @= []
+                pattern_names(nodes, pattern: n.b, @names)
+                pattern_keys(nodes, pattern: n.b, @key_nodes)
+                nodes[id].names @ names
+                holder = register_keys(@nodes, key_nodes: key_nodes, at: n.at)
+                nodes[id].extra @ holder
+                inner = with_variables(@entries, scope: w.scope, names: names)
+                top @ stack_push(@stack, top: top, w: Work(node: n.a, scope: w.scope, local: w.local))
+                top @ stack_push(@stack, top: top, w: Work(node: holder, scope: w.scope, local: w.local))
+                top @ stack_push(@stack, top: top, w: Work(node: n.c, scope: w.scope, local: w.local))
+                top @ stack_push(@stack, top: top, w: Work(node: n.d, scope: inner, local: true))
+
+                for x in n.items
+                    top @ stack_push(@stack, top: top, w: Work(node: x, scope: inner, local: true))
+            else if k == syntax.DEF
+                kind = if w.local
+                    LOCAL_ENTRY
+                else
+                    GLOBAL_ENTRY
+                own = enter(
+                    @entries,
+                    Entry(parent: w.scope, kind: kind, name: n.text, arity: n.names.len(), node: id, frame: w.local)
+                )
+
+                nodes[id].c @ if w.local
+                    1
+                else
+                    0
+                body_scope: i64 @= own
+
+                for p in n.names
+                    body_scope @ enter(
+                        @entries,
+                        Entry(parent: body_scope, kind: PARAMETER_ENTRY, name: p, arity: 0, node: -1, frame: true)
+                    )
+
+                top @ stack_push(@stack, top: top, w: Work(node: n.a, scope: body_scope, local: true))
+                top @ stack_push(@stack, top: top, w: Work(node: n.b, scope: own, local: w.local))
+            else if k == syntax.LABEL
+                inner = enter(
+                    @entries,
+                    Entry(parent: w.scope, kind: LABEL_ENTRY, name: n.text, arity: 0, node: -1, frame: true)
+                )
+                top @ stack_push(@stack, top: top, w: Work(node: n.a, scope: inner, local: true))
+            else if k == syntax.PATTERN_VARIABLE || k == syntax.PATTERN_ARRAY || k == syntax.PATTERN_OBJECT || k == syntax.PATTERN_ENTRY
+                _ = 0
+            else
+                for child in [n.a, n.b, n.c]
+                    if child >= 0
+                        top @ stack_push(@stack, top: top, w: Work(node: child, scope: w.scope, local: w.local))
+
+                for child in n.items
+                    top @ stack_push(@stack, top: top, w: Work(node: child, scope: w.scope, local: w.local))
+
+    return ok()
+
+# A node holding the key expressions of a binding's patterns, in order, so
+# that the machine evaluates them as one call's arguments; -1 where there is
+# none.
+function register_keys(@nodes: [syntax.Node], key_nodes: [i64], at: i64) -> i64
+    if key_nodes.len() == 0
+        return -1
+    holder: syntax.Node @= syntax.leaf(kind: syntax.ARRAY, at: at)
+    holder.items @ key_nodes
+    return syntax.add(@nodes, holder)
+
+## Tests
+
+# The nodes of `text` read and resolved with no prelude, and its root.
+function resolved(text: str) -> [syntax.Node]?
+    nodes: [syntax.Node] @= []
+    root = parser.read_into(@nodes, text: text)?
+    resolve(@nodes, root: root, text: text, first_user: 0)?
+    return ok(nodes)
+
+test "resolve: a call to a definition, to a parameter, and to a builtin"
+    nodes = resolved("def f(g): g; f(length)").must()
+    targets: [i64] @= []
+
+    for n in nodes
+        if n.kind == syntax.CALL
+            targets @ targets.push(n.c)
+
+    assert targets.len() == 3
+    assert targets[0] == syntax.TO_PARAMETER || targets[1] == syntax.TO_PARAMETER
+    assert targets[2] == syntax.TO_GLOBAL || targets[1] == syntax.TO_GLOBAL
+
+test "resolve: a variable's frames counted, one the run gives, a label missing"
+    nodes = resolved("1 as $a | 2 as $b | [$a, $b, $c]").must()
+    distances: [i64] @= []
+
+    for n in nodes
+        if n.kind == syntax.VARIABLE && n.c != DYNAMIC
+            distances @ distances.push(n.b)
+
+    assert distances == [1, 0]
+    assert resolved("break $nowhere").is_err()
+    assert resolved("nosuch(1)").is_err()
+
+test "resolve: a definition inside a binding has a frame, one at the top has none"
+    nodes = resolved("def top: 1; 1 as $x | def inner: $x; inner").must()
+    frames_of: [i64] @= []
+
+    for n in nodes
+        if n.kind == syntax.DEF
+            frames_of @ frames_of.push(n.c)
+
+    assert frames_of.len() == 2 && frames_of[0] + frames_of[1] == 1

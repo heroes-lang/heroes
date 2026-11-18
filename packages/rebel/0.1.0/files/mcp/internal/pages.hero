@@ -1,0 +1,87 @@
+# The cursors of MCP's paginated lists (server/utilities § Pagination): a
+# position in a list written as an opaque text a client gives back, read and
+# checked, and the page of a list it begins.
+
+use bytes
+use json
+use numbers
+use strings
+
+# The code of a cursor that does not read: a request a server answers
+# -32602.
+constant INVALID: str
+    "invalid"
+
+# The prefix that marks a cursor this server wrote.
+constant MARK: str
+    "page:"
+
+# The cursor that begins a page at `offset`, an index into the list.
+function cursor_of(offset: i64) -> str
+    return bytes.format_base64_url_unpadded(bytes.from_text(f"{MARK}{offset}"))
+
+# The index `cursor` begins at, "" beginning at 0. Fails `invalid` where it
+# is not one `cursor_of` wrote, or it points past `count`, a list's length.
+function offset_of(cursor: str, count: i64) -> i64?
+    if cursor == ""
+        return ok(0)
+
+    text = match bytes.parse_base64_url_unpadded(cursor)
+        .ok data => bytes.to_text(data).default("")
+        .err _   => ""
+
+    if !strings.has_prefix(s: text, prefix: MARK)
+        return fail(code: INVALID, msg: f"the cursor \"{cursor}\" is not one this server gave")
+
+    offset = match numbers.parse_int(text.slice(from: MARK.len(), to: text.len()))
+        .ok n  => n
+        .err _ => return fail(code: INVALID, msg: f"the cursor \"{cursor}\" is not one this server gave")
+
+    if offset < 0 || offset > count
+        return fail(code: INVALID, msg: f"the cursor \"{cursor}\" points past the list's {count} items")
+    return ok(offset)
+
+# The end of the page that begins at `offset` of a list of `count`, at most
+# `size` long; 0 or less for no bound.
+function end_of(offset: i64, count: i64, size: i64) -> i64
+    if size <= 0 || count - offset <= size
+        return count
+    return offset + size
+
+test "cursor_of, offset_of: read back, the empty cursor, and the refusals"
+    assert offset_of(cursor_of(3), count: 5).must() == 3 && offset_of("", count: 0).must() == 0
+
+    for bad in ["x", cursor_of(6), bytes.format_base64_url_unpadded(bytes.from_text("page:-1")), bytes.format_base64_url_unpadded(bytes.from_text("page:a"))]
+        match offset_of(bad, count: 5)
+            .ok _  => assert bad == "refused"
+            .err e => assert e.code == INVALID
+
+test "end_of: a page bounded, the last page, and no bound"
+    assert end_of(offset: 0, count: 10, size: 4) == 4 && end_of(offset: 8, count: 10, size: 4) == 10 && end_of(offset: 0, count: 10, size: 0) == 10
+
+# One page of a list, and the cursor of the next.
+record Page
+    # The page's items.
+    items: [json.Value]
+    # The cursor of the next page, "" where this one is the last.
+    next: str
+
+# The page of `items` that `cursor` begins, at most `size` long, 0 or less
+# for every item. Fails `invalid` as `offset_of` does.
+function page(items: [json.Value], cursor: str, size: i64) -> Page?
+    offset = offset_of(cursor, count: items.len())?
+    end = end_of(offset: offset, count: items.len(), size: size)
+
+    next = if end < items.len()
+        cursor_of(end)
+    else
+        ""
+    return ok(Page(items: items.slice(from: offset, to: end), next: next))
+
+test "page: the first, the next and the last page, and every item where no size bounds it"
+    items: [json.Value] = [.number(v: 1.0), .number(v: 2.0), .number(v: 3.0)]
+    first = page(items, cursor: "", size: 2).must()
+    assert first.items.len() == 2 && first.next != ""
+    last = page(items, cursor: first.next, size: 2).must()
+    assert last.items == [.number(v: 3.0)] && last.next == ""
+    assert page(items, cursor: "", size: 0).must().items.len() == 3

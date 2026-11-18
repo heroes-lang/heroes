@@ -1,0 +1,331 @@
+# UAX #14's line breaking: each character's class resolved by LB1, the
+# rules LB4 to LB9 read on the characters themselves, and the context the
+# rules after LB9 ask for kept as the bases are read, so a text is read once.
+
+use unicode/segment/internal/line_rules
+use unicode/segment/internal/tables
+use unicode/segment/internal/text
+
+# A place where a line may break: the byte index the next line begins at,
+# and whether the line must break there.
+record Opportunity
+    # The byte index.
+    at: i64
+    # Whether a line break before it forces the break.
+    mandatory: bool
+
+# The Line_Break class of the packed values `value`, resolved by LB1: AI, SG
+# and XX are AL; SA is CM for a mark and AL otherwise; CJ is NS.
+function resolved(value: i64) -> i64
+    raw = text.line_of(value)
+
+    if raw == tables.LB_AI || raw == tables.LB_SG || raw == tables.LB_XX
+        return tables.LB_AL
+
+    if raw == tables.LB_SA
+        group = text.category_group_of(value)
+
+        if group == 4 || group == 5
+            return tables.LB_CM
+        return tables.LB_AL
+
+    if raw == tables.LB_CJ
+        return tables.LB_NS
+    return raw
+
+# Whether a combining mark or a joiner after `class_before` stays with it by
+# LB9: every class but BK, CR, LF, NL, SP and ZW takes one.
+function takes_marks(class_before: i64) -> bool
+    return !line_rules.is_line_end(class_before) && class_before != tables.LB_SP && class_before != tables.LB_ZW
+
+# Whether `class_now` is a combining mark or a joiner, CM or ZWJ.
+function is_mark(class_now: i64) -> bool
+    return class_now == tables.LB_CM || class_now == tables.LB_ZWJ
+
+# The class a base of `class_now` has for the rules after LB9: AL for a mark
+# no base took, by LB10.
+function base_class(class_now: i64) -> i64
+    if is_mark(class_now)
+        return tables.LB_AL
+    return class_now
+
+# Whether the packed values `value` are East Asian: full-width, wide or
+# half-width.
+function is_east_asian(value: i64) -> bool
+    width = text.width_class_of(value)
+    return width == tables.EA_F || width == tables.EA_W || width == tables.EA_H
+
+# The places where a line of `decoded` may break, in order, the end of the
+# text the last; none for the empty text.
+function opportunities(decoded: text.Decoded lent) -> [Opportunity]
+    out: [Opportunity] @= []
+    count = decoded.points.len()
+
+    if count == 0
+        return out
+    classes: [i64] @= []
+
+    for value in decoded.values
+        classes @ classes.push(resolved(value))
+
+    # Whether each character is a mark LB9 attaches to the base before it.
+    attached: [bool] @= [false]
+    at: i64 @= 1
+
+    while at < count
+        attached @ attached.push(is_mark(classes[at]) && takes_marks(classes[at - 1]))
+        at @ at + 1
+
+    # For each index, the first base at or after it, `count` past the end.
+    bases_from = bases_after(attached)
+    state: Reading @= start_reading()
+    state @ read_base(state, decoded: decoded, classes: classes, index: 0)
+    zero_width: bool @= classes[0] == tables.LB_ZW
+    at @ 1
+
+    while at < count
+        left_raw = classes[at - 1]
+        right_raw = classes[at]
+
+        if left_raw == tables.LB_BK || left_raw == tables.LB_CR && right_raw != tables.LB_LF || left_raw == tables.LB_LF || left_raw == tables.LB_NL
+            out @ out.push(Opportunity(at: decoded.starts[at], mandatory: true))
+        else if left_raw == tables.LB_CR || line_rules.is_line_end(right_raw) || right_raw == tables.LB_SP || right_raw == tables.LB_ZW
+            _ = 0
+        else if zero_width
+            out @ out.push(Opportunity(at: decoded.starts[at], mandatory: false))
+        else if left_raw == tables.LB_ZWJ || attached[at]
+            _ = 0
+        else if !line_rules.joins(around(state, decoded: decoded, classes: classes, index: at, bases_from: bases_from))
+            out @ out.push(Opportunity(at: decoded.starts[at], mandatory: false))
+
+        if right_raw == tables.LB_ZW
+            zero_width @ true
+        else if right_raw != tables.LB_SP
+            zero_width @ false
+
+        if !attached[at]
+            state @ read_base(state, decoded: decoded, classes: classes, index: at)
+        at @ at + 1
+
+    out @ out.push(Opportunity(at: decoded.starts[count], mandatory: line_rules.is_line_end(classes[count - 1])))
+    return out
+
+# For each index of `attached`, the first index at or after it that is no
+# attached mark; one more entry, for the end, holds the length.
+function bases_after(attached: [bool] lent) -> [i64]
+    backward: [i64] @= [attached.len()]
+    next: i64 @= attached.len()
+    at: i64 @= attached.len() - 1
+
+    while at >= 0
+        if !attached[at]
+            next @ at
+        backward @ backward.push(next)
+        at @ at - 1
+
+    out: [i64] @= []
+    back: i64 @= backward.len() - 1
+
+    while back >= 0
+        out @ out.push(backward[back])
+        back @ back - 1
+
+    return out
+
+# What the bases read so far tell the rules after LB9.
+record Reading
+    # The last base, `line_rules.START` before the first.
+    last: i64
+    # Whether it is East Asian.
+    last_east_asian: bool
+    # Whether it closes a quote, general category Pf.
+    last_final: bool
+    # Its code point.
+    last_point: i64
+    # Whether it is an Extended_Pictographic code point no character has yet.
+    last_unassigned_pictograph: bool
+    # The base before it.
+    before_last: i64
+    # Whether that one is East Asian.
+    before_last_east_asian: bool
+    # Its code point, -1 where there is none.
+    before_last_point: i64
+    # The last base that is no space.
+    lead: i64
+    # The base before `lead`.
+    before_lead: i64
+    # Whether `lead` opens a quote, general category Pi.
+    lead_initial: bool
+    # Whether the bases read end with a number, `NU (SY | IS)*`, one `CL` or
+    # `CP` after it allowed.
+    in_number: bool
+    # Whether that number has its `CL` or `CP` already.
+    number_closed: bool
+    # How many regional indicators end the bases read, in a row.
+    regional: i64
+
+# The reading before the first base.
+function start_reading() -> Reading
+    start = line_rules.START
+    return Reading(
+        last: start,
+        last_east_asian: false,
+        last_final: false,
+        last_point: -1,
+        last_unassigned_pictograph: false,
+        before_last: start,
+        before_last_east_asian: false,
+        before_last_point: -1,
+        lead: start,
+        before_lead: start,
+        lead_initial: false,
+        in_number: false,
+        number_closed: false,
+        regional: 0
+    )
+
+# The values the rules read of the base at `index`: a mark no base took is
+# read as "A" is, by LB10.
+record Base
+    # Its class, resolved.
+    class_now: i64
+    # Whether it is East Asian.
+    east_asian: bool
+    # Whether it opens a quote.
+    initial: bool
+    # Whether it closes a quote.
+    final: bool
+    # Its code point.
+    point: i64
+    # Whether it is an Extended_Pictographic code point no character has yet.
+    unassigned_pictograph: bool
+
+# The base at `index` of `decoded`, whose resolved classes are `classes`.
+function base_at(decoded: text.Decoded lent, classes: [i64] lent, index: i64) -> Base
+    raw = classes[index]
+
+    if is_mark(raw)
+        return Base(
+            class_now: tables.LB_AL,
+            east_asian: false,
+            initial: false,
+            final: false,
+            point: 'A',
+            unassigned_pictograph: false
+        )
+    value = decoded.values[index]
+    group = text.category_group_of(value)
+    return Base(
+        class_now: raw,
+        east_asian: is_east_asian(value),
+        initial: group == 2,
+        final: group == 3,
+        point: decoded.points[index],
+        unassigned_pictograph: text.is_pictographic(value) && text.is_unassigned(value)
+    )
+
+# `state` once the base at `index` is read.
+function read_base(state: Reading, decoded: text.Decoded lent, classes: [i64] lent, index: i64) -> Reading
+    base = base_at(decoded, classes: classes, index: index)
+    class_now = base.class_now
+    lead_changes = class_now != tables.LB_SP
+
+    number = if class_now == tables.LB_NU
+        true
+    else if (class_now == tables.LB_SY || class_now == tables.LB_IS) && state.in_number && !state.number_closed
+        true
+    else if (class_now == tables.LB_CL || class_now == tables.LB_CP) && state.in_number && !state.number_closed
+        true
+    else
+        false
+    closed = number && (class_now == tables.LB_CL || class_now == tables.LB_CP)
+
+    regional = if class_now == tables.LB_RI
+        state.regional + 1
+    else
+        0
+
+    lead = if lead_changes
+        class_now
+    else
+        state.lead
+
+    before_lead = if lead_changes
+        state.last
+    else
+        state.before_lead
+
+    lead_initial = if lead_changes
+        class_now == tables.LB_QU && base.initial
+    else
+        state.lead_initial
+    return Reading(
+        last: class_now,
+        last_east_asian: base.east_asian,
+        last_final: base.final,
+        last_point: base.point,
+        last_unassigned_pictograph: base.unassigned_pictograph,
+        before_last: state.last,
+        before_last_east_asian: state.last_east_asian,
+        before_last_point: state.last_point,
+        lead: lead,
+        before_lead: before_lead,
+        lead_initial: lead_initial,
+        in_number: number,
+        number_closed: closed,
+        regional: regional
+    )
+
+# What surrounds the place before the base at `index`, with `state` the
+# bases before it.
+function around(state: Reading lent, decoded: text.Decoded lent, classes: [i64] lent, index: i64, bases_from: [i64] lent) -> line_rules.Around
+    right = base_at(decoded, classes: classes, index: index)
+    after_index = bases_from[index + 1]
+    after_right: i64 @= line_rules.END
+    after_right_east_asian: bool @= false
+    after_after_right: i64 @= line_rules.END
+
+    if after_index < classes.len()
+        after = base_at(decoded, classes: classes, index: after_index)
+        after_right @ after.class_now
+        after_right_east_asian @ after.east_asian
+        after_after_index = bases_from[after_index + 1]
+
+        if after_after_index < classes.len()
+            after_after_right @ base_at(decoded, classes: classes, index: after_after_index).class_now
+    return line_rules.Around(
+        left: state.last,
+        left_east_asian: state.last_east_asian,
+        left_final: state.last_final,
+        left_point: state.last_point,
+        left_unassigned_pictograph: state.last_unassigned_pictograph,
+        before_left: state.before_last,
+        before_left_east_asian: state.before_last_east_asian,
+        before_left_point: state.before_last_point,
+        lead: state.lead,
+        before_lead: state.before_lead,
+        lead_initial: state.lead_initial,
+        in_number: state.in_number,
+        regional: state.regional,
+        right: right.class_now,
+        right_east_asian: right.east_asian,
+        right_initial: right.initial,
+        right_final: right.final,
+        right_point: right.point,
+        after_right: after_right,
+        after_right_east_asian: after_right_east_asian,
+        after_after_right: after_after_right
+    )
+
+## Tests
+
+# ICU 78.3's line break iterator, observed 2026-11-17, answers each: the
+# byte index of each opportunity, `!` where its rule status is a hard break.
+test "opportunities: nothing, two words, a line feed, spaces, a number with its sign, a hyphen, and ideographs"
+    assert opportunities(text.decode("")) == []
+    assert opportunities(text.decode("ab cd")) == [Opportunity(at: 3, mandatory: false), Opportunity(at: 5, mandatory: false)]
+    assert opportunities(text.decode("a\nb")) == [Opportunity(at: 2, mandatory: true), Opportunity(at: 3, mandatory: false)]
+    assert opportunities(text.decode("a  b\n")) == [Opportunity(at: 3, mandatory: false), Opportunity(at: 5, mandatory: true)]
+    assert opportunities(text.decode("$-3.50 off")) == [Opportunity(at: 7, mandatory: false), Opportunity(at: 10, mandatory: false)]
+    assert opportunities(text.decode("well-known")) == [Opportunity(at: 5, mandatory: false), Opportunity(at: 10, mandatory: false)]
+    assert opportunities(text.decode("中文。")) == [Opportunity(at: 3, mandatory: false), Opportunity(at: 9, mandatory: false)]

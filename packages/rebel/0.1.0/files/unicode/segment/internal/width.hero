@@ -1,0 +1,109 @@
+# How many columns of a terminal a text takes, grapheme by grapheme, by
+# UAX #11's East Asian widths and the emoji rules terminals follow, its
+# escape sequences taking none.
+
+use unicode
+use unicode/segment/internal/escapes
+use unicode/segment/internal/graphemes
+use unicode/segment/internal/tables
+use unicode/segment/internal/text
+
+# The columns the grapheme of `decoded` from code point `from` to `to`, not
+# included, takes; ambiguous characters two where `east_asian`.
+function grapheme_width(decoded: text.Decoded lent, from: i64, to: i64, east_asian: bool) -> i64
+    first = decoded.values[from]
+    group = text.category_group_of(first)
+    class_now = text.grapheme_of(first)
+    point = decoded.points[from]
+
+    if point >= 0x20 && point < 0x7f
+        return 1
+
+    if point < 0x20 || point >= 0x7f && point < 0xa0 || text.is_default_ignorable(first)
+        return 0
+
+    if group == 4 || group == 6 || class_now == tables.GB_EXTEND || class_now == tables.GB_ZWJ || class_now == tables.GB_V || class_now == tables.GB_T
+        return 0
+
+    if class_now == tables.GB_REGIONAL_INDICATOR
+        if to - from >= 2 && text.grapheme_of(decoded.values[from + 1]) == tables.GB_REGIONAL_INDICATOR
+            return 2
+        return 1
+
+    if text.is_emoji(first)
+        at: i64 @= from + 1
+
+        while at < to
+            if decoded.points[at] == 0xfe0f
+                return 2
+
+            if decoded.points[at] == 0xfe0e
+                return 1
+            at @ at + 1
+    width_class = text.width_class_of(first)
+
+    if width_class == tables.EA_W || width_class == tables.EA_F
+        return 2
+
+    if width_class == tables.EA_A && east_asian
+        return 2
+    return 1
+
+# Whether every byte of `s` is printable ASCII, a space to a tilde.
+function is_printable_ascii(s: str) -> bool
+    for c in s.chars()
+        if c[0] < 0x20 || c[0] > 0x7e
+            return false
+
+    return true
+
+# The columns `plain`, a text with no escape sequence, takes.
+function plain_width(plain: str, east_asian: bool) -> i64
+    if is_printable_ascii(plain)
+        return plain.len()
+    decoded = text.decode(plain)
+    bounds = graphemes.boundaries(decoded)
+    total: i64 @= 0
+    from: i64 @= 0
+    at: i64 @= 1
+
+    while at < bounds.len()
+        to: i64 @= from
+
+        while decoded.starts[to] < bounds[at]
+            to @ to + 1
+
+        total @ total + grapheme_width(decoded, from: from, to: to, east_asian: east_asian)
+        from @ to
+        at @ at + 1
+
+    return total
+
+# The columns `s` takes, its escape sequences none.
+function width_of(s: str, east_asian: bool) -> i64
+    if is_printable_ascii(s)
+        return s.len()
+    return plain_width(escapes.strip(s).plain, east_asian: east_asian)
+
+## Tests
+
+# Each width is the one `east_asian_width` of Python 3.15.2's `unicodedata`
+# gives the grapheme's first character, observed 2026-11-17, read by the
+# rules the face states: two for W and F, none for a control, a mark alone
+# and a character drawn as nothing, two for an emoji drawn as one.
+test "width_of: nothing, ASCII, ideographs, a letter with its accent, a control, a soft hyphen, emoji, flags, and an ambiguous sign"
+    assert width_of(s: "", east_asian: false) == 0
+    assert width_of(s: "abc", east_asian: false) == 3
+    assert width_of(s: "日本語", east_asian: false) == 6
+    assert width_of(s: "ｱｲ", east_asian: false) == 2
+    assert width_of(s: "Ｆｕｌｌ", east_asian: false) == 8
+    assert width_of(s: unicode.from_code_points([0x65, 0x301, 0x78]).must(), east_asian: false) == 2
+    assert width_of(s: "a\tb\u{7}", east_asian: false) == 2
+    assert width_of(s: unicode.from_code_points([0x63, 0x6f, 0xad, 0x6f, 0x70]).must(), east_asian: false) == 4
+    assert width_of(s: "😀👍🏽", east_asian: false) == 4
+    assert width_of(s: "❤", east_asian: false) == 1
+    assert width_of(s: unicode.from_code_points([0x2764, 0xfe0f]).must(), east_asian: false) == 2
+    assert width_of(s: "🇫🇷🇮", east_asian: false) == 3
+    assert width_of(s: "±", east_asian: false) == 1
+    assert width_of(s: "±", east_asian: true) == 2
+    assert width_of(s: "\u{1b}[1m한글\u{1b}[0m", east_asian: false) == 4

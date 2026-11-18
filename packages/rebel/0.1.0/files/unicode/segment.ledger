@@ -1,0 +1,107 @@
+capability text/graphemes  a text cut into what a reader sees as one character, UAX #29's extended grapheme clusters
+  heroes  unicode/segment.graphemes, unicode/segment.grapheme_boundaries
+  go      -
+  rust    -
+  python  unicodedata.iter_graphemes
+  note    UAX #29 for Unicode 17.0.0, GB9c's Indic conjuncts included; every line of GraphemeBreakTest.txt 17.0.0 (766) runs as the package's tests. Python answers segments with their indices in code points; here the pieces themselves, or the boundaries as byte indices, which a slice reads. Rust's crate unicode-segmentation is outside the standard library
+
+capability text/grapheme-cursor  the grapheme boundary after or before a place, to move a cursor
+  heroes  unicode/segment.next_grapheme_boundary, unicode/segment.previous_grapheme_boundary
+  go      -
+  rust    -
+  python  -
+  note    it reads back only to a boundary no context can undo, so moving a cursor costs about one grapheme, where cutting the whole text costs the text; a place inside a character aborts, as a slice there does
+
+capability class/grapheme-break  the classes UAX #29 cuts graphemes by
+  heroes  unicode/segment.grapheme_break_class, unicode/segment.indic_conjunct_break_class
+  go      -
+  rust    -
+  python  unicodedata.grapheme_cluster_break, unicodedata.indic_conjunct_break
+  note    the values as `GraphemeBreakProperty.txt` and `DerivedCoreProperties.txt` write them, as Python answers them; held to Python's on all 1,112,064 scalar values by a sweep of 2026-11-17
+
+capability class/extended-pictographic  whether a character is a pictograph, which UAX #29 keeps whole in an emoji sequence
+  heroes  unicode/names.has_property
+  go      -
+  rust    -
+  python  unicodedata.extended_pictographic
+  note    `names.has_property(c: c, property: "Extended_Pictographic")`: the property is one of the binary properties `unicode/names` reads by name, where the others of `emoji-data.txt` stand too; this package reads it in its own table for GB11 and WB3c
+
+capability text/words  a text cut into words by UAX #29
+  heroes  unicode/segment.words, unicode/segment.word_segments, unicode/segment.word_boundaries
+  go      -
+  rust    -
+  python  -
+  note    every line of WordBreakTest.txt 17.0.0 (1,944) runs as the package's tests. `words` keeps the pieces holding a letter, a digit or an ideograph, as Rust's unicode-segmentation's `unicode_words` does; `word_segments` keeps every piece, as its `split_word_bounds` does. ICU 78.3's word iterator cuts Chinese and Thai by its dictionaries ("漢字" one word, "ภาษาไทย" two, observed 2026-11-17); UAX #29's rules, these, give an ideograph and a Thai letter with its marks a piece each, since a Thai letter is Word_Break Other, and no dictionary of a language is carried
+
+capability class/word-break  the class UAX #29 cuts words by
+  heroes  unicode/segment.word_break_class
+  go      -
+  rust    -
+  python  -
+  note    held to ICU 78.3's Word_Break on every scalar value by the generator and the sweep
+
+capability text/sentences  a text cut into sentences by UAX #29
+  heroes  unicode/segment.sentences, unicode/segment.sentence_boundaries
+  go      -
+  rust    -
+  python  -
+  note    every line of SentenceBreakTest.txt 17.0.0 (512) runs as the package's tests. No list of abbreviations is read, as UAX #29's rules read none: "Mr. Smith" is cut after "Mr.", as ICU's root iterator cuts it
+
+capability class/sentence-break  the class UAX #29 cuts sentences by
+  heroes  unicode/segment.sentence_break_class
+  go      -
+  rust    -
+  python  -
+  note    held to ICU 78.3's Sentence_Break on every scalar value
+
+capability text/line-breaks  the places a line may break, and must, by UAX #14
+  heroes  unicode/segment.line_breaks, unicode/segment.LineBreak
+  go      -
+  rust    -
+  python  -
+  note    UAX #14 revision 55 (Unicode 17.0.0), its default rules LB1 to LB31 with LB15a to LB15d, LB19a, LB20a, LB21a and LB28a; every line of LineBreakTest.txt 17.0.0 (19,338) runs as the package's tests. Thai, Lao, Khmer and Burmese, class SA, are resolved by LB1 to AL or CM, so their runs break only at spaces and punctuation, since breaking inside their words needs a dictionary. `mandatory` is true after BK, CR, LF and NL, as ICU 78.3's rule status says, and the end of the text is mandatory only where the text ends with one. Rust's crate unicode-linebreak and ICU's line iterator are outside the three libraries
+
+capability class/line-break  the class UAX #14 breaks lines by
+  heroes  unicode/segment.line_break_class
+  go      -
+  rust    -
+  python  -
+  note    the value `LineBreak.txt` writes, before LB1 resolves AI, SA, SG, XX and CJ; held to ICU 78.3's Line_Break on every scalar value
+
+capability class/east-asian-width  how wide a character is drawn in a grid of East Asian text, UAX #11
+  heroes  unicode/segment.east_asian_width, unicode/segment.WIDE, unicode/segment.FULLWIDTH, unicode/segment.HALFWIDTH, unicode/segment.NARROW, unicode/segment.AMBIGUOUS, unicode/segment.NEUTRAL
+  go      -
+  rust    -
+  python  unicodedata.east_asian_width
+  note    held to Python's on every scalar value; Go's `golang.org/x/text/width` is outside the standard library
+
+capability text/width  how many columns of a terminal a text takes
+  heroes  unicode/segment.width_of, unicode/segment.width_of_east_asian
+  go      -
+  rust    -
+  python  -
+  note    by grapheme, a rule of this package's, since none of the three libraries measures a text on a screen: a grapheme takes the width of its first character by UAX #11, two for an emoji drawn as one (U+FE0F after an emoji, a pair of regional indicators), one after U+FE0E, none for a control, a lone mark, a Hangul vowel or final consonant alone and a default ignorable character; the escape sequences of ECMA-48 take none. Python's `rich.cells.cell_len` and the `wcwidth` package are outside the standard library; `term` measures its tables with a table of its own until it calls this (its ledger's term/text-width)
+
+capability text/wrap  a text wrapped to a width in columns
+  heroes  unicode/segment.wrap, unicode/segment.wrap_options, unicode/segment.WrapOptions
+  go      -
+  rust    -
+  python  textwrap.wrap, textwrap.fill, textwrap.TextWrapper, TextWrapper.wrap, TextWrapper.fill
+  note    at UAX #14's break opportunities and measured by `width_of`, so ideographs break between them and a wide character counts two; Python breaks at white space and hyphens and counts characters. Its plain answers are the same for ASCII prose (observed 2026-11-17). `fill` is `wrap(...).join("\n")`. Of TextWrapper's attributes, `width`, `initial_indent`, `subsequent_indent` and `break_long_words` are WrapOptions' fields; `drop_whitespace` is always on, the spaces at a break taken away and a paragraph's leading spaces kept, as Python's default; `replace_whitespace` is off, a line break of the text ending its paragraph, where Python joins paragraphs; `break_on_hyphens` is UAX #14's, which breaks after a hyphen; `expand_tabs` and `tabsize` are `strings.expand_tabs` before wrapping; `fix_sentence_endings` is refused, its rule being, in TextWrapper's own words, "(unavoidably) imperfect"; `max_lines` and `placeholder` are the first lines of the answer and `truncate` on the last. The escape sequences of ECMA-48 are kept where they stand and take no column, which no reference library does
+
+capability text/truncate  a text cut to a width in columns, an ellipsis after it
+  heroes  unicode/segment.truncate
+  go      -
+  rust    -
+  python  textwrap.shorten
+  note    Python's `shorten` collapses white space and cuts at a word, with "[...]"; here the text is cut between graphemes with the ellipsis the program gives, every escape sequence kept, as a terminal's table cuts a cell. A program that wants whole words cuts at the last of `line_breaks` that fits
+
+capability segment/version  the version of Unicode the tables hold
+  heroes  unicode/segment.UNICODE_VERSION
+  go      -
+  rust    -
+  python  -
+  note    17.0.0, as `unicode.UNICODE_VERSION`, whose block holds Python's `unicodedata.unidata_version`; the table was made by a program from the Unicode Character Database 17.0.0 and held to Python 3.15.2's `unicodedata` and ICU 78.3 on every code point. A program using this package carries about 235 KB more than one using `unicode` alone (measured 2026-11-17, `heroes build` at -O0 on macOS)
+
+dropped
+  python  textwrap.dedent, textwrap.indent  the indentation of a text's lines, not its wrapping: `strings`' area, whose ledger names neither on 2026-11-17 (told to the round's coordinator)

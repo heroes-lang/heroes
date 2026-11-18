@@ -1,0 +1,78 @@
+# The forms Unicode compares texts in ignoring case: the canonical caseless
+# match (D145), the compatibility caseless match (D146) and NFKC_Casefold
+# (D147's mapping, the one UAX #31 compares identifiers by), on code points.
+
+use unicode
+use unicode/normalize/internal/forms
+use unicode/normalize/internal/lookup
+
+# `points` with each code point replaced by its full case folding, which
+# `unicode.to_casefold` answers: "ß" becomes "ss", "Σ" becomes "σ".
+function folded(points: [i64] lent) -> [i64]
+    out: [i64] @= []
+
+    for point in points
+        if point < 0x80
+            if point >= 'A' && point <= 'Z'
+                out @ out.push(point + 32)
+            else
+                out @ out.push(point)
+            continue
+
+        for each in unicode.code_points(unicode.to_casefold(unicode.from_code_point(point).must()))
+            out @ out.push(each)
+
+    return out
+
+# NFD of the full case folding of NFD of `points`: the canonical caseless
+# form.
+function caseless(points: [i64] lent) -> [i64]
+    first = forms.decomposed(points, compat: false)
+    return forms.decomposed(folded(first), compat: false)
+
+# NFKD of the full case folding of NFKD of the full case folding of NFD of
+# `points`: the compatibility caseless form. The folding is made twice since
+# a compatibility mapping can make a capital ("㎒" becomes "MHz").
+function caseless_compat(points: [i64] lent) -> [i64]
+    first = folded(forms.decomposed(points, compat: false))
+    second = folded(forms.decomposed(first, compat: true))
+    return forms.decomposed(second, compat: true)
+
+# `points` with each code point mapped by NFKC_Casefold, then put in NFC.
+function nfkc_casefold(points: [i64] lent) -> [i64]
+    out: [i64] @= []
+
+    for point in points
+        lookup.add_nfkc_casefold(@out, n: point)
+
+    return forms.normalized(out, compose: true, compat: false)
+
+## Tests
+
+# Python 3.15.2's `str.casefold`, observed 2026-11-17, answers each.
+test "folded: nothing, ASCII, a sharp s, a final sigma, and a ligature"
+    assert folded([]) == []
+    assert folded(['A', 'z', '1']) == ['a', 'z', '1']
+    assert folded([0xdf]) == ['s', 's']
+    assert folded([0x3a3, 0x3c2]) == [0x3c3, 0x3c3]
+    assert folded([0xfb01]) == ['f', 'i']
+
+# NFD of the case folding of NFD, by Python 3.15.2's `unicodedata`.
+test "caseless: the angstrom sign, a capital A with a ring, and a sharp s"
+    assert caseless([0x212b]) == ['a', 0x30a]
+    assert caseless([0xc5]) == ['a', 0x30a]
+    assert caseless([0x1e9e]) == ['s', 's']
+    assert caseless([]) == []
+
+# D146 made by Python 3.15.2's `unicodedata` and `str.casefold`.
+test "caseless_compat: a ligature, the sign for megahertz, and a circled capital"
+    assert caseless_compat([0xfb01]) == ['f', 'i']
+    assert caseless_compat([0x3392]) == ['m', 'h', 'z']
+    assert caseless_compat([0x24b6]) == ['a']
+
+# ICU 78.3's NFKC_Casefold, observed 2026-11-17, answers each.
+test "nfkc_casefold: a soft hyphen taken away, a capital with an accent written apart, and a ligature"
+    assert nfkc_casefold(['M', 'a', 0xad, 'x']) == ['m', 'a', 'x']
+    assert nfkc_casefold(['E', 0x301]) == [0xe9]
+    assert nfkc_casefold([0xfb01]) == ['f', 'i']
+    assert nfkc_casefold([]) == []

@@ -1,0 +1,10 @@
+# Reaches Rebel's package `llm/anthropic`, so that `heroes test` on this file
+# runs the tests of its face and its private modules. It prints the body a
+# one-turn request sends, on every run, touching no network and no key.
+
+use <rebel>/json
+use <rebel>/llm/anthropic
+
+function main()
+    r = anthropic.new_request(model: "claude-opus-5-5", max_tokens: 64, turns: [anthropic.user("Hello")])
+    print(json.format(anthropic.to_json(r).must()).must())

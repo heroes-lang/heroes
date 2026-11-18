@@ -1,0 +1,292 @@
+# A message read as its events come, by the Streaming page of the API
+# (platform.claude.com, read 2026-11-18): `message_start`, then each content
+# block's `content_block_start`, its deltas and its `content_block_stop`,
+# then `message_delta` and `message_stop`, `ping` anywhere, `error` in place
+# of the rest. The message is kept as JSON, the open block's text as pieces
+# joined once at its stop, so a long answer costs a copy of each piece and
+# no more; the input of a tool, which arrives as partial JSON, is kept as
+# the text it arrived as, since a stream cut short leaves it incomplete.
+
+use http
+use json
+use llm/anthropic/internal/failures
+use llm/anthropic/internal/fields
+use llm/anthropic/internal/transport
+use time
+
+# A stream being read: its connection and what has arrived of its message.
+record State
+    # The connection, its head read; `close` closes it.
+    opened: transport.Opened
+    # The event stream's reader.
+    events: http.EventReader
+    # The longest wait for the next bytes, in milliseconds, 0 for none.
+    idle_ms: i64
+    # The message `message_start` carried, its content set aside.
+    head: json.Value
+    # The content blocks so far, the open one as it began.
+    content: [json.Value]
+    # The input text of each tool block closed, by the block's id.
+    inputs: {str: str}
+    # The usage so far, each count the last one told.
+    usage: json.Value
+    # `message_delta`'s stop reason, sequence and details, "" and null
+    # before it.
+    stop_reason: str
+    # The stop sequence matched, "" where none.
+    stop_sequence: str
+    # The details of a refusal, null where none.
+    stop_details: json.Value
+    # The index of the block open, -1 where none is.
+    open_index: i64
+    # The type of the block open.
+    open_kind: str
+    # The pieces of the open block's text, thinking or input.
+    pieces: [str]
+    # The open thinking block's signature.
+    signature: str
+    # The open text block's citations.
+    citations: [json.Value]
+    # Whether `message_stop` or an `error` has come.
+    ended: bool
+
+# One event read: its name and its data.
+record Step
+    # The event's name, `content_block_delta`.
+    name: str
+    # Its data, read as JSON.
+    data: json.Value
+
+# The state of a stream whose head `o` read, waiting at most `idle_ms` for
+# each next bytes. Fails as `http.event_reader` fails on the head.
+function begin(o: transport.Opened, limits: http.Limits, idle_ms: i64) -> State?
+    events = http.event_reader(o.head, limits: limits)?
+    return ok(
+        State(opened: o, events: events, idle_ms: idle_ms, head: .object(members: {}), content: [], inputs: {}, usage: .object(members: {}), stop_reason: "", stop_sequence: "", stop_details: .null_value, open_index: -1, open_kind: "", pieces: [], signature: "", citations: [], ended: false)
+    )
+
+# Adds `piece` to `pieces`, the caller's own.
+function add_piece(@pieces: [str], piece: str)
+    pieces @ pieces.push(piece)
+
+# Adds `block` to `content`, the caller's own.
+function add_block(@content: [json.Value], block: json.Value)
+    content @ content.push(block)
+
+# Adds `citation` to `citations`, the caller's own.
+function add_citation(@citations: [json.Value], citation: json.Value)
+    citations @ citations.push(citation)
+
+# Whether a block of `kind` carries a tool's input.
+function is_tool(kind: str) -> bool
+    return kind == "tool_use" || kind == "server_tool_use" || kind == "mcp_tool_use"
+
+# The value the input text `text` holds so far: the whole value where it is
+# whole JSON, else what `json.parse_partial` reads, else an empty object.
+function input_value(text: str) -> json.Value
+    match json.parse(text)
+        .ok v => return v
+        .err _ =>
+            match json.parse_partial(text)
+                .ok p =>
+                    match p.value
+                        .object _                                                => return p.value
+                        .null_value | .boolean _ | .number _ | .text _ | .list _ => return .object(members: {})
+                .err _ => return .object(members: {})
+
+# The open block of `st` as it stands, `block` with what its pieces hold.
+function filled(st: State lent, block: json.Value) -> json.Value
+    text = st.pieces.join("")
+
+    if st.open_kind == "text"
+        out = fields.with_member(v: block, key: "text", value: fields.text(text))
+
+        if st.citations.len() > 0
+            return fields.with_member(v: out, key: "citations", value: .list(items: st.citations))
+        return out
+
+    if st.open_kind == "thinking"
+        out = fields.with_member(v: block, key: "thinking", value: fields.text(text))
+
+        if st.signature != ""
+            return fields.with_member(v: out, key: "signature", value: fields.text(st.signature))
+        return out
+
+    if is_tool(st.open_kind) && st.pieces.len() > 0
+        return fields.with_member(v: block, key: "input", value: input_value(text))
+    return block
+
+# The message so far as the API writes one: the head, the blocks with the
+# open one as far as it has come, the stop and the usage.
+function message_json(st: State lent) -> json.Value
+    blocks @= st.content
+
+    if st.open_index >= 0 && st.open_index < blocks.len()
+        blocks[st.open_index] @ filled(st, block: blocks[st.open_index])
+    out @= fields.with_member(v: st.head, key: "content", value: .list(items: blocks))
+    out @ fields.with_member(v: out, key: "stop_reason", value: fields.text(st.stop_reason))
+    out @ fields.with_member(v: out, key: "stop_sequence", value: fields.text(st.stop_sequence))
+    out @ fields.with_member(v: out, key: "stop_details", value: st.stop_details)
+    return fields.with_member(v: out, key: "usage", value: st.usage)
+
+# `usage` with every member of `told` that is not null.
+function merged(usage: json.Value, told: json.Value) -> json.Value
+    out @= usage
+
+    match told
+        .object o =>
+            for k in keys(o.members)
+                v = o.members[k].must()
+
+                if !json.is_null(v)
+                    out @ fields.with_member(v: out, key: k, value: v)
+        .null_value | .boolean _ | .number _ | .text _ | .list _ => _ = 0
+
+    return out
+
+# Closes the block open at `index`, its text joined into it.
+function stop_block(@st: State, index: i64) -> ()?
+    if index != st.open_index || index < 0 || index >= st.content.len()
+        return fail(code: "invalid", msg: f"content_block_stop for block {index}, where block {st.open_index} is open")
+    block = st.content[index]
+    text = st.pieces.join("")
+
+    if is_tool(st.open_kind) && text != ""
+        id = fields.text_at(block, key: "id")
+        st.inputs[id] @ text
+    st.content[index] @ filled(st, block: block)
+    st.open_index @ -1
+    st.open_kind @ ""
+    st.pieces @ []
+    st.signature @ ""
+    st.citations @ []
+    return ok()
+
+# Adds the delta `data` carries to the block open.
+function add_delta(@st: State, data: json.Value) -> ()?
+    index = fields.int_at(data, key: "index")
+
+    if index != st.open_index
+        return fail(code: "invalid", msg: f"content_block_delta for block {index}, where block {st.open_index} is open")
+    delta = fields.value_at_key(data, key: "delta")
+    kind = fields.text_at(delta, key: "type")
+
+    if kind == "text_delta"
+        add_piece(@st.pieces, piece: fields.text_at(delta, key: "text"))
+    else if kind == "thinking_delta"
+        add_piece(@st.pieces, piece: fields.text_at(delta, key: "thinking"))
+    else if kind == "input_json_delta"
+        add_piece(@st.pieces, piece: fields.text_at(delta, key: "partial_json"))
+    else if kind == "signature_delta"
+        st.signature @ fields.text_at(delta, key: "signature")
+    else if kind == "citations_delta"
+        add_citation(@st.citations, citation: fields.value_at_key(delta, key: "citation"))
+    return ok()
+
+# Applies the event `name` with `data` to `st`.
+function apply(@st: State, name: str, data: json.Value) -> ()?
+    if name == "message_start"
+        st.head @ fields.value_at_key(data, key: "message")
+        st.content @ fields.list_at(st.head, key: "content")
+        st.usage @ fields.value_at_key(st.head, key: "usage")
+    else if name == "content_block_start"
+        if st.open_index >= 0
+            return fail(code: "invalid", msg: f"content_block_start while block {st.open_index} is open")
+        index = fields.int_at(data, key: "index")
+
+        if index != st.content.len()
+            return fail(
+                code: "invalid",
+                msg: f"content_block_start for block {index}, where {st.content.len()} came before"
+            )
+        block = fields.value_at_key(data, key: "content_block")
+        add_block(@st.content, block: block)
+        st.open_index @ index
+        st.open_kind @ fields.text_at(block, key: "type")
+    else if name == "content_block_delta"
+        add_delta(@st, data: data)?
+    else if name == "content_block_stop"
+        stop_block(@st, index: fields.int_at(data, key: "index"))?
+    else if name == "message_delta"
+        delta = fields.value_at_key(data, key: "delta")
+        st.stop_reason @ fields.text_at(delta, key: "stop_reason")
+        st.stop_sequence @ fields.text_at(delta, key: "stop_sequence")
+        st.stop_details @ fields.value_at_key(delta, key: "stop_details")
+        st.usage @ merged(usage: st.usage, told: fields.value_at_key(data, key: "usage"))
+    else if name == "message_stop"
+        st.ended @ true
+    return ok()
+
+# The failure an `error` event's `data` carries.
+function error_failure(data: json.Value) -> failures.Failure
+    e = fields.value_at_key(data, key: "error")
+    kind = fields.text_at(e, key: "type")
+    status = failures.status_of_kind(kind)
+    retryable = failures.is_retryable(status)
+    wait: i64 @= 0
+
+    if retryable
+        wait @ failures.wait_before(
+            retry_after: "",
+            received: time.from_unix(whole_seconds: 0, extra_nanoseconds: 0).must(),
+            attempt: 1,
+            fraction: transport.fraction()
+        )
+    request_id = fields.text_at(data, key: "request_id")
+    return failures.Failure(
+        status: status,
+        kind: kind,
+        message: fields.text_at(e, key: "message"),
+        request_id: request_id,
+        retryable: retryable,
+        wait_ms: wait
+    )
+
+# The next event of `st`, applied to what has arrived. Fails `closed` once
+# the message has ended or where the stream ends before it does, `invalid`
+# where an event is not JSON or out of its order, with the API's failure
+# where an `error` event comes, and as `http.read_event` fails.
+function next(@st: State) -> Step?
+    if st.ended
+        return fail(code: "closed", msg: "the stream has ended: its message_stop or its error came")
+    transport.set_deadline(st.opened, ms: st.idle_ms)?
+
+    match http.read_event(@st.opened.reader, @st.events)
+        .err e =>
+            st.ended @ true
+
+            if e.code == "closed"
+                return fail(code: "closed", msg: "the stream ended before its message_stop")
+            return fail(code: e.code, msg: e.msg)
+        .ok event =>
+            data = json.parse(event.data)
+
+            match data
+                .err e =>
+                    st.ended @ true
+                    return fail(code: "invalid", msg: f"the data of the event \"{event.name}\" is not JSON: {e.msg}")
+                .ok v =>
+                    if event.name == "error"
+                        st.ended @ true
+                        return transport.told(error_failure(v))
+                    apply(@st, name: event.name, data: v)?
+                    return ok(Step(name: event.name, data: v))
+
+# Closes the connection of `st`.
+function close(@st: State)
+    transport.close(@st.opened)
+
+test "input_value: whole JSON, cut short, an array cut short, and nothing JSON can become"
+    assert input_value("{\"a\":1}") == json.parse("{\"a\":1}").must()
+    assert input_value("{\"a\":\"San Fr") == json.parse("{\"a\":\"San Fr\"}").must()
+    assert input_value("[1,") == json.parse("{}").must()
+    assert input_value("}") == json.parse("{}").must()
+
+test "merged: a count told, a null kept out, and a usage that is no object"
+    u = json.parse("{\"input_tokens\":3,\"output_tokens\":1}").must()
+    m = merged(usage: u, told: json.parse("{\"output_tokens\":15,\"input_tokens\":null}").must())
+    assert json.format(m).must() == "{\"input_tokens\":3,\"output_tokens\":15}"
+    assert merged(usage: u, told: .null_value) == u
+
+test "is_tool: the three kinds that carry an input, and text"
+    assert is_tool("tool_use") && is_tool("server_tool_use") && is_tool("mcp_tool_use") && !is_tool("text")

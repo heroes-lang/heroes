@@ -1,0 +1,8 @@
+# Reaches Rebel's `unicode/names`, so that `heroes test` on this file runs
+# the package's own tests (spec § 12). It prints the name of a character
+# and its script: "GREEK SMALL LETTER ALPHA Greek".
+
+use <rebel>/unicode/names
+
+function main()
+    print(names.name("α").default("?"), " ", names.script("α"))

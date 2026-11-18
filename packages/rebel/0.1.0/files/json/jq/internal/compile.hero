@@ -1,0 +1,37 @@
+# A filter's text made the code the machine runs: the prelude's definitions
+# read first, the filter read after them as the expression they are in scope
+# for, and every name resolved.
+
+use json/jq/internal/parser
+use json/jq/internal/prelude
+use json/jq/internal/resolve
+use json/jq/internal/syntax
+
+# The code of the filter `text`.
+#
+# Fails `invalid` where `text` is not a filter, as `parser` and `resolve`
+# say.
+function compile(text: str) -> syntax.Code?
+    nodes: [syntax.Node] @= []
+    builtins = parser.read_into(@nodes, text: prelude.text()).must()
+    first_user = nodes.len()
+    own = parser.read_into(@nodes, text: text)?
+
+    # The prelude's definitions are in scope for the filter: the last one's
+    # rest becomes the filter.
+    last: i64 @= builtins
+
+    while nodes[nodes[last].b].kind == syntax.DEF
+        last @ nodes[last].b
+
+    nodes[last].b @ own
+    resolve.resolve(@nodes, root: builtins, text: text, first_user: first_user)?
+    return ok(syntax.Code(nodes: nodes, root: builtins, text: text, first_user: first_user))
+
+## Tests
+
+test "compile: the prelude read, a filter after it, and a name no definition names"
+    code = compile(".a | map(. + 1)").must()
+    assert code.first_user > 0 && code.nodes.len() > code.first_user
+    assert compile("nosuchthing").is_err()
+    assert compile("def f: 1; f").must().text == "def f: 1; f"

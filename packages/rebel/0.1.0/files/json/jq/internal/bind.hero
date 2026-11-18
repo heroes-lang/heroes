@@ -1,0 +1,232 @@
+# The bindings: `as` with its patterns and their `?//` alternatives, and the
+# sources of `reduce` and `foreach`, each value matched against its patterns,
+# their keys evaluated first, and a frame pushed for each variable. Matching
+# holds its own stack.
+
+use json
+use json/jq/internal/frames
+use json/jq/internal/state
+use json/jq/internal/syntax
+use json/jq/internal/values
+
+# An initial state of `reduce` or `foreach` received: its choice made and its
+# source evaluated.
+function initial(@m: state.Machine, c: frames.Cont, state_value: json.Value)
+    n = m.nodes[c.node]
+
+    kind = if n.kind == syntax.REDUCE
+        state.C_REDUCE
+    else
+        state.C_FOREACH
+    holder: frames.Choice @= frames.choice(kind)
+    holder.item @ c.item
+    holder.other @ frames.plain(state_value)
+    holder.cont @ c.next
+    at = state.push_choice(@m, c: holder)
+    source = state.cont_of(
+        @m,
+        kind: state.K_SOURCE,
+        node: c.node,
+        env: c.env,
+        next: c.next,
+        item: c.item,
+        n: at,
+        collected: []
+    )
+    state.eval_to(@m, node: n.a, item: frames.plain(c.item.value), env: c.env, cont: source)
+
+# A value received by a binding, or by the source of `reduce` or `foreach`:
+# the keys of its patterns evaluated, if any, then the value bound.
+function bound(@m: state.Machine, asker: i64, value: json.Value)
+    c = m.conts[asker]
+    n = m.nodes[c.node]
+
+    if n.extra < 0
+        go_on(@m, asker: asker, value: value, key_values: [], alternative: 0)
+    else
+        holder = m.nodes[n.extra]
+        k = state.cont_of(
+            @m,
+            kind: state.K_KEYS,
+            node: n.extra,
+            env: c.env,
+            next: asker,
+            item: frames.plain(value),
+            n: 0,
+            collected: []
+        )
+        state.eval_to(@m, node: holder.items[0], item: frames.plain(c.item.value), env: c.env, cont: k)
+
+# One key of a binding's patterns received.
+function key_received(@m: state.Machine, c: frames.Cont, v: json.Value)
+    got: [json.Value] @= c.values
+    got @ got.push(v)
+    holder = m.nodes[c.node]
+
+    if got.len() < holder.items.len()
+        asker = m.conts[c.next]
+        k = state.cont_of(
+            @m,
+            kind: state.K_KEYS,
+            node: c.node,
+            env: c.env,
+            next: c.next,
+            item: c.item,
+            n: got.len(),
+            collected: got
+        )
+        state.eval_to(@m, node: holder.items[got.len()], item: frames.plain(asker.item.value), env: c.env, cont: k)
+    else
+        go_on(@m, asker: c.next, value: c.item.value, key_values: got, alternative: 0)
+
+# The value bound to the patterns of the construct `asker` was made for, with
+# their keys, and the construct gone on with.
+function go_on(@m: state.Machine, asker: i64, value: json.Value, key_values: [json.Value], alternative: i64)
+    c = m.conts[asker]
+    n = m.nodes[c.node]
+
+    if n.kind == syntax.BIND
+        patterns = n.items
+        next: i64 @= c.next
+
+        if alternative < patterns.len() - 1
+            alt_id = state.fresh(@m)
+            choice: frames.Choice @= frames.choice(state.C_ALTERNATIVES)
+            choice.node @ asker
+            choice.n @ alternative + 1
+            choice.m @ alt_id
+            choice.other @ frames.plain(value)
+            choice.values @ key_values
+            _ = state.push_choice(@m, c: choice)
+            next @ state.cont_of(
+                @m,
+                kind: state.K_ALTERNATIVES,
+                node: c.node,
+                env: c.env,
+                next: c.next,
+                item: c.item,
+                n: alt_id,
+                collected: []
+            )
+        m.cont @ next
+
+        match destructure(m, pattern: patterns[alternative], value: value, key_values: key_values)
+            .err e => state.raise_text(@m, msg: e.msg)
+            .ok found =>
+                env = push_variables(@m, env: c.env, names: n.names, found: found)
+                state.eval_to(@m, node: n.b, item: c.item, env: env, cont: next)
+    else
+        m.cont @ c.next
+
+        match destructure(m, pattern: n.b, value: value, key_values: key_values)
+            .err e => state.raise_text(@m, msg: e.msg)
+            .ok found =>
+                env = push_variables(@m, env: c.env, names: n.names, found: found)
+
+                end_kind = if n.kind == syntax.REDUCE
+                    state.C_UPDATE_END
+                else
+                    state.C_FOREACH_END
+                end: frames.Choice @= frames.choice(end_kind)
+                end.n @ c.n
+                end.other @ frames.plain(.null_value)
+                end_at = state.push_choice(@m, c: end)
+                held = m.choices[c.n].other
+
+                if n.kind == syntax.REDUCE
+                    k = state.cont_of(
+                        @m,
+                        kind: state.K_UPDATE,
+                        node: c.node,
+                        env: env,
+                        next: c.next,
+                        item: c.item,
+                        n: end_at,
+                        collected: []
+                    )
+                    state.eval_to(@m, node: n.d, item: held, env: env, cont: k)
+                else
+                    k = state.cont_of(
+                        @m,
+                        kind: state.K_FOREACH_UPDATE,
+                        node: c.node,
+                        env: env,
+                        next: c.next,
+                        item: c.item,
+                        n: end_at,
+                        collected: []
+                    )
+                    state.eval_to(@m, node: n.d, item: held, env: env, cont: k)
+
+# Pushes a frame for each of `names`, its value from `found`, `null` where
+# the pattern bound none.
+function push_variables(@m: state.Machine, env: i64, names: [str], found: {str: json.Value}) -> i64
+    at: i64 @= env
+
+    for name in names
+        v = found[name].default(.null_value)
+        at @ state.env_of(
+            @m,
+            e: frames.Env(parent: at, kind: frames.VARIABLE_FRAME, value: v, node: -1, closure: -1, n: 0)
+        )
+
+    return at
+
+# A pattern waiting to be matched against a value.
+record Pending
+    # The pattern node.
+    pattern: i64
+    # The value.
+    value: json.Value
+
+# The values the variables of `pattern` take in `value`, the keys of its
+# object patterns taken from `keys` in order.
+function destructure(m: state.Machine lent, pattern: i64, value: json.Value, key_values: [json.Value]) -> {str: json.Value}?
+    found: {str: json.Value} @= {}
+    left: [Pending] @= [Pending(pattern: pattern, value: value)]
+    top: i64 @= 1
+    next_key: i64 @= 0
+
+    while top > 0
+        top @ top - 1
+        p = left[top]
+        n = m.nodes[p.pattern]
+
+        if n.kind == syntax.PATTERN_VARIABLE
+            found[n.text] @ p.value
+        else if n.kind == syntax.PATTERN_ARRAY
+            at: i64 @= n.items.len()
+
+            while at > 0
+                at @ at - 1
+                element = values.index(v: p.value, k: .number(v: to_f64(at)))?
+                frames.put(@left, top: top, v: Pending(pattern: n.items[at], value: element))
+                top @ top + 1
+        else if n.kind == syntax.PATTERN_OBJECT
+            at: i64 @= n.items.len()
+
+            while at > 0
+                at @ at - 1
+                frames.put(@left, top: top, v: Pending(pattern: n.items[at], value: p.value))
+                top @ top + 1
+        else if n.kind == syntax.PATTERN_ENTRY
+            name: json.Value @= .text(v: n.text)
+
+            if n.a >= 0
+                name @ key_values[next_key]
+                next_key @ next_key + 1
+
+                match name
+                    .text _ => _ = 0
+                    .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+                        return values.raised(f"Cannot index {values.type_name(p.value)} with {values.type_name(name)}")
+            member = values.index(v: p.value, k: name)?
+
+            if n.text != ""
+                found[n.text] @ member
+
+            if n.b >= 0
+                frames.put(@left, top: top, v: Pending(pattern: n.b, value: member))
+                top @ top + 1
+
+    return ok(found)

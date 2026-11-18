@@ -1,0 +1,11 @@
+# Reaches Rebel's package `llm/openai`, so that `heroes test` on this file
+# runs the tests of its face and its private modules. It prints the body a
+# one-message chat request sends, on every run, touching no network and no
+# key.
+
+use <rebel>/json
+use <rebel>/llm/openai
+
+function main()
+    r = openai.chat_request(model: "gpt-test", messages: [openai.user_message("Hello")])
+    print(json.format(openai.chat_to_json(r).must()).must())

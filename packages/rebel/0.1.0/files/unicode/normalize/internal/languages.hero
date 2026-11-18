@@ -1,0 +1,249 @@
+# Case mapped by the rules of a language, `SpecialCasing.txt`'s conditional
+# mappings: the final sigma of every language, the dotted and dotless i of
+# Turkish and Azeri, and the dot Lithuanian keeps on an "i" under an accent.
+# Every other character takes `unicode`'s full mappings.
+
+use unicode
+use unicode/normalize/internal/lookup
+
+# The rules of every language.
+constant OTHER: i64
+    0
+
+# The rules of Turkish and Azeri.
+constant TURKIC: i64
+    1
+
+# The rules of Lithuanian.
+constant LITHUANIAN: i64
+    2
+
+# The combining class of the marks drawn above, which the conditions read.
+constant ABOVE: i64
+    230
+
+# The rules `language` asks for, read from its first subtag ignoring case:
+# `TURKIC` for "tr" and "az", `LITHUANIAN` for "lt", `OTHER` for any other.
+function rules_of(language: str) -> i64
+    end: i64 @= 0
+
+    while end < language.len() && language[end] != '-' && language[end] != '_'
+        end @ end + 1
+
+    if end != 2
+        return OTHER
+    first = language[0]
+    second = language[1]
+
+    if (first == 't' || first == 'T') && (second == 'r' || second == 'R') || (first == 'a' || first == 'A') && (second == 'z' || second == 'Z')
+        return TURKIC
+
+    if (first == 'l' || first == 'L') && (second == 't' || second == 'T')
+        return LITHUANIAN
+    return OTHER
+
+# Adds to `out` the code points of the text `mapped`.
+function add_text(@out: [i64], mapped: str)
+    for point in unicode.code_points(mapped)
+        out @ out.push(point)
+
+# Whether the code point `n` is cased, as `unicode.is_cased` answers.
+function is_cased(n: i64) -> bool
+    return unicode.is_cased(unicode.from_code_point(n).must())
+
+# Whether the code point `n` is case-ignorable, as `unicode.is_case_ignorable`
+# answers.
+function is_case_ignorable(n: i64) -> bool
+    return unicode.is_case_ignorable(unicode.from_code_point(n).must())
+
+# Whether the sigma at `at` ends a word: a cased letter before it, case
+# ignorable characters skipped, and none after it, as Final_Sigma says.
+function is_final_sigma(points: [i64] lent, at: i64) -> bool
+    before: i64 @= at - 1
+
+    while before >= 0 && is_case_ignorable(points[before])
+        before @ before - 1
+
+    if before < 0 || !is_cased(points[before])
+        return false
+    after: i64 @= at + 1
+
+    while after < points.len() && is_case_ignorable(points[after])
+        after @ after + 1
+
+    return after == points.len() || !is_cased(points[after])
+
+# Whether a mark drawn above follows `at` before any base or other mark
+# drawn above, as More_Above says.
+function is_more_above(points: [i64] lent, at: i64) -> bool
+    after: i64 @= at + 1
+
+    while after < points.len()
+        rank = lookup.combining_class(points[after])
+
+        if rank == ABOVE
+            return true
+
+        if rank == 0
+            return false
+        after @ after + 1
+
+    return false
+
+# Whether U+0307, the dot above, follows `at` before any base or other mark
+# drawn above, as Before_Dot says.
+function is_before_dot(points: [i64] lent, at: i64) -> bool
+    after: i64 @= at + 1
+
+    while after < points.len()
+        if points[after] == 0x307
+            return true
+        rank = lookup.combining_class(points[after])
+
+        if rank == ABOVE || rank == 0
+            return false
+        after @ after + 1
+
+    return false
+
+# Whether the base before `at`, no mark drawn above between, is the one
+# `accepts` names: After_I with a capital I, After_Soft_Dotted with a soft
+# dotted letter.
+function is_after(points: [i64] lent, at: i64, capital_i: bool) -> bool
+    before: i64 @= at - 1
+
+    while before >= 0
+        rank = lookup.combining_class(points[before])
+
+        if rank == 0
+            if capital_i
+                return points[before] == 'I'
+            return lookup.is_soft_dotted(points[before])
+
+        if rank == ABOVE
+            return false
+        before @ before - 1
+
+    return false
+
+# `points` in lower case by the rules `rules` names.
+function lowered(points: [i64] lent, rules: i64) -> [i64]
+    out: [i64] @= []
+    at: i64 @= 0
+
+    while at < points.len()
+        point = points[at]
+
+        if point == 0x3a3
+            if is_final_sigma(points, at: at)
+                out @ out.push(0x3c2)
+            else
+                out @ out.push(0x3c3)
+        else if rules == TURKIC && point == 0x130
+            out @ out.push('i')
+        else if rules == TURKIC && point == 0x307 && is_after(points, at: at, capital_i: true)
+            _ = 0
+        else if rules == TURKIC && point == 'I' && !is_before_dot(points, at: at)
+            out @ out.push(0x131)
+        else if rules == LITHUANIAN && (point == 'I' || point == 'J' || point == 0x12e) && is_more_above(points, at: at)
+            add_text(@out, mapped: unicode.to_lower(unicode.from_code_point(point).must()))
+            out @ out.push(0x307)
+        else if rules == LITHUANIAN && point == 0xcc
+            out @ out.push('i').push(0x307).push(0x300)
+        else if rules == LITHUANIAN && point == 0xcd
+            out @ out.push('i').push(0x307).push(0x301)
+        else if rules == LITHUANIAN && point == 0x128
+            out @ out.push('i').push(0x307).push(0x303)
+        else if point < 0x80
+            if point >= 'A' && point <= 'Z'
+                out @ out.push(point + 32)
+            else
+                out @ out.push(point)
+        else
+            add_text(@out, mapped: unicode.to_lower(unicode.from_code_point(point).must()))
+        at @ at + 1
+
+    return out
+
+# `points` in upper case by the rules `rules` names.
+function uppered(points: [i64] lent, rules: i64) -> [i64]
+    out: [i64] @= []
+    at: i64 @= 0
+
+    while at < points.len()
+        point = points[at]
+
+        if rules == TURKIC && point == 'i'
+            out @ out.push(0x130)
+        else if rules == LITHUANIAN && point == 0x307 && is_after(points, at: at, capital_i: false)
+            _ = 0
+        else if point < 0x80
+            if point >= 'a' && point <= 'z'
+                out @ out.push(point - 32)
+            else
+                out @ out.push(point)
+        else
+            add_text(@out, mapped: unicode.to_upper(unicode.from_code_point(point).must()))
+        at @ at + 1
+
+    return out
+
+# `points` folded by the rules `rules` names: Turkish and Azeri fold "I" to
+# "ı" and "İ" to "i"; every other language folds as `unicode.to_casefold`.
+function folded(points: [i64] lent, rules: i64) -> [i64]
+    out: [i64] @= []
+
+    for point in points
+        if rules == TURKIC && point == 'I'
+            out @ out.push(0x131)
+        else if rules == TURKIC && point == 0x130
+            out @ out.push('i')
+        else if point < 0x80
+            if point >= 'A' && point <= 'Z'
+                out @ out.push(point + 32)
+            else
+                out @ out.push(point)
+        else
+            add_text(@out, mapped: unicode.to_casefold(unicode.from_code_point(point).must()))
+
+    return out
+
+## Tests
+
+test "rules_of: a tag of each kind, in either case, with a region, and the empty one"
+    assert rules_of("tr") == TURKIC
+    assert rules_of("AZ") == TURKIC
+    assert rules_of("tr-TR") == TURKIC
+    assert rules_of("az_Latn") == TURKIC
+    assert rules_of("lt") == LITHUANIAN
+    assert rules_of("en") == OTHER
+    assert rules_of("") == OTHER
+    assert rules_of("tur") == OTHER
+    assert rules_of("t") == OTHER
+
+# ICU 78.3's `u_strToLower`, observed 2026-11-17, answers each, the root
+# locale for `OTHER`, "tr" and "lt" for theirs.
+test "lowered: a final sigma and one inside a word, Turkish i in each form, Lithuanian i under an accent"
+    assert lowered([0x39f, 0x394, 0x3a5, 0x3a3, 0x3a3, 0x395, 0x3a5, 0x3a3], rules: OTHER) == [0x3bf, 0x3b4, 0x3c5, 0x3c3, 0x3c3, 0x3b5, 0x3c5, 0x3c2]
+    assert lowered([0x3a3], rules: OTHER) == [0x3c3]
+    assert lowered(['I', 0x130], rules: OTHER) == ['i', 'i', 0x307]
+    assert lowered(['I', 0x130], rules: TURKIC) == [0x131, 'i']
+    assert lowered(['I', 0x307], rules: TURKIC) == ['i']
+    assert lowered(['I', 0x301], rules: LITHUANIAN) == ['i', 0x307, 0x301]
+    assert lowered([0xcc], rules: LITHUANIAN) == ['i', 0x307, 0x300]
+    assert lowered([], rules: TURKIC) == []
+
+# ICU 78.3's `u_strToUpper`, observed 2026-11-17.
+test "uppered: Turkish i, a sharp s, and Lithuanian's dot after i"
+    assert uppered(['i'], rules: TURKIC) == [0x130]
+    assert uppered(['i'], rules: OTHER) == ['I']
+    assert uppered([0xdf], rules: OTHER) == ['S', 'S']
+    assert uppered(['i', 0x307], rules: LITHUANIAN) == ['I']
+    assert uppered(['i', 0x307], rules: OTHER) == ['I', 0x307]
+
+# ICU 78.3's `u_strFoldCase`, the default and with its option for Turkic
+# languages, observed 2026-11-17.
+test "folded: the two capital i in Turkish and in other languages"
+    assert folded(['I', 0x130], rules: TURKIC) == [0x131, 'i']
+    assert folded(['I', 0x130], rules: OTHER) == ['i', 'i', 0x307]
+    assert folded([0xdf], rules: LITHUANIAN) == ['s', 's']

@@ -1,0 +1,4496 @@
+# The Model Context Protocol, revision 2026-07-28, followed as that revision
+# writes it: a server that offers a model tools (listed with the JSON Schema
+# of their inputs, and called), resources and resource templates, prompts,
+# completions, and change notifications on `subscriptions/listen`; that asks
+# the user for more through elicitation, by multi round-trip requests; that
+# tells progress and hears cancellation; over standard streams one message a
+# line, and over Streamable HTTP. Then a client of such a server, over the
+# same two transports.
+#
+# **The revision is stateless.** There is no `initialize` handshake: every
+# request carries its protocol version and the client's capabilities in its
+# `_meta`, and a server answers each request alone. `handle` checks those
+# fields and answers a request it can answer from what the program
+# described (`server/discover`, the lists, every refusal); for a tool call, a
+# resource read, a prompt, a completion or a subscription it says what was
+# asked, and **the program calls its own function with its own state**, as
+# `web` routes and `jsonrpc` finds, then answers with `answer_tool` and its
+# kin. A request that asks for an `initialize` is answered -32022 naming the
+# version this server speaks, as the revision asks of a server that speaks
+# it alone.
+#
+# **What it does not do.** Sampling, roots and logging are deprecated by
+# this revision (SEP-2577) and are not offered: no `sampling/createMessage`
+# or `roots/list` is asked of a client, and no log line is sent; a server
+# logs to its standard error. The deprecated HTTP+SSE transport of 2024-11-05
+# and the earlier revisions' handshake are not spoken. The tasks extension is
+# not offered. JSON-RPC is `jsonrpc`'s, a JSON value `json`'s, a schema's
+# validation `json/schema`'s, an HTTP message `http`'s, the authorization
+# flow `oauth2`'s: this package serves a protected resource's metadata and
+# its challenges, and finds where a client authorizes.
+#
+# The codes it fails with: `invalid` (a message or a value not of its form),
+# `not_found` (a member, a tool, a resource or a prompt absent), `failed` (a
+# server answered an error, its code and message in the failure's),
+# `permission` (a server asks for authorization: `Client.denied` holds its
+# answer), `unsupported` (something this package does not do), and as
+# `jsonrpc`, `http` and `io` fail: `closed`, `limit`, `timeout`, `stopped`.
+
+use bytes
+use containers/deque
+use http
+use io
+use json
+use json/schema as schemas
+use jsonrpc
+use mcp/internal/build
+use mcp/internal/fixture
+use mcp/internal/headers
+use mcp/internal/meta as reserved
+use mcp/internal/pages
+use mcp/internal/templates
+use net
+use numbers
+use oauth2
+use strings
+use threads
+use time
+use url
+use web
+
+## Codes
+
+# The code of a message, a member or an argument not of its form.
+constant INVALID: str
+    "invalid"
+
+# The code of a member, a tool, a resource, a prompt or a subscription
+# absent.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of an error a server answered: its code and message in the
+# failure's message.
+constant FAILED: str
+    "failed"
+
+# The code of a server that asks for authorization, answering 401 or 403.
+constant PERMISSION: str
+    "permission"
+
+# The code of what this package does not do.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The code of a list a server answers with more pages than a client reads.
+constant LIMIT: str
+    "limit"
+
+## The revision
+
+# The revision this package speaks, written in every request's `_meta` and
+# the one version `server/discover` names.
+constant PROTOCOL_VERSION: str
+    "2026-07-28"
+
+# The error of an HTTP field that does not match the body, or is missing.
+constant HEADER_MISMATCH: i64
+    -32020
+
+# The error of a request that needs a capability the client did not declare.
+constant MISSING_REQUIRED_CLIENT_CAPABILITY: i64
+    -32021
+
+# The error of a request in a protocol version the server does not speak.
+constant UNSUPPORTED_PROTOCOL_VERSION: i64
+    -32022
+
+## Who speaks
+
+# An image that stands for a server, a client, a tool, a resource or a
+# prompt.
+record Icon
+    # Its URL: `https://` or a `data:` URI.
+    src: str
+    # Its media type, "" where the URL's own says it.
+    mime_type: str
+    # The sizes it is drawn at, `48x48` or `any`; empty for none named.
+    sizes: [str]
+    # The background it is drawn for, `light` or `dark`; "" for either.
+    theme: str
+
+# A program that speaks MCP: a client's `clientInfo`, a server's
+# `serverInfo`. Made by `implementation`, its other fields set by the
+# program.
+record Implementation
+    # Its name.
+    name: str
+    # Its name for a person, "" for none.
+    title: str
+    # Its version.
+    version: str
+    # What it is, "" for none.
+    description: str
+    # Its web site, "" for none.
+    website_url: str
+    # Its icons, empty for none.
+    icons: [Icon]
+
+# What a client declares it can do, in each request's `_meta`.
+record ClientCapabilities
+    # Whether it asks its user by a form: elicitation's form mode.
+    elicitation_form: bool
+    # Whether it sends its user to a URL: elicitation's URL mode.
+    elicitation_url: bool
+    # Every other member as written: `extensions`, `experimental`, and the
+    # deprecated `sampling` and `roots`, which this package never uses.
+    members: {str: json.Value}
+
+# What a server declares it does, as `server/discover` answers.
+record ServerCapabilities
+    # Whether it offers tools.
+    tools: bool
+    # Whether it tells when its tools change.
+    tools_list_changed: bool
+    # Whether it offers resources.
+    resources: bool
+    # Whether it tells when a resource subscribed to changes.
+    resources_subscribe: bool
+    # Whether it tells when its resources change.
+    resources_list_changed: bool
+    # Whether it offers prompts.
+    prompts: bool
+    # Whether it tells when its prompts change.
+    prompts_list_changed: bool
+    # Whether it answers `completion/complete`.
+    completions: bool
+    # The extensions it speaks, by their identifiers, each with its settings.
+    extensions: {str: json.Value}
+
+# The `_meta` of a request, read: who asks, in which version, able to do
+# what.
+record RequestMeta
+    # The protocol version the request is written in.
+    protocol_version: str
+    # The client's name and version; its `name` "" where it gave none.
+    client: Implementation
+    # What it declares it can do.
+    capabilities: ClientCapabilities
+    # The token its progress is told with, `.absent` where it asks for none.
+    progress_token: jsonrpc.Id
+    # The least log level it asks for, "" for none; this package sends no log
+    # line, the feature being deprecated.
+    log_level: str
+    # Every member of `_meta`, these and the trace context among them.
+    members: {str: json.Value}
+
+# The implementation named `name` at `version`, every other field empty.
+#
+# - `name`: its name.
+# - `version`: its version.
+function implementation(name: str, version: str) -> Implementation
+    return Implementation(name: name, title: "", version: version, description: "", website_url: "", icons: [])
+
+# Capabilities that declare elicitation's form mode alone, the mode most
+# clients that ask their user offer.
+function form_capabilities() -> ClientCapabilities
+    return ClientCapabilities(elicitation_form: true, elicitation_url: false, members: {})
+
+# Capabilities that declare nothing: a client that never asks its user.
+function no_capabilities() -> ClientCapabilities
+    return ClientCapabilities(elicitation_form: false, elicitation_url: false, members: {})
+
+## Content
+
+# Hints about content: who it is for, how much it matters, when it changed.
+record Annotations
+    # Who it is for: `user`, `assistant`; empty for no hint.
+    audience: [str]
+    # How much it matters, 0.0 to 1.0, read only where `has_priority`.
+    priority: f64
+    # Whether `priority` is given.
+    has_priority: bool
+    # When it last changed, ISO 8601, "" for no hint.
+    last_modified: str
+
+# One block of content: of a tool's result or a prompt's message.
+variant Content
+    # Text.
+    text
+        # The text.
+        text: str
+        # Its hints.
+        annotations: Annotations
+    # An image, its bytes written in base 64.
+    image
+        # The image's bytes.
+        data: [u8]
+        # Its media type, `image/png`.
+        mime_type: str
+        # Its hints.
+        annotations: Annotations
+    # A sound, its bytes written in base 64.
+    audio
+        # The sound's bytes.
+        data: [u8]
+        # Its media type, `audio/wav`.
+        mime_type: str
+        # Its hints.
+        annotations: Annotations
+    # A link to a resource the client reads or fetches.
+    resource_link
+        # The resource, its annotations the link's.
+        resource: Resource
+    # A resource's contents, embedded.
+    embedded
+        # The contents.
+        contents: Contents
+        # Its hints.
+        annotations: Annotations
+
+# What a resource holds: text, or bytes.
+variant Contents
+    # Text.
+    text
+        # The resource's URI.
+        uri: str
+        # Its media type, "" for none.
+        mime_type: str
+        # The text.
+        text: str
+    # Bytes, written in base 64.
+    blob
+        # The resource's URI.
+        uri: str
+        # Its media type, "" for none.
+        mime_type: str
+        # The bytes.
+        data: [u8]
+
+# Hints of none.
+function no_annotations() -> Annotations
+    return Annotations(audience: [], priority: 0.0, has_priority: false, last_modified: "")
+
+# A block of `text`, with no hint.
+#
+# - `text`: the text, any.
+function text_content(text: str) -> Content
+    return .text(text: text, annotations: no_annotations())
+
+## Tools
+
+# What a tool's annotations say of it, the protocol's defaults where they
+# say nothing. A client trusts them only from a server it trusts.
+record Hints
+    # Its name for a person, "" for none.
+    title: str
+    # Whether it changes nothing; false by default.
+    read_only: bool
+    # Whether a change it makes may destroy; true by default.
+    destructive: bool
+    # Whether calling it twice with the same arguments does no more; false by
+    # default.
+    idempotent: bool
+    # Whether it reaches a world beyond the server's own; true by default.
+    open_world: bool
+
+# A tool a model may call. Made by `new_tool`.
+record Tool
+    # Its name: 1 to 128 of `A-Z a-z 0-9 _ - .`, as the revision advises.
+    name: str
+    # Its name for a person, "" for none.
+    title: str
+    # What it does, for the model.
+    description: str
+    # The JSON Schema of its arguments, an object of type `object`, 2020-12
+    # where it names no `$schema`. A property may carry `x-mcp-header`.
+    input_schema: json.Value
+    # The JSON Schema of its structured result, `.null_value` for none.
+    output_schema: json.Value
+    # Its annotations.
+    hints: Hints
+    # Its icons.
+    icons: [Icon]
+    # Its `_meta`, empty for none.
+    meta: {str: json.Value}
+
+# What a tool answers.
+record ToolResult
+    # The content blocks, in order.
+    content: [Content]
+    # The structured result, any JSON value but `null`; `.null_value` for
+    # none, so a structured `null` cannot be told.
+    structured: json.Value
+    # Whether the call failed in a way the model can see and correct: a wrong
+    # date, a value out of range.
+    is_error: bool
+
+# The hints of a tool that says nothing: the protocol's defaults.
+function default_hints() -> Hints
+    return Hints(title: "", read_only: false, destructive: true, idempotent: false, open_world: true)
+
+# A tool named `name` that `description` describes, taking what
+# `input_schema` allows, with no title, no output schema and the default
+# hints.
+#
+# - `name`: its name.
+# - `description`: what it does, for the model.
+# - `input_schema`: the JSON Schema of its arguments; `{"type": "object",
+#   "additionalProperties": false}` for none, as the revision advises.
+function new_tool(name: str, description: str, input_schema: json.Value) -> Tool
+    return Tool(
+        name: name,
+        title: "",
+        description: description,
+        input_schema: input_schema,
+        output_schema: .null_value,
+        hints: default_hints(),
+        icons: [],
+        meta: {}
+    )
+
+# A result of one block of `text`.
+#
+# - `text`: the text the model reads.
+function text_result(text: str) -> ToolResult
+    return ToolResult(content: [text_content(text)], structured: .null_value, is_error: false)
+
+# A failed call's result, one block of `text` that tells the model what to
+# correct: a tool execution error, not a protocol error.
+#
+# - `text`: what went wrong, for the model.
+function error_result(text: str) -> ToolResult
+    return ToolResult(content: [text_content(text)], structured: .null_value, is_error: true)
+
+# A result whose structured content is `value`, with its JSON as a block of
+# text too, as the revision advises for clients of before.
+#
+# - `value`: the structured result, which conforms to the tool's output
+#   schema where it has one.
+#
+# Fails `invalid` where `value` holds a `nan` or an infinity.
+function structured_result(value: json.Value) -> ToolResult?
+    return ok(ToolResult(content: [text_content(json.format(value)?)], structured: value, is_error: false))
+
+## Resources
+
+# A resource a client may read. Made by `new_resource`.
+record Resource
+    # Its URI.
+    uri: str
+    # Its name.
+    name: str
+    # Its name for a person, "" for none.
+    title: str
+    # What it holds, "" for no description.
+    description: str
+    # Its media type, "" for none.
+    mime_type: str
+    # Its size in bytes, read only where `has_size`.
+    size: i64
+    # Whether `size` is given.
+    has_size: bool
+    # Its hints.
+    annotations: Annotations
+    # Its icons.
+    icons: [Icon]
+    # Its `_meta`, empty for none.
+    meta: {str: json.Value}
+
+# A family of resources whose URIs a template writes, RFC 6570. Made by
+# `new_template`.
+record ResourceTemplate
+    # The URI template, `file:///{+path}`.
+    uri_template: str
+    # Its name.
+    name: str
+    # Its name for a person, "" for none.
+    title: str
+    # What its resources hold, "" for no description.
+    description: str
+    # Their media type, "" for none.
+    mime_type: str
+    # Its hints.
+    annotations: Annotations
+    # Its icons.
+    icons: [Icon]
+    # Its `_meta`, empty for none.
+    meta: {str: json.Value}
+
+# The resource at `uri` named `name`, every other field empty.
+#
+# - `uri`: its URI.
+# - `name`: its name.
+function new_resource(uri: str, name: str) -> Resource
+    return Resource(
+        uri: uri,
+        name: name,
+        title: "",
+        description: "",
+        mime_type: "",
+        size: 0,
+        has_size: false,
+        annotations: no_annotations(),
+        icons: [],
+        meta: {}
+    )
+
+# The template `uri_template` named `name`, every other field empty.
+#
+# - `uri_template`: an RFC 6570 template.
+# - `name`: its name.
+function new_template(uri_template: str, name: str) -> ResourceTemplate
+    return ResourceTemplate(
+        uri_template: uri_template,
+        name: name,
+        title: "",
+        description: "",
+        mime_type: "",
+        annotations: no_annotations(),
+        icons: [],
+        meta: {}
+    )
+
+# The URI `template` writes with `values`, RFC 6570.
+#
+# - `template`: the template; every operator and the prefix modifier are
+#   read, and a value being text, the explode modifier changes nothing.
+# - `values`: each variable's value; one absent is undefined, and its
+#   expression writes nothing of it.
+#
+# Fails `invalid` where `template` is not one. See also `match_template`.
+function expand_template(template: str, values: {str: str}) -> str?
+    return templates.expand(template, values: values)
+
+# The values that `template` would have to be expanded with to write `uri`,
+# unescaped: what a server reads from a resource's URI.
+#
+# - `template`: the template.
+# - `uri`: the URI.
+#
+# Each expression takes the characters its operator writes, up to the next
+# literal text, so a template whose expressions follow each other with no
+# text between them is matched as far as that reads. Fails `not_found` where
+# `template` does not write `uri`, `invalid` where it is no template. See
+# also `expand_template`.
+function match_template(template: str, uri: str) -> {str: str}?
+    return templates.match_uri(template: template, uri: uri)
+
+## Prompts
+
+# An argument a prompt takes.
+record PromptArgument
+    # Its name.
+    name: str
+    # Its name for a person, "" for none.
+    title: str
+    # What it is, "" for no description.
+    description: str
+    # Whether a request must give it.
+    required: bool
+
+# A prompt a user may choose. Made by `new_prompt`.
+record Prompt
+    # Its name.
+    name: str
+    # Its name for a person, "" for none.
+    title: str
+    # What it does, "" for no description.
+    description: str
+    # The arguments it takes, in order.
+    arguments: [PromptArgument]
+    # Its icons.
+    icons: [Icon]
+    # Its `_meta`, empty for none.
+    meta: {str: json.Value}
+
+# One message of a prompt.
+record PromptMessage
+    # Who speaks it: `user` or `assistant`.
+    role: str
+    # What it says.
+    content: Content
+
+# What `prompts/get` answers.
+record PromptResult
+    # What the prompt is, "" for no description.
+    description: str
+    # Its messages, in order.
+    messages: [PromptMessage]
+
+# The prompt `name` that `description` describes, taking `arguments`.
+#
+# - `name`: its name.
+# - `description`: what it does.
+# - `arguments`: what it takes, in order; empty for none.
+function new_prompt(name: str, description: str, arguments: [PromptArgument]) -> Prompt
+    return Prompt(name: name, title: "", description: description, arguments: arguments, icons: [], meta: {})
+
+## Asking the user
+
+# What a server asks a client to ask its user, by elicitation: a form, or a
+# URL the user opens. Sampling and roots, deprecated, are not asked.
+variant InputRequest
+    # A form whose fields a flat JSON Schema of strings, numbers, booleans
+    # and enumerations describes; never for a secret, which goes by `url`.
+    form
+        # Why the server asks.
+        message: str
+        # The `requestedSchema`.
+        schema: json.Value
+    # A URL the user opens out of the client's sight: for a secret, a
+    # payment, an authorization with a third party.
+    url
+        # Why the server asks.
+        message: str
+        # The URL.
+        url: str
+
+# A server's answer that it needs more before it can answer: what it asks,
+# and its own state the client gives back on the retry. Valid with at least
+# one of the two.
+record InputRequired
+    # The requests by the server's own keys, each unique in the answer.
+    requests: {str: InputRequest}
+    # The server's state, opaque to the client, "" for none; protected by
+    # `seal_state` where it decides anything.
+    state: str
+
+# What a retried request gives back: the user's answers, by the keys the
+# server asked them under, and the server's state as it was given.
+record Inputs
+    # Each answer as the client wrote it, by key.
+    responses: {str: json.Value}
+    # The state given back, "" for none.
+    state: str
+
+# What a user answered to an elicitation.
+record Elicited
+    # `accept`, `decline` or `cancel`.
+    action: str
+    # The form's values by field, where the action is `accept` in form mode;
+    # empty otherwise.
+    content: {str: json.Value}
+
+# No answer and no state: a request's first try.
+function no_inputs() -> Inputs
+    return Inputs(responses: {}, state: "")
+
+# What the user answered to the request the server asked under `key`.
+#
+# - `inputs`: what the retried request gave back.
+# - `key`: the key the server asked under.
+#
+# Fails `not_found` where `inputs` holds no answer for `key`, which a server
+# answers by asking again; `invalid` where the answer is not an elicitation's.
+function elicited_of(inputs: Inputs, key: str) -> Elicited?
+    answer = match inputs.responses[key]
+        .ok got => got
+        .err _  => return fail(code: NOT_FOUND, msg: f"no answer to \"{key}\"")
+
+    action = build.required_text(answer, key: "action")?
+
+    if action != "accept" && action != "decline" && action != "cancel"
+        return fail(code: INVALID, msg: f"\"{action}\" is not accept, decline or cancel")
+    return ok(Elicited(action: action, content: build.object_at(answer, key: "content")?))
+
+# A user's answer as a client writes it in `inputResponses`.
+#
+# - `action`: `accept`, `decline` or `cancel`.
+# - `content`: the form's values by field for `accept` in form mode; empty
+#   otherwise, and then not written.
+#
+# Fails `invalid` where `action` is another word.
+function elicitation_response(action: str, content: {str: json.Value}) -> json.Value?
+    if action != "accept" && action != "decline" && action != "cancel"
+        return fail(code: INVALID, msg: f"\"{action}\" is not accept, decline or cancel")
+    members: {str: json.Value} @= {}
+    members["action"] @ .text(v: action)
+
+    if content.len() > 0
+        members["content"] @ .object(members: content)
+    return ok(.object(members: members))
+
+# `state` signed for the request `bound`, valid before `expires`, so that a
+# client that gives it back cannot have changed it: what a server writes in
+# `InputRequired.state` where it decides anything, as the revision asks.
+#
+# - `ring`: the server's keys, each of 32 bytes or more; the first signs.
+# - `bound`: what the state belongs to: the method, the tool's name and the
+#   user it was asked of, so that it is refused on another request.
+# - `state`: the server's state, any text.
+# - `expires`: when it stops being taken.
+#
+# Aborts where `ring` is empty or a key is shorter than 32 bytes, as
+# `web.sign_value` does. It is `web.sign_value`'s HMAC-SHA256 form. See also
+# `open_state`.
+function seal_state(ring: [[u8]], bound: str, state: str, expires: time.Instant) -> str
+    return web.sign_value(ring, name: "mcp:" + bound, value: state, expires: expires)
+
+# The state `sealed` holds, as `seal_state` wrote it for `bound`.
+#
+# - `ring`: the server's keys.
+# - `bound`: what the state must belong to, as `seal_state` was given it.
+# - `sealed`: the state the client gave back.
+# - `now`: the instant compared with its end.
+#
+# Fails `invalid` where it was not signed by a key of `ring` for `bound`, or
+# has expired: a server then answers as to a first try. See also
+# `seal_state`.
+function open_state(ring: [[u8]], bound: str, sealed: str, now: time.Instant) -> str?
+    return web.verify_value(ring, name: "mcp:" + bound, signed: sealed, now: now)
+
+## JSON forms
+
+# `icons` as the list the revision writes.
+#
+# - `icons`: the icons, in order.
+#
+# See also `icons_of`.
+function icons_json(icons: [Icon]) -> json.Value
+    items: [json.Value] @= []
+
+    for icon in icons
+        members: {str: json.Value} @= {}
+        members["src"] @ .text(v: icon.src)
+        build.put_text(@members, key: "mimeType", value: icon.mime_type)
+        build.put_texts(@members, key: "sizes", values: icon.sizes)
+        build.put_text(@members, key: "theme", value: icon.theme)
+        items @ items.push(.object(members: members))
+
+    return .list(items: items)
+
+# The icons the list `v` holds.
+#
+# - `v`: a list of icon objects, or `.null_value` for none.
+#
+# Fails `invalid` where it is not a list of icons, each with its `src`. See
+# also `icons_json`.
+function icons_of(v: json.Value) -> [Icon]?
+    holder: {str: json.Value} @= {}
+    holder["icons"] @ v
+    out: [Icon] @= []
+
+    for item in build.items_at(.object(members: holder), key: "icons")?
+        out @ out.push(
+            Icon(src: build.required_text(item, key: "src")?, mime_type: build.text_at(item, key: "mimeType")?, sizes: build.texts_at(item, key: "sizes")?, theme: build.text_at(item, key: "theme")?)
+        )
+
+    return ok(out)
+
+# `i` as the revision writes it, an empty member left out.
+#
+# - `i`: the implementation.
+#
+# See also `implementation_of`.
+function implementation_json(i: Implementation) -> json.Value
+    members: {str: json.Value} @= {}
+    members["name"] @ .text(v: i.name)
+    build.put_text(@members, key: "title", value: i.title)
+    members["version"] @ .text(v: i.version)
+    build.put_text(@members, key: "description", value: i.description)
+    build.put_text(@members, key: "websiteUrl", value: i.website_url)
+
+    if i.icons.len() > 0
+        members["icons"] @ icons_json(i.icons)
+    return .object(members: members)
+
+# The implementation the object `v` writes.
+#
+# - `v`: a `clientInfo` or a `serverInfo`.
+#
+# Fails `invalid` where its `name` or its `version` is missing, or a member
+# is of another kind. See also `implementation_json`.
+function implementation_of(v: json.Value) -> Implementation?
+    return ok(
+        Implementation(name: build.required_text(v, key: "name")?, title: build.text_at(v, key: "title")?, version: build.required_text(v, key: "version")?, description: build.text_at(v, key: "description")?, website_url: build.text_at(v, key: "websiteUrl")?, icons: icons_of(build.members_of(v)["icons"].default(.null_value))?)
+    )
+
+# `c` as the object a request's `_meta` carries.
+#
+# - `c`: the capabilities; `elicitation` is written from its two flags, each
+#   mode named.
+#
+# See also `client_capabilities_of`.
+function client_capabilities_json(c: ClientCapabilities) -> json.Value
+    members: {str: json.Value} @= {}
+
+    for key in keys(c.members)
+        if key != "elicitation"
+            members[key] @ c.members[key].must()
+
+    if c.elicitation_form || c.elicitation_url
+        modes: {str: json.Value} @= {}
+
+        if c.elicitation_form
+            modes["form"] @ .object(members: {})
+
+        if c.elicitation_url
+            modes["url"] @ .object(members: {})
+        members["elicitation"] @ .object(members: modes)
+    return .object(members: members)
+
+# The capabilities the object `v` declares.
+#
+# - `v`: a request's `clientCapabilities`; an empty `elicitation` declares
+#   the form mode alone, as the revision reads it.
+#
+# See also `client_capabilities_json`.
+function client_capabilities_of(v: json.Value) -> ClientCapabilities
+    modes = reserved.elicitation_modes(v)
+    members: {str: json.Value} @= {}
+    written = build.members_of(v)
+
+    for key in keys(written)
+        if key != "elicitation"
+            members[key] @ written[key].must()
+
+    return ClientCapabilities(
+        elicitation_form: reserved.has(modes, name: "form"),
+        elicitation_url: reserved.has(modes, name: "url"),
+        members: members
+    )
+
+# `c` as the object `server/discover` answers.
+#
+# - `c`: the capabilities; a feature not offered is left out.
+#
+# See also `server_capabilities_of`.
+function server_capabilities_json(c: ServerCapabilities) -> json.Value
+    members: {str: json.Value} @= {}
+
+    if c.tools
+        tools: {str: json.Value} @= {}
+
+        if c.tools_list_changed
+            tools["listChanged"] @ .boolean(v: true)
+        members["tools"] @ .object(members: tools)
+
+    if c.resources
+        resources: {str: json.Value} @= {}
+
+        if c.resources_subscribe
+            resources["subscribe"] @ .boolean(v: true)
+
+        if c.resources_list_changed
+            resources["listChanged"] @ .boolean(v: true)
+        members["resources"] @ .object(members: resources)
+
+    if c.prompts
+        prompts: {str: json.Value} @= {}
+
+        if c.prompts_list_changed
+            prompts["listChanged"] @ .boolean(v: true)
+        members["prompts"] @ .object(members: prompts)
+
+    if c.completions
+        members["completions"] @ .object(members: {})
+
+    if c.extensions.len() > 0
+        members["extensions"] @ .object(members: c.extensions)
+    return .object(members: members)
+
+# The capabilities the object `v` declares.
+#
+# - `v`: a `capabilities` object, as `server/discover` answers it.
+#
+# Fails `invalid` where a feature's member is not an object. See also
+# `server_capabilities_json`.
+function server_capabilities_of(v: json.Value) -> ServerCapabilities?
+    written = build.members_of(v)
+    tools = build.object_at(v, key: "tools")?
+    resources = build.object_at(v, key: "resources")?
+    prompts = build.object_at(v, key: "prompts")?
+    _ = build.object_at(v, key: "completions")?
+    return ok(
+        ServerCapabilities(tools: !written["tools"].is_err(), tools_list_changed: tools["listChanged"].default(.null_value) == .boolean(v: true), resources: !written["resources"].is_err(), resources_subscribe: resources["subscribe"].default(.null_value) == .boolean(v: true), resources_list_changed: resources["listChanged"].default(.null_value) == .boolean(v: true), prompts: !written["prompts"].is_err(), prompts_list_changed: prompts["listChanged"].default(.null_value) == .boolean(v: true), completions: !written["completions"].is_err(), extensions: build.object_at(v, key: "extensions")?)
+    )
+
+# `a` as the object the revision writes, an empty hint left out.
+#
+# - `a`: the hints.
+#
+# See also `annotations_of`.
+function annotations_json(a: Annotations) -> json.Value
+    members: {str: json.Value} @= {}
+    build.put_texts(@members, key: "audience", values: a.audience)
+
+    if a.has_priority
+        members["priority"] @ .number(v: a.priority)
+    build.put_text(@members, key: "lastModified", value: a.last_modified)
+    return .object(members: members)
+
+# The hints the object `v` writes.
+#
+# - `v`: an `annotations` object, or `.null_value` for none.
+#
+# Fails `invalid` where a member is of another kind, or `priority` is not a
+# number. See also `annotations_json`.
+function annotations_of(v: json.Value) -> Annotations?
+    out @= no_annotations()
+    out.audience @ build.texts_at(v, key: "audience")?
+    out.last_modified @ build.text_at(v, key: "lastModified")?
+
+    match build.members_of(v)["priority"]
+        .ok got =>
+            out.priority @ json.number_of(got)?
+            out.has_priority @ true
+        .err _ => _ = 0
+
+    return ok(out)
+
+# Writes `a` at `annotations` in `members` where it says anything.
+#
+# - `members`: the object being written.
+# - `a`: the hints.
+function put_annotations(@members: {str: json.Value}, a: Annotations)
+    if a != no_annotations()
+        members["annotations"] @ annotations_json(a)
+
+# `c` as the content block the revision writes, its bytes in base 64.
+#
+# - `c`: the block.
+#
+# See also `content_of`.
+function content_json(c: Content) -> json.Value
+    members: {str: json.Value} @= {}
+
+    match c
+        .text t =>
+            members["type"] @ .text(v: "text")
+            members["text"] @ .text(v: t.text)
+            put_annotations(@members, a: t.annotations)
+        .image i =>
+            members["type"] @ .text(v: "image")
+            members["data"] @ .text(v: bytes.format_base64(i.data))
+            members["mimeType"] @ .text(v: i.mime_type)
+            put_annotations(@members, a: i.annotations)
+        .audio a =>
+            members["type"] @ .text(v: "audio")
+            members["data"] @ .text(v: bytes.format_base64(a.data))
+            members["mimeType"] @ .text(v: a.mime_type)
+            put_annotations(@members, a: a.annotations)
+        .resource_link l =>
+            members["type"] @ .text(v: "resource_link")
+            written = build.members_of(resource_json(l.resource))
+
+            for key in keys(written)
+                members[key] @ written[key].must()
+        .embedded e =>
+            members["type"] @ .text(v: "resource")
+            members["resource"] @ contents_json(e.contents)
+            put_annotations(@members, a: e.annotations)
+
+    return .object(members: members)
+
+# The content block the object `v` writes.
+#
+# - `v`: a block of type `text`, `image`, `audio`, `resource_link` or
+#   `resource`.
+#
+# Fails `invalid` where its type is another (a sampling's `tool_use`
+# among them), a member is missing or of another kind, or the base 64 does
+# not read. See also `content_json`.
+function content_of(v: json.Value) -> Content?
+    kind = build.required_text(v, key: "type")?
+    annotations = annotations_of(build.members_of(v)["annotations"].default(.null_value))?
+
+    if kind == "text"
+        return ok(.text(text: build.required_text(v, key: "text")?, annotations: annotations))
+
+    if kind == "image" || kind == "audio"
+        data = match bytes.parse_base64(build.required_text(v, key: "data")?)
+            .ok got => got
+            .err _  => return fail(code: INVALID, msg: f"the {kind}'s data is not base 64")
+
+        mime_type = build.required_text(v, key: "mimeType")?
+
+        if kind == "image"
+            return ok(.image(data: data, mime_type: mime_type, annotations: annotations))
+        return ok(.audio(data: data, mime_type: mime_type, annotations: annotations))
+
+    if kind == "resource_link"
+        return ok(.resource_link(resource: resource_of(v)?))
+
+    if kind == "resource"
+        return ok(
+            .embedded(contents: contents_of(build.members_of(v)["resource"].default(.null_value))?, annotations: annotations)
+        )
+    return fail(code: INVALID, msg: f"a content block of type \"{kind}\" is not one this revision gives a result")
+
+# `c` as the revision writes a resource's contents, bytes in base 64.
+#
+# - `c`: the contents.
+#
+# See also `contents_of`.
+function contents_json(c: Contents) -> json.Value
+    members: {str: json.Value} @= {}
+
+    match c
+        .text t =>
+            members["uri"] @ .text(v: t.uri)
+            build.put_text(@members, key: "mimeType", value: t.mime_type)
+            members["text"] @ .text(v: t.text)
+        .blob b =>
+            members["uri"] @ .text(v: b.uri)
+            build.put_text(@members, key: "mimeType", value: b.mime_type)
+            members["blob"] @ .text(v: bytes.format_base64(b.data))
+
+    return .object(members: members)
+
+# The contents the object `v` writes: text where it has `text`, bytes where
+# it has `blob`.
+#
+# - `v`: a resource's contents.
+#
+# Fails `invalid` where it has no `uri`, neither `text` nor `blob`, or the
+# base 64 does not read. See also `contents_json`.
+function contents_of(v: json.Value) -> Contents?
+    uri = build.required_text(v, key: "uri")?
+    mime_type = build.text_at(v, key: "mimeType")?
+    written = build.members_of(v)
+
+    if !written["text"].is_err()
+        return ok(.text(uri: uri, mime_type: mime_type, text: build.required_text(v, key: "text")?))
+
+    if written["blob"].is_err()
+        return fail(code: INVALID, msg: f"the contents of \"{uri}\" hold neither text nor a blob")
+
+    match bytes.parse_base64(build.required_text(v, key: "blob")?)
+        .ok data => return ok(.blob(uri: uri, mime_type: mime_type, data: data))
+        .err _   => return fail(code: INVALID, msg: f"the blob of \"{uri}\" is not base 64")
+
+# `t` as `tools/list` writes it, its hints left out where they are the
+# defaults.
+#
+# - `t`: the tool.
+#
+# See also `tool_of`.
+function tool_json(t: Tool) -> json.Value
+    members: {str: json.Value} @= {}
+    members["name"] @ .text(v: t.name)
+    build.put_text(@members, key: "title", value: t.title)
+    build.put_text(@members, key: "description", value: t.description)
+    members["inputSchema"] @ t.input_schema
+
+    if t.output_schema != .null_value
+        members["outputSchema"] @ t.output_schema
+    hints: {str: json.Value} @= {}
+    build.put_text(@hints, key: "title", value: t.hints.title)
+
+    if t.hints.read_only
+        hints["readOnlyHint"] @ .boolean(v: true)
+
+    if !t.hints.destructive
+        hints["destructiveHint"] @ .boolean(v: false)
+
+    if t.hints.idempotent
+        hints["idempotentHint"] @ .boolean(v: true)
+
+    if !t.hints.open_world
+        hints["openWorldHint"] @ .boolean(v: false)
+
+    if hints.len() > 0
+        members["annotations"] @ .object(members: hints)
+
+    if t.icons.len() > 0
+        members["icons"] @ icons_json(t.icons)
+
+    if t.meta.len() > 0
+        members["_meta"] @ .object(members: t.meta)
+    return .object(members: members)
+
+# The tool the object `v` writes.
+#
+# - `v`: a tool, as `tools/list` lists it.
+#
+# Fails `invalid` where its `name` is missing, its `inputSchema` is not an
+# object, or a member is of another kind. See also `tool_json`.
+function tool_of(v: json.Value) -> Tool?
+    written = build.members_of(v)
+    name = build.required_text(v, key: "name")?
+    input_schema = written["inputSchema"].default(.null_value)
+
+    match input_schema
+        .object _ => _ = 0
+        .null_value | .boolean _ | .number _ | .text _ | .list _ =>
+            return fail(code: INVALID, msg: f"the tool \"{name}\" has no `inputSchema` object")
+
+    annotations = written["annotations"].default(.null_value)
+    hints = Hints(
+        title: build.text_at(annotations, key: "title")?,
+        read_only: build.bool_at(annotations, key: "readOnlyHint", otherwise: false)?,
+        destructive: build.bool_at(annotations, key: "destructiveHint", otherwise: true)?,
+        idempotent: build.bool_at(annotations, key: "idempotentHint", otherwise: false)?,
+        open_world: build.bool_at(annotations, key: "openWorldHint", otherwise: true)?
+    )
+    return ok(
+        Tool(name: name, title: build.text_at(v, key: "title")?, description: build.text_at(v, key: "description")?, input_schema: input_schema, output_schema: written["outputSchema"].default(.null_value), hints: hints, icons: icons_of(written["icons"].default(.null_value))?, meta: build.object_at(v, key: "_meta")?)
+    )
+
+# `r` as the members of a `tools/call` result, `resultType` aside.
+#
+# - `r`: the result; `isError` is written only where it is true.
+#
+# See also `tool_result_of`.
+function tool_result_json(r: ToolResult) -> json.Value
+    items: [json.Value] @= []
+
+    for c in r.content
+        items @ items.push(content_json(c))
+
+    members: {str: json.Value} @= {}
+    members["content"] @ .list(items: items)
+
+    if r.structured != .null_value
+        members["structuredContent"] @ r.structured
+
+    if r.is_error
+        members["isError"] @ .boolean(v: true)
+    return .object(members: members)
+
+# The tool's result the object `v` writes.
+#
+# - `v`: a `tools/call` result whose type is `complete`.
+#
+# Fails `invalid` where a block is not of its form. See also
+# `tool_result_json`.
+function tool_result_of(v: json.Value) -> ToolResult?
+    content: [Content] @= []
+
+    for item in build.items_at(v, key: "content")?
+        content @ content.push(content_of(item)?)
+
+    return ok(
+        ToolResult(content: content, structured: build.members_of(v)["structuredContent"].default(.null_value), is_error: build.bool_at(v, key: "isError", otherwise: false)?)
+    )
+
+# `r` as `resources/list` writes it.
+#
+# - `r`: the resource.
+#
+# See also `resource_of`.
+function resource_json(r: Resource) -> json.Value
+    members: {str: json.Value} @= {}
+    members["uri"] @ .text(v: r.uri)
+    members["name"] @ .text(v: r.name)
+    build.put_text(@members, key: "title", value: r.title)
+    build.put_text(@members, key: "description", value: r.description)
+    build.put_text(@members, key: "mimeType", value: r.mime_type)
+    put_annotations(@members, a: r.annotations)
+
+    if r.has_size
+        members["size"] @ .number(v: to_f64(r.size))
+
+    if r.icons.len() > 0
+        members["icons"] @ icons_json(r.icons)
+
+    if r.meta.len() > 0
+        members["_meta"] @ .object(members: r.meta)
+    return .object(members: members)
+
+# The resource the object `v` writes, a resource link's included.
+#
+# - `v`: a resource.
+#
+# Fails `invalid` where its `uri` or its `name` is missing, its size is no
+# integer, or a member is of another kind. See also `resource_json`.
+function resource_of(v: json.Value) -> Resource?
+    written = build.members_of(v)
+    out @= new_resource(uri: build.required_text(v, key: "uri")?, name: build.required_text(v, key: "name")?)
+    out.title @ build.text_at(v, key: "title")?
+    out.description @ build.text_at(v, key: "description")?
+    out.mime_type @ build.text_at(v, key: "mimeType")?
+    out.annotations @ annotations_of(written["annotations"].default(.null_value))?
+    out.icons @ icons_of(written["icons"].default(.null_value))?
+    out.meta @ build.object_at(v, key: "_meta")?
+
+    match written["size"]
+        .ok size =>
+            out.size @ json.int_of(size)?
+            out.has_size @ true
+        .err _ => _ = 0
+
+    return ok(out)
+
+# `t` as `resources/templates/list` writes it.
+#
+# - `t`: the template.
+#
+# See also `template_of`.
+function template_json(t: ResourceTemplate) -> json.Value
+    members: {str: json.Value} @= {}
+    members["uriTemplate"] @ .text(v: t.uri_template)
+    members["name"] @ .text(v: t.name)
+    build.put_text(@members, key: "title", value: t.title)
+    build.put_text(@members, key: "description", value: t.description)
+    build.put_text(@members, key: "mimeType", value: t.mime_type)
+    put_annotations(@members, a: t.annotations)
+
+    if t.icons.len() > 0
+        members["icons"] @ icons_json(t.icons)
+
+    if t.meta.len() > 0
+        members["_meta"] @ .object(members: t.meta)
+    return .object(members: members)
+
+# The template the object `v` writes.
+#
+# - `v`: a resource template.
+#
+# Fails `invalid` where its `uriTemplate` or its `name` is missing, or a
+# member is of another kind. See also `template_json`.
+function template_of(v: json.Value) -> ResourceTemplate?
+    written = build.members_of(v)
+    out @= new_template(
+        uri_template: build.required_text(v, key: "uriTemplate")?,
+        name: build.required_text(v, key: "name")?
+    )
+    out.title @ build.text_at(v, key: "title")?
+    out.description @ build.text_at(v, key: "description")?
+    out.mime_type @ build.text_at(v, key: "mimeType")?
+    out.annotations @ annotations_of(written["annotations"].default(.null_value))?
+    out.icons @ icons_of(written["icons"].default(.null_value))?
+    out.meta @ build.object_at(v, key: "_meta")?
+    return ok(out)
+
+# `p` as `prompts/list` writes it.
+#
+# - `p`: the prompt.
+#
+# See also `prompt_of`.
+function prompt_json(p: Prompt) -> json.Value
+    members: {str: json.Value} @= {}
+    members["name"] @ .text(v: p.name)
+    build.put_text(@members, key: "title", value: p.title)
+    build.put_text(@members, key: "description", value: p.description)
+
+    if p.arguments.len() > 0
+        items: [json.Value] @= []
+
+        for a in p.arguments
+            argument: {str: json.Value} @= {}
+            argument["name"] @ .text(v: a.name)
+            build.put_text(@argument, key: "title", value: a.title)
+            build.put_text(@argument, key: "description", value: a.description)
+
+            if a.required
+                argument["required"] @ .boolean(v: true)
+            items @ items.push(.object(members: argument))
+
+        members["arguments"] @ .list(items: items)
+
+    if p.icons.len() > 0
+        members["icons"] @ icons_json(p.icons)
+
+    if p.meta.len() > 0
+        members["_meta"] @ .object(members: p.meta)
+    return .object(members: members)
+
+# The prompt the object `v` writes.
+#
+# - `v`: a prompt.
+#
+# Fails `invalid` where its `name` or an argument's is missing, or a member
+# is of another kind. See also `prompt_json`.
+function prompt_of(v: json.Value) -> Prompt?
+    arguments: [PromptArgument] @= []
+
+    for a in build.items_at(v, key: "arguments")?
+        arguments @ arguments.push(
+            PromptArgument(name: build.required_text(a, key: "name")?, title: build.text_at(a, key: "title")?, description: build.text_at(a, key: "description")?, required: build.bool_at(a, key: "required", otherwise: false)?)
+        )
+
+    out @= new_prompt(
+        name: build.required_text(v, key: "name")?,
+        description: build.text_at(v, key: "description")?,
+        arguments: arguments
+    )
+    out.title @ build.text_at(v, key: "title")?
+    out.icons @ icons_of(build.members_of(v)["icons"].default(.null_value))?
+    out.meta @ build.object_at(v, key: "_meta")?
+    return ok(out)
+
+# `r` as an `inputRequests` entry writes it: an `elicitation/create`.
+#
+# - `r`: the request.
+#
+# See also `input_request_of`.
+function input_request_json(r: InputRequest) -> json.Value
+    params: {str: json.Value} @= {}
+
+    match r
+        .form f =>
+            params["mode"] @ .text(v: "form")
+            params["message"] @ .text(v: f.message)
+            params["requestedSchema"] @ f.schema
+        .url u =>
+            params["mode"] @ .text(v: "url")
+            params["message"] @ .text(v: u.message)
+            params["url"] @ .text(v: u.url)
+
+    members: {str: json.Value} @= {}
+    members["method"] @ .text(v: "elicitation/create")
+    members["params"] @ .object(members: params)
+    return .object(members: members)
+
+# The request an `inputRequests` entry writes.
+#
+# - `v`: the entry; a `mode` absent is the form mode, as the revision reads
+#   it.
+#
+# Fails `unsupported` for `sampling/createMessage` and `roots/list`, which
+# this package does not answer and whose capabilities its clients never
+# declare; `invalid` where it is not of its form. See also
+# `input_request_json`.
+function input_request_of(v: json.Value) -> InputRequest?
+    method = build.required_text(v, key: "method")?
+
+    if method == "sampling/createMessage" || method == "roots/list"
+        return fail(
+            code: UNSUPPORTED,
+            msg: f"`{method}` is deprecated by revision {PROTOCOL_VERSION}, and this client does not answer it"
+        )
+
+    if method != "elicitation/create"
+        return fail(code: INVALID, msg: f"`{method}` is no request a server may ask")
+    params = build.members_of(v)["params"].default(.null_value)
+    mode = build.text_at(params, key: "mode")?
+    message = build.required_text(params, key: "message")?
+
+    if mode == "url"
+        return ok(.url(message: message, url: build.required_text(params, key: "url")?))
+
+    if mode != "" && mode != "form"
+        return fail(code: INVALID, msg: f"\"{mode}\" is no mode of elicitation")
+    schema = build.members_of(params)["requestedSchema"].default(.null_value)
+
+    match schema
+        .object _ => return ok(.form(message: message, schema: schema))
+        .null_value | .boolean _ | .number _ | .text _ | .list _ =>
+            return fail(code: INVALID, msg: "a form's `requestedSchema` is not an object")
+
+# `i` as the result the revision writes: `resultType` `input_required`, the
+# requests, the state.
+#
+# - `i`: what the server needs.
+#
+# See also `input_required_of`.
+function input_required_json(i: InputRequired) -> json.Value
+    members: {str: json.Value} @= {}
+    members["resultType"] @ .text(v: "input_required")
+
+    if i.requests.len() > 0
+        requests: {str: json.Value} @= {}
+
+        for key in keys(i.requests)
+            requests[key] @ input_request_json(i.requests[key].must())
+
+        members["inputRequests"] @ .object(members: requests)
+    build.put_text(@members, key: "requestState", value: i.state)
+    return .object(members: members)
+
+# What the result `v` asks, its `resultType` being `input_required`.
+#
+# - `v`: the result.
+#
+# Fails `invalid` where it asks nothing and gives no state, and as
+# `input_request_of` fails. See also `input_required_json`.
+function input_required_of(v: json.Value) -> InputRequired?
+    requests: {str: InputRequest} @= {}
+    written = build.object_at(v, key: "inputRequests")?
+
+    for key in keys(written)
+        requests[key] @ input_request_of(written[key].must())?
+
+    state = build.text_at(v, key: "requestState")?
+
+    if requests.len() == 0 && state == ""
+        return fail(code: INVALID, msg: "an input-required result asks nothing and gives no state")
+    return ok(InputRequired(requests: requests, state: state))
+
+## Servers
+
+# What a server offers and how it answers its lists: the program's
+# description, made by `new_server` and filled by the program. A feature is
+# offered where its list holds something.
+record Server
+    # Its name and version, written in every result's `_meta`.
+    info: Implementation
+    # What a model should know to use it well, "" for nothing.
+    instructions: str
+    # Its tools, in the order `tools/list` gives them, as the revision asks:
+    # the same order at every call.
+    tools: [Tool]
+    # Its resources.
+    resources: [Resource]
+    # Its resource templates.
+    templates: [ResourceTemplate]
+    # Its prompts.
+    prompts: [Prompt]
+    # Whether it tells a subscription when its lists change.
+    list_changed: bool
+    # Whether it tells a subscription when a resource changes.
+    subscribe: bool
+    # Whether it answers `completion/complete`.
+    completions: bool
+    # The extensions it speaks, by identifier, with their settings.
+    extensions: {str: json.Value}
+    # The most items of a list one page holds; 0 for every item on one page.
+    page_size: i64
+    # How long, in milliseconds, a client may hold a list or a resource read
+    # as fresh: 0 or more.
+    ttl_ms: i64
+    # Whether what it lists and reads depends on who asks, so that a cache
+    # shared between users must not keep it: `cacheScope` `private`.
+    private: bool
+    # The `Origin` values an HTTP request may carry, exactly; a request that
+    # carries another is refused 403, and one that carries none is taken.
+    origins: [str]
+
+# The notifications a subscription asks for, or a server agrees to send.
+record Filter
+    # The tools' list changing.
+    tools: bool
+    # The prompts' list changing.
+    prompts: bool
+    # The resources' list changing.
+    resources: bool
+    # The resources whose changes it asks for, by URI.
+    resource_uris: [str]
+
+# A tool call the program answers with `answer_tool`, or with
+# `answer_input_required` where it needs more of the user.
+record ToolCall
+    # The request's id.
+    id: jsonrpc.Id
+    # The tool's name, one of `Server.tools`.
+    name: str
+    # The arguments, an object the tool's input schema accepted.
+    arguments: json.Value
+    # Who asks, and able to do what.
+    meta: RequestMeta
+    # What a retried call gives back; empty on a first try.
+    inputs: Inputs
+
+# A resource read the program answers with `answer_resource`.
+record ResourceRead
+    # The request's id.
+    id: jsonrpc.Id
+    # The URI asked for.
+    uri: str
+    # The template that matched it, "" where it is one of `Server.resources`.
+    template: str
+    # The template's variables as `match_template` read them, empty for a
+    # listed resource.
+    values: {str: str}
+    # Who asks.
+    meta: RequestMeta
+    # What a retried read gives back.
+    inputs: Inputs
+
+# A prompt asked for, which the program answers with `answer_prompt`.
+record PromptGet
+    # The request's id.
+    id: jsonrpc.Id
+    # The prompt's name, one of `Server.prompts`.
+    name: str
+    # Its arguments by name, every required one given.
+    arguments: {str: str}
+    # Who asks.
+    meta: RequestMeta
+    # What a retried request gives back.
+    inputs: Inputs
+
+# A completion asked for, which the program answers with
+# `answer_completion`.
+record Completion
+    # The request's id.
+    id: jsonrpc.Id
+    # What is completed: `ref/prompt` or `ref/resource`.
+    kind: str
+    # The prompt's name, or the template's URI.
+    ref: str
+    # The argument being completed.
+    argument: str
+    # What the user has written of it so far.
+    value: str
+    # The arguments already given, by name.
+    context: {str: str}
+    # Who asks.
+    meta: RequestMeta
+
+# A subscription opened by `subscriptions/listen`, which the program answers
+# with `acknowledge` and keeps while it lasts.
+record Listen
+    # The request's id: the subscription's id, in every notification of it.
+    id: jsonrpc.Id
+    # What it asks for.
+    filter: Filter
+    # Who asks.
+    meta: RequestMeta
+
+# What one message received asks of the program.
+variant Request
+    # The package answered it: the program writes `answer`.
+    answered
+        # The answer: a result or an error.
+        answer: jsonrpc.Message
+    # An HTTP request answered already, as `read_http` answers what it reads
+    # whole and every refusal: the program writes `response`.
+    respond
+        # The response.
+        response: http.Response
+    # A notification that asks to cancel a request, on standard streams.
+    cancelled
+        # The request to cancel.
+        request_id: jsonrpc.Id
+        # Why, "" for no reason.
+        reason: str
+    # A message that asks for nothing: a notification of no use, or an
+    # answer.
+    ignored
+    # A tool called.
+    call_tool
+        # The call.
+        call: ToolCall
+    # A resource read.
+    read_resource
+        # The read.
+        read: ResourceRead
+    # A prompt asked for.
+    get_prompt
+        # The request.
+        get: PromptGet
+    # An argument to complete.
+    complete
+        # The request.
+        completion: Completion
+    # A subscription opened.
+    listen
+        # The subscription.
+        listen: Listen
+
+# A server named by `info` that offers nothing yet, its lists on one page,
+# fresh for no time, `public` and taking no `Origin`.
+#
+# - `info`: its name and version.
+function new_server(info: Implementation) -> Server
+    return Server(
+        info: info,
+        instructions: "",
+        tools: [],
+        resources: [],
+        templates: [],
+        prompts: [],
+        list_changed: false,
+        subscribe: false,
+        completions: false,
+        extensions: {},
+        page_size: 0,
+        ttl_ms: 0,
+        private: false,
+        origins: []
+    )
+
+# What `s` declares it does: each feature whose list holds something, and
+# what it tells.
+#
+# - `s`: the server.
+function capabilities_of(s: Server) -> ServerCapabilities
+    tools = s.tools.len() > 0
+    resources = s.resources.len() > 0 || s.templates.len() > 0
+    prompts = s.prompts.len() > 0
+    return ServerCapabilities(
+        tools: tools,
+        tools_list_changed: tools && s.list_changed,
+        resources: resources,
+        resources_subscribe: resources && s.subscribe,
+        resources_list_changed: resources && s.list_changed,
+        prompts: prompts,
+        prompts_list_changed: prompts && s.list_changed,
+        completions: s.completions,
+        extensions: s.extensions
+    )
+
+# The `_meta` of a request's `params`, read and checked.
+#
+# - `params`: the request's parameters, an object holding `_meta`.
+#
+# Fails `invalid` where it lacks `io.modelcontextprotocol/protocolVersion` or
+# `io.modelcontextprotocol/clientCapabilities`, or a reserved key holds a
+# value of another kind: a server answers -32602, as the revision asks.
+function meta_of(params: json.Value) -> RequestMeta?
+    parts = reserved.read(params)?
+
+    client = match parts.client_info
+        .null_value                                            => implementation(name: "", version: "")
+        .boolean _ | .number _ | .text _ | .list _ | .object _ => implementation_of(parts.client_info)?
+
+    token: jsonrpc.Id = match parts.progress_token
+        .text t                                        => .text(v: t.v)
+        .number n                                      => .number(v: n.v)
+        .null_value | .boolean _ | .list _ | .object _ => .absent
+
+    return ok(
+        RequestMeta(protocol_version: parts.protocol_version, client: client, capabilities: client_capabilities_of(parts.capabilities), progress_token: token, log_level: parts.log_level, members: parts.members)
+    )
+
+# What a retried request gives back in its `params`.
+#
+# - `params`: the request's parameters.
+#
+# Fails `invalid` where `inputResponses` is not an object or `requestState`
+# not a string.
+function inputs_of(params: json.Value) -> Inputs?
+    return ok(
+        Inputs(responses: build.object_at(params, key: "inputResponses")?, state: build.text_at(params, key: "requestState")?)
+    )
+
+# What the message `m` asks of the program: an answer the package made, or a
+# call the program answers itself.
+#
+# - `s`: the server.
+# - `m`: one message received.
+#
+# Answered here: `server/discover`; `tools/list`, `resources/list`,
+# `resources/templates/list` and `prompts/list`, page by page; a request
+# whose `_meta` is missing or not of its form (-32602), whose version is not
+# this one (-32022, the versions spoken in its data), an `initialize`
+# (-32022), a null id (-32600), a method this server does not offer
+# (-32601), an unknown tool, resource or prompt and a prompt's missing
+# argument (-32602, "Resource not found" for a resource, as the revision
+# writes it), and a tool's arguments its input schema refuses: a tool
+# execution error the model reads, `isError` true. A listed resource and a
+# template's match are read; a URI neither names is not found.
+function handle(s: Server, m: jsonrpc.Message) -> Request
+    match m
+        .notification n =>
+            if n.method != "notifications/cancelled"
+                return .ignored
+
+            id: jsonrpc.Id = match build.members_of(n.params)["requestId"].default(.null_value)
+                .text t                                        => .text(v: t.v)
+                .number v                                      => .number(v: v.v)
+                .null_value | .boolean _ | .list _ | .object _ => return .ignored
+
+            return .cancelled(request_id: id, reason: build.text_at(n.params, key: "reason").default(""))
+        .response _ => return .ignored
+        .request r =>
+            if r.id == .null_id
+                return .answered(answer: jsonrpc.invalid_request_of("an MCP request's id is never null"))
+
+            if r.method == "initialize"
+                return .answered(
+                    answer: build.unsupported_version(r.id, requested: build.text_at(r.params, key: "protocolVersion").default(""))
+                )
+
+            meta = match meta_of(r.params)
+                .ok got => got
+                .err e  => return .answered(answer: build.invalid_params(r.id, message: e.msg))
+
+            if meta.protocol_version != PROTOCOL_VERSION
+                return .answered(answer: build.unsupported_version(r.id, requested: meta.protocol_version))
+            return handle_method(s, id: r.id, method: r.method, params: r.params, meta: meta)
+
+# What the request `method` asks of the program, its `_meta` checked: the
+# second half of `handle`.
+#
+# - `s`: the server.
+# - `id`: the request's id.
+# - `method`: the method.
+# - `params`: its parameters.
+# - `meta`: its `_meta`, read.
+function handle_method(s: Server, id: jsonrpc.Id, method: str, params: json.Value, meta: RequestMeta) -> Request
+    capabilities = capabilities_of(s)
+    info = implementation_json(s.info)
+
+    cursor = match build.text_at(params, key: "cursor")
+        .ok got => got
+        .err e  => return .answered(answer: build.invalid_params(id, message: e.msg))
+
+    members: {str: json.Value} @= {}
+    listed: [json.Value] @= []
+    list_key: str @= ""
+
+    if method == "server/discover"
+        members["supportedVersions"] @ build.texts([PROTOCOL_VERSION])
+        members["capabilities"] @ server_capabilities_json(capabilities)
+        build.put_text(@members, key: "instructions", value: s.instructions)
+        return .answered(
+            answer: jsonrpc.result_of(id, value: build.result(members, server: info, cacheable: true, ttl_ms: s.ttl_ms, private: s.private))
+        )
+
+    if method == "tools/list" && capabilities.tools
+        list_key @ "tools"
+
+        for t in s.tools
+            listed @ listed.push(tool_json(t))
+    else if method == "resources/list" && capabilities.resources
+        list_key @ "resources"
+
+        for r in s.resources
+            listed @ listed.push(resource_json(r))
+    else if method == "resources/templates/list" && capabilities.resources
+        list_key @ "resourceTemplates"
+
+        for t in s.templates
+            listed @ listed.push(template_json(t))
+    else if method == "prompts/list" && capabilities.prompts
+        list_key @ "prompts"
+
+        for p in s.prompts
+            listed @ listed.push(prompt_json(p))
+
+    if list_key != ""
+        page = match pages.page(listed, cursor: cursor, size: s.page_size)
+            .ok got => got
+            .err e  => return .answered(answer: build.invalid_params(id, message: e.msg))
+
+        members[list_key] @ .list(items: page.items)
+        build.put_text(@members, key: "nextCursor", value: page.next)
+        return .answered(
+            answer: jsonrpc.result_of(id, value: build.result(members, server: info, cacheable: true, ttl_ms: s.ttl_ms, private: s.private))
+        )
+
+    inputs = match inputs_of(params)
+        .ok got => got
+        .err e  => return .answered(answer: build.invalid_params(id, message: e.msg))
+
+    if method == "tools/call" && capabilities.tools
+        return tool_call_of(s, id: id, params: params, meta: meta, inputs: inputs)
+
+    if method == "resources/read" && capabilities.resources
+        return resource_read_of(s, id: id, params: params, meta: meta, inputs: inputs)
+
+    if method == "prompts/get" && capabilities.prompts
+        return prompt_get_of(s, id: id, params: params, meta: meta, inputs: inputs)
+
+    if method == "completion/complete" && s.completions
+        return completion_of(id, params: params, meta: meta)
+
+    if method == "subscriptions/listen"
+        wanted = match filter_of(build.members_of(params)["notifications"].default(.null_value))
+            .ok got => got
+            .err e  => return .answered(answer: build.invalid_params(id, message: e.msg))
+
+        return .listen(listen: Listen(id: id, filter: wanted, meta: meta))
+    return .answered(
+        answer: .response(id: id, reply: .error(error: jsonrpc.Error(code: jsonrpc.METHOD_NOT_FOUND, message: "Method not found", data: .text(v: method))))
+    )
+
+# The tool call `params` asks for, its tool found and its arguments held to
+# the tool's input schema: part of `handle`.
+#
+# - `s`: the server.
+# - `id`: the request's id.
+# - `params`: the request's parameters.
+# - `meta`: its `_meta`.
+# - `inputs`: what a retry gives back.
+function tool_call_of(s: Server, id: jsonrpc.Id, params: json.Value, meta: RequestMeta, inputs: Inputs) -> Request
+    name = match build.required_text(params, key: "name")
+        .ok got => got
+        .err e  => return .answered(answer: build.invalid_params(id, message: e.msg))
+
+    tool = match tool_named(s, name: name)
+        .ok got => got
+        .err _  => return .answered(answer: build.invalid_params(id, message: f"Unknown tool: {name}"))
+
+    arguments = build.members_of(params)["arguments"].default(.object(members: {}))
+
+    match arguments
+        .object _ => _ = 0
+        .null_value | .boolean _ | .number _ | .text _ | .list _ =>
+            return .answered(
+                answer: build.invalid_params(id, message: f"the arguments of \"{name}\" are not an object")
+            )
+
+    compiled = match schemas.compile(tool.input_schema)
+        .ok got => got
+        .err e => return .answered(
+            answer: jsonrpc.error_of(id, code: jsonrpc.INTERNAL_ERROR, message: f"the input schema of \"{name}\" does not compile: {e.msg}")
+        )
+
+    match schemas.validate(compiled, instance: arguments)
+        .ok _ => _ = 0
+        .err e => return .answered(
+            answer: answer_tool(s, call: ToolCall(id: id, name: name, arguments: arguments, meta: meta, inputs: inputs), result: error_result(f"Invalid arguments for \"{name}\": {e.msg}"))
+        )
+
+    return .call_tool(call: ToolCall(id: id, name: name, arguments: arguments, meta: meta, inputs: inputs))
+
+# The tool of `s` named `name`.
+#
+# - `s`: the server.
+# - `name`: the tool's name.
+#
+# Fails `not_found` where `s` offers none of that name.
+function tool_named(s: Server, name: str) -> Tool?
+    for t in s.tools
+        if t.name == name
+            return ok(t)
+
+    return fail(code: NOT_FOUND, msg: f"no tool \"{name}\"")
+
+# The resource read `params` asks for: a listed resource, else the first
+# template that matches: part of `handle`.
+#
+# - `s`: the server.
+# - `id`: the request's id.
+# - `params`: the request's parameters.
+# - `meta`: its `_meta`.
+# - `inputs`: what a retry gives back.
+function resource_read_of(s: Server, id: jsonrpc.Id, params: json.Value, meta: RequestMeta, inputs: Inputs) -> Request
+    uri = match build.required_text(params, key: "uri")
+        .ok got => got
+        .err e  => return .answered(answer: build.invalid_params(id, message: e.msg))
+
+    for r in s.resources
+        if r.uri == uri
+            return .read_resource(
+                read: ResourceRead(id: id, uri: uri, template: "", values: {}, meta: meta, inputs: inputs)
+            )
+
+    for t in s.templates
+        match templates.match_uri(template: t.uri_template, uri: uri)
+            .ok values => return .read_resource(
+                read: ResourceRead(id: id, uri: uri, template: t.uri_template, values: values, meta: meta, inputs: inputs)
+            )
+            .err _ => _ = 0
+
+    data: {str: json.Value} @= {}
+    data["uri"] @ .text(v: uri)
+    return .answered(
+        answer: build.error_answer(id, code: jsonrpc.INVALID_PARAMS, message: "Resource not found", data: .object(members: data))
+    )
+
+# The prompt `params` asks for, its required arguments given: part of
+# `handle`.
+#
+# - `s`: the server.
+# - `id`: the request's id.
+# - `params`: the request's parameters.
+# - `meta`: its `_meta`.
+# - `inputs`: what a retry gives back.
+function prompt_get_of(s: Server, id: jsonrpc.Id, params: json.Value, meta: RequestMeta, inputs: Inputs) -> Request
+    name = match build.required_text(params, key: "name")
+        .ok got => got
+        .err e  => return .answered(answer: build.invalid_params(id, message: e.msg))
+
+    written = match build.object_at(params, key: "arguments")
+        .ok got => got
+        .err e  => return .answered(answer: build.invalid_params(id, message: e.msg))
+
+    arguments: {str: str} @= {}
+
+    for key in keys(written)
+        match written[key].must()
+            .text t => arguments[key] @ t.v
+            .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+                return .answered(answer: build.invalid_params(id, message: f"the argument \"{key}\" is not a string"))
+
+    for p in s.prompts
+        if p.name == name
+            for a in p.arguments
+                if a.required && arguments[a.name].is_err()
+                    return .answered(answer: build.invalid_params(id, message: f"Missing required argument: {a.name}"))
+
+            return .get_prompt(get: PromptGet(id: id, name: name, arguments: arguments, meta: meta, inputs: inputs))
+
+    return .answered(answer: build.invalid_params(id, message: f"Unknown prompt: {name}"))
+
+# The completion `params` asks for: part of `handle`.
+#
+# - `id`: the request's id.
+# - `params`: the request's parameters.
+# - `meta`: its `_meta`.
+function completion_of(id: jsonrpc.Id, params: json.Value, meta: RequestMeta) -> Request
+    written = build.members_of(params)
+    ref = written["ref"].default(.null_value)
+    argument = written["argument"].default(.null_value)
+    kind = build.text_at(ref, key: "type").default("")
+
+    target = if kind == "ref/prompt"
+        build.text_at(ref, key: "name").default("")
+    else
+        build.text_at(ref, key: "uri").default("")
+
+    if kind != "ref/prompt" && kind != "ref/resource" || target == ""
+        return .answered(
+            answer: build.invalid_params(id, message: "a completion's `ref` is neither a prompt nor a resource template")
+        )
+
+    name = match build.required_text(argument, key: "name")
+        .ok got => got
+        .err e  => return .answered(answer: build.invalid_params(id, message: e.msg))
+
+    context: {str: str} @= {}
+    given = build.object_at(build.members_of(params)["context"].default(.null_value), key: "arguments").default({})
+
+    for key in keys(given)
+        context[key] @ json.text_of(given[key].must()).default("")
+
+    return .complete(
+        completion: Completion(id: id, kind: kind, ref: target, argument: name, value: build.text_at(argument, key: "value").default(""), context: context, meta: meta)
+    )
+
+# The filter the object `v` writes.
+#
+# - `v`: a `notifications` filter, `.null_value` asking for nothing.
+#
+# Fails `invalid` where a member is of another kind.
+function filter_of(v: json.Value) -> Filter?
+    return ok(
+        Filter(tools: build.bool_at(v, key: "toolsListChanged", otherwise: false)?, prompts: build.bool_at(v, key: "promptsListChanged", otherwise: false)?, resources: build.bool_at(v, key: "resourcesListChanged", otherwise: false)?, resource_uris: build.texts_at(v, key: "resourceSubscriptions")?)
+    )
+
+# `f` as the object the revision writes, what it does not ask for left out.
+#
+# - `f`: the filter.
+function filter_json(f: Filter) -> json.Value
+    members: {str: json.Value} @= {}
+
+    if f.tools
+        members["toolsListChanged"] @ .boolean(v: true)
+
+    if f.prompts
+        members["promptsListChanged"] @ .boolean(v: true)
+
+    if f.resources
+        members["resourcesListChanged"] @ .boolean(v: true)
+    build.put_texts(@members, key: "resourceSubscriptions", values: f.resource_uris)
+    return .object(members: members)
+
+# The next request `reader` holds on standard streams, one message a line,
+# and what it asks of the program.
+#
+# - `reader`: the reader of the server's input, `io.reader(io.stdin())`.
+# - `s`: the server.
+#
+# A line that is no JSON is answered -32700 and a batch, which this
+# revision does not send, -32600: both `.answered`. Fails `closed` where the
+# input ends, at which the server exits, as the revision asks; `limit` where
+# a line passes `jsonrpc.default_limits()`.
+function read_request(@reader: io.Reader, s: Server) -> Request?
+    limits = jsonrpc.default_limits()
+
+    text = match jsonrpc.read_text(@reader, framing: .lines, limits: limits)
+        .ok got => got
+        .err e =>
+            if e.code == jsonrpc.NOT_TEXT
+                return ok(.answered(answer: jsonrpc.parse_error_of(e.msg)))
+            return fail(code: e.code, msg: e.msg)
+
+    received = match jsonrpc.parse(text, limits: limits)
+        .ok got => got
+        .err e =>
+            if e.code == jsonrpc.LIMIT
+                return ok(.answered(answer: jsonrpc.invalid_request_of(e.msg)))
+            return ok(.answered(answer: jsonrpc.parse_error_of(e.msg)))
+
+    if received.batch
+        return ok(
+            .answered(answer: jsonrpc.invalid_request_of(f"MCP sends no batch since 2025-06-18, and this is a batch of {received.messages.len()}"))
+        )
+
+    match received.messages[0]
+        .ok m  => return ok(handle(s, m: m))
+        .err e => return ok(.answered(answer: jsonrpc.invalid_request_of(e.msg)))
+
+## Answers
+
+# The answer to `call`: `result`, complete, the server named.
+#
+# - `s`: the server.
+# - `call`: the call answered.
+# - `result`: what the tool answers. Where the tool has an output schema and
+#   the result is no error, its structured content must conform to it.
+#
+# A structured result that does not conform is answered -32603, which the
+# revision asks a server never to send, so the program's mistake is not
+# passed to the model as data.
+function answer_tool(s: Server, call: ToolCall, result: ToolResult) -> jsonrpc.Message
+    match tool_named(s, name: call.name)
+        .ok tool =>
+            if tool.output_schema != .null_value && !result.is_error
+                match schemas.compile(tool.output_schema)
+                    .ok compiled =>
+                        match schemas.validate(compiled, instance: result.structured)
+                            .ok _ => _ = 0
+                            .err e => return jsonrpc.error_of(
+                                call.id,
+                                code: jsonrpc.INTERNAL_ERROR,
+                                message: f"the result of \"{call.name}\" does not conform to its output schema: {e.msg}"
+                            )
+                    .err e => return jsonrpc.error_of(
+                        call.id,
+                        code: jsonrpc.INTERNAL_ERROR,
+                        message: f"the output schema of \"{call.name}\" does not compile: {e.msg}"
+                    )
+        .err _ => _ = 0
+
+    return jsonrpc.result_of(
+        call.id,
+        value: build.result(build.members_of(tool_result_json(result)), server: implementation_json(s.info), cacheable: false, ttl_ms: 0, private: s.private)
+    )
+
+# The answer to `read`: `contents`, cacheable as `s` says, fresh for no time
+# where the read was a retry, whose result no cache may keep.
+#
+# - `s`: the server.
+# - `read`: the read answered.
+# - `contents`: what the resource holds; empty only for a resource that
+#   holds nothing, a resource that is not there being answered with
+#   `jsonrpc.error_of` and `jsonrpc.INVALID_PARAMS`.
+function answer_resource(s: Server, read: ResourceRead, contents: [Contents]) -> jsonrpc.Message
+    items: [json.Value] @= []
+
+    for c in contents
+        items @ items.push(contents_json(c))
+
+    members: {str: json.Value} @= {}
+    members["contents"] @ .list(items: items)
+    retried = read.inputs.responses.len() > 0 || read.inputs.state != ""
+
+    ttl = if retried
+        0
+    else
+        s.ttl_ms
+    return jsonrpc.result_of(
+        read.id,
+        value: build.result(members, server: implementation_json(s.info), cacheable: true, ttl_ms: ttl, private: s.private)
+    )
+
+# The answer to `get`: the prompt's messages.
+#
+# - `s`: the server.
+# - `get`: the request answered.
+# - `result`: its description and messages.
+function answer_prompt(s: Server, get: PromptGet, result: PromptResult) -> jsonrpc.Message
+    items: [json.Value] @= []
+
+    for m in result.messages
+        message: {str: json.Value} @= {}
+        message["role"] @ .text(v: m.role)
+        message["content"] @ content_json(m.content)
+        items @ items.push(.object(members: message))
+
+    members: {str: json.Value} @= {}
+    build.put_text(@members, key: "description", value: result.description)
+    members["messages"] @ .list(items: items)
+    return jsonrpc.result_of(
+        get.id,
+        value: build.result(members, server: implementation_json(s.info), cacheable: false, ttl_ms: 0, private: s.private)
+    )
+
+# The answer to `completion`: at most 100 of `values`, as the revision
+# allows, and whether more are there.
+#
+# - `s`: the server.
+# - `completion`: the request answered.
+# - `values`: the completions, the best first.
+#
+# Where `values` holds more than 100, the first 100 are written, their
+# `total` the whole count, and `hasMore` true.
+function answer_completion(s: Server, completion: Completion, values: [str]) -> jsonrpc.Message
+    kept = if values.len() > 100
+        values.slice(from: 0, to: 100)
+    else
+        values
+    inner: {str: json.Value} @= {}
+    inner["values"] @ build.texts(kept)
+    inner["total"] @ .number(v: to_f64(values.len()))
+    inner["hasMore"] @ .boolean(v: values.len() > 100)
+    members: {str: json.Value} @= {}
+    members["completion"] @ .object(members: inner)
+    return jsonrpc.result_of(
+        completion.id,
+        value: build.result(members, server: implementation_json(s.info), cacheable: false, ttl_ms: 0, private: s.private)
+    )
+
+# The answer that the request `id` needs more: what `input` asks of the
+# user, and the server's state.
+#
+# - `s`: the server.
+# - `id`: the request's id: a tool call's, a resource read's or a prompt's.
+# - `meta`: the request's `_meta`, whose capabilities are checked.
+# - `input`: what is asked, and the state; at least one of the two.
+#
+# A form asked of a client that declares no form mode, or a URL of one that
+# declares no URL mode, is answered -32021 instead, its data naming the
+# capability missing, as the revision asks. Aborts where `input` asks
+# nothing and gives no state.
+function answer_input_required(s: Server, id: jsonrpc.Id, meta: RequestMeta, input: InputRequired) -> jsonrpc.Message
+    assert input.requests.len() > 0 || input.state != ""
+    modes: {str: json.Value} @= {}
+
+    for key in keys(input.requests)
+        match input.requests[key].must()
+            .form _ =>
+                if !meta.capabilities.elicitation_form
+                    modes["form"] @ .object(members: {})
+            .url _ =>
+                if !meta.capabilities.elicitation_url
+                    modes["url"] @ .object(members: {})
+
+    if modes.len() > 0
+        required: {str: json.Value} @= {}
+        required["elicitation"] @ .object(members: modes)
+        return build.missing_capability(id, required: .object(members: required))
+    members = build.members_of(input_required_json(input))
+    written: {str: json.Value} @= members
+    named: {str: json.Value} @= {}
+    named["io.modelcontextprotocol/serverInfo"] @ implementation_json(s.info)
+    written["_meta"] @ .object(members: named)
+    return jsonrpc.result_of(id, value: .object(members: written))
+
+# The notification that tells the request `meta` came with how far it has
+# gone.
+#
+# - `meta`: the request's `_meta`, whose progress token it names.
+# - `progress`: how far, a number that grows at every notification.
+# - `total`: how far it goes, written where above 0.
+# - `message`: what it is doing, "" for nothing.
+#
+# Fails `not_found` where the request asked for no progress, as the revision
+# allows only tokens a request gave.
+function progress_of(meta: RequestMeta, progress: f64, total: f64, message: str) -> jsonrpc.Message?
+    if meta.progress_token == .absent
+        return fail(code: NOT_FOUND, msg: "the request gave no progress token")
+    params: {str: json.Value} @= {}
+    params["progressToken"] @ json.parse(jsonrpc.format_id(meta.progress_token)).must()
+    params["progress"] @ .number(v: progress)
+
+    if total > 0.0
+        params["total"] @ .number(v: total)
+    build.put_text(@params, key: "message", value: message)
+    return ok(.notification(method: "notifications/progress", params: .object(members: params)))
+
+## Subscriptions
+
+# What `s` agrees to send of what `asked` asks: the lists' changes where it
+# tells them and offers the list, the resources' where it tells them.
+#
+# - `s`: the server.
+# - `asked`: what a subscription asks for.
+function honored_of(s: Server, asked: Filter) -> Filter
+    capabilities = capabilities_of(s)
+
+    none: [str] = []
+
+    uris = if capabilities.resources_subscribe
+        asked.resource_uris
+    else
+        none
+    return Filter(
+        tools: asked.tools && capabilities.tools_list_changed,
+        prompts: asked.prompts && capabilities.prompts_list_changed,
+        resources: asked.resources && capabilities.resources_list_changed,
+        resource_uris: uris
+    )
+
+# The first message of the subscription `listen`: its acknowledgment, which
+# says what `s` agrees to send, as `honored_of` answers.
+#
+# - `s`: the server.
+# - `listen`: the subscription.
+function acknowledge(s: Server, listen: Listen) -> jsonrpc.Message
+    params: {str: json.Value} @= {}
+    params["_meta"] @ build.subscription_meta(listen.id)
+    params["notifications"] @ filter_json(honored_of(s, asked: listen.filter))
+    return .notification(method: "notifications/subscriptions/acknowledged", params: .object(members: params))
+
+# The notification that tells `listen` a list of `s` changed.
+#
+# - `s`: the server.
+# - `listen`: the subscription.
+# - `list`: `tools`, `prompts` or `resources`.
+#
+# Fails `not_found` where `listen` did not ask for it or `s` does not tell
+# it, since the revision forbids sending what was not asked; `invalid` for
+# another word.
+function changed_of(s: Server, listen: Listen, list: str) -> jsonrpc.Message?
+    honored = honored_of(s, asked: listen.filter)
+
+    asked = if list == "tools"
+        honored.tools
+    else if list == "prompts"
+        honored.prompts
+    else if list == "resources"
+        honored.resources
+    else
+        return fail(code: INVALID, msg: f"\"{list}\" is not tools, prompts or resources")
+
+    if !asked
+        return fail(code: NOT_FOUND, msg: f"the subscription did not ask for the {list}' changes")
+    params: {str: json.Value} @= {}
+    params["_meta"] @ build.subscription_meta(listen.id)
+    return ok(.notification(method: f"notifications/{list}/list_changed", params: .object(members: params)))
+
+# The notification that tells `listen` the resource `uri` changed.
+#
+# - `s`: the server.
+# - `listen`: the subscription.
+# - `uri`: the resource's URI, one the subscription asked for.
+#
+# Fails `not_found` where it did not ask for `uri`, or `s` does not tell a
+# resource's changes.
+function updated_of(s: Server, listen: Listen, uri: str) -> jsonrpc.Message?
+    if !reserved.has(honored_of(s, asked: listen.filter).resource_uris, name: uri)
+        return fail(code: NOT_FOUND, msg: f"the subscription did not ask for \"{uri}\"")
+    params: {str: json.Value} @= {}
+    params["_meta"] @ build.subscription_meta(listen.id)
+    params["uri"] @ .text(v: uri)
+    return ok(.notification(method: "notifications/resources/updated", params: .object(members: params)))
+
+# The answer that ends `listen` gracefully: a complete result naming it, as
+# a server writes before it closes the subscription's stream.
+#
+# - `s`: the server.
+# - `listen`: the subscription.
+function end_listen(s: Server, listen: Listen) -> jsonrpc.Message
+    members: {str: json.Value} @= {}
+    members["_meta"] @ build.subscription_meta(listen.id)
+    return jsonrpc.result_of(
+        listen.id,
+        value: build.result(members, server: implementation_json(s.info), cacheable: false, ttl_ms: 0, private: s.private)
+    )
+
+## Streamable HTTP
+
+# What the HTTP request `r` to the MCP endpoint asks of the program, every
+# check of the Streamable HTTP transport made first.
+#
+# - `s`: the server.
+# - `r`: the request, read by `http.next_request`.
+#
+# Answered here as `.respond`: a method other than `POST`, 405 with `Allow:
+# POST` (the `GET` and `DELETE` of earlier revisions among them); an `Origin`
+# not in `s.origins`, 403; a body `jsonrpc.read_http` refuses; a batch or a
+# value that is no request, 400; a notification, 202 with no body; a field
+# that does not match the body or is missing (`MCP-Protocol-Version`,
+# `Mcp-Method`, `Mcp-Name`, a tool's `Mcp-Param-` fields), 400 with -32020;
+# and everything `handle` answers, with the status `respond_http` gives it.
+# A tool call, a read, a prompt, a completion and a subscription are handed
+# to the program as `handle` hands them. `Mcp-Session-Id` and
+# `Last-Event-ID` are passed over, as the revision asks.
+function read_http(s: Server, r: http.Request) -> Request
+    if r.method != http.METHOD_POST
+        refused @= http.respond_text(
+            status: http.STATUS_METHOD_NOT_ALLOWED,
+            text: f"the MCP endpoint takes POST, and this is {r.method}"
+        )
+        refused.headers @ http.with_header(refused.headers, name: "Allow", value: http.METHOD_POST)
+        return .respond(response: refused)
+
+    match http.value_of(r.headers, name: "Origin")
+        .ok origin =>
+            if !reserved.has(s.origins, name: origin)
+                forbidden @= respond_http(
+                    jsonrpc.error_of(.null_id, code: jsonrpc.INVALID_REQUEST, message: f"the origin \"{origin}\" is not allowed")
+                )
+                forbidden.status @ http.STATUS_FORBIDDEN
+                forbidden.reason @ "Forbidden"
+                return .respond(response: forbidden)
+        .err _ => _ = 0
+
+    received = match jsonrpc.read_http(r, limits: jsonrpc.default_limits())
+        .ok got => got
+        .err e  => return .respond(response: jsonrpc.refusal_http(code: e.code, msg: e.msg))
+
+    if received.batch
+        return .respond(
+            response: respond_http(jsonrpc.invalid_request_of("a POST to the MCP endpoint holds one message, never a batch"))
+        )
+
+    m = match received.messages[0]
+        .ok got => got
+        .err e  => return .respond(response: respond_http(jsonrpc.invalid_request_of(e.msg)))
+
+    match m
+        .notification _ => return .respond(response: http.respond_status(http.STATUS_ACCEPTED))
+        .response _ => return .respond(
+            response: respond_http(jsonrpc.invalid_request_of("a client sends no answer to a server"))
+        )
+        .request q =>
+            match check_fields(s, r: r, method: q.method, params: q.params)
+                .ok _ => _ = 0
+                .err e => return .respond(
+                    response: respond_http(build.error_answer(q.id, code: HEADER_MISMATCH, message: e.msg, data: .null_value))
+                )
+
+    handled = handle(s, m: m)
+
+    match handled
+        .answered a => return .respond(response: respond_http(a.answer))
+        .respond _ | .cancelled _ | .ignored | .call_tool _ | .read_resource _ | .get_prompt _ | .complete _ | .listen _ =>
+            return handled
+
+# Fails `invalid` where a field of `r` that mirrors its body is missing or
+# does not match it, the message saying which: what `read_http` answers
+# -32020.
+#
+# - `s`: the server, whose tools say which `Mcp-Param-` fields a call
+#   carries.
+# - `r`: the HTTP request.
+# - `method`: the body's method.
+# - `params`: the body's parameters.
+#
+# An `Mcp-Name` and an `Mcp-Param-` field are read through the Base64
+# sentinel first; an integer is compared as a number, `42.0` matching `42`.
+# A tool unknown to `s` is left to `handle`, which answers it.
+function check_fields(s: Server, r: http.Request, method: str, params: json.Value) -> ()?
+    version = match http.value_of(r.headers, name: "MCP-Protocol-Version")
+        .ok got => got
+        .err _  => return fail(code: INVALID, msg: "Header mismatch: the MCP-Protocol-Version field is missing")
+
+    written = build.text_at(build.members_of(params)["_meta"].default(.null_value), key: "io.modelcontextprotocol/protocolVersion").default(
+        ""
+    )
+
+    if written != "" && written != version
+        return fail(
+            code: INVALID,
+            msg: f"Header mismatch: MCP-Protocol-Version '{version}' does not match the body's '{written}'"
+        )
+
+    named = match http.value_of(r.headers, name: "Mcp-Method")
+        .ok got => got
+        .err _  => return fail(code: INVALID, msg: "Header mismatch: the Mcp-Method field is missing")
+
+    if named != method
+        return fail(code: INVALID, msg: f"Header mismatch: Mcp-Method '{named}' does not match the body's '{method}'")
+
+    if method != "tools/call" && method != "prompts/get" && method != "resources/read"
+        return ok()
+
+    source = if method == "resources/read"
+        build.text_at(params, key: "uri").default("")
+    else
+        build.text_at(params, key: "name").default("")
+
+    field = match http.value_of(r.headers, name: "Mcp-Name")
+        .ok got => got
+        .err _  => return fail(code: INVALID, msg: "Header mismatch: the Mcp-Name field is missing")
+
+    name = headers.decode(field)?
+
+    if name != source
+        return fail(
+            code: INVALID,
+            msg: f"Header mismatch: Mcp-Name value '{name}' does not match body value '{source}'"
+        )
+
+    if method != "tools/call"
+        return ok()
+
+    tool = match tool_named(s, name: source)
+        .ok got => got
+        .err _  => return ok()
+
+    mirrored = match headers.params_of(tool.input_schema)
+        .ok got => got
+        .err _  => return ok()
+
+    arguments = build.members_of(params)["arguments"].default(.null_value)
+
+    for p in mirrored
+        match headers.value_of(arguments, p: p)
+            .ok value =>
+                given = match http.value_of(r.headers, name: "Mcp-Param-" + p.header)
+                    .ok got => headers.decode(got)?
+                    .err _ => return fail(
+                        code: INVALID,
+                        msg: f"Header mismatch: the Mcp-Param-{p.header} field is missing"
+                    )
+
+                same = if p.kind == "integer"
+                    numbers.parse_float(given).default(0.5) == numbers.parse_float(value).default(1.5)
+                else
+                    given == value
+
+                if !same
+                    return fail(
+                        code: INVALID,
+                        msg: f"Header mismatch: Mcp-Param-{p.header} value '{given}' does not match body value '{value}'"
+                    )
+            .err _ => _ = 0
+
+    return ok()
+
+# The HTTP response that carries `answer` as JSON, its status that of
+# Streamable HTTP: 200 for a result, 404 for -32601, 500 for -32603, 400 for
+# every other error.
+#
+# - `answer`: the answer.
+#
+# An answer that holds a `nan` cannot be written, and is answered 500.
+function respond_http(answer: jsonrpc.Message) -> http.Response
+    match jsonrpc.format(answer)
+        .ok text => return http.respond(
+            status: build.status_of(answer),
+            content_type: "application/json",
+            body: bytes.from_text(text)
+        )
+        .err e => return http.respond_text(status: http.STATUS_INTERNAL_SERVER_ERROR, text: e.msg)
+
+# Begins an event stream on the connection `s` in place of a response held
+# whole: what a server writes where it sends notifications before a
+# request's answer (its progress), or for a subscription.
+#
+# - `s`: the connection's stream; its owner closes it once the answer, or the
+#   subscription's end, is written.
+#
+# It writes `X-Accel-Buffering: no`, as the revision advises. Fails as
+# `web.start_events` fails. See also `write_event`.
+function start_stream(s: io.Stream) -> ()?
+    return web.start_events(s, headers: [http.Header(name: "X-Accel-Buffering", value: "no")])
+
+# Writes `m` as one event of the stream `start_stream` began.
+#
+# - `s`: the connection's stream.
+# - `m`: a notification of the request, or its answer, which ends the
+#   stream.
+#
+# Fails as `jsonrpc.format` and `web.write_event` fail: `closed` where the
+# client has gone, which the revision reads as the request's cancellation.
+function write_event(s: io.Stream, m: jsonrpc.Message) -> ()?
+    return web.write_event(s, event: http.Event(name: "", data: jsonrpc.format(m)?, id: ""))
+
+## Authorization
+
+# The response that serves a protected resource's metadata (RFC 9728) at its
+# well-known place, `oauth2.resource_metadata_url` of the server's URL.
+#
+# - `m`: the metadata: the MCP server's canonical URL and the authorization
+#   servers it trusts.
+#
+# Fails as `oauth2.format_resource_metadata` fails.
+function resource_metadata_response(m: oauth2.ResourceMetadata) -> http.Response?
+    return ok(
+        http.respond(status: http.STATUS_OK, content_type: "application/json", body: bytes.from_text(oauth2.format_resource_metadata(m)?))
+    )
+
+# The 401 a server answers a request without a valid token: its
+# `WWW-Authenticate` names the metadata and the scopes needed.
+#
+# - `metadata_url`: where the resource's metadata is served.
+# - `scope`: the scopes the request needs, space-separated; "" for none.
+#
+# The token itself is read by `web.bearer_token_of` and checked by the
+# program: a JWT by `jose`, an opaque one by `oauth2.introspect`, its
+# audience the server's own URL (RFC 8707).
+function unauthorized(metadata_url: str, scope: str) -> http.Response
+    refused @= http.respond_status(http.STATUS_UNAUTHORIZED)
+    refused.headers @ http.with_header(
+        refused.headers,
+        name: "WWW-Authenticate",
+        value: oauth2.format_challenge(location: metadata_url, scope: scope)
+    )
+    return refused
+
+# The 403 a server answers a token whose scopes do not reach what was asked:
+# `error="insufficient_scope"`, the scopes needed and the metadata.
+#
+# - `metadata_url`: where the resource's metadata is served.
+# - `scope`: the scopes the request needs, space-separated.
+function insufficient_scope(metadata_url: str, scope: str) -> http.Response
+    challenge = oauth2.format_challenge(location: metadata_url, scope: scope)
+
+    rest = if strings.has_prefix(s: challenge, prefix: "Bearer ")
+        challenge.slice(from: 7, to: challenge.len())
+    else
+        challenge
+    refused @= http.respond_status(http.STATUS_FORBIDDEN)
+    refused.headers @ http.with_header(
+        refused.headers,
+        name: "WWW-Authenticate",
+        value: "Bearer error=\"insufficient_scope\", " + rest
+    )
+    return refused
+
+# Where a client authorizes to an MCP server, found from its refusal.
+record Authorization
+    # The server's canonical URL: the `resource` of every authorization and
+    # token request (RFC 8707).
+    resource: str
+    # The server's protected resource metadata (RFC 9728).
+    protected: oauth2.ResourceMetadata
+    # The metadata of the first authorization server it trusts, whose
+    # `issuer` a redirect's `iss` is checked against (RFC 9207).
+    server: oauth2.Metadata
+    # The scopes to ask: the challenge's, else the resource's
+    # `scopes_supported`.
+    scopes: [str]
+
+# The canonical URL of the MCP server at `endpoint`, as RFC 8707 and the
+# revision write it: scheme and host in lower case, no fragment, no `/`
+# alone after the host.
+#
+# - `endpoint`: the MCP endpoint, an absolute `https://` or `http://` URL.
+#
+# Fails `invalid` where it is not one.
+function canonical_resource(endpoint: str) -> str?
+    u = match url.parse(endpoint)
+        .ok got => got
+        .err e  => return fail(code: INVALID, msg: f"\"{endpoint}\" is no URL: {e.msg}")
+
+    if u.scheme != "https" && u.scheme != "http" || u.host == ""
+        return fail(code: INVALID, msg: f"\"{endpoint}\" is not an absolute http or https URL")
+    out @= u
+    out.scheme @ strings.to_lower(u.scheme)
+    out.host @ strings.to_lower(u.host)
+    out.fragment @ ""
+    out.empty_fragment @ false
+    text = url.format(out)
+
+    if out.path == "/" && out.query == "" && !out.empty_query
+        return ok(text.slice(from: 0, to: text.len() - 1))
+    return ok(text)
+
+# Where to authorize to the server at `endpoint`, read from `denied`, the 401
+# or 403 it answered: its protected resource metadata, fetched where the
+# challenge names it or at the well-known place, then its first authorization
+# server's metadata, by RFC 8414 or OpenID Connect Discovery.
+#
+# - `transport`: how the requests are sent.
+# - `endpoint`: the MCP endpoint.
+# - `denied`: the response that refused the client, `Client.denied`.
+#
+# Fails `not_found` where no metadata is served or it names no
+# authorization server, and as `oauth2.fetch_resource_metadata` and
+# `oauth2.fetch_metadata` fail. The flow itself is `oauth2`'s, from
+# `config_for`.
+function discover_authorization(transport: http.Client, endpoint: str, denied: http.Response) -> Authorization?
+    resource = canonical_resource(endpoint)?
+    location = oauth2.resource_metadata_of(denied).default("")
+    protected = oauth2.fetch_resource_metadata(transport, resource: resource, location: location)?
+
+    if protected.authorization_servers.len() == 0
+        return fail(code: NOT_FOUND, msg: f"the metadata of \"{resource}\" names no authorization server")
+    server = oauth2.fetch_metadata(transport, issuer: protected.authorization_servers[0])?
+    scope = headers.challenge_scope(http.value_of(denied.headers, name: "WWW-Authenticate").default(""))
+
+    scopes = if scope != ""
+        strings.split(s: scope, sep: " ")
+    else
+        protected.scopes_supported
+    return ok(Authorization(resource: resource, protected: protected, server: server, scopes: scopes))
+
+# The `oauth2` client of the authorization `a` finds, as `client_id`: its
+# endpoints, its scopes and its resource set.
+#
+# - `a`: where to authorize.
+# - `client_id`: the client's id, the URL of its metadata document where it
+#   has one (`oauth2.format_client_metadata`), as the revision prefers.
+#
+# A redirect is read by `oauth2.read_redirect` with `a.server.issuer`, so
+# its `iss` is checked as the revision requires. See also `with_token`.
+function config_for(a: Authorization, client_id: str) -> oauth2.Config
+    c @= oauth2.config_from(a.server, client_id: client_id)
+    c.scopes @ a.scopes
+    c.resources @ [a.resource]
+    return c
+
+## Clients
+
+# How a client reaches its server.
+variant Link
+    # A stream: a child's standard streams, one message a line.
+    stream
+        # The JSON-RPC client over it, which keeps the server's
+        # notifications.
+        rpc: jsonrpc.Client
+    # Streamable HTTP: each request its own `POST`.
+    remote
+        # The MCP endpoint, an absolute URL.
+        endpoint: str
+        # How each request is sent.
+        transport: http.Client
+        # The access token every request carries, "" for none.
+        token: str
+
+# A client of one MCP server. Made by `stream_client` or `http_client`.
+record Client
+    # How it reaches the server.
+    link: Link
+    # Its own name and version, written in every request, the revision
+    # advising it.
+    info: Implementation
+    # What it declares it can do, in every request.
+    capabilities: ClientCapabilities
+    # Whether every request asks for its progress, a token of its own.
+    progress: bool
+    # The tools `list_tools` listed last, which say what `Mcp-Param-` fields
+    # a call over HTTP carries.
+    tools: [Tool]
+    # The notifications a server sent over HTTP before a request's answer,
+    # in the order `waiting` keeps; `next_notification` gives them out.
+    notifications: [jsonrpc.Message]
+    # The order of `notifications`, oldest first.
+    waiting: deque.Deque
+    # The last 401 or 403 the server answered, its `status` 0 where none:
+    # what `discover_authorization` reads.
+    denied: http.Response
+    # The id of the next request over HTTP.
+    next_id: i64
+
+# A notification a server sent: a request's progress, or a subscription's
+# change, or a subscription's end.
+record Notification
+    # The method: `notifications/progress`, `notifications/tools/list_changed`
+    # and the like; "" where the server ended a subscription gracefully.
+    method: str
+    # Its parameters, or the ending answer's result.
+    params: json.Value
+    # The subscription it belongs to, `.absent` for a request's own.
+    subscription: jsonrpc.Id
+
+# What `server/discover` answers.
+record Discovered
+    # The protocol versions the server speaks.
+    versions: [str]
+    # What it offers.
+    capabilities: ServerCapabilities
+    # Its name and version; its `name` "" where it gave none.
+    server: Implementation
+    # What a model should know to use it, "" for nothing.
+    instructions: str
+
+# What a tool call answers: its result, or a request for more.
+variant ToolOutcome
+    # The tool answered.
+    done
+        # Its result.
+        result: ToolResult
+    # The server needs more: retry with `Inputs` that answer `input`.
+    asks
+        # What it asks.
+        input: InputRequired
+
+# What a resource read answers: its contents, or a request for more.
+variant ReadOutcome
+    # The resource was read.
+    done
+        # Its contents.
+        contents: [Contents]
+    # The server needs more.
+    asks
+        # What it asks.
+        input: InputRequired
+
+# What a prompt request answers: the prompt, or a request for more.
+variant PromptOutcome
+    # The prompt.
+    done
+        # Its description and messages.
+        result: PromptResult
+    # The server needs more.
+    asks
+        # What it asks.
+        input: InputRequired
+
+# What `completion/complete` answers.
+record Completed
+    # The completions, at most 100.
+    values: [str]
+    # How many there are in all, `values.len()` where the server says none.
+    total: i64
+    # Whether there are more than `values`.
+    has_more: bool
+
+# A client of the server that reads from `reading` and writes to `writing`,
+# one message a line: a child started by `process.start` with its input and
+# output as pipes, `reading` its `output` and `writing` its `input`.
+#
+# - `reading`: the stream the server writes to; its owner closes it.
+# - `writing`: the stream the server reads from; its owner closes it, which
+#   is how a server is asked to stop.
+# - `info`: the client's name and version.
+#
+# It declares no capability and asks for no progress; the program sets
+# `capabilities` and `progress`.
+function stream_client(reading: io.Stream, writing: io.Stream, info: Implementation) -> Client
+    rpc = jsonrpc.new_client(reading: reading, writing: writing, framing: .lines, limits: jsonrpc.default_limits())
+    return Client(
+        link: .stream(rpc: rpc),
+        info: info,
+        capabilities: no_capabilities(),
+        progress: false,
+        tools: [],
+        notifications: [],
+        waiting: deque.new(),
+        denied: http.respond_status(0),
+        next_id: 1
+    )
+
+# A client of the server at the MCP endpoint `endpoint`, over Streamable
+# HTTP.
+#
+# - `endpoint`: the endpoint, an absolute URL.
+# - `transport`: how each request is sent.
+# - `info`: the client's name and version.
+function http_client(endpoint: str, transport: http.Client, info: Implementation) -> Client
+    return Client(
+        link: .remote(endpoint: endpoint, transport: transport, token: ""),
+        info: info,
+        capabilities: no_capabilities(),
+        progress: false,
+        tools: [],
+        notifications: [],
+        waiting: deque.new(),
+        denied: http.respond_status(0),
+        next_id: 1
+    )
+
+# `c` with every request carrying `token` as `Authorization: Bearer`.
+#
+# - `c`: the client.
+# - `token`: an access token `oauth2` issued for this server's resource; ""
+#   for none. A client over standard streams takes its credentials from its
+#   environment, as the revision asks, and is answered unchanged.
+function with_token(c: Client, token: str) -> Client
+    out @= c
+
+    match c.link
+        .remote r => out.link @ .remote(endpoint: r.endpoint, transport: r.transport, token: token)
+        .stream _ => _ = 0
+
+    return out
+
+# The parameters of a request of `c`: `params` with its `_meta`, the
+# protocol version, the client and its capabilities, and its progress token
+# where `c` asks for one.
+#
+# - `c`: the client.
+# - `params`: the request's own parameters.
+# - `id`: the request's id, from which a progress token is made.
+function request_params(c: Client, params: {str: json.Value}, id: i64) -> json.Value
+    meta: {str: json.Value} @= {}
+    meta["io.modelcontextprotocol/protocolVersion"] @ .text(v: PROTOCOL_VERSION)
+
+    if c.info.name != ""
+        meta["io.modelcontextprotocol/clientInfo"] @ implementation_json(c.info)
+    meta["io.modelcontextprotocol/clientCapabilities"] @ client_capabilities_json(c.capabilities)
+
+    if c.progress
+        meta["progressToken"] @ .text(v: f"progress-{id}")
+    out: {str: json.Value} @= params
+    out["_meta"] @ .object(members: meta)
+    return .object(members: out)
+
+# The result of the request `method` with `params`, sent to `c`'s server
+# with its `_meta`: what every request of the client goes through, and what a
+# program sends for a method of an extension.
+#
+# - `c`: the client; its stream's inbox keeps what comes before the answer,
+#   or its `notifications` what an HTTP answer's stream holds before it.
+# - `method`: the method.
+# - `params`: its parameters, `_meta` aside.
+#
+# Fails `failed` where the server answers an error, its code, message and
+# data in the message: -32022 with the versions it speaks; `permission`
+# where it answers 401 or 403, `c.denied` holding the response; `invalid`
+# where the result's `resultType` is one this revision does not name, or the
+# answer is no message; and as `jsonrpc.call` and `http.send` fail.
+function send_request(@c: Client, method: str, params: {str: json.Value}) -> json.Value?
+    value: json.Value @= .null_value
+
+    match c.link
+        .stream st =>
+            rpc @= st.rpc
+            sent = jsonrpc.call(@rpc, method: method, params: request_params(c, params: params, id: rpc.next_id))
+            c.link @ .stream(rpc: rpc)
+            value @ jsonrpc.value_of(sent?)?
+        .remote r =>
+            id = c.next_id
+            c.next_id @ c.next_id + 1
+            value @ send_http(@c, link_endpoint: r.endpoint, transport: r.transport, token: r.token, method: method, body: request_params(c, params: params, id: id), id: id)?
+
+    kind = build.text_at(value, key: "resultType")?
+
+    if kind != "" && kind != "complete" && kind != "input_required"
+        return fail(code: INVALID, msg: f"the result's type \"{kind}\" is not one revision {PROTOCOL_VERSION} names")
+    return ok(value)
+
+# The result of one request over Streamable HTTP: the `POST`, its fields, and
+# the answer read from JSON or from an event stream, the notifications before
+# it kept.
+#
+# - `c`: the client; its `notifications` and `denied` change.
+# - `link_endpoint`: the MCP endpoint.
+# - `transport`: how the request is sent.
+# - `token`: the access token, "" for none.
+# - `method`: the method.
+# - `body`: its parameters, `_meta` included.
+# - `id`: its id.
+#
+# Fails as `send_request` fails.
+function send_http(@c: Client, link_endpoint: str, transport: http.Client, token: str, method: str, body: json.Value, id: i64) -> json.Value?
+    request_id: jsonrpc.Id = .number(v: to_f64(id))
+    text = jsonrpc.format(.request(id: request_id, method: method, params: body))?
+    r @= http.request(method: http.METHOD_POST, target: link_endpoint)?
+    fields: [http.Header] @= r.headers
+    fields @ http.with_header(fields, name: "Content-Type", value: "application/json")
+    fields @ http.with_header(fields, name: "Accept", value: "application/json, text/event-stream")
+    fields @ http.with_header(fields, name: "MCP-Protocol-Version", value: PROTOCOL_VERSION)
+    fields @ http.with_header(fields, name: "Mcp-Method", value: method)
+
+    if method == "tools/call" || method == "prompts/get"
+        fields @ http.with_header(
+            fields,
+            name: "Mcp-Name",
+            value: headers.encode(build.text_at(body, key: "name").default(""))
+        )
+
+    if method == "resources/read"
+        fields @ http.with_header(
+            fields,
+            name: "Mcp-Name",
+            value: headers.encode(build.text_at(body, key: "uri").default(""))
+        )
+
+    if method == "tools/call"
+        name = build.text_at(body, key: "name").default("")
+        arguments = build.members_of(body)["arguments"].default(.null_value)
+
+        for t in c.tools
+            if t.name == name
+                for p in headers.params_of(t.input_schema).default([])
+                    match headers.value_of(arguments, p: p)
+                        .ok value => fields @ http.with_header(
+                            fields,
+                            name: "Mcp-Param-" + p.header,
+                            value: headers.encode(value)
+                        )
+                        .err _    => _ = 0
+
+    if token != ""
+        fields @ http.with_header(fields, name: "Authorization", value: "Bearer " + token)
+    r.headers @ fields
+    r.body @ bytes.from_text(text)
+    response = http.send(transport, r: r)?
+
+    if response.status == http.STATUS_UNAUTHORIZED || response.status == http.STATUS_FORBIDDEN
+        c.denied @ response
+        challenge = http.value_of(response.headers, name: "WWW-Authenticate").default("no challenge")
+        return fail(code: PERMISSION, msg: f"the server answered {response.status}: {challenge}")
+    kind = strings.to_lower(http.value_of(response.headers, name: "Content-Type").default(""))
+    received: [jsonrpc.Message] @= []
+
+    if strings.has_prefix(s: kind, prefix: "text/event-stream")
+        for event in http.events_of(response)?
+            if strings.trim(event.data) != ""
+                received @ received.push(jsonrpc.message_of(json.parse(event.data)?)?)
+    else
+        match jsonrpc.parse(bytes.to_text_lossy(response.body), limits: jsonrpc.default_limits())
+            .ok got =>
+                for item in got.messages
+                    match item
+                        .ok m => received @ received.push(m)
+                        .err e => return fail(
+                            code: INVALID,
+                            msg: f"the server answered {response.status} with no message: {e.msg}"
+                        )
+            .err _ => return fail(
+                code: FAILED,
+                msg: f"the server answered {response.status}: {bytes.to_text_lossy(response.body)}"
+            )
+    answer: jsonrpc.Reply @= .result(value: .null_value)
+    answered: bool @= false
+
+    for m in received
+        match m
+            .response a =>
+                if a.id == request_id || a.id == .null_id
+                    answer @ a.reply
+                    answered @ true
+            .notification _ => deque.push_back(@c.waiting, @c.notifications, value: m)
+            .request _      => _ = 0
+
+    if !answered
+        return fail(code: INVALID, msg: f"the server answered {response.status} with no answer to the request")
+    return jsonrpc.value_of(answer)
+
+# What `c`'s server says of itself: the versions it speaks, what it offers,
+# its name, its instructions.
+#
+# - `c`: the client.
+#
+# Fails as `send_request` fails, and `invalid` where the answer is not of its
+# form.
+function discover(@c: Client) -> Discovered?
+    result = send_request(@c, method: "server/discover", params: {})?
+    meta = build.members_of(result)["_meta"].default(.null_value)
+
+    server = match build.members_of(meta)["io.modelcontextprotocol/serverInfo"]
+        .ok got => implementation_of(got)?
+        .err _  => implementation(name: "", version: "")
+
+    return ok(
+        Discovered(versions: build.texts_at(result, key: "supportedVersions")?, capabilities: server_capabilities_of(build.members_of(result)["capabilities"].default(.null_value))?, server: server, instructions: build.text_at(result, key: "instructions")?)
+    )
+
+# Every item of the list `method` answers under `key`, page after page.
+#
+# - `c`: the client.
+# - `method`: `tools/list`, `resources/list`, `resources/templates/list` or
+#   `prompts/list`.
+# - `key`: the member that holds the items.
+#
+# A `nextCursor` given, the empty one included, asks for the next page, as
+# the revision asks. Fails `limit` past 10,000 pages, and as `send_request`
+# fails.
+function every_page(@c: Client, method: str, key: str) -> [json.Value]?
+    out: [json.Value] @= []
+    cursor: str @= ""
+    more: bool @= false
+    count: i64 @= 0
+
+    while true
+        params: {str: json.Value} @= {}
+
+        if more
+            params["cursor"] @ .text(v: cursor)
+        result = send_request(@c, method: method, params: params)?
+
+        for item in build.items_at(result, key: key)?
+            out @ out.push(item)
+
+        count @ count + 1
+
+        match build.members_of(result)["nextCursor"]
+            .ok next =>
+                cursor @ json.text_of(next)?
+                more @ true
+            .err _ => break
+
+        if count >= 10_000
+            return fail(code: LIMIT, msg: f"{method} gave more than 10,000 pages")
+
+    return ok(out)
+
+# Every tool `c`'s server offers, every page read, kept in `c.tools`.
+#
+# - `c`: the client; its `tools` are replaced.
+#
+# Over HTTP a tool whose `x-mcp-header` annotations are not of their form is
+# left out, as the revision requires of a client. Fails as `send_request`
+# fails, and `invalid` where a tool is not of its form.
+function list_tools(@c: Client) -> [Tool]?
+    out: [Tool] @= []
+
+    remote = match c.link
+        .remote _ => true
+        .stream _ => false
+
+    for item in every_page(@c, method: "tools/list", key: "tools")?
+        tool = tool_of(item)?
+
+        if !remote || !headers.params_of(tool.input_schema).is_err()
+            out @ out.push(tool)
+
+    c.tools @ out
+    return ok(out)
+
+# Calls the tool `name` with `arguments`.
+#
+# - `c`: the client.
+# - `name`: the tool's name.
+# - `arguments`: an object its input schema accepts.
+# - `inputs`: `no_inputs()` on a first try; on a retry, the answers to what
+#   the last outcome asked and the state it gave, the retry having an id of
+#   its own.
+#
+# A tool's own failure is a result whose `is_error` is true; a refusal of the
+# server (an unknown tool) fails `failed`. Fails as `send_request` fails.
+function call_tool(@c: Client, name: str, arguments: json.Value, inputs: Inputs) -> ToolOutcome?
+    params: {str: json.Value} @= {}
+    params["name"] @ .text(v: name)
+    params["arguments"] @ arguments
+    put_inputs(@params, inputs: inputs)
+    result = send_request(@c, method: "tools/call", params: params)?
+
+    if build.text_at(result, key: "resultType")? == "input_required"
+        return ok(.asks(input: input_required_of(result)?))
+    return ok(.done(result: tool_result_of(result)?))
+
+# Writes `inputs` in a retried request's parameters: `inputResponses` and
+# `requestState`, each where it holds something.
+#
+# - `params`: the request's parameters.
+# - `inputs`: what the retry gives back.
+function put_inputs(@params: {str: json.Value}, inputs: Inputs)
+    if inputs.responses.len() > 0
+        params["inputResponses"] @ .object(members: inputs.responses)
+    build.put_text(@params, key: "requestState", value: inputs.state)
+
+# Every resource `c`'s server lists.
+#
+# - `c`: the client.
+#
+# Fails as `send_request` fails, and `invalid` where a resource is not of
+# its form.
+function list_resources(@c: Client) -> [Resource]?
+    out: [Resource] @= []
+
+    for item in every_page(@c, method: "resources/list", key: "resources")?
+        out @ out.push(resource_of(item)?)
+
+    return ok(out)
+
+# Every resource template `c`'s server lists.
+#
+# - `c`: the client.
+#
+# Fails as `send_request` fails, and `invalid` where a template is not of
+# its form.
+function list_templates(@c: Client) -> [ResourceTemplate]?
+    out: [ResourceTemplate] @= []
+
+    for item in every_page(@c, method: "resources/templates/list", key: "resourceTemplates")?
+        out @ out.push(template_of(item)?)
+
+    return ok(out)
+
+# Reads the resource at `uri`.
+#
+# - `c`: the client.
+# - `uri`: the resource's URI, a listed one or one a template writes.
+# - `inputs`: `no_inputs()` on a first try.
+#
+# A resource that is not there fails `failed` with -32602, or the -32002 of
+# an earlier revision. Fails as `send_request` fails.
+function read_resource(@c: Client, uri: str, inputs: Inputs) -> ReadOutcome?
+    params: {str: json.Value} @= {}
+    params["uri"] @ .text(v: uri)
+    put_inputs(@params, inputs: inputs)
+    result = send_request(@c, method: "resources/read", params: params)?
+
+    if build.text_at(result, key: "resultType")? == "input_required"
+        return ok(.asks(input: input_required_of(result)?))
+    contents: [Contents] @= []
+
+    for item in build.items_at(result, key: "contents")?
+        contents @ contents.push(contents_of(item)?)
+
+    return ok(.done(contents: contents))
+
+# Every prompt `c`'s server lists.
+#
+# - `c`: the client.
+#
+# Fails as `send_request` fails, and `invalid` where a prompt is not of its
+# form.
+function list_prompts(@c: Client) -> [Prompt]?
+    out: [Prompt] @= []
+
+    for item in every_page(@c, method: "prompts/list", key: "prompts")?
+        out @ out.push(prompt_of(item)?)
+
+    return ok(out)
+
+# The prompt `name` made with `arguments`.
+#
+# - `c`: the client.
+# - `name`: the prompt's name.
+# - `arguments`: its arguments by name.
+# - `inputs`: `no_inputs()` on a first try.
+#
+# Fails as `send_request` fails, and `invalid` where a message is not of its
+# form.
+function get_prompt(@c: Client, name: str, arguments: {str: str}, inputs: Inputs) -> PromptOutcome?
+    given: {str: json.Value} @= {}
+
+    for key in keys(arguments)
+        given[key] @ .text(v: arguments[key].must())
+
+    params: {str: json.Value} @= {}
+    params["name"] @ .text(v: name)
+    params["arguments"] @ .object(members: given)
+    put_inputs(@params, inputs: inputs)
+    result = send_request(@c, method: "prompts/get", params: params)?
+
+    if build.text_at(result, key: "resultType")? == "input_required"
+        return ok(.asks(input: input_required_of(result)?))
+    messages: [PromptMessage] @= []
+
+    for item in build.items_at(result, key: "messages")?
+        messages @ messages.push(
+            PromptMessage(role: build.required_text(item, key: "role")?, content: content_of(build.members_of(item)["content"].default(.null_value))?)
+        )
+
+    return ok(.done(result: PromptResult(description: build.text_at(result, key: "description")?, messages: messages)))
+
+# The completions of the argument `argument` of a prompt or a resource
+# template, its value so far `value`.
+#
+# - `c`: the client.
+# - `kind`: `ref/prompt` or `ref/resource`.
+# - `ref`: the prompt's name, or the template's URI.
+# - `argument`: the argument completed.
+# - `value`: what the user has written of it.
+# - `context`: the arguments already given, by name; empty for none.
+#
+# Fails `invalid` where `kind` is another word, and as `send_request` fails.
+function complete(@c: Client, kind: str, ref: str, argument: str, value: str, context: {str: str}) -> Completed?
+    if kind != "ref/prompt" && kind != "ref/resource"
+        return fail(code: INVALID, msg: f"\"{kind}\" is neither ref/prompt nor ref/resource")
+    target: {str: json.Value} @= {}
+    target["type"] @ .text(v: kind)
+
+    if kind == "ref/prompt"
+        target["name"] @ .text(v: ref)
+    else
+        target["uri"] @ .text(v: ref)
+    asked: {str: json.Value} @= {}
+    asked["name"] @ .text(v: argument)
+    asked["value"] @ .text(v: value)
+    params: {str: json.Value} @= {}
+    params["ref"] @ .object(members: target)
+    params["argument"] @ .object(members: asked)
+
+    if context.len() > 0
+        given: {str: json.Value} @= {}
+
+        for key in keys(context)
+            given[key] @ .text(v: context[key].must())
+
+        holder: {str: json.Value} @= {}
+        holder["arguments"] @ .object(members: given)
+        params["context"] @ .object(members: holder)
+    result = send_request(@c, method: "completion/complete", params: params)?
+    inner = build.members_of(result)["completion"].default(.null_value)
+    values = build.texts_at(inner, key: "values")?
+
+    total = match build.members_of(inner)["total"]
+        .ok t  => json.int_of(t)?
+        .err _ => values.len()
+
+    return ok(
+        Completed(values: values, total: total, has_more: build.bool_at(inner, key: "hasMore", otherwise: false)?)
+    )
+
+# Opens a subscription for what `asked` asks, and answers what the server
+# agreed to send: the notifications then come by `next_notification`.
+#
+# - `c`: the client; over standard streams only.
+# - `asked`: the notifications wanted.
+#
+# The subscription's id is the request's, which every notification of it
+# names. Fails `unsupported` over Streamable HTTP, where a subscription is
+# an event stream this client does not hold open; `failed` where the server
+# refuses it; and as `jsonrpc.read_message` fails.
+function subscribe(@c: Client, asked: Filter) -> Filter?
+    st = match c.link
+        .stream got => got
+        .remote _ => return fail(
+            code: UNSUPPORTED,
+            msg: "this client opens a subscription over standard streams, not over Streamable HTTP"
+        )
+
+    rpc @= st.rpc
+    id: jsonrpc.Id = .number(v: to_f64(rpc.next_id))
+    rpc.next_id @ rpc.next_id + 1
+    asking: {str: json.Value} @= {}
+    asking["notifications"] @ filter_json(asked)
+    sent = jsonrpc.write_message(
+        rpc.writer,
+        m: .request(id: id, method: "subscriptions/listen", params: request_params(c, params: asking, id: 0)),
+        framing: .lines
+    )
+
+    honored: Filter? = match sent
+        .ok _  => acknowledged(@rpc, id: id)
+        .err e => fail(code: e.code, msg: e.msg)
+
+    c.link @ .stream(rpc: rpc)
+    return honored
+
+# The filter the server's acknowledgment of the subscription `id` names, the
+# messages before it kept in `rpc`'s inbox.
+#
+# - `rpc`: the stream's client.
+# - `id`: the subscription's id.
+#
+# Fails `failed` where the server answers the subscription with an error,
+# and as `jsonrpc.read_message` fails.
+function acknowledged(@rpc: jsonrpc.Client, id: jsonrpc.Id) -> Filter?
+    while true
+        m = jsonrpc.read_message(@rpc.reader, framing: rpc.framing, limits: rpc.limits)?
+
+        match m
+            .notification n =>
+                subscription = build.members_of(build.members_of(n.params)["_meta"].default(.null_value))["io.modelcontextprotocol/subscriptionId"].default(
+                    .null_value
+                )
+
+                if n.method == "notifications/subscriptions/acknowledged" && subscription == json.parse(jsonrpc.format_id(id)).must()
+                    return filter_of(build.members_of(n.params)["notifications"].default(.null_value))
+                deque.push_back(@rpc.waiting, @rpc.inbox, value: m)
+            .response r =>
+                if r.id == id
+                    _ = jsonrpc.value_of(r.reply)?
+                    return fail(code: FAILED, msg: "the server ended the subscription before acknowledging it")
+                deque.push_back(@rpc.waiting, @rpc.inbox, value: m)
+            .request _ => deque.push_back(@rpc.waiting, @rpc.inbox, value: m)
+
+# The next notification `c`'s server sent: one kept while a request waited,
+# else the next one read from its stream.
+#
+# - `c`: the client.
+#
+# Over Streamable HTTP only those kept from answers' event streams are
+# given, and none left fails `not_found`. A subscription the server ended
+# gracefully is a notification whose `method` is "". Fails `failed` where the
+# server answered a subscription with an error, `invalid` where it sent a
+# request, which the revision forbids, and as `jsonrpc.next_message` fails.
+function next_notification(@c: Client) -> Notification?
+    m: jsonrpc.Message @= .notification(method: "", params: .null_value)
+
+    match c.link
+        .remote _ =>
+            match deque.pop_front(@c.waiting, @c.notifications)
+                .ok got => m @ got
+                .err _  => return fail(code: NOT_FOUND, msg: "no notification waits")
+        .stream st =>
+            rpc @= st.rpc
+            got = jsonrpc.next_message(@rpc)
+            c.link @ .stream(rpc: rpc)
+            m @ got?
+
+    match m
+        .notification n =>
+            subscription = build.members_of(build.members_of(n.params)["_meta"].default(.null_value))["io.modelcontextprotocol/subscriptionId"].default(
+                .null_value
+            )
+
+            id: jsonrpc.Id = match subscription
+                .text t                                        => .text(v: t.v)
+                .number v                                      => .number(v: v.v)
+                .null_value | .boolean _ | .list _ | .object _ => .absent
+
+            return ok(Notification(method: n.method, params: n.params, subscription: id))
+        .response r => return ok(Notification(method: "", params: jsonrpc.value_of(r.reply)?, subscription: r.id))
+        .request q => return fail(
+            code: INVALID,
+            msg: f"the server sent the request \"{q.method}\", which revision {PROTOCOL_VERSION} forbids"
+        )
+
+# Asks `c`'s server to cancel the request or the subscription `request_id`.
+#
+# - `c`: the client; over standard streams only, since over HTTP closing a
+#   request's stream is its cancellation.
+# - `request_id`: the request's id.
+# - `reason`: why, "" for no reason.
+#
+# Fails `unsupported` over Streamable HTTP, and as `jsonrpc.notify` fails.
+function cancel(c: Client, request_id: jsonrpc.Id, reason: str) -> ()?
+    match c.link
+        .remote _ => return fail(
+            code: UNSUPPORTED,
+            msg: "over Streamable HTTP a request is cancelled by closing its stream"
+        )
+        .stream st =>
+            params: {str: json.Value} @= {}
+            params["requestId"] @ json.parse(jsonrpc.format_id(request_id)).must()
+            build.put_text(@params, key: "reason", value: reason)
+            return jsonrpc.notify(st.rpc, method: "notifications/cancelled", params: .object(members: params))
+
+## Tests
+
+# The `_meta` every request of the tests carries: this revision, and a
+# client that asks its user by forms.
+constant TEST_META: str
+    "\"_meta\": {\"io.modelcontextprotocol/protocolVersion\": \"2026-07-28\", \"io.modelcontextprotocol/clientInfo\": {\"name\": \"t\", \"version\": \"1\"}, \"io.modelcontextprotocol/clientCapabilities\": {\"elicitation\": {}}}"
+
+# A request of the tests: `extra` members, each followed by a comma, then
+# `TEST_META`.
+#
+# - `id`: the request's id.
+# - `method`: its method.
+# - `extra`: its other members as JSON text, each with a comma after it.
+function test_request(id: f64, method: str, extra: str) -> jsonrpc.Message
+    return .request(id: .number(v: id), method: method, params: json.parse("{" + extra + TEST_META + "}").must())
+
+# The server of the tests: three tools on pages of two, a resource, a
+# template, a prompt, completions, and changes told.
+function test_server() -> Server
+    s @= new_server(implementation(name: "test", version: "1"))
+    add @= new_tool(
+        name: "add",
+        description: "adds",
+        input_schema: json.parse("{\"type\": \"object\", \"properties\": {\"a\": {\"type\": \"number\"}, \"b\": {\"type\": \"number\"}}, \"required\": [\"a\", \"b\"]}").must()
+    )
+    add.output_schema @ json.parse("{\"type\": \"object\", \"required\": [\"sum\"]}").must()
+    echo = new_tool(
+        name: "echo",
+        description: "echoes",
+        input_schema: json.parse("{\"type\": \"object\", \"properties\": {\"text\": {\"type\": \"string\", \"x-mcp-header\": \"Text\"}}}").must()
+    )
+    greet = new_tool(name: "greet", description: "greets", input_schema: json.parse("{\"type\": \"object\"}").must())
+    s.tools @ [add, echo, greet]
+    s.resources @ [new_resource(uri: "notes://readme", name: "readme")]
+    s.templates @ [new_template(uri_template: "greeting://{name}", name: "greeting")]
+    s.prompts @ [
+        new_prompt(name: "review", description: "reviews", arguments: [PromptArgument(name: "code", title: "", description: "", required: true)])
+    ]
+    s.completions @ true
+    s.list_changed @ true
+    s.subscribe @ true
+    s.page_size @ 2
+    return s
+
+# The test server's answer to `request`, as a program writes its own. Fails
+# `not_found` where nothing answers it.
+#
+# - `s`: the test server.
+# - `request`: what a message asks.
+function test_answer(s: Server, request: Request) -> jsonrpc.Message?
+    match request
+        .answered a => return ok(a.answer)
+        .call_tool c =>
+            if c.call.name == "add"
+                a = json.number_of(json.member(c.call.arguments, key: "a").must()).must()
+                b = json.number_of(json.member(c.call.arguments, key: "b").must()).must()
+                sum: {str: json.Value} @= {}
+                sum["sum"] @ .number(v: a + b)
+                return ok(answer_tool(s, call: c.call, result: structured_result(.object(members: sum)).must()))
+
+            if c.call.name == "echo"
+                return ok(
+                    answer_tool(s, call: c.call, result: text_result(json.text_of(json.member(c.call.arguments, key: "text").must()).must()))
+                )
+
+            match elicited_of(c.call.inputs, key: "who")
+                .ok got => return ok(
+                    answer_tool(s, call: c.call, result: text_result(f"Hello, {json.text_of(got.content["name"].default(.null_value)).default("?")}"))
+                )
+                .err _ =>
+                    ask: {str: InputRequest} @= {}
+                    ask["who"] @ .form(
+                        message: "Who?",
+                        schema: json.parse("{\"type\": \"object\", \"properties\": {\"name\": {\"type\": \"string\"}}}").must()
+                    )
+                    return ok(
+                        answer_input_required(s, id: c.call.id, meta: c.call.meta, input: InputRequired(requests: ask, state: "first"))
+                    )
+        .read_resource r => return ok(
+            answer_resource(s, read: r.read, contents: [.text(uri: r.read.uri, mime_type: "text/plain", text: r.read.values["name"].default("readme"))])
+        )
+        .get_prompt g => return ok(
+            answer_prompt(s, get: g.get, result: PromptResult(description: "d", messages: [PromptMessage(role: "user", content: text_content(g.get.arguments["code"].must()))]))
+        )
+        .complete c => return ok(answer_completion(s, completion: c.completion, values: ["Ada", "Alan"]))
+        .listen l => return ok(acknowledge(s, listen: l.listen))
+        .respond _ | .cancelled _ | .ignored => return fail(code: NOT_FOUND, msg: "nothing answers it")
+
+# A thread's body: serves the connection `accepted` names, one message a
+# line, until it closes; a subscription's acknowledgment is followed by a
+# change of the tools. Answers how many messages it read.
+#
+# - `accepted`: the number `net.accept_number` gave.
+function serve_lines(accepted: i64) -> i64
+    conn = net.conn_of(n: accepted, deadline_ms: 10_000).must()
+    reader @= io.reader(conn.stream)
+    s = test_server()
+    served: i64 @= 0
+
+    while true
+        request = match read_request(@reader, s: s)
+            .ok got => got
+            .err _  => break
+
+        match test_answer(s, request: request)
+            .ok m  => jsonrpc.write_message(reader.stream, m: m, framing: .lines).must()
+            .err _ => _ = 0
+
+        match request
+            .listen l => jsonrpc.write_message(
+                reader.stream,
+                m: changed_of(s, listen: l.listen, list: "tools").must(),
+                framing: .lines
+            ).must()
+            .answered _ | .respond _ | .cancelled _ | .ignored | .call_tool _ | .read_resource _ | .get_prompt _ | .complete _ => _ = 0
+
+        served @ served + 1
+
+    io.close(@reader.stream).must()
+    return served
+
+# A thread's body: listens on a port the system chooses, tells it to the
+# control listener at `control`, and serves Streamable HTTP, a request
+# without `Authorization` answered 401, until no connection comes for two
+# seconds. Answers how many requests it served.
+#
+# - `control`: the port of the test's control listener.
+function serve_http_many(control: i64) -> i64
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    told @= net.connect("127.0.0.1", port: control, deadline_ms: 10_000).must()
+    io.write_text(told.stream, text: f"{l.address.port}").must()
+    io.close(@told.stream).must()
+    net.set_accept_deadline(l, ms: 2_000).must()
+    s = test_server()
+    served: i64 @= 0
+
+    while true
+        conn = match net.accept(l, deadline_ms: 10_000)
+            .ok got => got
+            .err _  => break
+
+        reader @= io.reader(conn.stream)
+
+        while true
+            r = match http.next_request(@reader, limits: http.default_limits())
+                .ok got => got
+                .err _  => break
+
+            response = if http.value_of(r.headers, name: "Authorization").is_err()
+                unauthorized(metadata_url: "http://127.0.0.1/.well-known/oauth-protected-resource", scope: "mcp:tools")
+            else
+                handled = read_http(s, r: r)
+
+                match handled
+                    .respond x => x.response
+                    .answered _ | .cancelled _ | .ignored | .call_tool _ | .read_resource _ | .get_prompt _ | .complete _ | .listen _ =>
+                        respond_http(test_answer(s, request: handled).must())
+            served @ served + 1
+            http.write_answer(reader.stream, r: r, response: response).must()
+
+            if r.closing || response.closing
+                break
+
+        io.close(@reader.stream).must()
+
+    net.close_listener(@l).must()
+    return served
+
+test "handle: discover, a list on pages, the refusals the revision names, and what goes to the program"
+    s = test_server()
+    discovered = handle(s, m: test_request(1.0, method: "server/discover", extra: ""))
+    assert discovered == .answered(answer: jsonrpc.result_of(.number(v: 1.0), value: build.result({"supportedVersions": build.texts([PROTOCOL_VERSION]), "capabilities": server_capabilities_json(capabilities_of(s))}, server: implementation_json(s.info), cacheable: true, ttl_ms: 0, private: false)))
+    page = handle(s, m: test_request(2.0, method: "tools/list", extra: ""))
+
+    match page
+        .answered a =>
+            reply: jsonrpc.Reply = match a.answer
+                .response r                  => r.reply
+                .request _ | .notification _ => .result(value: .null_value)
+
+            value = jsonrpc.value_of(reply).must()
+            assert build.items_at(value, key: "tools").must().len() == 2 && build.text_at(value, key: "nextCursor").must() != ""
+        .respond _ | .cancelled _ | .ignored | .call_tool _ | .read_resource _ | .get_prompt _ | .complete _ | .listen _ => assert false
+
+    refusals = [
+        test_request(3.0, method: "tools/call", extra: "\"name\": \"nope\",")
+        test_request(4.0, method: "resources/read", extra: "\"uri\": \"nope://x\",")
+        test_request(5.0, method: "prompts/get", extra: "\"name\": \"review\",")
+        test_request(6.0, method: "tools/list", extra: "\"cursor\": \"bad\",")
+        .request(id: .number(v: 7.0), method: "tools/list", params: json.parse("{}").must())
+        .request(id: .number(v: 8.0), method: "tools/list", params: json.parse("{\"_meta\": {\"io.modelcontextprotocol/protocolVersion\": \"2025-11-25\", \"io.modelcontextprotocol/clientCapabilities\": {}}}").must())
+        .request(id: .number(v: 9.0), method: "initialize", params: json.parse("{\"protocolVersion\": \"2025-11-25\"}").must())
+        test_request(10.0, method: "ping", extra: "")
+        .request(id: .null_id, method: "tools/list", params: .null_value)
+    ]
+    codes = [-32602, -32602, -32602, -32602, -32602, -32022, -32022, -32601, -32600]
+
+    for at in range(from: 0, to: refusals.len())
+        match handle(s, m: refusals[at])
+            .answered a =>
+                match a.answer
+                    .response r =>
+                        match r.reply
+                            .error e  => assert e.error.code == codes[at]
+                            .result _ => assert false
+                    .request _ | .notification _ => assert false
+            .respond _ | .cancelled _ | .ignored | .call_tool _ | .read_resource _ | .get_prompt _ | .complete _ | .listen _ => assert false
+
+    assert handle(s, m: .notification(method: "notifications/cancelled", params: json.parse("{\"requestId\": 3, \"reason\": \"late\"}").must())) == .cancelled(request_id: .number(v: 3.0), reason: "late")
+    assert handle(s, m: .notification(method: "notifications/initialized", params: .null_value)) == .ignored
+    assert handle(s, m: jsonrpc.result_of(.number(v: 1.0), value: .null_value)) == .ignored
+
+test "handle: arguments the input schema refuses are a tool execution error, and a template's values read"
+    s = test_server()
+
+    match handle(s, m: test_request(1.0, method: "tools/call", extra: "\"name\": \"add\", \"arguments\": {\"a\": \"x\"},"))
+        .answered a => assert strings.contains(s: jsonrpc.format(a.answer).must(), substr: "\"isError\":true")
+        .respond _ | .cancelled _ | .ignored | .call_tool _ | .read_resource _ | .get_prompt _ | .complete _ | .listen _ => assert false
+
+    match handle(s, m: test_request(2.0, method: "resources/read", extra: "\"uri\": \"greeting://Ada%20L\","))
+        .read_resource r                                                                                            => assert r.read.template == "greeting://{name}" && r.read.values == {"name": "Ada L"}
+        .answered _ | .respond _ | .cancelled _ | .ignored | .call_tool _ | .get_prompt _ | .complete _ | .listen _ => assert false
+
+test "answer_input_required, answer_tool: a capability not declared, and a result its output schema refuses"
+    s = test_server()
+    meta = meta_of(
+        json.parse("{\"_meta\": {\"io.modelcontextprotocol/protocolVersion\": \"2026-07-28\", \"io.modelcontextprotocol/clientCapabilities\": {}}}").must()
+    ).must()
+    ask: {str: InputRequest} @= {}
+    ask["k"] @ .url(message: "pay", url: "https://pay.example/x")
+    refused = answer_input_required(s, id: .number(v: 1.0), meta: meta, input: InputRequired(requests: ask, state: ""))
+    assert jsonrpc.format(refused).must() == "{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"code\":-32021,\"message\":\"Missing required client capability\",\"data\":{\"requiredCapabilities\":{\"elicitation\":{\"url\":{}}}}}}"
+    call = ToolCall(id: .number(v: 2.0), name: "add", arguments: .null_value, meta: meta, inputs: no_inputs())
+    assert jsonrpc.format(answer_tool(s, call: call, result: text_result("no sum"))).must() == "{\"jsonrpc\":\"2.0\",\"id\":2,\"error\":{\"code\":-32603,\"message\":\"the result of \\\"add\\\" does not conform to its output schema: at the instance: null, where the type is object (type at /type); 1 error in all\"}}"
+
+test "progress_of, acknowledge, changed_of, updated_of: what a request and a subscription may be told, and nothing else"
+    s = test_server()
+    no_token = meta_of(json.parse("{" + TEST_META + "}").must()).must()
+
+    match progress_of(no_token, progress: 1.0, total: 0.0, message: "")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    listening = Listen(
+        id: .number(v: 9.0),
+        filter: Filter(tools: true, prompts: false, resources: false, resource_uris: ["notes://readme"]),
+        meta: no_token
+    )
+    assert jsonrpc.format(acknowledge(s, listen: listening)).must() == "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/subscriptions/acknowledged\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/subscriptionId\":9},\"notifications\":{\"toolsListChanged\":true,\"resourceSubscriptions\":[\"notes://readme\"]}}}"
+
+    match changed_of(s, listen: listening, list: "prompts")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    match updated_of(s, listen: listening, uri: "notes://other")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    assert changed_of(s, listen: listening, list: "pages").is_err()
+
+test "read_http: a GET, an origin, a notification, each field missing or not matching, and a call handed on"
+    s @= test_server()
+    body = "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"echo\",\"arguments\":{\"text\":\"héllo\"}," + TEST_META + "}}"
+    good @= http.with_body(
+        http.request(method: http.METHOD_POST, target: "/mcp").must(),
+        content_type: "application/json",
+        body: bytes.from_text(body)
+    )
+    good.headers @ http.with_header(good.headers, name: "MCP-Protocol-Version", value: PROTOCOL_VERSION)
+    good.headers @ http.with_header(good.headers, name: "Mcp-Method", value: "tools/call")
+    good.headers @ http.with_header(good.headers, name: "Mcp-Name", value: "echo")
+    good.headers @ http.with_header(good.headers, name: "Mcp-Param-Text", value: headers.encode("héllo"))
+
+    match read_http(s, r: good)
+        .call_tool c => assert c.call.name == "echo"
+        .answered _ | .respond _ | .cancelled _ | .ignored | .read_resource _ | .get_prompt _ | .complete _ | .listen _ => assert false
+
+    statuses: [i64] @= []
+    get = http.request(method: "GET", target: "/mcp").must()
+    origin = good
+    origin_headers = http.with_header(good.headers, name: "Origin", value: "https://evil.example")
+    wrong_name = http.with_header(http.without_header(good.headers, name: "Mcp-Name"), name: "Mcp-Name", value: "add")
+    wrong_param = http.with_header(
+        http.without_header(good.headers, name: "Mcp-Param-Text"),
+        name: "Mcp-Param-Text",
+        value: "hello"
+    )
+    no_param = http.without_header(good.headers, name: "Mcp-Param-Text")
+    no_version = http.without_header(good.headers, name: "MCP-Protocol-Version")
+    cases = [get]
+    variants = [origin_headers, wrong_name, wrong_param, no_param, no_version]
+
+    for one in cases
+        match read_http(s, r: one)
+            .respond x => statuses @ statuses.push(x.response.status)
+            .answered _ | .cancelled _ | .ignored | .call_tool _ | .read_resource _ | .get_prompt _ | .complete _ | .listen _ => statuses @ statuses.push(
+                0
+            )
+
+    for fields in variants
+        r @= origin
+        r.headers @ fields
+
+        match read_http(s, r: r)
+            .respond x => statuses @ statuses.push(x.response.status)
+            .answered _ | .cancelled _ | .ignored | .call_tool _ | .read_resource _ | .get_prompt _ | .complete _ | .listen _ => statuses @ statuses.push(
+                0
+            )
+
+    assert statuses == [405, 403, 400, 400, 400, 400]
+    s.origins @ ["https://evil.example"]
+    trusted @= origin
+    trusted.headers @ origin_headers
+
+    match read_http(s, r: trusted)
+        .call_tool _ => _ = 0
+        .answered _ | .respond _ | .cancelled _ | .ignored | .read_resource _ | .get_prompt _ | .complete _ | .listen _ => assert false
+
+    notified = http.with_body(
+        http.request(method: http.METHOD_POST, target: "/mcp").must(),
+        content_type: "application/json",
+        body: bytes.from_text("{\"jsonrpc\":\"2.0\",\"method\":\"notifications/cancelled\",\"params\":{\"requestId\":1}}")
+    )
+
+    match read_http(s, r: notified)
+        .respond x => assert x.response.status == 202
+        .answered _ | .cancelled _ | .ignored | .call_tool _ | .read_resource _ | .get_prompt _ | .complete _ | .listen _ => assert false
+
+test "a client and a server of Heroes over one connection: every request, an elicitation retried, a subscription told"
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    conn = net.connect("127.0.0.1", port: l.address.port, deadline_ms: 10_000).must()
+    worker @= threads.spawn(body: serve_lines, arg: net.accept_number(l).must()).must()
+    c @= stream_client(
+        reading: conn.stream,
+        writing: conn.stream,
+        info: implementation(name: "heroes-client", version: "1")
+    )
+    c.capabilities @ form_capabilities()
+    found = discover(@c).must()
+    assert found.versions == [PROTOCOL_VERSION] && found.server.name == "test" && found.capabilities.tools && found.capabilities.completions
+    tools = list_tools(@c).must()
+    assert tools.len() == 3 && tools[2].name == "greet"
+
+    match call_tool(@c, name: "add", arguments: json.parse("{\"a\": 2, \"b\": 40}").must(), inputs: no_inputs()).must()
+        .done d => assert d.result.structured == json.parse("{\"sum\": 42}").must()
+        .asks _ => assert false
+
+    asked = match call_tool(@c, name: "greet", arguments: json.parse("{}").must(), inputs: no_inputs()).must()
+        .asks a => a.input
+        .done _ => InputRequired(requests: {}, state: "")
+
+    assert asked.state == "first" && keys(asked.requests) == ["who"]
+    answer: {str: json.Value} @= {}
+    answer["name"] @ .text(v: "Ada")
+    responses: {str: json.Value} @= {}
+    responses["who"] @ elicitation_response("accept", content: answer).must()
+
+    match call_tool(@c, name: "greet", arguments: json.parse("{}").must(), inputs: Inputs(responses: responses, state: asked.state)).must()
+        .done d => assert d.result.content == [text_content("Hello, Ada")]
+        .asks _ => assert false
+
+    match read_resource(@c, uri: "greeting://Grace", inputs: no_inputs()).must()
+        .done d => assert d.contents == [.text(uri: "greeting://Grace", mime_type: "text/plain", text: "Grace")]
+        .asks _ => assert false
+
+    assert list_resources(@c).must().len() == 1 && list_templates(@c).must()[0].uri_template == "greeting://{name}" && list_prompts(@c).must()[0].name == "review"
+
+    match get_prompt(@c, name: "review", arguments: {"code": "x = 1"}, inputs: no_inputs()).must()
+        .done d => assert d.result.messages[0].content == text_content("x = 1")
+        .asks _ => assert false
+
+    assert complete(@c, kind: "ref/prompt", ref: "review", argument: "code", value: "A", context: {}).must().values == ["Ada", "Alan"]
+
+    match read_resource(@c, uri: "nope://x", inputs: no_inputs())
+        .ok _  => assert false
+        .err e => assert e.code == FAILED && strings.contains(s: e.msg, substr: "-32602")
+
+    honored = subscribe(@c, asked: Filter(tools: true, prompts: true, resources: false, resource_uris: [])).must()
+    assert honored.tools && honored.prompts
+    told = next_notification(@c).must()
+    assert told.method == "notifications/tools/list_changed" && told.subscription != .absent
+    cancel(c, request_id: .number(v: 99.0), reason: "test").must()
+
+    match c.link
+        .stream st =>
+            rpc @= st.rpc
+            io.close(@rpc.writer).must()
+        .remote _ => assert false
+
+    assert threads.wait(@worker) >= 13
+    net.close_listener(@l).must()
+
+test "a client and a server of Heroes over Streamable HTTP: a 401 read, then every call with a token"
+    control @= net.listen(host: "127.0.0.1", port: 0).must()
+    worker @= threads.spawn(body: serve_http_many, arg: control.address.port).must()
+    told = net.accept(control, deadline_ms: 10_000).must()
+    told_reader @= io.reader(told.stream)
+    port = numbers.parse_int(io.read_rest_text(@told_reader).must()).must()
+    io.close(@told_reader.stream).must()
+    net.close_listener(@control).must()
+    c @= http_client(
+        f"http://127.0.0.1:{port}/mcp",
+        transport: http.default_client(),
+        info: implementation(name: "h", version: "1")
+    )
+
+    match discover(@c)
+        .ok _  => assert false
+        .err e => assert e.code == PERMISSION && c.denied.status == 401
+
+    assert headers.challenge_scope(http.value_of(c.denied.headers, name: "WWW-Authenticate").must()) == "mcp:tools"
+    c @ with_token(c, token: "t")
+    assert discover(@c).must().server.name == "test"
+    assert list_tools(@c).must().len() == 3
+
+    match call_tool(@c, name: "echo", arguments: json.parse("{\"text\": \"héllo, 世界\"}").must(), inputs: no_inputs()).must()
+        .done d => assert d.result.content == [text_content("héllo, 世界")]
+        .asks _ => assert false
+
+    match subscribe(@c, asked: Filter(tools: true, prompts: false, resources: false, resource_uris: []))
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+    assert threads.wait(@worker) == 5
+
+test "the JSON forms: each type written and read back"
+    tool @= new_tool(name: "t", description: "d", input_schema: json.parse("{\"type\": \"object\"}").must())
+    tool.hints.read_only @ true
+    tool.icons @ [Icon(src: "https://x/i.png", mime_type: "image/png", sizes: ["48x48"], theme: "dark")]
+    assert tool_of(tool_json(tool)).must() == tool
+    resource @= new_resource(uri: "file:///a", name: "a")
+    resource.size @ 7
+    resource.has_size @ true
+    resource.annotations @ Annotations(
+        audience: ["user"],
+        priority: 0.5,
+        has_priority: true,
+        last_modified: "2025-01-12T15:00:58Z"
+    )
+    assert resource_of(resource_json(resource)).must() == resource
+    template = new_template(uri_template: "file:///{+path}", name: "files")
+    assert template_of(template_json(template)).must() == template
+    prompt = new_prompt(
+        name: "p",
+        description: "",
+        arguments: [PromptArgument(name: "a", title: "A", description: "", required: true)]
+    )
+    assert prompt_of(prompt_json(prompt)).must() == prompt
+    blocks: [Content] = [
+        text_content("x")
+        .image(data: [1, 2, 255], mime_type: "image/png", annotations: no_annotations())
+        .audio(data: [], mime_type: "audio/wav", annotations: no_annotations())
+        .resource_link(resource: resource)
+        .embedded(contents: .blob(uri: "file:///b", mime_type: "", data: [0]), annotations: no_annotations())
+    ]
+
+    for block in blocks
+        assert content_of(content_json(block)).must() == block
+
+    info @= implementation(name: "n", version: "1")
+    info.website_url @ "https://n.example"
+    assert implementation_of(implementation_json(info)).must() == info
+    asks: {str: InputRequest} @= {}
+    asks["f"] @ .form(message: "m", schema: json.parse("{\"type\": \"object\"}").must())
+    asks["u"] @ .url(message: "m", url: "https://u.example")
+    assert input_required_of(input_required_json(InputRequired(requests: asks, state: "s"))).must() == InputRequired(requests: asks, state: "s")
+
+    match input_request_of(json.parse("{\"method\": \"sampling/createMessage\", \"params\": {}}").must())
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+    match content_of(json.parse("{\"type\": \"tool_use\"}").must())
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "canonical_resource, unauthorized, insufficient_scope: the server's URL, and the challenges"
+    assert canonical_resource("HTTPS://MCP.Example.COM/").must() == "https://mcp.example.com"
+    assert canonical_resource("https://mcp.example.com/mcp#x").must() == "https://mcp.example.com/mcp"
+    assert canonical_resource("mcp.example.com").is_err()
+    assert http.value_of(unauthorized(metadata_url: "https://m/.well-known/oauth-protected-resource", scope: "files:read").headers, name: "WWW-Authenticate").must() == "Bearer resource_metadata=\"https://m/.well-known/oauth-protected-resource\", scope=\"files:read\""
+    assert http.value_of(insufficient_scope(metadata_url: "https://m/w", scope: "a b").headers, name: "WWW-Authenticate").must() == "Bearer error=\"insufficient_scope\", resource_metadata=\"https://m/w\", scope=\"a b\""
+
+test "seal_state, open_state: read back, refused for another request, and after its end"
+    ring = [bytes.from_text("0123456789abcdef0123456789abcdef")]
+    now = time.now().must()
+    sealed = seal_state(
+        ring,
+        bound: "tools/call greet ada",
+        state: "step 1",
+        expires: time.add(now, d: time.seconds(60).must()).must()
+    )
+    assert open_state(ring, bound: "tools/call greet ada", sealed: sealed, now: now).must() == "step 1"
+    assert open_state(ring, bound: "tools/call greet bob", sealed: sealed, now: now).is_err()
+    assert open_state(
+        ring,
+        bound: "tools/call greet ada",
+        sealed: sealed,
+        now: time.add(now, d: time.seconds(120).must()).must()
+    ).is_err()
+
+## Examples
+
+# A server's name and version.
+test "implementation: a server's identity"
+    assert implementation(name: "weather", version: "1.0.0").version == "1.0.0"
+
+# The capabilities of a client that shows its user forms.
+test "form_capabilities: a client of forms"
+    assert form_capabilities().elicitation_form && !form_capabilities().elicitation_url
+
+# The capabilities of a client that never asks its user.
+test "no_capabilities: a client that asks nothing"
+    assert client_capabilities_json(no_capabilities()) == .object(members: {})
+
+# Hints of nothing, written as none.
+test "no_annotations: no hint"
+    assert annotations_json(no_annotations()) == .object(members: {})
+
+# A block of text.
+test "text_content: a line of text"
+    assert json.format(content_json(text_content("72°F"))).must() == "{\"type\":\"text\",\"text\":\"72°F\"}"
+
+# The defaults of a tool's hints.
+test "default_hints: destructive and open by default"
+    assert default_hints().destructive && default_hints().open_world && !default_hints().read_only
+
+# A tool of one string argument.
+test "new_tool: a tool and its schema"
+    t = new_tool(
+        name: "get_weather",
+        description: "The weather of a place.",
+        input_schema: json.parse("{\"type\": \"object\", \"properties\": {\"location\": {\"type\": \"string\"}}, \"required\": [\"location\"]}").must()
+    )
+    assert t.name == "get_weather" && t.output_schema == .null_value
+
+# A result of one line.
+test "text_result: a sentence for the model"
+    assert !text_result("done").is_error
+
+# A failure the model can correct.
+test "error_result: a date in the past"
+    assert error_result("the date must be in the future").is_error
+
+# A structured result and its text.
+test "structured_result: a temperature"
+    r = structured_result(json.parse("{\"temperature\": 22.5}").must()).must()
+    assert r.content == [text_content("{\"temperature\":22.5}")]
+
+# A file as a resource.
+test "new_resource: a file"
+    assert new_resource(uri: "file:///project/README.md", name: "README.md").uri == "file:///project/README.md"
+
+# A family of files.
+test "new_template: every file under a folder"
+    assert new_template(uri_template: "file:///{+path}", name: "files").uri_template == "file:///{+path}"
+
+# A template expanded.
+test "expand_template: a path"
+    assert expand_template("file:///{+path}", values: {"path": "src/main.rs"}).must() == "file:///src/main.rs"
+
+# A URI read back into the template's values.
+test "match_template: a name read from a URI"
+    assert match_template(template: "users://{id}/profile", uri: "users://42/profile").must() == {"id": "42"}
+
+# A prompt of one required argument.
+test "new_prompt: a code review"
+    p = new_prompt(
+        name: "code_review",
+        description: "Reviews code.",
+        arguments: [PromptArgument(name: "code", title: "", description: "", required: true)]
+    )
+    assert p.arguments.len() == 1
+
+# A first try gives nothing back.
+test "no_inputs: a first try"
+    assert no_inputs().responses == {} && no_inputs().state == ""
+
+# A user's answer read on the retry.
+test "elicited_of: the name the user gave"
+    responses: {str: json.Value} @= {}
+    responses["github_login"] @ json.parse("{\"action\": \"accept\", \"content\": {\"name\": \"octocat\"}}").must()
+    got = elicited_of(Inputs(responses: responses, state: ""), key: "github_login").must()
+    assert got.action == "accept" && got.content["name"].must() == .text(v: "octocat")
+
+# A client's answer, written.
+test "elicitation_response: a decline"
+    assert json.format(elicitation_response("decline", content: {}).must()).must() == "{\"action\":\"decline\"}"
+
+# A state sealed for one request.
+test "seal_state: a step of a call"
+    ring = [bytes.from_text("0123456789abcdef0123456789abcdef")]
+    sealed = seal_state(
+        ring,
+        bound: "tools/call book",
+        state: "seat 12",
+        expires: time.add(time.now().must(), d: time.seconds(300).must()).must()
+    )
+    assert sealed != "seat 12"
+
+# A state opened on the retry.
+test "open_state: a step of a call read back"
+    ring = [bytes.from_text("0123456789abcdef0123456789abcdef")]
+    now = time.now().must()
+    sealed = seal_state(ring, bound: "b", state: "s", expires: time.add(now, d: time.seconds(300).must()).must())
+    assert open_state(ring, bound: "b", sealed: sealed, now: now).must() == "s"
+
+# An icon written.
+test "icons_json: one icon"
+    assert json.format(icons_json([Icon(src: "https://x/i.png", mime_type: "", sizes: [], theme: "")])).must() == "[{\"src\":\"https://x/i.png\"}]"
+
+# Icons read.
+test "icons_of: one icon"
+    assert icons_of(json.parse("[{\"src\": \"https://x/i.png\", \"sizes\": [\"48x48\"]}]").must()).must()[0].sizes == ["48x48"]
+
+# A server's identity written.
+test "implementation_json: name and version"
+    assert json.format(implementation_json(implementation(name: "s", version: "1"))).must() == "{\"name\":\"s\",\"version\":\"1\"}"
+
+# A client's identity read.
+test "implementation_of: a clientInfo"
+    assert implementation_of(json.parse("{\"name\": \"c\", \"version\": \"2\"}").must()).must().name == "c"
+
+# Capabilities written.
+test "client_capabilities_json: forms and URLs"
+    c = ClientCapabilities(elicitation_form: true, elicitation_url: true, members: {})
+    assert json.format(client_capabilities_json(c)).must() == "{\"elicitation\":{\"form\":{},\"url\":{}}}"
+
+# Capabilities read, the empty elicitation meaning forms.
+test "client_capabilities_of: an empty elicitation"
+    assert client_capabilities_of(json.parse("{\"elicitation\": {}}").must()).elicitation_form
+
+# A server's capabilities written.
+test "server_capabilities_json: tools that change"
+    assert json.format(server_capabilities_json(capabilities_of(test_server()))).must() == "{\"tools\":{\"listChanged\":true},\"resources\":{\"subscribe\":true,\"listChanged\":true},\"prompts\":{\"listChanged\":true},\"completions\":{}}"
+
+# A server's capabilities read.
+test "server_capabilities_of: tools"
+    assert server_capabilities_of(json.parse("{\"tools\": {\"listChanged\": true}}").must()).must().tools_list_changed
+
+# Hints written.
+test "annotations_json: for the user, important"
+    a = Annotations(audience: ["user"], priority: 0.9, has_priority: true, last_modified: "")
+    assert json.format(annotations_json(a)).must() == "{\"audience\":[\"user\"],\"priority\":0.9}"
+
+# Hints read.
+test "annotations_of: a priority"
+    assert annotations_of(json.parse("{\"priority\": 0.7}").must()).must().priority == 0.7
+
+# Hints written into an object being built.
+test "put_annotations: none written for no hint"
+    members: {str: json.Value} @= {}
+    put_annotations(@members, a: no_annotations())
+    assert members == {}
+
+# An image block written.
+test "content_json: an image"
+    image: Content = .image(data: [137, 80], mime_type: "image/png", annotations: no_annotations())
+    assert json.format(content_json(image)).must() == "{\"type\":\"image\",\"data\":\"iVA=\",\"mimeType\":\"image/png\"}"
+
+# A block read.
+test "content_of: a text block"
+    assert content_of(json.parse("{\"type\": \"text\", \"text\": \"hi\"}").must()).must() == text_content("hi")
+
+# A resource's text written.
+test "contents_json: a file's text"
+    c: Contents = .text(uri: "file:///a.rs", mime_type: "text/x-rust", text: "fn main() {}")
+    assert json.format(contents_json(c)).must() == "{\"uri\":\"file:///a.rs\",\"mimeType\":\"text/x-rust\",\"text\":\"fn main() {}\"}"
+
+# A resource's bytes read.
+test "contents_of: a blob"
+    assert contents_of(json.parse("{\"uri\": \"file:///b\", \"blob\": \"AAE=\"}").must()).must() == .blob(uri: "file:///b", mime_type: "", data: [0, 1])
+
+# A tool as the list writes it.
+test "tool_json: a tool"
+    assert json.format(tool_json(new_tool(name: "t", description: "", input_schema: json.parse("{\"type\": \"object\"}").must()))).must() == "{\"name\":\"t\",\"inputSchema\":{\"type\":\"object\"}}"
+
+# A tool read from a list.
+test "tool_of: a tool read"
+    assert tool_of(json.parse("{\"name\": \"t\", \"inputSchema\": {\"type\": \"object\"}, \"annotations\": {\"readOnlyHint\": true}}").must()).must().hints.read_only
+
+# A tool's result written.
+test "tool_result_json: a failed call"
+    assert json.format(tool_result_json(error_result("no"))).must() == "{\"content\":[{\"type\":\"text\",\"text\":\"no\"}],\"isError\":true}"
+
+# A tool's result read.
+test "tool_result_of: one block"
+    assert tool_result_of(json.parse("{\"content\": [{\"type\": \"text\", \"text\": \"ok\"}]}").must()).must() == text_result("ok")
+
+# A resource written.
+test "resource_json: a file"
+    assert json.format(resource_json(new_resource(uri: "file:///a", name: "a"))).must() == "{\"uri\":\"file:///a\",\"name\":\"a\"}"
+
+# A resource read.
+test "resource_of: a file read"
+    assert resource_of(json.parse("{\"uri\": \"file:///a\", \"name\": \"a\", \"size\": 3}").must()).must().size == 3
+
+# A template written.
+test "template_json: a template"
+    assert json.format(template_json(new_template(uri_template: "x://{y}", name: "x"))).must() == "{\"uriTemplate\":\"x://{y}\",\"name\":\"x\"}"
+
+# A template read.
+test "template_of: a template read"
+    assert template_of(json.parse("{\"uriTemplate\": \"x://{y}\", \"name\": \"x\"}").must()).must().name == "x"
+
+# A prompt written.
+test "prompt_json: a prompt of one argument"
+    p = new_prompt(
+        name: "p",
+        description: "",
+        arguments: [PromptArgument(name: "a", title: "", description: "", required: true)]
+    )
+    assert json.format(prompt_json(p)).must() == "{\"name\":\"p\",\"arguments\":[{\"name\":\"a\",\"required\":true}]}"
+
+# A prompt read.
+test "prompt_of: a prompt read"
+    assert prompt_of(json.parse("{\"name\": \"p\"}").must()).must().arguments == []
+
+# An elicitation written as an input request.
+test "input_request_json: a URL to open"
+    r: InputRequest = .url(message: "Pay", url: "https://pay.example")
+    assert json.format(input_request_json(r)).must() == "{\"method\":\"elicitation/create\",\"params\":{\"mode\":\"url\",\"message\":\"Pay\",\"url\":\"https://pay.example\"}}"
+
+# An input request read, its mode absent being a form.
+test "input_request_of: a form with no mode"
+    match input_request_of(json.parse("{\"method\": \"elicitation/create\", \"params\": {\"message\": \"m\", \"requestedSchema\": {\"type\": \"object\"}}}").must()).must()
+        .form f => assert f.message == "m"
+        .url _  => assert false
+
+# An input-required result written.
+test "input_required_json: a state alone"
+    assert json.format(input_required_json(InputRequired(requests: {}, state: "s"))).must() == "{\"resultType\":\"input_required\",\"requestState\":\"s\"}"
+
+# An input-required result read.
+test "input_required_of: a state alone read"
+    assert input_required_of(json.parse("{\"resultType\": \"input_required\", \"requestState\": \"s\"}").must()).must().state == "s"
+
+# A server that offers nothing yet.
+test "new_server: a server's start"
+    assert new_server(implementation(name: "s", version: "1")).tools == []
+
+# What a server offers, read from its lists.
+test "capabilities_of: tools offered"
+    assert capabilities_of(test_server()).tools
+
+# A request's `_meta` read.
+test "meta_of: the version and the client"
+    m = meta_of(json.parse("{" + TEST_META + "}").must()).must()
+    assert m.protocol_version == "2026-07-28" && m.client.name == "t" && m.capabilities.elicitation_form
+
+# A retry's answers read.
+test "inputs_of: a retry's state"
+    assert inputs_of(json.parse("{\"requestState\": \"s\"}").must()).must().state == "s"
+
+# A tool call handed to the program.
+test "handle: a tool call"
+    match handle(test_server(), m: test_request(1.0, method: "tools/call", extra: "\"name\": \"add\", \"arguments\": {\"a\": 1, \"b\": 2},"))
+        .call_tool c => assert c.call.name == "add"
+        .answered _ | .respond _ | .cancelled _ | .ignored | .read_resource _ | .get_prompt _ | .complete _ | .listen _ => assert false
+
+# The second half of `handle`, a prompt asked for.
+test "handle_method: a prompt"
+    meta = meta_of(json.parse("{" + TEST_META + "}").must()).must()
+
+    match handle_method(test_server(), id: .number(v: 1.0), method: "prompts/get", params: json.parse("{\"name\": \"review\", \"arguments\": {\"code\": \"x\"}}").must(), meta: meta)
+        .get_prompt g => assert g.get.arguments == {"code": "x"}
+        .answered _ | .respond _ | .cancelled _ | .ignored | .call_tool _ | .read_resource _ | .complete _ | .listen _ => assert false
+
+# A tool call checked against its schema.
+test "tool_call_of: echo"
+    meta = meta_of(json.parse("{" + TEST_META + "}").must()).must()
+
+    match tool_call_of(test_server(), id: .number(v: 1.0), params: json.parse("{\"name\": \"echo\", \"arguments\": {\"text\": \"x\"}}").must(), meta: meta, inputs: no_inputs())
+        .call_tool c => assert c.call.arguments == json.parse("{\"text\": \"x\"}").must()
+        .answered _ | .respond _ | .cancelled _ | .ignored | .read_resource _ | .get_prompt _ | .complete _ | .listen _ => assert false
+
+# A tool found by name.
+test "tool_named: echo"
+    assert tool_named(test_server(), name: "echo").must().description == "echoes"
+
+# A listed resource read.
+test "resource_read_of: the readme"
+    meta = meta_of(json.parse("{" + TEST_META + "}").must()).must()
+
+    match resource_read_of(test_server(), id: .number(v: 1.0), params: json.parse("{\"uri\": \"notes://readme\"}").must(), meta: meta, inputs: no_inputs())
+        .read_resource r                                                                                            => assert r.read.template == ""
+        .answered _ | .respond _ | .cancelled _ | .ignored | .call_tool _ | .get_prompt _ | .complete _ | .listen _ => assert false
+
+# A prompt with its argument.
+test "prompt_get_of: review"
+    meta = meta_of(json.parse("{" + TEST_META + "}").must()).must()
+
+    match prompt_get_of(test_server(), id: .number(v: 1.0), params: json.parse("{\"name\": \"review\", \"arguments\": {\"code\": \"y\"}}").must(), meta: meta, inputs: no_inputs())
+        .get_prompt g => assert g.get.name == "review"
+        .answered _ | .respond _ | .cancelled _ | .ignored | .call_tool _ | .read_resource _ | .complete _ | .listen _ => assert false
+
+# A completion of a template's variable.
+test "completion_of: a name"
+    meta = meta_of(json.parse("{" + TEST_META + "}").must()).must()
+
+    match completion_of(.number(v: 1.0), params: json.parse("{\"ref\": {\"type\": \"ref/resource\", \"uri\": \"greeting://{name}\"}, \"argument\": {\"name\": \"name\", \"value\": \"A\"}}").must(), meta: meta)
+        .complete c => assert c.completion.value == "A" && c.completion.ref == "greeting://{name}"
+        .answered _ | .respond _ | .cancelled _ | .ignored | .call_tool _ | .read_resource _ | .get_prompt _ | .listen _ => assert false
+
+# A subscription's filter read.
+test "filter_of: tools"
+    assert filter_of(json.parse("{\"toolsListChanged\": true}").must()).must().tools
+
+# A filter written.
+test "filter_json: one resource"
+    assert json.format(filter_json(Filter(tools: false, prompts: false, resources: false, resource_uris: ["a://b"]))).must() == "{\"resourceSubscriptions\":[\"a://b\"]}"
+
+# One request read from a server's input.
+test "read_request: discover read from a pipe"
+    pipe = io.pipe().must()
+    jsonrpc.write_message(
+        pipe.writer,
+        m: test_request(1.0, method: "server/discover", extra: ""),
+        framing: .lines
+    ).must()
+    reader @= io.reader(pipe.reader)
+
+    match read_request(@reader, s: test_server()).must()
+        .answered _ => _ = 0
+        .respond _ | .cancelled _ | .ignored | .call_tool _ | .read_resource _ | .get_prompt _ | .complete _ | .listen _ => assert false
+
+    writer @= pipe.writer
+    io.close(@writer).must()
+    io.close(@reader.stream).must()
+
+# A tool's result answered.
+test "answer_tool: a sum"
+    meta = meta_of(json.parse("{" + TEST_META + "}").must()).must()
+    call = ToolCall(id: .number(v: 1.0), name: "echo", arguments: .null_value, meta: meta, inputs: no_inputs())
+    assert strings.contains(
+        s: jsonrpc.format(answer_tool(test_server(), call: call, result: text_result("x"))).must(),
+        substr: "\"content\":[{\"type\":\"text\",\"text\":\"x\"}]"
+    )
+
+# A resource's text answered.
+test "answer_resource: the readme"
+    meta = meta_of(json.parse("{" + TEST_META + "}").must()).must()
+    read = ResourceRead(
+        id: .number(v: 1.0),
+        uri: "notes://readme",
+        template: "",
+        values: {},
+        meta: meta,
+        inputs: no_inputs()
+    )
+    assert strings.contains(
+        s: jsonrpc.format(answer_resource(test_server(), read: read, contents: [.text(uri: "notes://readme", mime_type: "", text: "hi")])).must(),
+        substr: "\"contents\":[{\"uri\":\"notes://readme\",\"text\":\"hi\"}]"
+    )
+
+# A prompt's messages answered.
+test "answer_prompt: one message"
+    meta = meta_of(json.parse("{" + TEST_META + "}").must()).must()
+    get = PromptGet(id: .number(v: 1.0), name: "review", arguments: {}, meta: meta, inputs: no_inputs())
+    answer = answer_prompt(
+        test_server(),
+        get: get,
+        result: PromptResult(description: "", messages: [PromptMessage(role: "user", content: text_content("x"))])
+    )
+    assert strings.contains(s: jsonrpc.format(answer).must(), substr: "\"messages\":[{\"role\":\"user\"")
+
+# Completions answered.
+test "answer_completion: two names"
+    meta = meta_of(json.parse("{" + TEST_META + "}").must()).must()
+    asked = Completion(
+        id: .number(v: 1.0),
+        kind: "ref/prompt",
+        ref: "review",
+        argument: "code",
+        value: "",
+        context: {},
+        meta: meta
+    )
+    assert strings.contains(
+        s: jsonrpc.format(answer_completion(test_server(), completion: asked, values: ["a", "b"])).must(),
+        substr: "\"completion\":{\"values\":[\"a\",\"b\"],\"total\":2,\"hasMore\":false}"
+    )
+
+# A form asked of the user.
+test "answer_input_required: a form"
+    meta = meta_of(json.parse("{" + TEST_META + "}").must()).must()
+    ask: {str: InputRequest} @= {}
+    ask["who"] @ .form(message: "Who?", schema: json.parse("{\"type\": \"object\"}").must())
+    assert strings.contains(
+        s: jsonrpc.format(answer_input_required(test_server(), id: .number(v: 1.0), meta: meta, input: InputRequired(requests: ask, state: ""))).must(),
+        substr: "\"resultType\":\"input_required\""
+    )
+
+# Progress told to a request that asked for it.
+test "progress_of: halfway"
+    meta = meta_of(
+        json.parse("{\"_meta\": {\"io.modelcontextprotocol/protocolVersion\": \"2026-07-28\", \"io.modelcontextprotocol/clientCapabilities\": {}, \"progressToken\": \"abc123\"}}").must()
+    ).must()
+    assert jsonrpc.format(progress_of(meta, progress: 50.0, total: 100.0, message: "Reticulating splines...").must()).must() == "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/progress\",\"params\":{\"progressToken\":\"abc123\",\"progress\":50,\"total\":100,\"message\":\"Reticulating splines...\"}}"
+
+# What a server agrees to tell.
+test "honored_of: prompts not told by a server that has none"
+    s @= new_server(implementation(name: "s", version: "1"))
+    s.list_changed @ true
+    assert !honored_of(s, asked: Filter(tools: false, prompts: true, resources: false, resource_uris: [])).prompts
+
+# A subscription acknowledged.
+test "acknowledge: tools' changes agreed"
+    meta = meta_of(json.parse("{" + TEST_META + "}").must()).must()
+    listening = Listen(
+        id: .number(v: 1.0),
+        filter: Filter(tools: true, prompts: false, resources: false, resource_uris: []),
+        meta: meta
+    )
+    assert strings.contains(
+        s: jsonrpc.format(acknowledge(test_server(), listen: listening)).must(),
+        substr: "\"notifications\":{\"toolsListChanged\":true}"
+    )
+
+# The tools' list changed, told to a subscription.
+test "changed_of: tools"
+    meta = meta_of(json.parse("{" + TEST_META + "}").must()).must()
+    listening = Listen(
+        id: .number(v: 1.0),
+        filter: Filter(tools: true, prompts: false, resources: false, resource_uris: []),
+        meta: meta
+    )
+    assert jsonrpc.format(changed_of(test_server(), listen: listening, list: "tools").must()).must() == "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/tools/list_changed\",\"params\":{\"_meta\":{\"io.modelcontextprotocol/subscriptionId\":1}}}"
+
+# A resource's change told.
+test "updated_of: the readme"
+    meta = meta_of(json.parse("{" + TEST_META + "}").must()).must()
+    listening = Listen(
+        id: .text(v: "s"),
+        filter: Filter(tools: false, prompts: false, resources: false, resource_uris: ["notes://readme"]),
+        meta: meta
+    )
+    assert strings.contains(
+        s: jsonrpc.format(updated_of(test_server(), listen: listening, uri: "notes://readme").must()).must(),
+        substr: "\"uri\":\"notes://readme\""
+    )
+
+# A subscription ended gracefully.
+test "end_listen: the end of a subscription"
+    meta = meta_of(json.parse("{" + TEST_META + "}").must()).must()
+    listening = Listen(
+        id: .number(v: 1.0),
+        filter: Filter(tools: true, prompts: false, resources: false, resource_uris: []),
+        meta: meta
+    )
+    assert strings.contains(
+        s: jsonrpc.format(end_listen(test_server(), listen: listening)).must(),
+        substr: "\"io.modelcontextprotocol/subscriptionId\":1"
+    )
+
+# A GET refused, as the revision asks.
+test "read_http: a GET refused"
+    match read_http(test_server(), r: http.request(method: "GET", target: "/mcp").must())
+        .respond x => assert x.response.status == 405
+        .answered _ | .cancelled _ | .ignored | .call_tool _ | .read_resource _ | .get_prompt _ | .complete _ | .listen _ => assert false
+
+# The fields of a list checked against its body.
+test "check_fields: a list's fields"
+    r @= http.request(method: http.METHOD_POST, target: "/mcp").must()
+    r.headers @ http.with_header(r.headers, name: "MCP-Protocol-Version", value: PROTOCOL_VERSION)
+    r.headers @ http.with_header(r.headers, name: "Mcp-Method", value: "tools/list")
+    check_fields(test_server(), r: r, method: "tools/list", params: json.parse("{" + TEST_META + "}").must()).must()
+
+# An answer as an HTTP response.
+test "respond_http: a method not found is 404"
+    assert respond_http(jsonrpc.error_of(.number(v: 1.0), code: jsonrpc.METHOD_NOT_FOUND, message: "Method not found")).status == 404
+
+# An event stream begun on a connection.
+test "start_stream: the head of a stream"
+    two = net.pair(deadline_ms: 10_000).must()
+    start_stream(two.first.stream).must()
+    reader @= io.reader(two.second.stream)
+    assert strings.contains(s: io.read_line(@reader).must(), substr: "200")
+    fixture.shut(two)
+
+# A notification written as an event.
+test "write_event: a notification"
+    two = net.pair(deadline_ms: 10_000).must()
+    write_event(two.first.stream, m: .notification(method: "notifications/progress", params: .null_value)).must()
+    reader @= io.reader(two.second.stream)
+    assert io.read_line(@reader).must() == "data: {\"jsonrpc\":\"2.0\",\"method\":\"notifications/progress\"}"
+    fixture.shut(two)
+
+# A protected resource's metadata served.
+test "resource_metadata_response: one authorization server"
+    m = oauth2.ResourceMetadata(
+        resource: "https://mcp.example.com",
+        authorization_servers: ["https://auth.example.com"],
+        jwks_uri: "",
+        scopes_supported: [],
+        bearer_methods_supported: [],
+        resource_name: "",
+        members: {}
+    )
+    assert resource_metadata_response(m).must().status == 200
+
+# The 401 of a request without a token.
+test "unauthorized: the challenge"
+    assert unauthorized(metadata_url: "https://m/.well-known/oauth-protected-resource", scope: "").status == 401
+
+# The 403 of a token whose scopes do not reach.
+test "insufficient_scope: the challenge"
+    assert insufficient_scope(metadata_url: "https://m/w", scope: "files:write").status == 403
+
+# A server's canonical URL.
+test "canonical_resource: lower case, no fragment"
+    assert canonical_resource("https://MCP.example.com/mcp").must() == "https://mcp.example.com/mcp"
+
+# Discovery that finds nothing to authorize with, a server that is not there.
+test "discover_authorization: a server that does not answer"
+    denied = unauthorized(metadata_url: "http://127.0.0.1:1/.well-known/oauth-protected-resource", scope: "")
+    assert discover_authorization(http.default_client(), endpoint: "http://127.0.0.1:1/mcp", denied: denied).is_err()
+
+# An `oauth2` client for the server's resource.
+test "config_for: the resource set"
+    server = oauth2.parse_metadata(
+        text: "{\"issuer\": \"https://auth.example.com\", \"authorization_endpoint\": \"https://auth.example.com/authorize\", \"token_endpoint\": \"https://auth.example.com/token\"}",
+        issuer: "https://auth.example.com"
+    ).must()
+    protected = oauth2.ResourceMetadata(
+        resource: "https://mcp.example.com",
+        authorization_servers: ["https://auth.example.com"],
+        jwks_uri: "",
+        scopes_supported: [],
+        bearer_methods_supported: [],
+        resource_name: "",
+        members: {}
+    )
+    c = config_for(
+        Authorization(resource: "https://mcp.example.com", protected: protected, server: server, scopes: ["files:read"]),
+        client_id: "https://app.example.com/client.json"
+    )
+    assert c.resources == ["https://mcp.example.com"] && c.scopes == ["files:read"]
+
+# A client over a connection.
+test "stream_client: a client over one end"
+    two = net.pair(deadline_ms: 10_000).must()
+    c = stream_client(
+        reading: two.first.stream,
+        writing: two.first.stream,
+        info: implementation(name: "c", version: "1")
+    )
+    assert c.tools == [] && !c.progress
+    fixture.shut(two)
+
+# A client over HTTP.
+test "http_client: a remote server"
+    c = http_client(
+        "https://mcp.example.com/mcp",
+        transport: http.default_client(),
+        info: implementation(name: "c", version: "1")
+    )
+    assert c.next_id == 1
+
+# A token every request carries.
+test "with_token: a bearer token"
+    c = with_token(
+        http_client("https://mcp.example.com/mcp", transport: http.default_client(), info: implementation(name: "c", version: "1")),
+        token: "t"
+    )
+
+    match c.link
+        .remote r => assert r.token == "t"
+        .stream _ => assert false
+
+# A request's parameters with its `_meta`.
+test "request_params: the version in `_meta`"
+    c = http_client("https://m/mcp", transport: http.default_client(), info: implementation(name: "c", version: "1"))
+    assert meta_of(request_params(c, params: {}, id: 1)).must().protocol_version == PROTOCOL_VERSION
+
+# A request of any method, its result.
+test "send_request: discover by hand"
+    two = fixture.peer(
+        ["{\"resultType\": \"complete\", \"supportedVersions\": [\"2026-07-28\"], \"capabilities\": {}}"]
+    )
+    c @= stream_client(
+        reading: two.first.stream,
+        writing: two.first.stream,
+        info: implementation(name: "c", version: "1")
+    )
+    assert build.texts_at(send_request(@c, method: "server/discover", params: {}).must(), key: "supportedVersions").must() == [PROTOCOL_VERSION]
+    fixture.shut(two)
+
+# A request over HTTP to a port nothing listens on.
+test "send_http: nothing listens"
+    c @= http_client(
+        "http://127.0.0.1:1/mcp",
+        transport: http.default_client(),
+        info: implementation(name: "c", version: "1")
+    )
+    assert send_http(
+        @c,
+        link_endpoint: "http://127.0.0.1:1/mcp",
+        transport: http.default_client(),
+        token: "",
+        method: "server/discover",
+        body: .null_value,
+        id: 1
+    ).is_err()
+
+# What a server says of itself.
+test "discover: a server's versions"
+    two = fixture.peer(
+        ["{\"resultType\": \"complete\", \"supportedVersions\": [\"2026-07-28\"], \"capabilities\": {\"tools\": {}}, \"_meta\": {\"io.modelcontextprotocol/serverInfo\": {\"name\": \"s\", \"version\": \"1\"}}}"]
+    )
+    c @= stream_client(
+        reading: two.first.stream,
+        writing: two.first.stream,
+        info: implementation(name: "c", version: "1")
+    )
+    found = discover(@c).must()
+    assert found.server.name == "s" && found.capabilities.tools
+    fixture.shut(two)
+
+# Every page of a list.
+test "every_page: two pages"
+    two = fixture.peer(["{\"tools\": [1], \"nextCursor\": \"\"}", "{\"tools\": [2]}"])
+    c @= stream_client(
+        reading: two.first.stream,
+        writing: two.first.stream,
+        info: implementation(name: "c", version: "1")
+    )
+    assert every_page(@c, method: "tools/list", key: "tools").must() == [.number(v: 1.0), .number(v: 2.0)]
+    fixture.shut(two)
+
+# The tools of a server.
+test "list_tools: one tool"
+    two = fixture.peer(["{\"tools\": [{\"name\": \"t\", \"inputSchema\": {\"type\": \"object\"}}]}"])
+    c @= stream_client(
+        reading: two.first.stream,
+        writing: two.first.stream,
+        info: implementation(name: "c", version: "1")
+    )
+    assert list_tools(@c).must()[0].name == "t" && c.tools.len() == 1
+    fixture.shut(two)
+
+# A tool called.
+test "call_tool: an answer of text"
+    two = fixture.peer(["{\"resultType\": \"complete\", \"content\": [{\"type\": \"text\", \"text\": \"72°F\"}]}"])
+    c @= stream_client(
+        reading: two.first.stream,
+        writing: two.first.stream,
+        info: implementation(name: "c", version: "1")
+    )
+
+    match call_tool(@c, name: "get_weather", arguments: json.parse("{\"location\": \"New York\"}").must(), inputs: no_inputs()).must()
+        .done d => assert d.result == text_result("72°F")
+        .asks _ => assert false
+
+    fixture.shut(two)
+
+# A retry's answers written in its parameters.
+test "put_inputs: a state given back"
+    params: {str: json.Value} @= {}
+    put_inputs(@params, inputs: Inputs(responses: {}, state: "s"))
+    assert params == {"requestState": .text(v: "s")}
+
+# The resources of a server.
+test "list_resources: one resource"
+    two = fixture.peer(["{\"resources\": [{\"uri\": \"file:///a\", \"name\": \"a\"}]}"])
+    c @= stream_client(
+        reading: two.first.stream,
+        writing: two.first.stream,
+        info: implementation(name: "c", version: "1")
+    )
+    assert list_resources(@c).must()[0].uri == "file:///a"
+    fixture.shut(two)
+
+# The templates of a server.
+test "list_templates: one template"
+    two = fixture.peer(["{\"resourceTemplates\": [{\"uriTemplate\": \"x://{y}\", \"name\": \"x\"}]}"])
+    c @= stream_client(
+        reading: two.first.stream,
+        writing: two.first.stream,
+        info: implementation(name: "c", version: "1")
+    )
+    assert list_templates(@c).must()[0].name == "x"
+    fixture.shut(two)
+
+# A resource read.
+test "read_resource: a text"
+    two = fixture.peer(["{\"contents\": [{\"uri\": \"file:///a\", \"text\": \"hi\"}]}"])
+    c @= stream_client(
+        reading: two.first.stream,
+        writing: two.first.stream,
+        info: implementation(name: "c", version: "1")
+    )
+
+    match read_resource(@c, uri: "file:///a", inputs: no_inputs()).must()
+        .done d => assert d.contents == [.text(uri: "file:///a", mime_type: "", text: "hi")]
+        .asks _ => assert false
+
+    fixture.shut(two)
+
+# The prompts of a server.
+test "list_prompts: one prompt"
+    two = fixture.peer(["{\"prompts\": [{\"name\": \"p\"}]}"])
+    c @= stream_client(
+        reading: two.first.stream,
+        writing: two.first.stream,
+        info: implementation(name: "c", version: "1")
+    )
+    assert list_prompts(@c).must()[0].name == "p"
+    fixture.shut(two)
+
+# A prompt asked for.
+test "get_prompt: one message"
+    two = fixture.peer(["{\"messages\": [{\"role\": \"user\", \"content\": {\"type\": \"text\", \"text\": \"hi\"}}]}"])
+    c @= stream_client(
+        reading: two.first.stream,
+        writing: two.first.stream,
+        info: implementation(name: "c", version: "1")
+    )
+
+    match get_prompt(@c, name: "p", arguments: {}, inputs: no_inputs()).must()
+        .done d => assert d.result.messages[0].role == "user"
+        .asks _ => assert false
+
+    fixture.shut(two)
+
+# Completions asked for.
+test "complete: two values"
+    two = fixture.peer(["{\"completion\": {\"values\": [\"python\", \"pytorch\"], \"total\": 10, \"hasMore\": true}}"])
+    c @= stream_client(
+        reading: two.first.stream,
+        writing: two.first.stream,
+        info: implementation(name: "c", version: "1")
+    )
+    got = complete(@c, kind: "ref/prompt", ref: "code_review", argument: "language", value: "py", context: {}).must()
+    assert got.total == 10 && got.has_more
+    fixture.shut(two)
+
+# A subscription opened and acknowledged.
+test "subscribe: tools' changes"
+    two = net.pair(deadline_ms: 10_000).must()
+    jsonrpc.write_message(
+        two.second.stream,
+        m: .notification(method: "notifications/subscriptions/acknowledged", params: json.parse("{\"_meta\": {\"io.modelcontextprotocol/subscriptionId\": 1}, \"notifications\": {\"toolsListChanged\": true}}").must()),
+        framing: .lines
+    ).must()
+    c @= stream_client(
+        reading: two.first.stream,
+        writing: two.first.stream,
+        info: implementation(name: "c", version: "1")
+    )
+    assert subscribe(@c, asked: Filter(tools: true, prompts: false, resources: false, resource_uris: [])).must().tools
+    fixture.shut(two)
+
+# An acknowledgment read from a stream.
+test "acknowledged: the filter agreed"
+    two = net.pair(deadline_ms: 10_000).must()
+    jsonrpc.write_message(
+        two.second.stream,
+        m: .notification(method: "notifications/subscriptions/acknowledged", params: json.parse("{\"_meta\": {\"io.modelcontextprotocol/subscriptionId\": \"s\"}, \"notifications\": {}}").must()),
+        framing: .lines
+    ).must()
+    rpc @= jsonrpc.new_client(
+        reading: two.first.stream,
+        writing: two.first.stream,
+        framing: .lines,
+        limits: jsonrpc.default_limits()
+    )
+    assert !acknowledged(@rpc, id: .text(v: "s")).must().tools
+    fixture.shut(two)
+
+# A notification read.
+test "next_notification: progress"
+    two = net.pair(deadline_ms: 10_000).must()
+    jsonrpc.write_message(
+        two.second.stream,
+        m: .notification(method: "notifications/progress", params: json.parse("{\"progressToken\": \"p\", \"progress\": 1}").must()),
+        framing: .lines
+    ).must()
+    c @= stream_client(
+        reading: two.first.stream,
+        writing: two.first.stream,
+        info: implementation(name: "c", version: "1")
+    )
+    assert next_notification(@c).must().method == "notifications/progress"
+    fixture.shut(two)
+
+# A request cancelled.
+test "cancel: a request no longer wanted"
+    two = net.pair(deadline_ms: 10_000).must()
+    c = stream_client(
+        reading: two.first.stream,
+        writing: two.first.stream,
+        info: implementation(name: "c", version: "1")
+    )
+    cancel(c, request_id: .text(v: "123"), reason: "User requested cancellation").must()
+    reader @= io.reader(two.second.stream)
+    assert io.read_line(@reader).must() == "{\"jsonrpc\":\"2.0\",\"method\":\"notifications/cancelled\",\"params\":{\"requestId\":\"123\",\"reason\":\"User requested cancellation\"}}"
+    fixture.shut(two)

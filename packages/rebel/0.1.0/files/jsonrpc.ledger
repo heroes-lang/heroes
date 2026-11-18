@@ -1,0 +1,184 @@
+# The ledger of `jsonrpc`: what the JSON-RPC 2.0 libraries of Go and Python
+# let a program do, one block per capability, and what Rebel answers. None of
+# the three standard libraries speaks JSON-RPC 2.0 (Go's `net/rpc/jsonrpc` is
+# version 1.0, refused below), so the yardstick is the census the author
+# chose on 2026-11-17. Measured on this machine on 2026-11-17: Go's
+# `github.com/sourcegraph/jsonrpc2` v0.2.3 and the official MCP Go SDK's
+# `github.com/modelcontextprotocol/go-sdk/jsonrpc` v1.8.0 (`go doc -all`, the
+# modules fetched into the scratch folder's module cache), and Python's
+# `jsonrpcserver` 5.2.0 (`dir()`, installed into the scratch folder with
+# pip). Rust's standard library has none, and no Rust crate (`jsonrpsee`,
+# `jsonrpc-core`) is on this machine, so the `rust` lines read `-`.
+#
+# Behaviour was asked of `jsonrpcserver` and of the Go SDK's decoder on the
+# specification's examples and on the edges (a null id, a fractional id, an
+# id past 2^53, an unknown member, parameters that are a string); where they
+# disagree, the note says whose answer was taken and why.
+
+capability message/values  a request, a notification and an answer as values: method, parameters, result, error
+  heroes  jsonrpc.Message, jsonrpc.Reply, jsonrpc.Error
+  go      jsonrpc2.Request, jsonrpc2.Response, jsonrpc2.Request.Notif, jsonrpc2.JSONRPC2, go-sdk jsonrpc.Message, jsonrpc.Request, jsonrpc.Response
+  rust    -
+  python  jsonrpcserver.request.Request, jsonrpcserver.response.Response, SuccessResponse, ErrorResponse
+  note    One variant of three cases, the answer's two outcomes a variant of their own, so a `match` names every case
+
+capability message/ids  ids of every kind the specification allows: a string, a number, null, and none for a notification
+  heroes  jsonrpc.Id, jsonrpc.format_id, jsonrpc.MAX_EXACT_ID
+  go      jsonrpc2.ID, jsonrpc2.ID.Num, jsonrpc2.ID.Str, jsonrpc2.ID.IsString, go-sdk jsonrpc.ID, jsonrpc.MakeID
+  rust    -
+  python  -
+  note    `1.5` is kept and echoed, as Python echoes it; the Go SDK truncates it to 1, which answers another id. A `null` id is a request, as Python answers it; the Go SDK reads it as a notification and answers nothing. An id past 2^53 is refused `INVALID_REQUEST`: the Go SDK rounds it and answers another id, which a Python client would not match
+
+capability message/parse  a text read as one message or a batch, each element that is no message told why
+  heroes  jsonrpc.parse, jsonrpc.message_of, jsonrpc.Received
+  go      go-sdk jsonrpc.DecodeMessage, jsonrpc2.Request.UnmarshalJSON, jsonrpc2.Response.UnmarshalJSON
+  rust    -
+  python  jsonrpcserver.main.default_deserializer, default_validator, validator_for, schema, jsonrpcserver.request
+  note    A member the specification does not name is passed over, as Go's decoders pass it over; Python refuses it, and the specification lists the members without refusing others. Parameters that are a string are refused, as Python refuses them and the specification asks; the Go SDK keeps them
+
+capability message/format  a message and a batch written as text, members in the specification's order
+  heroes  jsonrpc.format, jsonrpc.format_batch, jsonrpc.to_value
+  go      go-sdk jsonrpc.EncodeMessage, jsonrpc2.Request.MarshalJSON, jsonrpc2.Response.MarshalJSON
+  rust    -
+  python  jsonrpcserver.response.to_dict, to_serializable, to_serializable_one, serialize_success, serialize_error, to_success_dict, to_error_dict, jsonrpcserver.main.default_serializer, serialize, serialize_one, dispatch_to_serializable
+
+capability errors/codes  the specification's error codes and the range left to servers
+  heroes  jsonrpc.PARSE_ERROR, jsonrpc.INVALID_REQUEST, jsonrpc.METHOD_NOT_FOUND, jsonrpc.INVALID_PARAMS, jsonrpc.INTERNAL_ERROR, jsonrpc.SERVER_ERROR_FIRST, jsonrpc.SERVER_ERROR_LAST
+  go      jsonrpc2.CodeParseError, CodeInvalidRequest, CodeMethodNotFound, CodeInvalidParams, CodeInternalError, go-sdk jsonrpc.CodeParseError and the same four
+  rust    -
+  python  jsonrpcserver.codes, jsonrpcserver.response.ERROR_PARSE_ERROR, ERROR_INVALID_REQUEST, ERROR_METHOD_NOT_FOUND, ERROR_SERVER_ERROR, jsonrpcserver.result.ERROR_INTERNAL_ERROR, ERROR_INVALID_PARAMS
+
+capability errors/answers  the answers a server writes: a result, an error of its own, a parse error, an invalid request, a method not found, invalid parameters, an internal error that tells the client nothing of the server
+  heroes  jsonrpc.result_of, jsonrpc.error_of, jsonrpc.answer_of, jsonrpc.refusal_of, jsonrpc.parse_error_of, jsonrpc.invalid_request_of
+  go      jsonrpc2.Conn.Reply, jsonrpc2.Conn.ReplyWithError, jsonrpc2.Conn.SendResponse, jsonrpc2.Error, jsonrpc2.Error.SetError, jsonrpc2.Error.Error, go-sdk jsonrpc.Error
+  rust    -
+  python  jsonrpcserver.Success, jsonrpcserver.Error, jsonrpcserver.InvalidParams, jsonrpcserver.Result, jsonrpcserver.result.SuccessResult, ErrorResult, InvalidParamsResult, InternalErrorResult, MethodNotFoundResult, jsonrpcserver.response.ParseErrorResponse, InvalidRequestResponse, MethodNotFoundResponse, ServerErrorResponse, jsonrpcserver.JsonRpcError, jsonrpcserver.exceptions
+  note    A handler's failure other than `invalid` is answered -32603 with no data, as Python answers an exception, so no message of the server's inside reaches a client
+
+capability errors/read  an answer's error read by the caller, its code and message kept
+  heroes  jsonrpc.value_of
+  go      jsonrpc2.Error, jsonrpc2.Error.Code, Message, Data, go-sdk jsonrpc.Error
+  rust    -
+  python  -
+
+capability server/methods  the methods a server takes, described once: their names and their parameters' names
+  heroes  jsonrpc.Methods, jsonrpc.Method, jsonrpc.new_methods, jsonrpc.add_method
+  go      jsonrpc2.Handler, jsonrpc2.HandlerWithError, jsonrpc2.HandlerWithErrorConfigurer
+  rust    -
+  python  jsonrpcserver.method, jsonrpcserver.methods, jsonrpcserver.main.Methods, global_methods
+  note    A method beginning `rpc.` is refused, the specification keeping those names; Python and Go take it
+
+capability server/find  the method a request names found, its parameters bound by position or by name, refused as Python refuses a call that does not fit
+  heroes  jsonrpc.method_of, jsonrpc.param_of, jsonrpc.Found
+  go      -
+  rust    -
+  python  jsonrpcserver.dispatcher.extract_args, extract_kwargs, validate_args
+  note    The language has no closure, so the program calls its own handler with its own state, as `web` routes; Go's Handler and Python's decorated function hold the state themselves
+
+capability server/dispatch  a whole text answered by a server with no state: each request found and handled, each notification handled and unanswered, a batch's answers in one array, nothing written for notifications alone
+  heroes  jsonrpc.dispatch
+  go      jsonrpc2.NewConn with a Handler, jsonrpc2.Handler.Handle
+  rust    -
+  python  jsonrpcserver.dispatch, dispatch_to_response, dispatch_to_serializable, jsonrpcserver.main.dispatch_to_json, dispatch_to_response_pure, jsonrpcserver.dispatcher
+  note    The specification's § 7 examples are its tests, each answer compared
+
+capability batch  a batch received and answered, and sent and its answers matched by id
+  heroes  jsonrpc.Received, jsonrpc.write_answers, jsonrpc.call_batch, jsonrpc.Call
+  go      -
+  rust    -
+  python  jsonrpcserver.dispatch with a list
+  note    The empty array is one `INVALID_REQUEST` and no batch, as the specification answers it; the Go SDK has no batch, and sourcegraph's `jsonrpc2` reads none
+
+capability limits  a message, a batch and a nesting bounded
+  heroes  jsonrpc.Limits, jsonrpc.default_limits
+  go      -
+  rust    -
+  python  jsonrpcserver.main.check_max_batch_size, dispatch's max_batch_size
+  note    Python sets no batch limit by default; 1,000 is set here so that a peer cannot make a server answer without end
+
+capability framing/lines  messages one a line over a stream, as MCP's standard streams and JSON Lines carry them
+  heroes  jsonrpc.Framing, jsonrpc.read_text, jsonrpc.write_text
+  go      jsonrpc2.PlainObjectCodec, jsonrpc2.NewPlainObjectStream
+  rust    -
+  python  -
+  note    A blank line is passed over and a carriage return before the line feed taken off; a line is read only up to the limit, so a peer that writes without end fills no memory
+
+capability framing/content-length  each message after a `Content-Length` header, the Language Server Protocol's base protocol
+  heroes  jsonrpc.Framing, jsonrpc.read_text, jsonrpc.write_text
+  go      jsonrpc2.VSCodeObjectCodec, jsonrpc2.NewBufferedStream, jsonrpc2.ObjectCodec, jsonrpc2.ObjectStream
+  rust    -
+  python  -
+  note    Field names are read in any case; a `Content-Type` naming a charset other than UTF-8 (written `utf-8` or `utf8`) is refused `unsupported`
+
+capability stream/messages  a message written to a stream, a server's answers written, the next message read
+  heroes  jsonrpc.write_message, jsonrpc.write_answers, jsonrpc.read_message
+  go      jsonrpc2.ObjectStream.WriteObject, ReadObject, jsonrpc2.Conn.SendResponse
+  rust    -
+  python  -
+
+capability client/call  a call written and its answer waited for, the ids chosen by the client
+  heroes  jsonrpc.Client, jsonrpc.new_client, jsonrpc.call
+  go      jsonrpc2.Conn.Call, jsonrpc2.Conn.DispatchCall, jsonrpc2.Waiter, jsonrpc2.Waiter.Wait, jsonrpc2.PickID, jsonrpc2.StringID, jsonrpc2.CallOption
+  rust    -
+  python  -
+  note    Ids are numbers counted from 1; a call with an id of the program's own is written with `write_message` and its answer read by `next_message`
+
+capability client/notify  a notification written, nothing waited for
+  heroes  jsonrpc.notify, jsonrpc.check_params
+  go      jsonrpc2.Conn.Notify
+  rust    -
+  python  -
+
+capability client/both-ways  the peer's own requests and notifications kept while a call waits, read and answered, as a Language Server Protocol client answers its server
+  heroes  jsonrpc.next_message, jsonrpc.send
+  go      jsonrpc2.Conn with a Handler on the client's side, jsonrpc2.AsyncHandler
+  rust    -
+  python  -
+
+capability client/close  the connection ended, and told when its other end goes
+  heroes  io.close
+  go      jsonrpc2.Conn.Close, jsonrpc2.Conn.DisconnectNotify, jsonrpc2.ErrClosed
+  rust    -
+  python  -
+  note    The stream is `io`'s; a call whose stream ends fails `closed`
+
+capability http/server  a JSON-RPC body read from an HTTP request and its answers written as the response, a method other than POST and a type other than JSON refused
+  heroes  jsonrpc.read_http, jsonrpc.respond_http, jsonrpc.refusal_http
+  go      -
+  rust    -
+  python  jsonrpcserver.serve, jsonrpcserver.server
+  note    A body typed `text/plain`, which a browser posts across origins without asking, is refused, so a page cannot call a server on the user's machine
+
+capability http/client  calls sent over HTTP and their answers read
+  heroes  jsonrpc.exchange_http, jsonrpc.call_http
+  go      -
+  rust    -
+  python  -
+
+capability rpc/version-1  JSON-RPC 1.0
+  heroes  refused: version 1.0 has no named parameters, no notifications by absence of an id and no batch; every peer of today writes 2.0, and a message whose `jsonrpc` is not "2.0" is refused as the 2.0 specification asks
+  go      net/rpc/jsonrpc
+  rust    -
+  python  -
+
+capability rpc/extra-members  members outside the specification written on a request (sourcegraph's `meta`, any extra field)
+  heroes  refused: no peer reads them as JSON-RPC; a program that needs them writes the value with `to_value` and adds the member itself
+  go      jsonrpc2.ExtraField, jsonrpc2.Meta, jsonrpc2.Request.Meta, jsonrpc2.Request.ExtraFields, jsonrpc2.RequestField
+  rust    -
+  python  -
+
+capability framing/varint  each message after its length as a varint
+  heroes  refused: no protocol of JSON-RPC's world frames so, and `protobuf` writes varints for a program that needs them
+  go      jsonrpc2.VarintObjectCodec
+  rust    -
+  python  -
+
+dropped  hooks and logging around each message, which a program's own loop writes where it reads and writes
+  go      jsonrpc2.LogMessages, jsonrpc2.OnRecv, jsonrpc2.OnSend, jsonrpc2.SetLogger, jsonrpc2.Logger
+  rust    -
+  python  jsonrpcserver.main.logger, logging, warnings, jsonrpcserver.result.warn_if_invalid_error
+
+dropped  contexts, asynchronous variants and the plumbing of each language's types
+  go      context.Context in every call, jsonrpc2.AsyncHandler, jsonrpc2.Error.MarshalJSON
+  rust    -
+  python  async_dispatch, async_dispatch_to_response, async_dispatch_to_serializable, async_dispatcher, async_main, NOCONTEXT, context, sentinels, NODATA, utils, identity, klass, Either, Left, Right, Deserialized, MethodsArgument, Optional, Union, Any, Dict, List, Callable, NamedTuple, Type, cast, pkgutil, math, json, oslash, exception_data, debug, post_process

@@ -1,0 +1,242 @@
+# UAX #14's rules LB11 to LB31, the ones read after LB9 has attached the
+# combining marks to their base: whether a line may break between two bases,
+# given what stands around them. `lines.hero` reads the text and fills what
+# these rules ask.
+
+use unicode/segment/internal/tables
+
+# What stands before the end of a text's start: the class of a base that
+# does not exist because the text begins there.
+constant START: i64
+    -1
+
+# The class of the position after the last base, the end of the text.
+constant END: i64
+    -2
+
+# What surrounds a place between two bases, each a Line_Break class resolved
+# by LB1 and LB10 (an index into `tables.LINE_NAMES`), `START` or `END`.
+record Around
+    # The base before the place.
+    left: i64
+    # Whether `left` is East Asian: full-width, wide or half-width.
+    left_east_asian: bool
+    # Whether `left` is a quotation mark that ends a quote, general category
+    # Pf.
+    left_final: bool
+    # The code point of `left`.
+    left_point: i64
+    # Whether `left` is an Extended_Pictographic code point no character has
+    # yet.
+    left_unassigned_pictograph: bool
+    # The base before `left`, `START` where there is none.
+    before_left: i64
+    # Whether `before_left` is East Asian.
+    before_left_east_asian: bool
+    # The code point of `before_left`, -1 where there is none.
+    before_left_point: i64
+    # The last base before the place that is no space, which `left` is unless
+    # `left` is a space.
+    lead: i64
+    # The base before `lead`, `START` where there is none.
+    before_lead: i64
+    # Whether `lead` is a quotation mark that opens a quote, general category
+    # Pi.
+    lead_initial: bool
+    # Whether the bases that end before the place are a number, `NU (SY | IS)*`
+    # with one `CL` or `CP` after it allowed.
+    in_number: bool
+    # How many regional indicators end the bases before the place in a row.
+    regional: i64
+    # The base after the place.
+    right: i64
+    # Whether `right` is East Asian.
+    right_east_asian: bool
+    # Whether `right` opens a quote, general category Pi.
+    right_initial: bool
+    # Whether `right` ends a quote, general category Pf.
+    right_final: bool
+    # The code point of `right`.
+    right_point: i64
+    # The base after `right`, `END` where there is none.
+    after_right: i64
+    # Whether `after_right` is East Asian; false at the end.
+    after_right_east_asian: bool
+    # The base after `after_right`, `END` where there is none.
+    after_after_right: i64
+
+# Whether `class_now` is one of the classes that end a line by force, or a
+# zero-width space, or a space: the classes LB15a, LB20a and others list.
+function is_line_end(class_now: i64) -> bool
+    return class_now == tables.LB_BK || class_now == tables.LB_CR || class_now == tables.LB_LF || class_now == tables.LB_NL
+
+# Whether `class_now` is a letter for LB23 to LB29, AL or HL.
+function is_letter(class_now: i64) -> bool
+    return class_now == tables.LB_AL || class_now == tables.LB_HL
+
+# Whether `class_now` is a hyphen, HY or HH.
+function is_hyphen(class_now: i64) -> bool
+    return class_now == tables.LB_HY || class_now == tables.LB_HH
+
+# Whether `class_now` is a prefix or a postfix of a number, PR or PO.
+function is_affix(class_now: i64) -> bool
+    return class_now == tables.LB_PR || class_now == tables.LB_PO
+
+# Whether `class_now` is a part of a Korean syllable, JL, JV, JT, H2 or H3.
+function is_korean(class_now: i64) -> bool
+    return class_now == tables.LB_JL || class_now == tables.LB_JV || class_now == tables.LB_JT || class_now == tables.LB_H2 || class_now == tables.LB_H3
+
+# Whether a base of `class_now` and code point `point` stands as an aksara
+# does in LB28a: AK, AS or the dotted circle U+25CC.
+function is_aksara(class_now: i64, point: i64) -> bool
+    return class_now == tables.LB_AK || class_now == tables.LB_AS || point == 0x25cc
+
+# Whether a line may not break at the place `around` describes, by rules
+# LB11 to LB30b; false where LB31 lets it.
+function joins(around: Around lent) -> bool
+    left = around.left
+    right = around.right
+
+    if right == tables.LB_WJ || left == tables.LB_WJ || left == tables.LB_GL
+        return true
+
+    if right == tables.LB_GL && left != tables.LB_SP && left != tables.LB_BA && !is_hyphen(left)
+        return true
+
+    if right == tables.LB_CL || right == tables.LB_CP || right == tables.LB_EX || right == tables.LB_SY
+        return true
+
+    if around.lead == tables.LB_OP
+        return true
+    before_lead = around.before_lead
+
+    if around.lead == tables.LB_QU && around.lead_initial && (before_lead == START || is_line_end(before_lead) || before_lead == tables.LB_OP || before_lead == tables.LB_QU || before_lead == tables.LB_GL || before_lead == tables.LB_SP || before_lead == tables.LB_ZW)
+        return true
+
+    if right == tables.LB_QU && around.right_final && quote_may_close(around.after_right)
+        return true
+
+    if left == tables.LB_SP && right == tables.LB_IS && around.after_right == tables.LB_NU
+        return false
+
+    if right == tables.LB_IS
+        return true
+
+    if (around.lead == tables.LB_CL || around.lead == tables.LB_CP) && right == tables.LB_NS
+        return true
+
+    if around.lead == tables.LB_B2 && right == tables.LB_B2
+        return true
+
+    if left == tables.LB_SP
+        return false
+
+    if right == tables.LB_QU && !around.right_initial || left == tables.LB_QU && !around.left_final
+        return true
+
+    if right == tables.LB_QU && (!around.left_east_asian || !around.after_right_east_asian)
+        return true
+
+    if left == tables.LB_QU && (!around.right_east_asian || around.before_left == START || !around.before_left_east_asian)
+        return true
+
+    if right == tables.LB_CB || left == tables.LB_CB
+        return false
+    return joins_after_quotes(around)
+
+# Rules LB20a to LB30b.
+function joins_after_quotes(around: Around lent) -> bool
+    left = around.left
+    right = around.right
+    before_left = around.before_left
+
+    if is_hyphen(left) && is_letter(right) && (before_left == START || is_line_end(before_left) || before_left == tables.LB_SP || before_left == tables.LB_ZW || before_left == tables.LB_CB || before_left == tables.LB_GL)
+        return true
+
+    if right == tables.LB_BA || right == tables.LB_HH || right == tables.LB_HY || right == tables.LB_NS || left == tables.LB_BB
+        return true
+
+    if before_left == tables.LB_HL && is_hyphen(left) && right != tables.LB_HL
+        return true
+
+    if left == tables.LB_SY && right == tables.LB_HL || right == tables.LB_IN
+        return true
+
+    if is_letter(left) && right == tables.LB_NU || left == tables.LB_NU && is_letter(right)
+        return true
+    pictographic_right = right == tables.LB_ID || right == tables.LB_EB || right == tables.LB_EM
+
+    if left == tables.LB_PR && pictographic_right || (left == tables.LB_ID || left == tables.LB_EB || left == tables.LB_EM) && right == tables.LB_PO
+        return true
+
+    if is_affix(left) && is_letter(right) || is_letter(left) && is_affix(right)
+        return true
+    return joins_numbers_onward(around)
+
+# Rules LB25 to LB30b.
+function joins_numbers_onward(around: Around lent) -> bool
+    left = around.left
+    right = around.right
+
+    if around.in_number && is_affix(right)
+        return true
+
+    if is_affix(left) && right == tables.LB_OP && (around.after_right == tables.LB_NU || around.after_right == tables.LB_IS && around.after_after_right == tables.LB_NU)
+        return true
+
+    if (is_affix(left) || left == tables.LB_HY || left == tables.LB_IS) && right == tables.LB_NU
+        return true
+
+    if around.in_number && right == tables.LB_NU && left != tables.LB_CL && left != tables.LB_CP
+        return true
+
+    if left == tables.LB_JL && (right == tables.LB_JL || right == tables.LB_JV || right == tables.LB_H2 || right == tables.LB_H3)
+        return true
+
+    if (left == tables.LB_JV || left == tables.LB_H2) && (right == tables.LB_JV || right == tables.LB_JT)
+        return true
+
+    if (left == tables.LB_JT || left == tables.LB_H3) && right == tables.LB_JT
+        return true
+
+    if is_korean(left) && right == tables.LB_PO || left == tables.LB_PR && is_korean(right)
+        return true
+
+    if is_letter(left) && is_letter(right)
+        return true
+    return joins_aksaras_onward(around)
+
+# Rules LB28a to LB30b.
+function joins_aksaras_onward(around: Around lent) -> bool
+    left = around.left
+    right = around.right
+
+    if left == tables.LB_AP && is_aksara(class_now: right, point: around.right_point)
+        return true
+
+    if is_aksara(class_now: left, point: around.left_point) && (right == tables.LB_VF || right == tables.LB_VI)
+        return true
+
+    if left == tables.LB_VI && is_aksara(class_now: around.before_left, point: around.before_left_point) && (right == tables.LB_AK || around.right_point == 0x25cc)
+        return true
+
+    if is_aksara(class_now: left, point: around.left_point) && is_aksara(class_now: right, point: around.right_point) && around.after_right == tables.LB_VF
+        return true
+
+    if left == tables.LB_IS && is_letter(right)
+        return true
+
+    if (is_letter(left) || left == tables.LB_NU) && right == tables.LB_OP && !around.right_east_asian
+        return true
+
+    if left == tables.LB_CP && !around.left_east_asian && (is_letter(right) || right == tables.LB_NU)
+        return true
+
+    if left == tables.LB_RI && right == tables.LB_RI && around.regional % 2 == 1
+        return true
+    return right == tables.LB_EM && (left == tables.LB_EB || around.left_unassigned_pictograph)
+
+# Whether a closing quotation mark may not be cut from what follows it, by
+# LB15b: what follows ends a phrase, or the text ends.
+function quote_may_close(after: i64) -> bool
+    return after == END || after == tables.LB_SP || after == tables.LB_GL || after == tables.LB_WJ || after == tables.LB_CL || after == tables.LB_QU || after == tables.LB_CP || after == tables.LB_EX || after == tables.LB_IS || after == tables.LB_SY || is_line_end(after) || after == tables.LB_ZW

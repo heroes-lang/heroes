@@ -1,0 +1,211 @@
+# A response of the Responses API read as its events come, by the
+# reference's streaming events (developers.openai.com, read 2026-11-18):
+# `response.created`, each output item's `response.output_item.added`, its
+# text's or its arguments' deltas and its `response.output_item.done`, and
+# one of `response.completed`, `response.incomplete` or `response.failed`
+# holding the response whole; `error` in place of the rest. The pieces of an
+# item not yet done are kept flat with the item they belong to.
+
+use http
+use json
+use llm/openai/internal/failures
+use llm/openai/internal/fields
+use llm/openai/internal/transport
+
+# A response stream being read: its connection and what has arrived.
+record State
+    # The connection, its head read; `close` closes it.
+    opened: transport.Opened
+    # The event stream's reader.
+    events: http.EventReader
+    # The longest wait for the next bytes, in milliseconds, 0 for none.
+    idle_ms: i64
+    # Whether a last event, an error or `[DONE]` came.
+    ended: bool
+    # Whether it ended with the response whole.
+    finished: bool
+    # The last response an event carried whole.
+    response: json.Value
+    # The output items by their index, as added or as done.
+    items: [json.Value]
+    # Whether each item is done.
+    done: [bool]
+    # The pieces of text of items not done.
+    text: [str]
+    # The item each piece of `text` belongs to.
+    text_owner: [i64]
+    # The pieces of arguments of function calls not done.
+    arguments: [str]
+    # The item each piece of `arguments` belongs to.
+    argument_owner: [i64]
+
+# One event read: its type and its data.
+record Step
+    # The event's type, `response.output_text.delta`.
+    name: str
+    # Its data.
+    data: json.Value
+
+# The state of a response stream whose head `o` read.
+function begin(o: transport.Opened, limits: http.Limits, idle_ms: i64) -> State?
+    events = http.event_reader(o.head, limits: limits)?
+    return ok(
+        State(opened: o, events: events, idle_ms: idle_ms, ended: false, finished: false, response: .object(members: {}), items: [], done: [], text: [], text_owner: [], arguments: [], argument_owner: [])
+    )
+
+# Adds `s` to `xs`, the caller's own.
+function add_text(@xs: [str], s: str)
+    xs @ xs.push(s)
+
+# Adds `n` to `xs`, the caller's own.
+function add_int(@xs: [i64], n: i64)
+    xs @ xs.push(n)
+
+# Adds `v` to `xs`, the caller's own.
+function add_value(@xs: [json.Value], v: json.Value)
+    xs @ xs.push(v)
+
+# Adds `b` to `xs`, the caller's own.
+function add_bool(@xs: [bool], b: bool)
+    xs @ xs.push(b)
+
+# Sets the item at `index`, the list grown to it.
+function put_item(@st: State, index: i64, item: json.Value, done: bool) -> ()?
+    if index < 0 || index > 100_000
+        return fail(code: "invalid", msg: f"an output_index of {index}")
+
+    while st.items.len() <= index
+        add_value(@st.items, v: .null_value)
+        add_bool(@st.done, b: false)
+
+    st.items[index] @ item
+    st.done[index] @ done
+    return ok()
+
+# The pieces of `pieces` whose owner is `owner`, joined.
+function joined(pieces: [str] lent, owners: [i64] lent, owner: i64) -> str
+    out: [str] @= []
+    at: i64 @= 0
+
+    while at < pieces.len()
+        if owners[at] == owner
+            out @ out.push(pieces[at])
+        at @ at + 1
+
+    return out.join("")
+
+# Applies the event `name` with `data`.
+function apply(@st: State, name: str, data: json.Value) -> ()?
+    index = fields.int_at(data, key: "output_index")
+
+    if name == "response.created" || name == "response.in_progress" || name == "response.queued"
+        st.response @ fields.value_at_key(data, key: "response")
+    else if name == "response.output_item.added"
+        put_item(@st, index: index, item: fields.value_at_key(data, key: "item"), done: false)?
+    else if name == "response.output_item.done"
+        put_item(@st, index: index, item: fields.value_at_key(data, key: "item"), done: true)?
+    else if name == "response.output_text.delta"
+        add_text(@st.text, s: fields.text_at(data, key: "delta"))
+        add_int(@st.text_owner, n: index)
+    else if name == "response.function_call_arguments.delta"
+        add_text(@st.arguments, s: fields.text_at(data, key: "delta"))
+        add_int(@st.argument_owner, n: index)
+    else if name == "response.completed" || name == "response.incomplete" || name == "response.failed"
+        st.response @ fields.value_at_key(data, key: "response")
+        st.ended @ true
+        st.finished @ true
+    return ok()
+
+# The failure an `error` event's `data` carries.
+function error_failure(data: json.Value) -> failures.Failure
+    code = fields.text_at(data, key: "code")
+    status = failures.status_of_kind(code)
+    return failures.Failure(
+        status: status,
+        kind: "-",
+        code: code,
+        message: fields.text_at(data, key: "message"),
+        request_id: "-",
+        retryable: failures.is_retryable(status),
+        wait_ms: 0
+    )
+
+# The next event of `st`, applied. Fails `closed` once the response has
+# ended or where the stream ends before; with the server's failure at an
+# `error` event; `invalid` where an event is not JSON; and as
+# `http.read_event` fails.
+function next(@st: State) -> Step?
+    if st.ended
+        return fail(code: "closed", msg: "the stream has ended: its last event came")
+    transport.set_deadline(st.opened, ms: st.idle_ms)?
+
+    match http.read_event(@st.opened.reader, @st.events)
+        .err e =>
+            st.ended @ true
+
+            if e.code == "closed"
+                return fail(code: "closed", msg: "the stream ended before its last event")
+            return fail(code: e.code, msg: e.msg)
+        .ok event =>
+            if event.data == "[DONE]"
+                st.ended @ true
+                return fail(code: "closed", msg: "the stream has ended: its [DONE] came")
+
+            match json.parse(event.data)
+                .err e =>
+                    st.ended @ true
+                    return fail(code: "invalid", msg: f"the data of the event \"{event.name}\" is not JSON: {e.msg}")
+                .ok v =>
+                    name: str @= fields.text_at(v, key: "type")
+
+                    if name == ""
+                        name @ event.name
+
+                    if name == "error"
+                        st.ended @ true
+                        return transport.told(error_failure(v))
+
+                    match apply(@st, name: name, data: v)
+                        .ok _ => return ok(Step(name: name, data: v))
+                        .err e =>
+                            st.ended @ true
+                            return fail(code: e.code, msg: e.msg)
+
+# The response so far: whole where its last event came, else the last one
+# carried with the items as far as they have come.
+function response_json(st: State lent) -> json.Value
+    if st.finished
+        return st.response
+    items: [json.Value] @= []
+    at: i64 @= 0
+
+    while at < st.items.len()
+        item = st.items[at]
+
+        if st.done[at]
+            items @ items.push(item)
+        else
+            kind = fields.text_at(item, key: "type")
+
+            if kind == "message"
+                part = fields.object(
+                    names: ["type", "text"],
+                    values: [fields.text("output_text"), fields.text(joined(st.text, owners: st.text_owner, owner: at))]
+                )
+                items @ items.push(fields.with_member(v: item, key: "content", value: .list(items: [part])))
+            else if kind == "function_call"
+                items @ items.push(
+                    fields.with_member(v: item, key: "arguments", value: fields.text(joined(st.arguments, owners: st.argument_owner, owner: at)))
+                )
+            else
+                items @ items.push(item)
+        at @ at + 1
+
+    return fields.with_member(v: st.response, key: "output", value: .list(items: items))
+
+# Closes the connection of `st`.
+function close(@st: State)
+    transport.close(@st.opened)
+
+test "joined: the pieces of one item, and none"
+    assert joined(["He", "x", "llo"], owners: [1, 0, 1], owner: 1) == "Hello" && joined(["a"], owners: [0], owner: 2) == ""

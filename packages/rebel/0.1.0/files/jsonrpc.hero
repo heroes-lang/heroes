@@ -1,0 +1,1628 @@
+# JSON-RPC 2.0, exactly as its specification of 2013-01-04 writes it:
+# requests, notifications, answers and errors with their codes, batches, and
+# ids of every kind the specification allows, read from text and written as
+# text; carried over a stream one message a line (as MCP's standard streams
+# and JSON Lines carry it) or each after a `Content-Length` header (as the
+# Language Server Protocol carries it), and over HTTP through `http`.
+#
+# **A server finds, the program calls.** The language has no closure, so no
+# table this package held could carry a handler with the program's state. A
+# program describes its methods with `add_method`; `method_of` answers which method
+# a request names and its parameters by name, the positional ones named; the
+# program writes `match found.method` and calls its own function with its own
+# state, then answers with `answer_of`. A program with no state hands
+# `dispatch` one function instead.
+#
+# **A client** writes a call and reads until its answer comes, keeping what
+# else came meanwhile (the other side's requests and notifications) for
+# `next_message`.
+#
+# **What it does not do.** A JSON value is `json`'s, the stream `io`'s, an HTTP
+# request and response `http`'s. Nothing here waits on several streams at
+# once (`poll`), or runs a call on another thread. A number is an `f64`, as
+# `json` reads it, so an id that is a number is held exactly only up to
+# `MAX_EXACT_ID` in either direction, and one past it is refused rather than
+# answered with another id.
+#
+# The codes it fails with: `invalid` (a text or a frame that is no message, a
+# method or a parameter refused), `not_found` (no method of that name, no
+# parameter of that name), `limit` (a message or a batch past `Limits`),
+# `not_text` (a frame that is not UTF-8), `failed` (an answer that is an
+# error), `unsupported` (an HTTP method or a charset refused), and from the
+# stream: `closed`, `timeout`, `stopped`.
+
+use bytes
+use containers/deque
+use http
+use io
+use json
+use jsonrpc/internal/fixture
+use jsonrpc/internal/frames
+use jsonrpc/internal/methods as table
+use jsonrpc/internal/wire
+use net
+use strings
+use threads
+
+## Codes
+
+# The code of a text, a frame or a value that is no message, and of a method
+# or a parameter a server refuses.
+constant INVALID: str
+    "invalid"
+
+# The code of a method no `add_method` described, and of a parameter a found
+# call does not hold.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a message, a frame or a batch past what `Limits` allows.
+constant LIMIT: str
+    "limit"
+
+# The code of an answer that is an error, its code and message in the
+# failure's message: what `value_of` fails with.
+constant FAILED: str
+    "failed"
+
+# The code of a frame whose bytes are not UTF-8.
+constant NOT_TEXT: str
+    "not_text"
+
+# The code of an HTTP method other than `POST`, and of a frame's charset other
+# than UTF-8.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The code of a stream that ends before a message begins, or whose other end
+# is gone.
+constant CLOSED: str
+    "closed"
+
+# The code of a method `add_method` was given already.
+constant EXISTS: str
+    "exists"
+
+## Error codes
+
+# The text received is not JSON: answered with a `null_id`.
+constant PARSE_ERROR: i64
+    -32700
+
+# The JSON received is not a request: answered with a `null_id`.
+constant INVALID_REQUEST: i64
+    -32600
+
+# No method of that name.
+constant METHOD_NOT_FOUND: i64
+    -32601
+
+# The parameters are not those the method takes.
+constant INVALID_PARAMS: i64
+    -32602
+
+# The server failed while it answered.
+constant INTERNAL_ERROR: i64
+    -32603
+
+# The lowest of the codes the specification leaves to a server's own errors,
+# -32099 to -32000.
+constant SERVER_ERROR_FIRST: i64
+    -32099
+
+# The highest of the codes the specification leaves to a server's own errors.
+constant SERVER_ERROR_LAST: i64
+    -32000
+
+# The largest number an id may be in either direction, 2^53 - 1: past it two
+# ids written differently read as one `f64`, so a request bearing one is
+# refused as `INVALID_REQUEST`.
+constant MAX_EXACT_ID: i64
+    9007199254740991
+
+## Messages
+
+# What names a request, so that its answer can name it back: a string, a
+# number, `null`, or nothing for a notification.
+variant Id
+    # No id: the message is a notification, and nothing answers it.
+    absent
+    # JSON's `null`: an error answer to a text whose id could not be read, or
+    # a request that wrote it, which the specification allows and advises
+    # against.
+    null_id
+    # A number, from `-MAX_EXACT_ID` to `MAX_EXACT_ID`; a fraction is allowed,
+    # though the specification advises against it.
+    number
+        # The number.
+        v: f64
+    # A string, the empty one included.
+    text
+        # The string.
+        v: str
+
+# An error an answer carries.
+record Error
+    # The error's code: one of the constants of `## Error codes`, or the
+    # program's own.
+    code: i64
+    # A sentence that says what failed.
+    message: str
+    # More of what failed, any JSON value; `.null_value` writes none, so an
+    # error whose data is JSON's `null` is read as having none.
+    data: json.Value
+
+# What answers a request: its result, or an error.
+variant Reply
+    # The request succeeded.
+    result
+        # What it answered, any JSON value.
+        value: json.Value
+    # The request failed.
+    error
+        # The error.
+        error: Error
+
+# One JSON-RPC message.
+variant Message
+    # A call that asks for an answer.
+    request
+        # Its id, which the answer names; never `.absent`, which would make it
+        # a notification.
+        id: Id
+        # The method's name. One beginning `rpc.` is the specification's own.
+        method: str
+        # The parameters: a list, by position, or an object, by name;
+        # `.null_value` where the request writes none.
+        params: json.Value
+    # A call that asks for no answer.
+    notification
+        # The method's name.
+        method: str
+        # The parameters, as a request's are.
+        params: json.Value
+    # The answer to a request.
+    response
+        # The request's id, or `.null_id` where the request's could not be
+        # read.
+        id: Id
+        # Its result or its error.
+        reply: Reply
+
+# What one text received holds: one message, or a batch of them.
+record Received
+    # Each element read, or the failure that says why it is no message, in
+    # order: one for a text that held one value, the empty array included,
+    # which is no batch.
+    messages: [Message?]
+    # Whether the text was a batch, an array of at least one element, whose
+    # answers go back as one array.
+    batch: bool
+
+# The answer to the request `id` names: `value` as its result.
+#
+# - `id`: the request's id.
+# - `value`: the result, any JSON value.
+#
+# See also `error_of`, `answer_of`.
+function result_of(id: Id, value: json.Value) -> Message
+    return .response(id: id, reply: .result(value: value))
+
+# The answer to the request `id` names: an error with `code` and `message`
+# and no data.
+#
+# - `id`: the request's id, `.null_id` where it could not be read.
+# - `code`: the error's code, a constant of `## Error codes` or the program's
+#   own.
+# - `message`: a sentence that says what failed.
+#
+# An error with data is built directly: `.response(id: id, reply:
+# .error(error: Error(code: c, message: m, data: d)))`. See also
+# `result_of`.
+function error_of(id: Id, code: i64, message: str) -> Message
+    return .response(id: id, reply: .error(error: Error(code: code, message: message, data: .null_value)))
+
+# The answer to the request `id` names, made from what the program's own
+# handler answered.
+#
+# - `id`: the request's id.
+# - `outcome`: the handler's answer: its value is the result; a failure
+#   `invalid` is `INVALID_PARAMS` with the failure's message as its data, and
+#   any other is `INTERNAL_ERROR` with no data, so that nothing of the
+#   server's inside reaches the client, as Python's `jsonrpcserver` answers.
+#
+# See also `refusal_of`, `error_of`.
+function answer_of(id: Id, outcome: json.Value?) -> Message
+    match outcome
+        .ok value => return result_of(id, value: value)
+        .err e =>
+            if e.code == INVALID
+                return .response(
+                    id: id,
+                    reply: .error(error: Error(code: INVALID_PARAMS, message: "Invalid params", data: .text(v: e.msg)))
+                )
+            return error_of(id, code: INTERNAL_ERROR, message: "Internal error")
+
+# The answer to a request `method_of` refused.
+#
+# - `id`: the request's id.
+# - `code`: the failure's code: `not_found` is `METHOD_NOT_FOUND`, `invalid`
+#   is `INVALID_PARAMS`, any other `INTERNAL_ERROR`.
+# - `msg`: the failure's message, written as the error's data where the code
+#   is `not_found` or `invalid`.
+#
+# See also `method_of`, `answer_of`.
+function refusal_of(id: Id, code: str, msg: str) -> Message
+    if code == NOT_FOUND
+        return .response(
+            id: id,
+            reply: .error(error: Error(code: METHOD_NOT_FOUND, message: "Method not found", data: .text(v: msg)))
+        )
+
+    if code == INVALID
+        return .response(
+            id: id,
+            reply: .error(error: Error(code: INVALID_PARAMS, message: "Invalid params", data: .text(v: msg)))
+        )
+    return error_of(id, code: INTERNAL_ERROR, message: "Internal error")
+
+# The answer to a text that is not JSON: `PARSE_ERROR`, its id `.null_id`.
+#
+# - `why`: what was wrong, as `parse` failed: written as the error's data.
+#
+# See also `invalid_request_of`.
+function parse_error_of(why: str) -> Message
+    return .response(
+        id: .null_id,
+        reply: .error(error: Error(code: PARSE_ERROR, message: "Parse error", data: .text(v: why)))
+    )
+
+# The answer to a value that is no request: `INVALID_REQUEST`, its id
+# `.null_id`, as the specification asks where the id could not be read.
+#
+# - `why`: what was wrong, as an element of `Received.messages` failed:
+#   written as the error's data.
+#
+# See also `parse_error_of`.
+function invalid_request_of(why: str) -> Message
+    return .response(
+        id: .null_id,
+        reply: .error(error: Error(code: INVALID_REQUEST, message: "Invalid Request", data: .text(v: why)))
+    )
+
+# The value of `reply`'s result.
+#
+# - `reply`: what a call answered.
+#
+# Fails `failed` where it is an error, the message holding its code, its
+# message and its data. See also `call`.
+function value_of(reply: Reply) -> json.Value?
+    match reply
+        .result r => return ok(r.value)
+        .error e =>
+            data = if e.error.data == .null_value
+                ""
+            else
+                f", {json.format(e.error.data).default("its data unwritable")}"
+            return fail(code: FAILED, msg: f"the peer answered the error {e.error.code}, \"{e.error.message}\"{data}")
+
+# `id` as JSON writes it: `1`, `"a"`, `null`, or "" for `.absent`.
+#
+# - `id`: any id.
+function format_id(id: Id) -> str
+    return match id
+        .absent   => ""
+        .null_id  => "null"
+        .number n => json.format(.number(v: n.v)).default(f"{n.v}")
+        .text t   => json.quote(t.v)
+
+## Reading and writing text
+
+# What a server and a client allow a text received to hold.
+record Limits
+    # The most bytes one message, or one batch, may take, framing aside.
+    message_bytes: i64
+    # The most elements one batch may hold.
+    batch_items: i64
+    # The deepest nesting a message may hold, counted as
+    # `json.DEFAULT_MAX_DEPTH` counts it.
+    depth: i64
+
+# The usual limits: 16 MiB a message, 1,000 elements a batch, and
+# `json.DEFAULT_MAX_DEPTH`. Python's `jsonrpcserver` sets no batch limit; one
+# is set here so that a peer cannot make a server answer without end.
+function default_limits() -> Limits
+    return Limits(message_bytes: 16_777_216, batch_items: 1_000, depth: json.DEFAULT_MAX_DEPTH)
+
+# The message or the batch `text` holds.
+#
+# - `text`: one JSON value: an object, or an array of them.
+# - `limits`: how deep it may nest and how many elements a batch may hold.
+#
+# Fails `invalid` where `text` is not JSON, which a server answers with
+# `parse_error_of`; `limit` where it is longer than `limits.message_bytes`
+# or a batch holds more than `limits.batch_items`.
+#
+# An element that is no message is a failure among `messages`, `invalid`, and
+# its message says why: a `jsonrpc` other than `"2.0"`, a method that is not a
+# string, parameters that are neither a list nor an object, an id of another
+# kind or past `MAX_EXACT_ID`, an answer with both a result and an error or
+# neither. A member the specification does not name is passed over, as Go's
+# decoders pass it over; Python's `jsonrpcserver` refuses it. The empty array
+# is one failure and no batch.
+function parse(text: str, limits: Limits) -> Received?
+    if text.len() > limits.message_bytes
+        return fail(code: LIMIT, msg: f"a text of {text.len()} bytes is past {limits.message_bytes}")
+    options @= json.strict()
+    options.max_depth @ limits.depth
+
+    value = match json.parse_with(text, options: options)
+        .ok v  => v
+        .err e => return fail(code: INVALID, msg: e.msg)
+
+    match value
+        .list l =>
+            if l.items.len() == 0
+                refused: [Message?] = [fail(code: INVALID, msg: "an empty batch holds no request")]
+                return ok(Received(messages: refused, batch: false))
+
+            if l.items.len() > limits.batch_items
+                return fail(code: LIMIT, msg: f"a batch of {l.items.len()} messages is past {limits.batch_items}")
+            messages: [Message?] @= []
+
+            for item in l.items
+                messages @ messages.push(message_of(item))
+
+            return ok(Received(messages: messages, batch: true))
+        .null_value | .boolean _ | .number _ | .text _ | .object _ =>
+            one: [Message?] = [message_of(value)]
+            return ok(Received(messages: one, batch: false))
+
+# `m` as JSON on one line.
+#
+# - `m`: any message; a request's `.absent` id writes a notification.
+#
+# Fails `invalid` where a value it holds is a `nan` or an infinity.
+#
+# Members are written in the order `jsonrpc`, `id`, `method`, `params`, then
+# `result` or `error`, the error's `code`, `message`, then `data` where it is
+# not `.null_value`. See also `format_batch`.
+function format(m: Message) -> str?
+    return json.format(to_value(m))
+
+# `messages` as one JSON array on one line: a batch.
+#
+# - `messages`: the messages, in order; at least one.
+#
+# Fails `invalid` where `messages` is empty, which no batch is, or a value is a
+# `nan` or an infinity. See also `format`.
+function format_batch(messages: [Message]) -> str?
+    if messages.len() == 0
+        return fail(code: INVALID, msg: "a batch holds at least one message")
+    items: [json.Value] @= []
+
+    for m in messages
+        items @ items.push(to_value(m))
+
+    return json.format(.list(items: items))
+
+# The message the JSON value `v` writes, as `parse` reads each element.
+#
+# - `v`: one value, as `json.parse` answers it.
+#
+# Fails `invalid` where it is no message, as an element of
+# `Received.messages` fails. See also `to_value`.
+function message_of(v: json.Value) -> Message?
+    shape = wire.read(v)?
+
+    id: Id = if !shape.has_id
+        .absent
+    else
+        match shape.id
+            .number n                                      => .number(v: n.v)
+            .text t                                        => .text(v: t.v)
+            .null_value | .boolean _ | .list _ | .object _ => .null_id
+
+    if shape.kind == wire.REQUEST
+        return ok(.request(id: id, method: shape.method, params: shape.params))
+
+    if shape.kind == wire.NOTIFICATION
+        return ok(.notification(method: shape.method, params: shape.params))
+
+    if shape.kind == wire.RESULT
+        return ok(.response(id: id, reply: .result(value: shape.result)))
+    return ok(
+        .response(id: id, reply: .error(error: Error(code: shape.code, message: shape.message, data: shape.data)))
+    )
+
+# `m` as the JSON value `format` writes.
+#
+# - `m`: any message; a request's `.absent` id writes a notification, and a
+#   response's writes `null`.
+#
+# See also `message_of`.
+function to_value(m: Message) -> json.Value
+    id: Id = match m
+        .request r      => r.id
+        .notification _ => .absent
+        .response r     => r.id
+
+    written: json.Value = match id
+        .absent | .null_id => .null_value
+        .number n          => .number(v: n.v)
+        .text t            => .text(v: t.v)
+
+    return match m
+        .request r      => wire.call_value(id: written, has_id: id != .absent, method: r.method, params: r.params)
+        .notification n => wire.call_value(id: written, has_id: false, method: n.method, params: n.params)
+        .response r =>
+            match r.reply
+                .result v => wire.result_value(id: written, result: v.value)
+                .error e => wire.error_value(
+                    id: written,
+                    code: e.error.code,
+                    message: e.error.message,
+                    data: e.error.data
+                )
+
+## Streams
+
+# How messages follow each other on a stream.
+variant Framing
+    # One message a line, ended by a line feed, a carriage return before it
+    # read as part of the end: MCP's standard streams, JSON Lines. A line of
+    # white space alone is passed over.
+    lines
+    # Each message after a header of `Name: value` lines ended by an empty
+    # line, `Content-Length` giving its bytes: the Language Server Protocol's
+    # base protocol.
+    content_length
+
+# The text of the next message `reader` holds, its framing taken off.
+#
+# - `reader`: the reader of the stream, advanced past the message.
+# - `framing`: how the messages follow each other.
+# - `limits`: `message_bytes` bounds the text, and a header's line 8,192
+#   bytes.
+#
+# Fails `closed` where the stream ends before a message begins; `invalid`
+# where it ends inside one, or a header has no `Content-Length`, a length that
+# is no number, or a line that is no field; `limit` past `limits.message_bytes`
+# (a line's bytes are read up to the limit and no further); `unsupported`
+# where `Content-Type` names a charset other than UTF-8; `not_text` where the
+# bytes are not UTF-8, the message read either way, so a server answers
+# `parse_error_of` and goes on. After any other failure the stream is no
+# longer in step and its owner closes it.
+function read_text(@reader: io.Reader, framing: Framing, limits: Limits) -> str?
+    return match framing
+        .lines          => frames.read_line_text(@reader, most: limits.message_bytes)
+        .content_length => frames.read_framed_text(@reader, most: limits.message_bytes)
+
+# The next message `reader` holds, read and parsed: what a client reads from
+# its peer, which writes one message at a time.
+#
+# - `reader`: the reader of the stream, advanced past the message.
+# - `framing`: how the messages follow each other.
+# - `limits`: what the message may hold.
+#
+# Fails as `read_text` and `parse` fail, and `invalid` where the text is a
+# batch or no message. A server reads with `read_text` and `parse` instead,
+# so that it can tell a text that is no JSON, which it answers, from a frame
+# that is no frame, after which it closes the stream.
+function read_message(@reader: io.Reader, framing: Framing, limits: Limits) -> Message?
+    text = read_text(@reader, framing: framing, limits: limits)?
+    received = parse(text, limits: limits)?
+
+    if received.batch
+        return fail(code: INVALID, msg: f"a batch of {received.messages.len()} where one message was expected")
+    return received.messages[0]
+
+# Writes `text`, one message or batch, to `s` with its framing, in one write.
+#
+# - `s`: the stream; its owner closes it.
+# - `text`: the message's text; for `.lines`, it holds no line feed, as
+#   `format` writes none.
+# - `framing`: how the messages follow each other: `.content_length` writes a
+#   `Content-Length` header alone, as the Language Server Protocol's clients
+#   write it.
+#
+# Fails `invalid` where `.lines` meets a line feed in `text`, and as
+# `io.write` fails. See also `write_message`.
+function write_text(s: io.Stream, text: str, framing: Framing) -> ()?
+    return match framing
+        .lines          => frames.write_line_text(s, text: text)
+        .content_length => frames.write_framed_text(s, text: text)
+
+# Writes `m` to `s`, as `format` writes it and `write_text` frames it.
+#
+# - `s`: the stream; its owner closes it.
+# - `m`: the message.
+# - `framing`: how the messages follow each other.
+#
+# Fails as `format` and `write_text` fail.
+function write_message(s: io.Stream, m: Message, framing: Framing) -> ()?
+    return write_text(s, text: format(m)?, framing: framing)
+
+# Writes the answers to one text received: one answer alone, a batch's as one
+# array, and nothing where there is none, as when every message was a
+# notification.
+#
+# - `s`: the stream; its owner closes it.
+# - `answers`: the answers, in the order of the messages they answer.
+# - `batch`: whether the text received was a batch, `Received.batch`.
+# - `framing`: how the messages follow each other.
+#
+# Fails as `format` and `write_text` fail. Aborts where `batch` is false and
+# `answers` holds more than one.
+function write_answers(s: io.Stream, answers: [Message], batch: bool, framing: Framing) -> ()?
+    if answers.len() == 0
+        return ok()
+
+    if batch
+        return write_text(s, text: format_batch(answers)?, framing: framing)
+    assert answers.len() == 1
+    return write_message(s, m: answers[0], framing: framing)
+
+## Servers
+
+# A method a server takes: its name and its parameters' names.
+record Method
+    # The method's name.
+    name: str
+    # The parameters' names, in the order a call by position gives them.
+    params: [str]
+    # How many of `params`, from the first, a call must give.
+    required: i64
+
+# The methods a server takes, by name. Made by `new_methods`, added to by
+# `add_method`.
+record Methods
+    # Each method by its name, in the order they were added.
+    by_name: {str: Method}
+
+# What `method_of` answers: the method a request names, and its parameters by name.
+record Found
+    # The method's name, as `add_method` was given it.
+    method: str
+    # The parameters the call gave, by name, the positional ones named in the
+    # method's order: an optional one not given is absent.
+    params: {str: json.Value}
+
+# A table of no methods.
+function new_methods() -> Methods
+    return Methods(by_name: {})
+
+# Adds the method `name` to `methods`.
+#
+# - `methods`: the table, which gains the method.
+# - `name`: the method's name; one beginning `rpc.` is the specification's
+#   own.
+# - `params`: its parameters' names, in their order; each once.
+# - `required`: how many of `params`, from the first, a call must give: 0 to
+#   their count.
+#
+# Fails `invalid` where `name` begins `rpc.`, a name stands twice in `params`,
+# or `required` is below 0 or past their count; `exists` where `methods` holds
+# `name` already. See also `method_of`.
+function add_method(@methods: Methods, name: str, params: [str], required: i64) -> ()?
+    table.check(name: name, params: params, required: required)?
+
+    if !methods.by_name[name].is_err()
+        return fail(code: EXISTS, msg: f"the method \"{name}\" is added already")
+    methods.by_name[name] @ Method(name: name, params: params, required: required)
+    return ok()
+
+# The method of `methods` that `method` names, and `params` by name.
+#
+# - `methods`: the table.
+# - `method`: the method's name, as the request wrote it.
+# - `params`: the request's parameters: a list, by position, an object, by
+#   name, or `.null_value` for none.
+#
+# Fails `not_found` where `methods` holds no such method; `invalid` where a
+# required parameter is not given, a list gives more than the method takes,
+# or an object names one it does not take, each message naming it as Python's
+# `jsonrpcserver` does. `refusal_of` answers either. See also `param_of`.
+function method_of(methods: Methods, method: str, params: json.Value) -> Found?
+    taken = match methods.by_name[method]
+        .ok m  => m
+        .err _ => return fail(code: NOT_FOUND, msg: f"no method \"{method}\"")
+
+    bound = table.bind(method: method, names: taken.params, required: taken.required, given: params)?
+    return ok(Found(method: method, params: bound))
+
+# The parameter `name` of `found`.
+#
+# - `found`: what `method_of` answered.
+# - `name`: the parameter's name.
+#
+# Fails `invalid` where `found` holds no such parameter, an optional one not
+# given: a handler that passes the failure on is answered `INVALID_PARAMS`.
+function param_of(found: Found, name: str) -> json.Value?
+    match found.params[name]
+        .ok v  => return ok(v)
+        .err _ => return fail(code: INVALID, msg: f"the call of \"{found.method}\" gives no \"{name}\"")
+
+# The answer to `text`, as a server with no state of its own answers it: each
+# request found in `methods` and handed to `handler`, each notification
+# handed to it and its answer dropped.
+#
+# - `text`: the text received, one message or a batch.
+# - `methods`: the methods the server takes.
+# - `limits`: what the text may hold.
+# - `handler`: called once for each request and notification `method_of`
+#   accepts, in order, with what `method_of` answered; its answer is made a reply
+#   by `answer_of`.
+#
+# The answer is the text to write back, or "" where nothing answers it: a
+# text of notifications alone. A response received is passed over. Fails
+# `invalid` only where an answer holds a `nan` or an infinity. See also
+# `method_of`, `write_answers`.
+function dispatch(text: str, methods: Methods, limits: Limits, handler: (function(Found) -> json.Value?)) -> str?
+    received = match parse(text, limits: limits)
+        .ok r => r
+        .err e =>
+            if e.code == LIMIT
+                return format(invalid_request_of(e.msg))
+            return format(parse_error_of(e.msg))
+
+    answers: [Message] @= []
+
+    for item in received.messages
+        match item
+            .err e => answers @ answers.push(invalid_request_of(e.msg))
+            .ok m =>
+                match m
+                    .request r =>
+                        answer = match method_of(methods, method: r.method, params: r.params)
+                            .ok found => answer_of(r.id, outcome: handler(found))
+                            .err e    => refusal_of(r.id, code: e.code, msg: e.msg)
+
+                        answers @ answers.push(answer)
+                    .notification n =>
+                        match method_of(methods, method: n.method, params: n.params)
+                            .ok found =>
+                                match handler(found)
+                                    .ok _  => _ = 0
+                                    .err _ => _ = 0
+                            .err _ => _ = 0
+                    .response _ => _ = 0
+
+    if answers.len() == 0
+        return ok("")
+
+    if received.batch
+        return format_batch(answers)
+    return format(answers[0])
+
+## Clients
+
+# A client of one peer over a stream: where it writes its calls, where it
+# reads what answers them, and what came meanwhile. Made by `new_client`.
+record Client
+    # The reader of the stream the peer writes to.
+    reader: io.Reader
+    # The stream the peer reads from: the same stream as `reader`'s for a
+    # socket, the other end of a pipe for a child's standard streams.
+    writer: io.Stream
+    # How the messages follow each other.
+    framing: Framing
+    # What a message received may hold.
+    limits: Limits
+    # The id the next call takes.
+    next_id: i64
+    # The messages that came while a call waited for its answer, the peer's
+    # requests and notifications and answers to no call waiting, in the order
+    # `waiting` keeps; `next_message` gives them out. They are kept without
+    # bound, as long as the program calls without reading them.
+    inbox: [Message]
+    # The order of `inbox`, oldest first.
+    waiting: deque.Deque
+
+# A call of a batch: a method and its parameters, and whether it asks for an
+# answer.
+record Call
+    # The method's name.
+    method: str
+    # Its parameters: a list, an object, or `.null_value` for none.
+    params: json.Value
+    # Whether it is a notification, which nothing answers.
+    notification: bool
+
+# A client that writes to `writing` and reads from `reading`.
+#
+# - `reading`: the stream the peer writes to; its owner closes it.
+# - `writing`: the stream the peer reads from, the same as `reading` for a
+#   socket; its owner closes it.
+# - `framing`: how the messages follow each other.
+# - `limits`: what a message received may hold.
+#
+# Its first call takes the id 1.
+function new_client(reading: io.Stream, writing: io.Stream, framing: Framing, limits: Limits) -> Client
+    return Client(
+        reader: io.reader(reading),
+        writer: writing,
+        framing: framing,
+        limits: limits,
+        next_id: 1,
+        inbox: [],
+        waiting: deque.new()
+    )
+
+# Calls `method` with `params` and waits for its answer.
+#
+# - `c`: the client; its next id is taken, and what comes before the answer
+#   is kept in its inbox.
+# - `method`: the method's name.
+# - `params`: a list, an object, or `.null_value` for none.
+#
+# The answer is the reply, an error included: `value_of` reads its result.
+# An answer with a `.null_id` is taken as this call's, since nothing else
+# waits. Fails `invalid` where `params` is neither a list, an object nor
+# `.null_value`, or a message received is no message; and as `read_text`
+# and `io.write` fail, `closed` where the stream ends first. See also
+# `notify`, `next_message`.
+function call(@c: Client, method: str, params: json.Value) -> Reply?
+    check_params(params)?
+    id: Id = .number(v: to_f64(c.next_id))
+    c.next_id @ c.next_id + 1
+    write_message(c.writer, m: .request(id: id, method: method, params: params), framing: c.framing)?
+
+    while true
+        got = read_message(@c.reader, framing: c.framing, limits: c.limits)?
+
+        match got
+            .response r =>
+                if r.id == id || r.id == .null_id
+                    return ok(r.reply)
+                deque.push_back(@c.waiting, @c.inbox, value: got)
+            .request _ | .notification _ => deque.push_back(@c.waiting, @c.inbox, value: got)
+
+# Writes the notification `method` with `params`, which nothing answers.
+#
+# - `c`: the client.
+# - `method`: the method's name.
+# - `params`: a list, an object, or `.null_value` for none.
+#
+# Fails `invalid` where `params` is neither a list, an object nor
+# `.null_value`, and as `io.write` fails.
+function notify(c: Client, method: str, params: json.Value) -> ()?
+    check_params(params)?
+    return write_message(c.writer, m: .notification(method: method, params: params), framing: c.framing)
+
+# Calls every one of `calls` in one batch and waits for every answer.
+#
+# - `c`: the client; one id is taken for each call that is no notification.
+# - `calls`: the calls, in order; at least one.
+#
+# The answer holds the replies of the calls that are no notification, in the
+# order of `calls`, whatever order the peer answered in. A batch of
+# notifications alone answers an empty list without reading. Fails `invalid`
+# where `calls` is empty, or the peer answers with no array, or with no
+# answer for a call; and as `call` fails.
+function call_batch(@c: Client, calls: [Call]) -> [Reply]?
+    if calls.len() == 0
+        return fail(code: INVALID, msg: "a batch holds at least one call")
+    messages: [Message] @= []
+    ids: [Id] @= []
+
+    for one in calls
+        check_params(one.params)?
+
+        if one.notification
+            messages @ messages.push(.notification(method: one.method, params: one.params))
+        else
+            id: Id = .number(v: to_f64(c.next_id))
+            c.next_id @ c.next_id + 1
+            ids @ ids.push(id)
+            messages @ messages.push(.request(id: id, method: one.method, params: one.params))
+
+    write_text(c.writer, text: format_batch(messages)?, framing: c.framing)?
+
+    if ids.len() == 0
+        return ok([])
+    asked: {str: bool} @= {}
+
+    for id in ids
+        asked[format_id(id)] @ true
+
+    replies: {str: Reply} @= {}
+
+    while true
+        received = parse(read_text(@c.reader, framing: c.framing, limits: c.limits)?, limits: c.limits)?
+
+        for item in received.messages
+            got = item?
+
+            match got
+                .response r =>
+                    if asked[format_id(r.id)].default(false)
+                        replies[format_id(r.id)] @ r.reply
+                    else if r.id == .null_id && !received.batch
+                        why = match value_of(r.reply)
+                            .ok _  => "an answer with a null id"
+                            .err e => e.msg
+
+                        return fail(code: INVALID, msg: f"the peer refused the batch: {why}")
+                    else
+                        deque.push_back(@c.waiting, @c.inbox, value: got)
+                .request _ | .notification _ => deque.push_back(@c.waiting, @c.inbox, value: got)
+
+        if received.batch
+            break
+
+    out: [Reply] @= []
+
+    for id in ids
+        match replies[format_id(id)]
+            .ok r  => out @ out.push(r)
+            .err _ => return fail(code: INVALID, msg: f"the peer gave no answer to the call {format_id(id)}")
+
+    return ok(out)
+
+# The next message from the peer: the oldest one kept in the inbox, else the
+# next one read.
+#
+# - `c`: the client; its inbox loses the message given.
+#
+# Fails as `read_text` fails, and `invalid` where a message read is no
+# message or a batch, which no peer writes to a client unasked. See also
+# `send`.
+function next_message(@c: Client) -> Message?
+    match deque.pop_front(@c.waiting, @c.inbox)
+        .ok m  => return ok(m)
+        .err _ => return read_message(@c.reader, framing: c.framing, limits: c.limits)
+
+# Writes `m` to the peer: an answer to one of its requests, or any message.
+#
+# - `c`: the client.
+# - `m`: the message.
+#
+# Fails as `write_message` fails.
+function send(c: Client, m: Message) -> ()?
+    return write_message(c.writer, m: m, framing: c.framing)
+
+# Fails `invalid` where `params` is neither a list, an object nor
+# `.null_value`, the three forms a call's parameters take.
+#
+# - `params`: the parameters a call is about to write.
+function check_params(params: json.Value) -> ()?
+    if params != .null_value && !wire.is_structured(params)
+        return fail(
+            code: INVALID,
+            msg: f"parameters are a list, an object or none, and these are {json.kind_of(params)}"
+        )
+    return ok()
+
+## HTTP
+
+# The message or the batch an HTTP request carries, as a server reads it.
+#
+# - `r`: the request: a `POST` whose body is JSON, its type `application/json`
+#   or none.
+# - `limits`: what the body may hold.
+#
+# Fails `unsupported` where the method is not `POST`; `invalid` where the type
+# is another, the body is not UTF-8 or is no JSON; `limit` as `parse` does.
+# `refusal_http` answers each. See also `respond_http`.
+function read_http(r: http.Request, limits: Limits) -> Received?
+    if r.method != http.METHOD_POST
+        return fail(code: UNSUPPORTED, msg: f"JSON-RPC over HTTP is sent by POST, and this is {r.method}")
+    kind = http.value_of(r.headers, name: "Content-Type").default("")
+
+    media = match strings.index_of(s: kind, substr: ";")
+        .ok at => strings.to_lower(strings.trim(kind.slice(from: 0, to: at)))
+        .err _ => strings.to_lower(strings.trim(kind))
+
+    if media != "" && media != "application/json" && media != "application/json-rpc" && media != "application/jsonrequest"
+        return fail(code: INVALID, msg: f"the type \"{kind}\" is not JSON")
+
+    if r.body.len() > limits.message_bytes
+        return fail(code: LIMIT, msg: f"a body of {r.body.len()} bytes is past {limits.message_bytes}")
+
+    match bytes.to_text(r.body)
+        .ok text => return parse(text, limits: limits)
+        .err _   => return fail(code: INVALID, msg: f"a body of {r.body.len()} bytes is not UTF-8")
+
+# The HTTP response that carries the answers to one request's body: 200 with
+# the answer or the batch's array as `application/json`, or 204 with no body
+# where nothing answers it.
+#
+# - `answers`: the answers, in order.
+# - `batch`: whether the body was a batch.
+#
+# Fails as `format` fails. Aborts where `batch` is false and `answers` holds
+# more than one.
+function respond_http(answers: [Message], batch: bool) -> http.Response?
+    if answers.len() == 0
+        return ok(http.respond_status(http.STATUS_NO_CONTENT))
+    text: str @= ""
+
+    if batch
+        text @ format_batch(answers)?
+    else
+        assert answers.len() == 1
+        text @ format(answers[0])?
+    return ok(http.respond(status: http.STATUS_OK, content_type: "application/json", body: bytes.from_text(text)))
+
+# The HTTP response to a body `read_http` refused.
+#
+# - `code`: the failure's code: `unsupported` is 405 with `Allow: POST`;
+#   `limit` is 413; any other is 400; each but 405 with `parse_error_of`'s
+#   answer as its body.
+# - `msg`: the failure's message, the error's data.
+function refusal_http(code: str, msg: str) -> http.Response
+    if code == UNSUPPORTED
+        refused @= http.respond_text(status: http.STATUS_METHOD_NOT_ALLOWED, text: msg)
+        refused.headers @ http.with_header(refused.headers, name: "Allow", value: http.METHOD_POST)
+        return refused
+
+    status = if code == LIMIT
+        http.STATUS_CONTENT_TOO_LARGE
+    else
+        http.STATUS_BAD_REQUEST
+    return http.respond(
+        status: status,
+        content_type: "application/json",
+        body: bytes.from_text(format(parse_error_of(msg)).must())
+    )
+
+# Sends `messages` in one `POST` and reads what answers them.
+#
+# - `transport`: how the request is sent.
+# - `r`: the request, its target and any field the program adds, an
+#   `Authorization` among them; its method and body are replaced.
+# - `messages`: the messages, sent alone where there is one and as a batch
+#   where there are several.
+#
+# The answers are those the body holds, in its order: none where the server
+# answers 202 or 204, as it does to notifications. Fails `failed` where the
+# status is not 2xx, its status and body in the message; `invalid` where the
+# body is no message or batch of them; and as `http.send` fails.
+function exchange_http(transport: http.Client, r: http.Request, messages: [Message]) -> [Message]?
+    text: str @= ""
+
+    if messages.len() == 0
+        return fail(code: INVALID, msg: "an exchange sends at least one message")
+
+    if messages.len() == 1
+        text @ format(messages[0])?
+    else
+        text @ format_batch(messages)?
+    sent @= r
+    sent.method @ http.METHOD_POST
+    sent.headers @ http.with_header(sent.headers, name: "Content-Type", value: "application/json")
+    sent.headers @ http.with_header(sent.headers, name: "Accept", value: "application/json")
+    sent.body @ bytes.from_text(text)
+    response = http.send(transport, r: sent)?
+    body = bytes.to_text_lossy(response.body)
+    succeeded = response.status >= 200 && response.status <= 299
+
+    if succeeded && strings.trim(body) == ""
+        return ok([])
+    answers: [Message] @= []
+
+    match parse(body, limits: default_limits())
+        .ok received =>
+            for item in received.messages
+                match item
+                    .ok m => answers @ answers.push(m)
+                    .err e =>
+                        if succeeded
+                            return fail(
+                                code: INVALID,
+                                msg: f"the server answered something that is no message: {e.msg}"
+                            )
+                        return fail(code: FAILED, msg: f"the server answered {response.status}: {body}")
+        .err e =>
+            if succeeded
+                return fail(code: INVALID, msg: f"the server answered something that is no message: {e.msg}")
+            return fail(code: FAILED, msg: f"the server answered {response.status}: {body}")
+
+    return ok(answers)
+
+# Calls `method` with `params` over HTTP, the id 1, and answers its reply.
+#
+# - `transport`: how the request is sent.
+# - `target`: the server's absolute URL.
+# - `method`: the method's name.
+# - `params`: a list, an object, or `.null_value` for none.
+#
+# Fails `invalid` where `target` is no URL or no answer names the call, and as
+# `exchange_http` fails.
+function call_http(transport: http.Client, target: str, method: str, params: json.Value) -> Reply?
+    check_params(params)?
+    r = http.request(method: http.METHOD_POST, target: target)?
+    answers = exchange_http(transport, r: r, messages: [.request(id: .number(v: 1.0), method: method, params: params)])?
+
+    for m in answers
+        match m
+            .response a                  => return ok(a.reply)
+            .request _ | .notification _ => _ = 0
+
+    return fail(code: INVALID, msg: "the server answered no response to the call")
+
+## Tests
+
+# The methods of the specification's examples, § 7: `subtract` by position
+# and by name, `sum` of up to three, `get_data`, and the notifications
+# `update` and `notify_hello`; `foobar` and `foo.get` are not there.
+function spec_methods() -> Methods
+    m @= new_methods()
+    add_method(@m, name: "subtract", params: ["minuend", "subtrahend"], required: 2).must()
+    add_method(@m, name: "sum", params: ["a", "b", "c"], required: 0).must()
+    add_method(@m, name: "get_data", params: [], required: 0).must()
+    add_method(@m, name: "update", params: ["a", "b", "c", "d", "e"], required: 0).must()
+    add_method(@m, name: "notify_hello", params: ["n"], required: 1).must()
+    return m
+
+# The handler of `spec_methods`, as a server with no state writes it.
+#
+# - `found`: the method found and its parameters by name.
+#
+# Fails `invalid` where a parameter of `subtract` or `sum` is not a number.
+function spec_handler(found: Found) -> json.Value?
+    if found.method == "subtract"
+        a = json.number_of(param_of(found, name: "minuend")?)?
+        b = json.number_of(param_of(found, name: "subtrahend")?)?
+        return ok(.number(v: a - b))
+
+    if found.method == "sum"
+        total: f64 @= 0.0
+
+        for name in keys(found.params)
+            total @ total + json.number_of(found.params[name].must())?
+
+        return ok(.number(v: total))
+
+    if found.method == "get_data"
+        return ok(json.parse("[\"hello\", 5]").must())
+    return ok(.null_value)
+
+# The answer of a server with no state to an HTTP request, as `http.exchange`
+# hands it: the body read, dispatched to `spec_handler`, and answered.
+#
+# - `r`: the request.
+function spec_over_http(r: http.Request) -> http.Response
+    received = match read_http(r, limits: default_limits())
+        .ok got => got
+        .err e  => return refusal_http(code: e.code, msg: e.msg)
+
+    answers: [Message] @= []
+
+    for item in received.messages
+        match item
+            .err e => answers @ answers.push(invalid_request_of(e.msg))
+            .ok m =>
+                match m
+                    .request q =>
+                        answer = match method_of(spec_methods(), method: q.method, params: q.params)
+                            .ok found => answer_of(q.id, outcome: spec_handler(found))
+                            .err e    => refusal_of(q.id, code: e.code, msg: e.msg)
+
+                        answers @ answers.push(answer)
+                    .notification _ | .response _ => _ = 0
+
+    return respond_http(answers, batch: received.batch).must()
+
+test "dispatch: every example of the specification's § 7"
+    m = spec_methods()
+    limits = default_limits()
+    assert dispatch("{\"jsonrpc\": \"2.0\", \"method\": \"subtract\", \"params\": [23, 42], \"id\": 2}", methods: m, limits: limits, handler: spec_handler).must() == "{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":-19}"
+    assert dispatch("{\"jsonrpc\": \"2.0\", \"method\": \"subtract\", \"params\": {\"subtrahend\": 23, \"minuend\": 42}, \"id\": 3}", methods: m, limits: limits, handler: spec_handler).must() == "{\"jsonrpc\":\"2.0\",\"id\":3,\"result\":19}"
+    assert dispatch("{\"jsonrpc\": \"2.0\", \"method\": \"update\", \"params\": [1,2,3,4,5]}", methods: m, limits: limits, handler: spec_handler).must() == ""
+    assert dispatch("{\"jsonrpc\": \"2.0\", \"method\": \"foobar\"}", methods: m, limits: limits, handler: spec_handler).must() == ""
+    assert dispatch("{\"jsonrpc\": \"2.0\", \"method\": \"foobar\", \"id\": \"1\"}", methods: m, limits: limits, handler: spec_handler).must() == "{\"jsonrpc\":\"2.0\",\"id\":\"1\",\"error\":{\"code\":-32601,\"message\":\"Method not found\",\"data\":\"no method \\\"foobar\\\"\"}}"
+    assert fixture.codes_of(dispatch("{\"jsonrpc\": \"2.0\", \"method\": \"foobar, \"params\": \"bar\", \"baz]", methods: m, limits: limits, handler: spec_handler).must()) == [PARSE_ERROR]
+    assert fixture.codes_of(dispatch("{\"jsonrpc\": \"2.0\", \"method\": 1, \"params\": \"bar\"}", methods: m, limits: limits, handler: spec_handler).must()) == [INVALID_REQUEST]
+    assert fixture.codes_of(dispatch("[{\"jsonrpc\": \"2.0\", \"method\": \"sum\", \"params\": [1,2,4], \"id\": \"1\"},{\"jsonrpc\": \"2.0\", \"method\"]", methods: m, limits: limits, handler: spec_handler).must()) == [PARSE_ERROR]
+    empty = dispatch("[]", methods: m, limits: limits, handler: spec_handler).must()
+    assert empty[0] == '{' && fixture.codes_of(empty) == [INVALID_REQUEST]
+    one = dispatch("[1]", methods: m, limits: limits, handler: spec_handler).must()
+    assert one[0] == '[' && fixture.codes_of(one) == [INVALID_REQUEST]
+    assert fixture.codes_of(dispatch("[1,2,3]", methods: m, limits: limits, handler: spec_handler).must()) == [INVALID_REQUEST, INVALID_REQUEST, INVALID_REQUEST]
+    batch = "[{\"jsonrpc\": \"2.0\", \"method\": \"sum\", \"params\": [1,2,4], \"id\": \"1\"}, {\"jsonrpc\": \"2.0\", \"method\": \"notify_hello\", \"params\": [7]}, {\"jsonrpc\": \"2.0\", \"method\": \"subtract\", \"params\": [42,23], \"id\": \"2\"}, {\"foo\": \"boo\"}, {\"jsonrpc\": \"2.0\", \"method\": \"foo.get\", \"params\": {\"name\": \"myself\"}, \"id\": \"5\"}, {\"jsonrpc\": \"2.0\", \"method\": \"get_data\", \"id\": \"9\"}]"
+    answered = dispatch(batch, methods: m, limits: limits, handler: spec_handler).must()
+    assert fixture.codes_of(answered) == [0, 0, INVALID_REQUEST, METHOD_NOT_FOUND, 0]
+    assert strings.has_prefix(
+        s: answered,
+        prefix: "[{\"jsonrpc\":\"2.0\",\"id\":\"1\",\"result\":7},{\"jsonrpc\":\"2.0\",\"id\":\"2\",\"result\":19},"
+    )
+    assert strings.has_suffix(s: answered, suffix: "{\"jsonrpc\":\"2.0\",\"id\":\"9\",\"result\":[\"hello\",5]}]")
+    assert dispatch("[{\"jsonrpc\": \"2.0\", \"method\": \"notify_sum\", \"params\": [1,2,4]}, {\"jsonrpc\": \"2.0\", \"method\": \"notify_hello\", \"params\": [7]}]", methods: m, limits: limits, handler: spec_handler).must() == ""
+
+test "dispatch: parameters refused, a handler failing, a null id, a text past the limit"
+    m = spec_methods()
+    limits = default_limits()
+    assert fixture.codes_of(dispatch("{\"jsonrpc\":\"2.0\",\"method\":\"subtract\",\"params\":[1],\"id\":1}", methods: m, limits: limits, handler: spec_handler).must()) == [INVALID_PARAMS]
+    assert fixture.codes_of(dispatch("{\"jsonrpc\":\"2.0\",\"method\":\"subtract\",\"params\":[\"a\",1],\"id\":1}", methods: m, limits: limits, handler: spec_handler).must()) == [INVALID_PARAMS]
+    assert dispatch("{\"jsonrpc\":\"2.0\",\"method\":\"get_data\",\"id\":null}", methods: m, limits: limits, handler: spec_handler).must() == "{\"jsonrpc\":\"2.0\",\"id\":null,\"result\":[\"hello\",5]}"
+    small = Limits(message_bytes: 10, batch_items: 1, depth: 2)
+    assert fixture.codes_of(dispatch("{\"jsonrpc\":\"2.0\",\"method\":\"get_data\",\"id\":1}", methods: m, limits: small, handler: spec_handler).must()) == [INVALID_REQUEST]
+    assert fixture.codes_of(dispatch("[[[1]]]", methods: m, limits: Limits(message_bytes: 100, batch_items: 9, depth: 2), handler: spec_handler).must()) == [PARSE_ERROR]
+    assert fixture.codes_of(dispatch("[1,2]", methods: m, limits: Limits(message_bytes: 100, batch_items: 1, depth: 9), handler: spec_handler).must()) == [INVALID_REQUEST]
+
+test "parse: one message, a batch, the empty array, and a text that is no JSON"
+    limits = default_limits()
+    one = parse("{\"jsonrpc\":\"2.0\",\"method\":\"m\",\"id\":\"x\"}", limits: limits).must()
+    assert !one.batch && one.messages.len() == 1 && one.messages[0].must() == .request(id: .text(v: "x"), method: "m", params: .null_value)
+    two = parse("[{\"jsonrpc\":\"2.0\",\"method\":\"m\"}, 7]", limits: limits).must()
+    assert two.batch && two.messages[0].must() == .notification(method: "m", params: .null_value) && two.messages[1].is_err()
+    empty = parse("[]", limits: limits).must()
+    assert !empty.batch && empty.messages[0].is_err()
+
+    match parse("{", limits: limits)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match parse("[1, 2]", limits: Limits(message_bytes: 100, batch_items: 1, depth: 9))
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+test "format, format_batch, to_value, message_of: each message written and read back"
+    messages: [Message] = [
+        .request(id: .number(v: 1.5), method: "m", params: json.parse("{\"a\": [1]}").must())
+        .request(id: .null_id, method: "", params: .null_value)
+        .notification(method: "n", params: .list(items: []))
+        .response(id: .text(v: "é"), reply: .result(value: .null_value))
+        .response(id: .null_id, reply: .error(error: Error(code: 7, message: "m", data: .boolean(v: true))))
+    ]
+
+    for m in messages
+        assert message_of(json.parse(format(m).must()).must()).must() == m
+
+    assert format(.request(id: .absent, method: "m", params: .null_value)).must() == "{\"jsonrpc\":\"2.0\",\"method\":\"m\"}"
+    assert format(.response(id: .absent, reply: .result(value: .number(v: 1.0)))).must() == "{\"jsonrpc\":\"2.0\",\"id\":null,\"result\":1}"
+
+    match format_batch([])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match format(result_of(.number(v: 1.0), value: .number(v: 0.0 / 0.0)))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "answer_of, refusal_of: each failure's code and what reaches the client"
+    assert format(answer_of(.number(v: 1.0), outcome: fail(code: INVALID, msg: "a is no number"))).must() == "{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"code\":-32602,\"message\":\"Invalid params\",\"data\":\"a is no number\"}}"
+    assert format(answer_of(.number(v: 1.0), outcome: fail(code: "failed", msg: "the disk is full"))).must() == "{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"code\":-32603,\"message\":\"Internal error\"}}"
+    assert format(refusal_of(.text(v: "a"), code: INVALID, msg: "x")).must() == "{\"jsonrpc\":\"2.0\",\"id\":\"a\",\"error\":{\"code\":-32602,\"message\":\"Invalid params\",\"data\":\"x\"}}"
+    assert format(refusal_of(.text(v: "a"), code: CLOSED, msg: "x")).must() == "{\"jsonrpc\":\"2.0\",\"id\":\"a\",\"error\":{\"code\":-32603,\"message\":\"Internal error\"}}"
+
+test "value_of, format_id: an error with and without data, and every kind of id"
+    match value_of(.error(error: Error(code: -32601, message: "Method not found", data: .text(v: "x"))))
+        .ok _  => assert false
+        .err e => assert e.code == FAILED && e.msg == "the peer answered the error -32601, \"Method not found\", \"x\""
+
+    assert format_id(.absent) == "" && format_id(.null_id) == "null" && format_id(.number(v: -2.0)) == "-2" && format_id(.text(v: "a\"b")) == "\"a\\\"b\""
+
+test "add_method, method_of, param_of: a method twice, an `rpc.` name, an optional parameter not given"
+    m @= spec_methods()
+
+    match add_method(@m, name: "sum", params: [], required: 0)
+        .ok _  => assert false
+        .err e => assert e.code == EXISTS
+
+    match add_method(@m, name: "rpc.discover", params: [], required: 0)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    found = method_of(m, method: "sum", params: json.parse("[1]").must()).must()
+
+    match param_of(found, name: "b")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match method_of(m, method: "nope", params: .null_value)
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+test "read_text, write_answers: both framings, a batch's answers, none for notifications alone"
+    framings: [Framing] = [.lines, .content_length]
+
+    for framing in framings
+        pipe = io.pipe().must()
+        write_answers(pipe.writer, answers: [], batch: true, framing: framing).must()
+        write_answers(
+            pipe.writer,
+            answers: [result_of(.number(v: 1.0), value: .null_value)],
+            batch: true,
+            framing: framing
+        ).must()
+        write_answers(
+            pipe.writer,
+            answers: [error_of(.null_id, code: 1, message: "m")],
+            batch: false,
+            framing: framing
+        ).must()
+        writer @= pipe.writer
+        io.close(@writer).must()
+        reader @= io.reader(pipe.reader)
+        assert read_text(@reader, framing: framing, limits: default_limits()).must() == "[{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":null}]"
+        assert read_text(@reader, framing: framing, limits: default_limits()).must() == "{\"jsonrpc\":\"2.0\",\"id\":null,\"error\":{\"code\":1,\"message\":\"m\"}}"
+
+        match read_text(@reader, framing: framing, limits: default_limits())
+            .ok _  => assert false
+            .err e => assert e.code == CLOSED
+
+        io.close(@reader.stream).must()
+
+test "call, next_message, send: a notification and a request of the peer kept while a call waits"
+    two = net.pair(deadline_ms: 10_000).must()
+    peer = two.second.stream
+    write_message(peer, m: .notification(method: "progress", params: .null_value), framing: .lines).must()
+    write_message(peer, m: .request(id: .text(v: "s1"), method: "ask", params: .null_value), framing: .lines).must()
+    write_message(peer, m: result_of(.number(v: 9.0), value: .null_value), framing: .lines).must()
+    write_message(peer, m: result_of(.number(v: 1.0), value: .number(v: 19.0)), framing: .lines).must()
+    c @= new_client(reading: two.first.stream, writing: two.first.stream, framing: .lines, limits: default_limits())
+    assert value_of(call(@c, method: "subtract", params: json.parse("[42, 23]").must()).must()).must() == .number(v: 19.0)
+    assert next_message(@c).must() == .notification(method: "progress", params: .null_value)
+    assert next_message(@c).must() == .request(id: .text(v: "s1"), method: "ask", params: .null_value)
+    assert next_message(@c).must() == result_of(.number(v: 9.0), value: .null_value)
+    send(c, m: result_of(.text(v: "s1"), value: .boolean(v: true))).must()
+    peer_reader @= io.reader(peer)
+    assert read_message(@peer_reader, framing: .lines, limits: default_limits()).must() == .request(id: .number(v: 1.0), method: "subtract", params: json.parse("[42, 23]").must())
+    assert read_message(@peer_reader, framing: .lines, limits: default_limits()).must() == result_of(.text(v: "s1"), value: .boolean(v: true))
+
+    match call(@c, method: "m", params: .text(v: "bar"))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    io.close(@peer_reader.stream).must()
+
+    match call(@c, method: "m", params: .null_value)
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED || e.code == "closed"
+
+    io.close(@c.reader.stream).must()
+
+test "call_batch: answers in the order of the calls whatever order the peer answers in, and a batch refused whole"
+    two = net.pair(deadline_ms: 10_000).must()
+    peer = two.second.stream
+    write_text(
+        peer,
+        text: "[{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":\"b\"},{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":\"a\"}]",
+        framing: .content_length
+    ).must()
+    write_text(peer, text: format(invalid_request_of("an empty batch")).must(), framing: .content_length).must()
+    c @= new_client(
+        reading: two.first.stream,
+        writing: two.first.stream,
+        framing: .content_length,
+        limits: default_limits()
+    )
+    calls = [
+        Call(method: "a", params: .null_value, notification: false)
+        Call(method: "n", params: .null_value, notification: true)
+        Call(method: "b", params: .null_value, notification: false)
+    ]
+    replies = call_batch(@c, calls: calls).must()
+    assert replies.len() == 2 && value_of(replies[0]).must() == .text(v: "a") && value_of(replies[1]).must() == .text(v: "b")
+
+    match call_batch(@c, calls: [Call(method: "a", params: .null_value, notification: false)])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    assert call_batch(@c, calls: [Call(method: "n", params: .null_value, notification: true)]).must() == []
+    io.close(@c.reader.stream).must()
+    second @= two.second.stream
+    io.close(@second).must()
+
+test "read_http, respond_http, refusal_http: a call, a batch, a notification, and the refusals"
+    post = http.request(method: http.METHOD_POST, target: "/rpc").must()
+    call_body = http.with_body(
+        post,
+        content_type: "application/json",
+        body: bytes.from_text("{\"jsonrpc\":\"2.0\",\"method\":\"subtract\",\"params\":[42,23],\"id\":1}")
+    )
+    answered = http.exchange(call_body, handler: spec_over_http).must()
+    assert answered.status == 200 && http.text_of(answered).must() == "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":19}"
+    notified = http.exchange(
+        http.with_body(post, content_type: "application/json", body: bytes.from_text("{\"jsonrpc\":\"2.0\",\"method\":\"update\"}")),
+        handler: spec_over_http
+    ).must()
+    assert notified.status == 204
+    batch = http.exchange(
+        http.with_body(post, content_type: "application/json; charset=utf-8", body: bytes.from_text("[1]")),
+        handler: spec_over_http
+    ).must()
+    assert batch.status == 200 && fixture.codes_of(http.text_of(batch).must()) == [INVALID_REQUEST]
+    got = http.exchange(http.request(method: "GET", target: "/rpc").must(), handler: spec_over_http).must()
+    assert got.status == 405 && http.value_of(got.headers, name: "Allow").must() == "POST"
+    broken = http.exchange(
+        http.with_body(post, content_type: "application/json", body: bytes.from_text("{")),
+        handler: spec_over_http
+    ).must()
+    assert broken.status == 400 && fixture.codes_of(http.text_of(broken).must()) == [PARSE_ERROR]
+    assert refusal_http(code: LIMIT, msg: "too long").status == 413
+
+test "exchange_http, call_http: a call answered over a real connection, and an answer that is no message"
+    started @= fixture.start(status: 200, body: "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":19}")
+    reply = call_http(
+        http.default_client(),
+        target: f"http://127.0.0.1:{started.port}/rpc",
+        method: "subtract",
+        params: json.parse("[42,23]").must()
+    ).must()
+    assert value_of(reply).must() == .number(v: 19.0)
+    seen = strings.split(s: threads.wait_text(@started.thread), sep: fixture.SEPARATOR)
+    assert seen[0] == "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"subtract\",\"params\":[42,23]}" && seen[1] == "application/json"
+    refused @= fixture.start(status: 500, body: "oops")
+    r = http.request(method: http.METHOD_POST, target: f"http://127.0.0.1:{refused.port}/rpc").must()
+
+    match exchange_http(http.default_client(), r: r, messages: [.notification(method: "n", params: .null_value)])
+        .ok _  => assert false
+        .err e => assert e.code == FAILED
+
+    _ = threads.wait_text(@refused.thread)
+
+## Examples
+
+# The answer to `subtract(42, 23)`, as the specification writes it.
+test "result_of: the answer to a call"
+    assert format(result_of(.number(v: 1.0), value: .number(v: 19.0))).must() == "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":19}"
+
+# An error of the program's own, with no data.
+test "error_of: an error of the program's own"
+    assert format(error_of(.text(v: "7"), code: -32000, message: "busy")).must() == "{\"jsonrpc\":\"2.0\",\"id\":\"7\",\"error\":{\"code\":-32000,\"message\":\"busy\"}}"
+
+# A handler's value made a result.
+test "answer_of: a handler's value made the answer"
+    assert answer_of(.number(v: 2.0), outcome: ok(.text(v: "pong"))) == result_of(.number(v: 2.0), value: .text(v: "pong"))
+
+# A method the server does not take, answered as the specification asks.
+test "refusal_of: a method that is not there"
+    m = new_methods()
+
+    match method_of(m, method: "foobar", params: .null_value)
+        .ok _  => assert false
+        .err e => assert refusal_of(.text(v: "1"), code: e.code, msg: e.msg) == .response(id: .text(v: "1"), reply: .error(error: Error(code: METHOD_NOT_FOUND, message: "Method not found", data: .text(v: "no method \"foobar\""))))
+
+# What a server writes back for a text that is no JSON.
+test "parse_error_of: a text that is no JSON"
+    assert format(parse_error_of("unexpected end")).must() == "{\"jsonrpc\":\"2.0\",\"id\":null,\"error\":{\"code\":-32700,\"message\":\"Parse error\",\"data\":\"unexpected end\"}}"
+
+# What a server writes back for an element of a batch that is no request.
+test "invalid_request_of: an element that is no request"
+    for item in parse("[1]", limits: default_limits()).must().messages
+        match item
+            .ok _  => assert false
+            .err e => assert fixture.codes_of(format(invalid_request_of(e.msg)).must()) == [INVALID_REQUEST]
+
+# The result of a reply read, or its error as a failure.
+test "value_of: a result read out of a reply"
+    assert value_of(.result(value: .number(v: 19.0))).must() == .number(v: 19.0)
+
+# An id as JSON writes it, for a message to a person.
+test "format_id: an id written for a log line"
+    assert format_id(.text(v: "a1")) == "\"a1\""
+
+# The usual limits.
+test "default_limits: 16 MiB a message"
+    assert default_limits().message_bytes == 16_777_216
+
+# A batch of a call and a notification.
+test "parse: a batch received"
+    got = parse(
+        "[{\"jsonrpc\":\"2.0\",\"method\":\"sum\",\"params\":[1,2],\"id\":\"1\"},{\"jsonrpc\":\"2.0\",\"method\":\"hello\"}]",
+        limits: default_limits()
+    ).must()
+    assert got.batch && got.messages.len() == 2
+
+# A notification written on one line.
+test "format: a notification"
+    assert format(.notification(method: "update", params: json.parse("[1,2]").must())).must() == "{\"jsonrpc\":\"2.0\",\"method\":\"update\",\"params\":[1,2]}"
+
+# Two calls written as one batch.
+test "format_batch: two calls in one batch"
+    calls: [Message] = [
+        .request(id: .number(v: 1.0), method: "a", params: .null_value)
+        .request(id: .number(v: 2.0), method: "b", params: .null_value)
+    ]
+    assert format_batch(calls).must() == "[{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"a\"},{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"b\"}]"
+
+# A message read out of a JSON value another reader made.
+test "message_of: a value read as a message"
+    assert message_of(json.parse("{\"jsonrpc\":\"2.0\",\"method\":\"ping\",\"id\":3}").must()).must() == .request(id: .number(v: 3.0), method: "ping", params: .null_value)
+
+# A message as a JSON value, to change or embed.
+test "to_value: a message as a JSON value"
+    assert json.value_at(to_value(result_of(.number(v: 1.0), value: .text(v: "x"))), pointer: "/result").must() == .text(v: "x")
+
+# One message read from a pipe, as the Language Server Protocol frames it.
+test "read_text: a message framed by its length"
+    pipe = io.pipe().must()
+    io.write_text(pipe.writer, text: "Content-Length: 2\r\n\r\n{}").must()
+    reader @= io.reader(pipe.reader)
+    assert read_text(@reader, framing: .content_length, limits: default_limits()).must() == "{}"
+    writer @= pipe.writer
+    io.close(@writer).must()
+    io.close(@reader.stream).must()
+
+# One message read and parsed, as a client reads its peer.
+test "read_message: a notification read from a pipe"
+    pipe = io.pipe().must()
+    io.write_line(pipe.writer, line: "{\"jsonrpc\":\"2.0\",\"method\":\"tick\"}").must()
+    reader @= io.reader(pipe.reader)
+    assert read_message(@reader, framing: .lines, limits: default_limits()).must() == .notification(method: "tick", params: .null_value)
+    writer @= pipe.writer
+    io.close(@writer).must()
+    io.close(@reader.stream).must()
+
+# A text framed for the Language Server Protocol.
+test "write_text: a text after its length"
+    pipe = io.pipe().must()
+    write_text(pipe.writer, text: "{}", framing: .content_length).must()
+    writer @= pipe.writer
+    io.close(@writer).must()
+    reader @= io.reader(pipe.reader)
+    assert io.read_rest_text(@reader).must() == "Content-Length: 2\r\n\r\n{}"
+    io.close(@reader.stream).must()
+
+# A message written one a line.
+test "write_message: a request on one line"
+    pipe = io.pipe().must()
+    write_message(
+        pipe.writer,
+        m: .request(id: .number(v: 1.0), method: "ping", params: .null_value),
+        framing: .lines
+    ).must()
+    writer @= pipe.writer
+    io.close(@writer).must()
+    reader @= io.reader(pipe.reader)
+    assert io.read_rest_text(@reader).must() == "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"ping\"}\n"
+    io.close(@reader.stream).must()
+
+# The answers to a batch of one call, written as one array.
+test "write_answers: a batch's one answer"
+    pipe = io.pipe().must()
+    write_answers(
+        pipe.writer,
+        answers: [result_of(.text(v: "1"), value: .number(v: 7.0))],
+        batch: true,
+        framing: .lines
+    ).must()
+    writer @= pipe.writer
+    io.close(@writer).must()
+    reader @= io.reader(pipe.reader)
+    assert io.read_rest_text(@reader).must() == "[{\"jsonrpc\":\"2.0\",\"id\":\"1\",\"result\":7}]\n"
+    io.close(@reader.stream).must()
+
+# An empty table, which finds nothing.
+test "new_methods: a table of none"
+    assert new_methods().by_name == {}
+
+# A method of two parameters, both required.
+test "add_method: subtract by position or by name"
+    m @= new_methods()
+    add_method(@m, name: "subtract", params: ["minuend", "subtrahend"], required: 2).must()
+    assert keys(m.by_name) == ["subtract"]
+
+# A call by position found, its parameters named.
+test "method_of: positional parameters named"
+    m = spec_methods()
+    found = method_of(m, method: "subtract", params: json.parse("[42, 23]").must()).must()
+    assert found.method == "subtract" && found.params["subtrahend"].must() == .number(v: 23.0)
+
+# A parameter read by a handler.
+test "param_of: one parameter of a call"
+    found = method_of(
+        spec_methods(),
+        method: "subtract",
+        params: json.parse("{\"minuend\": 1, \"subtrahend\": 2}").must()
+    ).must()
+    assert param_of(found, name: "minuend").must() == .number(v: 1.0)
+
+# A server with no state answering one call.
+test "dispatch: one call answered"
+    assert dispatch("{\"jsonrpc\": \"2.0\", \"method\": \"subtract\", \"params\": [42, 23], \"id\": 1}", methods: spec_methods(), limits: default_limits(), handler: spec_handler).must() == "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":19}"
+
+# A client over one end of a connection, its first id 1.
+test "new_client: a client over a connection"
+    two = net.pair(deadline_ms: 10_000).must()
+    c = new_client(reading: two.first.stream, writing: two.first.stream, framing: .lines, limits: default_limits())
+    assert c.next_id == 1
+    first @= two.first.stream
+    io.close(@first).must()
+    second @= two.second.stream
+    io.close(@second).must()
+
+# A call answered by a peer whose answer was written ahead.
+test "call: subtract answered"
+    two = net.pair(deadline_ms: 10_000).must()
+    write_message(two.second.stream, m: result_of(.number(v: 1.0), value: .number(v: 19.0)), framing: .lines).must()
+    c @= new_client(reading: two.first.stream, writing: two.first.stream, framing: .lines, limits: default_limits())
+    assert value_of(call(@c, method: "subtract", params: json.parse("[42, 23]").must()).must()).must() == .number(v: 19.0)
+    io.close(@c.reader.stream).must()
+    second @= two.second.stream
+    io.close(@second).must()
+
+# A notification, which nothing answers.
+test "notify: an update written"
+    two = net.pair(deadline_ms: 10_000).must()
+    c = new_client(reading: two.first.stream, writing: two.first.stream, framing: .lines, limits: default_limits())
+    notify(c, method: "update", params: json.parse("[1]").must()).must()
+    peer @= io.reader(two.second.stream)
+    assert read_message(@peer, framing: .lines, limits: default_limits()).must() == .notification(method: "update", params: json.parse("[1]").must())
+    first @= two.first.stream
+    io.close(@first).must()
+    io.close(@peer.stream).must()
+
+# A batch of two calls, answered in one array.
+test "call_batch: two calls in one batch"
+    two = net.pair(deadline_ms: 10_000).must()
+    write_text(
+        two.second.stream,
+        text: "[{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":1},{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":2}]",
+        framing: .lines
+    ).must()
+    c @= new_client(reading: two.first.stream, writing: two.first.stream, framing: .lines, limits: default_limits())
+    replies = call_batch(
+        @c,
+        calls: [Call(method: "a", params: .null_value, notification: false), Call(method: "b", params: .null_value, notification: false)]
+    ).must()
+    assert replies == [.result(value: .number(v: 1.0)), .result(value: .number(v: 2.0))]
+    io.close(@c.reader.stream).must()
+    second @= two.second.stream
+    io.close(@second).must()
+
+# A notification of the peer read when no call waits.
+test "next_message: the peer's notification"
+    two = net.pair(deadline_ms: 10_000).must()
+    write_message(two.second.stream, m: .notification(method: "tick", params: .null_value), framing: .lines).must()
+    c @= new_client(reading: two.first.stream, writing: two.first.stream, framing: .lines, limits: default_limits())
+    assert next_message(@c).must() == .notification(method: "tick", params: .null_value)
+    io.close(@c.reader.stream).must()
+    second @= two.second.stream
+    io.close(@second).must()
+
+# An answer to a request of the peer.
+test "send: an answer to the peer"
+    two = net.pair(deadline_ms: 10_000).must()
+    c = new_client(reading: two.first.stream, writing: two.first.stream, framing: .lines, limits: default_limits())
+    send(c, m: result_of(.text(v: "s1"), value: .null_value)).must()
+    peer @= io.reader(two.second.stream)
+    assert read_message(@peer, framing: .lines, limits: default_limits()).must() == result_of(.text(v: "s1"), value: .null_value)
+    first @= two.first.stream
+    io.close(@first).must()
+    io.close(@peer.stream).must()
+
+# Parameters that are neither a list nor an object, refused before a call.
+test "check_params: a string refused"
+    assert check_params(.text(v: "bar")).is_err() && !check_params(.null_value).is_err()
+
+# A POST read as one call.
+test "read_http: a call in a POST"
+    r = http.with_body(
+        http.request(method: http.METHOD_POST, target: "/rpc").must(),
+        content_type: "application/json",
+        body: bytes.from_text("{\"jsonrpc\":\"2.0\",\"method\":\"ping\",\"id\":1}")
+    )
+    assert read_http(r, limits: default_limits()).must().messages[0].must() == .request(id: .number(v: 1.0), method: "ping", params: .null_value)
+
+# The answer to one call as an HTTP response.
+test "respond_http: one answer"
+    response = respond_http([result_of(.number(v: 1.0), value: .text(v: "pong"))], batch: false).must()
+    assert response.status == 200 && http.text_of(response).must() == "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":\"pong\"}"
+
+# A GET refused as JSON-RPC over HTTP refuses it.
+test "refusal_http: a GET refused"
+    assert refusal_http(code: UNSUPPORTED, msg: "GET").status == 405
+
+# A notification sent over HTTP, which the server answers 204.
+test "exchange_http: a notification sent"
+    started @= fixture.start(status: 204, body: "")
+    r = http.request(method: http.METHOD_POST, target: f"http://127.0.0.1:{started.port}/rpc").must()
+    assert exchange_http(http.default_client(), r: r, messages: [.notification(method: "update", params: .null_value)]).must() == []
+    _ = threads.wait_text(@started.thread)
+
+# A call over HTTP answered.
+test "call_http: ping answered"
+    started @= fixture.start(status: 200, body: "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":\"pong\"}")
+    reply = call_http(
+        http.default_client(),
+        target: f"http://127.0.0.1:{started.port}/",
+        method: "ping",
+        params: .null_value
+    ).must()
+    assert value_of(reply).must() == .text(v: "pong")
+    _ = threads.wait_text(@started.thread)

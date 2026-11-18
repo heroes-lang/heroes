@@ -1,0 +1,206 @@
+# The `_meta` member MCP's revision 2026-07-28 puts in every request's
+# parameters, its reserved keys read and checked (basic § General fields),
+# and the capabilities a client declares there read for what a server may
+# ask of it. It answers JSON values and text, which the face turns into its
+# own records.
+
+use json
+
+# The code of `_meta` or a capability not of its form: a request a server
+# answers -32602.
+constant INVALID: str
+    "invalid"
+
+# The key of the protocol version a request is written in.
+constant PROTOCOL_VERSION: str
+    "io.modelcontextprotocol/protocolVersion"
+
+# The key of the client's name and version.
+constant CLIENT_INFO: str
+    "io.modelcontextprotocol/clientInfo"
+
+# The key of the capabilities a request declares.
+constant CLIENT_CAPABILITIES: str
+    "io.modelcontextprotocol/clientCapabilities"
+
+# The key of the least level of the log lines a request asks for.
+constant LOG_LEVEL: str
+    "io.modelcontextprotocol/logLevel"
+
+# The key of the subscription a notification belongs to.
+constant SUBSCRIPTION_ID: str
+    "io.modelcontextprotocol/subscriptionId"
+
+# The key of the server's name and version in a result's `_meta`.
+constant SERVER_INFO: str
+    "io.modelcontextprotocol/serverInfo"
+
+# The key of the token a request's progress is told with.
+constant PROGRESS_TOKEN: str
+    "progressToken"
+
+# A request's `_meta`, read.
+record Parts
+    # The protocol version it is written in.
+    protocol_version: str
+    # The client's name and version, an object, `.null_value` where none.
+    client_info: json.Value
+    # The capabilities it declares, an object.
+    capabilities: json.Value
+    # The progress token, a text or an integer; `.null_value` where none.
+    progress_token: json.Value
+    # The least log level asked for, "" where none.
+    log_level: str
+    # Every member of `_meta`, these included.
+    members: {str: json.Value}
+
+# The levels of a log line, from the least to the most severe (RFC 5424).
+function levels() -> [str]
+    return ["debug", "info", "notice", "warning", "error", "critical", "alert", "emergency"]
+
+# The `_meta` of a request's `params`, checked. Fails `invalid` where
+# `params` is no object, or `_meta` lacks the protocol version or the
+# capabilities, or a reserved key holds a value of another kind.
+function read(params: json.Value) -> Parts?
+    members = match params
+        .object o   => o.members
+        .null_value => return fail(code: INVALID, msg: "the request has no params, and so no `_meta`")
+        .boolean _ | .number _ | .text _ | .list _ =>
+            return fail(
+                code: INVALID,
+                msg: f"the params are {json.kind_of(params)}, and an MCP request's are an object"
+            )
+
+    meta = match members["_meta"]
+        .ok got =>
+            match got
+                .object o => o.members
+                .null_value | .boolean _ | .number _ | .text _ | .list _ =>
+                    return fail(code: INVALID, msg: "`_meta` is not an object")
+        .err _ => return fail(code: INVALID, msg: f"the request has no `_meta`, which carries `{PROTOCOL_VERSION}`")
+
+    version = match meta[PROTOCOL_VERSION]
+        .ok got =>
+            match got
+                .text t => t.v
+                .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+                    return fail(code: INVALID, msg: f"`{PROTOCOL_VERSION}` is not a string")
+        .err _ => return fail(code: INVALID, msg: f"`_meta` has no `{PROTOCOL_VERSION}`")
+
+    capabilities = match meta[CLIENT_CAPABILITIES]
+        .ok got =>
+            match got
+                .object _ => got
+                .null_value | .boolean _ | .number _ | .text _ | .list _ =>
+                    return fail(code: INVALID, msg: f"`{CLIENT_CAPABILITIES}` is not an object")
+        .err _ => return fail(code: INVALID, msg: f"`_meta` has no `{CLIENT_CAPABILITIES}`")
+
+    info = meta[CLIENT_INFO].default(.null_value)
+
+    match info
+        .object _ | .null_value => _ = 0
+        .boolean _ | .number _ | .text _ | .list _ =>
+            return fail(code: INVALID, msg: f"`{CLIENT_INFO}` is not an object")
+
+    token = meta[PROGRESS_TOKEN].default(.null_value)
+
+    match token
+        .text _ | .null_value => _ = 0
+        .number _ =>
+            if json.int_of(token).is_err()
+                return fail(code: INVALID, msg: "`progressToken` is a number that is no integer")
+        .boolean _ | .list _ | .object _ => return fail(
+            code: INVALID,
+            msg: "`progressToken` is neither a string nor an integer"
+        )
+
+    level: str @= ""
+
+    match meta[LOG_LEVEL]
+        .ok got =>
+            match got
+                .text t =>
+                    if !has(levels(), name: t.v)
+                        return fail(code: INVALID, msg: f"\"{t.v}\" is no log level")
+                    level @ t.v
+                .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+                    return fail(code: INVALID, msg: f"`{LOG_LEVEL}` is not a string")
+        .err _ => _ = 0
+
+    return ok(
+        Parts(protocol_version: version, client_info: info, capabilities: capabilities, progress_token: token, log_level: level, members: meta)
+    )
+
+# Whether `names` holds `name`.
+function has(names: [str], name: str) -> bool
+    for n in names
+        if n == name
+            return true
+
+    return false
+
+# The modes of elicitation `capabilities` declares: "form", "url", both or
+# none. An empty `elicitation` object declares `form` alone, for clients of
+# the revision before.
+function elicitation_modes(capabilities: json.Value) -> [str]
+    elicitation = match json.member(capabilities, key: "elicitation")
+        .ok got => got
+        .err _  => return []
+
+    modes: [str] @= []
+
+    match elicitation
+        .object o =>
+            if o.members == {}
+                return ["form"]
+
+            if !o.members["form"].is_err()
+                modes @ modes.push("form")
+
+            if !o.members["url"].is_err()
+                modes @ modes.push("url")
+        .null_value | .boolean _ | .number _ | .text _ | .list _ => _ = 0
+
+    return modes
+
+# The text of the member `key` of the object `v`, "" where it has none or the
+# member is not a string.
+function text_of(v: json.Value, key: str) -> str
+    return match json.member(v, key: key)
+        .ok got => json.text_of(got).default("")
+        .err _  => ""
+
+test "read: a request's `_meta` as the revision writes it, a progress token and a log level"
+    params = json.parse(
+        "{\"name\": \"x\", \"_meta\": {\"io.modelcontextprotocol/protocolVersion\": \"2026-07-28\", \"io.modelcontextprotocol/clientInfo\": {\"name\": \"c\", \"version\": \"1\"}, \"io.modelcontextprotocol/clientCapabilities\": {\"elicitation\": {}}, \"progressToken\": 7, \"io.modelcontextprotocol/logLevel\": \"info\", \"traceparent\": \"00-a-b-01\"}}"
+    ).must()
+    parts = read(params).must()
+    assert parts.protocol_version == "2026-07-28" && text_of(parts.client_info, key: "name") == "c"
+    assert parts.progress_token == .number(v: 7.0) && parts.log_level == "info" && parts.members["traceparent"].must() == .text(v: "00-a-b-01")
+
+test "read: each refusal a server answers -32602"
+    refused = [
+        "null"
+        "[]"
+        "{}"
+        "{\"_meta\": 1}"
+        "{\"_meta\": {\"io.modelcontextprotocol/clientCapabilities\": {}}}"
+        "{\"_meta\": {\"io.modelcontextprotocol/protocolVersion\": 1, \"io.modelcontextprotocol/clientCapabilities\": {}}}"
+        "{\"_meta\": {\"io.modelcontextprotocol/protocolVersion\": \"2026-07-28\"}}"
+        "{\"_meta\": {\"io.modelcontextprotocol/protocolVersion\": \"2026-07-28\", \"io.modelcontextprotocol/clientCapabilities\": []}}"
+        "{\"_meta\": {\"io.modelcontextprotocol/protocolVersion\": \"2026-07-28\", \"io.modelcontextprotocol/clientCapabilities\": {}, \"progressToken\": 1.5}}"
+        "{\"_meta\": {\"io.modelcontextprotocol/protocolVersion\": \"2026-07-28\", \"io.modelcontextprotocol/clientCapabilities\": {}, \"progressToken\": true}}"
+        "{\"_meta\": {\"io.modelcontextprotocol/protocolVersion\": \"2026-07-28\", \"io.modelcontextprotocol/clientCapabilities\": {}, \"io.modelcontextprotocol/logLevel\": \"loud\"}}"
+        "{\"_meta\": {\"io.modelcontextprotocol/protocolVersion\": \"2026-07-28\", \"io.modelcontextprotocol/clientCapabilities\": {}, \"io.modelcontextprotocol/clientInfo\": \"me\"}}"
+    ]
+
+    for text in refused
+        match read(json.parse(text).must())
+            .ok _  => assert text == "refused"
+            .err e => assert e.code == INVALID
+
+test "elicitation_modes: none, the empty object, form, url, and both"
+    assert elicitation_modes(json.parse("{}").must()) == []
+    assert elicitation_modes(json.parse("{\"elicitation\": {}}").must()) == ["form"]
+    assert elicitation_modes(json.parse("{\"elicitation\": {\"url\": {}}}").must()) == ["url"]
+    assert elicitation_modes(json.parse("{\"elicitation\": {\"form\": {}, \"url\": {}}}").must()) == ["form", "url"]

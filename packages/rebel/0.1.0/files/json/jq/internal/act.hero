@@ -1,0 +1,450 @@
+# What the machine does with values once a node's arguments are known: the
+# arguments evaluated one by one, the last the outer loop; an operator, a
+# string, an object, an index, a slice and a builtin acted on; an iteration
+# begun; an `if` branched; `limit` and ranges set going. Each sets the
+# registers of the step after it and calls no other step.
+
+use json
+use json/jq/internal/arith
+use json/jq/internal/formats
+use json/jq/internal/frames
+use json/jq/internal/natives
+use json/jq/internal/paths
+use json/jq/internal/state
+use json/jq/internal/syntax
+use json/jq/internal/text
+use json/jq/internal/values
+use json/jq/internal/write
+
+# The arguments a node evaluates as values before it acts.
+function args_of(m: state.Machine lent, node: i64) -> [i64]
+    n = m.nodes[node]
+
+    if n.kind == syntax.BINARY
+        return [n.a, n.b]
+
+    if n.kind == syntax.INDEX
+        return [n.b]
+
+    if n.kind == syntax.SLICE
+        ends: [i64] @= []
+
+        if n.b >= 0
+            ends @ ends.push(n.b)
+
+        if n.c >= 0
+            ends @ ends.push(n.c)
+        return ends
+
+    if n.kind == syntax.CALL && n.d == natives.LIMIT
+        return [n.items[0]]
+    return n.items
+
+# Whether a node's arguments are evaluated first to last, the first the
+# outer loop, as an object's are; every other node's last argument is.
+function forward(m: state.Machine lent, node: i64) -> bool
+    k = m.nodes[node].kind
+    return k == syntax.OBJECT || k == syntax.ARRAY
+
+# Evaluates the arguments of `node` on `item`, then acts.
+function start_args(@m: state.Machine, node: i64, item: frames.Item, env: i64, cont: i64)
+    arg_nodes = args_of(m, node: node)
+
+    if arg_nodes.len() == 0
+        complete(@m, node: node, given: [], item: item, env: env, next: cont)
+    else
+        first = if forward(m, node: node)
+            0
+        else
+            arg_nodes.len() - 1
+        k = state.cont_of(@m, kind: state.K_ARGS, node: node, env: env, next: cont, item: item, n: first, collected: [])
+        state.eval_to(@m, node: arg_nodes[first], item: frames.plain(item.value), env: env, cont: k)
+
+# `limit(count; filter)`.
+function limited(@m: state.Machine, count: i64, body: i64, item: frames.Item, env: i64, cont: i64)
+    if count <= 0
+        state.backtrack(@m)
+    else
+        c: frames.Choice @= frames.choice(state.C_LIMIT)
+        c.n @ count
+        c.cont @ cont
+        at = state.push_choice(@m, c: c)
+        k = state.cont_of(@m, kind: state.K_LIMIT, node: body, env: env, next: cont, item: item, n: at, collected: [])
+        state.eval_to(@m, node: body, item: item, env: env, cont: k)
+
+# One argument's value received; the next argument evaluated, or the node
+# acted on.
+function argument(@m: state.Machine, c: frames.Cont, v: json.Value)
+    arg_nodes = args_of(m, node: c.node)
+    ahead = forward(m, node: c.node)
+    got: [json.Value] @= []
+
+    if ahead
+        got @ c.values
+        got @ got.push(v)
+    else
+        got @ [v]
+
+        for x in c.values
+            got @ got.push(x)
+
+    next = if ahead
+        c.n + 1
+    else
+        c.n - 1
+
+    if next < 0 || next >= arg_nodes.len()
+        complete(@m, node: c.node, given: got, item: c.item, env: c.env, next: c.next)
+    else
+        k = state.cont_of(
+            @m,
+            kind: state.K_ARGS,
+            node: c.node,
+            env: c.env,
+            next: c.next,
+            item: c.item,
+            n: next,
+            collected: got
+        )
+        state.eval_to(@m, node: arg_nodes[next], item: frames.plain(c.item.value), env: c.env, cont: k)
+
+# `item`'s value passed to `next` as derived from `item`.
+function answer(@m: state.Machine, item: frames.Item, v: json.Value, next: i64)
+    state.emit_to(@m, item: frames.derived(from: item, v: v), cont: next)
+
+# A node acted on once its arguments' values are `given`.
+function complete(@m: state.Machine, node: i64, given: [json.Value], item: frames.Item, env: i64, next: i64)
+    n = m.nodes[node]
+
+    if n.kind == syntax.BINARY
+        left = m.max_steps - m.steps
+
+        match binary(op: n.d, a: given[0], b: given[1], budget: left)
+            .ok r =>
+                m.steps @ m.steps + r.cost
+                answer(@m, item: item, v: r.value, next: next)
+            .err e =>
+                if e.code == "limit"
+                    state.limit_reached(@m, msg: f"the run took more than {m.max_steps} steps")
+                else
+                    state.raise_text(@m, msg: e.msg)
+    else if n.kind == syntax.STRING
+        pieces: [str] @= []
+
+        for i in range(from: 0, to: n.items.len())
+            if m.nodes[n.items[i]].kind == syntax.LITERAL
+                match text.to_text(given[i])
+                    .ok t => pieces @ pieces.push(t)
+                    .err e =>
+                        fail_with(@m, code: e.code, msg: e.msg)
+                        return
+            else
+                match formats.apply(name: n.text, v: given[i])
+                    .ok f => pieces @ pieces.push(text.to_text(f).default(""))
+                    .err e =>
+                        fail_with(@m, code: e.code, msg: e.msg)
+                        return
+
+        answer(@m, item: item, v: .text(v: pieces.join("")), next: next)
+    else if n.kind == syntax.OBJECT
+        members: {str: json.Value} @= {}
+        i: i64 @= 0
+
+        while i + 1 < given.len()
+            match given[i]
+                .text key => members[key.v] @ given[i + 1]
+                .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+                    state.raise_text(@m, msg: f"Object keys must be strings")
+                    return
+
+            i @ i + 2
+
+        answer(@m, item: item, v: .object(members: members), next: next)
+    else if n.kind == syntax.INDEX || n.kind == syntax.SLICE
+        c = state.cont_of(@m, kind: state.K_INDEX, node: node, env: env, next: next, item: item, n: 0, collected: given)
+        state.eval_to(@m, node: n.a, item: item, env: env, cont: c)
+    else
+        native(@m, node: node, given: given, item: item, env: env, next: next)
+
+# What an operator answered and the steps it cost.
+record Computed
+    # The answer.
+    value: json.Value
+    # The steps it cost.
+    cost: i64
+
+# The steps an arithmetic operator will cost on `a` and `b`, counted before it
+# runs, so that a text doubled thirty times over is stopped before it is
+# made: an element or 16 bytes a step.
+function arithmetic_cost(op: i64, a: json.Value, b: json.Value) -> i64
+    sa = natives.size_of(a)
+    sb = natives.size_of(b)
+
+    if op == syntax.SUBTRACT
+        return 1 + sa * (sb + 1)
+
+    if op == syntax.MULTIPLY
+        match a
+            .text t =>
+                match b
+                    .number n                                                => return repeat_cost(t.v.len(), n: n.v)
+                    .null_value | .boolean _ | .text _ | .list _ | .object _ => return 1 + sa + sb
+            .number n =>
+                match b
+                    .text t                                                    => return repeat_cost(t.v.len(), n: n.v)
+                    .null_value | .boolean _ | .number _ | .list _ | .object _ => return 1 + sa + sb
+            .null_value | .boolean _ | .list _ | .object _ => return 1 + sa + sb
+    return 1 + sa + sb
+
+# The steps of a text of `bytes` bytes repeated `n` times.
+function repeat_cost(bytes: i64, n: f64) -> i64
+    if n != n || n <= 1.0
+        return 1 + bytes / 16
+
+    if n > 100000000000.0
+        return 9223372036854775807
+    count = n.to_i64().must()
+
+    if bytes > 0 && count > 100000000000 / bytes
+        return 9223372036854775807
+    return 1 + bytes * count / 16
+
+# A builtin's failure: a bound reached where its code is `limit`, and
+# otherwise jq's error saying `msg`.
+function fail_with(@m: state.Machine, code: str, msg: str)
+    if code == "limit"
+        state.limit_reached(@m, msg: msg)
+    else
+        state.raise_text(@m, msg: msg)
+
+# `a op b` for an arithmetic operator or a comparison, within `budget` steps.
+function binary(op: i64, a: json.Value, b: json.Value, budget: i64) -> Computed?
+    if op <= syntax.MODULO
+        cost = arithmetic_cost(op: op, a: a, b: b)
+
+        if cost > budget
+            return fail(code: "limit", msg: "the operation would take more steps than are left")
+        return ok(Computed(value: arith.apply(op: op, a: a, b: b)?, cost: cost))
+    ordered = values.order_within(a: a, b: b, budget: budget)?
+    c = ordered.result
+
+    truth = if op == syntax.EQUAL
+        c == 0
+    else if op == syntax.NOT_EQUAL
+        c != 0
+    else if op == syntax.LESS
+        c < 0
+    else if op == syntax.LESS_EQUAL
+        c <= 0
+    else if op == syntax.GREATER
+        c > 0
+    else
+        c >= 0
+    return ok(Computed(value: .boolean(v: truth), cost: ordered.cost))
+
+# A builtin given its arguments' values.
+function native(@m: state.Machine, node: i64, given: [json.Value], item: frames.Item, env: i64, next: i64)
+    n = m.nodes[node]
+    b = n.d
+
+    if b == natives.ERROR_1
+        state.raise_value(@m, value: given[0])
+    else if b == natives.GETPATH
+        if item.mode == frames.LOST
+            state.raise_text(@m, msg: f"Invalid path expression with result {write.preview(item.value)}")
+        else
+            match paths.getpath(v: item.value, path: given[0])
+                .err e => state.raise_text(@m, msg: e.msg)
+                .ok v =>
+                    if item.mode == frames.TRACKED
+                        p: [json.Value] @= item.path
+
+                        for x in paths.keys_of_path(given[0]).must()
+                            p @ p.push(x)
+
+                        state.emit_to(@m, item: frames.Item(value: v, path: p, mode: frames.TRACKED), cont: next)
+                    else
+                        answer(@m, item: item, v: v, next: next)
+    else if b == natives.LIMIT
+        match given[0]
+            .number count =>
+                if count.v != count.v || count.v < 0.0
+                    state.eval_to(@m, node: n.items[1], item: item, env: env, cont: next)
+                else
+                    whole = if count.v > 1000000000000.0
+                        1000000000000
+                    else
+                        count.v.to_i64().must()
+                    limited(@m, count: whole, body: n.items[1], item: item, env: env, cont: next)
+            .null_value | .boolean _ | .text _ | .list _ | .object _ =>
+                state.raise_text(@m, msg: "Invalid limit: must be a number")
+    else if b == natives.RANGE
+        ranged(@m, given: given, item: item, next: next)
+    else if b == natives.HALT_ERROR
+        match given[0]
+            .number code =>
+                m.ending @ state.HALTED
+                m.halt_code @ code.v.to_i64().default(5)
+                m.halt_value @ item.value
+            .null_value | .boolean _ | .text _ | .list _ | .object _ =>
+                state.raise_text(@m, msg: "halt_error/1: number required")
+    else
+        left = m.max_steps - m.steps
+
+        match natives.apply(id: b, input: item.value, given: given, limit: left)
+            .err e =>
+                if e.code == "limit"
+                    state.limit_reached(@m, msg: f"the run took more than {m.max_steps} steps")
+                else
+                    state.raise_text(@m, msg: e.msg)
+            .ok produced =>
+                m.steps @ m.steps + produced.cost
+                outputs(@m, list: produced.outputs, item: item, next: next)
+
+# The values of a builtin passed on, the first now and the rest by a choice.
+function outputs(@m: state.Machine, list: [json.Value], item: frames.Item, next: i64)
+    if list.len() == 0
+        state.backtrack(@m)
+    else
+        if list.len() > 1
+            c: frames.Choice @= frames.choice(state.C_VALUES)
+            c.values @ list
+            c.n @ 1
+            c.item @ item
+            c.cont @ next
+            _ = state.push_choice(@m, c: c)
+        answer(@m, item: item, v: list[0], next: next)
+
+# `range(from; upto; by)`'s first number, and a choice for the rest.
+function ranged(@m: state.Machine, given: [json.Value], item: frames.Item, next: i64)
+    match given[0]
+        .number from =>
+            match given[1]
+                .number upto =>
+                    match given[2]
+                        .number by => range_from(@m, x: from.v, upto: upto.v, by: by.v, item: item, next: next)
+                        .null_value | .boolean _ | .text _ | .list _ | .object _ =>
+                            state.raise_text(@m, msg: "Range bounds must be numeric")
+                .null_value | .boolean _ | .text _ | .list _ | .object _ =>
+                    state.raise_text(@m, msg: "Range bounds must be numeric")
+        .null_value | .boolean _ | .text _ | .list _ | .object _ => state.raise_text(
+            @m,
+            msg: "Range bounds must be numeric"
+        )
+
+# Whether `x` is still inside a range ending at `upto` by `by`.
+function in_range(x: f64, upto: f64, by: f64) -> bool
+    if x != x || upto != upto || by != by
+        return false
+    return by > 0.0 && x < upto || by < 0.0 && x > upto
+
+# Passes `x` on and leaves a choice for the numbers after it.
+function range_from(@m: state.Machine, x: f64, upto: f64, by: f64, item: frames.Item, next: i64)
+    if !in_range(x: x, upto: upto, by: by)
+        state.backtrack(@m)
+    else
+        if in_range(x: x + by, upto: upto, by: by)
+            c: frames.Choice @= frames.choice(state.C_RANGE)
+            c.x @ x + by
+            c.y @ upto
+            c.z @ by
+            c.item @ item
+            c.cont @ next
+            _ = state.push_choice(@m, c: c)
+        answer(@m, item: item, v: .number(v: x), next: next)
+
+# The target of an index or a slice received: the element passed on, with its
+# path inside `path(...)`.
+function indexed(@m: state.Machine, c: frames.Cont, target: frames.Item)
+    n = m.nodes[c.node]
+    key: json.Value @= .null_value
+
+    if n.kind == syntax.INDEX
+        key @ c.values[0]
+    else
+        members: {str: json.Value} @= {}
+        members["start"] @ .null_value
+        members["end"] @ .null_value
+        at: i64 @= 0
+
+        if n.b >= 0
+            members["start"] @ c.values[at]
+            at @ at + 1
+
+        if n.c >= 0
+            members["end"] @ c.values[at]
+        key @ .object(members: members)
+
+    if target.mode == frames.LOST
+        state.raise_text(
+            @m,
+            msg: f"Invalid path expression near attempt to access element {write.preview(key)} of {write.preview(target.value)}"
+        )
+    else
+        match values.index(v: target.value, k: key)
+            .err e => state.raise_text(@m, msg: e.msg)
+            .ok v =>
+                if target.mode == frames.TRACKED
+                    p: [json.Value] @= target.path
+                    p @ p.push(key)
+                    state.emit_to(@m, item: frames.Item(value: v, path: p, mode: frames.TRACKED), cont: c.next)
+                else
+                    state.emit_to(@m, item: frames.plain(v), cont: c.next)
+
+# The container of `.[]` received: its first element passed on, a choice
+# left for the rest.
+function iterate(@m: state.Machine, container: frames.Item, cont: i64)
+    if container.mode == frames.LOST
+        state.raise_text(
+            @m,
+            msg: f"Invalid path expression near attempt to iterate through {write.preview(container.value)}"
+        )
+    else
+        match container.value
+            .list l =>
+                if l.items.len() == 0
+                    state.backtrack(@m)
+                else
+                    c: frames.Choice @= frames.choice(state.C_ITERATE)
+                    c.other @ container
+                    c.n @ 0
+                    c.cont @ cont
+                    _ = state.push_choice(@m, c: c)
+                    state.backtrack(@m)
+            .object o =>
+                if o.members.len() == 0
+                    state.backtrack(@m)
+                else
+                    c: frames.Choice @= frames.choice(state.C_ITERATE)
+                    c.other @ container
+                    c.names @ keys(o.members)
+                    c.n @ 0
+                    c.cont @ cont
+                    _ = state.push_choice(@m, c: c)
+                    state.backtrack(@m)
+            .null_value => state.raise_text(@m, msg: "Cannot iterate over null")
+            .boolean _ | .number _ | .text _ =>
+                state.raise_text(@m, msg: f"Cannot iterate over {values.described(container.value)}")
+
+# The branch an `if`'s condition chose, or its next condition.
+function branch(@m: state.Machine, c: frames.Cont, truth: bool)
+    n = m.nodes[c.node]
+
+    if truth
+        state.eval_to(@m, node: n.items[2 * c.n + 1], item: c.item, env: c.env, cont: c.next)
+    else if 2 * c.n + 2 < n.items.len()
+        k = state.cont_of(
+            @m,
+            kind: state.K_IF,
+            node: c.node,
+            env: c.env,
+            next: c.next,
+            item: c.item,
+            n: c.n + 1,
+            collected: []
+        )
+        state.eval_to(@m, node: n.items[2 * c.n + 2], item: frames.plain(c.item.value), env: c.env, cont: k)
+    else if n.a >= 0
+        state.eval_to(@m, node: n.a, item: c.item, env: c.env, cont: c.next)
+    else
+        state.emit_to(@m, item: c.item, cont: c.next)

@@ -1,0 +1,11 @@
+# Reaches Rebel's `unicode/normalize`, so that `heroes test` on this file runs
+# the package's own tests, UAX #15's conformance cases among them (spec
+# § 12). It composes "e" and a combining acute accent into one character and
+# prints how many code points each form holds: "2 1".
+
+use <rebel>/unicode
+use <rebel>/unicode/normalize
+
+function main()
+    apart = unicode.from_code_points([0x65, 0x301]).must()
+    print(unicode.code_points(apart).len(), " ", unicode.code_points(normalize.to_nfc(apart)).len())

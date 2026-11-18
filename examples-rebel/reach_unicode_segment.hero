@@ -1,0 +1,10 @@
+# Reaches Rebel's `unicode/segment`, so that `heroes test` on this file runs
+# the package's own tests, UAX #29's and UAX #14's conformance cases among
+# them (spec § 12). It prints how many graphemes and how many columns a
+# word with a flag takes: "3 4".
+
+use <rebel>/unicode/segment
+
+function main()
+    word = "🇮🇹ok"
+    print(segment.graphemes(word).len(), " ", segment.width_of(word))

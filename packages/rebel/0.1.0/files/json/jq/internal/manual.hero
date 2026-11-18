@@ -1,0 +1,1058 @@
+# The examples of jq 1.7.1's manual, as jq's `tests/man.test` of the tag jq-1.7.1 holds them (SHA-256 1d0c3138...), fetched on 2026-11-17.
+#
+# Each case is a test: the filter run on its input must output exactly the
+# values the file lists, in order, an error after them allowed, as jq's own
+# runner allows one; a case jq refuses to compile must be refused. 219 cases
+# are tests here; the ones that cannot run are named below with their reason.
+#
+# - line 9, `[., tojson]`: a number past an f64 kept to its literal digits by `tojson`; a `json.Value` holds an f64
+# - line 17, `map([., . == 1]) | tojson`: a number's literal digits, `1.000`, kept by `tojson`; a `json.Value` holds an f64
+# - line 21, `. as $big | [$big, $big + 1] | map(. > 100000000000000000...`: an integer past an f64 compared exactly; a `json.Value` holds an f64
+# - line 661, `$ENV.PAGER`: `$ENV` read from the process's environment, `PAGER` set by jq's runner; here the caller gives `$ENV`
+# - line 665, `env.PAGER`: `env` read from the process's environment, `PAGER` set by jq's runner; here the caller gives `$ENV`
+
+use json
+use json/jq/internal/compile
+use json/jq/internal/machine
+use json/jq/internal/state
+use json/jq/internal/text
+use json/jq/internal/values
+
+# The release of jq the cases were taken from.
+constant VERSION: str
+    "jq-1.7.1"
+
+# The values `program` outputs for the JSON text `input`, which may hold
+# `nan`, as jq's tests write it.
+function outputs_of(program: str, input: str) -> [json.Value]
+    code = compile.compile(program).must()
+    m: state.Machine @= machine.start(
+        code,
+        input: text.read_json(input).must(),
+        variables: {},
+        inputs: [],
+        environment: .object(members: {}),
+        now: 0.0,
+        max_steps: 10000000,
+        max_outputs: 100000,
+        max_depth: 10000,
+        stop_after: 0
+    )
+    machine.run(@m)
+    assert m.ending != state.LIMITED
+    return m.outputs
+
+# Whether `program` on `input` outputs the values `expected` writes, in order.
+function passes(program: str, input: str, expected: [str]) -> bool
+    got = outputs_of(program: program, input: input)
+
+    if got.len() != expected.len()
+        return false
+
+    for i in range(from: 0, to: got.len())
+        if !values.equal(a: got[i], b: text.read_json(expected[i]).must())
+            return false
+
+    return true
+
+# U+FEFF, the byte order mark, which a case puts before its input: made from
+# its bytes, so no invisible character stands in this file.
+function bom() -> str
+    mark: [u8] = [239, 187, 191]
+    return mark.validated_bytes().must()
+
+# Whether `program` is refused.
+function refused(program: str) -> bool
+    return compile.compile(program).is_err()
+
+## Tests
+
+test "man.test 1: ."
+    assert passes(program: ".", input: "\"Hello, world!\"", expected: ["\"Hello, world!\""])
+
+test "man.test 5: ."
+    assert passes(program: ".", input: "0.12345678901234567890123456789", expected: ["0.12345678901234567890123456789"])
+
+test "man.test 13: . < 0.12345678901234567890123456788"
+    assert passes(
+        program: ". < 0.12345678901234567890123456788",
+        input: "0.12345678901234567890123456789",
+        expected: ["false"]
+    )
+
+test "man.test 25: .foo"
+    assert passes(program: ".foo", input: f"{{\"foo\": 42, \"bar\": \"less interesting data\"}}", expected: ["42"])
+
+test "man.test 29: .foo"
+    assert passes(program: ".foo", input: f"{{\"notfoo\": true, \"alsonotfoo\": false}}", expected: ["null"])
+
+test "man.test 33: .['foo']"
+    assert passes(program: ".[\"foo\"]", input: f"{{\"foo\": 42}}", expected: ["42"])
+
+test "man.test 37: .foo?"
+    assert passes(program: ".foo?", input: f"{{\"foo\": 42, \"bar\": \"less interesting data\"}}", expected: ["42"])
+
+test "man.test 41: .foo?"
+    assert passes(program: ".foo?", input: f"{{\"notfoo\": true, \"alsonotfoo\": false}}", expected: ["null"])
+
+test "man.test 45: .['foo']?"
+    assert passes(program: ".[\"foo\"]?", input: f"{{\"foo\": 42}}", expected: ["42"])
+
+test "man.test 49: [.foo?]"
+    assert passes(program: "[.foo?]", input: "[1,2]", expected: ["[]"])
+
+test "man.test 53: .[0]"
+    assert passes(
+        program: ".[0]",
+        input: f"[{{\"name\":\"JSON\", \"good\":true}}, {{\"name\":\"XML\", \"good\":false}}]",
+        expected: [f"{{\"name\":\"JSON\", \"good\":true}}"]
+    )
+
+test "man.test 57: .[2]"
+    assert passes(
+        program: ".[2]",
+        input: f"[{{\"name\":\"JSON\", \"good\":true}}, {{\"name\":\"XML\", \"good\":false}}]",
+        expected: ["null"]
+    )
+
+test "man.test 61: .[-2]"
+    assert passes(program: ".[-2]", input: "[1,2,3]", expected: ["2"])
+
+test "man.test 65: .[2:4]"
+    assert passes(program: ".[2:4]", input: "[\"a\",\"b\",\"c\",\"d\",\"e\"]", expected: ["[\"c\", \"d\"]"])
+
+test "man.test 69: .[2:4]"
+    assert passes(program: ".[2:4]", input: "\"abcdefghi\"", expected: ["\"cd\""])
+
+test "man.test 73: .[:3]"
+    assert passes(program: ".[:3]", input: "[\"a\",\"b\",\"c\",\"d\",\"e\"]", expected: ["[\"a\", \"b\", \"c\"]"])
+
+test "man.test 77: .[-2:]"
+    assert passes(program: ".[-2:]", input: "[\"a\",\"b\",\"c\",\"d\",\"e\"]", expected: ["[\"d\", \"e\"]"])
+
+test "man.test 81: .[]"
+    assert passes(
+        program: ".[]",
+        input: f"[{{\"name\":\"JSON\", \"good\":true}}, {{\"name\":\"XML\", \"good\":false}}]",
+        expected: [f"{{\"name\":\"JSON\", \"good\":true}}", f"{{\"name\":\"XML\", \"good\":false}}"]
+    )
+
+test "man.test 86: .[]"
+    expected: [str] = []
+    assert passes(program: ".[]", input: "[]", expected: expected)
+
+test "man.test 89: .foo[]"
+    assert passes(program: ".foo[]", input: f"{{\"foo\":[1,2,3]}}", expected: ["1", "2", "3"])
+
+test "man.test 95: .[]"
+    assert passes(program: ".[]", input: f"{{\"a\": 1, \"b\": 1}}", expected: ["1", "1"])
+
+test "man.test 100: .foo, .bar"
+    assert passes(
+        program: ".foo, .bar",
+        input: f"{{\"foo\": 42, \"bar\": \"something else\", \"baz\": true}}",
+        expected: ["42", "\"something else\""]
+    )
+
+test "man.test 105: .user, .projects[]"
+    assert passes(
+        program: ".user, .projects[]",
+        input: f"{{\"user\":\"stedolan\", \"projects\": [\"jq\", \"wikiflow\"]}}",
+        expected: ["\"stedolan\"", "\"jq\"", "\"wikiflow\""]
+    )
+
+test "man.test 111: .[4,2]"
+    assert passes(program: ".[4,2]", input: "[\"a\",\"b\",\"c\",\"d\",\"e\"]", expected: ["\"e\"", "\"c\""])
+
+test "man.test 116: .[] | .name"
+    assert passes(
+        program: ".[] | .name",
+        input: f"[{{\"name\":\"JSON\", \"good\":true}}, {{\"name\":\"XML\", \"good\":false}}]",
+        expected: ["\"JSON\"", "\"XML\""]
+    )
+
+test "man.test 121: (. + 2) * 5"
+    assert passes(program: "(. + 2) * 5", input: "1", expected: ["15"])
+
+test "man.test 125: [.user, .projects[]]"
+    assert passes(
+        program: "[.user, .projects[]]",
+        input: f"{{\"user\":\"stedolan\", \"projects\": [\"jq\", \"wikiflow\"]}}",
+        expected: ["[\"stedolan\", \"jq\", \"wikiflow\"]"]
+    )
+
+test "man.test 129: [ .[] | . * 2]"
+    assert passes(program: "[ .[] | . * 2]", input: "[1, 2, 3]", expected: ["[2, 4, 6]"])
+
+test "man.test 133: (user, title: .titles[])"
+    assert passes(
+        program: f"{{user, title: .titles[]}}",
+        input: f"{{\"user\":\"stedolan\",\"titles\":[\"JQ Primer\", \"More JQ\"]}}",
+        expected: [f"{{\"user\":\"stedolan\", \"title\": \"JQ Primer\"}}", f"{{\"user\":\"stedolan\", \"title\": \"More JQ\"}}"]
+    )
+
+test "man.test 138: ((.user): .titles)"
+    assert passes(
+        program: f"{{(.user): .titles}}",
+        input: f"{{\"user\":\"stedolan\",\"titles\":[\"JQ Primer\", \"More JQ\"]}}",
+        expected: [f"{{\"stedolan\": [\"JQ Primer\", \"More JQ\"]}}"]
+    )
+
+test "man.test 142: .. | .a?"
+    assert passes(program: ".. | .a?", input: f"[[{{\"a\":1}}]]", expected: ["1"])
+
+test "man.test 146: .a + 1"
+    assert passes(program: ".a + 1", input: f"{{\"a\": 7}}", expected: ["8"])
+
+test "man.test 150: .a + .b"
+    assert passes(program: ".a + .b", input: f"{{\"a\": [1,2], \"b\": [3,4]}}", expected: ["[1,2,3,4]"])
+
+test "man.test 154: .a + null"
+    assert passes(program: ".a + null", input: f"{{\"a\": 1}}", expected: ["1"])
+
+test "man.test 158: .a + 1"
+    assert passes(program: ".a + 1", input: f"{{}}", expected: ["1"])
+
+test "man.test 162: (a: 1) + (b: 2) + (c: 3) + (a: 42)"
+    assert passes(
+        program: f"{{a: 1}} + {{b: 2}} + {{c: 3}} + {{a: 42}}",
+        input: "null",
+        expected: [f"{{\"a\": 42, \"b\": 2, \"c\": 3}}"]
+    )
+
+test "man.test 166: 4 - .a"
+    assert passes(program: "4 - .a", input: f"{{\"a\":3}}", expected: ["1"])
+
+test "man.test 170: . - ['xml', 'yaml']"
+    assert passes(program: ". - [\"xml\", \"yaml\"]", input: "[\"xml\", \"yaml\", \"json\"]", expected: ["[\"json\"]"])
+
+test "man.test 174: 10 / . * 3"
+    assert passes(program: "10 / . * 3", input: "5", expected: ["6"])
+
+test "man.test 178: . / ', '"
+    assert passes(program: ". / \", \"", input: "\"a, b,c,d, e\"", expected: ["[\"a\",\"b,c,d\",\"e\"]"])
+
+test "man.test 182: ('k': ('a': 1, 'b': 2)) * ('k': ('a': 0,'c': 3))"
+    assert passes(
+        program: f"{{\"k\": {{\"a\": 1, \"b\": 2}}}} * {{\"k\": {{\"a\": 0,\"c\": 3}}}}",
+        input: "null",
+        expected: [f"{{\"k\": {{\"a\": 0, \"b\": 2, \"c\": 3}}}}"]
+    )
+
+test "man.test 186: .[] | (1 / .)?"
+    assert passes(program: ".[] | (1 / .)?", input: "[1,0,-1]", expected: ["1", "-1"])
+
+test "man.test 191: map(abs)"
+    assert passes(program: "map(abs)", input: "[-10, -1.1, -1e-1]", expected: ["[10,1.1,1e-1]"])
+
+test "man.test 195: .[] | length"
+    assert passes(
+        program: ".[] | length",
+        input: f"[[1,2], \"string\", {{\"a\":2}}, null, -5]",
+        expected: ["2", "6", "1", "0", "5"]
+    )
+
+test "man.test 203: utf8bytelength"
+    assert passes(program: "utf8bytelength", input: "\"\\u03bc\"", expected: ["2"])
+
+test "man.test 207: keys"
+    assert passes(
+        program: "keys",
+        input: f"{{\"abc\": 1, \"abcd\": 2, \"Foo\": 3}}",
+        expected: ["[\"Foo\", \"abc\", \"abcd\"]"]
+    )
+
+test "man.test 211: keys"
+    assert passes(program: "keys", input: "[42,3,35]", expected: ["[0,1,2]"])
+
+test "man.test 215: map(has('foo'))"
+    assert passes(program: "map(has(\"foo\"))", input: f"[{{\"foo\": 42}}, {{}}]", expected: ["[true, false]"])
+
+test "man.test 219: map(has(2))"
+    assert passes(program: "map(has(2))", input: "[[0,1], [\"a\",\"b\",\"c\"]]", expected: ["[false, true]"])
+
+test "man.test 223: .[] | in(('foo': 42))"
+    assert passes(program: f".[] | in({{\"foo\": 42}})", input: "[\"foo\", \"bar\"]", expected: ["true", "false"])
+
+test "man.test 228: map(in([0,1]))"
+    assert passes(program: "map(in([0,1]))", input: "[2, 0]", expected: ["[false, true]"])
+
+test "man.test 232: map(.+1)"
+    assert passes(program: "map(.+1)", input: "[1,2,3]", expected: ["[2,3,4]"])
+
+test "man.test 236: map_values(.+1)"
+    assert passes(
+        program: "map_values(.+1)",
+        input: f"{{\"a\": 1, \"b\": 2, \"c\": 3}}",
+        expected: [f"{{\"a\": 2, \"b\": 3, \"c\": 4}}"]
+    )
+
+test "man.test 240: map(., .)"
+    assert passes(program: "map(., .)", input: "[1,2]", expected: ["[1,1,2,2]"])
+
+test "man.test 244: map_values(. // empty)"
+    assert passes(
+        program: "map_values(. // empty)",
+        input: f"{{\"a\": null, \"b\": true, \"c\": false}}",
+        expected: [f"{{\"b\":true}}"]
+    )
+
+test "man.test 248: pick(.a, .b.c, .x)"
+    assert passes(
+        program: "pick(.a, .b.c, .x)",
+        input: f"{{\"a\": 1, \"b\": {{\"c\": 2, \"d\": 3}}, \"e\": 4}}",
+        expected: [f"{{\"a\":1,\"b\":{{\"c\":2}},\"x\":null}}"]
+    )
+
+test "man.test 252: pick(.[2], .[0], .[0])"
+    assert passes(program: "pick(.[2], .[0], .[0])", input: "[1,2,3,4]", expected: ["[1,null,3]"])
+
+test "man.test 256: path(.a[0].b)"
+    assert passes(program: "path(.a[0].b)", input: "null", expected: ["[\"a\",0,\"b\"]"])
+
+test "man.test 260: [path(..)]"
+    assert passes(
+        program: "[path(..)]",
+        input: f"{{\"a\":[{{\"b\":1}}]}}",
+        expected: ["[[],[\"a\"],[\"a\",0],[\"a\",0,\"b\"]]"]
+    )
+
+test "man.test 264: del(.foo)"
+    assert passes(
+        program: "del(.foo)",
+        input: f"{{\"foo\": 42, \"bar\": 9001, \"baz\": 42}}",
+        expected: [f"{{\"bar\": 9001, \"baz\": 42}}"]
+    )
+
+test "man.test 268: del(.[1, 2])"
+    assert passes(program: "del(.[1, 2])", input: "[\"foo\", \"bar\", \"baz\"]", expected: ["[\"foo\"]"])
+
+test "man.test 272: getpath(['a','b'])"
+    assert passes(program: "getpath([\"a\",\"b\"])", input: "null", expected: ["null"])
+
+test "man.test 276: [getpath(['a','b'], ['a','c'])]"
+    assert passes(
+        program: "[getpath([\"a\",\"b\"], [\"a\",\"c\"])]",
+        input: f"{{\"a\":{{\"b\":0, \"c\":1}}}}",
+        expected: ["[0, 1]"]
+    )
+
+test "man.test 280: setpath(['a','b']; 1)"
+    assert passes(program: "setpath([\"a\",\"b\"]; 1)", input: "null", expected: [f"{{\"a\": {{\"b\": 1}}}}"])
+
+test "man.test 284: setpath(['a','b']; 1)"
+    assert passes(
+        program: "setpath([\"a\",\"b\"]; 1)",
+        input: f"{{\"a\":{{\"b\":0}}}}",
+        expected: [f"{{\"a\": {{\"b\": 1}}}}"]
+    )
+
+test "man.test 288: setpath([0,'a']; 1)"
+    assert passes(program: "setpath([0,\"a\"]; 1)", input: "null", expected: [f"[{{\"a\":1}}]"])
+
+test "man.test 292: delpaths([['a','b']])"
+    assert passes(
+        program: "delpaths([[\"a\",\"b\"]])",
+        input: f"{{\"a\":{{\"b\":1}},\"x\":{{\"y\":2}}}}",
+        expected: [f"{{\"a\":{{}},\"x\":{{\"y\":2}}}}"]
+    )
+
+test "man.test 296: to_entries"
+    assert passes(
+        program: "to_entries",
+        input: f"{{\"a\": 1, \"b\": 2}}",
+        expected: [f"[{{\"key\":\"a\", \"value\":1}}, {{\"key\":\"b\", \"value\":2}}]"]
+    )
+
+test "man.test 300: from_entries"
+    assert passes(
+        program: "from_entries",
+        input: f"[{{\"key\":\"a\", \"value\":1}}, {{\"key\":\"b\", \"value\":2}}]",
+        expected: [f"{{\"a\": 1, \"b\": 2}}"]
+    )
+
+test "man.test 304: with_entries(.key |= 'KEY_' + .)"
+    assert passes(
+        program: "with_entries(.key |= \"KEY_\" + .)",
+        input: f"{{\"a\": 1, \"b\": 2}}",
+        expected: [f"{{\"KEY_a\": 1, \"KEY_b\": 2}}"]
+    )
+
+test "man.test 308: map(select(. >= 2))"
+    assert passes(program: "map(select(. >= 2))", input: "[1,5,3,0,7]", expected: ["[5,3,7]"])
+
+test "man.test 312: .[] | select(.id == 'second')"
+    assert passes(
+        program: ".[] | select(.id == \"second\")",
+        input: f"[{{\"id\": \"first\", \"val\": 1}}, {{\"id\": \"second\", \"val\": 2}}]",
+        expected: [f"{{\"id\": \"second\", \"val\": 2}}"]
+    )
+
+test "man.test 316: .[]|numbers"
+    assert passes(program: ".[]|numbers", input: f"[[],{{}},1,\"foo\",null,true,false]", expected: ["1"])
+
+test "man.test 320: 1, empty, 2"
+    assert passes(program: "1, empty, 2", input: "null", expected: ["1", "2"])
+
+test "man.test 325: [1,2,empty,3]"
+    assert passes(program: "[1,2,empty,3]", input: "null", expected: ["[1,2,3]"])
+
+test "man.test 329: try error catch ."
+    assert passes(program: "try error catch .", input: "\"error message\"", expected: ["\"error message\""])
+
+test "man.test 333: try error('invalid value: /(.)') catch ."
+    assert passes(
+        program: "try error(\"invalid value: \\(.)\") catch .",
+        input: "42",
+        expected: ["\"invalid value: 42\""]
+    )
+
+test "man.test 337: try error('/($__loc__)') catch ."
+    assert passes(
+        program: "try error(\"\\($__loc__)\") catch .",
+        input: "null",
+        expected: [f"\"{{\\\"file\\\":\\\"<top-level>\\\",\\\"line\\\":1}}\""]
+    )
+
+test "man.test 341: [paths]"
+    assert passes(program: "[paths]", input: f"[1,[[],{{\"a\":2}}]]", expected: ["[[0],[1],[1,0],[1,1],[1,1,\"a\"]]"])
+
+test "man.test 345: [paths(type == 'number')]"
+    assert passes(
+        program: "[paths(type == \"number\")]",
+        input: f"[1,[[],{{\"a\":2}}]]",
+        expected: ["[[0],[1,1,\"a\"]]"]
+    )
+
+test "man.test 349: add"
+    assert passes(program: "add", input: "[\"a\",\"b\",\"c\"]", expected: ["\"abc\""])
+
+test "man.test 353: add"
+    assert passes(program: "add", input: "[1, 2, 3]", expected: ["6"])
+
+test "man.test 357: add"
+    assert passes(program: "add", input: "[]", expected: ["null"])
+
+test "man.test 361: any"
+    assert passes(program: "any", input: "[true, false]", expected: ["true"])
+
+test "man.test 365: any"
+    assert passes(program: "any", input: "[false, false]", expected: ["false"])
+
+test "man.test 369: any"
+    assert passes(program: "any", input: "[]", expected: ["false"])
+
+test "man.test 373: all"
+    assert passes(program: "all", input: "[true, false]", expected: ["false"])
+
+test "man.test 377: all"
+    assert passes(program: "all", input: "[true, true]", expected: ["true"])
+
+test "man.test 381: all"
+    assert passes(program: "all", input: "[]", expected: ["true"])
+
+test "man.test 385: flatten"
+    assert passes(program: "flatten", input: "[1, [2], [[3]]]", expected: ["[1, 2, 3]"])
+
+test "man.test 389: flatten(1)"
+    assert passes(program: "flatten(1)", input: "[1, [2], [[3]]]", expected: ["[1, 2, [3]]"])
+
+test "man.test 393: flatten"
+    assert passes(program: "flatten", input: "[[]]", expected: ["[]"])
+
+test "man.test 397: flatten"
+    assert passes(
+        program: "flatten",
+        input: f"[{{\"foo\": \"bar\"}}, [{{\"foo\": \"baz\"}}]]",
+        expected: [f"[{{\"foo\": \"bar\"}}, {{\"foo\": \"baz\"}}]"]
+    )
+
+test "man.test 401: range(2; 4)"
+    assert passes(program: "range(2; 4)", input: "null", expected: ["2", "3"])
+
+test "man.test 406: [range(2; 4)]"
+    assert passes(program: "[range(2; 4)]", input: "null", expected: ["[2,3]"])
+
+test "man.test 410: [range(4)]"
+    assert passes(program: "[range(4)]", input: "null", expected: ["[0,1,2,3]"])
+
+test "man.test 414: [range(0; 10; 3)]"
+    assert passes(program: "[range(0; 10; 3)]", input: "null", expected: ["[0,3,6,9]"])
+
+test "man.test 418: [range(0; 10; -1)]"
+    assert passes(program: "[range(0; 10; -1)]", input: "null", expected: ["[]"])
+
+test "man.test 422: [range(0; -5; -1)]"
+    assert passes(program: "[range(0; -5; -1)]", input: "null", expected: ["[0,-1,-2,-3,-4]"])
+
+test "man.test 426: floor"
+    assert passes(program: "floor", input: "3.14159", expected: ["3"])
+
+test "man.test 430: sqrt"
+    assert passes(program: "sqrt", input: "9", expected: ["3"])
+
+test "man.test 434: .[] | tonumber"
+    assert passes(program: ".[] | tonumber", input: "[1, \"1\"]", expected: ["1", "1"])
+
+test "man.test 439: .[] | tostring"
+    assert passes(program: ".[] | tostring", input: "[1, \"1\", [1]]", expected: ["\"1\"", "\"1\"", "\"[1]\""])
+
+test "man.test 445: map(type)"
+    assert passes(
+        program: "map(type)",
+        input: f"[0, false, [], {{}}, null, \"hello\"]",
+        expected: ["[\"number\", \"boolean\", \"array\", \"object\", \"null\", \"string\"]"]
+    )
+
+test "man.test 449: .[] | (infinite * .) < 0"
+    assert passes(program: ".[] | (infinite * .) < 0", input: "[-1, 1]", expected: ["true", "false"])
+
+test "man.test 454: infinite, nan | type"
+    assert passes(program: "infinite, nan | type", input: "null", expected: ["\"number\"", "\"number\""])
+
+test "man.test 459: sort"
+    assert passes(program: "sort", input: "[8,3,null,6]", expected: ["[null,3,6,8]"])
+
+test "man.test 463: sort_by(.foo)"
+    assert passes(
+        program: "sort_by(.foo)",
+        input: f"[{{\"foo\":4, \"bar\":10}}, {{\"foo\":3, \"bar\":10}}, {{\"foo\":2, \"bar\":1}}]",
+        expected: [f"[{{\"foo\":2, \"bar\":1}}, {{\"foo\":3, \"bar\":10}}, {{\"foo\":4, \"bar\":10}}]"]
+    )
+
+test "man.test 467: sort_by(.foo, .bar)"
+    assert passes(
+        program: "sort_by(.foo, .bar)",
+        input: f"[{{\"foo\":4, \"bar\":10}}, {{\"foo\":3, \"bar\":20}}, {{\"foo\":2, \"bar\":1}}, {{\"foo\":3, \"bar\":10}}]",
+        expected: [f"[{{\"foo\":2, \"bar\":1}}, {{\"foo\":3, \"bar\":10}}, {{\"foo\":3, \"bar\":20}}, {{\"foo\":4, \"bar\":10}}]"]
+    )
+
+test "man.test 471: group_by(.foo)"
+    assert passes(
+        program: "group_by(.foo)",
+        input: f"[{{\"foo\":1, \"bar\":10}}, {{\"foo\":3, \"bar\":100}}, {{\"foo\":1, \"bar\":1}}]",
+        expected: [f"[[{{\"foo\":1, \"bar\":10}}, {{\"foo\":1, \"bar\":1}}], [{{\"foo\":3, \"bar\":100}}]]"]
+    )
+
+test "man.test 475: min"
+    assert passes(program: "min", input: "[5,4,2,7]", expected: ["2"])
+
+test "man.test 479: max_by(.foo)"
+    assert passes(
+        program: "max_by(.foo)",
+        input: f"[{{\"foo\":1, \"bar\":14}}, {{\"foo\":2, \"bar\":3}}]",
+        expected: [f"{{\"foo\":2, \"bar\":3}}"]
+    )
+
+test "man.test 483: unique"
+    assert passes(program: "unique", input: "[1,2,5,3,5,3,1,3]", expected: ["[1,2,3,5]"])
+
+test "man.test 487: unique_by(.foo)"
+    assert passes(
+        program: "unique_by(.foo)",
+        input: f"[{{\"foo\": 1, \"bar\": 2}}, {{\"foo\": 1, \"bar\": 3}}, {{\"foo\": 4, \"bar\": 5}}]",
+        expected: [f"[{{\"foo\": 1, \"bar\": 2}}, {{\"foo\": 4, \"bar\": 5}}]"]
+    )
+
+test "man.test 491: unique_by(length)"
+    assert passes(
+        program: "unique_by(length)",
+        input: "[\"chunky\", \"bacon\", \"kitten\", \"cicada\", \"asparagus\"]",
+        expected: ["[\"bacon\", \"chunky\", \"asparagus\"]"]
+    )
+
+test "man.test 495: reverse"
+    assert passes(program: "reverse", input: "[1,2,3,4]", expected: ["[4,3,2,1]"])
+
+test "man.test 499: contains('bar')"
+    assert passes(program: "contains(\"bar\")", input: "\"foobar\"", expected: ["true"])
+
+test "man.test 503: contains(['baz', 'bar'])"
+    assert passes(
+        program: "contains([\"baz\", \"bar\"])",
+        input: "[\"foobar\", \"foobaz\", \"blarp\"]",
+        expected: ["true"]
+    )
+
+test "man.test 507: contains(['bazzzzz', 'bar'])"
+    assert passes(
+        program: "contains([\"bazzzzz\", \"bar\"])",
+        input: "[\"foobar\", \"foobaz\", \"blarp\"]",
+        expected: ["false"]
+    )
+
+test "man.test 511: contains((foo: 12, bar: [(barp: 12)]))"
+    assert passes(
+        program: f"contains({{foo: 12, bar: [{{barp: 12}}]}})",
+        input: f"{{\"foo\": 12, \"bar\":[1,2,{{\"barp\":12, \"blip\":13}}]}}",
+        expected: ["true"]
+    )
+
+test "man.test 515: contains((foo: 12, bar: [(barp: 15)]))"
+    assert passes(
+        program: f"contains({{foo: 12, bar: [{{barp: 15}}]}})",
+        input: f"{{\"foo\": 12, \"bar\":[1,2,{{\"barp\":12, \"blip\":13}}]}}",
+        expected: ["false"]
+    )
+
+test "man.test 519: indices(', ')"
+    assert passes(program: "indices(\", \")", input: "\"a,b, cd, efg, hijk\"", expected: ["[3,7,12]"])
+
+test "man.test 523: indices(1)"
+    assert passes(program: "indices(1)", input: "[0,1,2,1,3,1,4]", expected: ["[1,3,5]"])
+
+test "man.test 527: indices([1,2])"
+    assert passes(program: "indices([1,2])", input: "[0,1,2,3,1,4,2,5,1,2,6,7]", expected: ["[1,8]"])
+
+test "man.test 531: index(', ')"
+    assert passes(program: "index(\", \")", input: "\"a,b, cd, efg, hijk\"", expected: ["3"])
+
+test "man.test 535: index(1)"
+    assert passes(program: "index(1)", input: "[0,1,2,1,3,1,4]", expected: ["1"])
+
+test "man.test 539: index([1,2])"
+    assert passes(program: "index([1,2])", input: "[0,1,2,3,1,4,2,5,1,2,6,7]", expected: ["1"])
+
+test "man.test 543: rindex(', ')"
+    assert passes(program: "rindex(\", \")", input: "\"a,b, cd, efg, hijk\"", expected: ["12"])
+
+test "man.test 547: rindex(1)"
+    assert passes(program: "rindex(1)", input: "[0,1,2,1,3,1,4]", expected: ["5"])
+
+test "man.test 551: rindex([1,2])"
+    assert passes(program: "rindex([1,2])", input: "[0,1,2,3,1,4,2,5,1,2,6,7]", expected: ["8"])
+
+test "man.test 555: inside('foobar')"
+    assert passes(program: "inside(\"foobar\")", input: "\"bar\"", expected: ["true"])
+
+test "man.test 559: inside(['foobar', 'foobaz', 'blarp'])"
+    assert passes(
+        program: "inside([\"foobar\", \"foobaz\", \"blarp\"])",
+        input: "[\"baz\", \"bar\"]",
+        expected: ["true"]
+    )
+
+test "man.test 563: inside(['foobar', 'foobaz', 'blarp'])"
+    assert passes(
+        program: "inside([\"foobar\", \"foobaz\", \"blarp\"])",
+        input: "[\"bazzzzz\", \"bar\"]",
+        expected: ["false"]
+    )
+
+test "man.test 567: inside(('foo': 12, 'bar':[1,2,('barp':12, 'blip':13)]))"
+    assert passes(
+        program: f"inside({{\"foo\": 12, \"bar\":[1,2,{{\"barp\":12, \"blip\":13}}]}})",
+        input: f"{{\"foo\": 12, \"bar\": [{{\"barp\": 12}}]}}",
+        expected: ["true"]
+    )
+
+test "man.test 571: inside(('foo': 12, 'bar':[1,2,('barp':12, 'blip':13)]))"
+    assert passes(
+        program: f"inside({{\"foo\": 12, \"bar\":[1,2,{{\"barp\":12, \"blip\":13}}]}})",
+        input: f"{{\"foo\": 12, \"bar\": [{{\"barp\": 15}}]}}",
+        expected: ["false"]
+    )
+
+test "man.test 575: [.[]|startswith('foo')]"
+    assert passes(
+        program: "[.[]|startswith(\"foo\")]",
+        input: "[\"fo\", \"foo\", \"barfoo\", \"foobar\", \"barfoob\"]",
+        expected: ["[false, true, false, true, false]"]
+    )
+
+test "man.test 579: [.[]|endswith('foo')]"
+    assert passes(program: "[.[]|endswith(\"foo\")]", input: "[\"foobar\", \"barfoo\"]", expected: ["[false, true]"])
+
+test "man.test 583: combinations"
+    assert passes(program: "combinations", input: "[[1,2], [3, 4]]", expected: ["[1, 3]", "[1, 4]", "[2, 3]", "[2, 4]"])
+
+test "man.test 590: combinations(2)"
+    assert passes(program: "combinations(2)", input: "[0, 1]", expected: ["[0, 0]", "[0, 1]", "[1, 0]", "[1, 1]"])
+
+test "man.test 597: [.[]|ltrimstr('foo')]"
+    assert passes(
+        program: "[.[]|ltrimstr(\"foo\")]",
+        input: "[\"fo\", \"foo\", \"barfoo\", \"foobar\", \"afoo\"]",
+        expected: ["[\"fo\",\"\",\"barfoo\",\"bar\",\"afoo\"]"]
+    )
+
+test "man.test 601: [.[]|rtrimstr('foo')]"
+    assert passes(
+        program: "[.[]|rtrimstr(\"foo\")]",
+        input: "[\"fo\", \"foo\", \"barfoo\", \"foobar\", \"foob\"]",
+        expected: ["[\"fo\",\"\",\"bar\",\"foobar\",\"foob\"]"]
+    )
+
+test "man.test 605: explode"
+    assert passes(program: "explode", input: "\"foobar\"", expected: ["[102,111,111,98,97,114]"])
+
+test "man.test 609: implode"
+    assert passes(program: "implode", input: "[65, 66, 67]", expected: ["\"ABC\""])
+
+test "man.test 613: join(', ')"
+    assert passes(program: "join(\", \")", input: "[\"a\",\"b,c,d\",\"e\"]", expected: ["\"a, b,c,d, e\""])
+
+test "man.test 617: join(' ')"
+    assert passes(program: "join(\" \")", input: "[\"a\",1,2.3,true,null,false]", expected: ["\"a 1 2.3 true  false\""])
+
+test "man.test 621: ascii_upcase"
+    assert passes(program: "ascii_upcase", input: "\"useful but not for é\"", expected: ["\"USEFUL BUT NOT FOR é\""])
+
+test "man.test 625: [while(.<100; .*2)]"
+    assert passes(program: "[while(.<100; .*2)]", input: "1", expected: ["[1,2,4,8,16,32,64]"])
+
+test "man.test 629: [repeat(.*2, error)?]"
+    assert passes(program: "[repeat(.*2, error)?]", input: "1", expected: ["[2]"])
+
+test "man.test 633: [.,1]|until(.[0] < 1; [.[0] - 1, .[1] * .[0]])|.[1]"
+    assert passes(program: "[.,1]|until(.[0] < 1; [.[0] - 1, .[1] * .[0]])|.[1]", input: "4", expected: ["24"])
+
+test "man.test 637: recurse(.foo[])"
+    assert passes(
+        program: "recurse(.foo[])",
+        input: f"{{\"foo\":[{{\"foo\": []}}, {{\"foo\":[{{\"foo\":[]}}]}}]}}",
+        expected: [f"{{\"foo\":[{{\"foo\":[]}},{{\"foo\":[{{\"foo\":[]}}]}}]}}", f"{{\"foo\":[]}}", f"{{\"foo\":[{{\"foo\":[]}}]}}", f"{{\"foo\":[]}}"]
+    )
+
+test "man.test 644: recurse"
+    assert passes(
+        program: "recurse",
+        input: f"{{\"a\":0,\"b\":[1]}}",
+        expected: [f"{{\"a\":0,\"b\":[1]}}", "0", "[1]", "1"]
+    )
+
+test "man.test 651: recurse(. * .; . < 20)"
+    assert passes(program: "recurse(. * .; . < 20)", input: "2", expected: ["2", "4", "16"])
+
+test "man.test 657: walk(if type == 'array' then sort else . end)"
+    assert passes(
+        program: "walk(if type == \"array\" then sort else . end)",
+        input: "[[4, 1, 7], [8, 5, 2], [3, 6, 9]]",
+        expected: ["[[1,4,7],[2,5,8],[3,6,9]]"]
+    )
+
+test "man.test 669: transpose"
+    assert passes(program: "transpose", input: "[[1], [2,3]]", expected: ["[[1,2],[null,3]]"])
+
+test "man.test 673: bsearch(0)"
+    assert passes(program: "bsearch(0)", input: "[0,1]", expected: ["0"])
+
+test "man.test 677: bsearch(0)"
+    assert passes(program: "bsearch(0)", input: "[1,2,3]", expected: ["-1"])
+
+test "man.test 681: bsearch(4) as $ix | if $ix < 0 then .[-(1+$ix)] = 4 else ..."
+    assert passes(
+        program: "bsearch(4) as $ix | if $ix < 0 then .[-(1+$ix)] = 4 else . end",
+        input: "[1,2,3]",
+        expected: ["[1,2,3,4]"]
+    )
+
+test "man.test 685: 'The input was /(.), which is one less than /(.+1)'"
+    assert passes(
+        program: "\"The input was \\(.), which is one less than \\(.+1)\"",
+        input: "42",
+        expected: ["\"The input was 42, which is one less than 43\""]
+    )
+
+test "man.test 689: [.[]|tostring]"
+    assert passes(
+        program: "[.[]|tostring]",
+        input: "[1, \"foo\", [\"foo\"]]",
+        expected: ["[\"1\",\"foo\",\"[\\\"foo\\\"]\"]"]
+    )
+
+test "man.test 693: [.[]|tojson]"
+    assert passes(
+        program: "[.[]|tojson]",
+        input: "[1, \"foo\", [\"foo\"]]",
+        expected: ["[\"1\",\"\\\"foo\\\"\",\"[\\\"foo\\\"]\"]"]
+    )
+
+test "man.test 697: [.[]|tojson|fromjson]"
+    assert passes(
+        program: "[.[]|tojson|fromjson]",
+        input: "[1, \"foo\", [\"foo\"]]",
+        expected: ["[1,\"foo\",[\"foo\"]]"]
+    )
+
+test "man.test 701: @html"
+    assert passes(program: "@html", input: "\"This works if x < y\"", expected: ["\"This works if x &lt; y\""])
+
+test "man.test 705: @sh 'echo /(.)'"
+    assert passes(
+        program: "@sh \"echo \\(.)\"",
+        input: "\"O'Hara's Ale\"",
+        expected: ["\"echo 'O'\\\\''Hara'\\\\''s Ale'\""]
+    )
+
+test "man.test 709: @base64"
+    assert passes(program: "@base64", input: "\"This is a message\"", expected: ["\"VGhpcyBpcyBhIG1lc3NhZ2U=\""])
+
+test "man.test 713: @base64d"
+    assert passes(program: "@base64d", input: "\"VGhpcyBpcyBhIG1lc3NhZ2U=\"", expected: ["\"This is a message\""])
+
+test "man.test 717: fromdate"
+    assert passes(program: "fromdate", input: "\"2015-03-05T23:51:47Z\"", expected: ["1425599507"])
+
+test "man.test 721: strptime('%Y-%m-%dT%H:%M:%SZ')"
+    assert passes(
+        program: "strptime(\"%Y-%m-%dT%H:%M:%SZ\")",
+        input: "\"2015-03-05T23:51:47Z\"",
+        expected: ["[2015,2,5,23,51,47,4,63]"]
+    )
+
+test "man.test 725: strptime('%Y-%m-%dT%H:%M:%SZ')|mktime"
+    assert passes(
+        program: "strptime(\"%Y-%m-%dT%H:%M:%SZ\")|mktime",
+        input: "\"2015-03-05T23:51:47Z\"",
+        expected: ["1425599507"]
+    )
+
+test "man.test 729: . == false"
+    assert passes(program: ". == false", input: "null", expected: ["false"])
+
+test "man.test 733: . == ('b': ('d': (4 + 1e-20), 'c': 3), 'a':1)"
+    assert passes(
+        program: f". == {{\"b\": {{\"d\": (4 + 1e-20), \"c\": 3}}, \"a\":1}}",
+        input: f"{{\"a\":1, \"b\": {{\"c\": 3, \"d\": 4}}}}",
+        expected: ["true"]
+    )
+
+test "man.test 737: .[] == 1"
+    assert passes(
+        program: ".[] == 1",
+        input: "[1, 1.0, \"1\", \"banana\"]",
+        expected: ["true", "true", "false", "false"]
+    )
+
+test "man.test 744: if . == 0 then   'zero' elif . == 1 then   'one' else   '..."
+    assert passes(
+        program: "if . == 0 then   \"zero\" elif . == 1 then   \"one\" else   \"many\" end",
+        input: "2",
+        expected: ["\"many\""]
+    )
+
+test "man.test 748: . < 5"
+    assert passes(program: ". < 5", input: "2", expected: ["true"])
+
+test "man.test 752: 42 and 'a string'"
+    assert passes(program: "42 and \"a string\"", input: "null", expected: ["true"])
+
+test "man.test 756: (true, false) or false"
+    assert passes(program: "(true, false) or false", input: "null", expected: ["true", "false"])
+
+test "man.test 761: (true, true) and (true, false)"
+    assert passes(
+        program: "(true, true) and (true, false)",
+        input: "null",
+        expected: ["true", "false", "true", "false"]
+    )
+
+test "man.test 768: [true, false | not]"
+    assert passes(program: "[true, false | not]", input: "null", expected: ["[false, true]"])
+
+test "man.test 772: empty // 42"
+    assert passes(program: "empty // 42", input: "null", expected: ["42"])
+
+test "man.test 776: .foo // 42"
+    assert passes(program: ".foo // 42", input: f"{{\"foo\": 19}}", expected: ["19"])
+
+test "man.test 780: .foo // 42"
+    assert passes(program: ".foo // 42", input: f"{{}}", expected: ["42"])
+
+test "man.test 784: (false, null, 1) // 42"
+    assert passes(program: "(false, null, 1) // 42", input: "null", expected: ["1"])
+
+test "man.test 788: (false, null, 1) | . // 42"
+    assert passes(program: "(false, null, 1) | . // 42", input: "null", expected: ["42", "42", "1"])
+
+test "man.test 794: try .a catch '. is not an object'"
+    assert passes(program: "try .a catch \". is not an object\"", input: "true", expected: ["\". is not an object\""])
+
+test "man.test 798: [.[]|try .a]"
+    assert passes(program: "[.[]|try .a]", input: f"[{{}}, true, {{\"a\":1}}]", expected: ["[null, 1]"])
+
+test "man.test 802: try error('some exception') catch ."
+    assert passes(program: "try error(\"some exception\") catch .", input: "true", expected: ["\"some exception\""])
+
+test "man.test 806: [.[] | .a?]"
+    assert passes(program: "[.[] | .a?]", input: f"[{{}}, true, {{\"a\":1}}]", expected: ["[null, 1]"])
+
+test "man.test 810: [.[] | tonumber?]"
+    assert passes(program: "[.[] | tonumber?]", input: "[\"1\", \"invalid\", \"3\", 4]", expected: ["[1, 3, 4]"])
+
+test "man.test 814: .bar as $x | .foo | . + $x"
+    assert passes(program: ".bar as $x | .foo | . + $x", input: f"{{\"foo\":10, \"bar\":200}}", expected: ["210"])
+
+test "man.test 818: . as $i|[(.*2|. as $i| $i), $i]"
+    assert passes(program: ". as $i|[(.*2|. as $i| $i), $i]", input: "5", expected: ["[10,5]"])
+
+test "man.test 822: . as [$a, $b, (c: $c)] | $a + $b + $c"
+    assert passes(
+        program: f". as [$a, $b, {{c: $c}}] | $a + $b + $c",
+        input: f"[2, 3, {{\"c\": 4, \"d\": 5}}]",
+        expected: ["9"]
+    )
+
+test "man.test 826: .[] as [$a, $b] | (a: $a, b: $b)"
+    assert passes(
+        program: f".[] as [$a, $b] | {{a: $a, b: $b}}",
+        input: "[[0], [0, 1], [2, 1, 0]]",
+        expected: [f"{{\"a\":0,\"b\":null}}", f"{{\"a\":0,\"b\":1}}", f"{{\"a\":2,\"b\":1}}"]
+    )
+
+test "man.test 832: .[] as ($a, $b, c: ($d, $e)) ?// ($a, $b, c: [($d, $e)]) ..."
+    assert passes(
+        program: f".[] as {{$a, $b, c: {{$d, $e}}}} ?// {{$a, $b, c: [{{$d, $e}}]}} | {{$a, $b, $d, $e}}",
+        input: f"[{{\"a\": 1, \"b\": 2, \"c\": {{\"d\": 3, \"e\": 4}}}}, {{\"a\": 1, \"b\": 2, \"c\": [{{\"d\": 3, \"e\": 4}}]}}]",
+        expected: [f"{{\"a\":1,\"b\":2,\"d\":3,\"e\":4}}", f"{{\"a\":1,\"b\":2,\"d\":3,\"e\":4}}"]
+    )
+
+test "man.test 837: .[] as ($a, $b, c: ($d)) ?// ($a, $b, c: [($e)]) | ($a, $..."
+    assert passes(
+        program: f".[] as {{$a, $b, c: {{$d}}}} ?// {{$a, $b, c: [{{$e}}]}} | {{$a, $b, $d, $e}}",
+        input: f"[{{\"a\": 1, \"b\": 2, \"c\": {{\"d\": 3, \"e\": 4}}}}, {{\"a\": 1, \"b\": 2, \"c\": [{{\"d\": 3, \"e\": 4}}]}}]",
+        expected: [f"{{\"a\":1,\"b\":2,\"d\":3,\"e\":null}}", f"{{\"a\":1,\"b\":2,\"d\":null,\"e\":4}}"]
+    )
+
+test "man.test 842: .[] as [$a] ?// [$b] | if $a != null then error('err: /($..."
+    assert passes(
+        program: f".[] as [$a] ?// [$b] | if $a != null then error(\"err: \\($a)\") else {{$a,$b}} end",
+        input: "[[3]]",
+        expected: [f"{{\"a\":null,\"b\":3}}"]
+    )
+
+test "man.test 846: def addvalue(f): . + [f]; map(addvalue(.[0]))"
+    assert passes(
+        program: "def addvalue(f): . + [f]; map(addvalue(.[0]))",
+        input: "[[1,2],[10,20]]",
+        expected: ["[[1,2,1], [10,20,10]]"]
+    )
+
+test "man.test 850: def addvalue(f): f as $x | map(. + $x); addvalue(.[0])"
+    assert passes(
+        program: "def addvalue(f): f as $x | map(. + $x); addvalue(.[0])",
+        input: "[[1,2],[10,20]]",
+        expected: ["[[1,2,1,2], [10,20,1,2]]"]
+    )
+
+test "man.test 854: isempty(empty)"
+    assert passes(program: "isempty(empty)", input: "null", expected: ["true"])
+
+test "man.test 858: isempty(.[])"
+    assert passes(program: "isempty(.[])", input: "[]", expected: ["true"])
+
+test "man.test 862: isempty(.[])"
+    assert passes(program: "isempty(.[])", input: "[1,2,3]", expected: ["false"])
+
+test "man.test 866: [limit(3;.[])]"
+    assert passes(program: "[limit(3;.[])]", input: "[0,1,2,3,4,5,6,7,8,9]", expected: ["[0,1,2]"])
+
+test "man.test 870: [first(range(.)), last(range(.)), nth(./2; range(.))]"
+    assert passes(program: "[first(range(.)), last(range(.)), nth(./2; range(.))]", input: "10", expected: ["[0,9,5]"])
+
+test "man.test 874: [range(.)]|[first, last, nth(5)]"
+    assert passes(program: "[range(.)]|[first, last, nth(5)]", input: "10", expected: ["[0,9,5]"])
+
+test "man.test 878: reduce .[] as $item (0; . + $item)"
+    assert passes(program: "reduce .[] as $item (0; . + $item)", input: "[1,2,3,4,5]", expected: ["15"])
+
+test "man.test 882: reduce .[] as [$i,$j] (0; . + $i * $j)"
+    assert passes(program: "reduce .[] as [$i,$j] (0; . + $i * $j)", input: "[[1,2],[3,4],[5,6]]", expected: ["44"])
+
+test "man.test 886: reduce .[] as ($x,$y) (null; .x += $x | .y += [$y])"
+    assert passes(
+        program: f"reduce .[] as {{$x,$y}} (null; .x += $x | .y += [$y])",
+        input: f"[{{\"x\":\"a\",\"y\":1}},{{\"x\":\"b\",\"y\":2}},{{\"x\":\"c\",\"y\":3}}]",
+        expected: [f"{{\"x\":\"abc\",\"y\":[1,2,3]}}"]
+    )
+
+test "man.test 890: foreach .[] as $item (0; . + $item)"
+    assert passes(
+        program: "foreach .[] as $item (0; . + $item)",
+        input: "[1,2,3,4,5]",
+        expected: ["1", "3", "6", "10", "15"]
+    )
+
+test "man.test 898: foreach .[] as $item (0; . + $item; [$item, . * 2])"
+    assert passes(
+        program: "foreach .[] as $item (0; . + $item; [$item, . * 2])",
+        input: "[1,2,3,4,5]",
+        expected: ["[1,2]", "[2,6]", "[3,12]", "[4,20]", "[5,30]"]
+    )
+
+test "man.test 906: foreach .[] as $item (0; . + 1; (index: ., $item))"
+    assert passes(
+        program: f"foreach .[] as $item (0; . + 1; {{index: ., $item}})",
+        input: "[\"foo\", \"bar\", \"baz\"]",
+        expected: [f"{{\"index\":1,\"item\":\"foo\"}}", f"{{\"index\":2,\"item\":\"bar\"}}", f"{{\"index\":3,\"item\":\"baz\"}}"]
+    )
+
+test "man.test 912: def range(init; upto; by): def _range: if (by > 0 and . <..."
+    assert passes(
+        program: "def range(init; upto; by): def _range: if (by > 0 and . < upto) or (by < 0 and . > upto) then ., ((.+by)|_range) else . end; if by == 0 then init else init|_range end | select((by > 0 and . < upto) or (by < 0 and . > upto)); range(0; 10; 3)",
+        input: "null",
+        expected: ["0", "3", "6", "9"]
+    )
+
+test "man.test 919: def while(cond; update): def _while: if cond then ., (upd..."
+    assert passes(
+        program: "def while(cond; update): def _while: if cond then ., (update | _while) else empty end; _while; [while(.<100; .*2)]",
+        input: "1",
+        expected: ["[1,2,4,8,16,32,64]"]
+    )
+
+test "man.test 923: truncate_stream([[0],1],[[1,0],2],[[1,0]],[[1]])"
+    assert passes(
+        program: "truncate_stream([[0],1],[[1,0],2],[[1,0]],[[1]])",
+        input: "1",
+        expected: ["[[0],2]", "[[0]]"]
+    )
+
+test "man.test 928: fromstream(1|truncate_stream([[0],1],[[1,0],2],[[1,0]],[[..."
+    assert passes(
+        program: "fromstream(1|truncate_stream([[0],1],[[1,0],2],[[1,0]],[[1]]))",
+        input: "null",
+        expected: ["[2]"]
+    )
+
+test "man.test 932: . as $dot|fromstream($dot|tostream)|.==$dot"
+    assert passes(
+        program: ". as $dot|fromstream($dot|tostream)|.==$dot",
+        input: f"[0,[1,{{\"a\":1}},{{\"b\":2}}]]",
+        expected: ["true"]
+    )
+
+test "man.test 936: (..|select(type=='boolean')) |= if . then 1 else 0 end"
+    assert passes(
+        program: "(..|select(type==\"boolean\")) |= if . then 1 else 0 end",
+        input: "[true,false,[5,true,[true,[false]],false]]",
+        expected: ["[1,0,[5,1,[1,[0]],0]]"]
+    )
+
+test "man.test 940: .foo += 1"
+    assert passes(program: ".foo += 1", input: f"{{\"foo\": 42}}", expected: [f"{{\"foo\": 43}}"])
+
+test "man.test 944: .a = .b"
+    assert passes(
+        program: ".a = .b",
+        input: f"{{\"a\": {{\"b\": 10}}, \"b\": 20}}",
+        expected: [f"{{\"a\":20,\"b\":20}}"]
+    )
+
+test "man.test 948: .a |= .b"
+    assert passes(
+        program: ".a |= .b",
+        input: f"{{\"a\": {{\"b\": 10}}, \"b\": 20}}",
+        expected: [f"{{\"a\":10,\"b\":20}}"]
+    )
+
+test "man.test 952: (.a, .b) = range(3)"
+    assert passes(
+        program: "(.a, .b) = range(3)",
+        input: "null",
+        expected: [f"{{\"a\":0,\"b\":0}}", f"{{\"a\":1,\"b\":1}}", f"{{\"a\":2,\"b\":2}}"]
+    )
+
+test "man.test 958: (.a, .b) |= range(3)"
+    assert passes(program: "(.a, .b) |= range(3)", input: "null", expected: [f"{{\"a\":0,\"b\":0}}"])

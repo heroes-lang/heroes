@@ -1,0 +1,62 @@
+capability text/normal-form  a text in one of Unicode's four normal forms
+  heroes  unicode/normalize.to_nfc, unicode/normalize.to_nfd, unicode/normalize.to_nfkc, unicode/normalize.to_nfkd
+  go      -
+  rust    -
+  python  unicodedata.normalize
+  note    UAX #15 for Unicode 17.0.0, the version `unicode` holds. Every line of NormalizationTest.txt 17.0.0 (20,034) runs as the package's tests, each held to the file's five invariants; and a sweep of 2026-11-17 normalized every one of the 1,112,064 scalar values in the four forms and matched Python 3.15.2's `unicodedata.normalize` byte for byte. Go's `golang.org/x/text/unicode/norm` and Rust's crate `unicode-normalization` are outside the three standard libraries. A text the quick check says is in the form is answered as it is, with no copy
+
+capability text/is-normal-form  whether a text is in one of the four normal forms
+  heroes  unicode/normalize.is_nfc, unicode/normalize.is_nfd, unicode/normalize.is_nfkc, unicode/normalize.is_nfkd
+  go      -
+  rust    -
+  python  unicodedata.is_normalized
+  note    the quick check first, the form made and compared only where it answers maybe, as Python does
+
+capability text/quick-check  UAX #15's quick check: yes, no, or maybe
+  heroes  unicode/normalize.quick_check, unicode/normalize.Form, unicode/normalize.QuickCheck
+  go      -
+  rust    -
+  python  -
+  note    Python makes it inside `is_normalized` and answers a `bool`; here the three answers are offered, so a program can settle most texts in one pass. `Form` names the form as Python's first argument does
+
+capability char/decomposition  the one step by which the database takes a character apart, and its kind
+  heroes  unicode/normalize.decomposition, unicode/normalize.Decomposition, unicode/normalize.CANONICAL
+  go      -
+  rust    -
+  python  unicodedata.decomposition
+  note    Python answers the database's field as text, "<compat> 0066 0069", and "" for none; here a record of the kind and the text it maps to, and `not_found` for none. A Hangul syllable answers its jamo, as Python's does though the database lists none
+
+capability class/combining  the canonical combining class of a character, which orders the marks after a letter
+  heroes  unicode/normalize.combining_class
+  go      -
+  rust    -
+  python  unicodedata.combining
+
+capability text/caseless-match  the forms Unicode's caseless matches compare: canonical (D145) and compatibility (D146)
+  heroes  unicode/normalize.to_caseless, unicode/normalize.to_caseless_compat
+  go      -
+  rust    -
+  python  -
+  note    a program writes them in Python as `normalize("NFD", normalize("NFD", s).casefold())`; `strings.to_casefold` folds without normalizing, so "É" written as one character and "e" with a combining acute accent differ there and match here. Two texts are compared by comparing their forms, the one way
+
+capability text/nfkc-casefold  NFKC_Casefold, the form UAX #31 compares identifiers in
+  heroes  unicode/normalize.to_nfkc_casefold
+  go      -
+  rust    -
+  python  -
+  note    the derived mapping of `DerivedNormalizationProps.txt` 17.0.0 then NFC; held to ICU 78.3's NFKC_Casefold normalizer (Unicode 17.0) on every scalar value, by the generator and by the sweep of 2026-11-17
+
+capability case/of-a-language  a text's case by the rules of Turkish, Azeri and Lithuanian
+  heroes  unicode/normalize.to_lower_for, unicode/normalize.to_upper_for, unicode/normalize.to_casefold_for
+  go      unicode.SpecialCase, unicode.TurkishCase, unicode.AzeriCase, SpecialCase.ToUpper, SpecialCase.ToLower, SpecialCase.ToTitle
+  rust    -
+  python  -
+  note    `SpecialCasing.txt`'s conditional mappings, Final_Sigma for every language, and CaseFolding.txt's T entries, as ICU 78.3's `u_strToLower`, `u_strToUpper` and `u_strFoldCase` answer them for "tr" and "lt" (observed 2026-11-17). Go's SpecialCase maps a character alone, so it cannot drop the dot after a capital I in Turkish, nor keep Lithuanian's; here a text is mapped with its context. Go's ToTitle is `to_upper_for` of the character, since title and upper case agree for every character these languages map otherwise. The language is read by its first subtag, ignoring case, so "tr-TR" and "az_Latn" are read
+
+capability normalize/version  the version of Unicode the tables hold
+  heroes  unicode/normalize.UNICODE_VERSION
+  go      -
+  rust    -
+  python  -
+  note    17.0.0, as `unicode.UNICODE_VERSION`, whose block holds Python's `unicodedata.unidata_version`; the tables were made by a program from the Unicode Character Database 17.0.0 and held to Python 3.15.2's `unicodedata` and ICU 78.3 on every code point. A program using this package carries about 385 KB more than one using `unicode` alone (measured 2026-11-17, `heroes build` at -O0 on macOS)
+

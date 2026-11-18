@@ -1,0 +1,78 @@
+# A server for this package's tests alone, run on a thread of its own while
+# the test's thread is the client: it answers one HTTP request with a body
+# written ahead and gives back what it read. Nothing outside the tests calls
+# it.
+
+use bytes
+use http
+use io
+use json
+use net
+use numbers
+use strings
+use threads
+
+# What parts the pieces of a thread's argument and of its answer.
+constant SEPARATOR: str
+    "\u{1e}"
+
+# A server running on a thread of its own, and the port it listens on.
+record Started
+    # The port the server listens on, which the system chose.
+    port: i64
+    # The server's thread, whose answer `threads.wait_text` gives: the body it
+    # read, then its `Content-Type`, then its `Accept`.
+    thread: threads.TextThread
+
+# `serve_once` started on a thread of its own, to answer `status` and `body`:
+# the server listens on a port the system chooses and tells it back over a
+# connection to a listener of this thread, so no port is assumed free.
+function start(status: i64, body: str) -> Started
+    control @= net.listen(host: "127.0.0.1", port: 0).must()
+    t = threads.spawn_text(body: serve_once, arg: [f"{control.address.port}", f"{status}", body].join(SEPARATOR))
+    told = net.accept(control, deadline_ms: 10_000).must()
+    r @= io.reader(told.stream)
+    port = numbers.parse_int(io.read_rest_text(@r).must()).must()
+    io.close(@r.stream).must()
+    net.close_listener(@control).must()
+    return Started(port: port, thread: t)
+
+# The body of `start`'s thread: it tells its port, answers one request, and
+# gives back what it read.
+function serve_once(arg: str) -> str
+    parts = strings.split(s: arg, sep: SEPARATOR)
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    told @= net.connect("127.0.0.1", port: numbers.parse_int(parts[0]).must(), deadline_ms: 10_000).must()
+    io.write_text(told.stream, text: f"{l.address.port}").must()
+    io.close(@told.stream).must()
+    conn = net.accept(l, deadline_ms: 10_000).must()
+    reader @= io.reader(conn.stream)
+    r = http.next_request(@reader, limits: http.default_limits()).must()
+    response = http.respond(
+        status: numbers.parse_int(parts[1]).must(),
+        content_type: "application/json",
+        body: bytes.from_text(parts[2])
+    )
+    http.write_answer(reader.stream, r: r, response: response).must()
+    io.close(@reader.stream).must()
+    net.close_listener(@l).must()
+    return [bytes.to_text_lossy(r.body), http.value_of(r.headers, name: "Content-Type").default(""), http.value_of(r.headers, name: "Accept").default("")].join(
+        SEPARATOR
+    )
+
+# The error codes of each answer `text` holds, one answer or a batch, 0 for a
+# result: what a test compares where the data's words are not its point.
+function codes_of(text: str) -> [i64]
+    out: [i64] @= []
+    value = json.parse(text).must()
+
+    answers = match value
+        .list l                                                    => l.items
+        .null_value | .boolean _ | .number _ | .text _ | .object _ => [value]
+
+    for answer in answers
+        match json.value_at(answer, pointer: "/error/code")
+            .ok code => out @ out.push(json.int_of(code).must())
+            .err _   => out @ out.push(0)
+
+    return out

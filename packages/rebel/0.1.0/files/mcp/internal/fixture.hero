@@ -1,0 +1,28 @@
+# A peer for this package's tests and examples alone: the two ends of a
+# connection, on whose far end the answers of a server are written ahead,
+# one message a line, so that a client's requests are answered in order
+# with no thread. Nothing outside the tests calls it.
+
+use io
+use json
+use jsonrpc
+use net
+
+# The two ends of a connection whose second end has written `results` ahead,
+# each the result of the request of id 1, 2 and so on: the client reads them
+# from the first end.
+function peer(results: [str]) -> net.Pair
+    two = net.pair(deadline_ms: 10_000).must()
+
+    for at in range(from: 0, to: results.len())
+        answer = jsonrpc.result_of(.number(v: to_f64(at + 1)), value: json.parse(results[at]).must())
+        jsonrpc.write_message(two.second.stream, m: answer, framing: .lines).must()
+
+    return two
+
+# Closes both ends of `two`.
+function shut(two: net.Pair)
+    first @= two.first.stream
+    io.close(@first).must()
+    second @= two.second.stream
+    io.close(@second).must()

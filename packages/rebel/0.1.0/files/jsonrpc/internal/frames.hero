@@ -1,0 +1,301 @@
+# How messages follow each other on a stream: one a line, or each after a
+# `Content-Length` header as the Language Server Protocol's base protocol
+# writes it. Every read is bounded: a line is taken from what the reader
+# holds, never past the limit, so a peer that writes without end fills no
+# memory, and every pass of a loop reads at least one byte or returns.
+
+use bytes
+use io
+use numbers
+use strings
+
+# The code of a frame that is not of its form.
+constant INVALID: str
+    "invalid"
+
+# The code of a frame past its limit.
+constant LIMIT: str
+    "limit"
+
+# The code of a stream that ended before a message began.
+constant CLOSED: str
+    "closed"
+
+# The code of a charset other than UTF-8.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The code of bytes that are not UTF-8.
+constant NOT_TEXT: str
+    "not_text"
+
+# The most bytes one line of a header may take, its end aside.
+constant HEADER_LINE_BYTES: i64
+    8_192
+
+# The most lines one header may hold.
+constant HEADER_LINES: i64
+    32
+
+# The bytes of `reader` up to and including the next line feed, or to the
+# end where none comes: an empty list at the end. Fails `limit` where more
+# than `most` bytes come before the line feed; the bytes read are dropped.
+function line(@reader: io.Reader, most: i64) -> [u8]?
+    pieces: [[u8]] @= []
+    total: i64 @= 0
+
+    while !io.at_end(@reader)?
+        held = io.buffered(reader)
+        feed = bytes.index_of(s: held, substr: [10])
+        take = feed.default(held.len() - 1) + 1
+
+        before = match feed
+            .ok at => at
+            .err _ => take
+
+        if total + before > most
+            return fail(code: LIMIT, msg: f"a line runs past {most} bytes")
+        pieces @ pieces.push(io.read_n(@reader, n: take)?)
+        total @ total + take
+
+        if !feed.is_err()
+            break
+
+    return ok(bytes.concat(pieces))
+
+# `raw` without its line feed and the carriage return before it.
+function without_end(raw: [u8]) -> [u8]
+    end: i64 @= raw.len()
+
+    if end > 0 && raw[end - 1] == '\n'
+        end @ end - 1
+
+    if end > 0 && raw[end - 1] == '\r'
+        end @ end - 1
+    return raw.slice(from: 0, to: end)
+
+# Whether `raw` holds white space alone: spaces, tabs and carriage returns.
+function is_blank(raw: [u8]) -> bool
+    for b in raw
+        if b != ' ' && b != '\t' && b != '\r'
+            return false
+
+    return true
+
+# The text of the next message of `reader`, one a line. A line of white space
+# alone is passed over; a last line with no line feed is a message. Fails
+# `closed` at the end, `limit` past `most` bytes, `not_text` where the line
+# is not UTF-8, the line read either way.
+function read_line_text(@reader: io.Reader, most: i64) -> str?
+    while true
+        raw = line(@reader, most: most)?
+
+        if raw.len() == 0
+            return fail(code: CLOSED, msg: "the stream ended before a message began")
+        kept = without_end(raw)
+
+        if !is_blank(kept)
+            match bytes.to_text(kept)
+                .ok text => return ok(text)
+                .err _   => return fail(code: NOT_TEXT, msg: f"a message of {kept.len()} bytes is not UTF-8")
+
+# The text of the next message of `reader`, after its header. Fails `closed`
+# where the stream ends before a header begins, `invalid` where it ends inside
+# one or a field is not of its form, `limit` where the length is past `most`
+# or the header past its own bounds, `unsupported` for a charset other than
+# UTF-8, `not_text` where the content is not UTF-8.
+function read_framed_text(@reader: io.Reader, most: i64) -> str?
+    length: i64 @= 0
+    has_length: bool @= false
+    lines: i64 @= 0
+
+    while true
+        raw = line(@reader, most: HEADER_LINE_BYTES)?
+
+        if raw.len() == 0 && lines == 0
+            return fail(code: CLOSED, msg: "the stream ended before a message began")
+
+        if raw.len() == 0
+            return fail(code: INVALID, msg: "the stream ended inside a header")
+        lines @ lines + 1
+
+        if lines > HEADER_LINES
+            return fail(code: LIMIT, msg: f"a header holds more than {HEADER_LINES} lines")
+        kept = without_end(raw)
+
+        if kept.len() == 0
+            break
+
+        field = match bytes.to_text(kept)
+            .ok text => text
+            .err _   => return fail(code: INVALID, msg: "a header line is not UTF-8")
+
+        colon = match strings.index_of(s: field, substr: ":")
+            .ok at => at
+            .err _ => return fail(code: INVALID, msg: f"the header line \"{field}\" holds no `:`")
+
+        name = strings.to_lower(strings.trim(field.slice(from: 0, to: colon)))
+        value = strings.trim(field.slice(from: colon + 1, to: field.len()))
+
+        if name == "content-length"
+            given = length_of(value)?
+
+            if has_length && given != length
+                return fail(code: INVALID, msg: f"two lengths, {length} and {given}")
+            length @ given
+            has_length @ true
+        else if name == "content-type"
+            check_charset(value)?
+
+    if !has_length
+        return fail(code: INVALID, msg: "a header holds no Content-Length")
+
+    if length > most
+        return fail(code: LIMIT, msg: f"a message of {length} bytes is past {most}")
+    content = io.read_n(@reader, n: length)?
+
+    if content.len() < length
+        return fail(code: INVALID, msg: f"the stream ended inside a message, at {content.len()} of {length} bytes")
+
+    match bytes.to_text(content)
+        .ok text => return ok(text)
+        .err _   => return fail(code: NOT_TEXT, msg: f"a message of {length} bytes is not UTF-8")
+
+# The length `value` writes: decimal digits alone. Fails `invalid` otherwise,
+# and `limit` where no `i64` holds it.
+function length_of(value: str) -> i64?
+    if value == ""
+        return fail(code: INVALID, msg: "Content-Length is empty")
+
+    for c in value.chars()
+        if c[0] < '0' || c[0] > '9'
+            return fail(code: INVALID, msg: f"Content-Length \"{value}\" is not decimal digits")
+
+    match numbers.parse_int(value)
+        .ok n  => return ok(n)
+        .err _ => return fail(code: LIMIT, msg: f"Content-Length {value} is past what a length holds")
+
+# Fails `unsupported` where the type `value` names a charset other than
+# UTF-8, which the Language Server Protocol writes `utf-8` and once wrote
+# `utf8`.
+function check_charset(value: str) -> ()?
+    for parameter in strings.split(s: value, sep: ";")
+        kept = strings.to_lower(strings.trim(parameter))
+
+        if strings.has_prefix(s: kept, prefix: "charset=")
+            charset = strings.trim(kept.slice(from: 8, to: kept.len()))
+            bare = strings.replace_all(s: charset, old: "\"", new: "")
+
+            if bare != "utf-8" && bare != "utf8"
+                return fail(code: UNSUPPORTED, msg: f"the charset \"{charset}\" is not UTF-8")
+
+    return ok()
+
+# Writes `text` and a line feed to `s` in one write. Fails `invalid` where
+# `text` holds a line feed, which would end the message early.
+function write_line_text(s: io.Stream, text: str) -> ()?
+    if strings.contains(s: text, substr: "\n")
+        return fail(code: INVALID, msg: "a message one a line holds no line feed")
+    return io.write_line(s, line: text)
+
+# Writes `text` after its `Content-Length` header to `s`, in one write.
+function write_framed_text(s: io.Stream, text: str) -> ()?
+    return io.write_text(s, text: f"Content-Length: {text.len()}\r\n\r\n{text}")
+
+test "line: a line, a last line with no end, the end, and a line past the limit"
+    pipe = io.pipe().must()
+    io.write_text(pipe.writer, text: "ab\ncd").must()
+    writer @= pipe.writer
+    io.close(@writer).must()
+    reader @= io.reader(pipe.reader)
+    assert line(@reader, most: 10).must() == [97, 98, 10]
+    assert line(@reader, most: 10).must() == [99, 100]
+    assert line(@reader, most: 10).must() == []
+    io.close(@reader.stream).must()
+    long = io.pipe().must()
+    io.write_text(long.writer, text: "abcdef\n").must()
+    long_reader @= io.reader(long.reader)
+
+    match line(@long_reader, most: 5)
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+    long_writer @= long.writer
+    io.close(@long_writer).must()
+    io.close(@long_reader.stream).must()
+
+test "read_line_text: blank lines passed over, a carriage return taken off, the end closed, bytes not UTF-8"
+    pipe = io.pipe().must()
+    io.write(pipe.writer, data: [10, 32, 13, 10, 123, 125, 13, 10, 0xff, 10, 91, 93]).must()
+    writer @= pipe.writer
+    io.close(@writer).must()
+    reader @= io.reader(pipe.reader)
+    assert read_line_text(@reader, most: 100).must() == "{}"
+
+    match read_line_text(@reader, most: 100)
+        .ok _  => assert false
+        .err e => assert e.code == NOT_TEXT
+
+    assert read_line_text(@reader, most: 100).must() == "[]"
+
+    match read_line_text(@reader, most: 100)
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED
+
+    io.close(@reader.stream).must()
+
+test "read_framed_text: two messages, a type of UTF-8, a length past the limit, and the end inside one"
+    pipe = io.pipe().must()
+    io.write_text(
+        pipe.writer,
+        text: "Content-Length: 2\r\n\r\n{}content-type: application/vscode-jsonrpc; charset=utf8\r\nContent-Length:3\r\n\r\n[1]"
+    ).must()
+    writer @= pipe.writer
+    io.close(@writer).must()
+    reader @= io.reader(pipe.reader)
+    assert read_framed_text(@reader, most: 100).must() == "{}"
+    assert read_framed_text(@reader, most: 100).must() == "[1]"
+
+    match read_framed_text(@reader, most: 100)
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED
+
+    io.close(@reader.stream).must()
+    cases = [
+        "Content-Length: 5\r\n\r\n{}"
+        "Content-Length: 500\r\n\r\n{}"
+        "Content-Type: text/plain; charset=latin1\r\nContent-Length: 2\r\n\r\n{}"
+        "Content-Length: x\r\n\r\n{}"
+        "Content-Length 2\r\n\r\n{}"
+        "Content-Type: a\r\n\r\n{}"
+        "Content-Length: 2\r\n"
+    ]
+    codes = [INVALID, LIMIT, UNSUPPORTED, INVALID, INVALID, INVALID, INVALID]
+
+    for at in range(from: 0, to: cases.len())
+        one = io.pipe().must()
+        io.write_text(one.writer, text: cases[at]).must()
+        one_writer @= one.writer
+        io.close(@one_writer).must()
+        one_reader @= io.reader(one.reader)
+
+        match read_framed_text(@one_reader, most: 100)
+            .ok _  => assert cases[at] == "refused"
+            .err e => assert e.code == codes[at]
+
+        io.close(@one_reader.stream).must()
+
+test "write_line_text, write_framed_text: the frames written, a line feed refused"
+    pipe = io.pipe().must()
+    write_line_text(pipe.writer, text: "{}").must()
+    write_framed_text(pipe.writer, text: "é").must()
+
+    match write_line_text(pipe.writer, text: "a\nb")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    writer @= pipe.writer
+    io.close(@writer).must()
+    reader @= io.reader(pipe.reader)
+    assert io.read_rest_text(@reader).must() == "{}\nContent-Length: 2\r\n\r\né"
+    io.close(@reader.stream).must()

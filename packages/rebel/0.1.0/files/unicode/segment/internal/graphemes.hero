@@ -1,0 +1,225 @@
+# UAX #29's extended grapheme clusters: whether two characters join, read
+# forward with the little context the rules GB9c, GB11, GB12 and GB13 need,
+# the boundaries of a whole text, and the boundary after or before a byte,
+# found by reading back only to a boundary no context can undo.
+
+use unicode
+use unicode/segment/internal/tables
+use unicode/segment/internal/text
+
+# What the characters read so far tell the rules that look back.
+record Context
+    # How many regional indicators end what was read, in a row.
+    regional: i64
+    # 1 where what was read ends with a pictograph and Extend characters, 2
+    # where a zero-width joiner follows them, 0 otherwise.
+    emoji: i64
+    # 1 where what was read ends with an Indic consonant and Extend or Linker
+    # characters, 2 where a Linker is among them, 0 otherwise.
+    conjunct: i64
+
+# The context before the first character.
+function fresh() -> Context
+    return Context(regional: 0, emoji: 0, conjunct: 0)
+
+# The context once the character whose packed values are `value` is read.
+function advanced(context: Context, value: i64) -> Context
+    class_now = text.grapheme_of(value)
+
+    regional = if class_now == tables.GB_REGIONAL_INDICATOR
+        context.regional + 1
+    else
+        0
+
+    emoji = if text.is_pictographic(value)
+        1
+    else if class_now == tables.GB_EXTEND && context.emoji == 1
+        1
+    else if class_now == tables.GB_ZWJ && context.emoji == 1
+        2
+    else
+        0
+    conjunct_now = text.conjunct_of(value)
+
+    conjunct = if conjunct_now == tables.INCB_CONSONANT
+        1
+    else if conjunct_now == tables.INCB_LINKER && context.conjunct >= 1
+        2
+    else if conjunct_now == tables.INCB_EXTEND && context.conjunct >= 1
+        context.conjunct
+    else
+        0
+    return Context(regional: regional, emoji: emoji, conjunct: conjunct)
+
+# Whether a control, a carriage return or a line feed is `class_now`.
+function is_control(class_now: i64) -> bool
+    return class_now == tables.GB_CONTROL || class_now == tables.GB_CR || class_now == tables.GB_LF
+
+# Whether the character `after` stays in the grapheme of the character
+# `before`, both packed values, `context` being what was read up to `before`
+# included: rules GB3 to GB13.
+function joins(context: Context lent, before: i64, after: i64) -> bool
+    left = text.grapheme_of(before)
+    right = text.grapheme_of(after)
+
+    if left == tables.GB_CR && right == tables.GB_LF
+        return true
+
+    if is_control(left) || is_control(right)
+        return false
+
+    if left == tables.GB_L && (right == tables.GB_L || right == tables.GB_V || right == tables.GB_LV || right == tables.GB_LVT)
+        return true
+
+    if (left == tables.GB_LV || left == tables.GB_V) && (right == tables.GB_V || right == tables.GB_T)
+        return true
+
+    if (left == tables.GB_LVT || left == tables.GB_T) && right == tables.GB_T
+        return true
+
+    if right == tables.GB_EXTEND || right == tables.GB_ZWJ || right == tables.GB_SPACINGMARK || left == tables.GB_PREPEND
+        return true
+
+    if text.conjunct_of(after) == tables.INCB_CONSONANT && context.conjunct == 2
+        return true
+
+    if left == tables.GB_ZWJ && context.emoji == 2 && text.is_pictographic(after)
+        return true
+    return left == tables.GB_REGIONAL_INDICATOR && right == tables.GB_REGIONAL_INDICATOR && context.regional % 2 == 1
+
+# Whether a boundary stands between `before` and `after` whatever came
+# before them: the context most favourable to joining that `before` allows
+# still leaves them apart.
+function is_sure(before: i64, after: i64) -> bool
+    left = text.grapheme_of(before)
+
+    regional = if left == tables.GB_REGIONAL_INDICATOR
+        1
+    else
+        0
+
+    emoji = if left == tables.GB_ZWJ
+        2
+    else
+        0
+    conjunct_before = text.conjunct_of(before)
+
+    conjunct = if conjunct_before == tables.INCB_LINKER || conjunct_before == tables.INCB_EXTEND
+        2
+    else
+        0
+    return !joins(Context(regional: regional, emoji: emoji, conjunct: conjunct), before: before, after: after)
+
+# The byte indices of every grapheme boundary of `decoded`: 0, then the end of
+# each grapheme.
+function boundaries(decoded: text.Decoded lent) -> [i64]
+    out: [i64] @= [0]
+    count = decoded.points.len()
+
+    if count == 0
+        return out
+    context: Context @= advanced(fresh(), decoded.values[0])
+    at: i64 @= 1
+
+    while at < count
+        if !joins(context, before: decoded.values[at - 1], after: decoded.values[at])
+            out @ out.push(decoded.starts[at])
+        context @ advanced(context, decoded.values[at])
+        at @ at + 1
+
+    out @ out.push(decoded.starts[count])
+    return out
+
+# The packed values of the character at byte `at` of `s`.
+function value_at(s: str, at: i64) -> i64
+    return text.value_of(unicode.code_point_at(s, at))
+
+# A boundary at or before byte `at` of `s` that no context can undo, `at`
+# being a character's first byte before the end.
+function sure_start(s: str, at: i64) -> i64
+    start: i64 @= at
+
+    while start > 0
+        before = unicode.floor_char_boundary(s, start - 1)
+
+        if is_sure(before: value_at(s, before), after: value_at(s, start))
+            return start
+        start @ before
+
+    return 0
+
+# The first grapheme boundary of `s` after byte `at`, which is a character's
+# first byte; the length where `at` is the length.
+function next_boundary(s: str, at: i64) -> i64
+    assert at >= 0 && at <= s.len() && unicode.is_char_boundary(s, at)
+
+    if at == s.len()
+        return at
+    position: i64 @= sure_start(s, at)
+    value: i64 @= value_at(s, position)
+    context: Context @= advanced(fresh(), value)
+    position @ position + unicode.width_at(s, position)
+
+    while position < s.len()
+        next_value = value_at(s, position)
+
+        if position > at && !joins(context, before: value, after: next_value)
+            return position
+        context @ advanced(context, next_value)
+        value @ next_value
+        position @ position + unicode.width_at(s, position)
+
+    return s.len()
+
+# The last grapheme boundary of `s` before byte `at`, which is a character's
+# first byte or the length; 0 where `at` is 0.
+function previous_boundary(s: str, at: i64) -> i64
+    assert at >= 0 && at <= s.len() && unicode.is_char_boundary(s, at)
+
+    if at == 0
+        return 0
+    position: i64 @= sure_start(s, unicode.floor_char_boundary(s, at - 1))
+    found: i64 @= position
+    value: i64 @= value_at(s, position)
+    context: Context @= advanced(fresh(), value)
+    position @ position + unicode.width_at(s, position)
+
+    while position < at
+        next_value = value_at(s, position)
+
+        if !joins(context, before: value, after: next_value)
+            found @ position
+        context @ advanced(context, next_value)
+        value @ next_value
+        position @ position + unicode.width_at(s, position)
+
+    return found
+
+## Tests
+
+# Python 3.15.2's `unicodedata.iter_graphemes`, observed 2026-11-17, cuts
+# each text at these bytes.
+test "boundaries: nothing, one character, a line break, an accent, a flag pair and a third, a family, and a conjunct"
+    assert boundaries(text.decode("")) == [0]
+    assert boundaries(text.decode("a")) == [0, 1]
+    assert boundaries(text.decode("\r\na")) == [0, 2, 3]
+    assert boundaries(text.decode(unicode.from_code_points([0x65, 0x301, 0x61]).must())) == [0, 3, 4]
+    assert boundaries(text.decode("🇫🇷🇩🇪🇮")) == [0, 8, 16, 20]
+    assert boundaries(text.decode(unicode.from_code_points([0x1f468, 0x200d, 0x1f469, 0x200d, 0x1f467]).must())) == [0, 18]
+    assert boundaries(text.decode("क्ष")) == [0, 9]
+    assert boundaries(text.decode(unicode.from_code_points([0x1100, 0x1161, 0x11a8, 0x1100]).must())) == [0, 9, 12]
+
+test "next_boundary and previous_boundary: the ends, inside a flag pair, and after a third indicator"
+    flags = "a🇫🇷🇩🇪🇮"
+    assert next_boundary(s: flags, at: 0) == 1
+    assert next_boundary(s: flags, at: 1) == 9
+    assert next_boundary(s: flags, at: 5) == 9
+    assert next_boundary(s: flags, at: 9) == 17
+    assert next_boundary(s: flags, at: 17) == 21
+    assert next_boundary(s: flags, at: 21) == 21
+    assert previous_boundary(s: flags, at: 21) == 17
+    assert previous_boundary(s: flags, at: 13) == 9
+    assert previous_boundary(s: flags, at: 1) == 0
+    assert previous_boundary(s: flags, at: 0) == 0
+    assert next_boundary(s: "", at: 0) == 0
+    assert previous_boundary(s: "", at: 0) == 0

@@ -1,0 +1,272 @@
+# jq's regular expressions over `regex`: the match objects of `match`, the
+# answer of `test`, the named captures of `capture`, and `split/2`. jq's flags
+# are read: `g` every match, `i` case ignored, `x` white space and comments in
+# the pattern ignored, `n` empty matches dropped, `s` `^` and `$` at the ends
+# of the text alone, which is `regex`'s own rule, and `p` a `.` that reads a
+# line feed too. `l`, Oniguruma's longest match, is refused, since `regex`
+# takes the match Perl's rule prefers. Offsets and lengths count code points,
+# as jq's do.
+
+use json
+use json/jq/internal/values
+use regex
+
+# The flags jq reads, and what `regex` is told.
+record Flags
+    # Every match, not the first.
+    global: bool
+    # Empty matches dropped.
+    no_empty: bool
+    # The pattern with its inline flags, as `regex` reads it.
+    pattern: str
+
+# The flags `flags` names for `pattern`, `null` naming none.
+function flags_of(pattern: str, flags: json.Value) -> Flags?
+    letters: str @= ""
+
+    match flags
+        .null_value => letters @ ""
+        .text t     => letters @ t.v
+        .boolean _ | .number _ | .list _ | .object _ =>
+            return values.raised(f"{values.described(flags)} is not a string")
+
+    global: bool @= false
+    no_empty: bool @= false
+    inline: [str] @= []
+    extended: bool @= false
+
+    for c in letters.chars()
+        if c == "g"
+            global @ true
+        else if c == "n"
+            no_empty @ true
+        else if c == "i"
+            inline @ inline.push("i")
+        else if c == "p"
+            inline @ inline.push("s")
+        else if c == "x"
+            extended @ true
+        else if c == "s"
+            inline @ inline
+        else
+            return values.raised(f"{letters} is not a valid modifier string")
+
+    written = if extended
+        without_space(pattern)
+    else
+        pattern
+
+    prefix = if inline.len() > 0
+        "(?" + inline.join("") + ")"
+    else
+        ""
+    return ok(Flags(global: global, no_empty: no_empty, pattern: prefix + written))
+
+# `pattern` without the white space and `#` comments the flag `x` ignores,
+# outside a class and an escape.
+function without_space(pattern: str) -> str
+    pieces: [str] @= []
+    at: i64 @= 0
+    in_class: bool @= false
+
+    while at < pattern.len()
+        c = pattern[at]
+
+        if c == '\\' && at + 1 < pattern.len()
+            pieces @ pieces.push(pattern.slice(from: at, to: at + 2))
+            at @ at + 2
+        else if in_class
+            if c == ']'
+                in_class @ false
+            pieces @ pieces.push(pattern.slice(from: at, to: at + 1))
+            at @ at + 1
+        else if c == '['
+            in_class @ true
+            pieces @ pieces.push("[")
+            at @ at + 1
+        else if c == ' ' || c == '\t' || c == '\n' || c == '\r'
+            at @ at + 1
+        else if c == '#'
+            while at < pattern.len() && pattern[at] != '\n'
+                at @ at + 1
+        else
+            start = at
+            at @ at + 1
+
+            while at < pattern.len() && pattern[at] >= 128 && pattern[at] < 192
+                at @ at + 1
+
+            pieces @ pieces.push(pattern.slice(from: start, to: at))
+
+    return pieces.join("")
+
+# The code point index of each byte of `s`, and of its end.
+function points_of(s: str) -> [i64]
+    points: [i64] @= []
+    point: i64 @= 0
+
+    for at in range(from: 0, to: s.len())
+        if s[at] < 128 || s[at] >= 192
+            if at > 0
+                point @ point + 1
+        points @ points.push(point)
+
+    if s.len() > 0
+        point @ point + 1
+    points @ points.push(point)
+    return points
+
+# The matches of `pattern` in the text `v`, as `flags` say.
+function matches(v: json.Value, pattern: json.Value, flags: json.Value) -> [regex.Match]?
+    s = match v
+        .text t                                                    => t.v
+        .null_value | .boolean _ | .number _ | .list _ | .object _ => ""
+
+    match v
+        .text _ => _ = 0
+        .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+            return values.raised(f"{values.described(v)} cannot be matched, as it is not a string")
+
+    p = match pattern
+        .text t                                                    => t.v
+        .null_value | .boolean _ | .number _ | .list _ | .object _ => ""
+
+    match pattern
+        .text _ => _ = 0
+        .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+            return values.raised(f"{values.described(pattern)} cannot be matched, as it is not a string")
+
+    f = flags_of(p, flags: flags)?
+
+    re = match regex.compile(f.pattern)
+        .ok compiled => compiled
+        .err e       => return values.raised(f"{p} (at offset 0) is not a valid regex: {e.msg}")
+
+    found: [regex.Match] @= []
+
+    if f.global
+        for m in regex.search_all(s, re: re)
+            if !(f.no_empty && m.end == m.start)
+                found @ found.push(m)
+    else
+        match regex.search(s, re: re)
+            .ok m =>
+                if !(f.no_empty && m.end == m.start)
+                    found @ found.push(m)
+            .err _ => _ = 0
+    return ok(found)
+
+# jq's `_match_impl`: the match objects, or whether there is one where `only_test`.
+function match_values(v: json.Value, pattern: json.Value, flags: json.Value, only_test: bool) -> json.Value?
+    found = matches(v: v, pattern: pattern, flags: flags)?
+
+    if only_test
+        return ok(.boolean(v: found.len() > 0))
+    s = json.text_of(v).must()
+    points = points_of(s)
+    out: [json.Value] @= []
+
+    for m in found
+        out @ out.push(match_object(m, s: s, points: points))
+
+    return ok(.list(items: out))
+
+# One match as jq writes it: `offset`, `length`, `string` and `captures`.
+function match_object(m: regex.Match, s: str, points: [i64] lent) -> json.Value
+    members: {str: json.Value} @= {}
+    members["offset"] @ .number(v: to_f64(points[m.start]))
+    members["length"] @ .number(v: to_f64(points[m.end] - points[m.start]))
+    members["string"] @ .text(v: m.text)
+    captures: [json.Value] @= []
+    names = m.captured.names
+
+    for n in range(from: 1, to: names.len())
+        c: {str: json.Value} @= {}
+
+        match regex.span(m, n)
+            .ok at =>
+                c["offset"] @ .number(v: to_f64(points[at.start]))
+                c["length"] @ .number(v: to_f64(points[at.end] - points[at.start]))
+                c["string"] @ .text(v: s.slice(from: at.start, to: at.end))
+            .err _ =>
+                c["offset"] @ .number(v: -1.0)
+                c["length"] @ .number(v: 0.0)
+                c["string"] @ .null_value
+
+        c["name"] @ if names[n] == ""
+            .null_value
+        else
+            .text(v: names[n])
+        captures @ captures.push(.object(members: c))
+
+    members["captures"] @ .list(items: captures)
+    return .object(members: members)
+
+# jq's `capture` of one match object: its named captures by name.
+function capture_object(m: json.Value) -> json.Value?
+    out: {str: json.Value} @= {}
+    captures = values.index(v: m, k: .text(v: "captures"))?
+
+    match captures
+        .list l =>
+            for c in l.items
+                name = values.index(v: c, k: .text(v: "name"))?
+
+                match name
+                    .text n                                                    => out[n.v] @ values.index(v: c, k: .text(v: "string"))?
+                    .null_value | .boolean _ | .number _ | .list _ | .object _ => _ = 0
+        .null_value | .boolean _ | .number _ | .text _ | .object _ =>
+            return values.raised("capture needs a match object")
+
+    return ok(.object(members: out))
+
+# jq's `split/2`: the pieces of the text `v` between every match of `pattern`.
+function split_by(v: json.Value, pattern: json.Value, flags: json.Value) -> json.Value?
+    all_flags: json.Value = match flags
+        .text t                                                    => .text(v: "g" + t.v)
+        .null_value | .boolean _ | .number _ | .list _ | .object _ => .text(v: "g")
+
+    found = matches(v: v, pattern: pattern, flags: all_flags)?
+    s = json.text_of(v).must()
+    pieces: [json.Value] @= []
+    start: i64 @= 0
+
+    for m in found
+        pieces @ pieces.push(.text(v: s.slice(from: start, to: m.start)))
+        start @ m.end
+
+    pieces @ pieces.push(.text(v: s.slice(from: start, to: s.len())))
+    return ok(.list(items: pieces))
+
+## Tests
+
+test "match_values: offsets in code points, captures named and not, an unmatched group"
+    got = match_values(
+        v: .text(v: "éab"),
+        pattern: .text(v: "(?<x>a)(c)?"),
+        flags: .null_value,
+        only_test: false
+    ).must()
+    text = json.format(got).must()
+    assert text == "[{\"offset\":1,\"length\":1,\"string\":\"a\",\"captures\":[{\"offset\":1,\"length\":1,\"string\":\"a\",\"name\":\"x\"},{\"offset\":-1,\"length\":0,\"string\":null,\"name\":null}]}]"
+
+test "match_values: every match with g, empty ones with and without n, a test"
+    every = match_values(v: .text(v: "abc"), pattern: .text(v: ""), flags: .text(v: "g"), only_test: false).must()
+    assert json.items_of(every).must().len() == 4
+    none = match_values(v: .text(v: "abc"), pattern: .text(v: ""), flags: .text(v: "gn"), only_test: false).must()
+    assert json.items_of(none).must().len() == 0
+    assert values.equal(
+        a: match_values(v: .text(v: "ABC"), pattern: .text(v: "b"), flags: .text(v: "i"), only_test: true).must(),
+        b: .boolean(v: true)
+    )
+
+test "flags_of: x strips space and comments, a letter refused"
+    assert flags_of("a b # c\n[ ]", flags: .text(v: "x")).must().pattern == "ab[ ]"
+    assert flags_of("a", flags: .text(v: "q")).is_err()
+
+test "split_by and capture_object"
+    got = split_by(v: .text(v: "a, b,c"), pattern: .text(v: ", *"), flags: .null_value).must()
+    assert json.format(got).must() == "[\"a\",\"b\",\"c\"]"
+    m = match_values(v: .text(v: "xyz"), pattern: .text(v: "(?<a>y)"), flags: .null_value, only_test: false).must()
+    first = json.items_of(m).must()[0]
+    assert json.format(capture_object(first).must()).must() == "{\"a\":\"y\"}"

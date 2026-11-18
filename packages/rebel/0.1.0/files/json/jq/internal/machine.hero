@@ -1,0 +1,726 @@
+# The machine that runs a filter: continuation-passing over `syntax`'s table,
+# a step at a time in one loop, so nothing it runs follows the program or the
+# data with recursion. To evaluate a node is to say which continuation
+# receives its values; a generator leaves a choice behind each value, and
+# going back takes the newest. An error unwinds the choices to the newest
+# `try` whose body it was raised in, which the continuation it was raised
+# with says; a `break` unwinds to its label. Continuations and frames no
+# longer reached are collected now and then.
+
+use json
+use json/jq/internal/act
+use json/jq/internal/arith
+use json/jq/internal/bind
+use json/jq/internal/compile
+use json/jq/internal/formats
+use json/jq/internal/frames
+use json/jq/internal/natives
+use json/jq/internal/state
+use json/jq/internal/syntax
+use json/jq/internal/values
+use json/jq/internal/write
+
+## A run
+
+# The state of a run of `code` on `input`, before its first step.
+function start(code: syntax.Code, input: json.Value, variables: {str: json.Value}, inputs: [json.Value], environment: json.Value, now: f64, max_steps: i64, max_outputs: i64, max_depth: i64, stop_after: i64) -> state.Machine
+    m: state.Machine @= state.Machine(
+        nodes: code.nodes,
+        first_user: code.first_user,
+        conts: [],
+        envs: [],
+        choices: [],
+        top: 0,
+        bag: [],
+        bag_top: 0,
+        outputs: [],
+        messages: [],
+        ids: 0,
+        steps: 0,
+        max_steps: max_steps,
+        max_outputs: max_outputs,
+        max_depth: max_depth,
+        stop_after: stop_after,
+        variables: variables,
+        inputs: inputs,
+        input_at: 0,
+        environment: environment,
+        now: now,
+        mode: state.EVAL,
+        node: code.root,
+        env: -1,
+        item: frames.plain(input),
+        cont: 0,
+        error: .null_value,
+        target: 0,
+        ending: state.RUNNING,
+        message: "",
+        halt_code: 0,
+        halt_value: .null_value,
+        collect_at: 65536
+    )
+    top_cont = state.cont_of(
+        @m,
+        kind: state.K_TOP,
+        node: -1,
+        env: -1,
+        next: -1,
+        item: frames.plain(.null_value),
+        n: 0,
+        collected: []
+    )
+    m.cont @ top_cont
+    return m
+
+# Runs `m` until it ends.
+function run(@m: state.Machine)
+    while m.ending == state.RUNNING
+        m.steps @ m.steps + 1
+
+        if m.steps > m.max_steps
+            state.limit_reached(@m, msg: f"the run took more than {m.max_steps} steps")
+        else
+            if m.conts.len() > m.collect_at
+                collect_garbage(@m)
+
+            if m.mode == state.EVAL
+                eval(@m)
+            else if m.mode == state.EMIT
+                emit(@m)
+            else if m.mode == state.BACKTRACK
+                back(@m)
+            else if m.mode == state.RAISE
+                unwind_error(@m)
+            else
+                unwind_break(@m)
+
+## Evaluating
+
+# One step of evaluation: the node in the registers.
+function eval(@m: state.Machine)
+    id = m.node
+    n = m.nodes[id]
+    k = n.kind
+    item = m.item
+    env = m.env
+    cont = m.cont
+
+    if k == syntax.IDENTITY
+        state.emit_to(@m, item: item, cont: cont)
+    else if k == syntax.LITERAL
+        state.emit_to(@m, item: frames.derived(from: item, v: n.value), cont: cont)
+    else if k == syntax.INDEX
+        if m.nodes[n.b].kind == syntax.LITERAL
+            c = state.cont_of(
+                @m,
+                kind: state.K_INDEX,
+                node: id,
+                env: env,
+                next: cont,
+                item: item,
+                n: 0,
+                collected: [m.nodes[n.b].value]
+            )
+            state.eval_to(@m, node: n.a, item: item, env: env, cont: c)
+        else
+            act.start_args(@m, node: id, item: item, env: env, cont: cont)
+    else if k == syntax.SLICE || k == syntax.STRING || k == syntax.BINARY
+        act.start_args(@m, node: id, item: item, env: env, cont: cont)
+    else if k == syntax.ITERATE
+        c = state.cont_of(@m, kind: state.K_ITERATE, node: id, env: env, next: cont, item: item, n: 0, collected: [])
+        state.eval_to(@m, node: n.a, item: item, env: env, cont: c)
+    else if k == syntax.FORMAT
+        match formats.apply(name: n.text, v: item.value)
+            .ok v  => state.emit_to(@m, item: frames.derived(from: item, v: v), cont: cont)
+            .err e => act.fail_with(@m, code: e.code, msg: e.msg)
+    else if k == syntax.ARRAY
+        if n.a < 0
+            state.emit_to(@m, item: frames.derived(from: item, v: .list(items: [])), cont: cont)
+        else
+            c: frames.Choice @= frames.choice(state.C_COLLECT)
+            c.n @ m.bag_top
+            c.item @ item
+            c.cont @ cont
+            at = state.push_choice(@m, c: c)
+            collector = state.cont_of(
+                @m,
+                kind: state.K_COLLECT,
+                node: id,
+                env: env,
+                next: cont,
+                item: item,
+                n: at,
+                collected: []
+            )
+            state.eval_to(@m, node: n.a, item: frames.plain(item.value), env: env, cont: collector)
+    else if k == syntax.OBJECT
+        if n.items.len() == 0
+            state.emit_to(@m, item: frames.derived(from: item, v: .object(members: {})), cont: cont)
+        else
+            act.start_args(@m, node: id, item: item, env: env, cont: cont)
+    else if k == syntax.NEGATE
+        c = state.cont_of(@m, kind: state.K_NEGATE, node: id, env: env, next: cont, item: item, n: 0, collected: [])
+        state.eval_to(@m, node: n.a, item: frames.plain(item.value), env: env, cont: c)
+    else if k == syntax.PIPE
+        c = state.cont_of(@m, kind: state.K_PIPE, node: n.b, env: env, next: cont, item: item, n: 0, collected: [])
+        state.eval_to(@m, node: n.a, item: item, env: env, cont: c)
+    else if k == syntax.COMMA
+        c: frames.Choice @= frames.choice(state.C_EVAL)
+        c.node @ n.b
+        c.item @ item
+        c.env @ env
+        c.cont @ cont
+        _ = state.push_choice(@m, c: c)
+        state.eval_to(@m, node: n.a, item: item, env: env, cont: cont)
+    else if k == syntax.AND || k == syntax.OR
+        kind = if k == syntax.AND
+            state.K_AND
+        else
+            state.K_OR
+        c = state.cont_of(@m, kind: kind, node: id, env: env, next: cont, item: item, n: 0, collected: [])
+        state.eval_to(@m, node: n.a, item: frames.plain(item.value), env: env, cont: c)
+    else if k == syntax.ALTERNATIVE
+        c: frames.Choice @= frames.choice(state.C_ALTERNATIVE)
+        c.node @ n.b
+        c.item @ item
+        c.env @ env
+        c.cont @ cont
+        at = state.push_choice(@m, c: c)
+        alt = state.cont_of(
+            @m,
+            kind: state.K_ALTERNATIVE,
+            node: id,
+            env: env,
+            next: cont,
+            item: item,
+            n: at,
+            collected: []
+        )
+        state.eval_to(@m, node: n.a, item: item, env: env, cont: alt)
+    else if k == syntax.IF
+        c = state.cont_of(@m, kind: state.K_IF, node: id, env: env, next: cont, item: item, n: 0, collected: [])
+        state.eval_to(@m, node: n.items[0], item: frames.plain(item.value), env: env, cont: c)
+    else if k == syntax.TRY
+        try_id = state.fresh(@m)
+        c: frames.Choice @= frames.choice(state.C_TRY)
+        c.node @ n.b
+        c.item @ item
+        c.env @ env
+        c.cont @ cont
+        c.n @ try_id
+        _ = state.push_choice(@m, c: c)
+        body = state.cont_of(
+            @m,
+            kind: state.K_TRY,
+            node: id,
+            env: env,
+            next: cont,
+            item: item,
+            n: try_id,
+            collected: []
+        )
+        state.eval_to(@m, node: n.a, item: item, env: env, cont: body)
+    else if k == syntax.REDUCE || k == syntax.FOREACH
+        c = state.cont_of(@m, kind: state.K_INIT, node: id, env: env, next: cont, item: item, n: 0, collected: [])
+        state.eval_to(@m, node: n.c, item: frames.plain(item.value), env: env, cont: c)
+    else if k == syntax.DEF
+        if n.c == 1
+            own = state.env_of(
+                @m,
+                e: frames.Env(parent: env, kind: frames.FUNCTION_FRAME, value: .null_value, node: id, closure: -1, n: 0)
+            )
+            state.eval_to(@m, node: n.b, item: item, env: own, cont: cont)
+        else
+            state.eval_to(@m, node: n.b, item: item, env: env, cont: cont)
+    else if k == syntax.CALL
+        call(@m, id: id, item: item, env: env, cont: cont)
+    else if k == syntax.VARIABLE
+        variable(@m, id: id, item: item, env: env, cont: cont)
+    else if k == syntax.BIND
+        c = state.cont_of(@m, kind: state.K_BIND, node: id, env: env, next: cont, item: item, n: 0, collected: [])
+        state.eval_to(@m, node: n.a, item: frames.plain(item.value), env: env, cont: c)
+    else if k == syntax.LABEL
+        label_id = state.fresh(@m)
+        own = state.env_of(
+            @m,
+            e: frames.Env(parent: env, kind: frames.LABEL_FRAME, value: .null_value, node: id, closure: -1, n: label_id)
+        )
+        c: frames.Choice @= frames.choice(state.C_LABEL)
+        c.n @ label_id
+        _ = state.push_choice(@m, c: c)
+        state.eval_to(@m, node: n.a, item: item, env: own, cont: cont)
+    else if k == syntax.BREAK
+        m.target @ m.envs[state.frame_at(m, env: env, up: n.b)].n
+        m.mode @ state.BREAK
+    else
+        state.raise_text(@m, msg: f"the node of kind {k} cannot be run")
+
+# A call: a parameter's closure, a definition's body with its arguments as
+# closures, or a builtin.
+function call(@m: state.Machine, id: i64, item: frames.Item, env: i64, cont: i64)
+    n = m.nodes[id]
+
+    if n.c == syntax.TO_PARAMETER
+        f = m.envs[state.frame_at(m, env: env, up: n.b)]
+        state.eval_to(@m, node: f.node, item: item, env: f.closure, cont: cont)
+    else if n.c == syntax.TO_LOCAL || n.c == syntax.TO_GLOBAL
+        base: i64 @= -1
+
+        if n.c == syntax.TO_LOCAL
+            base @ state.frame_at(m, env: env, up: n.b)
+
+        for arg in n.items
+            base @ state.env_of(
+                @m,
+                e: frames.Env(parent: base, kind: frames.PARAMETER_FRAME, value: .null_value, node: arg, closure: env, n: 0)
+            )
+
+        state.eval_to(@m, node: m.nodes[n.d].a, item: item, env: base, cont: cont)
+    else
+        builtin(@m, id: id, item: item, env: env, cont: cont)
+
+# A builtin the machine runs itself, or one of `natives` with no argument,
+# or the arguments of one evaluated first.
+function builtin(@m: state.Machine, id: i64, item: frames.Item, env: i64, cont: i64)
+    n = m.nodes[id]
+    b = n.d
+
+    if b == natives.EMPTY
+        state.backtrack(@m)
+    else if b == natives.ERROR_0
+        state.raise_value(@m, value: item.value)
+    else if b == natives.PATH
+        c = state.cont_of(@m, kind: state.K_PATH, node: id, env: env, next: cont, item: item, n: 0, collected: [])
+        state.eval_to(
+            @m,
+            node: n.items[0],
+            item: frames.Item(value: item.value, path: [], mode: frames.TRACKED),
+            env: env,
+            cont: c
+        )
+    else if b == natives.FIRST
+        act.limited(@m, count: 1, body: n.items[0], item: item, env: env, cont: cont)
+    else if b == natives.ISEMPTY
+        c: frames.Choice @= frames.choice(state.C_ISEMPTY)
+        c.item @ item
+        c.cont @ cont
+        at = state.push_choice(@m, c: c)
+        k = state.cont_of(@m, kind: state.K_ISEMPTY, node: id, env: env, next: cont, item: item, n: at, collected: [])
+        state.eval_to(@m, node: n.items[0], item: frames.plain(item.value), env: env, cont: k)
+    else if b == natives.INPUT
+        if m.input_at < m.inputs.len()
+            v = m.inputs[m.input_at]
+            m.input_at @ m.input_at + 1
+            state.emit_to(@m, item: frames.derived(from: item, v: v), cont: cont)
+        else
+            state.raise_text(@m, msg: "No more inputs")
+    else if b == natives.INPUTS
+        c: frames.Choice @= frames.choice(state.C_INPUTS)
+        c.item @ item
+        c.cont @ cont
+        _ = state.push_choice(@m, c: c)
+        state.backtrack(@m)
+    else if b == natives.DEBUG
+        frames.append(@m.messages, .list(items: [.text(v: "DEBUG:"), item.value]))
+        state.emit_to(@m, item: item, cont: cont)
+    else if b == natives.STDERR
+        frames.append(@m.messages, item.value)
+        state.emit_to(@m, item: item, cont: cont)
+    else if b == natives.HALT
+        m.ending @ state.HALTED
+        m.halt_code @ 0
+        m.halt_value @ .null_value
+    else if b == natives.NOW
+        state.emit_to(@m, item: frames.derived(from: item, v: .number(v: m.now)), cont: cont)
+    else if b == natives.BUILTINS
+        state.emit_to(@m, item: frames.derived(from: item, v: builtin_names(m)), cont: cont)
+    else
+        act.start_args(@m, node: id, item: item, env: env, cont: cont)
+
+# Every builtin's `name/arity`, the prelude's whose names do not begin with
+# `_` and those written in Heroes.
+function builtin_names(m: state.Machine lent) -> json.Value
+    names: [json.Value] @= []
+    seen: {str: bool} @= {}
+
+    for i in range(from: 0, to: m.first_user)
+        n = m.nodes[i]
+
+        if n.kind == syntax.DEF && n.text.len() > 0 && n.text[0] != '_'
+            name = f"{n.text}/{n.names.len()}"
+
+            if seen[name].is_err()
+                seen[name] @ true
+                names @ names.push(.text(v: name))
+
+    for name in natives.native_names()
+        if seen[name].is_err() && name[0] != '_'
+            seen[name] @ true
+            names @ names.push(.text(v: name))
+
+    return .list(items: names)
+
+# A variable: a frame's value, or one of the run's own by name.
+function variable(@m: state.Machine, id: i64, item: frames.Item, env: i64, cont: i64)
+    n = m.nodes[id]
+
+    if n.c == 1
+        if n.text == "ENV"
+            state.emit_to(@m, item: frames.derived(from: item, v: m.environment), cont: cont)
+        else if n.text == "__named"
+            state.emit_to(@m, item: frames.derived(from: item, v: .object(members: m.variables)), cont: cont)
+        else if n.text == "ARGS"
+            members: {str: json.Value} @= {}
+            members["positional"] @ .list(items: [])
+            members["named"] @ .object(members: m.variables)
+            state.emit_to(@m, item: frames.derived(from: item, v: .object(members: members)), cont: cont)
+        else
+            match m.variables[n.text]
+                .ok v  => state.emit_to(@m, item: frames.derived(from: item, v: v), cont: cont)
+                .err _ => state.raise_text(@m, msg: f"${n.text} is not defined")
+    else
+        f = m.envs[state.frame_at(m, env: env, up: n.b)]
+        state.emit_to(@m, item: frames.derived(from: item, v: f.value), cont: cont)
+
+## Passing a value on
+
+# One step of passing the value in the registers to its continuation.
+function emit(@m: state.Machine)
+    v = m.item
+    at = m.cont
+    c = m.conts[at]
+    k = c.kind
+
+    if k == state.K_TOP
+        frames.append(@m.outputs, v.value)
+
+        if m.outputs.len() > m.max_outputs
+            state.limit_reached(@m, msg: f"the run output more than {m.max_outputs} values")
+        else if m.stop_after > 0 && m.outputs.len() >= m.stop_after
+            m.ending @ state.FINISHED
+        else
+            state.backtrack(@m)
+    else if k == state.K_PIPE
+        state.eval_to(@m, node: c.node, item: v, env: c.env, cont: c.next)
+    else if k == state.K_ARGS
+        act.argument(@m, c: c, v: v.value)
+    else if k == state.K_INDEX
+        act.indexed(@m, c: c, target: v)
+    else if k == state.K_ITERATE
+        act.iterate(@m, container: v, cont: c.next)
+    else if k == state.K_COLLECT
+        state.collect(@m, v: v.value)
+        state.backtrack(@m)
+    else if k == state.K_NEGATE
+        match arith.negate(v.value)
+            .ok r  => state.emit_to(@m, item: frames.derived(from: c.item, v: r), cont: c.next)
+            .err e => state.raise_text(@m, msg: e.msg)
+    else if k == state.K_AND || k == state.K_OR
+        truth = values.truthy(v.value)
+
+        if k == state.K_AND && !truth
+            state.emit_to(@m, item: frames.derived(from: c.item, v: .boolean(v: false)), cont: c.next)
+        else if k == state.K_OR && truth
+            state.emit_to(@m, item: frames.derived(from: c.item, v: .boolean(v: true)), cont: c.next)
+        else
+            right = state.cont_of(
+                @m,
+                kind: state.K_TRUTH,
+                node: c.node,
+                env: c.env,
+                next: c.next,
+                item: c.item,
+                n: 0,
+                collected: []
+            )
+            state.eval_to(@m, node: m.nodes[c.node].b, item: frames.plain(c.item.value), env: c.env, cont: right)
+    else if k == state.K_TRUTH
+        state.emit_to(@m, item: frames.derived(from: c.item, v: .boolean(v: values.truthy(v.value))), cont: c.next)
+    else if k == state.K_ALTERNATIVE
+        if values.truthy(v.value)
+            m.choices[c.n].flag @ true
+            state.emit_to(@m, item: v, cont: c.next)
+        else
+            state.backtrack(@m)
+    else if k == state.K_IF
+        act.branch(@m, c: c, truth: values.truthy(v.value))
+    else if k == state.K_TRY || k == state.K_ALTERNATIVES
+        state.emit_to(@m, item: v, cont: c.next)
+    else if k == state.K_INIT
+        bind.initial(@m, c: c, state_value: v.value)
+    else if k == state.K_SOURCE || k == state.K_BIND
+        bind.bound(@m, asker: at, value: v.value)
+    else if k == state.K_KEYS
+        bind.key_received(@m, c: c, v: v.value)
+    else if k == state.K_UPDATE
+        m.choices[c.n].other @ frames.plain(v.value)
+        m.choices[c.n].flag @ true
+        state.backtrack(@m)
+    else if k == state.K_FOREACH_UPDATE
+        m.choices[c.n].other @ frames.plain(v.value)
+        m.choices[c.n].flag @ true
+        extract = m.nodes[c.node].items
+        out = frames.derived(from: c.item, v: v.value)
+
+        if extract.len() > 0
+            state.eval_to(@m, node: extract[0], item: out, env: c.env, cont: c.next)
+        else
+            state.emit_to(@m, item: out, cont: c.next)
+    else if k == state.K_PATH
+        if v.mode == frames.TRACKED
+            state.emit_to(@m, item: frames.derived(from: c.item, v: .list(items: v.path)), cont: c.next)
+        else
+            state.raise_text(@m, msg: f"Invalid path expression with result {write.preview(v.value)}")
+    else if k == state.K_LIMIT
+        left = m.choices[c.n].n - 1
+
+        if left <= 0
+            state.cut_to(@m, k: c.n)
+        else
+            m.choices[c.n].n @ left
+        state.emit_to(@m, item: v, cont: c.next)
+    else if k == state.K_ISEMPTY
+        state.cut_to(@m, k: c.n)
+        state.emit_to(@m, item: frames.derived(from: c.item, v: .boolean(v: false)), cont: c.next)
+    else
+        state.raise_text(@m, msg: f"a continuation of kind {k} cannot receive a value")
+
+## Going back
+
+# One step of going back to the newest choice.
+function back(@m: state.Machine)
+    if m.top == 0
+        m.ending @ state.FINISHED
+    else
+        at = m.top - 1
+        c = m.choices[at]
+        k = c.kind
+
+        if k == state.C_EVAL
+            state.pop_choice(@m)
+            state.eval_to(@m, node: c.node, item: c.item, env: c.env, cont: c.cont)
+        else if k == state.C_ITERATE
+            next_element(@m, at: at, c: c)
+        else if k == state.C_COLLECT
+            state.pop_choice(@m)
+            gathered = m.bag.slice(from: c.n, to: m.bag_top)
+            m.bag_top @ c.n
+            act.answer(@m, item: c.item, v: .list(items: gathered), next: c.cont)
+        else if k == state.C_ALTERNATIVE
+            state.pop_choice(@m)
+
+            if !c.flag
+                state.eval_to(@m, node: c.node, item: c.item, env: c.env, cont: c.cont)
+        else if k == state.C_REDUCE
+            state.pop_choice(@m)
+            act.answer(@m, item: c.item, v: c.other.value, next: c.cont)
+        else if k == state.C_UPDATE_END || k == state.C_FOREACH_END
+            state.pop_choice(@m)
+
+            if c.flag
+                m.choices[c.n].other @ c.other
+            else
+                m.choices[c.n].other @ frames.plain(.null_value)
+        else if k == state.C_ISEMPTY
+            state.pop_choice(@m)
+            act.answer(@m, item: c.item, v: .boolean(v: true), next: c.cont)
+        else if k == state.C_RANGE
+            if act.in_range(x: c.x + c.z, upto: c.y, by: c.z)
+                m.choices[at].x @ c.x + c.z
+            else
+                state.pop_choice(@m)
+            act.answer(@m, item: c.item, v: .number(v: c.x), next: c.cont)
+        else if k == state.C_VALUES
+            if c.n + 1 >= c.values.len()
+                state.pop_choice(@m)
+            else
+                m.choices[at].n @ c.n + 1
+            act.answer(@m, item: c.item, v: c.values[c.n], next: c.cont)
+        else if k == state.C_INPUTS
+            if m.input_at < m.inputs.len()
+                v = m.inputs[m.input_at]
+                m.input_at @ m.input_at + 1
+                act.answer(@m, item: c.item, v: v, next: c.cont)
+            else
+                state.pop_choice(@m)
+        else
+            state.pop_choice(@m)
+
+# The next element of the container a choice iterates.
+function next_element(@m: state.Machine, at: i64, c: frames.Choice)
+    i = c.n
+    container = c.other
+    element: json.Value @= .null_value
+    key: json.Value @= .null_value
+    count: i64 @= 0
+
+    match container.value
+        .list l =>
+            count @ l.items.len()
+            element @ l.items[i]
+            key @ .number(v: to_f64(i))
+        .object o =>
+            count @ c.names.len()
+            element @ o.members[c.names[i]].must()
+            key @ .text(v: c.names[i])
+        .null_value | .boolean _ | .number _ | .text _ => count @ 0
+
+    if i + 1 >= count
+        state.pop_choice(@m)
+    else
+        m.choices[at].n @ i + 1
+
+    if container.mode == frames.TRACKED
+        p: [json.Value] @= container.path
+        p @ p.push(key)
+        state.emit_to(@m, item: frames.Item(value: element, path: p, mode: frames.TRACKED), cont: c.cont)
+    else
+        state.emit_to(@m, item: frames.plain(element), cont: c.cont)
+
+## Unwinding
+
+# The ids of the `try` bodies and the alternatives the continuation `from`
+# stands inside.
+function inside(m: state.Machine lent, from: i64) -> {i64: bool}
+    ids: {i64: bool} @= {}
+    at: i64 @= from
+
+    while at >= 0
+        c = m.conts[at]
+
+        if c.kind == state.K_TRY || c.kind == state.K_ALTERNATIVES
+            ids[c.n] @ true
+        at @ c.next
+
+    return ids
+
+# One step of unwinding an error: the choices taken off up to the newest
+# `try` or alternative whose body raised it.
+function unwind_error(@m: state.Machine)
+    ids = inside(m, from: m.cont)
+    caught: bool @= false
+
+    while !caught && m.top > 0
+        at = m.top - 1
+        c = m.choices[at]
+        state.cut_to(@m, k: at)
+
+        if c.kind == state.C_TRY && !ids[c.n].is_err()
+            caught @ true
+
+            if c.node < 0
+                state.backtrack(@m)
+            else
+                state.eval_to(@m, node: c.node, item: frames.plain(m.error), env: c.env, cont: c.cont)
+        else if c.kind == state.C_ALTERNATIVES && !ids[c.m].is_err()
+            caught @ true
+            bind.go_on(@m, asker: c.node, value: c.other.value, key_values: c.values, alternative: c.n)
+
+    if !caught
+        m.ending @ state.RAISED
+
+# A `break` unwound to its label, which then gives nothing more.
+function unwind_break(@m: state.Machine)
+    found: bool @= false
+
+    while !found && m.top > 0
+        at = m.top - 1
+        c = m.choices[at]
+        state.cut_to(@m, k: at)
+
+        if c.kind == state.C_LABEL && c.n == m.target
+            found @ true
+
+    if found
+        state.backtrack(@m)
+    else
+        m.error @ .text(v: "break")
+        m.ending @ state.RAISED
+
+## Collecting
+
+# The continuations and frames no root reaches dropped, every index renamed.
+function collect_garbage(@m: state.Machine)
+    cont_roots: [i64] @= [m.cont]
+    env_roots: [i64] @= [m.env]
+
+    for i in range(from: 0, to: m.top)
+        cont_roots @ cont_roots.push(m.choices[i].cont)
+        env_roots @ env_roots.push(m.choices[i].env)
+
+        if m.choices[i].kind == state.C_ALTERNATIVES
+            cont_roots @ cont_roots.push(m.choices[i].node)
+
+    kept = frames.collect(m.conts, envs: m.envs, cont_roots: cont_roots, env_roots: env_roots)
+    m.conts @ kept.conts
+    m.envs @ kept.envs
+    m.cont @ frames.renamed(index: m.cont, by: kept.cont_index)
+    m.env @ frames.renamed(index: m.env, by: kept.env_index)
+
+    for i in range(from: 0, to: m.top)
+        m.choices[i].cont @ frames.renamed(index: m.choices[i].cont, by: kept.cont_index)
+        m.choices[i].env @ frames.renamed(index: m.choices[i].env, by: kept.env_index)
+
+        if m.choices[i].kind == state.C_ALTERNATIVES
+            m.choices[i].node @ frames.renamed(index: m.choices[i].node, by: kept.cont_index)
+
+    m.collect_at @ 2 * m.conts.len() + 65536
+
+## Tests
+
+# The machine run on `program` and `input` within `steps` steps and `depth`
+# levels.
+function ran(program: str, input: json.Value, steps: i64, depth: i64) -> state.Machine
+    m: state.Machine @= start(
+        compile.compile(program).must(),
+        input: input,
+        variables: {},
+        inputs: [],
+        environment: .object(members: {}),
+        now: 0.0,
+        max_steps: steps,
+        max_outputs: 1000,
+        max_depth: depth,
+        stop_after: 0
+    )
+    run(@m)
+    return m
+
+test "run: a value nested 5000 deep built, walked by `..` and written"
+    m = ran(
+        program: "reduce range(5000) as $i (null; [.]) | [..] | length",
+        input: .null_value,
+        steps: 10000000,
+        depth: 10000
+    )
+    assert m.ending == state.FINISHED && json.format(m.outputs[0]).must() == "5001"
+
+test "run: recursion past the depth bound, a loop past the step bound"
+    deep = ran(program: "def f: 1 + f; f", input: .null_value, steps: 10000000, depth: 500)
+    assert deep.ending == state.LIMITED
+    long = ran(program: "def f: f; f", input: .null_value, steps: 10000, depth: 500)
+    assert long.ending == state.LIMITED
+
+test "run: an error caught, an error raised past a try's body, a break to its label"
+    caught = ran(program: "try error(\"x\") catch .", input: .null_value, steps: 10000, depth: 500)
+    assert caught.ending == state.FINISHED && json.format(caught.outputs[0]).must() == "\"x\""
+    past = ran(program: "(try 1 catch 2) | error(\"y\")", input: .null_value, steps: 10000, depth: 500)
+    assert past.ending == state.RAISED && json.format(past.error).must() == "\"y\""
+    broken = ran(
+        program: "[label $f | range(10) | ., (select(. == 2) | break $f)]",
+        input: .null_value,
+        steps: 10000,
+        depth: 500
+    )
+    assert json.format(broken.outputs[0]).must() == "[0,1,2]"
+
+test "run: path tracking, and a value made inside a path refused"
+    p = ran(program: "[paths]", input: json.parse("{\"a\":[1]}").must(), steps: 10000, depth: 500)
+    assert json.format(p.outputs[0]).must() == "[[\"a\"],[\"a\",0]]"
+    lost = ran(program: "path(1)", input: .null_value, steps: 10000, depth: 500)
+    assert lost.ending == state.RAISED
+
+test "run: continuations collected while a long reduce runs"
+    m = ran(program: "reduce range(200000) as $i (0; . + $i)", input: .null_value, steps: 10000000, depth: 500)
+    assert m.ending == state.FINISHED && json.format(m.outputs[0]).must() == "19999900000"
+    assert m.conts.len() < 1000000

@@ -1,0 +1,150 @@
+# UAX #29's sentence boundaries: rules SB3 to SB11 read forward over a
+# decoded text, with the run of a terminator, its closing punctuation and its
+# spaces kept as the text is read, and SB8's look ahead for a lower case
+# letter found in a table made backward once.
+
+use unicode
+use unicode/segment/internal/tables
+use unicode/segment/internal/text
+
+# Whether `class_now` ends a paragraph, ParaSep.
+function is_paragraph_end(class_now: i64) -> bool
+    return class_now == tables.SB_SEP || class_now == tables.SB_CR || class_now == tables.SB_LF
+
+# Whether `class_now` is one SB5 attaches to the character before it.
+function is_attached(class_now: i64) -> bool
+    return class_now == tables.SB_EXTEND || class_now == tables.SB_FORMAT
+
+# Whether `class_now` stops SB8's look ahead: OLetter, Upper, Lower, ParaSep
+# or a terminator.
+function stops_look_ahead(class_now: i64) -> bool
+    return class_now == tables.SB_OLETTER || class_now == tables.SB_UPPER || class_now == tables.SB_LOWER || is_paragraph_end(class_now) || class_now == tables.SB_ATERM || class_now == tables.SB_STERM
+
+# For each index, the class of the first character at or after it that stops
+# SB8's look ahead, -1 where none does.
+function stops_from(classes: [i64] lent) -> [i64]
+    backward: [i64] @= []
+    stop: i64 @= -1
+    at: i64 @= classes.len() - 1
+
+    while at >= 0
+        if stops_look_ahead(classes[at])
+            stop @ classes[at]
+        backward @ backward.push(stop)
+        at @ at - 1
+
+    out: [i64] @= []
+    back: i64 @= backward.len() - 1
+
+    while back >= 0
+        out @ out.push(backward[back])
+        back @ back - 1
+
+    return out
+
+# The byte indices of every sentence boundary of `decoded`, 0 and the length
+# among them; `[0]` for the empty text.
+function boundaries(decoded: text.Decoded lent) -> [i64]
+    out: [i64] @= [0]
+    count = decoded.points.len()
+
+    if count == 0
+        return out
+    classes: [i64] @= []
+
+    for value in decoded.values
+        classes @ classes.push(text.sentence_of(value))
+
+    stops = stops_from(classes)
+
+    # The class SB5 leaves before the boundary, and the one before it.
+    last: i64 @= -1
+    before_last: i64 @= -1
+
+    # The terminator of the run `SATerm Close* Sp*` that ends the text read,
+    # -1 where it does not end so; and whether spaces have begun in it.
+    terminator: i64 @= -1
+    spaces: bool @= false
+    at: i64 @= 0
+
+    while at < count
+        right = classes[at]
+
+        if at > 0
+            left_raw = classes[at - 1]
+
+            joined = if left_raw == tables.SB_CR && right == tables.SB_LF
+                true
+            else if is_paragraph_end(left_raw)
+                false
+            else if is_attached(right)
+                true
+            else
+                joins_after_attached(
+                    left: last,
+                    before_left: before_last,
+                    right: right,
+                    terminator: terminator,
+                    spaces: spaces,
+                    stop: stops[at]
+                )
+
+            if !joined
+                out @ out.push(decoded.starts[at])
+
+        if !is_attached(right) || at == 0 || is_paragraph_end(classes[at - 1])
+            before_last @ last
+            last @ right
+
+            if right == tables.SB_ATERM || right == tables.SB_STERM
+                terminator @ right
+                spaces @ false
+            else if right == tables.SB_CLOSE && terminator != -1 && !spaces
+                _ = 0
+            else if right == tables.SB_SP && terminator != -1
+                spaces @ true
+            else
+                terminator @ -1
+        at @ at + 1
+
+    out @ out.push(decoded.starts[count])
+    return out
+
+# Rules SB6 to SB11 over the characters SB5 leaves: `left` and `before_left`
+# before the boundary, `right` after it, `terminator` and `spaces` the run
+# that ends the text before it, `stop` the class SB8's look ahead stops at.
+function joins_after_attached(left: i64, before_left: i64, right: i64, terminator: i64, spaces: bool, stop: i64) -> bool
+    if left == tables.SB_ATERM && right == tables.SB_NUMERIC
+        return true
+
+    if (before_left == tables.SB_UPPER || before_left == tables.SB_LOWER) && left == tables.SB_ATERM && right == tables.SB_UPPER
+        return true
+
+    if terminator == -1
+        return true
+
+    if terminator == tables.SB_ATERM && stop == tables.SB_LOWER
+        return true
+
+    if right == tables.SB_SCONTINUE || right == tables.SB_ATERM || right == tables.SB_STERM
+        return true
+
+    if !spaces && (right == tables.SB_CLOSE || right == tables.SB_SP || is_paragraph_end(right))
+        return true
+
+    if right == tables.SB_SP || is_paragraph_end(right)
+        return true
+    return false
+
+## Tests
+
+# ICU 78.3's sentence break iterator, observed 2026-11-17, cuts each text at
+# these bytes.
+test "boundaries: nothing, three sentences, an abbreviation before a lower case word, a number, quotes after a full stop, and a paragraph"
+    assert boundaries(text.decode("")) == [0]
+    assert boundaries(text.decode("Hi. How? Fine.")) == [0, 4, 9, 14]
+    assert boundaries(text.decode("e.g. this one. Next")) == [0, 15, 19]
+    assert boundaries(text.decode("It is 3.5 m. Ok")) == [0, 13, 15]
+    assert boundaries(text.decode("\"Go.\" She left.")) == [0, 6, 15]
+    assert boundaries(text.decode("One\nTwo")) == [0, 4, 7]
+    assert boundaries(text.decode(unicode.from_code_points([0x41, 0x2e, 0x301, 0x20, 0x42]).must())) == [0, 5, 6]

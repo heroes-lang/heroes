@@ -1,0 +1,227 @@
+# The JSON plumbing of MCP's messages: a member written only where it holds
+# something and read with its kind checked, a result made complete with the
+# fields every result of revision 2026-07-28 carries, the protocol's errors
+# with their codes and data, and the HTTP status each answer goes back with.
+
+use json
+use jsonrpc
+
+# The code of a member not of its kind.
+constant INVALID: str
+    "invalid"
+
+# The revision this package speaks.
+constant VERSION: str
+    "2026-07-28"
+
+# Writes `value` at `key` in `members` where it is not "".
+function put_text(@members: {str: json.Value}, key: str, value: str)
+    if value != ""
+        members[key] @ .text(v: value)
+
+# Writes `values` as a list at `key` in `members` where it is not empty.
+function put_texts(@members: {str: json.Value}, key: str, values: [str])
+    if values.len() > 0
+        members[key] @ texts(values)
+
+# `values` as a JSON list of strings.
+function texts(values: [str]) -> json.Value
+    items: [json.Value] @= []
+
+    for v in values
+        items @ items.push(.text(v: v))
+
+    return .list(items: items)
+
+# The members of `v`, none where it is not an object.
+function members_of(v: json.Value) -> {str: json.Value}
+    return match v
+        .object o                                                => o.members
+        .null_value | .boolean _ | .number _ | .text _ | .list _ => {}
+
+# The string at `key` of `v`, "" where there is none. Fails `invalid` where
+# it is there and is not a string.
+function text_at(v: json.Value, key: str) -> str?
+    match members_of(v)[key]
+        .ok got =>
+            match got
+                .text t     => return ok(t.v)
+                .null_value => return ok("")
+                .boolean _ | .number _ | .list _ | .object _ =>
+                    return fail(code: INVALID, msg: f"\"{key}\" is {json.kind_of(got)}, and a string was expected")
+        .err _ => return ok("")
+
+# The string at `key` of `v`. Fails `invalid` where there is none or it is
+# not a string.
+function required_text(v: json.Value, key: str) -> str?
+    match members_of(v)[key]
+        .ok got =>
+            match got
+                .text t => return ok(t.v)
+                .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+                    return fail(code: INVALID, msg: f"\"{key}\" is {json.kind_of(got)}, and a string was expected")
+        .err _ => return fail(code: INVALID, msg: f"\"{key}\" is missing")
+
+# The boolean at `key` of `v`, `otherwise` where there is none. Fails
+# `invalid` where it is not a boolean.
+function bool_at(v: json.Value, key: str, otherwise: bool) -> bool?
+    match members_of(v)[key]
+        .ok got =>
+            match got
+                .boolean b  => return ok(b.v)
+                .null_value => return ok(otherwise)
+                .number _ | .text _ | .list _ | .object _ =>
+                    return fail(code: INVALID, msg: f"\"{key}\" is {json.kind_of(got)}, and a boolean was expected")
+        .err _ => return ok(otherwise)
+
+# The strings of the list at `key` of `v`, none where there is none. Fails
+# `invalid` where it is not a list of strings.
+function texts_at(v: json.Value, key: str) -> [str]?
+    out: [str] @= []
+
+    match members_of(v)[key]
+        .ok got =>
+            match got
+                .list l =>
+                    for item in l.items
+                        match item
+                            .text t => out @ out.push(t.v)
+                            .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+                                return fail(
+                                    code: INVALID,
+                                    msg: f"\"{key}\" holds {json.kind_of(item)}, and strings were expected"
+                                )
+                .null_value => _ = 0
+                .boolean _ | .number _ | .text _ | .object _ =>
+                    return fail(code: INVALID, msg: f"\"{key}\" is {json.kind_of(got)}, and a list was expected")
+        .err _ => _ = 0
+
+    return ok(out)
+
+# The items of the list at `key` of `v`, none where there is none. Fails
+# `invalid` where it is not a list.
+function items_at(v: json.Value, key: str) -> [json.Value]?
+    match members_of(v)[key]
+        .ok got =>
+            match got
+                .list l     => return ok(l.items)
+                .null_value => return ok([])
+                .boolean _ | .number _ | .text _ | .object _ =>
+                    return fail(code: INVALID, msg: f"\"{key}\" is {json.kind_of(got)}, and a list was expected")
+        .err _ => return ok([])
+
+# The object at `key` of `v`, as its members, none where there is none.
+# Fails `invalid` where it is not an object.
+function object_at(v: json.Value, key: str) -> {str: json.Value}?
+    match members_of(v)[key]
+        .ok got =>
+            match got
+                .object o   => return ok(o.members)
+                .null_value => return ok({})
+                .boolean _ | .number _ | .text _ | .list _ =>
+                    return fail(code: INVALID, msg: f"\"{key}\" is {json.kind_of(got)}, and an object was expected")
+        .err _ => return ok({})
+
+# `members` made a complete result: `resultType`, then where `cacheable` the
+# freshness `ttl_ms` and the scope, then `_meta` naming the server where
+# `server` is an object.
+function result(members: {str: json.Value}, server: json.Value, cacheable: bool, ttl_ms: i64, private: bool) -> json.Value
+    out: {str: json.Value} @= {}
+    out["resultType"] @ .text(v: "complete")
+
+    for key in keys(members)
+        out[key] @ members[key].must()
+
+    if cacheable
+        out["ttlMs"] @ .number(v: to_f64(ttl_ms))
+
+        scope = if private
+            "private"
+        else
+            "public"
+        out["cacheScope"] @ .text(v: scope)
+
+    if server != .null_value
+        meta: {str: json.Value} @= members_of(members["_meta"].default(.null_value))
+        meta["io.modelcontextprotocol/serverInfo"] @ server
+        out["_meta"] @ .object(members: meta)
+    return .object(members: out)
+
+# An error answer to `id` with `code`, `message` and `data`, `.null_value`
+# writing none.
+function error_answer(id: jsonrpc.Id, code: i64, message: str, data: json.Value) -> jsonrpc.Message
+    return .response(id: id, reply: .error(error: jsonrpc.Error(code: code, message: message, data: data)))
+
+# The answer to a request whose protocol version this server does not speak:
+# -32022 with the versions it speaks and the one asked.
+function unsupported_version(id: jsonrpc.Id, requested: str) -> jsonrpc.Message
+    data: {str: json.Value} @= {}
+    data["supported"] @ texts([VERSION])
+    data["requested"] @ .text(v: requested)
+    return error_answer(
+        id,
+        code: -32022,
+        message: f"Unsupported protocol version: this server speaks {VERSION}",
+        data: .object(members: data)
+    )
+
+# The answer to a request that needs `required`, client capabilities it did
+# not declare: -32021 with them as its data.
+function missing_capability(id: jsonrpc.Id, required: json.Value) -> jsonrpc.Message
+    data: {str: json.Value} @= {}
+    data["requiredCapabilities"] @ required
+    return error_answer(id, code: -32021, message: "Missing required client capability", data: .object(members: data))
+
+# The HTTP status the answer `m` goes back with (Streamable HTTP, revision
+# 2026-07-28): 200 for a result, 404 for -32601, 500 for -32603, and 400 for
+# every other error, the protocol's own among them.
+function status_of(m: jsonrpc.Message) -> i64
+    return match m
+        .response r =>
+            match r.reply
+                .result _ => 200
+                .error e =>
+                    if e.error.code == -32601
+                        404
+                    else if e.error.code == -32603
+                        500
+                    else
+                        400
+        .request _ | .notification _ => 200
+
+# The answer `-32602 Invalid params` to `id`, `message` saying why.
+function invalid_params(id: jsonrpc.Id, message: str) -> jsonrpc.Message
+    return jsonrpc.error_of(id, code: jsonrpc.INVALID_PARAMS, message: message)
+
+# The `_meta` of every message of the subscription `id`, naming it.
+function subscription_meta(id: jsonrpc.Id) -> json.Value
+    meta: {str: json.Value} @= {}
+    meta["io.modelcontextprotocol/subscriptionId"] @ json.parse(jsonrpc.format_id(id)).must()
+    return .object(members: meta)
+
+test "put_text, put_texts, text_at, texts_at: written where not empty, read back, refused of the wrong kind"
+    members: {str: json.Value} @= {}
+    put_text(@members, key: "a", value: "")
+    put_text(@members, key: "b", value: "x")
+    put_texts(@members, key: "c", values: [])
+    put_texts(@members, key: "d", values: ["y"])
+    v: json.Value = .object(members: members)
+    assert keys(members) == ["b", "d"] && text_at(v, key: "b").must() == "x" && text_at(v, key: "a").must() == ""
+    assert texts_at(v, key: "d").must() == ["y"] && texts_at(v, key: "c").must() == []
+    assert text_at(v, key: "d").is_err() && texts_at(v, key: "b").is_err() && required_text(v, key: "a").is_err()
+    assert bool_at(v, key: "z", otherwise: true).must() && bool_at(v, key: "b", otherwise: true).is_err()
+
+test "result: complete, its cache's fields, and the server named in `_meta` beside the members' own"
+    members: {str: json.Value} @= {}
+    members["tools"] @ .list(items: [])
+    written = json.format(
+        result(members, server: json.parse("{\"name\":\"s\",\"version\":\"1\"}").must(), cacheable: true, ttl_ms: 0, private: true)
+    ).must()
+    assert written == "{\"resultType\":\"complete\",\"tools\":[],\"ttlMs\":0,\"cacheScope\":\"private\",\"_meta\":{\"io.modelcontextprotocol/serverInfo\":{\"name\":\"s\",\"version\":\"1\"}}}"
+    assert json.format(result({}, server: .null_value, cacheable: false, ttl_ms: 0, private: false)).must() == "{\"resultType\":\"complete\"}"
+
+test "unsupported_version, missing_capability, status_of: the protocol's errors and their statuses"
+    answer = unsupported_version(.number(v: 1.0), requested: "1900-01-01")
+    assert json.format(jsonrpc.to_value(answer)).must() == "{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"code\":-32022,\"message\":\"Unsupported protocol version: this server speaks 2026-07-28\",\"data\":{\"supported\":[\"2026-07-28\"],\"requested\":\"1900-01-01\"}}}"
+    assert status_of(answer) == 400 && status_of(missing_capability(.number(v: 1.0), required: .null_value)) == 400
+    assert status_of(jsonrpc.error_of(.null_id, code: -32601, message: "x")) == 404 && status_of(jsonrpc.result_of(.null_id, value: .null_value)) == 200

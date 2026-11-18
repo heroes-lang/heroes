@@ -1,0 +1,310 @@
+# A jq program as the parser reads it: one flat table of nodes, each naming
+# its children by their index in the table, so that nothing walks the program
+# by recursion over its text. The resolver fills in, for every call and every
+# variable, where at run time its definition stands.
+
+use json
+
+## The kinds of node
+
+# `.`, the input itself.
+constant IDENTITY: i64
+    1
+
+# `t[i]` and `t.name`: `a` the target, `b` the index.
+constant INDEX: i64
+    2
+
+# `t[from:to]`: `a` the target, `b` and `c` the ends, -1 where none is written.
+constant SLICE: i64
+    3
+
+# `t[]`: `a` the target.
+constant ITERATE: i64
+    4
+
+# A literal: `value` holds it.
+constant LITERAL: i64
+    5
+
+# A string with interpolations: `items` its parts, literals and expressions in
+# turn, and `text` the format applied to each expression, `text` for none.
+constant STRING: i64
+    6
+
+# `@name` alone: `text` the format.
+constant FORMAT: i64
+    7
+
+# `[e]`: `a` the body, -1 for `[]`.
+constant ARRAY: i64
+    8
+
+# `{k: v, ...}`: `items` the keys and the values, one after the other.
+constant OBJECT: i64
+    9
+
+# `-e`: `a` the operand.
+constant NEGATE: i64
+    10
+
+# `a | b`.
+constant PIPE: i64
+    11
+
+# `a, b`.
+constant COMMA: i64
+    12
+
+# An arithmetic operator or a comparison: `d` its code, `a` and `b` its sides.
+constant BINARY: i64
+    13
+
+# `a and b`.
+constant AND: i64
+    14
+
+# `a or b`.
+constant OR: i64
+    15
+
+# `a // b`.
+constant ALTERNATIVE: i64
+    16
+
+# An assignment: `d` its code, `a` the paths, `b` the value.
+constant ASSIGN: i64
+    17
+
+# `if`: `items` the conditions and the branches in turn, `a` the `else`.
+constant IF: i64
+    18
+
+# `try a catch b` and `a?`: `b` the handler, -1 where there is none.
+constant TRY: i64
+    19
+
+# `reduce a as b (c; d)`.
+constant REDUCE: i64
+    20
+
+# `foreach a as b (c; d; items[0])`, `items` empty where there is no extract.
+constant FOREACH: i64
+    21
+
+# `def text(params): a; b`: `items` the parameters, `a` the body, `b` the
+# expression the definition is in scope for.
+constant DEF: i64
+    22
+
+# A call of `text` with `items` its arguments. The resolver writes `c`, one of
+# the `TO_` constants, `d` the definition or the native, and `b` how many
+# frames up the definition's frame stands.
+constant CALL: i64
+    23
+
+# `$text`. The resolver writes `b`, how many frames up its value stands.
+constant VARIABLE: i64
+    24
+
+# `a as items[0] ?// items[1] ... | b`.
+constant BIND: i64
+    25
+
+# `label $text | a`.
+constant LABEL: i64
+    26
+
+# `break $text`. The resolver writes `b`, how many frames up its label stands.
+constant BREAK: i64
+    27
+
+# A pattern binding the variable `text`.
+constant PATTERN_VARIABLE: i64
+    28
+
+# A pattern `[p, ...]`: `items` the patterns of the elements.
+constant PATTERN_ARRAY: i64
+    29
+
+# A pattern `{...}`: `items` its entries.
+constant PATTERN_OBJECT: i64
+    30
+
+# One entry of an object pattern: `text` the variable bound to the member's
+# value, "" for none; `a` the key's expression, -1 where the key is the
+# variable's name; `b` the pattern of the member's value, -1 for none.
+constant PATTERN_ENTRY: i64
+    31
+
+# A parameter of a definition: `text` its name.
+constant PARAMETER: i64
+    32
+
+## Operators
+
+# `+`.
+constant ADD: i64
+    1
+
+# `-`.
+constant SUBTRACT: i64
+    2
+
+# `*`.
+constant MULTIPLY: i64
+    3
+
+# `/`.
+constant DIVIDE: i64
+    4
+
+# `%`.
+constant MODULO: i64
+    5
+
+# `==`.
+constant EQUAL: i64
+    6
+
+# `!=`.
+constant NOT_EQUAL: i64
+    7
+
+# `<`.
+constant LESS: i64
+    8
+
+# `<=`.
+constant LESS_EQUAL: i64
+    9
+
+# `>`.
+constant GREATER: i64
+    10
+
+# `>=`.
+constant GREATER_EQUAL: i64
+    11
+
+# `=`, the plain assignment.
+constant SET: i64
+    20
+
+# `|=`, the update.
+constant UPDATE: i64
+    21
+
+# `//=`.
+constant ALTERNATIVE_UPDATE: i64
+    22
+
+## What a call reaches
+
+# A function written in Heroes, `d` its number in `natives`.
+constant TO_NATIVE: i64
+    1
+
+# A definition with no frame of its own, at the program's top level: `d` its
+# node.
+constant TO_GLOBAL: i64
+    2
+
+# A definition inside another, `d` its node and `b` its frame's distance.
+constant TO_LOCAL: i64
+    3
+
+# A parameter of the definition being run, `b` its frame's distance.
+constant TO_PARAMETER: i64
+    4
+
+## The table
+
+# One node of the program.
+record Node
+    # Its kind, one of the constants above.
+    kind: i64
+    # The byte of the program's text it begins at.
+    at: i64
+    # A name, a field, a format, as its kind says.
+    text: str
+    # The first child, or -1.
+    a: i64
+    # The second child, or what the resolver writes.
+    b: i64
+    # The third child, or what the resolver writes.
+    c: i64
+    # The fourth child, an operator's code, or what the resolver writes.
+    d: i64
+    # The children of a kind that has a list of them.
+    items: [i64]
+    # A literal's value.
+    value: json.Value
+    # The variables a binding binds, in the order their frames stand, and a
+    # definition's parameters.
+    names: [str]
+    # For a binding, `reduce` and `foreach`, the node holding the key
+    # expressions of its object patterns, which the resolver adds; -1 for
+    # none.
+    extra: i64
+
+# A program read: its nodes, the one the run begins at, and the variables the
+# caller is expected to give, in the order their frames stand.
+record Code
+    # The nodes, the prelude's first.
+    nodes: [Node]
+    # The node of the expression run.
+    root: i64
+    # The program's text, which `$__loc__` and the messages read.
+    text: str
+    # The first node of the program's own text, every node before it the
+    # prelude's.
+    first_user: i64
+
+# A node of `kind` at byte `at`, with no child.
+function leaf(kind: i64, at: i64) -> Node
+    return Node(
+        kind: kind,
+        at: at,
+        text: "",
+        a: -1,
+        b: -1,
+        c: -1,
+        d: -1,
+        items: [],
+        value: .null_value,
+        names: [],
+        extra: -1
+    )
+
+# Adds `node` to `nodes` and answers its index.
+function add(@nodes: [Node], node: Node) -> i64
+    nodes @ nodes.push(node)
+    return nodes.len() - 1
+
+# The 1-based line of byte `at` of `text`.
+function line_of(text: str, at: i64) -> i64
+    line: i64 @= 1
+
+    for i in range(from: 0, to: at)
+        if i < text.len() && text[i] == '\n'
+            line @ line + 1
+
+    return line
+
+## Tests
+
+test "leaf: no child and no name"
+    n = leaf(kind: IDENTITY, at: 3)
+    assert n.kind == IDENTITY && n.at == 3 && n.a == -1 && n.items.len() == 0
+
+test "add: the index of the node added"
+    nodes: [Node] @= []
+    first = add(@nodes, leaf(kind: IDENTITY, at: 0))
+    second = add(@nodes, leaf(kind: ARRAY, at: 1))
+    assert first == 0 && second == 1 && nodes.len() == 2
+
+test "line_of: the first line, after a line break, and past the end"
+    assert line_of(text: "a\nb", at: 0) == 1
+    assert line_of(text: "a\nb", at: 2) == 2
+    assert line_of(text: "a\n", at: 9) == 2

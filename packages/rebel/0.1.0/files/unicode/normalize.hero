@@ -1,0 +1,431 @@
+# A text put in one of Unicode's four normal forms, so that two texts that
+# write the same characters in different code points compare equal: "é" as
+# one character and "e" followed by a combining acute accent are the same
+# text in NFC and in NFD. It also folds case for comparing, by Unicode's
+# caseless matches, and maps case by the rules of Turkish, Azeri and
+# Lithuanian. The tables hold Unicode 17.0.0, which `UNICODE_VERSION` says;
+# they live apart from `unicode` so that only the programs that normalize
+# carry them.
+#
+# What it does NOT do: say what a character is, its class or its simple case
+# (`unicode`); change the case of a text by the rules every language shares
+# (`strings.to_lower`, `strings.to_upper`, `strings.to_casefold`); order texts
+# by the rules of a language (`i18n`); cut a text into what a reader sees as
+# characters (`unicode/segment`).
+#
+# A text is a `str`, so it is UTF-8 already and nothing here reads bytes; a
+# function that takes a character aborts where it is handed the empty text or
+# more than one character. It fails with `not_found` alone, where a character
+# has no decomposition.
+
+use unicode
+use unicode/normalize/internal/caseless
+use unicode/normalize/internal/forms
+use unicode/normalize/internal/languages
+use unicode/normalize/internal/lookup
+use unicode/normalize/internal/normalization_cases
+use unicode/normalize/internal/tables
+
+## Codes
+
+# The code `decomposition` fails with where the character has none.
+constant NOT_FOUND: str
+    "not_found"
+
+## Limits
+
+# The version of Unicode the tables hold.
+constant UNICODE_VERSION: str
+    "17.0.0"
+
+## Normal forms
+
+# The four normal forms of UAX #15, which `quick_check` is asked about.
+variant Form
+    # Canonical composition: every character in its shortest canonical form,
+    # the form the web and most files hold.
+    nfc
+    # Canonical decomposition: every character taken apart into a base and
+    # its combining marks, in their canonical order.
+    nfd
+    # Compatibility composition: NFC after the compatibility mappings, which
+    # take "ﬁ" to "fi" and "①" to "1".
+    nfkc
+    # Compatibility decomposition: NFD after the compatibility mappings.
+    nfkd
+
+# What `quick_check` answers, UAX #15's three answers.
+variant QuickCheck
+    # The text is in the form.
+    yes
+    # The text is not in the form.
+    no
+    # The quick check cannot tell; `is_nfc` and its kin settle it.
+    maybe
+
+# `s` in Normalization Form C, UAX #15's canonical composition: each
+# character decomposed canonically, its marks put in their canonical order,
+# then composed again where a composition is allowed.
+#
+# - `s`: the text; the empty text answers itself.
+#
+# The answer is `s` itself where `s` is in NFC already, and the quick check
+# tells most such texts without decomposing them. It never changes what the
+# text means: only the code points that write it. See also `is_nfc`,
+# `to_nfd`.
+function to_nfc(s: str) -> str
+    return forms.normalized_text(s, compose: true, compat: false)
+
+# `s` in Normalization Form D, UAX #15's canonical decomposition: each
+# character taken apart into its base and its combining marks, the marks put
+# in their canonical order, Hangul syllables into their jamo.
+#
+# - `s`: the text; the empty text answers itself.
+#
+# See also `is_nfd`, `to_nfc`.
+function to_nfd(s: str) -> str
+    return forms.normalized_text(s, compose: false, compat: false)
+
+# `s` in Normalization Form KC, UAX #15's compatibility composition: as
+# `to_nfc`, after every compatibility mapping, so ligatures, circled and
+# full-width characters become their plain letters and digits.
+#
+# - `s`: the text; the empty text answers itself.
+#
+# It may change what a text means to a reader ("x²" becomes "x2"), so it is
+# for matching and for identifiers, never for storing what a person wrote.
+# See also `is_nfkc`, `to_nfkd`.
+function to_nfkc(s: str) -> str
+    return forms.normalized_text(s, compose: true, compat: true)
+
+# `s` in Normalization Form KD, UAX #15's compatibility decomposition: as
+# `to_nfd`, after every compatibility mapping.
+#
+# - `s`: the text; the empty text answers itself.
+#
+# See also `is_nfkd`, `to_nfkc`.
+function to_nfkd(s: str) -> str
+    return forms.normalized_text(s, compose: false, compat: true)
+
+# Whether `s` is in Normalization Form C, so `to_nfc` would answer it as it
+# is.
+#
+# - `s`: the text; the empty text is in every form.
+#
+# The quick check settles most texts in one pass; where it answers `maybe`,
+# the text is normalized and compared. See also `quick_check`, `to_nfc`.
+function is_nfc(s: str) -> bool
+    return forms.is_normalized(unicode.code_points(s), compose: true, compat: false)
+
+# Whether `s` is in Normalization Form D, so `to_nfd` would answer it as it
+# is.
+#
+# - `s`: the text; the empty text is in every form.
+#
+# See also `quick_check`, `to_nfd`.
+function is_nfd(s: str) -> bool
+    return forms.is_normalized(unicode.code_points(s), compose: false, compat: false)
+
+# Whether `s` is in Normalization Form KC, so `to_nfkc` would answer it as it
+# is.
+#
+# - `s`: the text; the empty text is in every form.
+#
+# See also `quick_check`, `to_nfkc`.
+function is_nfkc(s: str) -> bool
+    return forms.is_normalized(unicode.code_points(s), compose: true, compat: true)
+
+# Whether `s` is in Normalization Form KD, so `to_nfkd` would answer it as it
+# is.
+#
+# - `s`: the text; the empty text is in every form.
+#
+# See also `quick_check`, `to_nfkd`.
+function is_nfkd(s: str) -> bool
+    return forms.is_normalized(unicode.code_points(s), compose: false, compat: true)
+
+# UAX #15's quick check of `s` for `form`: `yes` where every character may
+# stand in the form and the marks are in their canonical order, `no` where
+# one may not, and `maybe` where only normalizing can tell.
+#
+# - `s`: the text; the empty text answers `yes`.
+# - `form`: the normal form asked about.
+#
+# It reads `s` once and builds nothing. NFD and NFKD never answer `maybe`.
+# See also `is_nfc`, `is_nfd`, `is_nfkc`, `is_nfkd`.
+function quick_check(s: str, form: Form) -> QuickCheck
+    points = unicode.code_points(s)
+
+    answer = match form
+        .nfc  => forms.quick_check(points, compose: true, compat: false)
+        .nfd  => forms.quick_check(points, compose: false, compat: false)
+        .nfkc => forms.quick_check(points, compose: true, compat: true)
+        .nfkd => forms.quick_check(points, compose: false, compat: true)
+
+    if answer == lookup.QUICK_YES
+        return .yes
+
+    if answer == lookup.QUICK_MAYBE
+        return .maybe
+    return .no
+
+## Characters
+
+# The name the decompositions of the Unicode Character Database give a
+# canonical one, which no tag names.
+constant CANONICAL: str
+    "canonical"
+
+# What `decomposition` answers: the one step by which the Unicode Character
+# Database takes a character apart.
+record Decomposition
+    # `CANONICAL` for a canonical decomposition; for a compatibility one, its
+    # tag as the database writes it without the angle brackets: "compat",
+    # "font", "noBreak", "initial", "medial", "final", "isolated", "circle",
+    # "super", "sub", "vertical", "wide", "narrow", "small", "square" or
+    # "fraction".
+    kind: str
+    # The one to eighteen characters the character maps to, each of which may
+    # decompose again.
+    text: str
+
+# The decomposition the Unicode Character Database gives `c`, one step of it,
+# with its kind.
+#
+# - `c`: one character.
+#
+# A Hangul syllable answers its two or three jamo, which the database
+# computes rather than lists, as Python's `unicodedata.decomposition` does.
+# Fails `not_found` where `c` has none. Aborts where `c` is not exactly one
+# character. See also `to_nfd`, `to_nfkd`, which apply every step.
+function decomposition(c: str) -> Decomposition?
+    n = unicode.code_point(c)
+
+    match lookup.step(n)
+        .ok found => return ok(
+            Decomposition(kind: tables.KINDS[found.kind], text: unicode.from_code_points(found.points).must())
+        )
+        .err _ => return fail(code: NOT_FOUND, msg: f"{lookup.shown(n)} has no decomposition")
+
+# The canonical combining class of `c`, which orders the marks after a base:
+# 0 for a base and every character that is no reordered mark, 1 to 254 for a
+# mark, 230 for most marks drawn above and 220 for most below.
+#
+# - `c`: one character.
+#
+# Aborts where `c` is not exactly one character. See also `to_nfd`.
+function combining_class(c: str) -> i64
+    return lookup.combining_class(unicode.code_point(c))
+
+## Case for comparing
+
+# The form of `s` that Unicode's canonical caseless match compares: NFD of
+# the full case folding of NFD of `s` (D145). Two texts match ignoring case
+# and the way their characters are written where their forms are equal.
+#
+# - `s`: the text; the empty text answers itself.
+#
+# The form is for comparing and for a map's key, never for showing. See also
+# `to_caseless_compat`, `strings.to_casefold`, which folds without
+# normalizing.
+function to_caseless(s: str) -> str
+    return unicode.from_code_points(caseless.caseless(unicode.code_points(s))).must()
+
+# The form of `s` that Unicode's compatibility caseless match compares: NFKD
+# of the case folding of NFKD of the case folding of NFD of `s` (D146), so
+# "ﬁ" and "FI" both match "fi".
+#
+# - `s`: the text; the empty text answers itself.
+#
+# The form is for comparing and for a map's key, never for showing. See also
+# `to_caseless`, `to_nfkc_casefold`.
+function to_caseless_compat(s: str) -> str
+    return unicode.from_code_points(caseless.caseless_compat(unicode.code_points(s))).must()
+
+# `s` mapped by Unicode's NFKC_Casefold, the form UAX #31 compares
+# identifiers in: compatibility mappings, full case folding and the default
+# ignorable characters taken out, in NFC.
+#
+# - `s`: the text; the empty text answers itself.
+#
+# The form is for comparing names, never for showing. See also
+# `to_caseless_compat`.
+function to_nfkc_casefold(s: str) -> str
+    return unicode.from_code_points(caseless.nfkc_casefold(unicode.code_points(s))).must()
+
+## Case of a language
+
+# `s` in lower case by Unicode's full mappings and the rules of `language`:
+# in Turkish and Azeri "I" becomes the dotless "ı" and "İ" becomes "i"; in
+# Lithuanian an "i" keeps its dot under an accent above; in every language a
+# final sigma becomes "ς".
+#
+# - `s`: the text; the empty text answers itself.
+# - `language`: a language tag, read by its first subtag ignoring case: "tr",
+#   "az" and "lt" have rules of their own, and any other tag, the empty one
+#   included, takes the rules every language shares.
+#
+# See also `to_upper_for`, `strings.to_lower`.
+function to_lower_for(s: str, language: str) -> str
+    return unicode.from_code_points(
+        languages.lowered(unicode.code_points(s), rules: languages.rules_of(language))
+    ).must()
+
+# `s` in upper case by Unicode's full mappings and the rules of `language`:
+# in Turkish and Azeri "i" becomes "İ"; in Lithuanian a dot above after a
+# soft-dotted letter goes; in every language "ß" becomes "SS".
+#
+# - `s`: the text; the empty text answers itself.
+# - `language`: a language tag, read as `to_lower_for` reads it.
+#
+# The title case of a character is its upper case in these three languages,
+# so a word is title-cased by this of its first character. See also
+# `to_lower_for`, `strings.to_upper`.
+function to_upper_for(s: str, language: str) -> str
+    return unicode.from_code_points(
+        languages.uppered(unicode.code_points(s), rules: languages.rules_of(language))
+    ).must()
+
+# `s` folded for comparing by Unicode's full case folding and the rules of
+# `language`: in Turkish and Azeri "I" folds to "ı" and "İ" to "i", where
+# every other language folds them to "i" and "i" with a dot above.
+#
+# - `s`: the text; the empty text answers itself.
+# - `language`: a language tag, read as `to_lower_for` reads it; Lithuanian
+#   folds as every other language does.
+#
+# The form is for comparing, never for showing. See also
+# `strings.to_casefold`, `to_caseless`.
+function to_casefold_for(s: str, language: str) -> str
+    return unicode.from_code_points(
+        languages.folded(unicode.code_points(s), rules: languages.rules_of(language))
+    ).must()
+
+## Tests
+
+# Every expected answer below is what Python 3.15.2's `unicodedata` (17.0.0)
+# or ICU 78.3 (Unicode 17.0) answered for the same input, observed
+# 2026-11-17; the internal modules hold the algorithm to them case by case,
+# and `normalization_cases` to every line of `NormalizationTest.txt`.
+
+test "normalization_cases: every line of the file is run"
+    assert normalization_cases.CASES == 20034
+
+test "to_nfc to to_nfkd: the empty text, ASCII, Hangul both ways, and a text of every kind of character"
+    assert to_nfc("") == "" && to_nfd("") == "" && to_nfkc("") == "" && to_nfkd("") == ""
+    assert to_nfkd("ASCII stays") == "ASCII stays"
+    assert unicode.code_points(to_nfd("한")) == [0x1112, 0x1161, 0x11ab]
+    assert to_nfc(unicode.from_code_points([0x1112, 0x1161, 0x11ab]).must()) == "한"
+    assert to_nfkc("Ⅻ㎒ｶ") == "XIIMHzカ"
+
+test "is_nfc and quick_check: the empty text, and a mark out of order"
+    out_of_order = unicode.from_code_points([0x61, 0x301, 0x323]).must()
+    assert is_nfc("") && is_nfd("") && is_nfkc("") && is_nfkd("")
+    assert quick_check("", form: .nfkd) == .yes
+    assert quick_check(out_of_order, form: .nfd) == .no
+    assert !is_nfd(out_of_order)
+
+test "decomposition: a character with none, and its message"
+    match decomposition("a")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND && e.msg == "U+0061 has no decomposition"
+
+    assert decomposition("한").must().text == unicode.from_code_points([0x1112, 0x1161, 0x11ab]).must()
+    assert decomposition("ﬁ").must().kind == "compat"
+
+test "to_lower_for and to_upper_for: a tag with a region, Lithuanian, and the empty tag"
+    assert to_lower_for(s: "DİYARBAKIR", language: "tr-TR") == "diyarbakır"
+    assert to_lower_for(s: "Ì", language: "lt") == unicode.from_code_points([0x69, 0x307, 0x300]).must()
+    assert to_upper_for(s: "ﬁ", language: "") == "FI"
+    assert to_casefold_for(s: "", language: "az") == ""
+
+## Examples
+
+# A word written with a combining accent, composed.
+test "to_nfc: an accent written apart"
+    apart = unicode.from_code_points([0x43, 0x61, 0x66, 0x65, 0x301]).must()
+    assert to_nfc(apart) == "Café"
+
+# A precomposed letter taken apart into its letter and its accent.
+test "to_nfd: a precomposed letter"
+    assert unicode.code_points(to_nfd("é")) == [0x65, 0x301]
+
+# A ligature and a circled digit, taken to their plain characters.
+test "to_nfkc: a ligature and a circled digit"
+    assert to_nfkc("ﬁ ①") == "fi 1"
+
+# A long s with a dot above and a dot below, taken apart and mapped to a
+# plain s.
+test "to_nfkd: a long s with two dots"
+    assert unicode.code_points(to_nfkd("ẛ")) == [0x73, 0x307]
+
+# A text written with a combining accent is not in NFC.
+test "is_nfc: a combining accent after its letter"
+    apart = unicode.from_code_points([0x65, 0x301]).must()
+    assert !is_nfc(apart)
+    assert is_nfc("é")
+
+# A precomposed letter is not in NFD.
+test "is_nfd: a precomposed letter"
+    apart = unicode.from_code_points([0x65, 0x301]).must()
+    assert !is_nfd("é")
+    assert is_nfd(apart)
+
+# A ligature is not in NFKC.
+test "is_nfkc: a ligature"
+    assert !is_nfkc("ﬁle")
+    assert is_nfkc("file")
+
+# A circled digit is not in NFKD.
+test "is_nfkd: a circled digit"
+    assert !is_nfkd("①")
+    assert is_nfkd("1")
+
+# The quick check answering each of its three answers.
+test "quick_check: a plain word, a precomposed letter, and a mark that may compose"
+    apart = unicode.from_code_points([0x65, 0x301]).must()
+    assert quick_check("word", form: .nfc) == .yes
+    assert quick_check("é", form: .nfd) == .no
+    assert quick_check(apart, form: .nfc) == .maybe
+
+# A precomposed letter and a fraction, each one step apart.
+test "decomposition: a letter with a ring and a fraction"
+    ring = decomposition("Å").must()
+    assert ring.kind == CANONICAL && unicode.code_points(ring.text) == [0x41, 0x30a]
+    half = decomposition("½").must()
+    assert half.kind == "fraction" && half.text == "1⁄2"
+
+# A mark drawn above, one drawn below, and a letter.
+test "combining_class: an acute accent, a dot below, and a letter"
+    assert combining_class(unicode.from_code_point(0x301).must()) == 230
+    assert combining_class(unicode.from_code_point(0x323).must()) == 220
+    assert combining_class("a") == 0
+
+# The sign for angstroms matches the small letter with a ring, and the sharp
+# s matches a double S, ignoring case.
+test "to_caseless: the angstrom sign, and a sharp s"
+    assert to_caseless("Å") == to_caseless("å")
+    assert to_caseless("Straße") == to_caseless("STRASSE")
+
+# A ligature matches its letters ignoring case.
+test "to_caseless_compat: a ligature and its letters in capitals"
+    assert to_caseless_compat("ﬁle") == to_caseless_compat("FILE")
+
+# An identifier with a soft hyphen, U+00AD, in it matches the one without.
+test "to_nfkc_casefold: an identifier with a soft hyphen"
+    hyphenated = unicode.from_code_points([0x4d, 0x61, 0xad, 0x78]).must()
+    assert to_nfkc_casefold(hyphenated) == "max"
+
+# Turkish takes a capital I to a dotless i.
+test "to_lower_for: a Turkish city"
+    assert to_lower_for(s: "ISPARTA", language: "tr") == "ısparta"
+    assert to_lower_for(s: "ISPARTA", language: "en") == "isparta"
+
+# Turkish takes a small i to a capital with a dot.
+test "to_upper_for: a Turkish city"
+    assert to_upper_for(s: "istanbul", language: "tr") == "İSTANBUL"
+
+# Turkish folds a capital I to a dotless i.
+test "to_casefold_for: a capital I in Turkish and in English"
+    assert to_casefold_for(s: "I", language: "tr") == "ı"
+    assert to_casefold_for(s: "I", language: "en") == "i"

@@ -1,0 +1,279 @@
+# jq's arithmetic on every type, with its messages: `+` on `null`, numbers,
+# texts, lists and objects; `-` on numbers and lists; `*` on numbers, a text
+# and a number, and objects merged deep; `/` on numbers and texts; `%` on the
+# integers of two numbers.
+
+use json
+use json/jq/internal/values
+use strings
+
+# How deep `*` merges two objects before it gives up.
+constant MAX_MERGE_DEPTH: i64
+    512
+
+# `a op b`, `op` one of `syntax`'s arithmetic codes 1 to 5.
+function apply(op: i64, a: json.Value, b: json.Value) -> json.Value?
+    if op == 1
+        return add(a: a, b: b)
+
+    if op == 2
+        return subtract(a: a, b: b)
+
+    if op == 3
+        return multiply(a: a, b: b)
+
+    if op == 4
+        return divide(a: a, b: b)
+    return modulo(a: a, b: b)
+
+# The message of `a` and `b` that `verb` refuses.
+function refused<T>(a: json.Value, b: json.Value, verb: str) -> T?
+    return values.raised(f"{values.described(a)} and {values.described(b)} cannot be {verb}")
+
+# jq's `+`.
+function add(a: json.Value, b: json.Value) -> json.Value?
+    match a
+        .null_value => return ok(b)
+        .number x =>
+            match b
+                .number y                                  => return ok(.number(v: x.v + y.v))
+                .null_value                                => return ok(a)
+                .boolean _ | .text _ | .list _ | .object _ => return refused(a: a, b: b, verb: "added")
+        .text x =>
+            match b
+                .text y                                      => return ok(.text(v: x.v + y.v))
+                .null_value                                  => return ok(a)
+                .boolean _ | .number _ | .list _ | .object _ => return refused(a: a, b: b, verb: "added")
+        .list x =>
+            match b
+                .list y =>
+                    joined: [json.Value] @= x.items
+
+                    for item in y.items
+                        joined @ joined.push(item)
+
+                    return ok(.list(items: joined))
+                .null_value                                  => return ok(a)
+                .boolean _ | .number _ | .text _ | .object _ => return refused(a: a, b: b, verb: "added")
+        .object x =>
+            match b
+                .object y =>
+                    combined: {str: json.Value} @= x.members
+
+                    for k in keys(y.members)
+                        combined[k] @ y.members[k].must()
+
+                    return ok(.object(members: combined))
+                .null_value                                => return ok(a)
+                .boolean _ | .number _ | .text _ | .list _ => return refused(a: a, b: b, verb: "added")
+        .boolean _ =>
+            match b
+                .null_value                                            => return ok(a)
+                .boolean _ | .number _ | .text _ | .list _ | .object _ => return refused(a: a, b: b, verb: "added")
+
+# jq's `-`: numbers, and a list without every element equal to one of `b`'s.
+function subtract(a: json.Value, b: json.Value) -> json.Value?
+    match a
+        .number x =>
+            match b
+                .number y => return ok(.number(v: x.v - y.v))
+                .null_value | .boolean _ | .text _ | .list _ | .object _ =>
+                    return refused(a: a, b: b, verb: "subtracted")
+        .list x =>
+            match b
+                .list y =>
+                    kept: [json.Value] @= []
+
+                    for item in x.items
+                        gone: bool @= false
+
+                        for other in y.items
+                            if !gone && values.equal(a: item, b: other)
+                                gone @ true
+
+                        if !gone
+                            kept @ kept.push(item)
+
+                    return ok(.list(items: kept))
+                .null_value | .boolean _ | .number _ | .text _ | .object _ =>
+                    return refused(a: a, b: b, verb: "subtracted")
+        .null_value | .boolean _ | .text _ | .object _ => return refused(a: a, b: b, verb: "subtracted")
+
+# A text repeated as jq 1.7.1 repeats it by `*`: `null` for a negative
+# count, and otherwise as many times as the count's integer, 0 giving the
+# empty text.
+function repeated(s: str, n: f64) -> json.Value?
+    if n != n || n < 0.0
+        return ok(.null_value)
+
+    if n > 1073741824.0 || s.len() > 0 && n > to_f64(1073741824 / s.len())
+        return values.raised("Repeat string result too long")
+    count = n.to_i64().must()
+    return ok(.text(v: repeat(s, count.to_u64().must())))
+
+# jq's `*`.
+function multiply(a: json.Value, b: json.Value) -> json.Value?
+    match a
+        .number x =>
+            match b
+                .number y                                      => return ok(.number(v: x.v * y.v))
+                .text t                                        => return repeated(t.v, n: x.v)
+                .null_value | .boolean _ | .list _ | .object _ => return refused(a: a, b: b, verb: "multiplied")
+        .text t =>
+            match b
+                .number y => return repeated(t.v, n: y.v)
+                .null_value | .boolean _ | .text _ | .list _ | .object _ =>
+                    return refused(a: a, b: b, verb: "multiplied")
+        .object _ =>
+            match b
+                .object _ => return merged(a: a, b: b, depth: 0)
+                .null_value | .boolean _ | .number _ | .text _ | .list _ =>
+                    return refused(a: a, b: b, verb: "multiplied")
+        .null_value | .boolean _ | .list _ => return refused(a: a, b: b, verb: "multiplied")
+
+# `a` and `b` merged deep: a member of both that is an object in both is
+# merged, and otherwise `b`'s stands.
+function merged(a: json.Value, b: json.Value, depth: i64) -> json.Value?
+    if depth > MAX_MERGE_DEPTH
+        return values.raised(f"`*` merges objects no deeper than {MAX_MERGE_DEPTH} levels")
+    x = json.members_of(a).must()
+    y = json.members_of(b).must()
+    out: {str: json.Value} @= x
+
+    for k in keys(y)
+        theirs = y[k].must()
+
+        match x[k]
+            .err _ => out[k] @ theirs
+            .ok mine =>
+                if values.rank(mine) == 6 && values.rank(theirs) == 6
+                    out[k] @ merged(a: mine, b: theirs, depth: depth + 1)?
+                else
+                    out[k] @ theirs
+
+    return ok(.object(members: out))
+
+# jq's `/`: numbers, failing on a zero divisor, and a text split by another.
+function divide(a: json.Value, b: json.Value) -> json.Value?
+    match a
+        .number x =>
+            match b
+                .number y =>
+                    if y.v == 0.0
+                        return values.raised(
+                            f"{values.described(a)} and {values.described(b)} cannot be divided because the divisor is zero"
+                        )
+                    return ok(.number(v: x.v / y.v))
+                .null_value | .boolean _ | .text _ | .list _ | .object _ => return refused(a: a, b: b, verb: "divided")
+        .text x =>
+            match b
+                .text y => return ok(split_text(s: x.v, sep: y.v))
+                .null_value | .boolean _ | .number _ | .list _ | .object _ => return refused(
+                    a: a,
+                    b: b,
+                    verb: "divided"
+                )
+        .null_value | .boolean _ | .list _ | .object _ => return refused(a: a, b: b, verb: "divided")
+
+# `s` split at each `sep`, as jq's `split/1` and `/` split it: the empty `sep`
+# splits it into its characters, and the empty `s` into nothing.
+function split_text(s: str, sep: str) -> json.Value
+    pieces: [json.Value] @= []
+
+    if s.len() == 0
+        return .list(items: pieces)
+
+    if sep.len() == 0
+        for c in s.chars()
+            pieces @ pieces.push(.text(v: c))
+
+        return .list(items: pieces)
+
+    for piece in strings.split(s: s, sep: sep)
+        pieces @ pieces.push(.text(v: piece))
+
+    return .list(items: pieces)
+
+# A number made an integer as C makes a `double` an `intmax_t`, held inside
+# the range of an `i64`.
+function saturated(x: f64) -> i64
+    if x != x
+        return 0
+
+    if x >= 9223372036854775000.0
+        return 9223372036854775807
+
+    if x <= -9223372036854775000.0
+        return -9223372036854775807 - 1
+    return x.to_i64().must()
+
+# jq's `%`: the remainder of the two numbers' integers, its sign the
+# dividend's.
+function modulo(a: json.Value, b: json.Value) -> json.Value?
+    match a
+        .number x =>
+            match b
+                .number y =>
+                    if x.v != x.v || y.v != y.v
+                        return ok(.number(v: x.v + y.v))
+                    d = saturated(y.v)
+
+                    if d == 0
+                        return values.raised(
+                            f"{values.described(a)} and {values.described(b)} cannot be divided (remainder) because the divisor is zero"
+                        )
+
+                    if d == -1
+                        return ok(.number(v: 0.0))
+                    return ok(.number(v: to_f64(saturated(x.v) % d)))
+                .null_value | .boolean _ | .text _ | .list _ | .object _ => return refused(a: a, b: b, verb: "divided")
+        .null_value | .boolean _ | .text _ | .list _ | .object _ => return refused(a: a, b: b, verb: "divided")
+
+# jq's unary `-`.
+function negate(v: json.Value) -> json.Value?
+    match v
+        .number n => return ok(.number(v: 0.0 - n.v))
+        .null_value | .boolean _ | .text _ | .list _ | .object _ =>
+            return values.raised(f"{values.described(v)} cannot be negated")
+
+## Tests
+
+test "add: null on either side, numbers, texts, lists, objects, and a refusal"
+    assert values.equal(a: add(a: .null_value, b: .number(v: 1.0)).must(), b: .number(v: 1.0))
+    assert values.equal(a: add(a: .text(v: "a"), b: .text(v: "b")).must(), b: .text(v: "ab"))
+    sum = add(a: json.parse("{\"a\":1,\"b\":2}").must(), b: json.parse("{\"b\":3}").must()).must()
+    assert json.format(sum).must() == "{\"a\":1,\"b\":3}"
+
+    match add(a: .text(v: "1,2,"), b: json.parse("{\"a\":{\"b\":{\"c\":33}}}").must())
+        .ok _  => assert false
+        .err e => assert e.msg == "string (\"1,2,\") and object ({\"a\":{\"b\":{...) cannot be added"
+
+test "subtract: numbers and a list without some elements"
+    got = subtract(a: json.parse("[1,2,1,3]").must(), b: json.parse("[1]").must()).must()
+    assert json.format(got).must() == "[2,3]"
+
+test "multiply: a text repeated, empty below 1, null when negative, objects merged deep"
+    assert values.equal(a: multiply(a: .text(v: "ab"), b: .number(v: 2.0)).must(), b: .text(v: "abab"))
+    assert values.equal(a: multiply(a: .text(v: "ab"), b: .number(v: 0.5)).must(), b: .text(v: ""))
+    assert values.equal(a: multiply(a: .number(v: -0.5), b: .text(v: "ab")).must(), b: .null_value)
+    assert values.equal(a: multiply(a: .text(v: "ab"), b: .number(v: 1.5)).must(), b: .text(v: "ab"))
+    deep = multiply(a: json.parse("{\"a\":{\"b\":1}}").must(), b: json.parse("{\"a\":{\"c\":2}}").must()).must()
+    assert json.format(deep).must() == "{\"a\":{\"b\":1,\"c\":2}}"
+
+test "divide: numbers, by zero refused, a text split"
+    assert divide(a: .number(v: 1.0), b: .number(v: 0.0)).is_err()
+    assert json.format(divide(a: .text(v: "a,b"), b: .text(v: ",")).must()).must() == "[\"a\",\"b\"]"
+
+test "modulo: signs as C, a fraction truncated, a zero divisor refused, the extremes"
+    assert values.equal(a: modulo(a: .number(v: 5.0), b: .number(v: -2.0)).must(), b: .number(v: 1.0))
+    assert values.equal(a: modulo(a: .number(v: -5.0), b: .number(v: 2.0)).must(), b: .number(v: -1.0))
+    assert values.equal(a: modulo(a: .number(v: 5.0), b: .number(v: 2.7)).must(), b: .number(v: 1.0))
+    assert modulo(a: .number(v: 5.0), b: .number(v: 0.4)).is_err()
+    assert values.equal(
+        a: modulo(a: .number(v: -9223372036854775808.0), b: .number(v: -1.0)).must(),
+        b: .number(v: 0.0)
+    )
+
+test "negate: a number and a text refused"
+    assert values.equal(a: negate(.number(v: 2.0)).must(), b: .number(v: -2.0))
+    assert negate(.text(v: "a")).is_err()

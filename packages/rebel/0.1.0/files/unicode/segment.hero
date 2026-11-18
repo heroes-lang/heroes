@@ -1,0 +1,506 @@
+# A text cut where Unicode says its parts end: into graphemes, what a reader
+# sees as one character (UAX #29); into words and sentences (UAX #29); at the
+# places a line may break (UAX #14). It also measures a text in the columns a
+# terminal draws it in (UAX #11, and the emoji rules terminals follow), and
+# wraps a text to a width in columns. The tables hold Unicode 17.0.0, which
+# `UNICODE_VERSION` says; they live apart from `unicode` so that only the
+# programs that cut or measure text carry them.
+#
+# What it does NOT do: say what a character is (`unicode`); cut a text at a
+# separator or into the words between white space (`strings.split`,
+# `strings.words`); hyphenate a word, which needs a dictionary of a language;
+# cut Thai, Lao, Khmer or Burmese into words, which needs one too, so UAX
+# #29's rules cut between their letters; lay out text written right to left.
+#
+# Every position is a byte index into the text, at a character's first byte,
+# so a slice at one never aborts. A function that takes a character aborts
+# where it is handed the empty text or more than one character. Nothing here
+# fails: every text has its boundaries.
+
+use unicode
+use unicode/segment/internal/grapheme_cases
+use unicode/segment/internal/graphemes as grapheme_rules
+use unicode/segment/internal/line_cases
+use unicode/segment/internal/line_cases_more
+use unicode/segment/internal/lines
+use unicode/segment/internal/sentence_cases
+use unicode/segment/internal/sentences as sentence_rules
+use unicode/segment/internal/tables
+use unicode/segment/internal/text
+use unicode/segment/internal/width as measure
+use unicode/segment/internal/word_cases
+use unicode/segment/internal/words as word_rules
+use unicode/segment/internal/wrap as wrapping
+
+## Limits
+
+# The version of Unicode the tables hold.
+constant UNICODE_VERSION: str
+    "17.0.0"
+
+## Graphemes
+
+# The graphemes of `s`, UAX #29's extended grapheme clusters: what a reader
+# takes for one character, a letter with its marks, a Hangul syllable written
+# in jamo, a flag, an emoji joined to others.
+#
+# - `s`: the text; the empty text has no grapheme.
+#
+# Joined, they write `s` again. See also `grapheme_boundaries`,
+# `next_grapheme_boundary`.
+function graphemes(s: str) -> [str]
+    return text.pieces(s: s, bounds: grapheme_rules.boundaries(text.decode(s)))
+
+# Where the graphemes of `s` begin and end, as byte indices, ascending: 0,
+# then the end of each grapheme.
+#
+# - `s`: the text; the empty text answers `[0]`.
+#
+# See also `graphemes`.
+function grapheme_boundaries(s: str) -> [i64]
+    return grapheme_rules.boundaries(text.decode(s))
+
+# Where the grapheme that holds byte `at` of `s` ends: the first grapheme
+# boundary after `at`.
+#
+# - `s`: the text.
+# - `at`: a byte index of `s` at a character's first byte, 0 to the length;
+#   at the length it answers the length.
+#
+# It reads only the characters around `at`, so moving a cursor costs what
+# one grapheme does. Aborts where `at` is below 0, past the end, or inside a
+# character (`unicode.is_char_boundary`). See also
+# `previous_grapheme_boundary`.
+function next_grapheme_boundary(s: str, at: i64) -> i64
+    return grapheme_rules.next_boundary(s: s, at: at)
+
+# Where the grapheme that ends at or holds byte `at` of `s` begins: the last
+# grapheme boundary before `at`.
+#
+# - `s`: the text.
+# - `at`: a byte index of `s` at a character's first byte, 0 to the length;
+#   at 0 it answers 0.
+#
+# It reads back from `at` only as far as UAX #29's rules need: a run of
+# regional indicators, an emoji sequence, an Indic conjunct. Aborts where
+# `at` is below 0, past the end, or inside a character. See also
+# `next_grapheme_boundary`.
+function previous_grapheme_boundary(s: str, at: i64) -> i64
+    return grapheme_rules.previous_boundary(s: s, at: at)
+
+# The Grapheme_Cluster_Break value of `c`, by which UAX #29 cuts graphemes,
+# as `GraphemeBreakProperty.txt` writes it: "CR", "LF", "Control", "Extend",
+# "ZWJ", "Regional_Indicator", "Prepend", "SpacingMark", "L", "V", "T",
+# "LV", "LVT", or "Other".
+#
+# - `c`: one character.
+#
+# Aborts where `c` is not exactly one character. See also
+# `indic_conjunct_break_class`.
+function grapheme_break_class(c: str) -> str
+    return tables.GRAPHEME_NAMES[text.grapheme_of(text.value_of(unicode.code_point(c)))]
+
+# The Indic_Conjunct_Break value of `c`, by which UAX #29 keeps a conjunct
+# of an Indic script in one grapheme: "Consonant", "Linker", "Extend", or
+# "None".
+#
+# - `c`: one character.
+#
+# Aborts where `c` is not exactly one character. See also
+# `grapheme_break_class`.
+function indic_conjunct_break_class(c: str) -> str
+    return tables.CONJUNCT_NAMES[text.conjunct_of(text.value_of(unicode.code_point(c)))]
+
+## Words
+
+# The words of `s` by UAX #29: the pieces between its word boundaries that
+# hold a letter, a digit or an ideograph, in order. "can't", "3.14" and
+# "e-mail"'s two halves are each one word; spaces and punctuation are none.
+#
+# - `s`: the text; the empty text has no word.
+#
+# See also `word_segments`, which keeps the pieces between the words too,
+# and `strings.words`, which cuts at white space alone.
+function words(s: str) -> [str]
+    found: [str] @= []
+
+    for piece in text.pieces(s: s, bounds: word_rules.boundaries(text.decode(s)))
+        if piece.chars().any(unicode.is_alphanumeric)
+            found @ found.push(piece)
+
+    return found
+
+# Every piece of `s` between two of its word boundaries by UAX #29: the
+# words, and each run of spaces and each mark of punctuation between them.
+#
+# - `s`: the text; the empty text has no piece.
+#
+# Joined, they write `s` again. See also `words`, `word_boundaries`.
+function word_segments(s: str) -> [str]
+    return text.pieces(s: s, bounds: word_rules.boundaries(text.decode(s)))
+
+# Where the word boundaries of `s` stand by UAX #29, as byte indices,
+# ascending, 0 and the length among them.
+#
+# - `s`: the text; the empty text answers `[0]`.
+#
+# See also `word_segments`.
+function word_boundaries(s: str) -> [i64]
+    return word_rules.boundaries(text.decode(s))
+
+# The Word_Break value of `c`, by which UAX #29 cuts words, as
+# `WordBreakProperty.txt` writes it: "ALetter", "Hebrew_Letter", "Numeric",
+# "Katakana", "ExtendNumLet", "MidLetter", "MidNum", "MidNumLet",
+# "Single_Quote", "Double_Quote", "Extend", "Format", "ZWJ", "WSegSpace",
+# "Regional_Indicator", "CR", "LF", "Newline", or "Other".
+#
+# - `c`: one character.
+#
+# Aborts where `c` is not exactly one character.
+function word_break_class(c: str) -> str
+    return tables.WORD_NAMES[text.word_of(text.value_of(unicode.code_point(c)))]
+
+## Sentences
+
+# The sentences of `s` by UAX #29, each with the spaces and the line break
+# that follow it.
+#
+# - `s`: the text; the empty text has no sentence.
+#
+# Joined, they write `s` again. A full stop that a lower case letter follows
+# ends no sentence, so "e.g. this" stays one; an abbreviation before a capital
+# letter is cut, since only a dictionary of a language knows it. See also
+# `sentence_boundaries`.
+function sentences(s: str) -> [str]
+    return text.pieces(s: s, bounds: sentence_rules.boundaries(text.decode(s)))
+
+# Where the sentence boundaries of `s` stand by UAX #29, as byte indices,
+# ascending, 0 and the length among them.
+#
+# - `s`: the text; the empty text answers `[0]`.
+#
+# See also `sentences`.
+function sentence_boundaries(s: str) -> [i64]
+    return sentence_rules.boundaries(text.decode(s))
+
+# The Sentence_Break value of `c`, by which UAX #29 cuts sentences, as
+# `SentenceBreakProperty.txt` writes it: "CR", "LF", "Extend", "Sep",
+# "Format", "Sp", "Lower", "Upper", "OLetter", "Numeric", "ATerm",
+# "SContinue", "STerm", "Close", or "Other".
+#
+# - `c`: one character.
+#
+# Aborts where `c` is not exactly one character.
+function sentence_break_class(c: str) -> str
+    return tables.SENTENCE_NAMES[text.sentence_of(text.value_of(unicode.code_point(c)))]
+
+## Lines
+
+# A place where a line may begin, which `line_breaks` answers.
+record LineBreak
+    # The byte index the next line begins at; the characters before it end
+    # the line before, its spaces among them.
+    at: i64
+    # Whether the line must break here: after a line feed, a carriage return,
+    # a next-line character or a line or paragraph separator. False where it
+    # only may.
+    mandatory: bool
+
+# The places where a line of `s` may break by UAX #14 and its default rules,
+# in order, the end of `s` the last.
+#
+# - `s`: the text; the empty text has no break.
+#
+# No break stands at 0. A break after spaces stands after the last of them,
+# so the spaces end the line before. The end of `s` is mandatory only where
+# `s` ends with a line break, as ICU answers. Thai, Lao, Khmer and Burmese
+# break only where a space or a mark of punctuation allows, since breaking
+# inside their words needs a dictionary. See also `wrap`.
+function line_breaks(s: str) -> [LineBreak]
+    found: [LineBreak] @= []
+
+    for opportunity in lines.opportunities(text.decode(s))
+        found @ found.push(LineBreak(at: opportunity.at, mandatory: opportunity.mandatory))
+
+    return found
+
+# The Line_Break value of `c`, by which UAX #14 breaks lines, as
+# `LineBreak.txt` writes it, in two or three capitals: "AL", "BA", "CM",
+# "ID", "SP" and the rest of the forty-eight classes.
+#
+# - `c`: one character.
+#
+# Aborts where `c` is not exactly one character.
+function line_break_class(c: str) -> str
+    return tables.LINE_NAMES[text.line_of(text.value_of(unicode.code_point(c)))]
+
+## Width on a screen
+
+# The East_Asian_Width value `east_asian_width` answers for a character that
+# is wide in every context: a Han ideograph, a kana, an emoji.
+constant WIDE: str
+    "W"
+
+# The East_Asian_Width value of a full-width form of a narrow character: "Ａ".
+constant FULLWIDTH: str
+    "F"
+
+# The East_Asian_Width value of a half-width form of a wide character: "ｱ".
+constant HALFWIDTH: str
+    "H"
+
+# The East_Asian_Width value of a character that is narrow in every context:
+# the letters and digits of ASCII.
+constant NARROW: str
+    "Na"
+
+# The East_Asian_Width value of a character that is wide in East Asian text
+# and narrow elsewhere: "±", "é", the Greek and Cyrillic letters.
+constant AMBIGUOUS: str
+    "A"
+
+# The East_Asian_Width value of a character East Asian text does not hold:
+# neither narrow nor wide, drawn narrow.
+constant NEUTRAL: str
+    "N"
+
+# The East_Asian_Width value of `c` by UAX #11: `WIDE`, `FULLWIDTH`,
+# `HALFWIDTH`, `NARROW`, `AMBIGUOUS` or `NEUTRAL`.
+#
+# - `c`: one character.
+#
+# Aborts where `c` is not exactly one character. See also `width_of`, which
+# measures a text by graphemes.
+function east_asian_width(c: str) -> str
+    return tables.WIDTH_NAMES[text.width_class_of(text.value_of(unicode.code_point(c)))]
+
+# How many columns of a terminal `s` takes, grapheme by grapheme: two for a
+# grapheme whose first character is wide or full-width, as every character
+# drawn as a picture by default is, for a pair of regional indicators (a
+# flag) and for an emoji followed by U+FE0F; one for an emoji followed by
+# U+FE0E; none for a grapheme that is a control, a lone mark, a Hangul vowel
+# or final consonant alone, or a character drawn as nothing; one for every
+# other. An escape sequence of ECMA-48 (a colour, a cursor's move, a title)
+# takes none.
+#
+# - `s`: the text; the empty text takes 0. A tab is a control and takes
+#   none, so expand it first with `strings.expand_tabs`.
+#
+# An ambiguous character takes one column, as terminals outside East Asia
+# draw it. See also `width_of_east_asian`, `wrap`, `truncate`.
+function width_of(s: str) -> i64
+    return measure.width_of(s: s, east_asian: false)
+
+# How many columns of a terminal set for East Asian text `s` takes: as
+# `width_of`, but a grapheme whose first character is ambiguous takes two.
+#
+# - `s`: the text; the empty text takes 0.
+#
+# See also `width_of`.
+function width_of_east_asian(s: str) -> i64
+    return measure.width_of(s: s, east_asian: true)
+
+## Wrapping
+
+# How `wrap` lays out a text: built by `wrap_options`, then changed field by
+# field.
+record WrapOptions
+    # The columns a line may take, as `width_of` counts them, its indent
+    # included; below 1 it is taken as 1.
+    width: i64
+    # What the first line of each paragraph begins with; it counts in its
+    # line's width.
+    first_indent: str
+    # What every other line begins with; it counts in its line's width.
+    rest_indent: str
+    # Whether a word wider than a line is cut between graphemes to fill it;
+    # false leaves it whole on a line of its own, wider than `width`.
+    break_long_words: bool
+
+# The options `wrap` takes for lines of `width` columns: no indent, and a
+# word wider than a line cut to fit, as Python's `textwrap` wraps.
+#
+# - `width`: the columns a line may take; below 1 it is taken as 1.
+#
+# See also `wrap`.
+function wrap_options(width: i64) -> WrapOptions
+    return WrapOptions(width: width, first_indent: "", rest_indent: "", break_long_words: true)
+
+# The lines of `s` wrapped to `options.width` columns: each paragraph,
+# ended by a line break of `s`, broken at the places UAX #14 allows, as many
+# words on a line as fit, measured as `width_of` measures.
+#
+# - `s`: the text; the empty text has no line, and an empty paragraph is an
+#   empty line, with no indent.
+# - `options`: the width, the indents and what a word wider than a line
+#   becomes.
+#
+# The lines hold no line break. The spaces where a line breaks end the line
+# before and are taken away; spaces inside a line stay. An escape sequence
+# of ECMA-48 stays where it stands and takes no column: one at a break goes
+# with the line after it. See also `wrap_options`, `line_breaks`,
+# `truncate`.
+function wrap(s: str, options: WrapOptions) -> [str]
+    return wrapping.wrap(
+        s: s,
+        columns: options.width,
+        first_indent: options.first_indent,
+        rest_indent: options.rest_indent,
+        break_long_words: options.break_long_words
+    )
+
+# `s` cut to at most `width` columns, with `ellipsis` written at its end
+# where anything was cut.
+#
+# - `s`: the text; it is answered as it is where it fits.
+# - `width`: the columns the answer may take, `ellipsis` included; below 0
+#   it is taken as 0.
+# - `ellipsis`: what is written where the text was cut, "…" or "...", or
+#   empty; an `ellipsis` wider than `width` is answered alone, cut to fit.
+#
+# It cuts between graphemes, never inside one, and keeps every escape
+# sequence of ECMA-48, those after the cut included, so a colour set before
+# it is still reset. See also `width_of`, `wrap`.
+function truncate(s: str, width: i64, ellipsis: str) -> str
+    return wrapping.truncate(s: s, columns: width, ellipsis: ellipsis)
+
+## Tests
+
+# Every expected answer below is what Python 3.15.2's `unicodedata` and
+# `textwrap` or ICU 78.3 (Unicode 17.0) answered for the same input,
+# observed 2026-11-17, but where a test says it reads UAX #29 against ICU's
+# dictionaries; the internal modules hold each rule to them case by case,
+# and the `*_cases` modules to every line of the four test files.
+
+test "the test files: every line of each is run"
+    assert grapheme_cases.CASES == 766
+    assert word_cases.CASES == 1944
+    assert sentence_cases.CASES == 512
+    assert line_cases.CASES + line_cases_more.CASES == 19338
+
+test "graphemes and words: the empty text, and words of a text with no word"
+    assert graphemes("") == []
+    assert words("") == [] && word_segments("") == []
+    assert words(" ,; ") == []
+    assert words("3.14 ab_c") == ["3.14", "ab_c"]
+    assert sentences("") == [] && sentence_boundaries("") == [0]
+    assert line_breaks("") == []
+
+test "the classes: a character of more than one byte for each"
+    assert grapheme_break_class("가") == "LV"
+    assert word_break_class("ア") == "Katakana"
+    assert sentence_break_class("。") == "STerm"
+    assert line_break_class("ア") == "ID"
+    assert line_break_class("ก") == "SA"
+    assert indic_conjunct_break_class("a") == "None"
+    assert east_asian_width("€") == AMBIGUOUS
+
+test "wrap and truncate: a wide text, and nothing to keep"
+    assert wrap("", options: wrap_options(3)) == []
+    assert truncate(s: "", width: 0, ellipsis: "…") == ""
+
+## Examples
+
+# A letter with a combining accent, a flag and a family are one grapheme
+# each.
+test "graphemes: a letter with its accent, a flag and a joined emoji"
+    accent = unicode.from_code_points([0x65, 0x301]).must()
+    family = unicode.from_code_points([0x1f468, 0x200d, 0x1f469]).must()
+    assert graphemes(accent + "🇫🇷" + family) == [accent, "🇫🇷", family]
+
+# The byte indices between the graphemes of a word with an accent.
+test "grapheme_boundaries: a word with a combining accent"
+    word = unicode.from_code_points([0x63, 0x61, 0x66, 0x65, 0x301]).must()
+    assert grapheme_boundaries(word) == [0, 1, 2, 3, 6]
+
+# A cursor moved right over a flag, two characters of four bytes each.
+test "next_grapheme_boundary: a cursor over a flag"
+    assert next_grapheme_boundary(s: "a🇫🇷b", at: 1) == 9
+
+# A cursor moved left over a flag.
+test "previous_grapheme_boundary: a cursor over a flag"
+    assert previous_grapheme_boundary(s: "a🇫🇷b", at: 9) == 1
+
+# The class of a carriage return and of a joiner.
+test "grapheme_break_class: a carriage return and a zero-width joiner"
+    assert grapheme_break_class("\r") == "CR"
+    assert grapheme_break_class(unicode.from_code_point(0x200d).must()) == "ZWJ"
+
+# A Devanagari consonant and its virama.
+test "indic_conjunct_break_class: a consonant and a virama"
+    assert indic_conjunct_break_class("क") == "Consonant"
+    assert indic_conjunct_break_class("्") == "Linker"
+
+# The words of a sentence, its comma and its spaces left out.
+test "words: a greeting"
+    assert words("Hello, world!") == ["Hello", "world"]
+
+# Every piece of a greeting, the comma and the space among them.
+test "word_segments: a greeting"
+    assert word_segments("Hello, world!") == ["Hello", ",", " ", "world", "!"]
+
+# Where the words of a greeting begin and end.
+test "word_boundaries: a greeting"
+    assert word_boundaries("Hello, world!") == [0, 5, 6, 7, 12, 13]
+
+# The class of a letter and of a digit.
+test "word_break_class: a letter and a digit"
+    assert word_break_class("a") == "ALetter"
+    assert word_break_class("7") == "Numeric"
+
+# Three sentences, each with the space after it.
+test "sentences: three short ones"
+    assert sentences("Hi. How? Fine.") == ["Hi. ", "How? ", "Fine."]
+
+# Where three sentences begin and end.
+test "sentence_boundaries: three short ones"
+    assert sentence_boundaries("Hi. How? Fine.") == [0, 4, 9, 14]
+
+# The class of a full stop and of a capital letter.
+test "sentence_break_class: a full stop and a capital"
+    assert sentence_break_class(".") == "ATerm"
+    assert sentence_break_class("A") == "Upper"
+
+# Where two lines may break: after a space, and after a line feed, where
+# they must.
+test "line_breaks: two words and a line feed"
+    assert line_breaks("Hello world\na") == [LineBreak(at: 6, mandatory: false), LineBreak(at: 12, mandatory: true), LineBreak(at: 13, mandatory: false)]
+
+# The class of a letter, a space and an ideograph.
+test "line_break_class: a letter, a space and an ideograph"
+    assert line_break_class("a") == "AL"
+    assert line_break_class(" ") == "SP"
+    assert line_break_class("中") == "ID"
+
+# A katakana is wide, its half-width form half-width, a letter of ASCII
+# narrow, and a plus-minus sign ambiguous.
+test "east_asian_width: four widths"
+    assert east_asian_width("ア") == WIDE
+    assert east_asian_width("ｱ") == HALFWIDTH
+    assert east_asian_width("a") == NARROW
+    assert east_asian_width("±") == AMBIGUOUS
+
+# Japanese takes two columns a character, a coloured word only its letters.
+test "width_of: Japanese, an emoji and a coloured word"
+    assert width_of("日本語") == 6
+    assert width_of("👍") == 2
+    assert width_of("\u{1b}[31mred\u{1b}[0m") == 3
+
+# An ambiguous character takes two columns in East Asian text.
+test "width_of_east_asian: a plus-minus sign"
+    assert width_of_east_asian("±1") == 3
+    assert width_of("±1") == 2
+
+# The options for lines of forty columns.
+test "wrap_options: forty columns"
+    options = wrap_options(40)
+    assert options.width == 40 && options.first_indent == "" && options.break_long_words
+
+# A sentence wrapped to ten columns, as Python's `textwrap` wraps it.
+test "wrap: a sentence in ten columns"
+    wrapped = wrap("The quick brown fox jumps over the lazy dog", options: wrap_options(10))
+    assert wrapped == ["The quick", "brown fox", "jumps over", "the lazy", "dog"]
+
+# A title cut to fit eight columns of a table.
+test "truncate: a title in eight columns"
+    assert truncate(s: "Hello, world", width: 8, ellipsis: "…") == "Hello, …"

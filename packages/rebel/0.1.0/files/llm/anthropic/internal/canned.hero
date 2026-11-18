@@ -1,0 +1,169 @@
+# A server for this package's tests alone, on the loopback and a thread of
+# its own while the test's thread is the client: it answers each request it
+# reads, one connection each, with the next answer written ahead, a whole
+# HTTP response as text, and gives back what it read. No test reaches the
+# network, and none spends a token.
+
+use bytes
+use http
+use io
+use net
+use numbers
+use strings
+use threads
+use url
+
+# What parts the pieces of a script and of `serve`'s answer.
+constant SEPARATOR: str
+    "\u{1e}"
+
+# A server running on its thread, and the port it listens on.
+record Started
+    # The port it listens on, which the system chose.
+    port: i64
+    # Its thread, whose answer `threads.wait_text` gives.
+    thread: threads.TextThread
+
+# A response of `status` holding the JSON text `body`, with its length.
+function json_answer(status: i64, body: str, fields: [str]) -> str
+    head = f"HTTP/1.1 {status} {http.status_text(status).default("Unknown")}\r\ncontent-type: application/json\r\ncontent-length: {body.len()}\r\n"
+    extra: [str] @= []
+
+    for f in fields
+        extra @ extra.push(f + "\r\n")
+
+    return head + extra.join("") + "\r\n" + body
+
+# A response of `content_type` holding `body`, ended by the connection's
+# end, as a stream of events is.
+function stream_answer(content_type: str, body: str) -> str
+    return f"HTTP/1.1 200 OK\r\ncontent-type: {content_type}\r\ncache-control: no-cache\r\nconnection: close\r\n\r\n" + body
+
+# The events `pairs` as a `text/event-stream` body: each name then its data.
+function events(pairs: [str]) -> str
+    out: [str] @= []
+    at: i64 @= 0
+
+    while at + 1 < pairs.len()
+        out @ out.push("event: " + pairs[at] + "\ndata: " + pairs[at + 1] + "\n\n")
+        at @ at + 2
+
+    return out.join("")
+
+# `serve` started with `answers` on a thread: the port it listens on is told
+# over a connection to a listener of this thread, so none is assumed free.
+function start(answers: [str]) -> Started
+    control @= net.listen(host: "127.0.0.1", port: 0).must()
+    t = threads.spawn_text(body: serve, arg: f"{control.address.port}" + SEPARATOR + answers.join(SEPARATOR))
+    told = net.accept(control, deadline_ms: 10_000).must()
+    r @= io.reader(told.stream)
+    port = numbers.parse_int(io.read_rest_text(@r).must()).must()
+    io.close(@r.stream).must()
+    net.close_listener(@control).must()
+    return Started(port: port, thread: t)
+
+# What `serve` read: each request as `METHOD target`, its fields as
+# `name: value`, an empty line and its body.
+function requests_of(@s: Started) -> [str]
+    seen = threads.wait_text(@s.thread)
+
+    if seen == ""
+        return []
+    return strings.split(s: seen, sep: SEPARATOR)
+
+# Listens on a port the system chooses, tells it to the control port that
+# begins `arg`, and answers each request it reads with the next answer,
+# closing each connection after; gives back what it read once every answer
+# is written or 10 s pass with no connection.
+function serve(arg: str) -> str
+    parts = strings.split(s: arg, sep: SEPARATOR)
+    control = numbers.parse_int(parts[0]).must()
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    c @= net.connect("127.0.0.1", port: control, deadline_ms: 10_000).must()
+    io.write_text(c.stream, text: f"{l.address.port}").must()
+    io.close(@c.stream).must()
+    net.set_accept_deadline(l, ms: 10_000).must()
+    seen: [str] @= []
+    at: i64 @= 1
+
+    while at < parts.len()
+        match net.accept(l, deadline_ms: 10_000)
+            .err _ => break
+            .ok conn =>
+                r @= io.reader(conn.stream)
+
+                match http.read_request(@r, limits: http.default_limits())
+                    .ok q =>
+                        lines: [str] @= [q.method + " " + url.request_target(q.url)]
+
+                        for h in q.headers
+                            lines @ lines.push(strings.to_lower(h.name) + ": " + h.value)
+
+                        seen @ seen.push(lines.join("\n") + "\n\n" + bytes.to_text_lossy(q.body))
+
+                        match io.write_text(r.stream, text: parts[at])
+                            .ok _  => _ = 0
+                            .err _ => _ = 0
+
+                        at @ at + 1
+                    .err _ => _ = 0
+
+                match io.close(@r.stream)
+                    .ok _  => _ = 0
+                    .err _ => _ = 0
+
+    net.close_listener(@l).must()
+    return seen.join(SEPARATOR)
+
+# The address of a server `start` started on `port`.
+function base(port: i64) -> str
+    return f"http://127.0.0.1:{port}"
+
+# A message as the API writes one, holding `content`, a JSON list's text,
+# stopped by `stop_reason`.
+function message(content: str, stop_reason: str) -> str
+    return "{\"id\":\"msg_01\",\"type\":\"message\",\"role\":\"assistant\",\"model\":\"claude-opus-5-5\",\"content\":" + content + ",\"stop_reason\":\"" + stop_reason + "\",\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":25,\"output_tokens\":15,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":3}}"
+
+# An error body as the API writes one, of `kind` with `words`.
+function error_body(kind: str, words: str) -> str
+    return "{\"type\":\"error\",\"error\":{\"type\":\"" + kind + "\",\"message\":\"" + words + "\"},\"request_id\":\"req_011\"}"
+
+# The events of a message with every kind of block and event: a thinking
+# block, a text block with a ping and a citation inside it, a tool call whose
+# input comes in pieces, an event no version names yet, its stop and usage.
+function every_event() -> str
+    return events(
+        ["message_start", "{\"type\":\"message_start\",\"message\":{\"id\":\"msg_02\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[],\"model\":\"claude-opus-5-5\",\"stop_reason\":null,\"stop_sequence\":null,\"usage\":{\"input_tokens\":472,\"output_tokens\":2}}}", "content_block_start", "{\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"thinking\",\"thinking\":\"\",\"signature\":\"\"}}", "content_block_delta", "{\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"Weather \"}}", "content_block_delta", "{\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"thinking_delta\",\"thinking\":\"first.\"}}", "content_block_delta", "{\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"signature_delta\",\"signature\":\"EqQB\"}}", "content_block_stop", "{\"type\":\"content_block_stop\",\"index\":0}", "content_block_start", "{\"type\":\"content_block_start\",\"index\":1,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}", "ping", "{\"type\": \"ping\"}", "content_block_delta", "{\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"Let's check \"}}", "content_block_delta", "{\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"citations_delta\",\"citation\":{\"type\":\"char_location\",\"cited_text\":\"x\"}}}", "content_block_delta", "{\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"Zürich:\"}}", "content_block_stop", "{\"type\":\"content_block_stop\",\"index\":1}", "content_block_start", "{\"type\":\"content_block_start\",\"index\":2,\"content_block\":{\"type\":\"tool_use\",\"id\":\"toolu_01\",\"name\":\"get_weather\",\"input\":{}}}", "content_block_delta", "{\"type\":\"content_block_delta\",\"index\":2,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"\"}}", "content_block_delta", "{\"type\":\"content_block_delta\",\"index\":2,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"{\\\"location\\\":\"}}", "content_block_delta", "{\"type\":\"content_block_delta\",\"index\":2,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\" \\\"Zür\"}}", "content_block_delta", "{\"type\":\"content_block_delta\",\"index\":2,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"ich\\\"}\"}}", "content_block_stop", "{\"type\":\"content_block_stop\",\"index\":2}", "future_event", "{\"type\":\"future_event\",\"x\":1}", "message_delta", "{\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"tool_use\",\"stop_sequence\":null},\"usage\":{\"output_tokens\":89}}", "message_stop", "{\"type\":\"message_stop\"}"]
+    )
+
+# The events of a tool call cut at `max_tokens` in the middle of its input.
+function cut_input() -> str
+    return events(
+        ["message_start", "{\"type\":\"message_start\",\"message\":{\"id\":\"msg_03\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[],\"model\":\"m\",\"stop_reason\":null,\"usage\":{\"input_tokens\":9,\"output_tokens\":1}}}", "content_block_start", "{\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"tool_use\",\"id\":\"toolu_02\",\"name\":\"write\",\"input\":{}}}", "content_block_delta", "{\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"input_json_delta\",\"partial_json\":\"{\\\"path\\\": \\\"a.txt\\\", \\\"text\\\": \\\"hel\"}}", "content_block_stop", "{\"type\":\"content_block_stop\",\"index\":0}", "message_delta", "{\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"max_tokens\",\"stop_sequence\":null},\"usage\":{\"output_tokens\":16}}", "message_stop", "{\"type\":\"message_stop\"}"]
+    )
+
+# The events of a message the API stops with an `error` event, overloaded.
+function overloaded_midway() -> str
+    return events(
+        ["message_start", "{\"type\":\"message_start\",\"message\":{\"id\":\"msg_04\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[],\"model\":\"m\",\"stop_reason\":null,\"usage\":{\"input_tokens\":1,\"output_tokens\":1}}}", "error", "{\"type\": \"error\", \"error\": {\"type\": \"overloaded_error\", \"message\": \"Overloaded\"}}"]
+    )
+
+# A model as the Models API writes one, of id `id`.
+function model_json(id: str) -> str
+    return "{\"type\":\"model\",\"id\":\"" + id + "\",\"display_name\":\"Claude\",\"created_at\":\"2026-10-01T00:00:00Z\",\"max_input_tokens\":1000000,\"max_tokens\":128000,\"capabilities\":null}"
+
+# A batch as the API writes one, of id `id` in `status`.
+function batch_json(id: str, status: str) -> str
+    return "{\"type\":\"message_batch\",\"id\":\"" + id + "\",\"processing_status\":\"" + status + "\",\"request_counts\":{\"processing\":0,\"succeeded\":2,\"errored\":1,\"canceled\":0,\"expired\":1},\"created_at\":\"2026-11-18T00:00:00Z\",\"ended_at\":null,\"expires_at\":\"2026-11-19T00:00:00Z\",\"cancel_initiated_at\":null,\"archived_at\":null,\"results_url\":null}"
+
+# The results of a batch, one of each of the four kinds, with a carriage
+# return before a line feed and an empty line among them.
+function results_jsonl() -> str
+    lines = [
+        "{\"custom_id\":\"b\",\"result\":{\"type\":\"succeeded\",\"message\":" + message(content: "[{\"type\":\"text\",\"text\":\"two\"}]", stop_reason: "end_turn") + "}}"
+        "{\"custom_id\":\"a\",\"result\":{\"type\":\"errored\",\"error\":{\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"bad\"}}}}\r"
+        ""
+        "{\"custom_id\":\"c\",\"result\":{\"type\":\"canceled\"}}"
+        "{\"custom_id\":\"d\",\"result\":{\"type\":\"expired\"}}"
+    ]
+    return lines.join("\n") + "\n"

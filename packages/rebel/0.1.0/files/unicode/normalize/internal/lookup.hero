@@ -1,0 +1,286 @@
+# What the tables of `tables.hero` answer for one code point: its canonical
+# combining class, its one-step decomposition, the composite of a pair, its
+# quick check answers, its NFKC_Casefold mapping and whether it is soft
+# dotted. Hangul syllables are computed here by UAX #15's arithmetic, which
+# no table lists.
+#
+# Every caller hands a code point from 0 to U+10FFFF, so every key built here
+# by a shift fits an `i64` with room to spare.
+
+use unicode/normalize/internal/tables
+
+# The first Hangul syllable, U+AC00.
+constant S_BASE: i64
+    0xac00
+
+# The first leading consonant, U+1100.
+constant L_BASE: i64
+    0x1100
+
+# The first vowel, U+1161.
+constant V_BASE: i64
+    0x1161
+
+# The code point before the first trailing consonant, U+11A7.
+constant T_BASE: i64
+    0x11a7
+
+# How many leading consonants compose.
+constant L_COUNT: i64
+    19
+
+# How many vowels compose.
+constant V_COUNT: i64
+    21
+
+# How many trailing consonants compose, the absent one counted.
+constant T_COUNT: i64
+    28
+
+# How many syllables share a leading consonant.
+constant N_COUNT: i64
+    588
+
+# How many Hangul syllables there are.
+constant S_COUNT: i64
+    11172
+
+# The quick check's answer for a code point that may stand in the form.
+constant QUICK_YES: i64
+    0
+
+# The quick check's answer for a code point that may stand in the form only
+# where it does not compose with what is before it.
+constant QUICK_MAYBE: i64
+    1
+
+# The quick check's answer for a code point that never stands in the form.
+constant QUICK_NO: i64
+    2
+
+# One step of a decomposition: its kind, an index into `tables.KINDS`, and
+# the code points it maps to.
+record Step
+    # 0 for a canonical decomposition, the index of its tag otherwise.
+    kind: i64
+    # The code points, one to eighteen.
+    points: [i64]
+
+# How many entries of `table`, which ascends, are at or below `key`.
+function count_at_or_below(table: [i64] lent, key: i64) -> i64
+    low: i64 @= 0
+    high: i64 @= table.len()
+
+    while low < high
+        middle = low + (high - low) / 2
+
+        if table[middle] <= key
+            low @ middle + 1
+        else
+            high @ middle
+
+    return low
+
+# Whether `n` is a precomposed Hangul syllable.
+function is_hangul_syllable(n: i64) -> bool
+    return n >= S_BASE && n < S_BASE + S_COUNT
+
+# The canonical combining class of the code point `n`, 0 to 254.
+function combining_class(n: i64) -> i64
+    count = count_at_or_below(tables.COMBINING, n << 29 | 0x1fffffff)
+
+    if count == 0
+        return 0
+    entry = tables.COMBINING[count - 1]
+
+    if n <= entry >> 8 & 0x1fffff
+        return entry & 0xff
+    return 0
+
+# The one-step decomposition of `n` the database lists, Hangul syllables
+# aside. Fails `not_found` where it lists none.
+function listed_step(n: i64) -> Step?
+    count = count_at_or_below(tables.DECOMPOSITIONS, n << 32 | 0xffffffff)
+
+    if count > 0
+        entry = tables.DECOMPOSITIONS[count - 1]
+
+        if entry >> 32 == n
+            offset = entry & 0x3fffff
+            length = entry >> 22 & 0x1f
+            return ok(
+                Step(kind: entry >> 27 & 0x1f, points: tables.DECOMPOSED.slice(from: offset, to: offset + length))
+            )
+    return fail(code: "not_found", msg: "no decomposition")
+
+# The one-step decomposition of `n`, a Hangul syllable's two or three jamo
+# included. Fails `not_found` where it has none.
+function step(n: i64) -> Step?
+    if !is_hangul_syllable(n)
+        return listed_step(n)
+    index = n - S_BASE
+    points: [i64] @= [L_BASE + index / N_COUNT, V_BASE + index % N_COUNT / T_COUNT]
+
+    if index % T_COUNT != 0
+        points @ points.push(T_BASE + index % T_COUNT)
+    return ok(Step(kind: 0, points: points))
+
+# The primary composite of `first` and `second`, by the pairs the database
+# allows and Hangul's arithmetic. Fails `not_found` where they compose to
+# nothing.
+function composite(first: i64, second: i64) -> i64?
+    if first >= L_BASE && first < L_BASE + L_COUNT && second >= V_BASE && second < V_BASE + V_COUNT
+        return ok(S_BASE + ((first - L_BASE) * V_COUNT + second - V_BASE) * T_COUNT)
+
+    if is_hangul_syllable(first) && (first - S_BASE) % T_COUNT == 0 && second > T_BASE && second < T_BASE + T_COUNT
+        return ok(first + second - T_BASE)
+
+    if first > 0x10ffff || second > 0x10ffff
+        return fail(code: "not_found", msg: "no composite")
+    key = first << 21 | second
+    count = count_at_or_below(tables.COMPOSE_PAIRS, key)
+
+    if count > 0 && tables.COMPOSE_PAIRS[count - 1] == key
+        return ok(tables.COMPOSED[count - 1])
+    return fail(code: "not_found", msg: "no composite")
+
+# The quick check answer of `n` for NFC, or for NFKC where `compat`:
+# `QUICK_YES`, `QUICK_MAYBE` or `QUICK_NO`.
+function composed_quick(n: i64, compat: bool) -> i64
+    count = if compat
+        count_at_or_below(tables.NFKC_QUICK, n << 23 | 0x7fffff)
+    else
+        count_at_or_below(tables.NFC_QUICK, n << 23 | 0x7fffff)
+
+    if count == 0
+        return QUICK_YES
+
+    entry = if compat
+        tables.NFKC_QUICK[count - 1]
+    else
+        tables.NFC_QUICK[count - 1]
+
+    if n <= entry >> 2 & 0x1fffff
+        return entry & 3
+    return QUICK_YES
+
+# The quick check answer of `n` for NFD, or for NFKD where `compat`: no where
+# it decomposes, canonically for NFD, in any way for NFKD.
+function decomposed_quick(n: i64, compat: bool) -> i64
+    match step(n)
+        .ok found =>
+            if compat || found.kind == 0
+                return QUICK_NO
+            return QUICK_YES
+        .err _ => return QUICK_YES
+
+# Adds to `out` what NFKC_Casefold maps the code point `n` to: nothing, one
+# code point, or several.
+function add_nfkc_casefold(@out: [i64], n: i64)
+    count = count_at_or_below(tables.CASEFOLD_RANGES, n << 21 | 0x1fffff)
+
+    if count > 0 && n <= tables.CASEFOLD_RANGES[count - 1] & 0x1fffff
+        target = tables.CASEFOLD_TARGETS[count - 1]
+        at: i64 @= target >> 5
+
+        while at < (target >> 5) + (target & 31)
+            out @ out.push(tables.CASEFOLD_POINTS[at])
+            at @ at + 1
+
+        return
+    out @ out.push(n)
+
+# Whether `n` is soft dotted: an "i" or "j" whose dot goes when an accent
+# stands above it.
+function is_soft_dotted(n: i64) -> bool
+    count = count_at_or_below(tables.SOFT_DOTTED, n << 21 | 0x1fffff)
+    return count > 0 && n <= tables.SOFT_DOTTED[count - 1] & 0x1fffff
+
+# The hexadecimal digits, in capitals as Unicode writes a code point.
+constant HEX: str
+    "0123456789ABCDEF"
+
+# `n` written as Unicode writes a code point: "U+", then four to six digits
+# in capitals, "U+00E9".
+function shown(n: i64) -> str
+    digits: [str] @= []
+    rest: i64 @= n
+
+    while rest > 0 || digits.len() < 4
+        digits @ digits.push(HEX.slice(from: rest % 16, to: rest % 16 + 1))
+        rest @ rest / 16
+
+    out: [str] @= ["U+"]
+    at: i64 @= digits.len() - 1
+
+    while at >= 0
+        out @ out.push(digits[at])
+        at @ at - 1
+
+    return out.join("")
+
+## Tests
+
+# Python 3.15.2's `unicodedata.combining`, observed 2026-11-17, answers each.
+test "combining_class: a letter, the first and last mark of a run, a class 1 mark, and the largest code point"
+    assert combining_class('a') == 0
+    assert combining_class(0x300) == 230
+    assert combining_class(0x314) == 230
+    assert combining_class(0x315) == 232
+    assert combining_class(0x316) == 220
+    assert combining_class(0x334) == 1
+    assert combining_class(0x1e94a) == 7
+    assert combining_class(0x10ffff) == 0
+    assert combining_class(0) == 0
+
+# Python 3.15.2's `unicodedata.decomposition`, observed 2026-11-17.
+test "step: a precomposed letter, a compatibility character, the first and last Hangul syllables, and none"
+    acute = step(0xe9).must()
+    assert acute.kind == 0 && acute.points == [0x65, 0x301]
+    ligature = step(0xfb01).must()
+    assert tables.KINDS[ligature.kind] == "compat" && ligature.points == [0x66, 0x69]
+    assert step(0xac00).must().points == [0x1100, 0x1161]
+    assert step(0xd7a3).must().points == [0x1112, 0x1175, 0x11c2]
+    assert step('a').is_err()
+    assert step(0x10ffff).is_err()
+
+# Each answer is the composition Python 3.15.2's NFC makes of the pair.
+test "composite: a pair, Hangul's two kinds, an excluded pair, and none"
+    assert composite(first: 0x65, second: 0x301).must() == 0xe9
+    assert composite(first: 0x1100, second: 0x1161).must() == 0xac00
+    assert composite(first: 0xac00, second: 0x11a8).must() == 0xac01
+    assert composite(first: 0xac01, second: 0x11a8).is_err()
+    assert composite(first: 0x915, second: 0x93c).is_err()
+    assert composite(first: 0x61, second: 0x62).is_err()
+
+# `DerivedNormalizationProps.txt` of Unicode 17.0.0 lists each answer.
+test "composed_quick and decomposed_quick: a letter, a mark that may compose, an excluded character, a ligature"
+    assert composed_quick(n: 'a', compat: false) == QUICK_YES
+    assert composed_quick(n: 0x301, compat: false) == QUICK_MAYBE
+    assert composed_quick(n: 0x958, compat: false) == QUICK_NO
+    assert composed_quick(n: 0xfb01, compat: false) == QUICK_YES
+    assert composed_quick(n: 0xfb01, compat: true) == QUICK_NO
+    assert decomposed_quick(n: 0xe9, compat: false) == QUICK_NO
+    assert decomposed_quick(n: 0xfb01, compat: false) == QUICK_YES
+    assert decomposed_quick(n: 0xfb01, compat: true) == QUICK_NO
+
+# ICU 78.3's NFKC_Casefold, observed 2026-11-17, maps each.
+test "add_nfkc_casefold: a capital, a soft hyphen taken away, a ligature, and a letter as it is"
+    out: [i64] @= []
+    add_nfkc_casefold(@out, n: 'A')
+    add_nfkc_casefold(@out, n: 0xad)
+    add_nfkc_casefold(@out, n: 0xfb01)
+    add_nfkc_casefold(@out, n: 'z')
+    assert out == ['a', 'f', 'i', 'z']
+
+# `PropList.txt` of Unicode 17.0.0 lists "i" and "j" as soft dotted.
+test "is_soft_dotted: i, j, and a capital I"
+    assert is_soft_dotted('i')
+    assert is_soft_dotted('j')
+    assert !is_soft_dotted('I')
+
+test "shown: four digits, five, six, and zero"
+    assert shown(0xe9) == "U+00E9"
+    assert shown(0x1f600) == "U+1F600"
+    assert shown(0x10ffff) == "U+10FFFF"
+    assert shown(0) == "U+0000"

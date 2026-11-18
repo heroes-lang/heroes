@@ -93,7 +93,7 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 3 | `json/schema` | JSON Schema 2020-12 (and draft 7) validation, every error with its place | `bytes`, `json`, `numbers`, `regex`, `strings`, `unicode`, `url` |  |
 | 3 | `json/patch` | JSON Patch (RFC 6902) and JSON Merge Patch (RFC 7386) made and applied | `json`, `strings` |  |
 | 3 | `json/path` | JSONPath queries (RFC 9535) | `json`, `numbers`, `regex`, `strings`, `unicode` |  |
-| 3 | `json/jq` | the jq language run over a `json.Value`, so over YAML, TOML, CBOR, MessagePack and XML read into one | `json`, `regex`, `numbers`, `bytes` |  |
+| 3 | `json/jq` | the jq language run over a `json.Value`, so over YAML, TOML, CBOR, MessagePack and XML read into one | `bytes`, `json`, `math`, `numbers`, `regex`, `strings`, `unicode` |  |
 | 4 | `ipc` | communication between processes of one machine: a local channel by name, shared memory, a lock and a semaphore between processes | `bytes`, `io`, `os`, `process`, `threads` | `hero_ipc.h` |
 | 4 | `fs` | files and directories by path: whole reads and writes, metadata, links, trees, temporaries | `bytes`, `io`, `os`, `path`, `time` | `hero_disk.h`, `hero_os.h` |
 | 4 | `msgpack` | MessagePack read into and written from a `json.Value`, bytes and extensions kept | `bytes`, `json`, `lists`, `time` |  |
@@ -149,13 +149,13 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 6 | `xlsx` | spreadsheets of Office Open XML read and written: sheets, cells, types, styles | `archive`, `xml`, `time`, `numbers` |  |
 | 6 | `pdf` | PDF documents written (text, standard fonts, images, simple tables) and their text read | `compress`, `bytes`, `image`, `time` |  |
 | 6 | `s3` | the S3 API with Signature Version 4: objects, buckets, multipart uploads, presigned URLs | `http`, `crypto`, `xml`, `time`, `url` |  |
-| 6 | `jsonrpc` | JSON-RPC 2.0 requests, answers and notifications over a stream or HTTP | `json`, `io`, `http` |  |
+| 6 | `jsonrpc` | JSON-RPC 2.0 requests, answers and notifications over a stream or HTTP | `bytes`, `containers/deque`, `http`, `io`, `json`, `net`, `numbers`, `strings`, `threads` |  |
 | 6 | `jobs` | background jobs kept in PostgreSQL or Redis, claimed by workers, retried, scheduled | `sql/postgres`, `json`, `time` |  |
 | 6 | `tracing` | spans with their context propagated in HTTP requests, exported by OpenTelemetry | `http`, `protobuf`, `random`, `time` |  |
 | 6 | `acme` | an ACME client (RFC 8555): account, order, HTTP-01 and DNS-01 challenges, the certificate downloaded | `http`, `jose`, `json`, `x509`, `crypto/keypairs`, `time` |  |
-| 6 | `llm/anthropic` | Claude's Messages API: messages, streaming, tools driven by the program, token counting, batches | `http`, `json`, `io`, `strings`, `time`, `os` |  |
-| 6 | `llm/openai` | Chat Completions and Responses, which Ollama and vLLM also speak: streaming, tools, embeddings | `http`, `json`, `io`, `strings`, `time`, `os` |  |
-| 7 | `mcp` | the Model Context Protocol, server and client, over standard streams and HTTP | `jsonrpc`, `json`, `http`, `io` |  |
+| 6 | `llm/anthropic` | Claude's Messages API: messages, streaming, tools driven by the program, token counting, batches | `bytes`, `http`, `io`, `json`, `net`, `numbers`, `os`, `random`, `strings`, `threads`, `time`, `tls`, `url` |  |
+| 6 | `llm/openai` | Chat Completions and Responses, which Ollama and vLLM also speak: streaming, tools, embeddings | `bytes`, `http`, `io`, `json`, `net`, `numbers`, `os`, `random`, `strings`, `threads`, `time`, `tls`, `url` |  |
+| 7 | `mcp` | the Model Context Protocol, server and client, over standard streams and HTTP | `bytes`, `containers/deque`, `http`, `io`, `json`, `json/schema`, `jsonrpc`, `net`, `numbers`, `oauth2`, `strings`, `threads`, `time`, `url`, `web` |  |
 | 7 | `openapi` | an OpenAPI 3.1 document built as data, written, served, and requests validated against it | `json`, `json/schema`, `yaml`, `http`, `web` |  |
 | 7 | `graphql` | GraphQL documents and schemas parsed, validated and executed, the program resolving each field | `json`, `http`, `web` |  |
 

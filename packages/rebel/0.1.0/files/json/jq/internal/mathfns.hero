@@ -1,0 +1,260 @@
+# The functions of C's mathematics that jq names, over `math`: one number in,
+# two in, three in, each failing where an operand is not a number. The Bessel
+# functions `j0`, `j1`, `y0`, `y1`, `jn` and `yn` are not here, since `math`
+# holds none.
+
+use json
+use json/jq/internal/values
+use math
+
+# The names of the functions of one number, in the order of their ids.
+function unary_names() -> [str]
+    return [
+        "floor"
+        "sqrt"
+        "ceil"
+        "round"
+        "fabs"
+        "trunc"
+        "rint"
+        "nearbyint"
+        "exp"
+        "exp2"
+        "exp10"
+        "expm1"
+        "log"
+        "log2"
+        "log10"
+        "log1p"
+        "logb"
+        "gamma"
+        "lgamma"
+        "tgamma"
+        "lgamma_r"
+        "frexp"
+        "modf"
+        "significand"
+        "sin"
+        "cos"
+        "tan"
+        "asin"
+        "acos"
+        "atan"
+        "sinh"
+        "cosh"
+        "tanh"
+        "asinh"
+        "acosh"
+        "atanh"
+        "cbrt"
+        "erf"
+        "erfc"
+    ]
+
+# The names of the functions of two numbers, in the order of their ids.
+function binary_names() -> [str]
+    return [
+        "pow"
+        "atan2"
+        "fmin"
+        "fmax"
+        "fmod"
+        "hypot"
+        "copysign"
+        "drem"
+        "ldexp"
+        "scalb"
+        "scalbln"
+        "nextafter"
+        "nexttoward"
+        "remainder"
+        "fdim"
+    ]
+
+# The number `v` holds, failing where it holds none.
+function number(v: json.Value) -> f64?
+    match v
+        .number n => return ok(n.v)
+        .null_value | .boolean _ | .text _ | .list _ | .object _ =>
+            return values.raised(f"{values.described(v)} number required")
+
+# `x` as a value.
+function of(x: f64) -> json.Value
+    return .number(v: x)
+
+# The function of one number named `name`, applied to `v`.
+function unary(name: str, v: json.Value) -> json.Value?
+    x = number(v)?
+
+    return match name
+        "floor"     => ok(of(math.floor(x)))
+        "sqrt"      => ok(of(math.sqrt(x)))
+        "ceil"      => ok(of(math.ceil(x)))
+        "round"     => ok(of(math.round(x)))
+        "fabs"      => ok(of(math.abs(x)))
+        "trunc"     => ok(of(math.trunc(x)))
+        "rint"      => ok(of(math.round_even(x)))
+        "nearbyint" => ok(of(math.round_even(x)))
+        "exp"       => ok(of(math.exp(x)))
+        "exp2"      => ok(of(math.exp2(x)))
+        "exp10"     => ok(of(math.pow(base: 10.0, exponent: x)))
+        "expm1"     => ok(of(math.exp_minus_1(x)))
+        "log"       => ok(of(math.ln(x)))
+        "log2"      => ok(of(math.log2(x)))
+        "log10"     => ok(of(math.log10(x)))
+        "log1p"     => ok(of(math.ln_1_plus(x)))
+        "logb"      => ok(of(logb(x)))
+        "gamma"     => ok(of(math.ln_gamma(x)))
+        "lgamma"    => ok(of(math.ln_gamma(x)))
+        "tgamma"    => ok(of(math.gamma(x)))
+        "lgamma_r"  => ok(.list(items: [of(math.ln_gamma(x)), of(gamma_sign(x))]))
+        "frexp" =>
+            s = math.to_scaled(x)
+            ok(.list(items: [of(s.fraction), of(to_f64(s.exponent))]))
+        "modf" =>
+            whole = math.trunc(x)
+
+            fraction = if x - x != 0.0
+                math.with_sign(x: 0.0, of: x)
+            else
+                x - whole
+            ok(.list(items: [of(fraction), of(whole)]))
+        "significand" => ok(of(significand(x)))
+        "sin"         => ok(of(math.sin(x)))
+        "cos"         => ok(of(math.cos(x)))
+        "tan"         => ok(of(math.tan(x)))
+        "asin"        => ok(of(math.asin(x)))
+        "acos"        => ok(of(math.acos(x)))
+        "atan"        => ok(of(math.atan(x)))
+        "sinh"        => ok(of(math.sinh(x)))
+        "cosh"        => ok(of(math.cosh(x)))
+        "tanh"        => ok(of(math.tanh(x)))
+        "asinh"       => ok(of(math.asinh(x)))
+        "acosh"       => ok(of(math.acosh(x)))
+        "atanh"       => ok(of(math.atanh(x)))
+        "cbrt"        => ok(of(math.cbrt(x)))
+        "erf"         => ok(of(math.erf(x)))
+        "erfc"        => ok(of(math.erfc(x)))
+        _             => values.raised(f"{name}/0 is not defined")
+
+# C's `logb`: the power of two `x` lies at, as a float.
+function logb(x: f64) -> f64
+    if x != x
+        return x
+
+    if x == 0.0
+        return -1.0 / 0.0
+
+    if x - x != 0.0
+        return math.abs(x)
+    return to_f64(math.exponent_of(x).must())
+
+# C's `significand`: `x` scaled into 1 up to 2.
+function significand(x: f64) -> f64
+    if x != x || x == 0.0 || x - x != 0.0
+        return x
+    return math.scale(x, exponent: 0 - math.exponent_of(x).must())
+
+# The sign of the gamma function at `x`, as `lgamma_r` gives it.
+function gamma_sign(x: f64) -> f64
+    if x != x || x > 0.0
+        return 1.0
+
+    if math.floor(x) == x
+        return 1.0
+    whole = math.floor(x)
+    odd = math.floor(whole / 2.0) * 2.0 != whole
+
+    return if odd
+        -1.0
+    else
+        1.0
+
+# The function of two numbers named `name`, applied to `a` and `b`.
+function binary(name: str, a: json.Value, b: json.Value) -> json.Value?
+    x = number(a)?
+    y = number(b)?
+
+    return match name
+        "pow"        => ok(of(math.pow(base: x, exponent: y)))
+        "atan2"      => ok(of(math.atan2(y: x, x: y)))
+        "fmin"       => ok(of(c_min(x: x, y: y)))
+        "fmax"       => ok(of(c_max(x: x, y: y)))
+        "fmod"       => ok(of(x % y))
+        "hypot"      => ok(of(math.hypot(x: x, y: y)))
+        "copysign"   => ok(of(math.with_sign(x: x, of: y)))
+        "drem"       => ok(of(math.rem_nearest(x: x, by: y)))
+        "remainder"  => ok(of(math.rem_nearest(x: x, by: y)))
+        "ldexp"      => ok(of(math.scale(x, exponent: exponent_of(y))))
+        "scalb"      => ok(of(math.scale(x, exponent: exponent_of(y))))
+        "scalbln"    => ok(of(math.scale(x, exponent: exponent_of(y))))
+        "nextafter"  => ok(of(math.next_after(x: x, toward: y)))
+        "nexttoward" => ok(of(math.next_after(x: x, toward: y)))
+        "fdim" =>
+            if x != x || y != y
+                ok(of(x + y))
+            else if x > y
+                ok(of(x - y))
+            else
+                ok(of(0.0))
+        _ => values.raised(f"{name}/2 is not defined")
+
+# A power of two as an integer, held to a range where scaling saturates.
+function exponent_of(y: f64) -> i64
+    if y != y
+        return 0
+
+    if y > 100000.0
+        return 100000
+
+    if y < -100000.0
+        return -100000
+    return math.trunc(y).to_i64().must()
+
+# C's `fmin`: a `nan` gives the other.
+function c_min(x: f64, y: f64) -> f64
+    if x != x
+        return y
+
+    if y != y
+        return x
+    return math.min(a: x, b: y)
+
+# C's `fmax`: a `nan` gives the other.
+function c_max(x: f64, y: f64) -> f64
+    if x != x
+        return y
+
+    if y != y
+        return x
+    return math.max(a: x, b: y)
+
+# C's `fma`: `a` times `b` plus `c`, rounded once.
+function fma(a: json.Value, b: json.Value, c: json.Value) -> json.Value?
+    x = number(a)?
+    y = number(b)?
+    z = number(c)?
+    return ok(of(math.mul_add(x: x, times: y, plus: z)))
+
+## Tests
+
+test "unary: floor, sqrt, frexp, modf and a refusal"
+    assert values.equal(a: unary(name: "floor", v: of(-1.5)).must(), b: of(-2.0))
+    assert values.equal(a: unary(name: "sqrt", v: of(4.0)).must(), b: of(2.0))
+    assert json.format(unary(name: "frexp", v: of(8.0)).must()).must() == "[0.5,4]"
+    assert json.format(unary(name: "modf", v: of(3.25)).must()).must() == "[0.25,3]"
+
+    match unary(name: "floor", v: .text(v: "a"))
+        .ok _  => assert false
+        .err e => assert e.msg == "string (\"a\") number required"
+
+test "binary: pow, fmod's sign, ldexp, fmin with a nan"
+    assert values.equal(a: binary(name: "pow", a: of(2.0), b: of(10.0)).must(), b: of(1024.0))
+    assert values.equal(a: binary(name: "fmod", a: of(-5.0), b: of(3.0)).must(), b: of(-2.0))
+    assert values.equal(a: binary(name: "ldexp", a: of(3.0), b: of(2.0)).must(), b: of(12.0))
+    zero = 0.0
+    assert values.equal(a: binary(name: "fmin", a: of(zero / zero), b: of(1.0)).must(), b: of(1.0))
+
+test "significand, logb and gamma_sign"
+    assert significand(12.0) == 1.5 && logb(12.0) == 3.0
+    assert gamma_sign(-0.5) == -1.0 && gamma_sign(2.5) == 1.0

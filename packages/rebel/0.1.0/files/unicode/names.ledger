@@ -1,0 +1,84 @@
+capability char/name  the name Unicode gives a character, and the character a name gives
+  heroes  unicode/names.name, unicode/names.from_name
+  go      -
+  rust    -
+  python  unicodedata.name, unicodedata.lookup
+  note    Python's `lookup` matches a name, an alias or a named sequence ignoring case alone; `from_name` matches all three by UAX #44's rule LM2, spaces, underscores and medial hyphens ignored too, so "latin_small_letter_a" names "a" here and nothing there. A sweep of 2026-11-17 matched `name` to Python's on all 1,112,064 scalar values, and read back 160,282 names and aliases, each as Unicode writes it and in lower case with underscores, with no failure. A character with no name fails `not_found`, where Python raises ValueError; a control's names are its aliases, as in Python. A program using this package carries about 1.05 MB more than one using `unicode` alone (measured 2026-11-17, `heroes build` at -O0 on macOS), the 34,594 names written as 13,788 words
+
+capability char/aliases  the aliases of a character: corrections, the names of controls, abbreviations
+  heroes  unicode/names.aliases, unicode/names.Alias, unicode/names.ALIAS_CORRECTION, unicode/names.ALIAS_CONTROL, unicode/names.ALIAS_ALTERNATE, unicode/names.ALIAS_FIGMENT, unicode/names.ALIAS_ABBREVIATION
+  go      -
+  rust    -
+  python  -
+  note    `NameAliases.txt` 17.0.0, in its order; Python reads an alias in `lookup` and lists none
+
+capability class/script  the script a character belongs to, and a script named by any of its names
+  heroes  unicode/names.script, unicode/names.scripts, unicode/names.script_named
+  go      unicode.Scripts, the 174 script tables from unicode.Adlam to unicode.Zanabazar_Square, unicode.FoldScript
+  rust    -
+  python  -
+  note    long names of `PropertyValueAliases.txt`, as Go's table names are ("Old_Italic"), "Unknown" for a code point no character has, as ICU 78.3 answers on every scalar value (held by the generator and the sweep). Go's `Is(unicode.Greek, r)` is `script(c) == "Greek"`; `script_named` reads a long name, a code of ISO 15924 or another alias by UAX #44's LM3, as a regular expression's `\p{Grek}` needs. `scripts` lists all 176 values of the Script property, Katakana_Or_Hiragana and Unknown among them, where Go's map lists the 174 scripts some character has, Unknown aside. Go's FoldScript, the characters outside a script whose case folds into it, is what a match ignoring case builds from `unicode.simple_fold`
+
+capability class/script-extensions  the scripts a character is used with
+  heroes  unicode/names.script_extensions
+  go      -
+  rust    -
+  python  -
+  note    `ScriptExtensions.txt` 17.0.0, in its order, and the character's own script where it is not listed, as Unicode defines; held to ICU 78.3's `uscript_getScriptExtensions`, as sets, on every scalar value
+
+capability class/block  the block a character stands in
+  heroes  unicode/names.block, unicode/names.blocks, unicode/names.Block, unicode/names.NO_BLOCK
+  go      -
+  rust    -
+  python  unicodedata.block
+  note    the names `Blocks.txt` writes, and "No_Block" outside every block, as Python answers on every scalar value
+
+capability class/property  whether a character has one of the binary properties Unicode lists by name
+  heroes  unicode/names.has_property, unicode/names.properties
+  go      unicode.Properties, unicode.ASCII_Hex_Digit, unicode.Bidi_Control, unicode.Dash, unicode.Deprecated, unicode.Diacritic, unicode.Extender, unicode.Hex_Digit, unicode.Hyphen, unicode.IDS_Binary_Operator, unicode.IDS_Trinary_Operator, unicode.IDS_Unary_Operator, unicode.ID_Compat_Math_Continue, unicode.ID_Compat_Math_Start, unicode.Ideographic, unicode.Join_Control, unicode.Logical_Order_Exception, unicode.Modifier_Combining_Mark, unicode.Noncharacter_Code_Point, unicode.Other_Alphabetic, unicode.Other_Default_Ignorable_Code_Point, unicode.Other_Grapheme_Extend, unicode.Other_ID_Continue, unicode.Other_ID_Start, unicode.Other_Lowercase, unicode.Other_Math, unicode.Other_Uppercase, unicode.Pattern_Syntax, unicode.Pattern_White_Space, unicode.Prepended_Concatenation_Mark, unicode.Quotation_Mark, unicode.Radical, unicode.Regional_Indicator, unicode.STerm, unicode.Sentence_Terminal, unicode.Soft_Dotted, unicode.Terminal_Punctuation, unicode.Unified_Ideograph, unicode.Variation_Selector, unicode.White_Space
+  rust    -
+  python  -
+  note    the 63 binary properties of `PropList.txt`, `DerivedCoreProperties.txt` and `emoji-data.txt` 17.0.0, read by a long or a short name by UAX #44's LM3; each held on every scalar value to Go 1.27.3's `unicode` (17.0.0) where Go has it and to ICU 78.3 where ICU has it, none held to neither. Go's STerm is Sentence_Terminal's old name, which `has_property` reads too. Python's `extended_pictographic` stands in `unicode/segment`'s ledger, which points here
+
+capability class/identifier  whether a character may begin a name, or go on inside one, by UAX #31
+  heroes  unicode/names.is_identifier_start, unicode/names.is_identifier_continue, unicode/names.is_identifier
+  go      -
+  rust    -
+  python  unicodedata.isxidstart, unicodedata.isxidcontinue, str.isidentifier
+  note    XID_Start and XID_Continue, as Python answers on every scalar value; `is_identifier` is Python's `isidentifier`, "_" allowed first. `strings`' ledger refuses `str.isidentifier` as Python's own rule; it stands here as UAX #31's default identifier with Python's one addition, which a program may take or not
+
+capability class/default-ignorable  whether a character is drawn as nothing where no font knows it
+  heroes  unicode/names.is_default_ignorable
+  go      -
+  rust    char::is_default_ignorable
+  python  -
+  note    Default_Ignorable_Code_Point of `DerivedCoreProperties.txt` 17.0.0, held to ICU 78.3; Rust's is unstable in 1.100
+
+capability number/numeric-value  the number a character writes, a fraction included, and of which kind
+  heroes  unicode/names.numeric_value, unicode/names.NumericValue, unicode/names.NUMERIC_DECIMAL, unicode/names.NUMERIC_DIGIT, unicode/names.NUMERIC_OTHER
+  go      -
+  rust    -
+  python  unicodedata.numeric, unicodedata.digit, str.isnumeric, str.isdigit
+  note    `DerivedNumericValues.txt` 17.0.0, Unihan's numbers among them ("万" is 10000), exact as a fraction where Python answers a float; `digit` is `numeric_value` of kind decimal or digit, `isnumeric` of a text every character's `numeric_value` succeeding, and `isdigit` the same of kind decimal or digit. Held to Python's three on every scalar value
+
+capability class/direction  the Bidi_Class of a character, and whether it is mirrored in text written right to left
+  heroes  unicode/names.bidi_class, unicode/names.is_mirrored
+  go      -
+  rust    -
+  python  unicodedata.bidirectional, unicodedata.mirrored
+  note    `DerivedBidiClass.txt` 17.0.0 with its defaults for code points no character has, as Python answers ("R" for U+05FF, "BN" for U+10FFFF) and ICU 78.3 on every scalar value
+
+capability class/mirror  the character that draws another mirrored
+  heroes  unicode/names.mirror
+  go      -
+  rust    -
+  python  -
+  note    `BidiMirroring.txt` 17.0.0, its best fits included, as ICU 78.3's `u_charMirror` answers on every scalar value; a character with none fails `not_found`
+
+capability names/version  the version of Unicode the tables hold
+  heroes  unicode/names.UNICODE_VERSION
+  go      -
+  rust    -
+  python  -
+  note    17.0.0, as `unicode.UNICODE_VERSION`, whose block holds Python's `unicodedata.unidata_version`; the tables were made by a program from the Unicode Character Database 17.0.0 and held to Python 3.15.2, Go 1.27.3 and ICU 78.3 on every code point
+

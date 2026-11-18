@@ -1,0 +1,106 @@
+# What a server checks of a method it takes and of the parameters a call
+# gives it: a method described once, and a call's parameters bound to the
+# method's names, by position or by name, as Python's `jsonrpcserver` binds
+# them to a function's arguments and refuses them where they do not fit.
+
+use json
+use strings
+
+# The code of a method or a call's parameters refused.
+constant INVALID: str
+    "invalid"
+
+# Fails `invalid` where a method named `name`, taking `params` of which the
+# first `required` are required, is not one a table may hold.
+function check(name: str, params: [str], required: i64) -> ()?
+    if strings.has_prefix(s: name, prefix: "rpc.")
+        return fail(code: INVALID, msg: f"the method \"{name}\" begins `rpc.`, which JSON-RPC keeps for itself")
+
+    if required < 0 || required > params.len()
+        return fail(code: INVALID, msg: f"{required} required of {params.len()} parameters")
+    seen: {str: bool} @= {}
+
+    for p in params
+        if seen[p].default(false)
+            return fail(code: INVALID, msg: f"the parameter \"{p}\" is named twice")
+        seen[p] @ true
+
+    return ok()
+
+# The parameters `given` by name, for the method `method` that takes `names`,
+# the first `required` of them required: a list bound in order, an object by
+# its keys, `.null_value` as none, each in the order of `names`.
+function bind(method: str, names: [str], required: i64, given: json.Value) -> {str: json.Value}?
+    out: {str: json.Value} @= {}
+
+    match given
+        .list l =>
+            if l.items.len() > names.len()
+                return fail(
+                    code: INVALID,
+                    msg: f"too many positional arguments: \"{method}\" takes {names.len()}, and {l.items.len()} were given"
+                )
+
+            for at in range(from: 0, to: l.items.len())
+                out[names[at]] @ l.items[at]
+        .object o =>
+            for key in keys(o.members)
+                if !has_name(names, name: key)
+                    return fail(code: INVALID, msg: f"\"{method}\" got an unexpected argument \"{key}\"")
+
+            for name in names
+                match o.members[name]
+                    .ok v  => out[name] @ v
+                    .err _ => _ = 0
+        .null_value => _ = 0
+        .boolean _ | .number _ | .text _ =>
+            return fail(code: INVALID, msg: f"parameters are a list or an object, and these are {json.kind_of(given)}")
+
+    for at in range(from: 0, to: required)
+        if out[names[at]].is_err()
+            return fail(code: INVALID, msg: f"\"{method}\" is missing a required argument: \"{names[at]}\"")
+
+    return ok(out)
+
+# Whether `names` holds `name`.
+function has_name(names: [str], name: str) -> bool
+    for n in names
+        if n == name
+            return true
+
+    return false
+
+test "check: a method taken, and the four refusals"
+    check(name: "subtract", params: ["minuend", "subtrahend"], required: 2).must()
+    check(name: "ping", params: [], required: 0).must()
+    names = ["rpc.x", "x", "x", "dup"]
+    counts = [0, 3, -1, 1]
+
+    for at in range(from: 0, to: names.len())
+        params = if names[at] == "dup"
+            ["a", "a"]
+        else
+            ["a", "b"]
+
+        match check(name: names[at], params: params, required: counts[at])
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+test "bind: by position, by name, none, and each refusal Python's jsonrpcserver gives"
+    two = ["minuend", "subtrahend"]
+    by_position = bind(method: "subtract", names: two, required: 2, given: json.parse("[42, 23]").must()).must()
+    assert keys(by_position) == two && by_position["minuend"].must() == .number(v: 42.0)
+    by_name = bind(
+        method: "subtract",
+        names: two,
+        required: 2,
+        given: json.parse("{\"subtrahend\": 23, \"minuend\": 42}").must()
+    ).must()
+    assert keys(by_name) == two && by_name["subtrahend"].must() == .number(v: 23.0)
+    assert bind(method: "ping", names: [], required: 0, given: .null_value).must() == {}
+    assert keys(bind(method: "f", names: ["a", "b"], required: 1, given: json.parse("[1]").must()).must()) == ["a"]
+
+    for text in ["[1]", "[1, 2, 3]", "{\"minuend\": 1, \"x\": 2}", "{\"minuend\": 1}", "\"bar\""]
+        match bind(method: "subtract", names: two, required: 2, given: json.parse(text).must())
+            .ok _  => assert text == "refused"
+            .err e => assert e.code == INVALID && strings.contains(s: e.msg, substr: "subtract") || text == "\"bar\""

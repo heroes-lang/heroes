@@ -1,0 +1,620 @@
+# What jq's values are and how jq orders, indexes and measures them: truth,
+# type names, the order `sort` uses, indexing and slicing with jq's rules and
+# its messages, `length`, `keys`, `has` and `contains`. The messages are jq
+# 1.7.1's, which `jq.test` holds.
+
+use json
+use json/jq/internal/write
+use unicode
+
+# The code of a jq error.
+constant INVALID: str
+    "invalid"
+
+# How deep `contains` follows two values before it gives up.
+constant MAX_CONTAINS_DEPTH: i64
+    512
+
+## Truth and types
+
+# Whether `v` is true to jq: anything but `null` and `false`.
+function truthy(v: json.Value) -> bool
+    return match v
+        .null_value                               => false
+        .boolean b                                => b.v
+        .number _ | .text _ | .list _ | .object _ => true
+
+# The name jq gives `v`'s type.
+function type_name(v: json.Value) -> str
+    return match v
+        .null_value => "null"
+        .boolean _  => "boolean"
+        .number _   => "number"
+        .text _     => "string"
+        .list _     => "array"
+        .object _   => "object"
+
+# `v`'s type and its preview, as jq's messages show a value: `number (1)`.
+function described(v: json.Value) -> str
+    return f"{type_name(v)} ({write.preview(v)})"
+
+# A jq error saying `msg`.
+function raised<T>(msg: str) -> T?
+    return fail(code: INVALID, msg: msg)
+
+# Where `v`'s type stands in jq's order of types.
+function rank(v: json.Value) -> i64
+    return match v
+        .null_value => 0
+        .boolean b =>
+            if b.v
+                2
+            else
+                1
+        .number _ => 3
+        .text _   => 4
+        .list _   => 5
+        .object _ => 6
+
+## Order
+
+# Where text `a` stands against text `b`, byte by byte, which is the order of
+# their code points.
+function text_order(a: str, b: str) -> i64
+    shorter = if a.len() < b.len()
+        a.len()
+    else
+        b.len()
+
+    for i in range(from: 0, to: shorter)
+        if a[i] != b[i]
+            return if a[i] < b[i]
+                -1
+            else
+                1
+
+    if a.len() == b.len()
+        return 0
+
+    return if a.len() < b.len()
+        -1
+    else
+        1
+
+# Where number `a` stands against `b`: a `nan` before every number, itself
+# included, as jq orders it.
+function number_order(a: f64, b: f64) -> i64
+    if a != a
+        return -1
+
+    if b != b
+        return 1
+
+    if a < b
+        return -1
+
+    if a > b
+        return 1
+    return 0
+
+# A pair of values left to compare, or a pair of lengths where `lengths` says.
+record Pending
+    # The left value.
+    a: json.Value
+    # The right value.
+    b: json.Value
+    # Whether this entry compares two lengths, held in `left` and `right`.
+    lengths: bool
+    # The left length.
+    left: i64
+    # The right length.
+    right: i64
+
+# Where `a` stands against `b` in jq's order: -1, 0 or 1. It holds its own
+# stack, so no depth is too deep for it.
+function order(a: json.Value, b: json.Value) -> i64
+    return order_within(a: a, b: b, budget: 9223372036854775807).must().result
+
+# What `order_within` answers: the order and the pairs it compared.
+record Ordered
+    # -1, 0 or 1.
+    result: i64
+    # The pairs of values compared, the work done.
+    cost: i64
+
+# Where `a` stands against `b` in jq's order, comparing at most `budget`
+# pairs of values. Fails `limit` past it: two values that share their parts
+# can hold more pairs than any memory, `[., .]` built thirty times over.
+function order_within(a: json.Value, b: json.Value, budget: i64) -> Ordered?
+    left: [Pending] @= [Pending(a: a, b: b, lengths: false, left: 0, right: 0)]
+    top: i64 @= 1
+    cost: i64 @= 0
+
+    while top > 0
+        top @ top - 1
+        p = left[top]
+        cost @ cost + 1
+
+        if cost > budget
+            return fail(code: "limit", msg: f"comparing two values took more than {budget} steps")
+
+        if p.lengths
+            if p.left != p.right
+                sign = if p.left < p.right
+                    -1
+                else
+                    1
+                return ok(Ordered(result: sign, cost: cost))
+        else
+            ra = rank(p.a)
+            rb = rank(p.b)
+
+            if ra != rb
+                sign = if ra < rb
+                    -1
+                else
+                    1
+                return ok(Ordered(result: sign, cost: cost))
+            r: i64 @= 0
+
+            match p.a
+                .number x =>
+                    match p.b
+                        .number y                                                => r @ number_order(a: x.v, b: y.v)
+                        .null_value | .boolean _ | .text _ | .list _ | .object _ => r @ 0
+                .text x =>
+                    match p.b
+                        .text y                                                    => r @ text_order(a: x.v, b: y.v)
+                        .null_value | .boolean _ | .number _ | .list _ | .object _ => r @ 0
+                .list x =>
+                    match p.b
+                        .list y =>
+                            top @ push_pending(
+                                @left,
+                                top: top,
+                                p: Pending(a: .null_value, b: .null_value, lengths: true, left: x.items.len(), right: y.items.len())
+                            )
+
+                            shorter = if x.items.len() < y.items.len()
+                                x.items.len()
+                            else
+                                y.items.len()
+                            at: i64 @= shorter
+
+                            while at > 0
+                                at @ at - 1
+                                top @ push_pending(
+                                    @left,
+                                    top: top,
+                                    p: Pending(a: x.items[at], b: y.items[at], lengths: false, left: 0, right: 0)
+                                )
+                        .null_value | .boolean _ | .number _ | .text _ | .object _ => r @ 0
+                .object x =>
+                    match p.b
+                        .object y =>
+                            kx = sort(keys(x.members))
+                            ky = sort(keys(y.members))
+
+                            # The values in the order of the keys, compared
+                            # only once the keys are equal.
+                            at: i64 @= kx.len()
+
+                            while at > 0
+                                at @ at - 1
+                                va = x.members[kx[at]].must()
+                                vb = y.members[kx[at]].default(.null_value)
+                                top @ push_pending(
+                                    @left,
+                                    top: top,
+                                    p: Pending(a: va, b: vb, lengths: false, left: 0, right: 0)
+                                )
+
+                            top @ push_pending(
+                                @left,
+                                top: top,
+                                p: Pending(a: texts(kx), b: texts(ky), lengths: false, left: 0, right: 0)
+                            )
+                        .null_value | .boolean _ | .number _ | .text _ | .list _ => r @ 0
+                .null_value | .boolean _ => r @ 0
+
+            if r != 0
+                return ok(Ordered(result: r, cost: cost))
+
+    return ok(Ordered(result: 0, cost: cost))
+
+# `names` as a list of texts.
+function texts(names: [str]) -> json.Value
+    items: [json.Value] @= []
+
+    for n in names
+        items @ items.push(.text(v: n))
+
+    return .list(items: items)
+
+# Pushes `p` on the stack of `order`, answering the new top.
+function push_pending(@left: [Pending], top: i64, p: Pending) -> i64
+    if top == left.len()
+        left @ left.push(p)
+    else
+        left[top] @ p
+    return top + 1
+
+# Whether `a` and `b` are equal to jq: equal in its order, so a `nan` equals
+# nothing.
+function equal(a: json.Value, b: json.Value) -> bool
+    return order(a: a, b: b) == 0
+
+## Indexing
+
+# A number used as an index: rounded down, as jq takes it.
+function index_number(x: f64) -> i64?
+    if x != x
+        return raised("nan index")
+
+    floor = if x < 0.0 && to_f64(x.to_i64().default(0)) != x
+        x - 1.0
+    else
+        x
+
+    if floor > 9223372036854775000.0 || floor < -9223372036854775000.0
+        return raised("index out of range")
+    return ok(floor.to_i64().must())
+
+# `v[k]` as jq reads it: a member of an object by a text, an element of a list
+# by a number counted from the end where negative, the indices where a list
+# holds another, and `null` on `null` or past the end.
+function index(v: json.Value, k: json.Value) -> json.Value?
+    match k
+        .text key =>
+            match v
+                .object o   => return ok(o.members[key.v].default(.null_value))
+                .null_value => return ok(.null_value)
+                .boolean _ | .number _ | .text _ | .list _ =>
+                    return raised(f"Cannot index {type_name(v)} with string \"{key.v}\"")
+        .number n =>
+            match v
+                .list l =>
+                    if n.v != n.v
+                        return ok(.null_value)
+                    at: i64 @= index_number(n.v)?
+
+                    if at < 0
+                        at @ at + l.items.len()
+
+                    if at < 0 || at >= l.items.len()
+                        return ok(.null_value)
+                    return ok(l.items[at])
+                .null_value => return ok(.null_value)
+                .boolean _ | .number _ | .text _ | .object _ =>
+                    return raised(f"Cannot index {type_name(v)} with number")
+        .list sub =>
+            match v
+                .list l     => return ok(indices_of_list(within: l.items, part: sub.items))
+                .null_value => return ok(.null_value)
+                .boolean _ | .number _ | .text _ | .object _ =>
+                    return raised(f"Cannot index {type_name(v)} with array")
+        .object o =>
+            match v
+                .null_value => return ok(.null_value)
+                .boolean _ | .number _ | .text _ | .list _ | .object _ =>
+                    from = o.members["start"].default(.null_value)
+                    to = o.members["end"].default(.null_value)
+
+                    match v
+                        .list _ | .text _ => return slice_of(v: v, from: from, to: to)
+                        .null_value | .boolean _ | .number _ | .object _ =>
+                            return raised(f"Cannot index {type_name(v)} with object")
+        .null_value | .boolean _ =>
+            match v
+                .null_value => return ok(.null_value)
+                .boolean _ | .number _ | .text _ | .list _ | .object _ =>
+                    return raised(f"Cannot index {type_name(v)} with {type_name(k)}")
+
+# Where the list `part` begins inside `within`, each index once; the empty
+# `part` begins nowhere.
+function indices_of_list(within: [json.Value], part: [json.Value]) -> json.Value
+    found: [json.Value] @= []
+
+    if part.len() == 0
+        return .list(items: found)
+    last = within.len() - part.len()
+    at: i64 @= 0
+
+    while at <= last
+        same: bool @= true
+        i: i64 @= 0
+
+        while same && i < part.len()
+            if !equal(a: within[at + i], b: part[i])
+                same @ false
+            i @ i + 1
+
+        if same
+            found @ found.push(.number(v: to_f64(at)))
+        at @ at + 1
+
+    return .list(items: found)
+
+# An end of a slice as an index into a sequence of `count`: `null` the end
+# `missing` names, a number rounded down for a start and up for an end,
+# counted from the end where negative, and held inside the sequence.
+function slice_end(e: json.Value, count: i64, missing: i64, upward: bool) -> i64?
+    match e
+        .null_value => return ok(missing)
+        .number n =>
+            if n.v != n.v
+                return ok(missing)
+            x = n.v
+
+            if x > 9223372036854775000.0
+                return ok(count)
+
+            if x < -9223372036854775000.0
+                return ok(0)
+            whole = x.to_i64().must()
+            at: i64 @= whole
+
+            if upward && to_f64(whole) < x
+                at @ whole + 1
+
+            if !upward && to_f64(whole) > x
+                at @ whole - 1
+
+            if at < 0
+                at @ at + count
+
+            if at < 0
+                at @ 0
+
+            if at > count
+                at @ count
+            return ok(at)
+        .boolean _ | .text _ | .list _ | .object _ =>
+            return raised("Start and end indices of an array slice must be numbers")
+
+# `v[from:to]`: a list's elements or a text's characters from `from` up to
+# `to`, `null` on `null`.
+function slice_of(v: json.Value, from: json.Value, to: json.Value) -> json.Value?
+    match v
+        .null_value => return ok(.null_value)
+        .list l =>
+            start = slice_end(from, count: l.items.len(), missing: 0, upward: false)?
+            end = slice_end(to, count: l.items.len(), missing: l.items.len(), upward: true)?
+
+            if end <= start
+                return ok(.list(items: []))
+            return ok(.list(items: l.items.slice(from: start, to: end)))
+        .text t =>
+            points = unicode.char_count(t.v)
+            start = slice_end(from, count: points, missing: 0, upward: false)?
+            end = slice_end(to, count: points, missing: points, upward: true)?
+
+            if end <= start
+                return ok(.text(v: ""))
+            return ok(.text(v: t.v.slice(from: byte_at(t.v, point: start), to: byte_at(t.v, point: end))))
+        .boolean _ | .number _ | .object _ => return raised(f"Cannot index {type_name(v)} with object")
+
+# The byte index of the character `point` of `s`, the length past the last.
+function byte_at(s: str, point: i64) -> i64
+    seen: i64 @= 0
+    at: i64 @= 0
+
+    while at < s.len() && seen < point
+        at @ at + 1
+
+        while at < s.len() && s[at] >= 128 && s[at] < 192
+            at @ at + 1
+
+        seen @ seen + 1
+
+    return at
+
+## Measuring
+
+# jq's `length`: a list's or an object's count, a text's characters, a
+# number's absolute value, 0 for `null`.
+function length(v: json.Value) -> json.Value?
+    return match v
+        .null_value => ok(.number(v: 0.0))
+        .boolean _  => raised(f"{described(v)} has no length")
+        .number n =>
+            if n.v == n.v && n.v < 0.0
+                ok(.number(v: 0.0 - n.v))
+            else
+                ok(.number(v: n.v))
+        .text t   => ok(.number(v: to_f64(unicode.char_count(t.v))))
+        .list l   => ok(.number(v: to_f64(l.items.len())))
+        .object o => ok(.number(v: to_f64(o.members.len())))
+
+# jq's `keys`, sorted where `sorted`: an object's keys, a list's indices.
+function keys_of(v: json.Value, sorted: bool) -> json.Value?
+    match v
+        .object o =>
+            names = if sorted
+                sort(keys(o.members))
+            else
+                keys(o.members)
+            return ok(texts(names))
+        .list l =>
+            found: [json.Value] @= []
+
+            for i in range(from: 0, to: l.items.len())
+                found @ found.push(.number(v: to_f64(i)))
+
+            return ok(.list(items: found))
+        .null_value | .boolean _ | .number _ | .text _ => return raised(f"{described(v)} has no keys")
+
+# jq's `has(k)`.
+function has(v: json.Value, k: json.Value) -> json.Value?
+    match v
+        .object o =>
+            match k
+                .text key => return ok(.boolean(v: !o.members[key.v].is_err()))
+                .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+                    return raised(f"Cannot check whether object has a {type_name(k)} key")
+        .list l =>
+            match k
+                .number n => return ok(.boolean(v: n.v == n.v && n.v >= 0.0 && n.v < to_f64(l.items.len())))
+                .null_value | .boolean _ | .text _ | .list _ | .object _ =>
+                    return raised(f"Cannot check whether array has a {type_name(k)} key")
+        .null_value | .boolean _ | .number _ | .text _ =>
+            return raised(f"Cannot check whether {type_name(v)} has a {type_name(k)} key")
+
+# jq's `contains(b)`: an object holding each member of `b` contained in its
+# own, a list holding for each element of `b` one that contains it, a text
+# holding `b` inside it, any other value equal to `b`.
+function contains(a: json.Value, b: json.Value) -> json.Value?
+    work: i64 @= 0
+    return ok(.boolean(v: contained(a: a, b: b, depth: 0, work: @work)?))
+
+# Whether `a` contains `b`, `depth` levels down, `work` the pairs compared
+# so far, at most 4,000,000.
+function contained(a: json.Value, b: json.Value, depth: i64, @work: i64) -> bool?
+    work @ work + 1
+
+    if work > 4000000
+        return fail(code: "limit", msg: "contains compared more than 4000000 pairs of values")
+
+    if depth > MAX_CONTAINS_DEPTH
+        return raised(f"contains follows values no deeper than {MAX_CONTAINS_DEPTH} levels")
+
+    if rank(a) != rank(b) && !(rank(a) <= 2 && rank(b) <= 2 && rank(a) >= 1 && rank(b) >= 1)
+        return raised(f"{described(a)} and {described(b)} cannot have their containment checked")
+
+    match a
+        .object x =>
+            match b
+                .object y =>
+                    for k in keys(y.members)
+                        match x.members[k]
+                            .err _ => return ok(false)
+                            .ok mine =>
+                                if !contained(a: mine, b: y.members[k].must(), depth: depth + 1, work: @work)?
+                                    return ok(false)
+
+                    return ok(true)
+                .null_value | .boolean _ | .number _ | .text _ | .list _ => return ok(false)
+        .list x =>
+            match b
+                .list y =>
+                    for want in y.items
+                        found: bool @= false
+
+                        for mine in x.items
+                            if !found && rank(mine) == rank(want)
+                                if contained(a: mine, b: want, depth: depth + 1, work: @work)?
+                                    found @ true
+
+                        if !found
+                            return ok(false)
+
+                    return ok(true)
+                .null_value | .boolean _ | .number _ | .text _ | .object _ => return ok(false)
+        .text x =>
+            match b
+                .text y                                                    => return ok(holds(s: x.v, part: y.v))
+                .null_value | .boolean _ | .number _ | .list _ | .object _ => return ok(false)
+        .null_value | .boolean _ | .number _ => return ok(equal(a: a, b: b))
+
+# Whether `part` stands inside `s`, byte for byte.
+function holds(s: str, part: str) -> bool
+    if part.len() == 0
+        return true
+    last = s.len() - part.len()
+    at: i64 @= 0
+
+    while at <= last
+        i: i64 @= 0
+
+        while i < part.len() && s[at + i] == part[i]
+            i @ i + 1
+
+        if i == part.len()
+            return true
+        at @ at + 1
+
+    return false
+
+## Tests
+
+test "truthy: null and false are false, zero and the empty text true"
+    assert !truthy(.null_value) && !truthy(.boolean(v: false))
+    assert truthy(.number(v: 0.0)) && truthy(.text(v: "")) && truthy(.list(items: []))
+
+test "order: types in jq's order, numbers, texts by code point, nan first"
+    assert order(a: .null_value, b: .boolean(v: false)) == -1
+    assert order(a: .boolean(v: true), b: .number(v: -5.0)) == -1
+    assert order(a: .text(v: "a"), b: .text(v: "ab")) == -1
+    assert order(a: .text(v: "é"), b: .text(v: "z")) == 1
+    zero = 0.0
+    assert order(a: .number(v: zero / zero), b: .number(v: zero / zero)) == -1
+    assert order(a: .number(v: 1.0), b: .number(v: zero / zero)) == 1
+
+test "order: lists element by element then by length, objects by keys then values"
+    a = json.parse("[[1,2],[1],[0,5]]").must()
+    items = json.items_of(a).must()
+    assert order(a: items[1], b: items[0]) == -1 && order(a: items[2], b: items[1]) == -1
+    x = json.parse("{\"a\":1}").must()
+    y = json.parse("{\"a\":1,\"b\":0}").must()
+    z = json.parse("{\"b\":0}").must()
+    assert order(a: x, b: y) == -1 && order(a: y, b: z) == -1
+    assert equal(a: json.parse("{\"b\":1,\"a\":2}").must(), b: json.parse("{\"a\":2,\"b\":1}").must())
+
+test "order: two values nested past any stack"
+    deep: json.Value @= .null_value
+
+    for _ in range(from: 0, to: 100000)
+        deep @ .list(items: [deep])
+
+    assert order(a: deep, b: deep) == 0
+
+test "index: members, elements from the end, null, a sub-list, and jq 1.7.1's messages"
+    obj = json.parse("{\"a\":1}").must()
+    assert equal(a: index(v: obj, k: .text(v: "a")).must(), b: .number(v: 1.0))
+    assert equal(a: index(v: obj, k: .text(v: "z")).must(), b: .null_value)
+    l = json.parse("[1,2,3]").must()
+    assert equal(a: index(v: l, k: .number(v: -1.0)).must(), b: .number(v: 3.0))
+    assert equal(a: index(v: l, k: .number(v: 1.5)).must(), b: .number(v: 2.0))
+    assert equal(a: index(v: l, k: .number(v: 9.0)).must(), b: .null_value)
+    assert equal(a: index(v: .null_value, k: .text(v: "a")).must(), b: .null_value)
+    sub = json.parse("[1,2,1,2]").must()
+    assert write.compact(index(v: sub, k: json.parse("[1,2]").must()).must()) == "[0,2]"
+
+    match index(v: .number(v: 1.0), k: .text(v: "a"))
+        .ok _  => assert false
+        .err e => assert e.msg == "Cannot index number with string \"a\""
+
+    match index(v: obj, k: .number(v: 0.0))
+        .ok _  => assert false
+        .err e => assert e.msg == "Cannot index object with number"
+
+test "slice: a list, a text by characters, rounding, negative ends, null"
+    l = json.parse("[1,2,3]").must()
+    assert write.compact(slice_of(v: l, from: .number(v: -2.0), to: .null_value).must()) == "[2,3]"
+    assert write.compact(slice_of(v: l, from: .number(v: 1.7), to: .number(v: 2.2)).must()) == "[2,3]"
+    assert write.compact(slice_of(v: .text(v: "aé😀b"), from: .number(v: 1.0), to: .number(v: 3.0)).must()) == "\"é😀\""
+    assert equal(a: slice_of(v: .null_value, from: .number(v: 1.0), to: .number(v: 2.0)).must(), b: .null_value)
+    assert slice_of(v: .object(members: {}), from: .number(v: 1.0), to: .number(v: 2.0)).is_err()
+
+test "length, keys_of and has: each kind, and their messages"
+    assert write.compact(length(.number(v: -5.0)).must()) == "5"
+    assert write.compact(length(.text(v: "aé")).must()) == "2"
+
+    match length(.boolean(v: true))
+        .ok _  => assert false
+        .err e => assert e.msg == "boolean (true) has no length"
+
+    assert write.compact(keys_of(json.parse("{\"b\":1,\"a\":2}").must(), sorted: true).must()) == "[\"a\",\"b\"]"
+    assert write.compact(keys_of(json.parse("{\"b\":1,\"a\":2}").must(), sorted: false).must()) == "[\"b\",\"a\"]"
+    assert write.compact(has(v: json.parse("[1]").must(), k: .number(v: 0.5)).must()) == "true"
+
+    match has(v: .number(v: 1.0), k: .text(v: "a"))
+        .ok _  => assert false
+        .err e => assert e.msg == "Cannot check whether number has a string key"
+
+test "contains: objects, lists, texts, booleans across, and a mismatch refused"
+    a = json.parse("{\"a\":[1,2,\"xyz\"],\"b\":true}").must()
+    assert write.compact(contains(a: a, b: json.parse("{\"a\":[\"y\"]}").must()).must()) == "true"
+    assert write.compact(contains(a: a, b: json.parse("{\"a\":[3]}").must()).must()) == "false"
+    assert write.compact(contains(a: .boolean(v: true), b: .boolean(v: false)).must()) == "false"
+    assert contains(a: .number(v: 1.0), b: .text(v: "a")).is_err()

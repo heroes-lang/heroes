@@ -1,0 +1,268 @@
+# jq's `@` formats: `@text`, `@json`, `@html`, `@uri`, `@csv`, `@tsv`, `@sh`,
+# `@base64` and `@base64d`, each a text made from a value as jq 1.7.1 makes it.
+
+use bytes
+use json
+use json/jq/internal/text
+use json/jq/internal/values
+use json/jq/internal/write
+
+# The value `v` written by the format `name`.
+function apply(name: str, v: json.Value) -> json.Value?
+    return match name
+        "text"    => ok(.text(v: text.to_text(v)?))
+        "json"    => ok(.text(v: write.compact_capped(v)?))
+        "html"    => ok(.text(v: html(text.to_text(v)?)))
+        "uri"     => ok(.text(v: uri(text.to_text(v)?)))
+        "csv"     => row(v, tab: false)
+        "tsv"     => row(v, tab: true)
+        "sh"      => shell(v)
+        "base64"  => ok(.text(v: bytes.format_base64(bytes.from_text(text.to_text(v)?))))
+        "base64d" => base64_decoded(v)
+        _         => values.raised(f"{name} is not a valid format")
+
+# `s` with `<`, `>`, `&`, `'` and `"` written as HTML's entities.
+function html(s: str) -> str
+    pieces: [str] @= []
+    start: i64 @= 0
+
+    for at in range(from: 0, to: s.len())
+        c = s[at]
+
+        entity = if c == '<'
+            "&lt;"
+        else if c == '>'
+            "&gt;"
+        else if c == '&'
+            "&amp;"
+        else if c == '\''
+            "&apos;"
+        else if c == '"'
+            "&quot;"
+        else
+            ""
+
+        if entity != ""
+            pieces @ pieces.push(s.slice(from: start, to: at))
+            pieces @ pieces.push(entity)
+            start @ at + 1
+
+    pieces @ pieces.push(s.slice(from: start, to: s.len()))
+    return pieces.join("")
+
+# `s` with every byte but the unreserved ones of RFC 3986, letters, digits,
+# `-`, `_`, `.` and `~`, written `%XX`.
+function uri(s: str) -> str
+    pieces: [str] @= []
+    hex = "0123456789ABCDEF"
+
+    for at in range(from: 0, to: s.len())
+        c = s[at]
+
+        if c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '-' || c == '_' || c == '.' || c == '~'
+            pieces @ pieces.push(s.slice(from: at, to: at + 1))
+        else
+            high = to_i64(c / 16).must()
+            low = to_i64(c % 16).must()
+            pieces @ pieces.push("%" + hex.slice(from: high, to: high + 1) + hex.slice(from: low, to: low + 1))
+
+    return pieces.join("")
+
+# A list written as one row of CSV, or of TSV where `tab`.
+function row(v: json.Value, tab: bool) -> json.Value?
+    kind = if tab
+        "tsv"
+    else
+        "csv"
+
+    match v
+        .list l =>
+            if volume_of(l.items) > write.MAX_VOLUME
+                return write.too_large(f"the {kind} row")
+            cells: [str] @= []
+
+            for item in l.items
+                match item
+                    .null_value            => cells @ cells.push("")
+                    .boolean _ | .number _ => cells @ cells.push(write.compact(item))
+                    .text t =>
+                        if tab
+                            cells @ cells.push(tsv_escaped(t.v))
+                        else
+                            cells @ cells.push("\"" + doubled_quotes(t.v) + "\"")
+                    .list _ | .object _ =>
+                        return values.raised(f"{values.described(item)} is not valid in a {kind} row")
+
+            sep = if tab
+                "\t"
+            else
+                ","
+            return ok(.text(v: cells.join(sep)))
+        .null_value | .boolean _ | .number _ | .text _ | .object _ =>
+            return values.raised(f"{values.described(v)} cannot be {kind}-formatted, only an array can be")
+
+# The work of writing `items` as text: an element or 16 bytes of text each a
+# step.
+function volume_of(items: [json.Value]) -> i64
+    volume: i64 @= items.len()
+
+    for item in items
+        match item
+            .text t                                                    => volume @ volume + t.v.len() / 16
+            .null_value | .boolean _ | .number _ | .list _ | .object _ => volume @ volume + 1
+
+    return volume
+
+# `s` with each `"` doubled.
+function doubled_quotes(s: str) -> str
+    pieces: [str] @= []
+    start: i64 @= 0
+
+    for at in range(from: 0, to: s.len())
+        if s[at] == '"'
+            pieces @ pieces.push(s.slice(from: start, to: at + 1))
+            start @ at
+
+    pieces @ pieces.push(s.slice(from: start, to: s.len()))
+    return pieces.join("")
+
+# `s` with `\`, a tab, a line feed and a carriage return written as escapes.
+function tsv_escaped(s: str) -> str
+    pieces: [str] @= []
+    start: i64 @= 0
+
+    for at in range(from: 0, to: s.len())
+        c = s[at]
+
+        escape = if c == '\\'
+            "\\\\"
+        else if c == '\t'
+            "\\t"
+        else if c == '\n'
+            "\\n"
+        else if c == '\r'
+            "\\r"
+        else
+            ""
+
+        if escape != ""
+            pieces @ pieces.push(s.slice(from: start, to: at))
+            pieces @ pieces.push(escape)
+            start @ at + 1
+
+    pieces @ pieces.push(s.slice(from: start, to: s.len()))
+    return pieces.join("")
+
+# `s` between single quotes for a POSIX shell, each `'` written `'\''`.
+function single_quoted(s: str) -> str
+    pieces: [str] @= ["'"]
+    start: i64 @= 0
+
+    for at in range(from: 0, to: s.len())
+        if s[at] == '\''
+            pieces @ pieces.push(s.slice(from: start, to: at))
+            pieces @ pieces.push("'\\''")
+            start @ at + 1
+
+    pieces @ pieces.push(s.slice(from: start, to: s.len()))
+    pieces @ pieces.push("'")
+    return pieces.join("")
+
+# jq's `@sh`: a text quoted, a list's elements quoted and joined by spaces.
+function shell(v: json.Value) -> json.Value?
+    items: [json.Value] @= []
+
+    match v
+        .list l                                                    => items @ l.items
+        .null_value | .boolean _ | .number _ | .text _ | .object _ => items @ [v]
+
+    if volume_of(items) > write.MAX_VOLUME
+        return write.too_large("the words of `@sh`")
+    words: [str] @= []
+
+    for item in items
+        match item
+            .text t => words @ words.push(single_quoted(t.v))
+            .null_value | .boolean _ | .number _ => words @ words.push(write.compact(item))
+            .list _ | .object _ => return values.raised(f"{values.described(item)} can not be escaped for shell")
+
+    return ok(.text(v: words.join(" ")))
+
+# The value of one base 64 digit, -1 where `c` is none.
+function digit64(c: u8) -> i64
+    if c >= 'A' && c <= 'Z'
+        return to_i64(c).must() - 65
+
+    if c >= 'a' && c <= 'z'
+        return to_i64(c).must() - 71
+
+    if c >= '0' && c <= '9'
+        return to_i64(c).must() + 4
+
+    if c == '+'
+        return 62
+
+    if c == '/'
+        return 63
+    return -1
+
+# jq's `@base64d`: the bytes a base 64 text holds, read up to its first `=`
+# with no padding asked, the bytes not UTF-8 written U+FFFD.
+function base64_decoded(v: json.Value) -> json.Value?
+    s = text.to_text(v)?
+    out: [u8] @= []
+    acc: i64 @= 0
+    bits: i64 @= 0
+    count: i64 @= 0
+    ended: bool @= false
+
+    for at in range(from: 0, to: s.len())
+        if !ended
+            c = s[at]
+
+            if c == '='
+                ended @ true
+            else
+                d = digit64(c)
+
+                if d < 0
+                    return values.raised(f"{values.described(v)} is not valid base64 data")
+                acc @ acc << 6 | d
+                bits @ bits + 6
+                count @ count + 1
+
+                if bits >= 8
+                    bits @ bits - 8
+                    out @ out.push(to_u8(acc >> bits & 255).must())
+                    acc @ acc & (1 << bits) - 1
+
+    if count % 4 == 1
+        return values.raised(f"{values.described(v)} trailing base64 data is not valid")
+    return ok(.text(v: bytes.to_text_lossy(out)))
+
+## Tests
+
+test "apply: jq.test's characters through every format"
+    s: json.Value = .text(v: "!()<>&'\"\t")
+    assert values.equal(a: apply(name: "html", v: s).must(), b: .text(v: "!()&lt;&gt;&amp;&apos;&quot;\t"))
+    assert values.equal(a: apply(name: "uri", v: s).must(), b: .text(v: "%21%28%29%3C%3E%26%27%22%09"))
+    assert values.equal(a: apply(name: "sh", v: s).must(), b: .text(v: "'!()<>&'\\''\"\t'"))
+    assert values.equal(a: apply(name: "base64", v: s).must(), b: .text(v: "ISgpPD4mJyIJ"))
+    assert values.equal(a: apply(name: "base64d", v: .text(v: "ISgpPD4mJyIJ")).must(), b: s)
+    cells: json.Value = .list(items: [.number(v: 1.0), s])
+    assert values.equal(a: apply(name: "csv", v: cells).must(), b: .text(v: "1,\"!()<>&'\"\"\t\""))
+    assert values.equal(a: apply(name: "tsv", v: cells).must(), b: .text(v: "1\t!()<>&'\"\\t"))
+
+test "apply: base 64 without padding, invalid data, a byte not UTF-8, a format unknown"
+    assert values.equal(a: apply(name: "base64d", v: .text(v: "YWJjZA")).must(), b: .text(v: "abcd"))
+    assert apply(name: "base64d", v: .text(v: "a b")).is_err()
+    assert values.equal(a: apply(name: "base64d", v: .text(v: "/w==")).must(), b: .text(v: "�"))
+    assert apply(name: "base32", v: .text(v: "a")).is_err()
+
+test "apply: csv and sh refuse what they cannot write"
+    assert apply(name: "csv", v: json.parse("{\"a\":1}").must()).is_err()
+    assert apply(name: "sh", v: json.parse("[[1]]").must()).is_err()
+    assert values.equal(
+        a: apply(name: "sh", v: json.parse("[1,\"a b\",null,false]").must()).must(),
+        b: .text(v: "1 'a b' null false")
+    )

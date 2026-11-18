@@ -1,0 +1,223 @@
+# A failure the API answered, as the face tells it: the Rebel code its
+# status chooses, the message that carries the status, the error's type, the
+# request's id and the wait advised in brackets before the API's own words,
+# that message read back, and the wait before a retry, from `retry-after`
+# or an exponential backoff. The errors page of the API (platform.claude.com,
+# read 2026-11-18) names the types and statuses; the SDKs' rule of retrying
+# 408, 409, 429 and every 5xx unless `x-should-retry` says otherwise is
+# theirs.
+
+use json
+use llm/anthropic/internal/fields
+use numbers
+use strings
+use time
+
+# A failure the API answered, or one its stream's `error` event carried.
+record Failure
+    # The HTTP status, or the one the error's type stands for in a stream.
+    status: i64
+    # The error's type, `rate_limit_error`; "-" where the answer named none.
+    kind: str
+    # The API's own words.
+    message: str
+    # The `request-id` the answer carried, "-" where none.
+    request_id: str
+    # Whether sending the same request again may succeed.
+    retryable: bool
+    # The milliseconds advised before sending it again, 0 where it is not
+    # retryable.
+    wait_ms: i64
+
+# The longest wait a `retry-after` is read up to: an hour, past which it is
+# cut, so that no answer makes the arithmetic overflow.
+constant LONGEST_MS: i64
+    3_600_000
+
+# The Rebel code a status chooses.
+function code_of_status(status: i64) -> str
+    if status == 400 || status == 422
+        return "invalid"
+
+    if status == 401 || status == 402 || status == 403
+        return "permission"
+
+    if status == 404
+        return "not_found"
+
+    if status == 408 || status == 504
+        return "timeout"
+
+    if status == 413 || status == 429 || status == 529
+        return "limit"
+
+    if status == 409
+        return "failed"
+
+    if status >= 400 && status < 500
+        return "invalid"
+    return "failed"
+
+# The status an error's type stands for, as the errors page pairs them; 500
+# for a type it does not name.
+function status_of_kind(kind: str) -> i64
+    return match kind
+        "invalid_request_error" => 400
+        "authentication_error"  => 401
+        "billing_error"         => 402
+        "permission_error"      => 403
+        "not_found_error"       => 404
+        "conflict_error"        => 409
+        "request_too_large"     => 413
+        "rate_limit_error"      => 429
+        "timeout_error"         => 504
+        "overloaded_error"      => 529
+        _                       => 500
+
+# Whether a request answered `status` may succeed sent again.
+function is_retryable(status: i64) -> bool
+    return status == 408 || status == 409 || status == 429 || status >= 500
+
+# `s` as one word inside the brackets: "-" where it is empty or holds a
+# space, a `]` or a byte outside ASCII's letters, digits, `_`, `-` and `.`.
+function word(s: str) -> str
+    if s == ""
+        return "-"
+
+    for c in s.chars()
+        fits = c[0] >= 'a' && c[0] <= 'z' || c[0] >= 'A' && c[0] <= 'Z' || c[0] >= '0' && c[0] <= '9' || c[0] == '_' || c[0] == '-' || c[0] == '.'
+
+        if !fits
+            return "-"
+
+    return s
+
+# The message of `f`: `[429 rate_limit_error req_1 wait 1000] words`, or
+# `retry no` in place of the wait where it is not retryable.
+function message_of(f: Failure) -> str
+    wait: str @= "no"
+
+    if f.retryable
+        wait @ f"{f.wait_ms}"
+    return f"[{f.status} {word(f.kind)} {word(f.request_id)} {wait}] {f.message}"
+
+# The failure `message_of` wrote in `msg`. Fails `not_found` where `msg`
+# does not open with its brackets.
+function read_back(msg: str) -> Failure?
+    if !strings.has_prefix(s: msg, prefix: "[")
+        return fail(code: "not_found", msg: "the message opens with no [status type id wait]")
+    halves = strings.split_once(s: msg.slice(from: 1, to: msg.len()), sep: "] ")?
+    parts = strings.split(s: halves.before, sep: " ")
+
+    if parts.len() != 4
+        return fail(code: "not_found", msg: f"the brackets hold {parts.len()} words, where a failure writes 4")
+    status = numbers.parse_int(parts[0])?
+    retryable = parts[3] != "no"
+    wait: i64 @= 0
+
+    if retryable
+        wait @ numbers.parse_int(parts[3])?
+    return ok(
+        Failure(status: status, kind: parts[1], message: halves.after, request_id: parts[2], retryable: retryable, wait_ms: wait)
+    )
+
+# At most `most` bytes of `s`, cut where a character begins.
+function cut(s: str, most: i64) -> str
+    if s.len() <= most
+        return s
+    at: i64 @= most
+
+    while at > 0 && s[at] >= 0x80 && s[at] < 0xc0
+        at @ at - 1
+
+    return s.slice(from: 0, to: at) + "..."
+
+# The type and the words of an error body: `{"type":"error","error":{...}}`,
+# or the body itself, at most 500 bytes, where it is not that.
+function kind_and_words(body: str) -> [str]
+    match json.parse(body)
+        .err _ => return ["-", cut(s: strings.trim(body), most: 500)]
+        .ok v =>
+            e = fields.value_at_key(v, key: "error")
+            kind = fields.text_at(e, key: "type")
+            words = fields.text_at(e, key: "message")
+
+            if kind == "" && words == ""
+                return ["-", cut(s: strings.trim(body), most: 500)]
+            return [kind, words]
+
+# The wait before retry `attempt`, 1 for the first: `retry_after` where it
+# says one (seconds or a date, read from `received`), else 500 ms doubled at
+# each attempt up to 8 s, spread from 75 % to 100 % by `fraction`, a number
+# from 0 to 1.
+function wait_before(retry_after: str, received: time.Instant, attempt: i64, fraction: f64) -> i64
+    longest = time.milliseconds(LONGEST_MS).must()
+
+    if retry_after != ""
+        match time.parse_retry_after(retry_after, received: received, longest: longest)
+            .ok d  => return time.to_units(d, unit: .millisecond)
+            .err _ => _ = 0
+    shift: i64 @= attempt - 1
+
+    if shift > 4
+        shift @ 4
+
+    if shift < 0
+        shift @ 0
+    base = 500 << shift
+    spread = 1.0 - 0.25 * fraction
+    return to_i64(to_f64(base) * spread).default(LONGEST_MS)
+
+test "code_of_status: each status the errors page names, and one it does not"
+    assert code_of_status(400) == "invalid" && code_of_status(401) == "permission"
+    assert code_of_status(402) == "permission" && code_of_status(403) == "permission"
+    assert code_of_status(404) == "not_found" && code_of_status(409) == "failed"
+    assert code_of_status(413) == "limit" && code_of_status(429) == "limit"
+    assert code_of_status(500) == "failed" && code_of_status(504) == "timeout"
+    assert code_of_status(529) == "limit" && code_of_status(418) == "invalid" && code_of_status(302) == "failed"
+
+test "status_of_kind and is_retryable: the overloaded type, an unknown one, and the edges"
+    assert status_of_kind("overloaded_error") == 529 && status_of_kind("rate_limit_error") == 429
+    assert status_of_kind("new_error") == 500
+    assert is_retryable(408) && is_retryable(409) && is_retryable(429) && is_retryable(500) && is_retryable(529)
+    assert !is_retryable(400) && !is_retryable(404) && !is_retryable(413)
+
+test "message_of and read_back: retryable, not, a type with a space, and words holding brackets"
+    f = Failure(
+        status: 429,
+        kind: "rate_limit_error",
+        message: "slow [down]",
+        request_id: "req_1",
+        retryable: true,
+        wait_ms: 1500
+    )
+    assert message_of(f) == "[429 rate_limit_error req_1 1500] slow [down]"
+    assert read_back(message_of(f)).must() == f
+    g = Failure(status: 400, kind: "a b", message: "", request_id: "", retryable: false, wait_ms: 0)
+    assert message_of(g) == "[400 - - no] "
+    assert read_back(message_of(g)).must().kind == "-"
+
+    match read_back("connection refused")
+        .ok _  => assert false
+        .err e => assert e.code == "not_found"
+
+    match read_back("[1 2 3] x")
+        .ok _  => assert false
+        .err e => assert e.code == "not_found"
+
+test "kind_and_words: the error shape, a body that is no JSON, JSON of another shape, and a long text"
+    assert kind_and_words("{\"type\":\"error\",\"error\":{\"type\":\"not_found_error\",\"message\":\"no\"}}") == ["not_found_error", "no"]
+    assert kind_and_words(" <html>bad gateway</html>\n") == ["-", "<html>bad gateway</html>"]
+    assert kind_and_words("{\"x\":1}") == ["-", "{\"x\":1}"]
+    long = kind_and_words(repeat("é", 300))
+    assert long[1].len() == 503
+
+test "wait_before: seconds, a date past, nothing said with the backoff, and its ceiling"
+    now = time.from_unix(whole_seconds: 1_700_000_000, extra_nanoseconds: 0).must()
+    assert wait_before(retry_after: "2", received: now, attempt: 1, fraction: 0.0) == 2000
+    assert wait_before(retry_after: "Wed, 21 Oct 2015 07:28:00 GMT", received: now, attempt: 1, fraction: 0.0) == 0
+    assert wait_before(retry_after: "", received: now, attempt: 1, fraction: 0.0) == 500
+    assert wait_before(retry_after: "", received: now, attempt: 2, fraction: 1.0) == 750
+    assert wait_before(retry_after: "", received: now, attempt: 9, fraction: 0.0) == 8000
+    assert wait_before(retry_after: "999999999", received: now, attempt: 1, fraction: 0.0) == LONGEST_MS
+    assert wait_before(retry_after: "soon", received: now, attempt: 1, fraction: 0.0) == 500

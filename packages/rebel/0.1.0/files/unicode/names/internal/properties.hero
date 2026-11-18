@@ -1,0 +1,198 @@
+# What `property_tables` answers for one code point: its script and script
+# extensions, its block, its binary properties, the number it writes, its
+# Bidi_Class and its mirror; and the names of scripts and properties read
+# loosely by UAX #44's rule LM3.
+
+use unicode/names/internal/naming
+use unicode/names/internal/property_tables
+
+# A number a character writes, as `property_tables` holds it.
+record Number
+    # The numerator.
+    numerator: i64
+    # The denominator, in lowest terms.
+    denominator: i64
+    # The Numeric_Type, an index into `property_tables.NUMERIC_KINDS`.
+    kind: i64
+
+# How many entries of `table` from `from` to `to`, which ascend, are at or
+# below `key`, counted from `from`.
+function count_in(table: [i64] lent, from: i64, to: i64, key: i64) -> i64
+    low: i64 @= from
+    high: i64 @= to
+
+    while low < high
+        middle = low + (high - low) / 2
+
+        if table[middle] <= key
+            low @ middle + 1
+        else
+            high @ middle
+
+    return low - from
+
+# Whether `n` is in the ranges `first << 21 | last` of `table` from `from` to
+# `to`.
+function in_ranges(table: [i64] lent, from: i64, to: i64, n: i64) -> bool
+    count = count_in(table, from: from, to: to, key: n << 21 | 0x1fffff)
+    return count > 0 && n <= table[from + count - 1] & 0x1fffff
+
+# The value the runs `first << 8 | value` of `table` give `n`.
+function run_value(table: [i64] lent, n: i64) -> i64
+    return table[count_in(table, from: 0, to: table.len(), key: n << 8 | 0xff) - 1] & 0xff
+
+# The long name of the script of `n`.
+function script_of(n: i64) -> str
+    return property_tables.SCRIPT_NAMES[run_value(property_tables.SCRIPT_RUNS, n: n)]
+
+# The long names of the scripts `n` is used with.
+function extensions_of(n: i64) -> [str]
+    ranges = property_tables.EXTENSION_RANGES
+    count = count_in(ranges, from: 0, to: ranges.len(), key: n << 29 | 0x1fffffff)
+
+    if count > 0 && n <= ranges[count - 1] >> 8 & 0x1fffff
+        set = property_tables.EXTENSION_SETS[ranges[count - 1] & 0xff]
+        out: [str] @= []
+        at: i64 @= set >> 8
+
+        while at < (set >> 8) + (set & 0xff)
+            out @ out.push(property_tables.SCRIPT_NAMES[property_tables.EXTENSION_MEMBERS[at]])
+            at @ at + 1
+
+        return out
+    return [script_of(n)]
+
+# `text` in its loose form by UAX #44's rule LM3: letters in capitals,
+# spaces, underscores and hyphens taken out, and an "IS" that begins what
+# is left taken out too.
+function loose(text: str) -> str
+    kept: [str] @= []
+
+    for c in text.chars()
+        if c != " " && c != "_" && c != "-" && c != "\t"
+            kept @ kept.push(c)
+
+    capitals = naming.loose(kept.join(""))
+
+    if capitals.len() > 2 && capitals.slice(from: 0, to: 2) == "IS"
+        return capitals.slice(from: 2, to: capitals.len())
+    return capitals
+
+# The index of the entry of `aliases` whose loose form is `key`'s. Fails
+# `not_found` where none is.
+function alias_index(aliases: [str] lent, key: str) -> i64?
+    wanted = loose(key)
+    at: i64 @= 0
+
+    while at < aliases.len()
+        if loose(aliases[at]) == wanted
+            return ok(at)
+        at @ at + 1
+
+    return fail(code: "not_found", msg: "no such alias")
+
+# The long name of the script `alias` names. Fails `not_found` where it names
+# none.
+function script_named(alias: str) -> str?
+    at = alias_index(property_tables.SCRIPT_ALIASES, key: alias)?
+    return ok(property_tables.SCRIPT_NAMES[property_tables.SCRIPT_ALIAS_TARGETS[at]])
+
+# The index in `property_tables.PROPERTY_NAMES` of the property `property`
+# names. Fails `not_found` where it names none.
+function property_index(property: str) -> i64?
+    at = alias_index(property_tables.PROPERTY_ALIASES, key: property)?
+    return ok(property_tables.PROPERTY_ALIAS_TARGETS[at])
+
+# Whether `n` has the property at `index` of `property_tables.PROPERTY_NAMES`.
+function has(n: i64, index: i64) -> bool
+    return in_ranges(
+        property_tables.PROPERTY_RANGES,
+        from: property_tables.PROPERTY_STARTS[index],
+        to: property_tables.PROPERTY_STARTS[index + 1],
+        n: n
+    )
+
+# The name of the block that holds `n`, "No_Block" where none does.
+function block_of(n: i64) -> str
+    blocks = property_tables.BLOCKS
+    count = count_in(blocks, from: 0, to: blocks.len(), key: n << 21 | 0x1fffff)
+
+    if count > 0 && n <= blocks[count - 1] & 0x1fffff
+        return property_tables.BLOCK_NAMES[count - 1]
+    return "No_Block"
+
+# The number `n` writes. Fails `not_found` where it writes none.
+function number_of(n: i64) -> Number?
+    points = property_tables.NUMERIC_POINTS
+    count = count_in(points, from: 0, to: points.len(), key: n << 2 | 3)
+
+    if count > 0 && points[count - 1] >> 2 == n
+        return ok(
+            Number(numerator: property_tables.NUMERATORS[count - 1], denominator: property_tables.DENOMINATORS[count - 1], kind: points[count - 1] & 3)
+        )
+    return fail(code: "not_found", msg: "no number")
+
+# The Bidi_Class of `n`, as `DerivedBidiClass.txt` writes it.
+function bidi_of(n: i64) -> str
+    return property_tables.BIDI_NAMES[run_value(property_tables.BIDI_RUNS, n: n)]
+
+# Whether `n` is Bidi_Mirrored.
+function is_mirrored(n: i64) -> bool
+    return in_ranges(property_tables.MIRRORED, from: 0, to: property_tables.MIRRORED.len(), n: n)
+
+# The code point whose glyph draws `n` mirrored. Fails `not_found` where
+# `BidiMirroring.txt` gives none.
+function mirror_of(n: i64) -> i64?
+    sources = property_tables.MIRROR_SOURCES
+    count = count_in(sources, from: 0, to: sources.len(), key: n)
+
+    if count > 0 && sources[count - 1] == n
+        return ok(property_tables.MIRROR_TARGETS[count - 1])
+    return fail(code: "not_found", msg: "no mirror")
+
+## Tests
+
+# ICU 78.3's `uscript_getScript` and `uscript_getScriptExtensions`,
+# observed 2026-11-17, answer each; the extensions in the order of
+# `ScriptExtensions.txt`.
+test "script_of and extensions_of: a letter, a digit, a mark, an unassigned code point, and a mark of several scripts"
+    assert script_of('a') == "Latin"
+    assert script_of('7') == "Common"
+    assert script_of(0x301) == "Inherited"
+    assert script_of(0x10ffff) == "Unknown"
+    assert script_of(0x4e00) == "Han"
+    assert extensions_of(0x30fc) == ["Hiragana", "Katakana"]
+    assert extensions_of('a') == ["Latin"]
+    assert extensions_of(0x10ffff) == ["Unknown"]
+
+test "loose: case, separators, and an initial is"
+    assert loose("Old_Italic") == "OLDITALIC"
+    assert loose("is-Greek") == "GREEK"
+    assert loose("white space") == "WHITESPACE"
+    assert loose("IS") == "IS"
+
+# `PropertyValueAliases.txt` and `PropertyAliases.txt` of Unicode 17.0.0.
+test "script_named and property_index: long names, codes, short aliases, and nothing"
+    assert script_named("Grek").must() == "Greek"
+    assert script_named("old italic").must() == "Old_Italic"
+    assert script_named("Qaai").must() == "Inherited"
+    assert script_named("Klingon").is_err()
+    white = property_index("WSpace").must()
+    assert property_tables.PROPERTY_NAMES[white] == "White_Space"
+    assert property_index("is_white_space").must() == white
+    assert property_index("Script").is_err()
+
+# Python 3.15.2's `unicodedata`, observed 2026-11-17.
+test "block_of, number_of, bidi_of, is_mirrored and mirror_of: edges of each"
+    assert block_of(0) == "Basic Latin"
+    assert block_of(0x10ffff) == "Supplementary Private Use Area-B"
+    assert block_of(0x2fe0) == "No_Block"
+    half = number_of(0xbd).must()
+    assert half.numerator == 1 && half.denominator == 2
+    minus = number_of(0xf33).must()
+    assert minus.numerator == -1 && minus.denominator == 2
+    assert number_of('a').is_err()
+    assert bidi_of(0x5d0) == "R" && bidi_of(0x627) == "AL" && bidi_of('1') == "EN"
+    assert is_mirrored('(') && !is_mirrored('a')
+    assert mirror_of('(').must() == ')'
+    assert mirror_of(0x221b).is_err()

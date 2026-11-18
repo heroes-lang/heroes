@@ -1,0 +1,2258 @@
+# The cases of jq 1.7.1's own test file, `tests/jq.test` of the tag jq-1.7.1 (SHA-256 35aade21...), fetched on 2026-11-17.
+#
+# Each case is a test: the filter run on its input must output exactly the
+# values the file lists, in order, an error after them allowed, as jq's own
+# runner allows one; a case jq refuses to compile must be refused. 442 cases
+# are tests here; the ones that cannot run are named below with their reason.
+#
+# - line 559, `9E999999999, 9999999999E999999990, 1E-999999999, 0.000000...`: numbers past an f64 written as jq 1.7 keeps a literal's own digits (`9E+999999999`); a `json.Value` holds an f64
+# - line 1839, `.[0] | tostring`: an integer literal past 2^53 kept to its last digit; a `json.Value` holds an f64
+# - line 1843, `.x | tojson`: an integer literal past 2^53 kept to its last digit; a `json.Value` holds an f64
+# - line 1847, `13911860366432393 == 13911860366432392`: two integers past 2^53 told apart; a `json.Value` holds an f64
+# - line 1949, `try input catch .`: `input` answers `break` under jq's own test runner, which feeds it; a caller here gives the inputs, and with none `input` raises `No more inputs`
+
+use json
+use json/jq/internal/compile
+use json/jq/internal/machine
+use json/jq/internal/state
+use json/jq/internal/text
+use json/jq/internal/values
+
+# The release of jq the cases were taken from.
+constant VERSION: str
+    "jq-1.7.1"
+
+# The values `program` outputs for the JSON text `input`, which may hold
+# `nan`, as jq's tests write it.
+function outputs_of(program: str, input: str) -> [json.Value]
+    code = compile.compile(program).must()
+    m: state.Machine @= machine.start(
+        code,
+        input: text.read_json(input).must(),
+        variables: {},
+        inputs: [],
+        environment: .object(members: {}),
+        now: 0.0,
+        max_steps: 10000000,
+        max_outputs: 100000,
+        max_depth: 10000,
+        stop_after: 0
+    )
+    machine.run(@m)
+    assert m.ending != state.LIMITED
+    return m.outputs
+
+# Whether `program` on `input` outputs the values `expected` writes, in order.
+function passes(program: str, input: str, expected: [str]) -> bool
+    got = outputs_of(program: program, input: input)
+
+    if got.len() != expected.len()
+        return false
+
+    for i in range(from: 0, to: got.len())
+        if !values.equal(a: got[i], b: text.read_json(expected[i]).must())
+            return false
+
+    return true
+
+# U+FEFF, the byte order mark, which a case puts before its input: made from
+# its bytes, so no invisible character stands in this file.
+function bom() -> str
+    mark: [u8] = [239, 187, 191]
+    return mark.validated_bytes().must()
+
+# Whether `program` is refused.
+function refused(program: str) -> bool
+    return compile.compile(program).is_err()
+
+## Tests
+
+test "jq.test 8: true"
+    assert passes(program: "true", input: "null", expected: ["true"])
+
+test "jq.test 12: false"
+    assert passes(program: "false", input: "null", expected: ["false"])
+
+test "jq.test 16: null"
+    assert passes(program: "null", input: "42", expected: ["null"])
+
+test "jq.test 20: 1"
+    assert passes(program: "1", input: "null", expected: ["1"])
+
+test "jq.test 25: -1"
+    assert passes(program: "-1", input: "null", expected: ["-1"])
+
+test "jq.test 31: ()"
+    assert passes(program: f"{{}}", input: "null", expected: [f"{{}}"])
+
+test "jq.test 35: []"
+    assert passes(program: "[]", input: "null", expected: ["[]"])
+
+test "jq.test 39: (x: -1)"
+    assert passes(program: f"{{x: -1}}", input: "null", expected: [f"{{\"x\": -1}}"])
+
+test "jq.test 46: ."
+    assert passes(program: ".", input: bom() + "\"byte order mark\"", expected: ["\"byte order mark\""])
+
+test "jq.test 52: 'Aa/r/n/t/b/f/u03bc'"
+    assert passes(
+        program: "\"Aa\\r\\n\\t\\b\\f\\u03bc\"",
+        input: "null",
+        expected: ["\"Aa\\u000d\\u000a\\u0009\\u0008\\u000c\\u03bc\""]
+    )
+
+test "jq.test 56: ."
+    assert passes(
+        program: ".",
+        input: "\"Aa\\r\\n\\t\\b\\f\\u03bc\"",
+        expected: ["\"Aa\\u000d\\u000a\\u0009\\u0008\\u000c\\u03bc\""]
+    )
+
+test "jq.test 60: 'inter/('pol' + 'ation')'"
+    assert passes(program: "\"inter\\(\"pol\" + \"ation\")\"", input: "null", expected: ["\"interpolation\""])
+
+test "jq.test 64: @text,@json,([1,.]|@csv,@tsv),@html,@uri,@sh,(@base64|.,@..."
+    assert passes(
+        program: "@text,@json,([1,.]|@csv,@tsv),@html,@uri,@sh,(@base64|.,@base64d)",
+        input: "\"!()<>&'\\\"\\t\"",
+        expected: ["\"!()<>&'\\\"\\t\"", "\"\\\"!()<>&'\\\\\\\"\\\\t\\\"\"", "\"1,\\\"!()<>&'\\\"\\\"\\t\\\"\"", "\"1\\t!()<>&'\\\"\\\\t\"", "\"!()&lt;&gt;&amp;&apos;&quot;\\t\"", "\"%21%28%29%3C%3E%26%27%22%09\"", "\"'!()<>&'\\\\''\\\"\\t'\"", "\"ISgpPD4mJyIJ\"", "\"!()<>&'\\\"\\t\""]
+    )
+
+test "jq.test 77: @base64"
+    assert passes(program: "@base64", input: "\"foóbar\\n\"", expected: ["\"Zm/Ds2Jhcgo=\""])
+
+test "jq.test 81: @base64d"
+    assert passes(program: "@base64d", input: "\"Zm/Ds2Jhcgo=\"", expected: ["\"foóbar\\n\""])
+
+test "jq.test 85: @uri"
+    assert passes(program: "@uri", input: "\"\\u03bc\"", expected: ["\"%CE%BC\""])
+
+test "jq.test 89: @html '<b>/(.)</b>'"
+    assert passes(
+        program: "@html \"<b>\\(.)</b>\"",
+        input: "\"<script>hax</script>\"",
+        expected: ["\"<b>&lt;script&gt;hax&lt;/script&gt;</b>\""]
+    )
+
+test "jq.test 93: [.[]|tojson|fromjson]"
+    assert passes(
+        program: "[.[]|tojson|fromjson]",
+        input: f"[\"foo\", 1, [\"a\", 1, \"b\", 2, {{\"foo\":\"bar\"}}]]",
+        expected: [f"[\"foo\",1,[\"a\",1,\"b\",2,{{\"foo\":\"bar\"}}]]"]
+    )
+
+test "jq.test 101: (a: 1)"
+    assert passes(program: f"{{a: 1}}", input: "null", expected: [f"{{\"a\":1}}"])
+
+test "jq.test 105: (a,b,(.d):.a,e:.b)"
+    assert passes(
+        program: f"{{a,b,(.d):.a,e:.b}}",
+        input: f"{{\"a\":1, \"b\":2, \"c\":3, \"d\":\"c\"}}",
+        expected: [f"{{\"a\":1, \"b\":2, \"c\":1, \"e\":2}}"]
+    )
+
+test "jq.test 109: ('a',b,'a$/(1+1)')"
+    assert passes(
+        program: f"{{\"a\",b,\"a$\\(1+1)\"}}",
+        input: f"{{\"a\":1, \"b\":2, \"c\":3, \"a$2\":4}}",
+        expected: [f"{{\"a\":1, \"b\":2, \"a$2\":4}}"]
+    )
+
+test "jq.test 113: ((0):1)"
+    assert refused(f"{{(0):1}}")
+
+test "jq.test 117: (non_const:., (0):1)"
+    assert refused(f"{{non_const:., (0):1}}")
+
+test "jq.test 125: .foo"
+    assert passes(program: ".foo", input: f"{{\"foo\": 42, \"bar\": 43}}", expected: ["42"])
+
+test "jq.test 129: .foo | .bar"
+    assert passes(
+        program: ".foo | .bar",
+        input: f"{{\"foo\": {{\"bar\": 42}}, \"bar\": \"badvalue\"}}",
+        expected: ["42"]
+    )
+
+test "jq.test 133: .foo.bar"
+    assert passes(program: ".foo.bar", input: f"{{\"foo\": {{\"bar\": 42}}, \"bar\": \"badvalue\"}}", expected: ["42"])
+
+test "jq.test 137: .foo_bar"
+    assert passes(program: ".foo_bar", input: f"{{\"foo_bar\": 2}}", expected: ["2"])
+
+test "jq.test 141: .['foo'].bar"
+    assert passes(
+        program: ".[\"foo\"].bar",
+        input: f"{{\"foo\": {{\"bar\": 42}}, \"bar\": \"badvalue\"}}",
+        expected: ["42"]
+    )
+
+test "jq.test 145: .'foo'.'bar'"
+    assert passes(program: ".\"foo\".\"bar\"", input: f"{{\"foo\": {{\"bar\": 20}}}}", expected: ["20"])
+
+test "jq.test 149: .e0, .E1, .E-1, .E+1"
+    assert passes(
+        program: ".e0, .E1, .E-1, .E+1",
+        input: f"{{\"e0\": 1, \"E1\": 2, \"E\": 3}}",
+        expected: ["1", "2", "2", "4"]
+    )
+
+test "jq.test 156: [.[]|.foo?]"
+    assert passes(
+        program: "[.[]|.foo?]",
+        input: f"[1,[2],{{\"foo\":3,\"bar\":4}},{{}},{{\"foo\":5}}]",
+        expected: ["[3,null,5]"]
+    )
+
+test "jq.test 160: [.[]|.foo?.bar?]"
+    assert passes(
+        program: "[.[]|.foo?.bar?]",
+        input: f"[1,[2],[],{{\"foo\":3}},{{\"foo\":{{\"bar\":4}}}},{{}}]",
+        expected: ["[4,null]"]
+    )
+
+test "jq.test 164: [..]"
+    assert passes(
+        program: "[..]",
+        input: f"[1,[[2]],{{ \"a\":[1]}}]",
+        expected: [f"[[1,[[2]],{{\"a\":[1]}}],1,[[2]],[2],2,{{\"a\":[1]}},[1],1]"]
+    )
+
+test "jq.test 168: [.[]|.[]?]"
+    assert passes(
+        program: "[.[]|.[]?]",
+        input: f"[1,null,[],[1,[2,[[3]]]],[{{}}],[{{\"a\":[1,[2]]}}]]",
+        expected: [f"[1,[2,[[3]]],{{}},{{\"a\":[1,[2]]}}]"]
+    )
+
+test "jq.test 172: [.[]|.[1:3]?]"
+    assert passes(
+        program: "[.[]|.[1:3]?]",
+        input: f"[1,null,true,false,\"abcdef\",{{}},{{\"a\":1,\"b\":2}},[],[1,2,3,4,5],[1,2]]",
+        expected: ["[null,\"bc\",[],[2,3],[2]]"]
+    )
+
+test "jq.test 177: map(try .a[] catch ., try .a.[] catch ., .a[]?, .a.[]?)"
+    assert passes(
+        program: "map(try .a[] catch ., try .a.[] catch ., .a[]?, .a.[]?)",
+        input: f"[{{\"a\": [1,2]}}, {{\"a\": 123}}]",
+        expected: ["[1,2,1,2,1,2,1,2,\"Cannot iterate over number (123)\",\"Cannot iterate over number (123)\"]"]
+    )
+
+test "jq.test 185: try (.foo[-1] = 0) catch ."
+    assert passes(
+        program: "try (.foo[-1] = 0) catch .",
+        input: "null",
+        expected: ["\"Out of bounds negative array index\""]
+    )
+
+test "jq.test 189: try (.foo[-2] = 0) catch ."
+    assert passes(
+        program: "try (.foo[-2] = 0) catch .",
+        input: "null",
+        expected: ["\"Out of bounds negative array index\""]
+    )
+
+test "jq.test 193: .[-1] = 5"
+    assert passes(program: ".[-1] = 5", input: "[0,1,2]", expected: ["[0,1,5]"])
+
+test "jq.test 197: .[-2] = 5"
+    assert passes(program: ".[-2] = 5", input: "[0,1,2]", expected: ["[0,5,2]"])
+
+test "jq.test 205: .[]"
+    assert passes(program: ".[]", input: "[1,2,3]", expected: ["1", "2", "3"])
+
+test "jq.test 211: 1,1"
+    assert passes(program: "1,1", input: "[]", expected: ["1", "1"])
+
+test "jq.test 216: 1,."
+    assert passes(program: "1,.", input: "[]", expected: ["1", "[]"])
+
+test "jq.test 221: [.]"
+    assert passes(program: "[.]", input: "[2]", expected: ["[[2]]"])
+
+test "jq.test 225: [[2]]"
+    assert passes(program: "[[2]]", input: "[3]", expected: ["[[2]]"])
+
+test "jq.test 229: [()]"
+    assert passes(program: f"[{{}}]", input: "[2]", expected: [f"[{{}}]"])
+
+test "jq.test 233: [.[]]"
+    assert passes(program: "[.[]]", input: "[\"a\"]", expected: ["[\"a\"]"])
+
+test "jq.test 237: [(.,1),((.,.[]),(2,3))]"
+    assert passes(
+        program: "[(.,1),((.,.[]),(2,3))]",
+        input: "[\"a\",\"b\"]",
+        expected: ["[[\"a\",\"b\"],1,[\"a\",\"b\"],\"a\",\"b\",2,3]"]
+    )
+
+test "jq.test 241: [([5,5][]),.,.[]]"
+    assert passes(program: "[([5,5][]),.,.[]]", input: "[1,2,3]", expected: ["[5,5,[1,2,3],1,2,3]"])
+
+test "jq.test 245: (x: (1,2)),(x:3) | .x"
+    assert passes(program: f"{{x: (1,2)}},{{x:3}} | .x", input: "null", expected: ["1", "2", "3"])
+
+test "jq.test 251: [.[-4,-3,-2,-1,0,1,2,3]]"
+    assert passes(program: "[.[-4,-3,-2,-1,0,1,2,3]]", input: "[1,2,3]", expected: ["[null,1,2,3,1,2,3,null]"])
+
+test "jq.test 255: [range(0;10)]"
+    assert passes(program: "[range(0;10)]", input: "null", expected: ["[0,1,2,3,4,5,6,7,8,9]"])
+
+test "jq.test 259: [range(0,1;3,4)]"
+    assert passes(program: "[range(0,1;3,4)]", input: "null", expected: ["[0,1,2, 0,1,2,3, 1,2, 1,2,3]"])
+
+test "jq.test 263: [range(0;10;3)]"
+    assert passes(program: "[range(0;10;3)]", input: "null", expected: ["[0,3,6,9]"])
+
+test "jq.test 267: [range(0;10;-1)]"
+    assert passes(program: "[range(0;10;-1)]", input: "null", expected: ["[]"])
+
+test "jq.test 271: [range(0;-5;-1)]"
+    assert passes(program: "[range(0;-5;-1)]", input: "null", expected: ["[0,-1,-2,-3,-4]"])
+
+test "jq.test 275: [range(0,1;4,5;1,2)]"
+    assert passes(
+        program: "[range(0,1;4,5;1,2)]",
+        input: "null",
+        expected: ["[0,1,2,3,0,2, 0,1,2,3,4,0,2,4, 1,2,3,1,3, 1,2,3,4,1,3]"]
+    )
+
+test "jq.test 279: [while(.<100; .*2)]"
+    assert passes(program: "[while(.<100; .*2)]", input: "1", expected: ["[1,2,4,8,16,32,64]"])
+
+test "jq.test 283: [(label $here | .[] | if .>1 then break $here else . end)..."
+    assert passes(
+        program: "[(label $here | .[] | if .>1 then break $here else . end), \"hi!\"]",
+        input: "[0,1,2]",
+        expected: ["[0,1,\"hi!\"]"]
+    )
+
+test "jq.test 287: [(label $here | .[] | if .>1 then break $here else . end)..."
+    assert passes(
+        program: "[(label $here | .[] | if .>1 then break $here else . end), \"hi!\"]",
+        input: "[0,2,1]",
+        expected: ["[0,\"hi!\"]"]
+    )
+
+test "jq.test 291: . as $foo | break $foo"
+    assert refused(". as $foo | break $foo")
+
+test "jq.test 295: [.[]|[.,1]|until(.[0] < 1; [.[0] - 1, .[1] * .[0]])|.[1]]"
+    assert passes(
+        program: "[.[]|[.,1]|until(.[0] < 1; [.[0] - 1, .[1] * .[0]])|.[1]]",
+        input: "[1,2,3,4,5]",
+        expected: ["[1,2,6,24,120]"]
+    )
+
+test "jq.test 299: [label $out | foreach .[] as $item ([3, null]; if .[0] < ..."
+    assert passes(
+        program: "[label $out | foreach .[] as $item ([3, null]; if .[0] < 1 then break $out else [.[0] -1, $item] end; .[1])]",
+        input: "[11,22,33,44,55,66,77,88,99]",
+        expected: ["[11,22,33]"]
+    )
+
+test "jq.test 303: [foreach range(5) as $item (0; $item)]"
+    assert passes(program: "[foreach range(5) as $item (0; $item)]", input: "null", expected: ["[0,1,2,3,4]"])
+
+test "jq.test 307: [foreach .[] as [$i, $j] (0; . + $i - $j)]"
+    assert passes(
+        program: "[foreach .[] as [$i, $j] (0; . + $i - $j)]",
+        input: "[[2,1], [5,3], [6,4]]",
+        expected: ["[1,3,5]"]
+    )
+
+test "jq.test 311: [foreach .[] as (a:$a) (0; . + $a; -.)]"
+    assert passes(
+        program: f"[foreach .[] as {{a:$a}} (0; . + $a; -.)]",
+        input: f"[{{\"a\":1}}, {{\"b\":2}}, {{\"a\":3, \"b\":4}}]",
+        expected: ["[-1, -1, -4]"]
+    )
+
+test "jq.test 315: [limit(3; .[])]"
+    assert passes(program: "[limit(3; .[])]", input: "[11,22,33,44,55,66,77,88,99]", expected: ["[11,22,33]"])
+
+test "jq.test 319: [limit(0; error)]"
+    assert passes(program: "[limit(0; error)]", input: "\"badness\"", expected: ["[]"])
+
+test "jq.test 323: [limit(1; 1, error)]"
+    assert passes(program: "[limit(1; 1, error)]", input: "\"badness\"", expected: ["[1]"])
+
+test "jq.test 327: [first(range(.)), last(range(.))]"
+    assert passes(program: "[first(range(.)), last(range(.))]", input: "10", expected: ["[0,9]"])
+
+test "jq.test 331: [nth(0,5,9,10,15; range(.)), try nth(-1; range(.)) catch .]"
+    assert passes(
+        program: "[nth(0,5,9,10,15; range(.)), try nth(-1; range(.)) catch .]",
+        input: "10",
+        expected: ["[0,5,9,\"nth doesn't support negative indices\"]"]
+    )
+
+test "jq.test 336: first(1,error('foo'))"
+    assert passes(program: "first(1,error(\"foo\"))", input: "null", expected: ["1"])
+
+test "jq.test 346: [limit(5,7; range(9))]"
+    assert passes(program: "[limit(5,7; range(9))]", input: "null", expected: ["[0,1,2,3,4,0,1,2,3,4,5,6]"])
+
+test "jq.test 351: [nth(5,7; range(9;0;-1))]"
+    assert passes(program: "[nth(5,7; range(9;0;-1))]", input: "null", expected: ["[4,2]"])
+
+test "jq.test 356: [range(0,1,2;4,3,2;2,3)]"
+    assert passes(
+        program: "[range(0,1,2;4,3,2;2,3)]",
+        input: "null",
+        expected: ["[0,2,0,3,0,2,0,0,0,1,3,1,1,1,1,1,2,2,2,2]"]
+    )
+
+test "jq.test 361: [range(3,5)]"
+    assert passes(program: "[range(3,5)]", input: "null", expected: ["[0,1,2,0,1,2,3,4]"])
+
+test "jq.test 366: [(index(',','|'), rindex(',','|')), indices(',','|')]"
+    assert passes(
+        program: "[(index(\",\",\"|\"), rindex(\",\",\"|\")), indices(\",\",\"|\")]",
+        input: "\"a,b|c,d,e||f,g,h,|,|,i,j\"",
+        expected: ["[1,3,22,19,[1,5,7,12,14,16,18,20,22],[3,9,10,17,19]]"]
+    )
+
+test "jq.test 371: join(',','/')"
+    assert passes(
+        program: "join(\",\",\"/\")",
+        input: "[\"a\",\"b\",\"c\",\"d\"]",
+        expected: ["\"a,b,c,d\"", "\"a/b/c/d\""]
+    )
+
+test "jq.test 376: [.[]|join('a')]"
+    assert passes(
+        program: "[.[]|join(\"a\")]",
+        input: "[[],[\"\"],[\"\",\"\"],[\"\",\"\",\"\"]]",
+        expected: ["[\"\",\"\",\"a\",\"aa\"]"]
+    )
+
+test "jq.test 381: flatten(3,2,1)"
+    assert passes(
+        program: "flatten(3,2,1)",
+        input: "[0, [1], [[2]], [[[3]]]]",
+        expected: ["[0,1,2,3]", "[0,1,2,[3]]", "[0,1,[2],[[3]]]"]
+    )
+
+test "jq.test 392: [.[3:2], .[-5:4], .[:-2], .[-2:], .[3:3][1:], .[10:]]"
+    assert passes(
+        program: "[.[3:2], .[-5:4], .[:-2], .[-2:], .[3:3][1:], .[10:]]",
+        input: "[0,1,2,3,4,5,6]",
+        expected: ["[[], [2,3], [0,1,2,3,4], [5,6], [], []]"]
+    )
+
+test "jq.test 396: [.[3:2], .[-5:4], .[:-2], .[-2:], .[3:3][1:], .[10:]]"
+    assert passes(
+        program: "[.[3:2], .[-5:4], .[:-2], .[-2:], .[3:3][1:], .[10:]]",
+        input: "\"abcdefghi\"",
+        expected: ["[\"\",\"\",\"abcdefg\",\"hi\",\"\",\"\"]"]
+    )
+
+test "jq.test 400: del(.[2:4],.[0],.[-2:])"
+    assert passes(program: "del(.[2:4],.[0],.[-2:])", input: "[0,1,2,3,4,5,6,7]", expected: ["[1,4,5]"])
+
+test "jq.test 404: .[2:4] = ([], ['a','b'], ['a','b','c'])"
+    assert passes(
+        program: ".[2:4] = ([], [\"a\",\"b\"], [\"a\",\"b\",\"c\"])",
+        input: "[0,1,2,3,4,5,6,7]",
+        expected: ["[0,1,4,5,6,7]", "[0,1,\"a\",\"b\",4,5,6,7]", "[0,1,\"a\",\"b\",\"c\",4,5,6,7]"]
+    )
+
+test "jq.test 416: reduce range(65540;65536;-1) as $i ([]; .[$i] = $i)|.[655..."
+    assert passes(
+        program: "reduce range(65540;65536;-1) as $i ([]; .[$i] = $i)|.[65536:]",
+        input: "null",
+        expected: ["[null,65537,65538,65539,65540]"]
+    )
+
+test "jq.test 424: 1 as $x | 2 as $y | [$x,$y,$x]"
+    assert passes(program: "1 as $x | 2 as $y | [$x,$y,$x]", input: "null", expected: ["[1,2,1]"])
+
+test "jq.test 428: [1,2,3][] as $x | [[4,5,6,7][$x]]"
+    assert passes(program: "[1,2,3][] as $x | [[4,5,6,7][$x]]", input: "null", expected: ["[5]", "[6]", "[7]"])
+
+test "jq.test 434: 42 as $x | . | . | . + 432 | $x + 1"
+    assert passes(program: "42 as $x | . | . | . + 432 | $x + 1", input: "34324", expected: ["43"])
+
+test "jq.test 438: 1 as $x | [$x,$x,$x as $x | $x]"
+    assert passes(program: "1 as $x | [$x,$x,$x as $x | $x]", input: "null", expected: ["[1,1,1]"])
+
+test "jq.test 442: [1, (c:3, d:4)] as [$a, (c:$b, b:$c)] | $a, $b, $c"
+    assert passes(
+        program: f"[1, {{c:3, d:4}}] as [$a, {{c:$b, b:$c}}] | $a, $b, $c",
+        input: "null",
+        expected: ["1", "3", "null"]
+    )
+
+test "jq.test 448: . as (as: $kw, 'str': $str, ('e'+'x'+'p'): $exp) | [$kw, ..."
+    assert passes(
+        program: f". as {{as: $kw, \"str\": $str, (\"e\"+\"x\"+\"p\"): $exp}} | [$kw, $str, $exp]",
+        input: f"{{\"as\": 1, \"str\": 2, \"exp\": 3}}",
+        expected: ["[1, 2, 3]"]
+    )
+
+test "jq.test 452: .[] as [$a, $b] | [$b, $a]"
+    assert passes(program: ".[] as [$a, $b] | [$b, $a]", input: "[[1], [1, 2, 3]]", expected: ["[null, 1]", "[2, 1]"])
+
+test "jq.test 457: . as $i | . as [$i] | $i"
+    assert passes(program: ". as $i | . as [$i] | $i", input: "[0]", expected: ["0"])
+
+test "jq.test 461: . as [$i] | . as $i | $i"
+    assert passes(program: ". as [$i] | . as $i | $i", input: "[0]", expected: ["[0]"])
+
+test "jq.test 465: . as [] | null"
+    assert refused(". as [] | null")
+
+test "jq.test 469: . as () | null"
+    assert refused(f". as {{}} | null")
+
+test "jq.test 479: 1+1"
+    assert passes(program: "1+1", input: "null", expected: ["2"])
+
+test "jq.test 483: 1+1"
+    assert passes(program: "1+1", input: "\"wtasdf\"", expected: ["2.0"])
+
+test "jq.test 487: 2-1"
+    assert passes(program: "2-1", input: "null", expected: ["1"])
+
+test "jq.test 491: 2-(-1)"
+    assert passes(program: "2-(-1)", input: "null", expected: ["3"])
+
+test "jq.test 495: 1e+0+0.001e3"
+    assert passes(program: "1e+0+0.001e3", input: "\"I wonder what this will be?\"", expected: ["20e-1"])
+
+test "jq.test 499: .+4"
+    assert passes(program: ".+4", input: "15", expected: ["19.0"])
+
+test "jq.test 503: .+null"
+    assert passes(program: ".+null", input: f"{{\"a\":42}}", expected: [f"{{\"a\":42}}"])
+
+test "jq.test 507: null+."
+    assert passes(program: "null+.", input: "null", expected: ["null"])
+
+test "jq.test 511: .a+.b"
+    assert passes(program: ".a+.b", input: f"{{\"a\":42}}", expected: ["42"])
+
+test "jq.test 515: [1,2,3] + [.]"
+    assert passes(program: "[1,2,3] + [.]", input: "null", expected: ["[1,2,3,null]"])
+
+test "jq.test 519: ('a':1) + ('b':2) + ('c':3)"
+    assert passes(
+        program: f"{{\"a\":1}} + {{\"b\":2}} + {{\"c\":3}}",
+        input: "\"asdfasdf\"",
+        expected: [f"{{\"a\":1, \"b\":2, \"c\":3}}"]
+    )
+
+test "jq.test 523: 'asdf' + 'jkl;' + . + . + ."
+    assert passes(
+        program: "\"asdf\" + \"jkl;\" + . + . + .",
+        input: "\"some string\"",
+        expected: ["\"asdfjkl;some stringsome stringsome string\""]
+    )
+
+test "jq.test 527: '/u0000/u0020/u0000' + ."
+    assert passes(
+        program: "\"\\u0000\\u0020\\u0000\" + .",
+        input: "\"\\u0000\\u0020\\u0000\"",
+        expected: ["\"\\u0000 \\u0000\\u0000 \\u0000\""]
+    )
+
+test "jq.test 531: 42 - ."
+    assert passes(program: "42 - .", input: "11", expected: ["31"])
+
+test "jq.test 535: [1,2,3,4,1] - [.,3]"
+    assert passes(program: "[1,2,3,4,1] - [.,3]", input: "1", expected: ["[2,4]"])
+
+test "jq.test 539: [10 * 20, 20 / .]"
+    assert passes(program: "[10 * 20, 20 / .]", input: "4", expected: ["[200, 5]"])
+
+test "jq.test 543: 1 + 2 * 2 + 10 / 2"
+    assert passes(program: "1 + 2 * 2 + 10 / 2", input: "null", expected: ["10"])
+
+test "jq.test 547: [16 / 4 / 2, 16 / 4 * 2, 16 - 4 - 2, 16 - 4 + 2]"
+    assert passes(
+        program: "[16 / 4 / 2, 16 / 4 * 2, 16 - 4 - 2, 16 - 4 + 2]",
+        input: "null",
+        expected: ["[2, 8, 10, 14]"]
+    )
+
+test "jq.test 551: 1e-19 + 1e-20 - 5e-21"
+    assert passes(program: "1e-19 + 1e-20 - 5e-21", input: "null", expected: ["1.05e-19"])
+
+test "jq.test 555: 1 / 1e-17"
+    assert passes(program: "1 / 1e-17", input: "null", expected: ["1e+17"])
+
+test "jq.test 566: 5E500000000 > 5E-5000000000, 10000E500000000 > 10000E-500..."
+    assert passes(
+        program: "5E500000000 > 5E-5000000000, 10000E500000000 > 10000E-5000000000",
+        input: "null",
+        expected: ["true", "true"]
+    )
+
+test "jq.test 572: (1e999999999, 10e999999999) > (1e-1147483646, 0.1e-114748..."
+    assert passes(
+        program: "(1e999999999, 10e999999999) > (1e-1147483646, 0.1e-1147483646)",
+        input: "null",
+        expected: ["true", "true", "true", "true"]
+    )
+
+test "jq.test 579: 25 % 7"
+    assert passes(program: "25 % 7", input: "null", expected: ["4"])
+
+test "jq.test 583: 49732 % 472"
+    assert passes(program: "49732 % 472", input: "null", expected: ["172"])
+
+test "jq.test 587: [(infinite, -infinite) % (1, -1, infinite)]"
+    assert passes(program: "[(infinite, -infinite) % (1, -1, infinite)]", input: "null", expected: ["[0,0,0,0,0,-1]"])
+
+test "jq.test 591: [nan % 1, 1 % nan | isnan]"
+    assert passes(program: "[nan % 1, 1 % nan | isnan]", input: "null", expected: ["[true,true]"])
+
+test "jq.test 595: 1 + tonumber + ('10' | tonumber)"
+    assert passes(program: "1 + tonumber + (\"10\" | tonumber)", input: "4", expected: ["15"])
+
+test "jq.test 599: [('a':42),.object,10,.num,false,true,null,'b',[1,4]] | .[..."
+    assert passes(
+        program: f"[{{\"a\":42}},.object,10,.num,false,true,null,\"b\",[1,4]] | .[] as $x | [$x == .[]]",
+        input: f"{{\"object\": {{\"a\":42}}, \"num\":10.0}}",
+        expected: ["[true,  true,  false, false, false, false, false, false, false]", "[true,  true,  false, false, false, false, false, false, false]", "[false, false, true,  true,  false, false, false, false, false]", "[false, false, true,  true,  false, false, false, false, false]", "[false, false, false, false, true,  false, false, false, false]", "[false, false, false, false, false, true,  false, false, false]", "[false, false, false, false, false, false, true,  false, false]", "[false, false, false, false, false, false, false, true,  false]", "[false, false, false, false, false, false, false, false, true ]"]
+    )
+
+test "jq.test 611: [.[] | length]"
+    assert passes(
+        program: "[.[] | length]",
+        input: f"[[], {{}}, [1,2], {{\"a\":42}}, \"asdf\", \"\\u03bc\"]",
+        expected: ["[0, 0, 2, 1, 4, 1]"]
+    )
+
+test "jq.test 615: utf8bytelength"
+    assert passes(program: "utf8bytelength", input: "\"asdf\\u03bc\"", expected: ["6"])
+
+test "jq.test 619: [.[] | try utf8bytelength catch .]"
+    assert passes(
+        program: "[.[] | try utf8bytelength catch .]",
+        input: f"[[], {{}}, [1,2], 55, true, false]",
+        expected: [f"[\"array ([]) only strings have UTF-8 byte length\",\"object ({{}}) only strings have UTF-8 byte length\",\"array ([1,2]) only strings have UTF-8 byte length\",\"number (55) only strings have UTF-8 byte length\",\"boolean (true) only strings have UTF-8 byte length\",\"boolean (false) only strings have UTF-8 byte length\"]"]
+    )
+
+test "jq.test 624: map(keys)"
+    assert passes(
+        program: "map(keys)",
+        input: f"[{{}}, {{\"abcd\":1,\"abc\":2,\"abcde\":3}}, {{\"x\":1, \"z\": 3, \"y\":2}}]",
+        expected: ["[[], [\"abc\",\"abcd\",\"abcde\"], [\"x\",\"y\",\"z\"]]"]
+    )
+
+test "jq.test 628: [1,2,empty,3,empty,4]"
+    assert passes(program: "[1,2,empty,3,empty,4]", input: "null", expected: ["[1,2,3,4]"])
+
+test "jq.test 632: map(add)"
+    assert passes(
+        program: "map(add)",
+        input: f"[[], [1,2,3], [\"a\",\"b\",\"c\"], [[3],[4,5],[6]], [{{\"a\":1}}, {{\"b\":2}}, {{\"a\":3}}]]",
+        expected: [f"[null, 6, \"abc\", [3,4,5,6], {{\"a\":3, \"b\": 2}}]"]
+    )
+
+test "jq.test 636: map_values(.+1)"
+    assert passes(program: "map_values(.+1)", input: "[0,1,2]", expected: ["[1,2,3]"])
+
+test "jq.test 645: def f: . + 1; def g: def g: . + 100; f | g | f; (f | g), g"
+    assert passes(
+        program: "def f: . + 1; def g: def g: . + 100; f | g | f; (f | g), g",
+        input: "3.0",
+        expected: ["106.0", "105.0"]
+    )
+
+test "jq.test 650: def f: (1000,2000); f"
+    assert passes(program: "def f: (1000,2000); f", input: "123412345", expected: ["1000", "2000"])
+
+test "jq.test 655: def f(a;b;c;d;e;f): [a+1,b,c,d,e,f]; f(.[0];.[1];.[0];.[0..."
+    assert passes(
+        program: "def f(a;b;c;d;e;f): [a+1,b,c,d,e,f]; f(.[0];.[1];.[0];.[0];.[0];.[0])",
+        input: "[1,2]",
+        expected: ["[2,2,1,1,1,1]"]
+    )
+
+test "jq.test 659: def f: 1; def g: f, def f: 2; def g: 3; f, def f: g; f, g..."
+    assert passes(
+        program: "def f: 1; def g: f, def f: 2; def g: 3; f, def f: g; f, g; def f: 4; [f, def f: g; def g: 5; f, g]+[f,g]",
+        input: "null",
+        expected: ["[4,1,2,3,3,5,4,1,2,3,3]"]
+    )
+
+test "jq.test 664: def a: 0; . | a"
+    assert passes(program: "def a: 0; . | a", input: "null", expected: ["0"])
+
+test "jq.test 669: def f(a;b;c;d;e;f;g;h;i;j): [j,i,h,g,f,e,d,c,b,a]; f(.[0]..."
+    assert passes(
+        program: "def f(a;b;c;d;e;f;g;h;i;j): [j,i,h,g,f,e,d,c,b,a]; f(.[0];.[1];.[2];.[3];.[4];.[5];.[6];.[7];.[8];.[9])",
+        input: "[0,1,2,3,4,5,6,7,8,9]",
+        expected: ["[9,8,7,6,5,4,3,2,1,0]"]
+    )
+
+test "jq.test 673: ([1,2] + [4,5])"
+    assert passes(program: "([1,2] + [4,5])", input: "[1,2,3]", expected: ["[1,2,4,5]"])
+
+test "jq.test 677: true"
+    assert passes(program: "true", input: "[1]", expected: ["true"])
+
+test "jq.test 681: null,1,null"
+    assert passes(program: "null,1,null", input: "\"hello\"", expected: ["null", "1", "null"])
+
+test "jq.test 687: [1,2,3]"
+    assert passes(program: "[1,2,3]", input: "[5,6]", expected: ["[1,2,3]"])
+
+test "jq.test 691: [.[]|floor]"
+    assert passes(program: "[.[]|floor]", input: "[-1.1,1.1,1.9]", expected: ["[-2, 1, 1]"])
+
+test "jq.test 695: [.[]|sqrt]"
+    assert passes(program: "[.[]|sqrt]", input: "[4,9]", expected: ["[2,3]"])
+
+test "jq.test 699: (add / length) as $m | map((. - $m) as $d | $d * $d) | ad..."
+    assert passes(
+        program: "(add / length) as $m | map((. - $m) as $d | $d * $d) | add / length | sqrt",
+        input: "[2,4,4,4,5,5,7,9]",
+        expected: ["2"]
+    )
+
+test "jq.test 708: atan * 4 * 1000000|floor / 1000000"
+    assert passes(program: "atan * 4 * 1000000|floor / 1000000", input: "1", expected: ["3.141592"])
+
+test "jq.test 712: [(3.141592 / 2) * (range(0;20) / 20)|cos * 1000000|floor ..."
+    assert passes(
+        program: "[(3.141592 / 2) * (range(0;20) / 20)|cos * 1000000|floor / 1000000]",
+        input: "null",
+        expected: ["[1,0.996917,0.987688,0.972369,0.951056,0.923879,0.891006,0.85264,0.809017,0.760406,0.707106,0.649448,0.587785,0.522498,0.45399,0.382683,0.309017,0.233445,0.156434,0.078459]"]
+    )
+
+test "jq.test 716: [(3.141592 / 2) * (range(0;20) / 20)|sin * 1000000|floor ..."
+    assert passes(
+        program: "[(3.141592 / 2) * (range(0;20) / 20)|sin * 1000000|floor / 1000000]",
+        input: "null",
+        expected: ["[0,0.078459,0.156434,0.233445,0.309016,0.382683,0.45399,0.522498,0.587785,0.649447,0.707106,0.760405,0.809016,0.85264,0.891006,0.923879,0.951056,0.972369,0.987688,0.996917]"]
+    )
+
+test "jq.test 721: def f(x): x | x; f([.], . + [42])"
+    assert passes(
+        program: "def f(x): x | x; f([.], . + [42])",
+        input: "[1,2,3]",
+        expected: ["[[[1,2,3]]]", "[[1,2,3],42]", "[[1,2,3,42]]", "[1,2,3,42,42]"]
+    )
+
+test "jq.test 729: def f: .+1; def g: f; def f: .+100; def f(a):a+.+11; [(g|..."
+    assert passes(
+        program: "def f: .+1; def g: f; def f: .+100; def f(a):a+.+11; [(g|f(20)), f]",
+        input: "1",
+        expected: ["[33,101]"]
+    )
+
+test "jq.test 734: def id(x):x; 2000 as $x | def f(x):1 as $x | id([$x, x, x..."
+    assert passes(
+        program: "def id(x):x; 2000 as $x | def f(x):1 as $x | id([$x, x, x]); def g(x): 100 as $x | f($x,$x+x); g($x)",
+        input: "\"more testing\"",
+        expected: ["[1,100,2100.0,100,2100.0]"]
+    )
+
+test "jq.test 739: def x(a;b): a as $a | b as $b | $a + $b; def y($a;$b): $a..."
+    assert passes(
+        program: "def x(a;b): a as $a | b as $b | $a + $b; def y($a;$b): $a + $b; def check(a;b): [x(a;b)] == [y(a;b)]; check(.[];.[]*2)",
+        input: "[1,2,3]",
+        expected: ["true"]
+    )
+
+test "jq.test 745: [[20,10][1,0] as $x | def f: (100,200) as $y | def g: [$x..."
+    assert passes(
+        program: "[[20,10][1,0] as $x | def f: (100,200) as $y | def g: [$x + $y, .]; . + $x | g; f[0] | [f][0][1] | f]",
+        input: "999999999",
+        expected: ["[[110.0, 130.0], [210.0, 130.0], [110.0, 230.0], [210.0, 230.0], [120.0, 160.0], [220.0, 160.0], [120.0, 260.0], [220.0, 260.0]]"]
+    )
+
+test "jq.test 750: def fac: if . == 1 then 1 else . * (. - 1 | fac) end; [.[..."
+    assert passes(
+        program: "def fac: if . == 1 then 1 else . * (. - 1 | fac) end; [.[] | fac]",
+        input: "[1,2,3,4]",
+        expected: ["[1,2,6,24]"]
+    )
+
+test "jq.test 760: reduce .[] as $x (0; . + $x)"
+    assert passes(program: "reduce .[] as $x (0; . + $x)", input: "[1,2,4]", expected: ["7"])
+
+test "jq.test 764: reduce .[] as [$i, (j:$j)] (0; . + $i - $j)"
+    assert passes(
+        program: f"reduce .[] as [$i, {{j:$j}}] (0; . + $i - $j)",
+        input: f"[[2,{{\"j\":1}}], [5,{{\"j\":3}}], [6,{{\"j\":4}}]]",
+        expected: ["5"]
+    )
+
+test "jq.test 768: reduce [[1,2,10], [3,4,10]][] as [$i,$j] (0; . + $i * $j)"
+    assert passes(program: "reduce [[1,2,10], [3,4,10]][] as [$i,$j] (0; . + $i * $j)", input: "null", expected: ["14"])
+
+test "jq.test 773: reduce . as $n (.; .)"
+    assert passes(program: "reduce . as $n (.; .)", input: "null", expected: ["null"])
+
+test "jq.test 778: . as ($a, b: [$c, ($d)]) | [$a, $c, $d]"
+    assert passes(
+        program: f". as {{$a, b: [$c, {{$d}}]}} | [$a, $c, $d]",
+        input: f"{{\"a\":1, \"b\":[2,{{\"d\":3}}]}}",
+        expected: ["[1,2,3]"]
+    )
+
+test "jq.test 782: . as ($a, $b:[$c, $d])| [$a, $b, $c, $d]"
+    assert passes(
+        program: f". as {{$a, $b:[$c, $d]}}| [$a, $b, $c, $d]",
+        input: f"{{\"a\":1, \"b\":[2,{{\"d\":3}}]}}",
+        expected: [f"[1,[2,{{\"d\":3}}],2,{{\"d\":3}}]"]
+    )
+
+test "jq.test 787: .[] | . as ($a, b: [$c, ($d)]) ?// [$a, ($b), $e] ?// $f ..."
+    assert passes(
+        program: f".[] | . as {{$a, b: [$c, {{$d}}]}} ?// [$a, {{$b}}, $e] ?// $f | [$a, $b, $c, $d, $e, $f]",
+        input: f"[{{\"a\":1, \"b\":[2,{{\"d\":3}}]}}, [4, {{\"b\":5, \"c\":6}}, 7, 8, 9], \"foo\"]",
+        expected: ["[1, null, 2, 3, null, null]", "[4, 5, null, null, 7, null]", "[null, null, null, null, null, \"foo\"]"]
+    )
+
+test "jq.test 794: .[] | . as (a:$a) ?// (a:$a) ?// (a:$a) | $a"
+    expected: [str] = []
+    assert passes(
+        program: f".[] | . as {{a:$a}} ?// {{a:$a}} ?// {{a:$a}} | $a",
+        input: "[[3],[4],[5],6]",
+        expected: expected
+    )
+
+test "jq.test 798: .[] as (a:$a) ?// (a:$a) ?// (a:$a) | $a"
+    expected: [str] = []
+    assert passes(
+        program: f".[] as {{a:$a}} ?// {{a:$a}} ?// {{a:$a}} | $a",
+        input: "[[3],[4],[5],6]",
+        expected: expected
+    )
+
+test "jq.test 802: [[3],[4],[5],6][] | . as (a:$a) ?// (a:$a) ?// (a:$a) | $a"
+    expected: [str] = []
+    assert passes(
+        program: f"[[3],[4],[5],6][] | . as {{a:$a}} ?// {{a:$a}} ?// {{a:$a}} | $a",
+        input: "null",
+        expected: expected
+    )
+
+test "jq.test 806: [[3],[4],[5],6] | .[] as (a:$a) ?// (a:$a) ?// (a:$a) | $a"
+    expected: [str] = []
+    assert passes(
+        program: f"[[3],[4],[5],6] | .[] as {{a:$a}} ?// {{a:$a}} ?// {{a:$a}} | $a",
+        input: "null",
+        expected: expected
+    )
+
+test "jq.test 810: .[] | . as (a:$a) ?// (a:$a) ?// $a | $a"
+    assert passes(
+        program: f".[] | . as {{a:$a}} ?// {{a:$a}} ?// $a | $a",
+        input: "[[3],[4],[5],6]",
+        expected: ["[3]", "[4]", "[5]", "6"]
+    )
+
+test "jq.test 817: .[] as (a:$a) ?// (a:$a) ?// $a | $a"
+    assert passes(
+        program: f".[] as {{a:$a}} ?// {{a:$a}} ?// $a | $a",
+        input: "[[3],[4],[5],6]",
+        expected: ["[3]", "[4]", "[5]", "6"]
+    )
+
+test "jq.test 824: [[3],[4],[5],6][] | . as (a:$a) ?// (a:$a) ?// $a | $a"
+    assert passes(
+        program: f"[[3],[4],[5],6][] | . as {{a:$a}} ?// {{a:$a}} ?// $a | $a",
+        input: "null",
+        expected: ["[3]", "[4]", "[5]", "6"]
+    )
+
+test "jq.test 831: [[3],[4],[5],6] | .[] as (a:$a) ?// (a:$a) ?// $a | $a"
+    assert passes(
+        program: f"[[3],[4],[5],6] | .[] as {{a:$a}} ?// {{a:$a}} ?// $a | $a",
+        input: "null",
+        expected: ["[3]", "[4]", "[5]", "6"]
+    )
+
+test "jq.test 838: .[] | . as (a:$a) ?// $a ?// (a:$a) | $a"
+    assert passes(
+        program: f".[] | . as {{a:$a}} ?// $a ?// {{a:$a}} | $a",
+        input: "[[3],[4],[5],6]",
+        expected: ["[3]", "[4]", "[5]", "6"]
+    )
+
+test "jq.test 845: .[] as (a:$a) ?// $a ?// (a:$a) | $a"
+    assert passes(
+        program: f".[] as {{a:$a}} ?// $a ?// {{a:$a}} | $a",
+        input: "[[3],[4],[5],6]",
+        expected: ["[3]", "[4]", "[5]", "6"]
+    )
+
+test "jq.test 852: [[3],[4],[5],6][] | . as (a:$a) ?// $a ?// (a:$a) | $a"
+    assert passes(
+        program: f"[[3],[4],[5],6][] | . as {{a:$a}} ?// $a ?// {{a:$a}} | $a",
+        input: "null",
+        expected: ["[3]", "[4]", "[5]", "6"]
+    )
+
+test "jq.test 859: [[3],[4],[5],6] | .[] as (a:$a) ?// $a ?// (a:$a) | $a"
+    assert passes(
+        program: f"[[3],[4],[5],6] | .[] as {{a:$a}} ?// $a ?// {{a:$a}} | $a",
+        input: "null",
+        expected: ["[3]", "[4]", "[5]", "6"]
+    )
+
+test "jq.test 866: .[] | . as $a ?// (a:$a) ?// (a:$a) | $a"
+    assert passes(
+        program: f".[] | . as $a ?// {{a:$a}} ?// {{a:$a}} | $a",
+        input: "[[3],[4],[5],6]",
+        expected: ["[3]", "[4]", "[5]", "6"]
+    )
+
+test "jq.test 873: .[] as $a ?// (a:$a) ?// (a:$a) | $a"
+    assert passes(
+        program: f".[] as $a ?// {{a:$a}} ?// {{a:$a}} | $a",
+        input: "[[3],[4],[5],6]",
+        expected: ["[3]", "[4]", "[5]", "6"]
+    )
+
+test "jq.test 880: [[3],[4],[5],6][] | . as $a ?// (a:$a) ?// (a:$a) | $a"
+    assert passes(
+        program: f"[[3],[4],[5],6][] | . as $a ?// {{a:$a}} ?// {{a:$a}} | $a",
+        input: "null",
+        expected: ["[3]", "[4]", "[5]", "6"]
+    )
+
+test "jq.test 887: [[3],[4],[5],6] | .[] as $a ?// (a:$a) ?// (a:$a) | $a"
+    assert passes(
+        program: f"[[3],[4],[5],6] | .[] as $a ?// {{a:$a}} ?// {{a:$a}} | $a",
+        input: "null",
+        expected: ["[3]", "[4]", "[5]", "6"]
+    )
+
+test "jq.test 894: . as $dot|any($dot[];not)"
+    assert passes(program: ". as $dot|any($dot[];not)", input: "[1,2,3,4,true,false,1,2,3,4,5]", expected: ["true"])
+
+test "jq.test 898: . as $dot|any($dot[];not)"
+    assert passes(program: ". as $dot|any($dot[];not)", input: "[1,2,3,4,true]", expected: ["false"])
+
+test "jq.test 902: . as $dot|all($dot[];.)"
+    assert passes(program: ". as $dot|all($dot[];.)", input: "[1,2,3,4,true,false,1,2,3,4,5]", expected: ["false"])
+
+test "jq.test 906: . as $dot|all($dot[];.)"
+    assert passes(program: ". as $dot|all($dot[];.)", input: "[1,2,3,4,true]", expected: ["true"])
+
+test "jq.test 911: any(true, error; .)"
+    assert passes(program: "any(true, error; .)", input: "\"badness\"", expected: ["true"])
+
+test "jq.test 915: all(false, error; .)"
+    assert passes(program: "all(false, error; .)", input: "\"badness\"", expected: ["false"])
+
+test "jq.test 919: any(not)"
+    assert passes(program: "any(not)", input: "[]", expected: ["false"])
+
+test "jq.test 923: all(not)"
+    assert passes(program: "all(not)", input: "[]", expected: ["true"])
+
+test "jq.test 927: any(not)"
+    assert passes(program: "any(not)", input: "[false]", expected: ["true"])
+
+test "jq.test 931: all(not)"
+    assert passes(program: "all(not)", input: "[false]", expected: ["true"])
+
+test "jq.test 935: [any,all]"
+    assert passes(program: "[any,all]", input: "[]", expected: ["[false,true]"])
+
+test "jq.test 939: [any,all]"
+    assert passes(program: "[any,all]", input: "[true]", expected: ["[true,true]"])
+
+test "jq.test 943: [any,all]"
+    assert passes(program: "[any,all]", input: "[false]", expected: ["[false,false]"])
+
+test "jq.test 947: [any,all]"
+    assert passes(program: "[any,all]", input: "[true,false]", expected: ["[true,false]"])
+
+test "jq.test 951: [any,all]"
+    assert passes(program: "[any,all]", input: "[null,null,true]", expected: ["[true,false]"])
+
+test "jq.test 959: path(.foo[0,1])"
+    assert passes(program: "path(.foo[0,1])", input: "null", expected: ["[\"foo\", 0]", "[\"foo\", 1]"])
+
+test "jq.test 964: path(.[] | select(.>3))"
+    assert passes(program: "path(.[] | select(.>3))", input: "[1,5,3]", expected: ["[1]"])
+
+test "jq.test 968: path(.)"
+    assert passes(program: "path(.)", input: "42", expected: ["[]"])
+
+test "jq.test 972: try path(.a | map(select(.b == 0))) catch ."
+    assert passes(
+        program: "try path(.a | map(select(.b == 0))) catch .",
+        input: f"{{\"a\":[{{\"b\":0}}]}}",
+        expected: [f"\"Invalid path expression with result [{{\\\"b\\\":0}}]\""]
+    )
+
+test "jq.test 976: try path(.a | map(select(.b == 0)) | .[0]) catch ."
+    assert passes(
+        program: "try path(.a | map(select(.b == 0)) | .[0]) catch .",
+        input: f"{{\"a\":[{{\"b\":0}}]}}",
+        expected: [f"\"Invalid path expression near attempt to access element 0 of [{{\\\"b\\\":0}}]\""]
+    )
+
+test "jq.test 980: try path(.a | map(select(.b == 0)) | .c) catch ."
+    assert passes(
+        program: "try path(.a | map(select(.b == 0)) | .c) catch .",
+        input: f"{{\"a\":[{{\"b\":0}}]}}",
+        expected: [f"\"Invalid path expression near attempt to access element \\\"c\\\" of [{{\\\"b\\\":0}}]\""]
+    )
+
+test "jq.test 984: try path(.a | map(select(.b == 0)) | .[]) catch ."
+    assert passes(
+        program: "try path(.a | map(select(.b == 0)) | .[]) catch .",
+        input: f"{{\"a\":[{{\"b\":0}}]}}",
+        expected: [f"\"Invalid path expression near attempt to iterate through [{{\\\"b\\\":0}}]\""]
+    )
+
+test "jq.test 988: path(.a[path(.b)[0]])"
+    assert passes(program: "path(.a[path(.b)[0]])", input: f"{{\"a\":{{\"b\":0}}}}", expected: ["[\"a\",\"b\"]"])
+
+test "jq.test 992: [paths]"
+    assert passes(program: "[paths]", input: f"[1,[[],{{\"a\":2}}]]", expected: ["[[0],[1],[1,0],[1,1],[1,1,\"a\"]]"])
+
+test "jq.test 996: ['foo',1] as $p | getpath($p), setpath($p; 20), delpaths(..."
+    assert passes(
+        program: "[\"foo\",1] as $p | getpath($p), setpath($p; 20), delpaths([$p])",
+        input: f"{{\"bar\": 42, \"foo\": [\"a\", \"b\", \"c\", \"d\"]}}",
+        expected: ["\"b\"", f"{{\"bar\": 42, \"foo\": [\"a\", 20, \"c\", \"d\"]}}", f"{{\"bar\": 42, \"foo\": [\"a\", \"c\", \"d\"]}}"]
+    )
+
+test "jq.test 1002: map(getpath([2])), map(setpath([2]; 42)), map(delpaths([[..."
+    assert passes(
+        program: "map(getpath([2])), map(setpath([2]; 42)), map(delpaths([[2]]))",
+        input: "[[0], [0,1], [0,1,2]]",
+        expected: ["[null, null, 2]", "[[0,null,42], [0,1,42], [0,1,42]]", "[[0], [0,1], [0,1]]"]
+    )
+
+test "jq.test 1008: map(delpaths([[0,'foo']]))"
+    assert passes(
+        program: "map(delpaths([[0,\"foo\"]]))",
+        input: f"[[{{\"foo\":2, \"x\":1}}], [{{\"bar\":2}}]]",
+        expected: [f"[[{{\"x\":1}}], [{{\"bar\":2}}]]"]
+    )
+
+test "jq.test 1012: ['foo',1] as $p | getpath($p), setpath($p; 20), delpaths(..."
+    assert passes(
+        program: "[\"foo\",1] as $p | getpath($p), setpath($p; 20), delpaths([$p])",
+        input: f"{{\"bar\":false}}",
+        expected: ["null", f"{{\"bar\":false, \"foo\": [null, 20]}}", f"{{\"bar\":false}}"]
+    )
+
+test "jq.test 1018: delpaths([[-200]])"
+    assert passes(program: "delpaths([[-200]])", input: "[1,2,3]", expected: ["[1,2,3]"])
+
+test "jq.test 1022: try delpaths(0) catch ."
+    assert passes(
+        program: "try delpaths(0) catch .",
+        input: f"{{}}",
+        expected: ["\"Paths must be specified as an array\""]
+    )
+
+test "jq.test 1026: del(.), del(empty), del((.foo,.bar,.baz) | .[2,3,0]), del..."
+    assert passes(
+        program: "del(.), del(empty), del((.foo,.bar,.baz) | .[2,3,0]), del(.foo[0], .bar[0], .foo, .baz.bar[0].x)",
+        input: f"{{\"foo\": [0,1,2,3,4], \"bar\": [0,1]}}",
+        expected: ["null", f"{{\"foo\": [0,1,2,3,4], \"bar\": [0,1]}}", f"{{\"foo\": [1,4], \"bar\": [1]}}", f"{{\"bar\": [1]}}"]
+    )
+
+test "jq.test 1033: del(.[1], .[-6], .[2], .[-3:9])"
+    assert passes(
+        program: "del(.[1], .[-6], .[2], .[-3:9])",
+        input: "[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]",
+        expected: ["[0, 3, 5, 6, 9]"]
+    )
+
+test "jq.test 1038: setpath([-1]; 1)"
+    assert passes(program: "setpath([-1]; 1)", input: "[0]", expected: ["[1]"])
+
+test "jq.test 1042: pick(.a.b.c)"
+    assert passes(program: "pick(.a.b.c)", input: "null", expected: [f"{{\"a\":{{\"b\":{{\"c\":null}}}}}}"])
+
+test "jq.test 1046: pick(first)"
+    assert passes(program: "pick(first)", input: "[1,2]", expected: ["[1]"])
+
+test "jq.test 1050: pick(first|first)"
+    assert passes(program: "pick(first|first)", input: "[[10,20],30]", expected: ["[[10]]"])
+
+test "jq.test 1055: try pick(last) catch ."
+    assert passes(
+        program: "try pick(last) catch .",
+        input: "[1,2]",
+        expected: ["\"Out of bounds negative array index\""]
+    )
+
+test "jq.test 1062: .message = 'goodbye'"
+    assert passes(
+        program: ".message = \"goodbye\"",
+        input: f"{{\"message\": \"hello\"}}",
+        expected: [f"{{\"message\": \"goodbye\"}}"]
+    )
+
+test "jq.test 1066: .foo = .bar"
+    assert passes(program: ".foo = .bar", input: f"{{\"bar\":42}}", expected: [f"{{\"foo\":42, \"bar\":42}}"])
+
+test "jq.test 1070: .foo |= .+1"
+    assert passes(program: ".foo |= .+1", input: f"{{\"foo\": 42}}", expected: [f"{{\"foo\": 43}}"])
+
+test "jq.test 1074: .[] += 2, .[] *= 2, .[] -= 2, .[] /= 2, .[] %=2"
+    assert passes(
+        program: ".[] += 2, .[] *= 2, .[] -= 2, .[] /= 2, .[] %=2",
+        input: "[1,3,5]",
+        expected: ["[3,5,7]", "[2,6,10]", "[-1,1,3]", "[0.5, 1.5, 2.5]", "[1,1,1]"]
+    )
+
+test "jq.test 1082: [.[] % 7]"
+    assert passes(
+        program: "[.[] % 7]",
+        input: "[-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7]",
+        expected: ["[0,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,0]"]
+    )
+
+test "jq.test 1086: .foo += .foo"
+    assert passes(program: ".foo += .foo", input: f"{{\"foo\":2}}", expected: [f"{{\"foo\":4}}"])
+
+test "jq.test 1090: .[0].a |= ('old':., 'new':(.+1))"
+    assert passes(
+        program: f".[0].a |= {{\"old\":., \"new\":(.+1)}}",
+        input: f"[{{\"a\":1,\"b\":2}}]",
+        expected: [f"[{{\"a\":{{\"old\":1, \"new\":2}},\"b\":2}}]"]
+    )
+
+test "jq.test 1094: def inc(x): x |= .+1; inc(.[].a)"
+    assert passes(
+        program: "def inc(x): x |= .+1; inc(.[].a)",
+        input: f"[{{\"a\":1,\"b\":2}},{{\"a\":2,\"b\":4}},{{\"a\":7,\"b\":8}}]",
+        expected: [f"[{{\"a\":2,\"b\":2}},{{\"a\":3,\"b\":4}},{{\"a\":8,\"b\":8}}]"]
+    )
+
+test "jq.test 1099: .[] | try (getpath(['a',0,'b']) |= 5) catch ."
+    assert passes(
+        program: ".[] | try (getpath([\"a\",0,\"b\"]) |= 5) catch .",
+        input: f"[null,{{\"b\":0}},{{\"a\":0}},{{\"a\":null}},{{\"a\":[0,1]}},{{\"a\":{{\"b\":1}}}},{{\"a\":[{{}}]}},{{\"a\":[{{\"c\":3}}]}}]",
+        expected: [f"{{\"a\":[{{\"b\":5}}]}}", f"{{\"b\":0,\"a\":[{{\"b\":5}}]}}", "\"Cannot index number with number\"", f"{{\"a\":[{{\"b\":5}}]}}", "\"Cannot index number with string \\\"b\\\"\"", "\"Cannot index object with number\"", f"{{\"a\":[{{\"b\":5}}]}}", f"{{\"a\":[{{\"c\":3,\"b\":5}}]}}"]
+    )
+
+test "jq.test 1111: (.[] | select(. >= 2)) |= empty"
+    assert passes(program: "(.[] | select(. >= 2)) |= empty", input: "[1,5,3,0,7]", expected: ["[1,0]"])
+
+test "jq.test 1115: .[] |= select(. % 2 == 0)"
+    assert passes(program: ".[] |= select(. % 2 == 0)", input: "[0,1,2,3,4,5]", expected: ["[0,2,4]"])
+
+test "jq.test 1119: .foo[1,4,2,3] |= empty"
+    assert passes(
+        program: ".foo[1,4,2,3] |= empty",
+        input: f"{{\"foo\":[0,1,2,3,4,5]}}",
+        expected: [f"{{\"foo\":[0,5]}}"]
+    )
+
+test "jq.test 1123: .[2][3] = 1"
+    assert passes(program: ".[2][3] = 1", input: "[4]", expected: ["[4, null, [null, null, null, 1]]"])
+
+test "jq.test 1127: .foo[2].bar = 1"
+    assert passes(
+        program: ".foo[2].bar = 1",
+        input: f"{{\"foo\":[11], \"bar\":42}}",
+        expected: [f"{{\"foo\":[11,null,{{\"bar\":1}}], \"bar\":42}}"]
+    )
+
+test "jq.test 1131: try ((map(select(.a == 1))[].b) = 10) catch ."
+    assert passes(
+        program: "try ((map(select(.a == 1))[].b) = 10) catch .",
+        input: f"[{{\"a\":0}},{{\"a\":1}}]",
+        expected: [f"\"Invalid path expression near attempt to iterate through [{{\\\"a\\\":1}}]\""]
+    )
+
+test "jq.test 1135: try ((map(select(.a == 1))[].a) |= .+1) catch ."
+    assert passes(
+        program: "try ((map(select(.a == 1))[].a) |= .+1) catch .",
+        input: f"[{{\"a\":0}},{{\"a\":1}}]",
+        expected: [f"\"Invalid path expression near attempt to iterate through [{{\\\"a\\\":1}}]\""]
+    )
+
+test "jq.test 1139: def x: .[1,2]; x=10"
+    assert passes(program: "def x: .[1,2]; x=10", input: "[0,1,2]", expected: ["[0,10,10]"])
+
+test "jq.test 1143: try (def x: reverse; x=10) catch ."
+    assert passes(
+        program: "try (def x: reverse; x=10) catch .",
+        input: "[0,1,2]",
+        expected: ["\"Invalid path expression with result [2,1,0]\""]
+    )
+
+test "jq.test 1147: .[] = 1"
+    assert passes(program: ".[] = 1", input: "[1,null,Infinity,-Infinity,NaN,-NaN]", expected: ["[1,1,1,1,1,1]"])
+
+test "jq.test 1155: [.[] | if .foo then 'yep' else 'nope' end]"
+    assert passes(
+        program: "[.[] | if .foo then \"yep\" else \"nope\" end]",
+        input: f"[{{\"foo\":0}},{{\"foo\":1}},{{\"foo\":[]}},{{\"foo\":true}},{{\"foo\":false}},{{\"foo\":null}},{{\"foo\":\"foo\"}},{{}}]",
+        expected: ["[\"yep\",\"yep\",\"yep\",\"yep\",\"nope\",\"nope\",\"yep\",\"nope\"]"]
+    )
+
+test "jq.test 1159: [.[] | if .baz then 'strange' elif .foo then 'yep' else '..."
+    assert passes(
+        program: "[.[] | if .baz then \"strange\" elif .foo then \"yep\" else \"nope\" end]",
+        input: f"[{{\"foo\":0}},{{\"foo\":1}},{{\"foo\":[]}},{{\"foo\":true}},{{\"foo\":false}},{{\"foo\":null}},{{\"foo\":\"foo\"}},{{}}]",
+        expected: ["[\"yep\",\"yep\",\"yep\",\"yep\",\"nope\",\"nope\",\"yep\",\"nope\"]"]
+    )
+
+test "jq.test 1163: [if 1,null,2 then 3 else 4 end]"
+    assert passes(program: "[if 1,null,2 then 3 else 4 end]", input: "null", expected: ["[3,4,3]"])
+
+test "jq.test 1167: [if empty then 3 else 4 end]"
+    assert passes(program: "[if empty then 3 else 4 end]", input: "null", expected: ["[]"])
+
+test "jq.test 1171: [if 1 then 3,4 else 5 end]"
+    assert passes(program: "[if 1 then 3,4 else 5 end]", input: "null", expected: ["[3,4]"])
+
+test "jq.test 1175: [if null then 3 else 5,6 end]"
+    assert passes(program: "[if null then 3 else 5,6 end]", input: "null", expected: ["[5,6]"])
+
+test "jq.test 1179: [if true then 3 end]"
+    assert passes(program: "[if true then 3 end]", input: "7", expected: ["[3]"])
+
+test "jq.test 1183: [if false then 3 end]"
+    assert passes(program: "[if false then 3 end]", input: "7", expected: ["[7]"])
+
+test "jq.test 1187: [if false then 3 else . end]"
+    assert passes(program: "[if false then 3 else . end]", input: "7", expected: ["[7]"])
+
+test "jq.test 1191: [if false then 3 elif false then 4 end]"
+    assert passes(program: "[if false then 3 elif false then 4 end]", input: "7", expected: ["[7]"])
+
+test "jq.test 1195: [if false then 3 elif false then 4 else . end]"
+    assert passes(program: "[if false then 3 elif false then 4 else . end]", input: "7", expected: ["[7]"])
+
+test "jq.test 1199: [.[] | [.foo[] // .bar]]"
+    assert passes(
+        program: "[.[] | [.foo[] // .bar]]",
+        input: f"[{{\"foo\":[1,2], \"bar\": 42}}, {{\"foo\":[1], \"bar\": null}}, {{\"foo\":[null,false,3], \"bar\": 18}}, {{\"foo\":[], \"bar\":42}}, {{\"foo\": [null,false,null], \"bar\": 41}}]",
+        expected: ["[[1,2], [1], [3], [42], [41]]"]
+    )
+
+test "jq.test 1203: .[] //= .[0]"
+    assert passes(
+        program: ".[] //= .[0]",
+        input: "[\"hello\",true,false,[false],null]",
+        expected: ["[\"hello\",true,\"hello\",[false],\"hello\"]"]
+    )
+
+test "jq.test 1207: .[] | [.[0] and .[1], .[0] or .[1]]"
+    assert passes(
+        program: ".[] | [.[0] and .[1], .[0] or .[1]]",
+        input: "[[true,[]], [false,1], [42,null], [null,false]]",
+        expected: ["[true,true]", "[false,true]", "[false,true]", "[false,false]"]
+    )
+
+test "jq.test 1214: [.[] | not]"
+    assert passes(
+        program: "[.[] | not]",
+        input: "[1,0,false,null,true,\"hello\"]",
+        expected: ["[false,false,true,true,false,false]"]
+    )
+
+test "jq.test 1219: [10 > 0, 10 > 10, 10 > 20, 10 < 0, 10 < 10, 10 < 20]"
+    assert passes(
+        program: "[10 > 0, 10 > 10, 10 > 20, 10 < 0, 10 < 10, 10 < 20]",
+        input: f"{{}}",
+        expected: ["[true,false,false,false,false,true]"]
+    )
+
+test "jq.test 1223: [10 >= 0, 10 >= 10, 10 >= 20, 10 <= 0, 10 <= 10, 10 <= 20]"
+    assert passes(
+        program: "[10 >= 0, 10 >= 10, 10 >= 20, 10 <= 0, 10 <= 10, 10 <= 20]",
+        input: f"{{}}",
+        expected: ["[true,true,false,false,true,true]"]
+    )
+
+test "jq.test 1228: [ 10 == 10, 10 != 10, 10 != 11, 10 == 11]"
+    assert passes(
+        program: "[ 10 == 10, 10 != 10, 10 != 11, 10 == 11]",
+        input: f"{{}}",
+        expected: ["[true,false,true,false]"]
+    )
+
+test "jq.test 1232: ['hello' == 'hello', 'hello' != 'hello', 'hello' == 'worl..."
+    assert passes(
+        program: "[\"hello\" == \"hello\", \"hello\" != \"hello\", \"hello\" == \"world\", \"hello\" != \"world\" ]",
+        input: f"{{}}",
+        expected: ["[true,false,false,true]"]
+    )
+
+test "jq.test 1236: [[1,2,3] == [1,2,3], [1,2,3] != [1,2,3], [1,2,3] == [4,5,..."
+    assert passes(
+        program: "[[1,2,3] == [1,2,3], [1,2,3] != [1,2,3], [1,2,3] == [4,5,6], [1,2,3] != [4,5,6]]",
+        input: f"{{}}",
+        expected: ["[true,false,false,true]"]
+    )
+
+test "jq.test 1240: [('foo':42) == ('foo':42),('foo':42) != ('foo':42), ('foo..."
+    assert passes(
+        program: f"[{{\"foo\":42}} == {{\"foo\":42}},{{\"foo\":42}} != {{\"foo\":42}}, {{\"foo\":42}} != {{\"bar\":42}}, {{\"foo\":42}} == {{\"bar\":42}}]",
+        input: f"{{}}",
+        expected: ["[true,false,true,false]"]
+    )
+
+test "jq.test 1245: [('foo':[1,2,('bar':18),'world']) == ('foo':[1,2,('bar':1..."
+    assert passes(
+        program: f"[{{\"foo\":[1,2,{{\"bar\":18}},\"world\"]}} == {{\"foo\":[1,2,{{\"bar\":18}},\"world\"]}},{{\"foo\":[1,2,{{\"bar\":18}},\"world\"]}} == {{\"foo\":[1,2,{{\"bar\":19}},\"world\"]}}]",
+        input: f"{{}}",
+        expected: ["[true,false]"]
+    )
+
+test "jq.test 1250: [('foo' | contains('foo')), ('foobar' | contains('foo')),..."
+    assert passes(
+        program: "[(\"foo\" | contains(\"foo\")), (\"foobar\" | contains(\"foo\")), (\"foo\" | contains(\"foobar\"))]",
+        input: f"{{}}",
+        expected: ["[true, true, false]"]
+    )
+
+test "jq.test 1255: [contains(''), contains('/u0000')]"
+    assert passes(program: "[contains(\"\"), contains(\"\\u0000\")]", input: "\"\\u0000\"", expected: ["[true, true]"])
+
+test "jq.test 1259: [contains(''), contains('a'), contains('ab'), contains('c..."
+    assert passes(
+        program: "[contains(\"\"), contains(\"a\"), contains(\"ab\"), contains(\"c\"), contains(\"d\")]",
+        input: "\"ab\\u0000cd\"",
+        expected: ["[true, true, true, true, true]"]
+    )
+
+test "jq.test 1263: [contains('cd'), contains('b/u0000'), contains('ab/u0000')]"
+    assert passes(
+        program: "[contains(\"cd\"), contains(\"b\\u0000\"), contains(\"ab\\u0000\")]",
+        input: "\"ab\\u0000cd\"",
+        expected: ["[true, true, true]"]
+    )
+
+test "jq.test 1267: [contains('b/u0000c'), contains('b/u0000cd'), contains('b..."
+    assert passes(
+        program: "[contains(\"b\\u0000c\"), contains(\"b\\u0000cd\"), contains(\"b\\u0000cd\")]",
+        input: "\"ab\\u0000cd\"",
+        expected: ["[true, true, true]"]
+    )
+
+test "jq.test 1271: [contains('@'), contains('/u0000@'), contains('/u0000what')]"
+    assert passes(
+        program: "[contains(\"@\"), contains(\"\\u0000@\"), contains(\"\\u0000what\")]",
+        input: "\"ab\\u0000cd\"",
+        expected: ["[false, false, false]"]
+    )
+
+test "jq.test 1277: [.[]|try if . == 0 then error('foo') elif . == 1 then .a ..."
+    assert passes(
+        program: "[.[]|try if . == 0 then error(\"foo\") elif . == 1 then .a elif . == 2 then empty else . end catch .]",
+        input: "[0,1,2,3]",
+        expected: ["[\"foo\",\"Cannot index number with string \\\"a\\\"\",3]"]
+    )
+
+test "jq.test 1281: [.[]|(.a, .a)?]"
+    assert passes(program: "[.[]|(.a, .a)?]", input: f"[null,true,{{\"a\":1}}]", expected: ["[null,null,1,1]"])
+
+test "jq.test 1285: [[.[]|[.a,.a]]?]"
+    assert passes(program: "[[.[]|[.a,.a]]?]", input: f"[null,true,{{\"a\":1}}]", expected: ["[]"])
+
+test "jq.test 1289: .[] | try error catch ."
+    assert passes(program: ".[] | try error catch .", input: "[1,null,2]", expected: ["1", "null", "2"])
+
+test "jq.test 1295: try error('/($__loc__)') catch ."
+    assert passes(
+        program: "try error(\"\\($__loc__)\") catch .",
+        input: "null",
+        expected: [f"\"{{\\\"file\\\":\\\"<top-level>\\\",\\\"line\\\":1}}\""]
+    )
+
+test "jq.test 1300: [.[]|startswith('foo')]"
+    assert passes(
+        program: "[.[]|startswith(\"foo\")]",
+        input: "[\"fo\", \"foo\", \"barfoo\", \"foobar\", \"barfoob\"]",
+        expected: ["[false, true, false, true, false]"]
+    )
+
+test "jq.test 1304: [.[]|endswith('foo')]"
+    assert passes(
+        program: "[.[]|endswith(\"foo\")]",
+        input: "[\"fo\", \"foo\", \"barfoo\", \"foobar\", \"barfoob\"]",
+        expected: ["[false, true, true, false, false]"]
+    )
+
+test "jq.test 1308: [.[] | split(', ')]"
+    assert passes(
+        program: "[.[] | split(\", \")]",
+        input: "[\"a,b, c, d, e,f\",\", a,b, c, d, e,f, \"]",
+        expected: ["[[\"a,b\",\"c\",\"d\",\"e,f\"],[\"\",\"a,b\",\"c\",\"d\",\"e,f\",\"\"]]"]
+    )
+
+test "jq.test 1312: split('')"
+    assert passes(program: "split(\"\")", input: "\"abc\"", expected: ["[\"a\",\"b\",\"c\"]"])
+
+test "jq.test 1316: [.[]|ltrimstr('foo')]"
+    assert passes(
+        program: "[.[]|ltrimstr(\"foo\")]",
+        input: "[\"fo\", \"foo\", \"barfoo\", \"foobar\", \"afoo\"]",
+        expected: ["[\"fo\",\"\",\"barfoo\",\"bar\",\"afoo\"]"]
+    )
+
+test "jq.test 1320: [.[]|rtrimstr('foo')]"
+    assert passes(
+        program: "[.[]|rtrimstr(\"foo\")]",
+        input: "[\"fo\", \"foo\", \"barfoo\", \"foobar\", \"foob\"]",
+        expected: ["[\"fo\",\"\",\"bar\",\"foobar\",\"foob\"]"]
+    )
+
+test "jq.test 1324: [(index(','), rindex(',')), indices(',')]"
+    assert passes(
+        program: "[(index(\",\"), rindex(\",\")), indices(\",\")]",
+        input: "\"a,bc,def,ghij,klmno\"",
+        expected: ["[1,13,[1,4,8,13]]"]
+    )
+
+test "jq.test 1328: [ index('aba'), rindex('aba'), indices('aba') ]"
+    assert passes(
+        program: "[ index(\"aba\"), rindex(\"aba\"), indices(\"aba\") ]",
+        input: "\"xababababax\"",
+        expected: ["[1,7,[1,3,5,7]]"]
+    )
+
+test "jq.test 1332: indices(1)"
+    assert passes(program: "indices(1)", input: "[0,1,1,2,3,4,1,5]", expected: ["[1,2,6]"])
+
+test "jq.test 1336: indices([1,2])"
+    assert passes(program: "indices([1,2])", input: "[0,1,2,3,1,4,2,5,1,2,6,7]", expected: ["[1,8]"])
+
+test "jq.test 1340: indices([1,2])"
+    assert passes(program: "indices([1,2])", input: "[1]", expected: ["[]"])
+
+test "jq.test 1344: indices(', ')"
+    assert passes(program: "indices(\", \")", input: "\"a,b, cd,e, fgh, ijkl\"", expected: ["[3,9,14]"])
+
+test "jq.test 1348: [.[]|split(',')]"
+    assert passes(
+        program: "[.[]|split(\",\")]",
+        input: "[\"a, bc, def, ghij, jklmn, a,b, c,d, e,f\", \"a,b,c,d, e,f,g,h\"]",
+        expected: ["[[\"a\",\" bc\",\" def\",\" ghij\",\" jklmn\",\" a\",\"b\",\" c\",\"d\",\" e\",\"f\"],[\"a\",\"b\",\"c\",\"d\",\" e\",\"f\",\"g\",\"h\"]]"]
+    )
+
+test "jq.test 1352: [.[]|split(', ')]"
+    assert passes(
+        program: "[.[]|split(\", \")]",
+        input: "[\"a, bc, def, ghij, jklmn, a,b, c,d, e,f\", \"a,b,c,d, e,f,g,h\"]",
+        expected: ["[[\"a\",\"bc\",\"def\",\"ghij\",\"jklmn\",\"a,b\",\"c,d\",\"e,f\"],[\"a,b,c,d\",\"e,f,g,h\"]]"]
+    )
+
+test "jq.test 1356: [.[] * 3]"
+    assert passes(
+        program: "[.[] * 3]",
+        input: "[\"a\", \"ab\", \"abc\"]",
+        expected: ["[\"aaa\", \"ababab\", \"abcabcabc\"]"]
+    )
+
+test "jq.test 1360: [.[] * 'abc']"
+    assert passes(
+        program: "[.[] * \"abc\"]",
+        input: "[-1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 3.7, 10.0]",
+        expected: ["[null,null,\"\",\"\",\"abc\",\"abc\",\"abcabcabc\",\"abcabcabcabcabcabcabcabcabcabc\"]"]
+    )
+
+test "jq.test 1364: [. * (nan,-nan)]"
+    assert passes(program: "[. * (nan,-nan)]", input: "\"abc\"", expected: ["[null,null]"])
+
+test "jq.test 1368: [.[] / ',']"
+    assert passes(
+        program: "[.[] / \",\"]",
+        input: "[\"a, bc, def, ghij, jklmn, a,b, c,d, e,f\", \"a,b,c,d, e,f,g,h\"]",
+        expected: ["[[\"a\",\" bc\",\" def\",\" ghij\",\" jklmn\",\" a\",\"b\",\" c\",\"d\",\" e\",\"f\"],[\"a\",\"b\",\"c\",\"d\",\" e\",\"f\",\"g\",\"h\"]]"]
+    )
+
+test "jq.test 1372: [.[] / ', ']"
+    assert passes(
+        program: "[.[] / \", \"]",
+        input: "[\"a, bc, def, ghij, jklmn, a,b, c,d, e,f\", \"a,b,c,d, e,f,g,h\"]",
+        expected: ["[[\"a\",\"bc\",\"def\",\"ghij\",\"jklmn\",\"a,b\",\"c,d\",\"e,f\"],[\"a,b,c,d\",\"e,f,g,h\"]]"]
+    )
+
+test "jq.test 1376: map(.[1] as $needle | .[0] | contains($needle))"
+    assert passes(
+        program: "map(.[1] as $needle | .[0] | contains($needle))",
+        input: "[[[],[]], [[1,2,3], [1,2]], [[1,2,3], [3,1]], [[1,2,3], [4]], [[1,2,3], [1,4]]]",
+        expected: ["[true, true, true, false, false]"]
+    )
+
+test "jq.test 1380: map(.[1] as $needle | .[0] | contains($needle))"
+    assert passes(
+        program: "map(.[1] as $needle | .[0] | contains($needle))",
+        input: "[[[\"foobar\", \"foobaz\"], [\"baz\", \"bar\"]], [[\"foobar\", \"foobaz\"], [\"foo\"]], [[\"foobar\", \"foobaz\"], [\"blap\"]]]",
+        expected: ["[true, true, false]"]
+    )
+
+test "jq.test 1384: [((foo: 12, bar:13) | contains((foo: 12))), ((foo: 12) | ..."
+    assert passes(
+        program: f"[({{foo: 12, bar:13}} | contains({{foo: 12}})), ({{foo: 12}} | contains({{}})), ({{foo: 12, bar:13}} | contains({{baz:14}}))]",
+        input: f"{{}}",
+        expected: ["[true, true, false]"]
+    )
+
+test "jq.test 1388: (foo: (baz: 12, blap: (bar: 13)), bar: 14) | contains((ba..."
+    assert passes(
+        program: f"{{foo: {{baz: 12, blap: {{bar: 13}}}}, bar: 14}} | contains({{bar: 14, foo: {{blap: {{}}}}}})",
+        input: f"{{}}",
+        expected: ["true"]
+    )
+
+test "jq.test 1392: (foo: (baz: 12, blap: (bar: 13)), bar: 14) | contains((ba..."
+    assert passes(
+        program: f"{{foo: {{baz: 12, blap: {{bar: 13}}}}, bar: 14}} | contains({{bar: 14, foo: {{blap: {{bar: 14}}}}}})",
+        input: f"{{}}",
+        expected: ["false"]
+    )
+
+test "jq.test 1396: sort"
+    assert passes(
+        program: "sort",
+        input: f"[42,[2,5,3,11],10,{{\"a\":42,\"b\":2}},{{\"a\":42}},true,2,[2,6],\"hello\",null,[2,5,6],{{\"a\":[],\"b\":1}},\"abc\",\"ab\",[3,10],{{}},false,\"abcd\",null]",
+        expected: [f"[null,null,false,true,2,10,42,\"ab\",\"abc\",\"abcd\",\"hello\",[2,5,3,11],[2,5,6],[2,6],[3,10],{{}},{{\"a\":42}},{{\"a\":42,\"b\":2}},{{\"a\":[],\"b\":1}}]"]
+    )
+
+test "jq.test 1400: (sort_by(.b) | sort_by(.a)), sort_by(.a, .b), sort_by(.b,..."
+    assert passes(
+        program: "(sort_by(.b) | sort_by(.a)), sort_by(.a, .b), sort_by(.b, .c), group_by(.b), group_by(.a + .b - .c == 2)",
+        input: f"[{{\"a\": 1, \"b\": 4, \"c\": 14}}, {{\"a\": 4, \"b\": 1, \"c\": 3}}, {{\"a\": 1, \"b\": 4, \"c\": 3}}, {{\"a\": 0, \"b\": 2, \"c\": 43}}]",
+        expected: [f"[{{\"a\": 0, \"b\": 2, \"c\": 43}}, {{\"a\": 1, \"b\": 4, \"c\": 14}}, {{\"a\": 1, \"b\": 4, \"c\": 3}}, {{\"a\": 4, \"b\": 1, \"c\": 3}}]", f"[{{\"a\": 0, \"b\": 2, \"c\": 43}}, {{\"a\": 1, \"b\": 4, \"c\": 14}}, {{\"a\": 1, \"b\": 4, \"c\": 3}}, {{\"a\": 4, \"b\": 1, \"c\": 3}}]", f"[{{\"a\": 4, \"b\": 1, \"c\": 3}}, {{\"a\": 0, \"b\": 2, \"c\": 43}}, {{\"a\": 1, \"b\": 4, \"c\": 3}}, {{\"a\": 1, \"b\": 4, \"c\": 14}}]", f"[[{{\"a\": 4, \"b\": 1, \"c\": 3}}], [{{\"a\": 0, \"b\": 2, \"c\": 43}}], [{{\"a\": 1, \"b\": 4, \"c\": 14}}, {{\"a\": 1, \"b\": 4, \"c\": 3}}]]", f"[[{{\"a\": 1, \"b\": 4, \"c\": 14}}, {{\"a\": 0, \"b\": 2, \"c\": 43}}], [{{\"a\": 4, \"b\": 1, \"c\": 3}}, {{\"a\": 1, \"b\": 4, \"c\": 3}}]]"]
+    )
+
+test "jq.test 1408: unique"
+    assert passes(program: "unique", input: "[1,2,5,3,5,3,1,3]", expected: ["[1,2,3,5]"])
+
+test "jq.test 1412: unique"
+    assert passes(program: "unique", input: "[]", expected: ["[]"])
+
+test "jq.test 1416: [min, max, min_by(.[1]), max_by(.[1]), min_by(.[2]), max_..."
+    assert passes(
+        program: "[min, max, min_by(.[1]), max_by(.[1]), min_by(.[2]), max_by(.[2])]",
+        input: "[[4,2,\"a\"],[3,1,\"a\"],[2,4,\"a\"],[1,3,\"a\"]]",
+        expected: ["[[1,3,\"a\"],[4,2,\"a\"],[3,1,\"a\"],[2,4,\"a\"],[4,2,\"a\"],[1,3,\"a\"]]"]
+    )
+
+test "jq.test 1420: [min,max,min_by(.),max_by(.)]"
+    assert passes(program: "[min,max,min_by(.),max_by(.)]", input: "[]", expected: ["[null,null,null,null]"])
+
+test "jq.test 1424: .foo[.baz]"
+    assert passes(program: ".foo[.baz]", input: f"{{\"foo\":{{\"bar\":4}},\"baz\":\"bar\"}}", expected: ["4"])
+
+test "jq.test 1428: .[] | .error = 'no, it's OK'"
+    assert passes(
+        program: ".[] | .error = \"no, it's OK\"",
+        input: f"[{{\"error\":true}}]",
+        expected: [f"{{\"error\": \"no, it's OK\"}}"]
+    )
+
+test "jq.test 1432: [(a:1)] | .[] | .a=999"
+    assert passes(program: f"[{{a:1}}] | .[] | .a=999", input: "null", expected: [f"{{\"a\": 999}}"])
+
+test "jq.test 1436: to_entries"
+    assert passes(
+        program: "to_entries",
+        input: f"{{\"a\": 1, \"b\": 2}}",
+        expected: [f"[{{\"key\":\"a\", \"value\":1}}, {{\"key\":\"b\", \"value\":2}}]"]
+    )
+
+test "jq.test 1440: from_entries"
+    assert passes(
+        program: "from_entries",
+        input: f"[{{\"key\":\"a\", \"value\":1}}, {{\"Key\":\"b\", \"Value\":2}}, {{\"name\":\"c\", \"value\":3}}, {{\"Name\":\"d\", \"Value\":4}}]",
+        expected: [f"{{\"a\": 1, \"b\": 2, \"c\": 3, \"d\": 4}}"]
+    )
+
+test "jq.test 1444: with_entries(.key |= 'KEY_' + .)"
+    assert passes(
+        program: "with_entries(.key |= \"KEY_\" + .)",
+        input: f"{{\"a\": 1, \"b\": 2}}",
+        expected: [f"{{\"KEY_a\": 1, \"KEY_b\": 2}}"]
+    )
+
+test "jq.test 1448: map(has('foo'))"
+    assert passes(program: "map(has(\"foo\"))", input: f"[{{\"foo\": 42}}, {{}}]", expected: ["[true, false]"])
+
+test "jq.test 1452: map(has(2))"
+    assert passes(program: "map(has(2))", input: "[[0,1], [\"a\",\"b\",\"c\"]]", expected: ["[false, true]"])
+
+test "jq.test 1456: has(nan)"
+    assert passes(program: "has(nan)", input: "[0,1,2]", expected: ["false"])
+
+test "jq.test 1460: keys"
+    assert passes(program: "keys", input: "[42,3,35]", expected: ["[0,1,2]"])
+
+test "jq.test 1464: [][.]"
+    assert passes(program: "[][.]", input: "1000000000000000000", expected: ["null"])
+
+test "jq.test 1468: map([1,2][0:.])"
+    assert passes(
+        program: "map([1,2][0:.])",
+        input: "[-1, 1, 2, 3, 1000000000000000000]",
+        expected: ["[[1], [1], [1,2], [1,2], [1,2]]"]
+    )
+
+test "jq.test 1474: ('k': ('a': 1, 'b': 2)) * ."
+    assert passes(
+        program: f"{{\"k\": {{\"a\": 1, \"b\": 2}}}} * .",
+        input: f"{{\"k\": {{\"a\": 0,\"c\": 3}}}}",
+        expected: [f"{{\"k\": {{\"a\": 0, \"b\": 2, \"c\": 3}}}}"]
+    )
+
+test "jq.test 1478: ('k': ('a': 1, 'b': 2), 'hello': ('x': 1)) * ."
+    assert passes(
+        program: f"{{\"k\": {{\"a\": 1, \"b\": 2}}, \"hello\": {{\"x\": 1}}}} * .",
+        input: f"{{\"k\": {{\"a\": 0,\"c\": 3}}, \"hello\": 1}}",
+        expected: [f"{{\"k\": {{\"a\": 0, \"b\": 2, \"c\": 3}}, \"hello\": 1}}"]
+    )
+
+test "jq.test 1482: ('k': ('a': 1, 'b': 2), 'hello': 1) * ."
+    assert passes(
+        program: f"{{\"k\": {{\"a\": 1, \"b\": 2}}, \"hello\": 1}} * .",
+        input: f"{{\"k\": {{\"a\": 0,\"c\": 3}}, \"hello\": {{\"x\": 1}}}}",
+        expected: [f"{{\"k\": {{\"a\": 0, \"b\": 2, \"c\": 3}}, \"hello\": {{\"x\": 1}}}}"]
+    )
+
+test "jq.test 1486: ('a': ('b': 1), 'c': ('d': 2), 'e': 5) * ."
+    assert passes(
+        program: f"{{\"a\": {{\"b\": 1}}, \"c\": {{\"d\": 2}}, \"e\": 5}} * .",
+        input: f"{{\"a\": {{\"b\": 2}}, \"c\": {{\"d\": 3, \"f\": 9}}}}",
+        expected: [f"{{\"a\": {{\"b\": 2}}, \"c\": {{\"d\": 3, \"f\": 9}}, \"e\": 5}}"]
+    )
+
+test "jq.test 1490: [.[]|arrays]"
+    assert passes(
+        program: "[.[]|arrays]",
+        input: f"[1,2,\"foo\",[],[3,[]],{{}},true,false,null]",
+        expected: ["[[],[3,[]]]"]
+    )
+
+test "jq.test 1494: [.[]|objects]"
+    assert passes(
+        program: "[.[]|objects]",
+        input: f"[1,2,\"foo\",[],[3,[]],{{}},true,false,null]",
+        expected: [f"[{{}}]"]
+    )
+
+test "jq.test 1498: [.[]|iterables]"
+    assert passes(
+        program: "[.[]|iterables]",
+        input: f"[1,2,\"foo\",[],[3,[]],{{}},true,false,null]",
+        expected: [f"[[],[3,[]],{{}}]"]
+    )
+
+test "jq.test 1502: [.[]|scalars]"
+    assert passes(
+        program: "[.[]|scalars]",
+        input: f"[1,2,\"foo\",[],[3,[]],{{}},true,false,null]",
+        expected: ["[1,2,\"foo\",true,false,null]"]
+    )
+
+test "jq.test 1506: [.[]|values]"
+    assert passes(
+        program: "[.[]|values]",
+        input: f"[1,2,\"foo\",[],[3,[]],{{}},true,false,null]",
+        expected: [f"[1,2,\"foo\",[],[3,[]],{{}},true,false]"]
+    )
+
+test "jq.test 1510: [.[]|booleans]"
+    assert passes(
+        program: "[.[]|booleans]",
+        input: f"[1,2,\"foo\",[],[3,[]],{{}},true,false,null]",
+        expected: ["[true,false]"]
+    )
+
+test "jq.test 1514: [.[]|nulls]"
+    assert passes(program: "[.[]|nulls]", input: f"[1,2,\"foo\",[],[3,[]],{{}},true,false,null]", expected: ["[null]"])
+
+test "jq.test 1518: flatten"
+    assert passes(program: "flatten", input: "[0, [1], [[2]], [[[3]]]]", expected: ["[0, 1, 2, 3]"])
+
+test "jq.test 1522: flatten(0)"
+    assert passes(program: "flatten(0)", input: "[0, [1], [[2]], [[[3]]]]", expected: ["[0, [1], [[2]], [[[3]]]]"])
+
+test "jq.test 1526: flatten(2)"
+    assert passes(program: "flatten(2)", input: "[0, [1], [[2]], [[[3]]]]", expected: ["[0, 1, 2, [3]]"])
+
+test "jq.test 1530: flatten(2)"
+    assert passes(program: "flatten(2)", input: "[0, [1, [2]], [1, [[3], 2]]]", expected: ["[0, 1, 2, 1, [3], 2]"])
+
+test "jq.test 1534: try flatten(-1) catch ."
+    assert passes(
+        program: "try flatten(-1) catch .",
+        input: "[0, [1], [[2]], [[[3]]]]",
+        expected: ["\"flatten depth must not be negative\""]
+    )
+
+test "jq.test 1538: transpose"
+    assert passes(program: "transpose", input: "[[1], [2,3]]", expected: ["[[1,2],[null,3]]"])
+
+test "jq.test 1542: transpose"
+    assert passes(program: "transpose", input: "[]", expected: ["[]"])
+
+test "jq.test 1546: ascii_upcase"
+    assert passes(program: "ascii_upcase", input: "\"useful but not for é\"", expected: ["\"USEFUL BUT NOT FOR é\""])
+
+test "jq.test 1550: bsearch(0,2,4)"
+    assert passes(program: "bsearch(0,2,4)", input: "[1,2,3]", expected: ["-1", "1", "-4"])
+
+test "jq.test 1558: strftime('%Y-%m-%dT%H:%M:%SZ')"
+    assert passes(
+        program: "strftime(\"%Y-%m-%dT%H:%M:%SZ\")",
+        input: "[2015,2,5,23,51,47,4,63]",
+        expected: ["\"2015-03-05T23:51:47Z\""]
+    )
+
+test "jq.test 1562: strftime('%A, %B %d, %Y')"
+    assert passes(
+        program: "strftime(\"%A, %B %d, %Y\")",
+        input: "1435677542.822351",
+        expected: ["\"Tuesday, June 30, 2015\""]
+    )
+
+test "jq.test 1566: gmtime"
+    assert passes(program: "gmtime", input: "1425599507", expected: ["[2015,2,5,23,51,47,4,63]"])
+
+test "jq.test 1571: try strftime('%Y-%m-%dT%H:%M:%SZ') catch ."
+    assert passes(
+        program: "try strftime(\"%Y-%m-%dT%H:%M:%SZ\") catch .",
+        input: "[\"a\",1,2,3,4,5,6,7]",
+        expected: ["\"strftime/1 requires parsed datetime inputs\""]
+    )
+
+test "jq.test 1575: try strflocaltime('%Y-%m-%dT%H:%M:%SZ') catch ."
+    assert passes(
+        program: "try strflocaltime(\"%Y-%m-%dT%H:%M:%SZ\") catch .",
+        input: "[\"a\",1,2,3,4,5,6,7]",
+        expected: ["\"strflocaltime/1 requires parsed datetime inputs\""]
+    )
+
+test "jq.test 1579: try mktime catch ."
+    assert passes(
+        program: "try mktime catch .",
+        input: "[\"a\",1,2,3,4,5,6,7]",
+        expected: ["\"mktime requires parsed datetime inputs\""]
+    )
+
+# `import` reads definitions from files, which this interpreter refuses: the case asserts the refusal
+test "jq.test 1584: import 'a' as foo; import 'b' as bar; def fooa: foo::a; [..."
+    assert refused("import \"a\" as foo; import \"b\" as bar; def fooa: foo::a; [fooa, bar::a, bar::b, foo::a]")
+
+# `import` reads definitions from files, which this interpreter refuses: the case asserts the refusal
+test "jq.test 1588: import 'c' as foo; [foo::a, foo::c]"
+    assert refused("import \"c\" as foo; [foo::a, foo::c]")
+
+# `include` reads definitions from files, which this interpreter refuses: the case asserts the refusal
+test "jq.test 1592: include 'c'; [a, c]"
+    assert refused("include \"c\"; [a, c]")
+
+# `import` reads data from files, which this interpreter refuses: the case asserts the refusal
+test "jq.test 1596: import 'data' as $e; import 'data' as $d; [$d[].this,$e[]..."
+    assert refused(
+        "import \"data\" as $e; import \"data\" as $d; [$d[].this,$e[].that,$d::d[].this,$e::e[].that]|join(\";\")"
+    )
+
+# `import` reads data from files, which this interpreter refuses: the case asserts the refusal
+test "jq.test 1601: import 'data' as $a; import 'data' as $b; def f: ($a, $b); f"
+    assert refused(f"import \"data\" as $a; import \"data\" as $b; def f: {{$a, $b}}; f")
+
+# `include` reads definitions from files, which this interpreter refuses: the case asserts the refusal
+test "jq.test 1605: include 'shadow1'; e"
+    assert refused("include \"shadow1\"; e")
+
+# `include` reads definitions from files, which this interpreter refuses: the case asserts the refusal
+test "jq.test 1609: include 'shadow1'; include 'shadow2'; e"
+    assert refused("include \"shadow1\"; include \"shadow2\"; e")
+
+# `import` reads definitions from files, which this interpreter refuses: the case asserts the refusal
+test "jq.test 1613: import 'shadow1' as f; import 'shadow2' as f; import 'sha..."
+    assert refused("import \"shadow1\" as f; import \"shadow2\" as f; import \"shadow1\" as e; [e::e, f::e]")
+
+test "jq.test 1617: module (.+1); 0"
+    assert refused("module (.+1); 0")
+
+test "jq.test 1621: module []; 0"
+    assert refused("module []; 0")
+
+test "jq.test 1625: include 'a' (.+1); 0"
+    assert refused("include \"a\" (.+1); 0")
+
+test "jq.test 1629: include 'a' []; 0"
+    assert refused("include \"a\" []; 0")
+
+test "jq.test 1633: include '/ '; 0"
+    assert refused("include \"\\ \"; 0")
+
+test "jq.test 1637: include '/(a)'; 0"
+    assert refused("include \"\\(a)\"; 0")
+
+# `modulemeta` reads a module's file, which this interpreter refuses: the case asserts the refusal
+test "jq.test 1641: modulemeta"
+    assert refused("modulemeta")
+
+# `modulemeta` reads a module's file, which this interpreter refuses: the case asserts the refusal
+test "jq.test 1645: modulemeta | .deps | length"
+    assert refused("modulemeta | .deps | length")
+
+# `modulemeta` reads a module's file, which this interpreter refuses: the case asserts the refusal
+test "jq.test 1649: modulemeta | .defs | length"
+    assert refused("modulemeta | .defs | length")
+
+test "jq.test 1653: import 'syntaxerror' as e; ."
+    assert refused("import \"syntaxerror\" as e; .")
+
+test "jq.test 1657: %::wat"
+    assert refused("%::wat")
+
+# `import` reads definitions from files, which this interpreter refuses: the case asserts the refusal
+test "jq.test 1661: import 'test_bind_order' as check; check::check"
+    assert refused("import \"test_bind_order\" as check; check::check")
+
+test "jq.test 1665: try -. catch ."
+    assert passes(
+        program: "try -. catch .",
+        input: "\"very-long-string\"",
+        expected: ["\"string (\\\"very-long-...) cannot be negated\""]
+    )
+
+test "jq.test 1669: join(',')"
+    assert passes(program: "join(\",\")", input: "[\"1\",2,true,false,3.4]", expected: ["\"1,2,true,false,3.4\""])
+
+test "jq.test 1673: .[] | join(',')"
+    assert passes(
+        program: ".[] | join(\",\")",
+        input: "[[], [null], [null,null], [null,null,null]]",
+        expected: ["\"\"", "\"\"", "\",\"", "\",,\""]
+    )
+
+test "jq.test 1680: .[] | join(',')"
+    assert passes(program: ".[] | join(\",\")", input: "[[\"a\",null], [null,\"a\"]]", expected: ["\"a,\"", "\",a\""])
+
+test "jq.test 1685: try join(',') catch ."
+    assert passes(
+        program: "try join(\",\") catch .",
+        input: f"[\"1\",\"2\",{{\"a\":{{\"b\":{{\"c\":33}}}}}}]",
+        expected: [f"\"string (\\\"1,2,\\\") and object ({{\\\"a\\\":{{\\\"b\\\":{{...) cannot be added\""]
+    )
+
+test "jq.test 1689: try join(',') catch ."
+    assert passes(
+        program: "try join(\",\") catch .",
+        input: "[\"1\",\"2\",[3,4,5]]",
+        expected: ["\"string (\\\"1,2,\\\") and array ([3,4,5]) cannot be added\""]
+    )
+
+test "jq.test 1693: (if:0,and:1,or:2,then:3,else:4,elif:5,end:6,as:7,def:8,re..."
+    assert passes(
+        program: f"{{if:0,and:1,or:2,then:3,else:4,elif:5,end:6,as:7,def:8,reduce:9,foreach:10,try:11,catch:12,label:13,import:14,include:15,module:16}}",
+        input: "null",
+        expected: [f"{{\"if\":0,\"and\":1,\"or\":2,\"then\":3,\"else\":4,\"elif\":5,\"end\":6,\"as\":7,\"def\":8,\"reduce\":9,\"foreach\":10,\"try\":11,\"catch\":12,\"label\":13,\"import\":14,\"include\":15,\"module\":16}}"]
+    )
+
+test "jq.test 1697: try (1/.) catch ."
+    assert passes(
+        program: "try (1/.) catch .",
+        input: "0",
+        expected: ["\"number (1) and number (0) cannot be divided because the divisor is zero\""]
+    )
+
+test "jq.test 1701: try (1/0) catch ."
+    assert passes(
+        program: "try (1/0) catch .",
+        input: "0",
+        expected: ["\"number (1) and number (0) cannot be divided because the divisor is zero\""]
+    )
+
+test "jq.test 1705: try (0/0) catch ."
+    assert passes(
+        program: "try (0/0) catch .",
+        input: "0",
+        expected: ["\"number (0) and number (0) cannot be divided because the divisor is zero\""]
+    )
+
+test "jq.test 1709: try (1%.) catch ."
+    assert passes(
+        program: "try (1%.) catch .",
+        input: "0",
+        expected: ["\"number (1) and number (0) cannot be divided (remainder) because the divisor is zero\""]
+    )
+
+test "jq.test 1713: try (1%0) catch ."
+    assert passes(
+        program: "try (1%0) catch .",
+        input: "0",
+        expected: ["\"number (1) and number (0) cannot be divided (remainder) because the divisor is zero\""]
+    )
+
+test "jq.test 1718: [range(-52;52;1)] as $powers | [$powers[]|pow(2;.)|log2|r..."
+    assert passes(
+        program: "[range(-52;52;1)] as $powers | [$powers[]|pow(2;.)|log2|round] == $powers",
+        input: "null",
+        expected: ["true"]
+    )
+
+test "jq.test 1722: [range(-99/2;99/2;1)] as $orig | [$orig[]|pow(2;.)|log2] ..."
+    expected: [str] = []
+    assert passes(
+        program: "[range(-99/2;99/2;1)] as $orig | [$orig[]|pow(2;.)|log2] as $back | ($orig|keys)[]|. as $k | (($orig|.[$k])-($back|.[$k]))|if . < 0 then . * -1 else . end|select(.>.00005)",
+        input: "null",
+        expected: expected
+    )
+
+test "jq.test 1725: )"
+    assert refused(f"}}")
+
+test "jq.test 1729: (.[()] = 0)?"
+    expected: [str] = []
+    assert passes(program: f"(.[{{}}] = 0)?", input: "null", expected: expected)
+
+test "jq.test 1732: INDEX(range(5)|[., 'foo/(.)']; .[0])"
+    assert passes(
+        program: "INDEX(range(5)|[., \"foo\\(.)\"]; .[0])",
+        input: "null",
+        expected: [f"{{\"0\":[0,\"foo0\"],\"1\":[1,\"foo1\"],\"2\":[2,\"foo2\"],\"3\":[3,\"foo3\"],\"4\":[4,\"foo4\"]}}"]
+    )
+
+test "jq.test 1736: JOIN(('0':[0,'abc'],'1':[1,'bcd'],'2':[2,'def'],'3':[3,'e..."
+    assert passes(
+        program: f"JOIN({{\"0\":[0,\"abc\"],\"1\":[1,\"bcd\"],\"2\":[2,\"def\"],\"3\":[3,\"efg\"],\"4\":[4,\"fgh\"]}}; .[0]|tostring)",
+        input: "[[5,\"foo\"],[3,\"bar\"],[1,\"foobar\"]]",
+        expected: ["[[[5,\"foo\"],null],[[3,\"bar\"],[3,\"efg\"]],[[1,\"foobar\"],[1,\"bcd\"]]]"]
+    )
+
+test "jq.test 1740: range(5;10)|IN(range(10))"
+    assert passes(
+        program: "range(5;10)|IN(range(10))",
+        input: "null",
+        expected: ["true", "true", "true", "true", "true"]
+    )
+
+test "jq.test 1748: range(5;13)|IN(range(0;10;3))"
+    assert passes(
+        program: "range(5;13)|IN(range(0;10;3))",
+        input: "null",
+        expected: ["false", "true", "false", "false", "true", "false", "false", "false"]
+    )
+
+test "jq.test 1759: range(10;12)|IN(range(10))"
+    assert passes(program: "range(10;12)|IN(range(10))", input: "null", expected: ["false", "false"])
+
+test "jq.test 1764: IN(range(10;20); range(10))"
+    assert passes(program: "IN(range(10;20); range(10))", input: "null", expected: ["false"])
+
+test "jq.test 1768: IN(range(5;20); range(10))"
+    assert passes(program: "IN(range(5;20); range(10))", input: "null", expected: ["true"])
+
+test "jq.test 1773: (.a as $x | .b) = 'b'"
+    assert passes(
+        program: "(.a as $x | .b) = \"b\"",
+        input: f"{{\"a\":null,\"b\":null}}",
+        expected: [f"{{\"a\":null,\"b\":\"b\"}}"]
+    )
+
+test "jq.test 1778: (.. | select(type == 'object' and has('b') and (.b | type..."
+    assert passes(
+        program: "(.. | select(type == \"object\" and has(\"b\") and (.b | type) == \"array\")|.b) |= .[0]",
+        input: f"{{\"a\": {{\"b\": [1, {{\"b\": 3}}]}}}}",
+        expected: [f"{{\"a\": {{\"b\": 1}}}}"]
+    )
+
+test "jq.test 1782: isempty(empty)"
+    assert passes(program: "isempty(empty)", input: "null", expected: ["true"])
+
+test "jq.test 1786: isempty(range(3))"
+    assert passes(program: "isempty(range(3))", input: "null", expected: ["false"])
+
+test "jq.test 1790: isempty(1,error('foo'))"
+    assert passes(program: "isempty(1,error(\"foo\"))", input: "null", expected: ["false"])
+
+test "jq.test 1795: index('')"
+    assert passes(program: "index(\"\")", input: "\"\"", expected: ["null"])
+
+test "jq.test 1800: builtins|length > 10"
+    assert passes(program: "builtins|length > 10", input: "null", expected: ["true"])
+
+test "jq.test 1804: '-1'|IN(builtins[] / '/'|.[1])"
+    assert passes(program: "\"-1\"|IN(builtins[] / \"/\"|.[1])", input: "null", expected: ["false"])
+
+test "jq.test 1808: all(builtins[] / '/'; .[1]|tonumber >= 0)"
+    assert passes(program: "all(builtins[] / \"/\"; .[1]|tonumber >= 0)", input: "null", expected: ["true"])
+
+test "jq.test 1812: builtins|any(.[:1] == '_')"
+    assert passes(program: "builtins|any(.[:1] == \"_\")", input: "null", expected: ["false"])
+
+test "jq.test 1833: map(. == 1)"
+    assert passes(
+        program: "map(. == 1)",
+        input: "[1, 1.0, 1.000, 100e-2, 1e+0, 0.0001e4]",
+        expected: ["[true, true, true, true, true, true]"]
+    )
+
+test "jq.test 1854: . - 10"
+    assert passes(program: ". - 10", input: "13911860366432393", expected: ["13911860366432382"])
+
+test "jq.test 1858: .[0] - 10"
+    assert passes(program: ".[0] - 10", input: "[13911860366432393]", expected: ["13911860366432382"])
+
+test "jq.test 1862: .x - 10"
+    assert passes(program: ".x - 10", input: f"{{\"x\":13911860366432393}}", expected: ["13911860366432382"])
+
+test "jq.test 1866: . |= try . catch ."
+    assert passes(program: ". |= try . catch .", input: "1", expected: ["1"])
+
+test "jq.test 1871: .[] as $n | $n+0 | [., tostring, . == $n]"
+    assert passes(
+        program: ".[] as $n | $n+0 | [., tostring, . == $n]",
+        input: "[-9007199254740993, -9007199254740992, 9007199254740992, 9007199254740993, 13911860366432393]",
+        expected: ["[-9007199254740992,\"-9007199254740992\",true]", "[-9007199254740992,\"-9007199254740992\",true]", "[9007199254740992,\"9007199254740992\",true]", "[9007199254740992,\"9007199254740992\",true]", "[13911860366432392,\"13911860366432392\",true]"]
+    )
+
+test "jq.test 1880: abs"
+    assert passes(program: "abs", input: "\"abc\"", expected: ["\"abc\""])
+
+test "jq.test 1884: map(abs)"
+    assert passes(program: "map(abs)", input: "[-0, 0, -10, -1.1]", expected: ["[0,0,10,1.1]"])
+
+test "jq.test 1888: map(fabs == length) | unique"
+    assert passes(
+        program: "map(fabs == length) | unique",
+        input: "[-10, -1.1, -1e-1, 1000000000000000002]",
+        expected: ["[true]"]
+    )
+
+test "jq.test 1893: map(abs)"
+    assert passes(program: "map(abs)", input: "[0.1,1000000000000000002]", expected: ["[1e-1, 1000000000000000002]"])
+
+test "jq.test 1899: 123 as $label | $label"
+    assert passes(program: "123 as $label | $label", input: "null", expected: ["123"])
+
+test "jq.test 1903: [ label $if | range(10) | ., (select(. == 5) | break $if) ]"
+    assert passes(
+        program: "[ label $if | range(10) | ., (select(. == 5) | break $if) ]",
+        input: "null",
+        expected: ["[0,1,2,3,4,5]"]
+    )
+
+test "jq.test 1907: reduce .[] as $then (4 as $else | $else; . as $elif | . +..."
+    assert passes(
+        program: "reduce .[] as $then (4 as $else | $else; . as $elif | . + $then * $elif)",
+        input: "[1,2,3]",
+        expected: ["96"]
+    )
+
+test "jq.test 1911: 1 as $foreach | 2 as $and | 3 as $or | ( $foreach, $and, ..."
+    assert passes(
+        program: f"1 as $foreach | 2 as $and | 3 as $or | {{ $foreach, $and, $or, a }}",
+        input: f"{{\"a\":4,\"b\":5}}",
+        expected: [f"{{\"foreach\":1,\"and\":2,\"or\":3,\"a\":4}}"]
+    )
+
+test "jq.test 1915: [ foreach .[] as $try (1 as $catch | $catch - 1; . + $try..."
+    assert passes(
+        program: "[ foreach .[] as $try (1 as $catch | $catch - 1; . + $try; .) ]",
+        input: "[10,9,8,7]",
+        expected: ["[10,19,27,34]"]
+    )
+
+test "jq.test 1922: ( a, $__loc__, c )"
+    assert passes(
+        program: f"{{ a, $__loc__, c }}",
+        input: f"{{\"a\":[1,2,3],\"b\":\"foo\",\"c\":{{\"hi\":\"hey\"}}}}",
+        expected: [f"{{\"a\":[1,2,3],\"__loc__\":{{\"file\":\"<top-level>\",\"line\":1}},\"c\":{{\"hi\":\"hey\"}}}}"]
+    )
+
+test "jq.test 1926: 1 as $x | '2' as $y | '3' as $z | ( $x, as, $y: 4, ($z): ..."
+    assert passes(
+        program: f"1 as $x | \"2\" as $y | \"3\" as $z | {{ $x, as, $y: 4, ($z): 5, if: 6, foo: 7 }}",
+        input: f"{{\"as\":8}}",
+        expected: [f"{{\"x\":1,\"as\":8,\"2\":4,\"3\":5,\"if\":6,\"foo\":7}}"]
+    )
+
+test "jq.test 1933: fromjson | isnan"
+    assert passes(program: "fromjson | isnan", input: "\"nan\"", expected: ["true"])
+
+test "jq.test 1937: tojson | fromjson"
+    assert passes(program: "tojson | fromjson", input: f"{{\"a\":nan}}", expected: [f"{{\"a\":null}}"])
+
+test "jq.test 1942: fromjson | isnan"
+    assert passes(program: "fromjson | isnan", input: "\"nan1234\"", expected: ["true"])
+
+test "jq.test 1953: debug"
+    assert passes(program: "debug", input: "1", expected: ["1"])
+
+test "jq.test 1958: 'foo' | try ((try . catch 'caught too much') | error) cat..."
+    assert passes(
+        program: "\"foo\" | try ((try . catch \"caught too much\") | error) catch \"caught just right\"",
+        input: "null",
+        expected: ["\"caught just right\""]
+    )
+
+test "jq.test 1962: .[]|(try (if .=='hi' then . else error end) catch empty) ..."
+    assert passes(
+        program: ".[]|(try (if .==\"hi\" then . else error end) catch empty) | \"\\(.) there!\"",
+        input: "[\"hi\",\"ho\"]",
+        expected: ["\"hi there!\""]
+    )
+
+test "jq.test 1966: try (['hi','ho']|.[]|(try . catch (if .=='ho' then 'BROKE..."
+    assert passes(
+        program: "try ([\"hi\",\"ho\"]|.[]|(try . catch (if .==\"ho\" then \"BROKEN\"|error else empty end)) | if .==\"ho\" then error else \"\\(.) there!\" end) catch \"caught outside \\(.)\"",
+        input: "null",
+        expected: ["\"hi there!\"", "\"caught outside ho\""]
+    )
+
+test "jq.test 1971: .[]|(try . catch (if .=='ho' then 'BROKEN'|error else emp..."
+    assert passes(
+        program: ".[]|(try . catch (if .==\"ho\" then \"BROKEN\"|error else empty end)) | if .==\"ho\" then error else \"\\(.) there!\" end",
+        input: "[\"hi\",\"ho\"]",
+        expected: ["\"hi there!\""]
+    )
+
+test "jq.test 1975: try (try error catch 'inner catch /(.)') catch 'outer cat..."
+    assert passes(
+        program: "try (try error catch \"inner catch \\(.)\") catch \"outer catch \\(.)\"",
+        input: "\"foo\"",
+        expected: ["\"inner catch foo\""]
+    )
+
+test "jq.test 1979: try ((try error catch 'inner catch /(.)')|error) catch 'o..."
+    assert passes(
+        program: "try ((try error catch \"inner catch \\(.)\")|error) catch \"outer catch \\(.)\"",
+        input: "\"foo\"",
+        expected: ["\"outer catch inner catch foo\""]
+    )
+
+test "jq.test 1984: first(.?,.?)"
+    assert passes(program: "first(.?,.?)", input: "null", expected: ["null"])
+
+test "jq.test 1989: (foo: 'bar') | .foo |= .?"
+    assert passes(program: f"{{foo: \"bar\"}} | .foo |= .?", input: "null", expected: [f"{{\"foo\": \"bar\"}}"])
+
+test "jq.test 1994: . |= try 2"
+    assert passes(program: ". |= try 2", input: "1", expected: ["2"])
+
+test "jq.test 1998: . |= try 2 catch 3"
+    assert passes(program: ". |= try 2 catch 3", input: "1", expected: ["2"])
+
+test "jq.test 2002: .[] |= try tonumber"
+    assert passes(program: ".[] |= try tonumber", input: "[\"1\", \"2a\", \"3\", 4]", expected: ["[1, 3, 4]"])
+
+test "jq.test 2007: any(keys[]|tostring?;true)"
+    assert passes(
+        program: "any(keys[]|tostring?;true)",
+        input: f"{{\"a\":\"1\",\"b\":\"2\",\"c\":\"3\"}}",
+        expected: ["true"]
+    )
+
+test "jq.test 2015: implode|explode"
+    assert passes(
+        program: "implode|explode",
+        input: "[-1,0,1,2,3,1114111,1114112,55295,55296,57343,57344,1.1,1.9]",
+        expected: ["[65533,0,1,2,3,1114111,65533,55295,65533,65533,57344,1,1]"]
+    )
+
+test "jq.test 2019: map(try implode catch .)"
+    assert passes(
+        program: "map(try implode catch .)",
+        input: "[123,[\"a\"],[nan]]",
+        expected: ["[\"implode input must be an array\",\"string (\\\"a\\\") can't be imploded, unicode codepoint needs to be numeric\",\"number (null) can't be imploded, unicode codepoint needs to be numeric\"]"]
+    )
+
+test "jq.test 2024: walk(.)"
+    assert passes(program: "walk(.)", input: f"{{\"x\":0}}", expected: [f"{{\"x\":0}}"])
+
+test "jq.test 2028: walk(1)"
+    assert passes(program: "walk(1)", input: f"{{\"x\":0}}", expected: ["1"])
+
+test "jq.test 2033: [walk(.,1)]"
+    assert passes(program: "[walk(.,1)]", input: f"{{\"x\":0}}", expected: [f"[{{\"x\":0}},1]"])
+
+test "jq.test 2038: walk(select(IN((), []) | not))"
+    assert passes(
+        program: f"walk(select(IN({{}}, []) | not))",
+        input: f"{{\"a\":1,\"b\":[]}}",
+        expected: [f"{{\"a\":1}}"]
+    )
+
+test "jq.test 2043: [range(10)] | .[1.2:3.5]"
+    assert passes(program: "[range(10)] | .[1.2:3.5]", input: "null", expected: ["[1,2,3]"])
+
+test "jq.test 2047: [range(10)] | .[1.5:3.5]"
+    assert passes(program: "[range(10)] | .[1.5:3.5]", input: "null", expected: ["[1,2,3]"])
+
+test "jq.test 2051: [range(10)] | .[1.7:3.5]"
+    assert passes(program: "[range(10)] | .[1.7:3.5]", input: "null", expected: ["[1,2,3]"])
+
+test "jq.test 2055: [range(10)] | .[1.7:4294967295]"
+    assert passes(program: "[range(10)] | .[1.7:4294967295]", input: "null", expected: ["[1,2,3,4,5,6,7,8,9]"])
+
+test "jq.test 2059: [range(10)] | .[1.7:-4294967296]"
+    assert passes(program: "[range(10)] | .[1.7:-4294967296]", input: "null", expected: ["[]"])
+
+test "jq.test 2063: [[range(10)] | .[1.1,1.5,1.7]]"
+    assert passes(program: "[[range(10)] | .[1.1,1.5,1.7]]", input: "null", expected: ["[1,1,1]"])
+
+test "jq.test 2067: [range(5)] | .[1.1] = 5"
+    assert passes(program: "[range(5)] | .[1.1] = 5", input: "null", expected: ["[0,5,2,3,4]"])
+
+test "jq.test 2071: [range(3)] | .[nan:1]"
+    assert passes(program: "[range(3)] | .[nan:1]", input: "null", expected: ["[0]"])
+
+test "jq.test 2075: [range(3)] | .[1:nan]"
+    assert passes(program: "[range(3)] | .[1:nan]", input: "null", expected: ["[1,2]"])
+
+test "jq.test 2079: [range(3)] | .[nan]"
+    assert passes(program: "[range(3)] | .[nan]", input: "null", expected: ["null"])
+
+test "jq.test 2083: try ([range(3)] | .[nan] = 9) catch ."
+    assert passes(
+        program: "try ([range(3)] | .[nan] = 9) catch .",
+        input: "null",
+        expected: ["\"Cannot set array element at NaN index\""]
+    )
+
+test "jq.test 2087: try ('foobar' | .[1.5:3.5] = 'xyz') catch ."
+    assert passes(
+        program: "try (\"foobar\" | .[1.5:3.5] = \"xyz\") catch .",
+        input: "null",
+        expected: ["\"Cannot update string slices\""]
+    )
+
+test "jq.test 2091: try ([range(10)] | .[1.5:3.5] = ['xyz']) catch ."
+    assert passes(
+        program: "try ([range(10)] | .[1.5:3.5] = [\"xyz\"]) catch .",
+        input: "null",
+        expected: ["[0,\"xyz\",4,5,6,7,8,9]"]
+    )
+
+test "jq.test 2095: try ('foobar' | .[1.5]) catch ."
+    assert passes(
+        program: "try (\"foobar\" | .[1.5]) catch .",
+        input: "null",
+        expected: ["\"Cannot index string with number\""]
+    )
+
+test "jq.test 2102: try ['ok', setpath([1]; 1)] catch ['ko', .]"
+    assert passes(
+        program: "try [\"ok\", setpath([1]; 1)] catch [\"ko\", .]",
+        input: f"{{\"hi\":\"hello\"}}",
+        expected: ["[\"ko\",\"Cannot index object with number\"]"]
+    )
+
+test "jq.test 2109: try ltrimstr(1) catch 'x', try rtrimstr(1) catch 'x' | 'ok'"
+    assert passes(
+        program: "try ltrimstr(1) catch \"x\", try rtrimstr(1) catch \"x\" | \"ok\"",
+        input: "\"hi\"",
+        expected: ["\"ok\"", "\"ok\""]
+    )
+
+test "jq.test 2114: try ltrimstr('x') catch 'x', try rtrimstr('x') catch 'x' ..."
+    assert passes(
+        program: "try ltrimstr(\"x\") catch \"x\", try rtrimstr(\"x\") catch \"x\" | \"ok\"",
+        input: f"{{\"hey\":[]}}",
+        expected: ["\"ok\"", "\"ok\""]
+    )

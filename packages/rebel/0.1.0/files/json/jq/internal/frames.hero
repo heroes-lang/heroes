@@ -1,0 +1,304 @@
+# The records the machine runs on, and the collection of those it no longer
+# reaches. A run is continuation-passing: a `Cont` says what receives a value,
+# an `Env` holds a variable, a parameter's closure, a local definition or a
+# label, and a `Choice` on a stack is a place the run goes back to for the
+# next value of a generator. Every `Cont` and `Env` names only ones made
+# before it, so one pass from the newest down marks every one still reached.
+
+use json
+
+## What a value carries through a run
+
+# A value with no path: the run is not inside `path(...)`.
+constant PLAIN: i64
+    0
+
+# A value with the path that reaches it from the input of `path(...)`.
+constant TRACKED: i64
+    1
+
+# A value computed inside `path(...)`, which no path reaches: using it as one
+# is an error.
+constant LOST: i64
+    2
+
+# A value as the machine passes it on.
+record Item
+    # The value.
+    value: json.Value
+    # The path that reaches it, where `mode` is `TRACKED`.
+    path: [json.Value]
+    # `PLAIN`, `TRACKED` or `LOST`.
+    mode: i64
+
+# `v` with no path.
+function plain(v: json.Value) -> Item
+    return Item(value: v, path: [], mode: PLAIN)
+
+# `v` computed from `from`: plain where `from` is, and lost inside a path.
+function derived(from: Item, v: json.Value) -> Item
+    mode = if from.mode == PLAIN
+        PLAIN
+    else
+        LOST
+    return Item(value: v, path: [], mode: mode)
+
+## Continuations
+
+# What receives a value: `kind` says how, `next` what receives the value it
+# passes on, -1 for none.
+record Cont
+    # One of the `K_` constants of `machine`.
+    kind: i64
+    # The node it was made for.
+    node: i64
+    # The frames it evaluates in.
+    env: i64
+    # The continuation it passes on to.
+    next: i64
+    # The input it keeps, or the value it is building.
+    item: Item
+    # An index, a count or an id, as its kind says.
+    n: i64
+    # The values collected so far, for a kind that collects them.
+    values: [json.Value]
+    # How many continuations stand below it, itself counted.
+    depth: i64
+
+## Frames
+
+# A variable's frame: `value` holds it.
+constant VARIABLE_FRAME: i64
+    1
+
+# A local definition's frame: `node` is the definition.
+constant FUNCTION_FRAME: i64
+    2
+
+# A parameter's frame: `node` is the argument and `closure` the frames it
+# runs in.
+constant PARAMETER_FRAME: i64
+    3
+
+# A label's frame: `n` is the label's id.
+constant LABEL_FRAME: i64
+    4
+
+# One frame of the environment.
+record Env
+    # The frame below it, -1 for none.
+    parent: i64
+    # One of the `_FRAME` constants.
+    kind: i64
+    # A variable's value.
+    value: json.Value
+    # A definition or an argument.
+    node: i64
+    # The frames an argument runs in.
+    closure: i64
+    # A label's id.
+    n: i64
+
+## Choices
+
+# A place the run goes back to.
+record Choice
+    # One of the `C_` constants of `machine`.
+    kind: i64
+    # The node it was made for.
+    node: i64
+    # The frames it evaluates in.
+    env: i64
+    # The continuation its values go to.
+    cont: i64
+    # The input it keeps.
+    item: Item
+    # A value it holds: a state, a container, the last value of an update.
+    other: Item
+    # An index, a count, an id.
+    n: i64
+    # A second index or id.
+    m: i64
+    # An object's keys, for iterating over one.
+    names: [str]
+    # A flag, as its kind says.
+    flag: bool
+    # A number, as its kind says: where a range stands.
+    x: f64
+    # A second number: where a range ends.
+    y: f64
+    # A third number: a range's step.
+    z: f64
+    # Values it holds: a builtin's outputs, a binding's keys.
+    values: [json.Value]
+
+# A choice of `kind` with nothing in it.
+function choice(kind: i64) -> Choice
+    return Choice(
+        kind: kind,
+        node: -1,
+        env: -1,
+        cont: -1,
+        item: plain(.null_value),
+        other: plain(.null_value),
+        n: 0,
+        m: 0,
+        names: [],
+        flag: false,
+        x: 0.0,
+        y: 0.0,
+        z: 0.0,
+        values: []
+    )
+
+## Lists
+
+# Adds `v` to the end of `xs`, which the caller owns.
+function append<T>(@xs: [T], v: T)
+    xs @ xs.push(v)
+
+# Writes `v` at index `top` of `xs`, the list growing by one where `top` is
+# its length.
+function put<T>(@xs: [T], top: i64, v: T)
+    if top == xs.len()
+        xs @ xs.push(v)
+    else
+        xs[top] @ v
+
+## Collection
+
+# The continuations and frames still reached, kept in their order, and every
+# index that named one renamed.
+record Kept
+    # The continuations kept.
+    conts: [Cont]
+    # The frames kept.
+    envs: [Env]
+    # For each old continuation, its new index, -1 where it was dropped.
+    cont_index: [i64]
+    # For each old frame, its new index, -1 where it was dropped.
+    env_index: [i64]
+
+# The continuations and frames reached from `cont_roots` and `env_roots`,
+# with their references renamed.
+function collect(conts: [Cont] lent, envs: [Env] lent, cont_roots: [i64], env_roots: [i64]) -> Kept
+    live_conts: [bool] @= []
+
+    for _ in range(from: 0, to: conts.len())
+        live_conts @ live_conts.push(false)
+
+    live_envs: [bool] @= []
+
+    for _ in range(from: 0, to: envs.len())
+        live_envs @ live_envs.push(false)
+
+    for c in cont_roots
+        if c >= 0
+            live_conts[c] @ true
+
+    for e in env_roots
+        if e >= 0
+            live_envs[e] @ true
+
+    at: i64 @= conts.len()
+
+    while at > 0
+        at @ at - 1
+
+        if live_conts[at]
+            k = conts[at]
+
+            if k.next >= 0
+                live_conts[k.next] @ true
+
+            if k.env >= 0
+                live_envs[k.env] @ true
+
+    at @ envs.len()
+
+    while at > 0
+        at @ at - 1
+
+        if live_envs[at]
+            f = envs[at]
+
+            if f.parent >= 0
+                live_envs[f.parent] @ true
+
+            if f.closure >= 0
+                live_envs[f.closure] @ true
+
+    cont_index: [i64] @= []
+    kept_conts: [Cont] @= []
+
+    for i in range(from: 0, to: conts.len())
+        if live_conts[i]
+            cont_index @ cont_index.push(kept_conts.len())
+            kept_conts @ kept_conts.push(conts[i])
+        else
+            cont_index @ cont_index.push(-1)
+
+    env_index: [i64] @= []
+    kept_envs: [Env] @= []
+
+    for i in range(from: 0, to: envs.len())
+        if live_envs[i]
+            env_index @ env_index.push(kept_envs.len())
+            kept_envs @ kept_envs.push(envs[i])
+        else
+            env_index @ env_index.push(-1)
+
+    for i in range(from: 0, to: kept_conts.len())
+        k = kept_conts[i]
+
+        if k.next >= 0
+            kept_conts[i].next @ cont_index[k.next]
+
+        if k.env >= 0
+            kept_conts[i].env @ env_index[k.env]
+
+    for i in range(from: 0, to: kept_envs.len())
+        f = kept_envs[i]
+
+        if f.parent >= 0
+            kept_envs[i].parent @ env_index[f.parent]
+
+        if f.closure >= 0
+            kept_envs[i].closure @ env_index[f.closure]
+
+    return Kept(conts: kept_conts, envs: kept_envs, cont_index: cont_index, env_index: env_index)
+
+# `index` renamed by `renamed`, -1 staying -1.
+function renamed(index: i64, by: [i64] lent) -> i64
+    if index < 0
+        return -1
+    return by[index]
+
+## Tests
+
+test "derived: plain from a plain value, lost inside a path"
+    assert derived(from: plain(.null_value), v: .boolean(v: true)).mode == PLAIN
+    tracked = Item(value: .null_value, path: [.text(v: "a")], mode: TRACKED)
+    assert derived(from: tracked, v: .null_value).mode == LOST
+
+test "put: at the end and over an entry"
+    xs: [i64] @= []
+    put(@xs, top: 0, v: 1)
+    put(@xs, top: 1, v: 2)
+    put(@xs, top: 0, v: 3)
+    assert xs == [3, 2]
+
+test "collect: a chain kept, a dropped continuation and frame left out, references renamed"
+    item = plain(.null_value)
+    conts: [Cont] @= []
+    conts @ conts.push(Cont(kind: 1, node: 0, env: 1, next: -1, item: item, n: 0, values: [], depth: 1))
+    conts @ conts.push(Cont(kind: 2, node: 0, env: -1, next: -1, item: item, n: 0, values: [], depth: 1))
+    conts @ conts.push(Cont(kind: 3, node: 0, env: -1, next: 0, item: item, n: 0, values: [], depth: 2))
+    envs: [Env] @= []
+    envs @ envs.push(Env(parent: -1, kind: VARIABLE_FRAME, value: .null_value, node: -1, closure: -1, n: 0))
+    envs @ envs.push(Env(parent: -1, kind: VARIABLE_FRAME, value: .null_value, node: -1, closure: -1, n: 0))
+    kept = collect(conts, envs: envs, cont_roots: [2], env_roots: [])
+    assert kept.conts.len() == 2 && kept.envs.len() == 1
+    assert kept.conts[1].next == 0 && kept.conts[0].env == 0
+    assert kept.cont_index == [0, -1, 1] && kept.env_index == [-1, 0]
+    assert renamed(index: 2, by: kept.cont_index) == 1 && renamed(index: -1, by: kept.cont_index) == -1

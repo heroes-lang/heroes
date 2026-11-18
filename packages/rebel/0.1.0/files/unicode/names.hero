@@ -1,0 +1,535 @@
+# What the Unicode Character Database tells of a character beyond its class
+# and its case: its name and the character a name gives, its aliases, its
+# script and the scripts it is used with, its block, the properties Unicode
+# lists by name, the number it writes and its direction in text written
+# right to left. The tables hold Unicode 17.0.0, which `UNICODE_VERSION`
+# says; they live apart from `unicode` so that only the programs that ask
+# carry them.
+#
+# What it does NOT do: say a character's general category, its class or its
+# case (`unicode`); normalize a text or give a character's decomposition and
+# combining class (`unicode/normalize`); cut a text, or say its width and the
+# classes UAX #29 and UAX #14 cut by (`unicode/segment`); lay out text
+# written right to left, which needs the whole bidirectional algorithm.
+#
+# A function that takes a character aborts where it is handed the empty text
+# or more than one character. It fails with `not_found` alone, where a name,
+# a script or a property names nothing, or a character has no name, no
+# number or no mirror.
+
+use unicode
+use unicode/names/internal/name_table
+use unicode/names/internal/naming
+use unicode/names/internal/properties as lookups
+use unicode/names/internal/property_tables
+
+## Codes
+
+# The code of a name that names no character, a script or a property that
+# names none, and a character with no name, no number or no mirror.
+constant NOT_FOUND: str
+    "not_found"
+
+## Limits
+
+# The version of Unicode the tables hold.
+constant UNICODE_VERSION: str
+    "17.0.0"
+
+## Names
+
+# The name Unicode gives `c`: "LATIN SMALL LETTER E WITH ACUTE" for "é".
+#
+# - `c`: one character.
+#
+# A Han ideograph, a Hangul syllable and the other characters Unicode names
+# by a rule answer that rule's name, "CJK UNIFIED IDEOGRAPH-4E00" and
+# "HANGUL SYLLABLE GA". Fails `not_found` where `c` has no name: a control
+# (whose names are its aliases, `aliases`), a private use character, a
+# noncharacter or a code point no character has yet. Aborts where `c` is not
+# exactly one character. See also `from_name`, `aliases`.
+function name(c: str) -> str?
+    n = unicode.code_point(c)
+
+    match naming.name_of(n)
+        .ok found => return ok(found)
+        .err _    => return fail(code: NOT_FOUND, msg: f"U+{naming.hex_of(n)} has no name")
+
+# The character `text` names: a name, an alias, or the name of a named
+# sequence, which answers several characters, as Python's
+# `unicodedata.lookup` reads them.
+#
+# - `text`: the name, matched loosely by UAX #44's rule LM2: case, spaces,
+#   underscores and a hyphen between two letters or digits are ignored, so
+#   "latin small letter a", "LATIN_SMALL_LETTER_A" and "LatinSmallLetterA"
+#   all name "a", but the hyphen of "HANGUL JUNGSEONG O-E" counts.
+#
+# Fails `not_found` where `text` names nothing, the message quoting it. See
+# also `name`.
+function from_name(text: str) -> str?
+    match naming.points_named(text)
+        .ok points => return ok(unicode.from_code_points(points).must())
+        .err _     => return fail(code: NOT_FOUND, msg: f"no character is named \"{text}\"")
+
+# The name `ALIAS_CORRECTION` gives an alias that corrects a mistake in a
+# character's name, which Unicode never changes.
+constant ALIAS_CORRECTION: str
+    "correction"
+
+# The kind of an alias that names a control character: "NULL", "LINE FEED".
+constant ALIAS_CONTROL: str
+    "control"
+
+# The kind of an alias that is a name a character is widely known by:
+# "BYTE ORDER MARK".
+constant ALIAS_ALTERNATE: str
+    "alternate"
+
+# The kind of an alias for a name a standard once gave a character that was
+# never there.
+constant ALIAS_FIGMENT: str
+    "figment"
+
+# The kind of an alias that is an abbreviation: "NUL", "LF", "ZWSP".
+constant ALIAS_ABBREVIATION: str
+    "abbreviation"
+
+# One alias of a character, which `aliases` answers.
+record Alias
+    # The alias, in capitals as Unicode writes it.
+    name: str
+    # Why the alias exists: `ALIAS_CORRECTION`, `ALIAS_CONTROL`,
+    # `ALIAS_ALTERNATE`, `ALIAS_FIGMENT` or `ALIAS_ABBREVIATION`.
+    kind: str
+
+# The aliases Unicode gives `c` in `NameAliases.txt`, in the order the file
+# lists them.
+#
+# - `c`: one character.
+#
+# Empty where `c` has none, as most characters do. Aborts where `c` is not
+# exactly one character. See also `name`, `from_name`, which reads every
+# alias.
+function aliases(c: str) -> [Alias]
+    n = unicode.code_point(c)
+    found: [Alias] @= []
+    at: i64 @= 0
+
+    while at < name_table.ALIASES.len()
+        entry = name_table.ALIASES[at]
+
+        if entry >> 3 == n
+            found @ found.push(Alias(name: name_table.ALIAS_NAMES[at], kind: name_table.ALIAS_KINDS[entry & 7]))
+        at @ at + 1
+
+    return found
+
+## Scripts
+
+# The script `c` belongs to, by its long name in Unicode's property value
+# aliases: "Latin", "Greek", "Han", "Old_Italic"; "Common" for a character
+# many scripts use, "Inherited" for a mark that takes its base's script, and
+# "Unknown" for a code point no character has yet.
+#
+# - `c`: one character.
+#
+# Aborts where `c` is not exactly one character. See also
+# `script_extensions`, `scripts`.
+function script(c: str) -> str
+    return lookups.script_of(unicode.code_point(c))
+
+# The scripts `c` is used with, by their long names in the order
+# `ScriptExtensions.txt` gives them: "ー" is used with Hiragana and Katakana.
+#
+# - `c`: one character.
+#
+# A character the file does not list answers its own script alone, as
+# Unicode defines. Aborts where `c` is not exactly one character. See also
+# `script`.
+function script_extensions(c: str) -> [str]
+    return lookups.extensions_of(unicode.code_point(c))
+
+# The long name of every script Unicode 17.0.0 holds, "Common", "Inherited"
+# and "Unknown" among them, in the order of their names' bytes.
+function scripts() -> [str]
+    return property_tables.SCRIPT_NAMES
+
+# The long name of the script `alias` names: its long name, its four-letter
+# code of ISO 15924, or another alias, matched loosely by UAX #44's rule LM3
+# (case, spaces, underscores and hyphens ignored), so "Grek", "greek" and
+# "GREEK" all answer "Greek".
+#
+# - `alias`: the name or code of a script.
+#
+# Fails `not_found` where `alias` names no script. See also `scripts`.
+function script_named(alias: str) -> str?
+    match lookups.script_named(alias)
+        .ok found => return ok(found)
+        .err _    => return fail(code: NOT_FOUND, msg: f"no script is named \"{alias}\"")
+
+## Blocks
+
+# What `block` names and `blocks` lists: a range of code points Unicode sets
+# aside together.
+record Block
+    # The block's name as `Blocks.txt` writes it: "Basic Latin",
+    # "Latin-1 Supplement".
+    name: str
+    # Its first code point.
+    first: i64
+    # Its last code point, which is in it.
+    last: i64
+
+# What `block` answers for a code point no block holds.
+constant NO_BLOCK: str
+    "No_Block"
+
+# The name of the block `c` stands in, "Latin-1 Supplement" for "é", or
+# `NO_BLOCK` where no block holds it, as Python's `unicodedata.block`
+# answers.
+#
+# - `c`: one character.
+#
+# Aborts where `c` is not exactly one character. See also `blocks`.
+function block(c: str) -> str
+    return lookups.block_of(unicode.code_point(c))
+
+# Every block of Unicode 17.0.0, in the order of their code points.
+function blocks() -> [Block]
+    found: [Block] @= []
+    at: i64 @= 0
+
+    while at < property_tables.BLOCKS.len()
+        entry = property_tables.BLOCKS[at]
+        found @ found.push(Block(name: property_tables.BLOCK_NAMES[at], first: entry >> 21, last: entry & 0x1fffff))
+        at @ at + 1
+
+    return found
+
+## Properties
+
+# Whether `c` has the binary property `property`, one of those Unicode lists
+# by name in `PropList.txt`, `DerivedCoreProperties.txt` and
+# `emoji-data.txt`: "White_Space", "Alphabetic", "Dash", "Emoji",
+# "Extended_Pictographic" and the rest `properties` lists.
+#
+# - `c`: one character.
+# - `property`: the property's long name or its short alias ("WSpace",
+#   "Alpha", "ExtPict"), matched loosely by UAX #44's rule LM3: case, spaces,
+#   underscores, hyphens and an "is" before the name are ignored.
+#
+# Fails `not_found` where `property` names no binary property, the message
+# quoting it. Aborts where `c` is not exactly one character. See also
+# `properties`.
+function has_property(c: str, property: str) -> bool?
+    n = unicode.code_point(c)
+
+    match lookups.property_index(property)
+        .ok index => return ok(lookups.has(n: n, index: index))
+        .err _    => return fail(code: NOT_FOUND, msg: f"no binary property is named \"{property}\"")
+
+# The long name of every binary property `has_property` reads, in the order
+# of their names' bytes.
+function properties() -> [str]
+    return property_tables.PROPERTY_NAMES
+
+# Whether `c` may begin an identifier by UAX #31: its property XID_Start,
+# the letters of every script and the numbers written as letters, "_" not
+# among them.
+#
+# - `c`: one character.
+#
+# Aborts where `c` is not exactly one character. See also
+# `is_identifier_continue`, `is_identifier`.
+function is_identifier_start(c: str) -> bool
+    return lookups.has(n: unicode.code_point(c), index: property_tables.PROPERTY_XID_START)
+
+# Whether `c` may stand in an identifier after its first character by
+# UAX #31: its property XID_Continue, the letters, the marks, the digits and
+# the connecting punctuation such as "_".
+#
+# - `c`: one character.
+#
+# Aborts where `c` is not exactly one character. See also
+# `is_identifier_start`.
+function is_identifier_continue(c: str) -> bool
+    return lookups.has(n: unicode.code_point(c), index: property_tables.PROPERTY_XID_CONTINUE)
+
+# Whether `s` is an identifier as Python's `str.isidentifier` reads one: a
+# first character that `is_identifier_start` accepts or "_", then characters
+# that `is_identifier_continue` accepts.
+#
+# - `s`: the text; the empty text is none.
+#
+# A keyword of a language is an identifier here. See also
+# `is_identifier_start`.
+function is_identifier(s: str) -> bool
+    at: i64 @= 0
+
+    for c in s.chars()
+        n = unicode.code_point(c)
+
+        fits = if at == 0
+            n == '_' || lookups.has(n: n, index: property_tables.PROPERTY_XID_START)
+        else
+            lookups.has(n: n, index: property_tables.PROPERTY_XID_CONTINUE)
+
+        if !fits
+            return false
+        at @ at + 1
+
+    return at > 0
+
+# Whether `c` is drawn as nothing where no font knows it, Unicode's
+# Default_Ignorable_Code_Point: the zero-width joiners, the variation
+# selectors, the soft hyphen and the code points set aside for more of them.
+#
+# - `c`: one character.
+#
+# Aborts where `c` is not exactly one character.
+function is_default_ignorable(c: str) -> bool
+    return lookups.has(n: unicode.code_point(c), index: property_tables.PROPERTY_DEFAULT_IGNORABLE_CODE_POINT)
+
+## Numbers
+
+# What `numeric_value` answers for a character `NUMERIC_DECIMAL` describes: a
+# digit of a decimal system, which `unicode.digit_value` also reads.
+constant NUMERIC_DECIMAL: str
+    "decimal"
+
+# What `numeric_value` answers for a digit that is no digit of a decimal
+# system: a superscript or a circled digit, "²", "①".
+constant NUMERIC_DIGIT: str
+    "digit"
+
+# What `numeric_value` answers for any other character that writes a number:
+# a fraction, a Roman numeral, a Han numeral, "½", "Ⅻ", "万".
+constant NUMERIC_OTHER: str
+    "numeric"
+
+# The number a character writes, exact, which `numeric_value` answers.
+record NumericValue
+    # The numerator, negative for the one character that writes a number
+    # below zero (U+0F33, minus one half).
+    numerator: i64
+    # The denominator, 1 for a whole number, never 0.
+    denominator: i64
+    # `NUMERIC_DECIMAL`, `NUMERIC_DIGIT` or `NUMERIC_OTHER`, Unicode's
+    # Numeric_Type.
+    kind: str
+
+# The number `c` writes, as a fraction, and its kind.
+#
+# - `c`: one character.
+#
+# A fraction is in its lowest terms, as Unicode writes it: "½" answers 1 and
+# 2, and "万" answers 10000 and 1. Python's `unicodedata.numeric` answers the
+# same value as a float, `digit` the value of a digit, `decimal` of a decimal
+# digit. Fails `not_found` where `c` writes no number. Aborts where `c` is
+# not exactly one character.
+function numeric_value(c: str) -> NumericValue?
+    n = unicode.code_point(c)
+
+    match lookups.number_of(n)
+        .ok found => return ok(
+            NumericValue(numerator: found.numerator, denominator: found.denominator, kind: property_tables.NUMERIC_KINDS[found.kind])
+        )
+        .err _ => return fail(code: NOT_FOUND, msg: f"U+{naming.hex_of(n)} writes no number")
+
+## Direction
+
+# The Bidi_Class of `c`, which orders it in text written right to left, as
+# `DerivedBidiClass.txt` writes it: "L" for a letter written left to right,
+# "R" for Hebrew, "AL" for Arabic, "EN" for a European digit, and the rest of
+# its twenty-three values.
+#
+# - `c`: one character.
+#
+# A code point no character has yet answers the default of its range, as
+# `DerivedBidiClass.txt` gives it: "R" in the ranges set aside for Hebrew and
+# the scripts like it, "AL" in those for Arabic, "BN" for a noncharacter and
+# a code point set aside as default ignorable, "L" elsewhere. Aborts where
+# `c` is not exactly one character. See also `is_mirrored`.
+function bidi_class(c: str) -> str
+    return lookups.bidi_of(unicode.code_point(c))
+
+# Whether `c` is drawn mirrored in text written right to left, Unicode's
+# Bidi_Mirrored: "(" is drawn as ")".
+#
+# - `c`: one character.
+#
+# Aborts where `c` is not exactly one character. See also `mirror`.
+function is_mirrored(c: str) -> bool
+    return lookups.is_mirrored(unicode.code_point(c))
+
+# The character whose shape draws `c` mirrored, by `BidiMirroring.txt`:
+# ")" for "(", "»" for "«".
+#
+# - `c`: one character.
+#
+# Fails `not_found` where `c` has no such character, a mirrored character
+# among them whose mirror no character draws ("∛"). Aborts where `c` is not
+# exactly one character. See also `is_mirrored`.
+function mirror(c: str) -> str?
+    n = unicode.code_point(c)
+
+    match lookups.mirror_of(n)
+        .ok found => return ok(unicode.from_code_point(found).must())
+        .err _    => return fail(code: NOT_FOUND, msg: f"U+{naming.hex_of(n)} has no mirror")
+
+## Tests
+
+# Every expected answer below is what Python 3.15.2's `unicodedata`
+# (17.0.0), Go 1.27.3's `unicode` (17.0.0) or ICU 78.3 (Unicode 17.0)
+# answered for the same input, observed 2026-11-17; the generators of the
+# tables held every code point to them before the tables were written.
+
+test "name and from_name: a character with no name, its message, a name with no character, and a named sequence"
+    match name(unicode.from_code_point(0).must())
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND && e.msg == "U+0000 has no name"
+
+    match from_name("LATIN LETTER NOTHING")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND && e.msg == "no character is named \"LATIN LETTER NOTHING\""
+
+    assert from_name("KEYCAP NUMBER SIGN").must() == unicode.from_code_points([0x23, 0xfe0f, 0x20e3]).must()
+    assert from_name("hangul syllable gag").must() == "각"
+    assert name("각").must() == "HANGUL SYLLABLE GAG"
+
+test "aliases: none, and a control's two"
+    assert aliases("a") == []
+    assert aliases(unicode.from_code_point(0).must()) == [Alias(name: "NULL", kind: ALIAS_CONTROL), Alias(name: "NUL", kind: ALIAS_ABBREVIATION)]
+
+test "scripts and properties: their counts, and both in the order of their bytes"
+    assert scripts().len() == 176 && blocks().len() == 346 && properties().len() == 63
+    assert script_named("Zzzz").must() == "Unknown"
+    assert script(unicode.from_code_point(0x10ffff).must()) == "Unknown"
+
+test "has_property and numeric_value: a property no character has here, an unknown property, and a number of each kind"
+    match has_property(c: "a", property: "Bogus")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND && e.msg == "no binary property is named \"Bogus\""
+
+    assert has_property(c: "😀", property: "ExtPict").must()
+    assert numeric_value("7").must() == NumericValue(numerator: 7, denominator: 1, kind: NUMERIC_DECIMAL)
+    assert numeric_value("万").must() == NumericValue(numerator: 10000, denominator: 1, kind: NUMERIC_OTHER)
+    assert numeric_value("a").is_err()
+
+test "is_identifier: the empty text, a digit first, letters of other scripts, and a middle dot"
+    assert !is_identifier("")
+    assert !is_identifier("1x")
+    assert is_identifier("名前")
+    assert is_identifier("x·y")
+    assert !is_identifier_start("_")
+
+test "bidi_class and mirror: an unassigned code point in the Hebrew block, and a character with no mirror"
+    assert bidi_class(unicode.from_code_point(0x5ff).must()) == "R"
+    assert bidi_class(unicode.from_code_point(0x10ffff).must()) == "BN"
+    assert bidi_class(unicode.from_code_point(0x378).must()) == "L"
+    assert mirror("a").is_err()
+    assert mirror("«").must() == "»"
+
+## Examples
+
+# The name of a letter with an accent.
+test "name: a letter with an acute accent"
+    assert name("é").must() == "LATIN SMALL LETTER E WITH ACUTE"
+
+# A character found by its name written in lower case.
+test "from_name: a name in lower case"
+    assert from_name("latin small letter e with acute").must() == "é"
+
+# The aliases of the byte order mark.
+test "aliases: the byte order mark"
+    found = aliases(unicode.from_code_point(0xfeff).must())
+    assert found.len() == 3
+    assert found[0] == Alias(name: "BYTE ORDER MARK", kind: ALIAS_ALTERNATE)
+    assert found[1] == Alias(name: "BOM", kind: ALIAS_ABBREVIATION)
+
+# The script of a Greek letter, of a digit and of a combining accent.
+test "script: a Greek letter, a digit and an accent"
+    assert script("α") == "Greek"
+    assert script("7") == "Common"
+    assert script(unicode.from_code_point(0x301).must()) == "Inherited"
+
+# The prolonged sound mark of Japanese, used with both kana.
+test "script_extensions: the prolonged sound mark"
+    assert script_extensions("ー") == ["Hiragana", "Katakana"]
+    assert script_extensions("α") == ["Greek"]
+
+# Every script, Latin among them.
+test "scripts: Latin among them"
+    latin @= false
+
+    for each in scripts()
+        if each == "Latin"
+            latin @ true
+
+    assert latin
+
+# A script named by its code of ISO 15924.
+test "script_named: the code of Greek"
+    assert script_named("Grek").must() == "Greek"
+
+# The block of a letter with an accent.
+test "block: a letter with an acute accent"
+    assert block("é") == "Latin-1 Supplement"
+
+# The first block, Basic Latin.
+test "blocks: the first one"
+    assert blocks()[0] == Block(name: "Basic Latin", first: 0, last: 0x7f)
+
+# A space is white space; a letter is not.
+test "has_property: white space"
+    assert has_property(c: " ", property: "White_Space").must()
+    assert !has_property(c: "a", property: "WSpace").must()
+
+# Every property, White_Space among them.
+test "properties: White_Space among them"
+    white_space @= false
+
+    for each in properties()
+        if each == "White_Space"
+            white_space @ true
+
+    assert white_space
+
+# A letter may begin an identifier, a digit may not.
+test "is_identifier_start: a letter and a digit"
+    assert is_identifier_start("a")
+    assert !is_identifier_start("1")
+
+# A digit may go on inside an identifier.
+test "is_identifier_continue: a digit"
+    assert is_identifier_continue("1")
+
+# A name beginning with an underscore is an identifier; one with a hyphen is
+# not.
+test "is_identifier: a name with an underscore and one with a hyphen"
+    assert is_identifier("_x1")
+    assert !is_identifier("x-1")
+
+# The zero-width space is drawn as nothing.
+test "is_default_ignorable: the zero-width space"
+    assert is_default_ignorable(unicode.from_code_point(0x200b).must())
+    assert !is_default_ignorable("a")
+
+# A vulgar fraction and a superscript digit.
+test "numeric_value: one half and a superscript two"
+    assert numeric_value("½").must() == NumericValue(numerator: 1, denominator: 2, kind: NUMERIC_OTHER)
+    assert numeric_value("²").must() == NumericValue(numerator: 2, denominator: 1, kind: NUMERIC_DIGIT)
+
+# A Hebrew letter is written right to left.
+test "bidi_class: a Hebrew letter and a Latin one"
+    assert bidi_class("א") == "R"
+    assert bidi_class("a") == "L"
+
+# A parenthesis is mirrored; a letter is not.
+test "is_mirrored: a parenthesis"
+    assert is_mirrored("(")
+    assert !is_mirrored("a")
+
+# A parenthesis is drawn mirrored as its other half.
+test "mirror: a parenthesis"
+    assert mirror("(").must() == ")"

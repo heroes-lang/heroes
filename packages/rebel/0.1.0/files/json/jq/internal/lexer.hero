@@ -1,0 +1,470 @@
+# A filter's text cut into tokens. A string literal becomes its pieces in turn:
+# `STRING_BEGIN`, a `PIECE` for each stretch of text with its escapes read, an
+# `INTERPOLATION` before the tokens of each `\(...)` and an `INTERPOLATION_END`
+# after them, and `STRING_END`. The strings nested inside an interpolation are
+# followed on a stack of counts of open parentheses, so no recursion follows
+# the text.
+
+use numbers
+use unicode
+
+# The code of a text that is not jq.
+constant INVALID: str
+    "invalid"
+
+## The kinds of token
+
+# A name, `text` holding it, `::` and all.
+constant NAME: i64
+    1
+
+# `.name`, `text` holding the name.
+constant FIELD: i64
+    2
+
+# `$name`, `text` holding the name.
+constant VARIABLE: i64
+    3
+
+# `@name`, `text` holding the name.
+constant FORMAT: i64
+    4
+
+# A number, `number` holding it.
+constant NUMBER: i64
+    5
+
+# A keyword, `text` holding it.
+constant KEYWORD: i64
+    6
+
+# Punctuation or an operator, `text` holding it.
+constant SYMBOL: i64
+    7
+
+# The opening quote of a string.
+constant STRING_BEGIN: i64
+    8
+
+# A stretch of a string's text, its escapes read.
+constant PIECE: i64
+    9
+
+# `\(`, an interpolation opening.
+constant INTERPOLATION: i64
+    10
+
+# The `)` that closes an interpolation.
+constant INTERPOLATION_END: i64
+    11
+
+# The closing quote of a string.
+constant STRING_END: i64
+    12
+
+# The end of the text.
+constant END: i64
+    13
+
+# One token.
+record Token
+    # Its kind, one of the constants above.
+    kind: i64
+    # The byte of the text it begins at.
+    at: i64
+    # Its name, symbol or text, as its kind says.
+    text: str
+    # A number's value.
+    number: f64
+
+# The words jq keeps for itself.
+function is_keyword(word: str) -> bool
+    for k in ["def", "if", "then", "elif", "else", "end", "as", "reduce", "foreach", "try", "catch", "label", "import", "include", "module", "and", "or", "__loc__"]
+        if k == word
+            return true
+
+    return false
+
+# Whether `c` may begin a name.
+function is_name_start(c: u8) -> bool
+    return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c == '_'
+
+# Whether `c` may stand inside a name.
+function is_name_byte(c: u8) -> bool
+    return is_name_start(c) || c >= '0' && c <= '9'
+
+# Whether `c` is an ASCII digit.
+function is_digit(c: u8) -> bool
+    return c >= '0' && c <= '9'
+
+# The 1-based line of byte `at` of `text`.
+function line_at(text: str, at: i64) -> i64
+    line: i64 @= 1
+
+    stop = if at < text.len()
+        at
+    else
+        text.len()
+
+    for i in range(from: 0, to: stop)
+        if text[i] == '\n'
+            line @ line + 1
+
+    return line
+
+# A failure at byte `at` of `text`, saying `what`.
+function refuse<T>(text: str, at: i64, what: str) -> T?
+    return fail(code: INVALID, msg: f"syntax error at line {line_at(text, at: at)}: {what}")
+
+# The end of the name that begins at byte `at`, a name being parts joined by
+# `::`.
+function name_end(text: str, at: i64) -> i64
+    end: i64 @= at
+
+    while end < text.len() && is_name_byte(text[end])
+        end @ end + 1
+
+    if end + 2 < text.len() && text[end] == ':' && text[end + 1] == ':' && is_name_start(text[end + 2])
+        return name_end(text, at: end + 2)
+    return end
+
+# The end of the number that begins at byte `at`, jq's grammar: digits with a
+# fraction or a fraction alone, then an exponent.
+function number_end(text: str, at: i64) -> i64
+    end: i64 @= at
+
+    while end < text.len() && is_digit(text[end])
+        end @ end + 1
+
+    if end < text.len() && text[end] == '.'
+        end @ end + 1
+
+        while end < text.len() && is_digit(text[end])
+            end @ end + 1
+
+    if end < text.len() && (text[end] == 'e' || text[end] == 'E')
+        mark: i64 @= end + 1
+
+        if mark < text.len() && (text[mark] == '+' || text[mark] == '-')
+            mark @ mark + 1
+
+        if mark < text.len() && is_digit(text[mark])
+            end @ mark
+
+            while end < text.len() && is_digit(text[end])
+                end @ end + 1
+
+    return end
+
+# Whether `c` is a symbol of one byte.
+function is_single_symbol(c: u8) -> bool
+    singles = ".[]{}|,:;=<>+-*/%?$"
+
+    for i in range(from: 0, to: singles.len())
+        if singles[i] == c
+            return true
+
+    return false
+
+# The symbols of two or three bytes, the longest first.
+function long_symbols() -> [str]
+    return ["?//=", "?//", "//=", "|=", "+=", "-=", "*=", "/=", "%=", "==", "!=", "<=", ">=", "//", ".."]
+
+# Whether `text` holds `symbol` at byte `at`.
+function holds_at(text: str, at: i64, symbol: str) -> bool
+    if at + symbol.len() > text.len()
+        return false
+
+    for i in range(from: 0, to: symbol.len())
+        if text[at + i] != symbol[i]
+            return false
+
+    return true
+
+# The value of four hexadecimal digits at byte `at`, or -1 where they are not.
+function hex4(text: str, at: i64) -> i64
+    if at + 4 > text.len()
+        return -1
+    value: i64 @= 0
+
+    for i in range(from: at, to: at + 4)
+        c = text[i]
+
+        digit = if c >= '0' && c <= '9'
+            to_i64(c).must() - 48
+        else if c >= 'a' && c <= 'f'
+            to_i64(c).must() - 87
+        else if c >= 'A' && c <= 'F'
+            to_i64(c).must() - 55
+        else
+            -1
+
+        if digit < 0
+            return -1
+        value @ value * 16 + digit
+
+    return value
+
+# Adds a token of `kind` to `tokens`.
+function put(@tokens: [Token], kind: i64, at: i64, text: str)
+    tokens @ tokens.push(Token(kind: kind, at: at, text: text, number: 0.0))
+
+# The tokens of `text`, the last one `END`.
+#
+# Fails `invalid` where a byte begins no token, a string is not closed, an
+# escape is not one of JSON's, or a parenthesis that would close an
+# interpolation is missing.
+function tokens_of(text: str) -> [Token]?
+    tokens: [Token] @= []
+
+    # For each string being read inside an interpolation, the parentheses open
+    # in that interpolation; the last is the innermost.
+    open: [i64] @= []
+    depth: i64 @= 0
+    in_string: bool @= false
+    at: i64 @= 0
+
+    while at < text.len()
+        if in_string
+            c = text[at]
+
+            if c == '"'
+                put(@tokens, kind: STRING_END, at: at, text: "")
+                in_string @ false
+                at @ at + 1
+            else if c == '\\'
+                if at + 1 >= text.len()
+                    return refuse(text: text, at: at, what: "a string is not closed")
+                e = text[at + 1]
+
+                if e == '('
+                    put(@tokens, kind: INTERPOLATION, at: at, text: "")
+                    depth @ depth + 1
+
+                    if open.len() < depth
+                        open @ open.push(0)
+                    else
+                        open[depth - 1] @ 0
+                    in_string @ false
+                    at @ at + 2
+                else
+                    piece = escape_of(text, at: at)?
+                    put(@tokens, kind: PIECE, at: at, text: piece.text)
+                    at @ piece.next
+            else
+                end: i64 @= at
+
+                while end < text.len() && text[end] != '"' && text[end] != '\\'
+                    end @ end + 1
+
+                if end >= text.len()
+                    return refuse(text: text, at: at, what: "a string is not closed")
+                put(@tokens, kind: PIECE, at: at, text: text.slice(from: at, to: end))
+                at @ end
+        else
+            c = text[at]
+
+            if c == ' ' || c == '\t' || c == '\n' || c == '\r'
+                at @ at + 1
+            else if c == '#'
+                while at < text.len() && text[at] != '\n'
+                    at @ at + 1
+            else if c == '"'
+                put(@tokens, kind: STRING_BEGIN, at: at, text: "")
+                in_string @ true
+                at @ at + 1
+            else if c == '(' || c == ')'
+                if c == ')' && depth > 0 && open[depth - 1] == 0
+                    put(@tokens, kind: INTERPOLATION_END, at: at, text: "")
+                    depth @ depth - 1
+                    in_string @ true
+                else
+                    if depth > 0
+                        step = if c == '('
+                            1
+                        else
+                            -1
+                        open[depth - 1] @ open[depth - 1] + step
+                    put(@tokens, kind: SYMBOL, at: at, text: text.slice(from: at, to: at + 1))
+                at @ at + 1
+            else if is_digit(c) || c == '.' && at + 1 < text.len() && is_digit(text[at + 1])
+                end = number_end(text, at: at)
+
+                match to_number(text.slice(from: at, to: end))
+                    .err _ => return refuse(
+                        text: text,
+                        at: at,
+                        what: f"a number that is not one: {text.slice(from: at, to: end)}"
+                    )
+                    .ok n => tokens @ tokens.push(
+                        Token(kind: NUMBER, at: at, text: text.slice(from: at, to: end), number: n)
+                    )
+
+                at @ end
+            else if c == '.' && at + 1 < text.len() && is_name_start(text[at + 1])
+                end = name_end(text, at: at + 1)
+                put(@tokens, kind: FIELD, at: at, text: text.slice(from: at + 1, to: end))
+                at @ end
+            else if (c == '$' || c == '@') && at + 1 < text.len() && is_name_start(text[at + 1])
+                end = name_end(text, at: at + 1)
+
+                kind = if c == '$'
+                    VARIABLE
+                else
+                    FORMAT
+                put(@tokens, kind: kind, at: at, text: text.slice(from: at + 1, to: end))
+                at @ end
+            else if is_name_start(c)
+                end = name_end(text, at: at)
+                word = text.slice(from: at, to: end)
+
+                kind = if is_keyword(word)
+                    KEYWORD
+                else
+                    NAME
+                put(@tokens, kind: kind, at: at, text: word)
+                at @ end
+            else
+                taken: i64 @= 0
+
+                for symbol in long_symbols()
+                    if taken == 0 && holds_at(text: text, at: at, symbol: symbol)
+                        put(@tokens, kind: SYMBOL, at: at, text: symbol)
+                        taken @ symbol.len()
+
+                if taken == 0
+                    if is_single_symbol(c)
+                        put(@tokens, kind: SYMBOL, at: at, text: text.slice(from: at, to: at + 1))
+                        taken @ 1
+                    else
+                        shown = if c < 128
+                            f"`{text.slice(from: at, to: at + 1)}`"
+                        else
+                            f"the byte {c}"
+                        return refuse(text: text, at: at, what: f"unexpected {shown}")
+                at @ at + taken
+
+    if in_string || depth > 0
+        return refuse(text: text, at: text.len(), what: "a string is not closed")
+    put(@tokens, kind: END, at: text.len(), text: "")
+    return ok(tokens)
+
+# A number read from its text, by jq's grammar.
+function to_number(s: str) -> f64?
+    return numbers_read(s)
+
+# What an escape reads to, and where the text goes on.
+record Escaped
+    # The text the escape stands for.
+    text: str
+    # The byte after the escape.
+    next: i64
+
+# The escape at byte `at`, its backslash, read: JSON's, with a `\u` pair of
+# surrogates read as one character and half a pair as U+FFFD.
+function escape_of(text: str, at: i64) -> Escaped?
+    e = text[at + 1]
+
+    if e == '"' || e == '\\' || e == '/'
+        return ok(Escaped(text: text.slice(from: at + 1, to: at + 2), next: at + 2))
+
+    if e == 'n'
+        return ok(Escaped(text: "\n", next: at + 2))
+
+    if e == 't'
+        return ok(Escaped(text: "\t", next: at + 2))
+
+    if e == 'r'
+        return ok(Escaped(text: "\r", next: at + 2))
+
+    if e == 'b'
+        return ok(Escaped(text: unicode.from_code_point(8).must(), next: at + 2))
+
+    if e == 'f'
+        return ok(Escaped(text: unicode.from_code_point(12).must(), next: at + 2))
+
+    if e == 'u'
+        high = hex4(text, at: at + 2)
+
+        if high < 0
+            return refuse(text: text, at: at, what: "an escape `\\u` not followed by four hexadecimal digits")
+
+        if high >= 0xd800 && high <= 0xdbff && holds_at(text: text, at: at + 6, symbol: "\\u")
+            low = hex4(text, at: at + 8)
+
+            if low >= 0xdc00 && low <= 0xdfff
+                point = 0x10000 + (high - 0xd800) * 0x400 + (low - 0xdc00)
+                return ok(Escaped(text: unicode.from_code_point(point).must(), next: at + 12))
+
+        if high >= 0xd800 && high <= 0xdfff
+            return ok(Escaped(text: unicode.from_code_point(0xfffd).must(), next: at + 6))
+        return ok(Escaped(text: unicode.from_code_point(high).must(), next: at + 6))
+    return refuse(text: text, at: at, what: "an escape that is not one of JSON's")
+
+# The `f64` a number's text writes: digits, a fraction, an exponent.
+function numbers_read(s: str) -> f64?
+    text = if s.len() > 0 && s[0] == '.'
+        "0" + s
+    else if s.len() > 0 && s[s.len() - 1] == '.'
+        s + "0"
+    else
+        s
+    return numbers.parse_float(text)
+
+## Tests
+
+test "tokens_of: a field, a pipe, a call and the end"
+    got = tokens_of(".a | length").must()
+    assert got.len() == 4
+    assert got[0].kind == FIELD && got[0].text == "a"
+    assert got[1].kind == SYMBOL && got[1].text == "|"
+    assert got[2].kind == NAME && got[2].text == "length"
+    assert got[3].kind == END
+
+test "tokens_of: the empty text and a comment alone"
+    assert tokens_of("").must().len() == 1
+    assert tokens_of("# nothing\n").must().len() == 1
+
+test "tokens_of: numbers, with a fraction alone, a point at the end and an exponent"
+    got = tokens_of("1 .5 2. 3e2 1E-1").must()
+    assert got[0].number == 1.0 && got[1].number == 0.5 && got[2].number == 2.0
+    assert got[3].number == 300.0 && got[4].number == 0.1
+
+test "tokens_of: the longest symbol first, and `..` apart from a field"
+    got = tokens_of("?// //= .. .x").must()
+    assert got[0].text == "?//" && got[1].text == "//=" && got[2].text == ".." && got[3].kind == FIELD
+
+test "tokens_of: a string with an escape and an interpolation holding a string"
+    got = tokens_of("\"a\\n\\(\"b\") c\"").must()
+    kinds: [i64] @= []
+
+    for t in got
+        kinds @ kinds.push(t.kind)
+
+    assert kinds == [STRING_BEGIN, PIECE, PIECE, INTERPOLATION, STRING_BEGIN, PIECE, STRING_END, INTERPOLATION_END, PIECE, STRING_END, END]
+    assert got[2].text == "\n" && got[8].text == " c"
+
+test "tokens_of: parentheses inside an interpolation close it only at their level"
+    got = tokens_of("\"\\((1) + 2)\"").must()
+    assert got[2].text == "(" && got[4].text == ")" && got[7].kind == INTERPOLATION_END
+
+test "tokens_of: a surrogate pair, half of one, and a character of three bytes"
+    got = tokens_of("\"\\ud83d\\ude00\\ud800€\"").must()
+    assert got[1].text == "😀" && got[2].text == "�" && got[3].text == "€"
+
+test "tokens_of: a variable, a format, a keyword and a name with a module"
+    got = tokens_of("$x @base64 reduce a::b").must()
+    assert got[0].kind == VARIABLE && got[0].text == "x" && got[1].kind == FORMAT && got[1].text == "base64"
+    assert got[2].kind == KEYWORD && got[3].kind == NAME && got[3].text == "a::b"
+
+test "tokens_of: a string not closed, an escape refused, a byte refused"
+    assert tokens_of("\"abc").is_err()
+    assert tokens_of("\"\\x\"").is_err()
+    assert tokens_of("\"\\(1\"").is_err()
+
+    match tokens_of("1 ^ 2")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "line_at: the line of a byte"
+    assert line_at(text: "a\n\nb", at: 3) == 3

@@ -1,0 +1,455 @@
+# jq's builtins on texts: `tostring`, `tonumber`, `tojson`, `fromjson`,
+# `explode`, `implode`, `ltrimstr`, `rtrimstr`, `startswith`, `endswith`,
+# `split/1`, `join`, the ASCII cases, `trim`, `indices`, `utf8bytelength`
+# and `reverse`, with jq 1.7.1's messages.
+
+use json
+use json/jq/internal/arith
+use json/jq/internal/values
+use json/jq/internal/write
+use numbers
+use unicode
+
+# How deep `fromjson` reads, as jq's own parser.
+constant MAX_PARSE_DEPTH: i64
+    10000
+
+# The text `v` is: a text itself, anything else written as JSON.
+function to_text(v: json.Value) -> str?
+    return match v
+        .text t                                                    => ok(t.v)
+        .null_value | .boolean _ | .number _ | .list _ | .object _ => write.compact_capped(v)
+
+# jq's `tostring`.
+function tostring(v: json.Value) -> json.Value?
+    return ok(.text(v: to_text(v)?))
+
+# `text` read as JSON as jq reads it: `nan`, with digits after it or not,
+# outside a string is a `nan`, and nesting goes 10,000 deep.
+function read_json(text: str) -> json.Value?
+    pieces: [str] @= []
+    start: i64 @= 0
+    at: i64 @= 0
+
+    # A byte order mark before the value is not read, as jq reads none.
+    if text.len() >= 3 && text[0] == 239 && text[1] == 187 && text[2] == 191
+        start @ 3
+        at @ 3
+    in_string: bool @= false
+
+    while at < text.len()
+        c = text[at]
+
+        if in_string
+            if c == '\\'
+                at @ at + 2
+            else
+                if c == '"'
+                    in_string @ false
+                at @ at + 1
+        else if c == '"'
+            in_string @ true
+            at @ at + 1
+        else if (c == 'n' || c == 'N') && at + 2 < text.len() && text[at + 1] == 'a' && (text[at + 2] == 'n' || text[at + 2] == 'N')
+            # `-nan` and `-NaN` are a `nan` too: the sign is dropped.
+            cut: i64 @= at
+
+            if cut > start && text[cut - 1] == '-'
+                cut @ cut - 1
+            pieces @ pieces.push(text.slice(from: start, to: cut))
+            pieces @ pieces.push("NaN")
+            at @ at + 3
+
+            while at < text.len() && text[at] >= '0' && text[at] <= '9'
+                at @ at + 1
+
+            start @ at
+        else
+            at @ at + 1
+
+    if start < text.len()
+        pieces @ pieces.push(text.slice(from: start, to: text.len()))
+    options: json.ParseOptions @= json.strict()
+    options.max_depth @ MAX_PARSE_DEPTH
+    options.non_finite @ true
+    options.duplicate_keys @ true
+
+    match json.parse_with(pieces.join(""), options: options)
+        .ok v => return ok(v)
+        .err e =>
+            if e.msg.len() > 0 && strings_contains(s: e.msg, part: "deeper")
+                return values.raised("Exceeds depth limit for parsing")
+            return values.raised(f"{e.msg} (while parsing '{text}')")
+
+# Whether `s` holds `part`.
+function strings_contains(s: str, part: str) -> bool
+    return values.holds(s: s, part: part)
+
+# jq's `fromjson`.
+function fromjson(v: json.Value) -> json.Value?
+    match v
+        .text t => return read_json(t.v)
+        .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+            return values.raised(f"{values.described(v)} cannot be parsed as JSON")
+
+# jq 1.7.1's `tonumber`: a number as it is, a text read as a JSON number.
+function tonumber(v: json.Value) -> json.Value?
+    match v
+        .number _ => return ok(v)
+        .text t =>
+            match read_json(t.v)
+                .ok n =>
+                    match n
+                        .number _ => return ok(n)
+                        .null_value | .boolean _ | .text _ | .list _ | .object _ =>
+                            return values.raised(f"{values.described(v)} cannot be parsed as a number")
+                .err e => return fail(code: e.code, msg: e.msg)
+        .null_value | .boolean _ | .list _ | .object _ =>
+            return values.raised(f"{values.described(v)} cannot be parsed as a number")
+
+# jq's `explode`: a text's code points.
+function explode(v: json.Value) -> json.Value?
+    match v
+        .text t =>
+            points: [json.Value] @= []
+
+            for p in unicode.code_points(t.v)
+                points @ points.push(.number(v: to_f64(p)))
+
+            return ok(.list(items: points))
+        .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+            return values.raised(f"{values.described(v)} cannot be exploded")
+
+# jq's `implode`: the text of a list of code points, a surrogate or a code
+# past U+10FFFF written U+FFFD.
+function implode(v: json.Value) -> json.Value?
+    match v
+        .list l =>
+            pieces: [str] @= []
+
+            for item in l.items
+                match item
+                    .number n =>
+                        if n.v != n.v
+                            return values.raised(
+                                "number (null) can't be imploded, unicode codepoint needs to be numeric"
+                            )
+
+                        if n.v < 0.0 || n.v > 1114111.0
+                            pieces @ pieces.push("�")
+                        else
+                            pieces @ pieces.push(unicode.from_code_point(n.v.to_i64().must()).default("�"))
+                    .null_value | .boolean _ | .text _ | .list _ | .object _ =>
+                        return values.raised(
+                            f"{values.described(item)} can't be imploded, unicode codepoint needs to be numeric"
+                        )
+
+            return ok(.text(v: pieces.join("")))
+        .null_value | .boolean _ | .number _ | .text _ | .object _ =>
+            return values.raised("implode input must be an array")
+
+# The two texts of a prefix or suffix test, or `none` where either is not one.
+record Pair
+    # The input's text.
+    s: str
+    # The argument's text.
+    part: str
+    # Whether both are texts.
+    both: bool
+
+# `v` and `arg` as texts, where both are.
+function texts_of(v: json.Value, arg: json.Value) -> Pair
+    match v
+        .text s =>
+            match arg
+                .text p                                                    => return Pair(s: s.v, part: p.v, both: true)
+                .null_value | .boolean _ | .number _ | .list _ | .object _ => return Pair(s: "", part: "", both: false)
+        .null_value | .boolean _ | .number _ | .list _ | .object _ => return Pair(s: "", part: "", both: false)
+
+# Whether `s` begins with `part`.
+function begins(s: str, part: str) -> bool
+    if part.len() > s.len()
+        return false
+
+    for i in range(from: 0, to: part.len())
+        if s[i] != part[i]
+            return false
+
+    return true
+
+# Whether `s` ends with `part`.
+function ends(s: str, part: str) -> bool
+    if part.len() > s.len()
+        return false
+    offset = s.len() - part.len()
+
+    for i in range(from: 0, to: part.len())
+        if s[offset + i] != part[i]
+            return false
+
+    return true
+
+# jq's `startswith`.
+function startswith(v: json.Value, arg: json.Value) -> json.Value?
+    p = texts_of(v: v, arg: arg)
+
+    if !p.both
+        return values.raised("startswith() requires string inputs")
+    return ok(.boolean(v: begins(s: p.s, part: p.part)))
+
+# jq's `endswith`.
+function endswith(v: json.Value, arg: json.Value) -> json.Value?
+    p = texts_of(v: v, arg: arg)
+
+    if !p.both
+        return values.raised("endswith() requires string inputs")
+    return ok(.boolean(v: ends(s: p.s, part: p.part)))
+
+# jq 1.7.1's `ltrimstr`: the input without the prefix where both are texts
+# and it has it, and otherwise the input as it is.
+function ltrimstr(v: json.Value, arg: json.Value) -> json.Value
+    p = texts_of(v: v, arg: arg)
+
+    if p.both && begins(s: p.s, part: p.part)
+        return .text(v: p.s.slice(from: p.part.len(), to: p.s.len()))
+    return v
+
+# jq 1.7.1's `rtrimstr`, as `ltrimstr` at the other end.
+function rtrimstr(v: json.Value, arg: json.Value) -> json.Value
+    p = texts_of(v: v, arg: arg)
+
+    if p.both && ends(s: p.s, part: p.part) && p.part.len() > 0
+        return .text(v: p.s.slice(from: 0, to: p.s.len() - p.part.len()))
+    return v
+
+# jq's `split/1`.
+function split(v: json.Value, arg: json.Value) -> json.Value?
+    p = texts_of(v: v, arg: arg)
+
+    if !p.both
+        return values.raised("split input and separator must be strings")
+    return ok(arith.split_text(s: p.s, sep: p.part))
+
+# jq 1.7.1's `join`: the elements written, `null` as nothing, numbers and
+# booleans as their text, a list or an object refused.
+function join_with(v: json.Value, sep: json.Value) -> json.Value?
+    match v
+        .list l =>
+            if l.items.len() == 0
+                return ok(.text(v: ""))
+
+            separator = match sep
+                .text s                                                    => s.v
+                .null_value | .boolean _ | .number _ | .list _ | .object _ => ""
+
+            match sep
+                .text _ => _ = 0
+                .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+                    return values.raised(
+                        f"{values.described(.text(v: ""))} and {values.described(sep)} cannot be added"
+                    )
+
+            volume: i64 @= l.items.len()
+
+            for item in l.items
+                match item
+                    .text t                                                    => volume @ volume + t.v.len() / 16
+                    .null_value | .boolean _ | .number _ | .list _ | .object _ => volume @ volume + 1
+
+            if volume > write.MAX_VOLUME
+                return write.too_large("the text `join` makes")
+            pieces: [str] @= []
+
+            for i in range(from: 0, to: l.items.len())
+                item = l.items[i]
+
+                if i > 0
+                    pieces @ pieces.push(separator)
+
+                match item
+                    .null_value            => pieces @ pieces.push("")
+                    .text t                => pieces @ pieces.push(t.v)
+                    .boolean _ | .number _ => pieces @ pieces.push(write.compact(item))
+                    .list _ | .object _ =>
+                        sofar = pieces.join("")
+                        return values.raised(
+                            f"{values.described(.text(v: sofar))} and {values.described(item)} cannot be added"
+                        )
+
+            return ok(.text(v: pieces.join("")))
+        .null_value | .boolean _ | .number _ | .text _ | .object _ =>
+            return values.raised(f"Cannot iterate over {values.described(v)}")
+
+# `s` with each ASCII letter in the case `upper` asks.
+function ascii_case(v: json.Value, upper: bool) -> json.Value?
+    match v
+        .text t =>
+            bytes: [u8] @= []
+
+            for i in range(from: 0, to: t.v.len())
+                c = t.v[i]
+
+                if upper && c >= 'a' && c <= 'z'
+                    bytes @ bytes.push(c - 32)
+                else if !upper && c >= 'A' && c <= 'Z'
+                    bytes @ bytes.push(c + 32)
+                else
+                    bytes @ bytes.push(c)
+
+            return ok(.text(v: bytes.validated_bytes().must()))
+        .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+            word = if upper
+                "ascii_upcase"
+            else
+                "ascii_downcase"
+            return values.raised(f"{word} input must be a string")
+
+# Whether byte `c` is white space to jq's `trim`.
+function is_blank(c: u8) -> bool
+    return c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == 11 || c == 12
+
+# jq's `trim`, `ltrim` and `rtrim`, the ends `start` and `end` say.
+function trimmed(v: json.Value, start: bool, end: bool) -> json.Value?
+    match v
+        .text t =>
+            from: i64 @= 0
+            to: i64 @= t.v.len()
+
+            while start && from < to && is_blank(t.v[from])
+                from @ from + 1
+
+            while end && to > from && is_blank(t.v[to - 1])
+                to @ to - 1
+
+            return ok(.text(v: t.v.slice(from: from, to: to)))
+        .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+            return values.raised(f"{values.described(v)} cannot be trimmed")
+
+# jq's `indices`: where `arg` begins in a text, counted in code points, or in
+# a list, an element or a sub-list.
+function indices(v: json.Value, arg: json.Value) -> json.Value?
+    match v
+        .null_value => return ok(.null_value)
+        .text t =>
+            match arg
+                .text part =>
+                    found: [json.Value] @= []
+
+                    if part.v.len() == 0
+                        return ok(.null_value)
+                    point: i64 @= 0
+                    at: i64 @= 0
+
+                    while at + part.v.len() <= t.v.len()
+                        if t.v[at] < 128 || t.v[at] >= 192
+                            if begins_at(s: t.v, part: part.v, at: at)
+                                found @ found.push(.number(v: to_f64(point)))
+                            point @ point + 1
+                        at @ at + 1
+
+                    return ok(.list(items: found))
+                .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+                    return values.raised(f"Cannot determine the indices of {values.type_name(arg)} in a string")
+        .list l =>
+            match arg
+                .list sub => return ok(values.indices_of_list(within: l.items, part: sub.items))
+                .null_value | .boolean _ | .number _ | .text _ | .object _ =>
+                    return ok(values.indices_of_list(within: l.items, part: [arg]))
+        .boolean _ | .number _ | .object _ => return values.raised(
+            f"Cannot determine the indices in {values.type_name(v)}"
+        )
+
+# Whether `s` holds `part` at byte `at`.
+function begins_at(s: str, part: str, at: i64) -> bool
+    for i in range(from: 0, to: part.len())
+        if s[at + i] != part[i]
+            return false
+
+    return true
+
+# jq's `utf8bytelength`.
+function utf8bytelength(v: json.Value) -> json.Value?
+    match v
+        .text t => return ok(.number(v: to_f64(t.v.len())))
+        .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+            return values.raised(f"{values.described(v)} only strings have UTF-8 byte length")
+
+# jq's `reverse`: a list's elements or a text's characters backwards, `null`
+# as the empty list.
+function reverse(v: json.Value) -> json.Value?
+    match v
+        .list l =>
+            out: [json.Value] @= []
+            at: i64 @= l.items.len()
+
+            while at > 0
+                at @ at - 1
+                out @ out.push(l.items[at])
+
+            return ok(.list(items: out))
+        .text t =>
+            characters: [str] @= []
+
+            for c in t.v.chars()
+                characters @ characters.push(c)
+
+            out: [str] @= []
+            at: i64 @= characters.len()
+
+            while at > 0
+                at @ at - 1
+                out @ out.push(characters[at])
+
+            return ok(.text(v: out.join("")))
+        .null_value                        => return ok(.list(items: []))
+        .boolean _ | .number _ | .object _ => return values.raised(f"Cannot reverse {values.described(v)}")
+
+# The number `numbers` reads from `s`, for a test.
+function read_number(s: str) -> f64
+    return numbers.parse_float(s).must()
+
+## Tests
+
+test "to_text: a text as it is, anything else as JSON"
+    assert to_text(.text(v: "a")).must() == "a" && to_text(json.parse("[1,\"a\"]").must()).must() == "[1,\"a\"]"
+
+test "read_json: nan and nan with a payload, nesting, and a refusal"
+    got = read_json("{\"a\":nan}").must()
+    assert write.compact(got) == "{\"a\":null}"
+    n = json.number_of(read_json("nan1234").must()).must()
+    assert n != n
+    assert read_json("{\"a\":}").is_err()
+
+test "tonumber: a number, a text, white space, a text that is none"
+    assert values.equal(a: tonumber(.text(v: " 10 ")).must(), b: .number(v: read_number("10")))
+    assert tonumber(.text(v: "2a")).is_err()
+    assert tonumber(.text(v: "[1]")).is_err()
+
+test "explode and implode: characters of several bytes, and a code past the range"
+    e = explode(.text(v: "aé😀")).must()
+    assert write.compact(e) == "[97,233,128512]"
+    assert values.equal(a: implode(e).must(), b: .text(v: "aé😀"))
+    assert values.equal(a: implode(json.parse("[55296]").must()).must(), b: .text(v: "�"))
+
+test "startswith, ltrimstr and rtrimstr: a match, none, and a number left alone"
+    assert values.equal(a: startswith(v: .text(v: "abc"), arg: .text(v: "ab")).must(), b: .boolean(v: true))
+    assert startswith(v: .number(v: 1.0), arg: .text(v: "a")).is_err()
+    assert values.equal(a: ltrimstr(v: .text(v: "abc"), arg: .text(v: "ab")), b: .text(v: "c"))
+    assert values.equal(a: ltrimstr(v: .number(v: 1.0), arg: .text(v: "a")), b: .number(v: 1.0))
+    assert values.equal(a: rtrimstr(v: .text(v: "abc"), arg: .text(v: "bc")), b: .text(v: "a"))
+
+test "join_with: null, numbers and booleans, and a list refused"
+    got = join_with(v: json.parse("[1,null,\"a\",true]").must(), sep: .text(v: "-")).must()
+    assert values.equal(a: got, b: .text(v: "1--a-true"))
+    assert join_with(v: json.parse("[[1]]").must(), sep: .text(v: "-")).is_err()
+
+test "indices: in a text by code point, in a list, a sub-list"
+    assert write.compact(indices(v: .text(v: "é,a,b"), arg: .text(v: ",")).must()) == "[1,3]"
+    assert write.compact(indices(v: json.parse("[0,1,1,2]").must(), arg: .number(v: 1.0)).must()) == "[1,2]"
+    assert write.compact(indices(v: json.parse("[1,2,1,2]").must(), arg: json.parse("[1,2]").must()).must()) == "[0,2]"
+
+test "trimmed, ascii_case, reverse and utf8bytelength"
+    assert values.equal(a: trimmed(.text(v: " \ta b\n"), start: true, end: true).must(), b: .text(v: "a b"))
+    assert values.equal(a: ascii_case(.text(v: "aÉb"), upper: true).must(), b: .text(v: "AÉB"))
+    assert values.equal(a: reverse(.text(v: "aé")).must(), b: .text(v: "éa"))
+    assert values.equal(a: utf8bytelength(.text(v: "é")).must(), b: .number(v: 2.0))

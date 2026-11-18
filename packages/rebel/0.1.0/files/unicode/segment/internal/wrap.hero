@@ -1,0 +1,359 @@
+# A text wrapped to a width in columns at the places UAX #14 allows, and a
+# text cut to a width, its escape sequences kept where they stood and taking
+# no column. The text is read without its sequences; each line is written
+# back with the sequences that stood inside it.
+
+use unicode/segment/internal/escapes
+use unicode/segment/internal/graphemes
+use unicode/segment/internal/lines
+use unicode/segment/internal/text
+use unicode/segment/internal/width
+
+# A wrapping under way: the lines made, and which escape sequences are
+# written already.
+record Wrapping
+    # The lines made so far.
+    lines: [str]
+    # How many of the sequences the lines hold.
+    escapes_used: i64
+
+# Whether the byte `b` ends a word for wrapping, being a space or a line
+# break: a space, a tab, a line feed, a vertical tab, a form feed or a
+# carriage return.
+function is_blank_byte(b: u8) -> bool
+    return b == ' ' || b == '\t' || b == '\n' || b == 0x0b || b == 0x0c || b == '\r'
+
+# Where the word of `plain` from `from` to `to` ends once the spaces and the
+# line break after it are left out: U+0020, the controls that break a line,
+# U+0085, U+2028 and U+2029.
+function word_end(plain: str, from: i64, to: i64) -> i64
+    end: i64 @= to
+
+    while end > from
+        if is_blank_byte(plain[end - 1])
+            end @ end - 1
+        else if end - 2 >= from && plain[end - 2] == 0xc2 && plain[end - 1] == 0x85
+            end @ end - 2
+        else if end - 3 >= from && plain[end - 3] == 0xe2 && plain[end - 2] == 0x80 && (plain[end - 1] == 0xa8 || plain[end - 1] == 0xa9)
+            end @ end - 3
+        else
+            return end
+
+    return end
+
+# Adds to `wrapping` the line of `plain` from `from` to `content_end`, after
+# `indent`, with the escape sequences of `stripped` that stand before `to`,
+# or every one left where `last`: those inside the text where they stood,
+# those after it at its end.
+function add_line(@wrapping: Wrapping, stripped: escapes.Stripped lent, indent: str, from: i64, content_end: i64, to: i64, last: bool)
+    plain = stripped.plain
+    pieces: [str] @= [indent]
+    cursor: i64 @= from
+    next: i64 @= wrapping.escapes_used
+
+    while next < stripped.escapes.len() && (stripped.escapes[next].at < to || last)
+        escape = stripped.escapes[next]
+
+        stop = if escape.at < content_end
+            escape.at
+        else
+            content_end
+
+        if stop > cursor
+            pieces @ pieces.push(plain.slice(from: cursor, to: stop))
+            cursor @ stop
+        pieces @ pieces.push(escape.written)
+        next @ next + 1
+
+    if content_end > cursor
+        pieces @ pieces.push(plain.slice(from: cursor, to: content_end))
+    wrapping.escapes_used @ next
+    wrapping.lines @ wrapping.lines.push(pieces.join(""))
+
+# The lines of `s`, each at most `columns` columns wide where its words fit,
+# the first line of each paragraph after `first_indent` and the others after
+# `rest_indent`; a word wider than a line cut between graphemes where
+# `break_long_words`.
+function wrap(s: str, columns: i64, first_indent: str, rest_indent: str, break_long_words: bool) -> [str]
+    stripped = escapes.strip(s)
+    plain = stripped.plain
+    wrapping: Wrapping @= Wrapping(lines: [], escapes_used: 0)
+
+    if plain == ""
+        if stripped.escapes.len() > 0
+            add_line(@wrapping, stripped: stripped, indent: "", from: 0, content_end: 0, to: 0, last: true)
+        return wrapping.lines
+    decoded = text.decode(plain)
+    bounds = graphemes.boundaries(decoded)
+
+    room = if columns < 1
+        1
+    else
+        columns
+    first_room = room - width.width_of(s: first_indent, east_asian: false)
+    rest_room = room - width.width_of(s: rest_indent, east_asian: false)
+
+    # The line under way: where it begins, where its words end, the columns
+    # they take with the spaces after them, and whether it holds a word.
+    line_from: i64 @= 0
+    content_end: i64 @= 0
+    used: i64 @= 0
+    holding: bool @= false
+    first_of_paragraph: bool @= true
+
+    # Where the paragraph under way begins: its first line keeps the spaces
+    # it begins with.
+    paragraph_start: i64 @= 0
+    previous: i64 @= 0
+    grapheme: i64 @= 0
+
+    for opportunity in lines.opportunities(decoded)
+        end = word_end(plain, from: previous, to: opportunity.at)
+        word = width.plain_width(plain.slice(from: previous, to: end), east_asian: false)
+        spaces = width.plain_width(plain.slice(from: end, to: opportunity.at), east_asian: false)
+
+        line_room_now = if first_of_paragraph
+            first_room
+        else
+            rest_room
+
+        line_room = if line_room_now < 1
+            1
+        else
+            line_room_now
+
+        if holding && used + word > line_room
+            indent = if first_of_paragraph
+                first_indent
+            else
+                rest_indent
+            add_line(
+                @wrapping,
+                stripped: stripped,
+                indent: indent,
+                from: line_from,
+                content_end: content_end,
+                to: previous,
+                last: false
+            )
+            first_of_paragraph @ false
+            line_from @ previous
+            holding @ false
+            used @ 0
+
+        if !holding
+            start_here = if first_of_paragraph
+                paragraph_start
+            else
+                previous
+            whole = width.plain_width(plain.slice(from: start_here, to: end), east_asian: false)
+
+            room_now = if first_of_paragraph
+                first_room
+            else
+                rest_room
+
+            word_room = if room_now < 1
+                1
+            else
+                room_now
+
+            if whole > word_room && break_long_words
+                # Cut the word between graphemes, a line for each full piece.
+                while grapheme < bounds.len() && bounds[grapheme] <= start_here
+                    grapheme @ grapheme + 1
+
+                piece_from: i64 @= start_here
+                piece_used: i64 @= 0
+                cut: i64 @= start_here
+
+                while grapheme < bounds.len() && bounds[grapheme] <= end
+                    next_cut = bounds[grapheme]
+                    taken = width.plain_width(plain.slice(from: cut, to: next_cut), east_asian: false)
+
+                    piece_room = if first_of_paragraph
+                        first_room
+                    else
+                        rest_room
+
+                    limit = if piece_room < 1
+                        1
+                    else
+                        piece_room
+
+                    if piece_used + taken > limit && cut > piece_from
+                        indent = if first_of_paragraph
+                            first_indent
+                        else
+                            rest_indent
+                        add_line(
+                            @wrapping,
+                            stripped: stripped,
+                            indent: indent,
+                            from: piece_from,
+                            content_end: cut,
+                            to: cut,
+                            last: false
+                        )
+                        first_of_paragraph @ false
+                        piece_from @ cut
+                        piece_used @ 0
+                    piece_used @ piece_used + taken
+                    cut @ next_cut
+                    grapheme @ grapheme + 1
+
+                line_from @ piece_from
+                content_end @ end
+                used @ piece_used + spaces
+            else
+                line_from @ start_here
+                content_end @ end
+                used @ whole + spaces
+            holding @ end > start_here
+        else
+            content_end @ end
+            used @ used + word + spaces
+
+        if opportunity.mandatory
+            indent = if first_of_paragraph
+                first_indent
+            else
+                rest_indent
+
+            shown_indent = if holding
+                indent
+            else
+                ""
+            add_line(
+                @wrapping,
+                stripped: stripped,
+                indent: shown_indent,
+                from: line_from,
+                content_end: content_end,
+                to: opportunity.at,
+                last: false
+            )
+            first_of_paragraph @ true
+            paragraph_start @ opportunity.at
+            line_from @ opportunity.at
+            content_end @ opportunity.at
+            holding @ false
+            used @ 0
+        previous @ opportunity.at
+
+    if holding
+        indent = if first_of_paragraph
+            first_indent
+        else
+            rest_indent
+        add_line(
+            @wrapping,
+            stripped: stripped,
+            indent: indent,
+            from: line_from,
+            content_end: content_end,
+            to: plain.len(),
+            last: true
+        )
+    else if wrapping.escapes_used < stripped.escapes.len()
+        if wrapping.lines.len() == 0
+            add_line(
+                @wrapping,
+                stripped: stripped,
+                indent: "",
+                from: plain.len(),
+                content_end: plain.len(),
+                to: plain.len(),
+                last: true
+            )
+        else
+            rest: [str] @= [wrapping.lines[wrapping.lines.len() - 1]]
+            at: i64 @= wrapping.escapes_used
+
+            while at < stripped.escapes.len()
+                rest @ rest.push(stripped.escapes[at].written)
+                at @ at + 1
+
+            wrapping.lines[wrapping.lines.len() - 1] @ rest.join("")
+    return wrapping.lines
+
+# `s` cut to at most `columns` columns with `ellipsis` after it where
+# anything was cut, between graphemes, every escape sequence kept: those
+# before the cut where they stood, the others after the ellipsis.
+function truncate(s: str, columns: i64, ellipsis: str) -> str
+    room = if columns < 0
+        0
+    else
+        columns
+
+    if width.width_of(s: s, east_asian: false) <= room
+        return s
+    mark = width.width_of(s: ellipsis, east_asian: false)
+
+    if mark > room
+        return truncate(s: ellipsis, columns: room, ellipsis: "")
+    stripped = escapes.strip(s)
+    plain = stripped.plain
+    decoded = text.decode(plain)
+    bounds = graphemes.boundaries(decoded)
+    cut: i64 @= 0
+    used: i64 @= 0
+    at: i64 @= 1
+
+    while at < bounds.len()
+        taken = width.plain_width(plain.slice(from: bounds[at - 1], to: bounds[at]), east_asian: false)
+
+        if used + taken > room - mark
+            break
+        used @ used + taken
+        cut @ bounds[at]
+        at @ at + 1
+
+    pieces: [str] @= []
+    cursor: i64 @= 0
+    next: i64 @= 0
+
+    while next < stripped.escapes.len() && stripped.escapes[next].at < cut
+        escape = stripped.escapes[next]
+
+        if escape.at > cursor
+            pieces @ pieces.push(plain.slice(from: cursor, to: escape.at))
+            cursor @ escape.at
+        pieces @ pieces.push(escape.written)
+        next @ next + 1
+
+    if cut > cursor
+        pieces @ pieces.push(plain.slice(from: cursor, to: cut))
+    pieces @ pieces.push(ellipsis)
+
+    while next < stripped.escapes.len()
+        pieces @ pieces.push(stripped.escapes[next].written)
+        next @ next + 1
+
+    return pieces.join("")
+
+## Tests
+
+# Python 3.15.2's `textwrap.wrap`, observed 2026-11-17, wraps the plain
+# texts alike; the escape sequences, the paragraphs and the cut words are
+# this module's rules, which Python's does not have.
+test "wrap: a sentence, indents, a long word cut and kept, paragraphs, an empty text, and colours"
+    assert wrap(s: "The quick brown fox jumps over the lazy dog", columns: 10, first_indent: "", rest_indent: "", break_long_words: true) == ["The quick", "brown fox", "jumps over", "the lazy", "dog"]
+    assert wrap(s: "The quick brown fox", columns: 12, first_indent: "* ", rest_indent: "  ", break_long_words: true) == ["* The quick", "  brown fox"]
+    assert wrap(s: "abcdefghij kl", columns: 4, first_indent: "", rest_indent: "", break_long_words: true) == ["abcd", "efgh", "ij", "kl"]
+    assert wrap(s: "abcdefghij kl", columns: 4, first_indent: "", rest_indent: "", break_long_words: false) == ["abcdefghij", "kl"]
+    assert wrap(s: "one\n\ntwo three", columns: 5, first_indent: "", rest_indent: "", break_long_words: true) == ["one", "", "two", "three"]
+    assert wrap(s: "", columns: 5, first_indent: "> ", rest_indent: "", break_long_words: true) == []
+    assert wrap(s: "a\n", columns: 5, first_indent: "", rest_indent: "", break_long_words: true) == ["a"]
+    assert wrap(s: "\u{1b}[31mred\u{1b}[0m and blue", columns: 7, first_indent: "", rest_indent: "", break_long_words: true) == ["\u{1b}[31mred\u{1b}[0m and", "blue"]
+    assert wrap(s: "日本語の文章です", columns: 6, first_indent: "", rest_indent: "", break_long_words: true) == ["日本語", "の文章", "です"]
+    assert wrap(s: "x", columns: 0, first_indent: "", rest_indent: "", break_long_words: true) == ["x"]
+    assert wrap(s: "  indented text here", columns: 10, first_indent: "", rest_indent: "", break_long_words: true) == ["  indented", "text here"]
+
+test "truncate: a text that fits, one cut with an ellipsis, a wide character, an ellipsis wider than the room, and a colour kept"
+    assert truncate(s: "short", columns: 10, ellipsis: "…") == "short"
+    assert truncate(s: "Hello, world", columns: 8, ellipsis: "…") == "Hello, …"
+    assert truncate(s: "日本語", columns: 5, ellipsis: "…") == "日本…"
+    assert truncate(s: "abcdef", columns: 2, ellipsis: "...") == ".."
+    assert truncate(s: "abc", columns: -1, ellipsis: "") == ""
+    assert truncate(s: "\u{1b}[31mabcdef\u{1b}[0m", columns: 4, ellipsis: "…") == "\u{1b}[31mabc…\u{1b}[0m"

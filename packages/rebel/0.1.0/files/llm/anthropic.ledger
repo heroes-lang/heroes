@@ -1,0 +1,321 @@
+# The ledger of `llm/anthropic`: what the official SDKs of Claude's API let a
+# program do with the Messages API, one block per capability, and what Rebel
+# answers. No standard library speaks the API, so the yardstick is the
+# census the coordinator set on 2026-11-17: Anthropic's official SDKs for
+# Python and Go. Measured on this machine on 2026-11-18: Python's
+# `anthropic` 2.10.0, installed with `pip --target` into the scratch folder
+# and walked with `dir()` from a client (`python3 -I`), and Go's
+# `github.com/anthropics/anthropic-sdk-go/v2` v2.11.0, from a module cache
+# in the scratch folder (`go doc -all`, the package and `option`). Anthropic
+# publishes no Rust SDK, so every `rust` line is `-`. The behaviour is the
+# API reference's (platform.claude.com/docs, read 2026-11-18: Create a
+# Message, Streaming, Tool use, Handle tool calls, Stop reasons, Token
+# counting, Batch processing, Models, Errors, Rate limits, API versions),
+# tested against answers and event streams replayed by a server of the
+# tests' own on the loopback; no test reaches the API, and the one live
+# test runs only with a key of its own in `REBEL_ANTHROPIC_LIVE_KEY`.
+
+capability client/key  a client made with an API key, sent as `x-api-key`
+  heroes  llm/anthropic.default_client, llm/anthropic.Client
+  go      anthropic.NewClient, option.WithAPIKey
+  rust    -
+  python  Anthropic, Anthropic.api_key
+  note    Two retries, ten minutes an attempt, as both SDKs default
+
+capability client/env  the key and the address read from the environment
+  heroes  llm/anthropic.client_from_env
+  go      anthropic.DefaultClientOptions, option.WithEnvironmentProduction
+  rust    -
+  python  Anthropic (reads ANTHROPIC_API_KEY, ANTHROPIC_AUTH_TOKEN, ANTHROPIC_BASE_URL)
+  note    The OAuth profiles on disk and workload identity federation the SDKs also resolve are refused below
+
+capability client/auth-token  an OAuth access token sent as `Authorization: Bearer`
+  heroes  llm/anthropic.Client
+  go      option.WithAuthToken
+  rust    -
+  python  Anthropic.auth_token, Anthropic.auth_headers
+
+capability client/base-url  another address: a proxy, a gateway, a test's server
+  heroes  llm/anthropic.Client
+  go      option.WithBaseURL
+  rust    -
+  python  Anthropic.base_url
+
+capability client/headers  fields added to every request, and betas named
+  heroes  llm/anthropic.Client
+  go      option.WithHeader, option.WithHeaderAdd, option.WithHeaderDel, option.WithQuery, option.WithQueryAdd, option.WithQueryDel
+  rust    -
+  python  Anthropic.default_headers, Anthropic.default_query, Anthropic.platform_headers, Anthropic.user_agent, Anthropic.with_options
+  note    A beta is a name in `Client.betas`, sent as `anthropic-beta`; a query is the path's own in `send_raw`
+
+capability client/retries  a request sent again after a transient failure, waiting what the server asks
+  heroes  llm/anthropic.Client
+  go      option.WithMaxRetries
+  rust    -
+  python  Anthropic.max_retries
+  note    408, 409, 429 and 5xx and a connection that failed, unless `x-should-retry` says otherwise, as both SDKs; a `retry-after` longer than `max_wait_ms` is told to the program in its failure rather than slept, where the SDKs fall back to their own backoff
+
+capability client/timeout  a time limit on an attempt, and on the wait for a stream's next bytes
+  heroes  llm/anthropic.Client
+  go      option.WithRequestTimeout, anthropic.CalculateNonStreamingTimeout
+  rust    -
+  python  Anthropic.timeout
+  note    A stream is bounded by its silence, never by its length, so a long answer streams whole
+
+capability client/transport  the authorities trusted, the connection's own settings
+  heroes  llm/anthropic.Client
+  go      option.WithHTTPClient
+  rust    -
+  python  DefaultHttpxClient, DefaultAsyncHttpxClient, DefaultAioHttpClient, DEFAULT_CONNECTION_LIMITS
+  note    The connection is `http`'s over `tls`; `roots` names other authorities, and nothing turns the check off
+
+capability messages/create  a message made from a conversation, its answer read whole
+  heroes  llm/anthropic.create
+  go      MessageService.New
+  rust    -
+  python  messages.create
+
+capability messages/request  the request: the model, the ceiling of tokens, the system prompt, and every other parameter by name
+  heroes  llm/anthropic.Request, llm/anthropic.new_request, llm/anthropic.with_field, llm/anthropic.with_effort, llm/anthropic.to_json
+  go      MessageNewParams, OutputConfigParam, ThinkingConfigParamUnion, ToolChoiceUnionParam, MetadataParam, option.WithJSONSet, option.WithJSONDel
+  rust    -
+  python  messages.create's parameters, types.MessageCreateParams
+  note    A parameter the record does not type is a `json.Value` by its name, so one the API adds needs nothing here; temperature, top_p and top_k are refused by the version itself
+
+capability messages/turns  the turns of a conversation, the user's and the assistant's
+  heroes  llm/anthropic.Turn, llm/anthropic.user, llm/anthropic.assistant, llm/anthropic.with_turn
+  go      MessageParam, NewUserMessage, NewAssistantMessage
+  rust    -
+  python  types.MessageParam
+
+capability messages/blocks-in  the content blocks a request sends: text, image, PDF
+  heroes  llm/anthropic.text_block, llm/anthropic.image_block, llm/anthropic.document_block
+  go      NewTextBlock, NewImageBlock, NewDocumentBlock, TextBlockParam, ImageBlockParam, DocumentBlockParam, Base64ImageSourceParam, Base64PDFSourceParam
+  rust    -
+  python  types.TextBlockParam, types.ImageBlockParam, types.DocumentBlockParam
+  note    Every other block (a URL's image, a file's id, a search result) is the JSON the reference writes, a `json.Value` in `Turn.content`
+
+capability messages/cache-control  the end of a prefix the API caches, for five minutes or an hour
+  heroes  llm/anthropic.cached
+  go      CacheControlEphemeralParam, NewCacheControlEphemeralParam
+  rust    -
+  python  types.CacheControlEphemeralParam
+
+capability messages/answer  the answer read: id, model, content, stop, usage
+  heroes  llm/anthropic.Message, llm/anthropic.Usage, llm/anthropic.to_message, llm/anthropic.parse_message
+  go      Message, Usage, Message.UnmarshalJSON, Message.RawJSON
+  rust    -
+  python  types.Message, types.Usage
+
+capability messages/blocks-out  the answer's blocks read by their kind
+  heroes  llm/anthropic.Block, llm/anthropic.blocks_of, llm/anthropic.text_of
+  go      ContentBlockUnion, ContentBlockUnion.AsText, AsThinking, AsRedactedThinking, AsToolUse, AsServerToolUse, AsWebSearchToolResult, AsWebFetchToolResult, AsAny
+  rust    -
+  python  types.ContentBlock, types.TextBlock, types.ThinkingBlock, types.RedactedThinkingBlock, types.ToolUseBlock, types.ServerToolUseBlock, MessageStream.get_final_text
+  note    A server tool's result is `other` with its JSON whole: its shapes change with each tool's version
+
+capability messages/stop  why the answer stopped, checked before its content
+  heroes  llm/anthropic.STOP_END_TURN, llm/anthropic.STOP_MAX_TOKENS, llm/anthropic.STOP_STOP_SEQUENCE, llm/anthropic.STOP_TOOL_USE, llm/anthropic.STOP_PAUSE_TURN, llm/anthropic.STOP_REFUSAL, llm/anthropic.STOP_CONTEXT_WINDOW, llm/anthropic.require_complete
+  go      StopReason, StopReasonEndTurn, StopReasonMaxTokens, StopReasonStopSequence, StopReasonToolUse, StopReasonPauseTurn, StopReasonRefusal, RefusalStopDetails
+  rust    -
+  python  types.StopReason, types.RefusalStopDetails
+  note    A refusal is `permission` and a cut answer `limit` in `require_complete`; neither SDK turns them into failures, so the program that reads `stop_reason` itself reads the same values
+
+capability messages/replay  an answer sent back as the assistant's turn, its thinking unchanged; a paused turn continued
+  heroes  llm/anthropic.turn_of, llm/anthropic.with_reply
+  go      Message.ToParam, ContentBlockUnion.ToParam
+  rust    -
+  python  -
+  note    The blocks go back as the API wrote them, so a thinking block's signature is never rebuilt
+
+capability tools/define  a tool of the program's: name, description, input schema, strict, eager streaming; and a server tool
+  heroes  llm/anthropic.Tool, llm/anthropic.Request
+  go      ToolParam, ToolUnionParam, ToolInputSchemaParam, WebSearchTool20250305Param
+  rust    -
+  python  types.ToolParam, types.ToolUnionParam, transform_schema
+  note    A server tool is its JSON in `Request.server_tools`; a schema is JSON the program writes, there being no reflection to derive one from a record
+
+capability tools/calls  the calls of an answer handed out to the program
+  heroes  llm/anthropic.tool_calls_of, llm/anthropic.ToolCall
+  go      ToolUseBlock, ContentBlockUnion.AsToolUse
+  rust    -
+  python  types.ToolUseBlock
+
+capability tools/input-checked  a call's input checked whole before it is used
+  heroes  llm/anthropic.input_of
+  go      ToolUseBlock.Input
+  rust    -
+  python  -
+  note    Both SDKs parse the streamed input tolerantly and may hand out a silent truncation; here the text as it came is kept and `input_of` fails `invalid` on anything that is not one whole object
+
+capability tools/results  the results of one turn's calls sent back in one user turn, an error marked
+  heroes  llm/anthropic.tool_result, llm/anthropic.with_tool_results
+  go      NewToolResultBlock, ToolResultBlockParam
+  rust    -
+  python  types.ToolResultBlockParam
+
+capability tools/runner  a loop that calls the program's functions until the model is done
+  heroes  refused: the program drives the loop; a library that calls back would need a closure for each tool's state, which the language has not, and the loop is six lines (the example of `with_tool_results`)
+  go      toolrunner.NewBetaToolFromJSONSchema, BetaMessageService.NewToolRunner, BetaToolRunner.RunToCompletion
+  rust    -
+  python  beta_tool, beta_async_tool, beta.messages.tool_runner
+
+capability streaming/events  a message read as its events come, every kind of event
+  heroes  llm/anthropic.stream, llm/anthropic.next_event, llm/anthropic.Event, llm/anthropic.Stream
+  go      MessageService.NewStreaming, ssestream.Stream, MessageStreamEventUnion
+  rust    -
+  python  messages.stream, messages.create(stream=True), MessageStream, Stream, MessageStreamEvent, TextEvent, InputJsonEvent, ContentBlockStopEvent, MessageStopEvent
+  note    An event this package does not name is `other`, as the versioning page asks; an `error` event is a failure with the status its type stands for
+
+capability streaming/accumulate  the message a stream makes, whole or as far as it has come
+  heroes  llm/anthropic.final_message, llm/anthropic.message_of
+  go      Message.Accumulate
+  rust    -
+  python  MessageStream.get_final_message, MessageStream.current_message_snapshot, MessageStream.until_done
+
+capability streaming/partial-input  a tool's input read while it streams
+  heroes  llm/anthropic.input_so_far
+  go      -
+  rust    -
+  python  InputJsonEvent.snapshot
+  note    Read by `json.parse_partial`, which guesses nothing: a key or a word not yet whole is left out
+
+capability streaming/close  a stream closed before or after its end
+  heroes  llm/anthropic.close_stream
+  go      ssestream.Stream.Close
+  rust    -
+  python  MessageStream.close, Stream.close
+
+capability tokens/count  the input tokens a request would cost, counted by the API
+  heroes  llm/anthropic.count_tokens
+  go      MessageService.CountTokens, MessageTokensCount
+  rust    -
+  python  messages.count_tokens
+
+capability models/list  a page of the models the API serves
+  heroes  llm/anthropic.list_models, llm/anthropic.first_page, llm/anthropic.Cursor, llm/anthropic.ModelPage
+  go      ModelService.List, pagination.Page
+  rust    -
+  python  models.list
+
+capability models/retrieve  one model by its id, its context window and its ceiling
+  heroes  llm/anthropic.model_of, llm/anthropic.ModelInfo, llm/anthropic.to_model_info
+  go      ModelService.Get, ModelInfo
+  rust    -
+  python  models.retrieve, types.ModelInfo
+
+capability pages/auto  every page of a list walked for the program
+  heroes  refused: the program's loop over `has_more` and `last_id` is two lines, and an iterator would need a closure
+  go      ModelService.ListAutoPaging, MessageBatchService.ListAutoPaging, pagination.PageAutoPager
+  rust    -
+  python  SyncPage iteration, Anthropic.get_api_list
+
+capability batches/create  requests sent as one batch, each named
+  heroes  llm/anthropic.create_batch, llm/anthropic.BatchRequest, llm/anthropic.Batch, llm/anthropic.RequestCounts, llm/anthropic.to_batch
+  go      MessageBatchService.New, MessageBatch, MessageBatchRequestCounts
+  rust    -
+  python  messages.batches.create, types.MessageBatch
+
+capability batches/retrieve  a batch polled until it ends
+  heroes  llm/anthropic.batch_of, llm/anthropic.BATCH_IN_PROGRESS, llm/anthropic.BATCH_CANCELING, llm/anthropic.BATCH_ENDED
+  go      MessageBatchService.Get
+  rust    -
+  python  messages.batches.retrieve
+
+capability batches/list  a page of the batches
+  heroes  llm/anthropic.list_batches, llm/anthropic.BatchPage
+  go      MessageBatchService.List
+  rust    -
+  python  messages.batches.list
+
+capability batches/cancel  a batch cancelled
+  heroes  llm/anthropic.cancel_batch
+  go      MessageBatchService.Cancel
+  rust    -
+  python  messages.batches.cancel
+
+capability batches/delete  an ended batch deleted
+  heroes  llm/anthropic.delete_batch
+  go      MessageBatchService.Delete, DeletedMessageBatch
+  rust    -
+  python  messages.batches.delete
+
+capability batches/results  a batch's results read a line at a time, each found by its name
+  heroes  llm/anthropic.batch_results, llm/anthropic.parse_batch_results, llm/anthropic.to_batch_result, llm/anthropic.BatchResult, llm/anthropic.Outcome
+  go      MessageBatchService.ResultsStreaming, MessageBatchIndividualResponse, jsonl.Stream
+  rust    -
+  python  messages.batches.results, types.MessageBatchIndividualResponse
+  note    The results are read from the batch's own path, never from `results_url`, so they go only where the key goes
+
+capability errors/status  a failure the API answered, by its status and its type
+  heroes  llm/anthropic.INVALID, llm/anthropic.PERMISSION, llm/anthropic.NOT_FOUND, llm/anthropic.LIMIT, llm/anthropic.TIMEOUT, llm/anthropic.FAILED, llm/anthropic.ApiError, llm/anthropic.failure_of
+  go      Error, Error.StatusCode, Error.RawJSON
+  rust    -
+  python  APIError, APIStatusError, BadRequestError, AuthenticationError, PaymentRequiredError, PermissionDeniedError, NotFoundError, ConflictError, RequestTooLargeError, UnprocessableEntityError, RateLimitError, InternalServerError, OverloadedError, ServiceUnavailableError, GatewayTimeoutError, DeadlineExceededError, RequestTimeoutError, ContentTooLargeError
+  note    Each status chooses a code of README § A4 and the message keeps the status, the type, the request id and the wait in brackets, as `sql`'s failures keep a SQLSTATE; `failure_of` reads them back
+
+capability errors/advice  whether a failure may pass if sent again, and after how long
+  heroes  llm/anthropic.ApiError
+  go      -
+  rust    -
+  python  RetryableError
+  note    `retryable` and `wait_ms` from the status, `x-should-retry` and `retry-after` (seconds or a date, through `time.parse_retry_after`); the SDKs keep this inside their retry loop
+
+capability errors/request-id  the id of a request, for support
+  heroes  llm/anthropic.ApiError
+  go      option.WithResponseInto
+  rust    -
+  python  MessageStream.request_id, APIStatusError.request_id
+
+capability errors/connection  a connection refused, cut or timed out
+  heroes  llm/anthropic.CLOSED, llm/anthropic.TIMEOUT
+  go      -
+  rust    -
+  python  APIConnectionError, APITimeoutError
+
+capability raw/request  any endpoint reached with the client's key, version and retries, its answer whole with its fields
+  heroes  llm/anthropic.send_raw
+  go      Client.Execute, Client.Get, Client.Post, Client.Put, Client.Patch, Client.Delete, option.WithResponseInto, option.WithResponseBodyInto, option.WithRequestBody
+  rust    -
+  python  Anthropic.get, Anthropic.post, Anthropic.put, Anthropic.patch, Anthropic.delete, Anthropic.request, Anthropic.with_raw_response, Anthropic.with_streaming_response
+  note    The rate-limit fields (`anthropic-ratelimit-*`) are read from the answer's headers
+
+capability structured-output  an answer held to a JSON schema and read as JSON
+  heroes  llm/anthropic.with_field, json.parse
+  go      OutputConfigParam, JSONOutputFormatParam
+  rust    -
+  python  messages.parse, types.ParsedMessage
+  note    `output_config.format` is set by `with_field` and the text read by `json.parse`; filling a record from it by its field names is refused, the language having no reflection (`json`'s own rule)
+
+capability clouds  Claude on Bedrock, Vertex AI, Foundry and Claude Platform on AWS, each with its cloud's own signing
+  heroes  refused: a cloud's signing (SigV4, Google's credentials, Entra ID) is that cloud's package; `base_url` and `headers` reach a gateway that signs
+  go      bedrock.NewMantleClient, vertex.WithGoogleAuth
+  rust    -
+  python  AnthropicBedrock, AnthropicBedrockMantle, AnthropicVertex, AnthropicFoundry, AnthropicAWS, AnthropicGoogleCloud, AsyncAnthropicBedrock, AsyncAnthropicBedrockMantle, AsyncAnthropicVertex, AsyncAnthropicFoundry, AsyncAnthropicAWS, AsyncAnthropicGoogleCloud
+
+capability credentials/federated  credentials from OAuth profiles on disk, or exchanged by workload identity federation
+  heroes  refused: an OAuth flow is `oauth2`'s, and the token it answers is `Client.auth_token`
+  go      option.WithFederationTokenProvider, option.WithProfile, option.WithConfig, option.WithConfigQuiet, option.WithoutEnvironmentDefaults
+  rust    -
+  python  AccessToken, AccessTokenAuth, AccessTokenProvider, AsyncAccessTokenProvider, BaseURLBoundProvider, CredentialResult, CredentialsFile, EnvToken, IdentityTokenFile, IdentityTokenProvider, InMemoryConfig, StaticToken, TokenCache, WorkloadIdentityCredentials, default_credentials, exchange_federation_assertion, Anthropic.credentials, Anthropic.custom_auth
+
+dropped  outside the package's area in README § A1: the Files and Skills APIs, Managed Agents, user profiles, the Admin API and the legacy Text Completions, each reached by `send_raw` where a program wants it
+  go      FileService, OrganizationAPIKeyService and the Organization services, BetaAgentService, BetaSessionService, BetaEnvironmentService, BetaVaultService, BetaDeploymentService, BetaMemoryStoreService, BetaSkillService, UserProfileService, CompletionService
+  rust    -
+  python  files, skills, completions, beta.agents, beta.deployment_runs, beta.deployments, beta.dreams, beta.environments, beta.files, beta.memory_stores, beta.models, beta.organization, beta.sessions, beta.skills, beta.tunnels, beta.user_profiles, beta.vaults, beta.webhooks, user_profiles, Anthropic.webhook_key
+
+dropped  the beta copies of the Messages API, whose features are the same requests with a beta named: compaction, context editing, task budgets, fallbacks, message threads, cache diagnostics
+  go      BetaMessageService, BetaMessageBatchService, BetaModelService
+  rust    -
+  python  beta.messages, BetaMessageStream, BetaMessageStreamManager, BetaAsyncMessageStream, BetaAsyncMessageStreamManager, BetaContentBlockStopEvent, BetaInputJsonEvent, BetaMessageStopEvent, BetaMessageStreamEvent, BetaTextEvent, BetaFallbackState, BetaRefusalFallbackMiddleware, ParsedBetaContentBlockStopEvent, ParsedBetaMessageStopEvent, ParsedBetaMessageStreamEvent, ParsedBetaTextEvent
+  note    `Client.betas` names the beta and `with_field` sets its parameter
+
+dropped  the plumbing of each language: async twins, contexts, option and parameter helpers, middleware, telemetry, and the sentinels of omitted values
+  go      context.Context, anthropic.Bool, anthropic.Int, anthropic.Float, anthropic.String, anthropic.Time, anthropic.Opt, anthropic.Ptr, param.Opt, option.WithMiddleware, option.WithDebugLog, option.WithOpenTelemetryTraces, option.WithOpenTelemetryPropagation, option.WithOpenTelemetryConversationID, option.WithOpenTelemetryTracesContentMode, option.WithOpenTelemetryTracesMaxContentBytes, option.WithTracerProvider, option.WithWebhookKey
+  rust    -
+  python  AsyncAnthropic, AsyncClient, AsyncStream, AsyncMessageStream, AsyncMessageStreamManager, AsyncAPIResponse, APIResponse, APIRequest, Client, BaseModel, NotGiven, NOT_GIVEN, not_given, Omit, omit, NoneType, RequestOptions, Timeout, DEFAULT_MAX_RETRIES, DEFAULT_TIMEOUT, Middleware, MiddlewareCallable, MiddlewareInput, AsyncMiddlewareCallable, CallNext, AsyncCallNext, OpenTelemetryClientOption, OpenTelemetryOptions, OpenTelemetryTraces, ResolvedOpenTelemetryOptions, ResolvedOpenTelemetryTraces, MessageStreamManager, Anthropic.copy, Anthropic.close, Anthropic.is_closed, Anthropic.middleware, Anthropic.with_middleware, Anthropic.open_telemetry, Anthropic.qs, file_from_path, lib, pagination, resources, types, transform_schema
+
+dropped  failures of the SDKs' own machinery or of other surfaces, which a program of this package meets as a status's code
+  go      -
+  rust    -
+  python  AnthropicError, APIResponseValidationError, APIWebhookValidationError, CredentialsError, IdentityTokenFileError, WorkloadIdentityError, CMEKContextUnavailableError, CMEKKeyDisabledError, CMEKKeyNetworkBlockedError, CMEKKeyUnreachableError, ClaudeCodeKeyCreatorNotMemberError, ClaudeCodeVersionTooOldError, ClientClosedRequestError, ContractSpendLimitReachedError, EnforcedSpendLimitReachedError, HTTPNotImplementedError, LinkedOrganizationBillingUnavailableError, LinkedOrganizationSpendLimitReachedError, OrganizationOnHoldError, OrganizationTypeNotSupportedError, ParentOrganizationRequiredError, PreconditionFailedError, RampLimitExceededError, RequestBodyEncodingInvalidError, RequestBodyEncodingUnsupportedError, RequestBodyTooLargeAfterDecodingError, RequestHeaderFieldsTooLargeError, SandboxEgressRestrictedError

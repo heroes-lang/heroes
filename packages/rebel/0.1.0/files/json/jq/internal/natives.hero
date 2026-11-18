@@ -1,0 +1,472 @@
+# The builtins written in Heroes, by number: the resolver finds a call's
+# number from its name and arity, and the machine hands a call its input and
+# its arguments' values, the last argument's values the outer loop, as jq
+# evaluates them. A number from `CONTROL` up names a builtin the machine runs
+# itself, since it takes a filter or touches the run: `empty`, `error`,
+# `path`, `getpath`, `limit`, `first`, `isempty`, ranges, inputs, `debug`,
+# `stderr`, `halt`, `now`, `$__named`'s object and the list of builtins.
+
+use json
+use json/jq/internal/collections
+use json/jq/internal/dates
+use json/jq/internal/formats
+use json/jq/internal/mathfns
+use json/jq/internal/paths
+use json/jq/internal/regexes
+use json/jq/internal/text
+use json/jq/internal/values
+use json/jq/internal/write
+
+# The first number of a builtin the machine runs itself.
+constant CONTROL: i64
+    900
+
+# `empty`.
+constant EMPTY: i64
+    900
+
+# `error/0`.
+constant ERROR_0: i64
+    901
+
+# `error/1`.
+constant ERROR_1: i64
+    902
+
+# `path/1`.
+constant PATH: i64
+    904
+
+# `getpath/1`.
+constant GETPATH: i64
+    905
+
+# `_limit/2`, behind `limit`.
+constant LIMIT: i64
+    906
+
+# `first/1`.
+constant FIRST: i64
+    907
+
+# `isempty/1`.
+constant ISEMPTY: i64
+    908
+
+# `_range/3`, behind `range`.
+constant RANGE: i64
+    909
+
+# `input/0`.
+constant INPUT: i64
+    910
+
+# `debug/0`.
+constant DEBUG: i64
+    911
+
+# `stderr/0`.
+constant STDERR: i64
+    912
+
+# `halt/0`.
+constant HALT: i64
+    913
+
+# `halt_error/1`.
+constant HALT_ERROR: i64
+    914
+
+# `inputs/0`.
+constant INPUTS: i64
+    915
+
+# `now/0`.
+constant NOW: i64
+    916
+
+# `builtins/0`.
+constant BUILTINS: i64
+    917
+
+# `input_line_number/0`.
+constant LINE_NUMBER: i64
+    918
+
+# The math functions of one number begin at this number.
+constant UNARY_MATH: i64
+    100
+
+# The math functions of two numbers begin at this number.
+constant BINARY_MATH: i64
+    200
+
+# What a builtin answered: its outputs and the steps it took.
+record Produced
+    # The values it outputs, in order.
+    outputs: [json.Value]
+    # The steps it took.
+    cost: i64
+
+# The names and arities of the builtins written in Heroes and run by the
+# machine, as `name/arity`, in no order; `builtins` adds the prelude's.
+function native_names() -> [str]
+    names: [str] @= [
+        "length/0"
+        "utf8bytelength/0"
+        "not/0"
+        "keys/0"
+        "keys_unsorted/0"
+        "has/1"
+        "contains/1"
+        "type/0"
+        "tostring/0"
+        "tonumber/0"
+        "tojson/0"
+        "fromjson/0"
+        "infinite/0"
+        "nan/0"
+        "isinfinite/0"
+        "isnan/0"
+        "isnormal/0"
+        "sort/0"
+        "min/0"
+        "max/0"
+        "unique/0"
+        "reverse/0"
+        "indices/1"
+        "join/1"
+        "setpath/2"
+        "delpaths/1"
+        "to_entries/0"
+        "from_entries/0"
+        "tostream/0"
+        "transpose/0"
+        "bsearch/1"
+        "ltrimstr/1"
+        "rtrimstr/1"
+        "startswith/1"
+        "endswith/1"
+        "explode/0"
+        "implode/0"
+        "split/1"
+        "ascii_downcase/0"
+        "ascii_upcase/0"
+        "trim/0"
+        "ltrim/0"
+        "rtrim/0"
+        "input_filename/0"
+        "format/1"
+        "gmtime/0"
+        "localtime/0"
+        "mktime/0"
+        "strftime/1"
+        "strflocaltime/1"
+        "strptime/1"
+        "fma/3"
+        "empty/0"
+        "error/0"
+        "error/1"
+        "path/1"
+        "getpath/1"
+        "first/1"
+        "isempty/1"
+        "input/0"
+        "inputs/0"
+        "debug/0"
+        "stderr/0"
+        "halt/0"
+        "halt_error/1"
+        "now/0"
+        "builtins/0"
+        "input_line_number/0"
+    ]
+
+    for name in mathfns.unary_names()
+        names @ names.push(f"{name}/0")
+
+    for name in mathfns.binary_names()
+        names @ names.push(f"{name}/2")
+
+    return names
+
+# The number of the builtin `name` of `arity`, -1 where there is none.
+function id_of(name: str, arity: i64) -> i64
+    if arity == 0
+        unary = mathfns.unary_names()
+
+        for i in range(from: 0, to: unary.len())
+            if unary[i] == name
+                return UNARY_MATH + i
+
+    if arity == 2
+        binary = mathfns.binary_names()
+
+        for i in range(from: 0, to: binary.len())
+            if binary[i] == name
+                return BINARY_MATH + i
+
+    return match f"{name}/{arity}"
+        "length/0"            => 1
+        "utf8bytelength/0"    => 2
+        "not/0"               => 3
+        "keys/0"              => 4
+        "keys_unsorted/0"     => 5
+        "has/1"               => 6
+        "contains/1"          => 7
+        "type/0"              => 8
+        "tostring/0"          => 9
+        "tonumber/0"          => 10
+        "tojson/0"            => 11
+        "fromjson/0"          => 12
+        "infinite/0"          => 13
+        "nan/0"               => 14
+        "isinfinite/0"        => 15
+        "isnan/0"             => 16
+        "isnormal/0"          => 17
+        "sort/0"              => 18
+        "_sort_by/1"          => 19
+        "_group_by/1"         => 20
+        "_unique_by/1"        => 21
+        "_min_by/1"           => 22
+        "_max_by/1"           => 23
+        "min/0"               => 24
+        "max/0"               => 25
+        "unique/0"            => 26
+        "reverse/0"           => 27
+        "indices/1"           => 28
+        "_flatten/1"          => 29
+        "join/1"              => 30
+        "setpath/2"           => 31
+        "delpaths/1"          => 32
+        "to_entries/0"        => 33
+        "from_entries/0"      => 34
+        "tostream/0"          => 35
+        "transpose/0"         => 36
+        "bsearch/1"           => 37
+        "ltrimstr/1"          => 39
+        "rtrimstr/1"          => 40
+        "startswith/1"        => 41
+        "endswith/1"          => 42
+        "explode/0"           => 43
+        "implode/0"           => 44
+        "split/1"             => 45
+        "ascii_downcase/0"    => 46
+        "ascii_upcase/0"      => 47
+        "trim/0"              => 48
+        "ltrim/0"             => 49
+        "rtrim/0"             => 50
+        "input_filename/0"    => 52
+        "_match/3"            => 53
+        "_capture_object/0"   => 54
+        "_split_regex/2"      => 55
+        "format/1"            => 56
+        "gmtime/0"            => 60
+        "localtime/0"         => 61
+        "mktime/0"            => 62
+        "strftime/1"          => 63
+        "strflocaltime/1"     => 64
+        "strptime/1"          => 65
+        "fma/3"               => 70
+        "_disjoint/1"         => 80
+        "_apply_updates/2"    => 81
+        "empty/0"             => EMPTY
+        "error/0"             => ERROR_0
+        "error/1"             => ERROR_1
+        "path/1"              => PATH
+        "getpath/1"           => GETPATH
+        "_limit/2"            => LIMIT
+        "first/1"             => FIRST
+        "isempty/1"           => ISEMPTY
+        "_range/3"            => RANGE
+        "input/0"             => INPUT
+        "debug/0"             => DEBUG
+        "stderr/0"            => STDERR
+        "halt/0"              => HALT
+        "halt_error/1"        => HALT_ERROR
+        "inputs/0"            => INPUTS
+        "now/0"               => NOW
+        "builtins/0"          => BUILTINS
+        "input_line_number/0" => LINE_NUMBER
+        _                     => -1
+
+# Whether the machine hands the builtin `id` its arguments as filters rather
+# than as values: `path`, `first`, `isempty`, and `_limit`'s second.
+function takes_filters(id: i64) -> bool
+    return id == PATH || id == FIRST || id == ISEMPTY || id == LIMIT
+
+# One output, costing one step.
+function one(v: json.Value) -> Produced?
+    return ok(Produced(outputs: [v], cost: 1))
+
+# One output costing a step for every element of `size`.
+function sized(v: json.Value, size: i64) -> Produced?
+    return ok(Produced(outputs: [v], cost: 1 + size))
+
+# The elements or members `v` holds, for a cost.
+function size_of(v: json.Value) -> i64
+    return match v
+        .list l                              => l.items.len()
+        .object o                            => o.members.len()
+        .text t                              => t.v.len() / 16
+        .null_value | .boolean _ | .number _ => 0
+
+# The builtin `id` run on `input` with `given`, its arguments' values in
+# order, within `limit` steps.
+function apply(id: i64, input: json.Value, given: [json.Value], limit: i64) -> Produced?
+    if id >= BINARY_MATH && id < CONTROL
+        return one(mathfns.binary(name: mathfns.binary_names()[id - BINARY_MATH], a: given[0], b: given[1])?)
+
+    if id >= UNARY_MATH && id < BINARY_MATH
+        return one(mathfns.unary(name: mathfns.unary_names()[id - UNARY_MATH], v: input)?)
+    size = size_of(input)
+
+    return match id
+        1   => one(values.length(input)?)
+        2   => one(text.utf8bytelength(input)?)
+        3   => one(.boolean(v: !values.truthy(input)))
+        4   => sized(values.keys_of(input, sorted: true)?, size: size)
+        5   => sized(values.keys_of(input, sorted: false)?, size: size)
+        6   => one(values.has(v: input, k: given[0])?)
+        7   => sized(values.contains(a: input, b: given[0])?, size: size)
+        8   => one(.text(v: values.type_name(input)))
+        9   => written(input, limit: limit, as_text: true)
+        10  => one(text.tonumber(input)?)
+        11  => written(input, limit: limit, as_text: false)
+        12  => sized(text.fromjson(input)?, size: size)
+        13  => one(.number(v: 1.0 / 0.0))
+        14  => one(.number(v: 0.0 / 0.0))
+        15  => one(.boolean(v: is_infinite(mathfns.number(input)?)))
+        16  => one(.boolean(v: is_nan(mathfns.number(input)?)))
+        17  => one(.boolean(v: is_normal(mathfns.number(input)?)))
+        18  => sized(collections.sort_values(input)?, size: size * 20)
+        19  => sized(collections.sort_by_keys(v: input, by: given[0])?, size: size * 20)
+        20  => sized(collections.group_by_keys(v: input, by: given[0], first_only: false)?, size: size * 20)
+        21  => sized(collections.group_by_keys(v: input, by: given[0], first_only: true)?, size: size * 20)
+        22  => sized(collections.extreme_by_keys(v: input, by: given[0], lowest: true)?, size: size)
+        23  => sized(collections.extreme_by_keys(v: input, by: given[0], lowest: false)?, size: size)
+        24  => sized(collections.extreme(input, lowest: true)?, size: size)
+        25  => sized(collections.extreme(input, lowest: false)?, size: size)
+        26  => sized(collections.unique(input)?, size: size * 20)
+        27  => sized(text.reverse(input)?, size: size)
+        28  => sized(text.indices(v: input, arg: given[0])?, size: size)
+        29  => flattened(input: input, depth: given[0], size: size)
+        30  => sized(text.join_with(v: input, sep: given[0])?, size: size)
+        31  => sized(paths.setpath(v: input, path: given[0], value: given[1])?, size: size)
+        32  => sized(paths.delpaths(v: input, paths: given[0])?, size: size * (1 + size_of(given[0])))
+        33  => sized(paths.to_entries(input)?, size: size)
+        34  => sized(collections.from_entries(input)?, size: size)
+        35  => streamed(input)
+        36  => sized(collections.transpose(input)?, size: size)
+        37  => one(collections.bsearch(v: input, target: given[0])?)
+        39  => one(text.ltrimstr(v: input, arg: given[0]))
+        40  => one(text.rtrimstr(v: input, arg: given[0]))
+        41  => one(text.startswith(v: input, arg: given[0])?)
+        42  => one(text.endswith(v: input, arg: given[0])?)
+        43  => sized(text.explode(input)?, size: size * 64)
+        44  => sized(text.implode(input)?, size: size)
+        45  => sized(text.split(v: input, arg: given[0])?, size: size)
+        46  => sized(text.ascii_case(input, upper: false)?, size: size)
+        47  => sized(text.ascii_case(input, upper: true)?, size: size)
+        48  => one(text.trimmed(input, start: true, end: true)?)
+        49  => one(text.trimmed(input, start: true, end: false)?)
+        50  => one(text.trimmed(input, start: false, end: true)?)
+        52  => one(.null_value)
+        53  => matched(input, given: given, size: size)
+        54  => one(regexes.capture_object(input)?)
+        55  => sized(regexes.split_by(v: input, pattern: given[0], flags: given[1])?, size: size)
+        56  => formatted(input: input, name: given[0])
+        60  => one(dates.gmtime(input)?)
+        61  => one(dates.gmtime(input)?)
+        62  => one(dates.mktime(input)?)
+        63  => one(dates.strftime(v: input, format: given[0])?)
+        64  => one(dates.strflocaltime(v: input, format: given[0])?)
+        65  => one(dates.strptime(v: input, format: given[0])?)
+        70  => one(mathfns.fma(a: given[0], b: given[1], c: given[2])?)
+        80  => one(paths.disjoint(given[0])?)
+        81  => sized(paths.apply_updates(v: input, paths: given[0], updates: given[1])?, size: size + size_of(given[0]))
+        918 => one(.number(v: 0.0))
+        _   => values.raised(f"the builtin numbered {id} is not one")
+
+# `input` written as JSON, or as its text where `as_text` and it is one.
+function written(input: json.Value, limit: i64, as_text: bool) -> Produced?
+    if as_text
+        match input
+            .text _                                                    => return one(input)
+            .null_value | .boolean _ | .number _ | .list _ | .object _ => _ = 0
+
+    match write.write(input, indent: 0, sorted: false, limit: limit)
+        .ok w  => return ok(Produced(outputs: [.text(v: w.text)], cost: w.cost))
+        .err e => return fail(code: e.code, msg: e.msg)
+
+# `flatten` with its depth read from `depth`.
+function flattened(input: json.Value, depth: json.Value, size: i64) -> Produced?
+    d = mathfns.number(depth)?
+
+    levels = if d != d || d < 0.0 || d > 1000000000.0
+        -1
+    else
+        d.to_i64().must()
+    return sized(collections.flatten(input, depth: levels)?, size: size)
+
+# `tostream`'s events, each an output.
+function streamed(input: json.Value) -> Produced?
+    events = paths.tostream(input)?
+    return ok(Produced(outputs: events, cost: 1 + events.len()))
+
+# `_match`'s answer for `given`: the pattern, the flags, and whether only a
+# test is asked.
+function matched(input: json.Value, given: [json.Value], size: i64) -> Produced?
+    only_test = values.truthy(given[2])
+    return sized(regexes.match_values(v: input, pattern: given[0], flags: given[1], only_test: only_test)?, size: size)
+
+# `format(name)`.
+function formatted(input: json.Value, name: json.Value) -> Produced?
+    match name
+        .text t => return sized(formats.apply(name: t.v, v: input)?, size: size_of(input))
+        .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+            return values.raised(f"{values.described(name)} is not a valid format")
+
+# Whether `x` is an infinity.
+function is_infinite(x: f64) -> bool
+    return x == x && x - x != 0.0
+
+# Whether `x` is a `nan`.
+function is_nan(x: f64) -> bool
+    return x != x
+
+# Whether `x` is a normal float: finite, not zero, not subnormal.
+function is_normal(x: f64) -> bool
+    if x != x || x - x != 0.0 || x == 0.0
+        return false
+
+    magnitude = if x < 0.0
+        0.0 - x
+    else
+        x
+    return magnitude >= 0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000022250738585072014
+
+## Tests
+
+test "id_of: a builtin, a math function, a control, and none"
+    assert id_of(name: "length", arity: 0) == 1
+    assert id_of(name: "pow", arity: 2) >= BINARY_MATH
+    assert id_of(name: "floor", arity: 0) >= UNARY_MATH && id_of(name: "floor", arity: 0) < BINARY_MATH
+    assert id_of(name: "path", arity: 1) == PATH
+    assert id_of(name: "length", arity: 1) == -1
+
+test "apply: length, a math function, setpath, and an error's message"
+    got = apply(id: 1, input: .text(v: "aé"), given: [], limit: 100).must()
+    assert got.outputs.len() == 1 && values.equal(a: got.outputs[0], b: .number(v: 2.0))
+    floor = apply(id: id_of(name: "floor", arity: 0), input: .number(v: 1.5), given: [], limit: 100).must()
+    assert values.equal(a: floor.outputs[0], b: .number(v: 1.0))
+    set = apply(id: 31, input: .null_value, given: [json.parse("[\"a\"]").must(), .number(v: 1.0)], limit: 100).must()
+    assert json.format(set.outputs[0]).must() == "{\"a\":1}"
+
+    match apply(id: 1, input: .boolean(v: true), given: [], limit: 100)
+        .ok _  => assert false
+        .err e => assert e.msg == "boolean (true) has no length"
+
+test "is_normal: one, zero, an infinity, a nan"
+    zero = 0.0
+    assert is_normal(1.0) && !is_normal(0.0) && !is_normal(1.0 / zero) && !is_normal(zero / zero)

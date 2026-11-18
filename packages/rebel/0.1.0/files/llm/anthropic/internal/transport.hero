@@ -1,0 +1,360 @@
+# The requests of the face sent and their answers read: a whole answer
+# through `http.send`, sent again after a failure the API calls transient,
+# and a connection held open for an answer read as it comes, an event
+# stream's or a batch's results. A failure the API answered is told by
+# `failures`; the key is in a header and never in a message.
+
+use bytes
+use http
+use io
+use llm/anthropic/internal/failures
+use net
+use random
+use time
+use tls
+use url
+
+# How every request is sent: what the face's client holds, in the shape
+# this module reads.
+record Settings
+    # The URL the paths are put after, with no `/` at its end.
+    base_url: str
+    # The fields every request carries: the key, the version, the betas.
+    headers: [http.Header]
+    # How many times a request is sent again after its first.
+    max_retries: i64
+    # The longest wait for a retry the client makes itself, in milliseconds;
+    # a longer one is told to the program instead.
+    max_wait_ms: i64
+    # The milliseconds one attempt may take, and a stream may wait for its
+    # next bytes; 0 for no limit.
+    deadline_ms: i64
+    # The PEM of the authorities trusted, "" for the system's own.
+    roots: str
+    # What an answer may hold.
+    limits: http.Limits
+
+# How a held connection is reached, for its deadline.
+variant Link
+    # A plain TCP connection, `http://`.
+    plain
+        # The connection, whose stream the reader holds.
+        conn: net.Conn
+    # A TLS connection, `https://`, whose stream the reader holds.
+    secure
+
+# A connection held open after the head of its answer was read.
+record Opened
+    # The reader of the connection, holding the bytes read past the head;
+    # `close` closes it.
+    reader: io.Reader
+    # How the connection is reached.
+    link: Link
+    # The head of the answer: its status and fields, no body.
+    head: http.Response
+
+# The settings of a client: its fields, and the fields of the header every
+# request carries made from them: `x-api-key` where `api_key` is set, else
+# `Authorization: Bearer` where `auth_token` is, `anthropic-version`, an
+# `anthropic-beta` naming every beta, then the program's own, which replace
+# any of the same name.
+function settings(base_url: str, api_key: str, auth_token: str, version: str, betas: [str], headers: [http.Header], max_retries: i64, max_wait_ms: i64, deadline_ms: i64, roots: str, limits: http.Limits) -> Settings
+    every: [http.Header] @= []
+
+    if api_key != ""
+        every @ every.push(http.Header(name: "x-api-key", value: api_key))
+    else if auth_token != ""
+        every @ every.push(http.Header(name: "authorization", value: "Bearer " + auth_token))
+    every @ every.push(http.Header(name: "anthropic-version", value: version))
+
+    if betas.len() > 0
+        every @ every.push(http.Header(name: "anthropic-beta", value: betas.join(",")))
+
+    for h in headers
+        every @ http.with_header(every, name: h.name, value: h.value)
+
+    base: str @= base_url
+
+    while base.len() > 0 && base[base.len() - 1] == '/'
+        base @ base.slice(from: 0, to: base.len() - 1)
+
+    return Settings(
+        base_url: base,
+        headers: every,
+        max_retries: max_retries,
+        max_wait_ms: max_wait_ms,
+        deadline_ms: deadline_ms,
+        roots: roots,
+        limits: limits
+    )
+
+# The request `method` `path` of `s`, with `body` as JSON where it is not "".
+function request_of(s: Settings, method: str, path: str, body: str) -> http.Request?
+    r = http.request(method: method, target: s.base_url + path)?
+    out @= r
+
+    for h in s.headers
+        out.headers @ http.with_header(out.headers, name: h.name, value: h.value)
+
+    if body != ""
+        out @ http.with_body(out, content_type: "application/json", body: bytes.from_text(body))
+    return ok(out)
+
+# A number from 0 to 1 drawn by the system, 0.5 where it draws none: what
+# spreads the waits of clients that failed together.
+function fraction() -> f64
+    match random.secure_below(1_000_000)
+        .ok n  => return to_f64(to_i64(n).default(500_000)) / 1_000_000.0
+        .err _ => return 0.5
+
+# Waits `ms` milliseconds.
+function pause(ms: i64)
+    if ms > 0
+        time.sleep(time.milliseconds(ms).default(time.nanoseconds(0)))
+
+# The failure `response` tells, its body read as an error's, `attempt` the
+# retry it would be.
+function failure_of(response: http.Response, attempt: i64) -> failures.Failure
+    text = http.text_of(response).default("")
+    said = failures.kind_and_words(text)
+    asked = http.value_of(response.headers, name: "x-should-retry").default("")
+    retryable: bool @= failures.is_retryable(response.status)
+
+    if asked == "true"
+        retryable @ true
+    else if asked == "false"
+        retryable @ false
+    wait: i64 @= 0
+
+    if retryable
+        now = time.now().default(time.from_unix(whole_seconds: 0, extra_nanoseconds: 0).must())
+        wait @ failures.wait_before(
+            retry_after: http.value_of(response.headers, name: "retry-after").default(""),
+            received: now,
+            attempt: attempt,
+            fraction: fraction()
+        )
+    return failures.Failure(
+        status: response.status,
+        kind: said[0],
+        message: said[1],
+        request_id: http.value_of(response.headers, name: "request-id").default("-"),
+        retryable: retryable,
+        wait_ms: wait
+    )
+
+# `f` as a failure of the language: its status's code, `message_of`'s words.
+function told<T>(f: failures.Failure) -> T?
+    return fail(code: failures.code_of_status(f.status), msg: failures.message_of(f))
+
+# Whether a failure of the connection is worth a retry.
+function is_transient(code: str) -> bool
+    return code == "closed" || code == "timeout" || code == "failed"
+
+# The answer to `method` `path` with `body`, read whole, with a status
+# from 200 to 299: sent again, at most `s.max_retries` times, after a
+# connection that failed and after a status the API calls transient, each
+# time after the wait `failures.wait_before` says, where it is at most
+# `s.max_wait_ms`.
+function send(s: Settings, method: str, path: str, body: str) -> http.Response?
+    r = request_of(s, method: method, path: path, body: body)?
+    c @= http.default_client()
+    c.max_redirects @ 0
+    c.deadline_ms @ s.deadline_ms
+    c.limits @ s.limits
+    c.roots @ s.roots
+    c.retries.count @ 0
+    attempt: i64 @= 0
+
+    while true
+        attempt @ attempt + 1
+
+        match http.send(c, r: r)
+            .ok response =>
+                if response.status >= 200 && response.status < 300
+                    return ok(response)
+                f = failure_of(response, attempt: attempt)
+
+                if !f.retryable || attempt > s.max_retries || f.wait_ms > s.max_wait_ms
+                    return told(f)
+                pause(f.wait_ms)
+            .err e =>
+                if !is_transient(e.code) || attempt > s.max_retries
+                    return fail(code: e.code, msg: e.msg)
+                pause(
+                    failures.wait_before(retry_after: "", received: time.from_unix(whole_seconds: 0, extra_nanoseconds: 0).must(), attempt: attempt, fraction: fraction())
+                )
+
+# Moves the deadline of `o`'s connection to `ms` from now; 0 takes it away.
+function set_deadline(o: Opened lent, ms: i64) -> ()?
+    match o.link
+        .plain p => return net.set_deadline(p.conn, ms: ms)
+        .secure  => return tls.set_deadline(o.reader.stream, ms: ms)
+
+# Closes `o`'s connection; a failure closing is no news to its caller.
+function close(@o: Opened)
+    match io.close(@o.reader.stream)
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+# The rest of `o`'s body, at most `most` bytes. Fails `limit` past them, and
+# as `http.read_piece` fails.
+function read_body(@o: Opened, most: i64) -> [u8]?
+    body @= http.body_reader(o.head, method: "GET", limits: http.default_limits())?
+    out: [u8] @= []
+
+    while true
+        piece = http.read_piece(@o.reader, @body, most: 65_536)?
+
+        if piece.len() == 0
+            return ok(out)
+
+        if out.len() + piece.len() > most
+            return fail(code: "limit", msg: f"the answer's body passes {most} bytes")
+
+        for b in piece
+            out @ out.push(b)
+
+# The connection of one attempt: the request written and the head of its
+# answer read.
+function attempt_open(s: Settings, r: http.Request) -> Opened?
+    u = r.url
+    port = url.port_of(u)?
+
+    if u.scheme == "https"
+        stream = tls.connect(u.host, port: port, deadline_ms: s.deadline_ms, client: tls.Client(roots: s.roots, protocols: ["http/1.1"]))?
+        o @= Opened(reader: io.reader(stream), link: .secure, head: http.respond_status(200))
+        return headed(@o, r: r, s: s)
+
+    if u.scheme == "http"
+        conn = net.connect(u.host, port: port, deadline_ms: 0)?
+        o @= Opened(reader: io.reader(conn.stream), link: .plain(conn: conn), head: http.respond_status(200))
+        return headed(@o, r: r, s: s)
+    return fail(code: "unsupported", msg: f"the scheme \"{u.scheme}\" is neither http nor https")
+
+# `o` with `r` written and the head of its answer read, its connection
+# closed where either fails.
+function headed(@o: Opened, r: http.Request, s: Settings) -> Opened?
+    outcome = written(@o, r: r, s: s)
+
+    match outcome
+        .ok _ => return ok(o)
+        .err e =>
+            close(@o)
+            return fail(code: e.code, msg: e.msg)
+
+# Writes `r` on `o` and reads the head of the answer into `o.head`.
+function written(@o: Opened, r: http.Request, s: Settings) -> ()?
+    set_deadline(o, ms: s.deadline_ms)?
+    http.write_request(o.reader.stream, r: r)?
+    o.head @ http.read_response_head(@o.reader, method: r.method, limits: s.limits)?
+    return ok()
+
+# A connection to `method` `path` with `body`, its head read and its status
+# from 200 to 299, the body left on it: sent again as `send` sends, until
+# the first byte of a body that comes as it is made. The caller closes it.
+function open(s: Settings, method: str, path: str, body: str) -> Opened?
+    r @= request_of(s, method: method, path: path, body: body)?
+    r.closing @ true
+    attempt: i64 @= 0
+
+    while true
+        attempt @ attempt + 1
+
+        match attempt_open(s, r: r)
+            .ok o =>
+                if o.head.status >= 200 && o.head.status < 300
+                    return ok(o)
+                held @= o
+                text = read_body(@held, most: 1_048_576).default([])
+                close(@held)
+                whole @= held.head
+                whole.body @ text
+                f = failure_of(whole, attempt: attempt)
+
+                if !f.retryable || attempt > s.max_retries || f.wait_ms > s.max_wait_ms
+                    return told(f)
+                pause(f.wait_ms)
+            .err e =>
+                if !is_transient(e.code) || attempt > s.max_retries
+                    return fail(code: e.code, msg: e.msg)
+                pause(
+                    failures.wait_before(retry_after: "", received: time.from_unix(whole_seconds: 0, extra_nanoseconds: 0).must(), attempt: attempt, fraction: fraction())
+                )
+
+# The query of a page: `after_id`, `before_id` and `limit` where set, with
+# its `?`; "" where none is.
+function query(after_id: str, before_id: str, limit: i64) -> str
+    pairs: [url.Pair] @= []
+
+    if after_id != ""
+        pairs @ pairs.push(url.Pair(key: "after_id", value: after_id))
+
+    if before_id != ""
+        pairs @ pairs.push(url.Pair(key: "before_id", value: before_id))
+
+    if limit > 0
+        pairs @ pairs.push(url.Pair(key: "limit", value: f"{limit}"))
+
+    if pairs.len() == 0
+        return ""
+    return "?" + url.format_query(pairs)
+
+test "request_of: the path after the base, every field, a body typed JSON, and none"
+    s = Settings(
+        base_url: "https://api.example.com",
+        headers: [http.Header(name: "x-api-key", value: "k"), http.Header(name: "anthropic-version", value: "v")],
+        max_retries: 0,
+        max_wait_ms: 0,
+        deadline_ms: 0,
+        roots: "",
+        limits: http.default_limits()
+    )
+    r = request_of(s, method: "POST", path: "/v1/messages", body: "{}").must()
+    assert url.format(r.url) == "https://api.example.com/v1/messages"
+    assert http.value_of(r.headers, name: "X-Api-Key").must() == "k"
+    assert http.value_of(r.headers, name: "content-type").must() == "application/json" && r.body == bytes.from_text("{}")
+    g = request_of(s, method: "GET", path: "/v1/models?limit=2", body: "").must()
+    assert g.body.len() == 0 && !http.has_header(g.headers, name: "content-type") && g.url.query == "limit=2"
+
+test "is_transient and fraction: the three codes of a connection, and a draw from 0 to 1"
+    assert is_transient("closed") && is_transient("timeout") && is_transient("failed") && !is_transient("invalid")
+    x = fraction()
+    assert x >= 0.0 && x <= 1.0
+
+test "settings: a key, a token, the betas, a field of the program's replacing, and the base's slashes"
+    with_key = settings(
+        base_url: "http://h//",
+        api_key: "k",
+        auth_token: "t",
+        version: "2026-10-21",
+        betas: ["a", "b"],
+        headers: [http.Header(name: "Anthropic-Version", value: "x")],
+        max_retries: 2,
+        max_wait_ms: 1,
+        deadline_ms: 0,
+        roots: "",
+        limits: http.default_limits()
+    )
+    assert with_key.base_url == "http://h"
+    assert http.value_of(with_key.headers, name: "x-api-key").must() == "k" && !http.has_header(with_key.headers, name: "authorization")
+    assert http.value_of(with_key.headers, name: "anthropic-beta").must() == "a,b"
+    assert http.values_of(with_key.headers, name: "anthropic-version") == ["x"]
+    with_token = settings(
+        base_url: "",
+        api_key: "",
+        auth_token: "t",
+        version: "v",
+        betas: [],
+        headers: [],
+        max_retries: 0,
+        max_wait_ms: 0,
+        deadline_ms: 0,
+        roots: "",
+        limits: http.default_limits()
+    )
+    assert http.value_of(with_token.headers, name: "authorization").must() == "Bearer t" && !http.has_header(with_token.headers, name: "anthropic-beta")
+
+test "query: nothing, every part, and a value escaped"
+    assert query(after_id: "", before_id: "", limit: 0) == ""
+    assert query(after_id: "a b", before_id: "z", limit: 5) == "?after_id=a+b&before_id=z&limit=5"

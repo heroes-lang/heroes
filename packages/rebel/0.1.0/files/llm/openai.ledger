@@ -1,0 +1,242 @@
+# The ledger of `llm/openai`: what the official SDKs of OpenAI's API let a
+# program do with Chat Completions, Responses, embeddings and models, one
+# block per capability, and what Rebel answers. No standard library speaks
+# the API, so the yardstick is the census the coordinator set on 2026-11-17:
+# OpenAI's official SDKs for Python and Go. Measured on this machine on
+# 2026-11-18: Python's `openai` 3.54.0, installed with `pip --target` into
+# the scratch folder and walked with `dir()` from a client (`python3 -I`),
+# and Go's `github.com/openai/openai-go/v3` v3.102.0, from a module cache in
+# the scratch folder (`go doc -all`, the package, `responses` and
+# `option`). OpenAI publishes no Rust SDK, so every `rust` line is `-`. The
+# behaviour is the reference's (developers.openai.com, read 2026-11-18:
+# Create chat completion, Chat Completions streaming events, Create a model
+# response, Responses streaming events, Embeddings, Models, Error codes,
+# Function calling, Streaming API responses) and Ollama's compatibility page
+# (its repository, read the same day), tested against answers and event
+# streams replayed by a server of the tests' own on the loopback; no test
+# reaches a server, and the live test runs only where `OPENAI_API_KEY` or
+# `OLLAMA_HOST` is set.
+
+capability client/key  a client made with an API key, sent as `Authorization: Bearer`
+  heroes  llm/openai.default_client, llm/openai.Client
+  go      openai.NewClient, option.WithAPIKey
+  rust    -
+  python  OpenAI, OpenAI.api_key, OpenAI.auth_headers
+  note    Two retries, ten minutes an attempt, as both SDKs default
+
+capability client/env  the key, the address, the organization and the project read from the environment
+  heroes  llm/openai.client_from_env
+  go      openai.DefaultClientOptions, option.WithEnvironmentProduction
+  rust    -
+  python  OpenAI (reads OPENAI_API_KEY, OPENAI_BASE_URL, OPENAI_ORG_ID, OPENAI_PROJECT_ID)
+
+capability client/organization  the organization and the project a request is billed to
+  heroes  llm/openai.Client
+  go      option.WithOrganization, option.WithProject
+  rust    -
+  python  OpenAI.organization, OpenAI.project
+
+capability client/base-url  another server that speaks the format: Ollama, vLLM, llama.cpp, LM Studio, a proxy
+  heroes  llm/openai.local_client, llm/openai.ollama_client, llm/openai.OLLAMA_URL, llm/openai.BASE_URL
+  go      option.WithBaseURL, option.WithUnsafeAllowHTTP
+  rust    -
+  python  OpenAI.base_url
+  note    `OLLAMA_HOST` is read as Ollama's own clients read it: a host, a host and a port, or a URL, 11434 by default and `0.0.0.0` as the loopback; a local server is sent no key
+
+capability client/headers  fields added to every request
+  heroes  llm/openai.Client
+  go      option.WithHeader, option.WithHeaderAdd, option.WithHeaderDel, option.WithQuery, option.WithQueryAdd, option.WithQueryDel
+  rust    -
+  python  OpenAI.default_headers, OpenAI.default_query, OpenAI.platform_headers, OpenAI.user_agent, OpenAI.with_options
+
+capability client/retries  a request sent again after a transient failure, waiting what the server asks
+  heroes  llm/openai.Client
+  go      option.WithMaxRetries, option.WithMaxRetryDelay
+  rust    -
+  python  OpenAI.max_retries
+  note    408, 409, 429 and 5xx and a connection that failed, unless `x-should-retry` says otherwise; `retry-after-ms` first, then `retry-after`; a wait longer than `max_wait_ms` is told rather than slept
+
+capability client/timeout  a time limit on an attempt, and on the wait for a stream's next bytes
+  heroes  llm/openai.Client
+  go      option.WithRequestTimeout
+  rust    -
+  python  OpenAI.timeout
+
+capability client/transport  the authorities trusted
+  heroes  llm/openai.Client
+  go      option.WithHTTPClient
+  rust    -
+  python  DefaultHttpxClient, DefaultAsyncHttpxClient, DefaultHttpx2Client, DefaultAsyncHttpx2Client, DefaultAioHttpClient, DEFAULT_CONNECTION_LIMITS, http_client
+
+capability chat/create  a chat completion made from a conversation, read whole
+  heroes  llm/openai.chat
+  go      ChatCompletionService.New
+  rust    -
+  python  chat.completions.create
+
+capability chat/request  the request: the model, the messages, the tools, every other parameter by name
+  heroes  llm/openai.ChatRequest, llm/openai.chat_request, llm/openai.with_chat_field, llm/openai.with_message, llm/openai.chat_to_json
+  go      ChatCompletionNewParams, option.WithJSONSet, option.WithJSONDel
+  rust    -
+  python  chat.completions.create's parameters, types.chat.CompletionCreateParams
+  note    A parameter the record does not type is a `json.Value` by its name, so what a server adds needs nothing here
+
+capability chat/messages  the messages of a conversation: system, developer, user, assistant, tool; parts of text and image
+  heroes  llm/openai.system_message, llm/openai.developer_message, llm/openai.user_message, llm/openai.user_parts, llm/openai.text_part, llm/openai.image_part, llm/openai.assistant_message, llm/openai.tool_message
+  go      SystemMessage, DeveloperMessage, UserMessage, AssistantMessage, ToolMessage, TextContentPart, ImageContentPart, ChatCompletionMessageParamUnion
+  rust    -
+  python  types.chat.ChatCompletionMessageParam, ChatCompletionSystemMessageParam, ChatCompletionDeveloperMessageParam, ChatCompletionUserMessageParam, ChatCompletionAssistantMessageParam, ChatCompletionToolMessageParam, ChatCompletionContentPartParam
+  note    An audio or a file part is the JSON the reference writes, a `json.Value` in `user_parts`
+
+capability chat/answer  the completion read: choices, their message, text, refusal and calls, the usage
+  heroes  llm/openai.Completion, llm/openai.Choice, llm/openai.Usage, llm/openai.to_completion, llm/openai.parse_completion, llm/openai.text_of
+  go      ChatCompletion, ChatCompletionChoice, ChatCompletionMessage, CompletionUsage
+  rust    -
+  python  types.chat.ChatCompletion, ChatCompletionMessage, types.CompletionUsage
+
+capability chat/finish  why a choice finished, checked before its text
+  heroes  llm/openai.FINISH_STOP, llm/openai.FINISH_LENGTH, llm/openai.FINISH_TOOL_CALLS, llm/openai.FINISH_CONTENT_FILTER, llm/openai.require_finished
+  go      ChatCompletionChoice.FinishReason
+  rust    -
+  python  LengthFinishReasonError, ContentFilterFinishReasonError
+  note    A cut choice is `limit`, a filtered one or a refusal `permission`, as Python's parse helpers raise for the first two
+
+capability chat/tools  functions offered, their calls handed out, their arguments checked, their results sent back
+  heroes  llm/openai.Function, llm/openai.ToolCall, llm/openai.tool_calls_of, llm/openai.arguments_of, llm/openai.with_tool_messages
+  go      ChatCompletionFunctionTool, shared.FunctionDefinitionParam, ChatCompletionMessageToolCallUnion, ChatCompletionMessage.ToParam
+  rust    -
+  python  types.chat.ChatCompletionToolParam, ChatCompletionMessageToolCall, pydantic_function_tool
+  note    The arguments are text the model wrote and may not be JSON, as the reference warns; `arguments_of` fails `invalid` on anything but one whole object. A schema is JSON the program writes, there being no reflection
+
+capability chat/stream  a chat completion read as its chunks come, and the completion they make
+  heroes  llm/openai.chat_stream, llm/openai.next_chunk, llm/openai.ChatStream, llm/openai.Chunk, llm/openai.ChunkChoice, llm/openai.ToolCallDelta, llm/openai.completion_of, llm/openai.final_completion, llm/openai.close_chat_stream
+  go      ChatCompletionService.NewStreaming, ChatCompletionChunk, ChatCompletionAccumulator, ChatCompletionAccumulator.AddChunk, JustFinishedContent, JustFinishedRefusal, JustFinishedToolCall
+  rust    -
+  python  chat.completions.stream, chat.completions.create(stream=True), ChatCompletionStream, ChatCompletionStream.get_final_completion, ChatCompletionStream.current_completion_snapshot, ChatCompletionStream.until_done, ChatCompletionStream.close
+  note    The usage is asked in a last chunk unless the request sets `stream_options`; a stream that ends with every choice finished and no `[DONE]`, as some servers end it, is whole
+
+capability chat/stored  completions the API stored, listed, read, updated, deleted
+  heroes  pending
+  go      ChatCompletionService.Get, ChatCompletionService.List, ChatCompletionService.Update, ChatCompletionService.Delete, ChatCompletionMessageService.List
+  rust    -
+  python  chat.completions.retrieve, chat.completions.list, chat.completions.update, chat.completions.delete, chat.completions.messages.list
+  note    `send_raw` reaches them; no record of their pages was written in this round
+
+capability responses/create  a response made from input items, read whole
+  heroes  llm/openai.create_response, llm/openai.ResponseRequest, llm/openai.response_request, llm/openai.with_response_field, llm/openai.response_to_json, llm/openai.input_message
+  go      responses.ResponseService.New, responses.ResponseNewParams
+  rust    -
+  python  responses.create
+
+capability responses/answer  the response read: status, output items, text, usage, error
+  heroes  llm/openai.Response, llm/openai.to_response, llm/openai.parse_response, llm/openai.output_text_of, llm/openai.STATUS_COMPLETED, llm/openai.STATUS_INCOMPLETE, llm/openai.STATUS_FAILED, llm/openai.STATUS_IN_PROGRESS, llm/openai.STATUS_QUEUED, llm/openai.STATUS_CANCELLED, llm/openai.require_completed
+  go      responses.Response, responses.Response.OutputText, responses.ResponseOutputItemUnion, responses.ResponseUsage
+  rust    -
+  python  types.responses.Response, Response.output_text
+
+capability responses/tools  function calls handed out and their outputs sent back, by the program's state or the server's
+  heroes  llm/openai.function_calls_of, llm/openai.function_output, llm/openai.with_function_outputs, llm/openai.arguments_of
+  go      responses.FunctionToolParam, responses.ResponseFunctionToolCall, responses.ResponseInputItemFunctionCallOutputParam
+  rust    -
+  python  types.responses.FunctionToolParam, ResponseFunctionToolCall, pydantic_responses_function_tool
+  note    Chained on the server by `ResponseRequest.previous_response_id` with only the outputs as input, or kept by the program with `with_function_outputs`, as the function-calling guide shows both
+
+capability responses/stream  a response read as its events come
+  heroes  llm/openai.response_stream, llm/openai.next_response_event, llm/openai.ResponseStream, llm/openai.ResponseEvent, llm/openai.response_of, llm/openai.final_response, llm/openai.close_response_stream
+  go      responses.ResponseService.NewStreaming, responses.ResponseStreamEventUnion
+  rust    -
+  python  responses.stream, responses.create(stream=True), ResponseStream, ResponseStream.get_final_response, ResponseStream.until_done, ResponseStream.close
+  note    The events the program acts on are named; reasoning summaries, server tools' progress and every event added since are `other` with their data
+
+capability responses/stored  a response the server keeps: read again, cancelled, deleted
+  heroes  llm/openai.retrieve_response, llm/openai.cancel_response, llm/openai.delete_response
+  go      responses.ResponseService.Get, responses.ResponseService.Cancel, responses.ResponseService.Delete
+  rust    -
+  python  responses.retrieve, responses.cancel, responses.delete
+
+capability responses/count  the input tokens a response request would cost, counted by the API
+  heroes  llm/openai.count_input_tokens
+  go      responses.InputTokenService.Count
+  rust    -
+  python  responses.input_tokens.count
+
+capability responses/more  a response's input items listed, a conversation compacted, a stored response streamed again
+  heroes  pending
+  go      responses.InputItemService.List, responses.InputItemService.ListAutoPaging, responses.ResponseService.Compact, responses.ResponseService.GetStreaming
+  rust    -
+  python  responses.input_items.list, responses.compact
+  note    `send_raw` reaches the first two; their records were not written in this round
+
+capability responses/websocket  the Responses API over a WebSocket
+  heroes  refused: `websocket`'s package and a later round; the HTTP form does all the same requests
+  go      responses.ResponseService.Connect, option.WithWebSocketReconnect, option.WithWebSocketRecovery
+  rust    -
+  python  responses.connect, ReconnectingEvent, ReconnectingOverrides, WebSocketConnectionClosedError, WebSocketQueueFullError
+
+capability embeddings  texts as vectors, of the model's length or the one asked
+  heroes  llm/openai.embed, llm/openai.embedding_request, llm/openai.EmbeddingRequest, llm/openai.Embeddings
+  go      EmbeddingService.New, EmbeddingNewParams, CreateEmbeddingResponse, Embedding
+  rust    -
+  python  embeddings.create, types.CreateEmbeddingResponse, types.Embedding
+  note    The vectors are `f32`, as `vectors` compares them, and put in the inputs' order by their `index`; `float` is asked, which Ollama speaks too
+
+capability models  the models a server serves, and one by its id
+  heroes  llm/openai.list_models, llm/openai.model_of, llm/openai.Model
+  go      ModelService.List, ModelService.ListAutoPaging, ModelService.Get
+  rust    -
+  python  models.list, models.retrieve, types.Model
+
+capability models/delete  a fine-tuned model deleted
+  heroes  refused: fine-tuning is outside the package's area; `send_raw` reaches it
+  go      ModelService.Delete
+  rust    -
+  python  models.delete
+
+capability errors/status  a failure the server answered, by its status, type and code
+  heroes  llm/openai.INVALID, llm/openai.PERMISSION, llm/openai.NOT_FOUND, llm/openai.LIMIT, llm/openai.TIMEOUT, llm/openai.FAILED, llm/openai.ApiError, llm/openai.failure_of
+  go      Error, ErrorObject
+  rust    -
+  python  APIError, APIStatusError, BadRequestError, AuthenticationError, PermissionDeniedError, NotFoundError, ConflictError, UnprocessableEntityError, RateLimitError, InternalServerError, ErrorObject
+  note    OpenAI's shape, vLLM's (`"object": "error"` at the top) and `{"error": "words"}` are all read; the message keeps the status, type, code, request id and wait in brackets, as `sql`'s failures keep a SQLSTATE
+
+capability errors/advice  whether a failure may pass if sent again, and after how long
+  heroes  llm/openai.ApiError
+  go      -
+  rust    -
+  python  -
+  note    `retryable` and `wait_ms` from the status, `x-should-retry`, `retry-after-ms` and `retry-after`; the SDKs keep this inside their retry loop
+
+capability errors/connection  a connection refused, cut or timed out
+  heroes  llm/openai.CLOSED, llm/openai.TIMEOUT
+  go      -
+  rust    -
+  python  APIConnectionError, APITimeoutError
+
+capability raw/request  any endpoint reached with the client's key and retries, its answer whole with its fields
+  heroes  llm/openai.send_raw
+  go      Client.Execute, Client.Get, Client.Post, Client.Put, Client.Patch, Client.Delete, option.WithResponseInto, option.WithResponseBodyInto, option.WithRequestBody
+  rust    -
+  python  OpenAI.get, OpenAI.post, OpenAI.put, OpenAI.patch, OpenAI.delete, OpenAI.request, OpenAI.with_raw_response, OpenAI.with_streaming_response, OpenAI.get_api_list
+
+capability structured-output  an answer held to a JSON schema and read as JSON
+  heroes  llm/openai.with_chat_field, llm/openai.with_response_field, json.parse
+  go      ResponseFormatJSONSchemaParam, shared.ResponseFormatJSONSchemaJSONSchemaParam
+  rust    -
+  python  chat.completions.parse, responses.parse, types.chat.ParsedChatCompletion, types.responses.ParsedResponse
+  note    `response_format` or `text.format` set by name and the text read by `json.parse`; filling a record by its field names is refused, the language having no reflection
+
+capability clouds  Azure OpenAI and Bedrock, with their own credentials
+  heroes  refused: a cloud's credentials (Entra ID, SigV4) are that cloud's package; `base_url` and `headers` reach a gateway that signs or an Azure key sent as a field
+  go      azure.WithEndpoint, azure.WithAPIKey, azure.WithTokenCredential, azure.WithTokenCredentialScopes, azure.WithUnsafeAllowHTTP, option.WithWorkloadIdentity, option.WithX509WorkloadIdentity
+  rust    -
+  python  AzureOpenAI, AsyncAzureOpenAI, BedrockOpenAI, AsyncBedrockOpenAI, azure_ad_token, azure_ad_token_provider, azure_endpoint, api_type, api_version, bedrock_token_provider, OpenAI.workload_identity, OAuthError
+
+dropped  outside the package's area in README § A1: files, uploads, batches, fine-tuning, moderations, images, audio, video, vector stores, containers, conversations, evals, the Realtime and Live APIs, webhooks, the Assistants beta, the admin API, the legacy completions, each reached by `send_raw` where a program wants it
+  go      FileService, UploadService, UploadPartService, BatchService, FineTuningService and its sub-services, GraderService, ModerationService, ImageService, AudioService and its sub-services, VideoService, VectorStoreService and its sub-services, ContainerService and its sub-services, SkillService and its sub-services, SafetyService and its sub-services, DecisionService, ContentProvenanceCheckService, AdminService and the AdminOrganization services, BetaService and the Beta services, CompletionService, option.WithWebhookSecret, option.WithAdminAPIKey, option.WithDataResidency
+  rust    -
+  python  files, uploads, batches, fine_tuning, moderations, images, audio, videos, vector_stores, containers, conversations, evals, realtime, live, webhooks, beta, admin, admin_api_key, completions, skills, safety, decisions, content_provenance_checks, OpenAI.webhook_secret, OpenAI.websocket_base_url, AssistantEventHandler, AsyncAssistantEventHandler, ComputerDriver, AsyncComputerDriver, ComputerToolset, AsyncComputerToolset, InvalidWebhookSignatureError, Audio, Customer, DataResidency, Deployment, Edit, Engine, File, FineTune, FineTuningJob, Image, Moderation
+
+dropped  the plumbing of each language: async twins, contexts, option and parameter helpers, middleware, sentinels of omitted values, version strings
+  go      context.Context, openai.Bool, openai.Int, openai.Float, openai.String, openai.Opt, param.Opt, option.WithMiddleware, option.WithDebugLog
+  rust    -
+  python  AsyncOpenAI, AsyncClient, AsyncStream, AsyncAPIResponse, APIResponse, Client, Stream, BaseModel, NotGiven, NOT_GIVEN, not_given, Omit, omit, NoneType, RequestOptions, Timeout, Transport, ProxiesTypes, HttpxBinaryResponseContent, DEFAULT_MAX_RETRIES, DEFAULT_TIMEOUT, VERSION, version, OpenAI.copy, OpenAI.close, OpenAI.is_closed, OpenAI.qs, OpenAI.custom_auth, file_from_path, lib, pagination, resources, types, providers, auth, annotations, override, ChatCompletion, Completion, Embedding, Model, OpenAIError, APIResponseValidationError

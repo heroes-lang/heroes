@@ -1,0 +1,118 @@
+# Runs the lines of the four test files of UAX #29 and UAX #14, which the
+# `*_cases.hero` modules hold, through the module each tests: each line the
+# code points of a text in hexadecimal, `x` between two where the file allows
+# no break and `/` where it writes one.
+
+use unicode
+use unicode/segment/internal/graphemes
+use unicode/segment/internal/lines
+use unicode/segment/internal/sentences
+use unicode/segment/internal/text
+use unicode/segment/internal/words
+
+# The lines are GraphemeBreakTest's.
+constant GRAPHEMES: i64
+    0
+
+# The lines are WordBreakTest's.
+constant WORDS: i64
+    1
+
+# The lines are SentenceBreakTest's.
+constant SENTENCES: i64
+    2
+
+# The lines are LineBreakTest's.
+constant LINES: i64
+    3
+
+# A line of a test file read: the code points, and where the file breaks,
+# as indices of code points.
+record Line
+    # The code points of the text.
+    points: [i64]
+    # The indices of the code points a break stands before, as the module
+    # tested answers them: 0 first for UAX #29, never for UAX #14; the count
+    # of code points last.
+    breaks: [i64]
+
+# `line` read, for the test file `kind` names.
+function read(line: str, kind: i64) -> Line
+    points: [i64] @= []
+    breaks: [i64] @= []
+
+    if kind != LINES
+        breaks @ breaks.push(0)
+    value: i64 @= 0
+
+    for c in line.chars()
+        byte = c[0]
+
+        if byte == 'x' || byte == '/'
+            points @ points.push(value)
+            value @ 0
+
+            if byte == '/'
+                breaks @ breaks.push(points.len())
+            continue
+
+        digit = if byte >= '0' && byte <= '9'
+            byte - '0'
+        else
+            byte - 'A' + 10
+        value @ value * 16 + to_i64(digit).must()
+
+    points @ points.push(value)
+    breaks @ breaks.push(points.len())
+    return Line(points: points, breaks: breaks)
+
+# Whether the module that `kind` names breaks the text of `line` where the
+# file does.
+function holds(line: str, kind: i64) -> bool
+    expected = read(line, kind: kind)
+    decoded = text.decode(unicode.from_code_points(expected.points).must())
+    bytes: [i64] @= []
+
+    if kind == LINES
+        for opportunity in lines.opportunities(decoded)
+            bytes @ bytes.push(opportunity.at)
+    else if kind == GRAPHEMES
+        bytes @ graphemes.boundaries(decoded)
+    else if kind == WORDS
+        bytes @ words.boundaries(decoded)
+    else
+        bytes @ sentences.boundaries(decoded)
+    found: [i64] @= []
+
+    for byte in bytes
+        at: i64 @= 0
+
+        while decoded.starts[at] != byte
+            at @ at + 1
+
+        found @ found.push(at)
+
+    return found == expected.breaks
+
+# The lines of `cases` the module `kind` names does not break as the file
+# does, as they are written.
+function failures(cases: [str], kind: i64) -> [str]
+    out: [str] @= []
+
+    for line in cases
+        if !holds(line, kind: kind)
+            out @ out.push(line)
+
+    return out
+
+## Tests
+
+test "read: one code point, a break and none, for UAX #29 and for UAX #14"
+    assert read("0041", kind: GRAPHEMES) == Line(points: [0x41], breaks: [0, 1])
+    assert read("0041x0308/0020", kind: WORDS) == Line(points: [0x41, 0x308, 0x20], breaks: [0, 2, 3])
+    assert read("2757x0020/2757", kind: LINES) == Line(points: [0x2757, 0x20, 0x2757], breaks: [2, 3])
+
+test "failures: a line each module breaks as the file does, and one it does not"
+    assert failures(["000Dx000A/0061"], kind: GRAPHEMES) == []
+    assert failures(["0061/0062"], kind: WORDS) == ["0061/0062"]
+    assert failures(["0061x0020/0062"], kind: LINES) == []

@@ -1,0 +1,164 @@
+# The members of an answer read leniently, and the members of a request
+# written: what the face reads out of every object the API answers, where a
+# member absent and a member `null` mean the same, and what it writes into
+# every body it sends. Nothing here fails: an answer's shape is checked by
+# the face where it matters, and a member of another kind reads as absent.
+
+use json
+
+# The text of the member `key` of `v`, "" where `v` holds none, holds `null`
+# or holds another kind there.
+function text_at(v: json.Value, key: str) -> str
+    match json.member(v, key: key)
+        .err _ => return ""
+        .ok found =>
+            match found
+                .text t                                                    => return t.v
+                .null_value | .boolean _ | .number _ | .list _ | .object _ => return ""
+
+# The integer of the member `key` of `v`, 0 where `v` holds none, holds
+# `null` or holds something that is no integer there.
+function int_at(v: json.Value, key: str) -> i64
+    match json.member(v, key: key)
+        .err _    => return 0
+        .ok found => return json.int_of(found).default(0)
+
+# The `bool` of the member `key` of `v`, false where it holds none.
+function bool_at(v: json.Value, key: str) -> bool
+    match json.member(v, key: key)
+        .err _    => return false
+        .ok found => return json.bool_of(found).default(false)
+
+# The member `key` of `v`, `null_value` where `v` holds none or is no object.
+function value_at_key(v: json.Value, key: str) -> json.Value
+    return json.member(v, key: key).default(.null_value)
+
+# The elements of the member `key` of `v`, none where it holds no list.
+function list_at(v: json.Value, key: str) -> [json.Value]
+    match json.member(v, key: key)
+        .err _    => return []
+        .ok found => return json.items_of(found).default([])
+
+# The text `s` as a value.
+function text(s: str) -> json.Value
+    return .text(v: s)
+
+# The integer `n` as a value; `n` is a count the program gave, which the
+# caller has checked fits `json.MAX_EXACT_INT`.
+function number(n: i64) -> json.Value
+    return .number(v: to_f64(n))
+
+# An object of `names` and `values`, in that order, a name written twice
+# keeping its last value at its first place.
+function object(names: [str], values: [json.Value]) -> json.Value
+    members: {str: json.Value} @= {}
+    at: i64 @= 0
+
+    while at < names.len() && at < values.len()
+        members[names[at]] @ values[at]
+        at @ at + 1
+
+    return .object(members: members)
+
+# `v` with its member `key` set to `value`, kept at its place where it held
+# one and added last where not; `v` where it is no object.
+function with_member(v: json.Value, key: str, value: json.Value) -> json.Value
+    match v
+        .object o =>
+            members @= o.members
+            members[key] @ value
+            return .object(members: members)
+        .null_value | .boolean _ | .number _ | .text _ | .list _ => return v
+
+# The texts `items` as a list value.
+function texts(items: [str]) -> json.Value
+    out: [json.Value] @= []
+
+    for s in items
+        out @ out.push(.text(v: s))
+
+    return .list(items: out)
+
+# The four counts of a usage object: input, output, cache creation and cache
+# read tokens, 0 for each it holds none of.
+function usage_counts(v: json.Value) -> [i64]
+    return [
+        int_at(v, key: "input_tokens")
+        int_at(v, key: "output_tokens")
+        int_at(v, key: "cache_creation_input_tokens")
+        int_at(v, key: "cache_read_input_tokens")
+    ]
+
+# `v` with only its members named in `names`, in its own order; `v` where
+# it is no object.
+function only(v: json.Value, names: [str]) -> json.Value
+    match v
+        .object o =>
+            kept: {str: json.Value} @= {}
+
+            for k in keys(o.members)
+                for n in names
+                    if n == k
+                        kept[k] @ o.members[k].must()
+
+            return .object(members: kept)
+        .null_value | .boolean _ | .number _ | .text _ | .list _ => return v
+
+# Whether `s` is 1 to `most` of ASCII's letters and digits, `_` and `-`: a
+# tool's name, a batch request's `custom_id`.
+function is_name(s: str, most: i64) -> bool
+    if s.len() == 0 || s.len() > most
+        return false
+    at: i64 @= 0
+
+    while at < s.len()
+        c = s[at]
+        fits = c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '_' || c == '-'
+
+        if !fits
+            return false
+        at @ at + 1
+
+    return true
+
+test "text_at: present, absent, null, of another kind, and on a list"
+    v = json.parse("{\"a\":\"x\",\"b\":null,\"c\":1}").must()
+    assert text_at(v, key: "a") == "x"
+    assert text_at(v, key: "z") == ""
+    assert text_at(v, key: "b") == ""
+    assert text_at(v, key: "c") == ""
+    assert text_at(json.parse("[1]").must(), key: "a") == ""
+
+test "int_at: an integer, a fraction, null, absent, and a text"
+    v = json.parse("{\"a\":12,\"b\":1.5,\"c\":null,\"d\":\"7\"}").must()
+    assert int_at(v, key: "a") == 12
+    assert int_at(v, key: "b") == 0
+    assert int_at(v, key: "c") == 0
+    assert int_at(v, key: "z") == 0
+    assert int_at(v, key: "d") == 0
+
+test "bool_at and list_at: present, absent and of another kind"
+    v = json.parse("{\"a\":true,\"l\":[1,2],\"n\":3}").must()
+    assert bool_at(v, key: "a") && !bool_at(v, key: "z") && !bool_at(v, key: "n")
+    assert list_at(v, key: "l").len() == 2 && list_at(v, key: "n").len() == 0 && list_at(v, key: "z").len() == 0
+
+test "object and with_member: order kept, a member replaced at its place, a list left as it is"
+    o = object(names: ["b", "a"], values: [text("1"), number(2)])
+    assert json.format(o).must() == "{\"b\":\"1\",\"a\":2}"
+    assert json.format(with_member(v: o, key: "b", value: .null_value)).must() == "{\"b\":null,\"a\":2}"
+    assert json.format(with_member(v: o, key: "c", value: texts(["x", "é"]))).must() == "{\"b\":\"1\",\"a\":2,\"c\":[\"x\",\"é\"]}"
+    l = json.parse("[1]").must()
+    assert with_member(v: l, key: "a", value: .null_value) == l
+
+test "usage_counts and only: every count, none, and the members kept in order"
+    u = json.parse("{\"input_tokens\":5,\"cache_read_input_tokens\":2,\"output_tokens\":null}").must()
+    assert usage_counts(u) == [5, 0, 0, 2]
+    assert usage_counts(.null_value) == [0, 0, 0, 0]
+    v = json.parse("{\"model\":\"m\",\"max_tokens\":1,\"messages\":[]}").must()
+    assert json.format(only(v, names: ["messages", "model"])).must() == "{\"model\":\"m\",\"messages\":[]}"
+    assert only(.null_value, names: ["a"]) == .null_value
+
+test "is_name: the shortest, the longest, one past, empty, a dot and a character of two bytes"
+    assert is_name("a", most: 64) && is_name(repeat("z", 64), most: 64)
+    assert !is_name(repeat("z", 65), most: 64) && !is_name("", most: 64)
+    assert !is_name("a.b", most: 64) && !is_name("é", most: 64) && is_name("my-id_1", most: 64)

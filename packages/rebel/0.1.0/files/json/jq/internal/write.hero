@@ -1,0 +1,351 @@
+# Values written as jq writes them: a number as jq writes a double, a string
+# with jq's escapes, an object's members in the order it holds them, and the
+# same stack-held walk for any depth. A write counts its cost, one step for
+# every value and every 64 bytes, and stops where the cost passes a limit, so
+# that writing a value shared a million times over cannot fill memory.
+
+use json
+use numbers
+
+# The code of a write stopped by its limit.
+constant LIMIT: str
+    "limit"
+
+# What a write answers: the text and what it cost.
+record Written
+    # The text.
+    text: str
+    # The steps it took.
+    cost: i64
+
+# `x` as jq writes a double: the fewest digits that read back as it, with an
+# exponent where the point would stand 4 or more places before the first
+# digit or more than 15 past the last; `nan` as `null` and an infinity as
+# the largest double.
+function number_text(x: f64) -> str
+    if x != x
+        return "null"
+
+    if x - x != 0.0
+        return if x > 0.0
+            "1.7976931348623157e+308"
+        else
+            "-1.7976931348623157e+308"
+
+    if x == 0.0
+        return if 1.0 / x < 0.0
+            "-0"
+        else
+            "0"
+
+    # `d.ddde+XX`, the fewest digits with one before the point.
+    shortest = numbers.format_float_exp_shortest(x)
+    negative = shortest[0] == '-'
+    digits: [str] @= []
+
+    at: i64 @= if negative
+        1
+    else
+        0
+
+    while at < shortest.len() && shortest[at] != 'e'
+        if shortest[at] != '.'
+            digits @ digits.push(shortest.slice(from: at, to: at + 1))
+        at @ at + 1
+
+    exponent = numbers.parse_int(shortest.slice(from: at + 1, to: shortest.len())).must()
+
+    sign = if negative
+        "-"
+    else
+        ""
+
+    # Where the point stands, counted from before the first digit.
+    point = exponent + 1
+    count = digits.len()
+
+    if point <= -4 || point > count + 15
+        rest = if count > 1
+            "." + digits.slice(from: 1, to: count).join("")
+        else
+            ""
+        e = exponent
+
+        e_sign = if e < 0
+            "-"
+        else
+            "+"
+
+        magnitude = if e < 0
+            0 - e
+        else
+            e
+
+        padded = if magnitude < 10
+            f"0{magnitude}"
+        else
+            f"{magnitude}"
+        return f"{sign}{digits[0]}{rest}e{e_sign}{padded}"
+
+    if point <= 0
+        return sign + "0." + repeat("0", (0 - point).to_u64().must()) + digits.join("")
+
+    if point >= count
+        return sign + digits.join("") + repeat("0", (point - count).to_u64().must())
+    return sign + digits.slice(from: 0, to: point).join("") + "." + digits.slice(from: point, to: count).join("")
+
+# The hexadecimal digit of `n`, 0 to 15.
+function hex_digit(n: u8) -> str
+    return "0123456789abcdef".slice(from: to_i64(n).must(), to: to_i64(n).must() + 1)
+
+# `s` between quotes, with jq's escapes: `"`, `\`, the characters below U+0020
+# and U+007F; every other character as itself.
+function quoted(s: str) -> str
+    pieces: [str] @= ["\""]
+    start: i64 @= 0
+
+    for at in range(from: 0, to: s.len())
+        c = s[at]
+
+        if c < 32 || c == '"' || c == '\\' || c == 127
+            if start < at
+                pieces @ pieces.push(s.slice(from: start, to: at))
+
+            escape = if c == '"'
+                "\\\""
+            else if c == '\\'
+                "\\\\"
+            else if c == '\n'
+                "\\n"
+            else if c == '\t'
+                "\\t"
+            else if c == '\r'
+                "\\r"
+            else if c == 8
+                "\\b"
+            else if c == 12
+                "\\f"
+            else
+                "\\u00" + hex_digit(c / 16) + hex_digit(c % 16)
+            pieces @ pieces.push(escape)
+            start @ at + 1
+
+    if start < s.len()
+        pieces @ pieces.push(s.slice(from: start, to: s.len()))
+    pieces @ pieces.push("\"")
+    return pieces.join("")
+
+# A mark on the stack of a write: a value to write, or a text to put.
+record Mark
+    # The value, where `text` is empty and `close` is false.
+    value: json.Value
+    # A text to put as it is, a key with its colon or a closing bracket.
+    text: str
+    # Whether this mark is a text.
+    is_text: bool
+    # The level a closing bracket stands at.
+    level: i64
+
+# `v` written, on one line where `indent` is 0 and otherwise one element or
+# member a line, `indent` spaces a level, its object members in key order
+# where `sorted`.
+#
+# Fails `limit` where the cost passes `limit`.
+function write(v: json.Value, indent: i64, sorted: bool, limit: i64) -> Written?
+    pieces: [str] @= []
+    cost: i64 @= 0
+    size: i64 @= 0
+    left: [Mark] @= [Mark(value: v, text: "", is_text: false, level: 0)]
+    top: i64 @= 1
+
+    colon = if indent > 0
+        ": "
+    else
+        ":"
+
+    while top > 0
+        top @ top - 1
+        mark = left[top]
+        cost @ cost + 1
+
+        if cost + size / 16 > limit
+            return fail(code: LIMIT, msg: f"writing a value took more than {limit} steps")
+
+        if mark.is_text
+            pieces @ pieces.push(mark.text)
+            size @ size + mark.text.len()
+        else
+            match mark.value
+                .null_value => pieces @ pieces.push("null")
+                .boolean b =>
+                    word = if b.v
+                        "true"
+                    else
+                        "false"
+                    pieces @ pieces.push(word)
+                .number n => pieces @ pieces.push(number_text(n.v))
+                .text t =>
+                    q = quoted(t.v)
+                    size @ size + q.len()
+                    pieces @ pieces.push(q)
+                .list l =>
+                    if l.items.len() == 0
+                        pieces @ pieces.push("[]")
+                    else
+                        pieces @ pieces.push("[")
+                        top @ push_text(@left, top: top, text: closing(indent: indent, level: mark.level, bracket: "]"))
+                        at: i64 @= l.items.len()
+
+                        while at > 0
+                            at @ at - 1
+                            top @ push_value(@left, top: top, v: l.items[at], level: mark.level + 1)
+                            top @ push_text(
+                                @left,
+                                top: top,
+                                text: opening(indent: indent, level: mark.level + 1, first: at == 0)
+                            )
+                .object o =>
+                    names = if sorted
+                        sort(keys(o.members))
+                    else
+                        keys(o.members)
+
+                    if names.len() == 0
+                        pieces @ pieces.push("{}")
+                    else
+                        pieces @ pieces.push("{")
+                        top @ push_text(@left, top: top, text: closing(indent: indent, level: mark.level, bracket: "}"))
+                        at: i64 @= names.len()
+
+                        while at > 0
+                            at @ at - 1
+                            top @ push_value(@left, top: top, v: o.members[names[at]].must(), level: mark.level + 1)
+                            lead = opening(indent: indent, level: mark.level + 1, first: at == 0)
+                            top @ push_text(@left, top: top, text: lead + quoted(names[at]) + colon)
+
+    return ok(Written(text: pieces.join(""), cost: cost + size / 16))
+
+# What opens an element at `level`: a comma unless it is the first, then a
+# line break and the indent where `indent` is not 0.
+function opening(indent: i64, level: i64, first: bool) -> str
+    comma = if first
+        ""
+    else
+        ","
+
+    if indent == 0
+        return comma
+    return comma + "\n" + repeat(" ", (indent * level).to_u64().must())
+
+# What closes a container at `level`.
+function closing(indent: i64, level: i64, bracket: str) -> str
+    if indent == 0
+        return bracket
+    return "\n" + repeat(" ", (indent * level).to_u64().must()) + bracket
+
+# Pushes the text `text` on the stack, answering the new top.
+function push_text(@left: [Mark], top: i64, text: str) -> i64
+    m = Mark(value: .null_value, text: text, is_text: true, level: 0)
+
+    if top == left.len()
+        left @ left.push(m)
+    else
+        left[top] @ m
+    return top + 1
+
+# Pushes the value `v` on the stack, answering the new top.
+function push_value(@left: [Mark], top: i64, v: json.Value, level: i64) -> i64
+    m = Mark(value: v, text: "", is_text: false, level: level)
+
+    if top == left.len()
+        left @ left.push(m)
+    else
+        left[top] @ m
+    return top + 1
+
+# The most work one builtin may do on one value: elements, or 16 bytes of
+# text, each a step. Two values that share their parts may hold more than any
+# memory, `[., .]` built forty times over, so a builtin that would make one
+# larger fails `limit` before it makes it.
+constant MAX_VOLUME: i64
+    4000000
+
+# The code of a builtin stopped by `MAX_VOLUME`.
+constant VOLUME: str
+    "limit"
+
+# `v` on one line, failing `limit` past `MAX_VOLUME`.
+function compact_capped(v: json.Value) -> str?
+    return ok(write(v, indent: 0, sorted: false, limit: MAX_VOLUME)?.text)
+
+# A failure saying what passed `MAX_VOLUME`.
+function too_large<T>(what: str) -> T?
+    return fail(code: VOLUME, msg: f"{what} would be larger than {MAX_VOLUME} elements, the most one builtin makes")
+
+# `v` on one line, with no limit.
+function compact(v: json.Value) -> str
+    return write(v, indent: 0, sorted: false, limit: 9223372036854775807).must().text
+
+# `v` indented `width` spaces a level, with no limit.
+function indented(v: json.Value, width: i64) -> str
+    return write(v, indent: width, sorted: false, limit: 9223372036854775807).must().text
+
+# `v` written as jq's messages show a value: the compact text, cut to its
+# first 11 bytes and `...` where it is longer than 14, never inside a
+# character.
+function preview(v: json.Value) -> str
+    full = write(v, indent: 0, sorted: false, limit: 100000).default(Written(text: "...", cost: 0)).text
+
+    if full.len() <= 14
+        return full
+    cut: i64 @= 11
+
+    while cut > 0 && full[cut] >= 128 && full[cut] < 192
+        cut @ cut - 1
+
+    return full.slice(from: 0, to: cut) + "..."
+
+## Tests
+
+test "number_text: integers, fractions, the exponent's thresholds, zero's sign"
+    assert number_text(1.0) == "1" && number_text(-3.0) == "-3" && number_text(0.5) == "0.5"
+    assert number_text(1000000000000000.0) == "1000000000000000"
+    assert number_text(10000000000000000.0) == "1e+16"
+    assert number_text(123456789012345680000.0) == "123456789012345680000"
+    assert number_text(0.0001) == "0.0001" && number_text(0.00001) == "1e-05"
+    assert number_text(0.00001234) == "1.234e-05"
+    assert number_text(1.0 / 3.0) == "0.3333333333333333"
+    assert number_text(0.0) == "0" && number_text(-0.0) == "-0"
+
+test "number_text: nan, the infinities and the smallest double"
+    zero = 0.0
+    assert number_text(zero / zero) == "null"
+    assert number_text(1.0 / zero) == "1.7976931348623157e+308"
+    assert number_text(-1.0 / zero) == "-1.7976931348623157e+308"
+    assert number_text(numbers.parse_float("5e-324").must()) == "5e-324"
+    assert number_text(numbers.parse_float("1.5e300").must()) == "1.5e+300"
+
+test "quoted: escapes, a control character, DEL, and characters of several bytes kept"
+    assert quoted("a\"b\\c\n") == "\"a\\\"b\\\\c\\n\""
+    assert quoted("\u{1b}\u{7f}é") == "\"\\u001b\\u007fé\""
+    assert quoted("") == "\"\""
+
+test "write: compact and indented, empty containers, keys in order or sorted"
+    v = json.parse("{\"b\": [1, {}], \"a\": []}").must()
+    assert compact(v) == "{\"b\":[1,{}],\"a\":[]}"
+    assert indented(v, width: 2) == "{\n  \"b\": [\n    1,\n    {}\n  ],\n  \"a\": []\n}"
+    assert write(v, indent: 0, sorted: true, limit: 100).must().text == "{\"a\":[],\"b\":[1,{}]}"
+
+test "write: a value nested deeper than any stack, and a limit passed"
+    deep: json.Value @= .null_value
+
+    for _ in range(from: 0, to: 100000)
+        deep @ .list(items: [deep])
+
+    assert compact(deep).len() == 200004
+    assert write(deep, indent: 0, sorted: false, limit: 1000).is_err()
+
+test "preview: short, cut at 11 bytes, and never inside a character"
+    assert preview(.text(v: "1,2,")) == "\"1,2,\""
+    assert preview(.text(v: "very-long-string")) == "\"very-long-..."
+    assert preview(.text(v: "ééééééééé")) == "\"ééééé..."

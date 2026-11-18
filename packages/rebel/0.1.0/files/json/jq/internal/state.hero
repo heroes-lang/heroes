@@ -1,0 +1,409 @@
+# The state of one run of the machine: its tables, its registers, its bounds
+# and what it has output, and the moves every step makes on them: evaluate a
+# node, pass a value on, go back to the newest choice, raise an error. The
+# steps themselves are `machine`'s. Every list grows through a function given
+# it as `@`, never through a field of the record, which would copy it.
+
+use json
+use json/jq/internal/frames
+use json/jq/internal/syntax
+use json/jq/internal/values
+use json/jq/internal/write
+
+## Modes and endings
+
+# The registers name a node to evaluate.
+constant EVAL: i64
+    1
+
+# The registers hold a value to pass on.
+constant EMIT: i64
+    2
+
+# The run goes back to the newest choice.
+constant BACKTRACK: i64
+    3
+
+# An error unwinds the choices.
+constant RAISE: i64
+    4
+
+# A `break` unwinds to its label.
+constant BREAK: i64
+    5
+
+# The run goes on.
+constant RUNNING: i64
+    0
+
+# Every value was output.
+constant FINISHED: i64
+    1
+
+# An error nothing caught ended the run.
+constant RAISED: i64
+    2
+
+# A bound ended the run.
+constant LIMITED: i64
+    3
+
+# `halt` or `halt_error` ended the run.
+constant HALTED: i64
+    4
+
+## The state
+
+# One run.
+record Machine
+    # The program's nodes.
+    nodes: [syntax.Node]
+    # The first node of the filter itself.
+    first_user: i64
+    # The continuations made.
+    conts: [frames.Cont]
+    # The frames made.
+    envs: [frames.Env]
+    # The stack of choices; `top` of them are in use.
+    choices: [frames.Choice]
+    # How many choices are in use.
+    top: i64
+    # The values being collected by `[...]`; `bag_top` of them are in use.
+    bag: [json.Value]
+    # How many collected values are in use.
+    bag_top: i64
+    # The values output.
+    outputs: [json.Value]
+    # What `debug` and `stderr` wrote.
+    messages: [json.Value]
+    # The last id given to a `try`, a label or a binding's alternatives.
+    ids: i64
+    # The steps taken.
+    steps: i64
+    # The bound on steps.
+    max_steps: i64
+    # The bound on outputs.
+    max_outputs: i64
+    # The bound on depth.
+    max_depth: i64
+    # The outputs after which the run stops, 0 for no such stop.
+    stop_after: i64
+    # The run's own variables, by name.
+    variables: {str: json.Value}
+    # What `input` reads.
+    inputs: [json.Value]
+    # The next input to read.
+    input_at: i64
+    # What `$ENV` reads.
+    environment: json.Value
+    # What `now` answers.
+    now: f64
+    # The step to take: `EVAL`, `EMIT`, `BACKTRACK`, `RAISE` or `BREAK`.
+    mode: i64
+    # The node to evaluate.
+    node: i64
+    # The frames it evaluates in.
+    env: i64
+    # The input to evaluate it on, or the value to pass on.
+    item: frames.Item
+    # The continuation that receives the value.
+    cont: i64
+    # The error being raised.
+    error: json.Value
+    # The label id a `break` goes to.
+    target: i64
+    # `RUNNING` or how the run ended.
+    ending: i64
+    # A bound's message.
+    message: str
+    # The exit code of a halt.
+    halt_code: i64
+    # The value `halt_error` was given.
+    halt_value: json.Value
+    # The number of continuations past which the next collection runs.
+    collect_at: i64
+
+## Moves
+
+# Evaluate `node` on `item` in `env`, passing its values to `cont`.
+function eval_to(@m: Machine, node: i64, item: frames.Item, env: i64, cont: i64)
+    m.mode @ EVAL
+    m.node @ node
+    m.item @ item
+    m.env @ env
+    m.cont @ cont
+
+# Pass `item` on to `cont`.
+function emit_to(@m: Machine, item: frames.Item, cont: i64)
+    m.mode @ EMIT
+    m.item @ item
+    m.cont @ cont
+
+# Go back to the newest choice.
+function backtrack(@m: Machine)
+    m.mode @ BACKTRACK
+
+# Raise the error `value` from where the registers stand.
+function raise_value(@m: Machine, value: json.Value)
+    m.mode @ RAISE
+    m.error @ value
+
+# Raise jq's error whose message is `msg`.
+function raise_text(@m: Machine, msg: str)
+    raise_value(@m, value: .text(v: msg))
+
+# End the run at a bound, saying `msg`.
+function limit_reached(@m: Machine, msg: str)
+    m.ending @ LIMITED
+    m.message @ msg
+
+## Growing the tables
+
+# Adds a continuation, answering its index; past the depth bound the run ends.
+function cont_of(@m: Machine, kind: i64, node: i64, env: i64, next: i64, item: frames.Item, n: i64, collected: [json.Value]) -> i64
+    depth = if next >= 0
+        m.conts[next].depth + 1
+    else
+        1
+
+    if depth > m.max_depth
+        limit_reached(@m, msg: f"the evaluation went deeper than {m.max_depth} levels")
+    frames.append(
+        @m.conts,
+        frames.Cont(kind: kind, node: node, env: env, next: next, item: item, n: n, values: collected, depth: depth)
+    )
+    return m.conts.len() - 1
+
+# Adds a frame, answering its index.
+function env_of(@m: Machine, e: frames.Env) -> i64
+    frames.append(@m.envs, e)
+    return m.envs.len() - 1
+
+# Pushes a choice, answering its index; past ten choices a level of the
+# depth bound the run ends.
+function push_choice(@m: Machine, c: frames.Choice) -> i64
+    if m.top >= m.max_depth * 10
+        limit_reached(@m, msg: f"the run held more than {m.max_depth * 10} generators waiting")
+    frames.put(@m.choices, top: m.top, v: c)
+    m.top @ m.top + 1
+    return m.top - 1
+
+# Takes the newest choice off.
+function pop_choice(@m: Machine)
+    m.top @ m.top - 1
+
+# Takes every choice from `k` up off, the collections among them dropped.
+function cut_to(@m: Machine, k: i64)
+    while m.top > k
+        c = m.choices[m.top - 1]
+
+        if c.kind == C_COLLECT
+            m.bag_top @ c.n
+        m.top @ m.top - 1
+
+# Adds `v` to the values being collected.
+function collect(@m: Machine, v: json.Value)
+    frames.put(@m.bag, top: m.bag_top, v: v)
+    m.bag_top @ m.bag_top + 1
+
+# A fresh id.
+function fresh(@m: Machine) -> i64
+    m.ids @ m.ids + 1
+    return m.ids
+
+# The frame `up` frames above `env`.
+function frame_at(m: Machine lent, env: i64, up: i64) -> i64
+    at: i64 @= env
+    left: i64 @= up
+
+    while left > 0
+        at @ m.envs[at].parent
+        left @ left - 1
+
+    return at
+
+## The kinds of choice
+
+# A node to evaluate later: the right side of `,`.
+constant C_EVAL: i64
+    1
+
+# The next element of a container.
+constant C_ITERATE: i64
+    2
+
+# The end of `[...]`'s collecting, `n` where its values begin.
+constant C_COLLECT: i64
+    3
+
+# The right side of `//`, taken where `flag` says the left gave nothing.
+constant C_ALTERNATIVE: i64
+    4
+
+# A `try`'s handler, `n` its id.
+constant C_TRY: i64
+    5
+
+# A label, `n` its id.
+constant C_LABEL: i64
+    6
+
+# A `reduce`'s state, in `other`, output when its source ends.
+constant C_REDUCE: i64
+    7
+
+# The end of one `reduce` update: its last value, in `other`, becomes the
+# state of the choice `n`.
+constant C_UPDATE_END: i64
+    8
+
+# A `foreach`'s state, in `other`.
+constant C_FOREACH: i64
+    9
+
+# The end of one `foreach` update, as `C_UPDATE_END`.
+constant C_FOREACH_END: i64
+    10
+
+# A `limit`'s count, `n` values left.
+constant C_LIMIT: i64
+    11
+
+# `isempty`'s answer where its filter gives nothing.
+constant C_ISEMPTY: i64
+    12
+
+# The next number of a range.
+constant C_RANGE: i64
+    13
+
+# The next output of a builtin, from `values`.
+constant C_VALUES: i64
+    14
+
+# The next value of `inputs`.
+constant C_INPUTS: i64
+    15
+
+# The next alternative of a binding's `?//`, `n` its index, `m` its id.
+constant C_ALTERNATIVES: i64
+    16
+
+## The kinds of continuation
+
+# The run's own: each value is an output.
+constant K_TOP: i64
+    1
+
+# The right side of a pipe, `node`, waits.
+constant K_PIPE: i64
+    2
+
+# The arguments of `node` are being evaluated, `n` the one now, `values` the
+# values so far; `item` is the input they read.
+constant K_ARGS: i64
+    3
+
+# The target of an index or a slice, `node`, with the keys in `values`.
+constant K_INDEX: i64
+    4
+
+# The container of `.[]`.
+constant K_ITERATE: i64
+    5
+
+# A value collected by `[...]`, the choice `n`.
+constant K_COLLECT: i64
+    6
+
+# The operand of unary `-`.
+constant K_NEGATE: i64
+    7
+
+# The left side of `and`.
+constant K_AND: i64
+    8
+
+# The right side of `and` or `or`: its truth is the answer.
+constant K_TRUTH: i64
+    9
+
+# The left side of `or`.
+constant K_OR: i64
+    10
+
+# A value of the left side of `//`, the choice `n`.
+constant K_ALTERNATIVE: i64
+    11
+
+# A condition of `if`, the `n`th.
+constant K_IF: i64
+    12
+
+# The body of a `try`, its id `n`: values pass on.
+constant K_TRY: i64
+    13
+
+# An initial state of `reduce` or `foreach`.
+constant K_INIT: i64
+    14
+
+# A value of the source of `reduce` or `foreach`, its state the choice `n`.
+constant K_SOURCE: i64
+    15
+
+# A value of a `reduce` update, the choice `n`.
+constant K_UPDATE: i64
+    16
+
+# A value of a `foreach` update, the choice `n`.
+constant K_FOREACH_UPDATE: i64
+    17
+
+# A value bound by `as`.
+constant K_BIND: i64
+    18
+
+# The keys of a binding's object patterns, for the value in `item`; `next` is
+# the continuation that asked.
+constant K_KEYS: i64
+    19
+
+# The body of a binding's alternative, its id `n`: values pass on.
+constant K_ALTERNATIVES: i64
+    20
+
+# The paths of `path(f)`.
+constant K_PATH: i64
+    21
+
+# A value under `limit`, the choice `n`.
+constant K_LIMIT: i64
+    22
+
+# A value under `isempty`, the choice `n`.
+constant K_ISEMPTY: i64
+    23
+
+## Errors as jq writes them
+
+# The message jq prints for the error `value`.
+function message_of(value: json.Value) -> str
+    return match value
+        .text t => t.v
+        .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+            write.compact(value) + " (not a string)"
+
+# The text of a path element for a message.
+function shown(v: json.Value) -> str
+    return write.preview(v)
+
+## Tests
+
+test "message_of: a text, and another value with its note"
+    assert message_of(.text(v: "x")) == "x"
+    assert message_of(json.parse("{\"a\":1}").must()) == "{\"a\":1} (not a string)"
+
+test "shown: a short value and a long one"
+    assert shown(.text(v: "a")) == "\"a\""
+    assert values.type_name(.null_value) == "null"

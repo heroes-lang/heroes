@@ -1,0 +1,283 @@
+# The HTTP fields MCP's Streamable HTTP transport mirrors from a request's
+# body (revision 2026-07-28, § Request Metadata): a value written plain where
+# a field holds it safely and in the Base64 sentinel `=?base64?...?=`
+# otherwise, read back, and the `x-mcp-header` annotations of a tool's input
+# schema found and checked, so a client mirrors them and a server holds the
+# fields to the body.
+
+use bytes
+use json
+use strings
+
+# The code of a field or an annotation not of its form.
+constant INVALID: str
+    "invalid"
+
+# The code of an argument the call does not give.
+constant NOT_FOUND: str
+    "not_found"
+
+# The sentinel's opening.
+constant OPENING: str
+    "=?base64?"
+
+# The sentinel's closing.
+constant CLOSING: str
+    "?="
+
+# A parameter of a tool mirrored into a field `Mcp-Param-<header>`.
+record Param
+    # The name after `Mcp-Param-`, as the annotation writes it.
+    header: str
+    # The keys of `properties` from the schema's root to the parameter.
+    path: [str]
+    # Its type: "string", "integer" or "boolean".
+    kind: str
+
+# Whether `value` stands in a field as it is: visible ASCII, spaces and tabs,
+# no white space at either end, and not the sentinel's form.
+function is_plain(value: str) -> bool
+    if value == ""
+        return true
+
+    if value[0] == ' ' || value[0] == '\t' || value[value.len() - 1] == ' ' || value[value.len() - 1] == '\t'
+        return false
+
+    for b in bytes.from_text(value)
+        if b != '\t' && (b < 0x20 || b > 0x7e)
+            return false
+
+    return !(strings.has_prefix(s: value, prefix: OPENING) && strings.has_suffix(s: value, suffix: CLOSING))
+
+# `value` as a field writes it: as it is where `is_plain`, else in the
+# sentinel, its UTF-8 in base 64.
+function encode(value: str) -> str
+    if is_plain(value)
+        return value
+    return OPENING + bytes.format_base64(bytes.from_text(value)) + CLOSING
+
+# The value a field `field` writes, its sentinel read. Fails `invalid` where
+# the sentinel's base 64 or its UTF-8 does not read.
+function decode(field: str) -> str?
+    if !(strings.has_prefix(s: field, prefix: OPENING) && strings.has_suffix(s: field, suffix: CLOSING)) || field.len() < OPENING.len() + CLOSING.len()
+        return ok(field)
+    inside = field.slice(from: OPENING.len(), to: field.len() - CLOSING.len())
+
+    data = match bytes.parse_base64(inside)
+        .ok got => got
+        .err _  => return fail(code: INVALID, msg: f"the field \"{field}\" holds base 64 that does not read")
+
+    match bytes.to_text(data)
+        .ok text => return ok(text)
+        .err _   => return fail(code: INVALID, msg: f"the field \"{field}\" holds bytes that are not UTF-8")
+
+# Whether `name` is an HTTP field name's token, RFC 9110 § 5.1.
+function is_token(name: str) -> bool
+    if name == ""
+        return false
+
+    for b in bytes.from_text(name)
+        letter = b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9'
+        mark = b == '!' || b == '#' || b == '$' || b == '%' || b == '&' || b == '\'' || b == '*' || b == '+' || b == '-' || b == '.' || b == '^' || b == '_' || b == '`' || b == '|' || b == '~'
+
+        if !letter && !mark
+            return false
+
+    return true
+
+# A place of a schema waiting to be walked: the value and the keys that lead
+# to it.
+record Place
+    value: json.Value
+    tokens: [str]
+
+# The parameters `schema` annotates with `x-mcp-header`, in the order of a
+# walk from its root. Fails `invalid` where an annotation is empty, no token,
+# names a field twice whatever its case, stands on a parameter that is not a
+# string, an integer or a boolean, or stands where a chain of `properties`
+# alone does not reach it from the root: the tool is then refused.
+function params_of(schema: json.Value) -> [Param]?
+    found: [Param] @= []
+    seen: {str: bool} @= {}
+    waiting: [Place] @= [Place(value: schema, tokens: [])]
+
+    while waiting.len() > 0
+        place = waiting[waiting.len() - 1]
+        waiting @ waiting.slice(from: 0, to: waiting.len() - 1)
+
+        match place.value
+            .object o =>
+                match o.members["x-mcp-header"]
+                    .ok annotation =>
+                        found @ found.push(param_at(place, annotation: annotation, members: o.members, seen: @seen)?)
+                    .err _ => _ = 0
+
+                for key in keys(o.members)
+                    waiting @ waiting.push(Place(value: o.members[key].must(), tokens: place.tokens.push(key)))
+            .list l =>
+                for at in range(from: 0, to: l.items.len())
+                    waiting @ waiting.push(Place(value: l.items[at], tokens: place.tokens.push(f"{at}")))
+            .null_value | .boolean _ | .number _ | .text _ => _ = 0
+
+    return ok(found)
+
+# The parameter the annotation `annotation` at `place` names, checked.
+function param_at(place: Place, annotation: json.Value, members: {str: json.Value}, @seen: {str: bool}) -> Param?
+    header = match annotation
+        .text t => t.v
+        .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+            return fail(code: INVALID, msg: "an `x-mcp-header` is not a string")
+
+    if !is_token(header)
+        return fail(code: INVALID, msg: f"the `x-mcp-header` \"{header}\" is not a field name's token")
+    folded = strings.to_lower(header)
+
+    if seen[folded].default(false)
+        return fail(code: INVALID, msg: f"the `x-mcp-header` \"{header}\" is named twice")
+    seen[folded] @ true
+    path: [str] @= []
+
+    if place.tokens.len() == 0 || place.tokens.len() % 2 != 0
+        return fail(code: INVALID, msg: f"the `x-mcp-header` \"{header}\" stands where `properties` alone do not lead")
+
+    for at in range(from: 0, to: place.tokens.len())
+        if at % 2 == 0 && place.tokens[at] != "properties"
+            return fail(
+                code: INVALID,
+                msg: f"the `x-mcp-header` \"{header}\" stands where `properties` alone do not lead"
+            )
+
+        if at % 2 == 1
+            path @ path.push(place.tokens[at])
+
+    kind = match members["type"]
+        .ok t  => json.text_of(t).default("")
+        .err _ => ""
+
+    if kind != "string" && kind != "integer" && kind != "boolean"
+        return fail(code: INVALID, msg: f"the `x-mcp-header` \"{header}\" stands on a parameter of type \"{kind}\"")
+    return ok(Param(header: header, path: path, kind: kind))
+
+# The text the argument at `p.path` of `arguments` gives its field: a string
+# as it is, an integer in decimal, a boolean `true` or `false`. Fails
+# `not_found` where the call gives no value there or `null`, and `invalid`
+# where the value is not of the parameter's type.
+function value_of(arguments: json.Value, p: Param) -> str?
+    here: json.Value @= arguments
+
+    for key in p.path
+        here @ match json.member(here, key: key)
+            .ok got => got
+            .err _  => return fail(code: NOT_FOUND, msg: f"the call gives no \"{key}\"")
+
+    match here
+        .null_value => return fail(code: NOT_FOUND, msg: "the call gives `null`")
+        .text t     => return ok(t.v)
+        .boolean b =>
+            if b.v
+                return ok("true")
+            return ok("false")
+        .number _ =>
+            match json.int_of(here)
+                .ok n => return ok(f"{n}")
+                .err e => return fail(
+                    code: INVALID,
+                    msg: f"the parameter of `Mcp-Param-{p.header}` is no integer within 2^53: {e.msg}"
+                )
+        .list _ | .object _ =>
+            return fail(code: INVALID, msg: f"the parameter of `Mcp-Param-{p.header}` is {json.kind_of(here)}")
+
+test "encode, decode: the revision's own table, a sentinel encoded, and a field that does not read"
+    assert encode("us-west1") == "us-west1"
+    assert encode("Hello, 世界") == "=?base64?SGVsbG8sIOS4lueVjA==?="
+    assert encode(" padded ") == "=?base64?IHBhZGRlZCA=?="
+    assert encode("line1\nline2") == "=?base64?bGluZTEKbGluZTI=?="
+    assert encode("=?base64?literal?=") == "=?base64?PT9iYXNlNjQ/bGl0ZXJhbD89?="
+    assert decode("=?base64?SGVsbG8sIOS4lueVjA==?=").must() == "Hello, 世界" && decode("plain").must() == "plain"
+
+    match decode("=?base64?***?=")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "params_of: the revision's example, a nested object, and each annotation refused"
+    good = json.parse(
+        "{\"type\": \"object\", \"properties\": {\"region\": {\"type\": \"string\", \"x-mcp-header\": \"Region\"}, \"query\": {\"type\": \"string\"}, \"opts\": {\"type\": \"object\", \"properties\": {\"n\": {\"type\": \"integer\", \"x-mcp-header\": \"N\"}}}}}"
+    ).must()
+    found = params_of(good).must()
+    assert found.len() == 2
+    assert found[0] == Param(header: "N", path: ["opts", "n"], kind: "integer") || found[1] == Param(header: "N", path: ["opts", "n"], kind: "integer")
+    refused = [
+        "{\"properties\": {\"a\": {\"type\": \"string\", \"x-mcp-header\": \"\"}}}"
+        "{\"properties\": {\"a\": {\"type\": \"string\", \"x-mcp-header\": \"A B\"}}}"
+        "{\"properties\": {\"a\": {\"type\": \"string\", \"x-mcp-header\": \"A\"}, \"b\": {\"type\": \"string\", \"x-mcp-header\": \"a\"}}}"
+        "{\"properties\": {\"a\": {\"type\": \"number\", \"x-mcp-header\": \"A\"}}}"
+        "{\"properties\": {\"a\": {\"type\": \"array\", \"items\": {\"type\": \"string\", \"x-mcp-header\": \"A\"}}}}"
+        "{\"anyOf\": [{\"properties\": {\"a\": {\"type\": \"string\", \"x-mcp-header\": \"A\"}}}]}"
+    ]
+
+    for text in refused
+        match params_of(json.parse(text).must())
+            .ok _  => assert text == "refused"
+            .err e => assert e.code == INVALID
+
+test "value_of: a string, an integer, a boolean, a nested value, an absent and a null one, and a fraction"
+    arguments = json.parse(
+        "{\"region\": \"us-west1\", \"n\": 42, \"on\": false, \"opts\": {\"k\": \"v\"}, \"none\": null, \"f\": 1.5}"
+    ).must()
+    assert value_of(arguments, p: Param(header: "R", path: ["region"], kind: "string")).must() == "us-west1"
+    assert value_of(arguments, p: Param(header: "N", path: ["n"], kind: "integer")).must() == "42"
+    assert value_of(arguments, p: Param(header: "O", path: ["on"], kind: "boolean")).must() == "false"
+    assert value_of(arguments, p: Param(header: "K", path: ["opts", "k"], kind: "string")).must() == "v"
+
+    for path in [["absent"], ["none"]]
+        match value_of(arguments, p: Param(header: "X", path: path, kind: "string"))
+            .ok _  => assert false
+            .err e => assert e.code == NOT_FOUND
+
+    match value_of(arguments, p: Param(header: "F", path: ["f"], kind: "integer"))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+# The `scope` a `WWW-Authenticate: Bearer` challenge names, "" where none:
+# the scopes a client asks first (MCP authorization, § Scope Selection
+# Strategy). A quoted value's `\` escapes are read.
+function challenge_scope(value: str) -> str
+    at: i64 @= 0
+
+    while at < value.len()
+        found = match strings.index_of(s: value.slice(from: at, to: value.len()), substr: "scope=")
+            .ok f  => at + f
+            .err _ => return ""
+
+        before: u8 = if found == 0
+            ' '
+        else
+            value[found - 1]
+        at @ found + 6
+
+        if before == ' ' || before == ','
+            if at < value.len() && value[at] == '"'
+                out: [str] @= []
+                inside: i64 @= at + 1
+
+                while inside < value.len() && value[inside] != '"'
+                    if value[inside] == '\\' && inside + 1 < value.len()
+                        inside @ inside + 1
+                    out @ out.push(value.slice(from: inside, to: inside + 1))
+                    inside @ inside + 1
+
+                return out.join("")
+            end: i64 @= at
+
+            while end < value.len() && value[end] != ',' && value[end] != ' '
+                end @ end + 1
+
+            return value.slice(from: at, to: end)
+
+    return ""
+
+test "challenge_scope: quoted, bare, absent, and a parameter that only ends in scope"
+    assert challenge_scope("Bearer resource_metadata=\"https://m/x\", scope=\"files:read files:write\"") == "files:read files:write"
+    assert challenge_scope("Bearer scope=a, error=\"insufficient_scope\"") == "a"
+    assert challenge_scope("Bearer resource_metadata=\"https://m/x\"") == ""
+    assert challenge_scope("Bearer myscope=\"x\"") == ""

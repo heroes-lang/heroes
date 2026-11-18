@@ -1,0 +1,162 @@
+# A text read once into what the rules of UAX #29 and UAX #14 read: its code
+# points, where each begins, and each one's packed values from `tables.RUNS`,
+# with the accessors that take the values apart.
+
+use unicode
+use unicode/segment/internal/tables
+
+# A text decoded: one entry of each list for each character, and one more in
+# `starts` for the end.
+record Decoded
+    # The code points, in order.
+    points: [i64]
+    # The byte index each code point begins at, then the text's length.
+    starts: [i64]
+    # Each code point's packed values, as `tables.RUNS` holds them.
+    values: [i64]
+
+# How many entries of `table`, which ascends, are at or below `key`.
+function count_at_or_below(table: [i64] lent, key: i64) -> i64
+    low: i64 @= 0
+    high: i64 @= table.len()
+
+    while low < high
+        middle = low + (high - low) / 2
+
+        if table[middle] <= key
+            low @ middle + 1
+        else
+            high @ middle
+
+    return low
+
+# The packed values of the code point `n`.
+function value_of(n: i64) -> i64
+    return value_in(tables.RUNS, n: n)
+
+# The packed values of the code point `n` in `runs`, which is `tables.RUNS`
+# read once by a caller that looks up many code points: a build under
+# `--sanitize` makes a constant again at every read of it.
+function value_in(runs: [i64] lent, n: i64) -> i64
+    return runs[count_at_or_below(runs, n << 32 | 0xffffffff) - 1] & 0xffffffff
+
+# How many bytes UTF-8 writes the code point `n` in.
+function utf8_len(n: i64) -> i64
+    if n < 0x80
+        return 1
+
+    if n < 0x800
+        return 2
+
+    if n < 0x10000
+        return 3
+    return 4
+
+# `s` decoded.
+function decode(s: str) -> Decoded
+    points = unicode.code_points(s)
+    runs = tables.RUNS
+    starts: [i64] @= []
+    values: [i64] @= []
+    at: i64 @= 0
+
+    for point in points
+        starts @ starts.push(at)
+        values @ values.push(value_in(runs, n: point))
+        at @ at + utf8_len(point)
+
+    starts @ starts.push(at)
+    return Decoded(points: points, starts: starts, values: values)
+
+# The Line_Break value in `value`, an index into `tables.LINE_NAMES`.
+function line_of(value: i64) -> i64
+    return value & 63
+
+# The Word_Break value in `value`, an index into `tables.WORD_NAMES`.
+function word_of(value: i64) -> i64
+    return value >> 6 & 31
+
+# The Sentence_Break value in `value`, an index into `tables.SENTENCE_NAMES`.
+function sentence_of(value: i64) -> i64
+    return value >> 11 & 15
+
+# The Grapheme_Cluster_Break value in `value`, an index into
+# `tables.GRAPHEME_NAMES`.
+function grapheme_of(value: i64) -> i64
+    return value >> 15 & 15
+
+# The Indic_Conjunct_Break value in `value`, an index into
+# `tables.CONJUNCT_NAMES`.
+function conjunct_of(value: i64) -> i64
+    return value >> 19 & 3
+
+# The East_Asian_Width value in `value`, an index into `tables.WIDTH_NAMES`.
+function width_class_of(value: i64) -> i64
+    return value >> 21 & 7
+
+# Whether `value` is an Extended_Pictographic character's.
+function is_pictographic(value: i64) -> bool
+    return value >> 24 & 1 == 1
+
+# Whether `value` is an Emoji character's.
+function is_emoji(value: i64) -> bool
+    return value >> 25 & 1 == 1
+
+# Whether `value` is the value of a character whose default is drawn as an
+# emoji, Emoji_Presentation.
+function is_emoji_presentation(value: i64) -> bool
+    return value >> 26 & 1 == 1
+
+# Whether `value` is a Default_Ignorable_Code_Point's.
+function is_default_ignorable(value: i64) -> bool
+    return value >> 27 & 1 == 1
+
+# The group of the general category in `value`: 1 Cn, 2 Pi, 3 Pf, 4 Mn, 5 Mc,
+# 6 Me, 7 Cc or Cf, 0 any other.
+function category_group_of(value: i64) -> i64
+    return value >> 28 & 7
+
+# Whether `value` is an unassigned code point's, general category Cn.
+function is_unassigned(value: i64) -> bool
+    return category_group_of(value) == 1
+
+# The pieces of `s` between each two of `bounds`, ascending byte indices at
+# characters' first bytes, 0 first and the length last.
+function pieces(s: str, bounds: [i64] lent) -> [str]
+    out: [str] @= []
+    at: i64 @= 1
+
+    while at < bounds.len()
+        out @ out.push(s.slice(from: bounds[at - 1], to: bounds[at]))
+        at @ at + 1
+
+    return out
+
+## Tests
+
+# Python 3.15.2's `unicodedata` and ICU 78.3, observed 2026-11-17.
+test "value_of: a letter, a carriage return, an emoji, a wide ideograph, the largest code point"
+    letter = value_of('a')
+    assert tables.LINE_NAMES[line_of(letter)] == "AL"
+    assert tables.WORD_NAMES[word_of(letter)] == "ALetter"
+    assert tables.SENTENCE_NAMES[sentence_of(letter)] == "Lower"
+    assert tables.WIDTH_NAMES[width_class_of(letter)] == "Na"
+    assert tables.GRAPHEME_NAMES[grapheme_of(value_of('\r'))] == "CR"
+    face = value_of(0x1f600)
+    assert is_pictographic(face) && is_emoji(face) && is_emoji_presentation(face)
+    assert tables.WIDTH_NAMES[width_class_of(value_of(0x4e00))] == "W"
+    assert is_unassigned(value_of(0x10ffff))
+    assert is_default_ignorable(value_of(0xad))
+    assert category_group_of(value_of(0x301)) == 4
+
+test "decode: the empty text, ASCII, and characters of two, three and four bytes"
+    empty = decode("")
+    assert empty.points == [] && empty.starts == [0] && empty.values == []
+    mixed = decode("aé中😀")
+    assert mixed.points == ['a', 0xe9, 0x4e2d, 0x1f600]
+    assert mixed.starts == [0, 1, 3, 6, 10]
+
+test "pieces: none, one, and several"
+    assert pieces(s: "", bounds: [0]) == []
+    assert pieces(s: "ab", bounds: [0, 2]) == ["ab"]
+    assert pieces(s: "aéb", bounds: [0, 1, 3, 4]) == ["a", "é", "b"]

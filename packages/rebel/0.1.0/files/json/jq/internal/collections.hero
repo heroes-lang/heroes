@@ -1,0 +1,331 @@
+# jq's builtins over lists: `sort` and the work behind `sort_by`, `group_by`,
+# `unique_by`, `min_by` and `max_by`, given each element's key list as jq's
+# definitions build it; `min`, `max`, `unique`, `flatten`, `transpose`,
+# `bsearch` and `from_entries`. Sorting is a stable merge sort in jq's order.
+
+use json
+use json/jq/internal/text
+use json/jq/internal/values
+use json/jq/internal/write
+
+# The elements of `v`, failing with `what` where it is not a list.
+function items_or(v: json.Value, what: str) -> [json.Value]?
+    match v
+        .list l => return ok(l.items)
+        .null_value | .boolean _ | .number _ | .text _ | .object _ =>
+            return values.raised(f"{values.described(v)} {what}")
+
+# The indices of `keys` in the order of their keys, equal keys in their own
+# order: a merge sort, bottom up.
+function order_of(by_key: [json.Value]) -> [i64]
+    current: [i64] @= []
+
+    for i in range(from: 0, to: by_key.len())
+        current @ current.push(i)
+
+    width: i64 @= 1
+
+    while width < by_key.len()
+        merged: [i64] @= []
+        start: i64 @= 0
+
+        while start < by_key.len()
+            middle = if start + width < by_key.len()
+                start + width
+            else
+                by_key.len()
+
+            end = if start + 2 * width < by_key.len()
+                start + 2 * width
+            else
+                by_key.len()
+            i: i64 @= start
+            j: i64 @= middle
+
+            while i < middle || j < end
+                if j >= end || i < middle && values.order(a: by_key[current[i]], b: by_key[current[j]]) <= 0
+                    merged @ merged.push(current[i])
+                    i @ i + 1
+                else
+                    merged @ merged.push(current[j])
+                    j @ j + 1
+
+            start @ end
+
+        current @ merged
+        width @ width * 2
+
+    return current
+
+# jq's `sort`.
+function sort_values(v: json.Value) -> json.Value?
+    items = items_or(v, what: "cannot be sorted, as it is not an array")?
+    out: [json.Value] @= []
+
+    for i in order_of(items)
+        out @ out.push(items[i])
+
+    return ok(.list(items: out))
+
+# The elements of `v` and their keys, checked to be lists of one length.
+record Keyed
+    # The elements.
+    items: [json.Value]
+    # Each element's key.
+    keys: [json.Value]
+
+# The elements of `v` with the keys `by` holds for them.
+function keyed(v: json.Value, by: json.Value, what: str) -> Keyed?
+    items = items_or(v, what: what)?
+    keyed_by = items_or(by, what: what)?
+
+    if keyed_by.len() != items.len()
+        return values.raised(f"{what}: the keys are not one a value")
+    return ok(Keyed(items: items, keys: keyed_by))
+
+# jq's `sort_by`, given the keys.
+function sort_by_keys(v: json.Value, by: json.Value) -> json.Value?
+    k = keyed(v: v, by: by, what: "cannot be sorted, as it is not an array")?
+    out: [json.Value] @= []
+
+    for i in order_of(k.keys)
+        out @ out.push(k.items[i])
+
+    return ok(.list(items: out))
+
+# jq's `group_by`, given the keys: the elements in groups of equal keys, the
+# groups in the order of their keys.
+function group_by_keys(v: json.Value, by: json.Value, first_only: bool) -> json.Value?
+    k = keyed(v: v, by: by, what: "cannot be grouped, as it is not an array")?
+    groups: [json.Value] @= []
+    group: [json.Value] @= []
+    last: json.Value @= .null_value
+    started: bool @= false
+
+    for i in order_of(k.keys)
+        if started && values.equal(a: k.keys[i], b: last)
+            if !first_only
+                group @ group.push(k.items[i])
+        else
+            if started
+                groups @ groups.push(close_group(group, first_only: first_only))
+            group @ [k.items[i]]
+            last @ k.keys[i]
+            started @ true
+
+    if started
+        groups @ groups.push(close_group(group, first_only: first_only))
+    return ok(.list(items: groups))
+
+# A group as `group_by` gives it, or its first element for `unique_by`.
+function close_group(group: [json.Value], first_only: bool) -> json.Value
+    if first_only
+        return group[0]
+    return .list(items: group)
+
+# jq's `min_by` where `lowest`, `max_by` otherwise, given the keys: the first
+# element of the lowest key, the last of the highest; `null` for none.
+function extreme_by_keys(v: json.Value, by: json.Value, lowest: bool) -> json.Value?
+    k = keyed(v: v, by: by, what: "cannot be searched for its extreme, as it is not an array")?
+
+    if k.items.len() == 0
+        return ok(.null_value)
+    best: i64 @= 0
+
+    for i in range(from: 1, to: k.items.len())
+        c = values.order(a: k.keys[i], b: k.keys[best])
+
+        if lowest && c < 0 || !lowest && c >= 0
+            best @ i
+
+    return ok(k.items[best])
+
+# jq's `min` where `lowest`, `max` otherwise.
+function extreme(v: json.Value, lowest: bool) -> json.Value?
+    return extreme_by_keys(v: v, by: v, lowest: lowest)
+
+# jq's `unique`.
+function unique(v: json.Value) -> json.Value?
+    return group_by_keys(v: v, by: v, first_only: true)
+
+# A list waiting to be flattened, and how far down it stands.
+record Level
+    # The elements.
+    items: [json.Value]
+    # The next element to read.
+    next: i64
+    # How deep it stands, the list flattened counting 0.
+    depth: i64
+
+# jq's `flatten`, `depth` levels down, every level where it is negative: a
+# list's elements, or an object's values, with the lists among them opened.
+function flatten(v: json.Value, depth: i64) -> json.Value?
+    # An object's values are flattened as a list's elements are, as jq's
+    # `.[]` reads them.
+    items: [json.Value] @= []
+
+    match v
+        .object o =>
+            for k in keys(o.members)
+                items @ items.push(o.members[k].must())
+        .null_value | .boolean _ | .number _ | .text _ | .list _ =>
+            items @ items_or(v, what: "cannot be flattened, as it is not an array")?
+
+    out: [json.Value] @= []
+    left: [Level] @= [Level(items: items, next: 0, depth: 0)]
+    top: i64 @= 1
+
+    while top > 0
+        here = left[top - 1]
+
+        if here.next >= here.items.len()
+            top @ top - 1
+        else
+            left[top - 1].next @ here.next + 1
+            item = here.items[here.next]
+
+            match item
+                .list inner =>
+                    if depth < 0 || here.depth < depth
+                        level = Level(items: inner.items, next: 0, depth: here.depth + 1)
+
+                        if top == left.len()
+                            left @ left.push(level)
+                        else
+                            left[top] @ level
+                        top @ top + 1
+                    else
+                        out @ out.push(item)
+                .null_value | .boolean _ | .number _ | .text _ | .object _ => out @ out.push(item)
+
+            if out.len() > write.MAX_VOLUME
+                return write.too_large("the list `flatten` makes")
+
+    return ok(.list(items: out))
+
+# jq's `transpose`: the rows of a list of lists as columns, short rows padded
+# with `null`.
+function transpose(v: json.Value) -> json.Value?
+    rows = items_or(v, what: "cannot be transposed, as it is not an array")?
+    width: i64 @= 0
+    cells: [[json.Value]] @= []
+
+    for row in rows
+        r = items_or(row, what: "cannot be transposed, as it is not an array")?
+        cells @ cells.push(r)
+
+        if r.len() > width
+            width @ r.len()
+
+    if width > 0 && cells.len() > write.MAX_VOLUME / width
+        return write.too_large("the list `transpose` makes")
+    out: [json.Value] @= []
+
+    for j in range(from: 0, to: width)
+        column: [json.Value] @= []
+
+        for r in cells
+            if j < r.len()
+                column @ column.push(r[j])
+            else
+                column @ column.push(.null_value)
+
+        out @ out.push(.list(items: column))
+
+    return ok(.list(items: out))
+
+# jq's `bsearch`: the index of `target` in a sorted list, or -1 minus the
+# index it would be put at.
+function bsearch(v: json.Value, target: json.Value) -> json.Value?
+    items = items_or(v, what: "cannot be searched from")?
+    low: i64 @= 0
+    high: i64 @= items.len() - 1
+
+    while low <= high
+        middle = low + (high - low) / 2
+        c = values.order(a: items[middle], b: target)
+
+        if c == 0
+            return ok(.number(v: to_f64(middle)))
+
+        if c < 0
+            low @ middle + 1
+        else
+            high @ middle - 1
+
+    return ok(.number(v: to_f64(-1 - low)))
+
+# jq 1.7.1's `from_entries`: each element's key read from `key`, or else from
+# `k`, `name`, `Name`, `K` or `Key`, a key that is not a text written as
+# JSON; its value from `value`, or else `v` or `Value`.
+function from_entries(v: json.Value) -> json.Value?
+    entries = items_or(v, what: "cannot be iterated over")?
+    out: {str: json.Value} @= {}
+
+    for e in entries
+        match e
+            .object o =>
+                key: json.Value @= o.members["key"].default(.null_value)
+
+                for name in ["k", "name", "Name", "K", "Key"]
+                    if !values.truthy(key)
+                        key @ o.members[name].default(key)
+
+                k = match key
+                    .text t                                                    => t.v
+                    .null_value | .boolean _ | .number _ | .list _ | .object _ => text.to_text(key)?
+
+                value: json.Value @= .null_value
+
+                if !o.members["value"].is_err()
+                    value @ o.members["value"].must()
+                else if !o.members["v"].is_err()
+                    value @ o.members["v"].must()
+                else
+                    value @ o.members["Value"].default(.null_value)
+                out[k] @ value
+            .null_value | .boolean _ | .number _ | .text _ | .list _ =>
+                return values.raised(f"Cannot index {values.type_name(e)} with \"key\"")
+
+    return ok(.object(members: out))
+
+## Tests
+
+test "sort_values: jq's order across types, stable, and a refusal"
+    got = sort_values(json.parse("[3, \"a\", null, [1], {}, true, false, 1]").must()).must()
+    assert json.format(got).must() == "[null,false,true,1,3,\"a\",[1],{}]"
+    assert sort_values(.number(v: 1.0)).is_err()
+
+test "sort_by_keys and group_by_keys: by keys, ties kept in order"
+    v = json.parse("[{\"a\":2,\"i\":0},{\"a\":1,\"i\":1},{\"a\":2,\"i\":2}]").must()
+    by = json.parse("[[2],[1],[2]]").must()
+    assert json.format(sort_by_keys(v: v, by: by).must()).must() == "[{\"a\":1,\"i\":1},{\"a\":2,\"i\":0},{\"a\":2,\"i\":2}]"
+    grouped = group_by_keys(v: v, by: by, first_only: false).must()
+    assert json.format(grouped).must() == "[[{\"a\":1,\"i\":1}],[{\"a\":2,\"i\":0},{\"a\":2,\"i\":2}]]"
+
+test "extreme_by_keys and unique: the first lowest, the last highest, null for none"
+    v = json.parse("[[1,0],[1,1],[0,2]]").must()
+    by = json.parse("[[1],[1],[0]]").must()
+    assert json.format(extreme_by_keys(v: v, by: by, lowest: false).must()).must() == "[1,1]"
+    assert json.format(extreme_by_keys(v: v, by: by, lowest: true).must()).must() == "[0,2]"
+    assert json.format(extreme(json.parse("[]").must(), lowest: true).must()).must() == "null"
+    assert json.format(unique(json.parse("[1,2,5,3,5,3,1,3]").must()).must()).must() == "[1,2,3,5]"
+
+test "flatten: one level, every level, and a depth past any stack"
+    v = json.parse("[1,[2,[3]]]").must()
+    assert json.format(flatten(v, depth: 1).must()).must() == "[1,2,[3]]"
+    assert json.format(flatten(v, depth: -1).must()).must() == "[1,2,3]"
+    deep: json.Value @= .number(v: 1.0)
+
+    for _ in range(from: 0, to: 100000)
+        deep @ .list(items: [deep])
+
+    assert json.format(flatten(deep, depth: -1).must()).must() == "[1]"
+
+test "transpose, bsearch and from_entries"
+    assert json.format(transpose(json.parse("[[1],[2,3]]").must()).must()).must() == "[[1,2],[null,3]]"
+    sorted = json.parse("[1,2,3]").must()
+    assert json.format(bsearch(v: sorted, target: .number(v: 2.0)).must()).must() == "1"
+    assert json.format(bsearch(v: sorted, target: .number(v: 0.0)).must()).must() == "-1"
+    entries = json.parse("[{\"k\":\"a\",\"v\":1},{\"name\":\"b\",\"value\":2},{\"key\":3}]").must()
+    assert json.format(from_entries(entries).must()).must() == "{\"a\":1,\"b\":2,\"3\":null}"

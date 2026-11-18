@@ -1,0 +1,144 @@
+# One run of a filter, start to end, and its answer as a list of values or a
+# failure, in the terms the face gives them: the face turns what a run
+# reached into its own `Outcome`.
+
+use json
+use json/jq/internal/compile
+use json/jq/internal/machine
+use json/jq/internal/state
+use json/jq/internal/syntax
+use json/jq/internal/text
+
+# The code of a run that raised an error nothing caught, or halted with a
+# code other than 0.
+constant INVALID: str
+    "invalid"
+
+# The code of a run that reached a bound.
+constant LIMIT: str
+    "limit"
+
+# What a run reached.
+record Reached
+    # The values output.
+    outputs: [json.Value]
+    # What `debug` and `stderr` wrote.
+    messages: [json.Value]
+    # How it ended, one of `state`'s endings.
+    ending: i64
+    # The error raised, where it raised one.
+    error: json.Value
+    # A bound's message.
+    message: str
+    # A halt's exit code.
+    halt_code: i64
+    # The value `halt_error` was given.
+    halt_value: json.Value
+    # How many of the further inputs it read.
+    read: i64
+
+# `code` run on `input` with the run's own variables, further inputs,
+# environment, clock and bounds, stopping after `stop_after` outputs, 0 for
+# never.
+function execute(code: syntax.Code, input: json.Value, variables: {str: json.Value}, inputs: [json.Value], environment: {str: json.Value}, now: f64, max_steps: i64, max_outputs: i64, max_depth: i64, stop_after: i64) -> Reached
+    m: state.Machine @= machine.start(
+        code,
+        input: input,
+        variables: variables,
+        inputs: inputs,
+        environment: .object(members: environment),
+        now: now,
+        max_steps: max_steps,
+        max_outputs: max_outputs,
+        max_depth: max_depth,
+        stop_after: stop_after
+    )
+    machine.run(@m)
+
+    read = if m.input_at > inputs.len()
+        inputs.len()
+    else
+        m.input_at
+    return Reached(
+        outputs: m.outputs,
+        messages: m.messages,
+        ending: m.ending,
+        error: m.error,
+        message: m.message,
+        halt_code: m.halt_code,
+        halt_value: m.halt_value,
+        read: read
+    )
+
+# The values `r` output, or the failure its ending is: `invalid` with jq's
+# message for an error or a halt with a code other than 0, `limit` with the
+# bound's.
+function answered(r: Reached) -> [json.Value]?
+    if r.ending == state.RAISED
+        return fail(code: INVALID, msg: state.message_of(r.error))
+
+    if r.ending == state.LIMITED
+        return fail(code: LIMIT, msg: r.message)
+
+    if r.ending == state.HALTED && r.halt_code != 0
+        return fail(
+            code: INVALID,
+            msg: f"halted with exit code {r.halt_code}: {text.to_text(r.halt_value).default("?")}"
+        )
+    return ok(r.outputs)
+
+# Whether `s` holds nothing but white space from byte `from` on.
+function only_space(s: str, from: i64) -> bool
+    for i in range(from: from, to: s.len())
+        c = s[i]
+
+        if c != ' ' && c != '\t' && c != '\n' && c != '\r'
+            return false
+
+    return true
+
+## Tests
+
+test "execute and answered: values, an error, a halt, and inputs read"
+    r = execute(
+        compile.compile(".a, input").must(),
+        input: json.parse("{\"a\":1}").must(),
+        variables: {},
+        inputs: [.number(v: 2.0)],
+        environment: {},
+        now: 0.0,
+        max_steps: 1000,
+        max_outputs: 10,
+        max_depth: 100,
+        stop_after: 0
+    )
+    assert answered(r).must().len() == 2 && r.read == 1
+    raised = execute(
+        compile.compile("error(\"x\")").must(),
+        input: .null_value,
+        variables: {},
+        inputs: [],
+        environment: {},
+        now: 0.0,
+        max_steps: 1000,
+        max_outputs: 10,
+        max_depth: 100,
+        stop_after: 0
+    )
+    assert answered(raised).is_err()
+    halted = execute(
+        compile.compile("halt").must(),
+        input: .null_value,
+        variables: {},
+        inputs: [],
+        environment: {},
+        now: 0.0,
+        max_steps: 1000,
+        max_outputs: 10,
+        max_depth: 100,
+        stop_after: 0
+    )
+    assert answered(halted).must().len() == 0
+
+test "only_space: white space alone, and a value after it"
+    assert only_space(" \n\t", from: 0) && !only_space(" 1", from: 0) && only_space("1", from: 1)

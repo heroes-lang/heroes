@@ -1,0 +1,203 @@
+# UAX #15's algorithm on code points: the full decomposition, canonical or
+# compatibility, the canonical ordering of the marks, the canonical
+# composition, and the quick check. The face turns a text into code points,
+# asks here, and writes the answer back.
+
+use unicode
+use unicode/normalize/internal/lookup
+
+# Adds to `out` the full decomposition of `n`: every step applied again to
+# what it maps to, compatibility steps too where `compat`. A decomposition
+# is at most four steps deep in Unicode 17.0.0, so the recursion is short.
+# Below U+00A0 nothing decomposes, so the table is not read there.
+function add_decomposed(@out: [i64], n: i64, compat: bool)
+    if n < 0xa0
+        out @ out.push(n)
+        return
+
+    match lookup.step(n)
+        .ok found =>
+            if found.kind != 0 && !compat
+                out @ out.push(n)
+                return
+
+            for point in found.points
+                add_decomposed(@out, n: point, compat: compat)
+        .err _ => out @ out.push(n)
+
+# Puts the marks of `points` in their canonical order: each run of code
+# points whose combining class is not 0 sorted by class, stably, so marks of
+# one class keep their order. A run is short, so an insertion sort serves;
+# below U+0300 every class is 0, so the table is not read there.
+function reorder(@points: [i64])
+    at: i64 @= 1
+
+    while at < points.len()
+        rank = if points[at] < 0x300
+            0
+        else
+            lookup.combining_class(points[at])
+
+        if rank != 0
+            moving = points[at]
+            to: i64 @= at
+
+            while to > 0 && lookup.combining_class(points[to - 1]) > rank
+                points[to] @ points[to - 1]
+                to @ to - 1
+
+            points[to] @ moving
+        at @ at + 1
+
+# The full decomposition of `points` in canonical order: NFD, or NFKD where
+# `compat`.
+function decomposed(points: [i64] lent, compat: bool) -> [i64]
+    out: [i64] @= []
+
+    for point in points
+        add_decomposed(@out, n: point, compat: compat)
+
+    reorder(@out)
+    return out
+
+# `points`, decomposed and in canonical order, composed canonically: each
+# mark composed with the last starter before it where nothing between blocks
+# it, by UAX #15's canonical composition algorithm.
+function composed(points: [i64] lent) -> [i64]
+    out: [i64] @= []
+
+    # Where the last starter stands in `out`, -1 before the first.
+    starter: i64 @= -1
+
+    # The class of the last code point kept since that starter, -1 where none
+    # was kept.
+    last_class: i64 @= -1
+
+    for point in points
+        rank = lookup.combining_class(point)
+
+        joined: i64? = if starter >= 0 && (last_class == -1 || last_class != 0 && last_class < rank)
+            lookup.composite(first: out[starter], second: point)
+        else
+            fail(code: "not_found", msg: "blocked")
+
+        match joined
+            .ok together => out[starter] @ together
+            .err _ =>
+                if rank == 0
+                    starter @ out.len()
+                    last_class @ -1
+                else
+                    last_class @ rank
+                out @ out.push(point)
+
+    return out
+
+# `points` in the normal form asked: composed where `compose`, by the
+# compatibility mappings too where `compat`.
+function normalized(points: [i64] lent, compose: bool, compat: bool) -> [i64]
+    apart = decomposed(points, compat: compat)
+
+    if compose
+        return composed(apart)
+    return apart
+
+# UAX #15's quick check of `points` for the form asked: `lookup.QUICK_YES`,
+# `QUICK_MAYBE` or `QUICK_NO`. A mark out of canonical order answers no; a
+# code point the form never holds answers no; one that may compose with what
+# is before it answers maybe, unless a no follows.
+function quick_check(points: [i64] lent, compose: bool, compat: bool) -> i64
+    answer: i64 @= lookup.QUICK_YES
+    last_class: i64 @= 0
+
+    for point in points
+        if point < 0xa0
+            last_class @ 0
+            continue
+        rank = lookup.combining_class(point)
+
+        if rank != 0 && last_class > rank
+            return lookup.QUICK_NO
+
+        found = if compose
+            lookup.composed_quick(n: point, compat: compat)
+        else
+            lookup.decomposed_quick(n: point, compat: compat)
+
+        if found == lookup.QUICK_NO
+            return lookup.QUICK_NO
+
+        if found == lookup.QUICK_MAYBE
+            answer @ lookup.QUICK_MAYBE
+        last_class @ rank
+
+    return answer
+
+# Whether `points` are in the form asked: the quick check, and where it
+# answers maybe, the form made and compared.
+function is_normalized(points: [i64] lent, compose: bool, compat: bool) -> bool
+    quick = quick_check(points, compose: compose, compat: compat)
+
+    if quick == lookup.QUICK_MAYBE
+        return normalized(points, compose: compose, compat: compat) == points
+    return quick == lookup.QUICK_YES
+
+# `s` in the normal form asked, `s` itself where the quick check says it is
+# in that form already.
+function normalized_text(s: str, compose: bool, compat: bool) -> str
+    points = unicode.code_points(s)
+
+    if quick_check(points, compose: compose, compat: compat) == lookup.QUICK_YES
+        return s
+    return unicode.from_code_points(normalized(points, compose: compose, compat: compat)).must()
+
+## Tests
+
+# Python 3.15.2's `unicodedata.normalize`, observed 2026-11-17, answers each.
+test "decomposed: nothing, a letter, a precomposed letter, a ligature, a syllable, and two marks put in order"
+    assert decomposed([], compat: false) == []
+    assert decomposed(['a'], compat: false) == ['a']
+    assert decomposed([0xe9], compat: false) == [0x65, 0x301]
+    assert decomposed([0xfb01], compat: false) == [0xfb01]
+    assert decomposed([0xfb01], compat: true) == [0x66, 0x69]
+    assert decomposed([0xd7a3], compat: false) == [0x1112, 0x1175, 0x11c2]
+    assert decomposed([0x61, 0x301, 0x323], compat: false) == [0x61, 0x323, 0x301]
+    assert decomposed([0x1e9b, 0x323], compat: false) == [0x17f, 0x323, 0x307]
+    assert decomposed([0x1e9b, 0x323], compat: true) == [0x73, 0x323, 0x307]
+
+# Python 3.15.2's `unicodedata.normalize("NFC", ...)`, observed 2026-11-17.
+test "composed: a mark after its letter, a mark blocked by one of its class, jamo, a lone mark, and two starters"
+    assert composed([]) == []
+    assert composed([0x65, 0x301]) == [0xe9]
+    assert composed([0x61, 0x323, 0x302]) == [0x1ead]
+    assert composed([0x61, 0x301, 0x301]) == [0xe1, 0x301]
+    assert composed([0x1100, 0x1161, 0x11a8]) == [0xac01]
+    assert composed([0x301, 0x65]) == [0x301, 0x65]
+    assert composed([0x65, 0x65]) == [0x65, 0x65]
+    assert normalized([0x1e9b, 0x323], compose: true, compat: false) == [0x1e9b, 0x323]
+    assert normalized([0x1e9b, 0x323], compose: true, compat: true) == [0x1e69]
+
+# Each answer is UAX #15's, held to `is_normalized` of Python 3.15.2.
+test "quick_check: nothing, ASCII, a mark that may compose, marks out of order, and an excluded character"
+    assert quick_check([], compose: true, compat: false) == lookup.QUICK_YES
+    assert quick_check(['a', 'b'], compose: true, compat: true) == lookup.QUICK_YES
+    assert quick_check([0x65, 0x301], compose: true, compat: false) == lookup.QUICK_MAYBE
+    assert quick_check([0x61, 0x301, 0x323], compose: false, compat: false) == lookup.QUICK_NO
+    assert quick_check([0x958], compose: true, compat: false) == lookup.QUICK_NO
+    assert quick_check([0xe9], compose: false, compat: false) == lookup.QUICK_NO
+    assert quick_check([0xe9], compose: true, compat: false) == lookup.QUICK_YES
+    assert quick_check([0xa0], compose: true, compat: true) == lookup.QUICK_NO
+    assert quick_check([0x9f, 0x7f], compose: false, compat: true) == lookup.QUICK_YES
+
+# Python 3.15.2's `unicodedata.normalize`, observed 2026-11-17.
+test "normalized_text: ASCII as it is, a text to compose, and the empty text"
+    assert normalized_text("plain", compose: true, compat: true) == "plain"
+    assert normalized_text(unicode.from_code_points([0x65, 0x301]).must(), compose: true, compat: false) == "é"
+    assert normalized_text("", compose: false, compat: false) == ""
+
+test "is_normalized: a maybe settled each way"
+    assert !is_normalized([0x65, 0x301], compose: true, compat: false)
+    assert is_normalized([0x61, 0x301], compose: true, compat: false) == false
+    assert is_normalized([0x3b1, 0x313], compose: true, compat: false) == false
+    assert is_normalized([0x1e9b, 0x323], compose: true, compat: false)
+    assert is_normalized([], compose: true, compat: true)

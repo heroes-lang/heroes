@@ -1,0 +1,620 @@
+# jq's dates, in UTC: `gmtime`, `mktime`, `strftime` and `strptime`, with
+# jq's broken-down time, the list `[year, month from 0, day, hours, minutes,
+# seconds, weekday from Sunday 0, day of the year from 0]`. The calendar is
+# the proleptic Gregorian one, computed with no table and no clock. The local
+# forms, `localtime` and `strflocaltime`, read the zone as UTC: a filter has
+# no zone of its own here.
+
+use json
+use json/jq/internal/values
+
+# The month names, from January.
+function month_names() -> [str]
+    return [
+        "January"
+        "February"
+        "March"
+        "April"
+        "May"
+        "June"
+        "July"
+        "August"
+        "September"
+        "October"
+        "November"
+        "December"
+    ]
+
+# The day names, from Sunday.
+function day_names() -> [str]
+    return ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+
+# The days from 1970-01-01 to the civil date `y`-`m`-`d`, `m` from 1.
+function days_from_civil(y: i64, m: i64, d: i64) -> i64
+    year = if m <= 2
+        y - 1
+    else
+        y
+
+    era = if year >= 0
+        year / 400
+    else
+        (year - 399) / 400
+    yoe = year - era * 400
+
+    shifted = if m > 2
+        m - 3
+    else
+        m + 9
+    doy = (153 * shifted + 2) / 5 + d - 1
+    doe = yoe * 365 + yoe / 4 - yoe / 100 + doy
+    return era * 146097 + doe - 719468
+
+# A civil date: the year, the month from 1, the day.
+record Civil
+    # The year.
+    year: i64
+    # The month, 1 to 12.
+    month: i64
+    # The day of the month, 1 to 31.
+    day: i64
+
+# The civil date `days` after 1970-01-01.
+function civil_from_days(days: i64) -> Civil
+    z = days + 719468
+
+    era = if z >= 0
+        z / 146097
+    else
+        (z - 146096) / 146097
+    doe = z - era * 146097
+    yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365
+    doy = doe - (365 * yoe + yoe / 4 - yoe / 100)
+    mp = (5 * doy + 2) / 153
+    d = doy - (153 * mp + 2) / 5 + 1
+
+    m = if mp < 10
+        mp + 3
+    else
+        mp - 9
+
+    y = if m <= 2
+        yoe + era * 400 + 1
+    else
+        yoe + era * 400
+    return Civil(year: y, month: m, day: d)
+
+# Whether `y` is a leap year.
+function is_leap(y: i64) -> bool
+    return y % 4 == 0 && y % 100 != 0 || y % 400 == 0
+
+# jq's `gmtime`: the broken-down time of `v` seconds after the epoch.
+function gmtime(v: json.Value) -> json.Value?
+    match v
+        .number n =>
+            if n.v != n.v || n.v > 253402300799.0 || n.v < -62135596800.0
+                return values.raised("gmtime() requires a number in the range of years 1 to 9999")
+            whole: f64 @= n.v - n.v % 1.0
+
+            if n.v < 0.0 && whole != n.v
+                whole @ whole - 1.0
+            fraction = n.v - whole
+            seconds = whole.to_i64().must()
+            days: i64 @= seconds / 86400
+            rest: i64 @= seconds % 86400
+
+            if rest < 0
+                rest @ rest + 86400
+                days @ days - 1
+            c = civil_from_days(days)
+            weekday = (days % 7 + 11) % 7
+            yday = days - days_from_civil(y: c.year, m: 1, d: 1)
+            return ok(
+                .list(items: [num(c.year), num(c.month - 1), num(c.day), num(rest / 3600), num(rest % 3600 / 60), .number(v: to_f64(rest % 60) + fraction), num(weekday), num(yday)])
+            )
+        .null_value | .boolean _ | .text _ | .list _ | .object _ => return values.raised("gmtime() requires a number")
+
+# `n` as a number value.
+function num(n: i64) -> json.Value
+    return .number(v: to_f64(n))
+
+# The fields of a broken-down time, as integers, the seconds' fraction cut.
+record Broken
+    # The year.
+    year: i64
+    # The month, 0 to 11.
+    month: i64
+    # The day of the month.
+    day: i64
+    # The hours.
+    hours: i64
+    # The minutes.
+    minutes: i64
+    # The seconds.
+    seconds: i64
+    # The seconds as given, the fraction kept.
+    exact: f64
+
+# The broken-down time `v` holds, failing with `who`'s message where it holds
+# none.
+function broken_of(v: json.Value, who: str) -> Broken?
+    match v
+        .list l =>
+            if l.items.len() < 6
+                return values.raised(f"{who} requires array of 6 numbers")
+            fields: [f64] @= []
+
+            for i in range(from: 0, to: 6)
+                match l.items[i]
+                    .number n =>
+                        if n.v != n.v || n.v > 1000000000000.0 || n.v < -1000000000000.0
+                            return values.raised(f"{who} requires parsed datetime inputs")
+                        fields @ fields.push(n.v)
+                    .null_value | .boolean _ | .text _ | .list _ | .object _ =>
+                        return values.raised(f"{who} requires parsed datetime inputs")
+
+            return ok(
+                Broken(year: fields[0].to_i64().must(), month: fields[1].to_i64().must(), day: fields[2].to_i64().must(), hours: fields[3].to_i64().must(), minutes: fields[4].to_i64().must(), seconds: fields[5].to_i64().must(), exact: fields[5])
+            )
+        .null_value | .boolean _ | .number _ | .text _ | .object _ =>
+            return values.raised(f"{who} requires array of 6 numbers")
+
+# The seconds after the epoch of the broken-down time `b`, the month and the
+# fields past their ranges carried, as C's `timegm` carries them.
+function seconds_of(b: Broken) -> i64
+    months = b.year * 12 + b.month
+
+    year = if months >= 0
+        months / 12
+    else
+        (months - 11) / 12
+    month = months - year * 12
+    days = days_from_civil(y: year, m: month + 1, d: 1) + b.day - 1
+    return days * 86400 + b.hours * 3600 + b.minutes * 60 + b.seconds
+
+# jq's `mktime`.
+function mktime(v: json.Value) -> json.Value?
+    b = broken_of(v, who: "mktime")?
+    return ok(num(seconds_of(b)))
+
+# `n` written with at least `width` digits, zeros before it.
+function padded(n: i64, width: i64) -> str
+    text_digits: str @= f"{n}"
+    negative = n < 0
+
+    if negative
+        text_digits @ f"{0 - n}"
+
+    while text_digits.len() < width
+        text_digits @ "0" + text_digits
+
+    if negative
+        return "-" + text_digits
+    return text_digits
+
+# jq's `strftime`: the broken-down time `v`, or a number of seconds, written
+# as `format` says.
+function strftime(v: json.Value, format: json.Value) -> json.Value?
+    fmt = match format
+        .text t                                                    => t.v
+        .null_value | .boolean _ | .number _ | .list _ | .object _ => ""
+
+    match format
+        .text _ => _ = 0
+        .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+            return values.raised("strftime/1 requires a string format")
+
+    time: json.Value @= v
+
+    match v
+        .number _                                                => time @ gmtime(v)?
+        .null_value | .boolean _ | .text _ | .list _ | .object _ => time @ v
+
+    b = broken_of(time, who: "strftime/1")?
+    seconds = seconds_of(b)
+    days: i64 @= seconds / 86400
+
+    if seconds % 86400 < 0
+        days @ days - 1
+    c = civil_from_days(days)
+    weekday = (days % 7 + 11) % 7
+    yday = days - days_from_civil(y: c.year, m: 1, d: 1)
+    rest: i64 @= seconds % 86400
+
+    if rest < 0
+        rest @ rest + 86400
+    hours = rest / 3600
+    minutes = rest % 3600 / 60
+    secs = rest % 60
+
+    hours12 = if hours % 12 == 0
+        12
+    else
+        hours % 12
+    pieces: [str] @= []
+    at: i64 @= 0
+
+    while at < fmt.len()
+        if fmt[at] != '%' || at + 1 >= fmt.len()
+            start = at
+            at @ at + 1
+
+            while at < fmt.len() && fmt[at] != '%'
+                at @ at + 1
+
+            pieces @ pieces.push(fmt.slice(from: start, to: at))
+        else
+            spec = fmt.slice(from: at + 1, to: at + 2)
+            at @ at + 2
+
+            piece = match spec
+                "Y" => f"{c.year}"
+                "C" => padded(n: c.year / 100, width: 2)
+                "y" => padded(n: c.year % 100, width: 2)
+                "m" => padded(n: c.month, width: 2)
+                "d" => padded(n: c.day, width: 2)
+                "e" =>
+                    if c.day < 10
+                        f" {c.day}"
+                    else
+                        f"{c.day}"
+                "H" => padded(n: hours, width: 2)
+                "I" => padded(n: hours12, width: 2)
+                "M" => padded(n: minutes, width: 2)
+                "S" => padded(n: secs, width: 2)
+                "j" => padded(n: yday + 1, width: 3)
+                "a" => day_names()[weekday].slice(from: 0, to: 3)
+                "A" => day_names()[weekday]
+                "b" => month_names()[c.month - 1].slice(from: 0, to: 3)
+                "h" => month_names()[c.month - 1].slice(from: 0, to: 3)
+                "B" => month_names()[c.month - 1]
+                "p" =>
+                    if hours < 12
+                        "AM"
+                    else
+                        "PM"
+                "Z" => "UTC"
+                "z" => "+0000"
+                "s" => f"{seconds}"
+                "u" =>
+                    if weekday == 0
+                        "7"
+                    else
+                        f"{weekday}"
+                "w" => f"{weekday}"
+                "U" => padded(n: (yday + 7 - weekday) / 7, width: 2)
+                "W" => padded(n: (yday + 7 - (weekday + 6) % 7) / 7, width: 2)
+                "G" => f"{iso_year(year: c.year, yday: yday, weekday: weekday)}"
+                "g" => padded(n: iso_year(year: c.year, yday: yday, weekday: weekday) % 100, width: 2)
+                "V" => padded(n: iso_week(year: c.year, yday: yday, weekday: weekday), width: 2)
+                "T" => padded(n: hours, width: 2) + ":" + padded(n: minutes, width: 2) + ":" + padded(n: secs, width: 2)
+                "R" => padded(n: hours, width: 2) + ":" + padded(n: minutes, width: 2)
+                "r" => padded(n: hours12, width: 2) + ":" + padded(n: minutes, width: 2) + ":" + padded(n: secs, width: 2) + " " + ampm(hours)
+                "D" => padded(n: c.month, width: 2) + "/" + padded(n: c.day, width: 2) + "/" + padded(n: c.year % 100, width: 2)
+                "F" => f"{c.year}-" + padded(n: c.month, width: 2) + "-" + padded(n: c.day, width: 2)
+                "c" =>
+                    short_day = day_names()[weekday].slice(from: 0, to: 3)
+                    short_month = month_names()[c.month - 1].slice(from: 0, to: 3)
+
+                    day = if c.day < 10
+                        f" {c.day}"
+                    else
+                        f"{c.day}"
+                    f"{short_day} {short_month} {day} " + padded(n: hours, width: 2) + ":" + padded(n: minutes, width: 2) + ":" + padded(n: secs, width: 2) + f" {c.year}"
+                "x" => padded(n: c.month, width: 2) + "/" + padded(n: c.day, width: 2) + "/" + padded(n: c.year % 100, width: 2)
+                "X" => padded(n: hours, width: 2) + ":" + padded(n: minutes, width: 2) + ":" + padded(n: secs, width: 2)
+                "n" => "\n"
+                "t" => "\t"
+                "%" => "%"
+                _   => "%" + spec
+
+            pieces @ pieces.push(piece)
+
+    return ok(.text(v: pieces.join("")))
+
+# jq's `strflocaltime`: `strftime` with the zone read as UTC, and its own
+# message.
+function strflocaltime(v: json.Value, format: json.Value) -> json.Value?
+    match strftime(v: v, format: format)
+        .ok t  => return ok(t)
+        .err e => return values.raised(as_local(e.msg))
+
+# A message of `strftime` given as `strflocaltime`'s.
+function as_local(msg: str) -> str
+    if msg.len() >= 11 && msg.slice(from: 0, to: 11) == "strftime/1 "
+        return "strflocaltime/1 " + msg.slice(from: 11, to: msg.len())
+    return msg
+
+# `AM` or `PM`.
+function ampm(hours: i64) -> str
+    if hours < 12
+        return "AM"
+    return "PM"
+
+# The ISO 8601 week of the year, 1 to 53.
+function iso_week(year: i64, yday: i64, weekday: i64) -> i64
+    monday_based = (weekday + 6) % 7
+    week = (yday - monday_based + 10) / 7
+
+    if week < 1
+        last = if is_leap(year - 1)
+            365
+        else
+            364
+        return iso_week(year: year - 1, yday: yday + last + 1, weekday: weekday)
+
+    days_in = if is_leap(year)
+        366
+    else
+        365
+
+    if week == 53 && days_in - yday <= 3 - monday_based
+        return 1
+    return week
+
+# The ISO 8601 year the week of a date belongs to.
+function iso_year(year: i64, yday: i64, weekday: i64) -> i64
+    monday_based = (weekday + 6) % 7
+    week = (yday - monday_based + 10) / 7
+
+    if week < 1
+        return year - 1
+
+    days_in = if is_leap(year)
+        366
+    else
+        365
+
+    if week == 53 && days_in - yday <= 3 - monday_based
+        return year + 1
+    return year
+
+# Where a reading of `strptime` stands.
+record Reading
+    # The text read.
+    s: str
+    # The byte it stands at.
+    at: i64
+
+# The digits at the reading, at most `most` of them, a sign allowed where
+# `signed`.
+function digits(@r: Reading, most: i64, signed: bool) -> i64?
+    negative: bool @= false
+
+    if signed && r.at < r.s.len() && (r.s[r.at] == '-' || r.s[r.at] == '+')
+        negative @ r.s[r.at] == '-'
+        r.at @ r.at + 1
+    start = r.at
+    value: i64 @= 0
+
+    while r.at < r.s.len() && r.at - start < most && r.s[r.at] >= '0' && r.s[r.at] <= '9'
+        value @ value * 10 + to_i64(r.s[r.at] - '0').must()
+        r.at @ r.at + 1
+
+    if r.at == start
+        return values.raised("no digits")
+
+    if negative
+        return ok(0 - value)
+    return ok(value)
+
+# The name at the reading among `names`, whole or its first three letters,
+# answering its index.
+function named(@r: Reading, names: [str]) -> i64?
+    for i in range(from: 0, to: names.len())
+        for candidate in [names[i], names[i].slice(from: 0, to: 3)]
+            if r.at + candidate.len() <= r.s.len() && lower(r.s.slice(from: r.at, to: r.at + candidate.len())) == lower(candidate)
+                r.at @ r.at + candidate.len()
+                return ok(i)
+
+    return values.raised("no name")
+
+# `s` with its ASCII letters in lower case.
+function lower(s: str) -> str
+    out: [u8] @= []
+
+    for i in range(from: 0, to: s.len())
+        c = s[i]
+
+        if c >= 'A' && c <= 'Z'
+            out @ out.push(c + 32)
+        else
+            out @ out.push(c)
+
+    return out.validated_bytes().must()
+
+# jq's `strptime`: the broken-down time `v` holds as `format` says, the
+# weekday and the day of the year computed.
+function strptime(v: json.Value, format: json.Value) -> json.Value?
+    s = match v
+        .text t                                                    => t.v
+        .null_value | .boolean _ | .number _ | .list _ | .object _ => ""
+
+    match v
+        .text _ => _ = 0
+        .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+            return values.raised(f"strptime/1 requires string inputs and arguments")
+
+    fmt = match format
+        .text t                                                    => t.v
+        .null_value | .boolean _ | .number _ | .list _ | .object _ => ""
+
+    r: Reading @= Reading(s: s, at: 0)
+    b: Broken @= Broken(year: 1900, month: 0, day: 1, hours: 0, minutes: 0, seconds: 0, exact: 0.0)
+    pm: i64 @= -1
+    epoch: i64 @= 0
+    has_epoch: bool @= false
+    offset: i64 @= 0
+    at: i64 @= 0
+    refused = f"date \"{s}\" does not match format \"{fmt}\""
+
+    while at < fmt.len()
+        c = fmt[at]
+
+        if c == ' ' || c == '\t' || c == '\n'
+            while r.at < s.len() && (s[r.at] == ' ' || s[r.at] == '\t' || s[r.at] == '\n')
+                r.at @ r.at + 1
+
+            at @ at + 1
+        else if c != '%' || at + 1 >= fmt.len()
+            if r.at >= s.len() || s[r.at] != c
+                return values.raised(refused)
+            r.at @ r.at + 1
+            at @ at + 1
+        else
+            spec = fmt.slice(from: at + 1, to: at + 2)
+            at @ at + 2
+            read: ()? @= ok()
+
+            if spec == "Y"
+                match digits(@r, most: 4, signed: true)
+                    .ok n  => b.year @ n
+                    .err e => read @ fail(code: e.code, msg: e.msg)
+            else if spec == "m"
+                match digits(@r, most: 2, signed: false)
+                    .ok n  => b.month @ n - 1
+                    .err e => read @ fail(code: e.code, msg: e.msg)
+            else if spec == "d" || spec == "e"
+                while r.at < s.len() && s[r.at] == ' '
+                    r.at @ r.at + 1
+
+                match digits(@r, most: 2, signed: false)
+                    .ok n  => b.day @ n
+                    .err e => read @ fail(code: e.code, msg: e.msg)
+            else if spec == "H"
+                match digits(@r, most: 2, signed: false)
+                    .ok n  => b.hours @ n
+                    .err e => read @ fail(code: e.code, msg: e.msg)
+            else if spec == "I"
+                match digits(@r, most: 2, signed: false)
+                    .ok n  => b.hours @ n % 12
+                    .err e => read @ fail(code: e.code, msg: e.msg)
+            else if spec == "M"
+                match digits(@r, most: 2, signed: false)
+                    .ok n  => b.minutes @ n
+                    .err e => read @ fail(code: e.code, msg: e.msg)
+            else if spec == "S"
+                match digits(@r, most: 2, signed: false)
+                    .ok n  => b.seconds @ n
+                    .err e => read @ fail(code: e.code, msg: e.msg)
+            else if spec == "y"
+                match digits(@r, most: 2, signed: false)
+                    .ok n =>
+                        b.year @ if n < 69
+                            2000 + n
+                        else
+                            1900 + n
+                    .err e => read @ fail(code: e.code, msg: e.msg)
+            else if spec == "j"
+                match digits(@r, most: 3, signed: false)
+                    .ok n =>
+                        b.month @ 0
+                        b.day @ n
+                    .err e => read @ fail(code: e.code, msg: e.msg)
+            else if spec == "s"
+                match digits(@r, most: 19, signed: true)
+                    .ok n =>
+                        epoch @ n
+                        has_epoch @ true
+                    .err e => read @ fail(code: e.code, msg: e.msg)
+            else if spec == "b" || spec == "B" || spec == "h"
+                match named(@r, names: month_names())
+                    .ok n  => b.month @ n
+                    .err e => read @ fail(code: e.code, msg: e.msg)
+            else if spec == "a" || spec == "A"
+                match named(@r, names: day_names())
+                    .ok _  => read @ ok()
+                    .err e => read @ fail(code: e.code, msg: e.msg)
+            else if spec == "p"
+                match named(@r, names: ["AM", "PM"])
+                    .ok n  => pm @ n
+                    .err e => read @ fail(code: e.code, msg: e.msg)
+            else if spec == "Z"
+                while r.at < s.len() && (s[r.at] >= 'A' && s[r.at] <= 'Z' || s[r.at] >= 'a' && s[r.at] <= 'z')
+                    r.at @ r.at + 1
+            else if spec == "z"
+                if r.at < s.len() && (s[r.at] == 'Z' || s[r.at] == 'z')
+                    r.at @ r.at + 1
+                else
+                    match digits(@r, most: 4, signed: true)
+                        .ok n =>
+                            magnitude = if n < 0
+                                0 - n
+                            else
+                                n
+
+                            sign = if n < 0
+                                -1
+                            else
+                                1
+                            offset @ sign * (magnitude / 100 * 3600 + magnitude % 100 * 60)
+                        .err e => read @ fail(code: e.code, msg: e.msg)
+            else if spec == "T"
+                match digits(@r, most: 2, signed: false)
+                    .ok n  => b.hours @ n
+                    .err e => read @ fail(code: e.code, msg: e.msg)
+
+                if !read.is_err() && r.at < s.len() && s[r.at] == ':'
+                    r.at @ r.at + 1
+
+                    match digits(@r, most: 2, signed: false)
+                        .ok n  => b.minutes @ n
+                        .err e => read @ fail(code: e.code, msg: e.msg)
+                else
+                    read @ values.raised(refused)
+
+                if !read.is_err() && r.at < s.len() && s[r.at] == ':'
+                    r.at @ r.at + 1
+
+                    match digits(@r, most: 2, signed: false)
+                        .ok n  => b.seconds @ n
+                        .err e => read @ fail(code: e.code, msg: e.msg)
+                else
+                    read @ values.raised(refused)
+            else if spec == "%"
+                if r.at < s.len() && s[r.at] == '%'
+                    r.at @ r.at + 1
+                else
+                    read @ values.raised(refused)
+            else
+                return values.raised(f"strptime/1 does not read the conversion %{spec}")
+
+            if read.is_err()
+                return values.raised(refused)
+
+    if r.at != s.len()
+        return values.raised(refused)
+
+    if pm == 1
+        b.hours @ b.hours + 12
+    seconds: i64 @= seconds_of(b) - offset
+
+    if has_epoch
+        seconds @ epoch
+    return gmtime(num(seconds))
+
+## Tests
+
+test "days_from_civil and civil_from_days: the epoch, a leap day, before the epoch"
+    assert days_from_civil(y: 1970, m: 1, d: 1) == 0
+    assert days_from_civil(y: 2000, m: 3, d: 1) == 11017
+    c = civil_from_days(-1)
+    assert c.year == 1969 && c.month == 12 && c.day == 31
+    leap = civil_from_days(days_from_civil(y: 2024, m: 2, d: 29))
+    assert leap.month == 2 && leap.day == 29
+
+test "gmtime and mktime: jq's manual's instant, a fraction, back again"
+    got = gmtime(.number(v: 1425599621.0)).must()
+    assert json.format(got).must() == "[2015,2,5,23,53,41,4,63]"
+    assert json.format(mktime(got).must()).must() == "1425599621"
+
+test "strftime and strptime: ISO 8601 both ways, and a date refused"
+    text = strftime(v: .number(v: 1425599621.0), format: .text(v: "%Y-%m-%dT%H:%M:%SZ")).must()
+    assert values.equal(a: text, b: .text(v: "2015-03-05T23:53:41Z"))
+    parsed = strptime(v: text, format: .text(v: "%Y-%m-%dT%H:%M:%SZ")).must()
+    assert json.format(parsed).must() == "[2015,2,5,23,53,41,4,63]"
+    assert strptime(v: .text(v: "2015-03"), format: .text(v: "%Y-%m-%d")).is_err()
+
+test "strftime: names, the day of the year, the week and a literal percent"
+    text = strftime(v: .number(v: 1425599621.0), format: .text(v: "%a %A %b %B %j %e %p %% %V %G")).must()
+    assert values.equal(a: text, b: .text(v: "Thu Thursday Mar March 064  5 PM % 10 2015"))

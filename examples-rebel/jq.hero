@@ -1,0 +1,269 @@
+# A small jq written with Rebel's `json/jq`: a filter run over the values of
+# files, or of the standard input where no file is named, each value's
+# outputs written one a line. `--yaml` reads the input as YAML documents and
+# `--toml` as one TOML document, both read into a `json.Value` by their own
+# packages, so the same filter reads all three, as yq does.
+#
+#     heroes run examples-rebel/jq.hero -- '.albums[] | .title' albums.json
+#     heroes run examples-rebel/jq.hero -- --yaml -r '.name' config.yaml
+#
+# Options, before the filter: `-c` one line a value, `-r` a text written
+# raw, `-n` the filter run once on `null`, `-s` every value read into one
+# list, `--arg name text` and `--argjson name json` a variable, `--yaml` and
+# `--toml` the input's format. `$ENV` reads the process's environment and
+# `now` the clock. The exit code is jq's: 5 where an error ends a run, 2 where
+# a file or an option is refused, a halt's own code where it halts.
+
+use <rebel>/io
+use <rebel>/json
+use <rebel>/json/jq
+use <rebel>/os
+use <rebel>/time
+use <rebel>/toml
+use <rebel>/yaml
+
+# What the command line asks.
+record Asked
+    # The filter's text.
+    filter: str
+    # The files to read, none for the standard input.
+    files: [str]
+    # Whether each value is written on one line.
+    compact: bool
+    # Whether a text is written raw, without quotes.
+    raw: bool
+    # Whether the filter runs once on `null`.
+    null_input: bool
+    # Whether the values read are run as one list.
+    slurp: bool
+    # `json`, `yaml` or `toml`.
+    format: str
+    # The variables `--arg` and `--argjson` give.
+    variables: {str: json.Value}
+
+# The command line read: the options anywhere, the first other word the
+# filter and the rest the files.
+#
+# - `given`: the arguments after the program's name.
+#
+# Fails `invalid` where an option is unknown, lacks its value, or no filter
+# is given.
+function asked_of(given: [str]) -> Asked?
+    a: Asked @= Asked(
+        filter: "",
+        files: [],
+        compact: false,
+        raw: false,
+        null_input: false,
+        slurp: false,
+        format: "json",
+        variables: {}
+    )
+    at: i64 @= 0
+    have_filter: bool @= false
+
+    while at < given.len()
+        word = given[at]
+
+        if word == "-c"
+            a.compact @ true
+        else if word == "-r"
+            a.raw @ true
+        else if word == "-n"
+            a.null_input @ true
+        else if word == "-s"
+            a.slurp @ true
+        else if word == "--yaml"
+            a.format @ "yaml"
+        else if word == "--toml"
+            a.format @ "toml"
+        else if word == "--arg" || word == "--argjson"
+            if at + 2 >= given.len()
+                return fail(code: "invalid", msg: f"{word} takes a name and a value")
+
+            value: json.Value = if word == "--arg"
+                .text(v: given[at + 2])
+            else
+                json.parse(given[at + 2])?
+            a.variables[given[at + 1]] @ value
+            at @ at + 2
+        else if word.len() > 1 && word[0] == '-'
+            return fail(code: "invalid", msg: f"unknown option {word}")
+        else if have_filter
+            a.files @ with_file(a.files, file: word)
+        else
+            a.filter @ word
+            have_filter @ true
+        at @ at + 1
+
+    if !have_filter
+        return fail(
+            code: "invalid",
+            msg: "usage: jq [-c] [-r] [-n] [-s] [--yaml|--toml] [--arg n v] [--argjson n j] FILTER [FILE...]"
+        )
+    return ok(a)
+
+# `files` with `file` after them.
+function with_file(files: [str], file: str) -> [str]
+    out: [str] @= files
+    out @ out.push(file)
+    return out
+
+# The values a text holds in `format`.
+function values_of(text: str, format: str) -> [json.Value]?
+    if format == "yaml"
+        return yaml.parse_all(text)
+
+    if format == "toml"
+        return ok([toml.to_json(toml.parse(text)?)?])
+    out: [json.Value] @= []
+    at: i64 @= 0
+    options: json.ParseOptions @= json.strict()
+    options.max_depth @ 10000
+    options.duplicate_keys @ true
+
+    while at < text.len() && !blank_from(text, at: at)
+        parsed = json.parse_next(text, from: at, options: options)?
+        out @ out.push(parsed.value)
+        at @ parsed.next
+
+    return ok(out)
+
+# Whether `text` holds nothing but white space from byte `at` on.
+function blank_from(text: str, at: i64) -> bool
+    for i in range(from: at, to: text.len())
+        c = text[i]
+
+        if c != ' ' && c != '\t' && c != '\n' && c != '\r'
+            return false
+
+    return true
+
+# Every value the files or the standard input hold.
+function read_inputs(a: Asked) -> [json.Value]?
+    if a.files.len() == 0
+        return values_of(text: io.read_all_text(io.stdin())?, format: a.format)
+    out: [json.Value] @= []
+
+    for file in a.files
+        for v in values_of(text: read_file(file)?, format: a.format)?
+            out @ out.push(v)
+
+    return ok(out)
+
+# The process's environment as `$ENV` reads it.
+function environment() -> {str: json.Value}
+    out: {str: json.Value} @= {}
+
+    match os.env_all()
+        .ok found =>
+            for name in keys(found)
+                out[name] @ .text(v: found[name].must())
+        .err _ => _ = 0
+
+    return out
+
+# Writes `text` to the standard error; a standard error that is closed is
+# told nothing, having nowhere to be told.
+function warn(text: str)
+    _ = io.write_text(io.stderr(), text: text).is_err()
+
+# `v` written as `a` asks.
+function shown(v: json.Value, a: Asked) -> str
+    if a.raw
+        match v
+            .text t                                                    => return t.v
+            .null_value | .boolean _ | .number _ | .list _ | .object _ => _ = 0
+
+    if a.compact
+        return jq.format_value(v)
+    return jq.format_value_indented(v, width: 2)
+
+# Runs the filter on each of `runs` in turn, the values after it given to
+# `input`, or on `first` alone with every value given to `input` where
+# `once`; writes every output and answers the exit code.
+function run_all(program: jq.Program, runs: [json.Value], once: bool, first: json.Value, a: Asked) -> i64
+    options: jq.Options @= jq.defaults()
+    options.variables @ a.variables
+    options.environment @ environment()
+
+    options.now @ match time.now()
+        .ok t  => to_f64(time.unix_milliseconds(t)) / 1000.0
+        .err _ => 0.0
+
+    code: i64 @= 0
+    next: i64 @= 0
+
+    count = if once
+        1
+    else
+        runs.len()
+
+    while next < count
+        options.inputs @ if once
+            runs
+        else
+            runs.slice(from: next + 1, to: runs.len())
+
+        input = if once
+            first
+        else
+            runs[next]
+        outcome = jq.run_with(program, input: input, options: options)
+
+        for v in outcome.outputs
+            print(shown(v, a: a))
+
+        for message in outcome.messages
+            warn(jq.format_value(message) + "\n")
+
+        match outcome.ending
+            .finished => _ = 0
+            .raised r =>
+                warn(f"jq: error: {r.message}\n")
+                code @ 5
+            .limited l =>
+                warn(f"jq: stopped: {l.message}\n")
+                code @ 5
+            .halted h =>
+                match h.value
+                    .text t     => warn(t.v)
+                    .null_value => _ = 0
+                    .boolean _ | .number _ | .list _ | .object _ =>
+                        warn(jq.format_value(h.value) + "\n")
+
+                return h.code
+
+        # What `input` read is not run as a value of its own.
+        next @ next + 1 + outcome.read
+
+    return code
+
+function main()
+    match asked_of(args())
+        .err e =>
+            print(f"jq: {e.msg}")
+            exit(code: 2)
+        .ok a =>
+            program = match jq.parse(a.filter)
+                .ok p => p
+                .err e =>
+                    print(f"jq: error: {e.msg}")
+                    exit(code: 3)
+
+            read: [json.Value] @= []
+
+            # With `-n` and no file, the standard input is not waited for.
+            if !a.null_input || a.slurp || a.files.len() > 0
+                match read_inputs(a)
+                    .ok values => read @ values
+                    .err e =>
+                        print(f"jq: error reading the input: {e.msg}")
+                        exit(code: 2)
+
+            if a.slurp
+                exit(code: run_all(program, runs: [], once: true, first: .list(items: read), a: a))
+            else if a.null_input
+                exit(code: run_all(program, runs: read, once: true, first: .null_value, a: a))
+            else
+                exit(code: run_all(program, runs: read, once: false, first: .null_value, a: a))

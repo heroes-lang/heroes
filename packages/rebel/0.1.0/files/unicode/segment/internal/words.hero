@@ -1,0 +1,174 @@
+# UAX #29's word boundaries: rules WB3 to WB16 read forward over a decoded
+# text, the Extend, Format and joiner characters WB4 attaches to the
+# character before them skipped by the rules that come after it, and the
+# character after the next one found in a table made backward once.
+
+use unicode
+use unicode/segment/internal/tables
+use unicode/segment/internal/text
+
+# Whether `class_now` is one WB4 attaches to the character before it.
+function is_attached(class_now: i64) -> bool
+    return class_now == tables.WB_EXTEND || class_now == tables.WB_FORMAT || class_now == tables.WB_ZWJ
+
+# Whether `class_now` ends a line for WB3a and WB3b.
+function is_newline(class_now: i64) -> bool
+    return class_now == tables.WB_NEWLINE || class_now == tables.WB_CR || class_now == tables.WB_LF
+
+# Whether `class_now` is a letter, AHLetter.
+function is_letter(class_now: i64) -> bool
+    return class_now == tables.WB_ALETTER || class_now == tables.WB_HEBREW_LETTER
+
+# Whether `class_now` may stand inside a word of letters, MidLetter or
+# MidNumLetQ.
+function is_mid_letter(class_now: i64) -> bool
+    return class_now == tables.WB_MIDLETTER || class_now == tables.WB_MIDNUMLET || class_now == tables.WB_SINGLE_QUOTE
+
+# Whether `class_now` may stand inside a number, MidNum or MidNumLetQ.
+function is_mid_number(class_now: i64) -> bool
+    return class_now == tables.WB_MIDNUM || class_now == tables.WB_MIDNUMLET || class_now == tables.WB_SINGLE_QUOTE
+
+# The class of the first character after each index that WB4 does not
+# attach, -1 past the end: entry `i` is for the characters after `i`.
+function classes_after(classes: [i64] lent) -> [i64]
+    out: [i64] @= []
+    next: i64 @= -1
+    at: i64 @= classes.len() - 1
+
+    while at >= 0
+        out @ out.push(next)
+
+        if !is_attached(classes[at])
+            next @ classes[at]
+        at @ at - 1
+
+    reversed: [i64] @= []
+    back: i64 @= out.len() - 1
+
+    while back >= 0
+        reversed @ reversed.push(out[back])
+        back @ back - 1
+
+    return reversed
+
+# The byte indices of every word boundary of `decoded`, 0 and the length
+# among them; `[0]` for the empty text.
+function boundaries(decoded: text.Decoded lent) -> [i64]
+    out: [i64] @= [0]
+    count = decoded.points.len()
+
+    if count == 0
+        return out
+    classes: [i64] @= []
+
+    for value in decoded.values
+        classes @ classes.push(text.word_of(value))
+
+    after = classes_after(classes)
+
+    # The class of the character the rules after WB4 see before the boundary,
+    # the one before it, and how many regional indicators end them in a row.
+    last: i64 @= classes[0]
+    before_last: i64 @= -1
+
+    regional: i64 @= if classes[0] == tables.WB_REGIONAL_INDICATOR
+        1
+    else
+        0
+    at: i64 @= 1
+
+    while at < count
+        left_raw = classes[at - 1]
+        right = classes[at]
+
+        joined = if left_raw == tables.WB_CR && right == tables.WB_LF
+            true
+        else if is_newline(left_raw) || is_newline(right)
+            false
+        else if left_raw == tables.WB_ZWJ && text.is_pictographic(decoded.values[at])
+            true
+        else if left_raw == tables.WB_WSEGSPACE && right == tables.WB_WSEGSPACE
+            true
+        else if is_attached(right)
+            true
+        else
+            joins_after_attached(
+                left: last,
+                before_left: before_last,
+                right: right,
+                after_right: after[at],
+                regional: regional
+            )
+
+        if !joined
+            out @ out.push(decoded.starts[at])
+
+        if !is_attached(right) || is_newline(left_raw)
+            before_last @ last
+            last @ right
+
+            regional @ if right == tables.WB_REGIONAL_INDICATOR
+                regional + 1
+            else
+                0
+        at @ at + 1
+
+    out @ out.push(decoded.starts[count])
+    return out
+
+# Rules WB5 to WB16, read over the characters WB4 leaves: `left` and
+# `before_left` the two before the boundary, `right` and `after_right` the
+# two after it, -1 where there is none, `regional` how many regional
+# indicators end the text before the boundary in a row.
+function joins_after_attached(left: i64, before_left: i64, right: i64, after_right: i64, regional: i64) -> bool
+    if is_letter(left) && is_letter(right)
+        return true
+
+    if is_letter(left) && is_mid_letter(right) && is_letter(after_right)
+        return true
+
+    if is_letter(before_left) && is_mid_letter(left) && is_letter(right)
+        return true
+
+    if left == tables.WB_HEBREW_LETTER && right == tables.WB_SINGLE_QUOTE
+        return true
+
+    if left == tables.WB_HEBREW_LETTER && right == tables.WB_DOUBLE_QUOTE && after_right == tables.WB_HEBREW_LETTER
+        return true
+
+    if before_left == tables.WB_HEBREW_LETTER && left == tables.WB_DOUBLE_QUOTE && right == tables.WB_HEBREW_LETTER
+        return true
+    numeric = tables.WB_NUMERIC
+
+    if (left == numeric || is_letter(left)) && (right == numeric || is_letter(right)) && (left == numeric || right == numeric)
+        return true
+
+    if before_left == numeric && is_mid_number(left) && right == numeric
+        return true
+
+    if left == numeric && is_mid_number(right) && after_right == numeric
+        return true
+
+    if left == tables.WB_KATAKANA && right == tables.WB_KATAKANA
+        return true
+    extend_num_let = tables.WB_EXTENDNUMLET
+
+    if (is_letter(left) || left == numeric || left == tables.WB_KATAKANA || left == extend_num_let) && right == extend_num_let
+        return true
+
+    if left == extend_num_let && (is_letter(right) || right == numeric || right == tables.WB_KATAKANA)
+        return true
+    return left == tables.WB_REGIONAL_INDICATOR && right == tables.WB_REGIONAL_INDICATOR && regional % 2 == 1
+
+## Tests
+
+# ICU 78.3's word break iterator, observed 2026-11-17, cuts each text at
+# these bytes, but the two ideographs, which its dictionary of Chinese keeps
+# as one word and UAX #29's rule WB999 cuts apart.
+test "boundaries: nothing, a greeting, an apostrophe, a decimal number, a word with a mark, and Katakana"
+    assert boundaries(text.decode("")) == [0]
+    assert boundaries(text.decode("Hello, world!")) == [0, 5, 6, 7, 12, 13]
+    assert boundaries(text.decode("can't stop")) == [0, 5, 6, 10]
+    assert boundaries(text.decode("3.14 x")) == [0, 4, 5, 6]
+    assert boundaries(text.decode(unicode.from_code_points([0x61, 0x62, 0x200d, 0x63, 0x20, 0x64]).must())) == [0, 6, 7, 8]
+    assert boundaries(text.decode("カタカナ漢字")) == [0, 12, 15, 18]

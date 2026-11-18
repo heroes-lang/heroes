@@ -1,0 +1,254 @@
+# What a JSON value is as a JSON-RPC 2.0 message: its members checked against
+# the specification's § 4 and § 5 and answered in pieces the face builds its
+# `Message` from, and a message's members written back in their order. It
+# names no type of the face, which a private module cannot reach.
+
+use json
+
+# The code of a value that is no message.
+constant INVALID: str
+    "invalid"
+
+# The largest number an id may be in either direction, as the face's
+# `MAX_EXACT_ID` says.
+constant MAX_EXACT_ID: i64
+    9007199254740991
+
+# A request's kind, as `Shape.kind` names it.
+constant REQUEST: str
+    "request"
+
+# A notification's kind.
+constant NOTIFICATION: str
+    "notification"
+
+# A successful answer's kind.
+constant RESULT: str
+    "result"
+
+# A failed answer's kind.
+constant ERROR: str
+    "error"
+
+# A message read into its pieces.
+record Shape
+    # `REQUEST`, `NOTIFICATION`, `RESULT` or `ERROR`.
+    kind: str
+    # The id as written, a number, a text or `.null_value`; `.null_value` too
+    # where there is none, which `has_id` tells.
+    id: json.Value
+    # Whether the message writes an id.
+    has_id: bool
+    # The method, "" for an answer.
+    method: str
+    # The parameters, `.null_value` where there are none.
+    params: json.Value
+    # The result, `.null_value` for anything but a `RESULT`.
+    result: json.Value
+    # The error's code, 0 for anything but an `ERROR`.
+    code: i64
+    # The error's message.
+    message: str
+    # The error's data, `.null_value` where none.
+    data: json.Value
+
+# The pieces of the message `v` writes.
+#
+# Fails `invalid` where it is no message, the reason in the message.
+function read(v: json.Value) -> Shape?
+    members = match v
+        .object o => o.members
+        .null_value | .boolean _ | .number _ | .text _ | .list _ =>
+            return fail(code: INVALID, msg: f"a message is an object, and this is {json.kind_of(v)}")
+
+    version = match members["jsonrpc"]
+        .ok got => got
+        .err _  => return fail(code: INVALID, msg: "a message holds no \"jsonrpc\" member")
+
+    if version != .text(v: "2.0")
+        return fail(code: INVALID, msg: f"\"jsonrpc\" is not \"2.0\": {json.format(version).default("a value")}")
+    has_id = !members["id"].is_err()
+    id = members["id"].default(.null_value)
+
+    if has_id
+        check_id(id)?
+    has_method = !members["method"].is_err()
+    has_result = !members["result"].is_err()
+    has_error = !members["error"].is_err()
+
+    if has_method
+        if has_result || has_error
+            return fail(code: INVALID, msg: "a message holds both a method and an answer")
+
+        method = match members["method"].must()
+            .text t => t.v
+            .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+                return fail(code: INVALID, msg: "\"method\" is not a string")
+
+        params = members["params"].default(.null_value)
+
+        if !members["params"].is_err() && !is_structured(params)
+            return fail(
+                code: INVALID,
+                msg: f"\"params\" is a list or an object, and this is {json.kind_of(params)}"
+            )
+
+        kind = if has_id
+            REQUEST
+        else
+            NOTIFICATION
+        return ok(
+            Shape(kind: kind, id: id, has_id: has_id, method: method, params: params, result: .null_value, code: 0, message: "", data: .null_value)
+        )
+
+    if has_result && has_error
+        return fail(code: INVALID, msg: "an answer holds both a result and an error")
+
+    if has_result
+        if !has_id
+            return fail(code: INVALID, msg: "a result names no \"id\"")
+        return ok(
+            Shape(kind: RESULT, id: id, has_id: true, method: "", params: .null_value, result: members["result"].must(), code: 0, message: "", data: .null_value)
+        )
+
+    if !has_error
+        return fail(code: INVALID, msg: "a message holds no \"method\", \"result\" or \"error\"")
+
+    error = match members["error"].must()
+        .object o => o.members
+        .null_value | .boolean _ | .number _ | .text _ | .list _ =>
+            return fail(code: INVALID, msg: "\"error\" is not an object")
+
+    code = match error["code"]
+        .ok c  => integer_of(c)?
+        .err _ => return fail(code: INVALID, msg: "an error holds no \"code\"")
+
+    message = match error["message"]
+        .ok m =>
+            match m
+                .text t => t.v
+                .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+                    return fail(code: INVALID, msg: "an error's \"message\" is not a string")
+        .err _ => return fail(code: INVALID, msg: "an error holds no \"message\"")
+
+    return ok(
+        Shape(kind: ERROR, id: id, has_id: true, method: "", params: .null_value, result: .null_value, code: code, message: message, data: error["data"].default(.null_value))
+    )
+
+# Fails `invalid` where `id` is no id: a value other than a string, a number
+# or `null`, or a number past `MAX_EXACT_ID`.
+function check_id(id: json.Value) -> ()?
+    match id
+        .text _ | .null_value => return ok()
+        .number n =>
+            if n.v > 9007199254740991.0 || n.v < -9007199254740991.0
+                return fail(
+                    code: INVALID,
+                    msg: f"the id {json.format(id).default("")} is past {MAX_EXACT_ID}, past which two ids read as one"
+                )
+            return ok()
+        .boolean _ | .list _ | .object _ =>
+            return fail(code: INVALID, msg: f"an id is a string, a number or null, and this is {json.kind_of(id)}")
+
+# Whether `v` is a list or an object, the two forms parameters take.
+function is_structured(v: json.Value) -> bool
+    return match v
+        .list _ | .object _                            => true
+        .null_value | .boolean _ | .number _ | .text _ => false
+
+# The integer an error's code writes. Fails `invalid` where it is no integer.
+function integer_of(v: json.Value) -> i64?
+    match json.int_of(v)
+        .ok n  => return ok(n)
+        .err e => return fail(code: INVALID, msg: f"an error's \"code\" is no integer: {e.msg}")
+
+# A request, or a notification where `has_id` is false, as a JSON object.
+function call_value(id: json.Value, has_id: bool, method: str, params: json.Value) -> json.Value
+    members: {str: json.Value} @= {}
+    members["jsonrpc"] @ .text(v: "2.0")
+
+    if has_id
+        members["id"] @ id
+    members["method"] @ .text(v: method)
+
+    if params != .null_value
+        members["params"] @ params
+    return .object(members: members)
+
+# A successful answer as a JSON object.
+function result_value(id: json.Value, result: json.Value) -> json.Value
+    members: {str: json.Value} @= {}
+    members["jsonrpc"] @ .text(v: "2.0")
+    members["id"] @ id
+    members["result"] @ result
+    return .object(members: members)
+
+# A failed answer as a JSON object, `data` left out where it is
+# `.null_value`.
+function error_value(id: json.Value, code: i64, message: str, data: json.Value) -> json.Value
+    error: {str: json.Value} @= {}
+    error["code"] @ .number(v: to_f64(code))
+    error["message"] @ .text(v: message)
+
+    if data != .null_value
+        error["data"] @ data
+    members: {str: json.Value} @= {}
+    members["jsonrpc"] @ .text(v: "2.0")
+    members["id"] @ id
+    members["error"] @ .object(members: error)
+    return .object(members: members)
+
+test "read: a request, a notification, a result and an error, from the specification's examples"
+    request = read(
+        json.parse("{\"jsonrpc\": \"2.0\", \"method\": \"subtract\", \"params\": [42, 23], \"id\": 1}").must()
+    ).must()
+    assert request.kind == REQUEST && request.method == "subtract" && request.id == .number(v: 1.0) && request.has_id
+    notification = read(
+        json.parse("{\"jsonrpc\": \"2.0\", \"method\": \"update\", \"params\": [1,2,3,4,5]}").must()
+    ).must()
+    assert notification.kind == NOTIFICATION && !notification.has_id
+    result = read(json.parse("{\"jsonrpc\": \"2.0\", \"result\": 19, \"id\": \"a\"}").must()).must()
+    assert result.kind == RESULT && result.result == .number(v: 19.0) && result.id == .text(v: "a")
+    error = read(
+        json.parse("{\"jsonrpc\": \"2.0\", \"error\": {\"code\": -32601, \"message\": \"Method not found\"}, \"id\": \"1\"}").must()
+    ).must()
+    assert error.kind == ERROR && error.code == -32601 && error.message == "Method not found" && error.data == .null_value
+
+test "read: a null id, a fractional id, an unknown member, and an error with no id"
+    assert read(json.parse("{\"jsonrpc\":\"2.0\",\"method\":\"ping\",\"id\":null}").must()).must().kind == REQUEST
+    assert read(json.parse("{\"jsonrpc\":\"2.0\",\"method\":\"ping\",\"id\":1.5}").must()).must().id == .number(v: 1.5)
+    assert read(json.parse("{\"jsonrpc\":\"2.0\",\"method\":\"ping\",\"id\":1,\"foo\":1}").must()).must().kind == REQUEST
+    assert read(json.parse("{\"jsonrpc\":\"2.0\",\"error\":{\"code\":-32700,\"message\":\"Parse error\"}}").must()).must().kind == ERROR
+
+test "read: every refusal of the specification, each with its reason"
+    refused = [
+        "1"
+        "{\"method\":\"ping\",\"id\":1}"
+        "{\"jsonrpc\":\"1.0\",\"method\":\"ping\",\"id\":1}"
+        "{\"jsonrpc\":\"2.0\",\"method\":1,\"params\":\"bar\"}"
+        "{\"jsonrpc\":\"2.0\",\"method\":\"ping\",\"params\":\"bar\",\"id\":1}"
+        "{\"jsonrpc\":\"2.0\",\"method\":\"ping\",\"params\":null,\"id\":1}"
+        "{\"jsonrpc\":\"2.0\",\"method\":\"ping\",\"id\":true}"
+        "{\"jsonrpc\":\"2.0\",\"method\":\"ping\",\"id\":[1]}"
+        "{\"jsonrpc\":\"2.0\",\"method\":\"x\",\"id\":9007199254740993}"
+        "{\"jsonrpc\":\"2.0\",\"id\":5}"
+        "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":1,\"error\":{\"code\":1,\"message\":\"x\"}}"
+        "{\"jsonrpc\":\"2.0\",\"result\":1}"
+        "{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"code\":1.5,\"message\":\"x\"}}"
+        "{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"message\":\"x\"}}"
+        "{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":{\"code\":1}}"
+        "{\"jsonrpc\":\"2.0\",\"id\":1,\"error\":[]}"
+        "{\"jsonrpc\":\"2.0\",\"method\":\"ping\",\"result\":1,\"id\":1}"
+    ]
+
+    for text in refused
+        match read(json.parse(text).must())
+            .ok _  => assert text == "refused"
+            .err e => assert e.code == INVALID && e.msg != ""
+
+test "call_value, result_value, error_value: members in their order, none left empty"
+    assert json.format(call_value(id: .number(v: 1.0), has_id: true, method: "m", params: .null_value)).must() == "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"m\"}"
+    assert json.format(call_value(id: .null_value, has_id: false, method: "m", params: .list(items: []))).must() == "{\"jsonrpc\":\"2.0\",\"method\":\"m\",\"params\":[]}"
+    assert json.format(result_value(id: .text(v: "a"), result: .null_value)).must() == "{\"jsonrpc\":\"2.0\",\"id\":\"a\",\"result\":null}"
+    assert json.format(error_value(id: .null_value, code: -32700, message: "Parse error", data: .null_value)).must() == "{\"jsonrpc\":\"2.0\",\"id\":null,\"error\":{\"code\":-32700,\"message\":\"Parse error\"}}"
+    assert json.format(error_value(id: .number(v: 2.0), code: 7, message: "m", data: .text(v: "d"))).must() == "{\"jsonrpc\":\"2.0\",\"id\":2,\"error\":{\"code\":7,\"message\":\"m\",\"data\":\"d\"}}"

@@ -1,0 +1,212 @@
+# The ledger of `json/jq`: what the jq libraries of the three languages let a
+# program do, one block per capability, and what Rebel answers. None of the
+# three standard libraries runs jq, so the yardstick is the author's of
+# 2026-11-17: jq itself (C) as the reference, gojq (Go, github.com/itchyny/gojq
+# v0.12.20), jaq (Rust: the crates jaq-core, jaq-std and jaq-json) and
+# Python's `jq` bindings 1.13.0. The lists are this machine's, 2026-11-17:
+# `go doc -all` of the gojq module fetched into the scratch folder, the item
+# lists docs.rs prints for the three jaq crates, and `dir()` of the Python
+# module installed there. The language is jq 1.7's, its manual of the tag
+# jq-1.7.1; the installed jq answers 1.8.2, and where 1.7.1 and 1.8.2 differ the
+# note says which was taken. The tests are jq 1.7.1's own `tests/jq.test`.
+
+capability jq/parse  a filter read and checked once, to be run any number of times
+  heroes  json/jq.parse, json/jq.is_valid, json/jq.Program, json/jq.MAX_NESTING
+  go      Parse, Compile, Query, Code, ParseError, ParseError.Error, CompilerOption
+  rust    load::parse, load::lex::Lexer, load::lex::Token, load::lex::Tok, load::lex::StrPart, load::lex::Expect, load::parse::Parser, load::parse::Expect, load::parse::Error, load::parse::Result, load::parse::TError, load::Error, load::Errors, load::span, compile::Compiler, compile::Filter, compile::Undefined, compile::Errors, compile::Error, Compiler, Filter, defs, funs
+  python  jq.compile, _Program, _Program.program_string
+  note    a filter is read with jq's builtins written in jq before it, every name resolved once, so a misspelt function is refused by `parse` and not when the run reaches it; a `$name` no binding names is read from `Options.variables` when the run reaches it, since the variables are given per run (gojq asks for their names at compile time). The reader nests at most `MAX_NESTING` levels
+
+capability jq/run  every value a filter outputs for one input
+  heroes  json/jq.run, json/jq.run_with, json/jq.Outcome
+  go      Query.Run, Code.Run, Iter, Iter.Next, NewIter
+  rust    Filter::run, Ctx, Ctx::new, native::run, box_iter::BoxIter, box_iter::Results
+  python  _Program.input_value, _Program.input, _ProgramWithInput.all, _ProgramWithInput.iter, jq.all, jq.iter
+  note    every value, in order; the values output before an error are kept in `Outcome.outputs`, as jq prints them before the error
+
+capability jq/run-first  the first value a filter outputs, the run stopped there
+  heroes  json/jq.first
+  go      Iter.Next (called once)
+  rust    Iterator::next on the outputs
+  python  _ProgramWithInput.first, jq.first
+  note    the run stops at the first value: `first(range(infinite))` ends
+
+capability jq/run-text  a filter run over every value of a JSON text, as jq run on a file
+  heroes  json/jq.run_text
+  go      -
+  rust    jaq_json::read::parse_many, jaq_json::read::read_many, jaq_json::read::parse_single, jaq_json::read::Error
+  python  _Program.input_text, _Program.input_values, _ProgramWithInput.text, jq.text
+  note    values one after another, white space between them or none, each the input of its own run and the rest given to `input`, as jq run on a file does
+
+capability jq/variables  variables the caller gives, read as `$name`, as `--arg` and `--argjson` give them
+  heroes  json/jq.Options (its `variables`)
+  go      WithVariables, Code.Run (its `values`)
+  rust    Vars, Ctx::new (its variables)
+  python  jq.compile (its `args`)
+  note    `$name` for each, and `$__named` and `$ARGS.named` for them all, as jq's `--arg` and `--argjson` give them
+
+capability jq/inputs  the values `input` and `inputs` read
+  heroes  json/jq.Options (its `inputs`), json/jq.Outcome (its `read`)
+  go      WithInputIter
+  rust    jaq_std::input::HasInputs, jaq_std::input::Inputs, jaq_std::input::RcIter, jaq_std::input::funs
+  python  _Program.input_values (each value after the first)
+  note    what `input` read is counted, so a caller running one filter over a stream skips it, as jq does
+
+capability jq/environment  what `$ENV` and `env` read
+  heroes  json/jq.Options (its `environment`)
+  go      WithEnvironLoader
+  rust    -
+  python  -
+  note    the caller's object, empty by default: a filter from outside never reads the process's environment unless the program puts it there; the example program does
+
+capability jq/bounds  a run bounded in steps, outputs and depth, so a filter cannot hang or fill memory
+  heroes  json/jq.Options (its `max_steps`, `max_outputs` and `max_depth`), json/jq.LIMIT, json/jq.DEFAULT_MAX_STEPS, json/jq.DEFAULT_MAX_OUTPUTS, json/jq.DEFAULT_MAX_DEPTH
+  go      Code.RunWithContext, Query.RunWithContext (cancellation by a context)
+  rust    -
+  python  -
+  note    none of the three bounds a run by itself; here every run is bounded by default. A step is one move of the machine; a builtin that copies or walks a value counts a step an element or 16 bytes, its cost counted before it allocates, and no builtin makes more than 4,000,000 elements of one value (`[., .]` built forty times over shares its parts and holds more than any memory). Measured on 2026-11-17: the hostile filters tried, endless recursion, `[range(1e9)]`, a text doubled a hundred times, a value shared 2^40 times over written, compared, flattened and walked, all end `limited`, the largest at 645 MB, `[paths]` over the shared value
+
+capability jq/errors  how a run ended: the value an error carried, the message jq prints, a halt and its exit code
+  heroes  json/jq.Ending, json/jq.INVALID
+  go      ValueError, HaltError, HaltError.ExitCode, HaltError.Value, HaltError.Error
+  rust    Error, Exn, val::ValR, val::ValX, val::ValRs, val::ValXs, val::unwrap_valr
+  python  ValueError (raised by the run)
+  note    `raised` keeps the error's value and the message jq prints for it, `halted` the exit code and the value of `halt_error`; jq 1.7.1's messages, which its test file holds, where 1.8.2 adds the value
+
+capability jq/messages  what `debug` and `stderr` wrote, kept for the caller
+  heroes  json/jq.Outcome (its `messages`)
+  go      -
+  rust    -
+  python  -
+  note    `debug` writes `["DEBUG:", v]` and `stderr` the value, kept for the caller instead of a standard error a library does not own
+
+capability jq/format  a value written as jq writes it, on one line or indented
+  heroes  json/jq.format_value, json/jq.format_value_indented
+  go      Marshal, Preview
+  rust    jaq_json::write::write, jaq_json::write::Pp, jaq_json::write::Styles, jaq_json::format_val, jaq_json::style, jaq_json::write_byte, jaq_json::write_bytes, jaq_json::write_seq, jaq_json::write_utf8, jaq_json::write_val
+  python  _ProgramWithInput.text
+  note    a double as jq writes one: the fewest digits, an exponent where the point stands 4 or more places before the digits or 15 past them, `nan` as `null` and an infinity as the largest double; `json.format` writes JavaScript's form, which differs at `1e+17`
+
+capability jq/order  two values ordered as jq orders them
+  heroes  json/jq.compare
+  go      Compare
+  rust    ops::Cmp, jaq_json::Val (its `Ord`)
+  python  -
+  note    jq's order of types and values, `nan` before every number, objects by sorted keys then values; held on a stack, and within a budget inside a run
+
+capability jq/type  the name jq gives a value's type
+  heroes  json/jq.type_of
+  go      TypeOf
+  rust    val::ValT
+  python  -
+  note    -
+
+capability jq/numbers-exact  numbers past an `f64`: big integers and a literal's own digits
+  heroes  pending
+  go      ToInt, ToFloat64 (and `*big.Int` values)
+  rust    jaq_json::Num
+  python  -
+  note    a `json.Value` holds every number as an `f64`; jq 1.7 keeps a literal's own digits (`100000000000000000001`, `1.000`) and gojq big integers. It needs a number case of `json.Value` that keeps its text, which is `json`'s to give
+
+capability jq/custom-functions  a function of the program's own called from a filter
+  heroes  pending
+  go      WithFunction, WithIterFunction
+  rust    Native, native::bome, native::unary, native::v, native::Fun, native::Filter, data::DataT, data::HasLut, data::JustLut
+  python  -
+  note    a function of the program's own named before `parse`, so that a misspelt name is still refused there; not done in time
+
+capability jq/modules  `import`, `include`, `module` and `modulemeta`: definitions read from other files
+  heroes  refused: `import`, `include` and `modulemeta` read files by a search path, so a filter from outside would make a library touch the disk; definitions are written in the filter's own text, which `def` reads
+  go      WithModuleLoader, NewModuleLoader, ModuleLoader, Import
+  rust    load::Loader, load::Module, load::Modules, load::Import, load::File, load::Arena, load::import
+  python  -
+  note    `parse` refuses the three with a message saying so; jq.test's module cases are tests of that refusal
+
+capability jq/syntax-tree  the filter's syntax tree as public values, printed back as text
+  heroes  refused: the tree is the interpreter's own; public types for it would fix the reader's shape for every program, and the filter's text is the one public form of it
+  go      Query.String, Term, TermType, Index, Func, FuncDef, If, IfElif, Try, Reduce, Foreach, Label, Object, ObjectKeyVal, ConstTerm, ConstArray, ConstObject, ConstObjectKeyVal, ConstObject.ToValue, Array, String, Pattern, PatternObject, Suffix, Unary, Operator, Operator.String, Operator.GoString, TermType.GoString (and each type's `String`)
+  rust    load::parse::Term, load::parse::Pattern, load::parse::BinaryOp, load::parse::Def, compile::TermId, compile::Lut, Lut, Cv, PathsPtr, RunPtr, UpdatePtr
+  python  -
+  note    gojq and jaq give theirs, each its own and not the other's
+
+capability jq/language-paths  `.`, `.foo`, `.[i]`, `.[a:b]`, `.[]`, `?`, `..`, and `path`, `paths`, `getpath`, `setpath`, `delpaths`, `del`, `pick`, `to_entries`, `from_entries`, `with_entries`, `leaf_paths`
+  heroes  json/jq.parse (the paths, `?`, `..`), json/jq.run (`path`, `paths`, `getpath`, `setpath`, `delpaths`, `del`, `pick`, the entries, `leaf_paths`)
+  go      (the language)
+  rust    path::Path, path::Part, path::Opt
+  python  (the language)
+  note    `path(f)` follows paths through pipes, `,`, `if`, `//`, `select`, `recurse`, `getpath`, `first` and `limit`, and refuses a value made inside it with jq's messages; `delpaths` removes every path at once, negative indices counted from the end first, as jq does
+
+capability jq/language-core  pipes, `,`, parentheses, literals, array and object construction, string interpolation, `if`, `and`, `or`, `not`, `//`, `try` and `catch`, `error`, `reduce`, `foreach`, `label` and `break`, `as` with destructuring and `?//`, `def` with arguments, recursion
+  heroes  json/jq.parse, json/jq.run
+  go      (the language)
+  rust    ops::Math, Bind, val::Range
+  python  (the language)
+  note    the orders of jq's generators kept: an operator's right side the outer loop, an object's first key the outer loop. Errors on the left of `//` go on, as jq 1.8.2 answers (1.7.1's was not observed here). `repeat(f)` repeats `f` on its own input, as jq 1.7.1's manual and jq 1.8.2 answer. A filter's own nesting is bounded by `MAX_NESTING`; a chain of pipes, commas or definitions is not
+
+capability jq/language-operators  `+`, `-`, `*`, `/`, `%`, `==`, `!=`, `<`, `<=`, `>`, `>=` on every type, as jq defines them
+  heroes  json/jq.parse, json/jq.run
+  go      (the language)
+  rust    ops::Math, ops::Cmp
+  python  (the language)
+  note    jq 1.7.1's: a text times a negative number is `null`, times a number under 1 the empty text; `%` on the integers of two numbers, a `nan` giving `nan`, and `(remainder)` in its message
+
+capability jq/language-assignment  `=`, `|=`, `+=`, `-=`, `*=`, `/=`, `%=`, `//=`
+  heroes  json/jq.parse, json/jq.run
+  go      (the language)
+  rust    (the language)
+  python  (the language)
+  note    `a |= f` takes `f`'s first value and removes the path where there is none, the removals made at once at the end, as jq 1.7.1 does; places none of which holds another are set in one pass that copies each container once, so `.[] |= f` on 100,000 elements takes one pass (measured 2026-11-17), and other places one after another
+
+capability jq/builtins-collections  length, keys, has, in, inside, contains, map, map_values, add, any, all, flatten, range, sort, sort_by, group_by, unique, unique_by, min, max, min_by, max_by, reverse, indices, index, rindex, combinations, transpose, bsearch, walk, first, last, nth, limit, until, while, repeat, recurse, isempty, select, empty, the type filters, IN, INDEX, JOIN, tostream, fromstream, truncate_stream, splits, getpath, env, builtins, input, inputs, debug, stderr, halt, halt_error, $__loc__
+  heroes  json/jq.run (every one named)
+  go      (the language)
+  rust    jaq_std::funs, jaq_std::defs, jaq_std::base_funs, jaq_std::extra_funs, jaq_json::funs, jaq_json::defs
+  python  (the language)
+  note    `limit`, `first`, `isempty`, ranges and `inputs` run lazily, so `first(range(infinite))` ends; `nth(n; f)` gives nothing past the end and refuses a negative `n`, as 1.7.1's tests ask; `flatten` reads an object's values; `getpath` and `paths` as jq's
+
+capability jq/builtins-text  utf8bytelength, startswith, endswith, ltrimstr, rtrimstr, trim, ltrim, rtrim, explode, implode, split, join, ascii_downcase, ascii_upcase, tostring, tonumber, tojson, fromjson, @text, @json
+  heroes  json/jq.run (every one named)
+  go      (the language)
+  rust    jaq_json::bstr, jaq_json::bytes_valrs
+  python  (the language)
+  note    jq 1.7.1's: `ltrimstr` and `rtrimstr` give their input back where it or the argument is not a text (1.8.2 refuses it); `tonumber` reads its text as a JSON number, white space around it allowed, where jq 1.8.2 refuses it; `indices` and the slices count code points, as jq 1.8.2 answers
+
+capability jq/builtins-regex  test, match, capture, scan, split/2, splits, sub, gsub, with jq's flags
+  heroes  json/jq.run (every one named)
+  go      (the language)
+  rust    (the language)
+  python  (the language)
+  note    through `regex`, in time linear in the text: Perl's rule for the match taken, so Oniguruma's flag `l` (longest) is refused, as are back-references and look-around; offsets in code points; `sub` and `gsub` with a replacement of several values give one result for each, as jq 1.8.2 answers
+
+capability jq/builtins-formats  @html, @uri, @csv, @tsv, @sh, @base64, @base64d, @base32, @base32d, alone and before a string
+  heroes  json/jq.run (every one named)
+  go      (the language)
+  rust    (the language)
+  python  (the language)
+  note    `@base64d` writes bytes that are not UTF-8 as U+FFFD, one for each byte that begins no character, where jq 1.8.2 writes fewer on one case found
+
+capability jq/builtins-math  floor, sqrt, pow, log and the rest of C's mathematics that jq names, infinite, nan, isinfinite, isnan, isnormal, the number filters
+  heroes  json/jq.run (every one named but the Bessel functions)
+  go      (the language)
+  rust    (the language)
+  python  (the language)
+  note    through `math`; `frexp`, `modf` and `lgamma_r` give lists, as jq's
+
+capability jq/builtins-dates  gmtime, mktime, strftime, strptime, todate, fromdate, dateadd, now, localtime, strflocaltime
+  heroes  json/jq.run (gmtime, mktime, strftime, strptime, todate, fromdate, todateiso8601, fromdateiso8601, dateadd, datesub, date, now, localtime, strflocaltime)
+  go      (the language)
+  rust    (the language)
+  python  (the language)
+  note    the proleptic Gregorian calendar computed with no table; the local forms read the zone as UTC and `now` reads `Options.now`, since a filter here has no clock and no zone of its own
+
+capability jq/builtins-bessel  the Bessel functions jq names: j0, j1, y0, y1, jn, yn
+  heroes  pending
+  go      (the language)
+  rust    -
+  python  (the language)
+  note    `math` holds none; written here they would be a second copy of what belongs there
+
+dropped
+  go      Code.Run's variadic `values` past WithVariables' names (the same capability as jq/variables), gojq's `ParseError.Offset` and `Token` (the message says the line), ToFloat64 and ToInt (helpers of a `WithFunction` body)
+  rust    box_iter::box_once, box_iter::flat_map_then, box_iter::flat_map_then_with, box_iter::flat_map_with, box_iter::map_with, box_iter::then (iterator plumbing), jaq_json::Rc and jaq_json::Map (the value's own storage), jaq_json::Error, jaq_json::ValR, jaq_json::ValX (a run's answer, jq/errors)
+  python  jq.jq and _Program.transform (deprecated forms of compile and run), _EmptyValue, _ErrorStore, _JqStatePool, _NO_VALUE, _ResultIterator, _compilation_lock, _iter, io, json, threading (the module's private names and its imports)

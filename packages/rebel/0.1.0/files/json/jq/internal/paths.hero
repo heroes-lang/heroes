@@ -1,0 +1,612 @@
+# The value at a path, a value with a path set or removed, and the stream
+# forms: jq's `getpath`, `setpath`, `delpaths`, `to_entries`, `from_entries`
+# and `tostream`. A path is a list of keys, a text for an object's member, a
+# number for a list's element, and an object `{"start": a, "end": b}` for a
+# slice. Each walks the path with a loop and rebuilds the value from the
+# bottom up, so no depth of path runs out of the machine's stack.
+
+use json
+use json/jq/internal/values
+use json/jq/internal/write
+
+# The keys of `path`, failing where it is not a list.
+function keys_of_path(path: json.Value) -> [json.Value]?
+    match path
+        .list l => return ok(l.items)
+        .null_value | .boolean _ | .number _ | .text _ | .object _ => return values.raised(
+            "Paths must be specified as an array"
+        )
+
+# The value at `path` in `v`: `null` where the path leaves the value through
+# `null`, an error where it meets a value of the wrong kind.
+function getpath(v: json.Value, path: json.Value) -> json.Value?
+    here: json.Value @= v
+
+    for k in keys_of_path(path)?
+        match here
+            .null_value                                            => return ok(.null_value)
+            .boolean _ | .number _ | .text _ | .list _ | .object _ => here @ values.index(v: here, k: k)?
+
+    return ok(here)
+
+# `v` with `value` at `path`, the containers on the way made where `null`
+# stands: an object for a text, a list padded with `null` for a number.
+function setpath(v: json.Value, path: json.Value, value: json.Value) -> json.Value?
+    steps = keys_of_path(path)?
+
+    # The values along the path, `null` where the path leaves the value.
+    along: [json.Value] @= [v]
+
+    for i in range(from: 0, to: steps.len())
+        here = along[i]
+
+        next: json.Value = match here
+            .null_value                                            => .null_value
+            .boolean _ | .number _ | .text _ | .list _ | .object _ => values.index(v: here, k: steps[i])?
+
+        along @ along.push(next)
+
+    built: json.Value @= value
+    at: i64 @= steps.len()
+
+    while at > 0
+        at @ at - 1
+        built @ put(container: along[at], k: steps[at], value: built)?
+
+    return ok(built)
+
+# `container` with `value` put at `k`.
+function put(container: json.Value, k: json.Value, value: json.Value) -> json.Value?
+    match k
+        .text key =>
+            match container
+                .object o =>
+                    members: {str: json.Value} @= o.members
+                    members[key.v] @ value
+                    return ok(.object(members: members))
+                .null_value =>
+                    members: {str: json.Value} @= {}
+                    members[key.v] @ value
+                    return ok(.object(members: members))
+                .boolean _ | .number _ | .text _ | .list _ =>
+                    return values.raised(f"Cannot index {values.type_name(container)} with string \"{key.v}\"")
+        .number n =>
+            items: [json.Value] @= []
+
+            match container
+                .list l     => items @ l.items
+                .null_value => items @ []
+                .boolean _ | .number _ | .text _ | .object _ =>
+                    return values.raised(f"Cannot index {values.type_name(container)} with number")
+
+            if n.v != n.v
+                return values.raised("Cannot set array element at NaN index")
+            at: i64 @= values.index_number(n.v)?
+
+            if at < 0
+                at @ at + items.len()
+
+                if at < 0
+                    return values.raised("Out of bounds negative array index")
+
+            if at > 100000000
+                return values.raised("Array index too large")
+
+            while items.len() <= at
+                items @ items.push(.null_value)
+
+            items[at] @ value
+            return ok(.list(items: items))
+        .object o =>
+            items: [json.Value] @= []
+
+            match container
+                .list l     => items @ l.items
+                .null_value => items @ []
+                .text _     => return values.raised("Cannot update string slices")
+                .boolean _ | .number _ | .object _ =>
+                    return values.raised(f"Cannot update field at object index of {values.type_name(container)}")
+
+            from = o.members["start"].default(.null_value)
+            to = o.members["end"].default(.null_value)
+
+            if !is_slice_end(from) || !is_slice_end(to)
+                return values.raised("Array/string slice indices must be integers")
+            start = values.slice_end(from, count: items.len(), missing: 0, upward: false)?
+            end_at = values.slice_end(to, count: items.len(), missing: items.len(), upward: true)?
+
+            stop = if end_at < start
+                start
+            else
+                end_at
+
+            match value
+                .list inserted =>
+                    out: [json.Value] @= items.slice(from: 0, to: start)
+
+                    for item in inserted.items
+                        out @ out.push(item)
+
+                    for item in items.slice(from: stop, to: items.len())
+                        out @ out.push(item)
+
+                    return ok(.list(items: out))
+                .null_value | .boolean _ | .number _ | .text _ | .object _ =>
+                    return values.raised("A slice of an array can only be assigned another array")
+        .null_value | .boolean _ | .list _ =>
+            return values.raised(f"Cannot index {values.type_name(container)} with {values.type_name(k)}")
+
+# Whether `e` may end a slice: a number or `null`.
+function is_slice_end(e: json.Value) -> bool
+    return match e
+        .null_value | .number _                    => true
+        .boolean _ | .text _ | .list _ | .object _ => false
+
+# `v` with every path of `paths` removed at once, as jq removes them: each
+# path's negative indices counted from the end of the list they meet in `v`,
+# a slice at its end made the indices it covers, the same place removed once,
+# and the paths removed from the last in jq's order, so that removing one
+# never moves another.
+function delpaths(v: json.Value, paths: json.Value) -> json.Value?
+    listed = keys_of_path(paths)?
+    normalized: [json.Value] @= []
+
+    for p in listed
+        for q in normalized_paths(v: v, path: p)?
+            normalized @ normalized.push(q)
+
+    ordered = sort_values(normalized)
+    out: json.Value @= v
+    at: i64 @= ordered.len()
+
+    while at > 0
+        at @ at - 1
+
+        if at + 1 >= ordered.len() || !values.equal(a: ordered[at], b: ordered[at + 1])
+            out @ delpath(v: out, path: ordered[at])?
+
+    return ok(out)
+
+# `path` as it names places of `v`: its numbers made indices from the start
+# of the lists they meet, and a slice at its end the indices it covers; none
+# where a negative index falls before a list's start.
+function normalized_paths(v: json.Value, path: json.Value) -> [json.Value]?
+    steps = keys_of_path(path)?
+    here: json.Value @= v
+    prefix: [json.Value] @= []
+
+    for i in range(from: 0, to: steps.len())
+        k = steps[i]
+        count: i64 @= -1
+
+        match here
+            .list l                                                    => count @ l.items.len()
+            .null_value | .boolean _ | .number _ | .text _ | .object _ => count @ -1
+
+        match k
+            .number n =>
+                if count >= 0 && n.v == n.v
+                    at: i64 @= values.index_number(n.v)?
+
+                    if at < 0
+                        at @ at + count
+
+                    if at < 0
+                        return ok([])
+                    prefix @ prefix.push(.number(v: to_f64(at)))
+                else
+                    prefix @ prefix.push(k)
+            .object o =>
+                if count >= 0 && i == steps.len() - 1
+                    from = o.members["start"].default(.null_value)
+                    to = o.members["end"].default(.null_value)
+                    start = values.slice_end(from, count: count, missing: 0, upward: false)?
+                    stop = values.slice_end(to, count: count, missing: count, upward: true)?
+                    expanded: [json.Value] @= []
+
+                    for at in range(from: start, to: stop)
+                        whole: [json.Value] @= prefix
+                        whole @ whole.push(.number(v: to_f64(at)))
+                        expanded @ expanded.push(.list(items: whole))
+
+                    return ok(expanded)
+                prefix @ prefix.push(k)
+            .null_value | .boolean _ | .text _ | .list _ => prefix @ prefix.push(k)
+
+        match here
+            .null_value => here @ .null_value
+            .boolean _ | .number _ | .text _ | .list _ | .object _ =>
+                here @ values.index(v: here, k: k).default(.null_value)
+
+    return ok([.list(items: prefix)])
+
+# `xs` in jq's order, by insertion into a sorted list.
+function sort_values(xs: [json.Value]) -> [json.Value]
+    sorted: [json.Value] @= []
+
+    for x in xs
+        sorted @ sorted.push(x)
+        at: i64 @= sorted.len() - 1
+
+        while at > 0 && values.order(a: sorted[at - 1], b: x) > 0
+            sorted[at] @ sorted[at - 1]
+            at @ at - 1
+
+        sorted[at] @ x
+
+    return sorted
+
+# `v` with the one path `path` removed.
+function delpath(v: json.Value, path: json.Value) -> json.Value?
+    steps = keys_of_path(path)?
+
+    if steps.len() == 0
+        return ok(.null_value)
+    parent_keys = steps.slice(from: 0, to: steps.len() - 1)
+    parent = getpath(v: v, path: .list(items: parent_keys))?
+
+    match parent
+        .null_value => return ok(v)
+        .boolean _ | .number _ | .text _ | .list _ | .object _ =>
+            changed = without(container: parent, k: steps[steps.len() - 1])?
+            return setpath(v: v, path: .list(items: parent_keys), value: changed)
+
+# `container` without the member or the elements `k` names.
+function without(container: json.Value, k: json.Value) -> json.Value?
+    match container
+        .object o =>
+            match k
+                .text key =>
+                    kept: {str: json.Value} @= {}
+
+                    for name in keys(o.members)
+                        if name != key.v
+                            kept[name] @ o.members[name].must()
+
+                    return ok(.object(members: kept))
+                .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+                    return values.raised(f"Cannot delete field at index of object")
+        .list l =>
+            match k
+                .number n =>
+                    at: i64 @= values.index_number(n.v)?
+
+                    if at < 0
+                        at @ at + l.items.len()
+
+                    if at < 0 || at >= l.items.len()
+                        return ok(container)
+                    kept: [json.Value] @= l.items.slice(from: 0, to: at)
+
+                    for item in l.items.slice(from: at + 1, to: l.items.len())
+                        kept @ kept.push(item)
+
+                    return ok(.list(items: kept))
+                .object o =>
+                    from = o.members["start"].default(.null_value)
+                    to = o.members["end"].default(.null_value)
+                    start = values.slice_end(from, count: l.items.len(), missing: 0, upward: false)?
+                    end_at = values.slice_end(to, count: l.items.len(), missing: l.items.len(), upward: true)?
+
+                    if end_at <= start
+                        return ok(container)
+                    kept: [json.Value] @= l.items.slice(from: 0, to: start)
+
+                    for item in l.items.slice(from: end_at, to: l.items.len())
+                        kept @ kept.push(item)
+
+                    return ok(.list(items: kept))
+                .null_value | .boolean _ | .text _ | .list _ =>
+                    return values.raised(f"Cannot delete field at index of array")
+        .null_value => return ok(container)
+        .boolean _ | .number _ | .text _ => return values.raised(
+            f"Cannot delete fields from {values.type_name(container)}"
+        )
+
+## Many places at once
+
+# The longest path `disjoint` accepts for the one-pass update.
+constant MAX_BATCH_DEPTH: i64
+    256
+
+# Whether the paths of `paths` name places none of which holds another, each
+# a list of texts and indices from 0, so that setting them one after another
+# is setting them all at once: the condition of the one-pass update.
+function disjoint(paths: json.Value) -> json.Value?
+    listed = keys_of_path(paths)?
+
+    for p in listed
+        match p
+            .list l =>
+                if l.items.len() == 0 || l.items.len() > MAX_BATCH_DEPTH
+                    return ok(.boolean(v: false))
+
+                for k in l.items
+                    match k
+                        .text _ => _ = 0
+                        .number n =>
+                            if n.v != n.v || n.v < 0.0 || n.v > 100000000.0 || to_f64(n.v.to_i64().must()) != n.v
+                                return ok(.boolean(v: false))
+                        .null_value | .boolean _ | .list _ | .object _ => return ok(.boolean(v: false))
+            .null_value | .boolean _ | .number _ | .text _ | .object _ => return ok(.boolean(v: false))
+
+    ordered = sort_values(listed)
+
+    for i in range(from: 1, to: ordered.len())
+        if is_prefix(p: ordered[i - 1], of: ordered[i])
+            return ok(.boolean(v: false))
+
+    return ok(.boolean(v: true))
+
+# Whether the path `p` is the path `q` or begins it.
+function is_prefix(p: json.Value, of: json.Value) -> bool
+    a = json.items_of(p).default([])
+    b = json.items_of(of).default([])
+
+    if a.len() > b.len()
+        return false
+
+    for i in range(from: 0, to: a.len())
+        if !values.equal(a: a[i], b: b[i])
+            return false
+
+    return true
+
+# One place to set: the rest of its path below the value being built, and the
+# value it takes.
+record Setting
+    # The keys left.
+    steps: [json.Value]
+    # The value set at the end of them.
+    value: json.Value
+
+# `v` with each path of `paths` set to the first element of the matching
+# element of `updates`, or removed where that element is `null`: the paths
+# `disjoint` accepts, set in one pass that copies each container once, then
+# the removals made at once as `delpaths` makes them.
+function apply_updates(v: json.Value, paths: json.Value, updates: json.Value) -> json.Value?
+    listed = keys_of_path(paths)?
+    news = keys_of_path(updates)?
+    settings: [Setting] @= []
+    removed: [json.Value] @= []
+
+    for i in range(from: 0, to: listed.len())
+        steps = keys_of_path(listed[i])?
+
+        update: json.Value = if i < news.len()
+            news[i]
+        else
+            .null_value
+
+        match update
+            .list u                                                    => settings @ settings.push(
+                Setting(steps: steps, value: u.items[0])
+            )
+            .null_value | .boolean _ | .number _ | .text _ | .object _ => removed @ removed.push(listed[i])
+
+    set = set_many(v, settings: settings, depth: 0)?
+    return delpaths(v: set, paths: .list(items: removed))
+
+# `v` with every setting made, each container on the way copied once. It
+# descends one level a call, at most `MAX_BATCH_DEPTH`, which `disjoint` has
+# checked.
+function set_many(v: json.Value, settings: [Setting], depth: i64) -> json.Value?
+    if settings.len() == 0
+        return ok(v)
+
+    if settings.len() == 1 && settings[0].steps.len() == 0
+        return ok(settings[0].value)
+
+    if depth > MAX_BATCH_DEPTH
+        return values.raised("a path is deeper than an update sets in one pass")
+
+    # The settings grouped by their first key, the groups in the order their
+    # keys first come.
+    names: [json.Value] @= []
+    groups: [[Setting]] @= []
+    where: {str: i64} @= {}
+
+    for s in settings
+        first = s.steps[0]
+        name = json.format(first).default("?")
+        rest = Setting(steps: s.steps.slice(from: 1, to: s.steps.len()), value: s.value)
+
+        match where[name]
+            .ok at =>
+                group: [Setting] @= groups[at]
+                groups[at] @ []
+                group @ group.push(rest)
+                groups[at] @ group
+            .err _ =>
+                where[name] @ groups.len()
+                names @ names.push(first)
+                groups @ groups.push([rest])
+
+    match v
+        .object o =>
+            members: {str: json.Value} @= o.members
+
+            for i in range(from: 0, to: names.len())
+                key = json.text_of(names[i])?
+                child = members[key].default(.null_value)
+                members[key] @ set_many(child, settings: groups[i], depth: depth + 1)?
+
+            return ok(.object(members: members))
+        .list l =>
+            items: [json.Value] @= l.items
+
+            for i in range(from: 0, to: names.len())
+                at = json.int_of(names[i])?
+
+                while items.len() <= at
+                    items @ items.push(.null_value)
+
+                items[at] @ set_many(items[at], settings: groups[i], depth: depth + 1)?
+
+            return ok(.list(items: items))
+        .null_value =>
+            built: json.Value @= .null_value
+
+            for i in range(from: 0, to: names.len())
+                child = set_many(.null_value, settings: groups[i], depth: depth + 1)?
+                built @ put(container: built, k: names[i], value: child)?
+
+            return ok(built)
+        .boolean _ | .number _ | .text _ =>
+            return put(container: v, k: names[0], value: .null_value)
+
+## Entries
+
+# jq's `to_entries`: `{"key": k, "value": v}` for each member, in the order
+# the object holds them; a list's are keyed by index.
+function to_entries(v: json.Value) -> json.Value?
+    out: [json.Value] @= []
+
+    match v
+        .object o =>
+            for k in keys(o.members)
+                out @ out.push(entry(key: .text(v: k), value: o.members[k].must()))
+        .list l =>
+            for i in range(from: 0, to: l.items.len())
+                out @ out.push(entry(key: .number(v: to_f64(i)), value: l.items[i]))
+        .null_value | .boolean _ | .number _ | .text _ => return values.raised(f"{values.described(v)} has no keys")
+
+    return ok(.list(items: out))
+
+# `{"key": key, "value": value}`.
+function entry(key: json.Value, value: json.Value) -> json.Value
+    members: {str: json.Value} @= {}
+    members["key"] @ key
+    members["value"] @ value
+    return .object(members: members)
+
+## Streams
+
+# One step of `tostream`'s walk: a value at a path, or the closing event of a
+# container whose last child stands at `path`.
+record Step
+    # The value, where `closing` is false.
+    value: json.Value
+    # Its path, or the path of the last child closed.
+    path: [json.Value]
+    # Whether this step closes a container.
+    closing: bool
+
+# jq's `tostream`: `[path, leaf]` for every value holding nothing, in the
+# order of the value, and `[path]` after the last child of each container,
+# `path` that child's.
+function tostream(v: json.Value) -> [json.Value]?
+    events: [json.Value] @= []
+    left: [Step] @= [Step(value: v, path: [], closing: false)]
+    top: i64 @= 1
+
+    while top > 0
+        top @ top - 1
+        s = left[top]
+
+        if s.closing
+            events @ events.push(.list(items: [.list(items: s.path)]))
+
+            if events.len() > write.MAX_VOLUME
+                return write.too_large("the events `tostream` makes")
+        else
+            children: [Step] @= []
+
+            match s.value
+                .list l =>
+                    for i in range(from: 0, to: l.items.len())
+                        p: [json.Value] @= s.path
+                        p @ p.push(.number(v: to_f64(i)))
+                        children @ children.push(Step(value: l.items[i], path: p, closing: false))
+                .object o =>
+                    for k in keys(o.members)
+                        p: [json.Value] @= s.path
+                        p @ p.push(.text(v: k))
+                        children @ children.push(Step(value: o.members[k].must(), path: p, closing: false))
+                .null_value | .boolean _ | .number _ | .text _ => children @ []
+
+            if children.len() == 0
+                events @ events.push(.list(items: [.list(items: s.path), s.value]))
+            else
+                top @ push_step(
+                    @left,
+                    top: top,
+                    s: Step(value: .null_value, path: children[children.len() - 1].path, closing: true)
+                )
+                at: i64 @= children.len()
+
+                while at > 0
+                    at @ at - 1
+                    top @ push_step(@left, top: top, s: children[at])
+
+    return ok(events)
+
+# Pushes `s` on `tostream`'s stack, answering the new top.
+function push_step(@left: [Step], top: i64, s: Step) -> i64
+    if top == left.len()
+        left @ left.push(s)
+    else
+        left[top] @ s
+    return top + 1
+
+## Tests
+
+test "getpath: a member of an element, null on the way, and a wrong kind"
+    v = json.parse("{\"a\":[{\"b\":1}]}").must()
+    assert json.format(getpath(v: v, path: json.parse("[\"a\",0,\"b\"]").must()).must()).must() == "1"
+    assert json.format(getpath(v: .null_value, path: json.parse("[\"a\",0]").must()).must()).must() == "null"
+    assert getpath(v: json.parse("{\"a\":1}").must(), path: json.parse("[\"a\",\"b\"]").must()).is_err()
+
+test "setpath: made from null, a negative index, a slice, and refusals"
+    assert json.format(setpath(v: .null_value, path: json.parse("[2]").must(), value: .number(v: 1.0)).must()).must() == "[null,null,1]"
+    l = json.parse("[1,2,3]").must()
+    assert json.format(setpath(v: l, path: json.parse("[-1]").must(), value: .number(v: 9.0)).must()).must() == "[1,2,9]"
+    assert setpath(v: l, path: json.parse("[-5]").must(), value: .number(v: 9.0)).is_err()
+    sliced = setpath(
+        v: l,
+        path: json.parse("[{\"start\":1,\"end\":2}]").must(),
+        value: json.parse("[\"x\",\"y\"]").must()
+    ).must()
+    assert json.format(sliced).must() == "[1,\"x\",\"y\",3]"
+    assert setpath(v: .number(v: 1.0), path: json.parse("[\"a\"]").must(), value: .null_value).is_err()
+
+test "delpaths: several, from the end first, a slice, the whole, and a refusal"
+    l = json.parse("[1,2,3]").must()
+    assert json.format(delpaths(v: l, paths: json.parse("[[0],[-1]]").must()).must()).must() == "[2]"
+    four = json.parse("[1,2,3,4]").must()
+    assert json.format(delpaths(v: four, paths: json.parse("[[{\"start\":1,\"end\":3}]]").must()).must()).must() == "[1,4]"
+    assert json.format(delpaths(v: l, paths: json.parse("[[]]").must()).must()).must() == "null"
+    assert delpaths(v: json.parse("{\"a\":1}").must(), paths: json.parse("[[\"a\",\"b\"]]").must()).is_err()
+
+test "apply_updates: no place at all leaves any value as it is"
+    assert values.equal(
+        a: apply_updates(v: .text(v: "a"), paths: json.parse("[]").must(), updates: json.parse("[]").must()).must(),
+        b: .text(v: "a")
+    )
+    assert values.equal(
+        a: apply_updates(v: .number(v: 1.0), paths: json.parse("[]").must(), updates: json.parse("[]").must()).must(),
+        b: .number(v: 1.0)
+    )
+
+test "apply_updates: members and elements set, one removed, a null made a container"
+    v = json.parse("{\"a\":[1,2,3],\"b\":1}").must()
+    paths_given = json.parse("[[\"a\",0],[\"a\",2],[\"b\"],[\"c\",\"d\"]]").must()
+    updates = json.parse("[[10],null,[5],[7]]").must()
+    got = apply_updates(v: v, paths: paths_given, updates: updates).must()
+    assert json.format(got).must() == "{\"a\":[10,2],\"b\":5,\"c\":{\"d\":7}}"
+
+test "disjoint: places apart, a place inside another, the same twice, a negative index"
+    assert values.equal(a: disjoint(json.parse("[[\"a\"],[\"b\",0]]").must()).must(), b: .boolean(v: true))
+    assert values.equal(a: disjoint(json.parse("[[\"a\"],[\"a\",0]]").must()).must(), b: .boolean(v: false))
+    assert values.equal(a: disjoint(json.parse("[[0],[0]]").must()).must(), b: .boolean(v: false))
+    assert values.equal(a: disjoint(json.parse("[[-1]]").must()).must(), b: .boolean(v: false))
+
+test "to_entries: an object in its order and a list by index"
+    v = json.parse("{\"b\":1,\"a\":2}").must()
+    assert json.format(to_entries(v).must()).must() == "[{\"key\":\"b\",\"value\":1},{\"key\":\"a\",\"value\":2}]"
+
+test "tostream: leaves and closing events, an empty list, a scalar"
+    events = tostream(json.parse("[1,[2,3]]").must()).must()
+    assert json.format(.list(items: events)).must() == "[[[0],1],[[1,0],2],[[1,1],3],[[1,1]],[[1]]]"
+    assert json.format(.list(items: tostream(json.parse("[]").must()).must())).must() == "[[[],[]]]"
+    assert json.format(.list(items: tostream(.number(v: 1.0)).must())).must() == "[[[],1]]"

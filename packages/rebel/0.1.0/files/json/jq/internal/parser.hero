@@ -1,0 +1,1053 @@
+# A filter's tokens read into `syntax`'s table by jq 1.7's grammar. It descends
+# one function a level of the filter's own nesting and refuses a filter nested
+# deeper than `MAX_NESTING`, so the machine's stack is never what stops it; a
+# long chain of pipes, commas or definitions is read by loops, not by descent.
+#
+# Some forms are rewritten as they are read, into calls of the prelude's
+# definitions: `a = b` is `_assign(a; b)`, `a |= f` is `_modify(a; f)`, and
+# `a op= b` is `b as $v | _modify(a; . op $v)`, as jq's manual defines them.
+# A parameter written `$name` is a filter parameter whose value is bound by
+# `name as $name` around the body.
+
+use json
+use json/jq/internal/lexer
+use json/jq/internal/syntax
+
+# The code of a filter that is not jq.
+constant INVALID: str
+    "invalid"
+
+# The deepest a filter nests.
+constant MAX_NESTING: i64
+    128
+
+# The variable an assignment `a op= b` binds `b` to, a name no filter can
+# write.
+constant ASSIGNED: str
+    "*assigned"
+
+# Where the reading stands.
+record Reading
+    # The filter's text.
+    text: str
+    # Its tokens, the last one `END`.
+    tokens: [lexer.Token]
+    # The token the reading stands at.
+    at: i64
+    # How deep the reading has nested.
+    depth: i64
+
+## The entry
+
+# The node of the filter `text`, its nodes added to `nodes`.
+#
+# Fails `invalid` where `text` is not a filter.
+function read_into(@nodes: [syntax.Node], text: str) -> i64?
+    r: Reading @= Reading(text: text, tokens: lexer.tokens_of(text)?, at: 0, depth: 0)
+
+    if peek(r).kind == lexer.END
+        return ok(syntax.add(@nodes, syntax.leaf(kind: syntax.IDENTITY, at: 0)))
+    root = pipe(@r, @nodes, comma: true)?
+
+    if peek(r).kind != lexer.END
+        return refuse(r, what: "the end of the filter")
+    return ok(root)
+
+## Reading tokens
+
+# The token the reading stands at.
+function peek(r: Reading lent) -> lexer.Token
+    return r.tokens[r.at]
+
+# The token after the one the reading stands at.
+function peek_next(r: Reading lent) -> lexer.Token
+    if r.at + 1 < r.tokens.len()
+        return r.tokens[r.at + 1]
+    return r.tokens[r.tokens.len() - 1]
+
+# Whether the reading stands at the symbol `s`.
+function at_symbol(r: Reading lent, s: str) -> bool
+    t = peek(r)
+    return t.kind == lexer.SYMBOL && t.text == s
+
+# Whether the reading stands at the keyword `k`.
+function at_keyword(r: Reading lent, k: str) -> bool
+    t = peek(r)
+    return t.kind == lexer.KEYWORD && t.text == k
+
+# The token the reading stands at, the reading moved past it.
+function take(@r: Reading) -> lexer.Token
+    t = r.tokens[r.at]
+
+    if t.kind != lexer.END
+        r.at @ r.at + 1
+    return t
+
+# What the token `t` is, said for a message.
+function shown(t: lexer.Token) -> str
+    if t.kind == lexer.END
+        return "the end of the filter"
+
+    if t.kind == lexer.NUMBER
+        return f"the number {t.text}"
+
+    if t.kind == lexer.STRING_BEGIN
+        return "a string"
+
+    if t.kind == lexer.FIELD
+        return f"`.{t.text}`"
+
+    if t.kind == lexer.VARIABLE
+        return f"`${t.text}`"
+
+    if t.kind == lexer.FORMAT
+        return f"`@{t.text}`"
+    return f"`{t.text}`"
+
+# A failure where the reading stands, `what` having been expected.
+function refuse<T>(r: Reading lent, what: str) -> T?
+    t = peek(r)
+    line = lexer.line_at(r.text, at: t.at)
+    return fail(code: INVALID, msg: f"syntax error at line {line}: unexpected {shown(t)}, expected {what}")
+
+# Moves past the symbol `s`, failing where the reading does not stand at it.
+function expect(@r: Reading, s: str) -> ()?
+    if !at_symbol(r, s: s)
+        return refuse(r, what: f"`{s}`")
+    _ = take(@r)
+    return ok()
+
+# Moves past the keyword `k`, failing where the reading does not stand at it.
+function expect_keyword(@r: Reading, k: str) -> ()?
+    if !at_keyword(r, k: k)
+        return refuse(r, what: f"`{k}`")
+    _ = take(@r)
+    return ok()
+
+# One level of nesting entered. Fails `invalid` past `MAX_NESTING`.
+function enter(@r: Reading) -> ()?
+    if r.depth >= MAX_NESTING
+        return fail(
+            code: INVALID,
+            msg: f"line {lexer.line_at(r.text, at: peek(r).at)}: the filter nests deeper than {MAX_NESTING} levels, the most this reader takes"
+        )
+    r.depth @ r.depth + 1
+    return ok()
+
+## Building nodes
+
+# A node of `kind` with the children `a` and `b`.
+function pair(@nodes: [syntax.Node], kind: i64, at: i64, a: i64, b: i64) -> i64
+    n: syntax.Node @= syntax.leaf(kind: kind, at: at)
+    n.a @ a
+    n.b @ b
+    return syntax.add(@nodes, n)
+
+# A literal node holding `value`.
+function literal(@nodes: [syntax.Node], at: i64, value: json.Value) -> i64
+    n: syntax.Node @= syntax.leaf(kind: syntax.LITERAL, at: at)
+    n.value @ value
+    return syntax.add(@nodes, n)
+
+# A call of `name` with `arguments`.
+function call(@nodes: [syntax.Node], at: i64, name: str, arguments: [i64]) -> i64
+    n: syntax.Node @= syntax.leaf(kind: syntax.CALL, at: at)
+    n.text @ name
+    n.items @ arguments
+    return syntax.add(@nodes, n)
+
+# `target[key]` where `key` is the literal text `name`.
+function field(@nodes: [syntax.Node], at: i64, target: i64, name: str) -> i64
+    key = literal(@nodes, at: at, value: .text(v: name))
+    return pair(@nodes, kind: syntax.INDEX, at: at, a: target, b: key)
+
+# `$name`.
+function variable(@nodes: [syntax.Node], at: i64, name: str) -> i64
+    n: syntax.Node @= syntax.leaf(kind: syntax.VARIABLE, at: at)
+    n.text @ name
+    return syntax.add(@nodes, n)
+
+# `source as $name | body`.
+function bind_to(@nodes: [syntax.Node], at: i64, source: i64, name: str, body: i64) -> i64
+    one: syntax.Node @= syntax.leaf(kind: syntax.PATTERN_VARIABLE, at: at)
+    one.text @ name
+    p = syntax.add(@nodes, one)
+    n: syntax.Node @= syntax.leaf(kind: syntax.BIND, at: at)
+    n.a @ source
+    n.items @ [p]
+    n.b @ body
+    return syntax.add(@nodes, n)
+
+# What `$__loc__` stands for at byte `at`.
+function location(r: Reading lent, @nodes: [syntax.Node], at: i64) -> i64
+    members: {str: json.Value} @= {}
+    members["file"] @ .text(v: "<top-level>")
+    members["line"] @ .number(v: to_f64(lexer.line_at(r.text, at: at)))
+    return literal(@nodes, at: at, value: .object(members: members))
+
+## Pipes and operators
+
+# A pipe: operands joined by `|`, each of them operators over operands; with
+# `comma` false a `,` ends it, as inside an object's value.
+function pipe(@r: Reading, @nodes: [syntax.Node], comma: bool) -> i64?
+    enter(@r)?
+
+    lowest = if comma
+        1
+    else
+        2
+
+    # The left sides read so far, joined right to left at the end, since `|`
+    # groups to the right.
+    sides: [i64] @= [binary(@r, @nodes, lowest: lowest)?]
+    ats: [i64] @= []
+
+    while at_symbol(r, s: "|")
+        ats @ ats.push(take(@r).at)
+        sides @ sides.push(binary(@r, @nodes, lowest: lowest)?)
+
+    chain: i64 @= sides[sides.len() - 1]
+    at: i64 @= sides.len() - 1
+
+    while at > 0
+        at @ at - 1
+        chain @ pair(@nodes, kind: syntax.PIPE, at: ats[at], a: sides[at], b: chain)
+
+    r.depth @ r.depth - 1
+    return ok(chain)
+
+# How tightly the operator `t` binds, 0 where it is none: `,` 1, `//` 2, the
+# assignments 3, `or` 4, `and` 5, the comparisons 6, `+` and `-` 7, `*`, `/`
+# and `%` 8.
+function binding_of(t: lexer.Token) -> i64
+    if t.kind == lexer.KEYWORD
+        if t.text == "or"
+            return 4
+
+        if t.text == "and"
+            return 5
+        return 0
+
+    if t.kind != lexer.SYMBOL
+        return 0
+    s = t.text
+
+    if s == ","
+        return 1
+
+    if s == "//"
+        return 2
+
+    if s == "=" || s == "|=" || s == "+=" || s == "-=" || s == "*=" || s == "/=" || s == "%=" || s == "//="
+        return 3
+
+    if s == "==" || s == "!=" || s == "<" || s == "<=" || s == ">" || s == ">="
+        return 6
+
+    if s == "+" || s == "-"
+        return 7
+
+    if s == "*" || s == "/" || s == "%"
+        return 8
+    return 0
+
+# The code of an arithmetic operator or a comparison.
+function operator_of(s: str) -> i64
+    return match s
+        "+"  => syntax.ADD
+        "-"  => syntax.SUBTRACT
+        "*"  => syntax.MULTIPLY
+        "/"  => syntax.DIVIDE
+        "%"  => syntax.MODULO
+        "==" => syntax.EQUAL
+        "!=" => syntax.NOT_EQUAL
+        "<"  => syntax.LESS
+        "<=" => syntax.LESS_EQUAL
+        ">"  => syntax.GREATER
+        ">=" => syntax.GREATER_EQUAL
+        _    => 0
+
+# Operands joined by the operators that bind at least as tightly as `lowest`,
+# by precedence climbing: `//` groups to the right, the assignments and the
+# comparisons not at all, the rest to the left.
+function binary(@r: Reading, @nodes: [syntax.Node], lowest: i64) -> i64?
+    enter(@r)?
+    left: i64 @= operand(@r, @nodes, comma: lowest == 1)?
+
+    while binding_of(peek(r)) >= lowest && binding_of(peek(r)) > 0
+        t = take(@r)
+        level = binding_of(t)
+
+        next = if level == 2
+            level
+        else
+            level + 1
+        right = binary(@r, @nodes, lowest: next)?
+        left @ joined(@nodes, t: t, left: left, right: right)
+
+        if (level == 3 || level == 6) && binding_of(peek(r)) == level
+            return refuse(r, what: "parentheses around an assignment or a comparison that stands beside another")
+
+    r.depth @ r.depth - 1
+    return ok(left)
+
+# `left` and `right` joined by the operator `t`.
+function joined(@nodes: [syntax.Node], t: lexer.Token, left: i64, right: i64) -> i64
+    s = t.text
+
+    if s == ","
+        return pair(@nodes, kind: syntax.COMMA, at: t.at, a: left, b: right)
+
+    if s == "//"
+        return pair(@nodes, kind: syntax.ALTERNATIVE, at: t.at, a: left, b: right)
+
+    if s == "or"
+        return pair(@nodes, kind: syntax.OR, at: t.at, a: left, b: right)
+
+    if s == "and"
+        return pair(@nodes, kind: syntax.AND, at: t.at, a: left, b: right)
+
+    if s == "="
+        return call(@nodes, at: t.at, name: "_assign", arguments: [left, right])
+
+    if s == "|="
+        return call(@nodes, at: t.at, name: "_modify", arguments: [left, right])
+
+    if binding_of(t) == 3
+        # `a op= b` is `b as $v | _modify(a; . op $v)`.
+        dot = syntax.add(@nodes, syntax.leaf(kind: syntax.IDENTITY, at: t.at))
+        v = variable(@nodes, at: t.at, name: ASSIGNED)
+
+        update = if s == "//="
+            pair(@nodes, kind: syntax.ALTERNATIVE, at: t.at, a: dot, b: v)
+        else
+            arithmetic(@nodes, at: t.at, op: operator_of(s.slice(from: 0, to: s.len() - 1)), a: dot, b: v)
+        modify = call(@nodes, at: t.at, name: "_modify", arguments: [left, update])
+        return bind_to(@nodes, at: t.at, source: right, name: ASSIGNED, body: modify)
+    return arithmetic(@nodes, at: t.at, op: operator_of(s), a: left, b: right)
+
+# `a op b`.
+function arithmetic(@nodes: [syntax.Node], at: i64, op: i64, a: i64, b: i64) -> i64
+    n: syntax.Node @= syntax.leaf(kind: syntax.BINARY, at: at)
+    n.a @ a
+    n.b @ b
+    n.d @ op
+    return syntax.add(@nodes, n)
+
+# One operand: `-` before one, a term with what follows it, or a term bound by
+# `as` to patterns over the pipe after it.
+function operand(@r: Reading, @nodes: [syntax.Node], comma: bool) -> i64?
+    if at_symbol(r, s: "-")
+        at = take(@r).at
+        enter(@r)?
+        inner = operand(@r, @nodes, comma: comma)?
+        r.depth @ r.depth - 1
+        return ok(pair(@nodes, kind: syntax.NEGATE, at: at, a: inner, b: -1))
+    term = postfix(@r, @nodes)?
+
+    if !at_keyword(r, k: "as")
+        return ok(term)
+    at = take(@r).at
+    patterns = alternatives(@r, @nodes)?
+    expect(@r, s: "|")?
+    body = pipe(@r, @nodes, comma: comma)?
+    n: syntax.Node @= syntax.leaf(kind: syntax.BIND, at: at)
+    n.a @ term
+    n.items @ patterns
+    n.b @ body
+    return ok(syntax.add(@nodes, n))
+
+## Terms
+
+# A term with what follows it, `-` before it allowed: the body of `try` and
+# of `catch`.
+function signed(@r: Reading, @nodes: [syntax.Node]) -> i64?
+    if at_symbol(r, s: "-")
+        at = take(@r).at
+        enter(@r)?
+        inner = signed(@r, @nodes)?
+        r.depth @ r.depth - 1
+        return ok(pair(@nodes, kind: syntax.NEGATE, at: at, a: inner, b: -1))
+    return postfix(@r, @nodes)
+
+# A term and what follows it: `.name`, `[i]`, `[a:b]`, `[]`, `?`.
+function postfix(@r: Reading, @nodes: [syntax.Node]) -> i64?
+    term: i64 @= primary(@r, @nodes)?
+    going: bool @= true
+
+    while going
+        t = peek(r)
+
+        if t.kind == lexer.FIELD
+            _ = take(@r)
+            term @ field(@nodes, at: t.at, target: term, name: t.text)
+        else if t.kind == lexer.SYMBOL && t.text == "." && peek_next(r).kind == lexer.STRING_BEGIN
+            _ = take(@r)
+            key = string(@r, @nodes, format: "")?
+            term @ pair(@nodes, kind: syntax.INDEX, at: t.at, a: term, b: key)
+        else if t.kind == lexer.SYMBOL && t.text == "." && peek_next(r).kind == lexer.SYMBOL && peek_next(r).text == "["
+            _ = take(@r)
+            term @ bracket(@r, @nodes, target: term)?
+        else if t.kind == lexer.SYMBOL && t.text == "["
+            term @ bracket(@r, @nodes, target: term)?
+        else if t.kind == lexer.SYMBOL && t.text == "?"
+            _ = take(@r)
+            term @ pair(@nodes, kind: syntax.TRY, at: t.at, a: term, b: -1)
+        else
+            going @ false
+
+    return ok(term)
+
+# `target[]`, `target[i]` or `target[a:b]`, the reading at the `[`.
+function bracket(@r: Reading, @nodes: [syntax.Node], target: i64) -> i64?
+    at = take(@r).at
+
+    if at_symbol(r, s: "]")
+        _ = take(@r)
+        return ok(pair(@nodes, kind: syntax.ITERATE, at: at, a: target, b: -1))
+    from: i64 @= -1
+
+    if !at_symbol(r, s: ":")
+        from @ pipe(@r, @nodes, comma: true)?
+
+    if at_symbol(r, s: "]")
+        _ = take(@r)
+        return ok(pair(@nodes, kind: syntax.INDEX, at: at, a: target, b: from))
+    expect(@r, s: ":")?
+    to: i64 @= -1
+
+    if !at_symbol(r, s: "]")
+        to @ pipe(@r, @nodes, comma: true)?
+    expect(@r, s: "]")?
+
+    if from < 0 && to < 0
+        return fail(
+            code: INVALID,
+            msg: f"syntax error at line {lexer.line_at(r.text, at: at)}: a slice `[:]` names neither end"
+        )
+    n: syntax.Node @= syntax.leaf(kind: syntax.SLICE, at: at)
+    n.a @ target
+    n.b @ from
+    n.c @ to
+    return ok(syntax.add(@nodes, n))
+
+# The term the reading stands at.
+function primary(@r: Reading, @nodes: [syntax.Node]) -> i64?
+    t = peek(r)
+
+    if t.kind == lexer.NUMBER
+        _ = take(@r)
+        return ok(literal(@nodes, at: t.at, value: .number(v: t.number)))
+
+    if t.kind == lexer.STRING_BEGIN
+        return string(@r, @nodes, format: "")
+
+    if t.kind == lexer.FORMAT
+        _ = take(@r)
+
+        if peek(r).kind == lexer.STRING_BEGIN
+            return string(@r, @nodes, format: t.text)
+        n: syntax.Node @= syntax.leaf(kind: syntax.FORMAT, at: t.at)
+        n.text @ t.text
+        return ok(syntax.add(@nodes, n))
+
+    if t.kind == lexer.FIELD
+        _ = take(@r)
+        dot = syntax.add(@nodes, syntax.leaf(kind: syntax.IDENTITY, at: t.at))
+        return ok(field(@nodes, at: t.at, target: dot, name: t.text))
+
+    if t.kind == lexer.VARIABLE
+        _ = take(@r)
+
+        if t.text == "__loc__"
+            return ok(location(r, @nodes, at: t.at))
+        return ok(variable(@nodes, at: t.at, name: t.text))
+
+    if t.kind == lexer.KEYWORD
+        return keyword_term(@r, @nodes)
+
+    if t.kind == lexer.NAME
+        return named(@r, @nodes)
+
+    if t.kind == lexer.SYMBOL
+        if t.text == "."
+            _ = take(@r)
+
+            if peek(r).kind == lexer.STRING_BEGIN
+                dot = syntax.add(@nodes, syntax.leaf(kind: syntax.IDENTITY, at: t.at))
+                key = string(@r, @nodes, format: "")?
+                return ok(pair(@nodes, kind: syntax.INDEX, at: t.at, a: dot, b: key))
+            return ok(syntax.add(@nodes, syntax.leaf(kind: syntax.IDENTITY, at: t.at)))
+
+        if t.text == ".."
+            _ = take(@r)
+            return ok(call(@nodes, at: t.at, name: "recurse", arguments: []))
+
+        if t.text == "("
+            _ = take(@r)
+            inner = pipe(@r, @nodes, comma: true)?
+            expect(@r, s: ")")?
+            return ok(inner)
+
+        if t.text == "["
+            _ = take(@r)
+
+            if at_symbol(r, s: "]")
+                _ = take(@r)
+                return ok(pair(@nodes, kind: syntax.ARRAY, at: t.at, a: -1, b: -1))
+            enter(@r)?
+            body = pipe(@r, @nodes, comma: true)?
+            r.depth @ r.depth - 1
+            expect(@r, s: "]")?
+            return ok(pair(@nodes, kind: syntax.ARRAY, at: t.at, a: body, b: -1))
+
+        if t.text == "{"
+            return object(@r, @nodes)
+    return refuse(
+        r,
+        what: "a term: `.`, a value, a call, `(`, `[`, `{`, `$name`, `if`, `try`, `reduce`, `foreach`, `def` or `label`"
+    )
+
+# A name the reading stands at: `break $name`, or a call with its arguments.
+function named(@r: Reading, @nodes: [syntax.Node]) -> i64?
+    t = take(@r)
+
+    if t.text == "null"
+        return ok(literal(@nodes, at: t.at, value: .null_value))
+
+    if t.text == "true" || t.text == "false"
+        return ok(literal(@nodes, at: t.at, value: .boolean(v: t.text == "true")))
+
+    if t.text == "break" && peek(r).kind == lexer.VARIABLE
+        label = take(@r)
+        n: syntax.Node @= syntax.leaf(kind: syntax.BREAK, at: t.at)
+        n.text @ label.text
+        return ok(syntax.add(@nodes, n))
+    arguments: [i64] @= []
+
+    if at_symbol(r, s: "(")
+        _ = take(@r)
+        enter(@r)?
+        arguments @ arguments.push(pipe(@r, @nodes, comma: true)?)
+
+        while at_symbol(r, s: ";")
+            _ = take(@r)
+            arguments @ arguments.push(pipe(@r, @nodes, comma: true)?)
+
+        r.depth @ r.depth - 1
+        expect(@r, s: ")")?
+    return ok(call(@nodes, at: t.at, name: t.text, arguments: arguments))
+
+# A term that opens with a keyword: `if`, `try`, `reduce`, `foreach`, `def`,
+# `label`; `import`, `include` and `module` are refused.
+function keyword_term(@r: Reading, @nodes: [syntax.Node]) -> i64?
+    t = peek(r)
+
+    if t.text == "if"
+        return if_term(@r, @nodes)
+
+    if t.text == "try"
+        _ = take(@r)
+        enter(@r)?
+        body = signed(@r, @nodes)?
+        handler: i64 @= -1
+
+        if at_keyword(r, k: "catch")
+            _ = take(@r)
+            handler @ signed(@r, @nodes)?
+        r.depth @ r.depth - 1
+        return ok(pair(@nodes, kind: syntax.TRY, at: t.at, a: body, b: handler))
+
+    if t.text == "reduce" || t.text == "foreach"
+        return fold_term(@r, @nodes)
+
+    if t.text == "def"
+        # A chain of definitions is read by a loop, not by descent, so that
+        # the prelude's hundred definitions nest nothing.
+        chain: [i64] @= []
+
+        while at_keyword(r, k: "def")
+            chain @ chain.push(def_head(@r, @nodes)?)
+
+        # Definitions with nothing after them are the filter `.`.
+        rest = if peek(r).kind == lexer.END
+            syntax.add(@nodes, syntax.leaf(kind: syntax.IDENTITY, at: peek(r).at))
+        else
+            pipe(@r, @nodes, comma: true)?
+
+        for i in range(from: 0, to: chain.len())
+            nodes[chain[i]].b @ if i + 1 < chain.len()
+                chain[i + 1]
+            else
+                rest
+
+        return ok(chain[0])
+
+    if t.text == "label"
+        _ = take(@r)
+
+        if peek(r).kind != lexer.VARIABLE
+            return refuse(r, what: "`$name` after `label`")
+        name = take(@r).text
+        expect(@r, s: "|")?
+        body = pipe(@r, @nodes, comma: true)?
+        n: syntax.Node @= syntax.leaf(kind: syntax.LABEL, at: t.at)
+        n.text @ name
+        n.a @ body
+        return ok(syntax.add(@nodes, n))
+
+    if t.text == "import" || t.text == "include" || t.text == "module"
+        line = lexer.line_at(r.text, at: t.at)
+        return fail(
+            code: INVALID,
+            msg: f"line {line}: `{t.text}` reads definitions from files, which this interpreter does not; give the definitions in the filter itself"
+        )
+    return refuse(r, what: "a term")
+
+# `if c then t elif c then t else e end`, `else` optional.
+function if_term(@r: Reading, @nodes: [syntax.Node]) -> i64?
+    at = take(@r).at
+    enter(@r)?
+    branches: [i64] @= []
+    branches @ branches.push(pipe(@r, @nodes, comma: true)?)
+    expect_keyword(@r, k: "then")?
+    branches @ branches.push(pipe(@r, @nodes, comma: true)?)
+
+    while at_keyword(r, k: "elif")
+        _ = take(@r)
+        branches @ branches.push(pipe(@r, @nodes, comma: true)?)
+        expect_keyword(@r, k: "then")?
+        branches @ branches.push(pipe(@r, @nodes, comma: true)?)
+
+    otherwise: i64 @= -1
+
+    if at_keyword(r, k: "else")
+        _ = take(@r)
+        otherwise @ pipe(@r, @nodes, comma: true)?
+    expect_keyword(@r, k: "end")?
+    r.depth @ r.depth - 1
+    n: syntax.Node @= syntax.leaf(kind: syntax.IF, at: at)
+    n.items @ branches
+    n.a @ otherwise
+    return ok(syntax.add(@nodes, n))
+
+# `reduce s as p (init; update)` or `foreach s as p (init; update; extract)`.
+function fold_term(@r: Reading, @nodes: [syntax.Node]) -> i64?
+    t = take(@r)
+    enter(@r)?
+    source = postfix(@r, @nodes)?
+    expect_keyword(@r, k: "as")?
+    patterns = alternatives(@r, @nodes)?
+
+    if patterns.len() > 1
+        return fail(
+            code: INVALID,
+            msg: f"line {lexer.line_at(r.text, at: t.at)}: `?//` is read after `as` in a binding, not in `{t.text}`"
+        )
+    expect(@r, s: "(")?
+    init = pipe(@r, @nodes, comma: true)?
+    expect(@r, s: ";")?
+    update = pipe(@r, @nodes, comma: true)?
+    extract: [i64] @= []
+
+    if t.text == "foreach" && at_symbol(r, s: ";")
+        _ = take(@r)
+        extract @ extract.push(pipe(@r, @nodes, comma: true)?)
+    expect(@r, s: ")")?
+    r.depth @ r.depth - 1
+
+    kind = if t.text == "reduce"
+        syntax.REDUCE
+    else
+        syntax.FOREACH
+    n: syntax.Node @= syntax.leaf(kind: kind, at: t.at)
+    n.a @ source
+    n.b @ patterns[0]
+    n.c @ init
+    n.d @ update
+    n.items @ extract
+    return ok(syntax.add(@nodes, n))
+
+# `def name(params): body;`, its node's `b` left for the caller to set.
+function def_head(@r: Reading, @nodes: [syntax.Node]) -> i64?
+    at = take(@r).at
+    t = peek(r)
+
+    if t.kind != lexer.NAME && t.kind != lexer.KEYWORD
+        return refuse(r, what: "a name after `def`")
+    name = take(@r).text
+    params: [str] @= []
+    valued: [bool] @= []
+
+    if at_symbol(r, s: "(")
+        _ = take(@r)
+        reading: bool @= true
+
+        while reading
+            p = take(@r)
+
+            if p.kind == lexer.VARIABLE
+                params @ params.push(p.text)
+                valued @ valued.push(true)
+            else if p.kind == lexer.NAME || p.kind == lexer.KEYWORD
+                params @ params.push(p.text)
+                valued @ valued.push(false)
+            else
+                r.at @ r.at - 1
+                return refuse(r, what: "a parameter, `name` or `$name`")
+
+            if at_symbol(r, s: ";")
+                _ = take(@r)
+            else
+                reading @ false
+
+        expect(@r, s: ")")?
+    expect(@r, s: ":")?
+    enter(@r)?
+    body: i64 @= pipe(@r, @nodes, comma: true)?
+    r.depth @ r.depth - 1
+    expect(@r, s: ";")?
+
+    # A parameter written `$name` binds its value around the body, the first
+    # outermost.
+    k: i64 @= params.len()
+
+    while k > 0
+        k @ k - 1
+
+        if valued[k]
+            source = call(@nodes, at: at, name: params[k], arguments: [])
+            body @ bind_to(@nodes, at: at, source: source, name: params[k], body: body)
+
+    n: syntax.Node @= syntax.leaf(kind: syntax.DEF, at: at)
+    n.text @ name
+    n.names @ params
+    n.a @ body
+    return ok(syntax.add(@nodes, n))
+
+## Strings and objects
+
+# A string the reading stands at, its interpolations each a node; `format`
+# names the format applied to them, "" for none. A string with no
+# interpolation is a literal.
+function string(@r: Reading, @nodes: [syntax.Node], format: str) -> i64?
+    at = take(@r).at
+    parts: [i64] @= []
+    pieces: [str] @= []
+    interpolated: bool @= false
+
+    while peek(r).kind != lexer.STRING_END
+        t = take(@r)
+
+        if t.kind == lexer.PIECE
+            pieces @ pieces.push(t.text)
+        else if t.kind == lexer.INTERPOLATION
+            if pieces.len() > 0
+                parts @ parts.push(literal(@nodes, at: t.at, value: .text(v: pieces.join(""))))
+                pieces @ []
+            enter(@r)?
+            parts @ parts.push(pipe(@r, @nodes, comma: true)?)
+            r.depth @ r.depth - 1
+
+            if peek(r).kind != lexer.INTERPOLATION_END
+                return refuse(r, what: "the `)` that closes an interpolation")
+            _ = take(@r)
+            interpolated @ true
+        else
+            r.at @ r.at - 1
+            return refuse(r, what: "the rest of a string")
+
+    _ = take(@r)
+
+    if !interpolated
+        return ok(literal(@nodes, at: at, value: .text(v: pieces.join(""))))
+
+    if pieces.len() > 0
+        parts @ parts.push(literal(@nodes, at: at, value: .text(v: pieces.join(""))))
+    n: syntax.Node @= syntax.leaf(kind: syntax.STRING, at: at)
+    n.items @ parts
+
+    n.text @ if format == ""
+        "text"
+    else
+        format
+    return ok(syntax.add(@nodes, n))
+
+# An object `{...}` the reading stands at.
+function object(@r: Reading, @nodes: [syntax.Node]) -> i64?
+    at = take(@r).at
+    enter(@r)?
+    items: [i64] @= []
+
+    if !at_symbol(r, s: "}")
+        reading: bool @= true
+
+        while reading
+            entry(@r, @nodes, @items)?
+
+            if at_symbol(r, s: ",")
+                _ = take(@r)
+            else
+                reading @ false
+
+    expect(@r, s: "}")?
+    r.depth @ r.depth - 1
+    n: syntax.Node @= syntax.leaf(kind: syntax.OBJECT, at: at)
+    n.items @ items
+    return ok(syntax.add(@nodes, n))
+
+# One entry of an object, its key and its value added to `items`.
+function entry(@r: Reading, @nodes: [syntax.Node], @items: [i64]) -> ()?
+    t = peek(r)
+    key: i64 @= -1
+    shorthand: i64 @= -1
+
+    if t.kind == lexer.VARIABLE
+        _ = take(@r)
+
+        named_value = if t.text == "__loc__"
+            location(r, @nodes, at: t.at)
+        else
+            variable(@nodes, at: t.at, name: t.text)
+
+        # `{$x: v}` takes the variable's value as its key; `{$x}` its name.
+        if at_symbol(r, s: ":")
+            key @ named_value
+        else
+            key @ literal(@nodes, at: t.at, value: .text(v: t.text))
+            shorthand @ named_value
+    else if t.kind == lexer.NAME || t.kind == lexer.KEYWORD
+        _ = take(@r)
+        key @ literal(@nodes, at: t.at, value: .text(v: t.text))
+        dot = syntax.add(@nodes, syntax.leaf(kind: syntax.IDENTITY, at: t.at))
+        shorthand @ field(@nodes, at: t.at, target: dot, name: t.text)
+    else if t.kind == lexer.STRING_BEGIN || t.kind == lexer.FORMAT
+        format: str @= ""
+
+        if t.kind == lexer.FORMAT
+            _ = take(@r)
+            format @ t.text
+
+            if peek(r).kind != lexer.STRING_BEGIN
+                return refuse(r, what: "a string after a format, as an object's key")
+        key @ string(@r, @nodes, format: format)?
+        dot = syntax.add(@nodes, syntax.leaf(kind: syntax.IDENTITY, at: t.at))
+        shorthand @ pair(@nodes, kind: syntax.INDEX, at: t.at, a: dot, b: key)
+    else if t.kind == lexer.SYMBOL && t.text == "("
+        _ = take(@r)
+        key @ pipe(@r, @nodes, comma: true)?
+        expect(@r, s: ")")?
+        k = nodes[key]
+
+        if k.kind == syntax.LITERAL
+            match k.value
+                .text _ => _ = 0
+                .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+                    return fail(
+                        code: INVALID,
+                        msg: f"Cannot use {kind_name(k.value)} ({literal_text(k.value)}) as object key at line {lexer.line_at(r.text, at: t.at)}"
+                    )
+
+        if !at_symbol(r, s: ":")
+            return refuse(r, what: "`:` after a computed key")
+    else
+        return refuse(r, what: "an object's key: a name, a string, `$name` or `(...)`")
+
+    if at_symbol(r, s: ":")
+        _ = take(@r)
+        value = pipe(@r, @nodes, comma: false)?
+        items @ items.push(key)
+        items @ items.push(value)
+    else
+        if shorthand < 0
+            return refuse(r, what: "`:`")
+        items @ items.push(key)
+        items @ items.push(shorthand)
+    return ok()
+
+# The name of a literal's type, as jq's messages give it.
+function kind_name(v: json.Value) -> str
+    return match v
+        .null_value => "null"
+        .boolean _  => "boolean"
+        .number _   => "number"
+        .text _     => "string"
+        .list _     => "array"
+        .object _   => "object"
+
+# A literal written as a message shows it.
+function literal_text(v: json.Value) -> str
+    match v
+        .number n =>
+            if n.v < 1000000000000000.0 && n.v > -1000000000000000.0
+                whole = n.v.to_i64().must()
+
+                if n.v == to_f64(whole)
+                    return f"{whole}"
+            return f"{n.v}"
+        .null_value | .boolean _ | .text _ | .list _ | .object _ => return json.format(v).default("?")
+
+## Patterns
+
+# Patterns joined by `?//`.
+function alternatives(@r: Reading, @nodes: [syntax.Node]) -> [i64]?
+    found: [i64] @= [pattern(@r, @nodes)?]
+
+    while at_symbol(r, s: "?//")
+        _ = take(@r)
+        found @ found.push(pattern(@r, @nodes)?)
+
+    return ok(found)
+
+# One pattern: `$name`, `[p, ...]` or `{entry, ...}`.
+function pattern(@r: Reading, @nodes: [syntax.Node]) -> i64?
+    t = peek(r)
+
+    if t.kind == lexer.VARIABLE
+        _ = take(@r)
+        n: syntax.Node @= syntax.leaf(kind: syntax.PATTERN_VARIABLE, at: t.at)
+        n.text @ t.text
+        return ok(syntax.add(@nodes, n))
+
+    if t.kind == lexer.SYMBOL && t.text == "["
+        _ = take(@r)
+        enter(@r)?
+        elements: [i64] @= [pattern(@r, @nodes)?]
+
+        while at_symbol(r, s: ",")
+            _ = take(@r)
+            elements @ elements.push(pattern(@r, @nodes)?)
+
+        expect(@r, s: "]")?
+        r.depth @ r.depth - 1
+        n: syntax.Node @= syntax.leaf(kind: syntax.PATTERN_ARRAY, at: t.at)
+        n.items @ elements
+        return ok(syntax.add(@nodes, n))
+
+    if t.kind == lexer.SYMBOL && t.text == "{"
+        _ = take(@r)
+        enter(@r)?
+        entries: [i64] @= [pattern_entry(@r, @nodes)?]
+
+        while at_symbol(r, s: ",")
+            _ = take(@r)
+            entries @ entries.push(pattern_entry(@r, @nodes)?)
+
+        expect(@r, s: "}")?
+        r.depth @ r.depth - 1
+        n: syntax.Node @= syntax.leaf(kind: syntax.PATTERN_OBJECT, at: t.at)
+        n.items @ entries
+        return ok(syntax.add(@nodes, n))
+    return refuse(r, what: "a pattern: `$name`, `[` or `{`")
+
+# One entry of an object pattern.
+function pattern_entry(@r: Reading, @nodes: [syntax.Node]) -> i64?
+    t = peek(r)
+    n: syntax.Node @= syntax.leaf(kind: syntax.PATTERN_ENTRY, at: t.at)
+
+    if t.kind == lexer.VARIABLE
+        _ = take(@r)
+        n.text @ t.text
+
+        if at_symbol(r, s: ":")
+            _ = take(@r)
+            n.b @ pattern(@r, @nodes)?
+        return ok(syntax.add(@nodes, n))
+
+    if t.kind == lexer.NAME || t.kind == lexer.KEYWORD
+        _ = take(@r)
+        n.a @ literal(@nodes, at: t.at, value: .text(v: t.text))
+    else if t.kind == lexer.STRING_BEGIN
+        n.a @ string(@r, @nodes, format: "")?
+    else if t.kind == lexer.SYMBOL && t.text == "("
+        _ = take(@r)
+        n.a @ pipe(@r, @nodes, comma: true)?
+        expect(@r, s: ")")?
+    else
+        return refuse(r, what: "an object pattern's key: `$name`, a name, a string or `(...)`")
+    expect(@r, s: ":")?
+    n.b @ pattern(@r, @nodes)?
+    return ok(syntax.add(@nodes, n))
+
+## Tests
+
+test "read_into: the empty filter is `.`"
+    nodes: [syntax.Node] @= []
+    root = read_into(@nodes, text: "").must()
+    assert nodes[root].kind == syntax.IDENTITY
+
+test "read_into: a pipe groups to the right, `,` binds tighter, `//` tighter still"
+    nodes: [syntax.Node] @= []
+    root = read_into(@nodes, text: "1 | 2, 3 // 4 | 5").must()
+    assert nodes[root].kind == syntax.PIPE
+    rest = nodes[nodes[root].b]
+    assert rest.kind == syntax.PIPE && nodes[rest.a].kind == syntax.COMMA
+    assert nodes[nodes[rest.a].b].kind == syntax.ALTERNATIVE
+
+test "read_into: arithmetic by precedence, and a comparison beside another refused"
+    nodes: [syntax.Node] @= []
+    root = read_into(@nodes, text: "1 + 2 * 3").must()
+    assert nodes[root].d == syntax.ADD && nodes[nodes[root].b].d == syntax.MULTIPLY
+    assert read_into(@nodes, text: "1 == 2 == 3").is_err()
+
+test "read_into: postfix forms, a slice with one end, and `?`"
+    nodes: [syntax.Node] @= []
+    root = read_into(@nodes, text: ".a[0].\"b\"[1:][]?").must()
+    assert nodes[root].kind == syntax.TRY
+    inner = nodes[nodes[root].a]
+    assert inner.kind == syntax.ITERATE && nodes[inner.a].kind == syntax.SLICE && nodes[inner.a].c == -1
+
+test "read_into: a binding takes the rest of the pipe"
+    nodes: [syntax.Node] @= []
+    root = read_into(@nodes, text: "1, .[] as [$a, {b: $c}] ?// $a | $a").must()
+    assert nodes[root].kind == syntax.COMMA
+    bound = nodes[nodes[root].b]
+    assert bound.kind == syntax.BIND && bound.items.len() == 2
+
+test "read_into: a definition with a value parameter binds it around the body"
+    nodes: [syntax.Node] @= []
+    root = read_into(@nodes, text: "def f($a; g): $a + g; f(1; 2)").must()
+    d = nodes[root]
+    assert d.kind == syntax.DEF && d.names == ["a", "g"] && nodes[d.a].kind == syntax.BIND
+    assert nodes[d.b].kind == syntax.CALL && nodes[d.b].items.len() == 2
+
+test "read_into: an object's shorthands and a computed key"
+    nodes: [syntax.Node] @= []
+    root = read_into(@nodes, text: "{a, $x, \"b\": 1, (.c): 2, if: 3}").must()
+    assert nodes[root].items.len() == 10
+
+test "read_into: a number as an object's key is refused, as jq does"
+    nodes: [syntax.Node] @= []
+
+    match read_into(@nodes, text: "{(0):1}")
+        .ok _  => assert false
+        .err e => assert e.msg == "Cannot use number (0) as object key at line 1"
+
+test "read_into: an interpolated string with a format"
+    nodes: [syntax.Node] @= []
+    root = read_into(@nodes, text: "@base64 \"x\\(.a)y\"").must()
+    assert nodes[root].kind == syntax.STRING && nodes[root].text == "base64" && nodes[root].items.len() == 3
+
+test "read_into: refusals, with their line"
+    nodes: [syntax.Node] @= []
+
+    match read_into(@nodes, text: ".a\n]")
+        .ok _  => assert false
+        .err e => assert e.msg == "syntax error at line 2: unexpected `]`, expected the end of the filter"
+
+    assert read_into(@nodes, text: ". as [] | null").is_err()
+    assert read_into(@nodes, text: ". as {} | null").is_err()
+    assert read_into(@nodes, text: "import \"a\" as b; .").is_err()
+    assert read_into(@nodes, text: "if . then 1").is_err()
+
+test "read_into: nesting past the bound is refused, and up to it read"
+    nodes: [syntax.Node] @= []
+    deep = repeat("[", 200) + repeat("]", 200)
+    assert read_into(@nodes, text: deep).is_err()
+    fine = repeat("(", 60) + "1" + repeat(")", 60)
+    assert !read_into(@nodes, text: fine).is_err()
+
+test "read_into: `$__loc__` is its line"
+    nodes: [syntax.Node] @= []
+    root = read_into(@nodes, text: "\n$__loc__").must()
+    assert json.format(nodes[root].value).must() == "{\"file\":\"<top-level>\",\"line\":2}"

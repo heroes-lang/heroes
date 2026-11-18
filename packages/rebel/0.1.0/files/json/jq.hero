@@ -1,0 +1,429 @@
+# The jq language run over a `json.Value`: a filter read once and run against
+# any number of values, each run answering every value the filter outputs.
+# Since YAML, TOML, CBOR, MessagePack and XML are read into a `json.Value` by
+# their own packages, a filter runs over them too, as `yq` and `xq` do.
+#
+# The language is jq 1.7's, as its manual defines it: paths, iteration,
+# pipes, `,`, `//`, `?`, comparisons and arithmetic as jq defines them on each
+# type, array and object construction, string interpolation and the `@`
+# formats, `if`, `try` and `catch`, `reduce`, `foreach`, `label` and
+# `break`, variables and destructuring with `?//`, definitions with
+# arguments, `..`, the assignments, and the manual's builtins; every case of
+# jq 1.7.1's own test file that does not need what follows passes. What it
+# does not do: `import`, `include` and `modulemeta`, which read files, are
+# refused; a number is the `f64` a `json.Value` holds, where jq 1.7 keeps a
+# literal's own digits until arithmetic touches it, so `100000000000000000001`
+# reads as `1e+20`; the Bessel functions `j0`, `j1`, `y0`, `y1`, `jn` and `yn`
+# are not defined, `math` holding none. What reads the world reads what the
+# caller gives: `$ENV` and `env` read `Options.environment`, `now` reads
+# `Options.now`, `input` and `inputs` read `Options.inputs`, `localtime`
+# and `strflocaltime` read the zone as UTC, and `input_filename` answers
+# `null`. Regular expressions are `regex`'s, matched in time linear in the
+# text, so a back-reference, a look-around and the flag `l` are refused where
+# Oniguruma, jq's, reads them.
+#
+# Every run is bounded: by the steps it may take, the values it may output and
+# the depth its evaluation may reach, so that no filter can hang a program or
+# fill its memory. The machine holds its own stacks, so neither a filter nested
+# deep nor a value nested deep runs out of the machine's.
+#
+# Fails `invalid` where a filter is not jq or where a run raises an error
+# nothing catches, and `limit` where a run reaches one of its bounds.
+
+use json
+use json/jq/internal/compile
+use json/jq/internal/execute
+use json/jq/internal/manual
+use json/jq/internal/parser as nesting
+use json/jq/internal/state
+use json/jq/internal/suite
+use json/jq/internal/syntax
+use json/jq/internal/text as texts
+use json/jq/internal/values
+use json/jq/internal/write
+
+## Codes and bounds
+
+# The code of a filter that is not jq, and of a run that raised an error
+# nothing caught: `parse`, `run` and `run_text` fail with it.
+constant INVALID: str
+    "invalid"
+
+# The code of a run that reached one of the bounds its `Options` set.
+constant LIMIT: str
+    "limit"
+
+# The code of `first` where the filter outputs nothing.
+constant NOT_FOUND: str
+    "not_found"
+
+# The steps a run takes at most unless its `Options` say otherwise: one step
+# is one move of the machine, and a builtin that copies or walks a value
+# counts a step for every element or every 64 bytes it handles.
+constant DEFAULT_MAX_STEPS: i64
+    10000000
+
+# The values a run outputs at most unless its `Options` say otherwise.
+constant DEFAULT_MAX_OUTPUTS: i64
+    1000000
+
+# The depth a run's evaluation reaches at most unless its `Options` say
+# otherwise: each call not in a tail position, each operand awaited and each
+# value being collected is one level.
+constant DEFAULT_MAX_DEPTH: i64
+    10000
+
+# The deepest a filter's own text nests, parentheses, brackets, braces,
+# definitions and the bodies of `if`, `reduce` and the like counted together;
+# `parse` refuses a filter nested deeper.
+constant MAX_NESTING: i64
+    nesting.MAX_NESTING
+
+## A filter
+
+# A filter read and checked, ready to run against any number of values. Only
+# `parse` makes one.
+record Program
+    # The filter's text as it was given.
+    text: str
+    # The filter as `parse` read it, the builtins written in jq before it,
+    # which only this package reads.
+    code: syntax.Code
+
+# The filter `text` writes, read and checked.
+#
+# - `text`: a jq filter, definitions before it allowed; the empty text is
+#   the filter `.`.
+#
+# Fails `invalid` where `text` is not a filter: a syntax error, a function
+# or a variable no definition names, `break` with no `label` around it,
+# `import` or `include`, and a filter nested deeper than `MAX_NESTING`. The
+# message says the line and what was expected.
+function parse(text: str) -> Program?
+    return ok(Program(text: text, code: compile.compile(text)?))
+
+# Whether `text` is a filter: true exactly where `parse` succeeds.
+#
+# - `text`: the text asked about.
+function is_valid(text: str) -> bool
+    return !parse(text).is_err()
+
+## Running
+
+# What a run may use and how far it may go. `defaults` answers the options of
+# a run with no variable, no input past the one given, and the default
+# bounds; a program changes the fields it needs.
+record Options
+    # The steps the run takes at most, `DEFAULT_MAX_STEPS` by default; past
+    # it the run ends `limited`.
+    max_steps: i64
+    # The values the run outputs at most, `DEFAULT_MAX_OUTPUTS` by default;
+    # past it the run ends `limited`.
+    max_outputs: i64
+    # The depth the evaluation reaches at most, `DEFAULT_MAX_DEPTH` by
+    # default; past it the run ends `limited`.
+    max_depth: i64
+    # The variables the filter reads as `$name`, by name without the `$`,
+    # as jq's `--arg` and `--argjson` give them; `$__named` reads them all as
+    # one object.
+    variables: {str: json.Value}
+    # The values `input` and `inputs` read, in order, after the one the run
+    # is given.
+    inputs: [json.Value]
+    # What `$ENV` and `env` read: an object, empty by default, never the
+    # process's own environment unless the program puts it here.
+    environment: {str: json.Value}
+    # What `now` answers: seconds since 1970-01-01T00:00:00Z.
+    now: f64
+
+# The options of a run with no variable, no further input, an empty `$ENV`,
+# `now` at 0, and the default bounds.
+function defaults() -> Options
+    return Options(
+        max_steps: DEFAULT_MAX_STEPS,
+        max_outputs: DEFAULT_MAX_OUTPUTS,
+        max_depth: DEFAULT_MAX_DEPTH,
+        variables: {},
+        inputs: [],
+        environment: {},
+        now: 0.0
+    )
+
+# How a run ended.
+variant Ending
+    # The filter output every value it had.
+    finished
+    # An error nothing caught ended the run.
+    raised
+        # The error's value: the text of jq's own errors, or what `error`
+        # was given.
+        value: json.Value
+        # The message jq prints for it: the text itself where the value is
+        # a text, and otherwise the value written as JSON with
+        # ` (not a string)` after it.
+        message: str
+    # The run reached one of its bounds.
+    limited
+        # Which bound, and its value.
+        message: str
+    # `halt` or `halt_error` stopped the run.
+    halted
+        # The exit code it asked for: 0 for `halt`, 5 for `halt_error`
+        # unless it names another.
+        code: i64
+        # What `halt_error` was given, `null` for `halt`.
+        value: json.Value
+
+# What a run answers: what it output, and how it ended.
+record Outcome
+    # The values output, in order, those before an error included.
+    outputs: [json.Value]
+    # What `debug` and `stderr` wrote, in order: `debug`'s each as the list
+    # `["DEBUG:", v]`, `stderr`'s as the value itself.
+    messages: [json.Value]
+    # How the run ended.
+    ending: Ending
+    # How many of `Options.inputs` the run read.
+    read: i64
+
+# Every value `program` outputs for `input`, run with `defaults()`.
+#
+# - `program`: a filter `parse` made.
+# - `input`: the value the filter reads as `.`.
+#
+# Fails `invalid` where the run raises an error nothing catches, the message
+# jq prints for it, and where it halts with an exit code other than 0. Fails
+# `limit` where it reaches a bound of `defaults()`.
+#
+# A filter that outputs nothing answers the empty list.
+function run(program: Program, input: json.Value) -> [json.Value]?
+    return execute.answered(
+        execute.execute(program.code, input: input, variables: {}, inputs: [], environment: {}, now: 0.0, max_steps: DEFAULT_MAX_STEPS, max_outputs: DEFAULT_MAX_OUTPUTS, max_depth: DEFAULT_MAX_DEPTH, stop_after: 0)
+    )
+
+# What `program` outputs for `input` and how it ended, run as `options` say.
+#
+# - `program`: a filter `parse` made.
+# - `input`: the value the filter reads as `.`.
+# - `options`: the variables, the further inputs and the bounds of the run.
+#
+# It never fails: an error, a bound and a halt are each an `Ending`, and the
+# values output before it are kept.
+function run_with(program: Program, input: json.Value, options: Options) -> Outcome
+    r = execute.execute(
+        program.code,
+        input: input,
+        variables: options.variables,
+        inputs: options.inputs,
+        environment: options.environment,
+        now: options.now,
+        max_steps: options.max_steps,
+        max_outputs: options.max_outputs,
+        max_depth: options.max_depth,
+        stop_after: 0
+    )
+    ending: Ending @= .finished
+
+    if r.ending == state.RAISED
+        ending @ .raised(value: r.error, message: state.message_of(r.error))
+    else if r.ending == state.LIMITED
+        ending @ .limited(message: r.message)
+    else if r.ending == state.HALTED
+        ending @ .halted(code: r.halt_code, value: r.halt_value)
+    return Outcome(outputs: r.outputs, messages: r.messages, ending: ending, read: r.read)
+
+# Every value `program` outputs for each value of `text` in turn, as jq run on
+# a file outputs them.
+#
+# - `program`: a filter `parse` made.
+# - `text`: JSON values one after another, white space between them or none;
+#   the empty text holds none. Each is read as `json.parse` reads one, but
+#   nested up to 10,000 deep.
+#
+# Fails `invalid` where `text` is not such a sequence, or where a run raises
+# an error nothing catches; `limit` where a run reaches a bound of
+# `defaults()`. Every value read is given to `input` and `inputs` too, as jq
+# gives a file's values.
+function run_text(program: Program, text: str) -> [json.Value]?
+    read: [json.Value] @= []
+    at: i64 @= 0
+    reading = json.ParseOptions(
+        max_depth: texts.MAX_PARSE_DEPTH,
+        duplicate_keys: true,
+        control_characters: false,
+        lone_surrogates: true,
+        non_finite: false,
+        exact_integers: false
+    )
+
+    while at < text.len() && !execute.only_space(text, from: at)
+        parsed = json.parse_next(text, from: at, options: reading)?
+        read @ read.push(parsed.value)
+        at @ parsed.next
+
+    out: [json.Value] @= []
+    next: i64 @= 0
+
+    while next < read.len()
+        rest = read.slice(from: next + 1, to: read.len())
+        r = execute.execute(
+            program.code,
+            input: read[next],
+            variables: {},
+            inputs: rest,
+            environment: {},
+            now: 0.0,
+            max_steps: DEFAULT_MAX_STEPS,
+            max_outputs: DEFAULT_MAX_OUTPUTS,
+            max_depth: DEFAULT_MAX_DEPTH,
+            stop_after: 0
+        )
+
+        for v in execute.answered(r)?
+            out @ out.push(v)
+
+        # What `input` read is not read again as a value of its own.
+        next @ next + 1 + r.read
+
+    return ok(out)
+
+# The first value `program` outputs for `input`; the run stops there.
+#
+# - `program`: a filter `parse` made.
+# - `input`: the value the filter reads as `.`.
+#
+# Fails `not_found` where the filter outputs nothing, and as `run` fails where
+# the run raises an error before its first output or reaches a bound.
+function first(program: Program, input: json.Value) -> json.Value?
+    r = execute.execute(
+        program.code,
+        input: input,
+        variables: {},
+        inputs: [],
+        environment: {},
+        now: 0.0,
+        max_steps: DEFAULT_MAX_STEPS,
+        max_outputs: DEFAULT_MAX_OUTPUTS,
+        max_depth: DEFAULT_MAX_DEPTH,
+        stop_after: 1
+    )
+
+    if r.outputs.len() > 0
+        return ok(r.outputs[0])
+    _ = execute.answered(r)?
+    return fail(code: NOT_FOUND, msg: f"{program.text} outputs nothing")
+
+## Values as jq sees them
+
+# `v` written as jq writes a value with `-c`: one line, no white space, and
+# a number as jq writes a double.
+#
+# - `v`: any value.
+#
+# A number is written in the fewest digits that read back as it, with an
+# exponent where its decimal point would stand more than 15 places past its
+# digits or 4 or more before them: `1e+17`, `0.0001`, `1e-05`. A `nan` is
+# written `null`, and an infinity as the largest double, as jq writes them.
+# It holds its own stack, so no value is nested too deep for it.
+function format_value(v: json.Value) -> str
+    return write.compact(v)
+
+# `v` written as jq writes a value by default: one element or member a line,
+# `width` spaces a level.
+#
+# - `v`: any value.
+# - `width`: the spaces that indent a level, 0 to 7, as jq's `--indent`;
+#   0 writes `v` on one line as `format_value` does.
+#
+# Aborts where `width` is below 0 or above 7.
+function format_value_indented(v: json.Value, width: i64) -> str
+    assert width >= 0 && width <= 7
+    return write.indented(v, width: width)
+
+# Where `a` stands against `b` in jq's order: -1 before, 0 equal, 1 after.
+#
+# - `a`: any value.
+# - `b`: any value.
+#
+# The order is `null`, `false`, `true`, numbers, texts, lists, objects. Numbers
+# by value, texts by their code points, lists element by element, objects by
+# their sorted keys first and then their values in that order. A `nan` stands
+# before every other number, as jq sorts it. It holds its own stack.
+function compare(a: json.Value, b: json.Value) -> i64
+    return values.order(a: a, b: b)
+
+# The name jq's `type` gives `v`: `null`, `boolean`, `number`, `string`,
+# `array` or `object`.
+#
+# - `v`: any value.
+function type_of(v: json.Value) -> str
+    return values.type_name(v)
+
+## Tests
+
+test "suite: the cases of jq 1.7.1's own tests, from their file"
+    assert suite.VERSION == "jq-1.7.1"
+
+test "manual: the examples of jq 1.7.1's manual, from jq's own file of them"
+    assert manual.VERSION == "jq-1.7.1"
+
+## Examples
+
+# A filter read.
+test "parse: a path and a pipe"
+    p = parse(".a | length").must()
+    assert p.text == ".a | length"
+
+# A text asked whether it is a filter.
+test "is_valid: a filter and a stray bracket"
+    assert is_valid("[.[] | select(. > 1)]") && !is_valid(".a]")
+
+# The options of a run, one changed.
+test "defaults: the bounds, and a variable given"
+    options: Options @= defaults()
+    options.variables["name"] @ .text(v: "Low")
+    assert options.max_steps == DEFAULT_MAX_STEPS && options.variables.len() == 1
+
+# Every value a filter outputs.
+test "run: the titles of the albums of 1977"
+    doc = json.parse("[{\"title\": \"Low\", \"year\": 1977}, {\"title\": \"Lodger\", \"year\": 1979}]").must()
+    got = run(parse("[.[] | select(.year == 1977) | .title]").must(), input: doc).must()
+    assert got.len() == 1 && format_value(got[0]) == "[\"Low\"]"
+
+# A run with a variable, ending in an error caught by nothing.
+test "run_with: a variable read and an error raised"
+    options: Options @= defaults()
+    options.variables["n"] @ .number(v: 2.0)
+    outcome = run_with(parse("$n, error(\"stop\")").must(), input: .null_value, options: options)
+    assert outcome.outputs.len() == 1 && format_value(outcome.outputs[0]) == "2"
+
+    match outcome.ending
+        .raised r                          => assert r.message == "stop"
+        .finished | .limited _ | .halted _ => assert false
+
+# A filter run on every value of a text.
+test "run_text: three values read one after another"
+    got = run_text(parse(". * 2").must(), text: "1 2\n3").must()
+    assert got.len() == 3 && format_value(got[2]) == "6"
+
+# The first value a filter outputs, of an endless stream.
+test "first: of the numbers counted from 0"
+    assert format_value(first(parse("range(infinite)").must(), input: .null_value).must()) == "0"
+
+# A value written as jq writes it.
+test "format_value: a list with a large number"
+    v = json.parse("[1e17, 0.5, \"a\"]").must()
+    assert format_value(v) == "[1e+17,0.5,\"a\"]"
+
+# A value written on several lines.
+test "format_value_indented: an object two spaces a level"
+    v = json.parse("{\"a\": [1]}").must()
+    assert format_value_indented(v, width: 2) == "{\n  \"a\": [\n    1\n  ]\n}"
+
+# Two values ordered as `sort` orders them.
+test "compare: a number before a text"
+    assert compare(a: .number(v: 9.0), b: .text(v: "a")) == -1
+
+# The name of a value's type.
+test "type_of: an object"
+    assert type_of(json.parse("{}").must()) == "object"

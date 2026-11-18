@@ -1,0 +1,426 @@
+# URI templates, RFC 6570, as MCP's resource templates write them: a
+# template expanded with text values at every level of the RFC (each
+# operator and the prefix modifier; a value is text, so the explode modifier
+# changes nothing), and a URI matched against a template to read the values
+# back. Matching is the reverse the RFC does not define: each expression
+# takes the characters its operator may write, up to the template's next
+# literal text, and the values are unescaped.
+
+use strings
+use url
+
+# The code of a template or a URI that is not of its form.
+constant INVALID: str
+    "invalid"
+
+# The code of a URI the template does not match.
+constant NOT_FOUND: str
+    "not_found"
+
+# One part of a template: literal text, or an expression.
+record Part
+    # The literal text, "" for an expression.
+    text: str
+    # The expression's operator: "", "+", "#", ".", "/", ";", "?" or "&"; ""
+    # too for literal text, which `names` tells apart.
+    operator: str
+    # The variables' names, in order; empty for literal text.
+    names: [str]
+    # Each variable's prefix length in characters, 0 for none.
+    prefixes: [i64]
+
+# The parts of `template`, its expressions checked. Fails `invalid` where an
+# expression is not closed, its operator is reserved for a future RFC, or a
+# variable's name or prefix is not of the RFC's form.
+function parts_of(template: str) -> [Part]?
+    parts: [Part] @= []
+    literal: [str] @= []
+    at: i64 @= 0
+
+    while at < template.len()
+        if template[at] != '{'
+            if template[at] == '}'
+                return fail(code: INVALID, msg: f"the template \"{template}\" closes at {at} a `}}` it never opened")
+            next = next_char(template, at: at)
+            literal @ literal.push(template.slice(from: at, to: next))
+            at @ next
+            continue
+
+        close = match strings.index_of(s: template.slice(from: at, to: template.len()), substr: "}")
+            .ok found => at + found
+            .err _ => return fail(
+                code: INVALID,
+                msg: f"the template \"{template}\" opens at {at} an expression it never closes"
+            )
+
+        if literal.len() > 0
+            parts @ parts.push(Part(text: literal.join(""), operator: "", names: [], prefixes: []))
+            literal @ []
+        parts @ parts.push(expression_of(inside: template.slice(from: at + 1, to: close), template: template)?)
+        at @ close + 1
+
+    if literal.len() > 0
+        parts @ parts.push(Part(text: literal.join(""), operator: "", names: [], prefixes: []))
+    return ok(parts)
+
+# The index past the character that begins at `at` in `s`.
+function next_char(s: str, at: i64) -> i64
+    first = s[at]
+
+    width = if first < 0x80
+        1
+    else if first < 0xe0
+        2
+    else if first < 0xf0
+        3
+    else
+        4
+
+    if at + width > s.len()
+        return s.len()
+    return at + width
+
+# The expression `inside` writes between its braces.
+function expression_of(inside: str, template: str) -> Part?
+    if inside == ""
+        return fail(code: INVALID, msg: f"the template \"{template}\" holds an empty expression")
+    operator: str @= ""
+    rest: str @= inside
+    first = inside.slice(from: 0, to: 1)
+
+    if first == "+" || first == "#" || first == "." || first == "/" || first == ";" || first == "?" || first == "&"
+        operator @ first
+        rest @ inside.slice(from: 1, to: inside.len())
+    else if first == "=" || first == "," || first == "!" || first == "@" || first == "|"
+        return fail(code: INVALID, msg: f"the operator `{first}` of \"{template}\" is kept for a later RFC")
+    names: [str] @= []
+    prefixes: [i64] @= []
+
+    for spec in strings.split(s: rest, sep: ",")
+        name: str @= spec
+        prefix: i64 @= 0
+
+        if strings.has_suffix(s: spec, suffix: "*")
+            name @ spec.slice(from: 0, to: spec.len() - 1)
+        else
+            match strings.index_of(s: spec, substr: ":")
+                .ok colon =>
+                    name @ spec.slice(from: 0, to: colon)
+                    prefix @ prefix_of(digits: spec.slice(from: colon + 1, to: spec.len()), template: template)?
+                .err _ => _ = 0
+
+        if !is_name(name)
+            return fail(code: INVALID, msg: f"\"{name}\" in \"{template}\" is no variable's name")
+        names @ names.push(name)
+        prefixes @ prefixes.push(prefix)
+
+    return ok(Part(text: "", operator: operator, names: names, prefixes: prefixes))
+
+# The prefix length `digits` writes: 1 to 9999.
+function prefix_of(digits: str, template: str) -> i64?
+    if digits == "" || digits.len() > 4 || digits[0] == '0'
+        return fail(code: INVALID, msg: f"the prefix \":{digits}\" of \"{template}\" is not 1 to 9999")
+    n: i64 @= 0
+
+    for c in digits.chars()
+        if c[0] < '0' || c[0] > '9'
+            return fail(code: INVALID, msg: f"the prefix \":{digits}\" of \"{template}\" is not digits")
+        n @ n * 10 + to_i64(c[0] - '0').must()
+
+    return ok(n)
+
+# Whether `name` is a variable's name: letters, digits, `_`, `.` between
+# them and percent-encoded triplets.
+function is_name(name: str) -> bool
+    if name == "" || name[0] == '.' || name[name.len() - 1] == '.'
+        return false
+    at: i64 @= 0
+
+    while at < name.len()
+        c = name[at]
+
+        if c == '%'
+            if at + 2 >= name.len() || !is_hex(name[at + 1]) || !is_hex(name[at + 2])
+                return false
+            at @ at + 3
+        else if is_alpha(c) || c >= '0' && c <= '9' || c == '_' || c == '.'
+            at @ at + 1
+        else
+            return false
+
+    return true
+
+# Whether `c` is an ASCII letter.
+function is_alpha(c: u8) -> bool
+    return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z'
+
+# Whether `c` is a hexadecimal digit.
+function is_hex(c: u8) -> bool
+    return c >= '0' && c <= '9' || c >= 'a' && c <= 'f' || c >= 'A' && c <= 'F'
+
+# Whether `c` is unreserved, RFC 3986: a letter, a digit, `-`, `.`, `_`, `~`.
+function is_unreserved(c: u8) -> bool
+    return is_alpha(c) || c >= '0' && c <= '9' || c == '-' || c == '.' || c == '_' || c == '~'
+
+# Whether `c` is reserved, RFC 3986: a general or a sub-delimiter.
+function is_reserved(c: u8) -> bool
+    return c == ':' || c == '/' || c == '?' || c == '#' || c == '[' || c == ']' || c == '@' || c == '!' || c == '$' || c == '&' || c == '\'' || c == '(' || c == ')' || c == '*' || c == '+' || c == ',' || c == ';' || c == '='
+
+# What an operator writes before its first value, between two, whether it
+# names each, and what it writes for an empty one: RFC 6570 Appendix A.
+record Rule
+    first: str
+    sep: str
+    named: bool
+    if_empty: str
+    reserved: bool
+
+# The rule of `operator`.
+function rule_of(operator: str) -> Rule
+    if operator == "+"
+        return Rule(first: "", sep: ",", named: false, if_empty: "", reserved: true)
+
+    if operator == "#"
+        return Rule(first: "#", sep: ",", named: false, if_empty: "", reserved: true)
+
+    if operator == "."
+        return Rule(first: ".", sep: ".", named: false, if_empty: "", reserved: false)
+
+    if operator == "/"
+        return Rule(first: "/", sep: "/", named: false, if_empty: "", reserved: false)
+
+    if operator == ";"
+        return Rule(first: ";", sep: ";", named: true, if_empty: "", reserved: false)
+
+    if operator == "?"
+        return Rule(first: "?", sep: "&", named: true, if_empty: "=", reserved: false)
+
+    if operator == "&"
+        return Rule(first: "&", sep: "&", named: true, if_empty: "=", reserved: false)
+    return Rule(first: "", sep: ",", named: false, if_empty: "", reserved: false)
+
+# `value` percent-encoded as `reserved` allows: unreserved characters kept,
+# and reserved ones and triplets already encoded too where it is true.
+function encode(value: str, reserved: bool) -> str
+    out: [str] @= []
+    at: i64 @= 0
+
+    while at < value.len()
+        c = value[at]
+
+        if is_unreserved(c) || reserved && is_reserved(c)
+            out @ out.push(value.slice(from: at, to: at + 1))
+            at @ at + 1
+        else if reserved && c == '%' && at + 2 < value.len() && is_hex(value[at + 1]) && is_hex(value[at + 2])
+            out @ out.push(value.slice(from: at, to: at + 3))
+            at @ at + 3
+        else
+            out @ out.push(url.escape_bytes([c]))
+            at @ at + 1
+
+    return out.join("")
+
+# The first `n` characters of `value`.
+function first_chars(value: str, n: i64) -> str
+    at: i64 @= 0
+    count: i64 @= 0
+
+    while at < value.len() && count < n
+        at @ next_char(value, at: at)
+        count @ count + 1
+
+    return value.slice(from: 0, to: at)
+
+# `template` expanded with `values`, a variable absent from them written as
+# undefined, RFC 6570 § 3. Fails `invalid` as `parts_of` does.
+function expand(template: str, values: {str: str}) -> str?
+    out: [str] @= []
+
+    for part in parts_of(template)?
+        if part.names.len() == 0
+            out @ out.push(encode(part.text, reserved: true))
+        else
+            rule = rule_of(part.operator)
+            written: i64 @= 0
+
+            for at in range(from: 0, to: part.names.len())
+                match values[part.names[at]]
+                    .ok raw =>
+                        lead = if written == 0
+                            rule.first
+                        else
+                            rule.sep
+
+                        value = if part.prefixes[at] > 0
+                            first_chars(raw, n: part.prefixes[at])
+                        else
+                            raw
+                        out @ out.push(lead)
+
+                        if rule.named
+                            out @ out.push(part.names[at])
+
+                            if value == ""
+                                out @ out.push(rule.if_empty)
+                            else
+                                out @ out.push("=")
+                        out @ out.push(encode(value, reserved: rule.reserved))
+                        written @ written + 1
+                    .err _ => _ = 0
+
+    return ok(out.join(""))
+
+# Whether `c` may stand inside the text an expression of `operator` writes,
+# its separators and `=` included.
+function may_stand(c: u8, operator: str) -> bool
+    if is_unreserved(c) || c == '%'
+        return true
+
+    if operator == "+" || operator == "#"
+        return is_reserved(c)
+
+    if operator == ""
+        return c == ','
+
+    if operator == ";"
+        return c == ';' || c == '=' || c == ','
+
+    if operator == "?" || operator == "&"
+        return c == '&' || c == '=' || c == ','
+    return c == ',' || c == operator[0]
+
+# The values `uri` gives the variables of `template`, unescaped, as the
+# expansion of those values would write `uri`. Fails `not_found` where it
+# does not, and `invalid` as `parts_of` does.
+function match_uri(template: str, uri: str) -> {str: str}?
+    parts = parts_of(template)?
+    values: {str: str} @= {}
+    at: i64 @= 0
+
+    for index in range(from: 0, to: parts.len())
+        part = parts[index]
+
+        if part.names.len() == 0
+            literal = encode(part.text, reserved: true)
+
+            if !strings.has_prefix(s: uri.slice(from: at, to: uri.len()), prefix: literal)
+                return fail(code: NOT_FOUND, msg: f"\"{uri}\" does not match \"{template}\"")
+            at @ at + literal.len()
+        else
+            end: i64 @= at
+            lead = rule_of(part.operator).first
+
+            if lead != "" && strings.has_prefix(s: uri.slice(from: at, to: uri.len()), prefix: lead)
+                end @ at + lead.len()
+
+            while end < uri.len() && may_stand(uri[end], operator: part.operator)
+                end @ end + 1
+
+            if index + 1 < parts.len() && parts[index + 1].names.len() == 0
+                next_literal = encode(parts[index + 1].text, reserved: true)
+
+                match strings.index_of(s: uri.slice(from: at, to: uri.len()), substr: next_literal)
+                    .ok found =>
+                        if at + found < end
+                            end @ at + found
+                    .err _ => return fail(code: NOT_FOUND, msg: f"\"{uri}\" does not match \"{template}\"")
+            read_expression(part, text: uri.slice(from: at, to: end), values: @values, template: template)?
+            at @ end
+
+    if at != uri.len()
+        return fail(code: NOT_FOUND, msg: f"\"{uri}\" goes on past \"{template}\"")
+    return ok(values)
+
+# Reads into `values` what the text `text` of one expression gives its
+# variables. Fails `not_found` where the text is not what the expression
+# writes.
+function read_expression(part: Part, text: str, @values: {str: str}, template: str) -> ()?
+    if text == ""
+        return ok()
+    rule = rule_of(part.operator)
+    rest: str @= text
+
+    if rule.first != ""
+        if !strings.has_prefix(s: text, prefix: rule.first)
+            return fail(code: NOT_FOUND, msg: f"\"{text}\" does not begin with `{rule.first}` in \"{template}\"")
+        rest @ text.slice(from: rule.first.len(), to: text.len())
+    items = strings.split(s: rest, sep: rule.sep)
+
+    if !rule.named && items.len() > part.names.len()
+        return fail(code: NOT_FOUND, msg: f"\"{text}\" holds more values than \"{template}\" names")
+
+    for at in range(from: 0, to: items.len())
+        name: str @= ""
+        raw: str @= items[at]
+
+        if rule.named
+            match strings.index_of(s: items[at], substr: "=")
+                .ok eq =>
+                    name @ items[at].slice(from: 0, to: eq)
+                    raw @ items[at].slice(from: eq + 1, to: items[at].len())
+                .err _ =>
+                    name @ items[at]
+                    raw @ ""
+
+            if !has(part.names, name: name)
+                return fail(code: NOT_FOUND, msg: f"\"{name}\" is not a variable of \"{template}\"")
+        else
+            name @ part.names[at]
+
+        match url.unescape(raw)
+            .ok value => values[name] @ value
+            .err _    => return fail(code: NOT_FOUND, msg: f"\"{raw}\" holds an escape that does not read")
+
+    return ok()
+
+# Whether `names` holds `name`.
+function has(names: [str], name: str) -> bool
+    for n in names
+        if n == name
+            return true
+
+    return false
+
+test "expand: every operator of RFC 6570's level 3 examples, a prefix, and an undefined variable"
+    values = {"var": "value", "hello": "Hello World!", "path": "/foo/bar", "x": "1024", "y": "768", "empty": ""}
+    assert expand("{var}", values: values).must() == "value"
+    assert expand("{hello}", values: values).must() == "Hello%20World%21"
+    assert expand("{+hello}", values: values).must() == "Hello%20World!"
+    assert expand("{+path}/here", values: values).must() == "/foo/bar/here"
+    assert expand("{#hello}", values: values).must() == "#Hello%20World!"
+    assert expand("map?{x,y}", values: values).must() == "map?1024,768"
+    assert expand("{x,hello,y}", values: values).must() == "1024,Hello%20World%21,768"
+    assert expand("X{.var}", values: values).must() == "X.value"
+    assert expand("{/var,x}/here", values: values).must() == "/value/1024/here"
+    assert expand("{;x,y,empty}", values: values).must() == ";x=1024;y=768;empty"
+    assert expand("{?x,y,empty}", values: values).must() == "?x=1024&y=768&empty="
+    assert expand("?fixed=yes{&x}", values: values).must() == "?fixed=yes&x=1024"
+    assert expand("{var:3}", values: values).must() == "val"
+    assert expand("{undef}{?undef}x", values: values).must() == "x"
+    assert expand("{name}", values: {"name": "é"}).must() == "%C3%A9"
+
+test "parts_of: the refusals: an unclosed expression, a stray brace, an operator kept, a name and a prefix"
+    for bad in ["{a", "a}", "{=a}", "{a b}", "{a:0}", "{a:x}", "{}", "{.a.}"]
+        match parts_of(bad)
+            .ok _  => assert bad == "refused"
+            .err e => assert e.code == INVALID
+
+test "match_uri: values read back for each operator, and URIs that do not match"
+    assert match_uri(template: "greeting://{name}", uri: "greeting://Ada%20L").must() == {"name": "Ada L"}
+    assert match_uri(template: "file:///{+path}", uri: "file:///a/b/c.txt").must() == {"path": "a/b/c.txt"}
+    assert match_uri(template: "users/{id}/posts{/post}", uri: "users/7/posts/12").must() == {"id": "7", "post": "12"}
+    assert match_uri(template: "search{?q,lang}", uri: "search?q=mcp&lang=en").must() == {"q": "mcp", "lang": "en"}
+    assert match_uri(template: "map/{x,y}", uri: "map/1024,768").must() == {"x": "1024", "y": "768"}
+    assert match_uri(template: "search{?q}", uri: "search").must() == {}
+
+    for uri in ["greeting:/x", "greeting://a/b", "users/7/posts/1/2", "search?z=1"]
+        template = if strings.has_prefix(s: uri, prefix: "greeting")
+            "greeting://{name}"
+        else if strings.has_prefix(s: uri, prefix: "users")
+            "users/{id}/posts{/post}"
+        else
+            "search{?q}"
+
+        match match_uri(template: template, uri: uri)
+            .ok _  => assert uri == "refused"
+            .err e => assert e.code == NOT_FOUND

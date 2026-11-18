@@ -1,0 +1,76 @@
+# Runs the lines of UAX #15's `NormalizationTest.txt`, which
+# `normalization_cases.hero` holds, through `forms`: each line five columns of
+# code points, held to the invariants the file states.
+
+use unicode/normalize/internal/forms
+
+# The columns of `line`, separated by `;`, each the code points it writes:
+# numbers in hexadecimal between spaces.
+function columns_of(line: str) -> [[i64]]
+    columns: [[i64]] @= []
+    points: [i64] @= []
+    value: i64 @= 0
+    digits: i64 @= 0
+
+    for c in line.chars()
+        byte = c[0]
+
+        if byte == ' ' || byte == ';'
+            if digits > 0
+                points @ points.push(value)
+            value @ 0
+            digits @ 0
+
+            if byte == ';'
+                columns @ columns.push(points)
+                points @ []
+            continue
+
+        digit = if byte >= '0' && byte <= '9'
+            byte - '0'
+        else
+            byte - 'A' + 10
+        value @ value * 16 + to_i64(digit).must()
+        digits @ digits + 1
+
+    if digits > 0
+        points @ points.push(value)
+    columns @ columns.push(points)
+    return columns
+
+# Whether `line`, five columns between `;`, holds every invariant:
+# c2 is NFC of c1, c2 and c3, and c4 of c4 and c5; c3 is NFD of c1, c2 and c3,
+# and c5 of c4 and c5; c4 is NFKC of all five; c5 is NFKD of all five.
+function holds(line: str) -> bool
+    c = columns_of(line)
+    nfc_ok = forms.normalized(c[0], compose: true, compat: false) == c[1] && forms.normalized(c[1], compose: true, compat: false) == c[1] && forms.normalized(c[2], compose: true, compat: false) == c[1] && forms.normalized(c[3], compose: true, compat: false) == c[3] && forms.normalized(c[4], compose: true, compat: false) == c[3]
+    nfd_ok = forms.normalized(c[0], compose: false, compat: false) == c[2] && forms.normalized(c[1], compose: false, compat: false) == c[2] && forms.normalized(c[2], compose: false, compat: false) == c[2] && forms.normalized(c[3], compose: false, compat: false) == c[4] && forms.normalized(c[4], compose: false, compat: false) == c[4]
+    compat_ok: bool @= true
+
+    for column in c
+        if forms.normalized(column, compose: true, compat: true) != c[3] || forms.normalized(column, compose: false, compat: true) != c[4]
+            compat_ok @ false
+
+    quick_ok = forms.is_normalized(c[1], compose: true, compat: false) && forms.is_normalized(c[2], compose: false, compat: false) && forms.is_normalized(c[3], compose: true, compat: true) && forms.is_normalized(c[4], compose: false, compat: true)
+    return nfc_ok && nfd_ok && compat_ok && quick_ok
+
+# The lines of `cases` that do not hold, as they are written.
+function failures(cases: [str]) -> [str]
+    out: [str] @= []
+
+    for line in cases
+        if !holds(line)
+            out @ out.push(line)
+
+    return out
+
+## Tests
+
+test "columns_of: an empty column, one point, several, and the largest code point"
+    assert columns_of("") == [[]]
+    assert columns_of("0041") == [[0x41]]
+    assert columns_of("1E0A 0323;10FFFF;") == [[0x1e0a, 0x323], [0x10ffff], []]
+
+test "failures: a line that holds and one that does not"
+    assert failures(["1E0A;1E0A;0044 0307;1E0A;0044 0307"]) == []
+    assert failures(["1E0A;0044 0307;0044 0307;1E0A;0044 0307"]) == ["1E0A;0044 0307;0044 0307;1E0A;0044 0307"]

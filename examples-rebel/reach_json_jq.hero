@@ -1,0 +1,20 @@
+# Reaches Rebel's `json/jq`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12), the cases of jq's own test file among them.
+# It runs one filter against a small document and prints what it outputs.
+
+use <rebel>/json
+use <rebel>/json/jq
+
+function main()
+    doc = json.parse("{\"albums\": [{\"title\": \"Low\", \"year\": 1977}, {\"title\": \"Heroes\", \"year\": 1977}]}").default(
+        .null_value
+    )
+
+    match jq.parse(".albums[] | select(.year == 1977) | .title")
+        .err e => print(e.code, ": ", e.msg)
+        .ok program =>
+            match jq.run(program, input: doc)
+                .err e => print(e.code, ": ", e.msg)
+                .ok outputs =>
+                    for v in outputs
+                        print(jq.format_value(v))

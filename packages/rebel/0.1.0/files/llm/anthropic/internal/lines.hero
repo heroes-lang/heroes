@@ -1,0 +1,83 @@
+# The lines of a body read as they come: a batch's results, a `.jsonl` file
+# of any length, held a line at a time and never whole.
+
+use bytes
+use http
+use llm/anthropic/internal/transport
+
+# The lines of a body read as they come, a batch's results.
+record Lines
+    # The connection, its head read.
+    opened: transport.Opened
+    # How its body ends.
+    body: http.BodyReader
+    # The bytes read and not yet answered as lines.
+    pending: [u8]
+    # Where in `pending` the next line begins.
+    start: i64
+    # How far `pending` has been searched for a line feed.
+    searched: i64
+    # Whether the body has ended.
+    ended: bool
+    # The most bytes of one line.
+    most: i64
+
+# The lines of `o`'s body, each at most `most` bytes. Fails as
+# `http.body_reader` fails, closing `o` then.
+function open(o: transport.Opened, most: i64) -> Lines?
+    held @= o
+
+    match http.body_reader(o.head, method: "GET", limits: http.default_limits())
+        .ok body => return ok(
+            Lines(opened: o, body: body, pending: [], start: 0, searched: 0, ended: false, most: most)
+        )
+        .err e =>
+            transport.close(@held)
+            return fail(code: e.code, msg: e.msg)
+
+# Adds `piece` to `pending`, the caller's own.
+function add_bytes(@pending: [u8], piece: [u8])
+    for b in piece
+        pending @ pending.push(b)
+
+# The next line of `l`, its line feed and a carriage return before it left
+# out. Fails `closed` after the last, `limit` where a line passes `l.most`
+# bytes, `not_text` where it is not UTF-8, and as `http.read_piece` fails.
+function next(@l: Lines) -> str?
+    while true
+        while l.searched < l.pending.len()
+            if l.pending[l.searched] == 10
+                end: i64 @= l.searched
+
+                if end > l.start && l.pending[end - 1] == 13
+                    end @ end - 1
+                line = l.pending.slice(from: l.start, to: end)
+                l.start @ l.searched + 1
+                l.searched @ l.start
+                return bytes.to_text(line)
+            l.searched @ l.searched + 1
+
+        if l.pending.len() - l.start > l.most
+            return fail(code: "limit", msg: f"a line of the answer passes {l.most} bytes")
+
+        if l.ended
+            if l.start < l.pending.len()
+                line = l.pending.slice(from: l.start, to: l.pending.len())
+                l.start @ l.pending.len()
+                l.searched @ l.start
+                return bytes.to_text(line)
+            return fail(code: "closed", msg: "the answer has no line more")
+        piece = http.read_piece(@l.opened.reader, @l.body, most: 65_536)?
+
+        if piece.len() == 0
+            l.ended @ true
+        else
+            if l.start > 0
+                l.pending @ l.pending.slice(from: l.start, to: l.pending.len())
+                l.searched @ l.searched - l.start
+                l.start @ 0
+            add_bytes(pending: @l.pending, piece: piece)
+
+# Closes the connection of `l`.
+function close(@l: Lines)
+    transport.close(@l.opened)
