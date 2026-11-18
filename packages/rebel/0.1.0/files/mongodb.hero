@@ -1,0 +1,3216 @@
+# A MongoDB client written in Heroes: it speaks MongoDB's wire protocol
+# (OP_MSG) over a TCP connection of `net` or a TLS connection of `tls`, and
+# links no library. Documents are `bson.Document`s; a filter, an update, a
+# projection, a sort or a pipeline is one too, written in code or read from
+# Extended JSON by `bson.parse_json`. It connects by a connection string
+# (`mongodb://` and `mongodb+srv://`, whose servers and options `dns` asks),
+# logs in with SCRAM-SHA-256 or SCRAM-SHA-1 (the server tells which it holds
+# for the user) or PLAIN, and runs every command: CRUD with cursors, bulk
+# writes, aggregation, counts and `distinct`, indexes, change streams, and
+# transactions on a replica set, with the read and write concerns and the
+# read preference a program names.
+#
+# **One connection, one server, one thread.** A `Client` is one connection to
+# the one server its read preference chose when it connected, carrying one
+# logical session; a program that works on several threads opens a client in
+# each, since threads share nothing in this language, and there is no pool to
+# share. Every call works on the program's own place through `@`. Reads are
+# retried once, and writes that may be retried once with the same
+# transaction number, on a new connection, where the first attempt lost its
+# connection or met a primary that stepped down, as the drivers'
+# specifications ask; a server that is no longer suitable is not followed by
+# a monitor.
+#
+# It does not compress (OP_COMPRESSED), encrypt fields on the client
+# (libmongocrypt), log in by Kerberos, X.509, AWS or OIDC, connect through a
+# load balancer, or report events to a monitor; the ledger says why of each.
+#
+# ## Failures
+#
+# A call fails with the codes below. A failure the server reports keeps the
+# server's own code, its name and its labels in brackets before its words,
+# `[11000 DuplicateKey] E11000 duplicate key error ...`, `[251
+# NoSuchTransaction; TransientTransactionError] ...`, and `server_code_of`
+# and `has_label` read them back. The server's code chooses Rebel's:
+# `exists` for a duplicate key and a namespace or an index that exists;
+# `permission` for a login refused and a command the user may not run;
+# `not_found` for a namespace, an index, a cursor or a transaction that is
+# not there; `timeout` for a time limit passed and a write concern that
+# waited past its time; `limit` for a document past 16 MiB and a stage past
+# its memory; `invalid` for a command, a filter or a value refused as
+# written; `unsupported` for a command the server does not know or does not
+# run here; and `failed` for every other, a primary that stepped down and a
+# write conflict among them. A connection lost, or bytes that are no OP_MSG,
+# end the client: every later call fails `closed`.
+
+use bson
+use mongodb/internal/commands
+use mongodb/internal/conn
+use mongodb/internal/cursors
+use mongodb/internal/dial
+use mongodb/internal/ops
+use mongodb/internal/replies
+use mongodb/internal/session
+use mongodb/internal/uri
+use mongodb/internal/writes
+use os
+
+## Codes
+
+# The code of an argument refused, a connection string that is none, a reply
+# that is not of the kind asked, and what the server refuses as written.
+constant INVALID: str
+    "invalid"
+
+# The code of a document `find_one` and its kin found none of, a cursor with
+# no more documents, no server that suits the read preference, and what the
+# server says is not there.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a duplicate key, and of a collection or an index that exists.
+constant EXISTS: str
+    "exists"
+
+# The code of a login refused and of a command the user may not run.
+constant PERMISSION: str
+    "permission"
+
+# The code of a client that is closed, or whose connection the server or the
+# network closed while the call waited.
+constant CLOSED: str
+    "closed"
+
+# The code of a call whose time ran out: a socket's timeout, a `maxTimeMS`,
+# a write concern's `wtimeout`, a change stream's wait.
+constant TIMEOUT: str
+    "timeout"
+
+# The code of a call that ended because the program was asked to stop.
+constant STOPPED: str
+    "stopped"
+
+# The code of a document or a message past what the server takes, and of a
+# stage past its memory.
+constant LIMIT: str
+    "limit"
+
+# The code of what this client or the server does not do: an option, a
+# mechanism, a command, a transaction on a standalone server.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The code of every other failure the server reports.
+constant FAILED: str
+    "failed"
+
+# The port MongoDB listens on unless told another.
+constant DEFAULT_PORT: i64
+    27017
+
+# The label of a failure after which the whole transaction may be run again.
+constant LABEL_TRANSIENT_TRANSACTION_ERROR: str
+    "TransientTransactionError"
+
+# The label of a commit whose outcome is unknown, which may be committed
+# again.
+constant LABEL_UNKNOWN_TRANSACTION_COMMIT_RESULT: str
+    "UnknownTransactionCommitResult"
+
+# The label of a write the server says may be sent again.
+constant LABEL_RETRYABLE_WRITE_ERROR: str
+    "RetryableWriteError"
+
+## Connecting
+
+# How the connection is secured.
+variant Security
+    # Nothing encrypted: whoever sits between the two ends reads every
+    # document. SCRAM's login sends no password either way. `mongodb://`'s
+    # default.
+    plain
+    # TLS from the first byte, the server's certificate checked for its
+    # authority and its name: `tls=true`, and `mongodb+srv://`'s default.
+    checked
+        # The PEM of the only authorities trusted; "" for the system's own
+        # store.
+        roots: str
+
+# How the user logs in.
+variant Mechanism
+    # SCRAM-SHA-256 where the server holds it for the user, SCRAM-SHA-1
+    # otherwise, as the server's `hello` tells.
+    negotiated
+    # SCRAM-SHA-1, the password hashed as MongoDB's old scheme did.
+    scram_sha_1
+    # SCRAM-SHA-256, the password prepared by SASLprep.
+    scram_sha_256
+    # SASL PLAIN, for LDAP's proxy on `$external`: the password is sent as it
+    # is, so only over TLS.
+    sasl_plain
+
+# Which server of a replica set the client connects to and reads from.
+variant ReadPreference
+    # The primary alone.
+    primary
+    # The primary, else a secondary.
+    primary_preferred
+    # A secondary alone.
+    secondary
+    # A secondary, else the primary.
+    secondary_preferred
+    # Any member that answers.
+    nearest
+
+# Whether a write waits for the server's journal.
+variant Journal
+    # As the server's default says.
+    server_default
+    # A write is acknowledged once in the journal: `j: true`.
+    required
+    # It is not waited for: `j: false`.
+    not_required
+
+# How a write is acknowledged. `w` "" with `server_default` and no time asks
+# the server's own default.
+record WriteConcern
+    # "" for the server's default; "majority"; a number of members, "0" (no
+    # acknowledgement), "1", "2", ...; or the name of a tag set.
+    w: str
+    # Whether the journal is waited for.
+    journal: Journal
+    # How long a write waits for its members, in milliseconds; 0 for no
+    # limit.
+    timeout_ms: i64
+
+# One server's name and port.
+record Host
+    # A name or an address, without brackets: `localhost`, `::1`.
+    name: str
+    # The TCP port, 1 to 65535.
+    port: i64
+
+# Where the servers are, how to log in, and how commands are sent. `options`
+# makes one; a program changes the fields it needs with `@`, or `parse_url`
+# reads one from a connection string.
+record Options
+    # The servers tried, in order; [] where `srv_name` names them.
+    hosts: [Host]
+    # The name whose SRV records name the servers, as `mongodb+srv://` gives
+    # it; "" for `hosts`.
+    srv_name: str
+    # The service of the SRV records, `mongodb` by default.
+    srv_service_name: str
+    # The most servers taken from the SRV records, 0 for all.
+    srv_max_hosts: i64
+    # The user, "" for none: no login.
+    username: str
+    # The password.
+    password: str
+    # The database the user is defined in; "" for `database`, or `admin`
+    # where that is "" too, or `$external` for PLAIN.
+    auth_source: str
+    # How the user logs in.
+    mechanism: Mechanism
+    # The database a connection string names, "" for none; read by nothing
+    # but `auth_source`'s default.
+    database: str
+    # The replica set's name, "" for any: a server of another set is refused.
+    replica_set: str
+    # Whether the client connects to the one host as it is, whatever it is,
+    # without looking for the read preference's server.
+    direct: bool
+    # How the connection is secured.
+    security: Security
+    # The application's name the server logs, "" for none.
+    app_name: str
+    # How long a TCP connection may take to be made, in milliseconds.
+    connect_timeout_ms: i64
+    # How long each command may wait for its reply, in milliseconds; 0 for
+    # no limit.
+    socket_timeout_ms: i64
+    # Which server the client connects to and reads from.
+    read_preference: ReadPreference
+    # The read concern's level of reads: "" for the server's default,
+    # `local`, `available`, `majority`, `linearizable`, `snapshot`.
+    read_concern: str
+    # The write concern of writes.
+    write_concern: WriteConcern
+    # Whether a write that may be retried is sent again once after a lost
+    # connection or a stepped-down primary.
+    retry_writes: bool
+    # Whether a read is sent again once after the same.
+    retry_reads: bool
+    # The stable API version every command declares, "" for none, "1".
+    server_api: str
+
+# The options of a connection to `host` at `DEFAULT_PORT`, as the drivers
+# default them: no user, plain TCP, the primary, the server's concerns, reads
+# and writes retried, a TCP connection given 10 seconds and no time limit on
+# a reply.
+#
+# - `host`: the server's name or address, without brackets.
+#
+# See also `parse_url`, `connect`.
+function options(host: str) -> Options
+    return Options(
+        hosts: [Host(name: host, port: DEFAULT_PORT)],
+        srv_name: "",
+        srv_service_name: "mongodb",
+        srv_max_hosts: 0,
+        username: "",
+        password: "",
+        auth_source: "",
+        mechanism: .negotiated,
+        database: "",
+        replica_set: "",
+        direct: false,
+        security: .plain,
+        app_name: "",
+        connect_timeout_ms: 10000,
+        socket_timeout_ms: 0,
+        read_preference: .primary,
+        read_concern: "",
+        write_concern: WriteConcern(w: "", journal: .server_default, timeout_ms: 0),
+        retry_writes: true,
+        retry_reads: true,
+        server_api: ""
+    )
+
+# The options a connection string names, as the drivers' URI specification
+# reads one: `mongodb://user:password@host1:port1,host2/database?options`
+# or `mongodb+srv://user:password@cluster.example.com/database?options`.
+#
+# - `text`: the connection string. Its user and password are percent-decoded
+#   and must hold no unescaped `:` or `@`; a host in brackets is an IPv6
+#   address; its options' names are read in any case: `authSource`,
+#   `authMechanism`, `replicaSet`, `directConnection`, `tls` (and `ssl`),
+#   `tlsCAFile` (whose file is read), `appName`, `connectTimeoutMS`,
+#   `socketTimeoutMS` and `timeoutMS`, `readPreference`, `readConcernLevel`,
+#   `w`, `journal`, `wtimeoutMS`, `retryWrites`, `retryReads`,
+#   `srvServiceName`, `srvMaxHosts`; the options of a pool, a monitor and
+#   server selection's timing are read and have no effect here.
+#   `mongodb+srv://` turns TLS on unless `tls=false` says otherwise; `connect`
+#   asks DNS for its servers and its TXT record's options.
+#
+# Fails `invalid` where `text` is no connection string, names an empty user,
+# a port outside 1 to 65535, an option this client knows nothing of, or a
+# value an option does not take; `unsupported` where it asks what this
+# client does not do (`tlsInsecure=true`, a client certificate,
+# `loadBalanced=true`, `compressors`, a Unix socket, another mechanism);
+# fails where `read_file` fails on `tlsCAFile`, with its code. See also
+# `options`, `connect`.
+function parse_url(text: str) -> Options?
+    s = uri.parse(text)?
+    hosts: [Host] @= []
+
+    for a in s.hosts
+        hosts @ hosts.push(Host(name: a.host, port: a.port))
+
+    mechanism: Mechanism = if s.mechanism == "SCRAM-SHA-1"
+        .scram_sha_1
+    else if s.mechanism == "SCRAM-SHA-256"
+        .scram_sha_256
+    else if s.mechanism == "PLAIN"
+        .sasl_plain
+    else
+        .negotiated
+
+    preference: ReadPreference = if s.read_preference == "primaryPreferred"
+        .primary_preferred
+    else if s.read_preference == "secondary"
+        .secondary
+    else if s.read_preference == "secondaryPreferred"
+        .secondary_preferred
+    else if s.read_preference == "nearest"
+        .nearest
+    else
+        .primary
+
+    journal: Journal = if s.journal == "true"
+        .required
+    else if s.journal == "false"
+        .not_required
+    else
+        .server_default
+
+    security: Security = if s.tls
+        .checked(roots: s.tls_roots)
+    else
+        .plain
+    return ok(
+        Options(hosts: hosts, srv_name: s.srv_name, srv_service_name: s.srv_service_name, srv_max_hosts: s.srv_max_hosts, username: s.username, password: s.password, auth_source: s.auth_source, mechanism: mechanism, database: s.database, replica_set: s.replica_set, direct: s.direct, security: security, app_name: s.app_name, connect_timeout_ms: s.connect_timeout_ms, socket_timeout_ms: s.socket_timeout_ms, read_preference: preference, read_concern: s.read_concern, write_concern: WriteConcern(w: s.w, journal: journal, timeout_ms: s.wtimeout_ms), retry_writes: s.retry_writes, retry_reads: s.retry_reads, server_api: s.server_api)
+    )
+
+# A connection to a MongoDB server, which `connect` makes and `close` ends.
+# Its one field is the conversation's private state: the connection, what the
+# server said of itself, the logical session and its transaction. A program
+# keeps one place per client and lends it to every call with `@`.
+record Client
+    # The conversation's state, which only this package reads and writes.
+    state: session.State
+
+# A client of the server `opts` choose: the SRV name resolved by the
+# system's resolver where one is named, then each host tried in order and
+# greeted with `hello`, the first that suits the read preference kept (a
+# server that is not names the one that is, which is tried next), and the
+# user logged in.
+#
+# - `opts`: where the servers are and how to log in.
+#
+# Fails `invalid` where `opts` names no host or a port outside 1 to 65535;
+# `not_found` where no server suits the read preference or the replica set's
+# name; `permission` where the login is refused; and with the code of the
+# last server's failure where none answers (`closed`, `timeout`,
+# `not_found` for a name with no address, a TLS failure of `tls`). The
+# client owes a `close`. See also `parse_url`, `close`.
+function connect(opts: Options) -> Client?
+    if opts.hosts.len() == 0 && opts.srv_name == ""
+        return fail(code: INVALID, msg: "the options name no host")
+    addresses: [uri.Address] @= []
+
+    for h in opts.hosts
+        if h.port < 1 || h.port > 65535
+            return fail(code: INVALID, msg: f"the port {h.port} of {h.name} is outside 1 to 65535")
+        addresses @ addresses.push(uri.Address(host: h.name, port: h.port))
+
+    mechanism = match opts.mechanism
+        .negotiated    => ""
+        .scram_sha_1   => "SCRAM-SHA-1"
+        .scram_sha_256 => "SCRAM-SHA-256"
+        .sasl_plain    => "PLAIN"
+
+    preference = match opts.read_preference
+        .primary             => "primary"
+        .primary_preferred   => "primaryPreferred"
+        .secondary           => "secondary"
+        .secondary_preferred => "secondaryPreferred"
+        .nearest             => "nearest"
+
+    journal = match opts.write_concern.journal
+        .server_default => ""
+        .required       => "true"
+        .not_required   => "false"
+
+    secure = match opts.security
+        .plain     => false
+        .checked _ => true
+
+    roots = match opts.security
+        .plain     => ""
+        .checked k => k.roots
+
+    settings = uri.Settings(
+        hosts: addresses,
+        srv_name: opts.srv_name,
+        srv_service_name: opts.srv_service_name,
+        srv_max_hosts: opts.srv_max_hosts,
+        username: opts.username,
+        password: opts.password,
+        auth_source: opts.auth_source,
+        mechanism: mechanism,
+        database: opts.database,
+        replica_set: opts.replica_set,
+        direct: opts.direct,
+        tls: secure,
+        tls_roots: roots,
+        app_name: opts.app_name,
+        connect_timeout_ms: opts.connect_timeout_ms,
+        socket_timeout_ms: opts.socket_timeout_ms,
+        read_preference: preference,
+        read_concern: opts.read_concern,
+        w: opts.write_concern.w,
+        journal: journal,
+        wtimeout_ms: opts.write_concern.timeout_ms,
+        retry_writes: opts.retry_writes,
+        retry_reads: opts.retry_reads,
+        server_api: opts.server_api
+    )
+    return ok(Client(state: dial.select(settings)?))
+
+# Ends `client`: its logical session is ended on the server, whatever it
+# answers, and its connection closed.
+#
+# - `client`: the client, after which every call on it fails `closed`.
+#
+# Fails `closed` where it was closed already. See also `connect`.
+function close(@client: Client) -> ()?
+    if !client.state.conn.ended && client.state.sessions
+        ids = bson.Document(
+            fields: [bson.Field(name: "endSessions", value: .array(items: [.document(doc: client.state.lsid)]))]
+        )
+
+        match session.command(@client.state, database: "admin", body: ids, kind: session.NO_SESSION, txn: 0, sequences: [])
+            .ok _  => _ = 0
+            .err _ => _ = 0
+    return conn.close(@client.state.conn)
+
+# Whether `client` is closed, by `close` or by a connection lost.
+#
+# - `client`: the client.
+function is_closed(client: Client) -> bool
+    return client.state.conn.ended
+
+# Makes every later command of `client` wait at most `ms` milliseconds for
+# its reply, failing `timeout`; 0 takes the limit away.
+#
+# - `client`: the client, whose `socket_timeout_ms` this changes.
+# - `ms`: the milliseconds, 0 or more.
+#
+# Fails `invalid` where `ms` is below 0. A command whose time runs out ends
+# the client, since its reply may still come. See also `Options`.
+function set_timeout(@client: Client, ms: i64) -> ()?
+    if ms < 0
+        return fail(code: INVALID, msg: f"a timeout of {ms} ms")
+    client.state.settings.socket_timeout_ms @ ms
+    return ok()
+
+# What `server_of` answers: what the server the client stands on said of
+# itself.
+record ServerInfo
+    # The server, `host:port`.
+    address: str
+    # The replica set's name, "" for a standalone server or a mongos.
+    replica_set: str
+    # Whether it is the replica set's primary, a standalone, or a mongos:
+    # one that takes writes.
+    is_writable: bool
+    # Whether it is a mongos.
+    is_mongos: bool
+    # Whether it keeps logical sessions, which transactions and retried writes
+    # need.
+    has_sessions: bool
+    # The highest wire version it speaks: 21 for MongoDB 7.0, 25 for 8.0.
+    max_wire_version: i64
+    # The most bytes of a document, of a message, and writes in one batch.
+    max_document_size: i64
+    max_message_size: i64
+    max_write_batch_size: i64
+    # Its whole `hello` reply.
+    hello: bson.Document
+
+# What the server `client` stands on said of itself when it connected.
+#
+# - `client`: the client.
+function server_of(client: Client) -> ServerInfo
+    s = client.state
+    return ServerInfo(
+        address: s.conn.target,
+        replica_set: s.set_name,
+        is_writable: s.is_primary,
+        is_mongos: s.is_mongos,
+        has_sessions: s.sessions,
+        max_wire_version: s.max_wire,
+        max_document_size: s.max_bson,
+        max_message_size: s.max_message,
+        max_write_batch_size: s.max_batch,
+        hello: s.hello
+    )
+
+# Asks the server whether it answers: the command `ping`.
+#
+# - `client`: the client.
+#
+# Fails as every command fails. See also `run_command`.
+function ping(@client: Client) -> ()?
+    _ = run_command(@client, database: "admin", command: bson.Document(fields: [bson.Field(name: "ping", value: bson.from_int(1))]))?
+    return ok()
+
+## Commands
+
+# The reply to `command`, run on `database` as it is, with what the protocol
+# adds: the session, the transaction, the read preference, the cluster time.
+#
+# - `client`: the client.
+# - `database`: the database's name.
+# - `command`: the command, its name its first field: `{"buildInfo": 1}`.
+#
+# Fails with the code of the server's failure, and as every command fails.
+# No read or write concern is added: the command carries its own. See also
+# `run_cursor_command`.
+function run_command(@client: Client, database: str, command: bson.Document) -> bson.Document?
+    return session.command(@client.state, database: database, body: command, kind: session.PLAIN, txn: 0, sequences: [])
+
+# The cursor a command answers with, `listCollections` or a command of a
+# server's own: run on `database`, its first batch read.
+#
+# - `client`: the client.
+# - `database`: the database's name.
+# - `command`: the command, which answers a cursor.
+#
+# Fails `invalid` where the reply holds no cursor, and as `run_command`
+# fails. See also `next_document`.
+function run_cursor_command(@client: Client, database: str, command: bson.Document) -> Cursor?
+    reply = run_command(@client, database: database, command: command)?
+    return ok(
+        Cursor(state: cursors.of_reply(reply, database: database, batch_size: 0, max_await_ms: 0, is_stream: false)?)
+    )
+
+# The server's plan for `command`, as `explain` answers it.
+#
+# - `client`: the client.
+# - `database`: the database's name.
+# - `command`: the command explained: a `find`, an `aggregate`, an
+#   `update`...
+# - `verbosity`: `queryPlanner`, `executionStats` or
+#   `allPlansExecution`.
+#
+# Fails as `run_command` fails. See also `run_command`.
+function explain(@client: Client, database: str, command: bson.Document, verbosity: str) -> bson.Document?
+    body = bson.Document(
+        fields: [bson.Field(name: "explain", value: .document(doc: command)), bson.Field(name: "verbosity", value: .text(v: verbosity))]
+    )
+    return run_command(@client, database: database, command: body)
+
+## Databases and collections
+
+# The names of the databases on the server, in its order.
+#
+# - `client`: the client.
+#
+# Fails `permission` where the user may not list them, and as every command
+# fails. See also `list_databases`.
+function list_database_names(@client: Client) -> [str]?
+    names: [str] @= []
+
+    for d in list_databases(@client, query: bson.Document(fields: []))?
+        names @ names.push(bson.text_of(bson.member(d, name: "name")?)?)
+
+    return ok(names)
+
+# The databases on the server, each a document of its `name`, `sizeOnDisk`
+# and `empty`.
+#
+# - `client`: the client.
+# - `query`: which databases, a filter on those fields; empty for all.
+#
+# Fails as `list_database_names` fails. See also `list_database_names`.
+function list_databases(@client: Client, query: bson.Document) -> [bson.Document]?
+    fields: [bson.Field] @= [bson.Field(name: "listDatabases", value: bson.from_int(1))]
+
+    if query.fields.len() > 0
+        fields @ fields.push(bson.Field(name: "filter", value: .document(doc: query)))
+    reply = ops.read(@client.state, database: "admin", body: bson.Document(fields: fields))?
+    found: [bson.Document] @= []
+
+    for d in bson.items_of(bson.member(reply, name: "databases")?)?
+        found @ found.push(bson.document_of(d)?)
+
+    return ok(found)
+
+# Removes the database `database` and all it holds.
+#
+# - `client`: the client.
+# - `database`: the database's name; one that does not exist is no failure.
+#
+# Fails as every write fails. See also `drop_collection`.
+function drop_database(@client: Client, database: str) -> ()?
+    _ = ops.write(@client.state, database: database, body: bson.Document(fields: [bson.Field(name: "dropDatabase", value: bson.from_int(1))]), sequences: [], retryable: false)?
+    return ok()
+
+# The names of the collections and views of `database`.
+#
+# - `client`: the client.
+# - `database`: the database's name.
+#
+# Fails as `list_collections` fails. See also `list_collections`.
+function list_collection_names(@client: Client, database: str) -> [str]?
+    names: [str] @= []
+
+    for c in list_collections(@client, database: database, query: bson.Document(fields: []))?
+        names @ names.push(bson.text_of(bson.member(c, name: "name")?)?)
+
+    return ok(names)
+
+# The collections and views of `database`, each the server's document of
+# its `name`, `type`, `options` and `info`.
+#
+# - `client`: the client.
+# - `database`: the database's name.
+# - `query`: a filter on those fields; empty for all.
+#
+# Fails as every read fails. See also `list_collection_names`.
+function list_collections(@client: Client, database: str, query: bson.Document) -> [bson.Document]?
+    body = bson.Document(
+        fields: [bson.Field(name: "listCollections", value: bson.from_int(1)), bson.Field(name: "filter", value: .document(doc: query))]
+    )
+    reply = ops.read(@client.state, database: database, body: body)?
+    c @= cursors.of_reply(reply, database: database, batch_size: 0, max_await_ms: 0, is_stream: false)?
+    return cursors.read_all(s: @client.state, c: @c)
+
+# Creates the collection `collection`, with the server's options.
+#
+# - `client`: the client.
+# - `database`: the database's name.
+# - `collection`: the new collection's name.
+# - `opts`: the fields `create` takes beside its name: `capped`, `size`,
+#   `max`, `validator`, `timeseries`, `expireAfterSeconds`,
+#   `clusteredIndex`, `collation`...; empty for none.
+#
+# Fails `exists` where a collection of that name exists with other options,
+# and as every write fails; one with the same options is no failure, as
+# MongoDB 7.0 answers. See also `create_view`, `drop_collection`.
+function create_collection(@client: Client, database: str, collection: str, opts: bson.Document) -> ()?
+    body = commands.merged(
+        base: bson.Document(fields: [bson.Field(name: "create", value: .text(v: collection))]),
+        extra: opts
+    )
+    _ = ops.write(@client.state, database: database, body: body, sequences: [], retryable: false)?
+    return ok()
+
+# Creates the view `view` of the collection `source` through `pipeline`.
+#
+# - `client`: the client.
+# - `database`: the database's name.
+# - `view`: the view's name.
+# - `source`: the collection or view it reads.
+# - `pipeline`: the stages it applies.
+#
+# Fails `exists` where the name is taken, and as every write fails. See also
+# `create_collection`.
+function create_view(@client: Client, database: str, view: str, source: str, pipeline: [bson.Document]) -> ()?
+    stages: [bson.Value] @= []
+
+    for p in pipeline
+        stages @ stages.push(.document(doc: p))
+
+    body = bson.Document(
+        fields: [bson.Field(name: "create", value: .text(v: view)), bson.Field(name: "viewOn", value: .text(v: source)), bson.Field(name: "pipeline", value: .array(items: stages))]
+    )
+    _ = ops.write(@client.state, database: database, body: body, sequences: [], retryable: false)?
+    return ok()
+
+# Removes the collection `collection`, its documents and its indexes.
+#
+# - `client`: the client.
+# - `database`: the database's name.
+# - `collection`: the collection's name; one that does not exist is no
+#   failure, as the drivers treat it.
+#
+# Fails as every write fails. See also `create_collection`.
+function drop_collection(@client: Client, database: str, collection: str) -> ()?
+    body = bson.Document(fields: [bson.Field(name: "drop", value: .text(v: collection))])
+
+    return match ops.write(@client.state, database: database, body: body, sequences: [], retryable: false)
+        .ok _ => ok()
+        .err e =>
+            if replies.code_of(e.msg).default(0) == 26
+                return ok()
+            fail(code: e.code, msg: e.msg)
+
+# Gives the collection `from` the name `to`, in one database.
+#
+# - `client`: the client.
+# - `database`: the database's name.
+# - `from`: the collection's name.
+# - `to`: its new name.
+# - `drop_target`: whether a collection already named `to` is removed first;
+#   otherwise it fails `exists`.
+#
+# Fails `not_found` where `from` does not exist, `exists` where `to` does
+# and `drop_target` is false, and as every write fails.
+function rename_collection(@client: Client, database: str, from: str, to: str, drop_target: bool) -> ()?
+    body = bson.Document(
+        fields: [bson.Field(name: "renameCollection", value: .text(v: database + "." + from)), bson.Field(name: "to", value: .text(v: database + "." + to)), bson.Field(name: "dropTarget", value: .boolean(v: drop_target))]
+    )
+    _ = ops.write(@client.state, database: "admin", body: body, sequences: [], retryable: false)?
+    return ok()
+
+## Writing
+
+# Inserts `doc` into `collection`, with a new ObjectId as its `_id` where it
+# has none, and answers its `_id`.
+#
+# - `client`: the client, whose maker of ids this advances.
+# - `database`: the database's name.
+# - `collection`: the collection's name; one that does not exist is made.
+# - `doc`: the document; an `_id` it lacks is put first.
+#
+# Fails `exists` where its `_id` or a unique index's key is taken, `limit`
+# where it passes the server's 16 MiB, and as every write fails. Retried
+# once as a retryable write. See also `insert_many`.
+function insert_one(@client: Client, database: str, collection: str, doc: bson.Document) -> bson.Value?
+    stored = writes.with_id(s: @client.state, doc: doc)?
+    _ = writes.send(@client.state, database: database, command: "insert", collection: collection, identifier: "documents", items: [stored], ordered: true, retryable: true, extra: bson.Document(fields: []))?
+    return bson.member(stored, name: "_id")
+
+# Inserts `docs` into `collection`, in batches the server takes, each with a
+# new ObjectId where it has no `_id`, and answers their `_id`s in order.
+#
+# - `client`: the client.
+# - `database`: the database's name.
+# - `collection`: the collection's name.
+# - `docs`: the documents; the empty list inserts none.
+# - `ordered`: whether the first failure stops the rest; otherwise every
+#   document is tried and the first failure reported at the end.
+#
+# Fails with the first write's failure, its index in `docs` and how many
+# others failed in its message, and as `insert_one` fails. See also
+# `insert_one`, `bulk_write`.
+function insert_many(@client: Client, database: str, collection: str, docs: [bson.Document], ordered: bool) -> [bson.Value]?
+    stored: [bson.Document] @= []
+    ids: [bson.Value] @= []
+
+    for d in docs
+        s = writes.with_id(s: @client.state, doc: d)?
+        stored @ stored.push(s)
+        ids @ ids.push(bson.member(s, name: "_id")?)
+
+    if stored.len() == 0
+        return ok(ids)
+    _ = writes.send(@client.state, database: database, command: "insert", collection: collection, identifier: "documents", items: stored, ordered: ordered, retryable: true, extra: bson.Document(fields: []))?
+    return ok(ids)
+
+# How an update, a replacement or a delete is done. `write_options` answers
+# the defaults; a program changes the fields it needs.
+record WriteOptions
+    # Whether a document is inserted where the filter matches none: an
+    # update's or a replacement's upsert. A delete ignores it.
+    upsert: bool
+    # The filters naming which elements of an array an update's `$[name]`
+    # changes; [] for none.
+    array_filters: [bson.Document]
+    # Fields joined to each statement: `collation`, `hint`; empty for none.
+    statement: bson.Document
+    # Fields joined to the command: `comment`, `let`,
+    # `bypassDocumentValidation`, `writeConcern`; empty for none.
+    command: bson.Document
+
+# The options of a plain write: no upsert, no array filter, no field more.
+function write_options() -> WriteOptions
+    return WriteOptions(
+        upsert: false,
+        array_filters: [],
+        statement: bson.Document(fields: []),
+        command: bson.Document(fields: [])
+    )
+
+# What an update or a replacement answers.
+record UpdateResult
+    # The documents the filter matched.
+    matched: i64
+    # The documents changed; a document matched and left as it was is not.
+    modified: i64
+    # The `_id` of the document an upsert inserted, [] where none was.
+    upserted_ids: [bson.Value]
+
+# Updates the first document of `collection` that `filter` matches.
+#
+# - `client`: the client.
+# - `database`: the database's name.
+# - `collection`: the collection's name.
+# - `query`: the documents considered; empty for any.
+# - `update`: a document of operators, `{"$set": {"a": 1}}`, or an array of
+#   stages, `[{"$set": {"a": "$b"}}]`.
+# - `opts`: the upsert, the array filters and the fields joined.
+#
+# Fails `invalid` where `update` is no document of operators nor an array of
+# stages, and as every write fails. Retried once as a retryable write. See
+# also `update_many`, `replace_one`.
+function update_one(@client: Client, database: str, collection: str, query: bson.Document, update: bson.Value, opts: WriteOptions) -> UpdateResult?
+    statement = commands.checked_update(query: query, update: update, upsert: opts.upsert, many: false, array_filters: opts.array_filters, extra: opts.statement)?
+    counts = writes.send(@client.state, database: database, command: "update", collection: collection, identifier: "updates", items: [statement], ordered: true, retryable: true, extra: opts.command)?
+    return ok(
+        UpdateResult(matched: counts.n - counts.upserted.len(), modified: counts.modified, upserted_ids: counts.upserted)
+    )
+
+# Updates every document of `collection` that `filter` matches.
+#
+# - `client`: the client.
+# - `database`: the database's name.
+# - `collection`: the collection's name.
+# - `query`: the documents updated; empty for all.
+# - `update`: a document of operators or an array of stages.
+# - `opts`: the upsert, the array filters and the fields joined.
+#
+# Fails as `update_one` fails. Never retried, since it may have updated
+# some. See also `update_one`.
+function update_many(@client: Client, database: str, collection: str, query: bson.Document, update: bson.Value, opts: WriteOptions) -> UpdateResult?
+    statement = commands.checked_update(query: query, update: update, upsert: opts.upsert, many: true, array_filters: opts.array_filters, extra: opts.statement)?
+    counts = writes.send(@client.state, database: database, command: "update", collection: collection, identifier: "updates", items: [statement], ordered: true, retryable: false, extra: opts.command)?
+    return ok(
+        UpdateResult(matched: counts.n - counts.upserted.len(), modified: counts.modified, upserted_ids: counts.upserted)
+    )
+
+# Replaces the first document of `collection` that `filter` matches by
+# `replacement`, its `_id` kept.
+#
+# - `client`: the client.
+# - `database`: the database's name.
+# - `collection`: the collection's name.
+# - `query`: the documents considered.
+# - `replacement`: the new document, with no operator: none of its fields
+#   begins with `$`.
+# - `opts`: the upsert and the fields joined; array filters do not apply.
+#
+# Fails `invalid` where `replacement` holds a field beginning with `$` or
+# `options` names array filters, and as every write fails. See also
+# `update_one`.
+function replace_one(@client: Client, database: str, collection: str, query: bson.Document, replacement: bson.Document, opts: WriteOptions) -> UpdateResult?
+    for f in replacement.fields
+        if f.name.len() > 0 && f.name[0] == '$'
+            return fail(
+                code: INVALID,
+                msg: f"a replacement holds the operator {f.name}; `update_one` applies operators"
+            )
+
+    if opts.array_filters.len() > 0
+        return fail(code: INVALID, msg: "a replacement takes no array filter")
+    statement = commands.update_statement(
+        query: query,
+        update: .document(doc: replacement),
+        upsert: opts.upsert,
+        multi: false,
+        array_filters: [],
+        extra: opts.statement
+    )
+    counts = writes.send(@client.state, database: database, command: "update", collection: collection, identifier: "updates", items: [statement], ordered: true, retryable: true, extra: opts.command)?
+    return ok(
+        UpdateResult(matched: counts.n - counts.upserted.len(), modified: counts.modified, upserted_ids: counts.upserted)
+    )
+
+# Deletes the first document of `collection` that `filter` matches, and
+# answers how many were deleted, 0 or 1.
+#
+# - `client`: the client.
+# - `database`: the database's name.
+# - `collection`: the collection's name.
+# - `query`: the documents considered; empty for any.
+# - `opts`: the fields joined; `upsert` and array filters do not apply.
+#
+# Fails as every write fails. Retried once as a retryable write. See also
+# `delete_many`.
+function delete_one(@client: Client, database: str, collection: str, query: bson.Document, opts: WriteOptions) -> i64?
+    statement = commands.delete_statement(query: query, every: false, extra: opts.statement)
+    counts = writes.send(@client.state, database: database, command: "delete", collection: collection, identifier: "deletes", items: [statement], ordered: true, retryable: true, extra: opts.command)?
+    return ok(counts.n)
+
+# Deletes every document of `collection` that `filter` matches, and answers
+# how many.
+#
+# - `client`: the client.
+# - `database`: the database's name.
+# - `collection`: the collection's name.
+# - `query`: the documents deleted; empty for all.
+# - `opts`: the fields joined.
+#
+# Fails as every write fails. Never retried. See also `delete_one`.
+function delete_many(@client: Client, database: str, collection: str, query: bson.Document, opts: WriteOptions) -> i64?
+    statement = commands.delete_statement(query: query, every: true, extra: opts.statement)
+    counts = writes.send(@client.state, database: database, command: "delete", collection: collection, identifier: "deletes", items: [statement], ordered: true, retryable: false, extra: opts.command)?
+    return ok(counts.n)
+
+# One write of a bulk write.
+variant WriteModel
+    # A document inserted, with an ObjectId where it has no `_id`.
+    insert_one
+        # The document.
+        doc: bson.Document
+    # The first document a filter matches updated.
+    update_one
+        # The documents considered.
+        query: bson.Document
+        # The operators or the stages.
+        update: bson.Value
+        # Whether a document is inserted where none matches.
+        upsert: bool
+    # Every document a filter matches updated.
+    update_many
+        # The documents considered.
+        query: bson.Document
+        # The operators or the stages.
+        update: bson.Value
+        # Whether a document is inserted where none matches.
+        upsert: bool
+    # The first document a filter matches replaced.
+    replace_one
+        # The documents considered.
+        query: bson.Document
+        # The new document.
+        replacement: bson.Document
+        # Whether it is inserted where none matches.
+        upsert: bool
+    # The first document a filter matches deleted.
+    delete_one
+        # The documents considered.
+        query: bson.Document
+    # Every document a filter matches deleted.
+    delete_many
+        # The documents considered.
+        query: bson.Document
+
+# What `bulk_write` answers: the counts of its writes.
+record BulkWriteResult
+    # The documents inserted.
+    inserted: i64
+    # The documents the updates and replacements matched.
+    matched: i64
+    # The documents they changed.
+    modified: i64
+    # The documents deleted.
+    deleted: i64
+    # The `_id`s of the documents inserted, in order.
+    inserted_ids: [bson.Value]
+    # The `_id`s of the documents upserts inserted.
+    upserted_ids: [bson.Value]
+
+# Runs `models` on `collection`, each run of writes of one kind sent as one
+# command, and sums their counts.
+#
+# - `client`: the client.
+# - `database`: the database's name.
+# - `collection`: the collection's name.
+# - `models`: the writes, in order; the empty list writes nothing.
+# - `ordered`: whether the first failure stops the rest.
+#
+# Fails `invalid` where an update is no document of operators nor an array
+# of stages, and with the first write's failure, as `insert_many` fails; the
+# writes before it stand. A run holding an update or a delete of many is
+# never retried. See also `insert_many`.
+function bulk_write(@client: Client, database: str, collection: str, models: [WriteModel], ordered: bool) -> BulkWriteResult?
+    result @= BulkWriteResult(inserted: 0, matched: 0, modified: 0, deleted: 0, inserted_ids: [], upserted_ids: [])
+    inserted_ids: [bson.Value] @= []
+    upserted_ids: [bson.Value] @= []
+    first_code: str @= ""
+    first_message: str @= ""
+    kinds: [i64] @= []
+
+    for m in models
+        kind_of_model = match m
+            .insert_one _                                   => 0
+            .update_one _ | .update_many _ | .replace_one _ => 1
+            .delete_one _ | .delete_many _                  => 2
+
+        kinds @ kinds.push(kind_of_model)
+
+    k: i64 @= 0
+
+    while k < models.len()
+        kind = kinds[k]
+        items: [bson.Document] @= []
+        retryable: bool @= true
+
+        while k < models.len() && kinds[k] == kind
+            item = match models[k]
+                .insert_one m =>
+                    stored = writes.with_id(s: @client.state, doc: m.doc)?
+                    inserted_ids @ inserted_ids.push(bson.member(stored, name: "_id")?)
+                    stored
+                .update_one m => commands.checked_update(query: m.query, update: m.update, upsert: m.upsert, many: false, array_filters: [], extra: bson.Document(fields: []))?
+                .update_many m =>
+                    retryable @ false
+                    commands.checked_update(query: m.query, update: m.update, upsert: m.upsert, many: true, array_filters: [], extra: bson.Document(fields: []))?
+                .replace_one m => commands.update_statement(
+                    query: m.query,
+                    update: .document(doc: m.replacement),
+                    upsert: m.upsert,
+                    multi: false,
+                    array_filters: [],
+                    extra: bson.Document(fields: [])
+                )
+                .delete_one m => commands.delete_statement(
+                    query: m.query,
+                    every: false,
+                    extra: bson.Document(fields: [])
+                )
+                .delete_many m =>
+                    retryable @ false
+                    commands.delete_statement(query: m.query, every: true, extra: bson.Document(fields: []))
+
+            items @ items.push(item)
+            k @ k + 1
+
+        command = if kind == 0
+            "insert"
+        else if kind == 1
+            "update"
+        else
+            "delete"
+
+        identifier = if kind == 0
+            "documents"
+        else if kind == 1
+            "updates"
+        else
+            "deletes"
+
+        match writes.send(@client.state, database: database, command: command, collection: collection, identifier: identifier, items: items, ordered: ordered, retryable: retryable, extra: bson.Document(fields: []))
+            .ok counts =>
+                if kind == 0
+                    result.inserted @ result.inserted + counts.n
+                else if kind == 1
+                    result.matched @ result.matched + counts.n - counts.upserted.len()
+                    result.modified @ result.modified + counts.modified
+
+                    for id in counts.upserted
+                        upserted_ids @ upserted_ids.push(id)
+                else
+                    result.deleted @ result.deleted + counts.n
+            .err e =>
+                if ordered
+                    return fail(code: e.code, msg: e.msg)
+
+                if first_code == ""
+                    first_code @ e.code
+                    first_message @ e.msg
+
+    if first_code != ""
+        return fail(code: first_code, msg: first_message)
+    result.inserted_ids @ inserted_ids
+    result.upserted_ids @ upserted_ids
+    return ok(result)
+
+## Reading
+
+# How a query is run. `find_options` answers the defaults; a program changes
+# the fields it needs.
+record FindOptions
+    # The fields returned, `{"name": 1, "_id": 0}`; empty for all.
+    projection: bson.Document
+    # The order, `{"age": -1}`; empty for the server's.
+    sort: bson.Document
+    # The documents passed over first, 0 for none.
+    skip: i64
+    # The most documents returned, 0 for no limit.
+    limit: i64
+    # The documents each batch holds, 0 for the server's choice.
+    batch_size: i64
+    # Fields joined to the `find` command: `hint`, `collation`, `comment`,
+    # `maxTimeMS`, `allowDiskUse`, `let`, `min`, `max`, `returnKey`,
+    # `showRecordId`, `noCursorTimeout`, `allowPartialResults`; empty for
+    # none.
+    command: bson.Document
+
+# The options of a plain query: every field, the server's order, no skip, no
+# limit, its batches.
+function find_options() -> FindOptions
+    empty = bson.Document(fields: [])
+    return FindOptions(projection: empty, sort: empty, skip: 0, limit: 0, batch_size: 0, command: empty)
+
+# A cursor of the server, read batch by batch by `next_document`. Its one
+# field is the cursor's private state. A cursor that still holds documents
+# on the server is closed by `close_cursor`, or by the server after ten
+# minutes unused.
+record Cursor
+    # The cursor's state, which only this package reads and writes.
+    state: cursors.Cursor
+
+# The documents of `collection` that `filter` matches, as a cursor: MongoDB's
+# `find`, which a built-in's name keeps from being this function's.
+#
+# - `client`: the client, which the cursor's later batches are read through.
+# - `database`: the database's name.
+# - `collection`: the collection's name; one that does not exist holds
+#   nothing.
+# - `query`: the query, `{"age": {"$gte": 18}}`; empty for all.
+# - `opts`: the projection, the order, the skip, the limit, the batch's
+#   size and the fields joined.
+#
+# Fails `invalid` where the server refuses the filter or an option, and as
+# every read fails. See also `find_one`, `next_document`, `read_all`.
+function find_many(@client: Client, database: str, collection: str, query: bson.Document, opts: FindOptions) -> Cursor?
+    body = commands.find_body(
+        collection: collection,
+        query: query,
+        projection: opts.projection,
+        order: opts.sort,
+        skip: opts.skip,
+        limit: opts.limit,
+        batch_size: opts.batch_size,
+        extra: opts.command
+    )
+    reply = ops.read(@client.state, database: database, body: body)?
+    return ok(
+        Cursor(state: cursors.of_reply(reply, database: database, batch_size: opts.batch_size, max_await_ms: 0, is_stream: false)?)
+    )
+
+# The first document of `collection` that `filter` matches, in `options`'
+# order.
+#
+# - `client`: the client.
+# - `database`: the database's name.
+# - `collection`: the collection's name.
+# - `query`: the query; empty for any.
+# - `opts`: as `find_many` takes them; its limit is 1 whatever it says.
+#
+# Fails `not_found` where none matches, and as `find_many` fails. See also
+# `find_many`.
+function find_one(@client: Client, database: str, collection: str, query: bson.Document, opts: FindOptions) -> bson.Document?
+    one @= opts
+    one.limit @ 1
+    one.command @ commands.merged(
+        base: one.command,
+        extra: bson.Document(fields: [bson.Field(name: "singleBatch", value: .boolean(v: true))])
+    )
+    c @= find_many(@client, database: database, collection: collection, query: query, opts: one)?
+
+    return match next_document(@client, @c)
+        .ok d => ok(d)
+        .err e =>
+            if e.code == NOT_FOUND
+                return fail(code: NOT_FOUND, msg: f"no document of {database}.{collection} matches the filter")
+            fail(code: e.code, msg: e.msg)
+
+# The next document of `cursor`, the server asked for its next batch where
+# the last is read.
+#
+# - `client`: the client the cursor was opened through.
+# - `cursor`: the cursor, which this call advances.
+#
+# Fails `not_found` once the cursor holds no more, `timeout` where a change
+# stream's wait brought no change, and as every read fails. See also
+# `read_all`.
+function next_document(@client: Client, @cursor: Cursor) -> bson.Document?
+    return cursors.next(s: @client.state, c: @cursor.state)
+
+# Every document `cursor` still holds, in order: the cursor read to its end.
+#
+# - `client`: the client the cursor was opened through.
+# - `cursor`: the cursor, read to its end.
+#
+# Fails as `next_document` fails; a change stream's cursor fails `timeout`
+# at its first wait that brings nothing. It holds every document in memory
+# at once. See also `next_document`.
+function read_all(@client: Client, @cursor: Cursor) -> [bson.Document]?
+    return cursors.read_all(s: @client.state, c: @cursor.state)
+
+# Tells the server to forget `cursor` where it still holds documents.
+#
+# - `client`: the client the cursor was opened through.
+# - `cursor`: the cursor, empty after the call.
+#
+# Fails as every command fails. See also `find_many`.
+function close_cursor(@client: Client, @cursor: Cursor) -> ()?
+    return cursors.close(s: @client.state, c: @cursor.state)
+
+# Whether `cursor` has given out every document: its batch read and the
+# server holding none.
+#
+# - `cursor`: the cursor.
+function is_exhausted(cursor: Cursor) -> bool
+    c = cursor.state
+    return c.id == 0 && c.at >= c.batch.len()
+
+# How many documents of `collection` `filter` matches, counted by the
+# server's aggregation as the drivers count them.
+#
+# - `client`: the client.
+# - `database`: the database's name.
+# - `collection`: the collection's name.
+# - `query`: the query; empty for all.
+#
+# Fails as every read fails. See also `estimated_document_count`.
+function count_documents(@client: Client, database: str, collection: str, query: bson.Document) -> i64?
+    group = bson.parse_json("{\"$group\": {\"_id\": 1, \"n\": {\"$sum\": 1}}}").must()
+    match_stage = bson.Document(fields: [bson.Field(name: "$match", value: .document(doc: query))])
+    c @= aggregate(@client, database: database, collection: collection, pipeline: [match_stage, group], opts: aggregate_options())?
+
+    return match next_document(@client, @c)
+        .ok d => bson.int_of(bson.member(d, name: "n")?)
+        .err e =>
+            if e.code == NOT_FOUND
+                return ok(0)
+            fail(code: e.code, msg: e.msg)
+
+# How many documents `collection` holds, as its metadata says: fast, and
+# approximate after an unclean shutdown.
+#
+# - `client`: the client.
+# - `database`: the database's name.
+# - `collection`: the collection's name.
+#
+# Fails as every read fails. See also `count_documents`.
+function estimated_document_count(@client: Client, database: str, collection: str) -> i64?
+    reply = ops.read(@client.state, database: database, body: bson.Document(fields: [bson.Field(name: "count", value: .text(v: collection))]))?
+    return bson.int_of(bson.member(reply, name: "n")?)
+
+# The distinct values of `field` among the documents of `collection` that
+# `filter` matches.
+#
+# - `client`: the client.
+# - `database`: the database's name.
+# - `collection`: the collection's name.
+# - `field`: the field, a dotted path for one nested: `address.city`.
+# - `query`: the query; empty for all.
+#
+# Fails `limit` where the values pass 16 MiB, and as every read fails. See
+# also `aggregate`.
+function distinct(@client: Client, database: str, collection: str, field: str, query: bson.Document) -> [bson.Value]?
+    body = bson.Document(
+        fields: [bson.Field(name: "distinct", value: .text(v: collection)), bson.Field(name: "key", value: .text(v: field)), bson.Field(name: "query", value: .document(doc: query))]
+    )
+    reply = ops.read(@client.state, database: database, body: body)?
+    return bson.items_of(bson.member(reply, name: "values")?)
+
+# How a pipeline is run. `aggregate_options` answers the defaults.
+record AggregateOptions
+    # The documents each batch holds, 0 for the server's choice.
+    batch_size: i64
+    # Fields joined to the `aggregate` command: `allowDiskUse`, `maxTimeMS`,
+    # `comment`, `hint`, `collation`, `let`, `bypassDocumentValidation`;
+    # empty for none.
+    command: bson.Document
+
+# The options of a plain pipeline.
+function aggregate_options() -> AggregateOptions
+    return AggregateOptions(batch_size: 0, command: bson.Document(fields: []))
+
+# The documents `pipeline` makes of `collection`, as a cursor.
+#
+# - `client`: the client.
+# - `database`: the database's name.
+# - `collection`: the collection's name; "" for the database's own stages,
+#   `$currentOp` or `$documents`.
+# - `pipeline`: the stages, in order; one that writes (`$out`, `$merge`)
+#   must stand last.
+# - `opts`: the batch's size and the fields joined.
+#
+# Fails `invalid` where the server refuses a stage, `limit` where a stage
+# passes its memory, and as every read fails. A pipeline that writes is sent
+# as a write, never retried. See also `find_many`.
+function aggregate(@client: Client, database: str, collection: str, pipeline: [bson.Document], opts: AggregateOptions) -> Cursor?
+    target: bson.Value = if collection == ""
+        bson.from_int(1)
+    else
+        .text(v: collection)
+    body = commands.aggregate(
+        target: target,
+        pipeline: pipeline,
+        batch_size: opts.batch_size,
+        extra: opts.command
+    )
+    writing = pipeline.len() > 0 && (bson.has_member(pipeline[pipeline.len() - 1], name: "$out") || bson.has_member(pipeline[pipeline.len() - 1], name: "$merge"))
+
+    reply = if writing
+        ops.write(@client.state, database: database, body: body, sequences: [], retryable: false)?
+    else
+        ops.read(@client.state, database: database, body: body)?
+    return ok(
+        Cursor(state: cursors.of_reply(reply, database: database, batch_size: opts.batch_size, max_await_ms: 0, is_stream: false)?)
+    )
+
+## Find and modify
+
+# Which version of the document a find-and-modify answers.
+variant ReturnDocument
+    # As it was before the change.
+    before
+    # As the change left it.
+    after
+
+# How a find-and-modify is done. `find_and_modify_options` answers the
+# defaults.
+record FindAndModifyOptions
+    # Which of the matches is taken, `{"age": -1}`; empty for the server's.
+    sort: bson.Document
+    # The fields of the document answered; empty for all.
+    projection: bson.Document
+    # Whether a document is inserted where none matches.
+    upsert: bool
+    # Which version is answered.
+    returned: ReturnDocument
+    # The filters of an update's `$[name]`; [] for none.
+    array_filters: [bson.Document]
+    # Fields joined to the command: `hint`, `collation`, `comment`,
+    # `maxTimeMS`, `let`, `writeConcern`; empty for none.
+    command: bson.Document
+
+# The options of a plain find-and-modify: the document before the change.
+function find_and_modify_options() -> FindAndModifyOptions
+    empty = bson.Document(fields: [])
+    return FindAndModifyOptions(
+        sort: empty,
+        projection: empty,
+        upsert: false,
+        returned: .before,
+        array_filters: [],
+        command: empty
+    )
+
+# Updates the first document of `collection` that `filter` matches in
+# `options`' order, and answers it before or after.
+#
+# - `client`: the client.
+# - `database`: the database's name.
+# - `collection`: the collection's name.
+# - `query`: the documents considered.
+# - `update`: a document of operators or an array of stages.
+# - `opts`: the order, the projection, the upsert, the version answered.
+#
+# Fails `not_found` where none matches and nothing is upserted, `invalid`
+# where `update` is no document of operators nor an array of stages, and as
+# every write fails. See also `update_one`.
+function find_one_and_update(@client: Client, database: str, collection: str, query: bson.Document, update: bson.Value, opts: FindAndModifyOptions) -> bson.Document?
+    _ = commands.checked_update(query: query, update: update, upsert: opts.upsert, many: false, array_filters: [], extra: bson.Document(fields: []))?
+    after = opts.returned == .after
+    body = commands.find_and_modify(
+        collection: collection,
+        query: query,
+        order: opts.sort,
+        projection: opts.projection,
+        update: update,
+        return_new: after,
+        upsert: opts.upsert,
+        array_filters: opts.array_filters,
+        extra: opts.command
+    )
+    reply = ops.write(@client.state, database: database, body: body, sequences: [], retryable: true)?
+    return replies.modified_of(reply, what: database + "." + collection)
+
+# Replaces the first document of `collection` that `filter` matches, and
+# answers it before or after.
+#
+# - `client`: the client.
+# - `database`: the database's name.
+# - `collection`: the collection's name.
+# - `query`: the documents considered.
+# - `replacement`: the new document, with no operator.
+# - `opts`: the order, the projection, the upsert, the version answered.
+#
+# Fails `not_found` where none matches and nothing is upserted, `invalid`
+# where `replacement` holds an operator, and as every write fails. See also
+# `replace_one`.
+function find_one_and_replace(@client: Client, database: str, collection: str, query: bson.Document, replacement: bson.Document, opts: FindAndModifyOptions) -> bson.Document?
+    for f in replacement.fields
+        if f.name.len() > 0 && f.name[0] == '$'
+            return fail(code: INVALID, msg: f"a replacement holds the operator {f.name}")
+
+    after = opts.returned == .after
+    body = commands.find_and_modify(
+        collection: collection,
+        query: query,
+        order: opts.sort,
+        projection: opts.projection,
+        update: .document(doc: replacement),
+        return_new: after,
+        upsert: opts.upsert,
+        array_filters: [],
+        extra: opts.command
+    )
+    reply = ops.write(@client.state, database: database, body: body, sequences: [], retryable: true)?
+    return replies.modified_of(reply, what: database + "." + collection)
+
+# Deletes the first document of `collection` that `filter` matches, and
+# answers it.
+#
+# - `client`: the client.
+# - `database`: the database's name.
+# - `collection`: the collection's name.
+# - `query`: the documents considered.
+# - `opts`: the order and the projection; the upsert and the version do
+#   not apply.
+#
+# Fails `not_found` where none matches, and as every write fails. See also
+# `delete_one`.
+function find_one_and_delete(@client: Client, database: str, collection: str, query: bson.Document, opts: FindAndModifyOptions) -> bson.Document?
+    body = commands.find_and_modify(
+        collection: collection,
+        query: query,
+        order: opts.sort,
+        projection: opts.projection,
+        update: .null_value,
+        return_new: false,
+        upsert: false,
+        array_filters: [],
+        extra: opts.command
+    )
+    reply = ops.write(@client.state, database: database, body: body, sequences: [], retryable: true)?
+    return replies.modified_of(reply, what: database + "." + collection)
+
+## Indexes
+
+# An index to create: its keys and the server's options.
+record IndexModel
+    # The keys and their directions or kinds, in order: `{"age": 1}`,
+    # `{"title": "text"}`, `{"loc": "2dsphere"}`.
+    keys: bson.Document
+    # The options of `createIndexes`: `name`, `unique`, `sparse`,
+    # `expireAfterSeconds`, `partialFilterExpression`, `collation`,
+    # `hidden`, `weights`...; empty for none, the name then made of the keys.
+    options: bson.Document
+
+# The name the server gives an index of `key_pattern` when none is asked:
+# each key and its direction or kind joined by `_`, `a_1_b_-1`.
+#
+# - `key_pattern`: the index's keys.
+#
+# See also `create_index`.
+function index_name_of(key_pattern: bson.Document) -> str
+    return commands.index_name(key_pattern)
+
+# Creates the index `model` describes on `collection`, and answers its name.
+#
+# - `client`: the client.
+# - `database`: the database's name.
+# - `collection`: the collection's name.
+# - `model`: the keys and the options.
+#
+# Fails `exists` where an index of those keys exists with other options, and
+# as `create_indexes` fails. An index that exists as asked is no failure.
+# See also `create_indexes`, `drop_index`.
+function create_index(@client: Client, database: str, collection: str, model: IndexModel) -> str?
+    names = create_indexes(@client, database: database, collection: collection, models: [model])?
+    return ok(names[0])
+
+# Creates every index `models` describe on `collection`, in one command, and
+# answers their names in order.
+#
+# - `client`: the client.
+# - `database`: the database's name.
+# - `collection`: the collection's name.
+# - `models`: the indexes; the empty list creates none.
+#
+# Fails `invalid` where the server refuses a key or an option, `exists` as
+# `create_index` fails, and as every write fails. See also `create_index`.
+function create_indexes(@client: Client, database: str, collection: str, models: [IndexModel]) -> [str]?
+    specs: [bson.Value] @= []
+    names: [str] @= []
+
+    for m in models
+        name = match bson.member(m.options, name: "name")
+            .ok v  => bson.text_of(v)?
+            .err _ => commands.index_name(m.keys)
+
+        names @ names.push(name)
+        spec = commands.merged(
+            base: bson.Document(fields: [bson.Field(name: "key", value: .document(doc: m.keys)), bson.Field(name: "name", value: .text(v: name))]),
+            extra: m.options
+        )
+        specs @ specs.push(.document(doc: spec))
+
+    if specs.len() == 0
+        return ok(names)
+    body = bson.Document(
+        fields: [bson.Field(name: "createIndexes", value: .text(v: collection)), bson.Field(name: "indexes", value: .array(items: specs))]
+    )
+    _ = ops.write(@client.state, database: database, body: body, sequences: [], retryable: false)?
+    return ok(names)
+
+# The indexes of `collection`, each the server's document of its `key`,
+# `name` and options.
+#
+# - `client`: the client.
+# - `database`: the database's name.
+# - `collection`: the collection's name.
+#
+# Fails `not_found` where the collection does not exist, and as every read
+# fails. See also `create_index`.
+function list_indexes(@client: Client, database: str, collection: str) -> [bson.Document]?
+    reply = ops.read(@client.state, database: database, body: bson.Document(fields: [bson.Field(name: "listIndexes", value: .text(v: collection))]))?
+    c @= cursors.of_reply(reply, database: database, batch_size: 0, max_await_ms: 0, is_stream: false)?
+    return cursors.read_all(s: @client.state, c: @c)
+
+# Removes the index named `name` from `collection`.
+#
+# - `client`: the client.
+# - `database`: the database's name.
+# - `collection`: the collection's name.
+# - `name`: the index's name, as `index_name_of` or `create_index` answers
+#   it; `_id_` cannot be removed.
+#
+# Fails `not_found` where no index has the name, and as every write fails.
+# See also `drop_indexes`.
+function drop_index(@client: Client, database: str, collection: str, name: str) -> ()?
+    body = bson.Document(
+        fields: [bson.Field(name: "dropIndexes", value: .text(v: collection)), bson.Field(name: "index", value: .text(v: name))]
+    )
+    _ = ops.write(@client.state, database: database, body: body, sequences: [], retryable: false)?
+    return ok()
+
+# Removes every index of `collection` but `_id_`.
+#
+# - `client`: the client.
+# - `database`: the database's name.
+# - `collection`: the collection's name.
+#
+# Fails as `drop_index` fails. See also `drop_index`.
+function drop_indexes(@client: Client, database: str, collection: str) -> ()?
+    return drop_index(@client, database: database, collection: collection, name: "*")
+
+## Change streams
+
+# How a change stream is opened. `watch_options` answers the defaults.
+record WatchOptions
+    # Whether an update's event holds the document: "" for the server's
+    # default, `updateLookup`, `whenAvailable`, `required`.
+    full_document: str
+    # The token of an event the stream resumes after; empty to begin now.
+    resume_after: bson.Document
+    # The token of an event the stream starts after, even an invalidating
+    # one; empty for none.
+    start_after: bson.Document
+    # How long each wait for a change lasts, in milliseconds; 0 for the
+    # server's second.
+    max_await_ms: i64
+    # The events each batch holds, 0 for the server's choice.
+    batch_size: i64
+
+# The options of a stream that begins now.
+function watch_options() -> WatchOptions
+    empty = bson.Document(fields: [])
+    return WatchOptions(full_document: "", resume_after: empty, start_after: empty, max_await_ms: 0, batch_size: 0)
+
+# A change stream of `collection`, of `database`, or of the whole server: a
+# cursor whose `next_document` answers each change as it comes, a document of
+# its `operationType`, `documentKey`, `fullDocument`, `updateDescription`.
+#
+# - `client`: the client; the stream needs a replica set or a mongos.
+# - `database`: the database's name; "" for every database of the server.
+# - `collection`: the collection's name; "" for every collection of the
+#   database.
+# - `pipeline`: stages after `$changeStream`, `$match` among them; [] for
+#   none.
+# - `opts`: the full document, the token resumed after, the wait.
+#
+# Fails `unsupported` on a standalone server, and as `aggregate` fails. Its
+# cursor never ends: `next_document` fails `timeout` after a wait that
+# brought nothing, and the program asks again. A stream broken by a lost
+# connection is not resumed for the program: `resume_token_of` gives the
+# token to open another with. See also `resume_token_of`.
+function watch(@client: Client, database: str, collection: str, pipeline: [bson.Document], opts: WatchOptions) -> Cursor?
+    stream: [bson.Field] @= []
+
+    if opts.full_document != ""
+        stream @ stream.push(bson.Field(name: "fullDocument", value: .text(v: opts.full_document)))
+
+    if opts.resume_after.fields.len() > 0
+        stream @ stream.push(bson.Field(name: "resumeAfter", value: .document(doc: opts.resume_after)))
+
+    if opts.start_after.fields.len() > 0
+        stream @ stream.push(bson.Field(name: "startAfter", value: .document(doc: opts.start_after)))
+
+    if database == ""
+        stream @ stream.push(bson.Field(name: "allChangesForCluster", value: .boolean(v: true)))
+    stages: [bson.Document] @= [
+        bson.Document(fields: [bson.Field(name: "$changeStream", value: .document(doc: bson.Document(fields: stream)))])
+    ]
+
+    for p in pipeline
+        stages @ stages.push(p)
+
+    target: bson.Value = if collection == ""
+        bson.from_int(1)
+    else
+        .text(v: collection)
+
+    on = if database == ""
+        "admin"
+    else
+        database
+    body = commands.aggregate(
+        target: target,
+        pipeline: stages,
+        batch_size: opts.batch_size,
+        extra: bson.Document(fields: [])
+    )
+    reply = ops.read(@client.state, database: on, body: body)?
+
+    wait = if opts.max_await_ms > 0
+        opts.max_await_ms
+    else
+        1000
+    return ok(
+        Cursor(state: cursors.of_reply(reply, database: on, batch_size: opts.batch_size, max_await_ms: wait, is_stream: true)?)
+    )
+
+# The token after the last change a stream gave out, to open another stream
+# that resumes after it.
+#
+# - `cursor`: a change stream's cursor.
+#
+# Fails `not_found` where the cursor is no change stream's or holds no token
+# yet. See also `watch`.
+function resume_token_of(cursor: Cursor) -> bson.Document?
+    c = cursor.state
+
+    if !c.is_stream || c.resume_token.fields.len() == 0
+        return fail(code: NOT_FOUND, msg: "the cursor holds no resume token")
+    return ok(c.resume_token)
+
+## Transactions
+
+# How a transaction is run. `transaction_options` answers the defaults.
+record TransactionOptions
+    # The read concern's level of its reads: "" for the client's, `local`,
+    # `majority`, `snapshot`.
+    read_concern: str
+    # The write concern of its commit; `w` "" for the client's.
+    write_concern: WriteConcern
+    # The longest its commit may take, in milliseconds; 0 for no limit.
+    max_commit_time_ms: i64
+
+# The options of a transaction run with the client's concerns.
+function transaction_options() -> TransactionOptions
+    return TransactionOptions(
+        read_concern: "",
+        write_concern: WriteConcern(w: "", journal: .server_default, timeout_ms: 0),
+        max_commit_time_ms: 0
+    )
+
+# Starts a transaction on `client`'s session: every later command of the
+# client runs in it until `commit_transaction` or `abort_transaction`.
+#
+# - `client`: the client; the transaction needs a replica set or a mongos.
+# - `opts`: its read concern, its commit's write concern and time.
+#
+# Fails `invalid` where a transaction is in progress already, `unsupported`
+# where the server keeps no session or is a standalone server. No command is
+# sent until the first operation in it. The program retries the whole
+# transaction where a failure has `LABEL_TRANSIENT_TRANSACTION_ERROR`, and
+# commits again where the commit's has
+# `LABEL_UNKNOWN_TRANSACTION_COMMIT_RESULT`: a function given as a callback
+# could not take the client by `@`. See also `commit_transaction`.
+function start_transaction(@client: Client, opts: TransactionOptions) -> ()?
+    if session.in_transaction(client.state)
+        return fail(code: INVALID, msg: "a transaction is in progress already")
+    else if !session.can_retry_writes(client.state)
+        return fail(
+            code: UNSUPPORTED,
+            msg: f"{client.state.conn.target} keeps no session in a replica set: transactions need one or a mongos"
+        )
+
+    journal = match opts.write_concern.journal
+        .server_default => ""
+        .required       => "true"
+        .not_required   => "false"
+
+    concern @= client.state.settings
+    concern.w @ opts.write_concern.w
+    concern.journal @ journal
+    concern.wtimeout_ms @ opts.write_concern.timeout_ms
+    client.state.txn_number @ client.state.txn_number + 1
+    client.state.transaction @ session.STARTING
+
+    client.state.txn_read_concern @ if opts.read_concern != ""
+        opts.read_concern
+    else
+        client.state.settings.read_concern
+    client.state.txn_write_concern @ session.write_concern_of(concern)
+    client.state.txn_max_commit_ms @ opts.max_commit_time_ms
+    return ok()
+
+# Commits the transaction in progress: its writes become visible together.
+#
+# - `client`: the client.
+#
+# Fails `invalid` where no transaction is in progress, and with the server's
+# failure, whose labels say whether to commit again or run the whole
+# transaction again; the transaction then stays in progress, to be committed
+# again or aborted. A transaction that sent nothing commits at once. See also
+# `abort_transaction`.
+function commit_transaction(@client: Client) -> ()?
+    if client.state.transaction == session.STARTING
+        client.state.transaction @ session.COMMITTED
+        return ok()
+    else if client.state.transaction != session.IN_PROGRESS
+        return fail(code: INVALID, msg: "no transaction is in progress")
+    fields: [bson.Field] @= [bson.Field(name: "commitTransaction", value: bson.from_int(1))]
+
+    if client.state.txn_max_commit_ms > 0
+        fields @ fields.push(bson.Field(name: "maxTimeMS", value: bson.from_int(client.state.txn_max_commit_ms)))
+    _ = session.command(@client.state, database: "admin", body: bson.Document(fields: fields), kind: session.ENDS_TRANSACTION, txn: 0, sequences: [])?
+    client.state.transaction @ session.COMMITTED
+    return ok()
+
+# Aborts the transaction in progress: none of its writes stands.
+#
+# - `client`: the client.
+#
+# Fails `invalid` where no transaction is in progress. The server's answer
+# is not waited on for a failure, as the drivers' specification asks: a
+# transaction it could not abort ends by its own time limit. See also
+# `start_transaction`.
+function abort_transaction(@client: Client) -> ()?
+    if client.state.transaction == session.STARTING
+        client.state.transaction @ session.ABORTED
+        return ok()
+    else if client.state.transaction != session.IN_PROGRESS
+        return fail(code: INVALID, msg: "no transaction is in progress")
+    body = bson.Document(fields: [bson.Field(name: "abortTransaction", value: bson.from_int(1))])
+
+    match session.command(@client.state, database: "admin", body: body, kind: session.ENDS_TRANSACTION, txn: 0, sequences: [])
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+    client.state.transaction @ session.ABORTED
+    return ok()
+
+# Whether a transaction is in progress on `client`.
+#
+# - `client`: the client.
+function is_in_transaction(client: Client) -> bool
+    return session.in_transaction(client.state)
+
+# The id of `client`'s logical session, `{"id": <UUID>}`, which every command
+# carries where the server keeps sessions.
+#
+# - `client`: the client.
+function session_id_of(client: Client) -> bson.Document
+    return client.state.lsid
+
+## Failures
+
+# The server's own code a failure's message names, `11000` of `[11000
+# DuplicateKey] ...`.
+#
+# - `message`: a failure's `msg`.
+#
+# Fails `not_found` where the message names no server code: a failure of
+# this client's own. See also `has_label`.
+function server_code_of(message: str) -> i64?
+    return replies.code_of(message)
+
+# The labels a failure's message names, `TransientTransactionError` among
+# them, in the server's order.
+#
+# - `message`: a failure's `msg`.
+#
+# See also `has_label`.
+function labels_of(message: str) -> [str]
+    return replies.labels_of(message)
+
+# Whether a failure's message names `label`.
+#
+# - `message`: a failure's `msg`.
+# - `label`: the label, one of the `LABEL_` constants or another.
+#
+# See also `labels_of`.
+function has_label(message: str, label: str) -> bool
+    for l in replies.labels_of(message)
+        if l == label
+            return true
+
+    return false
+
+## Tests
+
+test "options and parse_url: the defaults, a string of every option this client reads, and the refusals"
+    opts = options("db.example.com")
+    assert opts.retry_writes && opts.retry_reads && opts.connect_timeout_ms == 10000 && opts.mechanism == .negotiated
+    full = parse_url(
+        "mongodb://u:p@h:1/app?authSource=admin&authMechanism=SCRAM-SHA-1&appName=x&connectTimeoutMS=5&socketTimeoutMS=6&readPreference=nearest&readConcernLevel=majority&w=2&journal=false&wtimeoutMS=7&retryWrites=false&retryReads=false&maxPoolSize=10"
+    ).must()
+    assert full.mechanism == .scram_sha_1 && full.read_preference == .nearest && full.read_concern == "majority"
+    assert full.write_concern == WriteConcern(w: "2", journal: .not_required, timeout_ms: 7)
+    assert !full.retry_writes && !full.retry_reads && full.connect_timeout_ms == 5 && full.socket_timeout_ms == 6
+    srv = parse_url("mongodb+srv://cluster0.example.com/").must()
+    assert srv.srv_name == "cluster0.example.com" && srv.security == .checked(roots: "") && srv.hosts.len() == 0
+    assert parse_url("mongodb://h/?authMechanism=GSSAPI").is_err()
+    assert connect(
+        Options(hosts: [], srv_name: "", srv_service_name: "mongodb", srv_max_hosts: 0, username: "", password: "", auth_source: "", mechanism: .negotiated, database: "", replica_set: "", direct: false, security: .plain, app_name: "", connect_timeout_ms: 1, socket_timeout_ms: 0, read_preference: .primary, read_concern: "", write_concern: WriteConcern(w: "", journal: .server_default, timeout_ms: 0), retry_writes: true, retry_reads: true, server_api: "")
+    ).is_err()
+
+test "connect: a port where nothing listens fails closed, and a port out of range invalid"
+    opts @= options("127.0.0.1")
+    opts.hosts @ [Host(name: "127.0.0.1", port: 1)]
+
+    match connect(opts)
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED
+
+    opts.hosts @ [Host(name: "127.0.0.1", port: 70000)]
+
+    match connect(opts)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "live: CRUD, cursors across batches, counts, distinct, aggregation, find-and-modify, bulk writes, indexes and failures, against the server REBEL_MONGODB_URL names"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => print("live: skipped, REBEL_MONGODB_URL names no server")
+        .ok url =>
+            match connect(parse_url(url).must())
+                .err e => print(f"live: skipped, nothing answers: {e.code}")
+                .ok first =>
+                    c @= first
+                    db = "rebel_test"
+                    drop_database(@c, database: db).must()
+                    none = bson.Document(fields: [])
+                    people = [
+                        bson.parse_json("{\"name\": \"Ada\", \"age\": 36}").must()
+                        bson.parse_json("{\"name\": \"Grace\", \"age\": 85}").must()
+                        bson.parse_json("{\"name\": \"Alan\", \"age\": 41}").must()
+                        bson.parse_json("{\"name\": \"Edsger\", \"age\": 72}").must()
+                        bson.parse_json("{\"name\": \"Barbara\", \"age\": 17}").must()
+                    ]
+                    ids = insert_many(@c, database: db, collection: "people", docs: people, ordered: true).must()
+                    assert ids.len() == 5 && bson.kind_of(ids[0]) == "objectId"
+                    dup = bson.Document(fields: [bson.Field(name: "_id", value: ids[0])])
+
+                    match insert_one(@c, database: db, collection: "people", doc: dup)
+                        .ok _  => assert false
+                        .err e => assert e.code == EXISTS && server_code_of(e.msg).must() == 11000
+
+                    unordered = [
+                        bson.parse_json("{\"_id\": 1}").must()
+                        bson.parse_json("{\"_id\": 1}").must()
+                        bson.parse_json("{\"_id\": 2}").must()
+                    ]
+                    assert insert_many(
+                        @c,
+                        database: db,
+                        collection: "unordered",
+                        docs: unordered,
+                        ordered: false
+                    ).is_err()
+                    assert count_documents(@c, database: db, collection: "unordered", query: none).must() == 2
+                    by_age @= find_options()
+                    by_age.sort @ bson.parse_json("{\"age\": 1}").must()
+                    by_age.batch_size @ 2
+                    by_age.projection @ bson.parse_json("{\"name\": 1, \"_id\": 0}").must()
+                    cursor @= find_many(@c, database: db, collection: "people", query: none, opts: by_age).must()
+                    assert !is_exhausted(cursor)
+                    all_people = read_all(@c, @cursor).must()
+                    assert all_people.len() == 5 && is_exhausted(cursor)
+                    assert bson.format_json(all_people[0], mode: .relaxed).must() == "{\"name\":\"Barbara\"}"
+                    assert bson.member(all_people[4], name: "name").must() == .text(v: "Grace")
+                    adults = bson.parse_json("{\"age\": {\"$gte\": 18}}").must()
+                    assert count_documents(@c, database: db, collection: "people", query: adults).must() == 4
+                    assert estimated_document_count(@c, database: db, collection: "people").must() == 5
+                    assert count_documents(@c, database: db, collection: "nothing", query: none).must() == 0
+                    names = distinct(@c, database: db, collection: "people", field: "name", query: adults).must()
+                    assert names.len() == 4
+                    ada = find_one(
+                        @c,
+                        database: db,
+                        collection: "people",
+                        query: bson.parse_json("{\"name\": \"Ada\"}").must(),
+                        opts: find_options()
+                    ).must()
+                    assert bson.member(ada, name: "age").must() == .int32(v: 36)
+
+                    match find_one(@c, database: db, collection: "people", query: bson.parse_json("{\"name\": \"Nobody\"}").must(), opts: find_options())
+                        .ok _  => assert false
+                        .err e => assert e.code == NOT_FOUND
+
+                    raised = update_one(
+                        @c,
+                        database: db,
+                        collection: "people",
+                        query: bson.parse_json("{\"name\": \"Ada\"}").must(),
+                        update: .document(doc: bson.parse_json("{\"$inc\": {\"age\": 1}}").must()),
+                        opts: write_options()
+                    ).must()
+                    assert raised == UpdateResult(matched: 1, modified: 1, upserted_ids: [])
+                    marked = update_many(
+                        @c,
+                        database: db,
+                        collection: "people",
+                        query: adults,
+                        update: .document(doc: bson.parse_json("{\"$set\": {\"adult\": true}}").must()),
+                        opts: write_options()
+                    ).must()
+                    assert marked.matched == 4 && marked.modified == 4
+                    piped = update_one(
+                        @c,
+                        database: db,
+                        collection: "people",
+                        query: bson.parse_json("{\"name\": \"Alan\"}").must(),
+                        update: .array(items: [.document(doc: bson.parse_json("{\"$set\": {\"twice\": {\"$multiply\": [\"$age\", 2]}}}").must())]),
+                        opts: write_options()
+                    ).must()
+                    assert piped.modified == 1
+                    assert update_one(
+                        @c,
+                        database: db,
+                        collection: "people",
+                        query: none,
+                        update: .document(doc: bson.parse_json("{\"age\": 1}").must()),
+                        opts: write_options()
+                    ).is_err()
+                    upsert @= write_options()
+                    upsert.upsert @ true
+                    made = update_one(
+                        @c,
+                        database: db,
+                        collection: "people",
+                        query: bson.parse_json("{\"name\": \"Linus\"}").must(),
+                        update: .document(doc: bson.parse_json("{\"$set\": {\"age\": 55}}").must()),
+                        opts: upsert
+                    ).must()
+                    assert made.matched == 0 && made.upserted_ids.len() == 1
+                    replaced = replace_one(
+                        @c,
+                        database: db,
+                        collection: "people",
+                        query: bson.parse_json("{\"name\": \"Linus\"}").must(),
+                        replacement: bson.parse_json("{\"name\": \"Linus\", \"age\": 56}").must(),
+                        opts: write_options()
+                    ).must()
+                    assert replaced.matched == 1 && replaced.modified == 1
+                    assert replace_one(
+                        @c,
+                        database: db,
+                        collection: "people",
+                        query: none,
+                        replacement: bson.parse_json("{\"$set\": {}}").must(),
+                        opts: write_options()
+                    ).is_err()
+                    assert delete_one(@c, database: db, collection: "people", query: bson.parse_json("{\"name\": \"Linus\"}").must(), opts: write_options()).must() == 1
+                    assert delete_one(@c, database: db, collection: "people", query: bson.parse_json("{\"name\": \"Linus\"}").must(), opts: write_options()).must() == 0
+                    after @= find_and_modify_options()
+                    after.returned @ .after
+                    older = find_one_and_update(
+                        @c,
+                        database: db,
+                        collection: "people",
+                        query: bson.parse_json("{\"name\": \"Grace\"}").must(),
+                        update: .document(doc: bson.parse_json("{\"$inc\": {\"age\": 1}}").must()),
+                        opts: after
+                    ).must()
+                    assert bson.member(older, name: "age").must() == .int32(v: 86)
+                    before = find_one_and_update(
+                        @c,
+                        database: db,
+                        collection: "people",
+                        query: bson.parse_json("{\"name\": \"Grace\"}").must(),
+                        update: .document(doc: bson.parse_json("{\"$inc\": {\"age\": 1}}").must()),
+                        opts: find_and_modify_options()
+                    ).must()
+                    assert bson.member(before, name: "age").must() == .int32(v: 86)
+                    swapped = find_one_and_replace(
+                        @c,
+                        database: db,
+                        collection: "people",
+                        query: bson.parse_json("{\"name\": \"Edsger\"}").must(),
+                        replacement: bson.parse_json("{\"name\": \"Edsger\", \"age\": 70}").must(),
+                        opts: after
+                    ).must()
+                    assert bson.member(swapped, name: "age").must() == .int32(v: 70)
+                    gone = find_one_and_delete(
+                        @c,
+                        database: db,
+                        collection: "people",
+                        query: bson.parse_json("{\"name\": \"Barbara\"}").must(),
+                        opts: find_and_modify_options()
+                    ).must()
+                    assert bson.member(gone, name: "age").must() == .int32(v: 17)
+
+                    match find_one_and_delete(@c, database: db, collection: "people", query: bson.parse_json("{\"name\": \"Barbara\"}").must(), opts: find_and_modify_options())
+                        .ok _  => assert false
+                        .err e => assert e.code == NOT_FOUND
+
+                    models: [WriteModel] = [
+                        .insert_one(doc: bson.parse_json("{\"sku\": \"a\", \"n\": 1}").must())
+                        .insert_one(doc: bson.parse_json("{\"sku\": \"b\", \"n\": 2}").must())
+                        .update_many(query: none, update: .document(doc: bson.parse_json("{\"$inc\": {\"n\": 10}}").must()), upsert: false)
+                        .replace_one(query: bson.parse_json("{\"sku\": \"c\"}").must(), replacement: bson.parse_json("{\"sku\": \"c\", \"n\": 0}").must(), upsert: true)
+                        .delete_one(query: bson.parse_json("{\"sku\": \"a\"}").must())
+                    ]
+                    bulk = bulk_write(@c, database: db, collection: "items", models: models, ordered: true).must()
+                    assert bulk.inserted == 2 && bulk.matched == 2 && bulk.modified == 2 && bulk.deleted == 1
+                    assert bulk.inserted_ids.len() == 2 && bulk.upserted_ids.len() == 1
+                    grouped = [
+                        bson.parse_json("{\"$group\": {\"_id\": \"$adult\", \"n\": {\"$sum\": 1}}}").must()
+                        bson.parse_json("{\"$sort\": {\"n\": -1}}").must()
+                    ]
+                    groups @= aggregate(
+                        @c,
+                        database: db,
+                        collection: "people",
+                        pipeline: grouped,
+                        opts: aggregate_options()
+                    ).must()
+                    first_group = next_document(@c, @groups).must()
+
+                    # Edsger was replaced whole, losing his flag: three adults keep it.
+                    assert bson.member(first_group, name: "n").must() == .int32(v: 3)
+                    unique = IndexModel(
+                        keys: bson.parse_json("{\"name\": 1}").must(),
+                        options: bson.parse_json("{\"unique\": true}").must()
+                    )
+                    assert create_index(@c, database: db, collection: "people", model: unique).must() == "name_1"
+                    assert create_index(@c, database: db, collection: "people", model: unique).must() == "name_1"
+
+                    match insert_one(@c, database: db, collection: "people", doc: bson.parse_json("{\"name\": \"Ada\"}").must())
+                        .ok _  => assert false
+                        .err e => assert e.code == EXISTS
+
+                    other = IndexModel(
+                        keys: bson.parse_json("{\"name\": 1}").must(),
+                        options: bson.parse_json("{\"unique\": false, \"name\": \"name_1\"}").must()
+                    )
+                    assert create_index(@c, database: db, collection: "people", model: other).is_err()
+                    index_names: [str] @= []
+
+                    for spec in list_indexes(@c, database: db, collection: "people").must()
+                        index_names @ index_names.push(bson.text_of(bson.member(spec, name: "name").must()).must())
+
+                    assert index_names == ["_id_", "name_1"]
+                    drop_index(@c, database: db, collection: "people", name: "name_1").must()
+
+                    match drop_index(@c, database: db, collection: "people", name: "name_1")
+                        .ok _  => assert false
+                        .err e => assert e.code == NOT_FOUND
+
+                    _ = create_indexes(
+                        @c,
+                        database: db,
+                        collection: "people",
+                        models: [unique, IndexModel(keys: bson.parse_json("{\"age\": -1}").must(), options: none)]
+                    ).must()
+                    drop_indexes(@c, database: db, collection: "people").must()
+                    assert list_indexes(@c, database: db, collection: "people").must().len() == 1
+
+                    match list_indexes(@c, database: db, collection: "nothing")
+                        .ok _  => assert false
+                        .err e => assert e.code == NOT_FOUND
+
+                    copied = [
+                        bson.parse_json("{\"$match\": {}}").must()
+                        bson.parse_json("{\"$out\": \"people_copy\"}").must()
+                    ]
+                    out @= aggregate(
+                        @c,
+                        database: db,
+                        collection: "people",
+                        pipeline: copied,
+                        opts: aggregate_options()
+                    ).must()
+                    assert read_all(@c, @out).must().len() == 0
+                    assert count_documents(@c, database: db, collection: "people_copy", query: none).must() == 4
+                    rename_collection(
+                        @c,
+                        database: db,
+                        from: "people_copy",
+                        to: "people_renamed",
+                        drop_target: false
+                    ).must()
+
+                    match rename_collection(@c, database: db, from: "people_copy", to: "x", drop_target: false)
+                        .ok _  => assert false
+                        .err e => assert e.code == NOT_FOUND
+
+                    create_view(
+                        @c,
+                        database: db,
+                        view: "old",
+                        source: "people",
+                        pipeline: [bson.parse_json("{\"$match\": {\"age\": {\"$gt\": 70}}}").must()]
+                    ).must()
+                    assert count_documents(@c, database: db, collection: "old", query: none).must() == 1
+
+                    create_collection(@c, database: db, collection: "people", opts: none).must()
+
+                    match create_collection(@c, database: db, collection: "people", opts: bson.parse_json("{\"capped\": true, \"size\": 4096}").must())
+                        .ok _  => assert false
+                        .err e => assert e.code == EXISTS
+
+                    assert list_collection_names(@c, database: db).must().len() >= 5
+                    assert list_database_names(@c).must().len() >= 1
+
+                    match run_command(@c, database: db, command: bson.parse_json("{\"noSuchCommand\": 1}").must())
+                        .ok _  => assert false
+                        .err e => assert e.code == UNSUPPORTED && server_code_of(e.msg).must() == 59
+
+                    match find_many(@c, database: db, collection: "people", query: bson.parse_json("{\"$nonsense\": 1}").must(), opts: find_options())
+                        .ok _  => assert false
+                        .err e => assert e.code == INVALID
+
+                    killed_opts @= find_options()
+                    killed_opts.batch_size @ 1
+                    killed @= find_many(@c, database: db, collection: "people", query: none, opts: killed_opts).must()
+                    _ = next_document(@c, @killed).must()
+                    close_cursor(@c, @killed).must()
+
+                    match next_document(@c, @killed)
+                        .ok _  => assert false
+                        .err e => assert e.code == NOT_FOUND
+
+                    plan = explain(
+                        @c,
+                        database: db,
+                        command: bson.parse_json("{\"count\": \"people\"}").must(),
+                        verbosity: "queryPlanner"
+                    ).must()
+                    assert bson.has_member(plan, name: "queryPlanner")
+                    ping(@c).must()
+                    close(@c).must()
+                    assert is_closed(c) && ping(@c).is_err() && close(@c).is_err()
+                    print(
+                        "live: CRUD, cursors, counts, aggregation, find-and-modify, bulk writes, indexes and failures passed"
+                    )
+
+test "live: a batch past the server's most writes, sent in two commands"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => print("live batches: skipped, REBEL_MONGODB_URL names no server")
+        .ok url =>
+            match connect(parse_url(url).must())
+                .err e => print(f"live batches: skipped, nothing answers: {e.code}")
+                .ok first =>
+                    c @= first
+                    drop_collection(@c, database: "rebel_test_batches", collection: "many").must()
+                    most = server_of(c).max_write_batch_size
+                    docs: [bson.Document] @= []
+
+                    for i in range(from: 0, to: most + 1)
+                        docs @ docs.push(bson.Document(fields: [bson.Field(name: "i", value: bson.from_int(i))]))
+
+                    assert insert_many(@c, database: "rebel_test_batches", collection: "many", docs: docs, ordered: true).must().len() == most + 1
+                    assert count_documents(@c, database: "rebel_test_batches", collection: "many", query: bson.Document(fields: [])).must() == most + 1
+                    drop_collection(@c, database: "rebel_test_batches", collection: "many").must()
+                    close(@c).must()
+                    print(f"live batches: {most + 1} documents inserted in two commands")
+
+test "live: transactions committed and aborted as a second client sees them, and a failure inside one"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => print("live transactions: skipped, REBEL_MONGODB_URL names no server")
+        .ok url =>
+            match connect(parse_url(url).must())
+                .err e => print(f"live transactions: skipped, nothing answers: {e.code}")
+                .ok first =>
+                    c @= first
+
+                    if server_of(c).replica_set == ""
+                        print("live transactions: skipped, the server is no replica set")
+                        close(@c).must()
+                        return
+                    other @= connect(parse_url(url).must()).must()
+                    db = "rebel_test_txn"
+                    none = bson.Document(fields: [])
+                    drop_collection(@c, database: db, collection: "ledger").must()
+                    create_collection(@c, database: db, collection: "ledger", opts: none).must()
+                    majority @= transaction_options()
+                    majority.write_concern.w @ "majority"
+                    majority.read_concern @ "snapshot"
+                    start_transaction(@c, opts: majority).must()
+                    assert is_in_transaction(c)
+
+                    match start_transaction(@c, opts: majority)
+                        .ok _  => assert false
+                        .err e => assert e.code == INVALID
+
+                    _ = insert_one(
+                        @c,
+                        database: db,
+                        collection: "ledger",
+                        doc: bson.parse_json("{\"_id\": 1}").must()
+                    ).must()
+                    _ = insert_one(
+                        @c,
+                        database: db,
+                        collection: "ledger",
+                        doc: bson.parse_json("{\"_id\": 2}").must()
+                    ).must()
+                    assert count_documents(@other, database: db, collection: "ledger", query: none).must() == 0
+                    assert count_documents(@c, database: db, collection: "ledger", query: none).must() == 2
+                    commit_transaction(@c).must()
+                    assert !is_in_transaction(c)
+                    assert count_documents(@other, database: db, collection: "ledger", query: none).must() == 2
+                    start_transaction(@c, opts: transaction_options()).must()
+                    _ = insert_one(
+                        @c,
+                        database: db,
+                        collection: "ledger",
+                        doc: bson.parse_json("{\"_id\": 3}").must()
+                    ).must()
+                    abort_transaction(@c).must()
+                    assert count_documents(@other, database: db, collection: "ledger", query: none).must() == 2
+                    start_transaction(@c, opts: transaction_options()).must()
+
+                    match insert_one(@c, database: db, collection: "ledger", doc: bson.parse_json("{\"_id\": 1}").must())
+                        .ok _  => assert false
+                        .err e => assert e.code == EXISTS
+
+                    abort_transaction(@c).must()
+                    start_transaction(@c, opts: transaction_options()).must()
+                    commit_transaction(@c).must()
+
+                    match commit_transaction(@c)
+                        .ok _  => assert false
+                        .err e => assert e.code == INVALID
+
+                    start_transaction(@c, opts: transaction_options()).must()
+                    _ = insert_one(
+                        @other,
+                        database: db,
+                        collection: "ledger",
+                        doc: bson.parse_json("{\"_id\": 4}").must()
+                    ).must()
+
+                    match insert_one(@c, database: db, collection: "ledger", doc: bson.parse_json("{\"_id\": 4}").must())
+                        .ok _ => assert false
+                        .err e =>
+                            assert e.code == EXISTS || has_label(message: e.msg, label: LABEL_TRANSIENT_TRANSACTION_ERROR)
+
+                    abort_transaction(@c).must()
+                    assert !is_in_transaction(c)
+                    close(@other).must()
+                    close(@c).must()
+                    print("live transactions: commit, abort and a conflicting write passed")
+
+test "live: a change stream's insert and update, and a stream resumed after its token"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => print("live change streams: skipped, REBEL_MONGODB_URL names no server")
+        .ok url =>
+            match connect(parse_url(url).must())
+                .err e => print(f"live change streams: skipped, nothing answers: {e.code}")
+                .ok first =>
+                    c @= first
+
+                    if server_of(c).replica_set == ""
+                        print("live change streams: skipped, the server is no replica set")
+                        close(@c).must()
+                        return
+                    db = "rebel_test_streams"
+                    drop_collection(@c, database: db, collection: "events").must()
+                    create_collection(@c, database: db, collection: "events", opts: bson.Document(fields: [])).must()
+                    wait @= watch_options()
+                    wait.max_await_ms @ 300
+                    wait.full_document @ "updateLookup"
+                    stream @= watch(@c, database: db, collection: "events", pipeline: [], opts: wait).must()
+
+                    match next_document(@c, @stream)
+                        .ok _  => assert false
+                        .err e => assert e.code == TIMEOUT
+
+                    _ = insert_one(
+                        @c,
+                        database: db,
+                        collection: "events",
+                        doc: bson.parse_json("{\"_id\": 1, \"kind\": \"a\"}").must()
+                    ).must()
+                    inserted = next_document(@c, @stream).must()
+                    assert bson.member(inserted, name: "operationType").must() == .text(v: "insert")
+                    assert bson.value_at(inserted, path: "fullDocument.kind").must() == .text(v: "a")
+                    token = resume_token_of(stream).must()
+                    _ = update_one(
+                        @c,
+                        database: db,
+                        collection: "events",
+                        query: bson.parse_json("{\"_id\": 1}").must(),
+                        update: .document(doc: bson.parse_json("{\"$set\": {\"kind\": \"b\"}}").must()),
+                        opts: write_options()
+                    ).must()
+                    updated = next_document(@c, @stream).must()
+                    assert bson.member(updated, name: "operationType").must() == .text(v: "update")
+                    assert bson.value_at(updated, path: "fullDocument.kind").must() == .text(v: "b")
+                    close_cursor(@c, @stream).must()
+                    resumed_opts @= wait
+                    resumed_opts.resume_after @ token
+                    resumed @= watch(@c, database: db, collection: "events", pipeline: [], opts: resumed_opts).must()
+                    again = next_document(@c, @resumed).must()
+                    assert bson.member(again, name: "operationType").must() == .text(v: "update")
+                    close_cursor(@c, @resumed).must()
+                    close(@c).must()
+                    print("live change streams: insert, update and resume passed")
+
+test "live: logins by SCRAM-SHA-1, by SASLprep's password, refused, read-only, over TLS, and a read preference no member suits"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => print("live logins: skipped, REBEL_MONGODB_URL names no server")
+        .ok url =>
+            opts = parse_url(url).must()
+            wrong @= opts
+            wrong.password @ "not the password"
+
+            match connect(wrong)
+                .ok _  => assert false
+                .err e => assert e.code == PERMISSION && server_code_of(e.msg).must() == 18
+
+            elsewhere @= opts
+            elsewhere.replica_set @ "no-such-set"
+            assert connect(elsewhere).is_err()
+            secondary @= opts
+            secondary.read_preference @ .secondary
+            secondary.replica_set @ ""
+
+            match connect(secondary)
+                .ok got =>
+                    s @= got
+                    assert server_of(s).replica_set != ""
+                    close(@s).must()
+                .err e => assert e.code == NOT_FOUND
+
+            match os.env("REBEL_MONGODB_SHA1_URL")
+                .err _ => print("live logins: SCRAM-SHA-1 skipped, REBEL_MONGODB_SHA1_URL names no user")
+                .ok sha1_url =>
+                    s @= connect(parse_url(sha1_url).must()).must()
+                    ping(@s).must()
+                    close(@s).must()
+                    forced @= parse_url(sha1_url).must()
+                    forced.mechanism @ .scram_sha_256
+                    assert connect(forced).is_err()
+
+            match os.env("REBEL_MONGODB_PREP_URL")
+                .err _ => print("live logins: SASLprep skipped, REBEL_MONGODB_PREP_URL names no user")
+                .ok prep_url =>
+                    s @= connect(parse_url(prep_url).must()).must()
+                    ping(@s).must()
+                    close(@s).must()
+
+            match os.env("REBEL_MONGODB_READER_URL")
+                .err _ => print("live logins: read-only skipped, REBEL_MONGODB_READER_URL names no user")
+                .ok reader_url =>
+                    s @= connect(parse_url(reader_url).must()).must()
+                    _ = count_documents(
+                        @s,
+                        database: "rebel_test",
+                        collection: "people",
+                        query: bson.Document(fields: [])
+                    ).must()
+
+                    match insert_one(@s, database: "rebel_test", collection: "people", doc: bson.Document(fields: []))
+                        .ok _  => assert false
+                        .err e => assert e.code == PERMISSION && server_code_of(e.msg).must() == 13
+
+                    close(@s).must()
+
+            match os.env("REBEL_MONGODB_TLS_URL")
+                .err _ => print("live logins: TLS skipped, REBEL_MONGODB_TLS_URL names no server")
+                .ok tls_url =>
+                    s @= connect(parse_url(tls_url).must()).must()
+                    ping(@s).must()
+                    close(@s).must()
+
+            print("live logins: refusals, SCRAM-SHA-1, SASLprep, read-only and TLS ran")
+
+## Examples
+
+# The options of a server on this machine: plain TCP, the primary, no user.
+test "options: a server on this machine"
+    opts = options("localhost")
+    assert opts.hosts == [Host(name: "localhost", port: 27017)] && opts.read_preference == .primary && opts.security == .plain
+
+# The options a connection string names.
+test "parse_url: a replica set with a user and a majority write concern"
+    opts = parse_url("mongodb://app:s3cret@db1:27017,db2:27017/shop?replicaSet=rs0&w=majority").must()
+    assert opts.hosts.len() == 2 && opts.username == "app" && opts.replica_set == "rs0" && opts.write_concern.w == "majority"
+
+# A client connected, where the environment names a server; elsewhere it shows nothing.
+test "connect: a client of the server REBEL_MONGODB_URL names"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            assert !is_closed(c)
+            close(@c).must()
+
+# A client closed, after which every call fails `closed`.
+test "close: the end of a client"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            c2 @= connect(parse_url(url).must()).must()
+            close(@c2).must()
+            assert ping(@c2).is_err()
+            close(@c).must()
+
+# Whether a client is still open.
+test "is_closed: before and after close"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            assert !is_closed(c)
+            close(@c).must()
+
+# A limit on how long each reply may take.
+test "set_timeout: five seconds for each reply"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            set_timeout(@c, ms: 5000).must()
+            ping(@c).must()
+            close(@c).must()
+
+# What kind of server the client stands on.
+test "server_of: what the server said of itself"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            info = server_of(c)
+            assert info.max_wire_version > 0 && info.max_document_size == 16777216
+            close(@c).must()
+
+# Whether the server answers.
+test "ping: the server answers"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            ping(@c).must()
+            close(@c).must()
+
+# Any command, here the server's version.
+test "run_command: the server's build"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            reply = run_command(@c, database: "admin", command: bson.parse_json("{\"buildInfo\": 1}").must()).must()
+            assert bson.kind_of(bson.member(reply, name: "version").must()) == "string"
+            close(@c).must()
+
+# A command that answers a cursor.
+test "run_cursor_command: the collections of a database as a cursor"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            cursor @= run_cursor_command(
+                @c,
+                database: "rebel_examples",
+                command: bson.parse_json("{\"listCollections\": 1}").must()
+            ).must()
+            _ = read_all(@c, @cursor).must()
+            close(@c).must()
+
+# How the server would run a query.
+test "explain: the plan of a query"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            plan = explain(
+                @c,
+                database: "rebel_examples",
+                command: bson.parse_json("{\"find\": \"people\", \"filter\": {}}").must(),
+                verbosity: "queryPlanner"
+            ).must()
+            assert bson.has_member(plan, name: "queryPlanner")
+            close(@c).must()
+
+# The names of the databases.
+test "list_database_names: the server's databases"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            assert list_database_names(@c).must().len() > 0
+            close(@c).must()
+
+# The databases, each with its size on disk.
+test "list_databases: the server's databases with their sizes"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            assert list_databases(@c, query: bson.Document(fields: [])).must().len() > 0
+            close(@c).must()
+
+# A database removed with all it holds.
+test "drop_database: a database removed"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            _ = insert_one(
+                @c,
+                database: "rebel_examples_dropped",
+                collection: "c",
+                doc: bson.Document(fields: [])
+            ).must()
+            drop_database(@c, database: "rebel_examples_dropped").must()
+            close(@c).must()
+
+# The names of a database's collections.
+test "list_collection_names: the collections of a database"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            _ = insert_one(@c, database: "rebel_examples", collection: "people", doc: bson.Document(fields: [])).must()
+            names = list_collection_names(@c, database: "rebel_examples").must()
+            assert names.len() > 0
+            close(@c).must()
+
+# A database's collections, each with its options.
+test "list_collections: the collections with their options"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            _ = insert_one(@c, database: "rebel_examples", collection: "people", doc: bson.Document(fields: [])).must()
+            assert list_collections(@c, database: "rebel_examples", query: bson.Document(fields: [])).must().len() > 0
+            close(@c).must()
+
+# A collection created with options.
+test "create_collection: a capped collection"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            drop_collection(@c, database: "rebel_examples", collection: "log").must()
+            create_collection(
+                @c,
+                database: "rebel_examples",
+                collection: "log",
+                opts: bson.parse_json("{\"capped\": true, \"size\": 4096}").must()
+            ).must()
+            close(@c).must()
+
+# A view of a collection through a pipeline.
+test "create_view: the adults of a collection"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            drop_collection(@c, database: "rebel_examples", collection: "adults").must()
+            create_view(
+                @c,
+                database: "rebel_examples",
+                view: "adults",
+                source: "people",
+                pipeline: [bson.parse_json("{\"$match\": {\"age\": {\"$gte\": 18}}}").must()]
+            ).must()
+            close(@c).must()
+
+# A collection removed; one that does not exist is no failure.
+test "drop_collection: a collection removed"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            drop_collection(@c, database: "rebel_examples", collection: "nothing_here").must()
+            close(@c).must()
+
+# A collection renamed in its database.
+test "rename_collection: a collection given a new name"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            drop_collection(@c, database: "rebel_examples", collection: "old_name").must()
+            _ = insert_one(
+                @c,
+                database: "rebel_examples",
+                collection: "old_name",
+                doc: bson.Document(fields: [])
+            ).must()
+            rename_collection(
+                @c,
+                database: "rebel_examples",
+                from: "old_name",
+                to: "new_name",
+                drop_target: true
+            ).must()
+            close(@c).must()
+
+# A document inserted, its `_id` made.
+test "insert_one: a document and its new _id"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            id = insert_one(
+                @c,
+                database: "rebel_examples",
+                collection: "people",
+                doc: bson.parse_json("{\"name\": \"Ada\", \"age\": 36}").must()
+            ).must()
+            assert bson.kind_of(id) == "objectId"
+            close(@c).must()
+
+# Several documents inserted in one command.
+test "insert_many: three documents at once"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            docs = [
+                bson.parse_json("{\"n\": 1}").must()
+                bson.parse_json("{\"n\": 2}").must()
+                bson.parse_json("{\"n\": 3}").must()
+            ]
+            assert insert_many(@c, database: "rebel_examples", collection: "numbers", docs: docs, ordered: true).must().len() == 3
+            close(@c).must()
+
+# The options of an update that inserts where nothing matches.
+test "write_options: an upsert"
+    opts @= write_options()
+    opts.upsert @ true
+    assert opts.upsert && opts.array_filters.len() == 0
+
+# One document changed by an operator.
+test "update_one: a field raised by one"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            _ = insert_one(
+                @c,
+                database: "rebel_examples",
+                collection: "counters",
+                doc: bson.parse_json("{\"_id\": \"visits\", \"n\": 0}").must()
+            ).is_err()
+            r = update_one(
+                @c,
+                database: "rebel_examples",
+                collection: "counters",
+                query: bson.parse_json("{\"_id\": \"visits\"}").must(),
+                update: .document(doc: bson.parse_json("{\"$inc\": {\"n\": 1}}").must()),
+                opts: write_options()
+            ).must()
+            assert r.matched == 1
+            close(@c).must()
+
+# Every matching document changed.
+test "update_many: every match changed"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            r = update_many(
+                @c,
+                database: "rebel_examples",
+                collection: "people",
+                query: bson.Document(fields: []),
+                update: .document(doc: bson.parse_json("{\"$set\": {\"seen\": true}}").must()),
+                opts: write_options()
+            ).must()
+            assert r.matched >= 0
+            close(@c).must()
+
+# A document replaced whole.
+test "replace_one: a document replaced, its _id kept"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            opts @= write_options()
+            opts.upsert @ true
+            r = replace_one(
+                @c,
+                database: "rebel_examples",
+                collection: "settings",
+                query: bson.parse_json("{\"_id\": \"theme\"}").must(),
+                replacement: bson.parse_json("{\"value\": \"dark\"}").must(),
+                opts: opts
+            ).must()
+            assert r.matched + r.upserted_ids.len() == 1
+            close(@c).must()
+
+# The first matching document deleted.
+test "delete_one: one document deleted"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            _ = insert_one(
+                @c,
+                database: "rebel_examples",
+                collection: "trash_one",
+                doc: bson.parse_json("{\"kind\": \"old\"}").must()
+            ).must()
+            assert delete_one(@c, database: "rebel_examples", collection: "trash_one", query: bson.parse_json("{\"kind\": \"old\"}").must(), opts: write_options()).must() == 1
+            close(@c).must()
+
+# Every matching document deleted.
+test "delete_many: every match deleted"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            _ = delete_many(
+                @c,
+                database: "rebel_examples",
+                collection: "trash",
+                query: bson.Document(fields: []),
+                opts: write_options()
+            ).must()
+            close(@c).must()
+
+# Several writes of several kinds sent together.
+test "bulk_write: an insert, an update and a delete in order"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            models: [WriteModel] = [
+                .insert_one(doc: bson.parse_json("{\"sku\": \"a\", \"stock\": 1}").must())
+                .update_one(query: bson.parse_json("{\"sku\": \"a\"}").must(), update: .document(doc: bson.parse_json("{\"$inc\": {\"stock\": 4}}").must()), upsert: false)
+                .delete_one(query: bson.parse_json("{\"sku\": \"a\"}").must())
+            ]
+            r = bulk_write(@c, database: "rebel_examples", collection: "items", models: models, ordered: true).must()
+            assert r.inserted == 1 && r.matched == 1 && r.deleted == 1
+            close(@c).must()
+
+# The options of a sorted, limited query of some fields.
+test "find_options: the five youngest, their names alone"
+    opts @= find_options()
+    opts.sort @ bson.parse_json("{\"age\": 1}").must()
+    opts.limit @ 5
+    opts.projection @ bson.parse_json("{\"name\": 1, \"_id\": 0}").must()
+    assert opts.limit == 5
+
+# The documents a query matches, read from a cursor.
+test "find_many: the adults, read one at a time"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            cursor @= find_many(
+                @c,
+                database: "rebel_examples",
+                collection: "people",
+                query: bson.parse_json("{\"age\": {\"$gte\": 18}}").must(),
+                opts: find_options()
+            ).must()
+
+            while true
+                match next_document(@c, @cursor)
+                    .ok _  => _ = 0
+                    .err _ => break
+
+            close(@c).must()
+
+# The first document a query matches.
+test "find_one: one document by its name"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            _ = insert_one(
+                @c,
+                database: "rebel_examples",
+                collection: "people",
+                doc: bson.parse_json("{\"name\": \"Grace\"}").must()
+            ).must()
+            doc = find_one(
+                @c,
+                database: "rebel_examples",
+                collection: "people",
+                query: bson.parse_json("{\"name\": \"Grace\"}").must(),
+                opts: find_options()
+            ).must()
+            assert bson.member(doc, name: "name").must() == .text(v: "Grace")
+            close(@c).must()
+
+# A cursor read to its end, one document at a time.
+test "next_document: the documents of a cursor until its end"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            cursor @= find_many(
+                @c,
+                database: "rebel_examples",
+                collection: "numbers",
+                query: bson.Document(fields: []),
+                opts: find_options()
+            ).must()
+            seen: i64 @= 0
+
+            while true
+                match next_document(@c, @cursor)
+                    .ok _ => seen @ seen + 1
+                    .err e =>
+                        assert e.code == NOT_FOUND
+                        break
+
+            assert seen >= 0
+            close(@c).must()
+
+# A cursor read whole.
+test "read_all: every document of a cursor at once"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            cursor @= find_many(
+                @c,
+                database: "rebel_examples",
+                collection: "numbers",
+                query: bson.Document(fields: []),
+                opts: find_options()
+            ).must()
+            _ = read_all(@c, @cursor).must()
+            assert is_exhausted(cursor)
+            close(@c).must()
+
+# A cursor the program stops reading.
+test "close_cursor: a cursor given up before its end"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            opts @= find_options()
+            opts.batch_size @ 1
+            cursor @= find_many(
+                @c,
+                database: "rebel_examples",
+                collection: "numbers",
+                query: bson.Document(fields: []),
+                opts: opts
+            ).must()
+            close_cursor(@c, @cursor).must()
+            assert is_exhausted(cursor)
+            close(@c).must()
+
+# Whether a cursor has given out everything.
+test "is_exhausted: a cursor read to its end"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            cursor = find_many(
+                @c,
+                database: "rebel_examples",
+                collection: "nothing_here",
+                query: bson.Document(fields: []),
+                opts: find_options()
+            ).must()
+            assert is_exhausted(cursor)
+            close(@c).must()
+
+# How many documents a query matches.
+test "count_documents: the adults counted"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            assert count_documents(@c, database: "rebel_examples", collection: "people", query: bson.parse_json("{\"age\": {\"$gte\": 18}}").must()).must() >= 0
+            close(@c).must()
+
+# How many documents a collection holds, quickly.
+test "estimated_document_count: a collection's size from its metadata"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            assert estimated_document_count(@c, database: "rebel_examples", collection: "people").must() >= 0
+            close(@c).must()
+
+# The distinct values of a field.
+test "distinct: the names of the people"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            _ = distinct(
+                @c,
+                database: "rebel_examples",
+                collection: "people",
+                field: "name",
+                query: bson.Document(fields: [])
+            ).must()
+            close(@c).must()
+
+# The options of a large pipeline.
+test "aggregate_options: batches of a hundred, spilled to disk"
+    opts @= aggregate_options()
+    opts.batch_size @ 100
+    opts.command @ bson.parse_json("{\"allowDiskUse\": true}").must()
+    assert opts.batch_size == 100
+
+# Documents grouped by a pipeline.
+test "aggregate: the people counted by age"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            pipeline = [bson.parse_json("{\"$group\": {\"_id\": \"$age\", \"n\": {\"$sum\": 1}}}").must()]
+            cursor @= aggregate(
+                @c,
+                database: "rebel_examples",
+                collection: "people",
+                pipeline: pipeline,
+                opts: aggregate_options()
+            ).must()
+            _ = read_all(@c, @cursor).must()
+            close(@c).must()
+
+# The options of a find-and-modify that answers the new version.
+test "find_and_modify_options: the document after the change"
+    opts @= find_and_modify_options()
+    opts.returned @ .after
+    assert opts.returned == .after
+
+# A document changed and answered in one command.
+test "find_one_and_update: a counter raised and read in one step"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            opts @= find_and_modify_options()
+            opts.returned @ .after
+            opts.upsert @ true
+            doc = find_one_and_update(
+                @c,
+                database: "rebel_examples",
+                collection: "counters",
+                query: bson.parse_json("{\"_id\": \"orders\"}").must(),
+                update: .document(doc: bson.parse_json("{\"$inc\": {\"n\": 1}}").must()),
+                opts: opts
+            ).must()
+            assert bson.int_of(bson.member(doc, name: "n").must()).must() >= 1
+            close(@c).must()
+
+# A document replaced and answered in one command.
+test "find_one_and_replace: a document replaced and its old version answered"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            opts @= find_and_modify_options()
+            opts.upsert @ true
+
+            match find_one_and_replace(@c, database: "rebel_examples", collection: "settings", query: bson.parse_json("{\"_id\": \"lang\"}").must(), replacement: bson.parse_json("{\"value\": \"it\"}").must(), opts: opts)
+                .ok _  => _ = 0
+                .err e => assert e.code == NOT_FOUND
+
+            close(@c).must()
+
+# A document deleted and answered in one command.
+test "find_one_and_delete: the oldest job taken off a queue"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            _ = insert_one(
+                @c,
+                database: "rebel_examples",
+                collection: "jobs",
+                doc: bson.parse_json("{\"task\": \"mail\"}").must()
+            ).must()
+            opts @= find_and_modify_options()
+            opts.sort @ bson.parse_json("{\"_id\": 1}").must()
+            job = find_one_and_delete(
+                @c,
+                database: "rebel_examples",
+                collection: "jobs",
+                query: bson.Document(fields: []),
+                opts: opts
+            ).must()
+            assert bson.has_member(job, name: "task")
+            close(@c).must()
+
+# The name the server gives an index.
+test "index_name_of: the name of a compound index"
+    assert index_name_of(bson.parse_json("{\"last\": 1, \"first\": -1}").must()) == "last_1_first_-1"
+
+# An index created, and its name.
+test "create_index: a unique index on email"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            name = create_index(
+                @c,
+                database: "rebel_examples",
+                collection: "users",
+                model: IndexModel(keys: bson.parse_json("{\"email\": 1}").must(), options: bson.parse_json("{\"unique\": true}").must())
+            ).must()
+            assert name == "email_1"
+            close(@c).must()
+
+# Several indexes created together.
+test "create_indexes: two indexes in one command"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            models = [
+                IndexModel(keys: bson.parse_json("{\"a\": 1}").must(), options: bson.Document(fields: []))
+                IndexModel(keys: bson.parse_json("{\"b\": -1}").must(), options: bson.Document(fields: []))
+            ]
+            assert create_indexes(@c, database: "rebel_examples", collection: "indexed_many", models: models).must() == ["a_1", "b_-1"]
+            close(@c).must()
+
+# A collection's indexes, `_id_` first.
+test "list_indexes: the indexes of a collection"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            _ = insert_one(
+                @c,
+                database: "rebel_examples",
+                collection: "indexed_listed",
+                doc: bson.Document(fields: [])
+            ).must()
+            assert list_indexes(@c, database: "rebel_examples", collection: "indexed_listed").must().len() >= 1
+            close(@c).must()
+
+# An index removed.
+test "drop_index: an index removed by its name"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            _ = create_index(
+                @c,
+                database: "rebel_examples",
+                collection: "indexed_dropped",
+                model: IndexModel(keys: bson.parse_json("{\"c\": 1}").must(), options: bson.Document(fields: []))
+            ).must()
+            drop_index(@c, database: "rebel_examples", collection: "indexed_dropped", name: "c_1").must()
+            close(@c).must()
+
+# Every index of a collection removed.
+test "drop_indexes: every index but _id_ removed"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            _ = insert_one(
+                @c,
+                database: "rebel_examples",
+                collection: "indexed_all_dropped",
+                doc: bson.Document(fields: [])
+            ).must()
+            drop_indexes(@c, database: "rebel_examples", collection: "indexed_all_dropped").must()
+            close(@c).must()
+
+# The options of a stream that carries updated documents whole.
+test "watch_options: the full document of each update"
+    opts @= watch_options()
+    opts.full_document @ "updateLookup"
+    assert opts.max_await_ms == 0
+
+# A change stream opened, a change made, and the change read.
+test "watch: the next change of a collection"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+
+            if server_of(c).replica_set != ""
+                stream @= watch(
+                    @c,
+                    database: "rebel_examples",
+                    collection: "events",
+                    pipeline: [],
+                    opts: watch_options()
+                ).must()
+                _ = insert_one(
+                    @c,
+                    database: "rebel_examples",
+                    collection: "events",
+                    doc: bson.parse_json("{\"kind\": \"signup\"}").must()
+                ).must()
+                change = next_document(@c, @stream).must()
+                assert bson.member(change, name: "operationType").must() == .text(v: "insert")
+                close_cursor(@c, @stream).must()
+            close(@c).must()
+
+# The token to resume a stream after its last change.
+test "resume_token_of: where a stream stood"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+
+            if server_of(c).replica_set != ""
+                stream @= watch(
+                    @c,
+                    database: "rebel_examples",
+                    collection: "events",
+                    pipeline: [],
+                    opts: watch_options()
+                ).must()
+                _ = insert_one(
+                    @c,
+                    database: "rebel_examples",
+                    collection: "events",
+                    doc: bson.Document(fields: [])
+                ).must()
+                _ = next_document(@c, @stream).must()
+                assert resume_token_of(stream).must().fields.len() > 0
+                close_cursor(@c, @stream).must()
+            close(@c).must()
+
+# The options of a transaction.
+test "transaction_options: a snapshot read and a majority commit"
+    opts @= transaction_options()
+    opts.read_concern @ "snapshot"
+    opts.write_concern.w @ "majority"
+    assert opts.write_concern.w == "majority"
+
+# A transaction begun, written in, and committed.
+test "start_transaction: two writes made visible together"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+
+            if server_of(c).replica_set != ""
+                _ = insert_one(
+                    @c,
+                    database: "rebel_examples_txn",
+                    collection: "accounts",
+                    doc: bson.parse_json("{\"_id\": \"x\", \"balance\": 0}").must()
+                ).is_err()
+                start_transaction(@c, opts: transaction_options()).must()
+                _ = update_one(
+                    @c,
+                    database: "rebel_examples_txn",
+                    collection: "accounts",
+                    query: bson.parse_json("{\"_id\": \"x\"}").must(),
+                    update: .document(doc: bson.parse_json("{\"$inc\": {\"balance\": 5}}").must()),
+                    opts: write_options()
+                ).must()
+                commit_transaction(@c).must()
+            close(@c).must()
+
+# A transaction committed.
+test "commit_transaction: an insert made visible"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+
+            if server_of(c).replica_set != ""
+                start_transaction(@c, opts: transaction_options()).must()
+                _ = insert_one(
+                    @c,
+                    database: "rebel_examples_txn",
+                    collection: "ledger",
+                    doc: bson.parse_json("{\"amount\": 1}").must()
+                ).must()
+                commit_transaction(@c).must()
+                assert !is_in_transaction(c)
+            close(@c).must()
+
+# A transaction aborted: none of its writes stands.
+test "abort_transaction: an insert undone"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+
+            if server_of(c).replica_set != ""
+                start_transaction(@c, opts: transaction_options()).must()
+                _ = insert_one(
+                    @c,
+                    database: "rebel_examples_txn",
+                    collection: "ledger",
+                    doc: bson.parse_json("{\"amount\": -1}").must()
+                ).must()
+                abort_transaction(@c).must()
+            close(@c).must()
+
+# Whether a transaction is in progress.
+test "is_in_transaction: before and inside a transaction"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            assert !is_in_transaction(c)
+            close(@c).must()
+
+# The id of the client's logical session.
+test "session_id_of: the session's UUID"
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => _ = 0
+        .ok url =>
+            c @= connect(parse_url(url).must()).must()
+            assert bson.has_member(session_id_of(c), name: "id")
+            close(@c).must()
+
+# The server's own code of a failure.
+test "server_code_of: a duplicate key's code"
+    assert server_code_of("[11000 DuplicateKey] E11000 duplicate key error").must() == 11000
+
+# The labels of a failure.
+test "labels_of: a transient error's labels"
+    assert labels_of("[251 NoSuchTransaction; TransientTransactionError] none") == ["TransientTransactionError"]
+
+# Whether a failure says the whole transaction may be run again.
+test "has_label: whether a transaction may be run again"
+    assert has_label(
+        message: "[112 WriteConflict; TransientTransactionError] conflict",
+        label: LABEL_TRANSIENT_TRANSACTION_ERROR
+    )

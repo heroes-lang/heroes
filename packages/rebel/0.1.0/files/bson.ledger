@@ -1,0 +1,201 @@
+# The ledger of `bson`: what a program does with BSON documents and
+# MongoDB's Extended JSON, measured against Go's
+# `go.mongodb.org/mongo-driver/v2/bson` v2.10.0 (`go doc -all`, the module
+# fetched into the scratch folder on 2026-11-18), Rust's `bson` crate 2.15.0
+# (its rustdoc, built in the scratch folder the same day: the items of
+# `all.html` and the methods of `Document`, `Bson`, `ObjectId`, `Decimal128`,
+# `DateTime`, `Timestamp`, `Binary`, `Regex`, `RawDocument` and
+# `RawDocumentBuf`) and Python's `bson` of pymongo 4.20.0 (`dir()` of the
+# module, `json_util`, and its classes, installed into the scratch folder the
+# same day).
+#
+# Every expected value of the tests was observed: pymongo 4.20.0 wrote the
+# bytes and the canonical and relaxed Extended JSON of 69 documents of edge
+# values (every type, every subtype, the doubles' and dates' edges, the
+# Decimal128 clamps), decoded by hand-built bytes of the five deprecated
+# types, and answered the Decimal128 texts and encodings, the UUID byte
+# orders, the vectors' bytes and refusals, and the ObjectId times.
+
+capability bson/value  a document's every value held exactly, the deprecated types included
+  heroes  bson.Value, bson.Document, bson.Field, bson.ObjectId, bson.Decimal128, bson.Timestamp
+  go      D, E, M, A, Binary, CodeWithScope, DBPointer, DateTime, Decimal128, JavaScript, MaxKey, MinKey, Null, ObjectID, Regex, Symbol, Timestamp, Undefined, RawValue, Type, Type.String, Type.IsValid
+  rust    Bson, Document, JavaScriptCodeWithScope, DbPointer, Timestamp, Regex, Binary, spec::ElementType, spec::BinarySubtype
+  python  SON, Int64, Code, Regex, Binary, Timestamp, MinKey, MaxKey, ObjectId, Decimal128, DatetimeMS, the BSON* type constants
+  note    a document keeps its order and may hold a name twice, as Go's D and Rust's Document do; pymongo's dict holds a name once
+
+capability bson/encode  a document written as its bytes
+  heroes  bson.encode
+  go      Marshal, Encoder.Encode, NewEncoder
+  rust    to_vec, Document::to_writer, RawDocumentBuf::from_document
+  python  encode, BSON.encode
+  note    a regex's options are written sorted and an array's names as 0, 1, ..., as pymongo writes them; a name or pattern holding a zero byte is refused, `invalid`; a double is written by `numbers.f64_to_bits`, exact for every float but a NaN, whose sign and payload no route of Rebel keeps: every NaN is read and written as the quiet NaN, 0x7ff8000000000000, where Go and Rust keep a NaN's bits
+
+capability bson/decode  bytes read into a document, every length and every text checked, the nesting bounded
+  heroes  bson.decode, bson.decode_with, bson.DecodeOptions, bson.strict, bson.DEFAULT_MAX_DEPTH
+  go      Unmarshal, Decoder.Decode, NewDecoder, ReadDocument
+  rust    from_slice, from_reader, Document::from_reader, RawDocument::from_bytes
+  python  decode, BSON.decode
+  note    a boolean other than 0 or 1, a subtype 2 whose inner length disagrees and a code with scope whose lengths disagree are refused, as pymongo refuses them; an array's names are not read
+
+capability bson/decode-lossy  text that is not UTF-8 read with U+FFFD
+  heroes  bson.DecodeOptions.lossy_text
+  go      -
+  rust    from_slice_utf8_lossy, from_reader_utf8_lossy, Document::from_reader_utf8_lossy
+  python  CodecOptions(unicode_decode_error_handler="replace")
+  note    Go's driver does not check UTF-8 at all; here a text must be UTF-8 unless this is asked
+
+capability bson/stream  the documents of a stream or a dump read one after another
+  heroes  bson.decode_next, bson.decode_all, bson.Decoded
+  go      Decoder.Decode, NewDecoder
+  rust    -
+  python  decode_all, decode_iter, decode_file_iter
+  note    a file is read whole by `fs` or `io` first; `decode_next` answers where the next document begins
+
+capability bson/validate  bytes checked for one well-formed document
+  heroes  bson.is_valid
+  go      Raw.Validate, RawElement.Validate, RawValue.Validate, RawArray.Validate
+  rust    RawDocument::from_bytes
+  python  is_valid
+
+capability bson/raw-lookup  one field read out of a document's bytes without decoding the rest
+  heroes  bson.lookup
+  go      Raw.Lookup, Raw.LookupErr, Raw.Index, Raw.IndexErr, Raw.Elements, Raw.Values, RawElement.Key, RawElement.Value, RawArray.Index, RawArray.Values
+  rust    RawDocument::get, RawDocument::get_str, RawDocument::get_i32, RawDocument::get_i64, RawDocument::get_f64, RawDocument::get_bool, RawDocument::get_document, RawDocument::get_array, RawDocument::get_binary, RawDocument::get_object_id, RawDocument::get_datetime, RawDocument::get_timestamp, RawDocument::get_regex, RawDocument::iter, RawDocumentBuf, RawBson, RawBsonRef, RawArray
+  python  RawBSONDocument, RawBSONDocument.raw
+  note    only the fields before the one found are walked, by their lengths; the field found is read whole
+
+capability bson/fields  a document's fields read, set, removed and listed
+  heroes  bson.member, bson.has_member, bson.with_member, bson.without_member, bson.names_of
+  go      D.Map (gone in v2), M, E
+  rust    Document::get, Document::insert, Document::remove, Document::contains_key, Document::keys, Document::values, Document::iter, Document::len, Document::is_empty, Document::entry, Document::clear, Document::extend
+  python  dict's own operations, SON
+  note    `len` and iteration are the built-ins' on `doc.fields`; a name that stands twice: `member` reads the first, `with_member` sets the first, `without_member` removes all
+
+capability bson/path  a value reached by a dotted path, as a query names one
+  heroes  bson.value_at
+  go      Raw.Lookup with several keys, RawValue.Document
+  rust    -
+  python  -
+
+capability bson/typed-reading  a value read as a given type, failing on another
+  heroes  bson.text_of, bson.int_of, bson.number_of, bson.bool_of, bson.document_of, bson.items_of, bson.object_id_of, bson.binary_of, bson.instant_of, bson.decimal_of, bson.kind_of, bson.type_code_of
+  go      RawValue.StringValue, RawValue.Int32, RawValue.Int64, RawValue.AsInt64, RawValue.AsFloat64, RawValue.Double, RawValue.Boolean, RawValue.Document, RawValue.Array, RawValue.ObjectID, RawValue.Binary, RawValue.DateTime, RawValue.Time, RawValue.Decimal128, RawValue.Regex, RawValue.Timestamp, RawValue.JavaScript, RawValue.CodeWithScope, RawValue.DBPointer, RawValue.Symbol, RawValue.IsNumber, the *OK forms of each
+  rust    Bson::as_str, Bson::as_i32, Bson::as_i64, Bson::as_f64, Bson::as_bool, Bson::as_document, Bson::as_array, Bson::as_object_id, Bson::as_datetime, Bson::as_timestamp, Bson::as_null, Bson::as_symbol, Bson::as_db_pointer, Bson::element_type, Document::get_str, Document::get_i32, Document::get_i64, Document::get_f64, Document::get_bool, Document::get_document, Document::get_array, Document::get_object_id, Document::get_datetime, Document::get_timestamp, Document::get_binary_generic, Document::get_decimal128, Document::is_null
+  python  -
+  note    `int_of` reads a double that is a whole number too, since servers answer counts and `ok` as doubles; a `match` on `Value` reads the rest
+
+capability bson/int  an integer written at the narrowest type that holds it
+  heroes  bson.from_int
+  go      Encoder.IntMinSize
+  rust    -
+  python  Int64, and int encoded as int32 where it fits
+
+capability bson/object-id  ObjectIds made, read, written and dated
+  heroes  bson.ObjectIdMaker, bson.object_id_maker, bson.next_object_id, bson.object_id_at, bson.object_id_from_parts, bson.parse_object_id, bson.format_object_id, bson.object_id_from_bytes, bson.time_of, bson.is_object_id
+  go      NewObjectID, NewObjectIDFromTimestamp, ObjectIDFromHex, NilObjectID, ObjectID.Hex, ObjectID.String, ObjectID.Timestamp, ObjectID.IsZero, ObjectID.MarshalText, ObjectID.UnmarshalText, ObjectID.MarshalJSON, ObjectID.UnmarshalJSON
+  rust    oid::ObjectId::new, ObjectId::from_bytes, ObjectId::from_parts, ObjectId::parse_str, ObjectId::to_hex, ObjectId::timestamp, ObjectId::bytes
+  python  ObjectId(), ObjectId.from_datetime, ObjectId.is_valid, ObjectId.generation_time, ObjectId.binary, str(ObjectId)
+  note    the maker is a value the program holds, its five bytes and its counter drawn from the system's generator for keys, since the language has no mutable global; a zero id is `object_id_from_bytes` of twelve zeros
+
+capability bson/datetime  a UTC datetime to and from an instant
+  heroes  bson.from_instant, bson.instant_of
+  go      NewDateTimeFromTime, DateTime.Time, DateTime.MarshalJSON, DateTime.UnmarshalJSON
+  rust    DateTime::from_millis, DateTime::now, DateTime::timestamp_millis, DateTime::from_system_time, DateTime::to_system_time, DateTime::parse_rfc3339_str, DateTime::try_to_rfc3339_string, DateTime::builder, DateTime::checked_duration_since, DateTime::saturating_duration_since, DateTime::saturating_add_millis, DateTime::saturating_add_duration
+  python  datetime, DatetimeMS, DatetimeMS.as_datetime, DatetimeConversion
+  note    an instant is cut to the millisecond toward the past; the text and the arithmetic are `time`'s (`time.format`, `time.add`); a datetime outside an instant's 292 years either side of 1970 is held as its milliseconds and `instant_of` fails `does_not_fit`
+
+capability bson/timestamp  a replication timestamp held and ordered
+  heroes  bson.Timestamp, bson.compare_timestamps
+  go      Timestamp.After, Timestamp.Before, Timestamp.Compare, Timestamp.Equal, Timestamp.IsZero
+  rust    Timestamp, Timestamp::time, Timestamp::increment
+  python  Timestamp, Timestamp.time, Timestamp.inc, Timestamp.as_datetime
+
+capability bson/binary  binary data of every subtype
+  heroes  bson.Value.binary, bson.binary_of, bson.SUBTYPE_GENERIC, bson.SUBTYPE_FUNCTION, bson.SUBTYPE_BINARY_OLD, bson.SUBTYPE_UUID_OLD, bson.SUBTYPE_UUID, bson.SUBTYPE_MD5, bson.SUBTYPE_ENCRYPTED, bson.SUBTYPE_COLUMN, bson.SUBTYPE_SENSITIVE, bson.SUBTYPE_VECTOR, bson.SUBTYPE_USER_DEFINED
+  go      Binary, Binary.Equal, Binary.IsZero, the TypeBinary* constants
+  rust    Binary, Binary::from_base64, spec::BinarySubtype
+  python  Binary, Binary.subtype, the *_SUBTYPE constants
+  note    subtype 2 is held without its inner length and written with it, as pymongo does
+
+capability bson/uuid  a UUID in subtype 4 and in the three legacy orders of subtype 3
+  heroes  bson.UuidRepresentation, bson.from_uuid, bson.uuid_of, bson.reordered
+  go      -
+  rust    Uuid, UuidRepresentation, Binary::from_uuid, Binary::from_uuid_with_representation, Binary::to_uuid
+  python  Binary.from_uuid, Binary.as_uuid, UuidRepresentation, ALL_UUID_SUBTYPES
+  note    a UUID is its sixteen bytes here, `uuid` sits in the same layer; the orders are those pymongo 4.20 wrote
+
+capability bson/vector  a dense vector in subtype 9: int8, float32 and packed bits
+  heroes  bson.Vector, bson.from_vector, bson.vector_of
+  go      Vector, NewVector, NewVectorFromBinary, NewPackedBitVector, Vector.Binary, Vector.Int8, Vector.Float32, Vector.PackedBit, Vector.Type
+  rust    binary::Vector, binary::PackedBitVector
+  python  Binary.from_vector, Binary.as_vector, BinaryVector, BinaryVectorDtype
+  note    padding bits that are not zero are refused on reading too, where pymongo 4.20 only warns
+
+capability bson/regex  a regular expression held and its options ordered
+  heroes  bson.Value.regex, bson.from_regex
+  go      Regex, Regex.Equal, Regex.IsZero, Regex.String
+  rust    Regex, Regex::new
+  python  Regex, Regex.from_native, Regex.try_compile
+  note    the pattern is the server's PCRE and is not compiled here; `regex` matches Rebel's own syntax, not PCRE, so try_compile has no counterpart
+
+capability bson/decimal128  Decimal128 read, written, and crossed to `big`, exactly
+  heroes  bson.parse_decimal128, bson.format_decimal128, bson.from_decimal, bson.decimal_of
+  go      ParseDecimal128, ParseDecimal128FromBigInt, NewDecimal128, Decimal128.String, Decimal128.BigInt, Decimal128.IsNaN, Decimal128.IsInf, Decimal128.IsZero, Decimal128.GetBytes
+  rust    Decimal128, Decimal128::from_bytes, Decimal128::bytes, Decimal128::from_str, Decimal128::to_string
+  python  Decimal128, Decimal128.to_decimal, Decimal128.from_bid, Decimal128.bid
+  note    a text that needs rounding fails `invalid`, as pymongo's context traps it; zeros are clamped and trailing zeros moved into the exponent as pymongo does; a negative zero keeps its sign in the bytes and the text and is zero in a `big.Decimal`
+
+capability bson/dbref  the DBRef convention read and written
+  heroes  bson.DBRef, bson.from_dbref, bson.dbref_of
+  go      -
+  rust    -
+  python  DBRef, DBRef.as_doc, DBRef.collection, DBRef.id, DBRef.database
+
+capability bson/code  JavaScript code, with and without a scope
+  heroes  bson.Value.javascript, bson.Value.javascript_with_scope
+  go      JavaScript, CodeWithScope, CodeWithScope.String
+  rust    Bson::JavaScriptCode, Bson::JavaScriptCodeWithScope
+  python  Code, Code.scope
+
+capability bson/extjson-out  a document written as Extended JSON v2, canonical or relaxed
+  heroes  bson.to_json, bson.format_json, bson.value_to_json, bson.JsonMode
+  go      MarshalExtJSON, MarshalExtJSONIndent, IndentExtJSON, NewExtJSONValueWriter
+  rust    Bson::into_canonical_extjson, Bson::into_relaxed_extjson, Document's Display
+  python  json_util.dumps, json_util.default, CANONICAL_JSON_OPTIONS, RELAXED_JSON_OPTIONS, JSONOptions, JSONMode
+  note    canonical text is pymongo 4.20's byte for byte on 69 documents; relaxed differs in two places: an int64 past 2^53 stays `$numberLong`, so it reads back exactly, and a double that is a whole number is written as an integer (`json.Value` holds no point), so it reads back as an int32; indented text is `json.format_indented`
+
+capability bson/extjson-in  a document read from Extended JSON v2, canonical, relaxed and the legacy forms
+  heroes  bson.from_json, bson.parse_json, bson.value_from_json
+  go      UnmarshalExtJSON, NewExtJSONValueReader
+  rust    Bson::try_from(serde_json::Value), Document::try_from
+  python  json_util.loads, json_util.object_hook, LEGACY_JSON_OPTIONS read
+  note    a malformed wrapper fails with the JSON pointer of its place; `{"$regex": "a"}` alone is a query operator's document, where pymongo reads a regex (both query the same); a date's text of any year is read
+
+capability bson/extjson-legacy-out  Extended JSON written in its legacy v1 form or the shell's
+  heroes  refused: v1 and the shell's `ObjectId("...")` are superseded by v2 and the shell's form is no JSON; both are read where they are JSON
+  go      -
+  rust    -
+  python  LEGACY_JSON_OPTIONS (writing), DatetimeRepresentation.LEGACY, DatetimeRepresentation.NUMBERLONG, DatetimeRepresentation.ISO8601
+
+capability bson/struct-mapping  a record of the program filled from a document by its field names
+  heroes  refused: the language has no reflection; a program writes each field with `Record::field` names (spec § 9), which the compiler checks
+  go      Marshal and Unmarshal of structs, struct tags, Marshaler, Unmarshaler, ValueMarshaler, ValueUnmarshaler, KeyMarshaler, KeyUnmarshaler, Zeroer, MarshalValue, UnmarshalValue, Encoder.OmitEmpty, Encoder.NilSliceAsEmpty, Encoder.NilMapAsEmpty, Encoder.NilByteSliceAsEmpty, Encoder.OmitZeroStruct, Encoder.ErrorOnInlineDuplicates, Encoder.StringifyMapKeysWithFmt, Encoder.UseJSONStructTags, Decoder.DefaultDocumentM, Decoder.DefaultDocumentMap, Decoder.UseJSONStructTags, Decoder.ZeroMaps, Decoder.ZeroStructs, Decoder.AllowTruncatingDoubles, Decoder.BinaryAsSlice, Decoder.ObjectIDAsHexString, Decoder.UseLocalTimeZone
+  rust    to_bson, to_bson_with_options, to_document, to_document_with_options, from_bson, from_bson_with_options, from_document, from_document_with_options, ser::Serializer, de::Deserializer, serde_helpers
+  python  CodecOptions.document_class, TypeCodec, TypeRegistry, TypeEncoder, TypeDecoder
+
+capability bson/codec-registry  encoders and decoders registered per type at run time
+  heroes  refused: a registry dispatches on a value's dynamic type, which the language has not; a `match` on `Value` is the dispatch
+  go      Registry, NewRegistry, NewMgoRegistry, NewRespectNilValuesMgoRegistry, Registry.RegisterTypeEncoder, Registry.RegisterTypeDecoder, Registry.RegisterKindEncoder, Registry.RegisterKindDecoder, Registry.RegisterInterfaceEncoder, Registry.RegisterInterfaceDecoder, Registry.RegisterTypeMapEntry, Registry.LookupEncoder, Registry.LookupDecoder, Registry.LookupTypeMapEntry, ValueEncoder, ValueDecoder, ValueEncoderFunc, ValueDecoderFunc, EncodeContext, DecodeContext, Encoder.SetRegistry, Decoder.SetRegistry
+  rust    -
+  python  TypeRegistry, CodecOptions.type_registry
+
+capability bson/streaming-writers  a document read and written token by token
+  heroes  refused: a document is small (16 MiB on a server) and read whole; `lookup` reads one field without the rest
+  go      ValueReader, ValueWriter, DocumentReader, DocumentWriter, ArrayReader, ArrayWriter, NewDocumentReader, NewDocumentWriter, ReadArray
+  rust    RawDocument::iter_elements, RawElement
+  python  -
+
+dropped
+  go      ErrDecodeToNil, ErrEOA, ErrEOD, ErrInvalidHex, ErrInvalidJSON, ErrNilContext, ErrNilReader, ErrNilRegistry, DecodeError, DecodeError.Keys, ValueEncoderError, ValueDecoderError, TransitionError: error types, here codes and messages; D.String, M.String, Raw.String, RawValue.DebugString, RawElement.DebugString, RawArray.DebugString: debugging text, here `format_json`; Encoder.Reset, Decoder.Reset: reuse of a buffer
+  rust    the Error types of each module and their Result aliases; Document::get_*_mut and the *_mut accessors: a value is changed with `with_member`; the serde traits' impls (serialize, deserialize), the tap and pipe helpers of the documentation's blanket impls
+  python  InvalidBSON, InvalidDocument, InvalidStringData, InvalidId: here codes; has_c: whether a C extension is loaded; gen_list_name and the module's imported names (Any, Callable, Mapping, ...); CodecOptions.tz_aware and tzinfo: a datetime here is UTC by definition

@@ -1,0 +1,1898 @@
+# BSON, the binary documents of MongoDB as bsonspec.org specifies them: bytes
+# decoded into a `Document` a program reads and matches on, and a document
+# encoded as bytes, every one of BSON's types held exactly, the deprecated
+# ones included, so a document read and written again is the same bytes but
+# where the specification asks one form (a regex's options in alphabetical
+# order, an array's names `0`, `1`, ...). Extended JSON v2, canonical and
+# relaxed, crosses to and from a `json.Value` and its text.
+#
+# Every read is bounded: a length is checked against the bytes that hold it
+# before anything is taken, names and strings must be UTF-8, and `decode`
+# reads no deeper than `DEFAULT_MAX_DEPTH` unless it is asked to. Nothing here
+# follows the data with recursion: documents are read and written on stacks
+# this package holds.
+#
+# A record is not filled from BSON by its field names, since the language has
+# no reflection: a program writes each field with the language's own
+# `Record::field` names (spec § 9), which the compiler checks. An ObjectId is
+# made by a `ObjectIdMaker` the program holds, since the language has no
+# mutable global to hold a process's counter.
+#
+# A double is written by `numbers.f64_to_bits`, exactly; every NaN as the one
+# quiet NaN, its sign and payload lost. It speaks to no server: `mongodb` does. It fails with
+# `invalid`, `not_text`, `does_not_fit`, `not_found` and `unsupported`.
+
+use big
+use bson/internal/decimal
+use bson/internal/event
+use bson/internal/extjson_in
+use bson/internal/extjson_out
+use bson/internal/floats
+use bson/internal/reader
+use bson/internal/writer
+use bytes
+use json
+use os
+use time
+
+## The value
+
+# One BSON value. A `match` on it answers all twenty-one of BSON's types, the
+# five deprecated ones (`undefined`, `db_pointer`, `javascript`, `symbol`,
+# `javascript_with_scope`) included so that no document fails to read.
+variant Value
+    # A 64-bit binary floating point number, type 1.
+    double
+        # The number, `nan` and the infinities included.
+        v: f64
+    # A UTF-8 string, type 2; it may hold a zero byte.
+    text
+        # The text.
+        v: str
+    # An embedded document, type 3.
+    document
+        # The document.
+        doc: Document
+    # An array, type 4, its elements named `0`, `1`, ... in its bytes.
+    array
+        # The elements, in order.
+        items: [Value]
+    # Binary data, type 5, of a subtype.
+    binary
+        # The subtype, one of the `SUBTYPE_` constants or 128 to 255 for a
+        # program's own; subtype 2 is held without its inner length.
+        subtype: u8
+        # The bytes.
+        data: [u8]
+    # `undefined`, type 6, deprecated.
+    undefined
+    # An ObjectId, type 7.
+    object_id
+        # The id.
+        id: ObjectId
+    # `true` or `false`, type 8.
+    boolean
+        # The truth value.
+        v: bool
+    # A UTC datetime, type 9: milliseconds since 1970-01-01T00:00:00Z.
+    datetime
+        # The milliseconds, negative before 1970.
+        ms: i64
+    # `null`, type 10, a word the language keeps for itself.
+    null_value
+    # A regular expression, type 11.
+    regex
+        # The pattern, holding no zero byte.
+        pattern: str
+        # The options, letters such as `i`, `m`, `s`, `x`, holding no zero
+        # byte; written in alphabetical order.
+        options: str
+    # A DBPointer, type 12, deprecated.
+    db_pointer
+        # The collection's namespace.
+        namespace: str
+        # The document's id.
+        id: ObjectId
+    # JavaScript code, type 13.
+    javascript
+        # The code.
+        code: str
+    # A symbol, type 14, deprecated.
+    symbol
+        # The symbol's text.
+        v: str
+    # JavaScript code with a scope, type 15, deprecated.
+    javascript_with_scope
+        # The code.
+        code: str
+        # The variables the code sees.
+        scope: Document
+    # A 32-bit integer, type 16.
+    int32
+        # The integer.
+        v: i32
+    # A timestamp of MongoDB's replication, type 17.
+    timestamp
+        # The timestamp.
+        v: Timestamp
+    # A 64-bit integer, type 18.
+    int64
+        # The integer.
+        v: i64
+    # A 128-bit decimal, type 19.
+    decimal128
+        # The decimal.
+        v: Decimal128
+    # The key below every other value, type 255.
+    min_key
+    # The key above every other value, type 127.
+    max_key
+
+# A BSON document: its fields in order. A name may stand twice, as BSON
+# allows; `member` reads the first. Built directly, or by `decode`.
+record Document
+    # The fields, in the order they are written.
+    fields: [Field]
+
+# One field of a document: a name and its value.
+record Field
+    # The name, UTF-8 holding no zero byte; `encode` refuses one that holds
+    # one.
+    name: str
+    # The value.
+    value: Value
+
+# A MongoDB ObjectId: twelve bytes, the first four the seconds since 1970 of
+# its making, big-endian. Made by `next_object_id`, `object_id_at`,
+# `parse_object_id` and `object_id_from_bytes`, which keep it twelve bytes.
+record ObjectId
+    # The twelve bytes.
+    bytes: [u8]
+
+# A Decimal128, IEEE 754-2008's 128-bit decimal in its binary integer
+# encoding, as BSON holds it. Made by `parse_decimal128` and `from_decimal`,
+# which keep it sixteen bytes.
+record Decimal128
+    # The sixteen bytes, the least significant first.
+    bytes: [u8]
+
+# A timestamp of MongoDB's replication: seconds and an ordinal within them.
+# Built directly.
+record Timestamp
+    # The seconds since 1970-01-01T00:00:00Z.
+    seconds: u32
+    # The ordinal of the operation within its second.
+    increment: u32
+
+## Codes and limits
+
+# The code of bytes that are not one well-formed BSON document, of Extended
+# JSON that is not, of a value of another kind than the one asked for, and of
+# a name or a regex holding a zero byte.
+constant INVALID: str
+    "invalid"
+
+# The code of a name or a string whose bytes are not UTF-8.
+constant NOT_TEXT: str
+    "not_text"
+
+# The code of a number past its type, a document past 2 GiB, and a time past
+# what its form holds.
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+# The code of a field a document does not hold: `member`, `value_at`.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a Decimal128 infinity or NaN asked for as a `big.Decimal`.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The deepest nesting `decode` reads: an empty document is 1 deep, one
+# holding an empty document 2, an array and a scope each a level.
+constant DEFAULT_MAX_DEPTH: i64
+    512
+
+# Generic binary data, subtype 0.
+constant SUBTYPE_GENERIC: u8
+    0
+
+# A function, subtype 1.
+constant SUBTYPE_FUNCTION: u8
+    1
+
+# The old binary subtype 2, its bytes after an inner length, deprecated.
+constant SUBTYPE_BINARY_OLD: u8
+    2
+
+# A UUID in a legacy byte order, subtype 3.
+constant SUBTYPE_UUID_OLD: u8
+    3
+
+# A UUID in its standard byte order, subtype 4.
+constant SUBTYPE_UUID: u8
+    4
+
+# An MD5 digest, subtype 5.
+constant SUBTYPE_MD5: u8
+    5
+
+# Encrypted BSON of client-side encryption, subtype 6.
+constant SUBTYPE_ENCRYPTED: u8
+    6
+
+# A compressed time-series column, subtype 7.
+constant SUBTYPE_COLUMN: u8
+    7
+
+# Sensitive data a server leaves out of its logs, subtype 8.
+constant SUBTYPE_SENSITIVE: u8
+    8
+
+# A dense vector of numbers, subtype 9.
+constant SUBTYPE_VECTOR: u8
+    9
+
+# The first of the subtypes a program defines, 128 to 255.
+constant SUBTYPE_USER_DEFINED: u8
+    128
+
+## Decoding
+
+# How bytes are decoded. `strict` answers the defaults; a program changes the
+# field it needs.
+record DecodeOptions
+    # The deepest nesting accepted, counted as `DEFAULT_MAX_DEPTH` counts it.
+    # A document nested deeper fails `invalid`.
+    max_depth: i64
+    # Whether a name or a string that is not UTF-8 is read with U+FFFD for
+    # each byte that is not, as Rust's `from_slice_utf8_lossy` and Python's
+    # `unicode_decode_error_handler="replace"` read one, instead of failing
+    # `not_text`. Such a document encoded again is not the bytes it was read
+    # from.
+    lossy_text: bool
+
+# What `decode_next` answers.
+record Decoded
+    # The document decoded.
+    doc: Document
+    # The byte index past it: the length of the data where nothing follows.
+    next: i64
+
+# The options `decode` uses: nesting no deeper than `DEFAULT_MAX_DEPTH`, and
+# text that must be UTF-8.
+function strict() -> DecodeOptions
+    return DecodeOptions(max_depth: DEFAULT_MAX_DEPTH, lossy_text: false)
+
+# The one document `data` holds.
+#
+# - `data`: the document's bytes, and nothing after them; the empty list
+#   holds none and fails.
+#
+# Fails `invalid` where `data` is not one well-formed document: a length that
+# disagrees with the bytes, an unknown type, a boolean other than 0 or 1, a
+# missing closing zero, bytes after the document, nesting past
+# `DEFAULT_MAX_DEPTH`. Fails `not_text` where a name or a string is not
+# UTF-8. Each message opens `byte B:`, the index counted from 0. See also
+# `decode_with`, `decode_next`, `encode`.
+function decode(data: [u8]) -> Document?
+    return decode_with(data: data, options: strict())
+
+# The one document `data` holds, decoded as `options` asks.
+#
+# - `data`: the document's bytes, and nothing after them.
+# - `options`: the deepest nesting accepted, and whether text that is not
+#   UTF-8 is read lossy.
+#
+# Fails as `decode` fails. See also `decode`.
+function decode_with(data: [u8], options: DecodeOptions) -> Document?
+    got = decode_next(data: data, from: 0, options: options)?
+
+    if got.next != data.len()
+        return fail(code: INVALID, msg: f"byte {got.next}: {data.len() - got.next} bytes follow the document")
+    return ok(got.doc)
+
+# The document that begins at `from` of `data`, and where it ends: the
+# documents of a stream or a file of `mongodump`, read one after another.
+#
+# - `data`: the bytes, which may hold more after the document.
+# - `from`: the byte index where the document begins, 0 to the length.
+# - `options`: the deepest nesting accepted, and whether text that is not
+#   UTF-8 is read lossy.
+#
+# Fails as `decode` fails, bytes after the document aside. Aborts where
+# `from` is outside 0 to the length of `data`. See also `decode_all`.
+function decode_next(data: [u8], from: i64, options: DecodeOptions) -> Decoded?
+    assert from >= 0 && from <= data.len()
+    got = reader.read(data, from: from, max_depth: options.max_depth, lossy: options.lossy_text)?
+
+    # Each value made, the last event first: a container takes its elements
+    # off the top of `done`, which holds `top` of them, its first on top.
+    done: [Value] @= []
+    names: [str] @= []
+    top: i64 @= 0
+    at: i64 @= got.events.len()
+
+    while at > 0
+        at @ at - 1
+        e = got.events[at]
+        fields: [Field] @= []
+
+        for k in range(from: 0, to: e.count)
+            fields @ fields.push(Field(name: names[top - 1 - k], value: done[top - 1 - k]))
+
+        k = e.kind
+        made: Value @= .null_value
+
+        if k == event.DOUBLE
+            made @ .double(v: e.number)
+        else if k == event.STRING
+            made @ .text(v: e.text)
+        else if k == event.DOCUMENT
+            made @ .document(doc: Document(fields: fields))
+        else if k == event.ARRAY
+            items: [Value] @= []
+
+            for f in fields
+                items @ items.push(f.value)
+
+            made @ .array(items: items)
+        else if k == event.BINARY
+            made @ .binary(subtype: to_u8(e.integer).must(), data: e.data)
+        else if k == event.UNDEFINED
+            made @ .undefined
+        else if k == event.OBJECT_ID
+            made @ .object_id(id: ObjectId(bytes: e.data))
+        else if k == event.BOOLEAN
+            made @ .boolean(v: e.integer == 1)
+        else if k == event.DATETIME
+            made @ .datetime(ms: e.integer)
+        else if k == event.REGEX
+            made @ .regex(pattern: e.text, options: e.extra)
+        else if k == event.DB_POINTER
+            made @ .db_pointer(namespace: e.text, id: ObjectId(bytes: e.data))
+        else if k == event.JAVASCRIPT
+            made @ .javascript(code: e.text)
+        else if k == event.SYMBOL
+            made @ .symbol(v: e.text)
+        else if k == event.JAVASCRIPT_WITH_SCOPE
+            made @ .javascript_with_scope(code: e.text, scope: Document(fields: fields))
+        else if k == event.INT32
+            made @ .int32(v: to_i32(e.integer).must())
+        else if k == event.TIMESTAMP
+            made @ .timestamp(v: Timestamp(seconds: to_u32(e.integer).must(), increment: to_u32(e.second).must()))
+        else if k == event.INT64
+            made @ .int64(v: e.integer)
+        else if k == event.DECIMAL128
+            made @ .decimal128(v: Decimal128(bytes: e.data))
+        else if k == event.MIN_KEY
+            made @ .min_key
+        else if k == event.MAX_KEY
+            made @ .max_key
+        top @ top - e.count
+
+        if top == done.len()
+            done @ done.push(made)
+            names @ names.push(e.name)
+        else
+            done[top] @ made
+            names[top] @ e.name
+        top @ top + 1
+
+    return ok(Decoded(doc: document_of(done[0]).must(), next: got.next))
+
+# Every document `data` holds, one after another, as `mongodump` writes a
+# collection.
+#
+# - `data`: the documents' bytes, end to end; the empty list holds none.
+#
+# Fails as `decode_next` fails on the first document that is not
+# well-formed. See also `decode_next`.
+function decode_all(data: [u8]) -> [Document]?
+    docs: [Document] @= []
+    at: i64 @= 0
+
+    while at < data.len()
+        got = decode_next(data: data, from: at, options: strict())?
+        docs @ docs.push(got.doc)
+        at @ got.next
+
+    return ok(docs)
+
+# Whether `data` is exactly one well-formed BSON document, as `decode` reads
+# one.
+#
+# - `data`: the bytes.
+#
+# See also `decode`.
+function is_valid(data: [u8]) -> bool
+    return !decode(data).is_err()
+
+# The value of the first field named `name` at the top of the document
+# `data` holds, read without decoding the fields before it: Go's
+# `Raw.Lookup`, Rust's `RawDocument::get`, pymongo's `RawBSONDocument`.
+#
+# - `data`: one document's bytes, and nothing after them.
+# - `name`: the field's name, compared byte for byte.
+#
+# Fails `not_found` where no field at the top has that name; `invalid` where
+# the document's length or a length passed over is wrong, and as `decode`
+# fails on the field found, which alone is read whole. A field after the one
+# found is not looked at. See also `decode`, `member`.
+function lookup(data: [u8], name: str) -> Value?
+    span = reader.locate(data, name: name)?
+    piece: [u8] @= bytes.encode_i32_le(to_i32(span.end - span.start + 5).must())
+    bytes.push_all(to: @piece, from: data.slice(from: span.start, to: span.end))
+    piece @ piece.push(0)
+    doc = decode(piece)?
+    return ok(doc.fields[0].value)
+
+## Encoding
+
+# The bytes of `doc`.
+#
+# - `doc`: the document, nested as deep as it is.
+#
+# Fails `invalid` where a name, a regex's pattern or its options hold a zero
+# byte, which BSON writes as C strings; `does_not_fit` where a document, a
+# string or a binary passes the 2 GiB a length of BSON holds. A regex's
+# options are written in alphabetical order and an array's names as `0`,
+# `1`, ..., as the specification asks; everything else as `doc` holds it.
+# See also `decode`.
+function encode(doc: Document) -> [u8]?
+    events: [event.Event] @= [event.of_container(kind: event.DOCUMENT, name: "", count: doc.fields.len(), code: "")]
+
+    # Each value waiting to be written, the next on top, with its name.
+    waiting: [Value] @= []
+    names: [str] @= []
+    top: i64 @= 0
+    at: i64 @= doc.fields.len()
+
+    while at > 0
+        at @ at - 1
+        waiting @ waiting.push(doc.fields[at].value)
+        names @ names.push(doc.fields[at].name)
+        top @ top + 1
+
+    while top > 0
+        top @ top - 1
+        name = names[top]
+        children: [Field] @= []
+
+        made = match waiting[top]
+            .double d => event.of_double(name: name, x: d.v)
+            .text t   => event.of_text(kind: event.STRING, name: name, text: t.v)
+            .document d =>
+                children @ d.doc.fields
+                event.of_container(kind: event.DOCUMENT, name: name, count: d.doc.fields.len(), code: "")
+            .array a =>
+                for i in range(from: 0, to: a.items.len())
+                    children @ children.push(Field(name: to_str(i), value: a.items[i]))
+
+                event.of_container(kind: event.ARRAY, name: name, count: a.items.len(), code: "")
+            .binary b => event.of_data(kind: event.BINARY, name: name, data: b.data, subtype: to_i64(b.subtype).must())
+            .undefined => event.of_kind(kind: event.UNDEFINED, name: name)
+            .object_id o => event.of_data(kind: event.OBJECT_ID, name: name, data: o.id.bytes, subtype: 0)
+            .boolean b =>
+                truth: i64 = if b.v
+                    1
+                else
+                    0
+                event.of_integer(kind: event.BOOLEAN, name: name, n: truth)
+            .datetime d   => event.of_integer(kind: event.DATETIME, name: name, n: d.ms)
+            .null_value   => event.of_kind(kind: event.NULL_VALUE, name: name)
+            .regex r      => event.of_regex(name: name, pattern: r.pattern, options: r.options)
+            .db_pointer p => event.of_pointer(name: name, namespace: p.namespace, id: p.id.bytes)
+            .javascript j => event.of_text(kind: event.JAVASCRIPT, name: name, text: j.code)
+            .symbol s     => event.of_text(kind: event.SYMBOL, name: name, text: s.v)
+            .javascript_with_scope j =>
+                children @ j.scope.fields
+                event.of_container(
+                    kind: event.JAVASCRIPT_WITH_SCOPE,
+                    name: name,
+                    count: j.scope.fields.len(),
+                    code: j.code
+                )
+            .int32 i => event.of_integer(kind: event.INT32, name: name, n: to_i64(i.v).must())
+            .timestamp t =>
+                stamp = t.v
+                seconds = stamp.seconds
+                increment = stamp.increment
+                event.of_timestamp(name: name, seconds: to_i64(seconds).must(), increment: to_i64(increment).must())
+            .int64 i      => event.of_integer(kind: event.INT64, name: name, n: i.v)
+            .decimal128 d => event.of_data(kind: event.DECIMAL128, name: name, data: d.v.bytes, subtype: 0)
+            .min_key      => event.of_kind(kind: event.MIN_KEY, name: name)
+            .max_key      => event.of_kind(kind: event.MAX_KEY, name: name)
+
+        events @ events.push(made)
+        back: i64 @= children.len()
+
+        while back > 0
+            back @ back - 1
+
+            if top == waiting.len()
+                waiting @ waiting.push(children[back].value)
+                names @ names.push(children[back].name)
+            else
+                waiting[top] @ children[back].value
+                names[top] @ children[back].name
+            top @ top + 1
+
+    return writer.write(events)
+
+## Fields
+
+# The value of the first field of `doc` named `name`.
+#
+# - `doc`: the document.
+# - `name`: the field's name, compared byte for byte.
+#
+# Fails `not_found` where no field has that name. See also `value_at`,
+# `has_member`.
+function member(doc: Document, name: str) -> Value?
+    for f in doc.fields
+        if f.name == name
+            return ok(f.value)
+
+    return fail(code: NOT_FOUND, msg: f"no field \"{name}\" in a document of {doc.fields.len()} fields")
+
+# Whether `doc` has a field named `name`.
+#
+# - `doc`: the document.
+# - `name`: the field's name, compared byte for byte.
+#
+# See also `member`.
+function has_member(doc: Document, name: str) -> bool
+    for f in doc.fields
+        if f.name == name
+            return true
+
+    return false
+
+# `doc` with its first field named `name` holding `value`, in its place, or
+# with that field added at the end where none has the name.
+#
+# - `doc`: the document, unchanged.
+# - `name`: the field's name.
+# - `value`: its value.
+#
+# See also `without_member`.
+function with_member(doc: Document, name: str, value: Value) -> Document
+    fields: [Field] @= []
+    placed: bool @= false
+
+    for f in doc.fields
+        if !placed && f.name == name
+            fields @ fields.push(Field(name: name, value: value))
+            placed @ true
+        else
+            fields @ fields.push(f)
+
+    if !placed
+        fields @ fields.push(Field(name: name, value: value))
+    return Document(fields: fields)
+
+# `doc` without any field named `name`.
+#
+# - `doc`: the document, unchanged.
+# - `name`: the name; every field that has it is left out.
+#
+# See also `with_member`.
+function without_member(doc: Document, name: str) -> Document
+    fields: [Field] @= []
+
+    for f in doc.fields
+        if f.name != name
+            fields @ fields.push(f)
+
+    return Document(fields: fields)
+
+# The names of the fields of `doc`, in order; a name that stands twice is
+# there twice.
+#
+# - `doc`: the document.
+function names_of(doc: Document) -> [str]
+    names: [str] @= []
+
+    for f in doc.fields
+        names @ names.push(f.name)
+
+    return names
+
+# The value a dotted path names in `doc`, as MongoDB's queries name one:
+# `"a.b.0"` is field `b` of the document in field `a`, then its element 0.
+#
+# - `doc`: the document.
+# - `path`: names joined by `.`; a part that stands on an array is the
+#   index of an element in decimal.
+#
+# Fails `not_found` where a part names nothing, an index is past its array or
+# is no number, or a part stands on a value that is neither a document nor an
+# array; the message names the part. See also `member`.
+function value_at(doc: Document, path: str) -> Value?
+    current: Value @= .document(doc: doc)
+    start: i64 @= 0
+    k: i64 @= 0
+
+    while k <= path.len()
+        if k == path.len() || path[k] == '.'
+            part = path.slice(from: start, to: k)
+            next: Value @= .null_value
+
+            match current
+                .document d => next @ member(d.doc, name: part)?
+                .array a =>
+                    index = match event.to_index(part)
+                        .ok n  => n
+                        .err _ => return fail(code: NOT_FOUND, msg: f"\"{part}\" of \"{path}\" is no index of an array")
+
+                    if index >= a.items.len()
+                        return fail(
+                            code: NOT_FOUND,
+                            msg: f"\"{part}\" of \"{path}\" is past an array of {a.items.len()}"
+                        )
+                    next @ a.items[index]
+                .double _ | .text _ | .binary _ | .undefined | .object_id _ | .boolean _ | .datetime _ | .null_value | .regex _ | .db_pointer _ | .javascript _ | .symbol _ | .javascript_with_scope _ | .int32 _ | .timestamp _ | .int64 _ | .decimal128 _ | .min_key | .max_key =>
+                    return fail(
+                        code: NOT_FOUND,
+                        msg: f"\"{part}\" of \"{path}\" stands on {kind_of(current)}, which holds no fields"
+                    )
+
+            current @ next
+            start @ k + 1
+        k @ k + 1
+
+    return ok(current)
+
+## Reading a value
+
+# The name of the type of `v`, as MongoDB's `$type` operator spells it:
+# `double`, `string`, `object`, `array`, `binData`, `undefined`, `objectId`,
+# `bool`, `date`, `null`, `regex`, `dbPointer`, `javascript`, `symbol`,
+# `javascriptWithScope`, `int`, `timestamp`, `long`, `decimal`, `minKey`,
+# `maxKey`.
+#
+# - `v`: any value.
+#
+# See also `type_code_of`.
+function kind_of(v: Value) -> str
+    return event.type_name(type_code_of(v))
+
+# The type byte of `v`, 1 to 19, 127 for `max_key` and 255 for `min_key`.
+#
+# - `v`: any value.
+#
+# See also `kind_of`.
+function type_code_of(v: Value) -> i64
+    return match v
+        .double _                => event.DOUBLE
+        .text _                  => event.STRING
+        .document _              => event.DOCUMENT
+        .array _                 => event.ARRAY
+        .binary _                => event.BINARY
+        .undefined               => event.UNDEFINED
+        .object_id _             => event.OBJECT_ID
+        .boolean _               => event.BOOLEAN
+        .datetime _              => event.DATETIME
+        .null_value              => event.NULL_VALUE
+        .regex _                 => event.REGEX
+        .db_pointer _            => event.DB_POINTER
+        .javascript _            => event.JAVASCRIPT
+        .symbol _                => event.SYMBOL
+        .javascript_with_scope _ => event.JAVASCRIPT_WITH_SCOPE
+        .int32 _                 => event.INT32
+        .timestamp _             => event.TIMESTAMP
+        .int64 _                 => event.INT64
+        .decimal128 _            => event.DECIMAL128
+        .min_key                 => event.MIN_KEY
+        .max_key                 => event.MAX_KEY
+
+# The text of a string `v`.
+#
+# - `v`: the value.
+#
+# Fails `invalid` where `v` is no string. See also `kind_of`.
+function text_of(v: Value) -> str?
+    return match v
+        .text t => ok(t.v)
+        .double _ | .document _ | .array _ | .binary _ | .undefined | .object_id _ | .boolean _ | .datetime _ | .null_value | .regex _ | .db_pointer _ | .javascript _ | .symbol _ | .javascript_with_scope _ | .int32 _ | .timestamp _ | .int64 _ | .decimal128 _ | .min_key | .max_key =>
+            event.wrong_kind(found: kind_of(v), wanted: "a string")
+
+# The integer `v` holds: an int32, an int64, or a double that is a whole
+# number, as a server answers `{"ok": 1.0}` and counts.
+#
+# - `v`: the value.
+#
+# Fails `invalid` where `v` is none of those or a double with a fraction,
+# `does_not_fit` where a double is past an `i64`. See also `number_of`.
+function int_of(v: Value) -> i64?
+    return match v
+        .int32 i => ok(to_i64(i.v).must())
+        .int64 i => ok(i.v)
+        .double d =>
+            if d.v != d.v || d.v - d.v != 0.0 || d.v != to_f64(to_i64(d.v).default(0))
+                if d.v >= 9223372036854775808.0 || d.v < -9223372036854775808.0
+                    return fail(code: DOES_NOT_FIT, msg: f"the double {to_str(d.v)} is past an i64")
+                return fail(code: INVALID, msg: f"the double {to_str(d.v)} is no whole number")
+            ok(to_i64(d.v).must())
+        .text _ | .document _ | .array _ | .binary _ | .undefined | .object_id _ | .boolean _ | .datetime _ | .null_value | .regex _ | .db_pointer _ | .javascript _ | .symbol _ | .javascript_with_scope _ | .timestamp _ | .decimal128 _ | .min_key | .max_key =>
+            event.wrong_kind(found: kind_of(v), wanted: "an integer")
+
+# The number `v` holds as an `f64`: a double, an int32, or an int64, which
+# rounds to the nearest `f64` past 2^53.
+#
+# - `v`: the value.
+#
+# Fails `invalid` where `v` is none of those. See also `int_of`,
+# `decimal_of`.
+function number_of(v: Value) -> f64?
+    return match v
+        .double d => ok(d.v)
+        .int32 i  => ok(to_f64(i.v))
+        .int64 i  => ok(to_f64(i.v))
+        .text _ | .document _ | .array _ | .binary _ | .undefined | .object_id _ | .boolean _ | .datetime _ | .null_value | .regex _ | .db_pointer _ | .javascript _ | .symbol _ | .javascript_with_scope _ | .timestamp _ | .decimal128 _ | .min_key | .max_key =>
+            event.wrong_kind(found: kind_of(v), wanted: "a number")
+
+# The truth value of a boolean `v`.
+#
+# - `v`: the value.
+#
+# Fails `invalid` where `v` is no boolean.
+function bool_of(v: Value) -> bool?
+    return match v
+        .boolean b => ok(b.v)
+        .double _ | .text _ | .document _ | .array _ | .binary _ | .undefined | .object_id _ | .datetime _ | .null_value | .regex _ | .db_pointer _ | .javascript _ | .symbol _ | .javascript_with_scope _ | .int32 _ | .timestamp _ | .int64 _ | .decimal128 _ | .min_key | .max_key =>
+            event.wrong_kind(found: kind_of(v), wanted: "a boolean")
+
+# The document an embedded document `v` holds.
+#
+# - `v`: the value.
+#
+# Fails `invalid` where `v` is no document. See also `items_of`, `member`.
+function document_of(v: Value) -> Document?
+    return match v
+        .document d => ok(d.doc)
+        .double _ | .text _ | .array _ | .binary _ | .undefined | .object_id _ | .boolean _ | .datetime _ | .null_value | .regex _ | .db_pointer _ | .javascript _ | .symbol _ | .javascript_with_scope _ | .int32 _ | .timestamp _ | .int64 _ | .decimal128 _ | .min_key | .max_key =>
+            event.wrong_kind(found: kind_of(v), wanted: "a document")
+
+# The elements of an array `v`, in order.
+#
+# - `v`: the value.
+#
+# Fails `invalid` where `v` is no array. See also `document_of`.
+function items_of(v: Value) -> [Value]?
+    return match v
+        .array a => ok(a.items)
+        .double _ | .text _ | .document _ | .binary _ | .undefined | .object_id _ | .boolean _ | .datetime _ | .null_value | .regex _ | .db_pointer _ | .javascript _ | .symbol _ | .javascript_with_scope _ | .int32 _ | .timestamp _ | .int64 _ | .decimal128 _ | .min_key | .max_key =>
+            event.wrong_kind(found: kind_of(v), wanted: "an array")
+
+# The id an ObjectId `v` holds.
+#
+# - `v`: the value.
+#
+# Fails `invalid` where `v` is no ObjectId. See also `format_object_id`.
+function object_id_of(v: Value) -> ObjectId?
+    return match v
+        .object_id o => ok(o.id)
+        .double _ | .text _ | .document _ | .array _ | .binary _ | .undefined | .boolean _ | .datetime _ | .null_value | .regex _ | .db_pointer _ | .javascript _ | .symbol _ | .javascript_with_scope _ | .int32 _ | .timestamp _ | .int64 _ | .decimal128 _ | .min_key | .max_key =>
+            event.wrong_kind(found: kind_of(v), wanted: "an ObjectId")
+
+# The bytes of a binary `v`, of any subtype.
+#
+# - `v`: the value.
+#
+# Fails `invalid` where `v` is no binary. See also `uuid_of`.
+function binary_of(v: Value) -> [u8]?
+    return match v
+        .binary b => ok(b.data)
+        .double _ | .text _ | .document _ | .array _ | .undefined | .object_id _ | .boolean _ | .datetime _ | .null_value | .regex _ | .db_pointer _ | .javascript _ | .symbol _ | .javascript_with_scope _ | .int32 _ | .timestamp _ | .int64 _ | .decimal128 _ | .min_key | .max_key =>
+            event.wrong_kind(found: kind_of(v), wanted: "a binary")
+
+# The instant a datetime `v` names.
+#
+# - `v`: the value.
+#
+# Fails `invalid` where `v` is no datetime, `does_not_fit` where it stands
+# outside what a `time.Instant` holds, about 292 years either side of 1970.
+# See also `from_instant`.
+function instant_of(v: Value) -> time.Instant?
+    return match v
+        .datetime d => time.from_unix_milliseconds(d.ms)
+        .double _ | .text _ | .document _ | .array _ | .binary _ | .undefined | .object_id _ | .boolean _ | .null_value | .regex _ | .db_pointer _ | .javascript _ | .symbol _ | .javascript_with_scope _ | .int32 _ | .timestamp _ | .int64 _ | .decimal128 _ | .min_key | .max_key =>
+            event.wrong_kind(found: kind_of(v), wanted: "a datetime")
+
+## Making a value
+
+# `n` as an int32 where it fits one, else as an int64, as Go's and Python's
+# drivers write an integer.
+#
+# - `n`: any `i64`.
+#
+# See also `int_of`.
+function from_int(n: i64) -> Value
+    return match to_i32(n)
+        .ok small => .int32(v: small)
+        .err _    => .int64(v: n)
+
+# `t` as a datetime, cut to the millisecond toward the past.
+#
+# - `t`: any instant.
+#
+# See also `instant_of`.
+function from_instant(t: time.Instant) -> Value
+    ns = t.unix_nanoseconds
+    ms = ns / 1000000
+
+    if ns < 0 && ms * 1000000 != ns
+        return .datetime(ms: ms - 1)
+    return .datetime(ms: ms)
+
+# A regex of `pattern` and `options`, the options in alphabetical order.
+#
+# - `pattern`: the pattern, in the server's PCRE syntax; it must hold no zero
+#   byte for `encode` to write it.
+# - `options`: letters such as `i`, `m`, `s`, `u`, `x`; "" for none.
+#
+# See also `Value`.
+function from_regex(pattern: str, options: str) -> Value
+    return .regex(pattern: pattern, options: join(sort(options.chars()), ""))
+
+## ObjectIds
+
+# What makes ObjectIds for one program: five random bytes of its own and a
+# counter. Made by `object_id_maker`; the program keeps one place and lends
+# it to `next_object_id`, since the language holds no global counter.
+record ObjectIdMaker
+    # The five random bytes every id it makes carries.
+    random: [u8]
+    # The counter of the last id made, 0 to 16777215, wrapping to 0.
+    counter: i64
+
+# A maker of ObjectIds, its five bytes and its counter's start drawn from the
+# system's generator for keys.
+#
+# Fails where `os.random_bytes` fails, with its code. See also
+# `next_object_id`.
+function object_id_maker() -> ObjectIdMaker?
+    b = os.random_bytes(8)?
+    counter = to_i64(b[5]).must() << 16 | to_i64(b[6]).must() << 8 | to_i64(b[7]).must()
+    return ok(ObjectIdMaker(random: b.slice(from: 0, to: 5), counter: counter))
+
+# The twelve bytes of an id of `seconds`, `random` and `counter`.
+#
+# - `seconds`: 0 to 4294967295.
+# - `random`: five bytes.
+# - `counter`: 0 to 16777215.
+#
+# See also `next_object_id`.
+function object_id_from_parts(seconds: i64, random: [u8], counter: i64) -> ObjectId
+    out: [u8] @= bytes.encode_u32_be(to_u32(seconds).must())
+    bytes.push_all(to: @out, from: random)
+    out @ out.push(to_u8(counter >> 16 & 255).must())
+    out @ out.push(to_u8(counter >> 8 & 255).must())
+    out @ out.push(to_u8(counter & 255).must())
+    return ObjectId(bytes: out)
+
+# A new ObjectId: the seconds the wall clock reads now, the maker's five
+# bytes, and its counter advanced by one.
+#
+# - `maker`: the maker, whose counter this call advances.
+#
+# Fails where `time.now` fails, with its code, and `does_not_fit` where the
+# clock stands before 1970 or past 2106. See also `object_id_maker`.
+function next_object_id(@maker: ObjectIdMaker) -> ObjectId?
+    seconds = time.unix_seconds(time.now()?)
+
+    if seconds < 0 || seconds > 4294967295
+        return fail(
+            code: DOES_NOT_FIT,
+            msg: f"the clock reads {seconds} seconds since 1970, outside an ObjectId's 0 to 4294967295"
+        )
+    maker.counter @ (maker.counter + 1) % 16777216
+    return ok(object_id_from_parts(seconds: seconds, random: maker.random, counter: maker.counter))
+
+# The least ObjectId of the second `t` stands in, its last eight bytes zero:
+# a bound for a query over the ids made from that second on.
+#
+# - `t`: the instant, cut to its second toward the past.
+#
+# Fails `does_not_fit` where `t` stands before 1970 or past 2106. See also
+# `time_of`.
+function object_id_at(t: time.Instant) -> ObjectId?
+    seconds = time.unix_seconds(t)
+
+    if seconds < 0 || seconds > 4294967295
+        return fail(code: DOES_NOT_FIT, msg: f"{seconds} seconds since 1970 is outside an ObjectId's 0 to 4294967295")
+    return ok(object_id_from_parts(seconds: seconds, random: [0, 0, 0, 0, 0], counter: 0))
+
+# The ObjectId whose 24 hexadecimal digits `s` holds, in either case.
+#
+# - `s`: the text.
+#
+# Fails `invalid` where `s` is not 24 hexadecimal digits. See also
+# `format_object_id`, `is_object_id`.
+function parse_object_id(s: str) -> ObjectId?
+    if s.len() != 24
+        return fail(
+            code: INVALID,
+            msg: f"\"{s}\" has {s.len()} characters, where an ObjectId has 24 hexadecimal digits"
+        )
+
+    return match bytes.parse_hex(s)
+        .ok b  => ok(ObjectId(bytes: b))
+        .err _ => fail(code: INVALID, msg: f"\"{s}\" holds a character that is no hexadecimal digit")
+
+# `id` as 24 lowercase hexadecimal digits.
+#
+# - `id`: the id.
+#
+# See also `parse_object_id`.
+function format_object_id(id: ObjectId) -> str
+    return bytes.format_hex(id.bytes)
+
+# The ObjectId of the twelve bytes `b`.
+#
+# - `b`: the bytes.
+#
+# Fails `invalid` where `b` is not twelve bytes long. See also `ObjectId`.
+function object_id_from_bytes(b: [u8]) -> ObjectId?
+    if b.len() != 12
+        return fail(code: INVALID, msg: f"{b.len()} bytes, where an ObjectId has 12")
+    return ok(ObjectId(bytes: b))
+
+# The second `id` was made in, its first four bytes.
+#
+# - `id`: the id.
+#
+# See also `object_id_at`.
+function time_of(id: ObjectId) -> time.Instant
+    seconds = to_i64(bytes.decode_u32_be(id.bytes, at: 0).must()).must()
+    return time.from_unix(whole_seconds: seconds, extra_nanoseconds: 0).must()
+
+# Whether `s` is 24 hexadecimal digits, in either case.
+#
+# - `s`: the text.
+#
+# See also `parse_object_id`.
+function is_object_id(s: str) -> bool
+    return !parse_object_id(s).is_err()
+
+## Decimal128
+
+# The Decimal128 `s` spells: an optional sign, then `Infinity`, `Inf` or
+# `NaN` in any case, or digits with at most one point and an optional
+# exponent after `e` or `E`.
+#
+# - `s`: the text, with no space.
+#
+# Fails `invalid` where `s` is no such number, or where it would need
+# rounding to fit 34 digits and the exponents from -6176 to 6111;
+# `does_not_fit` where it is too large. A zero's exponent is clamped, and
+# zeros ending a coefficient are moved into the exponent where that makes it
+# fit. See also `format_decimal128`, `from_decimal`.
+function parse_decimal128(s: str) -> Decimal128?
+    return ok(Decimal128(bytes: decimal.parse(s)?))
+
+# `d` as text, as the General Decimal Arithmetic and Python's `Decimal`
+# write it: `1.23E+3`, `0.000001`, `1E-7`, `-0`, `NaN`, `Infinity`.
+#
+# - `d`: the decimal; a NaN is `NaN` whatever its sign.
+#
+# See also `parse_decimal128`.
+function format_decimal128(d: Decimal128) -> str
+    return decimal.format(d.bytes)
+
+# `d` as a Decimal128 value, exactly.
+#
+# - `d`: any decimal.
+#
+# Fails `invalid` where `d` would need rounding to fit, `does_not_fit` where
+# it is too large. See also `decimal_of`.
+function from_decimal(d: big.Decimal) -> Value?
+    return ok(.decimal128(v: Decimal128(bytes: decimal.from_decimal(d)?)))
+
+# The number a Decimal128 `v` holds, as a `big.Decimal`; a negative zero is
+# zero.
+#
+# - `v`: the value.
+#
+# Fails `invalid` where `v` is no Decimal128, `unsupported` where it is an
+# infinity or a NaN. See also `from_decimal`.
+function decimal_of(v: Value) -> big.Decimal?
+    return match v
+        .decimal128 d => decimal.to_decimal(d.v.bytes)
+        .double _ | .text _ | .document _ | .array _ | .binary _ | .undefined | .object_id _ | .boolean _ | .datetime _ | .null_value | .regex _ | .db_pointer _ | .javascript _ | .symbol _ | .javascript_with_scope _ | .int32 _ | .timestamp _ | .int64 _ | .min_key | .max_key =>
+            event.wrong_kind(found: kind_of(v), wanted: "a Decimal128")
+
+## Timestamps
+
+# Whether `a` comes before `b` (-1), is `b` (0), or comes after it (1): by
+# their seconds, then their increments.
+#
+# - `a`: a timestamp.
+# - `b`: another.
+function compare_timestamps(a: Timestamp, b: Timestamp) -> i64
+    a_seconds = a.seconds
+    b_seconds = b.seconds
+    a_increment = a.increment
+    b_increment = b.increment
+
+    if a_seconds != b_seconds
+        if a_seconds < b_seconds
+            return -1
+        return 1
+
+    if a_increment < b_increment
+        return -1
+    else if a_increment > b_increment
+        return 1
+    return 0
+
+## UUIDs
+
+# The byte order a UUID is held in: the standard one of subtype 4, or one of
+# the three legacy orders of subtype 3 that older drivers wrote.
+variant UuidRepresentation
+    # Subtype 4, the UUID's bytes in order.
+    standard
+    # Subtype 3, the bytes in order, as the old Python driver wrote them.
+    python_legacy
+    # Subtype 3, each half of the bytes reversed, as the old Java driver
+    # wrote them.
+    java_legacy
+    # Subtype 3, the first three groups reversed, as the old C# driver wrote
+    # them.
+    csharp_legacy
+
+# The bytes of `b` in or out of `representation`'s order, which is its own
+# inverse.
+#
+# - `b`: sixteen bytes.
+# - `representation`: the order.
+#
+# See also `from_uuid`.
+function reordered(b: [u8], representation: UuidRepresentation) -> [u8]
+    order: [i64] = match representation
+        .standard | .python_legacy => [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+        .java_legacy               => [7, 6, 5, 4, 3, 2, 1, 0, 15, 14, 13, 12, 11, 10, 9, 8]
+        .csharp_legacy             => [3, 2, 1, 0, 5, 4, 7, 6, 8, 9, 10, 11, 12, 13, 14, 15]
+
+    out: [u8] @= []
+
+    for k in order
+        out @ out.push(b[k])
+
+    return out
+
+# The binary value of the UUID `b` in `representation`'s subtype and order.
+#
+# - `b`: the UUID's sixteen bytes, in their standard order.
+# - `representation`: the subtype and order to write.
+#
+# Fails `invalid` where `b` is not sixteen bytes. See also `uuid_of`.
+function from_uuid(b: [u8], representation: UuidRepresentation) -> Value?
+    if b.len() != 16
+        return fail(code: INVALID, msg: f"{b.len()} bytes, where a UUID has 16")
+
+    subtype: u8 = match representation
+        .standard                                      => SUBTYPE_UUID
+        .python_legacy | .java_legacy | .csharp_legacy => SUBTYPE_UUID_OLD
+
+    return ok(.binary(subtype: subtype, data: reordered(b, representation: representation)))
+
+# The UUID a binary `v` holds in `representation`'s subtype and order, in its
+# standard order.
+#
+# - `v`: the value.
+# - `representation`: the subtype and order it was written in.
+#
+# Fails `invalid` where `v` is no binary of that subtype holding sixteen
+# bytes. See also `from_uuid`.
+function uuid_of(v: Value, representation: UuidRepresentation) -> [u8]?
+    wanted: u8 = match representation
+        .standard                                      => SUBTYPE_UUID
+        .python_legacy | .java_legacy | .csharp_legacy => SUBTYPE_UUID_OLD
+
+    return match v
+        .binary b =>
+            if b.subtype != wanted || b.data.len() != 16
+                return fail(
+                    code: INVALID,
+                    msg: f"a binary of subtype {b.subtype} and {b.data.len()} bytes, where a UUID of subtype {wanted} was expected"
+                )
+            ok(reordered(b.data, representation: representation))
+        .double _ | .text _ | .document _ | .array _ | .undefined | .object_id _ | .boolean _ | .datetime _ | .null_value | .regex _ | .db_pointer _ | .javascript _ | .symbol _ | .javascript_with_scope _ | .int32 _ | .timestamp _ | .int64 _ | .decimal128 _ | .min_key | .max_key =>
+            event.wrong_kind(found: kind_of(v), wanted: "a binary UUID")
+
+## Vectors
+
+# A dense vector held in a binary of subtype 9, as MongoDB's vector search
+# reads one: its type of element, and its elements.
+variant Vector
+    # Signed bytes, the type 0x03.
+    int8
+        # The elements.
+        values: [i8]
+    # 32-bit floats, the type 0x27, each written in its four bytes,
+    # little-endian.
+    float32
+        # The elements.
+        values: [f32]
+    # Bits packed eight to a byte, the first in the highest bit, the type
+    # 0x10.
+    packed_bit
+        # The bytes holding the bits.
+        bits: [u8]
+        # How many of the last byte's lowest bits are no element, 0 to 7;
+        # they must be zero.
+        padding: u8
+
+# The binary value of subtype 9 holding `v`.
+#
+# - `v`: the vector.
+#
+# Fails `invalid` where a packed vector's padding is past 7, is not 0 while
+# it holds no byte, or covers bits of its last byte that are not zero, as
+# pymongo 4.20 refuses them. See also `vector_of`.
+function from_vector(v: Vector) -> Value?
+    data: [u8] @= []
+
+    match v
+        .int8 x =>
+            data @ [0x03, 0]
+
+            for n in x.values
+                data @ data.push(to_u8((to_i64(n).must() + 256) % 256).must())
+        .float32 x =>
+            data @ [0x27, 0]
+
+            for f in x.values
+                bytes.push_all(to: @data, from: floats.encode_f32(f))
+        .packed_bit p =>
+            padding = to_i64(p.padding).must()
+
+            if padding > 7
+                return fail(code: INVALID, msg: f"a padding of {padding} bits, where 0 to 7 are")
+            else if p.bits.len() == 0 && padding > 0
+                return fail(code: INVALID, msg: f"a padding of {padding} bits on a vector of no byte")
+            else if padding > 0 && to_i64(p.bits[p.bits.len() - 1]).must() & (1 << padding) - 1 != 0
+                return fail(code: INVALID, msg: f"the last byte's {padding} bits of padding are not zero")
+            data @ [0x10, p.padding]
+            bytes.push_all(to: @data, from: p.bits)
+
+    return ok(.binary(subtype: SUBTYPE_VECTOR, data: data))
+
+# The vector a binary `v` of subtype 9 holds.
+#
+# - `v`: the value.
+#
+# Fails `invalid` where `v` is no binary of subtype 9, holds under two bytes,
+# names a type of element other than the three, has a padding other than 0 on
+# a vector that is not packed, a float vector whose bytes are not a multiple
+# of four, or a packed one whose padding is past 7, stands on no byte, or
+# covers bits that are not zero. pymongo 4.20 reads the last of those with a
+# warning; the vector specification says they must be zero. See also
+# `from_vector`.
+function vector_of(v: Value) -> Vector?
+    data = match v
+        .binary b =>
+            if b.subtype != SUBTYPE_VECTOR
+                return fail(code: INVALID, msg: f"a binary of subtype {b.subtype}, where a vector's 9 was expected")
+            b.data
+        .double _ | .text _ | .document _ | .array _ | .undefined | .object_id _ | .boolean _ | .datetime _ | .null_value | .regex _ | .db_pointer _ | .javascript _ | .symbol _ | .javascript_with_scope _ | .int32 _ | .timestamp _ | .int64 _ | .decimal128 _ | .min_key | .max_key =>
+            return event.wrong_kind(found: kind_of(v), wanted: "a vector")
+
+    if data.len() < 2
+        return fail(code: INVALID, msg: f"a vector of {data.len()} bytes, below its two of header")
+    kind = to_i64(data[0]).must()
+    padding = to_i64(data[1]).must()
+    body = data.slice(from: 2, to: data.len())
+
+    if kind != 0x10 && padding != 0
+        return fail(code: INVALID, msg: f"a padding of {padding} on a vector that is not packed")
+
+    if kind == 0x03
+        values: [i8] @= []
+
+        for b in body
+            wrap: i64 = if b > 127
+                256
+            else
+                0
+            values @ values.push(to_i8(to_i64(b).must() - wrap).must())
+
+        return ok(.int8(values: values))
+    else if kind == 0x27
+        if body.len() % 4 != 0
+            return fail(code: INVALID, msg: f"a float vector of {body.len()} bytes, which is no multiple of 4")
+        values: [f32] @= []
+        at: i64 @= 0
+
+        while at < body.len()
+            values @ values.push(floats.decode_f32(body, at: at))
+            at @ at + 4
+
+        return ok(.float32(values: values))
+    else if kind == 0x10
+        if padding > 7
+            return fail(code: INVALID, msg: f"a padding of {padding} bits, where 0 to 7 are")
+        else if body.len() == 0 && padding > 0
+            return fail(code: INVALID, msg: f"a padding of {padding} bits on a vector of no byte")
+        else if padding > 0 && to_i64(body[body.len() - 1]).must() & (1 << padding) - 1 != 0
+            return fail(code: INVALID, msg: f"the last byte's {padding} bits of padding are not zero")
+        return ok(.packed_bit(bits: body, padding: data[1]))
+    return fail(code: INVALID, msg: f"a vector of the type {kind}, which is none of 0x03, 0x27 and 0x10")
+
+## DBRefs
+
+# A DBRef, MongoDB's convention for a reference to a document of another
+# collection: a document of `$ref`, `$id` and an optional `$db`. Built
+# directly, or read by `dbref_of`.
+record DBRef
+    # The collection's name.
+    collection: str
+    # The referenced document's `_id`, of any type.
+    id: Value
+    # The database's name; "" for the referring document's own.
+    database: str
+
+# The document of `r`: `$ref`, `$id`, then `$db` where `r` names a database.
+#
+# - `r`: the reference.
+#
+# See also `dbref_of`.
+function from_dbref(r: DBRef) -> Document
+    fields: [Field] @= [Field(name: "$ref", value: .text(v: r.collection)), Field(name: "$id", value: r.id)]
+
+    if r.database != ""
+        fields @ fields.push(Field(name: "$db", value: .text(v: r.database)))
+    return Document(fields: fields)
+
+# The DBRef `doc` is: a first field `$ref` holding a string, a second `$id`,
+# and an optional `$db` holding a string; other fields after them are
+# allowed and left out.
+#
+# - `doc`: the document.
+#
+# Fails `invalid` where `doc` is no DBRef. See also `from_dbref`.
+function dbref_of(doc: Document) -> DBRef?
+    if doc.fields.len() < 2 || doc.fields[0].name != "$ref" || doc.fields[1].name != "$id"
+        return fail(code: INVALID, msg: "a DBRef opens with \"$ref\" then \"$id\"")
+    collection = text_of(doc.fields[0].value)?
+    database: str @= ""
+
+    if doc.fields.len() > 2 && doc.fields[2].name == "$db"
+        database @ text_of(doc.fields[2].value)?
+    return ok(DBRef(collection: collection, id: doc.fields[1].value, database: database))
+
+## Extended JSON
+
+# The two modes of MongoDB's Extended JSON v2.
+variant JsonMode
+    # Every value in a form that keeps its type: `{"$numberInt": "1"}`,
+    # `{"$date": {"$numberLong": "0"}}`. Read back, it gives the same
+    # document.
+    canonical
+    # Numbers and dates written as a reader expects them: an int32, an
+    # int64 within 2^53 and a finite double as a JSON number, a date from 1970
+    # to 9999 as RFC 3339 text. Read back, a number's type may differ.
+    relaxed
+
+# `doc` as Extended JSON, a `json.Value`, in `mode`.
+#
+# - `doc`: the document.
+# - `mode`: canonical or relaxed.
+#
+# Fails as `encode` fails on a document that is no BSON. A name that stands
+# twice keeps its first place and its last value, since a JSON object holds
+# a key once. An int64 past 2^53 stays `$numberLong` in relaxed mode, where
+# pymongo writes a number no `f64` holds exactly; a double that is a whole
+# number is written as an integer, since a `json.Value` holds no point. See
+# also `from_json`, `format_json`.
+function to_json(doc: Document, mode: JsonMode) -> json.Value?
+    data = encode(doc)?
+    got = reader.read(data, from: 0, max_depth: 9223372036854775807, lossy: false)?
+
+    code = match mode
+        .canonical => extjson_out.CANONICAL
+        .relaxed   => extjson_out.RELAXED
+
+    return ok(extjson_out.to_json(events: got.events, mode: code))
+
+# The document the Extended JSON `v` writes, canonical or relaxed.
+#
+# - `v`: an object; an object whose keys name a type wrapper (`$oid`,
+#   `$numberLong`, `$date`, ...) must be exactly that wrapper, and any other
+#   object, `{"$gt": 1}` included, is a document. A JSON number that is a
+#   whole number is an int32 where it fits, an int64 where that fits, a
+#   double otherwise or where it has a fraction.
+#
+# Fails `invalid` where `v` is no object, where a type wrapper is malformed,
+# and where a name or a pattern holds a zero byte; the message opens with the
+# JSON pointer of the place. The legacy forms are read: `$binary` with
+# `$type`, `$regex` with `$options`, `$date` as a number, `$uuid`. See also
+# `to_json`, `parse_json`.
+function from_json(v: json.Value) -> Document?
+    events = extjson_in.events_of(v)?
+    return decode_with(
+        data: writer.write(events)?,
+        options: DecodeOptions(max_depth: 9223372036854775807, lossy_text: false)
+    )
+
+# `doc` as Extended JSON text on one line.
+#
+# - `doc`: the document.
+# - `mode`: canonical or relaxed.
+#
+# Fails as `to_json` fails. See also `to_json`, `parse_json`.
+function format_json(doc: Document, mode: JsonMode) -> str?
+    return json.format(to_json(doc, mode: mode)?)
+
+# The document the Extended JSON text `text` writes.
+#
+# - `text`: the JSON text; an integer past 2^53 written with no wrapper fails
+#   rather than being read as the nearest `f64`.
+#
+# Fails where `json.parse` fails, with its code, and as `from_json` fails.
+# See also `from_json`, `format_json`.
+function parse_json(text: str) -> Document?
+    options @= json.strict()
+    options.exact_integers @ true
+    return from_json(json.parse_with(text, options: options)?)
+
+# The value `v` as Extended JSON in `mode`.
+#
+# - `v`: the value.
+# - `mode`: canonical or relaxed.
+#
+# Fails as `to_json` fails. See also `value_from_json`.
+function value_to_json(v: Value, mode: JsonMode) -> json.Value?
+    j = to_json(Document(fields: [Field(name: "v", value: v)]), mode: mode)?
+    return json.member(j, key: "v")
+
+# The value the Extended JSON `j` writes: a wrapper, a document, or a plain
+# JSON value.
+#
+# - `j`: the JSON value.
+#
+# Fails as `from_json` fails. See also `value_to_json`.
+function value_from_json(j: json.Value) -> Value?
+    members: {str: json.Value} @= {}
+    members["v"] @ j
+    doc = from_json(.object(members: members))?
+    return member(doc, name: "v")
+
+## Tests
+
+test "decode and encode: every type of BSON, read and written back to the same bytes"
+    # A document of one field of each type, built by hand and decoded by
+    # pymongo 4.20 into its 21 values, the deprecated ones included.
+    hex = [
+        "e6000000016400000000000000004002730003000000686900036f000c00000010780001000000000461000c000000103000"
+        "02000000000562000100000080ab06750007690057e193d7a9cc81b4027498b508740001096500c5d8d6cc3b0100000a6e00"
+        "0b720061620069000c70000500000064622e630057e193d7a9cc81b4027498b50d6a000200000078000e7900020000007300"
+        "0f6300160000000200000078000c0000001061000100000000106b00ffffff7f117a000100000002000000126c0001000000"
+        "000000001378007b000000000000000000000000004230ff6d007f4d0000"
+    ]
+    data = bytes.parse_hex(join(hex, "")).must()
+    doc = decode(data).must()
+    assert doc.fields.len() == 21
+    kinds: [str] @= []
+
+    for f in doc.fields
+        kinds @ kinds.push(kind_of(f.value))
+
+    assert join(kinds, " ") == "double string object array binData undefined objectId bool date null regex dbPointer javascript symbol javascriptWithScope int timestamp long decimal minKey maxKey"
+    assert member(doc, name: "z").must() == .timestamp(v: Timestamp(seconds: 2, increment: 1))
+    assert encode(doc).must() == data
+
+test "decode: the empty document, bytes after it, a wrong length, and a depth past the limit"
+    assert decode([5, 0, 0, 0, 0]).must().fields.len() == 0
+    assert decode([5, 0, 0, 0, 0, 0]).is_err()
+    assert decode([]).is_err()
+    assert decode([6, 0, 0, 0, 0]).is_err()
+    nested = bytes.parse_hex("1d000000036100150000000362000d0000000363000500000000000000").must()
+    assert decode_with(nested, options: DecodeOptions(max_depth: 4, lossy_text: false)).must().fields.len() == 1
+    assert decode_with(nested, options: DecodeOptions(max_depth: 3, lossy_text: false)).is_err()
+
+test "encode: a name with a zero byte refused, an array's names rewritten, a regex's options sorted"
+    zero = bytes.to_text([0x61, 0]).must()
+    assert encode(Document(fields: [Field(name: zero, value: .null_value)])).is_err()
+    array_doc = Document(fields: [Field(name: "a", value: .array(items: [.boolean(v: true)]))])
+    assert bytes.format_hex(encode(array_doc).must()) == "1100000004610009000000083000010000"
+    regex_doc = Document(fields: [Field(name: "r", value: .regex(pattern: "a", options: "mi"))])
+    assert bytes.format_hex(encode(regex_doc).must()) == "0d0000000b72006100696d0000"
+
+test "decode_all: none, two documents end to end, and a broken second one"
+    assert decode_all([]).must().len() == 0
+    assert decode_all([5, 0, 0, 0, 0, 5, 0, 0, 0, 0]).must().len() == 2
+    assert decode_all([5, 0, 0, 0, 0, 5, 0, 0]).is_err()
+
+test "member and value_at: absent names, a path through an array, an index past it, and a path through a number"
+    doc = parse_json("{\"a\": {\"b\": [10, {\"c\": \"x\"}]}, \"n\": 1}").must()
+    assert value_at(doc, path: "a.b.1.c").must() == .text(v: "x")
+    assert value_at(doc, path: "a.b.0").must() == .int32(v: 10)
+    assert value_at(doc, path: "a.b.2").is_err()
+    assert value_at(doc, path: "a.b.x").is_err()
+    assert value_at(doc, path: "n.m").is_err()
+    assert value_at(doc, path: "z").is_err()
+    assert member(doc, name: "q").is_err()
+
+test "with_member and without_member: replaced in place, added at the end, and both of a name that stands twice removed"
+    doc = Document(
+        fields: [Field(name: "a", value: from_int(1)), Field(name: "b", value: from_int(2)), Field(name: "a", value: from_int(3))]
+    )
+    replaced = with_member(doc, name: "a", value: from_int(9))
+    assert names_of(replaced) == ["a", "b", "a"] && member(replaced, name: "a").must() == .int32(v: 9)
+    assert names_of(with_member(doc, name: "c", value: .null_value)) == ["a", "b", "a", "c"]
+    assert names_of(without_member(doc, name: "a")) == ["b"]
+
+test "int_of: an int32, an int64, a whole double, a double with a fraction, one past an i64, and a string"
+    assert int_of(.int32(v: -2147483648)).must() == -2147483648
+    assert int_of(.int64(v: 9223372036854775807)).must() == 9223372036854775807
+    assert int_of(.double(v: 1.0)).must() == 1
+    assert int_of(.double(v: 1.5)).is_err()
+
+    match int_of(.double(v: 9223372036854775808.0))
+        .ok _  => assert false
+        .err e => assert e.code == DOES_NOT_FIT
+
+    assert int_of(.text(v: "1")).is_err()
+
+test "from_int: the edges of an int32 and one past them"
+    assert from_int(2147483647) == .int32(v: 2147483647)
+    assert from_int(-2147483648) == .int32(v: -2147483648)
+    assert from_int(2147483648) == .int64(v: 2147483648)
+    assert from_int(-2147483649) == .int64(v: -2147483649)
+
+test "from_instant and instant_of: before 1970 cut toward the past, and a date past what an instant holds"
+    assert from_instant(time.Instant(unix_nanoseconds: -1)) == .datetime(ms: -1)
+    assert from_instant(time.Instant(unix_nanoseconds: 1999999)) == .datetime(ms: 1)
+    assert instant_of(.datetime(ms: 1)).must().unix_nanoseconds == 1000000
+    assert instant_of(.datetime(ms: 9223372036854775807)).is_err()
+
+test "ObjectIds: parsed in either case, a wrong length, the time pymongo 4.20 reads, and object_id_at"
+    id = parse_object_id("57E193D7A9CC81B4027498B5").must()
+    assert format_object_id(id) == "57e193d7a9cc81b4027498b5"
+    assert time.format(time_of(id), layout: .rfc3339) == "2016-09-20T19:53:59Z"
+    assert !is_object_id("57e193d7a9cc81b4027498b") && !is_object_id("57e193d7a9cc81b4027498bz")
+    at = time.parse("2024-01-02T03:04:05Z", layout: .rfc3339).must()
+    assert format_object_id(object_id_at(at).must()) == "65937d250000000000000000"
+    assert object_id_at(time.Instant(unix_nanoseconds: -1000000000)).is_err()
+    assert object_id_from_bytes([1, 2, 3]).is_err()
+
+test "next_object_id: two ids differ, share their five bytes, and count up by one"
+    maker @= object_id_maker().must()
+    a = next_object_id(@maker).must()
+    b = next_object_id(@maker).must()
+    assert a != b && a.bytes.slice(from: 4, to: 9) == b.bytes.slice(from: 4, to: 9)
+    counter_a = to_i64(a.bytes[9]).must() * 65536 + to_i64(a.bytes[10]).must() * 256 + to_i64(a.bytes[11]).must()
+    counter_b = to_i64(b.bytes[9]).must() * 65536 + to_i64(b.bytes[10]).must() * 256 + to_i64(b.bytes[11]).must()
+    assert counter_b == (counter_a + 1) % 16777216
+
+test "uuid: the four orders pymongo 4.20 wrote, and back"
+    u = bytes.parse_hex("00112233445566778899aabbccddeeff").must()
+    java = from_uuid(u, representation: .java_legacy).must()
+    assert java == .binary(subtype: 3, data: bytes.parse_hex("7766554433221100ffeeddccbbaa9988").must())
+    csharp = from_uuid(u, representation: .csharp_legacy).must()
+    assert csharp == .binary(subtype: 3, data: bytes.parse_hex("33221100554477668899aabbccddeeff").must())
+    assert uuid_of(java, representation: .java_legacy).must() == u
+    assert uuid_of(java, representation: .standard).is_err()
+    assert from_uuid([1], representation: .standard).is_err()
+
+test "dbref_of: a reference with and without a database, and a document that is none"
+    r = DBRef(collection: "users", id: from_int(7), database: "app")
+    assert dbref_of(from_dbref(r)).must() == r
+    assert names_of(from_dbref(DBRef(collection: "c", id: .null_value, database: ""))) == ["$ref", "$id"]
+    assert dbref_of(
+        Document(fields: [Field(name: "$id", value: .null_value), Field(name: "$ref", value: .text(v: "c"))])
+    ).is_err()
+
+test "to_json: canonical and relaxed text of every type, as pymongo 4.20 wrote them"
+    doc = parse_json(
+        "{\"i\": {\"$numberInt\": \"5\"}, \"l\": {\"$numberLong\": \"5\"}, \"d\": {\"$numberDouble\": \"1.5\"}, \"t\": {\"$date\": {\"$numberLong\": \"1356351330501\"}}, \"b\": {\"$binary\": {\"base64\": \"AQI=\", \"subType\": \"80\"}}, \"o\": {\"$oid\": \"57e193d7a9cc81b4027498b5\"}, \"x\": {\"$numberDecimal\": \"1.23E+3\"}, \"s\": {\"$timestamp\": {\"t\": 1, \"i\": 2}}, \"r\": {\"$regularExpression\": {\"pattern\": \"ab\", \"options\": \"mi\"}}, \"m\": {\"$minKey\": 1}, \"c\": {\"$code\": \"x\", \"$scope\": {\"a\": 1}}}"
+    ).must()
+    canonical = "{\"i\":{\"$numberInt\":\"5\"},\"l\":{\"$numberLong\":\"5\"},\"d\":{\"$numberDouble\":\"1.5\"},\"t\":{\"$date\":{\"$numberLong\":\"1356351330501\"}},\"b\":{\"$binary\":{\"base64\":\"AQI=\",\"subType\":\"80\"}},\"o\":{\"$oid\":\"57e193d7a9cc81b4027498b5\"},\"x\":{\"$numberDecimal\":\"1.23E+3\"},\"s\":{\"$timestamp\":{\"t\":1,\"i\":2}},\"r\":{\"$regularExpression\":{\"pattern\":\"ab\",\"options\":\"im\"}},\"m\":{\"$minKey\":1},\"c\":{\"$code\":\"x\",\"$scope\":{\"a\":{\"$numberInt\":\"1\"}}}}"
+    assert format_json(doc, mode: .canonical).must() == canonical
+    relaxed = "{\"i\":5,\"l\":5,\"d\":1.5,\"t\":{\"$date\":\"2012-12-24T12:15:30.501Z\"},\"b\":{\"$binary\":{\"base64\":\"AQI=\",\"subType\":\"80\"}},\"o\":{\"$oid\":\"57e193d7a9cc81b4027498b5\"},\"x\":{\"$numberDecimal\":\"1.23E+3\"},\"s\":{\"$timestamp\":{\"t\":1,\"i\":2}},\"r\":{\"$regularExpression\":{\"pattern\":\"ab\",\"options\":\"im\"}},\"m\":{\"$minKey\":1},\"c\":{\"$code\":\"x\",\"$scope\":{\"a\":1}}}"
+    assert format_json(doc, mode: .relaxed).must() == relaxed
+
+test "from_json: a wrapper with an extra key, a bad $oid, a query operator kept as a document, a legacy $regex, and a top level that is no document"
+    assert parse_json("{\"a\": {\"$oid\": \"57e193d7a9cc81b4027498b5\", \"x\": 1}}").is_err()
+    assert parse_json("{\"a\": {\"$oid\": \"57e193\"}}").is_err()
+    assert parse_json("{\"a\": {\"$numberInt\": \"1.0\"}}").is_err()
+    assert parse_json("{\"a\": {\"$numberInt\": \"2147483648\"}}").is_err()
+    assert parse_json("{\"a\": {\"$numberDouble\": \"inf\"}}").is_err()
+    assert parse_json("{\"a\": {\"$minKey\": 2}}").is_err()
+    query = parse_json("{\"age\": {\"$gt\": 30}}").must()
+    assert value_at(query, path: "age.$gt").must() == .int32(v: 30)
+    regex = parse_json("{\"a\": {\"$regex\": \"abc\", \"$options\": \"i\"}}").must()
+    assert member(regex, name: "a").must() == .regex(pattern: "abc", options: "i")
+    assert parse_json("[1]").is_err()
+    assert parse_json("{\"$numberInt\": \"1\"}").is_err()
+    assert parse_json("{\"a\": 9007199254740993}").is_err()
+
+test "from_json: relaxed numbers, a negative zero, a fraction, and a legacy date"
+    doc = parse_json(
+        "{\"a\": 1, \"b\": 3000000000, \"c\": -0.0, \"d\": 1.5, \"e\": {\"$date\": 5}, \"f\": {\"$date\": \"1970-01-01T00:00:00.001Z\"}}"
+    ).must()
+    assert member(doc, name: "a").must() == .int32(v: 1)
+    assert member(doc, name: "b").must() == .int64(v: 3000000000)
+    assert kind_of(member(doc, name: "c").must()) == "double"
+    assert member(doc, name: "d").must() == .double(v: 1.5)
+    assert member(doc, name: "e").must() == .datetime(ms: 5)
+    assert member(doc, name: "f").must() == .datetime(ms: 1)
+
+test "decode, encode, to_json and parse_json: 69 documents of edge values held to the bytes and the Extended JSON pymongo 4.20 wrote"
+    # Each row: the bytes, the canonical text, the relaxed text, and whether
+    # the relaxed one is this package's too ("differs" for an int64 past 2^53,
+    # which stays `$numberLong` here).
+    cases = [
+        ["10000000016400000000000000000000", "{\"d\":{\"$numberDouble\":\"0.0\"}}", "{\"d\":0.0}", "same"]
+        ["10000000016400000000000000008000", "{\"d\":{\"$numberDouble\":\"-0.0\"}}", "{\"d\":-0.0}", "same"]
+        ["10000000016400000000000000f03f00", "{\"d\":{\"$numberDouble\":\"1.0\"}}", "{\"d\":1.0}", "same"]
+        ["10000000016400000000000000f0bf00", "{\"d\":{\"$numberDouble\":\"-1.0\"}}", "{\"d\":-1.0}", "same"]
+        ["100000000164009a9999999999b93f00", "{\"d\":{\"$numberDouble\":\"0.1\"}}", "{\"d\":0.1}", "same"]
+        ["100000000164002d431cebe2361a3f00", "{\"d\":{\"$numberDouble\":\"0.0001\"}}", "{\"d\":0.0001}", "same"]
+        ["10000000016400f168e388b5f8e43e00", "{\"d\":{\"$numberDouble\":\"1e-05\"}}", "{\"d\":1e-05}", "same"]
+        ["1000000001640000003426f56b0c4300", "{\"d\":{\"$numberDouble\":\"1000000000000000.0\"}}", "{\"d\":1000000000000000.0}", "same"]
+        ["100000000164000080e03779c3414300", "{\"d\":{\"$numberDouble\":\"1e+16\"}}", "{\"d\":1e+16}", "same"]
+        ["10000000016400ffffffffffffef7f00", "{\"d\":{\"$numberDouble\":\"1.7976931348623157e+308\"}}", "{\"d\":1.7976931348623157e+308}", "same"]
+        ["10000000016400010000000000000000", "{\"d\":{\"$numberDouble\":\"5e-324\"}}", "{\"d\":5e-324}", "same"]
+        ["10000000016400000000000000100000", "{\"d\":{\"$numberDouble\":\"2.2250738585072014e-308\"}}", "{\"d\":2.2250738585072014e-308}", "same"]
+        ["1000000001640077be9f1a2fdd5e4000", "{\"d\":{\"$numberDouble\":\"123.456\"}}", "{\"d\":123.456}", "same"]
+        ["10000000016400350f63bab4697bc300", "{\"d\":{\"$numberDouble\":\"-1.2345678901234568e+17\"}}", "{\"d\":-1.2345678901234568e+17}", "same"]
+        ["10000000016400555555555555d53f00", "{\"d\":{\"$numberDouble\":\"0.3333333333333333\"}}", "{\"d\":0.3333333333333333}", "same"]
+        ["10000000016400000000000000f07f00", "{\"d\":{\"$numberDouble\":\"Infinity\"}}", "{\"d\":{\"$numberDouble\":\"Infinity\"}}", "same"]
+        ["10000000016400000000000000f0ff00", "{\"d\":{\"$numberDouble\":\"-Infinity\"}}", "{\"d\":{\"$numberDouble\":\"-Infinity\"}}", "same"]
+        ["10000000016400000000000000f87f00", "{\"d\":{\"$numberDouble\":\"NaN\"}}", "{\"d\":{\"$numberDouble\":\"NaN\"}}", "same"]
+        ["0c000000106900ffffff7f00", "{\"i\":{\"$numberInt\":\"2147483647\"}}", "{\"i\":2147483647}", "same"]
+        ["0c0000001069000000008000", "{\"i\":{\"$numberInt\":\"-2147483648\"}}", "{\"i\":-2147483648}", "same"]
+        ["10000000126c00ffffffffffffff7f00", "{\"l\":{\"$numberLong\":\"9223372036854775807\"}}", "{\"l\":9223372036854775807}", "differs"]
+        ["10000000126c00000000000000008000", "{\"l\":{\"$numberLong\":\"-9223372036854775808\"}}", "{\"l\":-9223372036854775808}", "differs"]
+        ["10000000126c00000000000000200000", "{\"l\":{\"$numberLong\":\"9007199254740992\"}}", "{\"l\":9007199254740992}", "same"]
+        ["10000000126c00000000000000e0ff00", "{\"l\":{\"$numberLong\":\"-9007199254740992\"}}", "{\"l\":-9007199254740992}", "same"]
+        ["0d000000027300010000000000", "{\"s\":\"\"}", "{\"s\":\"\"}", "same"]
+        ["1e00000002730012000000636166c3a920e697a5e69cac20f09f98800000", "{\"s\":\"café 日本 😀\"}", "{\"s\":\"café 日本 😀\"}", "same"]
+        ["10000000027300040000006100620000", "{\"s\":\"a\\u0000b\"}", "{\"s\":\"a\\u0000b\"}", "same"]
+        ["120000000273000600000071225c0a090000", "{\"s\":\"q\\\"\\\\\\n\\t\"}", "{\"s\":\"q\\\"\\\\\\n\\t\"}", "same"]
+        ["0d000000056200000000000000", "{\"b\":{\"$binary\":{\"base64\":\"\",\"subType\":\"00\"}}}", "{\"b\":{\"$binary\":{\"base64\":\"\",\"subType\":\"00\"}}}", "same"]
+        ["0e00000005620001000000010100", "{\"b\":{\"$binary\":{\"base64\":\"AQ==\",\"subType\":\"01\"}}}", "{\"b\":{\"$binary\":{\"base64\":\"AQ==\",\"subType\":\"01\"}}}", "same"]
+        ["1400000005620007000000020300000061626300", "{\"b\":{\"$binary\":{\"base64\":\"YWJj\",\"subType\":\"02\"}}}", "{\"b\":{\"$binary\":{\"base64\":\"YWJj\",\"subType\":\"02\"}}}", "same"]
+        ["1d00000005620010000000030000000000000000000000000000000000", "{\"b\":{\"$binary\":{\"base64\":\"AAAAAAAAAAAAAAAAAAAAAA==\",\"subType\":\"03\"}}}", "{\"b\":{\"$binary\":{\"base64\":\"AAAAAAAAAAAAAAAAAAAAAA==\",\"subType\":\"03\"}}}", "same"]
+        ["1d00000005620010000000041111111111111111111111111111111100", "{\"b\":{\"$binary\":{\"base64\":\"EREREREREREREREREREREQ==\",\"subType\":\"04\"}}}", "{\"b\":{\"$binary\":{\"base64\":\"EREREREREREREREREREREQ==\",\"subType\":\"04\"}}}", "same"]
+        ["1d00000005620010000000050505050505050505050505050505050500", "{\"b\":{\"$binary\":{\"base64\":\"BQUFBQUFBQUFBQUFBQUFBQ==\",\"subType\":\"05\"}}}", "{\"b\":{\"$binary\":{\"base64\":\"BQUFBQUFBQUFBQUFBQUFBQ==\",\"subType\":\"05\"}}}", "same"]
+        ["0e00000005620001000000067800", "{\"b\":{\"$binary\":{\"base64\":\"eA==\",\"subType\":\"06\"}}}", "{\"b\":{\"$binary\":{\"base64\":\"eA==\",\"subType\":\"06\"}}}", "same"]
+        ["0e00000005620001000000077900", "{\"b\":{\"$binary\":{\"base64\":\"eQ==\",\"subType\":\"07\"}}}", "{\"b\":{\"$binary\":{\"base64\":\"eQ==\",\"subType\":\"07\"}}}", "same"]
+        ["0e00000005620001000000087a00", "{\"b\":{\"$binary\":{\"base64\":\"eg==\",\"subType\":\"08\"}}}", "{\"b\":{\"$binary\":{\"base64\":\"eg==\",\"subType\":\"08\"}}}", "same"]
+        ["0f0000000562000200000080fffe00", "{\"b\":{\"$binary\":{\"base64\":\"//4=\",\"subType\":\"80\"}}}", "{\"b\":{\"$binary\":{\"base64\":\"//4=\",\"subType\":\"80\"}}}", "same"]
+        ["0e00000005620001000000ff7100", "{\"b\":{\"$binary\":{\"base64\":\"cQ==\",\"subType\":\"ff\"}}}", "{\"b\":{\"$binary\":{\"base64\":\"cQ==\",\"subType\":\"ff\"}}}", "same"]
+        ["10000000097400000000000000000000", "{\"t\":{\"$date\":{\"$numberLong\":\"0\"}}}", "{\"t\":{\"$date\":\"1970-01-01T00:00:00Z\"}}", "same"]
+        ["10000000097400ffffffffffffffff00", "{\"t\":{\"$date\":{\"$numberLong\":\"-1\"}}}", "{\"t\":{\"$date\":{\"$numberLong\":\"-1\"}}}", "same"]
+        ["10000000097400010000000000000000", "{\"t\":{\"$date\":{\"$numberLong\":\"1\"}}}", "{\"t\":{\"$date\":\"1970-01-01T00:00:00.001Z\"}}", "same"]
+        ["10000000097400ffdb1fd277e6000000", "{\"t\":{\"$date\":{\"$numberLong\":\"253402300799999\"}}}", "{\"t\":{\"$date\":\"9999-12-31T23:59:59.999Z\"}}", "same"]
+        ["1000000009740000dc1fd277e6000000", "{\"t\":{\"$date\":{\"$numberLong\":\"253402300800000\"}}}", "{\"t\":{\"$date\":{\"$numberLong\":\"253402300800000\"}}}", "same"]
+        ["100000000974000028d3ed7cc7ffff00", "{\"t\":{\"$date\":{\"$numberLong\":\"-62135596800000\"}}}", "{\"t\":{\"$date\":{\"$numberLong\":\"-62135596800000\"}}}", "same"]
+        ["10000000097400ffffffffffffff7f00", "{\"t\":{\"$date\":{\"$numberLong\":\"9223372036854775807\"}}}", "{\"t\":{\"$date\":{\"$numberLong\":\"9223372036854775807\"}}}", "same"]
+        ["10000000097400d0d6d6cc3b01000000", "{\"t\":{\"$date\":{\"$numberLong\":\"1356351330000\"}}}", "{\"t\":{\"$date\":\"2012-12-24T12:15:30Z\"}}", "same"]
+        ["0a0000000b7200000000", "{\"r\":{\"$regularExpression\":{\"pattern\":\"\",\"options\":\"\"}}}", "{\"r\":{\"$regularExpression\":{\"pattern\":\"\",\"options\":\"\"}}}", "same"]
+        ["120000000b7200612f6200696d7375780000", "{\"r\":{\"$regularExpression\":{\"pattern\":\"a/b\",\"options\":\"imsux\"}}}", "{\"r\":{\"$regularExpression\":{\"pattern\":\"a/b\",\"options\":\"imsux\"}}}", "same"]
+        ["0d0000000b7200c3a900750000", "{\"r\":{\"$regularExpression\":{\"pattern\":\"é\",\"options\":\"u\"}}}", "{\"r\":{\"$regularExpression\":{\"pattern\":\"é\",\"options\":\"u\"}}}", "same"]
+        ["1100000011747300ffffffffffffffff00", "{\"ts\":{\"$timestamp\":{\"t\":4294967295,\"i\":4294967295}}}", "{\"ts\":{\"$timestamp\":{\"t\":4294967295,\"i\":4294967295}}}", "same"]
+        ["1100000011747300000000000000000000", "{\"ts\":{\"$timestamp\":{\"t\":0,\"i\":0}}}", "{\"ts\":{\"$timestamp\":{\"t\":0,\"i\":0}}}", "same"]
+        ["180000001378000000000000000000000000000000403000", "{\"x\":{\"$numberDecimal\":\"0\"}}", "{\"x\":{\"$numberDecimal\":\"0\"}}", "same"]
+        ["18000000137800000000000000000000000000000040b000", "{\"x\":{\"$numberDecimal\":\"-0\"}}", "{\"x\":{\"$numberDecimal\":\"-0\"}}", "same"]
+        ["180000001378000100000000000000000000000000fe5f00", "{\"x\":{\"$numberDecimal\":\"1E+6111\"}}", "{\"x\":{\"$numberDecimal\":\"1E+6111\"}}", "same"]
+        ["180000001378000000000000000000000000000000007c00", "{\"x\":{\"$numberDecimal\":\"NaN\"}}", "{\"x\":{\"$numberDecimal\":\"NaN\"}}", "same"]
+        ["18000000137800000000000000000000000000000000f800", "{\"x\":{\"$numberDecimal\":\"-Infinity\"}}", "{\"x\":{\"$numberDecimal\":\"-Infinity\"}}", "same"]
+        ["1800000013780001000000000000000000000000003a3000", "{\"x\":{\"$numberDecimal\":\"0.001\"}}", "{\"x\":{\"$numberDecimal\":\"0.001\"}}", "same"]
+        ["18000000137800f2af967ed05c82de3297ff6fde3c403000", "{\"x\":{\"$numberDecimal\":\"1234567890123456789012345678901234\"}}", "{\"x\":{\"$numberDecimal\":\"1234567890123456789012345678901234\"}}", "same"]
+        ["180000001378000f00000000000000000000000000008000", "{\"x\":{\"$numberDecimal\":\"-1.5E-6175\"}}", "{\"x\":{\"$numberDecimal\":\"-1.5E-6175\"}}", "same"]
+        ["0d000000046100050000000000", "{\"a\":[]}", "{\"a\":[]}", "same"]
+        ["340000000461002c00000004300005000000000331000500000000043200140000000430000c0000001030000100000000000000", "{\"a\":[[],{},[[{\"$numberInt\":\"1\"}]]]}", "{\"a\":[[],{},[[1]]]}", "same"]
+        ["0d000000036f00050000000000", "{\"o\":{}}", "{\"o\":{}}", "same"]
+        ["20000000036f001800000003700010000000037100080000000a720000000000", "{\"o\":{\"p\":{\"q\":{\"r\":null}}}}", "{\"o\":{\"p\":{\"q\":{\"r\":null}}}}", "same"]
+        ["24000000036f001c000000100001000000102478000200000010612e6200030000000000", "{\"o\":{\"\":{\"$numberInt\":\"1\"},\"$x\":{\"$numberInt\":\"2\"},\"a.b\":{\"$numberInt\":\"3\"}}}", "{\"o\":{\"\":1,\"$x\":2,\"a.b\":3}}", "same"]
+        ["100000000d6300040000006628290000", "{\"c\":{\"$code\":\"f()\"}}", "{\"c\":{\"$code\":\"f()\"}}", "same"]
+        ["2f0000000f63002700000004000000672829001b000000047600130000001030000100000010310002000000000000", "{\"c\":{\"$code\":\"g()\",\"$scope\":{\"v\":[{\"$numberInt\":\"1\"},{\"$numberInt\":\"2\"}]}}}", "{\"c\":{\"$code\":\"g()\",\"$scope\":{\"v\":[1,2]}}}", "same"]
+        ["160000000f63000e0000000100000000050000000000", "{\"c\":{\"$code\":\"\",\"$scope\":{}}}", "{\"c\":{\"$code\":\"\",\"$scope\":{}}}", "same"]
+        ["16000000ff6d007f4d000a6e00087900010866000000", "{\"m\":{\"$minKey\":1},\"M\":{\"$maxKey\":1},\"n\":null,\"y\":true,\"f\":false}", "{\"m\":{\"$minKey\":1},\"M\":{\"$maxKey\":1},\"n\":null,\"y\":true,\"f\":false}", "same"]
+    ]
+
+    for row in cases
+        data = bytes.parse_hex(row[0]).must()
+        doc = decode(data).must()
+        assert encode(doc).must() == data
+        assert format_json(doc, mode: .canonical).must() == row[1]
+        assert encode(parse_json(row[1]).must()).must() == data
+
+        if row[3] == "same"
+            assert to_json(doc, mode: .relaxed).must() == json.parse(row[2]).must()
+
+test "lookup: a field after another, a field absent, a length passed over that is wrong, and a document of the wrong length"
+    data = encode(parse_json("{\"a\": \"x\", \"b\": {\"c\": 1}}").must()).must()
+    assert lookup(data, name: "b").must() == .document(doc: Document(fields: [Field(name: "c", value: .int32(v: 1))]))
+    assert lookup(data, name: "z").is_err()
+    assert lookup(data.slice(from: 0, to: data.len() - 1), name: "b").is_err()
+
+test "decode_with: text that is not UTF-8, refused and read lossy"
+    data: [u8] = [14, 0, 0, 0, 2, 0x61, 0, 2, 0, 0, 0, 0xff, 0, 0]
+    assert decode(data).is_err()
+    doc = decode_with(data, options: DecodeOptions(max_depth: 8, lossy_text: true)).must()
+    assert member(doc, name: "a").must() == .text(v: "�")
+
+test "from_vector and vector_of: the bytes pymongo 4.20 wrote, and the vectors it refused"
+    int8 = from_vector(.int8(values: [1, -2, 127])).must()
+    assert int8 == .binary(subtype: 9, data: bytes.parse_hex("030001fe7f").must())
+    assert vector_of(int8).must() == .int8(values: [1, -2, 127])
+    floats32 = from_vector(.float32(values: [to_f32(1.5), to_f32(-0.0), to_f32(1.0 / 0.0)])).must()
+    assert floats32 == .binary(subtype: 9, data: bytes.parse_hex("27000000c03f000000800000807f").must())
+    packed = from_vector(.packed_bit(bits: [0xff, 0x80], padding: 3)).must()
+    assert packed == .binary(subtype: 9, data: bytes.parse_hex("1003ff80").must())
+    assert from_vector(.packed_bit(bits: [0xff, 0x87], padding: 3)).is_err()
+    assert from_vector(.packed_bit(bits: [], padding: 1)).is_err()
+    assert from_vector(.packed_bit(bits: [1], padding: 8)).is_err()
+    assert vector_of(.binary(subtype: 9, data: bytes.parse_hex("2700000000").must())).is_err()
+    assert vector_of(.binary(subtype: 9, data: bytes.parse_hex("27000000c03f").must())).must() == .float32(values: [to_f32(1.5)])
+    assert vector_of(.binary(subtype: 9, data: bytes.parse_hex("0301ff").must())).is_err()
+    assert vector_of(.binary(subtype: 9, data: bytes.parse_hex("1001").must())).is_err()
+    assert vector_of(.binary(subtype: 9, data: bytes.parse_hex("05").must())).is_err()
+    assert vector_of(.binary(subtype: 9, data: bytes.parse_hex("0700ff").must())).is_err()
+    assert vector_of(.binary(subtype: 9, data: bytes.parse_hex("1003ff87").must())).is_err()
+    assert vector_of(.binary(subtype: 0, data: bytes.parse_hex("030001").must())).is_err()
+
+## Examples
+
+# A document decoded from the bytes a server sent.
+test "decode: a document of one string"
+    doc = decode([0x13, 0, 0, 0, 0x02, 0x6e, 0x61, 0x6d, 0x65, 0, 0x04, 0, 0, 0, 0x41, 0x64, 0x61, 0, 0]).must()
+    assert member(doc, name: "name").must() == .text(v: "Ada")
+
+# A document decoded with a tighter limit on its nesting.
+test "decode_with: nesting limited to one level"
+    assert decode_with([5, 0, 0, 0, 0], options: DecodeOptions(max_depth: 1, lossy_text: false)).must().fields.len() == 0
+
+# The documents of a stream read one after another.
+test "decode_next: the first of two documents and where the second begins"
+    got = decode_next([5, 0, 0, 0, 0, 5, 0, 0, 0, 0], from: 0, options: strict()).must()
+    assert got.next == 5
+
+# Every document of a dump read at once.
+test "decode_all: two empty documents"
+    assert decode_all([5, 0, 0, 0, 0, 5, 0, 0, 0, 0]).must().len() == 2
+
+# Bytes checked before they are trusted.
+test "is_valid: the empty document and a truncated one"
+    assert is_valid([5, 0, 0, 0, 0]) && !is_valid([5, 0, 0])
+
+# The decoding options a program starts from.
+test "strict: the default depth"
+    assert strict().max_depth == DEFAULT_MAX_DEPTH
+
+# A document built in code and encoded.
+test "encode: a document of an int32"
+    doc = Document(fields: [Field(name: "n", value: from_int(1))])
+    assert encode(doc).must() == [12, 0, 0, 0, 0x10, 0x6e, 0, 1, 0, 0, 0, 0]
+
+# A field read by its name.
+test "member: the value of a field"
+    doc = Document(fields: [Field(name: "n", value: from_int(1))])
+    assert member(doc, name: "n").must() == .int32(v: 1)
+
+# Whether a field is there.
+test "has_member: a field present and one absent"
+    doc = Document(fields: [Field(name: "n", value: from_int(1))])
+    assert has_member(doc, name: "n") && !has_member(doc, name: "m")
+
+# A field set in a copy of a document.
+test "with_member: a field added"
+    doc = with_member(Document(fields: []), name: "n", value: from_int(1))
+    assert names_of(doc) == ["n"]
+
+# A field taken out of a copy of a document.
+test "without_member: a field removed"
+    doc = Document(fields: [Field(name: "n", value: from_int(1))])
+    assert without_member(doc, name: "n").fields.len() == 0
+
+# The names of a document's fields.
+test "names_of: two names in order"
+    doc = Document(fields: [Field(name: "b", value: .null_value), Field(name: "a", value: .null_value)])
+    assert names_of(doc) == ["b", "a"]
+
+# A value deep in a document reached by a dotted path.
+test "value_at: a field of a nested document"
+    doc = parse_json("{\"user\": {\"name\": \"Ada\"}}").must()
+    assert value_at(doc, path: "user.name").must() == .text(v: "Ada")
+
+# The type of a value, by the name `$type` gives it.
+test "kind_of: an int64"
+    assert kind_of(.int64(v: 1)) == "long"
+
+# The type byte of a value.
+test "type_code_of: a string"
+    assert type_code_of(.text(v: "")) == 2
+
+# A string read out of a value.
+test "text_of: a string and a number"
+    assert text_of(.text(v: "a")).must() == "a" && text_of(.int32(v: 1)).is_err()
+
+# A count read out of a server's reply, whatever its numeric type.
+test "int_of: a double the server wrote for 1"
+    assert int_of(.double(v: 1.0)).must() == 1
+
+# A number read as a float.
+test "number_of: an int64"
+    assert number_of(.int64(v: 3)).must() == 3.0
+
+# A flag read out of a value.
+test "bool_of: true"
+    assert bool_of(.boolean(v: true)).must()
+
+# An embedded document read out of a value.
+test "document_of: an empty document"
+    assert document_of(.document(doc: Document(fields: []))).must().fields.len() == 0
+
+# An array's elements read out of a value.
+test "items_of: an array of two"
+    assert items_of(.array(items: [.null_value, .null_value])).must().len() == 2
+
+# An ObjectId read out of a value.
+test "object_id_of: the id of a document"
+    id = parse_object_id("57e193d7a9cc81b4027498b5").must()
+    assert object_id_of(.object_id(id: id)).must() == id
+
+# Binary data read out of a value.
+test "binary_of: two bytes"
+    assert binary_of(.binary(subtype: SUBTYPE_GENERIC, data: [1, 2])).must() == [1, 2]
+
+# A datetime read as an instant.
+test "instant_of: the epoch"
+    assert instant_of(.datetime(ms: 0)).must() == time.epoch()
+
+# An integer made a value of the narrowest type.
+test "from_int: a small number is an int32"
+    assert from_int(7) == .int32(v: 7)
+
+# An instant made a datetime.
+test "from_instant: the epoch"
+    assert from_instant(time.epoch()) == .datetime(ms: 0)
+
+# A regex made with its options in order.
+test "from_regex: options sorted"
+    assert from_regex(pattern: "^a", options: "xi") == .regex(pattern: "^a", options: "ix")
+
+# A maker of ids made once and kept.
+test "object_id_maker: a maker's five bytes"
+    maker = object_id_maker().must()
+    assert maker.random.len() == 5
+
+# An id built of its three parts.
+test "object_id_from_parts: the parts in order"
+    id = object_id_from_parts(seconds: 1, random: [2, 3, 4, 5, 6], counter: 7)
+    assert format_object_id(id) == "000000010203040506000007"
+
+# A new id for a document about to be inserted.
+test "next_object_id: an id made now"
+    maker @= object_id_maker().must()
+    id = next_object_id(@maker).must()
+    assert id.bytes.len() == 12
+
+# The least id of a second, for a query over the ids made since.
+test "object_id_at: the epoch"
+    assert format_object_id(object_id_at(time.epoch()).must()) == "000000000000000000000000"
+
+# An id read from its text.
+test "parse_object_id: 24 digits"
+    assert !parse_object_id("57e193d7a9cc81b4027498b5").is_err()
+
+# An id written as text.
+test "format_object_id: the lowercase digits"
+    id = object_id_from_bytes([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xab]).must()
+    assert format_object_id(id) == "0000000000000000000000ab"
+
+# An id made of its twelve bytes.
+test "object_id_from_bytes: twelve bytes"
+    assert !object_id_from_bytes([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]).is_err()
+
+# When an id was made.
+test "time_of: the second of an id"
+    id = parse_object_id("000000010000000000000000").must()
+    assert time.unix_seconds(time_of(id)) == 1
+
+# A text checked for an id.
+test "is_object_id: an id and a word"
+    assert is_object_id("57e193d7a9cc81b4027498b5") && !is_object_id("hello")
+
+# A price read as an exact decimal.
+test "parse_decimal128: a price"
+    assert format_decimal128(parse_decimal128("19.99").must()) == "19.99"
+
+# A decimal written as text.
+test "format_decimal128: a large exponent"
+    assert format_decimal128(parse_decimal128("1.23E+3").must()) == "1.23E+3"
+
+# A decimal of `big` stored exactly.
+test "from_decimal: a price"
+    v = from_decimal(big.parse_decimal("19.99").must()).must()
+    assert v == .decimal128(v: parse_decimal128("19.99").must())
+
+# A stored decimal read for arithmetic.
+test "decimal_of: a price"
+    v = from_decimal(big.parse_decimal("19.99").must()).must()
+    assert big.format_decimal(decimal_of(v).must()) == "19.99"
+
+# Two timestamps of the oplog ordered.
+test "compare_timestamps: by seconds, then by increment"
+    a = Timestamp(seconds: 1, increment: 5)
+    b = Timestamp(seconds: 1, increment: 6)
+    assert compare_timestamps(a: a, b: b) == -1 && compare_timestamps(a: b, b: a) == 1 && compare_timestamps(a: a, b: a) == 0
+
+# A UUID's bytes put in a legacy order.
+test "reordered: the C# order"
+    u = bytes.parse_hex("00112233445566778899aabbccddeeff").must()
+    assert bytes.format_hex(reordered(u, representation: .csharp_legacy)) == "33221100554477668899aabbccddeeff"
+
+# A UUID stored in the standard subtype.
+test "from_uuid: subtype 4"
+    u = bytes.parse_hex("00112233445566778899aabbccddeeff").must()
+    assert from_uuid(u, representation: .standard).must() == .binary(subtype: SUBTYPE_UUID, data: u)
+
+# A UUID read back.
+test "uuid_of: subtype 4"
+    u = bytes.parse_hex("00112233445566778899aabbccddeeff").must()
+    assert uuid_of(.binary(subtype: SUBTYPE_UUID, data: u), representation: .standard).must() == u
+
+# A reference to a document of another collection.
+test "from_dbref: a reference"
+    doc = from_dbref(DBRef(collection: "users", id: from_int(1), database: ""))
+    assert names_of(doc) == ["$ref", "$id"]
+
+# A reference read back.
+test "dbref_of: a reference's collection"
+    doc = Document(fields: [Field(name: "$ref", value: .text(v: "users")), Field(name: "$id", value: from_int(1))])
+    assert dbref_of(doc).must().collection == "users"
+
+# A document as canonical Extended JSON.
+test "to_json: an int32 keeps its type"
+    j = to_json(Document(fields: [Field(name: "n", value: from_int(1))]), mode: .canonical).must()
+    assert json.format(j).must() == "{\"n\":{\"$numberInt\":\"1\"}}"
+
+# A document read from Extended JSON.
+test "from_json: an ObjectId"
+    j = json.parse("{\"_id\": {\"$oid\": \"57e193d7a9cc81b4027498b5\"}}").must()
+    assert kind_of(member(from_json(j).must(), name: "_id").must()) == "objectId"
+
+# A document written as relaxed text, as a person reads it.
+test "format_json: relaxed"
+    doc = Document(fields: [Field(name: "n", value: from_int(1))])
+    assert format_json(doc, mode: .relaxed).must() == "{\"n\":1}"
+
+# A query written as JSON text.
+test "parse_json: a filter with an operator"
+    doc = parse_json("{\"age\": {\"$gte\": 18}}").must()
+    assert names_of(doc) == ["age"]
+
+# One value as Extended JSON.
+test "value_to_json: an int64"
+    assert json.format(value_to_json(.int64(v: 2), mode: .canonical).must()).must() == "{\"$numberLong\":\"2\"}"
+
+# One value read from Extended JSON.
+test "value_from_json: a date"
+    j = json.parse("{\"$date\": {\"$numberLong\": \"0\"}}").must()
+    assert value_from_json(j).must() == .datetime(ms: 0)
+
+# One field of a large reply read without decoding the rest.
+test "lookup: the field ok of a reply"
+    data = encode(Document(fields: [Field(name: "ok", value: .double(v: 1.0))])).must()
+    assert lookup(data, name: "ok").must() == .double(v: 1.0)
+
+# An embedding stored as a vector of floats.
+test "from_vector: two floats"
+    v = from_vector(.float32(values: [to_f32(0.5), to_f32(0.25)])).must()
+    assert kind_of(v) == "binData"
+
+# An embedding read back.
+test "vector_of: a vector of bytes"
+    v = from_vector(.int8(values: [1, 2])).must()
+    assert vector_of(v).must() == .int8(values: [1, 2])

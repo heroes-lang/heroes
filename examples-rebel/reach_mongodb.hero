@@ -1,0 +1,27 @@
+# Reaches Rebel's `mongodb`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It pings the server the environment
+# variable REBEL_MONGODB_URL names and prints what it is, or says that no
+# server was named.
+
+use <rebel>/mongodb
+use <rebel>/os
+
+function main()
+    match os.env("REBEL_MONGODB_URL")
+        .err _ => print("REBEL_MONGODB_URL names no server")
+        .ok url =>
+            match mongodb.parse_url(url)
+                .err e => print(f"{e.code}: {e.msg}")
+                .ok opts =>
+                    match mongodb.connect(opts)
+                        .err e => print(f"{e.code}: {e.msg}")
+                        .ok first =>
+                            c @= first
+                            info = mongodb.server_of(c)
+                            print(
+                                f"connected to {info.address}, replica set \"{info.replica_set}\", wire version {info.max_wire_version}"
+                            )
+
+                            match mongodb.close(@c)
+                                .ok _  => _ = 0
+                                .err e => print(f"{e.code}: {e.msg}")

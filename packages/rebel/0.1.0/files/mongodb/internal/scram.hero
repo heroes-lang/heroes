@@ -1,0 +1,284 @@
+# The client's side of SCRAM-SHA-1 and SCRAM-SHA-256 (RFC 5802, RFC 7677) as
+# MongoDB asks it, and SASLprep (RFC 4013) of a password. SCRAM-SHA-1 hashes
+# the password first as MongoDB's old scheme did, the hexadecimal MD5 of
+# `user:mongo:password`; SCRAM-SHA-256 prepares it with SASLprep, as the
+# drivers' authentication specification asks. The username is neither, and
+# `=` and `,` in it are escaped. No channel binding is offered. Nothing here
+# reads or writes the network.
+
+use bytes
+use crypto
+use mongodb/internal/stringprep
+use strings
+use unicode
+use unicode/normalize
+
+# The code of a password SASLprep refuses, and of a server's answer that is no
+# SCRAM.
+constant INVALID: str
+    "invalid"
+
+# The code of a server whose signature is wrong or that refuses the proof.
+constant PERMISSION: str
+    "permission"
+
+# The least iteration count accepted from a server, as the drivers'
+# specification asks.
+constant LEAST_ITERATIONS: i64
+    4096
+
+# A SCRAM exchange in progress.
+record Scram
+    # SHA-1 or SHA-256.
+    algorithm: crypto.Algorithm
+    # The client's nonce.
+    nonce: str
+    # The client's first message without its GS2 header: `n=user,r=nonce`.
+    first_bare: str
+    # The salted password, empty until the server's first message.
+    salted: [u8]
+    # The message both sides sign, empty until the server's first message.
+    auth_message: str
+
+# `s` prepared by SASLprep: B.1's code points left out, C.1.2's spaces
+# written as U+0020, the result in NFKC, then refused where it holds a
+# prohibited or unassigned code point or breaks the bidirectional rule.
+# Fails `invalid`, the message naming the rule and never `s`.
+function saslprep(s: str) -> str?
+    mapped: [i64] @= []
+
+    for c in s.chars()
+        n = unicode.code_point(c)
+
+        if stringprep.holds(stringprep.mapped_to_nothing(), n: n)
+            continue
+        else if stringprep.holds(stringprep.non_ascii_space(), n: n)
+            mapped @ mapped.push(32)
+        else
+            mapped @ mapped.push(n)
+
+    text = normalize.to_nfkc(unicode.from_code_points(mapped).must())
+    points = unicode.code_points(text)
+    prohibited = stringprep.prohibited()
+    unassigned = stringprep.unassigned()
+    right_to_left = stringprep.rand_al_cat()
+    left_to_right = stringprep.l_cat()
+    any_rtl: bool @= false
+    any_ltr: bool @= false
+
+    for n in points
+        if stringprep.holds(prohibited, n: n)
+            return fail(code: INVALID, msg: f"SASLprep prohibits the code point U+{to_upper_hex(n)} in a password")
+        else if stringprep.holds(unassigned, n: n)
+            return fail(
+                code: INVALID,
+                msg: f"SASLprep refuses U+{to_upper_hex(n)}, unassigned in Unicode 3.2, in a password"
+            )
+
+        if stringprep.holds(right_to_left, n: n)
+            any_rtl @ true
+
+        if stringprep.holds(left_to_right, n: n)
+            any_ltr @ true
+
+    if any_rtl
+        first = points[0]
+        last = points[points.len() - 1]
+
+        if any_ltr || !stringprep.holds(right_to_left, n: first) || !stringprep.holds(right_to_left, n: last)
+            return fail(
+                code: INVALID,
+                msg: "SASLprep's bidirectional rule refuses the password: right-to-left text must hold no left-to-right letter and begin and end right-to-left"
+            )
+    return ok(text)
+
+# `n` in uppercase hexadecimal, four digits at least.
+function to_upper_hex(n: i64) -> str
+    digits = "0123456789ABCDEF"
+    out: [str] @= []
+    left: i64 @= n
+
+    while left > 0 || out.len() < 4
+        k = left % 16
+        out @ out.push(digits.slice(from: k, to: k + 1))
+        left @ left / 16
+
+    reversed: [str] @= []
+    at: i64 @= out.len()
+
+    while at > 0
+        at @ at - 1
+        reversed @ reversed.push(out[at])
+
+    return join(reversed, "")
+
+# `user` with `=` written `=3D` and `,` written `=2C`, as SCRAM names a user.
+function escape_user(user: str) -> str
+    out: [str] @= []
+
+    for c in user.chars()
+        if c == "="
+            out @ out.push("=3D")
+        else if c == ","
+            out @ out.push("=2C")
+        else
+            out @ out.push(c)
+
+    return join(out, "")
+
+# The text of the 24 random bytes `random` as a nonce, base 64.
+function nonce_of(random: [u8]) -> str
+    return bytes.format_base64(random)
+
+# An exchange of `algorithm` opened by `user` with `nonce`.
+function start(algorithm: crypto.Algorithm, user: str, nonce: str) -> Scram
+    bare = "n=" + escape_user(user) + ",r=" + nonce
+    return Scram(algorithm: algorithm, nonce: nonce, first_bare: bare, salted: [], auth_message: "")
+
+# The client's first message, its GS2 header first: no channel binding.
+function client_first(s: Scram) -> str
+    return "n,," + s.first_bare
+
+# The attributes of a SCRAM message, `a=v` joined by `,`. Fails `invalid`
+# where a part has no `=` or names a key twice.
+function attributes(message: str) -> {str: str}?
+    found: {str: str} @= {}
+
+    for part in strings.split(s: message, sep: ",")
+        if part.len() < 2 || part[1] != '='
+            return fail(code: INVALID, msg: "a SCRAM message holds a part that is no attribute")
+        key = part.slice(from: 0, to: 1)
+
+        if !found[key].is_err()
+            return fail(code: INVALID, msg: f"a SCRAM message names the attribute {key} twice")
+        found[key] @ part.slice(from: 2, to: part.len())
+
+    return ok(found)
+
+# The password SCRAM salts for `user`: SHA-1's is MongoDB's digest of
+# `user:mongo:password`, SHA-256's the password prepared by SASLprep.
+function prepared(algorithm: crypto.Algorithm, user: str, password: str) -> [u8]?
+    return match algorithm
+        .sha1   => ok(bytes.from_text(bytes.format_hex(crypto.md5_text(user + ":mongo:" + password))))
+        .sha256 => ok(bytes.from_text(saslprep(password)?))
+        .md5 | .sha224 | .sha384 | .sha512 | .sha512_224 | .sha512_256 | .sha3_224 | .sha3_256 | .sha3_384 | .sha3_512 =>
+            fail(code: INVALID, msg: "SCRAM is spoken here with SHA-1 and SHA-256 alone")
+
+# `a` and `b`, of one length, combined by exclusive or.
+function xor(a: [u8], b: [u8]) -> [u8]
+    out: [u8] @= []
+
+    for k in range(from: 0, to: a.len())
+        out @ out.push(to_u8(to_i64(a[k]).must() ^ to_i64(b[k]).must()).must())
+
+    return out
+
+# The client's final message, its proof made from `password` and the server's
+# first message `server_first`; `s` keeps what `verify` needs. Fails
+# `invalid` where `server_first` is no SCRAM message, its nonce does not
+# extend the client's, or its iteration count is below `LEAST_ITERATIONS`.
+function client_final(@s: Scram, user: str, password: str, server_first: str) -> str?
+    found = attributes(server_first)?
+
+    if !found["m"].is_err()
+        return fail(code: INVALID, msg: "the server asks for a SCRAM extension this client does not know")
+    nonce = found["r"].default("")
+    salt_text = found["s"].default("")
+    count_text = found["i"].default("")
+
+    if nonce.len() <= s.nonce.len() || nonce.slice(from: 0, to: s.nonce.len()) != s.nonce
+        return fail(code: INVALID, msg: "the server's nonce does not extend the client's")
+
+    salt = match bytes.parse_base64(salt_text)
+        .ok got => got
+        .err _  => return fail(code: INVALID, msg: "the server's salt is not base 64")
+
+    iterations: i64 @= 0
+
+    for i in range(from: 0, to: count_text.len())
+        if count_text[i] < '0' || count_text[i] > '9' || i > 9
+            return fail(code: INVALID, msg: "the server's iteration count is no number")
+        iterations @ iterations * 10 + to_i64(count_text[i] - '0').must()
+
+    if iterations < LEAST_ITERATIONS
+        return fail(
+            code: INVALID,
+            msg: f"the server asks {iterations} iterations, below the {LEAST_ITERATIONS} this client accepts"
+        )
+    key = prepared(algorithm: s.algorithm, user: user, password: password)?
+    s.salted @ crypto.pbkdf2(s.algorithm, password: key, salt: salt, iterations: iterations, length: crypto.digest_size(s.algorithm))?
+    without_proof = "c=biws,r=" + nonce
+    s.auth_message @ s.first_bare + "," + server_first + "," + without_proof
+    client_key = crypto.hmac_text(s.algorithm, key: s.salted, s: "Client Key")
+
+    stored_key = match s.algorithm
+        .sha1 => crypto.sha1(client_key)
+        .md5 | .sha224 | .sha256 | .sha384 | .sha512 | .sha512_224 | .sha512_256 | .sha3_224 | .sha3_256 | .sha3_384 | .sha3_512 =>
+            crypto.sha256(client_key)
+
+    signature = crypto.hmac_text(s.algorithm, key: stored_key, s: s.auth_message)
+    return ok(without_proof + ",p=" + bytes.format_base64(xor(a: client_key, b: signature)))
+
+# Checks the server's final message: its signature must be the one the
+# salted password makes. Fails `permission` where the server reports an
+# error or signs otherwise, `invalid` where the message is no SCRAM.
+function verify(s: Scram, server_final: str) -> ()?
+    found = attributes(server_final)?
+
+    if !found["e"].is_err()
+        return fail(code: PERMISSION, msg: f"the server refuses the SCRAM proof: {found["e"].must()}")
+
+    sent = match bytes.parse_base64(found["v"].default(""))
+        .ok got => got
+        .err _  => return fail(code: INVALID, msg: "the server's signature is not base 64")
+
+    server_key = crypto.hmac_text(s.algorithm, key: s.salted, s: "Server Key")
+    expected = crypto.hmac_text(s.algorithm, key: server_key, s: s.auth_message)
+
+    if sent.len() == 0 || !crypto.equals_constant_time(a: sent, b: expected)
+        return fail(
+            code: PERMISSION,
+            msg: "the server's SCRAM signature is wrong: it does not know this password, or something stands between"
+        )
+    return ok()
+
+test "saslprep: the mappings, NFKC, the prohibited and unassigned code points and the bidirectional rule, as pymongo 4.20 answers"
+    soft_hyphen = unicode.from_code_point(0xad).must()
+    assert saslprep("I" + soft_hyphen + "X").must() == "IX"
+    assert saslprep("user").must() == "user"
+    assert saslprep("ª").must() == "a"
+    assert saslprep("Ⅸ").must() == "IX"
+    assert saslprep("a　b").must() == "a b"
+    assert saslprep("ﬁ").must() == "fi"
+    assert saslprep("ا1ب").must() == "ا1ب"
+    assert saslprep("\u{7}").is_err()
+    assert saslprep("ا1").is_err()
+    assert saslprep("aا").is_err()
+    assert saslprep("ȡ").is_err()
+    assert saslprep("").must() == ""
+
+test "escape_user: an equals sign and a comma"
+    assert escape_user("a=b,c") == "a=3Db=2Cc"
+
+test "client_final and verify: RFC 7677's own exchange of SCRAM-SHA-256"
+    s @= start(algorithm: .sha256, user: "user", nonce: "rOprNGfwEbeRWgbNEkqO")
+    assert client_first(s) == "n,,n=user,r=rOprNGfwEbeRWgbNEkqO"
+    server_first = "r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0,s=W22ZaJ0SNY7soEsUEjb6gQ==,i=4096"
+    final = client_final(@s, user: "user", password: "pencil", server_first: server_first).must()
+    assert final == "c=biws,r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0,p=dHzbZapWIk4jUhN+Ute9ytag9zjfMHgsqmmiz7AndVQ="
+    verify(s, server_final: "v=6rriTRBi23WpRR/wtup+mMhUZUn/dB5nLTJRsjl95G4=").must()
+    assert verify(s, server_final: "v=6rriTRBi23WpRR/wtup+mMhUZUn/dB5nLTJRsjl95G5=").is_err()
+    assert verify(s, server_final: "e=invalid-proof").is_err()
+
+test "client_final: a nonce that does not extend the client's, too few iterations, and an extension"
+    s @= start(algorithm: .sha256, user: "u", nonce: "abc")
+    assert client_final(@s, user: "u", password: "p", server_first: "r=xyz1,s=AAAA,i=4096").is_err()
+    assert client_final(@s, user: "u", password: "p", server_first: "r=abc1,s=AAAA,i=4095").is_err()
+    assert client_final(@s, user: "u", password: "p", server_first: "m=ext,r=abc1,s=AAAA,i=4096").is_err()
+
+test "prepared: MongoDB's digest of SCRAM-SHA-1"
+    key = prepared(algorithm: .sha1, user: "user", password: "pencil").must()
+    assert bytes.to_text(key).must() == "1c33006ec1ffd90f9cadcbcc0e118200"
+
+test "to_upper_hex: four digits and more"
+    assert to_upper_hex(7) == "0007" && to_upper_hex(0x10fffd) == "10FFFD"

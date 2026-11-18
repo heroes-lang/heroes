@@ -1,0 +1,149 @@
+# One connection to one server: a TCP connection of `net`, a TLS stream of
+# `tls`, or two pipes of a test's scripted server. A request is written whole
+# and its reply read whole, its length checked before the bytes are taken. A
+# write or a read that fails, and a reply that cannot be read, end the
+# connection, since the stream no longer stands at a message's start: every
+# later call fails `closed`.
+
+use bson
+use bytes
+use io
+use mongodb/internal/wire
+use net
+use tls
+
+# The code of a connection that is closed or that the server closed.
+constant CLOSED: str
+    "closed"
+
+# What carries the connection.
+variant Link
+    # A TCP connection of `net`, whose deadline `net` moves.
+    plain
+        # The connection.
+        conn: net.Conn
+    # A TLS stream of `tls`, whose deadline `tls` moves.
+    secured
+    # Two pipes of a test's scripted server, with no deadline.
+    scripted
+
+# A connection, which `close` ends.
+record Conn
+    # The stream requests are written to.
+    out: io.Stream
+    # The stream replies are read from; the same stream but in a test.
+    input: io.Stream
+    # What carries it.
+    link: Link
+    # The server, `host:port`, as a message names it.
+    target: str
+    # Whether it has ended.
+    ended: bool
+    # The most bytes a reply may hold.
+    most: i64
+
+# A connection to `host` at `port`, over TLS checked against `roots` (the
+# system's store where "") where `secure`, the TCP connection given up after
+# `timeout_ms`. Fails as `net.connect_timeout` and `tls.connect` fail.
+function open(host: str, port: i64, secure: bool, roots: str, timeout_ms: i64) -> Conn?
+    target = net.join_host_port(host, port: port)
+
+    if secure
+        stream = tls.connect(host: host, port: port, deadline_ms: 0, client: tls.Client(roots: roots, protocols: []))?
+        return ok(
+            Conn(out: stream, input: stream, link: .secured, target: target, ended: false, most: wire.DEFAULT_MOST)
+        )
+
+    wait = if timeout_ms > 0
+        timeout_ms
+    else
+        10000
+    c = net.connect_timeout(host, port: port, timeout_ms: wait, deadline_ms: 0)?
+    return ok(
+        Conn(out: c.stream, input: c.stream, link: .plain(conn: c), target: target, ended: false, most: wire.DEFAULT_MOST)
+    )
+
+# A connection over two pipes of a test: requests to `out`, replies from
+# `input`.
+function scripted(out: io.Stream, input: io.Stream) -> Conn
+    return Conn(out: out, input: input, link: .scripted, target: "scripted:0", ended: false, most: wire.DEFAULT_MOST)
+
+# Makes every read and write of `c` end by `ms` milliseconds from now; 0
+# takes the deadline away. Fails as `net.set_deadline` and `tls.set_deadline`
+# fail.
+function set_deadline(c: Conn lent, ms: i64) -> ()?
+    return match c.link
+        .plain p  => net.set_deadline(p.conn, ms: ms)
+        .secured  => tls.set_deadline(c.out, ms: ms)
+        .scripted => ok()
+
+# A failure of `c` with `code`, after which `c` has ended.
+function broken<T>(@c: Conn, code: str, what: str) -> T?
+    c.ended @ true
+    return fail(code: code, msg: f"{c.target}: {what}")
+
+# The body of the reply to the request `message`, whose id is `request_id`.
+# Fails `closed` where `c` has ended or ends, `timeout` where its deadline
+# passes, and as `wire.length_of` and `wire.body_of` fail; each of these ends
+# `c`.
+function exchange(@c: Conn, message: [u8], request_id: i64) -> bson.Document?
+    if c.ended
+        return fail(code: CLOSED, msg: f"the connection to {c.target} is closed")
+
+    match io.write(c.out, data: message)
+        .ok _  => _ = 0
+        .err e => return broken(c: @c, code: e.code, what: f"writing a request: {e.msg}")
+
+    head = match io.read_exact(c.input, count: 4)
+        .ok got => got
+        .err e  => return broken(c: @c, code: e.code, what: f"reading a reply: {e.msg}")
+
+    n = match wire.length_of(head, most: c.most)
+        .ok got => got
+        .err e  => return broken(c: @c, code: e.code, what: e.msg)
+
+    rest = match io.read_exact(c.input, count: n - 4)
+        .ok got => got
+        .err e  => return broken(c: @c, code: e.code, what: f"reading a reply: {e.msg}")
+
+    return match wire.body_of(bytes.concat([head, rest]), request_id: request_id)
+        .ok body => ok(body)
+        .err e   => broken(c: @c, code: e.code, what: e.msg)
+
+# Ends `c`, closing its stream. Fails `closed` where it has ended already.
+function close(@c: Conn) -> ()?
+    was = c.ended
+    c.ended @ true
+
+    if was && io.is_closed(c.out)
+        return fail(code: CLOSED, msg: f"the connection to {c.target} is closed already")
+
+    if io.is_closed(c.out)
+        return ok()
+    return io.close(@c.out)
+
+test "exchange: a reply read from a scripted server, then a reply cut short ends the connection"
+    requests = io.pipe().must()
+    replies = io.pipe().must()
+    c @= scripted(out: requests.writer, input: replies.reader)
+    body = bson.encode(bson.Document(fields: [bson.Field(name: "ok", value: .double(v: 1.0))])).must()
+    reply: [u8] @= wire.message(request_id: 0, body: body, sequences: [])
+    reply[8] @ 5
+    io.write(replies.writer, data: reply).must()
+    got = exchange(c: @c, message: wire.message(request_id: 5, body: body, sequences: []), request_id: 5).must()
+    assert bson.member(got, name: "ok").must() == .double(v: 1.0)
+    io.write(replies.writer, data: reply.slice(from: 0, to: 10)).must()
+    w @= replies.writer
+    io.close(@w).must()
+
+    match exchange(c: @c, message: wire.message(request_id: 6, body: body, sequences: []), request_id: 6)
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED
+
+    assert c.ended
+    assert exchange(c: @c, message: [], request_id: 7).is_err()
+    close(@c).must()
+    unread @= requests.reader
+    io.close(@unread).must()
+    left @= replies.reader
+    io.close(@left).must()

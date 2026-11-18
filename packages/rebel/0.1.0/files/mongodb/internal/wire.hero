@@ -1,0 +1,198 @@
+# MongoDB's wire protocol as this client speaks it: OP_MSG (opcode 2013),
+# every request one body document and, for a batch of writes, document
+# sequences beside it. A reply is read whole and checked before its body is
+# decoded: its length against the most a server may send, its opcode, the
+# request it answers, its flags, and its CRC-32C where the server sends one.
+# OP_COMPRESSED and the legacy OP_REPLY are refused, since this client asks
+# for neither.
+
+use bson
+use bytes
+use hash
+
+# The code of a reply that is no well-formed OP_MSG.
+constant INVALID: str
+    "invalid"
+
+# The code of a reply past the most a message may hold.
+constant LIMIT: str
+    "limit"
+
+# The code of a compressed or legacy reply.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# OP_MSG's opcode.
+constant OP_MSG: i64
+    2013
+
+# OP_COMPRESSED's opcode.
+constant OP_COMPRESSED: i64
+    2012
+
+# The legacy OP_REPLY's opcode.
+constant OP_REPLY: i64
+    1
+
+# The flag of a message whose last four bytes are its CRC-32C.
+constant CHECKSUM_PRESENT: i64
+    1
+
+# The flag of a message after which the sender sends more without being asked.
+constant MORE_TO_COME: i64
+    2
+
+# The most bytes a message may hold until the server says otherwise:
+# MongoDB's `maxMessageSizeBytes` since 3.6.
+constant DEFAULT_MOST: i64
+    48000000
+
+# Documents sent beside the body under one name: `documents` for an insert,
+# `updates` for an update, `deletes` for a delete.
+record Sequence
+    # The name the server reads them under.
+    identifier: str
+    # Each document, already encoded.
+    documents: [[u8]]
+
+# The bytes of an OP_MSG of request `request_id` holding `body`, encoded, and
+# `sequences`.
+function message(request_id: i64, body: [u8], sequences: [Sequence]) -> [u8]
+    out: [u8] @= []
+
+    for _ in range(from: 0, to: 4)
+        out @ out.push(0)
+
+    bytes.push_all(to: @out, from: bytes.encode_i32_le(to_i32(request_id).must()))
+    bytes.push_all(to: @out, from: bytes.encode_i32_le(0))
+    bytes.push_all(to: @out, from: bytes.encode_i32_le(to_i32(OP_MSG).must()))
+    bytes.push_all(to: @out, from: bytes.encode_u32_le(0))
+    out @ out.push(0)
+    bytes.push_all(to: @out, from: body)
+
+    for s in sequences
+        out @ out.push(1)
+        size: i64 @= 4 + s.identifier.len() + 1
+
+        for d in s.documents
+            size @ size + d.len()
+
+        bytes.push_all(to: @out, from: bytes.encode_i32_le(to_i32(size).must()))
+        bytes.push_text(to: @out, s: s.identifier)
+        out @ out.push(0)
+
+        for d in s.documents
+            bytes.push_all(to: @out, from: d)
+
+    length = bytes.encode_i32_le(to_i32(out.len()).must())
+
+    for k in range(from: 0, to: 4)
+        out[k] @ length[k]
+
+    return out
+
+# The length a message's first four bytes give, checked against `most`.
+# Fails `invalid` where it is below a header's 16 bytes, `limit` where it is
+# past `most`.
+function length_of(head: [u8], most: i64) -> i64?
+    n = to_i64(bytes.decode_i32_le(head, at: 0).must()).must()
+
+    if n < 21
+        return fail(code: INVALID, msg: f"a reply of {n} bytes, below the 21 of the least OP_MSG")
+    else if n > most
+        return fail(code: LIMIT, msg: f"a reply of {n} bytes, past the {most} a message may hold")
+    return ok(n)
+
+# The body document of the OP_MSG `data`, whole from its length on, that
+# answers `request_id`. Fails `invalid` where `data` is no OP_MSG answering it
+# or its checksum is wrong, `unsupported` where it is compressed or legacy.
+function body_of(data: [u8], request_id: i64) -> bson.Document?
+    if data.len() < 21
+        return fail(code: INVALID, msg: f"a reply of {data.len()} bytes, below the 21 of the least OP_MSG")
+    responds = to_i64(bytes.decode_i32_le(data, at: 8).must()).must()
+    opcode = to_i64(bytes.decode_i32_le(data, at: 12).must()).must()
+
+    if opcode == OP_COMPRESSED || opcode == OP_REPLY
+        return fail(code: UNSUPPORTED, msg: f"a reply of opcode {opcode}, which this client never asks for")
+    else if opcode != OP_MSG
+        return fail(code: INVALID, msg: f"a reply of opcode {opcode}, where OP_MSG's 2013 was expected")
+    else if responds != request_id
+        return fail(code: INVALID, msg: f"a reply to request {responds}, where request {request_id} was waiting")
+    flags = to_i64(bytes.decode_u32_le(data, at: 16).must()).must()
+    end: i64 @= data.len()
+
+    if flags & CHECKSUM_PRESENT != 0
+        end @ end - 4
+        sent = bytes.decode_u32_le(data, at: end).must()
+
+        if hash.crc32c(data.slice(from: 0, to: end)) != sent
+            return fail(code: INVALID, msg: "a reply whose CRC-32C disagrees with its bytes")
+
+    if flags & MORE_TO_COME != 0
+        return fail(code: INVALID, msg: "a reply that says more come unasked, which this client never asks for")
+    at: i64 @= 20
+    body: bson.Document @= bson.Document(fields: [])
+    bodies: i64 @= 0
+
+    while at < end
+        kind = data[at]
+
+        if kind == 0
+            got = bson.decode_next(data.slice(from: 0, to: end), from: at + 1, options: bson.strict())?
+            body @ got.doc
+            bodies @ bodies + 1
+            at @ got.next
+        else if kind == 1 && at + 5 <= end
+            size = to_i64(bytes.decode_i32_le(data, at: at + 1).must()).must()
+
+            if size < 5 || at + 1 + size > end
+                return fail(code: INVALID, msg: f"byte {at}: a document sequence of {size} bytes runs past the reply")
+            at @ at + 1 + size
+        else
+            return fail(code: INVALID, msg: f"byte {at}: a section of kind {kind}, where 0 or 1 was expected")
+
+    if bodies != 1
+        return fail(code: INVALID, msg: f"a reply of {bodies} bodies, where one was expected")
+    return ok(body)
+
+test "message: a body alone, and a body with a sequence of two documents"
+    empty: [u8] = [5, 0, 0, 0, 0]
+    m = message(request_id: 7, body: empty, sequences: [])
+    assert m.len() == 26 && bytes.decode_i32_le(m, at: 0).must() == 26
+    assert bytes.decode_i32_le(m, at: 4).must() == 7 && bytes.decode_i32_le(m, at: 12).must() == 2013
+    assert m[20] == 0 && m.slice(from: 21, to: 26) == empty
+    two = message(request_id: 8, body: empty, sequences: [Sequence(identifier: "documents", documents: [empty, empty])])
+    assert two.len() == 26 + 1 + 4 + 10 + 10
+    assert two[26] == 1 && bytes.decode_i32_le(two, at: 27).must() == 4 + 10 + 10
+
+test "length_of: below a header, the least message, and past the most"
+    assert length_of([20, 0, 0, 0], most: 100).is_err()
+    assert length_of([21, 0, 0, 0], most: 100).must() == 21
+
+    match length_of([101, 0, 0, 0], most: 100)
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+test "body_of: a reply to another request, a compressed one, a checksum right and wrong, and two bodies"
+    empty: [u8] = [5, 0, 0, 0, 0]
+    reply: [u8] @= message(request_id: 3, body: empty, sequences: [])
+    reply[8] @ 9
+    assert body_of(reply, request_id: 9).must().fields.len() == 0
+    assert body_of(reply, request_id: 3).is_err()
+    compressed: [u8] @= reply
+    compressed[12] @ 0xdc
+    compressed[13] @ 7
+
+    match body_of(compressed, request_id: 9)
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+    summed: [u8] @= reply
+    summed[16] @ 1
+    sum = hash.crc32c(bytes.concat([bytes.encode_i32_le(30), summed.slice(from: 4, to: summed.len())]))
+    summed @ bytes.concat([bytes.encode_i32_le(30), summed.slice(from: 4, to: summed.len()), bytes.encode_u32_le(sum)])
+    assert body_of(summed, request_id: 9).must().fields.len() == 0
+    summed[29] @ to_u8(to_i64(summed[29]).must() ^ 1).must()
+    assert body_of(summed, request_id: 9).is_err()
+    doubled: [u8] = bytes.concat([reply, [0, 5, 0, 0, 0, 0]])
+    assert body_of(doubled, request_id: 9).is_err()

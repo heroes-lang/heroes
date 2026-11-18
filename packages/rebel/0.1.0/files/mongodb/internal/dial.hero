@@ -1,0 +1,345 @@
+# A server reached, greeted and logged in to: the SRV name resolved, the
+# seeds tried in order, each greeted with `hello`, the first that suits the
+# read preference kept, and the user logged in with SCRAM-SHA-256,
+# SCRAM-SHA-1 or PLAIN. A server that is not the one wanted tells which is in
+# its reply (`primary`, `hosts`), and those are tried after the seeds. One
+# connection to one server is the whole client: no pool and no monitor.
+
+use bson
+use bytes
+use crypto
+use dns
+use mongodb/internal/conn
+use mongodb/internal/replies
+use mongodb/internal/scram
+use mongodb/internal/session
+use mongodb/internal/uri
+use net
+use os
+
+# The code of no server that suits.
+constant NOT_FOUND: str
+    "not_found"
+
+constant INVALID: str
+    "invalid"
+
+constant PERMISSION: str
+    "permission"
+
+# The database credentials are checked in: the one named, `$external` for
+# PLAIN, else the connection's database, else `admin`.
+function source_of(s: uri.Settings) -> str
+    if s.auth_source != ""
+        return s.auth_source
+    else if s.mechanism == "PLAIN"
+        return "$external"
+    else if s.database != ""
+        return s.database
+    return "admin"
+
+# The name of the system this program runs on, as the handshake says it.
+function system_name() -> str
+    return match os.system()
+        .darwin  => "Darwin"
+        .linux   => "Linux"
+        .windows => "Windows"
+        .other   => "unknown"
+
+# The handshake's body: `hello`, or the legacy `isMaster` where `legacy`,
+# with the client's metadata and, where a user logs in by a mechanism the
+# server chooses, the question of which mechanisms it holds for that user.
+function hello_body(s: uri.Settings, legacy: bool) -> bson.Document
+    name = if legacy
+        "isMaster"
+    else
+        "hello"
+    driver = bson.Document(
+        fields: [bson.Field(name: "name", value: .text(v: "rebel-mongodb")), bson.Field(name: "version", value: .text(v: "0.1.0"))]
+    )
+    system = bson.Document(fields: [bson.Field(name: "type", value: .text(v: system_name()))])
+    client: [bson.Field] @= [
+        bson.Field(name: "driver", value: .document(doc: driver))
+        bson.Field(name: "os", value: .document(doc: system))
+        bson.Field(name: "platform", value: .text(v: "Heroes"))
+    ]
+
+    if s.app_name != ""
+        application = bson.Document(fields: [bson.Field(name: "name", value: .text(v: s.app_name))])
+        client @ client.push(bson.Field(name: "application", value: .document(doc: application)))
+    fields: [bson.Field] @= [
+        bson.Field(name: name, value: bson.from_int(1))
+        bson.Field(name: "client", value: .document(doc: bson.Document(fields: client)))
+        bson.Field(name: "compression", value: .array(items: []))
+    ]
+
+    if s.username != "" && s.mechanism == ""
+        fields @ fields.push(bson.Field(name: "saslSupportedMechs", value: .text(v: source_of(s) + "." + s.username)))
+    return bson.Document(fields: fields)
+
+# Greets the server of `s` and learns what it says of itself; a server that
+# knows no `hello` is asked `isMaster`.
+function handshake(@s: session.State) -> ()?
+    reply = match session.command(@s, database: "admin", body: hello_body(s.settings, legacy: false), kind: session.NO_SESSION, txn: 0, sequences: [])
+        .ok got => got
+        .err e =>
+            if replies.code_of(e.msg).default(0) != 59
+                return fail(code: e.code, msg: e.msg)
+            session.command(@s, database: "admin", body: hello_body(s.settings, legacy: true), kind: session.NO_SESSION, txn: 0, sequences: [])?
+
+    session.learn(s: @s, hello: reply)
+    return ok()
+
+# The bytes of a binary field `name` of `doc`.
+function payload_of(doc: bson.Document, name: str) -> [u8]?
+    return bson.binary_of(bson.member(doc, name: name)?)
+
+# Whether `doc`'s field `done` is true.
+function is_done(doc: bson.Document) -> bool
+    return match bson.member(doc, name: "done")
+        .ok v  => bson.bool_of(v).default(false)
+        .err _ => false
+
+# The SASL command `name` of `fields` on the credentials' database.
+function sasl(@s: session.State, fields: [bson.Field]) -> bson.Document?
+    return session.command(
+        @s,
+        database: source_of(s.settings),
+        body: bson.Document(fields: fields),
+        kind: session.NO_SESSION,
+        txn: 0,
+        sequences: []
+    )
+
+# Logs the user of `s`'s settings in, where one is named. Fails `permission`
+# where the server refuses the credentials, and as `scram` fails.
+function authenticate(@s: session.State) -> ()?
+    if s.settings.username == ""
+        return ok()
+    user = s.settings.username
+    password = s.settings.password
+    mechanism: str @= s.settings.mechanism
+
+    if mechanism == ""
+        mechanism @ "SCRAM-SHA-1"
+
+        match bson.member(s.hello, name: "saslSupportedMechs")
+            .ok v =>
+                for m in bson.items_of(v).default([])
+                    if bson.text_of(m).default("") == "SCRAM-SHA-256"
+                        mechanism @ "SCRAM-SHA-256"
+            .err _ => _ = 0
+
+    if mechanism == "PLAIN"
+        payload: [u8] @= [0]
+        bytes.push_text(to: @payload, s: user)
+        payload @ payload.push(0)
+        bytes.push_text(to: @payload, s: password)
+        reply = sasl(s: @s, fields: [bson.Field(name: "saslStart", value: bson.from_int(1)), bson.Field(name: "mechanism", value: .text(v: "PLAIN")), bson.Field(name: "payload", value: .binary(subtype: 0, data: payload)), bson.Field(name: "autoAuthorize", value: bson.from_int(1))])?
+
+        if !is_done(reply)
+            return fail(code: PERMISSION, msg: "the server did not end the PLAIN login")
+        return ok()
+
+    algorithm: crypto.Algorithm = if mechanism == "SCRAM-SHA-256"
+        .sha256
+    else
+        .sha1
+    exchange @= scram.start(algorithm: algorithm, user: user, nonce: scram.nonce_of(os.random_bytes(24)?))
+    options = bson.Document(fields: [bson.Field(name: "skipEmptyExchange", value: .boolean(v: true))])
+    first = sasl(s: @s, fields: [bson.Field(name: "saslStart", value: bson.from_int(1)), bson.Field(name: "mechanism", value: .text(v: mechanism)), bson.Field(name: "payload", value: .binary(subtype: 0, data: bytes.from_text(scram.client_first(exchange)))), bson.Field(name: "autoAuthorize", value: bson.from_int(1)), bson.Field(name: "options", value: .document(doc: options))])?
+    conversation = bson.member(first, name: "conversationId")?
+
+    server_first = match bytes.to_text(payload_of(first, name: "payload")?)
+        .ok t  => t
+        .err _ => return fail(code: INVALID, msg: "the server's first SCRAM message is not UTF-8")
+
+    final = scram.client_final(@exchange, user: user, password: password, server_first: server_first)?
+    second = sasl(s: @s, fields: [bson.Field(name: "saslContinue", value: bson.from_int(1)), bson.Field(name: "conversationId", value: conversation), bson.Field(name: "payload", value: .binary(subtype: 0, data: bytes.from_text(final)))])?
+
+    server_final = match bytes.to_text(payload_of(second, name: "payload")?)
+        .ok t  => t
+        .err _ => return fail(code: INVALID, msg: "the server's last SCRAM message is not UTF-8")
+
+    scram.verify(exchange, server_final: server_final)?
+
+    if !is_done(second)
+        last = sasl(s: @s, fields: [bson.Field(name: "saslContinue", value: bson.from_int(1)), bson.Field(name: "conversationId", value: conversation), bson.Field(name: "payload", value: .binary(subtype: 0, data: []))])?
+
+        if !is_done(last)
+            return fail(code: PERMISSION, msg: "the server did not end the SCRAM login")
+    return ok()
+
+# A greeted connection to `address`.
+function open_at(settings: uri.Settings, address: uri.Address) -> session.State?
+    c = conn.open(host: address.host, port: address.port, secure: settings.tls, roots: settings.tls_roots, timeout_ms: settings.connect_timeout_ms)?
+    s @= session.over(c: c, settings: settings, address: address)?
+
+    match handshake(@s)
+        .ok _ => return ok(s)
+        .err e =>
+            match conn.close(@s.conn)
+                .ok _  => _ = 0
+                .err _ => _ = 0
+
+            return fail(code: e.code, msg: e.msg)
+
+# Whether the server of `s` suits `mode`: any mode on a standalone or a
+# mongos; a writable primary for `primary` and `primaryPreferred`, a
+# secondary for `secondary` and `secondaryPreferred`, either for `nearest`.
+function suits(s: session.State lent, mode: str) -> bool
+    secondary = match bson.member(s.hello, name: "secondary")
+        .ok v  => bson.bool_of(v).default(false)
+        .err _ => false
+
+    if s.set_name == "" && (s.is_primary || s.is_mongos)
+        return true
+    else if mode == "primary" || mode == "primaryPreferred"
+        return s.is_primary
+    else if mode == "secondary" || mode == "secondaryPreferred"
+        return secondary
+    return s.is_primary || secondary
+
+# The `host:port` texts of `doc`'s field `name`, a list or one text.
+function hosts_named(doc: bson.Document, name: str) -> [uri.Address]
+    found: [uri.Address] @= []
+
+    match bson.member(doc, name: name)
+        .ok v =>
+            texts: [str] @= []
+
+            match bson.text_of(v)
+                .ok one => texts @ [one]
+                .err _ =>
+                    for item in bson.items_of(v).default([])
+                        texts @ texts.push(bson.text_of(item).default(""))
+
+            for t in texts
+                match uri.address_of(t)
+                    .ok a  => found @ found.push(a)
+                    .err _ => _ = 0
+        .err _ => _ = 0
+
+    return found
+
+# Closes `s`, whatever its connection answers.
+function drop(@s: session.State)
+    match conn.close(@s.conn)
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+# A client of `settings`: the SRV name resolved, then the first server that
+# suits the read preference, greeted and logged in to. Fails `not_found`
+# where no server suits, `permission` where the login is refused, and with
+# the code of the last server's failure where none answers.
+function select(settings: uri.Settings) -> session.State?
+    resolved = if settings.srv_name != ""
+        uri.resolve_srv(settings, resolver: dns.system()?)?
+    else
+        settings
+    mode = resolved.read_preference
+    queue: [uri.Address] @= resolved.hosts
+    tried: [str] @= []
+    last_code: str @= NOT_FOUND
+    last_message: str @= "no host to try"
+    fallback: [uri.Address] @= []
+    k: i64 @= 0
+
+    while k < queue.len()
+        a = queue[k]
+        k @ k + 1
+        key = net.join_host_port(a.host, port: a.port)
+        seen: bool @= false
+
+        for t in tried
+            if t == key
+                seen @ true
+
+        if seen
+            continue
+        tried @ tried.push(key)
+
+        s @= match open_at(settings: resolved, address: a)
+            .ok got => got
+            .err e =>
+                last_code @ e.code
+                last_message @ e.msg
+                continue
+
+        if resolved.replica_set != "" && s.set_name != resolved.replica_set
+            last_code @ NOT_FOUND
+            last_message @ f"{key} belongs to the replica set \"{s.set_name}\", not \"{resolved.replica_set}\""
+            drop(s: @s)
+            continue
+
+        if resolved.direct || suits(s, mode: mode)
+            match authenticate(@s)
+                .ok _ => return ok(s)
+                .err e =>
+                    drop(s: @s)
+                    return fail(code: e.code, msg: e.msg)
+
+        if fallback.len() == 0 && (mode == "primaryPreferred" || mode == "secondaryPreferred")
+            fallback @ [a]
+
+        for other in hosts_named(s.hello, name: "primary")
+            queue @ queue.push(other)
+
+        for other in hosts_named(s.hello, name: "hosts")
+            queue @ queue.push(other)
+
+        last_code @ NOT_FOUND
+        last_message @ f"{key} is no server the read preference {mode} asks for"
+        drop(s: @s)
+
+    if fallback.len() > 0
+        s @= open_at(settings: resolved, address: fallback[0])?
+
+        match authenticate(@s)
+            .ok _ => return ok(s)
+            .err e =>
+                drop(s: @s)
+                return fail(code: e.code, msg: e.msg)
+    return fail(code: last_code, msg: last_message)
+
+# `s` connected again, to the server its settings select, its session, its
+# transaction numbers and its cluster time kept: what a retry stands on.
+function reopen(@s: session.State) -> ()?
+    drop(s: @s)
+    fresh @= select(s.settings)?
+    fresh.lsid @ s.lsid
+    fresh.txn_number @ s.txn_number
+    fresh.transaction @ s.transaction
+    fresh.txn_read_concern @ s.txn_read_concern
+    fresh.txn_write_concern @ s.txn_write_concern
+    fresh.txn_max_commit_ms @ s.txn_max_commit_ms
+    fresh.cluster_time @ s.cluster_time
+    fresh.maker @ s.maker
+    s @ fresh
+    return ok()
+
+test "source_of: the source named, PLAIN's, the database, and admin"
+    settings @= uri.defaults("h")
+    assert source_of(settings) == "admin"
+    settings.database @ "app"
+    assert source_of(settings) == "app"
+    settings.mechanism @ "PLAIN"
+    assert source_of(settings) == "$external"
+    settings.auth_source @ "users"
+    assert source_of(settings) == "users"
+
+test "hello_body: the metadata, the application's name, and the question of mechanisms"
+    settings @= uri.defaults("h")
+    settings.app_name @ "inventory"
+    settings.username @ "ada"
+    body = hello_body(settings, legacy: false)
+    assert bson.names_of(body) == ["hello", "client", "compression", "saslSupportedMechs"]
+    assert bson.value_at(body, path: "client.application.name").must() == .text(v: "inventory")
+    assert bson.member(body, name: "saslSupportedMechs").must() == .text(v: "admin.ada")
+    assert bson.names_of(hello_body(uri.defaults("h"), legacy: true)) == ["isMaster", "client", "compression"]
+
+test "hosts_named: one text, a list, and a name that is none"
+    doc = bson.parse_json("{\"primary\": \"a:1\", \"hosts\": [\"b:2\", \"[::1]:3\"]}").must()
+    assert hosts_named(doc, name: "primary") == [uri.Address(host: "a", port: 1)]
+    assert hosts_named(doc, name: "hosts").len() == 2
+    assert hosts_named(doc, name: "none").len() == 0

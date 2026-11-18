@@ -1,0 +1,450 @@
+# Bytes read into the flat events of one BSON document, by bsonspec.org's
+# grammar and nothing looser: every length is checked against the bytes of
+# the document that holds it before anything is taken, every name and string
+# must be UTF-8, a boolean must be 0 or 1, and a code with scope's lengths
+# must agree. The documents still open wait on a stack this module holds, so
+# no nesting reaches the machine's stack, and the nesting allowed is a number
+# the caller gives. Every pass of the loop moves past at least one byte.
+
+use bson/internal/event
+use bson/internal/floats
+use bytes
+
+# The code of bytes that are not one well-formed BSON document.
+constant INVALID: str
+    "invalid"
+
+# The code of a name or a string whose bytes are not UTF-8.
+constant NOT_TEXT: str
+    "not_text"
+
+# What `read` answers.
+record Read
+    # The document's events, its own first, in the order the bytes hold them.
+    events: [event.Event]
+    # The byte index past the document.
+    next: i64
+
+# A document still open: its event, where its closing zero stands, and for a
+# scope where the whole code with scope ends.
+record Open
+    # The index of its event in the events.
+    index: i64
+    # The byte index of its closing zero.
+    end: i64
+    # The byte index past the code with scope that holds it, -1 for a
+    # document or an array.
+    after: i64
+
+# A string read: its text and the byte index past it.
+record Scanned
+    # The text.
+    text: str
+    # The byte index past the string's closing zero.
+    next: i64
+
+# The `i32` whose four bytes begin at `at`, which the caller has checked.
+function i32_at(data: [u8] lent, at: i64) -> i64
+    return to_i64(bytes.decode_i32_le(data, at: at).must()).must()
+
+# The `u32` whose four bytes begin at `at`, which the caller has checked.
+function u32_at(data: [u8] lent, at: i64) -> i64
+    return to_i64(bytes.decode_u32_le(data, at: at).must()).must()
+
+# Fails `invalid` where `count` bytes from `at` would pass `limit`, naming
+# `what` and the element that began at `start`.
+function need(at: i64, count: i64, limit: i64, start: i64, what: str) -> ()?
+    if at + count > limit
+        return fail(code: INVALID, msg: f"byte {start}: {what} runs past the end of its document")
+    return ok()
+
+# The bytes from `from` to `to` as text, each byte that is not UTF-8 read as
+# U+FFFD where `lossy`. Fails `not_text` where they are not UTF-8 and not
+# `lossy`, naming `what` and the byte `start`.
+function text_of(data: [u8] lent, from: i64, to: i64, start: i64, what: str, lossy: bool) -> str?
+    if lossy
+        return ok(bytes.to_text_lossy(data.slice(from: from, to: to)))
+
+    return match bytes.to_text(data.slice(from: from, to: to))
+        .ok t  => ok(t)
+        .err _ => fail(code: NOT_TEXT, msg: f"byte {start}: {what} is not UTF-8")
+
+# The C string that begins at `at` and ends before `limit`: bytes up to a zero.
+function cstring_at(data: [u8] lent, at: i64, limit: i64, start: i64, what: str, lossy: bool) -> Scanned?
+    k: i64 @= at
+
+    while k < limit
+        if data[k] == 0
+            return ok(
+                Scanned(text: text_of(data, from: at, to: k, start: start, what: what, lossy: lossy)?, next: k + 1)
+            )
+        k @ k + 1
+
+    return fail(code: INVALID, msg: f"byte {start}: {what} has no closing zero before the end of its document")
+
+# The string that begins at `at`, its length first, and ends by `limit`.
+function string_at(data: [u8] lent, at: i64, limit: i64, start: i64, lossy: bool) -> Scanned?
+    need(at: at, count: 4, limit: limit, start: start, what: "a string's length")?
+    n = i32_at(data, at: at)
+
+    if n < 1
+        return fail(code: INVALID, msg: f"byte {start}: a string's length is {n}, where its closing zero alone is 1")
+
+    need(at: at + 4, count: n, limit: limit, start: start, what: f"a string of {n} bytes")?
+
+    if data[at + 3 + n] != 0
+        return fail(code: INVALID, msg: f"byte {start}: a string of {n} bytes does not end with a zero byte")
+    return ok(
+        Scanned(text: text_of(data, from: at + 4, to: at + 3 + n, start: start, what: "a string", lossy: lossy)?, next: at + 4 + n)
+    )
+
+# Puts `f` on the stack of open documents, which holds `top` of them.
+function open_frame(@frames: [Open], top: i64, f: Open)
+    if top == frames.len()
+        frames @ frames.push(f)
+    else
+        frames[top] @ f
+
+# The document that begins at `from` of `data`, as events. Fails `invalid`
+# where the bytes are no well-formed document or nest deeper than
+# `max_depth` (the top document is 1 deep), `not_text` where a name or a
+# string is not UTF-8 and not `lossy`; each message opens with the byte index
+# of the element.
+function read(data: [u8], from: i64, max_depth: i64, lossy: bool) -> Read?
+    if from + 4 > data.len()
+        return fail(code: INVALID, msg: f"byte {from}: the data ends where a document's length was expected")
+    size = i32_at(data, at: from)
+
+    if size < 5
+        return fail(code: INVALID, msg: f"byte {from}: a document's length is {size}, below the 5 of an empty one")
+    else if from + size > data.len()
+        return fail(code: INVALID, msg: f"byte {from}: a document of {size} bytes, where {data.len() - from} remain")
+
+    events: [event.Event] @= [event.of_container(kind: event.DOCUMENT, name: "", count: 0, code: "")]
+    frames: [Open] @= [Open(index: 0, end: from + size - 1, after: -1)]
+    top: i64 @= 1
+    at: i64 @= from + 4
+
+    while top > 0
+        f = frames[top - 1]
+
+        if at == f.end
+            if data[at] != 0
+                return fail(
+                    code: INVALID,
+                    msg: f"byte {at}: a document ends with {data[at]} where a zero byte was expected"
+                )
+            at @ at + 1
+            top @ top - 1
+
+            if f.after >= 0 && at != f.after
+                return fail(code: INVALID, msg: f"byte {at}: a code with scope's length disagrees with its scope's")
+            continue
+        start = at
+        kind = to_i64(data[at]).must()
+
+        if kind == 0
+            return fail(code: INVALID, msg: f"byte {start}: a document ends {f.end - at} bytes before its length says")
+        named = cstring_at(data, at: at + 1, limit: f.end, start: start, what: "an element's name", lossy: lossy)?
+        name = named.text
+        at @ named.next
+        events[f.index].count @ events[f.index].count + 1
+        limit = f.end
+
+        if kind == event.DOUBLE
+            need(at: at, count: 8, limit: limit, start: start, what: "a double")?
+            events @ events.push(event.of_double(name: name, x: floats.decode(data, at: at)))
+            at @ at + 8
+        else if kind == event.STRING || kind == event.JAVASCRIPT || kind == event.SYMBOL
+            s = string_at(data, at: at, limit: limit, start: start, lossy: lossy)?
+            events @ events.push(event.of_text(kind: kind, name: name, text: s.text))
+            at @ s.next
+        else if kind == event.DOCUMENT || kind == event.ARRAY
+            need(at: at, count: 4, limit: limit, start: start, what: "a document's length")?
+            inner = i32_at(data, at: at)
+
+            if inner < 5
+                return fail(
+                    code: INVALID,
+                    msg: f"byte {start}: a document's length is {inner}, below the 5 of an empty one"
+                )
+
+            need(at: at, count: inner, limit: limit, start: start, what: f"a document of {inner} bytes")?
+
+            if top + 1 > max_depth
+                return fail(code: INVALID, msg: f"byte {start}: the documents nest deeper than {max_depth}")
+            events @ events.push(event.of_container(kind: kind, name: name, count: 0, code: ""))
+            open_frame(frames: @frames, top: top, f: Open(index: events.len() - 1, end: at + inner - 1, after: -1))
+            top @ top + 1
+            at @ at + 4
+        else if kind == event.BINARY
+            need(at: at, count: 5, limit: limit, start: start, what: "a binary's length")?
+            n = i32_at(data, at: at)
+
+            if n < 0
+                return fail(code: INVALID, msg: f"byte {start}: a binary's length is {n}")
+            subtype = to_i64(data[at + 4]).must()
+            need(at: at + 5, count: n, limit: limit, start: start, what: f"a binary of {n} bytes")?
+
+            if subtype == 2
+                if n < 4 || i32_at(data, at: at + 5) != n - 4
+                    return fail(
+                        code: INVALID,
+                        msg: f"byte {start}: a binary of subtype 2 whose inner length is not its length less 4"
+                    )
+                events @ events.push(
+                    event.of_data(kind: kind, name: name, data: data.slice(from: at + 9, to: at + 5 + n), subtype: subtype)
+                )
+            else
+                events @ events.push(
+                    event.of_data(kind: kind, name: name, data: data.slice(from: at + 5, to: at + 5 + n), subtype: subtype)
+                )
+            at @ at + 5 + n
+        else if kind == event.UNDEFINED || kind == event.NULL_VALUE || kind == event.MIN_KEY || kind == event.MAX_KEY
+            events @ events.push(event.of_kind(kind: kind, name: name))
+        else if kind == event.OBJECT_ID
+            need(at: at, count: 12, limit: limit, start: start, what: "an ObjectId")?
+            events @ events.push(
+                event.of_data(kind: kind, name: name, data: data.slice(from: at, to: at + 12), subtype: 0)
+            )
+            at @ at + 12
+        else if kind == event.BOOLEAN
+            need(at: at, count: 1, limit: limit, start: start, what: "a boolean")?
+
+            if data[at] > 1
+                return fail(code: INVALID, msg: f"byte {start}: a boolean holds {data[at]}, where only 0 and 1 are")
+            events @ events.push(event.of_integer(kind: kind, name: name, n: to_i64(data[at]).must()))
+            at @ at + 1
+        else if kind == event.DATETIME || kind == event.INT64
+            need(at: at, count: 8, limit: limit, start: start, what: "a 64-bit integer")?
+            events @ events.push(event.of_integer(kind: kind, name: name, n: bytes.decode_i64_le(data, at: at).must()))
+            at @ at + 8
+        else if kind == event.REGEX
+            pattern = cstring_at(data, at: at, limit: limit, start: start, what: "a regex's pattern", lossy: lossy)?
+            options = cstring_at(data, at: pattern.next, limit: limit, start: start, what: "a regex's options", lossy: lossy)?
+            events @ events.push(event.of_regex(name: name, pattern: pattern.text, options: options.text))
+            at @ options.next
+        else if kind == event.DB_POINTER
+            namespace = string_at(data, at: at, limit: limit, start: start, lossy: lossy)?
+            need(at: namespace.next, count: 12, limit: limit, start: start, what: "a pointer's ObjectId")?
+            events @ events.push(
+                event.of_pointer(name: name, namespace: namespace.text, id: data.slice(from: namespace.next, to: namespace.next + 12))
+            )
+            at @ namespace.next + 12
+        else if kind == event.JAVASCRIPT_WITH_SCOPE
+            need(at: at, count: 4, limit: limit, start: start, what: "a code with scope's length")?
+            total = i32_at(data, at: at)
+
+            if total < 14
+                return fail(
+                    code: INVALID,
+                    msg: f"byte {start}: a code with scope's length is {total}, below the 14 of the least"
+                )
+
+            need(at: at, count: total, limit: limit, start: start, what: f"a code with scope of {total} bytes")?
+            code = string_at(data, at: at + 4, limit: at + total, start: start, lossy: lossy)?
+            need(at: code.next, count: 5, limit: at + total, start: start, what: "a code with scope's scope")?
+            inner = i32_at(data, at: code.next)
+
+            if inner < 5 || code.next + inner != at + total
+                return fail(code: INVALID, msg: f"byte {start}: a code with scope's length disagrees with its scope's")
+
+            if top + 1 > max_depth
+                return fail(code: INVALID, msg: f"byte {start}: the documents nest deeper than {max_depth}")
+            events @ events.push(event.of_container(kind: kind, name: name, count: 0, code: code.text))
+            open_frame(
+                frames: @frames,
+                top: top,
+                f: Open(index: events.len() - 1, end: at + total - 1, after: at + total)
+            )
+            top @ top + 1
+            at @ code.next + 4
+        else if kind == event.INT32
+            need(at: at, count: 4, limit: limit, start: start, what: "an int32")?
+            events @ events.push(event.of_integer(kind: kind, name: name, n: i32_at(data, at: at)))
+            at @ at + 4
+        else if kind == event.TIMESTAMP
+            need(at: at, count: 8, limit: limit, start: start, what: "a timestamp")?
+            events @ events.push(
+                event.of_timestamp(name: name, seconds: u32_at(data, at: at + 4), increment: u32_at(data, at: at))
+            )
+            at @ at + 8
+        else if kind == event.DECIMAL128
+            need(at: at, count: 16, limit: limit, start: start, what: "a Decimal128")?
+            events @ events.push(
+                event.of_data(kind: kind, name: name, data: data.slice(from: at, to: at + 16), subtype: 0)
+            )
+            at @ at + 16
+        else
+            return fail(code: INVALID, msg: f"byte {start}: the type {kind} is no BSON type")
+
+    return ok(Read(events: events, next: at))
+
+# Where an element begins and ends in a document's bytes.
+record Span
+    # The byte index of its type.
+    start: i64
+    # The byte index past it.
+    end: i64
+
+# The byte index past the value of `kind` that begins at `at` and ends by
+# `limit`, its lengths checked and its contents not read. Fails `invalid` as
+# `read` fails on a length.
+function value_end(data: [u8] lent, kind: i64, at: i64, limit: i64, start: i64) -> i64?
+    fixed: i64 = if kind == event.DOUBLE || kind == event.DATETIME || kind == event.INT64 || kind == event.TIMESTAMP
+        8
+    else if kind == event.INT32
+        4
+    else if kind == event.OBJECT_ID
+        12
+    else if kind == event.DECIMAL128
+        16
+    else if kind == event.BOOLEAN
+        1
+    else if kind == event.UNDEFINED || kind == event.NULL_VALUE || kind == event.MIN_KEY || kind == event.MAX_KEY
+        0
+    else
+        -1
+
+    if fixed >= 0
+        need(at: at, count: fixed, limit: limit, start: start, what: event.type_name(kind))?
+        return ok(at + fixed)
+    else if kind == event.STRING || kind == event.JAVASCRIPT || kind == event.SYMBOL || kind == event.DB_POINTER
+        need(at: at, count: 4, limit: limit, start: start, what: "a string's length")?
+        n = i32_at(data, at: at)
+
+        if n < 1
+            return fail(code: INVALID, msg: f"byte {start}: a string's length is {n}")
+
+        tail: i64 = if kind == event.DB_POINTER
+            12
+        else
+            0
+        need(at: at + 4, count: n + tail, limit: limit, start: start, what: f"a string of {n} bytes")?
+        return ok(at + 4 + n + tail)
+    else if kind == event.DOCUMENT || kind == event.ARRAY || kind == event.JAVASCRIPT_WITH_SCOPE
+        need(at: at, count: 4, limit: limit, start: start, what: "a document's length")?
+        n = i32_at(data, at: at)
+
+        if n < 5
+            return fail(code: INVALID, msg: f"byte {start}: a document's length is {n}")
+        need(at: at, count: n, limit: limit, start: start, what: f"a document of {n} bytes")?
+        return ok(at + n)
+    else if kind == event.BINARY
+        need(at: at, count: 5, limit: limit, start: start, what: "a binary's length")?
+        n = i32_at(data, at: at)
+
+        if n < 0
+            return fail(code: INVALID, msg: f"byte {start}: a binary's length is {n}")
+        need(at: at + 5, count: n, limit: limit, start: start, what: f"a binary of {n} bytes")?
+        return ok(at + 5 + n)
+    else if kind == event.REGEX
+        pattern = cstring_at(data, at: at, limit: limit, start: start, what: "a regex's pattern", lossy: true)?
+        return ok(
+            cstring_at(data, at: pattern.next, limit: limit, start: start, what: "a regex's options", lossy: true)?.next
+        )
+    return fail(code: INVALID, msg: f"byte {start}: the type {kind} is no BSON type")
+
+# Where the first element named `name` stands at the top level of the one
+# document `data` holds, the elements before it passed over by their lengths
+# alone. Fails `invalid` where the document's length or a length passed over
+# is wrong, `not_found` where no element has that name.
+function locate(data: [u8], name: str) -> Span?
+    if data.len() < 5
+        return fail(code: INVALID, msg: f"byte 0: {data.len()} bytes, below the 5 of an empty document")
+    size = i32_at(data, at: 0)
+
+    if size != data.len()
+        return fail(code: INVALID, msg: f"byte 0: a document's length is {size}, where {data.len()} bytes stand")
+    end = size - 1
+    at: i64 @= 4
+
+    while at < end
+        start = at
+        kind = to_i64(data[at]).must()
+
+        if kind == 0
+            return fail(code: INVALID, msg: f"byte {start}: a document ends {end - at} bytes before its length says")
+        k: i64 @= at + 1
+
+        while k < end && data[k] != 0
+            k @ k + 1
+
+        if k == end
+            return fail(code: INVALID, msg: f"byte {start}: an element's name has no closing zero")
+        matched: bool @= k - at - 1 == name.len()
+        i: i64 @= 0
+
+        while matched && i < name.len()
+            matched @ data[at + 1 + i] == name[i]
+            i @ i + 1
+
+        after = value_end(data, kind: kind, at: k + 1, limit: end, start: start)?
+
+        if matched
+            return ok(Span(start: start, end: after))
+        at @ after
+
+    if data[end] != 0
+        return fail(code: INVALID, msg: f"byte {end}: a document ends with {data[end]} where a zero byte was expected")
+    return fail(code: "not_found", msg: f"no element \"{name}\" at the top of a document of {size} bytes")
+
+test "read: the empty document, one with an int32, and the byte past it"
+    got = read([5, 0, 0, 0, 0], from: 0, max_depth: 8, lossy: false).must()
+    assert got.events.len() == 1 && got.events[0].count == 0 && got.next == 5
+    one = read([9, 9, 9, 12, 0, 0, 0, 0x10, 0x61, 0, 7, 0, 0, 0, 0], from: 3, max_depth: 8, lossy: false).must()
+    assert one.events.len() == 2 && one.events[0].count == 1
+    assert one.events[1].kind == event.INT32 && one.events[1].name == "a" && one.events[1].integer == 7
+    assert one.next == 15
+
+test "read: lengths too short, too long, past the data, and a document that ends early or late"
+    assert read([], from: 0, max_depth: 8, lossy: false).is_err()
+    assert read([4, 0, 0, 0], from: 0, max_depth: 8, lossy: false).is_err()
+    assert read([6, 0, 0, 0, 0], from: 0, max_depth: 8, lossy: false).is_err()
+    assert read([5, 0, 0, 0, 1], from: 0, max_depth: 8, lossy: false).is_err()
+    assert read([0xff, 0xff, 0xff, 0xff, 0], from: 0, max_depth: 8, lossy: false).is_err()
+    assert read([12, 0, 0, 0, 0x10, 0x61, 0, 7, 0, 0, 0, 0, 0], from: 0, max_depth: 8, lossy: false).must().next == 12
+    assert read([13, 0, 0, 0, 0x10, 0x61, 0, 7, 0, 0, 0, 0, 0], from: 0, max_depth: 8, lossy: false).is_err()
+    assert read([11, 0, 0, 0, 0x10, 0x61, 0, 7, 0, 0, 0], from: 0, max_depth: 8, lossy: false).is_err()
+
+test "read: a string's length of 0, past its document, without its zero, and not UTF-8"
+    assert read([14, 0, 0, 0, 2, 0x61, 0, 2, 0, 0, 0, 0x62, 0, 0], from: 0, max_depth: 8, lossy: false).must().events[1].text == "b"
+    assert read([14, 0, 0, 0, 2, 0x61, 0, 0, 0, 0, 0, 0x62, 0, 0], from: 0, max_depth: 8, lossy: false).is_err()
+    assert read([14, 0, 0, 0, 2, 0x61, 0, 3, 0, 0, 0, 0x62, 0, 0], from: 0, max_depth: 8, lossy: false).is_err()
+    assert read([14, 0, 0, 0, 2, 0x61, 0, 2, 0, 0, 0, 0x62, 1, 0], from: 0, max_depth: 8, lossy: false).is_err()
+
+    match read([14, 0, 0, 0, 2, 0x61, 0, 2, 0, 0, 0, 0xff, 0, 0], from: 0, max_depth: 8, lossy: false)
+        .ok _  => assert false
+        .err e => assert e.code == NOT_TEXT
+
+test "read: a boolean of 2, an unknown type, and a name with no closing zero"
+    assert read([9, 0, 0, 0, 8, 0x61, 0, 1, 0], from: 0, max_depth: 8, lossy: false).must().events[1].integer == 1
+    assert read([9, 0, 0, 0, 8, 0x61, 0, 2, 0], from: 0, max_depth: 8, lossy: false).is_err()
+    assert read([8, 0, 0, 0, 0x14, 0x61, 0, 0], from: 0, max_depth: 8, lossy: false).is_err()
+    assert read([8, 0, 0, 0, 0x0a, 0x61, 0x62, 0], from: 0, max_depth: 8, lossy: false).is_err()
+
+test "read: nesting at the limit and one past it"
+    nested: [u8] = [13, 0, 0, 0, 3, 0x61, 0, 5, 0, 0, 0, 0, 0]
+    assert read(nested, from: 0, max_depth: 2, lossy: false).must().events.len() == 2
+    assert read(nested, from: 0, max_depth: 1, lossy: false).is_err()
+
+test "read: a binary of subtype 2 and its inner length, right and wrong"
+    good: [u8] = [18, 0, 0, 0, 5, 0x62, 0, 5, 0, 0, 0, 2, 1, 0, 0, 0, 0x61, 0]
+    assert read(good, from: 0, max_depth: 8, lossy: false).must().events[1].data == [0x61]
+    bad: [u8] = [18, 0, 0, 0, 5, 0x62, 0, 5, 0, 0, 0, 2, 2, 0, 0, 0, 0x61, 0]
+    assert read(bad, from: 0, max_depth: 8, lossy: false).is_err()
+
+test "read: a string that is not UTF-8, read lossy"
+    got = read([14, 0, 0, 0, 2, 0x61, 0, 2, 0, 0, 0, 0xff, 0, 0], from: 0, max_depth: 8, lossy: true).must()
+    assert got.events[1].text == "�"
+
+test "locate: the first of a name, one passed over, one absent, and a length passed over that is wrong"
+    data: [u8] = [19, 0, 0, 0, 2, 0x61, 0, 2, 0, 0, 0, 0x78, 0, 0x10, 0x62, 0, 7, 0, 0, 0, 0]
+    assert locate(data.slice(from: 0, to: 19), name: "b").is_err()
+    whole: [u8] = [21, 0, 0, 0, 2, 0x61, 0, 2, 0, 0, 0, 0x78, 0, 0x10, 0x62, 0, 7, 0, 0, 0, 0]
+    span = locate(whole, name: "b").must()
+    assert span.start == 13 && span.end == 20
+    assert locate(whole, name: "a").must().end == 13
+    assert locate(whole, name: "c").is_err()
+    wrong: [u8] = [21, 0, 0, 0, 2, 0x61, 0, 10, 0, 0, 0, 0x78, 0, 0x10, 0x62, 0, 7, 0, 0, 0, 0]
+    assert locate(wrong, name: "b").is_err()

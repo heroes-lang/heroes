@@ -1,0 +1,298 @@
+# Decimal128, IEEE 754-2008's 128-bit decimal in its binary integer encoding
+# (BID), as BSON holds it: sixteen bytes, the least significant first, a sign,
+# a biased exponent of 14 bits and a coefficient of up to 34 digits. Its text
+# is the General Decimal Arithmetic's, which `big.format_decimal_scientific`
+# writes; a text that would need rounding to fit is refused, never rounded.
+
+use big
+use bytes
+
+# The code of a text that is no decimal, and of one that would need rounding.
+constant INVALID: str
+    "invalid"
+
+# The code of a decimal outside what Decimal128 holds exactly.
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+# The code of an infinity or a NaN where a number is asked.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The exponent's bias: the stored exponent less this is the power of ten.
+constant BIAS: i64
+    6176
+
+# The smallest power of ten a coefficient is multiplied by.
+constant LOWEST: i64
+    -6176
+
+# The largest.
+constant HIGHEST: i64
+    6111
+
+# The most digits a coefficient holds.
+constant DIGITS: i64
+    34
+
+# A finite number, an infinity or a NaN.
+constant FINITE: i64
+    0
+
+constant INFINITE: i64
+    1
+
+constant NAN: i64
+    2
+
+# The fields of sixteen bytes.
+record Parts
+    # `FINITE`, `INFINITE` or `NAN`.
+    kind: i64
+    # Whether the sign bit is set, for a zero and a NaN too.
+    negative: bool
+    # The coefficient, 0 where the encoding's is past the 34 digits.
+    coefficient: big.Integer
+    # The power of ten, from `LOWEST` to `HIGHEST`; 0 for an infinity and a
+    # NaN.
+    exponent: i64
+
+# The fields of the sixteen bytes `b`.
+function parts_of(b: [u8]) -> Parts
+    assert b.len() == 16
+    top = to_i64(b[15]).must()
+    next = to_i64(b[14]).must()
+    negative = top >= 128
+    zero = big.from_int(0)
+
+    if top & 0x7c == 0x7c
+        return Parts(kind: NAN, negative: negative, coefficient: zero, exponent: 0)
+    else if top & 0x7c == 0x78
+        return Parts(kind: INFINITE, negative: negative, coefficient: zero, exponent: 0)
+    else if top & 0x60 == 0x60
+        # The coefficient begins 100 in binary, past 2^113 and so past 34
+        # digits: the number is a zero of the exponent the bits after it hold.
+        biased = (top & 0x1f) << 9 | next << 1 | to_i64(b[13]).must() >> 7
+        return Parts(kind: FINITE, negative: negative, coefficient: zero, exponent: biased - BIAS)
+    biased = (top & 0x7f) << 7 | next >> 1
+    low: [u8] @= b.slice(from: 0, to: 14)
+    low @ low.push(to_u8(next & 1).must())
+    coefficient = big.from_bytes(low, order: .little_endian)
+
+    if big.digit_count(coefficient) > DIGITS
+        return Parts(kind: FINITE, negative: negative, coefficient: zero, exponent: biased - BIAS)
+    return Parts(kind: FINITE, negative: negative, coefficient: coefficient, exponent: biased - BIAS)
+
+# The sixteen bytes of the finite number `coefficient` times ten to
+# `exponent`, both already in range.
+function encode(negative: bool, coefficient: big.Integer, exponent: i64) -> [u8]
+    biased = exponent + BIAS
+    b: [u8] @= big.to_bytes_width(coefficient, width: 16, order: .little_endian).must()
+    b[14] @ to_u8(to_i64(b[14]).must() | (biased & 0x7f) << 1).must()
+
+    sign: i64 = if negative
+        128
+    else
+        0
+    b[15] @ to_u8(sign | biased >> 7).must()
+    return b
+
+# The sixteen bytes of an infinity or a NaN.
+function special(kind: i64, negative: bool) -> [u8]
+    b: [u8] @= []
+
+    for _ in range(from: 0, to: 15)
+        b @ b.push(0)
+
+    top: i64 = if kind == NAN
+        0x7c
+    else
+        0x78
+
+    sign: i64 = if negative
+        128
+    else
+        0
+    b @ b.push(to_u8(top | sign).must())
+    return b
+
+# The sixteen bytes of `coefficient` times ten to `exponent`, made exact in
+# Decimal128's range: trailing zeros taken off a coefficient past 34 digits or
+# an exponent below `LOWEST`, zeros put on one above `HIGHEST`, and a zero's
+# exponent clamped. Fails `invalid` where that would round, `does_not_fit`
+# where the number is too large.
+function exact(negative: bool, coefficient: big.Integer, exponent: i64, asked: str) -> [u8]?
+    ten = big.from_int(10)
+    c @= big.abs(coefficient)
+    e @= exponent
+
+    if big.sign(c) == 0
+        if e < LOWEST
+            e @ LOWEST
+        else if e > HIGHEST
+            e @ HIGHEST
+        return ok(encode(negative: negative, coefficient: c, exponent: e))
+
+    digits @= big.digit_count(c)
+
+    while digits > DIGITS || e < LOWEST
+        d = big.divide(n: c, by: ten, rounding: .toward_zero)
+
+        if big.sign(d.remainder) != 0
+            return fail(
+                code: INVALID,
+                msg: f"{asked} needs rounding to fit Decimal128's 34 digits and exponents from -6176 to 6111"
+            )
+        c @ d.quotient
+        digits @ digits - 1
+        e @ e + 1
+
+    if e > HIGHEST
+        if digits + (e - HIGHEST) > DIGITS
+            return fail(code: DOES_NOT_FIT, msg: f"{asked} is past the largest Decimal128")
+        c @ big.multiply(a: c, b: big.power(base: ten, exponent: e - HIGHEST))
+        e @ HIGHEST
+    return ok(encode(negative: negative, coefficient: c, exponent: e))
+
+# Whether `s`, read without regard to case, is `word`.
+function is_word(s: str, word: str) -> bool
+    if s.len() != word.len()
+        return false
+
+    for i in range(from: 0, to: s.len())
+        c = to_i64(s[i]).must()
+
+        lower = if c >= 'A' && c <= 'Z'
+            c + 32
+        else
+            c
+
+        if lower != to_i64(word[i]).must()
+            return false
+
+    return true
+
+# The sixteen bytes `s` spells: an optional sign, then `Infinity`, `Inf` or
+# `NaN` in any case, or digits with at most one point and an optional
+# exponent after `e` or `E`. Fails `invalid` where `s` is no such number or
+# would need rounding, `does_not_fit` where it is too large.
+function parse(s: str) -> [u8]?
+    negative = s.len() > 0 && s[0] == '-'
+
+    rest = if s.len() > 0 && (s[0] == '-' || s[0] == '+')
+        s.slice(from: 1, to: s.len())
+    else
+        s
+
+    if is_word(s: rest, word: "infinity") || is_word(s: rest, word: "inf")
+        return ok(special(kind: INFINITE, negative: negative))
+    else if is_word(s: rest, word: "nan")
+        return ok(special(kind: NAN, negative: negative))
+
+    if rest.len() > 0 && (rest[0] == '-' || rest[0] == '+')
+        return fail(code: INVALID, msg: f"\"{s}\" is no decimal: a sign stands twice")
+
+    d = match big.parse_decimal(rest)
+        .ok got => got
+        .err e =>
+            if e.code == DOES_NOT_FIT
+                return fail(code: DOES_NOT_FIT, msg: f"\"{s}\" has an exponent past Decimal128's")
+            return fail(code: INVALID, msg: f"\"{s}\" is no decimal: {e.msg}")
+
+    return exact(negative: negative, coefficient: d.unscaled, exponent: -d.scale, asked: f"\"{s}\"")
+
+# The text of the sixteen bytes `b`: `NaN`, `Infinity`, `-Infinity`, or the
+# number as the General Decimal Arithmetic writes it, its sign kept on a zero.
+function format(b: [u8]) -> str
+    p = parts_of(b)
+
+    if p.kind == NAN
+        return "NaN"
+    else if p.kind == INFINITE && p.negative
+        return "-Infinity"
+    else if p.kind == INFINITE
+        return "Infinity"
+    text = big.format_decimal_scientific(big.Decimal(unscaled: p.coefficient, scale: -p.exponent))
+
+    if p.negative
+        return "-" + text
+    return text
+
+# The finite number the sixteen bytes `b` hold, as a `big.Decimal`; a negative
+# zero is zero. Fails `unsupported` for an infinity and a NaN.
+function to_decimal(b: [u8]) -> big.Decimal?
+    p = parts_of(b)
+
+    if p.kind != FINITE
+        return fail(code: UNSUPPORTED, msg: f"{format(b)} is no finite number")
+
+    unscaled = if p.negative
+        big.negate(p.coefficient)
+    else
+        p.coefficient
+    return ok(big.Decimal(unscaled: unscaled, scale: -p.exponent))
+
+# The sixteen bytes of `d`, exactly. Fails `invalid` where it would need
+# rounding, `does_not_fit` where it is too large.
+function from_decimal(d: big.Decimal) -> [u8]?
+    return exact(
+        negative: big.sign(d.unscaled) < 0,
+        coefficient: d.unscaled,
+        exponent: -d.scale,
+        asked: big.format_decimal_scientific(d)
+    )
+
+test "parse and format: the texts pymongo 4.20 read and wrote, each with its bytes"
+    cases = [
+        ["NaN", "NaN", "0000000000000000000000000000007c"]
+        ["-NaN", "NaN", "000000000000000000000000000000fc"]
+        ["-Infinity", "-Infinity", "000000000000000000000000000000f8"]
+        ["inf", "Infinity", "00000000000000000000000000000078"]
+        ["+Inf", "Infinity", "00000000000000000000000000000078"]
+        ["0E+6112", "0E+6111", "0000000000000000000000000000fe5f"]
+        ["0E-6177", "0E-6176", "00000000000000000000000000000000"]
+        ["1E+6112", "1.0E+6112", "0a00000000000000000000000000fe5f"]
+        ["12345678901234567890123456789012340", "1.234567890123456789012345678901234E+34", "f2af967ed05c82de3297ff6fde3c4230"]
+        [".5", "0.5", "05000000000000000000000000003e30"]
+        ["5.", "5", "05000000000000000000000000004030"]
+        ["-0", "-0", "000000000000000000000000000040b0"]
+        ["-0E+3", "-0E+3", "000000000000000000000000000046b0"]
+        ["1.23E+3", "1.23E+3", "7b000000000000000000000000004230"]
+        ["0.000001", "0.000001", "01000000000000000000000000003430"]
+        ["0.0000001", "1E-7", "01000000000000000000000000003230"]
+        ["1E6111", "1E+6111", "0100000000000000000000000000fe5f"]
+        ["1e6144", "1.000000000000000000000000000000000E+6144", "000000000a5bc138938d44c64d31fe5f"]
+    ]
+
+    for c in cases
+        b = parse(c[0]).must()
+        assert bytes.format_hex(b) == c[2]
+        assert format(b) == c[1]
+
+test "parse: what needs rounding, what is too large, and what is no number"
+    assert parse("1E-6177").is_err()
+    assert parse("123456789012345678901234567890123401").is_err()
+    assert parse("1E+6145").is_err()
+    assert parse("").is_err() && parse(".").is_err() && parse("1..2").is_err() && parse("E3").is_err()
+    assert parse("--1").is_err() && parse("+-1").is_err() && parse(" 1").is_err() && parse("Infinit").is_err()
+
+test "parts_of: a coefficient past 34 digits reads as a zero, in both encodings, as pymongo 4.20 reads them"
+    cases = [
+        ["ffffffffffffffffffffffffffff4130", "0"]
+        ["0000000000000000000000000000106c", "0"]
+        ["00000000000000000000000000008a6c", "0E+244"]
+        ["ffffffffffffffffffffffffffff7f6c", "0E+223"]
+        ["000000000000000000000000000000ff", "NaN"]
+        ["01000000000000000000000000004030", "1"]
+    ]
+
+    for c in cases
+        assert format(bytes.parse_hex(c[0]).must()) == c[1]
+
+test "to_decimal and from_decimal: a number both ways, a negative zero, and the specials refused"
+    d = to_decimal(parse("-1.50").must()).must()
+    assert big.format_decimal(d) == "-1.50"
+    assert format(from_decimal(d).must()) == "-1.50"
+    assert big.sign(to_decimal(parse("-0").must()).must().unscaled) == 0
+    assert to_decimal(parse("NaN").must()).is_err()
+    assert to_decimal(parse("-Inf").must()).is_err()

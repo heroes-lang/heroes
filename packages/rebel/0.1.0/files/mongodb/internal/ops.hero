@@ -1,0 +1,81 @@
+# Reads and writes sent with the retries the drivers' specifications ask: a
+# read retried once, on a new connection, where the first attempt lost its
+# connection or met a server that stepped down; a write that may be retried
+# sent with a transaction number and, on such a failure or one the server
+# labels `RetryableWriteError`, sent once more with the same number on a new
+# connection, which the server applies at most once. Nothing is retried in a
+# transaction: the program retries the transaction whole.
+
+use bson
+use mongodb/internal/dial
+use mongodb/internal/replies
+use mongodb/internal/session
+use mongodb/internal/wire
+
+# The server codes after which a read or a retryable write is sent again:
+# a host lost, a primary that stepped down, a shutdown, a time limit of the
+# network.
+function retryable_codes() -> [i64]
+    return [6, 7, 89, 91, 134, 189, 262, 9001, 10107, 11600, 11602, 13435, 13436]
+
+# Whether the failure `code`, `message` may be retried, as a write where
+# `writing`.
+function is_retryable(code: str, message: str, writing: bool) -> bool
+    if code == "closed"
+        return true
+
+    if writing
+        for label in replies.labels_of(message)
+            if label == "RetryableWriteError"
+                return true
+
+    return match replies.code_of(message)
+        .ok n  => replies.among(n, codes: retryable_codes())
+        .err _ => false
+
+# The reply to the read `body` on `database`, retried once where it may be.
+function read(@s: session.State, database: str, body: bson.Document) -> bson.Document?
+    return match session.command(@s, database: database, body: body, kind: session.READ, txn: 0, sequences: [])
+        .ok reply => ok(reply)
+        .err e =>
+            if !s.settings.retry_reads || session.in_transaction(s) || !is_retryable(code: e.code, message: e.msg, writing: false)
+                return fail(code: e.code, msg: e.msg)
+
+            match dial.reopen(@s)
+                .ok _  => _ = 0
+                .err _ => return fail(code: e.code, msg: e.msg)
+
+            session.command(@s, database: database, body: body, kind: session.READ, txn: 0, sequences: [])
+
+# The reply to a command that is neither a read nor a write: `getMore`,
+# `killCursors`, an index's creation.
+function plain(@s: session.State, database: str, body: bson.Document) -> bson.Document?
+    return session.command(@s, database: database, body: body, kind: session.PLAIN, txn: 0, sequences: [])
+
+# The reply to the write `body` on `database`, with `sequences` beside it;
+# retried once with the same transaction number where `retryable` and the
+# server keeps sessions in a replica set or behind a mongos.
+function write(@s: session.State, database: str, body: bson.Document, sequences: [wire.Sequence], retryable: bool) -> bson.Document?
+    txn = if retryable && s.settings.retry_writes && session.can_retry_writes(s) && !session.in_transaction(s)
+        session.next_txn(@s)
+    else
+        0
+
+    return match session.command(@s, database: database, body: body, kind: session.WRITE, txn: txn, sequences: sequences)
+        .ok reply => ok(reply)
+        .err e =>
+            if txn == 0 || !is_retryable(code: e.code, message: e.msg, writing: true)
+                return fail(code: e.code, msg: e.msg)
+
+            match dial.reopen(@s)
+                .ok _  => _ = 0
+                .err _ => return fail(code: e.code, msg: e.msg)
+
+            session.command(@s, database: database, body: body, kind: session.WRITE, txn: txn, sequences: sequences)
+
+test "is_retryable: a lost connection, a stepped-down primary, a labelled write, and a duplicate key"
+    assert is_retryable(code: "closed", message: "h:1: reading a reply", writing: false)
+    assert is_retryable(code: "failed", message: "[189 PrimarySteppedDown] stepped down", writing: false)
+    assert is_retryable(code: "failed", message: "[112 WriteConflict; RetryableWriteError] x", writing: true)
+    assert !is_retryable(code: "failed", message: "[112 WriteConflict; RetryableWriteError] x", writing: false)
+    assert !is_retryable(code: "exists", message: "[11000 DuplicateKey] E11000", writing: true)

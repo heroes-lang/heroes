@@ -1,0 +1,517 @@
+# A `json.Value` read as MongoDB Extended JSON v2, canonical or relaxed, into
+# the flat events of one BSON document. An object whose keys name a type
+# wrapper (`$oid`, `$numberLong`, `$date`, ...) must be exactly that wrapper,
+# or the reading fails; an object with any other key that begins with `$` is
+# an ordinary document, as a query's operators are. The legacy forms the
+# specification lets a reader take are taken: `$binary` with `$type`, `$regex`
+# with `$options`, `$date` as a number, and `$uuid`. The JSON is walked on a
+# stack this module holds.
+
+use bson/internal/decimal
+use bson/internal/event
+use bytes
+use json
+use math
+use numbers
+use time
+
+# The code of JSON that is no Extended JSON of a document.
+constant INVALID: str
+    "invalid"
+
+# 2^63 as a float, the first whole number past an `i64`.
+constant TWO_63: f64
+    9223372036854775808.0
+
+# The milliseconds of 400 years of the Gregorian calendar, 146097 days, after
+# which it repeats.
+constant CYCLE: i64
+    12622780800000
+
+# A JSON value waiting to become events: its name in its document, and the
+# JSON pointer of where it stands.
+record Pending
+    # The element's name.
+    name: str
+    # The JSON value.
+    value: json.Value
+    # Its JSON pointer, for a message.
+    pointer: str
+
+# A failure at `pointer` saying `what`.
+function refused<T>(pointer: str, what: str) -> T?
+    return fail(code: INVALID, msg: f"at \"{pointer}\": {what}")
+
+# The one member of `members`, which must hold `key` and nothing else.
+function only(members: {str: json.Value}, key: str, pointer: str) -> json.Value?
+    if keys(members).len() != 1
+        return refused(pointer: pointer, what: f"a {key} wrapper holds other keys beside {key}")
+    return ok(members[key].must())
+
+# The text `v` holds. Fails where it is no string.
+function text_in(v: json.Value, pointer: str, what: str) -> str?
+    return match v
+        .text t => ok(t.v)
+        .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+            refused(pointer: pointer, what: f"{what} is {json.kind_of(v)}, where a string was expected")
+
+# The members of `v`, an object of exactly the keys `first` and `second`.
+function two_members(v: json.Value, first: str, second: str, pointer: str, what: str) -> {str: json.Value}?
+    m = match v
+        .object o => o.members
+        .null_value | .boolean _ | .number _ | .text _ | .list _ =>
+            return refused(pointer: pointer, what: f"{what} is {json.kind_of(v)}, where an object was expected")
+
+    if keys(m).len() != 2 || m[first].is_err() || m[second].is_err()
+        return refused(pointer: pointer, what: f"{what} must hold exactly \"{first}\" and \"{second}\"")
+    return ok(m)
+
+# Whether `s` is an integer as Extended JSON writes one: an optional `-` and
+# one digit or more.
+function is_integer_text(s: str) -> bool
+    first = if s.len() > 0 && s[0] == '-'
+        1
+    else
+        0
+
+    if s.len() == first
+        return false
+
+    for i in range(from: first, to: s.len())
+        if s[i] < '0' || s[i] > '9'
+            return false
+
+    return true
+
+# Whether `s` is a finite double as Extended JSON writes one: an optional `-`,
+# digits with at most one point, and an optional exponent.
+function is_float_text(s: str) -> bool
+    at: i64 @= 0
+
+    if s.len() > 0 && s[0] == '-'
+        at @ 1
+    digits: i64 @= 0
+    points: i64 @= 0
+
+    while at < s.len() && (s[at] >= '0' && s[at] <= '9' || s[at] == '.')
+        if s[at] == '.'
+            points @ points + 1
+        else
+            digits @ digits + 1
+        at @ at + 1
+
+    if digits == 0 || points > 1
+        return false
+
+    if at == s.len()
+        return true
+
+    if s[at] != 'e' && s[at] != 'E'
+        return false
+    at @ at + 1
+
+    if at < s.len() && (s[at] == '+' || s[at] == '-')
+        at @ at + 1
+    exponent_digits: i64 @= 0
+
+    while at < s.len() && s[at] >= '0' && s[at] <= '9'
+        exponent_digits @ exponent_digits + 1
+        at @ at + 1
+
+    return exponent_digits > 0 && at == s.len()
+
+# The whole number `v` holds, from `lowest` to `highest`.
+function whole_in(v: json.Value, lowest: f64, highest: f64, pointer: str, what: str) -> i64?
+    x = match v
+        .number n => n.v
+        .null_value | .boolean _ | .text _ | .list _ | .object _ =>
+            return refused(pointer: pointer, what: f"{what} is {json.kind_of(v)}, where a number was expected")
+
+    if x != math.trunc(x) || x < lowest || x > highest
+        return refused(
+            pointer: pointer,
+            what: f"{what} is {to_str(x)}, where a whole number from {to_str(lowest)} to {to_str(highest)} was expected"
+        )
+    return ok(to_i64(x).must())
+
+# The milliseconds an RFC 3339 text names, a fraction past them dropped
+# toward the past.
+#
+# A `time.Instant` holds the years from 1678 to 2262, so a text of another
+# year is moved by whole cycles of 400 years, in which the calendar repeats
+# exactly, before it is read, and its milliseconds moved back after.
+function date_of_text(s: str, pointer: str) -> i64?
+    cycles: i64 @= 0
+    text: str @= s
+
+    head = if s.len() > 4 && s[4] == '-'
+        s.slice(from: 0, to: 4)
+    else
+        ""
+
+    match numbers.parse_int(head)
+        .ok year =>
+            moved: i64 @= year
+
+            while moved > 2200
+                moved @ moved - 400
+                cycles @ cycles + 1
+
+            while moved < 1700
+                moved @ moved + 400
+                cycles @ cycles - 1
+
+            digits = to_str(moved)
+            text @ "0000".slice(from: 0, to: 4 - digits.len()) + digits + s.slice(from: 4, to: s.len())
+        .err _ => _ = 0
+
+    t = match time.parse(text, layout: .rfc3339)
+        .ok got => got
+        .err e  => return refused(pointer: pointer, what: f"a $date text is no RFC 3339 time: {e.msg}")
+
+    ns = t.unix_nanoseconds
+    ms: i64 @= ns / 1000000
+
+    if ns < 0 && ms * 1000000 != ns
+        ms @ ms - 1
+    return ok(ms + cycles * CYCLE)
+
+# The ObjectId whose 24 hexadecimal digits `s` holds.
+function oid_bytes(s: str, pointer: str) -> [u8]?
+    if s.len() != 24
+        return refused(
+            pointer: pointer,
+            what: f"an $oid of {s.len()} characters, where 24 hexadecimal digits were expected"
+        )
+
+    return match bytes.parse_hex(s)
+        .ok b  => ok(b)
+        .err _ => refused(pointer: pointer, what: f"the $oid \"{s}\" holds a character that is no hexadecimal digit")
+
+# The binary event of `base64` and the subtype `subtype`, one or two
+# hexadecimal digits.
+function binary_event(name: str, base64: str, subtype: str, pointer: str) -> event.Event?
+    if subtype.len() < 1 || subtype.len() > 2
+        return refused(pointer: pointer, what: f"a binary's subtype \"{subtype}\" is not one or two hexadecimal digits")
+
+    padded = if subtype.len() == 1
+        "0" + subtype
+    else
+        subtype
+
+    code = match bytes.parse_hex(padded)
+        .ok b  => to_i64(b[0]).must()
+        .err _ => return refused(pointer: pointer, what: f"a binary's subtype \"{subtype}\" is not hexadecimal")
+
+    data = match bytes.parse_base64(base64)
+        .ok b  => b
+        .err _ => return refused(pointer: pointer, what: "a binary's base64 is not base 64")
+
+    return ok(event.of_data(kind: event.BINARY, name: name, data: data, subtype: code))
+
+# The event a JSON number stands for, as relaxed Extended JSON reads it: a
+# whole number an int32 where it fits, an int64 where that fits, a double
+# otherwise and wherever it has a fraction or is a negative zero.
+function number_event(name: str, x: f64) -> event.Event
+    if x == math.trunc(x) && !math.has_minus_sign(x) && x < TWO_63 && x >= -TWO_63
+        n = to_i64(x).must()
+
+        if n >= -2147483648 && n <= 2147483647
+            return event.of_integer(kind: event.INT32, name: name, n: n)
+        return event.of_integer(kind: event.INT64, name: name, n: n)
+    else if x == math.trunc(x) && math.has_minus_sign(x) && x != 0.0 && x >= -TWO_63
+        n = to_i64(x).must()
+
+        if n >= -2147483648
+            return event.of_integer(kind: event.INT32, name: name, n: n)
+        return event.of_integer(kind: event.INT64, name: name, n: n)
+    return event.of_double(name: name, x: x)
+
+# The event the object `members` stands for, named `name` and standing at
+# `pointer`: a scalar for a type wrapper, a scope for `$code` with `$scope`,
+# and a document, whose elements are its members, for every other object.
+function classify(members: {str: json.Value}, name: str, pointer: str) -> event.Event?
+    if !members["$oid"].is_err()
+        v = only(members, key: "$oid", pointer: pointer)?
+        return ok(
+            event.of_data(kind: event.OBJECT_ID, name: name, data: oid_bytes(s: text_in(v, pointer: pointer, what: "$oid")?, pointer: pointer)?, subtype: 0)
+        )
+    else if !members["$symbol"].is_err()
+        v = only(members, key: "$symbol", pointer: pointer)?
+        return ok(event.of_text(kind: event.SYMBOL, name: name, text: text_in(v, pointer: pointer, what: "$symbol")?))
+    else if !members["$numberInt"].is_err()
+        s = text_in(only(members, key: "$numberInt", pointer: pointer)?, pointer: pointer, what: "$numberInt")?
+
+        n = match numbers.parse_i32(s)
+            .ok got => got
+            .err _  => return refused(pointer: pointer, what: f"$numberInt \"{s}\" is no int32")
+
+        if !is_integer_text(s)
+            return refused(pointer: pointer, what: f"$numberInt \"{s}\" is no integer as Extended JSON writes one")
+        return ok(event.of_integer(kind: event.INT32, name: name, n: to_i64(n).must()))
+    else if !members["$numberLong"].is_err()
+        s = text_in(only(members, key: "$numberLong", pointer: pointer)?, pointer: pointer, what: "$numberLong")?
+
+        if !is_integer_text(s)
+            return refused(pointer: pointer, what: f"$numberLong \"{s}\" is no integer as Extended JSON writes one")
+
+        n = match numbers.parse_int(s)
+            .ok got => got
+            .err _  => return refused(pointer: pointer, what: f"$numberLong \"{s}\" is outside an int64")
+
+        return ok(event.of_integer(kind: event.INT64, name: name, n: n))
+    else if !members["$numberDouble"].is_err()
+        s = text_in(only(members, key: "$numberDouble", pointer: pointer)?, pointer: pointer, what: "$numberDouble")?
+
+        if s != "Infinity" && s != "-Infinity" && s != "NaN" && !is_float_text(s)
+            return refused(pointer: pointer, what: f"$numberDouble \"{s}\" is no double as Extended JSON writes one")
+        return ok(event.of_double(name: name, x: numbers.parse_float(s).must()))
+    else if !members["$numberDecimal"].is_err()
+        s = text_in(only(members, key: "$numberDecimal", pointer: pointer)?, pointer: pointer, what: "$numberDecimal")?
+
+        d = match decimal.parse(s)
+            .ok got => got
+            .err e  => return refused(pointer: pointer, what: f"$numberDecimal: {e.msg}")
+
+        return ok(event.of_data(kind: event.DECIMAL128, name: name, data: d, subtype: 0))
+    else if !members["$binary"].is_err()
+        return match members["$binary"].must()
+            .text legacy =>
+                if keys(members).len() != 2 || members["$type"].is_err()
+                    return refused(pointer: pointer, what: "a legacy $binary must stand with $type and nothing else")
+                binary_event(
+                    name: name,
+                    base64: legacy.v,
+                    subtype: text_in(members["$type"].must(), pointer: pointer, what: "$type")?,
+                    pointer: pointer
+                )
+            .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+                inner = two_members(only(members, key: "$binary", pointer: pointer)?, first: "base64", second: "subType", pointer: pointer, what: "$binary")?
+                base64 = text_in(inner["base64"].must(), pointer: pointer, what: "base64")?
+                binary_event(
+                    name: name,
+                    base64: base64,
+                    subtype: text_in(inner["subType"].must(), pointer: pointer, what: "subType")?,
+                    pointer: pointer
+                )
+    else if !members["$code"].is_err()
+        code = text_in(members["$code"].must(), pointer: pointer, what: "$code")?
+
+        if keys(members).len() == 1
+            return ok(event.of_text(kind: event.JAVASCRIPT, name: name, text: code))
+
+        if keys(members).len() != 2 || members["$scope"].is_err()
+            return refused(pointer: pointer, what: "$code may stand with $scope alone")
+
+        return match members["$scope"].must()
+            .object scope => ok(
+                event.of_container(kind: event.JAVASCRIPT_WITH_SCOPE, name: name, count: keys(scope.members).len(), code: code)
+            )
+            .null_value | .boolean _ | .number _ | .text _ | .list _ => refused(
+                pointer: pointer,
+                what: "$scope is no object"
+            )
+    else if !members["$timestamp"].is_err()
+        inner = two_members(only(members, key: "$timestamp", pointer: pointer)?, first: "t", second: "i", pointer: pointer, what: "$timestamp")?
+        seconds = whole_in(inner["t"].must(), lowest: 0.0, highest: 4294967295.0, pointer: pointer, what: "a timestamp's t")?
+        increment = whole_in(inner["i"].must(), lowest: 0.0, highest: 4294967295.0, pointer: pointer, what: "a timestamp's i")?
+        return ok(event.of_timestamp(name: name, seconds: seconds, increment: increment))
+    else if !members["$regularExpression"].is_err()
+        inner = two_members(only(members, key: "$regularExpression", pointer: pointer)?, first: "pattern", second: "options", pointer: pointer, what: "$regularExpression")?
+        pattern = text_in(inner["pattern"].must(), pointer: pointer, what: "a regex's pattern")?
+        return ok(
+            event.of_regex(name: name, pattern: pattern, options: text_in(inner["options"].must(), pointer: pointer, what: "a regex's options")?)
+        )
+    else if !members["$dbPointer"].is_err()
+        inner = two_members(only(members, key: "$dbPointer", pointer: pointer)?, first: "$ref", second: "$id", pointer: pointer, what: "$dbPointer")?
+        namespace = text_in(inner["$ref"].must(), pointer: pointer, what: "a pointer's $ref")?
+
+        id = match inner["$id"].must()
+            .object o => oid_bytes(s: text_in(only(o.members, key: "$oid", pointer: pointer)?, pointer: pointer, what: "$oid")?, pointer: pointer)?
+            .null_value | .boolean _ | .number _ | .text _ | .list _ => return refused(
+                pointer: pointer,
+                what: "a pointer's $id is no $oid wrapper"
+            )
+
+        return ok(event.of_pointer(name: name, namespace: namespace, id: id))
+    else if !members["$date"].is_err()
+        ms = match only(members, key: "$date", pointer: pointer)?
+            .object o =>
+                s = text_in(only(o.members, key: "$numberLong", pointer: pointer)?, pointer: pointer, what: "$date's $numberLong")?
+
+                if !is_integer_text(s)
+                    return refused(pointer: pointer, what: f"$date's $numberLong \"{s}\" is no integer")
+
+                match numbers.parse_int(s)
+                    .ok got => got
+                    .err _ => return refused(pointer: pointer, what: f"$date's $numberLong \"{s}\" is outside an int64")
+            .text t => date_of_text(s: t.v, pointer: pointer)?
+            .number n => whole_in(.number(v: n.v), lowest: -TWO_63, highest: 9223372036854774784.0, pointer: pointer, what: "a legacy $date")?
+            .null_value | .boolean _ | .list _ => return refused(
+                pointer: pointer,
+                what: "$date is no text, number or $numberLong"
+            )
+
+        return ok(event.of_integer(kind: event.DATETIME, name: name, n: ms))
+    else if !members["$minKey"].is_err() || !members["$maxKey"].is_err()
+        key = if !members["$minKey"].is_err()
+            "$minKey"
+        else
+            "$maxKey"
+        one = only(members, key: key, pointer: pointer)?
+
+        if one != .number(v: 1.0)
+            return refused(pointer: pointer, what: f"{key} must hold 1")
+
+        if key == "$minKey"
+            return ok(event.of_kind(kind: event.MIN_KEY, name: name))
+        return ok(event.of_kind(kind: event.MAX_KEY, name: name))
+    else if !members["$undefined"].is_err()
+        if only(members, key: "$undefined", pointer: pointer)? != .boolean(v: true)
+            return refused(pointer: pointer, what: "$undefined must hold true")
+        return ok(event.of_kind(kind: event.UNDEFINED, name: name))
+    else if !members["$uuid"].is_err()
+        s = text_in(only(members, key: "$uuid", pointer: pointer)?, pointer: pointer, what: "$uuid")?
+        dashes = s.len() == 36 && s[8] == '-' && s[13] == '-' && s[18] == '-' && s[23] == '-'
+
+        digits = if dashes
+            s.slice(from: 0, to: 8) + s.slice(from: 9, to: 13) + s.slice(from: 14, to: 18) + s.slice(from: 19, to: 23) + s.slice(from: 24, to: 36)
+        else
+            ""
+
+        return match bytes.parse_hex(digits)
+            .ok b =>
+                if b.len() != 16
+                    return refused(pointer: pointer, what: f"$uuid \"{s}\" is no UUID of 8-4-4-4-12 hexadecimal digits")
+                ok(event.of_data(kind: event.BINARY, name: name, data: b, subtype: 4))
+            .err _ => refused(pointer: pointer, what: f"$uuid \"{s}\" is no UUID of 8-4-4-4-12 hexadecimal digits")
+    else if !members["$regex"].is_err() && !members["$options"].is_err() && keys(members).len() == 2
+        regex = members["$regex"].must()
+        options = members["$options"].must()
+
+        match regex
+            .text p =>
+                return ok(
+                    event.of_regex(name: name, pattern: p.v, options: text_in(options, pointer: pointer, what: "$options")?)
+                )
+            .null_value | .boolean _ | .number _ | .list _ | .object _ => _ = 0
+    return ok(event.of_container(kind: event.DOCUMENT, name: name, count: keys(members).len(), code: ""))
+
+# Puts `p` on the stack, which holds `top` values.
+function put(@waiting: [Pending], top: i64, p: Pending)
+    if top == waiting.len()
+        waiting @ waiting.push(p)
+    else
+        waiting[top] @ p
+
+# The events of the document `v` writes in Extended JSON. Fails `invalid`
+# where `v` is no object of a document, or where a type wrapper in it is not
+# exactly one; the message opens with the JSON pointer of the place.
+function events_of(v: json.Value) -> [event.Event]?
+    match v
+        .object o =>
+            root = classify(o.members, name: "", pointer: "")?
+
+            if root.kind != event.DOCUMENT
+                return refused(
+                    pointer: "",
+                    what: f"the top level is a type wrapper of {event.type_name(root.kind)}, where a document was expected"
+                )
+        .null_value | .boolean _ | .number _ | .text _ | .list _ =>
+            return refused(pointer: "", what: f"the top level is {json.kind_of(v)}, where a document was expected")
+
+    events: [event.Event] @= []
+    waiting: [Pending] @= [Pending(name: "", value: v, pointer: "")]
+    top: i64 @= 1
+
+    while top > 0
+        top @ top - 1
+        p = waiting[top]
+        children: {str: json.Value} @= {}
+
+        match p.value
+            .object o =>
+                e = classify(o.members, name: p.name, pointer: p.pointer)?
+                events @ events.push(e)
+
+                if e.kind == event.DOCUMENT
+                    children @ o.members
+                else if e.kind == event.JAVASCRIPT_WITH_SCOPE
+                    match o.members["$scope"].must()
+                        .object scope                                            => children @ scope.members
+                        .null_value | .boolean _ | .number _ | .text _ | .list _ => _ = 0
+            .list l =>
+                events @ events.push(
+                    event.of_container(kind: event.ARRAY, name: p.name, count: l.items.len(), code: "")
+                )
+                at: i64 @= l.items.len()
+
+                while at > 0
+                    at @ at - 1
+                    index = event.index_name(at)
+                    put(
+                        waiting: @waiting,
+                        top: top,
+                        p: Pending(name: index, value: l.items[at], pointer: p.pointer + "/" + index)
+                    )
+                    top @ top + 1
+            .text t   => events @ events.push(event.of_text(kind: event.STRING, name: p.name, text: t.v))
+            .number n => events @ events.push(number_event(name: p.name, x: n.v))
+            .boolean b =>
+                truth: i64 = if b.v
+                    1
+                else
+                    0
+                events @ events.push(event.of_integer(kind: event.BOOLEAN, name: p.name, n: truth))
+            .null_value => events @ events.push(event.of_kind(kind: event.NULL_VALUE, name: p.name))
+
+        names = keys(children)
+        at: i64 @= names.len()
+
+        while at > 0
+            at @ at - 1
+            put(
+                waiting: @waiting,
+                top: top,
+                p: Pending(name: names[at], value: children[names[at]].must(), pointer: p.pointer + json.pointer_of([names[at]]))
+            )
+            top @ top + 1
+
+    return ok(events)
+
+test "is_integer_text: a sign alone, a plus, digits, a point and a space"
+    assert is_integer_text("0") && is_integer_text("-12")
+    assert !is_integer_text("") && !is_integer_text("-") && !is_integer_text("+1") && !is_integer_text("1.0") && !is_integer_text(" 1")
+
+test "is_float_text: an exponent with and without its digits, two points, and words"
+    assert is_float_text("1.0") && is_float_text("-0.0") && is_float_text("1e+300") && is_float_text("1.5E-07") && is_float_text(".5")
+    assert !is_float_text("1e") && !is_float_text("1.2.3") && !is_float_text("inf") && !is_float_text("") && !is_float_text("0x1p3")
+
+test "number_event: the edges of an int32 and an int64, a negative zero, a fraction, and 2^63"
+    assert number_event(name: "n", x: 2147483647.0).kind == event.INT32
+    assert number_event(name: "n", x: -2147483648.0).kind == event.INT32
+    assert number_event(name: "n", x: 2147483648.0).kind == event.INT64
+    assert number_event(name: "n", x: -2147483649.0).kind == event.INT64
+    assert number_event(name: "n", x: -0.0).kind == event.DOUBLE
+    assert number_event(name: "n", x: 0.5).kind == event.DOUBLE
+    assert number_event(name: "n", x: TWO_63).kind == event.DOUBLE
+    assert number_event(name: "n", x: -TWO_63).kind == event.INT64
+
+test "events_of: the wrappers' errors name the place, and $uuid reads as subtype 4"
+    match events_of(json.parse("{\"a\": [{\"$date\": true}]}").must())
+        .ok _  => assert false
+        .err e => assert e.msg == "at \"/a/0\": $date is no text, number or $numberLong"
+
+    got = events_of(json.parse("{\"u\": {\"$uuid\": \"00112233-4455-6677-8899-aabbccddeeff\"}}").must()).must()
+    assert got[1].kind == event.BINARY && got[1].integer == 4 && got[1].data.len() == 16
+    assert events_of(json.parse("{\"u\": {\"$uuid\": \"0011223344556677-8899-aabbccddeeff\"}}").must()).is_err()
+    assert events_of(json.parse("{\"b\": {\"$binary\": \"AQI=\", \"$type\": \"5\"}}").must()).must()[1].integer == 5
+    assert events_of(json.parse("{\"c\": {\"$code\": \"x\", \"$scope\": 1}}").must()).is_err()
+    assert events_of(json.parse("{\"t\": {\"$timestamp\": {\"t\": -1, \"i\": 0}}}").must()).is_err()
+
+test "date_of_text: the last date relaxed text writes, the year 1, a fraction past the millisecond, and a text that is no date"
+    assert date_of_text(s: "9999-12-31T23:59:59.999Z", pointer: "").must() == 253402300799999
+    assert date_of_text(s: "0001-01-01T00:00:00Z", pointer: "").must() == -62135596800000
+    assert date_of_text(s: "1970-01-01T00:00:00.0019Z", pointer: "").must() == 1
+    assert date_of_text(s: "1969-12-31T23:59:59.9999Z", pointer: "").must() == -1
+    assert date_of_text(s: "x", pointer: "").is_err()

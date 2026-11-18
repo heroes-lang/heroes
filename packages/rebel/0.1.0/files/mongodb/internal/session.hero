@@ -1,0 +1,362 @@
+# One client's conversation with one server: the connection, what the
+# server's `hello` said of itself, the logical session every command carries,
+# the transaction in progress, and the cluster time gossiped back. Every
+# command goes through `command`, which adds to its body what the protocol
+# and the settings ask (`$db`, `lsid`, `txnNumber`, the concerns, the read
+# preference, `$clusterTime`, the API version), sends it, and reads the
+# server's failure into one of Rebel's codes.
+
+use bson
+use io
+use mongodb/internal/conn
+use mongodb/internal/replies
+use mongodb/internal/uri
+use mongodb/internal/wire
+use numbers
+use uuid
+
+# The code of a client that is closed, a transaction asked in the wrong state.
+constant CLOSED: str
+    "closed"
+
+constant INVALID: str
+    "invalid"
+
+constant LIMIT: str
+    "limit"
+
+constant UNSUPPORTED: str
+    "unsupported"
+
+# What a command is, which decides what `command` adds to it.
+constant READ: i64
+    0
+
+# A write that may not be retried: a multi-document update or delete.
+constant WRITE: i64
+    1
+
+# A write that may be retried once with the same transaction number.
+constant RETRYABLE_WRITE: i64
+    2
+
+# A command with a session and neither concern: `getMore`, `killCursors`,
+# `listIndexes` and their kind.
+constant PLAIN: i64
+    3
+
+# A command with no session: the handshake, the login, `endSessions`.
+constant NO_SESSION: i64
+    4
+
+# `commitTransaction` and `abortTransaction`.
+constant ENDS_TRANSACTION: i64
+    5
+
+# The states of a transaction.
+constant NO_TRANSACTION: i64
+    0
+
+constant STARTING: i64
+    1
+
+constant IN_PROGRESS: i64
+    2
+
+constant COMMITTED: i64
+    3
+
+constant ABORTED: i64
+    4
+
+# A client's whole state, which only this package reads and writes.
+record State
+    # The connection.
+    conn: conn.Conn
+    # The settings it was made with, which a reconnection uses again.
+    settings: uri.Settings
+    # The server it stands on.
+    address: uri.Address
+    # The last request's id.
+    request_id: i64
+    # The server's `hello`.
+    hello: bson.Document
+    # The most bytes of a document, of a message, and writes in one batch.
+    max_bson: i64
+    max_message: i64
+    max_batch: i64
+    # The server's highest wire version.
+    max_wire: i64
+    # The replica set's name, "" for a standalone or a mongos.
+    set_name: str
+    # Whether the server is a mongos, and whether it is a writable primary.
+    is_mongos: bool
+    is_primary: bool
+    # Whether the server keeps logical sessions.
+    sessions: bool
+    # The logical session's id, `{"id": <UUID>}`.
+    lsid: bson.Document
+    # The session's last transaction number.
+    txn_number: i64
+    # The transaction's state, one of the constants above.
+    transaction: i64
+    # The transaction's read concern level, "" for none.
+    txn_read_concern: str
+    # The transaction's write concern, empty for the client's.
+    txn_write_concern: bson.Document
+    # The transaction's longest commit, in milliseconds, 0 for none.
+    txn_max_commit_ms: i64
+    # The highest `$clusterTime` seen, empty before any.
+    cluster_time: bson.Document
+    # What makes the `_id` of an inserted document that has none.
+    maker: bson.ObjectIdMaker
+
+# A state over `c`, before its handshake.
+function over(c: conn.Conn, settings: uri.Settings, address: uri.Address) -> State?
+    id = uuid.to_bytes(uuid.new_v4()?)
+    lsid = bson.Document(fields: [bson.Field(name: "id", value: .binary(subtype: bson.SUBTYPE_UUID, data: id))])
+    return ok(
+        State(conn: c, settings: settings, address: address, request_id: 0, hello: bson.Document(fields: []), max_bson: 16777216, max_message: wire.DEFAULT_MOST, max_batch: 100000, max_wire: 0, set_name: "", is_mongos: false, is_primary: false, sessions: false, lsid: lsid, txn_number: 0, transaction: NO_TRANSACTION, txn_read_concern: "", txn_write_concern: bson.Document(fields: []), txn_max_commit_ms: 0, cluster_time: bson.Document(fields: []), maker: bson.object_id_maker()?)
+    )
+
+# The write concern the settings name, empty where they name none.
+function write_concern_of(s: uri.Settings) -> bson.Document
+    fields: [bson.Field] @= []
+
+    if s.w != ""
+        w: bson.Value = if is_digits(s.w)
+            bson.from_int(numbers.parse_int(s.w).default(1))
+        else
+            .text(v: s.w)
+        fields @ fields.push(bson.Field(name: "w", value: w))
+
+    if s.journal != ""
+        fields @ fields.push(bson.Field(name: "j", value: .boolean(v: s.journal == "true")))
+
+    if s.wtimeout_ms > 0
+        fields @ fields.push(bson.Field(name: "wtimeout", value: bson.from_int(s.wtimeout_ms)))
+    return bson.Document(fields: fields)
+
+# Whether `s` is one digit or more and nothing else.
+function is_digits(s: str) -> bool
+    if s.len() == 0 || s.len() > 9
+        return false
+
+    for i in range(from: 0, to: s.len())
+        if s[i] < '0' || s[i] > '9'
+            return false
+
+    return true
+
+# Whether the transaction is starting or in progress.
+function in_transaction(s: State lent) -> bool
+    return s.transaction == STARTING || s.transaction == IN_PROGRESS
+
+# Whether writes may carry a transaction number: a replica set or a mongos
+# that keeps sessions.
+function can_retry_writes(s: State lent) -> bool
+    return s.sessions && (s.set_name != "" || s.is_mongos)
+
+# The next transaction number, for a retryable write.
+function next_txn(@s: State) -> i64
+    s.txn_number @ s.txn_number + 1
+    return s.txn_number
+
+# The body `body` with what the protocol and the settings add for a command
+# of `kind` sent to `database`, with transaction number `txn` (0 for none).
+function completed(s: State lent, database: str, body: bson.Document, kind: i64, txn: i64) -> bson.Document
+    fields: [bson.Field] @= body.fields
+    transacting = in_transaction(s) && kind != NO_SESSION
+
+    if s.sessions && kind != NO_SESSION
+        fields @ fields.push(bson.Field(name: "lsid", value: .document(doc: s.lsid)))
+
+    if transacting || kind == ENDS_TRANSACTION
+        fields @ fields.push(bson.Field(name: "txnNumber", value: .int64(v: s.txn_number)))
+
+        if s.transaction == STARTING && kind != ENDS_TRANSACTION
+            fields @ fields.push(bson.Field(name: "startTransaction", value: .boolean(v: true)))
+
+            if s.txn_read_concern != ""
+                concern = bson.Document(fields: [bson.Field(name: "level", value: .text(v: s.txn_read_concern))])
+                fields @ fields.push(bson.Field(name: "readConcern", value: .document(doc: concern)))
+        fields @ fields.push(bson.Field(name: "autocommit", value: .boolean(v: false)))
+    else if txn > 0
+        fields @ fields.push(bson.Field(name: "txnNumber", value: .int64(v: txn)))
+
+    if kind == ENDS_TRANSACTION
+        concern = if s.txn_write_concern.fields.len() > 0
+            s.txn_write_concern
+        else
+            write_concern_of(s.settings)
+
+        if concern.fields.len() > 0
+            fields @ fields.push(bson.Field(name: "writeConcern", value: .document(doc: concern)))
+    else if !transacting
+        if kind == READ && s.settings.read_concern != "" && !bson.has_member(body, name: "readConcern")
+            concern = bson.Document(fields: [bson.Field(name: "level", value: .text(v: s.settings.read_concern))])
+            fields @ fields.push(bson.Field(name: "readConcern", value: .document(doc: concern)))
+
+        if (kind == WRITE || kind == RETRYABLE_WRITE) && !bson.has_member(body, name: "writeConcern")
+            concern = write_concern_of(s.settings)
+
+            if concern.fields.len() > 0
+                fields @ fields.push(bson.Field(name: "writeConcern", value: .document(doc: concern)))
+
+    if kind == READ && !s.is_primary || kind == READ && s.settings.read_preference != "primary"
+        mode = if s.settings.read_preference == "primary"
+            "primaryPreferred"
+        else
+            s.settings.read_preference
+        preference = bson.Document(fields: [bson.Field(name: "mode", value: .text(v: mode))])
+        fields @ fields.push(bson.Field(name: "$readPreference", value: .document(doc: preference)))
+
+    if s.cluster_time.fields.len() > 0 && kind != NO_SESSION
+        fields @ fields.push(bson.Field(name: "$clusterTime", value: .document(doc: s.cluster_time)))
+
+    if s.settings.server_api != "" && kind != NO_SESSION || s.settings.server_api != "" && bson.has_member(body, name: "hello")
+        fields @ fields.push(bson.Field(name: "apiVersion", value: .text(v: s.settings.server_api)))
+    fields @ fields.push(bson.Field(name: "$db", value: .text(v: database)))
+    return bson.Document(fields: fields)
+
+# The `clusterTime` timestamp of a `$clusterTime` document.
+function time_of(doc: bson.Document) -> bson.Timestamp
+    return match bson.member(doc, name: "clusterTime")
+        .ok v =>
+            match v
+                .timestamp t => t.v
+                .double _ | .text _ | .document _ | .array _ | .binary _ | .undefined | .object_id _ | .boolean _ | .datetime _ | .null_value | .regex _ | .db_pointer _ | .javascript _ | .symbol _ | .javascript_with_scope _ | .int32 _ | .int64 _ | .decimal128 _ | .min_key | .max_key =>
+                    bson.Timestamp(seconds: 0, increment: 0)
+        .err _ => bson.Timestamp(seconds: 0, increment: 0)
+
+# Keeps the reply's `$clusterTime` where it is past the one held.
+function gossip(@s: State, reply: bson.Document)
+    match bson.member(reply, name: "$clusterTime")
+        .ok v =>
+            match bson.document_of(v)
+                .ok seen =>
+                    if s.cluster_time.fields.len() == 0 || bson.compare_timestamps(a: time_of(seen), b: time_of(s.cluster_time)) > 0
+                        s.cluster_time @ seen
+                .err _ => _ = 0
+        .err _ => _ = 0
+
+# The reply to the command `body` of `kind` sent to `database`, with
+# `sequences` beside it and transaction number `txn` (0 for none). Fails
+# `closed` where the client is closed or its connection ends, `limit` where
+# the command passes the server's most, and with the code of the server's
+# failure, its own code and labels in the message.
+function command(@s: State, database: str, body: bson.Document, kind: i64, txn: i64, sequences: [wire.Sequence]) -> bson.Document?
+    if s.conn.ended
+        return fail(code: CLOSED, msg: f"the connection to {s.conn.target} is closed")
+    full = completed(s, database: database, body: body, kind: kind, txn: txn)
+    encoded = bson.encode(full)?
+
+    if encoded.len() > s.max_bson + 16384
+        return fail(code: LIMIT, msg: f"a command of {encoded.len()} bytes, past the {s.max_bson} the server takes")
+    s.request_id @ s.request_id + 1
+    message = wire.message(request_id: s.request_id, body: encoded, sequences: sequences)
+
+    if message.len() > s.max_message
+        return fail(code: LIMIT, msg: f"a message of {message.len()} bytes, past the {s.max_message} the server takes")
+
+    if s.settings.socket_timeout_ms > 0
+        conn.set_deadline(s.conn, ms: s.settings.socket_timeout_ms)?
+
+    if s.transaction == STARTING && kind != NO_SESSION && kind != ENDS_TRANSACTION
+        s.transaction @ IN_PROGRESS
+    reply = conn.exchange(c: @s.conn, message: message, request_id: s.request_id)?
+    gossip(s: @s, reply: reply)
+    replies.check(reply)?
+    return ok(reply)
+
+# Reads the server's `hello` into `s`.
+function learn(@s: State, hello: bson.Document)
+    s.hello @ hello
+    s.max_bson @ replies.int_at(hello, name: "maxBsonObjectSize", otherwise: 16777216)
+    s.max_message @ replies.int_at(hello, name: "maxMessageSizeBytes", otherwise: wire.DEFAULT_MOST)
+    s.max_batch @ replies.int_at(hello, name: "maxWriteBatchSize", otherwise: 100000)
+    s.max_wire @ replies.int_at(hello, name: "maxWireVersion", otherwise: 0)
+    s.set_name @ replies.text_at(hello, name: "setName")
+    s.is_mongos @ replies.text_at(hello, name: "msg") == "isdbgrid"
+
+    primary = match bson.member(hello, name: "isWritablePrimary")
+        .ok v => bson.bool_of(v).default(false)
+        .err _ =>
+            match bson.member(hello, name: "ismaster")
+                .ok v  => bson.bool_of(v).default(false)
+                .err _ => false
+
+    s.is_primary @ primary
+    s.sessions @ bson.has_member(hello, name: "logicalSessionTimeoutMinutes")
+    s.conn.most @ s.max_message
+
+test "completed: a read on a secondary, a retryable write, and the first and later commands of a transaction"
+    settings @= uri.defaults("h")
+    settings.read_concern @ "majority"
+    settings.w @ "majority"
+    pipe = io.pipe().must()
+    s @= over(
+        c: conn.scripted(out: pipe.writer, input: pipe.reader),
+        settings: settings,
+        address: uri.Address(host: "h", port: 1)
+    ).must()
+    s.sessions @ true
+    s.set_name @ "rs0"
+    read = completed(
+        s,
+        database: "d",
+        body: bson.Document(fields: [bson.Field(name: "find", value: .text(v: "c"))]),
+        kind: READ,
+        txn: 0
+    )
+    assert bson.names_of(read) == ["find", "lsid", "readConcern", "$readPreference", "$db"]
+    s.is_primary @ true
+    write = completed(
+        s,
+        database: "d",
+        body: bson.Document(fields: [bson.Field(name: "insert", value: .text(v: "c"))]),
+        kind: RETRYABLE_WRITE,
+        txn: 4
+    )
+    assert bson.names_of(write) == ["insert", "lsid", "txnNumber", "writeConcern", "$db"]
+    assert bson.value_at(write, path: "writeConcern.w").must() == .text(v: "majority")
+    s.transaction @ STARTING
+    s.txn_number @ 7
+    first = completed(
+        s,
+        database: "d",
+        body: bson.Document(fields: [bson.Field(name: "insert", value: .text(v: "c"))]),
+        kind: RETRYABLE_WRITE,
+        txn: 0
+    )
+    assert bson.names_of(first) == ["insert", "lsid", "txnNumber", "startTransaction", "autocommit", "$db"]
+    s.transaction @ IN_PROGRESS
+    later = completed(
+        s,
+        database: "d",
+        body: bson.Document(fields: [bson.Field(name: "find", value: .text(v: "c"))]),
+        kind: READ,
+        txn: 0
+    )
+    assert bson.names_of(later) == ["find", "lsid", "txnNumber", "autocommit", "$db"]
+    commit = completed(
+        s,
+        database: "admin",
+        body: bson.Document(fields: [bson.Field(name: "commitTransaction", value: bson.from_int(1))]),
+        kind: ENDS_TRANSACTION,
+        txn: 0
+    )
+    assert bson.names_of(commit) == ["commitTransaction", "lsid", "txnNumber", "autocommit", "writeConcern", "$db"]
+    conn.close(@s.conn).must()
+    reading @= pipe.reader
+    io.close(@reading).must()
+
+test "write_concern_of: a number, a tag, a journal and a time"
+    settings @= uri.defaults("h")
+    assert write_concern_of(settings).fields.len() == 0
+    settings.w @ "2"
+    settings.journal @ "true"
+    settings.wtimeout_ms @ 100
+    assert bson.format_json(write_concern_of(settings), mode: .relaxed).must() == "{\"w\":2,\"j\":true,\"wtimeout\":100}"
+    settings.w @ "dc"
+    assert bson.member(write_concern_of(settings), name: "w").must() == .text(v: "dc")

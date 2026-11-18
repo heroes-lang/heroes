@@ -1,0 +1,464 @@
+# MongoDB's connection strings read, as the drivers' URI specification reads
+# them: `mongodb://user:password@host1:port1,host2/database?options` and
+# `mongodb+srv://user:password@cluster.example.com/database?options`, whose
+# hosts and TXT options DNS gives. The options' names are read in any case;
+# an option this client knows nothing of is refused rather than ignored, so a
+# misspelt one is told. The settings here are what the face's `Options`
+# holds, in a record of this package's own.
+
+use dns
+use net
+use numbers
+use strings
+use url
+
+# The code of a connection string or a DNS answer this client refuses.
+constant INVALID: str
+    "invalid"
+
+# The code of an option this client does not offer.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# MongoDB's port unless one is given.
+constant DEFAULT_PORT: i64
+    27017
+
+# One server's name and port.
+record Address
+    # A name or an address, without brackets.
+    host: str
+    # The TCP port.
+    port: i64
+
+# Every setting of a connection, as the face's `Options` holds them.
+record Settings
+    hosts: [Address]
+    srv_name: str
+    srv_service_name: str
+    srv_max_hosts: i64
+    username: str
+    password: str
+    auth_source: str
+    mechanism: str
+    database: str
+    replica_set: str
+    direct: bool
+    tls: bool
+    tls_roots: str
+    app_name: str
+    connect_timeout_ms: i64
+    socket_timeout_ms: i64
+    read_preference: str
+    read_concern: str
+    w: str
+    journal: str
+    wtimeout_ms: i64
+    retry_writes: bool
+    retry_reads: bool
+    server_api: str
+
+# The settings of a connection to `host` at the default port, as the drivers
+# default them.
+function defaults(host: str) -> Settings
+    return Settings(
+        hosts: [Address(host: host, port: DEFAULT_PORT)],
+        srv_name: "",
+        srv_service_name: "mongodb",
+        srv_max_hosts: 0,
+        username: "",
+        password: "",
+        auth_source: "",
+        mechanism: "",
+        database: "",
+        replica_set: "",
+        direct: false,
+        tls: false,
+        tls_roots: "",
+        app_name: "",
+        connect_timeout_ms: 10000,
+        socket_timeout_ms: 0,
+        read_preference: "primary",
+        read_concern: "",
+        w: "",
+        journal: "",
+        wtimeout_ms: 0,
+        retry_writes: true,
+        retry_reads: true,
+        server_api: ""
+    )
+
+# `s` percent-decoded, `what` naming it in a failure.
+function decoded(s: str, what: str) -> str?
+    return match url.unescape(s)
+        .ok got => ok(got)
+        .err _  => fail(code: INVALID, msg: f"the {what} holds a % that is no escape")
+
+# The server `s` names, `host`, `host:port` or `[address]:port`.
+function address_of(s: str) -> Address?
+    if s.len() == 0
+        return fail(code: INVALID, msg: "a connection string names an empty host")
+
+    if s[0] == '['
+        hp = match net.split_host_port(s)
+            .ok got => got
+            .err _ =>
+                if s[s.len() - 1] == ']'
+                    return ok(Address(host: s.slice(from: 1, to: s.len() - 1), port: DEFAULT_PORT))
+                return fail(code: INVALID, msg: f"the host \"{s}\" is no [address] or [address]:port")
+
+        return ok(Address(host: hp.host, port: hp.port))
+
+    host = decoded(s: s, what: "host")?
+
+    if strings.has_suffix(s: host, suffix: ".sock")
+        return fail(code: UNSUPPORTED, msg: f"the host \"{host}\" is a Unix socket, which `net` does not reach")
+    colon = strings.index_of_last(s: s, substr: ":")
+
+    return match colon
+        .err _ => ok(Address(host: host, port: DEFAULT_PORT))
+        .ok at =>
+            port = match net.parse_port(s.slice(from: at + 1, to: s.len()))
+                .ok p  => p
+                .err _ => return fail(code: INVALID, msg: f"the host \"{s}\" has no port of 1 to 65535")
+
+            if port < 1
+                return fail(code: INVALID, msg: f"the host \"{s}\" has the port 0")
+            ok(Address(host: decoded(s: s.slice(from: 0, to: at), what: "host")?, port: port))
+
+# Whether `value` is `true` or `false`, as an option says one.
+function flag(key: str, value: str) -> bool?
+    if value == "true"
+        return ok(true)
+    else if value == "false"
+        return ok(false)
+    return fail(code: INVALID, msg: f"the option {key}={value} is neither true nor false")
+
+# The number of milliseconds or of hosts `value` says, 0 or more.
+function count(key: str, value: str) -> i64?
+    return match numbers.parse_int(value)
+        .ok n =>
+            if n < 0
+                return fail(code: INVALID, msg: f"the option {key}={value} is below 0")
+            ok(n)
+        .err _ => fail(code: INVALID, msg: f"the option {key}={value} is no number")
+
+# `s` with the option `key=value` applied, `from_txt` where DNS's TXT record
+# gave it, which may give only `authSource`, `replicaSet` and `loadBalanced`.
+function apply(s: Settings, key: str, value: str, from_txt: bool) -> Settings?
+    k = strings.to_lower(key)
+    out @= s
+
+    if from_txt && k != "authsource" && k != "replicaset" && k != "loadbalanced"
+        return fail(
+            code: INVALID,
+            msg: f"a TXT record names the option {key}, where only authSource, replicaSet and loadBalanced may stand"
+        )
+
+    if k == "authsource"
+        out.auth_source @ value
+    else if k == "authmechanism"
+        if value != "SCRAM-SHA-1" && value != "SCRAM-SHA-256" && value != "PLAIN"
+            return fail(
+                code: UNSUPPORTED,
+                msg: f"the mechanism {value}: this client speaks SCRAM-SHA-1, SCRAM-SHA-256 and PLAIN"
+            )
+        out.mechanism @ value
+    else if k == "authmechanismproperties"
+        return fail(code: UNSUPPORTED, msg: "authMechanismProperties belongs to mechanisms this client does not speak")
+    else if k == "replicaset"
+        out.replica_set @ value
+    else if k == "directconnection"
+        out.direct @ flag(key: key, value: value)?
+    else if k == "tls" || k == "ssl"
+        out.tls @ flag(key: key, value: value)?
+    else if k == "tlscafile"
+        out.tls_roots @ match read_file(value)
+            .ok text => text
+            .err e   => return fail(code: e.code, msg: f"tlsCAFile: {e.msg}")
+    else if k == "tlsinsecure" || k == "tlsallowinvalidcertificates" || k == "tlsallowinvalidhostnames" || k == "tlsdisableocspendpointcheck"
+        if flag(key: key, value: value)?
+            return fail(
+                code: UNSUPPORTED,
+                msg: f"{key}=true: this client always checks the server's certificate and its name"
+            )
+    else if k == "tlscertificatekeyfile" || k == "tlscertificatekeyfilepassword"
+        return fail(code: UNSUPPORTED, msg: f"{key}: `tls` offers no client certificate")
+    else if k == "appname"
+        out.app_name @ value
+    else if k == "connecttimeoutms"
+        out.connect_timeout_ms @ count(key: key, value: value)?
+    else if k == "sockettimeoutms" || k == "timeoutms"
+        out.socket_timeout_ms @ count(key: key, value: value)?
+    else if k == "readpreference"
+        known = ["primary", "primaryPreferred", "secondary", "secondaryPreferred", "nearest"]
+
+        if !is_one_of(value, known: known)
+            return fail(
+                code: INVALID,
+                msg: f"the read preference {value} is none of primary, primaryPreferred, secondary, secondaryPreferred and nearest"
+            )
+        out.read_preference @ value
+    else if k == "readconcernlevel"
+        out.read_concern @ value
+    else if k == "w"
+        out.w @ value
+    else if k == "journal"
+        _ = flag(key: key, value: value)?
+        out.journal @ value
+    else if k == "wtimeoutms"
+        out.wtimeout_ms @ count(key: key, value: value)?
+    else if k == "retrywrites"
+        out.retry_writes @ flag(key: key, value: value)?
+    else if k == "retryreads"
+        out.retry_reads @ flag(key: key, value: value)?
+    else if k == "srvservicename"
+        out.srv_service_name @ value
+    else if k == "srvmaxhosts"
+        out.srv_max_hosts @ count(key: key, value: value)?
+    else if k == "loadbalanced"
+        if flag(key: key, value: value)?
+            return fail(
+                code: UNSUPPORTED,
+                msg: "loadBalanced=true: this client connects to one server, never through a load balancer"
+            )
+    else if k == "compressors"
+        return fail(code: UNSUPPORTED, msg: "compressors: this client sends and asks for no compression")
+    else if k == "maxpoolsize" || k == "minpoolsize" || k == "maxidletimems" || k == "waitqueuetimeoutms" || k == "maxconnecting" || k == "serverselectiontimeoutms" || k == "localthresholdms" || k == "heartbeatfrequencyms" || k == "serverselectiontryonce" || k == "maxstalenessseconds" || k == "zlibcompressionlevel"
+        _ = count(key: key, value: value)?
+    else
+        return fail(code: INVALID, msg: f"the option {key} is none this client knows")
+    return ok(out)
+
+# Whether `value` is one of `known`.
+function is_one_of(value: str, known: [str]) -> bool
+    for k in known
+        if k == value
+            return true
+
+    return false
+
+# Whether `s` holds the byte `c`.
+function holds(s: str, c: u8) -> bool
+    for i in range(from: 0, to: s.len())
+        if s[i] == c
+            return true
+
+    return false
+
+# The settings `text` writes. Fails `invalid` where it is no connection
+# string, names a host or a port that is none, an option twice in an
+# impossible way, or credentials with an unescaped `:` or `@`;
+# `unsupported` where it asks what this client does not do. A `mongodb+srv://`
+# string names one host, whose servers `resolve_srv` asks DNS for.
+function parse(text: str) -> Settings?
+    srv = strings.has_prefix(s: text, prefix: "mongodb+srv://")
+
+    if !srv && !strings.has_prefix(s: text, prefix: "mongodb://")
+        return fail(code: INVALID, msg: "a connection string begins mongodb:// or mongodb+srv://")
+
+    rest = if srv
+        text.slice(from: 14, to: text.len())
+    else
+        text.slice(from: 10, to: text.len())
+    end: i64 @= rest.len()
+
+    for i in range(from: 0, to: rest.len())
+        if end == rest.len() && (rest[i] == '/' || rest[i] == '?')
+            end @ i
+
+    authority = rest.slice(from: 0, to: end)
+    tail = rest.slice(from: end, to: rest.len())
+    out @= defaults("localhost")
+    out.hosts @ []
+    hosts_text: str @= authority
+
+    match strings.index_of_last(s: authority, substr: "@")
+        .ok at =>
+            userinfo = authority.slice(from: 0, to: at)
+            hosts_text @ authority.slice(from: at + 1, to: authority.len())
+            colon = strings.index_of(s: userinfo, substr: ":")
+
+            user_text = match colon
+                .ok c  => userinfo.slice(from: 0, to: c)
+                .err _ => userinfo
+
+            password_text = match colon
+                .ok c  => userinfo.slice(from: c + 1, to: userinfo.len())
+                .err _ => ""
+
+            if holds(s: user_text, c: '@') || holds(s: password_text, c: '@') || holds(s: password_text, c: ':')
+                return fail(
+                    code: INVALID,
+                    msg: "the user and the password must be percent-escaped: a : or an @ stands unescaped"
+                )
+            out.username @ decoded(s: user_text, what: "user")?
+            out.password @ decoded(s: password_text, what: "password")?
+
+            if out.username == ""
+                return fail(code: INVALID, msg: "a connection string names an empty user")
+        .err _ => _ = 0
+
+    if hosts_text == ""
+        return fail(code: INVALID, msg: "a connection string names no host")
+    parts = strings.split(s: hosts_text, sep: ",")
+
+    if srv
+        if parts.len() != 1 || holds(s: hosts_text, c: ':')
+            return fail(code: INVALID, msg: "a mongodb+srv:// string names one host, with no port")
+        out.srv_name @ decoded(s: hosts_text, what: "host")?
+        out.tls @ true
+    else
+        found: [Address] @= []
+
+        for part in parts
+            found @ found.push(address_of(part)?)
+
+        out.hosts @ found
+
+    query: str @= ""
+
+    if tail.len() > 0 && tail[0] == '/'
+        path_end: i64 @= tail.len()
+
+        for i in range(from: 0, to: tail.len())
+            if path_end == tail.len() && tail[i] == '?'
+                path_end @ i
+
+        out.database @ decoded(s: tail.slice(from: 1, to: path_end), what: "database")?
+
+        if holds(s: out.database, c: '/') || holds(s: out.database, c: ' ')
+            return fail(
+                code: INVALID,
+                msg: f"the database \"{out.database}\" holds a character a database's name may not"
+            )
+        query @ tail.slice(from: path_end, to: tail.len())
+    else
+        query @ tail
+
+    if query.len() > 0
+        for pair in strings.split(s: query.slice(from: 1, to: query.len()), sep: "&")
+            if pair == ""
+                continue
+
+            eq = match strings.index_of(s: pair, substr: "=")
+                .ok at => at
+                .err _ => return fail(code: INVALID, msg: f"the option \"{pair}\" has no =")
+
+            value = decoded(s: pair.slice(from: eq + 1, to: pair.len()), what: "option's value")?
+            out @ apply(out, key: pair.slice(from: 0, to: eq), value: value, from_txt: false)?
+
+    if srv && out.direct
+        return fail(code: INVALID, msg: "directConnection=true cannot stand with mongodb+srv://")
+
+    if out.direct && out.hosts.len() > 1
+        return fail(code: INVALID, msg: "directConnection=true names one host")
+    return ok(out)
+
+# Whether `host` stands under the domain the SRV name `srv_name` gives: its
+# parent where it has three labels or more, itself otherwise.
+function under_domain(host: str, srv_name: str) -> bool
+    labels = strings.split(s: srv_name, sep: ".")
+
+    domain = if labels.len() >= 3
+        srv_name.slice(from: labels[0].len() + 1, to: srv_name.len())
+    else
+        srv_name
+    return strings.has_suffix(s: strings.to_lower(host), suffix: "." + strings.to_lower(domain))
+
+# `s` with the servers and the options DNS gives for its SRV name: the SRV
+# records of `_<service>._tcp.<name>` and its one TXT record. Settings `s`
+# names already keep their value. Fails `invalid` where a server stands
+# outside the name's domain or the TXT records are more than one or name
+# another option, and where `dns` fails, with its code.
+function resolve_srv(s: Settings, resolver: dns.Resolver) -> Settings?
+    if s.srv_name == ""
+        return ok(s)
+    records = dns.lookup_srv(resolver, service: s.srv_service_name, proto: "tcp", name: s.srv_name)?
+    out @= s
+    found: [Address] @= []
+
+    for r in records
+        host = strings.trim_suffix(s: r.target, suffix: ".")
+
+        if !under_domain(host: host, srv_name: s.srv_name)
+            return fail(code: INVALID, msg: f"DNS names the server {host}, outside the domain of {s.srv_name}")
+
+        if s.srv_max_hosts == 0 || found.len() < s.srv_max_hosts
+            found @ found.push(Address(host: host, port: r.port))
+
+    out.hosts @ found
+
+    if found.len() == 0
+        return fail(code: INVALID, msg: f"DNS names no server for {s.srv_name}")
+
+    texts = match dns.lookup_txt(resolver, name: s.srv_name)
+        .ok got => got
+        .err e =>
+            if e.code != "not_found"
+                return fail(code: e.code, msg: e.msg)
+            none: [str] = []
+            none
+
+    if texts.len() > 1
+        return fail(
+            code: INVALID,
+            msg: f"DNS gives {texts.len()} TXT records for {s.srv_name}, where one at most may stand"
+        )
+
+    for text in texts
+        for pair in strings.split(s: text, sep: "&")
+            eq = match strings.index_of(s: pair, substr: "=")
+                .ok at => at
+                .err _ => return fail(code: INVALID, msg: f"the TXT option \"{pair}\" has no =")
+
+            key = strings.to_lower(pair.slice(from: 0, to: eq))
+            given = key == "authsource" && s.auth_source != "" || key == "replicaset" && s.replica_set != ""
+
+            if !given
+                out @ apply(out, key: pair.slice(from: 0, to: eq), value: decoded(s: pair.slice(from: eq + 1, to: pair.len()), what: "TXT option")?, from_txt: true)?
+
+    return ok(out)
+
+test "parse: the hosts, credentials, database and options pymongo 4.20 read"
+    s = parse("mongodb://u%40x:p%3Aw@h1:27018,[::1]:27019/db?replicaSet=rs0&authSource=admin").must()
+    assert s.hosts == [Address(host: "h1", port: 27018), Address(host: "::1", port: 27019)]
+    assert s.username == "u@x" && s.password == "p:w" && s.database == "db"
+    assert s.replica_set == "rs0" && s.auth_source == "admin" && !s.tls
+    t = parse(
+        "mongodb://host/db?w=majority&journal=true&wtimeoutMS=100&readPreference=secondaryPreferred&TLS=true"
+    ).must()
+    assert t.w == "majority" && t.journal == "true" && t.wtimeout_ms == 100 && t.read_preference == "secondaryPreferred" && t.tls
+    assert parse("mongodb://localhost?w=1").must().w == "1"
+    assert parse("mongodb://localhost").must().hosts == [Address(host: "localhost", port: 27017)]
+
+test "parse: what pymongo 4.20 refused, and what this client does not do"
+    assert parse("mongodb://user@name:pass@host").is_err()
+    assert parse("mongodb://us:er:pass@host").is_err()
+    assert parse("mongodb://@host").is_err()
+    assert parse("mongodb://host:0").is_err() && parse("mongodb://host:65536").is_err()
+    assert parse("mongodb://host/?unknownOption=1").is_err()
+    assert parse("mongodb+srv://cluster.example.com/?directConnection=true").is_err()
+    assert parse("mongodb+srv://h1.example.com,h2.example.com").is_err()
+    assert parse("mongodb://a/b/c").is_err()
+    assert parse("http://host").is_err() && parse("mongodb://").is_err()
+
+    match parse("mongodb://host/?tlsInsecure=true")
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+    match parse("mongodb://host/?loadBalanced=true")
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+test "parse: a mongodb+srv:// string turns TLS on, and an explicit tls=false keeps it off"
+    s = parse("mongodb+srv://cluster0.example.com/app").must()
+    assert s.srv_name == "cluster0.example.com" && s.tls && s.hosts.len() == 0 && s.database == "app"
+    assert !parse("mongodb+srv://cluster0.example.com/?tls=false").must().tls
+
+test "under_domain: a name of three labels and more, of two, and a host outside"
+    assert under_domain(host: "shard-00.cluster0.example.com", srv_name: "cluster0.example.com")
+    assert under_domain(host: "a.example.com", srv_name: "cluster0.example.com")
+    assert !under_domain(host: "a.evil.com", srv_name: "cluster0.example.com")
+    assert under_domain(host: "a.example.com", srv_name: "example.com")
+    assert !under_domain(host: "example.com", srv_name: "example.com")

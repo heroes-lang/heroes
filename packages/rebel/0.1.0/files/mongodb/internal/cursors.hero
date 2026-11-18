@@ -1,0 +1,166 @@
+# A cursor of the server read batch by batch: the documents of its last
+# batch given out one at a time, then `getMore` asked for the next, until the
+# server says it holds no more (an id of 0). A change stream's cursor never
+# ends: a `getMore` that waited its time and brought nothing fails `timeout`,
+# and its resume token follows every document given out.
+
+use bson
+use mongodb/internal/ops
+use mongodb/internal/replies
+use mongodb/internal/session
+use strings
+
+# The code of a cursor with no more documents.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a wait that brought nothing.
+constant TIMEOUT: str
+    "timeout"
+
+# A cursor's state.
+record Cursor
+    # The server's id of it, 0 once it holds no more.
+    id: i64
+    # Its database and its collection.
+    database: str
+    collection: str
+    # The last batch, and how many of its documents were given out.
+    batch: [bson.Document]
+    at: i64
+    # The documents each `getMore` asks, 0 for the server's choice.
+    batch_size: i64
+    # How long a `getMore` of a change stream waits, 0 for the server's.
+    max_await_ms: i64
+    # A change stream's resume token, empty for another cursor.
+    resume_token: bson.Document
+    # The token the server sent past the last batch, empty where none.
+    batch_token: bson.Document
+    # Whether it is a change stream's.
+    is_stream: bool
+
+# The cursor `reply` begins, on `database`.
+function of_reply(reply: bson.Document, database: str, batch_size: i64, max_await_ms: i64, is_stream: bool) -> Cursor?
+    b = replies.batch_of(reply)?
+
+    collection = match strings.index_of(s: b.namespace, substr: ".")
+        .ok at => b.namespace.slice(from: at + 1, to: b.namespace.len())
+        .err _ => b.namespace
+
+    return ok(
+        Cursor(id: b.id, database: database, collection: collection, batch: b.documents, at: 0, batch_size: batch_size, max_await_ms: max_await_ms, resume_token: b.resume_token, batch_token: b.resume_token, is_stream: is_stream)
+    )
+
+# The `getMore` that asks for `c`'s next batch.
+function get_more(c: Cursor lent) -> bson.Document
+    fields: [bson.Field] @= [
+        bson.Field(name: "getMore", value: .int64(v: c.id))
+        bson.Field(name: "collection", value: .text(v: c.collection))
+    ]
+
+    if c.batch_size > 0
+        fields @ fields.push(bson.Field(name: "batchSize", value: bson.from_int(c.batch_size)))
+
+    if c.is_stream && c.max_await_ms > 0
+        fields @ fields.push(bson.Field(name: "maxTimeMS", value: bson.from_int(c.max_await_ms)))
+    return bson.Document(fields: fields)
+
+# Gives out the document of `c`'s batch at `c.at`, a change stream's token
+# moved past it: the batch's own token after its last document where the
+# server sent one, else the document's `_id`.
+function take(@c: Cursor) -> bson.Document
+    d = c.batch[c.at]
+    c.at @ c.at + 1
+
+    if c.is_stream && c.at == c.batch.len() && c.batch_token.fields.len() > 0
+        c.resume_token @ c.batch_token
+    else if c.is_stream
+        match bson.member(d, name: "_id")
+            .ok v =>
+                match bson.document_of(v)
+                    .ok token => c.resume_token @ token
+                    .err _    => _ = 0
+            .err _ => _ = 0
+    return d
+
+# The next document of `c`, asking the server for a batch where the last is
+# given out. Fails `not_found` where the cursor holds no more, `timeout`
+# where a change stream's wait brought nothing, and as `getMore` fails.
+function next(@s: session.State, @c: Cursor) -> bson.Document?
+    if c.at < c.batch.len()
+        return ok(take(c: @c))
+
+    if c.id == 0
+        return fail(code: NOT_FOUND, msg: f"the cursor of {c.database}.{c.collection} holds no more documents")
+
+    reply = match ops.plain(@s, database: c.database, body: get_more(c))
+        .ok got => got
+        .err e =>
+            if replies.code_of(e.msg).default(0) == 43
+                c.id @ 0
+            return fail(code: e.code, msg: e.msg)
+
+    b = replies.batch_of(reply)?
+    c.id @ b.id
+    c.batch @ b.documents
+    c.at @ 0
+    c.batch_token @ b.resume_token
+
+    if c.batch.len() == 0 && b.resume_token.fields.len() > 0
+        c.resume_token @ b.resume_token
+
+    if c.batch.len() == 0 && c.id == 0
+        return fail(code: NOT_FOUND, msg: f"the cursor of {c.database}.{c.collection} holds no more documents")
+    else if c.batch.len() == 0
+        return fail(code: TIMEOUT, msg: f"the cursor of {c.database}.{c.collection} brought no document in its wait")
+    return ok(take(c: @c))
+
+# Every document `c` still holds, in order.
+function read_all(@s: session.State, @c: Cursor) -> [bson.Document]?
+    found: [bson.Document] @= []
+
+    while true
+        match next(@s, @c)
+            .ok d => found @ found.push(d)
+            .err e =>
+                if e.code == NOT_FOUND
+                    return ok(found)
+                return fail(code: e.code, msg: e.msg)
+
+# Tells the server to forget `c` where it still holds documents, and empties
+# it.
+function close(@s: session.State, @c: Cursor) -> ()?
+    c.batch @ []
+    c.at @ 0
+
+    if c.id == 0
+        return ok()
+    id = c.id
+    c.id @ 0
+    body = bson.Document(
+        fields: [bson.Field(name: "killCursors", value: .text(v: c.collection)), bson.Field(name: "cursors", value: .array(items: [.int64(v: id)]))]
+    )
+    _ = ops.plain(@s, database: c.database, body: body)?
+    return ok()
+
+test "get_more: a batch size, and a change stream's wait"
+    c = Cursor(
+        id: 7,
+        database: "d",
+        collection: "c.x",
+        batch: [],
+        at: 0,
+        batch_size: 10,
+        max_await_ms: 500,
+        resume_token: bson.Document(fields: []),
+        batch_token: bson.Document(fields: []),
+        is_stream: true
+    )
+    assert bson.format_json(get_more(c), mode: .canonical).must() == "{\"getMore\":{\"$numberLong\":\"7\"},\"collection\":\"c.x\",\"batchSize\":{\"$numberInt\":\"10\"},\"maxTimeMS\":{\"$numberInt\":\"500\"}}"
+
+test "of_reply: a collection whose name holds a point"
+    reply = bson.parse_json(
+        "{\"cursor\": {\"id\": 0, \"ns\": \"db.a.b\", \"firstBatch\": [{\"x\": 1}]}, \"ok\": 1}"
+    ).must()
+    c = of_reply(reply, database: "db", batch_size: 0, max_await_ms: 0, is_stream: false).must()
+    assert c.collection == "a.b" && c.batch.len() == 1 && c.id == 0

@@ -1,0 +1,40 @@
+# A double's eight bytes and a float's four, little-endian as BSON and its
+# vectors write them, through `numbers`' exact conversions between a float and
+# its IEEE 754 bits. Every NaN is written as the one quiet NaN, its sign and
+# payload lost, as `numbers.f64_to_bits` says.
+
+use bytes
+use numbers
+
+# The eight bytes of `x`, the least significant first.
+function encode(x: f64) -> [u8]
+    return bytes.encode_u64_le(numbers.f64_to_bits(x))
+
+# The double whose eight bytes begin at `at` of `data`. Aborts where fewer than
+# eight bytes stand there; the reader checks first.
+function decode(data: [u8] lent, at: i64) -> f64
+    return numbers.bits_to_f64(bytes.decode_u64_le(data, at: at).must())
+
+# The four bytes of `x`, the least significant first.
+function encode_f32(x: f32) -> [u8]
+    return bytes.encode_u32_le(numbers.f32_to_bits(x))
+
+# The float whose four bytes begin at `at` of `data`. Aborts where fewer than
+# four bytes stand there; the caller checks first.
+function decode_f32(data: [u8] lent, at: i64) -> f32
+    return numbers.bits_to_f32(bytes.decode_u32_le(data, at: at).must())
+
+test "encode and decode: one, both zeros, the infinities, NaN, and a read at an offset"
+    assert encode(1.0) == [0, 0, 0, 0, 0, 0, 0xf0, 0x3f]
+    assert encode(-0.0) == [0, 0, 0, 0, 0, 0, 0, 0x80]
+    assert encode(1.0 / 0.0) == [0, 0, 0, 0, 0, 0, 0xf0, 0x7f]
+    assert encode(0.0 / 0.0) == [0, 0, 0, 0, 0, 0, 0xf8, 0x7f]
+    assert decode([9, 0, 0, 0, 0, 0, 0, 0xf0, 0x3f], at: 1) == 1.0
+    assert decode([1, 0, 0, 0, 0, 0, 0, 0], at: 0) > 0.0
+    nan = decode([1, 0, 0, 0, 0, 0, 0xf0, 0x7f], at: 0)
+    assert nan != nan
+
+test "encode_f32 and decode_f32: one and a half, a negative zero, and an infinity"
+    assert encode_f32(to_f32(1.5)) == [0, 0, 0xc0, 0x3f]
+    assert encode_f32(to_f32(-0.0)) == [0, 0, 0, 0x80]
+    assert decode_f32([0, 0, 0x80, 0x7f], at: 0) == to_f32(1.0 / 0.0)

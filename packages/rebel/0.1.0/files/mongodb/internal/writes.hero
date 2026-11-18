@@ -1,0 +1,112 @@
+# Writes sent in batches: the documents of an insert and the statements of
+# an update or a delete, each encoded once, cut into batches that keep to the
+# server's most writes and bytes a message holds, and sent beside their
+# command as one document sequence each. An ordered write stops at the first
+# batch holding an error; an unordered one sends every batch and fails at
+# the end with the first error. The counts of every batch are summed.
+
+use bson
+use mongodb/internal/commands
+use mongodb/internal/ops
+use mongodb/internal/replies
+use mongodb/internal/session
+use mongodb/internal/wire
+
+# The code of a document past the most the server takes.
+constant LIMIT: str
+    "limit"
+
+# The room a batch leaves in a message for its command.
+constant ROOM: i64
+    16384
+
+# What a batched write answers.
+record Counts
+    # The documents inserted, matched or deleted: the replies' `n`.
+    n: i64
+    # The documents an update changed.
+    modified: i64
+    # The ids of the documents an upsert inserted.
+    upserted: [bson.Value]
+
+# `doc` with an `_id` first where it has none, a new ObjectId of `s`'s maker.
+function with_id(@s: session.State, doc: bson.Document) -> bson.Document?
+    if bson.has_member(doc, name: "_id")
+        return ok(doc)
+    id = bson.next_object_id(@s.maker)?
+    fields: [bson.Field] @= [bson.Field(name: "_id", value: .object_id(id: id))]
+
+    for f in doc.fields
+        fields @ fields.push(f)
+
+    return ok(bson.Document(fields: fields))
+
+# Sends `items` as the command `command` on `collection`, under the sequence
+# `identifier`, in batches; `extra` joins each command. Fails `limit` where
+# an item passes the server's most, and with the first write error.
+function send(@s: session.State, database: str, command: str, collection: str, identifier: str, items: [bson.Document], ordered: bool, retryable: bool, extra: bson.Document) -> Counts?
+    encoded: [[u8]] @= []
+
+    most = if command == "insert"
+        s.max_bson
+    else
+        s.max_bson + ROOM
+
+    for item in items
+        e = bson.encode(item)?
+
+        if e.len() > most
+            return fail(code: LIMIT, msg: f"a document of {e.len()} bytes, past the {s.max_bson} the server takes")
+        encoded @ encoded.push(e)
+
+    n: i64 @= 0
+    modified: i64 @= 0
+    upserted: [bson.Value] @= []
+    first_code: str @= ""
+    first_message: str @= ""
+    start: i64 @= 0
+    base = commands.merged(
+        base: bson.Document(fields: [bson.Field(name: command, value: .text(v: collection)), bson.Field(name: "ordered", value: .boolean(v: ordered))]),
+        extra: extra
+    )
+
+    while start < encoded.len()
+        batch: [[u8]] @= []
+        size: i64 @= 0
+        k: i64 @= start
+
+        while k < encoded.len() && batch.len() < s.max_batch && (batch.len() == 0 || size + encoded[k].len() <= s.max_message - ROOM)
+            batch @ batch.push(encoded[k])
+            size @ size + encoded[k].len()
+            k @ k + 1
+
+        reply = ops.write(@s, database: database, body: base, sequences: [wire.Sequence(identifier: identifier, documents: batch)], retryable: retryable)?
+        n @ n + replies.int_at(reply, name: "n", otherwise: 0)
+        modified @ modified + replies.int_at(reply, name: "nModified", otherwise: 0)
+
+        match bson.member(reply, name: "upserted")
+            .ok v =>
+                for u in bson.items_of(v).default([])
+                    match bson.document_of(u)
+                        .ok d =>
+                            match bson.member(d, name: "_id")
+                                .ok id => upserted @ upserted.push(id)
+                                .err _ => _ = 0
+                        .err _ => _ = 0
+            .err _ => _ = 0
+
+        match replies.write_errors(reply, offset: start)
+            .ok _ => _ = 0
+            .err e =>
+                if ordered
+                    return fail(code: e.code, msg: e.msg)
+
+                if first_code == ""
+                    first_code @ e.code
+                    first_message @ e.msg
+
+        start @ k
+
+    if first_code != ""
+        return fail(code: first_code, msg: first_message)
+    return ok(Counts(n: n, modified: modified, upserted: upserted))

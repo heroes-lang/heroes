@@ -1,0 +1,319 @@
+# The ledger of `mongodb`: what a program does with a MongoDB server,
+# measured against the official drivers: Go's
+# `go.mongodb.org/mongo-driver/v2` v2.10.0 (`go doc -all` of `mongo`,
+# `mongo/options`, `mongo/readpref`, `mongo/readconcern` and
+# `mongo/writeconcern`, fetched into the scratch folder on 2026-11-18),
+# Rust's `mongodb` crate 3.10.1 (its rustdoc built in the scratch folder the
+# same day: `all.html` and the methods of `Client`, `Database`, `Collection`,
+# `Cursor`, `SessionCursor`, `ClientSession`, `ClientOptions`, `IndexModel`
+# and `error::Error`) and Python's pymongo 4.20.0 (`dir()` of `MongoClient`,
+# `Database`, `Collection`, `Cursor`, `CommandCursor`, `ClientSession`,
+# `errors`, `operations`, `results` and `uri_parser`).
+#
+# The live runs, on 2026-11-18, reached MongoDB 7.0.48 (`mongo:7`, 1.14 GB,
+# in the container `rebel-mongodb` of this Mac) as a one-member replica set
+# `rs0` with authentication on and TLS allowed on one port, its certificate
+# `tls`'s test certificate for `localhost`. The expected values of the unit
+# tests were observed: pymongo 4.20 read the connection strings and answered
+# SASLprep; Python computed RFC 7677's SCRAM exchange and MongoDB's SHA-1
+# digest; RFC 3454's tables were read from Python 3.15's `stringprep`.
+
+capability mongodb/connect  a client connected by its options or a connection string
+  heroes  mongodb.connect, mongodb.options, mongodb.parse_url, mongodb.Options, mongodb.Host, mongodb.Client, mongodb.DEFAULT_PORT
+  go      Connect, options.Client, ClientOptions.ApplyURI, ClientOptions.SetHosts, ClientOptions.SetAuth, Client
+  rust    Client::with_uri_str, Client::with_options, ClientOptions::parse, ClientOptions::builder, Client
+  python  MongoClient, uri_parser.parse_uri, uri_parser.parse_host, uri_parser.split_hosts, uri_parser.split_options, uri_parser.parse_userinfo, uri_parser.validate_options, MongoClient.HOST, MongoClient.PORT
+  note    an unknown option is refused, as pymongo refuses it (Go and Rust ignore one); the options of a pool, a monitor and server selection's timing are read and have no effect
+
+capability mongodb/srv  servers and options found by DNS for mongodb+srv://
+  heroes  mongodb.connect, mongodb.Options.srv_name, mongodb.Options.srv_service_name, mongodb.Options.srv_max_hosts
+  go      ClientOptions.ApplyURI with mongodb+srv, SetSRVServiceName, SetSRVMaxHosts
+  rust    ClientOptions::parse with mongodb+srv, srv_service_name, srv_max_hosts
+  python  MongoClient with mongodb+srv, srvServiceName, srvMaxHosts
+  note    SRV and TXT asked of the system's resolver through `dns`; a server outside the name's domain and a second TXT record are refused; srvMaxHosts takes the first records, where the specification draws them at random. Unrun live: no DNS server here names this machine's server
+
+capability mongodb/tls  the connection secured by TLS, the server's certificate checked
+  heroes  mongodb.Security, mongodb.Options.security
+  go      ClientOptions.SetTLSConfig
+  rust    options::Tls, TlsOptions
+  python  tls, tlsCAFile, ssl
+  note    run live over `tls`; `tlsInsecure`, `tlsAllowInvalidCertificates` and `tlsAllowInvalidHostnames` are refused, `unsupported`
+
+capability mongodb/tls-client-certificate  a client certificate offered, and X.509's login
+  heroes  pending: `tls` offers no client certificate
+  go      ClientOptions.SetTLSConfig with Certificates, MONGODB-X509
+  rust    TlsOptions::cert_key_file_path, AuthMechanism::MongoDbX509
+  python  tlsCertificateKeyFile, tlsCertificateKeyFilePassword, MONGODB-X509
+
+capability mongodb/auth-scram  a login by SCRAM-SHA-256 or SCRAM-SHA-1, negotiated, the password prepared by SASLprep
+  heroes  mongodb.connect, mongodb.Mechanism, mongodb.Options.username, mongodb.Options.password, mongodb.Options.auth_source
+  go      options.Credential, ClientOptions.SetAuth
+  rust    options::Credential, AuthMechanism::ScramSha1, AuthMechanism::ScramSha256
+  python  username, password, authSource, authMechanism
+  note    run live against users of each mechanism, a SASLprep password (U+2168 logs in as IX), a wrong password and a forced mechanism the user lacks; the server's signature is checked and an iteration count below 4096 refused
+
+capability mongodb/auth-plain  a login by SASL PLAIN, LDAP's proxy
+  heroes  mongodb.Mechanism.sasl_plain
+  go      options.Credential with PLAIN
+  rust    AuthMechanism::Plain
+  python  authMechanism=PLAIN
+  note    unrun live: this server has no LDAP; the message is SASL's own, `\0user\0password`
+
+capability mongodb/auth-other  logins by Kerberos, AWS and OIDC
+  heroes  pending: GSSAPI needs the system's Kerberos library, which no package binds; MONGODB-AWS needs Signature Version 4 and STS, which `s3` holds a layer above; MONGODB-OIDC needs a callback driven by the program and HTTP
+  go      GSSAPI, MONGODB-AWS, MONGODB-OIDC, Credential.OIDCMachineCallback, Credential.OIDCHumanCallback
+  rust    AuthMechanism::Gssapi, AuthMechanism::MongoDbAws, AuthMechanism::MongoDbOidc, oidc
+  python  GSSAPI, MONGODB-AWS, MONGODB-OIDC, auth_oidc_shared
+
+capability mongodb/handshake  the server greeted, the client's name and the server's limits learned
+  heroes  mongodb.connect, mongodb.server_of, mongodb.ServerInfo, mongodb.Options.app_name
+  go      ClientOptions.SetAppName, Client.AppendDriverInfo
+  rust    ClientOptions::app_name, ClientOptions::driver_info, Client::append_metadata
+  python  appname, driver, MongoClient.append_metadata, MongoClient.server_info, MongoClient.address, MongoClient.is_primary, MongoClient.is_mongos
+  note    `hello`, and the legacy `isMaster` where the server knows no `hello`; the server's version is `run_command` of `buildInfo`
+
+capability mongodb/server-selection  the server chosen by read preference and replica set
+  heroes  mongodb.ReadPreference, mongodb.Options.read_preference, mongodb.Options.replica_set, mongodb.Options.direct
+  go      readpref.Primary, readpref.PrimaryPreferred, readpref.Secondary, readpref.SecondaryPreferred, readpref.Nearest, readpref.ReadPref, SetReadPreference, SetReplicaSet, SetDirect
+  rust    SelectionCriteria, ReadPreference, ClientOptions::repl_set_name, ClientOptions::direct_connection
+  python  ReadPreference, read_preferences, replicaSet, directConnection, MongoClient.primary, MongoClient.secondaries, MongoClient.arbiters, MongoClient.nodes
+  note    chosen once, at connect, the server that is not the one wanted naming the one that is; tags and maxStalenessSeconds are not read; run live (a secondary on a one-member set is `not_found`)
+
+capability mongodb/monitor  servers watched in the background and a changed primary followed
+  heroes  refused: a monitor is a thread sharing the client, and threads share nothing in this language; a client reconnects, choosing again, when a read or a retryable write loses its server
+  go      the topology monitor, event.ServerMonitor
+  rust    the topology monitor, event::sdam
+  python  the topology monitor, MongoClient.topology_description
+
+capability mongodb/pool  connections pooled and shared between threads
+  heroes  refused: threads share nothing in this language, so a pool has no one to share with; a thread opens its own client
+  go      SetMaxPoolSize, SetMinPoolSize, SetMaxConnIdleTime, SetMaxConnecting, Client.NumberSessionsInProgress
+  rust    max_pool_size, min_pool_size, max_idle_time, max_connecting, Client::warm_connection_pool
+  python  maxPoolSize, minPoolSize, maxIdleTimeMS, waitQueueTimeoutMS, maxConnecting
+
+capability mongodb/close  a client closed, its session ended
+  heroes  mongodb.close, mongodb.is_closed
+  go      Client.Disconnect
+  rust    Client::shutdown
+  python  MongoClient.close
+
+capability mongodb/timeouts  the time a connection and each reply may take
+  heroes  mongodb.Options.connect_timeout_ms, mongodb.Options.socket_timeout_ms, mongodb.set_timeout
+  go      ClientOptions.SetConnectTimeout, ClientOptions.SetTimeout, SetServerSelectionTimeout
+  rust    ClientOptions::connect_timeout, ClientOptions::server_selection_timeout
+  python  connectTimeoutMS, socketTimeoutMS, timeoutMS, pymongo.timeout
+  note    a reply past its time ends the client, since its bytes may still come; `maxTimeMS` is a field of a command's options
+
+capability mongodb/command  any command run as it is
+  heroes  mongodb.run_command, mongodb.run_cursor_command, mongodb.ping, mongodb.explain
+  go      Database.RunCommand, Database.RunCommandCursor, Client.Ping
+  rust    Database::run_command, Database::run_cursor_command, Database::run_raw_command, Database::run_raw_cursor_command
+  python  Database.command, Database.cursor_command, Cursor.explain
+
+capability mongodb/databases  databases listed and dropped
+  heroes  mongodb.list_database_names, mongodb.list_databases, mongodb.drop_database
+  go      Client.ListDatabaseNames, Client.ListDatabases, Database.Drop, ListDatabasesResult, DatabaseSpecification
+  rust    Client::list_database_names, Client::list_databases, Database::drop
+  python  MongoClient.list_database_names, MongoClient.list_databases, MongoClient.drop_database, MongoClient.get_database, MongoClient.get_default_database
+  note    a database is named by its `str` in every call; there is no handle of one
+
+capability mongodb/collections  collections and views listed, created, renamed and dropped
+  heroes  mongodb.list_collection_names, mongodb.list_collections, mongodb.create_collection, mongodb.create_view, mongodb.drop_collection, mongodb.rename_collection
+  go      Database.ListCollectionNames, Database.ListCollections, Database.ListCollectionSpecifications, Database.CreateCollection, Database.CreateView, Collection.Drop, CollectionSpecification
+  rust    Database::list_collection_names, Database::list_collections, Database::create_collection, Collection::drop
+  python  Database.list_collection_names, Database.list_collections, Database.create_collection, Database.drop_collection, Database.get_collection, Database.validate_collection, Collection.rename, Collection.drop
+  note    `validate` and the rest are `run_command`
+
+capability mongodb/insert  documents inserted, an ObjectId made for one without `_id`
+  heroes  mongodb.insert_one, mongodb.insert_many
+  go      Collection.InsertOne, Collection.InsertMany, InsertOneResult, InsertManyResult
+  rust    Collection::insert_one, Collection::insert_many
+  python  Collection.insert_one, Collection.insert_many, InsertOneResult, InsertManyResult
+  note    the `_id`s are answered directly; a batch past the server's most writes is cut in two, run live with 100,001 documents
+
+capability mongodb/update  documents updated by operators or a pipeline, replaced, upserted
+  heroes  mongodb.update_one, mongodb.update_many, mongodb.replace_one, mongodb.WriteOptions, mongodb.write_options, mongodb.UpdateResult
+  go      Collection.UpdateOne, Collection.UpdateMany, Collection.UpdateByID, Collection.ReplaceOne, UpdateResult
+  rust    Collection::update_one, Collection::update_many, Collection::replace_one
+  python  Collection.update_one, Collection.update_many, Collection.replace_one, UpdateResult
+  note    UpdateByID is `update_one` with `{"_id": id}`
+
+capability mongodb/delete  documents deleted
+  heroes  mongodb.delete_one, mongodb.delete_many
+  go      Collection.DeleteOne, Collection.DeleteMany, DeleteResult
+  rust    Collection::delete_one, Collection::delete_many
+  python  Collection.delete_one, Collection.delete_many, DeleteResult
+
+capability mongodb/find  documents queried with a filter, a projection, an order, a skip and a limit
+  heroes  mongodb.find_many, mongodb.find_one, mongodb.FindOptions, mongodb.find_options
+  go      Collection.Find, Collection.FindOne, SingleResult, options.Find
+  rust    Collection::find, Collection::find_one
+  python  Collection.find, Collection.find_one, Collection.find_raw_batches, Cursor.sort, Cursor.limit, Cursor.skip, Cursor.batch_size, Cursor.hint, Cursor.max_time_ms, Cursor.comment, Cursor.collation, Cursor.allow_disk_use, Cursor.min, Cursor.max, Cursor.where, Cursor.add_option, Cursor.remove_option
+  note    `find` is a built-in's name, so the query is `find_many`; every option the server knows is a field of `FindOptions.command`
+
+capability mongodb/cursor  a cursor read across batches, read whole, closed
+  heroes  mongodb.Cursor, mongodb.next_document, mongodb.read_all, mongodb.close_cursor, mongodb.is_exhausted
+  go      Cursor.Next, Cursor.TryNext, Cursor.Decode, Cursor.All, Cursor.Close, Cursor.ID, Cursor.Err, Cursor.RemainingBatchLength, Cursor.SetBatchSize, Cursor.SetComment, Cursor.SetMaxAwaitTime
+  rust    Cursor::advance, Cursor::current, Cursor::deserialize_current, Cursor::next, Cursor::has_next, SessionCursor
+  python  Cursor.next, Cursor.to_list, Cursor.close, Cursor.alive, Cursor.cursor_id, Cursor.retrieved, CommandCursor.next, CommandCursor.try_next, CommandCursor.to_list, CommandCursor.close, CommandCursor.alive
+  note    a tailable cursor's empty batch is `timeout`; rewind and clone are a new query
+
+capability mongodb/find-and-modify  one document changed or deleted and answered in one command
+  heroes  mongodb.find_one_and_update, mongodb.find_one_and_replace, mongodb.find_one_and_delete, mongodb.FindAndModifyOptions, mongodb.find_and_modify_options, mongodb.ReturnDocument
+  go      Collection.FindOneAndUpdate, Collection.FindOneAndReplace, Collection.FindOneAndDelete, options.ReturnDocument
+  rust    Collection::find_one_and_update, Collection::find_one_and_replace, Collection::find_one_and_delete, ReturnDocument
+  python  Collection.find_one_and_update, Collection.find_one_and_replace, Collection.find_one_and_delete, ReturnDocument
+  note    none matched is `not_found`, where the three answer a null
+
+capability mongodb/bulk  writes of several kinds sent together, ordered or not
+  heroes  mongodb.bulk_write, mongodb.WriteModel, mongodb.BulkWriteResult
+  go      Collection.BulkWrite, NewInsertOneModel, NewUpdateOneModel, NewUpdateManyModel, NewReplaceOneModel, NewDeleteOneModel, NewDeleteManyModel, WriteModel, BulkWriteResult, BulkWriteException
+  rust    -
+  python  Collection.bulk_write, InsertOne, UpdateOne, UpdateMany, ReplaceOne, DeleteOne, DeleteMany, BulkWriteResult, BulkWriteError
+
+capability mongodb/client-bulk-write  writes to several collections in one command, MongoDB 8's bulkWrite
+  heroes  pending: the command is MongoDB 8.0's, and the server here is 7.0
+  go      Client.BulkWrite, ClientBulkWrite, ClientInsertOneModel, ClientUpdateOneModel, ClientUpdateManyModel, ClientReplaceOneModel, ClientDeleteOneModel, ClientDeleteManyModel, ClientBulkWriteResult, ClientBulkWriteException
+  rust    Client::bulk_write
+  python  MongoClient.bulk_write, ClientBulkWriteResult, ClientBulkWriteException
+
+capability mongodb/count  documents counted exactly and estimated
+  heroes  mongodb.count_documents, mongodb.estimated_document_count
+  go      Collection.CountDocuments, Collection.EstimatedDocumentCount
+  rust    Collection::count_documents, Collection::estimated_document_count
+  python  Collection.count_documents, Collection.estimated_document_count
+
+capability mongodb/distinct  a field's distinct values
+  heroes  mongodb.distinct
+  go      Collection.Distinct, DistinctResult
+  rust    Collection::distinct
+  python  Collection.distinct, Cursor.distinct
+
+capability mongodb/aggregate  a pipeline run on a collection or a database, writing ones included
+  heroes  mongodb.aggregate, mongodb.AggregateOptions, mongodb.aggregate_options
+  go      Collection.Aggregate, Database.Aggregate, Pipeline
+  rust    Collection::aggregate, Database::aggregate
+  python  Collection.aggregate, Collection.aggregate_raw_batches, Database.aggregate
+  note    a pipeline ending in `$out` or `$merge` is sent as a write and never retried
+
+capability mongodb/indexes  indexes created, listed and dropped
+  heroes  mongodb.create_index, mongodb.create_indexes, mongodb.list_indexes, mongodb.drop_index, mongodb.drop_indexes, mongodb.index_name_of, mongodb.IndexModel
+  go      Collection.Indexes, IndexView.CreateOne, IndexView.CreateMany, IndexView.List, IndexView.ListSpecifications, IndexView.DropOne, IndexView.DropWithKey, IndexView.DropAll, IndexModel, IndexSpecification
+  rust    Collection::create_index, Collection::create_indexes, Collection::list_indexes, Collection::list_index_names, Collection::drop_index, Collection::drop_indexes, IndexModel
+  python  Collection.create_index, Collection.create_indexes, Collection.list_indexes, Collection.index_information, Collection.drop_index, Collection.drop_indexes, IndexModel
+  note    run live, on empty collections and on collections holding documents (whose builds vote for their commit)
+
+capability mongodb/search-indexes  Atlas Search indexes created, listed, updated and dropped
+  heroes  mongodb.run_command
+  go      Collection.SearchIndexes, SearchIndexView.CreateOne, SearchIndexView.CreateMany, SearchIndexView.List, SearchIndexView.UpdateOne, SearchIndexView.DropOne, SearchIndexModel
+  rust    Collection::create_search_index, Collection::create_search_indexes, Collection::list_search_indexes, Collection::update_search_index, Collection::drop_search_index
+  python  Collection.create_search_index, Collection.create_search_indexes, Collection.list_search_indexes, Collection.update_search_index, Collection.drop_search_index, SearchIndexModel
+  note    `createSearchIndexes`, `updateSearchIndex`, `dropSearchIndex` and `$listSearchIndexes` are commands and a stage of Atlas alone; unrun, no Atlas here
+
+capability mongodb/change-streams  changes of a collection, a database or the server followed, resumed by a token
+  heroes  mongodb.watch, mongodb.WatchOptions, mongodb.watch_options, mongodb.resume_token_of
+  go      Collection.Watch, Database.Watch, Client.Watch, ChangeStream.Next, ChangeStream.TryNext, ChangeStream.Decode, ChangeStream.ResumeToken, ChangeStream.Close, ChangeStream.ID, ChangeStream.Err, ChangeStream.RemainingBatchLength, ChangeStream.SetBatchSize
+  rust    Collection::watch, Database::watch, Client::watch, change_stream::ChangeStream
+  python  Collection.watch, Database.watch, MongoClient.watch, ChangeStream
+  note    run live: an insert, an update with its full document, and a stream resumed after a token
+
+capability mongodb/change-stream-resume  a change stream resumed by itself after a lost connection
+  heroes  pending: the program opens another stream with `resume_token_of`'s token; the driver does not yet do it for it
+  go      ChangeStream's automatic resume
+  rust    ChangeStream's automatic resume
+  python  ChangeStream's automatic resume
+
+capability mongodb/sessions  a logical session carried by every command, and ended
+  heroes  mongodb.session_id_of, mongodb.close
+  go      Client.StartSession, Session.ID, Session.EndSession, Session.Client, Client.UseSession, Client.UseSessionWithOptions, WithSession, NewSessionContext, SessionFromContext
+  rust    Client::start_session, ClientSession::id, ClientSession::client
+  python  MongoClient.start_session, ClientSession.session_id, ClientSession.end_session, ClientSession.has_ended, ClientSession.client, ClientSession.bind, ClientSession.options
+  note    one session per client, made at connect: a program wanting two opens two clients
+
+capability mongodb/causal-consistency  reads that see a session's earlier writes, by afterClusterTime
+  heroes  pending: the cluster time is kept and sent, the operation time not yet given back as `afterClusterTime`
+  go      Session.OperationTime, Session.AdvanceOperationTime, Session.ClusterTime, Session.AdvanceClusterTime, options.Session.SetCausalConsistency
+  rust    ClientSession::operation_time, ClientSession::advance_operation_time, ClientSession::cluster_time, ClientSession::advance_cluster_time
+  python  ClientSession.operation_time, ClientSession.advance_operation_time, ClientSession.cluster_time, ClientSession.advance_cluster_time
+
+capability mongodb/transactions  transactions started, committed and aborted on a replica set
+  heroes  mongodb.start_transaction, mongodb.commit_transaction, mongodb.abort_transaction, mongodb.is_in_transaction, mongodb.TransactionOptions, mongodb.transaction_options
+  go      Session.StartTransaction, Session.CommitTransaction, Session.AbortTransaction, Session.TransactionRunning, Session.SnapshotTime
+  rust    ClientSession::start_transaction, ClientSession::commit_transaction, ClientSession::abort_transaction, ClientSession::snapshot_time
+  python  ClientSession.start_transaction, ClientSession.commit_transaction, ClientSession.abort_transaction, ClientSession.in_transaction
+  note    run live, a second client seeing the commit and not the abort; a commit is not retried for the program, its labels say whether to
+
+capability mongodb/with-transaction  a transaction run by a callback the driver retries
+  heroes  refused: a function value cannot take the client by `@` (spec § 9), so the driver could not call the program's function on it; the program writes the loop, `has_label` telling it when to run again
+  go      Session.WithTransaction
+  rust    ClientSession::with_transaction, StartTransaction::and_run
+  python  ClientSession.with_transaction
+
+capability mongodb/concerns  read and write concerns, the journal and wtimeout
+  heroes  mongodb.Options.read_concern, mongodb.WriteConcern, mongodb.Journal, mongodb.Options.write_concern
+  go      readconcern.Local, readconcern.Majority, readconcern.Available, readconcern.Linearizable, readconcern.Snapshot, writeconcern.Majority, writeconcern.W1, writeconcern.Journaled, writeconcern.Unacknowledged, writeconcern.WriteConcern, SetReadConcern, SetWriteConcern
+  rust    ReadConcern, WriteConcern, Acknowledgment
+  python  ReadConcern, WriteConcern, MongoClient.read_concern, MongoClient.write_concern, MongoClient.read_preference
+  note    a command's own `writeConcern` or `readConcern` among its fields wins over the client's
+
+capability mongodb/retryable  reads and writes retried once after a lost connection or a stepped-down primary
+  heroes  mongodb.Options.retry_writes, mongodb.Options.retry_reads
+  go      SetRetryWrites, SetRetryReads
+  rust    ClientOptions::retry_writes, ClientOptions::retry_reads
+  python  retryWrites, retryReads
+  note    a write retried carries the same transaction number, which the server applies once; a multi-document write is never retried; the retries themselves are unrun live, no primary stepped down here
+
+capability mongodb/errors  failures with the server's code, its name and its labels
+  heroes  mongodb.server_code_of, mongodb.labels_of, mongodb.has_label, mongodb.LABEL_TRANSIENT_TRANSACTION_ERROR, mongodb.LABEL_UNKNOWN_TRANSACTION_COMMIT_RESULT, mongodb.LABEL_RETRYABLE_WRITE_ERROR, mongodb.INVALID, mongodb.NOT_FOUND, mongodb.EXISTS, mongodb.PERMISSION, mongodb.CLOSED, mongodb.TIMEOUT, mongodb.STOPPED, mongodb.LIMIT, mongodb.UNSUPPORTED, mongodb.FAILED
+  go      CommandError, WriteException, WriteError, WriteErrors, WriteConcernError, BulkWriteError, ServerError, LabeledError, IsDuplicateKeyError, IsTimeout, IsNetworkError, ErrorCodes, CommandError.HasErrorCode, CommandError.HasErrorLabel, CommandError.HasErrorMessage, CommandError.HasErrorCodeWithMessage, CommandError.IsMaxTimeMSExpiredError
+  rust    error::Error, Error::labels, Error::contains_label, Error::server_response, ErrorKind, WriteFailure, CommandError
+  python  PyMongoError, OperationFailure, DuplicateKeyError, WriteError, WriteConcernError, BulkWriteError, ExecutionTimeout, NetworkTimeout, AutoReconnect, ConnectionFailure, ServerSelectionTimeoutError, NotPrimaryError, CursorNotFound, DocumentTooLarge, InvalidOperation, InvalidURI, ConfigurationError, CollectionInvalid, InvalidName, ProtocolError, OperationFailure.code, OperationFailure.details, PyMongoError.has_error_label
+  note    the server's code chooses one of Rebel's codes; the code, its name and the labels stand in brackets before the message, run live for 11000, 18, 13, 26, 27, 59 and 2
+
+capability mongodb/server-api  the stable API version declared with every command
+  heroes  mongodb.Options.server_api
+  go      options.ServerAPI, ClientOptions.SetServerAPIOptions
+  rust    options::ServerApi, ServerApiVersion
+  python  ServerApi
+  note    `apiStrict` and `apiDeprecationErrors` are fields a command may add; unrun live
+
+capability mongodb/compression  messages compressed by snappy, zlib or zstd
+  heroes  pending: OP_COMPRESSED over `compress` (zlib) and `compress/zstd` is writable here and not yet written; `compressors` is refused, `unsupported`
+  go      ClientOptions.SetCompressors, SetZlibLevel, SetZstdLevel
+  rust    ClientOptions::compressors, Compressor
+  python  compressors, zlibCompressionLevel
+
+capability mongodb/encryption  fields encrypted on the client, queryable encryption
+  heroes  refused: client-side field level encryption needs libmongocrypt and a key vault; no Rebel package binds that library
+  go      ClientEncryption, NewClientEncryption, AutoEncryptionOptions, ClientEncryption.CreateDataKey, ClientEncryption.Encrypt, ClientEncryption.Decrypt, ClientEncryption.EncryptExpression, ClientEncryption.RewrapManyDataKey, ClientEncryption.GetKey, ClientEncryption.GetKeys, ClientEncryption.DeleteKey, ClientEncryption.AddKeyAltName, ClientEncryption.RemoveKeyAltName, ClientEncryption.GetKeyByAltName, ClientEncryption.CreateEncryptedCollection, ClientEncryption.Close, MongocryptError, MongocryptdError, EncryptionKeyVaultError
+  rust    client_encryption, Client::encrypted_builder
+  python  ClientEncryption, AutoEncryptionOpts, EncryptionError, EncryptedCollectionError
+
+capability mongodb/gridfs  files stored in chunks: uploaded, downloaded, found, renamed, deleted
+  heroes  pending: written over this package's CRUD, not yet written
+  go      Database.GridFSBucket, GridFSBucket, GridFSUploadStream, GridFSDownloadStream, GridFSFile
+  rust    Database::gridfs_bucket, gridfs::GridFsBucket
+  python  gridfs.GridFS, gridfs.GridFSBucket
+
+capability mongodb/events  commands, connections and servers reported to a monitor the program gives
+  heroes  pending: a monitor would be a function value of the program, called with each event's record; not yet written
+  go      event.CommandMonitor, event.PoolMonitor, event.ServerMonitor, ClientOptions.SetMonitor, SetPoolMonitor, SetServerMonitor
+  rust    event::command, event::cmap, event::sdam, ClientOptions::command_event_handler
+  python  monitoring.CommandListener, monitoring.ServerListener, monitoring.ConnectionPoolListener, event_listeners
+
+capability mongodb/load-balanced  servers reached through a load balancer
+  heroes  pending: a load balancer's mode (`serviceId`, pinned cursors) is not written; `loadBalanced=true` is refused, `unsupported`
+  go      ClientOptions.SetLoadBalanced
+  rust    ClientOptions::load_balanced
+  python  loadBalanced
+
+capability mongodb/typed-documents  documents read into and written from the program's records
+  heroes  refused: the language has no reflection; a document is a `bson.Document`, its fields read by `bson.member` and written by name (spec § 9's `Record::field`)
+  go      Cursor.Decode, SingleResult.Decode, ChangeStream.Decode, BatchCursorFromCursor, NewCursorFromDocuments, NewSingleResultFromDocument
+  rust    Collection<T>, Collection::clone_with_type, Cursor::deserialize_current, SessionCursor::with_type
+  python  CodecOptions.document_class, Collection.with_options, Database.with_options, MongoClient.codec_options, Database.dereference
+
+dropped
+  go      Collection.Clone, Collection.Database, Collection.Name, Database.Client, Database.Name, Database.Collection, Client.Database: handles of a name, here the name itself; Dialer, StreamType, ErrMapForOrderedArgument, InvalidArgumentError, MarshalError: plumbing of Go's interfaces; Database.GridFSBucket is in its block; ClientOptions' remaining setters (SetHTTPClient, SetBSONOptions, SetRegistry, SetDisableOCSPEndpointCheck, SetLocalThreshold, SetHeartbeatInterval, SetServerMonitoringMode): what has no effect with one connection and no registry
+  rust    the tap, pipe, conv, borrow and deref helpers of the documentation's blanket impls; Client::database_with_options, Database::collection_with_options, Database::client, Collection::client, Collection::name, Collection::namespace, Database::name, Client::default_database: handles of a name; Client::selection_criteria, Client::read_concern, Database::read_concern, Database::selection_criteria, Collection::read_concern, Collection::selection_criteria: here the options the client holds; Client::in_current_span, Client::instrument, with_subscriber: tracing's hooks
+  python  MongoClient.eq_props, MongoClient.next, Database.next, MongoClient.options, MongoClient.topology_description: plumbing and introspection; Collection.full_name, Collection.database, Collection.codec_options and the like: handles of a name; operations' and results' imported helpers (cast, Any, validate_*)

@@ -1,0 +1,227 @@
+# The events of one BSON document written as MongoDB Extended JSON v2, in its
+# canonical mode, where every value keeps its type, or its relaxed mode, where
+# the numbers and the dates a reader expects are plain. The value is built
+# from the last event to the first, so a container finds its elements already
+# made on a stack this module holds.
+
+use bson/internal/decimal
+use bson/internal/event
+use bytes
+use json
+use numbers
+use time
+
+# The canonical mode.
+constant CANONICAL: i64
+    0
+
+# The relaxed mode.
+constant RELAXED: i64
+    1
+
+# 2^53, past which an `f64` no longer holds every integer.
+constant EXACT: i64
+    9007199254740992
+
+# The last millisecond of the year 9999, the last a relaxed date writes as
+# text.
+constant LAST_TEXT_DATE: i64
+    253402300799999
+
+# The milliseconds of 400 years of the Gregorian calendar, 146097 days, after
+# which it repeats.
+constant CYCLE: i64
+    12622780800000
+
+# The milliseconds past which a date is moved back by cycles before a
+# `time.Instant` holds it: about the year 2255.
+constant SHIFT_ABOVE: i64
+    9000000000000
+
+# An object of one member.
+function wrap(key: str, v: json.Value) -> json.Value
+    m: {str: json.Value} @= {}
+    m[key] @ v
+    return .object(members: m)
+
+# An object of two members, in this order.
+function pair(first: str, a: json.Value, second: str, b: json.Value) -> json.Value
+    m: {str: json.Value} @= {}
+    m[first] @ a
+    m[second] @ b
+    return .object(members: m)
+
+# `x` as text, as Python's `repr` writes a float and so as pymongo writes
+# `$numberDouble`: `1.0`, `-0.0`, `0.1`, `1e+300`, `1.5e-07`, `Infinity`,
+# `-Infinity`, `NaN`. Without an exponent from 1e-4 up to under 1e16, with
+# one otherwise.
+function double_text(x: f64) -> str
+    if x != x
+        return "NaN"
+    else if x - x != 0.0 && x > 0.0
+        return "Infinity"
+    else if x - x != 0.0
+        return "-Infinity"
+    exp_form = numbers.format_float_exp_shortest(x)
+    e_at: i64 @= exp_form.len() - 1
+
+    while e_at > 0 && exp_form[e_at] != 'e'
+        e_at @ e_at - 1
+
+    exponent = numbers.parse_int(exp_form.slice(from: e_at + 1, to: exp_form.len())).must()
+
+    if exponent >= -4 && exponent < 16
+        return numbers.format_float_shortest(x)
+    return exp_form
+
+# A date of `ms` milliseconds since the epoch: as text in relaxed mode from
+# 1970 to the year 9999, as `$numberLong` otherwise.
+function date_json(ms: i64, mode: i64) -> json.Value
+    if mode == RELAXED && ms >= 0 && ms <= LAST_TEXT_DATE
+        # A `time.Instant` ends in 2262, so a later date is moved back by
+        # whole cycles of 400 years, in which the calendar repeats exactly,
+        # and its year moved forward again in the text.
+        cycles: i64 @= 0
+        shifted: i64 @= ms
+
+        while shifted > SHIFT_ABOVE
+            shifted @ shifted - CYCLE
+            cycles @ cycles + 1
+
+        t = time.from_unix_milliseconds(shifted).must()
+
+        layout: time.Layout = if ms % 1000 == 0
+            .rfc3339_seconds
+        else
+            .rfc3339_milliseconds
+        text = time.format(t, layout: layout)
+        year = numbers.parse_int(text.slice(from: 0, to: 4)).must() + 400 * cycles
+        return wrap(key: "$date", v: .text(v: to_str(year) + text.slice(from: 4, to: text.len())))
+    return wrap(key: "$date", v: wrap(key: "$numberLong", v: .text(v: to_str(ms))))
+
+# The JSON of the element `e`, which holds no other.
+function scalar(e: event.Event, mode: i64) -> json.Value
+    k = e.kind
+
+    if k == event.DOUBLE && mode == RELAXED && e.number - e.number == 0.0
+        return .number(v: e.number)
+    else if k == event.DOUBLE
+        return wrap(key: "$numberDouble", v: .text(v: double_text(e.number)))
+    else if k == event.STRING
+        return .text(v: e.text)
+    else if k == event.BINARY
+        subtype = bytes.format_hex([to_u8(e.integer).must()])
+        return wrap(
+            key: "$binary",
+            v: pair(first: "base64", a: .text(v: bytes.format_base64(e.data)), second: "subType", b: .text(v: subtype))
+        )
+    else if k == event.UNDEFINED
+        return wrap(key: "$undefined", v: .boolean(v: true))
+    else if k == event.OBJECT_ID
+        return wrap(key: "$oid", v: .text(v: bytes.format_hex(e.data)))
+    else if k == event.BOOLEAN
+        return .boolean(v: e.integer == 1)
+    else if k == event.DATETIME
+        return date_json(ms: e.integer, mode: mode)
+    else if k == event.NULL_VALUE
+        return .null_value
+    else if k == event.REGEX
+        return wrap(
+            key: "$regularExpression",
+            v: pair(first: "pattern", a: .text(v: e.text), second: "options", b: .text(v: e.extra))
+        )
+    else if k == event.DB_POINTER
+        id = wrap(key: "$oid", v: .text(v: bytes.format_hex(e.data)))
+        return wrap(key: "$dbPointer", v: pair(first: "$ref", a: .text(v: e.text), second: "$id", b: id))
+    else if k == event.JAVASCRIPT
+        return wrap(key: "$code", v: .text(v: e.text))
+    else if k == event.SYMBOL
+        return wrap(key: "$symbol", v: .text(v: e.text))
+    else if k == event.INT32 && mode == RELAXED
+        return .number(v: to_f64(e.integer))
+    else if k == event.INT32
+        return wrap(key: "$numberInt", v: .text(v: to_str(e.integer)))
+    else if k == event.TIMESTAMP
+        times = pair(first: "t", a: .number(v: to_f64(e.integer)), second: "i", b: .number(v: to_f64(e.second)))
+        return wrap(key: "$timestamp", v: times)
+    else if k == event.INT64 && mode == RELAXED && e.integer <= EXACT && e.integer >= -EXACT
+        return .number(v: to_f64(e.integer))
+    else if k == event.INT64
+        return wrap(key: "$numberLong", v: .text(v: to_str(e.integer)))
+    else if k == event.DECIMAL128
+        return wrap(key: "$numberDecimal", v: .text(v: decimal.format(e.data)))
+    else if k == event.MIN_KEY
+        return wrap(key: "$minKey", v: .number(v: 1.0))
+    return wrap(key: "$maxKey", v: .number(v: 1.0))
+
+# The Extended JSON of the document whose events are `events`, its own first,
+# in `mode`. A name that stands twice in one document keeps its first place
+# and its last value, since a JSON object holds a key once.
+function to_json(events: [event.Event] lent, mode: i64) -> json.Value
+    done: [json.Value] @= []
+    names: [str] @= []
+    top: i64 @= 0
+    at: i64 @= events.len()
+
+    while at > 0
+        at @ at - 1
+        e = events[at]
+        made: json.Value @= .null_value
+
+        if e.kind == event.ARRAY
+            items: [json.Value] @= []
+
+            for k in range(from: 0, to: e.count)
+                items @ items.push(done[top - 1 - k])
+
+            made @ .list(items: items)
+        else if e.kind == event.DOCUMENT || e.kind == event.JAVASCRIPT_WITH_SCOPE
+            members: {str: json.Value} @= {}
+
+            for k in range(from: 0, to: e.count)
+                members[names[top - 1 - k]] @ done[top - 1 - k]
+
+            if e.kind == event.DOCUMENT
+                made @ .object(members: members)
+            else
+                made @ pair(first: "$code", a: .text(v: e.text), second: "$scope", b: .object(members: members))
+        else
+            made @ scalar(e: e, mode: mode)
+        top @ top - e.count
+
+        if top == done.len()
+            done @ done.push(made)
+            names @ names.push(e.name)
+        else
+            done[top] @ made
+            names[top] @ e.name
+        top @ top + 1
+
+    return done[0]
+
+test "double_text: the floats pymongo 4.20 wrote as $numberDouble"
+    assert double_text(1.0) == "1.0"
+    assert double_text(-0.0) == "-0.0"
+    assert double_text(0.1) == "0.1"
+    assert double_text(1.0 / 0.0) == "Infinity" && double_text(-1.0 / 0.0) == "-Infinity"
+    assert double_text(0.0 / 0.0) == "NaN"
+    assert double_text(123456789012345678.0) == "1.2345678901234568e+17"
+    assert double_text(0.0001) == "0.0001"
+    assert double_text(0.00001) == "1e-05"
+    assert double_text(1000000000000000.0) == "1000000000000000.0"
+    assert double_text(10000000000000000.0) == "1e+16"
+
+test "date_json: a date with milliseconds, a whole second, one before 1970, and one past 9999"
+    assert json.format(date_json(ms: 1356351330501, mode: RELAXED)).must() == "{\"$date\":\"2012-12-24T12:15:30.501Z\"}"
+    assert json.format(date_json(ms: 0, mode: RELAXED)).must() == "{\"$date\":\"1970-01-01T00:00:00Z\"}"
+    assert json.format(date_json(ms: -1, mode: RELAXED)).must() == "{\"$date\":{\"$numberLong\":\"-1\"}}"
+    assert json.format(date_json(ms: 253402300800000, mode: RELAXED)).must() == "{\"$date\":{\"$numberLong\":\"253402300800000\"}}"
+    assert json.format(date_json(ms: 5, mode: CANONICAL)).must() == "{\"$date\":{\"$numberLong\":\"5\"}}"
+    assert json.format(date_json(ms: LAST_TEXT_DATE, mode: RELAXED)).must() == "{\"$date\":\"9999-12-31T23:59:59.999Z\"}"
+    assert json.format(date_json(ms: 9000000000001, mode: RELAXED)).must() == "{\"$date\":\"2255-03-14T16:00:00.001Z\"}"
+
+test "scalar: an int64 past 2^53 stays canonical in relaxed mode"
+    near = event.of_integer(kind: event.INT64, name: "n", n: 9007199254740993)
+    assert json.format(scalar(e: near, mode: RELAXED)).must() == "{\"$numberLong\":\"9007199254740993\"}"
+    small = event.of_integer(kind: event.INT64, name: "n", n: -5)
+    assert json.format(scalar(e: small, mode: RELAXED)).must() == "-5"

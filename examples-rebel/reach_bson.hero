@@ -1,0 +1,13 @@
+# Reaches Rebel's `bson`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It prints a document read from relaxed
+# Extended JSON and written back in its canonical form.
+
+use <rebel>/bson
+
+function main()
+    match bson.parse_json("{\"name\": \"Ada\", \"born\": 1815}")
+        .ok doc =>
+            match bson.format_json(doc, mode: .canonical)
+                .ok text => print(text)
+                .err e   => print(f"{e.code}: {e.msg}")
+        .err e => print(f"{e.code}: {e.msg}")

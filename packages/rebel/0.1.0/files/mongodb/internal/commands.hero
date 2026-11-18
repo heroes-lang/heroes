@@ -1,0 +1,249 @@
+# The bodies of MongoDB's commands, built from what the face's functions are
+# given: `find`, `aggregate`, `findAndModify`, the statements of `update` and
+# `delete`, and an index's name. A program's extra fields join a body last,
+# replacing a field of the same name, so every option the server knows can be
+# given whether this package names it or not.
+
+use bson
+
+# `base` with `extra`'s fields: one of the same name replaced in its place,
+# the others added at the end.
+function merged(base: bson.Document, extra: bson.Document) -> bson.Document
+    out: bson.Document @= base
+
+    for f in extra.fields
+        out @ bson.with_member(out, name: f.name, value: f.value)
+
+    return out
+
+# The field `name` of `value`.
+function field(name: str, value: bson.Value) -> bson.Field
+    return bson.Field(name: name, value: value)
+
+# The body of `find` on `collection`.
+function find_body(collection: str, query: bson.Document, projection: bson.Document, order: bson.Document, skip: i64, limit: i64, batch_size: i64, extra: bson.Document) -> bson.Document
+    fields: [bson.Field] @= [
+        field(name: "find", value: .text(v: collection))
+        field(name: "filter", value: .document(doc: query))
+    ]
+
+    if projection.fields.len() > 0
+        fields @ fields.push(field(name: "projection", value: .document(doc: projection)))
+
+    if order.fields.len() > 0
+        fields @ fields.push(field(name: "sort", value: .document(doc: order)))
+
+    if skip > 0
+        fields @ fields.push(field(name: "skip", value: bson.from_int(skip)))
+
+    if limit > 0
+        fields @ fields.push(field(name: "limit", value: bson.from_int(limit)))
+
+    if batch_size > 0
+        fields @ fields.push(field(name: "batchSize", value: bson.from_int(batch_size)))
+    return merged(base: bson.Document(fields: fields), extra: extra)
+
+# The body of `aggregate` on `target`, a collection's name or 1 for a
+# database's own stages.
+function aggregate(target: bson.Value, pipeline: [bson.Document], batch_size: i64, extra: bson.Document) -> bson.Document
+    stages: [bson.Value] @= []
+
+    for p in pipeline
+        stages @ stages.push(.document(doc: p))
+
+    cursor: [bson.Field] @= []
+
+    if batch_size > 0
+        cursor @ cursor.push(field(name: "batchSize", value: bson.from_int(batch_size)))
+    body = bson.Document(
+        fields: [field(name: "aggregate", value: target), field(name: "pipeline", value: .array(items: stages)), field(name: "cursor", value: .document(doc: bson.Document(fields: cursor)))]
+    )
+    return merged(base: body, extra: extra)
+
+# An update's statement: `query`, `update` (a document of operators, a
+# replacement, or a pipeline), and its options.
+function update_statement(query: bson.Document, update: bson.Value, upsert: bool, multi: bool, array_filters: [bson.Document], extra: bson.Document) -> bson.Document
+    fields: [bson.Field] @= [field(name: "q", value: .document(doc: query)), field(name: "u", value: update)]
+
+    if upsert
+        fields @ fields.push(field(name: "upsert", value: .boolean(v: true)))
+
+    if multi
+        fields @ fields.push(field(name: "multi", value: .boolean(v: true)))
+
+    if array_filters.len() > 0
+        items: [bson.Value] @= []
+
+        for a in array_filters
+            items @ items.push(.document(doc: a))
+
+        fields @ fields.push(field(name: "arrayFilters", value: .array(items: items)))
+    return merged(base: bson.Document(fields: fields), extra: extra)
+
+# An update's statement, as `update_statement` makes it, once `update` is
+# checked: a document whose first field is an operator, or an array of
+# stages. Fails `invalid` otherwise.
+function checked_update(query: bson.Document, update: bson.Value, upsert: bool, many: bool, array_filters: [bson.Document], extra: bson.Document) -> bson.Document?
+    match update
+        .document d =>
+            if d.doc.fields.len() == 0 || d.doc.fields[0].name.len() == 0 || d.doc.fields[0].name[0] != '$'
+                return fail(
+                    code: "invalid",
+                    msg: "an update's document must begin with an operator, `$set`; `replace_one` replaces a document"
+                )
+        .array _ => _ = 0
+        .double _ | .text _ | .binary _ | .undefined | .object_id _ | .boolean _ | .datetime _ | .null_value | .regex _ | .db_pointer _ | .javascript _ | .symbol _ | .javascript_with_scope _ | .int32 _ | .timestamp _ | .int64 _ | .decimal128 _ | .min_key | .max_key =>
+            return fail(
+                code: "invalid",
+                msg: f"an update of type {bson.kind_of(update)}, where a document of operators or an array of stages was expected"
+            )
+
+    return ok(
+        update_statement(query: query, update: update, upsert: upsert, multi: many, array_filters: array_filters, extra: extra)
+    )
+
+# A delete's statement: `query`, every document it matches where `every`,
+# else one.
+function delete_statement(query: bson.Document, every: bool, extra: bson.Document) -> bson.Document
+    limit: i64 = if every
+        0
+    else
+        1
+    return merged(
+        base: bson.Document(fields: [field(name: "q", value: .document(doc: query)), field(name: "limit", value: bson.from_int(limit))]),
+        extra: extra
+    )
+
+# The body of `findAndModify` on `collection`: an update where `update` is a
+# document or a pipeline, a removal where it is null.
+function find_and_modify(collection: str, query: bson.Document, order: bson.Document, projection: bson.Document, update: bson.Value, return_new: bool, upsert: bool, array_filters: [bson.Document], extra: bson.Document) -> bson.Document
+    fields: [bson.Field] @= [
+        field(name: "findAndModify", value: .text(v: collection))
+        field(name: "query", value: .document(doc: query))
+    ]
+
+    if order.fields.len() > 0
+        fields @ fields.push(field(name: "sort", value: .document(doc: order)))
+
+    if projection.fields.len() > 0
+        fields @ fields.push(field(name: "fields", value: .document(doc: projection)))
+
+    if update == .null_value
+        fields @ fields.push(field(name: "remove", value: .boolean(v: true)))
+    else
+        fields @ fields.push(field(name: "update", value: update))
+
+        if return_new
+            fields @ fields.push(field(name: "new", value: .boolean(v: true)))
+
+        if upsert
+            fields @ fields.push(field(name: "upsert", value: .boolean(v: true)))
+
+    if array_filters.len() > 0
+        items: [bson.Value] @= []
+
+        for a in array_filters
+            items @ items.push(.document(doc: a))
+
+        fields @ fields.push(field(name: "arrayFilters", value: .array(items: items)))
+    return merged(base: bson.Document(fields: fields), extra: extra)
+
+# The name the server gives an index of `key_pattern` when none is asked: each key
+# and its direction or kind joined by `_`, `a_1_b_-1`, `title_text`.
+function index_name(key_pattern: bson.Document) -> str
+    parts: [str] @= []
+
+    for f in key_pattern.fields
+        parts @ parts.push(f.name)
+
+        kind = match bson.int_of(f.value)
+            .ok n  => to_str(n)
+            .err _ => bson.text_of(f.value).default(bson.kind_of(f.value))
+
+        parts @ parts.push(kind)
+
+    return join(parts, "_")
+
+test "merged: a field replaced in its place and one added"
+    base = bson.parse_json("{\"find\": \"c\", \"limit\": 1}").must()
+    extra = bson.parse_json("{\"limit\": 2, \"comment\": \"x\"}").must()
+    assert bson.format_json(merged(base: base, extra: extra), mode: .relaxed).must() == "{\"find\":\"c\",\"limit\":2,\"comment\":\"x\"}"
+
+test "find_body: only the options given, then the extra fields"
+    empty = bson.Document(fields: [])
+    body = find_body(
+        collection: "c",
+        query: empty,
+        projection: empty,
+        order: bson.parse_json("{\"a\": -1}").must(),
+        skip: 0,
+        limit: 5,
+        batch_size: 0,
+        extra: bson.parse_json("{\"hint\": \"a_-1\"}").must()
+    )
+    assert bson.names_of(body) == ["find", "filter", "sort", "limit", "hint"]
+
+test "update_statement and delete_statement: an upsert of many with array filters, and a delete of one"
+    empty = bson.Document(fields: [])
+    u = update_statement(
+        query: empty,
+        update: .document(doc: empty),
+        upsert: true,
+        multi: true,
+        array_filters: [empty],
+        extra: empty
+    )
+    assert bson.names_of(u) == ["q", "u", "upsert", "multi", "arrayFilters"]
+    assert bson.member(delete_statement(query: empty, every: false, extra: empty), name: "limit").must() == .int32(v: 1)
+
+test "find_and_modify: a removal and an update that returns the new document"
+    empty = bson.Document(fields: [])
+    removal = find_and_modify(
+        collection: "c",
+        query: empty,
+        order: empty,
+        projection: empty,
+        update: .null_value,
+        return_new: true,
+        upsert: true,
+        array_filters: [],
+        extra: empty
+    )
+    assert bson.names_of(removal) == ["findAndModify", "query", "remove"]
+    update = find_and_modify(
+        collection: "c",
+        query: empty,
+        order: empty,
+        projection: empty,
+        update: .document(doc: empty),
+        return_new: true,
+        upsert: false,
+        array_filters: [],
+        extra: empty
+    )
+    assert bson.names_of(update) == ["findAndModify", "query", "update", "new"]
+
+test "index_name: directions, a text index and a 2dsphere index, as the server names them"
+    assert index_name(bson.parse_json("{\"a\": 1, \"b\": -1}").must()) == "a_1_b_-1"
+    assert index_name(bson.parse_json("{\"title\": \"text\", \"loc\": \"2dsphere\"}").must()) == "title_text_loc_2dsphere"
+
+test "checked_update: a document of operators, a pipeline, a replacement refused, and a number refused"
+    empty = bson.Document(fields: [])
+    assert !checked_update(query: empty, update: .document(doc: bson.parse_json("{\"$set\": {\"a\": 1}}").must()), upsert: false, many: false, array_filters: [], extra: empty).is_err()
+    assert !checked_update(query: empty, update: .array(items: []), upsert: false, many: false, array_filters: [], extra: empty).is_err()
+    assert checked_update(
+        query: empty,
+        update: .document(doc: bson.parse_json("{\"a\": 1}").must()),
+        upsert: false,
+        many: false,
+        array_filters: [],
+        extra: empty
+    ).is_err()
+    assert checked_update(
+        query: empty,
+        update: .int32(v: 1),
+        upsert: false,
+        many: false,
+        array_filters: [],
+        extra: empty
+    ).is_err()

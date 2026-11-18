@@ -120,7 +120,7 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 4 | `dns` | a DNS client: every record kind asked and answered over UDP and TCP | `bytes`, `io`, `net`, `os`, `strings`, `threads` |  |
 | 4 | `bench` | a function measured: warm-up, rounds, median and spread, two versions compared | `stats`, `time` |  |
 | 4 | `chunks` | text cut into pieces for retrieval, by characters, sentences, markdown headings or tokens, with overlap | `strings`, `unicode`, `unicode/segment`, `markdown`, `tokenizer` |  |
-| 4 | `bson` | BSON read and written exactly, every type, and Extended JSON | `bytes`, `big`, `json`, `time` |  |
+| 4 | `bson` | BSON read and written exactly, every type, and Extended JSON | `big`, `bytes`, `json`, `math`, `numbers`, `os`, `time` |  |
 | 4 | `tui` | full-screen terminal programs in immediate mode: widgets, layout by constraints, only the changed cells written | `term`, `unicode`, `strings` |  |
 | 4 | `webauthn` | a WebAuthn relying party: registration and authentication ceremonies, attestation and assertion verified | `cbor`, `crypto`, `crypto/keypairs`, `json`, `bytes`, `url` |  |
 | 4 | `image/png` | PNG read and written: every colour type and bit depth, interlacing read, the filter and the compression chosen, chunks kept or dropped | `bytes`, `compress`, `hash`, `image` |  |
@@ -128,7 +128,7 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 5 | `archive` | tar and zip, written and read | `bytes`, `compress`, `fs`, `hash`, `io`, `path`, `time` |  |
 | 5 | `sql/postgres` | PostgreSQL over its own protocol, written in Heroes; the API every driver keeps | `bytes`, `crypto`, `io`, `net`, `numbers`, `os`, `sql`, `strings`, `threads`, `time`, `tls` |  |
 | 5 | `sql/sqlite` | SQLite over its library, the same API name for name; only its users need the library | `sql`, `strings`, `time` | `sqlite3.h` |
-| 5 | `sql/mysql` | MySQL and MariaDB over their own protocol, written in Heroes; the same API as the other two drivers | `bytes`, `crypto`, `io`, `net`, `numbers`, `os`, `protobuf`, `sql`, `strings`, `time`, `tls`, `url` |  |
+| 5 | `sql/mysql` | MySQL and MariaDB over their own protocol, written in Heroes; the same API as the other two drivers | `bytes`, `crypto`, `io`, `net`, `numbers`, `os`, `sql`, `strings`, `time`, `tls`, `url` |  |
 | 5 | `redis` | a Redis client over its protocol (RESP2 and RESP3): commands, pipelines, publish and subscribe | `bytes`, `io`, `net`, `numbers`, `os`, `strings`, `time`, `tls`, `url` |  |
 | 5 | `sql/build` | queries as values composed by functions, placeholders for each database, values only as parameters, a row read into a record by its field names; the ORM itself refused, with the reason | `sql`, `strings` |  |
 | 5 | `http2` | HTTP/2 and HPACK, client and server, beneath `http` and knowing nothing of it | `bytes`, `io`, `net`, `numbers`, `threads`, `time`, `tls` |  |
@@ -140,7 +140,7 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 5 | `config` | settings read in layers (files, the environment, flags, `.env` files) with a precedence, read by path | `flags`, `ini`, `json`, `numbers`, `os`, `path`, `strings`, `time`, `toml`, `yaml` |  |
 | 5 | `amqp` | an AMQP 0-9-1 client (RabbitMQ): channels, exchanges, queues, publish and consume, acknowledgements | `net`, `tls`, `bytes`, `time` |  |
 | 5 | `kafka` | a Kafka client: produce, fetch, offsets and consumer groups over the wire protocol | `net`, `tls`, `bytes`, `compress`, `hash`, `time` |  |
-| 5 | `mongodb` | a MongoDB client over its wire protocol: SCRAM, CRUD, cursors, aggregation, transactions | `bson`, `net`, `tls`, `dns`, `crypto`, `io`, `strings`, `time` |  |
+| 5 | `mongodb` | a MongoDB client over its wire protocol: SCRAM, CRUD, cursors, aggregation, transactions | `bson`, `bytes`, `crypto`, `dns`, `hash`, `io`, `net`, `numbers`, `os`, `strings`, `tls`, `unicode`, `unicode/normalize`, `url`, `uuid` |  |
 | 5 | `log/files` | logs written to files that rotate by size or by day, the old ones kept, counted and compressed | `compress`, `fs`, `io`, `log`, `path`, `strings`, `time` |  |
 | 5 | `pdf` | PDF documents written (text, standard fonts, images, simple tables) and their text read | `bytes`, `compress`, `crypto`, `image`, `image/png`, `math`, `time`, `unicode` |  |
 | 6 | `http` | HTTP/1.1, client and server, over `net` | `bytes`, `compress`, `http2`, `io`, `json`, `net`, `numbers`, `os`, `strings`, `threads`, `time`, `tls`, `url` |  |

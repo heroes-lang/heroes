@@ -1,0 +1,274 @@
+# A server's reply read: whether it succeeded, and where it did not, a failure
+# whose Rebel code its server code chooses and whose message keeps the
+# server's own code, its name and its labels in brackets before its words:
+# `[11000 DuplicateKey] E11000 duplicate key error ...`, `[251
+# NoSuchTransaction; TransientTransactionError] ...`. `code_of` and
+# `labels_of` read them back. Write errors and write-concern errors of a reply
+# that says `ok` are failures too.
+
+use bson
+use strings
+
+# The codes of Rebel's vocabulary a server's code is mapped to.
+constant INVALID: str
+    "invalid"
+
+constant NOT_FOUND: str
+    "not_found"
+
+constant EXISTS: str
+    "exists"
+
+constant PERMISSION: str
+    "permission"
+
+constant TIMEOUT: str
+    "timeout"
+
+constant LIMIT: str
+    "limit"
+
+constant UNSUPPORTED: str
+    "unsupported"
+
+constant FAILED: str
+    "failed"
+
+# Whether `n` is one of `codes`.
+function among(n: i64, codes: [i64]) -> bool
+    for c in codes
+        if c == n
+            return true
+
+    return false
+
+# The Rebel code of the server's code `n`: `exists` for a duplicate key and
+# what exists already, `permission` for what the user may not do,
+# `not_found` for a namespace, an index, a cursor or a transaction that is
+# not there, `timeout` for a time limit passed, `limit` for a document or a
+# memory past what the server holds, `invalid` for a command or a value the
+# server refuses as written, `unsupported` for what it does not do, and
+# `failed` for every other.
+function code_for(n: i64) -> str
+    if among(n, codes: [11000, 11001, 12582, 48, 68, 85, 86])
+        return EXISTS
+    else if among(n, codes: [11, 13, 18, 8000])
+        return PERMISSION
+    else if among(n, codes: [26, 27, 43, 251, 47, 211])
+        return NOT_FOUND
+    else if among(n, codes: [50, 89, 262, 64, 24])
+        return TIMEOUT
+    else if among(n, codes: [10334, 17419, 17420, 146, 292])
+        return LIMIT
+    else if among(n, codes: [20, 59, 115, 166, 238, 263])
+        return UNSUPPORTED
+    else if among(n, codes: [2, 9, 14, 15, 16, 22, 40, 52, 53, 54, 55, 56, 57, 66, 67, 72, 73, 121, 168, 15974, 31249, 31254, 40323, 40324, 40352])
+        return INVALID
+    return FAILED
+
+# A failure of the server's code `n`, named `name`, labelled `labels`, saying
+# `message`.
+function failure<T>(n: i64, name: str, labels: [str], message: str) -> T?
+    head = if labels.len() > 0
+        f"[{n} {name}; {join(labels, " ")}]"
+    else
+        f"[{n} {name}]"
+    return fail(code: code_for(n), msg: head + " " + message)
+
+# The text of `doc`'s field `name`, "" where it has none or another kind.
+function text_at(doc: bson.Document, name: str) -> str
+    return match bson.member(doc, name: name)
+        .ok v  => bson.text_of(v).default("")
+        .err _ => ""
+
+# The integer of `doc`'s field `name`, `otherwise` where it has none.
+function int_at(doc: bson.Document, name: str, otherwise: i64) -> i64
+    return match bson.member(doc, name: name)
+        .ok v  => bson.int_of(v).default(otherwise)
+        .err _ => otherwise
+
+# The labels a reply carries in `errorLabels`.
+function labels_in(doc: bson.Document) -> [str]
+    labels: [str] @= []
+
+    match bson.member(doc, name: "errorLabels")
+        .ok v =>
+            for item in bson.items_of(v).default([])
+                labels @ labels.push(bson.text_of(item).default(""))
+        .err _ => _ = 0
+
+    return labels
+
+# Fails where `reply` reports a failure: `ok` other than 1, or a
+# write-concern error; write errors are read by `write_errors`.
+function check(reply: bson.Document) -> ()?
+    if int_at(reply, name: "ok", otherwise: 0) != 1
+        n = int_at(reply, name: "code", otherwise: 8)
+        name = text_at(reply, name: "codeName")
+        message = text_at(reply, name: "errmsg")
+        return failure(n: n, name: name, labels: labels_in(reply), message: message)
+
+    match bson.member(reply, name: "writeConcernError")
+        .ok v =>
+            e = bson.document_of(v).default(bson.Document(fields: []))
+            n = int_at(e, name: "code", otherwise: 64)
+            return failure(
+                n: n,
+                name: text_at(e, name: "codeName"),
+                labels: labels_in(reply),
+                message: "the write concern failed: " + text_at(e, name: "errmsg")
+            )
+        .err _ => _ = 0
+
+    return ok()
+
+# Fails where `reply` holds write errors: with the first one's code, its
+# index in the batch beginning at `offset`, and how many there are.
+function write_errors(reply: bson.Document, offset: i64) -> ()?
+    none: [bson.Value] = []
+
+    errors = match bson.member(reply, name: "writeErrors")
+        .ok v  => bson.items_of(v).default(none)
+        .err _ => none
+
+    if errors.len() == 0
+        return ok()
+    first = bson.document_of(errors[0]).default(bson.Document(fields: []))
+    index = int_at(first, name: "index", otherwise: 0) + offset
+
+    more = if errors.len() > 1
+        f"; {errors.len() - 1} more writes failed too"
+    else
+        ""
+    message = f"the write at index {index}: {text_at(first, name: "errmsg")}{more}"
+    return failure(
+        n: int_at(first, name: "code", otherwise: 8),
+        name: text_at(first, name: "codeName"),
+        labels: labels_in(reply),
+        message: message
+    )
+
+# The server's code a failure's message names, in its brackets. Fails
+# `not_found` where the message names none.
+function code_of(message: str) -> i64?
+    if message.len() < 3 || message[0] != '['
+        return fail(code: NOT_FOUND, msg: "the message names no server code")
+    end: i64 @= 1
+
+    while end < message.len() && message[end] >= '0' && message[end] <= '9'
+        end @ end + 1
+
+    if end == 1 || end - 1 > 12
+        return fail(code: NOT_FOUND, msg: "the message names no server code")
+    n: i64 @= 0
+
+    for i in range(from: 1, to: end)
+        n @ n * 10 + to_i64(message[i] - '0').must()
+
+    return ok(n)
+
+# The labels a failure's message names, in its brackets after `;`.
+function labels_of(message: str) -> [str]
+    if message.len() < 3 || message[0] != '['
+        return []
+
+    close = match strings.index_of(s: message, substr: "]")
+        .ok at => at
+        .err _ => return []
+
+    inside = message.slice(from: 1, to: close)
+
+    return match strings.index_of(s: inside, substr: "; ")
+        .ok at => strings.split(s: inside.slice(from: at + 2, to: inside.len()), sep: " ")
+        .err _ => []
+
+# A cursor's first answer: its id, its namespace, and its first batch.
+record Batch
+    # The cursor's id, 0 where the server holds nothing more.
+    id: i64
+    # The namespace, `database.collection`.
+    namespace: str
+    # The documents.
+    documents: [bson.Document]
+    # A change stream's token past the batch, empty where none.
+    resume_token: bson.Document
+
+# The batch `reply` holds under `cursor`, its documents under `firstBatch` or
+# `nextBatch`. Fails `invalid` where the reply holds no cursor.
+function batch_of(reply: bson.Document) -> Batch?
+    cursor = match bson.member(reply, name: "cursor")
+        .ok v  => bson.document_of(v)?
+        .err _ => return fail(code: INVALID, msg: "the reply holds no cursor")
+
+    items = match bson.member(cursor, name: "firstBatch")
+        .ok v => bson.items_of(v)?
+        .err _ =>
+            match bson.member(cursor, name: "nextBatch")
+                .ok v  => bson.items_of(v)?
+                .err _ => return fail(code: INVALID, msg: "the reply's cursor holds no batch")
+
+    documents: [bson.Document] @= []
+
+    for item in items
+        documents @ documents.push(bson.document_of(item)?)
+
+    token = match bson.member(cursor, name: "postBatchResumeToken")
+        .ok v  => bson.document_of(v).default(bson.Document(fields: []))
+        .err _ => bson.Document(fields: [])
+
+    return ok(
+        Batch(id: int_at(cursor, name: "id", otherwise: 0), namespace: text_at(cursor, name: "ns"), documents: documents, resume_token: token)
+    )
+
+# The document a `findAndModify` answers under `value`. Fails `not_found`
+# where it is null, naming `what`.
+function modified_of(reply: bson.Document, what: str) -> bson.Document?
+    v = bson.member(reply, name: "value")?
+
+    if v == .null_value
+        return fail(code: NOT_FOUND, msg: f"no document of {what} matches the filter")
+    return bson.document_of(v)
+
+test "check: ok as a double, a failure with labels, and a write-concern error"
+    assert !check(bson.parse_json("{\"ok\": 1.0}").must()).is_err()
+
+    match check(bson.parse_json("{\"ok\": 0.0, \"code\": 251, \"codeName\": \"NoSuchTransaction\", \"errmsg\": \"none\", \"errorLabels\": [\"TransientTransactionError\"]}").must())
+        .ok _ => assert false
+        .err e =>
+            assert e.code == NOT_FOUND
+            assert e.msg == "[251 NoSuchTransaction; TransientTransactionError] none"
+            assert code_of(e.msg).must() == 251
+            assert labels_of(e.msg) == ["TransientTransactionError"]
+
+    match check(bson.parse_json("{\"ok\": 1, \"writeConcernError\": {\"code\": 64, \"codeName\": \"WriteConcernFailed\", \"errmsg\": \"waiting\"}}").must())
+        .ok _  => assert false
+        .err e => assert e.code == TIMEOUT
+
+test "write_errors: none, and two of a duplicate key, the first at its offset"
+    assert !write_errors(bson.parse_json("{\"ok\": 1, \"n\": 1}").must(), offset: 0).is_err()
+    reply = bson.parse_json(
+        "{\"ok\": 1, \"n\": 0, \"writeErrors\": [{\"index\": 1, \"code\": 11000, \"codeName\": \"DuplicateKey\", \"errmsg\": \"E11000\"}, {\"index\": 2, \"code\": 11000, \"errmsg\": \"E11000\"}]}"
+    ).must()
+
+    match write_errors(reply, offset: 10)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == EXISTS
+            assert e.msg == "[11000 DuplicateKey] the write at index 11: E11000; 1 more writes failed too"
+
+test "code_of and labels_of: a message with no brackets, and one with a code and no labels"
+    assert code_of("plain words").is_err()
+    assert code_of("[] x").is_err()
+    assert labels_of("[11000 DuplicateKey] x") == []
+    assert code_for(99999) == FAILED
+
+test "batch_of: a first batch, a next batch, and a reply with no cursor"
+    first = batch_of(
+        bson.parse_json("{\"cursor\": {\"id\": {\"$numberLong\": \"42\"}, \"ns\": \"d.c\", \"firstBatch\": [{\"a\": 1}]}, \"ok\": 1}").must()
+    ).must()
+    assert first.id == 42 && first.namespace == "d.c" && first.documents.len() == 1
+    next = batch_of(
+        bson.parse_json("{\"cursor\": {\"id\": 0, \"ns\": \"d.c\", \"nextBatch\": []}, \"ok\": 1}").must()
+    ).must()
+    assert next.id == 0 && next.documents.len() == 0
+    assert batch_of(bson.parse_json("{\"ok\": 1}").must()).is_err()
