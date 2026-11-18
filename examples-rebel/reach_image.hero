@@ -1,0 +1,26 @@
+# Reaches Rebel's `image`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It draws a red disc on a blank image,
+# turns it a quarter, scales it down and prints its size and the colour at
+# its centre.
+
+use <rebel>/image
+
+function main()
+    match image.blank(width: 40, height: 20, format: .rgba)
+        .err e => print(e.code, ": ", e.msg)
+        .ok start =>
+            img @= start
+            image.fill_circle(
+                @img,
+                center_x: 20,
+                center_y: 10,
+                radius: 8,
+                color: image.Color(r: 255, g: 0, b: 0, a: 255)
+            )
+            turned = image.rotate_90(img)
+
+            match image.resize(turned, width: 10, height: 20, resampling: .bilinear)
+                .err e => print(e.code, ": ", e.msg)
+                .ok small =>
+                    c = image.color_at(small, x: 5, y: 10)
+                    print(small.width, " by ", small.height, ", red ", c.r)

@@ -1,0 +1,163 @@
+# The text chunks of PNG (section 11.3.3): `tEXt` and `zTXt`, whose
+# keyword and text are Latin-1, the second compressed, and `iTXt`, whose
+# text is UTF-8, compressed or not, with a language and a translated
+# keyword this module reads past.
+
+use bytes
+use compress
+use image
+
+# The bytes `latin`, Latin-1, as UTF-8 text.
+function from_latin(latin: [u8] lent) -> str
+    out: [u8] @= []
+
+    for b in latin
+        v = to_i64(b).must()
+
+        if v < 0x80
+            out @ out.push(b)
+        else
+            out @ out.push(to_u8(0xc0 | v >> 6).must())
+            out @ out.push(to_u8(0x80 | v & 0x3f).must())
+
+    return bytes.to_text(out).must()
+
+# The index of the first zero byte of `data` from `from`. Fails `invalid`
+# where there is none, naming `kind`.
+function zero_after(data: [u8] lent, from: i64, kind: str) -> i64?
+    for i in range(from: from, to: data.len())
+        if data[i] == 0
+            return ok(i)
+
+    return fail(code: image.INVALID, msg: f"a {kind} chunk with no zero byte after its keyword or a field")
+
+# `data` inflated as zlib, to at most `limit` bytes. Fails `limit` past
+# it, `invalid` where `data` is not zlib, naming `kind`.
+function inflated(data: [u8] lent, limit: i64, kind: str) -> [u8]?
+    match compress.decompress(data, format: .zlib, limit: limit)
+        .ok out => return ok(out)
+        .err e =>
+            if e.code == compress.LIMIT
+                return fail(code: image.LIMIT, msg: f"a {kind} chunk's text inflates past the {limit} bytes allowed")
+            return fail(code: image.INVALID, msg: f"a {kind} chunk's text is not zlib: {e.msg}")
+
+# The keyword and text of the chunk of `kind` holding `data`, its
+# compression undone to at most `limit` bytes; `kind` is `tEXt`, `zTXt` or
+# `iTXt`.
+function text_of(kind: str, data: [u8] lent, limit: i64) -> [str]?
+    end = zero_after(data, from: 0, kind: kind)?
+
+    if end == 0 || end > 79
+        return fail(
+            code: image.INVALID,
+            msg: f"a {kind} chunk whose keyword holds {end} bytes, where 1 to 79 are allowed"
+        )
+    keyword = from_latin(data.slice(from: 0, to: end))
+
+    if kind == "tEXt"
+        return ok([keyword, from_latin(data.slice(from: end + 1, to: data.len()))])
+
+    if kind == "zTXt"
+        if end + 2 > data.len() || data[end + 1] != 0
+            return fail(code: image.INVALID, msg: "a zTXt chunk with no compression method 0 after its keyword")
+        return ok([keyword, from_latin(inflated(data.slice(from: end + 2, to: data.len()), limit: limit, kind: kind)?)])
+
+    if end + 3 > data.len() || data[end + 1] > 1 || data[end + 2] != 0
+        return fail(
+            code: image.INVALID,
+            msg: "an iTXt chunk with no compression flag of 0 or 1 and method 0 after its keyword"
+        )
+    language_end = zero_after(data, from: end + 3, kind: kind)?
+    translated_end = zero_after(data, from: language_end + 1, kind: kind)?
+    body = data.slice(from: translated_end + 1, to: data.len())
+
+    text = if data[end + 1] == 1
+        inflated(body, limit: limit, kind: kind)?
+    else
+        body
+
+    match bytes.to_text(text)
+        .ok s  => return ok([keyword, s])
+        .err _ => return fail(code: image.INVALID, msg: "an iTXt chunk whose text is not UTF-8")
+
+# The data of a text chunk of `text` under `keyword`, and its type: `tEXt`
+# where `text` is ASCII, `iTXt` otherwise. Fails `invalid` where `keyword`
+# is not 1 to 79 printable ASCII characters with no space first, last or
+# beside another, or `text` holds a zero byte.
+function chunk_of(keyword: str, text: str) -> [[u8]]?
+    n = keyword.len()
+    good @= n >= 1 && n <= 79 && keyword[0] != ' ' && keyword[n - 1] != ' '
+
+    for i in range(from: 0, to: n)
+        c = keyword[i]
+
+        if c < 32 || c > 126 || c == ' ' && i > 0 && keyword[i - 1] == ' '
+            good @ false
+
+    if !good
+        return fail(
+            code: image.INVALID,
+            msg: f"a keyword of {n} bytes that PNG does not allow: 1 to 79 printable ASCII characters, no space first, last or beside another"
+        )
+    ascii @= true
+    data: [u8] @= bytes.from_text(keyword)
+    data @ data.push(0)
+    body = bytes.from_text(text)
+
+    for b in body
+        if b == 0
+            return fail(code: image.INVALID, msg: "a text holding a zero byte, which no text chunk can hold")
+
+        if b >= 0x80
+            ascii @ false
+
+    if !ascii
+        zeros: [u8] = [0, 0, 0, 0]
+
+        for b in zeros
+            data @ data.push(b)
+
+    for b in body
+        data @ data.push(b)
+
+    kind = if ascii
+        "tEXt"
+    else
+        "iTXt"
+    return ok([bytes.from_text(kind), data])
+
+test "from_latin: ASCII and Latin-1 letters"
+    assert from_latin([0x42, 0xe9, 0x74]) == "Bét"
+    assert from_latin([]) == ""
+
+test "text_of: tEXt, zTXt and iTXt, and a keyword with no end"
+    assert text_of("tEXt", data: [0x41, 0, 0xe9], limit: 10).must() == ["A", "é"]
+    packed = compress.compress(bytes.from_text("hello"), compress.defaults(.zlib)).must()
+    z: [u8] @= [0x4b, 0, 0]
+
+    for b in packed
+        z @ z.push(b)
+
+    assert text_of("zTXt", data: z, limit: 10).must() == ["K", "hello"]
+
+    match text_of("zTXt", data: z, limit: 3)
+        .ok _  => assert false
+        .err e => assert e.code == "limit"
+
+    i: [u8] = [0x54, 0, 0, 0, 0x69, 0x74, 0, 0x54, 0, 0x6c, 0xc3, 0xa0]
+    assert text_of("iTXt", data: i, limit: 10).must() == ["T", "là"]
+    assert text_of("tEXt", data: [0x41, 0x42], limit: 10).is_err()
+    assert text_of("tEXt", data: [0, 0x42], limit: 10).is_err()
+    assert text_of("iTXt", data: [0x54, 0, 0, 0, 0xff], limit: 10).is_err()
+
+test "chunk_of: tEXt for ASCII, iTXt otherwise, and keywords refused"
+    t = chunk_of(keyword: "Title", text: "Heroes").must()
+    assert t[0] == bytes.from_text("tEXt")
+    assert text_of("tEXt", data: t[1], limit: 100).must() == ["Title", "Heroes"]
+    u = chunk_of(keyword: "Title", text: "là").must()
+    assert u[0] == bytes.from_text("iTXt")
+    assert text_of("iTXt", data: u[1], limit: 100).must() == ["Title", "là"]
+    assert chunk_of(keyword: "", text: "x").is_err()
+    assert chunk_of(keyword: " Title", text: "x").is_err()
+    assert chunk_of(keyword: "Ti  tle", text: "x").is_err()
+    assert chunk_of(keyword: "Tïtle", text: "x").is_err()

@@ -1,0 +1,115 @@
+# The frames of a GIF laid over one another as a viewer shows them: a
+# screen of RGBA, transparent at first, each frame drawn where its indices
+# are not transparent, the screen copied out, then the frame's rectangle
+# disposed of as it says.
+
+use image
+use image/gif/internal/blocks
+
+# Every frame of `p` as the screen shows it, at most `limits.max_pixels`
+# pixels in all. Fails `limit` past them, `invalid` where a frame is not
+# whole or stands outside the screen.
+function composited(p: blocks.Parsed lent, limits: image.Limits) -> [image.Image]?
+    area = p.width * p.height
+
+    if area > 0 && p.frames.len() > limits.max_pixels / area
+        return fail(
+            code: image.LIMIT,
+            msg: f"{p.frames.len()} screens of {p.width} by {p.height} pixels, past the {limits.max_pixels} pixels allowed"
+        )
+    screen: [u8] @= []
+
+    for _ in range(from: 0, to: area * 4)
+        screen @ screen.push(0)
+
+    out: [image.Image] @= []
+
+    for f in p.frames
+        ix = f.image
+
+        if ix.width < 0 || ix.height < 0 || f.left < 0 || f.top < 0 || f.left + ix.width > p.width || f.top + ix.height > p.height || ix.indices.len() != ix.width * ix.height
+            return fail(
+                code: image.INVALID,
+                msg: f"a frame of {ix.width} by {ix.height} at {f.left}, {f.top} that is not whole or not inside the screen of {p.width} by {p.height}"
+            )
+        saved = screen
+
+        for y in range(from: 0, to: ix.height)
+            for x in range(from: 0, to: ix.width)
+                k = to_i64(ix.indices[y * ix.width + x]).must()
+
+                if k >= ix.palette.len()
+                    return fail(
+                        code: image.INVALID,
+                        msg: f"an index of {k} into a palette of {ix.palette.len()} colours"
+                    )
+                c = ix.palette[k]
+
+                if c.a != 0
+                    at = ((f.top + y) * p.width + f.left + x) * 4
+                    screen[at] @ c.r
+                    screen[at + 1] @ c.g
+                    screen[at + 2] @ c.b
+                    screen[at + 3] @ 255
+
+        out @ out.push(image.Image(width: p.width, height: p.height, format: .rgba, pixels: screen))
+
+        if f.disposal == 2
+            for y in range(from: 0, to: ix.height)
+                for x in range(from: 0, to: ix.width)
+                    at = ((f.top + y) * p.width + f.left + x) * 4
+
+                    for k in range(from: 0, to: 4)
+                        screen[at + k] @ 0
+        else if f.disposal == 3
+            screen @ saved
+
+    return ok(out)
+
+test "composited: a frame kept, one cleared to the background, one taken back"
+    red = image.Color(r: 255, g: 0, b: 0, a: 255)
+    blue = image.Color(r: 0, g: 0, b: 255, a: 255)
+    clear = image.Color(r: 9, g: 9, b: 9, a: 0)
+    first = blocks.Shot(
+        image: image.Indexed(width: 2, height: 1, palette: [red], indices: [0, 0]),
+        left: 0,
+        top: 0,
+        delay: 0,
+        disposal: 1,
+        interlaced: false
+    )
+    second = blocks.Shot(
+        image: image.Indexed(width: 1, height: 1, palette: [blue], indices: [0]),
+        left: 1,
+        top: 0,
+        delay: 0,
+        disposal: 3,
+        interlaced: false
+    )
+    third = blocks.Shot(
+        image: image.Indexed(width: 2, height: 1, palette: [clear, blue], indices: [0, 1]),
+        left: 0,
+        top: 0,
+        delay: 0,
+        disposal: 2,
+        interlaced: false
+    )
+    p = blocks.Parsed(
+        width: 2,
+        height: 1,
+        palette: [],
+        background: 0,
+        loop_count: -1,
+        frames: [first, second, third, first]
+    )
+    shown = composited(p, limits: image.default_limits()).must()
+    assert shown.len() == 4
+    assert shown[0].pixels == [255, 0, 0, 255, 255, 0, 0, 255]
+    assert shown[1].pixels == [255, 0, 0, 255, 0, 0, 255, 255]
+    assert shown[2].pixels == [255, 0, 0, 255, 0, 0, 255, 255]
+    assert shown[3].pixels == [255, 0, 0, 255, 255, 0, 0, 255]
+    few = image.Limits(max_width: 10, max_height: 10, max_pixels: 7)
+
+    match composited(p, limits: few)
+        .ok _  => assert false
+        .err e => assert e.code == image.LIMIT

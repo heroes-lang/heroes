@@ -1,0 +1,234 @@
+# An image turned by any angle about its centre: each output pixel's centre
+# carried back into the input by the inverse turn and sampled there under a
+# kernel at scale 1. A multiple of 90 degrees is moved whole instead, so it
+# stays exact.
+
+use image/internal/geometry
+use image/internal/layout
+use image/internal/resample
+use math
+
+# A turned image: its size and its pixels.
+record Turned
+    # The columns.
+    width: i64
+    # The rows.
+    height: i64
+    # The pixels, held as the input's.
+    pixels: [u8]
+
+# `degrees` as a count of quarter turns counter-clockwise, 0 to 3, where it
+# is a whole multiple of 90; -1 otherwise.
+function quarters_of(degrees: f64) -> i64
+    d = degrees - 360.0 * math.floor(degrees / 360.0)
+    q = d / 90.0
+
+    if q != math.floor(q)
+        return -1
+    return to_i64(q).must() % 4
+
+# `pixels`, laid out as `s` says, turned `degrees` counter-clockwise under
+# `kernel`, grown to hold every corner where `expand`, what no input pixel
+# reaches held as `background`. `degrees` is finite.
+function turned(s: layout.Shape, pixels: [u8] lent, degrees: f64, kernel: resample.Kernel, expand: bool, background: [i64]) -> Turned
+    quarters = quarters_of(degrees)
+
+    if quarters >= 0
+        return turned_by_quarters(s, pixels, quarters: quarters, expand: expand, background: background)
+    theta = degrees * math.PI / 180.0
+    c = math.cos(theta)
+    sn = math.sin(theta)
+    w = to_f64(s.width)
+    h = to_f64(s.height)
+
+    out_width = if expand
+        to_i64(math.ceil(math.abs(w * c) + math.abs(h * sn) - 0.000000001)).must()
+    else
+        s.width
+
+    out_height = if expand
+        to_i64(math.ceil(math.abs(w * sn) + math.abs(h * c) - 0.000000001)).must()
+    else
+        s.height
+    out_shape = layout.with_size(s, width: out_width, height: out_height)
+    out @= layout.zeros(layout.byte_count(out_shape))
+    half_w = to_f64(out_width) / 2.0
+    half_h = to_f64(out_height) / 2.0
+
+    for oy in range(from: 0, to: out_height)
+        for ox in range(from: 0, to: out_width)
+            px = to_f64(ox) + 0.5 - half_w
+            py = to_f64(oy) + 0.5 - half_h
+            sx = px * c - py * sn + w / 2.0
+            sy = px * sn + py * c + h / 2.0
+
+            values = if sx < 0.0 || sy < 0.0 || sx >= w || sy >= h
+                background
+            else
+                sampled(s, pixels, sx: sx, sy: sy, kernel: kernel)
+            layout.put_samples(out_shape, @out, x: ox, y: oy, values: values)
+
+    return Turned(width: out_width, height: out_height, pixels: out)
+
+# `pixels` turned by `quarters` quarter turns counter-clockwise, exactly;
+# where the size changes and not `expand`, centred on a canvas of the
+# input's size filled with `background`, the odd pixel left or above.
+function turned_by_quarters(s: layout.Shape, pixels: [u8] lent, quarters: i64, expand: bool, background: [i64]) -> Turned
+    moved = if quarters == 1
+        geometry.moved(s, pixels, move: .rotate_90)
+    else if quarters == 2
+        geometry.moved(s, pixels, move: .rotate_180)
+    else if quarters == 3
+        geometry.moved(s, pixels, move: .rotate_270)
+    else
+        pixels
+
+    width = if quarters % 2 == 1
+        s.height
+    else
+        s.width
+
+    height = if quarters % 2 == 1
+        s.width
+    else
+        s.height
+
+    if expand || width == s.width && height == s.height
+        return Turned(width: width, height: height, pixels: moved)
+    canvas @= layout.zeros(layout.byte_count(s))
+
+    for y in range(from: 0, to: s.height)
+        for x in range(from: 0, to: s.width)
+            layout.put_samples(s, @canvas, x: x, y: y, values: background)
+
+    from = layout.with_size(s, width: width, height: height)
+    geometry.place(
+        s: s,
+        pixels: @canvas,
+        from: from,
+        src: moved,
+        x: floor_half(s.width - width),
+        y: floor_half(s.height - height)
+    )
+    return Turned(width: s.width, height: s.height, pixels: canvas)
+
+# Half of `n`, rounded toward negative infinity.
+function floor_half(n: i64) -> i64
+    if n >= 0
+        return n / 2
+    return -((1 - n) / 2)
+
+# The samples of `pixels`, laid out as `s` says, at the point `sx`, `sy`
+# inside it, each input pixel weighted by `kernel` at its distance from the
+# point, with alpha premultiplied; the pixels past an edge left out and
+# the weights of the rest made to add up to 1.
+function sampled(s: layout.Shape, pixels: [u8] lent, sx: f64, sy: f64, kernel: resample.Kernel) -> [i64]
+    if kernel == .nearest
+        return layout.samples_at(s, pixels, x: to_i64(sx).must(), y: to_i64(sy).must())
+    r = resample.support_of(kernel)
+    first_x = max_i(a: to_i64(math.floor(sx - 0.5 - r)).must(), b: 0)
+    last_x = min_i(a: to_i64(math.ceil(sx - 0.5 + r)).must(), b: s.width - 1)
+    first_y = max_i(a: to_i64(math.floor(sy - 0.5 - r)).must(), b: 0)
+    last_y = min_i(a: to_i64(math.ceil(sy - 0.5 + r)).must(), b: s.height - 1)
+    ch = s.channels
+    alpha = layout.has_alpha(s)
+    top = layout.top_of(s)
+    acc: [f64] @= [0.0, 0.0, 0.0, 0.0]
+    total @= 0.0
+
+    for j in range(from: first_y, to: last_y + 1)
+        wy = resample.weigh(kernel, x: to_f64(j) + 0.5 - sy)
+
+        for i in range(from: first_x, to: last_x + 1)
+            wt = wy * resample.weigh(kernel, x: to_f64(i) + 0.5 - sx)
+
+            if wt != 0.0
+                v = layout.samples_at(s, pixels, x: i, y: j)
+
+                a = if alpha
+                    to_f64(v[ch - 1]) / to_f64(top)
+                else
+                    1.0
+
+                for c in range(from: 0, to: ch)
+                    weighted = if alpha && c < ch - 1
+                        to_f64(v[c]) * a
+                    else
+                        to_f64(v[c])
+                    acc[c] @ acc[c] + wt * weighted
+
+                total @ total + wt
+
+    if total == 0.0
+        return layout.samples_at(s, pixels, x: to_i64(sx).must(), y: to_i64(sy).must())
+    out: [i64] @= []
+
+    a = if alpha
+        acc[ch - 1] / total
+    else
+        to_f64(top)
+
+    for c in range(from: 0, to: ch)
+        v = acc[c] / total
+
+        unpremultiplied = if alpha && c < ch - 1
+            if a <= 0.0
+                0.0
+            else
+                v * to_f64(top) / a
+        else
+            v
+        out @ out.push(layout.clamp_round(unpremultiplied, top: top))
+
+    return out
+
+# The larger of `a` and `b`.
+function max_i(a: i64, b: i64) -> i64
+    if a > b
+        return a
+    return b
+
+# The smaller of `a` and `b`.
+function min_i(a: i64, b: i64) -> i64
+    if a < b
+        return a
+    return b
+
+test "quarters_of: multiples of 90 either way, and others"
+    assert quarters_of(0.0) == 0
+    assert quarters_of(90.0) == 1
+    assert quarters_of(-90.0) == 3
+    assert quarters_of(720.0) == 0
+    assert quarters_of(450.0) == 1
+    assert quarters_of(45.0) == -1
+    assert quarters_of(0.5) == -1
+
+test "turned: a quarter of a square is exact, and of an oblong kept in place"
+    sq = layout.Shape(width: 2, height: 2, channels: 1, wide: false)
+    assert turned(sq, [1, 2, 3, 4], degrees: 90.0, kernel: .bicubic, expand: false, background: [0]).pixels == [2, 4, 1, 3]
+    ob = layout.Shape(width: 3, height: 1, channels: 1, wide: false)
+    t = turned(ob, [1, 2, 3], degrees: 90.0, kernel: .nearest, expand: false, background: [9])
+    assert t.width == 3
+    assert t.pixels == [9, 2, 9]
+    grown = turned(ob, [1, 2, 3], degrees: -90.0, kernel: .nearest, expand: true, background: [9])
+    assert grown.width == 1
+    assert grown.pixels == [1, 2, 3]
+
+test "turned: 45 degrees grows to hold the corners, the corners background"
+    s = layout.Shape(width: 4, height: 4, channels: 1, wide: false)
+    flat: [u8] = [50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50]
+    t = turned(s, flat, degrees: 45.0, kernel: .bilinear, expand: true, background: [0])
+    assert t.width == 6
+    assert t.height == 6
+    assert t.pixels[0] == 0
+    assert t.pixels[2 * 6 + 2] == 50
+    kept = turned(s, flat, degrees: 30.0, kernel: .lanczos, expand: false, background: [7])
+    assert kept.width == 4
+    assert kept.pixels[0] == 7
+    assert kept.pixels[5] == 50
+
+test "floor_half: even, odd, and below zero"
+    assert floor_half(4) == 2
+    assert floor_half(3) == 1
+    assert floor_half(-2) == -1
+    assert floor_half(-3) == -2

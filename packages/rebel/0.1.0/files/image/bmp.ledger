@@ -1,0 +1,55 @@
+# The ledger of `image/bmp`: what Python's Pillow (its BMP plugin) lets a
+# program do with BMP, one block per capability, and what Rebel answers.
+# Go's standard library has no BMP (golang.org/x/image/bmp is not part of it
+# and is not on this machine) and Rust's has none: `-` in their lines.
+# Pillow is not installed here, so its names are those of its documented
+# API, unread by `dir()`.
+#
+# The test files were laid out byte by byte by a Go program on 2026-11-18,
+# their pixels known by construction, and every one was also read by macOS's
+# `sips` into a PNG that Go's image/png decoded: equal to the byte, but for
+# 16 bits of 5-5-5, where sips scales a 5-bit field otherwise than its own
+# 5-6-5 (up to 7 apart); here every field is scaled the same way, rounded to
+# 255.
+
+capability bmp/decode  a BMP read: every header, depth and compression of Windows and OS/2
+  heroes  image/bmp.decode
+  go      -
+  rust    -
+  python  Image.open, BmpImagePlugin.BmpImageFile, BmpImagePlugin.DibImageFile
+  note    OS/2's core header and BITMAPINFOHEADER to BITMAPV5HEADER; 1, 4, 8, 16, 24 and 32 bits; bit fields, an alpha mask making RGBA; RLE8 and RLE4; bottom up and top down. A 32-bit file with no alpha mask is RGB, its fourth byte unused as Windows documents it
+
+capability bmp/info  the size, depth and format read from the headers
+  heroes  image/bmp.info_of, image/bmp.Info
+  go      -
+  rust    -
+  python  Image.open (lazy)
+  note    -
+
+capability bmp/limits  a file that claims a huge image refused before it is allocated
+  heroes  image/bmp.decode with image.Limits
+  go      -
+  rust    -
+  python  Image.MAX_IMAGE_PIXELS
+  note    -
+
+capability bmp/encode  an image written as BMP
+  heroes  image/bmp.encode
+  go      -
+  rust    -
+  python  Image.save(format="BMP"), BmpImagePlugin._save
+  note    gray as 8 bits of a gray palette and RGB as 24 bits, as Pillow writes them; RGBA as 32 bits under BITMAPV4HEADER with an alpha mask, which every reader honouring bit fields reads as alpha
+
+capability bmp/encode-more  BMP written run-length coded, at 1 or 4 bits, or as 16 bits
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  note    -
+
+capability bmp/embedded  a BMP holding a JPEG or a PNG
+  heroes  refused: `unsupported`, the bytes inside are image/jpeg's and image/png's
+  go      -
+  rust    -
+  python  -
+  note    -

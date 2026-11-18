@@ -1,0 +1,254 @@
+# The netpbm formats read and written: PBM (P1, P4), PGM (P2, P5), PPM
+# (P3, P6) and PAM (P7), plain or raw, of any maximum value from 1 to
+# 65,535, comments anywhere the format allows them.
+#
+# It does not convert or scale: that is `image`'s. It reads the first image
+# of a file and not the ones that may follow it.
+#
+# **A file is not trusted.** `decode` reads every number of the header with
+# a bound on its digits, checks the size against the caller's
+# `image.Limits` before it allocates, and every sample against the maximum
+# value, so a broken or hostile file fails `invalid` or `limit` and never
+# reads past its end.
+#
+# It fails with `invalid`, `limit` and `unsupported`.
+
+use bytes
+use image
+use image/netpbm/internal/parse
+use image/netpbm/internal/samples as cases
+use image/netpbm/internal/write
+
+# What the header of a netpbm file says.
+record Info
+    # The columns.
+    width: i64
+    # The rows.
+    height: i64
+    # The largest value a sample may hold: 1 for PBM.
+    maxval: i64
+    # The samples a pixel: 1 to 4.
+    depth: i64
+    # Whether the samples are written as decimal text (P1, P2, P3).
+    plain: bool
+
+# The image `data` holds: its first one.
+#
+# - `data`: a netpbm file, P1 to P7.
+# - `limits`: the largest image the caller allows; `image.default_limits`
+#   makes the usual ones.
+#
+# The answer is gray (PBM, PGM, PAM of depth 1), gray with alpha (depth 2),
+# RGB (PPM, depth 3) or RGBA (depth 4), of 8 bits where the maximum value
+# is 255 or less and 16 otherwise. A PBM's 1 is black, 0 white. A maximum
+# value of 255 or 65,535 is kept as it is; any other is scaled to the full
+# range, rounded (7 of 15 is 119). Fails `limit` where the width or height
+# passes `limits`, before anything is allocated. Fails `invalid` where
+# `data` is not netpbm, the message naming the byte: an unknown magic
+# number, a number with more than 10 digits, a maximum value outside 1 to
+# 65,535, a sample past it, too few samples, a PAM header without its
+# fields or `ENDHDR`. Fails `unsupported` for a PAM of depth past 4. See
+# also `info_of` and `encode`.
+function decode(data: [u8], limits: image.Limits) -> image.Image?
+    h = parse.header_of(data)?
+    image.check_limits(limits, width: h.width, height: h.height)?
+    samples = parse.samples_of(data, h: h)?
+    wide = h.maxval > 255
+
+    bits = if wide
+        16
+    else
+        8
+    format = image.format_with(channels: h.depth, bits: bits).must()
+    pixels: [u8] @= []
+    bitmap = h.kind == 1 || h.kind == 4
+
+    for v in samples
+        scaled = if bitmap
+            255 - 255 * v
+        else if h.maxval == 255 || h.maxval == 65535
+            v
+        else if wide
+            (v * 65535 + h.maxval / 2) / h.maxval
+        else
+            (v * 255 + h.maxval / 2) / h.maxval
+
+        if wide
+            pixels @ pixels.push(to_u8(scaled >> 8).must())
+        pixels @ pixels.push(to_u8(scaled & 255).must())
+
+    return ok(image.Image(width: h.width, height: h.height, format: format, pixels: pixels))
+
+# The size, maximum value and depth of the netpbm `data`, read from its
+# header.
+#
+# - `data`: a netpbm file, or at least its header.
+#
+# Fails `invalid` and `unsupported` as `decode` does on the header. See
+# also `decode`.
+function info_of(data: [u8]) -> Info?
+    h = parse.header_of(data)?
+    return ok(Info(width: h.width, height: h.height, maxval: h.maxval, depth: h.depth, plain: h.kind <= 3))
+
+# `img` as a netpbm file: gray as PGM, RGB as PPM, a format with alpha as
+# PAM, of maximum value 255 or, at 16 bits, 65,535.
+#
+# - `img`: the image written.
+# - `plain`: whether the samples are written as decimal text (P2, P3), a
+#   line at most 70 characters, rather than raw (P5, P6).
+#
+# The same image answers the same bytes every time. Fails `unsupported`
+# where `plain` is asked of a format with alpha, which PAM writes raw only.
+# Aborts where `img` is not valid. See also `encode_bitmap` and `decode`.
+function encode(img: image.Image, plain: bool) -> [u8]?
+    assert image.is_valid(img)
+    depth = image.channels_of(img.format)
+    wide = image.bits_of(img.format) == 16
+
+    if plain && image.has_alpha(img.format)
+        return fail(code: image.UNSUPPORTED, msg: "PAM, which holds alpha, is written raw only")
+    samples: [i64] @= []
+
+    step = if wide
+        2
+    else
+        1
+    at @= 0
+
+    while at < img.pixels.len()
+        v = if wide
+            to_i64(img.pixels[at]).must() << 8 | to_i64(img.pixels[at + 1]).must()
+        else
+            to_i64(img.pixels[at]).must()
+        samples @ samples.push(v)
+        at @ at + step
+
+    kind = if image.has_alpha(img.format)
+        7
+    else if depth == 1 && plain
+        2
+    else if depth == 1
+        5
+    else if plain
+        3
+    else
+        6
+
+    tuple = if depth == 2
+        "GRAYSCALE_ALPHA"
+    else
+        "RGB_ALPHA"
+
+    maxval = if wide
+        65535
+    else
+        255
+    return ok(
+        write.written(kind: kind, width: img.width, height: img.height, depth: depth, maxval: maxval, samples: samples, tuple: tuple)
+    )
+
+# `img` as a PBM bitmap: black (1) where its gray, by `image.convert`, is
+# below `threshold`, white (0) elsewhere.
+#
+# - `img`: the image written, of any format.
+# - `threshold`: the gray, 0 to 255, from which a pixel is white; 128
+#   splits the range in half, 0 makes every pixel white.
+# - `plain`: whether the bits are written as text (P1), a line at most 70
+#   characters, rather than packed (P4).
+#
+# The same image answers the same bytes every time. Aborts where `img` is
+# not valid. See also `encode`.
+function encode_bitmap(img: image.Image, threshold: u8, plain: bool) -> [u8]
+    gray = image.convert(img, to: .gray)
+    bits: [i64] @= []
+
+    for v in gray.pixels
+        if v < threshold
+            bits @ bits.push(1)
+        else
+            bits @ bits.push(0)
+
+    return write.bitmap(width: img.width, height: img.height, bits: bits, plain: plain)
+
+## Tests
+
+test "decode: every file laid out by hand, pixel for pixel"
+    for s in cases.readable()
+        img = decode(bytes.parse_hex(s.file).must(), image.default_limits()).must()
+        assert img.width == s.width
+        assert img.height == s.height
+        assert img.pixels == bytes.parse_hex(s.pixels).must()
+
+test "decode: every broken file refused with its code, the bomb before it allocates"
+    for b in cases.refused()
+        match decode(bytes.parse_hex(b.file).must(), image.default_limits())
+            .ok _  => assert b.name == "never"
+            .err e => assert e.code == b.code
+
+test "decode: no prefix and no changed byte aborts"
+    for s in cases.readable()
+        file = bytes.parse_hex(s.file).must()
+
+        for n in range(from: 0, to: file.len())
+            match decode(file.slice(from: 0, to: n), image.default_limits())
+                .ok img => assert image.is_valid(img)
+                .err e  => assert e.code == image.INVALID || e.code == image.UNSUPPORTED
+
+        for k in range(from: 0, to: file.len())
+            changed @= file
+            changed[k] @ to_u8(to_i64(file[k]).must() ^ 0x5a).must()
+
+            match decode(changed, image.default_limits())
+                .ok img => assert image.is_valid(img)
+                .err e  => assert e.code == image.INVALID || e.code == image.UNSUPPORTED || e.code == image.LIMIT
+
+test "encode and decode: every format, raw and plain, back as written"
+    formats: [image.Format] = [.gray, .gray_alpha, .rgb, .rgba, .gray16, .gray_alpha16, .rgb16, .rgba16]
+
+    for format in formats
+        pixels: [u8] @= []
+
+        for i in range(from: 0, to: 30 * 2 * image.pixel_bytes_of(format))
+            pixels @ pixels.push(to_u8(i * 53 % 256).must())
+
+        img = image.from_pixels(width: 30, height: 2, format: format, pixels: pixels).must()
+        assert decode(encode(img, plain: false).must(), image.default_limits()).must() == img
+
+        if !image.has_alpha(format)
+            assert decode(encode(img, plain: true).must(), image.default_limits()).must() == img
+        else
+            assert encode(img, plain: true).is_err()
+
+test "encode_bitmap: the threshold's edges, raw and plain read back the same"
+    img = image.from_pixels(width: 4, height: 1, format: .gray, pixels: [0, 127, 128, 255]).must()
+
+    for plain in [false, true]
+        back = decode(encode_bitmap(img, threshold: 128, plain: plain), image.default_limits()).must()
+        assert back.pixels == [0, 0, 255, 255]
+
+    assert decode(encode_bitmap(img, threshold: 0, plain: false), image.default_limits()).must().pixels == [255, 255, 255, 255]
+
+## Examples
+
+# A PGM read.
+test "decode: a plain PGM of two pixels"
+    img = decode(bytes.from_text("P2 2 1 255 0 200"), image.default_limits()).must()
+    assert img.format == .gray
+    assert img.pixels == [0, 200]
+
+# A file's header read.
+test "info_of: the header of a raw PPM"
+    info = info_of(bytes.from_text("P6\n640 480\n255\n")).must()
+    assert info.width == 640
+    assert info.depth == 3
+    assert !info.plain
+
+# An image written as a PPM.
+test "encode: RGB as a raw PPM"
+    file = encode(image.from_pixels(width: 1, height: 1, format: .rgb, pixels: [1, 2, 3]).must(), plain: false).must()
+    assert file == bytes.concat([bytes.from_text("P6\n1 1\n255\n"), [1, 2, 3]])
+
+# A gray image written as black and white.
+test "encode_bitmap: dark pixels black"
+    img = image.from_pixels(width: 2, height: 1, format: .gray, pixels: [10, 250]).must()
+    assert encode_bitmap(img, threshold: 128, plain: true) == bytes.from_text("P1\n2 1\n1 0\n")

@@ -1,0 +1,319 @@
+# The ledger of `image`: what Go's `image`, `image/color`, `image/color/palette`
+# and `image/draw` (Go 1.27) and Python's Pillow let a program do with an
+# image in memory, one block per capability, and what Rebel answers. The file
+# formats are the subpackages' own ledgers: `image/png`, `image/jpeg`,
+# `image/gif`, `image/bmp`, `image/netpbm`.
+#
+# Go's lists are this machine's, 2026-11-18: `go doc -all` on each package.
+# Pillow is not installed here and nothing may be installed, so its names are
+# those of its documented public API (`Image`, `ImageDraw`, `ImageOps`,
+# `ImageChops`, `ImageFilter`, `ImageEnhance`, `ImageStat`, `ImageColor`,
+# `ImagePalette`, `ImageSequence`, `ImageCms`, `ImageFont`, `ImageGrab`,
+# `ImageShow`), not read by `dir()`: a question rather than a measurement,
+# and no expected value of the tests comes from it. Rust's standard library
+# has no image, so its line is `-` in every block. The expected values of the
+# tests were observed from Go on 2026-11-18 (gray from colour, the web-safe
+# palette); where Go has no such function (resizing, turning by any angle,
+# drawing), the tests hold the properties the documentation states and small
+# cases computed by hand from the definition, and say so.
+
+capability image/value  an image held in memory: its size, how a pixel is held, its bytes
+  heroes  image.Image, image.Format
+  go      Image, RGBA, RGBA64, NRGBA, NRGBA64, Gray, Gray16, Alpha, Alpha16, CMYK, Paletted, YCbCr, NYCbCrA, Config, RGBA64Image, PalettedImage, draw.Image, draw.RGBA64Image, and their fields Pix, Stride, Rect, Palette, Y, Cb, Cr, A, YStride, CStride, AStride, SubsampleRatio
+  rust    -
+  python  Image.Image, Image.mode, Image.size, Image.width, Image.height, Image.info
+  note    eight formats: gray, gray and alpha, RGB, RGBA, at 8 or 16 bits a sample, 16 bits held high byte first as Go's Gray16 and PNG hold them; alpha straight as Go's NRGBA and Pillow's RGBA, never premultiplied as Go's RGBA. An image begins at 0, 0 and has no stride of its own: a row is width × pixel bytes. CMYK, YCbCr, alpha alone and Pillow's 1-bit, 32-bit integer and float modes are not formats here; their block is below
+
+capability image/new  a blank image of a size and format
+  heroes  image.blank
+  go      NewRGBA, NewRGBA64, NewNRGBA, NewNRGBA64, NewGray, NewGray16, NewAlpha, NewAlpha16, NewCMYK, NewPaletted, NewYCbCr, NewNYCbCrA, NewUniform, Uniform, Black, White, Transparent, Opaque, Uniform.At, Uniform.Bounds, Uniform.ColorModel, Uniform.Convert, Uniform.Opaque, Uniform.RGBA, Uniform.RGBA64At
+  rust    -
+  python  Image.new, Image.linear_gradient, Image.radial_gradient
+  note    every sample 0, black and transparent, as Go's New functions make one; Pillow's colour argument is `fill_rect` over the whole image. A Uniform, an image of one colour without bounds, is a colour here: `fill_rect` paints one. The gradients are pending under image/generate
+
+capability image/generate  images made from a formula: gradients, noise, a Mandelbrot set
+  heroes  pending
+  go      -
+  rust    -
+  python  Image.linear_gradient, Image.radial_gradient, Image.effect_noise, Image.effect_mandelbrot, Image.effect_spread
+  note    -
+
+capability image/from-bytes  an image made from bytes the program holds, and its bytes read out
+  heroes  image.from_pixels, image.Image
+  go      Pix fields of every image type, PixOffset, RGBA.PixOffset, Gray.PixOffset (each type's), YCbCr.YOffset, YCbCr.COffset, NYCbCrA.AOffset
+  rust    -
+  python  Image.frombytes, Image.frombuffer, Image.tobytes, Image.fromarray, Image.__array_interface__
+  note    the bytes are `Image.pixels`, read and written directly; `from_pixels` checks their count. fromarray and the array interface are numpy's, which has no counterpart
+
+capability image/valid  whether an image holds the bytes its size says
+  heroes  image.is_valid
+  go      -
+  rust    -
+  python  Image.verify
+  note    a record built directly may say one size and hold another; every function asks this first and aborts, the caller having been able to ask. Pillow's verify checks a file, which each decoder here does as it reads
+
+capability image/limits  a limit on the size a decoder may allocate, against decompression bombs
+  heroes  image.Limits, image.default_limits, image.check_limits, image.LIMIT, image.DEFAULT_MAX_WIDTH, image.DEFAULT_MAX_HEIGHT, image.DEFAULT_MAX_PIXELS
+  go      DecodeConfig (read first, then the program decides)
+  rust    -
+  python  Image.MAX_IMAGE_PIXELS, Image.DecompressionBombError, Image.DecompressionBombWarning
+  note    every decoder takes Limits and fails `limit` before it allocates; Go has no limit (its documentation says to call DecodeConfig first), Pillow warns at MAX_IMAGE_PIXELS and fails at twice it. The defaults here are 65,536 a side and 2^26 pixels, 256 MiB of RGBA: a decision, not Pillow's number, which could not be read on this machine
+
+capability image/format-facts  what a format holds: channels, bits, bytes, alpha
+  heroes  image.channels_of, image.bits_of, image.pixel_bytes_of, image.has_alpha, image.format_with
+  go      Image.ColorModel, Opaque (each type's), RGBA.Opaque, Model
+  rust    -
+  python  Image.getbands, Image.mode, Image.has_transparency_data, ImageMode.getmode
+  note    Opaque, whether every pixel is opaque, is a scan a program writes with `samples_at`; it is not offered apart
+
+capability image/pixel-read  one pixel read, as a colour or as its samples
+  heroes  image.color_at, image.samples_at, image.Color
+  go      Image.At, RGBA.RGBAAt, RGBA64.RGBA64At, NRGBA.NRGBAAt, NRGBA64.NRGBA64At, Gray.GrayAt, Gray16.Gray16At, Alpha.AlphaAt, Alpha16.Alpha16At, CMYK.CMYKAt, YCbCr.YCbCrAt, NYCbCrA.NYCbCrAAt, Paletted.ColorIndexAt, RGBA64Image.RGBA64At (each type's), color.Color, color.Color.RGBA, color.RGBA, color.RGBA64, color.NRGBA, color.NRGBA64, color.Gray, color.Gray16, color.Alpha, color.Alpha16, color.Black, color.White, color.Transparent, color.Opaque, and each colour type's RGBA method
+  rust    -
+  python  Image.getpixel, Image.getdata, Image.load, PixelAccess, Image.getchannel
+  note    `color_at` answers 8 bits a channel, a 16-bit sample by its high byte as Go converts it; `samples_at` answers the samples exactly, 16 bits included. A position outside the image aborts, as an index past the end does
+
+capability image/pixel-write  one pixel written
+  heroes  image.set_color, image.set_samples
+  go      Set, SetRGBA, SetRGBA64, SetNRGBA, SetNRGBA64, SetGray, SetGray16, SetAlpha, SetAlpha16, SetCMYK, SetYCbCr, SetNYCbCrA, Paletted.SetColorIndex (each type's)
+  rust    -
+  python  Image.putpixel, Image.putdata
+  note    a colour written into gray takes Go's luma; the pixel is replaced, never blended (Pillow's putpixel, Go's Set)
+
+capability image/convert  an image held in another format
+  heroes  image.convert
+  go      color.Model, color.ModelFunc, color.RGBAModel, color.RGBA64Model, color.NRGBAModel, color.NRGBA64Model, color.GrayModel, color.Gray16Model, color.AlphaModel, color.Alpha16Model, Model.Convert
+  rust    -
+  python  Image.convert
+  note    gray from colour is Go's GrayModel, (19595 R + 38470 G + 7471 B + 32768) >> 16 on 16-bit values, observed from Go on two colours and Gray16Model on one; Pillow's ITU-R 601-2 luma differs by at most one. Alpha dropped keeps the colour (Pillow's convert from RGBA to RGB); Go's models composite over black, which is `flatten` here. 16 bits become 8 by the high byte, as Go converts
+
+capability image/flatten  alpha blended over a background colour and dropped
+  heroes  image.flatten
+  go      draw.Draw over a Uniform (draw.Over)
+  rust    -
+  python  Image.alpha_composite onto Image.new, Image.convert with a background pasted first
+  note    each colour weighted by its alpha, rounded
+
+capability image/colour-spaces  CMYK, YCbCr, Lab, HSV and other colour spaces
+  heroes  pending
+  go      color.CMYK, color.CMYKModel, color.CMYKToRGB, color.RGBToCMYK, color.YCbCr, color.YCbCrModel, color.YCbCrToRGB, color.RGBToYCbCr, color.NYCbCrA, color.NYCbCrAModel, YCbCrSubsampleRatio, YCbCrSubsampleRatio444, YCbCrSubsampleRatio422, YCbCrSubsampleRatio420, YCbCrSubsampleRatio440, YCbCrSubsampleRatio411, YCbCrSubsampleRatio410, YCbCrSubsampleRatio.String, CMYK, YCbCr, NYCbCrA
+  rust    -
+  python  Image.convert("CMYK"), Image.convert("YCbCr"), Image.convert("LAB"), Image.convert("HSV")
+  note    `image/jpeg` turns YCbCr into RGB as it reads, by JFIF's equations; a format of four samples other than RGBA, and the conversions, would need a design of their own
+
+capability image/colour-management  ICC profiles applied: one colour space into another
+  heroes  pending
+  go      -
+  rust    -
+  python  ImageCms, ImageCms.profileToProfile, ImageCms.buildTransform, ImageCms.applyTransform, ImageCms.createProfile, ImageCms.getOpenProfile
+  note    `image/jpeg` and `image/png` read the profile's bytes (Jpeg.icc, a kept iCCP chunk); applying one is a colour engine, a package of its own
+
+capability image/crop  a rectangle of an image as an image
+  heroes  image.crop
+  go      SubImage (each type's), Rectangle, Rect, Point, Pt, ZR, ZP, Rectangle.Add, Rectangle.Sub, Rectangle.Inset, Rectangle.Intersect, Rectangle.Union, Rectangle.Empty, Rectangle.Eq, Rectangle.Overlaps, Rectangle.In, Rectangle.Canon, Rectangle.Dx, Rectangle.Dy, Rectangle.Size, Rectangle.At, Rectangle.Bounds, Rectangle.ColorModel, Rectangle.RGBA64At, Rectangle.String, Rectangle.Mul, Point.Add, Point.Sub, Point.Mul, Point.Div, Point.In, Point.Mod, Point.Eq, Point.String
+  rust    -
+  python  Image.crop, ImageOps.crop
+  note    a copy, where Go's SubImage shares the pixels: no value aliases another here. A rectangle outside the image fails `invalid`; Pillow pads it with zeros. The rectangle and point arithmetic is four numbers a program computes itself, x, y, width and height being what every function takes
+
+capability image/flip-and-quarter-turns  mirrored, turned by quarters, transposed, exactly
+  heroes  image.flip_horizontal, image.flip_vertical, image.rotate_90, image.rotate_180, image.rotate_270, image.transpose, image.transverse
+  go      -
+  rust    -
+  python  Image.transpose, Image.Transpose.FLIP_LEFT_RIGHT, FLIP_TOP_BOTTOM, ROTATE_90, ROTATE_180, ROTATE_270, TRANSPOSE, TRANSVERSE, ImageOps.flip, ImageOps.mirror
+  note    rotate_90 is counter-clockwise, as Pillow's ROTATE_90 is
+
+capability image/orientation  an image shown upright by its EXIF orientation
+  heroes  image.apply_orientation
+  go      -
+  rust    -
+  python  ImageOps.exif_transpose
+  note    the eight orientations as Pillow maps them to transposes; `image/jpeg` reads the orientation
+
+capability image/rotate  an image turned by any angle
+  heroes  image.rotate
+  go      -
+  rust    -
+  python  Image.rotate (angle, resample, expand, center, translate, fillcolor)
+  note    about the centre, counter-clockwise as Pillow; a multiple of 90 is moved whole, so it is exact. Pillow's center and translate are pending under image/transform. Tested by properties (a flat image stays flat, the size an expansion takes, the corners left to the background) and small cases by hand: no reference on this machine turns an image
+
+capability image/resize  an image scaled, under a resampling filter
+  heroes  image.resize, image.Resampling
+  go      -
+  rust    -
+  python  Image.resize, Image.Resampling, NEAREST, BOX, BILINEAR, HAMMING, BICUBIC, LANCZOS, Image.reduce
+  note    the six filters of Pillow, each widened by the scale where it shrinks so every pixel counts, and alpha premultiplied, as Pillow's documentation describes; the weights are computed in floats, so a sample may differ from Pillow's by one, unmeasured since Pillow is not here. Pillow's box argument is `crop` first; reduce is `resize` with `box`. Tested by properties and by the weights of the kernels computed by hand
+
+capability image/thumbnail  an image made to fit a size, its proportions kept
+  heroes  image.thumbnail
+  go      -
+  rust    -
+  python  Image.thumbnail, ImageOps.contain, ImageOps.fit, ImageOps.pad, ImageOps.cover, ImageOps.scale
+  note    never enlarged, each side rounded and at least 1. fit, pad and cover are a thumbnail and a crop or a paste, which a program composes
+
+capability image/transform  affine, perspective and mesh transforms
+  heroes  pending
+  go      -
+  rust    -
+  python  Image.transform, Image.Transform.AFFINE, EXTENT, PERSPECTIVE, QUAD, MESH, ImageTransform
+  note    -
+
+capability image/paste  one image written into another
+  heroes  image.paste
+  go      draw.Draw, draw.Src, draw.Op
+  rust    -
+  python  Image.paste
+  note    the source is converted to the destination's format and replaces what was there, alpha and all; what falls outside is dropped
+
+capability image/composite  one image laid over another by its alpha
+  heroes  image.composite
+  go      draw.Draw, draw.DrawMask, draw.Over, draw.Drawer, Drawer.Draw
+  rust    -
+  python  Image.alpha_composite, Image.paste with a mask, Image.composite
+  note    Porter and Duff's over on straight alpha, rounded; tested by cases computed by hand. A separate mask image, DrawMask's and Image.composite's, is pending under image/mask
+
+capability image/mask  one image laid over another through a third, a mask
+  heroes  pending
+  go      draw.DrawMask
+  rust    -
+  python  Image.composite, Image.paste with a mask, Image.putalpha
+  note    -
+
+capability image/blend  two images mixed by an amount
+  heroes  image.blend
+  go      -
+  rust    -
+  python  Image.blend
+  note    -
+
+capability image/draw-shapes  lines, rectangles and circles drawn
+  heroes  image.draw_line, image.draw_rect, image.fill_rect, image.draw_circle, image.fill_circle
+  go      draw.Draw of a Uniform over a rectangle
+  rust    -
+  python  ImageDraw.Draw, ImageDraw.line, ImageDraw.rectangle, ImageDraw.ellipse, ImageDraw.circle
+  note    one pixel wide, written with no blending, as Pillow's Draw writes on an image; the time follows the part of the shape inside the image, so a shape of any size cannot hang a program. Pillow's line width and outline width are pending under image/draw-more
+
+capability image/draw-more  polygons, arcs, chords, pie slices, rounded rectangles, wide lines, flood fill
+  heroes  pending
+  go      -
+  rust    -
+  python  ImageDraw.polygon, ImageDraw.regular_polygon, ImageDraw.arc, ImageDraw.chord, ImageDraw.pieslice, ImageDraw.rounded_rectangle, ImageDraw.point, ImageDraw.bitmap, ImageDraw.floodfill, ImageDraw.shape, ImagePath, line and outline width
+  note    -
+
+capability image/text  text drawn with a font
+  heroes  pending
+  go      -
+  rust    -
+  python  ImageDraw.text, ImageDraw.multiline_text, ImageDraw.textbbox, ImageDraw.textlength, ImageFont, ImageFont.truetype, ImageFont.load_default
+  note    a font rasterizer (TrueType's outlines, hinting, layout) is a package of its own
+
+capability image/histogram  how many samples hold each value
+  heroes  image.histogram
+  go      -
+  rust    -
+  python  Image.histogram, Image.entropy, ImageStat.Stat
+  note    256 counts a channel, as Pillow lays them out; a 16-bit sample counts at its high byte. entropy and ImageStat's means are pending under image/statistics
+
+capability image/statistics  extrema, colours, bounding box, means, entropy
+  heroes  pending
+  go      -
+  rust    -
+  python  Image.getextrema, Image.getcolors, Image.getbbox, Image.entropy, ImageStat.Stat, ImageStat.Stat.mean, ImageStat.Stat.median, ImageStat.Stat.stddev
+  note    -
+
+capability image/palette  colours chosen for an image, and an image as indices into them
+  heroes  image.Indexed, image.palette_of, image.to_indexed, image.from_indexed
+  go      Paletted, NewPaletted, Paletted.ColorIndexAt, Paletted.SetColorIndex, color.Palette, Palette.Convert, Palette.Index, draw.FloydSteinberg, draw.Quantizer, Quantizer.Quantize
+  rust    -
+  python  Image.quantize, Image.convert("P"), Image.Quantize, Image.Dither, Image.getpalette, Image.putpalette, Image.remap_palette, ImagePalette
+  note    median cut weighted by counts, the nearest colour by the squared differences of four channels (Go's Palette.Index uses red, green and blue and alpha in 16 bits, the same order of nearness), Floyd and Steinberg's weights as Go's documentation names them. A quantizer of the program's own would be a function value given in; median cut is the one offered
+
+capability image/standard-palettes  palettes everybody shares
+  heroes  image.web_safe_palette
+  go      palette.WebSafe, palette.Plan9
+  rust    -
+  python  ImagePalette.ImagePalette, ImagePalette.random, ImagePalette.sepia, ImagePalette.wedge
+  note    the web-safe colours in Go's order, observed. Plan 9's palette, Pillow's sepia, wedge and random are pending under image/more-palettes
+
+capability image/more-palettes  Plan 9's palette and other made palettes
+  heroes  pending
+  go      palette.Plan9
+  rust    -
+  python  ImagePalette.sepia, ImagePalette.wedge, ImagePalette.random, ImagePalette.negative
+  note    -
+
+capability image/filters  convolution filters: blur, sharpen, edges
+  heroes  pending
+  go      -
+  rust    -
+  python  Image.filter, ImageFilter.BLUR, CONTOUR, DETAIL, EDGE_ENHANCE, EMBOSS, FIND_EDGES, SHARPEN, SMOOTH, GaussianBlur, BoxBlur, UnsharpMask, Kernel, RankFilter, MedianFilter, MinFilter, MaxFilter, ModeFilter
+  note    the package's header says it: no filter but the resampling ones yet
+
+capability image/adjust  levels changed: invert, contrast, brightness, equalize, posterize
+  heroes  pending
+  go      -
+  rust    -
+  python  Image.point, Image.eval, ImageEnhance.Brightness, ImageEnhance.Contrast, ImageEnhance.Color, ImageEnhance.Sharpness, ImageOps.autocontrast, ImageOps.equalize, ImageOps.invert, ImageOps.posterize, ImageOps.solarize, ImageOps.grayscale, ImageOps.colorize, ImageOps.expand
+  note    grayscale is `convert`; the others are pending
+
+capability image/channels  an image split into channels and put back together
+  heroes  pending
+  go      -
+  rust    -
+  python  Image.split, Image.merge, Image.getchannel, Image.putalpha
+  note    -
+
+capability image/arithmetic  two images combined sample by sample
+  heroes  pending
+  go      -
+  rust    -
+  python  ImageChops.add, subtract, add_modulo, subtract_modulo, difference, multiply, screen, overlay, soft_light, hard_light, lighter, darker, logical_and, logical_or, logical_xor, invert, offset, constant, duplicate
+  note    `blend` is the one offered
+
+capability image/colour-names  a colour from its CSS name or text
+  heroes  pending
+  go      -
+  rust    -
+  python  ImageColor.getrgb, ImageColor.getcolor, ImageColor.colormap
+  note    -
+
+capability image/kind  which format a file is in, from its first bytes
+  heroes  image.kind_of, image.Kind
+  go      Decode's format name, DecodeConfig's format name, RegisterFormat, ErrFormat
+  rust    -
+  python  Image.open (format detection), Image.registered_extensions, Image.OPEN, Image.ID
+  note    -
+
+capability image/open-any  a file of any format decoded by one call
+  heroes  refused: each format is a subpackage, so that a program carries only the codecs it uses (README A2); `kind_of` says which, and a program calls that format's `decode`
+  go      Decode, DecodeConfig, RegisterFormat, Config
+  rust    -
+  python  Image.open, Image.Image.save (format by extension), Image.register_open, Image.register_save, Image.register_extension, Image.register_mime
+  note    Go's registry is a mutable global filled by init functions, which the language has none of
+
+capability image/other-formats  TIFF, WebP, ICO, AVIF, HEIF, TGA, PSD, PCX and Pillow's other formats
+  heroes  pending
+  go      -
+  rust    -
+  python  TiffImagePlugin, WebPImagePlugin, IcoImagePlugin, AvifImagePlugin, TgaImagePlugin, PsdImagePlugin, PcxImagePlugin, DdsImagePlugin, QoiImagePlugin, Jpeg2KImagePlugin, EpsImagePlugin, PdfImagePlugin, and the other plugins
+  note    each would be a subpackage beside `image/png`; PDF writing is `pdf`'s
+
+capability image/sequence  the frames of an animation
+  heroes  image/gif.decode, image/gif.composite
+  go      gif.DecodeAll
+  rust    -
+  python  ImageSequence, ImageSequence.Iterator, Image.seek, Image.tell, Image.n_frames, Image.is_animated
+  note    in the format that holds frames; APNG's are pending in image/png's ledger
+
+capability image/screen  the screen grabbed, an image shown in a window or a viewer
+  heroes  refused: a library of images in memory opens no window and reads no screen
+  go      -
+  rust    -
+  python  ImageGrab.grab, ImageGrab.grabclipboard, ImageShow.show, Image.show, ImageTk, ImageQt, ImageWin
+  note    -
+
+dropped
+  go      Image, PalettedImage, RGBA64Image, draw.Image, draw.RGBA64Image, draw.Drawer, draw.Quantizer, color.Color, color.Model: interfaces, which the language has none of; the one image type stands for every implementation
+  go      Rectangle and Point as images and as arithmetic (the methods listed under image/crop): an image here begins at 0, 0 and a function takes x, y, width and height
+  go      the Opaque, Bounds, ColorModel and PixOffset methods of every image type: fields and formulas of `Image` here
+  python  Image.close, Image.__enter__, Image.__exit__, Image.copy, Image.load, Image.readonly, Image.fp, Image.filename: a file's lifetime and Pillow's lazy loading; an image here is a value, copied as every value is
+  python  Image.Image.toqimage, Image.Image.toqpixmap, Image.Image.tobitmap, Image.fromqimage, Image.fromqpixmap: Qt's and X's types

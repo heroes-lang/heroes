@@ -1,0 +1,30 @@
+# Reaches Rebel's `image/png`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It writes a small gradient as PNG, reads
+# it back, and prints its size and the colour of its last pixel.
+
+use <rebel>/image
+use <rebel>/image/png
+
+function main()
+    pixels: [u8] @= []
+
+    for i in range(from: 0, to: 16)
+        pixels @ pixels.push(to_u8(i * 16).must())
+
+    match image.from_pixels(width: 4, height: 4, format: .gray, pixels: pixels)
+        .err e => print(e.code, ": ", e.msg)
+        .ok img =>
+            match png.encode(img, png.encoding())
+                .err e => print(e.code, ": ", e.msg)
+                .ok file =>
+                    match png.decode(file, png.decoding())
+                        .err e => print(e.code, ": ", e.msg)
+                        .ok back => print(
+                            file.len(),
+                            " bytes, ",
+                            back.image.width,
+                            " by ",
+                            back.image.height,
+                            ", last ",
+                            image.color_at(back.image, x: 3, y: 3).r
+                        )

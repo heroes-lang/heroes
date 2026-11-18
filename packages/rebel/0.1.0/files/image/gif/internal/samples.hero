@@ -1,0 +1,121 @@
+# GIF files to test with, made on 2026-11-18 by Go 1.27's `image/gif` and
+# by a writer of GIF in Go for what Go's encoder never writes (interlacing,
+# GIF87a, a frame on the global palette alone, extensions), each with the
+# frames Go's `gif.DecodeAll` answers, as hexadecimal text: indices, and
+# each palette as red, green, blue and alpha, Go's transparent entry all
+# zero. Made by a program outside the tree; no program calls it.
+
+use bytes
+use image
+
+# A frame as Go reads it.
+record Shot
+    # The frame's left, as Go reads it.
+    left: i64
+    # The frame's top, as Go reads it.
+    top: i64
+    # The frame's width, as Go reads it.
+    width: i64
+    # The frame's height, as Go reads it.
+    height: i64
+    # The frame's delay, as Go reads it.
+    delay: i64
+    # The frame's disposal, as Go reads it.
+    disposal: i64
+    # Its indices, as hexadecimal text.
+    indices: str
+    # Its palette, four bytes a colour, as hexadecimal text.
+    palette: str
+
+# A file and what reading it answers.
+record Sample
+    # What the file is.
+    name: str
+    # The file, as hexadecimal text.
+    file: str
+    # The file's width, as Go reads it.
+    width: i64
+    # The file's height, as Go reads it.
+    height: i64
+    # The file's loop_count, as Go reads it.
+    loop_count: i64
+    # The file's background, as Go reads it.
+    background: i64
+    # The global palette, four bytes a colour, as hexadecimal text.
+    global: str
+    # The frames.
+    shots: [Shot]
+
+# A file reading refuses, with the code it fails with.
+record Broken
+    # What is wrong with it.
+    name: str
+    # The file, as hexadecimal text.
+    file: str
+    # The code `decode` fails with.
+    code: str
+
+# Every file read, with Go's frames.
+function readable() -> [Sample]
+    return [
+        Sample(name: "go one image of 16 colours", file: "4749463839610900070083000003ff0028f4034de90672de0997d30cbcc80fe1bd1206b2152ba718509c1b75911e9a8621bf7b24e4702709652a2e5a2d2c000000000900070000042ab0b0a1027aa621b03b5f44633c48a00c0e223006a0104ec01c82862604c020f94e1c8480638128081e11003b", width: 9, height: 7, loop_count: -1, background: 0, global: "03ff00ff28f403ff4de906ff72de09ff97d30cffbcc80fffe1bd12ff06b215ff2ba718ff509c1bff75911eff9a8621ffbf7b24ffe47027ff09652aff2e5a2dff", shots: [Shot(left: 0, top: 0, width: 9, height: 7, delay: 0, disposal: 0, indices: "050c030a01080f060d0800080008000800080b040d060f08010a030e08020c06000a040e010c07020d08030e0904000c0804000c08040704010e0b0805020f", palette: "03ff00ff28f403ff4de906ff72de09ff97d30cffbcc80fffe1bd12ff06b215ff2ba718ff509c1bff75911eff9a8621ffbf7b24ffe47027ff09652aff2e5a2dff")])
+        Sample(name: "go one image of 256 colours", file: "4749463839611700130087000007ff002cf40751e90e76de159bd31cc0c823e5bd2a0ab2312fa738549c3f7991469e864dc37b54e8705b0d6562325a69574f707c4477a1397ec62e85eb238c101893350d9a5a02a17ff7a8a4ecafc9e1b6eed6bd13cbc438c0cb5db5d282aad9a79fe0cc94e7f189ee167ef53b73fc606803855d0aaa5211cf4718f43c1f1931263e262d631b3488103bad0542d2fa49f7ef501ce45741d95e66ce658bc36cb0b873d5ad7afaa2811f9788448c8f6981968e769db36ba4d860abfd55b2224ab9473fc06c34c79129ceb61ed5db13dc0008e325fdea4af2f16fe7f894dcffb9d106dec60d03bb1428b01b4da522729a29978f30bc8437e1793e066e452b634c505853754d5a9a4261bf3768e42c6f0921762e167d530b8478008b9df592c2ea99e7dfa00cd4a731c9ae56beb57bb3bca0a8c3c59dcaea92d10f87d8347cdf5971e67e66eda35bf4c850fbed4502123a09372f105c241781191ea60e25cb032cf0f83315ed3a3ae2415fd74884cc4fa9c156ceb65df3ab6418a06b3d9572628a79877f80ac7487d1698ef65e951b539c4048a3653daa8a32b1af27b8d41cbff911c61e06cd43fbd468f0db8de5e2b2dae9d7cff0fcc4f721b9fe46ae056ba30c909813b58d1ada8221ff7728246c2f4961366e563d934b44b8404bdd3552022a59271f604c146771096e96fe75bbf37ce0e88305dd8a2ad2914fc79874bc9f99b1a6bea6ade39bb40890bb2d85c2527ac9776fd09c64d7c159dee64ee50b43ec3038f3552dfa7a22019f1708c40c0fe901160ef61d33eb2458e02b7dd532a2ca39c7bf40ecb44711a94e369e555b935c808863a57d6aca7271ef6778145c7f3951865e468d833b94a8309bcd25a2f21aa9170fb03c04b761f9be86eec5abe3ccd0d8d3f5cdda1ac2e13fb7e864acef89a1f6ae96fdd38b04f8800b1d7512426a19675f208c5427b1492ed63e35fb333c202843451d4a6a12518f0758b4fc5fd9f166fee66d23db7448d07b6dc58292ba89b7af90dca49701999e268ea54b83ac7078b3956dbaba62c1df57c8044ccf2941d64e36dd732be49820ebbd15f2e20af92c00000000170013000008ff001544c0f0c1440b1a3b84248172c54b193673f40442f4c85227520d2a7428d1a2468f224daa7429d3a64e9f428d2a752ad5aa562f081944aca0d1c3c8132c61d4cce153c8d12550a964ed22d6ccda840e2762ec28f224cb983677022daaf429d5ac5ec7a26d2bf7ce420816378434c132c64d1e428f349582b5cb58346ee7e4f54390a1448c1e49aa846993a750a44ea96a056b96ad5cbc7e092a84e090c2c610285dd4dc2114c9d32a5cc5a47d6397cfc004102d747c68b123c9953273023deab42ad7b16ae3e2fd6bb021c58d225344c400f2c44b1b3e8b34a5c275cc5a397a03248480f1c3491736256a14a952a64ea14aa56a15ab56ae5e810ad1a757ff2f842287922d6cfa38fa042b98b471f40a583881238996357c1a795ad1e3499839855c92ca2ecd7c13cf00159c90c3125dbc11c824a5dce24210549ca14723a0cc624c36ecfc234109382ce1451c845ca24a2fd0c45044166d0452492abd44534e3e0d845043125dc4514826ad04534d3a3424e1c51c887422cb31dcc463c0063014a1c51b8464e2ca30d8b423c00d4d8c91c723a5ec12cd39fd4c90c20f55ac11c825ad0c93cd3b056ca0431468fc61492bc46c234f0220dce044197c4ca24a30d8bc6340073455d146219dd4d24c39fd54d042115dd4d14829bd54d34e011dd4d0041059c8b10829bd58f30e0221e830051b8578720b34e908b0010d4d98021110003b", width: 23, height: 19, loop_count: -1, background: 0, global: "07ff00ff2cf407ff51e90eff76de15ff9bd31cffc0c823ffe5bd2aff0ab231ff2fa738ff549c3fff799146ff9e864dffc37b54ffe8705bff0d6562ff325a69ff574f70ff7c4477ffa1397effc62e85ffeb238cff101893ff350d9aff5a02a1ff7ff7a8ffa4ecafffc9e1b6ffeed6bdff13cbc4ff38c0cbff5db5d2ff82aad9ffa79fe0ffcc94e7fff189eeff167ef5ff3b73fcff606803ff855d0affaa5211ffcf4718fff43c1fff193126ff3e262dff631b34ff88103bffad0542ffd2fa49fff7ef50ff1ce457ff41d95eff66ce65ff8bc36cffb0b873ffd5ad7afffaa281ff1f9788ff448c8fff698196ff8e769dffb36ba4ffd860abfffd55b2ff224ab9ff473fc0ff6c34c7ff9129ceffb61ed5ffdb13dcff0008e3ff25fdeaff4af2f1ff6fe7f8ff94dcffffb9d106ffdec60dff03bb14ff28b01bff4da522ff729a29ff978f30ffbc8437ffe1793eff066e45ff2b634cff505853ff754d5aff9a4261ffbf3768ffe42c6fff092176ff2e167dff530b84ff78008bff9df592ffc2ea99ffe7dfa0ff0cd4a7ff31c9aeff56beb5ff7bb3bcffa0a8c3ffc59dcaffea92d1ff0f87d8ff347cdfff5971e6ff7e66edffa35bf4ffc850fbffed4502ff123a09ff372f10ff5c2417ff81191effa60e25ffcb032cfff0f833ff15ed3aff3ae241ff5fd748ff84cc4fffa9c156ffceb65dfff3ab64ff18a06bff3d9572ff628a79ff877f80ffac7487ffd1698efff65e95ff1b539cff4048a3ff653daaff8a32b1ffaf27b8ffd41cbffff911c6ff1e06cdff43fbd4ff68f0dbff8de5e2ffb2dae9ffd7cff0fffcc4f7ff21b9feff46ae05ff6ba30cff909813ffb58d1affda8221ffff7728ff246c2fff496136ff6e563dff934b44ffb8404bffdd3552ff022a59ff271f60ff4c1467ff71096eff96fe75ffbbf37cffe0e883ff05dd8aff2ad291ff4fc798ff74bc9fff99b1a6ffbea6adffe39bb4ff0890bbff2d85c2ff527ac9ff776fd0ff9c64d7ffc159deffe64ee5ff0b43ecff3038f3ff552dfaff7a2201ff9f1708ffc40c0fffe90116ff0ef61dff33eb24ff58e02bff7dd532ffa2ca39ffc7bf40ffecb447ff11a94eff369e55ff5b935cff808863ffa57d6affca7271ffef6778ff145c7fff395186ff5e468dff833b94ffa8309bffcd25a2fff21aa9ff170fb0ff3c04b7ff61f9beff86eec5ffabe3ccffd0d8d3fff5cddaff1ac2e1ff3fb7e8ff64acefff89a1f6ffae96fdffd38b04fff8800bff1d7512ff426a19ff675f20ff8c5427ffb1492effd63e35fffb333cff202843ff451d4aff6a1251ff8f0758ffb4fc5fffd9f166fffee66dff23db74ff48d07bff6dc582ff92ba89ffb7af90ffdca497ff01999eff268ea5ff4b83acff7078b3ff956dbaffba62c1ffdf57c8ff044ccfff2941d6ff4e36ddff732be4ff9820ebffbd15f2ffe20af9ff", shots: [Shot(left: 0, top: 0, width: 23, height: 19, delay: 0, disposal: 0, indices: "0a11181f262d343b424950575e656c737a81888f969da40d151d252d353d454d555d656d757d858d959da5adb5bd1019222b343d464f58616a737c858e97a0a9b2bbc4cdd6131d27313b454f59636d77818b959fa9b3bdc7d1dbe5ef16212c37424d58636e79848f9aa5b0bbc6d1dce7f2fd081925313d4955616d7985919da9b5c1cdd9e5f1fd0915211c293643505d6a7784919eabb8c5d2dfecf90613202d3a1f2d3b49576573818f9dabb9c7d5e3f1ff0d1b293745532231404f5e6d7c8b9aa9b8c7d6e5f4031221303f4e5d6c2535455565758595a5b5c5d5e5f505152535455565758528394a5b6c7d8e9fb0c1d2e3f405162738495a6b7c8d9e2b3d4f61738597a9bbcddff1031527394b5d6f8193a5b72e4154677a8da0b3c6d9ecff1225384b5e718497aabdd03145596d8195a9bdd1e5f90d2135495d718599adc1d5e934495e73889db2c7dcf1061b30455a6f8499aec3d8ed02374d63798fa5bbd1e7fd13293f556b8197adc3d9ef051b3a51687f96adc4dbf20920374e657c93aac1d8ef061d343d556d859db5cde5fd152d455d758da5bdd5ed051d354d4059728ba4bdd6ef08213a536c859eb7d0e9021b344d66", palette: "07ff00ff2cf407ff51e90eff76de15ff9bd31cffc0c823ffe5bd2aff0ab231ff2fa738ff549c3fff799146ff9e864dffc37b54ffe8705bff0d6562ff325a69ff574f70ff7c4477ffa1397effc62e85ffeb238cff101893ff350d9aff5a02a1ff7ff7a8ffa4ecafffc9e1b6ffeed6bdff13cbc4ff38c0cbff5db5d2ff82aad9ffa79fe0ffcc94e7fff189eeff167ef5ff3b73fcff606803ff855d0affaa5211ffcf4718fff43c1fff193126ff3e262dff631b34ff88103bffad0542ffd2fa49fff7ef50ff1ce457ff41d95eff66ce65ff8bc36cffb0b873ffd5ad7afffaa281ff1f9788ff448c8fff698196ff8e769dffb36ba4ffd860abfffd55b2ff224ab9ff473fc0ff6c34c7ff9129ceffb61ed5ffdb13dcff0008e3ff25fdeaff4af2f1ff6fe7f8ff94dcffffb9d106ffdec60dff03bb14ff28b01bff4da522ff729a29ff978f30ffbc8437ffe1793eff066e45ff2b634cff505853ff754d5aff9a4261ffbf3768ffe42c6fff092176ff2e167dff530b84ff78008bff9df592ffc2ea99ffe7dfa0ff0cd4a7ff31c9aeff56beb5ff7bb3bcffa0a8c3ffc59dcaffea92d1ff0f87d8ff347cdfff5971e6ff7e66edffa35bf4ffc850fbffed4502ff123a09ff372f10ff5c2417ff81191effa60e25ffcb032cfff0f833ff15ed3aff3ae241ff5fd748ff84cc4fffa9c156ffceb65dfff3ab64ff18a06bff3d9572ff628a79ff877f80ffac7487ffd1698efff65e95ff1b539cff4048a3ff653daaff8a32b1ffaf27b8ffd41cbffff911c6ff1e06cdff43fbd4ff68f0dbff8de5e2ffb2dae9ffd7cff0fffcc4f7ff21b9feff46ae05ff6ba30cff909813ffb58d1affda8221ffff7728ff246c2fff496136ff6e563dff934b44ffb8404bffdd3552ff022a59ff271f60ff4c1467ff71096eff96fe75ffbbf37cffe0e883ff05dd8aff2ad291ff4fc798ff74bc9fff99b1a6ffbea6adffe39bb4ff0890bbff2d85c2ff527ac9ff776fd0ff9c64d7ffc159deffe64ee5ff0b43ecff3038f3ff552dfaff7a2201ff9f1708ffc40c0fffe90116ff0ef61dff33eb24ff58e02bff7dd532ffa2ca39ffc7bf40ffecb447ff11a94eff369e55ff5b935cff808863ffa57d6affca7271ffef6778ff145c7fff395186ff5e468dff833b94ffa8309bffcd25a2fff21aa9ff170fb0ff3c04b7ff61f9beff86eec5ffabe3ccffd0d8d3fff5cddaff1ac2e1ff3fb7e8ff64acefff89a1f6ffae96fdffd38b04fff8800bff1d7512ff426a19ff675f20ff8c5427ffb1492effd63e35fffb333cff202843ff451d4aff6a1251ff8f0758ffb4fc5fffd9f166fffee66dff23db74ff48d07bff6dc582ff92ba89ffb7af90ffdca497ff01999eff268ea5ff4b83acff7078b3ff956dbaffba62c1ffdf57c8ff044ccfff2941d6ff4e36ddff732be4ff9820ebffbd15f2ffe20af9ff")])
+        Sample(name: "go one image of 2 colours", file: "47494638396128000300800000000000ffffff2c0000000028000300000214440c79a7d88ce04a91360b2fcd6edb0f86e2f815003b", width: 40, height: 3, loop_count: -1, background: 0, global: "000000ffffffffff", shots: [Shot(left: 0, top: 0, width: 40, height: 3, delay: 0, disposal: 0, indices: "000100010000000100010000000100010000000100010000000100010000000100010000000100010000000000010000000000010000000000010000000000010000000000010000000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", palette: "000000ffffffffff")])
+        Sample(name: "go animation of 3 frames, local palettes, a transparent entry, every disposal", file: "4749463839610900070000000021ff0b4e45545343415045322e30030100000021f904040a0000002c00000000090007008101ff0026f4014be90270de030214c4148636ed2d060871a211b04e87af07569444150021f90409140002002c01000200070005008202ff0027f40200000071de0696d308bbc80a000000000000031128a50c240e922102284fe80d82184401240021f9040c1e0000002c02000400050003008203ff0028f4034de90672de0997d30cbcc80fe1bd1206b2150309482705512f98018a48003b", width: 9, height: 7, loop_count: 0, background: 0, global: "", shots: [Shot(left: 0, top: 0, width: 9, height: 7, delay: 10, disposal: 1, indices: "000302010003020100030303030303030303020300010203000102010301030103010301000302010003020100030303030303030303020300010203000102", palette: "01ff00ff26f401ff4be902ff70de03ff"), Shot(left: 1, top: 2, width: 7, height: 5, delay: 20, disposal: 2, indices: "0205020502050200040200040200040302010005040202020202020200010203040500", palette: "02ff00ff27f402ff0000000071de06ff96d308ffbbc80aff000000ff000000ff"), Shot(left: 2, top: 4, width: 5, height: 3, delay: 30, disposal: 3, indices: "040702050001050105010603000502", palette: "03ff00ff28f403ff4de906ff72de09ff97d30cffbcc80fffe1bd12ff06b215ff")])
+        Sample(name: "go animation looping twice, with a global palette", file: "4749463839610900070082000009ff002ef40953e91278de1b9dd324c2c82de7bd360cb23f21ff0b4e45545343415045322e30030102000021f904040a0000002c00000000090007008101ff0026f4014be90270de030214c4148636ed2d060871a211b04e87af07569444150021f90409140002002c01000200070005008202ff0027f40200000071de0696d308bbc80a000000000000031128a50c240e922102284fe80d82184401240021f9040c1e0000002c02000400050003008203ff0028f4034de90672de0997d30cbcc80fe1bd1206b2150309482705512f98018a48003b", width: 9, height: 7, loop_count: 2, background: 0, global: "09ff00ff2ef409ff53e912ff78de1bff9dd324ffc2c82dffe7bd36ff0cb23fff", shots: [Shot(left: 0, top: 0, width: 9, height: 7, delay: 10, disposal: 1, indices: "000302010003020100030303030303030303020300010203000102010301030103010301000302010003020100030303030303030303020300010203000102", palette: "01ff00ff26f401ff4be902ff70de03ff"), Shot(left: 1, top: 2, width: 7, height: 5, delay: 20, disposal: 2, indices: "0205020502050200040200040200040302010005040202020202020200010203040500", palette: "02ff00ff27f402ff0000000071de06ff96d308ffbbc80aff000000ff000000ff"), Shot(left: 2, top: 4, width: 5, height: 3, delay: 30, disposal: 3, indices: "040702050001050105010603000502", palette: "03ff00ff28f403ff4de906ff72de09ff97d30cffbcc80fffe1bd12ff06b215ff")])
+        Sample(name: "an interlaced frame of 9 by 11", file: "47494638396109000b00f1000005ff002af4054fe90a74de0f2c0000000009000b0040021bc41486a079d9a21820cc2aaea556fb01866130906629a6e79a8a05003b", width: 9, height: 11, loop_count: -1, background: 0, global: "05ff00ff2af405ff4fe90aff74de0fff", shots: [Shot(left: 0, top: 0, width: 9, height: 11, delay: 0, disposal: 0, indices: "000302010003020100030303030303030303020300010203000102010301030103010301000302010003020100030303030303030303020300010203000102010301030103010301000302010003020100030303030303030303020300010203000102", palette: "05ff00ff2af405ff4fe90aff74de0fff")])
+        Sample(name: "GIF87a, the global palette alone", file: "47494638376106000500f1000005ff002af4054fe90a74de0f2c000000000600050000020cc41436cb32105c18731a640a003b", width: 6, height: 5, loop_count: -1, background: 0, global: "05ff00ff2af405ff4fe90aff74de0fff", shots: [Shot(left: 0, top: 0, width: 6, height: 5, delay: 0, disposal: 0, indices: "000302010003030303030303020300010203010301030103000302010003", palette: "05ff00ff2af405ff4fe90aff74de0fff")])
+        Sample(name: "comment, plain text and other application blocks passed over", file: "47494638396106000500f1000005ff002af4054fe90a74de0f21fe05426f7769650021010c000000000400040001010000036162630021ff0b584d502044617461584d50027879002c000000000600050000020cc41436cb32105c18731a640a003b", width: 6, height: 5, loop_count: -1, background: 0, global: "05ff00ff2af405ff4fe90aff74de0fff", shots: [Shot(left: 0, top: 0, width: 6, height: 5, delay: 0, disposal: 0, indices: "000302010003030303030303020300010203010301030103000302010003", palette: "05ff00ff2af405ff4fe90aff74de0fff")])
+        Sample(name: "a local palette of 8 and a code size of 3", file: "474946383961070004000000002c00000000070004008202ff0027f4024ce90471de0696d308bbc80ae0bd0c05b20e030f6845230121ca408a39509c30ca1e09003b", width: 7, height: 4, loop_count: -1, background: 0, global: "", shots: [Shot(left: 0, top: 0, width: 7, height: 4, delay: 0, disposal: 0, indices: "06050403020100010101010101010405060700010207010305070103", palette: "02ff00ff27f402ff4ce904ff71de06ff96d308ffbbc80affe0bd0cff05b20eff")])
+        Sample(name: "a code size of 8 over 3 colours", file: "4749463839610c000c00f1000005ff002af4054fe90a74de0f2c000000000c000c00000822000104102090e0c082080f2a34c83061c3850e23429cf8b0a2448b142f6acc483120003b", width: 12, height: 12, loop_count: -1, background: 0, global: "05ff00ff2af405ff4fe90aff74de0fff", shots: [Shot(left: 0, top: 0, width: 12, height: 12, delay: 0, disposal: 0, indices: "000102000102000102000102000102000102000102000102000102000102000102000102000102000102000102000102000102000102000102000102000102000102000102000102000102000102000102000102000102000102000102000102000102000102000102000102000102000102000102000102000102000102000102000102000102000102000102000102", palette: "05ff00ff2af405ff4fe90aff74de0fff")])
+    ]
+
+# Every file refused; beside each, what Go's `gif.DecodeAll` answers.
+function refused() -> [Broken]
+    return [
+        # Go: gif: can't recognize format "89a\x06\x00\x05"
+        Broken(name: "no header", file: "38396106000500f1000005ff002af4054fe90a74de0f2c000000000600050000020cc41436cb32105c18731a640a003b", code: "invalid")
+        # Go: gif: not enough image data
+        Broken(name: "a file cut inside its data", file: "47494638396106000500f1000005ff002af4054fe90a74de0f2c000000000600050000020cc41436cb32105c18", code: "invalid")
+        # Go: gif: pixel size in decode out of range: 9
+        Broken(name: "a code size of 9", file: "47494638396106000500f1000005ff002af4054fe90a74de0f2c00000000060005000009003b", code: "invalid")
+        # Go: gif: pixel size in decode out of range: 1
+        Broken(name: "a code size of 1", file: "47494638396102000100f1000005ff002af4054fe90a74de0f2c00000000020001000001003b", code: "invalid")
+        # Go: gif: no color table
+        Broken(name: "a frame with no palette", file: "474946383961060005000000002c000000000600050000020cc41436cb32105c18731a640a003b", code: "invalid")
+        # Go: gif: frame bounds larger than image bounds
+        Broken(name: "a frame outside the screen", file: "47494638396106000500f1000005ff002af4054fe90a74de0f2c030000000600050000020cc41436cb32105c18731a640a003b", code: "invalid")
+        # Go: gif: invalid pixel value
+        Broken(name: "an index past the palette", file: "47494638396106000500f0000005ff002af4052c000000000600050000020cc41436cb32105c18731a640a003b", code: "invalid")
+        # Go: gif: not enough image data
+        Broken(name: "fewer pixels than the frame", file: "47494638396109000900f1000005ff002af4054fe90a74de0f2c000000000900090000020cc41436cb32105c18731a640a003b", code: "invalid")
+        # Go: gif: missing image data
+        Broken(name: "no frame", file: "474946383961010001000000003b", code: "invalid")
+        # Go: accepts it
+        Broken(name: "a screen of 60,000 by 60,000", file: "47494638396160ea60eaf1000005ff002af4054fe90a74de0f2c000000000600050000020cc41436cb32105c18731a640a003b", code: "limit")
+    ]
+
+# Whether `palette` holds the colours `hex` names, four bytes each as Go
+# answers them: a transparent entry, which Go makes all zero, compared by
+# its alpha alone.
+#
+function same_palette(palette: [image.Color], hex: str) -> bool
+    want = bytes.parse_hex(hex).must()
+
+    if want.len() != palette.len() * 4
+        return false
+
+    for i in range(from: 0, to: palette.len())
+        c = palette[i]
+
+        if want[4 * i + 3] == 0
+            if c.a != 0
+                return false
+        else if c != image.Color(r: want[4 * i], g: want[4 * i + 1], b: want[4 * i + 2], a: want[4 * i + 3])
+            return false
+
+    return true
+
+test "same_palette: a transparent entry of any colour"
+    assert same_palette([image.Color(r: 9, g: 9, b: 9, a: 0)], hex: "00000000")
+    assert !same_palette([image.Color(r: 9, g: 9, b: 9, a: 255)], hex: "00000000")

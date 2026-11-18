@@ -1,0 +1,106 @@
+# The ledger of `image/jpeg`: what Go's `image/jpeg` (Go 1.27) and Python's
+# Pillow (its JPEG plugin) let a program do with JPEG, one block per
+# capability, and what Rebel answers. Go's list is this machine's,
+# `go doc -all image/jpeg`, 2026-11-18. Pillow is not installed here, so its
+# names are those of its documented API, unread by `dir()`. Rust's standard
+# library has no JPEG: `-` in every block.
+#
+# The expected pixels of the tests are Go's jpeg.Decode's, on files made by
+# Go's encoder and by libjpeg-turbo 3.2.1's cjpeg (4:4:4, 4:2:2, 4:4:0, 4:1:1,
+# progressive, restart intervals, optimized tables, RGB) on 2026-11-18. The
+# tolerance is 2 per sample, measured: T.81's conformance (ISO/IEC 10918-2)
+# allows an inverse DCT to differ from the reference by one in each sample,
+# and YCbCr turned into RGB in another decoder's rounding adds one more; every
+# sample read here stood within 2 of Go's. Go refuses one valid file cjpeg
+# makes (progressive with a restart every row: "missing 0xff00 sequence");
+# its pixels in the tests are those of the same picture coded without
+# restarts, which Go reads. Every file this package writes, gray and colour
+# at each sampling, was read by Go's jpeg.Decode within 2 of what this
+# package reads from it.
+
+capability jpeg/decode-baseline  a baseline file read
+  heroes  image/jpeg.decode, image/jpeg.Jpeg
+  go      Decode, FormatError, FormatError.Error, UnsupportedError, UnsupportedError.Error, Reader
+  rust    -
+  python  Image.open, JpegImagePlugin.JpegImageFile
+  note    gray or YCbCr (RGB where Adobe's marker says so, or the components are named R, G, B with no JFIF), every sampling of 1 to 4, restart intervals. Colour is upsampled by repeating each chroma sample, as Go does; libjpeg and so Pillow smooth it, so a sample may differ from Pillow's by more than 2 at a sharp colour edge (unmeasured: Pillow is not here)
+
+capability jpeg/decode-progressive  a progressive file read
+  heroes  image/jpeg.decode
+  go      Decode
+  rust    -
+  python  Image.open
+  note    every kind of scan: DC first and refining, AC first and refining, runs of blocks at the end of a band; at most 1,000 scans
+
+capability jpeg/info  the size and components read without decoding
+  heroes  image/jpeg.info_of, image/jpeg.Info
+  go      DecodeConfig
+  rust    -
+  python  Image.open (lazy)
+  note    -
+
+capability jpeg/limits  a file that claims a huge image refused before it is allocated
+  heroes  image/jpeg.decode with image.Limits
+  go      -
+  rust    -
+  python  Image.MAX_IMAGE_PIXELS
+  note    Go allocates the frame it is told and fails later; here `limit` comes first
+
+capability jpeg/exif-orientation  the EXIF orientation read
+  heroes  image/jpeg.orientation_of, image/jpeg.Jpeg.orientation, image/jpeg.Jpeg.exif
+  go      -
+  rust    -
+  python  Image.getexif, Exif.get(0x0112), ExifTags.Base.Orientation
+  note    in either byte order; `image.apply_orientation` shows the image upright. The rest of EXIF is kept as bytes
+
+capability jpeg/exif-read  every EXIF tag read
+  heroes  pending
+  go      -
+  rust    -
+  python  Image.getexif, Exif, Exif.get_ifd, ExifTags.TAGS, ExifTags.GPSTAGS, ExifTags.Base, ExifTags.IFD
+  note    the TIFF structure is Jpeg.exif; a reader of all its tags would be a package of its own
+
+capability jpeg/icc  the ICC profile read
+  heroes  image/jpeg.Jpeg.icc
+  go      -
+  rust    -
+  python  Image.info["icc_profile"]
+  note    put back together from its APP2 segments; not applied
+
+capability jpeg/encode  an image written as baseline JPEG at a quality
+  heroes  image/jpeg.encode, image/jpeg.encoding, image/jpeg.EncodeOptions, image/jpeg.Subsampling
+  go      Encode, Options, Options.Quality, DefaultQuality
+  rust    -
+  python  Image.save(format="JPEG", quality=, subsampling=)
+  note    Annex K's tables, read out of a file Go wrote at quality 50, scaled as libjpeg scales them; 4:4:4, 4:2:2 or 4:2:0. Go composites alpha over black and narrows 16 bits in silence; here both fail `unsupported`, as Pillow refuses RGBA, so the program says what it wants (`image.flatten`, `image.convert`)
+
+capability jpeg/encode-more  progressive, optimized, restart intervals, custom tables, metadata written
+  heroes  pending
+  go      -
+  rust    -
+  python  Image.save(progressive=, optimize=, qtables=, restart_marker_blocks=, restart_marker_rows=, exif=, icc_profile=, dpi=, comment=, keep_rgb=, streamtype=)
+  note    -
+
+capability jpeg/cmyk  CMYK and YCCK files read
+  heroes  pending
+  go      Decode (into image.CMYK)
+  rust    -
+  python  Image.open (mode "CMYK")
+  note    `unsupported` today: no file of four components could be made on this machine to test a reader against, and `image` has no CMYK format to answer one in
+
+capability jpeg/other-codings  arithmetic, lossless, hierarchical and 12-bit files
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  note    `unsupported` today; Go refuses them too, and Pillow reads what its libjpeg was built for
+
+capability jpeg/draft  a file decoded at a fraction of its size, faster
+  heroes  pending
+  go      -
+  rust    -
+  python  Image.draft
+  note    -
+
+dropped
+  go      Reader: an interface of io.ByteReader, which `[u8]` input has no need of

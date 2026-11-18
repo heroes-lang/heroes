@@ -1,0 +1,70 @@
+# The fixed tables of JPEG: the zigzag order of a block's coefficients, and
+# the tables of T.81's Annex K that the writer uses, the quantization
+# tables of K.1 and K.2 and the Huffman tables of K.3 to K.6. The bytes of
+# both are those of the DQT and DHT segments Go 1.27's `image/jpeg` writes
+# at quality 50, which are Annex K's unscaled, read out of its file on
+# 2026-11-18.
+
+use bytes
+
+# The DQT segment's data at quality 50: table 0 (K.1, brightness) and table
+# 1 (K.2, colour), each a byte of precision and number then 64 values in
+# zigzag order.
+constant ANNEX_K_DQT: str
+    "00100b0c0e0c0a100e0d0e1211101318281a181616183123251d283a333d3c3933383740485c4e404457453738506d51575f626768673e4d71797064785c656763011112121815182f1a1a2f634238426363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363636363"
+
+# The DHT segment's data: the DC and AC tables of brightness (K.3, K.5) and
+# of colour (K.4, K.6), each a byte of class and number, 16 counts and the
+# values.
+constant ANNEX_K_DHT: str
+    "0000010501010101010100000000000000000102030405060708090a0b100002010303020403050504040000017d01020300041105122131410613516107227114328191a1082342b1c11552d1f02433627282090a161718191a25262728292a3435363738393a434445464748494a535455565758595a636465666768696a737475767778797a838485868788898a92939495969798999aa2a3a4a5a6a7a8a9aab2b3b4b5b6b7b8b9bac2c3c4c5c6c7c8c9cad2d3d4d5d6d7d8d9dae1e2e3e4e5e6e7e8e9eaf1f2f3f4f5f6f7f8f9fa0100030101010101010101010000000000000102030405060708090a0b1100020102040403040705040400010277000102031104052131061241510761711322328108144291a1b1c109233352f0156272d10a162434e125f11718191a262728292a35363738393a434445464748494a535455565758595a636465666768696a737475767778797a82838485868788898a92939495969798999aa2a3a4a5a6a7a8a9aab2b3b4b5b6b7b8b9bac2c3c4c5c6c7c8c9cad2d3d4d5d6d7d8d9dae2e3e4e5e6e7e8e9eaf2f3f4f5f6f7f8f9fa"
+
+# The natural index, row times 8 plus column, of each of a block's 64
+# coefficients in zigzag order: the diagonals walked from the top left,
+# each in the other direction from the one before.
+function zigzag() -> [i64]
+    out: [i64] @= []
+
+    for s in range(from: 0, to: 15)
+        for i in range(from: 0, to: s + 1)
+            row = if s % 2 == 0
+                s - i
+            else
+                i
+            col = s - row
+
+            if row < 8 && col < 8
+                out @ out.push(row * 8 + col)
+
+    return out
+
+# The quantization table `number`, 0 or 1, of Annex K, in zigzag order.
+function annex_k_quantization(number: i64) -> [i64]
+    data = bytes.parse_hex(ANNEX_K_DQT).must()
+    out: [i64] @= []
+    start = number * 65 + 1
+
+    for k in range(from: start, to: start + 64)
+        out @ out.push(to_i64(data[k]).must())
+
+    return out
+
+# The DHT data of Annex K's four Huffman tables, as a DHT segment holds it.
+function annex_k_huffman() -> [u8]
+    return bytes.parse_hex(ANNEX_K_DHT).must()
+
+test "zigzag: the first coefficients, the last, and every one once"
+    z = zigzag()
+    assert z.len() == 64
+    assert z.slice(from: 0, to: 6) == [0, 1, 8, 16, 9, 2]
+    assert z[63] == 63
+    assert sort(z) == range(from: 0, to: 64)
+
+test "annex_k_quantization: the corners of K.1 and K.2"
+    luma = annex_k_quantization(0)
+    assert luma[0] == 16
+    assert luma[1] == 11
+    assert luma[63] == 99
+    chroma = annex_k_quantization(1)
+    assert chroma[0] == 17
+    assert chroma[63] == 99

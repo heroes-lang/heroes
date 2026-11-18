@@ -1,0 +1,342 @@
+# Lines, rectangles and circles drawn into pixels, each pixel written whole
+# with no blending, what falls outside dropped. Every loop here walks only
+# the rows or columns of the image a shape crosses, so a shape far larger
+# than the image costs no more than the image.
+
+use image/internal/layout
+
+# The largest coordinate or radius a shape takes, either way: past it the
+# products the shapes compute could overflow.
+constant REACH: i64
+    536870912
+
+# Whether `v` is within `REACH` either way.
+function in_reach(v: i64) -> bool
+    return v >= -REACH && v <= REACH
+
+# Writes `values` into the pixel at column `x`, row `y`, where it is inside.
+function dot(s: layout.Shape, @pixels: [u8], x: i64, y: i64, values: [i64] lent)
+    if x >= 0 && y >= 0 && x < s.width && y < s.height
+        layout.put_samples(s, @pixels, x: x, y: y, values: values)
+
+# Writes `values` into row `y`, columns `from` to `to` both included, the
+# part inside.
+function span(s: layout.Shape, @pixels: [u8], y: i64, from: i64, to: i64, values: [i64] lent)
+    if y < 0 || y >= s.height
+        return
+
+    first = if from < 0
+        0
+    else
+        from
+
+    last = if to >= s.width
+        s.width - 1
+    else
+        to
+    x @= first
+
+    while x <= last
+        layout.put_samples(s, @pixels, x: x, y: y, values: values)
+        x @ x + 1
+
+# `a` / `b` rounded toward negative infinity, `b` above 0.
+function floor_div(a: i64, b: i64) -> i64
+    if a >= 0
+        return a / b
+    return -((b - 1 - a) / b)
+
+# Draws the line from column `x0`, row `y0` to column `x1`, row `y1`, both
+# ends included: along the axis it moves most on, each step the pixel
+# nearest the true line, a half rounded down the page.
+function line(s: layout.Shape, @pixels: [u8], x0: i64, y0: i64, x1: i64, y1: i64, values: [i64] lent)
+    assert in_reach(x0) && in_reach(y0) && in_reach(x1) && in_reach(y1)
+    dx = x1 - x0
+    dy = y1 - y0
+
+    ax = if dx < 0
+        -dx
+    else
+        dx
+
+    ay = if dy < 0
+        -dy
+    else
+        dy
+
+    if ax == 0 && ay == 0
+        dot(s, @pixels, x: x0, y: y0, values: values)
+        return
+
+    if ax >= ay
+        # One pixel a column, from the left end.
+        left_x = if dx < 0
+            x1
+        else
+            x0
+
+        left_y = if dx < 0
+            y1
+        else
+            y0
+
+        rise = if dx < 0
+            -dy
+        else
+            dy
+
+        first = if left_x < 0
+            0
+        else
+            left_x
+
+        last = if left_x + ax >= s.width
+            s.width - 1
+        else
+            left_x + ax
+        x @= first
+
+        while x <= last
+            y = left_y + floor_div(a: 2 * (x - left_x) * rise + ax, b: 2 * ax)
+            dot(s, @pixels, x: x, y: y, values: values)
+            x @ x + 1
+
+        return
+
+    top_x = if dy < 0
+        x1
+    else
+        x0
+
+    top_y = if dy < 0
+        y1
+    else
+        y0
+
+    run = if dy < 0
+        -dx
+    else
+        dx
+
+    first = if top_y < 0
+        0
+    else
+        top_y
+
+    last = if top_y + ay >= s.height
+        s.height - 1
+    else
+        top_y + ay
+    y @= first
+
+    while y <= last
+        x = top_x + floor_div(a: 2 * (y - top_y) * run + ay, b: 2 * ay)
+        dot(s, @pixels, x: x, y: y, values: values)
+        y @ y + 1
+
+# Fills the rectangle whose top left pixel is column `x`, row `y`, of
+# `width` by `height` pixels.
+function rect_filled(s: layout.Shape, @pixels: [u8], x: i64, y: i64, width: i64, height: i64, values: [i64] lent)
+    assert in_reach(x) && in_reach(y) && in_reach(width) && in_reach(height)
+
+    if width <= 0 || height <= 0
+        return
+
+    first = if y < 0
+        0
+    else
+        y
+
+    last = if y + height > s.height
+        s.height
+    else
+        y + height
+    row @= first
+
+    while row < last
+        span(s, @pixels, y: row, from: x, to: x + width - 1, values: values)
+        row @ row + 1
+
+# Draws the border of the rectangle whose top left pixel is column `x`, row
+# `y`, of `width` by `height` pixels, inside it.
+function rect_border(s: layout.Shape, @pixels: [u8], x: i64, y: i64, width: i64, height: i64, values: [i64] lent)
+    assert in_reach(x) && in_reach(y) && in_reach(width) && in_reach(height)
+
+    if width <= 0 || height <= 0
+        return
+    span(s, @pixels, y: y, from: x, to: x + width - 1, values: values)
+    span(s, @pixels, y: y + height - 1, from: x, to: x + width - 1, values: values)
+    rect_filled(s, @pixels, x: x, y: y + 1, width: 1, height: height - 2, values: values)
+    rect_filled(s, @pixels, x: x + width - 1, y: y + 1, width: 1, height: height - 2, values: values)
+
+# The largest whole number whose square is at most `n`, which is 0 or more.
+function root_of(n: i64) -> i64
+    a @= to_i64(sqrt_estimate(n)).must()
+
+    while a > 0 && a * a > n
+        a @ a - 1
+
+    while (a + 1) * (a + 1) <= n
+        a @ a + 1
+
+    return a
+
+# A float near the square root of `n`, by Newton's steps from above.
+function sqrt_estimate(n: i64) -> f64
+    if n <= 0
+        return 0.0
+    x = to_f64(n)
+    g @= x
+
+    if g > 1.0
+        g @ x / 2.0
+    steps @= 0
+
+    while steps < 64
+        g @ (g + x / g) / 2.0
+        steps @ steps + 1
+
+    return g
+
+# How far the disc of `radius` reaches either way along the row `dy` rows
+# from its centre: -1 where the row misses it.
+function reach_at(radius: i64, dy: i64) -> i64
+    if dy < -radius || dy > radius
+        return -1
+    return root_of(radius * (radius + 1) - dy * dy)
+
+# Fills the disc of `radius` about column `cx`, row `cy`: every pixel with
+# dx² + dy² at most radius × (radius + 1).
+function disc(s: layout.Shape, @pixels: [u8], cx: i64, cy: i64, radius: i64, values: [i64] lent)
+    assert in_reach(cx) && in_reach(cy) && in_reach(radius)
+
+    if radius < 0
+        return
+
+    first = if cy - radius < 0
+        0
+    else
+        cy - radius
+
+    last = if cy + radius >= s.height
+        s.height - 1
+    else
+        cy + radius
+    y @= first
+
+    while y <= last
+        a = reach_at(radius: radius, dy: y - cy)
+        span(s, @pixels, y: y, from: cx - a, to: cx + a, values: values)
+        y @ y + 1
+
+# Draws the circle of `radius` about column `cx`, row `cy`: the pixels of
+# `disc` with a neighbour above, below, left or right outside it.
+function circle(s: layout.Shape, @pixels: [u8], cx: i64, cy: i64, radius: i64, values: [i64] lent)
+    assert in_reach(cx) && in_reach(cy) && in_reach(radius)
+
+    if radius < 0
+        return
+
+    first = if cy - radius < 0
+        0
+    else
+        cy - radius
+
+    last = if cy + radius >= s.height
+        s.height - 1
+    else
+        cy + radius
+    y @= first
+
+    while y <= last
+        dy = y - cy
+        a = reach_at(radius: radius, dy: dy)
+        up = reach_at(radius: radius, dy: dy - 1)
+        down = reach_at(radius: radius, dy: dy + 1)
+
+        inner = if up < down
+            up
+        else
+            down
+
+        if inner >= a
+            dot(s, @pixels, x: cx - a, y: y, values: values)
+            dot(s, @pixels, x: cx + a, y: y, values: values)
+        else
+            span(s, @pixels, y: y, from: cx - a, to: cx - inner - 1, values: values)
+            span(s, @pixels, y: y, from: cx + inner + 1, to: cx + a, values: values)
+        y @ y + 1
+
+# The rows of a gray buffer of `width` columns as text, `#` for a pixel
+# above 0: what the tests below compare.
+function picture(width: i64, pixels: [u8] lent) -> [str]
+    rows: [str] @= []
+    row: [str] @= []
+
+    for i in range(from: 0, to: pixels.len())
+        mark = if pixels[i] > 0
+            "#"
+        else
+            "."
+        row @ row.push(mark)
+
+        if row.len() == width
+            rows @ rows.push(row.join(""))
+            row @ []
+
+    return rows
+
+test "line: flat, steep, both ways, one point, and through the image from far outside"
+    s = layout.Shape(width: 5, height: 3, channels: 1, wide: false)
+    p @= layout.zeros(15)
+    line(s, @p, x0: 0, y0: 0, x1: 4, y1: 2, values: [1])
+    assert picture(5, pixels: p) == ["#....", ".##..", "...##"]
+    q @= layout.zeros(15)
+    line(s, @q, x0: 4, y0: 2, x1: 0, y1: 0, values: [1])
+    assert q == p
+    r @= layout.zeros(15)
+    line(s, @r, x0: 1, y0: 0, x1: 1, y1: 2, values: [1])
+    line(s, @r, x0: 3, y0: 1, x1: 3, y1: 1, values: [1])
+    assert picture(5, pixels: r) == [".#...", ".#.#.", ".#..."]
+    far @= layout.zeros(15)
+    line(s, @far, x0: -100000000, y0: 1, x1: 100000000, y1: 1, values: [1])
+    assert picture(5, pixels: far) == [".....", "#####", "....."]
+
+test "rect_border and rect_filled: inside, cut at the edges, and empty"
+    s = layout.Shape(width: 5, height: 4, channels: 1, wide: false)
+    p @= layout.zeros(20)
+    rect_border(s, @p, x: 1, y: 0, width: 4, height: 3, values: [1])
+    assert picture(5, pixels: p) == [".####", ".#..#", ".####", "....."]
+    q @= layout.zeros(20)
+    rect_filled(s, @q, x: -2, y: 2, width: 4, height: 9, values: [1])
+    rect_filled(s, @q, x: 0, y: 0, width: 0, height: 9, values: [1])
+    assert picture(5, pixels: q) == [".....", ".....", "##...", "##..."]
+
+test "disc and circle: radius 0, 1 and 2, and a centre outside"
+    s = layout.Shape(width: 5, height: 5, channels: 1, wide: false)
+    p @= layout.zeros(25)
+    disc(s, @p, cx: 2, cy: 2, radius: 2, values: [1])
+    assert picture(5, pixels: p) == [".###.", "#####", "#####", "#####", ".###."]
+    c @= layout.zeros(25)
+    circle(s, @c, cx: 2, cy: 2, radius: 2, values: [1])
+    assert picture(5, pixels: c) == [".###.", "#...#", "#...#", "#...#", ".###."]
+    one @= layout.zeros(25)
+    circle(s, @one, cx: 2, cy: 2, radius: 1, values: [1])
+    circle(s, @one, cx: 0, cy: 4, radius: 0, values: [1])
+    assert picture(5, pixels: one) == [".....", ".###.", ".#.#.", ".###.", "#...."]
+    out @= layout.zeros(25)
+    disc(s, @out, cx: -1, cy: 2, radius: 1, values: [1])
+    assert picture(5, pixels: out) == [".....", "#....", "#....", "#....", "....."]
+
+test "root_of: squares, between them, and large"
+    assert root_of(0) == 0
+    assert root_of(1) == 1
+    assert root_of(8) == 2
+    assert root_of(9) == 3
+    assert root_of(288230376151711744) == 536870912
+    assert root_of(288230376151711743) == 536870911
+
+test "floor_div: toward negative infinity"
+    assert floor_div(a: 7, b: 2) == 3
+    assert floor_div(a: -7, b: 2) == -4
+    assert floor_div(a: -6, b: 2) == -3

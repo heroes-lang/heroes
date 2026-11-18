@@ -1,0 +1,109 @@
+# Netpbm files written: a header of the magic number, the size and the
+# maximum value, or a PAM's fields, then the samples raw, high byte first
+# at 16 bits, or as decimal text in lines of at most 70 characters.
+
+use bytes
+
+# Adds the decimal `words` to `out`, a space between two on a line and a
+# new line where one more would pass 70 characters, and a new line at the
+# end.
+function put_words(@out: [u8], words: [str] lent)
+    line @= 0
+
+    for w in words
+        if line > 0 && line + 1 + w.len() > 70
+            out @ out.push('\n')
+            line @ 0
+
+        if line > 0
+            out @ out.push(' ')
+            line @ line + 1
+        bytes.push_text(to: @out, s: w)
+        line @ line + w.len()
+
+    if line > 0
+        out @ out.push('\n')
+
+# A netpbm file of `kind` (2, 3, 5, 6 or 7) holding `samples`, `depth` a
+# pixel, of maximum value `maxval`; a PAM's tuple type `tuple`.
+function written(kind: i64, width: i64, height: i64, depth: i64, maxval: i64, samples: [i64] lent, tuple: str) -> [u8]
+    out: [u8] @= []
+
+    if kind == 7
+        bytes.push_text(
+            to: @out,
+            s: f"P7\nWIDTH {width}\nHEIGHT {height}\nDEPTH {depth}\nMAXVAL {maxval}\nTUPLTYPE {tuple}\nENDHDR\n"
+        )
+    else
+        bytes.push_text(to: @out, s: f"P{kind}\n{width} {height}\n{maxval}\n")
+
+    if kind == 2 || kind == 3
+        for y in range(from: 0, to: height)
+            words: [str] @= []
+
+            for k in range(from: y * width * depth, to: (y + 1) * width * depth)
+                words @ words.push(to_str(samples[k]))
+
+            put_words(@out, words: words)
+
+        return out
+
+    for v in samples
+        if maxval > 255
+            out @ out.push(to_u8(v >> 8).must())
+        out @ out.push(to_u8(v & 255).must())
+
+    return out
+
+# A PBM of `bits`, 1 black and 0 white, `width` a row: packed (P4), or as
+# text (P1) where `plain`.
+function bitmap(width: i64, height: i64, bits: [i64] lent, plain: bool) -> [u8]
+    out: [u8] @= []
+
+    if plain
+        bytes.push_text(to: @out, s: f"P1\n{width} {height}\n")
+
+        for y in range(from: 0, to: height)
+            words: [str] @= []
+
+            for x in range(from: 0, to: width)
+                words @ words.push(to_str(bits[y * width + x]))
+
+            put_words(@out, words: words)
+
+        return out
+    bytes.push_text(to: @out, s: f"P4\n{width} {height}\n")
+
+    for y in range(from: 0, to: height)
+        acc @= 0
+        count @= 0
+
+        for x in range(from: 0, to: width)
+            acc @ acc << 1 | bits[y * width + x]
+            count @ count + 1
+
+            if count == 8
+                out @ out.push(to_u8(acc).must())
+                acc @ 0
+                count @ 0
+
+        if count > 0
+            out @ out.push(to_u8(acc << 8 - count & 255).must())
+
+    return out
+
+test "put_words: lines of at most 70 characters"
+    out: [u8] @= []
+    words: [str] @= []
+
+    for _ in range(from: 0, to: 30)
+        words @ words.push("255")
+
+    put_words(@out, words: words)
+    lines = bytes.split(s: out, sep: [0x0a])
+    assert lines[0].len() == 67
+    assert lines.len() == 3
+
+test "bitmap: packed rows end on a byte, plain rows are digits"
+    assert bitmap(width: 9, height: 1, bits: [1, 0, 1, 1, 0, 0, 0, 0, 1], plain: false).slice(from: 7, to: 9) == [0b1011_0000, 0b1000_0000]
+    assert bitmap(width: 2, height: 1, bits: [1, 0], plain: true) == bytes.from_text("P1\n2 1\n1 0\n")

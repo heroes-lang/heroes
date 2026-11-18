@@ -1,0 +1,153 @@
+# Pixels moved without being resampled: a rectangle cut out, and the eight
+# ways a grid can be mirrored and turned by quarters. Each output pixel is a
+# copy of one input pixel, so nothing here changes a sample.
+
+use image/internal/layout
+
+# One of the moves of a grid that keep every pixel whole.
+variant Move
+    # Left to right.
+    flip_horizontal
+    # Top to bottom.
+    flip_vertical
+    # A quarter counter-clockwise.
+    rotate_90
+    # Half a turn.
+    rotate_180
+    # A quarter clockwise.
+    rotate_270
+    # Across the main diagonal.
+    transpose
+    # Across the other diagonal.
+    transverse
+
+# Whether `move` swaps the width and the height.
+function swaps(move: Move) -> bool
+    return match move
+        .rotate_90 | .rotate_270 | .transpose | .transverse => true
+        .flip_horizontal | .flip_vertical | .rotate_180     => false
+
+# The column of the input pixel that lands at column `x`, row `y` of the
+# answer of `move` on an input of `width` by `height`.
+function source_x(move: Move, x: i64, y: i64, width: i64) -> i64
+    return match move
+        .flip_horizontal | .rotate_180 => width - 1 - x
+        .flip_vertical                 => x
+        .rotate_90 | .transverse       => width - 1 - y
+        .rotate_270 | .transpose       => y
+
+# The row of the input pixel that lands at column `x`, row `y` of the answer
+# of `move` on an input of `width` by `height`.
+function source_y(move: Move, x: i64, y: i64, height: i64) -> i64
+    return match move
+        .flip_horizontal             => y
+        .flip_vertical | .rotate_180 => height - 1 - y
+        .rotate_90 | .transpose      => x
+        .rotate_270 | .transverse    => height - 1 - x
+
+# `pixels`, laid out as `s` says, moved by `move`; the answer's width and
+# height are swapped where `swaps(move)`.
+function moved(s: layout.Shape, pixels: [u8] lent, move: Move) -> [u8]
+    out_width = if swaps(move)
+        s.height
+    else
+        s.width
+
+    out_height = if swaps(move)
+        s.width
+    else
+        s.height
+    size = layout.pixel_size(s)
+    out: [u8] @= []
+
+    for y in range(from: 0, to: out_height)
+        for x in range(from: 0, to: out_width)
+            sx = source_x(move, x: x, y: y, width: s.width)
+            sy = source_y(move, x: x, y: y, height: s.height)
+            at = (sy * s.width + sx) * size
+
+            for k in range(from: 0, to: size)
+                out @ out.push(pixels[at + k])
+
+    return out
+
+# The rectangle of `pixels`, laid out as `s` says, whose top left pixel is
+# column `x`, row `y`, of `width` by `height` pixels, which lies inside.
+function cut(s: layout.Shape, pixels: [u8] lent, x: i64, y: i64, width: i64, height: i64) -> [u8]
+    size = layout.pixel_size(s)
+    out: [u8] @= []
+
+    for row in range(from: y, to: y + height)
+        start = (row * s.width + x) * size
+
+        for k in range(from: start, to: start + width * size)
+            out @ out.push(pixels[k])
+
+    return out
+
+# Writes `src`, laid out as `from` says, into `pixels`, laid out as `s`
+# says, its top left pixel at column `x`, row `y`, both held the same way;
+# what falls outside is dropped.
+function place(s: layout.Shape, @pixels: [u8], from: layout.Shape, src: [u8] lent, x: i64, y: i64)
+    size = layout.pixel_size(s)
+    first_x = max_of(a: 0, b: x)
+    last_x = min_of(a: s.width, b: x + from.width)
+    first_y = max_of(a: 0, b: y)
+    last_y = min_of(a: s.height, b: y + from.height)
+
+    if first_x >= last_x
+        return
+
+    for row in range(from: first_y, to: last_y)
+        to_at = (row * s.width + first_x) * size
+        from_at = ((row - y) * from.width + first_x - x) * size
+
+        for k in range(from: 0, to: (last_x - first_x) * size)
+            pixels[to_at + k] @ src[from_at + k]
+
+# The larger of `a` and `b`.
+function max_of(a: i64, b: i64) -> i64
+    if a > b
+        return a
+    return b
+
+# The smaller of `a` and `b`.
+function min_of(a: i64, b: i64) -> i64
+    if a < b
+        return a
+    return b
+
+test "moved: every move of a grid of 3 by 2"
+    s = layout.Shape(width: 3, height: 2, channels: 1, wide: false)
+    p: [u8] = [1, 2, 3, 4, 5, 6]
+    assert moved(s, p, move: .flip_horizontal) == [3, 2, 1, 6, 5, 4]
+    assert moved(s, p, move: .flip_vertical) == [4, 5, 6, 1, 2, 3]
+    assert moved(s, p, move: .rotate_180) == [6, 5, 4, 3, 2, 1]
+    assert moved(s, p, move: .rotate_90) == [3, 6, 2, 5, 1, 4]
+    assert moved(s, p, move: .rotate_270) == [4, 1, 5, 2, 6, 3]
+    assert moved(s, p, move: .transpose) == [1, 4, 2, 5, 3, 6]
+    assert moved(s, p, move: .transverse) == [6, 3, 5, 2, 4, 1]
+
+test "moved: a pixel of several bytes stays whole, and no pixel no byte"
+    s = layout.Shape(width: 2, height: 1, channels: 1, wide: true)
+    assert moved(s, [1, 2, 3, 4], move: .flip_horizontal) == [3, 4, 1, 2]
+    empty = layout.Shape(width: 0, height: 0, channels: 4, wide: false)
+    assert moved(empty, [], move: .rotate_90).len() == 0
+
+test "cut: a rectangle inside, the whole, and none"
+    s = layout.Shape(width: 3, height: 3, channels: 1, wide: false)
+    p: [u8] = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    assert cut(s, p, x: 1, y: 1, width: 2, height: 2) == [5, 6, 8, 9]
+    assert cut(s, p, x: 0, y: 0, width: 3, height: 3) == p
+    assert cut(s, p, x: 3, y: 0, width: 0, height: 3).len() == 0
+
+test "place: inside, cut at every edge, and wholly outside"
+    s = layout.Shape(width: 3, height: 2, channels: 1, wide: false)
+    from = layout.Shape(width: 2, height: 2, channels: 1, wide: false)
+    p @= layout.zeros(6)
+    place(s: s, pixels: @p, from: from, src: [1, 2, 3, 4], x: 2, y: -1)
+    assert p == [0, 0, 3, 0, 0, 0]
+    place(s: s, pixels: @p, from: from, src: [1, 2, 3, 4], x: -1, y: 1)
+    assert p == [0, 0, 3, 2, 0, 0]
+    place(s: s, pixels: @p, from: from, src: [1, 2, 3, 4], x: 9, y: 9)
+    assert p == [0, 0, 3, 2, 0, 0]

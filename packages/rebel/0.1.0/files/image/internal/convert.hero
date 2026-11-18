@@ -1,0 +1,195 @@
+# Pixels converted between the ways a pixel is held: gray or colour, with
+# alpha or without, 8 or 16 bits. Every conversion goes through red, green,
+# blue and alpha of 16 bits, as Go's `color.Color.RGBA` does, so that gray
+# from colour is Go's `color.GrayModel` and 16 bits become 8 by their high
+# byte.
+
+use image/internal/layout
+
+# A pixel's red, green, blue and alpha, 16 bits each.
+record Wide
+    # Red, 0 to 65,535.
+    r: i64
+    # Green, 0 to 65,535.
+    g: i64
+    # Blue, 0 to 65,535.
+    b: i64
+    # Alpha, 0 to 65,535.
+    a: i64
+
+# `v`, a sample of 8 bits or of 16 where `wide`, as 16 bits: 8 bits times
+# 257, so 255 is 65,535.
+function widen(v: i64, wide: bool) -> i64
+    if wide
+        return v
+    return v * 257
+
+# `v`, 16 bits, as a sample of 16 bits where `wide`, else of 8: its high
+# byte, as Go converts it.
+function narrow(v: i64, wide: bool) -> i64
+    if wide
+        return v
+    return v >> 8
+
+# The luma of Go's `color.Gray16Model` of a colour of 16 bits a channel.
+function luma(r: i64, g: i64, b: i64) -> i64
+    return 19595 * r + 38470 * g + 7471 * b + 32768 >> 16
+
+# The pixel of `pixels` that begins at byte `at`, laid out as `s` says, as
+# 16-bit red, green, blue and alpha.
+function wide_at(s: layout.Shape, pixels: [u8] lent, at: i64) -> Wide
+    size = layout.sample_size(s)
+    first = widen(layout.sample(pixels, at: at, wide: s.wide), wide: s.wide)
+
+    if s.channels == 1
+        return Wide(r: first, g: first, b: first, a: 65535)
+
+    if s.channels == 2
+        return Wide(
+            r: first,
+            g: first,
+            b: first,
+            a: widen(layout.sample(pixels, at: at + size, wide: s.wide), wide: s.wide)
+        )
+    g = widen(layout.sample(pixels, at: at + size, wide: s.wide), wide: s.wide)
+    b = widen(layout.sample(pixels, at: at + 2 * size, wide: s.wide), wide: s.wide)
+
+    if s.channels == 3
+        return Wide(r: first, g: g, b: b, a: 65535)
+    return Wide(r: first, g: g, b: b, a: widen(layout.sample(pixels, at: at + 3 * size, wide: s.wide), wide: s.wide))
+
+# Writes `w` as the pixel of `pixels` that begins at byte `at`, laid out as
+# `s` says: gray as its luma, alpha dropped where `s` has none.
+function put_wide(s: layout.Shape, @pixels: [u8], at: i64, w: Wide)
+    size = layout.sample_size(s)
+
+    if s.channels <= 2
+        gray = if w.r == w.g && w.g == w.b
+            w.r
+        else
+            luma(r: w.r, g: w.g, b: w.b)
+        layout.put_sample(@pixels, at: at, wide: s.wide, value: narrow(gray, wide: s.wide))
+
+        if s.channels == 2
+            layout.put_sample(@pixels, at: at + size, wide: s.wide, value: narrow(w.a, wide: s.wide))
+        return
+    layout.put_sample(@pixels, at: at, wide: s.wide, value: narrow(w.r, wide: s.wide))
+    layout.put_sample(@pixels, at: at + size, wide: s.wide, value: narrow(w.g, wide: s.wide))
+    layout.put_sample(@pixels, at: at + 2 * size, wide: s.wide, value: narrow(w.b, wide: s.wide))
+
+    if s.channels == 4
+        layout.put_sample(@pixels, at: at + 3 * size, wide: s.wide, value: narrow(w.a, wide: s.wide))
+
+# The samples of the 8-bit colour `r`, `g`, `b`, `a` held as `s` holds a
+# pixel.
+function samples_of_color(s: layout.Shape, r: i64, g: i64, b: i64, a: i64) -> [i64]
+    one = layout.Shape(width: 1, height: 1, channels: s.channels, wide: s.wide)
+    p @= layout.zeros(layout.pixel_size(one))
+    put_wide(one, @p, at: 0, w: Wide(r: r * 257, g: g * 257, b: b * 257, a: a * 257))
+    return layout.samples_at(one, p, x: 0, y: 0)
+
+# `pixels`, laid out as `from` says, held as `channels` samples a pixel of
+# 16 bits where `wide`.
+function converted(from: layout.Shape, pixels: [u8] lent, channels: i64, wide: bool) -> [u8]
+    to = layout.with_channels(from, channels: channels, wide: wide)
+
+    if to == from
+        return pixels
+    out @= layout.zeros(layout.byte_count(to))
+    from_size = layout.pixel_size(from)
+    to_size = layout.pixel_size(to)
+    count = from.width * from.height
+
+    for i in range(from: 0, to: count)
+        put_wide(to, @out, at: i * to_size, w: wide_at(from, pixels, at: i * from_size))
+
+    return out
+
+# `pixels`, laid out as `s` says, blended over the 8-bit colour `r`, `g`,
+# `b` by each pixel's alpha, which is then dropped: one channel or three, at
+# the width of `s`.
+function flattened(s: layout.Shape, pixels: [u8] lent, r: i64, g: i64, b: i64) -> [u8]
+    if !layout.has_alpha(s)
+        return pixels
+    top = layout.top_of(s)
+    to = layout.with_channels(s, channels: s.channels - 1, wide: s.wide)
+    out @= layout.zeros(layout.byte_count(to))
+    size = layout.sample_size(s)
+    from_size = layout.pixel_size(s)
+    to_size = layout.pixel_size(to)
+
+    behind = if s.wide
+        [r * 257, g * 257, b * 257]
+    else
+        [r, g, b]
+    gray_behind = narrow(luma(r: r * 257, g: g * 257, b: b * 257), wide: s.wide)
+
+    for i in range(from: 0, to: s.width * s.height)
+        at = i * from_size
+        alpha = layout.sample(pixels, at: at + (s.channels - 1) * size, wide: s.wide)
+
+        for c in range(from: 0, to: s.channels - 1)
+            v = layout.sample(pixels, at: at + c * size, wide: s.wide)
+
+            back = if s.channels == 2
+                gray_behind
+            else
+                behind[c]
+            mixed = (v * alpha + back * (top - alpha) + top / 2) / top
+            layout.put_sample(@out, at: i * to_size + c * size, wide: s.wide, value: mixed)
+
+    return out
+
+test "converted: colour to gray as Go's GrayModel, and gray to colour"
+    rgb = layout.Shape(width: 2, height: 1, channels: 3, wide: false)
+    gray = converted(rgb, [255, 0, 0, 10, 200, 30], channels: 1, wide: false)
+    assert gray == [76, 124]
+    back = converted(layout.Shape(width: 2, height: 1, channels: 1, wide: false), gray, channels: 4, wide: false)
+    assert back == [76, 76, 76, 255, 124, 124, 124, 255]
+
+test "converted: 8 bits to 16 times 257, 16 to 8 by the high byte, alpha dropped as it is"
+    one = layout.Shape(width: 1, height: 1, channels: 2, wide: false)
+    assert converted(one, [0x12, 0x80], channels: 2, wide: true) == [0x12, 0x12, 0x80, 0x80]
+    wide = layout.Shape(width: 1, height: 1, channels: 1, wide: true)
+    assert converted(wide, [0xab, 0xff], channels: 1, wide: false) == [0xab]
+    assert converted(one, [0x12, 0x00], channels: 1, wide: false) == [0x12]
+
+test "converted: the same layout answers the same bytes, and no pixel no byte"
+    s = layout.Shape(width: 1, height: 1, channels: 4, wide: false)
+    assert converted(s, [1, 2, 3, 4], channels: 4, wide: false) == [1, 2, 3, 4]
+    empty = layout.Shape(width: 0, height: 3, channels: 3, wide: false)
+    assert converted(empty, [], channels: 1, wide: true).len() == 0
+
+test "flattened: opaque, transparent and half over a background"
+    s = layout.Shape(width: 3, height: 1, channels: 4, wide: false)
+    out = flattened(s, [10, 20, 30, 255, 10, 20, 30, 0, 200, 0, 0, 128], r: 0, g: 0, b: 255)
+    assert out == [10, 20, 30, 0, 0, 255, 100, 0, 127]
+    ga = layout.Shape(width: 1, height: 1, channels: 2, wide: true)
+    assert flattened(ga, [0xff, 0xff, 0, 0], r: 255, g: 255, b: 255) == [0xff, 0xff]
+
+test "samples_of_color: a colour as each layout holds it"
+    assert samples_of_color(layout.Shape(width: 1, height: 1, channels: 1, wide: false), r: 255, g: 255, b: 255, a: 9) == [255]
+    assert samples_of_color(layout.Shape(width: 1, height: 1, channels: 4, wide: true), r: 1, g: 2, b: 3, a: 255) == [257, 514, 771, 65535]
+    assert samples_of_color(layout.Shape(width: 1, height: 1, channels: 2, wide: false), r: 255, g: 0, b: 0, a: 7) == [76, 7]
+
+test "luma: Go's Gray16Model on a colour of 16 bits"
+    assert luma(r: 0x1234, g: 0x5678, b: 0x9abc) == 18903
+
+# The samples of the 8-bit colour `r`, `g`, `b`, `a`, given as bytes, held
+# as `s` holds a pixel.
+function samples_of_bytes(s: layout.Shape, r: u8, g: u8, b: u8, a: u8) -> [i64]
+    return samples_of_color(s, r: to_i64(r).must(), g: to_i64(g).must(), b: to_i64(b).must(), a: to_i64(a).must())
+
+# The colour of the pixel of `pixels` at column `x`, row `y`, laid out as
+# `s` says, as 8-bit red, green, blue and alpha: each 16-bit value's high
+# byte.
+function bytes_at(s: layout.Shape, pixels: [u8] lent, x: i64, y: i64) -> [u8]
+    w = wide_at(s, pixels, at: (y * s.width + x) * layout.pixel_size(s))
+    return [to_u8(w.r >> 8).must(), to_u8(w.g >> 8).must(), to_u8(w.b >> 8).must(), to_u8(w.a >> 8).must()]
+
+test "samples_of_bytes and bytes_at: a colour in and out of a gray pixel and a wide one"
+    gray = layout.Shape(width: 1, height: 1, channels: 1, wide: false)
+    assert samples_of_bytes(gray, r: 255, g: 255, b: 255, a: 0) == [255]
+    assert bytes_at(gray, [77], x: 0, y: 0) == [77, 77, 77, 255]
+    wide = layout.Shape(width: 1, height: 1, channels: 4, wide: true)
+    assert bytes_at(wide, [0x12, 0x34, 0, 0xff, 0xff, 0, 0x80, 0x01], x: 0, y: 0) == [0x12, 0, 0xff, 0x80]

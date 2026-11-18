@@ -1,0 +1,58 @@
+# NETPBM files to test with, made on 2026-11-18 by a Go 1.27 program in the
+# scratch folder: this program, laid out by hand, with the pixels the program put in each, as
+# hexadecimal text. Made by a program outside the tree; no program calls it.
+
+# A file and what reading it answers.
+record Sample
+    # What the file is.
+    name: str
+    # The file, as hexadecimal text.
+    file: str
+    # Its columns.
+    width: i64
+    # Its rows.
+    height: i64
+    # The format the pixels are laid out in, as `image.Format` names it.
+    format: str
+    # The pixels, as hexadecimal text.
+    pixels: str
+
+# A file reading refuses, with the code it fails with.
+record Broken
+    # What is wrong with it.
+    name: str
+    # The file, as hexadecimal text.
+    file: str
+    # The code `decode` fails with.
+    code: str
+
+# Every file read, with its pixels.
+function readable() -> [Sample]
+    return [
+        Sample(name: "P5, maxval 255, a comment in the header", file: "50350a23206d6164652062792068616e640a3320320a3235350a00326496c8ff", width: 3, height: 2, format: "gray", pixels: "00326496c8ff")
+        Sample(name: "P2, plain", file: "503220332032203235350a30203530203130300a31353020323030203235350a", width: 3, height: 2, format: "gray", pixels: "00326496c8ff")
+        Sample(name: "P2, maxval 15, scaled", file: "50320a3320320a31350a302033203620392031322031350a", width: 3, height: 2, format: "gray", pixels: "00336699ccff")
+        Sample(name: "P6, maxval 255", file: "503620322032203235350aff000000ff000000ff0963c7", width: 2, height: 2, format: "rgb", pixels: "ff000000ff000000ff0963c7")
+        Sample(name: "P3, plain, comments between numbers", file: "50330a32203220232073697a650a3235350a3235352030203020302032353520300a232061206c696e650a302030203235352039203939203139390a", width: 2, height: 2, format: "rgb", pixels: "ff000000ff000000ff0963c7")
+        Sample(name: "P5, maxval 65535", file: "5035203320312036353533350a1234ffff0001", width: 3, height: 1, format: "gray16", pixels: "1234ffff0001")
+        Sample(name: "P5, maxval 1000, scaled to 16 bits", file: "50352032203120313030300a01f403e8", width: 2, height: 1, format: "gray16", pixels: "8000ffff")
+        Sample(name: "P1, plain bits, no spaces between", file: "50310a3520320a31303131300a3020312030203020310a", width: 5, height: 2, format: "gray", pixels: "00ff0000ffff00ffff00")
+        Sample(name: "P4, packed bits, a row ending inside a byte", file: "50340a313020320ab040ffc0", width: 10, height: 2, format: "gray", pixels: "00ff0000ffffffffff0000000000000000000000")
+        Sample(name: "P7, RGB with alpha", file: "50370a574944544820320a48454947485420310a444550544820340a4d415856414c203235350a5455504c54595045205247425f414c5048410a454e444844520a0102030405060708", width: 2, height: 1, format: "rgba", pixels: "0102030405060708")
+        Sample(name: "P7, gray with alpha of 16 bits", file: "50370a23206120636f6d6d656e740a574944544820310a48454947485420320a444550544820320a4d415856414c2036353533350a5455504c5459504520475241595343414c455f414c5048410a454e444844520a00010002ffff8000", width: 1, height: 2, format: "gray_alpha16", pixels: "00010002ffff8000")
+    ]
+
+# Every file refused.
+function refused() -> [Broken]
+    return [
+        Broken(name: "P5 cut inside its pixels", file: "503520332032203235350a0001", code: "invalid")
+        Broken(name: "a sample past its maxval", file: "5032203220312031302035203131", code: "invalid")
+        Broken(name: "a maxval of 0", file: "50322031203120302030", code: "invalid")
+        Broken(name: "a maxval past 65535", file: "503520312031203635353336200000", code: "invalid")
+        Broken(name: "a width that is not a number", file: "503520782031203235352000", code: "invalid")
+        Broken(name: "a size past every limit", file: "50352039393939393939393939393939393939393939392031203235352000", code: "invalid")
+        Broken(name: "a bomb of 60,000 by 60,000", file: "5036203630303030203630303030203235350a00", code: "limit")
+        Broken(name: "P7 with no ENDHDR", file: "50370a574944544820310a48454947485420310a444550544820310a4d415856414c203235350a00", code: "invalid")
+        Broken(name: "P7 of depth 5", file: "50370a574944544820310a48454947485420310a444550544820350a4d415856414c203235350a454e444844520a0000000000", code: "unsupported")
+        Broken(name: "P8", file: "503820312031203235352000", code: "invalid")
+    ]

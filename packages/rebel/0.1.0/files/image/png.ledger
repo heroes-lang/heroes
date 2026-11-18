@@ -1,0 +1,115 @@
+# The ledger of `image/png`: what Go's `image/png` (Go 1.27) and Python's
+# Pillow (its PNG plugin) let a program do with PNG, one block per
+# capability, and what Rebel answers. Go's list is this machine's,
+# `go doc -all image/png`, 2026-11-18. Pillow is not installed here, so its
+# names are those of its documented API, unread by `dir()`. Rust's standard
+# library has no PNG: `-` in every block.
+#
+# The expected pixels of the tests are Go's: files made by Go's encoder and
+# by a writer of PNG in Go for what Go's encoder never writes (gray of 1, 2
+# and 4 bits, gray and alpha, tRNS, Adam7, every filter, chunks around the
+# data), each decoded by Go's png.Decode on 2026-11-18. Every file this
+# package writes, of the eight formats and indexed, was read back by Go's
+# png.Decode the same day, pixel for pixel equal.
+
+capability png/decode  a PNG file read into an image
+  heroes  image/png.decode, image/png.decoding, image/png.DecodeOptions, image/png.Png
+  go      Decode, FormatError, FormatError.Error, UnsupportedError, UnsupportedError.Error
+  rust    -
+  python  Image.open, PngImagePlugin.PngImageFile
+  note    every colour type and depth: a gray of 1, 2 or 4 bits scaled to 8 as Go scales it, a palette looked up, tRNS made alpha (Go's choice; Pillow keeps it in info), 16 bits kept. Go accepts an index past the palette and an unknown critical chunk; the PNG specification calls both errors, so they fail `invalid` and `unsupported` here, the one place this package and Go answer otherwise
+
+capability png/interlace-read  an Adam7-interlaced file read
+  heroes  image/png.decode
+  go      Decode
+  rust    -
+  python  Image.open
+  note    -
+
+capability png/interlace-write  an image written interlaced
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  note    neither Go nor, by its documentation, Pillow writes one
+
+capability png/info  the size and format read without the pixels
+  heroes  image/png.info_of, image/png.Info
+  go      DecodeConfig
+  rust    -
+  python  Image.open (lazy: size and mode before load)
+  note    -
+
+capability png/limits  a file that claims a huge image refused before it is allocated
+  heroes  image/png.decode with image.Limits
+  go      -
+  rust    -
+  python  Image.MAX_IMAGE_PIXELS, PngImagePlugin.MAX_TEXT_CHUNK, PngImagePlugin.MAX_TEXT_MEMORY
+  note    the image data is inflated to exactly the size the header implies, a text's compression to the limit the caller gives `texts_of`
+
+capability png/encode  an image written as PNG
+  heroes  image/png.encode, image/png.encoding, image/png.EncodeOptions
+  go      Encode, Encoder, Encoder.Encode, Encoder.CompressionLevel
+  rust    -
+  python  Image.save(format="PNG"), PngImagePlugin._save
+  note    colour type 0, 2, 4 or 6 as the format says, 8 or 16 bits. Go writes an opaque RGBA image as RGB; here a format is written as it is, `image.convert` first to drop an alpha that is all opaque
+
+capability png/compression-level  how hard the image data is compressed
+  heroes  image/png.EncodeOptions.level
+  go      CompressionLevel, DefaultCompression, NoCompression, BestSpeed, BestCompression
+  rust    -
+  python  Image.save(compress_level=), Image.save(optimize=)
+  note    0 to 9, as zlib's; Go's four names are 6, 0, 1 and 9 here
+
+capability png/filters  each row's filter chosen
+  heroes  image/png.Filter, image/png.EncodeOptions.filter
+  go      -
+  rust    -
+  python  -
+  note    none, sub, up, average, Paeth, or the adaptive choice (least sum of the bytes read as signed), which is what Go does and what libpng does by default
+
+capability png/indexed  an image of a palette written, at the fewest bits an index needs
+  heroes  image/png.encode_indexed, image/png.Png.palette
+  go      Encode of a Paletted image
+  rust    -
+  python  Image.save of a "P" image, Image.save(bits=), Image.save(transparency=)
+  note    1, 2, 4 or 8 bits for 2, 4, 16 or 256 colours, as Go chooses; alpha in tRNS up to the last entry that is not opaque
+
+capability png/chunks  ancillary chunks kept or dropped when reading, and written
+  heroes  image/png.Chunk, image/png.Keep, image/png.DecodeOptions.keep, image/png.EncodeOptions.chunks, image/png.Png.chunks
+  go      -
+  rust    -
+  python  Image.info, PngImagePlugin.PngInfo, PngInfo.add, Image.save(pnginfo=), Image.save(exif=), Image.save(icc_profile=), Image.save(dpi=)
+  note    kept as the file holds them, their place before or after the image data kept; written where PNG wants them, the colour chunks before PLTE. A chunk of the program's own is four letters beginning in lower case
+
+capability png/text  text chunks read and written
+  heroes  image/png.texts_of, image/png.text_chunk, image/png.Text
+  go      -
+  rust    -
+  python  Image.text, PngImagePlugin.PngInfo.add_text, PngInfo.add_itxt, PngImagePlugin.iTXt
+  note    tEXt and zTXt read as Latin-1, iTXt as UTF-8; written as tEXt for ASCII and iTXt otherwise, uncompressed. Pillow writes zTXt where asked; compressed writing is pending under png/text-compressed
+
+capability png/text-compressed  a text chunk written compressed
+  heroes  pending
+  go      -
+  rust    -
+  python  PngInfo.add_text(zip=True), PngInfo.add_itxt(zip=True)
+  note    -
+
+capability png/colour-chunks  gamma, chromaticities, sRGB and ICC applied to the pixels
+  heroes  pending
+  go      -
+  rust    -
+  python  Image.info["gamma"], Image.info["icc_profile"]
+  note    the chunks are kept as bytes; applying them is colour management (image's ledger, image/colour-management)
+
+capability png/apng  animated PNG read and written
+  heroes  pending
+  go      -
+  rust    -
+  python  Image.seek on an APNG, Image.n_frames, Image.save(save_all=True, duration=, loop=, disposal=, blend=)
+  note    its acTL, fcTL and fdAT chunks are kept as chunks today
+
+dropped
+  go      EncoderBuffer, EncoderBufferPool, Encoder.BufferPool: buffers reused between encodings, which a value of the language cannot share
+  python  Image.save(dictionary=): a zlib preset dictionary, which a PNG reader cannot be given

@@ -20,7 +20,7 @@ code is written. Everyone who writes a line of Rebel reads both first.
 
 ## A1. The packages
 
-A hundred and thirty-three packages, in layers. **A package may use any package of a layer below
+A hundred and thirty-eight packages, in layers. **A package may use any package of a layer below
 its own**; the column "may use" names the ones it is expected to need, not a limit. There is no cycle.
 
 | layer | package | what it holds | may use | C under it |
@@ -56,6 +56,7 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 1 | `containers/trie` | a prefix tree of texts to values: prefixes, the longest prefix of a text | `lists` |  |
 | 1 | `containers/disjoint` | union-find: sets merged and asked whether two values are in one | `lists` |  |
 | 1 | `url/idna` | internationalized domain names (UTS 46): to ASCII and back, Punycode; its tables apart, so only its users carry them | `unicode` |  |
+| 1 | `image` | images in memory, gray to RGBA at 8 and 16 bits: crop, resize, rotate, flip, convert, paste with alpha, simple drawing, a histogram; each file format a subpackage; a broken file is `invalid`, never a memory fault | `math` |  |
 | 2 | `io` | the stream: read, write, close, seek; buffers; lines; copying | `bytes` | `hero_stream.h` |
 | 2 | `json` | a JSON value parsed and rendered | `numbers`, `strings`, `unicode` |  |
 | 2 | `xml` | an XML document parsed, walked, built and written; names with their namespaces; escaping | `numbers`, `strings`, `unicode` |  |
@@ -81,6 +82,10 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 2 | `compress/zstd` | Zstandard (RFC 8878) read, and written at a basic level | `bytes` |  |
 | 2 | `compress/brotli` | Brotli (RFC 7932) read, and written at a basic level | `bytes` |  |
 | 2 | `compress/bzip2` | bzip2 read and written | `bytes` |  |
+| 2 | `image/jpeg` | JPEG read (baseline and progressive, every sampling, restart intervals, EXIF orientation) and baseline JPEG written at a quality | `bytes`, `image`, `math` |  |
+| 2 | `image/gif` | GIF read and written: every frame of an animation, laid one over another as a viewer shows it | `bytes`, `image` |  |
+| 2 | `image/bmp` | BMP read and written: 1 to 32 bits a pixel under every header, run-length coded files read | `bytes`, `image` |  |
+| 2 | `image/netpbm` | PBM, PGM, PPM and PAM read and written, plain or raw | `bytes`, `image` |  |
 | 3 | `time` | an instant, a duration, the calendar, time zones (the system's files, or the IANA data Rebel carries), text of a time, sleeping | `bytes`, `io`, `numbers`, `os`, `strings` | `hero_time.h`, `hero_stream.h`, `hero_disk.h` |
 | 3 | `process` | another program run, fed, read and waited for | `io`, `os`, `path`, `strings`, `unicode` | `hero_proc.h` |
 | 3 | `net` | TCP, UDP, names, addresses | `io`, `numbers`, `strings` | `hero_net.h`, `hero_stream_net.h` |
@@ -118,8 +123,8 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 4 | `bson` | BSON read and written exactly, every type, and Extended JSON | `bytes`, `big`, `json`, `time` |  |
 | 4 | `tui` | full-screen terminal programs in immediate mode: widgets, layout by constraints, only the changed cells written | `term`, `unicode`, `strings` |  |
 | 4 | `webauthn` | a WebAuthn relying party: registration and authentication ceremonies, attestation and assertion verified | `cbor`, `crypto`, `crypto/keypairs`, `json`, `bytes`, `url` |  |
+| 4 | `image/png` | PNG read and written: every colour type and bit depth, interlacing read, the filter and the compression chosen, chunks kept or dropped | `bytes`, `compress`, `hash`, `image` |  |
 | 5 | `jose` | JSON Web Tokens, signatures (JWS), keys (JWK) and encryption (JWE) where the system's cryptography allows | `asn1`, `big`, `bytes`, `crypto`, `crypto/keypairs`, `crypto/seal`, `json`, `os`, `pem`, `time` |  |
-| 5 | `image` | images in memory; PNG, JPEG, GIF and BMP read and written; crop, resize, rotate, colours, simple drawing; a broken file is `invalid`, never a memory fault | `compress`, `bytes`, `hash`, `math`, `io`, `fs` |  |
 | 5 | `archive` | tar and zip, written and read | `bytes`, `compress`, `fs`, `hash`, `io`, `path`, `time` |  |
 | 5 | `sql/postgres` | PostgreSQL over its own protocol, written in Heroes; the API every driver keeps | `bytes`, `crypto`, `io`, `net`, `numbers`, `os`, `sql`, `strings`, `threads`, `time`, `tls` |  |
 | 5 | `sql/sqlite` | SQLite over its library, the same API name for name; only its users need the library | `sql`, `strings`, `time` | `sqlite3.h` |

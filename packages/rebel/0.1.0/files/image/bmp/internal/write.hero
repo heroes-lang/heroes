@@ -1,0 +1,122 @@
+# A BMP file written, bottom up, each row padded to four bytes: gray as 8
+# bits of a gray palette, RGB as 24 bits, RGBA as 32 bits under a
+# BITMAPV4HEADER whose bit fields give the alpha, in the sRGB colour space.
+
+# `v` as four bytes, the low one first.
+function le32_bytes(v: i64) -> [u8]
+    return [to_u8(v & 255).must(), to_u8(v >> 8 & 255).must(), to_u8(v >> 16 & 255).must(), to_u8(v >> 24 & 255).must()]
+
+# Adds the bytes of `more` to `out`.
+function add(@out: [u8], more: [u8] lent)
+    for b in more
+        out @ out.push(b)
+
+# The size of the file `written` makes, or -1 where it would pass 2^32 - 1.
+function size_of(width: i64, height: i64, channels: i64) -> i64
+    bits = if channels == 1
+        8
+    else
+        channels * 8
+    stride = (width * bits + 31) / 32 * 4
+
+    header = if channels == 4
+        14 + 108
+    else if channels == 1
+        14 + 40 + 1024
+    else
+        14 + 40
+
+    if height > 0 && stride > (0xffffffff - header) / height
+        return -1
+    return header + stride * height
+
+# A BMP of `width` by `height` pixels whose `channels`, 1, 3 or 4 a pixel,
+# are in `pixels` row after row from the top, red first.
+function written(width: i64, height: i64, channels: i64, pixels: [u8] lent) -> [u8]
+    bits = if channels == 1
+        8
+    else
+        channels * 8
+    stride = (width * bits + 31) / 32 * 4
+
+    header = if channels == 4
+        108
+    else
+        40
+
+    palette = if channels == 1
+        1024
+    else
+        0
+    total = size_of(width: width, height: height, channels: channels)
+    out: [u8] @= [0x42, 0x4d]
+    add(out: @out, more: le32_bytes(total))
+    add(out: @out, more: [0, 0, 0, 0])
+    add(out: @out, more: le32_bytes(14 + header + palette))
+    add(out: @out, more: le32_bytes(header))
+    add(out: @out, more: le32_bytes(width))
+    add(out: @out, more: le32_bytes(height))
+    add(out: @out, more: [1, 0, to_u8(bits).must(), 0])
+
+    compression = if channels == 4
+        3
+    else
+        0
+    add(out: @out, more: le32_bytes(compression))
+    add(out: @out, more: le32_bytes(stride * height))
+    add(out: @out, more: le32_bytes(2835))
+    add(out: @out, more: le32_bytes(2835))
+
+    used = if channels == 1
+        256
+    else
+        0
+    add(out: @out, more: le32_bytes(used))
+    add(out: @out, more: le32_bytes(0))
+
+    if channels == 4
+        for m in [0xff0000, 0xff00, 0xff, 0xff000000, 0x73524742]
+            add(out: @out, more: le32_bytes(m))
+
+        for _ in range(from: 0, to: 48)
+            out @ out.push(0)
+
+    if channels == 1
+        for v in range(from: 0, to: 256)
+            g = to_u8(v).must()
+            add(out: @out, more: [g, g, g, 0])
+
+    for row in range(from: 0, to: height)
+        y = height - 1 - row
+        start = y * width * channels
+        written_bytes @= 0
+
+        for x in range(from: 0, to: width)
+            at = start + x * channels
+
+            if channels == 1
+                out @ out.push(pixels[at])
+            else
+                out @ out.push(pixels[at + 2])
+                out @ out.push(pixels[at + 1])
+                out @ out.push(pixels[at])
+
+                if channels == 4
+                    out @ out.push(pixels[at + 3])
+            written_bytes @ written_bytes + channels
+
+        while written_bytes < stride
+            out @ out.push(0)
+            written_bytes @ written_bytes + 1
+
+    return out
+
+test "size_of: rows padded to four bytes, and a file past 4 GiB"
+    assert size_of(width: 1, height: 1, channels: 3) == 14 + 40 + 4
+    assert size_of(width: 3, height: 2, channels: 1) == 14 + 40 + 1024 + 8
+    assert size_of(width: 65536, height: 65536, channels: 4) == -1
+
+test "written: a pixel of RGB, its row padded"
+    out = written(width: 1, height: 1, channels: 3, pixels: [1, 2, 3])
+    assert out.len() == 58
+    assert out.slice(from: 54, to: 58) == [3, 2, 1, 0]

@@ -1,0 +1,447 @@
+# A GIF file read and written block by block: the header and the logical
+# screen, the colour tables, the extensions (graphic control and the
+# NETSCAPE2.0 loop read, the others passed over), the image descriptors and
+# their LZW data in sub-blocks of at most 255 bytes, and the trailer.
+
+use image
+use image/gif/internal/lzw
+
+# One frame read.
+record Shot
+    # Its indices and palette, the transparent entry's alpha 0.
+    image: image.Indexed
+    # Its left edge on the screen.
+    left: i64
+    # Its top edge.
+    top: i64
+    # Its delay, in hundredths of a second.
+    delay: i64
+    # Its disposal, 0 to 3 as GIF numbers them.
+    disposal: i64
+    # Whether its rows were stored interlaced.
+    interlaced: bool
+
+# A file read.
+record Parsed
+    # The screen's columns.
+    width: i64
+    # The screen's rows.
+    height: i64
+    # The global palette, empty for none.
+    palette: [image.Color]
+    # The background index.
+    background: i64
+    # The NETSCAPE2.0 loop count, -1 for none.
+    loop_count: i64
+    # The frames.
+    frames: [Shot]
+
+# The two bytes of `data` at `at`, the low one first.
+function le16(data: [u8] lent, at: i64) -> i64
+    return to_i64(data[at]).must() | to_i64(data[at + 1]).must() << 8
+
+# `v` as two bytes, the low one first.
+function le16_bytes(v: i64) -> [u8]
+    return [to_u8(v & 255).must(), to_u8(v >> 8 & 255).must()]
+
+# The colour table of `count` entries at `at`, opaque.
+function table_at(data: [u8] lent, at: i64, count: i64) -> [image.Color]
+    out: [image.Color] @= []
+
+    for i in range(from: 0, to: count)
+        out @ out.push(image.Color(r: data[at + 3 * i], g: data[at + 3 * i + 1], b: data[at + 3 * i + 2], a: 255))
+
+    return out
+
+# Adds the data of the sub-blocks that begin at `at` to `out`, and answers
+# where the byte after their terminator stands. Fails `invalid` where they
+# run past the end.
+function sub_blocks(data: [u8] lent, at: i64, @out: [u8]) -> i64?
+    p @= at
+
+    while true
+        if p >= data.len()
+            return fail(code: image.INVALID, msg: f"sub-blocks from byte {at} run past the end of the file")
+        size = to_i64(data[p]).must()
+
+        if size == 0
+            return ok(p + 1)
+
+        if p + 1 + size > data.len()
+            return fail(
+                code: image.INVALID,
+                msg: f"a sub-block of {size} bytes at byte {p} runs past the end of the file"
+            )
+
+        for k in range(from: p + 1, to: p + 1 + size)
+            out @ out.push(data[k])
+
+        p @ p + 1 + size
+
+# The rows of a frame `height` tall in the order an interlaced frame stores
+# them: every eighth from 0, every eighth from 4, every fourth from 2, every
+# second from 1.
+function interlaced_rows(height: i64) -> [i64]
+    out: [i64] @= []
+    starts = [0, 4, 2, 1]
+    steps = [8, 8, 4, 2]
+
+    for pass in range(from: 0, to: 4)
+        y @= starts[pass]
+
+        while y < height
+            out @ out.push(y)
+            y @ y + steps[pass]
+
+    return out
+
+# The GIF file `data`, read under `limits`.
+function parsed(data: [u8] lent, limits: image.Limits) -> Parsed?
+    if data.len() < 13 || data[0] != 'G' || data[1] != 'I' || data[2] != 'F' || data[3] != '8' || data[4] != '7' && data[4] != '9' || data[5] != 'a'
+        return fail(code: image.INVALID, msg: "the data does not begin as GIF87a or GIF89a with a screen descriptor")
+    width = le16(data, at: 6)
+    height = le16(data, at: 8)
+    image.check_limits(limits, width: width, height: height)?
+    packed = to_i64(data[10]).must()
+    pos @= 13
+    palette: [image.Color] @= []
+
+    if packed & 0x80 != 0
+        count = 2 << (packed & 7)
+
+        if pos + 3 * count > data.len()
+            return fail(code: image.INVALID, msg: "the global colour table runs past the end of the file")
+        palette @ table_at(data, at: pos, count: count)
+        pos @ pos + 3 * count
+    loop_count @= -1
+    frames: [Shot] @= []
+    used @= 0
+    delay @= 0
+    disposal @= 0
+    transparent @= -1
+    ended @= false
+
+    while !ended
+        if pos >= data.len()
+            return fail(code: image.INVALID, msg: f"the file ends at byte {pos}, before its trailer")
+        kind = data[pos]
+
+        if kind == 0x3b
+            ended @ true
+        else if kind == 0x21
+            if pos + 2 > data.len()
+                return fail(code: image.INVALID, msg: f"an extension cut short at byte {pos}")
+            label = data[pos + 1]
+            body: [u8] @= []
+            after = sub_blocks(data: data, at: pos + 2, out: @body)?
+
+            if label == 0xf9 && body.len() >= 4
+                flags = to_i64(body[0]).must()
+                disposal @ flags >> 2 & 7
+                delay @ le16(body, at: 1)
+
+                transparent @ if flags & 1 != 0
+                    to_i64(body[3]).must()
+                else
+                    -1
+            else if label == 0xff && body.len() >= 14 && name_is(body, name: "NETSCAPE2.0") && body[11] == 1
+                loop_count @ le16(body, at: 12)
+            pos @ after
+        else if kind == 0x2c
+            if pos + 10 > data.len()
+                return fail(code: image.INVALID, msg: f"an image descriptor cut short at byte {pos}")
+            left = le16(data, at: pos + 1)
+            top = le16(data, at: pos + 3)
+            w = le16(data, at: pos + 5)
+            h = le16(data, at: pos + 7)
+            flags = to_i64(data[pos + 9]).must()
+            pos @ pos + 10
+
+            if left + w > width || top + h > height
+                return fail(
+                    code: image.INVALID,
+                    msg: f"a frame of {w} by {h} at {left}, {top} outside the screen of {width} by {height}"
+                )
+            budget = image.Limits(
+                max_width: limits.max_width,
+                max_height: limits.max_height,
+                max_pixels: limits.max_pixels - used
+            )
+            image.check_limits(budget, width: w, height: h)?
+            used @ used + w * h
+            frame_palette @= palette
+
+            if flags & 0x80 != 0
+                count = 2 << (flags & 7)
+
+                if pos + 3 * count > data.len()
+                    return fail(code: image.INVALID, msg: "a local colour table runs past the end of the file")
+                frame_palette @ table_at(data, at: pos, count: count)
+                pos @ pos + 3 * count
+
+            if frame_palette.len() == 0
+                return fail(code: image.INVALID, msg: f"a frame at byte {pos} with no colour table, local or global")
+
+            if pos >= data.len()
+                return fail(code: image.INVALID, msg: "a frame's LZW data is missing")
+            width_bits = to_i64(data[pos]).must()
+
+            if width_bits < 2 || width_bits > 8
+                return fail(
+                    code: image.INVALID,
+                    msg: f"an LZW minimum code size of {width_bits}, where 2 to 8 are read"
+                )
+            stream: [u8] @= []
+            pos @ sub_blocks(data: data, at: pos + 1, out: @stream)?
+            stored = lzw.decoded(stream, width: width_bits, count: w * h)?
+
+            for k in stored
+                if to_i64(k).must() >= frame_palette.len()
+                    return fail(
+                        code: image.INVALID,
+                        msg: f"an index of {k} into a palette of {frame_palette.len()} colours"
+                    )
+
+            interlaced = flags & 0x40 != 0
+            indices @= stored
+
+            if interlaced
+                rows = interlaced_rows(h)
+
+                for i in range(from: 0, to: h)
+                    for x in range(from: 0, to: w)
+                        indices[rows[i] * w + x] @ stored[i * w + x]
+
+            if transparent >= 0 && transparent < frame_palette.len()
+                frame_palette[transparent].a @ 0
+            shot_image = image.Indexed(width: w, height: h, palette: frame_palette, indices: indices)
+            frames @ frames.push(
+                Shot(image: shot_image, left: left, top: top, delay: delay, disposal: disposal, interlaced: interlaced)
+            )
+            delay @ 0
+            disposal @ 0
+            transparent @ -1
+        else
+            return fail(
+                code: image.INVALID,
+                msg: f"byte {pos} is {kind}, where an extension, an image or the trailer begins"
+            )
+
+    if frames.len() == 0
+        return fail(code: image.INVALID, msg: "the file holds no frame")
+    return ok(
+        Parsed(width: width, height: height, palette: palette, background: to_i64(data[11]).must(), loop_count: loop_count, frames: frames)
+    )
+
+# Whether the first bytes of `body` spell `name`.
+function name_is(body: [u8] lent, name: str) -> bool
+    if body.len() < name.len()
+        return false
+
+    for i in range(from: 0, to: name.len())
+        if body[i] != name[i]
+            return false
+
+    return true
+
+# The bits a colour table of `count` entries is written in: its size is
+# 2 << bits, at least `count`.
+function table_bits(count: i64) -> i64
+    k @= 0
+
+    while 2 << k < count
+        k @ k + 1
+
+    return k
+
+# Adds `palette`, padded with black to 2 << `table_bits`, to `out`; nothing
+# for an empty palette.
+function put_table(@out: [u8], palette: [image.Color] lent)
+    if palette.len() == 0
+        return
+
+    for c in palette
+        out @ out.push(c.r)
+        out @ out.push(c.g)
+        out @ out.push(c.b)
+
+    for _ in range(from: palette.len(), to: 2 << table_bits(palette.len()))
+        out @ out.push(0)
+        out @ out.push(0)
+        out @ out.push(0)
+
+# Adds `data` to `out` as sub-blocks of at most 255 bytes and a terminator.
+function put_sub_blocks(@out: [u8], data: [u8] lent)
+    at @= 0
+
+    while at < data.len()
+        n = if data.len() - at > 255
+            255
+        else
+            data.len() - at
+        out @ out.push(to_u8(n).must())
+
+        for k in range(from: at, to: at + n)
+            out @ out.push(data[k])
+
+        at @ at + n
+
+    out @ out.push(0)
+
+# The GIF89a file of `p`. Fails `invalid` where a side is outside 1 to
+# 65,535, a frame stands outside the screen, a palette holds no colour or
+# more than 256, an index is past its palette, a delay is outside 0 to
+# 65,535, or there is no frame.
+function written(p: Parsed lent) -> [u8]?
+    if p.width < 1 || p.height < 1 || p.width > 65535 || p.height > 65535 || p.frames.len() == 0
+        return fail(
+            code: image.INVALID,
+            msg: f"a screen of {p.width} by {p.height} with {p.frames.len()} frames, where GIF holds 1 to 65,535 a side and a frame at least"
+        )
+
+    if p.palette.len() > 256 || p.loop_count > 65535
+        return fail(
+            code: image.INVALID,
+            msg: f"a global palette of {p.palette.len()} colours or a loop count of {p.loop_count}, where 256 and 65,535 are the most"
+        )
+    out: [u8] @= [0x47, 0x49, 0x46, 0x38, 0x39, 0x61]
+
+    for b in le16_bytes(p.width)
+        out @ out.push(b)
+
+    for b in le16_bytes(p.height)
+        out @ out.push(b)
+
+    if p.palette.len() > 0
+        out @ out.push(to_u8(0xf0 | table_bits(p.palette.len())).must())
+    else
+        out @ out.push(0)
+    out @ out.push(to_u8(p.background & 255).must())
+    out @ out.push(0)
+    put_table(@out, palette: p.palette)
+
+    if p.loop_count >= 0
+        loop: [u8] @= [0x21, 0xff, 11, 0x4e, 0x45, 0x54, 0x53, 0x43, 0x41, 0x50, 0x45, 0x32, 0x2e, 0x30, 3, 1]
+
+        for b in le16_bytes(p.loop_count)
+            loop @ loop.push(b)
+
+        loop @ loop.push(0)
+
+        for b in loop
+            out @ out.push(b)
+
+    for f in p.frames
+        ix = f.image
+        n = ix.palette.len()
+
+        if ix.width < 1 || ix.height < 1 || f.left < 0 || f.top < 0 || f.left + ix.width > p.width || f.top + ix.height > p.height
+            return fail(
+                code: image.INVALID,
+                msg: f"a frame of {ix.width} by {ix.height} at {f.left}, {f.top} outside the screen of {p.width} by {p.height}"
+            )
+
+        if n < 1 || n > 256 || ix.indices.len() != ix.width * ix.height || f.delay < 0 || f.delay > 65535
+            return fail(
+                code: image.INVALID,
+                msg: f"a frame of {n} colours, {ix.indices.len()} indices and a delay of {f.delay}, where 1 to 256, one a pixel and 0 to 65,535 are written"
+            )
+
+        for k in ix.indices
+            if to_i64(k).must() >= n
+                return fail(code: image.INVALID, msg: f"an index of {k} into a palette of {n} colours")
+
+        transparent @= -1
+
+        for i in range(from: 0, to: n)
+            if transparent < 0 && ix.palette[i].a == 0
+                transparent @ i
+
+        mark = if transparent >= 0
+            1
+        else
+            0
+        flags = f.disposal << 2 | mark
+        out @ out.push(0x21)
+        out @ out.push(0xf9)
+        out @ out.push(4)
+        out @ out.push(to_u8(flags).must())
+
+        for b in le16_bytes(f.delay)
+            out @ out.push(b)
+
+        index_byte = if transparent >= 0
+            transparent
+        else
+            0
+        out @ out.push(to_u8(index_byte).must())
+        out @ out.push(0)
+        out @ out.push(0x2c)
+
+        for v in [f.left, f.top, ix.width, ix.height]
+            for b in le16_bytes(v)
+                out @ out.push(b)
+
+        local = !same_colors(palette: ix.palette, global: p.palette)
+        descriptor @= 0
+
+        if local
+            descriptor @ 0x80 | table_bits(n)
+
+        if f.interlaced
+            descriptor @ descriptor | 0x40
+        out @ out.push(to_u8(descriptor).must())
+
+        if local
+            put_table(@out, palette: ix.palette)
+        bits_needed = table_bits(n) + 1
+
+        width_bits = if bits_needed < 2
+            2
+        else
+            bits_needed
+        stored @= ix.indices
+
+        if f.interlaced
+            rows = interlaced_rows(ix.height)
+
+            for i in range(from: 0, to: ix.height)
+                for x in range(from: 0, to: ix.width)
+                    stored[i * ix.width + x] @ ix.indices[rows[i] * ix.width + x]
+        out @ out.push(to_u8(width_bits).must())
+        put_sub_blocks(out: @out, data: lzw.encoded(stored, width: width_bits))
+
+    out @ out.push(0x3b)
+    return ok(out)
+
+# Whether `palette` holds the colours of `global`, alpha aside, in order,
+# and `global` is not empty.
+function same_colors(palette: [image.Color] lent, global: [image.Color] lent) -> bool
+    if global.len() == 0 || palette.len() != global.len()
+        return false
+
+    for i in range(from: 0, to: palette.len())
+        a = palette[i]
+        b = global[i]
+
+        if a.r != b.r || a.g != b.g || a.b != b.b
+            return false
+
+    return true
+
+test "interlaced_rows: the four passes of 9 and of 1"
+    assert interlaced_rows(9) == [0, 8, 4, 2, 6, 1, 3, 5, 7]
+    assert interlaced_rows(1) == [0]
+
+test "table_bits: the size a table is padded to"
+    assert table_bits(1) == 0
+    assert table_bits(2) == 0
+    assert table_bits(3) == 1
+    assert table_bits(256) == 7
+
+test "sub_blocks: blocks gathered, and blocks past the end refused"
+    out: [u8] @= []
+    assert sub_blocks(data: [2, 7, 8, 1, 9, 0, 0x3b], at: 0, out: @out).must() == 6
+    assert out == [7, 8, 9]
+    rest: [u8] @= []
+    assert sub_blocks(data: [3, 7, 8], at: 0, out: @rest).is_err()

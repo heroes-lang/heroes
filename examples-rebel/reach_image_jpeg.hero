@@ -1,0 +1,33 @@
+# Reaches Rebel's `image/jpeg`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It writes a small gradient as JPEG at
+# quality 90, reads it back, and prints its size and its first pixel.
+
+use <rebel>/image
+use <rebel>/image/jpeg
+
+function main()
+    pixels: [u8] @= []
+
+    for i in range(from: 0, to: 16 * 16)
+        pixels @ pixels.push(to_u8(i % 256).must())
+
+    match image.from_pixels(width: 16, height: 16, format: .gray, pixels: pixels)
+        .err e => print(e.code, ": ", e.msg)
+        .ok img =>
+            options @= jpeg.encoding()
+            options.quality @ 90
+
+            match jpeg.encode(img, options)
+                .err e => print(e.code, ": ", e.msg)
+                .ok file =>
+                    match jpeg.decode(file, image.default_limits())
+                        .err e => print(e.code, ": ", e.msg)
+                        .ok back => print(
+                            file.len(),
+                            " bytes, ",
+                            back.image.width,
+                            " by ",
+                            back.image.height,
+                            ", first ",
+                            image.color_at(back.image, x: 0, y: 0).r
+                        )

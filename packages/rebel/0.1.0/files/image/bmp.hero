@@ -1,0 +1,193 @@
+# BMP read and written: Windows' device-independent bitmaps of 1, 4, 8, 16,
+# 24 and 32 bits a pixel, under every header from OS/2's core header to
+# BITMAPV5HEADER, bottom up or top down, plain, with bit fields, or run-length
+# coded (RLE8 and RLE4).
+#
+# It does not convert or scale: that is `image`'s. It reads no BMP holding a
+# JPEG or a PNG inside: those fail `unsupported`, and `image/jpeg` and
+# `image/png` read what they hold.
+#
+# **A file is not trusted.** `decode` checks the size the header claims
+# against the caller's `image.Limits` before it allocates, every offset and
+# row against the file's length, and every run against its row, so a broken
+# or hostile file fails `invalid` or `limit` and never reads past its end.
+#
+# It fails with `invalid`, `limit` and `unsupported`.
+
+use bytes
+use image
+use image/bmp/internal/read
+use image/bmp/internal/samples
+use image/bmp/internal/write
+
+# What the header of a BMP file says.
+record Info
+    # The columns.
+    width: i64
+    # The rows.
+    height: i64
+    # The bits a pixel: 1, 4, 8, 16, 24 or 32.
+    bits: i64
+    # The format `decode` answers for it: RGB, or RGBA where bit fields
+    # give alpha.
+    format: image.Format
+
+# The image `data` holds.
+#
+# - `data`: a whole BMP file, from `BM` to its last row.
+# - `limits`: the largest image the caller allows; `image.default_limits`
+#   makes the usual ones.
+#
+# The answer is RGB, or RGBA where bit fields give an alpha mask; a
+# palette is looked up, and a field of fewer than 8 bits is scaled to 8,
+# rounded (31 of 5 bits is 255). Fails `limit` where the header's width or
+# height passes `limits`, before anything is allocated. Fails `invalid`
+# where `data` is not BMP, the message naming what: no `BM`, a header of
+# unknown size, a depth or compression that does not fit, a palette or rows
+# past the end, an index past the palette, a run past its row. Fails
+# `unsupported` for a JPEG or PNG inside. See also `info_of` and `encode`.
+function decode(data: [u8], limits: image.Limits) -> image.Image?
+    h = read.header_of(data)?
+    image.check_limits(limits, width: h.width, height: h.height)?
+    pixels = read.pixels_of(data, h: h)?
+
+    format: image.Format = if h.bits >= 16 && h.masks[3] != 0
+        .rgba
+    else
+        .rgb
+    return ok(image.Image(width: h.width, height: h.height, format: format, pixels: pixels))
+
+# The size, depth and format of the BMP `data`, read from its headers.
+#
+# - `data`: a BMP file, or at least its headers.
+#
+# Fails `invalid` and `unsupported` as `decode` does on the headers. See
+# also `decode`.
+function info_of(data: [u8]) -> Info?
+    h = read.header_of(data)?
+
+    format: image.Format = if h.bits >= 16 && h.masks[3] != 0
+        .rgba
+    else
+        .rgb
+    return ok(Info(width: h.width, height: h.height, bits: h.bits, format: format))
+
+# `img` as a BMP file, bottom up: gray as 8 bits of a gray palette, RGB as
+# 24 bits, RGBA (and gray with alpha, made RGBA) as 32 bits under a
+# BITMAPV4HEADER whose bit fields give the alpha.
+#
+# - `img`: an image of 8 bits a sample, 1 pixel a side at least.
+#
+# The same image answers the same bytes every time. Fails `unsupported`
+# where `img` has 16 bits a sample (`image.convert` narrows it). Fails
+# `invalid` where a side is 0 or the file would pass 4 GiB. Aborts where
+# `img` is not valid. See also `decode`.
+function encode(img: image.Image) -> [u8]?
+    assert image.is_valid(img)
+
+    if image.bits_of(img.format) == 16
+        return fail(
+            code: image.UNSUPPORTED,
+            msg: "BMP holds 8 bits a sample: narrow 16 bits with `image.convert` first"
+        )
+
+    held = if img.format == .gray_alpha
+        image.convert(img, to: .rgba)
+    else
+        img
+    channels = image.channels_of(held.format)
+
+    if held.width < 1 || held.height < 1 || write.size_of(width: held.width, height: held.height, channels: channels) < 0
+        return fail(
+            code: image.INVALID,
+            msg: f"an image of {img.width} by {img.height} pixels, where BMP holds 1 by 1 at least and 4 GiB at most"
+        )
+    return ok(write.written(width: held.width, height: held.height, channels: channels, pixels: held.pixels))
+
+## Tests
+
+test "decode: every file of the writer, pixel for pixel as it was laid out"
+    for s in samples.readable()
+        img = decode(bytes.parse_hex(s.file).must(), image.default_limits()).must()
+        assert img.width == s.width
+        assert img.height == s.height
+
+        assert image.channels_of(img.format) == if s.format == "rgba"
+            4
+        else
+            3
+        assert img.pixels == bytes.parse_hex(s.pixels).must()
+
+test "decode: every broken file refused with its code, the bomb before it allocates"
+    for b in samples.refused()
+        match decode(bytes.parse_hex(b.file).must(), image.default_limits())
+            .ok _  => assert b.name == "never"
+            .err e => assert e.code == b.code
+
+test "decode: every prefix refused, and no changed byte aborts"
+    for s in samples.readable()
+        if s.name == "4 bits of palette" || s.name == "RLE8: runs, an absolute run, a delta" || s.name == "32 bits, a V4 header with an alpha mask"
+            file = bytes.parse_hex(s.file).must()
+
+            for n in range(from: 0, to: file.len())
+                assert decode(file.slice(from: 0, to: n), image.default_limits()).is_err() || s.name != "4 bits of palette"
+
+            for k in range(from: 0, to: file.len())
+                changed @= file
+                changed[k] @ to_u8(to_i64(file[k]).must() ^ 0x5a).must()
+
+                match decode(changed, image.default_limits())
+                    .ok img => assert image.is_valid(img)
+                    .err e  => assert e.code == image.INVALID || e.code == image.UNSUPPORTED || e.code == image.LIMIT
+
+test "encode and decode: gray, gray with alpha, RGB and RGBA back as written"
+    formats: [image.Format] = [.gray, .gray_alpha, .rgb, .rgba]
+
+    for format in formats
+        pixels: [u8] @= []
+
+        for i in range(from: 0, to: 7 * 3 * image.pixel_bytes_of(format))
+            pixels @ pixels.push(to_u8(i * 41 % 256).must())
+
+        img = image.from_pixels(width: 7, height: 3, format: format, pixels: pixels).must()
+        back = decode(encode(img).must(), image.default_limits()).must()
+
+        want = if format == .gray || format == .rgb
+            image.convert(img, to: .rgb)
+        else
+            image.convert(img, to: .rgba)
+        assert back == want
+
+test "encode: 16 bits refused, an empty image refused"
+    assert encode(image.blank(width: 2, height: 2, format: .rgb16).must()).is_err()
+    assert encode(image.blank(width: 0, height: 2, format: .rgb).must()).is_err()
+
+test "info_of: the depth and format of every file"
+    for s in samples.readable()
+        info = info_of(bytes.parse_hex(s.file).must()).must()
+        assert info.width == s.width
+
+        wanted: image.Format = if s.format == "rgba"
+            .rgba
+        else
+            .rgb
+        assert info.format == wanted
+
+## Examples
+
+# A BMP read.
+test "decode: an image of RGB written and read back"
+    img = image.from_pixels(width: 2, height: 1, format: .rgb, pixels: [1, 2, 3, 4, 5, 6]).must()
+    assert decode(encode(img).must(), image.default_limits()).must() == img
+
+# A BMP's size and depth, read from its headers.
+test "info_of: an RGBA file of 32 bits"
+    info = info_of(encode(image.blank(width: 5, height: 4, format: .rgba).must()).must()).must()
+    assert info.bits == 32
+    assert info.format == .rgba
+
+# A gray image written as BMP.
+test "encode: a gray image as 8 bits of a gray palette"
+    file = encode(image.from_pixels(width: 1, height: 1, format: .gray, pixels: [77]).must()).must()
+    assert info_of(file).must().bits == 8
+    assert decode(file, image.default_limits()).must().pixels == [77, 77, 77]

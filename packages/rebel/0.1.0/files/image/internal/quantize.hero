@@ -1,0 +1,300 @@
+# Colours reduced to a palette: the palette chosen by median cut, and each
+# pixel mapped to its nearest entry, plainly or with Floyd and Steinberg's
+# error diffusion. Everything here reads pixels as 8-bit RGBA, four bytes
+# a pixel, and a colour as one number, red in its highest byte.
+
+# The colour `r`, `g`, `b`, `a`, each 0 to 255, as one number.
+function pack(r: i64, g: i64, b: i64, a: i64) -> i64
+    return r << 24 | g << 16 | b << 8 | a
+
+# Channel `c` of the colour `p`: 0 red, 1 green, 2 blue, 3 alpha.
+function channel(p: i64, c: i64) -> i64
+    return p >> 24 - 8 * c & 255
+
+# The colour of pixel `i` of the RGBA bytes `rgba`.
+function color_at(rgba: [u8] lent, i: i64) -> i64
+    at = i * 4
+    r = to_i64(rgba[at]).must()
+    g = to_i64(rgba[at + 1]).must()
+    b = to_i64(rgba[at + 2]).must()
+    a = to_i64(rgba[at + 3]).must()
+    return pack(r: r, g: g, b: b, a: a)
+
+# How many pixels of `rgba` hold each colour, the colours in the order they
+# first appear.
+function counts_of(rgba: [u8] lent) -> {i64: i64}
+    counts: {i64: i64} @= {}
+
+    for i in range(from: 0, to: rgba.len() / 4)
+        p = color_at(rgba, i: i)
+        counts[p] @ counts[p].default(0) + 1
+
+    return counts
+
+# How far the colours of `box` spread along channel `c`.
+function spread(box: [i64] lent, c: i64) -> i64
+    low @= 255
+    high @= 0
+
+    for p in box
+        v = channel(p: p, c: c)
+
+        if v < low
+            low @ v
+
+        if v > high
+            high @ v
+
+    return high - low
+
+# The channel `box` spreads most along, the first of those that tie.
+function widest(box: [i64] lent) -> i64
+    best @= 0
+
+    for c in range(from: 1, to: 4)
+        if spread(box, c: c) > spread(box, c: best)
+            best @ c
+
+    return best
+
+# At most `most` colours for the pixels of `rgba` by median cut: its own
+# colours, in the order they first appear, where it has `most` or fewer.
+function median_cut(rgba: [u8] lent, most: i64) -> [i64]
+    counts = counts_of(rgba)
+    colors = keys(counts)
+
+    if colors.len() <= most
+        return colors
+    boxes: [[i64]] @= [colors]
+
+    while boxes.len() < most
+        chosen @= -1
+        chosen_spread @= 0
+
+        for i in range(from: 0, to: boxes.len())
+            if boxes[i].len() >= 2
+                s = spread(boxes[i], c: widest(boxes[i]))
+
+                if s > chosen_spread
+                    chosen @ i
+                    chosen_spread @ s
+
+        if chosen < 0
+            break
+        halves = split(boxes[chosen], counts: counts)
+        boxes[chosen] @ halves[0]
+        boxes @ boxes.push(halves[1])
+
+    out: [i64] @= []
+
+    for box in boxes
+        out @ out.push(mean_of(box, counts: counts))
+
+    return out
+
+# `box`, of two colours or more, cut in two at the median along its widest
+# channel, each colour weighted by its count in `counts`.
+function split(box: [i64] lent, counts: {i64: i64} lent) -> [[i64]]
+    c = widest(box)
+    order: [i64] @= []
+
+    for i in range(from: 0, to: box.len())
+        order @ order.push(channel(p: box[i], c: c) << 32 | i)
+
+    order @ sort(order)
+    total @= 0
+
+    for p in box
+        total @ total + counts[p].default(0)
+
+    seen @= 0
+    cut @= 1
+
+    for k in range(from: 0, to: order.len())
+        seen @ seen + counts[box[order[k] & 0xffffffff]].default(0)
+
+        if 2 * seen >= total
+            cut @ k + 1
+            break
+
+    if cut >= order.len()
+        cut @ order.len() - 1
+    low: [i64] @= []
+    high: [i64] @= []
+
+    for k in range(from: 0, to: order.len())
+        p = box[order[k] & 0xffffffff]
+
+        if k < cut
+            low @ low.push(p)
+        else
+            high @ high.push(p)
+
+    return [low, high]
+
+# The mean of the colours of `box`, each weighted by its count in
+# `counts`, each channel rounded to the nearest.
+function mean_of(box: [i64] lent, counts: {i64: i64} lent) -> i64
+    sums: [i64] @= [0, 0, 0, 0]
+    total @= 0
+
+    for p in box
+        n = counts[p].default(0)
+        total @ total + n
+
+        for c in range(from: 0, to: 4)
+            sums[c] @ sums[c] + channel(p: p, c: c) * n
+
+    if total == 0
+        return 0
+    return pack(
+        r: (sums[0] + total / 2) / total,
+        g: (sums[1] + total / 2) / total,
+        b: (sums[2] + total / 2) / total,
+        a: (sums[3] + total / 2) / total
+    )
+
+# The index of the colour of `palette` nearest `r`, `g`, `b`, `a` by the sum
+# of the squared differences of the channels, the first of those that tie.
+function nearest(palette: [i64] lent, r: i64, g: i64, b: i64, a: i64) -> i64
+    best @= 0
+    best_distance @= -1
+
+    for i in range(from: 0, to: palette.len())
+        p = palette[i]
+        dr = channel(p: p, c: 0) - r
+        dg = channel(p: p, c: 1) - g
+        db = channel(p: p, c: 2) - b
+        da = channel(p: p, c: 3) - a
+        d = dr * dr + dg * dg + db * db + da * da
+
+        if best_distance < 0 || d < best_distance
+            best @ i
+            best_distance @ d
+
+    return best
+
+# The index into `palette` of each pixel of `rgba`, `width` pixels a row:
+# the nearest colour, or where `dither`, the nearest to the colour with the
+# errors of the pixels before it spread in, 7/16 right, 3/16 below left,
+# 5/16 below and 1/16 below right.
+function indexed(rgba: [u8] lent, width: i64, palette: [i64] lent, dither: bool) -> [u8]
+    count = rgba.len() / 4
+    out: [u8] @= []
+
+    if !dither
+        known: {i64: i64} @= {}
+
+        for i in range(from: 0, to: count)
+            p = color_at(rgba, i: i)
+
+            match known[p]
+                .ok k => out @ out.push(to_u8(k).must())
+                .err _ =>
+                    k = nearest(
+                        palette,
+                        r: channel(p: p, c: 0),
+                        g: channel(p: p, c: 1),
+                        b: channel(p: p, c: 2),
+                        a: channel(p: p, c: 3)
+                    )
+                    known[p] @ k
+                    out @ out.push(to_u8(k).must())
+
+        return out
+    here @= zero_list((width + 2) * 4)
+    below @= zero_list((width + 2) * 4)
+
+    for i in range(from: 0, to: count)
+        x = i % width
+        p = color_at(rgba, i: i)
+        want: [i64] @= []
+
+        for c in range(from: 0, to: 4)
+            want @ want.push(clamp_byte(channel(p: p, c: c) + (here[(x + 1) * 4 + c] + 8 >> 4)))
+
+        k = nearest(palette, r: want[0], g: want[1], b: want[2], a: want[3])
+        out @ out.push(to_u8(k).must())
+
+        for c in range(from: 0, to: 4)
+            e = want[c] - channel(p: palette[k], c: c)
+            here[(x + 2) * 4 + c] @ here[(x + 2) * 4 + c] + e * 7
+            below[x * 4 + c] @ below[x * 4 + c] + e * 3
+            below[(x + 1) * 4 + c] @ below[(x + 1) * 4 + c] + e * 5
+            below[(x + 2) * 4 + c] @ below[(x + 2) * 4 + c] + e
+
+        if x == width - 1
+            here @ below
+            below @ zero_list((width + 2) * 4)
+
+    return out
+
+# `n` zeros.
+function zero_list(n: i64) -> [i64]
+    out: [i64] @= []
+
+    for _ in range(from: 0, to: n)
+        out @ out.push(0)
+
+    return out
+
+# `v` held to 0 to 255.
+function clamp_byte(v: i64) -> i64
+    if v < 0
+        return 0
+
+    if v > 255
+        return 255
+    return v
+
+test "pack and channel: each byte in its place"
+    p = pack(r: 1, g: 2, b: 3, a: 4)
+    assert p == 0x01020304
+    assert channel(p: p, c: 0) == 1
+    assert channel(p: p, c: 3) == 4
+
+test "median_cut: few colours answered as they first appear, none, and one"
+    rgba: [u8] = [9, 9, 9, 255, 1, 1, 1, 255, 9, 9, 9, 255]
+    assert median_cut(rgba, most: 4) == [pack(r: 9, g: 9, b: 9, a: 255), pack(r: 1, g: 1, b: 1, a: 255)]
+    assert median_cut([], most: 4).len() == 0
+    assert median_cut(rgba, most: 1) == [pack(r: 6, g: 6, b: 6, a: 255)]
+
+test "median_cut: a ramp of 8 grays in 2 and 4, by the median of the counts"
+    rgba: [u8] @= []
+
+    for v in [0, 10, 20, 30, 200, 210, 220, 230]
+        for _ in range(from: 0, to: 3)
+            rgba @ rgba.push(to_u8(v).must())
+
+        rgba @ rgba.push(255)
+
+    two = median_cut(rgba, most: 2)
+    assert two == [pack(r: 15, g: 15, b: 15, a: 255), pack(r: 215, g: 215, b: 215, a: 255)]
+    assert median_cut(rgba, most: 4).len() == 4
+
+test "nearest: the closest, the first of a tie, alpha counted"
+    palette = [pack(r: 0, g: 0, b: 0, a: 255), pack(r: 255, g: 255, b: 255, a: 255), pack(r: 0, g: 0, b: 0, a: 0)]
+    assert nearest(palette, r: 200, g: 200, b: 200, a: 255) == 1
+    assert nearest(palette, r: 10, g: 10, b: 10, a: 10) == 2
+    assert nearest([pack(r: 1, g: 0, b: 0, a: 0), pack(r: 0, g: 1, b: 0, a: 0)], r: 0, g: 0, b: 0, a: 0) == 0
+
+test "indexed: plain maps each pixel to its nearest, dithered mixes a gray from black and white"
+    palette = [pack(r: 0, g: 0, b: 0, a: 255), pack(r: 255, g: 255, b: 255, a: 255)]
+    rgba: [u8] = [10, 10, 10, 255, 250, 250, 250, 255]
+    assert indexed(rgba, width: 2, palette: palette, dither: false) == [0, 1]
+    gray: [u8] @= []
+
+    for _ in range(from: 0, to: 64)
+        gray @ gray.push(128)
+        gray @ gray.push(128)
+        gray @ gray.push(128)
+        gray @ gray.push(255)
+
+    out = indexed(gray, width: 8, palette: palette, dither: true)
+    whites @= 0
+
+    for k in out
+        if k == 1
+            whites @ whites + 1
+
+    assert whites >= 28 && whites <= 36

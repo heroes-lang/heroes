@@ -1,0 +1,79 @@
+# The orientation of an EXIF block: the TIFF structure's byte order and
+# first directory read, and tag 274 found in it. Every offset is checked
+# against the block's length before it is read.
+
+use image
+
+# The two bytes of `data` at `at` as a number, in the order `little` says.
+function u16_at(data: [u8] lent, at: i64, little: bool) -> i64
+    a = to_i64(data[at]).must()
+    b = to_i64(data[at + 1]).must()
+
+    if little
+        return b << 8 | a
+    return a << 8 | b
+
+# The four bytes of `data` at `at` as a number, in the order `little` says.
+function u32_at(data: [u8] lent, at: i64, little: bool) -> i64
+    first = u16_at(data, at: at, little: little)
+    second = u16_at(data, at: at + 2, little: little)
+
+    if little
+        return second << 16 | first
+    return first << 16 | second
+
+# The orientation the TIFF structure `tiff` holds in its first directory.
+# Fails `not_found` where it holds none, `invalid` where `tiff` is not a
+# TIFF structure or the tag is not one short of 1 to 8.
+function orientation_of(tiff: [u8] lent) -> i64?
+    if tiff.len() < 8
+        return fail(code: image.INVALID, msg: f"an EXIF block of {tiff.len()} bytes, shorter than a TIFF header")
+    little = tiff[0] == 'I' && tiff[1] == 'I'
+
+    if !little && !(tiff[0] == 'M' && tiff[1] == 'M') || u16_at(tiff, at: 2, little: little) != 42
+        return fail(code: image.INVALID, msg: "an EXIF block that does not begin as TIFF: II or MM, then 42")
+    directory = u32_at(tiff, at: 4, little: little)
+
+    if directory > tiff.len() - 2
+        return fail(
+            code: image.INVALID,
+            msg: f"an EXIF directory at byte {directory}, past the block's {tiff.len()} bytes"
+        )
+    count = u16_at(tiff, at: directory, little: little)
+
+    if count > (tiff.len() - directory - 2) / 12
+        return fail(code: image.INVALID, msg: f"an EXIF directory of {count} entries, past the block's end")
+
+    for i in range(from: 0, to: count)
+        at = directory + 2 + 12 * i
+
+        if u16_at(tiff, at: at, little: little) == 0x0112
+            kind = u16_at(tiff, at: at + 2, little: little)
+            n = u32_at(tiff, at: at + 4, little: little)
+            v = u16_at(tiff, at: at + 8, little: little)
+
+            if kind != 3 || n != 1 || v < 1 || v > 8
+                return fail(
+                    code: image.INVALID,
+                    msg: f"an EXIF orientation of type {kind}, count {n} and value {v}, where one short of 1 to 8 stands"
+                )
+            return ok(v)
+
+    return fail(code: "not_found", msg: "the EXIF block holds no orientation")
+
+test "orientation_of: both byte orders, absent, and broken"
+    big: [u8] = [0x4d, 0x4d, 0, 42, 0, 0, 0, 8, 0, 1, 0x01, 0x12, 0, 3, 0, 0, 0, 1, 0, 6, 0, 0, 0, 0, 0, 0]
+    assert orientation_of(big).must() == 6
+    little: [u8] = [0x49, 0x49, 42, 0, 8, 0, 0, 0, 1, 0, 0x12, 0x01, 3, 0, 1, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0]
+    assert orientation_of(little).must() == 3
+    none: [u8] = [0x4d, 0x4d, 0, 42, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0]
+
+    match orientation_of(none)
+        .ok _  => assert false
+        .err e => assert e.code == "not_found"
+
+    assert orientation_of([0x4d, 0x4d, 0, 42, 0xff, 0xff, 0xff, 0xff]).is_err()
+    assert orientation_of([0x4d, 0x4d, 0, 42, 0, 0, 0, 8, 0xff, 0xff]).is_err()
+    assert orientation_of([0x41, 0x41, 0, 42, 0, 0, 0, 8]).is_err()
+    nine: [u8] = [0x4d, 0x4d, 0, 42, 0, 0, 0, 8, 0, 1, 0x01, 0x12, 0, 3, 0, 0, 0, 1, 0, 9, 0, 0, 0, 0, 0, 0]
+    assert orientation_of(nine).is_err()

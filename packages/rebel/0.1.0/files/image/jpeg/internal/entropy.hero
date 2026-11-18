@@ -1,0 +1,191 @@
+# The entropy-coded data of a JPEG scan read bit by bit (T.81 F.2.2):
+# stuffed bytes undone, a marker stopping the bits, and Huffman codes read
+# against the tables of the DHT segments by the procedure of F.2.2.3,
+# lengths from 1 to 16 bits.
+
+use image
+
+# Where reading stands in a scan's data.
+record Bits
+    # The next byte of the data to take.
+    pos: i64
+    # The bits taken and not used, the next one highest.
+    held: i64
+    # How many there are: 0 to 8.
+    count: i64
+    # Whether a bit was asked for past a marker or the end of the data: a
+    # scan that ends before its last block.
+    stopped: bool
+
+# Reading from byte `pos`.
+function bits_at(pos: i64) -> Bits
+    return Bits(pos: pos, held: 0, count: 0, stopped: false)
+
+# The next bit of the data; 0, with `stopped` set, past a marker or the
+# end.
+function next_bit(@r: Bits, data: [u8] lent) -> i64
+    if r.count == 0
+        if r.pos >= data.len()
+            r.stopped @ true
+            return 0
+        b = to_i64(data[r.pos]).must()
+
+        if b == 0xff
+            if r.pos + 1 < data.len() && data[r.pos + 1] == 0
+                r.pos @ r.pos + 2
+            else
+                r.stopped @ true
+                return 0
+        else
+            r.pos @ r.pos + 1
+        r.held @ b
+        r.count @ 8
+    r.count @ r.count - 1
+    return r.held >> r.count & 1
+
+# The next `n` bits of the data as a number, the first highest; `n` is 0
+# to 16.
+function receive(@r: Bits, data: [u8] lent, n: i64) -> i64
+    v @= 0
+
+    for _ in range(from: 0, to: n)
+        v @ v << 1 | next_bit(@r, data: data)
+
+    return v
+
+# `v`, `n` bits received, as the signed number T.81's EXTEND makes of it.
+function extend(v: i64, n: i64) -> i64
+    if n == 0
+        return 0
+
+    if v < 1 << n - 1
+        return v - (1 << n) + 1
+    return v
+
+# Drops the bits left in the byte being read, as a restart marker does.
+function align(@r: Bits)
+    r.count @ 0
+
+# The Huffman tables of a file: four DC tables, numbers 0 to 3, and four AC
+# tables, numbers 4 to 7, as F.2.2.3 decodes with them.
+record Huff
+    # Whether each table has been defined.
+    defined: [bool]
+    # For table t and length l, 1 to 16, at t × 17 + l: the first code of
+    # that length.
+    mincode: [i64]
+    # The same, the last code of that length, or -1 where there is none.
+    maxcode: [i64]
+    # The same, the index in `values` of the first code of that length.
+    valptr: [i64]
+    # For table t, at t × 256: its symbols in code order.
+    values: [i64]
+
+# Eight tables, none defined.
+function no_tables() -> Huff
+    defined: [bool] @= []
+    small: [i64] @= []
+    big: [i64] @= []
+
+    for _ in range(from: 0, to: 8)
+        defined @ defined.push(false)
+
+    for _ in range(from: 0, to: 8 * 17)
+        small @ small.push(-1)
+
+    for _ in range(from: 0, to: 8 * 256)
+        big @ big.push(0)
+
+    return Huff(defined: defined, mincode: small, maxcode: small, valptr: small, values: big)
+
+# Defines table `t`, 0 to 7, from the counts of codes of each length, 1 to
+# 16, and the symbols, as a DHT segment holds them. Fails `invalid` where
+# the counts pass 256 or give more codes of a length than it has.
+function define(@h: Huff, t: i64, counts: [i64] lent, symbols: [i64] lent) -> ()?
+    code @= 0
+    k @= 0
+
+    for l in range(from: 1, to: 17)
+        n = counts[l - 1]
+
+        if n == 0
+            h.maxcode[t * 17 + l] @ -1
+        else
+            h.valptr[t * 17 + l] @ k
+            h.mincode[t * 17 + l] @ code
+            code @ code + n
+            k @ k + n
+
+            if code > 1 << l
+                return fail(code: image.INVALID, msg: f"a Huffman table with more codes of {l} bits than {l} bits hold")
+            h.maxcode[t * 17 + l] @ code - 1
+        code @ code << 1
+
+    for i in range(from: 0, to: symbols.len())
+        h.values[t * 256 + i] @ symbols[i]
+
+    h.defined[t] @ true
+    return ok()
+
+# The next symbol of the data by table `t`. Fails `invalid` where no code
+# of 16 bits or fewer matches.
+function symbol(@r: Bits, data: [u8] lent, h: Huff lent, t: i64) -> i64?
+    code @= next_bit(@r, data: data)
+
+    for l in range(from: 1, to: 17)
+        top = h.maxcode[t * 17 + l]
+
+        if top >= 0 && code <= top
+            return ok(h.values[t * 256 + h.valptr[t * 17 + l] + code - h.mincode[t * 17 + l]])
+        code @ code << 1 | next_bit(@r, data: data)
+
+    return fail(code: image.INVALID, msg: f"no Huffman code of table {t % 4} matches the bits before byte {r.pos}")
+
+test "next_bit and receive: bits highest first, a stuffed byte undone, a marker stops"
+    data: [u8] = [0b1010_0000, 0xff, 0x00, 0xff, 0xd9]
+    r @= bits_at(0)
+    assert receive(@r, data: data, n: 3) == 0b101
+    assert receive(@r, data: data, n: 5) == 0
+    assert receive(@r, data: data, n: 8) == 0xff
+    assert !r.stopped
+    assert next_bit(@r, data: data) == 0
+    assert r.stopped
+
+test "extend: the negatives below half, the positives above"
+    assert extend(v: 0, n: 1) == -1
+    assert extend(v: 1, n: 1) == 1
+    assert extend(v: 2, n: 3) == -5
+    assert extend(v: 5, n: 3) == 5
+    assert extend(v: 0, n: 0) == 0
+
+test "define and symbol: a table of three codes, and a code no table holds"
+    h @= no_tables()
+    counts: [i64] @= [1, 2]
+
+    for _ in range(from: 2, to: 16)
+        counts @ counts.push(0)
+
+    assert !define(@h, t: 4, counts: counts, symbols: [7, 8, 9]).is_err()
+    data: [u8] = [0b0101_1100]
+    r @= bits_at(0)
+    assert symbol(@r, data: data, h: h, t: 4).must() == 7
+    assert symbol(@r, data: data, h: h, t: 4).must() == 8
+    assert symbol(@r, data: data, h: h, t: 4).must() == 9
+    two: [i64] @= [1, 1]
+
+    for _ in range(from: 2, to: 16)
+        two @ two.push(0)
+
+    assert !define(@h, t: 5, counts: two, symbols: [7, 8]).is_err()
+    full: [u8] = [0xff, 0x00, 0xff, 0x00, 0xff, 0x00]
+    s @= bits_at(0)
+    assert symbol(@s, data: full, h: h, t: 5).is_err()
+
+test "define: more codes of a length than it holds"
+    h @= no_tables()
+    counts: [i64] @= [3]
+
+    for _ in range(from: 1, to: 16)
+        counts @ counts.push(0)
+
+    assert define(@h, t: 0, counts: counts, symbols: [1, 2, 3]).is_err()

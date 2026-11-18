@@ -1,0 +1,375 @@
+# A PNG file read whole: its chunks walked and checked in the order PNG
+# requires, its image data inflated to exactly the size the header implies,
+# unfiltered row by row, its passes put in place where it is interlaced, and
+# each pixel turned into the format `image` holds.
+
+use compress
+use image
+use image/png/internal/chunks
+use image/png/internal/filters
+
+# An ancillary chunk kept.
+record Piece
+    # Its four letters.
+    kind: str
+    # Its data.
+    data: [u8]
+    # Whether it stands after the image data.
+    after_image: bool
+
+# A file read.
+record Decoded
+    # The pixels.
+    image: image.Image
+    # The palette of colour type 3, alpha from `tRNS`; empty otherwise.
+    palette: [image.Color]
+    # What `IHDR` says.
+    header: chunks.Header
+    # The ancillary chunks kept.
+    pieces: [Piece]
+
+# One pass of Adam7, or the one pass of a file not interlaced: the pixels
+# from column `x0` every `dx`, from row `y0` every `dy`.
+record Pass
+    # The first column.
+    x0: i64
+    # The first row.
+    y0: i64
+    # The step between columns.
+    dx: i64
+    # The step between rows.
+    dy: i64
+
+# The passes of a file, seven where `interlaced`.
+function passes_of(interlaced: bool) -> [Pass]
+    if !interlaced
+        return [Pass(x0: 0, y0: 0, dx: 1, dy: 1)]
+    return [
+        Pass(x0: 0, y0: 0, dx: 8, dy: 8)
+        Pass(x0: 4, y0: 0, dx: 8, dy: 8)
+        Pass(x0: 0, y0: 4, dx: 4, dy: 8)
+        Pass(x0: 2, y0: 0, dx: 4, dy: 4)
+        Pass(x0: 0, y0: 2, dx: 2, dy: 4)
+        Pass(x0: 1, y0: 0, dx: 2, dy: 2)
+        Pass(x0: 0, y0: 1, dx: 1, dy: 2)
+    ]
+
+# How many of `size` pixels from `first` every `step` there are.
+function count_of(size: i64, first: i64, step: i64) -> i64
+    if size <= first
+        return 0
+    return (size - first + step - 1) / step
+
+# The bytes of a row of `width` pixels of `channels` samples of `depth`
+# bits, its filter byte left out.
+function row_bytes(width: i64, channels: i64, depth: i64) -> i64
+    return (width * channels * depth + 7) / 8
+
+# The bytes the inflated image data of `h` holds: each pass's rows, each
+# with its filter byte.
+function raw_size(h: chunks.Header) -> i64
+    channels = chunks.channels_of(h.color_type)
+    total @= 0
+
+    for p in passes_of(h.interlaced)
+        w = count_of(size: h.width, first: p.x0, step: p.dx)
+        rows = count_of(size: h.height, first: p.y0, step: p.dy)
+
+        if w > 0 && rows > 0
+            total @ total + rows * (1 + row_bytes(width: w, channels: channels, depth: h.depth))
+
+    return total
+
+# Whether `kind` is among the chunks to keep.
+function wanted(kind: str, keep_all: bool, kinds: [str] lent) -> bool
+    if keep_all
+        return true
+
+    for k in kinds
+        if k == kind
+            return true
+
+    return false
+
+# The file `data`, read under `limits`; every ancillary chunk kept where
+# `keep_all`, else those whose type is in `kinds`.
+function decoded(data: [u8] lent, limits: image.Limits, keep_all: bool, kinds: [str]) -> Decoded?
+    if data.len() < 8 || data.slice(from: 0, to: 8) != chunks.signature()
+        return fail(code: image.INVALID, msg: "the data does not begin with PNG's signature")
+    h = chunks.header_of(data, limits: limits)?
+    at @= 33
+    palette: [image.Color] @= []
+    has_palette @= false
+    transparency: [u8] @= []
+    has_transparency @= false
+    stream: [u8] @= []
+
+    # 0 before the image data, 1 inside it, 2 after it.
+    stage @= 0
+    pieces: [Piece] @= []
+    ended @= false
+
+    while !ended
+        found = chunks.chunk_at(data, at: at)?
+        kind = found.kind
+        body = data.slice(from: found.start, to: found.start + found.size)
+
+        if kind == "IDAT"
+            if stage == 2
+                return fail(
+                    code: image.INVALID,
+                    msg: f"an IDAT chunk at byte {at} after other chunks followed the image data: IDAT chunks stand together"
+                )
+
+            if h.color_type == 3 && !has_palette
+                return fail(
+                    code: image.INVALID,
+                    msg: f"the image data at byte {at} of a palette file comes before any PLTE"
+                )
+            stage @ 1
+
+            for b in body
+                stream @ stream.push(b)
+        else
+            if stage == 1
+                stage @ 2
+
+            if kind == "IEND"
+                ended @ true
+            else if kind == "IHDR"
+                return fail(code: image.INVALID, msg: f"a second IHDR at byte {at}")
+            else if kind == "PLTE"
+                if has_palette || stage > 0 || h.color_type == 0 || h.color_type == 4 || found.size == 0 || found.size % 3 != 0 || found.size > 768
+                    return fail(
+                        code: image.INVALID,
+                        msg: f"a PLTE of {found.size} bytes at byte {at} that this file cannot hold: one, before the image data, of 1 to 256 entries of 3 bytes, never in a gray file"
+                    )
+
+                if h.color_type == 3 && found.size / 3 > 1 << h.depth
+                    return fail(
+                        code: image.INVALID,
+                        msg: f"a PLTE of {found.size / 3} entries for indices of {h.depth} bits"
+                    )
+                has_palette @ true
+
+                if h.color_type == 3
+                    for i in range(from: 0, to: found.size / 3)
+                        palette @ palette.push(
+                            image.Color(r: body[3 * i], g: body[3 * i + 1], b: body[3 * i + 2], a: 255)
+                        )
+            else if kind == "tRNS"
+                fits = if h.color_type == 0
+                    found.size == 2
+                else if h.color_type == 2
+                    found.size == 6
+                else if h.color_type == 3
+                    has_palette && found.size <= palette.len()
+                else
+                    false
+
+                if has_transparency || stage > 0 || !fits
+                    return fail(
+                        code: image.INVALID,
+                        msg: f"a tRNS of {found.size} bytes at byte {at} that a file of colour type {h.color_type} cannot hold here"
+                    )
+                has_transparency @ true
+                transparency @ body
+
+                if h.color_type == 3
+                    for i in range(from: 0, to: found.size)
+                        palette[i].a @ body[i]
+            else if kind[0] < 'a'
+                return fail(
+                    code: image.UNSUPPORTED,
+                    msg: f"a critical chunk {kind} at byte {at} that PNG does not define, so the image cannot be read safely"
+                )
+            else if wanted(kind, keep_all: keep_all, kinds: kinds)
+                pieces @ pieces.push(Piece(kind: kind, data: body, after_image: stage > 0))
+        at @ found.next
+
+    if stage == 0
+        return fail(code: image.INVALID, msg: "the file holds no IDAT chunk")
+    size = raw_size(h)
+
+    raw @= match compress.decompress_leading(stream, format: .zlib, limit: size)
+        .ok lead => lead.data
+        .err e =>
+            if e.code == compress.LIMIT
+                return fail(
+                    code: image.INVALID,
+                    msg: f"the image data inflates to more than the {size} bytes {h.width} by {h.height} pixels need"
+                )
+            return fail(code: image.INVALID, msg: f"the image data is not a zlib stream: {e.msg}")
+
+    if raw.len() < size
+        return fail(
+            code: image.INVALID,
+            msg: f"the image data inflates to {raw.len()} bytes, where {h.width} by {h.height} pixels need {size}"
+        )
+    format = chunks.format_of(h, transparent: has_transparency)
+    pixels = pixels_of(h, raw: @raw, format: format, palette: palette, transparency: transparency)?
+    return ok(
+        Decoded(image: image.Image(width: h.width, height: h.height, format: format, pixels: pixels), palette: palette, header: h, pieces: pieces)
+    )
+
+# The sample `k` of the row whose bytes begin at `first` in `raw`, of
+# `depth` bits.
+function sample_of(raw: [u8] lent, first: i64, k: i64, depth: i64) -> i64
+    if depth == 8
+        return to_i64(raw[first + k]).must()
+
+    if depth == 16
+        return to_i64(raw[first + 2 * k]).must() << 8 | to_i64(raw[first + 2 * k + 1]).must()
+    bit = k * depth
+    byte = to_i64(raw[first + bit / 8]).must()
+    return byte >> 8 - depth - bit % 8 & (1 << depth) - 1
+
+# Writes `v`, a sample of `wide` width, at byte `at` of `out`.
+function put(@out: [u8], at: i64, v: i64, wide: bool)
+    if wide
+        out[at] @ to_u8(v >> 8).must()
+        out[at + 1] @ to_u8(v & 255).must()
+    else
+        out[at] @ to_u8(v).must()
+
+# The pixels of `h`'s image data `raw`, unfiltered in place, in `format`,
+# looked up in `palette` for colour type 3 and given alpha by
+# `transparency` where it holds a `tRNS`'s bytes. Fails `invalid` on a
+# filter type past 4 or an index past the palette.
+function pixels_of(h: chunks.Header, @raw: [u8], format: image.Format, palette: [image.Color] lent, transparency: [u8] lent) -> [u8]?
+    channels = chunks.channels_of(h.color_type)
+    step_bits = channels * h.depth
+
+    step = if step_bits < 8
+        1
+    else
+        step_bits / 8
+    wide = h.depth == 16
+
+    size = if wide
+        2
+    else
+        1
+    out_pixel = image.pixel_bytes_of(format)
+    out: [u8] @= []
+
+    for _ in range(from: 0, to: h.width * h.height * out_pixel)
+        out @ out.push(0)
+
+    top = (1 << h.depth) - 1
+    keyed = transparency.len() > 0 && h.color_type != 3
+    key: [i64] @= []
+
+    if keyed
+        for i in range(from: 0, to: transparency.len() / 2)
+            key @ key.push(to_i64(transparency[2 * i]).must() << 8 | to_i64(transparency[2 * i + 1]).must())
+
+    alpha_top = if wide
+        65535
+    else
+        255
+    at @= 0
+
+    for p in passes_of(h.interlaced)
+        w = count_of(size: h.width, first: p.x0, step: p.dx)
+        rows = count_of(size: h.height, first: p.y0, step: p.dy)
+
+        if w > 0 && rows > 0
+            bytes = row_bytes(width: w, channels: channels, depth: h.depth)
+            above @= -1
+
+            for py in range(from: 0, to: rows)
+                filters.unfilter(@raw, at: at, size: bytes, above: above, step: step)?
+                first = at + 1
+                y = p.y0 + py * p.dy
+
+                for px in range(from: 0, to: w)
+                    o = (y * h.width + p.x0 + px * p.dx) * out_pixel
+
+                    if h.color_type == 3
+                        index = sample_of(raw, first: first, k: px, depth: h.depth)
+
+                        if index >= palette.len()
+                            return fail(
+                                code: image.INVALID,
+                                msg: f"an index of {index} at row {y} into a palette of {palette.len()} entries"
+                            )
+                        c = palette[index]
+                        out[o] @ c.r
+                        out[o + 1] @ c.g
+                        out[o + 2] @ c.b
+
+                        if out_pixel == 4
+                            out[o + 3] @ c.a
+                    else
+                        matches @= keyed
+
+                        for ch in range(from: 0, to: channels)
+                            v = sample_of(raw, first: first, k: px * channels + ch, depth: h.depth)
+
+                            if keyed && v != key[ch]
+                                matches @ false
+
+                            scaled = if h.depth < 8
+                                v * 255 / top
+                            else
+                                v
+                            put(@out, at: o + ch * size, v: scaled, wide: wide)
+
+                        if keyed
+                            alpha = if matches
+                                0
+                            else
+                                alpha_top
+                            put(@out, at: o + channels * size, v: alpha, wide: wide)
+
+                above @ at
+                at @ at + 1 + bytes
+
+    return ok(out)
+
+# What the chunks of `data` before its image data say: the header, and
+# whether a `tRNS` stands among them. Fails as `decoded` does on the
+# chunks it reads.
+function header_and_transparency(data: [u8] lent) -> chunks.Header?
+    if data.len() < 8 || data.slice(from: 0, to: 8) != chunks.signature()
+        return fail(code: image.INVALID, msg: "the data does not begin with PNG's signature")
+    return chunks.header_of(
+        data,
+        limits: image.Limits(max_width: 0x7fffffff, max_height: 0x7fffffff, max_pixels: 0x7fffffffffffffff)
+    )
+
+# Whether a `tRNS` chunk stands in `data` before its image data, the
+# chunks read as far as the first `IDAT` or `IEND`.
+function transparency_before_data(data: [u8] lent) -> bool?
+    at @= 33
+
+    while at < data.len()
+        found = chunks.chunk_at(data, at: at)?
+
+        if found.kind == "tRNS"
+            return ok(true)
+
+        if found.kind == "IDAT" || found.kind == "IEND"
+            return ok(false)
+        at @ found.next
+
+    return ok(false)
+
+test "count_of and raw_size: Adam7's passes of small images"
+    assert count_of(size: 9, first: 0, step: 8) == 2
+    assert count_of(size: 9, first: 4, step: 8) == 1
+    assert count_of(size: 1, first: 4, step: 8) == 0
+    one = chunks.Header(width: 1, height: 1, depth: 8, color_type: 6, interlaced: true)
+    assert raw_size(one) == 5
+    flat = chunks.Header(width: 3, height: 2, depth: 1, color_type: 0, interlaced: false)
+    assert raw_size(flat) == 4
+
+test "sample_of: samples of 1, 2, 4, 8 and 16 bits"
+    raw: [u8] = [0b1011_0010, 0x12, 0x34]
+    assert sample_of(raw, first: 0, k: 0, depth: 1) == 1
+    assert sample_of(raw, first: 0, k: 1, depth: 1) == 0
+    assert sample_of(raw, first: 0, k: 1, depth: 2) == 0b11
+    assert sample_of(raw, first: 0, k: 1, depth: 4) == 0b0010
+    assert sample_of(raw, first: 1, k: 0, depth: 16) == 0x1234
+    assert sample_of(raw, first: 1, k: 1, depth: 8) == 0x34

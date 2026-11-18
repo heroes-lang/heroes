@@ -1,0 +1,28 @@
+# Reaches Rebel's `image/gif`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It writes a small image as GIF, reads it
+# back, and prints its frames, its size and its first colour.
+
+use <rebel>/image
+use <rebel>/image/gif
+
+function main()
+    match image.blank(width: 12, height: 8, format: .rgb)
+        .err e => print(e.code, ": ", e.msg)
+        .ok start =>
+            img @= start
+            image.fill_rect(@img, x: 0, y: 0, width: 6, height: 8, color: image.Color(r: 200, g: 30, b: 30, a: 255))
+
+            match gif.encode_image(img, dither: false)
+                .err e => print(e.code, ": ", e.msg)
+                .ok file =>
+                    match gif.decode(file, image.default_limits())
+                        .err e => print(e.code, ": ", e.msg)
+                        .ok g => print(
+                            g.frames.len(),
+                            " frame, ",
+                            g.width,
+                            " by ",
+                            g.height,
+                            ", first red ",
+                            g.frames[0].image.palette[0].r
+                        )

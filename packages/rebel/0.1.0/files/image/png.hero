@@ -1,0 +1,563 @@
+# PNG read and written, by the W3C's PNG specification (third edition):
+# every colour type and bit depth, interlaced or not, read into an
+# `image.Image`; an image written with the filter and compression level the
+# caller picks; the chunks a program does not need dropped or kept, and
+# text chunks read and made.
+#
+# It does not scale, convert or draw: that is `image`'s. The DEFLATE inside
+# is `compress`'s, and the CRC-32 of each chunk `hash`'s. It reads no APNG
+# animation: the frames after the first are chunks it keeps or drops.
+#
+# **A file is not trusted.** `decode` checks the size the header claims
+# against the caller's `image.Limits` before it allocates, inflates no more
+# than the image needs, and checks every chunk's length and CRC, so a broken
+# or hostile file fails `invalid` or `limit` and never reads past its end.
+#
+# It fails with `invalid`, `limit` and `unsupported`.
+
+use bytes
+use image
+use image/png/internal/chunks as frames
+use image/png/internal/decode as reading
+use image/png/internal/encode as writing
+use image/png/internal/samples
+use image/png/internal/text as texts
+
+## Chunks
+
+# One chunk of a PNG file that `decode` kept or `encode` writes: an
+# ancillary chunk, whose four letters begin in lower case (`tEXt`, `gAMA`,
+# `pHYs`, `eXIf`). Built directly, or by `text_chunk`.
+record Chunk
+    # The chunk's four ASCII letters, its type: `tEXt`.
+    kind: str
+    # The chunk's data, as the file holds it, compressed where the chunk's
+    # own format compresses it.
+    data: [u8]
+    # Whether the chunk stands after the image data rather than before it.
+    after_image: bool
+
+# Which ancillary chunks `decode` keeps.
+variant Keep
+    # None: the image alone.
+    none
+    # Every one, in the file's order.
+    all
+    # Those whose type is in `kinds`, in the file's order.
+    only
+        # The four-letter types kept: `["tEXt", "iTXt"]`.
+        kinds: [str]
+
+## Reading
+
+# How `decode` reads a file.
+record DecodeOptions
+    # The largest image the caller allows; past it, `limit`.
+    limits: image.Limits
+    # Which ancillary chunks are kept in `Png.chunks`.
+    keep: Keep
+
+# Options of `image.default_limits` that keep no chunk.
+#
+# See also `decode`.
+function decoding() -> DecodeOptions
+    return DecodeOptions(limits: image.default_limits(), keep: .none)
+
+# What `decode` answers: the image and what the file says of it.
+record Png
+    # The pixels: gray, gray and alpha, RGB or RGBA, of 16 bits where the
+    # file's samples are 16 bits and of 8 otherwise. A gray of 1, 2 or 4
+    # bits is scaled to 8 (a 1 to 255, a 3 of 2 bits to 255), a palette is
+    # looked up, and a `tRNS` chunk becomes alpha.
+    image: image.Image
+    # The palette of a file of colour type 3, its alpha from `tRNS`, opaque
+    # where it says none; empty for the other types.
+    palette: [image.Color]
+    # The bits a sample of the file: 1, 2, 4, 8 or 16.
+    bit_depth: i64
+    # The file's colour type: 0 gray, 2 RGB, 3 palette, 4 gray and alpha,
+    # 6 RGBA.
+    color_type: i64
+    # Whether the file is interlaced by Adam7.
+    interlaced: bool
+    # The ancillary chunks `DecodeOptions.keep` asked for, in the file's
+    # order.
+    chunks: [Chunk]
+
+# The image `data` holds, and its palette and chunks.
+#
+# - `data`: a whole PNG file: its signature, `IHDR`, the chunks, `IEND`.
+#   Bytes after `IEND` are not read.
+# - `options`: the limits and the chunks to keep; `decoding` makes the
+#   usual ones.
+#
+# Fails `limit` where the header's width or height passes
+# `options.limits`, before anything is allocated. Fails `invalid` where
+# `data` is not PNG, the message naming the byte or chunk: no signature, a
+# chunk cut short or of a wrong CRC, a header of an unknown colour type or
+# depth, a palette missing or too long, a `tRNS` that does not fit, image
+# data that inflates to more or less than the image needs, a filter type
+# past 4, an index past the palette. Fails `unsupported` where the header
+# names a compression, filter or interlace method no PNG defines but 0 (and
+# 1 for interlace), or the file holds an unknown critical chunk.
+#
+# It holds the inflated image data and the image at once. See also
+# `info_of` and `encode`.
+function decode(data: [u8], options: DecodeOptions) -> Png?
+    keep_all = match options.keep
+        .all            => true
+        .none | .only _ => false
+
+    kinds: [str] = match options.keep
+        .only o      => o.kinds
+        .all | .none => []
+
+    d = reading.decoded(data, limits: options.limits, keep_all: keep_all, kinds: kinds)?
+    kept: [Chunk] @= []
+
+    for p in d.pieces
+        kept @ kept.push(Chunk(kind: p.kind, data: p.data, after_image: p.after_image))
+
+    return ok(
+        Png(image: d.image, palette: d.palette, bit_depth: d.header.depth, color_type: d.header.color_type, interlaced: d.header.interlaced, chunks: kept)
+    )
+
+# What the header of a PNG file says, read without its image data.
+record Info
+    # The columns.
+    width: i64
+    # The rows.
+    height: i64
+    # The format `decode` answers for it.
+    format: image.Format
+    # The bits a sample of the file.
+    bit_depth: i64
+    # The file's colour type: 0, 2, 3, 4 or 6.
+    color_type: i64
+    # Whether it is interlaced.
+    interlaced: bool
+
+# The size and format of the image `data` holds, read from its chunks up to
+# the first `IDAT`, nothing inflated: Go's `png.DecodeConfig`.
+#
+# - `data`: a PNG file, or at least its chunks before the image data.
+#
+# Fails `invalid` as `decode` does on the chunks it reads, and
+# `unsupported` on a method no PNG defines. See also `decode`.
+function info_of(data: [u8]) -> Info?
+    h = reading.header_and_transparency(data)?
+    transparent = reading.transparency_before_data(data)?
+    return ok(
+        Info(width: h.width, height: h.height, format: frames.format_of(h, transparent: transparent), bit_depth: h.depth, color_type: h.color_type, interlaced: h.interlaced)
+    )
+
+## Writing
+
+# How `encode` chooses each row's filter, which makes the rows compress
+# better (PNG section 9).
+variant Filter
+    # Every row as it is.
+    none
+    # Each byte less the byte of the pixel to its left.
+    sub
+    # Each byte less the byte above it.
+    up
+    # Each byte less the mean of the left and the above.
+    average
+    # Each byte less Paeth's predictor of the left, the above and the upper
+    # left.
+    paeth
+    # For each row the filter whose bytes, read as signed, sum smallest in
+    # magnitude: the usual choice, Go's and libpng's.
+    adaptive
+
+# How `encode` writes a file.
+record EncodeOptions
+    # The DEFLATE level, 0 (`compress.NO_COMPRESSION`) to 9; the higher,
+    # the smaller and the slower.
+    level: i64
+    # How each row is filtered.
+    filter: Filter
+    # Ancillary chunks to write, each where its `after_image` says: those
+    # before the image data that PNG wants before the palette (`gAMA`,
+    # `cHRM`, `iCCP`, `sRGB`, `sBIT`, `cICP`, `mDCV`, `cLLI`) before it, the
+    # others after it.
+    chunks: [Chunk]
+
+# Options of level 6, the adaptive filter, and no chunk.
+#
+# See also `encode`.
+function encoding() -> EncodeOptions
+    return EncodeOptions(level: 6, filter: .adaptive, chunks: [])
+
+# `img` as a PNG file: colour type 0, 2, 4 or 6 as its format has gray or
+# colour and alpha or not, 8 or 16 bits as it holds them, not interlaced.
+#
+# - `img`: the image written.
+# - `options`: the level, the filter and the chunks; `encoding` makes the
+#   usual ones.
+#
+# The same image and options answer the same bytes every time. Fails
+# `invalid` where a chunk of `options` is not four ASCII letters beginning
+# in lower case, is one this function writes itself, or holds more than
+# 2^31 - 1 bytes, or where the level is outside 0 to 9. Aborts where `img`
+# is not valid. See also `encode_indexed` and `decode`.
+function encode(img: image.Image, options: EncodeOptions) -> [u8]?
+    assert image.is_valid(img)
+
+    color_type = match img.format
+        .gray | .gray16             => 0
+        .gray_alpha | .gray_alpha16 => 4
+        .rgb | .rgb16               => 2
+        .rgba | .rgba16             => 6
+
+    step = image.pixel_bytes_of(img.format)
+    pieces: [reading.Piece] @= []
+
+    for c in options.chunks
+        pieces @ pieces.push(reading.Piece(kind: c.kind, data: c.data, after_image: c.after_image))
+
+    choice = match options.filter
+        .none     => 0
+        .sub      => 1
+        .up       => 2
+        .average  => 3
+        .paeth    => 4
+        .adaptive => 5
+
+    return writing.encoded(
+        width: img.width,
+        height: img.height,
+        depth: image.bits_of(img.format),
+        color_type: color_type,
+        rows: img.pixels,
+        row_size: img.width * step,
+        step: step,
+        palette: [],
+        transparency: [],
+        level: options.level,
+        choice: choice,
+        pieces: pieces
+    )
+
+# `ix` as a PNG file of colour type 3: its palette in `PLTE`, alpha in
+# `tRNS` where an entry is not opaque, and the fewest bits an index needs, 1,
+# 2, 4 or 8, for the palette's count.
+#
+# - `ix`: the indexed image written; `image.to_indexed` makes one.
+# - `options`: the level, the filter and the chunks; `none` is usually best
+#   for indices, as Go chooses.
+#
+# Fails `invalid` where `ix` is not whole (`image.from_indexed` says how),
+# and as `encode` does on `options`. See also `encode`.
+function encode_indexed(ix: image.Indexed, options: EncodeOptions) -> [u8]?
+    count = ix.palette.len()
+
+    if count < 1 || count > 256 || ix.width < 1 || ix.height < 1 || ix.width > ix.indices.len() || ix.indices.len() != ix.width * ix.height
+        return fail(
+            code: image.INVALID,
+            msg: f"an indexed image of {ix.width} by {ix.height} pixels, {ix.indices.len()} indices and {count} colours, where PNG holds 1 by 1 at least, an index a pixel and 1 to 256 colours"
+        )
+
+    for k in ix.indices
+        if to_i64(k).must() >= count
+            return fail(code: image.INVALID, msg: f"an index of {k} into a palette of {count} colours")
+
+    palette: [u8] @= []
+    alphas: [u8] @= []
+    last_seen @= -1
+
+    for i in range(from: 0, to: count)
+        c = ix.palette[i]
+        palette @ palette.push(c.r)
+        palette @ palette.push(c.g)
+        palette @ palette.push(c.b)
+        alphas @ alphas.push(c.a)
+
+        if c.a != 255
+            last_seen @ i
+
+    transparency = alphas.slice(from: 0, to: last_seen + 1)
+    depth = writing.index_depth(count)
+    rows = writing.packed_indices(ix.indices, width: ix.width, height: ix.height, depth: depth)
+    pieces: [reading.Piece] @= []
+
+    for c in options.chunks
+        pieces @ pieces.push(reading.Piece(kind: c.kind, data: c.data, after_image: c.after_image))
+
+    choice = match options.filter
+        .none     => 0
+        .sub      => 1
+        .up       => 2
+        .average  => 3
+        .paeth    => 4
+        .adaptive => 5
+
+    return writing.encoded(
+        width: ix.width,
+        height: ix.height,
+        depth: depth,
+        color_type: 3,
+        rows: rows,
+        row_size: (ix.width * depth + 7) / 8,
+        step: 1,
+        palette: palette,
+        transparency: transparency,
+        level: options.level,
+        choice: choice,
+        pieces: pieces
+    )
+
+## Text
+
+# One text of a PNG file: a keyword and its text.
+record Text
+    # The keyword, 1 to 79 characters: `Title`, `Author`, `Comment`.
+    keyword: str
+    # The text, as UTF-8.
+    text: str
+
+# The texts of the `tEXt`, `zTXt` and `iTXt` chunks among `chunks`, in
+# their order, their Latin-1 read as UTF-8 and their compression undone.
+#
+# - `chunks`: chunks as `decode` keeps them; others are passed over.
+# - `limit`: the most bytes a compressed text may inflate to, 0 or more.
+#
+# Fails `invalid` where a text chunk is not laid out as PNG says, or an
+# `iTXt` is not UTF-8. Fails `limit` where a compressed text passes
+# `limit` bytes. See also `text_chunk`.
+function texts_of(chunks: [Chunk], limit: i64) -> [Text]?
+    out: [Text] @= []
+
+    for c in chunks
+        if c.kind == "tEXt" || c.kind == "zTXt" || c.kind == "iTXt"
+            pair = texts.text_of(c.kind, data: c.data, limit: limit)?
+            out @ out.push(Text(keyword: pair[0], text: pair[1]))
+
+    return ok(out)
+
+# A chunk holding `text` under `keyword`: `tEXt` where the text is ASCII,
+# `iTXt` otherwise, uncompressed, before the image data.
+#
+# - `keyword`: 1 to 79 printable ASCII characters, no space first or last
+#   and no two together.
+# - `text`: any UTF-8.
+#
+# Fails `invalid` where `keyword` breaks those rules. See also `texts_of`.
+function text_chunk(keyword: str, text: str) -> Chunk?
+    made = texts.chunk_of(keyword: keyword, text: text)?
+    return ok(Chunk(kind: bytes.to_text(made[0]).must(), data: made[1], after_image: false))
+
+## Tests
+
+test "decode: every file of Go's encoder and of the writer, pixel for pixel as Go reads it"
+    for s in samples.readable()
+        p = decode(bytes.parse_hex(s.file).must(), decoding()).must()
+        assert p.image.width == s.width
+        assert p.image.height == s.height
+        assert p.image.format == samples.format_named(s.format)
+        assert p.image.pixels == bytes.parse_hex(s.pixels).must()
+
+test "decode: every broken file refused with its code, the bombs before they allocate"
+    for b in samples.refused()
+        match decode(bytes.parse_hex(b.file).must(), decoding())
+            .ok _  => assert b.name == "never"
+            .err e => assert e.code == b.code
+
+test "decode: every prefix of a file is refused, and no changed byte aborts"
+    for s in samples.readable()
+        if s.name == "colour type 3 of 2 bits, interlaced" || s.name == "chunks before and after, the data in many IDAT"
+            file = bytes.parse_hex(s.file).must()
+
+            for n in range(from: 0, to: file.len() - 12)
+                assert decode(file.slice(from: 0, to: n), decoding()).is_err()
+
+            for k in range(from: 0, to: file.len())
+                changed @= file
+                changed[k] @ to_u8(to_i64(file[k]).must() ^ 0x5a).must()
+
+                match decode(changed, decoding())
+                    .ok p  => assert image.is_valid(p.image)
+                    .err e => assert e.code == image.INVALID || e.code == image.UNSUPPORTED || e.code == image.LIMIT
+
+test "decode: limits of the caller's own, and chunks kept by type, in place"
+    file = bytes.parse_hex(samples.readable()[0].file).must()
+    small = DecodeOptions(limits: image.Limits(max_width: 8, max_height: 100, max_pixels: 1000), keep: .none)
+
+    match decode(file, small)
+        .ok _  => assert false
+        .err e => assert e.code == image.LIMIT
+
+    rich = bytes.parse_hex(samples.readable()[samples.readable().len() - 1].file).must()
+    assert decode(rich, decoding()).must().chunks.len() == 0
+    every = decode(rich, DecodeOptions(limits: image.default_limits(), keep: .all)).must().chunks
+    assert every.len() == 4
+    assert every[0].kind == "gAMA"
+    assert !every[1].after_image
+    assert every[2].kind == "zTXt"
+    assert every[3].after_image
+    some = decode(rich, DecodeOptions(limits: image.default_limits(), keep: .only(kinds: ["iTXt"]))).must().chunks
+    assert some.len() == 1
+    assert some[0].kind == "iTXt"
+
+test "info_of: the header and a tRNS, nothing inflated"
+    for s in samples.readable()
+        file = bytes.parse_hex(s.file).must()
+        info = info_of(file).must()
+        assert info.width == s.width
+        assert info.format == samples.format_named(s.format)
+        assert info.interlaced == decode(file, decoding()).must().interlaced
+
+    assert info_of([0x89, 0x50]).is_err()
+
+test "encode and decode: every format, every filter and every level, back as written"
+    formats: [image.Format] = [.gray, .gray_alpha, .rgb, .rgba, .gray16, .gray_alpha16, .rgb16, .rgba16]
+    filters: [Filter] = [.none, .sub, .up, .average, .paeth, .adaptive]
+
+    for format in formats
+        n = 7 * 5 * image.pixel_bytes_of(format)
+        pixels: [u8] @= []
+
+        for i in range(from: 0, to: n)
+            pixels @ pixels.push(to_u8(i * 37 % 256).must())
+
+        img = image.from_pixels(width: 7, height: 5, format: format, pixels: pixels).must()
+
+        for f in filters
+            o @= encoding()
+            o.filter @ f
+            back = decode(encode(img, o).must(), decoding()).must()
+            assert back.image == img
+            assert back.bit_depth == image.bits_of(format)
+
+        for level in range(from: 0, to: 10)
+            o @= encoding()
+            o.level @ level
+            assert decode(encode(img, o).must(), decoding()).must().image == img
+
+test "encode: the same image answers the same bytes, an empty image and a bad level refused"
+    img = image.from_pixels(width: 2, height: 1, format: .rgb, pixels: [1, 2, 3, 4, 5, 6]).must()
+    assert encode(img, encoding()).must() == encode(img, encoding()).must()
+    assert encode(image.blank(width: 0, height: 3, format: .gray).must(), encoding()).is_err()
+    o @= encoding()
+    o.level @ -1
+    assert encode(img, o).is_err()
+
+test "encode: chunks written where they belong and read back, and chunks refused"
+    img = image.blank(width: 2, height: 2, format: .rgba).must()
+    o @= encoding()
+    o.chunks @ [
+        Chunk(kind: "tEXt", data: [0x61, 0, 0x62], after_image: true)
+        Chunk(kind: "gAMA", data: [0, 0, 0xb1, 0x8f], after_image: false)
+        text_chunk(keyword: "Title", text: "Heroes").must()
+    ]
+    kept = decode(encode(img, o).must(), DecodeOptions(limits: image.default_limits(), keep: .all)).must().chunks
+    assert kept.len() == 3
+    assert kept[0].kind == "gAMA"
+    assert kept[1].kind == "tEXt"
+    assert !kept[1].after_image
+    assert kept[2].after_image
+    assert texts_of(kept, limit: 100).must().len() == 2
+
+    for bad in ["IDAT", "tRNS", "ab1c", "abc"]
+        o2 @= encoding()
+        o2.chunks @ [Chunk(kind: bad, data: [], after_image: false)]
+        assert encode(img, o2).is_err()
+
+test "encode_indexed: 2, 4, 16 and 256 colours, alpha in tRNS, back to the same colours"
+    for count in [2, 3, 16, 256]
+        palette: [image.Color] @= []
+
+        for i in range(from: 0, to: count)
+            alpha = if i == 1
+                0
+            else
+                255
+            palette @ palette.push(
+                image.Color(r: to_u8(i).must(), g: to_u8(255 - i).must(), b: 7, a: to_u8(alpha).must())
+            )
+
+        indices: [u8] @= []
+
+        for i in range(from: 0, to: 11 * 3)
+            indices @ indices.push(to_u8(i * 7 % count).must())
+
+        ix = image.Indexed(width: 11, height: 3, palette: palette, indices: indices)
+        back = decode(encode_indexed(ix, encoding()).must(), decoding()).must()
+        assert back.color_type == 3
+        assert back.bit_depth == writing.index_depth(count)
+        assert back.palette == palette
+        assert back.image == image.from_indexed(ix).must()
+
+test "encode_indexed: an index past the palette and no palette refused"
+    red = image.Color(r: 255, g: 0, b: 0, a: 255)
+    assert encode_indexed(image.Indexed(width: 1, height: 1, palette: [red], indices: [1]), encoding()).is_err()
+    assert encode_indexed(image.Indexed(width: 1, height: 1, palette: [], indices: [0]), encoding()).is_err()
+
+test "texts_of: the texts of the writer's file, Latin-1, compressed and UTF-8"
+    rich = bytes.parse_hex(samples.readable()[samples.readable().len() - 1].file).must()
+    kept = decode(rich, DecodeOptions(limits: image.default_limits(), keep: .all)).must().chunks
+    found = texts_of(kept, limit: 1000).must()
+    assert found.len() == 3
+    assert found[0] == Text(keyword: "Author", text: "Bowie été")
+    assert found[1] == Text(keyword: "Comment", text: "a compressed comment, compressed")
+    assert found[2] == Text(keyword: "Title", text: "Ziggy là")
+
+    match texts_of(kept, limit: 5)
+        .ok _  => assert false
+        .err e => assert e.code == image.LIMIT
+
+## Examples
+
+# The usual options of reading.
+test "decoding: the default limits, no chunk kept"
+    o = decoding()
+    assert o.limits == image.default_limits()
+    assert o.keep == .none
+
+# A file written and read back.
+test "decode: an image written as PNG comes back the same"
+    img = image.from_pixels(width: 2, height: 1, format: .rgba, pixels: [255, 0, 0, 255, 0, 0, 255, 128]).must()
+    back = decode(encode(img, encoding()).must(), decoding()).must()
+    assert back.image == img
+    assert back.color_type == 6
+
+# A file's size read without its pixels.
+test "info_of: the size and format of a file"
+    file = encode(image.blank(width: 30, height: 20, format: .gray16).must(), encoding()).must()
+    info = info_of(file).must()
+    assert info.width == 30
+    assert info.format == .gray16
+
+# The usual options of writing.
+test "encoding: level 6 and the adaptive filter"
+    assert encoding().level == 6
+    assert encoding().filter == .adaptive
+
+# An image written at the highest level.
+test "encode: a gray image at level 9"
+    o @= encoding()
+    o.level @ 9
+    file = encode(image.blank(width: 64, height: 64, format: .gray).must(), o).must()
+    assert file.len() < 100
+
+# An image of two colours written with a palette of 1 bit.
+test "encode_indexed: black and white in 1 bit"
+    bw = [image.Color(r: 0, g: 0, b: 0, a: 255), image.Color(r: 255, g: 255, b: 255, a: 255)]
+    ix = image.Indexed(width: 8, height: 1, palette: bw, indices: [0, 1, 0, 1, 0, 1, 0, 1])
+    back = decode(encode_indexed(ix, encoding()).must(), decoding()).must()
+    assert back.bit_depth == 1
+    assert back.image.pixels.slice(from: 0, to: 6) == [0, 0, 0, 255, 255, 255]
+
+# The texts of a file, written and read.
+test "texts_of: a title written and read back"
+    o @= encoding()
+    o.chunks @ [text_chunk(keyword: "Title", text: "Station to Station").must()]
+    file = encode(image.blank(width: 1, height: 1, format: .gray).must(), o).must()
+    kept = decode(file, DecodeOptions(limits: image.default_limits(), keep: .only(kinds: ["tEXt"]))).must().chunks
+    assert texts_of(kept, limit: 1000).must() == [Text(keyword: "Title", text: "Station to Station")]
+
+# A text chunk made from a keyword and a text.
+test "text_chunk: ASCII as tEXt, other text as iTXt"
+    assert text_chunk(keyword: "Author", text: "Bowie").must().kind == "tEXt"
+    assert text_chunk(keyword: "Author", text: "Bowié").must().kind == "iTXt"

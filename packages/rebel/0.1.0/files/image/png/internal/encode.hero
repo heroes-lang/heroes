@@ -1,0 +1,213 @@
+# A PNG file written: its rows filtered, deflated as one zlib stream, and
+# laid out in chunks with the caller's own around them, each chunk where
+# PNG wants it.
+
+use compress
+use image
+use image/png/internal/chunks
+use image/png/internal/decode
+use image/png/internal/filters
+
+# The most bytes of image data one `IDAT` chunk holds.
+constant IDAT_SIZE: i64
+    65536
+
+# Whether a chunk of `kind` must stand before `PLTE`.
+function before_palette(kind: str) -> bool
+    for k in ["gAMA", "cHRM", "iCCP", "sRGB", "sBIT", "cICP", "mDCV", "cLLI"]
+        if k == kind
+            return true
+
+    return false
+
+# Nothing where every chunk of `pieces` may be written: four ASCII letters,
+# the first in lower case, not `tRNS`, which this module writes itself, and
+# at most 2^31 - 1 bytes. Fails `invalid` naming the first that may not.
+function check_pieces(pieces: [decode.Piece] lent) -> ()?
+    for p in pieces
+        letters @= p.kind.len() == 4
+
+        if letters
+            for k in range(from: 0, to: 4)
+                c = p.kind[k]
+
+                if !(c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z')
+                    letters @ false
+
+        if !letters || p.kind[0] < 'a' || p.kind == "tRNS"
+            return fail(
+                code: image.INVALID,
+                msg: f"a chunk of type \"{p.kind}\" cannot be written: a chunk added is four ASCII letters, the first in lower case, and not tRNS"
+            )
+
+        if p.data.len() > 0x7fffffff
+            return fail(
+                code: image.INVALID,
+                msg: f"a {p.kind} chunk of {p.data.len()} bytes, past the 2^31 - 1 PNG allows"
+            )
+
+    return ok()
+
+# Adds every byte of `more` to `out`.
+function add(@out: [u8], more: [u8] lent)
+    for b in more
+        out @ out.push(b)
+
+# A PNG file of `width` by `height` pixels of colour type `color_type` and
+# `depth` bits, whose rows, packed and unfiltered, are `rows`, `row_size`
+# bytes each and `step` bytes a pixel; `palette` and `transparency` the
+# data of `PLTE` and `tRNS`, empty for none. Each row is filtered by
+# `choice`, 0 to 4, or by the cheapest where it is 5. Fails `invalid` where
+# `level` is outside 0 to 9 or a chunk of `pieces` may not be written.
+function encoded(width: i64, height: i64, depth: i64, color_type: i64, rows: [u8] lent, row_size: i64, step: i64, palette: [u8] lent, transparency: [u8] lent, level: i64, choice: i64, pieces: [decode.Piece] lent) -> [u8]?
+    if level < 0 || level > 9
+        return fail(code: image.INVALID, msg: f"a level of {level}, where 0 to 9 are written")
+
+    if width < 1 || height < 1
+        return fail(
+            code: image.INVALID,
+            msg: f"an image of {width} by {height} pixels, where PNG holds 1 by 1 at least"
+        )
+    check_pieces(pieces)?
+    raw: [u8] @= []
+    above: [u8] @= []
+
+    for y in range(from: 0, to: height)
+        row = rows.slice(from: y * row_size, to: (y + 1) * row_size)
+
+        done = if choice == 5
+            filters.cheapest(row: row, above: above, step: step)
+        else
+            filters.filtered(row: row, above: above, kind: choice, step: step)
+        add(out: @raw, more: done)
+        above @ row
+
+    o @= compress.defaults(.zlib)
+    o.level @ level
+    packed = compress.compress(raw, o)?
+    out: [u8] @= chunks.signature()
+    header: [u8] @= chunks.be32_bytes(width)
+    add(out: @header, more: chunks.be32_bytes(height))
+    add(out: @header, more: [to_u8(depth).must(), to_u8(color_type).must(), 0, 0, 0])
+    add(out: @out, more: chunks.chunk_bytes("IHDR", data: header))
+
+    for p in pieces
+        if !p.after_image && before_palette(p.kind)
+            add(out: @out, more: chunks.chunk_bytes(p.kind, data: p.data))
+
+    if palette.len() > 0
+        add(out: @out, more: chunks.chunk_bytes("PLTE", data: palette))
+
+    if transparency.len() > 0
+        add(out: @out, more: chunks.chunk_bytes("tRNS", data: transparency))
+
+    for p in pieces
+        if !p.after_image && !before_palette(p.kind)
+            add(out: @out, more: chunks.chunk_bytes(p.kind, data: p.data))
+
+    at @= 0
+
+    while at < packed.len()
+        end = if at + IDAT_SIZE < packed.len()
+            at + IDAT_SIZE
+        else
+            packed.len()
+        add(out: @out, more: chunks.chunk_bytes("IDAT", data: packed.slice(from: at, to: end)))
+        at @ end
+
+    for p in pieces
+        if p.after_image
+            add(out: @out, more: chunks.chunk_bytes(p.kind, data: p.data))
+
+    add(out: @out, more: chunks.chunk_bytes("IEND", data: []))
+    return ok(out)
+
+# The fewest bits an index into a palette of `count` colours needs: 1, 2, 4
+# or 8.
+function index_depth(count: i64) -> i64
+    if count <= 2
+        return 1
+
+    if count <= 4
+        return 2
+
+    if count <= 16
+        return 4
+    return 8
+
+# `indices`, `width` a row, packed `depth` bits each, each row ending on a
+# byte.
+function packed_indices(indices: [u8] lent, width: i64, height: i64, depth: i64) -> [u8]
+    if depth == 8
+        return indices
+    out: [u8] @= []
+
+    for y in range(from: 0, to: height)
+        acc @= 0
+        bits @= 0
+
+        for x in range(from: 0, to: width)
+            acc @ acc << depth | to_i64(indices[y * width + x]).must()
+            bits @ bits + depth
+
+            if bits == 8
+                out @ out.push(to_u8(acc).must())
+                acc @ 0
+                bits @ 0
+
+        if bits > 0
+            out @ out.push(to_u8(acc << 8 - bits & 255).must())
+
+    return out
+
+test "before_palette: the colour chunks go first, the others after"
+    assert before_palette("gAMA")
+    assert before_palette("iCCP")
+    assert !before_palette("tEXt")
+    assert !before_palette("bKGD")
+
+test "check_pieces: letters, lower case first, tRNS refused"
+    assert !check_pieces([decode.Piece(kind: "tEXt", data: [], after_image: false)]).is_err()
+    assert check_pieces([decode.Piece(kind: "IDAT", data: [], after_image: false)]).is_err()
+    assert check_pieces([decode.Piece(kind: "tRNS", data: [], after_image: false)]).is_err()
+    assert check_pieces([decode.Piece(kind: "te1t", data: [], after_image: false)]).is_err()
+    assert check_pieces([decode.Piece(kind: "tEX", data: [], after_image: false)]).is_err()
+
+test "index_depth and packed_indices: 1, 2, 4 and 8 bits, a row ending inside a byte"
+    assert index_depth(2) == 1
+    assert index_depth(3) == 2
+    assert index_depth(16) == 4
+    assert index_depth(17) == 8
+    assert packed_indices([1, 0, 1, 1, 0, 0, 0, 0, 1, 1], width: 10, height: 1, depth: 1) == [0b1011_0000, 0b1100_0000]
+    assert packed_indices([3, 2, 1], width: 3, height: 1, depth: 2) == [0b1110_0100]
+    assert packed_indices([15, 1, 2], width: 1, height: 3, depth: 4) == [0xf0, 0x10, 0x20]
+
+test "encoded: a level outside 0 to 9 and an empty image are refused"
+    assert encoded(
+        width: 1,
+        height: 1,
+        depth: 8,
+        color_type: 0,
+        rows: [0],
+        row_size: 1,
+        step: 1,
+        palette: [],
+        transparency: [],
+        level: 10,
+        choice: 0,
+        pieces: []
+    ).is_err()
+    assert encoded(
+        width: 0,
+        height: 1,
+        depth: 8,
+        color_type: 0,
+        rows: [],
+        row_size: 0,
+        step: 1,
+        palette: [],
+        transparency: [],
+        level: 6,
+        choice: 0,
+        pieces: []
+    ).is_err()

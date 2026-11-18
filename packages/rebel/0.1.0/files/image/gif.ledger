@@ -1,0 +1,66 @@
+# The ledger of `image/gif`: what Go's `image/gif` (Go 1.27) and Python's
+# Pillow (its GIF plugin) let a program do with GIF, one block per
+# capability, and what Rebel answers. Go's list is this machine's,
+# `go doc -all image/gif`, 2026-11-18. Pillow is not installed here, so its
+# names are those of its documented API, unread by `dir()`. Rust's standard
+# library has no GIF: `-` in every block.
+#
+# The expected frames of the tests are Go's gif.DecodeAll's, on files made by
+# Go's encoder and by a writer of GIF in Go for what Go's encoder never writes
+# (interlacing, GIF87a, a frame on the global palette alone, comment,
+# plain-text and other application extensions), on 2026-11-18. An animation
+# this package wrote, three frames of 3 to 123 colours, one interlaced, was
+# read by Go's DecodeAll the same day: its indices, delays, disposals and
+# loop count equal.
+
+capability gif/decode  every frame of a GIF read, with its palette, place, delay and disposal
+  heroes  image/gif.decode, image/gif.Gif, image/gif.Frame, image/gif.Disposal
+  go      DecodeAll, Decode, GIF, GIF.Image, GIF.Delay, GIF.Disposal, GIF.LoopCount, GIF.Config, GIF.BackgroundIndex, DisposalNone, DisposalBackground, DisposalPrevious
+  rust    -
+  python  Image.open, Image.seek, Image.tell, Image.n_frames, Image.is_animated, Image.info["duration"], Image.info["loop"], Image.info["background"], Image.info["transparency"], Image.disposal_method
+  note    Go's Decode, the first frame alone, is frames[0]. The transparent entry keeps its colour with alpha 0, where Go makes it all zero; the loop count is Go's, -1 where there is no NETSCAPE2.0 block
+
+capability gif/info  the size of the screen read alone
+  heroes  image/gif.info_of, image/gif.Info
+  go      DecodeConfig
+  rust    -
+  python  Image.open (lazy)
+  note    -
+
+capability gif/limits  a file whose screen or frames would cost too much refused before they are allocated
+  heroes  image/gif.decode with image.Limits
+  go      -
+  rust    -
+  python  Image.MAX_IMAGE_PIXELS
+  note    the pixels of every frame together count against max_pixels, so many small frames cannot add up past it; a screen past the limits fails `limit`, which Go accepts since it allocates no screen (composite does here)
+
+capability gif/composite  the frames laid one over another as a viewer shows them
+  heroes  image/gif.composite
+  go      -
+  rust    -
+  python  Image.seek with Image.convert("RGBA") (Pillow composites as it seeks)
+  note    a background disposal clears to transparent, as browsers do, rather than to the background colour; tested by cases computed by hand
+
+capability gif/encode  an animation written
+  heroes  image/gif.encode
+  go      EncodeAll
+  rust    -
+  python  Image.save(save_all=True, append_images=, duration=, loop=, disposal=, transparency=, interlace=, background=, palette=)
+  note    a frame's palette is written as its own where it differs from the global one; its first entry of alpha 0 is its transparent index, as Go's encoder does
+
+capability gif/encode-image  one picture written as a GIF of its own palette
+  heroes  image/gif.encode_image
+  go      Encode, Options, Options.NumColors, Options.Quantizer, Options.Drawer
+  rust    -
+  python  Image.save(format="GIF"), Image.save(optimize=)
+  note    median cut to 256 colours, or 255 and a transparent entry for pixels of alpha below 128; Go's NumColors, a smaller palette, is pending, and its Quantizer and Drawer are interfaces (image's ledger, image/palette)
+
+capability gif/comments  a GIF's comment extension read and written
+  heroes  pending
+  go      -
+  rust    -
+  python  Image.info["comment"], Image.save(comment=)
+  note    read past today
+
+dropped
+  python  Image.save(optimize=), Image.save(include_color_table=): size tricks of Pillow's writer, which writes the smallest table it can; here the table holds the palette padded to a power of two

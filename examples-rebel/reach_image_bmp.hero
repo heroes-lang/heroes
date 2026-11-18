@@ -1,0 +1,14 @@
+# Reaches Rebel's `image/bmp`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It writes a small image, reads it back,
+# and prints its size and the colour of its first pixel.
+
+use <rebel>/image
+use <rebel>/image/bmp
+
+function main()
+    match image.from_pixels(width: 2, height: 1, format: .rgb, pixels: [200, 100, 50, 0, 0, 0])
+        .err e => print(e.code, ": ", e.msg)
+        .ok img =>
+            match bmp.decode(bmp.encode(img).default([]), image.default_limits())
+                .err e   => print(e.code, ": ", e.msg)
+                .ok back => print(back.width, " by ", back.height, ", red ", image.color_at(back, x: 0, y: 0).r)

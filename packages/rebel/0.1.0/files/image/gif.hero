@@ -1,0 +1,425 @@
+# GIF read and written, by the GIF89a specification: every frame of an
+# animation read with its palette, place, delay and disposal, interlaced or
+# not; the frames laid one over another as a viewer shows them; an
+# animation or a single image written with its palettes.
+#
+# It does not choose a palette or scale: `image.palette_of` and
+# `image.to_indexed` make the indexed frames `encode` takes, and
+# `encode_image` calls them for one image. A GIF is 8 bits a colour and
+# transparency is all or nothing: an entry of a palette whose alpha is 0 is
+# the transparent one.
+#
+# **A file is not trusted.** `decode` checks the screen and every frame
+# against the caller's `image.Limits`, the pixels of every frame together
+# against `max_pixels`, before it allocates them, and inflates no frame past
+# its own size, so a broken or hostile file fails `invalid` or `limit` and
+# never reads past its end.
+#
+# It fails with `invalid`, `limit` and `unsupported`.
+
+use bytes
+use image
+use image/gif/internal/blocks
+use image/gif/internal/canvas
+use image/gif/internal/samples
+
+## The animation
+
+# What a viewer does with a frame's rectangle before the next frame is
+# drawn.
+variant Disposal
+    # Nothing said: the frame stays, as `keep`.
+    unspecified
+    # The frame stays under the next.
+    keep
+    # The rectangle is cleared to transparent before the next frame.
+    background
+    # The rectangle goes back to what it was before this frame.
+    previous
+
+# One frame: an indexed image placed on the screen.
+record Frame
+    # The pixels and their palette: the frame's own, or the file's global
+    # one where it has none; the transparent entry has alpha 0.
+    image: image.Indexed
+    # The column of the frame's left edge on the screen.
+    left: i64
+    # The row of its top edge.
+    top: i64
+    # How long it shows, in hundredths of a second; 0 where the file says
+    # none.
+    delay: i64
+    # What happens to its rectangle after it.
+    disposal: Disposal
+    # Whether its rows are stored interlaced: read in place, and written so
+    # by `encode`.
+    interlaced: bool
+
+# A GIF file: a screen and the frames drawn on it.
+record Gif
+    # The screen's columns.
+    width: i64
+    # The screen's rows.
+    height: i64
+    # The global palette, empty where the file has none; at most 256
+    # colours.
+    palette: [image.Color]
+    # The index of the global palette's background colour.
+    background: i64
+    # How many times the animation plays again, by the NETSCAPE2.0 block,
+    # as Go counts it: -1 where the file has none, so it plays once; 0 for
+    # ever; n, n more times.
+    loop_count: i64
+    # The frames, in order.
+    frames: [Frame]
+
+## Reading
+
+# Every frame of the GIF `data` holds, and its screen.
+#
+# - `data`: a whole GIF file, 87a or 89a, from its header to its trailer;
+#   bytes after the trailer are not read.
+# - `limits`: the largest screen and frame the caller allows, and the most
+#   pixels of all the frames together.
+#
+# Fails `limit` where the screen or a frame passes `limits` or the frames
+# together pass `limits.max_pixels`, before the frame is inflated. Fails
+# `invalid` where `data` is not GIF, the message naming the byte: no header,
+# a block cut short, a frame outside the screen, a frame with no palette, a
+# code size outside 2 to 8, LZW data that holds a code not yet defined, more
+# or fewer pixels than the frame, an index past its palette, no frame.
+#
+# It holds every frame's indices. See also `composite`, `info_of` and
+# `encode`.
+function decode(data: [u8], limits: image.Limits) -> Gif?
+    p = blocks.parsed(data, limits: limits)?
+    frames: [Frame] @= []
+
+    for f in p.frames
+        disposal: Disposal = match f.disposal
+            1 => .keep
+            2 => .background
+            3 => .previous
+            _ => .unspecified
+
+        frames @ frames.push(
+            Frame(image: f.image, left: f.left, top: f.top, delay: f.delay, disposal: disposal, interlaced: f.interlaced)
+        )
+
+    return ok(
+        Gif(width: p.width, height: p.height, palette: p.palette, background: p.background, loop_count: p.loop_count, frames: frames)
+    )
+
+# What the header of a GIF file says.
+record Info
+    # The screen's columns.
+    width: i64
+    # The screen's rows.
+    height: i64
+
+# The size of the screen of the GIF `data`, read from its first 13 bytes.
+#
+# - `data`: a GIF file, or at least its header and screen descriptor.
+#
+# Fails `invalid` where `data` does not begin as GIF87a or GIF89a. See
+# also `decode`.
+function info_of(data: [u8]) -> Info?
+    if data.len() < 13 || data[0] != 'G' || data[1] != 'I' || data[2] != 'F' || data[3] != '8' || data[4] != '7' && data[4] != '9' || data[5] != 'a'
+        return fail(code: image.INVALID, msg: "the data does not begin as GIF87a or GIF89a with a screen descriptor")
+    return ok(Info(width: blocks.le16(data, at: 6), height: blocks.le16(data, at: 8)))
+
+# Every frame of `g` as a viewer shows it: the screen in RGBA, transparent
+# at first, each frame drawn over what its predecessors left, a transparent
+# index leaving what was under it, then disposed of as it says before the
+# next.
+#
+# - `g`: an animation, as `decode` answers one.
+# - `limits`: the most pixels the answer may hold, every screen counted.
+#
+# The answer holds one image a frame, each of the screen's size. Fails
+# `limit` where the frames times the screen's pixels pass
+# `limits.max_pixels`. Fails `invalid` where a frame is not whole or
+# stands outside the screen. See also `decode`.
+function composite(g: Gif, limits: image.Limits) -> [image.Image]?
+    frames: [blocks.Shot] @= []
+
+    for f in g.frames
+        number = match f.disposal
+            .unspecified => 0
+            .keep        => 1
+            .background  => 2
+            .previous    => 3
+
+        frames @ frames.push(
+            blocks.Shot(image: f.image, left: f.left, top: f.top, delay: f.delay, disposal: number, interlaced: f.interlaced)
+        )
+
+    p = blocks.Parsed(
+        width: g.width,
+        height: g.height,
+        palette: g.palette,
+        background: g.background,
+        loop_count: g.loop_count,
+        frames: frames
+    )
+    return canvas.composited(p, limits: limits)
+
+## Writing
+
+# `g` as a GIF89a file: its global palette where it has one, each frame's
+# palette written as its own where it differs from the global one, its
+# place, delay and disposal, the first entry of alpha 0 of its palette as
+# its transparent index, and a NETSCAPE2.0 block where `loop_count` is 0 or
+# more.
+#
+# - `g`: the animation written.
+#
+# The same animation answers the same bytes every time. Fails `invalid`
+# where a side of the screen or a frame is outside 1 to 65,535, a frame
+# stands outside the screen, a palette holds no colour or more than 256, an
+# index is past its palette, there is no frame, or a delay is outside 0 to
+# 65,535. See also `encode_image` and `decode`.
+function encode(g: Gif) -> [u8]?
+    frames: [blocks.Shot] @= []
+
+    for f in g.frames
+        number = match f.disposal
+            .unspecified => 0
+            .keep        => 1
+            .background  => 2
+            .previous    => 3
+
+        frames @ frames.push(
+            blocks.Shot(image: f.image, left: f.left, top: f.top, delay: f.delay, disposal: number, interlaced: f.interlaced)
+        )
+
+    p = blocks.Parsed(
+        width: g.width,
+        height: g.height,
+        palette: g.palette,
+        background: g.background,
+        loop_count: g.loop_count,
+        frames: frames
+    )
+    return blocks.written(p)
+
+# `img` as a GIF file of one frame: its colours reduced to 256 by
+# `image.palette_of`, or to 255 and a transparent entry where a pixel's
+# alpha is below 128, which becomes transparent.
+#
+# - `img`: the image written, of any format.
+# - `dither`: whether the colours are dithered when they are reduced
+#   (`image.to_indexed`).
+#
+# Fails `invalid` where a side of `img` is outside 1 to 65,535. Aborts where
+# `img` is not valid. See also `encode`.
+function encode_image(img: image.Image, dither: bool) -> [u8]?
+    assert image.is_valid(img)
+
+    if img.width < 1 || img.height < 1 || img.width > 65535 || img.height > 65535
+        return fail(
+            code: image.INVALID,
+            msg: f"an image of {img.width} by {img.height} pixels, where GIF holds 1 to 65,535 a side"
+        )
+    rgba = image.convert(img, to: .rgba)
+    opaque: [u8] @= []
+    transparent @= false
+
+    for i in range(from: 0, to: img.width * img.height)
+        if rgba.pixels[4 * i + 3] < 128
+            transparent @ true
+        else
+            for k in range(from: 0, to: 3)
+                opaque @ opaque.push(rgba.pixels[4 * i + k])
+
+    most = if transparent
+        255
+    else
+        256
+    palette: [image.Color] @= []
+
+    if opaque.len() > 0
+        palette @ image.palette_of(
+            image.from_pixels(width: opaque.len() / 3, height: 1, format: .rgb, pixels: opaque).must(),
+            most: most
+        ).must()
+
+    if palette.len() == 0
+        palette @ [image.Color(r: 0, g: 0, b: 0, a: 255)]
+    ix @= image.to_indexed(image.convert(rgba, to: .rgb), palette: palette, dither: dither).must()
+
+    if transparent
+        ix.palette @ ix.palette.push(image.Color(r: 0, g: 0, b: 0, a: 0))
+        hole = to_u8(ix.palette.len() - 1).must()
+
+        for i in range(from: 0, to: img.width * img.height)
+            if rgba.pixels[4 * i + 3] < 128
+                ix.indices[i] @ hole
+    frame = Frame(image: ix, left: 0, top: 0, delay: 0, disposal: .unspecified, interlaced: false)
+    return encode(
+        Gif(width: img.width, height: img.height, palette: ix.palette, background: 0, loop_count: -1, frames: [frame])
+    )
+
+## Tests
+
+test "decode: every file of Go's encoder and of the writer, frame for frame as Go reads it"
+    for s in samples.readable()
+        g = decode(bytes.parse_hex(s.file).must(), image.default_limits()).must()
+        assert g.width == s.width
+        assert g.height == s.height
+        assert g.loop_count == s.loop_count
+        assert g.background == s.background
+        assert samples.same_palette(g.palette, hex: s.global)
+        assert g.frames.len() == s.shots.len()
+
+        for i in range(from: 0, to: s.shots.len())
+            f = g.frames[i]
+            want = s.shots[i]
+
+            number = match f.disposal
+                .unspecified => 0
+                .keep        => 1
+                .background  => 2
+                .previous    => 3
+
+            assert f.left == want.left
+            assert f.top == want.top
+            assert f.image.width == want.width
+            assert f.image.height == want.height
+            assert f.delay == want.delay
+            assert number == want.disposal
+            assert f.image.indices == bytes.parse_hex(want.indices).must()
+            assert samples.same_palette(f.image.palette, hex: want.palette)
+
+test "decode: every broken file refused with its code"
+    for b in samples.refused()
+        match decode(bytes.parse_hex(b.file).must(), image.default_limits())
+            .ok _  => assert b.name == "never"
+            .err e => assert e.code == b.code
+
+test "decode: every prefix refused, and no changed byte aborts"
+    for s in samples.readable()
+        if s.name == "an interlaced frame of 9 by 11" || s.name == "go animation looping twice, with a global palette"
+            file = bytes.parse_hex(s.file).must()
+
+            for n in range(from: 0, to: file.len())
+                assert decode(file.slice(from: 0, to: n), image.default_limits()).is_err()
+
+            for k in range(from: 0, to: file.len())
+                changed @= file
+                changed[k] @ to_u8(to_i64(file[k]).must() ^ 0x5a).must()
+
+                match decode(changed, image.default_limits())
+                    .ok g  => assert g.frames.len() > 0
+                    .err e => assert e.code == image.INVALID || e.code == image.LIMIT
+
+test "decode: the pixels of every frame together against the caller's limit"
+    animated = bytes.parse_hex(samples.readable()[3].file).must()
+    assert decode(animated, image.Limits(max_width: 100, max_height: 100, max_pixels: 113)).must().frames.len() == 3
+
+    match decode(animated, image.Limits(max_width: 100, max_height: 100, max_pixels: 112))
+        .ok _  => assert false
+        .err e => assert e.code == image.LIMIT
+
+test "encode and decode: every file read, written and read again the same"
+    for s in samples.readable()
+        g = decode(bytes.parse_hex(s.file).must(), image.default_limits()).must()
+        again = decode(encode(g).must(), image.default_limits()).must()
+        assert again == g
+
+test "encode: the same animation answers the same bytes, and what GIF cannot hold refused"
+    g = decode(bytes.parse_hex(samples.readable()[3].file).must(), image.default_limits()).must()
+    assert encode(g).must() == encode(g).must()
+    outside @= g
+    outside.frames[0].left @ 5
+    assert encode(outside).is_err()
+    empty @= g
+    empty.frames @ []
+    assert encode(empty).is_err()
+    slow @= g
+    slow.frames[0].delay @ 70000
+    assert encode(slow).is_err()
+
+test "composite: the animation of Go, each screen whole, the first frame where it was put"
+    g = decode(bytes.parse_hex(samples.readable()[3].file).must(), image.default_limits()).must()
+    shown = composite(g, limits: image.default_limits()).must()
+    assert shown.len() == 3
+    assert shown[0].width == 9
+    first = image.from_indexed(g.frames[0].image).must()
+    assert image.color_at(shown[0], x: 0, y: 0) == image.color_at(first, x: 0, y: 0)
+
+test "encode_image: few colours exactly, transparency kept, an empty image refused"
+    img @= image.blank(width: 5, height: 3, format: .rgba).must()
+    image.fill_rect(@img, x: 0, y: 0, width: 3, height: 3, color: image.Color(r: 10, g: 20, b: 30, a: 255))
+    image.fill_rect(@img, x: 3, y: 0, width: 1, height: 3, color: image.Color(r: 200, g: 0, b: 5, a: 255))
+    back = decode(encode_image(img, dither: false).must(), image.default_limits()).must()
+    shown = image.from_indexed(back.frames[0].image).must()
+    assert image.color_at(shown, x: 1, y: 1) == image.Color(r: 10, g: 20, b: 30, a: 255)
+    assert image.color_at(shown, x: 3, y: 2) == image.Color(r: 200, g: 0, b: 5, a: 255)
+    assert image.color_at(shown, x: 4, y: 0).a == 0
+    assert encode_image(image.blank(width: 0, height: 3, format: .rgb).must(), dither: true).is_err()
+
+## Examples
+
+# A GIF read, frame by frame.
+test "decode: an image written and read back"
+    pixels: [u8] = [0, 0, 0, 255, 255, 255]
+    file = encode_image(
+        image.from_pixels(width: 2, height: 1, format: .rgb, pixels: pixels).must(),
+        dither: false
+    ).must()
+    g = decode(file, image.default_limits()).must()
+    assert g.frames.len() == 1
+    assert g.frames[0].image.indices == [0, 1]
+
+# The screen's size, read from the header alone.
+test "info_of: the size of a GIF's screen"
+    file = encode_image(image.blank(width: 30, height: 20, format: .rgb).must(), dither: false).must()
+    assert info_of(file).must() == Info(width: 30, height: 20)
+
+# An animation shown as a viewer shows it.
+test "composite: two frames, the second over the first"
+    black = image.Color(r: 0, g: 0, b: 0, a: 255)
+    white = image.Color(r: 255, g: 255, b: 255, a: 255)
+    first = Frame(
+        image: image.Indexed(width: 2, height: 1, palette: [black], indices: [0, 0]),
+        left: 0,
+        top: 0,
+        delay: 10,
+        disposal: .keep,
+        interlaced: false
+    )
+    second = Frame(
+        image: image.Indexed(width: 1, height: 1, palette: [white], indices: [0]),
+        left: 1,
+        top: 0,
+        delay: 10,
+        disposal: .keep,
+        interlaced: false
+    )
+    shown = composite(
+        Gif(width: 2, height: 1, palette: [], background: 0, loop_count: 0, frames: [first, second]),
+        limits: image.default_limits()
+    ).must()
+    assert shown[1].pixels == [0, 0, 0, 255, 255, 255, 255, 255]
+
+# An animation of two frames written, playing for ever.
+test "encode: two frames that loop for ever"
+    red = image.Color(r: 255, g: 0, b: 0, a: 255)
+    blue = image.Color(r: 0, g: 0, b: 255, a: 255)
+    frames = [
+        Frame(image: image.Indexed(width: 1, height: 1, palette: [red], indices: [0]), left: 0, top: 0, delay: 50, disposal: .keep, interlaced: false)
+        Frame(image: image.Indexed(width: 1, height: 1, palette: [blue], indices: [0]), left: 0, top: 0, delay: 50, disposal: .keep, interlaced: false)
+    ]
+    back = decode(
+        encode(Gif(width: 1, height: 1, palette: [], background: 0, loop_count: 0, frames: frames)).must(),
+        image.default_limits()
+    ).must()
+    assert back.loop_count == 0
+    assert back.frames[1].image.palette[0] == blue
+
+# A picture written as a GIF of one frame.
+test "encode_image: a picture of two colours"
+    img = image.from_pixels(width: 2, height: 1, format: .rgb, pixels: [255, 0, 0, 0, 255, 0]).must()
+    g = decode(encode_image(img, dither: false).must(), image.default_limits()).must()
+    assert image.from_indexed(g.frames[0].image).must().pixels == img.pixels

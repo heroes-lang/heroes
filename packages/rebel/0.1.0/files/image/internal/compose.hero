@@ -1,0 +1,102 @@
+# Two images combined: one laid over another by its alpha (Porter and
+# Duff's "over", on straight alpha), and two mixed by an amount. Both are
+# held the same way when they reach here; the face converts them first.
+
+use image/internal/layout
+
+# Lays `src`, laid out as `from`, over `pixels`, laid out as `s`, its top
+# left pixel at column `x`, row `y`, by its alpha. `from` holds the colour
+# channels of `s` and alpha after them, at the same width; what falls
+# outside `s` is dropped. Where `s` has no alpha the answer is opaque.
+function laid_over(s: layout.Shape, @pixels: [u8], from: layout.Shape, src: [u8] lent, x: i64, y: i64)
+    top = layout.top_of(s)
+    size = layout.sample_size(s)
+    to_pixel = layout.pixel_size(s)
+    from_pixel = layout.pixel_size(from)
+    colours = from.channels - 1
+    has_alpha = layout.has_alpha(s)
+
+    for row in range(from: max_of(a: 0, b: y), to: min_of(a: s.height, b: y + from.height))
+        for col in range(from: max_of(a: 0, b: x), to: min_of(a: s.width, b: x + from.width))
+            src_at = ((row - y) * from.width + col - x) * from_pixel
+            to_at = (row * s.width + col) * to_pixel
+            sa = layout.sample(src, at: src_at + colours * size, wide: s.wide)
+
+            da = if has_alpha
+                layout.sample(pixels, at: to_at + colours * size, wide: s.wide)
+            else
+                top
+
+            # The answer's alpha times `top`, so nothing is rounded twice.
+            out_alpha = sa * top + da * (top - sa)
+
+            for c in range(from: 0, to: colours)
+                sc = layout.sample(src, at: src_at + c * size, wide: s.wide)
+                dc = layout.sample(pixels, at: to_at + c * size, wide: s.wide)
+
+                v = if out_alpha == 0
+                    0
+                else
+                    (sc * sa * top + dc * da * (top - sa) + out_alpha / 2) / out_alpha
+                layout.put_sample(@pixels, at: to_at + c * size, wide: s.wide, value: v)
+
+            if has_alpha
+                layout.put_sample(@pixels, at: to_at + colours * size, wide: s.wide, value: (out_alpha + top / 2) / top)
+
+# `first` and `second`, laid out alike as `s`, mixed sample by sample:
+# `first` × (1 - `amount`) + `second` × `amount`, rounded.
+function mixed(s: layout.Shape, first: [u8] lent, second: [u8] lent, amount: f64) -> [u8]
+    out @= layout.zeros(first.len())
+    size = layout.sample_size(s)
+    top = layout.top_of(s)
+    at @= 0
+
+    while at < first.len()
+        a = to_f64(layout.sample(first, at: at, wide: s.wide))
+        b = to_f64(layout.sample(second, at: at, wide: s.wide))
+        layout.put_sample(@out, at: at, wide: s.wide, value: layout.clamp_round(a + (b - a) * amount, top: top))
+        at @ at + size
+
+    return out
+
+# The larger of `a` and `b`.
+function max_of(a: i64, b: i64) -> i64
+    if a > b
+        return a
+    return b
+
+# The smaller of `a` and `b`.
+function min_of(a: i64, b: i64) -> i64
+    if a < b
+        return a
+    return b
+
+test "laid_over: opaque replaces, transparent keeps, half mixes"
+    s = layout.Shape(width: 3, height: 1, channels: 3, wide: false)
+    from = layout.Shape(width: 3, height: 1, channels: 4, wide: false)
+    p: [u8] @= [10, 10, 10, 10, 10, 10, 10, 10, 10]
+    laid_over(s: s, pixels: @p, from: from, src: [200, 0, 0, 255, 200, 0, 0, 0, 200, 0, 0, 128], x: 0, y: 0)
+    assert p == [200, 0, 0, 10, 10, 10, 105, 5, 5]
+
+test "laid_over: onto a transparent pixel the source is kept, and the alpha adds"
+    s = layout.Shape(width: 2, height: 1, channels: 2, wide: false)
+    p: [u8] @= [0, 0, 100, 128]
+    laid_over(s: s, pixels: @p, from: s, src: [200, 128, 200, 128], x: 0, y: 0)
+    assert p == [200, 128, 167, 192]
+
+test "laid_over: cut at the edges, and wholly outside"
+    s = layout.Shape(width: 2, height: 2, channels: 1, wide: false)
+    from = layout.Shape(width: 2, height: 2, channels: 2, wide: false)
+    p: [u8] @= [0, 0, 0, 0]
+    laid_over(s: s, pixels: @p, from: from, src: [1, 255, 2, 255, 3, 255, 4, 255], x: 1, y: 1)
+    assert p == [0, 0, 0, 1]
+    laid_over(s: s, pixels: @p, from: from, src: [1, 255, 2, 255, 3, 255, 4, 255], x: -5, y: 0)
+    assert p == [0, 0, 0, 1]
+
+test "mixed: the ends and the middle, at 8 and 16 bits"
+    s = layout.Shape(width: 2, height: 1, channels: 1, wide: false)
+    assert mixed(s, first: [0, 100], second: [255, 200], amount: 0.0) == [0, 100]
+    assert mixed(s, first: [0, 100], second: [255, 200], amount: 1.0) == [255, 200]
+    assert mixed(s, first: [0, 100], second: [255, 200], amount: 0.5) == [128, 150]
+    w = layout.Shape(width: 1, height: 1, channels: 1, wide: true)
+    assert mixed(w, first: [0, 0], second: [0xff, 0xff], amount: 0.5) == [0x80, 0x00]

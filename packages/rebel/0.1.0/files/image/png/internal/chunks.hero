@@ -1,0 +1,243 @@
+# The chunks of a PNG file walked one by one: each one's length, type, data
+# and CRC checked against the bytes that are there, so nothing past the end
+# of the file is ever read. The header chunk, `IHDR`, is read and checked
+# here too.
+
+use hash
+use image
+
+# The eight bytes every PNG file begins with.
+function signature() -> [u8]
+    return [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
+
+# The number of the four bytes of `data` from `at`, the high one first.
+function be32(data: [u8] lent, at: i64) -> i64
+    b0 = to_i64(data[at]).must()
+    b1 = to_i64(data[at + 1]).must()
+    b2 = to_i64(data[at + 2]).must()
+    b3 = to_i64(data[at + 3]).must()
+    return b0 << 24 | b1 << 16 | b2 << 8 | b3
+
+# `v`, 0 to 2^32 - 1, as four bytes, the high one first.
+function be32_bytes(v: i64) -> [u8]
+    return [to_u8(v >> 24 & 255).must(), to_u8(v >> 16 & 255).must(), to_u8(v >> 8 & 255).must(), to_u8(v & 255).must()]
+
+# One chunk found in a file.
+record Found
+    # Its four letters.
+    kind: str
+    # Where its data begins in the file.
+    start: i64
+    # How many bytes of data it holds.
+    size: i64
+    # Where the chunk after it begins.
+    next: i64
+
+# Whether the four bytes of `data` from `at` are ASCII letters, as a chunk
+# type must be.
+function is_type(data: [u8] lent, at: i64) -> bool
+    for k in range(from: at, to: at + 4)
+        c = data[k]
+
+        if !(c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z')
+            return false
+
+    return true
+
+# The chunk of `data` that begins at `at`, its CRC checked. Fails `invalid`
+# where the chunk runs past the end of `data`, its type is not four letters,
+# its length passes 2^31 - 1, or its CRC is wrong.
+function chunk_at(data: [u8] lent, at: i64) -> Found?
+    if at + 8 > data.len()
+        return fail(
+            code: image.INVALID,
+            msg: f"the file ends at byte {data.len()}, inside a chunk's length and type at byte {at}"
+        )
+    size = be32(data, at: at)
+
+    if size > 0x7fffffff
+        return fail(
+            code: image.INVALID,
+            msg: f"a chunk at byte {at} says it holds {size} bytes, past the 2^31 - 1 PNG allows"
+        )
+
+    if !is_type(data, at: at + 4)
+        return fail(code: image.INVALID, msg: f"the chunk at byte {at} has a type that is not four ASCII letters")
+    kind = text_of(data.slice(from: at + 4, to: at + 8))
+
+    if size > data.len() - at - 12
+        return fail(
+            code: image.INVALID,
+            msg: f"the {kind} chunk at byte {at} holds {size} bytes and its CRC, and the file ends at byte {data.len()}"
+        )
+    crc = hash.crc32(data.slice(from: at + 4, to: at + 8 + size))
+    stored = be32(data, at: at + 8 + size)
+
+    if to_i64(crc).must() != stored
+        return fail(
+            code: image.INVALID,
+            msg: f"the {kind} chunk at byte {at} has a CRC of {stored}, and its bytes give {crc}"
+        )
+    return ok(Found(kind: kind, start: at + 8, size: size, next: at + 12 + size))
+
+# Four ASCII letters as text.
+function text_of(letters: [u8]) -> str
+    out: [str] @= []
+
+    for b in letters
+        out @ out.push(LETTERS.slice(from: to_i64(b).must() - 65, to: to_i64(b).must() - 64))
+
+    return out.join("")
+
+# The letters a chunk type is made of, from `A` (65) to `z` (122).
+constant LETTERS: str
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz"
+
+# A chunk of `kind` holding `data`, as a file holds it: its length, type,
+# data and CRC.
+function chunk_bytes(kind: str, data: [u8] lent) -> [u8]
+    out: [u8] @= be32_bytes(data.len())
+    typed: [u8] @= []
+
+    for k in range(from: 0, to: 4)
+        typed @ typed.push(kind[k])
+
+    for b in data
+        typed @ typed.push(b)
+
+    crc = to_i64(hash.crc32(typed)).must()
+
+    for b in typed
+        out @ out.push(b)
+
+    for b in be32_bytes(crc)
+        out @ out.push(b)
+
+    return out
+
+# What `IHDR` says of the image.
+record Header
+    # The columns, 1 to 2^31 - 1.
+    width: i64
+    # The rows, 1 to 2^31 - 1.
+    height: i64
+    # The bits a sample.
+    depth: i64
+    # The colour type: 0, 2, 3, 4 or 6.
+    color_type: i64
+    # Whether Adam7 interlaces it.
+    interlaced: bool
+
+# The samples a pixel of colour type `color_type`.
+function channels_of(color_type: i64) -> i64
+    if color_type == 2
+        return 3
+
+    if color_type == 4
+        return 2
+
+    if color_type == 6
+        return 4
+    return 1
+
+# The header of `data`, a file whose signature has been checked: its first
+# chunk, `IHDR`, read and its values checked, then checked against
+# `limits`.
+function header_of(data: [u8] lent, limits: image.Limits) -> Header?
+    found = chunk_at(data, at: 8)?
+
+    if found.kind != "IHDR" || found.size != 13
+        return fail(
+            code: image.INVALID,
+            msg: f"the first chunk is {found.kind} of {found.size} bytes, where IHDR of 13 must stand"
+        )
+    at = found.start
+    width = be32(data, at: at)
+    height = be32(data, at: at + 4)
+    depth = to_i64(data[at + 8]).must()
+    color_type = to_i64(data[at + 9]).must()
+
+    if width == 0 || height == 0 || width > 0x7fffffff || height > 0x7fffffff
+        return fail(code: image.INVALID, msg: f"IHDR says {width} by {height} pixels, where each side is 1 to 2^31 - 1")
+
+    allowed = if color_type == 0
+        depth == 1 || depth == 2 || depth == 4 || depth == 8 || depth == 16
+    else if color_type == 3
+        depth == 1 || depth == 2 || depth == 4 || depth == 8
+    else if color_type == 2 || color_type == 4 || color_type == 6
+        depth == 8 || depth == 16
+    else
+        false
+
+    if !allowed
+        return fail(
+            code: image.INVALID,
+            msg: f"IHDR says colour type {color_type} of {depth} bits, which PNG does not define"
+        )
+
+    if data[at + 10] != 0
+        return fail(
+            code: image.UNSUPPORTED,
+            msg: f"IHDR says compression method {data[at + 10]}, where PNG defines 0 alone"
+        )
+
+    if data[at + 11] != 0
+        return fail(code: image.UNSUPPORTED, msg: f"IHDR says filter method {data[at + 11]}, where PNG defines 0 alone")
+
+    if data[at + 12] > 1
+        return fail(
+            code: image.UNSUPPORTED,
+            msg: f"IHDR says interlace method {data[at + 12]}, where PNG defines 0 and 1"
+        )
+    image.check_limits(limits, width: width, height: height)?
+    return ok(
+        Header(width: width, height: height, depth: depth, color_type: color_type, interlaced: data[at + 12] == 1)
+    )
+
+# The format `decode` answers for a file of `h`, with a `tRNS` chunk where
+# `transparent`.
+function format_of(h: Header, transparent: bool) -> image.Format
+    wide = h.depth == 16
+
+    if h.color_type == 3
+        return if transparent
+            .rgba
+        else
+            .rgb
+    channels = channels_of(h.color_type)
+
+    alpha = if transparent && (channels == 1 || channels == 3)
+        1
+    else
+        0
+
+    bits = if wide
+        16
+    else
+        8
+    return image.format_with(channels: channels + alpha, bits: bits).must()
+
+test "be32 and be32_bytes: the high byte first, and back"
+    assert be32([0x12, 0x34, 0x56, 0x78], at: 0) == 0x12345678
+    assert be32_bytes(0xfffffffe) == [0xff, 0xff, 0xff, 0xfe]
+
+test "chunk_bytes and chunk_at: a chunk written and read back, its CRC checked"
+    c = chunk_bytes("tEXt", data: [0x61, 0x00, 0x62])
+    assert c.len() == 15
+    found = chunk_at(c, at: 0).must()
+    assert found.kind == "tEXt"
+    assert found.size == 3
+    assert found.next == 15
+    bad @= c
+    bad[9] @ 0x63
+    assert chunk_at(bad, at: 0).is_err()
+    assert chunk_at(c.slice(from: 0, to: 14), at: 0).is_err()
+    assert chunk_at([0, 0, 0, 0, 0x41], at: 0).is_err()
+
+test "chunk_at: a type that is not letters, and a length past 2^31 - 1"
+    assert chunk_at([0, 0, 0, 0, 0x41, 0x31, 0x41, 0x41, 0, 0, 0, 0], at: 0).is_err()
+    assert chunk_at([0x80, 0, 0, 0, 0x41, 0x41, 0x41, 0x41, 0, 0, 0, 0], at: 0).is_err()
+
+test "text_of: letters of both cases"
+    assert text_of([0x49, 0x48, 0x44, 0x52]) == "IHDR"
+    assert text_of([0x7a, 0x54, 0x58, 0x74]) == "zTXt"

@@ -1,0 +1,364 @@
+# JPEG read and written, by ITU-T T.81 and JFIF: baseline and progressive
+# files of 8 bits a sample read, gray or colour, every sampling of the
+# colour, with restart intervals; their EXIF orientation read; baseline files
+# written at a quality the caller picks, with the tables of T.81's Annex K.
+#
+# It does not scale, turn or convert an image: that is `image`'s, and
+# `image.apply_orientation` shows a photograph upright from the orientation
+# `decode` reads. Colour is upsampled by repeating each chroma sample over
+# the pixels it covers, as Go's `image/jpeg` does; no smoothing. It reads no
+# file coded arithmetically, losslessly, hierarchically or at 12 bits, and
+# no CMYK or YCCK file: those fail `unsupported`.
+#
+# **A file is not trusted.** `decode` checks the size the frame header claims
+# against the caller's `image.Limits` before it allocates, checks every
+# segment's length, every table a scan names and every run of coefficients
+# against its block, and refuses a file that ends inside a scan, so a broken
+# or hostile file fails `invalid` or `limit` and never reads past its end.
+#
+# It fails with `invalid`, `limit` and `unsupported`.
+
+use bytes
+use image
+use image/jpeg/internal/decode as reading
+use image/jpeg/internal/encode as writing
+use image/jpeg/internal/exif as tiff
+use image/jpeg/internal/samples
+
+## Reading
+
+# What `decode` answers: the image and what the file says of it.
+record Jpeg
+    # The pixels, gray for a file of one component and RGB otherwise, as
+    # the file stores them: `orientation` says how to show them.
+    image: image.Image
+    # The EXIF orientation, 1 to 8 (`image.apply_orientation` reads it); 1
+    # where the file holds no EXIF, or EXIF with no orientation or one that
+    # cannot be read.
+    orientation: i64
+    # Whether the file is progressive.
+    progressive: bool
+    # The EXIF data, the TIFF structure after `Exif` and two zero bytes in
+    # the first APP1 segment that holds them; empty where there is none.
+    exif: [u8]
+    # The ICC profile of the APP2 segments, put back together; empty where
+    # there is none.
+    icc: [u8]
+
+# The image `data` holds, and its orientation.
+#
+# - `data`: a whole JPEG file, from its SOI marker to its EOI. Bytes after
+#   EOI are not read.
+# - `limits`: the largest image the caller allows; `image.default_limits`
+#   makes the usual ones.
+#
+# Fails `limit` where the frame's width or height passes `limits`, before
+# anything is allocated. Fails `invalid` where `data` is not JPEG, the
+# message naming the byte: no SOI, a segment cut short, a table or a scan
+# that does not fit its frame, a Huffman code no table holds, a run of
+# coefficients past its block, a scan that ends before its last block, a
+# restart marker missing, more than `MAX_SCANS` scans, no EOI at the end. Fails `unsupported`
+# for arithmetic coding, a lossless or hierarchical frame, 12 bits a sample,
+# and a file of two or four components.
+#
+# It holds every coefficient of the image, two bytes each, before it holds
+# the pixels. See also `info_of` and `encode`.
+function decode(data: [u8], limits: image.Limits) -> Jpeg?
+    d = reading.decoded(data, limits: limits)?
+
+    orientation = if d.exif.len() > 0
+        tiff.orientation_of(d.exif).default(1)
+    else
+        1
+    return ok(Jpeg(image: d.image, orientation: orientation, progressive: d.progressive, exif: d.exif, icc: d.icc))
+
+# The most scans `decode` reads in one file: a progressive file has about
+# ten, and each scan walks every block of its components, so more would
+# only cost time.
+constant MAX_SCANS: i64
+    reading.MAX_SCANS
+
+# What the frame header of a JPEG file says, read without its scans.
+record Info
+    # The columns.
+    width: i64
+    # The rows.
+    height: i64
+    # The components: 1 gray, 3 colour.
+    components: i64
+    # Whether the file is progressive.
+    progressive: bool
+
+# The size of the image `data` holds, read from its segments up to the
+# frame header, nothing decoded: Go's `jpeg.DecodeConfig`.
+#
+# - `data`: a JPEG file, or at least its segments up to the frame header.
+#
+# Fails `invalid` and `unsupported` as `decode` does on the segments it
+# reads. See also `decode`.
+function info_of(data: [u8]) -> Info?
+    f = reading.frame_only(data)?
+    return ok(Info(width: f.width, height: f.height, components: f.components.len(), progressive: f.progressive))
+
+# The orientation the EXIF data `exif` holds: tag 274 of its first image
+# directory, 1 to 8.
+#
+# - `exif`: the TIFF structure of an EXIF segment, as `Jpeg.exif` holds it,
+#   in either byte order.
+#
+# Fails `not_found` where the directory holds no orientation. Fails
+# `invalid` where `exif` is not a TIFF structure, an offset points past its
+# end, or the orientation is not a short between 1 and 8. See also
+# `image.apply_orientation`.
+function orientation_of(exif: [u8]) -> i64?
+    return tiff.orientation_of(exif)
+
+# The code of an EXIF directory that holds no orientation.
+constant NOT_FOUND: str
+    "not_found"
+
+## Writing
+
+# How the colour is sampled against the brightness when writing.
+variant Subsampling
+    # 4:4:4: a colour sample for every pixel; the largest file.
+    full
+    # 4:2:2: one for every two pixels across.
+    half
+    # 4:2:0: one for every two by two pixels, Go's and libjpeg's usual
+    # choice.
+    quarter
+
+# How `encode` writes a file.
+record EncodeOptions
+    # 1 to 100: the higher, the larger the file and the closer its pixels.
+    # The tables of Annex K are scaled as libjpeg scales them: by 5000 /
+    # quality below 50, by 200 - 2 × quality from 50.
+    quality: i64
+    # How the colour of a colour image is sampled; a gray image has none.
+    subsampling: Subsampling
+
+# Options of quality 75 and 4:2:0, Go's default quality and sampling.
+#
+# See also `encode`.
+function encoding() -> EncodeOptions
+    return EncodeOptions(quality: 75, subsampling: .quarter)
+
+# `img` as a baseline JPEG file in JFIF: one component for gray, three for
+# RGB as YCbCr, Huffman-coded with the tables of Annex K.
+#
+# - `img`: a gray or RGB image of 8 bits, 1 to 65,535 pixels a side.
+# - `options`: the quality and the sampling; `encoding` makes the usual
+#   ones.
+#
+# The same image and options answer the same bytes every time. Fails
+# `unsupported` where `img` has alpha or 16 bits a sample (`image.flatten`
+# and `image.convert` make one this function takes). Fails `invalid` where
+# the quality is outside 1 to 100 or a side is outside 1 to 65,535. Aborts
+# where `img` is not valid. See also `decode`.
+function encode(img: image.Image, options: EncodeOptions) -> [u8]?
+    assert image.is_valid(img)
+
+    channels = match img.format
+        .gray                                                            => 1
+        .rgb                                                             => 3
+        .gray_alpha | .rgba | .gray16 | .gray_alpha16 | .rgb16 | .rgba16 => 0
+
+    if channels == 0
+        return fail(
+            code: image.UNSUPPORTED,
+            msg: "JPEG holds gray or RGB of 8 bits: flatten the alpha with `image.flatten` and narrow 16 bits with `image.convert` first"
+        )
+
+    if options.quality < 1 || options.quality > 100
+        return fail(code: image.INVALID, msg: f"a quality of {options.quality}, where 1 to 100 are written")
+
+    if img.width < 1 || img.height < 1 || img.width > 65535 || img.height > 65535
+        return fail(
+            code: image.INVALID,
+            msg: f"an image of {img.width} by {img.height} pixels, where JPEG holds 1 to 65,535 a side"
+        )
+
+    h = match options.subsampling
+        .full            => 1
+        .half | .quarter => 2
+
+    v = match options.subsampling
+        .full | .half => 1
+        .quarter      => 2
+
+    return ok(
+        writing.encoded(width: img.width, height: img.height, data: img.pixels, channels: channels, quality: options.quality, h: h, v: v)
+    )
+
+## Tests
+
+test "decode: every file of Go and of cjpeg, each sample within 2 of Go's"
+    for s in samples.readable()
+        j = decode(bytes.parse_hex(s.file).must(), image.default_limits()).must()
+        assert j.image.width == s.width
+        assert j.image.height == s.height
+
+        wanted_format: image.Format = if s.format == "gray"
+            .gray
+        else
+            .rgb
+        assert j.image.format == wanted_format
+        want = bytes.parse_hex(s.pixels).must()
+        worst @= 0
+
+        for i in range(from: 0, to: want.len())
+            d = to_i64(j.image.pixels[i]).must() - to_i64(want[i]).must()
+
+            if d > worst
+                worst @ d
+
+            if -d > worst
+                worst @ -d
+
+        assert worst <= 2
+
+test "decode: every broken file refused with its code, the bomb before it allocates"
+    for b in samples.refused()
+        match decode(bytes.parse_hex(b.file).must(), image.default_limits())
+            .ok _  => assert b.name == "never"
+            .err e => assert e.code == b.code
+
+test "decode: a file cut anywhere before its last bytes is refused, and no changed byte aborts"
+    for s in samples.readable()
+        if s.name == "go colour 4:2:0 at quality 50" || s.name == "cjpeg colour 4:2:0, progressive"
+            file = bytes.parse_hex(s.file).must()
+
+            for n in range(from: 0, to: file.len() - 16)
+                assert decode(file.slice(from: 0, to: n), image.default_limits()).is_err()
+
+            for k in range(from: 0, to: file.len())
+                changed @= file
+                changed[k] @ to_u8(to_i64(file[k]).must() ^ 0x5a).must()
+
+                match decode(changed, image.default_limits())
+                    .ok j  => assert image.is_valid(j.image)
+                    .err e => assert e.code == image.INVALID || e.code == image.UNSUPPORTED || e.code == image.LIMIT
+
+test "decode: the orientation of EXIF in either byte order, and the progressive flag"
+    for s in samples.readable()
+        j = decode(bytes.parse_hex(s.file).must(), image.default_limits()).must()
+
+        if s.name == "go colour with EXIF orientation 6, big-endian"
+            assert j.orientation == 6
+            assert j.exif.len() > 0
+        else if s.name == "go colour with EXIF orientation 3, little-endian"
+            assert j.orientation == 3
+        else
+            assert j.orientation == 1
+        assert j.progressive == (s.name.len() > 0 && info_of(bytes.parse_hex(s.file).must()).must().progressive)
+
+test "info_of: the size and components of every file"
+    for s in samples.readable()
+        info = info_of(bytes.parse_hex(s.file).must()).must()
+        assert info.width == s.width
+        assert info.height == s.height
+
+        assert info.components == if s.format == "gray"
+            1
+        else
+            3
+
+test "encode and decode: gray at every sampling and colour at 4:4:4 close to the picture at quality 95"
+    subsamplings: [Subsampling] = [.full, .half, .quarter]
+
+    for s in samples.readable()
+        if s.name == "go gray at quality 90" || s.name == "cjpeg colour 4:4:4"
+            format: image.Format = if s.format == "gray"
+                .gray
+            else
+                .rgb
+            img = image.from_pixels(
+                width: s.width,
+                height: s.height,
+                format: format,
+                pixels: bytes.parse_hex(s.pixels).must()
+            ).must()
+
+            for sub in subsamplings
+                file = encode(img, EncodeOptions(quality: 95, subsampling: sub)).must()
+                back = decode(file, image.default_limits()).must().image
+                assert back.width == img.width
+                total @= 0
+
+                for i in range(from: 0, to: img.pixels.len())
+                    d = to_i64(back.pixels[i]).must() - to_i64(img.pixels[i]).must()
+                    total @ total + d * d
+
+                assert total / img.pixels.len() <= 40 || format == .rgb && sub != .full
+
+test "encode: every quality makes a file read back, the same bytes twice"
+    img = image.from_pixels(
+        width: 17,
+        height: 9,
+        format: .rgb,
+        pixels: bytes.parse_hex(samples.readable()[1].pixels).must().slice(from: 0, to: 17 * 9 * 3)
+    ).must()
+
+    for q in [1, 2, 25, 49, 50, 51, 75, 99, 100]
+        file = encode(img, EncodeOptions(quality: q, subsampling: .quarter)).must()
+        assert decode(file, image.default_limits()).must().image.width == 17
+
+    assert encode(img, encoding()).must() == encode(img, encoding()).must()
+
+test "encode: alpha, 16 bits, a quality outside 1 to 100 and an empty image refused"
+    rgba = image.blank(width: 2, height: 2, format: .rgba).must()
+
+    match encode(rgba, encoding())
+        .ok _  => assert false
+        .err e => assert e.code == image.UNSUPPORTED
+
+    assert encode(image.blank(width: 2, height: 2, format: .gray16).must(), encoding()).is_err()
+    assert encode(
+        image.blank(width: 2, height: 2, format: .rgb).must(),
+        EncodeOptions(quality: 0, subsampling: .full)
+    ).is_err()
+    assert encode(
+        image.blank(width: 2, height: 2, format: .rgb).must(),
+        EncodeOptions(quality: 101, subsampling: .full)
+    ).is_err()
+    assert encode(image.blank(width: 0, height: 2, format: .rgb).must(), encoding()).is_err()
+
+## Examples
+
+# A photograph written and read back, close to what was written.
+test "decode: a gray gradient written and read back"
+    pixels: [u8] @= []
+
+    for i in range(from: 0, to: 64)
+        pixels @ pixels.push(to_u8(i * 4).must())
+
+    img = image.from_pixels(width: 8, height: 8, format: .gray, pixels: pixels).must()
+    back = decode(encode(img, EncodeOptions(quality: 100, subsampling: .full)).must(), image.default_limits()).must()
+    assert back.image.format == .gray
+    assert back.orientation == 1
+    assert !back.progressive
+
+# The size of a file read without its scans.
+test "info_of: the size of a file before it is decoded"
+    file = encode(image.blank(width: 40, height: 30, format: .rgb).must(), encoding()).must()
+    info = info_of(file).must()
+    assert info.width == 40
+    assert info.components == 3
+
+# The orientation of an EXIF block written in Motorola's byte order.
+test "orientation_of: a camera held turned a quarter"
+    exif: [u8] = [0x4d, 0x4d, 0, 42, 0, 0, 0, 8, 0, 1, 0x01, 0x12, 0, 3, 0, 0, 0, 1, 0, 6, 0, 0, 0, 0, 0, 0]
+    assert orientation_of(exif).must() == 6
+
+# The usual options of writing.
+test "encoding: quality 75 and 4:2:0"
+    assert encoding().quality == 75
+    assert encoding().subsampling == .quarter
+
+# A colour image written at a high quality, every colour sample kept.
+test "encode: RGB at quality 90 and 4:4:4"
+    img = image.blank(width: 16, height: 16, format: .rgb).must()
+    file = encode(img, EncodeOptions(quality: 90, subsampling: .full)).must()
+    assert file.slice(from: 0, to: 2) == [0xff, 0xd8]
+    assert decode(file, image.default_limits()).must().image.pixels.slice(from: 0, to: 3) == [0, 0, 0]

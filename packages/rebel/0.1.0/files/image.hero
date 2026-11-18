@@ -1,0 +1,1645 @@
+# Images in memory: a grid of pixels of one format, made, read and written
+# pixel by pixel, converted between formats, cut, scaled, turned, combined,
+# drawn on, measured, and reduced to a palette.
+#
+# It reads and writes no file: PNG is `image/png`'s, JPEG `image/jpeg`'s,
+# GIF `image/gif`'s, BMP `image/bmp`'s, and PBM, PGM, PPM and PAM
+# `image/netpbm`'s; `kind_of` says which of them a file's bytes hold. It
+# opens no path: `fs.read_bytes` answers the bytes a decoder takes. It draws
+# no text and applies no filter but the resampling ones.
+#
+# **A file from outside is not trusted.** Every decoder takes `Limits`, the
+# largest width, height and count of pixels the caller allows, and fails
+# `limit` before it allocates past them, so a small file that claims a huge
+# image (a "decompression bomb") costs a program at most what the caller
+# allowed. A broken file fails `invalid`, never a memory fault.
+#
+# It fails with `invalid`, `limit` and `unsupported`.
+
+use image/internal/compose
+use image/internal/convert as recode
+use image/internal/draw
+use image/internal/geometry
+use image/internal/layout
+use image/internal/quantize
+use image/internal/resample
+use image/internal/warp
+
+## Codes and limits
+
+# The code of an input that is not what the call reads: a file that is not
+# its format, a pixel buffer of the wrong length, a rectangle outside an
+# image, a palette of no colour or of more than 256. Every decoder fails
+# with it, and `from_pixels`, `crop`, `resize`, `thumbnail`, `blend`,
+# `apply_orientation`, `palette_of`, `to_indexed`, `from_indexed`,
+# `format_with`, `check_limits` and `kind_of`.
+constant INVALID: str
+    "invalid"
+
+# The code of an image larger than the caller allows: a width, height or
+# count of pixels past `Limits`. Every decoder fails with it, and `blank`,
+# `from_pixels`, `resize` and `check_limits`.
+constant LIMIT: str
+    "limit"
+
+# The code of a file of a known format in a form no decoder here reads (a
+# JPEG coded arithmetically, a PNG of an unknown compression method), and of
+# an image a format has no form for (an alpha channel in JPEG). The decoders
+# and encoders of the formats fail with it.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The widest image `default_limits` allows, in pixels.
+constant DEFAULT_MAX_WIDTH: i64
+    65536
+
+# The tallest image `default_limits` allows, in pixels.
+constant DEFAULT_MAX_HEIGHT: i64
+    65536
+
+# The most pixels `default_limits` allows in all the images one call
+# answers: 8192 by 8192, 256 MiB as RGBA of 8 bits.
+constant DEFAULT_MAX_PIXELS: i64
+    67108864
+
+# How large an image a decoder may answer. A decoder fails `limit` before it
+# allocates an image past any of the three; a file of several images (the
+# frames of a GIF) counts the pixels of all of them against `max_pixels`.
+# `default_limits` makes the usual ones; every field is 0 or more.
+record Limits
+    # The most columns an image may have.
+    max_width: i64
+    # The most rows an image may have.
+    max_height: i64
+    # The most pixels, width times height, summed over every image one call
+    # answers.
+    max_pixels: i64
+
+# Limits of `DEFAULT_MAX_WIDTH`, `DEFAULT_MAX_HEIGHT` and
+# `DEFAULT_MAX_PIXELS`: an image of 8192 by 8192 passes, one of 65,536 by
+# 65,536 does not.
+#
+# See also `check_limits`.
+function default_limits() -> Limits
+    return Limits(max_width: DEFAULT_MAX_WIDTH, max_height: DEFAULT_MAX_HEIGHT, max_pixels: DEFAULT_MAX_PIXELS)
+
+# Nothing where an image of `width` by `height` is within `limits`.
+#
+# - `limits`: what the caller allows.
+# - `width`: the columns asked for; 0 is allowed.
+# - `height`: the rows asked for; 0 is allowed.
+#
+# Fails `invalid` where `width` or `height` is negative. Fails `limit` where
+# `width` passes `limits.max_width`, `height` passes `limits.max_height`, or
+# their product passes `limits.max_pixels`; the product is never computed,
+# so it cannot overflow. The decoders of `image/png`, `image/jpeg` and the
+# others call it before they allocate. See also `default_limits`.
+function check_limits(limits: Limits, width: i64, height: i64) -> ()?
+    if width < 0 || height < 0
+        return fail(code: INVALID, msg: f"an image of {width} by {height} pixels: a side is negative")
+
+    if width > limits.max_width
+        return fail(code: LIMIT, msg: f"an image {width} pixels wide, past the {limits.max_width} allowed")
+
+    if height > limits.max_height
+        return fail(code: LIMIT, msg: f"an image {height} pixels tall, past the {limits.max_height} allowed")
+
+    if width > 0 && height > limits.max_pixels / width
+        return fail(
+            code: LIMIT,
+            msg: f"an image of {width} by {height} pixels, past the {limits.max_pixels} pixels allowed"
+        )
+    return ok()
+
+## Formats and colours
+
+# How a pixel is held: which channels, and 8 or 16 bits for each sample. A
+# 16-bit sample is two bytes, the high one first, as PNG and Go's `Gray16`
+# hold it. Alpha is straight, never premultiplied: 0 is transparent, the
+# largest value opaque, and the colour samples keep their own values.
+variant Format
+    # One sample a pixel, its brightness, 0 black, 255 white.
+    gray
+    # Brightness and alpha, 8 bits each.
+    gray_alpha
+    # Red, green and blue, 8 bits each.
+    rgb
+    # Red, green, blue and alpha, 8 bits each.
+    rgba
+    # Brightness, 16 bits.
+    gray16
+    # Brightness and alpha, 16 bits each.
+    gray_alpha16
+    # Red, green and blue, 16 bits each.
+    rgb16
+    # Red, green, blue and alpha, 16 bits each.
+    rgba16
+
+# A colour of 8 bits a channel, alpha straight. Built directly:
+# `image.Color(r: 255, g: 0, b: 0, a: 255)` is opaque red. On an image of 16
+# bits a channel each value counts 257 times, so 255 is 65,535.
+record Color
+    # Red, 0 to 255.
+    r: u8
+    # Green, 0 to 255.
+    g: u8
+    # Blue, 0 to 255.
+    b: u8
+    # Alpha, 0 transparent to 255 opaque.
+    a: u8
+
+# How many samples a pixel of `format` holds: 1, 2, 3 or 4.
+#
+# - `format`: the format asked about.
+#
+# See also `bits_of` and `pixel_bytes_of`.
+function channels_of(format: Format) -> i64
+    return match format
+        .gray | .gray16             => 1
+        .gray_alpha | .gray_alpha16 => 2
+        .rgb | .rgb16               => 3
+        .rgba | .rgba16             => 4
+
+# How many bits a sample of `format` holds: 8 or 16.
+#
+# - `format`: the format asked about.
+#
+# See also `channels_of`.
+function bits_of(format: Format) -> i64
+    return match format
+        .gray | .gray_alpha | .rgb | .rgba         => 8
+        .gray16 | .gray_alpha16 | .rgb16 | .rgba16 => 16
+
+# How many bytes a pixel of `format` holds: its channels times 1 or 2.
+#
+# - `format`: the format asked about.
+#
+# See also `channels_of` and `bits_of`.
+function pixel_bytes_of(format: Format) -> i64
+    return channels_of(format) * bits_of(format) / 8
+
+# Whether a pixel of `format` holds an alpha sample.
+#
+# - `format`: the format asked about.
+#
+# See also `channels_of`.
+function has_alpha(format: Format) -> bool
+    return channels_of(format) % 2 == 0
+
+# The format of `channels` samples of `bits` bits: 1 gray, 2 gray and alpha,
+# 3 RGB, 4 RGBA.
+#
+# - `channels`: 1 to 4.
+# - `bits`: 8 or 16.
+#
+# Fails `invalid` where `channels` is not 1 to 4 or `bits` is not 8 or 16.
+# See also `channels_of` and `bits_of`.
+function format_with(channels: i64, bits: i64) -> Format?
+    if bits != 8 && bits != 16
+        return fail(code: INVALID, msg: f"{bits} bits a sample, where 8 or 16 are held")
+    wide = bits == 16
+
+    if channels == 1 && wide
+        return ok(.gray16)
+
+    if channels == 1
+        return ok(.gray)
+
+    if channels == 2 && wide
+        return ok(.gray_alpha16)
+
+    if channels == 2
+        return ok(.gray_alpha)
+
+    if channels == 3 && wide
+        return ok(.rgb16)
+
+    if channels == 3
+        return ok(.rgb)
+
+    if channels == 4 && wide
+        return ok(.rgba16)
+
+    if channels == 4
+        return ok(.rgba)
+    return fail(code: INVALID, msg: f"{channels} channels a pixel, where 1 to 4 are held")
+
+## The image
+
+# An image: `width` by `height` pixels of one `format`, held row after row
+# from the top, each row from the left. `pixels` holds exactly `width` ×
+# `height` × `pixel_bytes_of(format)` bytes; `blank` and `from_pixels` make
+# one that does, and `is_valid` asks it of one built directly. A function
+# given an image whose `pixels` has another length aborts.
+record Image
+    # The columns, 0 or more.
+    width: i64
+    # The rows, 0 or more.
+    height: i64
+    # How each pixel is held.
+    format: Format
+    # The samples, row after row; a 16-bit sample is two bytes, the high
+    # one first.
+    pixels: [u8]
+
+# An image of `width` by `height` pixels of `format`, every sample 0: black,
+# and transparent where the format has alpha.
+#
+# - `width`: the columns, 0 or more.
+# - `height`: the rows, 0 or more.
+# - `format`: how each pixel is held.
+#
+# Fails `invalid` where `width` or `height` is negative. Fails `limit` where
+# the image passes `default_limits`. See also `from_pixels` and `fill_rect`.
+function blank(width: i64, height: i64, format: Format) -> Image?
+    check_limits(default_limits(), width: width, height: height)?
+    return ok(
+        Image(width: width, height: height, format: format, pixels: layout.zeros(width * height * pixel_bytes_of(format)))
+    )
+
+# An image of `width` by `height` pixels of `format` holding `pixels`, row
+# after row from the top.
+#
+# - `width`: the columns, 0 or more.
+# - `height`: the rows, 0 or more.
+# - `format`: how each pixel in `pixels` is held.
+# - `pixels`: exactly `width` × `height` × `pixel_bytes_of(format)` bytes; a
+#   16-bit sample is two bytes, the high one first.
+#
+# Fails `invalid` where `width` or `height` is negative or `pixels` holds
+# another count of bytes, the message saying both. Fails `limit` where the
+# image passes `default_limits`. See also `blank` and `is_valid`.
+function from_pixels(width: i64, height: i64, format: Format, pixels: [u8]) -> Image?
+    check_limits(default_limits(), width: width, height: height)?
+    wanted = width * height * pixel_bytes_of(format)
+
+    if pixels.len() != wanted
+        return fail(
+            code: INVALID,
+            msg: f"{pixels.len()} bytes of pixels, where {width} by {height} pixels of {pixel_bytes_of(format)} bytes hold {wanted}"
+        )
+    return ok(Image(width: width, height: height, format: format, pixels: pixels))
+
+# Whether `img` holds as many bytes as its width, height and format say,
+# none of them negative: whether the other functions accept it.
+#
+# - `img`: the image asked about, built directly or by any function.
+#
+# See also `from_pixels`.
+function is_valid(img: Image) -> bool
+    n = img.pixels.len()
+
+    if img.width < 0 || img.height < 0
+        return false
+
+    if img.width == 0 || img.height == 0
+        return n == 0
+
+    if img.width > n || img.height > n
+        return false
+    row = img.width * pixel_bytes_of(img.format)
+    return n % row == 0 && n / row == img.height
+
+# The colour of the pixel at column `x` and row `y` of `img`, in 8 bits a
+# channel: a gray sample stands for red, green and blue alike, a format
+# without alpha answers alpha 255, and a 16-bit sample keeps its high byte.
+#
+# - `img`: the image read.
+# - `x`: the column, 0 to `img.width` - 1.
+# - `y`: the row, 0 to `img.height` - 1.
+#
+# Aborts where `x` or `y` is outside the image, or `img` is not valid. See
+# also `samples_at` and `set_color`.
+function color_at(img: Image, x: i64, y: i64) -> Color
+    assert is_valid(img) && x >= 0 && y >= 0 && x < img.width && y < img.height
+    s = layout.Shape(
+        width: img.width,
+        height: img.height,
+        channels: channels_of(img.format),
+        wide: bits_of(img.format) == 16
+    )
+    c = recode.bytes_at(s, img.pixels, x: x, y: y)
+    return Color(r: c[0], g: c[1], b: c[2], a: c[3])
+
+# Writes `color` into the pixel at column `x` and row `y` of `img`,
+# converted to its format: a gray format takes the colour's luma (Go's
+# `color.GrayModel`), a format without alpha drops the alpha, a 16-bit one
+# takes each value times 257.
+#
+# - `img`: the image written; the one pixel changes.
+# - `x`: the column, 0 to `img.width` - 1.
+# - `y`: the row, 0 to `img.height` - 1.
+# - `color`: the colour written, alpha and all, with no blending.
+#
+# Aborts where `x` or `y` is outside the image, or `img` is not valid. See
+# also `color_at` and `set_samples`.
+function set_color(@img: Image, x: i64, y: i64, color: Color)
+    assert is_valid(img) && x >= 0 && y >= 0 && x < img.width && y < img.height
+    s = layout.Shape(
+        width: img.width,
+        height: img.height,
+        channels: channels_of(img.format),
+        wide: bits_of(img.format) == 16
+    )
+    values = recode.samples_of_bytes(s, r: color.r, g: color.g, b: color.b, a: color.a)
+    layout.put_samples(s, @img.pixels, x: x, y: y, values: values)
+
+# The samples of the pixel at column `x` and row `y` of `img`, exactly as
+# held: `channels_of(img.format)` of them, each 0 to 255 or, at 16 bits, 0
+# to 65,535.
+#
+# - `img`: the image read.
+# - `x`: the column, 0 to `img.width` - 1.
+# - `y`: the row, 0 to `img.height` - 1.
+#
+# Aborts where `x` or `y` is outside the image, or `img` is not valid. See
+# also `color_at` and `set_samples`.
+function samples_at(img: Image, x: i64, y: i64) -> [u16]
+    assert is_valid(img) && x >= 0 && y >= 0 && x < img.width && y < img.height
+    s = layout.Shape(
+        width: img.width,
+        height: img.height,
+        channels: channels_of(img.format),
+        wide: bits_of(img.format) == 16
+    )
+    out: [u16] @= []
+
+    for v in layout.samples_at(s, img.pixels, x: x, y: y)
+        out @ out.push(to_u16(v).must())
+
+    return out
+
+# Writes `samples` into the pixel at column `x` and row `y` of `img`,
+# exactly.
+#
+# - `img`: the image written; the one pixel changes.
+# - `x`: the column, 0 to `img.width` - 1.
+# - `y`: the row, 0 to `img.height` - 1.
+# - `samples`: `channels_of(img.format)` values in the format's order, each
+#   at most 255 at 8 bits.
+#
+# Aborts where `x` or `y` is outside the image, `img` is not valid,
+# `samples` holds another count, or a sample passes 255 at 8 bits. See also
+# `samples_at` and `set_color`.
+function set_samples(@img: Image, x: i64, y: i64, samples: [u16])
+    assert is_valid(img) && x >= 0 && y >= 0 && x < img.width && y < img.height
+    s = layout.Shape(
+        width: img.width,
+        height: img.height,
+        channels: channels_of(img.format),
+        wide: bits_of(img.format) == 16
+    )
+    assert samples.len() == s.channels
+    values: [i64] @= []
+
+    for v in samples
+        n = to_i64(v).must()
+        assert n <= layout.top_of(s)
+        values @ values.push(n)
+
+    layout.put_samples(s, @img.pixels, x: x, y: y, values: values)
+
+## Formats converted
+
+# `img` held in format `to`, pixel by pixel. Gray from colour is the luma of
+# Go's `color.GrayModel`, (19595 R + 38470 G + 7471 B + 32768) >> 16 on
+# 16-bit values; colour from gray repeats the gray. Alpha added is opaque,
+# and alpha dropped is dropped, the colour kept as it was (Pillow's choice;
+# `flatten` blends over a background instead). 8 bits become 16 times 257,
+# and 16 bits become 8 by their high byte, as Go converts them.
+#
+# - `img`: the image converted.
+# - `to`: the format of the answer; the same format answers a copy.
+#
+# Aborts where `img` is not valid. See also `flatten`.
+function convert(img: Image, to: Format) -> Image
+    assert is_valid(img)
+    s = layout.Shape(
+        width: img.width,
+        height: img.height,
+        channels: channels_of(img.format),
+        wide: bits_of(img.format) == 16
+    )
+    pixels = recode.converted(s, img.pixels, channels: channels_of(to), wide: bits_of(to) == 16)
+    return Image(width: img.width, height: img.height, format: to, pixels: pixels)
+
+# `img` blended over `background`, its alpha dropped: each pixel's colour
+# weighted by its alpha, the background's by the rest. A format without
+# alpha answers a copy.
+#
+# - `img`: the image blended.
+# - `background`: the colour behind it; its own alpha is not read.
+#
+# The answer is gray, gray16, rgb or rgb16, the format of `img` without its
+# alpha. Aborts where `img` is not valid. See also `convert` and
+# `composite`.
+function flatten(img: Image, background: Color) -> Image
+    assert is_valid(img)
+    s = layout.Shape(
+        width: img.width,
+        height: img.height,
+        channels: channels_of(img.format),
+        wide: bits_of(img.format) == 16
+    )
+    pixels = recode.flattened(
+        s,
+        img.pixels,
+        r: to_i64(background.r).must(),
+        g: to_i64(background.g).must(),
+        b: to_i64(background.b).must()
+    )
+
+    format: Format = match img.format
+        .gray | .gray_alpha     => .gray
+        .rgb | .rgba            => .rgb
+        .gray16 | .gray_alpha16 => .gray16
+        .rgb16 | .rgba16        => .rgb16
+
+    return Image(width: img.width, height: img.height, format: format, pixels: pixels)
+
+## Geometry
+
+# The rectangle of `img` whose top left corner is column `x`, row `y`, of
+# `width` by `height` pixels, as a new image.
+#
+# - `img`: the image cut.
+# - `x`: the first column kept, 0 or more.
+# - `y`: the first row kept, 0 or more.
+# - `width`: the columns kept, 0 or more; `x` + `width` at most
+#   `img.width`.
+# - `height`: the rows kept, 0 or more; `y` + `height` at most
+#   `img.height`.
+#
+# Fails `invalid` where the rectangle is not inside `img`, the message
+# saying both. Aborts where `img` is not valid. See also `paste`.
+function crop(img: Image, x: i64, y: i64, width: i64, height: i64) -> Image?
+    assert is_valid(img)
+
+    if x < 0 || y < 0 || width < 0 || height < 0 || x > img.width || y > img.height || width > img.width - x || height > img.height - y
+        return fail(
+            code: INVALID,
+            msg: f"the rectangle at {x}, {y} of {width} by {height} pixels is not inside an image of {img.width} by {img.height}"
+        )
+    s = layout.Shape(
+        width: img.width,
+        height: img.height,
+        channels: channels_of(img.format),
+        wide: bits_of(img.format) == 16
+    )
+    return ok(
+        Image(width: width, height: height, format: img.format, pixels: geometry.cut(s, img.pixels, x: x, y: y, width: width, height: height))
+    )
+
+# `img` mirrored left to right: the first column becomes the last.
+#
+# - `img`: the image mirrored.
+#
+# Aborts where `img` is not valid. See also `flip_vertical` and
+# `transpose`.
+function flip_horizontal(img: Image) -> Image
+    assert is_valid(img)
+    s = layout.Shape(
+        width: img.width,
+        height: img.height,
+        channels: channels_of(img.format),
+        wide: bits_of(img.format) == 16
+    )
+    return Image(
+        width: img.width,
+        height: img.height,
+        format: img.format,
+        pixels: geometry.moved(s, img.pixels, move: .flip_horizontal)
+    )
+
+# `img` mirrored top to bottom: the first row becomes the last.
+#
+# - `img`: the image mirrored.
+#
+# Aborts where `img` is not valid. See also `flip_horizontal`.
+function flip_vertical(img: Image) -> Image
+    assert is_valid(img)
+    s = layout.Shape(
+        width: img.width,
+        height: img.height,
+        channels: channels_of(img.format),
+        wide: bits_of(img.format) == 16
+    )
+    return Image(
+        width: img.width,
+        height: img.height,
+        format: img.format,
+        pixels: geometry.moved(s, img.pixels, move: .flip_vertical)
+    )
+
+# `img` turned a quarter counter-clockwise: its first row becomes the first
+# column, read from the bottom, and width and height swap.
+#
+# - `img`: the image turned.
+#
+# Exact: no pixel is resampled. Aborts where `img` is not valid. See also
+# `rotate_180`, `rotate_270` and `rotate`.
+function rotate_90(img: Image) -> Image
+    assert is_valid(img)
+    s = layout.Shape(
+        width: img.width,
+        height: img.height,
+        channels: channels_of(img.format),
+        wide: bits_of(img.format) == 16
+    )
+    return Image(
+        width: img.height,
+        height: img.width,
+        format: img.format,
+        pixels: geometry.moved(s, img.pixels, move: .rotate_90)
+    )
+
+# `img` turned half a turn: the top left pixel becomes the bottom right.
+#
+# - `img`: the image turned.
+#
+# Exact. Aborts where `img` is not valid. See also `rotate_90`.
+function rotate_180(img: Image) -> Image
+    assert is_valid(img)
+    s = layout.Shape(
+        width: img.width,
+        height: img.height,
+        channels: channels_of(img.format),
+        wide: bits_of(img.format) == 16
+    )
+    return Image(
+        width: img.width,
+        height: img.height,
+        format: img.format,
+        pixels: geometry.moved(s, img.pixels, move: .rotate_180)
+    )
+
+# `img` turned a quarter clockwise, three quarters counter-clockwise: its
+# first row becomes the last column, and width and height swap.
+#
+# - `img`: the image turned.
+#
+# Exact. Aborts where `img` is not valid. See also `rotate_90`.
+function rotate_270(img: Image) -> Image
+    assert is_valid(img)
+    s = layout.Shape(
+        width: img.width,
+        height: img.height,
+        channels: channels_of(img.format),
+        wide: bits_of(img.format) == 16
+    )
+    return Image(
+        width: img.height,
+        height: img.width,
+        format: img.format,
+        pixels: geometry.moved(s, img.pixels, move: .rotate_270)
+    )
+
+# `img` mirrored across its main diagonal: the pixel at column x, row y goes
+# to column y, row x, and width and height swap.
+#
+# - `img`: the image mirrored.
+#
+# Exact. Aborts where `img` is not valid. See also `transverse` and
+# `rotate_90`.
+function transpose(img: Image) -> Image
+    assert is_valid(img)
+    s = layout.Shape(
+        width: img.width,
+        height: img.height,
+        channels: channels_of(img.format),
+        wide: bits_of(img.format) == 16
+    )
+    return Image(
+        width: img.height,
+        height: img.width,
+        format: img.format,
+        pixels: geometry.moved(s, img.pixels, move: .transpose)
+    )
+
+# `img` mirrored across its other diagonal: the top left pixel becomes the
+# bottom right, and width and height swap.
+#
+# - `img`: the image mirrored.
+#
+# Exact. Aborts where `img` is not valid. See also `transpose`.
+function transverse(img: Image) -> Image
+    assert is_valid(img)
+    s = layout.Shape(
+        width: img.width,
+        height: img.height,
+        channels: channels_of(img.format),
+        wide: bits_of(img.format) == 16
+    )
+    return Image(
+        width: img.height,
+        height: img.width,
+        format: img.format,
+        pixels: geometry.moved(s, img.pixels, move: .transverse)
+    )
+
+# `img` as an EXIF orientation says to show it: 1 as it is, 2 mirrored, 3
+# turned half, 4 flipped, 5 transposed, 6 turned a quarter clockwise, 7
+# transversed, 8 turned a quarter counter-clockwise, as Pillow's
+# `ImageOps.exif_transpose` applies them.
+#
+# - `img`: the image as its file stores it.
+# - `orientation`: the EXIF tag 274's value, 1 to 8; `image/jpeg`'s decoder
+#   reads it.
+#
+# Fails `invalid` where `orientation` is not 1 to 8. Exact. Aborts where
+# `img` is not valid. See also `rotate_90` and `transpose`.
+function apply_orientation(img: Image, orientation: i64) -> Image?
+    return match orientation
+        1 => ok(convert(img, to: img.format))
+        2 => ok(flip_horizontal(img))
+        3 => ok(rotate_180(img))
+        4 => ok(flip_vertical(img))
+        5 => ok(transpose(img))
+        6 => ok(rotate_270(img))
+        7 => ok(transverse(img))
+        8 => ok(rotate_90(img))
+        _ => fail(code: INVALID, msg: f"an EXIF orientation of {orientation}, where 1 to 8 are defined")
+
+## Resampling
+
+# How a pixel is computed from the pixels around the place it comes from.
+variant Resampling
+    # The nearest pixel: no new value, blocks where enlarged.
+    nearest
+    # A box one pixel wide: each output pixel the mean of the input pixels
+    # under it.
+    box
+    # A triangle over the two nearest pixels each way: smooth, a little
+    # soft.
+    bilinear
+    # A sinc windowed by Hamming's cosine over two pixels each way: a little
+    # sharper than `bilinear`.
+    hamming
+    # Keys' cubic with a = -0.5 over four pixels each way: sharper.
+    bicubic
+    # Lanczos with three lobes over six pixels each way: the sharpest, and
+    # the slowest.
+    lanczos
+
+# `img` scaled to `width` by `height` pixels, each output pixel weighted
+# from the input pixels under its filter. A filter widens with the scale
+# where it shrinks, so that every input pixel counts (Pillow's way), and a
+# format with alpha is scaled with its colours premultiplied, so a
+# transparent pixel lends no colour.
+#
+# - `img`: the image scaled.
+# - `width`: the columns of the answer, 0 or more.
+# - `height`: the rows of the answer, 0 or more.
+# - `resampling`: how each pixel is computed.
+#
+# Fails `invalid` where `width` or `height` is negative, or `img` has no
+# pixel and the answer would. Fails `limit` where the answer passes
+# `default_limits`. The time is the answer's pixels times the filter's
+# width at the scale, and the rows scaled are held as floats, 8 bytes a
+# sample, before the columns are. Aborts where `img` is not valid. See also
+# `thumbnail`.
+function resize(img: Image, width: i64, height: i64, resampling: Resampling) -> Image?
+    assert is_valid(img)
+    check_limits(default_limits(), width: width, height: height)?
+
+    if width == 0 || height == 0
+        return ok(Image(width: width, height: height, format: img.format, pixels: []))
+
+    if img.width == 0 || img.height == 0
+        return fail(
+            code: INVALID,
+            msg: f"an image of {img.width} by {img.height} pixels has none to scale to {width} by {height}"
+        )
+    s = layout.Shape(
+        width: img.width,
+        height: img.height,
+        channels: channels_of(img.format),
+        wide: bits_of(img.format) == 16
+    )
+
+    kernel: resample.Kernel = match resampling
+        .nearest  => .nearest
+        .box      => .box
+        .bilinear => .bilinear
+        .hamming  => .hamming
+        .bicubic  => .bicubic
+        .lanczos  => .lanczos
+
+    pixels = resample.resized(s, img.pixels, width: width, height: height, kernel: kernel)
+    return ok(Image(width: width, height: height, format: img.format, pixels: pixels))
+
+# `img` scaled down to fit inside `max_width` by `max_height`, its
+# proportions kept, each side rounded to the nearest pixel and held to 1
+# and the bound; an image that fits already answers a copy, never enlarged.
+#
+# - `img`: the image scaled.
+# - `max_width`: the most columns of the answer, 1 or more.
+# - `max_height`: the most rows of the answer, 1 or more.
+# - `resampling`: how each pixel is computed.
+#
+# Fails `invalid` where `max_width` or `max_height` is below 1. Aborts
+# where `img` is not valid. See also `resize`.
+function thumbnail(img: Image, max_width: i64, max_height: i64, resampling: Resampling) -> Image?
+    assert is_valid(img)
+
+    if max_width < 1 || max_height < 1
+        return fail(code: INVALID, msg: f"a thumbnail of at most {max_width} by {max_height} pixels: a side is below 1")
+
+    if img.width <= max_width && img.height <= max_height
+        return ok(convert(img, to: img.format))
+    across = to_f64(max_width) / to_f64(img.width)
+    down = to_f64(max_height) / to_f64(img.height)
+
+    ratio = if across < down
+        across
+    else
+        down
+    width @= to_i64(to_f64(img.width) * ratio + 0.5).must()
+    height @= to_i64(to_f64(img.height) * ratio + 0.5).must()
+
+    if width < 1
+        width @ 1
+
+    if width > max_width
+        width @ max_width
+
+    if height < 1
+        height @ 1
+
+    if height > max_height
+        height @ max_height
+    return resize(img, width: width, height: height, resampling: resampling)
+
+# `img` turned `degrees` counter-clockwise about its centre, each pixel
+# computed from the input under `resampling`. Where `expand` is false the
+# answer is the size of `img` and its corners are cut; where it is true the
+# answer grows to hold the whole turned image. A pixel no input reaches is
+# `background`.
+#
+# - `img`: the image turned.
+# - `degrees`: the angle, counter-clockwise; negative turns clockwise, and
+#   any multiple of 90 is exact.
+# - `resampling`: how each pixel is computed; at this scale, the filter is
+#   never widened.
+# - `expand`: whether the answer grows to hold every corner.
+# - `background`: the colour of what no input pixel reaches, converted to
+#   the format of `img`.
+#
+# Aborts where `img` is not valid, or `degrees` is a NaN or an infinity.
+# See also `rotate_90`.
+function rotate(img: Image, degrees: f64, resampling: Resampling, expand: bool, background: Color) -> Image
+    assert is_valid(img)
+    assert degrees - degrees == 0.0
+    s = layout.Shape(
+        width: img.width,
+        height: img.height,
+        channels: channels_of(img.format),
+        wide: bits_of(img.format) == 16
+    )
+    behind = recode.samples_of_bytes(s, r: background.r, g: background.g, b: background.b, a: background.a)
+
+    kernel: resample.Kernel = match resampling
+        .nearest  => .nearest
+        .box      => .box
+        .bilinear => .bilinear
+        .hamming  => .hamming
+        .bicubic  => .bicubic
+        .lanczos  => .lanczos
+
+    t = warp.turned(s, img.pixels, degrees: degrees, kernel: kernel, expand: expand, background: behind)
+    return Image(width: t.width, height: t.height, format: img.format, pixels: t.pixels)
+
+## Combining
+
+# Writes `src` into `onto` with its top left corner at column `x`, row `y`,
+# replacing what was there, alpha and all (Pillow's `paste` with no mask,
+# Go's `draw.Src`). `src` is converted to the format of `onto` first; what
+# falls outside `onto` is dropped.
+#
+# - `onto`: the image written into.
+# - `src`: the image written.
+# - `x`: the column of `src`'s left edge; negative or past the width cuts it.
+# - `y`: the row of `src`'s top edge; negative or past the height cuts it.
+#
+# Aborts where an image is not valid. See also `composite` and `crop`.
+function paste(@onto: Image, src: Image, x: i64, y: i64)
+    assert is_valid(onto) && is_valid(src)
+    s = layout.Shape(
+        width: onto.width,
+        height: onto.height,
+        channels: channels_of(onto.format),
+        wide: bits_of(onto.format) == 16
+    )
+    from = layout.Shape(
+        width: src.width,
+        height: src.height,
+        channels: channels_of(src.format),
+        wide: bits_of(src.format) == 16
+    )
+    held = recode.converted(from, src.pixels, channels: s.channels, wide: s.wide)
+    geometry.place(
+        s: s,
+        pixels: @onto.pixels,
+        from: layout.with_channels(from, channels: s.channels, wide: s.wide),
+        src: held,
+        x: x,
+        y: y
+    )
+
+# Blends `src` over `onto` with its top left corner at column `x`, row `y`,
+# by `src`'s alpha (Porter and Duff's "over", Pillow's `alpha_composite`,
+# Go's `draw.Over`). `src` is converted to the format of `onto` with alpha
+# first, and where `onto` has no alpha the answer is opaque; what falls
+# outside `onto` is dropped.
+#
+# - `onto`: the image blended into.
+# - `src`: the image laid over it.
+# - `x`: the column of `src`'s left edge; negative or past the width cuts it.
+# - `y`: the row of `src`'s top edge; negative or past the height cuts it.
+#
+# Aborts where an image is not valid. See also `paste` and `flatten`.
+function composite(@onto: Image, src: Image, x: i64, y: i64)
+    assert is_valid(onto) && is_valid(src)
+    s = layout.Shape(
+        width: onto.width,
+        height: onto.height,
+        channels: channels_of(onto.format),
+        wide: bits_of(onto.format) == 16
+    )
+    from = layout.Shape(
+        width: src.width,
+        height: src.height,
+        channels: channels_of(src.format),
+        wide: bits_of(src.format) == 16
+    )
+
+    channels = if layout.has_alpha(s)
+        s.channels
+    else
+        s.channels + 1
+    held = recode.converted(from, src.pixels, channels: channels, wide: s.wide)
+    compose.laid_over(
+        s: s,
+        pixels: @onto.pixels,
+        from: layout.with_channels(from, channels: channels, wide: s.wide),
+        src: held,
+        x: x,
+        y: y
+    )
+
+# `first` and `second` mixed, each sample `first` × (1 - `amount`) +
+# `second` × `amount`, rounded: Pillow's `Image.blend`.
+#
+# - `first`: the image at `amount` 0.
+# - `second`: the image at `amount` 1, of the size of `first`; it is
+#   converted to the format of `first`.
+# - `amount`: 0 to 1.
+#
+# Fails `invalid` where the sizes differ or `amount` is outside 0 to 1.
+# Aborts where an image is not valid. See also `composite`.
+function blend(first: Image, second: Image, amount: f64) -> Image?
+    assert is_valid(first) && is_valid(second)
+
+    if first.width != second.width || first.height != second.height
+        return fail(
+            code: INVALID,
+            msg: f"images of {first.width} by {first.height} and {second.width} by {second.height} pixels: blending needs one size"
+        )
+
+    if amount != amount || amount < 0.0 || amount > 1.0
+        return fail(code: INVALID, msg: f"an amount of {amount}, where 0 to 1 are blended")
+    s = layout.Shape(
+        width: first.width,
+        height: first.height,
+        channels: channels_of(first.format),
+        wide: bits_of(first.format) == 16
+    )
+    other = layout.Shape(
+        width: second.width,
+        height: second.height,
+        channels: channels_of(second.format),
+        wide: bits_of(second.format) == 16
+    )
+    held = recode.converted(other, second.pixels, channels: s.channels, wide: s.wide)
+    return ok(
+        Image(width: first.width, height: first.height, format: first.format, pixels: compose.mixed(s, first: first.pixels, second: held, amount: amount))
+    )
+
+## Drawing
+
+# Draws the line from column `from_x`, row `from_y`, to column `to_x`, row
+# `to_y`, both ends included, one pixel wide: each column (or each row,
+# where the line is steeper) gets the pixel nearest to the true line.
+# `color` is written as `set_color` writes it, with no blending; what falls
+# outside `img` is dropped.
+#
+# - `img`: the image drawn on.
+# - `from_x`: the first end's column.
+# - `from_y`: the first end's row.
+# - `to_x`: the second end's column.
+# - `to_y`: the second end's row.
+# - `color`: the colour written.
+#
+# The time follows the part of the line inside `img`, never its length.
+# Aborts where `img` is not valid or a coordinate is past ±536,870,912
+# (2^29). See also `draw_rect` and `draw_circle`.
+function draw_line(@img: Image, from_x: i64, from_y: i64, to_x: i64, to_y: i64, color: Color)
+    assert is_valid(img)
+    s = layout.Shape(
+        width: img.width,
+        height: img.height,
+        channels: channels_of(img.format),
+        wide: bits_of(img.format) == 16
+    )
+    values = recode.samples_of_bytes(s, r: color.r, g: color.g, b: color.b, a: color.a)
+    draw.line(s, @img.pixels, x0: from_x, y0: from_y, x1: to_x, y1: to_y, values: values)
+
+# Draws the border of the rectangle whose top left pixel is column `x`, row
+# `y`, of `width` by `height` pixels, one pixel wide and inside the
+# rectangle. `color` is written with no blending; what falls outside `img`
+# is dropped.
+#
+# - `img`: the image drawn on.
+# - `x`: the rectangle's left column.
+# - `y`: the rectangle's top row.
+# - `width`: its columns; 0 or less draws nothing.
+# - `height`: its rows; 0 or less draws nothing.
+# - `color`: the colour written.
+#
+# Aborts where `img` is not valid or a coordinate or side is past
+# ±536,870,912 (2^29). See also `fill_rect`.
+function draw_rect(@img: Image, x: i64, y: i64, width: i64, height: i64, color: Color)
+    assert is_valid(img)
+    s = layout.Shape(
+        width: img.width,
+        height: img.height,
+        channels: channels_of(img.format),
+        wide: bits_of(img.format) == 16
+    )
+    values = recode.samples_of_bytes(s, r: color.r, g: color.g, b: color.b, a: color.a)
+    draw.rect_border(s, @img.pixels, x: x, y: y, width: width, height: height, values: values)
+
+# Fills the rectangle whose top left pixel is column `x`, row `y`, of
+# `width` by `height` pixels with `color`, written with no blending; what
+# falls outside `img` is dropped.
+#
+# - `img`: the image drawn on.
+# - `x`: the rectangle's left column.
+# - `y`: the rectangle's top row.
+# - `width`: its columns; 0 or less fills nothing.
+# - `height`: its rows; 0 or less fills nothing.
+# - `color`: the colour written.
+#
+# Aborts where `img` is not valid or a coordinate or side is past
+# ±536,870,912 (2^29). See also `draw_rect` and `blank`.
+function fill_rect(@img: Image, x: i64, y: i64, width: i64, height: i64, color: Color)
+    assert is_valid(img)
+    s = layout.Shape(
+        width: img.width,
+        height: img.height,
+        channels: channels_of(img.format),
+        wide: bits_of(img.format) == 16
+    )
+    values = recode.samples_of_bytes(s, r: color.r, g: color.g, b: color.b, a: color.a)
+    draw.rect_filled(s, @img.pixels, x: x, y: y, width: width, height: height, values: values)
+
+# Draws the circle of `radius` pixels about column `center_x`, row
+# `center_y`: the pixels of the disc of `fill_circle` that touch a pixel
+# outside it above, below, left or right, so the line is one pixel wide and
+# closed. `color` is written with no blending; what falls outside `img` is
+# dropped.
+#
+# - `img`: the image drawn on.
+# - `center_x`: the centre's column.
+# - `center_y`: the centre's row.
+# - `radius`: in pixels; 0 draws the centre alone, negative nothing.
+# - `color`: the colour written.
+#
+# The time follows the rows of `img` the circle crosses, never its size.
+# Aborts where `img` is not valid or a coordinate or the radius is past
+# ±536,870,912 (2^29). See also `fill_circle`.
+function draw_circle(@img: Image, center_x: i64, center_y: i64, radius: i64, color: Color)
+    assert is_valid(img)
+    s = layout.Shape(
+        width: img.width,
+        height: img.height,
+        channels: channels_of(img.format),
+        wide: bits_of(img.format) == 16
+    )
+    values = recode.samples_of_bytes(s, r: color.r, g: color.g, b: color.b, a: color.a)
+    draw.circle(s, @img.pixels, cx: center_x, cy: center_y, radius: radius, values: values)
+
+# Fills the disc of `radius` pixels about column `center_x`, row
+# `center_y`: every pixel whose distance from the centre, dx² + dy², is at
+# most radius × (radius + 1), the disc whose edge passes half a pixel past
+# `radius`. `color` is written with no blending; what falls outside `img`
+# is dropped.
+#
+# - `img`: the image drawn on.
+# - `center_x`: the centre's column.
+# - `center_y`: the centre's row.
+# - `radius`: in pixels; 0 fills the centre alone, negative nothing.
+# - `color`: the colour written.
+#
+# Aborts where `img` is not valid or a coordinate or the radius is past
+# ±536,870,912 (2^29). See also `draw_circle`.
+function fill_circle(@img: Image, center_x: i64, center_y: i64, radius: i64, color: Color)
+    assert is_valid(img)
+    s = layout.Shape(
+        width: img.width,
+        height: img.height,
+        channels: channels_of(img.format),
+        wide: bits_of(img.format) == 16
+    )
+    values = recode.samples_of_bytes(s, r: color.r, g: color.g, b: color.b, a: color.a)
+    draw.disc(s, @img.pixels, cx: center_x, cy: center_y, radius: radius, values: values)
+
+## Measures
+
+# How many samples of `img` hold each value, channel after channel: 256
+# counts for the first channel, then 256 for the next, as Pillow's
+# `histogram` lays them out. A 16-bit sample counts at its high byte.
+#
+# - `img`: the image counted.
+#
+# The answer holds 256 × `channels_of(img.format)` counts, which add up to
+# the pixels times the channels. Aborts where `img` is not valid.
+function histogram(img: Image) -> [i64]
+    assert is_valid(img)
+    channels = channels_of(img.format)
+    step = bits_of(img.format) / 8
+    counts: [i64] @= []
+
+    for _ in range(from: 0, to: 256 * channels)
+        counts @ counts.push(0)
+
+    at @= 0
+    c @= 0
+
+    while at < img.pixels.len()
+        bin = c * 256 + to_i64(img.pixels[at]).must()
+        counts[bin] @ counts[bin] + 1
+        at @ at + step
+        c @ (c + 1) % channels
+
+    return counts
+
+## Palettes
+
+# An image of colours chosen from a palette: one byte a pixel, each the
+# index of its colour. GIF holds its frames so, and PNG an image of colour
+# type 3. `to_indexed` makes one, `from_indexed` reads one back.
+record Indexed
+    # The columns, 0 or more.
+    width: i64
+    # The rows, 0 or more.
+    height: i64
+    # The colours, 1 to 256 of them; an entry of alpha 0 is transparent.
+    palette: [Color]
+    # One index a pixel, row after row from the top, each less than the
+    # count of `palette`.
+    indices: [u8]
+
+# At most `most` colours that stand for those of `img`, by median cut: the
+# colours are split in two at the median of the channel they spread most
+# along, again and again, and each part answers the mean of its colours,
+# each weighted by how many pixels hold it. An image of `most` colours or
+# fewer answers its own colours exactly, in the order they first appear.
+#
+# - `img`: the image whose colours are chosen, read as `color_at` reads it.
+# - `most`: the most colours answered, 1 to 256.
+#
+# Fails `invalid` where `most` is not 1 to 256. An image of no pixel answers
+# no colour. Aborts where `img` is not valid. See also `to_indexed`.
+function palette_of(img: Image, most: i64) -> [Color]?
+    assert is_valid(img)
+
+    if most < 1 || most > 256
+        return fail(code: INVALID, msg: f"a palette of at most {most} colours, where 1 to 256 are made")
+    s = layout.Shape(
+        width: img.width,
+        height: img.height,
+        channels: channels_of(img.format),
+        wide: bits_of(img.format) == 16
+    )
+    rgba = recode.converted(s, img.pixels, channels: 4, wide: false)
+    out: [Color] @= []
+
+    for p in quantize.median_cut(rgba, most: most)
+        out @ out.push(
+            Color(r: to_u8(quantize.channel(p: p, c: 0)).must(), g: to_u8(quantize.channel(p: p, c: 1)).must(), b: to_u8(quantize.channel(p: p, c: 2)).must(), a: to_u8(quantize.channel(p: p, c: 3)).must())
+        )
+
+    return ok(out)
+
+# `img` as indices into `palette`: each pixel the nearest colour, by the
+# sum of the squared differences of its four channels, the first where two
+# are as near. Where `dither` is true each pixel's error is spread to the
+# pixels right and below it (Floyd and Steinberg, Go's
+# `draw.FloydSteinberg`), so a gradient is kept as a mix of the colours.
+#
+# - `img`: the image indexed, read as `color_at` reads it.
+# - `palette`: the colours to choose from, 1 to 256.
+# - `dither`: whether errors are spread.
+#
+# Fails `invalid` where `palette` holds no colour or more than 256. Aborts
+# where `img` is not valid. See also `palette_of` and `from_indexed`.
+function to_indexed(img: Image, palette: [Color], dither: bool) -> Indexed?
+    assert is_valid(img)
+
+    if palette.len() < 1 || palette.len() > 256
+        return fail(code: INVALID, msg: f"a palette of {palette.len()} colours, where 1 to 256 are read")
+    s = layout.Shape(
+        width: img.width,
+        height: img.height,
+        channels: channels_of(img.format),
+        wide: bits_of(img.format) == 16
+    )
+    rgba = recode.converted(s, img.pixels, channels: 4, wide: false)
+    packed: [i64] @= []
+
+    for c in palette
+        packed @ packed.push(
+            quantize.pack(r: to_i64(c.r).must(), g: to_i64(c.g).must(), b: to_i64(c.b).must(), a: to_i64(c.a).must())
+        )
+
+    indices = quantize.indexed(rgba, width: img.width, palette: packed, dither: dither)
+    return ok(Indexed(width: img.width, height: img.height, palette: palette, indices: indices))
+
+# `ix` as an image of its colours: RGBA where an entry of its palette is not
+# opaque, RGB otherwise.
+#
+# - `ix`: the indexed image read.
+#
+# Fails `invalid` where a side is negative, its indices are not width ×
+# height or one is not less than the palette's count, or the palette holds
+# no colour or more than 256. See also `to_indexed`.
+function from_indexed(ix: Indexed) -> Image?
+    if ix.palette.len() < 1 || ix.palette.len() > 256
+        return fail(code: INVALID, msg: f"a palette of {ix.palette.len()} colours, where 1 to 256 are read")
+    n = ix.indices.len()
+    fits = ix.width >= 0 && ix.height >= 0 && (ix.width == 0 || ix.height == 0 || ix.width <= n && ix.height <= n && n % ix.width == 0 && n / ix.width == ix.height) && (ix.width > 0 && ix.height > 0 || n == 0)
+
+    if !fits
+        return fail(code: INVALID, msg: f"{n} indices for an image of {ix.width} by {ix.height} pixels")
+    opaque @= true
+
+    for c in ix.palette
+        if c.a != 255
+            opaque @ false
+
+    out: [u8] @= []
+
+    for k in ix.indices
+        i = to_i64(k).must()
+
+        if i >= ix.palette.len()
+            return fail(code: INVALID, msg: f"an index of {i} into a palette of {ix.palette.len()} colours")
+        c = ix.palette[i]
+        out @ out.push(c.r)
+        out @ out.push(c.g)
+        out @ out.push(c.b)
+
+        if !opaque
+            out @ out.push(c.a)
+
+    format: Format = if opaque
+        .rgb
+    else
+        .rgba
+    return ok(Image(width: ix.width, height: ix.height, format: format, pixels: out))
+
+# The 216 colours of the web-safe palette, every mix of red, green and blue
+# at 0, 51, 102, 153, 204 and 255, blue changing fastest: Go's
+# `palette.WebSafe`, each colour opaque.
+#
+# See also `to_indexed`.
+function web_safe_palette() -> [Color]
+    out: [Color] @= []
+
+    for r in range(from: 0, to: 6)
+        for g in range(from: 0, to: 6)
+            for b in range(from: 0, to: 6)
+                out @ out.push(Color(r: to_u8(r * 51).must(), g: to_u8(g * 51).must(), b: to_u8(b * 51).must(), a: 255))
+
+    return out
+
+## Kinds of file
+
+# Which format a file is in, from its first bytes.
+variant Kind
+    # PNG: `image/png` reads it.
+    png
+    # JPEG (JFIF or EXIF): `image/jpeg` reads it.
+    jpeg
+    # GIF, 87a or 89a: `image/gif` reads it.
+    gif
+    # BMP, Windows' bitmap: `image/bmp` reads it.
+    bmp
+    # PBM, PGM, PPM or PAM: `image/netpbm` reads it.
+    netpbm
+
+# The kind of file `data` begins as, read from its signature alone; the rest
+# is not checked, so a decoder may still fail `invalid`.
+#
+# - `data`: the file's bytes, or at least its first eight.
+#
+# Fails `invalid` where `data` begins as none of the kinds. See also `Kind`.
+function kind_of(data: [u8]) -> Kind?
+    n = data.len()
+
+    if n >= 8 && data.slice(from: 0, to: 8) == [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
+        return ok(.png)
+
+    if n >= 3 && data[0] == 0xff && data[1] == 0xd8 && data[2] == 0xff
+        return ok(.jpeg)
+
+    if n >= 6 && data[0] == 'G' && data[1] == 'I' && data[2] == 'F' && data[3] == '8' && (data[4] == '7' || data[4] == '9') && data[5] == 'a'
+        return ok(.gif)
+
+    if n >= 2 && data[0] == 'B' && data[1] == 'M'
+        return ok(.bmp)
+
+    if n >= 3 && data[0] == 'P' && data[1] >= '1' && data[1] <= '7' && (data[2] == ' ' || data[2] == '\n' || data[2] == '\r' || data[2] == '\t')
+        return ok(.netpbm)
+    return fail(code: INVALID, msg: f"{n} bytes that begin as no PNG, JPEG, GIF, BMP or netpbm file")
+
+## Tests
+
+test "check_limits: within, at each edge, past each, negative, and no overflow"
+    l = Limits(max_width: 100, max_height: 50, max_pixels: 1000)
+    assert !check_limits(l, width: 100, height: 10).is_err()
+    assert !check_limits(l, width: 0, height: 50).is_err()
+
+    for size in [[101, 1], [1, 51], [100, 11]]
+        match check_limits(l, width: size[0], height: size[1])
+            .ok _  => assert false
+            .err e => assert e.code == LIMIT
+
+    match check_limits(l, width: -1, height: 3)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match check_limits(Limits(max_width: 9223372036854775807, max_height: 9223372036854775807, max_pixels: 100), width: 4611686018427387904, height: 4)
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+test "from_pixels and is_valid: the right count, another count, and a negative side"
+    assert from_pixels(width: 2, height: 1, format: .rgb16, pixels: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]).must().width == 2
+
+    match from_pixels(width: 2, height: 1, format: .rgb, pixels: [1, 2, 3])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    assert !is_valid(Image(width: -1, height: 0, format: .gray, pixels: []))
+    assert !is_valid(Image(width: 3, height: 1, format: .gray, pixels: [1, 2]))
+    assert is_valid(Image(width: 0, height: 9, format: .rgba, pixels: []))
+    assert !is_valid(Image(width: 4611686018427387904, height: 4, format: .rgba, pixels: [1]))
+
+test "format_with: every format, and the ones refused"
+    assert format_with(channels: 1, bits: 8).must() == .gray
+    assert format_with(channels: 2, bits: 8).must() == .gray_alpha
+    assert format_with(channels: 4, bits: 16).must() == .rgba16
+    assert format_with(channels: 5, bits: 8).is_err()
+    assert format_with(channels: 0, bits: 8).is_err()
+    assert format_with(channels: 3, bits: 12).is_err()
+
+test "crop: the rectangle outside the image is refused, past either edge"
+    img = blank(width: 4, height: 3, format: .gray).must()
+    assert crop(img, x: 4, y: 0, width: 0, height: 3).must().width == 0
+
+    for r in [[3, 0, 2, 1], [0, 2, 1, 2], [-1, 0, 1, 1], [0, 0, 9223372036854775807, 1]]
+        match crop(img, x: r[0], y: r[1], width: r[2], height: r[3])
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+test "apply_orientation: each of the eight on a grid of 2 by 3"
+    img = from_pixels(width: 2, height: 3, format: .gray, pixels: [1, 2, 3, 4, 5, 6]).must()
+    assert apply_orientation(img, orientation: 1).must().pixels == [1, 2, 3, 4, 5, 6]
+    assert apply_orientation(img, orientation: 2).must().pixels == [2, 1, 4, 3, 6, 5]
+    assert apply_orientation(img, orientation: 3).must().pixels == [6, 5, 4, 3, 2, 1]
+    assert apply_orientation(img, orientation: 4).must().pixels == [5, 6, 3, 4, 1, 2]
+    assert apply_orientation(img, orientation: 5).must().pixels == [1, 3, 5, 2, 4, 6]
+    assert apply_orientation(img, orientation: 6).must().pixels == [5, 3, 1, 6, 4, 2]
+    assert apply_orientation(img, orientation: 7).must().pixels == [6, 4, 2, 5, 3, 1]
+    assert apply_orientation(img, orientation: 8).must().pixels == [2, 4, 6, 1, 3, 5]
+    assert apply_orientation(img, orientation: 0).is_err()
+    assert apply_orientation(img, orientation: 9).is_err()
+
+test "resize: to nothing, from nothing, and past the limits"
+    img = blank(width: 3, height: 3, format: .rgb).must()
+    assert resize(img, width: 0, height: 5, resampling: .bicubic).must().pixels.len() == 0
+    assert resize(blank(width: 0, height: 0, format: .gray).must(), width: 2, height: 2, resampling: .box).is_err()
+
+    match resize(img, width: 70000, height: 1, resampling: .nearest)
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+test "thumbnail: proportions kept, a side never below 1, and never enlarged"
+    wide = blank(width: 400, height: 10, format: .gray).must()
+    t = thumbnail(wide, max_width: 100, max_height: 100, resampling: .bilinear).must()
+    assert t.width == 100
+    assert t.height == 3
+    thin = thumbnail(
+        blank(width: 1000, height: 1, format: .gray).must(),
+        max_width: 10,
+        max_height: 10,
+        resampling: .nearest
+    ).must()
+    assert thin.height == 1
+    assert thumbnail(wide, max_width: 500, max_height: 500, resampling: .lanczos).must().width == 400
+    assert thumbnail(wide, max_width: 0, max_height: 5, resampling: .box).is_err()
+
+test "blend: sizes that differ, and an amount outside 0 to 1"
+    a = blank(width: 2, height: 2, format: .rgb).must()
+    assert blend(first: a, second: blank(width: 2, height: 3, format: .rgb).must(), amount: 0.5).is_err()
+    assert blend(first: a, second: a, amount: 1.5).is_err()
+    assert blend(first: a, second: a, amount: 0.0 / 0.0).is_err()
+
+test "from_indexed: an index past the palette, a count of indices that is wrong, and no palette"
+    red = Color(r: 255, g: 0, b: 0, a: 255)
+    assert from_indexed(Indexed(width: 1, height: 1, palette: [red], indices: [1])).is_err()
+    assert from_indexed(Indexed(width: 2, height: 1, palette: [red], indices: [0])).is_err()
+    assert from_indexed(Indexed(width: 0, height: 1, palette: [red], indices: [0])).is_err()
+    assert from_indexed(Indexed(width: 1, height: 1, palette: [], indices: [0])).is_err()
+    assert from_indexed(Indexed(width: 0, height: 0, palette: [red], indices: [])).must().pixels.len() == 0
+
+test "palette_of and to_indexed: the bounds of a palette"
+    img = blank(width: 2, height: 2, format: .rgb).must()
+    assert palette_of(img, most: 0).is_err()
+    assert palette_of(img, most: 257).is_err()
+    assert to_indexed(img, palette: [], dither: false).is_err()
+
+test "kind_of: every signature, short data, and none"
+    assert kind_of([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]).must() == .png
+    assert kind_of([0xff, 0xd8, 0xff, 0xe0]).must() == .jpeg
+    assert kind_of([0x47, 0x49, 0x46, 0x38, 0x37, 0x61]).must() == .gif
+    assert kind_of([0x42, 0x4d]).must() == .bmp
+    assert kind_of([0x50, 0x37, 0x0a]).must() == .netpbm
+    assert kind_of([0x50, 0x38, 0x0a]).is_err()
+    assert kind_of([0x89, 0x50]).is_err()
+    assert kind_of([]).is_err()
+
+test "rotate and colour on 16 bits: a background held at 16 bits, a colour by its high byte"
+    img @= blank(width: 3, height: 3, format: .rgba16).must()
+    set_samples(@img, x: 1, y: 1, samples: [0x1234, 0, 0xffff, 0xffff])
+    assert color_at(img, x: 1, y: 1) == Color(r: 0x12, g: 0, b: 0xff, a: 0xff)
+    turned = rotate(img, degrees: 45.0, resampling: .nearest, expand: true, background: Color(r: 1, g: 2, b: 3, a: 4))
+    assert samples_at(turned, x: 0, y: 0) == [257, 514, 771, 1028]
+
+## Examples
+
+# The usual limits, and a decoder's question asked of them.
+test "default_limits: an image of 8192 by 8192 passes"
+    assert !check_limits(default_limits(), width: 8192, height: 8192).is_err()
+
+# A size past the caller's own limits.
+test "check_limits: a width past the limit"
+    match check_limits(Limits(max_width: 10, max_height: 10, max_pixels: 100), width: 11, height: 1)
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+# The channels of a format.
+test "channels_of: gray has one, RGBA four"
+    assert channels_of(.gray) == 1
+    assert channels_of(.rgba16) == 4
+
+# The bits of a sample.
+test "bits_of: 8 or 16"
+    assert bits_of(.rgb) == 8
+    assert bits_of(.gray_alpha16) == 16
+
+# The bytes of a pixel.
+test "pixel_bytes_of: RGB of 8 bits, RGBA of 16"
+    assert pixel_bytes_of(.rgb) == 3
+    assert pixel_bytes_of(.rgba16) == 8
+
+# Whether a format holds alpha.
+test "has_alpha: RGBA does, RGB does not"
+    assert has_alpha(.rgba)
+    assert !has_alpha(.rgb)
+
+# A format named by its channels and bits, as a decoder finds them.
+test "format_with: three channels of 16 bits"
+    assert format_with(channels: 3, bits: 16).must() == .rgb16
+
+# A blank image is black and transparent.
+test "blank: 4 by 2 of RGBA, every sample 0"
+    img = blank(width: 4, height: 2, format: .rgba).must()
+    assert img.pixels.len() == 32
+    assert color_at(img, x: 3, y: 1) == Color(r: 0, g: 0, b: 0, a: 0)
+
+# An image made from bytes the program holds.
+test "from_pixels: a gray image of 3 by 1"
+    img = from_pixels(width: 3, height: 1, format: .gray, pixels: [0, 128, 255]).must()
+    assert color_at(img, x: 1, y: 0) == Color(r: 128, g: 128, b: 128, a: 255)
+
+# An image built directly is asked whether it holds the bytes it says.
+test "is_valid: an image short of a byte"
+    assert is_valid(Image(width: 2, height: 1, format: .gray, pixels: [1, 2]))
+    assert !is_valid(Image(width: 2, height: 1, format: .gray, pixels: [1]))
+
+# A pixel read as a colour.
+test "color_at: an RGB pixel is opaque"
+    img = from_pixels(width: 1, height: 1, format: .rgb, pixels: [10, 20, 30]).must()
+    assert color_at(img, x: 0, y: 0) == Color(r: 10, g: 20, b: 30, a: 255)
+
+# A pixel written by colour, and read back.
+test "set_color: one pixel made red"
+    img @= blank(width: 2, height: 2, format: .rgb).must()
+    set_color(@img, x: 1, y: 0, color: Color(r: 255, g: 0, b: 0, a: 255))
+    assert img.pixels == [0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0]
+
+# A 16-bit pixel read exactly.
+test "samples_at: the samples of a 16-bit gray pixel"
+    img = from_pixels(width: 1, height: 1, format: .gray16, pixels: [0x12, 0x34]).must()
+    assert samples_at(img, x: 0, y: 0) == [0x1234]
+
+# A 16-bit pixel written exactly.
+test "set_samples: a gray and alpha pixel of 16 bits"
+    img @= blank(width: 1, height: 1, format: .gray_alpha16).must()
+    set_samples(@img, x: 0, y: 0, samples: [0xabcd, 0xffff])
+    assert img.pixels == [0xab, 0xcd, 0xff, 0xff]
+
+# Colour to gray by Go's luma, and to 16 bits.
+test "convert: red to gray, and gray to 16 bits"
+    red = from_pixels(width: 1, height: 1, format: .rgb, pixels: [255, 0, 0]).must()
+    assert convert(red, to: .gray).pixels == [76]
+    assert convert(convert(red, to: .gray), to: .gray16).pixels == [76, 76]
+
+# Half-transparent red over white.
+test "flatten: red at half alpha over white is pink"
+    img = from_pixels(width: 1, height: 1, format: .rgba, pixels: [255, 0, 0, 128]).must()
+    flat = flatten(img, background: Color(r: 255, g: 255, b: 255, a: 255))
+    assert flat.format == .rgb
+    assert flat.pixels == [255, 127, 127]
+
+# The middle of an image cut out.
+test "crop: the middle 2 by 1 of a 4 by 3"
+    img = from_pixels(width: 4, height: 3, format: .gray, pixels: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]).must()
+    assert crop(img, x: 1, y: 1, width: 2, height: 1).must().pixels == [6, 7]
+
+# A row mirrored.
+test "flip_horizontal: a row reversed"
+    img = from_pixels(width: 3, height: 1, format: .gray, pixels: [1, 2, 3]).must()
+    assert flip_horizontal(img).pixels == [3, 2, 1]
+
+# A column mirrored.
+test "flip_vertical: rows reversed"
+    img = from_pixels(width: 1, height: 3, format: .gray, pixels: [1, 2, 3]).must()
+    assert flip_vertical(img).pixels == [3, 2, 1]
+
+# A quarter turn to the left.
+test "rotate_90: a row becomes a column, read upward"
+    img = from_pixels(width: 3, height: 1, format: .gray, pixels: [1, 2, 3]).must()
+    turned = rotate_90(img)
+    assert turned.width == 1
+    assert turned.pixels == [3, 2, 1]
+
+# Half a turn.
+test "rotate_180: a grid upside down"
+    img = from_pixels(width: 2, height: 2, format: .gray, pixels: [1, 2, 3, 4]).must()
+    assert rotate_180(img).pixels == [4, 3, 2, 1]
+
+# A quarter turn to the right.
+test "rotate_270: a row becomes a column, read downward"
+    img = from_pixels(width: 3, height: 1, format: .gray, pixels: [1, 2, 3]).must()
+    assert rotate_270(img).pixels == [1, 2, 3]
+    assert rotate_270(img).height == 3
+
+# Rows become columns.
+test "transpose: a grid of 2 by 2"
+    img = from_pixels(width: 2, height: 2, format: .gray, pixels: [1, 2, 3, 4]).must()
+    assert transpose(img).pixels == [1, 3, 2, 4]
+
+# Across the other diagonal.
+test "transverse: a grid of 2 by 2"
+    img = from_pixels(width: 2, height: 2, format: .gray, pixels: [1, 2, 3, 4]).must()
+    assert transverse(img).pixels == [4, 2, 3, 1]
+
+# A photograph taken with the camera turned, shown upright.
+test "apply_orientation: 6 turns a quarter clockwise"
+    img = from_pixels(width: 2, height: 1, format: .gray, pixels: [1, 2]).must()
+    upright = apply_orientation(img, orientation: 6).must()
+    assert upright.height == 2
+    assert upright.pixels == [1, 2]
+
+# An image halved, its two pixels a row averaged.
+test "resize: halved with a box"
+    img = from_pixels(width: 2, height: 1, format: .gray, pixels: [100, 200]).must()
+    assert resize(img, width: 1, height: 1, resampling: .box).must().pixels == [150]
+
+# A large image made small, its proportions kept.
+test "thumbnail: 640 by 480 within 64 by 64"
+    t = thumbnail(
+        blank(width: 640, height: 480, format: .rgb).must(),
+        max_width: 64,
+        max_height: 64,
+        resampling: .bicubic
+    ).must()
+    assert t.width == 64
+    assert t.height == 48
+
+# A turn by any angle, grown to hold the corners.
+test "rotate: 45 degrees grows an image of 10 by 10 to 15 by 15"
+    turned = rotate(
+        blank(width: 10, height: 10, format: .rgba).must(),
+        degrees: 45.0,
+        resampling: .bilinear,
+        expand: true,
+        background: Color(r: 0, g: 0, b: 0, a: 0)
+    )
+    assert turned.width == 15
+    assert turned.height == 15
+
+# One image written into another.
+test "paste: a 1 by 1 white square into a black image"
+    img @= blank(width: 2, height: 1, format: .gray).must()
+    paste(onto: @img, src: from_pixels(width: 1, height: 1, format: .gray, pixels: [255]).must(), x: 1, y: 0)
+    assert img.pixels == [0, 255]
+
+# A half-transparent pixel laid over an opaque one.
+test "composite: red at half alpha over blue"
+    img @= from_pixels(width: 1, height: 1, format: .rgb, pixels: [0, 0, 255]).must()
+    composite(
+        onto: @img,
+        src: from_pixels(width: 1, height: 1, format: .rgba, pixels: [255, 0, 0, 128]).must(),
+        x: 0,
+        y: 0
+    )
+    assert img.pixels == [128, 0, 127]
+
+# Two images mixed a quarter of the way.
+test "blend: a quarter of the way from black to gray"
+    black = from_pixels(width: 1, height: 1, format: .gray, pixels: [0]).must()
+    gray = from_pixels(width: 1, height: 1, format: .gray, pixels: [200]).must()
+    assert blend(first: black, second: gray, amount: 0.25).must().pixels == [50]
+
+# A diagonal drawn across an image.
+test "draw_line: the diagonal of a 3 by 3"
+    img @= blank(width: 3, height: 3, format: .gray).must()
+    draw_line(@img, from_x: 0, from_y: 0, to_x: 2, to_y: 2, color: Color(r: 255, g: 255, b: 255, a: 255))
+    assert img.pixels == [255, 0, 0, 0, 255, 0, 0, 0, 255]
+
+# A frame drawn around an image.
+test "draw_rect: the border of a 3 by 3"
+    img @= blank(width: 3, height: 3, format: .gray).must()
+    draw_rect(@img, x: 0, y: 0, width: 3, height: 3, color: Color(r: 9, g: 9, b: 9, a: 255))
+    assert img.pixels == [9, 9, 9, 9, 0, 9, 9, 9, 9]
+
+# A block filled.
+test "fill_rect: the right column of a 2 by 2"
+    img @= blank(width: 2, height: 2, format: .gray).must()
+    fill_rect(@img, x: 1, y: 0, width: 1, height: 2, color: Color(r: 7, g: 7, b: 7, a: 255))
+    assert img.pixels == [0, 7, 0, 7]
+
+# A ring of radius 1.
+test "draw_circle: a ring of radius 1 leaves its centre"
+    img @= blank(width: 3, height: 3, format: .gray).must()
+    draw_circle(@img, center_x: 1, center_y: 1, radius: 1, color: Color(r: 1, g: 1, b: 1, a: 255))
+    assert img.pixels == [1, 1, 1, 1, 0, 1, 1, 1, 1]
+
+# A disc of radius 1.
+test "fill_circle: a disc of radius 1 fills its square"
+    img @= blank(width: 3, height: 3, format: .gray).must()
+    fill_circle(@img, center_x: 1, center_y: 1, radius: 1, color: Color(r: 1, g: 1, b: 1, a: 255))
+    assert img.pixels == [1, 1, 1, 1, 1, 1, 1, 1, 1]
+
+# The values of a gray image counted.
+test "histogram: three pixels, two of them white"
+    counts = histogram(from_pixels(width: 3, height: 1, format: .gray, pixels: [255, 0, 255]).must())
+    assert counts.len() == 256
+    assert counts[255] == 2
+    assert counts[0] == 1
+
+# The colours of an image, fewer than asked.
+test "palette_of: an image of two colours answers both"
+    img = from_pixels(width: 3, height: 1, format: .rgb, pixels: [255, 0, 0, 0, 0, 255, 255, 0, 0]).must()
+    assert palette_of(img, most: 16).must() == [Color(r: 255, g: 0, b: 0, a: 255), Color(r: 0, g: 0, b: 255, a: 255)]
+
+# An image reduced to black and white.
+test "to_indexed: dark and light to black and white"
+    img = from_pixels(width: 2, height: 1, format: .gray, pixels: [30, 220]).must()
+    bw = [Color(r: 0, g: 0, b: 0, a: 255), Color(r: 255, g: 255, b: 255, a: 255)]
+    assert to_indexed(img, palette: bw, dither: false).must().indices == [0, 1]
+
+# An indexed image read back as its colours.
+test "from_indexed: two indices into a palette of two"
+    ix = Indexed(
+        width: 2,
+        height: 1,
+        palette: [Color(r: 1, g: 2, b: 3, a: 255), Color(r: 4, g: 5, b: 6, a: 255)],
+        indices: [1, 0]
+    )
+    assert from_indexed(ix).must().pixels == [4, 5, 6, 1, 2, 3]
+
+# The web-safe colours.
+test "web_safe_palette: 216 colours, black first and white last"
+    p = web_safe_palette()
+    assert p.len() == 216
+    assert p[1] == Color(r: 0, g: 0, b: 51, a: 255)
+    assert p[215] == Color(r: 255, g: 255, b: 255, a: 255)
+
+# A file's kind from its first bytes.
+test "kind_of: a GIF's signature"
+    assert kind_of([0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0, 0]).must() == .gif

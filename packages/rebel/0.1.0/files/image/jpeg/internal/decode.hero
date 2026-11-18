@@ -1,0 +1,475 @@
+# A JPEG file read whole: its segments walked in order, each one's length
+# checked against the file, the tables, the frame and every scan's header
+# checked against each other, the scans decoded, and the image made from
+# the coefficients. The metadata a program asks for, EXIF, the ICC profile
+# and Adobe's colour transform, is picked up on the way.
+
+use image
+use image/jpeg/internal/entropy
+use image/jpeg/internal/pixels
+use image/jpeg/internal/scan
+use image/jpeg/internal/tables
+
+# The most scans one file may hold.
+constant MAX_SCANS: i64
+    1000
+
+# A file read.
+record Decoded
+    # The pixels.
+    image: image.Image
+    # Whether the frame is progressive.
+    progressive: bool
+    # The TIFF structure of the first EXIF segment; empty for none.
+    exif: [u8]
+    # The ICC profile put back together; empty for none.
+    icc: [u8]
+
+# The two bytes of `data` at `at`, the high one first.
+function be16(data: [u8] lent, at: i64) -> i64
+    return to_i64(data[at]).must() << 8 | to_i64(data[at + 1]).must()
+
+# Whether `data` holds the bytes of `text` from `at`, within `end`.
+function holds_at(data: [u8] lent, at: i64, end: i64, text: [u8] lent) -> bool
+    if end - at < text.len()
+        return false
+
+    for i in range(from: 0, to: text.len())
+        if data[at + i] != text[i]
+            return false
+
+    return true
+
+# `a` / `b` rounded up, both above 0.
+function ceil_div(a: i64, b: i64) -> i64
+    return (a + b - 1) / b
+
+# The frame of the SOF segment whose data runs from `at` to `end`,
+# checked against `limits`. Fails `unsupported` on 12 or 16 bits a sample, a
+# height left to a DNL marker, and 2 or 4 components.
+function frame_of(data: [u8] lent, at: i64, end: i64, progressive: bool, limits: image.Limits) -> scan.Frame?
+    if end - at < 6
+        return fail(code: image.INVALID, msg: f"a frame header of {end - at} bytes at byte {at}")
+    precision = data[at]
+
+    if precision == 12 || precision == 16
+        return fail(code: image.UNSUPPORTED, msg: f"a frame of {precision} bits a sample, where 8 are read")
+
+    if precision != 8
+        return fail(code: image.INVALID, msg: f"a frame of {precision} bits a sample")
+    height = be16(data, at: at + 1)
+    width = be16(data, at: at + 3)
+    count = to_i64(data[at + 5]).must()
+
+    if height == 0
+        return fail(code: image.UNSUPPORTED, msg: "a frame whose height a DNL marker gives later")
+
+    if width == 0
+        return fail(code: image.INVALID, msg: "a frame of width 0")
+
+    if count == 2 || count == 4
+        return fail(
+            code: image.UNSUPPORTED,
+            msg: f"a frame of {count} components: gray (1) and YCbCr or RGB (3) are read, CMYK and YCCK are not"
+        )
+
+    if count != 1 && count != 3 || end - at != 6 + 3 * count
+        return fail(code: image.INVALID, msg: f"a frame header of {count} components in {end - at} bytes")
+    image.check_limits(limits, width: width, height: height)?
+    ids: [i64] @= []
+    hs: [i64] @= []
+    vs: [i64] @= []
+    qs: [i64] @= []
+    hmax @= 1
+    vmax @= 1
+
+    for i in range(from: 0, to: count)
+        p = at + 6 + 3 * i
+        id = to_i64(data[p]).must()
+        h = to_i64(data[p + 1]).must() >> 4
+        v = to_i64(data[p + 1]).must() & 15
+        q = to_i64(data[p + 2]).must()
+
+        if h < 1 || h > 4 || v < 1 || v > 4 || q > 3
+            return fail(
+                code: image.INVALID,
+                msg: f"a component of sampling {h} by {v} and table {q}, where 1 to 4 and 0 to 3 are allowed"
+            )
+
+        for other in ids
+            if other == id
+                return fail(code: image.INVALID, msg: f"two components of identifier {id}")
+
+        ids @ ids.push(id)
+        hs @ hs.push(h)
+        vs @ vs.push(v)
+        qs @ qs.push(q)
+
+        if h > hmax
+            hmax @ h
+
+        if v > vmax
+            vmax @ v
+
+    mcus_x = ceil_div(a: width, b: 8 * hmax)
+    mcus_y = ceil_div(a: height, b: 8 * vmax)
+    components: [scan.Component] @= []
+    offset @= 0
+
+    for i in range(from: 0, to: count)
+        c = scan.Component(
+            id: ids[i],
+            h: hs[i],
+            v: vs[i],
+            table: qs[i],
+            blocks_w: mcus_x * hs[i],
+            blocks_h: mcus_y * vs[i],
+            width: ceil_div(a: width * hs[i], b: hmax),
+            height: ceil_div(a: height * vs[i], b: vmax),
+            offset: offset
+        )
+        components @ components.push(c)
+        offset @ offset + c.blocks_w * c.blocks_h * 64
+
+    return ok(
+        scan.Frame(width: width, height: height, progressive: progressive, hmax: hmax, vmax: vmax, mcus_x: mcus_x, mcus_y: mcus_y, components: components)
+    )
+
+# The header of the scan whose data runs from `at` to `end`, checked
+# against the frame `f` and the tables of `h`.
+function scan_of(data: [u8] lent, at: i64, end: i64, f: scan.Frame lent, h: entropy.Huff lent) -> scan.Scan?
+    count = if end > at
+        to_i64(data[at]).must()
+    else
+        0
+
+    if count < 1 || count > 4 || end - at != 4 + 2 * count
+        return fail(code: image.INVALID, msg: f"a scan header of {count} components in {end - at} bytes at byte {at}")
+    members: [i64] @= []
+    dcs: [i64] @= []
+    acs: [i64] @= []
+    blocks @= 0
+
+    for i in range(from: 0, to: count)
+        id = to_i64(data[at + 1 + 2 * i]).must()
+        tables_byte = to_i64(data[at + 2 + 2 * i]).must()
+        found @= -1
+
+        for k in range(from: 0, to: f.components.len())
+            if f.components[k].id == id
+                found @ k
+
+        for m in members
+            if m == found
+                found @ -1
+
+        if found < 0 || tables_byte >> 4 > 3 || tables_byte & 15 > 3
+            return fail(
+                code: image.INVALID,
+                msg: f"a scan naming component {id} twice, or one the frame has not, or a table past 3"
+            )
+        members @ members.push(found)
+        dcs @ dcs.push(tables_byte >> 4)
+        acs @ acs.push(tables_byte & 15)
+        blocks @ blocks + f.components[found].h * f.components[found].v
+
+    p = at + 1 + 2 * count
+    start = to_i64(data[p]).must()
+    last = to_i64(data[p + 1]).must()
+    high = to_i64(data[p + 2]).must() >> 4
+    low = to_i64(data[p + 2]).must() & 15
+
+    shape_ok = if !f.progressive
+        start == 0 && last == 63 && high == 0 && low == 0
+    else if start == 0
+        last == 0 && high <= 13 && low <= 13
+    else
+        count == 1 && start <= last && last <= 63 && high <= 13 && low <= 13
+
+    if !shape_ok || count > 1 && blocks > 10
+        return fail(
+            code: image.INVALID,
+            msg: f"a scan of band {start} to {last}, bits {high} and {low}, over {count} components, that this frame cannot hold"
+        )
+
+    for i in range(from: 0, to: count)
+        if start == 0 && high == 0 && !h.defined[dcs[i]] || last > 0 && !h.defined[acs[i] + 4]
+            return fail(code: image.INVALID, msg: f"a scan at byte {at} names a Huffman table no DHT has defined")
+
+    return ok(scan.Scan(members: members, dc: dcs, ac: acs, start: start, end: last, high: high, low: low))
+
+# The JPEG file `data`, read under `limits`.
+function decoded(data: [u8] lent, limits: image.Limits) -> Decoded?
+    if data.len() < 2 || data[0] != 0xff || data[1] != 0xd8
+        return fail(code: image.INVALID, msg: "the data does not begin with JPEG's SOI marker")
+    pos @= 2
+    huff @= entropy.no_tables()
+    quant: [i64] @= []
+    defined: [bool] @= [false, false, false, false]
+
+    for _ in range(from: 0, to: 256)
+        quant @ quant.push(0)
+
+    frame @= scan.Frame(width: 0, height: 0, progressive: false, hmax: 1, vmax: 1, mcus_x: 0, mcus_y: 0, components: [])
+    framed @= false
+    coefs: [i16] @= []
+    interval @= 0
+    scans @= 0
+    exif: [u8] @= []
+    icc: [u8] @= []
+    adobe @= -1
+    jfif @= false
+    zz = tables.zigzag()
+    ended @= false
+
+    while pos < data.len()
+        if data[pos] != 0xff
+            return fail(code: image.INVALID, msg: f"byte {pos} is {data[pos]}, where a marker begins with 255")
+
+        while pos < data.len() && data[pos] == 0xff
+            pos @ pos + 1
+
+        if pos >= data.len()
+            break
+        m = to_i64(data[pos]).must()
+        pos @ pos + 1
+
+        if m == 0xd9
+            ended @ true
+            break
+
+        if m == 0xd8 || m == 0
+            return fail(code: image.INVALID, msg: f"a marker {m} at byte {pos - 1} where a segment stands")
+
+        if m != 1 && (m < 0xd0 || m > 0xd7)
+            if pos + 2 > data.len() || be16(data, at: pos) < 2 || pos + be16(data, at: pos) > data.len()
+                return fail(
+                    code: image.INVALID,
+                    msg: f"the segment of marker {m} at byte {pos - 2} runs past the end of the file"
+                )
+            start = pos + 2
+            end = pos + be16(data, at: pos)
+            next @= end
+
+            if m == 0xc0 || m == 0xc1 || m == 0xc2
+                if framed
+                    return fail(code: image.INVALID, msg: f"a second frame header at byte {pos - 2}")
+                frame @ frame_of(data, at: start, end: end, progressive: m == 0xc2, limits: limits)?
+                framed @ true
+                total @= 0
+
+                for c in frame.components
+                    total @ total + c.blocks_w * c.blocks_h * 64
+
+                for _ in range(from: 0, to: total)
+                    coefs @ coefs.push(0)
+            else if m == 0xc3 || m >= 0xc5 && m <= 0xc7 || m >= 0xc9 && m <= 0xcf
+                return fail(
+                    code: image.UNSUPPORTED,
+                    msg: f"a frame of marker {m}: lossless, hierarchical or arithmetic coding, which this package does not read"
+                )
+            else if m == 0xc4
+                tables_read(data, at: start, end: end, huff: @huff)?
+            else if m == 0xdb
+                quant_read(data, at: start, end: end, quant: @quant, defined: @defined)?
+            else if m == 0xdd
+                if end - start != 2
+                    return fail(code: image.INVALID, msg: f"a DRI segment of {end - start} bytes, where 2 stand")
+                interval @ be16(data, at: start)
+            else if m == 0xda
+                if !framed
+                    return fail(code: image.INVALID, msg: f"a scan at byte {pos - 2} before any frame header")
+                scans @ scans + 1
+
+                if scans > MAX_SCANS
+                    return fail(code: image.INVALID, msg: f"more than {MAX_SCANS} scans")
+                s = scan_of(data, at: start, end: end, f: frame, h: huff)?
+                next @ scan.decoded(data, start: end, f: frame, s: s, h: huff, interval: interval, coefs: @coefs, zz: zz)?
+            else if m == 0xe1 && exif.len() == 0 && holds_at(data: data, at: start, end: end, text: [0x45, 0x78, 0x69, 0x66, 0, 0])
+                exif @ data.slice(from: start + 6, to: end)
+            else if m == 0xe2 && holds_at(data: data, at: start, end: end, text: [0x49, 0x43, 0x43, 0x5f, 0x50, 0x52, 0x4f, 0x46, 0x49, 0x4c, 0x45, 0]) && end - start >= 14
+                for b in data.slice(from: start + 14, to: end)
+                    icc @ icc.push(b)
+            else if m == 0xee && holds_at(data: data, at: start, end: end, text: [0x41, 0x64, 0x6f, 0x62, 0x65]) && end - start >= 12
+                adobe @ to_i64(data[start + 11]).must()
+            else if m == 0xe0 && holds_at(data: data, at: start, end: end, text: [0x4a, 0x46, 0x49, 0x46, 0])
+                jfif @ true
+            pos @ next
+
+    if !ended
+        return fail(code: image.INVALID, msg: f"the file ends at byte {data.len()}, before its EOI marker")
+
+    if !framed || scans == 0
+        return fail(code: image.INVALID, msg: "the file holds no frame header or no scan")
+
+    for c in frame.components
+        if !defined[c.table]
+            return fail(
+                code: image.INVALID,
+                msg: f"component {c.id} names quantization table {c.table}, which no DQT defines"
+            )
+
+    samples = pixels.samples_of(frame, coefs: coefs, quant: quant, zz: zz)
+    rgb_ids = frame.components.len() == 3 && frame.components[0].id == 'R' && frame.components[1].id == 'G' && frame.components[2].id == 'B'
+    as_rgb = adobe == 0 || adobe < 0 && !jfif && rgb_ids
+    return ok(
+        Decoded(image: pixels.image_of(frame, samples: samples, as_rgb: as_rgb), progressive: frame.progressive, exif: exif, icc: icc)
+    )
+
+# Defines the Huffman tables of the DHT segment whose data runs from `at`
+# to `end`.
+function tables_read(data: [u8] lent, at: i64, end: i64, @huff: entropy.Huff) -> ()?
+    p @= at
+
+    while p < end
+        if end - p < 17
+            return fail(code: image.INVALID, msg: f"a DHT table cut short at byte {p}")
+        kind = to_i64(data[p]).must() >> 4
+        number = to_i64(data[p]).must() & 15
+
+        if kind > 1 || number > 3
+            return fail(
+                code: image.INVALID,
+                msg: f"a DHT table of class {kind} and number {number}, where 0 or 1 and 0 to 3 stand"
+            )
+        counts: [i64] @= []
+        total @= 0
+
+        for i in range(from: 1, to: 17)
+            counts @ counts.push(to_i64(data[p + i]).must())
+            total @ total + to_i64(data[p + i]).must()
+
+        if total > 256 || end - p - 17 < total
+            return fail(
+                code: image.INVALID,
+                msg: f"a DHT table of {total} codes at byte {p}, past 256 or past its segment"
+            )
+        symbols: [i64] @= []
+
+        for i in range(from: 0, to: total)
+            symbols @ symbols.push(to_i64(data[p + 17 + i]).must())
+
+        entropy.define(@huff, t: kind * 4 + number, counts: counts, symbols: symbols)?
+        p @ p + 17 + total
+
+    return ok()
+
+# Reads the quantization tables of the DQT segment whose data runs from
+# `at` to `end` into `quant`, four tables of 64 in zigzag order.
+function quant_read(data: [u8] lent, at: i64, end: i64, @quant: [i64], @defined: [bool]) -> ()?
+    p @= at
+
+    while p < end
+        precision = to_i64(data[p]).must() >> 4
+        number = to_i64(data[p]).must() & 15
+
+        size = if precision == 1
+            2
+        else
+            1
+
+        if precision > 1 || number > 3 || end - p - 1 < 64 * size
+            return fail(
+                code: image.INVALID,
+                msg: f"a DQT table of precision {precision} and number {number} at byte {p} that its segment cannot hold"
+            )
+
+        for k in range(from: 0, to: 64)
+            v = if size == 2
+                be16(data, at: p + 1 + 2 * k)
+            else
+                to_i64(data[p + 1 + k]).must()
+
+            if v == 0
+                return fail(code: image.INVALID, msg: f"a DQT table {number} holding a 0, which divides nothing")
+            quant[number * 64 + k] @ v
+
+        defined[number] @ true
+        p @ p + 1 + 64 * size
+
+    return ok()
+
+# The frame header of `data`, read as far as it, and whether it is
+# progressive: the segments before it walked and nothing decoded.
+function frame_only(data: [u8] lent) -> scan.Frame?
+    if data.len() < 2 || data[0] != 0xff || data[1] != 0xd8
+        return fail(code: image.INVALID, msg: "the data does not begin with JPEG's SOI marker")
+    pos @= 2
+    whole = image.Limits(max_width: 65535, max_height: 65535, max_pixels: 65535 * 65535)
+
+    while pos + 4 <= data.len() && data[pos] == 0xff
+        m = to_i64(data[pos + 1]).must()
+
+        if m == 0xff
+            pos @ pos + 1
+        else if m >= 0xd0 && m <= 0xd7 || m == 1
+            pos @ pos + 2
+        else
+            size = be16(data, at: pos + 2)
+
+            if size < 2 || pos + 2 + size > data.len()
+                return fail(
+                    code: image.INVALID,
+                    msg: f"the segment of marker {m} at byte {pos} runs past the end of the file"
+                )
+
+            if m == 0xc0 || m == 0xc1 || m == 0xc2
+                return frame_of(data, at: pos + 4, end: pos + 2 + size, progressive: m == 0xc2, limits: whole)
+
+            if m == 0xc3 || m >= 0xc5 && m <= 0xc7 || m >= 0xc9 && m <= 0xcf
+                return fail(
+                    code: image.UNSUPPORTED,
+                    msg: f"a frame of marker {m}: lossless, hierarchical or arithmetic coding"
+                )
+
+            if m == 0xda || m == 0xd9
+                break
+            pos @ pos + 2 + size
+
+    return fail(code: image.INVALID, msg: "no frame header before the first scan or the end of the file")
+
+test "frame_of: sampling, blocks and offsets of 4:2:0"
+    data: [u8] = [8, 0, 13, 0, 21, 3, 1, 0x22, 0, 2, 0x11, 1, 3, 0x11, 1]
+    f = frame_of(data, at: 0, end: data.len(), progressive: false, limits: image.default_limits()).must()
+    assert f.hmax == 2
+    assert f.mcus_x == 2
+    assert f.mcus_y == 1
+    assert f.components[0].blocks_w == 4
+    assert f.components[1].blocks_w == 2
+    assert f.components[1].width == 11
+    assert f.components[1].offset == 4 * 2 * 64
+    assert frame_of(
+        [12, 0, 1, 0, 1, 1, 1, 0x11, 0],
+        at: 0,
+        end: 9,
+        progressive: false,
+        limits: image.default_limits()
+    ).is_err()
+    assert frame_of(
+        [8, 0, 1, 0, 1, 4, 1, 0x11, 0, 2, 0x11, 0, 3, 0x11, 0, 4, 0x11, 0],
+        at: 0,
+        end: 18,
+        progressive: false,
+        limits: image.default_limits()
+    ).is_err()
+    assert frame_of(
+        [8, 0, 1, 0, 1, 1, 1, 0x51, 0],
+        at: 0,
+        end: 9,
+        progressive: false,
+        limits: image.default_limits()
+    ).is_err()
+
+test "frame_of: a frame past the limits fails before it is laid out"
+    data: [u8] = [8, 0xea, 0x60, 0xea, 0x60, 1, 1, 0x11, 0]
+
+    match frame_of(data, at: 0, end: data.len(), progressive: false, limits: image.default_limits())
+        .ok _  => assert false
+        .err e => assert e.code == image.LIMIT
+
+test "ceil_div and holds_at: rounding up, and bytes within a bound"
+    assert ceil_div(a: 13, b: 16) == 1
+    assert ceil_div(a: 16, b: 16) == 1
+    assert ceil_div(a: 17, b: 16) == 2
+    assert holds_at(data: [1, 2, 3], at: 1, end: 3, text: [2, 3])
+    assert !holds_at(data: [1, 2, 3], at: 2, end: 3, text: [3, 4])

@@ -1,0 +1,288 @@
+# The scans of a JPEG frame decoded into its coefficients: a baseline scan
+# whole (T.81 F.2), and the four kinds of progressive scan, a DC scan first
+# or refining, an AC scan of one band first or refining (G.1.2), with their
+# runs of blocks at the end of a band. Every coefficient of every component
+# lives in one list, two bytes each, a component's blocks from its offset.
+
+use image
+use image/jpeg/internal/entropy
+
+# One component of a frame.
+record Component
+    # Its identifier in the frame and the scans.
+    id: i64
+    # Its horizontal sampling factor, 1 to 4.
+    h: i64
+    # Its vertical sampling factor, 1 to 4.
+    v: i64
+    # The quantization table it is coded with, 0 to 3.
+    table: i64
+    # Its blocks across, every MCU's included.
+    blocks_w: i64
+    # Its blocks down, every MCU's included.
+    blocks_h: i64
+    # Its own samples across.
+    width: i64
+    # Its own samples down.
+    height: i64
+    # Where its first coefficient stands in the list.
+    offset: i64
+
+# A frame: the image's size and its components.
+record Frame
+    # The columns.
+    width: i64
+    # The rows.
+    height: i64
+    # Whether its scans are progressive.
+    progressive: bool
+    # The largest horizontal sampling factor.
+    hmax: i64
+    # The largest vertical sampling factor.
+    vmax: i64
+    # The MCUs across.
+    mcus_x: i64
+    # The MCUs down.
+    mcus_y: i64
+    # The components.
+    components: [Component]
+
+# A scan's header.
+record Scan
+    # The indices into the frame's components of those the scan holds.
+    members: [i64]
+    # The DC table of each member, 0 to 3.
+    dc: [i64]
+    # The AC table of each member, 0 to 3.
+    ac: [i64]
+    # The first coefficient of the band, in zigzag order.
+    start: i64
+    # The last coefficient of the band.
+    end: i64
+    # The bit position of the scan before this one, 0 for a first scan.
+    high: i64
+    # The bit position of this scan.
+    low: i64
+
+# Writes `v` as the coefficient at `at`. Fails `invalid` where it passes
+# what two bytes hold, which no file of 8 bits a sample does.
+function put(@coefs: [i16], at: i64, v: i64) -> ()?
+    if v < -32768 || v > 32767
+        return fail(code: image.INVALID, msg: f"a coefficient of {v}, past what a file of 8 bits a sample holds")
+    coefs[at] @ to_i16(v).must()
+    return ok()
+
+# The coefficient at `at`.
+function get(coefs: [i16] lent, at: i64) -> i64
+    return to_i64(coefs[at]).must()
+
+# Decodes the scan whose data begins at `start` of `data` into `coefs`,
+# with a restart marker every `interval` MCUs, 0 for none. Answers where
+# the scan's data ends: the next marker that is not a restart. Fails
+# `invalid` on a code no table holds, a run past its block, a restart
+# missing, or data that ends before the last block.
+function decoded(data: [u8] lent, start: i64, f: Frame lent, s: Scan lent, h: entropy.Huff lent, interval: i64, @coefs: [i16], zz: [i64] lent) -> i64?
+    r @= entropy.bits_at(start)
+    preds: [i64] @= [0, 0, 0, 0]
+    eobrun @= 0
+    expected @= 0
+
+    units = if s.members.len() == 1
+        c = f.components[s.members[0]]
+        (c.width + 7) / 8 * ((c.height + 7) / 8)
+    else
+        f.mcus_x * f.mcus_y
+
+    for n in range(from: 0, to: units)
+        if interval > 0 && n > 0 && n % interval == 0
+            entropy.align(@r)
+
+            while r.pos < data.len() && data[r.pos] == 0xff && r.pos + 1 < data.len() && data[r.pos + 1] == 0xff
+                r.pos @ r.pos + 1
+
+            if r.pos + 1 >= data.len() || data[r.pos] != 0xff || to_i64(data[r.pos + 1]).must() != 0xd0 + expected
+                return fail(code: image.INVALID, msg: f"restart marker {expected} missing at byte {r.pos}")
+            r.pos @ r.pos + 2
+            expected @ (expected + 1) % 8
+            preds @ [0, 0, 0, 0]
+            eobrun @ 0
+
+        if s.members.len() == 1
+            k = s.members[0]
+            c = f.components[k]
+            across = (c.width + 7) / 8
+            at = c.offset + (n / across * c.blocks_w + n % across) * 64
+            block(@r, data: data, h: h, s: s, member: 0, at: at, preds: @preds, eobrun: @eobrun, coefs: @coefs, zz: zz)?
+        else
+            mx = n % f.mcus_x
+            my = n / f.mcus_x
+
+            for member in range(from: 0, to: s.members.len())
+                c = f.components[s.members[member]]
+
+                for v in range(from: 0, to: c.v)
+                    for u in range(from: 0, to: c.h)
+                        at = c.offset + ((my * c.v + v) * c.blocks_w + mx * c.h + u) * 64
+                        block(@r, data: data, h: h, s: s, member: member, at: at, preds: @preds, eobrun: @eobrun, coefs: @coefs, zz: zz)?
+
+        if r.stopped
+            return fail(code: image.INVALID, msg: f"a scan's data ends at byte {r.pos}, before its last block")
+
+    pos @= r.pos
+
+    while pos + 1 < data.len() && !(data[pos] == 0xff && data[pos + 1] != 0 && (data[pos + 1] < 0xd0 || data[pos + 1] > 0xd7))
+        pos @ pos + 1
+
+    return ok(pos)
+
+# Decodes one block of member `member` of the scan `s` into the
+# coefficients from `at`.
+function block(@r: entropy.Bits, data: [u8] lent, h: entropy.Huff lent, s: Scan lent, member: i64, at: i64, @preds: [i64], @eobrun: i64, @coefs: [i16], zz: [i64] lent) -> ()?
+    if s.start == 0 && s.high > 0
+        if entropy.next_bit(@r, data: data) == 1
+            put(@coefs, at: at, v: get(coefs, at: at) | 1 << s.low)?
+        return ok()
+
+    if s.start == 0
+        t = entropy.symbol(@r, data: data, h: h, t: s.dc[member])?
+
+        if t > 15
+            return fail(code: image.INVALID, msg: f"a DC difference of category {t}, where 15 is the most")
+        preds[member] @ preds[member] + entropy.extend(v: entropy.receive(@r, data: data, n: t), n: t)
+
+        if preds[member] < -32768 || preds[member] > 32767
+            return fail(
+                code: image.INVALID,
+                msg: f"a DC coefficient of {preds[member]}, past what a file of 8 bits a sample holds"
+            )
+        put(@coefs, at: at, v: preds[member] << s.low)?
+
+        if s.end == 0
+            return ok()
+
+    first = if s.start == 0
+        1
+    else
+        s.start
+
+    if s.high > 0
+        return refined(
+            @r,
+            data: data,
+            h: h,
+            t: s.ac[member] + 4,
+            from: first,
+            to: s.end,
+            low: s.low,
+            at: at,
+            eobrun: @eobrun,
+            coefs: @coefs,
+            zz: zz
+        )
+
+    if eobrun > 0
+        eobrun @ eobrun - 1
+        return ok()
+    k @= first
+
+    while k <= s.end
+        rs = entropy.symbol(@r, data: data, h: h, t: s.ac[member] + 4)?
+        run = rs >> 4
+        size = rs & 15
+
+        if size == 0
+            if run < 15
+                eobrun @ (1 << run) - 1
+
+                if run > 0
+                    eobrun @ eobrun + entropy.receive(@r, data: data, n: run)
+                return ok()
+            k @ k + 16
+        else
+            k @ k + run
+
+            if k > s.end
+                return fail(code: image.INVALID, msg: f"a run of {run} zeros past the band's last coefficient, {s.end}")
+            put(@coefs, at: at + zz[k], v: entropy.extend(v: entropy.receive(@r, data: data, n: size), n: size) << s.low)?
+            k @ k + 1
+
+    return ok()
+
+# Refines the band `from` to `to` of the block at `at` by one bit, at bit
+# position `low`, by table `t` (G.1.2.3).
+function refined(@r: entropy.Bits, data: [u8] lent, h: entropy.Huff lent, t: i64, from: i64, to: i64, low: i64, at: i64, @eobrun: i64, @coefs: [i16], zz: [i64] lent) -> ()?
+    plus = 1 << low
+    minus = -1 << low
+    k @= from
+
+    if eobrun == 0
+        while k <= to
+            rs = entropy.symbol(@r, data: data, h: h, t: t)?
+            run @= rs >> 4
+            size = rs & 15
+            v @= 0
+
+            if size == 0 && run < 15
+                eobrun @ 1 << run
+
+                if run > 0
+                    eobrun @ eobrun + entropy.receive(@r, data: data, n: run)
+                break
+
+            if size != 0
+                if size != 1
+                    return fail(
+                        code: image.INVALID,
+                        msg: f"a refining coefficient of {size} bits, where 1 is the only size"
+                    )
+
+                v @ if entropy.next_bit(@r, data: data) == 1
+                    plus
+                else
+                    minus
+            placed @= false
+
+            while k <= to && !placed
+                z = at + zz[k]
+                c = get(coefs, at: z)
+
+                if c != 0
+                    sharpen(@r, data: data, coefs: @coefs, z: z, c: c, plus: plus, minus: minus)?
+                else if run == 0
+                    if v != 0
+                        put(@coefs, at: z, v: v)?
+                    placed @ true
+                else
+                    run @ run - 1
+                k @ k + 1
+
+    if eobrun > 0
+        while k <= to
+            z = at + zz[k]
+            c = get(coefs, at: z)
+
+            if c != 0
+                sharpen(@r, data: data, coefs: @coefs, z: z, c: c, plus: plus, minus: minus)?
+            k @ k + 1
+
+        eobrun @ eobrun - 1
+
+    return ok()
+
+# Adds the next correction bit to the coefficient `c` at `z`, which is not
+# 0, away from 0, where its bit at `plus` is not set already.
+function sharpen(@r: entropy.Bits, data: [u8] lent, @coefs: [i16], z: i64, c: i64, plus: i64, minus: i64) -> ()?
+    if entropy.next_bit(@r, data: data) == 1 && c & plus == 0
+        step = if c >= 0
+            plus
+        else
+            minus
+        put(@coefs, at: z, v: c + step)?
+
+    return ok()
+
+test "put: a coefficient past two bytes is refused"
+    coefs: [i16] @= [0]
+    assert !put(@coefs, at: 0, v: -32768).is_err()
+    assert put(@coefs, at: 0, v: 32768).is_err()
+    assert get(coefs, at: 0) == -32768

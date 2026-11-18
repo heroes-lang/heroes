@@ -1,0 +1,167 @@
+# A frame's coefficients turned into pixels: each block dequantized and
+# put through the inverse DCT of T.81 A.3.3, in floats, then shifted by 128
+# and held to 0 to 255; then each pixel's samples taken from its
+# components, a chroma sample repeated over the pixels it covers, and
+# YCbCr turned into RGB by JFIF's equations.
+
+use image
+use image/jpeg/internal/scan
+use math
+
+# For column (or row) `x` and frequency `u`, at x × 8 + u: C(u) / 2 ×
+# cos((2x + 1) u pi / 16), C(0) being 1 / sqrt(2) and C(u) 1 otherwise.
+function cosines() -> [f64]
+    out: [f64] @= []
+
+    for x in range(from: 0, to: 8)
+        for u in range(from: 0, to: 8)
+            scale = if u == 0
+                1.0 / math.sqrt(2.0)
+            else
+                1.0
+            out @ out.push(scale / 2.0 * math.cos(to_f64((2 * x + 1) * u) * math.PI / 16.0))
+
+    return out
+
+# `v` rounded to the nearest whole number, a half up, held to 0 to 255.
+function to_byte(v: f64) -> u8
+    if v <= 0.0
+        return 0
+
+    if v >= 255.0
+        return 255
+    return to_u8(to_i64(v + 0.5).must()).must()
+
+# The samples of every block of `f`, laid out as its coefficients are in
+# `coefs`: each dequantized by its component's table of `quant` (four
+# tables of 64 in zigzag order, `zz` the zigzag), turned by the inverse
+# DCT and shifted by 128.
+function samples_of(f: scan.Frame lent, coefs: [i16] lent, quant: [i64] lent, zz: [i64] lent) -> [u8]
+    t = cosines()
+    out: [u8] @= []
+    deq: [f64] @= []
+    rows: [f64] @= []
+
+    for _ in range(from: 0, to: 64)
+        deq @ deq.push(0.0)
+        rows @ rows.push(0.0)
+
+    for c in f.components
+        natural: [i64] @= []
+
+        for _ in range(from: 0, to: 64)
+            natural @ natural.push(0)
+
+        for i in range(from: 0, to: 64)
+            natural[zz[i]] @ quant[c.table * 64 + i]
+
+        for b in range(from: 0, to: c.blocks_w * c.blocks_h)
+            at = c.offset + b * 64
+            flat @= true
+
+            for k in range(from: 0, to: 64)
+                v = to_i64(coefs[at + k]).must() * natural[k]
+                deq[k] @ to_f64(v)
+
+                if k > 0 && v != 0
+                    flat @ false
+
+            if flat
+                level = to_byte(deq[0] / 8.0 + 128.0)
+
+                for _ in range(from: 0, to: 64)
+                    out @ out.push(level)
+            else
+                for v in range(from: 0, to: 8)
+                    for x in range(from: 0, to: 8)
+                        sum @= 0.0
+
+                        for u in range(from: 0, to: 8)
+                            sum @ sum + t[x * 8 + u] * deq[v * 8 + u]
+
+                        rows[v * 8 + x] @ sum
+
+                for y in range(from: 0, to: 8)
+                    for x in range(from: 0, to: 8)
+                        sum @= 0.0
+
+                        for v in range(from: 0, to: 8)
+                            sum @ sum + t[y * 8 + v] * rows[v * 8 + x]
+
+                        out @ out.push(to_byte(sum + 128.0))
+
+    return out
+
+# The sample of component `c` at its column `cx`, row `cy`.
+function sample_at(c: scan.Component lent, samples: [u8] lent, cx: i64, cy: i64) -> i64
+    return to_i64(samples[c.offset + (cy / 8 * c.blocks_w + cx / 8) * 64 + cy % 8 * 8 + cx % 8]).must()
+
+# The image of `f` from its `samples`: gray for one component; for three,
+# RGB from YCbCr, or the samples as they are where `as_rgb`.
+function image_of(f: scan.Frame lent, samples: [u8] lent, as_rgb: bool) -> image.Image
+    out: [u8] @= []
+
+    if f.components.len() == 1
+        c = f.components[0]
+
+        for y in range(from: 0, to: f.height)
+            for x in range(from: 0, to: f.width)
+                out @ out.push(samples[c.offset + (y / 8 * c.blocks_w + x / 8) * 64 + y % 8 * 8 + x % 8])
+
+        return image.Image(width: f.width, height: f.height, format: .gray, pixels: out)
+    a = f.components[0]
+    b = f.components[1]
+    c = f.components[2]
+
+    for y in range(from: 0, to: f.height)
+        for x in range(from: 0, to: f.width)
+            first = sample_at(a, samples: samples, cx: x * a.h / f.hmax, cy: y * a.v / f.vmax)
+            second = sample_at(b, samples: samples, cx: x * b.h / f.hmax, cy: y * b.v / f.vmax)
+            third = sample_at(c, samples: samples, cx: x * c.h / f.hmax, cy: y * c.v / f.vmax)
+
+            if as_rgb
+                out @ out.push(to_u8(first).must())
+                out @ out.push(to_u8(second).must())
+                out @ out.push(to_u8(third).must())
+            else
+                luma = to_f64(first)
+                blue = to_f64(second - 128)
+                red = to_f64(third - 128)
+                out @ out.push(to_byte(luma + 1.402 * red))
+                out @ out.push(to_byte(luma - 0.344136 * blue - 0.714136 * red))
+                out @ out.push(to_byte(luma + 1.772 * blue))
+
+    return image.Image(width: f.width, height: f.height, format: .rgb, pixels: out)
+
+test "to_byte: rounding and the ends"
+    assert to_byte(-3.0) == 0
+    assert to_byte(254.5) == 255
+    assert to_byte(254.49) == 254
+    assert to_byte(1000.0) == 255
+
+test "samples_of: a block of DC alone is flat, and one AC coefficient makes a cosine"
+    c = scan.Component(id: 1, h: 1, v: 1, table: 0, blocks_w: 1, blocks_h: 1, width: 8, height: 8, offset: 0)
+    f = scan.Frame(width: 8, height: 8, progressive: false, hmax: 1, vmax: 1, mcus_x: 1, mcus_y: 1, components: [c])
+    zz: [i64] @= []
+    quant: [i64] @= []
+
+    for i in range(from: 0, to: 64)
+        zz @ zz.push(i)
+        quant @ quant.push(1)
+
+    for _ in range(from: 64, to: 256)
+        quant @ quant.push(1)
+
+    coefs: [i16] @= []
+
+    for _ in range(from: 0, to: 64)
+        coefs @ coefs.push(0)
+
+    coefs[0] @ 80
+    flat = samples_of(f, coefs: coefs, quant: quant, zz: zz)
+    assert flat[0] == 138
+    assert flat[63] == 138
+    coefs[1] @ 40
+    wave = samples_of(f, coefs: coefs, quant: quant, zz: zz)
+    assert wave[0] > wave[7]
+    assert wave[0] == wave[8]

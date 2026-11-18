@@ -1,0 +1,59 @@
+# The ledger of `image/netpbm`: what Python's Pillow (its PPM plugin) lets a
+# program do with the netpbm formats, one block per capability, and what
+# Rebel answers. Go's standard library and Rust's have none: `-` in their
+# lines. Pillow is not installed here, so its names are those of its
+# documented API, unread by `dir()`.
+#
+# The test files were laid out by hand by a Go program on 2026-11-18, their
+# pixels known by construction; netpbm's own documentation is what they
+# follow (1 black in PBM, comments from `#` to the end of a line, PAM's
+# fields up to ENDHDR).
+
+capability netpbm/decode  PBM, PGM, PPM and PAM read, plain or raw
+  heroes  image/netpbm.decode
+  go      -
+  rust    -
+  python  Image.open, PpmImagePlugin.PpmImageFile, PpmImagePlugin.PpmPlainDecoder
+  note    a maximum value of 255 or 65,535 kept as it is, any other scaled to the full range, rounded: the decision of this package, since Pillow keeps a PGM of maximum value past 255 as 32-bit integers, a mode `image` has none of. PAM (P7) is read too, which Pillow's documentation does not list
+
+capability netpbm/info  the size, maximum value and depth read from the header
+  heroes  image/netpbm.info_of, image/netpbm.Info
+  go      -
+  rust    -
+  python  Image.open (lazy)
+  note    -
+
+capability netpbm/limits  a file that claims a huge image refused before it is allocated
+  heroes  image/netpbm.decode with image.Limits
+  go      -
+  rust    -
+  python  Image.MAX_IMAGE_PIXELS
+  note    a number of the header has at most 10 digits, so none overflows
+
+capability netpbm/encode  an image written as PGM, PPM or PAM, plain or raw
+  heroes  image/netpbm.encode
+  go      -
+  rust    -
+  python  Image.save(format="PPM"), Image.save(format="PGM")
+  note    a format with alpha as PAM, raw only
+
+capability netpbm/bitmap  a black and white bitmap written
+  heroes  image/netpbm.encode_bitmap
+  go      -
+  rust    -
+  python  Image.save of a "1" image as PBM
+  note    by a threshold on the gray; Pillow converts to "1" by dithering first, which a program does here with `image.to_indexed` and a palette of black and white
+
+capability netpbm/float  PFM, the float maps
+  heroes  pending
+  go      -
+  rust    -
+  python  Image.open of a PFM ("Pf", "PF"), Image.save(format="PFM")
+  note    `image` holds no float format
+
+capability netpbm/several  the images after the first in one file
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  note    netpbm allows several images one after another; `decode` reads the first

@@ -1,0 +1,309 @@
+# Pixels computed from the pixels around a place: the kernels of the
+# resampling filters, and an image scaled by convolving its rows and then
+# its columns with them. Where a kernel shrinks an image it is widened by
+# the scale, so every input pixel counts in the answer, and a pixel with
+# alpha is weighted with its colour premultiplied, so a transparent pixel
+# lends none.
+
+use image/internal/layout
+use math
+
+# A resampling kernel.
+variant Kernel
+    # The nearest pixel.
+    nearest
+    # A box one pixel wide.
+    box
+    # A triangle, two pixels wide.
+    bilinear
+    # A sinc windowed by Hamming's cosine, two pixels wide.
+    hamming
+    # Keys' cubic with a = -0.5, four pixels wide.
+    bicubic
+    # Lanczos of three lobes, six pixels wide.
+    lanczos
+
+# How far from its centre `kernel` reaches, in pixels at scale 1.
+function support_of(kernel: Kernel) -> f64
+    return match kernel
+        .nearest | .box      => 0.5
+        .bilinear | .hamming => 1.0
+        .bicubic             => 2.0
+        .lanczos             => 3.0
+
+# sin(pi x) / (pi x), 1 at 0.
+function sinc(x: f64) -> f64
+    if x == 0.0
+        return 1.0
+    a = x * math.PI
+    return math.sin(a) / a
+
+# The weight `kernel` gives a pixel `x` pixels from its centre.
+function weigh(kernel: Kernel, x: f64) -> f64
+    d = math.abs(x)
+
+    return match kernel
+        .nearest | .box =>
+            if x > -0.5 && x <= 0.5
+                1.0
+            else
+                0.0
+        .bilinear =>
+            if d < 1.0
+                1.0 - d
+            else
+                0.0
+        .hamming =>
+            if d >= 1.0
+                0.0
+            else
+                sinc(d) * (0.54 + 0.46 * math.cos(d * math.PI))
+        .bicubic => cubic(d)
+        .lanczos =>
+            if d < 3.0
+                sinc(d) * sinc(d / 3.0)
+            else
+                0.0
+
+# Keys' cubic convolution with a = -0.5 at the distance `d`, 0 or more.
+function cubic(d: f64) -> f64
+    a = -0.5
+
+    if d < 1.0
+        return ((a + 2.0) * d - (a + 3.0)) * d * d + 1.0
+
+    if d < 2.0
+        return (((d - 5.0) * d + 8.0) * d - 4.0) * a
+    return 0.0
+
+# The input pixels one output pixel is weighted from, along one axis.
+record Taps
+    # The first input pixel.
+    first: i64
+    # The weight of each input pixel from `first` on, adding up to 1 where
+    # any is not 0.
+    weights: [f64]
+
+# For each of `out_size` pixels along an axis of `in_size` input pixels,
+# the pixels and weights of `kernel` widened by the scale where it shrinks.
+function taps_of(in_size: i64, out_size: i64, kernel: Kernel) -> [Taps]
+    scale = to_f64(in_size) / to_f64(out_size)
+
+    widen = if scale > 1.0
+        scale
+    else
+        1.0
+    support = support_of(kernel) * widen
+    out: [Taps] @= []
+
+    for i in range(from: 0, to: out_size)
+        center = (to_f64(i) + 0.5) * scale
+        first = clamp_index(math.floor(center - support + 0.5), size: in_size)
+        last = clamp_index(math.floor(center + support + 0.5), size: in_size)
+        weights: [f64] @= []
+        total @= 0.0
+
+        for j in range(from: first, to: last)
+            w = weigh(kernel, x: (to_f64(j) - center + 0.5) / widen)
+            weights @ weights.push(w)
+            total @ total + w
+
+        if total != 0.0
+            for k in range(from: 0, to: weights.len())
+                weights[k] @ weights[k] / total
+        out @ out.push(Taps(first: first, weights: weights))
+
+    return out
+
+# `v`, a whole number held as a float, as an index held to 0 to `size`.
+function clamp_index(v: f64, size: i64) -> i64
+    if v <= 0.0
+        return 0
+
+    if v >= to_f64(size)
+        return size
+    return to_i64(v).must()
+
+# The input index the nearest kernel takes for output pixel `i` of
+# `out_size` along an axis of `in_size`: the pixel under its centre.
+function nearest_index(i: i64, in_size: i64, out_size: i64) -> i64
+    return (2 * i + 1) * in_size / (2 * out_size)
+
+# `pixels`, laid out as `s` says, scaled to `width` by `height` under
+# `kernel`. Both sizes and the input's are more than 0.
+function resized(s: layout.Shape, pixels: [u8] lent, width: i64, height: i64, kernel: Kernel) -> [u8]
+    if kernel == .nearest
+        return nearest_resized(s, pixels, width: width, height: height)
+    xs = taps_of(in_size: s.width, out_size: width, kernel: kernel)
+    ys = taps_of(in_size: s.height, out_size: height, kernel: kernel)
+    mid = rows_scaled(s, pixels, xs: xs, width: width)
+    return columns_scaled(s, mid: mid, ys: ys, width: width, height: height)
+
+# Every row of `pixels`, laid out as `s` says, scaled to `width` by `xs`,
+# as floats, colours premultiplied by alpha where there is one.
+function rows_scaled(s: layout.Shape, pixels: [u8] lent, xs: [Taps] lent, width: i64) -> [f64]
+    ch = s.channels
+    size = layout.sample_size(s)
+    pixel = layout.pixel_size(s)
+    top = to_f64(layout.top_of(s))
+    alpha = layout.has_alpha(s)
+    mid: [f64] @= []
+
+    for y in range(from: 0, to: s.height)
+        row = y * s.width * pixel
+
+        for x in range(from: 0, to: width)
+            t = xs[x]
+            acc: [f64] @= [0.0, 0.0, 0.0, 0.0]
+
+            for k in range(from: 0, to: t.weights.len())
+                at = row + (t.first + k) * pixel
+                w = t.weights[k]
+
+                a = if alpha
+                    to_f64(layout.sample(pixels, at: at + (ch - 1) * size, wide: s.wide)) / top
+                else
+                    1.0
+
+                for c in range(from: 0, to: ch)
+                    v = to_f64(layout.sample(pixels, at: at + c * size, wide: s.wide))
+
+                    weighted = if alpha && c < ch - 1
+                        v * a
+                    else
+                        v
+                    acc[c] @ acc[c] + w * weighted
+
+            for c in range(from: 0, to: ch)
+                mid @ mid.push(acc[c])
+
+    return mid
+
+# The rows of `mid`, `width` pixels each, scaled to `height` rows by `ys`
+# and written as `s` holds a pixel, colours divided back by alpha.
+function columns_scaled(s: layout.Shape, mid: [f64] lent, ys: [Taps] lent, width: i64, height: i64) -> [u8]
+    ch = s.channels
+    top = layout.top_of(s)
+    alpha = layout.has_alpha(s)
+    out_shape = layout.with_size(s, width: width, height: height)
+    out @= layout.zeros(layout.byte_count(out_shape))
+    size = layout.sample_size(s)
+    pixel = layout.pixel_size(s)
+
+    for y in range(from: 0, to: height)
+        t = ys[y]
+
+        for x in range(from: 0, to: width)
+            acc: [f64] @= [0.0, 0.0, 0.0, 0.0]
+
+            for k in range(from: 0, to: t.weights.len())
+                at = ((t.first + k) * width + x) * ch
+                w = t.weights[k]
+
+                for c in range(from: 0, to: ch)
+                    acc[c] @ acc[c] + w * mid[at + c]
+
+            put_unpremultiplied(
+                @out,
+                at: (y * width + x) * pixel,
+                acc: acc,
+                ch: ch,
+                top: top,
+                alpha: alpha,
+                size: size,
+                wide: s.wide
+            )
+
+    return out
+
+# Writes the samples `acc`, `ch` of them with colours premultiplied where
+# `alpha`, at byte `at` of `out`, each rounded and held to 0 to `top`.
+function put_unpremultiplied(@out: [u8], at: i64, acc: [f64] lent, ch: i64, top: i64, alpha: bool, size: i64, wide: bool)
+    a = if alpha
+        acc[ch - 1]
+    else
+        to_f64(top)
+
+    for c in range(from: 0, to: ch)
+        v = if alpha && c < ch - 1
+            if a <= 0.0
+                0.0
+            else
+                acc[c] * to_f64(top) / a
+        else
+            acc[c]
+        layout.put_sample(@out, at: at + c * size, wide: wide, value: layout.clamp_round(v, top: top))
+
+# `pixels`, laid out as `s` says, scaled to `width` by `height`, each
+# output pixel a copy of the input pixel under its centre.
+function nearest_resized(s: layout.Shape, pixels: [u8] lent, width: i64, height: i64) -> [u8]
+    pixel = layout.pixel_size(s)
+    out: [u8] @= []
+
+    for y in range(from: 0, to: height)
+        sy = nearest_index(i: y, in_size: s.height, out_size: height)
+
+        for x in range(from: 0, to: width)
+            at = (sy * s.width + nearest_index(i: x, in_size: s.width, out_size: width)) * pixel
+
+            for k in range(from: 0, to: pixel)
+                out @ out.push(pixels[at + k])
+
+    return out
+
+test "weigh: each kernel at its centre, its edge and past it"
+    assert weigh(.bilinear, x: 0.0) == 1.0
+    assert weigh(.bilinear, x: 0.5) == 0.5
+    assert weigh(.bilinear, x: -1.0) == 0.0
+    assert weigh(.box, x: -0.5) == 0.0
+    assert weigh(.box, x: 0.5) == 1.0
+    assert weigh(.bicubic, x: 0.0) == 1.0
+    assert weigh(.bicubic, x: 1.0) == 0.0
+    assert weigh(.bicubic, x: 2.5) == 0.0
+    assert weigh(.lanczos, x: 0.0) == 1.0
+    assert math.abs(weigh(.lanczos, x: 1.0)) < 0.000000000001
+    assert weigh(.lanczos, x: 3.0) == 0.0
+    assert weigh(.hamming, x: 0.0) == 1.0
+    assert weigh(.hamming, x: 1.0) == 0.0
+
+test "taps_of: the same size is the pixel itself, and halving weighs four"
+    same = taps_of(in_size: 3, out_size: 3, kernel: .bilinear)
+    assert same[1].first == 1
+    assert same[1].weights[0] == 1.0
+    half = taps_of(in_size: 4, out_size: 2, kernel: .bilinear)
+    assert half[0].first == 0
+    assert half[0].weights.len() == 3
+    assert half[1].first == 1
+    assert half[1].weights == [0.25 / 1.75, 0.75 / 1.75, 0.75 / 1.75]
+
+test "nearest_index: the pixel under each centre, up and down"
+    assert nearest_index(i: 0, in_size: 2, out_size: 4) == 0
+    assert nearest_index(i: 1, in_size: 2, out_size: 4) == 0
+    assert nearest_index(i: 2, in_size: 2, out_size: 4) == 1
+    assert nearest_index(i: 1, in_size: 4, out_size: 2) == 3
+
+test "resized: a flat image stays flat under every kernel, up and down"
+    s = layout.Shape(width: 3, height: 2, channels: 3, wide: false)
+    flat: [u8] = [10, 20, 30, 10, 20, 30, 10, 20, 30, 10, 20, 30, 10, 20, 30, 10, 20, 30]
+    kernels: [Kernel] = [.nearest, .box, .bilinear, .hamming, .bicubic, .lanczos]
+
+    for k in kernels
+        up = resized(s, flat, width: 7, height: 5, kernel: k)
+        assert up.len() == 7 * 5 * 3
+
+        for i in range(from: 0, to: up.len())
+            assert up[i] == flat[i % 3]
+
+        down = resized(s, flat, width: 1, height: 1, kernel: k)
+        assert down == [10, 20, 30]
+
+test "resized: a transparent pixel lends no colour, and wide samples"
+    s = layout.Shape(width: 2, height: 1, channels: 2, wide: false)
+    out = resized(s, [200, 255, 0, 0], width: 1, height: 1, kernel: .bilinear)
+    assert out == [200, 128]
+    w = layout.Shape(width: 2, height: 1, channels: 1, wide: true)
+    assert resized(w, [0, 0, 0xff, 0xff], width: 1, height: 1, kernel: .box) == [0x80, 0x00]
+
+test "resized: nearest doubles each pixel"
+    s = layout.Shape(width: 2, height: 1, channels: 1, wide: false)
+    assert resized(s, [1, 2], width: 4, height: 2, kernel: .nearest) == [1, 1, 2, 2, 1, 1, 2, 2]

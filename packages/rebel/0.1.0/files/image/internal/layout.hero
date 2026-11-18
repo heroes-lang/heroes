@@ -1,0 +1,139 @@
+# The shape of a pixel buffer, which the other private modules of `image`
+# work on: they cannot name the face's `Image`, so the face hands them its
+# fields as a `Shape` and the bytes beside it. A sample is one byte, or two
+# with the high one first where the shape is wide.
+
+# The size of a pixel buffer and how its pixels are held.
+record Shape
+    # The columns, 0 or more.
+    width: i64
+    # The rows, 0 or more.
+    height: i64
+    # The samples a pixel, 1 to 4; the last is alpha where it is 2 or 4.
+    channels: i64
+    # Whether a sample is 16 bits, two bytes, rather than 8.
+    wide: bool
+
+# The bytes of one sample of `s`: 1 or 2.
+function sample_size(s: Shape) -> i64
+    if s.wide
+        return 2
+    return 1
+
+# The bytes of one pixel of `s`.
+function pixel_size(s: Shape) -> i64
+    return s.channels * sample_size(s)
+
+# The bytes of one row of `s`.
+function row_size(s: Shape) -> i64
+    return s.width * pixel_size(s)
+
+# The bytes of every pixel of `s`.
+function byte_count(s: Shape) -> i64
+    return s.height * row_size(s)
+
+# The largest value of a sample of `s`: 255, or 65,535 where it is wide.
+function top_of(s: Shape) -> i64
+    if s.wide
+        return 65535
+    return 255
+
+# Whether the last sample of a pixel of `s` is alpha.
+function has_alpha(s: Shape) -> bool
+    return s.channels == 2 || s.channels == 4
+
+# `s` with `channels` samples a pixel and the width of sample `wide`.
+function with_channels(s: Shape, channels: i64, wide: bool) -> Shape
+    return Shape(width: s.width, height: s.height, channels: channels, wide: wide)
+
+# `s` with another size, its pixels held the same way.
+function with_size(s: Shape, width: i64, height: i64) -> Shape
+    return Shape(width: width, height: height, channels: s.channels, wide: s.wide)
+
+# `n` bytes of zero.
+function zeros(n: i64) -> [u8]
+    out: [u8] @= []
+    k @= 0
+
+    while k < n
+        out @ out.push(0)
+        k @ k + 1
+
+    return out
+
+# The sample of `pixels` that begins at byte `at`, two bytes where `wide`.
+function sample(pixels: [u8] lent, at: i64, wide: bool) -> i64
+    if wide
+        return to_i64(pixels[at]).must() << 8 | to_i64(pixels[at + 1]).must()
+    return to_i64(pixels[at]).must()
+
+# Writes `value` as the sample at byte `at` of `pixels`, two bytes where
+# `wide`. `value` is 0 to 255, or 0 to 65,535 where `wide`.
+function put_sample(@pixels: [u8], at: i64, wide: bool, value: i64)
+    if wide
+        pixels[at] @ to_u8(value >> 8).must()
+        pixels[at + 1] @ to_u8(value & 255).must()
+    else
+        pixels[at] @ to_u8(value).must()
+
+# The samples of the pixel at column `x`, row `y` of `pixels`, laid out as
+# `s` says.
+function samples_at(s: Shape, pixels: [u8] lent, x: i64, y: i64) -> [i64]
+    out: [i64] @= []
+    size = sample_size(s)
+    at = (y * s.width + x) * pixel_size(s)
+
+    for c in range(from: 0, to: s.channels)
+        out @ out.push(sample(pixels, at: at + c * size, wide: s.wide))
+
+    return out
+
+# Writes `values` as the samples of the pixel at column `x`, row `y` of
+# `pixels`, laid out as `s` says.
+function put_samples(s: Shape, @pixels: [u8], x: i64, y: i64, values: [i64])
+    size = sample_size(s)
+    at = (y * s.width + x) * pixel_size(s)
+
+    for c in range(from: 0, to: s.channels)
+        put_sample(@pixels, at: at + c * size, wide: s.wide, value: values[c])
+
+# `v` rounded to the nearest whole number, a half up, and held to 0 to
+# `top`. A NaN answers 0.
+function clamp_round(v: f64, top: i64) -> i64
+    if v != v || v <= 0.0
+        return 0
+
+    if v >= to_f64(top)
+        return top
+    return to_i64(v + 0.5).must()
+
+test "sample and put_sample: one byte, two bytes high first"
+    p @= zeros(3)
+    put_sample(@p, at: 0, wide: false, value: 200)
+    put_sample(@p, at: 1, wide: true, value: 0x1234)
+    assert p == [200, 0x12, 0x34]
+    assert sample(p, at: 0, wide: false) == 200
+    assert sample(p, at: 1, wide: true) == 0x1234
+
+test "samples_at and put_samples: the pixel's place in the buffer"
+    s = Shape(width: 2, height: 2, channels: 3, wide: false)
+    p @= zeros(byte_count(s))
+    put_samples(s, @p, x: 1, y: 1, values: [1, 2, 3])
+    assert p == [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3]
+    assert samples_at(s, p, x: 1, y: 1) == [1, 2, 3]
+    assert samples_at(s, p, x: 0, y: 0) == [0, 0, 0]
+
+test "byte_count, top and has_alpha: narrow, wide, empty"
+    assert byte_count(Shape(width: 3, height: 2, channels: 4, wide: true)) == 48
+    assert byte_count(Shape(width: 0, height: 5, channels: 1, wide: false)) == 0
+    assert top_of(Shape(width: 1, height: 1, channels: 2, wide: true)) == 65535
+    assert has_alpha(Shape(width: 1, height: 1, channels: 2, wide: false))
+    assert !has_alpha(Shape(width: 1, height: 1, channels: 3, wide: false))
+    assert zeros(0).len() == 0
+
+test "clamp_round: halves up, the ends, and a NaN"
+    assert clamp_round(1.5, top: 255) == 2
+    assert clamp_round(1.49, top: 255) == 1
+    assert clamp_round(-3.0, top: 255) == 0
+    assert clamp_round(300.0, top: 255) == 255
+    assert clamp_round(0.0 / 0.0, top: 255) == 0
