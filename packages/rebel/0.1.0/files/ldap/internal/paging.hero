@@ -1,0 +1,88 @@
+# The values of the controls the face builds and reads: simple paged
+# results (RFC 2696) and server-side sorting (RFC 2891), each its own BER.
+
+use asn1
+use bytes
+use ldap/internal/wire
+
+constant INVALID: str
+    "invalid"
+
+# What a paged results control's value holds.
+record PagedRead
+    # The size, or the server's estimate.
+    size: i64
+    # The cookie.
+    cookie: [u8]
+
+# The value of a paged results control asking `size` entries after
+# `cookie`.
+function paged_value(size: i64, cookie: [u8]) -> [u8]
+    return asn1.encode_der(.sequence(items: [.integer(v: size), .octet_string(v: cookie)])).must()
+
+# What the paged results control's `value` holds.
+#
+# Fails `invalid` where it is not a paged results value.
+function paged_read(value: [u8]) -> PagedRead?
+    v = match asn1.decode_ber(value)
+        .ok got => got
+        .err e  => return fail(code: INVALID, msg: f"a paged results control that is no BER: {e.msg}")
+
+    items = wire.elements(v, what: "a paged results control")?
+
+    if items.len() != 2
+        return fail(code: INVALID, msg: f"a paged results control of {items.len()} elements, where it has 2")
+    return ok(
+        PagedRead(size: wire.int_value(items[0], what: "a page's size")?, cookie: wire.octets(items[1], what: "a page's cookie")?)
+    )
+
+# The value of a sort request control: the key `k` sorts by `attributes[k]`
+# with the rule `rules[k]` ("" for none), from the largest where
+# `reverses[k]`.
+function sort_value(attributes: [str], rules: [str], reverses: [bool]) -> [u8]
+    keys_written: [asn1.Value] @= []
+
+    for k in range(from: 0, to: attributes.len())
+        parts: [asn1.Value] @= [.octet_string(v: bytes.from_text(attributes[k]))]
+
+        if rules[k] != ""
+            parts @ parts.push(
+                .primitive(tag: asn1.Tag(kind: .context_specific, number: 0, constructed: false), content: bytes.from_text(rules[k]))
+            )
+
+        if reverses[k]
+            parts @ parts.push(
+                .primitive(tag: asn1.Tag(kind: .context_specific, number: 1, constructed: false), content: [0xff])
+            )
+        keys_written @ keys_written.push(.sequence(items: parts))
+
+    return asn1.encode_der(.sequence(items: keys_written)).must()
+
+# The result code a sort response control's `value` holds.
+#
+# Fails `invalid` where it is not a sort response value.
+function sort_read(value: [u8]) -> i64?
+    v = match asn1.decode_ber(value)
+        .ok got => got
+        .err e  => return fail(code: INVALID, msg: f"a sort response control that is no BER: {e.msg}")
+
+    items = wire.elements(v, what: "a sort response control")?
+
+    if items.len() == 0
+        return fail(code: INVALID, msg: "a sort response control with no result")
+    return wire.int_value(items[0], what: "a sort result")
+
+## Tests
+
+test "paged_value and paged_read: a first page, a cookie, and a value that is no paged control"
+    assert bytes.format_hex(paged_value(size: 100, cookie: [])) == "3005020164" + "0400"
+    got = paged_read(paged_value(size: 3, cookie: [1, 2])).must()
+    assert got.size == 3 && got.cookie == [1, 2]
+    assert paged_read([0x30, 0x00]).is_err()
+    assert paged_read([0x01]).is_err()
+
+test "sort_value and sort_read: one key, a rule and a reverse order, and a sorted answer"
+    assert bytes.format_hex(sort_value(attributes: ["cn"], rules: [""], reverses: [false])) == "300630040402636e"
+    assert bytes.format_hex(sort_value(attributes: ["sn"], rules: ["2.5.13.3"], reverses: [true])) == "301330110402736e80083" + "22e352e31332e338101ff"
+    assert sort_read([0x30, 0x03, 0x0a, 0x01, 0x00]).must() == 0
+    assert sort_read([0x30, 0x00]).is_err()

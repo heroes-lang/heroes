@@ -1,0 +1,408 @@
+# The conversation with the server: the connection, made in plain text, by
+# TLS from the first byte or with StartTLS; a request written with its
+# number and the deadline of its operation set; the answer to it read, the
+# late answers of an operation given up read past, a notice of
+# disconnection told. A connection lost, a deadline passed or bytes that
+# are no LDAP end the session, and every later request fails `closed` with
+# the reason.
+
+use asn1
+use io
+use ldap/internal/codes
+use ldap/internal/requests
+use ldap/internal/wire
+use net
+use os
+use tls
+
+constant CLOSED: str
+    "closed"
+
+constant INVALID: str
+    "invalid"
+
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The StartTLS extended operation's identifier.
+constant START_TLS_OID: str
+    "1.3.6.1.4.1.1466.20037"
+
+# The notice of disconnection's identifier.
+constant NOTICE_OID: str
+    "1.3.6.1.4.1.1466.20036"
+
+# The largest message number; the next after it is 1.
+constant MOST_ID: i64
+    2147483647
+
+# What carries the conversation.
+variant Link
+    # A TCP connection of `net`, whose deadline `net` moves.
+    plain
+        # The connection.
+        conn: net.Conn
+    # A TLS stream of `tls`, whose deadline `tls` moves.
+    secured
+
+# A session's state, which the face's `Conn` holds.
+record Session
+    # The stream requests are written to and answers read from.
+    stream: io.Stream
+    # The buffered reader over `stream`.
+    reader: io.Reader
+    # What carries it.
+    link: Link
+    # The server's name, as the certificate is checked against it.
+    host: str
+    # How messages name the server: `host:port`.
+    target: str
+    # The number the next request takes.
+    next_id: i64
+    # The milliseconds each operation may take, 0 for no limit.
+    deadline_ms: i64
+    # The bytes a message may hold.
+    max_message: i64
+    # Whether the session is over.
+    ended: bool
+    # Why it is over, for the failures after.
+    why: str
+    # The number of the search running, 0 for none.
+    searching: i64
+    # The size limit the running search asked, 0 for none.
+    asked_size: i64
+    # The time limit the running search asked, 0 for none.
+    asked_time: i64
+    # The controls sent with every request.
+    controls: [wire.Ctl]
+    # The last result the server answered.
+    last: wire.Outcome
+    # The controls of the last answer.
+    last_controls: [wire.Ctl]
+
+# A session over `stream`, carried by `link`, before any request.
+function made(stream: io.Stream, link: Link, host: str, port: i64, deadline_ms: i64, max_message: i64) -> Session
+    return Session(
+        stream: stream,
+        reader: io.reader(stream),
+        link: link,
+        host: host,
+        target: host + ":" + to_str(port),
+        next_id: 1,
+        deadline_ms: deadline_ms,
+        max_message: max_message,
+        ended: false,
+        why: "",
+        searching: 0,
+        asked_size: 0,
+        asked_time: 0,
+        controls: [],
+        last: wire.Outcome(code: 0, matched: "", message: "", referrals: []),
+        last_controls: []
+    )
+
+# A session over a plain TCP connection to `host` at `port`.
+#
+# Fails as `net.connect_timeout` fails.
+function connect_plain(host: str, port: i64, deadline_ms: i64, max_message: i64) -> Session?
+    conn = net.connect_timeout(host, port: port, timeout_ms: deadline_ms, deadline_ms: 0)?
+    return ok(
+        made(conn.stream, link: .plain(conn: conn), host: host, port: port, deadline_ms: deadline_ms, max_message: max_message)
+    )
+
+# A session over TLS from the first byte to `host` at `port`.
+#
+# Fails as `tls.connect` fails.
+function connect_direct(host: str, port: i64, deadline_ms: i64, roots: str, max_message: i64) -> Session?
+    stream = tls.connect(host, port: port, deadline_ms: deadline_ms, client: tls.Client(roots: roots, protocols: []))?
+    return ok(made(stream, link: .secured, host: host, port: port, deadline_ms: deadline_ms, max_message: max_message))
+
+# The bytes of the StartTLS request numbered `id`.
+function start_tls_request(id: i64) -> [u8]
+    return wire.envelope(id, op: requests.extended(name: START_TLS_OID, value: []), controls: []).must()
+
+# Fails with the code a refused StartTLS fails with, `unsupported` where
+# the server knows no StartTLS or cannot begin it, where `answer` is not a
+# success.
+function start_tls_answered(answer: wire.Message, id: i64, target: str) -> ()?
+    if answer.id != id || answer.number != wire.EXTENDED_RESPONSE
+        return fail(
+            code: INVALID,
+            msg: f"StartTLS on {target}: the server answered the message {answer.id} with the operation {answer.number}"
+        )
+    result = wire.outcome(answer.op)?
+
+    if result.code == 0
+        return ok()
+
+    code = if result.code == 2 || result.code == 12 || result.code == 52 || result.code == 53
+        UNSUPPORTED
+    else
+        codes.library_code(result.code)
+
+    return fail(
+        code: code,
+        msg: codes.message_of(asked: f"StartTLS on {target}", code: result.code, said: result.message, matched: result.matched)
+    )
+
+# A session over TLS begun with StartTLS on a connection to `host` at
+# `port`: over the connection made, by `tls.client_over`, where the platform
+# has it; on macOS by a first connection that asks for StartTLS and reads
+# the server's answer, then a second made by `tls.connect_after`, whose
+# exchange sends the same request and expects the same answer byte for
+# byte.
+#
+# Fails as `connect_plain` and `start_tls` fail, and as
+# `tls.connect_after` fails.
+function connect_start_tls(host: str, port: i64, deadline_ms: i64, roots: str, max_message: i64) -> Session?
+    if os.system() != .darwin
+        s @= connect_plain(host, port: port, deadline_ms: deadline_ms, max_message: max_message)?
+
+        match start_tls(@s, roots: roots)
+            .ok _ => return ok(s)
+            .err e =>
+                end(@s, why: e.msg)
+                return fail(code: e.code, msg: e.msg)
+
+    probe @= connect_plain(host, port: port, deadline_ms: deadline_ms, max_message: max_message)?
+    request = start_tls_request(1)
+    asked = request_raw(@probe, data: request)
+    end(@probe, why: "the connection that asked for StartTLS")
+    raw = asked?
+    answer = wire.decode(raw)?
+    start_tls_answered(answer, id: 1, target: probe.target)?
+    steps: [tls.Step] = [.send(data: request), .expect(answer: raw)]
+    stream = tls.connect_after(host, port: port, deadline_ms: deadline_ms, client: tls.Client(roots: roots, protocols: []), steps: steps)?
+    s @= made(stream, link: .secured, host: host, port: port, deadline_ms: deadline_ms, max_message: max_message)
+    s.next_id @ 2
+    return ok(s)
+
+# Writes `data` on `s` and answers the bytes of the one message that
+# answers it, for the probe of StartTLS on macOS.
+function request_raw(@s: Session, data: [u8]) -> [u8]?
+    set_deadline(s)?
+    io.write(s.stream, data: data)?
+    return wire.read_raw(@s.reader, most: s.max_message)
+
+# Begins TLS on `s` with StartTLS, then `tls.client_over`.
+#
+# Fails `invalid` where `s` is over TLS already; with the code of the
+# server's result where it refuses, `s` staying open in plain text; as
+# `tls.client_over` fails, `s` then ended; `unsupported` on macOS, before
+# anything is sent.
+function start_tls(@s: Session, roots: str) -> ()?
+    match s.link
+        .secured => return fail(code: INVALID, msg: f"StartTLS on {s.target}: the connection is over TLS already")
+        .plain _ => _ = 0
+
+    if os.system() == .darwin
+        return fail(
+            code: UNSUPPORTED,
+            msg: f"StartTLS on {s.target}: macOS begins TLS only over a connection tls makes; open the connection with .start_tls"
+        )
+    id = send(@s, op: requests.extended(name: START_TLS_OID, value: []), controls: [])?
+    answer = receive(@s, id: id)?
+    start_tls_answered(answer, id: id, target: s.target)?
+
+    if io.buffered(s.reader).len() > 0
+        end(@s, why: "the server sent bytes after its StartTLS answer, before TLS")
+        return fail(code: INVALID, msg: f"StartTLS on {s.target}: the server sent bytes after its answer, before TLS")
+
+    match tls.client_over(@s.stream, host: s.host, client: tls.Client(roots: roots, protocols: []))
+        .ok secured =>
+            s.stream @ secured
+            s.reader @ io.reader(secured)
+            s.link @ .secured
+            return ok()
+        .err e =>
+            end(@s, why: e.msg)
+            return fail(code: e.code, msg: e.msg)
+
+# Sets the deadline of `s`'s next operation, `s.deadline_ms` from now.
+function set_deadline(s: Session) -> ()?
+    match s.link
+        .plain p => return net.set_deadline(p.conn, ms: s.deadline_ms)
+        .secured => return tls.set_deadline(s.stream, ms: s.deadline_ms)
+
+# Fails `closed` with the reason `s` ended.
+function ended_failure<T>(s: Session) -> T?
+    return fail(code: CLOSED, msg: f"the connection to {s.target} is closed: {s.why}")
+
+# Ends `s`: its stream is closed, and `why` is the reason every later
+# request is told.
+function end(@s: Session, why: str)
+    if !s.ended
+        s.ended @ true
+        s.why @ why
+        s.searching @ 0
+
+    if !io.is_closed(s.stream)
+        match io.close(@s.stream)
+            .ok _  => _ = 0
+            .err _ => _ = 0
+
+# Writes the request `op` with `controls` on `s` under the next number, the
+# operation's deadline set first, and answers the number.
+#
+# Fails `closed` where `s` is over, and as the write fails, which ends it.
+function send(@s: Session, op: asn1.Value, controls: [wire.Ctl]) -> i64?
+    if s.ended
+        return ended_failure(s)
+    id = s.next_id
+
+    s.next_id @ if id == MOST_ID
+        1
+    else
+        id + 1
+
+    data = wire.envelope(id, op: op, controls: controls)?
+
+    match set_deadline(s)
+        .ok _ => _ = 0
+        .err e =>
+            end(@s, why: e.msg)
+            return fail(code: e.code, msg: e.msg)
+
+    match io.write(s.stream, data: data)
+        .ok _ => return ok(id)
+        .err e =>
+            end(@s, why: e.msg)
+            return fail(code: e.code, msg: e.msg)
+
+# The next message of `s` answering the request numbered `id`: the answers
+# to earlier requests, given up, are read past.
+#
+# Fails `closed` where the server closes or sends a notice of
+# disconnection, with its words; `invalid` where its bytes are no LDAP or it
+# answers a request not yet sent; as the read fails. Each ends `s`.
+function receive(@s: Session, id: i64) -> wire.Message?
+    if s.ended
+        return ended_failure(s)
+
+    while true
+        raw = match wire.read_raw(@s.reader, most: s.max_message)
+            .ok got => got
+            .err e =>
+                end(@s, why: e.msg)
+                return fail(code: e.code, msg: e.msg)
+
+        message = match wire.decode(raw)
+            .ok got => got
+            .err e =>
+                end(@s, why: e.msg)
+                return fail(code: e.code, msg: e.msg)
+
+        if message.id == id
+            return ok(message)
+
+        if message.id == 0
+            said = match wire.outcome(message.op)
+                .ok r => codes.message_of(
+                    asked: "the server ended the connection",
+                    code: r.code,
+                    said: r.message,
+                    matched: ""
+                )
+                .err _ => "the server sent an unsolicited message the client cannot read"
+
+            end(@s, why: said)
+            return fail(code: CLOSED, msg: said)
+
+        if message.id > id
+            why = f"the server answered the message {message.id}, where {id} was asked"
+            end(@s, why: why)
+            return fail(code: INVALID, msg: why)
+
+# Sends an UnbindRequest on `s`, where it is not over, and closes it.
+#
+# Fails `closed` where its stream is closed already.
+function close(@s: Session) -> ()?
+    if s.ended
+        if io.is_closed(s.stream)
+            return ok()
+        end(@s, why: s.why)
+        return ok()
+
+    if io.is_closed(s.stream)
+        return fail(code: CLOSED, msg: f"the connection to {s.target} is closed already")
+
+    match send(@s, op: requests.unbind(), controls: [])
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+    end(@s, why: "it was closed")
+    return ok()
+
+# Sends `op` with the session's controls and reads its answer, which must
+# be the operation `answer`: its result is kept as the session's last, and
+# a result other than success and the codes of `accept` fails with the
+# library's code that names it, the message saying `asked`.
+#
+# Fails `invalid` where a search is running or the server answers another
+# operation, which ends the session; as `send` and `receive` fail.
+function exchange(@s: Session, op: asn1.Value, answer: i64, asked: str, accept: [i64]) -> wire.Message?
+    if s.searching != 0
+        return fail(
+            code: INVALID,
+            msg: f"{asked}: a search is running on {s.target}; read it to its end with next_item, or abandon_search, first"
+        )
+    id = send(@s, op: op, controls: s.controls)?
+    message = receive(@s, id: id)?
+
+    if message.number != answer
+        why = f"{asked}: the server answered with the operation {message.number}, where {answer} was due"
+        end(@s, why: why)
+        return fail(code: INVALID, msg: why)
+
+    result = match wire.outcome(message.op)
+        .ok r => r
+        .err e =>
+            end(@s, why: e.msg)
+            return fail(code: e.code, msg: e.msg)
+
+    s.last @ result
+    s.last_controls @ message.controls
+
+    if result.code == 0
+        return ok(message)
+
+    for code in accept
+        if result.code == code
+            return ok(message)
+
+    return fail(code: codes.library_code(result.code), msg: refused(asked: asked, result: result))
+
+# The message of a result refused: `codes.message_of`'s, and the servers a
+# referral names.
+function refused(asked: str, result: wire.Outcome) -> str
+    said = codes.message_of(asked: asked, code: result.code, said: result.message, matched: result.matched)
+
+    if result.referrals.len() == 0
+        return said
+    return said + "; referred to " + result.referrals.join(" ")
+
+# The next message of the search running on `s`, its deadline set again:
+# an entry, a reference or its end, the intermediate answers read past.
+#
+# Fails `invalid` where no search runs or the server answers another
+# operation, which ends the session; as `receive` fails.
+function next_of_search(@s: Session) -> wire.Message?
+    if s.searching == 0
+        return fail(code: INVALID, msg: f"no search is running on {s.target}")
+
+    match set_deadline(s)
+        .ok _ => _ = 0
+        .err e =>
+            end(@s, why: e.msg)
+            return fail(code: e.code, msg: e.msg)
+
+    while true
+        message = receive(@s, id: s.searching)?
+
+        if message.number == wire.SEARCH_ENTRY || message.number == wire.SEARCH_REFERENCE || message.number == wire.SEARCH_DONE
+            return ok(message)
+
+        if message.number != wire.INTERMEDIATE_RESPONSE
+            why = f"a search: the server answered with the operation {message.number}"
+            end(@s, why: why)
+            return fail(code: INVALID, msg: why)

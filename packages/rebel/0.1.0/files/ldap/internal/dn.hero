@@ -1,0 +1,405 @@
+# Distinguished names as text (RFC 4514): read into relative names of
+# attribute-value pairs, each value unescaped, and written back escaped. The
+# face's `Dn`, `Rdn` and `Ava` are made from the pairs read here. A value
+# written `#` and hexadecimal is the BER of a string and is read as its text
+# through `asn1`. The text is walked byte by byte and cut only at the bytes
+# of `,`, `+`, `=`, `\` and spaces, so a character is never split.
+
+use asn1
+use bytes
+use strings
+
+constant INVALID: str
+    "invalid"
+
+constant NOT_TEXT: str
+    "not_text"
+
+# One attribute and value read: `joined` where a `+` joins it to the pair
+# before it in the same relative name.
+record Pair
+    # The attribute's name or dotted identifier, as written.
+    attribute: str
+    # The value, unescaped.
+    value: str
+    # Whether it continues the relative name of the pair before it.
+    joined: bool
+
+# Whether `c` is an ASCII letter.
+function is_letter(c: u8) -> bool
+    return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z'
+
+# Whether `c` is an ASCII digit.
+function is_digit(c: u8) -> bool
+    return c >= '0' && c <= '9'
+
+# The value of the hexadecimal digit `c`, or -1 where it is none.
+function hex_value(c: u8) -> i64
+    if c >= '0' && c <= '9'
+        return to_i64(c - '0').must()
+
+    if c >= 'a' && c <= 'f'
+        return to_i64(c - 'a').must() + 10
+
+    if c >= 'A' && c <= 'F'
+        return to_i64(c - 'A').must() + 10
+    return -1
+
+# Whether `name` is an attribute type RFC 4514 reads: a descriptor (a letter,
+# then letters, digits and hyphens) or a dotted identifier (numbers without
+# a leading zero, two or more).
+function is_attribute_type(name: str) -> bool
+    if name.len() == 0
+        return false
+
+    if is_letter(name[0])
+        for k in range(from: 1, to: name.len())
+            c = name[k]
+
+            if !is_letter(c) && !is_digit(c) && c != '-'
+                return false
+
+        return true
+    digits @= 0
+    arcs @= 0
+
+    for k in range(from: 0, to: name.len())
+        c = name[k]
+
+        if c == '.'
+            if digits == 0
+                return false
+            arcs @ arcs + 1
+            digits @ 0
+        else if is_digit(c)
+            if digits == 1 && name[k - 1] == '0'
+                return false
+            digits @ digits + 1
+        else
+            return false
+
+    return digits > 0 && arcs >= 1
+
+# The text the BER `data` holds, an OCTET STRING or a string of any type.
+#
+# Fails `invalid` where `data` is no such element, `not_text` where its
+# bytes are not UTF-8.
+function ber_text(data: [u8]) -> str?
+    v = match asn1.decode_ber(data)
+        .ok got => got
+        .err e  => return fail(code: INVALID, msg: f"a value written with # holds no BER element: {e.msg}")
+
+    match v
+        .octet_string o => return bytes.to_text(o.v)
+        .text t         => return ok(t.v)
+        .boolean _ | .integer _ | .big_integer _ | .enumerated _ | .real _ | .bit_string _ | .null_value | .oid _ | .relative_oid _ | .utc_time _ | .generalized_time _ | .sequence _ | .set _ | .primitive _ | .constructed _ => return fail(
+            code: INVALID,
+            msg: f"a value written with # holds {asn1.format_tag(asn1.tag_of(v))}, not a string"
+        )
+
+# The pairs `s` writes, in order: "" writes none.
+#
+# Fails `invalid` where `s` is not a distinguished name, the message saying
+# at which byte; `not_text` where a value's escapes make bytes that are not
+# UTF-8.
+function parse(s: str) -> [Pair]?
+    out: [Pair] @= []
+    at @= 0
+    n = s.len()
+
+    while at < n && s[at] == ' '
+        at @ at + 1
+
+    if at == n
+        return ok(out)
+    joined @= false
+
+    while true
+        # The attribute type, up to `=`, spaces around it read past.
+        type_start = at
+
+        while at < n && s[at] != '=' && s[at] != ' ' && s[at] != ',' && s[at] != '+'
+            at @ at + 1
+
+        name = s.slice(from: type_start, to: at)
+
+        while at < n && s[at] == ' '
+            at @ at + 1
+
+        if at == n || s[at] != '='
+            return fail(code: INVALID, msg: f"byte {at}: a type and value pair without its \"=\" in \"{s}\"")
+
+        if !is_attribute_type(name)
+            return fail(code: INVALID, msg: f"byte {type_start}: \"{name}\" is no attribute type")
+        at @ at + 1
+
+        while at < n && s[at] == ' '
+            at @ at + 1
+
+        value: [u8] @= []
+        text: str @= ""
+
+        if at < n && s[at] == '#'
+            # The BER of the value, in hexadecimal.
+            at @ at + 1
+            hex_start = at
+
+            while at < n && hex_value(s[at]) >= 0
+                at @ at + 1
+
+            digits = at - hex_start
+
+            if digits == 0 || digits % 2 == 1
+                return fail(
+                    code: INVALID,
+                    msg: f"byte {hex_start}: a value written with # needs pairs of hexadecimal digits"
+                )
+            ber: [u8] @= []
+            k @= hex_start
+
+            while k < at
+                ber @ ber.push(to_u8(hex_value(s[k]) * 16 + hex_value(s[k + 1])).must())
+                k @ k + 2
+
+            text @ ber_text(ber)?
+
+            while at < n && s[at] == ' '
+                at @ at + 1
+        else
+            # The string, its escapes read; spaces not escaped at its end
+            # are read past.
+            kept @= 0
+
+            while at < n && s[at] != ',' && s[at] != '+'
+                c = s[at]
+
+                if c == '\\'
+                    if at + 1 >= n
+                        return fail(code: INVALID, msg: f"byte {at}: an escape cut short at the end of \"{s}\"")
+                    e = s[at + 1]
+                    high = hex_value(e)
+
+                    if high >= 0 && at + 2 < n && hex_value(s[at + 2]) >= 0
+                        value @ value.push(to_u8(high * 16 + hex_value(s[at + 2])).must())
+                        at @ at + 3
+                    else if e == ' ' || e == '"' || e == '#' || e == '+' || e == ',' || e == ';' || e == '<' || e == '=' || e == '>' || e == '\\'
+                        value @ value.push(e)
+                        at @ at + 2
+                    else
+                        return fail(code: INVALID, msg: f"byte {at}: \"\\\" before a character it does not escape")
+                    kept @ value.len()
+                else if c == '"' || c == ';' || c == '<' || c == '>' || c == 0
+                    return fail(code: INVALID, msg: f"byte {at}: a character that must be escaped in a value")
+                else
+                    value @ value.push(c)
+                    at @ at + 1
+
+                    if c != ' '
+                        kept @ value.len()
+
+            text @ match bytes.to_text(value.slice(from: 0, to: kept))
+                .ok t  => t
+                .err _ => return fail(code: NOT_TEXT, msg: f"the value of \"{name}\" is not UTF-8")
+
+        out @ out.push(Pair(attribute: name, value: text, joined: joined))
+
+        if at == n
+            return ok(out)
+
+        if s[at] != ',' && s[at] != '+'
+            return fail(code: INVALID, msg: f"byte {at}: a value goes on after its end")
+        joined @ s[at] == '+'
+        at @ at + 1
+
+        while at < n && s[at] == ' '
+            at @ at + 1
+
+        if at == n
+            return fail(code: INVALID, msg: f"byte {at}: a name that ends with a separator")
+
+# `s` escaped to stand as a value (RFC 4514 § 2.4): `\` before `"` `+` `,`
+# `;` `<` `>` and `\`, before a space or `#` that begins it and a space that
+# ends it, and `\00` for a zero byte.
+function escape(s: str) -> str
+    pieces: [str] @= []
+    n = s.len()
+    start @= 0
+
+    for k in range(from: 0, to: n)
+        c = s[k]
+        special = c == '"' || c == '+' || c == ',' || c == ';' || c == '<' || c == '>' || c == '\\'
+        edge = k == 0 && (c == ' ' || c == '#') || k == n - 1 && c == ' '
+
+        if special || edge || c == 0
+            pieces @ pieces.push(s.slice(from: start, to: k))
+
+            if c == 0
+                pieces @ pieces.push("\\00")
+            else
+                pieces @ pieces.push("\\" + s.slice(from: k, to: k + 1))
+            start @ k + 1
+
+    pieces @ pieces.push(s.slice(from: start, to: n))
+    return pieces.join("")
+
+# The value `s` holds, its escapes read as `parse` reads them, spaces kept.
+#
+# Fails `invalid` where an escape is cut short or names no character,
+# `not_text` where the bytes it makes are not UTF-8.
+function unescape(s: str) -> str?
+    out: [u8] @= []
+    at @= 0
+    n = s.len()
+
+    while at < n
+        c = s[at]
+
+        if c != '\\'
+            out @ out.push(c)
+            at @ at + 1
+            continue
+
+        if at + 1 >= n
+            return fail(code: INVALID, msg: f"byte {at}: an escape cut short at the end of \"{s}\"")
+        high = hex_value(s[at + 1])
+
+        if high >= 0
+            if at + 2 >= n || hex_value(s[at + 2]) < 0
+                return fail(code: INVALID, msg: f"byte {at}: \"\\\" and one hexadecimal digit, where two make a byte")
+            out @ out.push(to_u8(high * 16 + hex_value(s[at + 2])).must())
+            at @ at + 3
+        else
+            out @ out.push(s[at + 1])
+            at @ at + 2
+
+    return match bytes.to_text(out)
+        .ok t  => ok(t)
+        .err _ => fail(code: NOT_TEXT, msg: f"the escapes of \"{s}\" make bytes that are not UTF-8")
+
+# Whether the names `a` and `b`, both texts `parse` reads, name the same
+# entry: types with ASCII case ignored, values byte for byte or, where
+# `ignore_case`, with case ignored, the parts of a relative name in any order.
+function same(a: str, b: str, ignore_case: bool) -> bool
+    left = match parse(a)
+        .ok p  => p
+        .err _ => return false
+
+    right = match parse(b)
+        .ok p  => p
+        .err _ => return false
+
+    if left.len() != right.len()
+        return false
+    start @= 0
+
+    while start < left.len()
+        if left[start].joined != right[start].joined
+            return false
+        stop @= start + 1
+
+        while stop < left.len() && left[stop].joined
+            if !right[stop].joined
+                return false
+            stop @ stop + 1
+
+        if stop < right.len() && right[stop].joined
+            return false
+        used: [bool] @= []
+
+        for _ in range(from: start, to: stop)
+            used @ used.push(false)
+
+        for i in range(from: start, to: stop)
+            found @= false
+
+            for j in range(from: start, to: stop)
+                if !found && !used[j - start] && strings.equals_ignoring_case_ascii(a: left[i].attribute, b: right[j].attribute)
+                    equal = if ignore_case
+                        strings.equals_ignoring_case(a: left[i].value, b: right[j].value)
+                    else
+                        left[i].value == right[j].value
+
+                    if equal
+                        used[j - start] @ true
+                        found @ true
+
+            if !found
+                return false
+
+        start @ stop
+
+    return true
+
+## Tests
+
+test "parse: a name of four relative names, escapes, spaces around separators, a multi-valued name"
+    assert parse("cn=Ana Rossi,ou=people,dc=example,dc=org").must() == [Pair(attribute: "cn", value: "Ana Rossi", joined: false), Pair(attribute: "ou", value: "people", joined: false), Pair(attribute: "dc", value: "example", joined: false), Pair(attribute: "dc", value: "org", joined: false)]
+    assert parse("cn=Rossi\\, Ana,dc=x").must()[0].value == "Rossi, Ana"
+    assert parse("cn = Ana , dc = x").must() == [Pair(attribute: "cn", value: "Ana", joined: false), Pair(attribute: "dc", value: "x", joined: false)]
+    assert parse("cn=Ana+sn=Rossi,dc=x").must() == [Pair(attribute: "cn", value: "Ana", joined: false), Pair(attribute: "sn", value: "Rossi", joined: true), Pair(attribute: "dc", value: "x", joined: false)]
+    assert parse("cn=\\23hash\\20,dc=x").must()[0].value == "#hash "
+    assert parse("cn=caf\\c3\\a9,dc=x").must()[0].value == "café"
+    assert parse("cn=a\\2Cb").must()[0].value == "a,b"
+    assert parse("cn=Ana\\ ").must()[0].value == "Ana "
+    assert parse("cn=\\ lead").must()[0].value == " lead"
+    assert parse("cn=a  ,dc=b").must()[0].value == "a"
+    assert parse(" cn=Ana").must()[0].value == "Ana"
+    assert parse("cn=a=b").must()[0].value == "a=b"
+    assert parse("2.5.4.3=Ana").must()[0].attribute == "2.5.4.3"
+    assert parse("CN=Ana").must()[0].attribute == "CN"
+
+test "parse: the empty name, an empty value, and a value written as the BER of a string"
+    assert parse("").must() == []
+    assert parse("   ").must() == []
+    assert parse("cn=").must() == [Pair(attribute: "cn", value: "", joined: false)]
+    assert parse("cn=#0403416263,dc=x").must()[0].value == "Abc"
+    assert parse("cn=#0c0663616666c3a9").must()[0].value == "caffé"
+
+test "parse: names refused, each at its byte"
+    for bad in ["cn", "cn=a,", "=a", "cn=a;dc=b", "cn=\"quoted, value\"", "cn=a\\", "cn=a\\zz", "cn=a<b", "OID.2.5.4.3=x", "cn=a,,dc=b", "1cn=x", "cn=#zz", "cn=#0101ff", "cn=#04", "cn=#0403", "01.2=x", "1=x", "1.=x"]
+        match parse(bad)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+    match parse("cn=\\ff")
+        .ok _  => assert false
+        .err e => assert e.code == "not_text" && e.msg == "the value of \"cn\" is not UTF-8"
+
+    match parse("cn=a\\zz")
+        .ok _  => assert false
+        .err e => assert e.msg == "byte 4: \"\\\" before a character it does not escape"
+
+test "escape: what Go's EscapeDN answers, the zero byte, and text of more than one byte"
+    assert escape("Rossi, Ana") == "Rossi\\, Ana"
+    assert escape(" lead") == "\\ lead"
+    assert escape("trail ") == "trail\\ "
+    assert escape("#x") == "\\#x"
+    assert escape("a+b=c<d>e;f\"g\\h") == "a\\+b=c\\<d\\>e\\;f\\\"g\\\\h"
+    assert escape("café") == "café"
+    assert escape("a#b") == "a#b"
+    assert escape("") == ""
+    assert escape(" ") == "\\ "
+    zero: [u8] = [120, 0, 121]
+    assert escape(bytes.to_text(zero).must()) == "x\\00y"
+
+test "unescape: escapes of a character and of a byte, a cut escape, bytes that are not UTF-8"
+    assert unescape("Rossi\\, Ana").must() == "Rossi, Ana"
+    assert unescape("caf\\c3\\a9").must() == "café"
+    assert unescape("plain").must() == "plain"
+    assert unescape("").must() == ""
+    assert unescape("a\\").is_err()
+    assert unescape("a\\c").is_err()
+
+    match unescape("\\ff")
+        .ok _  => assert false
+        .err e => assert e.code == "not_text"
+
+test "same: types without case, parts of a relative name in any order, values with or without case"
+    assert same(a: "CN=Ana,DC=x", b: "cn=Ana,dc=x", ignore_case: false)
+    assert same(a: "cn=Ana+sn=Rossi,dc=x", b: "sn=Rossi+cn=Ana,dc=x", ignore_case: false)
+    assert !same(a: "cn=ana,dc=x", b: "cn=Ana,dc=x", ignore_case: false)
+    assert same(a: "cn=ana,dc=x", b: "cn=Ana,dc=X", ignore_case: true)
+    assert !same(a: "cn=Ana+sn=Rossi,dc=x", b: "cn=Ana,sn=Rossi,dc=x", ignore_case: false)
+    assert !same(a: "cn=Ana,dc=x", b: "cn=Ana", ignore_case: false)
+    assert same(a: "", b: "", ignore_case: false)
+    assert !same(a: "cn=a+cn=a", b: "cn=a+cn=b", ignore_case: false)

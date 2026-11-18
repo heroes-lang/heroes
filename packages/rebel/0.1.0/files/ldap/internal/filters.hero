@@ -1,0 +1,828 @@
+# Search filters (RFC 4515 as text, RFC 4511 § 4.5.1 as BER) held as a
+# flat list of nodes in preorder, each `and`, `or` and `not` followed by its
+# filters, which the face turns into its `Filter` and back. Text is read
+# with a stack of the filters still open and written with a stack of the
+# counts still owed, and BER is built and read the same way, so no filter's
+# nesting deepens the program's own stack; every reader stops past
+# `MAX_DEPTH`.
+
+use asn1
+use bytes
+use ldap/internal/dn
+use strings
+
+constant INVALID: str
+    "invalid"
+
+# The deepest `and`, `or` and `not` nest inside each other.
+constant MAX_DEPTH: i64
+    100
+
+# The node of an `and`, and the context tag of its BER; the other kinds
+# follow RFC 4511's order of the choice.
+constant AND: i64
+    0
+
+constant OR: i64
+    1
+
+constant NOT: i64
+    2
+
+constant EQUAL: i64
+    3
+
+constant SUBSTRINGS: i64
+    4
+
+constant GREATER_OR_EQUAL: i64
+    5
+
+constant LESS_OR_EQUAL: i64
+    6
+
+constant PRESENT: i64
+    7
+
+constant APPROX: i64
+    8
+
+constant EXTENSIBLE: i64
+    9
+
+# One filter of the list. The fields a kind does not use are empty.
+record Node
+    # Which filter: `AND` to `EXTENSIBLE`.
+    kind: i64
+    # The attribute; "" for an `extensible` without one and the three that
+    # join others.
+    attribute: str
+    # The value compared.
+    value: [u8]
+    # The first piece of `SUBSTRINGS`, [] for none.
+    initial: [u8]
+    # Its pieces in the middle.
+    middle: [[u8]]
+    # Its last piece, [] for none.
+    final: [u8]
+    # The matching rule of `EXTENSIBLE`, "" for none.
+    rule: str
+    # Whether `EXTENSIBLE` matches the attributes of the entry's name.
+    dn_attributes: bool
+    # How many filters follow right inside it, for `AND`, `OR` and `NOT`.
+    children: i64
+
+# A node of `kind` with nothing in it.
+function blank(kind: i64) -> Node
+    return Node(
+        kind: kind,
+        attribute: "",
+        value: [],
+        initial: [],
+        middle: [],
+        final: [],
+        rule: "",
+        dn_attributes: false,
+        children: 0
+    )
+
+# Whether `kind` joins other filters.
+function is_composite(kind: i64) -> bool
+    return kind == AND || kind == OR || kind == NOT
+
+# Whether `name` is an attribute description: a type RFC 4512 reads, then
+# options, each `;` and letters, digits and hyphens.
+function is_description(name: str) -> bool
+    parts = strings.split(s: name, sep: ";")
+
+    if !dn.is_attribute_type(parts[0])
+        return false
+
+    for k in range(from: 1, to: parts.len())
+        option = parts[k]
+
+        if option.len() == 0
+            return false
+
+        for i in range(from: 0, to: option.len())
+            c = option[i]
+
+            if !dn.is_letter(c) && !dn.is_digit(c) && c != '-'
+                return false
+
+    return true
+
+# The bytes of the value `s` writes, from byte `at` of the filter, for a
+# message: `\` and two hexadecimal digits make a byte.
+#
+# Fails `invalid` where an escape is broken, or the value holds a `*`, `(`,
+# `)` or a zero byte unescaped.
+function unescape_at(s: str, at: i64) -> [u8]?
+    out: [u8] @= []
+    k @= 0
+    n = s.len()
+
+    while k < n
+        c = s[k]
+
+        if c == '\\'
+            if k + 2 >= n
+                return fail(code: INVALID, msg: f"byte {at + k}: an escape cut short in a value")
+            high = dn.hex_value(s[k + 1])
+            low = dn.hex_value(s[k + 2])
+
+            if high < 0 || low < 0
+                return fail(code: INVALID, msg: f"byte {at + k}: \"\\\" not followed by two hexadecimal digits")
+            out @ out.push(to_u8(high * 16 + low).must())
+            k @ k + 3
+        else if c == '*' || c == '(' || c == ')' || c == 0
+            return fail(code: INVALID, msg: f"byte {at + k}: a character that must be escaped in a value")
+        else
+            out @ out.push(c)
+            k @ k + 1
+
+    return ok(out)
+
+# The node the item `s` writes, without its parentheses; `at` is where it
+# begins in the filter, for a message.
+function read_item(s: str, at: i64) -> Node?
+    eq @= -1
+
+    for k in range(from: 0, to: s.len())
+        if s[k] == '='
+            eq @ k
+            break
+
+    if eq <= 0
+        return fail(code: INVALID, msg: f"byte {at}: \"{s}\" is no comparison of an attribute")
+    before = s[eq - 1]
+    rest = s.slice(from: eq + 1, to: s.len())
+
+    if before == '~' || before == '>' || before == '<'
+        name = s.slice(from: 0, to: eq - 1)
+
+        if !is_description(name)
+            return fail(code: INVALID, msg: f"byte {at}: \"{name}\" is no attribute description")
+
+        kind = if before == '~'
+            APPROX
+        else if before == '>'
+            GREATER_OR_EQUAL
+        else
+            LESS_OR_EQUAL
+
+        node @= blank(kind)
+        node.attribute @ name
+        node.value @ unescape_at(rest, at: at + eq + 1)?
+        return ok(node)
+
+    if before == ':'
+        return read_extensible(left: s.slice(from: 0, to: eq - 1), value: rest, at: at)
+    name = s.slice(from: 0, to: eq)
+
+    if !is_description(name)
+        return fail(code: INVALID, msg: f"byte {at}: \"{name}\" is no attribute description")
+
+    if rest == "*"
+        node @= blank(PRESENT)
+        node.attribute @ name
+        return ok(node)
+
+    stars @= 0
+
+    for k in range(from: 0, to: rest.len())
+        if rest[k] == '*'
+            stars @ stars + 1
+
+    if stars == 0
+        node @= blank(EQUAL)
+        node.attribute @ name
+        node.value @ unescape_at(rest, at: at + eq + 1)?
+        return ok(node)
+
+    # Substrings: the pieces between the stars, the first and the last of
+    # them possibly empty, the others not.
+    pieces: [[u8]] @= []
+    start @= 0
+
+    for k in range(from: 0, to: rest.len() + 1)
+        if k == rest.len() || rest[k] == '*'
+            pieces @ pieces.push(unescape_at(rest.slice(from: start, to: k), at: at + eq + 1 + start)?)
+            start @ k + 1
+
+    middle: [[u8]] @= []
+
+    for k in range(from: 1, to: pieces.len() - 1)
+        if pieces[k].len() == 0
+            return fail(code: INVALID, msg: f"byte {at + eq + 1}: two stars with nothing between them in \"{rest}\"")
+        middle @ middle.push(pieces[k])
+
+    node @= blank(SUBSTRINGS)
+    node.attribute @ name
+    node.initial @ pieces[0]
+    node.middle @ middle
+    node.final @ pieces[pieces.len() - 1]
+    return ok(node)
+
+# The extensible match whose part before `:=` is `left`: `attr`, `attr:dn`,
+# `attr:rule`, `attr:dn:rule`, `:rule` or `:dn:rule`.
+function read_extensible(left: str, value: str, at: i64) -> Node?
+    parts = strings.split(s: left, sep: ":")
+    node @= blank(EXTENSIBLE)
+    node.attribute @ parts[0]
+    k @= 1
+
+    if k < parts.len() && (parts[k] == "dn" || parts[k] == "DN" || parts[k] == "Dn" || parts[k] == "dN")
+        node.dn_attributes @ true
+        k @ k + 1
+
+    if k < parts.len()
+        node.rule @ parts[k]
+        k @ k + 1
+
+    if k != parts.len()
+        return fail(code: INVALID, msg: f"byte {at}: \"{left}\" is no extensible match")
+
+    if node.attribute != "" && !is_description(node.attribute)
+        return fail(code: INVALID, msg: f"byte {at}: \"{node.attribute}\" is no attribute description")
+
+    if node.rule != "" && !dn.is_attribute_type(node.rule)
+        return fail(code: INVALID, msg: f"byte {at}: \"{node.rule}\" names no matching rule")
+
+    if node.attribute == "" && node.rule == ""
+        return fail(code: INVALID, msg: f"byte {at}: an extensible match with neither an attribute nor a rule")
+    node.value @ unescape_at(value, at: at + left.len() + 2)?
+    return ok(node)
+
+# The nodes the filter `s` writes, in preorder.
+#
+# Fails `invalid` where `s` is not a filter, the message saying at which
+# byte, or nests deeper than `MAX_DEPTH`.
+function parse(s: str) -> [Node]?
+    n = s.len()
+
+    if n == 0
+        return fail(code: INVALID, msg: "an empty filter")
+
+    if s[0] != '('
+        return ok([read_item(s, at: 0)?])
+    out: [Node] @= []
+
+    # The places in `out` of the `and`, `or` and `not` still open.
+    open: [i64] @= []
+    depth @= 0
+    at @= 0
+    done @= false
+
+    while at < n
+        if done
+            return fail(code: INVALID, msg: f"byte {at}: bytes after the filter's end")
+        c = s[at]
+
+        if c == ')'
+            if depth == 0
+                return fail(code: INVALID, msg: f"byte {at}: a \")\" that closes nothing")
+            depth @ depth - 1
+            top = open[depth]
+
+            if out[top].kind == NOT && out[top].children != 1
+                return fail(
+                    code: INVALID,
+                    msg: f"byte {at}: a \"!\" holds one filter, and this one holds {out[top].children}"
+                )
+            at @ at + 1
+            done @ depth == 0
+            continue
+
+        if c != '('
+            return fail(code: INVALID, msg: f"byte {at}: \"(\" expected")
+
+        if depth > 0
+            top = open[depth - 1]
+            out[top].children @ out[top].children + 1
+
+        if at + 1 >= n
+            return fail(code: INVALID, msg: f"byte {at}: a filter cut short")
+        kind_byte = s[at + 1]
+
+        if kind_byte == '&' || kind_byte == '|' || kind_byte == '!'
+            if depth >= MAX_DEPTH
+                return fail(code: INVALID, msg: f"byte {at}: the filter nests deeper than {MAX_DEPTH}")
+
+            kind = if kind_byte == '&'
+                AND
+            else if kind_byte == '|'
+                OR
+            else
+                NOT
+
+            if depth == open.len()
+                open @ open.push(out.len())
+            else
+                open[depth] @ out.len()
+            depth @ depth + 1
+            out @ out.push(blank(kind))
+            at @ at + 2
+
+            if at < n && s[at] != '(' && s[at] != ')'
+                return fail(
+                    code: INVALID,
+                    msg: f"byte {at}: \"(\" or \")\" expected after \"{s.slice(from: at - 1, to: at)}\""
+                )
+            continue
+
+        end @= at + 1
+
+        while end < n && s[end] != ')' && s[end] != '('
+            end @ end + 1
+
+        if end == n || s[end] == '('
+            return fail(code: INVALID, msg: f"byte {at}: a comparison that no \")\" ends")
+        out @ out.push(read_item(s.slice(from: at + 1, to: end), at: at + 1)?)
+        at @ end + 1
+        done @ depth == 0
+
+    if depth > 0 || !done
+        return fail(code: INVALID, msg: f"byte {n}: the filter ends with {depth} \"(\" still open")
+    return ok(out)
+
+# `b` written for a filter's text: the five bytes RFC 4515 escapes (`*`,
+# `(`, `)`, `\`, a zero byte) and the control bytes as `\` and two lower-case
+# hexadecimal digits, and every byte past ASCII too where `as_text` is false.
+function escape(b: [u8], as_text: bool) -> str
+    digits = "0123456789abcdef"
+    out: [u8] @= []
+
+    for c in b
+        plain = c >= 0x20 && c != 0x7f && c != '*' && c != '(' && c != ')' && c != '\\' && (as_text || c < 0x80)
+
+        if plain
+            out @ out.push(c)
+        else
+            hi = to_i64(c).must() / 16
+            lo = to_i64(c).must() % 16
+            out @ out.push('\\')
+            out @ out.push(digits[hi])
+            out @ out.push(digits[lo])
+
+    return bytes.to_text(out).must()
+
+# `b` written as a filter value: its text kept where it is UTF-8, every byte
+# past ASCII escaped where it is not.
+function value_text(b: [u8]) -> str
+    return match bytes.to_text(b)
+        .ok _  => escape(b, as_text: true)
+        .err _ => escape(b, as_text: false)
+
+# Fails `invalid` where `node` is no filter `format` and `encode` can write.
+function check(node: Node) -> ()?
+    if is_composite(node.kind)
+        if node.kind == NOT && node.children != 1
+            return fail(code: INVALID, msg: f"a not_of holds one filter, and this one holds {node.children}")
+        return ok()
+
+    if node.kind == EXTENSIBLE
+        if node.attribute == "" && node.rule == ""
+            return fail(code: INVALID, msg: "an extensible filter with neither an attribute nor a rule")
+
+        if node.attribute != "" && !is_description(node.attribute)
+            return fail(code: INVALID, msg: f"\"{node.attribute}\" is no attribute description")
+
+        if node.rule != "" && !dn.is_attribute_type(node.rule)
+            return fail(code: INVALID, msg: f"\"{node.rule}\" names no matching rule")
+        return ok()
+
+    if !is_description(node.attribute)
+        return fail(code: INVALID, msg: f"\"{node.attribute}\" is no attribute description")
+
+    if node.kind == SUBSTRINGS
+        if node.initial.len() == 0 && node.middle.len() == 0 && node.final.len() == 0
+            return fail(code: INVALID, msg: f"a substrings filter of \"{node.attribute}\" with no piece")
+
+        for piece in node.middle
+            if piece.len() == 0
+                return fail(
+                    code: INVALID,
+                    msg: f"an empty middle piece in the substrings filter of \"{node.attribute}\""
+                )
+
+    return ok()
+
+# The text of the one item `node`, inside its parentheses.
+function item_text(node: Node) -> str
+    if node.kind == PRESENT
+        return node.attribute + "=*"
+
+    if node.kind == SUBSTRINGS
+        pieces: [str] @= [node.attribute, "=", value_text(node.initial), "*"]
+
+        for piece in node.middle
+            pieces @ pieces.push(value_text(piece))
+            pieces @ pieces.push("*")
+
+        pieces @ pieces.push(value_text(node.final))
+        return pieces.join("")
+
+    if node.kind == EXTENSIBLE
+        pieces: [str] @= [node.attribute]
+
+        if node.dn_attributes
+            pieces @ pieces.push(":dn")
+
+        if node.rule != ""
+            pieces @ pieces.push(":" + node.rule)
+
+        pieces @ pieces.push(":=")
+        pieces @ pieces.push(value_text(node.value))
+        return pieces.join("")
+
+    operator = if node.kind == APPROX
+        "~="
+    else if node.kind == GREATER_OR_EQUAL
+        ">="
+    else if node.kind == LESS_OR_EQUAL
+        "<="
+    else
+        "="
+
+    return node.attribute + operator + value_text(node.value)
+
+# The text of the nodes `nodes`, one filter in preorder.
+#
+# Fails `invalid` where a node is no filter, or the list is not one filter.
+function format(nodes: [Node]) -> str?
+    pieces: [str] @= []
+    owed: [i64] @= []
+    depth @= 0
+
+    for k in range(from: 0, to: nodes.len())
+        node = nodes[k]
+
+        if k > 0 && depth == 0
+            return fail(code: INVALID, msg: "nodes after the filter's end")
+        check(node)?
+        closes @= true
+
+        if is_composite(node.kind)
+            if depth >= MAX_DEPTH
+                return fail(code: INVALID, msg: f"the filter nests deeper than {MAX_DEPTH}")
+
+            operator = if node.kind == AND
+                "(&"
+            else if node.kind == OR
+                "(|"
+            else
+                "(!"
+
+            pieces @ pieces.push(operator)
+
+            if node.children > 0
+                if depth == owed.len()
+                    owed @ owed.push(node.children)
+                else
+                    owed[depth] @ node.children
+                depth @ depth + 1
+                closes @ false
+            else
+                pieces @ pieces.push(")")
+        else
+            pieces @ pieces.push("(" + item_text(node) + ")")
+
+        while closes && depth > 0
+            owed[depth - 1] @ owed[depth - 1] - 1
+
+            if owed[depth - 1] == 0
+                pieces @ pieces.push(")")
+                depth @ depth - 1
+            else
+                closes @ false
+
+    if depth > 0 || nodes.len() == 0
+        return fail(code: INVALID, msg: "the nodes end before the filter does")
+    return ok(pieces.join(""))
+
+# A primitive element of the context tag `number` holding `content`.
+function context_primitive(number: i64, content: [u8]) -> asn1.Value
+    return .primitive(tag: asn1.Tag(kind: .context_specific, number: number, constructed: false), content: content)
+
+# A constructed element of the context tag `number` holding `items`.
+function context_constructed(number: i64, items: [asn1.Value]) -> asn1.Value
+    return .constructed(tag: asn1.Tag(kind: .context_specific, number: number, constructed: true), items: items)
+
+# The BER value of the one item `node`.
+function item_value(node: Node) -> asn1.Value
+    name: asn1.Value = .octet_string(v: bytes.from_text(node.attribute))
+
+    if node.kind == PRESENT
+        return context_primitive(number: PRESENT, content: bytes.from_text(node.attribute))
+
+    if node.kind == SUBSTRINGS
+        pieces: [asn1.Value] @= []
+
+        if node.initial.len() > 0
+            pieces @ pieces.push(context_primitive(number: 0, content: node.initial))
+
+        for piece in node.middle
+            pieces @ pieces.push(context_primitive(number: 1, content: piece))
+
+        if node.final.len() > 0
+            pieces @ pieces.push(context_primitive(number: 2, content: node.final))
+        return context_constructed(number: SUBSTRINGS, items: [name, .sequence(items: pieces)])
+
+    if node.kind == EXTENSIBLE
+        parts: [asn1.Value] @= []
+
+        if node.rule != ""
+            parts @ parts.push(context_primitive(number: 1, content: bytes.from_text(node.rule)))
+
+        if node.attribute != ""
+            parts @ parts.push(context_primitive(number: 2, content: bytes.from_text(node.attribute)))
+
+        parts @ parts.push(context_primitive(number: 3, content: node.value))
+
+        if node.dn_attributes
+            parts @ parts.push(context_primitive(number: 4, content: [0xff]))
+        return context_constructed(number: EXTENSIBLE, items: parts)
+    return context_constructed(number: node.kind, items: [name, .octet_string(v: node.value)])
+
+# The BER value of the nodes `nodes`, one filter in preorder, built from the
+# last node to the first on a stack of values made.
+#
+# Fails `invalid` as `format` does.
+function encode(nodes: [Node]) -> asn1.Value?
+    _ = format(nodes)?
+    made: [asn1.Value] @= []
+    top @= 0
+    k @= nodes.len()
+
+    while k > 0
+        k @ k - 1
+        node = nodes[k]
+
+        value = if is_composite(node.kind)
+            items: [asn1.Value] @= []
+
+            for i in range(from: 0, to: node.children)
+                items @ items.push(made[top - 1 - i])
+
+            top @ top - node.children
+            context_constructed(number: node.kind, items: items)
+        else
+            item_value(node)
+
+        if top == made.len()
+            made @ made.push(value)
+        else
+            made[top] @ value
+        top @ top + 1
+
+    return ok(made[0])
+
+# The bytes `v` holds as an OCTET STRING, or a context primitive's content.
+function octets(v: asn1.Value, what: str) -> [u8]?
+    return match v
+        .octet_string o => ok(o.v)
+        .primitive p    => ok(p.content)
+        .boolean _ | .integer _ | .big_integer _ | .enumerated _ | .real _ | .bit_string _ | .null_value | .oid _ | .relative_oid _ | .text _ | .utc_time _ | .generalized_time _ | .sequence _ | .set _ | .constructed _ => fail(
+            code: INVALID,
+            msg: f"{what}: an OCTET STRING was expected, and {asn1.format_tag(asn1.tag_of(v))} was found"
+        )
+
+# The text `v` holds as an OCTET STRING.
+function octets_text(v: asn1.Value, what: str) -> str?
+    return match bytes.to_text(octets(v, what: what)?)
+        .ok t  => ok(t)
+        .err _ => fail(code: INVALID, msg: f"{what}: bytes that are not UTF-8")
+
+# The node of the one filter `v`, its children not read.
+function node_of(v: asn1.Value) -> Node?
+    tag = asn1.tag_of(v)
+
+    if tag.kind != .context_specific || tag.number > EXTENSIBLE
+        return fail(code: INVALID, msg: f"a filter was expected, and {asn1.format_tag(tag)} was found")
+    node @= blank(tag.number)
+
+    if tag.number == PRESENT
+        node.attribute @ octets_text(v, what: "a presence filter")?
+        return ok(node)
+
+    items = match v
+        .constructed c => c.items
+        .boolean _ | .integer _ | .big_integer _ | .enumerated _ | .real _ | .bit_string _ | .octet_string _ | .null_value | .oid _ | .relative_oid _ | .text _ | .utc_time _ | .generalized_time _ | .sequence _ | .set _ | .primitive _ => return fail(
+            code: INVALID,
+            msg: f"the filter {asn1.format_tag(tag)} is primitive, and it holds elements"
+        )
+
+    if is_composite(tag.number)
+        node.children @ items.len()
+        return ok(node)
+
+    if tag.number == EXTENSIBLE
+        for item in items
+            item_tag = asn1.tag_of(item)
+
+            if item_tag.kind != .context_specific || item_tag.number < 1 || item_tag.number > 4
+                return fail(code: INVALID, msg: f"an extensible filter holds {asn1.format_tag(item_tag)}")
+
+            if item_tag.number == 1
+                node.rule @ octets_text(item, what: "a matching rule")?
+            else if item_tag.number == 2
+                node.attribute @ octets_text(item, what: "an extensible filter's attribute")?
+            else if item_tag.number == 3
+                node.value @ octets(item, what: "an extensible filter's value")?
+            else
+                flag = octets(item, what: "dnAttributes")?
+                node.dn_attributes @ flag.len() == 1 && flag[0] != 0
+
+        return ok(node)
+
+    if items.len() != 2
+        return fail(
+            code: INVALID,
+            msg: f"the filter {asn1.format_tag(tag)} holds {items.len()} elements, where it holds 2"
+        )
+    node.attribute @ octets_text(items[0], what: "a filter's attribute")?
+
+    if tag.number != SUBSTRINGS
+        node.value @ octets(items[1], what: "a filter's value")?
+        return ok(node)
+
+    pieces = match asn1.items_of(items[1])
+        .ok got => got
+        .err e  => return fail(code: INVALID, msg: f"a substrings filter: {e.msg}")
+
+    middle: [[u8]] @= []
+
+    for piece in pieces
+        piece_tag = asn1.tag_of(piece)
+        content = octets(piece, what: "a substring")?
+
+        if piece_tag.number == 0
+            node.initial @ content
+        else if piece_tag.number == 1
+            middle @ middle.push(content)
+        else
+            node.final @ content
+
+    node.middle @ middle
+    return ok(node)
+
+# The nodes of the filter `v`, in preorder, read with a stack of the values
+# still to visit.
+#
+# Fails `invalid` where `v` is no filter, or nests deeper than `MAX_DEPTH`.
+function decode(v: asn1.Value) -> [Node]?
+    out: [Node] @= []
+    pending: [asn1.Value] @= [v]
+    depths: [i64] @= [0]
+    top @= 1
+
+    while top > 0
+        top @ top - 1
+        here = pending[top]
+        depth = depths[top]
+        node = node_of(here)?
+        out @ out.push(node)
+
+        if is_composite(node.kind)
+            if depth >= MAX_DEPTH
+                return fail(code: INVALID, msg: f"the filter nests deeper than {MAX_DEPTH}")
+
+            empty: [asn1.Value] = []
+
+            items = match here
+                .constructed c => c.items
+                .boolean _ | .integer _ | .big_integer _ | .enumerated _ | .real _ | .bit_string _ | .octet_string _ | .null_value | .oid _ | .relative_oid _ | .text _ | .utc_time _ | .generalized_time _ | .sequence _ | .set _ | .primitive _ => empty
+
+            k @= items.len() - 1
+
+            while k >= 0
+                if top == pending.len()
+                    pending @ pending.push(items[k])
+                    depths @ depths.push(depth + 1)
+                else
+                    pending[top] @ items[k]
+                    depths[top] @ depth + 1
+                top @ top + 1
+                k @ k - 1
+
+    _ = format(out)?
+    return ok(out)
+
+## Tests
+
+# The BER of the filter `s` as this module reads it, in hexadecimal.
+test "parse and encode: every filter Go's CompileFilter reads as RFC 4515 does, byte for byte"
+    assert bytes.format_hex(asn1.encode_der(encode(parse("(cn=Ana)").must()).must()).must()) == "a3090402636e0403416e61"
+    assert bytes.format_hex(asn1.encode_der(encode(parse("(&(objectClass=person)(cn=Ana*))").must()).must()).must()) == "a024a315040b6f626a656374436c6173730406706572736f6ea40b0402636e30058003416e61"
+    assert bytes.format_hex(asn1.encode_der(encode(parse("(|(a=1)(b=2)(c=3))").must()).must()).must()) == "a118a306040161040131a306040162040132a306040163040133"
+    assert bytes.format_hex(asn1.encode_der(encode(parse("(!(cn=x))").must()).must()).must()) == "a209a3070402636e040178"
+    assert bytes.format_hex(asn1.encode_der(encode(parse("(cn=*)").must()).must()).must()) == "8702636e"
+    assert bytes.format_hex(asn1.encode_der(encode(parse("(cn=An*os*i)").must()).must()).must()) == "a4110402636e300b8002416e81026f73820169"
+    assert bytes.format_hex(asn1.encode_der(encode(parse("(cn=*ana)").must()).must()).must()) == "a40b0402636e30058203616e61"
+    assert bytes.format_hex(asn1.encode_der(encode(parse("(cn=a*)").must()).must()).must()) == "a4090402636e3003800161"
+    assert bytes.format_hex(asn1.encode_der(encode(parse("(cn=*a*b*)").must()).must()).must()) == "a40c0402636e3006810161810162"
+    assert bytes.format_hex(asn1.encode_der(encode(parse("(age>=18)").must()).must()).must()) == "a509040361676504023138"
+    assert bytes.format_hex(asn1.encode_der(encode(parse("(age<=65)").must()).must()).must()) == "a609040361676504023635"
+    assert bytes.format_hex(asn1.encode_der(encode(parse("(cn~=Anna)").must()).must()).must()) == "a80a0402636e0404416e6e61"
+    assert bytes.format_hex(asn1.encode_der(encode(parse("(cn:caseExactMatch:=Ana)").must()).must()).must()) == "a919810e6361736545786163744d617463688202636e8303416e61"
+    assert bytes.format_hex(asn1.encode_der(encode(parse("(:dn:2.5.13.5:=x)").must()).must()).must()) == "a9108108322e352e31332e358301788401ff"
+    assert bytes.format_hex(asn1.encode_der(encode(parse("(cn:dn:=x)").must()).must()).must()) == "a90a8202636e8301788401ff"
+    assert bytes.format_hex(asn1.encode_der(encode(parse("(:1.2.3:=v)").must()).must()).must()) == "a90a8105312e322e33830176"
+    assert bytes.format_hex(asn1.encode_der(encode(parse("(cn=a\\2ab\\28c\\29d\\5ce\\00f)").must()).must()).must()) == "a3110402636e040b612a62286329645c650066"
+    assert bytes.format_hex(asn1.encode_der(encode(parse("(cn=caf\\c3\\a9)").must()).must()).must()) == "a30b0402636e0405636166c3a9"
+    assert bytes.format_hex(asn1.encode_der(encode(parse("(cn=café)").must()).must()).must()) == "a30b0402636e0405636166c3a9"
+    assert bytes.format_hex(asn1.encode_der(encode(parse("(&)").must()).must()).must()) == "a000"
+    assert bytes.format_hex(asn1.encode_der(encode(parse("(|)").must()).must()).must()) == "a100"
+    assert bytes.format_hex(asn1.encode_der(encode(parse("(cn;lang-fr=x)").must()).must()).must()) == "a30f040a636e3b6c616e672d6672040178"
+    assert bytes.format_hex(asn1.encode_der(encode(parse("(2.5.4.3=x)").must()).must()).must()) == "a30c0407322e352e342e33040178"
+    assert bytes.format_hex(asn1.encode_der(encode(parse("(cn=)").must()).must()).must()) == "a3060402636e0400"
+    assert bytes.format_hex(asn1.encode_der(encode(parse("(cn= a )").must()).must()).must()) == "a3090402636e0403206120"
+    assert bytes.format_hex(asn1.encode_der(encode(parse("(objectGUID=\\a1\\b2\\ff)").must()).must()).must()) == "a311040a6f626a656374475549440403a1b2ff"
+    assert bytes.format_hex(asn1.encode_der(encode(parse("(cn:=x)").must()).must()).must()) == "a9078202636e830178"
+    assert bytes.format_hex(asn1.encode_der(encode(parse("(cn=\\2A)").must()).must()).must()) == "a3070402636e04012a"
+    assert bytes.format_hex(asn1.encode_der(encode(parse("cn=Ana").must()).must()).must()) == "a3090402636e0403416e61"
+    assert bytes.format_hex(asn1.encode_der(encode(parse("(cn:DN:=x)").must()).must()).must()) == "a90a8202636e8301788401ff"
+
+test "parse: filters refused, RFC 4515's grammar where Go reads more"
+    for bad in ["(cn=a\\zz)", "(cn=a\\2)", "(cn=a)(cn=b)", "(&(cn=a)", "(cn=a))", "(!(a=1)(b=2))", "(!)", "(cn)", "(cn=a*b)c)", "", "(cn=a**b)", "((cn=a))", "(=a)", "(cn=a(b)", "(:=x)", "(cn=a*\\2)", "(1cn=x)", "(cn;=x)", "(cn:1x:=a)", "(cn>=a*)", "(&(cn=a)))", "(cn=a)x"]
+        match parse(bad)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+    match parse("(cn=a\\zz)")
+        .ok _  => assert false
+        .err e => assert e.msg == "byte 5: \"\\\" not followed by two hexadecimal digits"
+
+test "format: every filter written back, a UTF-8 value kept, binary bytes escaped, a star escaped"
+    assert format(parse("(cn=Ana)").must()).must() == "(cn=Ana)"
+    assert format(parse("(&(objectClass=person)(cn=Ana*))").must()).must() == "(&(objectClass=person)(cn=Ana*))"
+    assert format(parse("(|(a=1)(b=2)(c=3))").must()).must() == "(|(a=1)(b=2)(c=3))"
+    assert format(parse("(!(cn=x))").must()).must() == "(!(cn=x))"
+    assert format(parse("(cn=An*os*i)").must()).must() == "(cn=An*os*i)"
+    assert format(parse("(cn=*a*b*)").must()).must() == "(cn=*a*b*)"
+    assert format(parse("(cn:caseExactMatch:=Ana)").must()).must() == "(cn:caseExactMatch:=Ana)"
+    assert format(parse("(:dn:2.5.13.5:=x)").must()).must() == "(:dn:2.5.13.5:=x)"
+    assert format(parse("(cn=a\\2ab\\28c\\29d\\5ce\\00f)").must()).must() == "(cn=a\\2ab\\28c\\29d\\5ce\\00f)"
+    assert format(parse("(cn=caf\\c3\\a9)").must()).must() == "(cn=café)"
+    assert format(parse("(&)").must()).must() == "(&)"
+    assert format(parse("(|)").must()).must() == "(|)"
+    assert format(parse("(objectGUID=\\a1\\b2\\ff)").must()).must() == "(objectGUID=\\a1\\b2\\ff)"
+    assert format(parse("(cn=\\2A)").must()).must() == "(cn=\\2a)"
+    assert format(parse("cn=Ana").must()).must() == "(cn=Ana)"
+    assert format(parse("(cn= a )").must()).must() == "(cn= a )"
+    assert format(parse("(cn=)").must()).must() == "(cn=)"
+    assert format(parse("(cn~=Anna)").must()).must() == "(cn~=Anna)"
+    assert format(parse("(age>=18)").must()).must() == "(age>=18)"
+    assert format(parse("(age<=65)").must()).must() == "(age<=65)"
+    assert format(parse("(&(|(a=1)(!(b=2)))(c=*))").must()).must() == "(&(|(a=1)(!(b=2)))(c=*))"
+
+test "decode: each filter read back from its BER, and BER that is no filter"
+    assert format(decode(asn1.decode_ber(bytes.parse_hex("a3090402636e0403416e61").must()).must()).must()).must() == format(parse("(cn=Ana)").must()).must()
+    assert format(decode(asn1.decode_ber(bytes.parse_hex("a024a315040b6f626a656374436c6173730406706572736f6ea40b0402636e30058003416e61").must()).must()).must()).must() == format(parse("(&(objectClass=person)(cn=Ana*))").must()).must()
+    assert format(decode(asn1.decode_ber(bytes.parse_hex("a118a306040161040131a306040162040132a306040163040133").must()).must()).must()).must() == format(parse("(|(a=1)(b=2)(c=3))").must()).must()
+    assert format(decode(asn1.decode_ber(bytes.parse_hex("a209a3070402636e040178").must()).must()).must()).must() == format(parse("(!(cn=x))").must()).must()
+    assert format(decode(asn1.decode_ber(bytes.parse_hex("8702636e").must()).must()).must()).must() == format(parse("(cn=*)").must()).must()
+    assert format(decode(asn1.decode_ber(bytes.parse_hex("a4110402636e300b8002416e81026f73820169").must()).must()).must()).must() == format(parse("(cn=An*os*i)").must()).must()
+    assert format(decode(asn1.decode_ber(bytes.parse_hex("a40b0402636e30058203616e61").must()).must()).must()).must() == format(parse("(cn=*ana)").must()).must()
+    assert format(decode(asn1.decode_ber(bytes.parse_hex("a4090402636e3003800161").must()).must()).must()).must() == format(parse("(cn=a*)").must()).must()
+    assert format(decode(asn1.decode_ber(bytes.parse_hex("a40c0402636e3006810161810162").must()).must()).must()).must() == format(parse("(cn=*a*b*)").must()).must()
+    assert format(decode(asn1.decode_ber(bytes.parse_hex("a509040361676504023138").must()).must()).must()).must() == format(parse("(age>=18)").must()).must()
+    assert format(decode(asn1.decode_ber(bytes.parse_hex("a609040361676504023635").must()).must()).must()).must() == format(parse("(age<=65)").must()).must()
+    assert format(decode(asn1.decode_ber(bytes.parse_hex("a80a0402636e0404416e6e61").must()).must()).must()).must() == format(parse("(cn~=Anna)").must()).must()
+    assert decode(asn1.decode_ber(bytes.parse_hex("0400").must()).must()).is_err()
+    assert decode(asn1.decode_ber(bytes.parse_hex("a2020400").must()).must()).is_err()
+    assert decode(asn1.decode_ber(bytes.parse_hex("a3020400").must()).must()).is_err()
+
+test "parse, format, encode and decode: 100 nested filters, and 101 refused by each"
+    deep = repeat("(!", 100) + "(a=1)" + repeat(")", 100)
+    nodes = parse(deep).must()
+    assert nodes.len() == 101
+    assert format(nodes).must() == deep
+    v = encode(nodes).must()
+    assert decode(v).must().len() == 101
+    assert parse(repeat("(!", 101) + "(a=1)" + repeat(")", 101)).is_err()
+    nested: [Node] @= []
+
+    for _ in range(from: 0, to: 101)
+        n @= blank(NOT)
+        n.children @ 1
+        nested @ nested.push(n)
+
+    leaf @= blank(PRESENT)
+    leaf.attribute @ "a"
+    nested @ nested.push(leaf)
+    assert format(nested).is_err()
+    assert encode(nested).is_err()
+
+test "escape and unescape_at: the five bytes RFC 4515 escapes, control bytes, text and binary"
+    assert escape(bytes.from_text("a*b(c)d\\e"), as_text: true) == "a\\2ab\\28c\\29d\\5ce"
+    assert escape(bytes.from_text("café"), as_text: true) == "café"
+    assert escape(bytes.from_text("café"), as_text: false) == "caf\\c3\\a9"
+    assert escape([0, 1, 0x7f, 0x41], as_text: true) == "\\00\\01\\7fA"
+    assert escape([], as_text: false) == ""
+    assert unescape_at("a\\2ab", at: 0).must() == bytes.from_text("a*b")
+    assert unescape_at("", at: 0).must() == []
+    assert unescape_at("a*b", at: 0).is_err()
+    assert unescape_at("a\\2", at: 0).is_err()
+    assert unescape_at("\\g0", at: 0).is_err()

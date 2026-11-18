@@ -1,0 +1,543 @@
+# The ledger of `ldap`: what a program does with an LDAP directory, measured
+# against four clients, each listed on this machine on 2026-11-18. Java's
+# `javax.naming.ldap` and `javax.naming.directory` (JNDI's LDAP), from the
+# pages of the Java SE 21 API documentation fetched into the scratch folder,
+# since no JDK is installed here; .NET's `System.DirectoryServices.Protocols`
+# 9.0.0, its members read from the XML documentation of its NuGet package
+# fetched into the scratch folder; Go's `github.com/go-ldap/ldap/v3` v3.4.15
+# (`go doc -all`, the module fetched into the scratch folder), as the
+# yardstick; and Python's `ldap3` 2.9.1 (`dir` of `ldap3`, its `Connection`,
+# `Server`, `utils.dn`, `utils.conv`, `utils.uri`, `utils.hashed` and
+# `extend`, installed into the scratch folder), as the yardstick. Rust's
+# standard library has no LDAP client, so its line is `-` in every block.
+#
+# Expected values of the tests were observed: the bytes of every request
+# from `ldap3`'s own encoder (its operation builders wrapped in an
+# `LDAPMessage` and encoded as `ldap3` sends them), a filter's bytes also
+# from Go's `CompileFilter`, the parsed and escaped names from Go's `ParseDN`
+# and `EscapeDN` and Python's `parse_dn`, `escape_rdn` and
+# `escape_filter_chars`, and the server's answers of the loopback server in
+# the tests from `ldap3`'s own protocol classes. The live run, on
+# 2026-11-18, reached OpenLDAP's slapd 2.6.10 (Debian 13) in a container of
+# this Mac: from macOS, StartTLS by `tls.connect_after`; from Linux inside
+# the container, StartTLS by `tls.client_over`; and over TLS from the first
+# byte, with the certificates of `tls`'s tests.
+
+capability ldap/open  a connection to a directory server opened, in plain text, over TLS from the first byte or with StartTLS
+  heroes  ldap.open, ldap.Conn, ldap.Security
+  java    InitialLdapContext, InitialDirContext, LdapContext.newInstance, LdapContext.reconnect
+  dotnet  LdapConnection, LdapDirectoryIdentifier, DirectoryIdentifier, DirectoryConnection, LdapSessionOptions.SecureSocketLayer, LdapSessionOptions.ProtocolVersion
+  go      Dial, DialTLS, DialURL, DialOpt, DialContext, DialWithDialer, DialWithTLSConfig, DialWithTLSDialer, NewConn, Conn, Conn.Start
+  rust    -
+  python  Server, Connection, Tls, Connection.open
+  note    one connection, which the program owes a `close`; LDAPv3 alone
+
+capability ldap/options  where a server is and how a connection is secured, as a value with defaults
+  heroes  ldap.options, ldap.Options, ldap.DEFAULT_PORT, ldap.DEFAULT_TLS_PORT, ldap.DEFAULT_DEADLINE_MS, ldap.DEFAULT_MAX_MESSAGE
+  java    Context.PROVIDER_URL, Context.SECURITY_PROTOCOL (environment entries)
+  dotnet  LdapSessionOptions.HostName, LdapSessionOptions.DomainName, LdapConnection.Timeout, LdapSessionOptions.SendTimeout
+  go      DialContext, Conn.SetTimeout
+  rust    -
+  python  Server (host, port, use_ssl, connect_timeout), Connection (receive_timeout)
+  note    StartTLS by default, the server's certificate checked: a password never crosses in plain text unless the program asks for `.plain`
+
+capability ldap/url  an LDAP URL (RFC 4516) read and written: scheme, host, port, base, attributes, scope, filter, extensions
+  heroes  ldap.parse_url, ldap.format_url, ldap.Url, ldap.to_options, ldap.to_query
+  java    -
+  dotnet  -
+  go      DialURL (its scheme and host alone)
+  rust    -
+  python  utils.uri.parse_uri, utils.uri.unquote
+  note    a referral's URLs are read with it; percent escapes decoded, the filter parsed
+
+capability ldap/close  the session ended with an UnbindRequest and the connection closed
+  heroes  ldap.close, ldap.is_closed
+  java    Context.close
+  dotnet  LdapConnection.Dispose
+  go      Conn.Unbind, Conn.Close, Conn.IsClosing
+  rust    -
+  python  Connection.unbind, Connection.closed
+  note    -
+
+capability ldap/start-tls  TLS begun on a connection already open (RFC 4511 § 4.14)
+  heroes  ldap.start_tls, ldap.Security, ldap.is_secured, ldap.START_TLS
+  java    StartTlsRequest, StartTlsResponse, StartTlsResponse.negotiate, StartTlsResponse.close, StartTlsResponse.setHostnameVerifier, StartTlsResponse.setEnabledCipherSuites
+  dotnet  LdapSessionOptions.StartTransportLayerSecurity, LdapSessionOptions.StopTransportLayerSecurity, TlsOperationException
+  go      Conn.StartTLS, Conn.TLSConnectionState
+  rust    -
+  python  Connection.start_tls
+  note    on Linux and Windows TLS begins over the connection made (`tls.client_over`); on macOS, whose TLS begins only over a connection `tls` makes, `open` asks for StartTLS on a first connection, reads the answer, and makes the connection it keeps with `tls.connect_after`, expecting the same answer byte for byte (OpenLDAP 2.6.10 answered alike, run 2026-11-18); `start_tls` on an open connection fails `unsupported` there; TLS is never stopped (.NET's Stop)
+
+capability ldap/deadline  each operation bounded in time on the client
+  heroes  ldap.set_deadline, ldap.Options
+  java    com.sun.jndi.ldap.read.timeout (an environment entry)
+  dotnet  LdapConnection.Timeout, DirectoryConnection.Timeout
+  go      Conn.SetTimeout
+  rust    -
+  python  Connection (receive_timeout)
+  note    a deadline that passes ends the session, since the next bytes may belong to the late answer
+
+capability ldap/bind-simple  a simple bind with a name and a password
+  heroes  ldap.bind
+  java    Context.SECURITY_PRINCIPAL, Context.SECURITY_CREDENTIALS, Context.SECURITY_AUTHENTICATION
+  dotnet  LdapConnection.Bind, LdapConnection.Credential, LdapConnection.AuthType, AuthType, LdapConnection.AutoBind
+  go      Conn.Bind, Conn.SimpleBind, SimpleBindRequest, NewSimpleBindRequest, SimpleBindResult
+  rust    -
+  python  Connection.bind, Connection.rebind, SIMPLE
+  note    an empty password is refused, as Go refuses it: RFC 4513 § 5.1.2's unauthenticated bind succeeds without checking anything
+
+capability ldap/bind-anonymous  the connection's identity dropped back to anonymous
+  heroes  ldap.bind_anonymous
+  java    -
+  dotnet  AuthType.Anonymous
+  go      -
+  rust    -
+  python  ANONYMOUS
+  note    -
+
+capability ldap/bind-unauthenticated  RFC 4513 § 5.1.2's unauthenticated bind: a name and no password
+  heroes  ldap.bind_unauthenticated
+  java    -
+  dotnet  -
+  go      Conn.UnauthenticatedBind
+  rust    -
+  python  -
+  note    a function of its own, so that `bind` never sends one by accident
+
+capability ldap/bind-sasl  a SASL bind of any mechanism, step by step
+  heroes  ldap.bind_sasl, ldap.Challenge
+  java    Context.SECURITY_AUTHENTICATION (a SASL mechanism's name)
+  dotnet  LdapSessionOptions.SaslMethod
+  go      -
+  rust    -
+  python  Connection.do_sasl_bind, SASL
+  note    the server's challenge is answered by the program, which knows the mechanism
+
+capability ldap/bind-external  SASL EXTERNAL: the identity the connection already proves
+  heroes  ldap.bind_external
+  java    -
+  dotnet  AuthType.External
+  go      Conn.ExternalBind
+  rust    -
+  python  EXTERNAL
+  note    `tls` presents no client certificate and `net` has no Unix socket, so the server sees only what it knows of the connection
+
+capability ldap/bind-plain  SASL PLAIN (RFC 4616)
+  heroes  ldap.bind_plain
+  java    -
+  dotnet  -
+  go      -
+  rust    -
+  python  PLAIN
+  note    -
+
+capability ldap/bind-digest-md5  SASL DIGEST-MD5
+  heroes  refused: RFC 6331 moved DIGEST-MD5 to Historic for its weaknesses; PLAIN over TLS is the replacement it names
+  java    -
+  dotnet  AuthType.Digest
+  go      Conn.DigestMD5Bind, DigestMD5BindRequest, DigestMD5BindResult, Conn.MD5Bind
+  rust    -
+  python  DIGEST_MD5
+  note    -
+
+capability ldap/bind-gssapi  SASL GSSAPI, Kerberos
+  heroes  refused: Kerberos is a library of its own (GSS-API), which Rebel does not carry; `bind_sasl` takes the tokens a program's own GSS-API makes
+  java    -
+  dotnet  AuthType.Kerberos, AuthType.Negotiate, LdapSessionOptions.Sealing, LdapSessionOptions.Signing, LdapSessionOptions.SecurityContext, LdapSessionOptions.SspiFlag
+  go      Conn.GSSAPIBind, Conn.GSSAPIBindRequest, Conn.GSSAPIBindRequestWithAPOptions, GSSAPIBindRequest, GSSAPIClient
+  rust    -
+  python  GSSAPI, KERBEROS
+  note    -
+
+capability ldap/bind-ntlm  NTLM, Microsoft's own bind
+  heroes  refused: NTLM is deprecated by Microsoft itself (2023), its hash crackable offline; Active Directory takes simple or SASL binds over TLS
+  java    -
+  dotnet  AuthType.Ntlm, AuthType.Dpa, AuthType.Msn, AuthType.Sicily
+  go      Conn.NTLMBind, Conn.NTLMBindWithHash, Conn.NTLMChallengeBind, Conn.NTLMUnauthenticatedBind, NTLMBindRequest, NTLMBindResult, NTLMNegotiator
+  rust    -
+  python  NTLM, Connection.do_ntlm_bind
+  note    -
+
+capability ldap/who-am-i  the identity the server sees on the connection (RFC 4532)
+  heroes  ldap.who_am_i, ldap.WHO_AM_I
+  java    -
+  dotnet  -
+  go      Conn.WhoAmI, WhoAmIResult
+  rust    -
+  python  extend.standard.who_am_i
+  note    -
+
+capability ldap/search  a search: base, scope, filter, attributes, size and time limits, types only, aliases
+  heroes  ldap.search, ldap.query, ldap.Query, ldap.Scope, ldap.Deref, ldap.Found
+  java    DirContext.search, SearchControls, SearchControls.setSearchScope, SearchControls.setCountLimit, SearchControls.setTimeLimit, SearchControls.setReturningAttributes, SearchControls.setReturningObjFlag, SearchControls.setDerefLinkFlag, SearchResult
+  dotnet  SearchRequest, SearchRequest.DistinguishedName, SearchRequest.Filter, SearchRequest.Scope, SearchRequest.Attributes, SearchRequest.SizeLimit, SearchRequest.TimeLimit, SearchRequest.TypesOnly, SearchRequest.Aliases, SearchScope, DereferenceAlias, SearchResponse, SearchOption, SearchOptionsControl
+  go      Conn.Search, SearchRequest, NewSearchRequest, SearchResult, ScopeBaseObject, ScopeSingleLevel, ScopeWholeSubtree, ScopeChildren, NeverDerefAliases, DerefInSearching, DerefFindingBaseObj, DerefAlways
+  rust    -
+  python  Connection.search, Connection.response, Connection.entries, BASE, LEVEL, SUBTREE, DEREF_NEVER, DEREF_SEARCH, DEREF_BASE, DEREF_ALWAYS, ALL_ATTRIBUTES, ALL_OPERATIONAL_ATTRIBUTES, NO_ATTRIBUTES
+  note    a size or time limit the program asked for answers the entries read with the result's code; one the server imposed on its own fails `limit` or `timeout`, so a cut answer is never taken for the whole
+
+capability ldap/search-stream  a search read one message at a time, so a large answer is never held whole
+  heroes  ldap.start_search, ldap.next_item, ldap.Item
+  java    NamingEnumeration (hasMore, next)
+  dotnet  LdapConnection.BeginSendRequest, LdapConnection.EndSendRequest, LdapConnection.GetPartialResults, PartialResultProcessing, PartialResultsCollection
+  go      Conn.SearchAsync, Response, PacketResponse, PacketResponse.ReadPacket
+  rust    -
+  python  ASYNC, ASYNC_STREAM, Connection.stream
+  note    -
+
+capability ldap/search-one  the one entry a name names, read
+  heroes  ldap.lookup
+  java    DirContext.getAttributes
+  dotnet  -
+  go      -
+  rust    -
+  python  -
+  note    a base-object search of `(objectClass=*)`; `not_found` where no entry has the name
+
+capability ldap/abandon  a running search given up (RFC 4511 § 4.11)
+  heroes  ldap.abandon_search
+  java    -
+  dotnet  LdapConnection.Abort
+  go      -
+  rust    -
+  python  Connection.abandon
+  note    messages of the abandoned search that still arrive are read past
+
+capability ldap/paged  a search read page by page (RFC 2696), every page gathered or one page at a time
+  heroes  ldap.search_paged, ldap.search_page, ldap.Page, ldap.paged_control, ldap.paged_of, ldap.Paged, ldap.PAGED_RESULTS
+  java    PagedResultsControl, PagedResultsResponseControl
+  dotnet  PageResultRequestControl, PageResultResponseControl
+  go      Conn.SearchWithPaging, ControlPaging, NewControlPaging, ControlPaging.SetCookie
+  rust    -
+  python  extend.standard.paged_search, Connection.search (paged_size, paged_cookie, paged_criticality)
+  note    -
+
+capability ldap/root-dse  the server's root DSE: naming contexts, controls, extensions and SASL mechanisms it supports
+  heroes  ldap.root_dse
+  java    -
+  dotnet  LdapSessionOptions.RootDseCache
+  go      -
+  rust    -
+  python  Server.info, DsaInfo, Server.get_info_from_server, Server.has_control, Server.has_extension, Server.has_feature, ALL, DSA
+  note    -
+
+capability ldap/schema  the server's schema read into object classes and attribute types
+  heroes  pending
+  java    DirContext.getSchema, DirContext.getSchemaClassDefinition
+  dotnet  -
+  go      -
+  rust    -
+  python  Server.schema, SchemaInfo, SCHEMA, Server.attach_schema_info, OFFLINE_AD_2012_R2, OFFLINE_DS389_1_3_3, OFFLINE_EDIR_8_8_8, OFFLINE_EDIR_9_1_4, OFFLINE_SLAPD_2_4
+  note    pending: RFC 4512's definitions have a grammar of their own, not written this round; `lookup` of the subschema entry answers them as text
+
+capability ldap/entry  an entry's attributes read by name, case ignored, as bytes or as text
+  heroes  ldap.Entry, ldap.Attribute, ldap.values_of, ldap.texts_of, ldap.text_of, ldap.has_attribute, ldap.text_attribute
+  java    Attributes, Attribute, BasicAttributes, BasicAttribute, Attributes.get, Attribute.getAll
+  dotnet  SearchResultEntry, SearchResultEntry.DistinguishedName, SearchResultEntry.Attributes, SearchResultAttributeCollection, DirectoryAttribute, DirectoryAttributeCollection, SearchResultEntryCollection
+  go      Entry, EntryAttribute, NewEntry, NewEntryAttribute, Entry.GetAttributeValue, Entry.GetAttributeValues, Entry.GetRawAttributeValue, Entry.GetRawAttributeValues, Entry.GetEqualFoldAttributeValue, Entry.GetEqualFoldAttributeValues, Entry.GetEqualFoldRawAttributeValue, Entry.GetEqualFoldRawAttributeValues, Attribute, PartialAttribute
+  rust    -
+  python  Entry, Attribute, OperationalAttribute, Entry.entry_attributes_as_dict
+  note    names compared as LDAP compares descriptors, ASCII case ignored, as Go's `EqualFold` readers do
+
+capability ldap/references  the continuation references of a search, as values
+  heroes  ldap.Reference, ldap.Found, ldap.Result
+  java    LdapReferralException, Context.REFERRAL
+  dotnet  SearchResultReference, SearchResultReferenceCollection, SearchResponse.References
+  go      SearchResult.Referrals
+  rust    -
+  python  Connection.response (type searchResRef)
+  note    -
+
+capability ldap/referral-chasing  a referral followed to the server it names
+  heroes  refused: following a referral means connecting and binding to another server, with which credentials the program alone knows; each referral is a value whose URLs `parse_url` reads
+  java    ManageReferralControl, Context.REFERRAL ("follow")
+  dotnet  LdapSessionOptions.ReferralChasing, LdapSessionOptions.ReferralHopLimit, LdapSessionOptions.ReferralCallback, ReferralCallback, ReferralChasingOptions, QueryForConnectionCallback, NotifyOfNewConnectionCallback, DereferenceConnectionCallback
+  go      -
+  rust    -
+  python  Connection (auto_referrals, use_referral_cache), Server (allowed_referral_hosts)
+  note    -
+
+capability ldap/add  an entry added
+  heroes  ldap.add
+  java    DirContext.bind, DirContext.createSubcontext
+  dotnet  AddRequest, AddResponse
+  go      Conn.Add, AddRequest, NewAddRequest, AddRequest.Attribute
+  rust    -
+  python  Connection.add
+  note    -
+
+capability ldap/modify  an entry's attributes changed: values added, deleted, replaced, incremented (RFC 4525)
+  heroes  ldap.modify, ldap.Change, ldap.ChangeKind
+  java    DirContext.modifyAttributes, ModificationItem, DirContext.ADD_ATTRIBUTE, DirContext.REPLACE_ATTRIBUTE, DirContext.REMOVE_ATTRIBUTE
+  dotnet  ModifyRequest, ModifyResponse, DirectoryAttributeModification, DirectoryAttributeModificationCollection, DirectoryAttributeOperation
+  go      Conn.Modify, Conn.ModifyWithResult, ModifyRequest, NewModifyRequest, ModifyRequest.Add, ModifyRequest.Delete, ModifyRequest.Replace, ModifyRequest.Increment, ModifyResult, Change
+  rust    -
+  python  Connection.modify, MODIFY_ADD, MODIFY_DELETE, MODIFY_REPLACE, MODIFY_INCREMENT
+  note    -
+
+capability ldap/delete  an entry deleted
+  heroes  ldap.delete
+  java    Context.unbind, Context.destroySubcontext
+  dotnet  DeleteRequest, DeleteResponse
+  go      Conn.Del, DelRequest, NewDelRequest
+  rust    -
+  python  Connection.delete
+  note    -
+
+capability ldap/rename  an entry renamed or moved (ModifyDN)
+  heroes  ldap.rename
+  java    Context.rename
+  dotnet  ModifyDNRequest, ModifyDNResponse
+  go      Conn.ModifyDN, ModifyDNRequest, NewModifyDNRequest, NewModifyDNWithControlsRequest
+  rust    -
+  python  Connection.modify_dn
+  note    -
+
+capability ldap/compare  whether an entry's attribute holds a value, asked of the server
+  heroes  ldap.compare
+  java    DirContext.search (a filter with a base scope and no attributes)
+  dotnet  CompareRequest, CompareResponse
+  go      Conn.Compare, CompareRequest
+  rust    -
+  python  Connection.compare
+  note    -
+
+capability ldap/password-modify  a password changed, or one generated by the server (RFC 3062)
+  heroes  ldap.change_password, ldap.PASSWORD_MODIFY
+  java    -
+  dotnet  -
+  go      Conn.PasswordModify, PasswordModifyRequest, NewPasswordModifyRequest, PasswordModifyResult
+  rust    -
+  python  extend.standard.modify_password, extend.microsoft.modify_password
+  note    Active Directory's own route, a `unicodePwd` replaced over TLS, is a `modify`
+
+capability ldap/extended  any extended operation, by its name and value
+  heroes  ldap.extended, ldap.Extended
+  java    LdapContext.extendedOperation, ExtendedRequest, ExtendedResponse
+  dotnet  ExtendedRequest, ExtendedResponse
+  go      Conn.Extended, ExtendedRequest, NewExtendedRequest, ExtendedResponse
+  rust    -
+  python  Connection.extended
+  note    -
+
+capability ldap/result  every answer's result told as a value: its code, the matched name, the server's message, the referrals and the controls
+  heroes  ldap.result_of, ldap.Result, ldap.INVALID, ldap.NOT_TEXT, ldap.NOT_FOUND, ldap.EXISTS, ldap.NOT_EMPTY, ldap.PERMISSION, ldap.CLOSED, ldap.TIMEOUT, ldap.STOPPED, ldap.LIMIT, ldap.UNSUPPORTED, ldap.FAILED
+  java    LdapContext.getResponseControls, HasControls, NamingException
+  dotnet  DirectoryResponse, DirectoryResponse.ResultCode, DirectoryResponse.MatchedDN, DirectoryResponse.ErrorMessage, DirectoryResponse.Referral, DirectoryResponse.Controls, DirectoryResponse.RequestId, ResultCode, DirectoryOperationException, LdapException, DirectoryException
+  go      Error, NewError, GetLDAPError, IsErrorWithCode, IsErrorAnyOf, Conn.GetLastError, LDAPResultSuccess (and every LDAPResult* constant), LDAPResultCodeMap
+  rust    -
+  python  Connection.result, Connection.last_error, core.results (every RESULT_* constant), core.exceptions
+  note    a result other than success fails with the library's code that names it (`not_found` for noSuchObject, `exists`, `permission`, `not_empty`, ...), and `result_of` answers the whole result after it
+
+capability ldap/controls  any control sent with a request and read from an answer
+  heroes  ldap.Control, ldap.set_controls, ldap.Query, ldap.Result
+  java    Control, BasicControl, ControlFactory, LdapContext.setRequestControls, LdapContext.getRequestControls, LdapContext.getConnectControls
+  dotnet  DirectoryControl, DirectoryControlCollection, DirectoryRequest.Controls
+  go      Control, ControlString, NewControlString, DecodeControl, FindControl
+  rust    -
+  python  protocol.controls.build_control, Connection.search (controls)
+  note    the controls are set on the connection and sent with every request after, as JNDI's request controls
+
+capability ldap/control-sort  server-side sorting (RFC 2891)
+  heroes  ldap.sort_control, ldap.SortKey, ldap.sort_result_of, ldap.SORT_REQUEST, ldap.SORT_RESPONSE
+  java    SortControl, SortKey, SortResponseControl
+  dotnet  SortRequestControl, SortResponseControl, SortKey
+  go      ControlServerSideSorting, NewControlServerSideSorting, NewControlServerSideSortingWithSortKeys, ControlServerSideSortingResult, NewControlServerSideSortingResult, ControlServerSideSortingCode, SortKey
+  rust    -
+  python  -
+  note    -
+
+capability ldap/control-manage-dsa-it  referrals and aliases treated as ordinary entries (RFC 3296)
+  heroes  ldap.manage_dsa_it_control, ldap.MANAGE_DSA_IT
+  java    ManageReferralControl
+  dotnet  -
+  go      ControlManageDsaIT, NewControlManageDsaIT
+  rust    -
+  python  -
+  note    -
+
+capability ldap/control-tree-delete  a subtree deleted whole
+  heroes  ldap.tree_delete_control, ldap.TREE_DELETE
+  java    -
+  dotnet  TreeDeleteControl
+  go      ControlSubtreeDelete, NewControlSubtreeDelete
+  rust    -
+  python  -
+  note    the control Active Directory and OpenLDAP read
+
+capability ldap/control-proxied-authorization  a request run as another identity (RFC 4370)
+  heroes  ldap.proxied_authorization_control, ldap.PROXIED_AUTHORIZATION
+  java    -
+  dotnet  -
+  go      -
+  rust    -
+  python  -
+  note    -
+
+capability ldap/control-assertion  a change made only where a filter holds of the entry (RFC 4528)
+  heroes  ldap.assertion_control, ldap.ASSERTION
+  java    -
+  dotnet  -
+  go      -
+  rust    -
+  python  -
+  note    -
+
+capability ldap/control-password-policy  the password policy's warnings and errors read (draft-behera-ldap-password-policy)
+  heroes  pending
+  java    -
+  dotnet  -
+  go      ControlBeheraPasswordPolicy, NewControlBeheraPasswordPolicy, ControlVChuPasswordMustChange, ControlVChuPasswordWarning
+  rust    -
+  python  -
+  note    pending: the request control is a `Control` by its OID; its answer, a choice of warnings and errors, has no reader yet
+
+capability ldap/control-sync  content synchronisation and persistent search (RFC 4533, draft-ietf-ldapext-psearch, Active Directory's DirSync and notification)
+  heroes  pending
+  java    UnsolicitedNotification, UnsolicitedNotificationEvent, UnsolicitedNotificationListener
+  dotnet  DirSyncRequestControl, DirSyncResponseControl, DirectorySynchronizationOptions, DirectoryNotificationControl
+  go      Conn.Syncrepl, ControlSyncRequest, NewControlSyncRequest, ControlSyncRequestMode, ControlSyncState, NewControlSyncState, ControlSyncStateState, ControlSyncDone, NewControlSyncDone, ControlSyncInfo, NewControlSyncInfo, ControlSyncInfoNewCookie, ControlSyncInfoRefreshDelete, ControlSyncInfoRefreshPresent, ControlSyncInfoSyncIdSet, ControlSyncInfoValue, Conn.DirSync, Conn.DirSyncAsync, ControlDirSync, NewControlDirSync, NewRequestControlDirSync, NewResponseControlDirSync, ControlMicrosoftNotification, NewControlMicrosoftNotification
+  rust    -
+  python  extend.standard.persistent_search, extend.microsoft.persistent_search, extend.microsoft.dir_sync
+  note    pending: content synchronisation and persistent search answer entries with state controls, intermediate messages and cookies for as long as the program reads, a reader of their own not written this round; `start_search` and `next_item` carry the messages
+
+capability ldap/control-vendor  Active Directory's and eDirectory's own controls: shown deleted, security descriptor flags, link TTL, extended DN, domain scope, VLV, ASQ, quota, cross-domain move, verify name, lazy commit, permissive modify
+  heroes  pending
+  java    -
+  dotnet  ShowDeletedControl, SecurityDescriptorFlagControl, SecurityMasks, ExtendedDNControl, ExtendedDNFlag, DomainScopeControl, VlvRequestControl, VlvResponseControl, AsqRequestControl, AsqResponseControl, QuotaControl, CrossDomainMoveControl, VerifyNameControl, LazyCommitControl, PermissiveModifyControl
+  go      ControlMicrosoftShowDeleted, NewControlMicrosoftShowDeleted, ControlMicrosoftSDFlags, NewControlMicrosoftSDFlags, ControlMicrosoftServerLinkTTL, NewControlMicrosoftServerLinkTTL
+  rust    -
+  python  extend.microsoft.add_members_to_groups, extend.microsoft.remove_members_from_groups, extend.microsoft.unlock_account, extend.novell (every function)
+  note    pending: each is a `Control` by its OID, which `set_controls` sends and `Result.controls` reads, but no builder or reader of its own is written
+
+capability ldap/dn-parse  a distinguished name (RFC 4514) read into its RDNs and attribute-value pairs
+  heroes  ldap.parse_dn, ldap.parse_rdn, ldap.Dn, ldap.Rdn, ldap.Ava, ldap.unescape_dn_value
+  java    LdapName, LdapName.getRdns, LdapName.get, LdapName.size, LdapName.isEmpty, Rdn, Rdn.getType, Rdn.getValue, Rdn.size, Rdn.toAttributes
+  dotnet  -
+  go      ParseDN, DN, RelativeDN, AttributeTypeAndValue
+  rust    -
+  python  utils.dn.parse_dn, utils.dn.to_dn
+  note    RFC 4514's grammar: spaces around separators read past and `=` inside a value read, as Go reads them and Python refuses; `;` as a separator, an `OID.` prefix, a type that begins with a digit and a quoted value refused, where Go reads them; a `#` value read only where its BER is a string, where Go reads any
+
+capability ldap/dn-format  a distinguished name written in RFC 4514's string form, each value escaped
+  heroes  ldap.format_dn, ldap.format_rdn, ldap.escape_dn_value
+  java    LdapName.toString, Rdn.toString, Rdn.escapeValue, Rdn.unescapeValue
+  dotnet  -
+  go      DN.String, RelativeDN.String, AttributeTypeAndValue.String, EscapeDN
+  rust    -
+  python  utils.dn.escape_rdn, utils.dn.safe_dn, utils.dn.safe_rdn
+  note    `=` written as it is, as Go's `EscapeDN` writes it, where Python escapes it; RFC 4514 allows either; a character past ASCII written as it is, where Go's `DN.String` escapes its bytes
+
+capability ldap/dn-compare  two names compared, types without case, values exactly or without case; one name under another; its parent; a child made
+  heroes  ldap.is_same_dn, ldap.is_same_dn_ignoring_case, ldap.is_under, ldap.parent_of, ldap.child_of
+  java    LdapName.equals, LdapName.compareTo, LdapName.startsWith, LdapName.endsWith, LdapName.getPrefix, LdapName.getSuffix, LdapName.add, LdapName.addAll, LdapName.remove, Rdn.equals, Rdn.compareTo
+  dotnet  -
+  go      DN.Equal, DN.EqualFold, DN.AncestorOf, DN.AncestorOfFold, RelativeDN.Equal, RelativeDN.EqualFold, AttributeTypeAndValue.Equal, AttributeTypeAndValue.EqualFold
+  rust    -
+  python  -
+  note    -
+
+capability ldap/filter-parse  a search filter (RFC 4515) read from text into a value, every escape
+  heroes  ldap.parse_filter, ldap.Filter, ldap.MAX_FILTER_DEPTH
+  java    DirContext.search (a filter as text), InvalidSearchFilterException
+  dotnet  SearchRequest.Filter (as text)
+  go      CompileFilter
+  rust    -
+  python  Connection.search (search_filter as text)
+  note    RFC 4515's grammar: `((cn=a))`, `(cn=a**b)`, `(cn=a(b)`, `(=a)` and `(:=x)` refused where Go reads them; `:DN` read as dnAttributes, ABNF's strings being blind to case, where Go reads a rule named DN; the parentheses around the whole may be left out, where Go asks for them
+
+capability ldap/filter-format  a filter value written back as RFC 4515's text
+  heroes  ldap.format_filter
+  java    -
+  dotnet  -
+  go      DecompileFilter
+  rust    -
+  python  -
+  note    a value that is UTF-8 kept as text, where Go's `DecompileFilter` escapes every byte past ASCII
+
+capability ldap/filter-escape  a value escaped to stand inside a filter's text, and unescaped
+  heroes  ldap.escape_filter, ldap.escape_filter_bytes, ldap.unescape_filter
+  java    -
+  dotnet  -
+  go      EscapeFilter
+  rust    -
+  python  utils.conv.escape_filter_chars, utils.conv.escape_bytes, utils.conv.unescape_filter_chars, utils.conv.is_filter_escaped, utils.conv.ldap_escape_to_bytes
+  note    `escape_filter` keeps characters past ASCII, as Python's `escape_filter_chars` does; `escape_filter_bytes` escapes them, as Go's `EscapeFilter` does
+
+capability ldap/filter-ber  a filter written as BER and read back from it
+  heroes  ldap.encode_filter, ldap.decode_filter
+  java    -
+  dotnet  BerConverter, BerConversionException
+  go      CompileFilter, DecompileFilter
+  rust    -
+  python  -
+  note    TRUE written 0xff, as RFC 4511 § 5.1 asks and ldap3 writes, where Go writes 0x01
+
+capability ldap/result-codes  the result codes of RFC 4511 and its extensions as constants and names
+  heroes  ldap.format_result_code, ldap.SUCCESS, ldap.NO_SUCH_OBJECT and the other 43 result constants
+  java    -
+  dotnet  ResultCode
+  go      LDAPResultCodeMap, every LDAPResult* constant
+  rust    -
+  python  core.results (every RESULT_* constant)
+  note    -
+
+capability ldap/unsolicited  a notice of disconnection read (RFC 4511 § 4.4.1)
+  heroes  ldap.NOTICE_OF_DISCONNECTION
+  java    UnsolicitedNotification
+  dotnet  -
+  go      -
+  rust    -
+  python  -
+  note    the connection ends, failing `closed` with the server's words
+
+capability ldap/ldif  entries read and written in LDIF (RFC 2849)
+  heroes  refused: LDIF is a file format of its own, not the protocol; a package of its own would hold it beside `csv` and `json`
+  java    -
+  dotnet  -
+  go      Entry.Print, Entry.PrettyPrint, EntryAttribute.Print, EntryAttribute.PrettyPrint, SearchResult.Print, SearchResult.PrettyPrint, SearchSingleResult.Print, SearchSingleResult.PrettyPrint
+  rust    -
+  python  Connection.response_to_ldif, LDIF
+  note    -
+
+capability ldap/password-hash  a password hashed as directories store it: {SHA}, {SSHA}, {SHA256} and the others
+  heroes  pending
+  java    -
+  dotnet  -
+  go      -
+  rust    -
+  python  utils.hashed.hashed, HASHED_* constants
+  note    pending: {SHA}, {SSHA} and the SHA-2 forms need `crypto`'s digests and a salt from `os`; not written this round
+
+capability ldap/object-mapping  an entry read into a record, and a record written as an entry
+  heroes  refused: the language has no reflection; a program reads each attribute it needs with `text_of` and `values_of`
+  java    -
+  dotnet  -
+  go      Entry.Unmarshal, Entry.UnmarshalFunc
+  rust    -
+  python  abstract.ObjectDef, abstract.AttrDef, Reader, Writer, WritableEntry, WritableAttribute
+  note    -
+
+capability ldap/pool  a pool of servers tried in turn, and of connections reused
+  heroes  refused: a list of servers tried in turn is a loop the program writes with `open`, and a connection is one place one thread owns
+  java    -
+  dotnet  LdapSessionOptions.AutoReconnect, LdapSessionOptions.FastConcurrentBind
+  go      -
+  rust    -
+  python  ServerPool, ROUND_ROBIN, RANDOM, FIRST, Connection (pool_name, pool_size, pool_lifetime, pool_keepalive), RESTARTABLE, SAFE_RESTARTABLE, REUSABLE, SAFE_SYNC
+  note    -
+
+capability ldap/postal-address  a postal address's lines read and written as the directory escapes them (RFC 4517 § 3.3.28)
+  heroes  pending
+  java    -
+  dotnet  -
+  go      PostalAddress, NewPostalAddress, ParsePostalAddress, PostalAddress.Equal, PostalAddress.Escape, PostalAddress.Lines, PostalAddress.String
+  rust    -
+  python  -
+  note    pending: RFC 4517's escapes of `$` and `\` in a postal address not written this round
+
+dropped
+  java    Context's environment constants and the naming framework's own classes (Name, NameParser, NamingEnumeration's other uses, Referenceable): JNDI's plumbing over every naming service
+  dotnet  DirectoryRequest, DirectoryResponse's base classes, DirectoryOperation, DsmlAuthRequest (DSML over SOAP), LdapSessionOptions.LocatorFlag, LocatorFlags, LdapSessionOptions.PingKeepAliveTimeout, LdapSessionOptions.PingLimit, LdapSessionOptions.PingWaitTimeout, LdapSessionOptions.TcpKeepAlive, LdapSessionOptions.HostReachable, LdapSessionOptions.QueryClientCertificate, QueryClientCertificateCallback, LdapSessionOptions.VerifyServerCertificate, VerifyServerCertificateCallback, LdapSessionOptions.SslInformation, SecurityPackageContextConnectionInformation, SecurityProtocol: Windows's locator, keep-alives and SChannel's own settings, which `tls` decides
+  go      Logger, DebugBinaryFile, Client (an interface), Conn.Start, Response (an interface), Error.Error, Error.Unwrap, every control's Encode, GetControlType and String: plumbing of Go's types
+  python  Connection.usage, Connection.repr_with_sensitive_data_stripped, Connection.response_to_json, Connection.response_to_file, Connection.refresh_server_info, Server.check_availability, Server.reset_availability, Server.update_availability, Server.candidate_addresses, Server.address_info, Server.next_message_id, Server.from_definition, Server.attach_dsa_info, get_config_parameter, set_config_parameter, MOCK_SYNC, MOCK_ASYNC, IP_V4_ONLY, IP_V6_ONLY, IP_V4_PREFERRED, IP_V6_PREFERRED, IP_SYSTEM_DEFAULT, utils.conv.to_unicode, utils.conv.to_raw, utils.conv.format_json, utils.conv.json_hook, utils.conv.json_encode_b64, utils.conv.check_json_dict, utils.conv.prepare_for_stream, utils.conv.b64encode, utils.conv.b64decode, utils.conv.CaseInsensitiveDict: statistics, mock strategies, address families, JSON rendering and conversions of Python's own types

@@ -1,0 +1,198 @@
+# The operations of LDAP as BER values (RFC 4511 § 4.2 to § 4.14), each
+# built from plain values: names and values as bytes, a scope and a choice
+# as their numbers, a filter as the BER value `filters` built. `wire`
+# wraps each in its message.
+
+use asn1
+use bytes
+use ldap/internal/wire
+
+# A constructed element of the application tag `number` holding `items`.
+function application(number: i64, items: [asn1.Value]) -> asn1.Value
+    return .constructed(tag: asn1.Tag(kind: .application, number: number, constructed: true), items: items)
+
+# A primitive element of the application tag `number` holding `content`.
+function application_primitive(number: i64, content: [u8]) -> asn1.Value
+    return .primitive(tag: asn1.Tag(kind: .application, number: number, constructed: false), content: content)
+
+# A primitive element of the context tag `number` holding `content`.
+function context(number: i64, content: [u8]) -> asn1.Value
+    return .primitive(tag: asn1.Tag(kind: .context_specific, number: number, constructed: false), content: content)
+
+# The OCTET STRING of the text `s`.
+function octets(s: str) -> asn1.Value
+    return .octet_string(v: bytes.from_text(s))
+
+# A SET OF the values `values`, written in their order: LDAP's values keep
+# the order the program gave them, where DER would sort them.
+function values_set(values: [[u8]]) -> asn1.Value
+    items: [asn1.Value] @= []
+
+    for v in values
+        items @ items.push(.octet_string(v: v))
+
+    return .constructed(tag: asn1.Tag(kind: .universal, number: asn1.SET, constructed: true), items: items)
+
+# A simple BindRequest of `name` with `password` (RFC 4511 § 4.2).
+function bind_simple(name: str, password: str) -> asn1.Value
+    return application(
+        number: wire.BIND_REQUEST,
+        items: [.integer(v: 3), octets(name), context(number: 0, content: bytes.from_text(password))]
+    )
+
+# A SASL BindRequest of `mechanism`, with `credentials` where there are
+# any.
+function bind_sasl(mechanism: str, credentials: [u8]) -> asn1.Value
+    parts: [asn1.Value] @= [octets(mechanism)]
+
+    if credentials.len() > 0
+        parts @ parts.push(.octet_string(v: credentials))
+    sasl: asn1.Value = .constructed(tag: asn1.Tag(kind: .context_specific, number: 3, constructed: true), items: parts)
+    return application(number: wire.BIND_REQUEST, items: [.integer(v: 3), octets(""), sasl])
+
+# The UnbindRequest.
+function unbind() -> asn1.Value
+    return application_primitive(number: wire.UNBIND_REQUEST, content: [])
+
+# A SearchRequest (RFC 4511 § 4.5.1); `scope` and `deref` are RFC 4511's
+# numbers, `matching` the filter's BER value.
+function search(base: str, scope: i64, deref: i64, size_limit: i64, time_limit: i64, types_only: bool, matching: asn1.Value, attributes: [str]) -> asn1.Value
+    names: [asn1.Value] @= []
+
+    for a in attributes
+        names @ names.push(octets(a))
+
+    return application(
+        number: wire.SEARCH_REQUEST,
+        items: [octets(base), .enumerated(v: scope), .enumerated(v: deref), .integer(v: size_limit), .integer(v: time_limit), .boolean(v: types_only), matching, .sequence(items: names)]
+    )
+
+# A ModifyRequest (RFC 4511 § 4.6): the change `k` does `kinds[k]` to the
+# attribute `names[k]` with the values `values[k]`.
+function modify(name: str, kinds: [i64], names: [str], values: [[[u8]]]) -> asn1.Value
+    changes: [asn1.Value] @= []
+
+    for k in range(from: 0, to: kinds.len())
+        changes @ changes.push(
+            .sequence(items: [.enumerated(v: kinds[k]), .sequence(items: [octets(names[k]), values_set(values[k])])])
+        )
+
+    return application(number: wire.MODIFY_REQUEST, items: [octets(name), .sequence(items: changes)])
+
+# An AddRequest (RFC 4511 § 4.7): the attribute `names[k]` with the values
+# `values[k]`.
+function add(name: str, names: [str], values: [[[u8]]]) -> asn1.Value
+    attributes: [asn1.Value] @= []
+
+    for k in range(from: 0, to: names.len())
+        attributes @ attributes.push(.sequence(items: [octets(names[k]), values_set(values[k])]))
+
+    return application(number: wire.ADD_REQUEST, items: [octets(name), .sequence(items: attributes)])
+
+# A DelRequest of `name` (RFC 4511 § 4.8).
+function delete(name: str) -> asn1.Value
+    return application_primitive(number: wire.DELETE_REQUEST, content: bytes.from_text(name))
+
+# A ModifyDNRequest (RFC 4511 § 4.9); `new_parent` "" sends none.
+function modify_dn(name: str, new_rdn: str, delete_old: bool, new_parent: str) -> asn1.Value
+    items: [asn1.Value] @= [octets(name), octets(new_rdn), .boolean(v: delete_old)]
+
+    if new_parent != ""
+        items @ items.push(context(number: 0, content: bytes.from_text(new_parent)))
+    return application(number: wire.MODIFY_DN_REQUEST, items: items)
+
+# A CompareRequest (RFC 4511 § 4.10).
+function compare(name: str, attribute: str, value: [u8]) -> asn1.Value
+    return application(
+        number: wire.COMPARE_REQUEST,
+        items: [octets(name), .sequence(items: [octets(attribute), .octet_string(v: value)])]
+    )
+
+# An AbandonRequest of the message numbered `id` (RFC 4511 § 4.11).
+function abandon(id: i64) -> asn1.Value
+    content = asn1.encode_content(.integer(v: id)).must()
+    return application_primitive(number: wire.ABANDON_REQUEST, content: content)
+
+# An ExtendedRequest (RFC 4511 § 4.12); `value` [] sends none.
+function extended(name: str, value: [u8]) -> asn1.Value
+    items: [asn1.Value] @= [context(number: 0, content: bytes.from_text(name))]
+
+    if value.len() > 0
+        items @ items.push(context(number: 1, content: value))
+    return application(number: wire.EXTENDED_REQUEST, items: items)
+
+# The value of a Password Modify request (RFC 3062): each part "" left
+# out.
+function password_modify_value(user: str, old: str, new: str) -> [u8]
+    parts: [asn1.Value] @= []
+
+    if user != ""
+        parts @ parts.push(context(number: 0, content: bytes.from_text(user)))
+
+    if old != ""
+        parts @ parts.push(context(number: 1, content: bytes.from_text(old)))
+
+    if new != ""
+        parts @ parts.push(context(number: 2, content: bytes.from_text(new)))
+    return asn1.encode_der(.sequence(items: parts)).must()
+
+# The password a Password Modify answer's `value` holds, [] where it holds
+# none.
+#
+# Fails `invalid` where `value` is not such an answer.
+function generated_password(value: [u8]) -> [u8]?
+    if value.len() == 0
+        return ok([])
+
+    v = match asn1.decode_ber(value)
+        .ok got => got
+        .err e  => return fail(code: "invalid", msg: f"a Password Modify answer that is no BER: {e.msg}")
+
+    for item in wire.elements(v, what: "a Password Modify answer")?
+        tag = asn1.tag_of(item)
+
+        if tag.kind == .context_specific && tag.number == 0
+            return wire.octets(item, what: "a generated password")
+
+    return ok([])
+
+## Tests
+
+# The bytes of `op` in a message numbered `id` with `controls`, in
+# hexadecimal.
+test "envelope: every request as ldap3 2.9.1 encodes it, byte for byte"
+    present: asn1.Value = .primitive(
+        tag: asn1.Tag(kind: .context_specific, number: 7, constructed: false),
+        content: bytes.from_text("objectClass")
+    )
+    cn_present: asn1.Value = .primitive(
+        tag: asn1.Tag(kind: .context_specific, number: 7, constructed: false),
+        content: bytes.from_text("cn")
+    )
+    assert bytes.format_hex(wire.envelope(1, op: bind_simple(name: "cn=admin,dc=example,dc=org", password: "secret"), controls: []).must()) == "302c0201016027020103041a636e3d61646d696e2c64633d6578616d706c652c64633d6f72678006736563726574"
+    assert bytes.format_hex(wire.envelope(1, op: bind_simple(name: "", password: ""), controls: []).must()) == "300c020101600702010304008000"
+    assert bytes.format_hex(wire.envelope(1, op: bind_sasl(mechanism: "EXTERNAL", credentials: []), controls: []).must()) == "301602010160110201030400a30a040845585445524e414c"
+    assert bytes.format_hex(wire.envelope(1, op: bind_sasl(mechanism: "PLAIN", credentials: [0, 97, 110, 97, 0, 115, 101, 99, 114, 101, 116]), controls: []).must()) == "3020020101601b0201030400a3140405504c41494e040b00616e6100736563726574"
+    assert bytes.format_hex(wire.envelope(2, op: search(base: "cn=Ana,dc=example,dc=org", scope: 0, deref: 0, size_limit: 0, time_limit: 0, types_only: false, matching: present, attributes: ["cn"]), controls: []).must()) == "3041020102633c0418636e3d416e612c64633d6578616d706c652c64633d6f72670a01000a0100020100020100010100870b6f626a656374436c61737330040402636e"
+    assert bytes.format_hex(wire.envelope(2, op: search(base: "dc=example,dc=org", scope: 2, deref: 0, size_limit: 1, time_limit: 5, types_only: true, matching: cn_present, attributes: ["1.1"]), controls: []).must()) == "3032020102632d041164633d6578616d706c652c64633d6f72670a01020a01000201010201050101ff8702636e30050403312e31"
+    assert bytes.format_hex(wire.envelope(2, op: add(name: "cn=Ana,dc=example,dc=org", names: ["objectClass", "cn", "sn"], values: [[bytes.from_text("person")], [bytes.from_text("Ana")], [bytes.from_text("Rossi")]]), controls: []).must()) == "305602010268510418636e3d416e612c64633d6578616d706c652c64633d6f726730353017040b6f626a656374436c61737331080406706572736f6e300b0402636e31050403416e61300d0402736e31070405526f737369"
+    assert bytes.format_hex(wire.envelope(2, op: modify(name: "cn=Ana,dc=example,dc=org", kinds: [2, 0, 1, 3], names: ["mail", "description", "telephoneNumber", "uidNumber"], values: [[bytes.from_text("ana@example.org")], [bytes.from_text("x"), bytes.from_text("y")], [], [bytes.from_text("1")]]), controls: []).must()) == "30818f0201026681890418636e3d416e612c64633d6578616d706c652c64633d6f7267306d301e0a0102301904046d61696c3111040f616e61406578616d706c652e6f7267301a0a01003015040b6465736372697074696f6e310604017804017930180a01013013040f74656c6570686f6e654e756d626572310030150a0103301004097569644e756d6265723103040131"
+    assert bytes.format_hex(wire.envelope(2, op: delete("cn=Ana,dc=example,dc=org"), controls: []).must()) == "301d0201024a18636e3d416e612c64633d6578616d706c652c64633d6f7267"
+    assert bytes.format_hex(wire.envelope(2, op: modify_dn(name: "cn=Ana,dc=example,dc=org", new_rdn: "cn=Anna", delete_old: true, new_parent: "ou=people,dc=example,dc=org"), controls: []).must()) == "30480201026c430418636e3d416e612c64633d6578616d706c652c64633d6f72670407636e3d416e6e610101ff801b6f753d70656f706c652c64633d6578616d706c652c64633d6f7267"
+    assert bytes.format_hex(wire.envelope(2, op: modify_dn(name: "cn=Ana,dc=example,dc=org", new_rdn: "cn=Anna", delete_old: false, new_parent: ""), controls: []).must()) == "302b0201026c260418636e3d416e612c64633d6578616d706c652c64633d6f72670407636e3d416e6e61010100"
+    assert bytes.format_hex(wire.envelope(2, op: compare(name: "cn=Ana,dc=example,dc=org", attribute: "sn", value: bytes.from_text("Rossi")), controls: []).must()) == "302c0201026e270418636e3d416e612c64633d6578616d706c652c64633d6f7267300b0402736e0405526f737369"
+    assert bytes.format_hex(wire.envelope(2, op: extended(name: "1.3.6.1.4.1.4203.1.11.3", value: []), controls: []).must()) == "301e02010277198017312e332e362e312e342e312e343230332e312e31312e33"
+    assert bytes.format_hex(wire.envelope(2, op: extended(name: "1.3.6.1.4.1.4203.1.11.1", value: password_modify_value(user: "cn=Ana,dc=example,dc=org", old: "old", new: "new")), controls: []).must()) == "304602010277418017312e332e362e312e342e312e343230332e312e31312e31812630248018636e3d416e612c64633d6578616d706c652c64633d6f726781036f6c6482036e6577"
+    assert bytes.format_hex(wire.envelope(1, op: extended(name: "1.3.6.1.4.1.1466.20037", value: []), controls: []).must()) == "301d02010177188016312e332e362e312e342e312e313436362e3230303337"
+    assert bytes.format_hex(wire.envelope(3, op: abandon(2), controls: []).must()) == "3006020103500102"
+    assert bytes.format_hex(wire.envelope(3, op: unbind(), controls: []).must()) == "30050201034200"
+    managed = [wire.Ctl(oid: "2.16.840.1.113730.3.4.2", critical: true, value: [])]
+    assert bytes.format_hex(wire.envelope(2, op: delete("cn=Ana,dc=example,dc=org"), controls: managed).must()) == "303d0201024a18636e3d416e612c64633d6578616d706c652c64633d6f7267a01e301c0417322e31362e3834302e312e3131333733302e332e342e320101ff"
+
+test "password_modify_value and generated_password: each part left out where empty, the password a server made"
+    assert bytes.format_hex(password_modify_value(user: "", old: "", new: "")) == "3000"
+    assert bytes.format_hex(password_modify_value(user: "cn=Ana,dc=example,dc=org", old: "old", new: "new")) == "30248018636e3d416e612c64633d6578616d706c652c64633d6f726781036f6c6482036e6577"
+    assert generated_password(bytes.parse_hex("3006800458793132").must()).must() == bytes.from_text("Xy12")
+    assert generated_password([]).must() == []
+    assert generated_password(bytes.parse_hex("3000").must()).must() == []
+    assert generated_password([0xff]).is_err()

@@ -1,0 +1,450 @@
+# LDAP's messages on the wire (RFC 4511 § 4.1): an `LDAPMessage` built
+# around a request and encoded in DER, which is BER; one message read from
+# a stream, its length checked against a bound before any byte of its
+# content is read; and the parts of an answer read from its BER: the
+# envelope, an LDAPResult, an entry, a reference, the credentials of a bind
+# and the name and value of an extended answer.
+
+use asn1
+use bytes
+use io
+
+constant INVALID: str
+    "invalid"
+
+constant CLOSED: str
+    "closed"
+
+# The deepest a message's elements nest when read: a filter's 100 and the
+# message's own few.
+constant MAX_NESTING: i64
+    128
+
+# The application numbers of the operations (RFC 4511 Appendix B).
+constant BIND_REQUEST: i64
+    0
+
+constant BIND_RESPONSE: i64
+    1
+
+constant UNBIND_REQUEST: i64
+    2
+
+constant SEARCH_REQUEST: i64
+    3
+
+constant SEARCH_ENTRY: i64
+    4
+
+constant SEARCH_DONE: i64
+    5
+
+constant MODIFY_REQUEST: i64
+    6
+
+constant MODIFY_RESPONSE: i64
+    7
+
+constant ADD_REQUEST: i64
+    8
+
+constant ADD_RESPONSE: i64
+    9
+
+constant DELETE_REQUEST: i64
+    10
+
+constant DELETE_RESPONSE: i64
+    11
+
+constant MODIFY_DN_REQUEST: i64
+    12
+
+constant MODIFY_DN_RESPONSE: i64
+    13
+
+constant COMPARE_REQUEST: i64
+    14
+
+constant COMPARE_RESPONSE: i64
+    15
+
+constant ABANDON_REQUEST: i64
+    16
+
+constant SEARCH_REFERENCE: i64
+    19
+
+constant EXTENDED_REQUEST: i64
+    23
+
+constant EXTENDED_RESPONSE: i64
+    24
+
+constant INTERMEDIATE_RESPONSE: i64
+    25
+
+# A control as it crosses: its identifier, its criticality, its value.
+record Ctl
+    # The dotted identifier.
+    oid: str
+    # Whether it is critical.
+    critical: bool
+    # Its value, [] for none.
+    value: [u8]
+
+# One message read: its number, its operation and its controls.
+record Message
+    # The message's number; 0 for an unsolicited notification.
+    id: i64
+    # The operation's application number.
+    number: i64
+    # The operation's element.
+    op: asn1.Value
+    # The controls after it.
+    controls: [Ctl]
+
+# The components of an LDAPResult.
+record Outcome
+    # The result code.
+    code: i64
+    # The matched name.
+    matched: str
+    # The diagnostic message.
+    message: str
+    # The referral's URLs, [] where there is none.
+    referrals: [str]
+
+# What a search entry holds.
+record EntryRead
+    # The entry's name.
+    dn: str
+    # Its attributes' descriptions, in order.
+    names: [str]
+    # Their values, one list per attribute.
+    values: [[[u8]]]
+
+# The bytes of the message numbered `id` carrying `op` and `controls`.
+#
+# Fails `invalid` where an element has no encoding, as `asn1.encode_der`
+# says.
+function envelope(id: i64, op: asn1.Value, controls: [Ctl]) -> [u8]?
+    items: [asn1.Value] @= [.integer(v: id), op]
+
+    if controls.len() > 0
+        written: [asn1.Value] @= []
+
+        for c in controls
+            parts: [asn1.Value] @= [.octet_string(v: bytes.from_text(c.oid))]
+
+            if c.critical
+                parts @ parts.push(.boolean(v: true))
+
+            if c.value.len() > 0
+                parts @ parts.push(.octet_string(v: c.value))
+            written @ written.push(.sequence(items: parts))
+
+        items @ items.push(
+            .constructed(tag: asn1.Tag(kind: .context_specific, number: 0, constructed: true), items: written)
+        )
+
+    return match asn1.encode_der(.sequence(items: items))
+        .ok b  => ok(b)
+        .err e => fail(code: INVALID, msg: f"a request that has no encoding: {e.msg}")
+
+# The bytes of the next message `r` reads, its header and its content:
+# 0x30, a definite length of at most `most` bytes, and that many bytes.
+#
+# Fails `closed` where the stream ends before a message or inside one,
+# `invalid` where its first bytes begin no message or its length passes
+# `most`, and as `io.read_n` fails.
+function read_raw(@r: io.Reader, most: i64) -> [u8]?
+    head = io.read_n(@r, n: 2)?
+
+    if head.len() == 0
+        return fail(code: CLOSED, msg: "the server closed the connection")
+
+    if head.len() < 2
+        return fail(code: CLOSED, msg: "the server closed the connection inside a message")
+
+    if head[0] != 0x30
+        return fail(
+            code: INVALID,
+            msg: f"a message begins with the byte 0x30, and this one with 0x{bytes.format_hex([head[0]])}"
+        )
+    first = to_i64(head[1]).must()
+    length @= 0
+    past @= false
+    header: [u8] @= head
+
+    if first < 0x80
+        length @ first
+    else if first == 0x80
+        return fail(code: INVALID, msg: "a message of indefinite length, which LDAP forbids (RFC 4511 § 5.1)")
+    else
+        count = first & 0x7f
+
+        if count > 8
+            return fail(code: INVALID, msg: f"a message's length written in {count} bytes")
+        more = io.read_n(@r, n: count)?
+
+        if more.len() < count
+            return fail(code: CLOSED, msg: "the server closed the connection inside a message's length")
+
+        # A length past `most`, or past 2^54 where `most` is larger, stops
+        # the reading before it could overflow.
+        for b in more
+            if length > most || length >= 18014398509481984
+                past @ true
+                break
+            length @ length * 256 + to_i64(b).must()
+
+        bytes.push_all(to: @header, from: more)
+
+    if past || length > most
+        return fail(code: INVALID, msg: f"a message of more than {most} bytes, the bound of a message")
+    body = io.read_n(@r, n: length)?
+
+    if body.len() < length
+        return fail(
+            code: CLOSED,
+            msg: f"the server closed the connection {body.len()} bytes into a message of {length}"
+        )
+    bytes.push_all(to: @header, from: body)
+    return ok(header)
+
+# The bytes `v` holds, an OCTET STRING or the content of a primitive of
+# another tag.
+function octets(v: asn1.Value, what: str) -> [u8]?
+    return match v
+        .octet_string o => ok(o.v)
+        .primitive p    => ok(p.content)
+        .boolean _ | .integer _ | .big_integer _ | .enumerated _ | .real _ | .bit_string _ | .null_value | .oid _ | .relative_oid _ | .text _ | .utc_time _ | .generalized_time _ | .sequence _ | .set _ | .constructed _ => fail(
+            code: INVALID,
+            msg: f"{what}: an OCTET STRING was expected, and {asn1.format_tag(asn1.tag_of(v))} was found"
+        )
+
+# The text `v` holds, an OCTET STRING of UTF-8.
+function text(v: asn1.Value, what: str) -> str?
+    return match bytes.to_text(octets(v, what: what)?)
+        .ok t  => ok(t)
+        .err _ => fail(code: INVALID, msg: f"{what}: bytes that are not UTF-8")
+
+# The elements of `v`, a SEQUENCE, a SET or a constructed element of
+# another tag.
+function elements(v: asn1.Value, what: str) -> [asn1.Value]?
+    return match v
+        .sequence s    => ok(s.items)
+        .set s         => ok(s.items)
+        .constructed c => ok(c.items)
+        .boolean _ | .integer _ | .big_integer _ | .enumerated _ | .real _ | .bit_string _ | .octet_string _ | .null_value | .oid _ | .relative_oid _ | .text _ | .utc_time _ | .generalized_time _ | .primitive _ => fail(
+            code: INVALID,
+            msg: f"{what}: elements were expected, and {asn1.format_tag(asn1.tag_of(v))} was found"
+        )
+
+# The integer `v` holds, an INTEGER or an ENUMERATED.
+function int_value(v: asn1.Value, what: str) -> i64?
+    return match asn1.int_of(v)
+        .ok n  => ok(n)
+        .err e => fail(code: INVALID, msg: f"{what}: {e.msg}")
+
+# The message `raw` holds.
+#
+# Fails `invalid` where `raw` is no LDAPMessage.
+function decode(raw: [u8]) -> Message?
+    v = match asn1.decode_with(data: raw, options: asn1.Options(encoding: .ber, max_depth: MAX_NESTING))
+        .ok got => got
+        .err e  => return fail(code: INVALID, msg: f"a message that is no BER: {e.msg}")
+
+    items = elements(v, what: "a message")?
+
+    if items.len() < 2 || items.len() > 3
+        return fail(code: INVALID, msg: f"a message of {items.len()} elements, where it has 2 or 3")
+    id = int_value(items[0], what: "a message's number")?
+
+    if id < 0 || id > 2147483647
+        return fail(code: INVALID, msg: f"the message number {id}, outside 0 to 2147483647")
+    tag = asn1.tag_of(items[1])
+
+    if tag.kind != .application
+        return fail(code: INVALID, msg: f"an operation was expected, and {asn1.format_tag(tag)} was found")
+    controls: [Ctl] @= []
+
+    if items.len() == 3
+        held = items[2]
+        held_tag = asn1.tag_of(held)
+
+        if held_tag.kind != .context_specific || held_tag.number != 0
+            return fail(code: INVALID, msg: f"controls were expected, and {asn1.format_tag(held_tag)} was found")
+
+        for c in elements(held, what: "the controls")?
+            parts = elements(c, what: "a control")?
+
+            if parts.len() == 0 || parts.len() > 3
+                return fail(code: INVALID, msg: f"a control of {parts.len()} elements")
+            oid = text(parts[0], what: "a control's identifier")?
+            critical @= false
+            value: [u8] @= []
+
+            for k in range(from: 1, to: parts.len())
+                match parts[k]
+                    .boolean b      => critical @ b.v
+                    .octet_string o => value @ o.v
+                    .integer _ | .big_integer _ | .enumerated _ | .real _ | .bit_string _ | .null_value | .oid _ | .relative_oid _ | .text _ | .utc_time _ | .generalized_time _ | .sequence _ | .set _ | .primitive _ | .constructed _ => return fail(
+                        code: INVALID,
+                        msg: f"the control {oid} holds {asn1.format_tag(asn1.tag_of(parts[k]))}"
+                    )
+
+            controls @ controls.push(Ctl(oid: oid, critical: critical, value: value))
+
+    return ok(Message(id: id, number: tag.number, op: items[1], controls: controls))
+
+# The LDAPResult at the start of `op`'s elements, read past what follows
+# it.
+#
+# Fails `invalid` where its elements are not an LDAPResult's.
+function outcome(op: asn1.Value) -> Outcome?
+    items = elements(op, what: "a result")?
+
+    if items.len() < 3
+        return fail(code: INVALID, msg: f"a result of {items.len()} elements, where it has 3 at the least")
+    code = int_value(items[0], what: "a result code")?
+    matched = bytes.to_text_lossy(octets(items[1], what: "a matched name")?)
+    message = bytes.to_text_lossy(octets(items[2], what: "a diagnostic message")?)
+    referrals: [str] @= []
+
+    for k in range(from: 3, to: items.len())
+        tag = asn1.tag_of(items[k])
+
+        if tag.kind == .context_specific && tag.number == 3
+            for url in elements(items[k], what: "a referral")?
+                referrals @ referrals.push(bytes.to_text_lossy(octets(url, what: "a referral's URL")?))
+
+    return ok(Outcome(code: code, matched: matched, message: message, referrals: referrals))
+
+# The content of the element of `op` past its LDAPResult whose context tag
+# is `number`, and whether there is one: the credentials of a bind's answer
+# ([7]), the name ([10]) and the value ([11]) of an extended answer.
+function extra(op: asn1.Value, number: i64) -> [u8]?
+    items = elements(op, what: "a result")?
+
+    for k in range(from: 3, to: items.len())
+        tag = asn1.tag_of(items[k])
+
+        if tag.kind == .context_specific && tag.number == number
+            return octets(items[k], what: f"the element [{number}] of a result")
+
+    return fail(code: "not_found", msg: f"no element [{number}] in the result")
+
+# The entry a SearchResultEntry `op` holds.
+#
+# Fails `invalid` where `op` is not one, `not_text` where its name is not
+# UTF-8.
+function entry(op: asn1.Value) -> EntryRead?
+    items = elements(op, what: "an entry")?
+
+    if items.len() != 2
+        return fail(code: INVALID, msg: f"an entry of {items.len()} elements, where it has 2")
+    name = text(items[0], what: "an entry's name")?
+    names: [str] @= []
+    values: [[[u8]]] @= []
+
+    for a in elements(items[1], what: "an entry's attributes")?
+        parts = elements(a, what: "an attribute")?
+
+        if parts.len() != 2
+            return fail(code: INVALID, msg: f"an attribute of {parts.len()} elements, where it has 2")
+        names @ names.push(text(parts[0], what: "an attribute's description")?)
+        held: [[u8]] @= []
+
+        for v in elements(parts[1], what: "an attribute's values")?
+            held @ held.push(octets(v, what: "a value")?)
+
+        values @ values.push(held)
+
+    return ok(EntryRead(dn: name, names: names, values: values))
+
+# The URLs a SearchResultReference `op` holds, one at the least.
+function reference(op: asn1.Value) -> [str]?
+    urls: [str] @= []
+
+    for u in elements(op, what: "a reference")?
+        urls @ urls.push(bytes.to_text_lossy(octets(u, what: "a reference's URL")?))
+
+    if urls.len() == 0
+        return fail(code: INVALID, msg: "a reference with no URL")
+    return ok(urls)
+
+## Tests
+
+# The message `hex` makes, read whole from a pipe.
+test "read_raw: one message, two in turn, then the end"
+    p = io.pipe().must()
+    io.write(p.writer, data: bytes.parse_hex("300c02010161070a010004000400300c02010265070a010004000400").must()).must()
+    w @= p.writer
+    io.close(@w).must()
+    r @= io.reader(p.reader)
+    assert bytes.format_hex(read_raw(@r, most: 1000).must()) == "300c02010161070a010004000400"
+    assert bytes.format_hex(read_raw(@r, most: 1000).must()) == "300c02010265070a010004000400"
+
+    match read_raw(@r, most: 1000)
+        .ok _  => assert false
+        .err e => assert e.code == "closed" && e.msg == "the server closed the connection"
+
+    rd @= p.reader
+    io.close(@rd).must()
+
+test "read_raw: a first byte that begins no message, an indefinite length, a length past the bound, a message cut short, long lengths"
+    for written in ["ff00", "3080", "30847fffffff", "300c020101", "3089", "308200"]
+        p = io.pipe().must()
+        io.write(p.writer, data: bytes.parse_hex(written).must()).must()
+        w @= p.writer
+        io.close(@w).must()
+        r @= io.reader(p.reader)
+        assert read_raw(@r, most: 1000).is_err()
+        rd @= p.reader
+        io.close(@rd).must()
+
+    p = io.pipe().must()
+    io.write(p.writer, data: bytes.parse_hex("3082000c" + "02010161070a010004000400").must()).must()
+    w @= p.writer
+    io.close(@w).must()
+    r @= io.reader(p.reader)
+    long = read_raw(@r, most: 1000).must()
+    assert long.len() == 16 && decode(long).must().number == BIND_RESPONSE
+    io.close(@r.stream).must()
+
+    match read_raw(@r, most: 10)
+        .ok _  => assert false
+        .err e => assert e.code == "closed"
+
+test "decode and outcome: a bind's answer, a referral, a notice of disconnection, controls, and messages that are no LDAP"
+    bound = decode(bytes.parse_hex("301f020101611a0a013104000413696e76616c69642063726564656e7469616c73").must()).must()
+    assert bound.id == 1 && bound.number == BIND_RESPONSE && bound.controls == []
+    assert outcome(bound.op).must() == Outcome(code: 49, matched: "", message: "invalid credentials", referrals: [])
+    referred = decode(
+        bytes.parse_hex("30410201026b3c0a010a04000400a33304316c6461703a2f2f6f746865722e6578616d706c652e6f72672f636e3d416e612c64633d6578616d706c652c64633d6f7267").must()
+    ).must()
+    assert outcome(referred.op).must().referrals == ["ldap://other.example.org/cn=Ana,dc=example,dc=org"]
+    notice = decode(
+        bytes.parse_hex("3031020100782c0a01340400040d7368757474696e6720646f776e8a16312e332e362e312e342e312e313436362e3230303336").must()
+    ).must()
+    assert notice.id == 0 && outcome(notice.op).must().code == 52
+    assert bytes.to_text(extra(notice.op, number: 10).must()).must() == "1.3.6.1.4.1.1466.20036"
+    assert extra(notice.op, number: 11).is_err()
+    paged = decode(
+        bytes.parse_hex("303302010265070a010004000400a02530230416312e322e3834302e3131333535362e312e342e3331390409300702010004026331").must()
+    ).must()
+    assert paged.controls.len() == 1 && paged.controls[0].oid == "1.2.840.113556.1.4.319" && !paged.controls[0].critical
+    assert decode(bytes.parse_hex("3000").must()).is_err()
+    assert decode(bytes.parse_hex("30030201ff").must()).is_err()
+    assert decode(bytes.parse_hex("30050201010400").must()).is_err()
+    assert decode(bytes.parse_hex("3006020101040100").must()).is_err()
+
+test "entry and reference: an entry's name, attributes and binary values, and a reference's URL"
+    e = entry(
+        decode(bytes.parse_hex("306f020102646a041e636e3d416e6120526f7373692c64633d6578616d706c652c64633d6f7267304830110402636e310b0409416e6120526f737369302004046d61696c3118040f616e61406578616d706c652e6f726704056140622e63301104096a70656750686f746f31040402ffd8").must()).must().op
+    ).must()
+    assert e.dn == "cn=Ana Rossi,dc=example,dc=org" && e.names == ["cn", "mail", "jpegPhoto"]
+    assert e.values[1] == [bytes.from_text("ana@example.org"), bytes.from_text("a@b.c")] && e.values[2] == [[0xff, 0xd8]]
+    assert reference(decode(bytes.parse_hex("3028020102732304216c6461703a2f2f6f746865722e6578616d706c652e6f72672f64633d6f74686572").must()).must().op).must() == ["ldap://other.example.org/dc=other"]

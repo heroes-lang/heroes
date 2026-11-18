@@ -1,0 +1,18 @@
+# Reaches Rebel's `ldap`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It reads a filter and a name and writes
+# them back, and reads the server an LDAP URL names.
+
+use <rebel>/ldap
+
+function main()
+    match ldap.parse_filter("(&(objectClass=person)(cn=Ana*))")
+        .err e => print(e.code, ": ", e.msg)
+        .ok f  => print(ldap.format_filter(f).default("?"))
+
+    match ldap.parse_dn("cn=Rossi\\, Ana,ou=people,dc=example,dc=org")
+        .err e => print(e.code, ": ", e.msg)
+        .ok dn => print(ldap.format_dn(dn))
+
+    match ldap.parse_url("ldap://ldap.example.org/dc=example,dc=org?cn?sub?(cn=A*)")
+        .err e => print(e.code, ": ", e.msg)
+        .ok u  => print(ldap.to_options(u).host)

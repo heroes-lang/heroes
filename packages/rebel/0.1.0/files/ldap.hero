@@ -1,0 +1,3378 @@
+# An LDAP client written in Heroes: it speaks LDAPv3 (RFC 4511) to a
+# directory server over a TCP connection of `net` or a TLS connection of
+# `tls`, every message BER of `asn1`, and links no library. It binds (simple,
+# SASL EXTERNAL and PLAIN, any SASL mechanism step by step), searches with a
+# scope, a filter, attributes, size and time limits and pages (RFC 2696),
+# adds, modifies, deletes, renames and compares entries, runs extended
+# operations (Who am I?, Password Modify, StartTLS), and sends and reads
+# controls. Distinguished names (RFC 4514), search filters (RFC 4515) and LDAP
+# URLs (RFC 4516) are read into values and written back, every escape.
+#
+# **TLS by default.** `options` asks for StartTLS on port 389, the server's
+# certificate checked for its authority and its host, so a password never
+# crosses in plain text unless the program asks for `.plain`; `.direct` is
+# TLS from the first byte, `ldaps://` on port 636. On Linux and Windows
+# StartTLS begins over the connection already made (`tls.client_over`); on
+# macOS, whose TLS begins only over a connection `tls` makes itself, `open`
+# first asks the server for StartTLS on a connection of its own, reads its
+# answer, and then makes the connection it keeps with `tls.connect_after`,
+# whose exchange before TLS sends the same request and expects the same
+# answer, byte for byte; so `start_tls` on a connection already open fails
+# `unsupported` there.
+#
+# **Every answer is a value.** A result other than success fails with the
+# library's code that names it (noSuchObject `not_found`, entryAlreadyExists
+# `exists`, invalidCredentials `permission`, notAllowedOnNonLeaf `not_empty`,
+# and the others below), its message naming the result, and `result_of`
+# answers the whole result after it: its code, the matched name, the server's
+# own words, its referrals and its controls. A search's continuation
+# references are values beside its entries; no referral is followed, since
+# following one means binding to another server with credentials the program
+# alone knows.
+#
+# **Every message is bounded**: one larger than `Options.max_message` is
+# refused before its bytes are read, a filter nests at most
+# `MAX_FILTER_DEPTH` deep and is read with a stack of its own, and each
+# operation ends by `Options.deadline_ms`. A deadline that passes, bytes that
+# are no LDAP, or a notice of disconnection end the connection: every later
+# call fails `closed`.
+#
+# It does not follow referrals, keep a pool of connections or servers, read
+# the schema's definitions, read or write LDIF, or run Kerberos or NTLM; the
+# ledger says so of each. It fails with `invalid`, `not_text`, `not_found`,
+# `exists`, `not_empty`, `permission`, `closed`, `timeout`, `stopped`,
+# `limit`, `unsupported` and `failed`.
+
+use asn1
+use bytes
+use io
+use ldap/internal/codes
+use ldap/internal/dn as distinguished
+use ldap/internal/fake
+use ldap/internal/filters
+use ldap/internal/paging
+use ldap/internal/requests
+use ldap/internal/session
+use ldap/internal/urls
+use ldap/internal/wire
+use numbers
+use os
+use strings
+use threads
+use tls
+
+## Codes
+
+# Bytes that are no LDAP, an argument the client refuses, or a result the
+# server gives for a request it cannot read (protocolError,
+# invalidDNSyntax, invalidAttributeSyntax, undefinedAttributeType,
+# constraintViolation, namingViolation, objectClassViolation and the others
+# about what was asked): every function.
+constant INVALID: str
+    "invalid"
+
+# A value that is not UTF-8 where text was asked: `texts_of`, `text_of`,
+# `parse_dn`, `unescape_dn_value`.
+constant NOT_TEXT: str
+    "not_text"
+
+# The entry named does not exist (noSuchObject), an attribute or a value
+# does not (noSuchAttribute), or the server refers the request elsewhere
+# (referral): every operation; and `text_of`, `paged_of`, `parent_of` where
+# what they read is not there.
+constant NOT_FOUND: str
+    "not_found"
+
+# The entry or the value is there already (entryAlreadyExists,
+# attributeOrValueExists): `add`, `modify`, `rename`.
+constant EXISTS: str
+    "exists"
+
+# The entry has entries below it (notAllowedOnNonLeaf): `delete`, `rename`.
+constant NOT_EMPTY: str
+    "not_empty"
+
+# The server refuses the identity or its rights (invalidCredentials,
+# insufficientAccessRights, inappropriateAuthentication,
+# strongerAuthRequired, confidentialityRequired): every operation; and
+# `open` and `start_tls` where `tls` refuses.
+constant PERMISSION: str
+    "permission"
+
+# The connection is closed, ended by an earlier failure, or the server
+# closed it or sent a notice of disconnection: every operation.
+constant CLOSED: str
+    "closed"
+
+# The operation's deadline passed, or the server's own time limit did
+# (timeLimitExceeded where the query asked none): every operation.
+constant TIMEOUT: str
+    "timeout"
+
+# The program was asked to stop while a call waited: every operation.
+constant STOPPED: str
+    "stopped"
+
+# The server's own limits cut the answer (sizeLimitExceeded where the query
+# asked none, adminLimitExceeded), or it is busy or unavailable: `search` and
+# every operation.
+constant LIMIT: str
+    "limit"
+
+# The server knows no such operation, control or mechanism
+# (unavailableCriticalExtension, authMethodNotSupported, unwillingToPerform,
+# affectsMultipleDSAs), or this platform cannot do what was asked: every
+# operation, and `start_tls` on macOS.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# A result none of the codes above names (operationsError, other, a loop
+# detected), the message carrying the server's own words; and `open` where
+# the network fails as `net` says.
+constant FAILED: str
+    "failed"
+
+## Result codes
+
+# The operation succeeded.
+constant SUCCESS: i64
+    0
+
+# The operation could not be done in the right order (operationsError).
+constant OPERATIONS_ERROR: i64
+    1
+
+# The server could not read the request (protocolError).
+constant PROTOCOL_ERROR: i64
+    2
+
+# The search's time limit passed (timeLimitExceeded).
+constant TIME_LIMIT_EXCEEDED: i64
+    3
+
+# The search's size limit was reached (sizeLimitExceeded).
+constant SIZE_LIMIT_EXCEEDED: i64
+    4
+
+# A compare found the value absent (compareFalse).
+constant COMPARE_FALSE: i64
+    5
+
+# A compare found the value present (compareTrue).
+constant COMPARE_TRUE: i64
+    6
+
+# The server knows no such authentication method (authMethodNotSupported).
+constant AUTH_METHOD_NOT_SUPPORTED: i64
+    7
+
+# The server asks for a stronger authentication (strongerAuthRequired).
+constant STRONGER_AUTH_REQUIRED: i64
+    8
+
+# Another server holds the entry, which the result's referrals name
+# (referral).
+constant REFERRAL: i64
+    10
+
+# A limit the administrator set was passed (adminLimitExceeded).
+constant ADMIN_LIMIT_EXCEEDED: i64
+    11
+
+# A control marked critical is unknown to the server
+# (unavailableCriticalExtension).
+constant UNAVAILABLE_CRITICAL_EXTENSION: i64
+    12
+
+# The server asks for TLS first (confidentialityRequired).
+constant CONFIDENTIALITY_REQUIRED: i64
+    13
+
+# A SASL bind goes on: the server sent a challenge (saslBindInProgress).
+constant SASL_BIND_IN_PROGRESS: i64
+    14
+
+# The entry has no such attribute or value (noSuchAttribute).
+constant NO_SUCH_ATTRIBUTE: i64
+    16
+
+# The attribute type is not in the schema (undefinedAttributeType).
+constant UNDEFINED_ATTRIBUTE_TYPE: i64
+    17
+
+# The attribute has no such matching rule (inappropriateMatching).
+constant INAPPROPRIATE_MATCHING: i64
+    18
+
+# A value breaks a constraint of the schema (constraintViolation).
+constant CONSTRAINT_VIOLATION: i64
+    19
+
+# The value is there already (attributeOrValueExists).
+constant ATTRIBUTE_OR_VALUE_EXISTS: i64
+    20
+
+# A value is not of its attribute's syntax (invalidAttributeSyntax).
+constant INVALID_ATTRIBUTE_SYNTAX: i64
+    21
+
+# No entry has the name (noSuchObject).
+constant NO_SUCH_OBJECT: i64
+    32
+
+# An alias names no entry (aliasProblem).
+constant ALIAS_PROBLEM: i64
+    33
+
+# A name is not a distinguished name (invalidDNSyntax).
+constant INVALID_DN_SYNTAX: i64
+    34
+
+# An alias could not be followed (aliasDereferencingProblem).
+constant ALIAS_DEREFERENCING_PROBLEM: i64
+    36
+
+# The authentication fits nothing the entry holds
+# (inappropriateAuthentication).
+constant INAPPROPRIATE_AUTHENTICATION: i64
+    48
+
+# The name or the password is wrong (invalidCredentials).
+constant INVALID_CREDENTIALS: i64
+    49
+
+# The identity has no right to do this (insufficientAccessRights).
+constant INSUFFICIENT_ACCESS_RIGHTS: i64
+    50
+
+# The server is too busy (busy).
+constant BUSY: i64
+    51
+
+# The server is shutting down or cannot serve (unavailable).
+constant UNAVAILABLE: i64
+    52
+
+# The server will not do this (unwillingToPerform).
+constant UNWILLING_TO_PERFORM: i64
+    53
+
+# A loop was found following aliases or referrals (loopDetect).
+constant LOOP_DETECT: i64
+    54
+
+# The name breaks the directory's naming rules (namingViolation).
+constant NAMING_VIOLATION: i64
+    64
+
+# The entry breaks its object classes' rules (objectClassViolation).
+constant OBJECT_CLASS_VIOLATION: i64
+    65
+
+# The entry has entries below it (notAllowedOnNonLeaf).
+constant NOT_ALLOWED_ON_NON_LEAF: i64
+    66
+
+# The change would remove a value of the entry's name (notAllowedOnRDN).
+constant NOT_ALLOWED_ON_RDN: i64
+    67
+
+# An entry has the name already (entryAlreadyExists).
+constant ENTRY_ALREADY_EXISTS: i64
+    68
+
+# The entry's structural object class may not change
+# (objectClassModsProhibited).
+constant OBJECT_CLASS_MODS_PROHIBITED: i64
+    69
+
+# The change would reach more than one server (affectsMultipleDSAs).
+constant AFFECTS_MULTIPLE_DSAS: i64
+    71
+
+# A failure no other code names (other).
+constant OTHER: i64
+    80
+
+# The operation was cancelled (canceled, RFC 3909).
+constant CANCELED: i64
+    118
+
+# The operation to cancel is unknown (noSuchOperation, RFC 3909).
+constant NO_SUCH_OPERATION: i64
+    119
+
+# The operation to cancel is too far along (tooLate, RFC 3909).
+constant TOO_LATE: i64
+    120
+
+# The operation cannot be cancelled (cannotCancel, RFC 3909).
+constant CANNOT_CANCEL: i64
+    121
+
+# The assertion control's filter does not hold (assertionFailed, RFC 4528).
+constant ASSERTION_FAILED: i64
+    122
+
+# The proxied identity is refused (authorizationDenied, RFC 4370).
+constant AUTHORIZATION_DENIED: i64
+    123
+
+# The name RFC 4511 and its extensions give `code`: `noSuchObject` for 32,
+# `success` for 0.
+#
+# - `code`: any result code.
+#
+# A code no RFC names is written `code 99`. See also `result_of`.
+function format_result_code(code: i64) -> str
+    return codes.name_of(code)
+
+## Results
+
+# What the server answered an operation (RFC 4511 § 4.1.9): the last one,
+# which `result_of` tells, and the end of a search.
+record Result
+    # The result code, `SUCCESS` or one of the constants above, or another
+    # number the server sent.
+    code: i64
+    # The name of the deepest entry the server found on the way to the one
+    # asked for, "" where it says none.
+    matched_dn: str
+    # The server's own words about the result, "" where it says none.
+    message: str
+    # The URLs of the servers that hold the entry, for a `REFERRAL`; [] for
+    # every other code.
+    referrals: [str]
+    # The controls the server sent with the answer, in its order.
+    controls: [Control]
+
+# The result the server answered `c`'s last operation, whether it succeeded
+# or failed.
+#
+# - `c`: the connection.
+#
+# Before any answer, a `SUCCESS` with nothing else. A failure of the
+# connection itself (a deadline, a notice of disconnection) leaves the last
+# answer the server gave. See also `format_result_code`.
+function result_of(c: Conn) -> Result
+    held: [Control] @= []
+
+    for k in c.session.last_controls
+        held @ held.push(Control(oid: k.oid, critical: k.critical, value: k.value))
+
+    o = c.session.last
+    return Result(code: o.code, matched_dn: o.matched, message: o.message, referrals: o.referrals, controls: held)
+
+## Controls
+
+# A control sent with a request or read from an answer (RFC 4511 § 4.1.11).
+# Built directly, or by `paged_control`, `sort_control` and the others.
+record Control
+    # The control's object identifier, dotted: `1.2.840.113556.1.4.319`.
+    oid: str
+    # Whether the server must refuse the request where it does not know the
+    # control; false lets it go on without.
+    critical: bool
+    # The control's value, its own BER; [] where it has none.
+    value: [u8]
+
+# The simple paged results control (RFC 2696).
+constant PAGED_RESULTS: str
+    "1.2.840.113556.1.4.319"
+
+# The server-side sort request control (RFC 2891).
+constant SORT_REQUEST: str
+    "1.2.840.113556.1.4.473"
+
+# The server-side sort response control (RFC 2891).
+constant SORT_RESPONSE: str
+    "1.2.840.113556.1.4.474"
+
+# The ManageDsaIT control: referrals and aliases read as entries (RFC 3296).
+constant MANAGE_DSA_IT: str
+    "2.16.840.1.113730.3.4.2"
+
+# The subtree delete control, read by Active Directory and OpenLDAP.
+constant TREE_DELETE: str
+    "1.2.840.113556.1.4.805"
+
+# The proxied authorization control, version 2 (RFC 4370).
+constant PROXIED_AUTHORIZATION: str
+    "2.16.840.1.113730.3.4.18"
+
+# The assertion control (RFC 4528).
+constant ASSERTION: str
+    "1.3.6.1.1.12"
+
+# The Who am I? extended operation (RFC 4532).
+constant WHO_AM_I: str
+    "1.3.6.1.4.1.4203.1.11.3"
+
+# The Password Modify extended operation (RFC 3062).
+constant PASSWORD_MODIFY: str
+    "1.3.6.1.4.1.4203.1.11.1"
+
+# The StartTLS extended operation (RFC 4511 § 4.14).
+constant START_TLS: str
+    "1.3.6.1.4.1.1466.20037"
+
+# The notice of disconnection a server sends before it closes (RFC 4511
+# § 4.4.1).
+constant NOTICE_OF_DISCONNECTION: str
+    "1.3.6.1.4.1.1466.20036"
+
+# Sets the controls sent with every later request on `c`, bind and search
+# included, until set again.
+#
+# - `c`: the connection, whose controls are replaced.
+# - `controls`: the controls, in the order sent; [] sends none.
+#
+# A search's own `Query.controls` follow them. See also `result_of`.
+function set_controls(@c: Conn, controls: [Control])
+    held: [wire.Ctl] @= []
+
+    for k in controls
+        held @ held.push(wire.Ctl(oid: k.oid, critical: k.critical, value: k.value))
+
+    c.session.controls @ held
+
+# The paged results control asking for a page of `size` entries after the
+# page `cookie` ended (RFC 2696).
+#
+# - `size`: the entries a page holds at most, 1 to 2147483647.
+# - `cookie`: the cookie of the page before, [] for the first page.
+#
+# The control is critical, so a server that pages nothing refuses the
+# search rather than answering it whole. Aborts where `size` is out of
+# range. See also `paged_of`, `search_page`.
+function paged_control(size: i64, cookie: [u8]) -> Control
+    assert size >= 1 && size <= 2147483647
+    return Control(oid: PAGED_RESULTS, critical: true, value: paging.paged_value(size: size, cookie: cookie))
+
+# What a paged results control says (RFC 2696).
+record Paged
+    # In a request, the size of a page; in an answer, the server's estimate
+    # of the entries in all, 0 where it gives none.
+    size: i64
+    # The cookie that asks for the next page; [] where the last page was
+    # read.
+    cookie: [u8]
+
+# The paged results control among `controls`, read.
+#
+# - `controls`: the controls of an answer, `Result.controls`.
+#
+# Fails `not_found` where none is a paged results control, `invalid` where
+# its value is not one. See also `paged_control`.
+function paged_of(controls: [Control]) -> Paged?
+    for k in controls
+        if k.oid == PAGED_RESULTS
+            got = paging.paged_read(k.value)?
+            return ok(Paged(size: got.size, cookie: got.cookie))
+
+    return fail(code: NOT_FOUND, msg: "no paged results control among the controls")
+
+# One key of a server-side sort (RFC 2891).
+record SortKey
+    # The attribute sorted by.
+    attribute: str
+    # The matching rule's name or identifier that orders it, "" for the
+    # attribute's own ordering.
+    ordering_rule: str
+    # Whether the order is from the largest to the smallest.
+    reverse: bool
+
+# The server-side sort control asking for the entries in the order of
+# `sort_keys` (RFC 2891).
+#
+# - `sort_keys`: the keys, the first deciding first; one at the least.
+# - `critical`: whether the server must refuse the search where it cannot
+#   sort.
+#
+# Fails `invalid` where `sort_keys` is empty or a key's attribute is "". See also
+# `sort_result_of`.
+function sort_control(sort_keys: [SortKey], critical: bool) -> Control?
+    if sort_keys.len() == 0
+        return fail(code: INVALID, msg: "a sort control with no key")
+    names: [str] @= []
+    rules: [str] @= []
+    reverses: [bool] @= []
+
+    for k in sort_keys
+        if k.attribute == ""
+            return fail(code: INVALID, msg: "a sort key whose attribute is \"\"")
+        names @ names.push(k.attribute)
+        rules @ rules.push(k.ordering_rule)
+        reverses @ reverses.push(k.reverse)
+
+    return ok(
+        Control(oid: SORT_REQUEST, critical: critical, value: paging.sort_value(attributes: names, rules: rules, reverses: reverses))
+    )
+
+# The result code of the server-side sort response control among
+# `controls`: `SUCCESS` where the entries are sorted.
+#
+# - `controls`: the controls of a search's result.
+#
+# Fails `not_found` where none is a sort response, `invalid` where its value
+# is not one. See also `sort_control`.
+function sort_result_of(controls: [Control]) -> i64?
+    for k in controls
+        if k.oid == SORT_RESPONSE
+            return paging.sort_read(k.value)
+
+    return fail(code: NOT_FOUND, msg: "no sort response control among the controls")
+
+# The ManageDsaIT control (RFC 3296): referral and alias entries read and
+# changed as ordinary entries, critical.
+#
+# See also `set_controls`.
+function manage_dsa_it_control() -> Control
+    return Control(oid: MANAGE_DSA_IT, critical: true, value: [])
+
+# The subtree delete control: `delete` removes the entry and every entry
+# below it, critical.
+#
+# See also `delete`.
+function tree_delete_control() -> Control
+    return Control(oid: TREE_DELETE, critical: true, value: [])
+
+# The proxied authorization control (RFC 4370): the request runs as
+# `authz_id`, critical.
+#
+# - `authz_id`: the identity, `dn:` and a name or `u:` and a user name; ""
+#   asks for the anonymous identity.
+#
+# See also `who_am_i`.
+function proxied_authorization_control(authz_id: str) -> Control
+    return Control(oid: PROXIED_AUTHORIZATION, critical: true, value: bytes.from_text(authz_id))
+
+# The assertion control (RFC 4528): the request is done only where `f`
+# holds of the entry, and fails `ASSERTION_FAILED` otherwise, critical.
+#
+# - `f`: the filter the entry must match.
+#
+# Fails `invalid` where `f` cannot be encoded, as `encode_filter` says. See
+# also `encode_filter`.
+function assertion_control(f: Filter) -> Control?
+    return ok(Control(oid: ASSERTION, critical: true, value: encode_filter(f)?))
+
+## Connecting
+
+# The port LDAP listens on, in plain text or for StartTLS.
+constant DEFAULT_PORT: i64
+    389
+
+# The port LDAP listens on over TLS from the first byte (`ldaps://`).
+constant DEFAULT_TLS_PORT: i64
+    636
+
+# The milliseconds an operation may take unless told otherwise: a minute.
+constant DEFAULT_DEADLINE_MS: i64
+    60000
+
+# The bytes a message may hold unless told otherwise: 16 MiB.
+constant DEFAULT_MAX_MESSAGE: i64
+    16777216
+
+# How a connection is secured.
+variant Security
+    # Nothing encrypted and nothing checked: whoever sits between the two
+    # ends reads every byte, a password included.
+    plain
+    # TLS from the first byte, `ldaps://`, the server's certificate checked
+    # for its authority and its host.
+    direct
+        # The PEM of the only authorities trusted; "" for the system's own
+        # store.
+        roots: str
+    # StartTLS after the connection is made, then TLS, the certificate
+    # checked as `direct` checks it.
+    start_tls
+        # The PEM of the only authorities trusted; "" for the system's own
+        # store.
+        roots: str
+
+# Where a server is and how a connection to it is made. `options` makes
+# one, `to_options` reads one from an LDAP URL; a program changes the fields
+# it needs with `@`.
+record Options
+    # The server's name or address, without brackets: `ldap.example.org`,
+    # `::1`.
+    host: str
+    # The server's TCP port, 1 to 65535.
+    port: i64
+    # How the connection is secured.
+    security: Security
+    # The milliseconds each operation may take, its answer read whole
+    # included; 0 for no limit.
+    deadline_ms: i64
+    # The bytes one message from the server may hold, 64 or more; a larger
+    # one fails `invalid` before its bytes are read.
+    max_message: i64
+
+# The options of a connection to `host` on `DEFAULT_PORT` with StartTLS,
+# the system's authorities trusted, `DEFAULT_DEADLINE_MS` and
+# `DEFAULT_MAX_MESSAGE`.
+#
+# - `host`: the server's name or address.
+#
+# See also `open`, `to_options`.
+function options(host: str) -> Options
+    return Options(
+        host: host,
+        port: DEFAULT_PORT,
+        security: .start_tls(roots: ""),
+        deadline_ms: DEFAULT_DEADLINE_MS,
+        max_message: DEFAULT_MAX_MESSAGE
+    )
+
+# A connection to a directory server, anonymous until a bind. Made only by
+# `open`; it holds the connection's stream, which `close` closes, and one
+# nobody closes is told when `main` returns.
+record Conn
+    # The conversation with the server: the stream, the bytes read and not
+    # given out, the next message's number, the controls sent with every
+    # request, the last result.
+    session: session.Session
+
+# A connection to the server `opts` names, secured as it says, anonymous.
+#
+# - `opts`: the server, the security, the deadline and the bound of a
+#   message.
+#
+# The connection answered is the caller's to `close`. Fails `invalid` where
+# `opts` holds a field out of range or the server answers StartTLS with
+# bytes that are no LDAP; as `net.connect` and `tls.connect` fail where the
+# server cannot be reached or its certificate is refused; with the code of
+# the server's result where it refuses StartTLS (`unsupported` for a server
+# that knows none). On macOS StartTLS costs a second connection, and a
+# server whose second answer differs from its first by a byte fails
+# `invalid` (the module's comment). See also `options`, `close`,
+# `start_tls`.
+function open(opts: Options) -> Conn?
+    if opts.host == ""
+        return fail(code: INVALID, msg: "opening a connection to the host \"\"")
+
+    if opts.port < 1 || opts.port > 65535
+        return fail(
+            code: INVALID,
+            msg: f"opening a connection to {opts.host}: the port {opts.port}, outside 1 to 65535"
+        )
+
+    if opts.deadline_ms < 0
+        return fail(code: INVALID, msg: f"opening a connection to {opts.host}: a deadline of {opts.deadline_ms} ms")
+
+    if opts.max_message < 64
+        return fail(
+            code: INVALID,
+            msg: f"opening a connection to {opts.host}: a bound of {opts.max_message} bytes on a message, below 64"
+        )
+
+    s = match opts.security
+        .plain => session.connect_plain(opts.host, port: opts.port, deadline_ms: opts.deadline_ms, max_message: opts.max_message)?
+        .direct d => session.connect_direct(host: opts.host, port: opts.port, deadline_ms: opts.deadline_ms, roots: d.roots, max_message: opts.max_message)?
+        .start_tls t => session.connect_start_tls(host: opts.host, port: opts.port, deadline_ms: opts.deadline_ms, roots: t.roots, max_message: opts.max_message)?
+
+    return ok(Conn(session: s))
+
+# Ends the session with an UnbindRequest and closes the connection.
+#
+# - `c`: the caller's connection, closed by this call whatever it answers.
+#
+# Fails `closed` where it is closed already; a connection an earlier failure
+# ended is closed without a word. See also `open`, `is_closed`.
+function close(@c: Conn) -> ()?
+    return session.close(@c.session)
+
+# Whether `c` is closed, by `close` or by a failure that ended it.
+#
+# - `c`: the connection.
+#
+# See also `close`.
+function is_closed(c: Conn) -> bool
+    return c.session.ended || io.is_closed(c.session.stream)
+
+# Whether `c` runs over TLS.
+#
+# - `c`: the connection.
+#
+# See also `start_tls`.
+function is_secured(c: Conn) -> bool
+    return match c.session.link
+        .secured => true
+        .plain _ => false
+
+# Begins TLS on `c`, open in plain text, with the StartTLS operation, the
+# server's certificate checked for its authority and `c`'s host.
+#
+# - `c`: the connection, in plain text and running no search; over TLS
+#   after this call.
+# - `roots`: the PEM of the only authorities trusted; "" for the system's
+#   own store.
+#
+# Fails `invalid` where `c` is already over TLS; with the code of the
+# server's result where it refuses; as `tls.client_over` fails, which ends
+# the connection; `unsupported` on macOS, where `open` with `.start_tls` is
+# the way. See also `open`, `is_secured`.
+function start_tls(@c: Conn, roots: str) -> ()?
+    if c.session.searching != 0
+        return fail(code: INVALID, msg: f"StartTLS on {c.session.target}: a search is running")
+    return session.start_tls(@c.session, roots: roots)
+
+# Sets the milliseconds each later operation on `c` may take.
+#
+# - `c`: the connection.
+# - `ms`: milliseconds, 0 for no limit.
+#
+# Fails `invalid` where `ms` is below 0. See also `Options`.
+function set_deadline(@c: Conn, ms: i64) -> ()?
+    if ms < 0
+        return fail(code: INVALID, msg: f"a deadline of {ms} ms, below 0")
+    c.session.deadline_ms @ ms
+    return ok()
+
+## Binding
+
+# Binds `c` as `dn` with `password`: a simple bind (RFC 4513 § 5.1.3).
+#
+# - `c`: the connection, running no search.
+# - `dn`: the name of the entry bound as, or a name the server maps
+#   (Active Directory's `user@domain`).
+# - `password`: the password, one byte at the least.
+#
+# Fails `invalid` where `password` is "": RFC 4513's unauthenticated bind,
+# which servers accept without checking anything, is `bind_unauthenticated`
+# alone; `permission` for a wrong name or password (invalidCredentials) or a
+# server that asks TLS first; and with the code of any other result. See
+# also `bind_anonymous`, `bind_plain`.
+function bind(@c: Conn, dn: str, password: str) -> ()?
+    if password == ""
+        return fail(
+            code: INVALID,
+            msg: f"binding as {dn} with an empty password, which a server accepts without checking anything; bind_unauthenticated sends one on purpose"
+        )
+    _ = session.exchange(@c.session, op: requests.bind_simple(name: dn, password: password), answer: wire.BIND_RESPONSE, asked: f"binding as {dn}", accept: [])?
+    return ok()
+
+# Binds `c` anonymously, dropping the identity an earlier bind gave it.
+#
+# - `c`: the connection, running no search.
+#
+# Fails with the code of the server's result where it refuses. See also
+# `bind`.
+function bind_anonymous(@c: Conn) -> ()?
+    _ = session.exchange(@c.session, op: requests.bind_simple(name: "", password: ""), answer: wire.BIND_RESPONSE, asked: "binding anonymously", accept: [])?
+    return ok()
+
+# Binds `c` as `dn` with no password: RFC 4513 § 5.1.2's unauthenticated
+# bind, which a server accepts, where it accepts it, as anonymous.
+#
+# - `c`: the connection, running no search.
+# - `dn`: the name given, for the server's logs; one byte at the least.
+#
+# Fails `invalid` where `dn` is "", and with the code of the server's result
+# where it refuses (`UNWILLING_TO_PERFORM`, OpenLDAP's default). See also
+# `bind`.
+function bind_unauthenticated(@c: Conn, dn: str) -> ()?
+    if dn == ""
+        return fail(code: INVALID, msg: "an unauthenticated bind names someone; an anonymous one is bind_anonymous")
+    _ = session.exchange(@c.session, op: requests.bind_simple(name: dn, password: ""), answer: wire.BIND_RESPONSE, asked: f"binding as {dn} without a password", accept: [])?
+    return ok()
+
+# What one step of a SASL bind answered.
+record Challenge
+    # Whether the bind is done; false while the server waits for the next
+    # step (saslBindInProgress).
+    finished: bool
+    # The server's credentials, its challenge or its last word; [] where it
+    # sent none.
+    credentials: [u8]
+
+# One step of a SASL bind of `mechanism`, sending `credentials`.
+#
+# - `c`: the connection, running no search.
+# - `mechanism`: the mechanism's name, `EXTERNAL`, `PLAIN`, `SCRAM-SHA-256`.
+# - `credentials`: what the mechanism sends at this step; [] sends none.
+#
+# Fails `invalid` where `mechanism` is "", and with the code of the
+# server's result, but saslBindInProgress, which answers an unfinished
+# `Challenge`. See also `bind_external`, `bind_plain`.
+function bind_sasl(@c: Conn, mechanism: str, credentials: [u8]) -> Challenge?
+    if mechanism == ""
+        return fail(code: INVALID, msg: "a SASL bind with no mechanism")
+    answer = session.exchange(@c.session, op: requests.bind_sasl(mechanism: mechanism, credentials: credentials), answer: wire.BIND_RESPONSE, asked: f"binding with SASL {mechanism}", accept: [SASL_BIND_IN_PROGRESS])?
+    return ok(
+        Challenge(finished: c.session.last.code == SUCCESS, credentials: wire.extra(answer.op, number: 7).default([]))
+    )
+
+# Binds `c` with SASL EXTERNAL (RFC 4422 Appendix A): the identity the
+# connection already proves to the server.
+#
+# - `c`: the connection, running no search.
+# - `authz_id`: the identity asked for, "" for the one the connection
+#   proves.
+#
+# `tls` presents no client certificate, so a server knows of the connection
+# what it sees of it. Fails with the code of the server's result where it
+# refuses, `INAPPROPRIATE_AUTHENTICATION` as `permission`. See also
+# `bind_sasl`.
+function bind_external(@c: Conn, authz_id: str) -> ()?
+    step = bind_sasl(@c, mechanism: "EXTERNAL", credentials: bytes.from_text(authz_id))?
+
+    if !step.finished
+        return fail(
+            code: INVALID,
+            msg: "binding with SASL EXTERNAL: the server asked for a second step, which EXTERNAL has not"
+        )
+    return ok()
+
+# Binds `c` with SASL PLAIN (RFC 4616): a user and a password, optionally
+# acting as another identity.
+#
+# - `c`: the connection, running no search; over TLS, since the password
+#   crosses as it is.
+# - `authz_id`: the identity to act as, "" for `user`'s own.
+# - `user`: the user's name, as the server's SASL knows it.
+# - `password`: the password, one byte at the least.
+#
+# Fails `invalid` where `user` or `password` is "" or any holds a zero byte,
+# `permission` where the server refuses them. See also `bind_sasl`, `bind`.
+function bind_plain(@c: Conn, authz_id: str, user: str, password: str) -> ()?
+    if user == "" || password == ""
+        return fail(code: INVALID, msg: "binding with SASL PLAIN: the user and the password are one byte at the least")
+    message: [u8] @= bytes.from_text(authz_id)
+    message @ message.push(0)
+    bytes.push_text(to: @message, s: user)
+    message @ message.push(0)
+    bytes.push_text(to: @message, s: password)
+    zeros @= 0
+
+    for b in message
+        if b == 0
+            zeros @ zeros + 1
+
+    if zeros != 2
+        return fail(
+            code: INVALID,
+            msg: "binding with SASL PLAIN: a zero byte inside the identity, the user or the password"
+        )
+    step = bind_sasl(@c, mechanism: "PLAIN", credentials: message)?
+
+    if !step.finished
+        return fail(
+            code: INVALID,
+            msg: "binding with SASL PLAIN: the server asked for a second step, which PLAIN has not"
+        )
+    return ok()
+
+# The identity the server sees on `c` (RFC 4532): `dn:` and a name, `u:`
+# and a user name, or "" for anonymous.
+#
+# - `c`: the connection, running no search.
+#
+# Fails `not_text` where the answer is not UTF-8, and with the code of the
+# server's result. See also `bind`.
+function who_am_i(@c: Conn) -> str?
+    answer = extended(@c, name: WHO_AM_I, value: [])?
+
+    return match bytes.to_text(answer.value)
+        .ok t  => ok(t)
+        .err _ => fail(code: NOT_TEXT, msg: "Who am I?: the identity the server answered is not UTF-8")
+
+## Searching
+
+# How far below its base a search reaches.
+variant Scope
+    # The base entry alone.
+    base_object
+    # The entries right below the base, the base not included.
+    one_level
+    # The base and every entry below it.
+    subtree
+    # Every entry below the base, the base not included
+    # (draft-sermersheim-ldap-subordinate-scope; OpenLDAP and others).
+    children
+
+# When a search follows an alias to the entry it names.
+variant Deref
+    # Never.
+    never
+    # Below the base, while searching.
+    in_searching
+    # On the way to the base alone.
+    finding_base
+    # Always.
+    always
+
+# A search, built by `query` and changed with `@`.
+record Query
+    # The name of the entry the search starts at; "" for the root DSE.
+    base: str
+    # How far below the base it reaches.
+    scope: Scope
+    # Which entries it answers.
+    filter: Filter
+    # The attributes answered, by name; [] for every user attribute, `*` for
+    # them too, `+` for the operational ones, `1.1` for none.
+    attributes: [str]
+    # The entries answered at most, 0 for the server's own limit alone.
+    size_limit: i64
+    # The seconds the server may search, 0 for its own limit alone.
+    time_limit_s: i64
+    # Whether attributes are answered without their values.
+    types_only: bool
+    # When aliases are followed.
+    deref: Deref
+    # The controls sent with this search, after the connection's.
+    controls: [Control]
+
+# A search of the subtree at `base` for the entries `f` matches, every user
+# attribute answered, no limit but the server's, aliases never followed.
+#
+# - `base`: the name of the entry the search starts at.
+# - `f`: the filter, as `parse_filter` reads one.
+#
+# See also `search`, `parse_filter`.
+function query(base: str, f: Filter) -> Query
+    return Query(
+        base: base,
+        scope: .subtree,
+        filter: f,
+        attributes: [],
+        size_limit: 0,
+        time_limit_s: 0,
+        types_only: false,
+        deref: .never,
+        controls: []
+    )
+
+# One attribute of an entry: its name and its values.
+record Attribute
+    # The attribute's description: a name or an identifier, with options
+    # (`cn;lang-fr`).
+    name: str
+    # Its values, as the server holds them; [] where a search asked types
+    # only.
+    values: [[u8]]
+
+# An entry a search answered.
+record Entry
+    # The entry's name, as the server writes it.
+    dn: str
+    # Its attributes, in the server's order.
+    attributes: [Attribute]
+    # The controls the server sent with the entry.
+    controls: [Control]
+
+# A continuation reference: other servers to ask for the rest of a search.
+record Reference
+    # Their LDAP URLs, as `parse_url` reads them; one at the least.
+    urls: [str]
+
+# What a search answered.
+record Found
+    # The entries, in the order the server sent them.
+    entries: [Entry]
+    # The continuation references, in their order.
+    references: [Reference]
+    # The search's result: `SUCCESS`, or `SIZE_LIMIT_EXCEEDED` or
+    # `TIME_LIMIT_EXCEEDED` where the query's own limit cut it, or
+    # `REFERRAL` with the servers that hold the base.
+    result: Result
+
+# The entries `q` finds on `c`, with its references and its result.
+#
+# - `c`: the connection, running no other search.
+# - `q`: the search.
+#
+# A size or time limit the query asked for answers the entries read before
+# it, `result.code` saying which; a limit the server imposed on its own
+# fails, so a cut answer is never taken for the whole. Fails `limit` where
+# the server's own size limit cut the answer (page it with `search_paged`)
+# or adminLimitExceeded, `timeout` where its own time limit did or the
+# deadline passed, `invalid` where `q` holds a field out of range, a filter
+# that cannot be encoded or a message that is no LDAP, and with the code of
+# any other result, `not_found` for a base that does not exist. The entries
+# are held whole: `start_search` reads them one at a time. See also
+# `lookup`, `search_paged`, `start_search`.
+function search(@c: Conn, q: Query) -> Found?
+    start_search(@c, q)?
+    entries: [Entry] @= []
+    references: [Reference] @= []
+
+    while true
+        match next_item(@c)?
+            .entry e     => entries @ entries.push(e.v)
+            .reference r => references @ references.push(r.v)
+            .done d      => return ok(Found(entries: entries, references: references, result: d.v))
+
+# The entry named `dn`, with `attributes`.
+#
+# - `c`: the connection, running no search.
+# - `dn`: the entry's name.
+# - `attributes`: the attributes answered, as `Query.attributes` takes
+#   them.
+#
+# Fails `not_found` where no entry has the name or the server refers it
+# elsewhere, and as `search` fails. See also `search`, `root_dse`.
+function lookup(@c: Conn, dn: str, attributes: [str]) -> Entry?
+    q @= query(base: dn, f: .present(attribute: "objectClass"))
+    q.scope @ .base_object
+    q.attributes @ attributes
+    found = search(@c, q)?
+
+    if found.result.code == REFERRAL
+        return fail(code: NOT_FOUND, msg: f"reading {dn}: the server refers it to " + found.result.referrals.join(" "))
+
+    if found.entries.len() == 0
+        return fail(code: NOT_FOUND, msg: f"reading {dn}: the server answered no entry")
+    return ok(found.entries[0])
+
+# The server's root DSE: its naming contexts, versions, controls,
+# extensions and SASL mechanisms, its user and operational attributes.
+#
+# - `c`: the connection, running no search; anonymous suffices on most
+#   servers.
+#
+# Fails as `lookup` does. See also `lookup`.
+function root_dse(@c: Conn) -> Entry?
+    return lookup(@c, dn: "", attributes: ["*", "+"])
+
+# One message of a search read by `next_item`.
+variant Item
+    # An entry.
+    entry
+        # The entry.
+        v: Entry
+    # A continuation reference.
+    reference
+        # The reference.
+        v: Reference
+    # The end of the search, after which `next_item` reads nothing more.
+    done
+        # The search's result.
+        v: Result
+
+# Sends the search `q` on `c` and returns at once: `next_item` reads its
+# answer one message at a time, so a large answer is never held whole.
+#
+# - `c`: the connection, running no other search; until `next_item` answers
+#   `done`, or `abandon_search`, every other operation on it fails
+#   `invalid`.
+# - `q`: the search.
+#
+# Fails `invalid` where `q` holds a field out of range or a filter that
+# cannot be encoded, or `c` runs a search already, and `closed` where the
+# connection is. See also `next_item`, `abandon_search`, `search`.
+function start_search(@c: Conn, q: Query) -> ()?
+    asked = f"searching {q.base}"
+
+    if c.session.searching != 0
+        return fail(
+            code: INVALID,
+            msg: f"{asked}: a search is running already; read it to its end with next_item, or abandon_search, first"
+        )
+
+    if q.size_limit < 0 || q.size_limit > 2147483647
+        return fail(code: INVALID, msg: f"{asked}: a size limit of {q.size_limit}, outside 0 to 2147483647")
+
+    if q.time_limit_s < 0 || q.time_limit_s > 2147483647
+        return fail(code: INVALID, msg: f"{asked}: a time limit of {q.time_limit_s} s, outside 0 to 2147483647")
+    encoded = encode_filter(q.filter)?
+
+    matching = match asn1.decode_with(data: encoded, options: asn1.Options(encoding: .ber, max_depth: wire.MAX_NESTING))
+        .ok v  => v
+        .err e => return fail(code: INVALID, msg: f"{asked}: the filter's BER: {e.msg}")
+
+    scope = match q.scope
+        .base_object => 0
+        .one_level   => 1
+        .subtree     => 2
+        .children    => 3
+
+    deref = match q.deref
+        .never        => 0
+        .in_searching => 1
+        .finding_base => 2
+        .always       => 3
+
+    sent: [wire.Ctl] @= c.session.controls
+
+    for k in q.controls
+        sent @ sent.push(wire.Ctl(oid: k.oid, critical: k.critical, value: k.value))
+
+    op = requests.search(
+        base: q.base,
+        scope: scope,
+        deref: deref,
+        size_limit: q.size_limit,
+        time_limit: q.time_limit_s,
+        types_only: q.types_only,
+        matching: matching,
+        attributes: q.attributes
+    )
+    id = session.send(@c.session, op: op, controls: sent)?
+    c.session.searching @ id
+    c.session.asked_size @ q.size_limit
+    c.session.asked_time @ q.time_limit_s
+    return ok()
+
+# The next message of the search running on `c`: an entry, a reference, or
+# its end.
+#
+# - `c`: the connection running a search.
+#
+# The `done` item comes once, with the search's result, and the connection
+# is free after it. Fails `invalid` where no search runs, and as `search`
+# fails for its result. See also `start_search`.
+function next_item(@c: Conn) -> Item?
+    message = session.next_of_search(@c.session)?
+
+    if message.number == wire.SEARCH_ENTRY
+        read = match wire.entry(message.op)
+            .ok e => e
+            .err e =>
+                session.end(@c.session, why: e.msg)
+                return fail(code: e.code, msg: e.msg)
+
+        attributes: [Attribute] @= []
+
+        for k in range(from: 0, to: read.names.len())
+            attributes @ attributes.push(Attribute(name: read.names[k], values: read.values[k]))
+
+        held: [Control] @= []
+
+        for k in message.controls
+            held @ held.push(Control(oid: k.oid, critical: k.critical, value: k.value))
+
+        return ok(.entry(v: Entry(dn: read.dn, attributes: attributes, controls: held)))
+
+    if message.number == wire.SEARCH_REFERENCE
+        found_urls = match wire.reference(message.op)
+            .ok u => u
+            .err e =>
+                session.end(@c.session, why: e.msg)
+                return fail(code: e.code, msg: e.msg)
+
+        return ok(.reference(v: Reference(urls: found_urls)))
+
+    result = match wire.outcome(message.op)
+        .ok r => r
+        .err e =>
+            session.end(@c.session, why: e.msg)
+            return fail(code: e.code, msg: e.msg)
+
+    c.session.last @ result
+    c.session.last_controls @ message.controls
+    c.session.searching @ 0
+    asked_size = c.session.asked_size
+    asked_time = c.session.asked_time
+    kept = result.code == SUCCESS || result.code == REFERRAL || result.code == SIZE_LIMIT_EXCEEDED && asked_size > 0 || result.code == TIME_LIMIT_EXCEEDED && asked_time > 0
+
+    if kept
+        return ok(.done(v: result_of(c)))
+    return fail(code: codes.library_code(result.code), msg: session.refused(asked: "a search", result: result))
+
+# Gives up the search running on `c` (an AbandonRequest), which the server
+# answers with nothing: entries it had sent already are read past.
+#
+# - `c`: the connection running a search; free after this call.
+#
+# Fails `invalid` where no search runs, `closed` where the connection is.
+# See also `start_search`.
+function abandon_search(@c: Conn) -> ()?
+    id = c.session.searching
+
+    if id == 0
+        return fail(code: INVALID, msg: f"no search is running on {c.session.target}")
+    c.session.searching @ 0
+    _ = session.send(@c.session, op: requests.abandon(id), controls: [])?
+    return ok()
+
+# One page of a paged search.
+record Page
+    # The page's entries, references and result.
+    found: Found
+    # The cookie that asks for the next page, `search_page`'s last
+    # argument; [] where this page was the last.
+    cookie: [u8]
+
+# One page of `q` on `c`: at most `size` entries after the page `cookie`
+# ended (RFC 2696).
+#
+# - `c`: the connection, running no search.
+# - `q`: the search; the same at every page.
+# - `size`: the entries a page holds at most, 1 to 2147483647.
+# - `cookie`: the cookie of the page before, [] for the first page.
+#
+# Fails `unsupported` where the server pages nothing, `invalid` where `size`
+# is out of range or the server's answer holds no paged results control,
+# and as `search` fails. See also `search_paged`, `paged_control`.
+function search_page(@c: Conn, q: Query, size: i64, cookie: [u8]) -> Page?
+    if size < 1 || size > 2147483647
+        return fail(code: INVALID, msg: f"a page of {size} entries, outside 1 to 2147483647")
+    paged @= q
+    sent: [Control] @= q.controls
+    sent @ sent.push(paged_control(size: size, cookie: cookie))
+    paged.controls @ sent
+    found = search(@c, paged)?
+
+    return match paged_of(found.result.controls)
+        .ok p => ok(Page(found: found, cookie: p.cookie))
+        .err _ => fail(
+            code: INVALID,
+            msg: f"searching {q.base} in pages: the server's answer holds no paged results control"
+        )
+
+# Every entry `q` finds on `c`, asked for in pages of `size`, so a server's
+# own size limit does not cut the answer.
+#
+# - `c`: the connection, running no search.
+# - `q`: the search.
+# - `size`: the entries a page holds at most, 1 to 2147483647.
+#
+# The entries and references of every page in order, and the last page's
+# result. Fails as `search_page` does. See also `search_page`, `search`.
+function search_paged(@c: Conn, q: Query, size: i64) -> Found?
+    entries: [Entry] @= []
+    references: [Reference] @= []
+    cookie: [u8] @= []
+
+    while true
+        page = search_page(@c, q, size: size, cookie: cookie)?
+
+        for e in page.found.entries
+            entries @ entries.push(e)
+
+        for r in page.found.references
+            references @ references.push(r)
+
+        if page.cookie.len() == 0
+            return ok(Found(entries: entries, references: references, result: page.found.result))
+
+        if page.cookie == cookie
+            return fail(code: INVALID, msg: f"searching {q.base} in pages: the server answered the same cookie twice")
+        cookie @ page.cookie
+
+## Entries
+
+# The attribute `name` with `values`, each written as its UTF-8 bytes.
+#
+# - `name`: the attribute's name.
+# - `values`: its values as text, in order.
+#
+# See also `add`, `Change`.
+function text_attribute(name: str, values: [str]) -> Attribute
+    held: [[u8]] @= []
+
+    for v in values
+        held @ held.push(bytes.from_text(v))
+
+    return Attribute(name: name, values: held)
+
+# The values of the attribute `name` of `e`, as the server sent them.
+#
+# - `e`: the entry.
+# - `name`: the attribute's name, ASCII case ignored, as LDAP compares
+#   descriptors; `cn;lang-fr` names that attribute with that option alone.
+#
+# [] where `e` has no such attribute. See also `texts_of`, `text_of`.
+function values_of(e: Entry, name: str) -> [[u8]]
+    for a in e.attributes
+        if strings.equals_ignoring_case_ascii(a: a.name, b: name)
+            return a.values
+
+    return []
+
+# The values of the attribute `name` of `e`, as text.
+#
+# - `e`: the entry.
+# - `name`: the attribute's name, ASCII case ignored.
+#
+# [] where `e` has no such attribute. Fails `not_text` where a value is not
+# UTF-8, a binary value such as a photograph or an `objectGUID`. See also
+# `values_of`.
+function texts_of(e: Entry, name: str) -> [str]?
+    out: [str] @= []
+
+    for v in values_of(e, name: name)
+        match bytes.to_text(v)
+            .ok t  => out @ out.push(t)
+            .err _ => return fail(code: NOT_TEXT, msg: f"a value of {name} of {e.dn} is not UTF-8")
+
+    return ok(out)
+
+# The first value of the attribute `name` of `e`, as text.
+#
+# - `e`: the entry.
+# - `name`: the attribute's name, ASCII case ignored.
+#
+# Fails `not_found` where `e` has no such attribute or it has no value,
+# `not_text` where the value is not UTF-8. See also `texts_of`.
+function text_of(e: Entry, name: str) -> str?
+    values = values_of(e, name: name)
+
+    if values.len() == 0
+        return fail(code: NOT_FOUND, msg: f"{e.dn} has no value of {name}")
+
+    return match bytes.to_text(values[0])
+        .ok t  => ok(t)
+        .err _ => fail(code: NOT_TEXT, msg: f"the value of {name} of {e.dn} is not UTF-8")
+
+# Whether `e` has the attribute `name`.
+#
+# - `e`: the entry.
+# - `name`: the attribute's name, ASCII case ignored.
+#
+# See also `values_of`.
+function has_attribute(e: Entry, name: str) -> bool
+    for a in e.attributes
+        if strings.equals_ignoring_case_ascii(a: a.name, b: name)
+            return true
+
+    return false
+
+## Changing
+
+# Adds the entry `dn` with `attributes`.
+#
+# - `c`: the connection, running no search.
+# - `dn`: the new entry's name.
+# - `attributes`: its attributes, `objectClass` among them, each with one
+#   value at the least.
+#
+# Fails `invalid` where `attributes` is empty or an attribute has no value,
+# `exists` where an entry has the name, `not_found` where its parent does
+# not exist, `permission`, and with the code of any other result. See also
+# `text_attribute`, `modify`.
+function add(@c: Conn, dn: str, attributes: [Attribute]) -> ()?
+    asked = f"adding {dn}"
+
+    if attributes.len() == 0
+        return fail(code: INVALID, msg: f"{asked}: an entry with no attribute")
+    names: [str] @= []
+    values: [[[u8]]] @= []
+
+    for a in attributes
+        if a.values.len() == 0
+            return fail(code: INVALID, msg: f"{asked}: the attribute {a.name} with no value")
+        names @ names.push(a.name)
+        values @ values.push(a.values)
+
+    _ = session.exchange(@c.session, op: requests.add(name: dn, names: names, values: values), answer: wire.ADD_RESPONSE, asked: asked, accept: [])?
+    return ok()
+
+# What a change does to an attribute (RFC 4511 § 4.6, RFC 4525).
+variant ChangeKind
+    # Adds its values, creating the attribute where it is absent.
+    add
+    # Deletes its values, or the whole attribute where none are given.
+    delete
+    # Replaces every value with its values, or deletes the attribute where
+    # none are given.
+    replace
+    # Adds its one value, a number, to the attribute's (RFC 4525).
+    increment
+
+# One change of a `modify`.
+record Change
+    # What it does.
+    kind: ChangeKind
+    # The attribute it changes and the values it names.
+    attribute: Attribute
+
+# Changes the attributes of the entry `dn`, every change or none.
+#
+# - `c`: the connection, running no search.
+# - `dn`: the entry's name.
+# - `changes`: the changes, made in order; one at the least.
+#
+# Fails `invalid` where `changes` is empty, `not_found` where no entry has
+# the name or a value to delete is absent, `exists` where a value to add is
+# there already, `permission`, and with the code of any other result. See
+# also `add`, `Change`.
+function modify(@c: Conn, dn: str, changes: [Change]) -> ()?
+    asked = f"modifying {dn}"
+
+    if changes.len() == 0
+        return fail(code: INVALID, msg: f"{asked}: no change")
+    kinds: [i64] @= []
+    names: [str] @= []
+    values: [[[u8]]] @= []
+
+    for change in changes
+        kind = match change.kind
+            .add       => 0
+            .delete    => 1
+            .replace   => 2
+            .increment => 3
+
+        kinds @ kinds.push(kind)
+        names @ names.push(change.attribute.name)
+        values @ values.push(change.attribute.values)
+
+    _ = session.exchange(@c.session, op: requests.modify(name: dn, kinds: kinds, names: names, values: values), answer: wire.MODIFY_RESPONSE, asked: asked, accept: [])?
+    return ok()
+
+# Deletes the entry `dn`, which has no entry below it.
+#
+# - `c`: the connection, running no search.
+# - `dn`: the entry's name.
+#
+# Fails `not_found` where no entry has the name, `not_empty` where entries
+# stand below it (`tree_delete_control` deletes them too), `permission`,
+# and with the code of any other result. See also `add`.
+function delete(@c: Conn, dn: str) -> ()?
+    _ = session.exchange(@c.session, op: requests.delete(dn), answer: wire.DELETE_RESPONSE, asked: f"deleting {dn}", accept: [])?
+    return ok()
+
+# Renames the entry `dn` to `new_rdn`, and moves it below `new_parent`
+# (ModifyDN).
+#
+# - `c`: the connection, running no search.
+# - `dn`: the entry's name.
+# - `new_rdn`: its new relative name, `cn=Ana Rossi`.
+# - `delete_old`: whether the values of the old relative name are deleted
+#   from the entry.
+# - `new_parent`: the name of the entry it moves below, "" to stay where it
+#   is.
+#
+# Fails `not_found` where no entry has the name, `exists` where the new
+# name is taken, `not_empty` where a server cannot move a subtree,
+# `permission`, and with the code of any other result. See also `delete`.
+function rename(@c: Conn, dn: str, new_rdn: str, delete_old: bool, new_parent: str) -> ()?
+    op = requests.modify_dn(name: dn, new_rdn: new_rdn, delete_old: delete_old, new_parent: new_parent)
+    _ = session.exchange(@c.session, op: op, answer: wire.MODIFY_DN_RESPONSE, asked: f"renaming {dn} to {new_rdn}", accept: [])?
+    return ok()
+
+# Whether the entry `dn`'s attribute `attribute` holds `value`, as the
+# attribute's equality rule compares it on the server.
+#
+# - `c`: the connection, running no search.
+# - `dn`: the entry's name.
+# - `attribute`: the attribute's name.
+# - `value`: the value compared.
+#
+# Fails `not_found` where no entry has the name, `invalid` where the
+# attribute is unknown or has no equality rule, and with the code of any
+# other result. See also `search`.
+function compare(@c: Conn, dn: str, attribute: str, value: [u8]) -> bool?
+    asked = f"comparing {attribute} of {dn}"
+    _ = session.exchange(@c.session, op: requests.compare(name: dn, attribute: attribute, value: value), answer: wire.COMPARE_RESPONSE, asked: asked, accept: [COMPARE_FALSE, COMPARE_TRUE])?
+
+    if c.session.last.code == SUCCESS
+        return fail(
+            code: INVALID,
+            msg: f"{asked}: the server answered success, where a compare answers compareTrue or compareFalse"
+        )
+    return ok(c.session.last.code == COMPARE_TRUE)
+
+# Changes the password of `user` from `old` to `new` (RFC 3062), and
+# answers the password the server made where `new` is "".
+#
+# - `c`: the connection, running no search; over TLS, since the passwords
+#   cross as they are.
+# - `user`: the identity whose password changes, "" for the one bound.
+# - `old`: the current password, "" where the server needs none (an
+#   administrator's change).
+# - `new`: the new password, "" for the server to make one.
+#
+# "" where the server made none. Fails `permission` where the server
+# refuses the change, `not_text` where its password is not UTF-8, and with
+# the code of any other result. See also `bind`.
+function change_password(@c: Conn, user: str, old: str, new: str) -> str?
+    answer = extended(@c, name: PASSWORD_MODIFY, value: requests.password_modify_value(user: user, old: old, new: new))?
+    made = requests.generated_password(answer.value)?
+
+    return match bytes.to_text(made)
+        .ok t  => ok(t)
+        .err _ => fail(code: NOT_TEXT, msg: "Password Modify: the password the server made is not UTF-8")
+
+# What an extended operation answered.
+record Extended
+    # The answer's name, an object identifier; "" where it has none.
+    name: str
+    # The answer's value; [] where it has none.
+    value: [u8]
+
+# Runs the extended operation `name` with `value` (RFC 4511 § 4.12).
+#
+# - `c`: the connection, running no search.
+# - `name`: the operation's object identifier, `WHO_AM_I`; StartTLS is
+#   `start_tls`'s.
+# - `value`: the request's value, its own BER; [] sends none.
+#
+# Fails `invalid` where `name` is no object identifier or is `START_TLS`,
+# and with the code of the server's result. See also `who_am_i`,
+# `change_password`.
+function extended(@c: Conn, name: str, value: [u8]) -> Extended?
+    if name == START_TLS
+        return fail(code: INVALID, msg: "StartTLS is start_tls's, which begins TLS after the answer")
+
+    if asn1.parse_oid(name).is_err()
+        return fail(code: INVALID, msg: f"the extended operation \"{name}\" is named by no object identifier")
+    answer = session.exchange(@c.session, op: requests.extended(name: name, value: value), answer: wire.EXTENDED_RESPONSE, asked: f"the extended operation {name}", accept: [])?
+    named = bytes.to_text_lossy(wire.extra(answer.op, number: 10).default([]))
+    return ok(Extended(name: named, value: wire.extra(answer.op, number: 11).default([])))
+
+## Distinguished names
+
+# One attribute and value of a relative distinguished name: `cn=Ana`.
+record Ava
+    # The attribute's name or dotted identifier, as written.
+    attribute: str
+    # The value, its escapes read: `Rossi, Ana` for `Rossi\, Ana`.
+    value: str
+
+# A relative distinguished name: one attribute and value, or several joined
+# by `+`.
+record Rdn
+    # Its attributes and values, one at the least, in the order written.
+    parts: [Ava]
+
+# A distinguished name (RFC 4514): relative names from the entry up to the
+# root, as written left to right. Built by `parse_dn` or directly.
+record Dn
+    # The relative names, the entry's own first; [] for the root, "".
+    rdns: [Rdn]
+
+# The distinguished name `s` writes (RFC 4514).
+#
+# - `s`: the name's text; "" is the root's, whose `rdns` is [].
+#
+# Spaces around `,`, `+` and `=` are read past, as Go and Python read them,
+# and a value is unescaped: `\,` `\+` `\"` `\\` `\<` `\>` `\;` `\=` `\#`, a
+# space or `#` escaped, and two hexadecimal digits for a byte. A value
+# written `#` and hexadecimal is the BER of a string, read as its text.
+# Fails `invalid` where `s` is not a name, the message saying at which byte,
+# `not_text` where the bytes a value's escapes make are not UTF-8. See also
+# `format_dn`, `parse_rdn`.
+function parse_dn(s: str) -> Dn?
+    rdns: [Rdn] @= []
+    parts: [Ava] @= []
+
+    for p in distinguished.parse(s)?
+        if !p.joined && parts.len() > 0
+            rdns @ rdns.push(Rdn(parts: parts))
+            parts @ []
+        parts @ parts.push(Ava(attribute: p.attribute, value: p.value))
+
+    if parts.len() > 0
+        rdns @ rdns.push(Rdn(parts: parts))
+    return ok(Dn(rdns: rdns))
+
+# `dn` written in RFC 4514's form: `cn=Ana Rossi,ou=people,dc=example,dc=org`.
+#
+# - `dn`: the name.
+#
+# Each value escaped by `escape_dn_value`, no space around `,`, `+` or `=`.
+# See also `parse_dn`.
+function format_dn(dn: Dn) -> str
+    written: [str] @= []
+
+    for r in dn.rdns
+        written @ written.push(format_rdn(r))
+
+    return written.join(",")
+
+# The relative distinguished name `s` writes: `cn=Ana+sn=Rossi`.
+#
+# - `s`: the relative name's text.
+#
+# Fails as `parse_dn` does, and `invalid` where `s` holds more than one
+# relative name. See also `format_rdn`.
+function parse_rdn(s: str) -> Rdn?
+    read = parse_dn(s)?
+
+    if read.rdns.len() != 1
+        return fail(code: INVALID, msg: f"\"{s}\" holds {read.rdns.len()} relative names, where it is one")
+    return ok(read.rdns[0])
+
+# `rdn` written in RFC 4514's form.
+#
+# - `rdn`: the relative name.
+#
+# See also `parse_rdn`, `format_dn`.
+function format_rdn(rdn: Rdn) -> str
+    written: [str] @= []
+
+    for p in rdn.parts
+        written @ written.push(p.attribute + "=" + distinguished.escape(p.value))
+
+    return written.join("+")
+
+# `s` escaped to stand as a value of a distinguished name (RFC 4514
+# § 2.4).
+#
+# - `s`: the value.
+#
+# `\` before `,` `+` `"` `\` `<` `>` and `;`, before a space or `#` that
+# begins the value and a space that ends it, and `\00` for a zero byte, as
+# Go's `EscapeDN` writes it; `=` stands as it is, as RFC 4514 allows. See
+# also `unescape_dn_value`, `escape_filter`.
+function escape_dn_value(s: str) -> str
+    return distinguished.escape(s)
+
+# The value an escaped value of a distinguished name holds.
+#
+# - `s`: the value as written, its escapes in it.
+#
+# Fails `invalid` where an escape is cut short or names no character,
+# `not_text` where the bytes it makes are not UTF-8. See also
+# `escape_dn_value`.
+function unescape_dn_value(s: str) -> str?
+    return distinguished.unescape(s)
+
+# Whether `a` and `b` name the same entry: attribute names compared with
+# ASCII case ignored, values byte for byte, the parts of a relative name in
+# any order.
+#
+# - `a`: one name.
+# - `b`: the other.
+#
+# See also `is_same_dn_ignoring_case`.
+function is_same_dn(a: Dn, b: Dn) -> bool
+    return distinguished.same(a: format_dn(a), b: format_dn(b), ignore_case: false)
+
+# Whether `a` and `b` name the same entry, the values compared with case
+# ignored as `strings.equals_ignoring_case` compares them, as most
+# directory attributes compare.
+#
+# - `a`: one name.
+# - `b`: the other.
+#
+# See also `is_same_dn`.
+function is_same_dn_ignoring_case(a: Dn, b: Dn) -> bool
+    return distinguished.same(a: format_dn(a), b: format_dn(b), ignore_case: true)
+
+# Whether `dn` stands below `ancestor`, at any depth, as `is_same_dn`
+# compares names.
+#
+# - `dn`: the name asked about.
+# - `ancestor`: the name it may stand below; the root, [], is above every
+#   other.
+#
+# False where the two are the same name. See also `parent_of`.
+function is_under(dn: Dn, ancestor: Dn) -> bool
+    if ancestor.rdns.len() >= dn.rdns.len()
+        return false
+    suffix = Dn(rdns: dn.rdns.slice(from: dn.rdns.len() - ancestor.rdns.len(), to: dn.rdns.len()))
+    return is_same_dn(a: suffix, b: ancestor)
+
+# The name of the entry right above `dn`.
+#
+# - `dn`: the name.
+#
+# Fails `not_found` for the root, which has none. See also `child_of`.
+function parent_of(dn: Dn) -> Dn?
+    if dn.rdns.len() == 0
+        return fail(code: NOT_FOUND, msg: "the root has no parent")
+    return ok(Dn(rdns: dn.rdns.slice(from: 1, to: dn.rdns.len())))
+
+# The name of the entry `rdn` right below `parent`.
+#
+# - `parent`: the parent's name.
+# - `rdn`: the new entry's relative name.
+#
+# See also `parent_of`.
+function child_of(parent: Dn, rdn: Rdn) -> Dn
+    rdns: [Rdn] @= [rdn]
+
+    for r in parent.rdns
+        rdns @ rdns.push(r)
+
+    return Dn(rdns: rdns)
+
+## Filters
+
+# A search filter (RFC 4511 § 4.5.1, RFC 4515). Built by `parse_filter` or
+# directly; an attribute is a name or a dotted identifier, with options.
+variant Filter
+    # Every filter of `items` holds: `(&(a=1)(b=2))`; `(&)` is true.
+    and_of
+        # The filters, in order.
+        items: [Filter]
+    # Any filter of `items` holds: `(|(a=1)(b=2))`; `(|)` is false.
+    or_of
+        # The filters, in order.
+        items: [Filter]
+    # The one filter of `items` does not hold: `(!(a=1))`.
+    not_of
+        # Exactly one filter.
+        items: [Filter]
+    # The attribute holds a value equal to `value`: `(cn=Ana)`.
+    equal
+        # The attribute.
+        attribute: str
+        # The value.
+        value: [u8]
+    # The attribute holds a value with these pieces: `(cn=An*os*i)`.
+    substrings
+        # The attribute.
+        attribute: str
+        # The piece the value begins with, [] for none.
+        initial: [u8]
+        # The pieces found in the middle, in order, none of them empty.
+        middle: [[u8]]
+        # The piece the value ends with, [] for none.
+        final: [u8]
+    # The attribute holds a value at least `value`: `(age>=18)`.
+    greater_or_equal
+        # The attribute.
+        attribute: str
+        # The value.
+        value: [u8]
+    # The attribute holds a value at most `value`: `(age<=65)`.
+    less_or_equal
+        # The attribute.
+        attribute: str
+        # The value.
+        value: [u8]
+    # The attribute is there: `(mail=*)`.
+    present
+        # The attribute.
+        attribute: str
+    # The attribute holds a value like `value`, as the server judges it:
+    # `(cn~=Anna)`.
+    approx
+        # The attribute.
+        attribute: str
+        # The value.
+        value: [u8]
+    # A matching rule applied: `(cn:caseExactMatch:=Ana)`, `(:dn:2.5.13.5:=x)`.
+    extensible
+        # The matching rule's name or identifier, "" for the attribute's own.
+        rule: str
+        # The attribute, "" for every attribute the rule applies to; one of
+        # the two is given.
+        attribute: str
+        # The value.
+        value: [u8]
+        # Whether the attributes of the entry's name are matched too.
+        dn_attributes: bool
+
+# The deepest a filter nests: `and_of`, `or_of` and `not_of` inside each
+# other 100 deep, read and written with a stack of their own.
+constant MAX_FILTER_DEPTH: i64
+    100
+
+# The filter `s` writes (RFC 4515).
+#
+# - `s`: the filter's text, `(&(objectClass=person)(cn=Ana*))`; the
+#   parentheses around the whole may be left out, `cn=Ana`.
+#
+# A value's `\` and two hexadecimal digits make a byte; `*` splits
+# substrings and is the presence test alone. Fails `invalid` where `s` is
+# not a filter, the message saying at which byte, or nests deeper than
+# `MAX_FILTER_DEPTH`. See also `format_filter`, `escape_filter`.
+function parse_filter(s: str) -> Filter?
+    nodes = filters.parse(s)?
+    made: [Filter] @= []
+    top @= 0
+    k @= nodes.len()
+
+    while k > 0
+        k @ k - 1
+        n = nodes[k]
+        items: [Filter] @= []
+
+        if filters.is_composite(n.kind)
+            for i in range(from: 0, to: n.children)
+                items @ items.push(made[top - 1 - i])
+
+            top @ top - n.children
+
+        f: Filter = if n.kind == filters.AND
+            .and_of(items: items)
+        else if n.kind == filters.OR
+            .or_of(items: items)
+        else if n.kind == filters.NOT
+            .not_of(items: items)
+        else if n.kind == filters.EQUAL
+            .equal(attribute: n.attribute, value: n.value)
+        else if n.kind == filters.SUBSTRINGS
+            .substrings(attribute: n.attribute, initial: n.initial, middle: n.middle, final: n.final)
+        else if n.kind == filters.GREATER_OR_EQUAL
+            .greater_or_equal(attribute: n.attribute, value: n.value)
+        else if n.kind == filters.LESS_OR_EQUAL
+            .less_or_equal(attribute: n.attribute, value: n.value)
+        else if n.kind == filters.PRESENT
+            .present(attribute: n.attribute)
+        else if n.kind == filters.APPROX
+            .approx(attribute: n.attribute, value: n.value)
+        else
+            .extensible(rule: n.rule, attribute: n.attribute, value: n.value, dn_attributes: n.dn_attributes)
+
+        if top == made.len()
+            made @ made.push(f)
+        else
+            made[top] @ f
+        top @ top + 1
+
+    return ok(made[0])
+
+# `f` written as RFC 4515's text: a value that is UTF-8 kept as text, its
+# `*`, `(`, `)`, `\` and control bytes escaped as `escape_filter` does, and
+# a value that is not UTF-8 escaped byte by byte as `escape_filter_bytes`
+# does.
+#
+# - `f`: the filter.
+#
+# Fails `invalid` where `f` is no filter: a `not_of` without one item, an
+# empty middle piece of `substrings`, an `extensible` with neither a rule
+# nor an attribute, an attribute that is "", or a nesting deeper than
+# `MAX_FILTER_DEPTH`. See also `parse_filter`.
+function format_filter(f: Filter) -> str?
+    nodes: [filters.Node] @= []
+    pending: [Filter] @= [f]
+    top @= 1
+
+    while top > 0
+        top @ top - 1
+        here = pending[top]
+        node @= filters.blank(filters.EQUAL)
+        empty: [Filter] = []
+
+        items = match here
+            .and_of a =>
+                node.kind @ filters.AND
+                a.items
+            .or_of o =>
+                node.kind @ filters.OR
+                o.items
+            .not_of n =>
+                node.kind @ filters.NOT
+                n.items
+            .equal e =>
+                node.attribute @ e.attribute
+                node.value @ e.value
+                empty
+            .substrings s =>
+                node.kind @ filters.SUBSTRINGS
+                node.attribute @ s.attribute
+                node.initial @ s.initial
+                node.middle @ s.middle
+                node.final @ s.final
+                empty
+            .greater_or_equal g =>
+                node.kind @ filters.GREATER_OR_EQUAL
+                node.attribute @ g.attribute
+                node.value @ g.value
+                empty
+            .less_or_equal l =>
+                node.kind @ filters.LESS_OR_EQUAL
+                node.attribute @ l.attribute
+                node.value @ l.value
+                empty
+            .present p =>
+                node.kind @ filters.PRESENT
+                node.attribute @ p.attribute
+                empty
+            .approx a =>
+                node.kind @ filters.APPROX
+                node.attribute @ a.attribute
+                node.value @ a.value
+                empty
+            .extensible x =>
+                node.kind @ filters.EXTENSIBLE
+                node.rule @ x.rule
+                node.attribute @ x.attribute
+                node.value @ x.value
+                node.dn_attributes @ x.dn_attributes
+                empty
+
+        node.children @ items.len()
+        nodes @ nodes.push(node)
+
+        if nodes.len() > 1000000
+            return fail(code: INVALID, msg: "a filter of more than a million parts")
+        k @= items.len() - 1
+
+        while k >= 0
+            if top == pending.len()
+                pending @ pending.push(items[k])
+            else
+                pending[top] @ items[k]
+            top @ top + 1
+            k @ k - 1
+
+    return filters.format(nodes)
+
+# `s` escaped to stand as a value in a filter's text: `\2a` for `*`, `\28`
+# and `\29` for the parentheses, `\5c` for `\`, `\00` for a zero byte and
+# the same form for every control byte; characters past ASCII stay as they
+# are, as Python's `escape_filter_chars` leaves them.
+#
+# - `s`: the value.
+#
+# See also `escape_filter_bytes`, `parse_filter`.
+function escape_filter(s: str) -> str
+    return filters.escape(bytes.from_text(s), as_text: true)
+
+# `b` escaped to stand as a value in a filter's text, every byte that is
+# not printable ASCII written as `\` and two hexadecimal digits: the form of
+# a binary value, an `objectGUID`.
+#
+# - `b`: the value's bytes.
+#
+# See also `escape_filter`, `unescape_filter`.
+function escape_filter_bytes(b: [u8]) -> str
+    return filters.escape(b, as_text: false)
+
+# The bytes an escaped value of a filter's text holds.
+#
+# - `s`: the value as written, `\2a` and the like in it.
+#
+# Fails `invalid` where a `\` is not followed by two hexadecimal digits or
+# the value holds a `*`, `(` or `)` unescaped. See also
+# `escape_filter_bytes`.
+function unescape_filter(s: str) -> [u8]?
+    return filters.unescape_at(s, at: 0)
+
+# `f` encoded as BER, as a SearchRequest carries it.
+#
+# - `f`: the filter.
+#
+# Fails `invalid` as `format_filter` does. See also `decode_filter`.
+function encode_filter(f: Filter) -> [u8]?
+    value = filters.encode(filters.parse(format_filter(f)?)?)?
+
+    return match asn1.encode_der(value)
+        .ok b  => ok(b)
+        .err e => fail(code: INVALID, msg: f"a filter that has no encoding: {e.msg}")
+
+# The filter whose BER is `data`.
+#
+# - `data`: one filter's bytes.
+#
+# Fails `invalid` where `data` is not one filter, or nests deeper than
+# `MAX_FILTER_DEPTH`. See also `encode_filter`.
+function decode_filter(data: [u8]) -> Filter?
+    v = match asn1.decode_with(data: data, options: asn1.Options(encoding: .ber, max_depth: wire.MAX_NESTING))
+        .ok got => got
+        .err e  => return fail(code: INVALID, msg: f"a filter that is no BER: {e.msg}")
+
+    return parse_filter(filters.format(filters.decode(v)?)?)
+
+## URLs
+
+# An LDAP URL (RFC 4516): a server, and a search on it.
+record Url
+    # `ldap` or `ldaps`, lower case.
+    scheme: str
+    # The server's name or address, without brackets; "" where the URL
+    # names none.
+    host: str
+    # The port, `DEFAULT_PORT` or `DEFAULT_TLS_PORT` where the URL names
+    # none.
+    port: i64
+    # The base of the search, its escapes read; "" where none is written.
+    dn: str
+    # The attributes asked for, [] where none are written.
+    attributes: [str]
+    # The search's scope, `base_object` where none is written.
+    scope: Scope
+    # The search's filter, `(objectClass=*)` where none is written.
+    filter: Filter
+    # The extensions, each as written after its escapes are read,
+    # `!bindname=cn=Ana` for a critical one.
+    extensions: [str]
+
+# The LDAP URL `s` (RFC 4516).
+#
+# - `s`: the URL's text, `ldap://ldap.example.org/dc=example,dc=org?cn?sub?(cn=A*)`.
+#
+# Fails `invalid` where `s` is not one: another scheme, a port out of range,
+# a scope that is not `base`, `one`, `sub` or `children`, a filter
+# `parse_filter` refuses, a percent escape cut short, or a part more. See
+# also `format_url`, `to_options`.
+function parse_url(s: str) -> Url?
+    p = urls.parse(s)?
+
+    port = if p.port != 0
+        p.port
+    else if p.scheme == "ldaps"
+        DEFAULT_TLS_PORT
+    else
+        DEFAULT_PORT
+
+    scope: Scope = if p.scope == "one"
+        .one_level
+    else if p.scope == "sub"
+        .subtree
+    else if p.scope == "children"
+        .children
+    else
+        .base_object
+
+    f: Filter = if p.filter == ""
+        .present(attribute: "objectClass")
+    else
+        match parse_filter(p.filter)
+            .ok got => got
+            .err e  => return fail(code: INVALID, msg: f"the filter of the LDAP URL \"{s}\": {e.msg}")
+
+    return ok(
+        Url(scheme: p.scheme, host: p.host, port: port, dn: p.dn, attributes: p.attributes, scope: scope, filter: f, extensions: p.extensions)
+    )
+
+# `u` written as an LDAP URL, every part escaped as RFC 4516 asks.
+#
+# - `u`: the URL.
+#
+# A part equal to its default is written only where a later part is. Fails
+# `invalid` where `u.scheme` is not `ldap` or `ldaps`, or its filter cannot
+# be written. See also `parse_url`.
+function format_url(u: Url) -> str?
+    if u.scheme != "ldap" && u.scheme != "ldaps"
+        return fail(code: INVALID, msg: f"the scheme \"{u.scheme}\", where an LDAP URL has ldap or ldaps")
+    filter_text = format_filter(u.filter)?
+
+    default_port = if u.scheme == "ldaps"
+        DEFAULT_TLS_PORT
+    else
+        DEFAULT_PORT
+
+    scope = match u.scope
+        .base_object => ""
+        .one_level   => "one"
+        .subtree     => "sub"
+        .children    => "children"
+
+    port = if u.port == default_port
+        0
+    else
+        u.port
+
+    written_filter = if filter_text == "(objectClass=*)"
+        ""
+    else
+        filter_text
+
+    parts = urls.Parts(
+        scheme: u.scheme,
+        host: u.host,
+        port: port,
+        dn: u.dn,
+        attributes: u.attributes,
+        scope: scope,
+        filter: written_filter,
+        extensions: u.extensions
+    )
+    return ok(urls.format(parts))
+
+# The options of a connection to the server `u` names: `.start_tls` for
+# `ldap`, `.direct` for `ldaps`, the system's authorities trusted, the
+# default deadline and bound of a message.
+#
+# - `u`: the URL; a `host` of "" is `localhost`.
+#
+# See also `to_query`, `open`.
+function to_options(u: Url) -> Options
+    host = if u.host == ""
+        "localhost"
+    else
+        u.host
+
+    opts @= options(host)
+    opts.port @ u.port
+
+    if u.scheme == "ldaps"
+        opts.security @ .direct(roots: "")
+    return opts
+
+# The search `u` names: its base, attributes, scope and filter.
+#
+# - `u`: the URL.
+#
+# See also `to_options`, `search`.
+function to_query(u: Url) -> Query
+    q @= query(base: u.dn, f: u.filter)
+    q.scope @ u.scope
+    q.attributes @ u.attributes
+    return q
+
+## Tests
+
+test "options and open: arguments refused before any connection is made"
+    for host in ["", "127.0.0.1"]
+        opts @= options(host)
+        opts.security @ .plain
+
+        if host != ""
+            opts.port @ 0
+
+        match open(opts)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+    opts @= options("127.0.0.1")
+    opts.deadline_ms @ -1
+    assert open(opts).is_err()
+    opts.deadline_ms @ 0
+    opts.max_message @ 63
+    assert open(opts).is_err()
+
+test "open: nothing listening fails closed"
+    opts @= options("127.0.0.1")
+    opts.port @ fake.free_port()
+    opts.security @ .plain
+
+    match open(opts)
+        .ok _  => assert false
+        .err e => assert e.code == "closed"
+
+test "bind: a wrong password fails permission, and result_of tells invalidCredentials and the server's words"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} bind-refused")
+    fake.until_listening(port)
+    opts @= options("127.0.0.1")
+    opts.port @ port
+    opts.security @ .plain
+    c @= open(opts).must()
+
+    match bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret")
+        .ok _  => assert false
+        .err e => assert e.code == "permission" && e.msg == "binding as cn=admin,dc=example,dc=org: invalidCredentials (49): invalid credentials"
+
+    r = result_of(c)
+    assert r.code == INVALID_CREDENTIALS && r.message == "invalid credentials" && r.matched_dn == ""
+    close(@c).must()
+    assert threads.wait_text(@server) == "ok"
+
+test "bind: an empty password and an unauthenticated bind without a name are refused before anything is sent"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} anonymous")
+    fake.until_listening(port)
+    opts @= options("127.0.0.1")
+    opts.port @ port
+    opts.security @ .plain
+    c @= open(opts).must()
+
+    match bind(@c, dn: "cn=admin,dc=example,dc=org", password: "")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    assert bind_unauthenticated(@c, dn: "").is_err()
+    assert bind_sasl(@c, mechanism: "", credentials: []).is_err()
+    assert bind_plain(@c, authz_id: "", user: "", password: "x").is_err()
+    bind_anonymous(@c).must()
+    assert !is_secured(c)
+    close(@c).must()
+    assert is_closed(c)
+
+    match close(@c)
+        .ok _  => _ = 0
+        .err e => assert e.code == "closed"
+
+    assert threads.wait_text(@server) == "ok"
+
+test "bind_sasl: a step the server answers with a challenge, saslBindInProgress"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} sasl-steps")
+    fake.until_listening(port)
+    opts @= options("127.0.0.1")
+    opts.port @ port
+    opts.security @ .plain
+    c @= open(opts).must()
+    step = bind_sasl(@c, mechanism: "EXTERNAL", credentials: []).must()
+    assert !step.finished && step.credentials == bytes.from_text("challenge")
+    assert result_of(c).code == SASL_BIND_IN_PROGRESS
+    close(@c).must()
+    assert threads.wait_text(@server) == "ok"
+
+test "search: the server's own size limit fails limit, and no such base fails not_found with the name it matched"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} search-size")
+    fake.until_listening(port)
+    opts @= options("127.0.0.1")
+    opts.port @ port
+    opts.security @ .plain
+    c @= open(opts).must()
+    bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
+    q @= query(base: "dc=example,dc=org", f: parse_filter("(&(objectClass=person)(cn=Ana*))").must())
+    q.attributes @ ["cn", "mail"]
+
+    match search(@c, q)
+        .ok _  => assert false
+        .err e => assert e.code == "limit" && e.msg == "a search: sizeLimitExceeded (4)"
+
+    close(@c).must()
+    assert threads.wait_text(@server) == "ok"
+    port_2 = fake.free_port()
+    server_2 @= threads.spawn_text(body: fake.serve, arg: f"plain {port_2} search-nosuch")
+    fake.until_listening(port_2)
+    opts.port @ port_2
+    c_2 @= open(opts).must()
+    bind(@c_2, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
+
+    match search(@c_2, q)
+        .ok _  => assert false
+        .err e => assert e.code == "not_found" && result_of(c_2).matched_dn == "dc=example,dc=org"
+
+    close(@c_2).must()
+    assert threads.wait_text(@server_2) == "ok"
+
+test "search: a size limit, a time limit and types only the query asks, answered with sizeLimitExceeded as a value"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} search-limits")
+    fake.until_listening(port)
+    opts @= options("127.0.0.1")
+    opts.port @ port
+    opts.security @ .plain
+    c @= open(opts).must()
+    bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
+    q @= query(base: "dc=example,dc=org", f: .present(attribute: "cn"))
+    q.size_limit @ 1
+    q.time_limit_s @ 5
+    q.types_only @ true
+    q.attributes @ ["1.1"]
+    found = search(@c, q).must()
+    assert found.entries.len() == 1 && found.result.code == SIZE_LIMIT_EXCEEDED
+    q.size_limit @ -1
+    assert search(@c, q).is_err()
+    close(@c).must()
+    assert threads.wait_text(@server) == "ok"
+
+test "lookup: a base with no entry answered fails not_found"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} lookup-none")
+    fake.until_listening(port)
+    opts @= options("127.0.0.1")
+    opts.port @ port
+    opts.security @ .plain
+    c @= open(opts).must()
+    bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
+
+    match lookup(@c, dn: "cn=Ana,dc=example,dc=org", attributes: ["cn"])
+        .ok _  => assert false
+        .err e => assert e.code == "not_found"
+
+    close(@c).must()
+    assert threads.wait_text(@server) == "ok"
+
+test "add: an entry that exists fails exists; an entry with no attribute or an attribute with no value is refused"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} add-exists")
+    fake.until_listening(port)
+    opts @= options("127.0.0.1")
+    opts.port @ port
+    opts.security @ .plain
+    c @= open(opts).must()
+    bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
+    assert add(@c, dn: "cn=Ana,dc=example,dc=org", attributes: []).is_err()
+    assert add(@c, dn: "cn=Ana,dc=example,dc=org", attributes: [text_attribute(name: "cn", values: [])]).is_err()
+    assert modify(@c, dn: "cn=Ana,dc=example,dc=org", changes: []).is_err()
+    entry = [
+        text_attribute(name: "objectClass", values: ["person"])
+        text_attribute(name: "cn", values: ["Ana"])
+        text_attribute(name: "sn", values: ["Rossi"])
+    ]
+
+    match add(@c, dn: "cn=Ana,dc=example,dc=org", attributes: entry)
+        .ok _  => assert false
+        .err e => assert e.code == "exists" && result_of(c).code == ENTRY_ALREADY_EXISTS
+
+    close(@c).must()
+    assert threads.wait_text(@server) == "ok"
+
+test "delete: no such entry fails not_found, entries below fail not_empty, a referral fails not_found with its URL a value"
+    for name in ["delete-nosuch", "delete-nonleaf", "delete-referral"]
+        port = fake.free_port()
+        server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} {name}")
+        fake.until_listening(port)
+        opts @= options("127.0.0.1")
+        opts.port @ port
+        opts.security @ .plain
+        c @= open(opts).must()
+        bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
+
+        match delete(@c, dn: "cn=Ana,dc=example,dc=org")
+            .ok _ => assert false
+            .err e =>
+                if name == "delete-nonleaf"
+                    assert e.code == "not_empty"
+                else
+                    assert e.code == "not_found"
+
+        if name == "delete-referral"
+            assert result_of(c).referrals == ["ldap://other.example.org/cn=Ana,dc=example,dc=org"]
+            assert parse_url(result_of(c).referrals[0]).must().host == "other.example.org"
+
+        close(@c).must()
+        assert threads.wait_text(@server) == "ok"
+
+test "a notice of disconnection, bytes that are no LDAP, a message past its bound and a deadline each end the connection"
+    for name in ["notice", "garbage", "huge", "silent"]
+        port = fake.free_port()
+        server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} {name}")
+        fake.until_listening(port)
+        opts @= options("127.0.0.1")
+        opts.port @ port
+        opts.security @ .plain
+        opts.deadline_ms @ 300
+        opts.max_message @ 1000
+        c @= open(opts).must()
+        bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
+
+        match who_am_i(@c)
+            .ok _ => assert false
+            .err e =>
+                if name == "notice"
+                    assert e.code == "closed" && e.msg == "the server ended the connection: unavailable (52): shutting down"
+                else if name == "silent"
+                    assert e.code == "timeout"
+                else
+                    assert e.code == "invalid"
+
+        assert is_closed(c)
+
+        match who_am_i(@c)
+            .ok _  => assert false
+            .err e => assert e.code == "closed"
+
+        close(@c).must()
+        assert threads.wait_text(@server) == "ok"
+
+test "abandon_search: a search given up, its late answer read past, and no operation while a search runs"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} abandon")
+    fake.until_listening(port)
+    opts @= options("127.0.0.1")
+    opts.port @ port
+    opts.security @ .plain
+    c @= open(opts).must()
+    bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
+    assert next_item(@c).is_err()
+    assert abandon_search(@c).is_err()
+    q @= query(base: "dc=example,dc=org", f: parse_filter("(&(objectClass=person)(cn=Ana*))").must())
+    q.attributes @ ["cn", "mail"]
+    start_search(@c, q).must()
+    assert start_search(@c, q).is_err()
+
+    match who_am_i(@c)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    match next_item(@c).must()
+        .entry e     => assert e.v.dn == "cn=Ana Rossi,dc=example,dc=org"
+        .reference _ => assert false
+        .done _      => assert false
+
+    abandon_search(@c).must()
+    assert who_am_i(@c).must() == "dn:cn=admin,dc=example,dc=org"
+    close(@c).must()
+    assert threads.wait_text(@server) == "ok"
+
+test "open over TLS from the first byte, the server's certificate checked against tls's test authority"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"ldaps {port} bind")
+    fake.until_listening(port)
+    opts @= options("localhost")
+    opts.port @ port
+    opts.security @ .direct(roots: tls.TEST_ROOT)
+    c @= open(opts).must()
+    assert is_secured(c)
+    assert start_tls(@c, roots: tls.TEST_ROOT).is_err()
+    bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
+    close(@c).must()
+    assert threads.wait_text(@server) == "ok"
+
+test "open with StartTLS: the request, its answer, then TLS, then a bind numbered after it"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"starttls {port} starttls")
+    fake.until_listening(port)
+    opts @= options("localhost")
+    opts.port @ port
+    opts.security @ .start_tls(roots: tls.TEST_ROOT)
+    c @= open(opts).must()
+    assert is_secured(c)
+    bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
+    assert who_am_i(@c).must() == "dn:cn=admin,dc=example,dc=org"
+    close(@c).must()
+    assert threads.wait_text(@server) == "ok"
+
+test "open with StartTLS: a server that knows no StartTLS fails unsupported"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} starttls-refused")
+    fake.until_listening(port)
+    opts @= options("127.0.0.1")
+    opts.port @ port
+    opts.security @ .start_tls(roots: tls.TEST_ROOT)
+
+    match open(opts)
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported" && e.msg == f"StartTLS on 127.0.0.1:{port}: protocolError (2): unsupported extended operation"
+
+    assert threads.wait_text(@server) == "ok"
+
+test "start_tls: on macOS a connection already open fails unsupported, before anything is sent"
+    if os.system() == .darwin
+        port = fake.free_port()
+        server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} bind")
+        fake.until_listening(port)
+        opts @= options("127.0.0.1")
+        opts.port @ port
+        opts.security @ .plain
+        c @= open(opts).must()
+
+        match start_tls(@c, roots: tls.TEST_ROOT)
+            .ok _  => assert false
+            .err e => assert e.code == "unsupported"
+
+        bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
+        close(@c).must()
+        assert threads.wait_text(@server) == "ok"
+
+test "names: parse_dn, format_dn, parse_rdn, the comparisons, a parent and a child"
+    d = parse_dn("CN=Ana+sn=Rossi, ou=people, dc=example,dc=org").must()
+    assert d.rdns.len() == 4 && d.rdns[0].parts == [Ava(attribute: "CN", value: "Ana"), Ava(attribute: "sn", value: "Rossi")]
+    assert format_dn(d) == "CN=Ana+sn=Rossi,ou=people,dc=example,dc=org"
+    assert format_dn(parse_dn("").must()) == ""
+    assert is_same_dn(a: d, b: parse_dn("sn=Rossi+cn=Ana,OU=people,DC=example,DC=org").must())
+    assert !is_same_dn(a: d, b: parse_dn("cn=ana+sn=Rossi,ou=people,dc=example,dc=org").must())
+    assert is_same_dn_ignoring_case(a: d, b: parse_dn("cn=ana+sn=ROSSI,ou=People,dc=Example,dc=org").must())
+    base = parse_dn("dc=example,dc=org").must()
+    assert is_under(dn: d, ancestor: base) && !is_under(dn: base, ancestor: d) && !is_under(dn: base, ancestor: base)
+    assert is_under(dn: base, ancestor: parse_dn("").must())
+    assert format_dn(parent_of(base).must()) == "dc=org"
+    assert parent_of(parse_dn("").must()).is_err()
+    assert format_dn(child_of(parent: base, rdn: parse_rdn("cn=Rossi\\, Ana").must())) == "cn=Rossi\\, Ana,dc=example,dc=org"
+    assert parse_rdn("cn=a,dc=b").is_err()
+    assert parse_rdn("").is_err()
+    assert format_rdn(Rdn(parts: [Ava(attribute: "cn", value: " #lead, trail ")])) == "cn=\\ #lead\\, trail\\ "
+
+test "filters: the variant written and read back, values as bytes, a filter refused when written"
+    f: Filter = .and_of(
+        items: [.equal(attribute: "objectClass", value: bytes.from_text("person")), .or_of(items: [.substrings(attribute: "cn", initial: bytes.from_text("An"), middle: [bytes.from_text("os")], final: []), .not_of(items: [.present(attribute: "mail")])]), .extensible(rule: "caseExactMatch", attribute: "sn", value: bytes.from_text("Rossi"), dn_attributes: true), .approx(attribute: "cn", value: bytes.from_text("Anna")), .greater_or_equal(attribute: "age", value: bytes.from_text("18")), .less_or_equal(attribute: "age", value: bytes.from_text("65"))]
+    )
+    text = format_filter(f).must()
+    assert text == "(&(objectClass=person)(|(cn=An*os*)(!(mail=*)))(sn:dn:caseExactMatch:=Rossi)(cn~=Anna)(age>=18)(age<=65))"
+    assert parse_filter(text).must() == f
+    assert decode_filter(encode_filter(f).must()).must() == f
+    assert format_filter(.not_of(items: [])).is_err()
+    assert format_filter(.substrings(attribute: "cn", initial: [], middle: [[]], final: [])).is_err()
+    assert format_filter(.extensible(rule: "", attribute: "", value: [], dn_attributes: false)).is_err()
+    assert format_filter(.equal(attribute: "", value: [])).is_err()
+    assert encode_filter(.present(attribute: "a b")).is_err()
+    assert decode_filter([0x30, 0x00]).is_err()
+    assert unescape_filter("caf\\c3\\a9").must() == bytes.from_text("café")
+    assert unescape_filter("a)").is_err()
+
+test "parse_url and format_url: defaults, a filter parsed, every part, and the options and query a URL names"
+    u = parse_url("ldaps://ldap.example.org/dc=example,dc=org?cn,mail?sub?(cn=A*)?!e-bindname=cn=x").must()
+    assert u.port == DEFAULT_TLS_PORT && u.scope == .subtree && u.attributes == ["cn", "mail"] && u.extensions == ["!e-bindname=cn=x"]
+    assert format_url(u).must() == "ldaps://ldap.example.org/dc=example,dc=org?cn,mail?sub?(cn=A*)?!e-bindname=cn=x"
+    plain = parse_url("ldap://h").must()
+    assert plain.port == DEFAULT_PORT && plain.scope == .base_object && plain.filter == .present(attribute: "objectClass")
+    assert format_url(plain).must() == "ldap://h"
+    odd = parse_url("ldap://h:1389/??one").must()
+    assert format_url(odd).must() == "ldap://h:1389/??one"
+    assert parse_url("ldap://h/??sub?(cn=a**)").is_err()
+    wrong @= plain
+    wrong.scheme @ "http"
+    assert format_url(wrong).is_err()
+    o = to_options(parse_url("ldap:///dc=x").must())
+    assert o.host == "localhost" && o.port == 389 && o.security == .start_tls(roots: "")
+    assert to_options(u).security == .direct(roots: "")
+    q = to_query(u)
+    assert q.base == "dc=example,dc=org" && q.scope == .subtree && q.attributes == ["cn", "mail"]
+
+test "controls: paged, sort, the response read, and the four that need no value"
+    p = paged_control(size: 2, cookie: [])
+    assert p.critical && bytes.format_hex(p.value) == "30050201020400"
+    assert paged_of([Control(oid: PAGED_RESULTS, critical: false, value: bytes.parse_hex("3007020100040263" + "31").must())]).must() == Paged(size: 0, cookie: bytes.from_text("c1"))
+    assert paged_of([]).is_err()
+    s = sort_control([SortKey(attribute: "cn", ordering_rule: "", reverse: false)], critical: false).must()
+    assert s.oid == SORT_REQUEST && bytes.format_hex(s.value) == "300630040402636e"
+    assert sort_control([], critical: true).is_err()
+    assert sort_control([SortKey(attribute: "", ordering_rule: "", reverse: true)], critical: true).is_err()
+    assert sort_result_of([Control(oid: SORT_RESPONSE, critical: false, value: [0x30, 0x03, 0x0a, 0x01, 0x00])]).must() == SUCCESS
+    assert sort_result_of([]).is_err()
+    assert manage_dsa_it_control().oid == MANAGE_DSA_IT && tree_delete_control().critical
+    assert proxied_authorization_control("dn:cn=Ana").value == bytes.from_text("dn:cn=Ana")
+    assert bytes.format_hex(assertion_control(.equal(attribute: "cn", value: bytes.from_text("Ana"))).must().value) == "a3090402636e0403416e61"
+
+test "entries: values by name with case ignored, text and binary values, an attribute absent"
+    e = Entry(
+        dn: "cn=Ana,dc=x",
+        attributes: [text_attribute(name: "cn", values: ["Ana", "Anna"]), Attribute(name: "jpegPhoto", values: [[0xff, 0xd8]])],
+        controls: []
+    )
+    assert texts_of(e, name: "CN").must() == ["Ana", "Anna"] && text_of(e, name: "cn").must() == "Ana"
+    assert values_of(e, name: "JPEGPHOTO") == [[0xff, 0xd8]] && values_of(e, name: "mail") == []
+    assert has_attribute(e, name: "jpegphoto") && !has_attribute(e, name: "mail")
+
+    match texts_of(e, name: "jpegPhoto")
+        .ok _   => assert false
+        .err e2 => assert e2.code == "not_text"
+
+    match text_of(e, name: "mail")
+        .ok _   => assert false
+        .err e2 => assert e2.code == "not_found"
+
+    assert texts_of(e, name: "mail").must() == []
+
+test "live: StartTLS, binds, searches, pages, sorting, changes and passwords against the server REBEL_LDAP_PORT names, dc=example,dc=org with cn=admin, cleaned up after"
+    match os.env("REBEL_LDAP_PORT")
+        .err _ => print("live: skipped, REBEL_LDAP_PORT names no server")
+        .ok port_text =>
+            opts @= options(os.env("REBEL_LDAP_HOST").default("localhost"))
+            opts.port @ numbers.parse_int(port_text).must()
+            opts.security @ .start_tls(roots: tls.TEST_ROOT)
+            password = os.env("REBEL_LDAP_PASSWORD").default("secret")
+            admin = "cn=admin,dc=example,dc=org"
+            c @= open(opts).must()
+            assert is_secured(c)
+
+            match bind(@c, dn: admin, password: "not the password")
+                .ok _  => assert false
+                .err e => assert e.code == "permission" && result_of(c).code == INVALID_CREDENTIALS
+
+            bind(@c, dn: admin, password: password).must()
+            assert who_am_i(@c).must() == "dn:" + admin
+            dse = root_dse(@c).must()
+            assert texts_of(dse, name: "namingContexts").must() == ["dc=example,dc=org"]
+            assert texts_of(dse, name: "supportedControl").must().len() > 3
+            base = "ou=rebel-live,dc=example,dc=org"
+            leftovers = search(@c, query(base: base, f: parse_filter("(objectClass=*)").must()))
+
+            match leftovers
+                .err e => assert e.code == "not_found"
+                .ok found =>
+                    k @= found.entries.len()
+
+                    while k > 0
+                        k @ k - 1
+                        delete(@c, dn: found.entries[k].dn).must()
+
+            add(
+                @c,
+                dn: base,
+                attributes: [text_attribute(name: "objectClass", values: ["organizationalUnit"]), text_attribute(name: "ou", values: ["rebel-live"])]
+            ).must()
+
+            match add(@c, dn: base, attributes: [text_attribute(name: "objectClass", values: ["organizationalUnit"]), text_attribute(name: "ou", values: ["rebel-live"])])
+                .ok _  => assert false
+                .err e => assert e.code == "exists"
+
+            for i in range(from: 0, to: 25)
+                name = if i < 10
+                    f"p0{i}"
+                else
+                    f"p{i}"
+
+                photo: [u8] = [0xff, 0xd8, to_u8(i).must()]
+                add(
+                    @c,
+                    dn: f"cn={name},{base}",
+                    attributes: [text_attribute(name: "objectClass", values: ["inetOrgPerson"]), text_attribute(name: "cn", values: [name]), text_attribute(name: "sn", values: ["Rossi città"]), text_attribute(name: "mail", values: [name + "@example.org"]), Attribute(name: "jpegPhoto", values: [photo])]
+                ).must()
+
+            people @= query(base: base, f: parse_filter("(&(objectClass=inetOrgPerson)(sn=Rossi*))").must())
+            people.attributes @ ["cn", "mail", "jpegPhoto"]
+            everyone = search(@c, people).must()
+            assert everyone.entries.len() == 25 && everyone.result.code == SUCCESS
+            assert values_of(everyone.entries[0], name: "JPEGPHOTO")[0].len() == 3
+            assert texts_of(everyone.entries[0], name: "jpegPhoto").is_err()
+            capped @= people
+            capped.size_limit @ 5
+            cut = search(@c, capped).must()
+            assert cut.entries.len() == 5 && cut.result.code == SIZE_LIMIT_EXCEEDED
+            paged = search_paged(@c, people, size: 7).must()
+            assert paged.entries.len() == 25
+            sorted @= people
+            sorted.controls @ [
+                sort_control([SortKey(attribute: "cn", ordering_rule: "caseIgnoreOrderingMatch", reverse: true)], critical: true).must()
+            ]
+            in_order = search(@c, sorted).must()
+            assert text_of(in_order.entries[0], name: "cn").must() == "p24" && text_of(in_order.entries[24], name: "cn").must() == "p00"
+            assert sort_result_of(in_order.result.controls).must() == SUCCESS
+            start_search(@c, people).must()
+            streamed @= 0
+
+            while streamed < 3
+                match next_item(@c).must()
+                    .entry _     => streamed @ streamed + 1
+                    .reference _ => _ = 0
+                    .done _      => assert false
+
+            abandon_search(@c).must()
+            one = lookup(@c, dn: f"cn=p03,{base}", attributes: ["mail", "sn"]).must()
+            assert text_of(one, name: "mail").must() == "p03@example.org" && text_of(one, name: "sn").must() == "Rossi città"
+            assert compare(@c, dn: f"cn=p03,{base}", attribute: "sn", value: bytes.from_text("rossi CITTÀ")).must()
+            assert !compare(@c, dn: f"cn=p03,{base}", attribute: "sn", value: bytes.from_text("Bianchi")).must()
+            changes = [
+                Change(kind: .replace, attribute: text_attribute(name: "mail", values: ["ana@example.org"]))
+                Change(kind: .add, attribute: text_attribute(name: "description", values: ["one", "two"]))
+                Change(kind: .delete, attribute: text_attribute(name: "description", values: ["one"]))
+            ]
+            modify(@c, dn: f"cn=p03,{base}", changes: changes).must()
+            changed = lookup(@c, dn: f"cn=p03,{base}", attributes: ["mail", "description"]).must()
+            assert texts_of(changed, name: "mail").must() == ["ana@example.org"] && texts_of(changed, name: "description").must() == ["two"]
+
+            match modify(@c, dn: f"cn=p03,{base}", changes: [Change(kind: .delete, attribute: text_attribute(name: "description", values: ["absent"]))])
+                .ok _  => assert false
+                .err e => assert e.code == "not_found" && result_of(c).code == NO_SUCH_ATTRIBUTE
+
+            set_controls(@c, controls: [assertion_control(parse_filter("(mail=nobody@example.org)").must()).must()])
+
+            match modify(@c, dn: f"cn=p03,{base}", changes: changes)
+                .ok _  => assert false
+                .err e => assert result_of(c).code == ASSERTION_FAILED && e.code == "invalid"
+
+            set_controls(@c, controls: [manage_dsa_it_control()])
+            assert lookup(@c, dn: f"cn=p04,{base}", attributes: ["cn"]).must().dn == f"cn=p04,{base}"
+            set_controls(@c, controls: [])
+            add(
+                @c,
+                dn: f"ou=moved,{base}",
+                attributes: [text_attribute(name: "objectClass", values: ["organizationalUnit"]), text_attribute(name: "ou", values: ["moved"])]
+            ).must()
+            rename(@c, dn: f"cn=p05,{base}", new_rdn: "cn=q05", delete_old: true, new_parent: "").must()
+            rename(@c, dn: f"cn=q05,{base}", new_rdn: "cn=q05", delete_old: true, new_parent: f"ou=moved,{base}").must()
+            assert lookup(@c, dn: f"cn=q05,ou=moved,{base}", attributes: ["cn"]).must().dn == f"cn=q05,ou=moved,{base}"
+
+            match delete(@c, dn: f"ou=moved,{base}")
+                .ok _  => assert false
+                .err e => assert e.code == "not_empty"
+
+            match delete(@c, dn: f"cn=absent,{base}")
+                .ok _  => assert false
+                .err e => assert e.code == "not_found" && result_of(c).matched_dn == base
+
+            made = change_password(@c, user: f"cn=p06,{base}", old: "", new: "").must()
+            assert made.len() > 0
+            assert change_password(@c, user: f"cn=p07,{base}", old: "", new: "pw7").must() == ""
+            bind(@c, dn: f"cn=p07,{base}", password: "pw7").must()
+            assert who_am_i(@c).must() == f"dn:cn=p07,{base}"
+            bind(@c, dn: f"cn=p06,{base}", password: made).must()
+            bind_plain(@c, authz_id: "", user: "ana", password: "secret").must()
+            plain_who = who_am_i(@c).must()
+            assert plain_who == "dn:uid=ana@example.org,ou=people,dc=example,dc=org"
+            assert bind_external(@c, authz_id: "").is_err()
+            bind_anonymous(@c).must()
+            assert who_am_i(@c).must() == ""
+            bind(@c, dn: admin, password: password).must()
+            remaining = search(@c, query(base: base, f: parse_filter("(objectClass=*)").must())).must()
+            k @= remaining.entries.len()
+            depth_sorted: [str] @= []
+
+            for e in remaining.entries
+                if is_under(dn: parse_dn(e.dn).must(), ancestor: parse_dn(f"ou=moved,{base}").must())
+                    depth_sorted @ depth_sorted.push(e.dn)
+
+            for d in depth_sorted
+                delete(@c, dn: d).must()
+
+            while k > 0
+                k @ k - 1
+                name = remaining.entries[k].dn
+
+                if !is_under(dn: parse_dn(name).must(), ancestor: parse_dn(f"ou=moved,{base}").must()) && name != f"ou=moved,{base}" && name != base
+                    delete(@c, dn: name).must()
+
+            delete(@c, dn: f"ou=moved,{base}").must()
+            delete(@c, dn: base).must()
+            close(@c).must()
+            print(
+                f"live: {plain_who}, 25 entries, 4 pages of 7, sorted, streamed, changed, renamed and moved, passwords, all removed"
+            )
+
+test "live over TLS from the first byte, against the server REBEL_LDAP_TLS_PORT names"
+    match os.env("REBEL_LDAP_TLS_PORT")
+        .err _ => print("live over TLS: skipped, REBEL_LDAP_TLS_PORT names no server")
+        .ok port_text =>
+            opts @= options(os.env("REBEL_LDAP_HOST").default("localhost"))
+            opts.port @ numbers.parse_int(port_text).must()
+            opts.security @ .direct(roots: tls.TEST_ROOT)
+            c @= open(opts).must()
+            bind(@c, dn: "cn=admin,dc=example,dc=org", password: os.env("REBEL_LDAP_PASSWORD").default("secret")).must()
+            assert who_am_i(@c).must() == "dn:cn=admin,dc=example,dc=org"
+            close(@c).must()
+            print("live over TLS: bound as cn=admin over ldaps")
+
+## Examples
+
+# The name of a result code.
+test "format_result_code: noSuchObject"
+    assert format_result_code(NO_SUCH_OBJECT) == "noSuchObject"
+
+# The whole result after a refused bind: its code and the server's words.
+test "result_of: after a wrong password"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} bind-refused")
+    fake.until_listening(port)
+    opts @= options("127.0.0.1")
+    opts.port @ port
+    opts.security @ .plain
+    c @= open(opts).must()
+
+    match bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret")
+        .ok _  => assert false
+        .err _ => assert result_of(c).code == INVALID_CREDENTIALS && result_of(c).message == "invalid credentials"
+
+    close(@c).must()
+    assert threads.wait_text(@server) == "ok"
+
+# The ManageDsaIT control sent with a delete.
+test "set_controls: ManageDsaIT with a delete"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} delete-managed")
+    fake.until_listening(port)
+    opts @= options("127.0.0.1")
+    opts.port @ port
+    opts.security @ .plain
+    c @= open(opts).must()
+    bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
+    set_controls(@c, controls: [manage_dsa_it_control()])
+    delete(@c, dn: "cn=Ana,dc=example,dc=org").must()
+    close(@c).must()
+    assert threads.wait_text(@server) == "ok"
+
+# The control asking for the first page of 100 entries.
+test "paged_control: the first page"
+    assert paged_control(size: 100, cookie: []).oid == PAGED_RESULTS
+
+# The cookie a page's result holds.
+test "paged_of: a cookie"
+    answer = Control(
+        oid: PAGED_RESULTS,
+        critical: false,
+        value: paged_control(size: 5, cookie: bytes.from_text("c1")).value
+    )
+    assert paged_of([answer]).must().cookie == bytes.from_text("c1")
+
+# Entries asked for sorted by surname, then by name.
+test "sort_control: two keys"
+    sorted = sort_control(
+        [SortKey(attribute: "sn", ordering_rule: "", reverse: false), SortKey(attribute: "cn", ordering_rule: "", reverse: false)],
+        critical: false
+    ).must()
+    assert sorted.oid == SORT_REQUEST
+
+# The result a sort response control holds.
+test "sort_result_of: sorted"
+    assert sort_result_of([Control(oid: SORT_RESPONSE, critical: false, value: [0x30, 0x03, 0x0a, 0x01, 0x00])]).must() == SUCCESS
+
+# The ManageDsaIT control, critical.
+test "manage_dsa_it_control: critical"
+    assert manage_dsa_it_control().critical
+
+# The subtree delete control.
+test "tree_delete_control: its identifier"
+    assert tree_delete_control().oid == TREE_DELETE
+
+# A request run as another identity.
+test "proxied_authorization_control: as a name"
+    assert proxied_authorization_control("dn:cn=Ana,dc=example,dc=org").oid == PROXIED_AUTHORIZATION
+
+# A change made only where the entry's surname is still Rossi.
+test "assertion_control: a surname"
+    assert assertion_control(parse_filter("(sn=Rossi)").must()).must().oid == ASSERTION
+
+# The options of a server: StartTLS on port 389.
+test "options: the defaults"
+    opts = options("ldap.example.org")
+    assert opts.port == 389 && opts.security == .start_tls(roots: "")
+
+# A connection in plain text to a server on this machine, bound and closed.
+test "open: in plain text"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} bind")
+    fake.until_listening(port)
+    opts @= options("127.0.0.1")
+    opts.port @ port
+    opts.security @ .plain
+    c @= open(opts).must()
+    bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
+    assert !is_secured(c)
+    close(@c).must()
+    assert threads.wait_text(@server) == "ok"
+
+# A connection closed, its session ended with an UnbindRequest.
+test "close: after a bind"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} bind")
+    fake.until_listening(port)
+    opts @= options("127.0.0.1")
+    opts.port @ port
+    opts.security @ .plain
+    c @= open(opts).must()
+    bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
+    close(@c).must()
+    assert is_closed(c)
+    assert threads.wait_text(@server) == "ok"
+
+# A connection is open until closed.
+test "is_closed: open, then closed"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} bind")
+    fake.until_listening(port)
+    opts @= options("127.0.0.1")
+    opts.port @ port
+    opts.security @ .plain
+    c @= open(opts).must()
+    bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
+    assert !is_closed(c)
+    close(@c).must()
+    assert is_closed(c)
+    assert threads.wait_text(@server) == "ok"
+
+# A connection over TLS from the first byte.
+test "is_secured: ldaps"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"ldaps {port} bind")
+    fake.until_listening(port)
+    opts @= options("localhost")
+    opts.port @ port
+    opts.security @ .direct(roots: tls.TEST_ROOT)
+    c @= open(opts).must()
+    bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
+    assert is_secured(c)
+    close(@c).must()
+    assert threads.wait_text(@server) == "ok"
+
+# TLS begun on a connection opened in plain text, where the platform begins
+# TLS over a connection it holds; macOS answers `unsupported`, and there
+# `open` with `.start_tls` is the way.
+test "start_tls: on an open connection"
+    port = fake.free_port()
+    darwin = os.system() == .darwin
+
+    mode = if darwin
+        "plain"
+    else
+        "starttls"
+
+    script = if darwin
+        "bind"
+    else
+        "starttls"
+
+    server @= threads.spawn_text(body: fake.serve, arg: f"{mode} {port} {script}")
+    fake.until_listening(port)
+    opts @= options("localhost")
+    opts.port @ port
+    opts.security @ .plain
+    c @= open(opts).must()
+
+    match start_tls(@c, roots: tls.TEST_ROOT)
+        .ok _ =>
+            assert is_secured(c)
+            bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
+            assert who_am_i(@c).must() == "dn:cn=admin,dc=example,dc=org"
+        .err e =>
+            assert e.code == "unsupported" && darwin
+            bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
+
+    close(@c).must()
+    assert threads.wait_text(@server) == "ok"
+
+# Each later operation bounded to five seconds.
+test "set_deadline: five seconds"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} bind")
+    fake.until_listening(port)
+    opts @= options("127.0.0.1")
+    opts.port @ port
+    opts.security @ .plain
+    c @= open(opts).must()
+    set_deadline(@c, ms: 5000).must()
+    bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
+    close(@c).must()
+    assert threads.wait_text(@server) == "ok"
+
+# A simple bind as the directory's administrator.
+test "bind: a name and a password"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} bind")
+    fake.until_listening(port)
+    opts @= options("127.0.0.1")
+    opts.port @ port
+    opts.security @ .plain
+    c @= open(opts).must()
+    bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
+    close(@c).must()
+    assert threads.wait_text(@server) == "ok"
+
+# Back to anonymous.
+test "bind_anonymous: anonymous"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} anonymous")
+    fake.until_listening(port)
+    opts @= options("127.0.0.1")
+    opts.port @ port
+    opts.security @ .plain
+    c @= open(opts).must()
+    bind_anonymous(@c).must()
+    close(@c).must()
+    assert threads.wait_text(@server) == "ok"
+
+# A name and no password, which OpenLDAP refuses by default.
+test "bind_unauthenticated: refused by default"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} unauthenticated")
+    fake.until_listening(port)
+    opts @= options("127.0.0.1")
+    opts.port @ port
+    opts.security @ .plain
+    c @= open(opts).must()
+
+    match bind_unauthenticated(@c, dn: "cn=guest")
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported" && result_of(c).code == UNWILLING_TO_PERFORM
+
+    close(@c).must()
+    assert threads.wait_text(@server) == "ok"
+
+# The first step of a SASL mechanism.
+test "bind_sasl: a challenge"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} sasl-steps")
+    fake.until_listening(port)
+    opts @= options("127.0.0.1")
+    opts.port @ port
+    opts.security @ .plain
+    c @= open(opts).must()
+    assert bind_sasl(@c, mechanism: "EXTERNAL", credentials: []).must().credentials == bytes.from_text("challenge")
+    close(@c).must()
+    assert threads.wait_text(@server) == "ok"
+
+# The identity the connection proves.
+test "bind_external: no identity asked"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} external")
+    fake.until_listening(port)
+    opts @= options("127.0.0.1")
+    opts.port @ port
+    opts.security @ .plain
+    c @= open(opts).must()
+    bind_external(@c, authz_id: "").must()
+    close(@c).must()
+    assert threads.wait_text(@server) == "ok"
+
+# A user and a password with SASL PLAIN.
+test "bind_plain: a user"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} plain")
+    fake.until_listening(port)
+    opts @= options("127.0.0.1")
+    opts.port @ port
+    opts.security @ .plain
+    c @= open(opts).must()
+    bind_plain(@c, authz_id: "", user: "ana", password: "secret").must()
+    close(@c).must()
+    assert threads.wait_text(@server) == "ok"
+
+# The identity bound.
+test "who_am_i: the administrator"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} whoami")
+    fake.until_listening(port)
+    opts @= options("127.0.0.1")
+    opts.port @ port
+    opts.security @ .plain
+    c @= open(opts).must()
+    bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
+    assert who_am_i(@c).must() == "dn:cn=admin,dc=example,dc=org"
+    close(@c).must()
+    assert threads.wait_text(@server) == "ok"
+
+# A search of the people named Ana below a base.
+test "query: a subtree"
+    q = query(base: "dc=example,dc=org", f: parse_filter("(&(objectClass=person)(cn=Ana*))").must())
+    assert q.scope == .subtree && q.size_limit == 0
+
+# The people named Ana, with their names and mail.
+test "search: entries and a reference"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} search")
+    fake.until_listening(port)
+    opts @= options("127.0.0.1")
+    opts.port @ port
+    opts.security @ .plain
+    c @= open(opts).must()
+    bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
+    q @= query(base: "dc=example,dc=org", f: parse_filter("(&(objectClass=person)(cn=Ana*))").must())
+    q.attributes @ ["cn", "mail"]
+    found = search(@c, q).must()
+    assert found.entries.len() == 1 && found.result.code == SUCCESS
+    assert texts_of(found.entries[0], name: "mail").must() == ["ana@example.org", "a@b.c"]
+    assert found.references == [Reference(urls: ["ldap://other.example.org/dc=other"])]
+    close(@c).must()
+    assert threads.wait_text(@server) == "ok"
+
+# One entry by its name.
+test "lookup: by name"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} lookup")
+    fake.until_listening(port)
+    opts @= options("127.0.0.1")
+    opts.port @ port
+    opts.security @ .plain
+    c @= open(opts).must()
+    bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
+    assert text_of(lookup(@c, dn: "cn=Ana,dc=example,dc=org", attributes: ["cn"]).must(), name: "cn").must() == "Bea"
+    close(@c).must()
+    assert threads.wait_text(@server) == "ok"
+
+# The naming contexts a server holds.
+test "root_dse: its naming contexts"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} rootdse")
+    fake.until_listening(port)
+    opts @= options("127.0.0.1")
+    opts.port @ port
+    opts.security @ .plain
+    c @= open(opts).must()
+    bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
+    assert texts_of(root_dse(@c).must(), name: "namingContexts").must() == ["dc=example,dc=org"]
+    close(@c).must()
+    assert threads.wait_text(@server) == "ok"
+
+# A search read one message at a time.
+test "start_search: one at a time"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} search")
+    fake.until_listening(port)
+    opts @= options("127.0.0.1")
+    opts.port @ port
+    opts.security @ .plain
+    c @= open(opts).must()
+    bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
+    q @= query(base: "dc=example,dc=org", f: parse_filter("(&(objectClass=person)(cn=Ana*))").must())
+    q.attributes @ ["cn", "mail"]
+    start_search(@c, q).must()
+    names: [str] @= []
+    going @= true
+
+    while going
+        match next_item(@c).must()
+            .entry e     => names @ names.push(e.v.dn)
+            .reference _ => _ = 0
+            .done _      => going @ false
+
+    assert names == ["cn=Ana Rossi,dc=example,dc=org"]
+    close(@c).must()
+    assert threads.wait_text(@server) == "ok"
+
+# The first message of a search: an entry.
+test "next_item: an entry"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} search")
+    fake.until_listening(port)
+    opts @= options("127.0.0.1")
+    opts.port @ port
+    opts.security @ .plain
+    c @= open(opts).must()
+    bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
+    q @= query(base: "dc=example,dc=org", f: parse_filter("(&(objectClass=person)(cn=Ana*))").must())
+    q.attributes @ ["cn", "mail"]
+    start_search(@c, q).must()
+
+    match next_item(@c).must()
+        .entry e     => assert e.v.dn == "cn=Ana Rossi,dc=example,dc=org"
+        .reference _ => assert false
+        .done _      => assert false
+
+    assert next_item(@c).must() == .reference(v: Reference(urls: ["ldap://other.example.org/dc=other"]))
+
+    match next_item(@c).must()
+        .done d      => assert d.v.code == SUCCESS
+        .entry _     => assert false
+        .reference _ => assert false
+
+    close(@c).must()
+    assert threads.wait_text(@server) == "ok"
+
+# A search given up after its first entry.
+test "abandon_search: after one entry"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} abandon-only")
+    fake.until_listening(port)
+    opts @= options("127.0.0.1")
+    opts.port @ port
+    opts.security @ .plain
+    c @= open(opts).must()
+    bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
+    q @= query(base: "dc=example,dc=org", f: parse_filter("(&(objectClass=person)(cn=Ana*))").must())
+    q.attributes @ ["cn", "mail"]
+    start_search(@c, q).must()
+    _ = next_item(@c).must()
+    abandon_search(@c).must()
+    close(@c).must()
+    assert threads.wait_text(@server) == "ok"
+
+# The first page of two entries, and the cookie for the next.
+test "search_page: the first page"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} paged-one")
+    fake.until_listening(port)
+    opts @= options("127.0.0.1")
+    opts.port @ port
+    opts.security @ .plain
+    c @= open(opts).must()
+    bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
+    page = search_page(
+        @c,
+        query(base: "dc=example,dc=org", f: parse_filter("(objectClass=*)").must()),
+        size: 2,
+        cookie: []
+    ).must()
+    assert page.found.entries.len() == 1 && page.cookie == bytes.from_text("c1")
+    close(@c).must()
+    assert threads.wait_text(@server) == "ok"
+
+# Every entry, asked for two at a time.
+test "search_paged: two pages"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} paged")
+    fake.until_listening(port)
+    opts @= options("127.0.0.1")
+    opts.port @ port
+    opts.security @ .plain
+    c @= open(opts).must()
+    bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
+    found = search_paged(
+        @c,
+        query(base: "dc=example,dc=org", f: parse_filter("(objectClass=*)").must()),
+        size: 2
+    ).must()
+    assert found.entries.len() == 2 && found.entries[1].dn == "cn=Bea,dc=example,dc=org"
+    close(@c).must()
+    assert threads.wait_text(@server) == "ok"
+
+# An attribute of text values.
+test "text_attribute: two values"
+    assert text_attribute(name: "mail", values: ["a@b.c", "d@e.f"]).values.len() == 2
+
+# The bytes of an entry's values.
+test "values_of: by name"
+    e = Entry(dn: "cn=Ana,dc=x", attributes: [text_attribute(name: "mail", values: ["a@b.c", "d@e.f"])], controls: [])
+    assert values_of(e, name: "Mail") == [bytes.from_text("a@b.c"), bytes.from_text("d@e.f")]
+
+# An entry's values as text.
+test "texts_of: two mails"
+    e = Entry(dn: "cn=Ana,dc=x", attributes: [text_attribute(name: "mail", values: ["a@b.c", "d@e.f"])], controls: [])
+    assert texts_of(e, name: "mail").must() == ["a@b.c", "d@e.f"]
+
+# An entry's first value as text.
+test "text_of: the first mail"
+    e = Entry(dn: "cn=Ana,dc=x", attributes: [text_attribute(name: "mail", values: ["a@b.c", "d@e.f"])], controls: [])
+    assert text_of(e, name: "mail").must() == "a@b.c"
+
+# Whether an entry has an attribute.
+test "has_attribute: mail but no phone"
+    e = Entry(dn: "cn=Ana,dc=x", attributes: [text_attribute(name: "mail", values: ["a@b.c", "d@e.f"])], controls: [])
+    assert has_attribute(e, name: "MAIL") && !has_attribute(e, name: "telephoneNumber")
+
+# A person added.
+test "add: a person"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} add")
+    fake.until_listening(port)
+    opts @= options("127.0.0.1")
+    opts.port @ port
+    opts.security @ .plain
+    c @= open(opts).must()
+    bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
+    add(
+        @c,
+        dn: "cn=Ana,dc=example,dc=org",
+        attributes: [text_attribute(name: "objectClass", values: ["person"]), text_attribute(name: "cn", values: ["Ana"]), text_attribute(name: "sn", values: ["Rossi"])]
+    ).must()
+    close(@c).must()
+    assert threads.wait_text(@server) == "ok"
+
+# A mail replaced, two descriptions added, a phone removed, a number incremented.
+test "modify: four changes"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} modify")
+    fake.until_listening(port)
+    opts @= options("127.0.0.1")
+    opts.port @ port
+    opts.security @ .plain
+    c @= open(opts).must()
+    bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
+    changes = [
+        Change(kind: .replace, attribute: text_attribute(name: "mail", values: ["ana@example.org"]))
+        Change(kind: .add, attribute: text_attribute(name: "description", values: ["x", "y"]))
+        Change(kind: .delete, attribute: text_attribute(name: "telephoneNumber", values: []))
+        Change(kind: .increment, attribute: text_attribute(name: "uidNumber", values: ["1"]))
+    ]
+    modify(@c, dn: "cn=Ana,dc=example,dc=org", changes: changes).must()
+    close(@c).must()
+    assert threads.wait_text(@server) == "ok"
+
+# An entry that does not exist.
+test "delete: absent"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} delete-nosuch")
+    fake.until_listening(port)
+    opts @= options("127.0.0.1")
+    opts.port @ port
+    opts.security @ .plain
+    c @= open(opts).must()
+    bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
+
+    match delete(@c, dn: "cn=Ana,dc=example,dc=org")
+        .ok _  => assert false
+        .err e => assert e.code == "not_found"
+
+    close(@c).must()
+    assert threads.wait_text(@server) == "ok"
+
+# An entry renamed and moved below another.
+test "rename: renamed and moved"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} rename")
+    fake.until_listening(port)
+    opts @= options("127.0.0.1")
+    opts.port @ port
+    opts.security @ .plain
+    c @= open(opts).must()
+    bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
+    rename(
+        @c,
+        dn: "cn=Ana,dc=example,dc=org",
+        new_rdn: "cn=Anna",
+        delete_old: true,
+        new_parent: "ou=people,dc=example,dc=org"
+    ).must()
+    close(@c).must()
+    assert threads.wait_text(@server) == "ok"
+
+# Whether an entry's surname is Rossi, and then not.
+test "compare: true then false"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} compare")
+    fake.until_listening(port)
+    opts @= options("127.0.0.1")
+    opts.port @ port
+    opts.security @ .plain
+    c @= open(opts).must()
+    bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
+    assert compare(@c, dn: "cn=Ana,dc=example,dc=org", attribute: "sn", value: bytes.from_text("Rossi")).must()
+    assert !compare(@c, dn: "cn=Ana,dc=example,dc=org", attribute: "sn", value: bytes.from_text("Rossi")).must()
+    close(@c).must()
+    assert threads.wait_text(@server) == "ok"
+
+# A password changed, and the one the server made.
+test "change_password: changed"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} passwd")
+    fake.until_listening(port)
+    opts @= options("127.0.0.1")
+    opts.port @ port
+    opts.security @ .plain
+    c @= open(opts).must()
+    bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
+    assert change_password(@c, user: "cn=Ana,dc=example,dc=org", old: "old", new: "new").must() == "Xy12"
+    close(@c).must()
+    assert threads.wait_text(@server) == "ok"
+
+# Who am I? run by its identifier.
+test "extended: Who am I?"
+    port = fake.free_port()
+    server @= threads.spawn_text(body: fake.serve, arg: f"plain {port} whoami")
+    fake.until_listening(port)
+    opts @= options("127.0.0.1")
+    opts.port @ port
+    opts.security @ .plain
+    c @= open(opts).must()
+    bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
+    assert extended(@c, name: WHO_AM_I, value: []).must().value == bytes.from_text("dn:cn=admin,dc=example,dc=org")
+    close(@c).must()
+    assert threads.wait_text(@server) == "ok"
+
+# A name read into its relative names.
+test "parse_dn: four relative names"
+    d = parse_dn("cn=Rossi\\, Ana,ou=people,dc=example,dc=org").must()
+    assert d.rdns.len() == 4 && d.rdns[0].parts[0].value == "Rossi, Ana"
+
+# A name written back.
+test "format_dn: escapes kept"
+    assert format_dn(parse_dn("cn = Rossi\\, Ana , dc=org").must()) == "cn=Rossi\\, Ana,dc=org"
+
+# A relative name of two parts.
+test "parse_rdn: two parts"
+    assert parse_rdn("cn=Ana+sn=Rossi").must().parts.len() == 2
+
+# A relative name written.
+test "format_rdn: two parts"
+    assert format_rdn(Rdn(parts: [Ava(attribute: "cn", value: "Ana"), Ava(attribute: "sn", value: "Rossi")])) == "cn=Ana+sn=Rossi"
+
+# A value with a comma, ready to stand in a name.
+test "escape_dn_value: a comma"
+    assert escape_dn_value("Rossi, Ana") == "Rossi\\, Ana"
+
+# An escaped value read.
+test "unescape_dn_value: a comma"
+    assert unescape_dn_value("Rossi\\, Ana").must() == "Rossi, Ana"
+
+# Two spellings of one name.
+test "is_same_dn: case of the types"
+    assert is_same_dn(a: parse_dn("CN=Ana,DC=org").must(), b: parse_dn("cn=Ana,dc=org").must())
+
+# Two names whose values differ in case alone.
+test "is_same_dn_ignoring_case: case of the values"
+    assert is_same_dn_ignoring_case(a: parse_dn("cn=ANA,dc=org").must(), b: parse_dn("cn=ana,dc=org").must())
+
+# A person below the directory's base.
+test "is_under: below its base"
+    assert is_under(dn: parse_dn("cn=Ana,ou=people,dc=org").must(), ancestor: parse_dn("dc=org").must())
+
+# The entry above a person.
+test "parent_of: its unit"
+    assert format_dn(parent_of(parse_dn("cn=Ana,ou=people,dc=org").must()).must()) == "ou=people,dc=org"
+
+# A new entry's name below a unit.
+test "child_of: below a unit"
+    assert format_dn(child_of(parent: parse_dn("ou=people,dc=org").must(), rdn: parse_rdn("cn=Ana").must())) == "cn=Ana,ou=people,dc=org"
+
+# A filter read from text.
+test "parse_filter: people named Ana"
+    assert parse_filter("(&(objectClass=person)(cn=Ana*))").must() == .and_of(items: [.equal(attribute: "objectClass", value: bytes.from_text("person")), .substrings(attribute: "cn", initial: bytes.from_text("Ana"), middle: [], final: [])])
+
+# A filter built as a value and written as text.
+test "format_filter: a presence test"
+    assert format_filter(.not_of(items: [.present(attribute: "mail")])).must() == "(!(mail=*))"
+
+# A name with a star and parentheses, safe to stand in a filter.
+test "escape_filter: a star"
+    assert "(cn=" + escape_filter("A*(b)") + ")" == "(cn=A\\2a\\28b\\29)"
+
+# A binary value written for a filter.
+test "escape_filter_bytes: an identifier"
+    assert escape_filter_bytes([0xa1, 0x41]) == "\\a1A"
+
+# The bytes of an escaped value.
+test "unescape_filter: a star"
+    assert unescape_filter("A\\2a").must() == bytes.from_text("A*")
+
+# A filter's BER.
+test "encode_filter: an equality"
+    assert bytes.format_hex(encode_filter(parse_filter("(cn=Ana)").must()).must()) == "a3090402636e0403416e61"
+
+# A filter read from its BER.
+test "decode_filter: an equality"
+    assert format_filter(decode_filter(bytes.parse_hex("a3090402636e0403416e61").must()).must()).must() == "(cn=Ana)"
+
+# A server and a search in one URL.
+test "parse_url: every part"
+    u = parse_url("ldap://ldap.example.org/dc=example,dc=org?cn?sub?(cn=A*)").must()
+    assert u.host == "ldap.example.org" && u.port == 389 && u.attributes == ["cn"] && u.scope == .subtree
+
+# A URL written back, its defaults left out.
+test "format_url: defaults left out"
+    assert format_url(parse_url("ldap://h:389/dc=x??base?(objectClass=*)").must()).must() == "ldap://h/dc=x"
+
+# The options of the server a URL names.
+test "to_options: ldaps"
+    assert to_options(parse_url("ldaps://ldap.example.org").must()).security == .direct(roots: "")
+
+# The search a URL names.
+test "to_query: a base and a filter"
+    assert to_query(parse_url("ldap:///dc=x??one?(cn=A*)").must()).scope == .one_level

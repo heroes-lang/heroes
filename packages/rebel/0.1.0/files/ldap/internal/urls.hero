@@ -1,0 +1,240 @@
+# LDAP URLs (RFC 4516) as text: split into their parts at `://`, `/` and
+# `?`, each part's percent escapes read by `url.unescape`, and written back
+# with every byte RFC 4516 asks escaped. `ldaps` is read beside `ldap`, as
+# every client reads it. The face makes its `Url` from the parts.
+
+use bytes
+use numbers
+use strings
+use url
+
+constant INVALID: str
+    "invalid"
+
+# What an LDAP URL holds, its escapes read.
+record Parts
+    # `ldap` or `ldaps`, lower case.
+    scheme: str
+    # The host, without brackets; "" for none.
+    host: str
+    # The port, 0 for none.
+    port: i64
+    # The base name.
+    dn: str
+    # The attributes.
+    attributes: [str]
+    # `base`, `one`, `sub`, `children`, lower case, or "" for none.
+    scope: str
+    # The filter's text, "" for none.
+    filter: str
+    # The extensions.
+    extensions: [str]
+
+# `s` with its percent escapes read, for a message naming `what`.
+function unescaped(s: str, what: str) -> str?
+    return match url.unescape(s)
+        .ok t  => ok(t)
+        .err e => fail(code: INVALID, msg: f"the {what} of an LDAP URL: {e.msg}")
+
+# The parts of the LDAP URL `s`.
+#
+# Fails `invalid` where `s` is not one.
+function parse(s: str) -> Parts?
+    halves = match strings.split_once(s: s, sep: "://")
+        .ok h  => h
+        .err _ => return fail(code: INVALID, msg: f"\"{s}\" is no LDAP URL: no \"://\"")
+
+    scheme = strings.to_lower_ascii(halves.before)
+
+    if scheme != "ldap" && scheme != "ldaps"
+        return fail(code: INVALID, msg: f"the scheme \"{halves.before}\", where an LDAP URL has ldap or ldaps")
+    rest = halves.after
+    slash = strings.index_of(s: rest, substr: "/").default(rest.len())
+    authority = rest.slice(from: 0, to: slash)
+    host @= authority
+    port @= 0
+
+    if strings.has_prefix(s: authority, prefix: "[")
+        close = match strings.index_of(s: authority, substr: "]")
+            .ok at => at
+            .err _ => return fail(code: INVALID, msg: f"the host \"{authority}\" opens a \"[\" it does not close")
+
+        host @ authority.slice(from: 1, to: close)
+        after = authority.slice(from: close + 1, to: authority.len())
+
+        if after != ""
+            if !strings.has_prefix(s: after, prefix: ":")
+                return fail(code: INVALID, msg: f"bytes after the host \"{authority}\"")
+            port @ read_port(after.slice(from: 1, to: after.len()))?
+    else
+        match strings.index_of_last(s: authority, substr: ":")
+            .ok at =>
+                host @ authority.slice(from: 0, to: at)
+                port @ read_port(authority.slice(from: at + 1, to: authority.len()))?
+            .err _ => _ = 0
+
+    host @ unescaped(s: host, what: "host")?
+    parts @= Parts(
+        scheme: scheme,
+        host: host,
+        port: port,
+        dn: "",
+        attributes: [],
+        scope: "",
+        filter: "",
+        extensions: []
+    )
+
+    if slash == rest.len()
+        return ok(parts)
+    fields = strings.split(s: rest.slice(from: slash + 1, to: rest.len()), sep: "?")
+
+    if fields.len() > 5
+        return fail(code: INVALID, msg: f"an LDAP URL of {fields.len()} parts after its host, where it has 5 at most")
+    parts.dn @ unescaped(s: fields[0], what: "base")?
+
+    if fields.len() > 1 && fields[1] != ""
+        names: [str] @= []
+
+        for a in strings.split(s: fields[1], sep: ",")
+            name = unescaped(s: a, what: "attributes")?
+
+            if name == ""
+                return fail(code: INVALID, msg: f"an empty attribute in \"{fields[1]}\"")
+            names @ names.push(name)
+
+        parts.attributes @ names
+
+    if fields.len() > 2 && fields[2] != ""
+        scope = strings.to_lower_ascii(unescaped(s: fields[2], what: "scope")?)
+
+        if scope != "base" && scope != "one" && scope != "sub" && scope != "children"
+            return fail(
+                code: INVALID,
+                msg: f"the scope \"{fields[2]}\", where an LDAP URL has base, one, sub or children"
+            )
+        parts.scope @ scope
+
+    if fields.len() > 3
+        parts.filter @ unescaped(s: fields[3], what: "filter")?
+
+    if fields.len() > 4 && fields[4] != ""
+        written: [str] @= []
+
+        for e in strings.split(s: fields[4], sep: ",")
+            extension = unescaped(s: e, what: "extensions")?
+
+            if extension == "" || extension == "!"
+                return fail(code: INVALID, msg: f"an empty extension in \"{fields[4]}\"")
+            written @ written.push(extension)
+
+        parts.extensions @ written
+
+    return ok(parts)
+
+# The port `s` writes, 1 to 65535.
+function read_port(s: str) -> i64?
+    if s == ""
+        return ok(0)
+
+    for k in range(from: 0, to: s.len())
+        if s[k] < '0' || s[k] > '9'
+            return fail(code: INVALID, msg: f"the port \"{s}\" is not a number")
+
+    return match numbers.parse_int(s)
+        .ok p =>
+            if p < 1 || p > 65535
+                fail(code: INVALID, msg: f"the port {s}, outside 1 to 65535")
+            else
+                ok(p)
+        .err _ => fail(code: INVALID, msg: f"the port \"{s}\" is not a number")
+
+# `s` with every byte escaped as `%` and two upper-case hexadecimal digits
+# but the letters, digits and `-._~!$&'()*+;=:@/`, and `,` where `comma`
+# is true.
+function escape(s: str, comma: bool) -> str
+    digits = "0123456789ABCDEF"
+    out: [u8] @= []
+
+    for c in bytes.from_text(s)
+        kept = c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '-' || c == '.' || c == '_' || c == '~' || c == '!' || c == '$' || c == '&' || c == '\'' || c == '(' || c == ')' || c == '*' || c == '+' || c == ';' || c == '=' || c == ':' || c == '@' || c == '/' || c == ',' && comma
+
+        if kept
+            out @ out.push(c)
+        else
+            v = to_i64(c).must()
+            out @ out.push('%')
+            out @ out.push(digits[v / 16])
+            out @ out.push(digits[v % 16])
+
+    return bytes.to_text(out).must()
+
+# The text of the URL `p`; `filter` "" and `scope` "" write none. A part
+# equal to its default is written only where a later part is.
+function format(p: Parts) -> str
+    pieces: [str] @= [p.scheme, "://"]
+
+    if strings.contains(s: p.host, substr: ":")
+        pieces @ pieces.push("[" + p.host + "]")
+    else
+        pieces @ pieces.push(escape(p.host, comma: true))
+
+    if p.port != 0
+        pieces @ pieces.push(":" + to_str(p.port))
+    names: [str] @= []
+
+    for a in p.attributes
+        names @ names.push(escape(a, comma: false))
+
+    exts: [str] @= []
+
+    for e in p.extensions
+        exts @ exts.push(escape(e, comma: false))
+
+    fields: [str] = [escape(p.dn, comma: true), names.join(","), p.scope, escape(p.filter, comma: true), exts.join(",")]
+    last @= fields.len() - 1
+
+    while last >= 0 && fields[last] == ""
+        last @ last - 1
+
+    if last >= 0
+        pieces @ pieces.push("/")
+
+        for k in range(from: 0, to: last + 1)
+            if k > 0
+                pieces @ pieces.push("?")
+            pieces @ pieces.push(fields[k])
+
+    return pieces.join("")
+
+## Tests
+
+test "parse: RFC 4516's examples, a port, IPv6, percent escapes and an extension"
+    a = parse("ldap:///o=University%20of%20Michigan,c=US").must()
+    assert a.scheme == "ldap" && a.host == "" && a.port == 0 && a.dn == "o=University of Michigan,c=US"
+    b = parse("ldap://ldap1.example.net/o=University%20of%20Michigan,c=US?postalAddress").must()
+    assert b.host == "ldap1.example.net" && b.attributes == ["postalAddress"]
+    c = parse("ldap://ldap1.example.net:6666/o=University%20of%20Michigan,c=US??sub?(cn=Babs%20Jensen)").must()
+    assert c.port == 6666 && c.scope == "sub" && c.filter == "(cn=Babs Jensen)" && c.attributes == []
+    d = parse("LDAP://ldap1.example.com/c=GB?objectClass?ONE").must()
+    assert d.scheme == "ldap" && d.scope == "one"
+    e = parse("ldap://ldap2.example.com/o=Question%3f,c=US?mail").must()
+    assert e.dn == "o=Question?,c=US"
+    f = parse("ldap:///??sub??e-bindname=cn=Manager%2cdc=example%2cdc=com").must()
+    assert f.extensions == ["e-bindname=cn=Manager,dc=example,dc=com"] && f.dn == ""
+    g = parse("ldaps://[::1]:636/dc=x?cn,mail?base?(objectClass=*)?!bindname=cn=a").must()
+    assert g.scheme == "ldaps" && g.host == "::1" && g.port == 636 && g.attributes == ["cn", "mail"] && g.extensions == ["!bindname=cn=a"]
+    assert parse("ldap://h").must().dn == ""
+
+test "parse: URLs refused"
+    for bad in ["http://x/", "ldap:/x", "ldap://h:0/", "ldap://h:65536/", "ldap://h:x/", "ldap://h/dc=x?a?wide", "ldap://h/a?b?c?d?e?f", "ldap://h/%zz", "ldap://[::1/", "ldap://h/x?a,,b", "ldap://h/x????,"]
+        match parse(bad)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+test "format: the parts written back, defaults left out, escapes where RFC 4516 asks"
+    assert format(parse("ldap://ldap1.example.net:6666/o=University%20of%20Michigan,c=US??sub?(cn=Babs%20Jensen)").must()) == "ldap://ldap1.example.net:6666/o=University%20of%20Michigan,c=US??sub?(cn=Babs%20Jensen)"
+    assert format(parse("ldap://h").must()) == "ldap://h"
+    assert format(parse("ldaps://[::1]:636/dc=x?cn,mail").must()) == "ldaps://[::1]:636/dc=x?cn,mail"
+    assert format(parse("ldap://h/o=Question%3f,c=US").must()) == "ldap://h/o=Question%3F,c=US"
+    assert format(parse("ldap:///??sub??e-bindname=cn=Manager%2cdc=example").must()) == "ldap:///??sub??e-bindname=cn=Manager%2Cdc=example"

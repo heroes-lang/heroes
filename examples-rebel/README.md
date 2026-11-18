@@ -136,7 +136,7 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 5 | `x509` | certificates, requests and revocation lists read, their names, extensions and keys; a chain put in order | `asn1`, `big`, `bytes`, `crypto/keypairs`, `net`, `pem`, `strings`, `time` |  |
 | 5 | `fs/watch` | a file or a folder watched, and told what changed | `fs`, `io`, `net`, `path`, `poll`, `time` | `hero_watch.h` |
 | 5 | `sql/odbc` | any database the system's ODBC manager reaches, through the one `sql` API | `bytes`, `os`, `sql`, `time` | `hero_odbc.h` |
-| 5 | `ldap` | an LDAP client: bind, search, change, over TLS | `asn1`, `net`, `tls`, `strings` |  |
+| 5 | `ldap` | an LDAP client: bind, search, change, over TLS | `asn1`, `bytes`, `io`, `net`, `numbers`, `os`, `strings`, `threads`, `time`, `tls`, `url` |  |
 | 5 | `config` | settings read in layers (files, the environment, flags, `.env` files) with a precedence, read by path | `flags`, `ini`, `json`, `numbers`, `os`, `path`, `strings`, `time`, `toml`, `yaml` |  |
 | 5 | `amqp` | an AMQP 0-9-1 client (RabbitMQ): channels, exchanges, queues, publish and consume, acknowledgements | `net`, `tls`, `bytes`, `time` |  |
 | 5 | `kafka` | a Kafka client: produce, fetch, offsets and consumer groups over the wire protocol | `net`, `tls`, `bytes`, `compress`, `hash`, `time` |  |

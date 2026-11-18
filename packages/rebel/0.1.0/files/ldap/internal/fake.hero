@@ -1,0 +1,363 @@
+# The loopback LDAP server of `ldap`'s tests, written here in Heroes: a
+# thread of its own listens on 127.0.0.1, in plain text, by TLS from the
+# first byte or with StartTLS through `tls.listen_after` and its test
+# certificates, and plays a script: each message the client sends is read
+# whole, its bytes checked against the request the script expects, and the
+# script's canned BER answered. A thread runs a function of one `str` and
+# answers one (spec § 13), so the script crosses by name and the server
+# answers `ok`, or what went wrong.
+
+use bytes
+use io
+use ldap/internal/wire
+use net
+use numbers
+use strings
+use time
+use tls
+
+# One turn of a script.
+record Turn
+    # The request expected, in hexadecimal; `*` for any one message.
+    expect: str
+    # The bytes answered, in hexadecimal; `wait` waits two seconds and
+    # closes; "" closes at once.
+    reply: str
+
+# The script named `name`: each turn the request expected, in
+# hexadecimal (`*` for any one message), and the bytes answered (`wait`
+# to wait two seconds and close, "" to close at once). Every byte was
+# made by Python's `ldap3` 2.9.1, its own operation builders and protocol
+# classes, on 2026-11-18.
+function script(name: str) -> [Turn]
+    return match name
+        "bind" => [
+            Turn(expect: "302c0201016027020103041a636e3d61646d696e2c64633d6578616d706c652c64633d6f72678006736563726574", reply: "300c02010161070a010004000400")
+            Turn(expect: "*", reply: "")
+        ]
+        "bind-refused" => [
+            Turn(expect: "302c0201016027020103041a636e3d61646d696e2c64633d6578616d706c652c64633d6f72678006736563726574", reply: "301f020101611a0a013104000413696e76616c69642063726564656e7469616c73")
+            Turn(expect: "*", reply: "")
+        ]
+        "anonymous" => [
+            Turn(expect: "300c020101600702010304008000", reply: "300c02010161070a010004000400")
+            Turn(expect: "*", reply: "")
+        ]
+        "external" => [
+            Turn(expect: "301602010160110201030400a30a040845585445524e414c", reply: "300c02010161070a010004000400")
+            Turn(expect: "*", reply: "")
+        ]
+        "plain" => [
+            Turn(expect: "3020020101601b0201030400a3140405504c41494e040b00616e6100736563726574", reply: "300c02010161070a010004000400")
+            Turn(expect: "*", reply: "")
+        ]
+        "sasl-steps" => [
+            Turn(expect: "301602010160110201030400a30a040845585445524e414c", reply: "301702010161120a010e0400040087096368616c6c656e6765")
+            Turn(expect: "*", reply: "")
+        ]
+        "search" => [
+            Turn(expect: "302c0201016027020103041a636e3d61646d696e2c64633d6578616d706c652c64633d6f72678006736563726574", reply: "300c02010161070a010004000400")
+            Turn(expect: "30590201026354041164633d6578616d706c652c64633d6f72670a01020a0100020100020100010100a024a315040b6f626a656374436c6173730406706572736f6ea40b0402636e30058003416e61300a0402636e04046d61696c", reply: "306f020102646a041e636e3d416e6120526f7373692c64633d6578616d706c652c64633d6f7267304830110402636e310b0409416e6120526f737369302004046d61696c3118040f616e61406578616d706c652e6f726704056140622e63301104096a70656750686f746f31040402ffd83028020102732304216c6461703a2f2f6f746865722e6578616d706c652e6f72672f64633d6f74686572300c02010265070a010004000400")
+            Turn(expect: "*", reply: "")
+        ]
+        "search-size" => [
+            Turn(expect: "302c0201016027020103041a636e3d61646d696e2c64633d6578616d706c652c64633d6f72678006736563726574", reply: "300c02010161070a010004000400")
+            Turn(expect: "30590201026354041164633d6578616d706c652c64633d6f72670a01020a0100020100020100010100a024a315040b6f626a656374436c6173730406706572736f6ea40b0402636e30058003416e61300a0402636e04046d61696c", reply: "306f020102646a041e636e3d416e6120526f7373692c64633d6578616d706c652c64633d6f7267304830110402636e310b0409416e6120526f737369302004046d61696c3118040f616e61406578616d706c652e6f726704056140622e63301104096a70656750686f746f31040402ffd8300c02010265070a010404000400")
+            Turn(expect: "*", reply: "")
+        ]
+        "search-limits" => [
+            Turn(expect: "302c0201016027020103041a636e3d61646d696e2c64633d6578616d706c652c64633d6f72678006736563726574", reply: "300c02010161070a010004000400")
+            Turn(expect: "3032020102632d041164633d6578616d706c652c64633d6f72670a01020a01000201010201050101ff8702636e30050403312e31", reply: "302e02010264290418636e3d4265612c64633d6578616d706c652c64633d6f7267300d300b0402636e31050403426561300c02010265070a010404000400")
+            Turn(expect: "*", reply: "")
+        ]
+        "search-nosuch" => [
+            Turn(expect: "302c0201016027020103041a636e3d61646d696e2c64633d6578616d706c652c64633d6f72678006736563726574", reply: "300c02010161070a010004000400")
+            Turn(expect: "30590201026354041164633d6578616d706c652c64633d6f72670a01020a0100020100020100010100a024a315040b6f626a656374436c6173730406706572736f6ea40b0402636e30058003416e61300a0402636e04046d61696c", reply: "302a02010265250a0120041164633d6578616d706c652c64633d6f7267040d6e6f207375636820656e747279")
+            Turn(expect: "*", reply: "")
+        ]
+        "paged" => [
+            Turn(expect: "302c0201016027020103041a636e3d61646d696e2c64633d6578616d706c652c64633d6f72678006736563726574", reply: "300c02010161070a010004000400")
+            Turn(expect: "305e0201026331041164633d6578616d706c652c64633d6f72670a01020a0100020100020100010100870b6f626a656374436c6173733000a02630240416312e322e3834302e3131333535362e312e342e3331390101ff040730050201020400", reply: "306f020102646a041e636e3d416e6120526f7373692c64633d6578616d706c652c64633d6f7267304830110402636e310b0409416e6120526f737369302004046d61696c3118040f616e61406578616d706c652e6f726704056140622e63301104096a70656750686f746f31040402ffd8303302010265070a010004000400a02530230416312e322e3834302e3131333535362e312e342e3331390409300702010004026331")
+            Turn(expect: "30600201036331041164633d6578616d706c652c64633d6f72670a01020a0100020100020100010100870b6f626a656374436c6173733000a02830260416312e322e3834302e3131333535362e312e342e3331390101ff0409300702010204026331", reply: "302e02010364290418636e3d4265612c64633d6578616d706c652c64633d6f7267300d300b0402636e31050403426561303102010365070a010004000400a02330210416312e322e3834302e3131333535362e312e342e333139040730050201000400")
+            Turn(expect: "*", reply: "")
+        ]
+        "lookup" => [
+            Turn(expect: "302c0201016027020103041a636e3d61646d696e2c64633d6578616d706c652c64633d6f72678006736563726574", reply: "300c02010161070a010004000400")
+            Turn(expect: "3041020102633c0418636e3d416e612c64633d6578616d706c652c64633d6f72670a01000a0100020100020100010100870b6f626a656374436c61737330040402636e", reply: "302e02010264290418636e3d4265612c64633d6578616d706c652c64633d6f7267300d300b0402636e31050403426561300c02010265070a010004000400")
+            Turn(expect: "*", reply: "")
+        ]
+        "lookup-none" => [
+            Turn(expect: "302c0201016027020103041a636e3d61646d696e2c64633d6578616d706c652c64633d6f72678006736563726574", reply: "300c02010161070a010004000400")
+            Turn(expect: "3041020102633c0418636e3d416e612c64633d6578616d706c652c64633d6f72670a01000a0100020100020100010100870b6f626a656374436c61737330040402636e", reply: "300c02010265070a010004000400")
+            Turn(expect: "*", reply: "")
+        ]
+        "add" => [
+            Turn(expect: "302c0201016027020103041a636e3d61646d696e2c64633d6578616d706c652c64633d6f72678006736563726574", reply: "300c02010161070a010004000400")
+            Turn(expect: "305602010268510418636e3d416e612c64633d6578616d706c652c64633d6f726730353017040b6f626a656374436c61737331080406706572736f6e300b0402636e31050403416e61300d0402736e31070405526f737369", reply: "300c02010269070a010004000400")
+            Turn(expect: "*", reply: "")
+        ]
+        "add-exists" => [
+            Turn(expect: "302c0201016027020103041a636e3d61646d696e2c64633d6578616d706c652c64633d6f72678006736563726574", reply: "300c02010161070a010004000400")
+            Turn(expect: "305602010268510418636e3d416e612c64633d6578616d706c652c64633d6f726730353017040b6f626a656374436c61737331080406706572736f6e300b0402636e31050403416e61300d0402736e31070405526f737369", reply: "300c02010269070a014404000400")
+            Turn(expect: "*", reply: "")
+        ]
+        "modify" => [
+            Turn(expect: "302c0201016027020103041a636e3d61646d696e2c64633d6578616d706c652c64633d6f72678006736563726574", reply: "300c02010161070a010004000400")
+            Turn(expect: "30818f0201026681890418636e3d416e612c64633d6578616d706c652c64633d6f7267306d301e0a0102301904046d61696c3111040f616e61406578616d706c652e6f7267301a0a01003015040b6465736372697074696f6e310604017804017930180a01013013040f74656c6570686f6e654e756d626572310030150a0103301004097569644e756d6265723103040131", reply: "300c02010267070a010004000400")
+            Turn(expect: "*", reply: "")
+        ]
+        "delete-nosuch" => [
+            Turn(expect: "302c0201016027020103041a636e3d61646d696e2c64633d6578616d706c652c64633d6f72678006736563726574", reply: "300c02010161070a010004000400")
+            Turn(expect: "301d0201024a18636e3d416e612c64633d6578616d706c652c64633d6f7267", reply: "302a0201026b250a0120041164633d6578616d706c652c64633d6f7267040d6e6f207375636820656e747279")
+            Turn(expect: "*", reply: "")
+        ]
+        "delete-nonleaf" => [
+            Turn(expect: "302c0201016027020103041a636e3d61646d696e2c64633d6578616d706c652c64633d6f72678006736563726574", reply: "300c02010161070a010004000400")
+            Turn(expect: "301d0201024a18636e3d416e612c64633d6578616d706c652c64633d6f7267", reply: "300c0201026b070a014204000400")
+            Turn(expect: "*", reply: "")
+        ]
+        "delete-referral" => [
+            Turn(expect: "302c0201016027020103041a636e3d61646d696e2c64633d6578616d706c652c64633d6f72678006736563726574", reply: "300c02010161070a010004000400")
+            Turn(expect: "301d0201024a18636e3d416e612c64633d6578616d706c652c64633d6f7267", reply: "30410201026b3c0a010a04000400a33304316c6461703a2f2f6f746865722e6578616d706c652e6f72672f636e3d416e612c64633d6578616d706c652c64633d6f7267")
+            Turn(expect: "*", reply: "")
+        ]
+        "delete-managed" => [
+            Turn(expect: "302c0201016027020103041a636e3d61646d696e2c64633d6578616d706c652c64633d6f72678006736563726574", reply: "300c02010161070a010004000400")
+            Turn(expect: "303d0201024a18636e3d416e612c64633d6578616d706c652c64633d6f7267a01e301c0417322e31362e3834302e312e3131333733302e332e342e320101ff", reply: "300c0201026b070a010004000400")
+            Turn(expect: "*", reply: "")
+        ]
+        "rename" => [
+            Turn(expect: "302c0201016027020103041a636e3d61646d696e2c64633d6578616d706c652c64633d6f72678006736563726574", reply: "300c02010161070a010004000400")
+            Turn(expect: "30480201026c430418636e3d416e612c64633d6578616d706c652c64633d6f72670407636e3d416e6e610101ff801b6f753d70656f706c652c64633d6578616d706c652c64633d6f7267", reply: "300c0201026d070a010004000400")
+            Turn(expect: "*", reply: "")
+        ]
+        "rename-here" => [
+            Turn(expect: "302c0201016027020103041a636e3d61646d696e2c64633d6578616d706c652c64633d6f72678006736563726574", reply: "300c02010161070a010004000400")
+            Turn(expect: "302b0201026c260418636e3d416e612c64633d6578616d706c652c64633d6f72670407636e3d416e6e61010100", reply: "300c0201026d070a010004000400")
+            Turn(expect: "*", reply: "")
+        ]
+        "compare" => [
+            Turn(expect: "302c0201016027020103041a636e3d61646d696e2c64633d6578616d706c652c64633d6f72678006736563726574", reply: "300c02010161070a010004000400")
+            Turn(expect: "302c0201026e270418636e3d416e612c64633d6578616d706c652c64633d6f7267300b0402736e0405526f737369", reply: "300c0201026f070a010604000400")
+            Turn(expect: "302c0201036e270418636e3d416e612c64633d6578616d706c652c64633d6f7267300b0402736e0405526f737369", reply: "300c0201036f070a010504000400")
+            Turn(expect: "*", reply: "")
+        ]
+        "whoami" => [
+            Turn(expect: "302c0201016027020103041a636e3d61646d696e2c64633d6578616d706c652c64633d6f72678006736563726574", reply: "300c02010161070a010004000400")
+            Turn(expect: "301e02010277198017312e332e362e312e342e312e343230332e312e31312e33", reply: "302b02010278260a0100040004008b1d646e3a636e3d61646d696e2c64633d6578616d706c652c64633d6f7267")
+            Turn(expect: "*", reply: "")
+        ]
+        "passwd" => [
+            Turn(expect: "302c0201016027020103041a636e3d61646d696e2c64633d6578616d706c652c64633d6f72678006736563726574", reply: "300c02010161070a010004000400")
+            Turn(expect: "304602010277418017312e332e362e312e342e312e343230332e312e31312e31812630248018636e3d416e612c64633d6578616d706c652c64633d6f726781036f6c6482036e6577", reply: "301602010278110a0100040004008b083006800458793132")
+            Turn(expect: "*", reply: "")
+        ]
+        "notice" => [
+            Turn(expect: "302c0201016027020103041a636e3d61646d696e2c64633d6578616d706c652c64633d6f72678006736563726574", reply: "300c02010161070a010004000400")
+            Turn(expect: "301e02010277198017312e332e362e312e342e312e343230332e312e31312e33", reply: "3031020100782c0a01340400040d7368757474696e6720646f776e8a16312e332e362e312e342e312e313436362e3230303336")
+        ]
+        "garbage" => [
+            Turn(expect: "302c0201016027020103041a636e3d61646d696e2c64633d6578616d706c652c64633d6f72678006736563726574", reply: "300c02010161070a010004000400")
+            Turn(expect: "301e02010277198017312e332e362e312e342e312e343230332e312e31312e33", reply: "ff00")
+        ]
+        "huge" => [
+            Turn(expect: "302c0201016027020103041a636e3d61646d696e2c64633d6578616d706c652c64633d6f72678006736563726574", reply: "300c02010161070a010004000400")
+            Turn(expect: "301e02010277198017312e332e362e312e342e312e343230332e312e31312e33", reply: "30847fffffff")
+        ]
+        "silent" => [
+            Turn(expect: "302c0201016027020103041a636e3d61646d696e2c64633d6578616d706c652c64633d6f72678006736563726574", reply: "300c02010161070a010004000400")
+            Turn(expect: "301e02010277198017312e332e362e312e342e312e343230332e312e31312e33", reply: "wait")
+        ]
+        "abandon" => [
+            Turn(expect: "302c0201016027020103041a636e3d61646d696e2c64633d6578616d706c652c64633d6f72678006736563726574", reply: "300c02010161070a010004000400")
+            Turn(expect: "30590201026354041164633d6578616d706c652c64633d6f72670a01020a0100020100020100010100a024a315040b6f626a656374436c6173730406706572736f6ea40b0402636e30058003416e61300a0402636e04046d61696c", reply: "306f020102646a041e636e3d416e6120526f7373692c64633d6578616d706c652c64633d6f7267304830110402636e310b0409416e6120526f737369302004046d61696c3118040f616e61406578616d706c652e6f726704056140622e63301104096a70656750686f746f31040402ffd8302e02010264290418636e3d4265612c64633d6578616d706c652c64633d6f7267300d300b0402636e31050403426561")
+            Turn(expect: "3006020103500102", reply: "300c02010265070a010004000400")
+            Turn(expect: "301e02010477198017312e332e362e312e342e312e343230332e312e31312e33", reply: "302b02010478260a0100040004008b1d646e3a636e3d61646d696e2c64633d6578616d706c652c64633d6f7267")
+            Turn(expect: "*", reply: "")
+        ]
+        "starttls" => [
+            Turn(expect: "302c0201026027020103041a636e3d61646d696e2c64633d6578616d706c652c64633d6f72678006736563726574", reply: "300c02010261070a010004000400")
+            Turn(expect: "301e02010377198017312e332e362e312e342e312e343230332e312e31312e33", reply: "302b02010378260a0100040004008b1d646e3a636e3d61646d696e2c64633d6578616d706c652c64633d6f7267")
+            Turn(expect: "*", reply: "")
+        ]
+        "starttls-refused" => [
+            Turn(expect: "301d02010177188016312e332e362e312e342e312e313436362e3230303337", reply: "302a02010178250a01020400041e756e737570706f7274656420657874656e646564206f7065726174696f6e")
+        ]
+        "rootdse" => [
+            Turn(expect: "302c0201016027020103041a636e3d61646d696e2c64633d6578616d706c652c64633d6f72678006736563726574", reply: "300c02010161070a010004000400")
+            Turn(expect: "302b020102632604000a01000a0100020100020100010100870b6f626a656374436c617373300604012a04012b", reply: "3074020102646f0400306b3025040b6f626a656374436c61737331160403746f70040f4f70656e4c444150726f6f744453453025040e6e616d696e67436f6e74657874733113041164633d6578616d706c652c64633d6f7267301b0414737570706f727465644c44415056657273696f6e3103040133300c02010265070a010004000400")
+            Turn(expect: "*", reply: "")
+        ]
+        "unauthenticated" => [
+            Turn(expect: "3014020101600f0201030408636e3d67756573748000", reply: "3041020101613c0a013504000435756e61757468656e746963617465642062696e642028444e2077697468206e6f2070617373776f72642920646973616c6c6f776564")
+            Turn(expect: "*", reply: "")
+        ]
+        "paged-one" => [
+            Turn(expect: "302c0201016027020103041a636e3d61646d696e2c64633d6578616d706c652c64633d6f72678006736563726574", reply: "300c02010161070a010004000400")
+            Turn(expect: "305e0201026331041164633d6578616d706c652c64633d6f72670a01020a0100020100020100010100870b6f626a656374436c6173733000a02630240416312e322e3834302e3131333535362e312e342e3331390101ff040730050201020400", reply: "306f020102646a041e636e3d416e6120526f7373692c64633d6578616d706c652c64633d6f7267304830110402636e310b0409416e6120526f737369302004046d61696c3118040f616e61406578616d706c652e6f726704056140622e63301104096a70656750686f746f31040402ffd8303302010265070a010004000400a02530230416312e322e3834302e3131333535362e312e342e3331390409300702010004026331")
+            Turn(expect: "*", reply: "")
+        ]
+        "abandon-only" => [
+            Turn(expect: "302c0201016027020103041a636e3d61646d696e2c64633d6578616d706c652c64633d6f72678006736563726574", reply: "300c02010161070a010004000400")
+            Turn(expect: "30590201026354041164633d6578616d706c652c64633d6f72670a01020a0100020100020100010100a024a315040b6f626a656374436c6173730406706572736f6ea40b0402636e30058003416e61300a0402636e04046d61696c", reply: "306f020102646a041e636e3d416e6120526f7373692c64633d6578616d706c652c64633d6f7267304830110402636e310b0409416e6120526f737369302004046d61696c3118040f616e61406578616d706c652e6f726704056140622e63301104096a70656750686f746f31040402ffd8302e02010264290418636e3d4265612c64633d6578616d706c652c64633d6f7267300d300b0402636e31050403426561")
+            Turn(expect: "3006020103500102", reply: "")
+        ]
+        _ => []
+
+# The StartTLS request this client sends first, and the answer to it.
+function starttls_steps() -> [tls.Step]
+    return [
+        .expect(answer: bytes.parse_hex("301d02010177188016312e332e362e312e342e312e313436362e3230303337").must())
+        .send(data: bytes.parse_hex("3024020101781f0a0100040004008a16312e332e362e312e342e312e313436362e3230303337").must())
+    ]
+
+# A port of the loopback address nothing listens on now.
+function free_port() -> i64
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    port = l.address.port
+    net.close_listener(@l).must()
+    return port
+
+# Waits until something listens on `port` of the loopback address, for
+# about ten seconds at most, by trying to listen there itself: `exists` says
+# the server is up, and no connection is spent on asking.
+function until_listening(port: i64)
+    tries @= 0
+
+    while tries < 500
+        tries @ tries + 1
+
+        match net.listen(host: "127.0.0.1", port: port)
+            .ok taken =>
+                l @= taken
+                net.close_listener(@l).must()
+                time.sleep(time.Duration(nanoseconds: 20000000))
+            .err e =>
+                if e.code == net.EXISTS
+                    return
+                time.sleep(time.Duration(nanoseconds: 20000000))
+
+# A plain listener on `port` of the loopback address, tried again for about
+# two seconds while `until_listening` holds the port for a moment.
+function listening(port: i64) -> net.Listener?
+    tries @= 0
+
+    while true
+        tries @ tries + 1
+
+        match net.listen(host: "127.0.0.1", port: port)
+            .ok l => return ok(l)
+            .err e =>
+                if tries >= 100
+                    return fail(code: e.code, msg: e.msg)
+                time.sleep(time.Duration(nanoseconds: 20000000))
+
+# A TLS listener on `port`, with StartTLS's exchange before TLS where
+# `starttls`, tried again as `listening` tries.
+function listening_tls(port: i64, server: tls.Server, starttls: bool) -> tls.Listener?
+    tries @= 0
+
+    while true
+        tries @ tries + 1
+
+        made = if starttls
+            tls.listen_after(host: "127.0.0.1", port: port, server: server, steps: starttls_steps())
+        else
+            tls.listen(host: "127.0.0.1", port: port, server: server)
+
+        match made
+            .ok l => return ok(l)
+            .err e =>
+                if tries >= 100
+                    return fail(code: e.code, msg: e.msg)
+                time.sleep(time.Duration(nanoseconds: 20000000))
+
+# Plays `turns` on `stream`, and answers `ok` or what went wrong.
+function play(stream: io.Stream, turns: [Turn]) -> str
+    r @= io.reader(stream)
+
+    for k in range(from: 0, to: turns.len())
+        t = turns[k]
+
+        heard = match wire.read_raw(@r, most: 1048576)
+            .ok got => got
+            .err e  => return f"turn {k}: {e.code}: {e.msg}"
+
+        if t.expect != "*" && bytes.format_hex(heard) != t.expect
+            return f"turn {k}: heard {bytes.format_hex(heard)}"
+
+        if t.reply == ""
+            return "ok"
+
+        if t.reply == "wait"
+            time.sleep(time.Duration(nanoseconds: 2000000000))
+            return "ok"
+
+        match io.write(stream, data: bytes.parse_hex(t.reply).must())
+            .ok _  => _ = 0
+            .err e => return f"turn {k}: writing: {e.code}: {e.msg}"
+
+    return "ok"
+
+# The server on a thread of its own: `arg` is `"<mode> <port> <script>"`,
+# the mode `plain`, `ldaps` or `starttls`. It accepts until a connection
+# plays the script (StartTLS on macOS spends one connection on asking
+# first), and answers `ok` or what went wrong.
+function serve(arg: str) -> str
+    parts = strings.split(s: arg, sep: " ")
+
+    if parts.len() != 3
+        return "invalid: not \"<mode> <port> <script>\": " + arg
+    port = numbers.parse_int(parts[1]).default(0)
+    turns = script(parts[2])
+
+    if turns.len() == 0
+        return "no script named " + parts[2]
+
+    if parts[0] == "plain"
+        l @= match listening(port)
+            .ok made => made
+            .err e   => return "listen failed: " + e.code + ": " + e.msg
+
+        net.set_accept_deadline(l, ms: 15000).must()
+
+        heard = match net.accept(l, deadline_ms: 15000)
+            .err e => e.code + ": " + e.msg
+            .ok c =>
+                s @= c.stream
+                played = play(stream: s, turns: turns)
+                io.close(@s).must()
+                played
+
+        net.close_listener(@l).must()
+        return heard
+
+    server = tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: [])
+
+    l @= match listening_tls(port, server: server, starttls: parts[0] == "starttls")
+        .ok made => made
+        .err e   => return "listen failed: " + e.code + ": " + e.msg
+
+    tls.set_accept_deadline(l, ms: 15000).must()
+    heard: str @= "closed: no client finished its handshake"
+    tries @= 0
+
+    while tries < 3
+        tries @ tries + 1
+
+        match tls.accept(l, deadline_ms: 10000)
+            .err e =>
+                heard @ e.code + ": " + e.msg
+
+                if e.code == "timeout"
+                    break
+            .ok taken =>
+                s @= taken
+                heard @ play(stream: s, turns: turns)
+
+                if !io.is_closed(s)
+                    io.close(@s).must()
+                break
+
+    tls.close_listener(@l).must()
+    return heard
