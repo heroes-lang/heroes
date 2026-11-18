@@ -1,0 +1,1022 @@
+# HPACK's Huffman code (RFC 7541 § 5.2 and Appendix B): a string's bytes
+# written in the code and read back. The tables below are the appendix's,
+# read from the RFC's text; the code is canonical (the codes of one length
+# are consecutive, taken in the order of their symbols), so reading walks
+# the lengths and needs no tree.
+
+## The code
+
+# The code of each symbol of RFC 7541 Appendix B, 0 to 255 and EOS (256),
+# its bits at the right of the number.
+constant CODES: [i64]
+    [
+        0x1ff8
+        0x7fffd8
+        0xfffffe2
+        0xfffffe3
+        0xfffffe4
+        0xfffffe5
+        0xfffffe6
+        0xfffffe7
+        0xfffffe8
+        0xffffea
+        0x3ffffffc
+        0xfffffe9
+        0xfffffea
+        0x3ffffffd
+        0xfffffeb
+        0xfffffec
+        0xfffffed
+        0xfffffee
+        0xfffffef
+        0xffffff0
+        0xffffff1
+        0xffffff2
+        0x3ffffffe
+        0xffffff3
+        0xffffff4
+        0xffffff5
+        0xffffff6
+        0xffffff7
+        0xffffff8
+        0xffffff9
+        0xffffffa
+        0xffffffb
+        0x14
+        0x3f8
+        0x3f9
+        0xffa
+        0x1ff9
+        0x15
+        0xf8
+        0x7fa
+        0x3fa
+        0x3fb
+        0xf9
+        0x7fb
+        0xfa
+        0x16
+        0x17
+        0x18
+        0x0
+        0x1
+        0x2
+        0x19
+        0x1a
+        0x1b
+        0x1c
+        0x1d
+        0x1e
+        0x1f
+        0x5c
+        0xfb
+        0x7ffc
+        0x20
+        0xffb
+        0x3fc
+        0x1ffa
+        0x21
+        0x5d
+        0x5e
+        0x5f
+        0x60
+        0x61
+        0x62
+        0x63
+        0x64
+        0x65
+        0x66
+        0x67
+        0x68
+        0x69
+        0x6a
+        0x6b
+        0x6c
+        0x6d
+        0x6e
+        0x6f
+        0x70
+        0x71
+        0x72
+        0xfc
+        0x73
+        0xfd
+        0x1ffb
+        0x7fff0
+        0x1ffc
+        0x3ffc
+        0x22
+        0x7ffd
+        0x3
+        0x23
+        0x4
+        0x24
+        0x5
+        0x25
+        0x26
+        0x27
+        0x6
+        0x74
+        0x75
+        0x28
+        0x29
+        0x2a
+        0x7
+        0x2b
+        0x76
+        0x2c
+        0x8
+        0x9
+        0x2d
+        0x77
+        0x78
+        0x79
+        0x7a
+        0x7b
+        0x7ffe
+        0x7fc
+        0x3ffd
+        0x1ffd
+        0xffffffc
+        0xfffe6
+        0x3fffd2
+        0xfffe7
+        0xfffe8
+        0x3fffd3
+        0x3fffd4
+        0x3fffd5
+        0x7fffd9
+        0x3fffd6
+        0x7fffda
+        0x7fffdb
+        0x7fffdc
+        0x7fffdd
+        0x7fffde
+        0xffffeb
+        0x7fffdf
+        0xffffec
+        0xffffed
+        0x3fffd7
+        0x7fffe0
+        0xffffee
+        0x7fffe1
+        0x7fffe2
+        0x7fffe3
+        0x7fffe4
+        0x1fffdc
+        0x3fffd8
+        0x7fffe5
+        0x3fffd9
+        0x7fffe6
+        0x7fffe7
+        0xffffef
+        0x3fffda
+        0x1fffdd
+        0xfffe9
+        0x3fffdb
+        0x3fffdc
+        0x7fffe8
+        0x7fffe9
+        0x1fffde
+        0x7fffea
+        0x3fffdd
+        0x3fffde
+        0xfffff0
+        0x1fffdf
+        0x3fffdf
+        0x7fffeb
+        0x7fffec
+        0x1fffe0
+        0x1fffe1
+        0x3fffe0
+        0x1fffe2
+        0x7fffed
+        0x3fffe1
+        0x7fffee
+        0x7fffef
+        0xfffea
+        0x3fffe2
+        0x3fffe3
+        0x3fffe4
+        0x7ffff0
+        0x3fffe5
+        0x3fffe6
+        0x7ffff1
+        0x3ffffe0
+        0x3ffffe1
+        0xfffeb
+        0x7fff1
+        0x3fffe7
+        0x7ffff2
+        0x3fffe8
+        0x1ffffec
+        0x3ffffe2
+        0x3ffffe3
+        0x3ffffe4
+        0x7ffffde
+        0x7ffffdf
+        0x3ffffe5
+        0xfffff1
+        0x1ffffed
+        0x7fff2
+        0x1fffe3
+        0x3ffffe6
+        0x7ffffe0
+        0x7ffffe1
+        0x3ffffe7
+        0x7ffffe2
+        0xfffff2
+        0x1fffe4
+        0x1fffe5
+        0x3ffffe8
+        0x3ffffe9
+        0xffffffd
+        0x7ffffe3
+        0x7ffffe4
+        0x7ffffe5
+        0xfffec
+        0xfffff3
+        0xfffed
+        0x1fffe6
+        0x3fffe9
+        0x1fffe7
+        0x1fffe8
+        0x7ffff3
+        0x3fffea
+        0x3fffeb
+        0x1ffffee
+        0x1ffffef
+        0xfffff4
+        0xfffff5
+        0x3ffffea
+        0x7ffff4
+        0x3ffffeb
+        0x7ffffe6
+        0x3ffffec
+        0x3ffffed
+        0x7ffffe7
+        0x7ffffe8
+        0x7ffffe9
+        0x7ffffea
+        0x7ffffeb
+        0xffffffe
+        0x7ffffec
+        0x7ffffed
+        0x7ffffee
+        0x7ffffef
+        0x7fffff0
+        0x3ffffee
+        0x3fffffff
+    ]
+
+# How many bits each symbol's code holds, 5 to 30, by symbol.
+constant LENGTHS: [i64]
+    [
+        13
+        23
+        28
+        28
+        28
+        28
+        28
+        28
+        28
+        24
+        30
+        28
+        28
+        30
+        28
+        28
+        28
+        28
+        28
+        28
+        28
+        28
+        30
+        28
+        28
+        28
+        28
+        28
+        28
+        28
+        28
+        28
+        6
+        10
+        10
+        12
+        13
+        6
+        8
+        11
+        10
+        10
+        8
+        11
+        8
+        6
+        6
+        6
+        5
+        5
+        5
+        6
+        6
+        6
+        6
+        6
+        6
+        6
+        7
+        8
+        15
+        6
+        12
+        10
+        13
+        6
+        7
+        7
+        7
+        7
+        7
+        7
+        7
+        7
+        7
+        7
+        7
+        7
+        7
+        7
+        7
+        7
+        7
+        7
+        7
+        7
+        7
+        7
+        8
+        7
+        8
+        13
+        19
+        13
+        14
+        6
+        15
+        5
+        6
+        5
+        6
+        5
+        6
+        6
+        6
+        5
+        7
+        7
+        6
+        6
+        6
+        5
+        6
+        7
+        6
+        5
+        5
+        6
+        7
+        7
+        7
+        7
+        7
+        15
+        11
+        14
+        13
+        28
+        20
+        22
+        20
+        20
+        22
+        22
+        22
+        23
+        22
+        23
+        23
+        23
+        23
+        23
+        24
+        23
+        24
+        24
+        22
+        23
+        24
+        23
+        23
+        23
+        23
+        21
+        22
+        23
+        22
+        23
+        23
+        24
+        22
+        21
+        20
+        22
+        22
+        23
+        23
+        21
+        23
+        22
+        22
+        24
+        21
+        22
+        23
+        23
+        21
+        21
+        22
+        21
+        23
+        22
+        23
+        23
+        20
+        22
+        22
+        22
+        23
+        22
+        22
+        23
+        26
+        26
+        20
+        19
+        22
+        23
+        22
+        25
+        26
+        26
+        26
+        27
+        27
+        26
+        24
+        25
+        19
+        21
+        26
+        27
+        27
+        26
+        27
+        24
+        21
+        21
+        26
+        26
+        28
+        27
+        27
+        27
+        20
+        24
+        20
+        21
+        22
+        21
+        21
+        23
+        22
+        22
+        25
+        25
+        24
+        24
+        26
+        23
+        26
+        27
+        26
+        26
+        27
+        27
+        27
+        27
+        27
+        28
+        27
+        27
+        27
+        27
+        27
+        26
+        30
+    ]
+
+# The symbols ordered by the length of their code, then by value: the
+# code is canonical, so the codes of one length are consecutive in this order.
+constant BY_LENGTH: [i64]
+    [
+        48
+        49
+        50
+        97
+        99
+        101
+        105
+        111
+        115
+        116
+        32
+        37
+        45
+        46
+        47
+        51
+        52
+        53
+        54
+        55
+        56
+        57
+        61
+        65
+        95
+        98
+        100
+        102
+        103
+        104
+        108
+        109
+        110
+        112
+        114
+        117
+        58
+        66
+        67
+        68
+        69
+        70
+        71
+        72
+        73
+        74
+        75
+        76
+        77
+        78
+        79
+        80
+        81
+        82
+        83
+        84
+        85
+        86
+        87
+        89
+        106
+        107
+        113
+        118
+        119
+        120
+        121
+        122
+        38
+        42
+        44
+        59
+        88
+        90
+        33
+        34
+        40
+        41
+        63
+        39
+        43
+        124
+        35
+        62
+        0
+        36
+        64
+        91
+        93
+        126
+        94
+        125
+        60
+        96
+        123
+        92
+        195
+        208
+        128
+        130
+        131
+        162
+        184
+        194
+        224
+        226
+        153
+        161
+        167
+        172
+        176
+        177
+        179
+        209
+        216
+        217
+        227
+        229
+        230
+        129
+        132
+        133
+        134
+        136
+        146
+        154
+        156
+        160
+        163
+        164
+        169
+        170
+        173
+        178
+        181
+        185
+        186
+        187
+        189
+        190
+        196
+        198
+        228
+        232
+        233
+        1
+        135
+        137
+        138
+        139
+        140
+        141
+        143
+        147
+        149
+        150
+        151
+        152
+        155
+        157
+        158
+        165
+        166
+        168
+        174
+        175
+        180
+        182
+        183
+        188
+        191
+        197
+        231
+        239
+        9
+        142
+        144
+        145
+        148
+        159
+        171
+        206
+        215
+        225
+        236
+        237
+        199
+        207
+        234
+        235
+        192
+        193
+        200
+        201
+        202
+        205
+        210
+        213
+        218
+        219
+        238
+        240
+        242
+        243
+        255
+        203
+        204
+        211
+        212
+        214
+        221
+        222
+        223
+        241
+        244
+        245
+        246
+        247
+        248
+        250
+        251
+        252
+        253
+        254
+        2
+        3
+        4
+        5
+        6
+        7
+        8
+        11
+        12
+        14
+        15
+        16
+        17
+        18
+        19
+        20
+        21
+        23
+        24
+        25
+        26
+        27
+        28
+        29
+        30
+        31
+        127
+        220
+        249
+        10
+        13
+        22
+        256
+    ]
+
+# For each length 0 to 30, the code of its first symbol in `BY_LENGTH`; 0
+# where no code has that length.
+constant FIRST_CODE: [i64]
+    [
+        0x0
+        0x0
+        0x0
+        0x0
+        0x0
+        0x0
+        0x14
+        0x5c
+        0xf8
+        0x0
+        0x3f8
+        0x7fa
+        0xffa
+        0x1ff8
+        0x3ffc
+        0x7ffc
+        0x0
+        0x0
+        0x0
+        0x7fff0
+        0xfffe6
+        0x1fffdc
+        0x3fffd2
+        0x7fffd8
+        0xffffea
+        0x1ffffec
+        0x3ffffe0
+        0x7ffffde
+        0xfffffe2
+        0x0
+        0x3ffffffc
+    ]
+
+# For each length 0 to 30, where its symbols begin in `BY_LENGTH`.
+constant FIRST_INDEX: [i64]
+    [
+        0
+        0
+        0
+        0
+        0
+        0
+        10
+        36
+        68
+        0
+        74
+        79
+        82
+        84
+        90
+        92
+        0
+        0
+        0
+        95
+        98
+        106
+        119
+        145
+        174
+        186
+        190
+        205
+        224
+        0
+        253
+    ]
+
+# For each length 0 to 30, how many symbols have a code that long.
+constant COUNT: [i64]
+    [
+        0
+        0
+        0
+        0
+        0
+        10
+        26
+        32
+        6
+        0
+        5
+        3
+        2
+        6
+        2
+        3
+        0
+        0
+        0
+        3
+        8
+        13
+        26
+        29
+        12
+        4
+        15
+        19
+        29
+        0
+        4
+    ]
+
+## Writing
+
+# How many bytes `data` takes in the code, its last one padded.
+function length_of(data: [u8] lent) -> i64
+    bits: i64 @= 0
+
+    for b in data
+        bits @ bits + LENGTHS[to_i64(b).must()]
+
+    return (bits + 7) / 8
+
+# `data` in the code, its last byte padded with the first bits of EOS, which
+# are ones.
+function encode(data: [u8] lent) -> [u8]
+    out: [u8] @= []
+    held: i64 @= 0
+    count: i64 @= 0
+
+    for b in data
+        symbol = to_i64(b).must()
+        held @ held << LENGTHS[symbol] | CODES[symbol]
+        count @ count + LENGTHS[symbol]
+
+        while count >= 8
+            count @ count - 8
+            out @ out.push(to_u8(held >> count & 0xff).must())
+
+        held @ held & (1 << count) - 1
+
+    if count > 0
+        padded = held << 8 - count | (1 << 8 - count) - 1
+        out @ out.push(to_u8(padded & 0xff).must())
+    return out
+
+## Reading
+
+# What `decode` answers: the bytes, or the reason the code is refused.
+record Decoded
+    # The bytes the code held.
+    data: [u8]
+    # Why the code is refused, "" where it is not.
+    why: str
+
+# The bytes `data` codes, or why the code is refused: EOS inside it, padding
+# longer than 7 bits, or padding that is not ones (RFC 7541 § 5.2).
+function decode(data: [u8] lent) -> Decoded
+    out: [u8] @= []
+    code: i64 @= 0
+    length: i64 @= 0
+
+    for b in data
+        byte = to_i64(b).must()
+        bit: i64 @= 7
+
+        while bit >= 0
+            code @ code << 1 | byte >> bit & 1
+            length @ length + 1
+            bit @ bit - 1
+
+            if length >= 5 && code - FIRST_CODE[length] < COUNT[length] && code >= FIRST_CODE[length]
+                symbol = BY_LENGTH[FIRST_INDEX[length] + code - FIRST_CODE[length]]
+
+                if symbol == 256
+                    return Decoded(data: [], why: "the code holds EOS")
+                out @ out.push(to_u8(symbol).must())
+                code @ 0
+                length @ 0
+            else if length == 30
+                return Decoded(data: [], why: "a code of more than 30 bits")
+
+    if length > 7
+        return Decoded(data: [], why: f"the padding is {length} bits long, and holds 7 at most")
+
+    if code != (1 << length) - 1
+        return Decoded(data: [], why: "the padding is not the first bits of EOS")
+    return Decoded(data: out, why: "")
+
+## Tests
+
+test "encode: RFC 7541 C.4.1's www.example.com, and nothing"
+    plain: [u8] = [119, 119, 119, 46, 101, 120, 97, 109, 112, 108, 101, 46, 99, 111, 109]
+    want: [u8] = [0xf1, 0xe3, 0xc2, 0xe5, 0xf2, 0x3a, 0x6b, 0xa0, 0xab, 0x90, 0xf4, 0xff]
+    assert encode(plain) == want
+    assert length_of(plain) == 12
+    assert encode([]) == []
+    assert length_of([]) == 0
+
+test "encode: no-cache, custom-key and custom-value, as C.4.2 and C.4.3 code them"
+    assert encode([110, 111, 45, 99, 97, 99, 104, 101]) == [0xa8, 0xeb, 0x10, 0x64, 0x9c, 0xbf]
+    assert encode([99, 117, 115, 116, 111, 109, 45, 107, 101, 121]) == [0x25, 0xa8, 0x49, 0xe9, 0x5b, 0xa9, 0x7d, 0x7f]
+    assert encode([99, 117, 115, 116, 111, 109, 45, 118, 97, 108, 117, 101]) == [0x25, 0xa8, 0x49, 0xe9, 0x5b, 0xb8, 0xe8, 0xb4, 0xbf]
+
+test "decode: every byte 0 to 255 read back as written"
+    every: [u8] @= []
+
+    for n in range(from: 0, to: 256)
+        every @ every.push(to_u8(n).must())
+
+    got = decode(encode(every))
+    assert got.why == ""
+    assert got.data == every
+    assert length_of(every) == encode(every).len()
+
+test "decode: the longest codes, 30 bits each, one after another"
+    long: [u8] = [10, 13, 22, 10]
+    got = decode(encode(long))
+    assert got.why == ""
+    assert got.data == long
+
+test "decode: EOS whole, padding of 8 bits, padding of zeros, an empty code"
+    assert decode([0xff, 0xff, 0xff, 0xff]).why == "the code holds EOS"
+    assert decode([0xf1, 0xe3, 0xc2, 0xe5, 0xf2, 0x3a, 0x6b, 0xa0, 0xab, 0x90, 0xf4, 0xff, 0xff]).why != ""
+    assert decode([0x07]).why == ""
+    assert decode([0x07]).data == [48]
+    assert decode([0x00]).why == "the padding is not the first bits of EOS"
+    assert decode([]).why == ""
+    assert decode([]).data == []

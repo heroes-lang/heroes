@@ -1,0 +1,165 @@
+# HPACK's static table (RFC 7541 Appendix A): sixty-one fields every encoder
+# and decoder knows, read from the RFC's text, and where a field stands in it.
+
+# The names of the static table's 61 entries, RFC 7541 Appendix A, the
+# entry at index i at i - 1.
+constant NAMES: [str]
+    [
+        ":authority"
+        ":method"
+        ":method"
+        ":path"
+        ":path"
+        ":scheme"
+        ":scheme"
+        ":status"
+        ":status"
+        ":status"
+        ":status"
+        ":status"
+        ":status"
+        ":status"
+        "accept-charset"
+        "accept-encoding"
+        "accept-language"
+        "accept-ranges"
+        "accept"
+        "access-control-allow-origin"
+        "age"
+        "allow"
+        "authorization"
+        "cache-control"
+        "content-disposition"
+        "content-encoding"
+        "content-language"
+        "content-length"
+        "content-location"
+        "content-range"
+        "content-type"
+        "cookie"
+        "date"
+        "etag"
+        "expect"
+        "expires"
+        "from"
+        "host"
+        "if-match"
+        "if-modified-since"
+        "if-none-match"
+        "if-range"
+        "if-unmodified-since"
+        "last-modified"
+        "link"
+        "location"
+        "max-forwards"
+        "proxy-authenticate"
+        "proxy-authorization"
+        "range"
+        "referer"
+        "refresh"
+        "retry-after"
+        "server"
+        "set-cookie"
+        "strict-transport-security"
+        "transfer-encoding"
+        "user-agent"
+        "vary"
+        "via"
+        "www-authenticate"
+    ]
+
+# The values of the static table's 61 entries, as `NAMES` orders them.
+constant VALUES: [str]
+    [
+        ""
+        "GET"
+        "POST"
+        "/"
+        "/index.html"
+        "http"
+        "https"
+        "200"
+        "204"
+        "206"
+        "304"
+        "400"
+        "404"
+        "500"
+        ""
+        "gzip, deflate"
+        ""
+        ""
+        ""
+        ""
+        ""
+        ""
+        ""
+        ""
+        ""
+        ""
+        ""
+        ""
+        ""
+        ""
+        ""
+        ""
+        ""
+        ""
+        ""
+        ""
+        ""
+        ""
+        ""
+        ""
+        ""
+        ""
+        ""
+        ""
+        ""
+        ""
+        ""
+        ""
+        ""
+        ""
+        ""
+        ""
+        ""
+        ""
+        ""
+        ""
+        ""
+        ""
+        ""
+        ""
+        ""
+    ]
+
+# The index, 1 to 61, of the first entry whose name and value are `name` and
+# `value`; 0 where none is.
+function index_of_field(name: str, value: str) -> i64
+    for i in range(from: 0, to: NAMES.len())
+        if NAMES[i] == name && VALUES[i] == value
+            return i + 1
+
+    return 0
+
+# The index, 1 to 61, of the first entry named `name`; 0 where none is.
+function index_of_name(name: str) -> i64
+    for i in range(from: 0, to: NAMES.len())
+        if NAMES[i] == name
+            return i + 1
+
+    return 0
+
+test "index_of_field: the first entry, the last, one with an empty value, and none"
+    assert index_of_field(name: ":authority", value: "") == 1
+    assert index_of_field(name: ":method", value: "POST") == 3
+    assert index_of_field(name: "www-authenticate", value: "") == 61
+    assert index_of_field(name: ":status", value: "302") == 0
+    assert NAMES.len() == 61
+    assert VALUES.len() == 61
+
+test "index_of_name: :status's first entry, a name twice, and none"
+    assert index_of_name(":status") == 8
+    assert index_of_name(":path") == 4
+    assert index_of_name("custom-key") == 0

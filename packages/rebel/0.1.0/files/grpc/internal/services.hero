@@ -1,0 +1,101 @@
+# The messages of the two services a server answers itself, written and read
+# by their field numbers with `protobuf`'s wire functions, no schema needed:
+# `grpc.health.v1.Health` (a service's name asked, its status answered) and
+# server reflection's `ServerReflectionInfo`, of v1 and v1alpha, whose list of
+# services is answered and whose requests for file descriptors are answered
+# NOT_FOUND, `protobuf` writing no `FileDescriptorProto`.
+
+use bytes
+use protobuf
+
+# The service a `HealthCheckRequest` names: its field 1, "" where absent.
+function health_service(data: [u8]) -> str?
+    at: i64 @= 0
+    name: [u8] @= []
+
+    while at < data.len()
+        tag = protobuf.decode_tag(data, at: at)?
+
+        if tag.number == 1
+            got = protobuf.decode_length_delimited(data, at: tag.next)?
+            name @ got.value
+            at @ got.next
+        else
+            at @ protobuf.skip_field(data, tag: tag)?
+
+    return bytes.to_text(name)
+
+# A `HealthCheckResponse` of `status`: its field 1, an enum.
+function health_response(status: i64) -> [u8]
+    out: [u8] @= []
+
+    if status != 0
+        protobuf.push_tag(@out, number: 1, wire: .varint)
+        protobuf.push_varint(@out, v: to_u64(status).must())
+    return out
+
+# A reflection's answer to `request`, for a server whose services are
+# `services`: their list where it asks `list_services`, NOT_FOUND to every
+# other question.
+function reflection_answer(request: [u8], services: [str]) -> [u8]?
+    at: i64 @= 0
+    host: [u8] @= []
+    listing: bool @= false
+
+    while at < request.len()
+        tag = protobuf.decode_tag(request, at: at)?
+
+        if tag.number == 1
+            got = protobuf.decode_length_delimited(request, at: tag.next)?
+            host @ got.value
+            at @ got.next
+        else
+            if tag.number == 7
+                listing @ true
+            at @ protobuf.skip_field(request, tag: tag)?
+
+    out: [u8] @= []
+    protobuf.push_tag(@out, number: 1, wire: .length_delimited)
+    protobuf.push_length_delimited(to: @out, v: host)
+    protobuf.push_tag(@out, number: 2, wire: .length_delimited)
+    protobuf.push_length_delimited(to: @out, v: request)
+
+    if listing
+        list: [u8] @= []
+
+        for name in services
+            one: [u8] @= []
+            protobuf.push_tag(@one, number: 1, wire: .length_delimited)
+            protobuf.push_length_delimited(to: @one, v: bytes.from_text(name))
+            protobuf.push_tag(@list, number: 1, wire: .length_delimited)
+            protobuf.push_length_delimited(to: @list, v: one)
+
+        protobuf.push_tag(@out, number: 6, wire: .length_delimited)
+        protobuf.push_length_delimited(to: @out, v: list)
+    else
+        error: [u8] @= []
+        protobuf.push_tag(@error, number: 1, wire: .varint)
+        protobuf.push_varint(@error, v: 5)
+        protobuf.push_tag(@error, number: 2, wire: .length_delimited)
+        protobuf.push_length_delimited(
+            to: @error,
+            v: bytes.from_text("this server answers the list of services alone: it writes no file descriptor")
+        )
+        protobuf.push_tag(@out, number: 7, wire: .length_delimited)
+        protobuf.push_length_delimited(to: @out, v: error)
+    return ok(out)
+
+test "health_service: a service named, none, and bytes that are no message"
+    assert health_service([10, 3, 97, 98, 99]).must() == "abc"
+    assert health_service([]).must() == ""
+    assert health_service([10, 9]).is_err()
+
+test "health_response: SERVING as field 1, UNKNOWN as nothing"
+    assert health_response(1) == [8, 1]
+    assert health_response(0) == []
+
+test "reflection_answer: the list of services, and NOT_FOUND to a file's name"
+    listed = reflection_answer([58, 1, 42], services: ["a.B"]).must()
+    assert bytes.contains(s: listed, substr: [10, 3, 97, 46, 66])
+    refused = reflection_answer([26, 1, 120], services: ["a.B"]).must()
+    assert bytes.contains(s: refused, substr: [58])

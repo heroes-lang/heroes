@@ -1,0 +1,113 @@
+# A call's metadata as HTTP/2 header fields: keys checked, a `-bin` key's
+# bytes carried in base 64, and the fields gRPC keeps for itself left out of
+# what a program reads.
+
+use bytes
+use http2
+
+# Why `key` cannot be a metadata key, "" where it can: lower case letters,
+# digits, `-`, `_` and `.`, not `grpc-`'s and not a field the protocol
+# writes itself.
+function key_refusal(key: str) -> str
+    if key.len() == 0
+        return "an empty metadata key"
+
+    for i in range(from: 0, to: key.len())
+        c = key[i]
+
+        if !(c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '-' || c == '_' || c == '.')
+            return f"the metadata key \"{key}\" holds a character no key may: lower case letters, digits, -, _ and . alone"
+
+    if bytes.has_prefix(s: bytes.from_text(key), prefix: bytes.from_text("grpc-"))
+        return f"the metadata key \"{key}\" begins with grpc-, which gRPC keeps for itself"
+
+    if is_kept(key)
+        return f"the metadata key \"{key}\" is a field the protocol writes itself"
+    return ""
+
+# Whether `name` is a field gRPC's protocol writes itself: a program reads
+# none of these as metadata.
+function is_kept(name: str) -> bool
+    return name.len() == 0 || name[0] == ':' || name == "content-type" || name == "te" || name == "connection" || bytes.has_prefix(s: bytes.from_text(name), prefix: bytes.from_text("grpc-"))
+
+# Whether `key` carries bytes.
+function is_binary(key: str) -> bool
+    return bytes.has_suffix(s: bytes.from_text(key), suffix: bytes.from_text("-bin"))
+
+# Why `value` cannot go with `key`, "" where it can: a key that is not
+# `-bin`'s carries printable ASCII.
+function value_refusal(key: str, value: [u8] lent) -> str
+    if is_binary(key)
+        return ""
+
+    for b in value
+        if b < ' ' || b > '~'
+            return f"the value of \"{key}\" holds a byte past printable ASCII; a key ending in -bin carries bytes"
+
+    return ""
+
+# The fields of entries keyed `names` holding `values`, in order. Fails
+# `invalid` where a key or a value is refused.
+function to_fields(names: [str], values: [[u8]]) -> [http2.Field]?
+    out: [http2.Field] @= []
+
+    for i in range(from: 0, to: names.len())
+        why = key_refusal(names[i])
+
+        if why != ""
+            return fail(code: "invalid", msg: why)
+        refused = value_refusal(names[i], value: values[i])
+
+        if refused != ""
+            return fail(code: "invalid", msg: refused)
+
+        text = if is_binary(names[i])
+            bytes.format_base64_unpadded(values[i])
+        else
+            bytes.to_text_lossy(values[i])
+        out @ out.push(http2.Field(name: names[i], value: text, sensitive: false))
+
+    return ok(out)
+
+# What `from_fields` answers: the keys and values, as parallel lists.
+record Pairs
+    # The keys.
+    keys: [str]
+    # The values, a `-bin` key's decoded from base 64.
+    values: [[u8]]
+
+# The metadata `fields` carry, the protocol's own fields left out; a `-bin`
+# value is decoded with or without its padding, and kept as it came where it
+# is no base 64.
+function from_fields(fields: [http2.Field]) -> Pairs
+    names: [str] @= []
+    values: [[u8]] @= []
+
+    for f in fields
+        if !is_kept(f.name)
+            names @ names.push(f.name)
+
+            if is_binary(f.name)
+                trimmed = bytes.trim_suffix_all(s: bytes.from_text(f.value), suffix: [61])
+                values @ values.push(
+                    bytes.parse_base64_unpadded(bytes.to_text_lossy(trimmed)).default(bytes.from_text(f.value))
+                )
+            else
+                values @ values.push(bytes.from_text(f.value))
+
+    return Pairs(keys: names, values: values)
+
+test "to_fields: a text key, a binary key in base 64 unpadded, and refusals"
+    got = to_fields(names: ["x-user", "trace-bin"], values: [[97], [0xff, 0x00]]).must()
+    assert got == [http2.Field(name: "x-user", value: "a", sensitive: false), http2.Field(name: "trace-bin", value: "/wA", sensitive: false)]
+    assert to_fields(names: ["X-User"], values: [[97]]).is_err()
+    assert to_fields(names: ["grpc-status"], values: [[48]]).is_err()
+    assert to_fields(names: ["x"], values: [[10]]).is_err()
+    assert to_fields(names: [], values: []).must() == []
+
+test "from_fields: the protocol's fields left out, a binary value padded or not"
+    got = from_fields(
+        [http2.Field(name: "content-type", value: "application/grpc", sensitive: false), http2.Field(name: "grpc-status", value: "0", sensitive: false), http2.Field(name: "x-a", value: "b", sensitive: false), http2.Field(name: "t-bin", value: "/wA=", sensitive: false), http2.Field(name: "u-bin", value: "/wA", sensitive: false)]
+    )
+    assert got.keys == ["x-a", "t-bin", "u-bin"]
+    assert got.values == [[98], [0xff, 0x00], [0xff, 0x00]]

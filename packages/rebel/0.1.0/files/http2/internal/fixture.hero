@@ -1,0 +1,223 @@
+# FOR TESTS: an HTTP/2 server and client of this process, each on a thread
+# of its own, over the loopback address, plain (h2c) or TLS with the test
+# certificates of `tls`. A thread takes and answers one text (spec § 13), so
+# each takes its port and what to ask, and answers what it saw.
+
+use bytes
+use http2/internal/engine
+use http2/internal/model
+use http2/internal/values
+use http2/internal/wire
+use io
+use net
+use numbers
+use time
+use tls
+
+# A port no socket listens on now, which the system gave and took back.
+function free_port() -> i64
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    port = l.address.port
+    net.close_listener(@l).must()
+    return port
+
+# Waits until something listens on `port`, trying for about two seconds; the
+# connection that finds it is closed at once.
+function until_listening(port: i64)
+    for _ in range(from: 0, to: 200)
+        match net.connect("127.0.0.1", port: port, deadline_ms: 1000)
+            .ok c =>
+                s @= c.stream
+                io.close(@s).must()
+                return
+            .err _ => time.sleep(time.milliseconds(10).must())
+
+# A field.
+function field(name: str, value: str) -> model.Field
+    return model.Field(name: name, value: value, sensitive: false)
+
+# Serves the next request of `stream` with "hello " and its path, and
+# answers its method and path; "" where no request came.
+function answer_one(stream: io.Stream) -> str
+    w @= wire.adopt(stream, session: engine.make(client: false, options: values.default_options())).must()
+
+    match wire.next_request(stream, @w, limit: 1048576)
+        .ok r =>
+            body = bytes.from_text("hello " + r.path)
+            answered = wire.answer(
+                stream,
+                @w,
+                id: r.stream,
+                response: model.Response(status: 200, headers: [field(name: "content-type", value: "text/plain")], body: body, trailers: [field(name: "x-length", value: to_str(r.body.len()))])
+            )
+            wire.goodbye(stream, @w)
+
+            match answered
+                .ok _  => return f"{r.method} {r.path} {r.body.len()}"
+                .err e => return "answer: " + e.msg
+        .err _ => return ""
+
+# A thread's body: an h2c server on the port `arg` names, which answers the
+# first request that comes and its method, path and body's length.
+function serve_plain(arg: str) -> str
+    port = numbers.parse_int(arg).must()
+    l @= net.listen(host: "127.0.0.1", port: port).must()
+    net.set_accept_deadline(l, ms: 10000).must()
+
+    for _ in range(from: 0, to: 20)
+        match net.accept(l, deadline_ms: 10000)
+            .ok c =>
+                stream @= c.stream
+                got = answer_one(stream)
+
+                match io.close(@stream)
+                    .ok _  => _ = 0
+                    .err _ => _ = 0
+
+                if got != ""
+                    net.close_listener(@l).must()
+                    return got
+            .err e =>
+                net.close_listener(@l).must()
+                return "accept: " + e.msg
+
+    net.close_listener(@l).must()
+    return "no request"
+
+# A thread's body: a TLS server offering `h2` on the port `arg` names, with
+# the certificate of `localhost`, answering as `serve_plain` does.
+function serve_tls(arg: str) -> str
+    port = numbers.parse_int(arg).must()
+    l @= tls.listen(
+        host: "127.0.0.1",
+        port: port,
+        server: tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: ["h2"])
+    ).must()
+    tls.set_accept_deadline(l, ms: 10000).must()
+
+    for _ in range(from: 0, to: 20)
+        match tls.accept(l, deadline_ms: 10000)
+            .ok accepted =>
+                stream @= accepted
+                tls.set_deadline(stream, ms: 10000).must()
+                got = answer_one(stream)
+
+                match io.close(@stream)
+                    .ok _  => _ = 0
+                    .err _ => _ = 0
+
+                if got != ""
+                    tls.close_listener(@l).must()
+                    return got
+            .err _ => _ = 0
+
+    tls.close_listener(@l).must()
+    return "no request"
+
+# A GET of `path` on a client's connection over `stream`, as "status body".
+function get_on(stream: io.Stream, path: str) -> str
+    w @= wire.adopt(stream, session: engine.make(client: true, options: values.default_options())).must()
+    request = model.Request(
+        method: "GET",
+        scheme: "https",
+        authority: "localhost",
+        path: path,
+        protocol: "",
+        headers: [],
+        body: [],
+        trailers: [],
+        stream: 0
+    )
+
+    match wire.start(stream, @w, r: request)
+        .ok id =>
+            match wire.finish(stream, @w, id: id, limit: 1048576)
+                .ok r =>
+                    wire.goodbye(stream, @w)
+                    return f"{r.status} {bytes.to_text_lossy(r.body)}"
+                .err e => return "finish: " + e.msg
+        .err e => return "start: " + e.msg
+
+# A thread's body: a GET over h2c, `arg` holding the port and the path
+# apart by a space, answered as "status body".
+function get_plain(arg: str) -> str
+    cut = index_of_space_last(arg)
+    port = numbers.parse_int(arg.slice(from: 0, to: cut)).must()
+    c = net.connect("127.0.0.1", port: port, deadline_ms: 10000).must()
+    stream @= c.stream
+    got = get_on(stream, path: arg.slice(from: cut + 1, to: arg.len()))
+    io.close(@stream).must()
+    return got
+
+# A thread's body: a GET over TLS with ALPN `h2`, trusting the test
+# authority, `arg` as `get_plain` takes it.
+function get_tls(arg: str) -> str
+    cut = index_of_space_last(arg)
+    port = numbers.parse_int(arg.slice(from: 0, to: cut)).must()
+    stream @= tls.connect(
+        host: "localhost",
+        port: port,
+        deadline_ms: 10000,
+        client: tls.Client(roots: tls.TEST_ROOT, protocols: ["h2"])
+    ).must()
+    tls.set_deadline(stream, ms: 10000).must()
+    got = get_on(stream, path: arg.slice(from: cut + 1, to: arg.len()))
+    io.close(@stream).must()
+    return got
+
+# Where the last space of `s` stands.
+function index_of_space_last(s: str) -> i64
+    at: i64 @= s.len() - 1
+
+    while at >= 0 && s[at] != ' '
+        at @ at - 1
+
+    return at
+
+# A thread's body: an h2c server on the port `arg`'s first word names,
+# answering as many requests on one connection as its second word says, each
+# with "hello " and its path, and answering how many it answered.
+function serve_many(arg: str) -> str
+    cut = index_of_space_last(arg)
+    port = numbers.parse_int(arg.slice(from: 0, to: cut)).must()
+    count = numbers.parse_int(arg.slice(from: cut + 1, to: arg.len())).must()
+    l @= net.listen(host: "127.0.0.1", port: port).must()
+    net.set_accept_deadline(l, ms: 10000).must()
+    answered: i64 @= 0
+
+    for _ in range(from: 0, to: 20)
+        if answered < count
+            match net.accept(l, deadline_ms: 10000)
+                .ok c =>
+                    stream @= c.stream
+                    w @= wire.adopt(
+                        stream,
+                        session: engine.make(client: false, options: values.default_options())
+                    ).must()
+
+                    while answered < count
+                        match wire.next_request(stream, @w, limit: 1048576)
+                            .ok r =>
+                                said = wire.answer(
+                                    stream,
+                                    @w,
+                                    id: r.stream,
+                                    response: model.Response(status: 200, headers: [], body: bytes.from_text("hello " + r.path), trailers: [])
+                                )
+
+                                match said
+                                    .ok _  => _ = 0
+                                    .err _ => _ = 0
+
+                                answered @ answered + 1
+                            .err _ => break
+
+                    wire.goodbye(stream, @w)
+
+                    match io.close(@stream)
+                        .ok _  => _ = 0
+                        .err _ => _ = 0
+                .err _ => break
+
+    net.close_listener(@l).must()
+    return to_str(answered)

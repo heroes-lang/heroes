@@ -4,10 +4,12 @@
 # left; and the answers a server gives what it cannot read.
 
 use http/internal/body
+use http/internal/h2bridge
 use http/internal/read
 use http/internal/syntax
 use http/internal/wire
 use http/internal/write
+use http2
 use io
 use net
 use time
@@ -211,7 +213,20 @@ function exchange(scheme: str, host: str, port: str, deadline_ms: i64, roots: st
         if number > 65_535
             return fail(code: syntax.INVALID, msg: f"sending a request: the port {port} is past 65535")
     data = write.request(method: method, target: target, host: host_value, fields: fields, content: content, closing: true)?
-    reader @= io.reader(connected(secure, host: host, port: number, deadline_ms: deadline_ms, roots: roots)?)
+    stream @= connected(secure, host: host, port: number, deadline_ms: deadline_ms, roots: roots)?
+
+    if secure && tls.protocol_of(stream).default("") == http2.ALPN
+        return h2bridge.exchange(
+            @stream,
+            method: method,
+            scheme: "https",
+            authority: host_value,
+            target: target,
+            fields: fields,
+            content: content,
+            bounds: bounds
+        )
+    reader @= io.reader(stream)
     answer = talk(@reader, data: data, method: method, bounds: bounds)
 
     match io.close(@reader.stream)
@@ -221,7 +236,8 @@ function exchange(scheme: str, host: str, port: str, deadline_ms: i64, roots: st
     return answer
 
 # A connection to `host` at `port`: TLS where `secure`, the certificate
-# checked against `roots` ("" the system's store) and HTTP/1.1 offered, its
+# checked against `roots` ("" the system's store) and HTTP/2 then HTTP/1.1
+# offered, the server choosing by ALPN, its
 # deadline the connection's and the handshake's together, and what is left of
 # it then every read's and write's (`tls.set_deadline`); else TCP, its
 # deadline every read's and write's, as `net.connect` sets it. 0 is none.
@@ -229,7 +245,7 @@ function connected(secure: bool, host: str, port: i64, deadline_ms: i64, roots: 
     if !secure
         return ok(net.connect(host, port: port, deadline_ms: deadline_ms)?.stream)
     began = time.mark()
-    stream @= tls.connect(host, port: port, deadline_ms: deadline_ms, client: tls.Client(roots: roots, protocols: ["http/1.1"]))?
+    stream @= tls.connect(host, port: port, deadline_ms: deadline_ms, client: tls.Client(roots: roots, protocols: [http2.ALPN, "http/1.1"]))?
 
     if deadline_ms <= 0
         return ok(stream)

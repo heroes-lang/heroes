@@ -1,0 +1,183 @@
+# HTTP/2's settings (RFC 9113 § 6.5.2, RFC 8441 § 3): their initial values,
+# a SETTINGS frame's list applied to them with every check, and the list
+# that makes the initial values into others.
+
+use http2/internal/model
+
+# PROTOCOL_ERROR.
+constant PROTOCOL_ERROR: i64
+    0x1
+
+# FLOW_CONTROL_ERROR.
+constant FLOW_CONTROL_ERROR: i64
+    0x3
+
+# The largest value of a setting.
+constant MOST_32: i64
+    4294967295
+
+# What `apply` answers: the settings, or the error RFC 9113 names.
+record Applied
+    # The settings after the list, where `why` is "".
+    settings: model.Settings
+    # The error code where the list is refused.
+    error: i64
+    # Why it is refused, "" where it is not.
+    why: str
+
+# The settings an end has before its SETTINGS frame.
+function initial() -> model.Settings
+    return model.Settings(
+        header_table_size: 4096,
+        enable_push: true,
+        max_concurrent_streams: MOST_32,
+        initial_window_size: 65535,
+        max_frame_size: 16384,
+        max_header_list_size: MOST_32,
+        enable_connect_protocol: false
+    )
+
+# `before` with `list` applied in its order, an unknown identifier ignored.
+function apply(before: model.Settings, list: [model.Setting]) -> Applied
+    s @= before
+
+    for one in list
+        v = one.value
+
+        if v < 0 || v > MOST_32
+            return Applied(
+                settings: before,
+                error: PROTOCOL_ERROR,
+                why: f"setting {one.id}'s value {v} is outside 0 to 2^32 - 1"
+            )
+
+        if one.id == 1
+            s.header_table_size @ v
+        else if one.id == 2
+            if v > 1
+                return Applied(
+                    settings: before,
+                    error: PROTOCOL_ERROR,
+                    why: f"SETTINGS_ENABLE_PUSH is {v}, neither 0 nor 1"
+                )
+            s.enable_push @ v == 1
+        else if one.id == 3
+            s.max_concurrent_streams @ v
+        else if one.id == 4
+            if v > 2147483647
+                return Applied(
+                    settings: before,
+                    error: FLOW_CONTROL_ERROR,
+                    why: f"SETTINGS_INITIAL_WINDOW_SIZE {v} passes 2^31 - 1"
+                )
+            s.initial_window_size @ v
+        else if one.id == 5
+            if v < 16384 || v > 16777215
+                return Applied(
+                    settings: before,
+                    error: PROTOCOL_ERROR,
+                    why: f"SETTINGS_MAX_FRAME_SIZE {v} is outside 16,384 to 16,777,215"
+                )
+            s.max_frame_size @ v
+        else if one.id == 6
+            s.max_header_list_size @ v
+        else if one.id == 8
+            if v > 1
+                return Applied(
+                    settings: before,
+                    error: PROTOCOL_ERROR,
+                    why: f"SETTINGS_ENABLE_CONNECT_PROTOCOL is {v}, neither 0 nor 1"
+                )
+
+            if v == 0 && before.enable_connect_protocol
+                return Applied(
+                    settings: before,
+                    error: PROTOCOL_ERROR,
+                    why: "SETTINGS_ENABLE_CONNECT_PROTOCOL taken back after 1"
+                )
+            s.enable_connect_protocol @ v == 1
+
+    return Applied(settings: s, error: 0, why: "")
+
+# A boolean setting's value.
+function bit(b: bool) -> i64
+    if b
+        return 1
+    return 0
+
+# The settings that make `initial()` into `s`, by identifier.
+function to_list(s: model.Settings) -> [model.Setting]
+    return changes(first: initial(), s: s)
+
+# The settings that make `first` into `s`, by identifier.
+function changes(first: model.Settings, s: model.Settings) -> [model.Setting]
+    out: [model.Setting] @= []
+
+    if s.header_table_size != first.header_table_size
+        out @ out.push(model.Setting(id: 1, value: s.header_table_size))
+
+    if s.enable_push != first.enable_push
+        out @ out.push(model.Setting(id: 2, value: bit(s.enable_push)))
+
+    if s.max_concurrent_streams != first.max_concurrent_streams
+        out @ out.push(model.Setting(id: 3, value: s.max_concurrent_streams))
+
+    if s.initial_window_size != first.initial_window_size
+        out @ out.push(model.Setting(id: 4, value: s.initial_window_size))
+
+    if s.max_frame_size != first.max_frame_size
+        out @ out.push(model.Setting(id: 5, value: s.max_frame_size))
+
+    if s.max_header_list_size != first.max_header_list_size
+        out @ out.push(model.Setting(id: 6, value: s.max_header_list_size))
+
+    if s.enable_connect_protocol != first.enable_connect_protocol
+        out @ out.push(model.Setting(id: 8, value: bit(s.enable_connect_protocol)))
+    return out
+
+# Why `s` cannot be advertised, "" where it can.
+function refusal(s: model.Settings) -> str
+    return apply(initial(), list: to_list(s)).why
+
+test "apply: each known setting, an unknown one ignored, and the order kept"
+    got = apply(
+        initial(),
+        list: [model.Setting(id: 3, value: 100), model.Setting(id: 99, value: 7), model.Setting(id: 4, value: 1), model.Setting(id: 4, value: 2147483647)]
+    )
+    assert got.why == ""
+    assert got.settings.max_concurrent_streams == 100
+    assert got.settings.initial_window_size == 2147483647
+    assert apply(initial(), list: []).settings == initial()
+
+test "apply: push of 2, a window past 2^31 - 1, frames of 16,383 and 16,777,216, extended CONNECT taken back"
+    assert apply(initial(), list: [model.Setting(id: 2, value: 2)]).error == 1
+    assert apply(initial(), list: [model.Setting(id: 4, value: 2147483648)]).error == 3
+    assert apply(initial(), list: [model.Setting(id: 5, value: 16383)]).error == 1
+    assert apply(initial(), list: [model.Setting(id: 5, value: 16777216)]).error == 1
+    assert apply(initial(), list: [model.Setting(id: 5, value: 16777215)]).why == ""
+    on = apply(initial(), list: [model.Setting(id: 8, value: 1)]).settings
+    assert apply(on, list: [model.Setting(id: 8, value: 0)]).error == 1
+
+test "to_list: nothing for the initial values, and each change by identifier"
+    assert to_list(initial()) == []
+    s @= initial()
+    s.enable_push @ false
+    s.max_header_list_size @ 65536
+    assert to_list(s) == [model.Setting(id: 2, value: 0), model.Setting(id: 6, value: 65536)]
+    assert apply(initial(), list: to_list(s)).settings == s
+
+# The usual options: a table of 4,096 bytes, push refused, 100 streams,
+# windows of 1 MiB a stream and 16 MiB a connection, frames of 16,384 bytes,
+# lists of 64 KiB; blocks of 128 KiB in 64 frames, 100 resets and 1,000
+# frames carrying nothing a second, bodies of 10 MiB.
+function default_options() -> model.Options
+    s @= initial()
+    s.enable_push @ false
+    s.max_concurrent_streams @ 100
+    s.initial_window_size @ 1048576
+    s.max_header_list_size @ 65536
+    return model.Options(
+        settings: s,
+        connection_window: 16777216,
+        limits: model.Limits(header_block_bytes: 131072, header_frames: 64, resets_per_second: 100, control_per_second: 1000, body_bytes: 10485760)
+    )

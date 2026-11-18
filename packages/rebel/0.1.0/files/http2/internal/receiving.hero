@@ -1,0 +1,628 @@
+# What a session does with the bytes a peer sends: the client's preface, the
+# frames cut from the bytes and each read by its type (RFC 9113 § 6), the
+# state of its stream and the windows changed (§ 5.1, § 5.2), the answers a
+# PING and a SETTINGS owe written, and the events the program is told.
+# Header blocks are `blocks`'s.
+
+use bytes
+use http2/internal/blocks
+use http2/internal/decoding
+use http2/internal/encoding
+use http2/internal/engine
+use http2/internal/frames
+use http2/internal/model
+use http2/internal/sending
+use http2/internal/values
+
+# The events the bytes `data` make after those held from before; a frame
+# cut short is held for the next call.
+function receive(@s: engine.State, data: [u8] lent, now_ms: i64) -> [model.Event]?
+    if s.failed
+        return fail(code: model.CLOSED, msg: "receiving on an HTTP/2 connection that has ended")
+    events: [model.Event] @= []
+    bytes.push_all(to: @s.input, from: data)
+    at: i64 @= 0
+
+    if s.preface_left > 0
+        preface = bytes.from_text(engine.PREFACE)
+
+        while s.preface_left > 0 && at < s.input.len()
+            if s.input[at] != preface[preface.len() - s.preface_left]
+                return engine.fail_connection(
+                    @s,
+                    error: engine.PROTOCOL_ERROR,
+                    why: "the client's first bytes are not HTTP/2's preface"
+                )
+            at @ at + 1
+            s.preface_left @ s.preface_left - 1
+
+    while s.preface_left == 0 && s.input.len() - at >= 9
+        head = frames.head_at(s.input, at: at)
+
+        most = if s.acked.max_frame_size > s.ours.max_frame_size
+            s.acked.max_frame_size
+        else
+            s.ours.max_frame_size
+
+        if head.length > most
+            return engine.fail_connection(
+                @s,
+                error: engine.FRAME_SIZE_ERROR,
+                why: f"a {frames.describe_kind(head.kind)} frame of {head.length} bytes passes the largest, {most}"
+            )
+
+        if s.input.len() - at - 9 < head.length
+            break
+        payload = s.input.slice(from: at + 9, to: at + 9 + head.length)
+        at @ at + 9 + head.length
+        handle(@s, @events, head: head, payload: payload, most: most, now_ms: now_ms)?
+
+    s.input @ s.input.slice(from: at, to: s.input.len())
+    return ok(events)
+
+# Reads one frame.
+function handle(@s: engine.State, @events: [model.Event], head: frames.Head, payload: [u8], most: i64, now_ms: i64) -> ()?
+    if !s.settings_seen && (head.kind != 4 || head.flags & 0x1 != 0)
+        return engine.fail_connection(
+            @s,
+            error: engine.PROTOCOL_ERROR,
+            why: f"the peer's first frame is {frames.describe_kind(head.kind)}, not SETTINGS"
+        )
+
+    if s.block_stream != 0 && (head.kind != 9 || head.stream != s.block_stream)
+        return engine.fail_connection(
+            @s,
+            error: engine.PROTOCOL_ERROR,
+            why: f"a {frames.describe_kind(head.kind)} frame on stream {head.stream} inside the header block of stream {s.block_stream}"
+        )
+    d = frames.decode(head, payload: payload, max_size: most)
+
+    if d.why != ""
+        if d.stream_only
+            engine.fail_stream(@s, @events, id: head.stream, error: d.error)
+            return ok()
+        return engine.fail_connection(@s, error: d.error, why: d.why)
+
+    match d.frame
+        .data f => return on_data(
+            @s,
+            @events,
+            id: f.stream,
+            data: f.data,
+            end_stream: f.end_stream,
+            size: head.length,
+            now_ms: now_ms
+        )
+        .headers f => return blocks.on_headers(
+            @s,
+            @events,
+            stream: f.stream,
+            block: f.block,
+            end_stream: f.end_stream,
+            end_headers: f.end_headers,
+            now_ms: now_ms
+        )
+        .priority _   => return control(@s, now_ms: now_ms)
+        .rst_stream f => return on_reset(@s, @events, id: f.stream, error: f.error, now_ms: now_ms)
+        .settings f   => return on_settings(@s, @events, ack: f.ack, list: f.settings, now_ms: now_ms)
+        .push_promise f => return engine.fail_connection(
+            @s,
+            error: engine.PROTOCOL_ERROR,
+            why: f"a PUSH_PROMISE on stream {f.stream}, which this end refused"
+        )
+        .ping f          => return on_ping(@s, @events, ack: f.ack, data: f.data, now_ms: now_ms)
+        .goaway f        => return on_goaway(@s, @events, last: f.last_stream, error: f.error, debug: f.debug)
+        .window_update f => return on_window(@s, @events, id: f.stream, increment: f.increment)
+        .continuation f => return blocks.on_continuation(
+            @s,
+            @events,
+            block: f.block,
+            end_headers: f.end_headers,
+            now_ms: now_ms
+        )
+        .unknown _ => return ok()
+
+# Counts a frame that carries nothing for the program.
+function control(@s: engine.State, now_ms: i64) -> ()?
+    if !engine.count_control(@s, now_ms: now_ms)
+        return engine.fail_connection(
+            @s,
+            error: engine.ENHANCE_YOUR_CALM,
+            why: f"more than {s.limits.control_per_second} frames carrying nothing in one second"
+        )
+    return ok()
+
+# A DATA frame of `size` bytes, padding included, holding `data`.
+function on_data(@s: engine.State, @events: [model.Event], id: i64, data: [u8], end_stream: bool, size: i64, now_ms: i64) -> ()?
+    if size > s.recv_window
+        return engine.fail_connection(
+            @s,
+            error: engine.FLOW_CONTROL_ERROR,
+            why: f"DATA of {size} bytes on stream {id} past the connection's window of {s.recv_window}"
+        )
+    s.recv_window @ s.recv_window - size
+    state = engine.state_of(s, id: id)
+
+    if state == engine.IDLE
+        return engine.fail_connection(@s, error: engine.PROTOCOL_ERROR, why: f"DATA on stream {id}, never opened")
+
+    if !engine.has(s, id: id)
+        engine.give_back(@s, id: 0, count: size)
+        return ok()
+    st @= engine.get(s, id: id)
+
+    if state != engine.OPEN && state != engine.HALF_LOCAL || !st.head_in
+        engine.give_back(@s, id: 0, count: size)
+
+        if state == engine.CLOSED && st.cause == engine.ENDED
+            return engine.fail_connection(@s, error: engine.STREAM_CLOSED, why: f"DATA on stream {id}, which has ended")
+
+        if state == engine.HALF_REMOTE
+            engine.fail_stream(@s, @events, id: id, error: engine.STREAM_CLOSED)
+        else if state != engine.CLOSED
+            engine.fail_stream(@s, @events, id: id, error: engine.PROTOCOL_ERROR)
+        return ok()
+
+    if size > st.recv_window
+        engine.give_back(@s, id: 0, count: size)
+        engine.fail_stream(@s, @events, id: id, error: engine.FLOW_CONTROL_ERROR)
+        return ok()
+    st.recv_window @ st.recv_window - size
+    st.received @ st.received + data.len()
+
+    if st.expected >= 0 && (st.received > st.expected || end_stream && st.received != st.expected)
+        engine.put(@s, id: id, st: st)
+        engine.give_back(@s, id: 0, count: size)
+        engine.fail_stream(@s, @events, id: id, error: engine.PROTOCOL_ERROR)
+        return ok()
+    st.given @ st.given + data.len()
+    engine.put(@s, id: id, st: st)
+    s.given @ s.given + data.len()
+
+    if size > data.len()
+        engine.give_back(@s, id: id, count: size - data.len())
+
+    if data.len() == 0 && !end_stream
+        control(@s, now_ms: now_ms)?
+    engine.add(@events, e: .data(stream: id, data: data, end_stream: end_stream))
+
+    if end_stream
+        engine.end_remote(@s, id: id)
+    return ok()
+
+# A RST_STREAM: the stream ends, each counted against the rate a peer may
+# reset streams at.
+function on_reset(@s: engine.State, @events: [model.Event], id: i64, error: i64, now_ms: i64) -> ()?
+    state = engine.state_of(s, id: id)
+
+    if state == engine.IDLE
+        return engine.fail_connection(@s, error: engine.PROTOCOL_ERROR, why: f"RST_STREAM on stream {id}, never opened")
+
+    if !engine.count_reset(@s, now_ms: now_ms)
+        return engine.fail_connection(
+            @s,
+            error: engine.ENHANCE_YOUR_CALM,
+            why: f"more than {s.limits.resets_per_second} streams reset in one second"
+        )
+
+    if engine.has(s, id: id) && state != engine.CLOSED
+        st = engine.get(s, id: id)
+        known = st.ours || st.head_in
+        engine.close(@s, id: id, cause: engine.RESET_REMOTE)
+
+        if known
+            engine.add(@events, e: .reset(stream: id, error: error, remote: true))
+    return ok()
+
+# A SETTINGS frame: an acknowledgement of this end's, or the peer's, applied
+# with every check and acknowledged.
+function on_settings(@s: engine.State, @events: [model.Event], ack: bool, list: [model.Setting], now_ms: i64) -> ()?
+    if ack
+        if s.unacked.len() > 0
+            done = s.unacked[0]
+            s.unacked @ s.unacked.slice(from: 1, to: s.unacked.len())
+
+            if done.header_table_size != s.acked.header_table_size
+                decoding_limit(@s, size: done.header_table_size)
+            s.acked @ done
+        engine.add(@events, e: .settings_acked)
+        return ok()
+
+    if s.settings_seen
+        control(@s, now_ms: now_ms)?
+    a = values.apply(s.theirs, list: list)
+
+    if a.why != ""
+        return engine.fail_connection(@s, error: a.error, why: a.why)
+
+    if s.client
+        for one in list
+            if one.id == 2 && one.value == 1
+                return engine.fail_connection(
+                    @s,
+                    error: engine.PROTOCOL_ERROR,
+                    why: "a server's SETTINGS_ENABLE_PUSH of 1"
+                )
+    delta = a.settings.initial_window_size - s.theirs.initial_window_size
+
+    if delta != 0
+        for id in keys(s.streams)
+            st @= engine.get(s, id: id)
+
+            if st.state != engine.CLOSED
+                st.send_window @ st.send_window + delta
+
+                if st.send_window > engine.MOST_WINDOW
+                    return engine.fail_connection(
+                        @s,
+                        error: engine.FLOW_CONTROL_ERROR,
+                        why: f"SETTINGS_INITIAL_WINDOW_SIZE takes stream {id}'s window past 2^31 - 1"
+                    )
+                engine.put(@s, id: id, st: st)
+
+    table = if a.settings.header_table_size < 4096
+        a.settings.header_table_size
+    else
+        4096
+
+    if table != s.encoder.table.max_size
+        encoding.resize(@s.encoder, size: table)
+    s.theirs @ a.settings
+    s.settings_seen @ true
+    engine.emit(@s, f: .settings(ack: true, settings: []))
+    engine.add(@events, e: .settings(settings: a.settings))
+
+    if delta > 0
+        engine.add(@events, e: .window(stream: 0))
+    return ok()
+
+# Makes the decoder's limit this end's acknowledged table size.
+function decoding_limit(@s: engine.State, size: i64)
+    decoding.set_limit(@s.decoder, size: size)
+
+# A PING: an answer to this end's is told, the peer's answered.
+function on_ping(@s: engine.State, @events: [model.Event], ack: bool, data: [u8], now_ms: i64) -> ()?
+    if ack
+        engine.add(@events, e: .pong(data: data))
+        return ok()
+    control(@s, now_ms: now_ms)?
+    engine.emit(@s, f: .ping(ack: true, data: data))
+    engine.add(@events, e: .ping(data: data))
+    return ok()
+
+# A GOAWAY: a client's streams past the last one the server processes are
+# refused, and may be sent again on another connection.
+function on_goaway(@s: engine.State, @events: [model.Event], last: i64, error: i64, debug: [u8]) -> ()?
+    s.goaway_received @ true
+
+    if last < s.peer_last
+        s.peer_last @ last
+    s.peer_error @ error
+
+    for id in keys(s.streams)
+        st = engine.get(s, id: id)
+
+        if st.ours && id > last && st.state != engine.CLOSED
+            engine.close(@s, id: id, cause: engine.RESET_REMOTE)
+            engine.add(@events, e: .reset(stream: id, error: engine.REFUSED_STREAM, remote: true))
+
+    engine.add(@events, e: .goaway(last_stream: last, error: error, debug: debug))
+    return ok()
+
+# A WINDOW_UPDATE: more bytes this end may send, on the connection or on a
+# stream.
+function on_window(@s: engine.State, @events: [model.Event], id: i64, increment: i64) -> ()?
+    if id == 0
+        if s.send_window + increment > engine.MOST_WINDOW
+            return engine.fail_connection(
+                @s,
+                error: engine.FLOW_CONTROL_ERROR,
+                why: "a WINDOW_UPDATE takes the connection's window past 2^31 - 1"
+            )
+        s.send_window @ s.send_window + increment
+        engine.add(@events, e: .window(stream: 0))
+        return ok()
+    state = engine.state_of(s, id: id)
+
+    if state == engine.IDLE
+        return engine.fail_connection(
+            @s,
+            error: engine.PROTOCOL_ERROR,
+            why: f"a WINDOW_UPDATE on stream {id}, never opened"
+        )
+
+    if !engine.has(s, id: id) || state == engine.CLOSED
+        return ok()
+    st @= engine.get(s, id: id)
+
+    if st.send_window + increment > engine.MOST_WINDOW
+        engine.fail_stream(@s, @events, id: id, error: engine.FLOW_CONTROL_ERROR)
+        return ok()
+    st.send_window @ st.send_window + increment
+    engine.put(@s, id: id, st: st)
+    engine.add(@events, e: .window(stream: id))
+    return ok()
+
+## Tests
+
+# A field.
+function field(name: str, value: str) -> model.Field
+    return model.Field(name: name, value: value, sensitive: false)
+
+# A GET of `path`.
+function get_of(path: str) -> [model.Field]
+    return [
+        field(name: ":method", value: "GET")
+        field(name: ":scheme", value: "https")
+        field(name: ":path", value: path)
+        field(name: ":authority", value: "example.com")
+    ]
+
+# The events `to` makes of what `from` wrote.
+function pump(@from: engine.State, @to: engine.State, now_ms: i64) -> [model.Event]?
+    out = from.out
+    from.out @ []
+    return receive(@to, data: out, now_ms: now_ms)
+
+# A client and a server that have exchanged their settings, with options.
+record Pair
+    # The client.
+    client: engine.State
+    # The server.
+    server: engine.State
+
+# Two sessions past their first frames.
+function paired(client: model.Options, server: model.Options) -> Pair
+    c @= engine.make(client: true, options: client)
+    sv @= engine.make(client: false, options: server)
+    _ = pump(from: @c, to: @sv, now_ms: 0).must()
+    _ = pump(from: @sv, to: @c, now_ms: 0).must()
+    _ = pump(from: @c, to: @sv, now_ms: 0).must()
+    return Pair(client: c, server: sv)
+
+# The error code of the GOAWAY in `out`, -1 where it holds none.
+function goaway_error(out: [u8]) -> i64
+    at: i64 @= 0
+
+    while at + 9 <= out.len()
+        head = frames.head_at(out, at: at)
+
+        if head.kind == 7 && at + 17 <= out.len()
+            return frames.u32_at(out, at: at + 13)
+        at @ at + 9 + head.length
+
+    return -1
+
+# The error code of the first RST_STREAM in `out`, -1 where it holds none.
+function reset_error(out: [u8]) -> i64
+    at: i64 @= 0
+
+    while at + 9 <= out.len()
+        head = frames.head_at(out, at: at)
+
+        if head.kind == 3
+            return frames.u32_at(out, at: at + 9)
+        at @ at + 9 + head.length
+
+    return -1
+
+test "receive: the preface and the settings both ways, acknowledged"
+    c @= engine.make(client: true, options: values.default_options())
+    sv @= engine.make(client: false, options: values.default_options())
+    first = pump(from: @c, to: @sv, now_ms: 0).must()
+    assert first.len() == 3
+    assert first[1] == .window(stream: 0)
+    assert sv.theirs.max_concurrent_streams == 100
+    second = pump(from: @sv, to: @c, now_ms: 0).must()
+    assert second.len() == 4
+    assert second[3] == .settings_acked
+    assert pump(from: @c, to: @sv, now_ms: 0).must() == [.settings_acked]
+    assert c.recv_window == 16777216
+    assert sv.send_window == 16777216
+
+test "receive: a GET and its response with a body, its data acknowledged"
+    p @= paired(client: values.default_options(), server: values.default_options())
+    id = sending.open_stream(@p.client, headers: get_of("/a"), end_stream: true).must()
+    assert id == 1
+    asked = pump(from: @p.client, to: @p.server, now_ms: 0).must()
+    assert asked == [.request(stream: 1, method: "GET", scheme: "https", authority: "example.com", path: "/a", protocol: "", headers: [], end_stream: true)]
+    sending.send_headers(@p.server, id: 1, headers: [field(name: ":status", value: "200")], end_stream: false).must()
+    assert sending.send_from(@p.server, id: 1, data: [104, 105], from: 0, end_stream: true).must() == 2
+    answered = pump(from: @p.server, to: @p.client, now_ms: 0).must()
+    assert answered == [.response(stream: 1, status: 200, headers: [], end_stream: false), .data(stream: 1, data: [104, 105], end_stream: true)]
+    assert engine.state_of(p.client, id: 1) == engine.CLOSED
+    sending.acknowledge(@p.client, id: 1, count: 2).must()
+    assert sending.acknowledge(@p.client, id: 1, count: 1).is_err()
+
+test "receive: a header block of 40,000 bytes across CONTINUATION frames"
+    p @= paired(client: values.default_options(), server: values.default_options())
+    big = repeat("v", 40000)
+    list @= get_of("/")
+    list @ list.push(field(name: "x-big", value: big))
+    _ = sending.open_stream(@p.client, headers: list, end_stream: true).must()
+    got = pump(from: @p.client, to: @p.server, now_ms: 0).must()
+    assert got.len() == 1
+
+test "receive: a CONTINUATION flood ends the connection with ENHANCE_YOUR_CALM"
+    p @= paired(client: values.default_options(), server: values.default_options())
+    block = encoding.encode(@p.client.encoder, fields: get_of("/"))
+    engine.emit(
+        @p.client,
+        f: .headers(stream: 1, block: block, end_stream: true, end_headers: false, padding: 0, has_priority: false, priority: model.Priority(exclusive: false, depends_on: 0, weight: 16))
+    )
+
+    for _ in range(from: 0, to: 70)
+        engine.emit(@p.client, f: .continuation(stream: 1, block: [], end_headers: false))
+
+    match pump(from: @p.client, to: @p.server, now_ms: 0)
+        .ok _  => assert false
+        .err e => assert e.code == model.LIMIT
+
+    assert goaway_error(p.server.out) == engine.ENHANCE_YOUR_CALM
+
+test "receive: streams reset faster than 100 a second end the connection (CVE-2023-44487)"
+    p @= paired(client: values.default_options(), server: values.default_options())
+    failed: bool @= false
+
+    for n in range(from: 0, to: 120)
+        if !failed
+            id = sending.open_stream(@p.client, headers: get_of("/"), end_stream: true).must()
+            sending.reset_stream(@p.client, id: id, error: engine.CANCEL).must()
+
+            match pump(from: @p.client, to: @p.server, now_ms: 5)
+                .ok _ => _ = 0
+                .err e =>
+                    assert e.code == model.LIMIT
+                    assert n == 100
+                    failed @ true
+
+    assert failed
+    assert goaway_error(p.server.out) == engine.ENHANCE_YOUR_CALM
+
+test "receive: resets spread over seconds are no flood"
+    p @= paired(client: values.default_options(), server: values.default_options())
+
+    for n in range(from: 0, to: 300)
+        id = sending.open_stream(@p.client, headers: get_of("/"), end_stream: true).must()
+        sending.reset_stream(@p.client, id: id, error: engine.CANCEL).must()
+        _ = pump(from: @p.client, to: @p.server, now_ms: n * 20).must()
+
+    assert sending.is_open(p.server)
+
+test "receive: a stream past SETTINGS_MAX_CONCURRENT_STREAMS refused, the client told"
+    o @= values.default_options()
+    o.settings.max_concurrent_streams @ 2
+    c @= engine.make(client: true, options: values.default_options())
+    sv @= engine.make(client: false, options: o)
+
+    for _ in range(from: 0, to: 3)
+        _ = sending.open_stream(@c, headers: get_of("/"), end_stream: true).must()
+
+    got = pump(from: @c, to: @sv, now_ms: 0).must()
+    assert got.len() == 5
+    assert reset_error(sv.out) == engine.REFUSED_STREAM
+    back = pump(from: @sv, to: @c, now_ms: 0).must()
+    assert back[back.len() - 1] == .reset(stream: 5, error: engine.REFUSED_STREAM, remote: true)
+    assert !sending.has_room(c)
+
+test "receive: a header list past the server's size answered 431, the table kept in step"
+    o @= values.default_options()
+    o.settings.max_header_list_size @ 1000
+    p @= paired(client: values.default_options(), server: o)
+    list @= get_of("/")
+    list @ list.push(field(name: "x-big", value: repeat("v", 2000)))
+    _ = sending.open_stream(@p.client, headers: list, end_stream: true).must()
+    assert pump(from: @p.client, to: @p.server, now_ms: 0).must() == []
+    answer = pump(from: @p.server, to: @p.client, now_ms: 0).must()
+    assert answer == [.response(stream: 1, status: 431, headers: [], end_stream: true)]
+    _ = sending.open_stream(@p.client, headers: get_of("/b"), end_stream: true).must()
+    assert pump(from: @p.client, to: @p.server, now_ms: 0).must().len() == 1
+
+test "receive: PINGs answered, the answer told, and a flood of them ended"
+    p @= paired(client: values.default_options(), server: values.default_options())
+    sending.send_ping(@p.client, data: [1, 2, 3, 4, 5, 6, 7, 8]).must()
+    assert pump(from: @p.client, to: @p.server, now_ms: 0).must() == [.ping(data: [1, 2, 3, 4, 5, 6, 7, 8])]
+    assert pump(from: @p.server, to: @p.client, now_ms: 0).must() == [.pong(data: [1, 2, 3, 4, 5, 6, 7, 8])]
+
+    for _ in range(from: 0, to: 1001)
+        sending.send_ping(@p.client, data: [0, 0, 0, 0, 0, 0, 0, 0]).must()
+
+    assert pump(from: @p.client, to: @p.server, now_ms: 0).is_err()
+
+test "receive: a body past the windows sent as they open"
+    o @= values.default_options()
+    o.settings.initial_window_size @ 65535
+    o.connection_window @ 65535
+    p @= paired(client: o, server: values.default_options())
+    _ = sending.open_stream(@p.client, headers: get_of("/"), end_stream: true).must()
+    _ = pump(from: @p.client, to: @p.server, now_ms: 0).must()
+    body = bytes.repeated([7], n: 100000)
+    sending.send_headers(@p.server, id: 1, headers: [field(name: ":status", value: "200")], end_stream: false).must()
+    at: i64 @= sending.send_from(@p.server, id: 1, data: body, from: 0, end_stream: true).must()
+    assert at == 65535
+    got: i64 @= 0
+    rounds: i64 @= 0
+
+    while got < 100000 && rounds < 10
+        for e in pump(from: @p.server, to: @p.client, now_ms: 0).must()
+            match e
+                .data d =>
+                    got @ got + d.data.len()
+                    sending.acknowledge(@p.client, id: 1, count: d.data.len()).must()
+                .response _ | .informational _ | .trailers _ | .request _ | .reset _ | .settings _ | .settings_acked | .ping _ | .pong _ | .goaway _ | .window _ => _ = 0
+
+        _ = pump(from: @p.client, to: @p.server, now_ms: 0).must()
+
+        if at < body.len()
+            at @ sending.send_from(@p.server, id: 1, data: body, from: at, end_stream: true).must()
+        rounds @ rounds + 1
+
+    assert got == 100000
+    assert engine.state_of(p.server, id: 1) == engine.CLOSED
+
+test "receive: DATA past the connection's window ends it with FLOW_CONTROL_ERROR"
+    o @= values.default_options()
+    o.connection_window @ 65535
+    o.settings.initial_window_size @ 1000000
+    p @= paired(client: o, server: values.default_options())
+    _ = sending.open_stream(@p.client, headers: get_of("/"), end_stream: true).must()
+    _ = pump(from: @p.client, to: @p.server, now_ms: 0).must()
+    sending.send_headers(@p.server, id: 1, headers: [field(name: ":status", value: "200")], end_stream: false).must()
+    p.server.send_window @ 1000000
+    _ = sending.send_from(@p.server, id: 1, data: bytes.repeated([7], n: 70000), from: 0, end_stream: false).must()
+    assert pump(from: @p.server, to: @p.client, now_ms: 0).is_err()
+    assert goaway_error(p.client.out) == engine.FLOW_CONTROL_ERROR
+
+test "receive: GOAWAY refuses the client's streams past its last, and they may go again"
+    p @= paired(client: values.default_options(), server: values.default_options())
+    _ = sending.open_stream(@p.client, headers: get_of("/1"), end_stream: true).must()
+    _ = pump(from: @p.client, to: @p.server, now_ms: 0).must()
+    _ = sending.open_stream(@p.client, headers: get_of("/3"), end_stream: true).must()
+    sending.send_goaway(@p.server, error: engine.NO_ERROR, debug: "bye").must()
+    got = pump(from: @p.server, to: @p.client, now_ms: 0).must()
+    assert got == [.reset(stream: 3, error: engine.REFUSED_STREAM, remote: true), .goaway(last_stream: 1, error: 0, debug: [98, 121, 101])]
+    assert sending.open_stream(@p.client, headers: get_of("/5"), end_stream: true).is_err()
+
+test "receive: a malformed request reset, a bad preface, a first frame not SETTINGS"
+    p @= paired(client: values.default_options(), server: values.default_options())
+    list @= get_of("/")
+    list @ list.push(field(name: "Accept", value: "x"))
+    block = encoding.encode(@p.client.encoder, fields: list)
+    engine.emit_block(@p.client, stream: 1, block: block, end_stream: true)
+    assert pump(from: @p.client, to: @p.server, now_ms: 0).must() == []
+    assert reset_error(p.server.out) == engine.PROTOCOL_ERROR
+    sv @= engine.make(client: false, options: values.default_options())
+    assert receive(@sv, data: bytes.from_text("GET / HTTP/1.1\r\n\r\n"), now_ms: 0).is_err()
+    sv2 @= engine.make(client: false, options: values.default_options())
+    raw: [u8] @= bytes.from_text(engine.PREFACE)
+    bytes.push_all(to: @raw, from: [0, 0, 8, 6, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8])
+    assert receive(@sv2, data: raw, now_ms: 0).is_err()
+
+test "receive: a request with a body and trailers, and bytes handed over one at a time"
+    p @= paired(client: values.default_options(), server: values.default_options())
+    list @= get_of("/")
+    list @ list.push(field(name: "te", value: "trailers"))
+    _ = sending.open_stream(@p.client, headers: list, end_stream: false).must()
+    _ = sending.send_from(@p.client, id: 1, data: [1, 2, 3], from: 0, end_stream: false).must()
+    sending.send_headers(@p.client, id: 1, headers: [field(name: "x-sum", value: "6")], end_stream: true).must()
+    out = sending.take_output(@p.client)
+    events: [model.Event] @= []
+
+    for b in out
+        for e in receive(@p.server, data: [b], now_ms: 0).must()
+            events @ events.push(e)
+
+    assert events.len() == 3
+    assert events[1] == .data(stream: 1, data: [1, 2, 3], end_stream: false)
+    assert events[2] == .trailers(stream: 1, headers: [field(name: "x-sum", value: "6")])
+
+test "receive: a server's SETTINGS with no push setting accepted, one sending push 1 refused"
+    c @= engine.make(client: true, options: values.default_options())
+    sv @= engine.make(client: false, options: values.default_options())
+    _ = pump(from: @c, to: @sv, now_ms: 0).must()
+    sv.out @ []
+    engine.emit(@sv, f: .settings(ack: false, settings: [model.Setting(id: 3, value: 250)]))
+    assert pump(from: @sv, to: @c, now_ms: 0).must().len() == 1
+    engine.emit(@sv, f: .settings(ack: false, settings: [model.Setting(id: 2, value: 1)]))
+    assert pump(from: @sv, to: @c, now_ms: 0).is_err()
+    assert goaway_error(c.out) == engine.PROTOCOL_ERROR

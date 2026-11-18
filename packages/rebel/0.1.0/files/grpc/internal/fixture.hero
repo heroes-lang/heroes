@@ -1,0 +1,226 @@
+# FOR TESTS: a gRPC server and client of this process, each on a thread of
+# its own over h2c, written on `http2` and this package's private moves: the
+# server echoes, fails, streams or stays silent by the method's name; the
+# client calls one method once and says what came back.
+
+use bytes
+use grpc/internal/calls
+use grpc/internal/clock
+use http2
+use io
+use net
+use numbers
+use time
+use tls
+
+# A port no socket listens on now.
+function free_port() -> i64
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    port = l.address.port
+    net.close_listener(@l).must()
+    return port
+
+# Waits until something listens on `port`; the connection that finds it is
+# closed at once.
+function until_listening(port: i64)
+    for _ in range(from: 0, to: 200)
+        match net.connect("127.0.0.1", port: port, deadline_ms: 1000)
+            .ok c =>
+                s @= c.stream
+                io.close(@s).must()
+                return
+            .err _ => time.sleep(time.milliseconds(10).must())
+
+# Every request message of `stream`, read until the client's last.
+function requests_of(@c: http2.Conn, stream: i64) -> [[u8]]
+    held: [u8] @= []
+    pending: [[u8]] @= []
+
+    while true
+        match http2.read_event_of(@c, stream: stream)
+            .ok e =>
+                match e
+                    .data d =>
+                        _ = calls.take(held: @held, @pending, data: d.data, gzip: true, most: 1048576)
+
+                        if d.end_stream
+                            return pending
+                    .trailers _ => return pending
+                    .reset _ => return pending
+                    .request _ | .response _ | .informational _ | .window _ | .settings _ | .settings_acked | .ping _ | .pong _ | .goaway _ => _ = 0
+            .err _ => return pending
+
+# Answers one call by its method: `Echo` sends each request back, `Many`
+# sends three, `Fail` ends `NOT_FOUND`, `Silent` answers nothing for two
+# seconds.
+function answer(@c: http2.Conn, stream: i64, path: str) -> ()?
+    asked = requests_of(@c, stream: stream)
+
+    if path == "/test.Echo/Fail"
+        head @= calls.response_head(false)
+
+        for f in calls.status_fields(code: 5, message: "no such thing", details: [1, 2])
+            head @ head.push(f)
+
+        return http2.write_headers(@c, stream: stream, headers: head, end_stream: true)
+
+    if path == "/test.Echo/Silent"
+        time.sleep(time.milliseconds(2000).must())
+    http2.write_headers(@c, stream: stream, headers: calls.response_head(false), end_stream: false)?
+    sent @= asked
+
+    if path == "/test.Echo/Many"
+        sent @ [bytes.from_text("one"), bytes.from_text("two"), bytes.from_text("three")]
+
+    for m in sent
+        http2.write_data(@c, stream: stream, data: calls.framed(m, gzip: false)?, end_stream: false)?
+
+    return http2.write_headers(
+        @c,
+        stream: stream,
+        headers: calls.status_fields(code: 0, message: "", details: []),
+        end_stream: true
+    )
+
+# Answers every call of `c` until the client ends the connection, and
+# answers how many.
+function serve_on(@c: http2.Conn) -> i64
+    answered: i64 @= 0
+
+    while true
+        match http2.accept_stream(@c)
+            .ok e =>
+                match e
+                    .request r =>
+                        if answer(@c, stream: r.stream, path: r.path).is_err()
+                            _ = 0
+                        answered @ answered + 1
+                    .response _ | .informational _ | .trailers _ | .data _ | .reset _ | .window _ | .settings _ | .settings_acked | .ping _ | .pong _ | .goaway _ => _ = 0
+            .err _ => return answered
+
+# A thread's body: a gRPC server over h2c on the port `arg` names, answering
+# every call of the first connection that makes one, and answering how many.
+function serve(arg: str) -> str
+    port = numbers.parse_int(arg).must()
+    l @= net.listen(host: "127.0.0.1", port: port).must()
+    net.set_accept_deadline(l, ms: 10000).must()
+    answered: i64 @= 0
+
+    for _ in range(from: 0, to: 10)
+        if answered == 0
+            match net.accept(l, deadline_ms: 15000)
+                .ok accepted =>
+                    stream @= accepted.stream
+
+                    match http2.server_of(@stream, options: http2.default_options())
+                        .ok made =>
+                            c @= made
+                            answered @ serve_on(@c)
+
+                            match http2.close(@c)
+                                .ok _  => _ = 0
+                                .err _ => _ = 0
+                        .err _ => io.close(@stream).must()
+                .err _ => _ = 0
+
+    net.close_listener(@l).must()
+    return to_str(answered)
+
+# A thread's body: a gRPC server over TLS offering `h2`, with the test
+# certificate of `localhost`, answering as `serve` does.
+function serve_tls(arg: str) -> str
+    port = numbers.parse_int(arg).must()
+    l @= tls.listen(
+        host: "127.0.0.1",
+        port: port,
+        server: tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: ["h2"])
+    ).must()
+    tls.set_accept_deadline(l, ms: 10000).must()
+    answered: i64 @= 0
+
+    for _ in range(from: 0, to: 10)
+        if answered == 0
+            match tls.accept(l, deadline_ms: 10000)
+                .ok accepted =>
+                    stream @= accepted
+                    tls.set_deadline(stream, ms: 15000).must()
+
+                    match http2.server_of(@stream, options: http2.default_options())
+                        .ok made =>
+                            c @= made
+                            answered @ serve_on(@c)
+
+                            match http2.close(@c)
+                                .ok _  => _ = 0
+                                .err _ => _ = 0
+                        .err _ => io.close(@stream).must()
+                .err _ => _ = 0
+
+    tls.close_listener(@l).must()
+    return to_str(answered)
+
+# A thread's body: one call over h2c, `arg` holding the port, the path and
+# the request's text apart by spaces; answered as "status messages first",
+# the first response as text.
+function call(arg: str) -> str
+    words = split_words(arg)
+    port = numbers.parse_int(words[0]).must()
+    c @= http2.connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: http2.default_options()).must()
+    head = calls.call_head(
+        scheme: "http",
+        authority: "localhost",
+        path: words[1],
+        user_agent: "fixture",
+        gzip: false,
+        timeout: "",
+        names: [],
+        values: []
+    ).must()
+    id = http2.start_stream(@c, headers: head, end_stream: false).must()
+    http2.write_data(
+        @c,
+        stream: id,
+        data: calls.framed(bytes.from_text(words[2]), gzip: false).must(),
+        end_stream: true
+    ).must()
+    held: [u8] @= []
+    pending: [[u8]] @= []
+    code: i64 @= -1
+
+    while code < 0
+        match http2.read_event_of(@c, stream: id)
+            .ok e =>
+                match e
+                    .response r =>
+                        if r.end_stream
+                            code @ calls.said(r.headers, http_status: r.status).code
+                    .data d => _ = calls.take(held: @held, @pending, data: d.data, gzip: true, most: 1048576)
+                    .trailers t => code @ calls.said(t.headers, http_status: 200).code
+                    .reset r => code @ 1000 + r.error
+                    .request _ | .informational _ | .window _ | .settings _ | .settings_acked | .ping _ | .pong _ | .goaway _ => _ = 0
+            .err _ => code @ 999
+
+    http2.close(@c).must()
+
+    first = if pending.len() > 0
+        bytes.to_text_lossy(pending[0])
+    else
+        ""
+    return f"{code} {pending.len()} {first}"
+
+# The words of `s` apart by spaces.
+function split_words(s: str) -> [str]
+    out: [str] @= []
+    at: i64 @= 0
+
+    for i in range(from: 0, to: s.len())
+        if s[i] == ' '
+            out @ out.push(s.slice(from: at, to: i))
+            at @ i + 1
+
+    out @ out.push(s.slice(from: at, to: s.len()))
+    return out
+
+# The milliseconds of `clock`, so a test can measure a wait.
+function now_ms() -> i64
+    return clock.now_ms()

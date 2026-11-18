@@ -1,0 +1,2600 @@
+# HTTP/2 (RFC 9113) and its header compression HPACK (RFC 7541), client and
+# server, over a `tls` stream whose ALPN chose `h2` or over a plain stream by
+# prior knowledge (h2c): many requests at once on one connection, each on a
+# stream of its own.
+#
+# Four layers, each usable alone. **Frames** are read and written with every
+# check RFC 9113 § 4 and § 6 make (sizes, stream identifiers, flags,
+# padding). **HPACK** writes and reads a header list with the static table,
+# the Huffman code and a dynamic table whose size the peer's settings bound.
+# **A session** is one connection's protocol with no stream under it: bytes
+# read are handed to `receive`, which answers events and leaves what must be
+# written in `take_output`; the streams and their states, flow control per
+# stream and per connection, SETTINGS, PING, GOAWAY, RST_STREAM and
+# CONTINUATION are its work, and a stream's priority is read and ignored, as
+# RFC 9113 § 5.3 allows. **A connection** is a session over an `io.Stream`:
+# requests sent and responses read whole or as they come, and a server that
+# reads each request whole and lets the program answer it with its own
+# handler and its own state.
+#
+# **A peer is held to bounds** (`Limits`): a header block's bytes and frames
+# (a CONTINUATION flood), a header list's size once decoded (an HPACK bomb:
+# the table is kept in step and the fields past the bound dropped), the
+# streams open at once, the streams reset each second (the rapid reset of
+# CVE-2023-44487), and the frames each second that carry nothing for the
+# program. A peer past one is sent GOAWAY with `ENHANCE_YOUR_CALM` or its
+# stream refused; nothing a peer sends aborts the program.
+#
+# **What it does not do.** It knows nothing of `http`'s requests, which
+# `http` turns into these; it pushes nothing (a client refuses PUSH_PROMISE,
+# a server never sends one), and HTTP/1.1's `Upgrade: h2c`, which RFC 9113
+# deprecates, is not offered. TLS is `tls`'s, the connection `net`'s.
+#
+# The codes it fails with: `invalid` (a frame, a block or an argument
+# HTTP/2 refuses, the message naming the RFC's error), `limit`, `not_text`,
+# `closed`, `not_found`, `unsupported`, and from the connection `timeout`,
+# `stopped` and `failed`.
+
+use bytes
+use http2/internal/decoding
+use http2/internal/encoding
+use http2/internal/engine
+use http2/internal/fixture
+use http2/internal/framer
+use http2/internal/frames
+use http2/internal/huffman
+use http2/internal/model
+use http2/internal/receiving
+use http2/internal/sending
+use http2/internal/values
+use http2/internal/wire
+use io
+use net
+use threads
+use tls
+
+## Codes
+
+# A frame, a header block or an argument that RFC 9113 or RFC 7541 refuses;
+# the message names the RFC's error and says what was found.
+constant INVALID: str
+    model.INVALID
+
+# A bound of `Limits` or of the settings passed by the peer, or a body past
+# `Limits.body_bytes`.
+constant LIMIT: str
+    model.LIMIT
+
+# A header field that is not UTF-8: `decode_fields`, and a session's peer.
+constant NOT_TEXT: str
+    model.NOT_TEXT
+
+# The connection or the stream is closed, reset, or past the peer's GOAWAY.
+constant CLOSED: str
+    model.CLOSED
+
+# A name with no address, or an error code with no name: `connect`,
+# `connect_plain`, `error_name`, `frame_name`.
+constant NOT_FOUND: str
+    model.NOT_FOUND
+
+# A server whose TLS chose another protocol than `h2`: `connect`.
+constant UNSUPPORTED: str
+    model.UNSUPPORTED
+
+# The time a connection allows ran out: the connection's functions.
+constant TIMEOUT: str
+    "timeout"
+
+# The program was asked to stop while a connection waited.
+constant STOPPED: str
+    "stopped"
+
+# The system refused for a reason no other code names.
+constant FAILED: str
+    "failed"
+
+## Error codes
+
+# NO_ERROR (RFC 9113 § 7): a graceful end, no error at all.
+constant NO_ERROR: i64
+    0x0
+
+# PROTOCOL_ERROR: the peer broke the protocol where no other code is more
+# specific.
+constant PROTOCOL_ERROR: i64
+    0x1
+
+# INTERNAL_ERROR: the end that sends it failed on its own.
+constant INTERNAL_ERROR: i64
+    0x2
+
+# FLOW_CONTROL_ERROR: a window was overrun or overflowed.
+constant FLOW_CONTROL_ERROR: i64
+    0x3
+
+# SETTINGS_TIMEOUT: settings sent were not acknowledged in time.
+constant SETTINGS_TIMEOUT: i64
+    0x4
+
+# STREAM_CLOSED: a frame came on a stream half closed already.
+constant STREAM_CLOSED: i64
+    0x5
+
+# FRAME_SIZE_ERROR: a frame of a size its type or the settings refuse.
+constant FRAME_SIZE_ERROR: i64
+    0x6
+
+# REFUSED_STREAM: the stream was refused before any of it was processed, so
+# a client may send it again.
+constant REFUSED_STREAM: i64
+    0x7
+
+# CANCEL: the stream is no longer wanted.
+constant CANCEL: i64
+    0x8
+
+# COMPRESSION_ERROR: a header block HPACK cannot read; the connection ends.
+constant COMPRESSION_ERROR: i64
+    0x9
+
+# CONNECT_ERROR: the connection a CONNECT request opened was reset or closed.
+constant CONNECT_ERROR: i64
+    0xa
+
+# ENHANCE_YOUR_CALM: the peer is sending more than this end allows.
+constant ENHANCE_YOUR_CALM: i64
+    0xb
+
+# INADEQUATE_SECURITY: the TLS under the connection is too weak.
+constant INADEQUATE_SECURITY: i64
+    0xc
+
+# HTTP_1_1_REQUIRED: the request must be sent over HTTP/1.1.
+constant HTTP_1_1_REQUIRED: i64
+    0xd
+
+# The name RFC 9113 § 7 gives an error code: `"PROTOCOL_ERROR"` for 1.
+#
+# - `code`: the error code, as a GOAWAY or a RST_STREAM carries it.
+#
+# Fails `not_found` for a code RFC 9113 does not name, which a peer may send
+# and which means `INTERNAL_ERROR`. See also `NO_ERROR`.
+function error_name(code: i64) -> str?
+    name = frames.error_name(code)
+
+    if name == ""
+        return fail(code: NOT_FOUND, msg: f"RFC 9113 names no error of code {code}")
+    return ok(name)
+
+## Frames
+
+# The type of a DATA frame.
+constant FRAME_DATA: i64
+    0x0
+
+# The type of a HEADERS frame.
+constant FRAME_HEADERS: i64
+    0x1
+
+# The type of a PRIORITY frame.
+constant FRAME_PRIORITY: i64
+    0x2
+
+# The type of a RST_STREAM frame.
+constant FRAME_RST_STREAM: i64
+    0x3
+
+# The type of a SETTINGS frame.
+constant FRAME_SETTINGS: i64
+    0x4
+
+# The type of a PUSH_PROMISE frame.
+constant FRAME_PUSH_PROMISE: i64
+    0x5
+
+# The type of a PING frame.
+constant FRAME_PING: i64
+    0x6
+
+# The type of a GOAWAY frame.
+constant FRAME_GOAWAY: i64
+    0x7
+
+# The type of a WINDOW_UPDATE frame.
+constant FRAME_WINDOW_UPDATE: i64
+    0x8
+
+# The type of a CONTINUATION frame.
+constant FRAME_CONTINUATION: i64
+    0x9
+
+# The flag END_STREAM of DATA and HEADERS: the sender's last frame on the
+# stream.
+constant FLAG_END_STREAM: i64
+    0x1
+
+# The flag ACK of SETTINGS and PING: an acknowledgement.
+constant FLAG_ACK: i64
+    0x1
+
+# The flag END_HEADERS of HEADERS, PUSH_PROMISE and CONTINUATION: the header
+# block ends in this frame.
+constant FLAG_END_HEADERS: i64
+    0x4
+
+# The flag PADDED of DATA, HEADERS and PUSH_PROMISE: a byte of padding's
+# length opens the payload.
+constant FLAG_PADDED: i64
+    0x8
+
+# The flag PRIORITY of HEADERS: five bytes of priority follow the padding's
+# length.
+constant FLAG_PRIORITY: i64
+    0x20
+
+# The bytes of a frame's head: a length of 24 bits, a type, flags and a
+# stream identifier of 31 bits.
+constant FRAME_HEAD_BYTES: i64
+    9
+
+# The smallest SETTINGS_MAX_FRAME_SIZE, and its initial value: 16,384 bytes.
+constant MIN_FRAME_SIZE: i64
+    16384
+
+# The largest SETTINGS_MAX_FRAME_SIZE: 16,777,215 bytes.
+constant MAX_FRAME_SIZE: i64
+    16777215
+
+# The largest window and the largest stream identifier: 2^31 - 1.
+constant MAX_WINDOW: i64
+    2147483647
+
+# What a setting with no limit holds: 2^32 - 1, its largest value, which is
+# what SETTINGS_MAX_CONCURRENT_STREAMS and SETTINGS_MAX_HEADER_LIST_SIZE hold
+# before a peer says otherwise.
+constant NO_LIMIT: i64
+    4294967295
+
+# The bytes a client sends before its first frame (RFC 9113 § 3.4).
+constant PREFACE: str
+    "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
+
+# The name TLS's ALPN gives HTTP/2.
+constant ALPN: str
+    "h2"
+
+# A stream's priority as RFC 7540 § 5.3 wrote it, which RFC 9113 deprecates:
+# read from HEADERS and PRIORITY frames and ignored by a session, written by
+# a program that sends frames itself.
+record Priority
+    # Whether the stream depends on `depends_on` alone, its other dependents
+    # moved under it.
+    exclusive: bool
+    # The stream it depends on, 0 for none, 0 to 2^31 - 1.
+    depends_on: i64
+    # Its weight, 1 to 256.
+    weight: i64
+
+# One setting of a SETTINGS frame.
+record Setting
+    # Its identifier: a `SETTING_` constant, or another the receiver ignores.
+    id: i64
+    # Its value, 0 to 4,294,967,295.
+    value: i64
+
+# One frame (RFC 9113 § 6): what `decode_frame` and `read_frame` answer and
+# `encode_frame` and `write_frame` take. A stream identifier is 0 to
+# 2^31 - 1; the reserved bit is read and dropped, and written 0.
+variant Frame
+    # DATA: bytes of a stream's body.
+    data
+        # The stream, 1 or more.
+        stream: i64
+        # The bytes, the padding left out.
+        data: [u8]
+        # Whether this is the sender's last frame on the stream.
+        end_stream: bool
+        # How many bytes of zero pad the frame, 0 to 255; a frame read with
+        # PADDED and none holds 0, as one read without it does.
+        padding: i64
+    # HEADERS: a header block, or the first fragment of one.
+    headers
+        # The stream, 1 or more.
+        stream: i64
+        # The fragment of the header block, as HPACK wrote it.
+        block: [u8]
+        # Whether this is the sender's last frame on the stream.
+        end_stream: bool
+        # Whether the block ends here; where not, CONTINUATION frames follow.
+        end_headers: bool
+        # How many bytes of zero pad the frame, 0 to 255.
+        padding: i64
+        # Whether the frame carries a priority (the flag PRIORITY).
+        has_priority: bool
+        # The priority, where `has_priority`; ignored otherwise.
+        priority: Priority
+    # PRIORITY: a stream's priority, read and ignored.
+    priority
+        # The stream, 1 or more.
+        stream: i64
+        # The priority.
+        priority: Priority
+    # RST_STREAM: a stream ended at once.
+    rst_stream
+        # The stream, 1 or more.
+        stream: i64
+        # Why: an error code, `CANCEL` or `NO_ERROR` among them.
+        error: i64
+    # SETTINGS: an end's settings, or the acknowledgement of the peer's.
+    settings
+        # Whether this acknowledges the peer's settings, and holds none.
+        ack: bool
+        # The settings, in their order; none for an acknowledgement.
+        settings: [Setting]
+    # PUSH_PROMISE: a server's promise of a stream it will push.
+    push_promise
+        # The stream the promise is made on, 1 or more.
+        stream: i64
+        # The stream promised, 1 or more.
+        promised: i64
+        # The fragment of the promised request's header block.
+        block: [u8]
+        # Whether the block ends here.
+        end_headers: bool
+        # How many bytes of zero pad the frame, 0 to 255.
+        padding: i64
+    # PING: eight bytes the peer sends back.
+    ping
+        # Whether this is the answer to a ping.
+        ack: bool
+        # The bytes, exactly 8.
+        data: [u8]
+    # GOAWAY: the end of the connection, gracefully or for an error.
+    goaway
+        # The highest stream the sender processed or may process, 0 to
+        # 2^31 - 1.
+        last_stream: i64
+        # Why: an error code, `NO_ERROR` for a graceful end.
+        error: i64
+        # Bytes for a person reading the trace, any or none.
+        debug: [u8]
+    # WINDOW_UPDATE: more bytes the sender may receive.
+    window_update
+        # The stream, 0 for the whole connection.
+        stream: i64
+        # The bytes added to the window, 1 to 2^31 - 1.
+        increment: i64
+    # CONTINUATION: the next fragment of a header block.
+    continuation
+        # The stream, 1 or more.
+        stream: i64
+        # The fragment.
+        block: [u8]
+        # Whether the block ends here.
+        end_headers: bool
+    # A frame of a type RFC 9113 does not define, which a receiver ignores
+    # (RFC 9113 § 4.1): an extension's, such as ALTSVC or PRIORITY_UPDATE.
+    unknown
+        # Its type, 10 to 255.
+        kind: i64
+        # Its flags, 0 to 255, as sent.
+        flags: i64
+        # Its stream, 0 to 2^31 - 1.
+        stream: i64
+        # Its payload.
+        payload: [u8]
+
+# The bytes of `f` on the wire: its head of nine bytes, then its payload.
+#
+# - `f`: the frame.
+#
+# Fails `invalid` where a field is out of its range: a stream of 0 where the
+# type needs one or another where it needs 0, a stream or a window past
+# 2^31 - 1, padding past 255, a PING's data other than 8 bytes, an
+# acknowledgement holding settings, an `unknown` frame of a type RFC 9113
+# defines, or a payload past `MAX_FRAME_SIZE`. See also `decode_frame`,
+# `write_frame`.
+function encode_frame(f: Frame) -> [u8]?
+    inner: model.Frame = match f
+        .data d => .data(stream: d.stream, data: d.data, end_stream: d.end_stream, padding: d.padding)
+        .headers h => .headers(
+            stream: h.stream,
+            block: h.block,
+            end_stream: h.end_stream,
+            end_headers: h.end_headers,
+            padding: h.padding,
+            has_priority: h.has_priority,
+            priority: model.Priority(exclusive: h.priority.exclusive, depends_on: h.priority.depends_on, weight: h.priority.weight)
+        )
+        .priority p => .priority(
+            stream: p.stream,
+            priority: model.Priority(exclusive: p.priority.exclusive, depends_on: p.priority.depends_on, weight: p.priority.weight)
+        )
+        .rst_stream r => .rst_stream(stream: r.stream, error: r.error)
+        .settings s =>
+            list: [model.Setting] @= []
+
+            for one in s.settings
+                list @ list.push(model.Setting(id: one.id, value: one.value))
+
+            .settings(ack: s.ack, settings: list)
+        .push_promise p => .push_promise(
+            stream: p.stream,
+            promised: p.promised,
+            block: p.block,
+            end_headers: p.end_headers,
+            padding: p.padding
+        )
+        .ping p          => .ping(ack: p.ack, data: p.data)
+        .goaway g        => .goaway(last_stream: g.last_stream, error: g.error, debug: g.debug)
+        .window_update w => .window_update(stream: w.stream, increment: w.increment)
+        .continuation c  => .continuation(stream: c.stream, block: c.block, end_headers: c.end_headers)
+        .unknown u       => .unknown(kind: u.kind, flags: u.flags, stream: u.stream, payload: u.payload)
+
+    return framer.encode(inner)
+
+# The frame `data` holds: exactly one frame, its head and its payload.
+#
+# - `data`: the bytes of one frame.
+# - `max_size`: the largest payload accepted, this end's
+#   SETTINGS_MAX_FRAME_SIZE: `MIN_FRAME_SIZE` to `MAX_FRAME_SIZE`.
+#
+# A frame of an unknown type is answered as `unknown`; unknown flags are
+# dropped.
+#
+# Fails `invalid` where `data` is not one whole frame, or the frame breaks a
+# rule of RFC 9113 § 6, the message naming its error: a payload past
+# `max_size`, a PING not of 8 bytes, a RST_STREAM or a WINDOW_UPDATE not of
+# 4, a PRIORITY not of 5, SETTINGS not a multiple of 6 or an acknowledgement
+# with a payload (`FRAME_SIZE_ERROR`); a stream of 0 where the type needs one
+# or another where it needs 0, padding as long as the payload, an increment
+# of 0 (`PROTOCOL_ERROR`). See also `read_frame`, `encode_frame`.
+function decode_frame(data: [u8], max_size: i64) -> Frame?
+    if max_size < MIN_FRAME_SIZE || max_size > MAX_FRAME_SIZE
+        return fail(
+            code: INVALID,
+            msg: f"reading a frame: the largest payload {max_size} is outside 16,384 to 16,777,215"
+        )
+    d = frames.decode_whole(data, max_size: max_size)
+
+    if d.why != ""
+        return fail(code: INVALID, msg: f"reading a frame: {frames.describe(d.error)}: {d.why}")
+
+    out: Frame = match d.frame
+        .data x => .data(stream: x.stream, data: x.data, end_stream: x.end_stream, padding: x.padding)
+        .headers h => .headers(
+            stream: h.stream,
+            block: h.block,
+            end_stream: h.end_stream,
+            end_headers: h.end_headers,
+            padding: h.padding,
+            has_priority: h.has_priority,
+            priority: Priority(exclusive: h.priority.exclusive, depends_on: h.priority.depends_on, weight: h.priority.weight)
+        )
+        .priority p => .priority(
+            stream: p.stream,
+            priority: Priority(exclusive: p.priority.exclusive, depends_on: p.priority.depends_on, weight: p.priority.weight)
+        )
+        .rst_stream r => .rst_stream(stream: r.stream, error: r.error)
+        .settings s =>
+            list: [Setting] @= []
+
+            for one in s.settings
+                list @ list.push(Setting(id: one.id, value: one.value))
+
+            .settings(ack: s.ack, settings: list)
+        .push_promise p => .push_promise(
+            stream: p.stream,
+            promised: p.promised,
+            block: p.block,
+            end_headers: p.end_headers,
+            padding: p.padding
+        )
+        .ping p          => .ping(ack: p.ack, data: p.data)
+        .goaway g        => .goaway(last_stream: g.last_stream, error: g.error, debug: g.debug)
+        .window_update w => .window_update(stream: w.stream, increment: w.increment)
+        .continuation c  => .continuation(stream: c.stream, block: c.block, end_headers: c.end_headers)
+        .unknown u       => .unknown(kind: u.kind, flags: u.flags, stream: u.stream, payload: u.payload)
+
+    return ok(out)
+
+# The next frame `r` reads, its head then its payload, checked as
+# `decode_frame` checks it.
+#
+# - `r`: the reader of the connection; it advances past the frame.
+# - `max_size`: the largest payload accepted, as `decode_frame` takes it.
+#
+# A payload past `max_size` is refused from its head, before its bytes are
+# read. Fails as `decode_frame` does, and `closed` where the stream ends
+# inside a frame. See also `write_frame`.
+function read_frame(@r: io.Reader, max_size: i64) -> Frame?
+    if max_size < MIN_FRAME_SIZE || max_size > MAX_FRAME_SIZE
+        return fail(
+            code: INVALID,
+            msg: f"reading a frame: the largest payload {max_size} is outside 16,384 to 16,777,215"
+        )
+    head @= io.read_n(@r, n: FRAME_HEAD_BYTES)?
+
+    if head.len() < FRAME_HEAD_BYTES
+        return fail(
+            code: CLOSED,
+            msg: f"reading a frame of {r.stream.name}: the stream ends after {head.len()} bytes of its head"
+        )
+    h = frames.head_at(head, at: 0)
+
+    if h.length > max_size
+        return fail(
+            code: INVALID,
+            msg: f"reading a frame: FRAME_SIZE_ERROR: a {frames.describe_kind(h.kind)} frame of {h.length} bytes passes the largest, {max_size}"
+        )
+    payload = io.read_n(@r, n: h.length)?
+
+    if payload.len() < h.length
+        return fail(
+            code: CLOSED,
+            msg: f"reading a frame of {r.stream.name}: the stream ends after {payload.len()} of its {h.length} bytes"
+        )
+    bytes.push_all(to: @head, from: payload)
+    return decode_frame(head, max_size: max_size)
+
+# Writes `f` to `s`, its bytes as `encode_frame` makes them, in one write.
+#
+# - `s`: the stream.
+# - `f`: the frame.
+#
+# Fails as `encode_frame` does, and as `io.write` does. See also
+# `read_frame`.
+function write_frame(s: io.Stream, f: Frame) -> ()?
+    return io.write(s, data: encode_frame(f)?)
+
+# The name RFC 9113 gives a frame's type: `"HEADERS"` for 1.
+#
+# - `kind`: the type, 0 to 255.
+#
+# Fails `not_found` for a type RFC 9113 does not define. See also
+# `FRAME_DATA`.
+function frame_name(kind: i64) -> str?
+    name = frames.frame_name(kind)
+
+    if name == ""
+        return fail(code: NOT_FOUND, msg: f"RFC 9113 defines no frame of type {kind}")
+    return ok(name)
+
+# The stream a frame is sent on: 0 for SETTINGS, PING and GOAWAY, and for a
+# WINDOW_UPDATE of the connection.
+#
+# - `f`: the frame.
+#
+# See also `Frame`.
+function stream_of(f: Frame) -> i64
+    return match f
+        .data d          => d.stream
+        .headers h       => h.stream
+        .priority p      => p.stream
+        .rst_stream r    => r.stream
+        .settings _      => 0
+        .push_promise p  => p.stream
+        .ping _          => 0
+        .goaway _        => 0
+        .window_update w => w.stream
+        .continuation c  => c.stream
+        .unknown u       => u.stream
+
+## Header fields and HPACK
+
+# One field of a header list: a name and its value, as HTTP/2 carries them.
+record Field
+    # The name: lower case, as HTTP/2 writes every name, or a pseudo-header
+    # beginning with `:` (`:method`, `:status`).
+    name: str
+    # The value, with no zero byte, carriage return or line feed.
+    value: str
+    # Whether the value must never enter a dynamic table, as a credential or
+    # a cookie of few bytes should not (RFC 7541 § 7.1.3): written as never
+    # indexed, and read so where the peer wrote it so.
+    sensitive: bool
+
+# The size RFC 7541 § 4.1 counts a field as: its name's bytes, its value's,
+# and 32.
+#
+# - `f`: the field.
+#
+# See also `decoder`.
+function field_size(f: Field) -> i64
+    return f.name.len() + f.value.len() + 32
+
+# An HPACK encoder: the dynamic table of the blocks it wrote. Made by
+# `encoder` alone; each connection holds its own.
+record Encoder
+    # The table and the size updates owed to the next block.
+    state: encoding.State
+
+# An HPACK decoder: the dynamic table of the blocks it read, kept in step
+# with the peer's encoder. Made by `decoder` alone; each connection holds its
+# own.
+record Decoder
+    # The table, its limit and the list's bound.
+    state: decoding.State
+
+# A new encoder whose dynamic table holds `table_size` bytes.
+#
+# - `table_size`: the bytes of its table, at most the peer's
+#   SETTINGS_HEADER_TABLE_SIZE (4,096 until the peer says otherwise); 0
+#   indexes nothing; below 0 is taken as 0.
+#
+# See also `encode_fields`, `resize_encoder`.
+function encoder(table_size: i64) -> Encoder
+    return Encoder(state: encoding.make(table_size))
+
+# The header block of `fields`, in their order, written against the static
+# table and `e`'s dynamic table, which it changes as the peer's decoder will.
+#
+# - `e`: the encoder; its table takes the fields it indexes.
+# - `fields`: the fields, pseudo-headers first; an empty list makes an empty
+#   block.
+#
+# A field found whole in a table is written as its index; one whose name is
+# found, with that index; a string is Huffman-coded where that is shorter. A
+# field `sensitive` is written never indexed; one past three quarters of the
+# table is not indexed, so it evicts nothing. A size update owed by
+# `resize_encoder` opens the block. See also `decode_fields`.
+function encode_fields(@e: Encoder, fields: [Field]) -> [u8]
+    inner: [model.Field] @= []
+
+    for f in fields
+        inner @ inner.push(model.Field(name: f.name, value: f.value, sensitive: f.sensitive))
+
+    return encoding.encode(@e.state, fields: inner)
+
+# Makes `e`'s table hold `size` bytes from the next block, which opens with
+# the size update RFC 7541 § 6.3 writes; a size smaller and then larger
+# before one block writes both.
+#
+# - `e`: the encoder; its table evicts its oldest entries to fit.
+# - `size`: the bytes, 0 to the peer's SETTINGS_HEADER_TABLE_SIZE.
+#
+# Fails `invalid` where `size` is below 0 or past 4,294,967,295. See also
+# `encoder`.
+function resize_encoder(@e: Encoder, size: i64) -> ()?
+    if size < 0 || size > NO_LIMIT
+        return fail(code: INVALID, msg: f"resizing an HPACK table to {size} bytes: a size is 0 to 4,294,967,295")
+    encoding.resize(@e.state, size: size)
+    return ok()
+
+# A new decoder whose peer's table may hold `table_size` bytes and whose
+# lists may hold `list_size`.
+#
+# - `table_size`: this end's SETTINGS_HEADER_TABLE_SIZE, the most the peer's
+#   encoder may make its table; below 0 is taken as 0.
+# - `list_size`: the most a list may hold once decoded, each field counted as
+#   `field_size` counts it: this end's SETTINGS_MAX_HEADER_LIST_SIZE; below 0
+#   is taken as 0.
+#
+# See also `decode_fields`, `resize_decoder`.
+function decoder(table_size: i64, list_size: i64) -> Decoder
+    return Decoder(state: decoding.make(table_size: table_size, list_size: list_size))
+
+# The header list a block holds, in its order, `d`'s table changed as the
+# peer's encoder changed its own.
+#
+# - `d`: the decoder; its table takes the fields the block indexes.
+# - `block`: the whole block, every fragment joined.
+#
+# The whole block is read whatever the list holds, so the table stays in
+# step with the peer's; a field past `list_size` is dropped, not kept, so a
+# block of few bytes that names one large entry many times (an HPACK bomb)
+# holds no more than the bound.
+#
+# Fails `invalid` where the block is not HPACK (an index past the tables, an
+# integer past 2^31, a string past the block, a Huffman code that does not
+# end in the EOS code's first bits or holds EOS, a size update past the
+# limit or not at the block's start, a size update owed and not sent), which
+# is `COMPRESSION_ERROR` and ends a connection; `limit` where the list passes
+# `list_size`; `not_text` where a name or a value is not UTF-8. After `limit`
+# and `not_text` the table is in step; after `invalid` it is not. See also
+# `encode_fields`.
+function decode_fields(@d: Decoder, block: [u8]) -> [Field]?
+    got = decoding.decode(@d.state, block: block)?
+    out: [Field] @= []
+
+    for f in got
+        out @ out.push(Field(name: f.name, value: f.value, sensitive: f.sensitive))
+
+    return ok(out)
+
+# Makes the most the peer may make its table `size` bytes: this end's new
+# SETTINGS_HEADER_TABLE_SIZE once the peer has acknowledged it.
+#
+# - `d`: the decoder; where its table is larger than `size`, the next block
+#   must open with a size update within it.
+# - `size`: the bytes, 0 to 4,294,967,295.
+#
+# Fails `invalid` where `size` is out of that range. See also `decoder`.
+function resize_decoder(@d: Decoder, size: i64) -> ()?
+    if size < 0 || size > NO_LIMIT
+        return fail(code: INVALID, msg: f"limiting an HPACK table to {size} bytes: a size is 0 to 4,294,967,295")
+    decoding.set_limit(@d.state, size: size)
+    return ok()
+
+# `data` in HPACK's Huffman code (RFC 7541 Appendix B), its last byte padded
+# with the first bits of EOS.
+#
+# - `data`: the bytes; an empty list makes an empty one.
+#
+# See also `decode_huffman`, `huffman_length`.
+function encode_huffman(data: [u8]) -> [u8]
+    return huffman.encode(data)
+
+# The bytes `data` codes in HPACK's Huffman code.
+#
+# - `data`: the coded bytes; an empty list decodes to an empty one.
+#
+# Fails `invalid` where a code is EOS, the padding is longer than 7 bits, or
+# the padding is not the first bits of EOS (RFC 7541 § 5.2). See also
+# `encode_huffman`.
+function decode_huffman(data: [u8]) -> [u8]?
+    got = huffman.decode(data)
+
+    if got.why != ""
+        return fail(code: INVALID, msg: f"reading a Huffman string of {data.len()} bytes: {got.why}")
+    return ok(got.data)
+
+# How many bytes `encode_huffman` makes of `data`.
+#
+# - `data`: the bytes.
+#
+# See also `encode_huffman`.
+function huffman_length(data: [u8]) -> i64
+    return huffman.length_of(data)
+
+## Settings
+
+# The identifier of SETTINGS_HEADER_TABLE_SIZE: the most bytes the sender's
+# decoder lets the peer's encoder put in its table; 4,096 at first.
+constant SETTING_HEADER_TABLE_SIZE: i64
+    0x1
+
+# The identifier of SETTINGS_ENABLE_PUSH: 0 refuses PUSH_PROMISE, 1 allows
+# it; 1 at first, and a server may send only 0.
+constant SETTING_ENABLE_PUSH: i64
+    0x2
+
+# The identifier of SETTINGS_MAX_CONCURRENT_STREAMS: the most streams the
+# peer may open at once toward the sender; no limit at first.
+constant SETTING_MAX_CONCURRENT_STREAMS: i64
+    0x3
+
+# The identifier of SETTINGS_INITIAL_WINDOW_SIZE: each stream's first window
+# toward the sender, at most 2^31 - 1; 65,535 at first.
+constant SETTING_INITIAL_WINDOW_SIZE: i64
+    0x4
+
+# The identifier of SETTINGS_MAX_FRAME_SIZE: the largest payload the sender
+# reads, 16,384 to 16,777,215; 16,384 at first.
+constant SETTING_MAX_FRAME_SIZE: i64
+    0x5
+
+# The identifier of SETTINGS_MAX_HEADER_LIST_SIZE: the largest header list
+# the sender accepts, counted as `field_size` counts it; no limit at first.
+constant SETTING_MAX_HEADER_LIST_SIZE: i64
+    0x6
+
+# The identifier of SETTINGS_ENABLE_CONNECT_PROTOCOL (RFC 8441): 1 lets a
+# client send an extended CONNECT with `:protocol`; 0 at first.
+constant SETTING_ENABLE_CONNECT_PROTOCOL: i64
+    0x8
+
+# The identifier of SETTINGS_NO_RFC7540_PRIORITIES (RFC 9218): 1 says the
+# sender ignores RFC 7540's priorities, which a session sends as it does.
+constant SETTING_NO_RFC7540_PRIORITIES: i64
+    0x9
+
+# The settings of one end, each as RFC 9113 § 6.5.2 defines it. Built
+# directly, or from `initial_settings` with fields changed.
+record Settings
+    # The bytes the peer's HPACK encoder may hold in its table.
+    header_table_size: i64
+    # Whether the peer may push.
+    enable_push: bool
+    # The most streams the peer may open at once, `NO_LIMIT` for none.
+    max_concurrent_streams: i64
+    # Each stream's first window toward this end, in bytes, 0 to 2^31 - 1.
+    initial_window_size: i64
+    # The largest payload of a frame this end reads, `MIN_FRAME_SIZE` to
+    # `MAX_FRAME_SIZE`.
+    max_frame_size: i64
+    # The largest header list this end accepts, in bytes as `field_size`
+    # counts, `NO_LIMIT` for none.
+    max_header_list_size: i64
+    # Whether a client may send an extended CONNECT (RFC 8441).
+    enable_connect_protocol: bool
+
+# The settings RFC 9113 gives an end before its SETTINGS frame: a table of
+# 4,096 bytes, push allowed, no limit on streams or on a header list,
+# windows of 65,535 bytes, frames of 16,384, no extended CONNECT.
+#
+# See also `apply_settings`.
+function initial_settings() -> Settings
+    i = values.initial()
+    return Settings(
+        header_table_size: i.header_table_size,
+        enable_push: i.enable_push,
+        max_concurrent_streams: i.max_concurrent_streams,
+        initial_window_size: i.initial_window_size,
+        max_frame_size: i.max_frame_size,
+        max_header_list_size: i.max_header_list_size,
+        enable_connect_protocol: i.enable_connect_protocol
+    )
+
+# `before` with the settings of one SETTINGS frame applied, in their order,
+# each checked as RFC 9113 § 6.5.2 checks it; an identifier it does not
+# define is ignored.
+#
+# - `before`: the settings the frame changes.
+# - `list`: the frame's settings.
+#
+# Fails `invalid` where SETTINGS_ENABLE_PUSH or SETTINGS_ENABLE_CONNECT_PROTOCOL
+# is neither 0 nor 1 or SETTINGS_MAX_FRAME_SIZE is out of its range
+# (`PROTOCOL_ERROR`), or SETTINGS_INITIAL_WINDOW_SIZE passes 2^31 - 1
+# (`FLOW_CONTROL_ERROR`), or a value passes 4,294,967,295. See also
+# `to_setting_list`.
+function apply_settings(before: Settings, list: [Setting]) -> Settings?
+    inner: [model.Setting] @= []
+
+    for one in list
+        inner @ inner.push(model.Setting(id: one.id, value: one.value))
+
+    a = values.apply(
+        model.Settings(header_table_size: before.header_table_size, enable_push: before.enable_push, max_concurrent_streams: before.max_concurrent_streams, initial_window_size: before.initial_window_size, max_frame_size: before.max_frame_size, max_header_list_size: before.max_header_list_size, enable_connect_protocol: before.enable_connect_protocol),
+        list: inner
+    )
+
+    if a.why != ""
+        return fail(code: INVALID, msg: f"applying settings: {frames.describe(a.error)}: {a.why}")
+    n = a.settings
+    return ok(
+        Settings(header_table_size: n.header_table_size, enable_push: n.enable_push, max_concurrent_streams: n.max_concurrent_streams, initial_window_size: n.initial_window_size, max_frame_size: n.max_frame_size, max_header_list_size: n.max_header_list_size, enable_connect_protocol: n.enable_connect_protocol)
+    )
+
+# The settings a SETTINGS frame sends to make `initial_settings()` into `s`:
+# those that differ, in the order of their identifiers.
+#
+# - `s`: the settings.
+#
+# Empty where `s` is `initial_settings()`. See also `apply_settings`.
+function to_setting_list(s: Settings) -> [Setting]
+    out: [Setting] @= []
+
+    for one in values.to_list(model.Settings(header_table_size: s.header_table_size, enable_push: s.enable_push, max_concurrent_streams: s.max_concurrent_streams, initial_window_size: s.initial_window_size, max_frame_size: s.max_frame_size, max_header_list_size: s.max_header_list_size, enable_connect_protocol: s.enable_connect_protocol))
+        out @ out.push(Setting(id: one.id, value: one.value))
+
+    return out
+
+## Options
+
+# The bounds a session holds its peer to, past what the settings say. Made
+# by `default_options`, its fields changed by the program.
+record Limits
+    # The most bytes of one header block, its HEADERS or PUSH_PROMISE and its
+    # CONTINUATION frames together; past it the connection ends with
+    # `ENHANCE_YOUR_CALM`. 1 or more.
+    header_block_bytes: i64
+    # The most frames one header block spans, the CONTINUATIONs counted, so
+    # a flood of empty CONTINUATION frames ends; past it the connection ends
+    # with `ENHANCE_YOUR_CALM`. 1 or more.
+    header_frames: i64
+    # The most streams the peer may reset in one second, by RST_STREAM;
+    # past it the connection ends with `ENHANCE_YOUR_CALM` (CVE-2023-44487).
+    # 1 or more.
+    resets_per_second: i64
+    # The most frames in one second that carry nothing for the program:
+    # PING and SETTINGS that are no acknowledgement, PRIORITY, and DATA
+    # empty and not ending its stream; past it the connection ends with
+    # `ENHANCE_YOUR_CALM`. 1 or more.
+    control_per_second: i64
+    # The most bytes of one body read whole by `next_request` and `finish`;
+    # past it a server answers 413, a client fails `limit`. 0 or more.
+    body_bytes: i64
+
+# How one end runs a connection. Made by `default_options`, its fields
+# changed by the program.
+record Options
+    # What this end advertises in its first SETTINGS frame: its decoder's
+    # table, the streams the peer may open, the windows, the largest frame
+    # and header list it reads.
+    settings: Settings
+    # The connection's window toward this end, in bytes, 65,535 to
+    # 2^31 - 1: raised from RFC 9113's 65,535 by a WINDOW_UPDATE sent after
+    # the first SETTINGS, and kept so as the program reads.
+    connection_window: i64
+    # The bounds it holds the peer to.
+    limits: Limits
+
+# The usual options: a table of 4,096 bytes, push refused, 100 streams at
+# once, windows of 1 MiB per stream and 16 MiB per connection, frames of
+# 16,384 bytes, header lists of 64 KiB; header blocks of 128 KiB in at most
+# 64 frames, 100 resets and 1,000 frames carrying nothing a second, and
+# bodies of 10 MiB.
+#
+# See also `Options`, `Limits`.
+function default_options() -> Options
+    o = values.default_options()
+    l = o.limits
+    return Options(
+        settings: Settings(header_table_size: o.settings.header_table_size, enable_push: o.settings.enable_push, max_concurrent_streams: o.settings.max_concurrent_streams, initial_window_size: o.settings.initial_window_size, max_frame_size: o.settings.max_frame_size, max_header_list_size: o.settings.max_header_list_size, enable_connect_protocol: o.settings.enable_connect_protocol),
+        connection_window: o.connection_window,
+        limits: Limits(header_block_bytes: l.header_block_bytes, header_frames: l.header_frames, resets_per_second: l.resets_per_second, control_per_second: l.control_per_second, body_bytes: l.body_bytes)
+    )
+
+## A session: the protocol with no stream under it
+
+# Which end of a connection a session is.
+variant Role
+    # The end that sends the preface and opens odd streams.
+    client
+    # The end that reads the preface and answers on the streams opened.
+    server
+
+# The state of one stream (RFC 9113 § 5.1).
+variant StreamState
+    # Not opened yet, or never known.
+    idle
+    # Promised by this end, not yet opened.
+    reserved_local
+    # Promised by the peer, not yet opened.
+    reserved_remote
+    # Open both ways.
+    open
+    # This end has sent its last frame; the peer may still send.
+    half_closed_local
+    # The peer has sent its last frame; this end may still send.
+    half_closed_remote
+    # Ended both ways, or reset.
+    closed
+
+# What a session tells the program, `receive` answering them in the order
+# the frames came.
+variant Event
+    # A server's: the head of a request, on a stream the client opened.
+    request
+        # The stream.
+        stream: i64
+        # `:method`: `GET`, `POST`.
+        method: str
+        # `:scheme`: `https`, `http`; "" for CONNECT.
+        scheme: str
+        # `:authority`, "" where the client sent none.
+        authority: str
+        # `:path`, with its query; "" for CONNECT.
+        path: str
+        # `:protocol` of an extended CONNECT (RFC 8441), "" for none.
+        protocol: str
+        # The other fields, in their order, every pseudo-header left out.
+        headers: [Field]
+        # Whether the request has no body.
+        end_stream: bool
+    # A client's: the head of the final response to its request.
+    response
+        # The stream.
+        stream: i64
+        # `:status`, 200 to 999.
+        status: i64
+        # The other fields, in their order.
+        headers: [Field]
+        # Whether the response has no body.
+        end_stream: bool
+    # A client's: an informational answer (1xx) before the response.
+    informational
+        # The stream.
+        stream: i64
+        # `:status`, 100 to 199.
+        status: i64
+        # The other fields.
+        headers: [Field]
+    # The trailers after a body, which end their stream.
+    trailers
+        # The stream.
+        stream: i64
+        # The fields, in their order.
+        headers: [Field]
+    # Bytes of a body, which the program acknowledges by `acknowledge` once
+    # it has taken them.
+    data
+        # The stream.
+        stream: i64
+        # The bytes, the padding left out; empty where a frame held none.
+        data: [u8]
+        # Whether they end their stream.
+        end_stream: bool
+    # A stream ended at once.
+    reset
+        # The stream.
+        stream: i64
+        # Why: an error code; `REFUSED_STREAM` for a client's stream past
+        # the server's GOAWAY, which may be sent again.
+        error: i64
+        # Whether the peer reset it; where not, this end did, for the peer's
+        # fault, and wrote the RST_STREAM already.
+        remote: bool
+    # The peer's settings changed: applied, and acknowledged already.
+    settings
+        # The peer's settings now.
+        settings: Settings
+    # The peer acknowledged this end's settings.
+    settings_acked
+    # A ping from the peer, answered already.
+    ping
+        # Its 8 bytes.
+        data: [u8]
+    # The answer to this end's `send_ping`.
+    pong
+        # Its 8 bytes.
+        data: [u8]
+    # The peer's GOAWAY: no stream past `last_stream` will be processed.
+    goaway
+        # The last stream the peer processes.
+        last_stream: i64
+        # Why, `NO_ERROR` for a graceful end.
+        error: i64
+        # The peer's debug data.
+        debug: [u8]
+    # A session's: the peer opened a window, so `send_data` may take more.
+    # A connection waits for windows itself and never gives this out.
+    window
+        # The stream, 0 for the connection's own window.
+        stream: i64
+
+# One HTTP/2 connection's protocol, with no stream under it, as Python's
+# `h2` keeps one: bytes read are handed to `receive`, and the bytes to write
+# are taken by `take_output`. Made by `client_session` or `server_session`;
+# it holds no handle.
+record Session
+    # Everything between two calls: the settings, the streams, the windows,
+    # the tables, the bytes to write.
+    state: engine.State
+
+# A client's session: the preface, the first SETTINGS and the connection's
+# WINDOW_UPDATE waiting in its output.
+#
+# - `options`: what it advertises and the bounds it holds the server to;
+#   `options.settings.enable_push` is sent as false whatever it holds.
+#
+# See also `server_session`, `receive`.
+function client_session(options: Options) -> Session
+    return Session(
+        state: engine.make(client: true, options: model.Options(settings: model.Settings(header_table_size: options.settings.header_table_size, enable_push: options.settings.enable_push, max_concurrent_streams: options.settings.max_concurrent_streams, initial_window_size: options.settings.initial_window_size, max_frame_size: options.settings.max_frame_size, max_header_list_size: options.settings.max_header_list_size, enable_connect_protocol: options.settings.enable_connect_protocol), connection_window: options.connection_window, limits: model.Limits(header_block_bytes: options.limits.header_block_bytes, header_frames: options.limits.header_frames, resets_per_second: options.limits.resets_per_second, control_per_second: options.limits.control_per_second, body_bytes: options.limits.body_bytes)))
+    )
+
+# A server's session: its first SETTINGS and the connection's WINDOW_UPDATE
+# waiting in its output; the client's preface is the first thing `receive`
+# reads.
+#
+# - `options`: what it advertises and the bounds it holds the client to;
+#   `options.settings.enable_push` is sent as false whatever it holds.
+#
+# See also `client_session`, `receive`.
+function server_session(options: Options) -> Session
+    return Session(
+        state: engine.make(client: false, options: model.Options(settings: model.Settings(header_table_size: options.settings.header_table_size, enable_push: options.settings.enable_push, max_concurrent_streams: options.settings.max_concurrent_streams, initial_window_size: options.settings.initial_window_size, max_frame_size: options.settings.max_frame_size, max_header_list_size: options.settings.max_header_list_size, enable_connect_protocol: options.settings.enable_connect_protocol), connection_window: options.connection_window, limits: model.Limits(header_block_bytes: options.limits.header_block_bytes, header_frames: options.limits.header_frames, resets_per_second: options.limits.resets_per_second, control_per_second: options.limits.control_per_second, body_bytes: options.limits.body_bytes)))
+    )
+
+# The events `data` makes, reading it after the bytes held from before:
+# every whole frame is read, a frame cut short held for the next call.
+#
+# - `s`: the session; its streams, windows and output change.
+# - `data`: bytes read from the connection, any count; empty reads nothing.
+# - `now_ms`: a monotonic clock in milliseconds, which counts the resets and
+#   frames a second.
+#
+# A PING and a SETTINGS are answered and a stream's queued data sent as
+# windows open, in the output. A stream error ends that stream alone, with
+# a `reset` event (`remote` false) and a RST_STREAM in the output.
+#
+# Fails `invalid` where the peer breaks the protocol for the connection
+# (RFC 9113 § 5.4.1), `limit` where it passes `Limits`, the GOAWAY saying so
+# waiting in the output, after which the session is closed; `closed` where
+# the session is closed already. The events before the failure are lost.
+# See also `take_output`.
+function receive(@s: Session, data: [u8], now_ms: i64) -> [Event]?
+    events = receiving.receive(@s.state, data: data, now_ms: now_ms)?
+    out: [Event] @= []
+
+    for e in events
+        one: Event = match e
+            .request r =>
+                fields: [Field] @= []
+
+                for f in r.headers
+                    fields @ fields.push(Field(name: f.name, value: f.value, sensitive: f.sensitive))
+
+                .request(
+                    stream: r.stream,
+                    method: r.method,
+                    scheme: r.scheme,
+                    authority: r.authority,
+                    path: r.path,
+                    protocol: r.protocol,
+                    headers: fields,
+                    end_stream: r.end_stream
+                )
+            .response r =>
+                fields: [Field] @= []
+
+                for f in r.headers
+                    fields @ fields.push(Field(name: f.name, value: f.value, sensitive: f.sensitive))
+
+                .response(stream: r.stream, status: r.status, headers: fields, end_stream: r.end_stream)
+            .informational r =>
+                fields: [Field] @= []
+
+                for f in r.headers
+                    fields @ fields.push(Field(name: f.name, value: f.value, sensitive: f.sensitive))
+
+                .informational(stream: r.stream, status: r.status, headers: fields)
+            .trailers r =>
+                fields: [Field] @= []
+
+                for f in r.headers
+                    fields @ fields.push(Field(name: f.name, value: f.value, sensitive: f.sensitive))
+
+                .trailers(stream: r.stream, headers: fields)
+            .data d  => .data(stream: d.stream, data: d.data, end_stream: d.end_stream)
+            .reset r => .reset(stream: r.stream, error: r.error, remote: r.remote)
+            .settings changed => .settings(
+                settings: Settings(header_table_size: changed.settings.header_table_size, enable_push: changed.settings.enable_push, max_concurrent_streams: changed.settings.max_concurrent_streams, initial_window_size: changed.settings.initial_window_size, max_frame_size: changed.settings.max_frame_size, max_header_list_size: changed.settings.max_header_list_size, enable_connect_protocol: changed.settings.enable_connect_protocol)
+            )
+            .settings_acked => .settings_acked
+            .ping p         => .ping(data: p.data)
+            .pong p         => .pong(data: p.data)
+            .goaway g       => .goaway(last_stream: g.last_stream, error: g.error, debug: g.debug)
+            .window w       => .window(stream: w.stream)
+
+        out @ out.push(one)
+
+    return ok(out)
+
+# The bytes the session has to write, in order, emptied from it.
+#
+# - `s`: the session; its output is emptied.
+#
+# Empty where it has nothing to write. See also `receive`.
+function take_output(@s: Session) -> [u8]
+    return sending.take_output(@s.state)
+
+# A client's: opens the next stream with a request's header list, and
+# answers its identifier.
+#
+# - `s`: the session; the HEADERS wait in its output.
+# - `headers`: `:method`, `:scheme`, `:authority` and `:path` first (only
+#   `:method` and `:authority` for CONNECT, and `:protocol` for an extended
+#   one), then the request's fields with lower case names.
+# - `end_stream`: true where the request has no body.
+#
+# Fails `invalid` where the session is a server's or the list is no
+# request's as RFC 9113 § 8.3.1 reads it (a pseudo-header missing,
+# repeated, unknown or after a field, a name not lower case, a field of a
+# connection such as `connection` or `transfer-encoding`, a value with a line
+# end); `limit` where the server's SETTINGS_MAX_CONCURRENT_STREAMS are open
+# already or the identifiers are spent; `closed` where the session is closed
+# or past the server's GOAWAY. See also `send_headers`, `send_data`.
+function open_stream(@s: Session, headers: [Field], end_stream: bool) -> i64?
+    inner: [model.Field] @= []
+
+    for f in headers
+        inner @ inner.push(model.Field(name: f.name, value: f.value, sensitive: f.sensitive))
+
+    return sending.open_stream(@s.state, headers: inner, end_stream: end_stream)
+
+# Sends a header list on an open stream: a server's response or an
+# informational answer, or either end's trailers.
+#
+# - `s`: the session; the HEADERS wait in its output, and where the stream
+#   has data queued they wait behind it.
+# - `stream`: the stream.
+# - `headers`: `:status` first for a response (`100` to `999`), or no
+#   pseudo-header for trailers, then lower case fields.
+# - `end_stream`: true where this ends the stream; trailers always end it.
+#
+# Fails `invalid` where the list is neither a response's nor trailers, or a
+# response comes twice, or a client sends anything but trailers; `closed`
+# where the stream is not open for this end to send. See also
+# `open_stream`.
+function send_headers(@s: Session, stream: i64, headers: [Field], end_stream: bool) -> ()?
+    inner: [model.Field] @= []
+
+    for f in headers
+        inner @ inner.push(model.Field(name: f.name, value: f.value, sensitive: f.sensitive))
+
+    return sending.send_headers(@s.state, id: stream, headers: inner, end_stream: end_stream)
+
+# Sends as much of `data` on a stream as the peer's windows allow, in DATA
+# frames of the peer's largest size, and answers how many bytes it took: the
+# rest is the program's to send again once a `window` event comes.
+#
+# - `s`: the session; the frames wait in its output.
+# - `stream`: the stream.
+# - `data`: the bytes, any count; empty with `end_stream` sends an empty
+#   frame that ends the stream.
+# - `end_stream`: true where these are the stream's last bytes; it goes with
+#   the last byte only where every byte was taken.
+#
+# 0 where a window is closed. Fails `closed` where the stream is not open
+# for this end to send, or the session is closed; `invalid` for a server's
+# body before its response. See also `window_of`.
+function send_data(@s: Session, stream: i64, data: [u8], end_stream: bool) -> i64?
+    return sending.send_from(@s.state, id: stream, data: data, from: 0, end_stream: end_stream)
+
+# Tells the session the program has taken `count` bytes of a stream's data,
+# so the peer may send as many again: the WINDOW_UPDATEs wait in the output
+# once half a window is taken.
+#
+# - `s`: the session.
+# - `stream`: the stream the bytes came on; a stream closed since still
+#   gives them back to the connection.
+# - `count`: the bytes taken, 0 or more, at most those given out and not yet
+#   acknowledged.
+#
+# Fails `invalid` where `count` is below 0 or past what was given out. See
+# also `receive`.
+function acknowledge(@s: Session, stream: i64, count: i64) -> ()?
+    return sending.acknowledge(@s.state, id: stream, count: count)
+
+# Ends a stream at once with a RST_STREAM, its queued data dropped.
+#
+# - `s`: the session; the frame waits in its output.
+# - `stream`: the stream, open or half closed; one closed already is left as
+#   it is.
+# - `error`: why, `CANCEL` where the program no longer wants it.
+#
+# Fails `invalid` where `stream` was never opened. See also `send_goaway`.
+function reset_stream(@s: Session, stream: i64, error: i64) -> ()?
+    return sending.reset_stream(@s.state, id: stream, error: error)
+
+# Sends a PING whose answer comes back as a `pong` event.
+#
+# - `s`: the session; the frame waits in its output.
+# - `data`: exactly 8 bytes, sent back as they are.
+#
+# Fails `invalid` where `data` is not 8 bytes, `closed` where the session is
+# closed. See also `receive`.
+function send_ping(@s: Session, data: [u8]) -> ()?
+    return sending.send_ping(@s.state, data: data)
+
+# Sends new settings, applied to what this end holds the peer to once the
+# peer acknowledges them (`settings_acked`).
+#
+# - `s`: the session; the SETTINGS wait in its output.
+# - `settings`: what this end advertises now; only what changed is sent.
+#
+# Fails `invalid` where a setting is out of its range; `closed` where the
+# session is closed. See also `peer_settings_of`.
+function change_settings(@s: Session, settings: Settings) -> ()?
+    return sending.change_settings(
+        @s.state,
+        settings: model.Settings(header_table_size: settings.header_table_size, enable_push: settings.enable_push, max_concurrent_streams: settings.max_concurrent_streams, initial_window_size: settings.initial_window_size, max_frame_size: settings.max_frame_size, max_header_list_size: settings.max_header_list_size, enable_connect_protocol: settings.enable_connect_protocol)
+    )
+
+# Sends GOAWAY: no stream the peer opens after those it opened already will
+# be processed; with an error other than `NO_ERROR` the session is closed.
+#
+# - `s`: the session; the frame waits in its output.
+# - `error`: why, `NO_ERROR` for a graceful end.
+# - `debug`: text for a person reading the trace, "" for none.
+#
+# Fails `closed` where the session is closed already. See also
+# `reset_stream`.
+function send_goaway(@s: Session, error: i64, debug: str) -> ()?
+    return sending.send_goaway(@s.state, error: error, debug: debug)
+
+# The state of a stream as the session knows it.
+#
+# - `s`: the session.
+# - `stream`: the stream, any identifier; one never opened is `idle`, or
+#   `closed` where a later one has been opened.
+#
+# See also `StreamState`.
+function state_of(s: Session, stream: i64) -> StreamState
+    n = engine.state_of(s.state, id: stream)
+
+    if n == engine.OPEN
+        return .open
+
+    if n == engine.HALF_LOCAL
+        return .half_closed_local
+
+    if n == engine.HALF_REMOTE
+        return .half_closed_remote
+
+    if n == engine.CLOSED
+        return .closed
+    return .idle
+
+# How many bytes this end may send on a stream now: the stream's window,
+# bounded by the connection's.
+#
+# - `s`: the session.
+# - `stream`: the stream; 0 for the connection's own window.
+#
+# 0 for a stream closed or not open for this end to send. See also
+# `send_data`.
+function window_of(s: Session, stream: i64) -> i64
+    return sending.window_of(s.state, id: stream)
+
+# The settings the peer holds this end to: `initial_settings()` until its
+# first SETTINGS frame.
+#
+# - `s`: the session.
+#
+# See also `change_settings`.
+function peer_settings_of(s: Session) -> Settings
+    t = s.state.theirs
+    return Settings(
+        header_table_size: t.header_table_size,
+        enable_push: t.enable_push,
+        max_concurrent_streams: t.max_concurrent_streams,
+        initial_window_size: t.initial_window_size,
+        max_frame_size: t.max_frame_size,
+        max_header_list_size: t.max_header_list_size,
+        enable_connect_protocol: t.enable_connect_protocol
+    )
+
+# Whether the session still runs: no connection error, no GOAWAY with an
+# error either way.
+#
+# - `s`: the session.
+#
+# See also `send_goaway`.
+function is_open(s: Session) -> bool
+    return sending.is_open(s.state)
+
+# Whether a client's session may open a stream now: open, before any GOAWAY,
+# below the server's SETTINGS_MAX_CONCURRENT_STREAMS.
+#
+# - `s`: the session.
+#
+# See also `open_stream`.
+function has_room(s: Session) -> bool
+    return sending.has_room(s.state)
+
+## A connection: a session over a stream
+
+# A request as one HTTP/2 stream carries it: its pseudo-headers by name, its
+# fields, its body and its trailers. Built directly by a client; read whole
+# by a server's `next_request`.
+record Request
+    # `:method`: `GET`, `POST`.
+    method: str
+    # `:scheme`: `https` or `http`.
+    scheme: str
+    # `:authority`: the host and, where not the scheme's, the port.
+    authority: str
+    # `:path`, with its query: `/`, `/a?b=1`.
+    path: str
+    # `:protocol` of an extended CONNECT (RFC 8441), "" for none.
+    protocol: str
+    # The fields, with lower case names, every pseudo-header left out.
+    headers: [Field]
+    # The body: none for none.
+    body: [u8]
+    # The trailers sent after the body, none for none.
+    trailers: [Field]
+    # The stream it travels on: a server's request's own; 0 in one a client
+    # builds, which `start` chooses.
+    stream: i64
+
+# A response as one HTTP/2 stream carries it.
+record Response
+    # `:status`, 200 to 999 written; the final one read, 1xx skipped.
+    status: i64
+    # The fields, with lower case names.
+    headers: [Field]
+    # The body: none for none.
+    body: [u8]
+    # The trailers after the body, none for none: gRPC's status travels so.
+    trailers: [Field]
+
+# An HTTP/2 connection over a stream: a session, the stream it reads and
+# writes, and the events read for streams nobody has asked for yet. Made by
+# `connect`, `connect_plain`, `client_of` or `server_of`; it owns its
+# stream, which `close` closes.
+record Conn
+    # The stream the frames travel on, owned by the connection; a program
+    # may wait on it with `poll.add_stream`.
+    stream: io.Stream
+    # The session, the events held, and what is being read.
+    state: wire.State
+
+# A client's connection to `host` at `port` over TLS, offering `h2` alone
+# by ALPN, its preface and settings sent.
+#
+# - `host`: a name or an address, as `tls.connect` takes it; the
+#   certificate must name it.
+# - `port`: 1 to 65535.
+# - `deadline_ms`: the milliseconds the connection and its handshake may
+#   take; 0 for no limit. Reads wait as long as the server takes.
+# - `roots`: the PEM of the only authorities trusted, "" for the system's
+#   own store, as `tls.Client` takes it.
+# - `options`: what this end advertises and its bounds.
+#
+# The connection is the caller's to close. Fails `unsupported` where the
+# server's TLS chose no `h2`, the connection closed; and as `tls.connect`
+# fails. See also `connect_plain`, `client_of`.
+function connect(host: str, port: i64, deadline_ms: i64, roots: str, options: Options) -> Conn?
+    stream @= tls.connect(host: host, port: port, deadline_ms: deadline_ms, client: tls.Client(roots: roots, protocols: [ALPN]))?
+    chosen = tls.protocol_of(stream).default("")
+
+    if chosen != ALPN
+        match io.close(@stream)
+            .ok _  => _ = 0
+            .err _ => _ = 0
+
+        return fail(
+            code: UNSUPPORTED,
+            msg: f"connecting to {host} at port {port} for HTTP/2: its TLS chose \"{chosen}\", not h2"
+        )
+
+    match client_of(@stream, options: options)
+        .ok made => return ok(made)
+        .err e =>
+            match io.close(@stream)
+                .ok _  => _ = 0
+                .err _ => _ = 0
+
+            return fail(code: e.code, msg: e.msg)
+
+# A client's connection to `host` at `port` in plain text, HTTP/2 by prior
+# knowledge (h2c, RFC 9113 § 3.3), its preface and settings sent.
+#
+# - `host`: a name or an address without brackets.
+# - `port`: 1 to 65535.
+# - `deadline_ms`: the milliseconds every read and write may take from the
+#   connection's making, as `net.connect` counts them; 0 for no limit.
+# - `options`: what this end advertises and its bounds.
+#
+# The connection is the caller's to close. Fails as `net.connect` fails. See
+# also `connect`.
+function connect_plain(host: str, port: i64, deadline_ms: i64, options: Options) -> Conn?
+    c = net.connect(host, port: port, deadline_ms: deadline_ms)?
+    stream @= c.stream
+
+    match client_of(@stream, options: options)
+        .ok made => return ok(made)
+        .err e =>
+            match io.close(@stream)
+                .ok _  => _ = 0
+                .err _ => _ = 0
+
+            return fail(code: e.code, msg: e.msg)
+
+# A client's connection over `stream`, a stream the program holds already:
+# one `tls.connect` answered with `h2` chosen, or a plain one.
+#
+# - `stream`: the stream; it passes to the connection, which closes it, and
+#   this place is emptied.
+# - `options`: what this end advertises and its bounds.
+#
+# Its preface and settings are written before it answers. Fails as
+# `io.write` does, `stream` then given back to the caller's place, open, to
+# close. See also `server_of`.
+function client_of(@stream: io.Stream, options: Options) -> Conn?
+    s = client_session(options)
+    owned = stream
+    stream.handle @ nullptr
+
+    match wire.adopt(owned, session: s.state)
+        .ok w => return ok(Conn(stream: owned, state: w))
+        .err e =>
+            stream @ owned
+            return fail(code: e.code, msg: e.msg)
+
+# A server's connection over `stream`, a client's connection accepted: by
+# `tls.accept` with `h2` chosen, or plain with prior knowledge.
+#
+# - `stream`: the stream; it passes to the connection, which closes it, and
+#   this place is emptied.
+# - `options`: what this end advertises and its bounds.
+#
+# Its settings are written before it answers; the client's preface is read
+# by the first read. Fails as `io.write` does, `stream` then given back to
+# the caller's place, open, to close. See also `next_request`, `serve_with`.
+function server_of(@stream: io.Stream, options: Options) -> Conn?
+    s = server_session(options)
+    owned = stream
+    stream.handle @ nullptr
+
+    match wire.adopt(owned, session: s.state)
+        .ok w => return ok(Conn(stream: owned, state: w))
+        .err e =>
+            stream @ owned
+            return fail(code: e.code, msg: e.msg)
+
+# Ends the connection: GOAWAY with `NO_ERROR` and the last stream the peer
+# opened, then the stream closed; this place emptied either way.
+#
+# - `c`: the connection; its stream is closed.
+#
+# Fails `closed` where it is closed already, and as `io.close` fails. See
+# also `connect`.
+function close(@c: Conn) -> ()?
+    if c.stream.handle == nullptr
+        return fail(code: CLOSED, msg: "closing an HTTP/2 connection that is closed already")
+    wire.goodbye(c.stream, @c.state)
+    return io.close(@c.stream)
+
+# The next event of the connection, held ones first, reading the stream
+# until one comes; what the session must answer is written on the way.
+#
+# - `c`: the connection.
+#
+# A connection answers PING and SETTINGS and waits for windows itself, so it
+# gives out a stream's events, a GOAWAY and the answer to `ping`, never
+# `settings`, `settings_acked`, `ping` or `window`. A `data` event's bytes
+# are given back to the peer's windows as it is given out.
+#
+# Fails `closed` where the peer closed the connection, and as `receive`
+# fails, the GOAWAY written; and as `io.read` does. See also
+# `read_event_of`.
+function read_event(@c: Conn) -> Event?
+    return read_event_of(@c, stream: 0)
+
+# The next event of one stream, reading the connection until one comes and
+# holding the events of other streams, and those of no stream, for later.
+#
+# - `c`: the connection.
+# - `stream`: the stream, 1 or more; 0 takes the next event of any stream,
+#   as `read_event` does.
+#
+# Fails as `read_event` does, and `closed` where the stream is closed and
+# nothing of it is held. See also `read_event`.
+function read_event_of(@c: Conn, stream: i64) -> Event?
+    e = wire.next_event_of(c.stream, @c.state, id: stream)?
+
+    out: Event = match e
+        .request r =>
+            fields: [Field] @= []
+
+            for f in r.headers
+                fields @ fields.push(Field(name: f.name, value: f.value, sensitive: f.sensitive))
+
+            .request(
+                stream: r.stream,
+                method: r.method,
+                scheme: r.scheme,
+                authority: r.authority,
+                path: r.path,
+                protocol: r.protocol,
+                headers: fields,
+                end_stream: r.end_stream
+            )
+        .response r =>
+            fields: [Field] @= []
+
+            for f in r.headers
+                fields @ fields.push(Field(name: f.name, value: f.value, sensitive: f.sensitive))
+
+            .response(stream: r.stream, status: r.status, headers: fields, end_stream: r.end_stream)
+        .informational r =>
+            fields: [Field] @= []
+
+            for f in r.headers
+                fields @ fields.push(Field(name: f.name, value: f.value, sensitive: f.sensitive))
+
+            .informational(stream: r.stream, status: r.status, headers: fields)
+        .trailers r =>
+            fields: [Field] @= []
+
+            for f in r.headers
+                fields @ fields.push(Field(name: f.name, value: f.value, sensitive: f.sensitive))
+
+            .trailers(stream: r.stream, headers: fields)
+        .data d  => .data(stream: d.stream, data: d.data, end_stream: d.end_stream)
+        .reset r => .reset(stream: r.stream, error: r.error, remote: r.remote)
+        .settings changed => .settings(
+            settings: Settings(header_table_size: changed.settings.header_table_size, enable_push: changed.settings.enable_push, max_concurrent_streams: changed.settings.max_concurrent_streams, initial_window_size: changed.settings.initial_window_size, max_frame_size: changed.settings.max_frame_size, max_header_list_size: changed.settings.max_header_list_size, enable_connect_protocol: changed.settings.enable_connect_protocol)
+        )
+        .settings_acked => .settings_acked
+        .ping p         => .ping(data: p.data)
+        .pong p         => .pong(data: p.data)
+        .goaway g       => .goaway(last_stream: g.last_stream, error: g.error, debug: g.debug)
+        .window w       => .window(stream: w.stream)
+
+    return ok(out)
+
+# A server's: the head of the next stream a client opens, the events of
+# every other stream held: what a server waits for while it answers other
+# streams of the connection one by one, as gRPC's does.
+#
+# - `c`: the connection.
+#
+# Always a `request` event. Fails `closed` where the client sends GOAWAY or
+# closes the connection, and as `read_event` does. See also `read_event_of`.
+function accept_stream(@c: Conn) -> Event?
+    e = wire.next_head(c.stream, @c.state)?
+
+    out: Event = match e
+        .request r =>
+            fields: [Field] @= []
+
+            for f in r.headers
+                fields @ fields.push(Field(name: f.name, value: f.value, sensitive: f.sensitive))
+
+            .request(
+                stream: r.stream,
+                method: r.method,
+                scheme: r.scheme,
+                authority: r.authority,
+                path: r.path,
+                protocol: r.protocol,
+                headers: fields,
+                end_stream: r.end_stream
+            )
+        .response _ | .informational _ | .trailers _ | .data _ | .reset _ | .window _ | .settings _ | .settings_acked | .ping _ | .pong _ | .goaway _ => .settings_acked
+
+    return ok(out)
+
+# A client's: opens a stream with a header list, written at once, and
+# answers its identifier; waits, reading and holding events, while the
+# server's SETTINGS_MAX_CONCURRENT_STREAMS are open.
+#
+# - `c`: the connection.
+# - `headers`: the list, as `open_stream` takes it.
+# - `end_stream`: true where nothing follows.
+#
+# Fails as `open_stream` does, and as `read_event` does while it waits. See
+# also `write_data`, `start`.
+function start_stream(@c: Conn, headers: [Field], end_stream: bool) -> i64?
+    inner: [model.Field] @= []
+
+    for f in headers
+        inner @ inner.push(model.Field(name: f.name, value: f.value, sensitive: f.sensitive))
+
+    return wire.start_stream(c.stream, @c.state, headers: inner, end_stream: end_stream)
+
+# Writes a header list on a stream: a response, an informational answer or
+# trailers, as `send_headers` takes them.
+#
+# - `c`: the connection.
+# - `stream`: the stream.
+# - `headers`: the list.
+# - `end_stream`: true where this ends the stream.
+#
+# Fails as `send_headers` and `io.write` do. See also `write_data`.
+function write_headers(@c: Conn, stream: i64, headers: [Field], end_stream: bool) -> ()?
+    inner: [model.Field] @= []
+
+    for f in headers
+        inner @ inner.push(model.Field(name: f.name, value: f.value, sensitive: f.sensitive))
+
+    return wire.write_headers(c.stream, @c.state, id: stream, headers: inner, end_stream: end_stream)
+
+# Writes `data` on a stream, waiting, reading and holding events, until the
+# peer's windows have let every byte go.
+#
+# - `c`: the connection.
+# - `stream`: the stream.
+# - `data`: the bytes, any count.
+# - `end_stream`: true where these are the stream's last bytes.
+#
+# Fails as `send_data` does, `closed` where the peer resets the stream
+# before every byte went, and as `read_event` does while it waits. See also
+# `write_headers`.
+function write_data(@c: Conn, stream: i64, data: [u8], end_stream: bool) -> ()?
+    return wire.write_data(c.stream, @c.state, id: stream, data: data, end_stream: end_stream)
+
+# Resets a stream with `error`, written at once.
+#
+# - `c`: the connection.
+# - `stream`: the stream.
+# - `error`: why, `CANCEL` where it is no longer wanted.
+#
+# Fails as `reset_stream` and `io.write` do. See also `write_data`.
+function write_reset(@c: Conn, stream: i64, error: i64) -> ()?
+    return wire.write_reset(c.stream, @c.state, id: stream, error: error)
+
+# Sends a PING and waits for its answer, holding the events that come
+# before it.
+#
+# - `c`: the connection.
+# - `data`: exactly 8 bytes.
+#
+# Fails as `send_ping` and `read_event` do. See also `send_ping`.
+function ping(@c: Conn, data: [u8]) -> ()?
+    return wire.ping(c.stream, @c.state, data: data)
+
+# A client's: sends `r` on a new stream, its head, its body and its
+# trailers, and answers the stream; its response is read by `finish`, so
+# several requests may be started before any is finished.
+#
+# - `c`: the connection.
+# - `r`: the request; its `stream` is not read.
+#
+# Fails as `start_stream` and `write_data` do. See also `finish`,
+# `round_trip`.
+function start(@c: Conn, r: Request) -> i64?
+    headers: [model.Field] @= []
+
+    for f in r.headers
+        headers @ headers.push(model.Field(name: f.name, value: f.value, sensitive: f.sensitive))
+
+    trailers: [model.Field] @= []
+
+    for f in r.trailers
+        trailers @ trailers.push(model.Field(name: f.name, value: f.value, sensitive: f.sensitive))
+
+    inner = model.Request(
+        method: r.method,
+        scheme: r.scheme,
+        authority: r.authority,
+        path: r.path,
+        protocol: r.protocol,
+        headers: headers,
+        body: r.body,
+        trailers: trailers,
+        stream: 0
+    )
+    return wire.start(c.stream, @c.state, r: inner)
+
+# A client's: the response on `stream`, read whole, informational answers
+# skipped, events of other streams held.
+#
+# - `c`: the connection.
+# - `stream`: a stream `start` answered.
+#
+# Fails `closed` where the server resets the stream (the message naming its
+# error; `REFUSED_STREAM` may be sent again) or closes the connection first;
+# `limit` where the body passes `Limits.body_bytes`, the stream then reset
+# with `CANCEL`; `invalid` where the response is malformed; and as
+# `read_event` does. See also `start`.
+function finish(@c: Conn, stream: i64) -> Response?
+    got = wire.finish(c.stream, @c.state, id: stream, limit: c.state.session.limits.body_bytes)?
+    headers: [Field] @= []
+
+    for f in got.headers
+        headers @ headers.push(Field(name: f.name, value: f.value, sensitive: f.sensitive))
+
+    trailers: [Field] @= []
+
+    for f in got.trailers
+        trailers @ trailers.push(Field(name: f.name, value: f.value, sensitive: f.sensitive))
+
+    return ok(Response(status: got.status, headers: headers, body: got.body, trailers: trailers))
+
+# A client's: the response to `r`, sent on a new stream and read whole, as
+# `start` and `finish` together.
+#
+# - `c`: the connection.
+# - `r`: the request.
+#
+# Fails as `start` and `finish` do. See also `connect`.
+function round_trip(@c: Conn, r: Request) -> Response?
+    id = start(@c, r: r)?
+    return finish(@c, stream: id)
+
+# A server's: the next request whose body has ended, read whole, events of
+# other streams held.
+#
+# - `c`: the connection.
+#
+# A request whose body passes `Limits.body_bytes` is answered 413 and its
+# stream reset, and the next one is read. Fails `closed` where the client
+# closes the connection or sends GOAWAY, and as `read_event` does. See also
+# `answer`, `serve_with`.
+function next_request(@c: Conn) -> Request?
+    got = wire.next_request(c.stream, @c.state, limit: c.state.session.limits.body_bytes)?
+    headers: [Field] @= []
+
+    for f in got.headers
+        headers @ headers.push(Field(name: f.name, value: f.value, sensitive: f.sensitive))
+
+    trailers: [Field] @= []
+
+    for f in got.trailers
+        trailers @ trailers.push(Field(name: f.name, value: f.value, sensitive: f.sensitive))
+
+    return ok(
+        Request(method: got.method, scheme: got.scheme, authority: got.authority, path: got.path, protocol: got.protocol, headers: headers, body: got.body, trailers: trailers, stream: got.stream)
+    )
+
+# A server's: writes `response` on `stream`, its head, its body and its
+# trailers, waiting while the client's windows hold the body back.
+#
+# - `c`: the connection.
+# - `stream`: the request's stream.
+# - `response`: the response; a status outside 200 to 999 is written 500.
+#
+# Fails as `write_headers` and `write_data` do. See also `next_request`.
+function answer(@c: Conn, stream: i64, response: Response) -> ()?
+    headers: [model.Field] @= []
+
+    for f in response.headers
+        headers @ headers.push(model.Field(name: f.name, value: f.value, sensitive: f.sensitive))
+
+    trailers: [model.Field] @= []
+
+    for f in response.trailers
+        trailers @ trailers.push(model.Field(name: f.name, value: f.value, sensitive: f.sensitive))
+
+    return wire.answer(
+        c.stream,
+        @c.state,
+        id: stream,
+        response: model.Response(status: response.status, headers: headers, body: response.body, trailers: trailers)
+    )
+
+# A handler that sends the request's body back with status 200, its
+# `content-type` kept: what a test's server answers, and a server whose
+# client checks what it sent.
+#
+# - `r`: the request.
+#
+# See also `serve`.
+function echo(r: Request) -> Response
+    headers: [Field] @= []
+
+    for f in r.headers
+        if f.name == "content-type"
+            headers @ headers.push(f)
+
+    return Response(status: 200, headers: headers, body: r.body, trailers: [])
+
+# A handler that answers `text` as `text/plain; charset=utf-8` with status
+# 200, whatever was asked: the handler of `serve_with` whose state is the
+# text, as a health check answers.
+#
+# - `text`: the body.
+# - `r`: the request, not read.
+#
+# See also `serve_with`.
+function respond_text(text: str, r: Request) -> Response
+    _ = r.stream
+    return Response(
+        status: 200,
+        headers: [Field(name: "content-type", value: "text/plain; charset=utf-8", sensitive: false)],
+        body: bytes.from_text(text),
+        trailers: []
+    )
+
+# A server's: answers every request of the connection with `handler`, one
+# after another, until the client closes it or sends GOAWAY, and answers how
+# many were answered.
+#
+# - `c`: the connection; its owner closes it.
+# - `handler`: called once for each request, read whole, on this thread;
+#   what it answers is written back.
+#
+# A request whose stream the client resets is not answered. A connection
+# error writes its GOAWAY and ends the serving. See also `serve_with`.
+function serve(@c: Conn, handler: (function(Request) -> Response)) -> i64
+    answered: i64 @= 0
+
+    while true
+        r = match next_request(@c)
+            .ok got => got
+            .err _  => return answered
+
+        match answer(@c, stream: r.stream, response: handler(r))
+            .ok _ => answered @ answered + 1
+            .err _ =>
+                if c.state.ended || !sending.is_open(c.state.session)
+                    return answered
+
+# `serve` with `state` handed to `handler` beside each request: how a
+# handler reads the program's own values, since a function takes no
+# closure.
+#
+# - `c`: the connection; its owner closes it.
+# - `state`: the program's value, handed to each call as it is.
+# - `handler`: called once for each request with `state`, as `serve` calls
+#   it.
+#
+# See also `serve`, `next_request`.
+function serve_with<S>(@c: Conn, state: S, handler: (function(S, Request) -> Response)) -> i64
+    answered: i64 @= 0
+
+    while true
+        r = match next_request(@c)
+            .ok got => got
+            .err _  => return answered
+
+        match answer(@c, stream: r.stream, response: handler(state, r))
+            .ok _ => answered @ answered + 1
+            .err _ =>
+                if c.state.ended || !sending.is_open(c.state.session)
+                    return answered
+
+## Examples
+
+# The name of the error a GOAWAY carried.
+test "error_name: ENHANCE_YOUR_CALM, and a code RFC 9113 does not name"
+    assert error_name(ENHANCE_YOUR_CALM).must() == "ENHANCE_YOUR_CALM"
+    assert error_name(0xff).is_err()
+
+# The name of a frame's type.
+test "frame_name: CONTINUATION, and a type of an extension"
+    assert frame_name(FRAME_CONTINUATION).must() == "CONTINUATION"
+    assert frame_name(0x10).is_err()
+
+# A PING's bytes on the wire: its head of nine bytes, then its eight.
+test "encode_frame: a PING"
+    got = encode_frame(.ping(ack: false, data: [1, 2, 3, 4, 5, 6, 7, 8])).must()
+    assert bytes.format_hex(got) == "0000080600000000000102030405060708"
+
+# The frame a WINDOW_UPDATE's bytes hold.
+test "decode_frame: a WINDOW_UPDATE of the connection"
+    data = bytes.parse_hex("000004080000000000000003e8").must()
+    assert decode_frame(data, max_size: MIN_FRAME_SIZE).must() == .window_update(stream: 0, increment: 1000)
+
+# A frame written to a pipe and read back from its other end.
+test "read_frame: a SETTINGS frame from a pipe"
+    p = io.pipe().must()
+    f: Frame = .settings(ack: false, settings: [Setting(id: SETTING_MAX_CONCURRENT_STREAMS, value: 100)])
+    write_frame(p.writer, f: f).must()
+    r @= io.reader(p.reader)
+    assert read_frame(@r, max_size: MIN_FRAME_SIZE).must() == f
+    w @= p.writer
+    io.close(@w).must()
+    gone @= p.reader
+    io.close(@gone).must()
+
+# A GOAWAY written to a pipe, and its bytes as they came out.
+test "write_frame: a GOAWAY with no error"
+    p = io.pipe().must()
+    write_frame(p.writer, f: .goaway(last_stream: 1, error: NO_ERROR, debug: [])).must()
+    assert bytes.format_hex(io.read_exact(p.reader, count: 17).must()) == "0000080700000000000000000100000000"
+    w @= p.writer
+    io.close(@w).must()
+    gone @= p.reader
+    io.close(@gone).must()
+
+# The stream a RST_STREAM ends.
+test "stream_of: a RST_STREAM's stream, and 0 for a PING"
+    assert stream_of(.rst_stream(stream: 3, error: CANCEL)) == 3
+    assert stream_of(.ping(ack: true, data: [0, 0, 0, 0, 0, 0, 0, 0])) == 0
+
+# RFC 7541 § 4.1's count of a field.
+test "field_size: custom-key and custom-header, 55 bytes"
+    assert field_size(Field(name: "custom-key", value: "custom-header", sensitive: false)) == 55
+
+# RFC 7541 C.4.1's request, as an encoder writes it.
+test "encoder: a table of 4,096 bytes writing RFC 7541 C.4.1"
+    e @= encoder(4096)
+    list = [
+        Field(name: ":method", value: "GET", sensitive: false)
+        Field(name: ":scheme", value: "http", sensitive: false)
+        Field(name: ":path", value: "/", sensitive: false)
+        Field(name: ":authority", value: "www.example.com", sensitive: false)
+    ]
+    assert bytes.format_hex(encode_fields(@e, fields: list)) == "828684418cf1e3c2e5f23a6ba0ab90f4ff"
+
+# A field written twice: the second time as an index of the dynamic table.
+test "encode_fields: a field found in the table the second time"
+    e @= encoder(4096)
+    list = [Field(name: "x-trace", value: "abc", sensitive: false)]
+    first = encode_fields(@e, fields: list)
+    assert first.len() > 1
+    assert encode_fields(@e, fields: list) == [0xbe]
+
+# A table made smaller: the next block opens with the size update.
+test "resize_encoder: to 0, said at the next block's start"
+    e @= encoder(4096)
+    resize_encoder(@e, size: 0).must()
+    assert encode_fields(@e, fields: []) == [0x20]
+
+# RFC 7541 C.4.1's block read back.
+test "decoder: reading RFC 7541 C.4.1"
+    d @= decoder(table_size: 4096, list_size: 65536)
+    got = decode_fields(@d, block: bytes.parse_hex("828684418cf1e3c2e5f23a6ba0ab90f4ff").must()).must()
+    assert got[3] == Field(name: ":authority", value: "www.example.com", sensitive: false)
+
+# A block whose list passes its size: refused, the table kept in step.
+test "decode_fields: a list past its size refused with limit"
+    d @= decoder(table_size: 4096, list_size: 40)
+
+    match decode_fields(@d, block: [0x82, 0x86])
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+# The limit lowered: the next block must open with a size update.
+test "resize_decoder: lowered to 0, a block without the update refused"
+    d @= decoder(table_size: 4096, list_size: 65536)
+    resize_decoder(@d, size: 0).must()
+    assert decode_fields(@d, block: [0x82]).is_err()
+    assert decode_fields(@d, block: [0x20, 0x82]).must().len() == 1
+
+# `www.example.com` in HPACK's Huffman code, RFC 7541 C.4.1.
+test "encode_huffman: www.example.com"
+    assert bytes.format_hex(encode_huffman(bytes.from_text("www.example.com"))) == "f1e3c2e5f23a6ba0ab90f4ff"
+
+# The bytes back from the code.
+test "decode_huffman: no-cache, and padding that is not EOS"
+    assert decode_huffman(bytes.parse_hex("a8eb10649cbf").must()).must() == bytes.from_text("no-cache")
+    assert decode_huffman([0x00]).is_err()
+
+# How long a string is in the code before it is written.
+test "huffman_length: www.example.com takes 12 bytes"
+    assert huffman_length(bytes.from_text("www.example.com")) == 12
+
+# What a peer holds before its first SETTINGS.
+test "initial_settings: frames of 16,384 bytes and no limit on streams"
+    s = initial_settings()
+    assert s.max_frame_size == MIN_FRAME_SIZE && s.max_concurrent_streams == NO_LIMIT && s.enable_push
+
+# A SETTINGS frame's list applied, and a value the RFC refuses.
+test "apply_settings: 100 streams, and a push of 2 refused"
+    s = apply_settings(initial_settings(), list: [Setting(id: SETTING_MAX_CONCURRENT_STREAMS, value: 100)]).must()
+    assert s.max_concurrent_streams == 100
+    assert apply_settings(initial_settings(), list: [Setting(id: SETTING_ENABLE_PUSH, value: 2)]).is_err()
+
+# The list a SETTINGS frame sends for settings of its own.
+test "to_setting_list: push refused and lists of 64 KiB"
+    s @= initial_settings()
+    s.enable_push @ false
+    s.max_header_list_size @ 65536
+    assert to_setting_list(s) == [Setting(id: SETTING_ENABLE_PUSH, value: 0), Setting(id: SETTING_MAX_HEADER_LIST_SIZE, value: 65536)]
+
+# The usual options, changed where a program needs more.
+test "default_options: 100 streams, and bodies of 10 MiB"
+    o = default_options()
+    assert o.settings.max_concurrent_streams == 100 && o.limits.body_bytes == 10485760 && !o.settings.enable_push
+
+# A client's first bytes: the preface, then its settings.
+test "client_session: the preface first in its output"
+    c @= client_session(default_options())
+    out = take_output(@c)
+    assert bytes.has_prefix(s: out, prefix: bytes.from_text(PREFACE))
+
+# A server reads the client's first bytes: its settings come as an event.
+test "server_session: the client's settings read"
+    c @= client_session(default_options())
+    s @= server_session(default_options())
+    events = receive(@s, data: take_output(@c), now_ms: 0).must()
+    assert events.len() > 0
+    assert peer_settings_of(s).max_concurrent_streams == 100
+
+# A request read by a server: its head as an event.
+test "receive: a GET read by a server"
+    c @= client_session(default_options())
+    s @= server_session(default_options())
+    _ = receive(@s, data: take_output(@c), now_ms: 0).must()
+    _ = receive(@c, data: take_output(@s), now_ms: 0).must()
+    id = open_stream(
+        @c,
+        headers: [Field(name: ":method", value: "GET", sensitive: false), Field(name: ":scheme", value: "https", sensitive: false), Field(name: ":path", value: "/", sensitive: false)],
+        end_stream: true
+    ).must()
+    events = receive(@s, data: take_output(@c), now_ms: 0).must()
+    assert events[events.len() - 1] == .request(stream: id, method: "GET", scheme: "https", authority: "", path: "/", protocol: "", headers: [], end_stream: true)
+
+# The output emptied once taken.
+test "take_output: nothing the second time"
+    c @= client_session(default_options())
+    assert take_output(@c).len() > 0
+    assert take_output(@c) == []
+
+# Streams a client opens: odd, one after another.
+test "open_stream: streams 1 and 3"
+    c @= client_session(default_options())
+    get = [
+        Field(name: ":method", value: "GET", sensitive: false)
+        Field(name: ":scheme", value: "https", sensitive: false)
+        Field(name: ":path", value: "/", sensitive: false)
+    ]
+    assert open_stream(@c, headers: get, end_stream: true).must() == 1
+    assert open_stream(@c, headers: get, end_stream: true).must() == 3
+
+# A server's response, read by the client as an event.
+test "send_headers: a 204 that ends its stream"
+    c @= client_session(default_options())
+    s @= server_session(default_options())
+    _ = receive(@s, data: take_output(@c), now_ms: 0).must()
+    _ = receive(@c, data: take_output(@s), now_ms: 0).must()
+    id = open_stream(
+        @c,
+        headers: [Field(name: ":method", value: "GET", sensitive: false), Field(name: ":scheme", value: "https", sensitive: false), Field(name: ":path", value: "/", sensitive: false)],
+        end_stream: true
+    ).must()
+    _ = receive(@s, data: take_output(@c), now_ms: 0).must()
+    send_headers(
+        @s,
+        stream: id,
+        headers: [Field(name: ":status", value: "204", sensitive: false)],
+        end_stream: true
+    ).must()
+    events = receive(@c, data: take_output(@s), now_ms: 0).must()
+    assert events[events.len() - 1] == .response(stream: id, status: 204, headers: [], end_stream: true)
+
+# A body sent within the windows: every byte taken at once.
+test "send_data: a body of five bytes, taken whole"
+    c @= client_session(default_options())
+    s @= server_session(default_options())
+    _ = receive(@s, data: take_output(@c), now_ms: 0).must()
+    _ = receive(@c, data: take_output(@s), now_ms: 0).must()
+    id = open_stream(
+        @c,
+        headers: [Field(name: ":method", value: "POST", sensitive: false), Field(name: ":scheme", value: "https", sensitive: false), Field(name: ":path", value: "/", sensitive: false)],
+        end_stream: false
+    ).must()
+    assert send_data(@c, stream: id, data: bytes.from_text("hello"), end_stream: true).must() == 5
+    events = receive(@s, data: take_output(@c), now_ms: 0).must()
+    assert events[events.len() - 1] == .data(stream: id, data: bytes.from_text("hello"), end_stream: true)
+
+# Bytes taken by the program given back, and no more than were given.
+test "acknowledge: five bytes given back, a sixth refused"
+    c @= client_session(default_options())
+    s @= server_session(default_options())
+    _ = receive(@s, data: take_output(@c), now_ms: 0).must()
+    _ = receive(@c, data: take_output(@s), now_ms: 0).must()
+    id = open_stream(
+        @c,
+        headers: [Field(name: ":method", value: "POST", sensitive: false), Field(name: ":scheme", value: "https", sensitive: false), Field(name: ":path", value: "/", sensitive: false)],
+        end_stream: false
+    ).must()
+    _ = send_data(@c, stream: id, data: bytes.from_text("hello"), end_stream: true).must()
+    _ = receive(@s, data: take_output(@c), now_ms: 0).must()
+    acknowledge(@s, stream: id, count: 5).must()
+    assert acknowledge(@s, stream: id, count: 1).is_err()
+
+# A stream cancelled: the server told the client reset it.
+test "reset_stream: a client cancels its request"
+    c @= client_session(default_options())
+    s @= server_session(default_options())
+    _ = receive(@s, data: take_output(@c), now_ms: 0).must()
+    _ = receive(@c, data: take_output(@s), now_ms: 0).must()
+    id = open_stream(
+        @c,
+        headers: [Field(name: ":method", value: "GET", sensitive: false), Field(name: ":scheme", value: "https", sensitive: false), Field(name: ":path", value: "/", sensitive: false)],
+        end_stream: true
+    ).must()
+    _ = receive(@s, data: take_output(@c), now_ms: 0).must()
+    reset_stream(@c, stream: id, error: CANCEL).must()
+    assert receive(@s, data: take_output(@c), now_ms: 0).must() == [.reset(stream: id, error: CANCEL, remote: true)]
+
+# A PING and its answer.
+test "send_ping: the server answers, the client is told"
+    c @= client_session(default_options())
+    s @= server_session(default_options())
+    _ = receive(@s, data: take_output(@c), now_ms: 0).must()
+    _ = receive(@c, data: take_output(@s), now_ms: 0).must()
+    send_ping(@c, data: [1, 1, 2, 3, 5, 8, 13, 21]).must()
+    heard = receive(@s, data: take_output(@c), now_ms: 0).must()
+    assert heard[heard.len() - 1] == .ping(data: [1, 1, 2, 3, 5, 8, 13, 21])
+    assert receive(@c, data: take_output(@s), now_ms: 0).must() == [.pong(data: [1, 1, 2, 3, 5, 8, 13, 21])]
+
+# New settings, read by the peer and acknowledged.
+test "change_settings: a client allows 10 streams"
+    c @= client_session(default_options())
+    s @= server_session(default_options())
+    _ = receive(@s, data: take_output(@c), now_ms: 0).must()
+    _ = receive(@c, data: take_output(@s), now_ms: 0).must()
+    o @= default_options().settings
+    o.max_concurrent_streams @ 10
+    change_settings(@c, settings: o).must()
+    _ = receive(@s, data: take_output(@c), now_ms: 0).must()
+    assert peer_settings_of(s).max_concurrent_streams == 10
+    assert receive(@c, data: take_output(@s), now_ms: 0).must().len() >= 1
+
+# A graceful end: the client told no new stream will be processed.
+test "send_goaway: a server's graceful end"
+    c @= client_session(default_options())
+    s @= server_session(default_options())
+    _ = receive(@s, data: take_output(@c), now_ms: 0).must()
+    _ = receive(@c, data: take_output(@s), now_ms: 0).must()
+    send_goaway(@s, error: NO_ERROR, debug: "maintenance").must()
+    assert receive(@c, data: take_output(@s), now_ms: 0).must() == [.goaway(last_stream: 0, error: NO_ERROR, debug: bytes.from_text("maintenance"))]
+    assert !has_room(c)
+
+# A request with no body leaves its stream half closed by the client.
+test "state_of: half closed by the client, and idle past it"
+    c @= client_session(default_options())
+    id = open_stream(
+        @c,
+        headers: [Field(name: ":method", value: "GET", sensitive: false), Field(name: ":scheme", value: "https", sensitive: false), Field(name: ":path", value: "/", sensitive: false)],
+        end_stream: true
+    ).must()
+    assert state_of(c, stream: id) == .half_closed_local
+    assert state_of(c, stream: id + 2) == .idle
+
+# The windows: RFC 9113's 65,535 bytes, then the server's 16 MiB.
+test "window_of: the connection's window before and after the server's"
+    c @= client_session(default_options())
+    s @= server_session(default_options())
+    assert window_of(c, stream: 0) == 65535
+    _ = receive(@s, data: take_output(@c), now_ms: 0).must()
+    _ = receive(@c, data: take_output(@s), now_ms: 0).must()
+    assert window_of(c, stream: 0) == 16777216
+
+# What a client holds the server to, from its SETTINGS.
+test "peer_settings_of: the server's 100 streams"
+    c @= client_session(default_options())
+    s @= server_session(default_options())
+    assert peer_settings_of(c).max_concurrent_streams == NO_LIMIT
+    _ = receive(@s, data: take_output(@c), now_ms: 0).must()
+    _ = receive(@c, data: take_output(@s), now_ms: 0).must()
+    assert peer_settings_of(c).max_concurrent_streams == 100
+
+# A session ended by an error is no longer open.
+test "is_open: open, then ended by a GOAWAY with an error"
+    s @= server_session(default_options())
+    assert is_open(s)
+    send_goaway(@s, error: PROTOCOL_ERROR, debug: "").must()
+    assert !is_open(s)
+
+# A client with room for one stream, then none.
+test "has_room: one stream allowed, then none"
+    o @= default_options()
+    o.settings.max_concurrent_streams @ 1
+    c @= client_session(default_options())
+    s @= server_session(o)
+    _ = receive(@s, data: take_output(@c), now_ms: 0).must()
+    _ = receive(@c, data: take_output(@s), now_ms: 0).must()
+    assert has_room(c)
+    _ = open_stream(
+        @c,
+        headers: [Field(name: ":method", value: "GET", sensitive: false), Field(name: ":scheme", value: "https", sensitive: false), Field(name: ":path", value: "/", sensitive: false)],
+        end_stream: true
+    ).must()
+    assert !has_room(c)
+
+# HTTP/2 over TLS with a server of this process, its certificate signed by
+# the test authority, ALPN choosing `h2`.
+test "connect: a GET over TLS, ALPN choosing h2"
+    if tls.is_available()
+        port = fixture.free_port()
+        server @= threads.spawn_text(body: fixture.serve_tls, arg: to_str(port))
+        fixture.until_listening(port)
+        c @= connect(
+            host: "localhost",
+            port: port,
+            deadline_ms: 10000,
+            roots: tls.TEST_ROOT,
+            options: default_options()
+        ).must()
+        r = round_trip(
+            @c,
+            r: Request(method: "GET", scheme: "https", authority: "localhost", path: "/tls", protocol: "", headers: [], body: [], trailers: [], stream: 0)
+        ).must()
+        assert r.status == 200 && r.body == bytes.from_text("hello /tls")
+        close(@c).must()
+        assert threads.wait_text(@server) == "GET /tls 0"
+
+# HTTP/2 in plain text by prior knowledge, with a server of this process.
+test "connect_plain: a GET over h2c"
+    port = fixture.free_port()
+    server @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port))
+    fixture.until_listening(port)
+    c @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
+    r = round_trip(
+        @c,
+        r: Request(method: "GET", scheme: "http", authority: "localhost", path: "/a", protocol: "", headers: [], body: [], trailers: [], stream: 0)
+    ).must()
+    assert r.status == 200 && r.trailers == [Field(name: "x-length", value: "0", sensitive: false)]
+    close(@c).must()
+    assert threads.wait_text(@server) == "GET /a 0"
+
+# A connection of `net` made a client's HTTP/2 connection.
+test "client_of: over a connection net made"
+    port = fixture.free_port()
+    server @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port))
+    fixture.until_listening(port)
+    made = net.connect("127.0.0.1", port: port, deadline_ms: 10000).must()
+    stream @= made.stream
+    c @= client_of(@stream, options: default_options()).must()
+    assert io.is_closed(stream)
+    r = round_trip(
+        @c,
+        r: Request(method: "POST", scheme: "http", authority: "localhost", path: "/up", protocol: "", headers: [], body: bytes.from_text("abc"), trailers: [], stream: 0)
+    ).must()
+    assert r.status == 200
+    close(@c).must()
+    assert threads.wait_text(@server) == "POST /up 3"
+
+# A server's connection over what `net` accepted, a client of this process
+# asking on a thread of its own.
+test "server_of: one request read and answered"
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    client @= threads.spawn_text(body: fixture.get_plain, arg: f"{l.address.port} /x")
+    accepted = net.accept(l, deadline_ms: 10000).must()
+    stream @= accepted.stream
+    c @= server_of(@stream, options: default_options()).must()
+    r = next_request(@c).must()
+    answer(
+        @c,
+        stream: r.stream,
+        response: Response(status: 200, headers: [], body: bytes.from_text("seen " + r.path), trailers: [])
+    ).must()
+    assert threads.wait_text(@client) == "200 seen /x"
+    close(@c).must()
+    net.close_listener(@l).must()
+
+# A connection closed once: the second close fails.
+test "close: GOAWAY sent, the stream closed, a second close refused"
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    client @= threads.spawn_text(body: fixture.get_plain, arg: f"{l.address.port} /c")
+    accepted = net.accept(l, deadline_ms: 10000).must()
+    stream @= accepted.stream
+    c @= server_of(@stream, options: default_options()).must()
+    assert serve(@c, handler: echo) == 1
+    _ = threads.wait_text(@client)
+    close(@c).must()
+
+    match close(@c)
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED
+
+    net.close_listener(@l).must()
+
+# Events as they come: the response's head, then its data.
+test "read_event: a response read event by event"
+    port = fixture.free_port()
+    server @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port))
+    fixture.until_listening(port)
+    c @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
+    id = start_stream(
+        @c,
+        headers: [Field(name: ":method", value: "GET", sensitive: false), Field(name: ":scheme", value: "http", sensitive: false), Field(name: ":path", value: "/e", sensitive: false)],
+        end_stream: true
+    ).must()
+    first = read_event(@c).must()
+    assert first == .response(stream: id, status: 200, headers: [Field(name: "content-type", value: "text/plain", sensitive: false)], end_stream: false)
+    assert read_event(@c).must() == .data(stream: id, data: bytes.from_text("hello /e"), end_stream: false)
+    close(@c).must()
+    assert threads.wait_text(@server) == "GET /e 0"
+
+# One stream's events while another's are held.
+test "read_event_of: the second request's answer read before the first's"
+    port = fixture.free_port()
+    server @= threads.spawn_text(body: fixture.serve_many, arg: f"{port} 2")
+    fixture.until_listening(port)
+    c @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
+    get = [
+        Field(name: ":method", value: "GET", sensitive: false)
+        Field(name: ":scheme", value: "http", sensitive: false)
+    ]
+    one @= get
+    one @ one.push(Field(name: ":path", value: "/1", sensitive: false))
+    two @= get
+    two @ two.push(Field(name: ":path", value: "/2", sensitive: false))
+    a = start_stream(@c, headers: one, end_stream: true).must()
+    b = start_stream(@c, headers: two, end_stream: true).must()
+    assert read_event_of(@c, stream: b).must() == .response(stream: b, status: 200, headers: [], end_stream: false)
+    assert read_event_of(@c, stream: a).must() == .response(stream: a, status: 200, headers: [], end_stream: false)
+    close(@c).must()
+    assert threads.wait_text(@server) == "2"
+
+# A stream opened with its head alone, its body written after.
+test "start_stream: a POST whose body follows"
+    port = fixture.free_port()
+    server @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port))
+    fixture.until_listening(port)
+    c @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
+    id = start_stream(
+        @c,
+        headers: [Field(name: ":method", value: "POST", sensitive: false), Field(name: ":scheme", value: "http", sensitive: false), Field(name: ":path", value: "/s", sensitive: false)],
+        end_stream: false
+    ).must()
+    write_data(@c, stream: id, data: bytes.from_text("12345"), end_stream: true).must()
+    r = finish(@c, stream: id).must()
+    assert r.status == 200
+    close(@c).must()
+    assert threads.wait_text(@server) == "POST /s 5"
+
+# Trailers written after a body, as gRPC's client ends its stream.
+test "write_headers: trailers end a request"
+    port = fixture.free_port()
+    server @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port))
+    fixture.until_listening(port)
+    c @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
+    id = start_stream(
+        @c,
+        headers: [Field(name: ":method", value: "POST", sensitive: false), Field(name: ":scheme", value: "http", sensitive: false), Field(name: ":path", value: "/t", sensitive: false)],
+        end_stream: false
+    ).must()
+    write_data(@c, stream: id, data: [1, 2], end_stream: false).must()
+    write_headers(
+        @c,
+        stream: id,
+        headers: [Field(name: "x-checksum", value: "3", sensitive: false)],
+        end_stream: true
+    ).must()
+    assert finish(@c, stream: id).must().status == 200
+    close(@c).must()
+    assert threads.wait_text(@server) == "POST /t 2"
+
+# A body of 3 MiB written as the windows open, to a server whose bound is
+# 1 MiB: it answers 413 and resets the stream, so the rest is not sent.
+test "write_data: a body past the server's bound, answered 413"
+    port = fixture.free_port()
+    server @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port))
+    fixture.until_listening(port)
+    c @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 30000, options: default_options()).must()
+    id = start_stream(
+        @c,
+        headers: [Field(name: ":method", value: "PUT", sensitive: false), Field(name: ":scheme", value: "http", sensitive: false), Field(name: ":path", value: "/big", sensitive: false)],
+        end_stream: false
+    ).must()
+
+    match write_data(@c, stream: id, data: bytes.repeated([9], n: 3145728), end_stream: true)
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED
+
+    assert finish(@c, stream: id).must().status == 413
+    after = round_trip(
+        @c,
+        r: Request(method: "GET", scheme: "http", authority: "h", path: "/after", protocol: "", headers: [], body: [], trailers: [], stream: 0)
+    ).must()
+    assert after.status == 200
+    close(@c).must()
+    assert threads.wait_text(@server) == "GET /after 0"
+
+# A request cancelled before its answer is read.
+test "write_reset: a request cancelled"
+    port = fixture.free_port()
+    server @= threads.spawn_text(body: fixture.serve_many, arg: f"{port} 1")
+    fixture.until_listening(port)
+    c @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
+    id = start_stream(
+        @c,
+        headers: [Field(name: ":method", value: "GET", sensitive: false), Field(name: ":scheme", value: "http", sensitive: false), Field(name: ":path", value: "/r", sensitive: false)],
+        end_stream: true
+    ).must()
+    write_reset(@c, stream: id, error: CANCEL).must()
+    assert finish(@c, stream: id).is_err()
+    close(@c).must()
+    _ = threads.wait_text(@server)
+
+# A PING answered by a server of this process.
+test "ping: answered before any request"
+    port = fixture.free_port()
+    server @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port))
+    fixture.until_listening(port)
+    c @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
+    ping(@c, data: [7, 7, 7, 7, 7, 7, 7, 7]).must()
+    _ = round_trip(
+        @c,
+        r: Request(method: "GET", scheme: "http", authority: "h", path: "/p", protocol: "", headers: [], body: [], trailers: [], stream: 0)
+    ).must()
+    close(@c).must()
+    assert threads.wait_text(@server) == "GET /p 0"
+
+# Two requests started before either is finished: one connection, two
+# streams.
+test "start: two requests on one connection at once"
+    port = fixture.free_port()
+    server @= threads.spawn_text(body: fixture.serve_many, arg: f"{port} 2")
+    fixture.until_listening(port)
+    c @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
+    a = start(
+        @c,
+        r: Request(method: "GET", scheme: "http", authority: "h", path: "/one", protocol: "", headers: [], body: [], trailers: [], stream: 0)
+    ).must()
+    b = start(
+        @c,
+        r: Request(method: "GET", scheme: "http", authority: "h", path: "/two", protocol: "", headers: [], body: [], trailers: [], stream: 0)
+    ).must()
+    assert finish(@c, stream: b).must().body == bytes.from_text("hello /two")
+    assert finish(@c, stream: a).must().body == bytes.from_text("hello /one")
+    close(@c).must()
+    assert threads.wait_text(@server) == "2"
+
+# A response read whole: head, body and trailers.
+test "finish: a response's body and trailers"
+    port = fixture.free_port()
+    server @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port))
+    fixture.until_listening(port)
+    c @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
+    id = start(
+        @c,
+        r: Request(method: "GET", scheme: "http", authority: "h", path: "/f", protocol: "", headers: [], body: [], trailers: [], stream: 0)
+    ).must()
+    r = finish(@c, stream: id).must()
+    assert r.body == bytes.from_text("hello /f") && r.trailers.len() == 1
+    close(@c).must()
+    assert threads.wait_text(@server) == "GET /f 0"
+
+# One request and its response, the ordinary call of a client.
+test "round_trip: a POST and its answer"
+    port = fixture.free_port()
+    server @= threads.spawn_text(body: fixture.serve_plain, arg: to_str(port))
+    fixture.until_listening(port)
+    c @= connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: default_options()).must()
+    r = round_trip(
+        @c,
+        r: Request(method: "POST", scheme: "http", authority: "h", path: "/rt", protocol: "", headers: [Field(name: "content-type", value: "text/plain", sensitive: false)], body: bytes.from_text("hi"), trailers: [], stream: 0)
+    ).must()
+    assert r.status == 200 && r.body == bytes.from_text("hello /rt")
+    close(@c).must()
+    assert threads.wait_text(@server) == "POST /rt 2"
+
+# A server's loop step by step: the request read whole, the program's own
+# answer written.
+test "next_request: a request read whole"
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    client @= threads.spawn_text(body: fixture.get_plain, arg: f"{l.address.port} /n?q=1")
+    accepted = net.accept(l, deadline_ms: 10000).must()
+    stream @= accepted.stream
+    c @= server_of(@stream, options: default_options()).must()
+    r = next_request(@c).must()
+    assert r.method == "GET" && r.path == "/n?q=1" && r.authority == "localhost"
+    answer(@c, stream: r.stream, response: respond_text(text: "ok", r: r)).must()
+    assert threads.wait_text(@client) == "200 ok"
+    close(@c).must()
+    net.close_listener(@l).must()
+
+# A response with trailers written by a server.
+test "answer: a response with trailers"
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    client @= threads.spawn_text(body: fixture.get_plain, arg: f"{l.address.port} /a")
+    accepted = net.accept(l, deadline_ms: 10000).must()
+    stream @= accepted.stream
+    c @= server_of(@stream, options: default_options()).must()
+    r = next_request(@c).must()
+    answer(
+        @c,
+        stream: r.stream,
+        response: Response(status: 200, headers: [], body: bytes.from_text("body"), trailers: [Field(name: "x-done", value: "1", sensitive: false)])
+    ).must()
+    assert threads.wait_text(@client) == "200 body"
+    close(@c).must()
+    net.close_listener(@l).must()
+
+# A connection served with `echo` until the client ends it.
+test "serve: one request echoed"
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    client @= threads.spawn_text(body: fixture.get_plain, arg: f"{l.address.port} /s")
+    accepted = net.accept(l, deadline_ms: 10000).must()
+    stream @= accepted.stream
+    c @= server_of(@stream, options: default_options()).must()
+    assert serve(@c, handler: echo) == 1
+    assert threads.wait_text(@client) == "200 "
+    close(@c).must()
+    net.close_listener(@l).must()
+
+# A connection served with the program's own text as state.
+test "serve_with: a health check's text"
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    client @= threads.spawn_text(body: fixture.get_plain, arg: f"{l.address.port} /health")
+    accepted = net.accept(l, deadline_ms: 10000).must()
+    stream @= accepted.stream
+    c @= server_of(@stream, options: default_options()).must()
+    assert serve_with(@c, state: "SERVING", handler: respond_text) == 1
+    assert threads.wait_text(@client) == "200 SERVING"
+    close(@c).must()
+    net.close_listener(@l).must()
+
+# A request's body sent back.
+test "echo: the body and its content-type sent back"
+    r = echo(
+        Request(method: "POST", scheme: "https", authority: "h", path: "/", protocol: "", headers: [Field(name: "content-type", value: "application/json", sensitive: false), Field(name: "x-a", value: "b", sensitive: false)], body: [123, 125], trailers: [], stream: 1)
+    )
+    assert r.status == 200 && r.body == [123, 125] && r.headers == [Field(name: "content-type", value: "application/json", sensitive: false)]
+
+# A fixed text answered whatever was asked.
+test "respond_text: OK as text"
+    r = respond_text(
+        text: "OK",
+        r: Request(method: "GET", scheme: "https", authority: "h", path: "/healthz", protocol: "", headers: [], body: [], trailers: [], stream: 1)
+    )
+    assert r.status == 200 && r.body == bytes.from_text("OK")
+
+# The next stream a client opens, while another's events wait.
+test "accept_stream: the second request's head, the first's held"
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    client @= threads.spawn_text(body: fixture.get_plain, arg: f"{l.address.port} /h")
+    accepted = net.accept(l, deadline_ms: 10000).must()
+    stream @= accepted.stream
+    c @= server_of(@stream, options: default_options()).must()
+
+    match accept_stream(@c).must()
+        .request r =>
+            assert r.path == "/h"
+            answer(
+                @c,
+                stream: r.stream,
+                response: respond_text(text: "seen", r: Request(method: r.method, scheme: r.scheme, authority: r.authority, path: r.path, protocol: "", headers: [], body: [], trailers: [], stream: r.stream))
+            ).must()
+        .response _ | .informational _ | .trailers _ | .data _ | .reset _ | .window _ | .settings _ | .settings_acked | .ping _ | .pong _ | .goaway _ => assert false
+
+    assert threads.wait_text(@client) == "200 seen"
+    close(@c).must()
+    net.close_listener(@l).must()

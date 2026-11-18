@@ -1,0 +1,8 @@
+# Reaches Rebel's package `grpc`, so that `heroes test` on this file runs
+# the tests of its face and its private modules (spec § 12). It prints the
+# frame gRPC gives an empty message, five bytes, touching no network.
+
+use <rebel>/grpc
+
+function main()
+    print(grpc.encode_frame([], compressed: false).len())

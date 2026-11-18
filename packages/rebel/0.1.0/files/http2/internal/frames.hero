@@ -1,0 +1,438 @@
+# HTTP/2's frames read (RFC 9113 § 4 and § 6): a frame's head of nine bytes,
+# and each type's payload read with every check the RFC makes of its size,
+# its stream identifier, its flags and its padding. A frame refused says
+# which error RFC 9113 names, and whether it ends the connection or one
+# stream. Writing them is `framer`'s.
+
+use bytes
+use http2/internal/model
+
+# The names of the error codes 0 to 13, as RFC 9113 § 7 gives them.
+constant ERROR_NAMES: [str]
+    [
+        "NO_ERROR"
+        "PROTOCOL_ERROR"
+        "INTERNAL_ERROR"
+        "FLOW_CONTROL_ERROR"
+        "SETTINGS_TIMEOUT"
+        "STREAM_CLOSED"
+        "FRAME_SIZE_ERROR"
+        "REFUSED_STREAM"
+        "CANCEL"
+        "COMPRESSION_ERROR"
+        "CONNECT_ERROR"
+        "ENHANCE_YOUR_CALM"
+        "INADEQUATE_SECURITY"
+        "HTTP_1_1_REQUIRED"
+    ]
+
+# The names of the frame types 0 to 9, as RFC 9113 § 6 gives them.
+constant FRAME_NAMES: [str]
+    [
+        "DATA"
+        "HEADERS"
+        "PRIORITY"
+        "RST_STREAM"
+        "SETTINGS"
+        "PUSH_PROMISE"
+        "PING"
+        "GOAWAY"
+        "WINDOW_UPDATE"
+        "CONTINUATION"
+    ]
+
+# PROTOCOL_ERROR.
+constant PROTOCOL_ERROR: i64
+    0x1
+
+# FLOW_CONTROL_ERROR.
+constant FLOW_CONTROL_ERROR: i64
+    0x3
+
+# FRAME_SIZE_ERROR.
+constant FRAME_SIZE_ERROR: i64
+    0x6
+
+# The largest stream identifier and window: 2^31 - 1.
+constant MOST_31: i64
+    2147483647
+
+# The largest value of 32 bits: 2^32 - 1.
+constant MOST_32: i64
+    4294967295
+
+# The largest payload a frame's head can name: 2^24 - 1.
+constant MOST_24: i64
+    16777215
+
+# A frame's head.
+record Head
+    # The payload's length in bytes.
+    length: i64
+    # The type.
+    kind: i64
+    # The flags.
+    flags: i64
+    # The stream, the reserved bit dropped.
+    stream: i64
+
+# What `decode` answers: the frame, or the error the RFC names for it.
+record Decoded
+    # The frame, where `why` is "".
+    frame: model.Frame
+    # The error code where the frame is refused.
+    error: i64
+    # Whether the error ends the stream alone, not the connection.
+    stream_only: bool
+    # What was found, "" where the frame is read.
+    why: str
+
+# The name of an error code, "" where RFC 9113 gives it none.
+function error_name(code: i64) -> str
+    if code >= 0 && code < ERROR_NAMES.len()
+        return ERROR_NAMES[code]
+    return ""
+
+# The name of a frame type, "" where RFC 9113 defines none.
+function frame_name(kind: i64) -> str
+    if kind >= 0 && kind < FRAME_NAMES.len()
+        return FRAME_NAMES[kind]
+    return ""
+
+# How an error code reads in a message: its name, or its number.
+function describe(code: i64) -> str
+    name = error_name(code)
+
+    if name == ""
+        return f"error code {code}"
+    return name
+
+# The unsigned integer of 32 bits at `at`, the first byte the most
+# significant.
+function u32_at(data: [u8] lent, at: i64) -> i64
+    return to_i64(data[at]).must() << 24 | to_i64(data[at + 1]).must() << 16 | to_i64(data[at + 2]).must() << 8 | to_i64(data[at + 3]).must()
+
+# Writes `value` as 32 bits, the most significant byte first.
+function push_u32(@out: [u8], value: i64)
+    out @ out.push(to_u8(value >> 24 & 0xff).must())
+    out @ out.push(to_u8(value >> 16 & 0xff).must())
+    out @ out.push(to_u8(value >> 8 & 0xff).must())
+    out @ out.push(to_u8(value & 0xff).must())
+
+# The head at `at` of `data`, which holds its nine bytes.
+function head_at(data: [u8] lent, at: i64) -> Head
+    length = to_i64(data[at]).must() << 16 | to_i64(data[at + 1]).must() << 8 | to_i64(data[at + 2]).must()
+    return Head(
+        length: length,
+        kind: to_i64(data[at + 3]).must(),
+        flags: to_i64(data[at + 4]).must(),
+        stream: u32_at(data, at: at + 5) & MOST_31
+    )
+
+# Writes a frame's head and its payload.
+function push_frame(@out: [u8], kind: i64, flags: i64, stream: i64, payload: [u8] lent)
+    out @ out.push(to_u8(payload.len() >> 16 & 0xff).must())
+    out @ out.push(to_u8(payload.len() >> 8 & 0xff).must())
+    out @ out.push(to_u8(payload.len() & 0xff).must())
+    out @ out.push(to_u8(kind).must())
+    out @ out.push(to_u8(flags).must())
+    push_u32(@out, value: stream)
+    bytes.push_all(to: @out, from: payload)
+
+# A frame refused: the error the RFC names, for the connection or the
+# stream alone.
+function refused(error: i64, stream_only: bool, why: str) -> Decoded
+    return Decoded(frame: .settings(ack: true, settings: []), error: error, stream_only: stream_only, why: why)
+
+# A frame read.
+function read(frame: model.Frame) -> Decoded
+    return Decoded(frame: frame, error: 0, stream_only: false, why: "")
+
+# Where a padded payload's body begins and ends, or why the padding is
+# refused: `skip` bytes after the padding's length come before the body.
+record Body
+    # The index of the body's first byte.
+    from: i64
+    # The index past its last.
+    to: i64
+    # The padding's length.
+    padding: i64
+    # Why it is refused, "" where it is not.
+    why: str
+
+# The body of a payload whose flags may say PADDED, after `skip` fixed bytes.
+function body_of(payload: [u8] lent, padded: bool, skip: i64, kind: str) -> Body
+    if !padded
+        if payload.len() < skip
+            return Body(from: 0, to: 0, padding: 0, why: f"a {kind} frame of {payload.len()} bytes is too short")
+        return Body(from: skip, to: payload.len(), padding: 0, why: "")
+
+    if payload.len() < 1 + skip
+        return Body(from: 0, to: 0, padding: 0, why: f"a padded {kind} frame of {payload.len()} bytes is too short")
+    padding = to_i64(payload[0]).must()
+
+    if padding >= payload.len() - skip
+        return Body(
+            from: 0,
+            to: 0,
+            padding: 0,
+            why: f"a {kind} frame's padding of {padding} bytes fills its payload of {payload.len()}"
+        )
+    return Body(from: 1 + skip, to: payload.len() - padding, padding: padding, why: "")
+
+# The priority of five bytes at `at`.
+function priority_at(payload: [u8] lent, at: i64) -> model.Priority
+    word = u32_at(payload, at: at)
+    return model.Priority(
+        exclusive: word & 0x80000000 != 0,
+        depends_on: word & MOST_31,
+        weight: to_i64(payload[at + 4]).must() + 1
+    )
+
+# The frame `head` and `payload` make, each check of RFC 9113 § 6 made, or
+# the error the RFC names; `max_size` is the largest payload this end reads.
+function decode(head: Head, payload: [u8] lent, max_size: i64) -> Decoded
+    name = frame_name(head.kind)
+
+    if head.length > max_size
+        return refused(
+            error: FRAME_SIZE_ERROR,
+            stream_only: false,
+            why: f"a {describe_kind(head.kind)} frame of {head.length} bytes passes the largest, {max_size}"
+        )
+    s = head.stream
+
+    if head.kind == 0
+        if s == 0
+            return refused(error: PROTOCOL_ERROR, stream_only: false, why: "a DATA frame on stream 0")
+        b = body_of(payload, padded: head.flags & 0x8 != 0, skip: 0, kind: name)
+
+        if b.why != ""
+            return refused(error: PROTOCOL_ERROR, stream_only: false, why: b.why)
+        return read(
+            .data(stream: s, data: payload.slice(from: b.from, to: b.to), end_stream: head.flags & 0x1 != 0, padding: b.padding)
+        )
+
+    if head.kind == 1
+        if s == 0
+            return refused(error: PROTOCOL_ERROR, stream_only: false, why: "a HEADERS frame on stream 0")
+        prioritized = head.flags & 0x20 != 0
+
+        skip = if prioritized
+            5
+        else
+            0
+        b = body_of(payload, padded: head.flags & 0x8 != 0, skip: skip, kind: name)
+
+        if b.why != ""
+            return refused(error: PROTOCOL_ERROR, stream_only: false, why: b.why)
+
+        p = if prioritized
+            priority_at(payload, at: b.from - 5)
+        else
+            model.Priority(exclusive: false, depends_on: 0, weight: 16)
+
+        if prioritized && p.depends_on == s
+            return refused(error: PROTOCOL_ERROR, stream_only: true, why: f"stream {s} depends on itself")
+        return read(
+            .headers(stream: s, block: payload.slice(from: b.from, to: b.to), end_stream: head.flags & 0x1 != 0, end_headers: head.flags & 0x4 != 0, padding: b.padding, has_priority: prioritized, priority: p)
+        )
+
+    if head.kind == 2
+        if s == 0
+            return refused(error: PROTOCOL_ERROR, stream_only: false, why: "a PRIORITY frame on stream 0")
+
+        if payload.len() != 5
+            return refused(
+                error: FRAME_SIZE_ERROR,
+                stream_only: true,
+                why: f"a PRIORITY frame holds 5 bytes, and this one {payload.len()}"
+            )
+        p = priority_at(payload, at: 0)
+
+        if p.depends_on == s
+            return refused(error: PROTOCOL_ERROR, stream_only: true, why: f"stream {s} depends on itself")
+        return read(.priority(stream: s, priority: p))
+
+    if head.kind == 3
+        if s == 0
+            return refused(error: PROTOCOL_ERROR, stream_only: false, why: "a RST_STREAM frame on stream 0")
+
+        if payload.len() != 4
+            return refused(
+                error: FRAME_SIZE_ERROR,
+                stream_only: false,
+                why: f"a RST_STREAM frame holds 4 bytes, and this one {payload.len()}"
+            )
+        return read(.rst_stream(stream: s, error: u32_at(payload, at: 0)))
+
+    if head.kind == 4
+        if s != 0
+            return refused(error: PROTOCOL_ERROR, stream_only: false, why: f"a SETTINGS frame on stream {s}")
+        ack = head.flags & 0x1 != 0
+
+        if ack && payload.len() != 0
+            return refused(
+                error: FRAME_SIZE_ERROR,
+                stream_only: false,
+                why: f"a SETTINGS acknowledgement of {payload.len()} bytes"
+            )
+
+        if payload.len() % 6 != 0
+            return refused(
+                error: FRAME_SIZE_ERROR,
+                stream_only: false,
+                why: f"a SETTINGS frame of {payload.len()} bytes, no multiple of 6"
+            )
+        list: [model.Setting] @= []
+        at: i64 @= 0
+
+        while at < payload.len()
+            id = to_i64(payload[at]).must() << 8 | to_i64(payload[at + 1]).must()
+            list @ list.push(model.Setting(id: id, value: u32_at(payload, at: at + 2)))
+            at @ at + 6
+
+        return read(.settings(ack: ack, settings: list))
+
+    if head.kind == 5
+        if s == 0
+            return refused(error: PROTOCOL_ERROR, stream_only: false, why: "a PUSH_PROMISE frame on stream 0")
+        b = body_of(payload, padded: head.flags & 0x8 != 0, skip: 4, kind: name)
+
+        if b.why != ""
+            return refused(error: PROTOCOL_ERROR, stream_only: false, why: b.why)
+        promised = u32_at(payload, at: b.from - 4) & MOST_31
+
+        if promised == 0
+            return refused(error: PROTOCOL_ERROR, stream_only: false, why: "a PUSH_PROMISE of stream 0")
+        return read(
+            .push_promise(stream: s, promised: promised, block: payload.slice(from: b.from, to: b.to), end_headers: head.flags & 0x4 != 0, padding: b.padding)
+        )
+
+    if head.kind == 6
+        if s != 0
+            return refused(error: PROTOCOL_ERROR, stream_only: false, why: f"a PING frame on stream {s}")
+
+        if payload.len() != 8
+            return refused(
+                error: FRAME_SIZE_ERROR,
+                stream_only: false,
+                why: f"a PING frame holds 8 bytes, and this one {payload.len()}"
+            )
+        return read(.ping(ack: head.flags & 0x1 != 0, data: payload))
+
+    if head.kind == 7
+        if s != 0
+            return refused(error: PROTOCOL_ERROR, stream_only: false, why: f"a GOAWAY frame on stream {s}")
+
+        if payload.len() < 8
+            return refused(
+                error: FRAME_SIZE_ERROR,
+                stream_only: false,
+                why: f"a GOAWAY frame of {payload.len()} bytes, fewer than 8"
+            )
+        return read(
+            .goaway(last_stream: u32_at(payload, at: 0) & MOST_31, error: u32_at(payload, at: 4), debug: payload.slice(from: 8, to: payload.len()))
+        )
+
+    if head.kind == 8
+        if payload.len() != 4
+            return refused(
+                error: FRAME_SIZE_ERROR,
+                stream_only: false,
+                why: f"a WINDOW_UPDATE frame holds 4 bytes, and this one {payload.len()}"
+            )
+        increment = u32_at(payload, at: 0) & MOST_31
+
+        if increment == 0
+            return refused(error: PROTOCOL_ERROR, stream_only: s != 0, why: f"a WINDOW_UPDATE of 0 on stream {s}")
+        return read(.window_update(stream: s, increment: increment))
+
+    if head.kind == 9
+        if s == 0
+            return refused(error: PROTOCOL_ERROR, stream_only: false, why: "a CONTINUATION frame on stream 0")
+        return read(.continuation(stream: s, block: payload, end_headers: head.flags & 0x4 != 0))
+    return read(.unknown(kind: head.kind, flags: head.flags, stream: s, payload: payload))
+
+# A frame type as a message names it.
+function describe_kind(kind: i64) -> str
+    name = frame_name(kind)
+
+    if name == ""
+        return f"type {kind}"
+    return name
+
+# The frame `data` holds whole, or the error the RFC names for it.
+function decode_whole(data: [u8] lent, max_size: i64) -> Decoded
+    if data.len() < 9
+        return refused(
+            error: FRAME_SIZE_ERROR,
+            stream_only: false,
+            why: f"{data.len()} bytes hold no frame's head of 9"
+        )
+    head = head_at(data, at: 0)
+
+    if data.len() != 9 + head.length
+        return refused(
+            error: FRAME_SIZE_ERROR,
+            stream_only: false,
+            why: f"the head names a payload of {head.length} bytes, and {data.len() - 9} follow it"
+        )
+    return decode(head, payload: data.slice(from: 9, to: data.len()), max_size: max_size)
+
+# The hexadecimal `hex` read as one frame, frames of 16,384 bytes at most.
+function decoded_hex(hex: str) -> Decoded
+    return decode_whole(bytes.parse_hex(hex).must(), max_size: 16384)
+
+test "decode_whole: each type read back as Go's Framer wrote it"
+    p = model.Priority(exclusive: true, depends_on: 3, weight: 256)
+    assert decoded_hex("000009012d000000050280000003ff820000").frame == .headers(stream: 5, block: [0x82], end_stream: true, end_headers: true, padding: 2, has_priority: true, priority: p)
+    list = [
+        model.Setting(id: 2, value: 0)
+        model.Setting(id: 4, value: 1048576)
+        model.Setting(id: 6, value: 4294967295)
+    ]
+    assert decoded_hex("0000120400000000000002000000000004001000000006ffffffff").frame == .settings(ack: false, settings: list)
+    assert decoded_hex("00000c0700000000007fffffff0000000b63616c6d").frame == .goaway(last_stream: 2147483647, error: 11, debug: [99, 97, 108, 109])
+    assert decoded_hex("000006000800000003036869000000").frame == .data(stream: 3, data: [104, 105], end_stream: false, padding: 3)
+    assert decoded_hex("000001fa050000000d09").frame == .unknown(kind: 0xfa, flags: 5, stream: 13, payload: [9])
+    assert decoded_hex("000007050c0000000101000000028200").frame == .push_promise(stream: 1, promised: 2, block: [0x82], end_headers: true, padding: 1)
+    assert decoded_hex("0000040800000000007fffffff").frame == .window_update(stream: 0, increment: 2147483647)
+
+test "decode_whole: refusals as Go names them, the connection's or the stream's"
+    ping = decoded_hex("00000706000000000001020304050607")
+    assert ping.why != "" && ping.error == 6 && !ping.stream_only
+    zero = decoded_hex("00000100000000000061")
+    assert zero.error == 1 && !zero.stream_only
+    window = decoded_hex("00000408000000000300000000")
+    assert window.error == 1 && window.stream_only
+    odd = decoded_hex("0000050400000000000002000000")
+    assert odd.error == 6
+    prio = decoded_hex("00000402000000000100000000")
+    assert prio.error == 6 && prio.stream_only
+
+test "decode_whole: padding at the payload's length, a frame past its size, none, and a short one"
+    assert decoded_hex("000003000800000001020000").why == ""
+    assert decoded_hex("000003000800000001030000").error == 1
+    big: [u8] @= [0x00, 0x40, 0x01, 0, 0, 0, 0, 0, 1]
+
+    for _ in range(from: 0, to: 16385)
+        big @ big.push(0)
+
+    assert decode_whole(big, max_size: 16384).error == 6
+    assert decode_whole(big, max_size: 16385).why == ""
+    assert decode_whole([], max_size: 16384).why != ""
+    assert decoded_hex("00000500000000000161").why != ""
+
+test "decode_whole: a stream depending on itself, a GOAWAY too short, an acknowledgement with bytes"
+    assert decoded_hex("0000060120000000030000000310" + "82").stream_only
+    assert decoded_hex("000004070000000000000000").error == 6
+    assert decoded_hex("000006040100000000000100000000").error == 6
+    assert decoded_hex("0000040500000000010000000000").why != ""
+
+test "error_name and frame_name: the first, the last, and past them"
+    assert error_name(0) == "NO_ERROR"
+    assert error_name(13) == "HTTP_1_1_REQUIRED"
+    assert error_name(14) == ""
+    assert frame_name(9) == "CONTINUATION"
+    assert frame_name(-1) == ""

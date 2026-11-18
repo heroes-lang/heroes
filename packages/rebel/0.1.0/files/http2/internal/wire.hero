@@ -1,0 +1,443 @@
+# A session over a stream: bytes read and handed to it, what it answers
+# written at once, the events of streams nobody has asked for held until
+# they are. Data held is given back to the connection's window at once and
+# to its stream's when the program takes it, so a stream nobody reads holds
+# at most its own window and never stops the others. The connection answers
+# PING and SETTINGS itself and waits for windows itself, so the events it
+# gives out are a stream's, a GOAWAY and a PING's answer.
+
+use bytes
+use http2/internal/engine
+use http2/internal/model
+use http2/internal/receiving
+use http2/internal/sending
+use io
+use net
+use time
+use tls
+
+# One connection's state over its stream.
+record State
+    # The session.
+    session: engine.State
+    # The events read and not yet given out, in the order they came.
+    held: [model.Event]
+    # Whether the connection has ended: the peer closed it, or it failed.
+    ended: bool
+
+# A monotonic clock in milliseconds, 0 where the system answers none.
+function now_ms() -> i64
+    match time.mark()
+        .ok m  => return m.nanoseconds / 1000000
+        .err _ => return 0
+
+# A connection's state over `session`, its first frames written.
+function adopt(stream: io.Stream, session: engine.State) -> State?
+    w @= State(session: session, held: [], ended: false)
+    flush(stream, @w)?
+    return ok(w)
+
+# Writes what the session has to write.
+function flush(stream: io.Stream, @w: State) -> ()?
+    out = sending.take_output(@w.session)
+
+    if out.len() > 0
+        io.write(stream, data: out)?
+    return ok()
+
+# The stream an event belongs to, 0 for the connection's own.
+function stream_of(e: model.Event) -> i64
+    return match e
+        .request r       => r.stream
+        .response r      => r.stream
+        .informational r => r.stream
+        .trailers t      => t.stream
+        .data d          => d.stream
+        .reset r         => r.stream
+        .window w        => w.stream
+        .settings _      => 0
+        .settings_acked  => 0
+        .ping _          => 0
+        .pong _          => 0
+        .goaway _        => 0
+
+# Whether the connection keeps `e` for the program: a stream's events, a
+# GOAWAY and a PING's answer; the windows, the settings and a peer's PING it
+# handles itself.
+function is_kept(e: model.Event) -> bool
+    return match e
+        .window _ | .settings _ | .settings_acked | .ping _                                                  => false
+        .request _ | .response _ | .informational _ | .trailers _ | .data _ | .reset _ | .pong _ | .goaway _ => true
+
+# Adds `e` to the events held.
+function push_event(@held: [model.Event], e: model.Event)
+    held @ held.push(e)
+
+# Holds `e`, its data given back to the connection's window at once.
+function hold(@w: State, e: model.Event) -> ()?
+    if !is_kept(e)
+        return ok()
+
+    match e
+        .data d => sending.acknowledge_connection(@w.session, count: d.data.len())?
+        .request _ | .response _ | .informational _ | .trailers _ | .reset _ | .window _ | .settings _ | .settings_acked | .ping _ | .pong _ | .goaway _ => _ = 0
+
+    push_event(@w.held, e: e)
+    return ok()
+
+# Reads the stream once and holds the events the bytes make, writing what
+# the session answers. Fails `closed` where the peer has closed the
+# connection, and as the session and the stream fail.
+function read_more(stream: io.Stream, @w: State) -> ()?
+    if w.ended
+        return fail(code: model.CLOSED, msg: "reading an HTTP/2 connection that has ended")
+    data = io.read(stream, most: 65536)?
+
+    if data.len() == 0
+        w.ended @ true
+        return fail(code: model.CLOSED, msg: "reading an HTTP/2 connection: the peer closed it")
+
+    match receiving.receive(@w.session, data: data, now_ms: now_ms())
+        .ok events =>
+            for e in events
+                hold(@w, e: e)?
+        .err e =>
+            w.ended @ true
+
+            match flush(stream, @w)
+                .ok _  => _ = 0
+                .err _ => _ = 0
+
+            return fail(code: e.code, msg: e.msg)
+
+    return flush(stream, @w)
+
+# Gives out the held event at `at`, a data event's bytes given back to its
+# stream's window.
+function give(stream: io.Stream, @w: State, at: i64) -> model.Event?
+    e = w.held[at]
+    rest: [model.Event] @= []
+
+    for i in range(from: 0, to: w.held.len())
+        if i != at
+            rest @ rest.push(w.held[i])
+
+    w.held @ rest
+
+    match e
+        .data d =>
+            sending.acknowledge_stream(@w.session, id: d.stream, count: d.data.len())?
+            flush(stream, @w)?
+        .request _ | .response _ | .informational _ | .trailers _ | .reset _ | .window _ | .settings _ | .settings_acked | .ping _ | .pong _ | .goaway _ => _ = 0
+
+    return ok(e)
+
+# The next event of any stream, held ones first.
+function next_event(stream: io.Stream, @w: State) -> model.Event?
+    while w.held.len() == 0
+        read_more(stream, @w)?
+
+    return give(stream, @w, at: 0)
+
+# Where the first held event of `id` stands, -1 where none is held.
+function held_of(w: State lent, id: i64) -> i64
+    for i in range(from: 0, to: w.held.len())
+        if stream_of(w.held[i]) == id
+            return i
+
+    return -1
+
+# The next event of the stream `id`, others held; of any stream for 0.
+function next_event_of(stream: io.Stream, @w: State, id: i64) -> model.Event?
+    if id == 0
+        return next_event(stream, @w)
+
+    while true
+        at = held_of(w, id: id)
+
+        if at >= 0
+            return give(stream, @w, at: at)
+
+        if engine.state_of(w.session, id: id) == engine.CLOSED
+            return fail(code: model.CLOSED, msg: f"reading stream {id}: it has ended and nothing of it is held")
+        read_more(stream, @w)?
+
+# Where the first held `pong` of `data` stands, -1 where none is held.
+function pong_of(w: State lent, data: [u8] lent) -> i64
+    for i in range(from: 0, to: w.held.len())
+        if w.held[i] == .pong(data: data)
+            return i
+
+    return -1
+
+# Sends a PING and waits for its answer.
+function ping(stream: io.Stream, @w: State, data: [u8]) -> ()?
+    sending.send_ping(@w.session, data: data)?
+    flush(stream, @w)?
+
+    while pong_of(w, data: data) < 0
+        read_more(stream, @w)?
+
+    _ = give(stream, @w, at: pong_of(w, data: data))?
+    return ok()
+
+# A client's: a stream opened with `headers` once the server lets one more
+# open.
+function start_stream(stream: io.Stream, @w: State, headers: [model.Field], end_stream: bool) -> i64?
+    while !sending.has_room(w.session) && sending.is_open(w.session) && !w.session.goaway_received
+        read_more(stream, @w)?
+
+    id = sending.open_stream(@w.session, headers: headers, end_stream: end_stream)?
+    flush(stream, @w)?
+    return ok(id)
+
+# A header list on `id`, written at once.
+function write_headers(stream: io.Stream, @w: State, id: i64, headers: [model.Field], end_stream: bool) -> ()?
+    sending.send_headers(@w.session, id: id, headers: headers, end_stream: end_stream)?
+    return flush(stream, @w)
+
+# Every byte of `data` on `id`, waiting for windows as they open.
+function write_data(stream: io.Stream, @w: State, id: i64, data: [u8] lent, end_stream: bool) -> ()?
+    at: i64 @= sending.send_from(@w.session, id: id, data: data, from: 0, end_stream: end_stream)?
+    flush(stream, @w)?
+
+    while at < data.len()
+        read_more(stream, @w)?
+        state = engine.state_of(w.session, id: id)
+
+        if state != engine.OPEN && state != engine.HALF_REMOTE
+            return fail(
+                code: model.CLOSED,
+                msg: f"writing data on stream {id}: the stream was reset with {data.len() - at} bytes unsent"
+            )
+        at @ sending.send_from(@w.session, id: id, data: data, from: at, end_stream: end_stream)?
+        flush(stream, @w)?
+
+    return ok()
+
+# A RST_STREAM on `id`, written at once.
+function write_reset(stream: io.Stream, @w: State, id: i64, error: i64) -> ()?
+    sending.reset_stream(@w.session, id: id, error: error)?
+    return flush(stream, @w)
+
+# A client's: the request sent on a new stream, head, body and trailers.
+function start(stream: io.Stream, @w: State, r: model.Request) -> i64?
+    head: [model.Field] @= [
+        model.Field(name: ":method", value: r.method, sensitive: false)
+    ]
+
+    if r.method != "CONNECT" || r.protocol != ""
+        head @ head.push(model.Field(name: ":scheme", value: r.scheme, sensitive: false))
+        head @ head.push(model.Field(name: ":path", value: r.path, sensitive: false))
+
+    if r.authority != ""
+        head @ head.push(model.Field(name: ":authority", value: r.authority, sensitive: false))
+
+    if r.protocol != ""
+        head @ head.push(model.Field(name: ":protocol", value: r.protocol, sensitive: false))
+
+    for f in r.headers
+        head @ head.push(f)
+
+    bare = r.body.len() == 0 && r.trailers.len() == 0
+    id = start_stream(stream, @w, headers: head, end_stream: bare)?
+
+    if !bare
+        write_data(stream, @w, id: id, data: r.body, end_stream: r.trailers.len() == 0)?
+
+        if r.trailers.len() > 0
+            write_headers(stream, @w, id: id, headers: r.trailers, end_stream: true)?
+    return ok(id)
+
+# A client's: the response on `id`, read whole within `limit` bytes of body.
+function finish(stream: io.Stream, @w: State, id: i64, limit: i64) -> model.Response?
+    status: i64 @= 0
+    headers: [model.Field] @= []
+    body: [u8] @= []
+    trailers: [model.Field] @= []
+
+    while true
+        match next_event_of(stream, @w, id: id)?
+            .response r =>
+                status @ r.status
+                headers @ r.headers
+
+                if r.end_stream
+                    return ok(model.Response(status: status, headers: headers, body: body, trailers: trailers))
+            .data d =>
+                if body.len() + d.data.len() > limit
+                    write_reset(stream, @w, id: id, error: engine.CANCEL)?
+                    return fail(
+                        code: model.LIMIT,
+                        msg: f"reading the response on stream {id}: its body passes {limit} bytes"
+                    )
+                bytes.push_all(to: @body, from: d.data)
+
+                if d.end_stream
+                    return ok(model.Response(status: status, headers: headers, body: body, trailers: trailers))
+            .trailers t =>
+                trailers @ t.headers
+                return ok(model.Response(status: status, headers: headers, body: body, trailers: trailers))
+            .reset r =>
+                why = if r.remote
+                    "the server reset it"
+                else
+                    "this end reset it, the response being malformed or too large"
+
+                code = if !r.remote && r.error == engine.CANCEL
+                    model.LIMIT
+                else if !r.remote
+                    model.INVALID
+                else
+                    model.CLOSED
+                return fail(
+                    code: code,
+                    msg: f"reading the response on stream {id}: {why} with {engine.name_of(r.error)}"
+                )
+            .informational _ | .request _ | .window _ | .settings _ | .settings_acked | .ping _ | .pong _ | .goaway _ => _ = 0
+
+# A server's: the next request whose head has come, its body read whole
+# within `limit` bytes; one past it is answered 413 and the next is read.
+function next_request(stream: io.Stream, @w: State, limit: i64) -> model.Request?
+    while true
+        e = next_event(stream, @w)?
+
+        match e
+            .request r =>
+                req @= model.Request(
+                    method: r.method,
+                    scheme: r.scheme,
+                    authority: r.authority,
+                    path: r.path,
+                    protocol: r.protocol,
+                    headers: r.headers,
+                    body: [],
+                    trailers: [],
+                    stream: r.stream
+                )
+
+                if r.end_stream
+                    return ok(req)
+
+                if collect(stream, @w, @req, limit: limit)?
+                    return ok(req)
+            .goaway _ =>
+                w.ended @ true
+                return fail(code: model.CLOSED, msg: "reading the next request: the client sent GOAWAY")
+            .response _ | .informational _ | .trailers _ | .data _ | .reset _ | .window _ | .settings _ | .settings_acked | .ping _ | .pong _ => _ = 0
+
+# Reads the body and trailers of `req` whole: false where the client reset
+# it or it passed `limit`, answered 413.
+function collect(stream: io.Stream, @w: State, @req: model.Request, limit: i64) -> bool?
+    id = req.stream
+    body: [u8] @= []
+
+    while true
+        match next_event_of(stream, @w, id: id)?
+            .data d =>
+                if body.len() + d.data.len() > limit
+                    write_headers(stream, @w, id: id, headers: [model.Field(name: ":status", value: "413", sensitive: false)], end_stream: true)?
+                    write_reset(stream, @w, id: id, error: engine.NO_ERROR)?
+                    return ok(false)
+                bytes.push_all(to: @body, from: d.data)
+
+                if d.end_stream
+                    req.body @ body
+                    return ok(true)
+            .trailers t =>
+                req.body @ body
+                req.trailers @ t.headers
+                return ok(true)
+            .reset _ => return ok(false)
+            .request _ | .response _ | .informational _ | .window _ | .settings _ | .settings_acked | .ping _ | .pong _ | .goaway _ => _ = 0
+
+# A server's: `response` written on `id`, head, body and trailers.
+function answer(stream: io.Stream, @w: State, id: i64, response: model.Response) -> ()?
+    status = if response.status < 200 || response.status > 999
+        500
+    else
+        response.status
+    head: [model.Field] @= [
+        model.Field(name: ":status", value: to_str(status), sensitive: false)
+    ]
+
+    for f in response.headers
+        head @ head.push(f)
+
+    bare = response.body.len() == 0 && response.trailers.len() == 0
+    write_headers(stream, @w, id: id, headers: head, end_stream: bare)?
+
+    if !bare
+        if response.body.len() > 0 || response.trailers.len() == 0
+            write_data(stream, @w, id: id, data: response.body, end_stream: response.trailers.len() == 0)?
+
+        if response.trailers.len() > 0
+            write_headers(stream, @w, id: id, headers: response.trailers, end_stream: true)?
+    return ok()
+
+# Makes every read and write of `stream` end by `ms` milliseconds from now,
+# 0 for no end: by `tls` where it is TLS's, by `net` where it is a socket's.
+function set_wait(stream: io.Stream, ms: i64)
+    match tls.set_deadline(stream, ms: ms)
+        .ok _  => return
+        .err _ => _ = 0
+
+    match net.set_deadline(net.Conn(stream: stream, local: net.unspecified_v4(), remote: net.unspecified_v4()), ms: ms)
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+# Reads and drops what the peer still sends, for a second at most, until it
+# closes: a server that closed at once while bytes it had not read waited
+# would make its system reset the connection, and the peer lose the last
+# answer it was sent.
+function linger(stream: io.Stream)
+    set_wait(stream, ms: 1000)
+
+    for _ in range(from: 0, to: 64)
+        match io.read(stream, most: 65536)
+            .ok data =>
+                if data.len() == 0
+                    return
+            .err _ => return
+
+# Ends the connection gracefully: GOAWAY with no error where the session
+# still runs, written as far as the stream takes it; a server's then waits
+# for the client to close, as `linger` says.
+function goodbye(stream: io.Stream, @w: State)
+    if sending.is_open(w.session) && !w.ended
+        match sending.send_goaway(@w.session, error: engine.NO_ERROR, debug: "")
+            .ok _  => _ = 0
+            .err _ => _ = 0
+
+        match flush(stream, @w)
+            .ok _  => _ = 0
+            .err _ => _ = 0
+
+        if !w.session.client
+            linger(stream)
+    w.ended @ true
+
+# Whether `e` opens a stream: a request's head.
+function is_request(e: model.Event) -> bool
+    return match e
+        .request _ => true
+        .response _ | .informational _ | .trailers _ | .data _ | .reset _ | .window _ | .settings _ | .settings_acked | .ping _ | .pong _ | .goaway _ => false
+
+# Whether `e` is the peer's GOAWAY.
+function is_goaway(e: model.Event) -> bool
+    return match e
+        .goaway _ => true
+        .request _ | .response _ | .informational _ | .trailers _ | .data _ | .reset _ | .window _ | .settings _ | .settings_acked | .ping _ | .pong _ => false
+
+# A server's: the head of the next stream a client opens, every other event
+# held. Fails `closed` once the client's GOAWAY is held.
+function next_head(stream: io.Stream, @w: State) -> model.Event?
+    while true
+        for i in range(from: 0, to: w.held.len())
+            if is_request(w.held[i])
+                return give(stream, @w, at: i)
+
+            if is_goaway(w.held[i])
+                return fail(code: model.CLOSED, msg: "waiting for a stream: the client sent GOAWAY")
+
+        read_more(stream, @w)?

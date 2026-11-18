@@ -364,7 +364,7 @@ capability client/https  an https:// request, the server's certificate checked a
   go      net/http.Transport.TLSClientConfig, net/http.ErrSchemeMismatch, crypto/tls.Config.RootCAs as net/http uses it
   rust    -
   python  http.client.HTTPSConnection, http.client.HTTPS_PORT, urllib.request.HTTPSHandler, requests' verify given a CA bundle, requests.exceptions.SSLError
-  note    through `tls.connect`, offering HTTP/1.1, on all three platforms; a refused certificate is `invalid` with `tls`'s reason. `roots` is PEM text, where requests takes a path: reading a file is `fs`'s
+  note    through `tls.connect`, offering HTTP/2 and HTTP/1.1 by ALPN (added 2026-11-18), on all three platforms; a refused certificate is `invalid` with `tls`'s reason. `roots` is PEM text, where requests takes a path: reading a file is `fs`'s
 
 capability client/https-unchecked  a certificate not checked
   heroes  refused: verification is never turned off outside tests; `tls`'s unchecked connection is named for tests alone, and `http` offers no switch to it
@@ -392,6 +392,20 @@ capability client/https-keep-alive  several https:// requests on one connection 
   rust    -
   python  http.client.HTTPSConnection reused
   note    a stream of `tls.connect` read through `io.reader`, as an http:// connection is; `send` itself opens one connection a request, http or https
+
+capability client/http2  an https:// request over HTTP/2 where the server's ALPN chooses h2, and several requests on one HTTP/2 connection the program holds
+  heroes  http.send, http.round_trip_h2, http.to_h2_request, http.from_h2_response
+  go      net/http.Transport's HTTP/2 (ForceAttemptHTTP2, TLSNextProto), net/http.Request.ProtoMajor as the client reads it
+  rust    -
+  python  -
+  note    added 2026-11-18: the exchange is `http2`'s, its fields made HTTP/2's (names in lower case, HTTP/1.1's connection fields left out, Host as :authority), the response read back as an HTTP/1.1 one so redirects, retries, cookies and decoding hold; `send` still opens one connection a request, `round_trip_h2` keeps one; Python's standard library and requests speak HTTP/1.1 alone (httpx's http2=True is a third party's)
+
+capability server/http2  a TLS server answering HTTP/2 where its listener offers h2 and the client chooses it
+  heroes  http.serve_tls, http.serve_stream, http.serve_h2, http.serve_h2_with, http.from_h2_request, http.to_h2_response
+  go      net/http.Server's HTTP/2 (TLSNextProto, Protocols), net/http.Request.ProtoMajor as the server reads it
+  rust    -
+  python  -
+  note    added 2026-11-18: a stream whose ALPN chose h2 is served by `http2`, each request read whole and handed to the same handler; no h2c on a plain connection, whose first bytes would have to be given to `http2` past this package's reader
 
 capability client/compressed  a gzip or deflate response asked for and undone, under the body's limit
   heroes  http.send, http.decode_body
@@ -601,7 +615,7 @@ dropped  an interface, an error type or a context: Heroes has none, a failure is
   rust    -
   python  http.client.HTTPException, NotConnected, InvalidURL, UnknownProtocol, UnknownTransferEncoding, UnimplementedFileMode, IncompleteRead, ImproperConnectionState, CannotSendRequest, CannotSendHeader, ResponseNotReady, BadStatusLine, RemoteDisconnected, error, urllib.request.URLError, ContentTooShortError, requests.exceptions.RequestException, HTTPError, ConnectionError, URLRequired, TooManyRedirects, MissingSchema, InvalidSchema, InvalidURL, InvalidHeader, UnrewindableBodyError, JSONDecodeError, requests.auth.AuthBase, requests.hooks
 
-dropped  HTTP/2 and the plumbing of a connection pool: this package is HTTP/1.1, and a connection is the program's or the call's
+dropped  HTTP/2's switches and the plumbing of a connection pool: HTTP/2 is `http2`'s, chosen by ALPN, and a connection is the program's or the call's
   go      net/http.HTTP2Config, Protocols and its HTTP, SetHTTP, SetUnencryptedHTTP, String, UnencryptedHTTP, Transport.Clone, Transport.CloseIdleConnections, Transport.CancelRequest, Transport.RegisterProtocol, Client.CloseIdleConnections, ClientConn.Available, ClientConn.Close, ClientConn.Err, ClientConn.InFlight, ClientConn.Release, ClientConn.Reserve, ClientConn.SetStateHook, DefaultMaxIdleConnsPerHost, AllowQuerySemicolons, Request.ProtoAtLeast, Response.ProtoAtLeast, Request.Write's proxy form
   rust    -
   python  requests.adapters.HTTPAdapter's pool, requests.Session.mount, requests.Session.adapters, requests.utils

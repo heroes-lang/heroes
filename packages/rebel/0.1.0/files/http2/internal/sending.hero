@@ -1,0 +1,286 @@
+# What a program asks of a session: a stream opened with a request, a
+# response or trailers sent, data sent as far as the windows allow (RFC 9113
+# § 5.2), data acknowledged, a stream reset, a PING, new settings, a GOAWAY;
+# each checked first, so a frame the session writes is one the peer may
+# read.
+
+use http2/internal/checks
+use http2/internal/encoding
+use http2/internal/engine
+use http2/internal/model
+use http2/internal/values
+
+# Fails `closed` where the session has ended.
+function open_or_fail(s: engine.State lent, asked: str) -> ()?
+    if s.failed
+        return fail(code: model.CLOSED, msg: f"{asked}: the HTTP/2 connection has ended")
+    return ok()
+
+# A client's: the next stream opened with `headers`, its identifier answered.
+function open_stream(@s: engine.State, headers: [model.Field], end_stream: bool) -> i64?
+    asked = "opening an HTTP/2 stream"
+
+    if !s.client
+        return fail(code: model.INVALID, msg: f"{asked}: a server opens no stream")
+    open_or_fail(s, asked: asked)?
+
+    if s.goaway_received
+        return fail(code: model.CLOSED, msg: f"{asked}: the server sent GOAWAY, and processes no new stream")
+
+    if s.active_ours >= s.theirs.max_concurrent_streams
+        return fail(
+            code: model.LIMIT,
+            msg: f"{asked}: {s.active_ours} streams are open, the server's SETTINGS_MAX_CONCURRENT_STREAMS"
+        )
+
+    if s.next_stream > engine.MOST_WINDOW
+        return fail(code: model.LIMIT, msg: f"{asked}: the connection's stream identifiers are spent")
+    r = checks.request(headers, extended: s.theirs.enable_connect_protocol)
+
+    if r.why != ""
+        return fail(code: model.INVALID, msg: f"{asked}: {r.why}")
+    id = s.next_stream
+    s.next_stream @ id + 2
+    st @= engine.fresh(s, ours: true)
+    st.head_out @ true
+    st.no_body @ r.head.method == "HEAD"
+    engine.put(@s, id: id, st: st)
+    engine.count_open(@s, ours: true)
+    engine.emit_block(@s, stream: id, block: encoding.encode(@s.encoder, fields: headers), end_stream: end_stream)
+
+    if end_stream
+        engine.end_local(@s, id: id)
+    return ok(id)
+
+# Fails `closed` where this end may not send on `id`.
+function sendable(s: engine.State lent, id: i64, asked: str) -> ()?
+    open_or_fail(s, asked: asked)?
+    state = engine.state_of(s, id: id)
+
+    if !engine.has(s, id: id) || state != engine.OPEN && state != engine.HALF_REMOTE
+        return fail(code: model.CLOSED, msg: f"{asked}: stream {id} is not open for this end to send")
+    return ok()
+
+# A response, an informational answer or trailers on `id`.
+function send_headers(@s: engine.State, id: i64, headers: [model.Field], end_stream: bool) -> ()?
+    asked = f"sending a header list on stream {id}"
+    sendable(s, id: id, asked: asked)?
+    st @= engine.get(s, id: id)
+
+    if !st.head_out
+        r = checks.response(headers)
+
+        if r.why != ""
+            return fail(code: model.INVALID, msg: f"{asked}: {r.why}")
+
+        if r.head.status < 200
+            if end_stream || r.head.status == 101
+                return fail(
+                    code: model.INVALID,
+                    msg: f"{asked}: an informational answer {r.head.status} ends no stream, and 101 is not HTTP/2's"
+                )
+        else
+            st.head_out @ true
+            engine.put(@s, id: id, st: st)
+    else
+        why = checks.trailers_refusal(headers)
+
+        if why != ""
+            return fail(code: model.INVALID, msg: f"{asked}: {why}")
+
+        if !end_stream
+            return fail(code: model.INVALID, msg: f"{asked}: trailers end their stream")
+    engine.emit_block(@s, stream: id, block: encoding.encode(@s.encoder, fields: headers), end_stream: end_stream)
+
+    if end_stream
+        engine.end_local(@s, id: id)
+    return ok()
+
+# Sends `data` from `from` on `id` as far as the windows allow, in frames of
+# the peer's largest size, and answers the index reached; END_STREAM goes
+# with the last byte where `end_stream` and every byte went.
+function send_from(@s: engine.State, id: i64, data: [u8] lent, from: i64, end_stream: bool) -> i64?
+    asked = f"sending data on stream {id}"
+    sendable(s, id: id, asked: asked)?
+    st @= engine.get(s, id: id)
+
+    if !st.head_out
+        return fail(code: model.INVALID, msg: f"{asked}: a body before its response's head")
+    room: i64 @= data.len() - from
+
+    if st.send_window < room
+        room @ st.send_window
+
+    if s.send_window < room
+        room @ s.send_window
+
+    if room < 0
+        room @ 0
+    end = from + room
+    finished = end == data.len() && end_stream
+    at: i64 @= from
+    most = s.theirs.max_frame_size
+    sent_end: bool @= false
+
+    while at < end
+        piece = if end - at > most
+            most
+        else
+            end - at
+        last = finished && at + piece == end
+        engine.emit(@s, f: .data(stream: id, data: data.slice(from: at, to: at + piece), end_stream: last, padding: 0))
+        sent_end @ sent_end || last
+        at @ at + piece
+
+    if finished && !sent_end
+        engine.emit(@s, f: .data(stream: id, data: [], end_stream: true, padding: 0))
+    st.send_window @ st.send_window - room
+    engine.put(@s, id: id, st: st)
+    s.send_window @ s.send_window - room
+
+    if finished
+        engine.end_local(@s, id: id)
+    return ok(end)
+
+# Tells the session the program took `count` bytes of `id`'s data, on the
+# connection and on the stream.
+function acknowledge(@s: engine.State, id: i64, count: i64) -> ()?
+    acknowledge_connection(@s, count: count)?
+    return acknowledge_stream(@s, id: id, count: count)
+
+# Gives `count` bytes back to the connection's window alone: what a
+# connection does with data it holds for a stream nobody has read yet.
+function acknowledge_connection(@s: engine.State, count: i64) -> ()?
+    if count < 0 || count > s.given
+        return fail(
+            code: model.INVALID,
+            msg: f"acknowledging {count} bytes: {s.given} were given out and not acknowledged"
+        )
+    s.given @ s.given - count
+    engine.give_back_connection(@s, count: count)
+    return ok()
+
+# Gives `count` bytes back to the window of `id` alone.
+function acknowledge_stream(@s: engine.State, id: i64, count: i64) -> ()?
+    if count < 0
+        return fail(code: model.INVALID, msg: f"acknowledging {count} bytes on stream {id}: a count is 0 or more")
+
+    if engine.has(s, id: id)
+        st @= engine.get(s, id: id)
+
+        if count > st.given
+            return fail(
+                code: model.INVALID,
+                msg: f"acknowledging {count} bytes on stream {id}: {st.given} were given out and not acknowledged"
+            )
+        st.given @ st.given - count
+        engine.put(@s, id: id, st: st)
+    engine.give_back_stream(@s, id: id, count: count)
+    return ok()
+
+# Resets `id` with `error`; a stream closed already is left as it is.
+function reset_stream(@s: engine.State, id: i64, error: i64) -> ()?
+    state = engine.state_of(s, id: id)
+
+    if state == engine.IDLE
+        return fail(code: model.INVALID, msg: f"resetting stream {id}: it was never opened")
+
+    if error < 0 || error > 4294967295
+        return fail(code: model.INVALID, msg: f"resetting stream {id}: the error code {error} is outside 0 to 2^32 - 1")
+
+    if engine.has(s, id: id) && state != engine.CLOSED && !s.failed
+        engine.emit(@s, f: .rst_stream(stream: id, error: error))
+        engine.close(@s, id: id, cause: engine.RESET_LOCAL)
+    return ok()
+
+# A PING of `data`, 8 bytes.
+function send_ping(@s: engine.State, data: [u8]) -> ()?
+    if data.len() != 8
+        return fail(code: model.INVALID, msg: f"sending a PING: it holds 8 bytes, and was given {data.len()}")
+    open_or_fail(s, asked: "sending a PING")?
+    engine.emit(@s, f: .ping(ack: false, data: data))
+    return ok()
+
+# New settings, the changes alone sent; the windows of open streams follow
+# the new initial window at once.
+function change_settings(@s: engine.State, settings: model.Settings) -> ()?
+    why = values.refusal(settings)
+
+    if why != ""
+        return fail(code: model.INVALID, msg: f"changing the settings: {why}")
+    open_or_fail(s, asked: "changing the settings")?
+    next @= settings
+    next.enable_push @ false
+    delta = next.initial_window_size - s.ours.initial_window_size
+
+    if delta != 0
+        for id in keys(s.streams)
+            st @= engine.get(s, id: id)
+
+            if st.state != engine.CLOSED
+                st.recv_window @ st.recv_window + delta
+                engine.put(@s, id: id, st: st)
+
+    s.decoder.list_size @ next.max_header_list_size
+    engine.emit(@s, f: .settings(ack: false, settings: values.changes(first: s.ours, s: next)))
+    unacked @= s.unacked
+    unacked @ unacked.push(next)
+    s.unacked @ unacked
+    s.ours @ next
+    return ok()
+
+# A GOAWAY: no stream the peer opens past the last it opened is processed;
+# with an error the session ends.
+function send_goaway(@s: engine.State, error: i64, debug: str) -> ()?
+    open_or_fail(s, asked: "sending GOAWAY")?
+
+    if error < 0 || error > 4294967295
+        return fail(code: model.INVALID, msg: f"sending GOAWAY: the error code {error} is outside 0 to 2^32 - 1")
+    engine.emit(@s, f: .goaway(last_stream: s.peer_highest, error: error, debug: debug_bytes(debug)))
+    s.goaway_sent @ true
+    s.goaway_last @ s.peer_highest
+
+    if error != engine.NO_ERROR
+        s.failed @ true
+    return ok()
+
+# A GOAWAY's debug text as bytes, cut at 256.
+function debug_bytes(debug: str) -> [u8]
+    out: [u8] @= []
+
+    for i in range(from: 0, to: debug.len())
+        if i < 256
+            out @ out.push(debug[i])
+
+    return out
+
+# The bytes to write, emptied from the session.
+function take_output(@s: engine.State) -> [u8]
+    out = s.out
+    s.out @ []
+    return out
+
+# The bytes this end may send on `id` now, the connection's window bounding
+# a stream's; for 0 the connection's.
+function window_of(s: engine.State lent, id: i64) -> i64
+    if id == 0
+        return s.send_window
+
+    if !engine.has(s, id: id)
+        return 0
+    st = engine.get(s, id: id)
+
+    if st.state != engine.OPEN && st.state != engine.HALF_REMOTE
+        return 0
+
+    if st.send_window < s.send_window
+        return st.send_window
+    return s.send_window
+
+# Whether the session still runs.
+function is_open(s: engine.State lent) -> bool
+    return !s.failed && !(s.goaway_received && s.peer_error != engine.NO_ERROR)
+
+# Whether a client may open a stream now.
+function has_room(s: engine.State lent) -> bool
+    return s.client && is_open(s) && !s.goaway_received && s.active_ours < s.theirs.max_concurrent_streams && s.next_stream <= engine.MOST_WINDOW

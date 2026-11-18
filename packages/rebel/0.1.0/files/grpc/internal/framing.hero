@@ -1,0 +1,155 @@
+# gRPC's messages on the wire: each framed by a byte that says whether it
+# is compressed and four bytes of length, read from the bytes a call's body
+# brings however they are cut; and gzip, the one compression offered.
+
+use bytes
+use compress
+
+# One message as the wire carries it.
+record Piece
+    # Whether the bytes are compressed.
+    compressed: bool
+    # The bytes.
+    data: [u8]
+
+# What `first` answers: the first message of the bytes, or why there is
+# none yet or none at all.
+record One
+    # Whether a whole message was found.
+    found: bool
+    # The message, where `found`.
+    piece: Piece
+    # The bytes after it, or all of them where none was found.
+    rest: [u8]
+    # The failure's code, "" where there is none: `invalid` or `limit`.
+    code: str
+    # Why, "" where there is no failure.
+    why: str
+
+# `message` framed.
+function encode(message: [u8] lent, compressed: bool) -> [u8]
+    out: [u8] @= []
+
+    flag: u8 = if compressed
+        1
+    else
+        0
+    out @ out.push(flag)
+    n = message.len()
+    out @ out.push(to_u8(n >> 24 & 0xff).must())
+    out @ out.push(to_u8(n >> 16 & 0xff).must())
+    out @ out.push(to_u8(n >> 8 & 0xff).must())
+    out @ out.push(to_u8(n & 0xff).must())
+    bytes.push_all(to: @out, from: message)
+    return out
+
+# The first message of `data`, its length read before its bytes and held to
+# `most`.
+function first(data: [u8] lent, most: i64) -> One
+    empty = Piece(compressed: false, data: [])
+
+    if data.len() < 5
+        return One(found: false, piece: empty, rest: data, code: "", why: "")
+
+    if data[0] > 1
+        return One(
+            found: false,
+            piece: empty,
+            rest: data,
+            code: "invalid",
+            why: f"a message's flag is {data[0]}, neither 0 nor 1"
+        )
+    n = to_i64(data[1]).must() << 24 | to_i64(data[2]).must() << 16 | to_i64(data[3]).must() << 8 | to_i64(data[4]).must()
+
+    if n > most
+        return One(
+            found: false,
+            piece: empty,
+            rest: data,
+            code: "limit",
+            why: f"a message of {n} bytes passes the largest, {most}"
+        )
+
+    if data.len() < 5 + n
+        return One(found: false, piece: empty, rest: data, code: "", why: "")
+    return One(
+        found: true,
+        piece: Piece(compressed: data[0] == 1, data: data.slice(from: 5, to: 5 + n)),
+        rest: data.slice(from: 5 + n, to: data.len()),
+        code: "",
+        why: ""
+    )
+
+# `data` compressed by gzip.
+function gzip(data: [u8]) -> [u8]?
+    return compress.compress(data, options: compress.defaults(.gzip))
+
+# `data` undone from gzip, at most `limit` bytes.
+function gunzip(data: [u8], limit: i64) -> [u8]?
+    return compress.decompress(data, format: .gzip, limit: limit)
+
+test "encode: an empty message, and one of three bytes compressed"
+    assert encode([], compressed: false) == [0, 0, 0, 0, 0]
+    assert encode([1, 2, 3], compressed: true) == [1, 0, 0, 0, 3, 1, 2, 3]
+
+test "first: a message whole, one cut short, a flag of 2, a length past the bound"
+    one = first([0, 0, 0, 0, 2, 7, 8, 0, 0], most: 100)
+    assert one.found && one.piece.data == [7, 8] && one.rest == [0, 0]
+    assert !first([0, 0, 0, 0, 2, 7], most: 100).found
+    assert first([2, 0, 0, 0, 0], most: 100).code == "invalid"
+    assert first([0, 0, 0, 1, 0], most: 100).code == "limit"
+    assert !first([], most: 100).found
+
+test "gzip: a message compressed and read back, and bounded"
+    text = bytes.repeated([97], n: 1000)
+    packed = gzip(text).must()
+    assert gunzip(packed, limit: 1000).must() == text
+    assert gunzip(packed, limit: 999).is_err()
+
+# What `whole` answers: the whole messages of the bytes, and how many bytes
+# they took.
+record Cut
+    # The messages, in order.
+    pieces: [Piece]
+    # The bytes the messages took, from the first.
+    used: i64
+    # The failure's code, "" where there is none.
+    code: str
+    # Why, "" where there is no failure.
+    why: str
+
+# Every whole message of `data`, read by index so no byte is copied twice.
+function whole(data: [u8] lent, most: i64) -> Cut
+    pieces: [Piece] @= []
+    at: i64 @= 0
+
+    while data.len() - at >= 5
+        if data[at] > 1
+            return Cut(
+                pieces: pieces,
+                used: at,
+                code: "invalid",
+                why: f"a message's flag is {data[at]}, neither 0 nor 1"
+            )
+        n = to_i64(data[at + 1]).must() << 24 | to_i64(data[at + 2]).must() << 16 | to_i64(data[at + 3]).must() << 8 | to_i64(data[at + 4]).must()
+
+        if n > most
+            return Cut(
+                pieces: pieces,
+                used: at,
+                code: "limit",
+                why: f"a message of {n} bytes passes the largest, {most}"
+            )
+
+        if data.len() - at - 5 < n
+            break
+        pieces @ pieces.push(Piece(compressed: data[at] == 1, data: data.slice(from: at + 5, to: at + 5 + n)))
+        at @ at + 5 + n
+
+    return Cut(pieces: pieces, used: at, code: "", why: "")
+
+test "whole: two messages and the start of a third, a flag of 3"
+    got = whole([0, 0, 0, 0, 1, 9, 1, 0, 0, 0, 0, 0, 0], most: 10)
+    assert got.pieces == [Piece(compressed: false, data: [9]), Piece(compressed: true, data: [])] && got.used == 11
+    assert whole([3, 0, 0, 0, 0], most: 10).code == "invalid"
+    assert whole([], most: 10).used == 0

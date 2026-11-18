@@ -1,0 +1,258 @@
+# HTTP/2's frames written (RFC 9113 § 6): each type's payload made from its
+# fields, every field held to its range first, so no frame this end writes
+# is one the peer must refuse.
+
+use bytes
+use http2/internal/frames
+use http2/internal/model
+
+# Why a stream identifier is refused for a frame of `kind`, "" where it is
+# not: `needs` says whether the type needs a stream, or 0, or either.
+function stream_refusal(stream: i64, kind: str, needs: i64) -> str
+    if stream < 0 || stream > frames.MOST_31
+        return f"a {kind} frame's stream {stream} is outside 0 to 2^31 - 1"
+
+    if needs == 1 && stream == 0
+        return f"a {kind} frame needs a stream, and was given 0"
+
+    if needs == 0 && stream != 0
+        return f"a {kind} frame belongs to stream 0, and was given {stream}"
+    return ""
+
+# Writes `padding` zeros after a padded payload's body.
+function push_padding(@out: [u8], padding: i64)
+    for _ in range(from: 0, to: padding)
+        out @ out.push(0)
+
+# Writes a priority's five bytes.
+function push_priority(@out: [u8], p: model.Priority)
+    exclusive = if p.exclusive
+        0x80000000
+    else
+        0
+    frames.push_u32(@out, value: exclusive | p.depends_on)
+    out @ out.push(to_u8(p.weight - 1).must())
+
+# Why a priority is refused, "" where it is not.
+function priority_refusal(p: model.Priority) -> str
+    if p.depends_on < 0 || p.depends_on > frames.MOST_31
+        return f"a priority's stream {p.depends_on} is outside 0 to 2^31 - 1"
+
+    if p.weight < 1 || p.weight > 256
+        return f"a priority's weight {p.weight} is outside 1 to 256"
+    return ""
+
+# The bytes of `f`. Fails `invalid` where a field is out of its range.
+function encode(f: model.Frame) -> [u8]?
+    out: [u8] @= []
+    payload: [u8] @= []
+    why: str @= ""
+
+    match f
+        .data d =>
+            why @ stream_refusal(stream: d.stream, kind: "DATA", needs: 1)
+
+            if d.padding < 0 || d.padding > 255
+                why @ f"a DATA frame's padding {d.padding} is outside 0 to 255"
+            flags: i64 @= 0
+
+            if d.end_stream
+                flags @ flags | 0x1
+
+            if d.padding > 0
+                flags @ flags | 0x8
+                payload @ payload.push(to_u8(d.padding & 0xff).must())
+            bytes.push_all(to: @payload, from: d.data)
+            push_padding(@payload, padding: d.padding)
+
+            if why == "" && payload.len() <= frames.MOST_24
+                frames.push_frame(out: @out, kind: 0, flags: flags, stream: d.stream, payload: payload)
+        .headers h =>
+            why @ stream_refusal(stream: h.stream, kind: "HEADERS", needs: 1)
+
+            if h.padding < 0 || h.padding > 255
+                why @ f"a HEADERS frame's padding {h.padding} is outside 0 to 255"
+
+            if h.has_priority && priority_refusal(h.priority) != ""
+                why @ priority_refusal(h.priority)
+            flags: i64 @= 0
+
+            if h.end_stream
+                flags @ flags | 0x1
+
+            if h.end_headers
+                flags @ flags | 0x4
+
+            if h.padding > 0
+                flags @ flags | 0x8
+                payload @ payload.push(to_u8(h.padding & 0xff).must())
+
+            if h.has_priority && why == ""
+                flags @ flags | 0x20
+                push_priority(@payload, p: h.priority)
+            bytes.push_all(to: @payload, from: h.block)
+            push_padding(@payload, padding: h.padding)
+
+            if why == "" && payload.len() <= frames.MOST_24
+                frames.push_frame(out: @out, kind: 1, flags: flags, stream: h.stream, payload: payload)
+        .priority p =>
+            why @ stream_refusal(stream: p.stream, kind: "PRIORITY", needs: 1)
+
+            if why == ""
+                why @ priority_refusal(p.priority)
+
+            if why == ""
+                push_priority(@payload, p: p.priority)
+                frames.push_frame(out: @out, kind: 2, flags: 0, stream: p.stream, payload: payload)
+        .rst_stream r =>
+            why @ stream_refusal(stream: r.stream, kind: "RST_STREAM", needs: 1)
+
+            if r.error < 0 || r.error > frames.MOST_32
+                why @ f"an error code {r.error} is outside 0 to 2^32 - 1"
+
+            if why == ""
+                frames.push_u32(@payload, value: r.error)
+                frames.push_frame(out: @out, kind: 3, flags: 0, stream: r.stream, payload: payload)
+        .settings s =>
+            if s.ack && s.settings.len() > 0
+                why @ "a SETTINGS acknowledgement holds no setting"
+
+            for one in s.settings
+                if one.id < 0 || one.id > 0xffff || one.value < 0 || one.value > frames.MOST_32
+                    why @ f"a setting {one.id} of {one.value} is outside its range"
+                payload @ payload.push(to_u8(one.id >> 8 & 0xff).must())
+                payload @ payload.push(to_u8(one.id & 0xff).must())
+                frames.push_u32(@payload, value: one.value & frames.MOST_32)
+
+            flags = if s.ack
+                0x1
+            else
+                0
+
+            if why == "" && payload.len() <= frames.MOST_24
+                frames.push_frame(out: @out, kind: 4, flags: flags, stream: 0, payload: payload)
+        .push_promise p =>
+            why @ stream_refusal(stream: p.stream, kind: "PUSH_PROMISE", needs: 1)
+
+            if p.promised < 1 || p.promised > frames.MOST_31
+                why @ f"a promised stream {p.promised} is outside 1 to 2^31 - 1"
+
+            if p.padding < 0 || p.padding > 255
+                why @ f"a PUSH_PROMISE frame's padding {p.padding} is outside 0 to 255"
+            flags: i64 @= 0
+
+            if p.end_headers
+                flags @ flags | 0x4
+
+            if p.padding > 0
+                flags @ flags | 0x8
+                payload @ payload.push(to_u8(p.padding & 0xff).must())
+            frames.push_u32(@payload, value: p.promised & frames.MOST_31)
+            bytes.push_all(to: @payload, from: p.block)
+            push_padding(@payload, padding: p.padding)
+
+            if why == "" && payload.len() <= frames.MOST_24
+                frames.push_frame(out: @out, kind: 5, flags: flags, stream: p.stream, payload: payload)
+        .ping p =>
+            if p.data.len() != 8
+                why @ f"a PING frame holds 8 bytes, and was given {p.data.len()}"
+
+            flags = if p.ack
+                0x1
+            else
+                0
+
+            if why == ""
+                frames.push_frame(out: @out, kind: 6, flags: flags, stream: 0, payload: p.data)
+        .goaway g =>
+            if g.last_stream < 0 || g.last_stream > frames.MOST_31
+                why @ f"a GOAWAY's last stream {g.last_stream} is outside 0 to 2^31 - 1"
+
+            if g.error < 0 || g.error > frames.MOST_32
+                why @ f"an error code {g.error} is outside 0 to 2^32 - 1"
+
+            if why == ""
+                frames.push_u32(@payload, value: g.last_stream)
+                frames.push_u32(@payload, value: g.error)
+                bytes.push_all(to: @payload, from: g.debug)
+
+                if payload.len() <= frames.MOST_24
+                    frames.push_frame(out: @out, kind: 7, flags: 0, stream: 0, payload: payload)
+        .window_update w =>
+            why @ stream_refusal(stream: w.stream, kind: "WINDOW_UPDATE", needs: -1)
+
+            if w.increment < 1 || w.increment > frames.MOST_31
+                why @ f"a window's increment {w.increment} is outside 1 to 2^31 - 1"
+
+            if why == ""
+                frames.push_u32(@payload, value: w.increment)
+                frames.push_frame(out: @out, kind: 8, flags: 0, stream: w.stream, payload: payload)
+        .continuation c =>
+            why @ stream_refusal(stream: c.stream, kind: "CONTINUATION", needs: 1)
+
+            flags = if c.end_headers
+                0x4
+            else
+                0
+
+            if why == "" && c.block.len() <= frames.MOST_24
+                frames.push_frame(out: @out, kind: 9, flags: flags, stream: c.stream, payload: c.block)
+        .unknown u =>
+            why @ stream_refusal(stream: u.stream, kind: "unknown", needs: -1)
+
+            if u.kind < 10 || u.kind > 255
+                why @ f"an unknown frame's type {u.kind} is outside 10 to 255"
+
+            if u.flags < 0 || u.flags > 255
+                why @ f"an unknown frame's flags {u.flags} are outside 0 to 255"
+
+            if why == "" && u.payload.len() <= frames.MOST_24
+                frames.push_frame(out: @out, kind: u.kind, flags: u.flags, stream: u.stream, payload: u.payload)
+
+    if why != ""
+        return fail(code: model.INVALID, msg: "writing a frame: " + why)
+
+    if out.len() == 0
+        return fail(code: model.INVALID, msg: f"writing a frame: its payload passes {frames.MOST_24} bytes")
+    return ok(out)
+
+test "encode: DATA plain and padded, as Go's Framer writes them"
+    assert bytes.format_hex(encode(.data(stream: 1, data: [104, 105], end_stream: true, padding: 0)).must()) == "0000020001000000016869"
+    assert bytes.format_hex(encode(.data(stream: 3, data: [104, 105], end_stream: false, padding: 3)).must()) == "000006000800000003036869000000"
+
+test "encode: HEADERS with priority and padding, PRIORITY, PUSH_PROMISE, CONTINUATION"
+    p = model.Priority(exclusive: true, depends_on: 3, weight: 256)
+    h = encode(
+        .headers(stream: 5, block: [0x82], end_stream: true, end_headers: true, padding: 2, has_priority: true, priority: p)
+    ).must()
+    assert bytes.format_hex(h) == "000009012d000000050280000003ff820000"
+    q = model.Priority(exclusive: false, depends_on: 1, weight: 16)
+    assert bytes.format_hex(encode(.priority(stream: 7, priority: q)).must()) == "000005020000000007000000010f"
+    assert bytes.format_hex(encode(.push_promise(stream: 1, promised: 2, block: [0x82], end_headers: true, padding: 1)).must()) == "000007050c0000000101000000028200"
+    assert bytes.format_hex(encode(.continuation(stream: 11, block: [0x84], end_headers: true)).must()) == "00000109040000000b84"
+
+test "encode: RST_STREAM, SETTINGS and its acknowledgement, PING, GOAWAY, WINDOW_UPDATE, unknown"
+    assert bytes.format_hex(encode(.rst_stream(stream: 9, error: 8)).must()) == "00000403000000000900000008"
+    list = [
+        model.Setting(id: 2, value: 0)
+        model.Setting(id: 4, value: 1048576)
+        model.Setting(id: 6, value: 4294967295)
+    ]
+    assert bytes.format_hex(encode(.settings(ack: false, settings: list)).must()) == "0000120400000000000002000000000004001000000006ffffffff"
+    assert bytes.format_hex(encode(.settings(ack: true, settings: [])).must()) == "000000040100000000"
+    assert bytes.format_hex(encode(.ping(ack: true, data: [1, 2, 3, 4, 5, 6, 7, 8])).must()) == "0000080601000000000102030405060708"
+    assert bytes.format_hex(encode(.goaway(last_stream: 2147483647, error: 11, debug: [99, 97, 108, 109])).must()) == "00000c0700000000007fffffff0000000b63616c6d"
+    assert bytes.format_hex(encode(.window_update(stream: 0, increment: 2147483647)).must()) == "0000040800000000007fffffff"
+    assert bytes.format_hex(encode(.unknown(kind: 0xfa, flags: 5, stream: 13, payload: [9])).must()) == "000001fa050000000d09"
+
+test "encode: each field out of its range refused"
+    assert encode(.data(stream: 0, data: [], end_stream: false, padding: 0)).is_err()
+    assert encode(.data(stream: 2147483648, data: [], end_stream: false, padding: 0)).is_err()
+    assert encode(.data(stream: 1, data: [], end_stream: false, padding: 256)).is_err()
+    assert encode(.ping(ack: false, data: [1])).is_err()
+    assert encode(.settings(ack: true, settings: [model.Setting(id: 1, value: 0)])).is_err()
+    assert encode(.window_update(stream: 1, increment: 0)).is_err()
+    assert encode(.rst_stream(stream: 1, error: -1)).is_err()
+    assert encode(.unknown(kind: 9, flags: 0, stream: 0, payload: [])).is_err()
+    assert encode(.priority(stream: 1, priority: model.Priority(exclusive: false, depends_on: 0, weight: 0))).is_err()
+    assert encode(.goaway(last_stream: -1, error: 0, debug: [])).is_err()

@@ -1,0 +1,302 @@
+# HPACK's decoder (RFC 7541 § 3 and § 6): a block read into a header list,
+# the dynamic table kept in step with the peer's encoder whatever the list
+# holds, and every bound held: a list past its size keeps nothing more, so
+# a block that names one large entry many times holds no more than the bound.
+
+use bytes
+use http2/internal/huffman
+use http2/internal/integers
+use http2/internal/model
+use http2/internal/samples
+use http2/internal/statics
+use http2/internal/table
+
+# A decoder between two blocks.
+record State
+    # Its dynamic table.
+    table: table.Table
+    # The most the peer may make the table: this end's SETTINGS_HEADER_TABLE_SIZE.
+    limit: i64
+    # The most a decoded list may hold, each field counted as its name, its
+    # value and 32 bytes.
+    list_size: i64
+    # Whether a size update must open the next block, the limit having fallen
+    # below the table's size.
+    owed: bool
+
+# One field read from a block, as bytes.
+record Raw
+    # The name.
+    name: [u8]
+    # The value.
+    value: [u8]
+
+# A string read from a block, and where the block goes on after it.
+record Text
+    # The string's bytes, Huffman's undone.
+    data: [u8]
+    # The index of the byte after it.
+    next: i64
+
+# A new decoder: the peer's table may hold `table_size` bytes, a list
+# `list_size`; below 0 is taken as 0.
+function make(table_size: i64, list_size: i64) -> State
+    size = if table_size < 0
+        0
+    else
+        table_size
+
+    most = if list_size < 0
+        0
+    else
+        list_size
+    return State(table: table.empty(size), limit: size, list_size: most, owed: false)
+
+# Makes `size` the most the peer may make its table; where the table is
+# larger, the next block must open with a size update within it.
+function set_limit(@d: State, size: i64)
+    d.limit @ size
+
+    if d.table.max_size > size
+        d.owed @ true
+
+# The string literal at `at` in `block` (RFC 7541 § 5.2).
+function read_string(block: [u8] lent, at: i64) -> Text?
+    if at >= block.len()
+        return fail(code: "invalid", msg: f"COMPRESSION_ERROR: the block ends where a string begins, at byte {at}")
+    coded = to_i64(block[at]).must() & 0x80 != 0
+    length = integers.read(block, at: at, prefix: 7)?
+    end = length.next + length.value
+
+    if end > block.len()
+        return fail(
+            code: "invalid",
+            msg: f"COMPRESSION_ERROR: a string of {length.value} bytes at byte {at} passes the block's {block.len()}"
+        )
+    raw = block.slice(from: length.next, to: end)
+
+    if !coded
+        return ok(Text(data: raw, next: end))
+    plain = huffman.decode(raw)
+
+    if plain.why != ""
+        return fail(code: "invalid", msg: f"COMPRESSION_ERROR: the Huffman string at byte {at}: {plain.why}")
+    return ok(Text(data: plain.data, next: end))
+
+# The field of `index` in the static then the dynamic table.
+function entry(d: State lent, index: i64, at: i64) -> Raw?
+    if index >= 1 && index <= statics.NAMES.len()
+        return ok(
+            Raw(name: bytes.from_text(statics.NAMES[index - 1]), value: bytes.from_text(statics.VALUES[index - 1]))
+        )
+    place = table.place_of(d.table, k: index - statics.NAMES.len() - 1)
+
+    if index < 1 || place < 0
+        return fail(
+            code: "invalid",
+            msg: f"COMPRESSION_ERROR: index {index} at byte {at} names no entry; the tables hold {statics.NAMES.len() + table.count(d.table)}"
+        )
+    return ok(Raw(name: d.table.names[place], value: d.table.values[place]))
+
+# Whether `index` names an entry of the static or the dynamic table.
+function is_entry(d: State lent, index: i64) -> bool
+    return index >= 1 && index <= statics.NAMES.len() + table.count(d.table)
+
+# What `decode` gathers: the fields kept, their size, and whether any was
+# dropped or was not UTF-8.
+record Gathered
+    # The fields kept.
+    fields: [model.Field]
+    # The size of every field read, kept or not.
+    size: i64
+    # Whether a field passed the list's size.
+    over: bool
+    # Whether a field kept was not UTF-8.
+    not_text: bool
+
+# Counts one field read and keeps it where the list has room for it.
+function gather(@g: Gathered, name: [u8], value: [u8], sensitive: bool, list_size: i64)
+    g.size @ g.size + table.entry_size(name: name, value: value)
+
+    if g.size > list_size
+        g.over @ true
+        return
+
+    match bytes.to_text(name)
+        .ok n =>
+            match bytes.to_text(value)
+                .ok v  => keep(@g.fields, f: model.Field(name: n, value: v, sensitive: sensitive))
+                .err _ => g.not_text @ true
+        .err _ => g.not_text @ true
+
+# Adds `f` to the fields kept.
+function keep(@fields: [model.Field], f: model.Field)
+    fields @ fields.push(f)
+
+# The header list `block` holds, the table changed as the peer's was. Fails
+# `invalid` (COMPRESSION_ERROR, the table no longer in step), `limit` where
+# the list passes its size, `not_text` where a field is not UTF-8.
+function decode(@d: State, block: [u8] lent) -> [model.Field]?
+    g @= Gathered(fields: [], size: 0, over: false, not_text: false)
+    at: i64 @= 0
+
+    if d.owed && (block.len() == 0 || to_i64(block[0]).must() & 0xe0 != 0x20)
+        return fail(
+            code: "invalid",
+            msg: "COMPRESSION_ERROR: the block does not open with the size update the new limit owes"
+        )
+    in_opening: bool @= true
+
+    while at < block.len()
+        b = to_i64(block[at]).must()
+
+        if b & 0x80 != 0
+            in_opening @ false
+            index = integers.read(block, at: at, prefix: 7)?
+
+            if index.value == 0
+                return fail(code: "invalid", msg: f"COMPRESSION_ERROR: index 0 at byte {at}")
+
+            if g.over
+                if !is_entry(d, index: index.value)
+                    _ = entry(d, index: index.value, at: at)?
+            else
+                e = entry(d, index: index.value, at: at)?
+                gather(@g, name: e.name, value: e.value, sensitive: false, list_size: d.list_size)
+            at @ index.next
+        else if b & 0xe0 == 0x20
+            if !in_opening
+                return fail(code: "invalid", msg: f"COMPRESSION_ERROR: a size update at byte {at}, after a field")
+            size = integers.read(block, at: at, prefix: 5)?
+
+            if size.value > d.limit
+                return fail(
+                    code: "invalid",
+                    msg: f"COMPRESSION_ERROR: a size update to {size.value} bytes at byte {at}, past the limit of {d.limit}"
+                )
+            table.resize(@d.table, max_size: size.value)
+            d.owed @ false
+            at @ size.next
+        else
+            in_opening @ false
+            indexing = b & 0xc0 == 0x40
+
+            prefix = if indexing
+                6
+            else
+                4
+            index = integers.read(block, at: at, prefix: prefix)?
+            name: [u8] @= []
+            next: i64 @= index.next
+
+            if index.value > 0
+                name @ entry(d, index: index.value, at: at)?.name
+            else
+                read = read_string(block, at: next)?
+                name @ read.data
+                next @ read.next
+            value = read_string(block, at: next)?
+
+            if indexing
+                table.add(@d.table, name: name, value: value.data)
+            gather(@g, name: name, value: value.data, sensitive: b & 0xf0 == 0x10, list_size: d.list_size)
+            at @ value.next
+
+    if d.owed
+        return fail(
+            code: "invalid",
+            msg: "COMPRESSION_ERROR: the block does not open with the size update the new limit owes"
+        )
+
+    if g.over
+        return fail(code: "limit", msg: f"the header list passes its limit of {d.list_size} bytes")
+
+    if g.not_text
+        return fail(code: "not_text", msg: "a header field is not UTF-8")
+    return ok(g.fields)
+
+test "decode: RFC 7541 C.3 and C.4's requests, their lists and the table after each"
+    plain @= make(table_size: 4096, list_size: 65536)
+    coded @= make(table_size: 4096, list_size: 65536)
+
+    for i in range(from: 0, to: 3)
+        want = samples.fields(names: samples.REQUEST_NAMES[i], values: samples.REQUEST_VALUES[i])
+        assert decode(@plain, block: samples.block(samples.REQUESTS_PLAIN[i])).must() == want
+        assert decode(@coded, block: samples.block(samples.REQUESTS_HUFFMAN[i])).must() == want
+        assert plain.table.size == samples.REQUEST_TABLE_SIZES[i]
+        assert coded.table.size == samples.REQUEST_TABLE_SIZES[i]
+
+test "decode: RFC 7541 C.5 and C.6's responses on a table of 256 bytes"
+    plain @= make(table_size: 256, list_size: 65536)
+    coded @= make(table_size: 256, list_size: 65536)
+
+    for i in range(from: 0, to: 3)
+        want = samples.fields(names: samples.RESPONSE_NAMES[i], values: samples.RESPONSE_VALUES[i])
+        assert decode(@plain, block: samples.block(samples.RESPONSES_PLAIN[i])).must() == want
+        assert decode(@coded, block: samples.block(samples.RESPONSES_HUFFMAN[i])).must() == want
+        assert coded.table.size == samples.RESPONSE_TABLE_SIZES[i]
+
+test "decode: RFC 7541 C.2's four single fields, never indexed read as sensitive"
+    d @= make(table_size: 4096, list_size: 65536)
+    one = decode(@d, block: bytes.parse_hex("400a637573746f6d2d6b65790d637573746f6d2d686561646572").must()).must()
+    assert one == [model.Field(name: "custom-key", value: "custom-header", sensitive: false)]
+    assert d.table.size == 55
+    two = decode(@d, block: bytes.parse_hex("040c2f73616d706c652f70617468").must()).must()
+    assert two == [model.Field(name: ":path", value: "/sample/path", sensitive: false)]
+    three = decode(@d, block: bytes.parse_hex("100870617373776f726406736563726574").must()).must()
+    assert three == [model.Field(name: "password", value: "secret", sensitive: true)]
+    assert decode(@d, block: [0x82]).must() == [model.Field(name: ":method", value: "GET", sensitive: false)]
+    assert d.table.size == 55
+
+test "decode: an empty block, index 0, an index past the tables, a string past the block"
+    d @= make(table_size: 4096, list_size: 65536)
+    assert decode(@d, block: []).must() == []
+    assert decode(@d, block: [0x80]).is_err()
+    assert decode(@d, block: [0xbe]).is_err()
+    assert decode(@d, block: [0x40, 0x05, 0x61]).is_err()
+    assert decode(@d, block: [0x40, 0x81, 0x00, 0x00]).is_err()
+
+test "decode: size updates at the start, past the limit, after a field, and owed"
+    d @= make(table_size: 4096, list_size: 65536)
+    assert decode(@d, block: [0x3f, 0xe2, 0x1f]).is_err()
+    assert decode(@d, block: [0x20, 0x3f, 0xe1, 0x0f, 0x82]).must().len() == 1
+    assert d.table.max_size == 2048
+    assert decode(@d, block: [0x82, 0x20]).is_err()
+    e @= make(table_size: 4096, list_size: 65536)
+    set_limit(@e, size: 100)
+    assert decode(@e, block: [0x82]).is_err()
+    f @= make(table_size: 4096, list_size: 65536)
+    set_limit(@f, size: 100)
+    assert decode(@f, block: [0x3f, 0x45, 0x82]).must().len() == 1
+    assert decode(@f, block: [0x82]).must().len() == 1
+
+test "decode: an HPACK bomb, one large entry named many times, held to the list's size"
+    d @= make(table_size: 4096, list_size: 16384)
+    big: [u8] @= [0x40, 0x01, 0x78]
+    integers.write(@big, value: 4000, prefix: 7, first: 0)
+
+    for _ in range(from: 0, to: 4000)
+        big @ big.push(0x61)
+
+    first = decode(@d, block: big)
+    assert first.must().len() == 1
+    bomb: [u8] @= []
+
+    for _ in range(from: 0, to: 10000)
+        bomb @ bomb.push(0xbe)
+
+    match decode(@d, block: bomb)
+        .ok _  => assert false
+        .err e => assert e.code == "limit"
+
+    assert decode(@d, block: [0xbe]).must()[0].value.len() == 4000
+
+test "decode: a value not UTF-8 refused, the table in step after it"
+    d @= make(table_size: 4096, list_size: 65536)
+
+    match decode(@d, block: [0x40, 0x01, 0x61, 0x01, 0xff])
+        .ok _  => assert false
+        .err e => assert e.code == "not_text"
+
+    assert table.count(d.table) == 1
+    assert decode(@d, block: [0x82]).must().len() == 1

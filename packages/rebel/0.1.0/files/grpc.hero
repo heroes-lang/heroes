@@ -1,0 +1,1770 @@
+# gRPC over HTTP/2: calls of the four kinds (unary, a stream from the
+# server, a stream from the client, and both ways at once), client and
+# server, as the gRPC over HTTP/2 protocol writes them: each message framed
+# by its length, a call's status and its message in the trailers, metadata
+# as header fields (`-bin` keys carried in base 64), a deadline sent as
+# `grpc-timeout`, and messages compressed by gzip where both ends allow it.
+#
+# **A message is bytes**, as `protobuf.encode` writes them: a program holds
+# its messages as `protobuf.Message` values read from its own `.proto`
+# files, or as records moved into one by their field names, and
+# `call_proto` and `methods_of` read a service's methods from a
+# `protobuf.Schema`. Nothing here generates code.
+#
+# **A server finds the method and the program calls its own handler**:
+# `next_call` answers the next call of one of the methods the program names,
+# with its index, and answers every other path `STATUS_UNIMPLEMENTED`; the
+# program reads the call's requests, writes its responses and finishes it with a
+# status, with its own state at hand, since a function takes no closure. The
+# health checking service and the list of services of server reflection are
+# answered by the server itself where the program enables them.
+#
+# **A call's failure is its status, not a failure of the function**: a
+# call the server refused, a deadline passed, a connection lost answer a
+# `Reply` or an `end` whose `Status` says why, as gRPC's own libraries do;
+# a function fails only for what the program gave it or for a connection
+# already ended.
+#
+# What it does not do: HTTP/2 is `http2`'s, TLS `tls`'s, a message's
+# encoding `protobuf`'s and gzip `compress`'s. No load balancing, name
+# resolution or retry policy: a channel is one connection. Reflection
+# answers the list of services and no file descriptor, since `protobuf`
+# writes no `FileDescriptorProto`.
+#
+# It fails with `invalid`, `limit`, `closed`, `not_found`, `unsupported`,
+# and from the connection `timeout`, `stopped` and `failed`.
+
+use bytes
+use grpc/internal/calls
+use grpc/internal/clock
+use grpc/internal/fixture
+use grpc/internal/framing
+use grpc/internal/meta
+use grpc/internal/services
+use grpc/internal/texts
+use http2
+use io
+use net
+use protobuf
+use threads
+use time
+use tls
+
+## Codes
+
+# An argument refused: a method's path, a status code, a metadata key.
+constant INVALID: str
+    "invalid"
+
+# A message past `Options.max_message_bytes`.
+constant LIMIT: str
+    "limit"
+
+# The channel, the server's connection or the call has ended.
+constant CLOSED: str
+    "closed"
+
+# A method no schema or list names: `method_of`, `status_name`.
+constant NOT_FOUND: str
+    "not_found"
+
+# A peer's message compressed by an encoding other than gzip.
+constant UNSUPPORTED: str
+    "unsupported"
+
+## Status codes
+
+# OK: the call succeeded.
+constant STATUS_OK: i64
+    0
+
+# CANCELLED: the call was cancelled, usually by its caller.
+constant STATUS_CANCELLED: i64
+    1
+
+# UNKNOWN: an error no other code describes, or a status from a space this
+# end does not know.
+constant STATUS_UNKNOWN: i64
+    2
+
+# INVALID_ARGUMENT: the caller gave an argument the server refuses whatever
+# the system's state.
+constant STATUS_INVALID_ARGUMENT: i64
+    3
+
+# DEADLINE_EXCEEDED: the deadline passed before the call ended.
+constant STATUS_DEADLINE_EXCEEDED: i64
+    4
+
+# NOT_FOUND: an entity the call names was not found.
+constant STATUS_NOT_FOUND: i64
+    5
+
+# ALREADY_EXISTS: an entity the call would create exists already.
+constant STATUS_ALREADY_EXISTS: i64
+    6
+
+# PERMISSION_DENIED: the caller may not do this.
+constant STATUS_PERMISSION_DENIED: i64
+    7
+
+# RESOURCE_EXHAUSTED: a resource ran out, a quota or a size among them.
+constant STATUS_RESOURCE_EXHAUSTED: i64
+    8
+
+# FAILED_PRECONDITION: the system is not in the state the call needs.
+constant STATUS_FAILED_PRECONDITION: i64
+    9
+
+# ABORTED: the call was aborted, a conflict among others.
+constant STATUS_ABORTED: i64
+    10
+
+# OUT_OF_RANGE: the call went past a valid range.
+constant STATUS_OUT_OF_RANGE: i64
+    11
+
+# UNIMPLEMENTED: the server does not offer the method.
+constant STATUS_UNIMPLEMENTED: i64
+    12
+
+# INTERNAL: an invariant broke inside the server or the protocol.
+constant STATUS_INTERNAL: i64
+    13
+
+# UNAVAILABLE: the service cannot be reached now; the call may be tried
+# again.
+constant STATUS_UNAVAILABLE: i64
+    14
+
+# DATA_LOSS: data was lost or corrupted beyond repair.
+constant STATUS_DATA_LOSS: i64
+    15
+
+# UNAUTHENTICATED: the call carries no valid credentials.
+constant STATUS_UNAUTHENTICATED: i64
+    16
+
+# How a call ended: a status code, a message for a person, and the details
+# gRPC's rich error model carries as bytes (a `google.rpc.Status` as
+# `protobuf.encode` writes it, sent as `grpc-status-details-bin`).
+record Status
+    # The code, `STATUS_OK` to `STATUS_UNAUTHENTICATED`; a peer's code past 16
+    # is kept as it came.
+    code: i64
+    # The message, any text; "" for none.
+    message: str
+    # The details' bytes, none for none.
+    details: [u8]
+
+# The name gRPC gives a status code: `"DEADLINE_EXCEEDED"` for 4.
+#
+# - `code`: the code.
+#
+# Fails `not_found` for a code past 16 or below 0. See also `Status`.
+function status_name(code: i64) -> str?
+    name = texts.name_of(code)
+
+    if name == ""
+        return fail(code: NOT_FOUND, msg: f"gRPC names no status {code}")
+    return ok(name)
+
+# The status gRPC gives an HTTP status that came with no `grpc-status`: 400 is
+# `STATUS_INTERNAL`, 401 `STATUS_UNAUTHENTICATED`, 403
+# `STATUS_PERMISSION_DENIED`, 404 `STATUS_UNIMPLEMENTED`, 429, 502, 503 and 504
+# `STATUS_UNAVAILABLE`, every other `STATUS_UNKNOWN`.
+#
+# - `status`: the HTTP status.
+#
+# See also `status_of_reset`.
+function status_of_http(status: i64) -> i64
+    return texts.of_http(status)
+
+# The status gRPC gives a stream reset by an HTTP/2 error: `CANCEL` is
+# `STATUS_CANCELLED`, `REFUSED_STREAM` `STATUS_UNAVAILABLE`, `ENHANCE_YOUR_CALM`
+# `STATUS_RESOURCE_EXHAUSTED`, `INADEQUATE_SECURITY` `STATUS_PERMISSION_DENIED`,
+# every other `STATUS_INTERNAL`.
+#
+# - `error`: the HTTP/2 error code.
+#
+# See also `status_of_http`.
+function status_of_reset(error: i64) -> i64
+    return texts.of_reset(error)
+
+# `message` as `grpc-message` carries it: every byte outside space to `~`,
+# and `%`, written as `%` and two capital hexadecimal digits.
+#
+# - `message`: the text, any UTF-8.
+#
+# See also `parse_status_message`.
+function format_status_message(message: str) -> str
+    return texts.percent(message)
+
+# The text `grpc-message` carries, its `%` escapes undone; an escape that is
+# none is kept as it came, and bytes that make no UTF-8 are replaced, as
+# gRPC's libraries read it.
+#
+# - `s`: the field's value.
+#
+# See also `format_status_message`.
+function parse_status_message(s: str) -> str
+    return texts.unpercent(s)
+
+## Metadata
+
+# One entry of a call's metadata: a key and its value. A key ending in
+# `-bin` carries bytes, sent in base 64; any other carries printable ASCII.
+record Entry
+    # The key: lower case letters, digits, `-`, `_` and `.`; `grpc-` and the
+    # pseudo-headers are gRPC's own.
+    key: str
+    # The value's bytes: printable ASCII for a key that does not end in
+    # `-bin`, any bytes for one that does.
+    value: [u8]
+
+# Whether `key` carries bytes: whether it ends in `-bin`.
+#
+# - `key`: the key.
+#
+# See also `Entry`.
+function is_binary_key(key: str) -> bool
+    return meta.is_binary(key)
+
+# The value of the first entry of `metadata` keyed `key`.
+#
+# - `metadata`: the entries, in their order.
+# - `key`: the key, in any case.
+#
+# Fails `not_found` where none is. See also `Entry`.
+function value_of(metadata: [Entry], key: str) -> [u8]?
+    wanted = bytes.to_lower_ascii(bytes.from_text(key))
+
+    for e in metadata
+        if bytes.to_lower_ascii(bytes.from_text(e.key)) == wanted
+            return ok(e.value)
+
+    return fail(code: NOT_FOUND, msg: f"no metadata keyed \"{key}\"")
+
+## Messages on the wire
+
+# One message as the wire carries it: whether it is compressed, and its
+# bytes.
+record Framed
+    # Whether the bytes are compressed by the call's `grpc-encoding`.
+    compressed: bool
+    # The bytes.
+    data: [u8]
+
+# What `decode_frames` answers: the whole messages, and the bytes of one cut
+# short.
+record Frames
+    # The messages whole, in order.
+    messages: [Framed]
+    # The bytes of a message not yet whole, which the next bytes go after.
+    rest: [u8]
+
+# A message framed for the wire: a byte that says whether it is compressed,
+# its length in four bytes, then its bytes.
+#
+# - `message`: the bytes, as `protobuf.encode` wrote them, or compressed.
+# - `compressed`: whether they are compressed.
+#
+# See also `decode_frames`.
+function encode_frame(message: [u8], compressed: bool) -> [u8]
+    return framing.encode(message, compressed: compressed)
+
+# The messages `data` frames, in order, and the bytes of one cut short.
+#
+# - `data`: bytes of a call's body, from a message's first byte.
+# - `most`: the largest message accepted, in bytes.
+#
+# Fails `invalid` where a flag is neither 0 nor 1, `limit` where a length
+# passes `most`, which is read from the length before the bytes are. See
+# also `encode_frame`.
+function decode_frames(data: [u8], most: i64) -> Frames?
+    cut = framing.whole(data, most: most)
+
+    if cut.code != ""
+        return fail(code: cut.code, msg: "reading gRPC messages: " + cut.why)
+    out: [Framed] @= []
+
+    for p in cut.pieces
+        out @ out.push(Framed(compressed: p.compressed, data: p.data))
+
+    return ok(Frames(messages: out, rest: data.slice(from: cut.used, to: data.len())))
+
+## Deadlines
+
+# `d` as `grpc-timeout` carries it: at most eight digits and a unit, the
+# finest unit that holds it (`n`, `u`, `m`, `S`, `M`, `H`).
+#
+# - `d`: the time left, 1 nanosecond or more.
+#
+# A duration past eight digits of hours is written as the most eight digits
+# of hours hold. See also `parse_timeout`.
+function format_timeout(d: time.Duration) -> str
+    return texts.format_timeout(d.nanoseconds)
+
+# The time `grpc-timeout` says is left.
+#
+# - `s`: the field's value: one to eight digits and a unit.
+#
+# Fails `invalid` where it is no such value. See also `format_timeout`.
+function parse_timeout(s: str) -> time.Duration?
+    ns = texts.parse_timeout(s)
+
+    if ns < 0
+        return fail(
+            code: INVALID,
+            msg: f"reading grpc-timeout \"{s}\": one to eight digits and a unit of n, u, m, S, M or H"
+        )
+    return ok(time.nanoseconds(ns))
+
+## Options
+
+# How an end runs its calls. Made by `default_options`, its fields changed
+# by the program.
+record Options
+    # The HTTP/2 connection's own options.
+    http2: http2.Options
+    # The largest message read or written, in bytes, once decompressed.
+    max_message_bytes: i64
+    # Whether messages are sent compressed by gzip, where the peer accepts it.
+    compress: bool
+    # What a client sends as `user-agent`.
+    user_agent: str
+
+# The usual options: `http2.default_options()`, messages of 4 MiB as gRPC's
+# libraries receive, sent uncompressed, the user agent `grpc-heroes/0.1`.
+#
+# See also `Options`.
+function default_options() -> Options
+    return Options(
+        http2: http2.default_options(),
+        max_message_bytes: 4194304,
+        compress: false,
+        user_agent: "grpc-heroes/0.1"
+    )
+
+## A client
+
+# A channel to one server: an HTTP/2 connection whose calls go to one
+# authority. Made by `dial`, `dial_plain` or `channel_of`; `close` closes it.
+record Channel
+    # The connection, owned by the channel.
+    conn: http2.Conn
+    # What each call sends as `:authority`.
+    authority: str
+    # `https` over TLS, `http` in plain text.
+    scheme: str
+    # How it runs its calls.
+    options: Options
+
+# What a call answers once it has ended: its status, the messages it
+# received and its metadata.
+record Reply
+    # How it ended.
+    status: Status
+    # The messages received, in order: one for a unary call that succeeded.
+    messages: [[u8]]
+    # The metadata the server sent first.
+    headers: [Entry]
+    # The metadata the server sent with its status.
+    trailers: [Entry]
+
+# A call in progress, made by `start_call`: a stream of the channel's
+# connection, read and written by `send`, `receive`, `close_send` and
+# `cancel`.
+record Call
+    # The HTTP/2 stream it travels on.
+    stream: i64
+    # The method's path, `/shop.Shop/GetOrder`.
+    path: str
+    # When the deadline passes, in milliseconds of `time.mark`'s clock, 0
+    # for none.
+    deadline_at: i64
+    # The metadata the server sent first, once it came.
+    headers: [Entry]
+    # The bytes received and not yet framed into a message.
+    held: [u8]
+    # Whether the server's messages come compressed by gzip.
+    gzip_in: bool
+    # Whether this end sends its messages compressed by gzip.
+    gzip_out: bool
+    # Whether the call has ended and `status` says how.
+    ended: bool
+    # How it ended, where `ended`.
+    status: Status
+    # The metadata the server sent with its status.
+    trailers: [Entry]
+    # The messages received and not yet given out, in order.
+    pending: [[u8]]
+
+# What `receive` answers: the next message, or the call's end.
+variant Incoming
+    # A message.
+    message
+        # Its bytes, decompressed.
+        data: [u8]
+    # The call has ended.
+    end
+        # How it ended.
+        status: Status
+        # The metadata sent with the status.
+        trailers: [Entry]
+
+# A channel to `host` at `port` over TLS, ALPN choosing `h2`.
+#
+# - `host`: a name or an address; the certificate must name it.
+# - `port`: 1 to 65535.
+# - `deadline_ms`: the milliseconds the connection and its handshake may
+#   take, 0 for no limit.
+# - `roots`: the PEM of the only authorities trusted, "" for the system's
+#   own store.
+# - `options`: how its calls run.
+#
+# Fails as `http2.connect` fails. See also `dial_plain`.
+function dial(host: str, port: i64, deadline_ms: i64, roots: str, options: Options) -> Channel?
+    conn = http2.connect(host: host, port: port, deadline_ms: deadline_ms, roots: roots, options: options.http2)?
+
+    authority = if port == 443
+        host
+    else
+        f"{host}:{port}"
+    return ok(Channel(conn: conn, authority: authority, scheme: "https", options: options))
+
+# A channel to `host` at `port` in plain text, HTTP/2 by prior knowledge.
+#
+# - `host`: a name or an address without brackets.
+# - `port`: 1 to 65535.
+# - `options`: how its calls run.
+#
+# Fails as `http2.connect_plain` fails. See also `dial`.
+function dial_plain(host: str, port: i64, options: Options) -> Channel?
+    conn = http2.connect_plain(host: host, port: port, deadline_ms: 0, options: options.http2)?
+    return ok(Channel(conn: conn, authority: f"{host}:{port}", scheme: "http", options: options))
+
+# A channel over an HTTP/2 connection the program made.
+#
+# - `conn`: the connection; it passes to the channel, which closes it.
+# - `authority`: what each call sends as `:authority`.
+# - `scheme`: `https` or `http`.
+# - `options`: how its calls run.
+#
+# See also `dial`.
+function channel_of(conn: http2.Conn, authority: str, scheme: str, options: Options) -> Channel
+    return Channel(conn: conn, authority: authority, scheme: scheme, options: options)
+
+# Closes the channel: GOAWAY, then its connection closed.
+#
+# - `ch`: the channel; closed by this call.
+#
+# Fails as `http2.close` does. See also `dial`.
+function close(@ch: Channel) -> ()?
+    return http2.close(@ch.conn)
+
+# A unary call, or a call whose server answers a stream: `request` sent, every
+# response read, the call's status answered.
+#
+# - `ch`: the channel.
+# - `path`: the method's path, `/shop.Shop/GetOrder`.
+# - `request`: the request's bytes.
+# - `metadata`: the entries sent with the call.
+# - `timeout_ms`: the milliseconds the call may take, sent as
+#   `grpc-timeout`; 0 for no deadline.
+#
+# A deadline passed answers `STATUS_DEADLINE_EXCEEDED` and cancels the call; a
+# connection lost answers `STATUS_UNAVAILABLE`. Fails `invalid` where `path` or
+# an entry is refused, `closed` where the channel has ended. See also
+# `call_many`, `start_call`.
+function call(@ch: Channel, path: str, request: [u8], metadata: [Entry], timeout_ms: i64) -> Reply?
+    c @= start_call(@ch, path: path, metadata: metadata, timeout_ms: timeout_ms)?
+
+    match send(@ch, @c, message: request)
+        .ok _ => _ = 0
+        .err e =>
+            if e.code == LIMIT || e.code == INVALID
+                cancel(@ch, @c).must()
+                return fail(code: e.code, msg: e.msg)
+
+    match close_send(@ch, c: c)
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+    messages: [[u8]] @= []
+
+    while true
+        match receive(@ch, @c)?
+            .message m => messages @ messages.push(m.data)
+            .end e => return ok(Reply(status: e.status, messages: messages, headers: c.headers, trailers: e.trailers))
+
+# A call whose client sends a stream: every request sent, the stream closed,
+# every response read.
+#
+# - `ch`: the channel.
+# - `path`: the method's path.
+# - `requests`: the requests' bytes, in order; none sends none.
+# - `metadata`: the entries sent with the call.
+# - `timeout_ms`: as `call` takes it.
+#
+# Fails as `call` does. See also `call`.
+function call_many(@ch: Channel, path: str, requests: [[u8]], metadata: [Entry], timeout_ms: i64) -> Reply?
+    c @= start_call(@ch, path: path, metadata: metadata, timeout_ms: timeout_ms)?
+
+    for request in requests
+        match send(@ch, @c, message: request)
+            .ok _ => _ = 0
+            .err e =>
+                if e.code == LIMIT || e.code == INVALID
+                    cancel(@ch, @c).must()
+                    return fail(code: e.code, msg: e.msg)
+
+    match close_send(@ch, c: c)
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+    messages: [[u8]] @= []
+
+    while true
+        match receive(@ch, @c)?
+            .message m => messages @ messages.push(m.data)
+            .end e => return ok(Reply(status: e.status, messages: messages, headers: c.headers, trailers: e.trailers))
+
+# A call started, its head sent: what a call that streams both ways needs,
+# its messages sent and read one by one.
+#
+# - `ch`: the channel.
+# - `path`: the method's path.
+# - `metadata`: the entries sent with the call.
+# - `timeout_ms`: as `call` takes it.
+#
+# Fails as `call` does. See also `send`, `receive`, `close_send`.
+function start_call(@ch: Channel, path: str, metadata: [Entry], timeout_ms: i64) -> Call?
+    names: [str] @= []
+    values: [[u8]] @= []
+
+    for e in metadata
+        names @ names.push(e.key)
+        values @ values.push(e.value)
+
+    timeout = if timeout_ms > 0
+        texts.format_timeout(timeout_ms * 1000000)
+    else
+        ""
+    head = calls.call_head(scheme: ch.scheme, authority: ch.authority, path: path, user_agent: ch.options.user_agent, gzip: ch.options.compress, timeout: timeout, names: names, values: values)?
+
+    deadline_at = if timeout_ms > 0
+        clock.now_ms() + timeout_ms
+    else
+        0
+    id = http2.start_stream(@ch.conn, headers: head, end_stream: false)?
+    return ok(
+        Call(stream: id, path: path, deadline_at: deadline_at, headers: [], held: [], gzip_in: false, gzip_out: ch.options.compress, ended: false, status: Status(code: STATUS_OK, message: "", details: []), trailers: [], pending: [])
+    )
+
+# Sends one message on a call.
+#
+# - `ch`: the channel.
+# - `c`: the call.
+# - `message`: the message's bytes, compressed where the call compresses.
+#
+# Fails `limit` past `Options.max_message_bytes`, `closed` where the call
+# has ended or this end closed its side. See also `close_send`.
+function send(@ch: Channel, @c: Call, message: [u8]) -> ()?
+    if c.ended
+        return fail(code: CLOSED, msg: f"sending on the call {c.path}: it has ended")
+
+    if message.len() > ch.options.max_message_bytes
+        return fail(
+            code: LIMIT,
+            msg: f"sending on the call {c.path}: a message of {message.len()} bytes passes {ch.options.max_message_bytes}"
+        )
+    data = calls.framed(message, gzip: c.gzip_out)?
+    left = clock.left_of(c.deadline_at)
+
+    if left == 0
+        cancel(@ch, @c)?
+        c.status @ Status(
+            code: STATUS_DEADLINE_EXCEEDED,
+            message: "the deadline passed before the message was sent",
+            details: []
+        )
+        return fail(code: "timeout", msg: f"sending on the call {c.path}: its deadline passed")
+    clock.wait_until(ch.conn.stream, deadline_at: c.deadline_at)
+    sent = http2.write_data(@ch.conn, stream: c.stream, data: data, end_stream: false)
+    clock.set_wait(ch.conn.stream, ms: 0)
+    return sent
+
+# Tells the server this end sends no more messages on the call.
+#
+# - `ch`: the channel.
+# - `c`: the call.
+#
+# Fails `closed` where the call has ended. See also `send`.
+function close_send(@ch: Channel, c: Call) -> ()?
+    if c.ended
+        return fail(code: CLOSED, msg: f"closing the call {c.path}: it has ended")
+    return http2.write_data(@ch.conn, stream: c.stream, data: [], end_stream: true)
+
+# The next message of the call, or its end with its status.
+#
+# - `ch`: the channel.
+# - `c`: the call; once it has ended every later call answers the same end.
+#
+# A deadline passed answers the end `STATUS_DEADLINE_EXCEEDED` and cancels the
+# call. See also `send`.
+function receive(@ch: Channel, @c: Call) -> Incoming?
+    while true
+        if c.pending.len() > 0
+            return ok(.message(data: calls.pop(@c.pending)))
+
+        if c.ended
+            return ok(.end(status: c.status, trailers: c.trailers))
+        left = clock.left_of(c.deadline_at)
+
+        if left == 0
+            cancel(@ch, @c)?
+            c.status @ Status(code: STATUS_DEADLINE_EXCEEDED, message: "the deadline passed", details: [])
+        else
+            clock.wait_until(ch.conn.stream, deadline_at: c.deadline_at)
+            got = http2.read_event_of(@ch.conn, stream: c.stream)
+            clock.set_wait(ch.conn.stream, ms: 0)
+
+            match got
+                .err e =>
+                    if e.code == "timeout" && c.deadline_at != 0
+                        cancel(@ch, @c)?
+                        c.status @ Status(code: STATUS_DEADLINE_EXCEEDED, message: "the deadline passed", details: [])
+                    else
+                        c.ended @ true
+                        c.status @ Status(code: STATUS_UNAVAILABLE, message: e.msg, details: [])
+                .ok event =>
+                    match event
+                        .response r =>
+                            fields: [Entry] @= []
+                            pairs = meta.from_fields(r.headers)
+
+                            for i in range(from: 0, to: pairs.keys.len())
+                                fields @ fields.push(Entry(key: pairs.keys[i], value: pairs.values[i]))
+
+                            c.headers @ fields
+                            encoding = calls.header_value(r.headers, name: "grpc-encoding")
+                            c.gzip_in @ encoding == "gzip"
+
+                            if r.status != 200 || r.end_stream
+                                said = calls.said(r.headers, http_status: r.status)
+                                c.ended @ true
+                                c.status @ Status(code: said.code, message: said.message, details: said.details)
+                                c.trailers @ fields
+                        .data d =>
+                            taken = calls.take(
+                                held: @c.held,
+                                @c.pending,
+                                data: d.data,
+                                gzip: c.gzip_in,
+                                most: ch.options.max_message_bytes
+                            )
+
+                            if taken.code != ""
+                                cancel(@ch, @c)?
+
+                                code = if taken.code == LIMIT
+                                    STATUS_RESOURCE_EXHAUSTED
+                                else
+                                    STATUS_INTERNAL
+                                c.status @ Status(code: code, message: taken.why, details: [])
+                            else if d.end_stream
+                                c.ended @ true
+                                c.status @ Status(
+                                    code: STATUS_INTERNAL,
+                                    message: "the server ended the stream with no status",
+                                    details: []
+                                )
+                        .trailers r =>
+                            said = calls.said(r.headers, http_status: 200)
+                            fields: [Entry] @= []
+                            pairs = meta.from_fields(r.headers)
+
+                            for i in range(from: 0, to: pairs.keys.len())
+                                fields @ fields.push(Entry(key: pairs.keys[i], value: pairs.values[i]))
+
+                            c.ended @ true
+                            c.status @ Status(code: said.code, message: said.message, details: said.details)
+                            c.trailers @ fields
+                        .reset r =>
+                            c.ended @ true
+                            passed = c.deadline_at != 0 && clock.left_of(c.deadline_at) == 0
+
+                            code = if passed
+                                STATUS_DEADLINE_EXCEEDED
+                            else
+                                texts.of_reset(r.error)
+                            c.status @ Status(
+                                code: code,
+                                message: f"the stream was reset with HTTP/2 error {r.error}",
+                                details: []
+                            )
+                        .informational _ | .request _ | .window _ | .settings _ | .settings_acked | .ping _ | .pong _ | .goaway _ => _ = 0
+
+# Cancels a call: the stream reset with `CANCEL`, the call ended
+# `STATUS_CANCELLED`.
+#
+# - `ch`: the channel.
+# - `c`: the call.
+#
+# See also `start_call`.
+function cancel(@ch: Channel, @c: Call) -> ()?
+    if c.ended
+        return ok()
+
+    match http2.write_reset(@ch.conn, stream: c.stream, error: http2.CANCEL)
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+    calls.drain(@ch.conn, stream: c.stream)
+    c.ended @ true
+    c.status @ Status(code: STATUS_CANCELLED, message: "cancelled by the client", details: [])
+    return ok()
+
+## Calls described by a `.proto`
+
+# The method a path names in `schema`: `/shop.Shop/GetOrder` is the method
+# `GetOrder` of the service `shop.Shop`.
+#
+# - `schema`: the schema holding the service.
+# - `path`: the method's path.
+#
+# Fails `not_found` where the schema holds no such method, `invalid` where
+# the path is not `/service/method`. See also `path_of`.
+function method_of(schema: protobuf.Schema, path: str) -> protobuf.Method?
+    why = calls.path_refusal(path)
+
+    if why != ""
+        return fail(code: INVALID, msg: why)
+    cut: i64 @= path.len() - 1
+
+    while path[cut] != '/'
+        cut @ cut - 1
+
+    service = protobuf.service_named(schema, name: path.slice(from: 1, to: cut))?
+    return protobuf.method_named(service, name: path.slice(from: cut + 1, to: path.len()))
+
+# The path a method is called by: `/` and its service's full name, `/` and
+# its name.
+#
+# - `m`: the method, as `protobuf` read it.
+#
+# See also `method_of`.
+function path_of(m: protobuf.Method) -> str
+    cut = m.full_name.len() - m.name.len() - 1
+
+    if cut < 0
+        return "/" + m.name
+    return "/" + m.full_name.slice(from: 0, to: cut) + "/" + m.name
+
+# What `call_proto` answers: the call's status, its responses decoded.
+record ProtoReply
+    # How it ended.
+    status: Status
+    # The responses, decoded as the method's output type.
+    messages: [protobuf.Message]
+    # The metadata the server sent first.
+    headers: [Entry]
+    # The metadata the server sent with its status.
+    trailers: [Entry]
+
+# A call described by a `.proto`: `request` checked against the method's
+# input type and encoded, the call made as `call` makes it, each response
+# decoded as the output type.
+#
+# - `ch`: the channel.
+# - `schema`: the schema holding the service.
+# - `path`: the method's path.
+# - `request`: the request, of the method's input type.
+# - `metadata`: the entries sent with the call.
+# - `timeout_ms`: as `call` takes it.
+#
+# Fails as `method_of`, `protobuf.encode` and `call` do, `invalid` where
+# `request` is of another type or a response does not decode. See also
+# `call`.
+function call_proto(@ch: Channel, schema: protobuf.Schema, path: str, request: protobuf.Message, metadata: [Entry], timeout_ms: i64) -> ProtoReply?
+    m = method_of(schema, path: path)?
+
+    wanted = if m.input_type.len() > 0 && m.input_type[0] == '.'
+        m.input_type.slice(from: 1, to: m.input_type.len())
+    else
+        m.input_type
+
+    if request.type_name != wanted
+        return fail(
+            code: INVALID,
+            msg: f"calling {path}: the request is a {request.type_name}, and the method takes a {wanted}"
+        )
+    reply = call(@ch, path: path, request: protobuf.encode(schema, m: request)?, metadata: metadata, timeout_ms: timeout_ms)?
+    out: [protobuf.Message] @= []
+
+    for data in reply.messages
+        match protobuf.decode(schema, type_name: m.output_type, data: data)
+            .ok got => out @ out.push(got)
+            .err e => return fail(
+                code: INVALID,
+                msg: f"calling {path}: a response does not decode as {m.output_type}: {e.msg}"
+            )
+
+    return ok(ProtoReply(status: reply.status, messages: out, headers: reply.headers, trailers: reply.trailers))
+
+## A server
+
+# A method a server answers: its path and whether each side streams.
+record Method
+    # The path, `/shop.Shop/GetOrder`.
+    path: str
+    # Whether the client sends a stream.
+    client_streaming: bool
+    # Whether the server sends a stream.
+    server_streaming: bool
+
+# The methods of a service, as `protobuf` read them from its `.proto`.
+#
+# - `service`: the service.
+#
+# In the service's order. See also `next_call`.
+function methods_of(service: protobuf.Service) -> [Method]
+    out: [Method] @= []
+
+    for m in service.methods
+        out @ out.push(
+            Method(path: path_of(m), client_streaming: m.client_streaming, server_streaming: m.server_streaming)
+        )
+
+    return out
+
+# A health status: the service's state is not known.
+constant HEALTH_UNKNOWN: i64
+    0
+
+# A health status: the service is serving.
+constant SERVING: i64
+    1
+
+# A health status: the service is not serving.
+constant NOT_SERVING: i64
+    2
+
+# A health status, sent by `Watch` alone: no such service is known.
+constant SERVICE_UNKNOWN: i64
+    3
+
+# A server's end of one HTTP/2 connection: the calls on it found and
+# answered. Made by `server_of`; its owner closes it with `close_server`.
+record Server
+    # The connection, owned by the server.
+    conn: http2.Conn
+    # How it runs its calls.
+    options: Options
+    # The health of each service by name, "" for the server as a whole, as
+    # `grpc.health.v1.Health` answers it; empty answers no health checking.
+    health: {str: i64}
+    # The full names of the services server reflection lists; empty answers
+    # no reflection.
+    reflection: [str]
+    # The streams of health `Watch` calls open, and the service each watches.
+    watchers: {i64: str}
+
+# A call a server reads and answers, made by `next_call`.
+record ServerCall
+    # The HTTP/2 stream it travels on.
+    stream: i64
+    # The method's path.
+    path: str
+    # The index in the methods `next_call` was given of the method called.
+    method: i64
+    # The metadata the client sent.
+    metadata: [Entry]
+    # When the client's deadline passes, in milliseconds of `time.mark`'s
+    # clock, 0 for none.
+    deadline_at: i64
+    # The bytes received and not yet framed into a message.
+    held: [u8]
+    # Whether the client's messages come compressed by gzip.
+    gzip_in: bool
+    # Whether this end sends its messages compressed by gzip.
+    gzip_out: bool
+    # Whether the client has sent its last message.
+    half_closed: bool
+    # Whether this end has sent its metadata, or its first message.
+    started: bool
+    # Whether this end has finished the call.
+    finished: bool
+    # The requests received and not yet given out, in order.
+    pending: [[u8]]
+
+# A server's end of the HTTP/2 connection `stream` carries: one `tls.accept`
+# answered with `h2` chosen, or a plain one with prior knowledge.
+#
+# - `stream`: the stream; it passes to the server, which closes it, and this
+#   place is emptied.
+# - `options`: how its calls run.
+#
+# Fails as `http2.server_of` does. See also `next_call`.
+function server_of(@stream: io.Stream, options: Options) -> Server?
+    conn = http2.server_of(@stream, options: options.http2)?
+    return ok(Server(conn: conn, options: options, health: {}, reflection: [], watchers: {}))
+
+# Closes a server's connection: GOAWAY, then the stream closed.
+#
+# - `s`: the server; closed by this call.
+#
+# Fails as `http2.close` does. See also `server_of`.
+function close_server(@s: Server) -> ()?
+    return http2.close(@s.conn)
+
+# The next call of one of `methods`, its head read: a call of another path is
+# answered `STATUS_UNIMPLEMENTED`, and a health check or a reflection's request
+# is answered where `s` enables them, and the next one is read.
+#
+# - `s`: the server.
+# - `methods`: the methods the program answers; the call's `method` is an
+#   index into them.
+#
+# Fails `closed` where the client closes the connection or sends GOAWAY,
+# and as `http2.read_event` fails. See also `read_request`, `finish`.
+function next_call(@s: Server, methods: [Method]) -> ServerCall?
+    while true
+        e = http2.accept_stream(@s.conn)?
+
+        match e
+            .request r =>
+                fields: [Entry] @= []
+                pairs = meta.from_fields(r.headers)
+
+                for i in range(from: 0, to: pairs.keys.len())
+                    fields @ fields.push(Entry(key: pairs.keys[i], value: pairs.values[i]))
+
+                timeout = calls.header_value(r.headers, name: "grpc-timeout")
+                ns = texts.parse_timeout(timeout)
+
+                deadline_at = if timeout != "" && ns >= 0
+                    clock.now_ms() + ns / 1000000 + 1
+                else
+                    0
+                encoding = calls.header_value(r.headers, name: "grpc-encoding")
+                accepts = bytes.contains(
+                    s: bytes.from_text(calls.header_value(r.headers, name: "grpc-accept-encoding")),
+                    substr: bytes.from_text("gzip")
+                )
+                index: i64 @= -1
+
+                for i in range(from: 0, to: methods.len())
+                    if methods[i].path == r.path && index < 0
+                        index @ i
+
+                c @= ServerCall(
+                    stream: r.stream,
+                    path: r.path,
+                    method: index,
+                    metadata: fields,
+                    deadline_at: deadline_at,
+                    held: [],
+                    gzip_in: encoding == "gzip",
+                    gzip_out: s.options.compress && accepts,
+                    half_closed: r.end_stream,
+                    started: false,
+                    finished: false,
+                    pending: []
+                )
+                content = calls.header_value(r.headers, name: "content-type")
+
+                if r.method != "POST" || !bytes.has_prefix(s: bytes.from_text(content), prefix: bytes.from_text("application/grpc"))
+                    status = if r.method != "POST"
+                        "405"
+                    else
+                        "415"
+
+                    match http2.write_headers(@s.conn, stream: r.stream, headers: [http2.Field(name: ":status", value: status, sensitive: false)], end_stream: true)
+                        .ok _  => _ = 0
+                        .err _ => _ = 0
+
+                    c.finished @ true
+                    calls.release(@s.conn, stream: c.stream, half_closed: c.half_closed)
+                else if encoding != "" && encoding != "gzip" && encoding != "identity"
+                    _ = finish(
+                        @s,
+                        @c,
+                        status: Status(code: STATUS_UNIMPLEMENTED, message: f"grpc-encoding {encoding} is not offered: gzip alone", details: []),
+                        trailers: []
+                    ).is_err()
+                else if r.path == calls.HEALTH_CHECK && s.health.len() > 0
+                    _ = answer_health(@s, @c).is_err()
+                else if r.path == calls.HEALTH_WATCH && s.health.len() > 0
+                    _ = watch_health(@s, @c).is_err()
+                else if (r.path == calls.REFLECTION || r.path == calls.REFLECTION_ALPHA) && s.reflection.len() > 0
+                    _ = answer_reflection(@s, @c).is_err()
+                else if index < 0
+                    _ = finish(
+                        @s,
+                        @c,
+                        status: Status(code: STATUS_UNIMPLEMENTED, message: f"unknown method {r.path}", details: []),
+                        trailers: []
+                    ).is_err()
+                else
+                    return ok(c)
+            .response _ | .informational _ | .trailers _ | .data _ | .reset _ | .window _ | .settings _ | .settings_acked | .ping _ | .pong _ | .goaway _ => _ = 0
+
+# The next request of a call, or its end where the client sent its last.
+#
+# - `s`: the server.
+# - `c`: the call.
+#
+# The end is `Incoming.end` with the status `STATUS_OK` and no metadata. Fails
+# `closed` where the client cancelled the call, `limit` past
+# `Options.max_message_bytes`, `invalid` where a message is not framed as
+# gRPC frames it, `unsupported` where it is compressed by another encoding
+# than gzip. See also `write_response`.
+function read_request(@s: Server, @c: ServerCall) -> Incoming?
+    while true
+        if c.pending.len() > 0
+            return ok(.message(data: calls.pop(@c.pending)))
+
+        if c.half_closed
+            if c.held.len() > 0
+                return fail(code: INVALID, msg: f"reading the call {c.path}: its last message is cut short")
+            return ok(.end(status: Status(code: STATUS_OK, message: "", details: []), trailers: []))
+        got = http2.read_event_of(@s.conn, stream: c.stream)
+
+        match got
+            .err e =>
+                c.finished @ true
+                return fail(code: CLOSED, msg: f"reading the call {c.path}: " + e.msg)
+            .ok event =>
+                match event
+                    .data d =>
+                        taken = calls.take(
+                            held: @c.held,
+                            @c.pending,
+                            data: d.data,
+                            gzip: c.gzip_in,
+                            most: s.options.max_message_bytes
+                        )
+
+                        if taken.code != ""
+                            code = if taken.code == LIMIT
+                                STATUS_RESOURCE_EXHAUSTED
+                            else
+                                STATUS_INTERNAL
+                            _ = finish(
+                                @s,
+                                @c,
+                                status: Status(code: code, message: taken.why, details: []),
+                                trailers: []
+                            ).is_err()
+                            return fail(code: taken.code, msg: f"reading the call {c.path}: " + taken.why)
+
+                        if d.end_stream
+                            c.half_closed @ true
+                    .trailers _ => c.half_closed @ true
+                    .reset r =>
+                        c.finished @ true
+                        return fail(
+                            code: CLOSED,
+                            msg: f"reading the call {c.path}: the client reset it with HTTP/2 error {r.error}"
+                        )
+                    .request _ | .response _ | .informational _ | .window _ | .settings _ | .settings_acked | .ping _ | .pong _ | .goaway _ => _ = 0
+
+# Sends the call's first metadata, before any response; sent with no
+# entries by the first `write_response` where the program sends none.
+#
+# - `s`: the server.
+# - `c`: the call.
+# - `metadata`: the entries.
+#
+# Fails `invalid` where an entry is refused, `closed` where the metadata was
+# sent already or the call has ended. See also `write_response`.
+function write_headers(@s: Server, @c: ServerCall, metadata: [Entry]) -> ()?
+    if c.started || c.finished
+        return fail(code: CLOSED, msg: f"sending the metadata of {c.path}: it was sent already, or the call has ended")
+    names: [str] @= []
+    values: [[u8]] @= []
+
+    for e in metadata
+        names @ names.push(e.key)
+        values @ values.push(e.value)
+
+    head @= calls.response_head(c.gzip_out)
+
+    for f in meta.to_fields(names: names, values: values)?
+        head @ head.push(f)
+
+    http2.write_headers(@s.conn, stream: c.stream, headers: head, end_stream: false)?
+    c.started @ true
+    return ok()
+
+# Sends one response on a call.
+#
+# - `s`: the server.
+# - `c`: the call.
+# - `message`: the response's bytes.
+#
+# Fails `limit` past `Options.max_message_bytes`, `closed` where the call
+# has ended or the client cancelled it. See also `finish`.
+function write_response(@s: Server, @c: ServerCall, message: [u8]) -> ()?
+    if c.finished
+        return fail(code: CLOSED, msg: f"answering the call {c.path}: it has ended")
+
+    if message.len() > s.options.max_message_bytes
+        return fail(
+            code: LIMIT,
+            msg: f"answering the call {c.path}: a message of {message.len()} bytes passes {s.options.max_message_bytes}"
+        )
+
+    if !c.started
+        write_headers(@s, @c, metadata: [])?
+
+    match http2.write_data(@s.conn, stream: c.stream, data: calls.framed(message, gzip: c.gzip_out)?, end_stream: false)
+        .ok _ => return ok()
+        .err e =>
+            c.finished @ true
+            return fail(code: CLOSED, msg: f"answering the call {c.path}: " + e.msg)
+
+# Ends a call with `status` and its trailing metadata; a call with no
+# response sent ends with one header block, gRPC's trailers-only answer.
+#
+# - `s`: the server.
+# - `c`: the call; finished by this call.
+# - `status`: how it ended.
+# - `trailers`: the entries sent with the status.
+#
+# Fails `closed` where the call has ended or the client cancelled it,
+# `invalid` where an entry is refused. See also `write_response`.
+function finish(@s: Server, @c: ServerCall, status: Status, trailers: [Entry]) -> ()?
+    if c.finished
+        return fail(code: CLOSED, msg: f"finishing the call {c.path}: it has ended")
+    names: [str] @= []
+    values: [[u8]] @= []
+
+    for e in trailers
+        names @ names.push(e.key)
+        values @ values.push(e.value)
+
+    extra = meta.to_fields(names: names, values: values)?
+    block: [http2.Field] @= []
+
+    if !c.started
+        block @ calls.response_head(false)
+
+    for f in calls.status_fields(code: status.code, message: status.message, details: status.details)
+        block @ block.push(f)
+
+    for f in extra
+        block @ block.push(f)
+
+    c.finished @ true
+    c.started @ true
+    written = http2.write_headers(@s.conn, stream: c.stream, headers: block, end_stream: true)
+    calls.release(@s.conn, stream: c.stream, half_closed: c.half_closed)
+
+    match written
+        .ok _  => return ok()
+        .err e => return fail(code: CLOSED, msg: f"finishing the call {c.path}: " + e.msg)
+
+# Answers a call of the health checking service's `Check`: the service its
+# request names looked up in `s.health`, its status answered, or
+# `STATUS_NOT_FOUND` where it is not there. `next_call` calls it where
+# `s.health` holds a service; a program routing calls itself calls it too.
+#
+# - `s`: the server.
+# - `c`: the call, of the path `/grpc.health.v1.Health/Check`; finished by
+#   this call.
+#
+# Fails as `read_request` and `finish` do. See also `set_health`.
+function answer_health(@s: Server, @c: ServerCall) -> ()?
+    request: [u8] @= []
+
+    while true
+        match read_request(@s, @c)?
+            .message m => request @ m.data
+            .end _     => break
+
+    service = services.health_service(request)?
+
+    match s.health[service]
+        .ok status =>
+            write_response(@s, @c, message: services.health_response(status))?
+            return finish(@s, @c, status: Status(code: STATUS_OK, message: "", details: []), trailers: [])
+        .err _ => return finish(
+            @s,
+            @c,
+            status: Status(code: STATUS_NOT_FOUND, message: f"no health is kept for the service \"{service}\"", details: []),
+            trailers: []
+        )
+
+# Answers a call of the health checking service's `Watch`: the status now, or
+# `SERVICE_UNKNOWN`, then each change `set_health` makes, the call kept open
+# until the client cancels it.
+#
+# - `s`: the server; the call is kept among its `watchers`.
+# - `c`: the call, of the path `/grpc.health.v1.Health/Watch`.
+#
+# Fails as `read_request` and `write_response` do. See also `set_health`.
+function watch_health(@s: Server, @c: ServerCall) -> ()?
+    request: [u8] @= []
+
+    match read_request(@s, @c)?
+        .message m => request @ m.data
+        .end _     => _ = 0
+
+    service = services.health_service(request)?
+    status = s.health[service].default(SERVICE_UNKNOWN)
+    write_response(@s, @c, message: services.health_response(status))?
+    s.watchers[c.stream] @ service
+    return ok()
+
+# Answers a call of server reflection, version 1 or 1alpha: each request
+# answered as it comes, the list of `s.reflection`'s services where it asks
+# for it and `NOT_FOUND` to a question about a file, until the client sends
+# its last.
+#
+# - `s`: the server.
+# - `c`: the call; finished by this call.
+#
+# Fails as `read_request`, `write_response` and `finish` do. See also
+# `Server`.
+function answer_reflection(@s: Server, @c: ServerCall) -> ()?
+    while true
+        match read_request(@s, @c)?
+            .message m => write_response(@s, @c, message: services.reflection_answer(m.data, services: s.reflection)?)?
+            .end _     => return finish(@s, @c, status: Status(code: STATUS_OK, message: "", details: []), trailers: [])
+
+# The milliseconds left before the client's deadline, 0 where it has
+# passed, -1 where the call has none.
+#
+# - `c`: the call.
+#
+# See also `ServerCall`.
+function left_ms(c: ServerCall) -> i64
+    return clock.left_of(c.deadline_at)
+
+# Sets the health of a service, telling every health `Watch` of it.
+#
+# - `s`: the server; its `health` changes.
+# - `service`: the service's full name, "" for the server as a whole.
+# - `status`: `SERVING`, `NOT_SERVING`, `HEALTH_UNKNOWN`.
+#
+# Fails `invalid` for a status outside 0 to 3. See also `Server`.
+function set_health(@s: Server, service: str, status: i64) -> ()?
+    if status < 0 || status > 3
+        return fail(code: INVALID, msg: f"setting the health of \"{service}\": {status} is no status, 0 to 3")
+    s.health[service] @ status
+    gone: [i64] @= []
+
+    for id in keys(s.watchers)
+        if s.watchers[id].default("") == service
+            w @= ServerCall(
+                stream: id,
+                path: calls.HEALTH_WATCH,
+                method: -1,
+                metadata: [],
+                deadline_at: 0,
+                held: [],
+                gzip_in: false,
+                gzip_out: false,
+                half_closed: true,
+                started: true,
+                finished: false,
+                pending: []
+            )
+
+            if write_response(@s, @w, message: services.health_response(status)).is_err()
+                gone @ gone.push(id)
+
+    for id in gone
+        kept: {i64: str} @= {}
+
+        for k in keys(s.watchers)
+            if k != id
+                kept[k] @ s.watchers[k].default("")
+
+        s.watchers @ kept
+
+    return ok()
+
+## Examples
+
+# The name of a call's status code.
+test "status_name: DEADLINE_EXCEEDED, and a code gRPC does not name"
+    assert status_name(STATUS_DEADLINE_EXCEEDED).must() == "DEADLINE_EXCEEDED"
+    assert status_name(17).is_err()
+
+# The status a proxy's 503 stands for.
+test "status_of_http: 503 is UNAVAILABLE, 404 UNIMPLEMENTED"
+    assert status_of_http(503) == STATUS_UNAVAILABLE && status_of_http(404) == STATUS_UNIMPLEMENTED
+
+# The status a stream cancelled by HTTP/2 stands for.
+test "status_of_reset: CANCEL is CANCELLED"
+    assert status_of_reset(http2.CANCEL) == STATUS_CANCELLED && status_of_reset(http2.REFUSED_STREAM) == STATUS_UNAVAILABLE
+
+# A status message as `grpc-message` carries it.
+test "format_status_message: a percent sign and a character past ASCII escaped"
+    assert format_status_message("50% done: é") == "50%25 done: %C3%A9"
+
+# A `grpc-message` read back.
+test "parse_status_message: escapes undone"
+    assert parse_status_message("50%25 done: %C3%A9") == "50% done: é"
+
+# Which keys carry bytes.
+test "is_binary_key: trace-bin carries bytes, x-user text"
+    assert is_binary_key("trace-bin") && !is_binary_key("x-user")
+
+# A metadata value found by its key, in any case.
+test "value_of: a key found in any case, and one absent"
+    metadata = [Entry(key: "x-user", value: bytes.from_text("ana"))]
+    assert value_of(metadata, key: "X-User").must() == bytes.from_text("ana")
+    assert value_of(metadata, key: "x-other").is_err()
+
+# A message framed as the wire carries it.
+test "encode_frame: three bytes, uncompressed"
+    assert encode_frame([1, 2, 3], compressed: false) == [0, 0, 0, 0, 3, 1, 2, 3]
+
+# Messages read from a body cut anywhere.
+test "decode_frames: one message whole and the start of the next"
+    got = decode_frames([0, 0, 0, 0, 1, 7, 0, 0], most: 100).must()
+    assert got.messages == [Framed(compressed: false, data: [7])] && got.rest == [0, 0]
+
+# A deadline as `grpc-timeout` carries it.
+test "format_timeout: a second and a half"
+    assert format_timeout(time.milliseconds(1500).must()) == "1500000u"
+
+# A deadline read back.
+test "parse_timeout: 250 milliseconds"
+    assert parse_timeout("250m").must() == time.milliseconds(250).must()
+    assert parse_timeout("1d").is_err()
+
+# The usual options.
+test "default_options: messages of 4 MiB, uncompressed"
+    o = default_options()
+    assert o.max_message_bytes == 4194304 && !o.compress
+
+# A channel over TLS to a server of this process, ALPN choosing `h2`.
+test "dial: a unary call over TLS"
+    if tls.is_available()
+        port = fixture.free_port()
+        server @= threads.spawn_text(body: fixture.serve_tls, arg: to_str(port))
+        fixture.until_listening(port)
+        ch @= dial(
+            host: "localhost",
+            port: port,
+            deadline_ms: 10000,
+            roots: tls.TEST_ROOT,
+            options: default_options()
+        ).must()
+        r = call(@ch, path: "/test.Echo/Echo", request: bytes.from_text("hi"), metadata: [], timeout_ms: 5000).must()
+        assert r.status.code == STATUS_OK && r.messages == [bytes.from_text("hi")]
+        close(@ch).must()
+        assert threads.wait_text(@server) == "1"
+
+# A channel in plain text, HTTP/2 by prior knowledge.
+test "dial_plain: a unary call over h2c"
+    port = fixture.free_port()
+    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port))
+    fixture.until_listening(port)
+    ch @= dial_plain(host: "127.0.0.1", port: port, options: default_options()).must()
+    r = call(
+        @ch,
+        path: "/test.Echo/Echo",
+        request: bytes.from_text("plain"),
+        metadata: [Entry(key: "x-user", value: bytes.from_text("ana"))],
+        timeout_ms: 0
+    ).must()
+    assert r.status.code == STATUS_OK && r.messages == [bytes.from_text("plain")]
+    close(@ch).must()
+    assert threads.wait_text(@server) == "1"
+
+# A channel over a connection the program made itself.
+test "channel_of: over http2.connect_plain"
+    port = fixture.free_port()
+    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port))
+    fixture.until_listening(port)
+    conn = http2.connect_plain(host: "127.0.0.1", port: port, deadline_ms: 0, options: http2.default_options()).must()
+    ch @= channel_of(conn, authority: "localhost", scheme: "http", options: default_options())
+    assert call(@ch, path: "/test.Echo/Echo", request: [1], metadata: [], timeout_ms: 0).must().messages == [[1]]
+    close(@ch).must()
+    assert threads.wait_text(@server) == "1"
+
+# A channel closed, and closed again.
+test "close: a second close refused"
+    port = fixture.free_port()
+    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port))
+    fixture.until_listening(port)
+    ch @= dial_plain(host: "127.0.0.1", port: port, options: default_options()).must()
+    _ = call(@ch, path: "/test.Echo/Echo", request: [], metadata: [], timeout_ms: 0).must()
+    close(@ch).must()
+    assert close(@ch).is_err()
+    _ = threads.wait_text(@server)
+
+# A unary call, a call that fails with its status and details, and a call
+# whose server streams.
+test "call: echoed, NOT_FOUND with its details, three messages streamed"
+    port = fixture.free_port()
+    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port))
+    fixture.until_listening(port)
+    ch @= dial_plain(host: "127.0.0.1", port: port, options: default_options()).must()
+    assert call(@ch, path: "/test.Echo/Echo", request: [9], metadata: [], timeout_ms: 0).must().messages == [[9]]
+    failed = call(@ch, path: "/test.Echo/Fail", request: [], metadata: [], timeout_ms: 0).must()
+    assert failed.status == Status(code: STATUS_NOT_FOUND, message: "no such thing", details: [1, 2])
+    many = call(@ch, path: "/test.Echo/Many", request: [], metadata: [], timeout_ms: 0).must()
+    assert many.messages.len() == 3 && many.status.code == STATUS_OK
+    close(@ch).must()
+    assert threads.wait_text(@server) == "3"
+
+# A call whose client streams: every message echoed.
+test "call_many: three requests echoed"
+    port = fixture.free_port()
+    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port))
+    fixture.until_listening(port)
+    ch @= dial_plain(host: "127.0.0.1", port: port, options: default_options()).must()
+    r = call_many(@ch, path: "/test.Echo/Echo", requests: [[1], [2], [3]], metadata: [], timeout_ms: 0).must()
+    assert r.messages == [[1], [2], [3]]
+    close(@ch).must()
+    _ = threads.wait_text(@server)
+
+# A call driven by hand: messages sent, the side closed, the answers read.
+test "start_call: a call driven message by message"
+    port = fixture.free_port()
+    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port))
+    fixture.until_listening(port)
+    ch @= dial_plain(host: "127.0.0.1", port: port, options: default_options()).must()
+    c @= start_call(@ch, path: "/test.Echo/Echo", metadata: [], timeout_ms: 0).must()
+    send(@ch, @c, message: [4]).must()
+    send(@ch, @c, message: [5]).must()
+    close_send(@ch, c: c).must()
+    assert receive(@ch, @c).must() == .message(data: [4])
+    assert receive(@ch, @c).must() == .message(data: [5])
+    close(@ch).must()
+    _ = threads.wait_text(@server)
+
+# One message sent on a call.
+test "send: a message past the bound refused"
+    port = fixture.free_port()
+    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port))
+    fixture.until_listening(port)
+    o @= default_options()
+    o.max_message_bytes @ 4
+    ch @= dial_plain(host: "127.0.0.1", port: port, options: o).must()
+    c @= start_call(@ch, path: "/test.Echo/Echo", metadata: [], timeout_ms: 0).must()
+
+    match send(@ch, @c, message: [1, 2, 3, 4, 5])
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+    send(@ch, @c, message: [1]).must()
+    close_send(@ch, c: c).must()
+    assert receive(@ch, @c).must() == .message(data: [1])
+    close(@ch).must()
+    _ = threads.wait_text(@server)
+
+# The client's side closed: the server answers once it has read every message.
+test "close_send: the server answers after the client's last message"
+    port = fixture.free_port()
+    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port))
+    fixture.until_listening(port)
+    ch @= dial_plain(host: "127.0.0.1", port: port, options: default_options()).must()
+    c @= start_call(@ch, path: "/test.Echo/Many", metadata: [], timeout_ms: 0).must()
+    close_send(@ch, c: c).must()
+    assert receive(@ch, @c).must() == .message(data: bytes.from_text("one"))
+    close(@ch).must()
+    _ = threads.wait_text(@server)
+
+# A call's end read after its messages, and a deadline that passes.
+test "receive: the end with its status, and DEADLINE_EXCEEDED"
+    port = fixture.free_port()
+    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port))
+    fixture.until_listening(port)
+    ch @= dial_plain(host: "127.0.0.1", port: port, options: default_options()).must()
+    c @= start_call(@ch, path: "/test.Echo/Echo", metadata: [], timeout_ms: 0).must()
+    close_send(@ch, c: c).must()
+
+    match receive(@ch, @c).must()
+        .message _ => assert false
+        .end e     => assert e.status.code == STATUS_OK
+
+    slow = call(@ch, path: "/test.Echo/Silent", request: [], metadata: [], timeout_ms: 300).must()
+    assert slow.status.code == STATUS_DEADLINE_EXCEEDED
+    close(@ch).must()
+    _ = threads.wait_text(@server)
+
+# A call cancelled by its client.
+test "cancel: the call ends CANCELLED"
+    port = fixture.free_port()
+    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port))
+    fixture.until_listening(port)
+    ch @= dial_plain(host: "127.0.0.1", port: port, options: default_options()).must()
+    c @= start_call(@ch, path: "/test.Echo/Echo", metadata: [], timeout_ms: 0).must()
+    cancel(@ch, @c).must()
+
+    match receive(@ch, @c).must()
+        .message _ => assert false
+        .end e     => assert e.status.code == STATUS_CANCELLED
+
+    close(@ch).must()
+    _ = threads.wait_text(@server)
+
+# A method found by its path in a schema read from a `.proto`.
+test "method_of: GetNote of test.Notes"
+    schema = protobuf.parse_schema_text(
+        name: "notes.proto",
+        text: "syntax = \"proto3\";\npackage test;\nmessage Note { string text = 1; }\nservice Notes { rpc GetNote (Note) returns (Note); rpc Watch (Note) returns (stream Note); }\n"
+    ).must()
+    m = method_of(schema, path: "/test.Notes/GetNote").must()
+    assert m.name == "GetNote"
+    assert method_of(schema, path: "/test.Notes/Nothing").is_err()
+
+# The path a method is called by.
+test "path_of: /test.Notes/GetNote"
+    schema = protobuf.parse_schema_text(
+        name: "notes.proto",
+        text: "syntax = \"proto3\";\npackage test;\nmessage Note { string text = 1; }\nservice Notes { rpc GetNote (Note) returns (Note); }\n"
+    ).must()
+    assert path_of(protobuf.service_named(schema, name: "test.Notes").must().methods[0]) == "/test.Notes/GetNote"
+
+# A call described by a `.proto`: its request a message of the schema.
+test "call_proto: a Note echoed and decoded"
+    port = fixture.free_port()
+    server @= threads.spawn_text(body: fixture.serve, arg: to_str(port))
+    fixture.until_listening(port)
+    schema = protobuf.parse_schema_text(
+        name: "echo.proto",
+        text: "syntax = \"proto3\";\npackage test;\nmessage Note { string text = 1; }\nservice Echo { rpc Echo (Note) returns (Note); }\n"
+    ).must()
+    note @= protobuf.new_message(schema, type_name: "test.Note").must()
+    protobuf.set(schema, @note, field: "text", value: .text(v: "proto")).must()
+    ch @= dial_plain(host: "127.0.0.1", port: port, options: default_options()).must()
+    r = call_proto(@ch, schema: schema, path: "/test.Echo/Echo", request: note, metadata: [], timeout_ms: 0).must()
+    assert protobuf.text_of(protobuf.get(schema, m: r.messages[0], field: "text").must()).must() == "proto"
+    close(@ch).must()
+    _ = threads.wait_text(@server)
+
+# A service's methods, with their streams.
+test "methods_of: a unary method and one whose server streams"
+    schema = protobuf.parse_schema_text(
+        name: "notes.proto",
+        text: "syntax = \"proto3\";\npackage test;\nmessage Note { string text = 1; }\nservice Notes { rpc GetNote (Note) returns (Note); rpc Watch (Note) returns (stream Note); }\n"
+    ).must()
+    got = methods_of(protobuf.service_named(schema, name: "test.Notes").must())
+    assert got == [Method(path: "/test.Notes/GetNote", client_streaming: false, server_streaming: false), Method(path: "/test.Notes/Watch", client_streaming: false, server_streaming: true)]
+
+# A server's connection over what `net` accepted; the client calls once.
+test "server_of: one call found, read and answered"
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Upper hello")
+    accepted = net.accept(l, deadline_ms: 10000).must()
+    stream @= accepted.stream
+    s @= server_of(@stream, options: default_options()).must()
+    c @= next_call(
+        @s,
+        methods: [Method(path: "/test.Echo/Upper", client_streaming: false, server_streaming: false)]
+    ).must()
+    assert c.method == 0
+
+    match read_request(@s, @c).must()
+        .message m =>
+            write_response(@s, @c, message: bytes.to_upper_ascii(m.data)).must()
+            finish(@s, @c, status: Status(code: STATUS_OK, message: "", details: []), trailers: []).must()
+        .end _ => assert false
+
+    assert threads.wait_text(@client) == "0 1 HELLO"
+    close_server(@s).must()
+    net.close_listener(@l).must()
+
+# A server closed after its calls.
+test "close_server: closed once, refused twice"
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Unknown x")
+    accepted = net.accept(l, deadline_ms: 10000).must()
+    stream @= accepted.stream
+    s @= server_of(@stream, options: default_options()).must()
+    assert next_call(@s, methods: []).is_err()
+    assert threads.wait_text(@client) == "12 0 "
+    close_server(@s).must()
+    assert close_server(@s).is_err()
+    net.close_listener(@l).must()
+
+# A call of a method the program does not name answered UNIMPLEMENTED by
+# the server itself.
+test "next_call: an unknown method answered UNIMPLEMENTED, then the connection's end"
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /other.Svc/Do x")
+    accepted = net.accept(l, deadline_ms: 10000).must()
+    stream @= accepted.stream
+    s @= server_of(@stream, options: default_options()).must()
+
+    match next_call(@s, methods: [Method(path: "/test.Echo/Echo", client_streaming: false, server_streaming: false)])
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED
+
+    assert threads.wait_text(@client) == "12 0 "
+    close_server(@s).must()
+    net.close_listener(@l).must()
+
+# Requests read until the client's last.
+test "read_request: one request, then the end"
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Count abc")
+    accepted = net.accept(l, deadline_ms: 10000).must()
+    stream @= accepted.stream
+    s @= server_of(@stream, options: default_options()).must()
+    c @= next_call(
+        @s,
+        methods: [Method(path: "/test.Echo/Count", client_streaming: true, server_streaming: false)]
+    ).must()
+    count: i64 @= 0
+
+    while true
+        match read_request(@s, @c).must()
+            .message _ => count @ count + 1
+            .end _     => break
+
+    write_response(@s, @c, message: bytes.from_text(to_str(count))).must()
+    finish(@s, @c, status: Status(code: STATUS_OK, message: "", details: []), trailers: []).must()
+    assert threads.wait_text(@client) == "0 1 1"
+    close_server(@s).must()
+    net.close_listener(@l).must()
+
+# The call's first metadata sent before its response.
+test "write_headers: metadata before the response"
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Echo x")
+    accepted = net.accept(l, deadline_ms: 10000).must()
+    stream @= accepted.stream
+    s @= server_of(@stream, options: default_options()).must()
+    c @= next_call(
+        @s,
+        methods: [Method(path: "/test.Echo/Echo", client_streaming: false, server_streaming: false)]
+    ).must()
+    write_headers(
+        @s,
+        @c,
+        metadata: [Entry(key: "x-served-by", value: bytes.from_text("heroes")), Entry(key: "trace-bin", value: [0xff])]
+    ).must()
+    assert write_headers(@s, @c, metadata: []).is_err()
+    write_response(@s, @c, message: bytes.from_text("y")).must()
+    finish(@s, @c, status: Status(code: STATUS_OK, message: "", details: []), trailers: []).must()
+    assert threads.wait_text(@client) == "0 1 y"
+    close_server(@s).must()
+    net.close_listener(@l).must()
+
+# Responses streamed by a server.
+test "write_response: three responses, then OK"
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Three x")
+    accepted = net.accept(l, deadline_ms: 10000).must()
+    stream @= accepted.stream
+    s @= server_of(@stream, options: default_options()).must()
+    c @= next_call(
+        @s,
+        methods: [Method(path: "/test.Echo/Three", client_streaming: false, server_streaming: true)]
+    ).must()
+
+    for word in ["a", "b", "c"]
+        write_response(@s, @c, message: bytes.from_text(word)).must()
+
+    finish(@s, @c, status: Status(code: STATUS_OK, message: "", details: []), trailers: []).must()
+    assert threads.wait_text(@client) == "0 3 a"
+    close_server(@s).must()
+    net.close_listener(@l).must()
+
+# A call ended with an error and no response: gRPC's trailers-only answer.
+test "finish: PERMISSION_DENIED with no response"
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Echo x")
+    accepted = net.accept(l, deadline_ms: 10000).must()
+    stream @= accepted.stream
+    s @= server_of(@stream, options: default_options()).must()
+    c @= next_call(
+        @s,
+        methods: [Method(path: "/test.Echo/Echo", client_streaming: false, server_streaming: false)]
+    ).must()
+    finish(@s, @c, status: Status(code: STATUS_PERMISSION_DENIED, message: "no", details: []), trailers: []).must()
+    assert finish(@s, @c, status: Status(code: STATUS_OK, message: "", details: []), trailers: []).is_err()
+    assert threads.wait_text(@client) == "7 0 "
+    close_server(@s).must()
+    net.close_listener(@l).must()
+
+# A call with no deadline.
+test "left_ms: -1 where the client sent no grpc-timeout"
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Echo x")
+    accepted = net.accept(l, deadline_ms: 10000).must()
+    stream @= accepted.stream
+    s @= server_of(@stream, options: default_options()).must()
+    c @= next_call(
+        @s,
+        methods: [Method(path: "/test.Echo/Echo", client_streaming: false, server_streaming: false)]
+    ).must()
+    assert left_ms(c) == -1
+    finish(@s, @c, status: Status(code: STATUS_OK, message: "", details: []), trailers: []).must()
+    _ = threads.wait_text(@client)
+    close_server(@s).must()
+    net.close_listener(@l).must()
+
+# A health watch told of a change.
+test "set_health: a watcher told the server is serving"
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /grpc.health.v1.Health/Watch ")
+    accepted = net.accept(l, deadline_ms: 10000).must()
+    stream @= accepted.stream
+    s @= server_of(@stream, options: default_options()).must()
+    c @= next_call(
+        @s,
+        methods: [Method(path: "/grpc.health.v1.Health/Watch", client_streaming: false, server_streaming: true)]
+    ).must()
+    watch_health(@s, @c).must()
+    set_health(@s, service: "", status: SERVING).must()
+    assert set_health(@s, service: "", status: 7).is_err()
+    close_server(@s).must()
+    assert bytes.has_prefix(s: bytes.from_text(threads.wait_text(@client)), prefix: bytes.from_text("999 2"))
+    net.close_listener(@l).must()
+
+# A health check answered by the server itself.
+test "answer_health: the server as a whole SERVING"
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /grpc.health.v1.Health/Check ")
+    accepted = net.accept(l, deadline_ms: 10000).must()
+    stream @= accepted.stream
+    s @= server_of(@stream, options: default_options()).must()
+    s.health[""] @ SERVING
+    assert next_call(@s, methods: []).is_err()
+    assert bytes.has_prefix(s: bytes.from_text(threads.wait_text(@client)), prefix: bytes.from_text("0 1"))
+    close_server(@s).must()
+    net.close_listener(@l).must()
+
+# A health watch answered with the status now.
+test "watch_health: SERVICE_UNKNOWN for a service with no health kept"
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    client @= threads.spawn_text(body: fixture.call, arg: f"{l.address.port} /grpc.health.v1.Health/Watch ")
+    accepted = net.accept(l, deadline_ms: 10000).must()
+    stream @= accepted.stream
+    s @= server_of(@stream, options: default_options()).must()
+    c @= next_call(
+        @s,
+        methods: [Method(path: "/grpc.health.v1.Health/Watch", client_streaming: false, server_streaming: true)]
+    ).must()
+    watch_health(@s, @c).must()
+    close_server(@s).must()
+    assert bytes.has_prefix(s: bytes.from_text(threads.wait_text(@client)), prefix: bytes.from_text("999 1"))
+    net.close_listener(@l).must()
+
+# Server reflection's list of services.
+test "answer_reflection: the list of services"
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    client @= threads.spawn_text(
+        body: fixture.call,
+        arg: f"{l.address.port} /grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo :\u{1}*"
+    )
+    accepted = net.accept(l, deadline_ms: 10000).must()
+    stream @= accepted.stream
+    s @= server_of(@stream, options: default_options()).must()
+    s.reflection @ ["test.Echo"]
+    assert next_call(@s, methods: []).is_err()
+    assert bytes.contains(s: bytes.from_text(threads.wait_text(@client)), substr: bytes.from_text("test.Echo"))
+    close_server(@s).must()
+    net.close_listener(@l).must()

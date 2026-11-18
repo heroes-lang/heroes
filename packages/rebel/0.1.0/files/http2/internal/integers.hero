@@ -1,0 +1,107 @@
+# HPACK's integers (RFC 7541 § 5.1): a number held in the low bits of a byte
+# whose high bits say what the byte is, and in bytes of seven bits after it
+# where it does not fit, the least significant first.
+
+# The largest integer read: 2^32 - 1, the largest size a setting can name.
+# Every index, length and size of a block is below it.
+constant MOST: i64
+    4294967295
+
+# What `read` answers: the integer, and where the block goes on after it.
+record Read
+    # The integer.
+    value: i64
+    # The index of the byte after the integer's last.
+    next: i64
+
+# Writes `value` with a prefix of `prefix` bits into `out`, the first byte's
+# other bits taken from `first`.
+function write(@out: [u8], value: i64, prefix: i64, first: i64)
+    top = (1 << prefix) - 1
+
+    if value < top
+        out @ out.push(to_u8(first | value).must())
+        return
+    out @ out.push(to_u8(first | top).must())
+    rest: i64 @= value - top
+
+    while rest >= 128
+        out @ out.push(to_u8(rest % 128 + 128).must())
+        rest @ rest / 128
+
+    out @ out.push(to_u8(rest).must())
+
+# The integer with a prefix of `prefix` bits that begins at `at` in `block`.
+# Fails `invalid` where the block ends inside it or it passes `MOST`.
+function read(block: [u8] lent, at: i64, prefix: i64) -> Read?
+    if at >= block.len()
+        return fail(code: "invalid", msg: f"COMPRESSION_ERROR: the block ends where an integer begins, at byte {at}")
+    top = (1 << prefix) - 1
+    value: i64 @= to_i64(block[at]).must() & top
+
+    if value < top
+        return ok(Read(value: value, next: at + 1))
+    shift: i64 @= 0
+    i: i64 @= at + 1
+
+    while true
+        if i >= block.len()
+            return fail(
+                code: "invalid",
+                msg: f"COMPRESSION_ERROR: the block ends inside the integer that begins at byte {at}"
+            )
+
+        if shift > 28
+            return fail(code: "invalid", msg: f"COMPRESSION_ERROR: the integer at byte {at} passes 2^32")
+        b = to_i64(block[i]).must()
+        value @ value + ((b & 127) << shift)
+        i @ i + 1
+
+        if value > MOST
+            return fail(code: "invalid", msg: f"COMPRESSION_ERROR: the integer at byte {at} passes 2^32")
+
+        if b & 128 == 0
+            return ok(Read(value: value, next: i))
+        shift @ shift + 7
+
+test "write: RFC 7541 C.1's 10 and 1337 on five bits, 42 on eight"
+    a: [u8] @= []
+    write(@a, value: 10, prefix: 5, first: 0)
+    assert a == [0x0a]
+    b: [u8] @= []
+    write(@b, value: 1337, prefix: 5, first: 0)
+    assert b == [0x1f, 0x9a, 0x0a]
+    c: [u8] @= []
+    write(@c, value: 42, prefix: 8, first: 0)
+    assert c == [0x2a]
+
+test "write: the prefix full, 0, and the high bits kept"
+    a: [u8] @= []
+    write(@a, value: 31, prefix: 5, first: 0x20)
+    assert a == [0x3f, 0x00]
+    b: [u8] @= []
+    write(@b, value: 0, prefix: 7, first: 0x80)
+    assert b == [0x80]
+    c: [u8] @= []
+    write(@c, value: 4294967295, prefix: 7, first: 0)
+    assert read(c, at: 0, prefix: 7).must().value == 4294967295
+
+test "read: C.1's three, and where the block goes on"
+    assert read([0x0a], at: 0, prefix: 5).must().value == 10
+    got = read([0xff, 0x1f, 0x9a, 0x0a, 0x00], at: 1, prefix: 5).must()
+    assert got.value == 1337
+    assert got.next == 4
+    assert read([0x2a], at: 0, prefix: 8).must().value == 42
+    assert read([0xe5], at: 0, prefix: 5).must().value == 5
+
+test "read: an empty block, a block cut inside, past 2^32, and endless continuation bytes"
+    assert read([], at: 0, prefix: 5).is_err()
+    assert read([0x1f, 0x9a], at: 0, prefix: 5).is_err()
+    assert read([0x7f, 0xff, 0xff, 0xff, 0xff, 0x0f], at: 0, prefix: 7).is_err()
+    long: [u8] @= [0x7f]
+
+    for _ in range(from: 0, to: 100)
+        long @ long.push(0x80)
+
+    long @ long.push(0x00)
+    assert read(long, at: 0, prefix: 7).is_err()

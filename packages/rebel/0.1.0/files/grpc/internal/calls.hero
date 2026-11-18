@@ -1,0 +1,236 @@
+# The moves a call makes on either end, on bytes and on `http2`'s fields
+# alone: a call's head and a response's written, a status read from or
+# written into a header block, a body's bytes framed into messages and
+# undone from gzip, the events of a finished stream drained.
+
+use bytes
+use grpc/internal/framing
+use grpc/internal/meta
+use grpc/internal/texts
+use http2
+
+# The path of the health checking service's `Check`.
+constant HEALTH_CHECK: str
+    "/grpc.health.v1.Health/Check"
+
+# The path of the health checking service's `Watch`.
+constant HEALTH_WATCH: str
+    "/grpc.health.v1.Health/Watch"
+
+# The path of server reflection's one method, version 1.
+constant REFLECTION: str
+    "/grpc.reflection.v1.ServerReflection/ServerReflectionInfo"
+
+# The path of server reflection's one method, version 1alpha.
+constant REFLECTION_ALPHA: str
+    "/grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo"
+
+# A status read from a header block.
+record Said
+    # The code.
+    code: i64
+    # The message.
+    message: str
+    # The details' bytes.
+    details: [u8]
+
+# A field.
+function field(name: str, value: str) -> http2.Field
+    return http2.Field(name: name, value: value, sensitive: false)
+
+# The value of the first field named `name`, "" where none is.
+function header_value(fields: [http2.Field] lent, name: str) -> str
+    for f in fields
+        if f.name == name
+            return f.value
+
+    return ""
+
+# Why `path` is no method's path, "" where it is one: `/`, a service, `/`,
+# a method, no space.
+function path_refusal(path: str) -> str
+    if path.len() < 4 || path[0] != '/'
+        return f"the path \"{path}\" is not /service/method"
+    slashes: i64 @= 0
+
+    for i in range(from: 0, to: path.len())
+        if path[i] == '/'
+            slashes @ slashes + 1
+
+        if path[i] <= ' '
+            return f"the path \"{path}\" holds a space or a control"
+
+    if slashes != 2 || path[path.len() - 1] == '/' || path[1] == '/'
+        return f"the path \"{path}\" is not /service/method"
+    return ""
+
+# A client's head of a call: its pseudo-headers, gRPC's fields and the
+# program's metadata.
+function call_head(scheme: str, authority: str, path: str, user_agent: str, gzip: bool, timeout: str, names: [str], values: [[u8]]) -> [http2.Field]?
+    why = path_refusal(path)
+
+    if why != ""
+        return fail(code: "invalid", msg: "starting a gRPC call: " + why)
+    out: [http2.Field] @= [
+        field(name: ":method", value: "POST")
+        field(name: ":scheme", value: scheme)
+        field(name: ":path", value: path)
+        field(name: ":authority", value: authority)
+        field(name: "content-type", value: "application/grpc")
+        field(name: "te", value: "trailers")
+        field(name: "user-agent", value: user_agent)
+        field(name: "grpc-accept-encoding", value: "gzip")
+    ]
+
+    if gzip
+        out @ out.push(field(name: "grpc-encoding", value: "gzip"))
+
+    if timeout != ""
+        out @ out.push(field(name: "grpc-timeout", value: timeout))
+
+    for f in meta.to_fields(names: names, values: values)?
+        out @ out.push(f)
+
+    return ok(out)
+
+# A server's first header block: status 200, gRPC's type, its encoding.
+function response_head(gzip: bool) -> [http2.Field]
+    out: [http2.Field] @= [
+        field(name: ":status", value: "200")
+        field(name: "content-type", value: "application/grpc")
+    ]
+
+    if gzip
+        out @ out.push(field(name: "grpc-encoding", value: "gzip"))
+    return out
+
+# The fields of a status: its code, its message escaped, its details in base
+# 64 unpadded.
+function status_fields(code: i64, message: str, details: [u8]) -> [http2.Field]
+    out: [http2.Field] @= [field(name: "grpc-status", value: to_str(code))]
+
+    if message != ""
+        out @ out.push(field(name: "grpc-message", value: texts.percent(message)))
+
+    if details.len() > 0
+        out @ out.push(field(name: "grpc-status-details-bin", value: bytes.format_base64_unpadded(details)))
+    return out
+
+# The status a header block holds; where it holds no `grpc-status`, the one
+# its HTTP status stands for, or `UNKNOWN` for 200.
+function said(fields: [http2.Field] lent, http_status: i64) -> Said
+    code_text = header_value(fields, name: "grpc-status")
+    message = texts.unpercent(header_value(fields, name: "grpc-message"))
+    raw = header_value(fields, name: "grpc-status-details-bin")
+    trimmed = bytes.trim_suffix_all(s: bytes.from_text(raw), suffix: [61])
+    details = bytes.parse_base64_unpadded(bytes.to_text_lossy(trimmed)).default([])
+
+    if code_text == ""
+        if http_status != 200
+            return Said(
+                code: texts.of_http(http_status),
+                message: f"the server answered HTTP {http_status} with no grpc-status",
+                details: []
+            )
+        return Said(code: 2, message: "the server sent no grpc-status", details: [])
+    code: i64 @= 0
+
+    for i in range(from: 0, to: code_text.len())
+        if code_text[i] < '0' || code_text[i] > '9' || i > 9
+            return Said(code: 2, message: f"the grpc-status \"{code_text}\" is no number", details: [])
+        code @ code * 10 + to_i64(code_text[i] - '0').must()
+
+    return Said(code: code, message: message, details: details)
+
+# Adds `m` to the messages held.
+function push_message(@pending: [[u8]], m: [u8])
+    pending @ pending.push(m)
+
+# The first message held, taken out.
+function pop(@pending: [[u8]]) -> [u8]
+    m = pending[0]
+    pending @ pending.slice(from: 1, to: pending.len())
+    return m
+
+# What `take` answers: "" where every message was read, or the failure's
+# code and why.
+record Taken
+    # `invalid`, `limit`, `unsupported`, or "".
+    code: str
+    # Why.
+    why: str
+
+# Adds a body's bytes to those held, and every whole message among them to
+# `pending`, undone from gzip where the call's messages may be.
+function take(@held: [u8], @pending: [[u8]], data: [u8] lent, gzip: bool, most: i64) -> Taken
+    bytes.push_all(to: @held, from: data)
+    cut = framing.whole(held, most: most)
+
+    for p in cut.pieces
+        if p.compressed
+            if !gzip
+                return Taken(code: "invalid", why: "a message is compressed, and the call names no grpc-encoding")
+
+            match framing.gunzip(p.data, limit: most)
+                .ok plain => push_message(@pending, m: plain)
+                .err e    => return Taken(code: e.code, why: "a message's gzip: " + e.msg)
+        else
+            push_message(@pending, m: p.data)
+
+    if cut.used > 0
+        held @ held.slice(from: cut.used, to: held.len())
+
+    if cut.code != ""
+        return Taken(code: cut.code, why: cut.why)
+    return Taken(code: "", why: "")
+
+# A message framed for the wire, compressed by gzip where `gzip`.
+function framed(message: [u8], gzip: bool) -> [u8]?
+    if gzip
+        return ok(framing.encode(framing.gzip(message)?, compressed: true))
+    return ok(framing.encode(message, compressed: false))
+
+# Reads and drops every event held of `stream`, which has ended.
+function drain(@conn: http2.Conn, stream: i64)
+    for _ in range(from: 0, to: 100000)
+        match http2.read_event_of(@conn, stream: stream)
+            .ok _  => _ = 0
+            .err _ => return
+
+# Lets a finished call's stream go: reset with NO_ERROR where the client may
+# still send (RFC 9113 § 8.1), and the events held of it dropped.
+function release(@conn: http2.Conn, stream: i64, half_closed: bool)
+    if !half_closed
+        match http2.write_reset(@conn, stream: stream, error: http2.NO_ERROR)
+            .ok _  => _ = 0
+            .err _ => _ = 0
+    drain(@conn, stream: stream)
+
+test "path_refusal: a method's path, and paths that are none"
+    assert path_refusal("/shop.Shop/Get") == ""
+    assert path_refusal("shop.Shop/Get") != ""
+    assert path_refusal("/shop.Shop/") != ""
+    assert path_refusal("/a/b/c") != ""
+    assert path_refusal("//b") != ""
+
+test "said: a status with its message and details, none at 200, an HTTP status mapped"
+    got = said(
+        [field(name: "grpc-status", value: "5"), field(name: "grpc-message", value: "no%20such"), field(name: "grpc-status-details-bin", value: "AQI")],
+        http_status: 200
+    )
+    assert got.code == 5 && got.message == "no such" && got.details == [1, 2]
+    assert said([], http_status: 200).code == 2
+    assert said([], http_status: 503).code == 14
+    assert said([field(name: "grpc-status", value: "x")], http_status: 200).code == 2
+
+test "take: messages framed across two pieces, and one compressed"
+    held: [u8] @= []
+    pending: [[u8]] @= []
+    first = take(held: @held, @pending, data: [0, 0, 0, 0, 2, 7], gzip: false, most: 100)
+    assert first.code == "" && pending.len() == 0
+    _ = take(held: @held, @pending, data: [8], gzip: false, most: 100)
+    assert pending == [[7, 8]] && held == []
+    packed = framed([1, 2, 3], gzip: true).must()
+    _ = take(held: @held, @pending, data: packed, gzip: true, most: 100)
+    assert pop(@pending) == [7, 8] && pop(@pending) == [1, 2, 3]
+    assert take(held: @held, @pending, data: packed, gzip: false, most: 100).code == "invalid"

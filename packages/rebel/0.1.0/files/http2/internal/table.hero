@@ -1,0 +1,132 @@
+# HPACK's dynamic table (RFC 7541 § 2.3.2 and § 4): the entries the blocks
+# added, the newest first by index, each counted as its name, its value and
+# 32 bytes, and the oldest evicted to keep the sum within the table's size.
+# An entry is kept as bytes, so a peer's field that is not UTF-8 keeps the
+# table in step all the same.
+
+# The dynamic table of one encoder or one decoder.
+record Table
+    # The names, the oldest live one at `first`, the newest last.
+    names: [[u8]]
+    # The values, as `names` orders them.
+    values: [[u8]]
+    # Where the oldest live entry stands; those before it are evicted.
+    first: i64
+    # The sum of the live entries' sizes, in bytes.
+    size: i64
+    # The most `size` may be, in bytes.
+    max_size: i64
+
+# An empty table of `max_size` bytes.
+function empty(max_size: i64) -> Table
+    return Table(names: [], values: [], first: 0, size: 0, max_size: max_size)
+
+# The size RFC 7541 § 4.1 counts an entry as.
+function entry_size(name: [u8] lent, value: [u8] lent) -> i64
+    return name.len() + value.len() + 32
+
+# How many entries `t` holds.
+function count(t: Table lent) -> i64
+    return t.names.len() - t.first
+
+# Adds an entry to a list the table owns.
+function push_entry(@list: [[u8]], entry: [u8])
+    list @ list.push(entry)
+
+# Evicts the oldest entries until `room` more bytes fit, or none is left.
+function evict(@t: Table, room: i64)
+    while t.size + room > t.max_size && t.first < t.names.len()
+        at = t.first
+        t.size @ t.size - entry_size(name: t.names[at], value: t.values[at])
+        t.first @ at + 1
+
+    if t.first > 32 && t.first * 2 > t.names.len()
+        t.names @ t.names.slice(from: t.first, to: t.names.len())
+        t.values @ t.values.slice(from: t.first, to: t.values.len())
+        t.first @ 0
+
+# Adds `name` and `value` as the newest entry, evicting the oldest first; an
+# entry larger than the table empties it and is not added (RFC 7541 § 4.4).
+function add(@t: Table, name: [u8], value: [u8])
+    size = entry_size(name: name, value: value)
+    evict(@t, room: size)
+
+    if size > t.max_size
+        return
+    push_entry(@t.names, entry: name)
+    push_entry(@t.values, entry: value)
+    t.size @ t.size + size
+
+# Makes the table hold `max_size` bytes, evicting the oldest to fit.
+function resize(@t: Table, max_size: i64)
+    t.max_size @ max_size
+    evict(@t, room: 0)
+
+# Where the entry of dynamic index `k` stands in the lists, `k` 0 for the
+# newest; -1 where the table holds fewer.
+function place_of(t: Table lent, k: i64) -> i64
+    if k < 0 || k >= count(t)
+        return -1
+    return t.names.len() - 1 - k
+
+# The dynamic index, 0 for the newest, of the newest entry whose name and
+# value are `name` and `value`; -1 where none is.
+function index_of_field(t: Table lent, name: [u8] lent, value: [u8] lent) -> i64
+    at: i64 @= t.names.len() - 1
+
+    while at >= t.first
+        if t.names[at] == name && t.values[at] == value
+            return t.names.len() - 1 - at
+        at @ at - 1
+
+    return -1
+
+# The dynamic index, 0 for the newest, of the newest entry named `name`; -1
+# where none is.
+function index_of_name(t: Table lent, name: [u8] lent) -> i64
+    at: i64 @= t.names.len() - 1
+
+    while at >= t.first
+        if t.names[at] == name
+            return t.names.len() - 1 - at
+        at @ at - 1
+
+    return -1
+
+test "add: newest first, its size counted, and the oldest evicted to fit"
+    t @= empty(100)
+    add(@t, name: [97], value: [98])
+    assert t.size == 34
+    add(@t, name: [99], value: [100])
+    assert count(t) == 2
+    assert index_of_field(t, name: [99], value: [100]) == 0
+    assert index_of_field(t, name: [97], value: [98]) == 1
+    add(@t, name: [101], value: [102])
+    assert count(t) == 2
+    assert index_of_field(t, name: [97], value: [98]) == -1
+    assert t.size == 68
+
+test "add: an entry larger than the table empties it, and a table of 0 holds nothing"
+    t @= empty(40)
+    add(@t, name: [97], value: [98])
+    add(@t, name: [97, 97, 97, 97, 97, 97, 97, 97], value: [98])
+    assert count(t) == 0
+    assert t.size == 0
+    z @= empty(0)
+    add(@z, name: [97], value: [98])
+    assert count(z) == 0
+
+test "resize: smaller evicts the oldest, 0 empties, and many entries are compacted"
+    t @= empty(4096)
+
+    for n in range(from: 0, to: 200)
+        add(@t, name: [97], value: [to_u8(n).must()])
+
+    assert count(t) == 120
+    assert index_of_name(t, name: [97]) == 0
+    assert place_of(t, k: 0) == t.names.len() - 1
+    resize(@t, max_size: 68)
+    assert count(t) == 2
+    resize(@t, max_size: 0)
+    assert count(t) == 0
+    assert place_of(t, k: 0) == -1

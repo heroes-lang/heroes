@@ -1,0 +1,552 @@
+# The state of one HTTP/2 connection between two calls, as bytes and events
+# and never a stream: what each end advertised, the streams and their states
+# (RFC 9113 § 5.1), the windows (§ 5.2), the header block being joined, the
+# bytes to write; and the moves every other module makes on it: a frame
+# written, a stream's state changed, a stream or the connection ended for an
+# error (§ 5.4), the rates a peer is held to counted.
+
+use bytes
+use http2/internal/decoding
+use http2/internal/encoding
+use http2/internal/framer
+use http2/internal/model
+use http2/internal/values
+
+## Stream states
+
+# Not opened yet.
+constant IDLE: i64
+    0
+
+# Open both ways.
+constant OPEN: i64
+    3
+
+# This end sent its last frame.
+constant HALF_LOCAL: i64
+    4
+
+# The peer sent its last frame.
+constant HALF_REMOTE: i64
+    5
+
+# Ended both ways, or reset.
+constant CLOSED: i64
+    6
+
+# A stream closed by END_STREAM both ways.
+constant ENDED: i64
+    1
+
+# A stream this end reset.
+constant RESET_LOCAL: i64
+    2
+
+# A stream the peer reset.
+constant RESET_REMOTE: i64
+    3
+
+## Error codes
+
+# NO_ERROR.
+constant NO_ERROR: i64
+    0x0
+
+# PROTOCOL_ERROR.
+constant PROTOCOL_ERROR: i64
+    0x1
+
+# INTERNAL_ERROR.
+constant INTERNAL_ERROR: i64
+    0x2
+
+# FLOW_CONTROL_ERROR.
+constant FLOW_CONTROL_ERROR: i64
+    0x3
+
+# STREAM_CLOSED.
+constant STREAM_CLOSED: i64
+    0x5
+
+# FRAME_SIZE_ERROR.
+constant FRAME_SIZE_ERROR: i64
+    0x6
+
+# REFUSED_STREAM.
+constant REFUSED_STREAM: i64
+    0x7
+
+# CANCEL.
+constant CANCEL: i64
+    0x8
+
+# COMPRESSION_ERROR.
+constant COMPRESSION_ERROR: i64
+    0x9
+
+# ENHANCE_YOUR_CALM.
+constant ENHANCE_YOUR_CALM: i64
+    0xb
+
+# The largest window: 2^31 - 1.
+constant MOST_WINDOW: i64
+    2147483647
+
+# The bytes a client sends first (RFC 9113 § 3.4).
+constant PREFACE: str
+    "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
+
+# How many closed streams the map keeps before they are dropped together.
+constant CLOSED_KEPT: i64
+    128
+
+## The state
+
+# One stream as the session knows it.
+record Stream
+    # `IDLE` to `CLOSED`.
+    state: i64
+    # Whether this end opened it.
+    ours: bool
+    # How it closed: `ENDED`, `RESET_LOCAL`, `RESET_REMOTE`; 0 while open.
+    cause: i64
+    # The bytes this end may still send on it.
+    send_window: i64
+    # The bytes the peer may still send on it.
+    recv_window: i64
+    # Its data given to the program and not yet acknowledged.
+    given: i64
+    # Its data acknowledged and not yet given back by a WINDOW_UPDATE.
+    consumed: i64
+    # Whether the peer's head came: a request's, or a final response's.
+    head_in: bool
+    # Whether this end sent its head: a request's, or a final response's.
+    head_out: bool
+    # Whether the request was a HEAD, whose response's length is no body's.
+    no_body: bool
+    # The peer's `content-length`, -1 for none.
+    expected: i64
+    # The bytes of data the peer sent on it.
+    received: i64
+
+# One connection's state.
+record State
+    # Whether this end is the client.
+    client: bool
+    # What this end advertised last.
+    ours: model.Settings
+    # What the peer acknowledged last.
+    acked: model.Settings
+    # The settings sent and not yet acknowledged, the oldest first.
+    unacked: [model.Settings]
+    # The peer's settings.
+    theirs: model.Settings
+    # The bounds the peer is held to.
+    limits: model.Limits
+    # The HPACK encoder of this end's blocks.
+    encoder: encoding.State
+    # The HPACK decoder of the peer's blocks.
+    decoder: decoding.State
+    # Every stream opened and not yet dropped.
+    streams: {i64: Stream}
+    # How many of `streams` are closed.
+    closed_count: i64
+    # The next stream this end opens.
+    next_stream: i64
+    # The highest stream the peer opened.
+    peer_highest: i64
+    # This end's streams open.
+    active_ours: i64
+    # The peer's streams open.
+    active_theirs: i64
+    # The bytes this end may still send on the connection.
+    send_window: i64
+    # The bytes the peer may still send on the connection.
+    recv_window: i64
+    # The data given to the program and not yet acknowledged.
+    given: i64
+    # The data acknowledged and not yet given back.
+    consumed: i64
+    # The connection's window this end keeps open.
+    target_window: i64
+    # The bytes read and not yet framed.
+    input: [u8]
+    # The bytes to write.
+    out: [u8]
+    # The bytes of the client's preface a server has still to read.
+    preface_left: i64
+    # Whether the peer's first SETTINGS came.
+    settings_seen: bool
+    # The stream whose header block is being joined, 0 for none.
+    block_stream: i64
+    # The block's bytes so far.
+    block: [u8]
+    # The block's frames so far.
+    block_frames: i64
+    # Whether the block's HEADERS ended the stream.
+    block_end_stream: bool
+    # Whether this end sent GOAWAY.
+    goaway_sent: bool
+    # The last stream this end's GOAWAY said it processes.
+    goaway_last: i64
+    # Whether the peer sent GOAWAY.
+    goaway_received: bool
+    # The last stream the peer's GOAWAY said it processes.
+    peer_last: i64
+    # The error the peer's GOAWAY carried.
+    peer_error: i64
+    # Whether the connection failed, either way.
+    failed: bool
+    # When the second the resets are counted in began, in milliseconds.
+    reset_start: i64
+    # The resets counted in it.
+    resets: i64
+    # When the second the frames carrying nothing are counted in began.
+    control_start: i64
+    # The frames carrying nothing counted in it.
+    controls: i64
+
+# A session's state as `client` or not: the first frames waiting in its
+# output, the preface first for a client.
+function make(client: bool, options: model.Options) -> State
+    ours @= options.settings
+    ours.enable_push @ false
+
+    target = if options.connection_window < 65535
+        65535
+    else if options.connection_window > MOST_WINDOW
+        MOST_WINDOW
+    else
+        options.connection_window
+
+    first = if client
+        1
+    else
+        2
+
+    preface_left = if client
+        0
+    else
+        PREFACE.len()
+    s @= State(
+        client: client,
+        ours: ours,
+        acked: values.initial(),
+        unacked: [ours],
+        theirs: values.initial(),
+        limits: options.limits,
+        encoder: encoding.make(4096),
+        decoder: decoding.make(table_size: 4096, list_size: ours.max_header_list_size),
+        streams: {},
+        closed_count: 0,
+        next_stream: first,
+        peer_highest: 0,
+        active_ours: 0,
+        active_theirs: 0,
+        send_window: 65535,
+        recv_window: target,
+        given: 0,
+        consumed: 0,
+        target_window: target,
+        input: [],
+        out: [],
+        preface_left: preface_left,
+        settings_seen: false,
+        block_stream: 0,
+        block: [],
+        block_frames: 0,
+        block_end_stream: false,
+        goaway_sent: false,
+        goaway_last: 0,
+        goaway_received: false,
+        peer_last: MOST_WINDOW,
+        peer_error: 0,
+        failed: false,
+        reset_start: 0,
+        resets: 0,
+        control_start: 0,
+        controls: 0
+    )
+
+    if client
+        bytes.push_all(to: @s.out, from: bytes.from_text(PREFACE))
+    emit(@s, f: .settings(ack: false, settings: values.to_list(ours)))
+
+    if target > 65535
+        emit(@s, f: .window_update(stream: 0, increment: target - 65535))
+    return s
+
+## Writing
+
+# Writes `f` to the output. Every frame the session makes is made within its
+# fields' ranges, so its encoding never fails.
+function emit(@s: State, f: model.Frame)
+    bytes.push_all(to: @s.out, from: framer.encode(f).must())
+
+# Writes a header block on `stream`: a HEADERS frame, and CONTINUATIONs
+# where the block passes the peer's largest frame.
+function emit_block(@s: State, stream: i64, block: [u8], end_stream: bool)
+    most = s.theirs.max_frame_size
+
+    if block.len() <= most
+        emit(
+            @s,
+            f: .headers(stream: stream, block: block, end_stream: end_stream, end_headers: true, padding: 0, has_priority: false, priority: model.Priority(exclusive: false, depends_on: 0, weight: 16))
+        )
+        return
+    emit(
+        @s,
+        f: .headers(stream: stream, block: block.slice(from: 0, to: most), end_stream: end_stream, end_headers: false, padding: 0, has_priority: false, priority: model.Priority(exclusive: false, depends_on: 0, weight: 16))
+    )
+    at: i64 @= most
+
+    while at < block.len()
+        end = if block.len() - at > most
+            at + most
+        else
+            block.len()
+        emit(
+            @s,
+            f: .continuation(stream: stream, block: block.slice(from: at, to: end), end_headers: end == block.len())
+        )
+        at @ end
+
+## Streams
+
+# Whether `id` is a stream this end opens: odd for a client, even for a
+# server.
+function is_ours(s: State lent, id: i64) -> bool
+    return id % 2 == 1 == s.client
+
+# Whether the map holds `id`.
+function has(s: State lent, id: i64) -> bool
+    return !s.streams[id].is_err()
+
+# The stream `id`, which the map holds.
+function get(s: State lent, id: i64) -> Stream
+    return s.streams[id].must()
+
+# Puts `st` in the map under `id`.
+function put_into(@streams: {i64: Stream}, id: i64, st: Stream)
+    streams[id] @ st
+
+# Puts `st` in the session's map under `id`.
+function put(@s: State, id: i64, st: Stream)
+    put_into(@s.streams, id: id, st: st)
+
+# The state of `id`: the map's, or by its number where the map has none, a
+# stream below the highest opened being closed.
+function state_of(s: State lent, id: i64) -> i64
+    match s.streams[id]
+        .ok st => return st.state
+        .err _ => _ = 0
+
+    if id <= 0
+        return IDLE
+
+    if is_ours(s, id: id)
+        if id < s.next_stream
+            return CLOSED
+        return IDLE
+
+    if id <= s.peer_highest
+        return CLOSED
+    return IDLE
+
+# A new stream's record, open or half closed as `end_in` and `end_out` say.
+function fresh(s: State lent, ours: bool) -> Stream
+    return Stream(
+        state: OPEN,
+        ours: ours,
+        cause: 0,
+        send_window: s.theirs.initial_window_size,
+        recv_window: s.ours.initial_window_size,
+        given: 0,
+        consumed: 0,
+        head_in: false,
+        head_out: false,
+        no_body: false,
+        expected: -1,
+        received: 0
+    )
+
+# Counts a stream opened by `ours` or by the peer.
+function count_open(@s: State, ours: bool)
+    if ours
+        s.active_ours @ s.active_ours + 1
+    else
+        s.active_theirs @ s.active_theirs + 1
+
+# Closes the stream `id`, which the map holds, for `cause`; the closed ones
+# dropped together once `CLOSED_KEPT` have gathered.
+function close(@s: State, id: i64, cause: i64)
+    st @= get(s, id: id)
+
+    if st.state == CLOSED
+        return
+
+    if st.ours
+        s.active_ours @ s.active_ours - 1
+    else
+        s.active_theirs @ s.active_theirs - 1
+    st.state @ CLOSED
+    st.cause @ cause
+    put(@s, id: id, st: st)
+    s.closed_count @ s.closed_count + 1
+
+    if s.closed_count > CLOSED_KEPT
+        prune(@s)
+
+# Drops every closed stream from the map; their numbers still say closed.
+function prune(@s: State)
+    kept: {i64: Stream} @= {}
+
+    for id in keys(s.streams)
+        st = s.streams[id].must()
+
+        if st.state != CLOSED
+            kept[id] @ st
+
+    s.streams @ kept
+    s.closed_count @ 0
+
+# The peer ended its side of `id`: open becomes half closed, half closed by
+# this end becomes closed.
+function end_remote(@s: State, id: i64)
+    st @= get(s, id: id)
+
+    if st.state == OPEN
+        st.state @ HALF_REMOTE
+        put(@s, id: id, st: st)
+    else if st.state == HALF_LOCAL
+        close(@s, id: id, cause: ENDED)
+
+# This end ended its side of `id`.
+function end_local(@s: State, id: i64)
+    st @= get(s, id: id)
+
+    if st.state == OPEN
+        st.state @ HALF_LOCAL
+        put(@s, id: id, st: st)
+    else if st.state == HALF_REMOTE
+        close(@s, id: id, cause: ENDED)
+
+## Errors
+
+# The code of § A4 an HTTP/2 error is told with: `limit` for a peer past
+# this end's bounds, `invalid` for every other.
+function code_of(error: i64) -> str
+    if error == ENHANCE_YOUR_CALM
+        return model.LIMIT
+    return model.INVALID
+
+# How an error code reads: its name, or its number.
+function name_of(error: i64) -> str
+    names = [
+        "NO_ERROR"
+        "PROTOCOL_ERROR"
+        "INTERNAL_ERROR"
+        "FLOW_CONTROL_ERROR"
+        "SETTINGS_TIMEOUT"
+        "STREAM_CLOSED"
+        "FRAME_SIZE_ERROR"
+        "REFUSED_STREAM"
+        "CANCEL"
+        "COMPRESSION_ERROR"
+        "CONNECT_ERROR"
+        "ENHANCE_YOUR_CALM"
+        "INADEQUATE_SECURITY"
+        "HTTP_1_1_REQUIRED"
+    ]
+
+    if error >= 0 && error < names.len()
+        return names[error]
+    return f"error code {error}"
+
+# Ends the connection for `error` (RFC 9113 § 5.4.1): GOAWAY in the output,
+# the session failed, and the failure the caller answers.
+function fail_connection<T>(@s: State, error: i64, why: str) -> T?
+    debug = bytes.from_text(why)
+
+    cut = if debug.len() > 256
+        debug.slice(from: 0, to: 256)
+    else
+        debug
+    emit(@s, f: .goaway(last_stream: s.peer_highest, error: error, debug: cut))
+    s.goaway_sent @ true
+    s.goaway_last @ s.peer_highest
+    s.failed @ true
+    return fail(code: code_of(error), msg: f"{name_of(error)}: {why}")
+
+# Adds `e` to the events answered.
+function add(@events: [model.Event], e: model.Event)
+    events @ events.push(e)
+
+# Ends one stream for `error` (RFC 9113 § 5.4.2): RST_STREAM in the output,
+# the stream closed, and a `reset` event where the program knows the stream.
+function fail_stream(@s: State, @events: [model.Event], id: i64, error: i64)
+    emit(@s, f: .rst_stream(stream: id, error: error))
+
+    if !has(s, id: id)
+        return
+    st = get(s, id: id)
+
+    if st.state == CLOSED
+        return
+    known = st.ours || st.head_in
+    close(@s, id: id, cause: RESET_LOCAL)
+
+    if known
+        add(@events, e: .reset(stream: id, error: error, remote: false))
+
+## Rates
+
+# Counts one frame carrying nothing in the second it falls in: false where
+# the peer passes its bound.
+function count_control(@s: State, now_ms: i64) -> bool
+    if now_ms - s.control_start >= 1000 || now_ms < s.control_start
+        s.control_start @ now_ms
+        s.controls @ 0
+    s.controls @ s.controls + 1
+    return s.controls <= s.limits.control_per_second
+
+# Counts one reset by the peer in the second it falls in: false where the
+# peer passes its bound.
+function count_reset(@s: State, now_ms: i64) -> bool
+    if now_ms - s.reset_start >= 1000 || now_ms < s.reset_start
+        s.reset_start @ now_ms
+        s.resets @ 0
+    s.resets @ s.resets + 1
+    return s.resets <= s.limits.resets_per_second
+
+## Windows
+
+# Gives back `count` bytes the program took on `id`, on the connection and
+# on the stream.
+function give_back(@s: State, id: i64, count: i64)
+    give_back_connection(@s, count: count)
+    give_back_stream(@s, id: id, count: count)
+
+# Gives back `count` bytes to the connection's window: a WINDOW_UPDATE once
+# half of it has been taken.
+function give_back_connection(@s: State, count: i64)
+    s.consumed @ s.consumed + count
+
+    if s.consumed * 2 >= s.target_window && s.consumed > 0
+        emit(@s, f: .window_update(stream: 0, increment: s.consumed))
+        s.recv_window @ s.recv_window + s.consumed
+        s.consumed @ 0
+
+# Gives back `count` bytes to the window of `id`, while the peer may still
+# send on it: a WINDOW_UPDATE once half of it has been taken.
+function give_back_stream(@s: State, id: i64, count: i64)
+    if id == 0 || !has(s, id: id)
+        return
+    st @= get(s, id: id)
+    st.consumed @ st.consumed + count
+
+    if (st.state == OPEN || st.state == HALF_LOCAL) && st.consumed * 2 >= s.ours.initial_window_size && st.consumed > 0
+        emit(@s, f: .window_update(stream: id, increment: st.consumed))
+        st.recv_window @ st.recv_window + st.consumed
+        st.consumed @ 0
+    put(@s, id: id, st: st)

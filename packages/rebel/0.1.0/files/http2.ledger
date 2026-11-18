@@ -1,0 +1,340 @@
+# The ledger of `http2`: HTTP/2 (RFC 9113) and HPACK (RFC 7541), against
+# Go 1.27's golang.org/x/net/http2 v0.63.0 (with http2/hpack and http2/h2c),
+# Rust's h2 0.4 (docs built 2026-11-18) and Python 3.15's h2 4.4.1, hpack
+# 4.2.0 and hyperframe 6.1.0, listed from this machine on 2026-11-18.
+
+capability frame/read  a frame read from bytes or a stream, every check of RFC 9113 § 4 and § 6 made
+  heroes  http2.decode_frame, http2.read_frame
+  go      net/http2.ErrFrameTooLarge, net/http2.Flags, net/http2.Flags.Has, net/http2.Frame, net/http2.FrameHeader, net/http2.FrameHeader.Header, net/http2.FrameHeader.String, net/http2.FrameWriteRequest.StreamID, net/http2.Framer, net/http2.Framer.ErrorDetail, net/http2.Framer.ReadFrame, net/http2.Framer.ReadFrameForHeader, net/http2.Framer.ReadFrameHeader, net/http2.Framer.SetMaxReadFrameSize, net/http2.Length, net/http2.NewFramer, net/http2.ReadFrameHeader, net/http2.StreamID, net/http2.Type
+  rust    -
+  python  hyperframe.frame.FRAMES, hyperframe.frame.FRAME_MAX_ALLOWED_LEN, hyperframe.frame.FRAME_MAX_LEN, hyperframe.frame.Flag, hyperframe.frame.Flags, hyperframe.frame.Frame, hyperframe.frame.Frame.explain, hyperframe.frame.Frame.parse_body, hyperframe.frame.Frame.parse_flags, hyperframe.frame.Frame.parse_frame_header
+  note    a payload past the largest frame is refused from its head, before its bytes are read; a PRIORITY frame not of 5 bytes ends its stream alone as RFC 9113 § 6.3 says, where Go ends the connection (observed 2026-11-18 with x/net v0.63.0)
+
+capability frame/write  a frame written, each field held to its range
+  heroes  http2.encode_frame, http2.write_frame
+  go      net/http2.AllowIllegalReads, net/http2.AllowIllegalWrites, net/http2.Framer.WriteContinuation, net/http2.Framer.WriteData, net/http2.Framer.WriteDataPadded, net/http2.Framer.WriteGoAway, net/http2.Framer.WriteHeaders, net/http2.Framer.WritePing, net/http2.Framer.WritePriority, net/http2.Framer.WritePriorityUpdate, net/http2.Framer.WritePushPromise, net/http2.Framer.WriteRSTStream, net/http2.Framer.WriteRawFrame, net/http2.Framer.WriteSettings, net/http2.Framer.WriteSettingsAck, net/http2.Framer.WriteWindowUpdate
+  rust    -
+  python  hyperframe.frame.Frame.serialize, hyperframe.frame.Frame.serialize_body
+  note    bytes observed equal to Go 1.27 x/net v0.63.0 Framer's for every type, padding and priority included; a field out of range fails invalid where Go writes it under AllowIllegalWrites
+
+capability frame/types  each frame type as a value: DATA, HEADERS, PRIORITY, RST_STREAM, SETTINGS, PUSH_PROMISE, PING, GOAWAY, WINDOW_UPDATE, CONTINUATION
+  heroes  http2.Frame, http2.Priority, http2.FRAME_DATA, http2.FLAG_END_STREAM, http2.FLAG_ACK, http2.FLAG_END_HEADERS, http2.FLAG_PADDED, http2.FLAG_PRIORITY, http2.FRAME_HEAD_BYTES, http2.stream_of
+  go      net/http2.BlockFragment, net/http2.Code, net/http2.ContinuationFrame, net/http2.ContinuationFrame.HeaderBlockFragment, net/http2.ContinuationFrame.HeadersEnded, net/http2.Data, net/http2.DataFrame, net/http2.DataFrame.Data, net/http2.DataFrame.StreamEnded, net/http2.DebugData, net/http2.EndHeaders, net/http2.EndStream, net/http2.Exclusive, net/http2.FlagContinuationEndHeaders, net/http2.FlagDataEndStream, net/http2.FlagDataPadded, net/http2.FlagHeadersEndHeaders, net/http2.FlagHeadersEndStream, net/http2.FlagHeadersPadded, net/http2.FlagHeadersPriority, net/http2.FlagPingAck, net/http2.FlagPushPromiseEndHeaders, net/http2.FlagPushPromisePadded, net/http2.FlagSettingsAck, net/http2.FrameContinuation, net/http2.FrameData, net/http2.FrameGoAway, net/http2.FrameHeaders, net/http2.FramePing, net/http2.FramePriority, net/http2.FramePushPromise, net/http2.FrameRSTStream, net/http2.FrameSettings, net/http2.FrameType, net/http2.FrameWindowUpdate, net/http2.GoAwayFrame, net/http2.GoAwayFrame.DebugData, net/http2.HeadersFrame, net/http2.HeadersFrame.HasPriority, net/http2.HeadersFrame.HeaderBlockFragment, net/http2.HeadersFrame.HeadersEnded, net/http2.HeadersFrame.StreamEnded, net/http2.HeadersFrameParam, net/http2.Increment, net/http2.LastStreamID, net/http2.MetaHeadersFrame, net/http2.MetaHeadersFrame.PseudoFields, net/http2.MetaHeadersFrame.PseudoValue, net/http2.MetaHeadersFrame.RegularFields, net/http2.PadLength, net/http2.PingFrame, net/http2.PingFrame.IsAck, net/http2.PriorityFrame, net/http2.PriorityParam, net/http2.PriorityParam.IsZero, net/http2.PromiseID, net/http2.PushPromiseFrame, net/http2.PushPromiseFrame.HeaderBlockFragment, net/http2.PushPromiseFrame.HeadersEnded, net/http2.PushPromiseParam, net/http2.RSTStreamFrame, net/http2.SettingsFrame, net/http2.SettingsFrame.ForeachSetting, net/http2.SettingsFrame.HasDuplicates, net/http2.SettingsFrame.IsAck, net/http2.SettingsFrame.NumSettings, net/http2.SettingsFrame.Setting, net/http2.SettingsFrame.Value, net/http2.StreamDep, net/http2.Weight, net/http2.WindowUpdateFrame
+  rust    -
+  python  hyperframe.frame.ContinuationFrame, hyperframe.frame.ContinuationFrame.defined_flags, hyperframe.frame.ContinuationFrame.explain, hyperframe.frame.ContinuationFrame.parse_body, hyperframe.frame.ContinuationFrame.parse_flags, hyperframe.frame.ContinuationFrame.parse_frame_header, hyperframe.frame.ContinuationFrame.serialize, hyperframe.frame.ContinuationFrame.serialize_body, hyperframe.frame.ContinuationFrame.stream_association, hyperframe.frame.ContinuationFrame.type, hyperframe.frame.DataFrame, hyperframe.frame.DataFrame.defined_flags, hyperframe.frame.DataFrame.explain, hyperframe.frame.DataFrame.flow_controlled_length, hyperframe.frame.DataFrame.parse_body, hyperframe.frame.DataFrame.parse_flags, hyperframe.frame.DataFrame.parse_frame_header, hyperframe.frame.DataFrame.parse_padding_data, hyperframe.frame.DataFrame.serialize, hyperframe.frame.DataFrame.serialize_body, hyperframe.frame.DataFrame.serialize_padding_data, hyperframe.frame.DataFrame.stream_association, hyperframe.frame.DataFrame.total_padding, hyperframe.frame.DataFrame.type, hyperframe.frame.GoAwayFrame, hyperframe.frame.GoAwayFrame.defined_flags, hyperframe.frame.GoAwayFrame.explain, hyperframe.frame.GoAwayFrame.parse_body, hyperframe.frame.GoAwayFrame.parse_flags, hyperframe.frame.GoAwayFrame.parse_frame_header, hyperframe.frame.GoAwayFrame.serialize, hyperframe.frame.GoAwayFrame.serialize_body, hyperframe.frame.GoAwayFrame.stream_association, hyperframe.frame.GoAwayFrame.type, hyperframe.frame.HeadersFrame, hyperframe.frame.HeadersFrame.defined_flags, hyperframe.frame.HeadersFrame.explain, hyperframe.frame.HeadersFrame.parse_body, hyperframe.frame.HeadersFrame.parse_flags, hyperframe.frame.HeadersFrame.parse_frame_header, hyperframe.frame.HeadersFrame.parse_padding_data, hyperframe.frame.HeadersFrame.parse_priority_data, hyperframe.frame.HeadersFrame.serialize, hyperframe.frame.HeadersFrame.serialize_body, hyperframe.frame.HeadersFrame.serialize_padding_data, hyperframe.frame.HeadersFrame.serialize_priority_data, hyperframe.frame.HeadersFrame.stream_association, hyperframe.frame.HeadersFrame.total_padding, hyperframe.frame.HeadersFrame.type, hyperframe.frame.Padding, hyperframe.frame.Padding.parse_padding_data, hyperframe.frame.Padding.serialize_padding_data, hyperframe.frame.Padding.total_padding, hyperframe.frame.PingFrame, hyperframe.frame.PingFrame.defined_flags, hyperframe.frame.PingFrame.explain, hyperframe.frame.PingFrame.parse_body, hyperframe.frame.PingFrame.parse_flags, hyperframe.frame.PingFrame.parse_frame_header, hyperframe.frame.PingFrame.serialize, hyperframe.frame.PingFrame.serialize_body, hyperframe.frame.PingFrame.stream_association, hyperframe.frame.PingFrame.type, hyperframe.frame.Priority, hyperframe.frame.Priority.parse_priority_data, hyperframe.frame.Priority.serialize_priority_data, hyperframe.frame.PriorityFrame, hyperframe.frame.PriorityFrame.defined_flags, hyperframe.frame.PriorityFrame.explain, hyperframe.frame.PriorityFrame.parse_body, hyperframe.frame.PriorityFrame.parse_flags, hyperframe.frame.PriorityFrame.parse_frame_header, hyperframe.frame.PriorityFrame.parse_priority_data, hyperframe.frame.PriorityFrame.serialize, hyperframe.frame.PriorityFrame.serialize_body, hyperframe.frame.PriorityFrame.serialize_priority_data, hyperframe.frame.PriorityFrame.stream_association, hyperframe.frame.PriorityFrame.type, hyperframe.frame.PushPromiseFrame, hyperframe.frame.PushPromiseFrame.defined_flags, hyperframe.frame.PushPromiseFrame.explain, hyperframe.frame.PushPromiseFrame.parse_body, hyperframe.frame.PushPromiseFrame.parse_flags, hyperframe.frame.PushPromiseFrame.parse_frame_header, hyperframe.frame.PushPromiseFrame.parse_padding_data, hyperframe.frame.PushPromiseFrame.serialize, hyperframe.frame.PushPromiseFrame.serialize_body, hyperframe.frame.PushPromiseFrame.serialize_padding_data, hyperframe.frame.PushPromiseFrame.stream_association, hyperframe.frame.PushPromiseFrame.total_padding, hyperframe.frame.PushPromiseFrame.type, hyperframe.frame.RstStreamFrame, hyperframe.frame.RstStreamFrame.defined_flags, hyperframe.frame.RstStreamFrame.explain, hyperframe.frame.RstStreamFrame.parse_body, hyperframe.frame.RstStreamFrame.parse_flags, hyperframe.frame.RstStreamFrame.parse_frame_header, hyperframe.frame.RstStreamFrame.serialize, hyperframe.frame.RstStreamFrame.serialize_body, hyperframe.frame.RstStreamFrame.stream_association, hyperframe.frame.RstStreamFrame.type, hyperframe.frame.SettingsFrame, hyperframe.frame.SettingsFrame.ENABLE_CONNECT_PROTOCOL, hyperframe.frame.SettingsFrame.ENABLE_PUSH, hyperframe.frame.SettingsFrame.HEADER_TABLE_SIZE, hyperframe.frame.SettingsFrame.INITIAL_WINDOW_SIZE, hyperframe.frame.SettingsFrame.MAX_CONCURRENT_STREAMS, hyperframe.frame.SettingsFrame.MAX_FRAME_SIZE, hyperframe.frame.SettingsFrame.MAX_HEADER_LIST_SIZE, hyperframe.frame.SettingsFrame.defined_flags, hyperframe.frame.SettingsFrame.explain, hyperframe.frame.SettingsFrame.parse_body, hyperframe.frame.SettingsFrame.parse_flags, hyperframe.frame.SettingsFrame.parse_frame_header, hyperframe.frame.SettingsFrame.serialize, hyperframe.frame.SettingsFrame.serialize_body, hyperframe.frame.SettingsFrame.stream_association, hyperframe.frame.SettingsFrame.type, hyperframe.frame.WindowUpdateFrame, hyperframe.frame.WindowUpdateFrame.defined_flags, hyperframe.frame.WindowUpdateFrame.explain, hyperframe.frame.WindowUpdateFrame.parse_body, hyperframe.frame.WindowUpdateFrame.parse_flags, hyperframe.frame.WindowUpdateFrame.parse_frame_header, hyperframe.frame.WindowUpdateFrame.serialize, hyperframe.frame.WindowUpdateFrame.serialize_body, hyperframe.frame.WindowUpdateFrame.stream_association, hyperframe.frame.WindowUpdateFrame.type
+  note    a variant of one case a type, where Go has a type each and Python a class each
+
+capability frame/names  a frame type's name
+  heroes  http2.frame_name
+  go      net/http2.FrameType.String
+  rust    -
+  python  -
+
+capability frame/unknown  a frame of an extension's type read and written as it is, and ignored by a session as RFC 9113 § 4.1 says
+  heroes  http2.Frame
+  go      net/http2.UnknownFrame, net/http2.UnknownFrame.Payload
+  rust    -
+  python  h2.connection.UnknownFrameReceived, h2.events.UnknownFrameReceived, hyperframe.frame.ExtensionFrame, hyperframe.frame.ExtensionFrame.defined_flags, hyperframe.frame.ExtensionFrame.explain, hyperframe.frame.ExtensionFrame.parse_body, hyperframe.frame.ExtensionFrame.parse_flags, hyperframe.frame.ExtensionFrame.parse_frame_header, hyperframe.frame.ExtensionFrame.serialize, hyperframe.frame.ExtensionFrame.serialize_body, hyperframe.frame.ExtensionFrame.stream_association, hyperframe.frame.ExtensionFrame.type
+  note    a session drops it without an event, where Python's h2 tells UnknownFrameReceived
+
+capability frame/preface  the client's preface and the ALPN name
+  heroes  http2.PREFACE, http2.ALPN
+  go      net/http2.ClientPreface, net/http2.NextProtoTLS
+  rust    -
+  python  -
+
+capability errors/codes  the error codes of RFC 9113 § 7 and their names
+  heroes  http2.NO_ERROR, http2.PROTOCOL_ERROR, http2.INTERNAL_ERROR, http2.FLOW_CONTROL_ERROR, http2.SETTINGS_TIMEOUT, http2.STREAM_CLOSED, http2.FRAME_SIZE_ERROR, http2.REFUSED_STREAM, http2.CANCEL, http2.COMPRESSION_ERROR, http2.CONNECT_ERROR, http2.ENHANCE_YOUR_CALM, http2.INADEQUATE_SECURITY, http2.HTTP_1_1_REQUIRED, http2.error_name
+  go      net/http2.ErrCode, net/http2.ErrCode.String, net/http2.ErrCodeCancel, net/http2.ErrCodeCompression, net/http2.ErrCodeConnect, net/http2.ErrCodeEnhanceYourCalm, net/http2.ErrCodeFlowControl, net/http2.ErrCodeFrameSize, net/http2.ErrCodeHTTP11Required, net/http2.ErrCodeInadequateSecurity, net/http2.ErrCodeInternal, net/http2.ErrCodeNo, net/http2.ErrCodeProtocol, net/http2.ErrCodeRefusedStream, net/http2.ErrCodeSettingsTimeout, net/http2.ErrCodeStreamClosed
+  rust    h2::Reason, h2::Reason::CANCEL, h2::Reason::COMPRESSION_ERROR, h2::Reason::CONNECT_ERROR, h2::Reason::ENHANCE_YOUR_CALM, h2::Reason::FLOW_CONTROL_ERROR, h2::Reason::FRAME_SIZE_ERROR, h2::Reason::INADEQUATE_SECURITY, h2::Reason::INTERNAL_ERROR, h2::Reason::NO_ERROR, h2::Reason::PROTOCOL_ERROR, h2::Reason::REFUSED_STREAM, h2::Reason::SETTINGS_TIMEOUT, h2::Reason::STREAM_CLOSED, h2::Reason::description
+  python  h2.connection.ErrorCodes, h2.errors.ErrorCodes, h2.errors.ErrorCodes.CANCEL, h2.errors.ErrorCodes.COMPRESSION_ERROR, h2.errors.ErrorCodes.CONNECT_ERROR, h2.errors.ErrorCodes.ENHANCE_YOUR_CALM, h2.errors.ErrorCodes.FLOW_CONTROL_ERROR, h2.errors.ErrorCodes.FRAME_SIZE_ERROR, h2.errors.ErrorCodes.HTTP_1_1_REQUIRED, h2.errors.ErrorCodes.INADEQUATE_SECURITY, h2.errors.ErrorCodes.INTERNAL_ERROR, h2.errors.ErrorCodes.NO_ERROR, h2.errors.ErrorCodes.PROTOCOL_ERROR, h2.errors.ErrorCodes.REFUSED_STREAM, h2.errors.ErrorCodes.SETTINGS_TIMEOUT, h2.errors.ErrorCodes.STREAM_CLOSED, h2.errors.ErrorCodes.as_integer_ratio, h2.errors.ErrorCodes.bit_count, h2.errors.ErrorCodes.bit_length, h2.errors.ErrorCodes.conjugate, h2.errors.ErrorCodes.denominator, h2.errors.ErrorCodes.from_bytes, h2.errors.ErrorCodes.imag, h2.errors.ErrorCodes.is_integer, h2.errors.ErrorCodes.numerator, h2.errors.ErrorCodes.real, h2.errors.ErrorCodes.to_bytes, h2.exceptions.ErrorCodes, h2.settings.ErrorCodes
+  note    an unknown code fails not_found in error_name, where Go answers "unknown error code 0x.." and Rust "unknown reason"
+
+capability hpack/encode  a header list written as a block: static table, dynamic table, Huffman where no longer
+  heroes  http2.encoder, http2.encode_fields, http2.Encoder
+  go      http2/hpack.Encoder, http2/hpack.Encoder.WriteField, http2/hpack.NewEncoder
+  rust    -
+  python  hpack.Encoder
+  note    RFC 7541 C.3 to C.6 written byte for byte; a string is Huffman-coded where that is no longer, which C.6.2's "307" needs; a field past three quarters of the table is not indexed
+
+capability hpack/decode  a block read into a header list, the dynamic table kept in step
+  heroes  http2.decoder, http2.decode_fields, http2.Decoder
+  go      http2/hpack.Decoder, http2/hpack.Decoder.Close, http2/hpack.Decoder.DecodeFull, http2/hpack.Decoder.EmitEnabled, http2/hpack.Decoder.SetEmitEnabled, http2/hpack.Decoder.SetEmitFunc, http2/hpack.Decoder.Write, http2/hpack.DecodingError, http2/hpack.DecodingError.Error, http2/hpack.ErrStringLength, http2/hpack.InvalidIndexError, http2/hpack.InvalidIndexError.Error, http2/hpack.NewDecoder
+  rust    -
+  python  hpack.Decoder, hpack.HPACKDecodingError, hpack.HPACKError, hpack.InvalidTableIndex, hpack.InvalidTableIndexError
+  note    RFC 7541 C.2 to C.6 read back; a name or value not UTF-8 fails not_text with the table in step, since a field here is text
+
+capability hpack/table-size  the dynamic table resized, and the size update a block owes
+  heroes  http2.resize_encoder, http2.resize_decoder
+  go      http2/hpack.Decoder.SetAllowedMaxDynamicTableSize, http2/hpack.Decoder.SetMaxDynamicTableSize, http2/hpack.Encoder.MaxDynamicTableSize, http2/hpack.Encoder.SetMaxDynamicTableSize, http2/hpack.Encoder.SetMaxDynamicTableSizeLimit
+  rust    -
+  python  hpack.InvalidTableSizeError
+  note    a limit lowered below the table makes the next block open with a size update, or it is refused, as RFC 7541 § 4.2 asks
+
+capability hpack/field  a header field, its size, never indexed where sensitive
+  heroes  http2.Field, http2.field_size
+  go      http2/hpack.HeaderField, http2/hpack.HeaderField.IsPseudo, http2/hpack.HeaderField.Size, http2/hpack.HeaderField.String, http2/hpack.Sensitive
+  rust    -
+  python  hpack.HeaderTuple, hpack.NeverIndexedHeaderTuple
+
+capability hpack/huffman  HPACK's Huffman code written and read
+  heroes  http2.encode_huffman, http2.decode_huffman, http2.huffman_length
+  go      http2/hpack.AppendHuffmanString, http2/hpack.ErrInvalidHuffman, http2/hpack.HuffmanDecode, http2/hpack.HuffmanDecodeToString, http2/hpack.HuffmanEncodeLength
+  rust    -
+  python  hpack.huffman, hpack.huffman_constants, hpack.huffman_table
+  note    the table read from RFC 7541 Appendix B; every byte 0 to 255 read back as written
+
+capability hpack/bomb  a block that names one large entry many times held to the list's size (an HPACK bomb)
+  heroes  http2.decode_fields
+  go      http2/hpack.Decoder.SetMaxStringLength, net/http2.Truncated
+  rust    -
+  python  h2.connection.OversizedHeaderListError, hpack.OversizedHeaderListError
+  note    the whole block is read so the table stays in step, the fields past the size dropped; tested with 10,000 references to an entry of 4,000 bytes
+
+capability settings/values  the settings of an end, their initial values, a frame's list applied with every check
+  heroes  http2.Settings, http2.Setting, http2.initial_settings, http2.apply_settings, http2.to_setting_list, http2.NO_LIMIT, http2.MIN_FRAME_SIZE, http2.MAX_FRAME_SIZE, http2.MAX_WINDOW, http2.SETTING_HEADER_TABLE_SIZE, http2.SETTING_ENABLE_PUSH, http2.SETTING_MAX_CONCURRENT_STREAMS, http2.SETTING_INITIAL_WINDOW_SIZE, http2.SETTING_MAX_FRAME_SIZE, http2.SETTING_MAX_HEADER_LIST_SIZE, http2.SETTING_ENABLE_CONNECT_PROTOCOL, http2.SETTING_NO_RFC7540_PRIORITIES
+  go      net/http2.ID, net/http2.Setting, net/http2.Setting.String, net/http2.Setting.Valid, net/http2.SettingEnableConnectProtocol, net/http2.SettingEnablePush, net/http2.SettingHeaderTableSize, net/http2.SettingID, net/http2.SettingID.String, net/http2.SettingInitialWindowSize, net/http2.SettingMaxConcurrentStreams, net/http2.SettingMaxFrameSize, net/http2.SettingMaxHeaderListSize, net/http2.SettingNoRFC7540Priorities, net/http2.Val
+  rust    -
+  python  h2.connection.ChangedSetting, h2.connection.H2Connection.HIGHEST_ALLOWED_STREAM_ID, h2.connection.H2Connection.MAX_WINDOW_INCREMENT, h2.connection.SettingCodes, h2.connection.Settings, h2.events.ChangedSetting, h2.events.SettingCodes, h2.events.Settings, h2.exceptions.InvalidSettingsValueError, h2.exceptions.InvalidSettingsValueError.add_note, h2.exceptions.InvalidSettingsValueError.args, h2.exceptions.InvalidSettingsValueError.error_code, h2.exceptions.InvalidSettingsValueError.with_traceback, h2.settings.ChangedSetting, h2.settings.InvalidSettingsValueError, h2.settings.Iterator, h2.settings.MutableMapping, h2.settings.SettingCodes, h2.settings.SettingCodes.ENABLE_CONNECT_PROTOCOL, h2.settings.SettingCodes.ENABLE_PUSH, h2.settings.SettingCodes.HEADER_TABLE_SIZE, h2.settings.SettingCodes.INITIAL_WINDOW_SIZE, h2.settings.SettingCodes.MAX_CONCURRENT_STREAMS, h2.settings.SettingCodes.MAX_FRAME_SIZE, h2.settings.SettingCodes.MAX_HEADER_LIST_SIZE, h2.settings.SettingCodes.as_integer_ratio, h2.settings.SettingCodes.bit_count, h2.settings.SettingCodes.bit_length, h2.settings.SettingCodes.conjugate, h2.settings.SettingCodes.denominator, h2.settings.SettingCodes.from_bytes, h2.settings.SettingCodes.imag, h2.settings.SettingCodes.is_integer, h2.settings.SettingCodes.numerator, h2.settings.SettingCodes.real, h2.settings.SettingCodes.to_bytes, h2.settings.Settings, h2.settings.Settings.acknowledge, h2.settings.Settings.clear, h2.settings.Settings.enable_connect_protocol, h2.settings.Settings.enable_push, h2.settings.Settings.get, h2.settings.Settings.header_table_size, h2.settings.Settings.initial_window_size, h2.settings.Settings.items, h2.settings.Settings.keys, h2.settings.Settings.max_concurrent_streams, h2.settings.Settings.max_frame_size, h2.settings.Settings.max_header_list_size, h2.settings.Settings.pop, h2.settings.Settings.popitem, h2.settings.Settings.setdefault, h2.settings.Settings.update, h2.settings.Settings.validate_received_setting, h2.settings.Settings.values, h2.settings.SettingsFrame, h2.settings.annotations, h2.settings.collections, h2.settings.enum
+  note    a client refuses a server's SETTINGS_ENABLE_PUSH of 1 and an extended CONNECT taken back after 1 (RFC 8441 § 3); SETTINGS_TIMEOUT is never sent, there being no clock here
+
+capability settings/change  new settings sent mid-connection, applied once acknowledged
+  heroes  http2.change_settings, http2.peer_settings_of
+  go      -
+  rust    h2::client::Connection::max_concurrent_recv_streams, h2::client::Connection::max_concurrent_send_streams, h2::client::Connection::set_initial_window_size, h2::client::SendRequest::current_max_recv_streams, h2::client::SendRequest::current_max_send_streams, h2::server::Connection::max_concurrent_recv_streams, h2::server::Connection::max_concurrent_send_streams, h2::server::Connection::set_initial_window_size
+  python  h2.connection.H2Connection.update_settings, h2.connection.RemoteSettingsChanged, h2.connection.SettingsAcknowledged, h2.events.RemoteSettingsChanged, h2.events.RemoteSettingsChanged.from_settings, h2.events.SettingsAcknowledged
+
+capability options  what an end advertises and the bounds it holds the peer to
+  heroes  http2.Options, http2.Limits, http2.default_options
+  go      net/http2.MaxConcurrentStreams, net/http2.MaxDecoderHeaderTableSize, net/http2.MaxEncoderHeaderTableSize, net/http2.MaxHandlers, net/http2.MaxHeaderListSize, net/http2.MaxReadFrameSize, net/http2.MaxUploadBufferPerConnection, net/http2.MaxUploadBufferPerStream, net/http2.StrictMaxConcurrentStreams
+  rust    h2::client::Builder, h2::client::Builder::data_frame_budget, h2::client::Builder::enable_push, h2::client::Builder::header_table_size, h2::client::Builder::initial_connection_window_size, h2::client::Builder::initial_max_send_streams, h2::client::Builder::initial_window_size, h2::client::Builder::max_concurrent_streams, h2::client::Builder::max_frame_size, h2::client::Builder::max_header_list_size, h2::client::Builder::max_send_buffer_size, h2::client::Builder::new, h2::server::Builder, h2::server::Builder::data_frame_budget, h2::server::Builder::header_table_size, h2::server::Builder::initial_connection_window_size, h2::server::Builder::initial_window_size, h2::server::Builder::max_concurrent_streams, h2::server::Builder::max_frame_size, h2::server::Builder::max_header_list_size, h2::server::Builder::max_send_buffer_size, h2::server::Builder::new
+  python  h2.config.H2Configuration, h2.config.H2Configuration.client_side, h2.connection.H2Configuration, h2.connection.H2Connection.DEFAULT_MAX_HEADER_LIST_SIZE, h2.connection.H2Connection.DEFAULT_MAX_INBOUND_FRAME_SIZE, h2.connection.H2Connection.DEFAULT_MAX_OUTBOUND_FRAME_SIZE, h2.connection.H2Connection.MAX_CLOSED_STREAMS
+  note    windows of 1 MiB a stream and 16 MiB a connection, as Go's transport keeps 4 MiB and 1 GiB and Rust's h2 65,535 unless told
+
+capability session/sans-io  a connection's protocol with no stream under it: bytes in, events out, bytes to write
+  heroes  http2.Session, http2.client_session, http2.server_session, http2.receive, http2.take_output, http2.Role
+  go      -
+  rust    -
+  python  h2.connection.AllowedStreamIDs, h2.connection.AllowedStreamIDs.EVEN, h2.connection.AllowedStreamIDs.ODD, h2.connection.AllowedStreamIDs.as_integer_ratio, h2.connection.AllowedStreamIDs.bit_count, h2.connection.AllowedStreamIDs.bit_length, h2.connection.AllowedStreamIDs.conjugate, h2.connection.AllowedStreamIDs.denominator, h2.connection.AllowedStreamIDs.from_bytes, h2.connection.AllowedStreamIDs.imag, h2.connection.AllowedStreamIDs.is_integer, h2.connection.AllowedStreamIDs.numerator, h2.connection.AllowedStreamIDs.real, h2.connection.AllowedStreamIDs.to_bytes, h2.connection.ConnectionInputs, h2.connection.ConnectionInputs.RECV_ALTERNATIVE_SERVICE, h2.connection.ConnectionInputs.RECV_DATA, h2.connection.ConnectionInputs.RECV_GOAWAY, h2.connection.ConnectionInputs.RECV_HEADERS, h2.connection.ConnectionInputs.RECV_PING, h2.connection.ConnectionInputs.RECV_PRIORITY, h2.connection.ConnectionInputs.RECV_PUSH_PROMISE, h2.connection.ConnectionInputs.RECV_RST_STREAM, h2.connection.ConnectionInputs.RECV_SETTINGS, h2.connection.ConnectionInputs.RECV_WINDOW_UPDATE, h2.connection.ConnectionInputs.SEND_ALTERNATIVE_SERVICE, h2.connection.ConnectionInputs.SEND_DATA, h2.connection.ConnectionInputs.SEND_GOAWAY, h2.connection.ConnectionInputs.SEND_HEADERS, h2.connection.ConnectionInputs.SEND_PING, h2.connection.ConnectionInputs.SEND_PRIORITY, h2.connection.ConnectionInputs.SEND_PUSH_PROMISE, h2.connection.ConnectionInputs.SEND_RST_STREAM, h2.connection.ConnectionInputs.SEND_SETTINGS, h2.connection.ConnectionInputs.SEND_WINDOW_UPDATE, h2.connection.ConnectionState, h2.connection.ConnectionState.CLIENT_OPEN, h2.connection.ConnectionState.CLOSED, h2.connection.ConnectionState.IDLE, h2.connection.ConnectionState.SERVER_OPEN, h2.connection.H2Connection, h2.connection.H2Connection.clear_outbound_data_buffer, h2.connection.H2Connection.data_to_send, h2.connection.H2Connection.initiate_connection, h2.connection.H2Connection.receive_data, h2.connection.H2ConnectionStateMachine, h2.connection.H2ConnectionStateMachine.process_input
+  note    Python's h2 alone offers it; Go and Rust drive a socket themselves
+
+capability session/events  what a peer did, as events: a request, a response, an informational answer, trailers, data, a reset, settings, a ping and its answer, GOAWAY, a window
+  heroes  http2.Event
+  go      -
+  rust    -
+  python  h2.connection.ConnectionTerminated, h2.connection.Event, h2.connection.InformationalResponseReceived, h2.connection.PingAckReceived, h2.connection.PingReceived, h2.connection.RequestReceived, h2.connection.ResponseReceived, h2.connection.TrailersReceived, h2.connection.WindowUpdated, h2.events.AlternativeServiceAvailable, h2.events.Any, h2.events.ConnectionTerminated, h2.events.DataReceived, h2.events.DataReceived.data, h2.events.DataReceived.flow_controlled_length, h2.events.DataReceived.stream_ended, h2.events.Event, h2.events.InformationalResponseReceived, h2.events.InformationalResponseReceived.headers, h2.events.InformationalResponseReceived.priority_updated, h2.events.PingAckReceived, h2.events.PingReceived, h2.events.PriorityUpdated, h2.events.PushedStreamReceived, h2.events.RequestReceived, h2.events.RequestReceived.headers, h2.events.RequestReceived.priority_updated, h2.events.RequestReceived.stream_ended, h2.events.ResponseReceived, h2.events.ResponseReceived.headers, h2.events.ResponseReceived.priority_updated, h2.events.ResponseReceived.stream_ended, h2.events.StreamEnded, h2.events.StreamReset, h2.events.StreamReset.error_code, h2.events.StreamReset.remote_reset, h2.events.TYPE_CHECKING, h2.events.TrailersReceived, h2.events.TrailersReceived.headers, h2.events.TrailersReceived.priority_updated, h2.events.TrailersReceived.stream_ended, h2.events.WindowUpdated, h2.events.WindowUpdated.delta, h2.events.annotations, h2.events.binascii, h2.events.dataclass, h2.events.kw_only
+  note    END_STREAM is a field of the event that carries it, where Python tells StreamEnded apart
+
+capability stream/open  a client's stream opened with a request's header list
+  heroes  http2.open_stream, http2.start_stream
+  go      net/http2.OpenStreamOptions
+  rust    h2::FlowControl::stream_id, h2::RecvStream::stream_id, h2::SendStream::stream_id, h2::StreamId, h2::client::PushedResponseFuture::stream_id, h2::client::ResponseFuture::stream_id, h2::client::SendRequest, h2::client::SendRequest::send_request, h2::server::SendPushedResponse::stream_id, h2::server::SendResponse::stream_id
+  python  h2.connection.H2Connection.get_next_available_stream_id, h2.connection.H2Connection.open_outbound_streams, h2.connection.H2Connection.send_headers, h2.connection.NoAvailableStreamIDError, h2.connection.StreamIDTooLowError, h2.exceptions.NoAvailableStreamIDError, h2.exceptions.NoAvailableStreamIDError.add_note, h2.exceptions.NoAvailableStreamIDError.args, h2.exceptions.NoAvailableStreamIDError.error_code, h2.exceptions.NoAvailableStreamIDError.with_traceback, h2.exceptions.StreamIDTooLowError, h2.exceptions.StreamIDTooLowError.add_note, h2.exceptions.StreamIDTooLowError.args, h2.exceptions.StreamIDTooLowError.error_code, h2.exceptions.StreamIDTooLowError.with_traceback
+
+capability stream/send-headers  a response, an informational answer, or trailers sent on a stream
+  heroes  http2.send_headers, http2.write_headers
+  go      -
+  rust    h2::SendStream::send_trailers, h2::server::SendResponse, h2::server::SendResponse::send_informational, h2::server::SendResponse::send_response
+  python  -
+
+capability stream/data  data sent as far as the windows allow, the rest when they open
+  heroes  http2.send_data, http2.write_data, http2.window_of
+  go      -
+  rust    h2::SendStream, h2::SendStream::capacity, h2::SendStream::poll_capacity, h2::SendStream::reserve_capacity, h2::SendStream::send_data
+  python  h2.connection.FlowControlError, h2.connection.FrameTooLargeError, h2.connection.H2Connection.end_stream, h2.connection.H2Connection.local_flow_control_window, h2.connection.H2Connection.send_data, h2.exceptions.FlowControlError, h2.exceptions.FlowControlError.add_note, h2.exceptions.FlowControlError.args, h2.exceptions.FlowControlError.error_code, h2.exceptions.FlowControlError.with_traceback, h2.exceptions.FrameTooLargeError, h2.exceptions.FrameTooLargeError.add_note, h2.exceptions.FrameTooLargeError.args, h2.exceptions.FrameTooLargeError.error_code, h2.exceptions.FrameTooLargeError.with_traceback, h2.windows.FlowControlError
+  note    a session takes no more than the windows allow and says how much, as Python's h2 refuses more; a connection waits, as Go and Rust do
+
+capability stream/receive  a stream's data and trailers read
+  heroes  http2.read_event, http2.read_event_of, http2.Event
+  go      -
+  rust    h2::RecvStream, h2::RecvStream::data, h2::RecvStream::flow_control, h2::RecvStream::is_end_stream, h2::RecvStream::poll_data, h2::RecvStream::trailers
+  python  -
+
+capability flow/acknowledge  data taken by the program given back to the peer's windows
+  heroes  http2.acknowledge
+  go      -
+  rust    h2::FlowControl, h2::FlowControl::available_capacity, h2::FlowControl::release_capacity, h2::FlowControl::used_capacity
+  python  h2.connection.H2Connection.acknowledge_received_data, h2.connection.H2Connection.inbound_flow_control_window, h2.connection.H2Connection.increment_flow_control_window, h2.connection.H2Connection.remote_flow_control_window, h2.connection.guard_increment_window, h2.windows.LARGEST_FLOW_CONTROL_WINDOW, h2.windows.WindowManager, h2.windows.WindowManager.process_bytes, h2.windows.WindowManager.window_consumed, h2.windows.WindowManager.window_opened, h2.windows.annotations
+  note    a WINDOW_UPDATE once half a window is taken, as Go does; a connection gives a stream's bytes back to the connection's window as it holds them and to the stream's as the program takes them, so a stream nobody reads holds at most its own window
+
+capability flow/windows  the windows this end keeps open
+  heroes  http2.Options.connection_window, http2.Settings.initial_window_size
+  go      -
+  rust    h2::client::Connection::set_target_window_size, h2::server::Connection::set_target_window_size
+  python  -
+
+capability stream/reset  a stream ended at once, and a reset told
+  heroes  http2.reset_stream, http2.write_reset
+  go      -
+  rust    h2::SendStream::poll_reset, h2::SendStream::send_reset, h2::server::SendPushedResponse::poll_reset, h2::server::SendPushedResponse::send_reset, h2::server::SendResponse::poll_reset, h2::server::SendResponse::send_reset
+  python  h2.connection.H2Connection.reset_stream, h2.connection.NoSuchStreamError, h2.connection.StreamClosedError, h2.exceptions.NoSuchStreamError, h2.exceptions.NoSuchStreamError.add_note, h2.exceptions.NoSuchStreamError.args, h2.exceptions.NoSuchStreamError.error_code, h2.exceptions.NoSuchStreamError.with_traceback, h2.exceptions.StreamClosedError, h2.exceptions.StreamClosedError.add_note, h2.exceptions.StreamClosedError.args, h2.exceptions.StreamClosedError.error_code, h2.exceptions.StreamClosedError.with_traceback
+
+capability stream/state  a stream's state by RFC 9113 § 5.1
+  heroes  http2.state_of, http2.StreamState
+  go      net/http2.ClientConn.State, net/http2.ClientConnState, net/http2.Closed, net/http2.Closing, net/http2.LastIdle, net/http2.StreamsActive, net/http2.StreamsPending, net/http2.StreamsReserved
+  rust    -
+  python  -
+
+capability ping  a PING sent and its answer awaited; a peer's answered
+  heroes  http2.send_ping, http2.ping
+  go      net/http2.ClientConn.Ping
+  rust    h2::Ping, h2::Ping::opaque, h2::PingPong, h2::PingPong::ping, h2::Pong, h2::client::Connection::ping_pong, h2::server::Connection::ping_pong
+  python  h2.connection.H2Connection.ping
+
+capability goaway  a connection ended, gracefully or for an error
+  heroes  http2.send_goaway, http2.close
+  go      net/http2.ClientConn.Close, net/http2.ClientConn.Shutdown, net/http2.GoAwayError, net/http2.GoAwayError.Error
+  rust    h2::server::Connection::abrupt_shutdown, h2::server::Connection::graceful_shutdown, h2::server::Connection::poll_closed
+  python  h2.connection.H2Connection.close_connection
+  note    a client's streams past a GOAWAY's last are told REFUSED_STREAM, which may be sent again, as Go retries them; a server's close reads what the client still sends for a second at most before it closes, as Go's server waits after its GOAWAY, so the system does not reset the connection under the last answer
+
+capability connection/room  whether a client may open another stream now
+  heroes  http2.has_room, http2.is_open
+  go      net/http2.ClientConn.CanTakeNewRequest, net/http2.ClientConn.ReserveNewRequest
+  rust    h2::client::ReadySendRequest, h2::client::SendRequest::poll_ready, h2::client::SendRequest::ready, h2::server::Connection::has_streams
+  python  h2.connection.H2Connection.open_inbound_streams, h2.connection.TooManyStreamsError, h2.exceptions.TooManyStreamsError, h2.exceptions.TooManyStreamsError.add_note, h2.exceptions.TooManyStreamsError.args, h2.exceptions.TooManyStreamsError.error_code, h2.exceptions.TooManyStreamsError.with_traceback
+
+capability client/tls  a client's connection over TLS, ALPN choosing h2
+  heroes  http2.connect
+  go      net/http2.ConfigureTransport, net/http2.ConfigureTransports, net/http2.DialTLS, net/http2.DialTLSContext, net/http2.TLSClientConfig, net/http2.Transport
+  rust    h2::client::Connection
+  python  -
+  note    run against Go's x/net/http2 server over TLS on 2026-11-18: a GET, a POST of 3,000,000 bytes echoed whole, two streams at once, a PING; a server choosing no h2 fails unsupported
+
+capability client/h2c  a client's connection in plain text by prior knowledge
+  heroes  http2.connect_plain
+  go      net/http2.AllowHTTP
+  rust    -
+  python  -
+  note    run against Go's h2c server as client/tls was
+
+capability client/over-stream  a client's connection over a stream the program holds
+  heroes  http2.client_of
+  go      net/http2.ClientConn, net/http2.Transport.NewClientConn
+  rust    h2::client::Builder::handshake, h2::client::handshake, h2::server::Builder::handshake, h2::server::Handshake
+  python  -
+
+capability client/request  a request sent and its response read whole, several at once on one connection
+  heroes  http2.round_trip, http2.start, http2.finish, http2.Request, http2.Response
+  go      net/http2.ClientConn.RoundTrip, net/http2.ClientConnPool, net/http2.ConnPool, net/http2.ErrNoCachedConn, net/http2.OnlyCachedConn, net/http2.RoundTripOpt, net/http2.Transport.CloseIdleConnections, net/http2.Transport.RoundTrip, net/http2.Transport.RoundTripOpt
+  rust    h2::client::ResponseFuture, h2::client::ResponseFuture::poll_informational, h2::client::ResponseFuture::push_promises
+  python  -
+  note    an informational answer is skipped by finish and told by read_event; a body past Limits.body_bytes resets the stream and fails limit; a pool of connections is the caller's, http's Session among them
+
+capability server/over-stream  a server's connection over a stream accepted, TLS with h2 chosen or plain
+  heroes  http2.server_of
+  go      net/http2.BaseConfig, net/http2.Context, net/http2.SawClientPreface, net/http2.ServeConnOpts, net/http2.Server.ServeConn, net/http2.UpgradeRequest
+  rust    h2::server::Connection, h2::server::Connection::accept, h2::server::handshake
+  python  -
+  note    run against Go's client over TLS and h2c, and Python h2 4.4.1's, on 2026-11-18
+
+capability server/loop  a server's requests read whole and answered by the program's own handler with its own state
+  heroes  http2.next_request, http2.answer, http2.accept_stream, http2.serve, http2.serve_with, http2.echo, http2.respond_text
+  go      net/http2.ConfigureServer, net/http2.Handler, net/http2.Server
+  rust    -
+  python  -
+  note    one request answered at a time on a connection, the others' events held; a body past Limits.body_bytes answered 413 and its stream reset with NO_ERROR, as RFC 9113 § 8.1 allows
+
+capability server/extended-connect  an extended CONNECT with :protocol (RFC 8441), WebSocket over HTTP/2
+  heroes  http2.Settings.enable_connect_protocol, http2.Request.protocol
+  go      -
+  rust    h2::client::SendRequest::is_extended_connect_protocol_enabled, h2::ext::Protocol, h2::ext::Protocol::as_ref, h2::ext::Protocol::as_str, h2::ext::Protocol::borrow, h2::ext::Protocol::borrow_mut, h2::ext::Protocol::clone, h2::ext::Protocol::clone_from, h2::ext::Protocol::clone_into, h2::ext::Protocol::clone_to_uninit, h2::ext::Protocol::eq, h2::ext::Protocol::equivalent, h2::ext::Protocol::fmt, h2::ext::Protocol::from, h2::ext::Protocol::from_static, h2::ext::Protocol::in_current_span, h2::ext::Protocol::instrument, h2::ext::Protocol::into, h2::ext::Protocol::ne, h2::ext::Protocol::to_owned, h2::ext::Protocol::try_from, h2::ext::Protocol::try_into, h2::ext::Protocol::type_id, h2::ext::Protocol::with_current_subscriber, h2::ext::Protocol::with_subscriber, h2::server::Builder::enable_connect_protocol, h2::server::Connection::enable_connect_protocol
+  python  -
+
+capability limits/header-list  a header list past the size this end advertised
+  heroes  http2.Settings.max_header_list_size
+  go      -
+  rust    -
+  python  -
+  note    a server answers 431 and keeps its table in step; a client cancels the stream and fails limit
+
+capability limits/continuation-flood  a header block past its bytes or its frames: a CONTINUATION flood
+  heroes  http2.Limits.header_block_bytes, http2.Limits.header_frames
+  go      -
+  rust    -
+  python  -
+  note    ended with ENHANCE_YOUR_CALM; tested with 70 empty CONTINUATION frames
+
+capability limits/concurrent  streams past SETTINGS_MAX_CONCURRENT_STREAMS refused
+  heroes  http2.Settings.max_concurrent_streams
+  go      -
+  rust    h2::client::Builder::max_concurrent_reset_streams, h2::server::Builder::max_concurrent_reset_streams
+  python  -
+  note    REFUSED_STREAM, which a client may send again; each refusal counted as a frame carrying nothing
+
+capability limits/rapid-reset  streams reset faster than a bound each second: CVE-2023-44487
+  heroes  http2.Limits.resets_per_second
+  go      -
+  rust    h2::client::Builder::max_local_error_reset_streams, h2::client::Builder::max_pending_accept_reset_streams, h2::client::Builder::reset_stream_duration, h2::server::Builder::max_local_error_reset_streams, h2::server::Builder::max_pending_accept_reset_streams, h2::server::Builder::reset_stream_duration
+  python  -
+  note    100 a second by default: the 101st reset in one second ends the connection with ENHANCE_YOUR_CALM; 300 spread over six seconds are no flood (tested)
+
+capability limits/control-flood  frames that carry nothing for the program past a bound each second: PING, SETTINGS, PRIORITY, empty DATA floods
+  heroes  http2.Limits.control_per_second
+  go      net/http2.CountError
+  rust    -
+  python  -
+  note    CVE-2019-9512, 9515 and 9518's floods; 1,000 a second by default
+
+capability limits/body  a body read whole within a bound
+  heroes  http2.Limits.body_bytes
+  go      -
+  rust    -
+  python  -
+
+capability h2c/upgrade  HTTP/1.1's Upgrade: h2c
+  heroes  refused: RFC 9113 § 3.1 deprecates it and browsers never sent it; prior knowledge is offered
+  go      http2/h2c.NewHandler
+  rust    -
+  python  h2.connection.H2Connection.initiate_upgrade_connection
+  note    Go's h2c handler answers both; this package answers prior knowledge alone
+
+capability server/push  a server pushing a stream it promised
+  heroes  refused: browsers dropped server push (Chrome 106, 2022) and RFC 9113 lets a server never push; a client refuses PUSH_PROMISE
+  go      net/http2.ErrPushLimitReached, net/http2.ErrRecursivePush, net/http2.PusherID
+  rust    h2::client::PushPromise, h2::client::PushPromise::borrow, h2::client::PushPromise::borrow_mut, h2::client::PushPromise::fmt, h2::client::PushPromise::from, h2::client::PushPromise::in_current_span, h2::client::PushPromise::instrument, h2::client::PushPromise::into, h2::client::PushPromise::into_parts, h2::client::PushPromise::request, h2::client::PushPromise::request_mut, h2::client::PushPromise::try_from, h2::client::PushPromise::try_into, h2::client::PushPromise::type_id, h2::client::PushPromise::with_current_subscriber, h2::client::PushPromise::with_subscriber, h2::client::PushPromises, h2::client::PushPromises::borrow, h2::client::PushPromises::borrow_mut, h2::client::PushPromises::fmt, h2::client::PushPromises::from, h2::client::PushPromises::in_current_span, h2::client::PushPromises::instrument, h2::client::PushPromises::into, h2::client::PushPromises::push_promise, h2::client::PushPromises::try_from, h2::client::PushPromises::try_into, h2::client::PushPromises::type_id, h2::client::PushPromises::with_current_subscriber, h2::client::PushPromises::with_subscriber, h2::client::PushedResponseFuture, h2::client::PushedResponseFuture::borrow, h2::client::PushedResponseFuture::borrow_mut, h2::client::PushedResponseFuture::fmt, h2::client::PushedResponseFuture::from, h2::client::PushedResponseFuture::in_current_span, h2::client::PushedResponseFuture::instrument, h2::client::PushedResponseFuture::into, h2::client::PushedResponseFuture::into_future, h2::client::PushedResponseFuture::poll, h2::client::PushedResponseFuture::try_from, h2::client::PushedResponseFuture::try_into, h2::client::PushedResponseFuture::try_poll, h2::client::PushedResponseFuture::type_id, h2::client::PushedResponseFuture::with_cancellation_token, h2::client::PushedResponseFuture::with_cancellation_token_owned, h2::client::PushedResponseFuture::with_current_subscriber, h2::client::PushedResponseFuture::with_subscriber, h2::server::SendPushedResponse, h2::server::SendPushedResponse::borrow, h2::server::SendPushedResponse::borrow_mut, h2::server::SendPushedResponse::fmt, h2::server::SendPushedResponse::from, h2::server::SendPushedResponse::in_current_span, h2::server::SendPushedResponse::instrument, h2::server::SendPushedResponse::into, h2::server::SendPushedResponse::send_response, h2::server::SendPushedResponse::try_from, h2::server::SendPushedResponse::try_into, h2::server::SendPushedResponse::type_id, h2::server::SendPushedResponse::with_current_subscriber, h2::server::SendPushedResponse::with_subscriber, h2::server::SendResponse::push_request
+  python  h2.connection.H2Connection.push_stream
+
+capability priority/scheduling  streams written in an order their priorities choose
+  heroes  refused: RFC 9113 § 5.3 deprecates RFC 7540's priorities, which are read and ignored; RFC 9218's PRIORITY_UPDATE is read as an unknown frame
+  go      net/http2.FramePriorityUpdate, net/http2.FrameWriteRequest, net/http2.FrameWriteRequest.Consume, net/http2.FrameWriteRequest.DataSize, net/http2.FrameWriteRequest.String, net/http2.MaxClosedNodesInTree, net/http2.MaxIdleNodesInTree, net/http2.NewPriorityWriteScheduler, net/http2.NewRandomWriteScheduler, net/http2.NewWriteScheduler, net/http2.PrioritizedStreamID, net/http2.Priority, net/http2.PriorityUpdateFrame, net/http2.PriorityWriteSchedulerConfig, net/http2.ThrottleOutOfOrderWrites, net/http2.WriteScheduler
+  rust    -
+  python  h2.connection.H2Connection.prioritize, h2.connection.PriorityUpdated
+
+capability altsvc  an ALTSVC frame advertising another protocol (RFC 7838)
+  heroes  refused: it advertises HTTP/3, for which this library has no QUIC; the frame is read and written as unknown
+  go      -
+  rust    -
+  python  h2.connection.AltSvcFrame, h2.connection.AlternativeServiceAvailable, h2.connection.H2Connection.advertise_alternative_service, hyperframe.frame.AltSvcFrame, hyperframe.frame.AltSvcFrame.defined_flags, hyperframe.frame.AltSvcFrame.explain, hyperframe.frame.AltSvcFrame.parse_body, hyperframe.frame.AltSvcFrame.parse_flags, hyperframe.frame.AltSvcFrame.parse_frame_header, hyperframe.frame.AltSvcFrame.serialize, hyperframe.frame.AltSvcFrame.serialize_body, hyperframe.frame.AltSvcFrame.stream_association, hyperframe.frame.AltSvcFrame.type
+
+capability keepalive  a ping on a clock of its own, an idle connection closed after a time
+  heroes  refused: no thread or timer runs here; a program pings with ping when its own clock says, and a stream's deadline bounds a silent peer
+  go      net/http2.IdleConnTimeout, net/http2.IdleTimeout, net/http2.PingTimeout, net/http2.ReadIdleTimeout, net/http2.WriteByteTimeout
+  rust    -
+  python  -
+
+capability checks/off  a check of headers or frames turned off
+  heroes  refused: nothing a peer sends is read past the RFC's checks
+  go      net/http2.PermitProhibitedCipherSuites
+  rust    -
+  python  h2.config.DummyLogger, h2.config.DummyLogger.debug, h2.config.DummyLogger.trace, h2.config.H2Configuration.header_encoding, h2.config.H2Configuration.normalize_inbound_headers, h2.config.H2Configuration.normalize_outbound_headers, h2.config.H2Configuration.split_outbound_cookies, h2.config.H2Configuration.validate_inbound_headers, h2.config.H2Configuration.validate_outbound_headers, h2.config.OutputLogger, h2.config.OutputLogger.debug, h2.config.OutputLogger.trace
+
+dropped  an error type or an exception: a failure here is a code and a message (README § A4)
+  go      http2/hpack.Err, net/http2.Cause, net/http2.ConnectionError, net/http2.ConnectionError.Error, net/http2.StreamError, net/http2.StreamError.Error
+  rust    h2::Error, h2::Error::borrow, h2::Error::borrow_mut, h2::Error::cause, h2::Error::description, h2::Error::fmt, h2::Error::from, h2::Error::get_io, h2::Error::in_current_span, h2::Error::instrument, h2::Error::into, h2::Error::into_io, h2::Error::is_go_away, h2::Error::is_io, h2::Error::is_library, h2::Error::is_remote, h2::Error::is_reset, h2::Error::provide, h2::Error::reason, h2::Error::source, h2::Error::to_string, h2::Error::try_from, h2::Error::try_into, h2::Error::type_id, h2::Error::with_current_subscriber, h2::Error::with_subscriber
+  python  h2.connection.DenialOfServiceError, h2.connection.HPACKError, h2.connection.InvalidPaddingError, h2.connection.ProtocolError, h2.connection.RFC1122Error, h2.exceptions.DenialOfServiceError, h2.exceptions.DenialOfServiceError.add_note, h2.exceptions.DenialOfServiceError.args, h2.exceptions.DenialOfServiceError.error_code, h2.exceptions.DenialOfServiceError.with_traceback, h2.exceptions.FrameDataMissingError, h2.exceptions.FrameDataMissingError.add_note, h2.exceptions.FrameDataMissingError.args, h2.exceptions.FrameDataMissingError.error_code, h2.exceptions.FrameDataMissingError.with_traceback, h2.exceptions.H2Error, h2.exceptions.H2Error.add_note, h2.exceptions.H2Error.args, h2.exceptions.H2Error.with_traceback, h2.exceptions.InvalidBodyLengthError, h2.exceptions.InvalidBodyLengthError.add_note, h2.exceptions.InvalidBodyLengthError.args, h2.exceptions.InvalidBodyLengthError.error_code, h2.exceptions.InvalidBodyLengthError.with_traceback, h2.exceptions.ProtocolError, h2.exceptions.ProtocolError.add_note, h2.exceptions.ProtocolError.args, h2.exceptions.ProtocolError.error_code, h2.exceptions.ProtocolError.with_traceback, h2.exceptions.RFC1122Error, h2.exceptions.RFC1122Error.add_note, h2.exceptions.RFC1122Error.args, h2.exceptions.RFC1122Error.with_traceback, h2.exceptions.UnsupportedFrameError, h2.exceptions.UnsupportedFrameError.add_note, h2.exceptions.UnsupportedFrameError.args, h2.exceptions.UnsupportedFrameError.error_code, h2.exceptions.UnsupportedFrameError.with_traceback, h2.exceptions.annotations, hyperframe.frame.InvalidDataError, hyperframe.frame.InvalidFrameError, hyperframe.frame.InvalidPaddingError, hyperframe.frame.UnknownFrameError
+
+dropped  a trait implementation Rust derives for every type (Debug, Clone, From, Into, tracing's Instrument, Future's poll): nothing a program calls by name
+  go      -
+  rust    h2::FlowControl::borrow, h2::FlowControl::borrow_mut, h2::FlowControl::clone, h2::FlowControl::clone_from, h2::FlowControl::clone_into, h2::FlowControl::clone_to_uninit, h2::FlowControl::fmt, h2::FlowControl::from, h2::FlowControl::in_current_span, h2::FlowControl::instrument, h2::FlowControl::into, h2::FlowControl::to_owned, h2::FlowControl::try_from, h2::FlowControl::try_into, h2::FlowControl::type_id, h2::FlowControl::with_current_subscriber, h2::FlowControl::with_subscriber, h2::Ping::borrow, h2::Ping::borrow_mut, h2::Ping::fmt, h2::Ping::from, h2::Ping::in_current_span, h2::Ping::instrument, h2::Ping::into, h2::Ping::try_from, h2::Ping::try_into, h2::Ping::type_id, h2::Ping::with_current_subscriber, h2::Ping::with_subscriber, h2::PingPong::borrow, h2::PingPong::borrow_mut, h2::PingPong::fmt, h2::PingPong::from, h2::PingPong::in_current_span, h2::PingPong::instrument, h2::PingPong::into, h2::PingPong::try_from, h2::PingPong::try_into, h2::PingPong::type_id, h2::PingPong::with_current_subscriber, h2::PingPong::with_subscriber, h2::Pong::borrow, h2::Pong::borrow_mut, h2::Pong::fmt, h2::Pong::from, h2::Pong::in_current_span, h2::Pong::instrument, h2::Pong::into, h2::Pong::try_from, h2::Pong::try_into, h2::Pong::type_id, h2::Pong::with_current_subscriber, h2::Pong::with_subscriber, h2::Reason::borrow, h2::Reason::borrow_mut, h2::Reason::clone, h2::Reason::clone_from, h2::Reason::clone_into, h2::Reason::clone_to_uninit, h2::Reason::eq, h2::Reason::equivalent, h2::Reason::fmt, h2::Reason::from, h2::Reason::in_current_span, h2::Reason::instrument, h2::Reason::into, h2::Reason::ne, h2::Reason::to_owned, h2::Reason::to_string, h2::Reason::try_from, h2::Reason::try_into, h2::Reason::type_id, h2::Reason::with_current_subscriber, h2::Reason::with_subscriber, h2::RecvStream::borrow, h2::RecvStream::borrow_mut, h2::RecvStream::drop, h2::RecvStream::fmt, h2::RecvStream::from, h2::RecvStream::in_current_span, h2::RecvStream::instrument, h2::RecvStream::into, h2::RecvStream::pin_drop, h2::RecvStream::try_from, h2::RecvStream::try_into, h2::RecvStream::type_id, h2::RecvStream::with_current_subscriber, h2::RecvStream::with_subscriber, h2::SendStream::borrow, h2::SendStream::borrow_mut, h2::SendStream::fmt, h2::SendStream::from, h2::SendStream::in_current_span, h2::SendStream::instrument, h2::SendStream::into, h2::SendStream::try_from, h2::SendStream::try_into, h2::SendStream::type_id, h2::SendStream::with_current_subscriber, h2::SendStream::with_subscriber, h2::StreamId::borrow, h2::StreamId::borrow_mut, h2::StreamId::clone, h2::StreamId::clone_from, h2::StreamId::clone_into, h2::StreamId::clone_to_uninit, h2::StreamId::eq, h2::StreamId::equivalent, h2::StreamId::fmt, h2::StreamId::from, h2::StreamId::hash, h2::StreamId::hash_slice, h2::StreamId::in_current_span, h2::StreamId::instrument, h2::StreamId::into, h2::StreamId::ne, h2::StreamId::to_owned, h2::StreamId::try_from, h2::StreamId::try_into, h2::StreamId::type_id, h2::StreamId::with_current_subscriber, h2::StreamId::with_subscriber, h2::client::Builder::borrow, h2::client::Builder::borrow_mut, h2::client::Builder::clone, h2::client::Builder::clone_from, h2::client::Builder::clone_into, h2::client::Builder::clone_to_uninit, h2::client::Builder::default, h2::client::Builder::fmt, h2::client::Builder::from, h2::client::Builder::in_current_span, h2::client::Builder::instrument, h2::client::Builder::into, h2::client::Builder::to_owned, h2::client::Builder::try_from, h2::client::Builder::try_into, h2::client::Builder::type_id, h2::client::Builder::with_current_subscriber, h2::client::Builder::with_subscriber, h2::client::Connection::borrow, h2::client::Connection::borrow_mut, h2::client::Connection::fmt, h2::client::Connection::from, h2::client::Connection::in_current_span, h2::client::Connection::instrument, h2::client::Connection::into, h2::client::Connection::into_future, h2::client::Connection::poll, h2::client::Connection::try_from, h2::client::Connection::try_into, h2::client::Connection::try_poll, h2::client::Connection::type_id, h2::client::Connection::with_cancellation_token, h2::client::Connection::with_cancellation_token_owned, h2::client::Connection::with_current_subscriber, h2::client::Connection::with_subscriber, h2::client::ReadySendRequest::borrow, h2::client::ReadySendRequest::borrow_mut, h2::client::ReadySendRequest::fmt, h2::client::ReadySendRequest::from, h2::client::ReadySendRequest::in_current_span, h2::client::ReadySendRequest::instrument, h2::client::ReadySendRequest::into, h2::client::ReadySendRequest::into_future, h2::client::ReadySendRequest::poll, h2::client::ReadySendRequest::try_from, h2::client::ReadySendRequest::try_into, h2::client::ReadySendRequest::try_poll, h2::client::ReadySendRequest::type_id, h2::client::ReadySendRequest::with_cancellation_token, h2::client::ReadySendRequest::with_cancellation_token_owned, h2::client::ReadySendRequest::with_current_subscriber, h2::client::ReadySendRequest::with_subscriber, h2::client::ResponseFuture::borrow, h2::client::ResponseFuture::borrow_mut, h2::client::ResponseFuture::fmt, h2::client::ResponseFuture::from, h2::client::ResponseFuture::in_current_span, h2::client::ResponseFuture::instrument, h2::client::ResponseFuture::into, h2::client::ResponseFuture::into_future, h2::client::ResponseFuture::poll, h2::client::ResponseFuture::try_from, h2::client::ResponseFuture::try_into, h2::client::ResponseFuture::try_poll, h2::client::ResponseFuture::type_id, h2::client::ResponseFuture::with_cancellation_token, h2::client::ResponseFuture::with_cancellation_token_owned, h2::client::ResponseFuture::with_current_subscriber, h2::client::ResponseFuture::with_subscriber, h2::client::SendRequest::borrow, h2::client::SendRequest::borrow_mut, h2::client::SendRequest::clone, h2::client::SendRequest::clone_from, h2::client::SendRequest::clone_into, h2::client::SendRequest::clone_to_uninit, h2::client::SendRequest::fmt, h2::client::SendRequest::from, h2::client::SendRequest::in_current_span, h2::client::SendRequest::instrument, h2::client::SendRequest::into, h2::client::SendRequest::to_owned, h2::client::SendRequest::try_from, h2::client::SendRequest::try_into, h2::client::SendRequest::type_id, h2::client::SendRequest::with_current_subscriber, h2::client::SendRequest::with_subscriber, h2::server::Builder::borrow, h2::server::Builder::borrow_mut, h2::server::Builder::clone, h2::server::Builder::clone_from, h2::server::Builder::clone_into, h2::server::Builder::clone_to_uninit, h2::server::Builder::default, h2::server::Builder::fmt, h2::server::Builder::from, h2::server::Builder::in_current_span, h2::server::Builder::instrument, h2::server::Builder::into, h2::server::Builder::to_owned, h2::server::Builder::try_from, h2::server::Builder::try_into, h2::server::Builder::type_id, h2::server::Builder::with_current_subscriber, h2::server::Builder::with_subscriber, h2::server::Connection::borrow, h2::server::Connection::borrow_mut, h2::server::Connection::fmt, h2::server::Connection::from, h2::server::Connection::in_current_span, h2::server::Connection::instrument, h2::server::Connection::into, h2::server::Connection::try_from, h2::server::Connection::try_into, h2::server::Connection::type_id, h2::server::Connection::with_current_subscriber, h2::server::Connection::with_subscriber, h2::server::Handshake::borrow, h2::server::Handshake::borrow_mut, h2::server::Handshake::fmt, h2::server::Handshake::from, h2::server::Handshake::in_current_span, h2::server::Handshake::instrument, h2::server::Handshake::into, h2::server::Handshake::into_future, h2::server::Handshake::poll, h2::server::Handshake::try_from, h2::server::Handshake::try_into, h2::server::Handshake::try_poll, h2::server::Handshake::type_id, h2::server::Handshake::with_cancellation_token, h2::server::Handshake::with_cancellation_token_owned, h2::server::Handshake::with_current_subscriber, h2::server::Handshake::with_subscriber, h2::server::SendResponse::borrow, h2::server::SendResponse::borrow_mut, h2::server::SendResponse::fmt, h2::server::SendResponse::from, h2::server::SendResponse::in_current_span, h2::server::SendResponse::instrument, h2::server::SendResponse::into, h2::server::SendResponse::try_from, h2::server::SendResponse::try_into, h2::server::SendResponse::type_id, h2::server::SendResponse::with_current_subscriber, h2::server::SendResponse::with_subscriber
+  python  -
+
+dropped  Python's module machinery and names a module imports from another: not this area's capabilities
+  go      -
+  rust    -
+  python  h2.config.Any, h2.config.annotations, h2.config.sys, h2.connection.Any, h2.connection.ContinuationFrame, h2.connection.DataFrame, h2.connection.Decoder, h2.connection.Encoder, h2.connection.Enum, h2.connection.ExtensionFrame, h2.connection.Frame, h2.connection.FrameBuffer, h2.connection.GoAwayFrame, h2.connection.H2Stream, h2.connection.HeadersFrame, h2.connection.IntEnum, h2.connection.PingFrame, h2.connection.PriorityFrame, h2.connection.PushPromiseFrame, h2.connection.RstStreamFrame, h2.connection.SettingsFrame, h2.connection.SizeLimitDict, h2.connection.StreamClosedBy, h2.connection.TYPE_CHECKING, h2.connection.WindowManager, h2.connection.WindowUpdateFrame, h2.connection.annotations, h2.connection.base64, h2.errors.annotations, h2.errors.enum, hpack.annotations, hpack.exceptions, hpack.hpack, hpack.struct, hpack.table, hyperframe.frame.Any, hyperframe.frame.Frame.defined_flags, hyperframe.frame.Frame.stream_association, hyperframe.frame.Frame.type, hyperframe.frame.TYPE_CHECKING, hyperframe.frame.annotations, hyperframe.frame.binascii, hyperframe.frame.struct
+
+dropped  Go's plumbing: a debug switch, a logger, a reused frame, a goroutine count
+  go      net/http2.ClientConn.SetDoNotReuse, net/http2.DebugGoroutines, net/http2.DisableCompression, net/http2.Fields, net/http2.Framer.SetReuseFrames, net/http2.ReadMetaHeaders, net/http2.Settings, net/http2.TrailerPrefix, net/http2.VerboseLogs
+  rust    -
+  python  -

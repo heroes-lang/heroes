@@ -23,7 +23,13 @@
 # to the Public Suffix List where a `Session`'s `is_public_suffix` is the
 # subpackage `http/suffixes`'s, which only a program that asks carries.
 #
-# **What it does not do.** HTTP/2 and HTTP/3 are not here, nor routing by
+# **HTTP/2 is `http2`'s, which this package speaks through it**: an
+# `https://` request offers HTTP/2 and HTTP/1.1 by ALPN and goes over HTTP/2
+# where the server chooses it; `serve_tls`, whose listener offers `h2`,
+# answers a client that asks for it over HTTP/2; and `round_trip_h2` sends
+# many requests on one HTTP/2 connection the program holds.
+#
+# **What it does not do.** HTTP/3 is not here, nor routing by
 # pattern, a time limit on making a plain connection,
 # Brotli or Zstandard, or a file server: a file is read by `fs` and answered
 # by `respond`. A body is held whole in memory, read within `Limits`, but
@@ -61,6 +67,7 @@ use http/internal/coding
 use http/internal/conditional
 use http/internal/cookies
 use http/internal/form_parts
+use http/internal/h2bridge
 use http/internal/memory
 use http/internal/multipart
 use http/internal/negotiate
@@ -73,6 +80,7 @@ use http/internal/streaming
 use http/internal/syntax
 use http/internal/wire
 use http/internal/write
+use http2
 use io
 use json
 use net
@@ -1582,8 +1590,9 @@ function fetch_once(@s: Session, r: Request) -> Response?
 # - `c`: how it is sent.
 # - `r`: the request; its target an absolute `http://` or `https://` URL.
 #
-# An `https://` request is TLS by `tls.connect`, offering HTTP/1.1, the
-# server's certificate checked against `c.roots`. The response is answered
+# An `https://` request is TLS by `tls.connect`, offering HTTP/2 and
+# HTTP/1.1 by ALPN, HTTP/2 spoken through `http2` where the server chooses it,
+# the server's certificate checked against `c.roots`. The response is answered
 # whatever its status; a 4xx or 5xx is no failure (`require_success` makes it
 # one). A 301, 302 or 303 is followed with `GET` and no body, a `HEAD`
 # staying `HEAD`; a 307 or 308 with the same method and body; between
@@ -2005,7 +2014,8 @@ function serve(s: Server, l: net.Listener, handler: (function(Request) -> Respon
 #   handshake may take once it has connected, and then the milliseconds its
 #   connection may last (`tls.set_deadline`), 0 for no limit.
 # - `l`: the TLS listener, made by `tls.listen` with HTTP/1.1 among its
-#   protocols; its owner closes it.
+#   protocols, and `h2` where HTTP/2 is answered too (`serve_stream` says
+#   how); its owner closes it.
 # - `handler`: called once for each request, as `serve` calls it.
 #
 # It serves ONE CONNECTION AT A TIME, as `serve` does, so a client that
@@ -2083,9 +2093,18 @@ function serve_conn(s: Server, c: net.Conn, handler: (function(Request) -> Respo
 # - `handler`: called once for each request, as `serve` calls it.
 #
 # It ends as `serve_conn` does. The stream's own deadline is the one that
-# holds: `serve_tls` sets one on each TLS stream it accepts. See also
-# `serve_tls`.
+# holds: `serve_tls` sets one on each TLS stream it accepts. A TLS stream
+# whose ALPN chose `h2` is served over HTTP/2 by `serve_h2`, its owner
+# closing it. See also `serve_tls`, `serve_h2`.
 function serve_stream(s: Server, stream: io.Stream, remote: str, handler: (function(Request) -> Response)) -> i64
+    if tls.protocol_of(stream).default("") == http2.ALPN
+        inner @= stream
+
+        match http2.server_of(@inner, options: h2bridge.options_for(wire.Bounds(head_bytes: s.limits.head_bytes, field_count: s.limits.field_count, body_bytes: s.limits.body_bytes)))
+            .ok made =>
+                conn @= made
+                return serve_h2(s, @conn, remote: remote, handler: handler)
+            .err _ => return 0
     reader @= io.reader(stream)
     answered: i64 @= 0
 
@@ -2204,6 +2223,14 @@ function serve_tls_with<S>(s: Server, l: tls.Listener, state: S, handler: (funct
 #
 # Ends as `serve_stream` does. See also `next_request`, `write_answer`.
 function serve_stream_with<S>(s: Server, stream: io.Stream, remote: str, state: S, handler: (function(S, Request) -> Response)) -> i64
+    if tls.protocol_of(stream).default("") == http2.ALPN
+        inner @= stream
+
+        match http2.server_of(@inner, options: h2bridge.options_for(wire.Bounds(head_bytes: s.limits.head_bytes, field_count: s.limits.field_count, body_bytes: s.limits.body_bytes)))
+            .ok made =>
+                conn @= made
+                return serve_h2_with(s, @conn, remote: remote, state: state, handler: handler)
+            .err _ => return 0
     reader @= io.reader(stream)
     answered: i64 @= 0
 
@@ -2408,6 +2435,191 @@ function write_answer(s: io.Stream, r: Request, response: Response) -> ()?
         head_only: r.method == METHOD_HEAD
     )
     return io.write(s, data: data)
+
+## HTTP/2
+
+# `r` as `http2` sends it: its method, its URL's scheme, authority and path
+# with its query, its fields with names in lower case, those of HTTP/1.1's
+# connection left out and `Host` carried as `:authority`.
+#
+# - `r`: the request; its URL absolute, or a path with a `Host` field.
+#
+# Credentials and cookies are marked never to enter a table. Fails `invalid`
+# where neither the URL nor a `Host` field names a host. See also
+# `from_h2_response`, `round_trip_h2`.
+function to_h2_request(r: Request) -> http2.Request?
+    named = if r.url.host == ""
+        ""
+    else
+        policy.host_field(scheme: r.url.scheme, host: r.url.host, port: r.url.port)
+    authority = value_of(r.headers, name: "Host").default(named)
+
+    if authority == ""
+        return fail(code: INVALID, msg: f"sending {r.method} {url.request_target(r.url)} over HTTP/2: no host is named")
+
+    scheme = if r.url.scheme == ""
+        "https"
+    else
+        strings.to_lower_ascii(r.url.scheme)
+    fields: [wire.Field] @= []
+
+    for h in r.headers
+        fields @ fields.push(wire.Field(name: h.name, value: h.value))
+
+    return ok(
+        http2.Request(method: r.method, scheme: scheme, authority: authority, path: url.request_target(r.url), protocol: "", headers: h2bridge.fields_for(fields), body: r.body, trailers: [], stream: 0)
+    )
+
+# A request `http2` read, as a handler of this package reads one: its path
+# and query as its URL, its fields, its `:authority` as a `Host` field where
+# it sent none.
+#
+# - `r`: the request, as `http2.next_request` reads it.
+# - `remote`: the client's address, or "" where the caller does not know it.
+#
+# Fails `invalid` where its path is no request target, as `parse_target`
+# reads one. See also `serve_h2`.
+function from_h2_request(r: http2.Request, remote: str) -> Request?
+    target = parse_target(method: r.method, target: r.path)?
+    headers: [Header] @= []
+
+    for f in r.headers
+        headers @ headers.push(Header(name: f.name, value: f.value))
+
+    if r.authority != "" && !has_header(headers, name: "Host")
+        headers @ headers.push(Header(name: "Host", value: r.authority))
+    return ok(Request(method: r.method, url: target, headers: headers, body: r.body, closing: false, remote: remote))
+
+# `response` as `http2` writes it in answer to a request of `method`: its
+# fields with names in lower case, those of HTTP/1.1's connection and its
+# framing left out, a `date` where it has none, and no body for `HEAD`, 204
+# or 304.
+#
+# - `response`: the response; a status outside 200 to 999 is written 500.
+# - `method`: the request's method.
+#
+# See also `from_h2_request`, `serve_h2`.
+function to_h2_response(response: Response, method: str) -> http2.Response
+    status = if response.status < 200 || response.status > 999
+        500
+    else
+        response.status
+    fields: [wire.Field] @= []
+
+    for h in response.headers
+        lower = strings.to_lower_ascii(h.name)
+
+        if lower != "content-length"
+            fields @ fields.push(wire.Field(name: h.name, value: h.value))
+
+    if !has_header(response.headers, name: "Date")
+        match policy.date_now()
+            .ok d  => fields @ fields.push(wire.Field(name: "date", value: d))
+            .err _ => _ = 0
+
+    none: [u8] = []
+
+    body = if method == METHOD_HEAD || status == 204 || status == 304
+        none
+    else
+        response.body
+    return http2.Response(status: status, headers: h2bridge.fields_for(fields), body: body, trailers: [])
+
+# A response `http2` read, as this package's: no reason, its fields as they
+# came, its trailers dropped as HTTP/1.1's are.
+#
+# - `r`: the response.
+#
+# See also `to_h2_request`, `round_trip_h2`.
+function from_h2_response(r: http2.Response) -> Response
+    headers: [Header] @= []
+
+    for f in r.headers
+        headers @ headers.push(Header(name: f.name, value: f.value))
+
+    return Response(status: r.status, reason: "", headers: headers, body: r.body, closing: false)
+
+# The response to `r` on an HTTP/2 connection the program holds: many
+# requests on one connection, one after another, as `round_trip` sends them
+# on an HTTP/1.1 one.
+#
+# - `c`: the connection, made by `http2.connect` or `http2.connect_plain`;
+#   its owner closes it.
+# - `r`: the request, as `to_h2_request` takes it.
+# - `limits`: what the response may hold: its fields and its body, which the
+#   connection's own `http2.Limits.body_bytes` bounds as well.
+#
+# No redirect is followed and no body decoded, as `round_trip` does neither.
+# Fails as `to_h2_request` and `http2.round_trip` do, and `limit` past
+# `limits`. See also `round_trip`.
+function round_trip_h2(@c: http2.Conn, r: Request, limits: Limits) -> Response?
+    got = http2.round_trip(@c, r: to_h2_request(r)?)?
+
+    if got.headers.len() > limits.field_count || got.body.len() > limits.body_bytes
+        return fail(
+            code: LIMIT,
+            msg: f"reading the response to {r.method} {url.request_target(r.url)} over HTTP/2: it passes {limits.field_count} fields or {limits.body_bytes} bytes"
+        )
+    return ok(from_h2_response(got))
+
+# Serves the requests of an HTTP/2 connection with `handler`, one after
+# another, until the client closes it or sends GOAWAY, and answers how many
+# were answered: what `serve_stream` does over a TLS stream that chose `h2`.
+#
+# - `s`: how it serves; its `limits` are the connection's own, given when it
+#   was made, and `s.deadline_ms` is not read.
+# - `c`: the connection, made by `http2.server_of`; its owner closes it.
+# - `remote`: what each request's `remote` holds, "" where unknown.
+# - `handler`: called once for each request, read whole, on this thread.
+#
+# A request whose path is no target is answered 400. See also
+# `serve_h2_with`, `serve_stream`.
+function serve_h2(s: Server, @c: http2.Conn, remote: str, handler: (function(Request) -> Response)) -> i64
+    _ = s.deadline_ms
+    answered: i64 @= 0
+
+    while true
+        got = match http2.next_request(@c)
+            .ok g  => g
+            .err _ => return answered
+
+        match from_h2_request(got, remote: remote)
+            .ok r =>
+                match http2.answer(@c, stream: got.stream, response: to_h2_response(handler(r), method: r.method))
+                    .ok _  => answered @ answered + 1
+                    .err _ => _ = 0
+            .err _ =>
+                match http2.answer(@c, stream: got.stream, response: http2.Response(status: 400, headers: [], body: [], trailers: []))
+                    .ok _  => _ = 0
+                    .err _ => _ = 0
+
+# `serve_h2` with `state` handed to `handler` beside each request.
+#
+# - `s`: how it serves, as `serve_h2` reads it.
+# - `c`: the connection, made by `http2.server_of`; its owner closes it.
+# - `remote`: what each request's `remote` holds.
+# - `state`: the program's value, handed to each call as it is.
+# - `handler`: called once for each request with `state`.
+#
+# See also `serve_h2`, `serve_stream_with`.
+function serve_h2_with<S>(s: Server, @c: http2.Conn, remote: str, state: S, handler: (function(S, Request) -> Response)) -> i64
+    _ = s.deadline_ms
+    answered: i64 @= 0
+
+    while true
+        got = match http2.next_request(@c)
+            .ok g  => g
+            .err _ => return answered
+
+        match from_h2_request(got, remote: remote)
+            .ok r =>
+                match http2.answer(@c, stream: got.stream, response: to_h2_response(handler(state, r), method: r.method))
+                    .ok _  => answered @ answered + 1
+                    .err _ => _ = 0
+            .err _ =>
+                match http2.answer(@c, stream: got.stream, response: http2.Response(status: 400, headers: [], body: [], trailers: []))
+                    .ok _  => _ = 0
+                    .err _ => _ = 0
 
 ## Multipart bodies read
 
@@ -3898,7 +4110,8 @@ test "round_trip: a GET on a held connection"
 test "default_server: thirty seconds a connection"
     assert default_server().deadline_ms == 30_000 && default_server().limits == default_limits()
 
-# A server answering one connection, then ending as its listener's deadline passes.
+# A server answering one connection, then ending as its listener's deadline
+# passes.
 test "serve: one connection answered, then the listener's deadline"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
     conn = net.connect("127.0.0.1", port: l.address.port, deadline_ms: 5_000).must()
@@ -4413,3 +4626,114 @@ test "store_cookies_by: a cookie for co.uk refused"
 # A single label, which no response may set a cookie for.
 test "is_single_label: com"
     assert is_single_label("com")
+
+# An `https://` request whose server chooses `h2` by ALPN goes over HTTP/2:
+# the server of this process answers HTTP/2 alone.
+test "send: https:// over HTTP/2 where the server's ALPN chooses h2"
+    if tls.is_available()
+        port = h2bridge.free_port()
+        t @= threads.spawn_text(body: h2bridge.serve_h2_tls, arg: to_str(port))
+        h2bridge.until_listening(port)
+        c @= default_client()
+        c.roots @ tls.TEST_ROOT
+        got = get(c, target: f"https://localhost:{port}/x").must()
+        assert got.status == 200 && text_of(got).must() == "over h2"
+        assert threads.wait_text(@t) == "1"
+
+# A TLS listener offering `h2` answers an HTTP/2 client over HTTP/2.
+test "serve_tls: an HTTP/2 client answered over HTTP/2"
+    if tls.is_available()
+        l @= tls.listen(
+            host: "127.0.0.1",
+            port: 0,
+            server: tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: ["h2", "http/1.1"])
+        ).must()
+        t @= threads.spawn_text(body: h2bridge.ask_h2_tls, arg: to_str(l.port))
+        tls.set_accept_deadline(l, ms: 5000).must()
+
+        match serve_tls(default_server(), l: l, handler: respond_not_found)
+            .ok _  => assert false
+            .err e => assert e.code == TIMEOUT
+
+        assert strings.has_prefix(s: threads.wait_text(@t), prefix: "404 ")
+        tls.close_listener(@l).must()
+
+# Two requests on one HTTP/2 connection the program holds.
+test "round_trip_h2: two requests on one connection"
+    port = h2bridge.free_port()
+    t @= threads.spawn_text(body: h2bridge.serve_h2_plain, arg: to_str(port))
+    h2bridge.until_listening(port)
+    c @= http2.connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: http2.default_options()).must()
+    first = round_trip_h2(
+        @c,
+        r: request(method: METHOD_GET, target: f"http://127.0.0.1:{port}/a").must(),
+        limits: default_limits()
+    ).must()
+    second_one = round_trip_h2(
+        @c,
+        r: request(method: METHOD_GET, target: f"http://127.0.0.1:{port}/b").must(),
+        limits: default_limits()
+    ).must()
+    assert text_of(first).must() == "over h2" && text_of(second_one).must() == "over h2"
+    http2.close(@c).must()
+    assert threads.wait_text(@t) == "2"
+
+# An HTTP/2 connection served with a handler of this package.
+test "serve_h2: one request answered 404 by respond_not_found"
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    t @= threads.spawn_text(body: h2bridge.ask_h2_plain, arg: to_str(l.address.port))
+    accepted = net.accept(l, deadline_ms: 10000).must()
+    stream @= accepted.stream
+    c @= http2.server_of(@stream, options: http2.default_options()).must()
+    assert serve_h2(default_server(), @c, remote: "", handler: respond_not_found) == 1
+    assert strings.has_prefix(s: threads.wait_text(@t), prefix: "404 ")
+    http2.close(@c).must()
+    net.close_listener(@l).must()
+
+# An HTTP/2 connection served with the program's own value as state.
+test "serve_h2_with: a redirector over HTTP/2"
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    t @= threads.spawn_text(body: h2bridge.ask_h2_plain, arg: to_str(l.address.port))
+    accepted = net.accept(l, deadline_ms: 10000).must()
+    stream @= accepted.stream
+    c @= http2.server_of(@stream, options: http2.default_options()).must()
+    assert serve_h2_with(default_server(), @c, remote: "", state: "https://example.com", handler: respond_moved_to) == 1
+    assert strings.has_prefix(s: threads.wait_text(@t), prefix: "30")
+    http2.close(@c).must()
+    net.close_listener(@l).must()
+
+# A request of this package as HTTP/2 sends it.
+test "to_h2_request: the authority from the URL, fields in lower case, Connection left out"
+    r = with_header(
+        request(method: METHOD_GET, target: "https://example.com:8443/a?b=1").must().headers,
+        name: "Connection",
+        value: "close"
+    )
+    got = to_h2_request(
+        Request(method: METHOD_GET, url: url.parse("https://example.com:8443/a?b=1").must(), headers: with_header(r, name: "Accept", value: "*/*"), body: [], closing: false, remote: "")
+    ).must()
+    assert got.authority == "example.com:8443" && got.path == "/a?b=1" && got.scheme == "https"
+    assert got.headers == [http2.Field(name: "accept", value: "*/*", sensitive: false)]
+
+# A request HTTP/2 read, as a handler of this package reads it.
+test "from_h2_request: the path as its URL, :authority as Host"
+    got = from_h2_request(
+        http2.Request(method: "GET", scheme: "https", authority: "h.example", path: "/p?q=1", protocol: "", headers: [], body: [], trailers: [], stream: 1),
+        remote: ""
+    ).must()
+    assert got.url.path == "/p" && got.url.query == "q=1" && value_of(got.headers, name: "Host").must() == "h.example"
+
+# A response of this package as HTTP/2 writes it.
+test "to_h2_response: Content-Length left out, a date added, no body for HEAD"
+    r = respond_text(200, text: "hi")
+    got = to_h2_response(r, method: METHOD_GET)
+    assert got.status == 200 && got.body == [104, 105]
+    assert has_header(from_h2_response(got).headers, name: "date") && !has_header(from_h2_response(got).headers, name: "content-length")
+    assert to_h2_response(r, method: METHOD_HEAD).body == []
+
+# A response HTTP/2 read, as this package's.
+test "from_h2_response: status, fields and body kept"
+    got = from_h2_response(
+        http2.Response(status: 201, headers: [http2.Field(name: "location", value: "/n", sensitive: false)], body: [1], trailers: [])
+    )
+    assert got.status == 201 && value_of(got.headers, name: "Location").must() == "/n" && got.body == [1]

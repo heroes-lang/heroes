@@ -1,0 +1,205 @@
+# The texts of a gRPC call's head and trailers: the names of the status
+# codes, the statuses an HTTP status and an HTTP/2 reset stand for (gRPC's
+# "HTTP to gRPC status code mapping"), `grpc-message`'s escapes, and
+# `grpc-timeout`'s digits and unit.
+
+use bytes
+
+# The names of the status codes 0 to 16.
+constant NAMES: [str]
+    [
+        "OK"
+        "CANCELLED"
+        "UNKNOWN"
+        "INVALID_ARGUMENT"
+        "DEADLINE_EXCEEDED"
+        "NOT_FOUND"
+        "ALREADY_EXISTS"
+        "PERMISSION_DENIED"
+        "RESOURCE_EXHAUSTED"
+        "FAILED_PRECONDITION"
+        "ABORTED"
+        "OUT_OF_RANGE"
+        "UNIMPLEMENTED"
+        "INTERNAL"
+        "UNAVAILABLE"
+        "DATA_LOSS"
+        "UNAUTHENTICATED"
+    ]
+
+# The largest i64.
+constant MOST: i64
+    9223372036854775807
+
+# The name of a status code, "" for a code past 16 or below 0.
+function name_of(code: i64) -> str
+    if code >= 0 && code < NAMES.len()
+        return NAMES[code]
+    return ""
+
+# The status an HTTP status that came with no `grpc-status` stands for.
+function of_http(status: i64) -> i64
+    if status == 400
+        return 13
+
+    if status == 401
+        return 16
+
+    if status == 403
+        return 7
+
+    if status == 404
+        return 12
+
+    if status == 429 || status == 502 || status == 503 || status == 504
+        return 14
+    return 2
+
+# The status a stream reset with the HTTP/2 error `error` stands for.
+function of_reset(error: i64) -> i64
+    if error == 0x8
+        return 1
+
+    if error == 0x7
+        return 14
+
+    if error == 0xb
+        return 8
+
+    if error == 0xc
+        return 7
+    return 13
+
+# The hexadecimal digit of `n`, 0 to 15, in capitals.
+function digit(n: i64) -> u8
+    return "0123456789ABCDEF"[n]
+
+# `s` as `grpc-message` carries it: every byte outside space to `~`, and
+# `%`, as `%XX`.
+function percent(s: str) -> str
+    out: [u8] @= []
+
+    for i in range(from: 0, to: s.len())
+        b = s[i]
+
+        if b < ' ' || b > '~' || b == '%'
+            n = to_i64(b).must()
+            out @ out.push('%')
+            out @ out.push(digit(n / 16))
+            out @ out.push(digit(n % 16))
+        else
+            out @ out.push(b)
+
+    return bytes.to_text_lossy(out)
+
+# The value of one hexadecimal digit, -1 where `c` is none.
+function value_of_digit(c: u8) -> i64
+    if c >= '0' && c <= '9'
+        return to_i64(c - '0').must()
+
+    if c >= 'a' && c <= 'f'
+        return to_i64(c - 'a').must() + 10
+
+    if c >= 'A' && c <= 'F'
+        return to_i64(c - 'A').must() + 10
+    return -1
+
+# `grpc-message`'s text with its escapes undone; an escape that is none is
+# kept as it came, bytes that make no UTF-8 replaced.
+function unpercent(s: str) -> str
+    out: [u8] @= []
+    at: i64 @= 0
+
+    while at < s.len()
+        if s[at] == '%' && at + 2 < s.len() && value_of_digit(s[at + 1]) >= 0 && value_of_digit(s[at + 2]) >= 0
+            out @ out.push(to_u8(value_of_digit(s[at + 1]) * 16 + value_of_digit(s[at + 2])).must())
+            at @ at + 3
+        else
+            out @ out.push(s[at])
+            at @ at + 1
+
+    return bytes.to_text_lossy(out)
+
+# The nanoseconds in one of each unit of `grpc-timeout`, as `UNITS` orders
+# them: n, u, m, S, M, H.
+constant SIZES: [i64]
+    [1, 1000, 1000000, 1000000000, 60000000000, 3600000000000]
+
+# The units of `grpc-timeout`, finest first.
+constant UNITS: str
+    "numSMH"
+
+# `ns` nanoseconds as `grpc-timeout` carries it: the finest unit whose
+# count, rounded up, fits eight digits.
+function format_timeout(ns: i64) -> str
+    for i in range(from: 0, to: SIZES.len())
+        whole = ns / SIZES[i]
+
+        count = if ns % SIZES[i] == 0
+            whole
+        else
+            whole + 1
+
+        if count <= 99999999
+            return f"{count}{UNITS.slice(from: i, to: i + 1)}"
+
+    return "99999999H"
+
+# The nanoseconds `grpc-timeout`'s value says, the largest i64 where they
+# pass it; -1 where the value is not one to eight digits and a unit.
+function parse_timeout(s: str) -> i64
+    if s.len() < 2 || s.len() > 9
+        return -1
+    count: i64 @= 0
+
+    for i in range(from: 0, to: s.len() - 1)
+        if s[i] < '0' || s[i] > '9'
+            return -1
+        count @ count * 10 + to_i64(s[i] - '0').must()
+
+    unit = s[s.len() - 1]
+
+    for i in range(from: 0, to: SIZES.len())
+        if UNITS[i] == unit
+            if count > MOST / SIZES[i]
+                return MOST
+            return count * SIZES[i]
+
+    return -1
+
+test "percent: plain text kept, % and bytes past ASCII escaped, as gRPC's specification shows"
+    assert percent("Hello world") == "Hello world"
+    assert percent("50%") == "50%25"
+    assert percent("ä") == "%C3%A4"
+    assert percent("") == ""
+    assert percent("a\nb") == "a%0Ab"
+
+test "unpercent: escapes undone, an escape that is none kept, bytes that are no UTF-8 replaced"
+    assert unpercent("50%25") == "50%"
+    assert unpercent("%C3%A4") == "ä"
+    assert unpercent("%zz and %4") == "%zz and %4"
+    assert unpercent("%FF") == "�"
+
+test "format_timeout: the finest unit that fits eight digits, rounded up"
+    assert format_timeout(1) == "1n"
+    assert format_timeout(99999999) == "99999999n"
+    assert format_timeout(100000000) == "100000u"
+    assert format_timeout(1500000000) == "1500000u"
+    assert format_timeout(1000000000000) == "1000000m"
+    assert format_timeout(MOST) == "2562048H"
+
+test "parse_timeout: each unit, nine digits, no unit, a unit unknown, and a sum past i64"
+    assert parse_timeout("1S") == 1000000000
+    assert parse_timeout("250m") == 250000000
+    assert parse_timeout("3H") == 10800000000000
+    assert parse_timeout("123456789S") == -1
+    assert parse_timeout("10") == -1
+    assert parse_timeout("10x") == -1
+    assert parse_timeout("99999999H") == MOST
+
+test "of_http and of_reset: gRPC's mapping, every other code UNKNOWN or INTERNAL"
+    assert of_http(404) == 12 && of_http(503) == 14 && of_http(500) == 2 && of_http(401) == 16
+    assert of_reset(0x8) == 1 && of_reset(0x7) == 14 && of_reset(0xb) == 8 && of_reset(0x1) == 13
+
+test "name_of: the first, the last, and past them"
+    assert name_of(0) == "OK" && name_of(16) == "UNAUTHENTICATED" && name_of(17) == ""

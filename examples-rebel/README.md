@@ -119,7 +119,6 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 4 | `tui` | full-screen terminal programs in immediate mode: widgets, layout by constraints, only the changed cells written | `term`, `unicode`, `strings` |  |
 | 4 | `webauthn` | a WebAuthn relying party: registration and authentication ceremonies, attestation and assertion verified | `cbor`, `crypto`, `crypto/keypairs`, `json`, `bytes`, `url` |  |
 | 5 | `jose` | JSON Web Tokens, signatures (JWS), keys (JWK) and encryption (JWE) where the system's cryptography allows | `asn1`, `big`, `bytes`, `crypto`, `crypto/keypairs`, `crypto/seal`, `json`, `os`, `pem`, `time` |  |
-| 5 | `http` | HTTP/1.1, client and server, over `net` | `bytes`, `compress`, `io`, `json`, `net`, `os`, `strings`, `threads`, `time`, `tls`, `url` |  |
 | 5 | `image` | images in memory; PNG, JPEG, GIF and BMP read and written; crop, resize, rotate, colours, simple drawing; a broken file is `invalid`, never a memory fault | `compress`, `bytes`, `hash`, `math`, `io`, `fs` |  |
 | 5 | `archive` | tar and zip, written and read | `bytes`, `compress`, `fs`, `hash`, `io`, `path`, `time` |  |
 | 5 | `sql/postgres` | PostgreSQL over its own protocol, written in Heroes; the API every driver keeps | `bytes`, `crypto`, `io`, `net`, `numbers`, `os`, `sql`, `strings`, `threads`, `time`, `tls` |  |
@@ -127,7 +126,7 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 5 | `sql/mysql` | MySQL and MariaDB over their own protocol, written in Heroes; the same API as the other two drivers | `bytes`, `crypto`, `io`, `net`, `numbers`, `os`, `protobuf`, `sql`, `strings`, `time`, `tls`, `url` |  |
 | 5 | `redis` | a Redis client over its protocol (RESP2 and RESP3): commands, pipelines, publish and subscribe | `bytes`, `io`, `net`, `numbers`, `os`, `strings`, `time`, `tls`, `url` |  |
 | 5 | `sql/build` | queries as values composed by functions, placeholders for each database, values only as parameters, a row read into a record by its field names; the ORM itself refused, with the reason | `sql`, `strings` |  |
-| 5 | `http2` | HTTP/2 and HPACK, client and server, beneath `http` and knowing nothing of it | `io`, `net`, `tls`, `bytes`, `numbers`, `strings`, `time`, `threads`, `poll` |  |
+| 5 | `http2` | HTTP/2 and HPACK, client and server, beneath `http` and knowing nothing of it | `bytes`, `io`, `net`, `numbers`, `threads`, `time`, `tls` |  |
 | 5 | `mail/smtp` | mail sent: SMTP with STARTTLS or TLS, authentication, the extensions | `bytes`, `crypto`, `io`, `mail`, `net`, `numbers`, `strings`, `threads`, `time`, `tls` |  |
 | 5 | `x509` | certificates, requests and revocation lists read, their names, extensions and keys; a chain put in order | `asn1`, `big`, `bytes`, `crypto/keypairs`, `net`, `pem`, `strings`, `time` |  |
 | 5 | `fs/watch` | a file or a folder watched, and told what changed | `fs`, `io`, `net`, `path`, `poll`, `time` | `hero_watch.h` |
@@ -140,24 +139,25 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 5 | `kafka` | a Kafka client: produce, fetch, offsets and consumer groups over the wire protocol | `net`, `tls`, `bytes`, `compress`, `hash`, `time` |  |
 | 5 | `mongodb` | a MongoDB client over its wire protocol: SCRAM, CRUD, cursors, aggregation, transactions | `bson`, `net`, `tls`, `dns`, `crypto`, `io`, `strings`, `time` |  |
 | 5 | `log/files` | logs written to files that rotate by size or by day, the old ones kept, counted and compressed | `compress`, `fs`, `io`, `log`, `path`, `strings`, `time` |  |
+| 6 | `http` | HTTP/1.1, client and server, over `net` | `bytes`, `compress`, `http2`, `io`, `json`, `net`, `numbers`, `os`, `strings`, `threads`, `time`, `tls`, `url` |  |
 | 6 | `sql/migrate` | numbered migrations applied in transactions, the versions applied kept in a table, the step back | `bytes`, `crypto`, `fs`, `numbers`, `path`, `sql`, `sql/build`, `strings`, `time` |  |
-| 6 | `web` | a router in the manner of Echo: routes with methods and parameters, groups, middleware as functions over a request and a response, the right 404 and 405, responses for JSON, text, redirects and static files; the program calls its own handler with its own state | `bytes`, `compress`, `crypto`, `crypto/seal`, `fs`, `http`, `io`, `json`, `log`, `net`, `numbers`, `os`, `path`, `strings`, `template`, `time`, `tls`, `url`, `uuid` |  |
-| 6 | `grpc` | gRPC calls of the four kinds, client and server, over `http2` and `protobuf` | `http2`, `protobuf`, `compress`, `tls`, `time` |  |
-| 6 | `websocket` | WebSocket (RFC 6455) client and server, compressed or not, many connections on one thread | `bytes`, `compress`, `crypto`, `http`, `io`, `json`, `net`, `os`, `poll`, `strings`, `threads`, `time`, `tls`, `unicode`, `url` |  |
-| 6 | `oauth2` | an OAuth 2.0 client (authorization code with PKCE, client credentials, device flow, refresh) and OpenID Connect | `bytes`, `crypto`, `http`, `io`, `jose`, `json`, `net`, `random`, `threads`, `time`, `url` |  |
-| 6 | `metrics` | counters, gauges and histograms, written in Prometheus's text format and served | `strings`, `numbers`, `time`, `http` |  |
+| 6 | `grpc` | gRPC calls of the four kinds, client and server, over `http2` and `protobuf` | `bytes`, `compress`, `http2`, `io`, `net`, `numbers`, `protobuf`, `threads`, `time`, `tls` |  |
 | 6 | `xlsx` | spreadsheets of Office Open XML read and written: sheets, cells, types, styles | `archive`, `xml`, `time`, `numbers` |  |
 | 6 | `pdf` | PDF documents written (text, standard fonts, images, simple tables) and their text read | `compress`, `bytes`, `image`, `time` |  |
-| 6 | `s3` | the S3 API with Signature Version 4: objects, buckets, multipart uploads, presigned URLs | `http`, `crypto`, `xml`, `time`, `url` |  |
-| 6 | `jsonrpc` | JSON-RPC 2.0 requests, answers and notifications over a stream or HTTP | `bytes`, `containers/deque`, `http`, `io`, `json`, `net`, `numbers`, `strings`, `threads` |  |
 | 6 | `jobs` | background jobs kept in PostgreSQL or Redis, claimed by workers, retried, scheduled | `sql/postgres`, `json`, `time` |  |
-| 6 | `tracing` | spans with their context propagated in HTTP requests, exported by OpenTelemetry | `http`, `protobuf`, `random`, `time` |  |
-| 6 | `acme` | an ACME client (RFC 8555): account, order, HTTP-01 and DNS-01 challenges, the certificate downloaded | `http`, `jose`, `json`, `x509`, `crypto/keypairs`, `time` |  |
-| 6 | `llm/anthropic` | Claude's Messages API: messages, streaming, tools driven by the program, token counting, batches | `bytes`, `http`, `io`, `json`, `net`, `numbers`, `os`, `random`, `strings`, `threads`, `time`, `tls`, `url` |  |
-| 6 | `llm/openai` | Chat Completions and Responses, which Ollama and vLLM also speak: streaming, tools, embeddings | `bytes`, `http`, `io`, `json`, `net`, `numbers`, `os`, `random`, `strings`, `threads`, `time`, `tls`, `url` |  |
-| 7 | `mcp` | the Model Context Protocol, server and client, over standard streams and HTTP | `bytes`, `containers/deque`, `http`, `io`, `json`, `json/schema`, `jsonrpc`, `net`, `numbers`, `oauth2`, `strings`, `threads`, `time`, `url`, `web` |  |
-| 7 | `openapi` | an OpenAPI 3.1 document built as data, written, served, and requests validated against it | `json`, `json/schema`, `yaml`, `http`, `web` |  |
-| 7 | `graphql` | GraphQL documents and schemas parsed, validated and executed, the program resolving each field | `json`, `http`, `web` |  |
+| 7 | `web` | a router in the manner of Echo: routes with methods and parameters, groups, middleware as functions over a request and a response, the right 404 and 405, responses for JSON, text, redirects and static files; the program calls its own handler with its own state | `bytes`, `compress`, `crypto`, `crypto/seal`, `fs`, `http`, `io`, `json`, `log`, `net`, `numbers`, `os`, `path`, `strings`, `template`, `time`, `tls`, `url`, `uuid` |  |
+| 7 | `websocket` | WebSocket (RFC 6455) client and server, compressed or not, many connections on one thread | `bytes`, `compress`, `crypto`, `http`, `io`, `json`, `net`, `os`, `poll`, `strings`, `threads`, `time`, `tls`, `unicode`, `url` |  |
+| 7 | `oauth2` | an OAuth 2.0 client (authorization code with PKCE, client credentials, device flow, refresh) and OpenID Connect | `bytes`, `crypto`, `http`, `io`, `jose`, `json`, `net`, `random`, `threads`, `time`, `url` |  |
+| 7 | `metrics` | counters, gauges and histograms, written in Prometheus's text format and served | `strings`, `numbers`, `time`, `http` |  |
+| 7 | `s3` | the S3 API with Signature Version 4: objects, buckets, multipart uploads, presigned URLs | `http`, `crypto`, `xml`, `time`, `url` |  |
+| 7 | `jsonrpc` | JSON-RPC 2.0 requests, answers and notifications over a stream or HTTP | `bytes`, `containers/deque`, `http`, `io`, `json`, `net`, `numbers`, `strings`, `threads` |  |
+| 7 | `tracing` | spans with their context propagated in HTTP requests, exported by OpenTelemetry | `http`, `protobuf`, `random`, `time` |  |
+| 7 | `acme` | an ACME client (RFC 8555): account, order, HTTP-01 and DNS-01 challenges, the certificate downloaded | `http`, `jose`, `json`, `x509`, `crypto/keypairs`, `time` |  |
+| 7 | `llm/anthropic` | Claude's Messages API: messages, streaming, tools driven by the program, token counting, batches | `bytes`, `http`, `io`, `json`, `net`, `numbers`, `os`, `random`, `strings`, `threads`, `time`, `tls`, `url` |  |
+| 7 | `llm/openai` | Chat Completions and Responses, which Ollama and vLLM also speak: streaming, tools, embeddings | `bytes`, `http`, `io`, `json`, `net`, `numbers`, `os`, `random`, `strings`, `threads`, `time`, `tls`, `url` |  |
+| 8 | `mcp` | the Model Context Protocol, server and client, over standard streams and HTTP | `bytes`, `containers/deque`, `http`, `io`, `json`, `json/schema`, `jsonrpc`, `net`, `numbers`, `oauth2`, `strings`, `threads`, `time`, `url`, `web` |  |
+| 8 | `openapi` | an OpenAPI 3.1 document built as data, written, served, and requests validated against it | `json`, `json/schema`, `yaml`, `http`, `web` |  |
+| 8 | `graphql` | GraphQL documents and schemas parsed, validated and executed, the program resolving each field | `json`, `http`, `web` |  |
 
 **The types other packages name**, each owned by one package and named
 qualified everywhere else, never redefined:

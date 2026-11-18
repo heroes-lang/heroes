@@ -1,0 +1,158 @@
+# HPACK's encoder (RFC 7541 § 6): a header list written as a block against
+# the static table and the encoder's own dynamic table, which changes as the
+# peer's decoder's will.
+
+use bytes
+use http2/internal/huffman
+use http2/internal/integers
+use http2/internal/model
+use http2/internal/samples
+use http2/internal/statics
+use http2/internal/table
+
+# An encoder between two blocks.
+record State
+    # Its dynamic table.
+    table: table.Table
+    # The smallest size asked since the last block, -1 where none was.
+    least: i64
+    # The last size asked since the last block, -1 where none was.
+    last: i64
+
+# A new encoder whose table holds `table_size` bytes, below 0 taken as 0.
+function make(table_size: i64) -> State
+    size = if table_size < 0
+        0
+    else
+        table_size
+    return State(table: table.empty(size), least: -1, last: -1)
+
+# Makes the table hold `size` bytes from now, the size update owed to the
+# next block: the smallest size asked since the last block and the last.
+function resize(@e: State, size: i64)
+    if e.least < 0 || size < e.least
+        e.least @ size
+    e.last @ size
+    table.resize(@e.table, max_size: size)
+
+# Writes `s` as a string literal (RFC 7541 § 5.2), Huffman-coded where that
+# is no longer and `coded` allows it, as RFC 7541 C.6 codes `307`.
+function write_string(@out: [u8], s: [u8] lent, coded: bool)
+    length = huffman.length_of(s)
+
+    if coded && length <= s.len()
+        integers.write(@out, value: length, prefix: 7, first: 0x80)
+        bytes.push_all(to: @out, from: huffman.encode(s))
+    else
+        integers.write(@out, value: s.len(), prefix: 7, first: 0)
+        bytes.push_all(to: @out, from: s)
+
+# The block of `fields`, strings Huffman-coded where that is shorter.
+function encode(@e: State, fields: [model.Field] lent) -> [u8]
+    return encode_with(@e, fields: fields, coded: true)
+
+# The block of `fields`, strings Huffman-coded where `coded` and shorter:
+# the size updates owed first, then each field as an index where a table
+# holds it whole, else as a literal, indexed unless sensitive or past three
+# quarters of the table.
+function encode_with(@e: State, fields: [model.Field] lent, coded: bool) -> [u8]
+    out: [u8] @= []
+
+    if e.last >= 0
+        if e.least < e.last
+            integers.write(@out, value: e.least, prefix: 5, first: 0x20)
+        integers.write(@out, value: e.last, prefix: 5, first: 0x20)
+        e.least @ -1
+        e.last @ -1
+
+    for f in fields
+        name = bytes.from_text(f.name)
+        value = bytes.from_text(f.value)
+        whole: i64 @= 0
+
+        if !f.sensitive
+            whole @ statics.index_of_field(name: f.name, value: f.value)
+
+            if whole == 0
+                k = table.index_of_field(e.table, name: name, value: value)
+
+                if k >= 0
+                    whole @ statics.NAMES.len() + 1 + k
+
+        if whole > 0
+            integers.write(@out, value: whole, prefix: 7, first: 0x80)
+            continue
+        named: i64 @= statics.index_of_name(f.name)
+
+        if named == 0
+            k = table.index_of_name(e.table, name: name)
+
+            if k >= 0
+                named @ statics.NAMES.len() + 1 + k
+        size = table.entry_size(name: name, value: value)
+
+        if f.sensitive
+            integers.write(@out, value: named, prefix: 4, first: 0x10)
+        else if size * 4 <= e.table.max_size * 3
+            integers.write(@out, value: named, prefix: 6, first: 0x40)
+        else
+            integers.write(@out, value: named, prefix: 4, first: 0)
+
+        if named == 0
+            write_string(out: @out, s: name, coded: coded)
+        write_string(out: @out, s: value, coded: coded)
+
+        if !f.sensitive && size * 4 <= e.table.max_size * 3
+            table.add(@e.table, name: name, value: value)
+
+    return out
+
+test "encode_with: RFC 7541 C.3's three requests, no Huffman, byte for byte"
+    e @= make(4096)
+
+    for i in range(from: 0, to: 3)
+        got = encode_with(
+            @e,
+            fields: samples.fields(names: samples.REQUEST_NAMES[i], values: samples.REQUEST_VALUES[i]),
+            coded: false
+        )
+        assert bytes.format_hex(got) == samples.REQUESTS_PLAIN[i]
+        assert e.table.size == samples.REQUEST_TABLE_SIZES[i]
+
+test "encode: RFC 7541 C.4's three requests, Huffman-coded, byte for byte"
+    e @= make(4096)
+
+    for i in range(from: 0, to: 3)
+        got = encode(@e, fields: samples.fields(names: samples.REQUEST_NAMES[i], values: samples.REQUEST_VALUES[i]))
+        assert bytes.format_hex(got) == samples.REQUESTS_HUFFMAN[i]
+
+test "encode: RFC 7541 C.5 and C.6's responses on a table of 256 bytes, evictions included"
+    plain @= make(256)
+    coded @= make(256)
+
+    for i in range(from: 0, to: 3)
+        list = samples.fields(names: samples.RESPONSE_NAMES[i], values: samples.RESPONSE_VALUES[i])
+        assert bytes.format_hex(encode_with(@plain, fields: list, coded: false)) == samples.RESPONSES_PLAIN[i]
+        assert bytes.format_hex(encode(@coded, fields: list)) == samples.RESPONSES_HUFFMAN[i]
+        assert plain.table.size == samples.RESPONSE_TABLE_SIZES[i]
+
+test "encode: a sensitive field never indexed, an empty list, and a table of 0"
+    e @= make(4096)
+    secret = model.Field(name: "authorization", value: "secret", sensitive: true)
+    first = encode_with(@e, fields: [secret], coded: false)
+    assert first[0] == 0x1f
+    assert table.count(e.table) == 0
+    assert encode(@e, fields: []) == []
+    z @= make(0)
+    got = encode(@z, fields: [model.Field(name: "x-a", value: "b", sensitive: false)])
+    assert got[0] == 0x00
+    assert table.count(z.table) == 0
+
+test "resize: the smallest and the last size written at the next block, then none"
+    e @= make(4096)
+    resize(@e, size: 0)
+    resize(@e, size: 2048)
+    assert encode(@e, fields: []) == [0x20, 0x3f, 0xe1, 0x0f]
+    assert encode(@e, fields: []) == []
+    resize(@e, size: 100)
+    assert encode(@e, fields: []) == [0x3f, 0x45]

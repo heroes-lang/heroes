@@ -1,0 +1,211 @@
+# A request sent over HTTP/2 where a server's TLS chose `h2` by ALPN: the
+# request's fields made HTTP/2's (names in lower case, those of HTTP/1.1's
+# connection left out, `Host` made `:authority`), the exchange made by
+# `http2` on the connection, and the response read back as a message of
+# this package, so the client's redirects, retries, cookies and decoding
+# hold for it as for HTTP/1.1.
+
+use http/internal/read
+use http/internal/wire
+use http2
+use io
+use net
+use numbers
+use strings
+use time
+use tls
+
+# Whether `name`, in any case, is a field of HTTP/1.1's connection, which
+# HTTP/2 refuses (RFC 9113 § 8.2.2), or `Host`, which `:authority` carries.
+function is_dropped(name: str) -> bool
+    lower = strings.to_lower_ascii(name)
+    return lower == "connection" || lower == "keep-alive" || lower == "proxy-connection" || lower == "transfer-encoding" || lower == "upgrade" || lower == "host"
+
+# `fields` as HTTP/2 carries them: names in lower case, the connection's
+# left out, `te` kept only as `trailers`, credentials and cookies never
+# indexed.
+function fields_for(fields: [wire.Field]) -> [http2.Field]
+    out: [http2.Field] @= []
+
+    for f in fields
+        lower = strings.to_lower_ascii(f.name)
+
+        if !is_dropped(f.name) && (lower != "te" || strings.to_lower_ascii(f.value) == "trailers")
+            out @ out.push(
+                http2.Field(name: lower, value: f.value, sensitive: lower == "authorization" || lower == "cookie" || lower == "proxy-authorization")
+            )
+
+    return out
+
+# The options of a client held to `bounds`: its bodies, and its header
+# lists as large as a head of `bounds` with its fields counted as HPACK
+# counts them.
+function options_for(bounds: wire.Bounds) -> http2.Options
+    o @= http2.default_options()
+    o.limits.body_bytes @ bounds.body_bytes
+    o.settings.max_header_list_size @ bounds.head_bytes + 32 * bounds.field_count
+    return o
+
+# The response to one request over HTTP/2 on `stream`, a TLS stream whose
+# ALPN chose `h2`, closed after it. Fails as `http2.round_trip` fails, and
+# `limit` where the response holds more fields than `bounds` allow.
+function exchange(@stream: io.Stream, method: str, scheme: str, authority: str, target: str, fields: [wire.Field], content: [u8], bounds: wire.Bounds) -> read.Message?
+    c @= http2.client_of(@stream, options: options_for(bounds))?
+    request = http2.Request(
+        method: method,
+        scheme: scheme,
+        authority: authority,
+        path: target,
+        protocol: "",
+        headers: fields_for(fields),
+        body: content,
+        trailers: [],
+        stream: 0
+    )
+    answer = http2.round_trip(@c, r: request)
+
+    match http2.close(@c)
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+    got = answer?
+
+    if got.headers.len() > bounds.field_count
+        return fail(
+            code: "limit",
+            msg: f"reading the response to {method} {target}: {got.headers.len()} fields, past {bounds.field_count}"
+        )
+    head: [wire.Field] @= []
+
+    for f in got.headers
+        head @ head.push(wire.Field(name: f.name, value: f.value))
+
+    return ok(
+        read.Message(head: wire.Head(method: "", target: "", status: got.status, reason: "", major: 2, minor: 0, fields: head), content: got.body, closing: true)
+    )
+
+## For tests
+
+# FOR TESTS: a port no socket listens on now.
+function free_port() -> i64
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    port = l.address.port
+    net.close_listener(@l).must()
+    return port
+
+# FOR TESTS: waits until something listens on `port`, about two seconds at
+# most; the connection that finds it is closed at once.
+function until_listening(port: i64)
+    for _ in range(from: 0, to: 200)
+        match net.connect("127.0.0.1", port: port, deadline_ms: 1000)
+            .ok c =>
+                s @= c.stream
+                io.close(@s).must()
+                return
+            .err _ => time.sleep(time.milliseconds(10).must())
+
+# FOR TESTS, a thread's body: a TLS server offering `h2` alone on the port
+# `arg` names, answering "over h2" to every request of the first HTTP/2
+# connection that asks one, and answering how many it answered.
+function serve_h2_tls(arg: str) -> str
+    port = numbers.parse_int(arg).must()
+    l @= tls.listen(
+        host: "127.0.0.1",
+        port: port,
+        server: tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: [http2.ALPN])
+    ).must()
+    tls.set_accept_deadline(l, ms: 10000).must()
+    answered: i64 @= 0
+
+    for _ in range(from: 0, to: 10)
+        if answered == 0
+            match tls.accept(l, deadline_ms: 10000)
+                .ok accepted =>
+                    stream @= accepted
+                    tls.set_deadline(stream, ms: 10000).must()
+
+                    match http2.server_of(@stream, options: http2.default_options())
+                        .ok made =>
+                            c @= made
+                            answered @ http2.serve_with(@c, state: "over h2", handler: http2.respond_text)
+                            http2.close(@c).must()
+                        .err _ =>
+                            io.close(@stream).must()
+                .err _ => _ = 0
+
+    tls.close_listener(@l).must()
+    return to_str(answered)
+
+# FOR TESTS, a thread's body: an h2c server on the port `arg` names,
+# answering as `serve_h2_tls` does.
+function serve_h2_plain(arg: str) -> str
+    port = numbers.parse_int(arg).must()
+    l @= net.listen(host: "127.0.0.1", port: port).must()
+    net.set_accept_deadline(l, ms: 10000).must()
+    answered: i64 @= 0
+
+    for _ in range(from: 0, to: 10)
+        if answered == 0
+            match net.accept(l, deadline_ms: 10000)
+                .ok accepted =>
+                    stream @= accepted.stream
+
+                    match http2.server_of(@stream, options: http2.default_options())
+                        .ok made =>
+                            c @= made
+                            answered @ http2.serve_with(@c, state: "over h2", handler: http2.respond_text)
+                            http2.close(@c).must()
+                        .err _ =>
+                            io.close(@stream).must()
+                .err _ => _ = 0
+
+    net.close_listener(@l).must()
+    return to_str(answered)
+
+# A GET of `/x` on `c`, as "status body".
+function ask_on(@c: http2.Conn) -> str
+    answer = http2.round_trip(
+        @c,
+        r: http2.Request(method: "GET", scheme: "https", authority: "localhost", path: "/x", protocol: "", headers: [], body: [], trailers: [], stream: 0)
+    )
+
+    match http2.close(@c)
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+    match answer
+        .ok r  => return f"{r.status} {r.body.len()}"
+        .err e => return "failed: " + e.msg
+
+# FOR TESTS, a thread's body: an HTTP/2 client over TLS to the port `arg`
+# names, trusting the test authority, asking `/x` once.
+function ask_h2_tls(arg: str) -> str
+    port = numbers.parse_int(arg).must()
+
+    match http2.connect(host: "localhost", port: port, deadline_ms: 10000, roots: tls.TEST_ROOT, options: http2.default_options())
+        .ok made =>
+            c @= made
+            return ask_on(@c)
+        .err e => return "failed: " + e.msg
+
+# FOR TESTS, a thread's body: an HTTP/2 client by prior knowledge to the
+# port `arg` names, asking `/x` once.
+function ask_h2_plain(arg: str) -> str
+    port = numbers.parse_int(arg).must()
+
+    match http2.connect_plain(host: "127.0.0.1", port: port, deadline_ms: 10000, options: http2.default_options())
+        .ok made =>
+            c @= made
+            return ask_on(@c)
+        .err e => return "failed: " + e.msg
+
+test "fields_for: names in lower case, the connection's and Host left out, te kept as trailers"
+    got = fields_for(
+        [wire.Field(name: "Accept", value: "*/*"), wire.Field(name: "Connection", value: "close"), wire.Field(name: "Host", value: "h"), wire.Field(name: "TE", value: "trailers"), wire.Field(name: "te", value: "gzip"), wire.Field(name: "Cookie", value: "a=b")]
+    )
+    assert got == [http2.Field(name: "accept", value: "*/*", sensitive: false), http2.Field(name: "te", value: "trailers", sensitive: false), http2.Field(name: "cookie", value: "a=b", sensitive: true)]
+    assert fields_for([]) == []
+
+test "options_for: bodies and lists as a client's bounds say"
+    o = options_for(wire.Bounds(head_bytes: 1000, field_count: 10, body_bytes: 5))
+    assert o.limits.body_bytes == 5 && o.settings.max_header_list_size == 1320

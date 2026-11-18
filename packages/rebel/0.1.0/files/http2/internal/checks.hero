@@ -1,0 +1,299 @@
+# The rules a header list obeys in HTTP/2 (RFC 9113 § 8.2 and § 8.3): names
+# in lower case, no field of a connection, pseudo-headers first and only
+# those of a request or of a response, values with no line end; a list that
+# breaks one is malformed, and its stream is reset.
+
+use http2/internal/model
+
+# A request's head as its pseudo-headers name it, the other fields apart.
+record RequestHead
+    # `:method`.
+    method: str
+    # `:scheme`, "" for CONNECT.
+    scheme: str
+    # `:authority`, "" where none came.
+    authority: str
+    # `:path`, "" for CONNECT.
+    path: str
+    # `:protocol`, "" where none came.
+    protocol: str
+    # The other fields.
+    headers: [model.Field]
+    # The value of `content-length`, -1 where none came.
+    length: i64
+
+# A response's head: its status and its other fields.
+record ResponseHead
+    # `:status`.
+    status: i64
+    # The other fields.
+    headers: [model.Field]
+    # The value of `content-length`, -1 where none came.
+    length: i64
+
+# Why a regular field is refused, "" where it is not.
+function field_refusal(f: model.Field) -> str
+    if f.name.len() == 0
+        return "a field with an empty name"
+
+    for i in range(from: 0, to: f.name.len())
+        c = f.name[i]
+
+        if c >= 'A' && c <= 'Z'
+            return f"the name \"{f.name}\" holds a capital letter"
+
+        if c <= ' ' || c == ':' || c >= 0x7f || c == '"' || c == '(' || c == ')' || c == ',' || c == '/' || c == ';' || c == '<' || c == '=' || c == '>' || c == '?' || c == '@' || c == '[' || c == '\\' || c == ']' || c == '{' || c == '}'
+            return f"the name \"{f.name}\" holds a character no name may"
+
+    v = f.value
+
+    for i in range(from: 0, to: v.len())
+        c = v[i]
+
+        if c == 0 || c == '\r' || c == '\n'
+            return f"the value of \"{f.name}\" holds a zero, a carriage return or a line feed"
+
+    if v.len() > 0 && (v[0] == ' ' || v[0] == '\t' || v[v.len() - 1] == ' ' || v[v.len() - 1] == '\t')
+        return f"the value of \"{f.name}\" begins or ends with white space"
+
+    if f.name == "connection" || f.name == "keep-alive" || f.name == "proxy-connection" || f.name == "transfer-encoding" || f.name == "upgrade"
+        return f"\"{f.name}\" belongs to HTTP/1.1's connection, which HTTP/2 refuses"
+
+    if f.name == "te" && v != "trailers"
+        return "`te` holds anything but \"trailers\""
+    return ""
+
+# The value of `content-length` as a count, -1 where it is not one: digits
+# alone, or the same digits repeated after commas, as RFC 9110 § 8.6 allows.
+function length_of(value: str) -> i64
+    first: str @= ""
+    at: i64 @= 0
+
+    while at <= value.len()
+        end: i64 @= at
+
+        while end < value.len() && value[end] != ','
+            end @ end + 1
+
+        piece: str @= value.slice(from: at, to: end)
+
+        while piece.len() > 0 && piece[0] == ' '
+            piece @ piece.slice(from: 1, to: piece.len())
+
+        while piece.len() > 0 && piece[piece.len() - 1] == ' '
+            piece @ piece.slice(from: 0, to: piece.len() - 1)
+
+        if piece.len() == 0 || piece.len() > 18
+            return -1
+
+        for i in range(from: 0, to: piece.len())
+            if piece[i] < '0' || piece[i] > '9'
+                return -1
+
+        if first != "" && piece != first
+            return -1
+        first @ piece
+        at @ end + 1
+
+    n: i64 @= 0
+
+    for i in range(from: 0, to: first.len())
+        n @ n * 10 + to_i64(first[i] - '0').must()
+
+    return n
+
+# What the other fields hold: their refusal, or the content length.
+record Others
+    # The fields, pseudo-headers left out.
+    headers: [model.Field]
+    # `content-length`'s count, -1 for none.
+    length: i64
+    # Why the list is refused, "" where it is not.
+    why: str
+
+# The regular fields of `fields` from `from` on, each checked; a
+# pseudo-header among them is refused.
+function others(fields: [model.Field] lent, from: i64) -> Others
+    out: [model.Field] @= []
+    length: i64 @= -1
+
+    for i in range(from: from, to: fields.len())
+        f = fields[i]
+
+        if f.name.len() > 0 && f.name[0] == ':'
+            return Others(headers: [], length: -1, why: f"the pseudo-header \"{f.name}\" after a field")
+        why = field_refusal(f)
+
+        if why != ""
+            return Others(headers: [], length: -1, why: why)
+
+        if f.name == "content-length"
+            n = length_of(f.value)
+
+            if n < 0 || length >= 0 && n != length
+                return Others(headers: [], length: -1, why: f"`content-length` \"{f.value}\" is no count of bytes")
+            length @ n
+        out @ out.push(f)
+
+    return Others(headers: out, length: length, why: "")
+
+# What `request` answers: the head, or why it is malformed.
+record Request
+    # The head, where `why` is "".
+    head: RequestHead
+    # Why the list is no request's, "" where it is one.
+    why: str
+
+# The request head `fields` hold, its pseudo-headers checked as RFC 9113 §
+# 8.3.1 and RFC 8441 § 4 check them; `extended` says whether this end
+# allows `:protocol`.
+function request(fields: [model.Field] lent, extended: bool) -> Request
+    method: str @= ""
+    scheme: str @= ""
+    authority: str @= ""
+    path: str @= ""
+    protocol: str @= ""
+    seen: {str: bool} @= {}
+    at: i64 @= 0
+    empty = RequestHead(method: "", scheme: "", authority: "", path: "", protocol: "", headers: [], length: -1)
+
+    while at < fields.len() && fields[at].name.len() > 0 && fields[at].name[0] == ':'
+        f = fields[at]
+
+        if seen[f.name].default(false)
+            return Request(head: empty, why: f"the pseudo-header \"{f.name}\" twice")
+        seen[f.name] @ true
+
+        if f.name == ":method"
+            method @ f.value
+        else if f.name == ":scheme"
+            scheme @ f.value
+        else if f.name == ":authority"
+            authority @ f.value
+        else if f.name == ":path"
+            path @ f.value
+        else if f.name == ":protocol" && extended
+            protocol @ f.value
+        else
+            return Request(head: empty, why: f"the pseudo-header \"{f.name}\" belongs to no request")
+        at @ at + 1
+
+    rest = others(fields, from: at)
+
+    if rest.why != ""
+        return Request(head: empty, why: rest.why)
+
+    if method == ""
+        return Request(head: empty, why: "a request with no `:method`")
+
+    if method == "CONNECT" && protocol == ""
+        if scheme != "" || path != "" || authority == ""
+            return Request(head: empty, why: "a CONNECT with `:scheme` or `:path`, or with no `:authority`")
+    else
+        if protocol != "" && method != "CONNECT"
+            return Request(head: empty, why: "`:protocol` on a request that is no CONNECT")
+
+        if scheme == "" || path == ""
+            return Request(head: empty, why: "a request with no `:scheme` or no `:path`")
+
+        if (scheme == "http" || scheme == "https") && path != "*" && path[0] != '/'
+            return Request(head: empty, why: f"a `:path` \"{path}\" that begins with no `/`")
+    return Request(
+        head: RequestHead(method: method, scheme: scheme, authority: authority, path: path, protocol: protocol, headers: rest.headers, length: rest.length),
+        why: ""
+    )
+
+# What `response` answers: the head, or why it is malformed.
+record Response
+    # The head, where `why` is "".
+    head: ResponseHead
+    # Why the list is no response's, "" where it is one.
+    why: str
+
+# The response head `fields` hold: one `:status` of three digits, 100 to
+# 999, and no other pseudo-header.
+function response(fields: [model.Field] lent) -> Response
+    empty = ResponseHead(status: 0, headers: [], length: -1)
+
+    if fields.len() == 0 || fields[0].name != ":status"
+        return Response(head: empty, why: "a response that does not begin with `:status`")
+    v = fields[0].value
+
+    if v.len() != 3 || v[0] < '1' || v[0] > '9' || v[1] < '0' || v[1] > '9' || v[2] < '0' || v[2] > '9'
+        return Response(head: empty, why: f"a `:status` \"{v}\" that is no status")
+    status = to_i64(v[0] - '0').must() * 100 + to_i64(v[1] - '0').must() * 10 + to_i64(v[2] - '0').must()
+    rest = others(fields, from: 1)
+
+    if rest.why != ""
+        return Response(head: empty, why: rest.why)
+    return Response(head: ResponseHead(status: status, headers: rest.headers, length: rest.length), why: "")
+
+# Why `fields` are no trailers, "" where they are: no pseudo-header, each
+# field as `field_refusal` reads it.
+function trailers_refusal(fields: [model.Field] lent) -> str
+    return others(fields, from: 0).why
+
+# A field named `name` holding `value`.
+function plain(name: str, value: str) -> model.Field
+    return model.Field(name: name, value: value, sensitive: false)
+
+test "request: a GET, a CONNECT, an extended CONNECT, and the fields kept"
+    got = request(
+        [plain(name: ":method", value: "GET"), plain(name: ":scheme", value: "https"), plain(name: ":path", value: "/a?b"), plain(name: ":authority", value: "x"), plain(name: "accept", value: "*/*")],
+        extended: false
+    )
+    assert got.why == ""
+    assert got.head.path == "/a?b" && got.head.headers.len() == 1 && got.head.length == -1
+    assert request([plain(name: ":method", value: "CONNECT"), plain(name: ":authority", value: "h:443")], extended: false).why == ""
+    ws = [
+        plain(name: ":method", value: "CONNECT")
+        plain(name: ":protocol", value: "websocket")
+        plain(name: ":scheme", value: "https")
+        plain(name: ":path", value: "/chat")
+        plain(name: ":authority", value: "h")
+    ]
+    assert request(ws, extended: true).head.protocol == "websocket"
+    assert request(ws, extended: false).why != ""
+
+test "request: no method, a pseudo-header twice, after a field, unknown, a capital, a connection field, te"
+    assert request([plain(name: ":scheme", value: "https"), plain(name: ":path", value: "/")], extended: false).why != ""
+    assert request([plain(name: ":method", value: "GET"), plain(name: ":method", value: "GET")], extended: false).why != ""
+    base = [
+        plain(name: ":method", value: "GET")
+        plain(name: ":scheme", value: "https")
+        plain(name: ":path", value: "/")
+    ]
+    assert request([plain(name: ":method", value: "GET"), plain(name: "a", value: "b"), plain(name: ":path", value: "/")], extended: false).why != ""
+    assert request([plain(name: ":status", value: "200")], extended: false).why != ""
+
+    for bad in [plain(name: "Accept", value: "x"), plain(name: "connection", value: "close"), plain(name: "te", value: "gzip"), plain(name: "x", value: " y"), plain(name: "x", value: "a\nb")]
+        list @= base
+        list @ list.push(bad)
+        assert request(list, extended: false).why != ""
+
+    good @= base
+    good @ good.push(plain(name: "te", value: "trailers"))
+    assert request(good, extended: false).why == ""
+
+test "response: 200 with a length, 103, and statuses that are none"
+    got = response([plain(name: ":status", value: "200"), plain(name: "content-length", value: "5")])
+    assert got.why == "" && got.head.status == 200 && got.head.length == 5
+    assert response([plain(name: ":status", value: "103")]).head.status == 103
+    assert response([plain(name: ":status", value: "99")]).why != ""
+    assert response([plain(name: ":status", value: "2a0")]).why != ""
+    assert response([]).why != ""
+    assert response([plain(name: "a", value: "b"), plain(name: ":status", value: "200")]).why != ""
+    assert response([plain(name: ":status", value: "200"), plain(name: ":path", value: "/")]).why != ""
+
+test "length_of: digits, repeated after commas, differing, empty, and not digits"
+    assert length_of("0") == 0
+    assert length_of("42, 42") == 42
+    assert length_of("42, 43") == -1
+    assert length_of("") == -1
+    assert length_of("-1") == -1
+    assert length_of("9999999999999999999") == -1
+
+test "trailers_refusal: fields, a pseudo-header, and none"
+    assert trailers_refusal([plain(name: "grpc-status", value: "0")]) == ""
+    assert trailers_refusal([plain(name: ":status", value: "200")]) != ""
+    assert trailers_refusal([]) == ""

@@ -1,0 +1,233 @@
+# A peer's header blocks (RFC 9113 § 4.3, § 6.2, § 6.10 and § 8): a HEADERS
+# frame and its CONTINUATIONs joined within the bounds a peer is held to,
+# decoded whole so the HPACK table stays in step, and read by the stream's
+# state as a request that opens a stream, a response or an informational
+# answer, or trailers. A list past its size is answered 431 by a server and
+# cancelled by a client; a malformed one resets its stream.
+
+use bytes
+use http2/internal/checks
+use http2/internal/decoding
+use http2/internal/encoding
+use http2/internal/engine
+use http2/internal/model
+
+# Begins a header block with a HEADERS frame on `stream`.
+function on_headers(@s: engine.State, @events: [model.Event], stream: i64, block: [u8], end_stream: bool, end_headers: bool, now_ms: i64) -> ()?
+    if block.len() > s.limits.header_block_bytes
+        return engine.fail_connection(
+            @s,
+            error: engine.ENHANCE_YOUR_CALM,
+            why: f"a header block on stream {stream} passes {s.limits.header_block_bytes} bytes"
+        )
+    s.block_stream @ stream
+    s.block @ block
+    s.block_frames @ 1
+    s.block_end_stream @ end_stream
+
+    if end_headers
+        return finish(@s, @events, now_ms: now_ms)
+    return ok()
+
+# Adds a CONTINUATION frame's fragment to the block being joined.
+function on_continuation(@s: engine.State, @events: [model.Event], block: [u8], end_headers: bool, now_ms: i64) -> ()?
+    if s.block_stream == 0
+        return engine.fail_connection(
+            @s,
+            error: engine.PROTOCOL_ERROR,
+            why: "a CONTINUATION frame with no header block begun"
+        )
+    s.block_frames @ s.block_frames + 1
+
+    if s.block_frames > s.limits.header_frames
+        return engine.fail_connection(
+            @s,
+            error: engine.ENHANCE_YOUR_CALM,
+            why: f"a header block on stream {s.block_stream} spans more than {s.limits.header_frames} frames"
+        )
+
+    if s.block.len() + block.len() > s.limits.header_block_bytes
+        return engine.fail_connection(
+            @s,
+            error: engine.ENHANCE_YOUR_CALM,
+            why: f"a header block on stream {s.block_stream} passes {s.limits.header_block_bytes} bytes"
+        )
+    bytes.push_all(to: @s.block, from: block)
+
+    if end_headers
+        return finish(@s, @events, now_ms: now_ms)
+    return ok()
+
+# Decodes the block joined and reads it by the stream's state.
+function finish(@s: engine.State, @events: [model.Event], now_ms: i64) -> ()?
+    id = s.block_stream
+    end_stream = s.block_end_stream
+    block = s.block
+    s.block_stream @ 0
+    s.block @ []
+    s.block_frames @ 0
+    fields: [model.Field] @= []
+    problem: str @= ""
+
+    match decoding.decode(@s.decoder, block: block)
+        .ok got => fields @ got
+        .err e =>
+            if e.code == model.INVALID
+                return engine.fail_connection(@s, error: engine.COMPRESSION_ERROR, why: e.msg)
+            problem @ e.code
+
+    if s.client
+        return response_block(@s, @events, id: id, fields: fields, end_stream: end_stream, problem: problem)
+    return request_block(@s, @events, id: id, fields: fields, end_stream: end_stream, problem: problem, now_ms: now_ms)
+
+# Trailers on an open stream: they end it, hold no pseudo-header, and close
+# a body whose length was announced.
+function trailers(@s: engine.State, @events: [model.Event], id: i64, fields: [model.Field], end_stream: bool, problem: str)
+    st = engine.get(s, id: id)
+
+    if !end_stream || problem != "" || checks.trailers_refusal(fields) != "" || st.expected >= 0 && st.received != st.expected
+        engine.fail_stream(@s, @events, id: id, error: engine.PROTOCOL_ERROR)
+        return
+    engine.add(@events, e: .trailers(stream: id, headers: fields))
+    engine.end_remote(@s, id: id)
+
+# A block on a stream the peer may no longer send on: a stream error, a
+# connection error, or nothing where this end reset it.
+function on_closed(@s: engine.State, @events: [model.Event], id: i64) -> ()?
+    if engine.has(s, id: id)
+        st = engine.get(s, id: id)
+
+        if st.state == engine.HALF_REMOTE
+            engine.fail_stream(@s, @events, id: id, error: engine.STREAM_CLOSED)
+            return ok()
+
+        if st.cause == engine.RESET_LOCAL || st.cause == engine.RESET_REMOTE
+            return ok()
+        return engine.fail_connection(
+            @s,
+            error: engine.STREAM_CLOSED,
+            why: f"a header block on stream {id}, which has ended"
+        )
+    return ok()
+
+# A server's: the block opens a stream with a request, or holds its
+# trailers.
+function request_block(@s: engine.State, @events: [model.Event], id: i64, fields: [model.Field], end_stream: bool, problem: str, now_ms: i64) -> ()?
+    state = engine.state_of(s, id: id)
+
+    if state == engine.OPEN || state == engine.HALF_LOCAL
+        trailers(@s, @events, id: id, fields: fields, end_stream: end_stream, problem: problem)
+        return ok()
+
+    if state != engine.IDLE
+        return on_closed(@s, @events, id: id)
+
+    if engine.is_ours(s, id: id)
+        return engine.fail_connection(
+            @s,
+            error: engine.PROTOCOL_ERROR,
+            why: f"a client opened stream {id}, an even one"
+        )
+    s.peer_highest @ id
+
+    if s.goaway_sent && id > s.goaway_last
+        return ok()
+
+    if s.active_theirs >= s.ours.max_concurrent_streams
+        engine.emit(@s, f: .rst_stream(stream: id, error: engine.REFUSED_STREAM))
+
+        if !engine.count_control(@s, now_ms: now_ms)
+            return engine.fail_connection(
+                @s,
+                error: engine.ENHANCE_YOUR_CALM,
+                why: f"more than {s.limits.control_per_second} streams refused or frames carrying nothing in one second"
+            )
+        return ok()
+    st @= engine.fresh(s, ours: false)
+    engine.put(@s, id: id, st: st)
+    engine.count_open(@s, ours: false)
+
+    if problem == model.LIMIT
+        answer = encoding.encode(@s.encoder, fields: [model.Field(name: ":status", value: "431", sensitive: false)])
+        engine.emit_block(@s, stream: id, block: answer, end_stream: true)
+
+        if end_stream
+            engine.close(@s, id: id, cause: engine.ENDED)
+        else
+            engine.emit(@s, f: .rst_stream(stream: id, error: engine.NO_ERROR))
+            engine.close(@s, id: id, cause: engine.RESET_LOCAL)
+        return ok()
+    r = checks.request(fields, extended: s.ours.enable_connect_protocol)
+
+    if problem != "" || r.why != "" || end_stream && r.head.length > 0
+        engine.fail_stream(@s, @events, id: id, error: engine.PROTOCOL_ERROR)
+        return ok()
+    st.head_in @ true
+    st.expected @ r.head.length
+    engine.put(@s, id: id, st: st)
+    h = r.head
+    engine.add(
+        @events,
+        e: .request(stream: id, method: h.method, scheme: h.scheme, authority: h.authority, path: h.path, protocol: h.protocol, headers: h.headers, end_stream: end_stream)
+    )
+
+    if end_stream
+        engine.end_remote(@s, id: id)
+    return ok()
+
+# A client's: the block holds a response, an informational answer, or the
+# response's trailers.
+function response_block(@s: engine.State, @events: [model.Event], id: i64, fields: [model.Field], end_stream: bool, problem: str) -> ()?
+    state = engine.state_of(s, id: id)
+
+    if !engine.is_ours(s, id: id)
+        return engine.fail_connection(
+            @s,
+            error: engine.PROTOCOL_ERROR,
+            why: f"a server sent a header block on stream {id}, which it may not open"
+        )
+
+    if state == engine.IDLE
+        return engine.fail_connection(@s, error: engine.PROTOCOL_ERROR, why: f"a response on stream {id}, never opened")
+
+    if state != engine.OPEN && state != engine.HALF_LOCAL
+        return on_closed(@s, @events, id: id)
+    st @= engine.get(s, id: id)
+
+    if st.head_in
+        trailers(@s, @events, id: id, fields: fields, end_stream: end_stream, problem: problem)
+        return ok()
+
+    if problem == model.LIMIT
+        engine.fail_stream(@s, @events, id: id, error: engine.CANCEL)
+        return ok()
+    r = checks.response(fields)
+
+    if problem != "" || r.why != ""
+        engine.fail_stream(@s, @events, id: id, error: engine.PROTOCOL_ERROR)
+        return ok()
+    status = r.head.status
+
+    if status < 200
+        if status == 101 || end_stream
+            engine.fail_stream(@s, @events, id: id, error: engine.PROTOCOL_ERROR)
+            return ok()
+        engine.add(@events, e: .informational(stream: id, status: status, headers: r.head.headers))
+        return ok()
+    empty = st.no_body || status == 204 || status == 304
+
+    if end_stream && r.head.length > 0 && !empty
+        engine.fail_stream(@s, @events, id: id, error: engine.PROTOCOL_ERROR)
+        return ok()
+    st.head_in @ true
+
+    st.expected @ if empty
+        0
+    else
+        r.head.length
+    engine.put(@s, id: id, st: st)
+    engine.add(@events, e: .response(stream: id, status: status, headers: r.head.headers, end_stream: end_stream))
+
+    if end_stream
+        engine.end_remote(@s, id: id)
+    return ok()
