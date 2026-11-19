@@ -142,7 +142,7 @@ function parse_source(s: source.Source) -> ParseOutput
     for d in closer_runs.told_once(controlled, text: s.text)
         control @ control.push(d)
 
-    # `use <core>` alone is told the modules its package's tree holds, which
+    # `use <rebel>` alone is told the modules its package's tree holds, which
     # the parser, reading no catalogue, cannot name (defect 2438).
     return ParseOutput(
         decls: decls,

@@ -1,4 +1,0 @@
-# A module of defect 2368's cases, the package `core`'s root `zeta`.
-
-function z() -> str
-    return "z"

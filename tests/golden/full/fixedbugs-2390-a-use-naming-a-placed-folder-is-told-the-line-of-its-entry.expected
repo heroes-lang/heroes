@@ -1,19 +1,19 @@
-error[package_unmarked]: `heroes.packages/core@0.1.0-2e3e1bba9c8acea1/` is the folder a fetch placed a package's tree in, which a `use` never names: a package's module is reached through its entry in the catalogue `heroes.toml` beside the file you compile, written between `<` `>` — `use <core>/strconv`, `core` standing for the entry that placed this folder
+error[package_unmarked]: `heroes.packages/rebel@0.1.0-2e3e1bba9c8acea1/` is the folder a fetch placed a package's tree in, which a `use` never names: a package's module is reached through its entry in the catalogue `heroes.toml` beside the file you compile, written between `<` `>` — `use <rebel>/strconv`, `rebel` standing for the entry that placed this folder
   at tests/golden/full/fixedbugs-2390-a-use-naming-a-placed-folder-is-told-the-line-of-its-entry.hero:22:5
      |
-  22 | use heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strconv  #~ package_unmarked
-     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  fix (guess): write `<core>/strconv`
+  22 | use heroes.packages/rebel@0.1.0-2e3e1bba9c8acea1/strconv  #~ package_unmarked
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  fix (guess): write `<rebel>/strconv`
 
-error[package_unmarked]: `heroes.packages/core@0.1.0-2e3e1bba9c8acea1/` is the folder a fetch placed a package's tree in, which a `use` never names: a package's module is reached through its entry in the catalogue `heroes.toml` beside the file you compile, written between `<` `>`, and `<core>/strconv/internal/shown` is private to `<core>/strconv`: a module whose path holds `internal` as a part after its first, a folder's name or its own, is named only by the module the path before the last such part names and by the modules under it, so no `use` of this program reaches it; name what `<core>/strconv` offers instead
+error[package_unmarked]: `heroes.packages/rebel@0.1.0-2e3e1bba9c8acea1/` is the folder a fetch placed a package's tree in, which a `use` never names: a package's module is reached through its entry in the catalogue `heroes.toml` beside the file you compile, written between `<` `>`, and `<rebel>/strconv/internal/shown` is private to `<rebel>/strconv`: a module whose path holds `internal` as a part after its first, a folder's name or its own, is named only by the module the path before the last such part names and by the modules under it, so no `use` of this program reaches it; name what `<rebel>/strconv` offers instead
   at tests/golden/full/fixedbugs-2390-a-use-naming-a-placed-folder-is-told-the-line-of-its-entry.hero:23:5
      |
-  23 | use heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strconv/internal/shown  #~ package_unmarked
-     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  23 | use heroes.packages/rebel@0.1.0-2e3e1bba9c8acea1/strconv/internal/shown  #~ package_unmarked
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-error[package_unmarked]: `heroes.packages/core@0.1.0-2e3e1bba9c8acea1/` is the folder a fetch placed a package's tree in, which a `use` never names: a package's module is reached through its entry in the catalogue `heroes.toml` beside the file you compile, written between `<` `>` — `use <core>/strconv`, `core` standing for the entry that placed this folder
+error[package_unmarked]: `heroes.packages/rebel@0.1.0-2e3e1bba9c8acea1/` is the folder a fetch placed a package's tree in, which a `use` never names: a package's module is reached through its entry in the catalogue `heroes.toml` beside the file you compile, written between `<` `>` — `use <rebel>/strconv`, `rebel` standing for the entry that placed this folder
   at tests/golden/full/fixedbugs-2390-a-use-naming-a-placed-folder-is-told-the-line-of-its-entry.hero:24:5
      |
-  24 | use <heroes.packages/core@0.1.0-2e3e1bba9c8acea1>/strconv as sc  #~ package_unmarked
-     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  fix (guess): write `<core>/strconv`
+  24 | use <heroes.packages/rebel@0.1.0-2e3e1bba9c8acea1>/strconv as sc  #~ package_unmarked
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  fix (guess): write `<rebel>/strconv`

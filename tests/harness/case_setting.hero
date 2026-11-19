@@ -61,8 +61,6 @@
 # a child in no folder but this process's, so `/usr/bin/env -C` started such
 # a case, and it was skipped by name on Windows, which has no `env`.
 
-use <core>/strings as core_strings
-
 use apply_tree
 use shell
 use strings
@@ -305,7 +303,7 @@ function whole(root: str, path: str) -> str
     if path.len() > 0 && path[0] == '/'
         return path
 
-    if core_strings.has_prefix(s: path, prefix: "./")
+    if strings.has_prefix(s: path, prefix: "./")
         return root + "/" + path.slice(from: 2, to: path.len())
     return root + "/" + path
 

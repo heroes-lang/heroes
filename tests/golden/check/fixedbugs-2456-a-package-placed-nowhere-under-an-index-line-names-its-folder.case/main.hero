@@ -2,7 +2,7 @@
 # entry under an `index` line the author wrote. The verb reads the index the
 # catalogue names, so the message names the folder it places the tree in
 # and nothing more.
-use <core>/strings  #~ package_unread
+use <rebel>/strings  #~ package_unread
 
 function main()
     print(strings.trim_space(s: "  hi  "))

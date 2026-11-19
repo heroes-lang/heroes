@@ -49,8 +49,6 @@
 # bubblewrap (the `thesis-attest` job alone does), so the Linux words are
 # judged where bubblewrap is installed and nowhere else (issue 2162).
 
-use <core>/strings as core_strings
-
 use shell
 use strings
 use thesis_seal
@@ -134,7 +132,7 @@ function unrunnable_with(darwin: str, linux: str, held: [str]?) -> str
 function is_key_name(name: str) -> bool
     if name == thesis_seal.TEST_KEY || name.len() < KEY_OPENING.len() + KEY_CLOSING.len()
         return false
-    return core_strings.has_prefix(s: name, prefix: KEY_OPENING) && core_strings.has_suffix(s: name, suffix: KEY_CLOSING)
+    return strings.has_prefix(s: name, prefix: KEY_OPENING) && strings.has_suffix(s: name, suffix: KEY_CLOSING)
 
 # Every seal key's variable this process's environment holds, in order, or why
 # the environment could not be listed: `prepared` refuses to run a model's
@@ -252,7 +250,7 @@ function linux_words(scratch: str, binary: str) -> [str]
 # be an absolute path (the profile names it, and the program's own `{dir}`
 # arguments do too); the profile is written into the scratch.
 function prepared(scratch: str, binary: str) -> Sandbox?
-    if !core_strings.has_prefix(s: scratch, prefix: "/") || !core_strings.has_prefix(s: binary, prefix: "/")
+    if !strings.has_prefix(s: scratch, prefix: "/") || !strings.has_prefix(s: binary, prefix: "/")
         return fail(
             code: "relative_path",
             msg: "a sandbox names its scratch and its binary by absolute paths; given " + scratch + " and " + binary
@@ -303,12 +301,12 @@ function words_with(sandbox: Sandbox, arguments: [str]) -> [str]
 
 test "the profile denies by default, allows the scratch alone for writing, and denies the home and the network"
     text = profile(scratch: "/x/scratch", binary: "/x/scratch/main")
-    assert core_strings.has_prefix(s: text, prefix: "(version 1)\n(deny default)\n")
-    assert core_strings.contains(s: text, substr: "(allow file-read* file-write* (subpath \"/x/scratch\"))")
-    assert core_strings.contains(s: text, substr: "(deny file-read* (subpath \"/Users\")")
-    assert core_strings.contains(s: text, substr: "(deny network*)")
-    assert core_strings.contains(s: text, substr: "(allow sysctl-read)")
-    assert !core_strings.contains(s: text, substr: "allow default")
+    assert strings.has_prefix(s: text, prefix: "(version 1)\n(deny default)\n")
+    assert strings.contains(s: text, substr: "(allow file-read* file-write* (subpath \"/x/scratch\"))")
+    assert strings.contains(s: text, substr: "(deny file-read* (subpath \"/Users\")")
+    assert strings.contains(s: text, substr: "(deny network*)")
+    assert strings.contains(s: text, substr: "(allow sysctl-read)")
+    assert !strings.contains(s: text, substr: "allow default")
 
     match prepared(scratch: "relative", binary: "/x/main")
         .ok _  => assert false
@@ -362,9 +360,9 @@ test "a program run inside the sandbox writes in its scratch, is refused outside
         stdin_path: ""
     ).must()
     assert ran.code == 0
-    assert core_strings.contains(s: ran.out, substr: "in false")
-    assert core_strings.contains(s: ran.out, substr: "out true")
-    assert core_strings.contains(s: ran.out, substr: "read true")
+    assert strings.contains(s: ran.out, substr: "in false")
+    assert strings.contains(s: ran.out, substr: "out true")
+    assert strings.contains(s: ran.out, substr: "read true")
     assert shell.exists(inside + "/inside.txt")
     assert !shell.exists(outside + "/leak.txt")
 
@@ -373,7 +371,7 @@ test "a machine with neither sandbox tool cannot run a model's program, and says
     # alone on every machine, a shell holding a key included.
     none: [str] = []
     told = unrunnable_with(darwin: "/no/such/sandbox-exec", linux: "/no/such/bwrap", held: ok(none))
-    assert core_strings.contains(s: told, substr: "neither /no/such/sandbox-exec nor /no/such/bwrap")
+    assert strings.contains(s: told, substr: "neither /no/such/sandbox-exec nor /no/such/bwrap")
 
     # A tool that exists answers nothing, whichever of the two it is: the test
     # makes the file it names, since a path the machine is supposed to hold,
@@ -387,13 +385,13 @@ test "a machine with neither sandbox tool cannot run a model's program, and says
     # And with a tool present, a key held or an environment unlisted is the
     # answer, while with neither tool the tools are.
     held = unrunnable_with(darwin: tool, linux: "/no/such/bwrap", held: ok(["HEROES_A_KEY", "HEROES_B_KEY"]))
-    assert core_strings.has_prefix(
+    assert strings.has_prefix(
         s: held,
         prefix: "HEROES_A_KEY and HEROES_B_KEY are set, and no process holding a seal's key runs a program"
     )
     unlisted: [str]? = fail(code: "environment_unlisted", msg: "this process's environment could not be listed")
     assert unrunnable_with(darwin: tool, linux: "/no/such/bwrap", held: unlisted) == "this process's environment could not be listed"
-    assert core_strings.contains(
+    assert strings.contains(
         s: unrunnable_with(darwin: "/no/such/sandbox-exec", linux: "/no/such/bwrap", held: unlisted),
         substr: "neither "
     )
@@ -446,11 +444,11 @@ test "every limit is set by a `ulimit` of its own, joined so a refused one stops
     assert script == "ulimit -f " + FILE_BLOCKS.to_str() + " && ulimit -v " + ADDRESS_KIB.to_str() + " && exec \"$0\" \"$@\""
     assert linux[linux.len() - 1] == "/s/answer"
     darwin = darwin_words(profile_path: "/s/sandbox.sb", binary: "/s/answer")
-    assert core_strings.has_prefix(
+    assert strings.has_prefix(
         s: darwin[2],
         prefix: "ulimit -f " + FILE_BLOCKS.to_str() + " && exec /usr/bin/env -i "
     )
 
     for words in [linux, darwin]
         for word in words
-            assert !core_strings.contains(s: word, substr: "; exec")
+            assert !strings.contains(s: word, substr: "; exec")

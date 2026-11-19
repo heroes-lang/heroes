@@ -195,8 +195,9 @@ function table_at(lines: [str], name: str) -> i64
 # Whether `line` opens the table of `name` with something after it, a space,
 # a comment or a return. The head is asked of the line's bytes (defect 2411):
 # a line is the author's, any character, and `#12345678901234567é` put a cut
-# at `[dependencies.core]`'s nineteen bytes inside `é`, which stopped `heroes
-# add` at exit 134 after it had placed the tree. `key_line` below asks a key
+# at the nineteen bytes of an entry's head with a name of four letters,
+# `[dependencies.yaml]`, inside `é`, which stopped `heroes add` at exit 134
+# after it had placed the tree. `key_line` below asks a key
 # the same way.
 function starts_table(line: str, name: str) -> bool
     head = "[dependencies." + name + "]"
@@ -292,10 +293,10 @@ test "an entry that moved changes in its own lines, its comment kept, and every 
     before = "# the program's packages\n[dependencies.json]  # the parser\nversion = \"1.4.2\"  # pinned for the release\nsum = \"sha256-" + "a".repeat(64.to_u64().must()) + "\"\n\n# the folder I am writing\n[dependencies.mine]\npath = \"../mine\"\n"
     after = edited(
         text: before,
-        entries: [entry(name: "json", version: "1.5.0", sum: "sha256-" + "b".repeat(64.to_u64().must())), catalogue.Entry(name: "mine", version: "", git: "", tag: "", commit: "", path: "../mine", sum: ""), entry(name: "core", version: "0.1.0", sum: "sha256-" + "d".repeat(64.to_u64().must()))],
+        entries: [entry(name: "json", version: "1.5.0", sum: "sha256-" + "b".repeat(64.to_u64().must())), catalogue.Entry(name: "mine", version: "", git: "", tag: "", commit: "", path: "../mine", sum: ""), entry(name: "rebel", version: "0.1.0", sum: "sha256-" + "d".repeat(64.to_u64().must()))],
         index: ""
     )
-    assert after == "# the program's packages\n[dependencies.json]  # the parser\nversion = \"1.5.0\"  # pinned for the release\nsum = \"sha256-" + "b".repeat(64.to_u64().must()) + "\"\n\n# the folder I am writing\n[dependencies.mine]\npath = \"../mine\"\n\n[dependencies.core]\nversion = \"0.1.0\"\nsum = \"sha256-" + "d".repeat(64.to_u64().must()) + "\"\n"
+    assert after == "# the program's packages\n[dependencies.json]  # the parser\nversion = \"1.5.0\"  # pinned for the release\nsum = \"sha256-" + "b".repeat(64.to_u64().must()) + "\"\n\n# the folder I am writing\n[dependencies.mine]\npath = \"../mine\"\n\n[dependencies.rebel]\nversion = \"0.1.0\"\nsum = \"sha256-" + "d".repeat(64.to_u64().must()) + "\"\n"
     assert catalogue.parsed(file: "h", text: after).problem == ""
     assert place_of(text: after, name: "json", key: "version") == 3
     assert place_of(text: after, name: "mine", key: "") == 7
@@ -308,10 +309,10 @@ test "a catalogue whose lines end with a return keeps them, every line it adds e
     before = "index = \"file://../idx\"\r\n\r\n[dependencies.json]\r\nversion = \"1.4.2\"  # pinned\r\nsum = \"sha256-" + "a".repeat(64.to_u64().must()) + "\"\r\n"
     after = edited(
         text: before,
-        entries: [entry(name: "json", version: "1.5.0", sum: "sha256-" + "b".repeat(64.to_u64().must())), entry(name: "core", version: "0.1.0", sum: "sha256-" + "d".repeat(64.to_u64().must()))],
+        entries: [entry(name: "json", version: "1.5.0", sum: "sha256-" + "b".repeat(64.to_u64().must())), entry(name: "rebel", version: "0.1.0", sum: "sha256-" + "d".repeat(64.to_u64().must()))],
         index: ""
     )
-    assert after == "index = \"file://../idx\"\r\n\r\n[dependencies.json]\r\nversion = \"1.5.0\"  # pinned\r\nsum = \"sha256-" + "b".repeat(64.to_u64().must()) + "\"\r\n\r\n[dependencies.core]\r\nversion = \"0.1.0\"\r\nsum = \"sha256-" + "d".repeat(64.to_u64().must()) + "\"\r\n"
+    assert after == "index = \"file://../idx\"\r\n\r\n[dependencies.json]\r\nversion = \"1.5.0\"  # pinned\r\nsum = \"sha256-" + "b".repeat(64.to_u64().must()) + "\"\r\n\r\n[dependencies.rebel]\r\nversion = \"0.1.0\"\r\nsum = \"sha256-" + "d".repeat(64.to_u64().must()) + "\"\r\n"
     assert catalogue.parsed(file: "h", text: after).problem == ""
     assert place_of(text: after, name: "json", key: "sum") == 5
 
@@ -319,7 +320,7 @@ test "a catalogue whose lines end with a return keeps them, every line it adds e
 # key ends is no table and no key, asked of its bytes; cut at the head's
 # length, `é` and `€` were split and the edit aborted (defect 2411).
 test "a line holding a character above ASCII where a head ends is read by its bytes"
-    assert !starts_table(line: "#12345678901234567é", name: "core")
+    assert !starts_table(line: "#12345678901234567é", name: "yaml")
     assert !starts_table(line: "[dependencies.jso€x", name: "json")
     assert starts_table(line: "[dependencies.json] # é", name: "json")
     assert key_line(lines: ["versio€ = \"1.4.2\""], from: 0, to: 1, key: "version") == -1

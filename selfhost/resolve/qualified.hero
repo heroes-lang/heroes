@@ -175,7 +175,7 @@ function name_declared_elsewhere(@r: state.Resolver, s: source.Source, text: str
 # that a `use` of this file can name, as this file writes it (defect 2373):
 # in a package's own file its module is bare. Every declaring module is asked
 # (defect 2379): until then only the first was, so `<alpha>/a`, which
-# `core`'s files cannot name, hid `<core>/util`, which `use util` names, and
+# `rebel`'s files cannot name, hid `<rebel>/util`, which `use util` names, and
 # the name was told as unknown with a near name's rename.
 function outside_the_file(s: source.Source, from: str, text: str, span: token.Span, declaring: [str]) -> diag.Diagnostic?
     beyond: [str] @= []
@@ -351,19 +351,19 @@ test "elsewhere splits on the use line, and neither repair is certain"
 test "a name only out-of-reach modules declare is told with them, and a nameable one wins"
     s = fixture()
     r: state.Resolver @= state.new_resolver(expr_count: 0, type_count: 0)
-    r.module @ "<core>/strings"
+    r.module @ "<rebel>/strings"
     span = token.Span(start: 5, end: 10)
     resolved.declare_top(@r.out, module: "other/strings", name: "dist2", decl: 0)
     program = name_declared_elsewhere(@r, s, "dist2", span).must()
     assert program.code == "unknown_name"
-    assert program.message == "nothing named `dist2` is in scope, and no `use` of this file can name a module declaring it: `other/strings` is a module of the program, and no file of the package `core` names a module of the program that uses it"
+    assert program.message == "nothing named `dist2` is in scope, and no `use` of this file can name a module declaring it: `other/strings` is a module of the program, and no file of the package `rebel` names a module of the program that uses it"
     assert program.fixes.len() == 0
     assert program.notes.len() == 1
 
     # A package the file's own catalogue does not list sorts first, and the
     # file's own package's module after it is still the answer.
     resolved.declare_top(@r.out, module: "<alpha>/a", name: "dist2", decl: 1)
-    resolved.declare_top(@r.out, module: "<core>/util", name: "dist2", decl: 2)
+    resolved.declare_top(@r.out, module: "<rebel>/util", name: "dist2", decl: 2)
     own = name_declared_elsewhere(@r, s, "dist2", span).must()
     assert own.code == "needs_qualifying"
     assert own.fixes[0].title == "write `util.dist2` (and add `use util`)"

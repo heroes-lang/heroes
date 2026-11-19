@@ -2,6 +2,6 @@
 # index, its tree placed under `heroes.packages/`.
 index = "file://../idx"
 
-[dependencies.core]
+[dependencies.rebel]
 version = "0.1.0"
-sum = "sha256-f45a062f0669d29c00b77eb917fc80d107f12d20879cc69ca57095b3519ee051"
+sum = "sha256-9f900a47a7e9baaed57f01d867ff35950cc229fa64eb7db2b5de864d67718f68"

@@ -5,10 +5,10 @@
 # `<path>.md` beside `<path>.hero`, and is held to three things:
 #
 # - it is what `write` writes from the face, byte for byte, so a card is true
-#   by construction and never written by hand (`examples/packages/README.md` § 8.2);
+#   by construction and never written by hand (`examples-rebel/packages/README.md` § 8.2);
 # - it spends at most `MOST` tokens by `heroes measure`'s `maximum`, and the
 #   face cards together no more than the specification's own `maximum` (panel
-#   234's R5, `examples/packages/README.md` § 8.3), a floor's card, a module
+#   234's R5, `examples-rebel/packages/README.md` § 8.3), a floor's card, a module
 #   whose `extern` group binds a header (§ 4.1), counting apart, since only a
 #   program that reaches the floor reads it;
 # - every call it writes compiles as written: a program calling each function
@@ -17,8 +17,6 @@
 # A face the form cannot say (`package_face.hero`'s refusals), a code no doc of
 # the face explains, and a stored `.md` that is no face's card are each told,
 # by name, and never written around.
-
-use <core>/strings as core_strings
 
 use package_card
 use package_codes
@@ -41,7 +39,7 @@ constant SPEC: str
 constant WRITE: str
     "heroes run tests/harness/package_cards.hero -- write"
 
-# A card as `write` writes it: its face's path under `core/`, the card's own
+# A card as `write` writes it: its face's path under `rebel/`, the card's own
 # path, its text, the program that proves its calls, what stops it being
 # written, and whether it is a floor's, which counts apart from the faces'
 # total.
@@ -59,14 +57,14 @@ record Wrote
     paths: [str]
     found: [str]
 
-# The faces of a tree, as their paths under `core/`: each `.hero` not under an
-# `internal/` directory (`examples/packages/README.md` § 1.2 and § 1.3). `rels` are the
+# The faces of a tree, as their paths under `rebel/`: each `.hero` not under an
+# `internal/` directory (`examples-rebel/packages/README.md` § 1.2 and § 1.3). `rels` are the
 # tree's files, each as a path under it.
 function faces_in(rels: [str]) -> [str]
     out: [str] @= []
 
     for rel in rels
-        if core_strings.has_suffix(s: rel, suffix: ".hero") && !private(rel)
+        if strings.has_suffix(s: rel, suffix: ".hero") && !private(rel)
             out @ out.push(strings.without_suffix(text: rel, suffix: ".hero"))
 
     return out
@@ -86,7 +84,7 @@ function package_modules(face: str, rels: [str]) -> [str]
     out: [str] @= [face + ".hero"]
 
     for rel in rels
-        if core_strings.has_prefix(s: rel, prefix: face + "/internal/") && core_strings.has_suffix(s: rel, suffix: ".hero")
+        if strings.has_prefix(s: rel, prefix: face + "/internal/") && strings.has_suffix(s: rel, suffix: ".hero")
             out @ out.push(rel)
 
     return out
@@ -101,7 +99,7 @@ function strays(rels: [str]) -> [str]
     out: [str] @= []
 
     for rel in rels
-        if core_strings.has_suffix(s: rel, suffix: ".md") && faces[strings.without_suffix(text: rel, suffix: ".md")].is_err()
+        if strings.has_suffix(s: rel, suffix: ".md") && faces[strings.without_suffix(text: rel, suffix: ".md")].is_err()
             out @ out.push(rel)
 
     return out
@@ -249,9 +247,9 @@ function maximum_of(scratch: str, compiler: str, path: str) -> i64?
         )
     return package_card.maximum_in(said.out)
 
-# A folder where each card's proof is built as a program: a `use <core>/...`
+# A folder where each card's proof is built as a program: a `use <rebel>/...`
 # reads the catalogue beside the file compiled (spec § 1), so the proof stands
-# beside a catalogue of its own whose one entry, `core`, is a `path` to a copy
+# beside a catalogue of its own whose one entry, `rebel`, is a `path` to a copy
 # of the source's modules, the author's own folder while a package is developed
 # (panel 235's R6): nothing is fetched, and the calls are compiled against the
 # source as it stands, a version in preparation included. The copy's folder
@@ -260,7 +258,7 @@ function proof_tree(scratch: str, root: str, rels: [str]) -> str?
     dir = scratch + "/cards-proof"
 
     for rel in rels
-        if core_strings.has_suffix(s: rel, suffix: ".hero")
+        if strings.has_suffix(s: rel, suffix: ".hero")
             target = dir + "/" + COPY + "/" + rel
             shell.mkdir_all(parent(target))?
             write_file(path: target, text: read(root + "/" + rel)?)?
@@ -270,7 +268,7 @@ function proof_tree(scratch: str, root: str, rels: [str]) -> str?
 
 # The folder beside the proofs holding the copy of the source's modules.
 constant COPY: str
-    "core.source"
+    "rebel.source"
 
 function parent(path: str) -> str
     cut: i64 @= 0

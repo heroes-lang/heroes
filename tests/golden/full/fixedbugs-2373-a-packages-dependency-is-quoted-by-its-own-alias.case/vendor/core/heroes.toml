@@ -1,4 +1,0 @@
-# The catalogue of the package `core` of defect 2373's case: it names the
-# package the program calls `words` by its own alias, `text`.
-[dependencies.text]
-path = "../text"

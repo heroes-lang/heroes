@@ -24,8 +24,6 @@
 # `f` unqualified. So `probe.Probe` travels between modules and the sugar
 # that builds one does not.
 
-use <core>/strings as core_strings
-
 use absence
 use platform_skips
 use report
@@ -196,7 +194,7 @@ function library_asked(scratch: str, p: Probe) -> Outcome
 # "" where there is none.
 function case_of(argv: str) -> str
     for word in words_of(argv)
-        if core_strings.has_suffix(s: word, suffix: ".hero")
+        if strings.has_suffix(s: word, suffix: ".hero")
             return word
 
     return ""
@@ -212,7 +210,7 @@ function asks_about_absence(p: Probe) -> bool
         asked @ asked.push(needle)
 
     for one in asked
-        if core_strings.contains(s: one, substr: "ffi_missing_header") || core_strings.contains(s: one, substr: "ffi_pkgconfig") || core_strings.contains(s: one, substr: "pkg-config is not on this machine")
+        if strings.contains(s: one, substr: "ffi_missing_header") || strings.contains(s: one, substr: "ffi_pkgconfig") || strings.contains(s: one, substr: "pkg-config is not on this machine")
             return true
 
     return false
@@ -248,26 +246,26 @@ function judged(p: Probe, said: shell.Run) -> str
             "    stderr is not what it must be\n--- expected ---\n" + p.err_is + "--- actual ---\n" + err + "--- end ---"
         )
 
-    if p.out_starts.len() > 0 && !core_strings.has_prefix(s: out, prefix: p.out_starts)
+    if p.out_starts.len() > 0 && !strings.has_prefix(s: out, prefix: p.out_starts)
         wrong @ wrong.push("    stdout does not start with `" + p.out_starts + "`, it starts:\n" + first_line(out))
 
-    if p.err_starts.len() > 0 && !core_strings.has_prefix(s: err, prefix: p.err_starts)
+    if p.err_starts.len() > 0 && !strings.has_prefix(s: err, prefix: p.err_starts)
         wrong @ wrong.push("    stderr does not start with `" + p.err_starts + "`, it starts:\n" + first_line(err))
 
     for needle in p.out_has
-        if !core_strings.contains(s: out, substr: needle)
+        if !strings.contains(s: out, substr: needle)
             wrong @ wrong.push("    stdout does not carry `" + needle + "`")
 
     for needle in p.out_lacks
-        if core_strings.contains(s: out, substr: needle)
+        if strings.contains(s: out, substr: needle)
             wrong @ wrong.push("    stdout carries `" + needle + "` and must not")
 
     for needle in p.err_has
-        if !core_strings.contains(s: err, substr: needle)
+        if !strings.contains(s: err, substr: needle)
             wrong @ wrong.push("    stderr does not carry `" + needle + "`")
 
     for needle in p.err_lacks
-        if core_strings.contains(s: err, substr: needle)
+        if strings.contains(s: err, substr: needle)
             wrong @ wrong.push("    stderr carries `" + needle + "` and must not")
 
     if p.err_lines >= 0 && strings.lines(err).len() != p.err_lines
@@ -348,7 +346,7 @@ test "fixedbugs: a row that may skip is skipped only where the machine lacks wha
     refuted.err_has @ ["error[ffi_return_type]"]
     got = outcome(scratch: scratch, compiler: compiler.must(), p: refuted)
     assert got.kind == "failed"
-    assert core_strings.contains(s: got.text, substr: "not skipped for a missing library: clang finds `stdio.h`")
+    assert strings.contains(s: got.text, substr: "not skipped for a missing library: clang finds `stdio.h`")
     lacks = absence.planted_case(dir: tree, name: "lacks", bound: absence.NOWHERE, missing: absence.NOWHERE)
     assert !lacks.is_err()
     excused: Probe @= probe(name: "lacks", argv: "build " + lacks.must(), code: 1)
@@ -365,7 +363,7 @@ test "fixedbugs: a row that may skip is skipped only where the machine lacks wha
     r: report.Report @= report.empty()
     run_table(scratch: scratch, compiler: compiler.must(), probes: [excused, refuted], r: @r)
     assert r.skips.len() == 1
-    assert core_strings.has_prefix(s: r.skips[0], prefix: "SKIP surface/lacks\n")
+    assert strings.has_prefix(s: r.skips[0], prefix: "SKIP surface/lacks\n")
     assert r.failed == 1
     assert !shell.remove_tree(scratch).is_err()
 
@@ -387,14 +385,14 @@ test "fixedbugs: a row naming a library its case binds is skipped where the mach
     lacking.library @ absent
     got = outcome(scratch: scratch, compiler: "no-compiler-runs-2481", p: lacking)
     assert got.kind == "skipped"
-    assert core_strings.contains(
+    assert strings.contains(
         s: got.text,
         substr: "the library `" + absent + "`, which clang's linker does not find here"
     )
     unbound: Probe @= lacking
     unbound.library @ "heroes_unbound_2481"
     told = outcome(scratch: scratch, compiler: "no-compiler-runs-2481", p: unbound)
-    assert told.kind == "failed" && core_strings.contains(s: told.text, substr: "names it in no `link` group")
+    assert told.kind == "failed" && strings.contains(s: told.text, substr: "names it in no `link` group")
     present: str @= "m"
 
     if shell.exe_suffix() == ".exe"

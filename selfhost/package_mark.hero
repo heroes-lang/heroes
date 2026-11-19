@@ -18,11 +18,11 @@
 # - `use <github.com/acme/json>/parse`, an address, and the same without the
 #   brackets: the catalogue holds an address and the `use` its entry, which
 #   only the catalogue names, so the repair is a `guess`;
-# - `use heroes.packages/core@0.1.0-<key>/strconv`, the folder a fetch placed
+# - `use heroes.packages/rebel@0.1.0-<key>/strconv`, the folder a fetch placed
 #   a package in, bare, quoted or in the mark: no address, and told what it
 #   is (`placed_use.hero`, defect 2390), the repair writing its entry's line,
 #   a `guess` for the same reason, only the catalogue saying its entry
-#   `core` placed that folder;
+#   `rebel` placed that folder;
 # - `use <json>`, a package with no module, an unclosed mark and an empty one:
 #   no repair, which module or name is meant being the author's, and no
 #   module named that the package does not hold (defect 2438);
@@ -41,7 +41,7 @@ use module_text
 use placed_use
 use token
 
-# How `use <core>` with no module is told, then how the line goes on: here
+# How `use <rebel>` with no module is told, then how the line goes on: here
 # the mark and no module's name, the parser reading no catalogue, and in the
 # parse stage the modules the package's tree holds where it can be read
 # (`module/offered_modules.hero`; defect 2438: `parse` was said to be a file
@@ -277,7 +277,7 @@ function address(line: [token.Token], text: str, close: i64) -> diag.Diagnostic
         )
     return address_told(held, span: span)
 
-# `use <heroes.packages/core@0.1.0-<key>>/strconv`: a placed folder in the
+# `use <heroes.packages/rebel@0.1.0-<key>>/strconv`: a placed folder in the
 # mark, told as the bare line is, over the mark and the module after it; the
 # repair offered where nothing but an `as` follows.
 function placed_marked(line: [token.Token], text: str, close: i64, inside: str) -> diag.Diagnostic

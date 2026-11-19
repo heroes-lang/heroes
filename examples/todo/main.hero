@@ -17,9 +17,8 @@
 # touching the disk, and it is what value semantics makes free: `complete`
 # returns a new list, because there is nothing else it could return.
 
-use <core>/strconv
-
 use list
+use numbers
 
 ## Error codes
 #
@@ -97,7 +96,7 @@ function number_of(word: str) -> i64?
     if word.len() == 0
         return fail(code: ERR_NO_NUMBER, msg: "`done` needs the number of a task")
 
-    match strconv.atoi(word)
+    match numbers.atoi(word)
         .ok n  => return ok(n)
         .err e => return fail(code: ERR_NO_NUMBER, msg: e.msg)
 

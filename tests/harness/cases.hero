@@ -25,8 +25,6 @@
 # expectation asks the walk alone, so a form of case this file learns reaches
 # every suite at once.
 
-use <core>/strings as core_strings
-
 use shell
 use strings
 
@@ -72,7 +70,7 @@ function collect(scratch: str, dir: str) -> [Case]?
     present = listed(entries)
 
     for entry in entries
-        if core_strings.has_suffix(s: entry, suffix: ".expected")
+        if strings.has_suffix(s: entry, suffix: ".expected")
             owner = strings.without_suffix(text: entry, suffix: ".expected") + ".hero"
 
             if present[owner].is_err()
@@ -104,14 +102,14 @@ function programs(scratch: str, dir: str) -> [Case]?
     found: [Case] @= []
 
     for entry in entries
-        if core_strings.has_suffix(s: entry, suffix: ".hero")
+        if strings.has_suffix(s: entry, suffix: ".hero")
             stem = strings.without_suffix(text: entry, suffix: ".hero")
             found @ found.push(
                 Case(source: entry, expected: beside(present: present, path: stem + ".expected"), name: strings.base_name(path: stem))
             )
 
     for folder in shell.list_directories(scratch: scratch, dir: dir)?
-        if core_strings.has_suffix(s: folder, suffix: CASE)
+        if strings.has_suffix(s: folder, suffix: CASE)
             found @ found.push(folder_case(scratch: scratch, folder: folder)?)
 
     return ok(found)
@@ -162,7 +160,7 @@ function matching(found: [Case], only: str) -> [Case]
     kept: [Case] @= []
 
     for item in found
-        if core_strings.contains(s: item.name, substr: only)
+        if strings.contains(s: item.name, substr: only)
             kept @ kept.push(item)
 
     return kept
@@ -207,7 +205,7 @@ function shard_shaped(word: str) -> bool
         if half.len() == 0 || half.len() > SHARD_DIGITS || strings.to_number(half).is_err()
             return false
 
-        if core_strings.has_prefix(s: half, prefix: "-")
+        if strings.has_prefix(s: half, prefix: "-")
             return false
 
     return true
@@ -383,7 +381,7 @@ test "a shard asks the floor of the whole directory and names its own cases, and
     assert asks_floor("")
     assert asks_floor("2/6")
     assert !asks_floor("fixedbugs-133")
-    assert core_strings.has_prefix(
+    assert strings.has_prefix(
         s: starved_words(skipped: 2, count: 5, noun: "cases", only: "2/6", whole: "x"),
         prefix: "  2 of 5 cases of shard 2 of 6 were"
     )
@@ -403,7 +401,7 @@ test "fixedbugs: the skip ratio's failure says the machine's verdict of the whol
     assert shard == "  1 of 1 programs of shard 1 of 2 were skipped for a missing library — a skip is not a pass, so a third of them or more were not judged on this machine"
 
     for told in [filtered, shard]
-        assert !core_strings.contains(s: told, substr: "this machine is not")
+        assert !strings.contains(s: told, substr: "this machine is not")
 
 test "the filter keeps the cases whose name holds the word, and an empty word keeps all"
     a = Case(source: "x/a.hero", expected: "x/a.expected", name: "a")

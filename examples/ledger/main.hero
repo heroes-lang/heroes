@@ -26,11 +26,10 @@
 # emitted C that clang warned about, filed and repaired as defect 009 the
 # same hour.
 
-use <core>/strings
-
 use book/entry
 use db/sqlite
 use report/lines
+use strings
 
 function main()
     opened = sqlite.opened()

@@ -1,0 +1,366 @@
+# JSON read, for the guard: `parse` reads the event a tool call sends on
+# stdin (RFC 8259) into a `Value`, and `field` finds a member of an object.
+#
+# The hooks use no library (M-rebel-library's decisions 6 and 8,
+# 2026-11-19): until that day the guard read its event through a package
+# placed beside it, which the milestone removed. This reader is the one
+# `examples/json/json.hero` holds, its reading half, written there to the
+# RFC: a number's digits rounded once by the C library's `strtod`, a
+# document nested past `DEEPEST` refused, never a stack run out.
+
+extern "stdlib.h"
+    function strtod(text: cstr lent, end: ptr) -> f64
+
+# A JSON value, one case per kind the RFC names.
+variant Value
+    nothing
+    boolean
+        value: bool
+    number
+        value: f64
+    string
+        value: str
+    array
+        items: [Value]
+    object
+        fields: {str: Value}
+
+# What every refusal of this module fails with: the text is not JSON.
+constant NOT_JSON: str
+    "not_json"
+
+# What `field` fails with where the object has no member of that name, or
+# the value is no object.
+constant NO_FIELD: str
+    "no_field"
+
+# The deepest a document may nest, arrays and objects counted together.
+constant DEEPEST: i64
+    512
+
+# A document being read: its text and the byte the reader stands on.
+record Reader
+    text: str
+    at: i64
+
+## Reading
+
+# The value the whole of `s` writes, white space allowed around it.
+function parse(s: str) -> Value?
+    r: Reader @= Reader(text: s, at: 0)
+    skip_space(@r)
+    v = value(@r, depth: 0)?
+    skip_space(@r)
+
+    if r.at < s.len()
+        return refused(r, why: "text follows the value")
+    return ok(v)
+
+# The value `r` stands on, `depth` arrays and objects inside the document.
+function value(@r: Reader, depth: i64) -> Value?
+    if r.at >= r.text.len()
+        return refused(r, why: "a value is missing")
+    c = r.text[r.at]
+
+    if c == '{' || c == '['
+        if depth >= DEEPEST
+            return refused(r, why: f"the document nests deeper than {DEEPEST}")
+
+        if c == '{'
+            return object(@r, depth: depth + 1)
+        return array(@r, depth: depth + 1)
+
+    if c == '"'
+        return ok(.string(value: string(@r)?))
+
+    if c == '-' || c >= '0' && c <= '9'
+        return ok(.number(value: number(@r)?))
+
+    if word(@r, said: "true")
+        return ok(.boolean(value: true))
+
+    if word(@r, said: "false")
+        return ok(.boolean(value: false))
+
+    if word(@r, said: "null")
+        return ok(.nothing)
+    return refused(r, why: "no value begins here")
+
+# The object `r` stands on, its `{` included.
+function object(@r: Reader, depth: i64) -> Value?
+    fields: {str: Value} @= {}
+    r.at @ r.at + 1
+    skip_space(@r)
+
+    if at_byte(r, byte: '}')
+        r.at @ r.at + 1
+        return ok(.object(fields: fields))
+
+    while true
+        skip_space(@r)
+
+        if !at_byte(r, byte: '"')
+            return refused(r, why: "a member's name is missing")
+        name = string(@r)?
+        skip_space(@r)
+
+        if !at_byte(r, byte: ':')
+            return refused(r, why: "a `:` is missing after a member's name")
+        r.at @ r.at + 1
+        skip_space(@r)
+        fields[name] @ value(@r, depth: depth)?
+        skip_space(@r)
+
+        if at_byte(r, byte: '}')
+            r.at @ r.at + 1
+            return ok(.object(fields: fields))
+
+        if !at_byte(r, byte: ',')
+            return refused(r, why: "a `,` or a `}` is missing after a member")
+        r.at @ r.at + 1
+
+    return refused(r, why: "the object never closes")
+
+# The array `r` stands on, its `[` included.
+function array(@r: Reader, depth: i64) -> Value?
+    items: [Value] @= []
+    r.at @ r.at + 1
+    skip_space(@r)
+
+    if at_byte(r, byte: ']')
+        r.at @ r.at + 1
+        return ok(.array(items: items))
+
+    while true
+        skip_space(@r)
+        items @ items.push(value(@r, depth: depth)?)
+        skip_space(@r)
+
+        if at_byte(r, byte: ']')
+            r.at @ r.at + 1
+            return ok(.array(items: items))
+
+        if !at_byte(r, byte: ',')
+            return refused(r, why: "a `,` or a `]` is missing after an element")
+        r.at @ r.at + 1
+
+    return refused(r, why: "the array never closes")
+
+# The string `r` stands on, its quotes included, its escapes decoded. Its
+# bytes are gathered whole, so a character is never cut, and a `\u` escape
+# is written as the UTF-8 bytes of its character, a surrogate pair as one.
+function string(@r: Reader) -> str?
+    bytes: [u8] @= []
+    r.at @ r.at + 1
+
+    while r.at < r.text.len()
+        c = r.text[r.at]
+
+        if c == '"'
+            r.at @ r.at + 1
+            return ok(bytes.validated_bytes().must())
+
+        if c < 0x20
+            return refused(r, why: "a control character stands in a string unescaped")
+
+        if c != '\\'
+            bytes @ bytes.push(c)
+            r.at @ r.at + 1
+        else
+            escaped(@r, @bytes)?
+
+    return refused(r, why: "a string never closes")
+
+# The escape `r` stands on, its `\` included, its bytes added to `bytes`.
+function escaped(@r: Reader, @bytes: [u8]) -> ()?
+    if r.at + 1 >= r.text.len()
+        return refused(r, why: "a string ends inside an escape")
+    c = r.text[r.at + 1]
+    r.at @ r.at + 2
+
+    if c == '"' || c == '\\' || c == '/'
+        bytes @ bytes.push(c)
+    else if c == 'b'
+        bytes @ bytes.push(8)
+    else if c == 'f'
+        bytes @ bytes.push(12)
+    else if c == 'n'
+        bytes @ bytes.push(10)
+    else if c == 'r'
+        bytes @ bytes.push(13)
+    else if c == 't'
+        bytes @ bytes.push(9)
+    else if c == 'u'
+        point = code_point(@r)?
+        utf8(@bytes, point: point)
+    else
+        r.at @ r.at - 2
+        return refused(r, why: "no such escape")
+    return ok()
+
+# The character a `\u` escape writes, `r` standing after its `u`: four
+# hexadecimal digits, and where they write a high surrogate, a second escape
+# writing the low one, the two making one character past U+FFFF. A
+# surrogate standing alone is no character, and is refused.
+function code_point(@r: Reader) -> i64?
+    first = hex4(@r)?
+
+    if first >= 0xdc00 && first <= 0xdfff
+        return refused(r, why: "a low surrogate stands alone")
+
+    if first < 0xd800 || first > 0xdbff
+        return ok(first)
+
+    if r.at + 1 >= r.text.len() || r.text[r.at] != '\\' || r.text[r.at + 1] != 'u'
+        return refused(r, why: "a high surrogate stands alone")
+    r.at @ r.at + 2
+    second = hex4(@r)?
+
+    if second < 0xdc00 || second > 0xdfff
+        return refused(r, why: "a high surrogate is not followed by a low one")
+    return ok(0x10000 + (first - 0xd800) * 0x400 + (second - 0xdc00))
+
+# The number four hexadecimal digits at `r` write.
+function hex4(@r: Reader) -> i64?
+    total: i64 @= 0
+
+    for _ in range(from: 0, to: 4)
+        if r.at >= r.text.len()
+            return refused(r, why: "a `\\u` escape has fewer than four digits")
+        digit = hex_digit(r.text[r.at])
+
+        if digit < 0
+            return refused(r, why: "a `\\u` escape holds a byte that is no hexadecimal digit")
+        total @ total * 16 + digit
+        r.at @ r.at + 1
+
+    return ok(total)
+
+# The value of one hexadecimal digit, or -1.
+function hex_digit(c: u8) -> i64
+    if c >= '0' && c <= '9'
+        return to_i64(c - '0').must()
+
+    if c >= 'a' && c <= 'f'
+        return to_i64(c - 'a').must() + 10
+
+    if c >= 'A' && c <= 'F'
+        return to_i64(c - 'A').must() + 10
+    return -1
+
+# The UTF-8 bytes of the character `point`, added to `bytes`.
+function utf8(@bytes: [u8], point: i64)
+    if point < 0x80
+        bytes @ bytes.push(to_u8(point).must())
+    else if point < 0x800
+        bytes @ bytes.push(to_u8(0xc0 | point >> 6).must())
+        bytes @ bytes.push(to_u8(0x80 | point & 0x3f).must())
+    else if point < 0x10000
+        bytes @ bytes.push(to_u8(0xe0 | point >> 12).must())
+        bytes @ bytes.push(to_u8(0x80 | point >> 6 & 0x3f).must())
+        bytes @ bytes.push(to_u8(0x80 | point & 0x3f).must())
+    else
+        bytes @ bytes.push(to_u8(0xf0 | point >> 18).must())
+        bytes @ bytes.push(to_u8(0x80 | point >> 12 & 0x3f).must())
+        bytes @ bytes.push(to_u8(0x80 | point >> 6 & 0x3f).must())
+        bytes @ bytes.push(to_u8(0x80 | point & 0x3f).must())
+
+# The number `r` stands on, read to the RFC's grammar: an optional `-`, `0`
+# or digits not opening with one, then optionally a point and digits, then
+# optionally `e` or `E`, a sign and digits.
+function number(@r: Reader) -> f64?
+    start = r.at
+
+    if at_byte(r, byte: '-')
+        r.at @ r.at + 1
+    whole = digits(@r)
+
+    if whole == 0
+        return refused(r, why: "a number has no digit")
+
+    if whole > 1 && r.text[start] == '0' || whole > 1 && r.text[start] == '-' && r.text[start + 1] == '0'
+        return refused(r, why: "a number opens with a 0 before another digit")
+
+    if at_byte(r, byte: '.')
+        r.at @ r.at + 1
+
+        if digits(@r) == 0
+            return refused(r, why: "a number's point has no digit after it")
+
+    if at_byte(r, byte: 'e') || at_byte(r, byte: 'E')
+        r.at @ r.at + 1
+
+        if at_byte(r, byte: '+') || at_byte(r, byte: '-')
+            r.at @ r.at + 1
+
+        if digits(@r) == 0
+            return refused(r, why: "a number's exponent has no digit")
+    v = strtod(text: r.text.slice(from: start, to: r.at).cstr(), end: nullptr)
+
+    # Past the largest `f64` `strtod` answers an infinity, the one number,
+    # `nan` aside, that taken from itself is not 0.
+    if v - v != 0.0
+        return refused(r, why: "a number lies past the largest f64")
+    return ok(v)
+
+# How many ASCII digits `r` stood on, now passed.
+function digits(@r: Reader) -> i64
+    start = r.at
+
+    while r.at < r.text.len() && r.text[r.at] >= '0' && r.text[r.at] <= '9'
+        r.at @ r.at + 1
+
+    return r.at - start
+
+# Whether the text at `r` is `said`, which is then passed.
+function word(@r: Reader, said: str) -> bool
+    if r.at + said.len() > r.text.len()
+        return false
+
+    for i in range(from: 0, to: said.len())
+        if r.text[r.at + i] != said[i]
+            return false
+
+    r.at @ r.at + said.len()
+    return true
+
+# Whether `r` stands on `byte`.
+function at_byte(r: Reader, byte: u8) -> bool
+    return r.at < r.text.len() && r.text[r.at] == byte
+
+# Past the RFC's four bytes of white space.
+function skip_space(@r: Reader)
+    while r.at < r.text.len() && (r.text[r.at] == ' ' || r.text[r.at] == '\t' || r.text[r.at] == '\n' || r.text[r.at] == '\r')
+        r.at @ r.at + 1
+
+# A refusal naming the byte `r` stands on and why.
+function refused<A>(r: Reader, why: str) -> A?
+    return fail(code: NOT_JSON, msg: f"byte {r.at}: {why}")
+
+## Finding
+
+# The member of the object `v` named `name`.
+function field(v: Value, name: str) -> Value?
+    return match v
+        .object o =>
+            match o.fields[name]
+                .ok got => ok(got)
+                .err _  => fail(code: NO_FIELD, msg: "the object has no member `" + name + "`")
+        .nothing | .boolean _ | .number _ | .string _ | .array _ => fail(
+            code: NO_FIELD,
+            msg: "the value is no object, so it has no member `" + name + "`"
+        )
+
+## Tests
+
+test "json: an event reads into its members, and a text that is not JSON is refused"
+    event = parse("{\"cwd\": \"/a\", \"tool_input\": {\"command\": \"git status\", \"timeout\": 1.5e3}}").must()
+    assert field(field(event, "tool_input").must(), "command").must() == .string(value: "git status")
+    assert field(field(event, "tool_input").must(), "timeout").must() == .number(value: 1500.0)
+    assert field(event, "cwd").must() == .string(value: "/a") && field(event, "other").is_err()
+    assert parse("\"\\u00e9\\ud83d\\ude00\"").must() == .string(value: "é😀")
+
+    for text in ["", "{", "[1,]", "{\"a\" 1}", "01", "\"\\ud800\"", "[1] x", "1e400", repeat("[", 513) + repeat("]", 513)]
+        match parse(text)
+            .ok _  => assert false
+            .err e => assert e.code == NOT_JSON

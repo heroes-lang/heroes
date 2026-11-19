@@ -1,0 +1,5 @@
+# A module of the package `rebel`, read from its folder.
+
+# w
+function word() -> str
+    return "s"

@@ -34,8 +34,6 @@
 # `build_reason` before its first build; `emission` claims its blessed file all
 # the same, so no orphan, and compares it on the platforms that build it.
 
-use <core>/strings as core_strings
-
 use freed_bytes
 use shell
 use strings
@@ -287,7 +285,7 @@ test "every name skipped on Windows is a case or a surface row that exists"
     assert windows()[0].name + ".hero" == "fixedbugs-562-a-header-only-inline-is-told-what-c-wants.hero"
     surface = read_file("tests/harness/suite_surface.hero")
     assert !surface.is_err()
-    assert core_strings.contains(s: surface.must(), substr: "row(name: \"" + windows()[1].name + "\"")
+    assert strings.contains(s: surface.must(), substr: "row(name: \"" + windows()[1].name + "\"")
     assert windows().len() == 21
 
     for one in windows().slice(from: 5, to: 17)
@@ -317,7 +315,7 @@ test "every name skipped on Windows is a case or a surface row that exists"
     # a row the surface table names (panel 245's R3).
     for one in darwin_alone()
         folder = shell.exists("tests/golden/unsupported/" + one.name + ".case/main.hero")
-        assert folder || core_strings.contains(s: surface.must(), substr: "row(name: \"" + one.name + "\"")
+        assert folder || strings.contains(s: surface.must(), substr: "row(name: \"" + one.name + "\"")
 
     # Two, defect 2447's ten danger cases, whose words are the SDK's, and
     # panel 245's two rows of a library a text stub holds.
@@ -352,7 +350,7 @@ test "every program Windows cannot build is a file that exists, skipped there al
     assert unbuildable_on_windows().len() == 2
 
     for one in unbuildable_on_windows()
-        assert core_strings.has_prefix(s: one.name, prefix: "tests/golden/run/")
+        assert strings.has_prefix(s: one.name, prefix: "tests/golden/run/")
         assert shell.exists(one.name)
         assert build_reason(one.name).is_err() == !on_windows
 

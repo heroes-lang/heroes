@@ -52,8 +52,6 @@
 # before a needle is looked for, and `alloc.c`'s own floor below is what
 # proves it did not blank everything.
 
-use <core>/strings as core_strings
-
 use floors
 use report
 use shell
@@ -397,7 +395,7 @@ function run_all(scratch: str) -> report.Report?
     sources: [str] @= []
 
     for path in files
-        if core_strings.has_suffix(s: path, suffix: ".c") || core_strings.has_suffix(s: path, suffix: ".h")
+        if strings.has_suffix(s: path, suffix: ".c") || strings.has_suffix(s: path, suffix: ".h")
             sources @ sources.push(path)
 
     r: report.Report @= report.empty()
@@ -511,7 +509,7 @@ function keep_shared_state(@r: report.Report, sources: [str])
     total: i64 @= 0
 
     for path in sources
-        if !core_strings.has_suffix(s: path, suffix: ".c")
+        if !strings.has_suffix(s: path, suffix: ".c")
             continue
         text = read_file(path)
 
@@ -601,7 +599,7 @@ function keep_shared_state(@r: report.Report, sources: [str])
 # same hole as the pointer. A declarator holding a `(` is still a function
 # unless it opens a function pointer, `pointed_function_name`.
 function declares_object(row: str) -> bool
-    if !core_strings.has_prefix(s: row, prefix: "static")
+    if !strings.has_prefix(s: row, prefix: "static")
         return false
 
     if row.len() < 8
@@ -610,7 +608,7 @@ function declares_object(row: str) -> bool
     if word_byte(row[6])
         return false
 
-    if !core_strings.has_suffix(s: row, suffix: ";")
+    if !strings.has_suffix(s: row, suffix: ";")
         return false
 
     # `const` USED TO SKIP THE WHOLE ROW, AND THAT WAS A HOLE THIS SWEEP FELL
@@ -626,10 +624,10 @@ function declares_object(row: str) -> bool
     # A `T *const p` is caught instead of skipped, which is the loud direction.
     decl = declarator(row)
 
-    if names_word(code: decl, name: "const") && !core_strings.contains(s: decl, substr: "*")
+    if names_word(code: decl, name: "const") && !strings.contains(s: decl, substr: "*")
         return false
 
-    if !core_strings.contains(s: decl, substr: "(")
+    if !strings.contains(s: decl, substr: "(")
         return true
 
     return pointed_function_name(decl) != ""
@@ -768,11 +766,11 @@ function named_here(key: str) -> bool
 # drops the project's own `incref`/`decref` vocabulary still trips the
 # floor rather than passing quietly.
 function counts(row: str) -> bool
-    return names_word(code: row, name: "incref") || names_word(code: row, name: "decref") || core_strings.contains(s: row, substr: "_incref") || core_strings.contains(s: row, substr: "_decref")
+    return names_word(code: row, name: "incref") || names_word(code: row, name: "decref") || strings.contains(s: row, substr: "_incref") || strings.contains(s: row, substr: "_decref")
 
 function is_prototype(row: str) -> bool
     trimmed = strings.trimmed(row)
-    return core_strings.has_suffix(s: trimmed, suffix: ";") && !core_strings.contains(s: trimmed, substr: "{")
+    return strings.has_suffix(s: trimmed, suffix: ";") && !strings.contains(s: trimmed, substr: "{")
 
 ## Rule 4 — the platform layer's headers and members (panel 234's R6)
 
@@ -803,7 +801,7 @@ function keep_layer(@r: report.Report, sources: [str])
     for path in sources
         name = path.slice(from: min_len(path, LAYER.len()), to: path.len())
 
-        if !core_strings.has_prefix(s: path, prefix: LAYER) || !core_strings.has_suffix(s: name, suffix: ".c") || !core_strings.has_prefix(s: name, prefix: "hero_") || core_strings.contains(s: name, substr: "/")
+        if !strings.has_prefix(s: path, prefix: LAYER) || !strings.has_suffix(s: name, suffix: ".c") || !strings.has_prefix(s: name, prefix: "hero_") || strings.contains(s: name, substr: "/")
             continue
         members @ members + 1
         stem = name.slice(from: 0, to: name.len() - 2)
@@ -873,14 +871,14 @@ function unguarded(text: str) -> [str]
     while at < code.len()
         row = strings.trimmed(code[at])
 
-        if core_strings.has_prefix(s: row, prefix: "#")
+        if strings.has_prefix(s: row, prefix: "#")
             directives @ directives.push(strings.trimmed(row.slice(from: 1, to: row.len())))
             lines_at @ lines_at.push(at + 1)
         at @ at + 1
 
     guard: str @= ""
 
-    if directives.len() >= 2 && core_strings.has_prefix(s: directives[0], prefix: "ifndef ") && core_strings.has_prefix(s: directives[1], prefix: "define ")
+    if directives.len() >= 2 && strings.has_prefix(s: directives[0], prefix: "ifndef ") && strings.has_prefix(s: directives[1], prefix: "define ")
         guard @ strings.trimmed(directives[0].slice(from: 7, to: directives[0].len()))
 
     if guard.len() == 0 || strings.trimmed(directives[1].slice(from: 7, to: directives[1].len())) != guard
@@ -903,7 +901,7 @@ function unguarded(text: str) -> [str]
 
 function conditional(directive: str) -> bool
     for word in ["if", "ifdef", "ifndef", "elif", "elifdef", "elifndef", "else", "endif"]
-        if directive == word || core_strings.has_prefix(s: directive, prefix: word + " ") || core_strings.has_prefix(s: directive, prefix: word + "(")
+        if directive == word || strings.has_prefix(s: directive, prefix: word + " ") || strings.has_prefix(s: directive, prefix: word + "(")
             return true
 
     return false

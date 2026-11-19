@@ -21,8 +21,8 @@
 # A line is `[label:] [mnemonic [operand, operand]] [; comment]`, and any part
 # may be missing.
 
-use <core>/strconv
-use <core>/strings
+use numbers
+use strings
 
 ## Error codes
 #
@@ -149,7 +149,7 @@ function register_of(word: str, number: i64) -> i64?
     return ok(n)
 
 function number_of(word: str, number: i64) -> i64?
-    match strconv.atoi(word)
+    match numbers.atoi(word)
         .ok n  => return ok(n)
         .err e => return fail(code: ERR_BAD_NUMBER, msg: "line " + number.to_str() + ": " + e.msg)
 

@@ -1,0 +1,97 @@
+# The order this program puts its rows in, written for it: a stable sort of an
+# array by a function that says whether one element comes before another.
+#
+# `sort` in this language orders numbers, `str` and `bool` (spec § 11) and
+# cannot be told which field of a record to look at, so a program that orders
+# records carries its own sort and no library (design.md §1.11). Until
+# 2026-11-19 this one came from a package, which M-rebel-library removed (its
+# page's decisions 6 to 8); it is written here from its contract alone.
+#
+# A merge sort from the bottom up, over the elements' indices: runs of one
+# merged into runs of two, then four, each pass writing a new array of
+# indices, so a comparison reads two elements in place and moves none, and
+# each element is copied once, at the end. A merge takes the right run's
+# element first only where it comes strictly before the left's, which is
+# what keeps two equal elements in the order they were given.
+
+# `xs` ordered by `before`, two elements neither of which comes before the
+# other kept in the order `xs` gives them.
+function sort_by<A>(xs: [A], before: (function(a: A, b: A) -> bool)) -> [A]
+    order: [i64] @= range(from: 0, to: xs.len())
+    width: i64 @= 1
+
+    while width < xs.len()
+        merged: [i64] @= []
+        start: i64 @= 0
+
+        while start < xs.len()
+            middle = end_of_run(start: start, width: width, count: xs.len())
+            end = end_of_run(start: middle, width: width, count: xs.len())
+            left: i64 @= start
+            right: i64 @= middle
+
+            while left < middle && right < end
+                if before(a: xs[order[right]], b: xs[order[left]])
+                    merged @ merged.push(order[right])
+                    right @ right + 1
+                else
+                    merged @ merged.push(order[left])
+                    left @ left + 1
+
+            while left < middle
+                merged @ merged.push(order[left])
+                left @ left + 1
+
+            while right < end
+                merged @ merged.push(order[right])
+                right @ right + 1
+
+            start @ end
+
+        order @ merged
+        width @ width * 2
+
+    out: [A] @= []
+
+    for at in order
+        out @ out.push(xs[at])
+
+    return out
+
+# Where the run of `width` elements that opens at `start` ends, `count` being
+# how many there are: never past the last.
+function end_of_run(start: i64, width: i64, count: i64) -> i64
+    if start >= count || width > count - start
+        return count
+    return start + width
+
+# Whether `a` is smaller than `b`, for the tests below.
+function smaller(a: i64, b: i64) -> bool
+    return a < b
+
+# Whether `a`'s first digit is smaller than `b`'s, two numbers of one ten
+# being equal, for the stability test below.
+function by_ten(a: i64, b: i64) -> bool
+    return a / 10 < b / 10
+
+test "sort_by orders by the function it is given"
+    assert sort_by([5, 3, 9, 1, 3, 7, 2], smaller) == [1, 2, 3, 3, 5, 7, 9]
+    assert sort_by([2, 1], smaller) == [1, 2]
+    assert sort_by([1], smaller) == [1]
+    nothing: [i64] = []
+    assert sort_by(nothing, smaller).len() == 0
+
+test "sort_by keeps two equal elements in the order they were given"
+    assert sort_by([31, 12, 35, 18, 30, 11, 14], by_ten) == [12, 18, 11, 14, 31, 35, 30]
+
+    for count in range(from: 0, to: 40)
+        given = range(from: 0, to: count).map(backwards)
+        sorted = sort_by(given, by_ten)
+        assert sorted.len() == count
+
+        for at in range(from: 1, to: sorted.len())
+            assert sorted[at - 1] / 10 < sorted[at] / 10 || sorted[at - 1] / 10 == sorted[at] / 10 && sorted[at - 1] > sorted[at]
+
+# `n` written backwards from 100, so a run of numbers comes in falling order.
+function backwards(n: i64) -> i64
+    return 100 - n

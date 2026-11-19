@@ -6,18 +6,15 @@
 # suites — a second copy is a second place for `ends_with` to be subtly
 # wrong.
 #
-# **Three of them are `core`'s since feature 2425** (panel 242's R7,
-# ratified 2026-11-10): the net's own catalogue, `tests/harness/heroes.toml`,
-# takes `core`, 0.2.0 when it arrived and the newest version since the
-# author's decision of 2026-11-14 (`examples/packages/README.md` § 10, step
-# 5), and `starts_with`, `ends_with` and `contains`, which
-# were hand copies of its contract, left this file for `use <core>/strings`
-# (`has_prefix`, `has_suffix`, `contains`), 1,476 calls in 112 modules, the
-# author's instruction that no copy by hand survives a package's arrival.
-# Each answers what the copy answered on every text, the empty one
-# included, and walks bytes as this file does. What stays here is what
-# `core` does not hold, or holds with another contract (`trimmed` cuts four
-# ASCII bytes where `trim_space` cuts Unicode's white space).
+# **Three of them are the net's own again since M-rebel-library step 55a**
+# (2026-11-19): `has_prefix`, `has_suffix` and `contains`, called in 116
+# modules, 1,597 calls that day (`git grep -oh` over the net). From feature
+# 2425 (panel 242's R7) until then they were a package's, which the net's
+# catalogue took; the milestone removed that package and decided that the
+# compiler and its net use no library (its page's decisions 6 and 8), so the
+# predicates are written here once more, from their contract alone: each
+# walks bytes, as every function of this file does, and answers `true` for
+# the empty text.
 #
 # Port of the small string helpers spread through
 # heroes-cli/tests/{golden,corpus,layout}.rs in the Rust bootstrap at `m-bootstrap-archive` (Rust hands those out
@@ -31,19 +28,48 @@
 # harness. Indexing gives a `u8` for any in-range index and cannot abort,
 # so every predicate here walks bytes.
 
-use <core>/strconv
-use <core>/strings as core_strings
+# Whether `s` begins with `prefix`; every text begins with "".
+function has_prefix(s: str, prefix: str) -> bool
+    return prefix.len() <= s.len() && holds_at(s: s, part: prefix, at: 0)
+
+# Whether `s` ends with `suffix`; every text ends with "".
+function has_suffix(s: str, suffix: str) -> bool
+    return suffix.len() <= s.len() && holds_at(s: s, part: suffix, at: s.len() - suffix.len())
+
+# Whether `substr` occurs anywhere in `s`; "" occurs in every text.
+function contains(s: str, substr: str) -> bool
+    at: i64 @= 0
+
+    while at + substr.len() <= s.len()
+        if holds_at(s: s, part: substr, at: at)
+            return true
+        at @ at + 1
+
+    return false
+
+# Whether the bytes of `part` stand in `s` from byte `at` on. The callers
+# above ask first that `at + part.len()` lies within `s`, so every index here
+# is in bounds and the walk cannot abort, a multi-byte character included.
+function holds_at(s: str, part: str, at: i64) -> bool
+    i: i64 @= 0
+
+    while i < part.len()
+        if s[at + i] != part[i]
+            return false
+        i @ i + 1
+
+    return true
 
 # `text` with `suffix` removed.
 #
-# The caller must have asked `core_strings.has_suffix` first — this returns `text`
+# The caller must have asked `has_suffix` first — this returns `text`
 # untouched otherwise, rather than guessing. The slice is safe for the
 # same reason it is safe nowhere else in this file: an ASCII suffix that
 # matched proves the cut is on a character boundary, because no ASCII
 # byte appears inside a multi-byte UTF-8 sequence. Every suffix the
 # harness passes is a literal in its own source (`.hero`, `.expected`).
 function without_suffix(text: str, suffix: str) -> str
-    if !core_strings.has_suffix(s: text, suffix: suffix)
+    if !has_suffix(s: text, suffix: suffix)
         return text
     return text.slice(from: 0, to: text.len() - suffix.len())
 
@@ -132,7 +158,7 @@ function is_space(byte: u8) -> bool
     return byte == 32 || byte == 9 || byte == 10 || byte == 13
 
 function without_prefix(text: str, prefix: str) -> str
-    if !core_strings.has_prefix(s: text, prefix: prefix)
+    if !has_prefix(s: text, prefix: prefix)
         return text
     return text.slice(from: prefix.len(), to: text.len())
 
@@ -144,25 +170,65 @@ function without_prefix(text: str, prefix: str) -> str
 # a file somebody edits: `!exit: three` is a broken case, and a broken
 # case must be reported by name, not by killing the harness.
 #
-# **The digits are `core`'s `strconv.atoi` since defect 2545** (2026-11-15).
-# The loop this file held multiplied before it asked, so a number past an
-# `i64`, `99999999999999999999` or `9223372036854775808`, killed the harness
-# `integer overflow` at exit 134, the abort the paragraph above refuses, and
-# so did the lowest `i64`, its digits read as one past the largest before the
-# sign was laid on. `atoi` asks each step whether it would leave the type, so
-# it fails `does_not_fit` naming the text, and reads the lowest `i64`. What
-# stays here is the one clause of this function's contract `atoi` does not
-# hold: a leading `+` is no number, as it always was, since callers read the
-# failure as a refusal: `cases.shard_shaped` as no shard and `issue_args` as no
-# issue's number, so `+1/+2` or `+7` read as numbers would be a shard or an
-# issue nobody wrote.
+# **A number past an `i64` is a failure since defect 2545** (2026-11-15).
+# The loop this file held until then multiplied before it asked, so a number
+# past an `i64`, `99999999999999999999` or `9223372036854775808`, killed the
+# harness `integer overflow` at exit 134, the abort the paragraph above
+# refuses, and so did the lowest `i64`, its digits read as one past the
+# largest before the sign was laid on. So the digits are added below zero,
+# where the lowest `i64` has room and its positive twin is the one number
+# refused, and each step asks first whether it would leave the type: a
+# number too large fails `does_not_fit`, the built-ins' own code (spec § 11),
+# naming the text. A leading `+` is no number, as it always was, since
+# callers read the failure as a refusal: `cases.shard_shaped` as no shard and
+# `issue_args` as no issue's number, so `+1/+2` or `+7` read as numbers would
+# be a shard or an issue nobody wrote.
 function to_number(text: str) -> i64?
-    if core_strings.has_prefix(s: text, prefix: "+")
-        return fail(
-            code: strconv.NOT_A_NUMBER,
-            msg: "`" + text + "` is not a decimal integer: its sign may be a leading `-` alone"
-        )
-    return strconv.atoi(text)
+    negative = text.len() > 0 && text[0] == '-'
+    at: i64 @= 0
+
+    if negative
+        at @ 1
+
+    if at == text.len()
+        return fail(code: NOT_A_NUMBER, msg: "`" + text + "` is not a decimal integer: it holds no digit")
+    total: i64 @= 0
+
+    while at < text.len()
+        c = text[at]
+
+        if c < '0' || c > '9'
+            return fail(
+                code: NOT_A_NUMBER,
+                msg: "`" + text + "` is not a decimal integer: it holds digits and a leading `-` alone"
+            )
+        digit = to_i64(c - '0').must()
+
+        if total < CUTOFF || total == CUTOFF && digit > CUTLIM
+            return fail(code: "does_not_fit", msg: "`" + text + "` does not fit an i64")
+        total @ total * 10 - digit
+        at @ at + 1
+
+    if negative
+        return ok(total)
+
+    if total == CUTOFF * 10 - CUTLIM
+        return fail(code: "does_not_fit", msg: "`" + text + "` does not fit an i64")
+    return ok(-total)
+
+# What `to_number` fails with where a text is no integer at all.
+constant NOT_A_NUMBER: str
+    "not_a_number"
+
+# The digits are added below zero, where an `i64` reaches one further than
+# above it. A total below `CUTOFF`, or at it with a next digit past `CUTLIM`,
+# would leave the type at the next step, so the step is refused before it is
+# taken (the C library's `strtol` asks the same two numbers).
+constant CUTOFF: i64
+    -922337203685477580
+
+constant CUTLIM: i64
+    8
 
 # Where `needle` first occurs in `text`, or an error if it does not.
 function index_of(text: str, needle: str) -> i64?
@@ -238,16 +304,22 @@ test "index_of, split_text and words"
     assert words("solo") == ["solo"]
 
 test "contains finds a needle at every position and refuses a longer one"
-    assert core_strings.contains(s: "abc", substr: "a")
-    assert core_strings.contains(s: "abc", substr: "c")
-    assert core_strings.contains(s: "abc", substr: "abc")
-    assert !core_strings.contains(s: "abc", substr: "abcd")
-    assert !core_strings.contains(s: "abc", substr: "ac")
-    assert core_strings.contains(s: "aab", substr: "ab")
+    assert contains(s: "abc", substr: "a")
+    assert contains(s: "abc", substr: "c")
+    assert contains(s: "abc", substr: "abc")
+    assert !contains(s: "abc", substr: "abcd")
+    assert !contains(s: "abc", substr: "ac")
+    assert contains(s: "aab", substr: "ab")
+
+test "the empty text begins, ends and occurs in every text, and holds no other"
+    assert has_prefix(s: "", prefix: "") && has_prefix(s: "abc", prefix: "")
+    assert has_suffix(s: "", suffix: "") && has_suffix(s: "abc", suffix: "")
+    assert contains(s: "", substr: "") && contains(s: "abc", substr: "")
+    assert !has_prefix(s: "", prefix: "a") && !has_suffix(s: "", suffix: "a") && !contains(s: "", substr: "a")
 
 test "starts_with and without_prefix"
-    assert core_strings.has_prefix(s: "!exit: 3", prefix: "!exit: ")
-    assert !core_strings.has_prefix(s: "!exit", prefix: "!exit: ")
+    assert has_prefix(s: "!exit: 3", prefix: "!exit: ")
+    assert !has_prefix(s: "!exit", prefix: "!exit: ")
     assert without_prefix(text: "!exit: 3", prefix: "!exit: ") == "3"
     assert without_prefix(text: "nope", prefix: "!exit: ") == "nope"
 
@@ -275,17 +347,17 @@ test "fixedbugs: a number past an i64 is refused by name, never an abort, and th
     for past in ["9223372036854775808", "-9223372036854775809", "99999999999999999999", "-99999999999999999999"]
         match to_number(past)
             .ok _  => assert false
-            .err e => assert e.code == "does_not_fit" && core_strings.contains(s: e.msg, substr: past)
+            .err e => assert e.code == "does_not_fit" && contains(s: e.msg, substr: past)
 
     for word in ["+", "+5", "+-5", "-+5", "--5", " 5", "5 "]
         match to_number(word)
             .ok _  => assert false
-            .err e => assert e.code == "not_a_number" && core_strings.contains(s: e.msg, substr: word)
+            .err e => assert e.code == "not_a_number" && contains(s: e.msg, substr: word)
 
 test "ends_with and without_suffix agree on the harness's own suffixes"
-    assert core_strings.has_suffix(s: "a/b/foo.hero", suffix: ".hero")
-    assert !core_strings.has_suffix(s: "a/b/foo.hero", suffix: ".expected")
-    assert !core_strings.has_suffix(s: ".hero", suffix: "x.hero")
+    assert has_suffix(s: "a/b/foo.hero", suffix: ".hero")
+    assert !has_suffix(s: "a/b/foo.hero", suffix: ".expected")
+    assert !has_suffix(s: ".hero", suffix: "x.hero")
     assert without_suffix(text: "a/b/foo.hero", suffix: ".hero") == "a/b/foo"
     assert without_suffix(text: "a/b/foo.hero", suffix: ".expected") == "a/b/foo.hero"
 
@@ -294,9 +366,9 @@ test "ends_with walks bytes, so a multi-byte character neither matches nor abort
     # would abort if it sliced; walking bytes answers false instead, and
     # a match on the whole character still answers true.
     name = "pé.hero"
-    assert core_strings.has_suffix(s: name, suffix: ".hero")
-    assert core_strings.has_suffix(s: "pé", suffix: "é")
-    assert !core_strings.has_suffix(s: "pé", suffix: "e")
+    assert has_suffix(s: name, suffix: ".hero")
+    assert has_suffix(s: "pé", suffix: "é")
+    assert !has_suffix(s: "pé", suffix: "e")
     assert without_suffix(text: name, suffix: ".hero") == "pé"
 
 test "split_on keeps empty pieces and lines drops the trailing one"

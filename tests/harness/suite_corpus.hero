@@ -23,8 +23,8 @@
 #      modules declare an `extern` group is bound to a live library, whose
 #      version decides what the program prints — `examples/curl/` prints
 #      this machine's libcurl. Both are asked of the program's OWN modules
-#      since 2026-11-06 (task 2293): a program carried each core package it
-#      used as a copy under its `core/`, whose tests are the package's, so
+#      since 2026-11-06 (task 2293): a program carried each package it
+#      used as a copy under a folder named for it, whose tests are the package's, so
 #      a program with none of its own passed on its copy's. Since
 #      2026-11-08 (panel 235's R15) it fetches them under
 #      `heroes.packages/`, which is never its own (`placed_trees.hero`).
@@ -44,8 +44,6 @@
 # the gallery prints the machine's; an unfinished one, a lesson about `???`,
 # is judged by `check`'s holes (`gallery.hero`). Check 2 is not asked of
 # the gallery: a lesson tests itself through the expectation beside it.
-
-use <core>/strings as core_strings
 
 use absence
 use expectation
@@ -128,9 +126,15 @@ constant EXAMPLES: str
 # since 2cafaa240, the commit that set 44 (`git diff --name-only
 # --diff-filter=A`): `collatz`, `dotproduct`, `firsthit`, `histogram`,
 # `mandelbrot`, `matmul`, `montecarlo`, `nqueens`, `threads`, `wordbands`,
-# `packages` and `server`, the newest, the HTTP server built from core 0.3.0.
+# `packages` and `server`, the newest, the HTTP server built over a package.
+# **55 on 2026-11-19, lowered on purpose, the world moved and not the floor
+# to fit it** (M-rebel-library step 55b): the author's decision of
+# 2026-11-15 splits the examples in two groups, the compiler's using no
+# library and Rebel's beside them, and `packages`, the one program here that
+# held a package's own tests, moved to `examples-rebel/packages/`; the walk
+# read 55 directories with a `main.hero` that day, every other program kept.
 constant LEAST: i64
-    56
+    55
 
 function run_all(scratch: str, compiler: str) -> report.Report?
     r: report.Report @= report.empty()
@@ -325,7 +329,7 @@ function one_program(scratch: str, compiler: str, binaries: str, p: Program, @r:
             report.keep_failure(@r, label: "corpus/" + name + " at " + level, detail: detail)
             return false
 
-        if core_strings.contains(s: said.must().out, substr: "FAIL ")
+        if strings.contains(s: said.must().out, substr: "FAIL ")
             report.keep_failure(
                 @r,
                 label: "corpus/" + name + " at " + level,
@@ -333,7 +337,7 @@ function one_program(scratch: str, compiler: str, binaries: str, p: Program, @r:
             )
             return false
 
-        if level == "--sanitize" && (core_strings.contains(s: said.must().err, substr: "AddressSanitizer") || core_strings.contains(s: said.must().err, substr: "runtime error:"))
+        if level == "--sanitize" && (strings.contains(s: said.must().err, substr: "AddressSanitizer") || strings.contains(s: said.must().err, substr: "runtime error:"))
             report.keep_failure(@r, label: "corpus/" + name, detail: "  tripped a sanitiser:\n" + said.must().err)
             return false
 
@@ -398,7 +402,7 @@ function prints(scratch: str, compiler: str, binaries: str, p: Program, @r: repo
         )
         return
 
-    if core_strings.contains(s: sanitised.must().err, substr: "AddressSanitizer") || core_strings.contains(s: sanitised.must().err, substr: "runtime error:")
+    if strings.contains(s: sanitised.must().err, substr: "AddressSanitizer") || strings.contains(s: sanitised.must().err, substr: "runtime error:")
         report.keep_failure(@r, label: "corpus/" + name, detail: "  tripped a sanitiser:\n" + sanitised.must().err)
         return
 
@@ -430,7 +434,7 @@ function prints(scratch: str, compiler: str, binaries: str, p: Program, @r: repo
             )
             return
 
-        if core_strings.contains(s: low.must().err, substr: "AddressSanitizer") || core_strings.contains(s: low.must().err, substr: "LeakSanitizer") || core_strings.contains(s: low.must().err, substr: "runtime error:")
+        if strings.contains(s: low.must().err, substr: "AddressSanitizer") || strings.contains(s: low.must().err, substr: "LeakSanitizer") || strings.contains(s: low.must().err, substr: "runtime error:")
             report.keep_failure(
                 @r,
                 label: "corpus/" + name + " at --sanitize -O0",
@@ -546,7 +550,7 @@ function module_texts(scratch: str, dir: str, carried: bool) -> [str]?
     nothing: [str] = []
 
     for entry in shell.list_tree(scratch: scratch, dir: dir, skip: nothing)?
-        if core_strings.has_suffix(s: entry, suffix: ".hero") && (carried || own_module(dir: dir, path: entry))
+        if strings.has_suffix(s: entry, suffix: ".hero") && (carried || own_module(dir: dir, path: entry))
             text = read_file(entry)
 
             if !text.is_err()
@@ -557,8 +561,9 @@ function module_texts(scratch: str, dir: str, carried: bool) -> [str]?
 # Whether a module is the program's own and not a package it carries: a
 # package a fetch placed stands in a folder named `heroes.packages`, left out
 # by that name wherever it stands (panel 235's R7, `placed_trees.hero`). Until
-# 2026-11-08 a program's copy stood under its `core/`, so that folder was left
-# out too; a folder named `core` is the program's own since the copies left.
+# 2026-11-08 a program's copy stood under a folder named for its package, so
+# that folder was left out too; such a folder is the program's own since the
+# copies left.
 function own_module(dir: str, path: str) -> bool
     _ = dir
     return !placed_trees.within(path)
@@ -575,7 +580,7 @@ function module_paths(scratch: str, dir: str) -> [str]
         return out
 
     for entry in walked.must()
-        if core_strings.has_suffix(s: entry, suffix: ".hero")
+        if strings.has_suffix(s: entry, suffix: ".hero")
             out @ out.push(entry)
 
     return out
@@ -586,14 +591,14 @@ function module_paths(scratch: str, dir: str) -> [str]
 function declares_any(modules: [str], opening: str) -> bool
     for text in modules
         for row in strings.lines(text)
-            if core_strings.has_prefix(s: row, prefix: opening)
+            if strings.has_prefix(s: row, prefix: opening)
                 return true
 
     return false
 
 function holds(modules: [str], needle: str) -> bool
     for text in modules
-        if core_strings.contains(s: text, substr: needle)
+        if strings.contains(s: text, substr: needle)
             return true
 
     return false
@@ -614,7 +619,7 @@ test "fixedbugs: no comment of an example runs straight into a section heading (
     read: i64 @= 0
 
     for path in files.must()
-        if !core_strings.has_suffix(s: path, suffix: ".hero")
+        if !strings.has_suffix(s: path, suffix: ".hero")
             continue
         text = read_file(path)
         assert !text.is_err()
@@ -625,7 +630,7 @@ test "fixedbugs: no comment of an example runs straight into a section heading (
         for row in strings.lines(text.must())
             at @ at + 1
 
-            if core_strings.has_prefix(s: row, prefix: "## ") && core_strings.has_prefix(s: before, prefix: "#") && !core_strings.has_prefix(s: before, prefix: "##")
+            if strings.has_prefix(s: row, prefix: "## ") && strings.has_prefix(s: before, prefix: "#") && !strings.has_prefix(s: before, prefix: "##")
                 cut @ cut.push(path + ":" + at.to_str())
             before @ row
 
@@ -650,12 +655,12 @@ test "a directory that neither tests itself nor binds C is caught"
 
 test "a program tests itself in its own modules, never in the packages it carries (task 2293)"
     assert own_module(dir: "examples/ini", path: "examples/ini/main.hero")
-    assert own_module(dir: "examples/ini", path: "examples/ini/lib/core/x.hero")
-    assert own_module(dir: "examples/ini", path: "examples/ini/core/strings.hero")
+    assert own_module(dir: "examples/ini", path: "examples/ini/lib/rebel/x.hero")
+    assert own_module(dir: "examples/ini", path: "examples/ini/rebel/strings.hero")
 
     # A placed package is no module of the program, by its folder's name; a
     # folder only holding the word is the program's (panel 235's R7).
-    assert !own_module(dir: "examples/ini", path: "examples/ini/heroes.packages/core@0.1.0-0123456789abcdef/strings.hero")
+    assert !own_module(dir: "examples/ini", path: "examples/ini/heroes.packages/rebel@0.1.0-0123456789abcdef/strings.hero")
     assert own_module(dir: "examples/ini", path: "examples/ini/heroes.packagesx/strings.hero")
     assert own_module(dir: "examples/ini", path: "examples/ini/lib/my.heroes.packages/x.hero")
 
@@ -663,7 +668,7 @@ test "a program tests itself in its own modules, never in the packages it carrie
     # program that tests nothing of its own.
     scratch = shell.own_scratch()
     tree = scratch + "/corpus-carried"
-    placed = tree + "/heroes.packages/core@0.1.0-0123456789abcdef"
+    placed = tree + "/heroes.packages/rebel@0.1.0-0123456789abcdef"
     assert !shell.mkdir_all(placed + "/strings/internal").is_err()
     assert !write_file(path: tree + "/main.hero", text: "function main()\n    print(1)\n").is_err()
     assert !write_file(path: placed + "/strings/internal/scan.hero", text: "test \"a\"\n    assert true\n").is_err()
@@ -720,7 +725,7 @@ test "fixedbugs: a program whose tests cannot build is skipped only where the ma
     assert !took
     assert refuted.failed == 1
     assert refuted.skips.len() == 0
-    assert core_strings.contains(s: refuted.failures[0], substr: "clang finds `stdio.h`")
+    assert strings.contains(s: refuted.failures[0], substr: "clang finds `stdio.h`")
     lacks = tree + "/lacks"
     assert !write_file(path: lacks + "/main.hero", text: "use db/store\n\nfunction main()\n    print(store.seven())\n").is_err()
     store = "extern \"" + absence.NOWHERE + "\"\n    function seven() -> i32\n"
@@ -738,7 +743,7 @@ test "fixedbugs: a program whose tests cannot build is skipped only where the ma
     assert skipped
     assert excused.failed == 0
     assert excused.skips.len() == 1
-    assert core_strings.has_prefix(s: excused.skips[0], prefix: "SKIP corpus/lacks\n")
+    assert strings.has_prefix(s: excused.skips[0], prefix: "SKIP corpus/lacks\n")
     assert !shell.remove_tree(scratch).is_err()
 
 # DEFECT 606's cause in this suite, held as a test (2026-10-11): the gallery's
@@ -774,15 +779,15 @@ test "fixedbugs: a gallery program is checked, owes its expectation, and is run 
 
     assert r.failed == 2
     assert r.passed == 2
-    assert core_strings.has_prefix(s: r.failures[0], prefix: "FAIL corpus/gallery/refused\n")
-    assert core_strings.contains(s: r.failures[0], substr: "never_rebound")
-    assert core_strings.has_prefix(s: r.failures[1], prefix: "FAIL corpus/gallery/unowed\n")
-    assert core_strings.contains(s: r.failures[1], substr: "unowed.expected is not there")
+    assert strings.has_prefix(s: r.failures[0], prefix: "FAIL corpus/gallery/refused\n")
+    assert strings.contains(s: r.failures[0], substr: "never_rebound")
+    assert strings.has_prefix(s: r.failures[1], prefix: "FAIL corpus/gallery/unowed\n")
+    assert strings.contains(s: r.failures[1], substr: "unowed.expected is not there")
 
     # And an expectation the program does not meet is a failure at its level.
     assert !write_file(path: tree + "/owed.expected", text: "8\n").is_err()
     wrong: report.Report @= report.empty()
     _ = one_lesson(scratch: scratch, compiler: compiler, binaries: binaries, path: tree + "/owed.hero", r: @wrong)
     assert wrong.failed == 1
-    assert core_strings.has_prefix(s: wrong.failures[0], prefix: "FAIL corpus/gallery/owed at -O0\n")
+    assert strings.has_prefix(s: wrong.failures[0], prefix: "FAIL corpus/gallery/owed at -O0\n")
     assert !shell.remove_tree(scratch).is_err()

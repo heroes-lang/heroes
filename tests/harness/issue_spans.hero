@@ -17,8 +17,6 @@
 # backtick more in the code, never a reference let loose. The oracle that holds
 # this model to GitHub's own reading is `POST /markdown`, which `plan` asks.
 
-use <core>/strings as core_strings
-
 use strings
 
 # One code span: its opening run's first byte, the byte just past its closing
@@ -176,7 +174,7 @@ function fence_of(row: str) -> str
     if n < 3
         return ""
 
-    if t[0] == '`' && core_strings.contains(s: t.slice(from: n, to: t.len()), substr: "`")
+    if t[0] == '`' && strings.contains(s: t.slice(from: n, to: t.len()), substr: "`")
         return ""
     return t.slice(from: 0, to: n)
 
@@ -200,7 +198,7 @@ function starts_block(row: str) -> bool
     t = unindented(row)
 
     for opening in ["- ", "* ", "+ ", "#", ">", "|"]
-        if core_strings.has_prefix(s: t, prefix: opening)
+        if strings.has_prefix(s: t, prefix: opening)
             return true
 
     digits: i64 @= 0

@@ -22,8 +22,6 @@
 # exit 0, and `--level O2` and `--shapes iff` read as the default and as no
 # shape. Each is told now, at exit 2, naming the flag.
 
-use <core>/strings as core_strings
-
 use gen_program
 use strings
 
@@ -192,12 +190,12 @@ test "fixedbugs: a flag's value that is no number is refused naming the flag and
     for value in ["three", "+5", "", "3x", " 3", "0x10"]
         match value_number(said: value, flag: "--count")
             .ok _  => assert false
-            .err e => assert e.code == "not_a_number" && core_strings.has_prefix(s: e.msg, prefix: "`--count` takes a number: ") && core_strings.contains(s: e.msg, substr: value)
+            .err e => assert e.code == "not_a_number" && strings.has_prefix(s: e.msg, prefix: "`--count` takes a number: ") && strings.contains(s: e.msg, substr: value)
 
     for value in ["99999999999999999999", "9223372036854775808", "-9223372036854775809"]
         match value_number(said: value, flag: "--from")
             .ok _  => assert false
-            .err e => assert e.code == "does_not_fit" && core_strings.has_prefix(s: e.msg, prefix: "`--from` takes a number: ") && core_strings.contains(s: e.msg, substr: value)
+            .err e => assert e.code == "does_not_fit" && strings.has_prefix(s: e.msg, prefix: "`--from` takes a number: ") && strings.contains(s: e.msg, substr: value)
 
     assert text(f, flag: "--compiler", fallback: "heroes") == "heroes"
     judged = read(words: ["judge", "dir", "--compiler", "./heroes"], positional: 1, known: ["--compiler"]).must()

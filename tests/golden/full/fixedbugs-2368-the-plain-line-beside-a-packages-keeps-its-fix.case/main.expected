@@ -1,5 +1,5 @@
-note: the package `core` is read from the folder `tests/golden/full/fixedbugs-2368-the-plain-line-beside-a-packages-keeps-its-fix.case/vendor/core/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
-error[module_binding_taken]: this file already calls `<core>/strings` by the name `strings`, so `other/strings` cannot have it too — a file may not bind one name twice
+note: the package `rebel` is read from the folder `tests/golden/full/fixedbugs-2368-the-plain-line-beside-a-packages-keeps-its-fix.case/vendor/rebel/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+error[module_binding_taken]: this file already calls `<rebel>/strings` by the name `strings`, so `other/strings` cannot have it too — a file may not bind one name twice
   at tests/golden/full/fixedbugs-2368-the-plain-line-beside-a-packages-keeps-its-fix.case/main.hero:16:11
      |
   16 | use other/strings  #~ module_binding_taken

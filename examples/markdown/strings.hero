@@ -1,0 +1,121 @@
+# The text work this program does, written for it: the lines of a document, a line without the white space at its ends, and whether it opens with a mark.
+#
+# The language offers `len`, `slice`, `chars` and `join` and leaves the rest
+# to the program (design.md §1.11: there is no standard library), so each
+# program of `examples/` that takes text apart carries the few functions it
+# calls and no library. Until 2026-11-19 these came from a package, which
+# M-rebel-library removed (its page's decisions 6 to 8); they are written
+# here from their contract alone. Each walks bytes and cuts only where a
+# character begins, so no `slice` below splits one (spec § 10).
+
+# Whether `s` begins with `prefix`; every text begins with "".
+function has_prefix(s: str, prefix: str) -> bool
+    return prefix.len() <= s.len() && holds_at(s: s, part: prefix, at: 0)
+
+# Whether the bytes of `part` stand in `s` from byte `at` on; the callers ask
+# first that they fit, so every index is in bounds.
+function holds_at(s: str, part: str, at: i64) -> bool
+    i: i64 @= 0
+
+    while i < part.len()
+        if s[at + i] != part[i]
+            return false
+        i @ i + 1
+
+    return true
+
+# The lines of `s`, each without its end, "\n" or "\r\n"; the last line's end
+# may be left out, so "a\nb" and "a\nb\n" are both ["a", "b"], "" holds no
+# line, and a "\r" with no "\n" after it ends nothing.
+function split_lines(s: str) -> [str]
+    out: [str] @= []
+    start: i64 @= 0
+    at: i64 @= 0
+
+    while at < s.len()
+        if s[at] == '\n'
+            cut: i64 @= at
+
+            if cut > start && s[cut - 1] == '\r'
+                cut @ cut - 1
+            out @ out.push(s.slice(from: start, to: cut))
+            start @ at + 1
+        at @ at + 1
+
+    if start < s.len()
+        out @ out.push(s.slice(from: start, to: s.len()))
+    return out
+
+# `s` without the white space at either end (`space_at`).
+function trim_space(s: str) -> str
+    start: i64 @= 0
+
+    while start < s.len() && space_at(s, at: start) > 0
+        start @ start + space_at(s, at: start)
+
+    end: i64 @= s.len()
+
+    while end > start && space_ending(s, at: end) > 0
+        end @ end - space_ending(s, at: end)
+
+    return s.slice(from: start, to: end)
+
+# The bytes of the white space character that ends just before byte `at` of
+# `s`, or 0 where the character there is none: the walk goes back over the
+# bytes that continue a character, `0b10xxxxxx`, to the byte that begins it.
+function space_ending(s: str, at: i64) -> i64
+    first: i64 @= at - 1
+
+    while first > 0 && s[first] >= 0x80 && s[first] <= 0xbf
+        first @ first - 1
+
+    if space_at(s, at: first) == at - first
+        return at - first
+    return 0
+
+# The bytes of the white space character that begins at byte `at` of `s`, or
+# 0 where none does. White space is Unicode's: the ASCII tab, line feed,
+# vertical tab, form feed, carriage return and space, then U+0085, U+00A0,
+# U+1680, U+2000 to U+200A, U+2028, U+2029, U+202F, U+205F and U+3000, each
+# matched on its UTF-8 bytes. A byte inside a character begins none of them,
+# so at one this answers 0 and no caller cuts there.
+function space_at(s: str, at: i64) -> i64
+    c = s[at]
+
+    if c == ' ' || c >= 9 && c <= 13
+        return 1
+
+    if c == 0xc2 && at + 1 < s.len() && (s[at + 1] == 0x85 || s[at + 1] == 0xa0)
+        return 2
+
+    if at + 2 >= s.len()
+        return 0
+    second = s[at + 1]
+    third = s[at + 2]
+
+    if c == 0xe1 && second == 0x9a && third == 0x80
+        return 3
+
+    if c == 0xe2 && second == 0x80 && (third >= 0x80 && third <= 0x8a || third == 0xa8 || third == 0xa9 || third == 0xaf)
+        return 3
+
+    if c == 0xe2 && second == 0x81 && third == 0x9f
+        return 3
+
+    if c == 0xe3 && second == 0x80 && third == 0x80
+        return 3
+    return 0
+
+test "split_lines drops each line's end, the last one optional"
+    assert split_lines("a\nb") == ["a", "b"] && split_lines("a\nb\n") == ["a", "b"]
+    assert split_lines("a\r\nb\r\n") == ["a", "b"]
+    assert split_lines("").len() == 0 && split_lines("\n") == [""]
+    assert split_lines("a\n\nb") == ["a", "", "b"] && split_lines("a\rb") == ["a\rb"]
+
+test "trim_space cuts Unicode's white space at either end and nothing inside"
+    assert trim_space("  look around \t\r\n") == "look around"
+    nbsp: [u8] = [0xc2, 0xa0]
+    ideographic: [u8] = [0xe3, 0x80, 0x80]
+    assert trim_space(nbsp.validated_bytes().must() + "café" + ideographic.validated_bytes().must()) == "café"
+    assert trim_space("\u{2028}\u{85}") == "" && trim_space("") == ""
+    assert trim_space(" é ") == "é" && trim_space("a b") == "a b"

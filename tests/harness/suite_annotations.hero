@@ -31,8 +31,6 @@
 # comment provokes nothing — and only the `.hero` cases produce
 # diagnostics.
 
-use <core>/strings as core_strings
-
 use absence
 use cases
 use floors
@@ -345,13 +343,13 @@ function asked_groups(@r: report.Report, scratch: str, compiler: str, roots: [st
 # Whether `only` names the group at `group`: the directory's own name holds
 # it, or one of its files' names, its extension left out.
 function names_a_group(group: str, entries: [str], only: str) -> bool
-    if core_strings.contains(s: strings.base_name(path: group), substr: only)
+    if strings.contains(s: strings.base_name(path: group), substr: only)
         return true
 
     for entry in entries
         stem = strings.split_on(text: strings.base_name(path: entry), byte: '.')[0]
 
-        if core_strings.contains(s: stem, substr: only)
+        if strings.contains(s: stem, substr: only)
             return true
 
     return false
@@ -488,11 +486,11 @@ function thesis_codes(diag_source: str) -> [str]
     inside: bool @= false
 
     for row in strings.lines(diag_source)
-        if core_strings.has_prefix(s: row, prefix: "function is_thesis_rule")
+        if strings.has_prefix(s: row, prefix: "function is_thesis_rule")
             inside @ true
             continue
 
-        if inside && core_strings.contains(s: row, substr: "for one in codes")
+        if inside && strings.contains(s: row, substr: "for one in codes")
             return out
         trimmed = strings.trimmed(row)
 
@@ -514,7 +512,7 @@ function groups(scratch: str, roots: [str]) -> [str]?
         holds_cases: bool @= false
 
         for entry in shell.list_entries(scratch: scratch, dir: root)?
-            if core_strings.has_suffix(s: entry, suffix: ".hero")
+            if strings.has_suffix(s: entry, suffix: ".hero")
                 holds_cases @ true
 
         if holds_cases
@@ -540,7 +538,7 @@ function one_group(@r: report.Report, scratch: str, compiler: str, group: str, @
     texts: [str] @= []
 
     for path in files.must()
-        if !core_strings.has_suffix(s: path, suffix: ".hero")
+        if !strings.has_suffix(s: path, suffix: ".hero")
             continue
         text = read_file(path)
 
@@ -578,7 +576,7 @@ function one_group(@r: report.Report, scratch: str, compiler: str, group: str, @
         text = texts[at]
         at @ at + 1
 
-        if !core_strings.contains(s: text, substr: "function main")
+        if !strings.contains(s: text, substr: "function main")
             continue
         programs @ programs + 1
         marks = mark_readers.claimed_by(text)
@@ -654,7 +652,7 @@ function one_group(@r: report.Report, scratch: str, compiler: str, group: str, @
         text = texts[at]
         at @ at + 1
 
-        if core_strings.contains(s: text, substr: "function main")
+        if strings.contains(s: text, substr: "function main")
             continue
         marks = mark_readers.claimed_by(text)
 
@@ -746,7 +744,7 @@ function uses_of(text: str) -> [str]
     out: [str] @= []
 
     for row in strings.lines(text)
-        if !core_strings.has_prefix(s: row, prefix: "use ")
+        if !strings.has_prefix(s: row, prefix: "use ")
             continue
         words = strings.words(strings.without_prefix(text: row, prefix: "use "))
 
@@ -935,15 +933,15 @@ test "fixedbugs: a run-root program steps aside only where its case and the mach
     assert got.passed == 2
     assert got.failed == 2
     assert got.skips.len() == 1
-    assert core_strings.has_prefix(s: got.skips[0], prefix: "SKIP annotations/" + root + "/a-lacks\n")
-    assert core_strings.contains(s: got.skips[0], substr: "which clang does not find")
+    assert strings.has_prefix(s: got.skips[0], prefix: "SKIP annotations/" + root + "/a-lacks\n")
+    assert strings.contains(s: got.skips[0], substr: "which clang does not find")
 
     # Each judged case says why the compiler's word was not taken.
-    assert core_strings.contains(
+    assert strings.contains(
         s: got.failures[0],
         substr: "not skipped for a missing library: " + has + ": clang finds `stdio.h`"
     )
-    assert core_strings.contains(s: got.failures[1], substr: "binds no such header")
+    assert strings.contains(s: got.failures[1], substr: "binds no such header")
     assert !shell.remove_tree(scratch).is_err()
 
 # The ruling on defect 246's floor (the coordinator, 2026-10-04): a mark
@@ -977,7 +975,7 @@ test "fixedbugs: a machine stepping every run-root program aside reads red, and 
     all_aside: report.Report @= report.empty()
     floored(@all_aside, expected: 10, run: run, floor: 10, run_floor: 2)
     assert all_aside.failed == 1
-    assert core_strings.contains(s: all_aside.failures[0], substr: "this machine is not asking them")
+    assert strings.contains(s: all_aside.failures[0], substr: "this machine is not asking them")
 
     # A floor the marks found miss is red; one they reach is green, the mark
     # stepped aside counted as reached (10 expected, 9 asked, 1 stepped aside).
@@ -1008,8 +1006,8 @@ test "fixedbugs: the run roots' half going is red by a floor of its own, whateve
     floored(@gone, expected: 3714, run: Asked(marks: 0, stepped: 0), floor: 3581, run_floor: 133)
     assert gone.passed == 1
     assert gone.failed == 1
-    assert core_strings.has_prefix(s: gone.failures[0], prefix: "FAIL annotations/run-roots\n")
-    assert core_strings.contains(s: gone.failures[0], substr: "the walk found 0 annotated diagnostics in the run roots")
+    assert strings.has_prefix(s: gone.failures[0], prefix: "FAIL annotations/run-roots\n")
+    assert strings.contains(s: gone.failures[0], substr: "the walk found 0 annotated diagnostics in the run roots")
 
 # DEFECT 319, held as a test (2026-10-04). A module's marks are the programs'
 # that reach it by their `use` lines: stepped aside with them where every one
@@ -1078,7 +1076,7 @@ test "fixedbugs: a module's marks step aside with the programs that reach it, an
     assert !plant(path: d + "/orphan.hero", source: MARKED_STDIO, said: "").is_err()
     orphan = grouped(scratch: scratch, root: root + "/d", compiler: compiler)
     assert orphan.got.failed == 1
-    assert core_strings.contains(
+    assert strings.contains(
         s: orphan.got.failures[0],
         substr: "in a module no program of this group reaches by its `use` lines: " + d + "/orphan.hero:2:ffi_return_type"
     )
@@ -1088,7 +1086,7 @@ test "fixedbugs: a module's marks step aside with the programs that reach it, an
     assert !plant(path: f + "/orphan.hero", source: MARKED_STDIO, said: "").is_err()
     nobody = grouped(scratch: scratch, root: root + "/f", compiler: compiler)
     assert nobody.got.failed == 1
-    assert core_strings.contains(
+    assert strings.contains(
         s: nobody.got.failures[0],
         substr: "1 annotations here in a module no program of this group reaches by its `use` lines, so nothing provokes them"
     )
@@ -1096,7 +1094,7 @@ test "fixedbugs: a module's marks step aside with the programs that reach it, an
     assert !plant(path: g + "/lone.hero", source: MARKED_STDIO, said: "").is_err()
     lone = grouped(scratch: scratch, root: root + "/g", compiler: compiler)
     assert lone.got.failed == 1
-    assert core_strings.contains(
+    assert strings.contains(
         s: lone.got.failures[0],
         substr: "1 annotations here and no program with a `main` to provoke them"
     )
@@ -1131,7 +1129,7 @@ test "fixedbugs: a narrowed sweep asks each run-root group its word names, whole
     assert !asked_groups(@by_file, scratch: scratch, compiler: stand_in, roots: [root], only: "third").is_err()
     assert by_file.passed == 0
     assert by_file.failed == 1
-    assert core_strings.has_prefix(s: by_file.failures[0], prefix: "FAIL annotations/" + root + "/beta\n")
+    assert strings.has_prefix(s: by_file.failures[0], prefix: "FAIL annotations/" + root + "/beta\n")
     neither: report.Report @= report.empty()
     assert !asked_groups(@neither, scratch: scratch, compiler: stand_in, roots: [root], only: "gamma").is_err()
     assert neither.passed + neither.failed == 0

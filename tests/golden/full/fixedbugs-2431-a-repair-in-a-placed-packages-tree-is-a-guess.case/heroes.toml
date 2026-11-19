@@ -1,12 +1,12 @@
-# The catalogue of defect 2431's case beside it: `json` and `core` from the
+# The catalogue of defect 2431's case beside it: `json` and `rebel` from the
 # index, each tree placed under `heroes.packages/` and held to its sum
 # (no `path` stands in a fetched package's catalogue, panel 244's R3). The
 # index is not here: `check` reads the placed trees and their fingerprints
 # alone.
-[dependencies.core]
+[dependencies.rebel]
 version = "1.0.0"
-sum = "sha256-23b26b3feefc8d2d9cd3a5cf04b586a195a94150fbb1e65902033cf08422cb8a"
+sum = "sha256-611bf597ec25edb198d27e866dbecff8853f017707143dc49eed823b6eaa8248"
 
 [dependencies.json]
 version = "1.0.0"
-sum = "sha256-ab29b3a13aeb774a65021128932d6926e012d6f80436dfb3d7b259015489fff2"
+sum = "sha256-1c08d06fcb6fc4c3bacb06e7187d7aa9b868d3af0f3b27948f7bdb52cc0f7a29"

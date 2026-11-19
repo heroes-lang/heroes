@@ -14,7 +14,7 @@
 # built-in's name.
 #
 # **Two names for one module, and the fix wants the second.** The compilation
-# calls a module by its identity (`placed.identity`): `<core>/strings`, and in
+# calls a module by its identity (`placed.identity`): `<rebel>/strings`, and in
 # a package's own file `<json>/text/strs` for the line `use text/strs`. The
 # message names the identity, which is what the clash is between; the fix
 # names the path the line WRITES, the only text an author can rename, and
@@ -139,9 +139,9 @@ function repaired(written: str, alias: str, has_alias: bool) -> str
 # 1 where the fix would write an `as`; 2 where the line has one.
 #
 # **Asked of the path the line writes, as the fix is** (defect 2368): the
-# module's identity in a package's own file is `<core>/zeta` for `use zeta`,
+# module's identity in a package's own file is `<rebel>/zeta` for `use zeta`,
 # whose closed-up form differed from `zeta`, so that line was read second
-# beside `use text/zeta` and told with a fix renaming it `<core>_zeta`.
+# beside `use text/zeta` and told with a fix renaming it `<rebel>_zeta`.
 function repair_pass(s: source.Source, used: ast.Use, library: {str: bool}) -> i64
     if used.binding.end != used.name.end
         return 2
@@ -165,19 +165,19 @@ test "a suggested name closes up the path's separators, and keeps every characte
     assert use_alias.suggestion("café/é€😀") == "café_é€😀"
 
 test "a package's module is named by its entry and its path, the mark left out"
-    # Defect 2368: `<core>_strings` was offered, which is no name.
-    assert use_alias.suggestion("<core>/strings") == "core_strings"
+    # Defect 2368: `<rebel>_strings` was offered, which is no name.
+    assert use_alias.suggestion("<rebel>/strings") == "rebel_strings"
     assert use_alias.suggestion("<json>/text/strs") == "json_text_strs"
 
     # A mark that never closes, or closes on no path, is no package's module,
     # and no name either: no reader hands one here, and none is offered.
-    assert use_alias.alias_for(written: "<core", binding: "core", library: library_names()) == ""
-    assert use_alias.alias_for(written: "<core>", binding: "core", library: library_names()) == ""
+    assert use_alias.alias_for(written: "<rebel", binding: "rebel", library: library_names()) == ""
+    assert use_alias.alias_for(written: "<rebel>", binding: "rebel", library: library_names()) == ""
 
 test "a fix is offered only where its alias is a name and changes something"
     assert use_alias.alias_for(written: "other/strings", binding: "strings", library: library_names()) == "other_strings"
-    assert use_alias.alias_for(written: "<core>/strings", binding: "strings", library: library_names()) == "core_strings"
-    assert use_alias.alias_for(written: "<core>/strings", binding: "words", library: library_names()) == "core_strings"
+    assert use_alias.alias_for(written: "<rebel>/strings", binding: "strings", library: library_names()) == "rebel_strings"
+    assert use_alias.alias_for(written: "<rebel>/strings", binding: "words", library: library_names()) == "rebel_strings"
     assert use_alias.alias_for(written: "zeta", binding: "zeta", library: library_names()) == ""
     assert use_alias.alias_for(written: "lib/beta", binding: "lib_beta", library: library_names()) == ""
     assert use_alias.alias_for(written: "café/é", binding: "é", library: library_names()) == ""
@@ -186,7 +186,7 @@ test "the fix names the line as written, and renames its alias where it has one"
     span = token.Span(start: 4, end: 11)
     plain = module_binding_taken(
         binding: "strings",
-        first: "<core>/strings",
+        first: "<rebel>/strings",
         second: "other/strings",
         written: "other/strings",
         has_alias: false,
@@ -200,7 +200,7 @@ test "the fix names the line as written, and renames its alias where it has one"
     assert plain.fixes[0].replacement == "strings as other_strings"
     bracketed = module_binding_taken(
         binding: "strings",
-        first: "<core>/strings",
+        first: "<rebel>/strings",
         second: "<json>/strings",
         written: "<json>/strings",
         has_alias: false,
@@ -213,14 +213,14 @@ test "the fix names the line as written, and renames its alias where it has one"
     renamed = module_binding_taken(
         binding: "strings",
         first: "other/strings",
-        second: "<core>/strings",
-        written: "<core>/strings",
+        second: "<rebel>/strings",
+        written: "<rebel>/strings",
         has_alias: true,
         library: library_names(),
         path: token.Span(start: 4, end: 4),
         span: span
     )
-    assert renamed.fixes[0].replacement == "core_strings"
+    assert renamed.fixes[0].replacement == "rebel_strings"
 
     # In a package's own file the line writes `text/strs`, which the
     # compilation calls `<json>/text/strs`: the message names the second and

@@ -29,8 +29,8 @@ use resolve/builtin_names
 # author reads it as the answer.
 #
 # **And only where the alias is a name the parser reads after `as`** (defect
-# 2368): the suggestion kept a package's `<` and `>`, so `use <core>/strings`
-# was offered `as <core>_strings`, which does not parse. The suggestion no
+# 2368): the suggestion kept a package's `<` and `>`, so `use <rebel>/strings`
+# was offered `as <rebel>_strings`, which does not parse. The suggestion no
 # longer writes a mark, and this asks the alias itself rather than trusting
 # that: a fix that does not parse is the one thing a fix may never be.
 #

@@ -15,10 +15,9 @@
 # somebody typed would need `chars()` and a different function, which is
 # `examples/widths/`'s subject and not this one.
 
-use <core>/strings
-
 use data/row
 use query/plan
+use strings
 
 # One column of the report: which field, and how wide it came out.
 record Field

@@ -1,0 +1,76 @@
+# The text work this program does, written for it: the words of a text, between runs of white space.
+#
+# The language offers `len`, `slice`, `chars` and `join` and leaves the rest
+# to the program (design.md §1.11: there is no standard library), so each
+# program of `examples/` that takes text apart carries the few functions it
+# calls and no library. Until 2026-11-19 these came from a package, which
+# M-rebel-library removed (its page's decisions 6 to 8); they are written
+# here from their contract alone. Each walks bytes and cuts only where a
+# character begins, so no `slice` below splits one (spec § 10).
+
+# The words of `s`: the pieces between runs of white space (`space_at`), none
+# of them empty, so "  a b  " is ["a", "b"] and a text of white space alone
+# holds none.
+function fields(s: str) -> [str]
+    out: [str] @= []
+    at: i64 @= 0
+    start: i64 @= 0
+    inside: bool @= false
+
+    while at < s.len()
+        space = space_at(s, at: at)
+
+        if space > 0
+            if inside
+                out @ out.push(s.slice(from: start, to: at))
+            inside @ false
+            at @ at + space
+        else
+            if !inside
+                start @ at
+            inside @ true
+            at @ at + 1
+
+    if inside
+        out @ out.push(s.slice(from: start, to: s.len()))
+    return out
+
+# The bytes of the white space character that begins at byte `at` of `s`, or
+# 0 where none does. White space is Unicode's: the ASCII tab, line feed,
+# vertical tab, form feed, carriage return and space, then U+0085, U+00A0,
+# U+1680, U+2000 to U+200A, U+2028, U+2029, U+202F, U+205F and U+3000, each
+# matched on its UTF-8 bytes. A byte inside a character begins none of them,
+# so at one this answers 0 and no caller cuts there.
+function space_at(s: str, at: i64) -> i64
+    c = s[at]
+
+    if c == ' ' || c >= 9 && c <= 13
+        return 1
+
+    if c == 0xc2 && at + 1 < s.len() && (s[at + 1] == 0x85 || s[at + 1] == 0xa0)
+        return 2
+
+    if at + 2 >= s.len()
+        return 0
+    second = s[at + 1]
+    third = s[at + 2]
+
+    if c == 0xe1 && second == 0x9a && third == 0x80
+        return 3
+
+    if c == 0xe2 && second == 0x80 && (third >= 0x80 && third <= 0x8a || third == 0xa8 || third == 0xa9 || third == 0xaf)
+        return 3
+
+    if c == 0xe2 && second == 0x81 && third == 0x9f
+        return 3
+
+    if c == 0xe3 && second == 0x80 && third == 0x80
+        return 3
+    return 0
+
+test "fields gives the words between runs of white space"
+    assert fields("  3 4  + ") == ["3", "4", "+"]
+    nbsp: [u8] = [0xc2, 0xa0]
+    assert fields("one\ttwo\nthree" + nbsp.validated_bytes().must() + "four") == ["one", "two", "three", "four"]
+    assert fields("").len() == 0 && fields(" \t ").len() == 0
+    assert fields("café") == ["café"]

@@ -3,7 +3,7 @@
 # 2026-11-07; task 2312): what each verb prints and exits with, the catalogue
 # each writes byte for byte, its error codes and texts, the placement folder,
 # and the sum of a fixed tree holding a file that is not text. The second
-# version, over the core packages, replaces the transport alone and passes
+# version, written with Rebel (M-rebel-packages-manager), replaces the transport alone and passes
 # these unchanged.
 #
 # **One folder, a case a folder**: `tests/golden/fetch/<name>.case/`, as
@@ -70,8 +70,6 @@
 # and one date, given to every program this suite starts, git and the
 # compiler alike (`identity`, panel 242's R6), never written into the
 # harness's own environment, and with `core.autocrlf=false`.
-
-use <core>/strings as core_strings
 
 use case_setting
 use floors
@@ -155,7 +153,7 @@ function settable(name: str) -> bool
 # Whether the case in `dir` gives its commands a `PATH` of its own.
 function sets_path(dir: str) -> bool
     for pair in environment_of(dir)
-        if core_strings.has_prefix(s: pair, prefix: "PATH=")
+        if strings.has_prefix(s: pair, prefix: "PATH=")
             return true
 
     return false
@@ -202,7 +200,7 @@ function run_all(scratch: str, compiler: str, only: str) -> report.Report?
     found: [str] @= []
 
     for dir in shell.list_directories(scratch: scratch, dir: ROOT)?
-        if core_strings.has_suffix(s: dir, suffix: ".case") && (only == "" || core_strings.contains(s: last_part(dir), substr: only))
+        if strings.has_suffix(s: dir, suffix: ".case") && (only == "" || strings.contains(s: last_part(dir), substr: only))
             found @ found.push(dir)
 
     if only == ""
@@ -323,7 +321,7 @@ function whole(root: str, path: str) -> str
     if path.len() > 0 && path[0] == '/'
         return path
 
-    if core_strings.has_prefix(s: path, prefix: "./")
+    if strings.has_prefix(s: path, prefix: "./")
         return root + "/" + path.slice(from: 2, to: path.len())
     return root + "/" + path
 

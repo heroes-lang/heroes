@@ -21,15 +21,15 @@ use placed_use
 use source
 
 # Every `use` naming a private module from outside its owner:
-# `<core>/strings/internal/scan` is `<core>/strings`'s, the module before the
+# `<rebel>/strings/internal/scan` is `<rebel>/strings`'s, the module before the
 # LAST `internal` part, and only that module and the modules under it name it.
 #
 # **Asked of a module the compilation holds, and of no other** (defect
 # 2452): a line naming a module no file holds is told by the graph's unknown
 # tellers, which `modules.errors` asks first, once a line. It was told here
 # as well, a second message, and of a name no tree holds: `use
-# core/internal/scan`, its brackets forgotten, was refused as private to a
-# folder `core` the program does not have.
+# rebel/internal/scan`, its brackets forgotten, was refused as private to a
+# folder `rebel` the program does not have.
 function told(s: source.Source, uses: [ast.Use], found: [diag.Diagnostic]) -> [diag.Diagnostic]
     out: [diag.Diagnostic] @= found
 
@@ -81,16 +81,16 @@ function owner_of(name: str) -> str
     return placed_use.internal_owner(name)
 
 test "a private module is its owner's and its owner's modules' alone"
-    assert owner_of("<core>/strings/internal/scan") == "<core>/strings"
-    assert owner_of("<core>/strings") == ""
+    assert owner_of("<rebel>/strings/internal/scan") == "<rebel>/strings"
+    assert owner_of("<rebel>/strings") == ""
     assert owner_of("a/internal/b/internal/c") == "a/internal/b"
     assert owner_of("internalx/y") == ""
     assert owner_of("a/internals/b") == ""
-    assert reaches(from: "<core>/strings", name: "<core>/strings/internal/scan")
-    assert reaches(from: "<core>/strings/split", name: "<core>/strings/internal/scan")
-    assert !reaches(from: "<core>/stringsx", name: "<core>/strings/internal/scan")
+    assert reaches(from: "<rebel>/strings", name: "<rebel>/strings/internal/scan")
+    assert reaches(from: "<rebel>/strings/split", name: "<rebel>/strings/internal/scan")
+    assert !reaches(from: "<rebel>/stringsx", name: "<rebel>/strings/internal/scan")
     assert !reaches(from: "main", name: "lib/internal/strs")
     assert reaches(from: "main", name: "lib/strs")
-    assert offered_said(from: "main", meant: "<core>/strs", marked: "<core>/strs") == ""
-    assert offered_said(from: "<core>/strings", meant: "<core>/internal/scan", marked: "<core>/internal/scan") == ""
-    assert offered_said(from: "<json>/c", meant: "<core>/internal/scan", marked: "<text>/internal/scan") == "`use <text>/internal/scan` would name a module private to `<text>`: " + placed_use.PRIVATE_RULE + "; name what `<text>` offers instead"
+    assert offered_said(from: "main", meant: "<rebel>/strs", marked: "<rebel>/strs") == ""
+    assert offered_said(from: "<rebel>/strings", meant: "<rebel>/internal/scan", marked: "<rebel>/internal/scan") == ""
+    assert offered_said(from: "<json>/c", meant: "<rebel>/internal/scan", marked: "<text>/internal/scan") == "`use <text>/internal/scan` would name a module private to `<text>`: " + placed_use.PRIVATE_RULE + "; name what `<text>` offers instead"

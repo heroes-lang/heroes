@@ -1,5 +1,5 @@
-# A Heroes module's code read as text, for the checks that judge the core
-# packages by their source (`package_rules.hero`): its code without its
+# A Heroes module's code read as text, for the checks that judge a
+# package by its source (`package_rules.hero`): its code without its
 # comments, the same with every literal's contents dropped, the codes its `fail`
 # calls write, the calls it makes, and its `test` blocks. The comments
 # themselves, a declaration's doc and its first sentence, are
@@ -19,8 +19,6 @@
 # (`shell.hero`'s `project_files` writes `return fail(`, then `code:
 # "cannot_walk",` on the next line), so a code is read from the scan's runs,
 # where the newline between `fail(` and `code:` is white space like any other.
-
-use <core>/strings as core_strings
 
 use strings
 
@@ -276,11 +274,11 @@ function past_space(text: str, at: i64) -> i64
 function opens_code(code: str) -> bool
     rest = right_trimmed(code)
 
-    if !core_strings.has_suffix(s: rest, suffix: "code:")
+    if !strings.has_suffix(s: rest, suffix: "code:")
         return false
     before = right_trimmed(strings.without_suffix(text: rest, suffix: "code:"))
 
-    if !core_strings.has_suffix(s: before, suffix: "fail(")
+    if !strings.has_suffix(s: before, suffix: "fail(")
         return false
     head = before.len() - 5
     return head == 0 || !word_byte(before[head - 1])
@@ -315,7 +313,7 @@ function masked(text: str, keep_tests: bool) -> str
     inside: bool @= false
 
     for row in strings.lines(text)
-        if core_strings.has_prefix(s: row, prefix: "test \"")
+        if strings.has_prefix(s: row, prefix: "test \"")
             inside @ true
         else if inside && row.len() > 0 && row[0] != ' ' && row[0] != '\t' && row[0] != '#'
             inside @ false

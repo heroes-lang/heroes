@@ -1,6 +1,9 @@
-# A small HTTP server built from the core packages: `net` for the sockets,
-# `net/http` for the requests and their answers, and the language's own
-# threads, one to each connection. M-core-packages' acceptance (feature 893).
+# A small HTTP server, built from the program's own modules: `net.hero` for
+# the sockets, over the platform layer's `hero_net.h`, `http.hero` for the
+# requests and their answers, and the language's own threads, one to each
+# connection. It was M-core-packages' acceptance (feature 893), built then
+# over a package; since M-rebel-library (2026-11-19) the compiler's examples
+# use no library, and the modules beside this file are the program's own.
 #
 # Run with no words it is the loopback shape the corpus runs: server and client
 # in one process, the client on a thread of its own sending two requests on one
@@ -12,28 +15,27 @@
 # connection finish what it holds, says what it served, and returns from
 # `main`, so the leak check at its end runs.
 #
-# A CONNECTION THAT SENDS NOTHING IS ENDED, AND A PROGRAM STOPS ITSELF, SINCE
-# CORE 0.4.0 (panel 248's R4 and R5). `http.serve_conn` gives each request's
-# head 60 seconds to arrive (`net.set_deadline`), so a quiet connection holds
-# its thread and its slot no longer than that; until then one quiet
-# connection accepted first held every later accept (the sitting's
-# compiler-engineer, with a room of 8: a new client unanswered for 10 s).
-# And a thread asks the whole program's stop with `net.ask_stop`, as the
-# loopback client does, with no signal; a Ctrl-C after it does not end the
-# server, a second does.
+# A CONNECTION THAT SENDS NOTHING IS ENDED, AND A PROGRAM STOPS ITSELF (panel
+# 248's R4 and R5). `http.serve_conn` gives each request's head 60 seconds to
+# arrive (`net.set_deadline`), so a quiet connection holds its thread and its
+# slot no longer than that; without it one quiet connection accepted first
+# held every later accept (the sitting's compiler-engineer, with a room of 8:
+# a new client unanswered for 10 s). And a thread asks the whole program's
+# stop with `net.ask_stop`, as the loopback client does, with no signal; a
+# Ctrl-C after it does not end the server, a second does.
 #
 # ONE CONNECTION PER THREAD, AND WHY IT IS WRITTEN HERE. A Heroes thread runs a
 # function of one `i64` and gives back one (spec § 13), so a connection crosses
 # into its thread as the number `net.number` gives it up for, and the thread
 # takes it back with `net.of`; a handler cannot cross at all, which is why
-# `net/http` serves one connection, `serve_conn`, and the loop that starts a
+# `http.hero` serves one connection, `serve_conn`, and the loop that starts a
 # thread for each is the program's (Go's `http.Serve` holds both). A number
 # never taken back is told when `main` returns, as a connection never closed is.
 
-use <core>/net
-use <core>/net/http
-use <core>/strconv
-use <core>/strings
+use http
+use net
+use numbers
+use strings
 
 extern "hero_os.h"
     function hero_thread_spawn(body: (function(x: i64) -> i64), arg: i64) -> i64
@@ -81,7 +83,7 @@ function loopback()
 
 # The server alone, at `written`'s port, until it is asked to stop.
 function serve(written: str)
-    port = strconv.atoi(written)
+    port = numbers.atoi(written)
 
     if port.is_err()
         print("usage: server [serve <port>]: " + said(port))
@@ -217,5 +219,5 @@ test "the handler greets at /hello and answers 404 everywhere else"
     assert missing.status == 404 && missing.body == "404 page not found: /hello/\n"
 
 test "said gives a failure's words, and none for a value"
-    assert said(strconv.atoi("x")) == "\"x\" is not a number"
-    assert said(strconv.atoi("1")) == ""
+    assert said(numbers.atoi("x")) == "\"x\" is not a number"
+    assert said(numbers.atoi("1")) == ""

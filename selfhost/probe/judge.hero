@@ -338,7 +338,7 @@ test "every family holds over a comment after the parenthesis around a map's key
 # comments, which the last two assertions show.
 test "every family holds over a use block out of order"
     seeds = [
-        "# header\nuse zeta  # the last\n# about the package\nuse <core>/strings\n\n# a remark\n\nuse alpha as near_alpha\n\nfunction main()\n    print(zeta.two() + strings.four() + near_alpha.one())\n"
+        "# header\nuse zeta  # the last\n# about the package\nuse <rebel>/strings\n\n# a remark\n\nuse alpha as near_alpha\n\nfunction main()\n    print(zeta.two() + strings.four() + near_alpha.one())\n"
         "use zeta\n\nfunction main()\n    print(zeta.two() + alpha.one())\n\n# the late one\nuse alpha\n# the doc of helper\nfunction helper() -> i64\n    return 1\n"
     ]
     r = every_family(seeds)

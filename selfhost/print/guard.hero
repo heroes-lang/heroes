@@ -366,7 +366,7 @@ test "a comment after the parenthesis around a map's key stays after it"
 # dump to print them otherwise, `settled` would read them as ordinary rows and
 # every reorder would be refused at exit 2, loud, and this test says why.
 test "the dump prints each use line as a row of its own, in the order written"
-    text = "use zeta\nuse <core>/x as near_x\n"
+    text = "use zeta\nuse <rebel>/x as near_x\n"
     parsed = parse.parse(text)
     rows = dump.dump_ast(parsed.tree, source.new_source(name: "t.hero", text: text), parsed.uses, parsed.decls)
-    assert settled(rows) == ["  use <core>/x as near_x", "  use zeta", "file t.hero", ""]
+    assert settled(rows) == ["  use <rebel>/x as near_x", "  use zeta", "file t.hero", ""]

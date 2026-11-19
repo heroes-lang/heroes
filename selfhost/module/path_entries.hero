@@ -64,7 +64,7 @@ test "a path stands in the catalogue of a package read from a path, and in no fe
     own = catalogue.Catalogue(
         file: "heroes.toml",
         index: "",
-        entries: [entry(name: "core", version: "1.0.0", path: ""), folder],
+        entries: [entry(name: "rebel", version: "1.0.0", path: ""), folder],
         problem: "",
         code: "",
         at: "",
@@ -74,6 +74,6 @@ test "a path stands in the catalogue of a package read from a path, and in no fe
     assert held(of: fetched, own: own) == refused(of: fetched, r: folder)
     assert refused(of: fetched, r: folder).len() > 0
     assert held(of: entry(name: "pp", version: "", path: "../git/pp"), own: own) == ""
-    assert refused(of: fetched, r: entry(name: "core", version: "1.0.0", path: "")) == ""
+    assert refused(of: fetched, r: entry(name: "rebel", version: "1.0.0", path: "")) == ""
     assert noted(alias: "pp", folder: "../git/pp/", own: own).len() == 1
     assert noted(alias: "gp", folder: "x/", own: catalogue.empty()).len() == 0

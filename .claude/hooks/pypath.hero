@@ -5,17 +5,15 @@
 # is `git`, so `git/ add -A` is no git command to the Python guard; Python's
 # `normpath` keeps a path's two leading slashes, `//a`, where Go's `Clean`
 # folds them, POSIX leaving their meaning to the system; and Python's `join`
-# cleans nothing. Where the two agree the work is `<core>/path/filepath`'s.
+# cleans nothing. Where the two agree the work is `clean`'s, Go's `Clean`.
 #
 # What this cannot read, said so a pass is not read as more: `~name`, another
 # user's home, which Python reads from the user database and the runtime
 # holds no door to; `expanduser` answers it as unread, and the guard refuses
 # rather than guess the folder (`verdict.hero`).
 
-use <core>/os
-use <core>/path/filepath
-
 use pystr
+use system
 
 # The last part of `p`, everything after its last `/`: Python's `basename`,
 # "" where `p` ends with `/`.
@@ -52,8 +50,39 @@ function isabs(p: str) -> bool
 # for exactly two leading slashes, which it keeps.
 function normpath(p: str) -> str
     if pystr.opens(s: p, prefix: "//") && !pystr.opens(s: p, prefix: "///")
-        return "/" + filepath.clean(p)
-    return filepath.clean(p)
+        return "/" + clean(p)
+    return clean(p)
+
+# `p` cleaned by text alone, the rules Rob Pike gave Plan 9's file names
+# and Go's `Clean` keeps: runs of `/` made one, each `.` dropped, each `..`
+# dropped with the name before it, a `..` at the root dropped, one that
+# climbs above a relative path kept, and "." for nothing left.
+function clean(p: str) -> str
+    if p.len() == 0
+        return "."
+    rooted = p[0] == '/'
+    kept: [str] @= []
+    start: i64 @= 0
+
+    for at in range(from: 0, to: p.len() + 1)
+        if at == p.len() || p[at] == '/'
+            part = p.slice(from: start, to: at)
+            start @ at + 1
+
+            if part == ".."
+                if kept.len() > 0 && kept[kept.len() - 1] != ".."
+                    kept @ kept.slice(from: 0, to: kept.len() - 1)
+                else if !rooted
+                    kept @ kept.push(part)
+            else if part != "" && part != "."
+                kept @ kept.push(part)
+
+    if rooted
+        return "/" + join(kept, "/")
+
+    if kept.len() == 0
+        return "."
+    return join(kept, "/")
 
 # `b` after `a`: Python's `join` of two, `b` whole where it is absolute, a `/`
 # between them where `a` is not empty and does not end with one.
@@ -66,11 +95,11 @@ function join_two(a: str, b: str) -> str
     return a + "/" + b
 
 # `p` made absolute against the working folder and cleaned: Python's
-# `abspath`. It fails as `os.getwd` fails.
+# `abspath`. It fails as `system.getwd` fails.
 function abspath(p: str) -> str?
     if isabs(p)
         return ok(normpath(p))
-    return ok(normpath(join_two(a: os.getwd()?, b: p)))
+    return ok(normpath(join_two(a: system.getwd()?, b: p)))
 
 # What `expanduser` makes of a path: the path, or one whose `~name` this
 # cannot read.
@@ -96,7 +125,7 @@ function expanduser(p: str) -> Expanded
     if end > 1
         return .unread(name: p.slice(from: 1, to: end))
 
-    home = match os.env("HOME")
+    home = match system.env("HOME")
         .ok h  => h
         .err _ => return .unread(name: "")
 
@@ -156,7 +185,7 @@ function variable(name: str) -> str?
         if name[at] == '=' || name[at] == 0
             return fail(code: "not_found", msg: "no variable is named by a text holding = or a zero byte")
 
-    return os.env(name)
+    return system.env(name)
 
 # Where the name after the `$` at `at` ends, past a closing `}`, or -1 where
 # no name follows: Python's `\$(\w+|\{[^}]*\})` with ASCII words.
@@ -190,21 +219,26 @@ test "pypath: basename and dirname are Python's, not Go's"
     assert dirname("/a/b") == "/a" && dirname("a") == "" && dirname("/a") == "/" && dirname("//") == "//"
     assert dirname("a//b") == "a" && all_slashes("//") && !all_slashes("/a")
 
+test "pypath: clean follows the rules for a name, by text alone"
+    assert clean("a//b/./c/..") == "a/b" && clean("/../a") == "/a" && clean("../../a") == "../../a"
+    assert clean("") == "." && clean(".") == "." && clean("/") == "/" && clean("a/../..") == ".."
+    assert clean("//a/") == "/a" && clean("é/./ü") == "é/ü"
+
 test "pypath: isabs, normpath and join as Python reads them"
     assert isabs("/x") && !isabs("x")
     assert normpath("//a/./b/..") == "//a" && normpath("///a") == "/a" && normpath("") == "." && normpath("a/..") == "."
     assert join_two(a: "/a", b: "b") == "/a/b" && join_two(a: "/a/", b: "b") == "/a/b"
     assert join_two(a: "/a", b: "/b") == "/b" && join_two(a: "", b: "b") == "b"
     assert abspath("/x/../y").must() == "/y"
-    assert abspath("q").must() == normpath(join_two(a: os.getwd().must(), b: "q"))
+    assert abspath("q").must() == normpath(join_two(a: system.getwd().must(), b: "q"))
 
 test "pypath: expanduser reads $HOME, and a ~name is unread"
-    home = os.env("HOME").must()
+    home = system.env("HOME").must()
     assert expanduser("~/x") == .path(text: home + "/x") && expanduser("x~") == .path(text: "x~")
     assert expanduser("~joseph/x") == .unread(name: "joseph")
 
 test "pypath: expandvars replaces a set variable and leaves the rest"
-    home = os.env("HOME").must()
+    home = system.env("HOME").must()
     assert expandvars("$HOME/x") == home + "/x" && expandvars("${HOME}") == home
     assert expandvars("$HEROES_HOOKS_NEVER_SET/x") == "$HEROES_HOOKS_NEVER_SET/x"
     assert expandvars("a$") == "a$" && expandvars("${x") == "${x" && expandvars("${}") == "${}" && expandvars("$-") == "$-"

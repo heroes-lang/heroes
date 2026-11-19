@@ -34,11 +34,9 @@
 # **A package tree beside the answer** (task 2300, panel 234's R14): where the
 # grading names one, its catalogue and placed packages are copied into the
 # scratch beside `answer.hero` before `check`, so an answer's `use
-# <core>/strings` compiles against it (`thesis_packages.hero`). `binds_c` is
+# <rebel>/strings` compiles against it (`thesis_packages.hero`). `binds_c` is
 # asked of the answer's own text, before the tree is placed and never of it:
 # a package's `extern` builds, an answer's is `refused_extern`.
-
-use <core>/strings as core_strings
 
 use expectation
 use json_fields
@@ -77,11 +75,11 @@ function extracted(answer: str) -> str?
         bare = strings.trimmed(text: line)
 
         if !inside
-            if core_strings.has_prefix(s: bare, prefix: "```") || core_strings.has_prefix(s: bare, prefix: "~~~")
+            if strings.has_prefix(s: bare, prefix: "```") || strings.has_prefix(s: bare, prefix: "~~~")
                 inside @ true
                 fence @ bare.slice(from: 0, to: 3)
                 held @ []
-        else if core_strings.has_prefix(s: bare, prefix: fence)
+        else if strings.has_prefix(s: bare, prefix: fence)
             inside @ false
             blocks @ blocks.push(held.join("\n") + "\n")
         else
@@ -93,7 +91,7 @@ function extracted(answer: str) -> str?
     for i in range(from: 0, to: blocks.len())
         block = blocks[blocks.len() - 1 - i]
 
-        if core_strings.contains(s: block, substr: "function main")
+        if strings.contains(s: block, substr: "function main")
             return ok(block)
 
     return fail(
@@ -109,7 +107,7 @@ function without_cr(line: str) -> str
 # A program that binds C: a top-level line opening `extern `.
 function binds_c(program: str) -> bool
     for line in strings.lines(text: program)
-        if core_strings.has_prefix(s: line, prefix: "extern ")
+        if strings.has_prefix(s: line, prefix: "extern ")
             return true
 
     return false
@@ -181,7 +179,7 @@ function graded(scratch: str, compiler: str, arm: str, answer: str, task: thesis
     built = shell.run_bounded(scratch: scratch, program: compiler, words: build_words(compiler: compiler, arm: arm, path: path, binary: binary), seconds: 120, bytes: 0, stdin_path: "")?
 
     if built.code != 0
-        if core_strings.contains(s: built.err, substr: "no binary:") && core_strings.contains(s: built.err, substr: "hole")
+        if strings.contains(s: built.err, substr: "no binary:") && strings.contains(s: built.err, substr: "hole")
             return ok(
                 Graded(outcome: "hole", codes: [], message: built.err, passed: 0, total: task.cases.len(), at_case: "")
             )
@@ -239,7 +237,7 @@ function codes_of(err: str) -> [str]
 # `path` as an absolute path: itself where it already is one, else under the
 # working directory `pwd` names.
 function absolute(scratch: str, path: str) -> str?
-    if core_strings.has_prefix(s: path, prefix: "/")
+    if strings.has_prefix(s: path, prefix: "/")
         return ok(path)
     here = shell.run(scratch: scratch, program: "pwd", words: ["pwd"])?
 
@@ -270,7 +268,7 @@ function run_case(scratch: str, sandbox: thesis_sandbox.Sandbox, task: thesis_ta
         )
 
     if ran.code >= 128
-        if core_strings.contains(s: ran.err, substr: "panic:")
+        if strings.contains(s: ran.err, substr: "panic:")
             return ok(
                 Graded(outcome: "abort", codes: [], message: strings.trimmed(text: ran.err), passed: 0, total: 0, at_case: "")
             )
@@ -344,7 +342,7 @@ test "an answer is graded end to end against a task of the tree: wrong output, a
     assert wrong.outcome == "compiled_wrong"
     assert wrong.passed == 1
     assert wrong.total == task.cases.len()
-    assert core_strings.contains(s: wrong.message, substr: "printed something else")
+    assert strings.contains(s: wrong.message, substr: "printed something else")
 
     refused = graded(
         scratch: scratch + "/refused",
@@ -358,7 +356,7 @@ test "an answer is graded end to end against a task of the tree: wrong output, a
     ).must()
     assert refused.outcome == "compile_error"
     assert refused.codes == ["unused_binding"]
-    assert core_strings.contains(s: refused.message, substr: "error[unused_binding]")
+    assert strings.contains(s: refused.message, substr: "error[unused_binding]")
 
     brief = graded(
         scratch: scratch + "/brief",
@@ -470,7 +468,7 @@ test "the control arm builds what the strict build refuses and runs it: a droppe
     ).must()
     assert loud.outcome == "abort"
     assert loud.passed == 0
-    assert core_strings.contains(s: loud.message, substr: "panic: this match has no arm for .empty")
+    assert strings.contains(s: loud.message, substr: "panic: this match has no arm for .empty")
 
 # A task of one case, written by a test: its one argument's words counted.
 function counting_task(dir: str) -> thesis_tasks.Task?
@@ -484,6 +482,35 @@ function counting_task(dir: str) -> thesis_tasks.Task?
 function fenced(program: str) -> str
     return "```\n" + program + "```\n"
 
+# A package tree under `dir` as `heroes add` would leave one: a catalogue
+# whose one entry, `rebel` 0.1.0, carries the sum of the four files placed
+# under `heroes.packages/`, in the folder whose key the compiler takes over
+# the entry (`selfhost/module/placed.hero`). `strings.fields` gives the words
+# of a text, and `net/hero_net` binds the platform layer's header, a
+# package's own `extern`; each has its card beside it, the face's and the
+# floor's, which the package arm's context reads (`thesis_cards.hero`). The
+# sum and the key were computed with `shasum -a 256` over these bytes on
+# 2026-11-19 and verified by a build; a byte moved in any file moves both,
+# and the test's build then says so. From feature 2425 until M-rebel-library
+# step 55a the tests read the net's own catalogue and the tree it placed,
+# which left with the package they named.
+function package_tree(dir: str) -> ()?
+    placed = dir + "/heroes.packages/rebel@0.1.0-80b84a13e2192a79"
+    shell.mkdir_all(placed + "/net")?
+    write_file(path: dir + "/heroes.toml", text: "index = \"file://../packages\"\n\n[dependencies.rebel]\nversion = \"0.1.0\"\nsum = \"sha256-80da19cde73f3d182880b9a05e0ff2dfb610090338474736073bba080b2ab406\"\n")?
+    write_file(path: placed + "/strings.hero", text: FIELDS)?
+    write_file(path: placed + "/strings.md", text: "# strings: `use <rebel>/strings`\n")?
+    write_file(path: placed + "/net/hero_net.hero", text: FLOOR)?
+    return write_file(path: placed + "/net/hero_net.md", text: "# hero_net: `use <rebel>/net/hero_net`\n")
+
+# The tree's `strings.hero`, byte for byte.
+constant FIELDS: str
+    "# The words of a text, for the grading test's package tree.\n\n# The pieces of `s` between runs of spaces, none of them empty.\nfunction fields(s: str) -> [str]\n    out: [str] @= []\n    start: i64 @= 0\n    at: i64 @= 0\n\n    while at <= s.len()\n        if at == s.len() || s[at] == ' '\n            if at > start\n                out @ out.push(s.slice(from: start, to: at))\n            start @ at + 1\n        at @ at + 1\n\n    return out\n"
+
+# The tree's `net/hero_net.hero`, byte for byte.
+constant FLOOR: str
+    "# The platform layer's sockets, bound for the grading test's package tree.\n\nextern \"hero_net.h\"\n    constant HERO_NET_OK: i64\n"
+
 test "a package tree beside the answer: a package compiles, the package's own extern builds, an answer's is refused, and a program naming none is graded as without it"
     if thesis_sandbox.unrunnable() != ""
         print("SKIP thesis_grade: " + thesis_sandbox.unrunnable())
@@ -493,10 +520,11 @@ test "a package tree beside the answer: a package compiles, the package's own ex
     compiler = shell.some_compiler().must()
     task = counting_task(scratch + "/task").must()
 
-    # The harness's own tree, its catalogue and its placed core, committed.
-    tree = thesis_packages.tree_at(scratch: scratch, dir: "tests/harness").must()
+    # A tree as `heroes add` would leave it, written by `package_tree`.
+    package_tree(scratch + "/tree").must()
+    tree = thesis_packages.tree_at(scratch: scratch, dir: scratch + "/tree").must()
     over = fenced(
-        "use <core>/strings\n\nfunction main()\n    given = args()\n    print(strings.fields(given[0]).len())\n"
+        "use <rebel>/strings\n\nfunction main()\n    given = args()\n    print(strings.fields(given[0]).len())\n"
     )
 
     for arm in ["strict", "control"]
@@ -525,12 +553,12 @@ test "a package tree beside the answer: a package compiles, the package's own ex
     assert bare.outcome == "compile_error"
     assert bare.codes == ["unknown_entry"]
 
-    # `<core>/net/hero_net` binds the platform layer's header, and builds.
+    # `<rebel>/net/hero_net` binds the platform layer's header, and builds.
     floor = graded(
         scratch: scratch + "/floor",
         compiler: compiler,
         arm: "strict",
-        answer: fenced("use <core>/net/hero_net\n\nfunction main()\n    print(3 + hero_net.HERO_NET_OK)\n"),
+        answer: fenced("use <rebel>/net/hero_net\n\nfunction main()\n    print(3 + hero_net.HERO_NET_OK)\n"),
         task: task,
         tree: tree.dir,
         seconds: 5,
@@ -579,7 +607,7 @@ test "a grading child holding the package suite's key runs no program, and says 
             given: [shell.Variable(name: name, value: "not-a-key")]
         ).must()
         assert ran.code == 2
-        assert core_strings.contains(s: ran.err, substr: name + " is set in this process's environment")
+        assert strings.contains(s: ran.err, substr: name + " is set in this process's environment")
 
 # DEFECT 2569, held as a test (2026-11-15): the grader refused the five key
 # names it listed, so a child holding a sixth `HEROES_*_KEY` graded a model's
@@ -601,7 +629,7 @@ test "fixedbugs: a grading child holding a sixth HEROES_*_KEY runs no program, a
         given: [shell.Variable(name: "HEROES_SIXTH_SUITE_KEY", value: "not-a-key"), shell.Variable(name: "HEROES_ANOTHER_SUITE_KEY", value: "not-a-key")]
     ).must()
     assert ran.code == 2
-    assert core_strings.contains(
+    assert strings.contains(
         s: ran.err,
         substr: "HEROES_ANOTHER_SUITE_KEY and HEROES_SIXTH_SUITE_KEY are set in this process's environment"
     )

@@ -5,7 +5,7 @@
 #     heroes run tests/harness/package_cards.hero -- check
 #
 # from the repository's root. `write` writes the card of every face module of
-# the package's source, the newest version folder of the index's `core`
+# the package's source, the newest version folder of the index's `rebel`
 # (`package_rules.source_root`), `<path>.md` beside its `<path>.hero`, and
 # then judges the tree as written; `check` judges it as it
 # stands, naming each stored card that differs from what `write` would write,

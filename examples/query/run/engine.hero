@@ -13,23 +13,23 @@
 # corpus program, which is where a copy that was not made and a copy made
 # twice both show up.
 #
-# THE SORT IS `core/slices`' `sort_by`, STABLE, ONE ORDER PER FUNCTION.
+# THE SORT IS `sorting.sort_by`, STABLE, ONE ORDER PER FUNCTION.
 # `sort` in this language takes an array of numbers, of `str` or of `bool`
 # (spec § Built-ins) — it cannot order records, because it has no way to be
-# told which field to look at. Until core 0.5.0 this module carried a merge
-# sort of its own, slicing the rows in two at every level and joining the
-# halves back; `sort_by` is that sort made a package (feature 2330), a merge
-# over the rows' indices that copies each row once, at the end, measured on
-# 2026-11-14 at 853 million instructions for 100,000 rows at `-O0` against
-# the hand-written merge's 2,436 million. The language has no closures, so
-# an order cannot carry the `plan.Order` it was asked for into the function
+# told which field to look at. So the program carries a sort of its own
+# (`sorting.hero`), a merge over the rows' indices that copies each row once,
+# at the end. Until 2026-11-14 this module merged the rows themselves,
+# slicing them in two at every level and joining the halves back, measured
+# that day at 2,436 million instructions for 100,000 rows at `-O0`, against
+# 853 million for a package's merge over indices, the shape `sorting.hero`
+# takes; its own count is unmeasured. The language has no closures, so an
+# order cannot carry the `plan.Order` it was asked for into the function
 # `sort_by` calls: each order is a function of its own, and `ordered` picks
 # one.
 
-use <core>/slices
-
 use data/row
 use query/plan
+use sorting
 
 # The rows a filter keeps, in the order they arrived.
 function filtered(rows: [row.Row], keep: plan.Where) -> [row.Row]
@@ -119,10 +119,10 @@ function text_before(a: str, b: str) -> bool
 # The rows in the order `o` asks for.
 function ordered(rows: [row.Row], o: plan.Order) -> [row.Row]
     return match o
-        .unordered | .by_id  => slices.sort_by(rows, id_first)
-        .by_score_high_first => slices.sort_by(rows, score_first)
-        .by_name             => slices.sort_by(rows, name_first)
-        .by_active           => slices.sort_by(rows, active_first)
+        .unordered | .by_id  => sorting.sort_by(rows, id_first)
+        .by_score_high_first => sorting.sort_by(rows, score_first)
+        .by_name             => sorting.sort_by(rows, name_first)
+        .by_active           => sorting.sort_by(rows, active_first)
 
 # The first `n`, or all of them. A limit of zero or less means no limit,
 # so a query that does not care carries no special case.

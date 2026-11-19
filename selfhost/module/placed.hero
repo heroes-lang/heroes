@@ -77,13 +77,13 @@ function identity(aliases: [reached.Alias], from: str, named: str) -> str
 # `identity` and the one rule a message asks where it quotes a `use` line no
 # line in hand holds (defect 2373): a module as it is from a file of the
 # program's own; one of `from`'s own package by its path inside it, bare
-# (R4), so `<core>/text/strs` is `text/strs` in `core`'s files; one of
+# (R4), so `<rebel>/text/strs` is `text/strs` in `rebel`'s files; one of
 # another package by the alias `from`'s own catalogue gives it, marked; ""
 # where no `use` of `from` names it, a module of the program's own or a
 # package its catalogue does not hold. A line in hand is quoted as it is
 # written, which is this answer for that line (the test below holds the two
 # together). Until then the module's identity was quoted, and in a
-# package's file `use <core>/text/strs` is refused `unknown_entry`.
+# package's file `use <rebel>/text/strs` is refused `unknown_entry`.
 function written_in(aliases: [reached.Alias], from: str, module: str) -> str
     owner = entry_of(from)
 

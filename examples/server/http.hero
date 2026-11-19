@@ -1,0 +1,408 @@
+# HTTP/1.1 for this program (RFC 9112), over its connections (`net.hero`):
+# the server's side, `serve_conn`, which answers every request a connection
+# sends, and the client's, `round_trip`, which sends one request and reads
+# its answer.
+#
+# The language offers no protocol of its own (design.md §1.11: there is no
+# standard library), so this program carries the part of HTTP it speaks and
+# no library. Until 2026-11-19 it came from a package, which M-rebel-library
+# removed (its page's decisions 6 to 8); it is written here from the RFC.
+#
+# WHAT IT SPEAKS: a request line or a status line, header fields, and a body
+# whose length `Content-Length` gives, every answer carrying one; no chunked
+# body, which a peer that sends one is refused for, `MALFORMED`. A
+# connection is kept for the next request until the client closes it or
+# asks `Connection: close`.
+#
+# WHAT BOUNDS IT, since a request is input: a head past `HEAD_MOST` bytes and
+# a body past `BODY_MOST` are refused, and each request's head must arrive
+# within `HEAD_SECONDS` (`net.set_deadline`), so a client that sends nothing
+# holds its thread no longer than that.
+
+use net
+
+# A request: its method, its target, its header fields by name as sent, and
+# its body.
+record Request
+    method: str
+    target: str
+    header: {str: str}
+    body: str
+
+# An answer: its status, its header fields, and its body. `Content-Length`
+# is written from the body, whatever the fields say.
+record Response
+    status: i64
+    header: {str: str}
+    body: str
+
+# What a request or an answer that is not HTTP this module speaks fails with.
+constant MALFORMED: str
+    "malformed"
+
+# The most bytes a head may hold, and a body.
+constant HEAD_MOST: i64
+    65536
+
+constant BODY_MOST: i64
+    1048576
+
+# How long a request's head may take to arrive.
+constant HEAD_SECONDS: i64
+    60
+
+# The bytes a connection has sent and nobody has read yet.
+record Pending
+    bytes: [u8]
+
+## The server's side
+
+# Every request `conn` sends answered by `handler`, one after another, until
+# the client closes the connection or asks `Connection: close`. Answers how
+# many were answered, or fails where the connection failed or sent what is
+# not HTTP.
+function serve_conn(conn: net.Conn, handler: (function(Request) -> Response)) -> i64?
+    pending: Pending @= Pending(bytes: [])
+    answered: i64 @= 0
+
+    while true
+        net.set_deadline(conn, seconds: HEAD_SECONDS)?
+        head = read_head(conn, @pending, idle_ends: true)?
+
+        if head == ""
+            return ok(answered)
+        request = request_of(head, conn, @pending)?
+        response = handler(request)
+        net.send_all(conn, text: response_text(response))?
+        answered @ answered + 1
+
+        if lower(header_value(request.header, "connection")) == "close"
+            return ok(answered)
+
+    return ok(answered)
+
+# The request a head says, its body read from `conn`.
+function request_of(head: str, conn: net.Conn, @pending: Pending) -> Request?
+    lines = head_lines(head)
+    first = words_of(lines[0])
+
+    if first.len() != 3 || !(first[2] == "HTTP/1.1" || first[2] == "HTTP/1.0")
+        return fail(code: MALFORMED, msg: "the request line is not `METHOD target HTTP/1.1`: " + lines[0])
+    header = fields_of(lines.slice(from: 1, to: lines.len()))?
+    body = body_of(header, conn, @pending)?
+    return ok(Request(method: first[0], target: first[1], header: header, body: body))
+
+# The answer `handler` gave, as the wire carries it.
+function response_text(r: Response) -> str
+    parts: [str] @= [f"HTTP/1.1 {r.status} {reason(r.status)}\r\n"]
+
+    for name in sort(keys(r.header))
+        if lower(name) != "content-length"
+            parts @ parts.push(name + ": " + r.header[name].must() + "\r\n")
+
+    parts @ parts.push(f"Content-Length: {r.body.len()}\r\n\r\n")
+    parts @ parts.push(r.body)
+    return join(parts, "")
+
+# The answer for a target nothing serves.
+function not_found(request: Request) -> Response
+    return Response(
+        status: 404,
+        header: {"Content-Type": "text/plain; charset=utf-8"},
+        body: "404 page not found: " + request.target + "\n"
+    )
+
+# The reason phrase a status line writes after the status.
+function reason(status: i64) -> str
+    return match status
+        200 => "OK"
+        204 => "No Content"
+        400 => "Bad Request"
+        404 => "Not Found"
+        405 => "Method Not Allowed"
+        500 => "Internal Server Error"
+        _   => "Status"
+
+## The client's side
+
+# `request` sent on `conn`, and the answer read back. The server sends
+# nothing it was not asked for, so the answer's last byte is the last this
+# reads, and the next request starts clean.
+function round_trip(conn: net.Conn, request: Request) -> Response?
+    net.send_all(conn, text: request_text(request))?
+    pending: Pending @= Pending(bytes: [])
+    head = read_head(conn, @pending, idle_ends: false)?
+
+    if head == ""
+        return fail(code: MALFORMED, msg: "the server closed the connection before it answered")
+    lines = head_lines(head)
+    first = words_of(lines[0])
+
+    if first.len() < 2 || !(first[0] == "HTTP/1.1" || first[0] == "HTTP/1.0")
+        return fail(code: MALFORMED, msg: "the status line is not `HTTP/1.1 status reason`: " + lines[0])
+    status = status_of(first[1])?
+    header = fields_of(lines.slice(from: 1, to: lines.len()))?
+    body = body_of(header, conn, @pending)?
+    return ok(Response(status: status, header: header, body: body))
+
+# A request as the wire carries it.
+function request_text(r: Request) -> str
+    parts: [str] @= [r.method + " " + r.target + " HTTP/1.1\r\n"]
+
+    for name in sort(keys(r.header))
+        if lower(name) != "content-length"
+            parts @ parts.push(name + ": " + r.header[name].must() + "\r\n")
+
+    parts @ parts.push(f"Content-Length: {r.body.len()}\r\n\r\n")
+    parts @ parts.push(r.body)
+    return join(parts, "")
+
+# The status a status line writes: three digits.
+function status_of(word: str) -> i64?
+    if word.len() != 3
+        return fail(code: MALFORMED, msg: "a status is three digits: " + word)
+    total: i64 @= 0
+
+    for at in range(from: 0, to: 3)
+        if word[at] < '0' || word[at] > '9'
+            return fail(code: MALFORMED, msg: "a status is three digits: " + word)
+        total @ total * 10 + to_i64(word[at] - '0').must()
+
+    return ok(total)
+
+## Heads and bodies
+
+# The next head `conn` sends, up to its blank line, which is passed; "" where
+# the peer closed before a byte of it, and, where `idle_ends`, where the wait
+# for its first byte ended by the program's stop or by the deadline: a
+# connection that holds nothing has nothing to finish. The bytes after the
+# blank line stay in `pending`.
+function read_head(conn: net.Conn, @pending: Pending, idle_ends: bool) -> str?
+    while true
+        end = blank_line(pending.bytes)
+
+        if end >= 0
+            head = pending.bytes.slice(from: 0, to: end)
+            pending.bytes @ pending.bytes.slice(from: end + 4, to: pending.bytes.len())
+
+            match head.validated_bytes()
+                .ok text => return ok(text)
+                .err _   => return fail(code: MALFORMED, msg: "a head holds bytes that are not UTF-8")
+
+        if pending.bytes.len() > HEAD_MOST
+            return fail(code: MALFORMED, msg: f"a head runs past {HEAD_MOST} bytes")
+        got = net.receive(conn)
+
+        if idle_ends && pending.bytes.len() == 0 && wait_ended(got)
+            return ok("")
+        more = got?
+
+        if more.len() == 0
+            if pending.bytes.len() == 0
+                return ok("")
+            return fail(code: MALFORMED, msg: "the connection closed inside a head")
+        append(@pending, more: more)
+
+    return ok("")
+
+# Whether a receive failed because its wait was ended, by the program's stop
+# or by the connection's deadline, rather than by the connection.
+function wait_ended(got: [u8]?) -> bool
+    return match got
+        .ok _  => false
+        .err e => e.code == net.STOPPED || e.code == "timed_out"
+
+# The body `header` announces, read from `pending` and then from `conn`.
+function body_of(header: {str: str}, conn: net.Conn, @pending: Pending) -> str?
+    if lower(header_value(header, "transfer-encoding")) != ""
+        return fail(code: MALFORMED, msg: "a chunked body is not spoken here")
+    told = header_value(header, "content-length")
+    length: i64 @= 0
+
+    if told != ""
+        length @ length_digits(told)?
+
+    if length > BODY_MOST
+        return fail(code: MALFORMED, msg: f"a body of {length} bytes runs past {BODY_MOST}")
+
+    while pending.bytes.len() < length
+        more = net.receive(conn)?
+
+        if more.len() == 0
+            return fail(code: MALFORMED, msg: "the connection closed inside a body")
+        append(@pending, more: more)
+
+    body = pending.bytes.slice(from: 0, to: length)
+    pending.bytes @ pending.bytes.slice(from: length, to: pending.bytes.len())
+
+    match body.validated_bytes()
+        .ok text => return ok(text)
+        .err _   => return fail(code: MALFORMED, msg: "a body holds bytes that are not UTF-8")
+
+# The decimal digits of a `Content-Length`, at most nine of them.
+function length_digits(text: str) -> i64?
+    if text.len() == 0 || text.len() > 9
+        return fail(code: MALFORMED, msg: "a Content-Length is one to nine digits: " + text)
+    total: i64 @= 0
+
+    for at in range(from: 0, to: text.len())
+        if text[at] < '0' || text[at] > '9'
+            return fail(code: MALFORMED, msg: "a Content-Length is one to nine digits: " + text)
+        total @ total * 10 + to_i64(text[at] - '0').must()
+
+    return ok(total)
+
+# `more` added to what is pending.
+function append(@pending: Pending, more: [u8])
+    for b in more
+        pending.bytes @ pending.bytes.push(b)
+
+# Where the first `\r\n\r\n` of `bytes` opens, or -1.
+function blank_line(bytes: [u8]) -> i64
+    at: i64 @= 0
+
+    while at + 3 < bytes.len()
+        if bytes[at] == 13 && bytes[at + 1] == 10 && bytes[at + 2] == 13 && bytes[at + 3] == 10
+            return at
+        at @ at + 1
+
+    return -1
+
+# A head's lines, each without its `\r\n`.
+function head_lines(head: str) -> [str]
+    lines: [str] @= []
+    start: i64 @= 0
+    at: i64 @= 0
+
+    while at + 1 < head.len()
+        if head[at] == '\r' && head[at + 1] == '\n'
+            lines @ lines.push(head.slice(from: start, to: at))
+            start @ at + 2
+            at @ at + 2
+        else
+            at @ at + 1
+
+    return lines.push(head.slice(from: start, to: head.len()))
+
+# The words of a request or status line, split at single spaces.
+function words_of(line: str) -> [str]
+    out: [str] @= []
+    start: i64 @= 0
+
+    for at in range(from: 0, to: line.len())
+        if line[at] == ' '
+            out @ out.push(line.slice(from: start, to: at))
+            start @ at + 1
+
+    return out.push(line.slice(from: start, to: line.len()))
+
+# Header fields `Name: value`, each value without the white space around it.
+function fields_of(lines: [str]) -> {str: str}?
+    out: {str: str} @= {}
+
+    for line in lines
+        colon: i64 @= -1
+        at: i64 @= 0
+
+        while colon < 0 && at < line.len()
+            if line[at] == ':'
+                colon @ at
+            at @ at + 1
+
+        if colon <= 0
+            return fail(code: MALFORMED, msg: "a header field is not `Name: value`: " + line)
+        out[line.slice(from: 0, to: colon)] @ trimmed(line.slice(from: colon + 1, to: line.len()))
+
+    return ok(out)
+
+# The value of the field named `name` in any case, or "".
+function header_value(header: {str: str}, name: str) -> str
+    for key in keys(header)
+        if lower(key) == name
+            return header[key].must()
+
+    return ""
+
+# `text` with the spaces and tabs at its ends cut, as a field's value is.
+function trimmed(text: str) -> str
+    start: i64 @= 0
+    end: i64 @= text.len()
+
+    while start < end && (text[start] == ' ' || text[start] == '\t')
+        start @ start + 1
+
+    while end > start && (text[end - 1] == ' ' || text[end - 1] == '\t')
+        end @ end - 1
+
+    return text.slice(from: start, to: end)
+
+# `text` with its ASCII capitals made small, as a field's name is compared.
+function lower(text: str) -> str
+    bytes: [u8] @= []
+
+    for at in range(from: 0, to: text.len())
+        c = text[at]
+
+        if c >= 'A' && c <= 'Z'
+            bytes @ bytes.push(c + 32)
+        else
+            bytes @ bytes.push(c)
+
+    return bytes.validated_bytes().must()
+
+test "an answer is written with its length, a request too, and a 404 names its target"
+    hello = Response(status: 200, header: {"Content-Type": "text/plain"}, body: "hi\n")
+    assert response_text(hello) == "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 3\r\n\r\nhi\n"
+    nothing: {str: str} = {}
+    asked = Request(method: "GET", target: "/x", header: {"Host": "h"}, body: "")
+    assert request_text(asked) == "GET /x HTTP/1.1\r\nHost: h\r\nContent-Length: 0\r\n\r\n"
+    missing = not_found(Request(method: "GET", target: "/gone", header: nothing, body: ""))
+    assert missing.status == 404 && missing.body == "404 page not found: /gone\n"
+
+test "a head comes apart into its lines, words and fields, a field's name in any case"
+    assert head_lines("GET / HTTP/1.1\r\nHost: a\r\nX: b") == ["GET / HTTP/1.1", "Host: a", "X: b"]
+    assert words_of("GET / HTTP/1.1") == ["GET", "/", "HTTP/1.1"]
+    fields = fields_of(["Host:  a b ", "content-LENGTH: 12"]).must()
+    assert fields["Host"].must() == "a b" && header_value(fields, "content-length") == "12"
+    assert fields_of(["no colon"]).is_err() && fields_of([": empty name"]).is_err()
+    assert lower("Content-Type") == "content-type" && trimmed(" \tx y\t ") == "x y"
+
+test "a length and a status are digits, and nothing else"
+    assert length_digits("0").must() == 0 && length_digits("1234").must() == 1234
+    assert length_digits("").is_err() && length_digits("-1").is_err() && length_digits("1234567890").is_err()
+    assert status_of("404").must() == 404 && status_of("40").is_err() && status_of("4x4").is_err()
+    assert blank_line([65, 13, 10, 13, 10, 66]) == 1 && blank_line([13, 10, 13]) == -1
+
+# The answer `request` gets from the handler below, as the tests read it.
+function echo(request: Request) -> Response
+    return Response(status: 200, header: {"X-Method": request.method}, body: request.target + ":" + request.body)
+
+# The server's side of the test below, on a thread of its own: the
+# connection its number names, served with `echo`, then closed; answers how
+# many requests it answered, or -1.
+function served_one(n: i64) -> i64
+    match net.of(n)
+        .err _ => return -1
+        .ok taken =>
+            conn: net.Conn @= taken
+            answered = serve_conn(conn, handler: echo)
+            net.close(@conn)
+            return answered.default(-1)
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(x: i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+test "two requests on one connection get their two answers, and the server counts them"
+    listener: net.Listener @= net.listen(host: "127.0.0.1", port: 0).must()
+    client: net.Conn @= net.dial(host: "127.0.0.1", port: net.port_of(listener).must()).must()
+    accepted: net.Conn @= net.accept(listener).must()
+    worker = hero_thread_spawn(body: served_one, arg: net.number(@accepted).must())
+    nothing: {str: str} = {}
+    first = round_trip(client, request: Request(method: "POST", target: "/a", header: nothing, body: "body")).must()
+    assert first.status == 200 && first.body == "/a:body" && header_value(first.header, "x-method") == "POST"
+    second = round_trip(client, request: Request(method: "GET", target: "/b", header: nothing, body: "")).must()
+    assert second.body == "/b:"
+    net.close(@client)
+    assert hero_thread_join(handle: worker) == 2
+    net.close_listener(@listener)

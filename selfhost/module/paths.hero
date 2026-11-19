@@ -245,11 +245,11 @@ test "a refused use line does not eat the next one, and this is a fixed defect"
 # the path the parser tells whole, one message for the one mistake.
 test "a number the lexer reads inside a path told whole is no second message"
     for key in ["2e3e1bba9c8acea1", "12e4a0b1c2d3e4f5", "0123456789abcdef", "0b1fa2b3c4d5e6f7", "1_e3"]
-        p = parse.parse("use heroes.packages/core@0.1.0-" + key + "/strconv\n\nfunction main()\n    print(0)\n")
+        p = parse.parse("use heroes.packages/rebel@0.1.0-" + key + "/strconv\n\nfunction main()\n    print(0)\n")
         assert p.diagnostics.len() == 1
         assert p.diagnostics[0].code == "package_unmarked"
 
-    for line in ["use <heroes.packages/core@1e5-k>/strconv", "use \"heroes.packages/core@0.1.0-2e3e/strconv\"", "use github.com/2e3/json/parse"]
+    for line in ["use <heroes.packages/rebel@1e5-k>/strconv", "use \"heroes.packages/rebel@0.1.0-2e3e/strconv\"", "use github.com/2e3/json/parse"]
         p = parse.parse(line + "\n\nfunction main()\n    print(0)\n")
         assert p.diagnostics.len() == 1
 
@@ -273,9 +273,9 @@ test "a package's mark: each habit is told, and only a sure repair is certain"
         "use github.com/acme/json/parse\n"
         "use <json\n"
         "use <>/x\n"
-        "use heroes.packages/core@0.1.0-k/strconv\n"
-        "use <heroes.packages/core@0.1.0-k>/strconv\n"
-        "use heroes.packages/core@0.1.0-k/strconv/internal/shown\n"
+        "use heroes.packages/rebel@0.1.0-k/strconv\n"
+        "use <heroes.packages/rebel@0.1.0-k>/strconv\n"
+        "use heroes.packages/rebel@0.1.0-k/strconv/internal/shown\n"
     ]
     codes: [str] = [
         "package_mark_holds_a_path"
@@ -292,7 +292,7 @@ test "a package's mark: each habit is told, and only a sure repair is certain"
         "package_unmarked"
     ]
     certain: [str] = ["<json>/parse", "/", "json", "<json>/parse", "", "", "", "", "", "", "", ""]
-    guessed: [str] = ["", "", "", "", "", "<json>", "<json>/parse", "", "", "<core>/strconv", "<core>/strconv", ""]
+    guessed: [str] = ["", "", "", "", "", "<json>", "<json>/parse", "", "", "<rebel>/strconv", "<rebel>/strconv", ""]
     at: i64 @= 0
 
     while at < texts.len()

@@ -18,8 +18,6 @@
 # so a file named `heroes.packages` or a folder whose name only holds the word,
 # `my.heroes.packages`, is the program's like any other.
 
-use <core>/strings as core_strings
-
 use strings
 
 # The folder's name: the compiler's `PLACED` (`selfhost/module/packages.hero`),
@@ -52,9 +50,9 @@ function outside(paths: [str]) -> [str]
 ## Tests
 
 test "a path stands in a placed tree when one of its folders is named heroes.packages, at any depth"
-    assert within("examples/ini/heroes.packages/core@0.1.0-0123456789abcdef/strings.hero")
-    assert within("examples/ini/heroes.packages/core@0.1.0-0123456789abcdef/strings/internal/scan.hero")
-    assert within("heroes.packages/core@0.1.0-0123456789abcdef/strings.md")
+    assert within("examples/ini/heroes.packages/rebel@0.1.0-0123456789abcdef/strings.hero")
+    assert within("examples/ini/heroes.packages/rebel@0.1.0-0123456789abcdef/strings/internal/scan.hero")
+    assert within("heroes.packages/rebel@0.1.0-0123456789abcdef/strings.md")
     assert within("/abs/app/heroes.packages/x")
 
     # Widened by none: a sibling, a name only holding the word, a file of
@@ -62,7 +60,7 @@ test "a path stands in a placed tree when one of its folders is named heroes.pac
     assert !within("examples/ini/heroes.packagesx/strings.hero")
     assert !within("examples/ini/my.heroes.packages/strings.hero")
     assert !within("examples/ini/heroes.packages")
-    assert !within("packages/core/0.1.0/files/strings.hero")
+    assert !within("packages/rebel/0.1.0/files/strings.hero")
     assert !within("examples/ini/main.hero")
     assert !within("")
 
@@ -77,4 +75,4 @@ test "the paths outside every placed tree keep their order"
 test "the folder's name is the compiler's PLACED"
     source = read_file("selfhost/module/packages.hero")
     assert !source.is_err()
-    assert core_strings.contains(s: source.must(), substr: "constant PLACED: str\n    \"" + FOLDER + "\"\n")
+    assert strings.contains(s: source.must(), substr: "constant PLACED: str\n    \"" + FOLDER + "\"\n")

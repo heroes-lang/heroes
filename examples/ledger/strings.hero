@@ -1,0 +1,44 @@
+# The text work this program does, written for it: whether a text holds another.
+#
+# The language offers `len`, `slice`, `chars` and `join` and leaves the rest
+# to the program (design.md §1.11: there is no standard library), so each
+# program of `examples/` that takes text apart carries the few functions it
+# calls and no library. Until 2026-11-19 these came from a package, which
+# M-rebel-library removed (its page's decisions 6 to 8); they are written
+# here from their contract alone. Each walks bytes and cuts only where a
+# character begins, so no `slice` below splits one (spec § 10).
+
+# Whether `substr` occurs anywhere in `s`; "" occurs in every text.
+function contains(s: str, substr: str) -> bool
+    return !first_at(s: s, part: substr).is_err()
+
+# The byte where `part` first occurs in `s`, or `not_found`. A match begins
+# with `part`'s first byte, which no UTF-8 character holds inside it, so the
+# offset is always one `slice` may cut at.
+function first_at(s: str, part: str) -> i64?
+    at: i64 @= 0
+
+    while at + part.len() <= s.len()
+        if holds_at(s: s, part: part, at: at)
+            return ok(at)
+        at @ at + 1
+
+    return fail(code: "not_found", msg: "the text holds no `" + part + "`")
+
+# Whether the bytes of `part` stand in `s` from byte `at` on; the callers ask
+# first that they fit, so every index is in bounds.
+function holds_at(s: str, part: str, at: i64) -> bool
+    i: i64 @= 0
+
+    while i < part.len()
+        if s[at + i] != part[i]
+            return false
+        i @ i + 1
+
+    return true
+
+test "contains finds a part anywhere, the empty one everywhere"
+    assert contains(s: "a needle here", substr: "needle")
+    assert contains(s: "abc", substr: "c") && contains(s: "abc", substr: "abc")
+    assert !contains(s: "abc", substr: "abcd") && !contains(s: "abc", substr: "ac")
+    assert contains(s: "", substr: "") && !contains(s: "", substr: "a")

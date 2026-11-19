@@ -41,8 +41,6 @@
 # place, and a place that no longer holds its character is red too, so the
 # list cannot outlive what it excuses.
 
-use <core>/strings as core_strings
-
 use floors
 use placed_trees
 use report
@@ -276,7 +274,7 @@ function exempt(path: str) -> bool
         return true
 
     for tree in EXEMPT
-        if core_strings.has_prefix(s: path, prefix: tree)
+        if strings.has_prefix(s: path, prefix: tree)
             return true
 
     return false
@@ -397,9 +395,9 @@ test "a case's tree is exempt and a document is not"
 # Panel 235's R7: the folder is left out by its name, at any depth, and
 # nothing beside it is, the package's own source least of all.
 test "a placed tree is exempt by its folder's name, and the package's source beside it is not"
-    assert exempt("examples/ini/heroes.packages/core@0.1.0-0123456789abcdef/strings.md")
-    assert exempt("heroes.packages/core@0.1.0-0123456789abcdef/strings.hero")
-    assert !exempt("packages/core/0.1.0/files/strings.md")
+    assert exempt("examples/ini/heroes.packages/rebel@0.1.0-0123456789abcdef/strings.md")
+    assert exempt("heroes.packages/rebel@0.1.0-0123456789abcdef/strings.hero")
+    assert !exempt("packages/rebel/0.1.0/files/strings.md")
     assert !exempt("examples/ini/heroes.packagesx/strings.md")
     assert !exempt("examples/ini/my.heroes.packages/strings.md")
     assert !exempt("examples/ini/main.hero")

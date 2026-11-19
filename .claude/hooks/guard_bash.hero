@@ -24,11 +24,10 @@
 # with a traceback, exit 1, which Claude Code reads as no opinion; here it is
 # no opinion, exit 0.
 
-use <core>/encoding/json
-use <core>/os
-
 use answer
+use json
 use stderr
+use system
 use verdict
 
 # The exit that blocks the tool call.
@@ -73,7 +72,7 @@ function judged(text: str) -> answer.Answer
 
     if cwd.len() > 0
         return verdict.verdict(command: line, cwd: cwd)
-    return verdict.verdict(command: line, cwd: os.getwd().default("."))
+    return verdict.verdict(command: line, cwd: system.getwd().default("."))
 
 ## Tests
 

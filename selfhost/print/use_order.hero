@@ -1,7 +1,7 @@
 # The `use` block in its one order (panel 238, ratified 2026-11-08; design.md
 # §4.15, §4.1). Before `heroes fmt` prints a file, its `use` lines are
 # gathered into one block above the declarations: the bracketed ones
-# (`use <core>/x`) first, then the program's own, a blank line between the two
+# (`use <rebel>/x`) first, then the program's own, a blank line between the two
 # groups and none inside one, each group in `use_key.hero`'s order, the order
 # the compiler walks, binds and reads cycles in, so the two cannot disagree.
 #
@@ -355,11 +355,11 @@ function sorted_text(text: str) -> str
     return reordered(source.new_source(name: "t.hero", text: text), parsed.uses, parsed.comments, parsed.decls)
 
 test "the bracketed group first, each group by its path part by part, a blank line between"
-    text = "use zeta\nuse <core2>/x\nuse lib/beta\nuse <core>/y\nuse alpha\n\nfunction main()\n    print(1)\n"
-    assert sorted_text(text) == "use <core>/y\nuse <core2>/x\n\nuse alpha\nuse lib/beta\nuse zeta\n\nfunction main()\n    print(1)\n"
+    text = "use zeta\nuse <rebel2>/x\nuse lib/beta\nuse <rebel>/y\nuse alpha\n\nfunction main()\n    print(1)\n"
+    assert sorted_text(text) == "use <rebel>/y\nuse <rebel2>/x\n\nuse alpha\nuse lib/beta\nuse zeta\n\nfunction main()\n    print(1)\n"
 
 test "a file already in its order comes back byte for byte, and one with no use line"
-    for text in ["# header\n\nuse <core>/y\n\nuse alpha\nuse zeta\n\nfunction main()\n    print(1)\n", "function main()\n    print(1)\n", "", "use a"]
+    for text in ["# header\n\nuse <rebel>/y\n\nuse alpha\nuse zeta\n\nfunction main()\n    print(1)\n", "function main()\n    print(1)\n", "", "use a"]
         assert sorted_text(text) == text
 
 test "the header stays above, and neither a run nor a remark that rises is ever glued under it"

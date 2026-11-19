@@ -1,0 +1,95 @@
+# What the hooks ask of the system: the working folder, a variable of the
+# environment, and what stands at a path, through the language's own
+# `hero_os.h` (spec § 13), the doors the compiler itself reads through.
+#
+# The hooks use no library, as the compiler and its net use none
+# (M-rebel-library's decisions 6 and 8, 2026-11-19): until that day these
+# questions went through a package placed beside them, which the milestone
+# removed, so the hooks bind the doors themselves, as `stderr.hero` does.
+#
+# A path or a name holding a zero byte would stop the program at the lend to
+# C, so each caller asks that first (`trees.hero`'s `holds_zero`,
+# `pypath.hero`'s `variable`).
+
+extern "hero_os.h"
+    constant HERO_OS_OK: i64
+    constant HERO_OS_NOT_FOUND: i64
+    constant HERO_FS_ABSENT: i64
+    constant HERO_FS_UNKNOWN: i64
+    constant HERO_FS_FILE: i64
+    constant HERO_FS_DIRECTORY: i64
+    function hero_env_shown(name: cstr lent, @status: i64, @marks: i64) -> str
+    function hero_fs_resolved_shown(path: cstr lent, @status: i64, @marks: i64) -> str
+    function hero_fs_kind(path: cstr lent) -> i64
+    function hero_fs_mode(path: cstr lent) -> i64
+
+# The working folder, absolute, every link on the way followed. It fails
+# where the folder cannot be read or its path is not UTF-8.
+function getwd() -> str?
+    return resolved(".")
+
+# The value of the environment variable `name`, "" where it is set empty. It
+# fails `not_found` where it is unset, and `not_text` where its value is not
+# UTF-8.
+function env(name: str) -> str?
+    status: i64 @= 0
+    marks: i64 @= 0
+    value = hero_env_shown(name: name.cstr(), status: @status, marks: @marks)
+
+    if status == HERO_OS_NOT_FOUND
+        return fail(code: "not_found", msg: "no environment variable " + name + " is set")
+
+    if status != HERO_OS_OK
+        return fail(code: "not_text", msg: "the environment variable " + name + " is not UTF-8")
+    return ok(value)
+
+# Whether a regular file stands at `path`, every link followed.
+function is_file(path: str) -> bool
+    return followed_kind(path) == HERO_FS_FILE
+
+# Whether a folder stands at `path`, every link followed.
+function is_dir(path: str) -> bool
+    return followed_kind(path) == HERO_FS_DIRECTORY
+
+# Whether anything stands at `path`, a link itself counting, one to nothing
+# included.
+function lexists(path: str) -> bool
+    kind = hero_fs_kind(path: path.cstr())
+    return kind != HERO_FS_ABSENT && kind != HERO_FS_UNKNOWN
+
+# The permission bits of what `path` names, every link followed, or -1 where
+# nothing stands there.
+function mode(path: str) -> i64
+    match resolved(path)
+        .ok there => return hero_fs_mode(path: there.cstr())
+        .err _    => return -1
+
+# What stands at the end of `path`'s links: `HERO_FS_ABSENT` where the path
+# cannot be resolved or its end is not there.
+function followed_kind(path: str) -> i64
+    return match resolved(path)
+        .ok there => hero_fs_kind(path: there.cstr())
+        .err _    => HERO_FS_ABSENT
+
+# The place `path` names as the filesystem resolves it, absolute, every link
+# followed.
+function resolved(path: str) -> str?
+    status: i64 @= 0
+    marks: i64 @= 0
+    there = hero_fs_resolved_shown(path: path.cstr(), status: @status, marks: @marks)
+
+    if status != HERO_OS_OK
+        return fail(code: "unresolved", msg: "the path " + path + " cannot be resolved, or is not UTF-8")
+    return ok(there)
+
+test "system: the working folder is absolute, and HOME is set and absolute"
+    here = getwd().must()
+    assert here.len() > 0 && here[0] == '/'
+    assert is_dir(here) && !is_file(here) && lexists(here)
+    assert env("HOME").must().len() > 0
+    assert env("HEROES_HOOKS_NEVER_SET").is_err()
+
+test "system: a file is a file, an absent path is nothing, and a file's bits are read"
+    assert is_file("seed/heroes.c") && !is_dir("seed/heroes.c") && lexists("seed/heroes.c")
+    assert !is_file("/heroes-hooks-never-there") && !lexists("/heroes-hooks-never-there")
+    assert mode("seed/heroes.c") >= 0 && mode("/heroes-hooks-never-there") == -1

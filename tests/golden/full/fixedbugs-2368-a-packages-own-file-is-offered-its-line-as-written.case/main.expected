@@ -1,6 +1,6 @@
-note: the package `core` is read from the folder `tests/golden/full/fixedbugs-2368-a-packages-own-file-is-offered-its-line-as-written.case/vendor/core/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
-error[module_binding_taken]: this file already calls `<core>/zeta` by the name `zeta`, so `<core>/text/zeta` cannot have it too — a file may not bind one name twice
-  at tests/golden/full/fixedbugs-2368-a-packages-own-file-is-offered-its-line-as-written.case/vendor/core/strings.hero:4:10
+note: the package `rebel` is read from the folder `tests/golden/full/fixedbugs-2368-a-packages-own-file-is-offered-its-line-as-written.case/vendor/rebel/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+error[module_binding_taken]: this file already calls `<rebel>/zeta` by the name `zeta`, so `<rebel>/text/zeta` cannot have it too — a file may not bind one name twice
+  at tests/golden/full/fixedbugs-2368-a-packages-own-file-is-offered-its-line-as-written.case/vendor/rebel/strings.hero:4:10
     |
   4 | use text/zeta  #~ module_binding_taken
     |          ^^^^

@@ -22,8 +22,6 @@
 # a precedence table whose rows had been shuffled, which is the only kind of
 # mistake this table can have that still parses.
 
-use <core>/strings as core_strings
-
 use floors
 use report
 use shell
@@ -144,7 +142,7 @@ function contextual(@r: report.Report, out: str, scratch: str)
         seen: bool @= false
 
         for entry in files.must()
-            if !core_strings.has_suffix(s: entry, suffix: ".hero")
+            if !strings.has_suffix(s: entry, suffix: ".hero")
                 continue
             text = read_file(entry)
 
@@ -156,11 +154,11 @@ function contextual(@r: report.Report, out: str, scratch: str)
                 )
                 return
 
-            if core_strings.contains(s: text.must(), substr: constant_name)
+            if strings.contains(s: text.must(), substr: constant_name)
                 seen @ true
 
             for line in strings.lines(text.must())
-                if core_strings.contains(s: line, substr: "\"" + word + "\"") && !core_strings.has_prefix(s: strings.trimmed(line), prefix: "#")
+                if strings.contains(s: line, substr: "\"" + word + "\"") && !strings.has_prefix(s: strings.trimmed(line), prefix: "#")
                     literal @ literal.push(strings.base_name(path: entry) + ": " + strings.trimmed(line))
 
         if !seen
@@ -243,11 +241,11 @@ function arms_of_binary_op() -> [Row]
     inside: bool @= false
 
     for line in strings.lines(text.must())
-        if core_strings.has_prefix(s: line, prefix: "function binary_op(")
+        if strings.has_prefix(s: line, prefix: "function binary_op(")
             inside @ true
             continue
 
-        if inside && core_strings.has_prefix(s: line, prefix: "function ")
+        if inside && strings.has_prefix(s: line, prefix: "function ")
             inside @ false
 
         if !inside
@@ -266,7 +264,7 @@ function printed_rows(out: str) -> [Row]
     seen: bool @= false
 
     for line in strings.lines(out)
-        if core_strings.contains(s: line, substr: "power  spelling  operator")
+        if strings.contains(s: line, substr: "power  spelling  operator")
             seen @ true
             continue
 
@@ -298,7 +296,7 @@ function quoted_before_arrow(path: str, marker: str) -> [str]
         return found
 
     for line in strings.lines(text.must())
-        if !core_strings.contains(s: line, substr: marker)
+        if !strings.contains(s: line, substr: marker)
             continue
         word = between(text: line, open: "\"", close: "\"")
 
@@ -345,7 +343,7 @@ function quoted_on_next_line(path: str, marker: str) -> [str]
 
             if word.len() > 0
                 found @ found.push(word)
-        take @ core_strings.contains(s: line, substr: marker)
+        take @ strings.contains(s: line, substr: marker)
 
     return found
 
@@ -356,7 +354,7 @@ function words_after(text: str, marker: str) -> [str]
     seen: bool @= false
 
     for line in strings.lines(text)
-        if core_strings.contains(s: line, substr: marker)
+        if strings.contains(s: line, substr: marker)
             seen @ true
             continue
 
@@ -604,7 +602,7 @@ function marks_read(text: str, declared: [str]) -> [str]
         name = constant_of(word)
 
         for line in strings.lines(text)
-            if !core_strings.has_prefix(s: strings.trimmed(line), prefix: "#") && names_whole(line: line, name: name) && !holds(list: out, word: word)
+            if !strings.has_prefix(s: strings.trimmed(line), prefix: "#") && names_whole(line: line, name: name) && !holds(list: out, word: word)
                 out @ out.push(word)
 
     return out
@@ -669,11 +667,11 @@ function productions_of(text: str) -> [Production]
     seen: bool @= false
 
     for line in strings.lines(text)
-        if core_strings.contains(s: line, substr: "Productions, collected from")
+        if strings.contains(s: line, substr: "Productions, collected from")
             seen @ true
             continue
 
-        if !seen || !core_strings.has_prefix(s: line, prefix: "    ")
+        if !seen || !strings.has_prefix(s: line, prefix: "    ")
             continue
         body = strings.trimmed(line)
 

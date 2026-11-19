@@ -10,7 +10,7 @@
 #
 # FIX: every refusal of a line says what a catalogue holds in one sentence,
 # its dependencies and the one `index` line above them, and nothing else.
-use <core>/strings  #~ catalogue_refused
+use <rebel>/strings  #~ catalogue_refused
 
 function main()
     print(strings.trim_space(s: "  hi  "))
