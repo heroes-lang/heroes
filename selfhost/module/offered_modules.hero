@@ -4,9 +4,9 @@
 # 2026-11-07): the modules at the root of the package's tree that a `use` of
 # the file can write, read from the tree and never invented.
 #
-# Asked by two lines' messages, one rule in one place: `use core`, an entry
+# Asked by two lines' messages, one rule in one place: `use rebel`, an entry
 # named whole with no brackets (`module/package_told.whole_entry`, defect
-# 2394), and `use <core>` alone, which the parser refuses before any
+# 2394), and `use <rebel>` alone, which the parser refuses before any
 # catalogue is read (`package_mark.hero`, `package_wants_a_module`). The
 # parser said `parse` was a file of the package, whatever the package held
 # (defect 2438), so the parse stage now hands its reports here, where the
@@ -63,8 +63,8 @@ function wants_a_module(s: source.Source, said: [diag.Diagnostic], decls: [ast.D
 
     return out
 
-# `use <core>` told the modules at the root of the package the file's own
-# catalogue names `core` (a package's file reads its own, R3), as that file
+# `use <rebel>` told the modules at the root of the package the file's own
+# catalogue names `rebel` (a package's file reads its own, R3), as that file
 # writes them; `d` as the parser said it where none can be listed.
 function listed(s: source.Source, d: diag.Diagnostic, library: {str: bool}) -> diag.Diagnostic
     written = placed.entry_of(source.span_text(s, d.span) + "/")
@@ -82,8 +82,8 @@ function listed(s: source.Source, d: diag.Diagnostic, library: {str: bool}) -> d
     out.message @ package_mark.MODULE_WANTED + said
     return out
 
-# `use <core>/strconv`, the one module at its root; `use <core>/a` or
-# `use <core>/b`, the modules at its root; three and `or another`, past
+# `use <rebel>/strconv`, the one module at its root; `use <rebel>/a` or
+# `use <rebel>/b`, the modules at its root; three and `or another`, past
 # three; "" where `found` offers no line. A module named like a built-in of
 # `library` takes its alias (`offered_line`).
 function phrase(written: str, found: [str], library: {str: bool}) -> str
@@ -159,9 +159,9 @@ test "the lines an entry is offered are listed with an `or` before the last"
     assert listed_or(["`a`", "`b`"]) == "`a` or `b`"
     assert listed_or(["`a`", "`b`", "`c`"]) == "`a`, `b` or `c`"
     none: {str: bool} = {}
-    assert phrase(written: "core", found: ["strconv"], library: none) == "`use <core>/strconv`, the one module at its root"
-    assert phrase(written: "core", found: ["a", "b"], library: none) == "`use <core>/a` or `use <core>/b`, the modules at its root"
-    assert phrase(written: "core", found: ["a", "b", "c", "d"], library: none) == "`use <core>/a`, `use <core>/b`, `use <core>/c` or another of the modules at its root"
+    assert phrase(written: "rebel", found: ["strconv"], library: none) == "`use <rebel>/strconv`, the one module at its root"
+    assert phrase(written: "rebel", found: ["a", "b"], library: none) == "`use <rebel>/a` or `use <rebel>/b`, the modules at its root"
+    assert phrase(written: "rebel", found: ["a", "b", "c", "d"], library: none) == "`use <rebel>/a`, `use <rebel>/b`, `use <rebel>/c` or another of the modules at its root"
 
 # Defect 2549: `sort` is the inventory's, `validated` the library's alone;
 # each is offered by the line the built-in rule's own fix writes, and a

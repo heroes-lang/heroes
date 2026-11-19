@@ -23,8 +23,8 @@
 #
 # **A `use` line is quoted as the file writes it, never as the compilation
 # names its module** (defect 2373): in a package's own file `use text/strs`
-# is the module `<core>/text/strs`, and a message quoting that, or offering
-# `use <core>/text/strs`, names a line the file cannot hold, refused
+# is the module `<rebel>/text/strs`, and a message quoting that, or offering
+# `use <rebel>/text/strs`, names a line the file cannot hold, refused
 # `unknown_entry` there. Each caller hands in the line's own text where it
 # stands on one, and `placed.written_in` answers where it does not; the module
 # itself, named in prose, keeps its identity.
@@ -193,7 +193,7 @@ function needs_a_use(name: str, module: str, written: str, span: token.Span) -> 
     return d
 
 # A name only modules no `use` of this file can name declare (defect 2379):
-# `mine()` in a file of the package `core` where the program's own
+# `mine()` in a file of the package `rebel` where the program's own
 # `other/strings` alone declares `mine`. It was told `unknown_name` with a near
 # name's rename and a note on binding C, both pointing away from the cause.
 # Each module is named by its identity with why no line of `from` reaches

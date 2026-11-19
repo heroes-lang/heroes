@@ -2259,7 +2259,7 @@ class FolderCases(unittest.TestCase):
         answer(self.tree, "annotations", 0, "  annotations (only fixedbugs-2367-x): 1 passed, 0 failed\n")
         self.folder("tests/golden/full", "fixedbugs-2367-x", marked=False)
         git(self.tree, "commit", "-q", "-m", "case", "--", "tests/golden")
-        for module in ("other/zeta.hero", "vendor/core/text/strs.hero", "zeta.hero"):
+        for module in ("other/zeta.hero", "vendor/rebel/text/strs.hero", "zeta.hero"):
             rel = "tests/golden/full/fixedbugs-2367-x.case/" + module
             staged(self.tree, rel, self.UNCANONICAL)
             self.assertIsNone(self.commit(rel), rel)

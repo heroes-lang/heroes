@@ -245,12 +245,12 @@ function unmarked(s: source.Source, used: ast.Use, plain: diag.Diagnostic, entry
     )
     return d
 
-# A bare `use` naming an entry of the catalogue whole, `use core` with no
-# `core.hero` where the file's `use` lines start (defect 2394): told as
-# `plain` tells it, and that `core` is an entry, reached through one of its
+# A bare `use` naming an entry of the catalogue whole, `use rebel` with no
+# `rebel.hero` where the file's `use` lines start (defect 2394): told as
+# `plain` tells it, and that `rebel` is an entry, reached through one of its
 # modules in angle brackets. It was told the first half alone, the entry's
-# word given to `use core/strconv` and kept from this line, which `import
-# core`'s certain fix writes. No repair: which module is meant is the
+# word given to `use rebel/strconv` and kept from this line, which `import
+# rebel`'s certain fix writes. No repair: which module is meant is the
 # author's.
 function whole_entry(s: source.Source, used: ast.Use, plain: diag.Diagnostic, entry: Named) -> diag.Diagnostic
     d: diag.Diagnostic @= plain

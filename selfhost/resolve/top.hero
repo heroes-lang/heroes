@@ -465,9 +465,9 @@ test "of two lines binding one name, the one a fix can repair is told, in either
 
 # Defect 2368, 2026-11-09: the line told keeps the rule above when a package's
 # module is one of the two, and its fix writes a name. In a package's own file
-# a bare `use zeta` is the module `<core>/zeta`, whose closed-up form
-# `<core>_zeta` was not its binding, so that line was read second beside
-# `use text/zeta` and told with a fix renaming it `<core>_zeta`; two packages'
+# a bare `use zeta` is the module `<base>/zeta`, whose closed-up form
+# `<base>_zeta` was not its binding, so that line was read second beside
+# `use text/zeta` and told with a fix renaming it `<base>_zeta`; two packages'
 # modules of one last part were offered `<json>_strings`.
 test "a package's module beside another of its last part: the line a fix can repair is told, its alias a name"
     inside = [
@@ -476,24 +476,26 @@ test "a package's module beside another of its last part: the line a fix can rep
     ]
 
     for pair in inside
-        assert told(files: packaged(head: "use <core>/strings\n", inner: pair[0])) == [pair[2]]
-        assert told(files: packaged(head: "use <core>/strings\n", inner: pair[1])) == [pair[2]]
+        assert told(files: packaged(head: "use <base>/strings\n", inner: pair[0])) == [pair[2]]
+        assert told(files: packaged(head: "use <base>/strings\n", inner: pair[1])) == [pair[2]]
 
-    assert told(files: packaged(head: "use <core>/strings\nuse <json>/strings\n", inner: "")) == ["<json>/strings: strings as json_strings"]
-    assert told(files: packaged(head: "use <json>/strings\nuse <core>/strings\n", inner: "")) == ["<json>/strings: strings as json_strings"]
-    assert told(files: packaged(head: "use <core>/strings as strings\nuse other/strings\n", inner: "")) == ["<core>/strings: core_strings"]
+    assert told(files: packaged(head: "use <base>/strings\nuse <json>/strings\n", inner: "")) == ["<json>/strings: strings as json_strings"]
+    assert told(files: packaged(head: "use <json>/strings\nuse <base>/strings\n", inner: "")) == ["<json>/strings: strings as json_strings"]
+    assert told(files: packaged(head: "use <base>/strings as strings\nuse other/strings\n", inner: "")) == ["<base>/strings: base_strings"]
 
-# A program whose root `use`s `head` and whose package `core`'s `strings` uses
-# `inner`, with the modules both name: `core`'s `zeta`, `text/zeta` and
-# `other/zeta`, `json`'s `strings`, and the program's `other/strings`.
+# A program whose root `use`s `head` and whose package `base`'s `strings` uses
+# `inner`, with the modules both name: `base`'s `zeta`, `text/zeta` and
+# `other/zeta`, `json`'s `strings`, and the program's `other/strings`. The
+# package is named to sort before `json`, as the name it had until
+# M-rebel-library step 55e did, so `json`'s line is read second and told.
 function packaged(head: str, inner: str) -> [source.InputFile]
     body = "function three() -> i64\n    return 3\n"
     return [
         source.InputFile(name: "main.hero", module: "main", text: head + "\nfunction main()\n    print(strings.two())\n", is_library: false)
-        source.InputFile(name: "core/strings.hero", module: "<core>/strings", text: inner + "\nfunction two() -> i64\n    return zeta.three()\n", is_library: false)
-        source.InputFile(name: "core/zeta.hero", module: "<core>/zeta", text: body, is_library: false)
-        source.InputFile(name: "core/text/zeta.hero", module: "<core>/text/zeta", text: body, is_library: false)
-        source.InputFile(name: "core/other/zeta.hero", module: "<core>/other/zeta", text: body, is_library: false)
+        source.InputFile(name: "base/strings.hero", module: "<base>/strings", text: inner + "\nfunction two() -> i64\n    return zeta.three()\n", is_library: false)
+        source.InputFile(name: "base/zeta.hero", module: "<base>/zeta", text: body, is_library: false)
+        source.InputFile(name: "base/text/zeta.hero", module: "<base>/text/zeta", text: body, is_library: false)
+        source.InputFile(name: "base/other/zeta.hero", module: "<base>/other/zeta", text: body, is_library: false)
         source.InputFile(name: "json/strings.hero", module: "<json>/strings", text: body, is_library: false)
         source.InputFile(name: "other/strings.hero", module: "other/strings", text: body, is_library: false)
     ]

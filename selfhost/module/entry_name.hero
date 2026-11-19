@@ -97,7 +97,7 @@ function in_mark(name: str) -> str
 ## Tests
 
 test "an entry is named as a `use` writes it between the brackets"
-    assert shaped("json") && shaped("core_2") && shaped("a")
+    assert shaped("json") && shaped("rebel_2") && shaped("a")
     assert !shaped("") && !shaped("Json") && !shaped("2json") && !shaped("_json") && !shaped("my-json")
     assert refused("json") == ""
     assert refused("Json") == "a name is lowercase letters, digits and `_`, starting with a letter"

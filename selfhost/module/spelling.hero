@@ -1,9 +1,9 @@
 # Whether a module's file is named as its `use` spells it (spec § 1; panel
 # 234's R3 item 4, the compiler-engineer's shape (b), ratified 2026-11-06;
 # defect 2290). A volume that ignores case, this Mac's APFS and Windows'
-# NTFS, opens `core/strings.hero` for `use Core/Strings`, so a misspelt `use`
+# NTFS, opens `rebel/strings.hero` for `use Rebel/Strings`, so a misspelt `use`
 # compiled there and was `unknown_module` on Linux, and one file reached under
-# two spellings compiled twice, `h_CoreStrings_…` beside `h_corestrings_…`.
+# two spellings compiled twice, `h_RebelStrings_…` beside `h_rebelstrings_…`.
 # The open answers for the volume; the directory's listing answers for the
 # name, on every machine alike: a module is read only where each part of its
 # path is a name its directory lists, byte for byte.
@@ -213,5 +213,5 @@ test "a module is read under the spelling its directory lists, and the other spe
     assert others(opened: dir + "/", module: "GEOM") == ["geom"]
     assert others(opened: dir + "/", module: "absent").len() == 0
     assert split("a/b/c") == ["a", "b", "c"]
-    assert same_but_case(a: "Core", b: "core")
-    assert !same_but_case(a: "Core", b: "cores")
+    assert same_but_case(a: "Rebel", b: "rebel")
+    assert !same_but_case(a: "Rebel", b: "rebels")

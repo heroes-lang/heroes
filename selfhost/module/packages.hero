@@ -16,8 +16,8 @@
 # not hold the build list whole. A package's module is named in the
 # compilation by the program's alias for its package, `<json>/parse`, so two
 # aliases of one package compile once, and a package's own bare `use` lines
-# start at its own root (R4): `use internal/scan` in `<core>/strings` is
-# `<core>/internal/scan`.
+# start at its own root (R4): `use internal/scan` in `<rebel>/strings` is
+# `<rebel>/internal/scan`.
 #
 # **A fetched package is placed inside the program, under a folder no `use`
 # can spell, one tree per package keyed by its identity, never by its alias**
@@ -317,7 +317,7 @@ function failure_of(got: str?) -> str
 
 test "an entry not placed is told what `heroes fetch` does while its source serves it, and the verb once it does not (defect 2525)"
     indexed = catalogue.Entry(
-        name: "core",
+        name: "rebel",
         version: "0.2.1",
         git: "",
         tag: "",
@@ -325,10 +325,10 @@ test "an entry not placed is told what `heroes fetch` does while its source serv
         path: "",
         sum: "sha256-" + "1".repeat(64.to_u64().must())
     )
-    assert while_served(indexed, index: "file://../../packages") == ", while the index `file://../../packages` serves core 0.2.1 at the catalogue's `sum`; where it does not, `heroes fetch` says so, and `heroes add core` writes the entry at a version it serves"
+    assert while_served(indexed, index: "file://../../packages") == ", while the index `file://../../packages` serves rebel 0.2.1 at the catalogue's `sum`; where it does not, `heroes fetch` says so, and `heroes add rebel` writes the entry at a version it serves"
     assert strings.starts_with(
         text: while_served(indexed, index: ""),
-        prefix: ", while the Heroes index serves core 0.2.1"
+        prefix: ", while the Heroes index serves rebel 0.2.1"
     )
     tagged = catalogue.Entry(
         name: "greet",

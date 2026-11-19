@@ -372,14 +372,14 @@ function sum_of(digit: str) -> str
     return "sha256-" + digit.repeat(64.to_u64().must())
 
 test "a catalogue of the three sources reads, and none is none"
-    text = "# the program's packages\nindex = \"https://index.example.org/heroes\"\n\n[dependencies.json]\nversion = \"1.4.2\"  # pinned\nsum = \"" + sum_of("a") + "\"\n\n[dependencies.yaml]\ngit = \"https://git.example.org/ana/yaml\"\ntag = \"v0.3.1\"\ncommit = \"" + "b".repeat(40.to_u64().must()) + "\"\nsum = \"" + sum_of("c") + "\"\n\n[dependencies.core]\npath = \"../packages/core\"\n"
+    text = "# the program's packages\nindex = \"https://index.example.org/heroes\"\n\n[dependencies.json]\nversion = \"1.4.2\"  # pinned\nsum = \"" + sum_of("a") + "\"\n\n[dependencies.yaml]\ngit = \"https://git.example.org/ana/yaml\"\ntag = \"v0.3.1\"\ncommit = \"" + "b".repeat(40.to_u64().must()) + "\"\nsum = \"" + sum_of("c") + "\"\n\n[dependencies.rebel]\npath = \"../packages/rebel\"\n"
     c = parsed(file: "heroes.toml", text: text)
     assert c.problem == ""
     assert c.index == "https://index.example.org/heroes"
     assert c.entries.len() == 3
     assert entry(c, name: "json").must().version == "1.4.2"
     assert entry(c, name: "yaml").must().tag == "v0.3.1"
-    assert entry(c, name: "core").must().path == "../packages/core"
+    assert entry(c, name: "rebel").must().path == "../packages/rebel"
     assert entry(c, name: "toml").is_err()
     absent = read(opened: "build/selftest-no-catalogue-here/", named: "build/selftest-no-catalogue-here/")
     assert absent.file == "" && absent.problem == "" && absent.entries.len() == 0
@@ -440,9 +440,9 @@ test "every other TOML form is refused with its line, and a refused line names n
     assert spelt.problem == "h: the entries `a` and `b` name one package, and a program holds one version of each package under one name"
 
     # The lines read before the refused one are never used (R5).
-    broken = parsed(file: "h", text: "[dependencies.core]\npath = \"../core\"\nversion = 1\n")
+    broken = parsed(file: "h", text: "[dependencies.rebel]\npath = \"../rebel\"\nversion = 1\n")
     assert broken.entries.len() == 0
-    assert entry(broken, name: "core").is_err()
+    assert entry(broken, name: "rebel").is_err()
 
 test "an entry holds one source and what that source needs, and nothing else"
     sum = sum_of("d")

@@ -1,5 +1,5 @@
 # A `use` naming the folder a fetch placed a package's tree in (defect 2390):
-# `use heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strconv`. `heroes fetch`
+# `use heroes.packages/rebel@0.1.0-2e3e1bba9c8acea1/strconv`. `heroes fetch`
 # places each package of the catalogue under `heroes.packages/`, one folder
 # `<name>@<version>-<key>` a package, under a folder no `use` can spell
 # (spec § 1; panel 235's R7), the name being the catalogue's entry for a
@@ -10,11 +10,11 @@
 # module as the entry, `use <strconv>/parse`, a line the compiler refuses.
 #
 # What it is told here: what the folder is, and the line that reaches the
-# same file through its entry, `use <core>/strconv`. The repair is a `guess`
+# same file through its entry, `use <rebel>/strconv`. The repair is a `guess`
 # (`package_mark.placed_told`): the parser reads the line's text and never
-# the catalogue, and only the catalogue says that its entry `core` places this
+# the catalogue, and only the catalogue says that its entry `rebel` places this
 # folder, at this version and key; an entry of another version, a `git`
-# entry under another alias, or none at all, and `<core>/strconv` is another
+# entry under another alias, or none at all, and `<rebel>/strconv` is another
 # module or none. A module under the package's `internal` folder is offered no
 # line, since no line of the program reaches it (R16), and is told so.
 #
@@ -168,33 +168,33 @@ function internal_owner(name: str) -> str
 ## Tests
 
 test "a placed folder is read into its folder, its entry and its module (defect 2390)"
-    assert is_placed("heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strconv")
-    assert is_placed("heroes.packages/core@0.1.0-2e3e1bba9c8acea1")
+    assert is_placed("heroes.packages/rebel@0.1.0-2e3e1bba9c8acea1/strconv")
+    assert is_placed("heroes.packages/rebel@0.1.0-2e3e1bba9c8acea1")
     assert !is_placed("heroes.packages")
     assert is_placed("heroes.packages/")
     assert read("heroes.packages/").folder == "heroes.packages"
     assert read("heroes.packages/").entry == ""
     assert !is_placed("github.com/acme/json")
-    assert !is_placed("heroes.packagesx/core")
-    one = read("heroes.packages/core@0.1.0-2e3e1bba9c8acea1/strconv/internal/shown")
-    assert one.folder == "heroes.packages/core@0.1.0-2e3e1bba9c8acea1"
-    assert one.entry == "core"
+    assert !is_placed("heroes.packagesx/rebel")
+    one = read("heroes.packages/rebel@0.1.0-2e3e1bba9c8acea1/strconv/internal/shown")
+    assert one.folder == "heroes.packages/rebel@0.1.0-2e3e1bba9c8acea1"
+    assert one.entry == "rebel"
     assert one.module == "strconv/internal/shown"
-    assert read("heroes.packages/core@0.1.0-2e3e1bba9c8acea1").module == ""
-    assert read("heroes.packages/core@0.1.0-2e3e1bba9c8acea1/").module == ""
-    assert read("heroes.packages/Core@1/x").entry == ""
+    assert read("heroes.packages/rebel@0.1.0-2e3e1bba9c8acea1").module == ""
+    assert read("heroes.packages/rebel@0.1.0-2e3e1bba9c8acea1/").module == ""
+    assert read("heroes.packages/Rebel@1/x").entry == ""
     assert read("heroes.packages/go-json@1/x").entry == ""
     assert read("heroes.packages/json2@v1-k/x").entry == "json2"
 
 test "the repair is the entry's line, and none reaches a module under `internal`"
-    assert repair(read("heroes.packages/core@0.1.0-k/strconv")) == "<core>/strconv"
-    assert repair(read("heroes.packages/core@0.1.0-k/text/strs")) == "<core>/text/strs"
-    assert repair(read("heroes.packages/core@0.1.0-k/strconv/internal/shown")) == ""
-    assert repair(read("heroes.packages/core@0.1.0-k/internal/scan")) == ""
-    assert repair(read("heroes.packages/core@0.1.0-k")) == ""
-    assert repair(read("heroes.packages/Core@0.1.0-k/strconv")) == ""
-    assert internal_owner("<core>/strings/internal/scan") == "<core>/strings"
-    assert internal_owner("<core>/internal/scan") == "<core>"
+    assert repair(read("heroes.packages/rebel@0.1.0-k/strconv")) == "<rebel>/strconv"
+    assert repair(read("heroes.packages/rebel@0.1.0-k/text/strs")) == "<rebel>/text/strs"
+    assert repair(read("heroes.packages/rebel@0.1.0-k/strconv/internal/shown")) == ""
+    assert repair(read("heroes.packages/rebel@0.1.0-k/internal/scan")) == ""
+    assert repair(read("heroes.packages/rebel@0.1.0-k")) == ""
+    assert repair(read("heroes.packages/Rebel@0.1.0-k/strconv")) == ""
+    assert internal_owner("<rebel>/strings/internal/scan") == "<rebel>/strings"
+    assert internal_owner("<rebel>/internal/scan") == "<rebel>"
     assert internal_owner("a/internal/b/internal/c") == "a/internal/b"
     assert internal_owner("internalx/y") == ""
     assert internal_owner("a/internals/b") == ""

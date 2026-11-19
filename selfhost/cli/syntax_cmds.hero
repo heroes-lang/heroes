@@ -366,10 +366,10 @@ test "a comment moved off the code it was written beside is refused, whichever p
 # pass that lost a line, on one that made a remark a declaration's doc and on
 # one whose text does not parse, and passes the pass `fmt` makes.
 test "a block out of order is refused, the same block in order passes, and the reorder has its own judge"
-    in_order = "use <core>/strings\n\nuse alpha\nuse zeta\n\nfunction main()\n    print(alpha.one() + zeta.two())\n"
+    in_order = "use <rebel>/strings\n\nuse alpha\nuse zeta\n\nfunction main()\n    print(alpha.one() + zeta.two())\n"
     printed_wrong = [
-        "use zeta\nuse alpha\nuse <core>/strings\n\nfunction main()\n    print(alpha.one() + zeta.two())\n"
-        "use <core>/strings\nuse alpha\nuse zeta\n\nfunction main()\n    print(alpha.one() + zeta.two())\n"
+        "use zeta\nuse alpha\nuse <rebel>/strings\n\nfunction main()\n    print(alpha.one() + zeta.two())\n"
+        "use <rebel>/strings\nuse alpha\nuse zeta\n\nfunction main()\n    print(alpha.one() + zeta.two())\n"
     ]
 
     for out_of_order in printed_wrong
@@ -434,7 +434,7 @@ test "the shapes beside the rule are written by it, and each is a fixpoint"
         "use zeta\nuse alpha\n"
         "use zeta  # the last letter\nuse alpha  # the first\n" + main
         "use zeta as a_first\nuse alpha as z_last\n\nfunction main()\n    print(a_first.two() + z_last.one())\n"
-        "use zeta\n\n# the package group, written second\nuse <core>/strings\n\nfunction main()\n    print(zeta.two())\n"
+        "use zeta\n\n# the package group, written second\nuse <rebel>/strings\n\nfunction main()\n    print(zeta.two())\n"
         "use zeta\n" + main + "\n# a remark above the late line\nuse alpha\nfunction helper() -> i64\n    return 1\n"
         "use zeta\n" + main + "\n# a remark, then a blank\n\nuse alpha\n# the doc of helper\nfunction helper() -> i64\n    return 1\n"
         "# header\nuse zeta\n# about alpha\nuse alpha\n\nfunction main()\n    print(1)\n"
@@ -451,7 +451,7 @@ test "the shapes beside the rule are written by it, and each is a fixpoint"
         "use alpha\nuse zeta\n"
         "use alpha  # the first\nuse zeta  # the last letter\n" + main
         "use alpha as z_last\nuse zeta as a_first\n\nfunction main()\n    print(a_first.two() + z_last.one())\n"
-        "# the package group, written second\nuse <core>/strings\n\nuse zeta\n\nfunction main()\n    print(zeta.two())\n"
+        "# the package group, written second\nuse <rebel>/strings\n\nuse zeta\n\nfunction main()\n    print(zeta.two())\n"
         "# a remark above the late line\nuse alpha\nuse zeta\n" + main + "\nfunction helper() -> i64\n    return 1\n"
         "use alpha\nuse zeta\n" + main + "\n# a remark, then a blank\n\n# the doc of helper\nfunction helper() -> i64\n    return 1\n"
         "# header\n\n# about alpha\nuse alpha\nuse zeta\n\nfunction main()\n    print(1)\n"
@@ -527,12 +527,12 @@ function orders(count: i64) -> [[i64]]
 # header and that line's comment are one run, read as the header, the one
 # reading the text cannot settle otherwise. Each text is a fixpoint.
 test "every order of one set of lines gives one text per layout"
-    lines = ["use <core>/strings", "use <core2>/x", "# why beta\nuse lib/beta as b2", "use alpha", "use Zeta"]
+    lines = ["use <rebel>/strings", "use <rebel2>/x", "# why beta\nuse lib/beta as b2", "use alpha", "use Zeta"]
     tail = "\n\nfunction main()\n    print(1)\n"
-    block = "use <core>/strings\nuse <core2>/x\n\nuse Zeta\nuse alpha\n\n# why beta\nuse lib/beta as b2" + tail
+    block = "use <rebel>/strings\nuse <rebel2>/x\n\nuse Zeta\nuse alpha\n\n# why beta\nuse lib/beta as b2" + tail
     apart = "# header\n\n" + block
     glued = "# header\n" + block
-    read_as_header = "# header\n# why beta\nuse <core>/strings\nuse <core2>/x\n\nuse Zeta\nuse alpha\nuse lib/beta as b2" + tail
+    read_as_header = "# header\n# why beta\nuse <rebel>/strings\nuse <rebel2>/x\n\nuse Zeta\nuse alpha\nuse lib/beta as b2" + tail
     seen: i64 @= 0
 
     for order in orders(count: 5)
@@ -551,7 +551,7 @@ test "every order of one set of lines gives one text per layout"
         seen @ seen + 1
 
     assert seen == 120
-    late = "# header\n\nuse <core>/strings\nuse <core2>/x\n# why beta\nuse lib/beta as b2\nuse Zeta" + tail + "\nuse alpha\n"
+    late = "# header\n\nuse <rebel>/strings\nuse <rebel2>/x\n# why beta\nuse lib/beta as b2\nuse Zeta" + tail + "\nuse alpha\n"
     assert written_by_fmt(late) == apart
 
     for text in [apart, glued, read_as_header]

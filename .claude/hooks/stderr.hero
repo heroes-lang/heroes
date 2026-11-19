@@ -1,7 +1,7 @@
 # The error stream, where a hook says why it refused: `hero_write_err` of the
 # language's own `hero_os.h` (spec § 13), the door the compiler writes its own
-# messages through, written whole with nothing added. No package of `core`
-# writes to the error stream yet, so the hooks bind the door themselves.
+# messages through, written whole with nothing added. The hooks use no
+# library, so they bind the door themselves.
 
 extern "hero_os.h"
     function hero_write_err(text: str)

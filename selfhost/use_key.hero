@@ -14,7 +14,7 @@
 # its bytes; then the alias, a line with none first; then the order the
 # lines were given in. `/` (0x2F) sorts below every byte a part of a path may
 # hold, a digit, a letter or `_` (the parser refuses any other), so comparing
-# bytes is comparing the path part by part: `<core>/y` before `<core2>/x`,
+# bytes is comparing the path part by part: `<rebel>/y` before `<rebel2>/x`,
 # `a/b` before `a0` before `a_b` before `ab`. Case is not folded, `Zeta`
 # before `alpha`, gofmt's byte-wise order. A space joins the path to its
 # alias, and it sorts below `/` and every byte of a name, so `a` comes before
@@ -39,7 +39,7 @@ function group_of(written: str) -> i64
         return 0
     return 1
 
-# The path with a package's brackets taken out, `<core>/x` read `core/x`. Cut
+# The path with a package's brackets taken out, `<rebel>/x` read `rebel/x`. Cut
 # beside each `<` and `>`, a byte that is never inside another character.
 function path_key(written: str) -> str
     parts: [str] @= []
@@ -143,11 +143,11 @@ function ordered_uses(s: source.Source, uses: [ast.Use]) -> [ast.Use]
 ## Tests
 
 test "a package's module first, then the path part by part by its bytes"
-    written = ["zeta", "<core2>/x", "ab", "lib/beta", "<core>/y", "alpha", "a_b", "a0", "Zeta", "a/b"]
-    assert in_order(written) == ["<core>/y", "<core2>/x", "Zeta", "a/b", "a0", "a_b", "ab", "alpha", "lib/beta", "zeta"]
+    written = ["zeta", "<rebel2>/x", "ab", "lib/beta", "<rebel>/y", "alpha", "a_b", "a0", "Zeta", "a/b"]
+    assert in_order(written) == ["<rebel>/y", "<rebel2>/x", "Zeta", "a/b", "a0", "a_b", "ab", "alpha", "lib/beta", "zeta"]
 
-    # The whole line by bytes would put `<core2>` first, `>` being 0x3E.
-    assert in_order(["<core2>/x", "<core>/y"]) == ["<core>/y", "<core2>/x"]
+    # The whole line by bytes would put `<rebel2>` first, `>` being 0x3E.
+    assert in_order(["<rebel2>/x", "<rebel>/y"]) == ["<rebel>/y", "<rebel2>/x"]
 
     # A path that is the start of another comes first, and nothing is lost.
     assert in_order(["a/b/c", "a/b", "a"]) == ["a", "a/b", "a/b/c"]
@@ -164,7 +164,7 @@ test "the alias breaks a tie, a line with none first, then the order given"
 
 test "a compilation's lines are ordered file by file, and never across files"
     files: [source.InputFile] = [
-        source.InputFile(name: "main.hero", module: "main", text: "use zeta\nuse lib/beta as zeta\nuse <core>/x\n", is_library: false)
+        source.InputFile(name: "main.hero", module: "main", text: "use zeta\nuse lib/beta as zeta\nuse <rebel>/x\n", is_library: false)
         source.InputFile(name: "zeta.hero", module: "zeta", text: "use b\nuse a\n", is_library: false)
     ]
     s = source.from_files(files)
@@ -175,7 +175,7 @@ test "a compilation's lines are ordered file by file, and never across files"
     for one in ordered_uses(s, uses: used)
         shown @ shown.push(source.span_text(s, one.name) + "/" + alias_of(s, used: one))
 
-    assert shown == ["<core>/x/", "lib/beta/zeta", "zeta/", "a/", "b/"]
+    assert shown == ["<rebel>/x/", "lib/beta/zeta", "zeta/", "a/", "b/"]
 
 # The goldens whose subject is a walk order name their modules so that order
 # is this key's (panel 238's R4): defect 560's default case, `unsupported`'s

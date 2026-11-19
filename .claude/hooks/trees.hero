@@ -12,9 +12,8 @@
 # path cannot be asked, a zero byte in it included; so do these, where the
 # zero byte would otherwise stop the program at the lend to C.
 
-use <core>/os
-
 use pypath
+use system
 
 # The seed, the one file a tree holds that a copy of its sources would not.
 constant SEED: str
@@ -34,9 +33,7 @@ function is_file(path: str) -> bool
     if path.len() == 0 || holds_zero(path)
         return false
 
-    return match os.stat(path)
-        .ok info => info.kind == .regular
-        .err _   => false
+    return system.is_file(path)
 
 # Whether a folder stands at `path`, a link followed: Python's
 # `os.path.isdir`.
@@ -44,16 +41,14 @@ function is_dir(path: str) -> bool
     if path.len() == 0 || holds_zero(path)
         return false
 
-    return match os.stat(path)
-        .ok info => info.kind == .directory
-        .err _   => false
+    return system.is_dir(path)
 
 # Whether anything stands at `path`, a link itself counting: Python's
 # `os.path.lexists`.
 function lexists(path: str) -> bool
     if path.len() == 0 || holds_zero(path)
         return false
-    return !os.lstat(path).is_err()
+    return system.lexists(path)
 
 # The nearest folder at or above `path` holding `seed/heroes.c` and a `.git`
 # entry, as an absolute path, or "" where none does: `trees.tree_of`.
@@ -89,14 +84,13 @@ function runnable(path: str) -> bool
     if !is_file(path)
         return false
 
-    return match os.stat(path)
-        .ok info => info.mode % 2 == 1 || info.mode / 8 % 2 == 1 || info.mode / 64 % 2 == 1
-        .err _   => false
+    bits = system.mode(path)
+    return bits >= 0 && (bits % 2 == 1 || bits / 8 % 2 == 1 || bits / 64 % 2 == 1)
 
 ## Tests
 
 test "trees: the lane this file stands in is a tree, and its compiler is its own"
-    here = os.getwd().must()
+    here = system.getwd().must()
     tree = tree_of(here)
     assert tree.len() > 0 && is_file(tree + "/seed/heroes.c") && lexists(tree + "/.git")
     assert compiler_of(tree) == tree + "/heroes"
