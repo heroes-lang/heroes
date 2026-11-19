@@ -1,0 +1,17 @@
+# UNVERIFIED — pending debrief
+# Panel 253's R4, M-rebel-library step 61d, 2026-11-19: `skip_test` is a
+# function of the library, so a program may not declare the name again, as a
+# function, a parameter or a local, which would take every call of it in its
+# scope (design.md §4.4; `resolve/builtin_names.hero`, defect 455). No tracked
+# program declared it when it entered (`git grep -w skip_test` printed
+# nothing at f44b7234c).
+
+function skip_test(reason: str) -> str  #~ builtin_name_taken
+    return reason
+
+function told(skip_test: str) -> str  #~ builtin_name_taken
+    return skip_test
+
+function main()
+    skip_test = "no server named"  #~ builtin_name_taken
+    print(skip_test)
