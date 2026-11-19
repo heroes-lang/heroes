@@ -1,0 +1,23 @@
+# Found beside panel 252's landing, 2026-11-19: `hero_print_str` called alone,
+# outside a `print` statement, opens a print span that nothing closes, and in
+# a thread that then ends, stdout's lock went with the thread: `exit`,
+# flushing stdout on the main thread, waited for it for ever, the line
+# written. The compiler's own artifacts take this route (`print_artifact`, on
+# the thread every command runs on), so `parse --dump-ast` hung the same way.
+# Now a thread leaving its body gives back a span it holds
+# (`runtime/parts/panic.c`'s `hero_print_thread_leave`).
+extern "hero_os.h"
+    function hero_print_str(text: str)
+    function hero_thread_spawn_sized(body: (function(i64) -> i64), arg: i64, bytes: i64, @why: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+    function hero_exit(code: i64)
+
+function main()
+    why: i64 @= 0
+    handle = hero_thread_spawn_sized(body: command, arg: 0, bytes: 1048576, why: @why)
+    hero_exit(code: hero_thread_join(handle: handle))
+
+# Writes a line the way the compiler writes an artifact, and ends.
+function command(_: i64) -> i64
+    hero_print_str(text: "written by a thread that then ended\n")
+    return 0
