@@ -1,0 +1,41 @@
+# Fixed defect 2596, 2026-11-19 (panel 252's R2): the refused half. A literal's
+# parts that need no synthesis now settle a letter, and what none of them says
+# stays refused where it stands: a row with nothing in it, a value letter no
+# part names (`V`, the key saying only `K`), a plain map whose only value is
+# empty, an array of `ok(…)`, which spec § 9 says gives no type, and `ok(…)`
+# handed to a generic call, which the repair never reads inside. Each message
+# names the letter that is truly unsaid.
+function count_rows<K>(xs: [[K]]) -> i64
+    return xs.len()
+
+function count_values<K, V>(m: {K: [V]}) -> i64
+    return keys(m).len()
+
+function held<T>(x: T?) -> i64
+    if x.is_err()
+        return 0
+    return 1
+
+function a_row_with_nothing()
+    print(count_rows([[]]))  #~ cannot_infer
+
+function a_value_no_part_names()
+    print(count_values({"a": []}))  #~ cannot_infer
+
+function a_plain_map_whose_value_is_empty()
+    m = {"a": []}  #~ cannot_infer
+    print(m.len())
+
+function an_array_of_ok()
+    x = [ok(1), ok(2)]  #~ cannot_infer
+    print(x.len())
+
+function ok_handed_to_a_generic_call()
+    print(held(ok(1)))  #~ cannot_infer
+
+function main()
+    a_row_with_nothing()
+    a_value_no_part_names()
+    a_plain_map_whose_value_is_empty()
+    an_array_of_ok()
+    ok_handed_to_a_generic_call()

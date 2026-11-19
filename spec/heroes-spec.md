@@ -317,8 +317,8 @@ Loops: `while cond` and `for x in xs`, over an array or a `range` (section 11).
 ## 10. Strings, arrays, maps
 `s[i]` yields a `u8`; iterate characters with
 `s.chars()`, which yields single-character `str`. A container literal separates
-elements by newline across lines and by comma on one, and an empty one needs an
-annotation: `xs: [i64] = []` · `m: {str: i64} @= {}`.
+elements by newline across lines and by comma on one, and an empty one that
+nothing else types needs an annotation: `xs: [i64] = []` · `m: {str: i64} @= {}`.
 ```
 m: {str: i64} @= {}
 m["a"] @ 1

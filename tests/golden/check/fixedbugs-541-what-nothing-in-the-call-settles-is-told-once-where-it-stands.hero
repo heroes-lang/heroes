@@ -85,7 +85,7 @@ function folds()
     us: [u8] = [1, 2, 3]
     print(us.fold(0, keep))  #~ type_mismatch
     print(foldr(f: keep, start: 0, xs: us))  #~ type_mismatch
-    print(apply_all(fs: [ident, half], x: 200))  #~ type_mismatch
+    print(apply_all(fs: [ident, half], x: 200))  # builds since defect 2596
     ns: [i64] = [1, 2, 3]
     print(ns.fold(0, add8))  #~ type_mismatch
 
