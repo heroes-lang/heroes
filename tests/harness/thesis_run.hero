@@ -1536,14 +1536,16 @@ test "the paired run on the scripted transport: one answer naming a package is r
     _ = thesis_grade.counting_task(suite + "/01").must()
     write_file(path: suite + "/LABEL", text: "assistant\n").must()
 
-    # The cards' context over the harness's own tree, as `cards` writes it.
+    # The cards' context over a tree as `heroes add` leaves one, as `cards`
+    # writes it.
+    thesis_grade.package_tree(scratch + "/tree").must()
     cards = scratch + "/spec-and-cards.md"
     write_file(
         path: cards,
-        text: thesis_cards.made(scratch: scratch, dir: "tests/harness", spec_path: thesis_prompt.SPEC).must().text
+        text: thesis_cards.made(scratch: scratch, dir: scratch + "/tree", spec_path: thesis_prompt.SPEC).must().text
     ).must()
     over = answer_json(
-        text: "```\nuse <core>/strings\n\nfunction main()\n    given = args()\n    print(strings.fields(given[0]).len())\n```\n"
+        text: "```\nuse <rebel>/strings\n\nfunction main()\n    given = args()\n    print(strings.fields(given[0]).len())\n```\n"
     )
     plan = Plan(
         suite_dir: suite,
@@ -1598,7 +1600,7 @@ test "the paired run on the scripted transport: one answer naming a package is r
 
     assert seen == 11
     kept = read_file(path: scratch + "/out/provenance.json").must()
-    assert strings.contains(s: kept, substr: "\"packages\":\"tests/harness\"")
+    assert strings.contains(s: kept, substr: "\"packages\":\"" + scratch + "/tree\"")
     assert !strings.contains(s: kept.slice(from: 0, to: strings.index_of(text: kept, needle: cards).must()), substr: "\"packages\"")
 
     # And the report reads the run back: the cards' context against `spec`,

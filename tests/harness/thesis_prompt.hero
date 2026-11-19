@@ -440,7 +440,7 @@ test "a package arm's context reads with its tree, its first line out of the pro
     prompt = rendered(template: template, context: context, task: "Print `hello`.", layout: "cached").must()
     assert !strings.contains(s: prompt.system, substr: "packages " + scratch)
     assert strings.contains(s: prompt.system, substr: thesis_cards.HEADING)
-    assert strings.has_suffix(s: prompt.system, suffix: "# strings: `use <core>/strings`\n\n</specification>")
+    assert strings.has_suffix(s: prompt.system, suffix: "# strings: `use <rebel>/strings`\n\n</specification>")
 
     # The `spec` context carries no tree.
     assert context_of(scratch: scratch, name: "spec").must().tree == ""

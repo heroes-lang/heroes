@@ -1,4 +1,4 @@
-# A core package's card, written from its face (task 2294; panel 234's R5): the
+# A package's card, written from its face (task 2294; panel 234's R5): the
 # `use` line, the module doc's first sentence, each record with its fields,
 # each variant with its cases as a program builds them, each function's
 # signature with the call a program writes beside it, and each
@@ -19,8 +19,8 @@
 # the compiler, by building `proof_source`'s program (`package_judge.hero`).
 #
 # **The `use` line is the catalogue's since panel 235's R15** (ratified
-# 2026-11-07, M-package-manager step 14): the core packages are one entry,
-# `core`, so a program writes `use <core>/strings`, and a face's own `use`
+# 2026-11-07, M-package-manager step 14): a package is one entry of the
+# catalogue, `PACKAGE`, so a program writes `use <rebel>/strings`, and a face's own `use`
 # lines, written from the package's root (R4), are a program's once the
 # package's name is put before them.
 
@@ -378,7 +378,7 @@ function maximum_in(said: str) -> i64?
 
 test "the call labels exactly the parameters whose type another shares, and marks `@`"
     face = package_face.face_of(
-        path: "core_test",
+        path: "rebel_test",
         text: "# T.\n\n# A.\nfunction a(s: str, prefix: str) -> bool\n    return true\n\n# B.\nfunction b(s: str) -> str\n    return s\n\n# C.\nfunction c(@x: Pair, y: Pair lent, n: i64)\n    _ = 0\n\n# D.\nfunction d<A>(first: A, second: A, take: bool) -> A\n    return first\n\n# E.\nfunction e()\n    _ = 0\n"
     )
     calls: [str] @= []
@@ -392,10 +392,10 @@ test "a card is written in E2's form, each section only where it has a line"
     text = "# Text, taken apart. More.\n\n# Two halves. More.\nrecord Halves\n    before: str\n    after: str\n\n# Whether it begins. More.\nfunction has_prefix(s: str, prefix: str) -> bool\n    return true\n\n# The halves, failing `not_found` where `s` holds no `sep`.\nfunction split_once(s: str, sep: str) -> Halves?\n    return ok(Halves(before: s, after: sep))\n"
     face = package_face.face_of(path: "strings", text: text)
     codes = [package_codes.Code(code: "not_found", through: "", meaning: "where `s` holds no `sep` (`split_once`)")]
-    assert card_text(face: face, codes: codes) == "# strings: `use <core>/strings`\n\nText, taken apart.\n\n## Types\n\n`record Halves` with `before: str` and `after: str`: Two halves.\n\n## Functions\n\n- `has_prefix(s: str, prefix: str) -> bool`, called `strings.has_prefix(s: s, prefix: prefix)`: Whether it begins.\n- `split_once(s: str, sep: str) -> Halves?`, called `strings.split_once(s: s, sep: sep)`: The halves, failing `not_found` where `s` holds no `sep`.\n\n## Codes\n\n- `not_found`: where `s` holds no `sep` (`split_once`).\n"
+    assert card_text(face: face, codes: codes) == "# strings: `use <rebel>/strings`\n\nText, taken apart.\n\n## Types\n\n`record Halves` with `before: str` and `after: str`: Two halves.\n\n## Functions\n\n- `has_prefix(s: str, prefix: str) -> bool`, called `strings.has_prefix(s: s, prefix: prefix)`: Whether it begins.\n- `split_once(s: str, sep: str) -> Halves?`, called `strings.split_once(s: s, sep: sep)`: The halves, failing `not_found` where `s` holds no `sep`.\n\n## Codes\n\n- `not_found`: where `s` holds no `sep` (`split_once`).\n"
     nothing: [package_codes.Code] = []
     bare = package_face.face_of(path: "net/http", text: "# Http.\n")
-    assert card_text(face: bare, codes: nothing) == "# http: `use <core>/net/http`\n\nHttp.\n"
+    assert card_text(face: bare, codes: nothing) == "# http: `use <rebel>/net/http`\n\nHttp.\n"
     assert listed(["`a`", "`b`", "`c`"]) == "`a`, `b` and `c`"
 
     # A code written through a constant names the constant as a program writes it.
@@ -404,21 +404,21 @@ test "a card is written in E2's form, each section only where it has a line"
         text: "# Numbers.\n\n# What fails.\nconstant NOT_A_NUMBER: str\n    \"not_a_number\"\n"
     )
     through = [package_codes.Code(code: "not_a_number", through: "NOT_A_NUMBER", meaning: "What fails.")]
-    assert card_text(face: numbers, codes: through) == "# strconv: `use <core>/strconv`\n\nNumbers.\n\n## Codes\n\n- `not_a_number`, `strconv.NOT_A_NUMBER`: What fails.\n"
-    assert proof_source(face: numbers, card: "c.md") == "# The calls c.md writes, each compiled as the card writes it.\n\nuse <core>/strconv\n\nfunction main()\n    _ = strconv.NOT_A_NUMBER\n"
+    assert card_text(face: numbers, codes: through) == "# strconv: `use <rebel>/strconv`\n\nNumbers.\n\n## Codes\n\n- `not_a_number`, `strconv.NOT_A_NUMBER`: What fails.\n"
+    assert proof_source(face: numbers, card: "c.md") == "# The calls c.md writes, each compiled as the card writes it.\n\nuse <rebel>/strconv\n\nfunction main()\n    _ = strconv.NOT_A_NUMBER\n"
 
 test "the proof calls each function as the card does, its records through the binding"
     text = "# S.\n\nuse strings/internal/scan\nuse encoding/json\n\n# H.\nrecord Halves\n    before: str\n\n# One.\nfunction split_once(s: str, sep: str) -> Halves?\n    return ok(Halves(before: s + sep))\n\n# Two.\nfunction gather(xs: [Halves], v: json.Value)\n    _ = 0\n"
     face = package_face.face_of(path: "strings", text: text)
-    assert proof_source(face: face, card: "c.md") == "# The calls c.md writes, each compiled as the card writes it.\n\nuse <core>/strings\nuse <core>/encoding/json\n\nfunction main()\n    _ = 0\n\nfunction call_split_once(s: str, sep: str) -> strings.Halves?\n    return strings.split_once(s: s, sep: sep)\n\nfunction call_gather(xs: [strings.Halves], v: json.Value)\n    strings.gather(xs, v)\n"
+    assert proof_source(face: face, card: "c.md") == "# The calls c.md writes, each compiled as the card writes it.\n\nuse <rebel>/strings\nuse <rebel>/encoding/json\n\nfunction main()\n    _ = 0\n\nfunction call_split_once(s: str, sep: str) -> strings.Halves?\n    return strings.split_once(s: s, sep: sep)\n\nfunction call_gather(xs: [strings.Halves], v: json.Value)\n    strings.gather(xs, v)\n"
     assert qualified(ty: "{str: [Halves]}", binding: "s", local: ["Halves"]) == "{str: [s.Halves]}"
     assert qualified(ty: "x.Halves", binding: "s", local: ["Halves"]) == "x.Halves"
-    assert use_binding("use core/a/b as c") == "c"
-    assert use_binding("use <core>/a/b") == "b"
+    assert use_binding("use rebel/a/b as c") == "c"
+    assert use_binding("use <rebel>/a/b") == "b"
 
     # A face's own line from the package's root is the program's in brackets,
     # and a line already bracketed stays as written.
-    assert program_use("use strings/internal/scan") == "use <core>/strings/internal/scan"
+    assert program_use("use strings/internal/scan") == "use <rebel>/strings/internal/scan"
     assert program_use("use <json>/value") == "use <json>/value"
 
 test "the budget's number is the `maximum` row of `heroes measure`"
@@ -430,14 +430,14 @@ test "a variant's line builds each case, and its proof builds each as the line d
     text = "# J.\n\n# A value. More.\nvariant Value\n    nothing\n    number\n        value: f64\n    array\n        items: [Value]\n\n# The value, failing `not_json` where it is none.\nfunction parse(s: str) -> Value?\n    return ok(.nothing)\n"
     face = package_face.face_of(path: "encoding/json", text: text)
     nothing: [package_codes.Code] = []
-    assert card_text(face: face, codes: nothing) == "# json: `use <core>/encoding/json`\n\nJ.\n\n## Types\n\n`variant Value`, one of `.nothing`, `.number(value: f64)` or `.array(items: [Value])`: A value.\n\n## Functions\n\n- `parse(s: str) -> Value?`, called `json.parse(s)`: The value, failing `not_json` where it is none.\n"
-    assert proof_source(face: face, card: "c.md") == "# The calls c.md writes, each compiled as the card writes it.\n\nuse <core>/encoding/json\n\nfunction main()\n    _ = 0\n\nfunction case_Value_nothing() -> json.Value\n    return .nothing\n\nfunction case_Value_number(value: f64) -> json.Value\n    return .number(value: value)\n\nfunction case_Value_array(items: [json.Value]) -> json.Value\n    return .array(items: items)\n\nfunction call_parse(s: str) -> json.Value?\n    return json.parse(s)\n"
+    assert card_text(face: face, codes: nothing) == "# json: `use <rebel>/encoding/json`\n\nJ.\n\n## Types\n\n`variant Value`, one of `.nothing`, `.number(value: f64)` or `.array(items: [Value])`: A value.\n\n## Functions\n\n- `parse(s: str) -> Value?`, called `json.parse(s)`: The value, failing `not_json` where it is none.\n"
+    assert proof_source(face: face, card: "c.md") == "# The calls c.md writes, each compiled as the card writes it.\n\nuse <rebel>/encoding/json\n\nfunction main()\n    _ = 0\n\nfunction case_Value_nothing() -> json.Value\n    return .nothing\n\nfunction case_Value_number(value: f64) -> json.Value\n    return .number(value: value)\n\nfunction case_Value_array(items: [json.Value]) -> json.Value\n    return .array(items: items)\n\nfunction call_parse(s: str) -> json.Value?\n    return json.parse(s)\n"
     assert listed_or(["`a`"]) == "`a`"
     assert listed_or(["`a`", "`b`", "`c`"]) == "`a`, `b` or `c`"
     assert case_written(face.choices[0].cases[1]) == ".number(value: f64)"
     assert choice_line(face.choices[0]) == "`variant Value`, one of `.nothing`, `.number(value: f64)` or `.array(items: [Value])`: A value."
 
-# A floor's card (`examples/packages/README.md` § 4.1): what its group gives a
+# A floor's card (`examples-rebel/packages/README.md` § 4.1): what its group gives a
 # program to name under the header's own heading, each as the program writes
 # it, its handle used by a function's signature through the binding in the
 # proof, and every constant of the group named there.
@@ -446,5 +446,5 @@ test "a floor's card names its group's records and constants, and its proof name
     face = package_face.face_of(path: "net/hero_net", text: text)
     assert face.refused.len() == 0
     nothing: [package_codes.Code] = []
-    assert card_text(face: face, codes: nothing) == "# hero_net: `use <core>/net/hero_net`\n\nThe layer, bound thin.\n\n## From `hero_net.h`\n\n- `record Socket tag hero_net_socket`, a handle, written `hero_net.Socket`: A socket the layer holds.\n- `hero_net.A` and `hero_net.B`, each `i64`: The kinds.\n- `record Pair tag pair` with `x: i64` and `y: i64`, written `hero_net.Pair`: Two numbers.\n\n## Functions\n\n- `port_of(s: Socket) -> i64`, called `hero_net.port_of(s)`: The port, or -1.\n"
-    assert proof_source(face: face, card: "c.md") == "# The calls c.md writes, each compiled as the card writes it.\n\nuse <core>/net/hero_net\n\nfunction main()\n    _ = hero_net.A\n    _ = hero_net.B\n\nfunction call_port_of(s: hero_net.Socket) -> i64\n    return hero_net.port_of(s)\n"
+    assert card_text(face: face, codes: nothing) == "# hero_net: `use <rebel>/net/hero_net`\n\nThe layer, bound thin.\n\n## From `hero_net.h`\n\n- `record Socket tag hero_net_socket`, a handle, written `hero_net.Socket`: A socket the layer holds.\n- `hero_net.A` and `hero_net.B`, each `i64`: The kinds.\n- `record Pair tag pair` with `x: i64` and `y: i64`, written `hero_net.Pair`: Two numbers.\n\n## Functions\n\n- `port_of(s: Socket) -> i64`, called `hero_net.port_of(s)`: The port, or -1.\n"
+    assert proof_source(face: face, card: "c.md") == "# The calls c.md writes, each compiled as the card writes it.\n\nuse <rebel>/net/hero_net\n\nfunction main()\n    _ = hero_net.A\n    _ = hero_net.B\n\nfunction call_port_of(s: hero_net.Socket) -> i64\n    return hero_net.port_of(s)\n"

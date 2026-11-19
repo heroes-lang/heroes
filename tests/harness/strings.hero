@@ -192,7 +192,6 @@ function to_number(text: str) -> i64?
 
     if at == text.len()
         return fail(code: NOT_A_NUMBER, msg: "`" + text + "` is not a decimal integer: it holds no digit")
-    lowest = -9223372036854775807 - 1
     total: i64 @= 0
 
     while at < text.len()
@@ -205,7 +204,7 @@ function to_number(text: str) -> i64?
             )
         digit = to_i64(c - '0').must()
 
-        if total < (lowest + digit) / 10
+        if total < CUTOFF || total == CUTOFF && digit > CUTLIM
             return fail(code: "does_not_fit", msg: "`" + text + "` does not fit an i64")
         total @ total * 10 - digit
         at @ at + 1
@@ -213,13 +212,23 @@ function to_number(text: str) -> i64?
     if negative
         return ok(total)
 
-    if total == lowest
+    if total == CUTOFF * 10 - CUTLIM
         return fail(code: "does_not_fit", msg: "`" + text + "` does not fit an i64")
     return ok(-total)
 
 # What `to_number` fails with where a text is no integer at all.
 constant NOT_A_NUMBER: str
     "not_a_number"
+
+# The digits are added below zero, where an `i64` reaches one further than
+# above it. A total below `CUTOFF`, or at it with a next digit past `CUTLIM`,
+# would leave the type at the next step, so the step is refused before it is
+# taken (the C library's `strtol` asks the same two numbers).
+constant CUTOFF: i64
+    -922337203685477580
+
+constant CUTLIM: i64
+    8
 
 # Where `needle` first occurs in `text`, or an error if it does not.
 function index_of(text: str, needle: str) -> i64?

@@ -66,10 +66,6 @@
 #   compat        the promise `1.0.0` rests on: a release's examples/ checked
 #                 by today's compiler, red from v1.0.0 on, told before it
 #   corpus        examples/ — real programs, tests and output, three ways
-#   packages      the core packages' trees under examples/: each program's
-#                 copy the canonical tree's, every module reached by its
-#                 driver, named and spelled as the conventions say, quiet,
-#                 documented and tested (task 2293)
 #   warnings      the generated C compiles without a single warning
 #   records       §14's identifiers, the alias table, stray C, the goldens
 #   surface       what a user types: exit codes, streams, flags, rendering
@@ -134,7 +130,6 @@ use suite_layout
 use suite_lines
 use suite_lldb
 use suite_order
-use suite_packages
 use suite_probe
 use suite_records
 use suite_run
@@ -559,18 +554,11 @@ function main()
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
-    # The core packages' trees under examples/, every copy against the
-    # canonical tree and every module against the conventions (task 2293).
-    # Reads files, and runs the compiler once, for the driver's reach.
-    if only == "" || only == "packages"
-        got = suite_packages.run_all(scratch: scratch, compiler: compiler)
-
-        if got.is_err()
-            print("harness: the packages suite could not run" + why(got))
-            exit(2)
-        print("  packages: " + report.counted(got.must()))
-        total @ report.tally(one: total, two: got.must())
-        ran @ ran + 1
+    # **The `packages` suite stood here until M-rebel-library step 55f**
+    # (2026-11-19; task 2293 until then): it held one package's index, its
+    # placed trees under `examples/` and the net, its driver and its
+    # conventions, and that package left the tree, the compiler's examples and
+    # its net using none since. Its rules stay in `package_rules.hero`.
 
     # The package manager's interface (panel 235's R19, task 2312): what
     # `heroes add` and `heroes fetch` print, exit with and write, each case a
@@ -788,17 +776,17 @@ constant LATENCY_PROGRAM: str
     "tests/harness/latency.hero"
 
 # **AND THE SIXTH, the package cards' program** (M-core-packages, 2026-11-06,
-# task 2294): `package_cards.hero` and its word, which only it reaches; the
-# modules that write and judge a card are reached from this root as well,
-# through the `packages` suite, so their tests run twice and the word's once.
-# Tested the same way, one test for the root.
+# task 2294): `package_cards.hero` and its word, and the modules that write
+# and judge a card, which only it reaches since the `packages` suite retired
+# (M-rebel-library step 55f), so their tests run here alone. Tested the same
+# way, one test for the root.
 constant CARDS_PROGRAM: str
     "tests/harness/package_cards.hero"
 
 # Every module the root `root` reaches through its `use` lines, the root among
 # them, each named by its path under `dir` without `.hero`, in the order they
 # are found: `issues`, and a placed package's module by its tree,
-# `heroes.packages/rebel@0.1.0-09f92e0d32ca605b/strings`, since `heroes test`
+# `heroes.packages/rebel@0.1.0-80b84a13e2192a79/strings`, since `heroes test`
 # runs the `test` blocks of every module it reaches, a placed package's among
 # them. The net's catalogue took a package from feature 2425 until
 # M-rebel-library step 55a, when the net stopped using a library; a root that
@@ -891,7 +879,7 @@ function tree_of_module(name: str) -> str
 # `dir`: a folder named `<entry>@<version>-<key>`, as `heroes add` places one
 # (`package_rules.placed_named` reads the name in full). None, or more than
 # one, is a failure, since the build reads the one its catalogue names and
-# the `packages` suite holds there to be exactly one.
+# `heroes fetch` places one.
 function placed_tree(dir: str, entry: str) -> str?
     folder = dir + "/" + placed_trees.FOLDER
     found: [str] @= []

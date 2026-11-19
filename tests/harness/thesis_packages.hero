@@ -1,19 +1,19 @@
 # THE PACKAGE TREE A PAIRED RUN PLACES BESIDE THE ANSWER (task 2300; panel
 # 234's R14, its spec-warden's § 8 and its critic's G17).
 #
-# R14 measures what the core packages buy a model by a run whose two arms
+# R14 measures what a package buys a model by a run whose two arms
 # differ in the packages alone: the specification, against the specification
 # and the cards with the package tree beside the answer. **A tree** is what a
 # program carries to reach its packages, a folder holding the catalogue
 # `heroes.toml` and the placed packages under `heroes.packages/`, as `heroes
 # add` leaves them (spec § 1; design.md §1.11, panel 235's R15): a program's
 # root without its program. The grader copies those two entries beside
-# `answer.hero` before it checks it, so `use <core>/strings` in an answer
+# `answer.hero` before it checks it, so `use <rebel>/strings` in an answer
 # compiles against the tree, and nothing else of the folder travels.
 #
 # **What pins a tree is its catalogue's sums, which the compiler checks at
 # every build**: a placed file changed since it was placed is `package_unread`
-# at `check` and at `build` (measured 2026-11-15 on core 0.5.0). So a tree
+# at `check` and at `build` (measured 2026-11-15 on a package's 0.5.0). So a tree
 # whose entry has no `sum` (a `path` entry, read where it stands and verified
 # by nothing) is refused here, and a tree's digest is taken over its catalogue
 # and every placed file's bytes, which a run records and a context file names
@@ -28,7 +28,7 @@
 # folder builds and runs), so a copy builds wherever it stands.
 #
 # **`binds_c` stays on the answer alone** (R14): a package's own `extern`, the
-# platform layer's sockets in `<core>/net/hero_net`, builds beside the answer,
+# platform layer's sockets in `<rebel>/net/hero_net`, builds beside the answer,
 # while an answer that binds C is still `refused_extern`
 # (`thesis_grade.hero`). And a tree beside a program that names no package is
 # inert: a program with no bracketed `use` reads no catalogue (panel 235's
@@ -135,7 +135,7 @@ function without_index(text: str) -> str
     return kept.join("")
 
 # A placed file's path with its folder's key left out:
-# `core@0.5.0-f58b55a0517ed0eb/strings.hero` is `core@0.5.0/strings.hero`.
+# `rebel@0.5.0-f58b55a0517ed0eb/strings.hero` is `rebel@0.5.0/strings.hero`.
 # The key is the last sixteen lowercase hexadecimal digits of the first part,
 # after a `-`; a part of another shape is kept whole.
 function keyless(rel: str) -> str
@@ -190,12 +190,12 @@ function names_a_package(program: str) -> bool
 # A tree written by a test: a catalogue with `index` and one pinned entry,
 # and one placed folder under `key` holding two files.
 function written_tree(dir: str, index: str, key: str, body: str) -> ()?
-    shell.mkdir_all(dir + "/" + PLACED + "/core@0.5.0-" + key)?
-    write_file(path: dir + "/" + CATALOGUE, text: "index = \"" + index + "\"\n\n[dependencies.core]\nversion = \"0.5.0\"\nsum = \"sha256-38e6194310472ac1e5779c6bf0fd30c0b725db0db8bcf149cb44f97cbde04204\"\n")?
-    write_file(path: dir + "/" + PLACED + "/core@0.5.0-" + key + "/strings.hero", text: body)?
+    shell.mkdir_all(dir + "/" + PLACED + "/rebel@0.5.0-" + key)?
+    write_file(path: dir + "/" + CATALOGUE, text: "index = \"" + index + "\"\n\n[dependencies.rebel]\nversion = \"0.5.0\"\nsum = \"sha256-38e6194310472ac1e5779c6bf0fd30c0b725db0db8bcf149cb44f97cbde04204\"\n")?
+    write_file(path: dir + "/" + PLACED + "/rebel@0.5.0-" + key + "/strings.hero", text: body)?
     return write_file(
-        path: dir + "/" + PLACED + "/core@0.5.0-" + key + "/strings.md",
-        text: "# strings: `use <core>/strings`\n"
+        path: dir + "/" + PLACED + "/rebel@0.5.0-" + key + "/strings.md",
+        text: "# strings: `use <rebel>/strings`\n"
     )
 
 test "a tree's digest is its catalogue's and its placed files', the index line and the folder's key left out"
@@ -220,7 +220,7 @@ test "a tree's digest is its catalogue's and its placed files', the index line a
     ).must()
     one = tree_at(scratch: scratch, dir: scratch + "/one").must()
     assert one.sha.len() == 64
-    assert one.entries == ["core"]
+    assert one.entries == ["rebel"]
     assert one.dir == scratch + "/one"
 
     # One version placed from two spellings of one index is one tree, and a
@@ -244,13 +244,13 @@ test "a folder that is no tree, a catalogue naming nothing and an entry no sum p
         .err e => assert e.code == "no_tree"
 
     written_tree(dir: scratch + "/path", index: "file://x", key: "f58b55a0517ed0eb", body: "x\n").must()
-    write_file(path: scratch + "/path/" + CATALOGUE, text: "[dependencies.core]\npath = \"../core\"\n").must()
+    write_file(path: scratch + "/path/" + CATALOGUE, text: "[dependencies.rebel]\npath = \"../rebel\"\n").must()
 
     match tree_at(scratch: scratch, dir: scratch + "/path")
         .ok _ => assert false
         .err e =>
             assert e.code == "unpinned_entry"
-            assert strings.contains(s: e.msg, substr: "entry `core` carries no `sum`")
+            assert strings.contains(s: e.msg, substr: "entry `rebel` carries no `sum`")
 
     write_file(path: scratch + "/path/" + CATALOGUE, text: "index = \"file://x\"\n").must()
 
@@ -259,16 +259,16 @@ test "a folder that is no tree, a catalogue naming nothing and an entry no sum p
         .err e => assert e.code == "no_entry"
 
 test "a placed folder's key is left out of a path, and only a key of sixteen lowercase hexadecimal digits"
-    assert keyless("core@0.5.0-f58b55a0517ed0eb/strings.hero") == "core@0.5.0/strings.hero"
-    assert keyless("core@0.5.0-f58b55a0517ed0eb/net/http.md") == "core@0.5.0/net/http.md"
-    assert keyless("core@0.5.0-f58b55a0517ed0eb") == "core@0.5.0"
-    assert keyless("core@0.5.0-F58B55A0517ED0EB/strings.hero") == "core@0.5.0-F58B55A0517ED0EB/strings.hero"
-    assert keyless("core@0.5.0-f58b55a0517ed0e/strings.hero") == "core@0.5.0-f58b55a0517ed0e/strings.hero"
+    assert keyless("rebel@0.5.0-f58b55a0517ed0eb/strings.hero") == "rebel@0.5.0/strings.hero"
+    assert keyless("rebel@0.5.0-f58b55a0517ed0eb/net/http.md") == "rebel@0.5.0/net/http.md"
+    assert keyless("rebel@0.5.0-f58b55a0517ed0eb") == "rebel@0.5.0"
+    assert keyless("rebel@0.5.0-F58B55A0517ED0EB/strings.hero") == "rebel@0.5.0-F58B55A0517ED0EB/strings.hero"
+    assert keyless("rebel@0.5.0-f58b55a0517ed0e/strings.hero") == "rebel@0.5.0-f58b55a0517ed0e/strings.hero"
     assert keyless("leftover/strings.hero") == "leftover/strings.hero"
     assert keyless("") == ""
 
 test "a program names a package by a use whose first part is in angle brackets, and by nothing else"
-    assert names_a_package("use <core>/strings\n\nfunction main()\n    print(1)\n")
+    assert names_a_package("use <rebel>/strings\n\nfunction main()\n    print(1)\n")
     assert names_a_package("use geom\nuse <json>/parse as p\n")
-    assert !names_a_package("use geom\n\nfunction main()\n    print(\"use <core>/strings\")\n")
-    assert !names_a_package("# use <core>/strings\nfunction main()\n    print(1)\n")
+    assert !names_a_package("use geom\n\nfunction main()\n    print(\"use <rebel>/strings\")\n")
+    assert !names_a_package("# use <rebel>/strings\nfunction main()\n    print(1)\n")

@@ -39,7 +39,7 @@
 # because only a program that reaches the floor reads it
 # (`package_judge.hero`); the floor itself still builds beside the answer. The
 # cards are the ones placed in the tree, `<path>.md` beside `<path>.hero`
-# (`examples/packages/README.md` § 8), so a model reads the cards of the
+# (`examples-rebel/packages/README.md` § 8), so a model reads the cards of the
 # packages its answer compiles against, in E2's form, each function's
 # signature beside the call a program writes (R5; R14's *the card's form is
 # E2's*), taken as the card program wrote them. A `.md` beside no module is
@@ -263,24 +263,24 @@ function said(got: thesis_packages.Tree?) -> str
 # A face and a floor placed in a tree written by a test, beside the tree
 # `thesis_packages.written_tree` writes: `strings` and `net/hero_net`.
 function written_cards(dir: str) -> ()?
-    folder = dir + "/" + thesis_packages.PLACED + "/core@0.5.0-f58b55a0517ed0eb"
+    folder = dir + "/" + thesis_packages.PLACED + "/rebel@0.5.0-f58b55a0517ed0eb"
     thesis_packages.written_tree(dir: dir, index: "file://../../packages", key: "f58b55a0517ed0eb", body: "function f() -> i64\n    return 1\n")?
     shell.mkdir_all(folder + "/net")?
     write_file(path: folder + "/net/hero_net.hero", text: "extern \"hero_net.h\"\n    constant HERO_NET_OK: i64\n")?
-    return write_file(path: folder + "/net/hero_net.md", text: "# hero_net: `use <core>/net/hero_net`\n")
+    return write_file(path: folder + "/net/hero_net.md", text: "# hero_net: `use <rebel>/net/hero_net`\n")
 
 test "a context is the specification, the heading, the lead and the faces' cards, and its first line names the tree and the specification"
     scratch = shell.own_scratch()
     written_cards(scratch + "/tree").must()
     write_file(path: scratch + "/spec.md", text: "# Report\n\nThe language.\n").must()
     got = made(scratch: scratch, dir: scratch + "/tree", spec_path: scratch + "/spec.md").must()
-    assert got.faces == ["core@0.5.0/strings.md"]
-    assert got.floors == ["core@0.5.0/net/hero_net.md"]
+    assert got.faces == ["rebel@0.5.0/strings.md"]
+    assert got.floors == ["rebel@0.5.0/net/hero_net.md"]
     header = header_of(got.text).must()
     assert header.tree == scratch + "/tree"
     assert header.tree_sha == thesis_packages.tree_at(scratch: scratch, dir: scratch + "/tree").must().sha
     assert header.spec_sha == thesis_sha256.of("# Report\n\nThe language.\n")
-    assert body_of(got.text) == "# Report\n\nThe language.\n\n" + HEADING + "\n\n" + LEAD + "\n\n# strings: `use <core>/strings`\n"
+    assert body_of(got.text) == "# Report\n\nThe language.\n\n" + HEADING + "\n\n" + LEAD + "\n\n# strings: `use <rebel>/strings`\n"
     assert !strings.contains(s: body_of(got.text), substr: "hero_net")
 
     # What `cards` wrote reads back as the prompt's text, and a byte moved
@@ -299,7 +299,7 @@ test "a context is the specification, the heading, the lead and the faces' cards
 
     write_file(path: scratch + "/spec.md", text: "# Report\n\nThe language.\n").must()
     write_file(
-        path: scratch + "/tree/" + thesis_packages.PLACED + "/core@0.5.0-f58b55a0517ed0eb/strings.md",
+        path: scratch + "/tree/" + thesis_packages.PLACED + "/rebel@0.5.0-f58b55a0517ed0eb/strings.md",
         text: "# moved\n"
     ).must()
 
@@ -338,7 +338,7 @@ test "a tree with a path of two words, an absolute one or one climbing out, no f
             .err e => assert e.code == "bad_tree_path"
 
     written_cards(scratch + "/floors").must()
-    shell.remove_tree(scratch + "/floors/" + thesis_packages.PLACED + "/core@0.5.0-f58b55a0517ed0eb/strings.md").must()
+    shell.remove_tree(scratch + "/floors/" + thesis_packages.PLACED + "/rebel@0.5.0-f58b55a0517ed0eb/strings.md").must()
 
     match made(scratch: scratch, dir: scratch + "/floors", spec_path: scratch + "/spec.md")
         .ok _  => assert false
@@ -346,7 +346,7 @@ test "a tree with a path of two words, an absolute one or one climbing out, no f
 
     written_cards(scratch + "/stray").must()
     write_file(
-        path: scratch + "/stray/" + thesis_packages.PLACED + "/core@0.5.0-f58b55a0517ed0eb/notes.md",
+        path: scratch + "/stray/" + thesis_packages.PLACED + "/rebel@0.5.0-f58b55a0517ed0eb/notes.md",
         text: "notes\n"
     ).must()
 

@@ -59,7 +59,7 @@
 #     digest no longer the catalogue's `sum`, so the fix this check prints
 #     would break the program it judges.
 #   - **Nobody in this repository writes it** (R7): a placed module's source is
-#     judged where it is written, and the core packages' is `packages/`, which
+#     judged where it is written, and a package's is `packages/`, which
 #     the walk reads.
 #   - **A package is built as its author wrote it**, in form or not: the same
 #     case built and printed `1112` and `81` with that module out of R1's form.
@@ -83,7 +83,7 @@ use strings
 # `tests/golden/lldb` joined them on 2026-10-12 (issue 944), written in form:
 # its programs are run, as `run/`'s are, and the lines its sessions claim are
 # the lines of the canonical text, so a case out of form would move them.
-# `packages` joined them on 2026-11-08 (panel 238's R10): the core packages'
+# `packages` joined them on 2026-11-08 (panel 238's R10): the package
 # index left `examples/` for the repository's root, and its newest version's
 # `files/` is the package's source, read by every program that places it.
 constant SOURCE_DIRS: [str]
@@ -123,7 +123,7 @@ constant SOURCE_DIRS: [str]
 # since batch 19 took the tree 25% past 1361, and the six files of the
 # latency instrument arrived on a floor already outgrown.
 # **2136 on 2026-11-15**, told by `floors.check` at batch 38's gate: the
-# batches since M-latency-ceiling (the core packages' placed trees under
+# batches since M-latency-ceiling (a package's placed trees under
 # `examples/` and the index's versions under `packages/` among them) took the
 # tree 25% past 1704.
 constant LEAST: i64
@@ -243,7 +243,7 @@ test "the exempt directories are named nowhere in the walk"
 
 test "a module a package fetch placed is no source, at any depth, and a folder only holding the word is (batch 26)"
     assert !is_source("tests/golden/run/fixedbugs-2351-x.case/heroes.packages/a@1.0.0-0bf9de114969a539/av.hero")
-    assert !is_source("examples/ini/heroes.packages/core@0.1.0-0123456789abcdef/strings.hero")
+    assert !is_source("examples/ini/heroes.packages/rebel@0.1.0-0123456789abcdef/strings.hero")
     assert is_source("examples/ini/main.hero")
     assert is_source("examples/ini/heroes.packagesx/strings.hero")
     assert !is_source("examples/ini/notes.md")

@@ -1,5 +1,5 @@
-# A Heroes module's code read as text, for the checks that judge the core
-# packages by their source (`package_rules.hero`): its code without its
+# A Heroes module's code read as text, for the checks that judge a
+# package by its source (`package_rules.hero`): its code without its
 # comments, the same with every literal's contents dropped, the codes its `fail`
 # calls write, the calls it makes, and its `test` blocks. The comments
 # themselves, a declaration's doc and its first sentence, are

@@ -1,33 +1,33 @@
-# The rules the `packages` suite holds the core packages to, each a function over
-# text so that a test can ask it of a literal: how a path and a declared name are
-# spelled, what a code looks like, what a package may not do, what every function
-# owes, what the driver reaches, and how the local static index the programs'
-# catalogues read is written. `suite_packages.hero` walks the index and the
-# programs and asks these; the conventions are `examples/packages/README.md`'s,
-# each marked there "(the `packages` suite)".
+# The rules a package's source is held to, each a function over text so that a
+# test can ask it of a literal: how a path and a declared name are spelled,
+# what a code looks like, what a package may not do, what every function owes,
+# what a driver reaches, and how a local static index is written. The
+# conventions are `examples-rebel/packages/README.md`'s, each marked there
+# "(the `packages` suite)".
 #
-# **The source is one tree since panel 235's R15** (ratified 2026-11-07,
-# M-package-manager step 14): the core packages are one catalogue entry, `core`,
-# published in the index at `INDEX`, `<index>/core/<version>/files/`, and each
-# program fetches its version under its own `heroes.packages/`. The conventions
-# are held over the newest version's files, the one a version in preparation is
-# written in; every published version is held to its listing and its sum.
+# **The `packages` suite that walked an index with these retired with the
+# package it walked** (M-rebel-library step 55f, 2026-11-19): it held one
+# package, published at `<index>/<name>/<version>/files/` and placed by every
+# program that used it, and the milestone removed that package and decided
+# the compiler's examples and its net use none. The rules stay for the checks
+# that judge the library the index holds now, `PACKAGE`, whose source is the
+# newest version folder's `files/` (`source_root`), and for the cards'
+# program (`package_cards.hero`).
 
 use module_docs
 use module_text
 use shell
 use strings
 
-# The local static index every program's catalogue under `examples/` reads, at
-# the repository's root, over `file://../../packages` (panel 235's R15 and R9's
+# The local static index at the repository's root (panel 235's R15 and R9's
 # C4; panel 238's R10 moved it there from inside `examples/`).
 constant INDEX: str
     "packages"
 
-# The one package the conventions hold, the catalogue entry every program names
-# the core packages by: `use <core>/strings`.
+# The one package the index holds, the catalogue entry a program names it by:
+# `use <rebel>/strings`.
 constant PACKAGE: str
-    "core"
+    "rebel"
 
 # The calls no package makes, but `log` and `os`, whose work they are (the
 # conventions' § 5.2). `args_checked` reads what `args` reads (spec § 11), so a
@@ -55,7 +55,7 @@ function source_root(scratch: str) -> str?
     package = INDEX + "/" + PACKAGE
 
     if !shell.is_directory(package)
-        return fail(code: "absent", msg: package + " is not there, and the core packages' source is its newest version")
+        return fail(code: "absent", msg: package + " is not there, and the package's source is its newest version")
     versions: [str] @= []
 
     for dir in shell.list_directories(scratch: scratch, dir: package)?
@@ -69,7 +69,7 @@ function source_root(scratch: str) -> str?
     if last.len() == 0
         return fail(
             code: "absent",
-            msg: package + " holds no version folder, and the core packages' source is its newest"
+            msg: package + " holds no version folder, and the package's source is its newest"
         )
     return ok(package + "/" + last + "/files")
 
@@ -292,7 +292,7 @@ function quoted_value(line: str) -> str?
         return fail(code: "malformed", msg: line)
     return ok(line.slice(from: at.must() + 4, to: line.len() - 1))
 
-# The entry's name and version a placed tree's folder writes, `core@0.1.0-<key>`,
+# The entry's name and version a placed tree's folder writes, `rebel@0.1.0-<key>`,
 # or a failure for a folder of another shape: the compiler names a tree
 # `<name>@<version>-<16 hex>` (`selfhost/module/placed.hero`'s `key`).
 function placed_named(folder: str) -> Entry?
@@ -316,7 +316,7 @@ function module_path(root: str, path: str) -> str
 
 # The parts of a path under a package's root that are not lower case: each
 # directory `[a-z][a-z0-9_]*`, and the file's name the same before its one
-# extension, `[a-z0-9]+` (`examples/packages/README.md` § 1.5). On a volume that
+# extension, `[a-z0-9]+` (`examples-rebel/packages/README.md` § 1.5). On a volume that
 # folds case, two spellings are one file, and a module named in a capital
 # compiles there and nowhere else.
 function crooked_parts(rel: str) -> [str]
@@ -395,7 +395,7 @@ function folded(text: str) -> str
     return bytes.validated_bytes().must()
 
 # The records and variants not named in PascalCase, `[A-Z][A-Za-z0-9]*`, and the
-# constants not in SCREAMING_CASE, `[A-Z][A-Z0-9_]*` (`examples/packages/README.md` § 2.5):
+# constants not in SCREAMING_CASE, `[A-Z][A-Z0-9_]*` (`examples-rebel/packages/README.md` § 2.5):
 # a declaration in column 0, or a member of an `extern` group indented under
 # one, since no statement opens with these words.
 function misnamed(text: str) -> [str]
@@ -438,7 +438,7 @@ function screaming(name: str) -> bool
     return true
 
 # The codes a module's `fail` calls write that are not snake_case,
-# `[a-z][a-z0-9_]*` (spec § 6, `examples/packages/README.md` § 3.2), tests included: each
+# `[a-z][a-z0-9_]*` (spec § 6, `examples-rebel/packages/README.md` § 3.2), tests included: each
 # literal, and each `str` constant of the module a code is written through (the
 # conventions' § 3.3), read for its value.
 function crooked_codes(text: str) -> [str]
@@ -598,25 +598,25 @@ test "a listing is sorted by the paths' bytes, and what moved is named once each
 test "a catalogue of the examples is the verb's: an index line, then each entry's version and sum"
     sum = "sha256-" + "0123456789abcdef".repeat(4.to_u64().must())
     c = catalogue_read(
-        "index = \"file://../../packages\"\n\n[dependencies.core]\nversion = \"0.1.0\"\nsum = \"" + sum + "\"\n"
+        "index = \"file://../../packages\"\n\n[dependencies.rebel]\nversion = \"0.1.0\"\nsum = \"" + sum + "\"\n"
     ).must()
     assert c.index == "file://../../packages"
-    assert c.entries.len() == 1 && c.entries[0].name == "core" && c.entries[0].version == "0.1.0" && c.entries[0].sum == sum
-    assert catalogue_read("[dependencies.core]\npath = \"../packages\"\n").is_err()
+    assert c.entries.len() == 1 && c.entries[0].name == "rebel" && c.entries[0].version == "0.1.0" && c.entries[0].sum == sum
+    assert catalogue_read("[dependencies.rebel]\npath = \"../packages\"\n").is_err()
     assert catalogue_read("index = \"file://../index\"\n# a comment\n").is_err()
-    assert catalogue_read("[dependencies.core]\nversion = \"0.1.0\"\n").is_err()
+    assert catalogue_read("[dependencies.rebel]\nversion = \"0.1.0\"\n").is_err()
     assert catalogue_read(
-        "[dependencies.core]\nversion = \"0.1.0\"\nversion = \"0.2.0\"\nsum = \"" + sum + "\"\n"
+        "[dependencies.rebel]\nversion = \"0.1.0\"\nversion = \"0.2.0\"\nsum = \"" + sum + "\"\n"
     ).is_err()
     assert quoted_value("sum = \"x\"").must() == "x"
     assert quoted_value("sum = x").is_err()
 
 test "a placed tree's folder writes its entry's name and version, then sixteen hexadecimal digits"
-    got = placed_named("core@0.1.0-0123456789abcdef").must()
-    assert got.name == "core" && got.version == "0.1.0"
-    assert placed_named("core@0.1.0").is_err()
+    got = placed_named("rebel@0.1.0-0123456789abcdef").must()
+    assert got.name == "rebel" && got.version == "0.1.0"
+    assert placed_named("rebel@0.1.0").is_err()
     assert placed_named("core-0.1.0-0123456789abcdef").is_err()
-    assert placed_named("core@0.1.0-0123").is_err()
+    assert placed_named("rebel@0.1.0-0123").is_err()
 
 test "every part of a path under a package's root is lower case"
     assert crooked_parts("strings/internal/scan.hero").len() == 0
@@ -626,12 +626,12 @@ test "every part of a path under a package's root is lower case"
     assert crooked_parts("a.b.hero") == ["a.b.hero"]
     assert crooked_parts("x/1st.hero") == ["1st.hero"]
     assert crooked_parts("x/a.Hero") == ["a.Hero"]
-    assert module_path(root: "packages/core/0.1.0/files", path: "packages/core/0.1.0/files/strings/internal/scan.hero") == "strings/internal/scan"
+    assert module_path(root: "packages/rebel/0.1.0/files", path: "packages/rebel/0.1.0/files/strings/internal/scan.hero") == "strings/internal/scan"
 
 test "two paths that differ only in case are named together"
     assert case_twins(["a/Strings.hero", "a/strings.hero", "b/x.hero"]) == ["`a/Strings.hero` and `a/strings.hero`"]
     assert case_twins(["a/x.hero", "b/x.hero"]).len() == 0
-    assert folded("Core/ÉtÉ.hero") == "core/ÉtÉ.hero"
+    assert folded("Rebel/ÉtÉ.hero") == "rebel/ÉtÉ.hero"
 
 test "a record and a variant are PascalCase, a constant SCREAMING_CASE, indented ones too"
     assert misnamed("record Halves\n    before: str\nconstant MAX_DEPTH: i64\n    3\n").len() == 0
@@ -664,8 +664,8 @@ test "every top-level function has a doc and a test of its own module that calls
     assert untested(text) == ["`g`", "`h`"]
 
 test "the `#line` paths of an emission are read once each, in order"
-    c = "#line 65 \"main.c\"\n#line 9 \"examples/packages/main.hero\"\n#line 13\n#line 17 \"examples/packages/heroes.packages/core@0.1.0-0123456789abcdef/strings.hero\"\n#line 20 \"examples/packages/heroes.packages/core@0.1.0-0123456789abcdef/strings.hero\"\n"
-    assert line_paths(c) == ["main.c", "examples/packages/main.hero", "examples/packages/heroes.packages/core@0.1.0-0123456789abcdef/strings.hero"]
+    c = "#line 65 \"main.c\"\n#line 9 \"examples-rebel/packages/main.hero\"\n#line 13\n#line 17 \"examples-rebel/packages/heroes.packages/rebel@0.1.0-0123456789abcdef/strings.hero\"\n#line 20 \"examples-rebel/packages/heroes.packages/rebel@0.1.0-0123456789abcdef/strings.hero\"\n"
+    assert line_paths(c) == ["main.c", "examples-rebel/packages/main.hero", "examples-rebel/packages/heroes.packages/rebel@0.1.0-0123456789abcdef/strings.hero"]
 
 test "a test's title is read as `heroes test` prints it, and only a passed one is passed"
     assert test_titles("test \"a b\"\n    assert true\n\n# test \"not one\"\n    test \"nor this\"\n") == ["a b"]

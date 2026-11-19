@@ -76,7 +76,7 @@ constant KINDS: [str]
 # and the project's other top-level directories, `tests/` split in two. It is a
 # premise about the world, so `records/areas` holds it to the tree each run:
 # a directory of `selfhost/` this list does not name is a failure, not a file
-# filed under nothing. `packages` joined on 2026-11-08, the core packages'
+# filed under nothing. `packages` joined on 2026-11-08, the package
 # index having left `examples/` for the repository's root (panel 238's R10).
 constant AREAS: [str]
     [
@@ -864,8 +864,8 @@ test "a path is in the area its head names, and a directory of selfhost/ nobody 
 
     # The index at the root and the program of `examples/` that drives it bear
     # one name, and each is in its own area.
-    assert area_of_path("packages/core/versions") == "packages"
-    assert area_of_path("examples/packages/main.hero") == "examples"
+    assert area_of_path("packages/rebel/versions") == "packages"
+    assert area_of_path("examples/json/main.hero") == "examples"
 
 test "a chain row gives up its milestone, and the summary rows do not"
     row = "| 35 | **M-declared-freer** | scheduled | — | — | the freer by name |"

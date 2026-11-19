@@ -3,7 +3,7 @@
 # 2026-11-07; task 2312): what each verb prints and exits with, the catalogue
 # each writes byte for byte, its error codes and texts, the placement folder,
 # and the sum of a fixed tree holding a file that is not text. The second
-# version, over the core packages, replaces the transport alone and passes
+# version, written with Rebel (M-rebel-packages-manager), replaces the transport alone and passes
 # these unchanged.
 #
 # **One folder, a case a folder**: `tests/golden/fetch/<name>.case/`, as
