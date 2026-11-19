@@ -1,0 +1,7 @@
+# A generic function called across a ring of modules, panel 252's R1
+# (2026-11-19): `ga.pick<T>` is instantiated from `gb` at `ga.Box`, at `[str]`
+# and at `i64`, and `gb` is used by `ga`. 3 * 2 + 2 + 2 is 10.
+use ga
+
+function main()
+    print(ga.run())

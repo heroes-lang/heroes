@@ -497,7 +497,7 @@ capability zone/by-name  a time zone by its name in the IANA database
   go      time.LoadLocation, time.Location, Location.String
   rust    -
   python  zoneinfo.ZoneInfo, zoneinfo.ZoneInfo.key, zoneinfo.TZPATH
-  note    the system's files first, in the order of Python's `TZPATH` on this Mac, then the IANA data Rebel carries (`time.ZONE_DATA_VERSION`, Go's `time/tzdata`), which Windows reads always; a name is a normalized relative path, Python's rule. Each call reads the file again. Read through `io`'s stream and not `fs`, whose package uses `time`: the compiler refuses the cycle
+  note    the system's files first, in the order of Python's `TZPATH` on this Mac, then the IANA data Rebel carries (`time.ZONE_DATA_VERSION`, Go's `time/tzdata`), which Windows reads always; a name is a normalized relative path, Python's rule. Each call reads the file again. Read through `io`'s stream and not `fs`, whose package uses `time`: the compiler refused the cycle when this was written, until panel 252's R1 (2026-11-19)
 
 capability zone/search-path  where the zone files are looked for, set by the program
   heroes  refused: the system's directories are fixed; a file elsewhere is read with `fs.read_bytes` and given to `time.decode_tzif`

@@ -1,0 +1,9 @@
+use sb
+
+# Holds a B by value.
+record A
+    b: sb.B
+
+# One.
+function one() -> i64
+    return 1

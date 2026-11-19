@@ -11,9 +11,10 @@
 # and a caller can read one answer without following an edge.
 #
 # It is a module rather than a section of `ir/flatten.hero` because
-# none of these calls back into the walk, which is the only property
-# the language cares about: Heroes refuses module cycles, so the
-# functions that call INWARDS only are exactly the ones that can leave.
+# none of these calls back into the walk, which was the only property
+# the language cared about while it refused module cycles (until
+# panel 252's R1, 2026-11-19): the functions that call INWARDS only were exactly
+# the ones that could leave.
 # Cut at M-declared-freer step 1, panel 109's condition.
 
 use ast

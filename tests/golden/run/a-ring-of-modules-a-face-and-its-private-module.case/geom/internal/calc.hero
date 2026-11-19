@@ -1,0 +1,5 @@
+use geom
+
+# The sum of the squares of a point's coordinates.
+function square_sum(p: geom.Point) -> i64
+    return p.x * p.x + p.y * p.y + 1

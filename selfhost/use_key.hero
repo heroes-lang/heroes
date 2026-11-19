@@ -1,8 +1,9 @@
 # The one order of a file's `use` lines (panel 238, ratified 2026-11-08;
 # design.md §4.15). It is the order `heroes fmt` writes the block in
 # (`print/use_order.hero`) and the order the compiler follows the lines in:
-# the module walk (`modules.load_edited`), the cycle walk (`modules.cycles`)
-# and the binding of names (`resolve/top.read_uses`). One key in one place,
+# the module walk (`modules.load_edited`) and the binding of names
+# (`resolve/top.read_uses`); the cycle walk, `modules.cycles`, left with
+# the refusal it served (panel 252's R1, 2026-11-19). One key in one place,
 # so the formatter and the compiler cannot disagree, and a formatted file and
 # its source are one program by construction: the order an author writes
 # reaches no output but that file's own line numbers. Until that sitting the

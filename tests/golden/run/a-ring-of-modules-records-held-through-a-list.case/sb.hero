@@ -1,0 +1,14 @@
+use sa
+
+# Holds A's through a list.
+record B
+    items: [sa.A]
+
+# The total of every A it holds.
+function sum(b: B) -> i64
+    t: i64 @= 0
+
+    for x in b.items
+        t @ t + sa.total(a: x)
+
+    return t

@@ -389,6 +389,16 @@ protects**: a knot carries a module doc naming its cycle, its entry points and
 which function calls which, so a reader opens it and finds a map rather than
 drowning.
 
+**Corrected 2026-11-19: the language no longer forbids the seam.** Panel 252's
+R1, ratified that day, lifted the refusal of a module cycle: `module_cycle` left
+the compiler (`selfhost/modules.hero`'s walk deleted), a ring of modules builds
+and runs, and its constants and records held by value keep their own refusals,
+`constant_cycle` and `no_size`. The sitting found that nothing in the compiler
+reads the module graph in an order (a unit's cache key is its own emitted
+text), so R6's topological order was never needed. The knots that stand keep
+their rows on `suite_layout.hero`'s decided list and their maps until they are
+cut (`.claude/rules/module-shape.md`).
+
 ## CL-021 — The Heroes subset of Rust is spent, and kept as the record of what it bought
 2026-08-19, M-bootstrap-archive · § 5
 

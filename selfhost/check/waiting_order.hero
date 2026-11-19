@@ -80,8 +80,9 @@ constant REFUSES: i64
 # argument's own names more narrowly speaks first, `{k64: {2: 3}}` after
 # `{4: {k9: 5}}`, and the pair's verdict holds in either order.
 # The synthesis this weighs is `check/walk.hero`'s: an array literal takes
-# its first element's type, a map literal its first key's and value's, and a
-# generic call the types its own arguments settle in its result.
+# the type of its first element that refuses itself in no part (`lead`), a map
+# literal its first such key's and value's, and a generic call the types its
+# own arguments settle in its result.
 function weight(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64, depth: i64) -> i64
     if depth <= 0
         return 1
@@ -98,13 +99,13 @@ function weight(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.S
         .array el =>
             if el.elements.len() == 0
                 return REFUSES
-            return weight(@c, a, r, s, decls, id: el.elements[0], depth: depth - 1)
+            return first_weight(@c, a, r, s, decls, ids: el.elements, depth: depth - 1)
         .map en =>
             if en.entries.len() == 0
                 return REFUSES
             return sum(
-                x: weight(@c, a, r, s, decls, id: en.entries[0].key, depth: depth - 1),
-                y: weight(@c, a, r, s, decls, id: en.entries[0].value, depth: depth - 1)
+                x: first_weight(@c, a, r, s, decls, ids: parts_of(en.entries, key: true), depth: depth - 1),
+                y: first_weight(@c, a, r, s, decls, ids: parts_of(en.entries, key: false), depth: depth - 1)
             )
         .call cl =>
             if waiting.made_by_context(a, r, decls, callee: cl.callee)
@@ -161,6 +162,54 @@ function weight(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.S
         .try_expr | .if_expr | .match_expr | .error => return 0
 
     return 0
+
+# A literal's parts in the order its synthesis reads them (defect 2596, panel
+# 252's R2): its lead, then the others as written, the walk synthesising the
+# first and checking the rest against it; a literal led by its first reads as before.
+function led(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], ids: [i64]) -> [i64]
+    at = lead(@c, a, r, s, decls, ids: ids)
+    out: [i64] @= [ids[at]]
+
+    for k in range(from: 0, to: ids.len())
+        if k != at
+            out @ out.push(ids[k])
+
+    return out
+
+# Which of a literal's parts its synthesis reads first: the first that refuses
+# itself in no part, so `[[], ["a"]]` types as `[["a"], []]` does; the first
+# where every one refuses itself, which is then told there as before.
+function lead(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], ids: [i64]) -> i64
+    k: i64 @= 0
+
+    while k < ids.len()
+        if weight(@c, a, r, s, decls, id: ids[k], depth: LOOK) < REFUSES
+            return k
+        k @ k + 1
+
+    return 0
+
+# What the part `lead` would pick weighs: REFUSES where every one refuses.
+function first_weight(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], ids: [i64], depth: i64) -> i64
+    for id in ids
+        w = weight(@c, a, r, s, decls, id: id, depth: depth)
+
+        if w < REFUSES
+            return w
+
+    return REFUSES
+
+# A map literal's keys where `key`, else its values, in the order written.
+function parts_of(entries: [ast.MapEntry], key: bool) -> [i64]
+    out: [i64] @= []
+
+    for e in entries
+        if key
+            out @ out.push(e.key)
+        else
+            out @ out.push(e.value)
+
+    return out
 
 # What a part with a type of its own weighs: 1 for a local of `i64` or `f64`,
 # a literal's default widths, 0 for any other.

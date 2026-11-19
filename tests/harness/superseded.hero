@@ -1,0 +1,697 @@
+# WHAT M-REBEL-LIBRARY SUPERSEDED, HELD TO THE TREE: the landing's final check,
+# and the reading of a milestone page retired into it.
+#
+# The author's decisions of 2026-11-15 (`docs/roadmap/milestones/M-rebel-library.md`)
+# replaced design.md §1.11's founding constraint: decision 9, *Heroes imposes no
+# standard library and offers one that is optional*, with the Zen's law 18
+# rewritten; decision 8, `core` no longer exists, every trace removed; decision
+# 10, the decisions this supersedes declared invalidated in one register, living
+# texts rewritten clean, and the sittings, journals and closed issues kept, each
+# with its note. Panel 253's R1 (ratified 2026-11-19) made the register one
+# `decision` issue. A sentence is landed in a dozen files by several lanes, and
+# a file nobody re-read keeps the old one in silence, so the milestone's page
+# asked a check of the net rather than a reading (its decision *the final
+# check*). Four parts, each a label of `records`:
+#
+# 1. `records/sentence`: the new sentence stands in each of its homes, the
+#    words each home must hold written down below (`homes`);
+# 2. `records/retired`: no wording the decisions retired stands in a living
+#    text, English or Italian (`RETIRED`);
+# 3. `records/core`: `core` as a package stands in no living file (`CORE`);
+# 4. `records/noted`: every record the register lists carries its note, and
+#    names the register (`NOTED`, `REGISTER`).
+#
+# Parts 2 and 3 walk the project's files that are not records (the walk
+# `suite_records.hero` hands in), less a retired milestone page and `EXEMPT`.
+# Text is compared FOLDED (`folded`): lowercase, every run of white space one
+# space, a line's leading `#` and `>` marks and every `*` dropped, and the HTML
+# entities and curly quotes the site writes read as their characters, so a
+# sentence wrapped across lines, in a comment, a quote or a page reads as one.
+#
+# And the milestone page retired into it: a row of the chain is a milestone the
+# work owes or has closed, and on 2026-11-15 decision 4 enclosed
+# M-core-packages and M-doc-generator in M-rebel-library, decision 23 of
+# 2026-11-16 M-web-framework; their rows left the chain at the landing while
+# their pages stayed, each the record of what it held, and `records/homes`
+# accepts such a page by the line `retired_into` reads.
+#
+# design.md §1.11 is the section these sentences rewrite.
+
+use cards
+use report
+use strings
+
+# How the line a retired page carries opens: `**Retired YYYY-MM-DD into
+# M-<name>**`, the day the author's decision retired it and the milestone that
+# encloses it. Bold, at the start of a line, as the pages' dated notes are.
+constant RETIRED: str
+    "**Retired "
+
+# Law 18 of the Zen, decision 9's words.
+constant LAW_18: str
+    "There is no standard library to obey; there is a Rebel to call, or not."
+
+# CLAUDE.md § 13's line, the author's words (panel 253's spec-warden report).
+constant CONTRACT_13: str
+    "A standard library shipped with the compiler or the runtime, or one the compiler is written with; Rebel is a package a program takes or leaves."
+
+# Decision 9's sentence, the words every English home holds.
+constant SENTENCE: str
+    "imposes no standard library"
+
+# Its Italian, as the site's Italian edition says it: both words, since the
+# translation's order is the translator's.
+constant SENTENCE_IT: [str]
+    [
+        "non impone"
+        "libreria standard"
+    ]
+
+# One home of the new sentence: the file, the heading that opens the section
+# read ("" for the whole file), and every phrase it must hold.
+record Home
+    path: str
+    within: str
+    says: [str]
+
+# Where the new sentence lives, a premise about the world written down: design.md
+# §1.11, the Zen in `doctor.hero`, README.md, CLAUDE.md § 13, the ffi-pragmatist's
+# charter, and the site's pages that said the old sentence or are to say the new
+# one, both editions (the landing's site brief). A home that is not there is a
+# failure, so a page moved without this list is told rather than skipped.
+function homes() -> [Home]
+    out: [Home] @= []
+    out @ out.push(Home(path: "docs/design.md", within: "### 1.11", says: [SENTENCE]))
+    out @ out.push(Home(path: "selfhost/cli/doctor.hero", within: "", says: [LAW_18]))
+    out @ out.push(Home(path: "README.md", within: "", says: [SENTENCE]))
+    out @ out.push(Home(path: "CLAUDE.md", within: "## 13.", says: [CONTRACT_13]))
+    out @ out.push(Home(path: ".claude/agents/ffi-pragmatist.md", within: "", says: [SENTENCE]))
+    out @ out.push(Home(path: "site/src/html/project.html", within: "", says: [LAW_18]))
+    out @ out.push(Home(path: "site/src/html/it/project.html", within: "", says: [LAW_18]))
+
+    for page in ["start.html", "why.html", "why/not.html", "why/faq.html", "docs/packages.html"]
+        out @ out.push(Home(path: "site/src/html/" + page, within: "", says: [SENTENCE]))
+        out @ out.push(Home(path: "site/src/html/it/" + page, within: "", says: SENTENCE_IT))
+
+    return out
+
+# The wordings decisions 8 and 9 retired, folded: design.md §1.11's box and
+# title, Part 2's bullet, the old law 18 and its first form, CLAUDE.md § 13's
+# old line, the ffi-pragmatist's old charter, and the site's and the gallery's
+# sentences in both editions. Each is long enough that the new sentence cannot
+# hold it: `there is no standard library to obey` is not one of them.
+constant RETIRED_WORDINGS: [str]
+    [
+        "out of scope, permanently"
+        "do not accumulate convenience functions"
+        "the founding constraint: there is no standard library"
+        "that is the whole standard library"
+        "there is no standard library; c is the man who sold the world"
+        "there is no standard library, everything comes from c"
+        "there is no standard library, permanently"
+        "there is no standard library, on purpose"
+        "there is no standard library."
+        "a standard library. anything in design.md part 6"
+        "panel judge for the founding constraint"
+        "no standard library</span>"
+        "una libreria standard non c'è"
+        "non c'è una libreria standard"
+        "niente libreria standard"
+    ]
+
+# `core` as a package, folded: its alias in a `use`, its folder in the index,
+# its last version. An HTML page's `&lt;core&gt;/` folds to the first.
+constant CORE: [str]
+    [
+        "<core>/"
+        "packages/core"
+        "core 0.6.0"
+    ]
+
+# What parts 2 and 3 leave out, each with its reason, each held to selecting a
+# file so an exemption that reaches nothing is told (`records/exemptions`'
+# rule): the seed is generated and changes at its next refresh (the landing
+# brief), and this module quotes every wording it refuses.
+constant EXEMPT: [str]
+    [
+        "seed/heroes.c"
+        "tests/harness/superseded.hero"
+    ]
+
+# The records the register lists as carrying its note: four sittings, a
+# journal, and the three milestone pages retired into M-rebel-library. Held
+# both ways to the register's body once GitHub holds it; a record a later
+# comment of the register adds joins this list by hand.
+constant NOTED: [str]
+    [
+        "docs/panel/080-the-egg-that-cannot-hide.md"
+        "docs/panel/234-the-core-packages-are-code-a-program-carries-in-gos-tree-under-core-a-thick-face-on-a-published-floor-a-card-that-shows-the-call-and-the-platforms-c-an-archive-beside-the-runtime.md"
+        "docs/panel/235-dependencies-named-by-an-alias-in-angle-brackets-that-the-programs-catalogue-resolves-gos-modules-copied-whole-a-toml-catalogue-listing-every-package-and-no-fetched-code-run-at-build.md"
+        "docs/panel/250-a-package-stays-placed-whole-since-no-placement-meets-the-compilers-ruler-and-feature-2315-waits-for-packages-core-does-not-hold.md"
+        "docs/records/journal/075-package-manager.md"
+        "docs/roadmap/milestones/M-core-packages.md"
+        "docs/roadmap/milestones/M-doc-generator.md"
+        "docs/roadmap/milestones/M-web-framework.md"
+    ]
+
+# The register's address. Until the coordinator files it, it is the
+# placeholder every note writes, and the coordinator's one replacement over the
+# tree writes the address here as in the notes. The placeholder is built from
+# pieces where it is compared (`placeholder`), so that replacement cannot
+# rewrite the comparison too.
+constant REGISTER: str
+    "<register>"
+
+function placeholder() -> str
+    return "<" + "register" + ">"
+
+# How a record's note opens: invalidated, in part or whole, or retired.
+constant NOTE_OPENINGS: [str]
+    [
+        "**Invalidated"
+        "**Retired "
+    ]
+
+# The line in the register's body that lists the records carrying its note.
+constant CARRYING: str
+    "carrying the note**"
+
+# What GitHub answered of the issues, as this check reads it: whether it was
+# asked, why not where it was not, and each issue's body by its number. The
+# records suite reads the listing once and hands this in, so this module, and
+# a run of its own tests, carries none of the transport.
+record Answered
+    asked: bool
+    broken: bool
+    why: str
+    bodies: {i64: str}
+
+# The four parts over the walk: `present` every path git names as the
+# project's, `open_text` those of them that are not records, generated or
+# closed issues.
+function check(@r: report.Report, present: [str], open_text: [str], github: Answered)
+    homes_part(@r, present: present)
+    walked_parts(@r, present: present, open_text: open_text)
+    noted_part(@r, present: present, github: github)
+
+# Part 1.
+function homes_part(@r: report.Report, present: [str])
+    offences: [str] @= []
+
+    for home in homes()
+        text = read_file(home.path)
+
+        if text.is_err() || !among(home.path, present)
+            offences @ offences.push("    " + home.path + ": not there")
+            continue
+
+        for one in missing_in(text: text.must(), home: home)
+            offences @ offences.push("    " + home.path + ": " + one)
+
+    if offences.len() == 0
+        report.keep_pass(@r)
+        return
+    report.keep_failure(
+        @r,
+        label: "records/sentence",
+        detail: "  a home of the new sentence (decision 9, panel 253's R1) does not hold it:\n" + offences.join("\n") + "\n  write it there in these words, or move the home in tests/harness/superseded.hero's `homes` with the page"
+    )
+
+# What `home` does not hold of its phrases in `text`, each told.
+function missing_in(text: str, home: Home) -> [str]
+    out: [str] @= []
+    read: str @= text
+
+    if home.within != ""
+        part = section(text: text, heading: home.within)
+
+        if part.is_err()
+            out @ out.push("no section opens `" + home.within + "`")
+            return out
+        read @ part.must()
+    held = folded(read)
+
+    for phrase in home.says
+        if !strings.contains(s: held, substr: folded(phrase))
+            where: str @= ""
+
+            if home.within != ""
+                where @ " in `" + home.within + "`"
+            out @ out.push("does not say `" + phrase + "`" + where)
+
+    return out
+
+# The section of `text` that opens at the line beginning `heading`, up to the
+# next heading of its level or above, or why there is none.
+function section(text: str, heading: str) -> str?
+    level = marks(heading)
+    rows = strings.lines(text)
+    out: [str] @= []
+    inside: bool @= false
+
+    for row in rows
+        if inside && marks(row) > 0 && marks(row) <= level
+            break
+
+        if !inside && strings.has_prefix(s: row, prefix: heading)
+            inside @ true
+
+        if inside
+            out @ out.push(row)
+
+    if !inside
+        return fail(code: "none", msg: "no line opens `" + heading + "`")
+    return ok(out.join("\n"))
+
+# How many `#` open a markdown heading's line, 0 for any other line.
+function marks(row: str) -> i64
+    at: i64 @= 0
+
+    while at < row.len() && row[at] == '#'
+        at @ at + 1
+
+    if at > 0 && at < row.len() && row[at] == ' '
+        return at
+    return 0
+
+# Parts 2 and 3, one pass over the files that are not records.
+function walked_parts(@r: report.Report, present: [str], open_text: [str])
+    retired: [str] @= []
+    cored: [str] @= []
+
+    for path in open_text
+        if among(path, EXEMPT)
+            continue
+        text = read_file(path)
+
+        if text.is_err()
+            continue
+        raw = text.must()
+
+        if strings.has_prefix(s: path, prefix: "docs/roadmap/milestones/") && !retired_into(raw).is_err()
+            continue
+
+        if might_retire(raw)
+            for one in retired_in(raw)
+                retired @ retired.push("    " + path + ": `" + one + "`")
+
+        if strings.contains(s: raw, substr: "core")
+            for one in core_in(raw)
+                cored @ cored.push("    " + path + ": `" + one + "`")
+
+    for path in EXEMPT
+        if !among(path, present)
+            retired @ retired.push("    " + path + ": an exemption of this check that selects no file")
+
+    tell(
+        @r,
+        label: "records/retired",
+        found: retired,
+        why: "  a wording decisions 8 and 9 retired stands in a living text (decision 10: living texts are rewritten clean; the old words live in the register):"
+    )
+    tell(
+        @r,
+        label: "records/core",
+        found: cored,
+        why: "  `core` as a package stands in a living file (decision 8: every trace removed; seed/heroes.c and the records are exempt):"
+    )
+
+# A pass or one failure listing what `found` holds.
+function tell(@r: report.Report, label: str, found: [str], why: str)
+    if found.len() == 0
+        report.keep_pass(@r)
+    else
+        report.keep_failure(@r, label: label, detail: why + "\n" + found.join("\n"))
+
+# Whether `text` holds a word every retired wording holds one of, read before
+# a file is folded, so the walk folds only the few that might hold one. Each
+# piece leaves out its first letter, whose case varies.
+function might_retire(text: str) -> bool
+    for piece in ["ibrar", "ibrer", "onvenience", "ermanently", "ounding"]
+        if strings.contains(s: text, substr: piece)
+            return true
+
+    return false
+
+# The retired wordings `text` holds, folded.
+function retired_in(text: str) -> [str]
+    return found_in(text: folded(text), needles: RETIRED_WORDINGS)
+
+# The spellings of `core` as a package `text` holds, folded.
+function core_in(text: str) -> [str]
+    return found_in(text: folded(text), needles: CORE)
+
+function found_in(text: str, needles: [str]) -> [str]
+    out: [str] @= []
+
+    for needle in needles
+        if strings.contains(s: text, substr: needle)
+            out @ out.push(needle)
+
+    return out
+
+# Part 4.
+function noted_part(@r: report.Report, present: [str], github: Answered)
+    offences: [str] @= []
+    filed = REGISTER != placeholder()
+
+    if !filed
+        offences @ offences.push(
+            "    the register is not filed: its address is still `" + placeholder() + "` here and in every note; file it and write its address in place of the placeholder over the tree"
+        )
+    else if !cards.is_issue_url(REGISTER)
+        offences @ offences.push("    `" + REGISTER + "` is not an issue's address")
+
+    for path in NOTED
+        text = read_file(path)
+
+        if text.is_err() || !among(path, present)
+            offences @ offences.push("    " + path + ": not there")
+            continue
+        why = note_offence(text: text.must(), register: REGISTER)
+
+        if why != ""
+            offences @ offences.push("    " + path + ": " + why)
+
+    if filed && cards.is_issue_url(REGISTER)
+        if github.broken
+            offences @ offences.push("    GitHub's answer could not be read: " + github.why)
+        else if !github.asked
+            report.keep_skip(
+                @r,
+                label: "records/noted",
+                detail: "  GitHub could not be asked, so the register's body was not held to NOTED: " + github.why
+            )
+        else
+            for one in against_register(bodies: github.bodies, register: REGISTER)
+                offences @ offences.push("    " + one)
+
+    if offences.len() == 0
+        report.keep_pass(@r)
+        return
+    report.keep_failure(
+        @r,
+        label: "records/noted",
+        detail: "  a record the register lists does not carry its note (decision 10, panel 253's R1):\n" + offences.join("\n")
+    )
+
+# Why `text`, a record the register lists, does not carry its note: a line
+# opening one of `NOTE_OPENINGS`, and the register's address from it on; ""
+# where it does.
+function note_offence(text: str, register: str) -> str
+    rows = strings.lines(text)
+    at: i64 @= 0
+
+    while at < rows.len()
+        for opening in NOTE_OPENINGS
+            if strings.has_prefix(s: rows[at], prefix: opening)
+                rest: [str] @= []
+                i: i64 @= at
+
+                while i < rows.len()
+                    rest @ rest.push(rows[i])
+                    i @ i + 1
+
+                if strings.contains(s: rest.join("\n"), substr: register)
+                    return ""
+
+        at @ at + 1
+
+    return "no note opening `**Invalidated` or `**Retired ` names the register, `" + register + "`"
+
+# The register's body against `NOTED`, both ways: what it lists as carrying its
+# note and this module does not hold, and the reverse.
+function against_register(bodies: {i64: str}, register: str) -> [str]
+    out: [str] @= []
+    number = strings.to_number(strings.base_name(register))
+
+    if number.is_err()
+        out @ out.push("the register's address ends in no number: " + register)
+        return out
+    body = bodies[number.must()]
+
+    if body.is_err()
+        out @ out.push("the register, " + register + ", is not among the issues GitHub returned")
+        return out
+    listed = noted_in_register(body.must())
+
+    for path in listed
+        if !among(path, NOTED)
+            out @ out.push(path + ": the register lists it and NOTED does not")
+
+    for path in NOTED
+        if !among(path, listed)
+            out @ out.push(path + ": NOTED holds it and the register does not list it")
+
+    return out
+
+# The records a register's body lists as carrying its note: the code spans
+# naming a `.md` file on each line that holds `CARRYING`.
+function noted_in_register(body: str) -> [str]
+    out: [str] @= []
+
+    for row in strings.lines(body)
+        if !strings.contains(s: row, substr: CARRYING)
+            continue
+        parts = strings.split_on(text: row, byte: '`')
+        at: i64 @= 1
+
+        while at < parts.len()
+            if strings.has_suffix(s: parts[at], suffix: ".md") && !among(parts[at], out)
+                out @ out.push(parts[at])
+            at @ at + 2
+
+    return out
+
+# `text` folded for comparison: lowercase ASCII, every run of white space one
+# space, a line's leading `#` and `>` marks and every `*` dropped, and the
+# entities and curly quotes `ENTITIES` names read as what they stand for. Only
+# ASCII bytes and whole characters move, so the answer is text whenever `text`
+# is.
+function folded(text: str) -> str
+    out: [u8] @= []
+    at: i64 @= 0
+    line_start: bool @= true
+    owed_space: bool @= false
+
+    while at < text.len()
+        b = text[at]
+
+        if b == ' ' || b == '\t' || b == '\n' || b == '\r'
+            if b == '\n'
+                line_start @ true
+            owed_space @ out.len() > 0
+            at @ at + 1
+            continue
+
+        if line_start && (b == '#' || b == '>')
+            at @ at + 1
+            continue
+        line_start @ false
+
+        if b == '*'
+            at @ at + 1
+            continue
+        kept: u8 @= b
+        width: i64 @= 1
+        swapped = entity_at(text: text, at: at)
+
+        if swapped >= 0
+            width @ ENTITIES[swapped].len()
+            kept @ ENTITY_BYTES[swapped]
+
+        if kept == ' '
+            owed_space @ out.len() > 0
+            at @ at + width
+            continue
+
+        if owed_space
+            out @ out.push(' ')
+            owed_space @ false
+
+        if kept >= 'A' && kept <= 'Z'
+            kept @ kept + 32
+        out @ out.push(kept)
+        at @ at + width
+
+    return out.validated_bytes().default("")
+
+# The entities and quotes `folded` reads as one ASCII byte, and the byte each
+# stands for, at the same index.
+constant ENTITIES: [str]
+    [
+        "&rsquo;"
+        "&lsquo;"
+        "&#39;"
+        "&apos;"
+        "’"
+        "‘"
+        "&lt;"
+        "&gt;"
+        "&amp;"
+        "&nbsp;"
+        "&quot;"
+    ]
+
+constant ENTITY_BYTES: [u8]
+    [
+        '\''
+        '\''
+        '\''
+        '\''
+        '\''
+        '\''
+        '<'
+        '>'
+        '&'
+        ' '
+        '"'
+    ]
+
+# The index in `ENTITIES` of the one that stands at `at`, or -1.
+function entity_at(text: str, at: i64) -> i64
+    i: i64 @= 0
+
+    while i < ENTITIES.len()
+        one = ENTITIES[i]
+
+        if at + one.len() <= text.len() && strings.holds_at(s: text, part: one, at: at)
+            return i
+        i @ i + 1
+
+    return -1
+
+function among(word: str, words: [str]) -> bool
+    for one in words
+        if one == word
+            return true
+
+    return false
+
+# The milestone a retired page says it went into, read off its first line of
+# the shape `RETIRED` opens, or why the page says none.
+function retired_into(text: str) -> str?
+    for row in strings.lines(text)
+        if !strings.has_prefix(s: row, prefix: RETIRED)
+            continue
+        rest = strings.without_prefix(text: row, prefix: RETIRED)
+
+        # `day_of` reads ten ASCII bytes before it answers, so the cut at ten
+        # stands between characters.
+        if cards.day_of(rest).is_err()
+            continue
+        after = rest.slice(from: 10, to: rest.len())
+
+        if !strings.has_prefix(s: after, prefix: " into ")
+            continue
+        named = strings.without_prefix(text: after, prefix: " into ")
+        end = strings.index_of(text: named, needle: "**")
+
+        if end.is_err()
+            continue
+        name = named.slice(from: 0, to: end.must())
+
+        if cards.is_milestone_name(name)
+            return ok(name)
+
+    return fail(code: "none", msg: "no line opens `**Retired YYYY-MM-DD into M-<name>**`")
+
+## Tests
+
+test "a retired page names the milestone that encloses it, on a dated line of its own"
+    page = "# M-core-packages\n\nWhat it held.\n\n**Retired 2026-11-15 into M-rebel-library**, by the author's decision 4.\n"
+    assert retired_into(page).must() == "M-rebel-library"
+    assert retired_into("**Retired 2026-11-16 into M-rebel-packages-manager**\n").must() == "M-rebel-packages-manager"
+
+test "a line that only resembles the retirement names nothing"
+    assert retired_into("# M-doc-generator\n\nNothing retired here.\n").is_err()
+    assert retired_into("  **Retired 2026-11-15 into M-rebel-library**\n").is_err()
+    assert retired_into("**Retired 2026-13-15 into M-rebel-library**\n").is_err()
+    assert retired_into("**Retired 2026-11-15 to M-rebel-library**\n").is_err()
+    assert retired_into("**Retired 2026-11-15 into M-Rebel**\n").is_err()
+    assert retired_into("**Retired 2026-11-15 into M-rebel-library\n").is_err()
+    assert retired_into("**Retired 2026-11-15 into rebel**\n").is_err()
+
+test "a text is folded: case, white space, a line's marks, emphasis, entities and curly quotes"
+    assert folded("  There  is\n> **no**\tstandard\n# library ") == "there is no standard library"
+    assert folded("Non c&rsquo;è una libreria standard") == "non c'è una libreria standard"
+    assert folded("Non c’è") == "non c'è"
+    assert folded("use &lt;core&gt;/strings") == "use <core>/strings"
+    assert folded("a&nbsp;b") == "a b"
+    assert folded("") == ""
+
+test "part 1 fires on a home that lacks the sentence, and passes one that wraps it"
+    home = Home(path: "README.md", within: "", says: [SENTENCE])
+    assert missing_in(text: "Heroes imposes no\nstandard library, and offers Rebel.", home: home).len() == 0
+    assert missing_in(text: "There is no standard library.", home: home).len() == 1
+    law = Home(path: "selfhost/cli/doctor.hero", within: "", says: [LAW_18])
+    assert missing_in(text: "18. There is no standard library to obey; there is a Rebel to call, or not.\\n", home: law).len() == 0
+    assert missing_in(text: "18. There is no standard library; C is the man who sold the world.\\n", home: law).len() == 1
+
+test "part 1 reads a home's section alone, and tells a section that is not there"
+    home = Home(path: "docs/design.md", within: "### 1.11", says: [SENTENCE])
+    design = "### 1.10 Before\n\nHeroes imposes no standard library.\n\n### 1.11 The constraint\n\nIt ships a runtime.\n\n### 1.12 After\n"
+    assert missing_in(text: design, home: home).len() == 1
+    moved = "### 1.11 The constraint\n\nHeroes imposes no standard library.\n\n#### 1.11.1 Deeper\n\nstill inside\n\n## Part 2\n"
+    assert missing_in(text: moved, home: home).len() == 0
+    assert section(text: moved, heading: "### 1.11").must() == "### 1.11 The constraint\n\nHeroes imposes no standard library.\n\n#### 1.11.1 Deeper\n\nstill inside\n"
+    assert missing_in(text: "## Part 1\n", home: home) == ["no section opens `### 1.11`"]
+
+test "part 2 fires on every retired wording, English and Italian, and not on the new sentence"
+    assert retired_in("Writing a broad standard library is out of\nscope, permanently.") == ["out of scope, permanently"]
+    assert retired_in("18. There is no standard library; C is the man who sold the world.") == ["there is no standard library; c is the man who sold the world"]
+    assert retired_in("<dd>Una libreria standard non c&rsquo;è, di proposito") == ["una libreria standard non c'è"]
+    assert retired_in("<span class=\"when\">Niente libreria standard</span>") == ["niente libreria standard"]
+    assert retired_in("18. There is no standard library to obey; there is a Rebel to call, or not.").len() == 0
+    assert retired_in("Heroes imposes no standard library and offers one that is optional.").len() == 0
+    assert might_retire("a Library") && might_retire("permanently") && !might_retire("nothing here")
+
+test "part 3 fires on core as a package in every spelling, and not on a word that holds core"
+    assert core_in("use <core>/strings") == ["<core>/"]
+    assert core_in("<code>use &lt;core&gt;/strings</code>") == ["<core>/"]
+    assert core_in("read from packages/core/0.6.0/list") == ["packages/core"]
+    assert core_in("added core\n0.6.0") == ["core 0.6.0"]
+    assert core_in("the score of core_strings and a `core` the record names").len() == 0
+
+test "part 4 fires on a record with no note or a note that names no register"
+    register = "https://github.com/heroes-lang/heroes/issues/1"
+    noted = "the sitting\n\n**Invalidated in part by M-rebel-library, 2026-11-19**: R1 no longer holds.\nEntry 7 of the register, " + register + ".\n"
+    assert note_offence(text: noted, register: register) == ""
+    assert note_offence(text: "**Retired 2026-11-15 into M-rebel-library**, the register " + register + ".\n", register: register) == ""
+    assert note_offence(text: "the sitting, untouched, " + register + "\n", register: register) != ""
+    assert note_offence(text: "**Invalidated in part by M-rebel-library, 2026-11-19**: R1.\n", register: register) != ""
+
+test "part 4 reads the records a register lists from its carrying lines alone"
+    body = "- **Records carrying the note**: `docs/panel/234-x.md`; `docs/records/journal/075-y.md`.\n- **Also**: `docs/roadmap/milestones/M-package-index.md`.\n- **Closed issue carrying the note**: 2403.\n"
+    assert noted_in_register(body) == ["docs/panel/234-x.md", "docs/records/journal/075-y.md"]
+
+test "part 4 holds the register's list and NOTED to each other, both ways"
+    whole: [str] @= []
+
+    for path in NOTED
+        whole @ whole.push("`" + path + "`")
+
+    body = "- **Records carrying the note**: " + whole.join(", ") + ".\n"
+    bodies: {i64: str} @= {}
+    bodies[7] @ body
+    register = "https://github.com/heroes-lang/heroes/issues/7"
+    assert against_register(bodies: bodies, register: register).len() == 0
+    bodies[7] @ body + "- **Record carrying the note**: `docs/panel/001-x.md`.\n"
+    assert against_register(bodies: bodies, register: register) == ["docs/panel/001-x.md: the register lists it and NOTED does not"]
+    bodies[7] @ "- **Record carrying the note**: `" + NOTED[0] + "`.\n"
+    assert against_register(bodies: bodies, register: register).len() == NOTED.len() - 1
+    assert against_register(bodies: bodies, register: "https://github.com/heroes-lang/heroes/issues/8") == ["the register, https://github.com/heroes-lang/heroes/issues/8, is not among the issues GitHub returned"]
+
+test "the register is the placeholder until it is filed, and then an issue's address"
+    assert placeholder() == "<" + "register>"
+    assert REGISTER == placeholder() || cards.is_issue_url(REGISTER)
+
+test "every exemption, home and noted record is a path of the tree as written, never a glob"
+    for path in EXEMPT
+        assert !strings.contains(s: path, substr: "*")
+
+    for path in NOTED
+        assert strings.has_suffix(s: path, suffix: ".md")
+
+    for home in homes()
+        assert home.says.len() > 0

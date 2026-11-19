@@ -57,8 +57,9 @@ record Args
 # parameter carrying `owned <freer>`, whose bytes are copied out, the
 # original freed, and the `str?` stored through the author's place. Paid by
 # `ir/owned_release.hero`, which is where the freer and the library's
-# `validated` are reachable; this module cannot do it, because
-# `owned_release` uses it and Heroes refuses module cycles. `at` is the
+# `validated` are reachable; this module did not do it, because
+# `owned_release` uses it and Heroes refused module cycles when the
+# payment moved there (until panel 252's R1, 2026-11-19). `at` is the
 # parameter's position, which the mark is read at. Until panel 196's R1 an
 # element's temporary was a write-back too, stored by this module; an
 # element is its own place since, so a cell is the only thing a call owes.

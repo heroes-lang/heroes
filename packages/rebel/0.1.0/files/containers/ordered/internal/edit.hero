@@ -17,17 +17,18 @@ record Spot
     added: bool
 
 # Ends the program where the shape is a set's and a map's write was asked,
-# or the other way, or where a list is shorter than the shape.
+# or the other way, or where a list is not as long as this package left it
+# (defect 2597).
 function require_kind(shape: tree.Tree lent, as_map: bool, keys_held: i64, values_held: i64)
     if shape.holds_values != as_map
         if as_map
             codes.abort_with("a set's shape was given to a map's write; make a map with `new_ordered_map`")
         else
             codes.abort_with("a map's shape was given to a set's write, which would leave its value list behind")
-    codes.require_storage(held: keys_held, count: shape.count, what: "key list")
+    codes.require_kept(held: keys_held, kept: tree.room(shape), what: "key list")
 
     if as_map
-        codes.require_storage(held: values_held, count: shape.count, what: "value list")
+        codes.require_kept(held: values_held, kept: tree.room(shape), what: "value list")
 
 # Adds `key` where no equal key is held, answering its slot and whether it
 # was new. One call of the order a level, and one more at the end.
@@ -166,6 +167,7 @@ test "add, take_entry and every search: five thousand random operations against 
             model @ samples.model_remove(model, gone)
             model_values @ samples.model_remove(model_values, gone)
         assert tree.holds(shape)
+        assert tree.room(shape) == held.len() && tree.room(shape) == values.len()
         assert shape.count == model.len()
         order = steps.in_order(shape)
 
@@ -231,3 +233,14 @@ test "add and take_key: a set of texts by their bytes, two thousand random opera
             texts @ texts.push(held[at])
 
         assert texts == sort(texts)
+
+test "require_kind: another shape's key list is not as long as this one left its own (defect 2597)"
+    a @= tree.empty(holds_values: false)
+    a_keys: [i64] @= []
+    b @= tree.empty(holds_values: false)
+    b_keys: [i64] @= []
+    _ = add(@b, @b_keys, key: 1, less: samples.ascending)
+    _ = add(@b, @b_keys, key: 2, less: samples.ascending)
+    _ = add(@a, @a_keys, key: 5, less: samples.ascending)
+    assert tree.room(a) == a_keys.len()
+    assert tree.room(a) != b_keys.len()

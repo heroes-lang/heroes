@@ -1,0 +1,14 @@
+use shapes/internal/calc
+
+# A rectangle.
+record Rect
+    w: i64
+    h: i64
+
+# Its area, computed by the private module.
+function area(r: Rect) -> i64
+    return calc.area_of(r: r)
+
+# The rectangle twice as wide, built by the private module.
+function doubled(r: Rect) -> Rect
+    return calc.wider(r: r)

@@ -11,12 +11,13 @@
 # compiler, and what lets the ownership pass point at a single
 # instruction and say "this one produced a value somebody owns".
 #
-# THE KNOT'S MAP (CLAUDE.md §11's due for a module the language refuses
-# to split). Every function here but `bind_payload` is mutually recursive
-# by construction — a statement lowers its
-# expressions, an if-expression lowers its blocks, a block lowers its
-# statements — so no cut exists: `module_cycle` fires on the `use` edge
-# whatever it carries.
+# THE KNOT'S MAP (CLAUDE.md §11's due for a module the language refused
+# to split until panel 252's R1, 2026-11-19). Every function here but
+# `bind_payload` is mutually recursive by construction — a statement
+# lowers its expressions, an if-expression lowers its blocks, a block
+# lowers its statements — so no cut existed while `module_cycle` fired on
+# the `use` edge whatever it carried. A ring of modules builds since that
+# sitting, and the knot is not cut yet.
 #
 # Entry points, top to bottom: `block` runs statements in order;
 # `statement` dispatches; `expr` flattens one expression to a temporary;

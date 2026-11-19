@@ -3,6 +3,7 @@
 # A message of a kind it does not know is kept as `other`, and the caller
 # decides; a body shorter than its fields fails `invalid`.
 
+use bytes
 use io
 use sql/postgres/internal/wire
 
@@ -152,7 +153,7 @@ function read(@r: io.Reader) -> Message?
     if length < 4 || length - 4 > MOST_BODY
         return fail(
             code: INVALID,
-            msg: f"the server sent a message of kind {head[0]} and length {length}, which no message has"
+            msg: f"the server sent a message of kind '{bytes.format_escaped([head[0]])}' and length {length}, which no message has"
         )
     body = io.read_n(@r, length - 4)?
 

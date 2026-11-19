@@ -24,3 +24,18 @@ records).
 **Why after M-web-framework.** Its witness is the packages' own API: a generator
 with nothing to generate proves nothing, and M-core-packages is what puts
 documented declarations into a tree somebody else will read.
+
+## Retired into M-rebel-library, 2026-11-15
+
+**Retired 2026-11-15 into M-rebel-library**, by the author's decisions 4 and 13 of that day:
+decision 4 enclosed this row in M-rebel-library (`docs/roadmap/milestones/M-rebel-library.md`), and
+decision 13 decided the documentation first, the shape of the comment above a function, a record and
+a variant, and the verb `heroes doc`, both inside it. So the witness this page waited for, a tree of
+documented declarations somebody else will read, is Rebel's, and the stopping rule it asked first is
+met by the author's decision rather than by a consumer found later. Panel 253's R2 (ratified
+2026-11-19, decision 2595) adopted `heroes doc` as the seventeenth verb with its sentence in spec
+§ 1, and M-rebel-library's step 59 builds it (`557c53420` and `cc1a13fd7`, on lane-impl-doc at this
+writing). Panel 234's R5, *no `heroes doc` in this milestone* of M-core-packages, is entered in the
+register of the decisions M-rebel-library invalidates, <register>. The row left § The chain on
+2026-11-19, at M-rebel-library's landing; its open task, 808, moves to M-rebel-library's milestone
+on GitHub. The page above stands as it was written.

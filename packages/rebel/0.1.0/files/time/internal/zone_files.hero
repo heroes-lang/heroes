@@ -3,7 +3,8 @@
 # the machine's own zone, from `TZ` or `/etc/localtime`. A `TZ` holding a
 # POSIX rule is made a TZif file of that rule alone, so every zone is read by
 # one reader. It reads no file through `fs`, whose package uses `time`: the
-# compiler refuses the cycle.
+# compiler refused the cycle when this was written, until panel 252's R1
+# (2026-11-19) let two packages use each other.
 
 use bytes
 use io

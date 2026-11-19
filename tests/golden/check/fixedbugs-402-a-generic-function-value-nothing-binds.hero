@@ -54,7 +54,7 @@ function through_a_generic_callee()
     print(ys.len())
 
 function first_in_an_array()
-    fs = [ident, twice]  #~ cannot_infer
+    fs = [ident, twice]  # builds since defect 2596: `twice` types the literal
     print(fs.len())
 
 function compared()

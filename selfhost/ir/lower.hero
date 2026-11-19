@@ -11,9 +11,10 @@
 # **That direction is the whole reason the seam exists**, and it was
 # measured before it was cut (panel 109's condition, M-declared-freer
 # step 1): the inner half is a knot of 25 mutually recursive functions
-# that the language refuses to split, because a statement lowers its
-# expressions and an expression lowers its blocks, and Heroes has no
-# module cycles. The declaration walk is the one part of this file that
+# that the language refused to split, because a statement lowers its
+# expressions and an expression lowers its blocks, and Heroes had no
+# module cycles until panel 252's R1, 2026-11-19. The declaration walk is the
+# one part of this file that
 # only ever calls INWARDS, so it is the one part that can be a module of
 # its own — and it keeps the name `ir/lower` so that the twenty-four
 # modules calling `lower.lower(...)` do not move at all.

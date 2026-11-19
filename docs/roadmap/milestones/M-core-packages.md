@@ -398,7 +398,7 @@ shelf*, and its English and Italian pages missing), and its copies under
 
 **Where they moved, 2026-11-08** (M-package-manager step 14, lane pm-core;
 panel 235's R15): the thirteen copies left the programs and the canonical
-tree left `examples/packages/`, and the source is `core` 0.1.0 in a local static index,
+tree left `examples/packages/` that day (2026-11-08), and the source is `core` 0.1.0 in a local static index,
 then inside `examples/` and read over `file://../index`, at the repository's root
 since panel 238's R10 the same day, `packages/`, read over `file://../../packages`
 (every placed folder renamed with it, the key holding the `index` line as written).
@@ -521,3 +521,20 @@ with its unit written down, and **feature 2315, the package manager rewritten ov
 packages, leaves this row for row 78, M-package-index** (the author's *(b)*), since no placement
 meets R2 and `core` replaces none of its C parts; so this row no longer closes with it, and the
 acceptance condition written above on 2026-11-08 stands as written at its date.
+
+## Retired into M-rebel-library, 2026-11-15
+
+**Retired 2026-11-15 into M-rebel-library**, by the author's decision 4 of that day, which enclosed
+this row in M-rebel-library (`docs/roadmap/milestones/M-rebel-library.md`): `core` no longer exists
+(decision 8), the library a program may take or leave is Rebel, written from scratch with its own
+tree and its own names (decision 2), and the compiler, its examples and its net use no library
+(decisions 6 and 7). What this page ruled and no longer holds is entered in the register of the
+decisions M-rebel-library invalidates, <register>: panel 234's admission by need, Go's tree under
+`core/` and Go's names, the conventions page, the cards and their ceiling, the paired run at this
+row's close, the author's *no copy by hand survives a package's arrival* of 2026-11-05, and the
+package manager rewritten over these packages as this row's acceptance. Panel 234's thick face over
+a published floor and its platform layer beside the runtime stand, Rebel's faces and floors and
+`runtime/platform/` being both. The row left § The chain on 2026-11-19, at M-rebel-library's
+landing; its open issues move to M-rebel-library's milestone on GitHub, feature 2315 to
+M-rebel-packages-manager's. The page above stands as it was written, the record of the work it
+held.

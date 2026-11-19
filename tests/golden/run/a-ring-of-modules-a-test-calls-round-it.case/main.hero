@@ -1,0 +1,11 @@
+# A `test` across a ring of three modules, panel 252's R1 (2026-11-19): the
+# program prints the walk round the ring, and `heroes test`, which the run
+# form asks of a case whose program holds a `test`, runs this file's test and
+# `rb`'s, each calling round the ring.
+use ra
+
+function main()
+    print(ra.start(n: 5))
+
+test "the walk round the ring from the program's own file"
+    assert ra.start(n: 1) == 4

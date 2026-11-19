@@ -1,0 +1,6 @@
+use ra
+
+# The third stop, which builds the first module's record.
+function finish(n: i64) -> i64
+    item = ra.Item(n: n)
+    return item.n * 2
