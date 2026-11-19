@@ -1,0 +1,110 @@
+# The ledger of `containers/disjoint`: union-find, sets merged and asked
+# whether two elements stand in one, what Python's networkx 3.7 `UnionFind`,
+# Rust's petgraph 0.8.3 `UnionFind` and Boost's `disjoint_sets` with the
+# incremental components of the Boost Graph Library offer, one block per
+# capability, and what Heroes answers to each. Go 1.27, Rust 1.100 and
+# Python 3.15 have none in their standard libraries; the lists came from
+# `dir()` of networkx installed in the scratch folder, from `cargo doc` of
+# petgraph there, and from the declarations of Boost's
+# `boost/pending/disjoint_sets.hpp` and `boost/graph/incremental_components.hpp`.
+#
+# The elements are the numbers from 0 to the size less one, as petgraph's and
+# Boost's are; a program with elements of its own numbers them by a map.
+
+## Union-find
+
+capability disjoint/make  a number of elements, each alone in its own set
+  heroes  disjoint.new
+  go      -
+  rust    UnionFind::new, UnionFind::new_empty, UnionFind::default
+  python  UnionFind.__init__
+  boost   disjoint_sets::disjoint_sets, disjoint_sets_with_storage, initialize_incremental_components
+  note    elements are numbers from 0, as petgraph's and Boost's; networkx takes any hashable value, which a program numbers by a map of its own. A count below zero aborts, a precondition the caller can check
+
+capability disjoint/add  one element more, alone in a set of its own
+  heroes  disjoint.add
+  go      -
+  rust    UnionFind::new_set
+  python  UnionFind.__getitem__
+  boost   disjoint_sets::make_set, disjoint_sets_with_storage::extend_sets
+  note    answers the new element's number, the size before the call, as petgraph's `new_set` answered 0 on an empty structure (observed); networkx adds an unknown element when it is first asked for, which here would make a read a write, so an element is added only by this call
+
+capability disjoint/size  how many elements there are
+  heroes  disjoint.size
+  go      -
+  rust    UnionFind::len, UnionFind::is_empty
+  python  UnionFind.__iter__
+  boost   -
+  note    -
+
+capability disjoint/root  the element that stands for the set holding an element
+  heroes  disjoint.root_of
+  go      -
+  rust    UnionFind::find, UnionFind::find_mut, UnionFind::try_find, UnionFind::try_find_mut
+  python  UnionFind.__getitem__
+  boost   disjoint_sets::find_set
+  note    it compresses the path it walks, as Boost's `find_set`, networkx's lookup and petgraph's `find_mut` do, so it takes the sets with `@`; petgraph's `find`, which leaves the paths, is not offered twice: union by rank keeps every tree under the logarithm of its size in height either way. An element past the size aborts, where petgraph's `try_` variants answer `None`: the caller can check it against `disjoint.size`
+
+capability disjoint/merge  the sets of two elements merged into one
+  heroes  disjoint.merge
+  go      -
+  rust    UnionFind::union, UnionFind::try_union
+  python  UnionFind.union
+  boost   disjoint_sets::union_set, disjoint_sets::link, incremental_components
+  note    answers whether the two were apart, as petgraph's `union` does (observed: true, true, then false for an edge closing a triangle); networkx answers nothing. Union by rank, the root of the lower rank hung under the other; the name is `merge` since `union` is a keyword of C and Rust that the compiler refuses
+
+capability disjoint/same  whether two elements stand in one set
+  heroes  disjoint.same
+  go      -
+  rust    UnionFind::equiv, UnionFind::try_equiv
+  python  -
+  boost   same_component
+  note    as petgraph's `equiv`, it takes the sets with `@` to compress the paths it walks
+
+capability disjoint/set-size  how many elements the set of an element holds
+  heroes  disjoint.size_of
+  go      -
+  rust    -
+  python  -
+  boost   -
+  note    none of the three answers it; networkx keeps the sizes in its public `weights` map, and a program of union by size asks it, so the size is kept at every root and read in a constant
+
+capability disjoint/set-count  how many sets there are
+  heroes  disjoint.set_count
+  go      -
+  rust    -
+  python  -
+  boost   disjoint_sets::count_sets
+  note    kept as a count that every merge of two sets apart lowers, so it costs a constant, where Boost's `count_sets` walks the elements
+
+capability disjoint/members  the elements of the set holding an element
+  heroes  disjoint.members_of
+  go      -
+  rust    -
+  python  -
+  boost   component_index
+  note    each set is a ring through its elements spliced at every merge, so a set's members cost its own size and nothing of the others; in increasing order, which networkx's sets leave unordered
+
+capability disjoint/all-sets  every set and its elements
+  heroes  disjoint.to_lists
+  go      -
+  rust    -
+  python  UnionFind.to_sets
+  boost   component_index
+  note    lists in increasing order, in the order of their smallest elements, where networkx answers sets in no order (observed: [{0, 1}, {2, 3, 4}, {5}] sorted for the components of three edges over six nodes, the same as here)
+
+capability disjoint/labels  for every element, a label its whole set shares
+  heroes  disjoint.to_labels
+  go      -
+  rust    UnionFind::into_labeling
+  python  -
+  boost   disjoint_sets::normalize_sets, disjoint_sets::compress_sets, compress_components
+  note    the label is the smallest element of the set, the same however the merges went; petgraph's `into_labeling` gives each element its root, which depends on the merges (observed: [0, 3, 2, 3, 3] where this gives [0, 1, 2, 1, 1]). Boost's `normalize_sets` makes the representative the smallest element in the same way; `compress_sets` is the compression `disjoint.root_of` does as it walks
+
+## Dropped
+
+dropped disjoint-plumbing  capacity hints, the parent and rank maps a caller supplies, and the traits every Rust type carries: the structure keeps its own lists
+  go      -
+  rust    UnionFind::with_capacity, UnionFind::capacity, UnionFind::reserve, UnionFind::reserve_exact, UnionFind::try_reserve, UnionFind::try_reserve_exact, UnionFind::shrink_to, UnionFind::shrink_to_fit, UnionFind::clone, UnionFind::fmt, and on UnionFind `borrow`, `borrow_mut`, `into`, `from`, `try_from`, `try_into`, `type_id`, `to_owned`, `clone_into`, `clone_to_uninit`
+  python  UnionFind.parents, UnionFind.weights
+  boost   the rank and parent property maps, find_with_path_halving, find_with_full_path_compression

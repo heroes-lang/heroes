@@ -1,0 +1,25 @@
+# Reaches Rebel's `containers/trie`, so that `heroes test` on this file runs
+# the package's own tests (spec § 12). It cuts a text into the longest words
+# a dictionary holds, as a tokenizer reads: "ant eat s".
+
+use <rebel>/containers/trie
+
+function main()
+    words @= trie.new_set()
+
+    for word in ["a", "an", "ant", "eat", "s"]
+        _ = trie.add(@words, word)
+
+    text = "anteats"
+    pieces: [str] @= []
+    at @= 0
+
+    while at < text.len()
+        match trie.longest_prefix_slot(words, text: text, from: at)
+            .ok slot =>
+                key = trie.key_at(words, slot)
+                pieces @ pieces.push(key)
+                at @ at + key.len()
+            .err _ => break
+
+    print(pieces.join(" "))

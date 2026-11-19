@@ -1,0 +1,206 @@
+# The ledger of `containers/trie`: a prefix tree of texts to values, what
+# Python's `pygtrie` 2.6.2 (`Trie`, `CharTrie`, `StringTrie`, `PrefixSet`),
+# Rust's `radix_trie` 0.3.0 (`Trie`, `SubTrie`, `SubTrieMut`) and Java's
+# Commons Collections 4.6.0 `PatriciaTrie` offer, one block per capability,
+# and what Heroes answers to each. Go 1.27, Rust 1.100 and Python 3.15 have no
+# trie in their standard libraries; the lists came from `dir()` of pygtrie
+# installed in the scratch folder, from `cargo doc` of radix_trie there, and
+# from the Javadoc of PatriciaTrie 4.6.0 (no Java runtime is on this machine).
+#
+# A record takes no type parameter, so the structure is a shape holding the
+# keys, which are texts, beside the program's own value list, lent with `@`
+# to every write of a map; a set of texts has no list at all.
+
+## The trie
+
+capability trie/make  an empty trie of texts to values, or of texts alone
+  heroes  trie.new_map, trie.new_set
+  go      -
+  rust    Trie::new, Trie::default
+  python  Trie, CharTrie, StringTrie, PrefixSet, Trie.fromkeys
+  java    PatriciaTrie.PatriciaTrie
+  note    a radix tree, a branch only where two keys part, each label read from a key held under it, so no label is copied and a key's bytes are kept once; radix_trie and PatriciaTrie are radix trees too, pygtrie a node a character, unsorted unless `enable_sorting`. A map's values are the program's list, a set has none, as `containers/ordered` keeps them. `fromkeys` is a loop of `trie.put`
+
+capability trie/size  how many keys a trie holds
+  heroes  trie.size
+  go      -
+  rust    Trie::len, Trie::is_empty
+  python  Trie.__len__, Trie.__bool__, PrefixSet.__len__
+  java    size, isEmpty
+  note    -
+
+capability trie/put  a value put under a text, replacing the one held
+  heroes  trie.put
+  go      -
+  rust    Trie::insert, Trie::map_with_default, SubTrieMut::insert
+  python  Trie.__setitem__, Trie.setdefault, Trie.update, Trie.merge
+  java    put, putAll, putIfAbsent, compute, computeIfAbsent, computeIfPresent, merge, replace, replaceAll
+  note    replaces the value of a key held, as all three do; Rust's `insert` answers the value it replaced (observed `Some(1)`), which a program reads at `trie.slot_of` first. `setdefault`, `map_with_default`, `putIfAbsent` and the `compute` family are `trie.slot_of` then a write at the slot or `trie.put`; `update`, `merge` and `putAll` are a loop of `trie.put`
+
+capability trie/add  a text added to a trie of texts alone, and taken out
+  heroes  trie.add, trie.discard
+  go      -
+  rust    -
+  python  PrefixSet.add, PrefixSet.discard, PrefixSet.remove, PrefixSet.pop
+  java    -
+  note    answers whether the key was new or was there, as a set does. pygtrie's PrefixSet keeps only the shortest of keys that begin one another (observed: `foobar` added after `foo` changes nothing, `fo` added takes `foo` out) and its `in` asks whether a key held begins the text; here a set keeps every key it is given, and that `in` is `trie.shortest_prefix_slot`. `pop` is `trie.last_slot` then `trie.discard_at`
+
+capability trie/get  the value under a text
+  heroes  trie.get, trie.slot_of
+  go      -
+  rust    Trie::get, Trie::get_mut, SubTrie::get, SubTrieMut::get, Trie::value, Trie::value_mut
+  python  Trie.__getitem__, Trie.get
+  java    get, getOrDefault
+  note    absent is `not_found`, where pygtrie raises `KeyError`, or `ShortKeyError` for a text that only begins a key (observed); a value changed in place is written at the slot `trie.slot_of` answers, the value list being the program's
+
+capability trie/contains  whether a trie holds a text, and where
+  heroes  trie.contains
+  go      -
+  rust    Trie::get
+  python  Trie.__contains__, Trie.has_key, Trie.has_node, Trie.HAS_VALUE
+  java    containsKey
+  note    a text that only begins a key is not held (observed in pygtrie: `inn` held, `in` not)
+
+capability trie/key-at  the text at a slot
+  heroes  trie.key_at
+  go      -
+  rust    Trie::key, SubTrie::key
+  python  -
+  java    -
+  note    the trie keeps its keys, so a slot names its key at no cost
+
+capability trie/remove  a text and its value taken out
+  heroes  trie.remove, trie.remove_at, trie.discard_at
+  go      -
+  rust    Trie::remove, SubTrieMut::remove
+  python  Trie.pop, Trie.__delitem__, Trie.popitem
+  java    remove
+  note    answers the value taken out, as Rust's `remove` (observed `Some(5)`) and Python's `pop` (observed 1); absent is `not_found`. The last slot moves into the one freed, as in every structure of `containers`. `popitem` is `trie.last_slot` then `trie.remove_at`
+
+capability trie/has-prefix  whether some key begins with a text
+  heroes  trie.has_prefix
+  go      -
+  rust    Trie::get_raw_descendant, Trie::subtrie, SubTrie::is_empty
+  python  Trie.has_subtrie, Trie.has_node, Trie.HAS_SUBTRIE
+  java    prefixMap
+  note    true for a key equal to the prefix as well, as radix_trie's `get_raw_descendant` (observed: a subtrie of 1 for `tea`) and Java's `prefixMap`; pygtrie's `has_subtrie` is false where nothing stands under the key (observed: false for `tea`, true for `te`), and its `has_node` answers both questions in one number, which `trie.contains` and this answer apart. The empty prefix asks whether any key is held (observed: false on an empty pygtrie)
+
+capability trie/with-prefix  every key that begins with a text, in order
+  heroes  trie.keys_with_prefix, trie.slots_with_prefix
+  go      -
+  rust    Trie::subtrie, Trie::subtrie_mut, Trie::iter, Trie::keys, Trie::values, SubTrie::iter, SubTrie::keys, SubTrie::values, SubTrieMut::iter, SubTrieMut::keys, SubTrieMut::values
+  python  Trie.keys, Trie.iterkeys, Trie.items, Trie.iteritems, Trie.values, Trie.itervalues, Trie.__iter__, Trie.__getitem__ with a slice, Trie.enable_sorting, PrefixSet.iter, PrefixSet.__iter__
+  java    prefixMap, keySet, values, entrySet, mapIterator
+  note    in byte order, the order of radix_trie, of PatriciaTrie and of pygtrie with `enable_sorting` (observed: te, tea, ted, ten); a prefix no key begins with gives an empty list, where pygtrie raises `KeyError` (observed). Values and items are read at the slots
+
+capability trie/count-prefix  how many keys begin with a text
+  heroes  trie.count_with_prefix
+  go      -
+  rust    SubTrie::len
+  python  -
+  java    prefixMap
+  note    kept at every node, so it costs the prefix's length; radix_trie's `subtrie("te").len()` answered 4 for te, tea, ted and ten, and so does this
+
+capability trie/remove-prefix  every key that begins with a text taken out
+  heroes  trie.remove_with_prefix, trie.discard_with_prefix
+  go      -
+  rust    -
+  python  Trie.__delitem__ with a slice
+  java    prefixMap
+  note    answers how many keys went; observed pygtrie's `del t["te":]` over to, tea, ted and ten leaving to, as here
+
+capability trie/longest-prefix  the longest key that begins a text
+  heroes  trie.longest_prefix_slot
+  go      -
+  rust    Trie::get_ancestor, Trie::get_ancestor_value, Trie::get_raw_ancestor
+  python  Trie.longest_prefix
+  java    -
+  note    it takes the byte `from` where the key would begin, so a tokenizer or a router scanning a text never cuts a slice of it; pygtrie's `longest_prefix` and radix_trie's `get_ancestor` both answered `ant` for `anteats` over a, an, ant, eat and s (observed), as here; the empty key, held, begins every text (observed in pygtrie)
+
+capability trie/shortest-prefix  the shortest key that begins a text
+  heroes  trie.shortest_prefix_slot
+  go      -
+  rust    -
+  python  Trie.shortest_prefix, PrefixSet.__contains__
+  java    -
+  note    observed pygtrie answering `a` for `anteats`, as here
+
+capability trie/prefixes  every key that begins a text, the shortest first
+  heroes  trie.prefix_slots
+  go      -
+  rust    -
+  python  Trie.prefixes, Trie.walk_towards
+  java    -
+  note    the shortest first, as pygtrie's `prefixes` (observed: a, an, ant; and /, /api, /api/v1 for /api/v1/users)
+
+capability trie/separator  prefixes counted in parts cut by a separator, as a router reads a path
+  heroes  trie.prefix_slots
+  go      -
+  rust    -
+  python  StringTrie
+  java    -
+  note    a StringTrie counts prefixes in parts cut by its separator (observed: of `/a` and `/ab`, only `/ab` begins `/ab/c`); here the keys stay text and `trie.prefix_slots` gives every key that begins the text, of which the program keeps the ones whose next byte in the text is the separator or the end, as its doc comment says
+
+capability trie/order  the first and the last key, and the key after or before one
+  heroes  trie.first_slot, trie.last_slot, trie.next_slot, trie.previous_slot
+  go      -
+  rust    -
+  python  -
+  java    firstKey, lastKey, nextKey, previousKey, firstEntry, lastEntry
+  note    in byte order, walked through the parent links with no stack
+
+capability trie/range  the keys between two texts in byte order
+  heroes  refused: the keys between two texts in byte order are an ordered set's question, which `containers/ordered` answers with `ordered.slots_between`, `ordered.ceiling_slot` and `ordered.floor_slot` in the logarithm of the size; a trie's own range is a prefix, `trie.slots_with_prefix`. Wrong the day a program needs both prefixes and byte ranges over keys it cannot keep twice
+  go      -
+  rust    -
+  python  -
+  java    headMap, tailMap, subMap, comparator
+  note    -
+
+capability trie/nearest-by-bits  the key nearest a text by the exclusive or of their bits
+  heroes  refused: the key nearest a text by the exclusive or of their bits is PatriciaTrie's own measure of its bit-wise tree and orders texts by no rule a reader can state; the keys nearest in byte order are `trie.previous_slot` and `trie.next_slot` around a text added to a set for the asking. Wrong where a program's keys are numbers whose bits are a metric, which a trie of texts does not hold
+  go      -
+  rust    -
+  python  -
+  java    select, selectKey, selectValue
+  note    -
+
+capability trie/byte-keys  keys of bytes that are not text
+  heroes  pending
+  go      -
+  rust    TrieKey, TrieKey::encode, TrieKey::encode_bytes, NibbleVec
+  python  Trie over any sequence
+  java    getKeyAnalyzer, KeyAnalyzer
+  note    the walks compare bytes already; a key of bytes that are not text needs the keys kept as `[u8]`, which a key read back as text would then have to validate, and a second face of every function that takes a key. Not written badly in the time of this round: texts cover routers, completion and tokenizers over text, and `bytes` finds byte patterns anywhere
+
+capability trie/nodes  the tree's own nodes walked: children, leaves, the prefix a node stands for
+  heroes  refused: the nodes are the package's own and change shape at every write, so a program that walked them would hold what the next call breaks; what a walk of them computes, the keys under a prefix and their count, is `trie.keys_with_prefix` and `trie.count_with_prefix`, and pygtrie's `traverse` folds a function the caller builds per node, which needs a closure the language does not have. Wrong where a program needs the shape of the tree itself, a compressed dictionary written to a file
+  go      -
+  rust    Trie::children, Trie::is_leaf, Trie::prefix, SubTrie::children, SubTrie::is_leaf, SubTrie::prefix, SubTrieMut::children, SubTrieMut::is_leaf, SubTrieMut::prefix
+  python  Trie.traverse
+  java    -
+  note    -
+
+capability trie/equal  two tries compared by their keys and values
+  heroes  trie.keys_with_prefix
+  go      -
+  rust    Trie::eq, Trie::ne
+  python  Trie.__eq__, Trie.strictly_equals
+  java    equals
+  note    two tries hold the same keys where `trie.keys_with_prefix(t, "")` agree, and the same values where the values at their slots do; `==` compares the shapes node by node, which two built in other orders may not share, as Python's `strictly_equals` against its `==`
+
+capability trie/copy  a trie copied, and emptied
+  heroes  trie.new_map, trie.new_set
+  go      -
+  rust    Trie::clone, Trie::clone_from
+  python  Trie.copy, Trie.clear, PrefixSet.copy, PrefixSet.clear
+  java    clear
+  note    a value is a copy (spec § 3), so `b = a` copies a trie with nothing more; a trie emptied is a new shape and the program's list emptied
+
+## Dropped
+
+dropped trie-plumbing  iterator types, formatting, conversions and the traits every Rust type carries, a Python mapping's abstract base, a Java map's views and hashing: the trie's own answers are lists and slots
+  go      -
+  rust    radix_trie::iter::Iter, radix_trie::iter::Keys, radix_trie::iter::Values, radix_trie::iter::Children, SubTrieResult, Trie::from_iter, Trie::fmt, and on Trie `borrow`, `borrow_mut`, `into`, `from`, `try_from`, `try_into`, `type_id`, `to_owned`, `clone_into`, `clone_to_uninit`
+  python  Trie.__repr__, Trie.__str__, ShortKeyError, NodeFactory, PrefixSet.isdisjoint
+  java    hashCode, toString, clone, containsValue, forEach

@@ -1,0 +1,189 @@
+# The checks the trie's tests hold it to: its rules walked whole, and the
+# plain models its answers are compared with, a map of texts read by brute
+# force. No function of the package calls one.
+
+use containers/internal/samples
+use containers/trie/internal/layout
+
+# Ends the program where the trie breaks one of its rules: every live node
+# reached once from the root, siblings in increasing order of first byte,
+# depths growing down, every label read from a witness under its node, every
+# node but the root holding a key or two children, the counts right, and the
+# slots and nodes naming each other.
+function require_whole(nodes: layout.Nodes lent)
+    seen @= 0
+    keys_seen @= 0
+    at @= layout.ROOT
+
+    while true
+        seen @ seen + 1
+        held = nodes.slot[at]
+
+        if held != layout.NONE
+            keys_seen @ keys_seen + 1
+            assert nodes.ends[held] == at
+            assert nodes.texts[held].len() == nodes.depth[at]
+        expected @= 0
+
+        if held != layout.NONE
+            expected @ 1
+        child @= nodes.first[at]
+        children @= 0
+        previous_byte @= -1
+
+        while child != layout.NONE
+            assert nodes.parent[child] == at
+            assert nodes.depth[child] > nodes.depth[at]
+            byte = to_i64(nodes.lead[child]).must()
+            assert byte > previous_byte
+            previous_byte @ byte
+            witness = nodes.witness[child]
+            assert witness >= 0 && witness < nodes.count
+            assert nodes.texts[witness][nodes.depth[at]] == nodes.lead[child]
+            assert nodes.texts[witness].len() >= nodes.depth[child]
+            expected @ expected + nodes.below[child]
+            children @ children + 1
+            child @ nodes.next[child]
+
+        assert nodes.below[at] == expected
+
+        if at != layout.ROOT
+            assert held != layout.NONE || children >= 2
+            witness = nodes.witness[at]
+            assert witness >= 0 && witness < nodes.count
+            assert stands_under(nodes, below: nodes.ends[witness], above: at)
+
+        if nodes.first[at] != layout.NONE
+            at @ nodes.first[at]
+            continue
+
+        while at != layout.ROOT && nodes.next[at] == layout.NONE
+            at @ nodes.parent[at]
+
+        if at == layout.ROOT
+            break
+        at @ nodes.next[at]
+
+    assert seen == nodes.live
+    assert keys_seen == nodes.count
+
+# Whether node `below` is `above` or stands under it.
+function stands_under(nodes: layout.Nodes lent, below: i64, above: i64) -> bool
+    at @= below
+
+    while at != layout.NONE
+        if at == above
+            return true
+        at @ nodes.parent[at]
+
+    return false
+
+# The text of three letters, the third of two bytes, that `dice` makes: from
+# none to five characters, so keys share prefixes often.
+function random_key(@dice: samples.Dice) -> str
+    letters = ["a", "b", "é"]
+    pieces: [str] @= []
+
+    for _ in range(from: 0, to: samples.roll(@dice, 6))
+        pieces @ pieces.push(letters[samples.roll(@dice, 3)])
+
+    return pieces.join("")
+
+# The keys of `model` that begin with `prefix`, in the order of their bytes.
+function model_under(model: {str: i64} lent, prefix: str) -> [str]
+    found: [str] @= []
+
+    for key in sort(keys(model))
+        if holds_at(text: key, from: 0, part: prefix)
+            found @ found.push(key)
+
+    return found
+
+# The keys of `model` that begin `text` from `from`, the shortest first.
+function model_along(model: {str: i64} lent, text: str, from: i64) -> [str]
+    found: [str] @= []
+
+    for key in sort(keys(model))
+        if holds_at(text: text, from: from, part: key)
+            found @ found.push(key)
+
+    return found
+
+# Whether the bytes of `text` from `from` begin with the bytes of `part`.
+function holds_at(text: str, from: i64, part: str) -> bool
+    if from + part.len() > text.len()
+        return false
+
+    for at in range(from: 0, to: part.len())
+        if text[from + at] != part[at]
+            return false
+
+    return true
+
+# The byte indices of `text` where a character begins, and its length.
+function boundaries(text: str) -> [i64]
+    found: [i64] @= []
+    at @= 0
+
+    for c in text.chars()
+        found @ found.push(at)
+        at @ at + c.len()
+
+    found @ found.push(at)
+    return found
+
+# `model` without `key`.
+function without(model: {str: i64}, key: str) -> {str: i64}
+    kept: {str: i64} @= {}
+
+    for held in keys(model)
+        if held != key
+            kept[held] @ model[held].must()
+
+    return kept
+
+# `xs` from its last element to its first.
+function reverse_strings(xs: [str]) -> [str]
+    turned: [str] @= []
+    at @= xs.len() - 1
+
+    while at >= 0
+        turned @ turned.push(xs[at])
+        at @ at - 1
+
+    return turned
+
+## Tests
+
+test "holds_at and boundaries: a part at the start, inside, past the end, and characters of two bytes"
+    assert holds_at(text: "abc", from: 0, part: "")
+    assert holds_at(text: "abc", from: 1, part: "bc")
+    assert !holds_at(text: "abc", from: 2, part: "cd")
+    assert !holds_at(text: "aé", from: 0, part: "ab")
+    assert boundaries("") == [0]
+    assert boundaries("aé") == [0, 1, 3]
+
+test "require_whole and stands_under: an empty trie, and a root with one leaf"
+    nodes @= layout.empty(holds_values: false)
+    require_whole(nodes)
+    leaf = layout.new_node(@nodes, parent: layout.ROOT, lead: 'a', depth: 1, witness: 0)
+    layout.attach(@nodes, at: layout.ROOT, child: leaf)
+    nodes.texts @ ["a"]
+    nodes.ends @ [leaf]
+    nodes.slot[leaf] @ 0
+    nodes.below[leaf] @ 1
+    nodes.below[layout.ROOT] @ 1
+    nodes.count @ 1
+    require_whole(nodes)
+    assert stands_under(nodes, below: leaf, above: layout.ROOT)
+    assert !stands_under(nodes, below: layout.ROOT, above: leaf)
+
+test "random_key, model_under, model_along, without and reverse_strings: a seeded key and a small model"
+    dice @= samples.Dice(state: 5)
+    key = random_key(@dice)
+    assert key.chars().len() <= 5
+    model: {str: i64} = {"a": 1, "ab": 2, "b": 3}
+    assert model_under(model, "a") == ["a", "ab"]
+    assert model_along(model, text: "xab", from: 1) == ["a", "ab"]
+    assert keys(without(model, "ab")) == ["a", "b"]
+    assert reverse_strings(["x", "y"]) == ["y", "x"]

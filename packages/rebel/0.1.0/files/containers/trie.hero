@@ -1,0 +1,644 @@
+# A prefix tree of texts: keys found, added and taken out at a cost of their
+# length whatever the number held, with what a trie alone answers quickly:
+# whether some key begins with a text, every key that does in byte order and
+# how many, and the longest or the shortest key that begins a text, which is
+# what a router asks of a path and a tokenizer of the text still to read.
+# Python's `pygtrie`, Rust's `radix_trie`, Java's `PatriciaTrie`.
+#
+# A trie of texts to values is a map, and a trie of texts alone a set. The
+# tree is a radix tree: a branch stands only where two keys part, and the
+# bytes between two branches are read from a key held, not copied, so a trie
+# holds each key's bytes once and at most twice as many nodes as keys.
+#
+# It does not order by anything but bytes, nor search inside a key: keys
+# ordered by a function of the program are `containers/ordered`'s, and a text
+# searched for anywhere in another is `strings`'s. A key is compared byte by
+# byte, so the order is the built-in `sort`'s on texts and a prefix is a
+# prefix of bytes; since a key is text, a key that begins a text ends on a
+# boundary between its characters.
+#
+# The trie keeps its keys; a map's values are a list of the program's, lent
+# with `@` to every call that changes it, since a record takes no type
+# parameter. A SLOT is an index into that list and into the trie's keys, from
+# 0 to the size less one, good until the next call that takes a key out,
+# which moves the last slot into the slot it frees. A program that keeps
+# several tries gathers each one's shape and value list in a record of its
+# own and lends the fields.
+#
+# It fails with `not_found`, where a key or a prefix is not there. A call
+# aborts where the program broke a precondition it could have checked: a slot
+# past the size, a position outside the text, a value list that is not the
+# trie's own, a map's write given a set's shape or the other way.
+
+use containers/internal/codes
+use containers/internal/storage
+use containers/trie/internal/edit
+use containers/trie/internal/layout
+use containers/trie/internal/walk
+
+## The codes
+
+# The code of a search that found nothing, which every function of this
+# package whose `Fails` names `not_found` answers.
+constant NOT_FOUND: str
+    codes.NOT_FOUND
+
+## The trie
+
+# The shape of a trie of texts, a map's or a set's: its nodes, and the keys
+# by slot.
+#
+# Made empty by `new_map` or `new_set`, and changed only by this section's
+# functions. A map's shape refuses a set's writes, and a set's a map's, by
+# aborting, since a value list would drift from its keys. `==` compares two
+# shapes node by node, not only their keys: two tries holding the same keys
+# put in another order may differ.
+record Trie
+    # The nodes and the keys, held by the package itself: a program reads them
+    # through this section's functions.
+    nodes: layout.Nodes
+
+# An empty trie of texts to values, whose program keeps an empty value list
+# beside it.
+#
+# See also `new_set`, `put`.
+function new_map() -> Trie
+    return Trie(nodes: layout.empty(holds_values: true))
+
+# An empty trie of texts alone.
+#
+# See also `new_map`, `add`.
+function new_set() -> Trie
+    return Trie(nodes: layout.empty(holds_values: false))
+
+# How many keys a trie holds.
+#
+# - `trie`: the trie.
+#
+# See also `count_with_prefix`.
+function size(trie: Trie) -> i64
+    return trie.nodes.count
+
+# Puts `value` under `key` in a map, replacing the value of a key it holds.
+#
+# - `trie`: the map's shape, made by `new_map`; it gains a slot where `key` is
+#   new.
+# - `value_list`: the map's values; a new key's value goes at the slot after
+#   the last, a key held has its value replaced at its slot.
+# - `key`: the key, any text, the empty text included.
+# - `value`: the value to put.
+#
+# It costs the length of `key`. Aborts where `trie` is a set's shape or
+# `value_list` is shorter than its size. See also `get`, `remove`.
+function put<V>(@trie: Trie, @value_list: [V], key: str, value: V)
+    edit.require_kind(trie.nodes, as_map: true, values_held: value_list.len())
+    spot = edit.insert(@trie.nodes, key)
+    storage.store(@value_list, spot.slot, value)
+
+# The value under `key` in a map.
+#
+# - `trie`: the map's shape.
+# - `value_list`: the map's values.
+# - `key`: the key to find.
+#
+# Fails `not_found` where the map holds no `key`. Aborts where `trie` is a
+# set's shape or `value_list` is shorter than its size. See also `slot_of`,
+# `put`.
+function get<V>(trie: Trie, value_list: [V] lent, key: str) -> V?
+    edit.require_kind(trie.nodes, as_map: true, values_held: value_list.len())
+    at = walk.exact_of(trie.nodes, key)
+
+    if at == layout.NONE
+        return fail(code: NOT_FOUND, msg: f"the map's {trie.nodes.count} keys hold no \"{key}\"")
+    return ok(value_list[at])
+
+# Takes `key` and its value out of a map, answering the value.
+#
+# - `trie`: the map's shape; it loses a slot.
+# - `value_list`: the map's values; the last slot's value moves into the slot
+#   freed.
+# - `key`: the key to take out.
+#
+# Since the last slot moves, a slot held before the call may name another key
+# after it. Fails `not_found` where the map holds no `key`, and leaves it as
+# it was. Aborts where `trie` is a set's shape or `value_list` is shorter
+# than its size. See also `remove_at`, `remove_with_prefix`, `put`.
+function remove<V>(@trie: Trie, @value_list: [V], key: str) -> V?
+    edit.require_kind(trie.nodes, as_map: true, values_held: value_list.len())
+    at = walk.exact_of(trie.nodes, key)
+
+    if at == layout.NONE
+        return fail(code: NOT_FOUND, msg: f"the map's {trie.nodes.count} keys hold no \"{key}\" to take out")
+    value = value_list[at]
+    edit.take_entry(@trie.nodes, @value_list, at)
+    return ok(value)
+
+# Takes the key at slot `at` and its value out of a map.
+#
+# - `trie`: the map's shape; it loses a slot.
+# - `value_list`: the map's values; the last slot's value moves into `at`.
+# - `at`: the slot to free, from 0 to the size less one, as a search answered
+#   it.
+#
+# Aborts where `at` names no slot, `trie` is a set's shape or `value_list` is
+# shorter than its size. See also `remove`.
+function remove_at<V>(@trie: Trie, @value_list: [V], at: i64)
+    edit.require_kind(trie.nodes, as_map: true, values_held: value_list.len())
+    layout.require_slot(trie.nodes, at)
+    edit.take_entry(@trie.nodes, @value_list, at)
+
+# Takes every key that begins with `prefix` out of a map, with its value,
+# answering how many.
+#
+# - `trie`: the map's shape; it loses a slot for every key taken out.
+# - `value_list`: the map's values, moved as the slots are.
+# - `prefix`: the text the keys taken out begin with; the empty text takes
+#   every key out.
+#
+# From 0, where no key begins with `prefix`, to the size. It costs the length
+# of every key taken out. Aborts where `trie` is a set's shape or
+# `value_list` is shorter than its size. See also `remove`,
+# `count_with_prefix`.
+function remove_with_prefix<V>(@trie: Trie, @value_list: [V], prefix: str) -> i64
+    edit.require_kind(trie.nodes, as_map: true, values_held: value_list.len())
+    return edit.take_entries_under(@trie.nodes, @value_list, prefix)
+
+# Adds `key` to a set, answering whether it was new.
+#
+# - `trie`: the set's shape, made by `new_set`; it gains a slot where `key` is
+#   new.
+# - `key`: the key, any text, the empty text included.
+#
+# False where the set held `key` already. It costs the length of `key`.
+# Aborts where `trie` is a map's shape. See also `discard`, `contains`.
+function add(@trie: Trie, key: str) -> bool
+    edit.require_kind(trie.nodes, as_map: false, values_held: 0)
+    return edit.insert(@trie.nodes, key).added
+
+# Takes `key` out of a set, answering whether it was there.
+#
+# - `trie`: the set's shape; it loses a slot where `key` was there, the last
+#   slot moving into the slot freed.
+# - `key`: the key to take out.
+#
+# False where the set held no `key`, and then it is left as it was. Aborts
+# where `trie` is a map's shape. See also `discard_at`,
+# `discard_with_prefix`, `add`.
+function discard(@trie: Trie, key: str) -> bool
+    edit.require_kind(trie.nodes, as_map: false, values_held: 0)
+    at = walk.exact_of(trie.nodes, key)
+
+    if at == layout.NONE
+        return false
+    edit.take(@trie.nodes, at)
+    return true
+
+# Takes the key at slot `at` out of a set.
+#
+# - `trie`: the set's shape; it loses a slot, the last slot moving into `at`.
+# - `at`: the slot to free, from 0 to the size less one.
+#
+# Aborts where `at` names no slot or `trie` is a map's shape. See also
+# `discard`.
+function discard_at(@trie: Trie, at: i64)
+    edit.require_kind(trie.nodes, as_map: false, values_held: 0)
+    layout.require_slot(trie.nodes, at)
+    edit.take(@trie.nodes, at)
+
+# Takes every key that begins with `prefix` out of a set, answering how many.
+#
+# - `trie`: the set's shape; it loses a slot for every key taken out.
+# - `prefix`: the text the keys taken out begin with; the empty text takes
+#   every key out.
+#
+# From 0 to the size. Aborts where `trie` is a map's shape. See also
+# `discard`, `count_with_prefix`.
+function discard_with_prefix(@trie: Trie, prefix: str) -> i64
+    edit.require_kind(trie.nodes, as_map: false, values_held: 0)
+    return edit.take_under(@trie.nodes, prefix)
+
+# Whether a trie holds `key`.
+#
+# - `trie`: the trie.
+# - `key`: the key to look for.
+#
+# A key that only begins another is not held: see `has_prefix` for that.
+# See also `slot_of`.
+function contains(trie: Trie, key: str) -> bool
+    return walk.exact_of(trie.nodes, key) != layout.NONE
+
+# The slot of `key`.
+#
+# - `trie`: the trie.
+# - `key`: the key to find.
+#
+# Fails `not_found` where the trie holds no `key`. See also `contains`,
+# `key_at`.
+function slot_of(trie: Trie, key: str) -> i64?
+    return codes.answer(at: walk.exact_of(trie.nodes, key), msg: f"no key \"{key}\" among the {trie.nodes.count} held")
+
+# The key at slot `at`.
+#
+# - `trie`: the trie.
+# - `at`: a slot, from 0 to the size less one, as a search answered it.
+#
+# Aborts where `at` names no slot. See also `slot_of`.
+function key_at(trie: Trie, at: i64) -> str
+    layout.require_slot(trie.nodes, at)
+    return trie.nodes.texts[at]
+
+# Whether some key held begins with `prefix`, the key equal to it included.
+#
+# - `trie`: the trie.
+# - `prefix`: the text the keys would begin with; every key begins with the
+#   empty text, so it answers whether the trie holds any key.
+#
+# It costs the length of `prefix`. See also `count_with_prefix`,
+# `contains`.
+function has_prefix(trie: Trie, prefix: str) -> bool
+    return walk.count_under(trie.nodes, prefix) > 0
+
+# How many keys begin with `prefix`, the key equal to it included.
+#
+# - `trie`: the trie.
+# - `prefix`: the text the keys would begin with; the empty text counts every
+#   key.
+#
+# From 0 to the size. It costs the length of `prefix`, the count being kept
+# at every node. See also `has_prefix`, `slots_with_prefix`.
+function count_with_prefix(trie: Trie, prefix: str) -> i64
+    return walk.count_under(trie.nodes, prefix)
+
+# The slots of every key that begins with `prefix`, in the order of the keys'
+# bytes.
+#
+# - `trie`: the trie.
+# - `prefix`: the text the keys begin with; the empty text gives every key.
+#
+# A key comes before every longer key it begins, and keys parting at a byte
+# come in the order of that byte, the built-in `sort`'s order on texts; empty
+# where no key begins with `prefix`. It costs the length of `prefix` and the
+# nodes under it. See also `keys_with_prefix`, `count_with_prefix`.
+function slots_with_prefix(trie: Trie, prefix: str) -> [i64]
+    return walk.slots_under(trie.nodes, prefix)
+
+# Every key that begins with `prefix`, in the order of their bytes.
+#
+# - `trie`: the trie.
+# - `prefix`: the text the keys begin with; the empty text gives every key.
+#
+# In the order of `slots_with_prefix`; empty where no key begins with
+# `prefix`. See also `slots_with_prefix`.
+function keys_with_prefix(trie: Trie, prefix: str) -> [str]
+    return walk.texts_of(trie.nodes, walk.slots_under(trie.nodes, prefix))
+
+# The slot of the longest key that `text` holds from byte `from`: the key a
+# router takes for a path, and a tokenizer for the text it has still to read.
+#
+# - `trie`: the trie.
+# - `text`: the text the key would begin.
+# - `from`: the byte where the key would begin in `text`, from 0 to its
+#   length; a scan reads a text from 0 and then from the end of each key
+#   found, so no slice of it is made.
+#
+# The key's length in bytes is `key_at`'s, and the bytes after it in `text`
+# start at `from` plus that length, on a boundary between characters. Fails
+# `not_found` where no key begins `text` at `from`; the empty key, held,
+# begins every text. Aborts where `from` is below zero or past the length of
+# `text`. It costs the length of the key found and at most the bytes of
+# `text` to the next branch. See also `shortest_prefix_slot`,
+# `prefix_slots`.
+function longest_prefix_slot(trie: Trie, text: str, from: i64) -> i64?
+    walk.require_place(text: text, from: from)
+    found = walk.along(trie.nodes, text: text, from: from, first_only: false, last_only: true)
+
+    if found.len() == 0
+        return fail(code: NOT_FOUND, msg: f"no key begins \"{text}\" at byte {from}")
+    return ok(found[0])
+
+# The slot of the shortest key that `text` holds from byte `from`.
+#
+# - `trie`: the trie.
+# - `text`: the text the key would begin.
+# - `from`: the byte where the key would begin in `text`, from 0 to its
+#   length.
+#
+# Fails `not_found` where no key begins `text` at `from`. Aborts where `from`
+# is below zero or past the length of `text`. See also
+# `longest_prefix_slot`, `prefix_slots`.
+function shortest_prefix_slot(trie: Trie, text: str, from: i64) -> i64?
+    walk.require_place(text: text, from: from)
+    found = walk.along(trie.nodes, text: text, from: from, first_only: true, last_only: false)
+
+    if found.len() == 0
+        return fail(code: NOT_FOUND, msg: f"no key begins \"{text}\" at byte {from}")
+    return ok(found[0])
+
+# The slots of every key that `text` holds from byte `from`, the shortest
+# first.
+#
+# - `trie`: the trie.
+# - `text`: the text the keys would begin.
+# - `from`: the byte where the keys would begin in `text`, from 0 to its
+#   length.
+#
+# Empty where no key begins `text` at `from`. A router whose keys are paths
+# cut by `/` keeps the ones whose next byte in `text` is `/` or the end, as
+# Python's `StringTrie` counts prefixes in parts. Aborts where `from` is below
+# zero or past the length of `text`. See also `longest_prefix_slot`.
+function prefix_slots(trie: Trie, text: str, from: i64) -> [i64]
+    walk.require_place(text: text, from: from)
+    return walk.along(trie.nodes, text: text, from: from, first_only: false, last_only: false)
+
+# The slot of the first key in the order of their bytes.
+#
+# - `trie`: the trie.
+#
+# Fails `not_found` where it is empty. See also `last_slot`, `next_slot`.
+function first_slot(trie: Trie) -> i64?
+    return codes.answer(at: walk.first(trie.nodes), msg: "an empty trie has no first key")
+
+# The slot of the last key in the order of their bytes.
+#
+# - `trie`: the trie.
+#
+# Fails `not_found` where it is empty. See also `first_slot`,
+# `previous_slot`.
+function last_slot(trie: Trie) -> i64?
+    return codes.answer(at: walk.last(trie.nodes), msg: "an empty trie has no last key")
+
+# The slot of the key just after the one at `at`, in the order of their
+# bytes.
+#
+# - `trie`: the trie.
+# - `at`: a slot, from 0 to the size less one.
+#
+# Fails `not_found` after the last key. Aborts where `at` names no slot. A
+# walk from `first_slot` to the end costs the nodes of the trie in all. See
+# also `previous_slot`, `slots_with_prefix`.
+function next_slot(trie: Trie, at: i64) -> i64?
+    layout.require_slot(trie.nodes, at)
+    return codes.answer(
+        at: walk.successor(trie.nodes, at),
+        msg: f"no key after \"{trie.nodes.texts[at]}\", the last of {trie.nodes.count}"
+    )
+
+# The slot of the key just before the one at `at`, in the order of their
+# bytes.
+#
+# - `trie`: the trie.
+# - `at`: a slot, from 0 to the size less one.
+#
+# Fails `not_found` before the first key. Aborts where `at` names no slot.
+# See also `next_slot`.
+function previous_slot(trie: Trie, at: i64) -> i64?
+    layout.require_slot(trie.nodes, at)
+    return codes.answer(
+        at: walk.predecessor(trie.nodes, at),
+        msg: f"no key before \"{trie.nodes.texts[at]}\", the first of {trie.nodes.count}"
+    )
+
+## Examples
+
+# An empty map, ready for routes and their handlers' numbers.
+test "new_map: an empty map of routes"
+    routes = new_map()
+    assert size(routes) == 0
+
+# An empty set, ready for the words of a dictionary.
+test "new_set: an empty dictionary"
+    words = new_set()
+    assert !has_prefix(words, "")
+
+# A key put twice counts once.
+test "size: three words, one of them twice"
+    words @= new_set()
+
+    for word in ["tea", "ten", "tea"]
+        _ = add(@words, word)
+
+    assert size(words) == 2
+
+# A value put, then replaced under the same key.
+test "put: a price put and then changed"
+    prices @= new_map()
+    cents: [i64] @= []
+    put(@prices, @cents, key: "tea", value: 250)
+    put(@prices, @cents, key: "tea", value: 275)
+    assert get(prices, cents, "tea").must() == 275
+
+# A value found by its key, and a key that only begins another.
+test "get: a price by name, and a name that only begins one"
+    prices @= new_map()
+    cents: [i64] @= []
+    put(@prices, @cents, key: "teapot", value: 1900)
+    assert get(prices, cents, "teapot").must() == 1900
+    assert get(prices, cents, "tea").is_err()
+
+# A key taken out, its value answered.
+test "remove: a route taken out of the map"
+    routes @= new_map()
+    handlers: [str] @= []
+    put(@routes, @handlers, key: "/users", value: "list")
+    put(@routes, @handlers, key: "/users/new", value: "form")
+    assert remove(@routes, @handlers, "/users").must() == "list"
+    assert keys_with_prefix(routes, "") == ["/users/new"]
+
+# The first key taken out by its slot.
+test "remove_at: the first route in byte order taken out"
+    routes @= new_map()
+    handlers: [str] @= []
+    put(@routes, @handlers, key: "/b", value: "second")
+    put(@routes, @handlers, key: "/a", value: "first")
+    remove_at(@routes, @handlers, first_slot(routes).must())
+    assert keys_with_prefix(routes, "") == ["/b"]
+    assert handlers[slot_of(routes, "/b").must()] == "second"
+
+# A whole branch of routes taken out at once.
+test "remove_with_prefix: every route under an old path"
+    routes @= new_map()
+    handlers: [i64] @= []
+
+    for path in ["/old/a", "/old/b", "/new"]
+        put(@routes, @handlers, key: path, value: path.len())
+
+    assert remove_with_prefix(@routes, @handlers, "/old/") == 2
+    assert keys_with_prefix(routes, "") == ["/new"]
+
+# A word added once, and again.
+test "add: a word new, then held already"
+    words @= new_set()
+    assert add(@words, "tea")
+    assert !add(@words, "tea")
+
+# A word taken out, and one never there.
+test "discard: a word held, then one absent"
+    words @= new_set()
+    _ = add(@words, "tea")
+    assert discard(@words, "tea")
+    assert !discard(@words, "tea")
+
+# The last word taken out by its slot.
+test "discard_at: the last word in byte order taken out"
+    words @= new_set()
+
+    for word in ["to", "tea", "ted"]
+        _ = add(@words, word)
+
+    discard_at(@words, last_slot(words).must())
+    assert keys_with_prefix(words, "") == ["tea", "ted"]
+
+# Every word of a family taken out.
+test "discard_with_prefix: the words that begin with te"
+    words @= new_set()
+
+    for word in ["to", "tea", "ted", "ten"]
+        _ = add(@words, word)
+
+    assert discard_with_prefix(@words, "te") == 3
+    assert keys_with_prefix(words, "") == ["to"]
+
+# A word held, and one that only begins a word held.
+test "contains: a word held, and a beginning of one"
+    words @= new_set()
+    _ = add(@words, "inn")
+    assert contains(words, "inn")
+    assert !contains(words, "in")
+
+# The slot of a key, to read its value beside it.
+test "slot_of: the slot of a name, then its value"
+    ages @= new_map()
+    years: [i64] @= []
+    put(@ages, @years, key: "ann", value: 30)
+    assert years[slot_of(ages, "ann").must()] == 30
+
+# The key at a slot a search answered.
+test "key_at: the route a path matched"
+    routes @= new_set()
+    _ = add(@routes, "/static/")
+    at = longest_prefix_slot(routes, text: "/static/logo.png", from: 0).must()
+    assert key_at(routes, at) == "/static/"
+
+# Whether any word begins as typed so far.
+test "has_prefix: what a user has typed so far"
+    words @= new_set()
+    _ = add(@words, "tea")
+    assert has_prefix(words, "te")
+    assert has_prefix(words, "tea")
+    assert !has_prefix(words, "to")
+
+# How many words a beginning would complete.
+test "count_with_prefix: the words that complete te"
+    words @= new_set()
+
+    for word in ["tea", "ted", "ten", "to"]
+        _ = add(@words, word)
+
+    assert count_with_prefix(words, "te") == 3
+
+# The values of every key under a prefix, in the keys' order.
+test "slots_with_prefix: the prices of every tea"
+    prices @= new_map()
+    cents: [i64] @= []
+    put(@prices, @cents, key: "tea/mint", value: 300)
+    put(@prices, @cents, key: "tea/black", value: 250)
+    put(@prices, @cents, key: "coffee", value: 200)
+    found: [i64] @= []
+
+    for at in slots_with_prefix(prices, "tea/")
+        found @ found.push(cents[at])
+
+    assert found == [250, 300]
+
+# The completions of what a user has typed, sorted.
+test "keys_with_prefix: the completions of te"
+    words @= new_set()
+
+    for word in ["ten", "tea", "to", "ted", "te"]
+        _ = add(@words, word)
+
+    assert keys_with_prefix(words, "te") == ["te", "tea", "ted", "ten"]
+
+# A text cut into the longest words a dictionary holds, as a tokenizer reads.
+test "longest_prefix_slot: a text cut into the longest known words"
+    words @= new_set()
+
+    for word in ["a", "an", "ant", "eat", "s"]
+        _ = add(@words, word)
+
+    text = "anteats"
+    pieces: [str] @= []
+    at @= 0
+
+    while at < text.len()
+        key = key_at(words, longest_prefix_slot(words, text: text, from: at).must())
+        pieces @ pieces.push(key)
+        at @ at + key.len()
+
+    assert pieces == ["ant", "eat", "s"]
+
+# The shortest blocked prefix of a path.
+test "shortest_prefix_slot: the first blocked folder on a path"
+    blocked @= new_set()
+    _ = add(@blocked, "/tmp/")
+    _ = add(@blocked, "/tmp/cache/")
+    at = shortest_prefix_slot(blocked, text: "/tmp/cache/x", from: 0).must()
+    assert key_at(blocked, at) == "/tmp/"
+
+# Every route that begins a path, the shortest first.
+test "prefix_slots: every route a path passes through"
+    routes @= new_set()
+
+    for route in ["/", "/api", "/api/v1", "/web"]
+        _ = add(@routes, route)
+
+    passed: [str] @= []
+
+    for at in prefix_slots(routes, text: "/api/v1/users", from: 0)
+        passed @ passed.push(key_at(routes, at))
+
+    assert passed == ["/", "/api", "/api/v1"]
+
+# The first word in byte order.
+test "first_slot: the first word of a dictionary"
+    words @= new_set()
+
+    for word in ["pear", "fig", "date"]
+        _ = add(@words, word)
+
+    assert key_at(words, first_slot(words).must()) == "date"
+
+# The last word in byte order.
+test "last_slot: the last word of a dictionary"
+    words @= new_set()
+
+    for word in ["pear", "fig", "date"]
+        _ = add(@words, word)
+
+    assert key_at(words, last_slot(words).must()) == "pear"
+
+# A walk forwards through every key, one step at a time.
+test "next_slot: every word in order"
+    words @= new_set()
+
+    for word in ["to", "tea", "t"]
+        _ = add(@words, word)
+
+    walked: [str] @= []
+    at @= first_slot(words).must()
+    walked @ walked.push(key_at(words, at))
+
+    while !next_slot(words, at).is_err()
+        at @ next_slot(words, at).must()
+        walked @ walked.push(key_at(words, at))
+
+    assert walked == ["t", "tea", "to"]
+
+# The key before the last.
+test "previous_slot: the word before the last"
+    words @= new_set()
+
+    for word in ["to", "tea", "t"]
+        _ = add(@words, word)
+
+    assert key_at(words, previous_slot(words, last_slot(words).must()).must()) == "tea"

@@ -13,7 +13,10 @@
 # graph never runs out of stack, and costs the nodes and edges it reads.
 #
 # It holds no graph of its own: the program's maps are the graph, and a
-# structure that changes is the program's to keep.
+# structure that changes is the program's to keep. The connected components
+# of a graph whose edges point both ways, or arrive one by one, are
+# union-find's, `containers/disjoint`: `disjoint.merge` for every edge, then
+# `disjoint.to_lists`, at a nearly constant cost an edge.
 #
 # It fails with `not_found`, where a node is not in the graph or a path or a
 # cycle is not there, and `invalid`, where a graph has a cycle an order

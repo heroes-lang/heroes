@@ -1,0 +1,323 @@
+# The nodes under a trie and the keys it holds: a radix tree kept in lists of
+# numbers, each node's children a list through their first bytes in
+# increasing order, and each node's label, the bytes from its parent's end to
+# its own, read from a key at or under it, its WITNESS, so no label is ever
+# copied. This module knows the links; `edit` changes the tree and `walk`
+# reads it.
+#
+# The nodes stay dense: the live ones are 0 to `live` less one, the root at
+# 0, and a node let go takes the last one into its place. Every walk is a
+# loop, and nothing here recurses.
+
+use containers/internal/codes
+use containers/internal/storage
+
+# The link, slot or witness that names none.
+constant NONE: i64
+    -1
+
+# The root's node: the empty prefix, never let go.
+constant ROOT: i64
+    0
+
+# Below this length a node list is never cut back.
+constant KEPT: i64
+    64
+
+# The nodes and keys of one trie. Node `i`'s links stand at index `i` of
+# every node list, slot `s`'s key at index `s` of `texts` and `ends`; a list's
+# length past `live` or `count` is room kept for reuse.
+record Nodes
+    # The node's parent, `NONE` at the root.
+    parent: [i64]
+    # The node's first child, the one whose label has the smallest first byte,
+    # `NONE` at a leaf.
+    first: [i64]
+    # The node's next sibling, whose label's first byte is larger, `NONE` at
+    # the last.
+    next: [i64]
+    # The first byte of the node's label; 0 at the root, which has none.
+    lead: [u8]
+    # How many bytes the keys at and under the node share from their start:
+    # where the node's label ends.
+    depth: [i64]
+    # The slot of a key at or under the node, whose bytes from the parent's
+    # depth to the node's are its label; `NONE` at an empty root.
+    witness: [i64]
+    # The slot of the key that ends at the node, `NONE` where none does.
+    slot: [i64]
+    # How many keys end at or under the node.
+    below: [i64]
+    # How many nodes are live, the root included.
+    live: i64
+    # The key at each slot.
+    texts: [str]
+    # The node each slot's key ends at.
+    ends: [i64]
+    # How many keys are held: the slots 0 to `count` less one.
+    count: i64
+    # Whether it is a map's, whose program keeps a value list beside it; a
+    # set's has none.
+    holds_values: bool
+
+# An empty trie, the root alone; a map's where `holds_values` is true.
+function empty(holds_values: bool) -> Nodes
+    return Nodes(
+        parent: [NONE],
+        first: [NONE],
+        next: [NONE],
+        lead: [0],
+        depth: [0],
+        witness: [NONE],
+        slot: [NONE],
+        below: [0],
+        live: 1,
+        texts: [],
+        ends: [],
+        count: 0,
+        holds_values: holds_values
+    )
+
+# Ends the program where `at` names no slot of the trie.
+function require_slot(nodes: Nodes lent, at: i64)
+    if at < 0 || at >= nodes.count
+        codes.abort_with(f"slot {at} names no key of a trie of {nodes.count}")
+
+# A new node at the end of the live ones, linked to nothing yet.
+function new_node(@nodes: Nodes, parent: i64, lead: u8, depth: i64, witness: i64) -> i64
+    at = nodes.live
+    storage.store(@nodes.parent, at, parent)
+    storage.store(@nodes.first, at, NONE)
+    storage.store(@nodes.next, at, NONE)
+    storage.store(@nodes.lead, at, lead)
+    storage.store(@nodes.depth, at, depth)
+    storage.store(@nodes.witness, at, witness)
+    storage.store(@nodes.slot, at, NONE)
+    storage.store(@nodes.below, at, 0)
+    nodes.live @ at + 1
+    return at
+
+# The child of `at` whose label begins with `byte`, `NONE` where none does.
+function child_of(nodes: Nodes lent, at: i64, byte: u8) -> i64
+    child @= nodes.first[at]
+
+    while child != NONE && nodes.lead[child] < byte
+        child @ nodes.next[child]
+
+    if child != NONE && nodes.lead[child] == byte
+        return child
+    return NONE
+
+# Whether `at` has exactly one child.
+function has_one_child(nodes: Nodes lent, at: i64) -> bool
+    child = nodes.first[at]
+    return child != NONE && nodes.next[child] == NONE
+
+# The child of `at` just before `child`, `NONE` where `child` is the first.
+function sibling_before(nodes: Nodes lent, at: i64, child: i64) -> i64
+    before @= NONE
+    here @= nodes.first[at]
+
+    while here != child
+        before @ here
+        here @ nodes.next[here]
+
+    return before
+
+# The last child of `at`, `NONE` at a leaf.
+function last_child(nodes: Nodes lent, at: i64) -> i64
+    child @= nodes.first[at]
+
+    if child == NONE
+        return NONE
+
+    while nodes.next[child] != NONE
+        child @ nodes.next[child]
+
+    return child
+
+# Hangs `child` under `at`, among its siblings in the order of their first
+# bytes; the child's own parent link is the caller's to set.
+function attach(@nodes: Nodes, at: i64, child: i64)
+    byte = nodes.lead[child]
+    head = nodes.first[at]
+
+    if head == NONE || byte < nodes.lead[head]
+        nodes.next[child] @ head
+        nodes.first[at] @ child
+        return
+    before @= head
+
+    while nodes.next[before] != NONE && nodes.lead[nodes.next[before]] < byte
+        before @ nodes.next[before]
+
+    nodes.next[child] @ nodes.next[before]
+    nodes.next[before] @ child
+
+# Takes `child` out of the children of `at`.
+function detach(@nodes: Nodes, at: i64, child: i64)
+    before = sibling_before(nodes, at: at, child: child)
+
+    if before == NONE
+        nodes.first[at] @ nodes.next[child]
+    else
+        nodes.next[before] @ nodes.next[child]
+    nodes.next[child] @ NONE
+
+# Puts `new` in the place of `old` among the children of `old`'s parent: its
+# parent, its first byte and its next sibling become `old`'s, whose first byte
+# is the same, so the order holds. `old` is left linked to nothing above.
+function swap_in(@nodes: Nodes, old: i64, new: i64)
+    up = nodes.parent[old]
+    before = sibling_before(nodes, at: up, child: old)
+
+    if before == NONE
+        nodes.first[up] @ new
+    else
+        nodes.next[before] @ new
+    nodes.next[new] @ nodes.next[old]
+    nodes.parent[new] @ up
+    nodes.lead[new] @ nodes.lead[old]
+    nodes.next[old] @ NONE
+
+# Moves the node at `from` into `to`, a node let go and linked to by none,
+# mending every link to it: its parent's or its sibling's, its children's,
+# and its slot's.
+function relocate(@nodes: Nodes, from: i64, to: i64)
+    up = nodes.parent[from]
+    before = sibling_before(nodes, at: up, child: from)
+
+    if before == NONE
+        nodes.first[up] @ to
+    else
+        nodes.next[before] @ to
+    nodes.parent[to] @ up
+    nodes.first[to] @ nodes.first[from]
+    nodes.next[to] @ nodes.next[from]
+    nodes.lead[to] @ nodes.lead[from]
+    nodes.depth[to] @ nodes.depth[from]
+    nodes.witness[to] @ nodes.witness[from]
+    nodes.slot[to] @ nodes.slot[from]
+    nodes.below[to] @ nodes.below[from]
+    child @= nodes.first[to]
+
+    while child != NONE
+        nodes.parent[child] @ to
+        child @ nodes.next[child]
+
+    if nodes.slot[to] != NONE
+        nodes.ends[nodes.slot[to]] @ to
+
+# Lets go `at`, a node linked to by none: the last live node takes its place,
+# and the node lists are cut back where three quarters of them stand unused.
+function vacate(@nodes: Nodes, at: i64)
+    last = nodes.live - 1
+
+    if at != last
+        relocate(@nodes, from: last, to: at)
+    nodes.live @ last
+
+    if nodes.parent.len() >= KEPT && last * 4 <= nodes.parent.len()
+        nodes.parent @ nodes.parent.slice(from: 0, to: last)
+        nodes.first @ nodes.first.slice(from: 0, to: last)
+        nodes.next @ nodes.next.slice(from: 0, to: last)
+        nodes.lead @ nodes.lead.slice(from: 0, to: last)
+        nodes.depth @ nodes.depth.slice(from: 0, to: last)
+        nodes.witness @ nodes.witness.slice(from: 0, to: last)
+        nodes.slot @ nodes.slot.slice(from: 0, to: last)
+        nodes.below @ nodes.below.slice(from: 0, to: last)
+
+## Tests
+
+test "empty: the root alone, no key, a map's and a set's"
+    shaped = empty(holds_values: true)
+    assert shaped.live == 1 && shaped.count == 0 && shaped.holds_values
+    assert shaped.parent == [NONE] && shaped.first == [NONE] && shaped.below == [0]
+    set = empty(holds_values: false)
+    assert !set.holds_values && set.texts == []
+
+test "new_node: appended after the root, linked to nothing"
+    nodes @= empty(holds_values: false)
+    at = new_node(@nodes, parent: ROOT, lead: 'a', depth: 1, witness: 0)
+    assert at == 1 && nodes.live == 2
+    assert nodes.parent[at] == ROOT && nodes.first[at] == NONE && nodes.next[at] == NONE
+    assert nodes.first[ROOT] == NONE
+
+test "attach and child_of: children kept in the order of their first bytes, a byte absent"
+    nodes @= empty(holds_values: false)
+
+    leads: [u8] = ['m', 'c', 'x', 'a']
+
+    for byte in leads
+        child = new_node(@nodes, parent: ROOT, lead: byte, depth: 1, witness: 0)
+        attach(@nodes, at: ROOT, child: child)
+
+    order: [u8] @= []
+    child @= nodes.first[ROOT]
+
+    while child != NONE
+        order @ order.push(nodes.lead[child])
+        child @ nodes.next[child]
+
+    assert order == ['a', 'c', 'm', 'x']
+    assert nodes.lead[child_of(nodes, at: ROOT, byte: 'm')] == 'm'
+    assert child_of(nodes, at: ROOT, byte: 'b') == NONE
+    assert child_of(nodes, at: ROOT, byte: 'z') == NONE
+    assert child_of(nodes, at: 1, byte: 'a') == NONE
+    assert nodes.lead[last_child(nodes, ROOT)] == 'x'
+    assert last_child(nodes, 1) == NONE
+
+test "detach: the first child, a middle one, and the last"
+    nodes @= empty(holds_values: false)
+
+    leads: [u8] = ['a', 'b', 'c', 'd']
+
+    for byte in leads
+        child = new_node(@nodes, parent: ROOT, lead: byte, depth: 1, witness: 0)
+        attach(@nodes, at: ROOT, child: child)
+
+    detach(@nodes, at: ROOT, child: child_of(nodes, at: ROOT, byte: 'a'))
+    detach(@nodes, at: ROOT, child: child_of(nodes, at: ROOT, byte: 'c'))
+    assert nodes.lead[nodes.first[ROOT]] == 'b'
+    detach(@nodes, at: ROOT, child: child_of(nodes, at: ROOT, byte: 'd'))
+    assert has_one_child(nodes, ROOT)
+    assert sibling_before(nodes, at: ROOT, child: nodes.first[ROOT]) == NONE
+
+test "swap_in: a grandchild takes its parent's place between two siblings"
+    nodes @= empty(holds_values: false)
+    a = new_node(@nodes, parent: ROOT, lead: 'a', depth: 1, witness: 0)
+    attach(@nodes, at: ROOT, child: a)
+    m = new_node(@nodes, parent: ROOT, lead: 'm', depth: 2, witness: 0)
+    attach(@nodes, at: ROOT, child: m)
+    z = new_node(@nodes, parent: ROOT, lead: 'z', depth: 1, witness: 0)
+    attach(@nodes, at: ROOT, child: z)
+    under = new_node(@nodes, parent: m, lead: 'q', depth: 4, witness: 0)
+    attach(@nodes, at: m, child: under)
+    swap_in(@nodes, old: m, new: under)
+    assert nodes.next[a] == under && nodes.next[under] == z
+    assert nodes.parent[under] == ROOT && nodes.lead[under] == 'm'
+
+test "vacate: the last node, and one in the middle mended into its place"
+    nodes @= empty(holds_values: false)
+    a = new_node(@nodes, parent: ROOT, lead: 'a', depth: 1, witness: 0)
+    attach(@nodes, at: ROOT, child: a)
+    b = new_node(@nodes, parent: ROOT, lead: 'b', depth: 1, witness: 0)
+    attach(@nodes, at: ROOT, child: b)
+    c = new_node(@nodes, parent: b, lead: 'c', depth: 2, witness: 0)
+    attach(@nodes, at: b, child: c)
+    detach(@nodes, at: ROOT, child: a)
+    vacate(@nodes, a)
+    assert nodes.live == 3
+    assert child_of(nodes, at: ROOT, byte: 'b') == b
+    assert nodes.first[b] == a && nodes.lead[a] == 'c' && nodes.parent[a] == b
+    detach(@nodes, at: b, child: a)
+    vacate(@nodes, a)
+    assert nodes.live == 2 && nodes.first[ROOT] == a
+    assert nodes.lead[a] == 'b' && nodes.first[a] == NONE && nodes.parent[a] == ROOT
+    assert c == 3
+
+test "require_slot: the first and the last slot"
+    nodes @= empty(holds_values: false)
+    nodes.count @ 2
+    require_slot(nodes, 0)
+    require_slot(nodes, 1)

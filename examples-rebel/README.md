@@ -20,7 +20,7 @@ code is written. Everyone who writes a line of Rebel reads both first.
 
 ## A1. The packages
 
-A hundred and thirty-eight packages, in layers. **A package may use any package of a layer below
+A hundred and forty packages, in layers. **A package may use any package of a layer below
 its own**; the column "may use" names the ones it is expected to need, not a limit. There is no cycle.
 
 | layer | package | what it holds | may use | C under it |
@@ -44,6 +44,8 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 0 | `containers/heap` | a heap over the program's own list: a priority queue |  |  |
 | 0 | `graphs` | the orders, cycles, components, reachability and shortest paths of a graph |  |  |
 | 0 | `qr` | QR codes made, every version and correction level, written as modules, SVG or text for a terminal |  |  |
+| 0 | `containers/trie` | a prefix tree of texts to values: prefixes, the longest prefix of a text |  |  |
+| 0 | `containers/disjoint` | union-find: sets merged and asked whether two values are in one |  |  |
 | 1 | `unicode/normalize` | NFC, NFD, NFKC, NFKD, case folding for comparison; its tables apart, so only its users carry them | `unicode` |  |
 | 1 | `unicode/segment` | the boundaries of graphemes, words and sentences (UAX #29), the width of a text on a screen (UAX #11) | `unicode` |  |
 | 1 | `unicode/names` | the name of a character and the character of a name, scripts, blocks | `unicode` |  |
@@ -53,8 +55,6 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 1 | `random` | a seeded generator, ranges, shuffling, choosing, sampling; secure values from `os` | `math`, `os` |  |
 | 1 | `stats` | mean, median, mode, variance, deviation, quantiles, correlation | `lists`, `math` |  |
 | 1 | `math/linear` | vectors of two, three and four, matrices, quaternions, transforms, cameras and Euler angles in all twelve orders | `math` |  |
-| 1 | `containers/trie` | a prefix tree of texts to values: prefixes, the longest prefix of a text | `lists` |  |
-| 1 | `containers/disjoint` | union-find: sets merged and asked whether two values are in one | `lists` |  |
 | 1 | `url/idna` | internationalized domain names (UTS 46): to ASCII and back, Punycode; its tables apart, so only its users carry them | `unicode` |  |
 | 1 | `image` | images in memory, gray to RGBA at 8 and 16 bits: crop, resize, rotate, flip, convert, paste with alpha, simple drawing, a histogram; each file format a subpackage; a broken file is `invalid`, never a memory fault | `math` |  |
 | 2 | `io` | the stream: read, write, close, seek; buffers; lines; copying | `bytes` | `hero_stream.h` |
@@ -74,10 +74,10 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 2 | `crypto/seal` | authenticated encryption by the system's own cryptography | `bytes` | `hero_crypto.h` |
 | 2 | `crypto/keypairs` | key pairs, signatures and key agreement by the system's own cryptography | `bytes` | `hero_crypto.h` |
 | 2 | `scanner` | a configurable lexer: identifiers, numbers, strings, comments, each token with its place | `numbers`, `regex`, `strings`, `unicode` |  |
-| 2 | `property` | property-based testing: generated cases, a seed that reproduces, the failing case shrunk | `random`, `lists` |  |
-| 2 | `vectors` | vectors of f32 compared (dot, cosine, distance) and the nearest found, exactly or by an HNSW index | `random` |  |
+| 2 | `property` | property-based testing: generated cases, a seed that reproduces, the failing case shrunk | `math`, `random`, `unicode` |  |
+| 2 | `vectors` | vectors of f32 compared (dot, cosine, distance) and the nearest found, exactly or by an HNSW index | `math`, `numbers`, `random` |  |
 | 2 | `tokenizer` | byte-pair encoding as tiktoken does it: encode, decode, count; its tables in subpackages, one per encoding, so a program carries only the one it uses | `bytes`, `regex`, `unicode` |  |
-| 2 | `search` | an inverted index in memory, ranked by BM25, with phrase and prefix queries | `strings`, `unicode` |  |
+| 2 | `search` | an inverted index in memory, ranked by BM25, with phrase and prefix queries | `math`, `numbers`, `strings`, `unicode` |  |
 | 2 | `http/suffixes` | the Public Suffix List, so cookies for a public suffix are refused and a site's registrable domain is known; its data apart | `strings` |  |
 | 2 | `compress/zstd` | Zstandard (RFC 8878) read, and written at a basic level | `bytes` |  |
 | 2 | `compress/brotli` | Brotli (RFC 7932) read, and written at a basic level | `bytes` |  |
@@ -118,12 +118,13 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 4 | `asn1` | ASN.1 values read and written in DER and BER, every universal type, tagged and constructed | `big`, `bytes`, `lists`, `math`, `numbers`, `time`, `unicode` |  |
 | 4 | `i18n` | message catalogs (gettext), plural rules, numbers and dates written for a language, text ordered for a language, from CLDR; its tables in subpackages | `unicode`, `time`, `strings`, `numbers` |  |
 | 4 | `dns` | a DNS client: every record kind asked and answered over UDP and TCP | `bytes`, `io`, `net`, `os`, `strings`, `threads` |  |
-| 4 | `bench` | a function measured: warm-up, rounds, median and spread, two versions compared | `stats`, `time` |  |
+| 4 | `bench` | a function measured: warm-up, rounds, median and spread, two versions compared | `math`, `numbers`, `os`, `stats`, `time` |  |
 | 4 | `chunks` | text cut into pieces for retrieval, by characters, sentences, markdown headings or tokens, with overlap | `markdown`, `tokenizer`, `unicode`, `unicode/segment` |  |
 | 4 | `bson` | BSON read and written exactly, every type, and Extended JSON | `big`, `bytes`, `json`, `math`, `numbers`, `os`, `time` |  |
-| 4 | `tui` | full-screen terminal programs in immediate mode: widgets, layout by constraints, only the changed cells written | `term`, `unicode`, `strings` |  |
+| 4 | `tui` | full-screen terminal programs in immediate mode: widgets, layout by constraints, only the changed cells written | `io`, `os`, `term`, `unicode`, `unicode/segment` |  |
 | 4 | `webauthn` | a WebAuthn relying party: registration and authentication ceremonies, attestation and assertion verified | `cbor`, `crypto`, `crypto/keypairs`, `json`, `bytes`, `url` |  |
 | 4 | `image/png` | PNG read and written: every colour type and bit depth, interlacing read, the filter and the compression chosen, chunks kept or dropped | `bytes`, `compress`, `hash`, `image` |  |
+| 4 | `jobs` | background jobs and their workers, retried and scheduled, over a store in a subpackage: the values both stores share | `json`, `numbers`, `os`, `time` |  |
 | 5 | `jose` | JSON Web Tokens, signatures (JWS), keys (JWK) and encryption (JWE) where the system's cryptography allows | `asn1`, `big`, `bytes`, `crypto`, `crypto/keypairs`, `crypto/seal`, `json`, `os`, `pem`, `time` |  |
 | 5 | `archive` | tar and zip, written and read | `bytes`, `compress`, `fs`, `hash`, `io`, `path`, `time` |  |
 | 5 | `sql/postgres` | PostgreSQL over its own protocol, written in Heroes; the API every driver keeps | `bytes`, `crypto`, `io`, `net`, `numbers`, `os`, `sql`, `strings`, `threads`, `time`, `tls` |  |
@@ -147,7 +148,8 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 6 | `sql/migrate` | numbered migrations applied in transactions, the versions applied kept in a table, the step back | `bytes`, `crypto`, `fs`, `numbers`, `path`, `sql`, `sql/build`, `strings`, `time` |  |
 | 6 | `grpc` | gRPC calls of the four kinds, client and server, over `http2` and `protobuf` | `bytes`, `compress`, `http2`, `io`, `net`, `numbers`, `protobuf`, `threads`, `time`, `tls` |  |
 | 6 | `xlsx` | spreadsheets of Office Open XML read and written: sheets, cells, types, styles | `archive`, `bytes`, `fs`, `io`, `lists`, `math`, `numbers`, `strings`, `time`, `unicode`, `xml` |  |
-| 6 | `jobs` | background jobs kept in PostgreSQL or Redis, claimed by workers, retried, scheduled | `sql/postgres`, `json`, `time` |  |
+| 6 | `jobs/postgres_store` | jobs kept in PostgreSQL: claimed with FOR UPDATE SKIP LOCKED, enqueued in the program's own transaction | `jobs`, `json`, `os`, `sql`, `sql/postgres`, `strings`, `time` |  |
+| 6 | `jobs/redis_store` | jobs kept in Redis: every change a Lua script the server runs whole | `bytes`, `jobs`, `json`, `numbers`, `os`, `redis`, `strings`, `time` |  |
 | 7 | `web` | a router in the manner of Echo: routes with methods and parameters, groups, middleware as functions over a request and a response, the right 404 and 405, responses for JSON, text, redirects and static files; the program calls its own handler with its own state | `bytes`, `compress`, `crypto`, `crypto/seal`, `fs`, `http`, `io`, `json`, `log`, `net`, `numbers`, `os`, `path`, `strings`, `template`, `time`, `tls`, `url`, `uuid` |  |
 | 7 | `websocket` | WebSocket (RFC 6455) client and server, compressed or not, many connections on one thread | `bytes`, `compress`, `crypto`, `http`, `io`, `json`, `net`, `os`, `poll`, `strings`, `threads`, `time`, `tls`, `unicode`, `url` |  |
 | 7 | `oauth2` | an OAuth 2.0 client (authorization code with PKCE, client credentials, device flow, refresh) and OpenID Connect | `bytes`, `crypto`, `http`, `io`, `jose`, `json`, `net`, `random`, `threads`, `time`, `url` |  |

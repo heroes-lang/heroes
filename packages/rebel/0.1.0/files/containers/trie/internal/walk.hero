@@ -1,0 +1,283 @@
+# The reads of a trie: a text followed down from the root byte by byte, the
+# label of each node read from its witness key, to the key it names, the node
+# a prefix reaches, or the keys that begin it; and the keys in the order of
+# their bytes, walked through the parent links with no stack, since a node's
+# key comes before the keys under it and siblings stand in the order of
+# their first bytes.
+
+use containers/internal/codes
+use containers/internal/storage
+use containers/trie/internal/layout
+
+# The node under which every key beginning with the bytes of `text` from
+# `from` to `to` stands: the node that prefix ends at, or the child whose
+# label it ends inside; `NONE` where no key begins with it.
+function reach(nodes: layout.Nodes lent, text: str, from: i64, to: i64) -> i64
+    length = to - from
+    at @= layout.ROOT
+    depth @= 0
+
+    while depth < length
+        child = layout.child_of(nodes, at: at, byte: text[from + depth])
+
+        if child == layout.NONE
+            return layout.NONE
+        end = nodes.depth[child]
+        witness = nodes.texts[nodes.witness[child]]
+        step @= depth + 1
+
+        while step < end && step < length
+            if witness[step] != text[from + step]
+                return layout.NONE
+            step @ step + 1
+
+        at @ child
+        depth @ step
+
+    return at
+
+# The slot of `key`, `NONE` where the trie holds none.
+function exact_of(nodes: layout.Nodes lent, key: str) -> i64
+    at = reach(nodes, text: key, from: 0, to: key.len())
+
+    if at == layout.NONE || nodes.depth[at] != key.len()
+        return layout.NONE
+    return nodes.slot[at]
+
+# How many keys begin with `prefix`.
+function count_under(nodes: layout.Nodes lent, prefix: str) -> i64
+    at = reach(nodes, text: prefix, from: 0, to: prefix.len())
+
+    if at == layout.NONE
+        return 0
+    return nodes.below[at]
+
+# The slots of the keys `text` holds from `from`, the shortest first: every
+# node the text passes whole on its way down that a key ends at, the root
+# first. Where `first_only` is true it stops at the first, and where
+# `last_only` is true it answers the last alone.
+function along(nodes: layout.Nodes lent, text: str, from: i64, first_only: bool, last_only: bool) -> [i64]
+    length = text.len() - from
+    found: [i64] @= []
+    deepest @= layout.NONE
+    at @= layout.ROOT
+    depth @= 0
+
+    while true
+        held = nodes.slot[at]
+
+        if held != layout.NONE
+            deepest @ held
+
+            if !last_only
+                found @ found.push(held)
+
+                if first_only
+                    return found
+
+        if depth >= length
+            break
+        child = layout.child_of(nodes, at: at, byte: text[from + depth])
+
+        if child == layout.NONE
+            break
+        end = nodes.depth[child]
+
+        if end > length
+            break
+        witness = nodes.texts[nodes.witness[child]]
+        step @= depth + 1
+
+        while step < end && witness[step] == text[from + step]
+            step @ step + 1
+
+        if step < end
+            break
+        at @ child
+        depth @ end
+
+    if last_only && deepest != layout.NONE
+        found @ found.push(deepest)
+    return found
+
+# The slots of every key at or under `top`, in the order of their bytes: a
+# node's own key, then its children's from the smallest first byte, climbing
+# back through the parent links.
+function under(nodes: layout.Nodes lent, top: i64) -> [i64]
+    found: [i64] @= []
+
+    if top == layout.NONE
+        return found
+    at @= top
+
+    while true
+        if nodes.slot[at] != layout.NONE
+            found @ found.push(nodes.slot[at])
+
+        if nodes.first[at] != layout.NONE
+            at @ nodes.first[at]
+            continue
+
+        while at != top && nodes.next[at] == layout.NONE
+            at @ nodes.parent[at]
+
+        if at == top
+            break
+        at @ nodes.next[at]
+
+    return found
+
+# The slots of every key that begins with `prefix`, in the order of their
+# bytes.
+function slots_under(nodes: layout.Nodes lent, prefix: str) -> [i64]
+    return under(nodes, reach(nodes, text: prefix, from: 0, to: prefix.len()))
+
+# The first key at or under `at` in the order of bytes: down the first
+# children to a node a key ends at, which a node with no key and fewer than
+# two children never is but at an empty root.
+function leftmost(nodes: layout.Nodes lent, at: i64) -> i64
+    here @= at
+
+    while nodes.slot[here] == layout.NONE
+        if nodes.first[here] == layout.NONE
+            return layout.NONE
+        here @ nodes.first[here]
+
+    return nodes.slot[here]
+
+# The last key at or under `at` in the order of bytes: down the last
+# children to a leaf, where a key always ends but at an empty root.
+function rightmost(nodes: layout.Nodes lent, at: i64) -> i64
+    here @= at
+
+    while nodes.first[here] != layout.NONE
+        here @ layout.last_child(nodes, here)
+
+    return nodes.slot[here]
+
+# The slot of the first key, `NONE` in an empty trie.
+function first(nodes: layout.Nodes lent) -> i64
+    return leftmost(nodes, layout.ROOT)
+
+# The slot of the last key, `NONE` in an empty trie.
+function last(nodes: layout.Nodes lent) -> i64
+    return rightmost(nodes, layout.ROOT)
+
+# The slot of the key after the one at slot `at` in the order of bytes,
+# `NONE` after the last.
+function successor(nodes: layout.Nodes lent, at: i64) -> i64
+    here @= nodes.ends[at]
+
+    if nodes.first[here] != layout.NONE
+        return leftmost(nodes, nodes.first[here])
+
+    while here != layout.ROOT
+        if nodes.next[here] != layout.NONE
+            return leftmost(nodes, nodes.next[here])
+        here @ nodes.parent[here]
+
+    return layout.NONE
+
+# The slot of the key before the one at slot `at` in the order of bytes,
+# `NONE` before the first.
+function predecessor(nodes: layout.Nodes lent, at: i64) -> i64
+    here @= nodes.ends[at]
+
+    while here != layout.ROOT
+        up = nodes.parent[here]
+        before = layout.sibling_before(nodes, at: up, child: here)
+
+        if before != layout.NONE
+            return rightmost(nodes, before)
+
+        if nodes.slot[up] != layout.NONE
+            return nodes.slot[up]
+        here @ up
+
+    return layout.NONE
+
+# The keys at `slots`, in their order.
+function texts_of(nodes: layout.Nodes lent, slots: [i64]) -> [str]
+    found: [str] @= []
+
+    for at in slots
+        found @ found.push(nodes.texts[at])
+
+    return found
+
+# Ends the program where `from` is not a byte of `text` or its end.
+function require_place(text: str, from: i64)
+    if from < 0 || from > text.len()
+        codes.abort_with(f"byte {from} is outside a text of {text.len()} bytes")
+
+## Tests
+
+# A set's nodes holding `words`, built by hand through `edit`'s rules being
+# out of reach here: each word a leaf under the root, so no two may share a
+# first byte.
+function flat(words: [str]) -> layout.Nodes
+    nodes @= layout.empty(holds_values: false)
+
+    for word in words
+        slot = nodes.count
+        leaf = layout.new_node(@nodes, parent: layout.ROOT, lead: word[0], depth: word.len(), witness: slot)
+        layout.attach(@nodes, at: layout.ROOT, child: leaf)
+        storage.store(@nodes.texts, slot, word)
+        storage.store(@nodes.ends, slot, leaf)
+        nodes.slot[leaf] @ slot
+        nodes.below[leaf] @ 1
+        nodes.below[layout.ROOT] @ nodes.below[layout.ROOT] + 1
+        nodes.count @ slot + 1
+
+    return nodes
+
+test "reach and exact_of: an empty trie, a key, a prefix inside a label, and a byte apart"
+    empty = layout.empty(holds_values: false)
+    assert reach(empty, text: "", from: 0, to: 0) == layout.ROOT
+    assert reach(empty, text: "a", from: 0, to: 1) == layout.NONE
+    assert exact_of(empty, "") == layout.NONE
+    nodes = flat(["tea", "of"])
+    assert exact_of(nodes, "tea") == 0 && exact_of(nodes, "of") == 1
+    assert exact_of(nodes, "te") == layout.NONE
+    assert reach(nodes, text: "te", from: 0, to: 2) == nodes.ends[0]
+    assert reach(nodes, text: "tex", from: 0, to: 3) == layout.NONE
+    assert reach(nodes, text: "xteax", from: 1, to: 4) == nodes.ends[0]
+    assert exact_of(nodes, "teas") == layout.NONE
+
+test "count_under: the empty prefix, a key, inside a label, and none"
+    nodes = flat(["tea", "of", "é"])
+    assert count_under(nodes, "") == 3
+    assert count_under(nodes, "tea") == 1
+    assert count_under(nodes, "t") == 1
+    assert count_under(nodes, "x") == 0
+    assert count_under(nodes, "é") == 1
+
+test "along: every key a text holds, the first, the last, from inside, and at the end"
+    nodes = flat(["ab", "x"])
+    assert along(nodes, text: "abc", from: 0, first_only: false, last_only: false) == [0]
+    assert along(nodes, text: "a", from: 0, first_only: false, last_only: false) == []
+    assert along(nodes, text: "zab", from: 1, first_only: false, last_only: true) == [0]
+    assert along(nodes, text: "ab", from: 2, first_only: true, last_only: false) == []
+    assert along(nodes, text: "ac", from: 0, first_only: false, last_only: true) == []
+
+test "under, first and last: an empty trie, and three leaves in the order of their bytes"
+    empty = layout.empty(holds_values: false)
+    assert under(empty, layout.ROOT) == [] && first(empty) == layout.NONE && last(empty) == layout.NONE
+    assert under(empty, layout.NONE) == []
+    nodes = flat(["m", "z", "a"])
+    assert under(nodes, layout.ROOT) == [2, 0, 1]
+    assert first(nodes) == 2 && last(nodes) == 1
+    assert slots_under(nodes, "z") == [1] && slots_under(nodes, "q") == []
+
+test "texts_of: none, and three slots in their order"
+    nodes = flat(["m", "z", "a"])
+    assert texts_of(nodes, []) == []
+    assert texts_of(nodes, [2, 0, 1]) == ["a", "m", "z"]
+    require_place(text: "", from: 0)
+    require_place(text: "aé", from: 3)
+
+test "successor and predecessor: through three leaves both ways"
+    nodes = flat(["m", "z", "a"])
+    assert successor(nodes, 2) == 0 && successor(nodes, 0) == 1 && successor(nodes, 1) == layout.NONE
+    assert predecessor(nodes, 1) == 0 && predecessor(nodes, 0) == 2 && predecessor(nodes, 2) == layout.NONE
+    assert leftmost(nodes, nodes.ends[1]) == 1 && rightmost(nodes, nodes.ends[2]) == 2

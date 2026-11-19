@@ -1,0 +1,349 @@
+# The writes of a trie: a key put in, splitting a label where it parts from
+# the keys held, and a slot taken out, its node let go where no key needs it
+# and a node left with one child merged into that child, the witnesses that
+# named the slot renamed, and the last slot moved into the one freed, in the
+# trie's own lists and in the program's value list alike.
+
+use containers/internal/codes
+use containers/internal/samples
+use containers/internal/storage
+use containers/trie/internal/audit
+use containers/trie/internal/layout
+use containers/trie/internal/walk
+
+# Where `insert` left a key: its slot, and whether it was new.
+record Spot
+    # The key's slot.
+    slot: i64
+    # Whether the key was new, its slot just claimed.
+    added: bool
+
+# Ends the program where the shape is a set's and a map's write was asked, or
+# the other way, or where a map's value list is shorter than its keys.
+function require_kind(nodes: layout.Nodes lent, as_map: bool, values_held: i64)
+    if nodes.holds_values != as_map
+        if as_map
+            codes.abort_with("a set's trie was given to a map's call; make a map with `new_map`")
+        else
+            codes.abort_with("a map's trie was given to a set's write, which would leave its value list behind")
+
+    if as_map
+        codes.require_storage(held: values_held, count: nodes.count, what: "value list")
+
+# Gives `key` the next slot, ending at node `at`, and counts it at `at` and
+# every node above.
+function claim(@nodes: layout.Nodes, key: str, at: i64) -> i64
+    slot = nodes.count
+    storage.store(@nodes.texts, slot, key)
+    storage.store(@nodes.ends, slot, at)
+    nodes.slot[at] @ slot
+    nodes.count @ slot + 1
+    here @= at
+
+    while here != layout.NONE
+        nodes.below[here] @ nodes.below[here] + 1
+        here @ nodes.parent[here]
+
+    return slot
+
+# Puts `key` in the trie, answering its slot and whether it was new.
+function insert(@nodes: layout.Nodes, key: str) -> Spot
+    at @= layout.ROOT
+    depth @= 0
+
+    while true
+        if depth == key.len()
+            if nodes.slot[at] != layout.NONE
+                return Spot(slot: nodes.slot[at], added: false)
+            return Spot(slot: claim(@nodes, key: key, at: at), added: true)
+        child = layout.child_of(nodes, at: at, byte: key[depth])
+
+        if child == layout.NONE
+            leaf = layout.new_node(@nodes, parent: at, lead: key[depth], depth: key.len(), witness: nodes.count)
+            layout.attach(@nodes, at: at, child: leaf)
+            return Spot(slot: claim(@nodes, key: key, at: leaf), added: true)
+        end = nodes.depth[child]
+        witness = nodes.witness[child]
+        step @= depth + 1
+
+        while step < end && step < key.len() && nodes.texts[witness][step] == key[step]
+            step @ step + 1
+
+        if step == end
+            at @ child
+            depth @ end
+            continue
+        middle = layout.new_node(@nodes, parent: at, lead: nodes.lead[child], depth: step, witness: witness)
+        nodes.below[middle] @ nodes.below[child]
+        layout.swap_in(@nodes, old: child, new: middle)
+        nodes.parent[child] @ middle
+        nodes.lead[child] @ nodes.texts[witness][step]
+        nodes.first[middle] @ child
+
+        if step == key.len()
+            return Spot(slot: claim(@nodes, key: key, at: middle), added: true)
+        leaf = layout.new_node(@nodes, parent: middle, lead: key[step], depth: key.len(), witness: nodes.count)
+        layout.attach(@nodes, at: middle, child: leaf)
+        return Spot(slot: claim(@nodes, key: key, at: leaf), added: true)
+
+# Hands the place of `old`, a node with one child and no key, to that child,
+# and answers the child.
+function fold_into_child(@nodes: layout.Nodes, old: i64) -> i64
+    child = nodes.first[old]
+    layout.swap_in(@nodes, old: old, new: child)
+    nodes.first[old] @ layout.NONE
+    return child
+
+# Takes the key at slot `at` out of the trie: its node let go or merged where
+# no key needs it, every witness that named it renamed, and the last slot
+# moved into it.
+function take(@nodes: layout.Nodes, at: i64)
+    ending = nodes.ends[at]
+    nodes.slot[ending] @ layout.NONE
+    here @= ending
+
+    while here != layout.NONE
+        nodes.below[here] @ nodes.below[here] - 1
+        here @ nodes.parent[here]
+
+    gone: [i64] @= []
+    lowest @= ending
+
+    if ending != layout.ROOT
+        if nodes.first[ending] == layout.NONE
+            up = nodes.parent[ending]
+            layout.detach(@nodes, at: up, child: ending)
+            gone @ gone.push(ending)
+            lowest @ up
+
+            if up != layout.ROOT && nodes.slot[up] == layout.NONE && layout.has_one_child(nodes, up)
+                lowest @ fold_into_child(@nodes, up)
+                gone @ gone.push(up)
+        else if layout.has_one_child(nodes, ending)
+            lowest @ fold_into_child(@nodes, ending)
+            gone @ gone.push(ending)
+    here @ lowest
+
+    while here != layout.NONE
+        if nodes.witness[here] == at
+            if nodes.slot[here] != layout.NONE
+                nodes.witness[here] @ nodes.slot[here]
+            else if nodes.first[here] != layout.NONE
+                nodes.witness[here] @ nodes.witness[nodes.first[here]]
+            else
+                nodes.witness[here] @ layout.NONE
+        here @ nodes.parent[here]
+
+    last = nodes.count - 1
+
+    if last != at
+        moved = nodes.ends[last]
+        nodes.slot[moved] @ at
+        here @ moved
+
+        while here != layout.NONE
+            if nodes.witness[here] == last
+                nodes.witness[here] @ at
+            here @ nodes.parent[here]
+
+    storage.drop_slot(@nodes.texts, at: at, end: last, count: last)
+    storage.drop_slot(@nodes.ends, at: at, end: last, count: last)
+    nodes.count @ last
+
+    for node in sort(gone).reverse_order()
+        layout.vacate(@nodes, node)
+
+# Takes the key at slot `at` and its value out, the last slot's value moving
+# into `at` as its key does.
+function take_entry<V>(@nodes: layout.Nodes, @value_list: [V], at: i64)
+    last = nodes.count - 1
+    take(@nodes, at)
+    storage.drop_slot(@value_list, at: at, end: last, count: last)
+
+# Takes out every key that begins with `prefix`, answering how many: the
+# slots from the largest down, so the last slot that moves into a slot freed
+# is never one still to be taken out.
+function take_under(@nodes: layout.Nodes, prefix: str) -> i64
+    doomed = reverse_order(sort(walk.slots_under(nodes, prefix)))
+
+    for at in doomed
+        take(@nodes, at)
+
+    return doomed.len()
+
+# Takes out every key that begins with `prefix` with its value, answering how
+# many, as `take_under` does.
+function take_entries_under<V>(@nodes: layout.Nodes, @value_list: [V], prefix: str) -> i64
+    doomed = reverse_order(sort(walk.slots_under(nodes, prefix)))
+
+    for at in doomed
+        take_entry(@nodes, @value_list, at)
+
+    return doomed.len()
+
+# `xs` from its last element to its first.
+function reverse_order(xs: [i64]) -> [i64]
+    turned: [i64] @= []
+    at @= xs.len() - 1
+
+    while at >= 0
+        turned @ turned.push(xs[at])
+        at @ at - 1
+
+    return turned
+
+## Tests
+
+test "insert: the empty key, a key, the same again, a split inside a label, and a key ending at the split"
+    nodes @= layout.empty(holds_values: true)
+    first = insert(@nodes, "")
+    assert first.slot == 0 && first.added && nodes.slot[layout.ROOT] == 0
+    assert insert(@nodes, "tea").added
+    again = insert(@nodes, "tea")
+    assert again.slot == 1 && !again.added
+    assert insert(@nodes, "ten").slot == 2
+    assert insert(@nodes, "te").slot == 3
+    assert nodes.live == 4 && nodes.count == 4
+    audit.require_whole(nodes)
+    assert walk.exact_of(nodes, "te") == 3 && walk.exact_of(nodes, "t") == layout.NONE
+
+test "take: a leaf, a key with one child under it, a branch left with one child, and the root's"
+    nodes @= layout.empty(holds_values: false)
+
+    for key in ["", "a", "ab", "abc", "abd"]
+        _ = insert(@nodes, key)
+
+    take(@nodes, walk.exact_of(nodes, "abd"))
+    audit.require_whole(nodes)
+    take(@nodes, walk.exact_of(nodes, "ab"))
+    audit.require_whole(nodes)
+    take(@nodes, walk.exact_of(nodes, ""))
+    audit.require_whole(nodes)
+    assert walk.texts_of(nodes, walk.under(nodes, layout.ROOT)) == ["a", "abc"]
+    take(@nodes, walk.exact_of(nodes, "a"))
+    take(@nodes, walk.exact_of(nodes, "abc"))
+    audit.require_whole(nodes)
+    assert nodes.count == 0 && nodes.live == 1 && nodes.first[layout.ROOT] == layout.NONE
+
+test "take_entry: the value list moved as the slots are"
+    nodes @= layout.empty(holds_values: true)
+    values: [str] @= []
+
+    for key in ["x", "y", "z"]
+        storage.store(@values, insert(@nodes, key).slot, key)
+
+    take_entry(@nodes, @values, walk.exact_of(nodes, "x"))
+    assert values.slice(from: 0, to: 2) == ["z", "y"]
+    assert walk.exact_of(nodes, "z") == 0
+
+test "take_under and take_entries_under: none, a branch, a key and its branch, and every key"
+    nodes @= layout.empty(holds_values: true)
+    values: [str] @= []
+
+    for key in ["", "to", "tea", "ted", "ten", "te"]
+        storage.store(@values, insert(@nodes, key).slot, key)
+
+    assert take_entries_under(@nodes, @values, "x") == 0
+    assert take_entries_under(@nodes, @values, "tea") == 1
+    audit.require_whole(nodes)
+    assert take_entries_under(@nodes, @values, "te") == 3
+    audit.require_whole(nodes)
+
+    for held in ["", "to"]
+        assert values[walk.exact_of(nodes, held)] == held
+
+    set @= layout.empty(holds_values: false)
+
+    for key in ["a", "ab", "b"]
+        _ = insert(@set, key)
+
+    assert take_under(@set, "") == 3
+    audit.require_whole(set)
+    assert set.live == 1
+
+test "require_kind: a map's call on a map's shape, and a set's on a set's"
+    require_kind(layout.empty(holds_values: true), as_map: true, values_held: 0)
+    require_kind(layout.empty(holds_values: false), as_map: false, values_held: 0)
+
+test "reverse_order: none, one, and three"
+    assert reverse_order([]) == []
+    assert reverse_order([4]) == [4]
+    assert reverse_order([1, 2, 3]) == [3, 2, 1]
+
+test "insert, take, take_entries_under and every read: four thousand random operations against a map"
+    dice @= samples.Dice(state: 2026)
+    nodes @= layout.empty(holds_values: true)
+    values: [i64] @= []
+    model: {str: i64} @= {}
+
+    for step in range(from: 0, to: 4000)
+        key = audit.random_key(@dice)
+        choice = samples.roll(@dice, 20)
+
+        if choice < 10
+            spot = insert(@nodes, key)
+            storage.store(@values, spot.slot, step)
+            assert spot.added == model[key].is_err()
+            model[key] @ step
+        else if choice == 10
+            starts = audit.boundaries(key)
+            prefix = key.slice(from: 0, to: starts[samples.roll(@dice, starts.len())])
+            doomed = audit.model_under(model, prefix)
+            assert take_entries_under(@nodes, @values, prefix) == doomed.len()
+
+            for gone in doomed
+                model @ audit.without(model, gone)
+
+            assert walk.count_under(nodes, prefix) == 0
+        else if choice < 16
+            at = walk.exact_of(nodes, key)
+
+            if model[key].is_err()
+                assert at == layout.NONE
+            else
+                assert values[at] == model[key].must()
+                take_entry(@nodes, @values, at)
+                model @ audit.without(model, key)
+        else
+            assert walk.texts_of(nodes, walk.slots_under(nodes, key)) == audit.model_under(model, key)
+            assert walk.count_under(nodes, key) == audit.model_under(model, key).len()
+            text = key + audit.random_key(@dice)
+            starts = audit.boundaries(key)
+            from = starts[samples.roll(@dice, starts.len())]
+            prefixes = audit.model_along(model, text: text, from: from)
+            assert walk.texts_of(nodes, walk.along(nodes, text: text, from: from, first_only: false, last_only: false)) == prefixes
+            shortest = walk.along(nodes, text: text, from: from, first_only: true, last_only: false)
+            longest = walk.along(nodes, text: text, from: from, first_only: false, last_only: true)
+
+            if prefixes.len() == 0
+                assert shortest == [] && longest == []
+            else
+                assert walk.texts_of(nodes, shortest) == [prefixes[0]]
+                assert walk.texts_of(nodes, longest) == [prefixes[prefixes.len() - 1]]
+
+        if step % 97 == 0
+            audit.require_whole(nodes)
+            ordered = sort(keys(model))
+            assert walk.texts_of(nodes, walk.under(nodes, layout.ROOT)) == ordered
+            walked: [str] @= []
+            at @= walk.first(nodes)
+
+            while at != layout.NONE
+                walked @ walked.push(nodes.texts[at])
+                at @ walk.successor(nodes, at)
+
+            assert walked == ordered
+            back: [str] @= []
+            at @ walk.last(nodes)
+
+            while at != layout.NONE
+                back @ back.push(nodes.texts[at])
+                at @ walk.predecessor(nodes, at)
+
+            assert audit.reverse_strings(back) == ordered
+
+            for held in ordered
+                assert values[walk.exact_of(nodes, held)] == model[held].must()
+
+    audit.require_whole(nodes)
+    assert nodes.count == keys(model).len()

@@ -1,0 +1,234 @@
+# Union-find: elements gathered into sets that only ever merge, each set
+# answered by one element that stands for it, so that whether two elements
+# stand in one set is known at once. Two sets merge at a nearly constant cost,
+# by union by rank with the paths compressed, held in lists and walked by
+# loops, never by recursion. Python's networkx `UnionFind`, Rust's petgraph
+# `UnionFind`, Boost's `disjoint_sets`.
+#
+# What it is for: the connected components of a graph whose edges arrive one
+# by one (Kruskal's spanning tree, the islands of a grid, the clusters of
+# near duplicates), names found to mean one thing, the cells of a maze. A set
+# never splits: a structure that takes elements out of sets is not this one.
+#
+# It does not order or index: the strongly connected components of a graph
+# that points one way are `graphs.strong_components`'s; the elements of a set
+# as a value of the language are `sets`'s.
+#
+# The elements are the numbers from 0 to the size less one, as petgraph's and
+# Boost's are: a program with elements of its own numbers them, with a map
+# from each to its number and a list from each number back, and asks by the
+# numbers. `new` makes the first elements and `add` one more.
+#
+# It fails with no code: every answer is defined for every element. A call
+# aborts where the program broke a precondition it could have checked: an
+# element below zero or at or past the size, or a size below zero.
+
+use containers/disjoint/internal/forest
+
+## Union-find
+
+# The sets of union-find over the elements 0 to the size less one: every
+# element stands in exactly one set, and the sets only merge.
+#
+# Made by `new` and grown by `add`, and changed only by this section's
+# functions. `==` compares two the way they were built, not only their sets:
+# two built by other merges may hold the same sets and differ.
+record Disjoint
+    # The forest of parents, ranks and rings, held by the package itself: a
+    # program reads it through this section's functions.
+    forest: forest.Forest
+
+# `count` elements, from 0 to `count` less one, each alone in a set of its
+# own.
+#
+# - `count`: how many elements; 0 makes none, and `add` makes the first.
+#
+# Aborts where `count` is below zero. See also `add`.
+function new(count: i64) -> Disjoint
+    return Disjoint(forest: forest.planted(count))
+
+# Adds one element alone in a new set, answering its number, which is the
+# size before the call.
+#
+# - `disjoint`: the sets; it gains an element and a set.
+#
+# See also `new`.
+function add(@disjoint: Disjoint) -> i64
+    return forest.sprout(@disjoint.forest)
+
+# How many elements there are, in every set together.
+#
+# - `disjoint`: the sets.
+#
+# See also `set_count`.
+function size(disjoint: Disjoint) -> i64
+    return disjoint.forest.parent.len()
+
+# How many sets there are: the size where nothing has merged, one less for
+# every merge of two sets apart.
+#
+# - `disjoint`: the sets.
+#
+# See also `size`, `to_lists`.
+function set_count(disjoint: Disjoint) -> i64
+    return disjoint.forest.sets
+
+# The element that stands for the set holding `element`, the same for every
+# element of that set until it merges.
+#
+# - `disjoint`: the sets; the path walked from `element` is shortened, which
+#   changes no set.
+# - `element`: the element, from 0 to the size less one.
+#
+# Which element stands for a set is the structure's choice, and a merge may
+# change it: compare two roots asked after the same merges, never one kept
+# from before. Aborts where `element` is not an element. It costs nearly a
+# constant, the inverse of Ackermann's function of the size, over many calls.
+# See also `same`, `to_labels`.
+function root_of(@disjoint: Disjoint, element: i64) -> i64
+    return forest.root(@disjoint.forest, element)
+
+# Merges the set holding `a` with the set holding `b`, answering whether they
+# were apart.
+#
+# - `disjoint`: the sets; it loses one set where `a` and `b` were apart.
+# - `a`: an element, from 0 to the size less one.
+# - `b`: another, or `a` itself, which merges nothing.
+#
+# False where `a` and `b` stood in one set already, which is how Kruskal's
+# algorithm finds an edge that would close a cycle. Aborts where `a` or `b`
+# is not an element. See also `same`.
+function merge(@disjoint: Disjoint, a: i64, b: i64) -> bool
+    return forest.unite(@disjoint.forest, a: a, b: b)
+
+# Whether `a` and `b` stand in one set.
+#
+# - `disjoint`: the sets; the paths walked are shortened, which changes no
+#   set.
+# - `a`: an element, from 0 to the size less one.
+# - `b`: another, or `a` itself, which always stands with itself.
+#
+# Aborts where `a` or `b` is not an element. See also `merge`, `root_of`.
+function same(@disjoint: Disjoint, a: i64, b: i64) -> bool
+    first = forest.root(@disjoint.forest, a)
+    return forest.root(@disjoint.forest, b) == first
+
+# How many elements the set holding `element` holds, itself included.
+#
+# - `disjoint`: the sets; the path walked is shortened, which changes no set.
+# - `element`: the element, from 0 to the size less one.
+#
+# From 1 to the size. Aborts where `element` is not an element. See also
+# `members_of`.
+function size_of(@disjoint: Disjoint, element: i64) -> i64
+    top = forest.root(@disjoint.forest, element)
+    return disjoint.forest.size[top]
+
+# The elements of the set holding `element`, in increasing order.
+#
+# - `disjoint`: the sets.
+# - `element`: the element, from 0 to the size less one.
+#
+# Never empty: `element` is among them. Aborts where `element` is not an
+# element. It costs the set's size times its logarithm, and nothing of the
+# other sets. See also `size_of`, `to_lists`.
+function members_of(disjoint: Disjoint, element: i64) -> [i64]
+    return sort(forest.ring_of(disjoint.forest, element))
+
+# Every set, each as its elements in increasing order, the sets in the order
+# of their smallest elements.
+#
+# - `disjoint`: the sets.
+#
+# As many lists as `set_count` answers; empty where there is no element. It
+# costs the size. See also `to_labels`, `members_of`.
+function to_lists(disjoint: Disjoint) -> [[i64]]
+    return forest.groups(disjoint.forest)
+
+# For every element, the smallest element of its set: a label its whole set
+# shares, the same for the same sets however they were merged.
+#
+# - `disjoint`: the sets.
+#
+# As long as the size; an element alone is its own label. It costs the size.
+# See also `to_lists`, `root_of`.
+function to_labels(disjoint: Disjoint) -> [i64]
+    return forest.labels(disjoint.forest)
+
+## Examples
+
+# Four people, each alone before anyone has met.
+test "new: four people, four groups"
+    groups = new(4)
+    assert set_count(groups) == 4
+
+# A newcomer added, numbered after the others.
+test "add: a fifth person joins"
+    groups @= new(4)
+    assert add(@groups) == 4
+    assert size(groups) == 5
+
+# How many elements there are, however they are grouped.
+test "size: six cities, two of them joined by a road"
+    cities @= new(6)
+    _ = merge(@cities, a: 0, b: 1)
+    assert size(cities) == 6
+
+# How many groups are left after two friendships.
+test "set_count: five people, two friendships, three groups"
+    people @= new(5)
+    _ = merge(@people, a: 0, b: 1)
+    _ = merge(@people, a: 3, b: 4)
+    assert set_count(people) == 3
+
+# Two elements of one set answer one root.
+test "root_of: two friends answer one root"
+    people @= new(3)
+    _ = merge(@people, a: 0, b: 2)
+    assert root_of(@people, 0) == root_of(@people, 2)
+
+# Kruskal's test of an edge: the road that would close a loop merges nothing.
+test "merge: three roads between three towns, the third closing a loop"
+    towns @= new(3)
+    assert merge(@towns, a: 0, b: 1)
+    assert merge(@towns, a: 1, b: 2)
+    assert !merge(@towns, a: 0, b: 2)
+
+# Whether two people know each other through friends.
+test "same: a friend of a friend, and a stranger"
+    people @= new(4)
+    _ = merge(@people, a: 0, b: 1)
+    _ = merge(@people, a: 1, b: 2)
+    assert same(@people, a: 0, b: 2)
+    assert !same(@people, a: 0, b: 3)
+
+# The size of the island a cell stands on.
+test "size_of: an island of three cells and one alone"
+    cells @= new(4)
+    _ = merge(@cells, a: 0, b: 1)
+    _ = merge(@cells, a: 1, b: 2)
+    assert size_of(@cells, 2) == 3
+    assert size_of(@cells, 3) == 1
+
+# The members of one group, smallest first.
+test "members_of: the group of one person"
+    people @= new(5)
+    _ = merge(@people, a: 4, b: 1)
+    _ = merge(@people, a: 1, b: 3)
+    assert members_of(people, 3) == [1, 3, 4]
+
+# Every group, as the connected components of a graph given by its edges.
+test "to_lists: the components of six nodes and three edges"
+    nodes @= new(6)
+
+    for edge in [[0, 1], [2, 3], [3, 4]]
+        _ = merge(@nodes, a: edge[0], b: edge[1])
+
+    assert to_lists(nodes) == [[0, 1], [2, 3, 4], [5]]
+
+# A label for every element, the smallest of its component.
+test "to_labels: the component of every node"
+    nodes @= new(5)
+    _ = merge(@nodes, a: 3, b: 1)
+    _ = merge(@nodes, a: 4, b: 3)
+    assert to_labels(nodes) == [0, 1, 2, 1, 1]

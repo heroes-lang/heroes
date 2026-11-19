@@ -1,0 +1,23 @@
+# Reaches Rebel's `containers/disjoint`, so that `heroes test` on this file
+# runs the package's own tests (spec § 12). It prints the connected
+# components of six nodes joined by three edges: "0 1 | 2 3 4 | 5".
+
+use <rebel>/containers/disjoint
+
+function main()
+    nodes @= disjoint.new(6)
+
+    for edge in [[0, 1], [2, 3], [3, 4]]
+        _ = disjoint.merge(@nodes, a: edge[0], b: edge[1])
+
+    written: [str] @= []
+
+    for component in disjoint.to_lists(nodes)
+        members: [str] @= []
+
+        for node in component
+            members @ members.push(f"{node}")
+
+        written @ written.push(members.join(" "))
+
+    print(written.join(" | "))

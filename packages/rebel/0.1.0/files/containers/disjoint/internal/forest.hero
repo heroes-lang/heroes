@@ -1,0 +1,323 @@
+# The forest under union-find: each element's parent, a root being its own;
+# each root's rank, a bound on the height of its tree, and its set's size;
+# and a ring through every set, each element naming the next of its set, so
+# that a set's members are read without a search. Roots are found by loops,
+# the path from an element compressed onto its root in a second loop, so
+# nothing here recurses; union by rank keeps every tree under the logarithm
+# of its size in height, compressed or not.
+
+use containers/internal/codes
+use containers/internal/samples
+
+# The forest of one union-find. Element `i` stands at index `i` of every
+# list, and every list is as long as the elements.
+record Forest
+    # The element's parent, the element itself at a root.
+    parent: [i64]
+    # At a root, a bound on the height of its tree: 0 for an element alone,
+    # one more where two trees of one rank merge.
+    rank: [i64]
+    # At a root, how many elements its set holds.
+    size: [i64]
+    # The next element of the element's set, round a ring that comes back to
+    # the element.
+    ring: [i64]
+    # How many sets there are.
+    sets: i64
+
+# `count` elements, each alone in a set of its own.
+function planted(count: i64) -> Forest
+    if count < 0
+        codes.abort_with(f"a union-find of {count} elements: a count is 0 or more")
+    numbers = range(from: 0, to: count)
+    ones: [i64] @= []
+    zeros: [i64] @= []
+
+    for _ in numbers
+        ones @ ones.push(1)
+        zeros @ zeros.push(0)
+
+    return Forest(parent: numbers, rank: zeros, size: ones, ring: numbers, sets: count)
+
+# Adds `value` at the end of `xs`, in place.
+function grow(@xs: [i64], value: i64)
+    xs @ xs.push(value)
+
+# Adds one element alone in a new set and answers its number.
+function sprout(@forest: Forest) -> i64
+    element = forest.parent.len()
+    grow(@forest.parent, element)
+    grow(@forest.rank, 0)
+    grow(@forest.size, 1)
+    grow(@forest.ring, element)
+    forest.sets @ forest.sets + 1
+    return element
+
+# Ends the program where `element` is not an element of the forest.
+function require_element(forest: Forest lent, element: i64)
+    if element < 0 || element >= forest.parent.len()
+        codes.abort_with(
+            f"element {element} is not one of the {forest.parent.len()} of the union-find, numbered from 0"
+        )
+
+# The root of the tree holding `element`, the path from it then hung on the
+# root directly.
+function root(@forest: Forest, element: i64) -> i64
+    require_element(forest, element)
+    top @= element
+
+    while forest.parent[top] != top
+        top @ forest.parent[top]
+
+    at @= element
+
+    while at != top
+        above = forest.parent[at]
+        forest.parent[at] @ top
+        at @ above
+
+    return top
+
+# Merges the sets of `a` and `b`, the root of lower rank hung under the other,
+# their rings spliced into one; false where they were one set already.
+function unite(@forest: Forest, a: i64, b: i64) -> bool
+    first = root(@forest, a)
+    second = root(@forest, b)
+
+    if first == second
+        return false
+    top @= first
+    under @= second
+
+    if forest.rank[first] < forest.rank[second]
+        top @ second
+        under @ first
+    forest.parent[under] @ top
+    forest.size[top] @ forest.size[top] + forest.size[under]
+
+    if forest.rank[top] == forest.rank[under]
+        forest.rank[top] @ forest.rank[top] + 1
+    after_top = forest.ring[top]
+    forest.ring[top] @ forest.ring[under]
+    forest.ring[under] @ after_top
+    forest.sets @ forest.sets - 1
+    return true
+
+# The elements of the set holding `element`, round its ring from `element`.
+function ring_of(forest: Forest lent, element: i64) -> [i64]
+    require_element(forest, element)
+    members: [i64] @= [element]
+    at @= forest.ring[element]
+
+    while at != element
+        members @ members.push(at)
+        at @ forest.ring[at]
+
+    return members
+
+# For every element, the smallest element of its set: the elements are read
+# in increasing order, and the first of a set met labels its whole ring.
+function labels(forest: Forest lent) -> [i64]
+    count = forest.parent.len()
+    marks: [i64] @= []
+
+    for _ in range(from: 0, to: count)
+        marks @ marks.push(-1)
+
+    for element in range(from: 0, to: count)
+        if marks[element] < 0
+            marks[element] @ element
+            at @= forest.ring[element]
+
+            while at != element
+                marks[at] @ element
+                at @ forest.ring[at]
+
+    return marks
+
+# Every set, each in increasing order, in the order of its smallest element:
+# each element pushed into its label's list as the elements are read in
+# order, so no list needs sorting.
+function groups(forest: Forest lent) -> [[i64]]
+    marks = labels(forest)
+    place: [i64] @= []
+    found: [[i64]] @= []
+
+    for element in range(from: 0, to: marks.len())
+        if marks[element] == element
+            place @ place.push(found.len())
+            found @ found.push([element])
+        else
+            place @ place.push(-1)
+            at = place[marks[element]]
+            grow(@found[at], element)
+
+    return found
+
+## Tests
+
+test "planted: none, one, and three elements, each its own root"
+    none = planted(0)
+    assert none.parent == [] && none.sets == 0
+    one = planted(1)
+    assert one.parent == [0] && one.ring == [0] && one.size == [1]
+    three = planted(3)
+    assert three.parent == [0, 1, 2] && three.rank == [0, 0, 0] && three.sets == 3
+
+test "sprout: from none, and after a merge"
+    forest @= planted(0)
+    assert sprout(@forest) == 0
+    assert sprout(@forest) == 1
+    assert unite(@forest, a: 0, b: 1)
+    assert sprout(@forest) == 2
+    assert forest.sets == 2 && forest.parent.len() == 3
+
+test "root: an element alone, a chain compressed onto its root"
+    forest @= planted(5)
+    assert root(@forest, 4) == 4
+    forest.parent @ [0, 0, 1, 2, 3]
+    assert root(@forest, 4) == 0
+    assert forest.parent == [0, 0, 0, 0, 0]
+
+test "unite: equal ranks, unequal ranks, and two of one set"
+    forest @= planted(4)
+    assert unite(@forest, a: 0, b: 1)
+    top = root(@forest, 0)
+    assert forest.rank[top] == 1 && forest.size[top] == 2
+    assert unite(@forest, a: 2, b: 0)
+    assert root(@forest, 2) == top && forest.rank[top] == 1 && forest.size[top] == 3
+    assert !unite(@forest, a: 1, b: 2)
+    assert !unite(@forest, a: 3, b: 3)
+    assert forest.sets == 2
+
+test "ring_of: alone, and a ring of three spliced by two merges"
+    forest @= planted(4)
+    assert ring_of(forest, 2) == [2]
+    _ = unite(@forest, a: 0, b: 2)
+    _ = unite(@forest, a: 3, b: 2)
+    assert sort(ring_of(forest, 2)) == [0, 2, 3]
+    assert sort(ring_of(forest, 3)) == [0, 2, 3]
+    assert ring_of(forest, 1) == [1]
+
+test "labels and groups: none, all alone, and all in one"
+    empty = planted(0)
+    assert labels(empty) == [] && groups(empty) == []
+    alone = planted(3)
+    assert labels(alone) == [0, 1, 2] && groups(alone) == [[0], [1], [2]]
+    whole @= planted(3)
+    _ = unite(@whole, a: 2, b: 1)
+    _ = unite(@whole, a: 1, b: 0)
+    assert labels(whole) == [0, 0, 0] && groups(whole) == [[0, 1, 2]]
+
+test "require_element: the first and the last element"
+    forest = planted(3)
+    require_element(forest, 0)
+    require_element(forest, 2)
+
+# The model's label of every element after `a`'s set and `b`'s merge: every
+# element labelled as `b` takes `a`'s label, the smaller of the two kept.
+function model_merge(marks: [i64] lent, a: i64, b: i64) -> [i64]
+    keep = marks[a]
+    lose = marks[b]
+    low @= keep
+    high @= lose
+
+    if lose < keep
+        low @ lose
+        high @ keep
+    merged: [i64] @= []
+
+    for label in marks
+        if label == high
+            merged @ merged.push(low)
+        else
+            merged @ merged.push(label)
+
+    return merged
+
+# The elements of `marks` labelled `label`, in increasing order.
+function model_members(marks: [i64] lent, label: i64) -> [i64]
+    found: [i64] @= []
+
+    for element in range(from: 0, to: marks.len())
+        if marks[element] == label
+            found @ found.push(element)
+
+    return found
+
+# The height of the tree holding `element`: the steps from it to its root.
+function height(forest: Forest lent, element: i64) -> i64
+    steps @= 0
+    at @= element
+
+    while forest.parent[at] != at
+        at @ forest.parent[at]
+        steps @ steps + 1
+
+    return steps
+
+# Whether `size` holds at least two to the power `rank` elements: union by
+# rank's bound.
+function within_rank(rank: i64, size: i64) -> bool
+    room @= 1
+
+    for _ in range(from: 0, to: rank)
+        room @ room * 2
+
+    return room <= size
+
+test "unite, root, ring_of, labels and groups: six thousand random operations against a plain labelling"
+    dice @= samples.Dice(state: 1117)
+    forest @= planted(0)
+    model: [i64] @= []
+
+    for step in range(from: 0, to: 6000)
+        choice = samples.roll(@dice, 20)
+
+        if choice == 0 || forest.parent.len() < 2
+            element = sprout(@forest)
+            assert element == model.len()
+            model @ model.push(element)
+            continue
+        a = samples.roll(@dice, forest.parent.len())
+        b = samples.roll(@dice, forest.parent.len())
+
+        if choice < 8
+            apart = model[a] != model[b]
+            assert unite(@forest, a: a, b: b) == apart
+
+            if apart
+                model @ model_merge(model, a: a, b: b)
+        else if choice < 14
+            assert root(@forest, a) == root(@forest, b) == (model[a] == model[b])
+        else if choice < 17
+            top = root(@forest, a)
+            assert forest.size[top] == model_members(model, model[a]).len()
+            assert within_rank(rank: forest.rank[top], size: forest.size[top])
+        else
+            assert sort(ring_of(forest, a)) == model_members(model, model[a])
+
+        if step % 250 == 0
+            assert labels(forest) == model
+            sets @= 0
+
+            for element in range(from: 0, to: model.len())
+                if model[element] == element
+                    sets @ sets + 1
+                    assert height(forest, element) <= forest.rank[root(@forest, element)]
+
+            assert forest.sets == sets
+            assert groups(forest).len() == sets
+
+    assert labels(forest) == model
+
+test "root: a chain of a hundred thousand merges, each root found by a loop"
+    forest @= planted(100000)
+
+    for element in range(from: 1, to: 100000)
+        _ = unite(@forest, a: element - 1, b: element)
+
+    assert forest.sets == 1
+    assert root(@forest, 99999) == root(@forest, 0)
+    assert ring_of(forest, 5).len() == 100000
+    assert groups(forest).len() == 1
