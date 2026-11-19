@@ -1,0 +1,80 @@
+# The edits the shrinking passes make to a list of choices: a block deleted
+# or set to 0, and every copy of a choice lowered together, with the
+# questions they ask first.
+
+# `best` without its choices from `at` to `at + size`.
+function without(best: [u64], at: i64, size: i64) -> [u64]
+    out: [u64] @= []
+    i: i64 @= 0
+
+    while i < best.len()
+        if i < at || i >= at + size
+            out @ out.push(best[i])
+        i @ i + 1
+
+    return out
+
+# `best` with its choices from `at` to `at + size` set to 0.
+function zeroed(best: [u64], at: i64, size: i64) -> [u64]
+    out: [u64] @= []
+    i: i64 @= 0
+
+    while i < best.len()
+        if i >= at && i < at + size
+            out @ out.push(0)
+        else
+            out @ out.push(best[i])
+        i @ i + 1
+
+    return out
+
+function all_zero(best: [u64], at: i64, size: i64) -> bool
+    i: i64 @= at
+
+    while i < at + size
+        if best[i] != 0
+            return false
+        i @ i + 1
+
+    return true
+
+# Whether `best[at]` stands again after `at`, and nowhere before it.
+function first_of_twins(best: [u64], at: i64) -> bool
+    value = best[at]
+    later: bool @= false
+    i: i64 @= 0
+
+    while i < best.len()
+        if best[i] == value
+            if i < at
+                return false
+
+            if i > at
+                later @ true
+        i @ i + 1
+
+    return later
+
+# `best` with every choice equal to `value` made `lower`.
+function replaced(best: [u64], value: u64, lower: u64) -> [u64]
+    out: [u64] @= []
+
+    for c in best
+        if c == value
+            out @ out.push(lower)
+        else
+            out @ out.push(c)
+
+    return out
+
+test "without and zeroed: a block at the start, inside, at the end"
+    assert without(best: [1, 2, 3, 4], at: 0, size: 2) == [3, 4]
+    assert without(best: [1, 2, 3, 4], at: 1, size: 2) == [1, 4]
+    assert without(best: [1, 2, 3, 4], at: 3, size: 1) == [1, 2, 3]
+    assert zeroed(best: [1, 2, 3, 4], at: 2, size: 2) == [1, 2, 0, 0]
+    assert all_zero(best: [1, 0, 0], at: 1, size: 2)
+    assert !all_zero(best: [1, 0, 0], at: 0, size: 2)
+    assert first_of_twins(best: [9, 9], at: 0)
+    assert !first_of_twins(best: [9, 9], at: 1)
+    assert !first_of_twins(best: [9, 3], at: 0)
+    assert replaced(best: [4, 9, 2, 9], value: 9, lower: 1) == [4, 1, 2, 1]

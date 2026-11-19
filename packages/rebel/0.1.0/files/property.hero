@@ -1,0 +1,1065 @@
+# Property-based testing inside a `test` block: a property, a top-level
+# function from a generated value to a `bool` or a `()?`, checked over many
+# cases a generator makes from a seed, and the first case that fails it
+# shrunk to a smallest one, which the report prints with the seed that
+# reproduces the run.
+#
+# A generator is a function the program writes, `(function(Source) -> T?)`:
+# it copies the `Source` it is given into a cell and draws every part of its
+# value through `@source` with the draws below (numbers, characters, texts,
+# bytes, the `more` of a list or a map, `one_of`, `frequency`), calling its
+# own helpers with the same `@source`; a record is built from its drawn
+# fields. Every draw is a function of one sequence of numbers, the choices,
+# so the package can make a case again from its choices and look for smaller
+# choices that still fail: Hypothesis's integrated shrinking, which shrinks
+# the program's own records with no shrinker of theirs. A smaller choice
+# draws a simpler value: a number nearer 0, a shorter list, an earlier
+# alternative, an earlier character of an alphabet.
+#
+# Every run is bounded: by the cases asked, by the cases rejected, by the
+# candidates tried while shrinking, and by the choices one case may draw,
+# past which a draw fails `limit` and the generator's `?` hands it up, so a
+# generator's loop ends whatever it draws. The first case draws every choice
+# as 0, the simplest value of every draw; the next tenth of the cases draw
+# every number, character and byte from its edges (a range's ends, 0, 1,
+# -1, a float's special values, characters of every width); the rest draw at
+# random, an edge one draw in eight.
+#
+# It does not time a property, which is `bench`'s, nor write a failing case
+# to a file. It fails with `limit` where a case draws past its bound,
+# `invalid` where a case is rejected, and `not_found` where `smallest` finds
+# no case accepted.
+
+use math
+use property/internal/choices as drawing
+use property/internal/collections
+use property/internal/floats as float_draws
+use property/internal/numbers
+use property/internal/runner
+use property/internal/samples
+use property/internal/texts as text_draws
+use random
+
+## Codes
+
+# The code a draw fails with where its case has drawn every choice its
+# settings allow (`Settings.choices`); the case is rejected, not failed.
+constant LIMIT: str
+    drawing.LIMIT
+
+# The code `assume` fails with, and the code a generator or a `()?` property
+# answers to reject its case: the case is not one the property reads.
+constant INVALID: str
+    drawing.INVALID
+
+# The code `smallest` fails with where no case was accepted.
+constant NOT_FOUND: str
+    runner.NOT_FOUND
+
+# The `report` of an `Outcome` whose property held on every case, alone, so
+# a test writes `assert outcome.report == property.HELD` and a failure prints
+# the whole report beside it.
+constant HELD: str
+    runner.HELD
+
+## Settings
+
+# How a run is made: its seed and its bounds. Built by `seeded` or
+# `seeded_by_system`, a field changed by the `with_` functions, or built
+# directly: `cases` and `choices` above 0, `rejects` and `shrinks` 0 or
+# more.
+record Settings
+    # The seed every case of the run is drawn from: the same seed and the same
+    # generator make the same cases.
+    seed: u64
+    # How many cases must hold for the run to hold, 1 or more.
+    cases: i64
+    # How many cases may be rejected (by `assume`, a `?` of the generator, or
+    # a case past `choices`) before the run gives up, 0 or more.
+    rejects: i64
+    # How many candidates shrinking may try, each a generation and a call of
+    # the property; 0 reports the first failing case as it was drawn.
+    shrinks: i64
+    # How many choices one case may draw, 1 or more: the bound of its size.
+    choices: i64
+
+# Settings with `seed` and the bounds of every run that names no other:
+# 100 cases, 1,000 rejects, 2,000 shrinking candidates, 8,192 choices a case.
+#
+# - `seed`: the seed, any `u64`; a failure's report names it.
+#
+# See also `seeded_by_system` and `with_cases`.
+function seeded(seed: u64) -> Settings
+    return Settings(seed: seed, cases: 100, rejects: 1000, shrinks: 2000, choices: 8192)
+
+# Settings as `seeded` makes them with a seed drawn from the system's
+# generator for keys, different on every call: for runs that look at new
+# cases each time, the report naming the seed that makes them again.
+#
+# Fails with the code of `random.from_system` where the system's generator
+# refuses. See also `seeded`.
+function seeded_by_system() -> Settings?
+    generator @= random.from_system()?
+    return ok(seeded(random.next_u64(@generator)))
+
+# A copy of `settings` asking `cases` cases.
+#
+# - `settings`: the settings copied.
+# - `cases`: how many cases must hold, 1 or more.
+#
+# Aborts where `cases` is below 1. See also `with_rejects`.
+function with_cases(settings: Settings, cases: i64) -> Settings
+    assert cases >= 1
+    return Settings(
+        seed: settings.seed,
+        cases: cases,
+        rejects: settings.rejects,
+        shrinks: settings.shrinks,
+        choices: settings.choices
+    )
+
+# A copy of `settings` allowing `rejects` rejected cases.
+#
+# - `settings`: the settings copied.
+# - `rejects`: how many cases may be rejected before the run gives up, 0 or
+#   more.
+#
+# Aborts where `rejects` is below 0. See also `with_cases`.
+function with_rejects(settings: Settings, rejects: i64) -> Settings
+    assert rejects >= 0
+    return Settings(
+        seed: settings.seed,
+        cases: settings.cases,
+        rejects: rejects,
+        shrinks: settings.shrinks,
+        choices: settings.choices
+    )
+
+# A copy of `settings` allowing `shrinks` candidates while shrinking.
+#
+# - `settings`: the settings copied.
+# - `shrinks`: how many candidates shrinking may try, 0 or more; 0 keeps the
+#   failing case as it was drawn.
+#
+# Aborts where `shrinks` is below 0. See also `with_choices`.
+function with_shrinks(settings: Settings, shrinks: i64) -> Settings
+    assert shrinks >= 0
+    return Settings(
+        seed: settings.seed,
+        cases: settings.cases,
+        rejects: settings.rejects,
+        shrinks: shrinks,
+        choices: settings.choices
+    )
+
+# A copy of `settings` allowing `choices` choices a case.
+#
+# - `settings`: the settings copied.
+# - `choices`: how many choices one case may draw, 1 or more; a draw past
+#   them fails `limit` and the case is rejected.
+#
+# Aborts where `choices` is below 1. See also `with_shrinks`.
+function with_choices(settings: Settings, choices: i64) -> Settings
+    assert choices >= 1
+    return Settings(
+        seed: settings.seed,
+        cases: settings.cases,
+        rejects: settings.rejects,
+        shrinks: settings.shrinks,
+        choices: choices
+    )
+
+## The source of a case
+
+# Where a generator draws one case from: the case's choices and how many it
+# has drawn. The package makes it and hands it to the generator, which
+# copies it into a cell, `s @= source`, and draws through `@s`.
+record Source
+    # The case's choices and its place in them, held by the package itself.
+    state: drawing.State
+
+# A source that draws `choices` in turn, and 0 past them: to test a
+# generator's own helpers, which take `@source`, on chosen choices, and to
+# read what a draw makes of them.
+#
+# - `choices`: the choices, as a `Failure` holds them or as a test writes
+#   them.
+#
+# A draw past 8,192 choices, or past `choices` where it is longer, fails
+# `limit`. See also `replay`.
+function source_of(choices: [u64]) -> Source
+    limit: i64 @= 8192
+
+    if choices.len() > limit
+        limit @ choices.len()
+    return Source(state: drawing.given(choices: choices, limit: limit))
+
+## Numbers
+
+# A whole number from `least` to `most`, both included: a range's ends, 0,
+# 1 and -1 among its edges, and on each side of its target (0, or the end
+# nearer 0 where the range leaves 0 out) nearer the target the smaller its
+# choices, the side above the simpler: where numbers fail on both sides, the
+# smallest case is the least above the target that fails.
+#
+# - `source`: the case drawn from, which the caller holds; two choices are
+#   drawn.
+# - `least`: the smallest number answered, any `i64`.
+# - `most`: the largest number answered, `least` or above; the whole width of
+#   `i64` is allowed.
+#
+# Fails `limit` where the case has no choice left. Aborts where `most` is
+# below `least`. See also `u64_between` and `float_between`.
+function int_between(@source: Source, least: i64, most: i64) -> i64?
+    return numbers.int_between(@source.state, least: least, most: most)
+
+# A `u64` from `least` to `most`, both included, nearer `least` the smaller
+# its choices, its edges the two ends and their neighbours.
+#
+# - `source`: the case drawn from, which the caller holds; two choices are
+#   drawn.
+# - `least`: the smallest number answered.
+# - `most`: the largest number answered, `least` or above.
+#
+# Fails `limit` where the case has no choice left. Aborts where `most` is
+# below `least`. See also `int_between`.
+function u64_between(@source: Source, least: u64, most: u64) -> u64?
+    return numbers.u64_between(@source.state, least: least, most: most)
+
+# Any float, its edges the special values: zeros of both signs, `nan`, both
+# infinities, the largest and smallest finite floats, the smallest normal
+# one, 1, -1, 0.5, the machine's epsilon and 2^53. The rest, of either sign,
+# are whole numbers up to 2^20, fractions below 1, floats of any size and
+# whole numbers up to 2^53, and smaller choices answer nearer 0.
+#
+# - `source`: the case drawn from, which the caller holds; two choices are
+#   drawn.
+#
+# Fails `limit` where the case has no choice left. See also
+# `float_between`.
+function float(@source: Source) -> f64?
+    return float_draws.float(@source.state)
+
+# A finite float from `least` to `most`, both included: the ends, 0 of both
+# signs where the range holds it, the neighbours of the ends, 1 and -1 and
+# the tiny and huge floats it holds are its edges; the rest are small whole
+# numbers, floats spread over the range and floats of any size it holds,
+# nearer 0 the smaller its choices.
+#
+# - `source`: the case drawn from, which the caller holds; two choices are
+#   drawn.
+# - `least`: the smallest float answered, finite.
+# - `most`: the largest float answered, finite, `least` or above.
+#
+# Fails `limit` where the case has no choice left. Aborts where an end is a
+# `nan` or an infinity, or `most` is below `least`. See also `float`.
+function float_between(@source: Source, least: f64, most: f64) -> f64?
+    return float_draws.float_between(@source.state, least: least, most: most)
+
+# `true` or `false`, as likely, `false` the simpler.
+#
+# - `source`: the case drawn from, which the caller holds; one choice is
+#   drawn.
+#
+# Fails `limit` where the case has no choice left. See also `one_of`.
+function boolean(@source: Source) -> bool?
+    return numbers.boolean(@source.state)
+
+## Text and bytes
+
+# One character of `alphabet`, the first of it the simplest.
+#
+# - `source`: the case drawn from, which the caller holds; one choice is
+#   drawn.
+# - `alphabet`: the characters to draw from, in the order a reader calls
+#   simpler first, characters of more than one byte included; at least one.
+#
+# Fails `limit` where the case has no choice left. Aborts where `alphabet` is
+# empty. See also `text` and `any_character`.
+function character(@source: Source, alphabet: str) -> str?
+    return text_draws.character(@source.state, letters: alphabet.chars())
+
+# Any character, a Unicode scalar value: its edges the zero character, a
+# line feed, a space, the last of every width of UTF-8 and the first of the
+# next, characters of two, three and four bytes, a combining mark, a
+# right-to-left override, a byte order mark, U+FFFD, a noncharacter and the
+# last scalar value; the rest printable ASCII, the Basic Multilingual Plane
+# or any plane, `0` the simplest.
+#
+# - `source`: the case drawn from, which the caller holds; two choices are
+#   drawn.
+#
+# Fails `limit` where the case has no choice left. See also `any_text`.
+function any_character(@source: Source) -> str?
+    return text_draws.any_character(@source.state)
+
+# A text of characters of `alphabet`, from `least` to `most` characters
+# long, shorter the smaller its choices.
+#
+# - `source`: the case drawn from, which the caller holds; one choice for
+#   the length's every step and one for each character are drawn.
+# - `alphabet`: the characters to draw from, simpler first; at least one.
+# - `least`: the fewest characters, 0 or more.
+# - `most`: the most characters, `least` or more.
+#
+# Its length is counted in characters, never bytes. Fails `limit` where the
+# case has no choice left. Aborts where `alphabet` is empty, `least` is below
+# 0 or `most` below `least`. See also `any_text` and `character`.
+function text(@source: Source, alphabet: str, least: i64, most: i64) -> str?
+    return text_draws.text(@source.state, letters: alphabet.chars(), least: least, most: most)
+
+# A text of any characters, as `any_character` draws them, from `least` to
+# `most` characters long.
+#
+# - `source`: the case drawn from, which the caller holds.
+# - `least`: the fewest characters, 0 or more.
+# - `most`: the most characters, `least` or more.
+#
+# Fails `limit` where the case has no choice left. Aborts where `least` is
+# below 0 or `most` below `least`. See also `text`.
+function any_text(@source: Source, least: i64, most: i64) -> str?
+    return text_draws.any_text(@source.state, least: least, most: most)
+
+# From `least` to `most` bytes, each any byte, 0, 255, 127, 128, a line feed,
+# a carriage return and a space its edges, and 0 the simplest.
+#
+# - `source`: the case drawn from, which the caller holds.
+# - `least`: the fewest bytes, 0 or more.
+# - `most`: the most bytes, `least` or more.
+#
+# Fails `limit` where the case has no choice left. Aborts where `least` is
+# below 0 or `most` below `least`. See also `text`.
+function bytes(@source: Source, least: i64, most: i64) -> [u8]?
+    return text_draws.bytes_of(@source.state, least: least, most: most)
+
+## Lists, maps and choices
+
+# How long a list a generator is drawing may grow, and how long it has grown:
+# the count `more` keeps. Built by `many`.
+record Many
+    # The bounds and the count so far, held by the package itself.
+    count: collections.Count
+
+# The count of a list from `least` to `most` elements long, for `more`; on
+# average about five elements above `least`, or half the way to `most` where
+# that is nearer.
+#
+# - `least`: the fewest elements, 0 or more.
+# - `most`: the most elements, `least` or more.
+#
+# Aborts where `least` is below 0 or `most` below `least`. See also `more`.
+function many(least: i64, most: i64) -> Many
+    return Many(count: collections.new_count(least: least, most: most))
+
+# Whether the list `count` counts takes one more element, and if so counts
+# it: a generator draws one element each time it answers `true`. Below its
+# least it answers `true` and draws nothing; at its most, and after it has
+# once answered `false`, it answers `false`.
+#
+# - `source`: the case drawn from, which the caller holds; one choice is
+#   drawn where the answer is not forced.
+# - `count`: the count `many` made, which the caller holds; it counts the
+#   element.
+#
+# A choice of 0 ends the list, so a shorter list is a smaller case, and an
+# element whose choices are deleted is an element gone. Fails `limit` where
+# the case has no choice left. See also `many`.
+function more(@source: Source, @count: Many) -> bool?
+    return collections.more(@source.state, @count.count)
+
+# Which of `count` alternatives a generator takes, from 0, the first the
+# simplest, every one as likely.
+#
+# - `source`: the case drawn from, which the caller holds; one choice is
+#   drawn.
+# - `count`: how many alternatives, 1 or more.
+#
+# Fails `limit` where the case has no choice left. Aborts where `count` is
+# below 1. See also `frequency` and `choose`.
+function one_of(@source: Source, count: i64) -> i64?
+    return collections.one_of(@source.state, alternatives: count)
+
+# Which of the alternatives `weights` weighs a generator takes, from 0, each
+# as likely as its weight against their sum, the first of weight above 0
+# the simplest.
+#
+# - `source`: the case drawn from, which the caller holds; one choice is
+#   drawn.
+# - `weights`: a weight for each alternative, each 0 or more, their sum above
+#   0; an alternative of weight 0 is never taken.
+#
+# Fails `limit` where the case has no choice left. Aborts where `weights` is
+# empty, holds a weight below 0, or sums to 0 or past an `i64`. See also
+# `one_of`.
+function frequency(@source: Source, weights: [i64]) -> i64?
+    return collections.frequency(@source.state, weights: weights)
+
+# An element of `xs`, the first the simplest.
+#
+# - `source`: the case drawn from, which the caller holds; one choice is
+#   drawn.
+# - `xs`: the elements, at least one.
+#
+# Fails `limit` where the case has no choice left. Aborts where `xs` is
+# empty. See also `one_of`.
+function choose<T>(@source: Source, xs: [T]) -> T?
+    return collections.choose(@source.state, xs: xs)
+
+# The elements of `xs` in a drawn order, their own order the simplest.
+#
+# - `source`: the case drawn from, which the caller holds; one choice is
+#   drawn for each element but the last.
+# - `xs`: the elements, any number.
+#
+# Fails `limit` where the case has no choice left. See also `subsequence`.
+function shuffled<T>(@source: Source, xs: [T]) -> [T]?
+    return collections.shuffled(@source.state, xs: xs)
+
+# Some elements of `xs`, each kept or left as likely, in their order, none
+# the simplest.
+#
+# - `source`: the case drawn from, which the caller holds; one choice is
+#   drawn for each element.
+# - `xs`: the elements, any number.
+#
+# Fails `limit` where the case has no choice left. See also `shuffled`.
+function subsequence<T>(@source: Source, xs: [T]) -> [T]?
+    return collections.subsequence(@source.state, xs: xs)
+
+# A seeded generator of `random`, its two words drawn, for code under test
+# that takes one: what it draws is part of the case and shrinks with it.
+#
+# - `source`: the case drawn from, which the caller holds; two choices are
+#   drawn.
+#
+# Fails `limit` where the case has no choice left. See also `random.Generator`.
+function random_generator(@source: Source) -> random.Generator?
+    high = drawing.next(@source.state)?
+    low = drawing.next(@source.state)?
+    return ok(random.Generator(high: high, low: low))
+
+# Nothing where `condition` holds, else a failure `invalid` that rejects the
+# case: a generator writes `property.assume(x != 0)?`, and a `()?` property
+# the same, so a case outside what the property reads is drawn again and not
+# counted.
+#
+# - `condition`: whether the case is one the property reads.
+#
+# Fails `invalid` where `condition` is `false`. A property whose cases are
+# rejected more than `Settings.rejects` times gives up. See also `check`.
+function assume(condition: bool) -> ()?
+    if condition
+        return ok()
+    return fail(code: INVALID, msg: "the case is rejected: an assumption of the property does not hold")
+
+## Generators the package offers
+
+# A generator of any `i64`, for `check`: `int_between` over the whole width
+# of `i64`, so its edges are the type's ends.
+#
+# - `source`: the case, as `check` hands it.
+#
+# Fails `limit` where the case has no choice left. See also `int_between`.
+function ints(source: Source) -> i64?
+    s @= source
+    return int_between(@s, least: math.MIN_I64, most: math.MAX_I64)
+
+# A generator of any float, for `check`: `float`, its special values among
+# the edges.
+#
+# - `source`: the case, as `check` hands it.
+#
+# Fails `limit` where the case has no choice left. See also `float`.
+function floats(source: Source) -> f64?
+    s @= source
+    return float(@s)
+
+# A generator of texts of any characters, up to 20 long, for `check`:
+# `any_text`.
+#
+# - `source`: the case, as `check` hands it.
+#
+# Fails `limit` where the case has no choice left. See also `any_text`.
+function texts(source: Source) -> str?
+    s @= source
+    return any_text(@s, least: 0, most: 20)
+
+# A generator of lists of up to 20 numbers, each any `i64`, for `check`.
+#
+# - `source`: the case, as `check` hands it.
+#
+# Fails `limit` where the case has no choice left. See also `many` and
+# `ints`.
+function int_lists(source: Source) -> [i64]?
+    s @= source
+    count @= many(least: 0, most: 20)
+    out: [i64] @= []
+
+    while more(@s, @count)?
+        out @ out.push(int_between(@s, least: math.MIN_I64, most: math.MAX_I64)?)
+
+    return ok(out)
+
+# A generator of up to 64 bytes, each any byte, for `check`: `bytes`.
+#
+# - `source`: the case, as `check` hands it.
+#
+# Fails `limit` where the case has no choice left. See also `bytes`.
+function byte_lists(source: Source) -> [u8]?
+    s @= source
+    return bytes(@s, least: 0, most: 64)
+
+# A generator of `true` and `false`, for `check`: `boolean`.
+#
+# - `source`: the case, as `check` hands it.
+#
+# Fails `limit` where the case has no choice left. See also `boolean`.
+function booleans(source: Source) -> bool?
+    s @= source
+    return boolean(@s)
+
+## Running
+
+# What a run of a property ended with.
+variant Verdict
+    # The property held on every case asked.
+    held
+    # A case failed the property; its smallest form is told.
+    failed
+        # The failing case, shrunk.
+        failure: Failure
+    # More cases were rejected than the settings allow, before enough held.
+    gave_up
+        # The last rejection, as its code and message: `invalid: ...`.
+        last: str
+
+# A failing case, as shrinking left it.
+record Failure
+    # The case the failure was first found at, counted from 0 in the run.
+    found_at: i64
+    # The choices the smallest failing case draws: `replay` makes it again.
+    choices: [u64]
+    # The smallest failing case as the program's `show` wrote it.
+    shown: str
+    # What the property answered on it: `false`, the code and message of its
+    # failure, or the two answers that differ.
+    answer: str
+    # How many smaller candidates shrinking kept, one after another.
+    shrinks: i64
+    # How many candidates shrinking tried.
+    tries: i64
+
+# What `check` and its kin found: the verdict, the counts, and a paragraph a
+# reader reads.
+record Outcome
+    # Whether the property held, failed or gave up.
+    verdict: Verdict
+    # `HELD` where the property held; else the run told: the case, the seed,
+    # the smallest case shown and its choices, or why the run gave up.
+    report: str
+    # The seed the run was drawn from.
+    seed: u64
+    # How many cases held.
+    passed: i64
+    # How many cases were rejected.
+    rejected: i64
+
+# Whether `holds` answers `true` on every case `generate` makes, checked over
+# the cases `settings` asks; the first case it answers `false` on is shrunk
+# to a smallest one, which the report shows.
+#
+# - `generate`: the program's generator: called with a fresh `Source` for
+#   each case and each candidate of the shrinking, it answers the case, or
+#   fails to reject it (`invalid` from `assume`, `limit` from a draw past the
+#   bound); it must draw the same value from the same choices.
+# - `holds`: the property: called on each case the generator answers, `true`
+#   where the case holds.
+# - `show`: called once, on the smallest failing case, to write it in the
+#   report.
+# - `settings`: the seed and the bounds of the run.
+#
+# Never fails: a property that fails is a verdict, `failed`, and a run whose
+# cases are rejected past `settings.rejects` is `gave_up`. A `holds` that
+# aborts ends the test there. See also `check_result` and `replay`.
+function check<T>(generate: (function(Source) -> T?), holds: (function(T) -> bool), show: (function(T) -> str), settings: Settings) -> Outcome
+    run @= runner.start(
+        seed: settings.seed,
+        cases: settings.cases,
+        rejects: settings.rejects,
+        shrinks: settings.shrinks,
+        limit: settings.choices
+    )
+
+    while runner.next(@run)
+        match generate(Source(state: runner.state(run)))
+            .ok value =>
+                if holds(value)
+                    runner.held(@run)
+                else
+                    runner.failed(@run, code: runner.FALSE_CODE, answer: "false")
+            .err e => runner.rejected(@run, code: e.code, msg: e.msg)
+
+    shown: str @= ""
+
+    if run.found
+        shown @ match generate(Source(state: runner.best_state(run)))
+            .ok value => show(value)
+            .err e    => runner.not_made_again(code: e.code, msg: e.msg)
+    verdict: Verdict @= .held
+
+    if run.found
+        verdict @ .failed(
+            failure: Failure(found_at: run.found_at, choices: run.best, shown: shown, answer: run.answer, shrinks: run.kept, tries: run.tries)
+        )
+    else if run.gave_up
+        verdict @ .gave_up(last: run.last_rejection)
+    return Outcome(
+        verdict: verdict,
+        report: runner.report(run, shown: shown),
+        seed: settings.seed,
+        passed: run.passed,
+        rejected: run.rejected
+    )
+
+# Whether `holds` answers `ok()` on every case `generate` makes, as `check`
+# does; a failure's code and message are its words in the report, and a
+# failure `invalid` rejects the case instead.
+#
+# - `generate`: the program's generator, as `check` calls it.
+# - `holds`: the property: called on each case, `ok()` where it holds, a
+#   failure saying why where it does not, `invalid` (as `assume` answers)
+#   where the case is not one it reads.
+# - `show`: called once, on the smallest failing case, to write it.
+# - `settings`: the seed and the bounds of the run.
+#
+# Shrinking keeps only candidates that fail with the code of the first
+# failure, so a smaller case of another failure does not take its place.
+# Never fails, as `check`. See also `check`.
+function check_result<T>(generate: (function(Source) -> T?), holds: (function(T) -> ()?), show: (function(T) -> str), settings: Settings) -> Outcome
+    run @= runner.start(
+        seed: settings.seed,
+        cases: settings.cases,
+        rejects: settings.rejects,
+        shrinks: settings.shrinks,
+        limit: settings.choices
+    )
+
+    while runner.next(@run)
+        match generate(Source(state: runner.state(run)))
+            .ok value =>
+                match holds(value)
+                    .ok _ => runner.held(@run)
+                    .err e =>
+                        if e.code == INVALID
+                            runner.rejected(@run, code: e.code, msg: e.msg)
+                        else
+                            runner.failed(@run, code: e.code, answer: f"{e.code}: {e.msg}")
+            .err e => runner.rejected(@run, code: e.code, msg: e.msg)
+
+    shown: str @= ""
+
+    if run.found
+        shown @ match generate(Source(state: runner.best_state(run)))
+            .ok value => show(value)
+            .err e    => runner.not_made_again(code: e.code, msg: e.msg)
+    verdict: Verdict @= .held
+
+    if run.found
+        verdict @ .failed(
+            failure: Failure(found_at: run.found_at, choices: run.best, shown: shown, answer: run.answer, shrinks: run.kept, tries: run.tries)
+        )
+    else if run.gave_up
+        verdict @ .gave_up(last: run.last_rejection)
+    return Outcome(
+        verdict: verdict,
+        report: runner.report(run, shown: shown),
+        seed: settings.seed,
+        passed: run.passed,
+        rejected: run.rejected
+    )
+
+# Whether `left` and `right` answer the same, by `same`, on every case
+# `generate` makes, as `check` checks a property: a function against a
+# simpler one that is known right, an old version against a new.
+#
+# - `generate`: the program's generator, as `check` calls it.
+# - `left`: the first function, called on each case.
+# - `right`: the second function, called on each case after `left`.
+# - `same`: called with the two answers, `true` where they agree.
+# - `show`: called once, on the smallest case where they differ, to write it.
+# - `settings`: the seed and the bounds of the run.
+#
+# Never fails, as `check`. See also `check`.
+function check_equal<T, R>(generate: (function(Source) -> T?), left: (function(T) -> R), right: (function(T) -> R), same: (function(left: R, right: R) -> bool), show: (function(T) -> str), settings: Settings) -> Outcome
+    run @= runner.start(
+        seed: settings.seed,
+        cases: settings.cases,
+        rejects: settings.rejects,
+        shrinks: settings.shrinks,
+        limit: settings.choices
+    )
+
+    while runner.next(@run)
+        match generate(Source(state: runner.state(run)))
+            .ok value =>
+                first = left(value)
+                second = right(value)
+
+                if same(left: first, right: second)
+                    runner.held(@run)
+                else
+                    runner.failed(@run, code: runner.DIFFER_CODE, answer: "two answers that differ")
+            .err e => runner.rejected(@run, code: e.code, msg: e.msg)
+
+    shown: str @= ""
+
+    if run.found
+        shown @ match generate(Source(state: runner.best_state(run)))
+            .ok value => show(value)
+            .err e    => runner.not_made_again(code: e.code, msg: e.msg)
+    verdict: Verdict @= .held
+
+    if run.found
+        verdict @ .failed(
+            failure: Failure(found_at: run.found_at, choices: run.best, shown: shown, answer: run.answer, shrinks: run.kept, tries: run.tries)
+        )
+    else if run.gave_up
+        verdict @ .gave_up(last: run.last_rejection)
+    return Outcome(
+        verdict: verdict,
+        report: runner.report(run, shown: shown),
+        seed: settings.seed,
+        passed: run.passed,
+        rejected: run.rejected
+    )
+
+# The smallest case `generate` makes that `accepts` accepts: the first
+# accepted over the run's cases, shrunk as a failure is.
+#
+# - `generate`: the program's generator, as `check` calls it.
+# - `accepts`: called on each case, `true` where it is one being looked for.
+# - `settings`: the seed and the bounds of the search.
+#
+# Fails `not_found` where no case of `settings.cases` was accepted, or every
+# case was rejected past `settings.rejects`. See also `check`.
+function smallest<T>(generate: (function(Source) -> T?), accepts: (function(T) -> bool), settings: Settings) -> T?
+    run @= runner.start(
+        seed: settings.seed,
+        cases: settings.cases,
+        rejects: settings.rejects,
+        shrinks: settings.shrinks,
+        limit: settings.choices
+    )
+
+    while runner.next(@run)
+        match generate(Source(state: runner.state(run)))
+            .ok value =>
+                if accepts(value)
+                    runner.failed(@run, code: runner.FALSE_CODE, answer: "accepted")
+                else
+                    runner.held(@run)
+            .err e => runner.rejected(@run, code: e.code, msg: e.msg)
+
+    if !run.found
+        return fail(code: NOT_FOUND, msg: runner.none_accepted(run))
+    return generate(Source(state: runner.best_state(run)))
+
+# `count` cases `generate` makes, in the order a run makes them: the
+# simplest first, then edges, then at random.
+#
+# - `generate`: the program's generator, as `check` calls it.
+# - `count`: how many cases, 0 or more.
+# - `settings`: the seed and the bounds; `cases` is not read.
+#
+# Fails `limit` where the generator rejected more than `settings.rejects`
+# cases before `count` were made. Aborts where `count` is below 0. See also
+# `label_counts`.
+function sample<T>(generate: (function(Source) -> T?), count: i64, settings: Settings) -> [T]?
+    assert count >= 0
+    out: [T] @= []
+    run @= runner.start(
+        seed: settings.seed,
+        cases: count,
+        rejects: settings.rejects,
+        shrinks: 0,
+        limit: settings.choices
+    )
+
+    while runner.next(@run)
+        match generate(Source(state: runner.state(run)))
+            .ok value =>
+                out @ out.push(value)
+                runner.held(@run)
+            .err e => runner.rejected(@run, code: e.code, msg: e.msg)
+
+    if run.gave_up
+        return fail(code: LIMIT, msg: runner.report(run, shown: ""))
+    return ok(out)
+
+# How many of the run's cases `label` gives each label: how the cases a
+# generator makes spread, to see that it reaches what the property needs.
+#
+# - `generate`: the program's generator, as `check` calls it.
+# - `label`: called on each case, the label it counts under.
+# - `settings`: the seed and the bounds; `settings.cases` cases are counted.
+#
+# The labels stand in the order they were first given. Fails `limit` where
+# the generator rejected more than `settings.rejects` cases. See also
+# `sample`.
+function label_counts<T>(generate: (function(Source) -> T?), label: (function(T) -> str), settings: Settings) -> {str: i64}?
+    counts: {str: i64} @= {}
+    run @= runner.start(
+        seed: settings.seed,
+        cases: settings.cases,
+        rejects: settings.rejects,
+        shrinks: 0,
+        limit: settings.choices
+    )
+
+    while runner.next(@run)
+        match generate(Source(state: runner.state(run)))
+            .ok value =>
+                name = label(value)
+                counts[name] @ counts[name].default(0) + 1
+                runner.held(@run)
+            .err e => runner.rejected(@run, code: e.code, msg: e.msg)
+
+    if run.gave_up
+        return fail(code: LIMIT, msg: runner.report(run, shown: ""))
+    return ok(counts)
+
+# The case `generate` makes from `choices`: a failure's smallest case made
+# again, from the `choices` of its `Failure`.
+#
+# - `generate`: the program's generator, as `check` calls it.
+# - `choices`: the choices, each drawn in turn; past them every choice is 0.
+# - `settings`: the bound of the case, `settings.choices`; the rest is not
+#   read.
+#
+# Fails where `generate` fails on that case, with its code. See also
+# `check`.
+function replay<T>(generate: (function(Source) -> T?), choices: [u64], settings: Settings) -> T?
+    return generate(Source(state: drawing.given(choices: choices, limit: settings.choices)))
+
+## Examples
+
+# A run of 100 cases from the seed 7, the bounds every run names by default.
+test "seeded: the default bounds"
+    s = seeded(7)
+    assert s.cases == 100 && s.rejects == 1000 && s.shrinks == 2000 && s.choices == 8192
+
+# A run seeded from the system: new cases each time, its seed in the report.
+test "seeded_by_system: a fresh seed and the default bounds"
+    assert seeded_by_system().must().cases == 100
+
+# A run of 500 cases.
+test "with_cases: 500 cases"
+    assert with_cases(seeded(7), cases: 500).cases == 500
+
+# A run that gives up at the first rejected case.
+test "with_rejects: no rejection allowed"
+    assert with_rejects(seeded(7), rejects: 0).rejects == 0
+
+# A run that reports its first failing case as it was drawn.
+test "with_shrinks: no shrinking"
+    assert with_shrinks(seeded(7), shrinks: 0).shrinks == 0
+
+# Cases kept small: 64 choices at most.
+test "with_choices: 64 choices a case"
+    assert with_choices(seeded(7), choices: 64).choices == 64
+
+# The choices a test writes for a generator's helper: 0 and 3 make a die
+# show 4, the side above 1 at three steps.
+test "source_of: a die from chosen choices"
+    s @= source_of([0, 3])
+    assert int_between(@s, least: 1, most: 6).must() == 4
+
+# A die's throw, as a generator draws it.
+test "int_between: a die thrown"
+    s @= source_of([0, 5])
+    assert int_between(@s, least: 1, most: 6).must() == 6
+
+# A port number, any `u64` from 1024 to 65535.
+test "u64_between: a port"
+    s @= source_of([0, 10])
+    assert u64_between(@s, least: 1024, most: 65535).must() == 1034
+
+# An edge of the floats: the third special value is a `nan`.
+test "float: a nan among the edges"
+    s @= source_of([7, 512])
+    x = float(@s).must()
+    assert x != x
+
+# A temperature from -10 to 10: a kind and a magnitude of 0 make 0.
+test "float_between: the simplest temperature"
+    s @= source_of([])
+    assert float_between(@s, least: -10.0, most: 10.0).must() == 0.0
+
+# A coin: `false` for a choice of 0, `true` for one at half or above.
+test "boolean: a coin"
+    s @= source_of([0, 9223372036854775808])
+    assert !boolean(@s).must()
+    assert boolean(@s).must()
+
+# A character of an alphabet holding characters of two and four bytes.
+test "character: the second of an alphabet"
+    s @= source_of([256])
+    assert character(@s, alphabet: "aé😀").must() == "é"
+
+# The simplest character is `0`.
+test "any_character: the simplest"
+    s @= source_of([])
+    assert any_character(@s).must() == "0"
+
+# A word of `a` and `b`: one more, `a`, one more, `b`, no more.
+test "text: a word of two letters"
+    s @= source_of([18446744073709551615, 0, 18446744073709551615, 256, 0])
+    assert text(@s, alphabet: "ab", least: 0, most: 5).must() == "ab"
+
+# Two characters at least: the simplest text is `00`.
+test "any_text: the simplest of two characters"
+    s @= source_of([])
+    assert any_text(@s, least: 2, most: 8).must() == "00"
+
+# One byte, its value the choice's top byte.
+test "bytes: one byte of 65"
+    s @= source_of([18446744073709551615, 4683743612465315840, 0])
+    assert bytes(@s, least: 0, most: 4).must() == [65]
+
+# A list of booleans as a generator draws it: one more, true, one more,
+# false, no more.
+test "more: a list of two booleans"
+    s @= source_of([18446744073709551615, 9223372036854775808, 18446744073709551615, 0, 0])
+    count @= many(least: 0, most: 3)
+    out: [bool] @= []
+
+    while more(@s, @count).must()
+        out @ out.push(boolean(@s).must())
+
+    assert out == [true, false]
+
+# The count of a list of at most three elements: none below the least.
+test "many: a list of one to three elements"
+    s @= source_of([])
+    count @= many(least: 1, most: 3)
+    assert more(@s, @count).must()
+    assert !more(@s, @count).must()
+
+# The third of three shapes.
+test "one_of: the third alternative"
+    s @= source_of([512])
+    assert one_of(@s, count: 3).must() == 2
+
+# A weight of 0 is never taken: the simplest is the first weighed above 0.
+test "frequency: the first alternative of weight above 0"
+    s @= source_of([0])
+    assert frequency(@s, weights: [0, 9, 1]).must() == 1
+
+# A colour from a list.
+test "choose: a colour"
+    s @= source_of([256])
+    assert choose(@s, xs: ["red", "green", "blue"]).must() == "green"
+
+# Three cards dealt in a drawn order.
+test "shuffled: three cards"
+    s @= source_of([512, 0])
+    assert shuffled(@s, xs: [1, 2, 3]).must() == [3, 2, 1]
+
+# The first and the last of three, the middle left.
+test "subsequence: two of three"
+    s @= source_of([9223372036854775808, 0, 9223372036854775808])
+    assert subsequence(@s, xs: [1, 2, 3]).must() == [1, 3]
+
+# A generator of `random` whose state is the case's two choices.
+test "random_generator: the state drawn"
+    s @= source_of([1, 2])
+    assert random_generator(@s).must() == random.Generator(high: 1, low: 2)
+
+# A case the property does not read is rejected with `invalid`.
+test "assume: a condition that fails rejects"
+    assert !assume(true).is_err()
+
+    match assume(false)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+# Adding 0 leaves every number as it was: the property holds.
+test "check: adding 0 to any number"
+    outcome = check(generate: ints, holds: samples.adds_zero, show: samples.int_text, settings: seeded(7))
+    assert outcome.report == HELD
+    assert outcome.passed == 100
+
+# A property false from 1,000 up fails on a large number, which shrinks to
+# 1,000 itself.
+test "check: below 1000, shrunk to 1000"
+    outcome = check(generate: ints, holds: samples.below_thousand, show: samples.int_text, settings: seeded(7))
+
+    match outcome.verdict
+        .failed f          => assert f.failure.shown == "1000"
+        .held | .gave_up _ => assert false
+
+# A number that does not fit a byte fails with `to_u8`'s code, shrunk to
+# 256.
+test "check_result: a byte's range, shrunk to 256"
+    outcome = check_result(generate: ints, holds: samples.fits_a_byte, show: samples.int_text, settings: seeded(7))
+
+    match outcome.verdict
+        .failed f          => assert f.failure.shown == "256"
+        .held | .gave_up _ => assert false
+
+# A list reversed twice is the list.
+test "check_equal: a list reversed twice"
+    outcome = check_equal(
+        generate: int_lists,
+        left: samples.reversed_twice,
+        right: samples.itself,
+        same: samples.same_list,
+        show: samples.ints_text,
+        settings: seeded(7)
+    )
+    assert outcome.report == HELD
+
+# The smallest number above 1,000.
+test "smallest: the first number above 1000"
+    assert smallest(generate: ints, accepts: samples.above_thousand, settings: seeded(7)).must() == 1001
+
+# The first case of a run is the simplest: 0.
+test "sample: the simplest case first"
+    cases = sample(generate: ints, count: 3, settings: seeded(7)).must()
+    assert cases.len() == 3 && cases[0] == 0
+
+# How the signs of 100 cases spread.
+test "label_counts: the signs of 100 numbers"
+    counts = label_counts(generate: ints, label: samples.sign_of, settings: seeded(7)).must()
+    total = counts["negative"].default(0) + counts["zero"].default(0) + counts["positive"].default(0)
+    assert total == 100
+    assert counts["zero"].default(0) >= 1
+
+# A failure's smallest case made again from its choices.
+test "replay: the smallest case made again"
+    assert replay(generate: ints, choices: [0, 1000], settings: seeded(7)).must() == 1000
+
+# Any `i64`: 0 and 42 make 42.
+test "ints: a number from its choices"
+    assert replay(generate: ints, choices: [0, 42], settings: seeded(7)).must() == 42
+
+# Any float: an edge, the third special value, a `nan`.
+test "floats: a nan from its choices"
+    x = replay(generate: floats, choices: [7, 512], settings: seeded(7)).must()
+    assert x != x
+
+# The simplest text is empty.
+test "texts: the simplest text"
+    assert replay(generate: texts, choices: [], settings: seeded(7)).must() == ""
+
+# A list of one number, 5.
+test "int_lists: one number"
+    assert replay(generate: int_lists, choices: [18446744073709551615, 0, 5], settings: seeded(7)).must() == [5]
+
+# A list of one byte, 7.
+test "byte_lists: one byte"
+    assert replay(generate: byte_lists, choices: [18446744073709551615, 504403158265495552], settings: seeded(7)).must() == [7]
+
+# `true` for a choice at half.
+test "booleans: true"
+    assert replay(generate: booleans, choices: [9223372036854775808], settings: seeded(7)).must()

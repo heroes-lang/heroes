@@ -1,0 +1,79 @@
+# The properties, answers and writers the face's examples check with: plain
+# top-level functions, as a program's own would be.
+
+# `x` written.
+function int_text(x: i64) -> str
+    return x.to_str()
+
+# `xs` written as a list.
+function ints_text(xs: [i64]) -> str
+    pieces: [str] @= []
+
+    for x in xs
+        pieces @ pieces.push(x.to_str())
+
+    return "[" + pieces.join(", ") + "]"
+
+# Whether adding 0 to `x` leaves it: true of every number.
+function adds_zero(x: i64) -> bool
+    return x + 0 == x
+
+# Whether `x` is below 1,000: false from 1,000 up.
+function below_thousand(x: i64) -> bool
+    return x < 1000
+
+# Whether `x` is above 1,000.
+function above_thousand(x: i64) -> bool
+    return x > 1000
+
+# Nothing where `x` fits a byte, else the failure of `to_u8`.
+function fits_a_byte(x: i64) -> ()?
+    _ = to_u8(x)?
+    return ok()
+
+# `xs` reversed twice, one element at a time.
+function reversed_twice(xs: [i64]) -> [i64]
+    once: [i64] @= []
+    at: i64 @= xs.len()
+
+    while at > 0
+        at @ at - 1
+        once @ once.push(xs[at])
+
+    twice: [i64] @= []
+    back: i64 @= once.len()
+
+    while back > 0
+        back @ back - 1
+        twice @ twice.push(once[back])
+
+    return twice
+
+# `xs` as it is.
+function itself(xs: [i64]) -> [i64]
+    return xs
+
+# Whether two lists are equal.
+function same_list(left: [i64], right: [i64]) -> bool
+    return left == right
+
+# The sign of `x` as a word.
+function sign_of(x: i64) -> str
+    if x < 0
+        return "negative"
+
+    if x == 0
+        return "zero"
+    return "positive"
+
+test "samples: the properties answer as their comments say"
+    assert adds_zero(-7)
+    assert !below_thousand(1000)
+    assert above_thousand(1001)
+    assert fits_a_byte(255).is_err() == false
+    assert fits_a_byte(256).is_err()
+    assert reversed_twice([1, 2, 3]) == itself([1, 2, 3])
+    assert same_list(left: [1], right: [1])
+    assert sign_of(-1) == "negative" && sign_of(0) == "zero" && sign_of(5) == "positive"
+    assert ints_text([1, -2]) == "[1, -2]"
+    assert int_text(-3) == "-3"

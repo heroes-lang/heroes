@@ -1,0 +1,413 @@
+# The ledger of `property`: what property-based testing lets a test do, one
+# block per capability, and what Rebel answers. The lists are this machine's,
+# 2026-11-19, read and never their source: Go's `testing/quick` (`go doc
+# -all`, Go 1.27.3); Rust's `proptest` 1.12.0 and `quickcheck` 1.1.0, fetched
+# into the scratch folder and read from `cargo doc` (their items and every
+# method of `Strategy`, `TestRunner`, `Config`, `QuickCheck`, `Gen` and
+# `TestResult`), Rust's standard library holding none; Python's `hypothesis`
+# 6.170.15, installed into the scratch folder and read by `dir()` of
+# `hypothesis`, `hypothesis.strategies`, `hypothesis.settings` and
+# `hypothesis.stateful`. Haskell's QuickCheck is the reference the task names
+# and no Haskell is on this machine, so its line is the export list of
+# `Test.QuickCheck` 2.19.0.0 as Hackage's documentation gives it, read
+# 2026-11-19: a list read, never run.
+#
+# The shape every block rests on: Heroes has no closure, and a function value
+# takes no `@` parameter, so a generator is a top-level function the program
+# writes, `(function(Source) -> T?)`, drawing every part of its value from one
+# `Source` through the draws below. Its value is a function of one sequence of
+# choices, which the package keeps, replays and shrinks: Hypothesis's
+# integrated shrinking (its "internal reduction"), never a shrinker per type.
+
+capability property/check  a property checked over many generated cases, answering `bool`
+  heroes  property.check
+  go      quick.Check, quick.Config.Values
+  rust    proptest::proptest!, proptest::test_runner::TestRunner, TestRunner::run, TestRunner::run_one, TestRunner::new, TestRunner::default, quickcheck::quickcheck, quickcheck::quickcheck!, quickcheck::QuickCheck, QuickCheck::new, QuickCheck::quickcheck, QuickCheck::quicktest, quickcheck::Testable, Testable::result
+  python  hypothesis.given
+  haskell quickCheck, quickCheckWith, quickCheckResult, quickCheckWithResult, property, Property, Testable, forAll, forAllShow, forAllBlind, propertyForAllShrinkShow
+  note    Go's `quick.Check` and QuickCheck take a function of typed arguments and find generators by reflection or a type class; here the generator is named beside the property, `(function(Source) -> T?)`, and the report needs `show` to write the case, the language having no rendering of a record
+
+capability property/check-result  a property that answers its own failure in words
+  heroes  property.check_result
+  go      -
+  rust    proptest::prop_assert!, proptest::prop_assert_eq!, proptest::prop_assert_ne!, TestCaseError::Fail, TestCaseError::fail, TestCaseResult, ProptestResultExt, Reason, quickcheck::TestResult, TestResult::passed, TestResult::failed, TestResult::error, TestResult::from_bool, TestResult::is_failure, TestResult::is_error
+  python  hypothesis.note
+  haskell counterexample, printTestCase, whenFail, whenFail', (===), (=/=), total, ioProperty, idempotentIOProperty
+  note    a failure's code and message are the property's words in the report, as `prop_assert!` and `counterexample` let a property say why; shrinking keeps only candidates failing with the first failure's code, as Hypothesis shrinks each distinct failure apart
+
+capability property/check-equal  two functions answering alike on every generated case
+  heroes  property.check_equal
+  go      quick.CheckEqual, quick.CheckEqualError
+  rust    -
+  python  -
+  haskell (===)
+  note    the answers are compared by the program's `same`, since a type parameter's `==` is refused by the compiler (a `partial` record may arrive), and the report shows the case, not the two answers
+
+capability property/outcome  what a run found, told as values and as a paragraph
+  heroes  property.Outcome, property.Verdict, property.Failure
+  go      quick.CheckError, quick.SetupError
+  rust    proptest::test_runner::TestError, TestError::Fail, TestError::Abort
+  python  -
+  haskell Result, Success, GaveUp, Failure, NoExpectedFailure, isSuccess
+  note    QuickCheck's `NoExpectedFailure` is a test asserting `.failed`; `report` is `HELD` alone where the property held, so `assert outcome.report == property.HELD` prints the whole report when it did not
+
+capability property/expect-failure  a property a test expects to fail
+  heroes  property.Verdict
+  go      -
+  rust    quickcheck::TestResult::must_fail
+  python  -
+  haskell expectFailure
+  note    a test asserts the verdict `.failed`, its smallest case read from the `Failure`
+
+capability property/seed  a run reproduced from the seed its failure prints
+  heroes  property.seeded
+  go      quick.Config.Rand
+  rust    proptest::test_runner::Config::rng_seed, RngSeed, RngSeed::Fixed, TestRunner::deterministic, TestRunner::new_with_rng, TestRunner::new_rng, TestRunner::rng, TestRng, quickcheck::Gen::from_size_and_seed, QuickCheck::rng, QuickCheck::gen
+  python  hypothesis.seed, hypothesis.settings.derandomize
+  haskell replay, recheck
+  note    every case is drawn from PCG (`random.Generator`) seeded by the run's seed and the case's number, so a seed and a generator make the same run on every machine; the report names the seed
+
+capability property/fresh-seed  a run seeded from the system's generator
+  heroes  property.seeded_by_system
+  go      -
+  rust    RngSeed::Random
+  python  -
+  haskell -
+
+capability property/cases  how many cases must hold
+  heroes  property.with_cases
+  go      quick.Config.MaxCount, quick.Config.MaxCountScale
+  rust    Config::cases, Config::with_cases, QuickCheck::tests, QuickCheck::max_tests, QuickCheck::min_tests_passed
+  python  hypothesis.settings.max_examples
+  haskell maxSuccess, withMaxSuccess, withNumTests, once, again
+  note    100 by default, as Go's `quick`, Hypothesis (`max_examples`, read 2026-11-19) and QuickCheck default; proptest runs 256 (its `Config` documentation)
+
+capability property/rejects  how many cases may be rejected before the run gives up
+  heroes  property.with_rejects
+  go      -
+  rust    Config::max_local_rejects, Config::max_global_rejects, TestRunner::reject_local
+  python  hypothesis.HealthCheck.filter_too_much
+  haskell maxDiscardRatio, withDiscardRatio
+  note    1,000 by default, ten for each case asked, QuickCheck's `maxDiscardRatio` as its documentation gives it; past it the verdict is `gave_up` with the last rejection's words
+
+capability property/shrink-bound  how much work shrinking may do, none included
+  heroes  property.with_shrinks
+  go      -
+  rust    Config::max_shrink_iters, Strategy::no_shrink, proptest::strategy::NoShrink, quickcheck::NoShrink
+  python  hypothesis.settings.phases, hypothesis.Phase.shrink
+  haskell maxShrinks, withMaxShrinks, noShrinking
+  note    a bound of candidates tried, 2,000 by default, 0 keeping the case as drawn; proptest bounds the same count (`max_shrink_iters`), QuickCheck the steps kept
+
+capability property/size-bound  how large one case may grow
+  heroes  property.with_choices
+  go      -
+  rust    Config::max_default_size_range, proptest::collection::size_range, SizeRange
+  python  hypothesis.HealthCheck.data_too_large
+  haskell maxSize, withMaxSize, sized, getSize, resize, scale, mapSize
+  note    a bound of the choices one case draws, 8,192 by default (Hypothesis's `BUFFER_SIZE` reads 8192, read 2026-11-19), past which a draw fails `limit`; QuickCheck's size that grows with the case number is not kept, a list's length being set by `many` and the first cases being the simplest and the edges
+
+capability property/shrinking  the failing case reduced to a smallest one
+  heroes  property.check, property.check_result, property.check_equal, property.smallest
+  go      -
+  rust    proptest::strategy::ValueTree, quickcheck::Arbitrary::shrink, quickcheck::empty_shrinker, quickcheck::single_shrinker
+  python  hypothesis.Phase.shrink, hypothesis.Phase.explain
+  haskell shrink, shrinkList, shrinkMap, shrinkMapBy, shrinkIntegral, shrinkRealFrac, shrinkBoundedEnum, shrinkDecimal, shrinkNothing, genericShrink, subterms, recursivelyShrink, forAllShrink, forAllShrinkShow, forAllShrinkBlind, shrinking, Shrinking, ShrinkState, shrinkInit, shrinkState, Shrink2, getShrink2
+  note    integrated shrinking as Hypothesis does it, on the sequence of choices the generator drew: the choices are cut to the fewest that fail, blocks deleted and zeroed, a choice and the next made 0 and the largest, equal choices lowered together, each choice lowered by halving, neighbours swapped, a choice moved onto the next; a candidate is kept where it is smaller (fewer choices, then lower) and fails alike. No shrinker is written per type, so the program's records shrink with no code of its own
+
+capability property/assume  a case rejected, by its generator or by the property
+  heroes  property.assume
+  go      -
+  rust    proptest::prop_assume!, TestCaseError::Reject, TestCaseError::reject, quickcheck::TestResult::discard
+  python  hypothesis.assume, hypothesis.reject
+  haskell (==>), discard, Discard
+  note    a rejection is a failure `invalid` from the generator or a `()?` property, counted against `rejects` and never as a failure
+
+capability property/replay  a failing case rebuilt from its choices
+  heroes  property.replay, property.source_of
+  go      -
+  rust    -
+  python  hypothesis.reproduce_failure, hypothesis.settings.print_blob
+  haskell -
+  note    Hypothesis's `reproduce_failure` replays a blob of its choices; here the `Failure` holds the choices, and the report prints the first 32 of them
+
+capability property/smallest  the smallest generated value a function accepts
+  heroes  property.smallest
+  go      -
+  rust    -
+  python  hypothesis.find
+  haskell -
+  note    Hypothesis's `find`; no case accepted fails `not_found`
+
+capability property/sample  values a generator makes, to look at
+  heroes  property.sample
+  go      quick.Value
+  rust    Strategy::new_tree
+  python  hypothesis.strategies.SearchStrategy.example
+  haskell generate, sample, sample'
+  note    in the order a run makes them: the simplest case first, then the edges, then at random
+
+capability property/labels  how the cases spread over labels the program gives them
+  heroes  property.label_counts
+  go      -
+  rust    -
+  python  hypothesis.event, hypothesis.statistics
+  haskell label, collect, classify, tabulate, labelledExamples, labelledExamplesWith, labelledExamplesResult, labelledExamplesWithResult
+  note    the labels are counted over the run's cases, in the order first given; QuickCheck prints them, here they are a map the test reads
+
+capability property/coverage  a share of cases a label must reach, held by a statistical test
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  haskell cover, coverTable, checkCoverage, checkCoverageWith, Confidence, certainty, tolerance, stdConfidence
+  note    a share each label must reach, held by a sequential statistical test as QuickCheck's `checkCoverage` does it, is not written; `label_counts` gives the counts it would read
+
+capability property/integers  whole numbers in a range, its edges first
+  heroes  property.int_between, property.u64_between, property.ints
+  go      -
+  rust    proptest::num::i8::ANY, i16::ANY, i32::ANY, i64::ANY, i128::ANY, u8::ANY, u16::ANY, u32::ANY, u64::ANY, u128::ANY, isize::ANY, usize::ANY, proptest::num::sample_uniform_incl, proptest::bits::i64::between, proptest::bits::u64::between
+  python  hypothesis.strategies.integers
+  haskell choose, chooseInt, chooseInteger, chooseWord64, chooseInt64, chooseUpTo, chooseBoundedIntegral, chooseAny, arbitrarySizedIntegral, arbitrarySizedNatural, arbitrarySizedBoundedIntegral, arbitraryBoundedIntegral, arbitraryBoundedRandom, Positive, Negative, NonZero, NonNegative, NonPositive, Large, Small
+  note    the edges first: the first case draws every number at its target (0, or the end nearer 0), the next tenth of the cases draw edges only (the target, 1, -1, the ends and their neighbours), the rest an edge one draw in eight, as Hypothesis mixes its boundary values in; both ends are included, as Hypothesis's `integers` and QuickCheck's `choose`, where `random.int_in` leaves its end out. The side above the target is the simpler: where both sides fail the smallest case is the least failing number above it, 256 for a byte's range where Hypothesis's `find` answers -1 (run 2026-11-19), so that halving a magnitude ends on a threshold on either side; and a choice past the end reads 0, so of two numbers whose sum must reach 1000 the smallest case is (1000, 0), where Hypothesis answers (0, 1000). For a threshold, a duplicate in a list, a character in a text and a number past 1000 the two answer alike: 1000, [0, 0], `é` and 1001
+
+capability property/floats  floats in a range, and any float with the special values
+  heroes  property.float, property.float_between, property.floats
+  go      -
+  rust    proptest::num::f64::ANY, f64::POSITIVE, f64::NEGATIVE, f64::NORMAL, f64::SUBNORMAL, f64::ZERO, f64::INFINITE, f64::QUIET_NAN, f64::SIGNALING_NAN, the same of f32
+  python  hypothesis.strategies.floats
+  haskell arbitrarySizedFractional
+  note    `float` draws every special value among its edges, nan, both infinities and both zeros included, as Hypothesis's `floats()`; `float_between` draws finite floats only, its ends included
+
+capability property/booleans  `true` or `false`
+  heroes  property.boolean, property.booleans
+  go      -
+  rust    proptest::bool::ANY, proptest::bool::weighted, proptest::bool::Weighted
+  python  hypothesis.strategies.booleans
+  haskell -
+  note    proptest's weighted boolean is `frequency` of two
+
+capability property/characters  one character, from chosen characters or from all of Unicode
+  heroes  property.character, property.any_character
+  go      -
+  rust    proptest::char::any, proptest::char::range, proptest::char::ranges, proptest::char::select_char, proptest::char::DEFAULT_PREFERRED_RANGES, proptest::char::DEFAULT_SPECIAL_CHARS
+  python  hypothesis.strategies.characters
+  haskell arbitraryUnicodeChar, arbitraryASCIIChar, arbitraryPrintableChar
+  note    an alphabet is a text whose characters, of any width, are drawn simplest first; any character draws edges of every UTF-8 width, the zero character, a combining mark, a right-to-left override and the last scalar value, then printable ASCII, the Basic Multilingual Plane or any plane, `0` the simplest as in Hypothesis; surrogates never, a `str` holding UTF-8
+
+capability property/texts  a text over chosen characters, those of more than one byte included, or over all of Unicode
+  heroes  property.text, property.any_text, property.texts
+  go      -
+  rust    proptest::string::StringParam
+  python  hypothesis.strategies.text
+  haskell ASCIIString, UnicodeString, PrintableString
+  note    a length is counted in characters
+
+capability property/bytes  bytes of a length in a range
+  heroes  property.bytes, property.byte_lists
+  go      -
+  rust    -
+  python  hypothesis.strategies.binary
+  haskell -
+
+capability property/lists  a list of any element, its length in a range
+  heroes  property.many, property.more, property.int_lists
+  go      -
+  rust    proptest::collection::vec, vec_deque, linked_list, binary_heap, proptest::array::uniform, uniform1 to uniform32
+  python  hypothesis.strategies.lists, hypothesis.strategies.iterables
+  haskell listOf, listOf1, vectorOf, vector, NonEmptyList, NonEmpty, getNonEmpty
+  note    a list of any element is the generator's own loop, `while property.more(@s, @count)?`, since a generator passed as a value cannot advance the source of the one that calls it; `more` reads one choice an element and 0 ends the list, Hypothesis's `many`, so a deleted element is a shorter list
+
+capability property/maps  a map or a set of drawn keys
+  heroes  property.many, property.more
+  go      -
+  rust    proptest::collection::btree_map, hash_map, btree_set, hash_set, proptest::bits::bitset, proptest::bits::bool_vec
+  python  hypothesis.strategies.dictionaries, hypothesis.strategies.fixed_dictionaries, hypothesis.strategies.sets, hypothesis.strategies.frozensets
+  haskell -
+  note    a map or a set is drawn by the same loop, a key drawn again replacing the one before, so it may hold fewer than the elements counted, as a set does
+
+capability property/one-of  one of several alternatives, the first the simplest
+  heroes  property.one_of
+  go      -
+  rust    proptest::prop_oneof!, Strategy::prop_union, proptest::strategy::Union, proptest::strategy::TupleUnion, proptest::option::of, proptest::result::maybe_ok, proptest::result::maybe_err
+  python  hypothesis.strategies.one_of, hypothesis.strategies.none, hypothesis.strategies.just, hypothesis.strategies.nothing
+  haskell oneof
+  note    which alternative, the first the simplest; the program draws it with its own draws, a function value of a generator being unable to advance the caller's source
+
+capability property/frequency  one of several alternatives, by weights
+  heroes  property.frequency
+  go      -
+  rust    proptest::prop_oneof! with weights, proptest::option::weighted, proptest::option::prob, proptest::option::Probability, proptest::result::maybe_ok_weighted, proptest::result::maybe_err_weighted, proptest::strategy::float_to_weight, proptest::strategy::W, proptest::strategy::WA
+  python  -
+  haskell frequency
+
+capability property/choose  an element of a list the program gives
+  heroes  property.choose
+  go      -
+  rust    proptest::sample::select, proptest::sample::Select, proptest::sample::Index, proptest::sample::Selector
+  python  hypothesis.strategies.sampled_from
+  haskell elements, growingElements
+
+capability property/shuffled  a list put in a drawn order, shrinking to its own
+  heroes  property.shuffled
+  go      -
+  rust    Strategy::prop_shuffle, proptest::strategy::Shuffle, proptest::strategy::Shuffleable
+  python  hypothesis.strategies.permutations
+  haskell shuffle
+  note    Fisher and Yates's from the front, each place keeping its element for a choice of 0
+
+capability property/subsequence  some elements of a list, in their order
+  heroes  property.subsequence
+  go      -
+  rust    proptest::sample::subsequence, proptest::sample::Subsequence
+  python  -
+  haskell sublistOf
+  note    each element kept or left, as likely; nothing kept is the simplest
+
+capability property/records  a value of the program's own type built from draws, dependent draws included
+  heroes  property.Source, property.check
+  go      quick.Generator
+  rust    proptest::prop_compose!, Strategy::prop_map, Strategy::prop_map_into, Strategy::prop_flat_map, Strategy::prop_ind_flat_map, Strategy::prop_ind_flat_map2, Strategy::prop_filter_map, proptest::strategy::Just, proptest::strategy::LazyJust, proptest::strategy::Map, MapInto, Flatten, IndFlatten, IndFlattenMap, FilterMap, LazyJustFn
+  python  hypothesis.strategies.builds, hypothesis.strategies.composite, hypothesis.strategies.data, hypothesis.strategies.DataObject, hypothesis.strategies.DrawFn, hypothesis.strategies.tuples, hypothesis.strategies.shared, SearchStrategy.map, SearchStrategy.flatmap
+  haskell Gen, applyArbitrary2, applyArbitrary3, applyArbitrary4, (><)
+  note    a generator is a top-level function from `Source` to `T?` that copies its source into a cell and draws each field through `@source`, calling helpers of its own with the same `@source`; a dependent draw is a draw that reads an earlier one, and a map is code after the draws (the driver `reach_property.hero` shows the shape)
+
+capability property/filter  a drawn value kept only where a condition holds, the run bounded
+  heroes  property.assume
+  go      -
+  rust    Strategy::prop_filter, proptest::strategy::Filter
+  python  hypothesis.strategies.SearchStrategy.filter
+  haskell suchThat, suchThatMap, suchThatMaybe
+  note    a value is filtered by `assume` in the generator, which rejects the case, or by the generator's own loop of draws, which the bound of choices ends with `limit`
+
+capability property/recursive  recursive data of a bounded depth
+  heroes  property.Source
+  go      -
+  rust    Strategy::prop_recursive, proptest::strategy::Recursive
+  python  hypothesis.strategies.recursive, hypothesis.strategies.deferred
+  haskell -
+  note    a recursive generator is a function calling itself with a depth it counts down, the bound of choices ending it whatever it draws; under `--sanitize` a deep recursion takes more stack, so a deep structure is drawn with an explicit stack
+
+capability property/random  a seeded generator, for code that takes one
+  heroes  property.random_generator
+  go      -
+  rust    Strategy::prop_perturb, proptest::strategy::Perturb
+  python  hypothesis.strategies.randoms, hypothesis.strategies.random_module, hypothesis.register_random
+  haskell -
+  note    its two words are choices, so code that draws from it shrinks with the case
+
+capability property/stateful  a sequence of commands run against a model of the system
+  heroes  property.check
+  go      -
+  rust    -
+  python  hypothesis.stateful.RuleBasedStateMachine, Bundle, rule, initialize, invariant, precondition, consumes, multiple, run_state_machine_as_test
+  haskell -
+  note    a list of the program's own commands drawn with `more` and `one_of`, run in the property against a model of the system, every step compared; Hypothesis's rules, bundles and preconditions are the program's `match` and `assume`
+
+capability property/regex  a text that matches a pattern
+  heroes  pending
+  go      -
+  rust    proptest::string::string_regex, proptest::string::bytes_regex, proptest::string::string_regex_parsed, proptest::string::bytes_regex_parsed, proptest::string::Error
+  python  hypothesis.strategies.from_regex
+  haskell -
+  note    a text matching a pattern is drawn from the pattern's parsed tree, which `regex` does not hand out; not written
+
+capability property/target  cases steered toward a larger score the property reports
+  heroes  pending
+  go      -
+  rust    -
+  python  hypothesis.target, hypothesis.Phase.target
+  haskell -
+  note    steering cases toward a larger score needs a second answer from the property and a search over choices; not written
+
+capability property/deadline  a case or a shrink stopped after a time
+  heroes  refused: `property` stands in layer 2 and `time` in 3, so no clock is read here; a property that must be quick is measured with `bench`
+  go      -
+  rust    Config::timeout, Config::max_shrink_time
+  python  hypothesis.settings.deadline, hypothesis.HealthCheck.too_slow
+  haskell within, discardAfter
+
+capability property/persistence  failing cases kept in files and tried first on the next run
+  heroes  refused: the package writes no file; a run is made again from the seed its report names, and a failure from the choices its `Failure` holds, which a program keeps where it keeps its tests
+  go      -
+  rust    proptest::test_runner::FailurePersistence, FileFailurePersistence, MapFailurePersistence, PersistedSeed, Config::failure_persistence, Config::with_failure_persistence, Config::source_file, Config::with_source_file, Config::clone_with_source_file
+  python  hypothesis.settings.database, hypothesis.database, hypothesis.Phase.reuse
+  haskell -
+
+capability property/explicit-examples  chosen values tried before the generated ones
+  heroes  built-in assert
+  go      -
+  rust    -
+  python  hypothesis.example, hypothesis.Phase.explicit
+  haskell -
+  note    a chosen value is checked in the same `test` block, `assert holds(value)`, before or after the run
+
+capability property/type-directed  values generated from their type alone
+  heroes  refused: Heroes has no type class and no interface, so a generator is named for each type; the package offers `ints`, `floats`, `texts`, `int_lists`, `byte_lists` and `booleans` for the plain ones
+  go      quick.Value, quick.Generator
+  rust    proptest::arbitrary::Arbitrary, any, any_with, arbitrary, arbitrary_with, ArbitraryF1, ArbitraryF2, ParamsFor, StrategyFor, Mapped, SMapped, quickcheck::Arbitrary, quickcheck::Arbitrary::arbitrary, quickcheck::Gen::new, quickcheck::Gen::size, quickcheck::Gen::choose
+  python  hypothesis.strategies.from_type, hypothesis.strategies.register_type_strategy, hypothesis.infer
+  haskell Arbitrary, arbitrary, Arbitrary1, liftArbitrary, liftShrink, arbitrary1, shrink1, Arbitrary2, liftArbitrary2, liftShrink2, arbitrary2, shrink2, arbitraryBoundedEnum, polyQuickCheck, polyVerboseCheck, monomorphic, Blind, getBlind, Fixed, getFixed, Smart
+
+capability property/functions  functions generated as values
+  heroes  refused: a function value is a top-level function, never a closure, so no function can be made at run time from a drawn table
+  go      -
+  rust    -
+  python  hypothesis.strategies.functions
+  haskell Fun, applyFun, applyFun2, applyFun3, Fn, Fn2, Fn3, Function, function, functionMap, functionShow, functionIntegral, functionRealFrac, functionBoundedEnum, functionVoid, CoArbitrary, coarbitrary, genericCoarbitrary, variant, coarbitraryIntegral, coarbitraryReal, coarbitraryShow, coarbitraryEnum
+
+capability property/verbose  every case printed as it runs
+  heroes  refused: the package prints nothing; `sample` and `label_counts` show the cases a generator makes, and a property may print its own
+  go      -
+  rust    Config::verbose
+  python  hypothesis.settings.verbosity, hypothesis.Verbosity
+  haskell verboseCheck, verboseCheckWith, verboseCheckWithResult, verboseCheckResult, verbose, verboseShrinking, chatty, withProgress, TestProgress
+
+capability property/all-in-module  every property of a module found and run
+  heroes  refused: `heroes test` runs every `test` block, and a property is checked in one; finding properties by their names needs reflection, which the language has none of
+  go      -
+  rust    -
+  python  -
+  haskell quickCheckAll, verboseCheckAll, forAllProperties, allProperties
+
+capability property/combined  properties joined by and and or
+  heroes  built-in &&, built-in ||
+  go      -
+  rust    -
+  python  -
+  haskell (.&.), (.&&.), conjoin, Every, getEvery, (.||.), disjoin, Some, getSome
+  note    two properties joined are one property answering both, written with the language's operators
+
+capability property/ordered  a sorted list
+  heroes  built-in sort
+  go      -
+  rust    -
+  python  -
+  haskell orderedList, OrderedList, Ordered, getOrdered, SortedList, Sorted, getSorted
+  note    a sorted list is a drawn list sorted in the generator, `sort(xs)` or `lists.sort_by`
+
+capability property/infinite  an infinite list
+  heroes  refused: a value is made whole before the property reads it, and a list is finite
+  go      -
+  rust    -
+  python  -
+  haskell infiniteListOf, infiniteList, InfiniteList, getInfiniteList, infiniteListInternalData
+
+capability property/domain-values  dates, times, durations, zones, UUIDs, e-mail and IP addresses, decimals, fractions, complex numbers, slices
+  heroes  refused: an instant, a duration, a zone, a UUID or a decimal is a type of `time`, `uuid` or `big`, packages of this layer or above, which `property` may not use; a program draws them from numbers and texts, an IP address from four bytes
+  go      -
+  rust    proptest::path::PathParams
+  python  hypothesis.strategies.dates, datetimes, times, timedeltas, timezones, timezone_keys, uuids, emails, ip_addresses, decimals, fractions, complex_numbers, slices
+  haskell -
+
+capability property/fuzzing  inputs grown by the coverage of the code they reach
+  heroes  refused: coverage-guided fuzzing grows inputs by the branches they reach, which the compiler does not count
+  go      testing.F, F.Add, F.Fuzz
+  rust    -
+  python  -
+  haskell -
+
+dropped plumbing  what a type system, a test runner or a library's insides need, which a run here does not
+  go      -
+  rust    every `*ValueTree` type and Strategy::boxed, Strategy::sboxed, BoxedStrategy (a strategy's own shrinking machinery and boxing, which the choices replace); proptest::num::*::BinarySearch, proptest::strategy::Fuse, proptest::strategy::check_strategy_sanity, CheckStrategySanityOptions (a shrinker's checks of itself); proptest::test_runner::ResultCache, ResultCacheKey, basic_result_cache, noop_result_cache, Config::result_cache (a cache of answers for a property assumed pure); RngAlgorithm, Config::rng_algorithm (one generator here, `random`'s PCG); Config::fork, contextualize_config, Config::test_name, INFO_LOG, TestRunner::flat_map_regen, Config::max_flat_map_regens, TestRunner::bytes_used (a runner's processes, logging and counters); proptest::prelude::Rng, RngCore, RngExt (the `rand` crate's traits); proptest::bits::*::masked, sampled, BitSetLike, VarBitSet, BitSetStrategy, SampledBitSetStrategy (sets of bits, which `containers/bits` holds); proptest::range_subset (ranges as strategies)
+  python  hypothesis.configuration, control, core, entry_points, errors, internal, reporting, utils, vendor, version, currently_in_test_context, is_hypothesis_test, strategies.runner, settings.backend, settings.register_profile, settings.load_profile, settings.get_profile, settings.get_current_profile_name, settings.report_multiple_bugs, settings.show_changed, settings.stateful_step_count, settings.suppress_health_check, HealthCheck.function_scoped_fixture, HealthCheck.differing_executors, HealthCheck.nested_given, HealthCheck.large_base_example (pytest's fixtures and profiles, a library's insides; a `Settings` is a value the program keeps)
+  haskell Witness, Wit, witness, coerceWitness, castWitness, Args, stdArgs, discardAfter's internals (a type-level witness for a typeclass, and the record of the runner's own arguments, which `Settings` is)

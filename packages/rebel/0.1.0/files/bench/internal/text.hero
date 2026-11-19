@@ -1,0 +1,61 @@
+# Times written for a reader: three figures in the unit that keeps them at 1
+# or above, as Go's `testing` and pyperf write a time, and the line a
+# measurement is told in.
+
+use math
+use numbers
+
+# `ns` nanoseconds in three figures and its unit.
+function time(ns: f64) -> str
+    if ns != ns
+        return "nan"
+
+    if ns < 0.0
+        return "-" + time(0.0 - ns)
+
+    if ns > math.MAX_F64
+        return "inf"
+    size: f64 @= ns
+    unit: str @= "ns"
+
+    if size >= 999.5
+        size @ size / 1000.0
+        unit @ "µs"
+
+    if size >= 999.5 && unit == "µs"
+        size @ size / 1000.0
+        unit @ "ms"
+
+    if size >= 999.5 && unit == "ms"
+        size @ size / 1000.0
+        unit @ "s"
+    digits: i64 @= 0
+
+    if size < 9.995
+        digits @ 2
+    else if size < 99.95
+        digits @ 1
+    return numbers.format_float(size, precision: digits) + " " + unit
+
+# The line `measure` tells: the median a call, the rounds kept and run, the
+# calls a round, the best, the spread and the outliers.
+function measured(median: f64, best: f64, spread: f64, kept: i64, run: i64, calls: i64, outliers: i64) -> str
+    return f"{time(median)} a call, the median of {kept} rounds kept of {run} run, {calls} calls each; best {time(best)}, spread {time(spread)}, {outliers} outliers"
+
+test "time: each unit, its edges, three figures, signs, infinity and nan"
+    assert time(0.0) == "0.00 ns"
+    assert time(1.234) == "1.23 ns"
+    assert time(12.34) == "12.3 ns"
+    assert time(123.4) == "123 ns"
+    assert time(999.4) == "999 ns"
+    assert time(999.6) == "1.00 µs"
+    assert time(1500.0) == "1.50 µs"
+    assert time(2500000.0) == "2.50 ms"
+    assert time(3000000000.0) == "3.00 s"
+    assert time(7200000000000.0) == "7200 s"
+    assert time(-1500.0) == "-1.50 µs"
+    assert time(math.INF) == "inf"
+    assert time(math.NAN) == "nan"
+
+test "measured: the line of a measurement"
+    assert measured(median: 1500.0, best: 1400.0, spread: 200.0, kept: 19, run: 23, calls: 640, outliers: 1) == "1.50 µs a call, the median of 19 rounds kept of 23 run, 640 calls each; best 1.40 µs, spread 200 ns, 1 outliers"

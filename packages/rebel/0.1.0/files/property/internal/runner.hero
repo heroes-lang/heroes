@@ -1,0 +1,333 @@
+# A run of a property, as a state the face's loops drive: `next` says
+# whether there is a case to try and makes its choices ready, the face makes
+# the case with the program's generator and calls the program's property,
+# and tells the run what happened with `held`, `failed` or `rejected`. So
+# the loop over cases and the shrinking are written once, here, with no
+# type of the program's in them, and each kind of property needs only its
+# own few lines in the face.
+#
+# Two phases. Generating: case after case from the run's seed until enough
+# held, too many were rejected, or one failed; a failing case's first
+# `limit` choices are kept. Shrinking: the plan of `shrinking` proposes
+# smaller choices, its first pass cutting them to the fewest that still
+# fail, and a candidate that fails with the first failure's code is kept.
+# Every candidate of the shrinking counts against `shrinks`.
+
+use property/internal/choices
+use property/internal/shrinking
+
+constant NOT_FOUND: str
+    "not_found"
+
+constant HELD: str
+    "held"
+
+# The code a `bool` property's failure carries.
+constant FALSE_CODE: str
+    "false"
+
+# The code `check_equal` gives the cases where its two answers differ.
+constant DIFFER_CODE: str
+    "differ"
+
+# How many choices a report writes before it says how many more there are.
+constant CHOICES_SHOWN: i64
+    32
+
+variant Phase
+    generating
+    shrinking
+    done
+
+# The state of a run.
+record Run
+    # The run's seed.
+    seed: u64
+    # The cases that must hold.
+    cases: i64
+    # The rejected cases allowed.
+    rejects: i64
+    # The candidates shrinking may try.
+    shrinks: i64
+    # The choices a case may read.
+    limit: i64
+    # Where the run stands.
+    phase: Phase
+    # The case being generated.
+    case_number: i64
+    # The cases that held.
+    passed: i64
+    # The cases rejected.
+    rejected: i64
+    # The last rejection's code and message.
+    last_rejection: str
+    # Whether the run gave up.
+    gave_up: bool
+    # Whether a case failed.
+    found: bool
+    # The case that failed first.
+    found_at: i64
+    # The code of the first failure.
+    code: str
+    # What the property answered on the best case.
+    answer: str
+    # The smallest failing choices so far.
+    best: [u64]
+    # The choices being tried.
+    candidate: [u64]
+    # The shrinking's passes.
+    plan: shrinking.Plan
+    # The candidates tried after the generating phase.
+    tries: i64
+    # The candidates kept.
+    kept: i64
+
+function start(seed: u64, cases: i64, rejects: i64, shrinks: i64, limit: i64) -> Run
+    assert cases >= 0
+    assert rejects >= 0
+    assert shrinks >= 0
+    assert limit >= 1
+    empty: [u64] = []
+    return Run(
+        seed: seed,
+        cases: cases,
+        rejects: rejects,
+        shrinks: shrinks,
+        limit: limit,
+        phase: .generating,
+        case_number: 0,
+        passed: 0,
+        rejected: 0,
+        last_rejection: "",
+        gave_up: false,
+        found: false,
+        found_at: 0,
+        code: "",
+        answer: "",
+        best: empty,
+        candidate: empty,
+        plan: shrinking.start(),
+        tries: 0,
+        kept: 0
+    )
+
+# `xs` without the zeros at its end, which read as the zeros past it would.
+function stripped(xs: [u64]) -> [u64]
+    end: i64 @= xs.len()
+
+    while end > 0 && xs[end - 1] == 0
+        end @ end - 1
+
+    return xs.slice(from: 0, to: end)
+
+# Whether the run has a case to try, made ready for `state`.
+function next(@run: Run) -> bool
+    while true
+        match run.phase
+            .generating =>
+                if run.passed >= run.cases
+                    run.phase @ .done
+                else
+                    return true
+            .shrinking =>
+                if run.tries >= run.shrinks
+                    run.phase @ .done
+                else
+                    best = run.best
+
+                    match shrinking.propose(@run.plan, best: best)
+                        .ok candidate =>
+                            run.candidate @ candidate
+                            return true
+                        .err _ => run.phase @ .done
+            .done => return false
+
+# The choices of the case to try.
+function state(run: Run lent) -> choices.State
+    match run.phase
+        .generating => return choices.streamed(
+            seed: run.seed,
+            case_number: run.case_number,
+            cases: run.cases,
+            limit: run.limit
+        )
+        .shrinking | .done => return choices.given(choices: run.candidate, limit: run.limit)
+
+# The choices of the smallest failing case.
+function best_state(run: Run lent) -> choices.State
+    return choices.given(choices: run.best, limit: run.limit)
+
+# The case tried held.
+function held(@run: Run)
+    match run.phase
+        .generating =>
+            run.passed @ run.passed + 1
+            run.case_number @ run.case_number + 1
+        .shrinking =>
+            run.tries @ run.tries + 1
+            shrinking.passed(@run.plan)
+        .done => _ = 0
+
+# The case tried failed with `code`, the property answering `answer`.
+function failed(@run: Run, code: str, answer: str)
+    match run.phase
+        .generating =>
+            run.found @ true
+            run.found_at @ run.case_number
+            run.code @ code
+            run.answer @ answer
+            first = choices.first_choices(
+                seed: run.seed,
+                case_number: run.case_number,
+                cases: run.cases,
+                count: run.limit
+            )
+            run.best @ first
+
+            if run.shrinks == 0
+                run.phase @ .done
+            else
+                run.phase @ .shrinking
+        .shrinking =>
+            run.tries @ run.tries + 1
+
+            if code == run.code
+                kept = stripped(run.candidate)
+                run.best @ kept
+                run.answer @ answer
+                run.kept @ run.kept + 1
+                shrinking.kept(@run.plan)
+            else
+                shrinking.passed(@run.plan)
+        .done => _ = 0
+
+# The case tried was rejected, by its generator or its property.
+function rejected(@run: Run, code: str, msg: str)
+    match run.phase
+        .generating =>
+            run.rejected @ run.rejected + 1
+            run.case_number @ run.case_number + 1
+            run.last_rejection @ f"{code}: {msg}"
+
+            if run.rejected > run.rejects
+                run.gave_up @ true
+                run.phase @ .done
+        .shrinking => held(@run)
+        .done      => _ = 0
+
+# `xs` written as a list, its first `CHOICES_SHOWN` numbers and how many more.
+function choices_text(xs: [u64]) -> str
+    pieces: [str] @= []
+
+    for x in xs
+        if pieces.len() < CHOICES_SHOWN
+            pieces @ pieces.push(x.to_str())
+
+    more: str @= ""
+
+    if xs.len() > CHOICES_SHOWN
+        more @ f", and {xs.len() - CHOICES_SHOWN} more"
+    return "[" + pieces.join(", ") + more + "]"
+
+# The run told for a reader, `shown` the smallest failing case as the
+# program wrote it: `HELD` alone where it held.
+function report(run: Run lent, shown: str) -> str
+    if run.found
+        return f"failed at case {run.found_at} with seed {run.seed}, after {run.passed} held and {run.rejected} rejected; shrunk in {run.kept} steps of {run.tries} tries to: {shown}; the property answered {run.answer}; its choices: {choices_text(run.best)}"
+
+    if run.gave_up
+        return f"gave up with seed {run.seed}: {run.rejected} cases rejected, past the {run.rejects} allowed, with {run.passed} of {run.cases} held; the last rejection: {run.last_rejection}"
+    return HELD
+
+# What a report shows where the generator did not make the smallest case
+# again from its choices: a generator that does not draw the same value from
+# the same choices.
+function not_made_again(code: str, msg: str) -> str
+    return f"(the generator did not make the case again from its choices: {code}: {msg})"
+
+# Why `smallest` found nothing: how many cases were tried and rejected.
+function none_accepted(run: Run lent) -> str
+    if run.gave_up
+        return f"no case accepted with seed {run.seed}: {run.rejected} cases rejected, past the {run.rejects} allowed, and {run.passed} not accepted"
+    return f"no case of {run.cases} accepted with seed {run.seed}, {run.rejected} rejected"
+
+test "stripped: trailing zeros only, empty, all zeros"
+    assert stripped([1, 0, 2, 0, 0]) == [1, 0, 2]
+    empty: [u64] = []
+    assert stripped(empty).len() == 0
+    assert stripped([0, 0]).len() == 0
+
+test "choices_text: short, empty, and past the shown"
+    assert choices_text([1, 2]) == "[1, 2]"
+    empty: [u64] = []
+    assert choices_text(empty) == "[]"
+    long: [u64] @= []
+
+    for i in range(from: 0, to: 40)
+        long @ long.push(to_u64(i).must())
+
+    assert choices_text(long).len() > 0
+    assert choices_text(long).slice(from: choices_text(long).len() - 13, to: choices_text(long).len()) == ", and 8 more]"
+
+# The fake generator of the run's tests: the sum of the top bytes of the
+# case's first three choices, every choice read.
+function sum_of_three(@case_state: choices.State) -> u64?
+    a = choices.next(@case_state)?
+    b = choices.next(@case_state)?
+    c = choices.next(@case_state)?
+    return ok(a / 72057594037927936 + b / 72057594037927936 + c / 72057594037927936)
+
+test "a run: held for 20 cases, then a failure shrunk to the threshold"
+    run @= start(seed: 4, cases: 20, rejects: 10, shrinks: 2000, limit: 50)
+    seen: i64 @= 0
+
+    while next(@run)
+        made @= state(run)
+        total = sum_of_three(@made).must()
+        seen @ seen + 1
+
+        if total < 1000
+            held(@run)
+        else
+            failed(@run, code: FALSE_CODE, answer: "false")
+
+    assert seen == 20
+    assert report(run, shown: "") == HELD
+
+    shrinks @= start(seed: 4, cases: 100, rejects: 10, shrinks: 2000, limit: 50)
+
+    while next(@shrinks)
+        made @= state(shrinks)
+        total = sum_of_three(@made).must()
+
+        if total < 150
+            held(@shrinks)
+        else
+            failed(@shrinks, code: FALSE_CODE, answer: "false")
+
+    assert shrinks.found
+    replayed @= best_state(shrinks)
+    assert sum_of_three(@replayed).must() == 150
+    assert shrinks.best.len() <= 3
+    assert shrinks.tries <= 2000
+
+test "a run: rejected past the allowance gives up, and the report says so"
+    run @= start(seed: 1, cases: 10, rejects: 3, shrinks: 10, limit: 5)
+
+    while next(@run)
+        rejected(@run, code: choices.INVALID, msg: "never")
+
+    assert run.gave_up
+    assert run.rejected == 4
+    assert report(run, shown: "").slice(from: 0, to: 19) == "gave up with seed 1"
+
+test "a run: no shrinking keeps the failing case as drawn"
+    run @= start(seed: 8, cases: 10, rejects: 3, shrinks: 0, limit: 5)
+
+    while next(@run)
+        failed(@run, code: FALSE_CODE, answer: "false")
+
+    assert run.found
+    assert run.found_at == 0
+    assert run.best == [0, 0, 0, 0, 0]
+    assert run.tries == 0

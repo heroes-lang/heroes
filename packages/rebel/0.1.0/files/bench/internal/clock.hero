@@ -1,0 +1,163 @@
+# The clocks a measurement reads and the rules it reads them by. A round is
+# timed on the monotonic clock of `time`, and the processor time the process
+# spent in it read from `os.process_times` around it; the calls of a round
+# are settled as Go's `testing.B` settles its `N`, each try predicting the
+# calls that reach the round's length and a fifth more, at most a hundred
+# times the last; and a round waited where its wall time stands above its
+# processor time by more than a share of its wall time and more than
+# `TICK_NS`, the coarsest step a system counts processor time in.
+
+use math
+use os
+use time
+
+constant FAILED: str
+    "failed"
+
+constant TIMEOUT: str
+    "timeout"
+
+# 20 milliseconds: Windows counts processor time in steps of 15.6, and a gap
+# below this says nothing about waiting.
+constant TICK_NS: i64
+    20000000
+
+# The most calls a round makes, as Go's `testing.B` caps its `N`.
+constant MOST_CALLS: i64
+    1000000000
+
+# One round timed.
+record Timing
+    # The calls it made.
+    calls: i64
+    # Its length on the monotonic clock, in nanoseconds.
+    wall_ns: i64
+    # The processor time the process spent in it, in nanoseconds.
+    processor_ns: i64
+
+# The processor time the process has spent, every thread, in nanoseconds.
+# Fails `failed` where the system cannot read it.
+function processor_now() -> i64?
+    match os.process_times()
+        .ok times => return ok(times.user_ns + times.system_ns)
+        .err e    => return fail(code: FAILED, msg: f"the process's processor time could not be read: {e.msg}")
+
+# `work` called `calls` times on `input`, timed; its answers dropped.
+function timed<T, R>(work: (function(T) -> R), input: T, calls: i64) -> Timing?
+    spent_before = processor_now()?
+    began = time.mark()?
+    at: i64 @= 0
+
+    while at < calls
+        _ = work(input)
+        at @ at + 1
+
+    took = time.elapsed(began)?
+    spent_after = processor_now()?
+    return ok(Timing(calls: calls, wall_ns: took.nanoseconds, processor_ns: spent_after - spent_before))
+
+# The calls of the next try at settling a round, after `calls` calls took
+# `took_ns`: those that reach `round_ns` and a fifth more, at least one more
+# than `calls`, at most a hundred times them and `MOST_CALLS`.
+function next_calls(calls: i64, took_ns: i64, round_ns: i64) -> i64
+    predicted: f64 @= to_f64(calls) * 100.0
+
+    if took_ns > 0
+        predicted @ to_f64(round_ns) * to_f64(calls) / to_f64(took_ns) * 1.2
+
+    most: f64 @= to_f64(calls) * 100.0
+
+    if most > to_f64(MOST_CALLS)
+        most @ to_f64(MOST_CALLS)
+
+    if predicted > most
+        predicted @ most
+    next = to_i64(predicted).must()
+
+    if next <= calls
+        return calls + 1
+    return next
+
+# What settling the calls of a round found: the calls, and every try.
+record Settled
+    # The calls a round makes.
+    calls: i64
+    # The tries, in order, the last of them at `calls`.
+    tries: [Timing]
+
+# The calls that make a round of `work` last `round_ns` at least, tried from
+# one up.
+function settle<T, R>(work: (function(T) -> R), input: T, round_ns: i64) -> Settled?
+    calls: i64 @= 1
+    tries: [Timing] @= []
+
+    while true
+        t = timed(work: work, input: input, calls: calls)?
+        tries @ tries.push(t)
+
+        if t.wall_ns >= round_ns || calls >= MOST_CALLS
+            return ok(Settled(calls: calls, tries: tries))
+        calls @ next_calls(calls: calls, took_ns: t.wall_ns, round_ns: round_ns)
+
+# Two rounds of two versions timed in a pair.
+record Pair
+    # The first version's round.
+    before: Timing
+    # The second version's round.
+    after: Timing
+
+# A round of `before` and a round of `after`, in that order where
+# `before_first`, else the other.
+function timed_pair<T, R>(before: (function(T) -> R), after: (function(T) -> R), input: T, before_calls: i64, after_calls: i64, before_first: bool) -> Pair?
+    if before_first
+        b = timed(work: before, input: input, calls: before_calls)?
+        a = timed(work: after, input: input, calls: after_calls)?
+        return ok(Pair(before: b, after: a))
+    a = timed(work: after, input: input, calls: after_calls)?
+    b = timed(work: before, input: input, calls: before_calls)?
+    return ok(Pair(before: b, after: a))
+
+# Whether a round waited: its wall time above its processor time by more
+# than `TICK_NS` and more than `share` of its wall time.
+function waited(t: Timing, share: f64) -> bool
+    gap = t.wall_ns - t.processor_ns
+    return gap > TICK_NS && to_f64(gap) > share * to_f64(t.wall_ns)
+
+# Why a round that waited was discarded, with its two times.
+function waiting_reason(t: Timing) -> str
+    return f"discarded, waiting: wall {t.wall_ns} ns against processor {t.processor_ns} ns"
+
+# Whether the time allowed since `began` has run out.
+function past(began: time.Mark, most: time.Duration) -> bool?
+    took = time.elapsed(began)?
+    return ok(took.nanoseconds >= most.nanoseconds)
+
+# Why no round was kept.
+function none_kept(run: i64, most: time.Duration) -> str
+    return f"no round kept of {run} run within {most.nanoseconds} ns: every one waited on something other than its work"
+
+function add_one(x: i64) -> i64
+    return x + 1
+
+test "next_calls: from one, capped at a hundredfold, at least one more"
+    assert next_calls(calls: 1, took_ns: 0, round_ns: 1000000) == 100
+    assert next_calls(calls: 1, took_ns: 1000, round_ns: 1000000) == 100
+    assert next_calls(calls: 100, took_ns: 100000, round_ns: 1000000) == 1200
+    assert next_calls(calls: 10, took_ns: 1000000, round_ns: 1000) == 11
+    assert next_calls(calls: 100000000, took_ns: 1, round_ns: 1000000000) == MOST_CALLS
+
+test "waited: a gap past the tick and the share, threads that run ahead, a share of infinity"
+    assert !waited(t: Timing(calls: 1, wall_ns: 100000000, processor_ns: 95000000), share: 0.1)
+    assert waited(t: Timing(calls: 1, wall_ns: 100000000, processor_ns: 50000000), share: 0.1)
+    assert !waited(t: Timing(calls: 1, wall_ns: 10000000, processor_ns: 0), share: 0.1)
+    assert !waited(t: Timing(calls: 1, wall_ns: 100000000, processor_ns: 400000000), share: 0.1)
+    assert !waited(t: Timing(calls: 1, wall_ns: 100000000, processor_ns: 0), share: math.INF)
+
+test "timed and settle: a round of a cheap call reaches its length"
+    one = timed(work: add_one, input: 4, calls: 1000).must()
+    assert one.calls == 1000 && one.wall_ns >= 0 && one.processor_ns >= 0
+    settled = settle(work: add_one, input: 4, round_ns: 1000000).must()
+    last = settled.tries[settled.tries.len() - 1]
+    assert last.calls == settled.calls
+    assert last.wall_ns >= 1000000 || last.calls == MOST_CALLS
+    assert settled.tries[0].calls == 1

@@ -1,0 +1,200 @@
+# The whole numbers and booleans a case draws. A number reads two choices: a
+# kind, whose low three bits set make the number an edge, and a magnitude.
+# Off the edges the kind's other bits choose a side of the range's target
+# (0, or the end nearer 0), each side as likely as it is wide and the side
+# above for a kind of 0, and the magnitude, read by `choices.below` on the
+# side's width and one, is the distance from the target. So a uniform
+# magnitude gives a uniform number, a magnitude of 0 the target, and a
+# smaller magnitude a number nearer it: halving the magnitude of a case that
+# fails at and above a threshold ends on the threshold itself.
+#
+# Arithmetic on the full width of `i64` runs on `u64` lifted by 2^63, the
+# order kept and no overflow reached.
+
+use math
+use property/internal/choices
+
+constant TWO_63: u64
+    9223372036854775808
+
+constant TWO_61: f64
+    2305843009213693952.0
+
+constant MAX_U64: u64
+    18446744073709551615
+
+# `x` lifted onto `u64`, the order kept: the least `i64` reads 0.
+function lifted(x: i64) -> u64
+    if x >= 0
+        return to_u64(x).must() + TWO_63
+    return to_u64(x - math.MIN_I64).must()
+
+# The `i64` that `lifted` made `u`.
+function lowered(u: u64) -> i64
+    if u >= TWO_63
+        return to_i64(u - TWO_63).must()
+    return to_i64(u).must() + math.MIN_I64
+
+# The whole number of a range a draw shrinks toward: 0 where the range holds
+# it, else the end nearer 0.
+function target_of(least: i64, most: i64) -> i64
+    if least > 0
+        return least
+
+    if most < 0
+        return most
+    return 0
+
+# Whether `kind` takes the side above the target, `up` wide, rather than
+# the side below, `down` wide: each as likely as it is wide, the side above
+# for a kind of 0 where it has room.
+function takes_up(kind: u64, up: u64, down: u64) -> bool
+    if down == 0
+        return true
+
+    if up == 0
+        return false
+    share = to_f64(up) / (to_f64(up) + to_f64(down))
+    return to_f64(kind / 8) < share * TWO_61
+
+# The distance `magnitude` reads on a side `room` wide, by `choices.below`.
+function distance(magnitude: u64, room: u64) -> u64
+    if room == MAX_U64
+        return magnitude
+    return choices.below(magnitude: magnitude, n: room + 1)
+
+# The edges of a range of whole numbers, each once, the simplest first, as
+# smaller choices read them: the target, 1, -1, its ends, and the neighbours
+# of its ends.
+function int_edges(least: i64, most: i64) -> [i64]
+    candidates: [i64] @= [target_of(least: least, most: most), 1, -1, least, most]
+
+    if least < most
+        candidates @ candidates.push(least + 1)
+        candidates @ candidates.push(most - 1)
+    edges: [i64] @= []
+
+    for x in candidates
+        if x >= least && x <= most && !held_already(edges: edges, x: x)
+            edges @ edges.push(x)
+
+    return edges
+
+function held_already(edges: [i64], x: i64) -> bool
+    for e in edges
+        if e == x
+            return true
+
+    return false
+
+# A whole number from `least` to `most`, both included.
+function int_between(@state: choices.State, least: i64, most: i64) -> i64?
+    assert least <= most
+    kind = choices.next(@state)?
+    magnitude = choices.next(@state)?
+
+    if choices.is_edge(kind)
+        edges = int_edges(least: least, most: most)
+        return ok(edges[choices.edge_index(choice: magnitude, n: edges.len())])
+    target = lifted(target_of(least: least, most: most))
+    up = lifted(most) - target
+    down = target - lifted(least)
+
+    if takes_up(kind: kind, up: up, down: down)
+        return ok(lowered(target + distance(magnitude: magnitude, room: up)))
+    return ok(lowered(target - distance(magnitude: magnitude, room: down)))
+
+# A `u64` from `least` to `most`, both included, `least` the target.
+function u64_between(@state: choices.State, least: u64, most: u64) -> u64?
+    assert least <= most
+    kind = choices.next(@state)?
+    magnitude = choices.next(@state)?
+
+    if choices.is_edge(kind)
+        edges: [u64] @= [least]
+
+        if most - least >= 2
+            edges @ edges.push(least + 1)
+
+        if most > least
+            edges @ edges.push(most)
+
+        if most - least >= 2
+            edges @ edges.push(most - 1)
+        return ok(edges[choices.edge_index(choice: magnitude, n: edges.len())])
+    return ok(least + distance(magnitude: magnitude, room: most - least))
+
+# `true` for a choice at or above half.
+function boolean(@state: choices.State) -> bool?
+    c = choices.next(@state)?
+    return ok(c >= choices.HALF)
+
+test "lifted and lowered: the ends of i64 and 0, the order kept"
+    assert lifted(math.MIN_I64) == 0
+    assert lifted(-1) == TWO_63 - 1
+    assert lifted(0) == TWO_63
+    assert lifted(math.MAX_I64) == MAX_U64
+    assert lowered(lifted(math.MIN_I64)) == math.MIN_I64
+    assert lowered(lifted(-5)) == -5
+    assert lowered(lifted(math.MAX_I64)) == math.MAX_I64
+
+test "takes_up: one side empty, a kind of 0, the sides by their widths"
+    assert takes_up(kind: MAX_U64, up: 5, down: 0)
+    assert !takes_up(kind: 0, up: 0, down: 5)
+    assert takes_up(kind: 0, up: 1, down: 1000)
+    assert !takes_up(kind: MAX_U64, up: 1000, down: 1)
+    assert takes_up(kind: 4611686018427387904, up: 1, down: 1)
+    assert !takes_up(kind: 9223372036854775808 + 8, up: 1, down: 1)
+
+test "int_between: zeros answer the target, every number of a small range reached"
+    zero @= choices.given(choices: [], limit: 10)
+    assert int_between(@zero, least: -5, most: 5).must() == 0
+    assert int_between(@zero, least: 3, most: 9).must() == 3
+    assert int_between(@zero, least: -9, most: -3).must() == -3
+    assert int_between(@zero, least: 7, most: 7).must() == 7
+    seen: {i64: bool} @= {}
+
+    for case_number in range(from: 0, to: 300)
+        state @= choices.streamed(seed: 11, case_number: case_number, cases: 300, limit: 10)
+        x = int_between(@state, least: -3, most: 4).must()
+        assert x >= -3 && x <= 4
+        seen[x] @ true
+
+    assert keys(seen).len() == 8
+
+test "int_between: a magnitude is a distance, above for a kind of 0, below for a large one"
+    above @= choices.given(choices: [0, 1000], limit: 10)
+    assert int_between(@above, least: -5000, most: 5000).must() == 1000
+    below @= choices.given(choices: [MAX_U64 - 7, 1000], limit: 10)
+    assert int_between(@below, least: -5000, most: 5000).must() == -1000
+    scaled @= choices.given(choices: [0, 9223372036854775808], limit: 10)
+    assert int_between(@scaled, least: 0, most: 9).must() == 5
+
+test "int_between: the whole width of i64 and its edges"
+    assert int_edges(least: math.MIN_I64, most: math.MAX_I64) == [0, 1, -1, math.MIN_I64, math.MAX_I64, math.MIN_I64 + 1, math.MAX_I64 - 1]
+    assert int_edges(least: 5, most: 5) == [5]
+    assert int_edges(least: 2, most: 3) == [2, 3]
+    top @= choices.given(choices: [0, MAX_U64], limit: 10)
+    assert int_between(@top, least: math.MIN_I64, most: math.MAX_I64).must() == math.MAX_I64
+    bottom @= choices.given(choices: [MAX_U64 - 7, TWO_63], limit: 10)
+    assert int_between(@bottom, least: math.MIN_I64, most: math.MAX_I64).must() == math.MIN_I64
+    edge @= choices.given(choices: [7, 1024], limit: 10)
+    assert int_between(@edge, least: math.MIN_I64, most: math.MAX_I64).must() == math.MAX_I64
+    simplest @= choices.given(choices: [7], limit: 10)
+    assert int_between(@simplest, least: math.MIN_I64, most: math.MAX_I64).must() == 0
+
+test "u64_between: zeros answer least, the full width, a single value"
+    zero @= choices.given(choices: [], limit: 10)
+    assert u64_between(@zero, least: 10, most: 20).must() == 10
+    full @= choices.given(choices: [0, MAX_U64], limit: 10)
+    assert u64_between(@full, least: 0, most: MAX_U64).must() == MAX_U64
+    one @= choices.given(choices: [7, 512], limit: 10)
+    assert u64_between(@one, least: 4, most: 4).must() == 4
+    near @= choices.given(choices: [7, 256], limit: 10)
+    assert u64_between(@near, least: 0, most: MAX_U64).must() == 1
+
+test "boolean: false for 0, true at half"
+    state @= choices.given(choices: [0, TWO_63 - 1, TWO_63], limit: 10)
+    assert !boolean(@state).must()
+    assert !boolean(@state).must()
+    assert boolean(@state).must()

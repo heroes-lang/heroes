@@ -1,0 +1,230 @@
+# The floats a case draws, any float or a finite one in a range. A float
+# reads two choices, a kind and a magnitude. The kind's low three bits set
+# make it an edge; its next two choose a form, and the bits above them a
+# sign, or a side of the range's target (0, or the end nearer 0) each as
+# likely as it is wide. The form reads a size from the magnitude: a whole
+# number up to 2^20, a fraction below 1 (of the side's width, in a range), a
+# float of any size by its bits, or a whole number up to 2^53. Every form's
+# size grows with its magnitude, so halving a magnitude ends on a threshold,
+# and a kind and a magnitude of 0 answer the target: 0, positive.
+
+use math
+use property/internal/choices
+
+constant TWO_63: u64
+    9223372036854775808
+
+constant TWO_52: u64
+    4503599627370496
+
+constant TWO_53: f64
+    9007199254740992.0
+
+constant TWO_59: f64
+    576460752303423488.0
+
+# The positive finite float whose bits are `bits`, below 2^63: the
+# infinities' and the nans' exponent read as the largest finite one's.
+function size_of_bits(bits: u64) -> f64
+    exponent: i64 @= to_i64(bits / TWO_52).must()
+
+    if exponent == 2047
+        exponent @ 2046
+    fraction = to_f64(bits % TWO_52)
+
+    if exponent == 0
+        return math.scale(fraction, exponent: -1074)
+    return math.scale(fraction + 4503599627370496.0, exponent: exponent - 1075)
+
+# The size form `form` reads from `magnitude`.
+function size_of(form: u64, magnitude: u64) -> f64
+    if form == 0
+        return to_f64(magnitude / 17592186044416)
+
+    if form == 1
+        return to_f64(magnitude / 2048) / TWO_53
+
+    if form == 2
+        return size_of_bits(magnitude % TWO_63)
+    return to_f64(magnitude / 2048)
+
+# The special floats, in the order an edge index reads them.
+function special_floats() -> [f64]
+    return [
+        0.0
+        -0.0
+        math.NAN
+        math.INF
+        -math.INF
+        math.MAX_F64
+        -math.MAX_F64
+        math.SMALLEST_F64
+        -math.SMALLEST_F64
+        math.SMALLEST_NORMAL_F64
+        -math.SMALLEST_NORMAL_F64
+        1.0
+        -1.0
+        0.5
+        math.EPSILON
+        9007199254740992.0
+    ]
+
+# Any float, the special values its edges.
+function float(@state: choices.State) -> f64?
+    kind = choices.next(@state)?
+    magnitude = choices.next(@state)?
+
+    if choices.is_edge(kind)
+        specials = special_floats()
+        return ok(specials[choices.edge_index(choice: magnitude, n: specials.len())])
+    size = size_of(form: kind / 8 % 4, magnitude: magnitude)
+
+    if kind / 32 % 2 == 1
+        return ok(-size)
+    return ok(size)
+
+# Whether `a` and `b` are one float: equal, and of one sign where both are 0.
+function same_float(a: f64, b: f64) -> bool
+    return a == b && math.has_minus_sign(a) == math.has_minus_sign(b)
+
+# The edges of a range of finite floats, each once, the simplest first, as
+# smaller choices read them: its target, its zeros, 1, -1 and 0.5, its ends
+# and their neighbours, and the tiny and huge floats it holds.
+function float_edges(least: f64, most: f64) -> [f64]
+    target: f64 @= 0.0
+
+    if least > 0.0
+        target @ least
+
+    if most < 0.0
+        target @ most
+    candidates = [
+        target
+        0.0
+        -0.0
+        1.0
+        -1.0
+        0.5
+        least
+        most
+        math.next_after(x: least, toward: most)
+        math.next_after(x: most, toward: least)
+        math.SMALLEST_F64
+        -math.SMALLEST_F64
+        math.SMALLEST_NORMAL_F64
+        -math.SMALLEST_NORMAL_F64
+        math.MAX_F64
+        -math.MAX_F64
+    ]
+    edges: [f64] @= []
+
+    for x in candidates
+        if x >= least && x <= most
+            known: bool @= false
+
+            for e in edges
+                if same_float(a: e, b: x)
+                    known @ true
+
+            if !known
+                edges @ edges.push(x)
+
+    return edges
+
+# A finite float from `least` to `most`, both included.
+function float_between(@state: choices.State, least: f64, most: f64) -> f64?
+    assert math.is_finite(least) && math.is_finite(most)
+    assert least <= most
+    kind = choices.next(@state)?
+    magnitude = choices.next(@state)?
+
+    if choices.is_edge(kind)
+        edges = float_edges(least: least, most: most)
+        return ok(edges[choices.edge_index(choice: magnitude, n: edges.len())])
+    target: f64 @= 0.0
+
+    if least > 0.0
+        target @ least
+
+    if most < 0.0
+        target @ most
+    up = most - target
+    down = target - least
+    takes_up: bool @= true
+
+    if up == 0.0
+        takes_up @ false
+    else if down > 0.0
+        share = up / 2.0 / (up / 2.0 + down / 2.0)
+        takes_up @ to_f64(kind / 32) < share * TWO_59
+    room: f64 @= down
+
+    if takes_up
+        room @ up
+    form = kind / 8 % 4
+    size: f64 @= size_of(form: form, magnitude: magnitude)
+
+    if form == 1 || size > room
+        size @ size_of(form: 1, magnitude: magnitude) * room
+    at: f64 @= target - size
+
+    if takes_up
+        at @ target + size
+
+    if at > most
+        return ok(most)
+
+    if at < least
+        return ok(least)
+    return ok(at)
+
+test "size_of: the four forms, growing with the magnitude"
+    assert size_of(form: 0, magnitude: 17592186044416 * 3) == 3.0
+    assert size_of(form: 1, magnitude: 2048 * TWO_52) == 0.5
+    assert size_of(form: 2, magnitude: 4607182418800017408) == 1.0
+    assert size_of(form: 2, magnitude: TWO_63 - 1) == math.MAX_F64
+    assert size_of(form: 2, magnitude: 1) == math.SMALLEST_F64
+    assert size_of(form: 2, magnitude: TWO_63 + 1) == math.SMALLEST_F64
+    assert size_of(form: 3, magnitude: 2048 * 4) == 4.0
+    assert size_of(form: 0, magnitude: 0) == 0.0
+
+test "float: 0 for zeros, a sign from the kind, every special value an edge"
+    zero @= choices.given(choices: [], limit: 10)
+    z = float(@zero).must()
+    assert z == 0.0 && !math.has_minus_sign(z)
+    signed @= choices.given(choices: [32, 17592186044416 * 2], limit: 10)
+    assert float(@signed).must() == -2.0
+    specials = special_floats()
+    assert specials.len() == 16
+    nan_seen: bool @= false
+
+    for at in range(from: 0, to: specials.len())
+        state @= choices.given(choices: [7, to_u64(at * 256).must()], limit: 10)
+        x = float(@state).must()
+
+        if x != x
+            nan_seen @ true
+        else
+            assert same_float(a: x, b: specials[at])
+
+    assert nan_seen
+
+test "float_between: zeros at the target, the edges of a narrow range, always inside"
+    zero @= choices.given(choices: [], limit: 10)
+    assert float_between(@zero, least: -1.5, most: 2.5).must() == 0.0
+    assert float_between(@zero, least: 2.5, most: 3.0).must() == 2.5
+    assert float_between(@zero, least: -3.0, most: -2.5).must() == -2.5
+    assert float_edges(least: 1.0, most: 1.0) == [1.0]
+    assert float_edges(least: -0.0, most: 0.0).len() == 2
+    down @= choices.given(choices: [18446744073709551615 - 31, 17592186044416 * 2], limit: 10)
+    assert float_between(@down, least: -10.0, most: 10.0).must() == -2.0
+
+    for case_number in range(from: 0, to: 300)
+        state @= choices.streamed(seed: 5, case_number: case_number, cases: 300, limit: 10)
+        x = float_between(@state, least: -math.MAX_F64, most: math.MAX_F64).must()
+        assert math.is_finite(x)
+        narrow @= choices.streamed(seed: 6, case_number: case_number, cases: 300, limit: 10)
+        y = float_between(@narrow, least: 0.25, most: 0.5).must()
+        assert y >= 0.25 && y <= 0.5
+        wide @= choices.streamed(seed: 7, case_number: case_number, cases: 300, limit: 10)
+        _ = float(@wide).must()

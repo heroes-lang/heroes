@@ -1,0 +1,173 @@
+# The characters, texts and bytes a case draws. A character of an alphabet
+# is one choice, its index; any character is two, a kind and a magnitude, as
+# a number is: its edges are characters that break code that counts bytes
+# for characters (the last of each width of UTF-8 and the first of the
+# next, the zero character, a combining mark, a byte order mark), and off
+# them the magnitude counts from `0` through printable ASCII, the Basic
+# Multilingual Plane, or every scalar value, surrogates skipped. A text and
+# bytes are a list of them, counted by `collections.more`.
+
+use property/internal/choices
+use property/internal/collections
+use unicode
+
+# The code points of the edge characters, in the order an edge index reads
+# them.
+function edge_points() -> [i64]
+    return [
+        0
+        10
+        32
+        127
+        128
+        233
+        2047
+        2048
+        8364
+        769
+        8238
+        65279
+        65533
+        65535
+        65536
+        128512
+        1114111
+    ]
+
+# The bytes an edge reads, in order.
+function edge_bytes() -> [u8]
+    return [0, 255, 127, 128, 10, 13, 32]
+
+# The scalar value `steps` past `0` in a run of `count` scalar values from 0,
+# surrogates skipped, wrapped around.
+function scalar_after_zero(steps: u64, count: u64) -> i64
+    at = to_i64((48 + choices.below(magnitude: steps, n: count)) % count).must()
+
+    if at < 55296
+        return at
+    return at + 2048
+
+# One character of `letters`, the characters of an alphabet.
+function character(@state: choices.State, letters: [str]) -> str?
+    assert letters.len() > 0
+    c = choices.next(@state)?
+    return ok(letters[choices.index_below(choice: c, n: letters.len())])
+
+# Any character.
+function any_character(@state: choices.State) -> str?
+    kind = choices.next(@state)?
+    magnitude = choices.next(@state)?
+
+    if choices.is_edge(kind)
+        points = edge_points()
+        return ok(unicode.from_code_point(points[choices.edge_index(choice: magnitude, n: points.len())]).must())
+    form = kind / 8 % 4
+    point: i64 @= 0
+
+    if form == 0
+        point @ 32 + to_i64((16 + choices.below(magnitude: magnitude, n: 95)) % 95).must()
+    else if form == 1
+        point @ scalar_after_zero(steps: magnitude, count: 63488)
+    else
+        point @ scalar_after_zero(steps: magnitude, count: 1112064)
+    return ok(unicode.from_code_point(point).must())
+
+# A text of `letters`, from `least` to `most` characters.
+function text(@state: choices.State, letters: [str], least: i64, most: i64) -> str?
+    assert letters.len() > 0
+    count @= collections.new_count(least: least, most: most)
+    pieces: [str] @= []
+
+    while collections.more(@state, @count)?
+        pieces @ pieces.push(character(@state, letters: letters)?)
+
+    return ok(pieces.join(""))
+
+# A text of any characters, from `least` to `most` characters.
+function any_text(@state: choices.State, least: i64, most: i64) -> str?
+    count @= collections.new_count(least: least, most: most)
+    pieces: [str] @= []
+
+    while collections.more(@state, @count)?
+        pieces @ pieces.push(any_character(@state)?)
+
+    return ok(pieces.join(""))
+
+# One byte: an edge for a choice whose low three bits are set, else the
+# choice's top byte.
+function byte(@state: choices.State) -> u8?
+    c = choices.next(@state)?
+
+    if choices.is_edge(c)
+        edges = edge_bytes()
+        return ok(edges[choices.edge_index(choice: c, n: edges.len())])
+    return ok(to_u8(c / 72057594037927936).must())
+
+# From `least` to `most` bytes.
+function bytes_of(@state: choices.State, least: i64, most: i64) -> [u8]?
+    count @= collections.new_count(least: least, most: most)
+    out: [u8] @= []
+
+    while collections.more(@state, @count)?
+        out @ out.push(byte(@state)?)
+
+    return ok(out)
+
+test "scalar_after_zero: 0 first, surrogates skipped, wrapped"
+    assert scalar_after_zero(steps: 0, count: 1112064) == 48
+    assert scalar_after_zero(steps: 1, count: 1112064) == 49
+    assert scalar_after_zero(steps: 55296 - 48, count: 1112064) == 57344
+    assert scalar_after_zero(steps: 1112064 - 48, count: 1112064) == 0
+    assert scalar_after_zero(steps: 1112063 - 48, count: 1112064) == 1114111
+    assert scalar_after_zero(steps: 63487 - 48, count: 63488) == 65535
+
+test "character: the first for 0, one of more than one byte"
+    state @= choices.given(choices: [0, 256, 512], limit: 10)
+    letters = "aé😀".chars()
+    assert character(@state, letters: letters).must() == "a"
+    assert character(@state, letters: letters).must() == "é"
+    assert character(@state, letters: letters).must() == "😀"
+
+test "any_character: 0 for zeros, every edge a character, every form a scalar value"
+    zero @= choices.given(choices: [], limit: 10)
+    assert any_character(@zero).must() == "0"
+    points = edge_points()
+
+    for at in range(from: 0, to: points.len())
+        state @= choices.given(choices: [7, to_u64(at * 256).must()], limit: 10)
+        assert unicode.code_point(any_character(@state).must()) == points[at]
+
+    widths: {i64: bool} @= {}
+
+    for case_number in range(from: 0, to: 400)
+        state @= choices.streamed(seed: 9, case_number: case_number, cases: 400, limit: 10)
+        c = any_character(@state).must()
+        assert c.chars().len() == 1
+        widths[c.len()] @ true
+
+    assert keys(widths).len() == 4
+
+test "text: empty for zeros, least forced, most kept, lengths in characters"
+    zero @= choices.given(choices: [], limit: 100)
+    letters = "xé".chars()
+    assert text(@zero, letters: letters, least: 0, most: 5).must() == ""
+    forced @= choices.given(choices: [], limit: 100)
+    assert text(@forced, letters: letters, least: 3, most: 5).must() == "xxx"
+
+    for case_number in range(from: 0, to: 100)
+        state @= choices.streamed(seed: 2, case_number: case_number, cases: 100, limit: 1000)
+        t = text(@state, letters: letters, least: 1, most: 4).must()
+        assert t.chars().len() >= 1 && t.chars().len() <= 4
+        other @= choices.streamed(seed: 2, case_number: case_number, cases: 100, limit: 1000)
+        u = any_text(@other, least: 0, most: 6).must()
+        assert u.chars().len() <= 6
+
+test "bytes_of: empty for zeros, the edges, a top byte"
+    zero @= choices.given(choices: [], limit: 100)
+    assert bytes_of(@zero, least: 0, most: 4).must().len() == 0
+    state @= choices.given(
+        choices: [18446744073709551615, 263, 18446744073709551615, 72057594037927936 * 200],
+        limit: 100
+    )
+    got = bytes_of(@state, least: 0, most: 2).must()
+    assert got == [255, 200]

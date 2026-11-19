@@ -1,0 +1,232 @@
+# The choices one case draws from, and the draw that reads the next of them.
+# A case being generated reads its choices from its own stream, a PCG of
+# `random` seeded by the run's seed and the case's number, through the
+# case's mode: the first case reads every choice as 0, the edge cases read
+# each with its low three bits set (the band every draw with edges reads as
+# "an edge"), the rest read them as drawn. A case replayed or shrunk reads
+# the choices it is given and 0 past them. Either way a case reads at most
+# `limit` choices, and the draw past them fails `limit`, which a generator's
+# `?` hands up, so no generator draws forever.
+#
+# A draw reads only bits a mode leaves alone where it must: an index is read
+# from the bits above the low eight, so the edge mode, which sets the low
+# three, leaves every index as likely; and the bands with edges read the low
+# three alone.
+
+use random
+
+constant LIMIT: str
+    "limit"
+
+constant INVALID: str
+    "invalid"
+
+# 2^63, the half of the choices: a choice at or above it reads as `true`.
+constant HALF: u64
+    9223372036854775808
+
+# How the choices of a case are made.
+variant Mode
+    # Every choice is 0: the simplest case.
+    zeros
+    # Every choice drawn, its low three bits set: every number an edge.
+    edges
+    # Every choice as drawn.
+    drawn
+    # The choices given, 0 past them.
+    given
+
+# The choices of one case and how many it has read.
+record State
+    # How the choices are made.
+    mode: Mode
+    # The case's stream, read by every mode but `given`.
+    stream: random.Generator
+    # The choices of a case replayed or shrunk; empty for the other modes.
+    choices: [u64]
+    # How many choices the case has read.
+    read: i64
+    # The most it may read.
+    limit: i64
+
+# The mode of case `case` of a run of `cases`: the first the simplest, the
+# next tenth (one at least, where the run has two cases or more) the edges,
+# the rest drawn.
+function mode_of(case_number: i64, cases: i64) -> Mode
+    if case_number == 0
+        return .zeros
+
+    edge_cases = cases / 10
+
+    if case_number <= edge_cases || edge_cases == 0 && case_number == 1
+        return .edges
+    return .drawn
+
+# The state that generates case `case_number` of the run seeded `seed`.
+function streamed(seed: u64, case_number: i64, cases: i64, limit: i64) -> State
+    stream = random.Generator(high: seed, low: to_u64(case_number).must())
+    empty: [u64] = []
+    return State(
+        mode: mode_of(case_number: case_number, cases: cases),
+        stream: stream,
+        choices: empty,
+        read: 0,
+        limit: limit
+    )
+
+# The state that replays `choices`, 0 past them.
+function given(choices: [u64], limit: i64) -> State
+    return State(mode: .given, stream: random.Generator(high: 0, low: 0), choices: choices, read: 0, limit: limit)
+
+# `raw` as `mode` reads it.
+function through(raw: u64, mode: Mode) -> u64
+    return match mode
+        .zeros => 0
+        .edges => raw - raw % 8 + 7
+        .drawn => raw
+        .given => raw
+
+# The next choice of `state`, which advances. Fails `limit` past its bound.
+function next(@state: State) -> u64?
+    at = state.read
+
+    if at >= state.limit
+        return fail(code: LIMIT, msg: f"the case drew more than its {state.limit} choices")
+    state.read @ at + 1
+
+    match state.mode
+        .given =>
+            if at < state.choices.len()
+                return ok(state.choices[at])
+            return ok(0)
+        .zeros => return ok(0)
+        .edges | .drawn =>
+            raw = random.next_u64(@state.stream)
+            return ok(through(raw: raw, mode: state.mode))
+
+# The first `count` choices case `case_number` of the run reads, as `next`
+# reads them: what the case is made of, kept to be shrunk.
+function first_choices(seed: u64, case_number: i64, cases: i64, count: i64) -> [u64]
+    state @= streamed(seed: seed, case_number: case_number, cases: cases, limit: count)
+    out: [u64] @= []
+
+    while out.len() < count
+        match next(@state)
+            .ok c  => out @ out.push(c)
+            .err _ => break
+
+    return out
+
+# The high word of `choice` times `n`, as if multiplied in 128 bits: the
+# part of `n` that `choice` stands at as a fraction of 2^64, so it grows
+# with `choice` and stays below `n`.
+function scaled(choice: u64, n: u64) -> u64
+    a_high = choice / 4294967296
+    a_low = choice % 4294967296
+    b_high = n / 4294967296
+    b_low = n % 4294967296
+    cross = a_high * b_low + a_low * b_low / 4294967296
+    other = a_low * b_high + cross % 4294967296
+    return a_high * b_high + cross / 4294967296 + other / 4294967296
+
+# The number below `n` that `magnitude` reads: itself where it is below `n`,
+# so a test writes small choices plainly, else its scaled part of `n`, which
+# grows with it. Halving a magnitude that fails from some number up ends on
+# that number.
+function below(magnitude: u64, n: u64) -> u64
+    assert n > 0
+
+    if magnitude < n
+        return magnitude
+    return scaled(choice: magnitude, n: n)
+
+# The index below `n` that `choice` reads: its bits above the low eight, read
+# by `below`, so 0 reads 0 and the edge mode's low bits change nothing.
+function index_below(choice: u64, n: i64) -> i64
+    assert n > 0
+    count = to_u64(n).must()
+    high = choice / 256
+
+    if high < count
+        return to_i64(high).must()
+    return to_i64(scaled(choice: choice, n: count)).must()
+
+# Whether `choice` reads as an edge: its low three bits set, one choice in
+# eight drawn, every one of the edge mode.
+function is_edge(choice: u64) -> bool
+    return choice % 8 == 7
+
+# Which of `n` edges `choice` names, by its bits above the low eight.
+function edge_index(choice: u64, n: i64) -> i64
+    return index_below(choice: choice, n: n)
+
+test "mode_of: the first case, the edges, the rest"
+    assert mode_of(case_number: 0, cases: 100) == .zeros
+    assert mode_of(case_number: 1, cases: 100) == .edges
+    assert mode_of(case_number: 10, cases: 100) == .edges
+    assert mode_of(case_number: 11, cases: 100) == .drawn
+    assert mode_of(case_number: 1, cases: 2) == .edges
+    assert mode_of(case_number: 1, cases: 1) == .edges
+    assert mode_of(case_number: 2, cases: 5) == .drawn
+
+test "next: zeros, a bound, given choices and 0 past them"
+    zero @= streamed(seed: 7, case_number: 0, cases: 100, limit: 2)
+    assert next(@zero).must() == 0
+    assert next(@zero).must() == 0
+
+    match next(@zero)
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+    replayed @= given(choices: [5, 6], limit: 4)
+    assert next(@replayed).must() == 5
+    assert next(@replayed).must() == 6
+    assert next(@replayed).must() == 0
+    assert next(@replayed).must() == 0
+    assert next(@replayed).is_err()
+
+test "next: the edge mode sets the low three bits, the drawn mode keeps them"
+    edges @= streamed(seed: 7, case_number: 1, cases: 100, limit: 64)
+    raw @= random.Generator(high: 7, low: 1)
+
+    for _ in range(from: 0, to: 64)
+        r = random.next_u64(@raw)
+        e = next(@edges).must()
+        assert e % 8 == 7
+        assert e / 8 == r / 8
+
+    other @= streamed(seed: 7, case_number: 20, cases: 100, limit: 3)
+    straight @= random.Generator(high: 7, low: 20)
+    assert next(@other).must() == random.next_u64(@straight)
+
+test "first_choices: the choices a case reads, replayed alike"
+    kept = first_choices(seed: 42, case_number: 30, cases: 100, count: 5)
+    assert kept.len() == 5
+    again @= streamed(seed: 42, case_number: 30, cases: 100, limit: 5)
+
+    for c in kept
+        assert next(@again).must() == c
+
+    assert first_choices(seed: 42, case_number: 0, cases: 100, count: 3) == [0, 0, 0]
+    assert first_choices(seed: 42, case_number: 30, cases: 100, count: 0).len() == 0
+
+test "scaled and below: 0, the largest, a half, small magnitudes read plainly"
+    assert scaled(choice: 0, n: 1000) == 0
+    assert scaled(choice: 18446744073709551615, n: 7) == 6
+    assert scaled(choice: 9223372036854775808, n: 3) == 1
+    assert scaled(choice: 18446744073709551615, n: 18446744073709551615) == 18446744073709551614
+    assert below(magnitude: 999, n: 1000) == 999
+    assert below(magnitude: 1000, n: 1000) == 0
+    assert below(magnitude: 18446744073709551615, n: 1000) == 999
+
+test "index_below: 0, the low eight bits ignored, the largest choice"
+    assert index_below(choice: 0, n: 3) == 0
+    assert index_below(choice: 255, n: 3) == 0
+    assert index_below(choice: 256, n: 3) == 1
+    assert index_below(choice: 768, n: 3) == 0
+    assert index_below(choice: 18446744073709551615, n: 1) == 0
+    assert index_below(choice: 18446744073709551615, n: 7) == 6
+    assert index_below(choice: 9223372036854775808, n: 3) == 1
+    assert is_edge(7)
+    assert !is_edge(0)
+    assert is_edge(18446744073709551615)

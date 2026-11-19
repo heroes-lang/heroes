@@ -1,0 +1,556 @@
+# A function measured: called in rounds after a warm-up, each round
+# repeating the call until it lasts long enough for the monotonic clock to
+# read it well, and the time a call took told by the rounds kept: their
+# median, their best, their spread, their quartiles and the rounds far from
+# the others. Two versions of a function are compared in pairs of rounds run
+# alternately in one sitting, the change read by the sign test and counted
+# none under a floor of effect.
+#
+# It keeps the rules the Heroes project measures its own compiler by
+# (`tests/harness/latency_clock.hero`): the first round is discarded; a round
+# whose wall time stands more than a share above the processor time the
+# process spent in it waited on something other than its work, and is
+# discarded; the best of the rounds kept is the number, and the worst less
+# the best its spread. Two results of two sittings are two dates, not a
+# measurement, so no function here compares them.
+#
+# The work is called through a function value and its answer dropped, which
+# the compiler cannot see through, so no call is removed. It does not count
+# allocations, run a program in a process of its own, or draw a plot. It
+# fails with `failed` where a clock cannot be read, `timeout` where no round
+# could be kept in the time allowed, and `invalid` where times it is given
+# cannot be read.
+
+use bench/internal/clock
+use bench/internal/figures
+use bench/internal/paired
+use bench/internal/samples
+use bench/internal/text
+use math
+use time
+
+## Codes
+
+# The code `measure` and `compare` fail with where the monotonic clock or the
+# process's processor time cannot be read.
+constant FAILED: str
+    clock.FAILED
+
+# The code `measure` and `compare` fail with where the time allowed ran out
+# before a round, or a pair, could be kept: every one waited.
+constant TIMEOUT: str
+    clock.TIMEOUT
+
+# The code `summarize` and `compare_pairs` fail with where the times are
+# empty, of two lengths, negative or not numbers.
+constant INVALID: str
+    figures.INVALID
+
+## Settings
+
+# How a measurement is made. Built by `defaults`, a field changed by the
+# `with_` functions, or built directly within the bounds each field states.
+record Settings
+    # Rounds run and discarded after the calls of a round are settled and
+    # before the rounds that count: 1 or more, the first round being the
+    # project's rule.
+    warmups: i64
+    # Rounds kept at most, or pairs kept for `compare`: 1 or more.
+    rounds: i64
+    # The time a measurement may take, counted from its start: measuring
+    # stops at the first round that ends after it, kept rounds or not; at
+    # least one round is run after the warm-ups, and two pairs by `compare`.
+    most: time.Duration
+    # How long a round lasts at least: its calls are as many as reach it,
+    # settled before the warm-ups. Above 0.
+    round: time.Duration
+    # How far a round's wall time may stand above its processor time, as a
+    # share of the wall time, before the round is discarded as waiting:
+    # 0.1 is a tenth; `math.INF` keeps every round. A gap below 20
+    # milliseconds, the step some systems count processor time in, is never
+    # waiting.
+    waiting: f64
+    # The floor of effect of `compare`: a change of the median smaller than
+    # this share of the first version's median is counted no change. 0 or
+    # more.
+    floor: f64
+
+# The settings of a measurement no program changed: one warm-up, 20 rounds
+# of at least 100 milliseconds within 10 seconds, a round discarded as
+# waiting past a tenth, and a floor of effect of 0.5 %, the project's own.
+#
+# See also `with_rounds` and `with_round`.
+function defaults() -> Settings
+    return Settings(
+        warmups: 1,
+        rounds: 20,
+        most: time.seconds(10).must(),
+        round: time.milliseconds(100).must(),
+        waiting: 0.1,
+        floor: 0.005
+    )
+
+# A copy of `settings` running `warmups` warm-up rounds.
+#
+# - `settings`: the settings copied.
+# - `warmups`: rounds run and discarded, 1 or more.
+#
+# Aborts where `warmups` is below 1, which would keep the first round. See
+# also `with_rounds`.
+function with_warmups(settings: Settings, warmups: i64) -> Settings
+    assert warmups >= 1
+    return Settings(
+        warmups: warmups,
+        rounds: settings.rounds,
+        most: settings.most,
+        round: settings.round,
+        waiting: settings.waiting,
+        floor: settings.floor
+    )
+
+# A copy of `settings` keeping `rounds` rounds at most.
+#
+# - `settings`: the settings copied.
+# - `rounds`: rounds, or pairs for `compare`, kept at most, 1 or more.
+#
+# Aborts where `rounds` is below 1. See also `with_time`.
+function with_rounds(settings: Settings, rounds: i64) -> Settings
+    assert rounds >= 1
+    return Settings(
+        warmups: settings.warmups,
+        rounds: rounds,
+        most: settings.most,
+        round: settings.round,
+        waiting: settings.waiting,
+        floor: settings.floor
+    )
+
+# A copy of `settings` measuring for `most` at most: with many `rounds`, a
+# measurement for a time.
+#
+# - `settings`: the settings copied.
+# - `most`: the time the rounds may take, 0 or more; 0 runs one round.
+#
+# Aborts where `most` is negative. See also `with_rounds`.
+function with_time(settings: Settings, most: time.Duration) -> Settings
+    assert most.nanoseconds >= 0
+    return Settings(
+        warmups: settings.warmups,
+        rounds: settings.rounds,
+        most: most,
+        round: settings.round,
+        waiting: settings.waiting,
+        floor: settings.floor
+    )
+
+# A copy of `settings` whose rounds last at least `round`.
+#
+# - `settings`: the settings copied.
+# - `round`: the least length of a round, above 0; a longer round reads a
+#   call's time more finely and costs more.
+#
+# Aborts where `round` is not above 0. See also `with_time`.
+function with_round(settings: Settings, round: time.Duration) -> Settings
+    assert round.nanoseconds > 0
+    return Settings(
+        warmups: settings.warmups,
+        rounds: settings.rounds,
+        most: settings.most,
+        round: round,
+        waiting: settings.waiting,
+        floor: settings.floor
+    )
+
+# A copy of `settings` discarding a round as waiting past `share`.
+#
+# - `settings`: the settings copied.
+# - `share`: how far the wall time may stand above the processor time, as a
+#   share of the wall time, 0 or more; `math.INF` keeps every round, as a
+#   work that waits on a disk or a network by nature needs.
+#
+# Aborts where `share` is negative or a nan. See also `with_floor`.
+function with_waiting(settings: Settings, share: f64) -> Settings
+    assert share >= 0.0
+    return Settings(
+        warmups: settings.warmups,
+        rounds: settings.rounds,
+        most: settings.most,
+        round: settings.round,
+        waiting: share,
+        floor: settings.floor
+    )
+
+# A copy of `settings` whose floor of effect is `share`.
+#
+# - `settings`: the settings copied.
+# - `share`: the change of the median, as a share of the first version's,
+#   below which `compare` counts no change, 0 or more and finite.
+#
+# Aborts where `share` is negative, infinite or a nan. See also `compare`.
+function with_floor(settings: Settings, share: f64) -> Settings
+    assert share >= 0.0 && math.is_finite(share)
+    return Settings(
+        warmups: settings.warmups,
+        rounds: settings.rounds,
+        most: settings.most,
+        round: settings.round,
+        waiting: settings.waiting,
+        floor: share
+    )
+
+## Results
+
+# One round of a measurement.
+record Round
+    # How many calls the round made.
+    calls: i64
+    # Its length on the monotonic clock, in nanoseconds.
+    wall_ns: i64
+    # The processor time the process spent in it, every thread, in
+    # nanoseconds.
+    processor_ns: i64
+    # Whether the round counts.
+    kept: bool
+    # What became of it: `kept`, `discarded, settling the calls`,
+    # `discarded, a warm-up`, `discarded, the first pair`, or `discarded,
+    # waiting: ...` with the two times.
+    reason: str
+
+# How many times stand far from the others, by Tukey's fences: a fence
+# stands 1.5 interquartile ranges beyond a quartile, and a far fence 3.
+record Outliers
+    # Times below the far fence below.
+    low_severe: i64
+    # Times between the two fences below.
+    low_mild: i64
+    # Times between the two fences above.
+    high_mild: i64
+    # Times above the far fence above.
+    high_severe: i64
+
+# The figures of a list of times, each in nanoseconds a call. Built by
+# `summarize`; `best` is at or below `lower_quartile`, at or below `median`,
+# at or below `upper_quartile`, at or below `worst`.
+record Summary
+    # How many times, 1 or more.
+    count: i64
+    # The least: the number, by the project's rule.
+    best: f64
+    # The greatest.
+    worst: f64
+    # The middle time, or the mean of the two middle ones.
+    median: f64
+    # The arithmetic mean.
+    mean: f64
+    # The worst less the best: the noise, by the project's rule.
+    spread: f64
+    # The sample standard deviation; 0 for one time.
+    deviation: f64
+    # The median of each time's distance from the median.
+    median_deviation: f64
+    # The first quartile, by the inclusive method (`stats.quantiles_inclusive`).
+    lower_quartile: f64
+    # The third quartile, by the same method.
+    upper_quartile: f64
+    # The times far from the others.
+    outliers: Outliers
+
+# What `measure` found: every round, the figures of the kept rounds' times
+# a call, and a line a reader reads.
+record Report
+    # The calls each round made.
+    calls: i64
+    # Every round, in the order they ran.
+    rounds: [Round]
+    # The figures of the kept rounds, in nanoseconds a call.
+    summary: Summary
+    # The measurement in one line: the median a call, the best, the spread,
+    # the rounds kept and discarded, the outliers.
+    text: str
+
+# Which way a comparison found the second version to have moved.
+variant Change
+    # The second is slower, by the sign test and by more than the floor.
+    slower
+    # The second is faster, by the sign test and by more than the floor.
+    faster
+    # The two read the same: the sign test found no direction, or the change
+    # is within the floor.
+    same
+    # Too few pairs were kept for a verdict: the machine was not still.
+    unknown
+
+# What `compare` and `compare_pairs` found.
+record Comparison
+    # The verdict.
+    change: Change
+    # The pairs read.
+    pairs: i64
+    # The pairs in which the second version was slower.
+    slower: i64
+    # The pairs in which it was faster; the rest are tied.
+    faster: i64
+    # The median of the pairs' differences, the second less the first, in
+    # nanoseconds a call.
+    median_change: f64
+    # `median_change` as a share of the first version's median.
+    share: f64
+    # The chance, were the two the same, of as lopsided a split of the
+    # untied pairs or more, either way: under 0.05 is a direction. 1 where
+    # too few pairs were read.
+    tail: f64
+    # The floor of effect the verdict was read against, as a share.
+    floor: f64
+    # The figures of the first version's times.
+    before: Summary
+    # The figures of the second version's times.
+    after: Summary
+    # The comparison in one line.
+    text: str
+
+## Measuring
+
+# How long `work` takes on `input`, a call: its calls in a round settled so a
+# round lasts `settings.round`, the warm-ups run and discarded, then rounds
+# until `settings.rounds` are kept or `settings.most` has passed, each round
+# that waited discarded.
+#
+# - `work`: the function measured, called on `input` over and over; its
+#   answer is dropped, and the call is not removed.
+# - `input`: what `work` is called on, the same each time.
+# - `settings`: the warm-ups, the rounds, the times and the waiting share.
+#
+# Fails `failed` where a clock cannot be read, and `timeout` where
+# `settings.most` passed with every round discarded as waiting. A `work` that
+# aborts ends the program there. See also `compare` and `summarize`.
+function measure<T, R>(work: (function(T) -> R), input: T, settings: Settings) -> Report?
+    began = time.mark()?
+    settled = clock.settle(work: work, input: input, round_ns: settings.round.nanoseconds)?
+    calls = settled.calls
+    rounds: [Round] @= []
+
+    for t in settled.tries
+        rounds @ rounds.push(
+            Round(calls: t.calls, wall_ns: t.wall_ns, processor_ns: t.processor_ns, kept: false, reason: "discarded, settling the calls")
+        )
+
+    for _ in range(from: 0, to: settings.warmups)
+        t = clock.timed(work: work, input: input, calls: calls)?
+        rounds @ rounds.push(
+            Round(calls: calls, wall_ns: t.wall_ns, processor_ns: t.processor_ns, kept: false, reason: "discarded, a warm-up")
+        )
+
+    kept: [f64] @= []
+
+    while kept.len() < settings.rounds
+        t = clock.timed(work: work, input: input, calls: calls)?
+
+        if clock.waited(t: t, share: settings.waiting)
+            rounds @ rounds.push(
+                Round(calls: calls, wall_ns: t.wall_ns, processor_ns: t.processor_ns, kept: false, reason: clock.waiting_reason(t))
+            )
+        else
+            rounds @ rounds.push(
+                Round(calls: calls, wall_ns: t.wall_ns, processor_ns: t.processor_ns, kept: true, reason: "kept")
+            )
+            kept @ kept.push(to_f64(t.wall_ns) / to_f64(calls))
+
+        if clock.past(began: began, most: settings.most)?
+            break
+
+    if kept.len() == 0
+        return fail(code: TIMEOUT, msg: clock.none_kept(run: rounds.len(), most: settings.most))
+    summary = summarize(kept)?
+    far = summary.outliers.low_severe + summary.outliers.low_mild + summary.outliers.high_mild + summary.outliers.high_severe
+    line = text.measured(
+        median: summary.median,
+        best: summary.best,
+        spread: summary.spread,
+        kept: summary.count,
+        run: rounds.len(),
+        calls: calls,
+        outliers: far
+    )
+    return ok(Report(calls: calls, rounds: rounds, summary: summary, text: line))
+
+# Whether `after` is slower or faster than `before` on `input`: rounds of the
+# two run in pairs, alternately and in turns of order, the first pair
+# discarded and every pair in which a round waited dropped, and the pairs
+# read by `compare_pairs` against `settings.floor`.
+#
+# - `before`: the first version, its calls in a round settled on its own.
+# - `after`: the second version, of the same type, settled on its own.
+# - `input`: what both are called on.
+# - `settings`: the warm-ups (of each), the pairs (`rounds`), the times, the
+#   waiting share and the floor of effect.
+#
+# Fails `failed` where a clock cannot be read, and `timeout` where
+# `settings.most` passed with no pair kept. See also `compare_pairs` and
+# `measure`.
+function compare<T, R>(before: (function(T) -> R), after: (function(T) -> R), input: T, settings: Settings) -> Comparison?
+    began = time.mark()?
+    first = clock.settle(work: before, input: input, round_ns: settings.round.nanoseconds)?
+    second = clock.settle(work: after, input: input, round_ns: settings.round.nanoseconds)?
+
+    for _ in range(from: 0, to: settings.warmups)
+        _ = clock.timed_pair(before: before, after: after, input: input, before_calls: first.calls, after_calls: second.calls, before_first: true)?
+
+    before_times: [f64] @= []
+    after_times: [f64] @= []
+    pair: i64 @= 0
+
+    while before_times.len() < settings.rounds
+        p = clock.timed_pair(before: before, after: after, input: input, before_calls: first.calls, after_calls: second.calls, before_first: pair % 2 == 0)?
+
+        if pair > 0 && !clock.waited(t: p.before, share: settings.waiting) && !clock.waited(t: p.after, share: settings.waiting)
+            before_times @ before_times.push(to_f64(p.before.wall_ns) / to_f64(first.calls))
+            after_times @ after_times.push(to_f64(p.after.wall_ns) / to_f64(second.calls))
+        pair @ pair + 1
+
+        if pair >= 2 && clock.past(began: began, most: settings.most)?
+            break
+
+    if before_times.len() == 0
+        return fail(code: TIMEOUT, msg: clock.none_kept(run: pair, most: settings.most))
+    return compare_pairs(before: before_times, after: after_times, floor: settings.floor)
+
+## Reading times the program took
+
+# The figures of `times`, each the time of a call in nanoseconds: for a
+# program that times its own work, a setup left out, as Go's `StopTimer` and
+# criterion's `iter_custom` let one.
+#
+# - `times`: the times, at least one, each 0 or more and finite.
+#
+# Fails `invalid` where `times` is empty or holds a negative time, an
+# infinity or a nan. It sorts copies. See also `compare_pairs`.
+function summarize(times: [f64]) -> Summary?
+    f = figures.of(times)?
+    return ok(
+        Summary(count: f.count, best: f.best, worst: f.worst, median: f.median, mean: f.mean, spread: f.spread, deviation: f.deviation, median_deviation: f.median_deviation, lower_quartile: f.lower_quartile, upper_quartile: f.upper_quartile, outliers: Outliers(low_severe: f.low_severe, low_mild: f.low_mild, high_mild: f.high_mild, high_severe: f.high_severe))
+    )
+
+# Whether the second version is slower or faster, read from pairs of times
+# the program made itself, alternately in one sitting: `before[i]` and
+# `after[i]` are a pair. The sign test counts the pairs each way; a split of
+# the untied ones lopsided enough that its two-sided chance is under 0.05,
+# over at least 5 of them, is a direction, and a median change within
+# `floor` of the first version's median is counted none.
+#
+# - `before`: the first version's times, in nanoseconds a call, each 0 or
+#   more and finite.
+# - `after`: the second version's times, as many, each one's pair at its
+#   index.
+# - `floor`: the floor of effect, a share of the first version's median, 0
+#   or more.
+#
+# Fewer than 5 pairs is `unknown`. Fails `invalid` where the lists are empty,
+# of two lengths, or hold a time that is negative, infinite or a nan, and
+# where `floor` is negative or a nan. See also `compare`.
+function compare_pairs(before: [f64], after: [f64], floor: f64) -> Comparison?
+    read = paired.read(before: before, after: after, floor: floor)?
+    first = summarize(before)?
+    second = summarize(after)?
+    change: Change @= .unknown
+
+    if read.verdict == paired.SLOWER
+        change @ .slower
+    else if read.verdict == paired.FASTER
+        change @ .faster
+    else if read.verdict == paired.SAME
+        change @ .same
+    return ok(
+        Comparison(change: change, pairs: read.pairs, slower: read.slower, faster: read.faster, median_change: read.median_change, share: read.share, tail: read.tail, floor: floor, before: first, after: second, text: read.text)
+    )
+
+## Text
+
+# `ns` nanoseconds written for a reader, three figures in the unit that
+# keeps them above 1: `ns`, `µs`, `ms` or `s`.
+#
+# - `ns`: the time in nanoseconds, any float; one below 0 is written with its
+#   minus sign, and an infinity or a nan as itself.
+#
+# See also `throughput`.
+function format_time(ns: f64) -> str
+    return text.time(ns)
+
+# How many units a second the work handles at the median of `summary`: bytes
+# a second where a call handles `per_call` bytes, elements where elements.
+#
+# - `summary`: the figures of the times a call.
+# - `per_call`: the units one call handles, 0 or more.
+#
+# An infinity where the median is 0. See also `format_time`.
+function throughput(summary: Summary, per_call: f64) -> f64
+    return per_call * 1000000000.0 / summary.median
+
+## Examples
+
+# The settings of a measurement no program changed.
+test "defaults: 20 rounds of 100 milliseconds"
+    s = defaults()
+    assert s.warmups == 1 && s.rounds == 20 && s.round.nanoseconds == 100000000 && s.floor == 0.005
+
+# Three warm-up rounds for a work that warms slowly.
+test "with_warmups: three warm-ups"
+    assert with_warmups(defaults(), warmups: 3).warmups == 3
+
+# Five rounds, for a quick look.
+test "with_rounds: five rounds"
+    assert with_rounds(defaults(), rounds: 5).rounds == 5
+
+# A measurement for two seconds: many rounds, stopped by the time.
+test "with_time: two seconds"
+    s = with_time(with_rounds(defaults(), rounds: 1000000), most: time.seconds(2).must())
+    assert s.most.nanoseconds == 2000000000
+
+# Rounds of a millisecond, for a work that is cheap.
+test "with_round: rounds of a millisecond"
+    assert with_round(defaults(), round: time.milliseconds(1).must()).round.nanoseconds == 1000000
+
+# Every round kept, for a work that waits on a disk by nature.
+test "with_waiting: every round kept"
+    assert with_waiting(defaults(), share: math.INF).waiting == math.INF
+
+# A floor of 1 %, for a machine that is never still.
+test "with_floor: a floor of 1 %"
+    assert with_floor(defaults(), share: 0.01).floor == 0.01
+
+# A sum of a thousand numbers, measured over five short rounds.
+test "measure: a sum of a thousand numbers"
+    settings = with_rounds(with_round(defaults(), round: time.milliseconds(1).must()), rounds: 5)
+    report = measure(work: samples.sum_to, input: 1000, settings: settings).must()
+    assert report.summary.count >= 1
+    assert report.summary.best <= report.summary.median
+    assert report.calls >= 1
+
+# A loop against Gauss's formula: the formula is faster.
+test "compare: a loop against a formula"
+    settings = with_rounds(with_round(defaults(), round: time.milliseconds(1).must()), rounds: 8)
+    comparison = compare(before: samples.sum_to, after: samples.sum_by_formula, input: 10000, settings: settings).must()
+    assert comparison.change == .faster
+
+# The figures of times a program took itself.
+test "summarize: five times, one far above"
+    s = summarize([10.0, 11.0, 10.5, 10.2, 30.0]).must()
+    assert s.median == 10.5 && s.best == 10.0 && s.spread == 20.0
+    assert s.outliers.high_severe == 1
+
+# Pairs a program timed itself: slower in every one of six.
+test "compare_pairs: slower in six pairs of six"
+    c = compare_pairs(
+        before: [10.0, 10.0, 10.0, 10.0, 10.0, 10.0],
+        after: [12.0, 12.0, 12.0, 12.0, 12.0, 12.0],
+        floor: 0.005
+    ).must()
+    assert c.change == .slower && c.slower == 6
+
+# A time in microseconds.
+test "format_time: one and a half microseconds"
+    assert format_time(1500.0) == "1.50 µs"
+
+# Bytes a second at a median of a microsecond a call of a kilobyte.
+test "throughput: a kilobyte a microsecond"
+    s = summarize([1000.0]).must()
+    assert throughput(summary: s, per_call: 1024.0) == 1024000000.0

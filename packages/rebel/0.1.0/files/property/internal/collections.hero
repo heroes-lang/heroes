@@ -1,0 +1,197 @@
+# The draws that choose: whether a list takes one more element, which of
+# several alternatives, which element of a list, an order and a subsequence.
+# Each reads its choice so that 0 is the simplest answer: no more element,
+# the first alternative, the first element, the list's own order, nothing
+# kept. An index is read from a choice's bits above the low eight
+# (`choices.index_below`), which the edge mode leaves alone.
+
+use property/internal/choices
+
+# The count `more` keeps for a list: its bounds, how many elements it has,
+# and the choice below which it stops.
+record Count
+    # The fewest elements.
+    least: i64
+    # The most elements.
+    most: i64
+    # The elements counted so far.
+    count: i64
+    # A choice below this ends the list: 2^64 over one more than the average
+    # number of elements above `least`.
+    stop_below: u64
+    # Whether the list has ended.
+    done: bool
+
+# The count of a list from `least` to `most` elements: on average five above
+# `least`, or half the way to `most` where that is nearer, one at least.
+function new_count(least: i64, most: i64) -> Count
+    assert least >= 0
+    assert most >= least
+    five: i64 @= 5
+
+    if least > five
+        five @ least
+
+    average: i64 @= (most - least) / 2
+
+    if five < average
+        average @ five
+
+    if average < 1
+        average @ 1
+    stop = 18446744073709551615 / to_u64(average + 1).must()
+    return Count(least: least, most: most, count: 0, stop_below: stop, done: false)
+
+# Whether the list `count` counts takes one more element, counting it.
+function more(@state: choices.State, @count: Count) -> bool?
+    if count.done
+        return ok(false)
+
+    if count.count < count.least
+        count.count @ count.count + 1
+        return ok(true)
+
+    if count.count >= count.most
+        count.done @ true
+        return ok(false)
+    c = choices.next(@state)?
+
+    if c < count.stop_below
+        count.done @ true
+        return ok(false)
+    count.count @ count.count + 1
+    return ok(true)
+
+# Which of `alternatives` alternatives, from 0.
+function one_of(@state: choices.State, alternatives: i64) -> i64?
+    assert alternatives > 0
+    c = choices.next(@state)?
+    return ok(choices.index_below(choice: c, n: alternatives))
+
+# Which alternative by `weights`, from 0: the first of weight above 0 for a
+# choice of 0. Every weight is 0 or more and their sum above 0; a sum past an
+# `i64` aborts in the addition.
+function frequency(@state: choices.State, weights: [i64]) -> i64?
+    assert weights.len() > 0
+    total: i64 @= 0
+
+    for w in weights
+        assert w >= 0
+        total @ total + w
+
+    assert total > 0
+    c = choices.next(@state)?
+    r = choices.index_below(choice: c, n: total)
+    reached: i64 @= 0
+    at: i64 @= 0
+
+    while at < weights.len()
+        reached @ reached + weights[at]
+
+        if r < reached
+            return ok(at)
+        at @ at + 1
+
+    return ok(weights.len() - 1)
+
+# An element of `xs`, the first for a choice of 0.
+function choose<T>(@state: choices.State, xs: [T]) -> T?
+    assert xs.len() > 0
+    at = one_of(@state, alternatives: xs.len())?
+    return ok(xs[at])
+
+# `xs` in a drawn order: Fisher and Yates's from the front, each place taking
+# itself for a choice of 0.
+function shuffled<T>(@state: choices.State, xs: [T]) -> [T]?
+    out @= xs
+    at: i64 @= 0
+
+    while at + 1 < out.len()
+        c = choices.next(@state)?
+        other = at + choices.index_below(choice: c, n: out.len() - at)
+
+        if other != at
+            held = out[at]
+            out[at] @ out[other]
+            out[other] @ held
+        at @ at + 1
+
+    return ok(out)
+
+# The elements of `xs` whose choice is at or above half, in their order.
+function subsequence<T>(@state: choices.State, xs: [T]) -> [T]?
+    out: [T] @= []
+
+    for x in xs
+        c = choices.next(@state)?
+
+        if c >= choices.HALF
+            out @ out.push(x)
+
+    return ok(out)
+
+test "new_count: the stop for lists of every bound"
+    assert new_count(least: 0, most: 10).stop_below == 18446744073709551615 / 6
+    assert new_count(least: 0, most: 1).stop_below == 18446744073709551615 / 2
+    assert new_count(least: 3, most: 1000).stop_below == 18446744073709551615 / 6
+    assert new_count(least: 20, most: 1000).stop_below == 18446744073709551615 / 21
+    assert new_count(least: 4, most: 4).stop_below == 18446744073709551615 / 2
+    assert new_count(least: 0, most: 9223372036854775807).stop_below == 18446744073709551615 / 6
+
+test "more: forced below least, ended at most, a 0 ends the list"
+    zero @= choices.given(choices: [], limit: 100)
+    forced @= new_count(least: 2, most: 5)
+    assert more(@zero, @forced).must()
+    assert more(@zero, @forced).must()
+    assert !more(@zero, @forced).must()
+    assert !more(@zero, @forced).must()
+    assert zero.read == 1
+
+    full @= choices.given(choices: [18446744073709551615, 18446744073709551615, 18446744073709551615], limit: 100)
+    capped @= new_count(least: 0, most: 2)
+    assert more(@full, @capped).must()
+    assert more(@full, @capped).must()
+    assert !more(@full, @capped).must()
+    assert full.read == 2
+    assert capped.count == 2
+
+test "more: past the case's bound, a failure"
+    bounded @= choices.given(choices: [], limit: 0)
+    count @= new_count(least: 0, most: 3)
+
+    match more(@bounded, @count)
+        .ok _  => assert false
+        .err e => assert e.code == choices.LIMIT
+
+test "one_of and frequency: 0 first, weights of 0 skipped, the last reached"
+    state @= choices.given(choices: [0, 256, 0, 512, 18446744073709551615], limit: 10)
+    assert one_of(@state, alternatives: 3).must() == 0
+    assert one_of(@state, alternatives: 3).must() == 1
+    assert frequency(@state, weights: [0, 5, 1]).must() == 1
+    assert frequency(@state, weights: [1, 1, 1]).must() == 2
+    assert frequency(@state, weights: [1, 0]).must() == 0
+
+test "choose, shuffled and subsequence: the simplest for zeros, one element, none"
+    zero @= choices.given(choices: [], limit: 100)
+    assert choose(@zero, xs: ["a", "b"]).must() == "a"
+    assert shuffled(@zero, xs: [3, 1, 2]).must() == [3, 1, 2]
+    assert subsequence(@zero, xs: [3, 1, 2]).must().len() == 0
+    empty: [i64] = []
+    assert shuffled(@zero, xs: empty).must().len() == 0
+    assert shuffled(@zero, xs: [9]).must() == [9]
+
+    turned @= choices.given(choices: [512, 18446744073709551615], limit: 100)
+    assert shuffled(@turned, xs: ["x", "y", "z"]).must() == ["z", "x", "y"]
+    kept @= choices.given(choices: [0, 18446744073709551615, choices.HALF], limit: 100)
+    assert subsequence(@kept, xs: ["p", "q", "r"]).must() == ["q", "r"]
+
+test "shuffled: every order of three reached, each a permutation"
+    seen: {str: bool} @= {}
+
+    for case_number in range(from: 0, to: 200)
+        state @= choices.streamed(seed: 3, case_number: case_number, cases: 200, limit: 10)
+        order = shuffled(@state, xs: ["a", "b", "c"]).must()
+        assert sort(order) == ["a", "b", "c"]
+        seen[order.join("")] @ true
+
+    assert keys(seen).len() == 6

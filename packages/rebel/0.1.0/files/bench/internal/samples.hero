@@ -1,0 +1,22 @@
+# The work the face's examples measure: plain top-level functions, as a
+# program's own would be.
+
+# The sum of the numbers from 1 to `n`, one at a time.
+function sum_to(n: i64) -> i64
+    total: i64 @= 0
+    at: i64 @= 1
+
+    while at <= n
+        total @ total + at
+        at @ at + 1
+
+    return total
+
+# The same sum by Gauss's formula.
+function sum_by_formula(n: i64) -> i64
+    return n * (n + 1) / 2
+
+test "samples: the two sums agree"
+    assert sum_to(100) == 5050
+    assert sum_by_formula(100) == 5050
+    assert sum_to(0) == 0

@@ -1,0 +1,379 @@
+# The passes that look for smaller choices for a failing case, as a plan the
+# runner asks for one candidate at a time and tells whether it was kept.
+# Smaller is shortlex: fewer choices, then the first that differs lower.
+# Every candidate a pass proposes is smaller than the best it was made from,
+# so shrinking ends, and the runner bounds it by the candidates tried too.
+#
+# Eight passes, in a round: cut the choices to the fewest that still fail,
+# by halving, every choice past them read as 0; delete a block of 8 choices
+# down to 1, which drops an element a `more` counted (one choice and the
+# element's own) or a draw a branch no longer needs; set a block of 8, 4, 2
+# or 1 to 0; set a choice to 0 and the next to the largest, which turns a
+# number drawn as an edge into the same number drawn plainly, the largest
+# magnitude reading the end of its side; lower every copy of a choice that
+# stands more than once together, first to 0 and then by halving, which two
+# equal values drawn alike need; lower each choice by halving the gap to the
+# lowest that still fails; swap two neighbours where the later is lower; move the whole of a
+# choice onto the next one or the one after (two numbers' magnitudes stand
+# two apart), which a sum that must stay large needs. A round that kept a
+# candidate is run again from the first pass; a round that kept none ends
+# the shrinking. The lowering pass reads 0 as tried, the zeroing pass having
+# tried it.
+
+use property/internal/edits
+
+constant TRUNCATE: i64
+    0
+
+constant DELETE: i64
+    1
+
+constant ZERO: i64
+    2
+
+constant PAIR: i64
+    3
+
+constant TWINS: i64
+    4
+
+constant LOWER: i64
+    5
+
+constant SWAP: i64
+    6
+
+constant MOVE: i64
+    7
+
+constant MAX_U64: u64
+    18446744073709551615
+
+# Where the passes stand.
+record Plan
+    # The pass running: `TRUNCATE`, `DELETE`, `ZERO`, `PAIR`, `TWINS`,
+    # `LOWER`, `SWAP` or `MOVE`.
+    pass: i64
+    # Which block size `DELETE` or `ZERO` is at, and which gap, less one,
+    # `MOVE` is at.
+    size_at: i64
+    # The choice the pass is at, or the length `TRUNCATE` tries.
+    at: i64
+    # Whether `TRUNCATE`, `TWINS` or `LOWER` is halving.
+    halving: bool
+    # The highest value known not to fail, while halving: a length or a
+    # choice.
+    low: u64
+    # The lowest value known to fail, while halving.
+    high: u64
+    # The value the last candidate tried, while halving.
+    trying: u64
+    # Whether this round kept a candidate.
+    improved: bool
+    # Whether the passes are over.
+    finished: bool
+
+# The sizes of the blocks `DELETE` deletes.
+function delete_sizes() -> [i64]
+    return [8, 7, 6, 5, 4, 3, 2, 1]
+
+# The sizes of the blocks `ZERO` sets to 0.
+function zero_sizes() -> [i64]
+    return [8, 4, 2, 1]
+
+function start() -> Plan
+    return Plan(
+        pass: TRUNCATE,
+        size_at: 0,
+        at: 0,
+        halving: false,
+        low: 0,
+        high: 0,
+        trying: 0,
+        improved: false,
+        finished: false
+    )
+
+# The pass after the one running, from its start.
+function next_pass(@plan: Plan)
+    plan.pass @ plan.pass + 1
+    plan.size_at @ 0
+    plan.at @ 0
+    plan.halving @ false
+
+# The next block size of `sizes`, or the next pass after the last.
+function next_size(@plan: Plan, sizes: [i64])
+    plan.at @ 0
+
+    if plan.size_at + 1 < sizes.len()
+        plan.size_at @ plan.size_at + 1
+    else
+        next_pass(@plan)
+
+# The end of a round: another where this one kept a candidate.
+function end_round(@plan: Plan)
+    if plan.improved
+        plan.pass @ TRUNCATE
+        plan.size_at @ 0
+        plan.at @ 0
+        plan.halving @ false
+        plan.improved @ false
+    else
+        plan.finished @ true
+
+# A candidate of `TRUNCATE`: the fewest choices of `best` known to fail are
+# `high`, and fewer than `low` + 1 do not.
+function truncating(@plan: Plan, best: [u64]) -> [u64]?
+    length = to_u64(best.len()).must()
+
+    if !plan.halving
+        plan.halving @ true
+        plan.low @ 0
+        plan.high @ length
+
+    if plan.high > length
+        plan.high @ length
+
+    if plan.low >= plan.high
+        next_pass(@plan)
+        return fail(code: "not_found", msg: "the truncation is over")
+    plan.trying @ plan.low + (plan.high - plan.low) / 2
+    return ok(best.slice(from: 0, to: to_i64(plan.trying).must()))
+
+# A candidate of `LOWER` at `at`, or nothing where `at`'s choice is done:
+# first the choice less one, which ends the halving at once where it does not
+# fail, as it does not where an earlier round lowered it; then the midpoint
+# of what is known.
+function lowering(@plan: Plan, best: [u64], at: i64) -> [u64]?
+    if !plan.halving
+        if best[at] == 0
+            plan.at @ at + 1
+            return fail(code: "not_found", msg: "this choice is 0")
+        plan.halving @ true
+        plan.low @ 0
+        plan.high @ best[at]
+        plan.trying @ best[at] - 1
+    else if plan.high - plan.low <= 1
+        plan.halving @ false
+        plan.at @ at + 1
+        return fail(code: "not_found", msg: "this choice is as low as it fails")
+    else
+        plan.trying @ plan.low + (plan.high - plan.low) / 2
+    out @= best
+    out[at] @ plan.trying
+    return ok(out)
+
+# The next candidate smaller than `best`. Fails `not_found` where the passes
+# are over.
+function propose(@plan: Plan, best: [u64]) -> [u64]?
+    while !plan.finished
+        if plan.pass == TRUNCATE
+            match truncating(@plan, best: best)
+                .ok candidate => return ok(candidate)
+                .err _        => _ = 0
+        else if plan.pass == DELETE
+            sizes = delete_sizes()
+            size = sizes[plan.size_at]
+
+            if plan.at + size > best.len()
+                next_size(@plan, sizes: sizes)
+            else
+                return ok(edits.without(best: best, at: plan.at, size: size))
+        else if plan.pass == ZERO
+            sizes = zero_sizes()
+            size = sizes[plan.size_at]
+
+            if plan.at + size > best.len()
+                next_size(@plan, sizes: sizes)
+            else if edits.all_zero(best: best, at: plan.at, size: size)
+                plan.at @ plan.at + 1
+            else
+                return ok(edits.zeroed(best: best, at: plan.at, size: size))
+        else if plan.pass == PAIR
+            at = plan.at
+
+            if at + 1 >= best.len()
+                next_pass(@plan)
+            else if best[at] == 0
+                plan.at @ at + 1
+            else
+                out @= best
+                out[at] @ 0
+                out[at + 1] @ MAX_U64
+                return ok(out)
+        else if plan.pass == TWINS
+            at = plan.at
+
+            if at >= best.len()
+                next_pass(@plan)
+            else if !plan.halving
+                if best[at] == 0 || !edits.first_of_twins(best: best, at: at)
+                    plan.at @ at + 1
+                else
+                    plan.halving @ true
+                    plan.low @ 0
+                    plan.high @ best[at]
+                    plan.trying @ 0
+                    return ok(edits.replaced(best: best, value: best[at], lower: 0))
+            else if plan.high - plan.low <= 1
+                plan.halving @ false
+                plan.at @ at + 1
+            else
+                plan.trying @ plan.low + (plan.high - plan.low) / 2
+                return ok(edits.replaced(best: best, value: plan.high, lower: plan.trying))
+        else if plan.pass == LOWER
+            at = plan.at
+
+            if at >= best.len()
+                next_pass(@plan)
+            else
+                match lowering(@plan, best: best, at: at)
+                    .ok candidate => return ok(candidate)
+                    .err _        => _ = 0
+        else if plan.pass == SWAP
+            at = plan.at
+
+            if at + 1 >= best.len()
+                next_pass(@plan)
+            else if best[at] > best[at + 1]
+                out @= best
+                out[at] @ best[at + 1]
+                out[at + 1] @ best[at]
+                return ok(out)
+            else
+                plan.at @ at + 1
+        else
+            at = plan.at
+            gap = plan.size_at + 1
+
+            if at + gap >= best.len()
+                if gap == 1
+                    plan.size_at @ 1
+                    plan.at @ 0
+                else
+                    end_round(@plan)
+            else if best[at] == 0 || best[at + gap] > MAX_U64 - best[at]
+                plan.at @ at + 1
+            else
+                out @= best
+                out[at] @ 0
+                out[at + gap] @ best[at + gap] + best[at]
+                return ok(out)
+
+    return fail(code: "not_found", msg: "the passes are over")
+
+# The last candidate was kept as the new best.
+function kept(@plan: Plan)
+    plan.improved @ true
+
+    if plan.pass == TRUNCATE || plan.pass == TWINS || plan.pass == LOWER
+        plan.high @ plan.trying
+    else if plan.pass == PAIR || plan.pass == SWAP || plan.pass == MOVE
+        plan.at @ plan.at + 1
+
+# The last candidate was not kept.
+function passed(@plan: Plan)
+    if plan.pass == TRUNCATE
+        plan.low @ plan.trying + 1
+    else if plan.pass == TWINS || plan.pass == LOWER
+        plan.low @ plan.trying
+    else
+        plan.at @ plan.at + 1
+
+# A fake property for the plan's tests: the case fails while its choices sum
+# to 10 or more.
+function sum_fails(xs: [u64]) -> bool
+    total: u64 @= 0
+
+    for x in xs
+        total @ total + x
+
+    return total >= 10
+
+test "propose: a sum of 10 or more shrinks to one choice of 10"
+    plan @= start()
+    best: [u64] @= [3, 9, 0, 7, 2]
+    tries: i64 @= 0
+
+    while tries < 10000
+        match propose(@plan, best: best)
+            .ok candidate =>
+                tries @ tries + 1
+
+                if sum_fails(candidate)
+                    best @ candidate
+                    kept(@plan)
+                else
+                    passed(@plan)
+            .err _ => break
+
+    assert best == [10]
+    assert tries < 10000
+
+test "propose: an empty best has nothing to try, a sorted pair is swapped"
+    plan @= start()
+    empty: [u64] = []
+    assert propose(@plan, best: empty).is_err()
+    swaps @= Plan(
+        pass: SWAP,
+        size_at: 0,
+        at: 0,
+        halving: false,
+        low: 0,
+        high: 0,
+        trying: 0,
+        improved: false,
+        finished: false
+    )
+    assert propose(@swaps, best: [5, 2]).must() == [2, 5]
+    pairs @= Plan(
+        pass: PAIR,
+        size_at: 0,
+        at: 0,
+        halving: false,
+        low: 0,
+        high: 0,
+        trying: 0,
+        improved: false,
+        finished: false
+    )
+    assert propose(@pairs, best: [0, 7, 5]).must() == [0, 0, 18446744073709551615]
+    twins @= Plan(
+        pass: TWINS,
+        size_at: 0,
+        at: 0,
+        halving: false,
+        low: 0,
+        high: 0,
+        trying: 0,
+        improved: false,
+        finished: false
+    )
+    assert propose(@twins, best: [4, 9, 2, 9]).must() == [4, 0, 2, 0]
+    passed(@twins)
+    assert propose(@twins, best: [4, 9, 2, 9]).must() == [4, 4, 2, 4]
+    moves @= Plan(
+        pass: MOVE,
+        size_at: 1,
+        at: 0,
+        halving: false,
+        low: 0,
+        high: 0,
+        trying: 0,
+        improved: false,
+        finished: false
+    )
+    assert propose(@moves, best: [3, 1, 4]).must() == [0, 1, 7]
+
+test "propose: the truncation halves to the fewest choices that fail"
+    plan @= start()
+    best: [u64] @= [1, 1, 1, 0, 9, 9, 9, 9]
+    first = propose(@plan, best: best).must()
+    assert first == [1, 1, 1, 0]
+    best @ first
+    kept(@plan)
+    assert propose(@plan, best: best).must() == [1, 1]
+    passed(@plan)
+    assert propose(@plan, best: best).must() == [1, 1, 1]
+    kept(@plan)
+    assert propose(@plan, best: [1, 1, 1]).must().len() == 0

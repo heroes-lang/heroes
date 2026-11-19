@@ -1,0 +1,23 @@
+# Reaches Rebel's `bench`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It measures a sum of a thousand numbers
+# over five rounds of a millisecond and prints the line that tells it.
+
+use <rebel>/bench
+use <rebel>/time
+
+function sum_to(n: i64) -> i64
+    total: i64 @= 0
+    at: i64 @= 1
+
+    while at <= n
+        total @ total + at
+        at @ at + 1
+
+    return total
+
+function main()
+    settings = bench.with_rounds(bench.with_round(bench.defaults(), round: time.milliseconds(1).must()), rounds: 5)
+
+    match bench.measure(work: sum_to, input: 1000, settings: settings)
+        .ok report => print(report.text)
+        .err e     => print(e.msg)

@@ -1,0 +1,36 @@
+# Reaches Rebel's `property`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It checks that a list reversed twice is
+# the list itself over 100 generated lists, and prints the report, `held`.
+
+use <rebel>/property
+
+# A list of up to ten whole numbers from -100 to 100.
+function small_lists(source: property.Source) -> [i64]?
+    s @= source
+    count @= property.many(least: 0, most: 10)
+    out: [i64] @= []
+
+    while property.more(@s, @count)?
+        out @ out.push(property.int_between(@s, least: -100, most: 100)?)
+
+    return ok(out)
+
+function reversed(xs: [i64]) -> [i64]
+    out: [i64] @= []
+    at: i64 @= xs.len()
+
+    while at > 0
+        at @ at - 1
+        out @ out.push(xs[at])
+
+    return out
+
+function reverses_back(xs: [i64]) -> bool
+    return reversed(reversed(xs)) == xs
+
+function shown(xs: [i64]) -> str
+    return xs.len().to_str() + " numbers"
+
+function main()
+    outcome = property.check(generate: small_lists, holds: reverses_back, show: shown, settings: property.seeded(7))
+    print(outcome.report)
