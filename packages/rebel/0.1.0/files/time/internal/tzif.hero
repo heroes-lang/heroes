@@ -97,7 +97,10 @@ function counts(data: [u8], at: i64) -> Counts?
     version = version_of(data[at + 4])
 
     if version == 0
-        return fail(code: INVALID, msg: f"the version byte at {at + 4} is {data[at + 4]}, none of 0, '2', '3' or '4'")
+        return fail(
+            code: INVALID,
+            msg: f"the version byte at {at + 4} is '{bytes.format_escaped([data[at + 4]])}', none of '\\x00', '2', '3' or '4'"
+        )
     return ok(
         Counts(version: version, ut: count(data, at: at + 20)?, standard: count(data, at: at + 24)?, leaps: count(data, at: at + 28)?, times: count(data, at: at + 32)?, kinds: count(data, at: at + 36)?, letters: count(data, at: at + 40)?)
     )
@@ -340,7 +343,7 @@ test "read fails: no TZif, a version 5, a file cut short, an index past the type
 
     match read(sample(version: '5', times: [], footer: "", leaps: 0))
         .ok _  => assert false
-        .err e => assert e.msg == "the version byte at 4 is 53, none of 0, '2', '3' or '4'"
+        .err e => assert e.msg == "the version byte at 4 is '5', none of '\\x00', '2', '3' or '4'"
 
     whole = sample(version: '2', times: [1, 2], footer: "CET-1", leaps: 0)
 

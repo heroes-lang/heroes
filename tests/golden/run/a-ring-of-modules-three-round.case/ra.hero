@@ -1,0 +1,9 @@
+use rb
+
+# An item of the ring.
+record Item
+    n: i64
+
+# Starts the walk round the ring.
+function start(n: i64) -> i64
+    return rb.step(n: n)

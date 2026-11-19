@@ -24,6 +24,7 @@ use records_github
 use report
 use shell
 use strings
+use superseded
 
 # Dated records: a panel, a journal, a measurement, a defect report, a
 # story beat, a golden fixture, the design log. They KEEP the identifiers
@@ -618,8 +619,13 @@ constant REFUSED: [str]
 # to and fetched from beside git. `REFUSED` gains its three runners-up, each
 # refused in its `docs/roadmap/names.md` row: `M-package-registry`,
 # `M-heroes-index` and `M-central-index`.
+# **97 -> 99 on 2026-11-19**, `M-rebel-library`, written at row 76 where
+# `M-core-packages` stood, and `M-rebel-packages-manager`, entered at row 78,
+# both by the author's decision 4 of 2026-11-15, at M-rebel-library's
+# landing. `M-core-packages`, `M-doc-generator` and `M-web-framework` keep
+# their rows here, retired into the first (`superseded.retired_into`).
 constant ROWS: i64
-    97
+    99
 
 # **`WATCHED` stood here until 2026-09-07 and nothing had read it since
 # 2026-08-19.** It listed `design.md` and `CLAUDE.md` as *"the two documents whose
@@ -984,6 +990,25 @@ function run_all(scratch: str, only: str) -> report.Report?
     unmerged(@r, scratch: scratch)
     entries(@r, present: walked)
     portable.check(@r, present: walked)
+
+    # **M-rebel-library's final check** (2026-11-19, `superseded.hero`): the
+    # new sentence in its homes, the retired wordings and `core` as a package
+    # in no file that is not a record, generated or a closed issue, CLAUDE.md
+    # and names.md included, which `living` leaves out for the old spelling's
+    # reason alone; and every record the register lists carrying its note.
+    open_text: [str] @= []
+
+    for path in walked
+        if !is_record(path) && !is_generated(path) && closed[path].is_err()
+            open_text @ open_text.push(path)
+
+    bodies: {i64: str} @= {}
+
+    for issue in held.issues
+        bodies[issue.number] @ issue.body
+
+    answered = superseded.Answered(asked: held.asked, broken: held.broken, why: held.why, bodies: bodies)
+    superseded.check(@r, present: walked, open_text: open_text, github: answered)
     return ok(r)
 
 # EVERY DIRECTORY OF `selfhost/` IS AN AREA A CARD MAY NAME (`cards.AREAS`,
@@ -4851,11 +4876,26 @@ function homed(@r: report.Report, present: [str], held: github_issues.Listing)
         return
     offenders: [str] @= []
 
+    # **A page whose row left the chain because another milestone enclosed
+    # it is retired, and says so** (M-rebel-library's landing, 2026-11-19):
+    # its line names the day and the milestone that encloses it, and that
+    # milestone has a row. A page that says it was retired while its row
+    # stands is one of the two wrong.
     for path in files
         own = strings.without_suffix(text: strings.base_name(path), suffix: ".md")
+        into = superseded.retired_into(read_file(path).default(""))
 
         if is_open[own].is_err()
-            offenders @ offenders.push("    " + own + ": a page and no row in § The chain")
+            if into.is_err()
+                offenders @ offenders.push("    " + own + ": a page and no row in § The chain")
+            else if is_open[into.must()].is_err()
+                offenders @ offenders.push(
+                    "    " + own + ": retired into " + into.must() + ", which has no row in § The chain"
+                )
+        else if !into.is_err()
+            offenders @ offenders.push(
+                "    " + own + ": a row in § The chain, and a page that says it was retired into " + into.must()
+            )
 
     for path in present
         if strings.has_prefix(s: path, prefix: MILESTONES + "/") && !is_among(path, seen: files)

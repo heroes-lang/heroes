@@ -188,6 +188,50 @@ is a full panel.
      with a header saying how it was run; panel 183's
      `llm-ergonomist-clean.md` and `-clean-task2.md` are the first two, and
      their briefs are in `docs/panel/183-briefs/blind/`.
+
+     **Amended 2026-11-19 by author instruction** (the author's *yes* that
+     evening to the coordinator's recommendation; defect 2589, found by panel
+     251's coordinator and critic, widened by panel 253's critic). Since no
+     file may stand outside the repository's root (CLAUDE.md § Hard stops),
+     the seat's area is under `.claude/worktrees/`, and the command above
+     leaked from there in four ways: a loop reading `done < order.txt`
+     handed every session the list of all its folders, appended to its
+     prompt; the CLI rendered the main checkout's git status, its branch,
+     its git user and five commit subjects, which `GIT_CEILING_DIRECTORIES`
+     did not stop; the transcripts were written under `~/.claude/projects/`;
+     and a session left a `cache-break-state-<id>.json` in the system's
+     temporary folder. **All 51 of panel 251's sessions answered
+     `context: no`.** So every session of a blind seat now runs:
+     - with **`< /dev/null`** on its `claude -p` line;
+     - in an area that is **the top of an empty git repository of its own**
+       (`git init`, a `.gitignore` of `*`, a local `user.name` `reader` and
+       `user.email` `reader@invalid`, no commit), so the status the CLI
+       renders names `reader` and no commit;
+     - with **`HOME`** set to the area's `home/`, so its transcript lands
+       inside the root, and **`TMPDIR` and `CLAUDE_CODE_TMPDIR`** set to the
+       area's `tmp/`, the runner looking in the system's temporary folder
+       after each session for a file naming its id and stopping at the first;
+     - after **a free preflight**: one session with the real prompt and every
+       flag, its key a string the API refuses and not shaped like a real key,
+       which must cost 0, leave no file naming its id and read clean by the
+       scan (panel 253's, 2026-11-19 15:51: cost 0, the prompt alone, a git
+       status naming `reader` and no commit, no `CLAUDE.md` and no memory);
+     - with **a scan** of each transcript that reads only the entries the
+       session did not write and fails on silence, a scan that read nothing
+       being no clean reading;
+     - counted a success only where `subtype` is `success`, `is_error` is
+       false and `terminal_reason` is `completed`, all three (a refused key's
+       run reads `subtype` `success`);
+     - and only once **the spec-warden's registered predictions** stand in its
+       report, which the runner copies and hashes as it starts (panel 251's
+       were written 13 seconds after its runner started).
+
+     The runner that does all of it is panel 253's, `run.sh` with
+     `tools/scan.py` and `tools/check_area.py` in
+     `docs/panel/253-reports/evidence.tar.xz`. The 694 folders the blind and
+     paid sessions of sittings 227 to 250 had written under
+     `~/.claude/projects/` were moved inside the root that day, uncommitted;
+     whether those sessions were handed the git status too is unread.
    - `spec-warden` ← the measured token count of the spec before/after (run
      the counter; if only an estimate exists, say so — its verdict will be
      provisional).

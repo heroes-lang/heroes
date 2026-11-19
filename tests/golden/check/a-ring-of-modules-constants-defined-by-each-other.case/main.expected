@@ -1,0 +1,1 @@
+tests/golden/check/a-ring-of-modules-constants-defined-by-each-other.case/ca.hero:4:10: error[constant_cycle]: `constant A` is defined in terms of itself through `B`, so it has no value

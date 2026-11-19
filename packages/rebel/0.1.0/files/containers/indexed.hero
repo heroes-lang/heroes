@@ -17,8 +17,11 @@
 # constant over many calls.
 #
 # It fails with `not_found`, where a key or a position is not there. A call
-# aborts where a position is outside the map, or a list or the lookup map is
-# not the map's own.
+# aborts where a position is outside the map, or where a list or the lookup
+# map is not as long as this package left the map's own, which those of
+# another map mostly are: ones just as long are not told apart, since the
+# shape holds none of the entries, so a program keeps each map's shape beside
+# its own lists and map.
 
 use containers/indexed/internal/table
 use containers/internal/codes
@@ -52,7 +55,7 @@ record Indexed
 #
 # See also `put`.
 function new() -> Indexed
-    return Indexed(table: table.Table(count: 0, dead: 0))
+    return Indexed(table: table.Table(count: 0, dead: 0, room: 0))
 
 # How many entries a map that keeps its order holds.
 #
@@ -72,10 +75,11 @@ function size(indexed: Indexed) -> i64
 # - `key`: the key.
 # - `value`: the value to put.
 #
-# Aborts where a list or the lookup map is not the map's own. See also
-# `get`, `position_of`.
+# Aborts where a list or the lookup map is not as long as this package left
+# the map's own. See also `get`, `position_of`.
 function put<K, V>(@indexed: Indexed, @key_list: [K], @value_list: [V], @lookup: {K: i64}, key: K, value: V) -> i64
     table.require_lists(indexed.table, keys_held: key_list.len(), values_held: value_list.len())
+    table.require_lookup(indexed.table, lookup.len())
     return table.put(@indexed.table, @key_list, @value_list, @lookup, key: key, value: value)
 
 # The value under `key`.
@@ -88,7 +92,8 @@ function put<K, V>(@indexed: Indexed, @key_list: [K], @value_list: [V], @lookup:
 # Fails `not_found` where the map holds no entry under `key`. See also
 # `value_at`.
 function get<K, V>(indexed: Indexed, value_list: [V] lent, lookup: {K: i64} lent, key: K) -> V?
-    codes.require_storage(held: value_list.len(), count: indexed.table.count, what: "value list")
+    codes.require_kept(held: value_list.len(), kept: indexed.table.room, what: "value list")
+    table.require_lookup(indexed.table, lookup.len())
     at = table.position_of(indexed.table, lookup, key)
 
     if at == table.GONE
@@ -104,6 +109,7 @@ function get<K, V>(indexed: Indexed, value_list: [V] lent, lookup: {K: i64} lent
 # Fails `not_found` where the map holds no entry under `key`. See also
 # `key_at`.
 function position_of<K>(indexed: Indexed, lookup: {K: i64} lent, key: K) -> i64?
+    table.require_lookup(indexed.table, lookup.len())
     return codes.answer(
         at: table.position_of(indexed.table, lookup, key),
         msg: f"the map's {indexed.table.count} entries hold none under the key asked"
@@ -117,6 +123,7 @@ function position_of<K>(indexed: Indexed, lookup: {K: i64} lent, key: K) -> i64?
 #
 # See also `position_of`.
 function contains<K>(indexed: Indexed, lookup: {K: i64} lent, key: K) -> bool
+    table.require_lookup(indexed.table, lookup.len())
     return table.position_of(indexed.table, lookup, key) != table.GONE
 
 # The key at position `at`.
@@ -128,7 +135,7 @@ function contains<K>(indexed: Indexed, lookup: {K: i64} lent, key: K) -> bool
 # Fails `not_found` where `at` is below zero or at or past the size. See also
 # `value_at`.
 function key_at<K>(indexed: Indexed, key_list: [K] lent, at: i64) -> K?
-    codes.require_storage(held: key_list.len(), count: indexed.table.count, what: "key list")
+    codes.require_kept(held: key_list.len(), kept: indexed.table.room, what: "key list")
 
     if at < 0 || at >= indexed.table.count
         return fail(code: NOT_FOUND, msg: f"position {at} is outside a map of {indexed.table.count} entries")
@@ -143,7 +150,7 @@ function key_at<K>(indexed: Indexed, key_list: [K] lent, at: i64) -> K?
 # Fails `not_found` where `at` is below zero or at or past the size. See also
 # `key_at`.
 function value_at<V>(indexed: Indexed, value_list: [V] lent, at: i64) -> V?
-    codes.require_storage(held: value_list.len(), count: indexed.table.count, what: "value list")
+    codes.require_kept(held: value_list.len(), kept: indexed.table.room, what: "value list")
 
     if at < 0 || at >= indexed.table.count
         return fail(code: NOT_FOUND, msg: f"position {at} is outside a map of {indexed.table.count} entries")
@@ -162,6 +169,7 @@ function value_at<V>(indexed: Indexed, value_list: [V] lent, at: i64) -> V?
 # `shift_remove`, which keeps the order.
 function swap_remove<K, V>(@indexed: Indexed, @key_list: [K], @value_list: [V], @lookup: {K: i64}, key: K) -> V?
     table.require_lists(indexed.table, keys_held: key_list.len(), values_held: value_list.len())
+    table.require_lookup(indexed.table, lookup.len())
     at = table.position_of(indexed.table, lookup, key)
 
     if at == table.GONE
@@ -186,6 +194,7 @@ function swap_remove<K, V>(@indexed: Indexed, @key_list: [K], @value_list: [V], 
 # `swap_remove`.
 function shift_remove<K, V>(@indexed: Indexed, @key_list: [K], @value_list: [V], @lookup: {K: i64}, key: K) -> V?
     table.require_lists(indexed.table, keys_held: key_list.len(), values_held: value_list.len())
+    table.require_lookup(indexed.table, lookup.len())
     at = table.position_of(indexed.table, lookup, key)
 
     if at == table.GONE
@@ -209,6 +218,7 @@ function shift_remove<K, V>(@indexed: Indexed, @key_list: [K], @value_list: [V],
 # Aborts where `at` names no position. See also `shift_remove_at`.
 function swap_remove_at<K, V>(@indexed: Indexed, @key_list: [K], @value_list: [V], @lookup: {K: i64}, at: i64)
     table.require_lists(indexed.table, keys_held: key_list.len(), values_held: value_list.len())
+    table.require_lookup(indexed.table, lookup.len())
     table.require_position(indexed.table, at)
     table.swap_remove_at(@indexed.table, @key_list, @value_list, @lookup, at)
 
@@ -225,6 +235,7 @@ function swap_remove_at<K, V>(@indexed: Indexed, @key_list: [K], @value_list: [V
 # Aborts where `at` names no position. See also `swap_remove_at`.
 function shift_remove_at<K, V>(@indexed: Indexed, @key_list: [K], @value_list: [V], @lookup: {K: i64}, at: i64)
     table.require_lists(indexed.table, keys_held: key_list.len(), values_held: value_list.len())
+    table.require_lookup(indexed.table, lookup.len())
     table.require_position(indexed.table, at)
     table.shift_remove_at(@indexed.table, @key_list, @value_list, @lookup, at)
 
@@ -243,6 +254,7 @@ function shift_remove_at<K, V>(@indexed: Indexed, @key_list: [K], @value_list: [
 # See also `swap`.
 function move<K, V>(indexed: Indexed, @key_list: [K], @value_list: [V], @lookup: {K: i64}, from: i64, to: i64)
     table.require_lists(indexed.table, keys_held: key_list.len(), values_held: value_list.len())
+    table.require_lookup(indexed.table, lookup.len())
     table.require_position(indexed.table, from)
     table.require_position(indexed.table, to)
     table.move(@key_list, @value_list, @lookup, from: from, to: to)
@@ -259,6 +271,7 @@ function move<K, V>(indexed: Indexed, @key_list: [K], @value_list: [V], @lookup:
 # Aborts where either names no position. See also `move`.
 function swap<K, V>(indexed: Indexed, @key_list: [K], @value_list: [V], @lookup: {K: i64}, at: i64, with: i64)
     table.require_lists(indexed.table, keys_held: key_list.len(), values_held: value_list.len())
+    table.require_lookup(indexed.table, lookup.len())
     table.require_position(indexed.table, at)
     table.require_position(indexed.table, with)
     table.swap(@key_list, @value_list, @lookup, at: at, with: with)
@@ -276,6 +289,7 @@ function swap<K, V>(indexed: Indexed, @key_list: [K], @value_list: [V], @lookup:
 # also `lists.sort_by`.
 function sort_by_key<K, V>(@indexed: Indexed, @key_list: [K], @value_list: [V], @lookup: {K: i64}, less: (function(a: K, b: K) -> bool))
     table.require_lists(indexed.table, keys_held: key_list.len(), values_held: value_list.len())
+    table.require_lookup(indexed.table, lookup.len())
     table.sort_by_key(@indexed.table, @key_list, @value_list, @lookup, less: less)
 
 # The keys in their order.
@@ -285,7 +299,7 @@ function sort_by_key<K, V>(@indexed: Indexed, @key_list: [K], @value_list: [V], 
 #
 # Empty for an empty map. See also `values`.
 function keys_in_order<K>(indexed: Indexed, key_list: [K] lent) -> [K]
-    codes.require_storage(held: key_list.len(), count: indexed.table.count, what: "key list")
+    codes.require_kept(held: key_list.len(), kept: indexed.table.room, what: "key list")
     return key_list.slice(from: 0, to: indexed.table.count)
 
 # The values in the order of their keys.
@@ -295,7 +309,7 @@ function keys_in_order<K>(indexed: Indexed, key_list: [K] lent) -> [K]
 #
 # Empty for an empty map. See also `keys_in_order`.
 function values<V>(indexed: Indexed, value_list: [V] lent) -> [V]
-    codes.require_storage(held: value_list.len(), count: indexed.table.count, what: "value list")
+    codes.require_kept(held: value_list.len(), kept: indexed.table.room, what: "value list")
     return value_list.slice(from: 0, to: indexed.table.count)
 
 # Empties a map that keeps its order.
@@ -307,7 +321,7 @@ function values<V>(indexed: Indexed, value_list: [V] lent) -> [V]
 #
 # See also `new`.
 function clear<K, V>(@indexed: Indexed, @key_list: [K], @value_list: [V], @lookup: {K: i64})
-    indexed.table @ table.Table(count: 0, dead: 0)
+    indexed.table @ table.Table(count: 0, dead: 0, room: 0)
     key_list @ []
     value_list @ []
     lookup @ {}

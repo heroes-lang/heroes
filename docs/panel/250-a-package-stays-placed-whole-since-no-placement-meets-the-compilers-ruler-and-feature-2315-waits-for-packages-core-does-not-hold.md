@@ -638,3 +638,11 @@ morning (its milestone alone written, its body read back byte for byte unchanged
 row no longer closing with it, panel 242's R7 *"Feature 2315 waits for that package"* holding in
 M-package-index. The conservative alternative, (*c*), not taken. **What it does not**: a reopening of
 subset placement; the predictions, on their own clocks.
+
+**Invalidated in part by M-rebel-library, 2026-11-19**: R1's *every version placed whole* is
+amended by name by panel 253's R6 (ratified 2026-11-19): an entry with a `packages` line places
+only the packages it names, with each one they use, and an entry without one keeps R1. R3's
+*(b)*, feature 2315 waiting at M-package-index for packages `core` does not hold, no longer holds:
+2315 is M-rebel-packages-manager's, the package manager written with Rebel (the author's decisions
+4 and 8 of 2026-11-15). R2 and R4 stand. Entry 12 of the register of the decisions M-rebel-library
+invalidates, <register>.

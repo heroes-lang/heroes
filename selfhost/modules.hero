@@ -16,7 +16,7 @@
 # compile-time argument that would have bought the rule.
 #
 # DISCOVERY DOES NO DIAGNOSIS. A module that does not exist and a
-# cycle are both reported by errors(), against the FINISHED Source,
+# collision are both reported by errors(), against the FINISHED Source,
 # because that is the only text whose offsets a Span may point into.
 # Discovery's own job is to terminate and to be deterministic.
 #
@@ -60,8 +60,8 @@ function open_directory(path: str) -> str
 # line numbers in every diagnostic and the order declarations reach the
 # emitter — so it is fixed by the modules' names and never by a
 # filesystem listing, nor by the order a formatter may rewrite. The seen list is what makes this terminate on a
-# cycle; it is not the cycle CHECK, which needs spans and lives in
-# errors().
+# ring of modules, which the language allows (panel 252's R1): each
+# module of a ring is loaded once, the first time a `use` names it.
 function load_text(path: str, root_text: str, library: str) -> source.Source?
     none: [source.InputFile] = []
     return load_edited(path: path, root_text: root_text, edited: none, library: library)
@@ -139,17 +139,20 @@ function load_edited(path: str, root_text: str, edited: [source.InputFile], libr
 ## The graph's own errors — against the finished Source
 
 # Every diagnostic the module GRAPH produces, ordered by the position
-# of the use line that provokes it. Cycles are asked only when every
-# name resolves: a cycle report naming a module that does not exist
-# would be a second diagnostic for one mistake.
+# of the use line that provokes it. **A ring of modules is none of
+# them** (panel 252's R1, ratified 2026-11-19): nothing after this pass
+# reads the graph in an order. A unit's cache key is its own emitted
+# text, the C's type order walks types, and the two cycles that have no
+# meaning keep their own refusals, `constant_cycle`
+# (`resolve/cycles.hero`) and `no_size` (`check/sized.hero`), which ask
+# of constants and types wherever their modules stand. Until that sitting
+# a ring was `module_cycle`, panel 031's R6, for an incremental build
+# that never came to need it.
 function errors(s: source.Source, uses: [ast.Use]) -> [diag.Diagnostic]
     out: [diag.Diagnostic] @= []
     out @ unknown_modules(s, uses, found: out)
     out @ collisions(s, found: out)
     out @ private.told(s, uses, found: out)
-
-    if out.len() == 0
-        out @ cycles(s, uses, found: out)
 
     # Insertion sort by span start — the stable-sort idiom.
     sorted: [diag.Diagnostic] @= []
@@ -266,119 +269,6 @@ function collisions(s: source.Source, found: [diag.Diagnostic]) -> [diag.Diagnos
 
     return out
 
-# A ring of use lines. Reported once, on the edge that closes it, with
-# the whole ring in the note's message — an error naming one edge of a
-# cycle is an error the reader has to reconstruct. The walk is the
-# bootstrap's depth-first search with an explicit frontier instead of
-# recursion: the recursion there carried two &mut lists, and one
-# threaded state record says the same thing.
-record Edge
-    from_at: i64
-    to_at: i64
-    span: token.Span
-
-function cycles(s: source.Source, uses: [ast.Use], found: [diag.Diagnostic]) -> [diag.Diagnostic]
-    out: [diag.Diagnostic] @= found
-    modules: [str] @= []
-
-    for f in s.files
-        modules @ modules.push(f.module)
-
-    edges: [Edge] @= []
-
-    # The edges in the key's order, so which ring is told, and from which
-    # line, is the modules' and not the order they were written in.
-    for used in use_key.ordered_uses(s, uses)
-        from_at = source.file_of(s, used.span.start)
-        name = places.identity(
-            s.reached.aliases,
-            from: source.module_at(s, used.span.start),
-            named: source.span_text(s, used.name)
-        )
-        to_at: i64 @= -1
-        probe: i64 @= 0
-
-        for m in modules
-            if m == name && to_at == -1
-                to_at @ probe
-            probe @ probe + 1
-
-        if to_at != -1
-            edges @ edges.push(Edge(from_at: from_at, to_at: to_at, span: used.name))
-
-    # 0 new, 1 open, 2 done.
-    state: [i64] @= []
-
-    for _ in modules
-        state @ state.push(0)
-
-    start: i64 @= 0
-
-    while start < modules.len()
-        if state[start] == 0
-            walked = walk(node: start, edges: edges, state: state, stack: [], s: s, modules: modules)
-            state @ walked.state
-
-            if !walked.ring_span.is_err()
-                d: diag.Diagnostic @= diag.new_diagnostic(
-                    code: "module_cycle",
-                    message: "modules may not form a cycle, and this `use` closes one: " + walked.ring,
-                    span: walked.ring_span.must()
-                )
-                d.notes @ d.notes.push("move what both modules need into a third one that neither uses")
-                out @ out.push(d)
-                return out
-        start @ start + 1
-
-    return out
-
-record Walked
-    state: [i64]
-    ring: str
-    ring_span: token.Span?
-
-# Depth-first from one node, reporting the first back edge.
-function walk(node: i64, edges: [Edge], state: [i64], stack: [i64], s: source.Source, modules: [str]) -> Walked
-    st: [i64] @= state
-    st[node] @ 1
-    grown: [i64] @= stack
-    grown @ grown.push(node)
-
-    for edge in edges
-        if edge.from_at != node
-            continue
-
-        if st[edge.to_at] == 1
-            at: i64 @= 0
-            probe: i64 @= 0
-
-            for n in grown
-                if n == edge.to_at && at == 0
-                    at @ probe
-                probe @ probe + 1
-
-            ring: [str] @= []
-            index: i64 @= at
-
-            while index < grown.len()
-                ring @ ring.push(modules[grown[index]])
-                index @ index + 1
-
-            ring @ ring.push(modules[edge.to_at])
-            span: token.Span? = ok(edge.span)
-            return Walked(state: st, ring: ring.join(" uses "), ring_span: span)
-
-        if st[edge.to_at] == 0
-            inner = walk(node: edge.to_at, edges: edges, state: st, stack: grown, s: s, modules: modules)
-            st @ inner.state
-
-            if !inner.ring_span.is_err()
-                return Walked(state: st, ring: inner.ring, ring_span: inner.ring_span)
-
-    st[node] @ 2
-    none: token.Span? = fail(code: "none", msg: "no ring from here")
-    return Walked(state: st, ring: "", ring_span: none)
-
 ## Tests
 
 test "directory text keeps the author's spelling; opening keeps the slash rule"
@@ -391,7 +281,7 @@ test "directory text keeps the author's spelling; opening keeps the slash rule"
     # backslash is NAMED wrong and OPENED right.
     assert open_directory("a\\b.hero") == ""
 
-test "the graph: an absent module, the reserved name, a collision, a ring"
+test "the graph: an absent module, the reserved name, a collision, and a ring that is no error"
     # An absent module, with the caret on the use line.
     text = "use ghost\n\nfunction main()\n    print(1)\n"
     parsed = parse.parse(text)
@@ -419,7 +309,7 @@ test "the graph: an absent module, the reserved name, a collision, a ring"
     assert got3.len() == 1
     assert got3[0].code == "module_name_reserved"
 
-    # A ring of two, named whole, reported on the edge that closes it.
+    # A ring of two is no error of the graph (panel 252's R1).
     fa = source.user_file(name: "a.hero", text: "use b\n\nfunction fa() -> i64\n    return 1\n")
     fb = source.user_file(name: "b.hero", text: "use a\n\nfunction fb() -> i64\n    return 2\n")
     ring_files: [source.InputFile] = [fa, fb]
@@ -427,9 +317,7 @@ test "the graph: an absent module, the reserved name, a collision, a ring"
     joined = s4.text
     parsed4 = parse.parse(joined)
     got4 = errors(s4, parsed4.uses)
-    assert got4.len() == 1
-    assert got4[0].code == "module_cycle"
-    assert got4[0].message == "modules may not form a cycle, and this `use` closes one: a uses b uses a"
+    assert got4.len() == 0
 
 test "load_text walks siblings depth-first and appends the library last"
     root = "use selftest_mod_leaf\n\nfunction main()\n    print(selftest_mod_leaf.leaf())\n"

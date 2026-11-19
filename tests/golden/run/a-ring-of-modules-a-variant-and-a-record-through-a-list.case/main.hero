@@ -1,0 +1,10 @@
+# A variant and a record of a ring of modules holding each other, panel 252's
+# R1 (2026-11-19): a case of `va.Shape` holds a `vb.Bag`, and the bag holds
+# `[va.Shape]`. The radii 2 and 3 sum to 5.
+use va
+use vb
+
+function main()
+    shapes: [va.Shape] = [.circle(r: 2), .circle(r: 3)]
+    outer: va.Shape = .group(bag: vb.Bag(shapes: shapes))
+    print(va.size(s: outer))

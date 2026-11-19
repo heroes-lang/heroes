@@ -1,0 +1,7 @@
+# A ring of three modules, panel 252's R1 (2026-11-19): `ra` uses `rb`, `rb`
+# uses `rc`, and `rc` uses `ra` and builds its record. The walk round the ring
+# adds one and doubles: 5 becomes 12.
+use ra
+
+function main()
+    print(ra.start(n: 5))

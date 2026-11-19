@@ -323,8 +323,8 @@ Loops: `while cond` and `for x in xs`, over an array or a `range` (section 11).
 ## 10. Strings, arrays, maps
 `s[i]` yields a `u8`; iterate characters with
 `s.chars()`, which yields single-character `str`. A container literal separates
-elements by newline across lines and by comma on one, and an empty one needs an
-annotation: `xs: [i64] = []` · `m: {str: i64} @= {}`.
+elements by newline across lines and by comma on one, and an empty one that
+nothing else types needs an annotation: `xs: [i64] = []` · `m: {str: i64} @= {}`.
 ```
 m: {str: i64} @= {}
 m["a"] @ 1
@@ -354,7 +354,7 @@ the function accepts · `fold` (its function names them `acc` then `item`) · `f
 `print` writes its values with no
 separator and exactly one trailing newline, and takes the types this language
 renders as text: a number, `str` or `bool`. A float prints a point or
-exponent (`1.0`, `1e-06`), or `inf`, `-inf`, `nan`, and reads back as the same value; a
+exponent (`1.0`, `1e-06`), or `inf`, `-inf`, `nan`, and C's `strtod` reads it back as the same value; a
 `bool` prints `true` or `false`.
 Convert with `to_<type>`, and the name says whether it
 can fail: `to_str`, `to_f32` and `to_f64` cannot, so they give a value; `to_i8`

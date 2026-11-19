@@ -11,9 +11,10 @@
 #
 # It is also where the language forced a shape: `mutate_typo` and
 # `mutate_edits` both need the one-character slip and the text edit, and Heroes
-# refuses module cycles (`module_cycle` fires on the `use` edge, whatever it
-# carries). Two modules that each need one function from the other cannot both
-# exist, so the shared half lives here and both use it.
+# refused module cycles (`module_cycle` fired on the `use` edge, whatever it
+# carried, until panel 252's R1, 2026-11-19). Two modules that each needed one
+# function from the other could not both exist, so the shared half lives here
+# and both use it.
 
 use ast
 use source
@@ -23,10 +24,10 @@ use token
 # which is §4.4's own example.
 #
 # It lives HERE rather than beside the three typo operators because
-# `mutate-undeclared` needs it too and Heroes refuses module cycles: two
-# modules each needing one function from the other cannot both exist, so the
-# shared half sits on the side nothing else imports (`mutate_typo` uses this
-# module, never the other way).
+# `mutate-undeclared` needs it too and Heroes refused module cycles when it
+# moved (until panel 252's R1, 2026-11-19): two modules each needing one function
+# from the other could not both exist, so the shared half sits on the side
+# nothing else imports (`mutate_typo` uses this module, never the other way).
 function slipped(name: str) -> str
     cs = name.chars()
     middle = cs.len() / 2

@@ -1,0 +1,5 @@
+use ca
+
+# One more than the first.
+constant B: i64
+    ca.A + 1

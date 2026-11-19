@@ -16,6 +16,8 @@
 #    what it settles;
 # 4. a generic function's name, from the letters bound so far
 #    (`check/waiting_names.hero`'s `partly`);
+# 4b. the parts of a waiting literal that have a type with no synthesis, a
+#    key or an entry (`check/waiting_parts.hero`, defect 2596, panel 252's R2);
 # 5. a form that refuses itself, `[]`, `{}`, `ok(…)`, a case, synthesised and
 #    told where it stands, quiet where an earlier argument's mistake left its
 #    letter poisoned (§4.5: that mistake's shadow);
@@ -31,6 +33,7 @@ use check/state
 use check/waiting
 use check/waiting_names
 use check/waiting_order
+use check/waiting_parts
 use resolved
 use source
 
@@ -87,6 +90,12 @@ function next(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
         # One argument left and no generic function's name: what it weighs
         # orders nothing, so it is not weighed.
         if pending.left.len() == 1 && !function_value.generic_at(a, r, decls, pending.left[0].value)
+            # One that refuses itself may still hold typed parts (step 4b);
+            # one that does not is synthesised alone as before.
+            refuses = waiting_order.weight(@c, a, r, s, decls, id: pending.left[0].value, depth: waiting_order.LOOK) >= waiting_order.REFUSES
+
+            if refuses && waiting_parts.bind_parts(@c, a, r, params: call.params, left: pending.left, @bindings)
+                continue
             return alone(
                 call,
                 @pending,
@@ -101,6 +110,9 @@ function next(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
         pending.left @ waiting_names.partly(@c, a, r, s, decls, params: call.params, left: still, @bindings)
 
         if pending.left.len() < still.len()
+            continue
+
+        if waiting_parts.bind_parts(@c, a, r, params: call.params, left: pending.left, @bindings)
             continue
         k @ waiting_order.next_alone(@c, a, r, s, decls, left: pending.left, refusing: true)
 

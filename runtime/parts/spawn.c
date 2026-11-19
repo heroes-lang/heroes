@@ -437,6 +437,9 @@ static void hero_spawn_enter(HeroSpawnSlot *slot) {
     }
 #endif
     slot->result = slot->body(slot->arg);
+    /* A print span the body left open is given back before anything else
+     * ends, so stdout's lock never outlives its holder (`parts/panic.c`). */
+    hero_print_thread_leave();
 #if !defined(_WIN32)
     /* AND THE SIGNALS ARE HELD OFF AGAIN BEFORE ANY OF IT IS GIVEN BACK, the
      * other end of the start's window and the same cause (defect 2496): a

@@ -1,0 +1,9 @@
+use shapes
+
+# The area of the face's own type.
+function area_of(r: shapes.Rect) -> i64
+    return r.w * r.h
+
+# The face's own type, built again twice as wide.
+function wider(r: shapes.Rect) -> shapes.Rect
+    return shapes.Rect(w: r.w * 2, h: r.h)

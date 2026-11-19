@@ -513,6 +513,34 @@ order kept. No sitting for the scheduling: a scheduling changes no language
 is 235, and row 78's opening convenes its own. § The chain holds 93 rows with
 no gap, by a count over the table.
 
+**2026-11-15, M-rebel-library opened, enclosing M-core-packages and
+M-doc-generator, and M-rebel-packages-manager entered, by the author's
+decisions 4 and 23**, given in the conversation that opened the milestone and
+meant as: *a new row, at once, enclosing M-core-packages and M-doc-generator*
+(decision 4, 2026-11-15), and *`web` for what Echo gives, which encloses
+M-web-framework* (decision 23, 2026-11-16). The package manager written with
+Rebel stays open on a row of its own, M-rebel-packages-manager, the one tool
+that takes the library (decision 6), and feature 2315 moves to it; M-package-index
+comes after it, as that row's page decided on 2026-11-17. The rows were written
+into § The chain at the milestone's landing on 2026-11-19: M-rebel-library at
+76, where M-core-packages stood, M-rebel-packages-manager at 78, M-package-index
+one down at 79, M-core-packages, M-doc-generator and M-web-framework out of the
+chain with their pages kept and their names retired in `names.md`, and the
+thirteen scheduled rows from M-compared-languages on each one up, their order
+kept. No sitting for the scheduling: a scheduling changes no language
+(https://github.com/heroes-lang/heroes/issues/820). § The chain holds 92 rows
+with no gap, by a count over the table.
+
+**2026-11-19, what panel 253 left owed stays inside M-rebel-library, by the
+author's answer** of about 21:25 to the coordinator's third question, meant as:
+*no, I want to face them before closing this whole chat, so run them one at a
+time and let us resolve them; and as always, when we close the steps no
+blocking may be active*. So no row enters for R6's `fetch` placing a
+`packages` list's closure, for R5's whole stack at an abort, or for R3's mixed
+route of the system's cryptography on macOS: each is a step of M-rebel-library,
+in that order (its page), and the row closes over zero open `blocking` and
+`systemic` defects (CLAUDE.md § Verification).
+
 ---
 
 **What used to stand under the ROADMAP lives in `docs/roadmap/`** since

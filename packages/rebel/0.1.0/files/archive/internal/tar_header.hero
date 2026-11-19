@@ -145,7 +145,10 @@ function number_of(block: [u8] lent, from: i64, width: i64, at: i64) -> i64?
 
     while at_digit < from + width
         if block[at_digit] != ' ' && block[at_digit] != 0
-            return codes.invalid_at(at: at + at_digit, why: f"a byte {block[at_digit]} inside a number")
+            return codes.invalid_at(
+                at: at + at_digit,
+                why: f"'{bytes.format_escaped([block[at_digit]])}' inside a number"
+            )
         at_digit @ at_digit + 1
 
     return ok(value)
@@ -239,3 +242,8 @@ test "text_of: UTF-8 kept, other bytes read as Latin-1"
     block: [u8] = [0x61, 0xc3, 0xa9, 0, 0xe9, 0]
     assert text_of(block, from: 0, width: 6) == "aé"
     assert text_of(block, from: 4, width: 2) == "é"
+
+test "number_of: a byte inside a number, told as its character (defect 2598)"
+    match number_of(bytes.from_text("12x4"), from: 0, width: 4, at: 0)
+        .ok _  => assert false
+        .err e => assert e.msg == "not a valid archive at byte 2: 'x' inside a number"

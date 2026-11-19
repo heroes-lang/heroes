@@ -1,0 +1,5 @@
+use sa
+
+# Holds an A by value.
+record B
+    a: sa.A  #~ no_size

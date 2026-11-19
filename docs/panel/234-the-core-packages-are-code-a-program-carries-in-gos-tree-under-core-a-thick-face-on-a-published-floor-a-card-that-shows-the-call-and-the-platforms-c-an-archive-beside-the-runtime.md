@@ -697,3 +697,14 @@ the program's own when its catalogue entry is deleted), so the copies become fin
 of the program's catalogue, resolved from a local static index, and `use core/…` becomes `use
 <core>/…`, no old spelling kept. R2's choice of Go's tree for the packages themselves,
 `core/strings` and the rest, stands.
+
+**Invalidated in part by M-rebel-library, 2026-11-19**: no longer hold R1's admission test, R2's
+Go's tree under `core/` (amended above by panel 235's R15), R3's conventions page with §2.2's rule
+of Go's names, R5's card and its ceiling with *no `heroes doc` in this milestone*, R13's
+`core/slices`, and R14's paired run at M-core-packages' close, by the author's decisions 2, 4, 8,
+13 and 22 of 2026-11-15 and 16 and panel 253's R2: Rebel has its own tree and names and no card,
+`core` no longer exists, M-core-packages is retired into M-rebel-library, and `heroes doc` is a
+verb. Stand: R1's *no core package is shipped with the compiler or the runtime* and the veto of
+route B5, R4's thick face over a published floor, R6's platform layer beside the runtime, R3's two
+compiler refusals, R7 to R12, R15 and R16. Entry 7 of the register of the decisions M-rebel-library
+invalidates, <register>.

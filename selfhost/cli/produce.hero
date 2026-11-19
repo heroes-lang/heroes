@@ -6,9 +6,9 @@
 # a concern rather than at a line count. `cli_verbs` answers *what the
 # author typed* — build, run, test — and this answers *how a program is
 # produced*, which all three of those verbs ask for and none of them
-# owns. The arrows already pointed one way, which is the only condition
-# under which a seam exists here: Heroes refuses module cycles whatever
-# the edge carries.
+# owns. The arrows already pointed one way, which was the only condition
+# under which a seam could exist then: Heroes refused module cycles
+# whatever the edge carried, until panel 252's R1, 2026-11-19.
 #
 # Split again on 2026-09-15 (defect 037): the compile-and-link half is
 # `cli/assemble.hero`, one ROUND, because this file now asks for a round

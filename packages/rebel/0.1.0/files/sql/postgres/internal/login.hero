@@ -263,3 +263,12 @@ test "login: a password refused by a FATAL, none given, GSSAPI, SCRAM with chann
     empty @= script.scripted([])
     assert login(@empty.session, user: "", database: "", application_name: "", password: "", nonce: "n").is_err()
     _ = script.finish(@empty)
+
+test "login: a message no length fits is told by its kind's letter (defect 2598)"
+    t @= script.scripted(['R', 0, 0, 0, 1])
+
+    match login(@t.session, user: "ana", database: "db", application_name: "", password: "pw", nonce: "n")
+        .ok _  => assert false
+        .err e => assert e.msg == "reading from test:5432/db: the server sent a message of kind 'R' and length 1, which no message has"
+
+    _ = script.finish(@t)

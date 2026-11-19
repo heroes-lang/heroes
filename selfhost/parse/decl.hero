@@ -24,10 +24,10 @@
 # calls back into `constant_tail` and `function_tail` — and that is true of
 # THAT cut and of no other. The ring is a fact about where the shared tails
 # live, not about the grammar: moved into a third module neither of the
-# other two is used by, the edges run one way and `module_cycle` never
-# fires. The compiler's own diagnostic had been printing the answer all
-# along — *"move what both modules need into a third one that neither
-# uses"*.
+# other two is used by, the edges run one way and no ring is left. The
+# compiler's own diagnostic, `module_cycle` until panel 252's R1, 2026-11-19 lifted
+# it, had been printing the answer all along — *"move what both modules
+# need into a third one that neither uses"*.
 #
 # The edges that leave this module and stay other modules: `parse/heads` (the
 # shared head), `parse/records` (fields and cases, indented or in braces),

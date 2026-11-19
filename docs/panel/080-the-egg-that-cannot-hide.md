@@ -146,3 +146,10 @@ reported this file as pending. They were matching the string `ratification
 pending`, which this sentence contains inside its own negation. That is the
 whole argument for a check that asks the value in hand — one section, not
 `Pending` — instead of one that greps the vocabulary.
+
+**Invalidated in part by M-rebel-library, 2026-11-19**: the Zen's law on the standard library,
+law 19 here (*"There is no standard library, everything comes from C, the man who sold the
+world."*) and law 18 in `heroes this` since 2026-09-02 (*"There is no standard library; C is the
+man who sold the world."*), no longer holds. The author's decision 9 of 2026-11-15 made it
+*"There is no standard library to obey; there is a Rebel to call, or not."* The egg itself stands.
+Entry 3 of the register of the decisions M-rebel-library invalidates, <register>.

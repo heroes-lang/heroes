@@ -1,0 +1,7 @@
+# The catalogue of the case beside it: two packages of the author's own,
+# each read from a folder, each using the other.
+[dependencies.alpha]
+path = "vendor/alpha"
+
+[dependencies.beta]
+path = "vendor/beta"

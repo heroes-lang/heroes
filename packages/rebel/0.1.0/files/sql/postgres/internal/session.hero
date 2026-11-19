@@ -4,6 +4,7 @@
 # A failure the server calls FATAL, a lost connection and a message out of
 # order end the session; every later request then fails `closed`.
 
+use bytes
 use io
 use sql
 use sql/postgres/internal/backend
@@ -165,7 +166,7 @@ function name_of(m: backend.Message) -> str
         .copy_both               => "a CopyBothResponse"
         .copy_data               => "a CopyData"
         .copy_done               => "a CopyDone"
-        .other o                 => f"a message of kind {o.kind}"
+        .other o                 => f"a message of kind '{bytes.format_escaped([o.kind])}'"
 
 # Reads the answers to one request up to ReadyForQuery: the first failure is
 # kept and told after it, so the session stays in step.
@@ -246,3 +247,7 @@ test "keep_notice: the oldest dropped past 64"
         )
 
     assert s.notices.len() == 64 && s.notices[0].message == "6" && s.notices[63].message == "69"
+
+test "name_of: a message of a kind no case names, told by its letter (defect 2598)"
+    m: backend.Message = .other(kind: '?')
+    assert name_of(m) == "a message of kind '?'"

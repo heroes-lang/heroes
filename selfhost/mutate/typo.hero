@@ -25,11 +25,12 @@ use source
 use token
 
 # THE ONE-CHARACTER SLIP ITSELF LIVES IN `mutate_sites`, with the text edit and
-# the questions about one node, and the reason is the language rather than
-# taste: `mutate-undeclared` needs the same slip, and Heroes refuses module
-# cycles (`module_cycle` fires on the `use` edge, whatever it carries). Two
-# modules that each need one function from the other cannot both exist, so the
-# shared half is a module of its own that both use.
+# the questions about one node, and the reason was the language rather than
+# taste: `mutate-undeclared` needs the same slip, and Heroes refused module
+# cycles (`module_cycle` fired on the `use` edge, whatever it carried, until
+# panel 252's R1, 2026-11-19). Two modules that each needed one function from the
+# other could not both exist, so the shared half is a module of its own that
+# both use.
 
 # **A one-character edit** in an identifier, wherever a bare name is read.
 function typo_ident(a: ast.Ast, s: source.Source) -> [str]

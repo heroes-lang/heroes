@@ -236,6 +236,30 @@ void hero_print_end(void) {
 #endif
 }
 
+/* A SPAN ENDS WITH ITS THREAD, WHATEVER OPENED IT (defect 2605, found beside
+ * panel 252's landing, 2026-11-19). A `print` statement opens and closes its span, but
+ * `hero_print_str` is also bound alone, by the compiler for an artifact
+ * (`selfhost/cli/io.hero`'s `print_artifact`) and by any program that names
+ * `hero_os.h`, and a printer called outside a statement opens a span nothing
+ * closes. Its thread then ends holding stdout's lock, and the C library's
+ * `exit`, flushing stdout on the main thread, waits for a holder that is
+ * gone. The compiler writes an artifact on a thread of its own
+ * (`selfhost/main.hero`), so `parse --dump-ast` and `fmt` with no
+ * `--in-place` hung at their end with the artifact written, past a `timeout`
+ * of 10 s, and so did 14 lines binding `hero_print_str` in a thread
+ * (2026-11-19, this Mac). So a thread leaving
+ * its body gives back a span it holds, with no newline, since nothing of a
+ * statement was left to write (`parts/spawn.c`). */
+static void hero_print_thread_leave(void) {
+    if (!hero_print_open) return;
+    hero_print_open = false;
+#if defined(_WIN32)
+    _unlock_file(stdout);
+#else
+    funlockfile(stdout);
+#endif
+}
+
 /* Which test `heroes test` asked for. In the runtime rather than the generated C
  * because CLAUDE.md §7 lets a translation unit include `heroes_runtime.h` and
  * nothing else — `strtol` would need `<stdlib.h>`, and a second header in every

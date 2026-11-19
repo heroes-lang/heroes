@@ -288,3 +288,10 @@ decision, panel 241's ratification (2415). So `m-package-manager` stands on this
 after those closes, as `m-latency-ceiling` stood on the commit after defect 2278's; `a090af316`
 beneath it is the tree both Windows runs judged, and this commit adds only this paragraph and the
 page's.
+
+**Invalidated in part by M-rebel-library, 2026-11-19**: the third tempo this journal records, the
+package manager rewritten over the core packages with its interface unchanged, and `core` as the
+catalogue entry fourteen programs fetched, no longer hold. `core` no longer exists (the author's
+decision 8 of 2026-11-15), and the package manager written with Rebel is row 78,
+M-rebel-packages-manager (decisions 4 and 6). The first version this row delivered, over C, stands.
+Entries 10 and 16 of the register of the decisions M-rebel-library invalidates, <register>.

@@ -1,0 +1,10 @@
+use sb
+
+# Holds a B by value.
+record A
+    b: sb.B
+    n: i64
+
+# Its own number and its B's.
+function total(a: A) -> i64
+    return a.n + sb.sum(b: a.b)

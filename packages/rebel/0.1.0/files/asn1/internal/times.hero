@@ -11,6 +11,7 @@
 # offset or fraction of a minute or an hour must be added goes through a
 # `time.Instant`, so it fails `does_not_fit` outside 1677 to 2262.
 
+use bytes
 use time
 
 # The code of content that is no time of its type.
@@ -28,7 +29,7 @@ function digits(content: [u8], from: i64, count: i64) -> i64?
         c = content[k]
 
         if c < '0' || c > '9'
-            return fail(code: INVALID, msg: f"a time with the byte {c} where a digit belongs, at {k}")
+            return fail(code: INVALID, msg: f"a time with '{bytes.format_escaped([c])}' where a digit belongs, at {k}")
         n @ n * 10 + to_i64(c - '0').must()
 
     return ok(n)
@@ -72,7 +73,10 @@ function zone_at(content: [u8], at: i64, hours_alone: bool) -> i64?
         return ok(0)
 
     if content[at] != '+' && content[at] != '-'
-        return fail(code: INVALID, msg: f"a time with the byte {content[at]} where its zone belongs, at {at}")
+        return fail(
+            code: INVALID,
+            msg: f"a time with '{bytes.format_escaped([content[at]])}' where its zone belongs, at {at}"
+        )
     hours = digits(content: content, from: at + 1, count: 2)?
     minutes @= 0
 
@@ -330,3 +334,12 @@ test "write_utc and write_generalized: as OpenSSL writes them, and the refused"
     assert write_generalized(
         time.DateTime(year: 2026, month: 2, day: 30, hour: 0, minute: 0, second: 0, nanosecond: 0)
     ).is_err()
+
+test "digits and zone_at: a byte where a digit or a zone belongs, told as its character (defect 2598)"
+    match digits(content: text_bytes("1x"), from: 0, count: 2)
+        .ok _  => assert false
+        .err e => assert e.msg == "a time with 'x' where a digit belongs, at 1"
+
+    match zone_at(content: text_bytes("x0100"), at: 0, hours_alone: false)
+        .ok _  => assert false
+        .err e => assert e.msg == "a time with 'x' where its zone belongs, at 0"
