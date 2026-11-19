@@ -1,0 +1,487 @@
+# A symbol made from its pieces: the smallest version that holds them, the
+# data codewords cut into blocks and each given its error correction, the
+# blocks interleaved, the codewords placed, and the mask of least penalty
+# applied. A level is an index, 0 to 3 for L, M, Q and H.
+
+use qr/internal/bits
+use qr/internal/codes
+use qr/internal/matrix
+use qr/internal/rs
+use qr/internal/tables
+
+# A symbol made, before the face turns its modules into rows.
+record Symbol
+    # The version, 1 to 40.
+    version: i64
+    # The level index, 0 to 3.
+    level: i64
+    # The mask, 0 to 7.
+    mask: i64
+    # Modules a side.
+    size: i64
+    # 1 dark, 0 light, row after row.
+    cells: [u8]
+
+# The smallest version from `least` to `most` whose symbol at level index
+# `level` holds `pieces`, or 0 where none does.
+function smallest_version(pieces: [bits.Piece], level: i64, least: i64, most: i64) -> i64
+    version: i64 @= least
+
+    while version <= most
+        length = bits.total_length(pieces, version)
+
+        if length >= 0 && length <= tables.data_codewords(version: version, level: level) * 8
+            return version
+        version @ version + 1
+
+    return 0
+
+# The highest level index from `level` up at which a symbol of `version`
+# still holds `pieces`.
+function boosted(pieces: [bits.Piece], version: i64, level: i64) -> i64
+    length = bits.total_length(pieces, version)
+    best: i64 @= level
+
+    for higher in range(from: level + 1, to: 4)
+        if length <= tables.data_codewords(version: version, level: higher) * 8
+            best @ higher
+
+    return best
+
+# Every codeword of a symbol of `version` at level index `level` whose data
+# codewords are `data`: the blocks' data codewords interleaved, then their
+# error correction codewords interleaved.
+function interleave(data: [u8], version: i64, level: i64) -> [u8]
+    count = tables.blocks_of(version: version, level: level)
+    ec = tables.ec_per_block(version: version, level: level)
+    total = tables.total_codewords(version)
+    short_count = count - total % count
+    short_data = total / count - ec
+    divisor = rs.generator(ec)
+    blocks: [[u8]] @= []
+    checks: [[u8]] @= []
+    at: i64 @= 0
+
+    for b in range(from: 0, to: count)
+        length: i64 @= short_data
+
+        if b >= short_count
+            length @ short_data + 1
+        block = data.slice(from: at, to: at + length)
+        at @ at + length
+        blocks @ blocks.push(block)
+        checks @ checks.push(rs.remainder(block, divisor))
+
+    out: [u8] @= []
+
+    for i in range(from: 0, to: short_data + 1)
+        for b in range(from: 0, to: count)
+            if i < blocks[b].len()
+                out @ out.push(blocks[b][i])
+
+    for i in range(from: 0, to: ec)
+        for b in range(from: 0, to: count)
+            out @ out.push(checks[b][i])
+
+    return out
+
+# The symbol of `pieces` at `version` and level index `level`, masked by
+# `mask`, or by the mask of least penalty where `mask` is below zero, the
+# lowest mask winning a tie.
+function encode(pieces: [bits.Piece], version: i64, level: i64, mask: i64) -> Symbol
+    words = bits.codewords(
+        pieces: pieces,
+        version: version,
+        capacity: tables.data_codewords(version: version, level: level)
+    )
+    laid = matrix.layout(version)
+    size = laid.size
+    regions = laid.regions
+    cells: [u8] @= laid.cells
+    matrix.place(
+        cells: @cells,
+        regions: regions,
+        size: size,
+        words: interleave(data: words, version: version, level: level)
+    )
+    chosen: i64 @= mask
+
+    if chosen < 0
+        least: i64 @= -1
+
+        for m in range(from: 0, to: 8)
+            trial: [u8] @= cells
+            matrix.apply_mask(cells: @trial, regions: regions, size: size, mask: m)
+            matrix.draw_format(cells: @trial, size: size, level: level, mask: m)
+            score = matrix.penalty(trial, size)
+
+            if least < 0 || score < least
+                least @ score
+                chosen @ m
+
+    matrix.apply_mask(cells: @cells, regions: regions, size: size, mask: chosen)
+    matrix.draw_format(cells: @cells, size: size, level: level, mask: chosen)
+    return Symbol(version: version, level: level, mask: chosen, size: size, cells: cells)
+
+# `symbol`'s cells under `mask` instead of its own, its format written again.
+function remask(symbol: Symbol, mask: i64) -> Symbol
+    regions = matrix.layout(symbol.version).regions
+    cells: [u8] @= symbol.cells
+    matrix.apply_mask(cells: @cells, regions: regions, size: symbol.size, mask: symbol.mask)
+    matrix.apply_mask(cells: @cells, regions: regions, size: symbol.size, mask: mask)
+    matrix.draw_format(cells: @cells, size: symbol.size, level: symbol.level, mask: mask)
+    return Symbol(version: symbol.version, level: symbol.level, mask: mask, size: symbol.size, cells: cells)
+
+# The letter of level index `level`.
+function letter(level: i64) -> str
+    return ["L", "M", "Q", "H"][level]
+
+# The failure of data that no version up to `most` holds at level index
+# `level`, `length` its bits in that version.
+function too_long<T>(length: i64, level: i64, most: i64) -> T?
+    room = tables.data_codewords(version: most, level: level) * 8
+
+    if length < 0
+        return fail(
+            code: codes.UNSUPPORTED,
+            msg: f"a segment counts more characters than version {most}'s count field holds"
+        )
+    return fail(
+        code: codes.UNSUPPORTED,
+        msg: f"the data needs {length} bits and version {most} holds {room} at level {letter(level)}"
+    )
+
+# The symbol of `pieces`, checked, at the smallest version from `least` to
+# `most` at level index `level`, the level raised where `boost` asks.
+function from_pieces(pieces: [bits.Piece], level: i64, least: i64, most: i64, boost: bool) -> Symbol?
+    if least < 1 || least > 40 || most < 1 || most > 40
+        return fail(code: codes.INVALID, msg: f"a version is 1 to 40, and the versions asked are {least} to {most}")
+
+    if least > most
+        return fail(code: codes.INVALID, msg: f"the smallest version asked, {least}, is above the largest, {most}")
+
+    for piece in pieces
+        bits.check(piece)?
+
+    version = smallest_version(pieces: pieces, level: level, least: least, most: most)
+
+    if version == 0
+        return too_long(length: bits.total_length(pieces, most), level: level, most: most)
+    chosen: i64 @= level
+
+    if boost
+        chosen @ boosted(pieces: pieces, version: version, level: level)
+    return ok(encode(pieces: pieces, version: version, level: chosen, mask: -1))
+
+# The symbol of `text` at the smallest version holding it at level index
+# `level`, its pieces the shortest for each group of versions in turn.
+function from_text(text: str, level: i64) -> Symbol?
+    for group in [[1, 9], [10, 26], [27, 40]]
+        pieces = bits.shortest(text, group[0])
+        version = smallest_version(pieces: pieces, level: level, least: group[0], most: group[1])
+
+        if version > 0
+            return ok(encode(pieces: pieces, version: version, level: level, mask: -1))
+
+    return too_long(length: bits.total_length(bits.shortest(text, 40), 40), level: level, most: 40)
+
+# The byte indices where `text` is cut into `count` parts, as equal in bytes
+# as its characters allow: `count + 1` indices from 0 to its length.
+function cuts(text: str, count: i64) -> [i64]
+    out: [i64] @= [0]
+
+    for i in range(from: 1, to: count)
+        at: i64 @= text.len() * i / count
+
+        while at < text.len() && text[at] >= 0x80 && text[at] < 0xc0
+            at @ at + 1
+
+        if at <= out[out.len() - 1]
+            at @ out[out.len() - 1] + 1
+
+            while at < text.len() && text[at] >= 0x80 && text[at] < 0xc0
+                at @ at + 1
+
+        out @ out.push(at)
+
+    out @ out.push(text.len())
+    return out
+
+# The symbols of a structured append of `text` over `count` symbols of one
+# version at level index `level`: each part's header, index, count and the
+# parity of every byte of `text`, then its shortest pieces.
+function sequence(text: str, level: i64, count: i64) -> [Symbol]?
+    if count < 1 || count > 16
+        return fail(code: codes.INVALID, msg: f"a structured append is 1 to 16 symbols, not {count}")
+    characters: i64 @= 0
+
+    for _ in text.chars()
+        characters @ characters + 1
+
+    if characters < count
+        return fail(code: codes.INVALID, msg: f"a text of {characters} characters cannot be cut into {count} parts")
+    parity: i64 @= 0
+
+    for at in range(from: 0, to: text.len())
+        parity @ parity ^ to_i64(text[at]).must()
+
+    places = cuts(text, count)
+    empty: [u8] = []
+
+    for group in [[1, 9], [10, 26], [27, 40]]
+        parts: [[bits.Piece]] @= []
+        version: i64 @= group[0]
+
+        for i in range(from: 0, to: count)
+            head = bits.Piece(mode: 5, data: empty, number: i << 12 | count - 1 << 8 | parity)
+            pieces: [bits.Piece] @= [head]
+
+            for piece in bits.shortest(text.slice(from: places[i], to: places[i + 1]), group[0])
+                pieces @ pieces.push(piece)
+
+            needed = smallest_version(pieces: pieces, level: level, least: group[0], most: group[1])
+
+            if needed == 0
+                version @ 0
+            else if version > 0 && needed > version
+                version @ needed
+            parts @ parts.push(pieces)
+
+        if version > 0
+            symbols: [Symbol] @= []
+
+            for pieces in parts
+                symbols @ symbols.push(encode(pieces: pieces, version: version, level: level, mask: -1))
+
+            return ok(symbols)
+
+    return fail(
+        code: codes.UNSUPPORTED,
+        msg: f"a part of {text.len() / count} bytes or more fits no version at level {letter(level)}"
+    )
+
+# The index of the level whose letter is `name`, 0 to 3 for L, M, Q and H;
+# `name` is one of them.
+function level_index(name: str) -> i64
+    return match name
+        "L" => 0
+        "M" => 1
+        "Q" => 2
+        _   => 3
+
+# The bytes of `s`.
+function bytes_of(s: str) -> [u8]
+    out: [u8] @= []
+
+    for at in range(from: 0, to: s.len())
+        out @ out.push(s[at])
+
+    return out
+
+# The rows of `symbol`, `true` dark.
+function rows(symbol: Symbol) -> [[bool]]
+    out: [[bool]] @= []
+    cells = symbol.cells
+
+    for y in range(from: 0, to: symbol.size)
+        row: [bool] @= []
+
+        for x in range(from: 0, to: symbol.size)
+            row @ row.push(cells[y * symbol.size + x] == 1)
+
+        out @ out.push(row)
+
+    return out
+
+# The cells of `modules`, row after row, 1 dark.
+function cells_of(modules: [[bool]]) -> [u8]
+    out: [u8] @= []
+
+    for row in modules
+        for dark in row
+            if dark
+                out @ out.push(1)
+            else
+                out @ out.push(0)
+
+    return out
+
+## Tests
+
+# The rows of `symbol` as text, "1" dark.
+function drawn(symbol: Symbol) -> [str]
+    out: [str] @= []
+
+    for row in rows(symbol)
+        line: [str] @= []
+
+        for dark in row
+            if dark
+                line @ line.push("1")
+            else
+                line @ line.push("0")
+
+        out @ out.push(line.join(""))
+
+    return out
+
+# Core Image's own symbol of "HELLO WORLD" at level Q, drawn by
+# `CIQRCodeGenerator` on 2026-11-19 (the scratch folder's `oracle gen Q`):
+# alphanumeric, version 1, mask 6, module for module.
+test "from_text: HELLO WORLD at 1-Q is Core Image's symbol"
+    symbol = from_text(text: "HELLO WORLD", level: 2).must()
+    assert symbol.version == 1 && symbol.mask == 6
+    want: [str] = [
+        "111111100001001111111"
+        "100000101100101000001"
+        "101110100101101011101"
+        "101110101111101011101"
+        "101110101101001011101"
+        "100000100100101000001"
+        "111111101010101111111"
+        "000000001101100000000"
+        "010111101100111011010"
+        "101111010000111101110"
+        "001010110001001100000"
+        "101101000101100011000"
+        "110111111110111011111"
+        "000000001000100101000"
+        "111111100110011001111"
+        "100000101010010010111"
+        "101110101101001000111"
+        "101110101011100010100"
+        "101110100100001000011"
+        "100000101110011100110"
+        "111111100101000000010"
+    ]
+    assert drawn(symbol) == want
+
+# Core Image's symbol of 122 letters "a" at level M, the most version 7
+# holds in one byte segment, with its version information: drawn the same
+# day. The sweep of that day held all 160 versions and levels so, each at
+# its byte capacity, and found Core Image's next version at one byte more.
+test "from_text: 122 bytes at 7-M is Core Image's symbol, version information and all"
+    text = repeat("a", 122)
+    symbol = from_text(text: text, level: 1).must()
+    assert symbol.version == 7 && symbol.mask == 1
+    want: [str] = [
+        "111111101010010111001111001010101100101111111"
+        "100000100011101000010101001000100101001000001"
+        "101110101001010010111010111101110101001011101"
+        "101110100110110101001010010101010101101011101"
+        "101110100011101101001111101010101011101011101"
+        "100000101101011110001000101000100000001000001"
+        "111111101010101010101010101010101010101111111"
+        "000000000001001101011000100010001000000000000"
+        "101000110000101010111111101010101011000100101"
+        "110010011110010010100000110101010101010100001"
+        "001100100110100001110010110111011100110110101"
+        "001110011000001101010101000010001000000011010"
+        "110001101110001000101101101010101011001011011"
+        "111100011100110110100000110101010101010100001"
+        "111111100001110101110010110111011100110110101"
+        "010100010100011101010101000010001000000011010"
+        "001000100100000000101101101010101011001011011"
+        "110001001100100110100000110101010101010100001"
+        "011001111001100111110010110111011100110110101"
+        "001101000100001011010101000010001000000011010"
+        "100111111100111100101111101010101011111111011"
+        "001010001101100010101000110101010101100010001"
+        "110010101011010011111010110111011100101010101"
+        "111010001110011001001000100010001000100011010"
+        "010111111111100101111111101010101010111111011"
+        "111000010010001010011010010101010100010100001"
+        "110001110110110010010111010111011101101010101"
+        "111001000100111000100101000010001001101001001"
+        "011010101111100110111010101010101011011101010"
+        "111100011100101110111010010101010100010100001"
+        "011101110000101101110111010111011101101010101"
+        "111101011011011010100101000010001001101001010"
+        "001001101001110110011010101010101011011101011"
+        "001000011010111111111010010101010100010100001"
+        "000010110000110101110111010111011101101010101"
+        "011110011011010100100101000010001001101001010"
+        "100110101001011110011111101010101011111111011"
+        "000000001011011111101000110101010101100010001"
+        "111111101111010110101010110111011101101010101"
+        "100000100100000101111000100010001000100011010"
+        "101110100000110110111111101010101011111111011"
+        "101110100110010111110101010101010100100010011"
+        "101110101011010111111101110111011100101010101"
+        "100000100100000100001000100010001001010101000"
+        "111111101000110010001010101010101011110111001"
+    ]
+    assert drawn(symbol) == want
+    assert from_text(text: repeat("a", 123), level: 1).must().version == 8
+
+test "from_pieces: the versions refused, a segment refused, and data too long"
+    empty: [bits.Piece] = []
+    assert from_pieces(pieces: empty, level: 0, least: 0, most: 40, boost: false).is_err()
+    assert from_pieces(pieces: empty, level: 0, least: 5, most: 4, boost: false).is_err()
+    assert from_pieces(pieces: empty, level: 0, least: 1, most: 41, boost: false).is_err()
+    assert from_pieces(
+        pieces: [bits.Piece(mode: 0, data: [0x41], number: 0)],
+        level: 0,
+        least: 1,
+        most: 40,
+        boost: false
+    ).is_err()
+    long = bits.Piece(mode: 2, data: bytes_of(repeat("a", 2954)), number: 0)
+
+    match from_pieces(pieces: [long], level: 0, least: 1, most: 40, boost: false)
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported" && e.msg == "the data needs 23652 bits and version 40 holds 23648 at level L"
+
+    small = bits.Piece(mode: 2, data: bytes_of("hello"), number: 0)
+
+    match from_pieces(pieces: [small], level: 0, least: 1, most: 40, boost: true)
+        .ok s  => assert s.version == 1 && s.level == 3
+        .err _ => assert false
+
+    assert from_pieces(pieces: [small], level: 0, least: 3, most: 3, boost: false).must().version == 3
+
+test "from_text: nothing, and one character more than version 40 holds"
+    assert from_text(text: "", level: 3).must().version == 1
+    assert from_text(text: repeat("a", 1274), level: 3).is_err()
+
+test "remask: every mask and back, the format written again"
+    symbol = from_text(text: "remask", level: 1).must()
+
+    for mask in range(from: 0, to: 8)
+        other = remask(symbol: symbol, mask: mask)
+        assert other.mask == mask
+        assert remask(symbol: other, mask: symbol.mask).cells == symbol.cells
+
+# The parts of a structured append, read back part by part by Core Image's
+# detector on 2026-11-19: each payload opened 3, its index, 2 for three
+# symbols, and the parity e8 of the whole text.
+test "sequence: three symbols of one version, their headers, and the refusals"
+    text = "The quick brown fox jumps over the lazy dog, 0123456789, caffè ☕"
+    symbols = sequence(text: text, level: 2, count: 3).must()
+    assert symbols.len() == 3
+    assert symbols[0].version == 3 && symbols[1].version == 3 && symbols[2].version == 3
+    assert sequence(text: text, level: 2, count: 0).is_err()
+    assert sequence(text: text, level: 2, count: 17).is_err()
+    assert sequence(text: "ab", level: 2, count: 3).is_err()
+    assert sequence(text: "one", level: 2, count: 1).must().len() == 1
+
+test "cuts: equal parts, never inside a character"
+    assert cuts(text: "abcdef", count: 3) == [0, 2, 4, 6]
+    assert cuts(text: "éééé", count: 2) == [0, 4, 8]
+    assert cuts(text: "aé", count: 2) == [0, 1, 3]
+    assert cuts(text: "€a", count: 2) == [0, 3, 4]
+
+test "interleave: one block, and blocks of two lengths at 5-Q"
+    data: [u8] @= []
+
+    for i in range(from: 0, to: 62)
+        data @ data.push(to_u8(i).must())
+
+    words = interleave(data: data, version: 5, level: 2)
+    assert words.len() == 134
+    assert words[0] == 0 && words[1] == 15 && words[2] == 30 && words[3] == 46
+    assert words[60] == 45 && words[61] == 61
+
+test "level_index and letter: the four"
+    for i in range(from: 0, to: 4)
+        assert level_index(letter(i)) == i

@@ -1,0 +1,32 @@
+# The codes `acme` fails with, kept in one place so that every module of the
+# package fails alike.
+
+# An answer that is not RFC 8555's, or an argument refused.
+constant INVALID: str
+    "invalid"
+
+# No account has the key.
+constant NOT_FOUND: str
+    "not_found"
+
+# The server's rate limit.
+constant LIMIT: str
+    "limit"
+
+# A wait ran out.
+constant TIMEOUT: str
+    "timeout"
+
+# Every other refusal of the server.
+constant FAILED: str
+    "failed"
+
+# What the directory does not offer.
+constant UNSUPPORTED: str
+    "unsupported"
+
+## Tests
+
+test "codes: the library's words"
+    assert INVALID == "invalid" && NOT_FOUND == "not_found" && LIMIT == "limit"
+    assert TIMEOUT == "timeout" && FAILED == "failed" && UNSUPPORTED == "unsupported"

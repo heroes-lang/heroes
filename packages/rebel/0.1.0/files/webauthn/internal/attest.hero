@@ -1,0 +1,157 @@
+# An attestation statement verified (Web Authentication Level 3 § 8): the
+# formats "none", "packed" (self attestation, and an attestation
+# certificate's with the requirements of § 8.2.1) and "fido-u2f" (§ 8.6);
+# "apple", "tpm", "android-key" and "android-safetynet" read and kept, their
+# certificates handed back, and said unverified.
+
+use cbor
+use crypto/keypairs
+use webauthn/internal/codes
+use webauthn/internal/cose
+use webauthn/internal/der
+use webauthn/internal/items
+
+# What a statement's verification answers: `kind` 0 none, 1 self
+# attestation, 2 a certificate's, 3 kept unverified; and the certificates, as
+# DER, the attestation's own first.
+record Outcome
+    # 0 to 3.
+    kind: i64
+    # The certificates of `x5c`; empty where it has none.
+    certificates: [[u8]]
+
+# The scheme an attestation's `alg` names for a certificate's key.
+function scheme_of(alg: i64) -> keypairs.Scheme?
+    return match alg
+        -7   => ok(.ecdsa_sha256)
+        -35  => ok(.ecdsa_sha384)
+        -257 => ok(.rsa_pkcs1_sha256)
+        -258 => ok(.rsa_pkcs1_sha384)
+        -259 => ok(.rsa_pkcs1_sha512)
+        -37  => ok(.rsa_pss_sha256)
+        -38  => ok(.rsa_pss_sha384)
+        -39  => ok(.rsa_pss_sha512)
+        -8   => ok(.ed25519)
+        _    => fail(code: codes.INVALID, msg: f"the attestation's algorithm {alg} is none this package reads")
+
+# The certificates of `statement`'s `x5c`, at least one.
+function chain(statement: [cbor.Entry]) -> [[u8]]?
+    list = items.items(v: items.by_name(found: statement, key: "x5c", what: "the attestation statement")?, what: "x5c")?
+
+    if list.len() == 0
+        return fail(code: codes.INVALID, msg: "the attestation's x5c holds no certificate")
+    out: [[u8]] @= []
+
+    for item in list
+        out @ out.push(items.binary(v: item, what: "a certificate of x5c")?)
+
+    return ok(out)
+
+# Nothing where `signature` holds over `signed` by the certificate's key
+# under `scheme`, else `invalid` naming the format.
+function holds(key: [u8], scheme: keypairs.Scheme, signed: [u8], signature: [u8], format: str) -> ()?
+    match keypairs.verify_der(public_der: key, scheme: scheme, message: signed, signature: signature)
+        .ok good =>
+            if !good
+                return fail(code: codes.INVALID, msg: f"the {format} attestation's signature does not hold")
+            return ok()
+        .err e => return fail(code: e.code, msg: f"the {format} attestation's certificate key: {e.msg}")
+
+# The statement of `format` verified over the authenticator data `auth_data`
+# and the client data's hash `client_hash`, `key` the credential's key,
+# `aaguid` and `credential_id` the authenticator data's.
+function verify(format: str, statement: [cbor.Entry], auth_data: [u8], client_hash: [u8], key: cose.Key, aaguid: [u8], credential_id: [u8]) -> Outcome?
+    none: [[u8]] = []
+    signed = der.joined([auth_data, client_hash])
+
+    if format == "none"
+        if statement.len() != 0
+            return fail(code: codes.INVALID, msg: "the attestation \"none\" carries a statement")
+        return ok(Outcome(kind: 0, certificates: none))
+
+    if format == "packed"
+        alg = items.integer(v: items.by_name(found: statement, key: "alg", what: "the attestation statement")?, what: "alg")?
+        signature = items.binary(v: items.by_name(found: statement, key: "sig", what: "the attestation statement")?, what: "sig")?
+
+        if !items.has_name(found: statement, key: "x5c")
+            if alg != key.algorithm
+                return fail(
+                    code: codes.INVALID,
+                    msg: f"the self attestation's algorithm {alg} is not the key's, {key.algorithm}"
+                )
+
+            match cose.verify(key: key, data: signed, signature: signature)
+                .ok good =>
+                    if !good
+                        return fail(code: codes.INVALID, msg: "the packed self attestation's signature does not hold")
+                .err e => return fail(code: e.code, msg: e.msg)
+
+            return ok(Outcome(kind: 1, certificates: none))
+        certificates = chain(statement)?
+        leaf = der.certificate(certificates[0])?
+        holds(key: leaf.key, scheme: scheme_of(alg)?, signed: signed, signature: signature, format: "packed")?
+
+        if leaf.version != 3
+            return fail(code: codes.INVALID, msg: f"the attestation certificate is of version {leaf.version}, not 3")
+        unit: bool @= false
+
+        for u in leaf.units
+            if u == "Authenticator Attestation"
+                unit @ true
+
+        if !unit || !leaf.named
+            return fail(
+                code: codes.INVALID,
+                msg: "the attestation certificate's subject is not a country, an organization, the unit \"Authenticator Attestation\" and a common name"
+            )
+
+        if leaf.authority
+            return fail(code: codes.INVALID, msg: "the attestation certificate is a certificate authority's")
+
+        if leaf.aaguid.len() > 0 && leaf.aaguid != aaguid
+            return fail(
+                code: codes.INVALID,
+                msg: "the attestation certificate names another AAGUID than the authenticator data's"
+            )
+        return ok(Outcome(kind: 2, certificates: certificates))
+
+    if format == "fido-u2f"
+        certificates = chain(statement)?
+        signature = items.binary(v: items.by_name(found: statement, key: "sig", what: "the attestation statement")?, what: "sig")?
+
+        if certificates.len() != 1
+            return fail(
+                code: codes.INVALID,
+                msg: f"the fido-u2f attestation holds {certificates.len()} certificates, not one"
+            )
+
+        if key.point.len() != 65 || key.algorithm != -7
+            return fail(code: codes.INVALID, msg: "the fido-u2f attestation's credential is not a P-256 key")
+        leaf = der.certificate(certificates[0])?
+        base = der.joined([[0], der.part(data: auth_data, from: 0, to: 32), client_hash, credential_id, key.point])
+        holds(key: leaf.key, scheme: .ecdsa_sha256, signed: base, signature: signature, format: "fido-u2f")?
+        return ok(Outcome(kind: 2, certificates: certificates))
+
+    if format == "apple" || format == "tpm" || format == "android-key" || format == "android-safetynet"
+        kept: [[u8]] @= []
+
+        if items.has_name(found: statement, key: "x5c")
+            kept @ chain(statement)?
+        return ok(Outcome(kind: 3, certificates: kept))
+    return fail(code: codes.INVALID, msg: f"the attestation format \"{format}\" is none of Web Authentication's")
+
+## Tests
+
+test "scheme_of: every algorithm read, and one that is not"
+    assert scheme_of(-7).must() == .ecdsa_sha256
+    assert scheme_of(-257).must() == .rsa_pkcs1_sha256
+    assert scheme_of(-39).must() == .rsa_pss_sha512
+    assert scheme_of(-65535).is_err()
+
+test "chain: absent, empty, and an item that is not bytes"
+    empty: [cbor.Entry] = []
+    assert chain(empty).is_err()
+    nothing: [cbor.Value] = []
+    assert chain([cbor.Entry(key: .text(v: "x5c"), value: .list(items: nothing))]).is_err()
+    assert chain([cbor.Entry(key: .text(v: "x5c"), value: .list(items: [.text(v: "a")]))]).is_err()
+    assert chain([cbor.Entry(key: .text(v: "x5c"), value: .list(items: [.binary(v: [1])]))]).must() == [[1]]

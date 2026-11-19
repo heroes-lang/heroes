@@ -1,0 +1,357 @@
+# ACME's requests on the wire (RFC 8555 § 6): each POST a JWS in the
+# flattened JSON serialization, its protected header naming the algorithm,
+# a fresh nonce, the URL and either the account's key (`jwk`) or its URL
+# (`kid`); the nonce of each answer kept for the next; a `badNonce` answered
+# by up to three more tries; a problem document turned into a code and a
+# message.
+
+use acme/internal/codes
+use bytes
+use http
+use jose
+use json
+use time
+
+# What a client signs and sends with: the face's `Client` holds one.
+record Session
+    # The account's private key.
+    key: jose.Key
+    # The algorithm the key signs with.
+    algorithm: jose.Algorithm
+    # The account's URL; "" before one is made or found.
+    kid: str
+    # The nonce the next request carries; "" where none is held.
+    nonce: str
+    # The directory's `newNonce`.
+    new_nonce: str
+    # How requests are sent.
+    transport: http.Client
+
+# An answer of the server.
+record Answer
+    # Its status.
+    status: i64
+    # Its body.
+    body: [u8]
+    # Its `Location`; "" where none.
+    location: str
+    # Its header's fields.
+    headers: [http.Header]
+
+# The User-Agent every request carries, as RFC 8555 § 6.1 asks of a client.
+constant USER_AGENT: str
+    "heroes-rebel-acme/0.1.0"
+
+# `r` with this package's User-Agent.
+function stamped(r: http.Request) -> http.Request
+    out @= r
+    out.headers @ http.with_header(headers: r.headers, name: "User-Agent", value: USER_AGENT)
+    return out
+
+# The algorithm a private `key` signs ACME's requests with: ES256 for P-256,
+# ES384 for P-384, RS256 for RSA, EdDSA for Ed25519.
+function algorithm_of(key: jose.Key) -> jose.Algorithm?
+    if !jose.is_private(key)
+        return fail(code: codes.INVALID, msg: "an account key must be private: a public key signs nothing")
+
+    if key.key_type == "EC" && key.curve == "P-256"
+        return ok(.es256)
+
+    if key.key_type == "EC" && key.curve == "P-384"
+        return ok(.es384)
+
+    if key.key_type == "RSA"
+        return ok(.rs256)
+
+    if key.key_type == "OKP" && key.curve == "Ed25519"
+        return ok(.eddsa)
+    return fail(code: codes.INVALID, msg: f"a key of type {key.key_type} {key.curve} signs no ACME request")
+
+# The milliseconds `headers`' `Retry-After` asks, as whole seconds; `none`
+# where it says none or a date.
+function retry_after_ms(headers: [http.Header], none: i64) -> i64
+    match http.value_of(headers: headers, name: "Retry-After")
+        .ok v =>
+            if v.len() == 0 || v.len() > 6
+                return none
+            seconds: i64 @= 0
+
+            for at in range(from: 0, to: v.len())
+                if v[at] < '0' || v[at] > '9'
+                    return none
+                seconds @ seconds * 10 + to_i64(v[at] - '0').must()
+
+            return seconds * 1000
+        .err _ => return none
+
+# The URLs of `headers`' `Link` fields whose relation is `relation`.
+function links(headers: [http.Header], relation: str) -> [str]
+    out: [str] @= []
+    want = f"rel=\"{relation}\""
+
+    for value in http.values_of(headers: headers, name: "Link")
+        if value.len() > 2 && value[0] == '<'
+            close: i64 @= 1
+
+            while close < value.len() && value[close] != '>'
+                close @ close + 1
+
+            if close < value.len()
+                rest = value.slice(from: close + 1, to: value.len())
+                found: bool @= false
+                at: i64 @= 0
+
+                while at + want.len() <= rest.len() && !found
+                    if rest.slice(from: at, to: at + want.len()) == want
+                        found @ true
+                    at @ at + 1
+
+                if found
+                    out @ out.push(value.slice(from: 1, to: close))
+
+    return out
+
+# The failure a problem document `body`, answered with `status`, says: its
+# type's last part chooses the code, its detail and its subproblems' make
+# the message.
+function problem<T>(status: i64, body: [u8]) -> T?
+    kind: str @= ""
+    detail: str @= ""
+    extra: [str] @= []
+
+    match bytes.to_text(body)
+        .ok text =>
+            match json.parse(text)
+                .ok v =>
+                    kind @ json.text_of(json.member(v: v, key: "type").default(.null_value)).default("")
+                    detail @ json.text_of(json.member(v: v, key: "detail").default(.null_value)).default("")
+
+                    for sub in json.items_of(json.member(v: v, key: "subproblems").default(.null_value)).default([])
+                        said = json.text_of(json.member(v: sub, key: "detail").default(.null_value)).default("")
+
+                        if said.len() > 0
+                            extra @ extra.push(said)
+                .err _ => detail @ text
+        .err _ => detail @ "the body is not text"
+
+    prefix = "urn:ietf:params:acme:error:"
+    short: str @= kind
+
+    if kind.len() > prefix.len() && kind.slice(from: 0, to: prefix.len()) == prefix
+        short @ kind.slice(from: prefix.len(), to: kind.len())
+    tail: str @= ""
+
+    if extra.len() > 0
+        tail @ f" ({extra.join("; ")})"
+    message = f"the server answered {status} {short}: {detail}{tail}"
+
+    if short == "rateLimited"
+        return fail(code: codes.LIMIT, msg: message)
+
+    if short == "accountDoesNotExist"
+        return fail(code: codes.NOT_FOUND, msg: message)
+
+    if short == "malformed" && status == 0
+        return fail(code: codes.INVALID, msg: message)
+    return fail(code: codes.FAILED, msg: message)
+
+# A fresh nonce from the directory's `newNonce`, kept in `session`.
+function fetch_nonce(@session: Session) -> ()?
+    request = stamped(http.request(method: "HEAD", target: session.new_nonce)?)
+    response = http.send(c: session.transport, r: request)?
+
+    match http.value_of(headers: response.headers, name: "Replay-Nonce")
+        .ok n => session.nonce @ n
+        .err _ => return fail(
+            code: codes.INVALID,
+            msg: f"the server's newNonce answered {response.status} with no Replay-Nonce"
+        )
+
+    return ok()
+
+# The flattened JWS of `payload` for `url`, signed by `session`'s key with its
+# nonce: its public key in the header where `with_jwk`, else its `kid`.
+function signed(session: Session, url: str, payload: [u8], with_jwk: bool) -> str?
+    protected: {str: json.Value} @= {"nonce": .text(v: session.nonce), "url": .text(v: url)}
+
+    if with_jwk
+        protected["jwk"] @ jose.to_json(jose.public_of(session.key)?)
+    else
+        if session.kid.len() == 0
+            return fail(
+                code: codes.INVALID,
+                msg: "the client has no account yet: `new_account` or `find_account` first"
+            )
+        protected["kid"] @ .text(v: session.kid)
+    return jose.sign_flattened(
+        payload: payload,
+        signer: jose.Signer(key: session.key, algorithm: session.algorithm, protected: protected, unprotected: {})
+    )
+
+# The answer to a POST of `payload` to `url`, signed as `signed` signs it,
+# asking `accept`: a `badNonce` sent again with the nonce it brought, up to
+# three times, any other problem a failure.
+function post(@session: Session, url: str, payload: [u8], with_jwk: bool, accept: str) -> Answer?
+    tries: i64 @= 0
+
+    while true
+        if session.nonce.len() == 0
+            fetch_nonce(@session)?
+        body = signed(session: session, url: url, payload: payload, with_jwk: with_jwk)?
+        session.nonce @ ""
+        request @= http.with_body(
+            r: http.request(method: "POST", target: url)?,
+            content_type: "application/jose+json",
+            body: bytes.from_text(body)
+        )
+        request.headers @ http.with_header(headers: request.headers, name: "Accept", value: accept)
+        response = http.send(c: session.transport, r: stamped(request))?
+
+        match http.value_of(headers: response.headers, name: "Replay-Nonce")
+            .ok n  => session.nonce @ n
+            .err _ => _ = 0
+
+        if response.status >= 400
+            bad = bytes.from_text("urn:ietf:params:acme:error:badNonce")
+            said = response.body
+
+            if tries < 3 && contains(said: said, part: bad)
+                tries @ tries + 1
+                continue
+            return problem(status: response.status, body: response.body)
+        return ok(
+            Answer(status: response.status, body: response.body, location: http.value_of(headers: response.headers, name: "Location").default(""), headers: response.headers)
+        )
+
+# Whether `part` stands in `said`.
+function contains(said: [u8], part: [u8]) -> bool
+    at: i64 @= 0
+
+    while at + part.len() <= said.len()
+        same: i64 @= 0
+
+        while same < part.len() && said[at + same] == part[same]
+            same @ same + 1
+
+        if same == part.len()
+            return true
+        at @ at + 1
+
+    return false
+
+# The answer to a GET of `url`, which needs no signature: the directory and
+# renewal information.
+function get(transport: http.Client, url: str) -> Answer?
+    response = http.send(c: transport, r: stamped(http.request(method: "GET", target: url)?))?
+
+    if response.status >= 400
+        return problem(status: response.status, body: response.body)
+    return ok(
+        Answer(status: response.status, body: response.body, location: http.value_of(headers: response.headers, name: "Location").default(""), headers: response.headers)
+    )
+
+# The body of `answer` as text.
+function text_of(answer: Answer) -> str?
+    match bytes.to_text(answer.body)
+        .ok t  => return ok(t)
+        .err _ => return fail(code: codes.INVALID, msg: "the server answered a body that is not UTF-8")
+
+# `value` as JSON bytes.
+function json_bytes(value: json.Value) -> [u8]?
+    return ok(bytes.from_text(json.format(value)?))
+
+# `words` as a JSON array of strings.
+function texts_json(words: [str]) -> json.Value
+    out: [json.Value] @= []
+
+    for w in words
+        out @ out.push(.text(v: w))
+
+    return .list(items: out)
+
+# Waits `ms` milliseconds.
+function pause(ms: i64)
+    time.sleep(time.milliseconds(ms).must())
+
+# The thumbprint of `session`'s key, SHA-256, in base 64 for URLs.
+function thumbprint(session: Session) -> str?
+    return ok(bytes.format_base64_url_unpadded(jose.thumbprint(key: session.key, algorithm: .sha256)?))
+
+# The JWS of a key change (RFC 8555 § 7.3.5): the inner JWS, signed by
+# `key` with `algorithm`, of the account's URL and its old public key.
+function key_change(session: Session, url: str, key: jose.Key, algorithm: jose.Algorithm) -> [u8]?
+    old = jose.to_json(jose.public_of(session.key)?)
+    payload = json_bytes(.object(members: {"account": .text(v: session.kid), "oldKey": old}))?
+    protected: {str: json.Value} = {"jwk": jose.to_json(jose.public_of(key)?), "url": .text(v: url)}
+    inner = jose.sign_flattened(payload: payload, signer: jose.Signer(key: key, algorithm: algorithm, protected: protected, unprotected: {}))?
+    return ok(bytes.from_text(inner))
+
+# The external account binding (RFC 8555 § 7.3.4): the account's public key
+# signed by HMAC with the CA's `hmac_key`, under its `key_id`, for `url`.
+function binding(session: Session, url: str, key_id: str, hmac_key: [u8]) -> json.Value?
+    payload = json_bytes(jose.to_json(jose.public_of(session.key)?))?
+    protected: {str: json.Value} = {"kid": .text(v: key_id), "url": .text(v: url)}
+    text = jose.sign_flattened(payload: payload, signer: jose.Signer(key: jose.key_from_secret(hmac_key), algorithm: .hs256, protected: protected, unprotected: {}))?
+    return json.parse(text)
+
+## Tests
+
+test "retry_after_ms: seconds, none, a date, and nonsense"
+    assert retry_after_ms(headers: [http.Header(name: "Retry-After", value: "3")], none: 1000) == 3000
+    assert retry_after_ms(headers: [], none: 1000) == 1000
+    assert retry_after_ms(headers: [http.Header(name: "retry-after", value: "Wed, 21 Oct 2026 07:28:00 GMT")], none: 7) == 7
+    assert retry_after_ms(headers: [http.Header(name: "Retry-After", value: "")], none: 5) == 5
+
+test "links: alternates among other relations"
+    headers = [
+        http.Header(name: "Link", value: "<https://ca.example/dir>;rel=\"index\"")
+        http.Header(name: "Link", value: "<https://ca.example/cert/1/1>;rel=\"alternate\"")
+        http.Header(name: "link", value: "<https://ca.example/cert/1/2>; rel=\"alternate\"")
+    ]
+    assert links(headers: headers, relation: "alternate") == ["https://ca.example/cert/1/1", "https://ca.example/cert/1/2"]
+    assert links(headers: headers, relation: "up").len() == 0
+
+test "problem: the codes by type, the detail and the subproblems"
+    body = bytes.from_text(
+        "{\"type\":\"urn:ietf:params:acme:error:rejectedIdentifier\",\"detail\":\"no\",\"subproblems\":[{\"type\":\"urn:ietf:params:acme:error:caa\",\"detail\":\"CAA forbids\"}]}"
+    )
+    got1: i64? = problem(status: 400, body: body)
+
+    match got1
+        .ok _  => assert false
+        .err e => assert e.code == "failed" && e.msg == "the server answered 400 rejectedIdentifier: no (CAA forbids)"
+
+    limited = bytes.from_text("{\"type\":\"urn:ietf:params:acme:error:rateLimited\",\"detail\":\"slow\"}")
+    got2: i64? = problem(status: 429, body: limited)
+
+    match got2
+        .ok _  => assert false
+        .err e => assert e.code == "limit"
+
+    missing = bytes.from_text("{\"type\":\"urn:ietf:params:acme:error:accountDoesNotExist\",\"detail\":\"none\"}")
+    got3: i64? = problem(status: 400, body: missing)
+
+    match got3
+        .ok _  => assert false
+        .err e => assert e.code == "not_found"
+
+    got4: i64? = problem(status: 500, body: bytes.from_text("oops"))
+
+    match got4
+        .ok _  => assert false
+        .err e => assert e.msg == "the server answered 500 : oops"
+
+test "stamped: the User-Agent added, once"
+    r = stamped(stamped(http.request(method: "GET", target: "https://ca.example/dir").must()))
+    assert http.values_of(headers: r.headers, name: "User-Agent") == ["heroes-rebel-acme/0.1.0"]
+
+test "contains: at either end, absent, and empty"
+    assert contains(said: [1, 2, 3], part: [2, 3])
+    assert contains(said: [1, 2, 3], part: [])
+    assert !contains(said: [1, 2], part: [2, 3])
+
+test "algorithm_of: a public key refused, a P-256 key's ES256"
+    key = jose.generate_key(.p256).must()
+    assert algorithm_of(key).must() == .es256
+    assert algorithm_of(jose.public_of(key).must()).is_err()
+    assert algorithm_of(jose.key_from_secret([1, 2, 3])).is_err()

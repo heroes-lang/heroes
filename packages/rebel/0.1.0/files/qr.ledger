@@ -1,0 +1,214 @@
+# The ledger of `qr`: QR codes made by ISO/IEC 18004, one block per
+# capability, and what Heroes answers to each.
+#
+# Go 1.27, Rust 1.100 and Python 3.15 carry no QR code in their standard
+# libraries (asked on 2026-11-19: `go doc -all image` names none, Python's
+# modules hold none, Rust's std documentation has no page). The yardsticks are
+# the queue's: Go's skip2/go-qrcode (`go` below) and Python's segno and qrcode
+# (`python` below, each entry prefixed by its package). None of the three is
+# installed on this machine (asked the same day: no module, no Go module
+# cache entry, no zbar, no Python decoder), so their entries are named from
+# their published documentation and not listed by a command. The oracle the
+# tests were held to is the system's own: macOS's Core Image, its
+# `CIQRCodeGenerator` and its `CIDetector` of QR codes, driven by a Swift
+# program in the scratch folder.
+
+## Making a code
+
+capability qr/make-text  a QR code of a text, the smallest version at a level, its modes chosen to make it shortest
+  heroes  qr.make
+  go      qrcode.New, qrcode.Encode
+  rust    -
+  python  segno.make, segno.make_qr, qrcode.make, qrcode.QRCode.add_data, qrcode.QRCode.make, qrcode.QRCode.best_fit
+  note    the smallest version, then the shortest split for that version's group of count widths; Core Image's own symbol, module for module, in 288 of 300 mixed texts and in all 160 versions and levels at their byte capacity (2026-11-19); the other 12 differ in the mask alone (see qr/mask). No ECI is written, as go-qrcode and python-qrcode write none; segno writes ISO 8859-1 where the text fits it, which Heroes does not, a `str` being UTF-8
+
+capability qr/make-bytes  a QR code of bytes that need not be text
+  heroes  qr.make_bytes
+  go      -
+  rust    -
+  python  segno.make (bytes), qrcode.QRCode.add_data (bytes)
+  note    one byte segment
+
+capability qr/segments  a code of segments the program chose, each in its own mode
+  heroes  qr.make_segments, qr.Segment, qr.Mode, qr.MODES
+  go      -
+  rust    -
+  python  segno.make (mode=), qrcode.util.QRData, qrcode.util.MODE_NUMBER, qrcode.util.MODE_ALPHA_NUM, qrcode.util.MODE_8BIT_BYTE, qrcode.util.MODE_KANJI
+  note    a segment a mode cannot write is `invalid`, naming the byte and its place
+
+capability qr/optimal-segments  a text split into numeric, alphanumeric and byte segments so that its bits are fewest
+  heroes  qr.segments_of
+  go      -
+  rust    -
+  python  qrcode.util.optimal_data_chunks, qrcode.QRCode.add_data (optimize=)
+  note    the least bits by a walk over the characters keeping the cheapest way to end in each mode, a segment's fractional bits rounded where it closes; never kanji, since a UTF-8 text says nothing of Shift JIS; Core Image chose the same split in all 300 mixed texts
+
+capability qr/kanji  kanji written in thirteen bits a character
+  heroes  qr.Segment
+  go      -
+  rust    -
+  python  segno.make (mode="kanji"), qrcode.util.MODE_KANJI
+  note    the `kanji` case takes Shift JIS pairs, which `unicode/encodings` writes, `qr` standing at layer 0 with no table; read back as 日本語の漢字 by Core Image at every level, and ten kanji fill 1-L as the capacity says. Core Image's own generator writes the same Shift JIS bytes in byte mode
+
+capability qr/eci  an Extended Channel Interpretation, naming the character set of the bytes that follow
+  heroes  qr.Segment
+  go      -
+  rust    -
+  python  segno.make (eci=, encoding=)
+  note    the `eci` case, its 8, 16 and 24 bit forms; read back by Core Image (assignments 26, 300 and 999999), which reads the UTF-8 text after ECI 26 and none after the other two
+
+capability qr/version  the version asked, or a range of versions to choose from
+  heroes  qr.Options, qr.make_segments
+  go      qrcode.NewWithForcedVersion
+  rust    -
+  python  segno.make (version=), qrcode.QRCode (version=), qrcode.QRCode.make (fit=)
+  note    a range of versions, `min_version` to `max_version`; one version is the range of one
+
+capability qr/level  the four levels of error correction
+  heroes  qr.Level, qr.LEVELS, qr.letter_of
+  go      qrcode.RecoveryLevel, qrcode.Low, qrcode.Medium, qrcode.High, qrcode.Highest
+  rust    -
+  python  segno.make (error=), qrcode.constants.ERROR_CORRECT_L, ERROR_CORRECT_M, ERROR_CORRECT_Q, ERROR_CORRECT_H
+
+capability qr/boost  the level raised as far as the chosen version still holds the data
+  heroes  qr.Options
+  go      -
+  rust    -
+  python  segno.make (boost_error=)
+  note    `boost`, false by `defaults` as go-qrcode and python-qrcode do; segno raises it by default
+
+capability qr/mask  the mask chosen by the standard's penalty rules, or the one asked
+  heroes  qr.make, qr.with_mask
+  go      -
+  rust    -
+  python  segno.make (mask=), qrcode.QRCode (mask_pattern=), qrcode.QRCode.best_mask_pattern
+  note    rule 3 read as the two eleven-module patterns inside the symbol; Core Image chose the same mask in all 160 sweep symbols and in 288 of 300 mixed texts. In the other 12 its mask scores 1 or 2 points more by this reading; three other readings of rule 3 (ZXing's, the quiet zone counted light, both sides counted) and the format modules scored light or dark agreed with it less often (97, 77, 59 and 70 of 109); its reading is unpublished
+
+capability qr/penalty  the penalty score of a symbol, the sum the mask is chosen by
+  heroes  qr.penalty_of
+  go      -
+  rust    -
+  python  qrcode.util.lost_point
+
+capability qr/capacity  how many characters of a mode a version holds at a level
+  heroes  qr.capacity_of
+  go      -
+  rust    -
+  python  -
+  note    held to Core Image's edges: n characters at version v and n+1 at v+1, for every byte capacity and for 1-L, 1-M, 1-H and 40-L numeric and alphanumeric
+
+capability qr/structured-append  one text spread over up to sixteen codes read as one
+  heroes  qr.make_sequence
+  go      -
+  rust    -
+  python  segno.make_sequence
+  note    one version for every part, as segno; the parity is the XOR of every byte of the text's UTF-8; each part read back by Core Image with its header, index and parity
+
+capability qr/micro  Micro QR codes, M1 to M4
+  heroes  pending
+  go      -
+  rust    -
+  python  segno.make_micro, segno.make (micro=), segno.QRCode.is_micro
+  note    Micro QR has its own format information, masks and capacities; not written
+
+## What a code is
+
+capability qr/info  a code's version, level, mask and size
+  heroes  qr.Code
+  go      qrcode.QRCode.VersionNumber, qrcode.QRCode.Level
+  rust    -
+  python  segno.QRCode.version, segno.QRCode.error, segno.QRCode.mask, segno.QRCode.mode, segno.QRCode.symbol_size, qrcode.QRCode.version
+  note    its fields
+
+capability qr/designator  a code named as its version and level, "1-M"
+  heroes  qr.designator_of
+  go      -
+  rust    -
+  python  segno.QRCode.designator
+
+capability qr/matrix  the modules, dark or light, row after row
+  heroes  qr.Code
+  go      qrcode.QRCode.Bitmap
+  rust    -
+  python  segno.QRCode.matrix, segno.QRCode.matrix_iter, qrcode.QRCode.get_matrix
+  note    `modules`, rows of `bool`
+
+capability qr/regions  which pattern a module belongs to: finder, timing, alignment, format, version, data
+  heroes  qr.region_of, qr.Region
+  go      -
+  rust    -
+  python  segno.QRCode.matrix_iter (verbose=), segno's per-region colours (finder_dark, alignment_dark, timing_dark, format_dark, version_dark, data_dark and their light ones)
+  note    segno colours each region in its writers; here the program asks a module's region and draws
+
+## Written out
+
+capability qr/svg  a code as SVG text: scale, quiet zone, colours
+  heroes  qr.to_svg, qr.SvgOptions, qr.svg_defaults
+  go      -
+  rust    -
+  python  segno.QRCode.save (kind="svg"), segno.QRCode.svg_inline, qrcode.image.svg.SvgImage, qrcode.image.svg.SvgPathImage, qrcode.image.svg.SvgFragmentImage
+  note    one path of runs over a ground; a colour is checked to hold nothing that could close its attribute; read back by Core Image through AppKit's SVG reader
+
+capability qr/data-uri  a code as a data: URI
+  heroes  refused: a data URI is `bytes.format_base64` of `to_svg`'s text after "data:image/svg+xml;base64,", one line a program writes; `qr` stands at layer 0, beneath `bytes`
+  go      -
+  rust    -
+  python  segno.QRCode.svg_data_uri, segno.QRCode.png_data_uri
+
+capability qr/text  a code as text of block characters, one row a line or two
+  heroes  qr.to_text, qr.to_compact_text
+  go      qrcode.QRCode.ToString, qrcode.QRCode.ToSmallString
+  rust    -
+  python  segno.QRCode.save (kind="txt"), qrcode.QRCode.print_ascii
+  note    full blocks two characters a module as go-qrcode's ToString, half blocks two rows a line as its ToSmallString and python-qrcode's print_ascii; `invert` as go-qrcode's; the half blocks read back by Core Image
+
+capability qr/terminal  a code drawn in a terminal by its colours
+  heroes  qr.to_terminal
+  go      -
+  rust    -
+  python  segno.QRCode.terminal, qrcode.QRCode.print_tty
+  note    black and white grounds, two spaces a module, as segno's terminal
+
+capability qr/raster  a code as pixels, and through them as PNG
+  heroes  qr.to_pixels
+  go      qrcode.QRCode.Image, qrcode.QRCode.PNG, qrcode.QRCode.Write, qrcode.QRCode.WriteFile, qrcode.WriteFile, qrcode.WriteColorFile, qrcode.QRCode.ForegroundColor, qrcode.QRCode.BackgroundColor
+  rust    -
+  python  segno.QRCode.save (kind="png"), segno.QRCode.to_pil, qrcode.QRCode.make_image, qrcode.image.pil.PilImage, qrcode.image.pure.PyPNGImage
+  note    `qr` stands at layer 0 beneath `image`: it gives 8-bit gray samples, which a program hands to `image.from_pixels` and `image/png.encode` (the driver's test); that PNG read back by Core Image
+
+capability qr/border  the quiet zone around a code, four modules by the standard or any other
+  heroes  qr.to_text, qr.to_svg, qr.to_pixels
+  go      qrcode.QRCode.DisableBorder
+  rust    -
+  python  segno.QRCode.save (border=), segno.QRCode.default_border_size, qrcode.QRCode (border=, box_size=)
+  note    every writer takes its border in modules, 0 included; the standard asks 4
+
+capability qr/other-formats  a code as EPS, PDF, PBM, PAM, PPM, XBM, XPM or TeX
+  heroes  refused: a raster or page format is another package's, `image/netpbm` for PBM, PAM and PPM from `to_pixels`, `pdf` for PDF; EPS, XBM, XPM and TeX are formats no package of Rebel writes
+  go      -
+  rust    -
+  python  segno.QRCode.save (kind="eps", "pdf", "pbm", "pam", "ppm", "xbm", "xpm", "tex")
+
+capability qr/payloads  the text of a Wi-Fi network, a contact, a place, an email or a payment
+  heroes  qr.wifi_text
+  go      -
+  rust    -
+  python  segno.helpers.make_wifi, segno.helpers.make_wifi_data, segno.helpers.make_mecard, segno.helpers.make_vcard, segno.helpers.make_geo, segno.helpers.make_email, segno.helpers.make_epc_qr
+  note    the Wi-Fi text, as readers share it; a contact (vCard, RFC 6350, and MeCard), a place (geo:, RFC 5870), an email and a payment (the EPC's guideline) are formats of their own a program writes as text, refused here
+
+capability qr/styles  modules drawn rounded or as dots, gradients, a picture behind the code
+  heroes  refused: rounded modules, gradients and pictures behind a code are drawing, which a program does from `modules` and `region_of` with `image`; they lower a code's contrast, which the standard's levels do not account for
+  go      -
+  rust    -
+  python  qrcode.image.styledpil.StyledPilImage, qrcode.image.styles.moduledrawers, qrcode.image.styles.colormasks, segno.QRCode.to_artistic
+
+capability qr/show  a code shown in the system's viewer
+  heroes  refused: opening the system's viewer is a program's act, through `process`
+  go      -
+  rust    -
+  python  segno.QRCode.show
+
+dropped plumbing  what a program has already, or what an object with state needed
+  go      qrcode.QRCode.Content (the program has its text)
+  rust    -
+  python  qrcode.QRCode.clear, qrcode.QRCode (image_factory=), segno.consts, qrcode.QRCode.print_tty (the same as print_ascii with tty=True)

@@ -1,0 +1,167 @@
+# The client data read and checked (Web Authentication Level 3 § 5.8.1 and
+# § 7.1 steps 7 to 10): its type, its challenge, its origin, and where the
+# page was a cross-origin frame, the top page's origin.
+
+use bytes
+use crypto
+use json
+use webauthn/internal/codes
+
+# The client data read.
+record Client
+    # "webauthn.create" or "webauthn.get".
+    kind: str
+    # The challenge, decoded.
+    challenge: [u8]
+    # The origin.
+    origin: str
+    # Whether the page was a cross-origin frame.
+    cross_origin: bool
+    # The top page's origin; empty where none was given.
+    top_origin: str
+
+# The text member `key` of the object `members`, which must be there.
+function text_member(members: {str: json.Value}, key: str) -> str?
+    match members[key]
+        .ok v =>
+            match json.text_of(v)
+                .ok t  => return ok(t)
+                .err _ => return fail(code: codes.INVALID, msg: f"the client data's \"{key}\" is not a string")
+        .err _ => return fail(code: codes.INVALID, msg: f"the client data has no \"{key}\"")
+
+# The client data `data` holds.
+function read(data: [u8]) -> Client?
+    text = bytes.to_text(data)
+
+    if text.is_err()
+        return fail(code: codes.INVALID, msg: "the client data is not UTF-8")
+
+    members: {str: json.Value} = match json.parse(text.must())
+        .ok v =>
+            match json.members_of(v)
+                .ok m  => m
+                .err _ => return fail(code: codes.INVALID, msg: "the client data is not a JSON object")
+        .err e => return fail(code: codes.INVALID, msg: f"the client data is not JSON: {e.msg}")
+
+    kind = text_member(members: members, key: "type")?
+    encoded = text_member(members: members, key: "challenge")?
+    origin = text_member(members: members, key: "origin")?
+    challenge = bytes.parse_base64_url_unpadded(encoded)
+
+    if challenge.is_err()
+        return fail(code: codes.INVALID, msg: "the client data's challenge is not base 64 for URLs without padding")
+    cross: bool @= false
+
+    match members["crossOrigin"]
+        .ok v =>
+            match json.bool_of(v)
+                .ok b  => cross @ b
+                .err _ => return fail(code: codes.INVALID, msg: "the client data's \"crossOrigin\" is not a boolean")
+        .err _ => cross @ false
+
+    top: str @= ""
+
+    if !members["topOrigin"].is_err()
+        top @ text_member(members: members, key: "topOrigin")?
+    return ok(Client(kind: kind, challenge: challenge.must(), origin: origin, cross_origin: cross, top_origin: top))
+
+# Whether `s` stands in `list`.
+function among(s: str, list: [str]) -> bool
+    for x in list
+        if x == s
+            return true
+
+    return false
+
+# Nothing where `client` is of `kind`, carries `challenge`, comes from one of
+# `origins`, and is a cross-origin frame only inside one of `top_origins`.
+function check(client: Client, kind: str, challenge: [u8], origins: [str], top_origins: [str]) -> ()?
+    if client.kind != kind
+        return fail(code: codes.INVALID, msg: f"the client data's type is \"{client.kind}\", not \"{kind}\"")
+
+    if !crypto.equals_constant_time(a: client.challenge, b: challenge)
+        return fail(code: codes.INVALID, msg: "the client data's challenge is not the one sent")
+
+    if !among(s: client.origin, list: origins)
+        return fail(
+            code: codes.INVALID,
+            msg: f"the client data's origin \"{client.origin}\" is not one of the relying party's"
+        )
+
+    if client.cross_origin
+        if top_origins.len() == 0
+            return fail(
+                code: codes.INVALID,
+                msg: "the ceremony ran in a cross-origin frame, which the relying party does not allow"
+            )
+
+        if !among(s: client.top_origin, list: top_origins)
+            return fail(
+                code: codes.INVALID,
+                msg: f"the ceremony ran in a frame of \"{client.top_origin}\", which is not one of the top origins allowed"
+            )
+    return ok()
+
+## Tests
+
+test "read: the three members, the optional two, and the refusals"
+    data = bytes.from_text("{\"type\":\"webauthn.get\",\"challenge\":\"AAEC\",\"origin\":\"https://example.org\"}")
+    c = read(data).must()
+    assert c.kind == "webauthn.get" && c.challenge == [0, 1, 2] && c.origin == "https://example.org"
+    assert !c.cross_origin && c.top_origin == ""
+    framed = read(
+        bytes.from_text("{\"type\":\"t\",\"challenge\":\"\",\"origin\":\"o\",\"crossOrigin\":true,\"topOrigin\":\"https://a.example\"}")
+    ).must()
+    assert framed.cross_origin && framed.top_origin == "https://a.example"
+
+    match read(bytes.from_text("{\"type\":\"t\",\"origin\":\"o\"}"))
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "the client data has no \"challenge\""
+
+    assert read(bytes.from_text("[]")).is_err()
+    assert read(bytes.from_text("{\"type\":1,\"challenge\":\"\",\"origin\":\"o\"}")).is_err()
+    assert read(bytes.from_text("{\"type\":\"t\",\"challenge\":\"A=\",\"origin\":\"o\"}")).is_err()
+    assert read([0xff]).is_err()
+
+test "check: each refusal, and a frame inside an allowed top origin"
+    c = Client(
+        kind: "webauthn.create",
+        challenge: [1, 2],
+        origin: "https://example.org",
+        cross_origin: false,
+        top_origin: ""
+    )
+    origins = ["https://example.org"]
+    none: [str] = []
+    assert !check(client: c, kind: "webauthn.create", challenge: [1, 2], origins: origins, top_origins: none).is_err()
+    assert check(client: c, kind: "webauthn.get", challenge: [1, 2], origins: origins, top_origins: none).is_err()
+    assert check(client: c, kind: "webauthn.create", challenge: [1, 3], origins: origins, top_origins: none).is_err()
+    assert check(
+        client: c,
+        kind: "webauthn.create",
+        challenge: [1, 2],
+        origins: ["https://example.com"],
+        top_origins: none
+    ).is_err()
+    framed = Client(
+        kind: "webauthn.create",
+        challenge: [1, 2],
+        origin: "https://example.org",
+        cross_origin: true,
+        top_origin: "https://shop.example"
+    )
+    assert check(
+        client: framed,
+        kind: "webauthn.create",
+        challenge: [1, 2],
+        origins: origins,
+        top_origins: none
+    ).is_err()
+    assert !check(client: framed, kind: "webauthn.create", challenge: [1, 2], origins: origins, top_origins: ["https://shop.example"]).is_err()
+    assert check(
+        client: framed,
+        kind: "webauthn.create",
+        challenge: [1, 2],
+        origins: origins,
+        top_origins: ["https://other.example"]
+    ).is_err()

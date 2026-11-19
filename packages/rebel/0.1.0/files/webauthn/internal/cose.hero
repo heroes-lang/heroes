@@ -1,0 +1,148 @@
+# A COSE key (RFC 9052 and RFC 9053) read: its key type, its algorithm, its
+# curve and its numbers, checked against one another, and the key written as
+# SubjectPublicKeyInfo for `crypto/keypairs` to verify with.
+#
+# The labels read are 1 the key type (1 OKP, 2 EC2, 3 RSA), 3 the algorithm,
+# and for EC2 -1 the curve (1 P-256, 2 P-384, 3 P-521), -2 x and -3 y; for
+# OKP -1 the curve (6 Ed25519) and -2 x; for RSA -1 the modulus n and -2 the
+# exponent e.
+
+use cbor
+use crypto/keypairs
+use webauthn/internal/codes
+use webauthn/internal/der
+use webauthn/internal/items
+
+# A COSE key read.
+record Key
+    # The COSE algorithm.
+    algorithm: i64
+    # The kind of key.
+    kind: keypairs.Kind
+    # How its signatures are checked.
+    scheme: keypairs.Scheme
+    # The key as SubjectPublicKeyInfo DER.
+    der: [u8]
+    # For an EC2 key, its point: 0x04, x and y; empty for the others.
+    point: [u8]
+
+# The key `data` holds.
+function read(data: [u8]) -> Key?
+    value = cbor.decode(data)
+
+    found: [cbor.Entry] = match value
+        .ok v  => items.entries(v: v, what: "a COSE key")?
+        .err e => return fail(code: codes.INVALID, msg: f"COSE key: {e.msg}")
+
+    kty = items.integer(v: items.by_label(found: found, label: 1, what: "the COSE key")?, what: "the key type")?
+    alg = items.integer(v: items.by_label(found: found, label: 3, what: "the COSE key")?, what: "the algorithm")?
+
+    if kty == 2
+        crv = items.integer(v: items.by_label(found: found, label: -1, what: "the COSE key")?, what: "the curve")?
+        x = items.binary(v: items.by_label(found: found, label: -2, what: "the COSE key")?, what: "x")?
+        y = items.binary(v: items.by_label(found: found, label: -3, what: "the COSE key")?, what: "y")?
+        point: [u8] @= [4]
+
+        for b in x
+            point @ point.push(b)
+
+        for b in y
+            point @ point.push(b)
+
+        if alg == -7 && crv == 1
+            if x.len() != 32 || y.len() != 32
+                return fail(
+                    code: codes.INVALID,
+                    msg: f"COSE key: a P-256 point of {x.len()} and {y.len()} bytes, not 32 and 32"
+                )
+            return ok(
+                Key(algorithm: alg, kind: .p256, scheme: .ecdsa_sha256, der: der.ec_key(curve: der.P256, point: point), point: point)
+            )
+
+        if alg == -35 && crv == 2
+            if x.len() != 48 || y.len() != 48
+                return fail(
+                    code: codes.INVALID,
+                    msg: f"COSE key: a P-384 point of {x.len()} and {y.len()} bytes, not 48 and 48"
+                )
+            return ok(
+                Key(algorithm: alg, kind: .p384, scheme: .ecdsa_sha384, der: der.ec_key(curve: der.P384, point: point), point: point)
+            )
+
+        if alg == -36 && crv == 3
+            return fail(
+                code: codes.UNSUPPORTED,
+                msg: "COSE key: ES512 on P-521, which no system's cryptography here verifies"
+            )
+        return fail(
+            code: codes.INVALID,
+            msg: f"COSE key: algorithm {alg} on curve {crv}, which an EC2 key does not pair"
+        )
+
+    if kty == 3
+        n = items.binary(v: items.by_label(found: found, label: -1, what: "the COSE key")?, what: "the modulus")?
+        e = items.binary(v: items.by_label(found: found, label: -2, what: "the COSE key")?, what: "the exponent")?
+        bits = n.len() * 8
+
+        if bits < 1024 || bits > 8192
+            return fail(code: codes.INVALID, msg: f"COSE key: an RSA modulus of {n.len()} bytes")
+
+        scheme: keypairs.Scheme = match alg
+            -257 => .rsa_pkcs1_sha256
+            -258 => .rsa_pkcs1_sha384
+            -259 => .rsa_pkcs1_sha512
+            -37  => .rsa_pss_sha256
+            -38  => .rsa_pss_sha384
+            -39  => .rsa_pss_sha512
+            _    => return fail(code: codes.INVALID, msg: f"COSE key: algorithm {alg}, which an RSA key does not pair")
+
+        empty: [u8] = []
+        return ok(
+            Key(algorithm: alg, kind: .rsa(bits: bits), scheme: scheme, der: der.rsa_key(n: n, e: e), point: empty)
+        )
+
+    if kty == 1
+        crv = items.integer(v: items.by_label(found: found, label: -1, what: "the COSE key")?, what: "the curve")?
+        x = items.binary(v: items.by_label(found: found, label: -2, what: "the COSE key")?, what: "x")?
+
+        if alg != -8 || crv != 6
+            return fail(
+                code: codes.INVALID,
+                msg: f"COSE key: algorithm {alg} on curve {crv}, which an OKP key does not pair"
+            )
+
+        if x.len() != 32
+            return fail(code: codes.INVALID, msg: f"COSE key: an Ed25519 key of {x.len()} bytes, not 32")
+
+        if !keypairs.is_available(.ed25519)
+            return fail(code: codes.UNSUPPORTED, msg: "COSE key: EdDSA, and this system's cryptography has no Ed25519")
+        empty: [u8] = []
+        return ok(Key(algorithm: alg, kind: .ed25519, scheme: .ed25519, der: der.ed25519_key(x), point: empty))
+    return fail(code: codes.INVALID, msg: f"COSE key: key type {kty}, which is none of OKP, EC2 and RSA")
+
+# Whether `signature` is the signature of `data` by `key`.
+function verify(key: Key, data: [u8], signature: [u8]) -> bool?
+    return keypairs.verify_der(public_der: key.der, scheme: key.scheme, message: data, signature: signature)
+
+## Tests
+
+test "read: refusals of the map, the labels and the pairs"
+    assert read([0x01]).is_err()
+    assert read([0xa0]).is_err()
+
+    match read([0xa2, 0x01, 0x02, 0x03, 0x26])
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "the COSE key has no member -1"
+
+    # kty 2, alg -7, crv 2: ES256 on P-384
+    match read([0xa5, 0x01, 0x02, 0x03, 0x26, 0x20, 0x02, 0x21, 0x41, 0x00, 0x22, 0x41, 0x00])
+        .ok _  => assert false
+        .err e => assert e.msg == "COSE key: algorithm -7 on curve 2, which an EC2 key does not pair"
+
+    # kty 2, alg -36, crv 3
+    match read([0xa5, 0x01, 0x02, 0x03, 0x38, 0x23, 0x20, 0x03, 0x21, 0x41, 0x00, 0x22, 0x41, 0x00])
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported"
+
+    # kty 4
+    assert read([0xa2, 0x01, 0x04, 0x03, 0x26]).is_err()

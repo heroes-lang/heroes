@@ -1,0 +1,1322 @@
+# A client of ACME, RFC 8555: the directory read, an account made, found,
+# changed or deactivated, an order placed for names, its authorizations
+# answered by HTTP-01 or DNS-01, the order finalized with a certificate
+# request, and the certificate chain downloaded, revoked, or asked when to
+# renew (RFC 9773). Every request is a JWS of `jose` with a fresh nonce,
+# sent by `http` with this package's User-Agent; a nonce the server refuses
+# is replaced and the request sent again, up to three times.
+#
+# It does not serve the HTTP-01 answer nor publish the DNS-01 record: it
+# says what to serve at which path and what to publish under which name,
+# and the program serves it (`http`) or publishes it (its DNS provider's
+# API). It does not make the certificate request: `x509` reads requests and
+# does not yet write them, so the program hands `finalize` a request's DER
+# made elsewhere, and TLS-ALPN-01, whose answer is a certificate made on the
+# spot, waits for the same. It keeps nothing on disk: the account's key and
+# URL are the program's to keep.
+#
+# It fails with `invalid`, where an answer of the server is not what RFC
+# 8555 writes; `not_found`, where no account has the key; `limit`, where
+# the server says a rate limit was reached; `timeout`, where a wait ran out;
+# `failed`, where the server refused for another reason, the problem's type
+# and detail in the message; and the codes of `http` and `jose`, handed on.
+
+use acme/internal/codes
+use acme/internal/fields
+use acme/internal/sample
+use acme/internal/wire
+use big
+use bytes
+use crypto
+use http
+use jose
+use json
+use pem
+use x509
+
+## The codes
+
+# The code of an answer of the server that is not what RFC 8555 writes, and
+# of an argument refused.
+constant INVALID: str
+    codes.INVALID
+
+# The code of an account looked for and not there: `find_account`.
+constant NOT_FOUND: str
+    codes.NOT_FOUND
+
+# The code of a server's `rateLimited`.
+constant LIMIT: str
+    codes.LIMIT
+
+# The code of a wait that ran out: `wait_authorization`, `wait_order`.
+constant TIMEOUT: str
+    codes.TIMEOUT
+
+# The code of what the server's directory does not offer:
+# `new_authorization` without `newAuthz`, `renewal_info` without
+# `renewalInfo`.
+constant UNSUPPORTED: str
+    codes.UNSUPPORTED
+
+# The code of every other refusal of the server, and of an authorization or
+# an order that turned `invalid`: the problem's type and detail are in the
+# message.
+constant FAILED: str
+    codes.FAILED
+
+## The directory and the client
+
+# What a server's directory names (RFC 8555 § 7.1.1).
+record Directory
+    # The URL that gives a fresh nonce.
+    new_nonce: str
+    # The URL an account is made at.
+    new_account: str
+    # The URL an order is placed at.
+    new_order: str
+    # The URL an authorization is asked at before an order; "" where the
+    # server offers none, as most do.
+    new_authz: str
+    # The URL a certificate is revoked at.
+    revoke_cert: str
+    # The URL an account's key is changed at.
+    key_change: str
+    # The URL of renewal information (RFC 9773); "" where none.
+    renewal_info: str
+    # The terms of service an account agrees to; "" where none.
+    terms_of_service: str
+    # The CA's web site; "" where none.
+    website: str
+    # The domains a CAA record names this CA by.
+    caa_identities: [str]
+    # Whether an account must be bound to one the CA keeps.
+    external_account_required: bool
+    # The profiles of certificate an order may ask, each by its name, with
+    # its description.
+    profiles: {str: str}
+
+# A client of one ACME server, with one account key. Made by `connect`.
+record Client
+    # The server's directory.
+    directory: Directory
+    # The key, the algorithm, the account's URL, the next nonce and the HTTP
+    # client: this package's to keep and change.
+    session: wire.Session
+
+# A client of the server whose directory is at `directory_url`, signing
+# with `key`: the directory read.
+#
+# - `directory_url`: the directory's URL, as
+#   "https://acme-v02.api.letsencrypt.org/directory".
+# - `key`: the account's private key, P-256, P-384, RSA of 2048 bits or
+#   more, or Ed25519 where the system has it; `jose.generate_key` makes one.
+# - `transport`: how requests are sent; `http.default_client()`, with
+#   `roots` naming a test CA's authority where the server is one.
+#
+# Fails `invalid` where the key is public or of no kind ACME signs with, or
+# the directory is not one; with `http`'s codes where it cannot be fetched.
+# See also `new_account`.
+function connect(directory_url: str, key: jose.Key, transport: http.Client) -> Client?
+    algorithm = wire.algorithm_of(key)?
+    answer = wire.get(transport: transport, url: directory_url)?
+    directory = parse_directory(wire.text_of(answer)?)?
+    session = wire.Session(
+        key: key,
+        algorithm: algorithm,
+        kid: "",
+        nonce: "",
+        new_nonce: directory.new_nonce,
+        transport: transport
+    )
+    return ok(Client(directory: directory, session: session))
+
+# The directory the JSON `text` writes.
+#
+# - `text`: a directory object.
+#
+# Fails `invalid` where it is not a JSON object naming `newNonce`,
+# `newAccount` and `newOrder`. See also `connect`.
+function parse_directory(text: str) -> Directory?
+    m = fields.object(text: text, what: "the directory")?
+    meta = fields.inner(members: m, key: "meta")
+    offered = fields.inner(members: meta, key: "profiles")
+    profiles: {str: str} @= {}
+
+    for name in keys(offered)
+        profiles[name] @ fields.text_of(members: offered, key: name)
+
+    return ok(
+        Directory(new_nonce: fields.required(members: m, key: "newNonce", what: "the directory")?, new_account: fields.required(members: m, key: "newAccount", what: "the directory")?, new_order: fields.required(members: m, key: "newOrder", what: "the directory")?, new_authz: fields.text_of(members: m, key: "newAuthz"), revoke_cert: fields.text_of(members: m, key: "revokeCert"), key_change: fields.text_of(members: m, key: "keyChange"), renewal_info: fields.text_of(members: m, key: "renewalInfo"), terms_of_service: fields.text_of(members: meta, key: "termsOfService"), website: fields.text_of(members: meta, key: "website"), caa_identities: fields.texts(members: meta, key: "caaIdentities"), external_account_required: fields.flag(members: meta, key: "externalAccountRequired"), profiles: profiles)
+    )
+
+## Accounts
+
+# An account, as the server answers it (RFC 8555 § 7.1.2).
+record Account
+    # The account's URL, the `kid` every later request is signed with.
+    url: str
+    # "valid", "deactivated" or "revoked".
+    status: str
+    # Its contacts, as "mailto:ops@example.org".
+    contacts: [str]
+    # The URL listing its orders; "" where the server gives none.
+    orders: str
+
+# The account of `client`'s key, made where none is; `client` signs as it
+# from then on.
+#
+# - `client`: the client; it keeps the account's URL.
+# - `contacts`: the contacts, each a "mailto:" URL; empty for none.
+# - `agree_terms`: whether the program's user agreed to the directory's
+#   terms of service, which a server that has them requires.
+#
+# A key that has an account already answers that account. Fails `failed`
+# where the server refuses, with its problem. See also `find_account`,
+# `new_account_bound`.
+function new_account(@client: Client, contacts: [str], agree_terms: bool) -> Account?
+    url = client.directory.new_account
+    members: {str: json.Value} = {
+        "termsOfServiceAgreed": .boolean(v: agree_terms)
+        "contact": wire.texts_json(contacts)
+    }
+    answer = wire.post(@client.session, url: url, payload: wire.json_bytes(.object(members: members))?, with_jwk: true, accept: "application/json")?
+    client.session.kid @ answer.location
+    return parse_account(text: wire.text_of(answer)?, url: answer.location)
+
+# The account of `client`'s key made and bound to an account the CA keeps
+# (external account binding, RFC 8555 § 7.3.4).
+#
+# - `client`: the client; it keeps the account's URL.
+# - `contacts`: the contacts; empty for none.
+# - `agree_terms`: whether the terms were agreed.
+# - `key_id`: the CA's identifier of its account.
+# - `hmac_key`: the MAC key the CA gave with it, decoded from its base 64.
+#
+# Fails as `new_account` does. See also `new_account`.
+function new_account_bound(@client: Client, contacts: [str], agree_terms: bool, key_id: str, hmac_key: [u8]) -> Account?
+    url = client.directory.new_account
+    bound = wire.binding(session: client.session, url: url, key_id: key_id, hmac_key: hmac_key)?
+    members: {str: json.Value} = {
+        "termsOfServiceAgreed": .boolean(v: agree_terms)
+        "contact": wire.texts_json(contacts)
+        "externalAccountBinding": bound
+    }
+    answer = wire.post(@client.session, url: url, payload: wire.json_bytes(.object(members: members))?, with_jwk: true, accept: "application/json")?
+    client.session.kid @ answer.location
+    return parse_account(text: wire.text_of(answer)?, url: answer.location)
+
+# The account of `client`'s key, none made.
+#
+# - `client`: the client; it keeps the account's URL.
+#
+# Fails `not_found` where the key has no account. See also `new_account`.
+function find_account(@client: Client) -> Account?
+    url = client.directory.new_account
+    members: {str: json.Value} = {"onlyReturnExisting": .boolean(v: true)}
+    answer = wire.post(@client.session, url: url, payload: wire.json_bytes(.object(members: members))?, with_jwk: true, accept: "application/json")?
+    client.session.kid @ answer.location
+    return parse_account(text: wire.text_of(answer)?, url: answer.location)
+
+# `client`'s account with its contacts replaced.
+#
+# - `client`: a client with an account.
+# - `contacts`: the new contacts; empty removes them all.
+#
+# Fails `invalid` where `client` has no account yet. See also
+# `new_account`.
+function update_account(@client: Client, contacts: [str]) -> Account?
+    url = client.session.kid
+    members: {str: json.Value} = {"contact": wire.texts_json(contacts)}
+    answer = wire.post(@client.session, url: url, payload: wire.json_bytes(.object(members: members))?, with_jwk: false, accept: "application/json")?
+    return parse_account(text: wire.text_of(answer)?, url: url)
+
+# `client`'s account deactivated: it can do nothing more, for ever.
+#
+# - `client`: a client with an account.
+#
+# Fails `invalid` where `client` has no account yet. See also
+# `new_account`.
+function deactivate_account(@client: Client) -> Account?
+    url = client.session.kid
+    members: {str: json.Value} = {"status": .text(v: "deactivated")}
+    answer = wire.post(@client.session, url: url, payload: wire.json_bytes(.object(members: members))?, with_jwk: false, accept: "application/json")?
+    return parse_account(text: wire.text_of(answer)?, url: url)
+
+# `client`'s account moved to `key`, which signs from then on (RFC 8555
+# § 7.3.5).
+#
+# - `client`: a client with an account; its key becomes `key`.
+# - `key`: the new private key, of a kind `connect` takes.
+#
+# Fails `invalid` where `client` has no account or `key` is refused;
+# `failed` where the server refuses, as for a key another account has. See
+# also `connect`.
+function change_key(@client: Client, key: jose.Key) -> ()?
+    url = client.directory.key_change
+    algorithm = wire.algorithm_of(key)?
+    inner = wire.key_change(session: client.session, url: url, key: key, algorithm: algorithm)?
+    _ = wire.post(@client.session, url: url, payload: inner, with_jwk: false, accept: "application/json")?
+    client.session.key @ key
+    client.session.algorithm @ algorithm
+    return ok()
+
+# The account the JSON `text` writes, at `url`.
+#
+# - `text`: an account object.
+# - `url`: its URL, the response's `Location`.
+#
+# Fails `invalid` where it is not an object with a `status`. See also
+# `new_account`.
+function parse_account(text: str, url: str) -> Account?
+    m = fields.object(text: text, what: "the account")?
+    status = fields.required(members: m, key: "status", what: "the account")?
+    return ok(
+        Account(url: url, status: status, contacts: fields.texts(members: m, key: "contact"), orders: fields.text_of(members: m, key: "orders"))
+    )
+
+## Orders
+
+# What a certificate is for: a domain name or an IP address.
+record Identifier
+    # "dns" or "ip".
+    kind: str
+    # The name, as "example.org" or "*.example.org", or the address, as
+    # "192.0.2.1".
+    value: str
+
+# A problem the server reports (RFC 7807 and RFC 8555 § 6.7).
+record Problem
+    # Its type, as "urn:ietf:params:acme:error:unauthorized".
+    kind: str
+    # What went wrong, in the server's words.
+    detail: str
+    # The HTTP status it came with; 0 where it says none.
+    status: i64
+    # The identifier a subproblem is about; its kind "" where none.
+    identifier: Identifier
+    # The problems of each identifier, for an order of several.
+    subproblems: [Problem]
+
+# The problem the JSON `text` writes: its type, detail, status, identifier
+# and subproblems, these read one level deep.
+#
+# - `text`: a problem document.
+#
+# Fails `invalid` where it is not a JSON object. See also `Problem`.
+function parse_problem(text: str) -> Problem?
+    m = fields.object(text: text, what: "the problem")?
+    subproblems: [Problem] @= []
+    none: [Problem] = []
+
+    for item in fields.list(members: m, key: "subproblems")
+        one = json.members_of(item).default({})
+        named = fields.inner(members: one, key: "identifier")
+        subproblems @ subproblems.push(
+            Problem(kind: fields.text_of(members: one, key: "type"), detail: fields.text_of(members: one, key: "detail"), status: fields.number(members: one, key: "status"), identifier: Identifier(kind: fields.text_of(members: named, key: "type"), value: fields.text_of(members: named, key: "value")), subproblems: none)
+        )
+
+    named = fields.inner(members: m, key: "identifier")
+    return ok(
+        Problem(kind: fields.text_of(members: m, key: "type"), detail: fields.text_of(members: m, key: "detail"), status: fields.number(members: m, key: "status"), identifier: Identifier(kind: fields.text_of(members: named, key: "type"), value: fields.text_of(members: named, key: "value")), subproblems: subproblems)
+    )
+
+# An order (RFC 8555 § 7.1.3).
+record Order
+    # The order's URL.
+    url: str
+    # "pending", "ready", "processing", "valid" or "invalid".
+    status: str
+    # When it expires, as RFC 3339 writes it; "" where not said.
+    expires: str
+    # What the certificate is for.
+    identifiers: [Identifier]
+    # The validity asked, RFC 3339; "" where not asked.
+    not_before: str
+    # The same, its end.
+    not_after: str
+    # The URLs of its authorizations, one per identifier.
+    authorizations: [str]
+    # The URL it is finalized at.
+    finalize: str
+    # The URL of its certificate, once valid; "" before.
+    certificate: str
+    # The profile asked; "" where none.
+    profile: str
+    # The problem that made it invalid: one, or none.
+    problems: [Problem]
+
+# What `new_order` asks for. Built directly, or by `order_for`.
+record OrderRequest
+    # The identifiers.
+    identifiers: [Identifier]
+    # The validity's start, RFC 3339; "" leaves it to the server.
+    not_before: str
+    # Its end; "" leaves it to the server.
+    not_after: str
+    # A profile of the directory's; "" for the server's default.
+    profile: str
+
+# An order of a certificate for `names`, each a domain name, "*." before a
+# wildcard; the validity and profile left to the server.
+#
+# - `names`: the names; the first is the one a certificate commonly names.
+#
+# See also `new_order`.
+function order_for(names: [str]) -> OrderRequest
+    identifiers: [Identifier] @= []
+
+    for name in names
+        identifiers @ identifiers.push(Identifier(kind: "dns", value: name))
+
+    return OrderRequest(identifiers: identifiers, not_before: "", not_after: "", profile: "")
+
+# An order placed.
+#
+# - `client`: a client with an account.
+# - `request`: the identifiers, the validity and the profile.
+#
+# Fails `invalid` where `client` has no account or `request` no
+# identifier; `failed` where the server refuses a name, its problem said;
+# `limit` at a rate limit. See also `order_for`, `fetch_authorization`.
+function new_order(@client: Client, request: OrderRequest) -> Order?
+    if request.identifiers.len() == 0
+        return fail(code: INVALID, msg: "an order names at least one identifier")
+    list: [json.Value] @= []
+
+    for i in request.identifiers
+        list @ list.push(.object(members: {"type": .text(v: i.kind), "value": .text(v: i.value)}))
+
+    members: {str: json.Value} @= {"identifiers": .list(items: list)}
+
+    if request.not_before.len() > 0
+        members["notBefore"] @ .text(v: request.not_before)
+
+    if request.not_after.len() > 0
+        members["notAfter"] @ .text(v: request.not_after)
+
+    if request.profile.len() > 0
+        members["profile"] @ .text(v: request.profile)
+    url = client.directory.new_order
+    answer = wire.post(@client.session, url: url, payload: wire.json_bytes(.object(members: members))?, with_jwk: false, accept: "application/json")?
+    return parse_order(text: wire.text_of(answer)?, url: answer.location)
+
+# The order at `url`, read again.
+#
+# - `client`: a client with an account.
+# - `url`: the order's URL.
+#
+# Fails `failed` where the server refuses. See also `wait_order`.
+function fetch_order(@client: Client, url: str) -> Order?
+    empty: [u8] = []
+    answer = wire.post(@client.session, url: url, payload: empty, with_jwk: false, accept: "application/json")?
+    return parse_order(text: wire.text_of(answer)?, url: url)
+
+# The order the JSON `text` writes, at `url`.
+#
+# - `text`: an order object.
+# - `url`: its URL.
+#
+# Fails `invalid` where it is not an object with a `status`, an
+# `authorizations` list and a `finalize` URL. See also `new_order`.
+function parse_order(text: str, url: str) -> Order?
+    m = fields.object(text: text, what: "the order")?
+    status = fields.required(members: m, key: "status", what: "the order")?
+    finalize_url = fields.required(members: m, key: "finalize", what: "the order")?
+
+    if m["authorizations"].is_err()
+        return fail(code: INVALID, msg: "the order has no \"authorizations\"")
+    identifiers: [Identifier] @= []
+
+    for item in fields.list(members: m, key: "identifiers")
+        one = json.members_of(item).default({})
+        identifiers @ identifiers.push(
+            Identifier(kind: fields.text_of(members: one, key: "type"), value: fields.text_of(members: one, key: "value"))
+        )
+
+    problems: [Problem] @= []
+
+    match m["error"]
+        .ok v  => problems @ problems.push(parse_problem(json.format(v)?)?)
+        .err _ => _ = 0
+
+    return ok(
+        Order(url: url, status: status, expires: fields.text_of(members: m, key: "expires"), identifiers: identifiers, not_before: fields.text_of(members: m, key: "notBefore"), not_after: fields.text_of(members: m, key: "notAfter"), authorizations: fields.texts(members: m, key: "authorizations"), finalize: finalize_url, certificate: fields.text_of(members: m, key: "certificate"), profile: fields.text_of(members: m, key: "profile"), problems: problems)
+    )
+
+## Authorizations and challenges
+
+# A challenge of an authorization (RFC 8555 § 7.1.5 and § 8).
+record Challenge
+    # Its URL.
+    url: str
+    # Its type: "http-01", "dns-01", "tls-alpn-01".
+    kind: str
+    # "pending", "processing", "valid" or "invalid".
+    status: str
+    # Its token, which the answer is made from.
+    token: str
+    # When it was validated, RFC 3339; "" before.
+    validated: str
+    # The problem that made it invalid: one, or none.
+    problems: [Problem]
+
+# An authorization: the account's proof of control of one identifier.
+record Authorization
+    # Its URL.
+    url: str
+    # "pending", "valid", "invalid", "deactivated", "expired" or
+    # "revoked".
+    status: str
+    # The identifier, without the "*." of a wildcard.
+    identifier: Identifier
+    # When it expires, RFC 3339; "" where not said.
+    expires: str
+    # The challenges, any one of which proves control.
+    challenges: [Challenge]
+    # Whether the order asked a wildcard of the identifier.
+    wildcard: bool
+
+# The authorization at `url`.
+#
+# - `client`: a client with an account.
+# - `url`: one of `Order.authorizations`.
+#
+# Fails `failed` where the server refuses. See also `challenge_of`.
+function fetch_authorization(@client: Client, url: str) -> Authorization?
+    empty: [u8] = []
+    answer = wire.post(@client.session, url: url, payload: empty, with_jwk: false, accept: "application/json")?
+    return parse_authorization(text: wire.text_of(answer)?, url: url)
+
+# An authorization asked before any order, where the server offers it.
+#
+# - `client`: a client with an account.
+# - `identifier`: what it is for.
+#
+# Fails `unsupported` where the directory has no `newAuthz`, as most have
+# not. See also `fetch_authorization`.
+function new_authorization(@client: Client, identifier: Identifier) -> Authorization?
+    url = client.directory.new_authz
+
+    if url.len() == 0
+        return fail(
+            code: UNSUPPORTED,
+            msg: "the server's directory offers no newAuthz: authorizations come with an order"
+        )
+    members: {str: json.Value} = {
+        "identifier": .object(members: {"type": .text(v: identifier.kind), "value": .text(v: identifier.value)})
+    }
+    answer = wire.post(@client.session, url: url, payload: wire.json_bytes(.object(members: members))?, with_jwk: false, accept: "application/json")?
+    return parse_authorization(text: wire.text_of(answer)?, url: answer.location)
+
+# The authorization at `url` given up: deactivated, so the account must
+# prove control again.
+#
+# - `client`: a client with an account.
+# - `url`: the authorization's URL.
+#
+# See also `fetch_authorization`.
+function deactivate_authorization(@client: Client, url: str) -> Authorization?
+    members: {str: json.Value} = {"status": .text(v: "deactivated")}
+    answer = wire.post(@client.session, url: url, payload: wire.json_bytes(.object(members: members))?, with_jwk: false, accept: "application/json")?
+    return parse_authorization(text: wire.text_of(answer)?, url: url)
+
+# The authorization the JSON `text` writes, at `url`.
+#
+# - `text`: an authorization object.
+# - `url`: its URL.
+#
+# Fails `invalid` where it is not an object with a `status`, an
+# `identifier` and a `challenges` list. See also `fetch_authorization`.
+function parse_authorization(text: str, url: str) -> Authorization?
+    m = fields.object(text: text, what: "the authorization")?
+    status = fields.required(members: m, key: "status", what: "the authorization")?
+
+    if m["identifier"].is_err() || m["challenges"].is_err()
+        return fail(code: INVALID, msg: "the authorization has no \"identifier\" or no \"challenges\"")
+    named = fields.inner(members: m, key: "identifier")
+    challenges: [Challenge] @= []
+
+    for item in fields.list(members: m, key: "challenges")
+        challenges @ challenges.push(parse_challenge(json.format(item)?)?)
+
+    return ok(
+        Authorization(url: url, status: status, identifier: Identifier(kind: fields.text_of(members: named, key: "type"), value: fields.text_of(members: named, key: "value")), expires: fields.text_of(members: m, key: "expires"), challenges: challenges, wildcard: fields.flag(members: m, key: "wildcard"))
+    )
+
+# The challenge the JSON `text` writes.
+#
+# - `text`: a challenge object, its URL among its members.
+#
+# Fails `invalid` where it is not an object with a `type`, a `url` and a
+# `status`. See also `respond`.
+function parse_challenge(text: str) -> Challenge?
+    m = fields.object(text: text, what: "the challenge")?
+    kind = fields.required(members: m, key: "type", what: "the challenge")?
+    url = fields.required(members: m, key: "url", what: "the challenge")?
+    status = fields.required(members: m, key: "status", what: "the challenge")?
+    problems: [Problem] @= []
+
+    match m["error"]
+        .ok v  => problems @ problems.push(parse_problem(json.format(v)?)?)
+        .err _ => _ = 0
+
+    return ok(
+        Challenge(url: url, kind: kind, status: status, token: fields.text_of(members: m, key: "token"), validated: fields.text_of(members: m, key: "validated"), problems: problems)
+    )
+
+# The challenge of `authorization` whose type is `kind`.
+#
+# - `authorization`: the authorization.
+# - `kind`: "http-01", "dns-01" or "tls-alpn-01".
+#
+# Fails `not_found` where it offers none of that type. See also `respond`.
+function challenge_of(authorization: Authorization, kind: str) -> Challenge?
+    for c in authorization.challenges
+        if c.kind == kind
+            return ok(c)
+
+    return fail(
+        code: NOT_FOUND,
+        msg: f"the authorization of {authorization.identifier.value} offers no {kind} challenge"
+    )
+
+# The key authorization of `token`: the token, a dot, and the account key's
+# thumbprint (RFC 8555 § 8.1).
+#
+# - `client`: the client whose key answers.
+# - `token`: the challenge's token.
+#
+# Fails `invalid` where the token holds a character base 64 for URLs does
+# not. See also `http01_body`, `dns01_value`.
+function key_authorization(client: Client, token: str) -> str?
+    if token.len() == 0
+        return fail(code: INVALID, msg: "a challenge's token is empty")
+
+    for at in range(from: 0, to: token.len())
+        b = token[at]
+        letter = b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9'
+
+        if !letter && b != '-' && b != '_'
+            return fail(
+                code: INVALID,
+                msg: f"a challenge's token holds byte {b} at {at}, which base 64 for URLs does not"
+            )
+
+    return ok(f"{token}.{wire.thumbprint(client.session)?}")
+
+# The path an HTTP-01 answer is served at, on port 80 of the name:
+# "/.well-known/acme-challenge/<token>".
+#
+# - `token`: the challenge's token.
+#
+# See also `http01_body`.
+function http01_path(token: str) -> str
+    return "/.well-known/acme-challenge/" + token
+
+# The body an HTTP-01 answer is served with, as `text/plain`: the key
+# authorization.
+#
+# - `client`: the client whose key answers.
+# - `token`: the challenge's token.
+#
+# Fails as `key_authorization` does. See also `http01_path`.
+function http01_body(client: Client, token: str) -> str?
+    return key_authorization(client: client, token: token)
+
+# The name a DNS-01 answer is published under: "_acme-challenge." before
+# the identifier, a wildcard's "*." left out.
+#
+# - `domain`: the authorization's identifier.
+#
+# See also `dns01_value`.
+function dns01_name(domain: str) -> str
+    if domain.len() >= 2 && domain[0] == '*' && domain[1] == '.'
+        return "_acme-challenge." + domain.slice(from: 2, to: domain.len())
+    return "_acme-challenge." + domain
+
+# The TXT record a DNS-01 answer publishes: SHA-256 of the key
+# authorization, in base 64 for URLs without padding.
+#
+# - `client`: the client whose key answers.
+# - `token`: the challenge's token.
+#
+# Fails as `key_authorization` does. See also `dns01_name`.
+function dns01_value(client: Client, token: str) -> str?
+    return ok(bytes.format_base64_url_unpadded(crypto.sha256_text(key_authorization(client: client, token: token)?)))
+
+# `challenge` answered: the server told the answer is in place and asked to
+# validate it.
+#
+# - `client`: a client with an account.
+# - `challenge`: the challenge, its answer served or published first.
+#
+# The challenge as the server answers, usually "processing". See also
+# `wait_authorization`.
+function respond(@client: Client, challenge: Challenge) -> Challenge?
+    url = challenge.url
+    answer = wire.post(@client.session, url: url, payload: bytes.from_text("{}"), with_jwk: false, accept: "application/json")?
+    return parse_challenge(wire.text_of(answer)?)
+
+# The authorization at `url` once it settles: read again, the waits as the
+# server's `Retry-After` asks, a second where it says none, until it is no
+# longer "pending".
+#
+# - `client`: a client with an account.
+# - `url`: the authorization's URL.
+# - `timeout_ms`: the most milliseconds to wait, 0 or more.
+#
+# Fails `failed` where it turns "invalid", the challenge's problem said;
+# `timeout` where it is still pending after `timeout_ms`. See also
+# `wait_order`.
+function wait_authorization(@client: Client, url: str, timeout_ms: i64) -> Authorization?
+    waited: i64 @= 0
+
+    while true
+        empty: [u8] = []
+        answer = wire.post(@client.session, url: url, payload: empty, with_jwk: false, accept: "application/json")?
+        got = parse_authorization(text: wire.text_of(answer)?, url: url)?
+
+        if got.status == "invalid"
+            said: [str] @= []
+
+            for c in got.challenges
+                for p in c.problems
+                    said @ said.push(f"{c.kind}: {p.detail}")
+
+            return fail(
+                code: FAILED,
+                msg: f"the authorization of {got.identifier.value} turned invalid: {said.join("; ")}"
+            )
+
+        if got.status != "pending"
+            return ok(got)
+
+        if waited >= timeout_ms
+            return fail(
+                code: TIMEOUT,
+                msg: f"the authorization of {got.identifier.value} was still pending after {waited} ms"
+            )
+        pause: i64 @= wire.retry_after_ms(headers: answer.headers, none: 1000)
+
+        if pause > timeout_ms - waited
+            pause @ timeout_ms - waited
+        wire.pause(pause)
+        waited @ waited + pause
+
+## The certificate
+
+# `order` finalized with the certificate request `csr`.
+#
+# - `client`: a client with an account.
+# - `order`: an order whose status is "ready".
+# - `csr`: the request's DER, for the order's identifiers and signed by the
+#   certificate's own key, never the account's.
+#
+# The order as the server answers, "processing" or "valid". Fails `failed`
+# where the server refuses the request. See also `wait_order`, `download`.
+function finalize(@client: Client, order: Order, csr: [u8]) -> Order?
+    url = order.finalize
+    members: {str: json.Value} = {"csr": .text(v: bytes.format_base64_url_unpadded(csr))}
+    answer = wire.post(@client.session, url: url, payload: wire.json_bytes(.object(members: members))?, with_jwk: false, accept: "application/json")?
+    return parse_order(text: wire.text_of(answer)?, url: order.url)
+
+# The order at `url` once it settles: read again until it is neither
+# "pending" nor "processing", waiting as `wait_authorization` does.
+#
+# - `client`: a client with an account.
+# - `url`: the order's URL.
+# - `timeout_ms`: the most milliseconds to wait.
+#
+# Fails `failed` where it turns "invalid"; `timeout` past `timeout_ms`.
+# See also `finalize`.
+function wait_order(@client: Client, url: str, timeout_ms: i64) -> Order?
+    waited: i64 @= 0
+
+    while true
+        empty: [u8] = []
+        answer = wire.post(@client.session, url: url, payload: empty, with_jwk: false, accept: "application/json")?
+        got = parse_order(text: wire.text_of(answer)?, url: url)?
+
+        if got.status == "invalid"
+            said: [str] @= []
+
+            for p in got.problems
+                said @ said.push(p.detail)
+
+            return fail(code: FAILED, msg: f"the order turned invalid: {said.join("; ")}")
+
+        if got.status != "pending" && got.status != "processing"
+            return ok(got)
+
+        if waited >= timeout_ms
+            return fail(code: TIMEOUT, msg: f"the order was still {got.status} after {waited} ms")
+        pause: i64 @= wire.retry_after_ms(headers: answer.headers, none: 1000)
+
+        if pause > timeout_ms - waited
+            pause @ timeout_ms - waited
+        wire.pause(pause)
+        waited @ waited + pause
+
+# A certificate chain downloaded.
+record Chain
+    # The certificates as PEM, the certificate first, then its issuers.
+    pem: str
+    # The URLs of the other chains the server offers for it (`Link` with
+    # `rel="alternate"`).
+    alternates: [str]
+
+# The certificate chain at `url`.
+#
+# - `client`: a client with an account.
+# - `url`: `Order.certificate`, or one of `Chain.alternates`.
+#
+# Fails `invalid` where the server answers no PEM. See also `finalize`.
+function download(@client: Client, url: str) -> Chain?
+    empty: [u8] = []
+    answer = wire.post(@client.session, url: url, payload: empty, with_jwk: false, accept: "application/pem-certificate-chain")?
+    text = wire.text_of(answer)?
+    head = "-----BEGIN CERTIFICATE-----"
+
+    if text.len() < head.len() || text.slice(from: 0, to: head.len()) != head
+        return fail(code: INVALID, msg: "the server's certificate is not PEM beginning with a certificate")
+    return ok(Chain(pem: text, alternates: wire.links(headers: answer.headers, relation: "alternate")))
+
+# The certificate `certificate` revoked, signed by the account.
+#
+# - `client`: a client with an account that ordered it.
+# - `certificate`: the certificate's DER.
+# - `reason`: the CRL reason code: 0 unspecified, 1 key compromise, 4
+#   superseded, 5 cessation of operation; the others the server may refuse.
+#
+# Fails `failed` where the server refuses. See also `download`.
+function revoke(@client: Client, certificate: [u8], reason: i64) -> ()?
+    url = client.directory.revoke_cert
+    members: {str: json.Value} = {
+        "certificate": .text(v: bytes.format_base64_url_unpadded(certificate))
+        "reason": .number(v: to_f64(reason))
+    }
+    _ = wire.post(@client.session, url: url, payload: wire.json_bytes(.object(members: members))?, with_jwk: false, accept: "application/json")?
+    return ok()
+
+# When the CA suggests renewing a certificate (RFC 9773).
+record RenewalInfo
+    # The window's start, RFC 3339.
+    start: str
+    # Its end.
+    end: str
+    # A page explaining the window; "" where none.
+    explanation: str
+
+# The identifier RFC 9773 names a certificate by: its authority key
+# identifier and its serial number's bytes, each in base 64 for URLs without
+# padding, joined by a dot.
+#
+# - `certificate`: the certificate's DER, as `Chain.pem` holds it first.
+#
+# Fails `invalid` where it is no certificate `x509` reads or has no
+# authority key identifier. See also `renewal_info`.
+function renewal_id(certificate: [u8]) -> str?
+    cert = x509.decode_certificate(certificate)?
+
+    if !cert.extensions.has_authority_key_id || !cert.extensions.authority_key_id.has_key_id
+        return fail(
+            code: INVALID,
+            msg: "the certificate has no authority key identifier, which a renewal identifier is made of"
+        )
+    key_id = bytes.format_base64_url_unpadded(cert.extensions.authority_key_id.key_id)
+    serial = bytes.format_base64_url_unpadded(big.to_bytes_signed(n: cert.serial, order: .big_endian))
+    return ok(f"{key_id}.{serial}")
+
+# The renewal window of `certificate`, asked of the server.
+#
+# - `client`: a client; no account is needed.
+# - `certificate`: the certificate's DER.
+#
+# Fails `unsupported` where the directory names no `renewalInfo`; as
+# `renewal_id` does. See also `download`.
+function renewal_info(client: Client, certificate: [u8]) -> RenewalInfo?
+    base = client.directory.renewal_info
+
+    if base.len() == 0
+        return fail(code: UNSUPPORTED, msg: "the server's directory offers no renewalInfo")
+    id = renewal_id(certificate)?
+    slash: str @= "/"
+
+    if base[base.len() - 1] == '/'
+        slash @ ""
+    answer = wire.get(transport: client.session.transport, url: base + slash + id)?
+    m = fields.object(text: wire.text_of(answer)?, what: "the renewal information")?
+    window = fields.inner(members: m, key: "suggestedWindow")
+    start = fields.required(members: window, key: "start", what: "the suggested window")?
+    end = fields.required(members: window, key: "end", what: "the suggested window")?
+    return ok(RenewalInfo(start: start, end: end, explanation: fields.text_of(members: m, key: "explanationURL")))
+
+## Examples
+
+# A client of the test server, its directory read.
+test "connect: the directory of a test server"
+    match sample.directory_url()
+        .err _ => print("connect: skipped, ACME_DIRECTORY is not set or nothing answers there")
+        .ok url =>
+            client = connect(
+                directory_url: url,
+                key: jose.generate_key(.p256).must(),
+                transport: sample.transport()
+            ).must()
+            assert client.directory.new_order.len() > 0
+
+# Pebble 2.10.3's directory, as it answered on 2026-11-19.
+test "parse_directory: Pebble's directory"
+    d = parse_directory(
+        "{\"keyChange\":\"https://localhost:14000/rollover-account-key\",\"meta\":{\"caaIdentities\":[\"pebble.letsencrypt.org\"],\"externalAccountRequired\":false,\"profiles\":{\"default\":\"The profile you know and love\",\"shortlived\":\"A short-lived cert profile, without actual enforcement\"},\"termsOfService\":\"data:text/plain,Do%20what%20thou%20wilt\"},\"newAccount\":\"https://localhost:14000/sign-me-up\",\"newNonce\":\"https://localhost:14000/nonce-plz\",\"newOrder\":\"https://localhost:14000/order-plz\",\"renewalInfo\":\"https://localhost:14000/draft-ietf-acme-ari-03/renewalInfo\",\"revokeCert\":\"https://localhost:14000/revoke-cert\"}"
+    ).must()
+    assert d.new_order == "https://localhost:14000/order-plz" && d.new_authz == ""
+    assert d.caa_identities == ["pebble.letsencrypt.org"] && !d.external_account_required
+    assert d.profiles["shortlived"].must().len() > 0
+
+# An account made for a new key.
+test "new_account: an account for a new key"
+    match sample.directory_url()
+        .err _ => print("new_account: skipped, ACME_DIRECTORY is not set or nothing answers there")
+        .ok url =>
+            client @= connect(
+                directory_url: url,
+                key: jose.generate_key(.p256).must(),
+                transport: sample.transport()
+            ).must()
+            account = new_account(@client, contacts: ["mailto:ops@heroes-test.example"], agree_terms: true).must()
+            assert account.status == "valid" && account.contacts == ["mailto:ops@heroes-test.example"]
+
+# An account bound to one the CA keeps, its key and identifier given by the environment.
+test "new_account_bound: an external account"
+    match sample.eab()
+        .err _ => print("new_account_bound: skipped, ACME_DIRECTORY, ACME_EAB_KID or ACME_EAB_KEY is not set")
+        .ok binding =>
+            client @= connect(
+                directory_url: sample.directory_url().must(),
+                key: jose.generate_key(.p256).must(),
+                transport: sample.transport()
+            ).must()
+            account = new_account_bound(
+                @client,
+                contacts: [],
+                agree_terms: true,
+                key_id: binding.key_id,
+                hmac_key: binding.hmac_key
+            ).must()
+            assert account.status == "valid"
+
+# The account of a key found again.
+test "find_account: the account just made"
+    match sample.directory_url()
+        .err _ => print("find_account: skipped, ACME_DIRECTORY is not set or nothing answers there")
+        .ok url =>
+            client @= connect(
+                directory_url: url,
+                key: jose.generate_key(.p256).must(),
+                transport: sample.transport()
+            ).must()
+            made = new_account(@client, contacts: [], agree_terms: true).must()
+            assert find_account(@client).must().url == made.url
+
+# An account's contacts replaced.
+test "update_account: a new contact"
+    match sample.directory_url()
+        .err _ => print("update_account: skipped, ACME_DIRECTORY is not set or nothing answers there")
+        .ok url =>
+            client @= connect(
+                directory_url: url,
+                key: jose.generate_key(.p256).must(),
+                transport: sample.transport()
+            ).must()
+            _ = new_account(@client, contacts: [], agree_terms: true).must()
+            assert update_account(@client, contacts: ["mailto:new@heroes-test.example"]).must().contacts == ["mailto:new@heroes-test.example"]
+
+# An account deactivated for ever.
+test "deactivate_account: deactivated"
+    match sample.directory_url()
+        .err _ => print("deactivate_account: skipped, ACME_DIRECTORY is not set or nothing answers there")
+        .ok url =>
+            client @= connect(
+                directory_url: url,
+                key: jose.generate_key(.p256).must(),
+                transport: sample.transport()
+            ).must()
+            _ = new_account(@client, contacts: [], agree_terms: true).must()
+            assert deactivate_account(@client).must().status == "deactivated"
+
+# An account's key rolled over.
+test "change_key: a new P-256 key"
+    match sample.directory_url()
+        .err _ => print("change_key: skipped, ACME_DIRECTORY is not set or nothing answers there")
+        .ok url =>
+            client @= connect(
+                directory_url: url,
+                key: jose.generate_key(.p256).must(),
+                transport: sample.transport()
+            ).must()
+            made = new_account(@client, contacts: [], agree_terms: true).must()
+            change_key(@client, key: jose.generate_key(.p256).must()).must()
+            assert find_account(@client).must().url == made.url
+
+# The account of RFC 8555 § 7.1.2's example.
+test "parse_account: RFC 8555 § 7.1.2"
+    text = "{\"status\":\"valid\",\"contact\":[\"mailto:cert-admin@example.org\",\"mailto:admin@example.org\"],\"termsOfServiceAgreed\":true,\"orders\":\"https://example.com/acme/orders/rzGoeA\"}"
+    account = parse_account(text: text, url: "https://example.com/acme/acct/evOfKhNU60wg").must()
+    assert account.status == "valid" && account.contacts.len() == 2 && account.orders == "https://example.com/acme/orders/rzGoeA"
+
+# A problem with a subproblem for one identifier.
+test "parse_problem: a rejected name"
+    text = "{\"type\":\"urn:ietf:params:acme:error:malformed\",\"detail\":\"Some of the identifiers requested were rejected\",\"subproblems\":[{\"type\":\"urn:ietf:params:acme:error:malformed\",\"detail\":\"Invalid underscore in DNS name \\\"_example.org\\\"\",\"identifier\":{\"type\":\"dns\",\"value\":\"_example.org\"}}]}"
+    problem = parse_problem(text).must()
+    assert problem.kind == "urn:ietf:params:acme:error:malformed" && problem.subproblems.len() == 1
+    assert problem.subproblems[0].identifier.value == "_example.org"
+
+# An order for two names.
+test "order_for: two names, the rest the server's"
+    request = order_for(["example.org", "www.example.org"])
+    assert request.identifiers.len() == 2 && request.identifiers[0].kind == "dns" && request.profile == ""
+
+# An order placed for one name.
+test "new_order: one name"
+    match sample.directory_url()
+        .err _ => print("new_order: skipped, ACME_DIRECTORY is not set or nothing answers there")
+        .ok url =>
+            client @= connect(
+                directory_url: url,
+                key: jose.generate_key(.p256).must(),
+                transport: sample.transport()
+            ).must()
+            _ = new_account(@client, contacts: [], agree_terms: true).must()
+            order = new_order(@client, request: order_for([sample.CSR_NAME])).must()
+            assert order.status == "pending" && order.authorizations.len() == 1
+
+# An order read again.
+test "fetch_order: the order just placed"
+    match sample.directory_url()
+        .err _ => print("fetch_order: skipped, ACME_DIRECTORY is not set or nothing answers there")
+        .ok url =>
+            client @= connect(
+                directory_url: url,
+                key: jose.generate_key(.p256).must(),
+                transport: sample.transport()
+            ).must()
+            _ = new_account(@client, contacts: [], agree_terms: true).must()
+            order = new_order(@client, request: order_for([sample.CSR_NAME])).must()
+            assert fetch_order(@client, url: order.url).must().finalize == order.finalize
+
+# The order of RFC 8555 § 7.1.3's example.
+test "parse_order: RFC 8555 § 7.1.3"
+    text = "{\"status\":\"valid\",\"expires\":\"2016-01-20T14:09:07.99Z\",\"identifiers\":[{\"type\":\"dns\",\"value\":\"www.example.org\"},{\"type\":\"dns\",\"value\":\"example.org\"}],\"notBefore\":\"2016-01-01T00:00:00Z\",\"notAfter\":\"2016-01-08T00:00:00Z\",\"authorizations\":[\"https://example.com/acme/authz/PAniVnsZcis\",\"https://example.com/acme/authz/r4HqLzrSrpI\"],\"finalize\":\"https://example.com/acme/order/TOlocE8rfgo/finalize\",\"certificate\":\"https://example.com/acme/cert/mAt3xBGaobw\"}"
+    order = parse_order(text: text, url: "https://example.com/acme/order/TOlocE8rfgo").must()
+    assert order.status == "valid" && order.identifiers[1].value == "example.org" && order.authorizations.len() == 2
+    assert order.certificate == "https://example.com/acme/cert/mAt3xBGaobw" && order.problems.len() == 0
+
+# The authorization of RFC 8555 § 7.1.4's example.
+test "parse_authorization: RFC 8555 § 7.1.4"
+    text = "{\"status\":\"valid\",\"expires\":\"2015-03-01T14:09:07.99Z\",\"identifier\":{\"type\":\"dns\",\"value\":\"www.example.org\"},\"challenges\":[{\"url\":\"https://example.com/acme/chall/prV_B7yEyA4\",\"type\":\"http-01\",\"status\":\"valid\",\"token\":\"DGyRejmCefe7v4NfDGDKfA\",\"validated\":\"2014-12-01T12:05:58.16Z\"}],\"wildcard\":false}"
+    authorization = parse_authorization(text: text, url: "https://example.com/acme/authz/PAniVnsZcis").must()
+    assert authorization.identifier.value == "www.example.org" && authorization.challenges.len() == 1 && !authorization.wildcard
+
+# A challenge of RFC 8555 § 8.3's example.
+test "parse_challenge: an HTTP-01 challenge"
+    text = "{\"type\":\"http-01\",\"url\":\"https://example.com/acme/chall/prV_B7yEyA4\",\"status\":\"pending\",\"token\":\"LoqXcYV8q5ONbJQxbmR7SCTNo3tiAXDfowyjxAjEuX0\"}"
+    challenge = parse_challenge(text).must()
+    assert challenge.kind == "http-01" && challenge.token == "LoqXcYV8q5ONbJQxbmR7SCTNo3tiAXDfowyjxAjEuX0"
+
+# The HTTP-01 challenge of an authorization, and a type it does not offer.
+test "challenge_of: http-01 and dns-01"
+    text = "{\"status\":\"valid\",\"expires\":\"2015-03-01T14:09:07.99Z\",\"identifier\":{\"type\":\"dns\",\"value\":\"www.example.org\"},\"challenges\":[{\"url\":\"https://example.com/acme/chall/prV_B7yEyA4\",\"type\":\"http-01\",\"status\":\"valid\",\"token\":\"DGyRejmCefe7v4NfDGDKfA\",\"validated\":\"2014-12-01T12:05:58.16Z\"}],\"wildcard\":false}"
+    authorization = parse_authorization(text: text, url: "https://example.com/acme/authz/PAniVnsZcis").must()
+    assert challenge_of(authorization: authorization, kind: "http-01").must().token == "DGyRejmCefe7v4NfDGDKfA"
+    assert challenge_of(authorization: authorization, kind: "dns-01").is_err()
+
+# A token and the account key's thumbprint.
+test "key_authorization: the token, a dot, the thumbprint"
+    key = jose.generate_key(.p256).must()
+    session = wire.Session(
+        key: key,
+        algorithm: .es256,
+        kid: "",
+        nonce: "",
+        new_nonce: "",
+        transport: http.default_client()
+    )
+    client = Client(
+        directory: parse_directory("{\"newNonce\":\"n\",\"newAccount\":\"a\",\"newOrder\":\"o\"}").must(),
+        session: session
+    )
+    thumbprint = bytes.format_base64_url_unpadded(jose.thumbprint(key: key, algorithm: .sha256).must())
+    assert key_authorization(client: client, token: "DGyRejmCefe7v4NfDGDKfA").must() == "DGyRejmCefe7v4NfDGDKfA." + thumbprint
+    assert key_authorization(client: client, token: "a.b").is_err()
+
+# The path an HTTP-01 answer is served at.
+test "http01_path: the token's place"
+    assert http01_path("LoqXcYV8") == "/.well-known/acme-challenge/LoqXcYV8"
+
+# The body an HTTP-01 answer is served with.
+test "http01_body: the key authorization"
+    key = jose.generate_key(.p256).must()
+    session = wire.Session(
+        key: key,
+        algorithm: .es256,
+        kid: "",
+        nonce: "",
+        new_nonce: "",
+        transport: http.default_client()
+    )
+    client = Client(
+        directory: parse_directory("{\"newNonce\":\"n\",\"newAccount\":\"a\",\"newOrder\":\"o\"}").must(),
+        session: session
+    )
+    thumbprint = bytes.format_base64_url_unpadded(jose.thumbprint(key: key, algorithm: .sha256).must())
+    assert http01_body(client: client, token: "LoqXcYV8").must() == "LoqXcYV8." + thumbprint
+
+# The name a DNS-01 answer is published under.
+test "dns01_name: a name and a wildcard"
+    assert dns01_name("example.org") == "_acme-challenge.example.org"
+    assert dns01_name("*.example.org") == "_acme-challenge.example.org"
+
+# The TXT record of a DNS-01 answer.
+test "dns01_value: the digest of the key authorization"
+    key = jose.generate_key(.p256).must()
+    session = wire.Session(
+        key: key,
+        algorithm: .es256,
+        kid: "",
+        nonce: "",
+        new_nonce: "",
+        transport: http.default_client()
+    )
+    client = Client(
+        directory: parse_directory("{\"newNonce\":\"n\",\"newAccount\":\"a\",\"newOrder\":\"o\"}").must(),
+        session: session
+    )
+    thumbprint = bytes.format_base64_url_unpadded(jose.thumbprint(key: key, algorithm: .sha256).must())
+    digest = crypto.sha256_text("LoqXcYV8." + thumbprint)
+    assert dns01_value(client: client, token: "LoqXcYV8").must() == bytes.format_base64_url_unpadded(digest)
+
+# An order's authorization read.
+test "fetch_authorization: one name, its challenges"
+    match sample.directory_url()
+        .err _ => print("fetch_authorization: skipped, ACME_DIRECTORY is not set or nothing answers there")
+        .ok url =>
+            client @= connect(
+                directory_url: url,
+                key: jose.generate_key(.p256).must(),
+                transport: sample.transport()
+            ).must()
+            _ = new_account(@client, contacts: [], agree_terms: true).must()
+            order = new_order(@client, request: order_for([sample.CSR_NAME])).must()
+            authorization = fetch_authorization(@client, url: order.authorizations[0]).must()
+            assert authorization.identifier.value == sample.CSR_NAME && authorization.challenges.len() > 0
+
+# An authorization asked before any order, which Pebble does not offer.
+test "new_authorization: unsupported where the directory has no newAuthz"
+    match sample.directory_url()
+        .err _ => print("new_authorization: skipped, ACME_DIRECTORY is not set or nothing answers there")
+        .ok url =>
+            client @= connect(
+                directory_url: url,
+                key: jose.generate_key(.p256).must(),
+                transport: sample.transport()
+            ).must()
+            _ = new_account(@client, contacts: [], agree_terms: true).must()
+
+            match new_authorization(@client, identifier: Identifier(kind: "dns", value: sample.CSR_NAME))
+                .ok a  => assert a.status == "pending"
+                .err e => assert e.code == "unsupported"
+
+# An authorization given up.
+test "deactivate_authorization: deactivated"
+    match sample.directory_url()
+        .err _ => print("deactivate_authorization: skipped, ACME_DIRECTORY is not set or nothing answers there")
+        .ok url =>
+            client @= connect(
+                directory_url: url,
+                key: jose.generate_key(.p256).must(),
+                transport: sample.transport()
+            ).must()
+            _ = new_account(@client, contacts: [], agree_terms: true).must()
+            order = new_order(@client, request: order_for([sample.CSR_NAME])).must()
+            assert deactivate_authorization(@client, url: order.authorizations[0]).must().status == "deactivated"
+
+# A DNS-01 challenge answered, its record published at the challenge server.
+test "respond: a published TXT record"
+    match sample.directory_url()
+        .err _ => print("respond: skipped, ACME_DIRECTORY is not set or nothing answers there")
+        .ok url =>
+            client @= connect(
+                directory_url: url,
+                key: jose.generate_key(.p256).must(),
+                transport: sample.transport()
+            ).must()
+            _ = new_account(@client, contacts: [], agree_terms: true).must()
+            order = new_order(@client, request: order_for([sample.CSR_NAME])).must()
+            authorization = fetch_authorization(@client, url: order.authorizations[0]).must()
+            challenge = challenge_of(authorization: authorization, kind: "dns-01").must()
+            sample.publish_txt(
+                name: dns01_name(authorization.identifier.value),
+                value: dns01_value(client: client, token: challenge.token).must()
+            ).must()
+            assert respond(@client, challenge: challenge).must().url == challenge.url
+
+# An authorization waited for until DNS-01 validated it.
+test "wait_authorization: valid"
+    match sample.directory_url()
+        .err _ => print("wait_authorization: skipped, ACME_DIRECTORY is not set or nothing answers there")
+        .ok url =>
+            client @= connect(
+                directory_url: url,
+                key: jose.generate_key(.p256).must(),
+                transport: sample.transport()
+            ).must()
+            _ = new_account(@client, contacts: [], agree_terms: true).must()
+            order = new_order(@client, request: order_for([sample.CSR_NAME])).must()
+            authorization = fetch_authorization(@client, url: order.authorizations[0]).must()
+            challenge = challenge_of(authorization: authorization, kind: "dns-01").must()
+            sample.publish_txt(
+                name: dns01_name(authorization.identifier.value),
+                value: dns01_value(client: client, token: challenge.token).must()
+            ).must()
+            _ = respond(@client, challenge: challenge).must()
+            _ = wait_authorization(@client, url: authorization.url, timeout_ms: 30000).must()
+            assert fetch_authorization(@client, url: authorization.url).must().status == "valid"
+
+# An order finalized with a certificate request.
+test "finalize: a request for the one name"
+    match sample.directory_url()
+        .err _ => print("finalize: skipped, ACME_DIRECTORY is not set or nothing answers there")
+        .ok url =>
+            client @= connect(
+                directory_url: url,
+                key: jose.generate_key(.p256).must(),
+                transport: sample.transport()
+            ).must()
+            _ = new_account(@client, contacts: [], agree_terms: true).must()
+            order = new_order(@client, request: order_for([sample.CSR_NAME])).must()
+            authorization = fetch_authorization(@client, url: order.authorizations[0]).must()
+            challenge = challenge_of(authorization: authorization, kind: "dns-01").must()
+            sample.publish_txt(
+                name: dns01_name(authorization.identifier.value),
+                value: dns01_value(client: client, token: challenge.token).must()
+            ).must()
+            _ = respond(@client, challenge: challenge).must()
+            _ = wait_authorization(@client, url: authorization.url, timeout_ms: 30000).must()
+            ready = wait_order(@client, url: order.url, timeout_ms: 30000).must()
+            finalized = finalize(@client, order: ready, csr: sample.CSR).must()
+            assert finalized.status == "processing" || finalized.status == "valid"
+
+# An order waited for until its certificate is issued.
+test "wait_order: valid, with a certificate"
+    match sample.directory_url()
+        .err _ => print("wait_order: skipped, ACME_DIRECTORY is not set or nothing answers there")
+        .ok url =>
+            client @= connect(
+                directory_url: url,
+                key: jose.generate_key(.p256).must(),
+                transport: sample.transport()
+            ).must()
+            _ = new_account(@client, contacts: [], agree_terms: true).must()
+            order = new_order(@client, request: order_for([sample.CSR_NAME])).must()
+            authorization = fetch_authorization(@client, url: order.authorizations[0]).must()
+            challenge = challenge_of(authorization: authorization, kind: "dns-01").must()
+            sample.publish_txt(
+                name: dns01_name(authorization.identifier.value),
+                value: dns01_value(client: client, token: challenge.token).must()
+            ).must()
+            _ = respond(@client, challenge: challenge).must()
+            _ = wait_authorization(@client, url: authorization.url, timeout_ms: 30000).must()
+            ready = wait_order(@client, url: order.url, timeout_ms: 30000).must()
+            assert ready.status == "ready"
+            _ = finalize(@client, order: ready, csr: sample.CSR).must()
+            done = wait_order(@client, url: order.url, timeout_ms: 30000).must()
+            assert done.status == "valid" && done.certificate.len() > 0
+
+# A certificate chain downloaded.
+test "download: the PEM of a chain"
+    match sample.directory_url()
+        .err _ => print("download: skipped, ACME_DIRECTORY is not set or nothing answers there")
+        .ok url =>
+            client @= connect(
+                directory_url: url,
+                key: jose.generate_key(.p256).must(),
+                transport: sample.transport()
+            ).must()
+            _ = new_account(@client, contacts: [], agree_terms: true).must()
+            order = new_order(@client, request: order_for([sample.CSR_NAME])).must()
+            authorization = fetch_authorization(@client, url: order.authorizations[0]).must()
+            challenge = challenge_of(authorization: authorization, kind: "dns-01").must()
+            sample.publish_txt(
+                name: dns01_name(authorization.identifier.value),
+                value: dns01_value(client: client, token: challenge.token).must()
+            ).must()
+            _ = respond(@client, challenge: challenge).must()
+            _ = wait_authorization(@client, url: authorization.url, timeout_ms: 30000).must()
+            ready = wait_order(@client, url: order.url, timeout_ms: 30000).must()
+            _ = finalize(@client, order: ready, csr: sample.CSR).must()
+            done = wait_order(@client, url: order.url, timeout_ms: 30000).must()
+            chain = download(@client, url: done.certificate).must()
+            leaf = pem.parse(chain.pem).must().data
+            assert pem.parse_all(chain.pem).must().len() >= 2 && leaf.len() > 0
+
+# A certificate revoked as superseded.
+test "revoke: reason 4"
+    match sample.directory_url()
+        .err _ => print("revoke: skipped, ACME_DIRECTORY is not set or nothing answers there")
+        .ok url =>
+            client @= connect(
+                directory_url: url,
+                key: jose.generate_key(.p256).must(),
+                transport: sample.transport()
+            ).must()
+            _ = new_account(@client, contacts: [], agree_terms: true).must()
+            order = new_order(@client, request: order_for([sample.CSR_NAME])).must()
+            authorization = fetch_authorization(@client, url: order.authorizations[0]).must()
+            challenge = challenge_of(authorization: authorization, kind: "dns-01").must()
+            sample.publish_txt(
+                name: dns01_name(authorization.identifier.value),
+                value: dns01_value(client: client, token: challenge.token).must()
+            ).must()
+            _ = respond(@client, challenge: challenge).must()
+            _ = wait_authorization(@client, url: authorization.url, timeout_ms: 30000).must()
+            ready = wait_order(@client, url: order.url, timeout_ms: 30000).must()
+            _ = finalize(@client, order: ready, csr: sample.CSR).must()
+            done = wait_order(@client, url: order.url, timeout_ms: 30000).must()
+            chain = download(@client, url: done.certificate).must()
+            leaf = pem.parse(chain.pem).must().data
+            revoke(@client, certificate: leaf, reason: 4).must()
+
+# The ARI identifier of a certificate the test server issued, held to what OpenSSL reads of it.
+test "renewal_id: a certificate of Pebble"
+    assert renewal_id(sample.LEAF).must() == sample.LEAF_ID
+    assert renewal_id([0x30, 0x00]).is_err()
+
+# When the CA suggests renewing a certificate it issued.
+test "renewal_info: a window"
+    match sample.directory_url()
+        .err _ => print("renewal_info: skipped, ACME_DIRECTORY is not set or nothing answers there")
+        .ok url =>
+            client @= connect(
+                directory_url: url,
+                key: jose.generate_key(.p256).must(),
+                transport: sample.transport()
+            ).must()
+            _ = new_account(@client, contacts: [], agree_terms: true).must()
+            order = new_order(@client, request: order_for([sample.CSR_NAME])).must()
+            authorization = fetch_authorization(@client, url: order.authorizations[0]).must()
+            challenge = challenge_of(authorization: authorization, kind: "dns-01").must()
+            sample.publish_txt(
+                name: dns01_name(authorization.identifier.value),
+                value: dns01_value(client: client, token: challenge.token).must()
+            ).must()
+            _ = respond(@client, challenge: challenge).must()
+            _ = wait_authorization(@client, url: authorization.url, timeout_ms: 30000).must()
+            ready = wait_order(@client, url: order.url, timeout_ms: 30000).must()
+            _ = finalize(@client, order: ready, csr: sample.CSR).must()
+            done = wait_order(@client, url: order.url, timeout_ms: 30000).must()
+            chain = download(@client, url: done.certificate).must()
+            leaf = pem.parse(chain.pem).must().data
+            window = renewal_info(client: client, certificate: leaf).must()
+            assert window.start.len() > 0 && window.end.len() > 0

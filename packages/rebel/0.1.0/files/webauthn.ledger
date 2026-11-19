@@ -1,0 +1,191 @@
+# The ledger of `webauthn`: a relying party of W3C Web Authentication Level 3,
+# one block per capability, and what Heroes answers to each.
+#
+# Go 1.27, Rust 1.100 and Python 3.15 carry no WebAuthn in their standard
+# libraries. The yardsticks are the queue's: Go's go-webauthn (`go` below,
+# its packages `webauthn`, `protocol` and `webauthncose`), Python's
+# py_webauthn (`python` below, its module `webauthn`) and SimpleWebAuthn's
+# server (named in `note`). None is installed on this machine (asked on
+# 2026-11-19: no Python module, no Go module cache entry, no npm package), so
+# their entries are named from their published documentation and not listed
+# by a command. The ceremonies the tests hold were recorded from an
+# authenticator written in Python over the `cryptography` package installed
+# here (version 50.0.2), which signs and makes certificates independently of
+# Heroes.
+
+## Ceremonies
+
+capability webauthn/challenge  a challenge of random bytes for a ceremony
+  heroes  webauthn.new_challenge
+  go      protocol.CreateChallenge, protocol.URLEncodedBase64
+  rust    -
+  python  webauthn.helpers.generate_challenge, webauthn.helpers.generate_user_handle
+  note    thirty-two bytes of `os.random_bytes`, as go-webauthn draws; the same function makes a user handle, which py_webauthn draws apart
+
+capability webauthn/registration-options  the options of a registration, written as the JSON a browser hands navigator.credentials.create
+  heroes  webauthn.registration_options, webauthn.format_registration_options, webauthn.RegistrationOptions, webauthn.Requirement, webauthn.Conveyance, webauthn.Attachment, webauthn.Hint, webauthn.Descriptor
+  go      webauthn.WebAuthn.BeginRegistration, protocol.CredentialCreation, webauthn.WithAuthenticatorSelection, webauthn.WithExclusions, webauthn.WithConveyancePreference, webauthn.WithExtensions, webauthn.WithResidentKeyRequirement, webauthn.WithCredentialParameters, webauthn.WithPublicKeyCredentialHints
+  rust    -
+  python  webauthn.generate_registration_options, webauthn.options_to_json, webauthn.helpers.structs.AuthenticatorSelectionCriteria, webauthn.helpers.structs.AttestationConveyancePreference, webauthn.helpers.structs.ResidentKeyRequirement, webauthn.helpers.structs.PublicKeyCredentialHint
+  note    the defaults SimpleWebAuthn and py_webauthn share (ES256, EdDSA, RS256; a minute; attestation "none"; resident key and user verification "preferred"), EdDSA left out where this system cannot verify it, so no credential is registered that the relying party could not check; `credProps` asked, as SimpleWebAuthn asks it
+
+capability webauthn/registration-verify  a registration response verified: client data, authenticator data, attestation, the credential to keep
+  heroes  webauthn.verify_registration, webauthn.expect, webauthn.Expected, webauthn.Registration, webauthn.Credential
+  go      webauthn.WebAuthn.FinishRegistration, webauthn.WebAuthn.CreateCredential, protocol.ParseCredentialCreationResponseBody, protocol.ParseCredentialCreationResponseBytes, webauthn.Credential
+  rust    -
+  python  webauthn.verify_registration_response, webauthn.helpers.parse_registration_credential_json, webauthn.registration.verify_registration_response.VerifiedRegistration
+  note    every step of § 7.1 a relying party makes, each failure naming its check; held to 18 recorded registrations (none, packed self with ES256, ES384, RS256 and EdDSA, packed with a certificate, fido-u2f, tpm, and eleven broken on purpose)
+
+capability webauthn/authentication-options  the options of an authentication, written as the JSON a browser hands navigator.credentials.get
+  heroes  webauthn.authentication_options, webauthn.format_authentication_options, webauthn.AuthenticationOptions
+  go      webauthn.WebAuthn.BeginLogin, webauthn.WebAuthn.BeginDiscoverableLogin, protocol.CredentialAssertion, webauthn.WithAllowedCredentials, webauthn.WithUserVerification
+  rust    -
+  python  webauthn.generate_authentication_options, webauthn.options_to_json
+
+capability webauthn/authentication-verify  an authentication response verified: client data, authenticator data, the signature, the counter
+  heroes  webauthn.verify_authentication, webauthn.Authentication
+  go      webauthn.WebAuthn.FinishLogin, webauthn.WebAuthn.ValidateLogin, protocol.ParseCredentialRequestResponseBody
+  rust    -
+  python  webauthn.verify_authentication_response, webauthn.helpers.parse_authentication_credential_json
+  note    § 7.2's steps; held to 7 recorded assertions (ES256, ES384, RS256, a signature tampered, user verification missing, the wrong type, a counter of 0)
+
+capability webauthn/discoverable  a login whose credential the response names, the user found by its handle
+  heroes  webauthn.credential_id_of, webauthn.user_handle_of
+  go      webauthn.WebAuthn.FinishDiscoverableLogin, webauthn.WebAuthn.ValidateDiscoverableLogin, webauthn.DiscoverableUserHandler
+  rust    -
+  python  webauthn.verify_authentication_response (the user handle read by the program)
+  note    the program reads the handle and the credential's ID before verifying, where go-webauthn takes a function that finds the user
+
+capability webauthn/sign-count  the signature counter checked, a clone told
+  heroes  webauthn.verify_authentication
+  go      webauthn.Authenticator.UpdateCounter, webauthn.Authenticator.CloneWarning
+  rust    -
+  python  webauthn.verify_authentication_response (credential_current_sign_count)
+  note    a counter that did not grow, where either is not zero, fails `invalid`, as py_webauthn and SimpleWebAuthn fail; go-webauthn sets `CloneWarning` and goes on
+
+capability webauthn/flags  user presence, user verification, backup eligibility and state
+  heroes  webauthn.AuthenticatorData, webauthn.Registration, webauthn.Authentication
+  go      protocol.AuthenticatorFlags, webauthn.CredentialFlags
+  rust    -
+  python  webauthn.helpers.structs.AuthenticatorDataFlags, webauthn.helpers.structs.CredentialDeviceType
+  note    UP always required, UV where `Expected.user_verification`; BS without BE refused (§ 6.1.3); BE and BS handed back, the device type of py_webauthn
+
+capability webauthn/origins  one origin or several, a cross-origin frame and its top origin
+  heroes  webauthn.Expected
+  go      webauthn.Config.RPOrigins, webauthn.Config.RPTopOrigins, webauthn.Config.RPTopOriginVerificationMode
+  rust    -
+  python  webauthn.verify_registration_response (expected_origin as a list)
+  note    several origins; a cross-origin frame refused unless its top origin is one of `top_origins`, as go-webauthn's RPTopOrigins
+
+## What a response holds
+
+capability webauthn/client-data  the client data read: its type, challenge, origin, cross-origin and top origin
+  heroes  webauthn.parse_client_data, webauthn.ClientData
+  go      protocol.CollectedClientData, protocol.CollectedClientData.Verify
+  rust    -
+  python  webauthn.helpers.parse_client_data_json, webauthn.helpers.structs.CollectedClientData
+  note    the challenge compared in constant time
+
+capability webauthn/authenticator-data  the authenticator data read: the RP ID's hash, the flags, the counter, the attested credential, the extensions
+  heroes  webauthn.parse_authenticator_data, webauthn.AuthenticatorData
+  go      protocol.AuthenticatorData, protocol.AuthenticatorData.Unmarshal, protocol.AttestedCredentialData
+  rust    -
+  python  webauthn.helpers.parse_authenticator_data, webauthn.helpers.structs.AuthenticatorData, webauthn.helpers.structs.AttestedCredentialData
+  note    the COSE key and the extensions found by `cbor.decode_next`, so a key followed by extensions is cut where CBOR ends; any byte after them refused
+
+capability webauthn/attestation-object  the attestation object read: its format, its statement, its authenticator data
+  heroes  webauthn.parse_attestation_object, webauthn.AttestationObject
+  go      protocol.AttestationObject, protocol.AttestationObject.Verify
+  rust    -
+  python  webauthn.helpers.parse_attestation_object, webauthn.helpers.structs.AttestationObject
+
+capability webauthn/cose-key  a COSE key read: its algorithm, its kind, its key as SubjectPublicKeyInfo
+  heroes  webauthn.parse_public_key, webauthn.PublicKey, webauthn.ES256, webauthn.ES384, webauthn.ES512, webauthn.EDDSA, webauthn.PS256, webauthn.PS384, webauthn.PS512, webauthn.RS256, webauthn.RS384, webauthn.RS512
+  go      webauthncose.ParsePublicKey, webauthncose.EC2PublicKeyData, webauthncose.RSAPublicKeyData, webauthncose.OKPPublicKeyData, webauthncose.COSEAlgorithmIdentifier
+  rust    -
+  python  webauthn.helpers.decode_credential_public_key, webauthn.helpers.cose.COSEAlgorithmIdentifier, webauthn.helpers.cose.COSEKTY, webauthn.helpers.cose.COSECRV
+  note    written as SubjectPublicKeyInfo by a DER writer of its own, `asn1` standing at this package's layer; ES512 is `unsupported` (no P-521 in `crypto/keypairs`), EdDSA `unsupported` on macOS (measured: the recorded EdDSA registration answers so here); RS1 (SHA-1) refused as no key's algorithm
+
+capability webauthn/signature  a signature checked against a COSE key
+  heroes  webauthn.verify_signature
+  go      webauthncose.VerifySignature
+  rust    -
+  python  webauthn.helpers.verify_signature
+  note    ECDSA signatures DER, as Web Authentication writes them and `crypto/keypairs` reads them
+
+## Attestation
+
+capability webauthn/attestation-none  the format "none"
+  heroes  webauthn.verify_registration
+  go      protocol attestation format "none"
+  rust    -
+  python  webauthn.registration.formats (none)
+  note    a statement that is not empty refused
+
+capability webauthn/attestation-packed  the format "packed": self attestation and a certificate's
+  heroes  webauthn.verify_registration
+  go      protocol attestation format "packed"
+  rust    -
+  python  webauthn.registration.formats.packed.verify_packed
+  note    self attestation (the key's own algorithm) and a certificate's, with § 8.2.1's checks: version 3, the subject's C, O, OU "Authenticator Attestation" and CN, not an authority, the AAGUID extension equal to the authenticator data's; recorded with a certificate made by Python's `cryptography`, and with a wrong unit and a wrong AAGUID, both refused. The certificate is read by a DER walk of its own, `x509` standing above this package
+
+capability webauthn/attestation-fido-u2f  the format "fido-u2f" of the older security keys
+  heroes  webauthn.verify_registration
+  go      protocol attestation format "fido-u2f"
+  rust    -
+  python  webauthn.registration.formats.fido_u2f.verify_fido_u2f
+  note    one certificate, a P-256 credential, the signature over 0x00, the RP ID's hash, the client data's hash, the credential ID and the point
+
+capability webauthn/attestation-apple  the format "apple" of Apple's anonymous attestation
+  heroes  pending
+  go      protocol attestation format "apple"
+  rust    -
+  python  webauthn.registration.formats.apple.verify_apple
+  note    read and kept: `Attestation.unverified`, its certificates handed back; the nonce extension is read by the DER walk and not yet compared
+
+capability webauthn/attestation-tpm  the format "tpm" of a Trusted Platform Module
+  heroes  pending
+  go      protocol attestation format "tpm"
+  rust    -
+  python  webauthn.registration.formats.tpm.verify_tpm
+  note    read and kept: `Attestation.unverified` (a recorded "tpm" registration answers so)
+
+capability webauthn/attestation-android  the formats "android-key" and "android-safetynet"
+  heroes  pending
+  go      protocol attestation formats "android-key", "android-safetynet"
+  rust    -
+  python  webauthn.registration.formats.android_key.verify_android_key, webauthn.registration.formats.android_safetynet.verify_android_safetynet
+  note    read and kept: `Attestation.unverified`
+
+capability webauthn/trust  an attestation's certificates checked to a root the program trusts
+  heroes  refused: whether an attestation certificate leads to a root the program trusts is `x509`'s to answer (`x509.verify_chain`), and `x509` stands above this package's layer; `Registration.certificates` is what the program hands it
+  go      protocol.AttestationObject.VerifyAttestation (with metadata), webauthn.Config.MDS
+  rust    -
+  python  webauthn.verify_registration_response (pem_root_certs_bytes_by_fmt), webauthn.helpers.validate_certificate_chain
+
+capability webauthn/metadata  the FIDO Metadata Service read, an authenticator's statement found by its AAGUID
+  heroes  refused: the FIDO Metadata Service is a JWT whose certificate chain is checked, fetched over HTTPS: `jose`, `x509` and `http` stand above this package's layer; a program reads it and looks up `Registration.aaguid`
+  go      metadata.Provider, metadata.Fetch, metadata.Metadata
+  rust    -
+  python  -
+
+## Extensions
+
+capability webauthn/appid  the FIDO AppID extension: a credential registered for U2F, its RP ID hash the AppID's
+  heroes  pending
+  go      webauthn.WithAppIdExtension, protocol.ExtensionAppID
+  rust    -
+  python  -
+  note    a credential registered for U2F signs over the AppID's hash: not yet read
+
+capability webauthn/extensions  the authenticator's extension outputs, and the client's results
+  heroes  pending
+  go      protocol.AuthenticationExtensions, protocol.AuthenticationExtensionsClientOutputs
+  rust    -
+  python  webauthn.helpers.structs.AuthenticationExtensionsClientInputs
+  note    the authenticator's outputs are handed back as one CBOR map's bytes (`AuthenticatorData.extensions`); the client's results, `credProps` among them, are not read
+
+dropped plumbing  what a program's own types or an HTTP request stood for
+  go      webauthn.User (an interface), webauthn.SessionData (the program keeps the challenge), webauthn.New, webauthn.Config (a record here), protocol.Error
+  rust    -
+  python  webauthn.helpers.exceptions, webauthn.helpers.bytes_to_base64url, webauthn.helpers.base64url_to_bytes (`bytes.format_base64_url_unpadded`, `bytes.parse_base64_url_unpadded`)

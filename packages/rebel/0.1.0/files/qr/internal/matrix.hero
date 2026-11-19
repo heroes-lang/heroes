@@ -1,0 +1,400 @@
+# The modules of a symbol: its function patterns drawn, its codewords placed
+# in their two-column zigzag, a mask applied, its format and version
+# information written, and the penalty a mask is chosen by.
+#
+# A symbol of `size` modules a side is two lists of `size * size`, row after
+# row, module (x, y) at `y * size + x`: `cells`, 1 dark and 0 light, and
+# `regions`, what each module is: 0 data, 1 finder with its separator, 2
+# timing, 3 alignment, 4 format, 5 version, 6 the dark module. A level is an
+# index, 0 to 3 for L, M, Q and H.
+
+use qr/internal/tables
+
+# A symbol's function patterns before any data: what `layout` answers.
+record Layout
+    # Modules a side.
+    size: i64
+    # 1 dark, 0 light, row after row.
+    cells: [u8]
+    # What each module is, row after row.
+    regions: [u8]
+
+# Writes `dark` and `region` at module (`x`, `y`) of a symbol `size` wide.
+function set(@cells: [u8], @regions: [u8], size: i64, x: i64, y: i64, dark: bool, region: u8)
+    if dark
+        cells[y * size + x] @ 1
+    else
+        cells[y * size + x] @ 0
+    regions[y * size + x] @ region
+
+# The larger of the distances of `dx` and `dy` from zero.
+function reach(dx: i64, dy: i64) -> i64
+    ax: i64 @= dx
+    ay: i64 @= dy
+
+    if ax < 0
+        ax @ 0 - ax
+
+    if ay < 0
+        ay @ 0 - ay
+
+    if ax > ay
+        return ax
+    return ay
+
+# The function patterns of a symbol of `version`: timing, finders with their
+# separators, alignment patterns, the dark module, the version information
+# from version 7, and the format modules reserved light.
+function layout(version: i64) -> Layout
+    size = 17 + 4 * version
+    cells: [u8] @= []
+    regions: [u8] @= []
+
+    for _ in range(from: 0, to: size * size)
+        cells @ cells.push(0)
+        regions @ regions.push(0)
+
+    for i in range(from: 0, to: size)
+        set(cells: @cells, regions: @regions, size: size, x: i, y: 6, dark: i % 2 == 0, region: 2)
+        set(cells: @cells, regions: @regions, size: size, x: 6, y: i, dark: i % 2 == 0, region: 2)
+
+    for corner in [[3, 3], [size - 4, 3], [3, size - 4]]
+        for dy in range(from: -4, to: 5)
+            for dx in range(from: -4, to: 5)
+                x = corner[0] + dx
+                y = corner[1] + dy
+
+                if x >= 0 && x < size && y >= 0 && y < size
+                    distance = reach(dx: dx, dy: dy)
+                    set(
+                        cells: @cells,
+                        regions: @regions,
+                        size: size,
+                        x: x,
+                        y: y,
+                        dark: distance != 2 && distance != 4,
+                        region: 1
+                    )
+
+    positions = tables.alignment_positions(version)
+    last = positions.len() - 1
+
+    for i in range(from: 0, to: positions.len())
+        for j in range(from: 0, to: positions.len())
+            corner = i == 0 && j == 0 || i == 0 && j == last || i == last && j == 0
+
+            if !corner
+                for dy in range(from: -2, to: 3)
+                    for dx in range(from: -2, to: 3)
+                        set(
+                            cells: @cells,
+                            regions: @regions,
+                            size: size,
+                            x: positions[i] + dx,
+                            y: positions[j] + dy,
+                            dark: reach(dx: dx, dy: dy) != 1,
+                            region: 3
+                        )
+
+    for spot in format_spots(size)
+        set(cells: @cells, regions: @regions, size: size, x: spot % size, y: spot / size, dark: false, region: 4)
+
+    set(cells: @cells, regions: @regions, size: size, x: 8, y: size - 8, dark: true, region: 6)
+
+    if version >= 7
+        bits = version_bits(version)
+
+        for i in range(from: 0, to: 18)
+            dark = bits >> i & 1 == 1
+            a = size - 11 + i % 3
+            b = i / 3
+            set(cells: @cells, regions: @regions, size: size, x: a, y: b, dark: dark, region: 5)
+            set(cells: @cells, regions: @regions, size: size, x: b, y: a, dark: dark, region: 5)
+
+    return Layout(size: size, cells: cells, regions: regions)
+
+# The eighteen bits of version information of `version`: the version and
+# its BCH remainder by 0x1f25.
+function version_bits(version: i64) -> i64
+    rem: i64 @= version
+
+    for _ in range(from: 0, to: 12)
+        rem @ rem << 1 ^ (rem >> 11) * 0x1f25
+
+    return version << 12 | rem
+
+# The fifteen bits of format information of level index `level` and `mask`:
+# the level's two bits and the mask's three, their BCH remainder by 0x537,
+# the whole masked by 0x5412.
+function format_bits(level: i64, mask: i64) -> i64
+    data = [1, 0, 3, 2][level] << 3 | mask
+    rem: i64 @= data
+
+    for _ in range(from: 0, to: 10)
+        rem @ rem << 1 ^ (rem >> 9) * 0x537
+
+    return (data << 10 | rem) ^ 0x5412
+
+# Where the format bits stand, as `y * size + x`: bit `i` of the first copy
+# at index `i`, of the second at index `15 + i`.
+function format_spots(size: i64) -> [i64]
+    spots: [i64] @= []
+
+    for i in range(from: 0, to: 6)
+        spots @ spots.push(i * size + 8)
+
+    spots @ spots.push(7 * size + 8)
+    spots @ spots.push(8 * size + 8)
+    spots @ spots.push(8 * size + 7)
+
+    for i in range(from: 9, to: 15)
+        spots @ spots.push(8 * size + 14 - i)
+
+    for i in range(from: 0, to: 8)
+        spots @ spots.push(8 * size + size - 1 - i)
+
+    for i in range(from: 8, to: 15)
+        spots @ spots.push((size - 15 + i) * size + 8)
+
+    return spots
+
+# Writes the format information of level index `level` and `mask` into both
+# of its copies.
+function draw_format(@cells: [u8], size: i64, level: i64, mask: i64)
+    bits = format_bits(level: level, mask: mask)
+    spots = format_spots(size)
+
+    for i in range(from: 0, to: 30)
+        cells[spots[i]] @ to_u8(bits >> i % 15 & 1).must()
+
+# Places `words`, every codeword of the symbol, bit by bit from the highest,
+# in the modules `regions` leaves to data: two columns at a time from the
+# right, up and down in turn, column 6 skipped. The modules left over are the
+# remainder bits, light.
+function place(@cells: [u8], regions: [u8] lent, size: i64, words: [u8])
+    total = words.len() * 8
+    at: i64 @= 0
+    right: i64 @= size - 1
+
+    while right >= 1
+        if right == 6
+            right @ 5
+        upward = right + 1 & 2 == 0
+
+        for step in range(from: 0, to: size)
+            y: i64 @= step
+
+            if upward
+                y @ size - 1 - step
+
+            for j in [0, 1]
+                x = right - j
+
+                if regions[y * size + x] == 0 && at < total
+                    cells[y * size + x] @ to_u8(to_i64(words[at >> 3]).must() >> 7 - (at & 7) & 1).must()
+                    at @ at + 1
+
+        right @ right - 2
+
+# Whether mask `mask` inverts module (`x`, `y`), by the standard's eight
+# conditions.
+function masked(mask: i64, x: i64, y: i64) -> bool
+    if mask == 0
+        return (x + y) % 2 == 0
+
+    if mask == 1
+        return y % 2 == 0
+
+    if mask == 2
+        return x % 3 == 0
+
+    if mask == 3
+        return (x + y) % 3 == 0
+
+    if mask == 4
+        return (x / 3 + y / 2) % 2 == 0
+
+    if mask == 5
+        return x * y % 2 + x * y % 3 == 0
+
+    if mask == 6
+        return (x * y % 2 + x * y % 3) % 2 == 0
+    return ((x + y) % 2 + x * y % 3) % 2 == 0
+
+# Inverts every data module `mask` names; a second call undoes the first.
+function apply_mask(@cells: [u8], regions: [u8] lent, size: i64, mask: i64)
+    for y in range(from: 0, to: size)
+        for x in range(from: 0, to: size)
+            at = y * size + x
+
+            if regions[at] == 0 && masked(mask: mask, x: x, y: y)
+                cells[at] @ 1 - cells[at]
+
+## The penalty
+
+# The penalty of a symbol by the four rules of ISO/IEC 18004 § 7.8.3: runs,
+# blocks, finder-like patterns, and balance.
+function penalty(cells: [u8] lent, size: i64) -> i64
+    return runs_penalty(cells, size) + blocks_penalty(cells, size) + finder_penalty(cells, size) + balance_penalty(cells, size)
+
+# The module at (`x`, `y`), or at (`y`, `x`) where `across` is false, so one
+# walk reads rows and columns alike.
+function at_line(cells: [u8] lent, size: i64, line: i64, i: i64, across: bool) -> u8
+    if across
+        return cells[line * size + i]
+    return cells[i * size + line]
+
+# Rule 1: each run of five or more modules of one colour in a row or a
+# column scores 3, and 1 more for each module past five.
+function runs_penalty(cells: [u8] lent, size: i64) -> i64
+    score: i64 @= 0
+
+    for across in [true, false]
+        for line in range(from: 0, to: size)
+            run: i64 @= 1
+
+            for i in range(from: 1, to: size + 1)
+                if i < size && at_line(cells: cells, size: size, line: line, i: i, across: across) == at_line(cells: cells, size: size, line: line, i: i - 1, across: across)
+                    run @ run + 1
+                else
+                    if run >= 5
+                        score @ score + run - 2
+                    run @ 1
+
+    return score
+
+# Rule 2: each square of two by two modules of one colour scores 3, squares
+# that overlap counted each.
+function blocks_penalty(cells: [u8] lent, size: i64) -> i64
+    score: i64 @= 0
+
+    for y in range(from: 0, to: size - 1)
+        for x in range(from: 0, to: size - 1)
+            c = cells[y * size + x]
+
+            if cells[y * size + x + 1] == c && cells[(y + 1) * size + x] == c && cells[(y + 1) * size + x + 1] == c
+                score @ score + 3
+
+    return score
+
+# Rule 3: each pattern dark, light, three dark, light, dark with four light
+# modules before or after it, in a row or a column, scores 40: the eleven
+# modules `10111010000` or `00001011101` inside the symbol.
+function finder_penalty(cells: [u8] lent, size: i64) -> i64
+    after: [u8] = [1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0]
+    before: [u8] = [0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1]
+    score: i64 @= 0
+
+    for across in [true, false]
+        for line in range(from: 0, to: size)
+            for start in range(from: 0, to: size - 10)
+                first: bool @= true
+                second: bool @= true
+
+                for k in range(from: 0, to: 11)
+                    m = at_line(cells: cells, size: size, line: line, i: start + k, across: across)
+
+                    if m != after[k]
+                        first @ false
+
+                    if m != before[k]
+                        second @ false
+
+                if first
+                    score @ score + 40
+
+                if second
+                    score @ score + 40
+
+    return score
+
+# Rule 4: 10 for each full step of 5 % the dark modules stand from half.
+function balance_penalty(cells: [u8] lent, size: i64) -> i64
+    dark: i64 @= 0
+
+    for c in cells
+        dark @ dark + to_i64(c).must()
+
+    total = size * size
+    off: i64 @= dark * 20 - total * 10
+
+    if off < 0
+        off @ 0 - off
+    steps = (off + total - 1) / total - 1
+
+    if steps < 0
+        return 0
+    return steps * 10
+
+## Tests
+
+test "reach: the four quadrants and the axes"
+    assert reach(dx: 0, dy: 0) == 0
+    assert reach(dx: -3, dy: 2) == 3
+    assert reach(dx: 1, dy: -4) == 4
+
+test "format_bits: level M with mask 5, and level L with mask 0"
+    assert format_bits(level: 1, mask: 5) == 0x40ce
+    assert format_bits(level: 0, mask: 0) == 0x77c4
+
+test "version_bits: version 7 and version 40"
+    assert version_bits(7) == 0x07c94
+    assert version_bits(40) == 0x28c69
+
+test "format_spots: thirty places, all distinct, none on the timing lines' crossing"
+    spots = format_spots(21)
+    assert spots.len() == 30
+    seen: {i64: bool} @= {}
+
+    for s in spots
+        assert seen[s].is_err()
+        seen[s] @ true
+        assert s != 6 * 21 + 6
+
+test "masked: each of the eight at two modules"
+    assert masked(mask: 0, x: 0, y: 0) && !masked(mask: 0, x: 1, y: 0)
+    assert masked(mask: 1, x: 5, y: 0) && !masked(mask: 1, x: 0, y: 1)
+    assert masked(mask: 2, x: 3, y: 1) && !masked(mask: 2, x: 1, y: 1)
+    assert masked(mask: 3, x: 1, y: 2) && !masked(mask: 3, x: 1, y: 1)
+    assert masked(mask: 4, x: 2, y: 1) && !masked(mask: 4, x: 3, y: 0)
+    assert masked(mask: 5, x: 0, y: 7) && !masked(mask: 5, x: 1, y: 1)
+    assert masked(mask: 6, x: 1, y: 0) && !masked(mask: 6, x: 1, y: 3)
+    assert masked(mask: 7, x: 0, y: 0) && !masked(mask: 7, x: 1, y: 0)
+
+test "layout: version 1's patterns, and version 7's version information"
+    one = layout(1)
+    assert one.size == 21
+    assert one.cells[0] == 1 && one.regions[0] == 1
+    assert one.cells[1 * 21 + 1] == 0
+    assert one.cells[2 * 21 + 2] == 1
+    assert one.regions[7] == 1 && one.cells[7] == 0
+    assert one.regions[6 * 21 + 8] == 2 && one.cells[6 * 21 + 8] == 1
+    assert one.regions[6 * 21 + 9] == 2 && one.cells[6 * 21 + 9] == 0
+    assert one.regions[13 * 21 + 8] == 6 && one.cells[13 * 21 + 8] == 1
+    data: i64 @= 0
+
+    for r in one.regions
+        if r == 0
+            data @ data + 1
+
+    assert data == tables.raw_modules(1)
+    seven = layout(7)
+    count: i64 @= 0
+
+    for r in seven.regions
+        if r == 0
+            count @ count + 1
+
+    assert count == tables.raw_modules(7)
+    assert seven.regions[0 * seven.size + seven.size - 11] == 5
+
+test "penalty: a symbol of one colour, and the balance's steps"
+    light: [u8] @= []
+
+    for _ in range(from: 0, to: 21 * 21)
+        light @ light.push(0)
+
+    assert runs_penalty(light, 21) == 2 * 21 * 19
+    assert blocks_penalty(light, 21) == 3 * 20 * 20
+    assert finder_penalty(light, 21) == 0
+    assert balance_penalty(light, 21) == 90

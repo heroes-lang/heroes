@@ -1,0 +1,546 @@
+# What ISO/IEC 18004 fixes for each version and level: how many codewords a
+# symbol holds, how they are cut into blocks of error correction, where the
+# alignment patterns stand, and how wide a segment's count is.
+#
+# A level is an index here, 0 to 3 for L, M, Q and H, the order of the
+# tables; the face's `Level` turns into it at one place, `matrix`'s. The
+# block tables were held to Core Image's own symbols of every version and
+# level (the tests of `qr/internal/build`).
+
+# The error correction codewords of each block, by version (index 1 to 40,
+# index 0 unused) for level L.
+constant EC_L: [i64]
+    [
+        0
+        7
+        10
+        15
+        20
+        26
+        18
+        20
+        24
+        30
+        18
+        20
+        24
+        26
+        30
+        22
+        24
+        28
+        30
+        28
+        28
+        28
+        28
+        30
+        30
+        26
+        28
+        30
+        30
+        30
+        30
+        30
+        30
+        30
+        30
+        30
+        30
+        30
+        30
+        30
+        30
+    ]
+
+# The same for level M.
+constant EC_M: [i64]
+    [
+        0
+        10
+        16
+        26
+        18
+        24
+        16
+        18
+        22
+        22
+        26
+        30
+        22
+        22
+        24
+        24
+        28
+        28
+        26
+        26
+        26
+        26
+        28
+        28
+        28
+        28
+        28
+        28
+        28
+        28
+        28
+        28
+        28
+        28
+        28
+        28
+        28
+        28
+        28
+        28
+        28
+    ]
+
+# The same for level Q.
+constant EC_Q: [i64]
+    [
+        0
+        13
+        22
+        18
+        26
+        18
+        24
+        18
+        22
+        20
+        24
+        28
+        26
+        24
+        20
+        30
+        24
+        28
+        28
+        26
+        30
+        28
+        30
+        30
+        30
+        30
+        28
+        30
+        30
+        30
+        30
+        30
+        30
+        30
+        30
+        30
+        30
+        30
+        30
+        30
+        30
+    ]
+
+# The same for level H.
+constant EC_H: [i64]
+    [
+        0
+        17
+        28
+        22
+        16
+        22
+        28
+        26
+        26
+        24
+        28
+        24
+        28
+        22
+        24
+        24
+        30
+        28
+        28
+        26
+        28
+        30
+        24
+        30
+        30
+        30
+        30
+        30
+        30
+        30
+        30
+        30
+        30
+        30
+        30
+        30
+        30
+        30
+        30
+        30
+        30
+    ]
+
+# The blocks of error correction, by version, for level L.
+constant BLOCKS_L: [i64]
+    [
+        0
+        1
+        1
+        1
+        1
+        1
+        2
+        2
+        2
+        2
+        4
+        4
+        4
+        4
+        4
+        6
+        6
+        6
+        6
+        7
+        8
+        8
+        9
+        9
+        10
+        12
+        12
+        12
+        13
+        14
+        15
+        16
+        17
+        18
+        19
+        19
+        20
+        21
+        22
+        24
+        25
+    ]
+
+# The same for level M.
+constant BLOCKS_M: [i64]
+    [
+        0
+        1
+        1
+        1
+        2
+        2
+        4
+        4
+        4
+        5
+        5
+        5
+        8
+        9
+        9
+        10
+        10
+        11
+        13
+        14
+        16
+        17
+        17
+        18
+        20
+        21
+        23
+        25
+        26
+        28
+        29
+        31
+        33
+        35
+        37
+        38
+        40
+        43
+        45
+        47
+        49
+    ]
+
+# The same for level Q.
+constant BLOCKS_Q: [i64]
+    [
+        0
+        1
+        1
+        2
+        2
+        4
+        4
+        6
+        6
+        8
+        8
+        8
+        10
+        12
+        16
+        12
+        17
+        16
+        18
+        21
+        20
+        23
+        23
+        25
+        27
+        29
+        34
+        34
+        35
+        38
+        40
+        43
+        45
+        48
+        51
+        53
+        56
+        59
+        62
+        65
+        68
+    ]
+
+# The same for level H.
+constant BLOCKS_H: [i64]
+    [
+        0
+        1
+        1
+        2
+        4
+        4
+        4
+        5
+        6
+        8
+        8
+        11
+        11
+        16
+        16
+        18
+        16
+        19
+        21
+        25
+        25
+        25
+        34
+        30
+        32
+        35
+        37
+        40
+        42
+        45
+        48
+        51
+        54
+        57
+        60
+        63
+        66
+        70
+        74
+        77
+        81
+    ]
+
+# The error correction codewords of each block of a symbol of `version` at
+# level index `level`.
+function ec_per_block(version: i64, level: i64) -> i64
+    if level == 0
+        return EC_L[version]
+
+    if level == 1
+        return EC_M[version]
+
+    if level == 2
+        return EC_Q[version]
+    return EC_H[version]
+
+# How many blocks the codewords of a symbol of `version` at level index
+# `level` are cut into.
+function blocks_of(version: i64, level: i64) -> i64
+    if level == 0
+        return BLOCKS_L[version]
+
+    if level == 1
+        return BLOCKS_M[version]
+
+    if level == 2
+        return BLOCKS_Q[version]
+    return BLOCKS_H[version]
+
+# The modules of a symbol of `version` left for codewords and the remainder
+# bits once every function pattern and both copies of the format and version
+# information are placed.
+function raw_modules(version: i64) -> i64
+    total: i64 @= (16 * version + 128) * version + 64
+
+    if version >= 2
+        count = version / 7 + 2
+        total @ total - ((25 * count - 10) * count - 55)
+
+    if version >= 7
+        total @ total - 36
+    return total
+
+# The codewords of every kind a symbol of `version` holds.
+function total_codewords(version: i64) -> i64
+    return raw_modules(version) / 8
+
+# The data codewords of a symbol of `version` at level index `level`: the
+# total less the error correction of every block.
+function data_codewords(version: i64, level: i64) -> i64
+    return total_codewords(version) - ec_per_block(version: version, level: level) * blocks_of(version: version, level: level)
+
+# The rows and columns where the centres of the alignment patterns of
+# `version` stand, ascending; none for version 1.
+function alignment_positions(version: i64) -> [i64]
+    if version == 1
+        return []
+    count = version / 7 + 2
+    last = 17 + 4 * version - 7
+    step: i64 @= 26
+
+    if version != 32
+        step @ (version * 4 + count * 2 + 1) / (count * 2 - 2) * 2
+    positions: [i64] @= [6]
+    at: i64 @= last - (count - 2) * step
+
+    while at <= last
+        positions @ positions.push(at)
+        at @ at + step
+
+    return positions
+
+# The width in bits of a segment's character count for mode index `mode`
+# (0 numeric, 1 alphanumeric, 2 byte, 3 kanji) in a symbol of `version`.
+function count_bits(mode: i64, version: i64) -> i64
+    group: i64 @= 0
+
+    if version >= 27
+        group @ 2
+    else if version >= 10
+        group @ 1
+
+    if mode == 0
+        return 10 + 2 * group
+
+    if mode == 1
+        return 9 + 2 * group
+
+    if mode == 2
+        if group == 0
+            return 8
+        return 16
+    return 8 + 2 * group
+
+# How many characters of mode index `mode` one segment holds in a symbol of
+# `version` at level index `level`, its header counted.
+function capacity(version: i64, level: i64, mode: i64) -> i64
+    bits = data_codewords(version: version, level: level) * 8 - 4 - count_bits(mode: mode, version: version)
+
+    if bits < 0
+        return 0
+    most: i64 @= 0
+
+    if mode == 0
+        most @ bits / 10 * 3
+
+        if bits % 10 >= 7
+            most @ most + 2
+        else if bits % 10 >= 4
+            most @ most + 1
+    else if mode == 1
+        most @ bits / 11 * 2
+
+        if bits % 11 >= 6
+            most @ most + 1
+    else if mode == 2
+        most @ bits / 8
+    else
+        most @ bits / 13
+    limit = (1 << count_bits(mode: mode, version: version)) - 1
+
+    if most > limit
+        return limit
+    return most
+
+## Tests
+
+test "raw_modules and total_codewords: versions 1, 2, 7 and 40"
+    assert raw_modules(1) == 208
+    assert total_codewords(1) == 26
+    assert total_codewords(2) == 44
+    assert total_codewords(7) == 196
+    assert total_codewords(40) == 3706
+
+test "data_codewords: version 1 at each level, and version 40 at L and H"
+    assert data_codewords(version: 1, level: 0) == 19
+    assert data_codewords(version: 1, level: 1) == 16
+    assert data_codewords(version: 1, level: 2) == 13
+    assert data_codewords(version: 1, level: 3) == 9
+    assert data_codewords(version: 40, level: 0) == 2956
+    assert data_codewords(version: 40, level: 3) == 1276
+
+test "alignment_positions: none for 1, two for 2 and 6, the odd step of 32, and 40"
+    nothing: [i64] = []
+    assert alignment_positions(1) == nothing
+    assert alignment_positions(2) == [6, 18]
+    assert alignment_positions(7) == [6, 22, 38]
+    assert alignment_positions(32) == [6, 34, 60, 86, 112, 138]
+    assert alignment_positions(40) == [6, 30, 58, 86, 114, 142, 170]
+
+test "count_bits: each mode at the edges of the three groups"
+    assert count_bits(mode: 0, version: 1) == 10
+    assert count_bits(mode: 0, version: 9) == 10
+    assert count_bits(mode: 0, version: 10) == 12
+    assert count_bits(mode: 0, version: 27) == 14
+    assert count_bits(mode: 1, version: 26) == 11
+    assert count_bits(mode: 2, version: 9) == 8
+    assert count_bits(mode: 2, version: 10) == 16
+    assert count_bits(mode: 3, version: 40) == 12
+
+test "capacity: version 1 and 40, each mode, the smallest and largest levels"
+    assert capacity(version: 1, level: 0, mode: 0) == 41
+    assert capacity(version: 1, level: 0, mode: 1) == 25
+    assert capacity(version: 1, level: 0, mode: 2) == 17
+    assert capacity(version: 1, level: 0, mode: 3) == 10
+    assert capacity(version: 1, level: 3, mode: 0) == 17
+    assert capacity(version: 40, level: 0, mode: 0) == 7089
+    assert capacity(version: 40, level: 0, mode: 1) == 4296
+    assert capacity(version: 40, level: 0, mode: 2) == 2953
+    assert capacity(version: 40, level: 0, mode: 3) == 1817
+    assert capacity(version: 40, level: 3, mode: 2) == 1273

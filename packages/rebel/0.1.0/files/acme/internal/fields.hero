@@ -1,0 +1,93 @@
+# The members of an ACME server's JSON objects read: an object out of its
+# text, a member that must be a string, one that may be absent, a list of
+# strings, a flag, a number. The face's parsers build their records from
+# these.
+
+use acme/internal/codes
+use json
+
+# The object `text` writes, `what` naming it in a failure.
+function object(text: str, what: str) -> {str: json.Value}?
+    match json.parse(text)
+        .ok v =>
+            match json.members_of(v)
+                .ok m  => return ok(m)
+                .err _ => return fail(code: codes.INVALID, msg: f"{what} is not a JSON object")
+        .err e => return fail(code: codes.INVALID, msg: f"{what} is not JSON: {e.msg}")
+
+# The string member `key` of `members`; "" where it is absent or no string.
+function text_of(members: {str: json.Value}, key: str) -> str
+    match members[key]
+        .ok v  => return json.text_of(v).default("")
+        .err _ => return ""
+
+# The string member `key` of `members`, which must be there.
+function required(members: {str: json.Value}, key: str, what: str) -> str?
+    match members[key]
+        .ok v =>
+            match json.text_of(v)
+                .ok t  => return ok(t)
+                .err _ => return fail(code: codes.INVALID, msg: f"{what}'s \"{key}\" is not a string")
+        .err _ => return fail(code: codes.INVALID, msg: f"{what} has no \"{key}\"")
+
+# The strings of the list member `key`; empty where it is absent, its items
+# that are no strings left out.
+function texts(members: {str: json.Value}, key: str) -> [str]
+    out: [str] @= []
+
+    match members[key]
+        .ok v =>
+            for item in json.items_of(v).default([])
+                match json.text_of(item)
+                    .ok t  => out @ out.push(t)
+                    .err _ => _ = 0
+        .err _ => _ = 0
+
+    return out
+
+# The items of the list member `key`; empty where it is absent.
+function list(members: {str: json.Value}, key: str) -> [json.Value]
+    match members[key]
+        .ok v  => return json.items_of(v).default([])
+        .err _ => return []
+
+# The members of the object member `key`; empty where it is absent.
+function inner(members: {str: json.Value}, key: str) -> {str: json.Value}
+    match members[key]
+        .ok v  => return json.members_of(v).default({})
+        .err _ => return {}
+
+# The boolean member `key`; false where it is absent.
+function flag(members: {str: json.Value}, key: str) -> bool
+    match members[key]
+        .ok v  => return json.bool_of(v).default(false)
+        .err _ => return false
+
+# The integer member `key`; 0 where it is absent.
+function number(members: {str: json.Value}, key: str) -> i64
+    match members[key]
+        .ok v  => return json.int_of(v).default(0)
+        .err _ => return 0
+
+## Tests
+
+test "object, text, required, texts, flag, number: present, absent, and of another kind"
+    m = object(text: "{\"a\":\"x\",\"b\":[\"y\",1,\"z\"],\"c\":true,\"d\":7,\"e\":{\"f\":\"g\"}}", what: "it").must()
+    assert text_of(members: m, key: "a") == "x"
+    assert text_of(members: m, key: "zz") == ""
+    assert text_of(members: m, key: "d") == ""
+    assert required(members: m, key: "a", what: "it").must() == "x"
+
+    match required(members: m, key: "q", what: "the order")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "the order has no \"q\""
+
+    assert required(members: m, key: "c", what: "it").is_err()
+    assert texts(members: m, key: "b") == ["y", "z"]
+    assert texts(members: m, key: "none").len() == 0
+    assert list(members: m, key: "b").len() == 3
+    assert text_of(members: inner(members: m, key: "e"), key: "f") == "g"
+    assert flag(members: m, key: "c") && !flag(members: m, key: "a")
+    assert number(members: m, key: "d") == 7 && number(members: m, key: "a") == 0
+    assert object(text: "[]", what: "it").is_err()
+    assert object(text: "{", what: "it").is_err()

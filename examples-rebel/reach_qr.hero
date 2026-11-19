@@ -1,0 +1,25 @@
+# Reaches Rebel's `qr`, so that `heroes test` on this file runs the package's
+# own tests (spec § 12). It prints a link as a QR code for a terminal whose
+# ground is dark, half as tall as it is wide.
+
+use <rebel>/image
+use <rebel>/image/png
+use <rebel>/qr
+
+function main()
+    match qr.make(text: "https://heroes-lang.org", level: .medium)
+        .ok code => print(qr.to_compact_text(code: code, border: 2, invert: true))
+        .err e   => print(e.msg)
+
+# A code written as PNG by a program: `qr` gives the gray pixels, `image`
+# holds them and `image/png` writes them; read back, they are the same. The
+# PNG this makes was read by Core Image's detector on 2026-11-19.
+test "a code as PNG through image and image/png, read back"
+    code = qr.make(text: "https://heroes-lang.org", level: .medium).must()
+    side = (code.size + 8) * 4
+    pixels = qr.to_pixels(code: code, scale: 4, border: 4)
+    img = image.from_pixels(width: side, height: side, format: .gray, pixels: pixels).must()
+    data = png.encode(img: img, options: png.encoding()).must()
+    back = png.decode(data: data, options: png.decoding()).must()
+    assert back.image.width == side
+    assert back.image.pixels == pixels

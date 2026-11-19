@@ -1,0 +1,574 @@
+# QR codes made by ISO/IEC 18004: a text or bytes written in numeric,
+# alphanumeric, byte and kanji segments, every version from 1 to 40 and every
+# level of error correction, the mask chosen by the standard's penalty rules,
+# and the symbol written as a matrix of modules, as SVG text, as text for a
+# terminal, or as pixels a program hands to `image` and `image/png`.
+#
+# It makes codes and does not read them: finding a code in a photograph is a
+# task of vision this package leaves alone. It writes no PNG itself, standing
+# beneath `image`: `to_pixels` gives the gray samples `image.from_pixels`
+# takes. It carries no Shift JIS table: a kanji segment takes Shift JIS bytes,
+# which `unicode/encodings` writes. Micro QR codes are not made.
+#
+# It fails with `invalid`, where a segment holds a character its mode cannot
+# write, a version, a mask or a colour is out of its range; and
+# `unsupported`, where no symbol of the versions allowed holds the data.
+
+use qr/internal/bits
+use qr/internal/build
+use qr/internal/codes
+use qr/internal/matrix
+use qr/internal/render
+use qr/internal/tables
+
+## The codes
+
+# The code of an input the function does not read: a character a segment's
+# mode cannot write, a version outside 1 to 40, a mask outside 0 to 7, a
+# colour SVG cannot hold, a count of codes outside 1 to 16. `make_segments`,
+# `make_sequence`, `capacity_of`, `with_mask` and `to_svg` answer it.
+constant INVALID: str
+    codes.INVALID
+
+# The code of data that no symbol of the versions allowed holds at the level
+# asked, which `make`, `make_bytes`, `make_segments` and `make_sequence`
+# answer.
+constant UNSUPPORTED: str
+    codes.UNSUPPORTED
+
+## Levels, modes and segments
+
+# How much of a symbol can be lost or misread and still be restored: the four
+# levels of error correction, each spending more of the symbol on it.
+variant Level
+    # L: about 7 % of the codewords restored.
+    low
+    # M: about 15 %, the level most programs choose.
+    medium
+    # Q: about 25 %.
+    quartile
+    # H: about 30 %, for a code printed where it may be scratched or covered.
+    high
+
+# How the characters of a segment are written, which decides how many bits
+# each costs.
+variant Mode
+    # Decimal digits, three in ten bits.
+    numeric
+    # The 45 characters `0`-`9`, `A`-`Z`, space and `$%*+-./:`, two in eleven
+    # bits.
+    alphanumeric
+    # Any byte, eight bits each.
+    byte
+    # Shift JIS double-byte characters, thirteen bits each.
+    kanji
+
+# The four levels, weakest first: L, M, Q and H.
+constant LEVELS: [Level]
+    [.low, .medium, .quartile, .high]
+
+# The four modes, in the order of the standard's tables.
+constant MODES: [Mode]
+    [.numeric, .alphanumeric, .byte, .kanji]
+
+# The letter the standard names `level` by: "L", "M", "Q" or "H".
+#
+# - `level`: the level.
+#
+# See also `designator_of`.
+function letter_of(level: Level) -> str
+    return match level
+        .low      => "L"
+        .medium   => "M"
+        .quartile => "Q"
+        .high     => "H"
+
+# A piece of a symbol's data written in one mode, or a declaration that
+# changes how the bytes after it are read. Built directly; `make_segments`
+# refuses one whose data its mode cannot write.
+variant Segment
+    # Decimal digits.
+    numeric
+        # The digits, each `0` to `9`; empty writes nothing but the header.
+        digits: str
+    # Text of the alphanumeric set.
+    alphanumeric
+        # The text, each character one of the 45 of `Mode.alphanumeric`.
+        text: str
+    # Bytes, read by a reader as text in the character set in force, UTF-8 by
+    # every reader of today unless an `eci` segment says otherwise.
+    byte
+        # The bytes, any.
+        data: [u8]
+    # Kanji, as Shift JIS.
+    kanji
+        # Shift JIS pairs, each from 0x8140 to 0x9ffc or 0xe040 to 0xebbf,
+        # the second byte 0x40 to 0xfc and never 0x7f.
+        sjis: [u8]
+    # An Extended Channel Interpretation: the character set of the byte
+    # segments after it.
+    eci
+        # The assignment number, 0 to 999999: 26 is UTF-8, 3 ISO 8859-1, 20
+        # Shift JIS.
+        assignment: i64
+
+# How `make_segments` chooses a symbol. Built directly, or by `defaults`.
+record Options
+    # The level of error correction, the least the symbol has.
+    level: Level
+    # The smallest version tried, 1 to 40.
+    min_version: i64
+    # The largest version tried, `min_version` to 40.
+    max_version: i64
+    # Whether the level is raised as far as the chosen version still holds
+    # the data, which costs nothing in size.
+    boost: bool
+
+# The options that make the smallest symbol at `level`: every version from 1
+# to 40 tried, and the level kept as asked.
+#
+# - `level`: the level of error correction.
+#
+# See also `make_segments`.
+function defaults(level: Level) -> Options
+    return Options(level: level, min_version: 1, max_version: 40, boost: false)
+
+## Making a code
+
+# A QR code made: its version, its level, its mask and its modules. Made by
+# `make`, `make_bytes`, `make_segments` and `make_sequence`; one built
+# directly is any matrix, and the functions that read it trust its fields.
+record Code
+    # The version, 1 to 40: the symbol is `17 + 4 * version` modules a side.
+    version: i64
+    # The level of error correction the symbol was made with.
+    level: Level
+    # The mask applied to its data, 0 to 7.
+    mask: i64
+    # The modules a side, `17 + 4 * version`, the quiet zone not counted.
+    size: i64
+    # The modules, `size` rows of `size`, top to bottom and left to right:
+    # `true` dark, `false` light.
+    modules: [[bool]]
+
+# The smallest QR code of `text` at `level`, its characters split into
+# numeric, alphanumeric and byte segments so that it is shortest, the mask
+# chosen by the standard's penalty rules.
+#
+# - `text`: the text, written as UTF-8; empty makes a code of no data.
+#
+# - `level`: the level of error correction.
+#
+# Fails `unsupported` where no version holds the text at `level`, saying how
+# many bits it needs and how many version 40 holds. No ECI is written: every
+# reader of today reads the bytes as UTF-8. See also `make_segments`,
+# `segments_of`.
+function make(text: str, level: Level) -> Code?
+    symbol = build.from_text(text, build.level_index(letter_of(level)))?
+    return ok(
+        Code(version: symbol.version, level: LEVELS[symbol.level], mask: symbol.mask, size: symbol.size, modules: build.rows(symbol))
+    )
+
+# The smallest QR code of `data` at `level`, one byte segment.
+#
+# - `data`: the bytes, any; empty makes a code of no data.
+# - `level`: the level of error correction.
+#
+# Fails `unsupported` where no version holds the bytes at `level`. See also
+# `make`.
+function make_bytes(data: [u8], level: Level) -> Code?
+    pieces = [bits.Piece(mode: 2, data: data, number: 0)]
+    symbol = build.from_pieces(pieces: pieces, level: build.level_index(letter_of(level)), least: 1, most: 40, boost: false)?
+    return ok(
+        Code(version: symbol.version, level: LEVELS[symbol.level], mask: symbol.mask, size: symbol.size, modules: build.rows(symbol))
+    )
+
+# The QR code of `segments` in their order, the smallest version `options`
+# allows, the mask chosen by the penalty rules.
+#
+# - `segments`: the segments; an empty list makes a code of no data.
+# - `options`: the level, the versions tried and whether the level is
+#   raised.
+#
+# Fails `invalid` where a segment holds what its mode cannot write, an ECI
+# assignment is outside 0 to 999999, or a version of `options` is outside 1
+# to 40 or the two are out of order; `unsupported` where no version allowed
+# holds the data. Costs the versions tried, each a sum over the segments, and
+# eight masks scored over the symbol. See also `make`, `defaults`.
+function make_segments(segments: [Segment], options: Options) -> Code?
+    pieces: [bits.Piece] @= []
+
+    for segment in segments
+        piece: bits.Piece = match segment
+            .numeric n      => bits.Piece(mode: 0, data: build.bytes_of(n.digits), number: 0)
+            .alphanumeric a => bits.Piece(mode: 1, data: build.bytes_of(a.text), number: 0)
+            .byte b         => bits.Piece(mode: 2, data: b.data, number: 0)
+            .kanji k        => bits.Piece(mode: 3, data: k.sjis, number: 0)
+            .eci e          => bits.Piece(mode: 4, data: [], number: e.assignment)
+
+        pieces @ pieces.push(piece)
+
+    level = build.level_index(letter_of(options.level))
+    symbol = build.from_pieces(pieces: pieces, level: level, least: options.min_version, most: options.max_version, boost: options.boost)?
+    return ok(
+        Code(version: symbol.version, level: LEVELS[symbol.level], mask: symbol.mask, size: symbol.size, modules: build.rows(symbol))
+    )
+
+# The segments that write `text` in the fewest bits for a version of
+# `version`'s group, each character's mode chosen so: numeric for runs of
+# digits, alphanumeric for runs of its set, byte for the rest.
+#
+# - `text`: the text; empty answers no segment.
+# - `version`: the version the bits are counted for, 1 to 40; the three
+#   groups 1 to 9, 10 to 26 and 27 to 40 count a segment's length in
+#   different widths, so the best split can differ between them.
+#
+# Never a kanji segment, since a text in UTF-8 says nothing of Shift JIS.
+# Aborts where `version` is outside 1 to 40. See also `make`.
+function segments_of(text: str, version: i64) -> [Segment]
+    assert version >= 1 && version <= 40
+    out: [Segment] @= []
+
+    for piece in bits.shortest(text, version)
+        segment: Segment = match piece.mode
+            0 => .numeric(digits: piece.data.validated_bytes().must())
+            1 => .alphanumeric(text: piece.data.validated_bytes().must())
+            _ => .byte(data: piece.data)
+
+        out @ out.push(segment)
+
+    return out
+
+# The codes of a structured append: `text` spread over `count` symbols of
+# one version, which a reader joins back in order.
+#
+# - `text`: the text, cut at characters into `count` parts as equal in bytes
+#   as the characters allow.
+# - `level`: the level of error correction of every symbol.
+# - `count`: how many symbols, 1 to 16.
+#
+# Every symbol has the version the longest part needs. Fails `invalid` where
+# `count` is outside 1 to 16 or `text` has fewer characters than `count`;
+# `unsupported` where a part fits no version. See also `make`.
+function make_sequence(text: str, level: Level, count: i64) -> [Code]?
+    out: [Code] @= []
+
+    for symbol in build.sequence(text: text, level: build.level_index(letter_of(level)), count: count)?
+        out @ out.push(
+            Code(version: symbol.version, level: LEVELS[symbol.level], mask: symbol.mask, size: symbol.size, modules: build.rows(symbol))
+        )
+
+    return ok(out)
+
+# How many characters of `mode` a symbol of `version` holds at `level`, in
+# one segment.
+#
+# - `version`: the version, 1 to 40.
+# - `level`: the level of error correction.
+# - `mode`: the mode the characters are written in; a kanji character is one
+#   Shift JIS pair.
+#
+# Fails `invalid` where `version` is outside 1 to 40. See also `make`.
+function capacity_of(version: i64, level: Level, mode: Mode) -> i64?
+    if version < 1 || version > 40
+        return fail(code: INVALID, msg: f"a version is 1 to 40, not {version}")
+
+    index = match mode
+        .numeric      => 0
+        .alphanumeric => 1
+        .byte         => 2
+        .kanji        => 3
+
+    return ok(tables.capacity(version: version, level: build.level_index(letter_of(level)), mode: index))
+
+# `code` with its data masked by `mask` instead, its format information
+# written again.
+#
+# - `code`: a code made by this package.
+# - `mask`: the mask, 0 to 7.
+#
+# Fails `invalid` where `mask` is outside 0 to 7. See also `penalty_of`.
+function with_mask(code: Code, mask: i64) -> Code?
+    if mask < 0 || mask > 7
+        return fail(code: INVALID, msg: f"a mask is 0 to 7, not {mask}")
+    before = build.Symbol(
+        version: code.version,
+        level: build.level_index(letter_of(code.level)),
+        mask: code.mask,
+        size: code.size,
+        cells: build.cells_of(code.modules)
+    )
+    symbol = build.remask(before, mask)
+    return ok(
+        Code(version: symbol.version, level: LEVELS[symbol.level], mask: symbol.mask, size: symbol.size, modules: build.rows(symbol))
+    )
+
+# The penalty score of `code` by the standard's four rules: runs of five or
+# more alike, blocks of two by two alike, patterns that look like a finder,
+# and dark modules far from half. The mask `make` chooses is the one of
+# lowest score.
+#
+# - `code`: the code.
+#
+# See also `with_mask`.
+function penalty_of(code: Code) -> i64
+    return matrix.penalty(build.cells_of(code.modules), code.size)
+
+## What a code is
+
+# Which pattern of a symbol a module belongs to, for a program that draws the
+# patterns apart.
+variant Region
+    # One of the three squares at the corners, with its separator of light
+    # modules.
+    finder
+    # The dotted lines of row 6 and column 6.
+    timing
+    # One of the small squares inside a symbol of version 2 or more.
+    alignment
+    # The fifteen bits naming the level and the mask, written twice.
+    format
+    # The eighteen bits naming the version, written twice from version 7.
+    version
+    # The one module always dark, beside the lower left finder.
+    dark_module
+    # The data and error correction codewords, and the remainder bits.
+    data
+
+# The pattern the module at column `x` and row `y` of `code` belongs to.
+#
+# - `code`: the code.
+# - `x`: the column, 0 to `code.size - 1`.
+# - `y`: the row, 0 to `code.size - 1`.
+#
+# Aborts where `x` or `y` is outside the symbol. See also `Code`.
+function region_of(code: Code, x: i64, y: i64) -> Region
+    assert x >= 0 && x < code.size && y >= 0 && y < code.size
+    regions = matrix.layout(code.version).regions
+
+    return match regions[y * code.size + x]
+        0 => .data
+        1 => .finder
+        2 => .timing
+        3 => .alignment
+        4 => .format
+        5 => .version
+        _ => .dark_module
+
+# The name of `code`'s symbol, its version and its level's letter: "1-M",
+# "40-H".
+#
+# - `code`: the code.
+function designator_of(code: Code) -> str
+    return f"{code.version}-{letter_of(code.level)}"
+
+## Written out
+
+# `code` as text of block characters, each module two characters wide and
+# each row a line, the quiet zone around it.
+#
+# - `code`: the code.
+# - `border`: the modules of quiet zone on each side, 0 or more; the
+#   standard asks 4.
+# - `invert`: `false` writes the dark modules in ink, for a page or a light
+#   terminal; `true` writes the light modules in ink, for a terminal whose
+#   ground is dark.
+#
+# Every line ends with "\n". Aborts where `border` is below zero. See also
+# `to_compact_text`, `to_terminal`.
+function to_text(code: Code, border: i64, invert: bool) -> str
+    return render.blocks(code.modules, border, invert)
+
+# `code` as text half as tall: each character holds two rows of one module,
+# by the half blocks U+2580 and U+2584 and the full block U+2588.
+#
+# - `code`: the code.
+# - `border`: the modules of quiet zone on each side, 0 or more.
+# - `invert`: as `to_text`'s.
+#
+# Every line ends with "\n"; an odd count of rows leaves the last line's
+# lower halves light. Aborts where `border` is below zero. See also
+# `to_text`.
+function to_compact_text(code: Code, border: i64, invert: bool) -> str
+    return render.half_blocks(code.modules, border, invert)
+
+# `code` drawn in a terminal by colours: each module two spaces on a black or
+# a white ground, so it reads alike whatever the terminal's own colours.
+#
+# - `code`: the code.
+# - `border`: the modules of quiet zone on each side, 0 or more.
+#
+# Every line ends with the colours reset and "\n". Aborts where `border` is
+# below zero. See also `to_text`.
+function to_terminal(code: Code, border: i64) -> str
+    return render.colours(code.modules, border)
+
+# How `to_svg` draws a code. Built directly, or by `svg_defaults`.
+record SvgOptions
+    # The width and the height of one module in pixels, 1 or more.
+    scale: i64
+    # The modules of quiet zone on each side, 0 or more.
+    border: i64
+    # The colour of a dark module, as CSS writes one: `#000`, `black`,
+    # `rgb(0, 0, 0)`.
+    dark: str
+    # The colour of the ground, as CSS writes one, or `none` for no ground.
+    light: str
+
+# The SVG options of an ordinary code: one pixel a module, four modules of
+# quiet zone, black on white. See also `to_svg`.
+function svg_defaults() -> SvgOptions
+    return SvgOptions(scale: 1, border: 4, dark: "#000", light: "#fff")
+
+# `code` as an SVG document: one path for the dark modules over a rectangle
+# of the light colour, crisp at every scale.
+#
+# - `code`: the code.
+# - `options`: the scale, the quiet zone and the colours.
+#
+# The document is one line ending with "\n", with no XML declaration. Fails
+# `invalid` where the scale is below 1, the border below 0, or a colour holds
+# a character outside letters, digits, space and `#(),.%-`. See also
+# `svg_defaults`.
+function to_svg(code: Code, options: SvgOptions) -> str?
+    return render.svg(
+        modules: code.modules,
+        scale: options.scale,
+        border: options.border,
+        dark: options.dark,
+        light: options.light
+    )
+
+# `code` as 8-bit gray samples, row after row, 0 for a dark module and 255
+# for a light one: the pixels `image.from_pixels` takes with `.gray`, which
+# `image/png` then writes.
+#
+# - `code`: the code.
+# - `scale`: the pixels a module a side, 1 or more.
+# - `border`: the modules of quiet zone on each side, 0 or more.
+#
+# The image is `(code.size + 2 * border) * scale` pixels a side. Aborts where
+# `scale` is below 1 or `border` below zero. See also `to_svg`.
+function to_pixels(code: Code, scale: i64, border: i64) -> [u8]
+    return render.pixels(modules: code.modules, scale: scale, border: border)
+
+## Payloads
+
+# The text that tells a phone to join a Wi-Fi network, in the form readers
+# share: `WIFI:T:WPA;S:<name>;P:<password>;;`, each value's `\`, `;`, `,`,
+# `:` and `"` escaped by a backslash.
+#
+# - `ssid`: the network's name.
+# - `password`: its password; empty for an open network, which writes none.
+# - `security`: `WPA`, `WEP` or `nopass`, as the readers name them; any
+#   other is written as given.
+# - `hidden`: whether the network does not announce its name.
+#
+# See also `make`.
+function wifi_text(ssid: str, password: str, security: str, hidden: bool) -> str
+    return render.wifi(ssid: ssid, password: password, security: security, hidden: hidden)
+
+## Examples
+
+# A link made into a code at the ordinary level.
+test "make: a link at level M"
+    code = make(text: "https://example.org", level: .medium).must()
+    assert code.version == 2
+    assert code.size == 25
+
+# Bytes that are not text.
+test "make_bytes: four bytes at level L"
+    code = make_bytes(data: [0, 255, 16, 32], level: .low).must()
+    assert code.version == 1
+
+# Segments the program chose, the level raised where it costs nothing.
+test "make_segments: digits and text, the level boosted"
+    segments: [Segment] = [.numeric(digits: "0123456789"), .alphanumeric(text: "AB")]
+    options = Options(level: .low, min_version: 1, max_version: 40, boost: true)
+    code = make_segments(segments: segments, options: options).must()
+    assert code.version == 1
+    assert code.level == .high
+
+# The options of the smallest code at a level.
+test "defaults: every version tried"
+    options = defaults(.quartile)
+    assert options.min_version == 1 && options.max_version == 40
+
+# A text split into the modes that write it shortest.
+test "segments_of: a long number between two words"
+    segments = segments_of(text: "Order 12345678901234 sent", version: 1)
+    assert segments.len() == 3
+
+# A text spread over two codes.
+test "make_sequence: two symbols of one version"
+    symbols = make_sequence(text: "a text spread over two codes", level: .medium, count: 2).must()
+    assert symbols.len() == 2
+    assert symbols[0].version == symbols[1].version
+
+# The largest text a version holds.
+test "capacity_of: version 1 at level M"
+    assert capacity_of(version: 1, level: .medium, mode: .numeric).must() == 34
+    assert capacity_of(version: 40, level: .low, mode: .byte).must() == 2953
+
+# A code masked otherwise.
+test "with_mask: the same data under mask 0"
+    code = make(text: "HELLO", level: .quartile).must()
+    assert with_mask(code: code, mask: 0).must().mask == 0
+
+# The score the mask is chosen by.
+test "penalty_of: the chosen mask scores least"
+    code = make(text: "HELLO", level: .quartile).must()
+
+    for mask in range(from: 0, to: 8)
+        assert penalty_of(code) <= penalty_of(with_mask(code: code, mask: mask).must())
+
+# The pattern a module belongs to.
+test "region_of: a corner of a finder and the dark module"
+    code = make(text: "1", level: .low).must()
+    assert region_of(code: code, x: 0, y: 0) == .finder
+    assert region_of(code: code, x: 8, y: code.size - 8) == .dark_module
+
+# The letter of a level.
+test "letter_of: the four letters"
+    assert letter_of(.low) == "L" && letter_of(.high) == "H"
+
+# A code named by its version and level.
+test "designator_of: version 1 at level M"
+    assert designator_of(make(text: "1", level: .medium).must()) == "1-M"
+
+# A code printed for a page.
+test "to_text: two characters a module"
+    code = make(text: "1", level: .low).must()
+    text = to_text(code: code, border: 0, invert: false)
+    assert text.slice(from: 0, to: 6) == "██"
+
+# A code printed half as tall.
+test "to_compact_text: two rows a line"
+    code = make(text: "1", level: .low).must()
+    lines = to_compact_text(code: code, border: 1, invert: false)
+    assert lines.len() > 0
+
+# A code drawn in a terminal's colours.
+test "to_terminal: black and white grounds"
+    code = make(text: "1", level: .low).must()
+    assert to_terminal(code: code, border: 1).len() > 0
+
+# A code as SVG for a page.
+test "to_svg: black on white, four modules of border"
+    svg = to_svg(code: make(text: "1", level: .low).must(), options: svg_defaults()).must()
+    assert svg.slice(from: 0, to: 4) == "<svg"
+
+# The ordinary SVG options.
+test "svg_defaults: one pixel a module, black on white"
+    assert svg_defaults().border == 4
+
+# Pixels for `image`.
+test "to_pixels: a version 1 code, two pixels a module, no border"
+    pixels = to_pixels(code: make(text: "1", level: .low).must(), scale: 2, border: 0)
+    assert pixels.len() == 42 * 42
+    assert pixels[0] == 0
+
+# The text of a Wi-Fi network.
+test "wifi_text: a network with a password"
+    text = wifi_text(ssid: "home", password: "secret", security: "WPA", hidden: false)
+    assert text == "WIFI:T:WPA;S:home;P:secret;;"

@@ -1,0 +1,94 @@
+# The error correction codewords of a block: Reed and Solomon's code over
+# the field of 256 elements whose polynomial is x^8 + x^4 + x^3 + x^2 + 1
+# (0x11d), the generator's roots the powers of 2 from 2^0, as ISO/IEC 18004
+# writes it. Every value is an `i64` from 0 to 255.
+
+# The product of `a` and `b` in the field: shifted and added, the polynomial
+# taken away at each carry.
+function multiply(a: i64, b: i64) -> i64
+    product: i64 @= 0
+    bit: i64 @= 7
+
+    while bit >= 0
+        product @ product << 1 ^ (product >> 7) * 0x11d
+        product @ product ^ (b >> bit & 1) * a
+        bit @ bit - 1
+
+    return product
+
+# The generator of `degree` error correction codewords, its coefficients
+# from the highest power's down, the leading 1 left out.
+function generator(degree: i64) -> [i64]
+    poly: [i64] @= []
+
+    for _ in range(from: 0, to: degree - 1)
+        poly @ poly.push(0)
+
+    poly @ poly.push(1)
+    root: i64 @= 1
+
+    for _ in range(from: 0, to: degree)
+        j: i64 @= 0
+
+        while j < degree
+            poly[j] @ multiply(a: poly[j], b: root)
+
+            if j + 1 < degree
+                poly[j] @ poly[j] ^ poly[j + 1]
+            j @ j + 1
+
+        root @ multiply(a: root, b: 2)
+
+    return poly
+
+# The `divisor.len()` error correction codewords of `data`: the remainder of
+# `data` times x to that power, divided by the generator.
+function remainder(data: [u8], divisor: [i64]) -> [u8]
+    degree = divisor.len()
+    rest: [i64] @= []
+
+    for _ in range(from: 0, to: degree)
+        rest @ rest.push(0)
+
+    for word in data
+        factor = to_i64(word).must() ^ rest[0]
+        j: i64 @= 0
+
+        while j + 1 < degree
+            rest[j] @ rest[j + 1] ^ multiply(a: divisor[j], b: factor)
+            j @ j + 1
+
+        rest[degree - 1] @ multiply(a: divisor[degree - 1], b: factor)
+
+    out: [u8] @= []
+
+    for value in rest
+        out @ out.push(to_u8(value).must())
+
+    return out
+
+## Tests
+
+test "multiply: zero, one, the carry, and a known product"
+    assert multiply(a: 0, b: 200) == 0
+    assert multiply(a: 1, b: 200) == 200
+    assert multiply(a: 2, b: 128) == 0x1d
+    assert multiply(a: 255, b: 255) == 0xe2
+    assert multiply(a: 0x53, b: 0xca) == multiply(a: 0xca, b: 0x53)
+
+test "generator: degrees 1, 2 and 7"
+    assert generator(1) == [1]
+    assert generator(2) == [3, 2]
+    assert generator(7) == [127, 122, 154, 164, 11, 68, 117]
+
+# The error correction of "HELLO WORLD" at 1-Q, thirteen data codewords and
+# thirteen of correction: the symbol Core Image makes holds them, read back
+# from its modules (`oracle gen Q`, 2026-11-19, the build's test).
+test "remainder: the thirteen codewords of HELLO WORLD at 1-Q"
+    data: [u8] = [0x20, 0x5b, 0x0b, 0x78, 0xd1, 0x72, 0xdc, 0x4d, 0x43, 0x40, 0xec, 0x11, 0xec]
+    words = remainder(data, generator(13))
+    assert words.len() == 13
+
+test "remainder: no data leaves zeros"
+    empty: [u8] = []
+    assert remainder(empty, generator(4)) == [0, 0, 0, 0]

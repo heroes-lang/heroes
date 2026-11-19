@@ -1,0 +1,187 @@
+# The options of the two ceremonies written as JSON, in the shapes Web
+# Authentication Level 3 names `PublicKeyCredentialCreationOptionsJSON` and
+# `PublicKeyCredentialRequestOptionsJSON` (§ 5.1.8 and § 5.1.9): every byte
+# string in base 64 for URLs without padding, the members in the order the
+# specification lists them, those left at their default left out.
+
+use bytes
+use json
+use webauthn/internal/codes
+
+# A credential named in the options, made plain.
+record Named
+    # The credential ID.
+    id: [u8]
+    # Its transports.
+    transports: [str]
+
+# The options of a registration made plain: every choice as the word the
+# JSON writes, `attachment` empty where any is allowed.
+record Creation
+    # The RP ID.
+    rp_id: str
+    # The RP's name.
+    rp_name: str
+    # The user handle.
+    user_id: [u8]
+    # The account's name.
+    user_name: str
+    # The name shown.
+    display_name: str
+    # The challenge.
+    challenge: [u8]
+    # Milliseconds.
+    timeout_ms: i64
+    # COSE algorithms.
+    algorithms: [i64]
+    # Credentials excluded.
+    exclude: [Named]
+    # "none", "indirect", "direct" or "enterprise".
+    attestation: str
+    # "platform", "cross-platform", or empty.
+    attachment: str
+    # "required", "preferred" or "discouraged".
+    resident_key: str
+    # The same three.
+    user_verification: str
+    # "security-key", "client-device", "hybrid".
+    hints: [str]
+
+# `named` as JSON descriptors.
+function descriptors(named: [Named]) -> json.Value
+    out: [json.Value] @= []
+
+    for n in named
+        members: {str: json.Value} @= {
+            "type": .text(v: "public-key")
+            "id": .text(v: bytes.format_base64_url_unpadded(n.id))
+        }
+
+        if n.transports.len() > 0
+            list: [json.Value] @= []
+
+            for t in n.transports
+                list @ list.push(.text(v: t))
+
+            members["transports"] @ .list(items: list)
+        out @ out.push(.object(members: members))
+
+    return .list(items: out)
+
+# `words` as a JSON array of strings.
+function texts(words: [str]) -> json.Value
+    out: [json.Value] @= []
+
+    for w in words
+        out @ out.push(.text(v: w))
+
+    return .list(items: out)
+
+# The JSON of a registration's options `c`.
+function creation(c: Creation) -> str?
+    if c.user_id.len() == 0 || c.user_id.len() > 64
+        return fail(code: codes.INVALID, msg: f"a user handle is 1 to 64 bytes, not {c.user_id.len()}")
+
+    if c.challenge.len() < 16
+        return fail(code: codes.INVALID, msg: f"a challenge is 16 bytes or more, not {c.challenge.len()}")
+
+    if c.algorithms.len() == 0
+        return fail(code: codes.INVALID, msg: "a registration's options name no algorithm")
+    params: [json.Value] @= []
+
+    for alg in c.algorithms
+        params @ params.push(.object(members: {"type": .text(v: "public-key"), "alg": .number(v: to_f64(alg))}))
+
+    selection: {str: json.Value} @= {}
+
+    if c.attachment.len() > 0
+        selection["authenticatorAttachment"] @ .text(v: c.attachment)
+    selection["residentKey"] @ .text(v: c.resident_key)
+    selection["requireResidentKey"] @ .boolean(v: c.resident_key == "required")
+    selection["userVerification"] @ .text(v: c.user_verification)
+    members: {str: json.Value} @= {
+        "rp": .object(members: {"name": .text(v: c.rp_name), "id": .text(v: c.rp_id)})
+        "user": .object(members: {"id": .text(v: bytes.format_base64_url_unpadded(c.user_id)), "name": .text(v: c.user_name), "displayName": .text(v: c.display_name)})
+        "challenge": .text(v: bytes.format_base64_url_unpadded(c.challenge))
+        "pubKeyCredParams": .list(items: params)
+        "timeout": .number(v: to_f64(c.timeout_ms))
+    }
+
+    if c.exclude.len() > 0
+        members["excludeCredentials"] @ descriptors(c.exclude)
+    members["authenticatorSelection"] @ .object(members: selection)
+
+    if c.hints.len() > 0
+        members["hints"] @ texts(c.hints)
+    members["attestation"] @ .text(v: c.attestation)
+    members["extensions"] @ .object(members: {"credProps": .boolean(v: true)})
+    return json.format(.object(members: members))
+
+# The JSON of an authentication's options.
+function request(rp_id: str, challenge: [u8], timeout_ms: i64, allow: [Named], user_verification: str, hints: [str]) -> str?
+    if challenge.len() < 16
+        return fail(code: codes.INVALID, msg: f"a challenge is 16 bytes or more, not {challenge.len()}")
+    members: {str: json.Value} @= {
+        "challenge": .text(v: bytes.format_base64_url_unpadded(challenge))
+        "timeout": .number(v: to_f64(timeout_ms))
+        "rpId": .text(v: rp_id)
+    }
+
+    if allow.len() > 0
+        members["allowCredentials"] @ descriptors(allow)
+    members["userVerification"] @ .text(v: user_verification)
+
+    if hints.len() > 0
+        members["hints"] @ texts(hints)
+    return json.format(.object(members: members))
+
+## Tests
+
+test "creation: the JSON a browser parses, and the refusals"
+    nothing: [Named] = []
+    none: [str] = []
+    c = Creation(
+        rp_id: "example.org",
+        rp_name: "Example",
+        user_id: [1, 2, 3],
+        user_name: "ada",
+        display_name: "Ada",
+        challenge: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        timeout_ms: 60000,
+        algorithms: [-7, -257],
+        exclude: [Named(id: [9], transports: ["usb"])],
+        attestation: "none",
+        attachment: "",
+        resident_key: "preferred",
+        user_verification: "preferred",
+        hints: none
+    )
+    text = creation(c).must()
+    assert text == "{\"rp\":{\"name\":\"Example\",\"id\":\"example.org\"},\"user\":{\"id\":\"AQID\",\"name\":\"ada\",\"displayName\":\"Ada\"},\"challenge\":\"AAAAAAAAAAAAAAAAAAAAAA\",\"pubKeyCredParams\":[{\"type\":\"public-key\",\"alg\":-7},{\"type\":\"public-key\",\"alg\":-257}],\"timeout\":60000,\"excludeCredentials\":[{\"type\":\"public-key\",\"id\":\"CQ\",\"transports\":[\"usb\"]}],\"authenticatorSelection\":{\"residentKey\":\"preferred\",\"requireResidentKey\":false,\"userVerification\":\"preferred\"},\"attestation\":\"none\",\"extensions\":{\"credProps\":true}}"
+    empty: [u8] = []
+    assert creation(
+        Creation(rp_id: "a", rp_name: "a", user_id: empty, user_name: "a", display_name: "a", challenge: c.challenge, timeout_ms: 1, algorithms: [-7], exclude: nothing, attestation: "none", attachment: "", resident_key: "preferred", user_verification: "preferred", hints: none)
+    ).is_err()
+    assert creation(
+        Creation(rp_id: "a", rp_name: "a", user_id: [1], user_name: "a", display_name: "a", challenge: [1], timeout_ms: 1, algorithms: [-7], exclude: nothing, attestation: "none", attachment: "", resident_key: "preferred", user_verification: "preferred", hints: none)
+    ).is_err()
+
+test "request: the JSON a browser parses, allowed credentials and hints"
+    text = request(
+        rp_id: "example.org",
+        challenge: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        timeout_ms: 60000,
+        allow: [Named(id: [1, 2], transports: [])],
+        user_verification: "required",
+        hints: ["security-key"]
+    ).must()
+    assert text == "{\"challenge\":\"AAAAAAAAAAAAAAAAAAAAAA\",\"timeout\":60000,\"rpId\":\"example.org\",\"allowCredentials\":[{\"type\":\"public-key\",\"id\":\"AQI\"}],\"userVerification\":\"required\",\"hints\":[\"security-key\"]}"
+    none: [Named] = []
+    assert request(
+        rp_id: "a",
+        challenge: [1, 2],
+        timeout_ms: 1,
+        allow: none,
+        user_verification: "preferred",
+        hints: []
+    ).is_err()

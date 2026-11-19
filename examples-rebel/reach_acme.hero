@@ -1,0 +1,168 @@
+# Reaches Rebel's `acme`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It reads the directory of the ACME server
+# whose URL `ACME_DIRECTORY` names, trusting the authority whose PEM file
+# `ACME_ROOTS` names where it is set, and prints its terms of service; with
+# no `ACME_DIRECTORY`, or nothing answering, it says it skipped.
+#
+# Its test runs a whole ceremony against that server, Pebble in the tests of
+# 2026-11-19: `ACME_DIRECTORY` and `ACME_ROOTS` as above, `ACME_CHALLTEST`
+# the management URL of the challenge server Pebble resolves names through
+# (it publishes the DNS-01 record), and port 5002 of this machine, where the
+# test serves the HTTP-01 answer Pebble fetches.
+
+use <rebel>/acme
+use <rebel>/bytes
+use <rebel>/http
+use <rebel>/jose
+use <rebel>/json
+use <rebel>/net
+use <rebel>/os
+use <rebel>/pem
+use <rebel>/process
+
+function main()
+    match os.env("ACME_DIRECTORY")
+        .err _ => print("skipped: ACME_DIRECTORY is not set")
+        .ok directory =>
+            match acme.connect(directory_url: directory, key: jose.generate_key(.p256).must(), transport: transport())
+                .ok client => print(f"terms of service: {client.directory.terms_of_service}")
+                .err e     => print(f"skipped: nothing answers at {directory}: {e.msg}")
+
+# A client that trusts the authority `ACME_ROOTS` names.
+function transport() -> http.Client
+    c @= http.default_client()
+
+    match os.env("ACME_ROOTS")
+        .ok path => c.roots @ read_file(path).default("")
+        .err _   => _ = 0
+
+    return c
+
+# The HTTP-01 answer `body` served at its path; anything else not found.
+function answer(body: str, r: http.Request) -> http.Response
+    if r.url.path.len() > 28 && r.url.path.slice(from: 0, to: 28) == "/.well-known/acme-challenge/"
+        return http.respond_text(status: 200, text: body)
+    return http.respond_status(404)
+
+# The TXT record `value` published under `name` at the challenge server.
+function publish(name: str, value: str) -> ()?
+    target = os.env("ACME_CHALLTEST").default("http://127.0.0.1:8055") + "/set-txt"
+    body = json.format(.object(members: {"host": .text(v: name + "."), "value": .text(v: value)}))?
+    request = http.with_body(
+        r: http.request(method: "POST", target: target)?,
+        content_type: "application/json",
+        body: bytes.from_text(body)
+    )
+    _ = http.require_success(http.send(c: http.default_client(), r: request)?)?
+    return ok()
+
+# A certificate request for `names`, its DER, made by OpenSSL with a P-256
+# key thrown away: `x509` reads requests and does not yet write them.
+function request_for(names: [str]) -> [u8]?
+    alt: [str] @= []
+
+    for n in names
+        alt @ alt.push("DNS:" + n)
+
+    arguments = [
+        "req"
+        "-new"
+        "-newkey"
+        "ec"
+        "-pkeyopt"
+        "ec_paramgen_curve:P-256"
+        "-nodes"
+        "-keyout"
+        "/dev/null"
+        "-subj"
+        "/CN=" + names[0]
+        "-addext"
+        "subjectAltName=" + alt.join(",")
+        "-outform"
+        "DER"
+    ]
+    command = process.with_error(
+        c: process.with_output(c: process.command(program: "openssl", arguments: arguments), to: .pipe),
+        to: .pipe
+    )
+    finished = process.run(command)?
+    return ok(finished.output)
+
+# The whole ceremony against the server at `directory`: what it says on one
+# line, every step asserted.
+function ceremony(directory: str)
+    probe = http.send(c: transport(), r: http.request(method: "GET", target: directory).must())
+
+    if probe.is_err()
+        print(f"acme live: skipped, nothing answers at {directory}")
+        return
+    client @= acme.connect(
+        directory_url: directory,
+        key: jose.generate_key(.p256).must(),
+        transport: transport()
+    ).must()
+    account = acme.new_account(@client, contacts: ["mailto:ops@heroes-test.example"], agree_terms: true).must()
+    assert account.status == "valid"
+    assert acme.find_account(@client).must().url == account.url
+    assert acme.update_account(@client, contacts: ["mailto:other@heroes-test.example"]).must().contacts == ["mailto:other@heroes-test.example"]
+    names = ["dns.heroes-test.example", "web.heroes-test.example"]
+    order = acme.new_order(@client, request: acme.order_for(names)).must()
+    assert order.status == "pending" && order.authorizations.len() == 2
+
+    for url in order.authorizations
+        authorization = acme.fetch_authorization(@client, url: url).must()
+
+        if authorization.identifier.value == names[0]
+            challenge = acme.challenge_of(authorization: authorization, kind: "dns-01").must()
+            publish(
+                name: acme.dns01_name(authorization.identifier.value),
+                value: acme.dns01_value(client: client, token: challenge.token).must()
+            ).must()
+            _ = acme.respond(@client, challenge: challenge).must()
+        else
+            challenge = acme.challenge_of(authorization: authorization, kind: "http-01").must()
+            body = acme.http01_body(client: client, token: challenge.token).must()
+            listener @= net.listen(host: "", port: 5002).must()
+            _ = acme.respond(@client, challenge: challenge).must()
+            net.set_accept_deadline(l: listener, ms: 4000).must()
+
+            match http.serve_with(s: http.default_server(), l: listener, state: body, handler: answer)
+                .ok _  => _ = 0
+                .err e => assert e.code == "timeout"
+
+            net.close_listener(@listener).must()
+        settled = acme.wait_authorization(@client, url: url, timeout_ms: 30000).must()
+        assert settled.status == "valid"
+
+    ready = acme.wait_order(@client, url: order.url, timeout_ms: 30000).must()
+    assert ready.status == "ready"
+
+    match request_for(names)
+        .err e => print(f"acme live: the authorizations held; finalize skipped, no openssl: {e.msg}")
+        .ok csr =>
+            _ = acme.finalize(@client, order: ready, csr: csr).must()
+            done = acme.wait_order(@client, url: order.url, timeout_ms: 30000).must()
+            assert done.status == "valid"
+            chain = acme.download(@client, url: done.certificate).must()
+            blocks = pem.parse_all(chain.pem).must()
+            assert blocks.len() >= 2
+            leaf = blocks[0].data
+
+            match os.env("ACME_SAVE_LEAF")
+                .ok path => write_file(path: path, text: chain.pem).must()
+                .err _   => _ = 0
+
+            window = acme.renewal_info(client: client, certificate: leaf).must()
+            assert window.start.len() > 0
+            acme.revoke(@client, certificate: leaf, reason: 4).must()
+            acme.change_key(@client, key: jose.generate_key(.p384).must()).must()
+            assert acme.find_account(@client).must().url == account.url
+            assert acme.deactivate_account(@client).must().status == "deactivated"
+            print(
+                f"acme live: {directory}: an account, found, updated; two names validated by DNS-01 and HTTP-01; a chain of {blocks.len()} certificates and {chain.alternates.len()} alternates; renewal from {window.start}; revoked; key changed to P-384; deactivated"
+            )
+
+test "acme live: a whole ceremony against the server ACME_DIRECTORY names"
+    match os.env("ACME_DIRECTORY")
+        .err _        => print("acme live: skipped, ACME_DIRECTORY is not set")
+        .ok directory => ceremony(directory)

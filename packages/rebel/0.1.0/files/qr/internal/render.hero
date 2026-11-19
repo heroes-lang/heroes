@@ -1,0 +1,258 @@
+# A symbol written out: block characters, half blocks, a terminal's
+# colours, SVG and gray pixels, each with a quiet zone of light modules
+# around it; and the text of a Wi-Fi network.
+#
+# A symbol here is its rows, `modules[y][x]`, `true` dark, as the face's
+# `Code` holds them. Every writer collects pieces and joins them once.
+
+use qr/internal/codes
+
+# Whether module (`x`, `y`) is dark, every module of the quiet zone outside
+# the symbol light.
+function dark_at(modules: [[bool]] lent, x: i64, y: i64) -> bool
+    if y < 0 || y >= modules.len() || x < 0 || x >= modules.len()
+        return false
+    return modules[y][x]
+
+# Every row as block characters: a module whose ink is due two full blocks,
+# else two spaces.
+function blocks(modules: [[bool]] lent, border: i64, invert: bool) -> str
+    assert border >= 0
+    out: [str] @= []
+    last = modules.len() + border
+
+    for y in range(from: 0 - border, to: last)
+        for x in range(from: 0 - border, to: last)
+            if dark_at(modules: modules, x: x, y: y) != invert
+                out @ out.push("██")
+            else
+                out @ out.push("  ")
+
+        out @ out.push("\n")
+
+    return out.join("")
+
+# Every two rows as one line of half blocks; a row past the last is blank.
+function half_blocks(modules: [[bool]] lent, border: i64, invert: bool) -> str
+    assert border >= 0
+    out: [str] @= []
+    last = modules.len() + border
+    y: i64 @= 0 - border
+
+    while y < last
+        for x in range(from: 0 - border, to: last)
+            top = dark_at(modules: modules, x: x, y: y) != invert
+            bottom = y + 1 < last && dark_at(modules: modules, x: x, y: y + 1) != invert
+
+            if top && bottom
+                out @ out.push("█")
+            else if top
+                out @ out.push("▀")
+            else if bottom
+                out @ out.push("▄")
+            else
+                out @ out.push(" ")
+
+        out @ out.push("\n")
+        y @ y + 2
+
+    return out.join("")
+
+# Every row in a terminal's colours: two spaces a module on a black or white
+# ground, the ground written only where it changes, reset at each line's
+# end.
+function colours(modules: [[bool]] lent, border: i64) -> str
+    assert border >= 0
+    out: [str] @= []
+    last = modules.len() + border
+
+    for y in range(from: 0 - border, to: last)
+        ground: i64 @= -1
+
+        for x in range(from: 0 - border, to: last)
+            dark = dark_at(modules: modules, x: x, y: y)
+
+            if dark && ground != 0
+                out @ out.push("\u{1b}[40m")
+                ground @ 0
+            else if !dark && ground != 1
+                out @ out.push("\u{1b}[47m")
+                ground @ 1
+            out @ out.push("  ")
+
+        out @ out.push("\u{1b}[0m\n")
+
+    return out.join("")
+
+# Nothing where `colour` holds only letters, digits, space and `#(),.%-`,
+# so nothing it holds can close the attribute it is written in; else
+# `invalid`.
+function check_colour(colour: str, name: str) -> ()?
+    if colour.len() == 0
+        return fail(code: codes.INVALID, msg: f"the {name} colour is empty; `none` draws nothing")
+
+    for c in colour.chars()
+        b = c[0]
+        plain = b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9'
+
+        if !plain && b != ' ' && b != '#' && b != '(' && b != ')' && b != ',' && b != '.' && b != '%' && b != '-'
+            return fail(
+                code: codes.INVALID,
+                msg: f"the {name} colour \"{colour}\" holds \"{c}\", which a CSS colour of letters, digits, space and #(),.%- does not"
+            )
+
+    return ok()
+
+# The SVG document of `modules`: a rectangle of `light` unless it is `none`,
+# and one path of `dark` drawing each row's runs of dark modules.
+function svg(modules: [[bool]] lent, scale: i64, border: i64, dark: str, light: str) -> str?
+    if scale < 1
+        return fail(code: codes.INVALID, msg: f"the scale is 1 or more pixels a module, not {scale}")
+
+    if border < 0
+        return fail(code: codes.INVALID, msg: f"the border is 0 or more modules, not {border}")
+    check_colour(colour: dark, name: "dark")?
+    check_colour(colour: light, name: "light")?
+    span = modules.len() + 2 * border
+    width = span * scale
+    out: [str] @= [
+        f"<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{width}\" height=\"{width}\" viewBox=\"0 0 {span} {span}\" shape-rendering=\"crispEdges\">"
+    ]
+
+    if light != "none"
+        out @ out.push(f"<rect width=\"{span}\" height=\"{span}\" fill=\"{light}\"/>")
+    out @ out.push(f"<path fill=\"{dark}\" d=\"")
+
+    for y in range(from: 0, to: modules.len())
+        x: i64 @= 0
+
+        while x < modules.len()
+            if modules[y][x]
+                start = x
+
+                while x < modules.len() && modules[y][x]
+                    x @ x + 1
+
+                out @ out.push(f"M{start + border},{y + border}h{x - start}v1h-{x - start}z")
+            else
+                x @ x + 1
+
+    out @ out.push("\"/></svg>\n")
+    return ok(out.join(""))
+
+# The gray samples of `modules`, `scale` pixels a module, 0 dark, 255 light.
+function pixels(modules: [[bool]] lent, scale: i64, border: i64) -> [u8]
+    assert scale >= 1 && border >= 0
+    span = modules.len() + 2 * border
+    row: [u8] @= []
+    out: [u8] @= []
+
+    for y in range(from: 0 - border, to: modules.len() + border)
+        row @ []
+
+        for x in range(from: 0 - border, to: modules.len() + border)
+            value: u8 @= 255
+
+            if dark_at(modules: modules, x: x, y: y)
+                value @ 0
+
+            for _ in range(from: 0, to: scale)
+                row @ row.push(value)
+
+        for _ in range(from: 0, to: scale)
+            for v in row
+                out @ out.push(v)
+
+    assert out.len() == span * scale * span * scale
+    return out
+
+# `value` with its `\`, `;`, `,`, `:` and `"` escaped by a backslash.
+function wifi_escaped(value: str) -> str
+    out: [str] @= []
+
+    for c in value.chars()
+        if c == "\\" || c == ";" || c == "," || c == ":" || c == "\""
+            out @ out.push("\\")
+        out @ out.push(c)
+
+    return out.join("")
+
+# The text of a Wi-Fi network: its security where given, its name, its
+# password where given, whether it is hidden.
+function wifi(ssid: str, password: str, security: str, hidden: bool) -> str
+    out: [str] @= ["WIFI:"]
+
+    if security.len() > 0
+        out @ out.push(f"T:{wifi_escaped(security)};")
+    out @ out.push(f"S:{wifi_escaped(ssid)};")
+
+    if password.len() > 0
+        out @ out.push(f"P:{wifi_escaped(password)};")
+
+    if hidden
+        out @ out.push("H:true;")
+    out @ out.push(";")
+    return out.join("")
+
+## Tests
+
+test "dark_at: inside, and every side of the quiet zone"
+    modules = [[true, false], [false, true]]
+    assert dark_at(modules: modules, x: 0, y: 0)
+    assert !dark_at(modules: modules, x: 1, y: 0)
+    assert !dark_at(modules: modules, x: -1, y: 0)
+    assert !dark_at(modules: modules, x: 0, y: -1)
+    assert !dark_at(modules: modules, x: 2, y: 1)
+    assert !dark_at(modules: modules, x: 1, y: 2)
+
+test "blocks: no border, a border, and inverted"
+    modules = [[true, false], [false, true]]
+    assert blocks(modules, 0, false) == "██  \n  ██\n"
+    assert blocks(modules, 0, true) == "  ██\n██  \n"
+    assert blocks(modules, 1, false) == "        \n  ██    \n    ██  \n        \n"
+
+test "half_blocks: two rows a line, the last line's lower half blank"
+    modules = [[true, false, true], [true, true, false], [false, true, false]]
+    assert half_blocks(modules, 0, false) == "█▄▀\n ▀ \n"
+    assert half_blocks(modules, 0, true) == " ▀▄\n▀ ▀\n"
+    empty: [[bool]] = []
+    assert half_blocks(empty, 0, false) == ""
+
+test "colours: the ground written where it changes, reset at each line's end"
+    modules = [[true, true], [false, true]]
+    assert colours(modules, 0) == "\u{1b}[40m    \u{1b}[0m\n\u{1b}[47m  \u{1b}[40m  \u{1b}[0m\n"
+
+test "check_colour: names, hexadecimal, functions, and what could break out"
+    assert !check_colour(colour: "black", name: "dark").is_err()
+    assert !check_colour(colour: "#1a2B3c", name: "dark").is_err()
+    assert !check_colour(colour: "rgb(0, 10%, 2.5)", name: "dark").is_err()
+    assert check_colour(colour: "", name: "dark").is_err()
+    assert check_colour(colour: "red\"/><script>", name: "dark").is_err()
+    assert check_colour(colour: "a;b", name: "light").is_err()
+    assert check_colour(colour: "é", name: "light").is_err()
+
+test "svg: one run, a ground of none, and the refusals"
+    modules = [[true, true, false], [false, false, false], [true, false, true]]
+    doc = svg(modules: modules, scale: 2, border: 1, dark: "#000", light: "#fff").must()
+    assert doc == "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"10\" height=\"10\" viewBox=\"0 0 5 5\" shape-rendering=\"crispEdges\"><rect width=\"5\" height=\"5\" fill=\"#fff\"/><path fill=\"#000\" d=\"M1,1h2v1h-2zM1,3h1v1h-1zM3,3h1v1h-1z\"/></svg>\n"
+    bare = svg(modules: modules, scale: 1, border: 0, dark: "black", light: "none").must()
+    assert bare == "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"3\" height=\"3\" viewBox=\"0 0 3 3\" shape-rendering=\"crispEdges\"><path fill=\"black\" d=\"M0,0h2v1h-2zM0,2h1v1h-1zM2,2h1v1h-1z\"/></svg>\n"
+    assert svg(modules: modules, scale: 0, border: 0, dark: "#000", light: "#fff").is_err()
+    assert svg(modules: modules, scale: 1, border: -1, dark: "#000", light: "#fff").is_err()
+    assert svg(modules: modules, scale: 1, border: 0, dark: "<", light: "#fff").is_err()
+
+test "pixels: one pixel a module with a border, and a scale of two"
+    modules = [[true]]
+    assert pixels(modules: modules, scale: 1, border: 1) == [255, 255, 255, 255, 0, 255, 255, 255, 255]
+    assert pixels(modules: modules, scale: 2, border: 0) == [0, 0, 0, 0]
+    assert pixels(modules: [[true, false], [false, true]], scale: 1, border: 0) == [0, 255, 255, 0]
+
+test "wifi_escaped: each of the five, and a text of more than one byte"
+    assert wifi_escaped("") == ""
+    assert wifi_escaped("a;b,c:d\\e\"f") == "a\\;b\\,c\\:d\\\\e\\\"f"
+    assert wifi_escaped("caffè") == "caffè"
+
+test "wifi: open, hidden, and no security named"
+    assert wifi(ssid: "cafe", password: "", security: "nopass", hidden: false) == "WIFI:T:nopass;S:cafe;;"
+    assert wifi(ssid: "lab", password: "p;w", security: "WPA", hidden: true) == "WIFI:T:WPA;S:lab;P:p\\;w;H:true;;"
+    assert wifi(ssid: "x", password: "", security: "", hidden: false) == "WIFI:S:x;;"

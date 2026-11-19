@@ -1,0 +1,353 @@
+# The two ceremonies verified end to end: a registration by the steps of Web
+# Authentication Level 3 § 7.1, an authentication by those of § 7.2, each
+# check failing `invalid` with a message that names it. The face turns what
+# they answer into its own records.
+
+use cbor
+use crypto
+use webauthn/internal/attest
+use webauthn/internal/authdata
+use webauthn/internal/client
+use webauthn/internal/codes
+use webauthn/internal/cose
+use webauthn/internal/der
+use webauthn/internal/items
+use webauthn/internal/recorded
+use webauthn/internal/response
+
+# What a ceremony must show, made plain.
+record Want
+    # The challenge sent.
+    challenge: [u8]
+    # The RP ID.
+    rp_id: str
+    # The origins allowed.
+    origins: [str]
+    # The top origins a frame may stand in.
+    top_origins: [str]
+    # Whether the user must be verified.
+    user_verification: bool
+    # The COSE algorithms a registered key may have.
+    algorithms: [i64]
+
+# An attestation object read.
+record Object
+    # Its format.
+    format: str
+    # Its statement.
+    statement: cbor.Value
+    # Its authenticator data.
+    auth_data: [u8]
+
+# A registration verified.
+record Registered
+    # The credential ID.
+    id: [u8]
+    # Its COSE key's bytes.
+    public_key: [u8]
+    # The counter.
+    sign_count: i64
+    # The transports the response named.
+    transports: [str]
+    # The key's algorithm.
+    algorithm: i64
+    # The AAGUID.
+    aaguid: [u8]
+    # The format.
+    format: str
+    # 0 none, 1 self, 2 certified, 3 unverified.
+    kind: i64
+    # The attestation's certificates.
+    certificates: [[u8]]
+    # UV.
+    user_verified: bool
+    # BE.
+    backup_eligible: bool
+    # BS.
+    backed_up: bool
+
+# An authentication verified.
+record Verified
+    # The credential ID.
+    id: [u8]
+    # The user handle; empty where none.
+    user_handle: [u8]
+    # The new counter.
+    sign_count: i64
+    # UV.
+    user_verified: bool
+    # BE.
+    backup_eligible: bool
+    # BS.
+    backed_up: bool
+
+# The attestation object `data` holds.
+function object(data: [u8]) -> Object?
+    found: [cbor.Entry] = match cbor.decode(data)
+        .ok v  => items.entries(v: v, what: "the attestation object")?
+        .err e => return fail(code: codes.INVALID, msg: f"the attestation object: {e.msg}")
+
+    format = items.text(v: items.by_name(found: found, key: "fmt", what: "the attestation object")?, what: "fmt")?
+    statement = items.by_name(found: found, key: "attStmt", what: "the attestation object")?
+    _ = items.entries(v: statement, what: "attStmt")?
+    auth_data = items.binary(v: items.by_name(found: found, key: "authData", what: "the attestation object")?, what: "authData")?
+    return ok(Object(format: format, statement: statement, auth_data: auth_data))
+
+# Nothing where the authenticator data `ad` is for `want`'s RP ID, says the
+# user was present, and verified where `want` asks it, its backup flags
+# agreeing.
+function check_flags(ad: authdata.Parsed, want: Want) -> ()?
+    if ad.rp_id_hash != crypto.sha256_text(want.rp_id)
+        return fail(code: codes.INVALID, msg: f"the authenticator data is for another RP ID than \"{want.rp_id}\"")
+
+    if !ad.user_present
+        return fail(code: codes.INVALID, msg: "the authenticator data says the user was not present")
+
+    if want.user_verification && !ad.user_verified
+        return fail(
+            code: codes.INVALID,
+            msg: "the authenticator data says the user was not verified, which the relying party requires"
+        )
+
+    if ad.backed_up && !ad.backup_eligible
+        return fail(
+            code: codes.INVALID,
+            msg: "the authenticator data says the credential is backed up and not eligible for backup"
+        )
+    return ok()
+
+# The registration `text` makes, verified against `want`.
+function register(text: str, want: Want) -> Registered?
+    r = response.read(text: text, registration: true)?
+    c = client.read(r.client_data)?
+    client.check(client: c, kind: "webauthn.create", challenge: want.challenge, origins: want.origins, top_origins: want.top_origins)?
+    o = object(r.attestation_object)?
+    ad = authdata.read(o.auth_data)?
+    check_flags(ad: ad, want: want)?
+
+    if !ad.attested
+        return fail(code: codes.INVALID, msg: "the authenticator data of a registration holds no credential")
+
+    if ad.credential_id.len() > 1023
+        return fail(code: codes.INVALID, msg: f"a credential ID of {ad.credential_id.len()} bytes, more than 1023")
+
+    if ad.credential_id != r.id
+        return fail(code: codes.INVALID, msg: "the response names another credential than its authenticator data")
+    key = cose.read(ad.public_key)?
+    allowed: bool @= false
+
+    for alg in want.algorithms
+        if alg == key.algorithm
+            allowed @ true
+
+    if !allowed
+        return fail(
+            code: codes.INVALID,
+            msg: f"the credential's algorithm {key.algorithm} is not one the relying party allows"
+        )
+    statement = items.entries(v: o.statement, what: "attStmt")?
+    outcome = attest.verify(format: o.format, statement: statement, auth_data: o.auth_data, client_hash: crypto.sha256(r.client_data), key: key, aaguid: ad.aaguid, credential_id: ad.credential_id)?
+    return ok(
+        Registered(id: ad.credential_id, public_key: ad.public_key, sign_count: ad.sign_count, transports: r.transports, algorithm: key.algorithm, aaguid: ad.aaguid, format: o.format, kind: outcome.kind, certificates: outcome.certificates, user_verified: ad.user_verified, backup_eligible: ad.backup_eligible, backed_up: ad.backed_up)
+    )
+
+# The authentication `text` makes with the credential `id` of COSE key
+# `public_key`, its counter last kept `stored`, verified against `want`.
+function authenticate(text: str, want: Want, id: [u8], public_key: [u8], stored: i64) -> Verified?
+    r = response.read(text: text, registration: false)?
+
+    if r.id != id
+        return fail(code: codes.INVALID, msg: "the response names another credential than the one given")
+    c = client.read(r.client_data)?
+    client.check(client: c, kind: "webauthn.get", challenge: want.challenge, origins: want.origins, top_origins: want.top_origins)?
+    ad = authdata.read(r.authenticator_data)?
+    check_flags(ad: ad, want: want)?
+    key = cose.read(public_key)?
+    signed = der.joined([r.authenticator_data, crypto.sha256(r.client_data)])
+
+    match cose.verify(key: key, data: signed, signature: r.signature)
+        .ok good =>
+            if !good
+                return fail(code: codes.INVALID, msg: "the assertion's signature does not hold")
+        .err e => return fail(code: e.code, msg: e.msg)
+
+    if (ad.sign_count != 0 || stored != 0) && ad.sign_count <= stored
+        return fail(
+            code: codes.INVALID,
+            msg: f"the signature counter is {ad.sign_count} and was {stored}: it did not grow, the sign of a cloned authenticator"
+        )
+    return ok(
+        Verified(id: r.id, user_handle: r.user_handle, sign_count: ad.sign_count, user_verified: ad.user_verified, backup_eligible: ad.backup_eligible, backed_up: ad.backed_up)
+    )
+
+## Tests
+
+# The registration challenge of the recorded ceremonies, the bytes 0 to 31.
+function registration_challenge() -> [u8]
+    out: [u8] @= []
+
+    for i in range(from: 0, to: 32)
+        out @ out.push(to_u8(i).must())
+
+    return out
+
+# What the recorded ceremonies show, with `challenge`.
+function want_of(challenge: [u8]) -> Want
+    none: [str] = []
+    return Want(
+        challenge: challenge,
+        rp_id: "example.org",
+        origins: ["https://example.org"],
+        top_origins: none,
+        user_verification: false,
+        algorithms: [-7, -35, -8, -257, -37]
+    )
+
+# The message `got` fails with, or "" where it holds.
+function message_of<T>(got: T?) -> str
+    match got
+        .ok _  => return ""
+        .err e => return e.msg
+
+test "register: none, packed self with ES256, ES384 and RS256, and the keys they leave"
+    want = want_of(registration_challenge())
+    none = register(text: recorded.NONE_ES256, want: want).must()
+    assert none.format == "none" && none.kind == 0 && none.algorithm == -7
+    assert none.id.len() == 16 && none.user_verified && !none.backup_eligible
+    assert none.transports == ["internal"]
+    assert none.aaguid == [0xad, 0xce, 0x00, 0x02, 0x35, 0xbc, 0xc6, 0x0a, 0x64, 0x8b, 0x0b, 0x25, 0xf1, 0xf0, 0x55, 0x03]
+    packed = register(text: recorded.PACKED_SELF_ES256, want: want).must()
+    assert packed.format == "packed" && packed.kind == 1 && packed.certificates.len() == 0
+    assert register(text: recorded.PACKED_SELF_ES384, want: want).must().algorithm == -35
+    rsa = register(text: recorded.PACKED_SELF_RS256, want: want).must()
+    assert rsa.algorithm == -257 && rsa.kind == 1 && rsa.id.len() == 32
+
+test "register: packed with a certificate, its subject and AAGUID checked; fido-u2f; tpm kept"
+    want = want_of(registration_challenge())
+    full = register(text: recorded.PACKED_FULL, want: want).must()
+    assert full.kind == 2 && full.certificates.len() == 2
+    assert message_of(register(text: recorded.PACKED_FULL_BAD_OU, want: want)) == "the attestation certificate's subject is not a country, an organization, the unit \"Authenticator Attestation\" and a common name"
+    assert message_of(register(text: recorded.PACKED_FULL_OTHER_AAGUID, want: want)) == "the attestation certificate names another AAGUID than the authenticator data's"
+    u2f = register(text: recorded.FIDO_U2F, want: want).must()
+    assert u2f.format == "fido-u2f" && u2f.kind == 2 && !u2f.user_verified
+    kept = register(text: recorded.TPM_KEPT, want: want).must()
+    assert kept.format == "tpm" && kept.kind == 3
+
+test "register: each check's refusal, named"
+    want = want_of(registration_challenge())
+    assert message_of(register(text: recorded.PACKED_SELF_TAMPERED, want: want)) == "the packed self attestation's signature does not hold"
+    assert message_of(register(text: recorded.NONE_WRONG_TYPE, want: want)) == "the client data's type is \"webauthn.get\", not \"webauthn.create\""
+    assert message_of(register(text: recorded.NONE_CROSS_ORIGIN, want: want)) == "the ceremony ran in a cross-origin frame, which the relying party does not allow"
+    assert message_of(register(text: recorded.NONE_NO_UP, want: want)) == "the authenticator data says the user was not present"
+    assert message_of(register(text: recorded.NONE_BS_WITHOUT_BE, want: want)) == "the authenticator data says the credential is backed up and not eligible for backup"
+    assert message_of(register(text: recorded.NONE_OTHER_RP, want: want)) == "the authenticator data is for another RP ID than \"example.org\""
+    assert message_of(register(text: recorded.NONE_ES256, want: want_of([1, 2, 3]))) == "the client data's challenge is not the one sent"
+    strict = Want(
+        challenge: want.challenge,
+        rp_id: want.rp_id,
+        origins: want.origins,
+        top_origins: want.top_origins,
+        user_verification: true,
+        algorithms: want.algorithms
+    )
+    assert message_of(register(text: recorded.NONE_NO_UV, want: strict)) == "the authenticator data says the user was not verified, which the relying party requires"
+    assert !register(text: recorded.NONE_NO_UV, want: want).is_err()
+    only_rsa = Want(
+        challenge: want.challenge,
+        rp_id: want.rp_id,
+        origins: want.origins,
+        top_origins: want.top_origins,
+        user_verification: false,
+        algorithms: [-257]
+    )
+    assert message_of(register(text: recorded.NONE_ES256, want: only_rsa)) == "the credential's algorithm -7 is not one the relying party allows"
+    other_site = Want(
+        challenge: want.challenge,
+        rp_id: want.rp_id,
+        origins: ["https://example.com"],
+        top_origins: want.top_origins,
+        user_verification: false,
+        algorithms: want.algorithms
+    )
+    assert message_of(register(text: recorded.NONE_ES256, want: other_site)) == "the client data's origin \"https://example.org\" is not one of the relying party's"
+    framed = Want(
+        challenge: want.challenge,
+        rp_id: want.rp_id,
+        origins: want.origins,
+        top_origins: ["https://shop.example.com"],
+        user_verification: false,
+        algorithms: want.algorithms
+    )
+    assert !register(text: recorded.NONE_CROSS_ORIGIN, want: framed).is_err()
+    synced = register(text: recorded.NONE_SYNCED, want: want).must()
+    assert synced.backup_eligible && synced.backed_up
+
+test "register: EdDSA verified where the system has Ed25519, said unsupported where it has not"
+    want = want_of(registration_challenge())
+    got = register(text: recorded.PACKED_SELF_EDDSA, want: want)
+
+    match got
+        .ok r  => assert r.algorithm == -8 && r.kind == 1
+        .err e => assert e.code == "unsupported" && e.msg == "COSE key: EdDSA, and this system's cryptography has no Ed25519"
+
+test "authenticate: ES256, ES384 and RS256 with the keys registered, the counter and the handle"
+    reg = want_of(registration_challenge())
+    challenge: [u8] @= []
+
+    for i in range(from: 32, to: 64)
+        challenge @ challenge.push(to_u8(i).must())
+
+    want = want_of(challenge)
+    es = register(text: recorded.PACKED_SELF_ES256, want: reg).must()
+    login = authenticate(text: recorded.AUTH_ES256, want: want, id: es.id, public_key: es.public_key, stored: 0).must()
+    assert login.sign_count == 5 && login.user_verified
+    assert login.user_handle == [0x75, 0x73, 0x65, 0x72, 0x2d, 0x31]
+    assert message_of(authenticate(text: recorded.AUTH_ES256, want: want, id: es.id, public_key: es.public_key, stored: 5)) == "the signature counter is 5 and was 5: it did not grow, the sign of a cloned authenticator"
+    zero = authenticate(
+        text: recorded.AUTH_ES256_ZERO,
+        want: want,
+        id: es.id,
+        public_key: es.public_key,
+        stored: 0
+    ).must()
+    assert zero.sign_count == 0 && zero.user_handle.len() == 0
+    assert authenticate(
+        text: recorded.AUTH_ES256_ZERO,
+        want: want,
+        id: es.id,
+        public_key: es.public_key,
+        stored: 3
+    ).is_err()
+    rs = register(text: recorded.PACKED_SELF_RS256, want: reg).must()
+    assert authenticate(text: recorded.AUTH_RS256, want: want, id: rs.id, public_key: rs.public_key, stored: 0).must().sign_count == 1
+    es384 = register(text: recorded.PACKED_SELF_ES384, want: reg).must()
+    assert authenticate(text: recorded.AUTH_ES384, want: want, id: es384.id, public_key: es384.public_key, stored: 8).must().sign_count == 9
+
+test "authenticate: a signature tampered, another credential, the wrong type, no verification"
+    reg = want_of(registration_challenge())
+    challenge: [u8] @= []
+
+    for i in range(from: 32, to: 64)
+        challenge @ challenge.push(to_u8(i).must())
+
+    want = want_of(challenge)
+    es = register(text: recorded.PACKED_SELF_ES256, want: reg).must()
+    rs = register(text: recorded.PACKED_SELF_RS256, want: reg).must()
+    assert message_of(authenticate(text: recorded.AUTH_ES256_TAMPERED, want: want, id: es.id, public_key: es.public_key, stored: 0)) == "the assertion's signature does not hold"
+    assert message_of(authenticate(text: recorded.AUTH_ES256, want: want, id: rs.id, public_key: rs.public_key, stored: 0)) == "the response names another credential than the one given"
+    assert message_of(authenticate(text: recorded.AUTH_ES256, want: want, id: es.id, public_key: rs.public_key, stored: 0)) == "the assertion's signature does not hold"
+    assert message_of(authenticate(text: recorded.AUTH_WRONG_TYPE, want: want, id: es.id, public_key: es.public_key, stored: 0)) == "the client data's type is \"webauthn.create\", not \"webauthn.get\""
+    strict = Want(
+        challenge: challenge,
+        rp_id: "example.org",
+        origins: ["https://example.org"],
+        top_origins: want.top_origins,
+        user_verification: true,
+        algorithms: want.algorithms
+    )
+    assert message_of(authenticate(text: recorded.AUTH_ES256_NO_UV, want: strict, id: es.id, public_key: es.public_key, stored: 0)) == "the authenticator data says the user was not verified, which the relying party requires"
+    assert !authenticate(text: recorded.AUTH_ES256_NO_UV, want: want, id: es.id, public_key: es.public_key, stored: 0).is_err()
+
+test "object: the three members, and a map that lacks one"
+    assert object([0xa0]).is_err()
+    assert object([0x01]).is_err()

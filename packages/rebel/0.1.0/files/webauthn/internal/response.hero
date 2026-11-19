@@ -1,0 +1,127 @@
+# A ceremony's response read from the JSON `PublicKeyCredential.toJSON()`
+# writes (Web Authentication Level 3 § 5.1, `RegistrationResponseJSON` and
+# `AuthenticationResponseJSON`): every byte string decoded from base 64 for
+# URLs, `id` and `rawId` the same credential.
+
+use bytes
+use json
+use webauthn/internal/codes
+
+# A response read.
+record Response
+    # The credential ID.
+    id: [u8]
+    # The client data's bytes.
+    client_data: [u8]
+    # The attestation object's bytes; empty in an authentication's.
+    attestation_object: [u8]
+    # The authenticator data's bytes; in a registration's, empty where the
+    # response leaves its copy out.
+    authenticator_data: [u8]
+    # The signature; empty in a registration's.
+    signature: [u8]
+    # The user handle; empty where none.
+    user_handle: [u8]
+    # The transports a registration's response names.
+    transports: [str]
+
+# The bytes of the base 64 text member `key` of `members`, where it is.
+function encoded(members: {str: json.Value}, key: str, needed: bool) -> [u8]?
+    match members[key]
+        .ok v =>
+            if json.is_null(v)
+                if needed
+                    return fail(code: codes.INVALID, msg: f"the response's \"{key}\" is null")
+                empty: [u8] = []
+                return ok(empty)
+
+            match json.text_of(v)
+                .ok text =>
+                    match bytes.parse_base64_url_unpadded(text)
+                        .ok b => return ok(b)
+                        .err _ => return fail(
+                            code: codes.INVALID,
+                            msg: f"the response's \"{key}\" is not base 64 for URLs without padding"
+                        )
+                .err _ => return fail(code: codes.INVALID, msg: f"the response's \"{key}\" is not a string")
+        .err _ =>
+            if needed
+                return fail(code: codes.INVALID, msg: f"the response has no \"{key}\"")
+            empty: [u8] = []
+            return ok(empty)
+
+# The object `v` is, or `invalid` naming `what`.
+function object_of(v: json.Value, what: str) -> {str: json.Value}?
+    match json.members_of(v)
+        .ok m  => return ok(m)
+        .err _ => return fail(code: codes.INVALID, msg: f"{what} is not a JSON object")
+
+# The response `text` holds; `registration` says which kind is expected.
+function read(text: str, registration: bool) -> Response?
+    whole: {str: json.Value} = match json.parse(text)
+        .ok v  => object_of(v: v, what: "the response")?
+        .err e => return fail(code: codes.INVALID, msg: f"the response is not JSON: {e.msg}")
+
+    id = encoded(members: whole, key: "id", needed: true)?
+    raw = encoded(members: whole, key: "rawId", needed: true)?
+
+    if id != raw
+        return fail(code: codes.INVALID, msg: "the response's \"id\" and \"rawId\" name different credentials")
+
+    match whole["type"]
+        .ok t =>
+            if json.text_of(t).default("") != "public-key"
+                return fail(code: codes.INVALID, msg: "the response's \"type\" is not \"public-key\"")
+        .err _ => return fail(code: codes.INVALID, msg: "the response has no \"type\"")
+
+    inner: {str: json.Value} = match whole["response"]
+        .ok v  => object_of(v: v, what: "the response's \"response\"")?
+        .err _ => return fail(code: codes.INVALID, msg: "the response has no \"response\"")
+
+    client_data = encoded(members: inner, key: "clientDataJSON", needed: true)?
+    attestation = encoded(members: inner, key: "attestationObject", needed: registration)?
+    authenticator = encoded(members: inner, key: "authenticatorData", needed: !registration)?
+    signature = encoded(members: inner, key: "signature", needed: !registration)?
+    handle = encoded(members: inner, key: "userHandle", needed: false)?
+    transports: [str] @= []
+
+    match inner["transports"]
+        .ok v =>
+            match json.items_of(v)
+                .ok list =>
+                    for item in list
+                        match json.text_of(item)
+                            .ok t => transports @ transports.push(t)
+                            .err _ => return fail(
+                                code: codes.INVALID,
+                                msg: "the response's \"transports\" holds what is not a string"
+                            )
+                .err _ => return fail(code: codes.INVALID, msg: "the response's \"transports\" is not an array")
+        .err _ => _ = 0
+
+    return ok(
+        Response(id: id, client_data: client_data, attestation_object: attestation, authenticator_data: authenticator, signature: signature, user_handle: handle, transports: transports)
+    )
+
+## Tests
+
+test "read: an authentication's members, and what each refusal says"
+    text = "{\"id\":\"AQI\",\"rawId\":\"AQI\",\"type\":\"public-key\",\"response\":{\"clientDataJSON\":\"e30\",\"authenticatorData\":\"AA\",\"signature\":\"AQ\",\"userHandle\":null}}"
+    r = read(text: text, registration: false).must()
+    assert r.id == [1, 2] && r.client_data == [0x7b, 0x7d] && r.signature == [1]
+    assert r.user_handle.len() == 0 && r.attestation_object.len() == 0
+
+    match read(text: text, registration: true)
+        .ok _  => assert false
+        .err e => assert e.msg == "the response has no \"attestationObject\""
+
+    assert read(
+        text: "{\"id\":\"AQI\",\"rawId\":\"AQM\",\"type\":\"public-key\",\"response\":{}}",
+        registration: false
+    ).is_err()
+    assert read(
+        text: "{\"id\":\"AQI\",\"rawId\":\"AQI\",\"type\":\"other\",\"response\":{}}",
+        registration: false
+    ).is_err()
+    assert read(text: "[1]", registration: false).is_err()
+    assert read(text: "{\"id\":\"A+\",\"rawId\":\"A+\"}", registration: false).is_err()

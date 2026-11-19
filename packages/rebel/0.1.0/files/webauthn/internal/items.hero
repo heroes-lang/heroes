@@ -1,0 +1,114 @@
+# What `webauthn` reads out of a `cbor.Value`: its bytes, its text, its
+# map's entries, its list's items, and a map's member by a text or an
+# integer key; each answering `invalid`, naming what was asked, where the
+# value is of another kind. `cbor` answers integers and text keys of its own;
+# the rest is matched here, once.
+
+use cbor
+use webauthn/internal/codes
+
+# The name of `v`'s kind, for a message.
+function kind_of(v: cbor.Value) -> str
+    return match v
+        .unsigned _ | .negative _            => "an integer"
+        .binary _                            => "a byte string"
+        .text _                              => "a text string"
+        .list _                              => "an array"
+        .pairs _                             => "a map"
+        .tagged _                            => "a tag"
+        .float _                             => "a float"
+        .boolean _                           => "a boolean"
+        .null_value | .undefined | .simple _ => "a simple value"
+
+# The bytes `v` holds, where it is a byte string.
+function binary(v: cbor.Value, what: str) -> [u8]?
+    match v
+        .binary b => return ok(b.v)
+        .unsigned _ | .negative _ | .text _ | .list _ | .pairs _ | .tagged _ | .float _ | .boolean _ | .null_value | .undefined | .simple _ => _ = 0
+
+    return fail(code: codes.INVALID, msg: f"{what} is {kind_of(v)}, not a byte string")
+
+# The text `v` holds, where it is a text string.
+function text(v: cbor.Value, what: str) -> str?
+    match v
+        .text t => return ok(t.v)
+        .unsigned _ | .negative _ | .binary _ | .list _ | .pairs _ | .tagged _ | .float _ | .boolean _ | .null_value | .undefined | .simple _ => _ = 0
+
+    return fail(code: codes.INVALID, msg: f"{what} is {kind_of(v)}, not a text string")
+
+# The entries of `v`, where it is a map.
+function entries(v: cbor.Value, what: str) -> [cbor.Entry]?
+    match v
+        .pairs p => return ok(p.entries)
+        .unsigned _ | .negative _ | .binary _ | .text _ | .list _ | .tagged _ | .float _ | .boolean _ | .null_value | .undefined | .simple _ => _ = 0
+
+    return fail(code: codes.INVALID, msg: f"{what} is {kind_of(v)}, not a map")
+
+# The items of `v`, where it is an array.
+function items(v: cbor.Value, what: str) -> [cbor.Value]?
+    match v
+        .list l => return ok(l.items)
+        .unsigned _ | .negative _ | .binary _ | .text _ | .pairs _ | .tagged _ | .float _ | .boolean _ | .null_value | .undefined | .simple _ => _ = 0
+
+    return fail(code: codes.INVALID, msg: f"{what} is {kind_of(v)}, not an array")
+
+# The integer `v` holds.
+function integer(v: cbor.Value, what: str) -> i64?
+    match cbor.int_of(v)
+        .ok n  => return ok(n)
+        .err _ => return fail(code: codes.INVALID, msg: f"{what} is {kind_of(v)}, not an integer within 64 bits")
+
+# The member of `found` under the text key `key`.
+function by_name(found: [cbor.Entry], key: str, what: str) -> cbor.Value?
+    for entry in found
+        match entry.key
+            .text t =>
+                if t.v == key
+                    return ok(entry.value)
+            .unsigned _ | .negative _ | .binary _ | .list _ | .pairs _ | .tagged _ | .float _ | .boolean _ | .null_value | .undefined | .simple _ => _ = 0
+
+    return fail(code: codes.INVALID, msg: f"{what} has no member \"{key}\"")
+
+# Whether `found` has a member under the text key `key`.
+function has_name(found: [cbor.Entry], key: str) -> bool
+    return !by_name(found: found, key: key, what: "").is_err()
+
+# The member of `found` under the integer key `label`.
+function by_label(found: [cbor.Entry], label: i64, what: str) -> cbor.Value?
+    for entry in found
+        match cbor.int_of(entry.key)
+            .ok n =>
+                if n == label
+                    return ok(entry.value)
+            .err _ => _ = 0
+
+    return fail(code: codes.INVALID, msg: f"{what} has no member {label}")
+
+## Tests
+
+test "binary, text, entries, items: each kind, and what is not"
+    assert binary(v: .binary(v: [1, 2]), what: "x").must() == [1, 2]
+
+    match binary(v: .text(v: "a"), what: "the signature")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "the signature is a text string, not a byte string"
+
+    assert text(v: .text(v: "a"), what: "x").must() == "a"
+    assert text(v: .unsigned(v: 1), what: "x").is_err()
+    nothing: [cbor.Value] = []
+    assert items(v: .list(items: nothing), what: "x").must().len() == 0
+    assert items(v: .null_value, what: "x").is_err()
+    assert entries(v: .undefined, what: "x").is_err()
+
+test "by_name, has_name, by_label: present, absent, and keys of other kinds"
+    found = [
+        cbor.Entry(key: .text(v: "fmt"), value: .text(v: "none"))
+        cbor.Entry(key: .negative(n: 0), value: .unsigned(v: 1))
+    ]
+    assert text(v: by_name(found: found, key: "fmt", what: "x").must(), what: "x").must() == "none"
+    assert has_name(found: found, key: "fmt") && !has_name(found: found, key: "sig")
+    assert integer(v: by_label(found: found, label: -1, what: "x").must(), what: "x").must() == 1
+
+    match by_label(found: found, label: 3, what: "the COSE key")
+        .ok _  => assert false
+        .err e => assert e.msg == "the COSE key has no member 3"

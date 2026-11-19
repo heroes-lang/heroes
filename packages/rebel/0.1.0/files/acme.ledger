@@ -1,0 +1,196 @@
+# The ledger of `acme`: a client of the Automatic Certificate Management
+# Environment (RFC 8555), one block per capability, and what Heroes answers
+# to each.
+#
+# Go 1.27, Rust 1.100 and Python 3.15 carry no ACME in their standard
+# libraries. The yardsticks are the queue's: Go's `golang.org/x/crypto/acme`
+# and lego (`go` below, the package named first), Python's `acme` package
+# of certbot (`python` below), and acme.sh and certbot's commands (named in
+# `note`). None is installed on this machine (asked on 2026-11-19: no Go
+# module cache entry, no Python module, no command), so their entries are
+# named from their published documentation and not listed by a command. The
+# live tests ran against Let's Encrypt's Pebble 2.10.3 and its
+# pebble-challtestsrv 2.10.3, in docker on this machine, on 2026-11-19.
+
+## The directory and the account
+
+capability acme/directory  the directory read: the URLs of every resource, the terms, whether an external account is required, the profiles
+  heroes  acme.connect, acme.parse_directory, acme.Directory
+  go      acme.Client.Discover, acme.Directory, lego api.Core.GetDirectory
+  rust    -
+  python  acme.client.ClientV2.get_directory, acme.messages.Directory, acme.messages.Directory.Meta
+  note    Pebble 2.10.3's directory read whole, its profiles included
+
+capability acme/nonce  a fresh nonce for each request, a bad nonce answered by one retry
+  heroes  acme.connect
+  go      acme.Client (internal nonces), lego api.Core.nonceManager
+  rust    -
+  python  acme.client.ClientNetwork (nonces kept), acme.messages.Error (badNonce)
+  note    every answer's Replay-Nonce kept; a badNonce sent again up to three times: Pebble refuses 5 % of nonces on purpose, and with one retry a live run of about 150 requests failed once (2026-11-19); certbot retries once, Go's acme until its context ends
+
+capability acme/account-new  an account made, the terms agreed, contacts given
+  heroes  acme.new_account, acme.Account
+  go      acme.Client.Register, acme.Account, lego registration.Registrar.Register
+  rust    -
+  python  acme.client.ClientV2.new_account, acme.messages.NewRegistration, acme.messages.Registration
+  note    every request carries a User-Agent (RFC 8555 § 6.1): Pebble refuses one without, and `http` sends none of its own
+
+capability acme/account-find  the account of a key found, none made
+  heroes  acme.find_account
+  go      acme.Client.GetReg, lego registration.Registrar.ResolveAccountByKey
+  rust    -
+  python  acme.client.ClientV2.query_registration, acme.messages.NewRegistration (only_return_existing)
+  note    accountDoesNotExist is `not_found`
+
+capability acme/account-update  an account's contacts changed
+  heroes  acme.update_account
+  go      acme.Client.UpdateReg, lego registration.Registrar.UpdateRegistration
+  rust    -
+  python  acme.client.ClientV2.update_registration
+
+capability acme/account-deactivate  an account deactivated
+  heroes  acme.deactivate_account
+  go      acme.Client.DeactivateReg, lego registration.Registrar.DeleteRegistration
+  rust    -
+  python  acme.client.ClientV2.deactivate_registration
+
+capability acme/key-change  an account's key rolled over to another
+  heroes  acme.change_key
+  go      acme.Client.AccountKeyRollover
+  rust    -
+  python  -
+  note    held live: P-256 to P-384, the account found again with the new key
+
+capability acme/external-account  an account bound to one the CA keeps (external account binding)
+  heroes  acme.new_account_bound
+  go      acme.ExternalAccountBinding, lego registration.Registrar.RegisterWithExternalAccountBinding
+  rust    -
+  python  acme.messages.ExternalAccountBinding, acme.client.ClientV2.external_account_required
+  note    HS256 over the account's public JWK by `jose`; held live against a key Pebble was configured with
+
+## Orders
+
+capability acme/order-new  an order for names and addresses, a validity asked, a profile asked
+  heroes  acme.new_order, acme.order_for, acme.OrderRequest, acme.Order, acme.Identifier
+  go      acme.Client.AuthorizeOrder, acme.Order, acme.AuthzID, acme.WithOrderNotBefore, acme.WithOrderNotAfter, acme.WithOrderProfile, lego certificate.Certifier.Obtain
+  rust    -
+  python  acme.client.ClientV2.new_order, acme.messages.NewOrder, acme.messages.Order, acme.messages.Identifier
+  note    notBefore, notAfter and profile written only where asked
+
+capability acme/order-fetch  an order, an authorization, a challenge read again
+  heroes  acme.fetch_order, acme.fetch_authorization, acme.parse_order, acme.parse_authorization, acme.parse_challenge, acme.Authorization, acme.Challenge
+  go      acme.Client.GetOrder, acme.Client.GetAuthorization, acme.Client.GetChallenge
+  rust    -
+  python  acme.client.ClientV2.poll, acme.messages.Authorization, acme.messages.ChallengeBody
+  note    POST-as-GET, as RFC 8555 § 6.3 asks
+
+capability acme/wait  an authorization or an order polled until it settles, as the server's Retry-After asks
+  heroes  acme.wait_authorization, acme.wait_order
+  go      acme.Client.WaitAuthorization, acme.Client.WaitOrder, acme.RetryAfter
+  rust    -
+  python  acme.client.ClientV2.poll_authorizations, acme.client.ClientV2.poll_and_finalize
+  note    Retry-After in seconds read, a second where none; the time given counts the waits
+
+capability acme/pre-authorization  an authorization asked before an order (newAuthz)
+  heroes  acme.new_authorization
+  go      acme.Client.Authorize, acme.Client.AuthorizeIP
+  rust    -
+  python  -
+  note    Pebble's directory has no newAuthz, so live it answered `unsupported`, as the example holds
+
+capability acme/authorization-deactivate  an authorization given up
+  heroes  acme.deactivate_authorization
+  go      acme.Client.RevokeAuthorization
+  rust    -
+  python  acme.client.ClientV2.deactivate_authorization
+
+## Challenges
+
+capability acme/key-authorization  a challenge's key authorization: its token and the account key's thumbprint
+  heroes  acme.key_authorization
+  go      acme.Client.HTTP01ChallengeResponse (its body), lego challenge.GetKeyAuthorization
+  rust    -
+  python  acme.challenges.KeyAuthorizationChallenge.key_authorization
+  note    a token outside base 64 for URLs refused before it is written anywhere
+
+capability acme/http-01  the answer to an HTTP-01 challenge and the path it is served at
+  heroes  acme.http01_path, acme.http01_body
+  go      acme.Client.HTTP01ChallengeResponse, acme.Client.HTTP01ChallengePath, lego challenge/http01.ProviderServer
+  rust    -
+  python  acme.challenges.HTTP01, acme.challenges.HTTP01Response, acme.challenges.HTTP01.uri, acme.challenges.HTTP01.validation
+  note    the program serves it: the driver's live test served it with `http.serve_with` on port 5002 and Pebble validated it
+
+capability acme/dns-01  the TXT record of a DNS-01 challenge and its name
+  heroes  acme.dns01_name, acme.dns01_value
+  go      acme.Client.DNS01ChallengeRecord, lego challenge/dns01.GetRecord
+  rust    -
+  python  acme.challenges.DNS01, acme.challenges.DNS01.validation, acme.challenges.DNS01.validation_domain_name
+  note    the program publishes it: the live tests published it at pebble-challtestsrv and Pebble validated it
+
+capability acme/tls-alpn-01  the certificate of a TLS-ALPN-01 challenge (RFC 8737)
+  heroes  pending
+  go      acme.Client.TLSALPN01ChallengeCert, lego challenge/tlsalpn01.ChallengeCert
+  rust    -
+  python  acme.challenges.TLSALPN01, acme.challenges.TLSALPN01Response
+  note    its answer is a self-signed certificate carrying the acmeIdentifier extension, made on the spot: `x509` does not write certificates yet
+
+capability acme/respond  a challenge answered: the server told to validate it
+  heroes  acme.respond
+  go      acme.Client.Accept
+  rust    -
+  python  acme.client.ClientV2.answer_challenge
+
+capability acme/dns-providers  the TXT record published at a DNS provider's API
+  heroes  refused: a DNS provider's API is that provider's package, one per provider as lego has them; `dns01_name` and `dns01_value` are what a program hands it
+  go      lego providers/dns (one package per provider)
+  rust    -
+  python  certbot's dns plugins
+
+## The certificate
+
+capability acme/finalize  an order finalized with a certificate request
+  heroes  acme.finalize
+  go      acme.Client.CreateOrderCert
+  rust    -
+  python  acme.client.ClientV2.finalize_order
+  note    the request's DER given by the program
+
+capability acme/csr  the certificate request made from a key and the names
+  heroes  pending
+  go      x509.CreateCertificateRequest (used by lego certificate.generateCsr)
+  rust    -
+  python  acme.crypto_util.make_csr
+  note    `x509` reads certificate requests and does not yet write them (its ledger's x509/create-request is pending), so the live tests made theirs with OpenSSL 3
+
+capability acme/download  the certificate chain downloaded, and its alternates
+  heroes  acme.download, acme.Chain
+  go      acme.Client.FetchCert, acme.Client.ListCertAlternates
+  rust    -
+  python  acme.client.ClientV2.finalize_order (fullchain_pem), acme.messages.OrderResource.alternative_fullchains_pem
+  note    PEM asked by Accept; alternates read from Link; Pebble 2.10.3 offered none in its default configuration
+
+capability acme/revoke  a certificate revoked, by the account or by the certificate's key, with a reason
+  heroes  acme.revoke
+  go      acme.Client.RevokeCert, acme.CRLReasonCode
+  rust    -
+  python  acme.client.ClientV2.revoke
+  note    by the account's key; revocation signed by the certificate's own key needs that key as a JWK, which the program may sign with `jose` itself: not offered here
+
+capability acme/renewal-info  when to renew a certificate, asked of the CA (ACME Renewal Information, RFC 9773)
+  heroes  acme.renewal_info, acme.renewal_id, acme.RenewalInfo
+  go      acme.Client.FetchRenewalInfo, acme.RenewalInfo
+  rust    -
+  python  acme.client.ClientV2.renewal_time
+  note    the identifier from the certificate itself, read by `x509`, as Go's FetchRenewalInfo takes the leaf; held to Python's `cryptography` on a certificate Pebble issued, and live
+
+capability acme/errors  the server's problem documents read: their type, detail and subproblems
+  heroes  acme.parse_problem, acme.Problem
+  go      acme.Error, acme.Subproblem, acme.OrderError, acme.AuthorizationError
+  rust    -
+  python  acme.messages.Error, acme.errors.ValidationError, acme.errors.PollError
+  note    rateLimited is `limit`, accountDoesNotExist `not_found`, every other type `failed`, its detail and subproblems in the message
+
+dropped plumbing  what an object with state, a command or a store of files stood for
+  go      acme.Client.Key, acme.Client.HTTPClient, acme.Client.UserAgent (fields of the `Client` record here), lego's command line and its account store, autocert.Manager (a server that renews by itself: the program's loop)
+  rust    -
+  python  acme.client.ClientNetwork, acme.jws (JWS is `jose`'s), certbot's command line and plugins

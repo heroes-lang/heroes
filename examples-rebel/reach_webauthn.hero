@@ -1,0 +1,18 @@
+# Reaches Rebel's `webauthn`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It prints the JSON of a registration's
+# options, which a page hands `navigator.credentials.create`.
+
+use <rebel>/webauthn
+
+function main()
+    rp = webauthn.RelyingParty(id: "example.org", name: "Example", origins: ["https://example.org"])
+    user = webauthn.User(id: [1, 2, 3, 4], name: "ada@example.org", display_name: "Ada Lovelace")
+
+    match webauthn.new_challenge()
+        .err e => print(e.msg)
+        .ok challenge =>
+            options = webauthn.registration_options(challenge)
+
+            match webauthn.format_registration_options(rp: rp, user: user, options: options)
+                .ok text => print(text)
+                .err e   => print(e.msg)

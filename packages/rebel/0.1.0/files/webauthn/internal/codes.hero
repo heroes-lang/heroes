@@ -1,0 +1,18 @@
+# The codes `webauthn` fails with, kept in one place so that every module of
+# the package fails alike.
+
+# The code of a response that is not well formed or does not verify, which
+# the face names as `webauthn.INVALID`.
+constant INVALID: str
+    "invalid"
+
+# The code of a key this system's cryptography lacks, which the face names
+# as `webauthn.UNSUPPORTED`.
+constant UNSUPPORTED: str
+    "unsupported"
+
+## Tests
+
+test "codes: the two codes are the library's words"
+    assert INVALID == "invalid"
+    assert UNSUPPORTED == "unsupported"

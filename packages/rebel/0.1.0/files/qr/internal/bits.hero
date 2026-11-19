@@ -1,0 +1,502 @@
+# A symbol's data as bits: each segment checked against its mode, written
+# after its mode indicator and its count, and a text split into the segments
+# that write it in the fewest bits.
+#
+# A segment here is a `Piece`, the face's `Segment` made plain: a mode index
+# and its bytes, since a private module cannot name its own face's types.
+# Bits are held one to a `u8`, 0 or 1, a symbol holding at most 23,648 of
+# data.
+
+use qr/internal/codes
+use qr/internal/tables
+
+# A segment made plain. `mode` is 0 numeric, 1 alphanumeric, 2 byte, 3 kanji,
+# 4 an ECI, 5 a structured append header.
+record Piece
+    # The mode index, 0 to 5.
+    mode: i64
+    # The digits, the text's bytes, the bytes, or the Shift JIS pairs; empty
+    # for an ECI and a header.
+    data: [u8]
+    # For an ECI its assignment; for a header the sixteen bits that follow
+    # its indicator, index, count less one and parity; 0 otherwise.
+    number: i64
+
+# The 45 characters of the alphanumeric mode, in the order of their values.
+constant ALPHANUMERIC: str
+    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:"
+
+# The value of `b` in the alphanumeric set, or 45 where it is none of them.
+function alphanumeric_value(b: u8) -> i64
+    if b >= '0' && b <= '9'
+        return to_i64(b - '0').must()
+
+    if b >= 'A' && b <= 'Z'
+        return to_i64(b - 'A').must() + 10
+    at: i64 @= 36
+
+    while at < 45
+        if ALPHANUMERIC[at] == b
+            return at
+        at @ at + 1
+
+    return 45
+
+# Whether `b` is a decimal digit.
+function is_digit(b: u8) -> bool
+    return b >= '0' && b <= '9'
+
+# The Shift JIS value of the pair at `at` of `sjis` as the kanji mode writes
+# it, or -1 where the pair is outside the two ranges the mode reads.
+function kanji_value(sjis: [u8], at: i64) -> i64
+    high = to_i64(sjis[at]).must()
+    low = to_i64(sjis[at + 1]).must()
+
+    if low < 0x40 || low > 0xfc || low == 0x7f
+        return -1
+    pair = high * 256 + low
+    base: i64 @= 0
+
+    if pair >= 0x8140 && pair <= 0x9ffc
+        base @ pair - 0x8140
+    else if pair >= 0xe040 && pair <= 0xebbf
+        base @ pair - 0xc140
+    else
+        return -1
+    return (base >> 8) * 0xc0 + (base & 0xff)
+
+# The characters `piece` counts in its count field.
+function count_of(piece: Piece) -> i64
+    if piece.mode == 3
+        return piece.data.len() / 2
+    return piece.data.len()
+
+# Nothing where `piece` is one its mode can write, else `invalid` naming the
+# first thing that is not.
+function check(piece: Piece) -> ()?
+    data = piece.data
+    at: i64 @= 0
+
+    if piece.mode == 0
+        while at < data.len()
+            if !is_digit(data[at])
+                return fail(
+                    code: codes.INVALID,
+                    msg: f"a numeric segment holds byte {data[at]} at {at}, which is not a digit"
+                )
+            at @ at + 1
+
+    if piece.mode == 1
+        while at < data.len()
+            if alphanumeric_value(data[at]) == 45
+                return fail(
+                    code: codes.INVALID,
+                    msg: f"an alphanumeric segment holds byte {data[at]} at {at}, which is not one of \"{ALPHANUMERIC}\""
+                )
+            at @ at + 1
+
+    if piece.mode == 3
+        if data.len() % 2 != 0
+            return fail(
+                code: codes.INVALID,
+                msg: f"a kanji segment holds {data.len()} bytes, which is not a count of Shift JIS pairs"
+            )
+
+        while at < data.len()
+            if kanji_value(data, at) < 0
+                return fail(
+                    code: codes.INVALID,
+                    msg: f"a kanji segment holds the pair {data[at]} {data[at + 1]} at {at}, which is not a Shift JIS kanji the mode writes"
+                )
+            at @ at + 2
+
+    if piece.mode == 4 && (piece.number < 0 || piece.number > 999999)
+        return fail(code: codes.INVALID, msg: f"an ECI assignment is 0 to 999999, not {piece.number}")
+    return ok()
+
+# The bits `piece` takes in a symbol of `version`, its header counted, or -1
+# where its count does not fit the count field of that version.
+function length_of(piece: Piece, version: i64) -> i64
+    if piece.mode == 4
+        if piece.number < 128
+            return 12
+
+        if piece.number < 16384
+            return 20
+        return 28
+
+    if piece.mode == 5
+        return 20
+    count = count_of(piece)
+
+    if count >= 1 << tables.count_bits(mode: piece.mode, version: version)
+        return -1
+    head = 4 + tables.count_bits(mode: piece.mode, version: version)
+
+    if piece.mode == 0
+        return head + count / 3 * 10 + [0, 4, 7][count % 3]
+
+    if piece.mode == 1
+        return head + count / 2 * 11 + count % 2 * 6
+
+    if piece.mode == 2
+        return head + count * 8
+    return head + count * 13
+
+# The bits `pieces` take in a symbol of `version`, or -1 where one of them
+# does not fit its count field.
+function total_length(pieces: [Piece], version: i64) -> i64
+    total: i64 @= 0
+
+    for piece in pieces
+        bits = length_of(piece, version)
+
+        if bits < 0
+            return -1
+        total @ total + bits
+
+    return total
+
+# Writes the `count` low bits of `value`, the highest first.
+function put(@bits: [u8], value: i64, count: i64)
+    at: i64 @= count - 1
+
+    while at >= 0
+        bits @ bits.push(to_u8(value >> at & 1).must())
+        at @ at - 1
+
+# The mode indicator of mode index `mode`.
+function indicator(mode: i64) -> i64
+    return [1, 2, 4, 8, 7, 3][mode]
+
+# Writes `piece` for a symbol of `version`, its indicator, its count and its
+# data; `piece` checked and fitting.
+function write(@bits: [u8], piece: Piece, version: i64)
+    put(bits: @bits, value: indicator(piece.mode), count: 4)
+
+    if piece.mode == 4
+        if piece.number < 128
+            put(bits: @bits, value: piece.number, count: 8)
+        else if piece.number < 16384
+            put(bits: @bits, value: 2 << 14 | piece.number, count: 16)
+        else
+            put(bits: @bits, value: 6 << 21 | piece.number, count: 24)
+        return
+
+    if piece.mode == 5
+        put(bits: @bits, value: piece.number, count: 16)
+        return
+    data = piece.data
+    put(bits: @bits, value: count_of(piece), count: tables.count_bits(mode: piece.mode, version: version))
+    at: i64 @= 0
+
+    if piece.mode == 0
+        while at + 3 <= data.len()
+            put(bits: @bits, value: digits_value(data: data, at: at, count: 3), count: 10)
+            at @ at + 3
+
+        if data.len() - at == 2
+            put(bits: @bits, value: digits_value(data: data, at: at, count: 2), count: 7)
+        else if data.len() - at == 1
+            put(bits: @bits, value: digits_value(data: data, at: at, count: 1), count: 4)
+    else if piece.mode == 1
+        while at + 2 <= data.len()
+            put(bits: @bits, value: alphanumeric_value(data[at]) * 45 + alphanumeric_value(data[at + 1]), count: 11)
+            at @ at + 2
+
+        if at < data.len()
+            put(bits: @bits, value: alphanumeric_value(data[at]), count: 6)
+    else if piece.mode == 2
+        while at < data.len()
+            put(bits: @bits, value: to_i64(data[at]).must(), count: 8)
+            at @ at + 1
+    else
+        while at < data.len()
+            put(bits: @bits, value: kanji_value(data, at), count: 13)
+            at @ at + 2
+
+# The number the `count` digits at `at` of `data` write.
+function digits_value(data: [u8], at: i64, count: i64) -> i64
+    value: i64 @= 0
+    i: i64 @= 0
+
+    while i < count
+        value @ value * 10 + to_i64(data[at + i] - '0').must()
+        i @ i + 1
+
+    return value
+
+# The data codewords of a symbol of `version` holding `pieces`, at
+# `capacity` codewords: the bits, the terminator, the zeros to a byte, and
+# the pad codewords 0xec and 0x11 in turn.
+function codewords(pieces: [Piece], version: i64, capacity: i64) -> [u8]
+    bits: [u8] @= []
+
+    for piece in pieces
+        write(@bits, piece, version)
+
+    room = capacity * 8 - bits.len()
+    terminator: i64 @= 4
+
+    if room < 4
+        terminator @ room
+    put(bits: @bits, value: 0, count: terminator)
+
+    while bits.len() % 8 != 0
+        bits @ bits.push(0)
+
+    words: [u8] @= []
+    at: i64 @= 0
+
+    while at < bits.len()
+        value: u8 @= 0
+        i: i64 @= 0
+
+        while i < 8
+            value @ value * 2 + bits[at + i]
+            i @ i + 1
+
+        words @ words.push(value)
+        at @ at + 8
+
+    pad: u8 @= 0xec
+
+    while words.len() < capacity
+        words @ words.push(pad)
+
+        if pad == 0xec
+            pad @ 0x11
+        else
+            pad @ 0xec
+
+    return words
+
+## The shortest split
+
+# The cost in sixths of a bit of the character of `width` bytes beginning
+# with `first`, in mode index `mode` (0 numeric, 1 alphanumeric, 2 byte), or
+# -1 where the mode cannot write it.
+function char_cost(first: u8, width: i64, mode: i64) -> i64
+    if mode == 2
+        return width * 48
+
+    if width != 1
+        return -1
+
+    if mode == 0
+        if is_digit(first)
+            return 20
+        return -1
+
+    if alphanumeric_value(first) < 45
+        return 33
+    return -1
+
+# The width in bytes of the UTF-8 character that begins with `first`.
+function char_width(first: u8) -> i64
+    if first < 0x80
+        return 1
+
+    if first < 0xe0
+        return 2
+
+    if first < 0xf0
+        return 3
+    return 4
+
+# The pieces that write `text` in the fewest bits for a symbol of
+# `version`: for each character, the least cost of the text so far ending in
+# each mode, then the modes read back from the end.
+function shortest(text: str, version: i64) -> [Piece]
+    head: [i64] = [
+        (4 + tables.count_bits(mode: 0, version: version)) * 6
+        (4 + tables.count_bits(mode: 1, version: version)) * 6
+        (4 + tables.count_bits(mode: 2, version: version)) * 6
+    ]
+    starts: [i64] @= []
+    from_mode: [i64] @= []
+    cost: [i64] @= [-1, -1, -1]
+    at: i64 @= 0
+
+    while at < text.len()
+        width = char_width(text[at])
+        next: [i64] @= [-1, -1, -1]
+
+        for mode in [0, 1, 2]
+            step = char_cost(first: text[at], width: width, mode: mode)
+            best: i64 @= -1
+            came: i64 @= mode
+
+            if step >= 0
+                for prev in [0, 1, 2]
+                    if starts.len() == 0
+                        if prev == mode
+                            best @ head[mode] + step
+                    else if cost[prev] >= 0
+                        through: i64 @= cost[prev] + step
+
+                        if prev != mode
+                            through @ (cost[prev] + 5) / 6 * 6 + head[mode] + step
+
+                        if best < 0 || through < best
+                            best @ through
+                            came @ prev
+
+            next[mode] @ best
+            from_mode @ from_mode.push(came)
+
+        starts @ starts.push(at)
+        cost @ next
+        at @ at + width
+
+    if starts.len() == 0
+        return []
+    mode: i64 @= 0
+
+    for m in [1, 2]
+        if cost[m] >= 0 && (cost[mode] < 0 || (cost[m] + 5) / 6 < (cost[mode] + 5) / 6)
+            mode @ m
+
+    modes: [i64] @= []
+    i: i64 @= starts.len() - 1
+
+    while i >= 0
+        modes @ modes.push(mode)
+        mode @ from_mode[i * 3 + mode]
+        i @ i - 1
+
+    return grouped(text: text, starts: starts, modes: modes)
+
+# The pieces of `text` whose characters begin at `starts`, the mode of the
+# character `i` being `modes[starts.len() - 1 - i]`: runs of one mode joined.
+function grouped(text: str, starts: [i64], modes: [i64]) -> [Piece]
+    pieces: [Piece] @= []
+    last = starts.len() - 1
+    run_start: i64 @= 0
+    i: i64 @= 0
+
+    while i <= last
+        mode = modes[last - i]
+
+        if i == last || modes[last - i - 1] != mode
+            end: i64 @= text.len()
+
+            if i < last
+                end @ starts[i + 1]
+            run: [u8] @= []
+            b: i64 @= starts[run_start]
+
+            while b < end
+                run @ run.push(text[b])
+                b @ b + 1
+
+            pieces @ pieces.push(Piece(mode: mode, data: run, number: 0))
+            run_start @ i + 1
+        i @ i + 1
+
+    return pieces
+
+## Tests
+
+test "alphanumeric_value: digits, letters, the nine others, and what is not"
+    assert alphanumeric_value('0') == 0
+    assert alphanumeric_value('9') == 9
+    assert alphanumeric_value('A') == 10
+    assert alphanumeric_value('Z') == 35
+    assert alphanumeric_value(' ') == 36
+    assert alphanumeric_value(':') == 44
+    assert alphanumeric_value('a') == 45
+    assert alphanumeric_value(0) == 45
+    assert alphanumeric_value(255) == 45
+
+test "kanji_value: both ranges at their edges, and pairs outside them"
+    assert kanji_value([0x81, 0x40], 0) == 0
+    assert kanji_value([0x93, 0x5f], 0) == 0xd9f
+    assert kanji_value([0xe4, 0xaa], 0) == 0x1aaa
+    assert kanji_value([0x9f, 0xfc], 0) >= 0
+    assert kanji_value([0xeb, 0xbf], 0) >= 0
+    assert kanji_value([0x81, 0x3f], 0) == -1
+    assert kanji_value([0x81, 0x7f], 0) == -1
+    assert kanji_value([0xa0, 0x40], 0) == -1
+    assert kanji_value([0xeb, 0xc0], 0) == -1
+
+test "check: each mode's refusals, and an empty segment of every mode"
+    empty: [u8] = []
+
+    for mode in [0, 1, 2, 3]
+        assert !check(Piece(mode: mode, data: empty, number: 0)).is_err()
+
+    match check(Piece(mode: 0, data: [0x31, 0x61], number: 0))
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "a numeric segment holds byte 97 at 1, which is not a digit"
+
+    assert check(Piece(mode: 1, data: [0x61], number: 0)).is_err()
+    assert check(Piece(mode: 3, data: [0x81], number: 0)).is_err()
+    assert check(Piece(mode: 3, data: [0x41, 0x41], number: 0)).is_err()
+    assert check(Piece(mode: 4, data: empty, number: 1000000)).is_err()
+    assert check(Piece(mode: 4, data: empty, number: -1)).is_err()
+    assert !check(Piece(mode: 4, data: empty, number: 999999)).is_err()
+
+test "length_of: each mode's remainders, the ECI widths, and a count that does not fit"
+    empty: [u8] = []
+    assert length_of(Piece(mode: 0, data: [0x31], number: 0), 1) == 18
+    assert length_of(Piece(mode: 0, data: [0x31, 0x32], number: 0), 1) == 21
+    assert length_of(Piece(mode: 0, data: [0x31, 0x32, 0x33], number: 0), 1) == 24
+    assert length_of(Piece(mode: 1, data: [0x41], number: 0), 1) == 19
+    assert length_of(Piece(mode: 1, data: [0x41, 0x42], number: 0), 10) == 26
+    assert length_of(Piece(mode: 2, data: [1, 2], number: 0), 10) == 36
+    assert length_of(Piece(mode: 3, data: [0x81, 0x40], number: 0), 1) == 25
+    assert length_of(Piece(mode: 4, data: empty, number: 127), 1) == 12
+    assert length_of(Piece(mode: 4, data: empty, number: 128), 1) == 20
+    assert length_of(Piece(mode: 4, data: empty, number: 16384), 1) == 28
+    long: [u8] @= []
+
+    for _ in range(from: 0, to: 256)
+        long @ long.push(0)
+
+    assert length_of(Piece(mode: 2, data: long, number: 0), 9) == -1
+    assert length_of(Piece(mode: 2, data: long, number: 0), 10) == 20 + 256 * 8
+
+# "HELLO WORLD" at 1-Q, the data codewords Core Image's own symbol carries
+# (`oracle gen Q`, read back by its detector, 2026-11-19).
+test "codewords: HELLO WORLD at version 1, thirteen codewords"
+    text = "HELLO WORLD"
+    data: [u8] @= []
+
+    for at in range(from: 0, to: text.len())
+        data @ data.push(text[at])
+
+    words = codewords(pieces: [Piece(mode: 1, data: data, number: 0)], version: 1, capacity: 13)
+    assert words == [0x20, 0x5b, 0x0b, 0x78, 0xd1, 0x72, 0xdc, 0x4d, 0x43, 0x40, 0xec, 0x11, 0xec]
+
+# The ECI's bits, read back by Core Image's detector from symbols of an ECI
+# and a byte segment on 2026-11-19: payloads opening 71a4, 7812c4 and
+# 7cf423f4.
+test "codewords: nothing, a terminator cut short, and the ECI's three widths"
+    empty: [u8] = []
+    assert codewords(pieces: [], version: 1, capacity: 3) == [0x00, 0xec, 0x11]
+    assert codewords(pieces: [Piece(mode: 4, data: empty, number: 26)], version: 1, capacity: 2) == [0x71, 0xa0]
+    assert codewords(pieces: [Piece(mode: 4, data: empty, number: 300)], version: 1, capacity: 3) == [0x78, 0x12, 0xc0]
+    assert codewords(pieces: [Piece(mode: 4, data: empty, number: 999999)], version: 1, capacity: 4) == [0x7c, 0xf4, 0x23, 0xf0]
+
+test "shortest: empty, one mode, and runs worth a switch"
+    nothing: [Piece] = []
+    assert shortest("", 1) == nothing
+    one = shortest("12345", 1)
+    assert one.len() == 1 && one[0].mode == 0
+    letters = shortest("HELLO WORLD", 1)
+    assert letters.len() == 1 && letters[0].mode == 1
+    lower = shortest("hello", 1)
+    assert lower.len() == 1 && lower[0].mode == 2
+    mixed = shortest("Order 12345678901234 sent", 1)
+    assert mixed.len() == 3
+    assert mixed[0].mode == 2 && mixed[1].mode == 0 && mixed[2].mode == 2
+    assert mixed[1].data.len() == 14
+
+test "shortest: few digits stay in the byte run, and characters of more than one byte"
+    short = shortest("ab12cd", 1)
+    assert short.len() == 1 && short[0].mode == 2
+    accented = shortest("caffè 1234567890123", 1)
+    assert accented.len() == 2
+    assert accented[0].data.len() == 7
+    assert accented[1].mode == 0

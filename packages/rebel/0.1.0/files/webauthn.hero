@@ -1,0 +1,820 @@
+# A relying party of W3C Web Authentication Level 3: the options of a
+# registration and of an authentication written as the JSON a browser hands
+# `navigator.credentials`, and the responses verified: the client data's
+# type, challenge and origin, the authenticator data's RP ID, flags and
+# counter, the attestation, and the assertion's signature.
+#
+# It reads the attestation formats "none", "packed" (self attestation and a
+# certificate's) and "fido-u2f" and verifies them; "apple", "tpm",
+# "android-key" and "android-safetynet" are read, kept and said unverified.
+# A credential's key is a COSE key, checked by the system's own
+# cryptography through `crypto/keypairs`: ES256 and RS256 everywhere,
+# ES384, PS256 to PS512 and RS384 to RS512, and EdDSA where the system has
+# Ed25519 (not macOS). It does not check an attestation's certificates to a
+# root, nor read the FIDO Metadata Service: `x509` and `jose` stand above
+# it, and `Registration.certificates` and `Registration.aaguid` are what a
+# program hands them. It keeps no session: the program keeps the challenge
+# it sent and the credentials it registered.
+#
+# It fails with `invalid`, where a response is not well formed or does not
+# verify, the message saying which check; `unsupported`, where a key's
+# algorithm is one the system's cryptography lacks; and the codes of
+# `crypto/keypairs` and `os`, handed on.
+
+use bytes
+use cbor
+use crypto
+use crypto/keypairs
+use json
+use os
+use webauthn/internal/authdata
+use webauthn/internal/client
+use webauthn/internal/codes
+use webauthn/internal/cose as cose_key
+use webauthn/internal/flow
+use webauthn/internal/options as writer
+use webauthn/internal/recorded
+use webauthn/internal/response as reply
+
+## The codes
+
+# The code of a response that is not well formed or does not verify: every
+# `verify_*` and `parse_*` function answers it, the message naming the
+# check.
+constant INVALID: str
+    codes.INVALID
+
+# The code of a key whose algorithm or curve this system's cryptography
+# lacks: EdDSA on macOS and Windows, ES512 everywhere; `parse_public_key`,
+# `verify_signature` and the `verify_*` functions answer it.
+constant UNSUPPORTED: str
+    codes.UNSUPPORTED
+
+## Algorithms
+
+# ECDSA on P-256 with SHA-256, the COSE algorithm every authenticator has.
+constant ES256: i64
+    -7
+
+# ECDSA on P-384 with SHA-384.
+constant ES384: i64
+    -35
+
+# ECDSA on P-521 with SHA-512, which no system here verifies.
+constant ES512: i64
+    -36
+
+# EdDSA, Ed25519 in practice.
+constant EDDSA: i64
+    -8
+
+# RSASSA-PSS with SHA-256.
+constant PS256: i64
+    -37
+
+# RSASSA-PSS with SHA-384.
+constant PS384: i64
+    -38
+
+# RSASSA-PSS with SHA-512.
+constant PS512: i64
+    -39
+
+# RSASSA-PKCS1-v1_5 with SHA-256, Windows Hello's.
+constant RS256: i64
+    -257
+
+# RSASSA-PKCS1-v1_5 with SHA-384.
+constant RS384: i64
+    -258
+
+# RSASSA-PKCS1-v1_5 with SHA-512.
+constant RS512: i64
+    -259
+
+## The relying party and its users
+
+# The relying party: the site a credential belongs to.
+record RelyingParty
+    # The RP ID: a registrable domain or the host of the origins, as
+    # "example.org", never a scheme or a port.
+    id: str
+    # The name shown to the user, as "Example".
+    name: str
+    # The origins a ceremony may come from, each a scheme, a host and a
+    # port where not the default: "https://example.org",
+    # "https://login.example.org:8443".
+    origins: [str]
+
+# A user account, as a registration names it.
+record User
+    # The user handle: 1 to 64 bytes the site chooses, no personal data, the
+    # same for every credential of the account; `new_challenge` makes one.
+    id: [u8]
+    # The account's name, as "ada@example.org".
+    name: str
+    # The name shown, as "Ada Lovelace".
+    display_name: str
+
+# How strongly the relying party asks for a property.
+variant Requirement
+    # The ceremony fails without it.
+    required
+    # Asked where the authenticator can give it.
+    preferred
+    # Better not.
+    discouraged
+
+# Which attestation the relying party asks for.
+variant Conveyance
+    # None: the format "none", the authenticator's make not told.
+    none
+    # An attestation the client may anonymize.
+    indirect
+    # The authenticator's own attestation.
+    direct
+    # An attestation that may identify the device, for a managed fleet.
+    enterprise
+
+# Which authenticators a registration may use.
+variant Attachment
+    # Any.
+    either
+    # One built into the device: Touch ID, Windows Hello, Android.
+    platform
+    # One that moves between devices: a security key, a phone.
+    cross_platform
+
+# A hint to the browser of the authenticator the relying party expects.
+variant Hint
+    # A physical security key.
+    security_key
+    # The device the browser runs on.
+    client_device
+    # A phone, reached by a QR code.
+    hybrid
+
+# A credential named in the options: one to exclude from a registration or
+# to allow in an authentication.
+record Descriptor
+    # The credential ID.
+    id: [u8]
+    # How the authenticator is reached, as it said at registration: "usb",
+    # "nfc", "ble", "hybrid", "internal"; empty where unknown.
+    transports: [str]
+
+## Options
+
+# The options of a registration. Built directly, or by
+# `registration_options`.
+record RegistrationOptions
+    # The challenge, 16 bytes or more of random, kept by the program until
+    # the response comes back.
+    challenge: [u8]
+    # How long the browser waits, in milliseconds.
+    timeout_ms: i64
+    # The COSE algorithms accepted, the preferred first.
+    algorithms: [i64]
+    # The credentials the account has already, so none is registered twice
+    # on one authenticator.
+    exclude: [Descriptor]
+    # The attestation asked for.
+    attestation: Conveyance
+    # The authenticators allowed.
+    attachment: Attachment
+    # Whether the credential is kept on the authenticator, so a login needs
+    # no user name.
+    resident_key: Requirement
+    # Whether the user is verified: a PIN, a fingerprint, a face.
+    user_verification: Requirement
+    # Hints of the authenticator expected, the likeliest first.
+    hints: [Hint]
+
+# The options of an ordinary registration with `challenge`: a minute to
+# answer, ES256, EdDSA where this system verifies it, and RS256, no
+# attestation, any authenticator, a discoverable credential and user
+# verification preferred.
+#
+# - `challenge`: the challenge, from `new_challenge`.
+#
+# See also `format_registration_options`.
+function registration_options(challenge: [u8]) -> RegistrationOptions
+    algorithms: [i64] @= [ES256]
+
+    if keypairs.is_available(.ed25519)
+        algorithms @ algorithms.push(EDDSA)
+    algorithms @ algorithms.push(RS256)
+    none: [Descriptor] = []
+    hints: [Hint] = []
+    return RegistrationOptions(
+        challenge: challenge,
+        timeout_ms: 60000,
+        algorithms: algorithms,
+        exclude: none,
+        attestation: .none,
+        attachment: .either,
+        resident_key: .preferred,
+        user_verification: .preferred,
+        hints: hints
+    )
+
+# The JSON of a registration's options, `PublicKeyCredentialCreationOptionsJSON`:
+# what a page hands `PublicKeyCredential.parseCreationOptionsFromJSON`, every
+# byte string in base 64 for URLs without padding.
+#
+# - `rp`: the relying party.
+# - `user`: the account the credential is for.
+# - `options`: the challenge and the choices.
+#
+# Fails `invalid` where `user.id` is empty or past 64 bytes, the challenge
+# is shorter than 16 bytes, or no algorithm is given. See also
+# `verify_registration`.
+function format_registration_options(rp: RelyingParty, user: User, options: RegistrationOptions) -> str?
+    exclude: [writer.Named] @= []
+
+    for d in options.exclude
+        exclude @ exclude.push(writer.Named(id: d.id, transports: d.transports))
+
+    attestation = match options.attestation
+        .none       => "none"
+        .indirect   => "indirect"
+        .direct     => "direct"
+        .enterprise => "enterprise"
+
+    attachment = match options.attachment
+        .either         => ""
+        .platform       => "platform"
+        .cross_platform => "cross-platform"
+
+    resident = match options.resident_key
+        .required    => "required"
+        .preferred   => "preferred"
+        .discouraged => "discouraged"
+
+    verification = match options.user_verification
+        .required    => "required"
+        .preferred   => "preferred"
+        .discouraged => "discouraged"
+
+    hints: [str] @= []
+
+    for h in options.hints
+        word = match h
+            .security_key  => "security-key"
+            .client_device => "client-device"
+            .hybrid        => "hybrid"
+
+        hints @ hints.push(word)
+
+    return writer.creation(
+        writer.Creation(rp_id: rp.id, rp_name: rp.name, user_id: user.id, user_name: user.name, display_name: user.display_name, challenge: options.challenge, timeout_ms: options.timeout_ms, algorithms: options.algorithms, exclude: exclude, attestation: attestation, attachment: attachment, resident_key: resident, user_verification: verification, hints: hints)
+    )
+
+# The options of an authentication. Built directly, or by
+# `authentication_options`.
+record AuthenticationOptions
+    # The challenge, 16 bytes or more of random, kept by the program.
+    challenge: [u8]
+    # How long the browser waits, in milliseconds.
+    timeout_ms: i64
+    # The credentials that may answer; empty lets the authenticator choose a
+    # discoverable one, and the response names the user.
+    allow: [Descriptor]
+    # Whether the user is verified.
+    user_verification: Requirement
+    # Hints of the authenticator expected.
+    hints: [Hint]
+
+# The options of an ordinary authentication with `challenge`: a minute,
+# any discoverable credential, user verification preferred.
+#
+# - `challenge`: the challenge, from `new_challenge`.
+#
+# See also `format_authentication_options`.
+function authentication_options(challenge: [u8]) -> AuthenticationOptions
+    none: [Descriptor] = []
+    hints: [Hint] = []
+    return AuthenticationOptions(
+        challenge: challenge,
+        timeout_ms: 60000,
+        allow: none,
+        user_verification: .preferred,
+        hints: hints
+    )
+
+# The JSON of an authentication's options,
+# `PublicKeyCredentialRequestOptionsJSON`: what a page hands
+# `PublicKeyCredential.parseRequestOptionsFromJSON`.
+#
+# - `rp_id`: the relying party's ID.
+# - `options`: the challenge and the choices.
+#
+# Fails `invalid` where the challenge is shorter than 16 bytes. See also
+# `verify_authentication`.
+function format_authentication_options(rp_id: str, options: AuthenticationOptions) -> str?
+    allow: [writer.Named] @= []
+
+    for d in options.allow
+        allow @ allow.push(writer.Named(id: d.id, transports: d.transports))
+
+    verification = match options.user_verification
+        .required    => "required"
+        .preferred   => "preferred"
+        .discouraged => "discouraged"
+
+    hints: [str] @= []
+
+    for h in options.hints
+        word = match h
+            .security_key  => "security-key"
+            .client_device => "client-device"
+            .hybrid        => "hybrid"
+
+        hints @ hints.push(word)
+
+    return writer.request(
+        rp_id: rp_id,
+        challenge: options.challenge,
+        timeout_ms: options.timeout_ms,
+        allow: allow,
+        user_verification: verification,
+        hints: hints
+    )
+
+# Thirty-two bytes from the system's generator for keys: a challenge, or a
+# user handle.
+#
+# Fails with `os.random_bytes`'s code where the generator refuses. See also
+# `registration_options`.
+function new_challenge() -> [u8]?
+    return os.random_bytes(32)
+
+## Verifying
+
+# What a ceremony's response must show. Built directly, or by `expect`.
+record Expected
+    # The challenge the options carried.
+    challenge: [u8]
+    # The relying party's ID, whose SHA-256 the authenticator data holds.
+    rp_id: str
+    # The origins the client data may name.
+    origins: [str]
+    # The origins of the top page a cross-origin frame may stand in; empty
+    # refuses every response from a cross-origin frame.
+    top_origins: [str]
+    # Whether the user must have been verified.
+    user_verification: bool
+    # The COSE algorithms a registered key may have.
+    algorithms: [i64]
+
+# What `rp`'s ceremony with `challenge` must show: one of its origins, no
+# cross-origin frame, the user present but not necessarily verified, and any
+# algorithm of this package.
+#
+# - `rp`: the relying party.
+# - `challenge`: the challenge sent.
+#
+# See also `verify_registration`, `verify_authentication`.
+function expect(rp: RelyingParty, challenge: [u8]) -> Expected
+    none: [str] = []
+    return Expected(
+        challenge: challenge,
+        rp_id: rp.id,
+        origins: rp.origins,
+        top_origins: none,
+        user_verification: false,
+        algorithms: [ES256, ES384, EDDSA, PS256, PS384, PS512, RS256, RS384, RS512]
+    )
+
+# A credential the relying party keeps, made by `verify_registration` and
+# handed to `verify_authentication`.
+record Credential
+    # The credential ID, 16 to 1023 bytes.
+    id: [u8]
+    # Its public key, a COSE key as the authenticator wrote it.
+    public_key: [u8]
+    # The signature counter last seen, 0 to 2^32 - 1; 0 where the
+    # authenticator keeps none.
+    sign_count: i64
+    # How the authenticator is reached, as the response said.
+    transports: [str]
+
+# How a registration's authenticator vouched for its key.
+variant Attestation
+    # Not at all: the format "none", the authenticator's make unknown.
+    none
+    # By the credential's own key: "packed" with no certificate.
+    self_attested
+    # By an attestation certificate, its signature verified and the
+    # certificate's fields checked; whether the certificate leads to a root
+    # the program trusts is the program's to ask, of
+    # `Registration.certificates`.
+    certified
+    # By a format this package reads and does not verify: "apple", "tpm",
+    # "android-key", "android-safetynet"; the key is the authenticator's
+    # word.
+    unverified
+
+# What a verified registration answers.
+record Registration
+    # The credential to keep.
+    credential: Credential
+    # Its key's COSE algorithm.
+    algorithm: i64
+    # The authenticator's model, 16 bytes; all zero where it does not say.
+    aaguid: [u8]
+    # The attestation format, as "none", "packed", "fido-u2f".
+    format: str
+    # How the key was vouched for.
+    attestation: Attestation
+    # The attestation's certificates as DER, its own first; empty for none
+    # and self attestation.
+    certificates: [[u8]]
+    # Whether the user was verified.
+    user_verified: bool
+    # Whether the credential may be backed up, a passkey synced between
+    # devices.
+    backup_eligible: bool
+    # Whether it is backed up now.
+    backed_up: bool
+
+# The registration `response` makes, every check of Web Authentication
+# Level 3 § 7.1 made against `expected`.
+#
+# - `response`: the JSON `PublicKeyCredential.toJSON()` writes for a new
+#   credential, `RegistrationResponseJSON`.
+# - `expected`: the challenge, the RP ID, the origins, whether the user must
+#   be verified, the algorithms allowed.
+#
+# Fails `invalid` naming the first check that fails: the JSON, the client
+# data's type, challenge, origin or frame, the RP ID's hash, the user's
+# presence or verification, the backup flags, the algorithm, the credential
+# ID, the attestation's signature or certificate; `unsupported` where the
+# key's algorithm is one this system lacks. See also `verify_authentication`.
+function verify_registration(response: str, expected: Expected) -> Registration?
+    want = flow.Want(
+        challenge: expected.challenge,
+        rp_id: expected.rp_id,
+        origins: expected.origins,
+        top_origins: expected.top_origins,
+        user_verification: expected.user_verification,
+        algorithms: expected.algorithms
+    )
+    r = flow.register(text: response, want: want)?
+
+    attestation: Attestation = match r.kind
+        0 => .none
+        1 => .self_attested
+        2 => .certified
+        _ => .unverified
+
+    credential = Credential(id: r.id, public_key: r.public_key, sign_count: r.sign_count, transports: r.transports)
+    return ok(
+        Registration(credential: credential, algorithm: r.algorithm, aaguid: r.aaguid, format: r.format, attestation: attestation, certificates: r.certificates, user_verified: r.user_verified, backup_eligible: r.backup_eligible, backed_up: r.backed_up)
+    )
+
+# What a verified authentication answers.
+record Authentication
+    # The credential that answered.
+    credential_id: [u8]
+    # The user handle the authenticator returned, which a discoverable
+    # credential always does; empty where it returned none, a handle never
+    # being empty.
+    user_handle: [u8]
+    # The new signature counter, to keep in the credential.
+    sign_count: i64
+    # Whether the user was verified.
+    user_verified: bool
+    # Whether the credential may be backed up.
+    backup_eligible: bool
+    # Whether it is backed up now.
+    backed_up: bool
+
+# The authentication `response` makes with `credential`, every check of Web
+# Authentication Level 3 § 7.2 made against `expected`.
+#
+# - `response`: the JSON `PublicKeyCredential.toJSON()` writes for an
+#   assertion, `AuthenticationResponseJSON`.
+# - `expected`: the challenge, the RP ID, the origins, whether the user must
+#   be verified; its algorithms are not read.
+# - `credential`: the credential the response names, as registered, with
+#   the counter last kept.
+#
+# Fails `invalid` naming the first check that fails: the JSON, the
+# credential's ID, the client data, the RP ID's hash, the flags, the
+# signature, and a counter that did not grow where either counter is not
+# zero, the sign of a cloned authenticator. See also `credential_id_of`.
+function verify_authentication(response: str, expected: Expected, credential: Credential) -> Authentication?
+    want = flow.Want(
+        challenge: expected.challenge,
+        rp_id: expected.rp_id,
+        origins: expected.origins,
+        top_origins: expected.top_origins,
+        user_verification: expected.user_verification,
+        algorithms: expected.algorithms
+    )
+    v = flow.authenticate(text: response, want: want, id: credential.id, public_key: credential.public_key, stored: credential.sign_count)?
+    return ok(
+        Authentication(credential_id: v.id, user_handle: v.user_handle, sign_count: v.sign_count, user_verified: v.user_verified, backup_eligible: v.backup_eligible, backed_up: v.backed_up)
+    )
+
+# The credential ID a response names, so the program finds the credential
+# it registered before verifying.
+#
+# - `response`: a registration's or an authentication's JSON.
+#
+# Fails `invalid` where it is not such JSON. See also `user_handle_of`.
+function credential_id_of(response: str) -> [u8]?
+    return ok(reply.read(text: response, registration: false)?.id)
+
+# The user handle an authentication's response carries: the account of a
+# discoverable credential, found before the credential is.
+#
+# - `response`: an authentication's JSON.
+#
+# Fails `invalid` where it is not such JSON or carries no handle. See also
+# `credential_id_of`.
+function user_handle_of(response: str) -> [u8]?
+    handle = reply.read(text: response, registration: false)?.user_handle
+
+    if handle.len() == 0
+        return fail(code: INVALID, msg: "the response carries no user handle")
+    return ok(handle)
+
+## What a response holds
+
+# The client data a browser signs over.
+record ClientData
+    # "webauthn.create" or "webauthn.get".
+    kind: str
+    # The challenge, decoded.
+    challenge: [u8]
+    # The origin of the page, as "https://example.org".
+    origin: str
+    # Whether the page was a frame of another origin.
+    cross_origin: bool
+    # The origin of the top page where `cross_origin`; empty otherwise.
+    top_origin: str
+
+# The client data `data` holds, `clientDataJSON` decoded from base 64.
+#
+# - `data`: the JSON's bytes, as the browser wrote them.
+#
+# Fails `invalid` where it is not a JSON object with a string `type`,
+# `challenge` and `origin`, or the challenge is not base 64 for URLs. See
+# also `verify_registration`.
+function parse_client_data(data: [u8]) -> ClientData?
+    c = client.read(data)?
+    return ok(
+        ClientData(kind: c.kind, challenge: c.challenge, origin: c.origin, cross_origin: c.cross_origin, top_origin: c.top_origin)
+    )
+
+# The authenticator data: the RP ID's hash, the flags, the counter, and at
+# registration the new credential.
+record AuthenticatorData
+    # SHA-256 of the RP ID, 32 bytes.
+    rp_id_hash: [u8]
+    # UP: the user was present.
+    user_present: bool
+    # UV: the user was verified.
+    user_verified: bool
+    # BE: the credential may be backed up.
+    backup_eligible: bool
+    # BS: it is backed up.
+    backed_up: bool
+    # AT: a credential follows.
+    attested: bool
+    # ED: extension outputs follow.
+    has_extensions: bool
+    # The signature counter, 0 to 2^32 - 1.
+    sign_count: i64
+    # The authenticator's model, 16 bytes; empty where no credential
+    # follows.
+    aaguid: [u8]
+    # The credential ID; empty where none follows.
+    credential_id: [u8]
+    # The credential's COSE key, its bytes as written; empty where none
+    # follows.
+    public_key: [u8]
+    # The extension outputs, one CBOR map's bytes; empty where none.
+    extensions: [u8]
+
+# The authenticator data `data` holds.
+#
+# - `data`: the bytes, 37 or more.
+#
+# Fails `invalid` where it is shorter than its flags say, a COSE key or the
+# extensions are not one CBOR map, or bytes follow them. See also
+# `parse_attestation_object`.
+function parse_authenticator_data(data: [u8]) -> AuthenticatorData?
+    a = authdata.read(data)?
+    return ok(
+        AuthenticatorData(rp_id_hash: a.rp_id_hash, user_present: a.user_present, user_verified: a.user_verified, backup_eligible: a.backup_eligible, backed_up: a.backed_up, attested: a.attested, has_extensions: a.has_extensions, sign_count: a.sign_count, aaguid: a.aaguid, credential_id: a.credential_id, public_key: a.public_key, extensions: a.extensions)
+    )
+
+# An attestation object: what an authenticator answers a registration.
+record AttestationObject
+    # The format, as "none" or "packed".
+    format: str
+    # The attestation statement, a CBOR map whose members the format names.
+    statement: cbor.Value
+    # The authenticator data's bytes.
+    auth_data: [u8]
+
+# The attestation object `data` holds, CBOR with the members `fmt`,
+# `attStmt` and `authData`.
+#
+# - `data`: the bytes, `attestationObject` decoded from base 64.
+#
+# Fails `invalid` where it is not such a map. See also
+# `parse_authenticator_data`.
+function parse_attestation_object(data: [u8]) -> AttestationObject?
+    o = flow.object(data)?
+    return ok(AttestationObject(format: o.format, statement: o.statement, auth_data: o.auth_data))
+
+# A credential's public key, read from its COSE key.
+record PublicKey
+    # The COSE algorithm, as `ES256`.
+    algorithm: i64
+    # The kind of key.
+    kind: keypairs.Kind
+    # How its signatures are checked.
+    scheme: keypairs.Scheme
+    # The key as SubjectPublicKeyInfo DER, which `keypairs.verify_der` and
+    # `keypairs.parse_public_der` read.
+    der: [u8]
+
+# The public key the COSE key `cose` holds.
+#
+# - `cose`: the COSE key's CBOR bytes, as `AuthenticatorData.public_key` or
+#   `Credential.public_key`.
+#
+# Fails `invalid` where it is not a COSE key of an algorithm this package
+# reads, or its members disagree with its algorithm; `unsupported` for ES512
+# and, where the system lacks Ed25519, EdDSA. See also `verify_signature`.
+function parse_public_key(cose: [u8]) -> PublicKey?
+    k = cose_key.read(cose)?
+    return ok(PublicKey(algorithm: k.algorithm, kind: k.kind, scheme: k.scheme, der: k.der))
+
+# Whether `signature` is the signature of `data` by the key `cose` holds.
+#
+# - `cose`: the COSE key's bytes.
+# - `data`: the bytes signed.
+# - `signature`: the signature, DER for ECDSA as Web Authentication writes
+#   it.
+#
+# False, never a failure, for a signature that does not hold. Fails as
+# `parse_public_key` fails, and with `keypairs.verify_der`'s codes. See also
+# `parse_public_key`.
+function verify_signature(cose: [u8], data: [u8], signature: [u8]) -> bool?
+    k = cose_key.read(cose)?
+    return keypairs.verify_der(public_der: k.der, scheme: k.scheme, message: data, signature: signature)
+
+## Examples
+
+# The options of a registration, as JSON for the page.
+test "registration_options: the ordinary options, written for the browser"
+    options = registration_options([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16])
+    assert options.timeout_ms == 60000
+    assert options.algorithms[0] == ES256
+
+# Registration options written as JSON.
+test "format_registration_options: the relying party, the user, the challenge"
+    rp = RelyingParty(id: "example.org", name: "Example", origins: ["https://example.org"])
+    user = User(id: [1, 2, 3], name: "ada@example.org", display_name: "Ada")
+    options = registration_options([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+    text = format_registration_options(rp: rp, user: user, options: options).must()
+    assert text.slice(from: 0, to: 6) == "{\"rp\":"
+
+# The options of an authentication.
+test "authentication_options: any discoverable credential"
+    options = authentication_options([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+    assert options.allow.len() == 0
+
+# Authentication options written as JSON.
+test "format_authentication_options: the RP ID and the challenge"
+    options = authentication_options([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+    text = format_authentication_options(rp_id: "example.org", options: options).must()
+    assert text.len() > 0
+
+# A fresh challenge.
+test "new_challenge: thirty-two bytes, different each time"
+    assert new_challenge().must().len() == 32
+    assert new_challenge().must() != new_challenge().must()
+
+# What a ceremony must show.
+test "expect: one origin, the user present"
+    rp = RelyingParty(id: "example.org", name: "Example", origins: ["https://example.org"])
+    want = expect(rp: rp, challenge: [7, 7, 7])
+    assert want.rp_id == "example.org" && !want.user_verification
+
+# A registration verified: the credential to keep, from a ceremony recorded
+# from a software authenticator.
+test "verify_registration: packed self attestation with ES256"
+    rp = RelyingParty(id: "example.org", name: "Example", origins: ["https://example.org"])
+    challenge: [u8] @= []
+
+    for i in range(from: 0, to: 32)
+        challenge @ challenge.push(to_u8(i).must())
+
+    registration = verify_registration(
+        response: recorded.PACKED_SELF_ES256,
+        expected: expect(rp: rp, challenge: challenge)
+    ).must()
+    assert registration.attestation == .self_attested && registration.algorithm == ES256
+    assert registration.credential.id.len() == 16
+
+# A login verified with the credential registered, its counter kept.
+test "verify_authentication: an ES256 assertion, the counter grown to 5"
+    rp = RelyingParty(id: "example.org", name: "Example", origins: ["https://example.org"])
+    challenge: [u8] @= []
+
+    for i in range(from: 0, to: 32)
+        challenge @ challenge.push(to_u8(i).must())
+
+    registration = verify_registration(
+        response: recorded.PACKED_SELF_ES256,
+        expected: expect(rp: rp, challenge: challenge)
+    ).must()
+    login: [u8] @= []
+
+    for i in range(from: 32, to: 64)
+        login @ login.push(to_u8(i).must())
+
+    done = verify_authentication(
+        response: recorded.AUTH_ES256,
+        expected: expect(rp: rp, challenge: login),
+        credential: registration.credential
+    ).must()
+    assert done.sign_count == 5 && done.user_verified
+
+# The credential an assertion names, to find before verifying.
+test "credential_id_of: sixteen bytes"
+    assert credential_id_of(recorded.AUTH_ES256).must() == [0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11]
+
+# The user a discoverable credential answers for.
+test "user_handle_of: the handle user-1, and an assertion with none"
+    assert user_handle_of(recorded.AUTH_ES256).must() == [0x75, 0x73, 0x65, 0x72, 0x2d, 0x31]
+    assert user_handle_of(recorded.AUTH_ES256_ZERO).is_err()
+
+# The client data a browser signs.
+test "parse_client_data: a registration's type, challenge and origin"
+    data: [u8] @= []
+    text = "{\"type\":\"webauthn.create\",\"challenge\":\"AAEC\",\"origin\":\"https://example.org\"}"
+
+    for at in range(from: 0, to: text.len())
+        data @ data.push(text[at])
+
+    c = parse_client_data(data).must()
+    assert c.kind == "webauthn.create" && c.challenge == [0, 1, 2] && c.origin == "https://example.org"
+
+# Authenticator data of an assertion: the RP ID's hash, the flags, the
+# counter.
+test "parse_authenticator_data: user present and verified, counter 7"
+    a = parse_authenticator_data(
+        [0xbf, 0xab, 0xc3, 0x74, 0x32, 0x95, 0x8b, 0x06, 0x33, 0x60, 0xd3, 0xad, 0x64, 0x61, 0xc9, 0xc4, 0x73, 0x5a, 0xe7, 0xf8, 0xed, 0xd4, 0x65, 0x92, 0xa5, 0xe0, 0xf0, 0x14, 0x52, 0xb2, 0xe4, 0xb5, 0x05, 0x00, 0x00, 0x00, 0x07]
+    ).must()
+    assert a.user_present && a.user_verified && !a.attested && a.sign_count == 7
+    assert a.rp_id_hash == crypto.sha256_text("example.org")
+
+# An attestation object of the format "none".
+test "parse_attestation_object: none, an empty statement, 37 bytes of authenticator data"
+    o = parse_attestation_object(
+        [0xa3, 0x63, 0x66, 0x6d, 0x74, 0x64, 0x6e, 0x6f, 0x6e, 0x65, 0x67, 0x61, 0x74, 0x74, 0x53, 0x74, 0x6d, 0x74, 0xa0, 0x68, 0x61, 0x75, 0x74, 0x68, 0x44, 0x61, 0x74, 0x61, 0x58, 0x25, 0xbf, 0xab, 0xc3, 0x74, 0x32, 0x95, 0x8b, 0x06, 0x33, 0x60, 0xd3, 0xad, 0x64, 0x61, 0xc9, 0xc4, 0x73, 0x5a, 0xe7, 0xf8, 0xed, 0xd4, 0x65, 0x92, 0xa5, 0xe0, 0xf0, 0x14, 0x52, 0xb2, 0xe4, 0xb5, 0x05, 0x00, 0x00, 0x00, 0x07]
+    ).must()
+    assert o.format == "none" && o.auth_data.len() == 37
+
+# A registered key read: its algorithm and its key for `crypto/keypairs`.
+test "parse_public_key: the ES256 key of a registration"
+    rp = RelyingParty(id: "example.org", name: "Example", origins: ["https://example.org"])
+    challenge: [u8] @= []
+
+    for i in range(from: 0, to: 32)
+        challenge @ challenge.push(to_u8(i).must())
+
+    registration = verify_registration(
+        response: recorded.PACKED_SELF_ES256,
+        expected: expect(rp: rp, challenge: challenge)
+    ).must()
+    key = parse_public_key(registration.credential.public_key).must()
+    assert key.algorithm == ES256 && key.kind == .p256 && key.der[0] == 0x30
+
+# A signature checked against a COSE key: what an assertion signs.
+test "verify_signature: an assertion's signature over its data, and over other data"
+    rp = RelyingParty(id: "example.org", name: "Example", origins: ["https://example.org"])
+    challenge: [u8] @= []
+
+    for i in range(from: 0, to: 32)
+        challenge @ challenge.push(to_u8(i).must())
+
+    registration = verify_registration(
+        response: recorded.PACKED_SELF_ES256,
+        expected: expect(rp: rp, challenge: challenge)
+    ).must()
+    response = json.members_of(json.member(v: json.parse(recorded.AUTH_ES256).must(), key: "response").must()).must()
+    authenticator = bytes.parse_base64_url_unpadded(json.text_of(response["authenticatorData"].must()).must()).must()
+    client_data = bytes.parse_base64_url_unpadded(json.text_of(response["clientDataJSON"].must()).must()).must()
+    signature = bytes.parse_base64_url_unpadded(json.text_of(response["signature"].must()).must()).must()
+    signed = bytes.concat([authenticator, crypto.sha256(client_data)])
+    assert verify_signature(cose: registration.credential.public_key, data: signed, signature: signature).must()
+    assert !verify_signature(cose: registration.credential.public_key, data: authenticator, signature: signature).must()

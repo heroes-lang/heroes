@@ -1,0 +1,158 @@
+# The authenticator data read (Web Authentication Level 3 § 6.1): 32 bytes
+# of the RP ID's hash, one byte of flags, four of the signature counter, and
+# where the flags say so the attested credential (AAGUID, the credential
+# ID's length and bytes, its COSE key) and the extension outputs, one CBOR
+# map each, nothing after them.
+
+use cbor
+use webauthn/internal/codes
+use webauthn/internal/der
+
+# The authenticator data read.
+record Parsed
+    # SHA-256 of the RP ID.
+    rp_id_hash: [u8]
+    # UP, bit 0.
+    user_present: bool
+    # UV, bit 2.
+    user_verified: bool
+    # BE, bit 3.
+    backup_eligible: bool
+    # BS, bit 4.
+    backed_up: bool
+    # AT, bit 6.
+    attested: bool
+    # ED, bit 7.
+    has_extensions: bool
+    # The signature counter.
+    sign_count: i64
+    # The AAGUID; empty without AT.
+    aaguid: [u8]
+    # The credential ID; empty without AT.
+    credential_id: [u8]
+    # The COSE key's bytes; empty without AT.
+    public_key: [u8]
+    # The extensions' bytes; empty without ED.
+    extensions: [u8]
+
+# The authenticator data `data` holds.
+function read(data: [u8]) -> Parsed?
+    if data.len() < 37
+        return fail(
+            code: codes.INVALID,
+            msg: f"authenticator data of {data.len()} bytes, fewer than the 37 it always holds"
+        )
+    flags = to_i64(data[32]).must()
+    count: i64 @= 0
+
+    for i in range(from: 33, to: 37)
+        count @ count * 256 + to_i64(data[i]).must()
+
+    aaguid: [u8] @= []
+    id: [u8] @= []
+    key: [u8] @= []
+    extensions: [u8] @= []
+    at: i64 @= 37
+    attested = flags & 0x40 != 0
+    has_extensions = flags & 0x80 != 0
+
+    if attested
+        if data.len() < at + 18
+            return fail(
+                code: codes.INVALID,
+                msg: f"authenticator data of {data.len()} bytes ends inside its attested credential"
+            )
+        aaguid @ der.part(data: data, from: at, to: at + 16)
+        length = to_i64(data[at + 16]).must() * 256 + to_i64(data[at + 17]).must()
+        at @ at + 18
+
+        if length < 1 || at + length > data.len()
+            return fail(
+                code: codes.INVALID,
+                msg: f"a credential ID of {length} bytes in authenticator data of {data.len()}"
+            )
+        id @ der.part(data: data, from: at, to: at + length)
+        at @ at + length
+
+        match cbor.decode_next(data: data, from: at, options: cbor.strict())
+            .ok got =>
+                key @ der.part(data: data, from: at, to: got.next)
+                at @ got.next
+            .err e => return fail(code: codes.INVALID, msg: f"the credential's COSE key: {e.msg}")
+
+    if has_extensions
+        if at >= data.len()
+            return fail(code: codes.INVALID, msg: "the flags say extensions follow, and none do")
+
+        match cbor.decode_next(data: data, from: at, options: cbor.strict())
+            .ok got =>
+                extensions @ der.part(data: data, from: at, to: got.next)
+                at @ got.next
+            .err e => return fail(code: codes.INVALID, msg: f"the extensions: {e.msg}")
+
+    if at != data.len()
+        return fail(code: codes.INVALID, msg: f"{data.len() - at} bytes follow the authenticator data")
+    return ok(
+        Parsed(rp_id_hash: der.part(data: data, from: 0, to: 32), user_present: flags & 0x01 != 0, user_verified: flags & 0x04 != 0, backup_eligible: flags & 0x08 != 0, backed_up: flags & 0x10 != 0, attested: attested, has_extensions: has_extensions, sign_count: count, aaguid: aaguid, credential_id: id, public_key: key, extensions: extensions)
+    )
+
+## Tests
+
+test "read: the shortest, the flags, the counter, and what follows"
+    bare: [u8] @= []
+
+    for _ in range(from: 0, to: 32)
+        bare @ bare.push(0xaa)
+
+    for b in [0x1d, 0x00, 0x00, 0x01, 0x02]
+        bare @ bare.push(to_u8(b).must())
+
+    got = read(bare).must()
+    assert got.user_present && got.user_verified && got.backup_eligible && got.backed_up
+    assert !got.attested && !got.has_extensions
+    assert got.sign_count == 258
+    assert got.credential_id.len() == 0
+    longer: [u8] @= bare
+    longer @ longer.push(0)
+    assert read(longer).is_err()
+    shorter = der.part(data: bare, from: 0, to: 36)
+    assert read(shorter).is_err()
+
+test "read: a counter of all ones, and extensions said and missing"
+    data: [u8] @= []
+
+    for _ in range(from: 0, to: 32)
+        data @ data.push(0)
+
+    for b in [0x81, 0xff, 0xff, 0xff, 0xff]
+        data @ data.push(to_u8(b).must())
+
+    match read(data)
+        .ok _  => assert false
+        .err e => assert e.msg == "the flags say extensions follow, and none do"
+
+    data @ data.push(0xa0)
+    got = read(data).must()
+    assert got.sign_count == 4294967295 && got.extensions == [0xa0]
+
+test "read: an attested credential cut short, and a key that is not CBOR"
+    data: [u8] @= []
+
+    for _ in range(from: 0, to: 32)
+        data @ data.push(0)
+
+    for b in [0x41, 0, 0, 0, 0]
+        data @ data.push(to_u8(b).must())
+
+    assert read(data).is_err()
+
+    for _ in range(from: 0, to: 16)
+        data @ data.push(0)
+
+    data @ data.push(0)
+    data @ data.push(2)
+    data @ data.push(7)
+    data @ data.push(7)
+    assert read(data).is_err()
+    data @ data.push(0xff)
+    assert read(data).is_err()
