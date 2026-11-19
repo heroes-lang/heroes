@@ -43,8 +43,8 @@ of the 176 functions of `strings`, `os`, `path/filepath` and `strconv`, 61 make
 answered 55 % of them. One corpus, and systems code.
 
 What removing `core` means, counted the same day: 17 of the 56 programs of
-`examples/` use it (35 `use` lines in 23 files); 115 modules of the net write
-`use <core>/strings as core_strings` and call three functions of it
+`examples/` use it (35 `use` lines in 23 files); 115 modules of the net bind
+its `strings` as `core_strings` and call three functions of it
 (`contains` 921 times, `has_prefix` 507, `has_suffix` 159); 113 files of
 `tests/golden` name it as a fixture; 18 files of `selfhost/` name it; 339
 living files in all, beside 19 placed copies (741 files).
@@ -347,6 +347,119 @@ notes did not read them from a clock.
     the task was amended that evening. The table reads 130 rows, layers 0 to
     7 and no package using one of its own layer or above.
 
+## The author's answer of 2026-11-19: what panel 253 left owed is built here
+
+At about 21:25, to the coordinator's question whether the landing holds the three things panel
+253 left owed or leaves each a row of its own after it (the coordinator recommended the rows),
+meant as: *no, I want to face them before closing this whole chat, so run them one at a time and
+let us resolve them; and as always, when we close the steps no blocking may be active.* So no
+row of the chain is written for them, and this milestone owes them, one at a time and in this
+order, after the landing's lanes:
+
+1. **Panel 253's R6, `heroes fetch` placing a `packages` list's closure**: an entry's listed
+   packages placed with each one they use, priced by the sitting's compiler-engineer at about 150
+   lines and unbuilt; with the umbrella's lane, which builds the list, the refusal and `heroes add
+   rebel/<path>`.
+2. **Panel 253's R5, the whole stack of calls when a program aborts**: the frame walk with its
+   lines resolved by the parent process, (W) with (A), and its three repairs (the walk starts at
+   the aborting frame; the lines are resolved in the parent, never by `dladdr` in the child on
+   Linux; the program's units built with `-fno-omit-frame-pointer` on x86-64), built and run on
+   the three platforms. The sentence in spec § 6 stays vetoed.
+3. **Panel 253's R3, the mixed route of the system's cryptography on macOS**: the AEADs through
+   CryptoKit, Ed25519 and X25519 through a vendored C library, built and measured. It waited for
+   the author's answer to decision 2594, whether decision 24 admits a vendored C cryptography
+   library, and the answer of about 21:50 below admits one for primitives that read no outside
+   data.
+
+**And the milestone closes over zero open `blocking` and `systemic` defect issues**, as CLAUDE.md
+§ Verification says of every tag.
+
+## The author's answers of 2026-11-19, about 21:50: yes to the coordinator's six recommendations
+
+Given in conversation, meant as: *yes to everything*. Each written as what it settles:
+
+- **Decision 24 admits a vendored C cryptography library for primitives that read no outside
+  data** (decision 2594, its comment of 20:51 UTC carrying the words). A cipher, a signature and a
+  key agreement work on bytes the program already holds, so *"what reads data from outside is
+  written in Heroes, never bound from a C library"* stays true; and the ffi-pragmatist's reserved
+  veto (panel 253's R1) stands: no wording of this answer stops a program binding a C library
+  itself. Its first use is panel 253's R3, the third of the owed steps above, built and measured
+  before the milestone closes. Decision 2594 closes with the commit that writes this answer here
+  and in design.md.
+- **The panel skill's blind seat runs with the measured repairs of defect 2589**:
+  `.claude/skills/panel/SKILL.md` amended (CLAUDE.md § 3: the skills are amended by the author's
+  instruction), committed on `rebel-round` at `cb2ad6d7d`.
+- **The folders earlier sittings' blind and paid sessions wrote under the user's own
+  `~/.claude/projects/` move inside the repository's root** (CLAUDE.md § Hard stops: no file
+  outside it): 694 folders and 739 transcripts, moved uncommitted to
+  `.claude/worktrees/rebel-scratch/old-blind-transcripts/` with its README and MANIFEST. The
+  coordinator's earlier figure, 189 folders, was a part it could not reconstruct.
+- **No new paid blind reading now.**
+- **Nothing is installed on the Windows box**; Rebel's own pipeline installs SQLite where its tests
+  need it.
+
+## The coherence review's nineteen decisions, adopted by recommendation on 2026-11-19
+
+The review of decision 31 put nineteen questions, D01 to D19, each with its recommendation and the
+count it rests on, taken that day by the review's readers over Rebel's faces; the counts below are
+theirs and were not run again for this page. **The coordinator adopted every one as recommended on
+2026-11-19**, by the batch's rule (`.claude/rules/verification.md` § The batch: *a batch's own
+questions take the recommended answer*), **for the author to turn**:
+
+- **D01**: § A3 gains `from_x`, `x_with`, `x_name`, `x_named` and `x_all`, rows the library already
+  writes (`from_x` 77 functions in 31 faces, `x_with` 52 in 29, `x_name` 42 in 24).
+- **D02**: bytes to a value and back are `decode_x` and `encode_x`, and `parse_x` and `format_x`
+  mean text alone (functions answering bytes: `encode_x` 54 against `format_x` 8; reading bytes:
+  `decode_x` 64 against `parse_x` 11).
+- **D03**: a value is made by its type's bare noun, or `new_x` where the noun is taken or the value
+  drawn fresh, and `x_of` asks a question (129 functions in 53 faces named for the record they
+  return, 75 `new` or `new_x`).
+- **D04**: `default_<record>()` for the defaults and `<what>_<record>()` for a named preset
+  (`default_x()` and `default_options()` 40 functions in 29 faces, `defaults()` 10 faces).
+- **D05**: `x_json` writes a record as a `json.Value`, `x_of(v: json.Value)` reads it back, and
+  `fetch_x` is one thing asked of a server (`x_json` 61 functions in 12 faces, the readers 39,
+  `fetch_x` 8 in 4).
+- **D06**: § A3's abbreviations gain `opts`, `msg`, `img`, `re`, `arg`, `ttl`, `ssid` and `_ms` as
+  a unit's suffix, and not `sub`, `mul` or `neg` (`opts` 35 parameters in 11 faces, `msg` 15 in 9,
+  `img` 34 in 7, `_ms` 111 fields and parameters in 29 faces; no `sub_`, `mul_` or `neg_` called
+  outside its package).
+- **D07**: a span a caller gives is a `time.Duration` from layer 4 up and `_ms: i64` only in `net`,
+  `serial` and `term`; seconds are spelled `_seconds`; `0` waits not at all and no bound is a named
+  constant; a moment a server sends is a `time.Instant` (a span in a bare `i64` is the unit mistake
+  the compiler cannot refuse; `time.Duration` 51 parameters in 10 faces, `_ms` 52 in 15).
+- **D08**: a field that may hold nothing is `T?`, never a `bool` beside it (50 `has_x: bool` fields
+  in 11 faces, 34 pairs in `x509` and 2 in `kafka` beside the value they guard).
+- **D09**: a position the program holds aborts outside the structure, as the language does past an
+  index's end, and only a `get` is the checked reader (no caller outside the package for the three
+  functions it reaches).
+- **D10**: one heading, `## Codes`, for every code constant; a face whose ledger holds a `pending`
+  block names it in its header; § A2 names the private modules a folder of subpackages shares
+  (`## Codes` heads 82 faces; 84 ledgers hold 417 `pending` blocks, 69 of their faces' headers
+  silent on them).
+- **D11**: a check in the `rebel` suite over `heroes doc`'s output, an example per function,
+  `Fails` on every fallible one and every `See also` existing, written once `heroes doc` merges
+  (§ A7 promised it and no check held it; the debt read then over layers 0, 4, 7 and 8: 888
+  examples and 18 `Fails` missing).
+- **D12**: the 21 floors owe § A7's parameter lines, and no example is owed of a binding of one C
+  function (338 of the floors' 442 functions had no line, which `heroes doc` refuses).
+- **D13**: a package `otlp` at layer 7, and `metrics` and `tracing` at layer 8 (five public types
+  and two exporters declared twice; no package uses either).
+- **D14**: retries and circuit breakers leave `time` for a package of their own at layer 4, and
+  `http`'s policy is theirs (22 names a stranger does not look for in `time`, 97 public functions
+  down to 81).
+- **D15**: SCRAM-SHA-256 and SASLprep become one package at layer 3 (the client steps written three
+  times and SASLprep once, so a password above ASCII would log in to MongoDB and not to PostgreSQL
+  or Kafka: read from the modules, unrun).
+- **D16**: `math/complex`, a subpackage at layer 1 (30 `_complex` suffixes in the library's largest
+  face, 155 functions, about 125 after).
+- **D17**: `url/idna` moves to layer 2 and takes NFC from `unicode/normalize` (no package uses it,
+  and 844 of its test file's 6,389 lines answered `unsupported`).
+- **D18**: the program's stop, `catch_stop`, `ask_stop` and `is_stop_asked`, moves from `net` to
+  `os`, so a program that reads a serial port need not use `net` to end on Ctrl-C (22 uses in 8
+  files).
+- **D19**: `regex` stays at its layer (moved to 2, `scanner` and `tokenizer`, which use it, would
+  climb with every package above them, for two `pending` classes).
+
 ## Decided on the fly by the coordinator, for the author to turn
 
 - **The packages, in layers** (`examples-rebel/README.md` § A1): `io` holds
@@ -449,3 +562,40 @@ edge case of an algorithm. The first two data came from the guide's own
 snippets, the coordinator's: `c >= "0"` refused at the first check
 (`bad_operand`), and a search that cut a slice at every byte, accepted by the
 checker and aborting on `caffè` when run.
+
+## The work as it stands, 2026-11-19 evening
+
+Read from `git log` of the branch `rebel-round`, which opened from `main` at `f6c49d84c` (batch
+39's round), and of the lanes running beside the landing; every hash is the commit's own.
+
+- **Rebel, steps 3 to 53** (`89a33de42`, 2026-11-17 09:43, to `5c5e6f811`, 2026-11-19 11:31; no
+  step 39 was committed): the packages, the platform layer under them in `runtime/platform/`, the
+  rules page `examples-rebel/README.md` and this page; step 40 repaired what the Windows box found.
+- **The three sittings** of decision 33, ratified as proposed by the author's word of about 13:10
+  on 2026-11-19: panel 251 (A, decision 2590), panel 252 (B, decision 2599) and panel 253 (C,
+  decision 2595).
+- **Steps 54a to 54e**: panel 251's R1 and R2 and defects 2522, 2552, 2582, 2587 and 2588 (lane
+  `lane-251`, merged at `06a2ecfbb`).
+- **Steps 55a to 55g**: the compiler's home without a library, the net's string predicates its own,
+  the examples carrying their own functions, the goldens' fixture package renamed, the hooks naming
+  no `core`, and the static index's `core` removed whole at `7ddb4ed74` (lane `lane-core`, merged at `90bfb5252`).
+- **Steps 56a to 56i**: the coherence review's instruments, the `rebel` suite, and its repairs
+  (lane `lane-review`, merged at `b7a43bf18`); its nineteen decisions are above.
+- **Steps 57a to 57e**: five Windows reds of step 53's sweep (lane `lane-win`, merged at
+  `f7fa352f3`).
+- **Committed on the implementation lanes and not merged at this writing**: steps 58a to 58e
+  (`lane-impl-b`): a print span ends with its thread, so `exit` no longer waits on a lock nobody
+  holds, `e8b13be45`, the hang filed as defect 2605 on 2026-11-19 (20:15 UTC by GitHub); modules
+  may form a ring (panel 252's R1); a literal's typed part settles its letter (R2, defect 2596);
+  spec § 11 names C's `strtod` (R5); containers refuse a list that is not their own (R3, defect
+  2597). Steps 59a to 59c (`lane-impl-doc`): `heroes doc`, its golden forms `doc` and
+  `doc_refused`, and the compiler's own tests counting it (panel 253's R2). Steps 60a and 60b
+  (`lane-impl-rt`): defects 2602 and 2600. `lane-impl-skip` (panel 253's R4) had committed nothing.
+- **The landing's lanes, steps 62 to 67**: the contract's and design's texts, the chain, the
+  register and the final check (step 63), the site, Rebel's own pipeline, panel 253's R6, and the
+  reds the branch carries at its base. Then the three owed steps above, one at a time.
+
+**The register of the decisions this milestone invalidates** is one `decision` issue with dated
+comments (decision 10, panel 253's R1), <register>; this page carries no list of it. The records
+that held a superseded decision each end with a dated note pointing at it.
+
