@@ -1,0 +1,252 @@
+# The ledger of `vectors`: what a program can do with vectors of floats
+# compared and searched for the nearest, one block per capability, and what
+# Rebel answers.
+#
+# Neither Go's nor Rust's standard library holds vectors of floats or a
+# search for the nearest, so their lines read `-`; Python's holds three
+# functions over coordinates (`math.dist`, `math.hypot`, `math.sumprod`). The
+# task (the author, 2026-11-17) named the yardsticks: hnswlib, faiss and
+# pgvector's operators. The lists are this machine's, 2026-11-19: `dir()` of
+# `hnswlib` 0.8.0 and of its `Index`, built from its source into the scratch
+# folder since no wheel exists for Python 3.15; `dir()` of `faiss` 1.16.0
+# (faiss-cpu), of its `IndexHNSWFlat` and its `hnsw`, and its names holding
+# `Flat`, `HNSW`, `METRIC`, `knn`, `L2`, `index`; pgvector's operators and
+# functions from its documentation (pgvector 0.8), not installed here, so its
+# lines are read and never run.
+#
+# A vector is `[f32]`, as all three yardsticks hold it; matrices and arrays of
+# more dimensions stay out (the task).
+#
+# The differential, 2026-11-19, on 10,000 vectors of 32 components drawn
+# uniformly from -1 to 1 by `random`'s PCG seeded (1, 2), 200 queries drawn
+# after them, k 10, 16 links, 200 candidates at construction, every library
+# on one thread. Exact search: `nearest` answered numpy's float64 ids, ties by
+# index, on 200 of 200 queries under the euclidean metric and 200 of 200
+# under the cosine. Recall of the k found against those ids, at ef 10, 50,
+# 100 and 200: euclidean, Rebel 0.5890, 0.9465, 0.9910, 0.9995; hnswlib
+# 0.5900, 0.9445, 0.9915, 0.9995; faiss's `IndexHNSWFlat` 0.6160, 0.9485,
+# 0.9905, 0.9995. Cosine, Rebel 0.6035, 0.9485, 0.9885, 0.9995; hnswlib
+# 0.6030, 0.9465, 0.9875, 0.9995; faiss on normalized vectors 0.6460, 0.9635,
+# 0.9955, 1.0000. Cost on this Mac at -O2: the index built in 5.4 s, where
+# hnswlib took 2.5 s and faiss 0.8 s; a query at ef 100 about 100
+# microseconds, hnswlib's 46; 21 MB resident at most; written as 2,743,300
+# bytes and read back as the same graph.
+
+capability vector/dot  the dot product of two vectors
+  heroes  vectors.dot
+  go      -
+  rust    -
+  python  math.sumprod, faiss.fvec_inner_product, hnswlib.Index (space "ip")
+  pgvector  inner_product, <#>
+  note    each product exact in f64 and the sum rounded once to f32: Python's `sum` over the f32 products in f64 gives the same before the last rounding (observed). faiss and pgvector sum in f32 and may differ in the last bits
+
+capability vector/norm  the length of a vector
+  heroes  vectors.norm
+  go      -
+  rust    -
+  python  math.hypot, faiss.fvec_norms_L2sqr
+  pgvector  vector_norm
+  note    the squares summed in f64, one root, one rounding to f32; `math.hypot` scales to avoid overflow, which f64 sums of f32 squares never need
+
+capability vector/cosine  the cosine similarity and distance of two vectors
+  heroes  vectors.cosine_similarity, vectors.cosine_distance
+  go      -
+  rust    -
+  python  hnswlib.Index (space "cosine")
+  pgvector  cosine_distance, <=>
+  note    the dot product over the root of the product of the squared lengths, as pgvector divides (one rounding where two roots take three), held within -1 and 1. A vector of zeros fails `invalid`, where pgvector answers NaN and hnswlib's normalization leaves it zero
+
+capability vector/euclidean  the euclidean distance of two vectors, and its square
+  heroes  vectors.euclidean_distance, vectors.squared_euclidean_distance
+  go      -
+  rust    -
+  python  math.dist, faiss.fvec_L2sqr, faiss.METRIC_L2, hnswlib.Index (space "l2")
+  pgvector  l2_distance, <->
+  note    pgvector's `<->` is the distance and faiss's and hnswlib's `l2` its square; both are offered
+
+capability vector/manhattan  the sum of the absolute differences of two vectors
+  heroes  vectors.manhattan_distance
+  go      -
+  rust    -
+  python  faiss.METRIC_L1
+  pgvector  l1_distance, <+>
+
+capability vector/metric  a distance chosen by a value, and one query's distances to many vectors
+  heroes  vectors.Metric, vectors.distance, vectors.distances
+  go      -
+  rust    -
+  python  faiss.pairwise_distances, faiss.METRIC_INNER_PRODUCT
+  pgvector  -
+  note    the inner product orders as pgvector's `<#>`, the product negated so the nearest is the smallest; faiss's `METRIC_INNER_PRODUCT` answers the product itself, the largest first. `pairwise_distances` takes many queries; a program loops over them
+
+capability vector/normalize  a vector scaled to length one
+  heroes  vectors.normalize
+  go      -
+  rust    -
+  python  faiss.normalize_L2, faiss.fvec_renorm_L2
+  pgvector  l2_normalize
+  note    each quotient in f64, rounded once; a vector of zeros, or one holding a nan or an infinity, fails `invalid`, where faiss and pgvector leave zeros as they are
+
+capability vector/arithmetic  two vectors added, subtracted, multiplied element by element, a vector scaled
+  heroes  vectors.add, vectors.subtract, vectors.multiply, vectors.scale
+  go      -
+  rust    -
+  python  faiss.fvec_madd
+  pgvector  +, -, *
+  note    faiss's `fvec_madd`, a plus b times a factor, is `add(a: a, b: scale(b, by: f))`
+
+capability vector/aggregate  the sum and the mean of many vectors
+  heroes  vectors.sum, vectors.mean
+  go      -
+  rust    -
+  python  -
+  pgvector  sum, avg
+  note    each component summed in f64 and rounded once; the mean of 0.1, 0.2 and 0.4 as f32 is numpy's float64 mean rounded to f32 (observed)
+
+capability vector/dimensions  how many components a vector has
+  heroes  built-in len
+  go      -
+  rust    -
+  python  faiss.Index.d, hnswlib.Index.dim
+  pgvector  vector_dims
+  note    an index's is `vectors.dimension_of`
+
+capability vector/subvector  the components of a vector from one place to another
+  heroes  built-in slice
+  go      -
+  rust    -
+  python  -
+  pgvector  subvector
+
+capability vector/half-precision  a vector held at half precision
+  heroes  numbers.f32_to_f16_bits, numbers.f16_bits_to_f32
+  go      -
+  rust    -
+  python  -
+  pgvector  halfvec
+  note    `numbers` converts each component; an index of half-precision vectors is not offered, the vectors are held as f32
+
+capability vector/binary  a vector reduced to one bit a component, and the distances of bit vectors
+  heroes  vectors.quantize_binary, vectors.hamming_distance, vectors.jaccard_distance
+  go      -
+  rust    -
+  python  faiss.IndexBinaryFlat, faiss.IndexBinaryHNSW
+  pgvector  binary_quantize, bit, hamming_distance, jaccard_distance, <~>, <%>
+  note    a bit set where a component is above zero, the first in the highest bit, as pgvector writes a bit string; a nan gives a clear bit. Two bit vectors with no bit set are at a Jaccard distance of 0.0, as SciPy 1.18.1's `jaccard` answers (observed). The nearest bit vectors are found by `hamming_distance` in a loop; an index of them is not offered
+
+capability vector/sparse  a vector held as its components that are not zero
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  pgvector  sparsevec
+  note    a vector of indices and values with the same distances; not yet written
+
+capability nearest/exact  the k nearest of a list of vectors, by exact search
+  heroes  vectors.nearest, vectors.Neighbor
+  go      -
+  rust    -
+  python  faiss.IndexFlat, faiss.IndexFlatL2, faiss.IndexFlatIP, faiss.knn, faiss.knn_L2sqr, faiss.knn_inner_product, hnswlib.BFIndex
+  pgvector  ORDER BY <-> LIMIT k without an index
+  note    equal to numpy's float64 ids on 400 queries of the differential; ties by index. A nan or an infinity fails `invalid`, since ordering a nan aborts
+
+capability nearest/range  every vector within a distance, by exact search
+  heroes  vectors.within
+  go      -
+  rust    -
+  python  faiss.IndexFlat.range_search
+  pgvector  WHERE <-> < r
+  note    the radius is compared with the distance as answered, in f32, and is inclusive; faiss's is exclusive and in its squared measure
+
+capability hnsw/new  an HNSW index made empty, with its links, its search at construction and its seed
+  heroes  vectors.new_index, vectors.Options, vectors.default_options, vectors.Index
+  go      -
+  rust    -
+  python  hnswlib.Index, hnswlib.Index.init_index, faiss.IndexHNSWFlat, faiss.HNSW.efConstruction
+  pgvector  CREATE INDEX USING hnsw WITH (m, ef_construction)
+  note    hnswlib's defaults, 16 links and 200 candidates, seed 100. The level of a vector is drawn with integers alone, so one seed builds one index on every platform; hnswlib draws it with a logarithm. No `max_elements`: the lists grow
+
+capability hnsw/insert  a vector added to the index under an id
+  heroes  vectors.insert
+  go      -
+  rust    -
+  python  hnswlib.Index.add_items, faiss.Index.add, faiss.Index.add_with_ids
+  pgvector  INSERT
+  note    the id is the program's, any i64, as hnswlib's labels; an id held fails `exists`, where hnswlib's `add_items` replaces its vector. Removed vectors are linked to as any other, so a vector inserted among them is reached; hnswlib leaves them out of an insert's links
+
+capability hnsw/search  the k nearest found by the index, with the breadth of its search
+  heroes  vectors.search
+  go      -
+  rust    -
+  python  hnswlib.Index.knn_query, hnswlib.Index.set_ef, hnswlib.Index.ef, faiss.Index.search, faiss.HNSW.efSearch
+  pgvector  hnsw.ef_search
+  note    the walk is hnswlib's, and so is its recall in the differential; ef is given at each search instead of held by the index. An ef below k is taken as k, as hnswlib takes it
+
+capability hnsw/filter  the k nearest found by the index among the ids a function accepts
+  heroes  vectors.search_where
+  go      -
+  rust    -
+  python  hnswlib.Index.knn_query (filter), faiss.SearchParametersHNSW, faiss.IDSelector
+  pgvector  WHERE beside ORDER BY, hnsw.iterative_scan
+  note    the function is called once for each vector the walk reaches, as hnswlib's filter
+
+capability hnsw/delete  an id marked deleted, and the mark taken back
+  heroes  vectors.remove, vectors.restore
+  go      -
+  rust    -
+  python  hnswlib.Index.mark_deleted, hnswlib.Index.unmark_deleted, faiss.Index.remove_ids
+  pgvector  DELETE
+  note    a removed vector stays a road through the graph, as in hnswlib; faiss's HNSW refuses `remove_ids`
+
+capability hnsw/compact  the index rebuilt without its deleted vectors
+  heroes  vectors.compact
+  go      -
+  rust    -
+  python  hnswlib.Index.init_index (allow_replace_deleted), hnswlib.Index.add_items (replace_deleted)
+  pgvector  VACUUM, REINDEX
+  note    hnswlib reuses a removed vector's slot for a new one; here the index is built again from what is kept, with its seed
+
+capability hnsw/read  the index's count, ids and vectors read back
+  heroes  vectors.size, vectors.contains, vectors.ids_of, vectors.vector_of, vectors.dimension_of, vectors.metric_of
+  go      -
+  rust    -
+  python  hnswlib.Index.get_current_count, hnswlib.Index.element_count, hnswlib.Index.get_ids_list, hnswlib.Index.get_items, hnswlib.Index.space, hnswlib.Index.M, hnswlib.Index.ef_construction, hnswlib.Index.get_max_elements, hnswlib.Index.max_elements, faiss.Index.ntotal, faiss.Index.reconstruct, faiss.Index.reconstruct_n, faiss.Index.metric_type
+  pgvector  -
+  note    under the cosine a vector is answered normalized, as hnswlib's `get_items` answers it
+
+capability hnsw/save  the index written as bytes and read back
+  heroes  vectors.to_bytes, vectors.from_bytes
+  go      -
+  rust    -
+  python  hnswlib.Index.save_index, hnswlib.Index.load_index, hnswlib.Index.index_file_size, faiss.write_index, faiss.read_index, faiss.serialize_index, faiss.deserialize_index
+  pgvector  -
+  note    this package's own format; every cut of an index's bytes fails `invalid` and none aborts (tested on every length), and every link is checked to reach its layer before a walk can follow it
+
+capability hnsw/quantized  an index that keeps vectors compressed or in clusters: IVF, product and scalar quantization, LSH, NSG, CAGRA
+  heroes  refused: the task (the author, 2026-11-17) gives this package exact search and HNSW over vectors held whole; an index that trades recall for memory by compressing them is a package of its own
+  go      -
+  rust    -
+  python  faiss.IndexIVFFlat, faiss.IndexHNSWPQ, faiss.IndexHNSWSQ, faiss.IndexHNSWRaBitQ, faiss.IndexHNSW2Level, faiss.IndexHNSWCagra, faiss.IndexNSGFlat, faiss.IndexNNDescentFlat, faiss.IndexRefineFlat, faiss.index_factory
+  pgvector  ivfflat
+
+capability cluster/kmeans  vectors grouped around k centres
+  heroes  refused: grouping vectors finds no nearest, the task's area; the centre of a group is `vectors.mean`
+  go      -
+  rust    -
+  python  faiss.Kmeans
+  pgvector  -
+
+dropped threads  the number of threads a call uses: a call here runs on its caller's thread
+  go      -
+  rust    -
+  python  hnswlib.Index.num_threads, hnswlib.Index.set_num_threads, faiss.omp_set_num_threads
+
+dropped capacity  room reserved before vectors are added: the lists grow
+  go      -
+  rust    -
+  python  hnswlib.Index.resize_index
+
+dropped plumbing  faiss's calls that take raw pointers, its encoded codes, its training and its graph's internals, which no program of this package's area writes
+  go      -
+  rust    -
+  python  faiss.Index.add_c, add_ex, add_with_ids_c, search_c, search_ex, search1, range_search_c, reconstruct_c, reconstruct_batch, reconstruct_n_c, sa_encode, sa_decode, sa_code_size, add_sa_codes, train, train_c, is_trained, assign, compute_residual, merge_from, check_compatible_for_merge, permute_entries, get_distance_computer, search_and_reconstruct, search_subset, search_level_0, init_level0, init_level_0_from_entry_points, init_level_0_from_knngraph, add_level_0_links_from_sample, keep_max_size_level0, link_singletons, reorder_links, shrink_level_0_neighbors, use_visited_hashset, own_fields, storage, verbose, metric_arg, faiss.HNSW.neighbors, levels, offsets, entry_point, max_level, assign_probas, cum_nneighbor_per_level, set_default_probas, random_level, rng, search_bounded_queue, search_method

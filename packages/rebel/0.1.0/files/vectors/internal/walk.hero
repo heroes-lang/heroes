@@ -1,0 +1,512 @@
+# The walks of an HNSW graph: the greedy descent through the upper layers,
+# the search of one layer with a breadth `ef`, the choice of the links a node
+# keeps (Malkov and Yashunin's heuristic, as hnswlib runs it), an insert, and
+# a search for the `k` nearest. Every walk is a loop over heaps held in
+# lists; nothing recurses.
+#
+# One rule parts from hnswlib: an insert links to removed nodes as to any
+# other, since they stay in the graph as roads, so a node inserted among
+# removed ones is still reached; hnswlib leaves them out of the links an
+# insert makes. A search never answers a removed node.
+
+use random
+use vectors/internal/arith
+use vectors/internal/codes
+use vectors/internal/exact
+use vectors/internal/graph as hnsw
+use vectors/internal/heap
+
+# Which nodes a walk has reached: stamps, one a node, for the inserts an
+# index makes in turn, or a map for a search that reads the index alone.
+record Visits
+    # The stamp of the last walk that reached each node, where dense.
+    stamps: [i64]
+    # The stamp of the current walk.
+    stamp: i64
+    # The nodes the current walk has reached, where not dense.
+    reached: {i64: bool}
+    # Whether the stamps are used; the map is otherwise.
+    dense: bool
+
+# Visits by stamps for a graph of `count` nodes.
+function dense_visits(count: i64) -> Visits
+    stamps: [i64] @= []
+
+    for _ in range(from: 0, to: count)
+        stamps @ stamps.push(0)
+
+    return Visits(stamps: stamps, stamp: 0, reached: {}, dense: true)
+
+# Visits by a map, for one search.
+function sparse_visits() -> Visits
+    return Visits(stamps: [], stamp: 0, reached: {}, dense: false)
+
+# Makes room for one more node in `visits`.
+function grow(@visits: Visits)
+    if visits.dense
+        hnsw.grow_i64(@visits.stamps, value: 0)
+
+# Starts a new walk: no node is reached.
+function begin(@visits: Visits)
+    if visits.dense
+        visits.stamp @ visits.stamp + 1
+    else
+        visits.reached @ {}
+
+# Whether this is the first time the current walk reaches `node`, which it
+# then marks.
+function first_visit(@visits: Visits, node: i64) -> bool
+    if visits.dense
+        if visits.stamps[node] == visits.stamp
+            return false
+        visits.stamps[node] @ visits.stamp
+        return true
+
+    if visits.reached[node].default(false)
+        return false
+    visits.reached[node] @ true
+    return true
+
+# `vector` as an index of `graph` holds it: checked as long as the
+# dimension and finite, and normalized under the cosine. Fails `invalid`
+# otherwise, naming the vector by `what`.
+function admit(graph: hnsw.Graph lent, vector: [f32], what: str) -> [f32]?
+    if vector.len() != graph.dimension
+        return fail(
+            code: codes.INVALID,
+            msg: f"{what} holds {vector.len()} components where the index holds {graph.dimension}"
+        )
+    arith.finite(vector, what: what)?
+
+    if graph.metric == codes.COSINE
+        return arith.normalized(vector)
+    return ok(vector)
+
+# Accepts every id: the filter of a walk that has none.
+function every(_: i64) -> bool
+    return true
+
+# The distance `graph` orders by, from the vector of `query` at `query_at`
+# to `node`'s.
+function measure_to(graph: hnsw.Graph lent, query: [f32] lent, query_at: i64, node: i64) -> f64
+    return arith.measure(
+        xs: query,
+        x_at: query_at,
+        ys: graph.data,
+        y_at: node * graph.dimension,
+        count: graph.dimension,
+        metric: graph.metric
+    )
+
+# The distance `graph` orders by, between two of its nodes.
+function measure_between(graph: hnsw.Graph lent, a: i64, b: i64) -> f64
+    return arith.measure(
+        xs: graph.data,
+        x_at: a * graph.dimension,
+        ys: graph.data,
+        y_at: b * graph.dimension,
+        count: graph.dimension,
+        metric: graph.metric
+    )
+
+# The node nearest to `query` found by moving greedily from `from` on each
+# layer from `from_layer` down to the one above `to_layer`: on each, to a
+# nearer link while one is nearer. Each pass reads the whole list of the node
+# it started from, as hnswlib does, and moves to the nearest of it.
+function descend(graph: hnsw.Graph lent, query: [f32] lent, query_at: i64, from: i64, from_layer: i64, to_layer: i64) -> i64
+    current @= from
+    distance @= measure_to(graph, query, query_at: query_at, node: from)
+    layer @= from_layer
+
+    while layer > to_layer
+        moved @= true
+
+        while moved
+            moved @ false
+            here = current
+            total = hnsw.link_count(graph, node: here, layer: layer)
+
+            for index in range(from: 0, to: total)
+                next = hnsw.link(graph, node: here, layer: layer, index: index)
+                found = measure_to(graph, query, query_at: query_at, node: next)
+
+                if found < distance
+                    distance @ found
+                    current @ next
+                    moved @ true
+
+        layer @ layer - 1
+
+    return current
+
+# Whether a walk keeps `node` among its results: not removed where removed
+# nodes are skipped, and accepted by `accepts` where the walk is filtered.
+function keeps(graph: hnsw.Graph lent, node: i64, skip_removed: bool, accepts: (function(i64) -> bool), filtered: bool) -> bool
+    if skip_removed && graph.removed[node]
+        return false
+
+    if filtered
+        return accepts(graph.ids[node])
+    return true
+
+# Searches `layer` of `graph` from `entry` for the `ef` nodes nearest to the
+# vector of `query` at `query_at`, into `results`, the farthest on top. The
+# walk stops where its nearest candidate is farther than the farthest of `ef`
+# results; while fewer are kept, it goes on.
+function walk_layer(graph: hnsw.Graph lent, @visits: Visits, query: [f32] lent, query_at: i64, entry: i64, ef: i64, layer: i64, skip_removed: bool, accepts: (function(i64) -> bool), filtered: bool, @results: heap.Heap)
+    candidates @= heap.nearest_first()
+    heap.clear(@results)
+    begin(@visits)
+    _ = first_visit(@visits, node: entry)
+    start = measure_to(graph, query, query_at: query_at, node: entry)
+    heap.add(@candidates, distance: start, node: entry)
+
+    if keeps(graph, node: entry, skip_removed: skip_removed, accepts, filtered: filtered)
+        heap.add(@results, distance: start, node: entry)
+
+    while candidates.size > 0
+        nearest = heap.top_distance(candidates)
+
+        if results.size >= ef && nearest > heap.top_distance(results)
+            return
+        current = heap.top_node(candidates)
+        heap.pop(@candidates)
+        total = hnsw.link_count(graph, node: current, layer: layer)
+
+        for index in range(from: 0, to: total)
+            next = hnsw.link(graph, node: current, layer: layer, index: index)
+
+            if first_visit(@visits, node: next)
+                found = measure_to(graph, query, query_at: query_at, node: next)
+
+                if results.size < ef || found < heap.top_distance(results)
+                    heap.add(@candidates, distance: found, node: next)
+
+                    if keeps(graph, node: next, skip_removed: skip_removed, accepts, filtered: filtered)
+                        heap.add(@results, distance: found, node: next)
+
+                        if results.size > ef
+                            heap.pop(@results)
+
+# Of `nodes`, nearest first with their `distances` from a node, the at most
+# `most` a node keeps: each in turn, unless a node already kept is nearer to
+# it than the node is. Fewer than `most` are kept whole.
+function select(graph: hnsw.Graph lent, nodes: [i64] lent, distances: [f64] lent, most: i64) -> [i64]
+    if nodes.len() < most
+        return nodes
+    kept: [i64] @= []
+    at: i64 @= 0
+
+    while at < nodes.len() && kept.len() < most
+        candidate = nodes[at]
+        good @= true
+        index: i64 @= 0
+
+        while good && index < kept.len()
+            if measure_between(graph, a: candidate, b: kept[index]) < distances[at]
+                good @ false
+            index @ index + 1
+
+        if good
+            kept @ kept.push(candidate)
+        at @ at + 1
+
+    return kept
+
+# Links `owner` back to `node` on `layer`: at the end of its list where it
+# has room, else by choosing again among its links and `node`.
+function link_back(@graph: hnsw.Graph, owner: i64, node: i64, layer: i64)
+    most = hnsw.most_links(graph, layer: layer)
+    held = hnsw.link_count(graph, node: owner, layer: layer)
+
+    if held < most
+        hnsw.append_link(@graph, owner: owner, layer: layer, node: node)
+        return
+    sorted @= heap.farthest_first()
+    heap.add(@sorted, distance: measure_between(graph, a: owner, b: node), node: node)
+
+    for index in range(from: 0, to: held)
+        other = hnsw.link(graph, node: owner, layer: layer, index: index)
+        heap.add(@sorted, distance: measure_between(graph, a: owner, b: other), node: other)
+
+    distances: [f64] @= []
+    nodes = heap.drain_nearest_first(@sorted, @distances)
+    hnsw.set_links(
+        @graph,
+        node: owner,
+        layer: layer,
+        nodes: select(graph, nodes: nodes, distances: distances, most: most)
+    )
+
+# Inserts `vector`, as long as the graph's dimension, finite and normalized
+# where the metric asks it, under `id`, which the graph does not hold live.
+function insert(@graph: hnsw.Graph, @visits: Visits, id: i64, vector: [f32] lent)
+    level = hnsw.draw_level(@graph)
+    node = hnsw.add_node(@graph, id: id, vector: vector, level: level)
+    grow(@visits)
+
+    if graph.entry == hnsw.NONE
+        graph.entry @ node
+        graph.top @ level
+        return
+    current @= descend(graph, query: vector, query_at: 0, from: graph.entry, from_layer: graph.top, to_layer: level)
+    layer @= level
+
+    if graph.top < layer
+        layer @ graph.top
+    results @= heap.farthest_first()
+
+    while layer >= 0
+        walk_layer(
+            graph,
+            @visits,
+            query: vector,
+            query_at: 0,
+            entry: current,
+            ef: graph.ef_construction,
+            layer: layer,
+            skip_removed: false,
+            accepts: every,
+            filtered: false,
+            @results
+        )
+        distances: [f64] @= []
+        nodes = heap.drain_nearest_first(@results, @distances)
+        chosen = select(graph, nodes: nodes, distances: distances, most: graph.links)
+        hnsw.set_links(@graph, node: node, layer: layer, nodes: chosen)
+
+        for owner in chosen
+            link_back(@graph, owner: owner, node: node, layer: layer)
+
+        if chosen.len() > 0
+            current @ chosen[0]
+        layer @ layer - 1
+
+    if level > graph.top
+        graph.entry @ node
+        graph.top @ level
+
+# What a search of the graph found: the ids, nearest first, ties by id, and
+# the distances as the graph orders them.
+record Found
+    # The id of each node found.
+    ids: [i64]
+    # The distance of each, as the graph orders it.
+    distances: [f64]
+
+# The `k` live nodes nearest to `query` that `accepts` takes where
+# `filtered`, found with a breadth of `ef` on layer 0, at least `k`.
+function search(graph: hnsw.Graph lent, query: [f32] lent, k: i64, ef: i64, accepts: (function(i64) -> bool), filtered: bool) -> Found
+    if graph.entry == hnsw.NONE || k == 0
+        return Found(ids: [], distances: [])
+    breadth @= ef
+
+    if breadth < k
+        breadth @ k
+    current = descend(graph, query, query_at: 0, from: graph.entry, from_layer: graph.top, to_layer: 0)
+    visits @= sparse_visits()
+    results @= heap.farthest_first()
+    walk_layer(
+        graph,
+        @visits,
+        query,
+        query_at: 0,
+        entry: current,
+        ef: breadth,
+        layer: 0,
+        skip_removed: true,
+        accepts,
+        filtered: filtered,
+        @results
+    )
+
+    while results.size > k
+        heap.pop(@results)
+
+    distances: [f64] @= []
+    nodes = heap.drain_nearest_first(@results, @distances)
+    ids: [i64] @= []
+
+    for node in nodes
+        ids @ ids.push(graph.ids[node])
+
+    order_ties_by_id(@ids, distances)
+    return Found(ids: ids, distances: distances)
+
+# Puts the ids of each run of equal distances in increasing order.
+function order_ties_by_id(@ids: [i64], distances: [f64] lent)
+    at: i64 @= 1
+
+    while at < ids.len()
+        back @= at
+
+        while back > 0 && distances[back - 1] == distances[back] && ids[back - 1] > ids[back]
+            held = ids[back - 1]
+            ids[back - 1] @ ids[back]
+            ids[back] @ held
+            back @ back - 1
+
+        at @ at + 1
+
+## Tests
+
+# A graph of `count` points on a line, ids ten times their place.
+function line_of(count: i64, links: i64) -> hnsw.Graph
+    built @= hnsw.empty(dimension: 1, metric: 0, links: links, ef_construction: 32, seed: 7)
+    visits @= dense_visits(0)
+
+    for at in range(from: 0, to: count)
+        insert(@built, @visits, id: at * 10, vector: [to_f32(to_f64(at))])
+
+    return built
+
+# Whether an id is a multiple of thirty.
+function multiple_of_thirty(id: i64) -> bool
+    return id % 30 == 0
+
+test "first_visit: dense and sparse, each node once a walk"
+    dense @= dense_visits(3)
+    begin(@dense)
+    assert first_visit(@dense, node: 1) && !first_visit(@dense, node: 1) && first_visit(@dense, node: 2)
+    begin(@dense)
+    assert first_visit(@dense, node: 1)
+    sparse @= sparse_visits()
+    begin(@sparse)
+    assert first_visit(@sparse, node: 900) && !first_visit(@sparse, node: 900)
+    begin(@sparse)
+    assert first_visit(@sparse, node: 900)
+
+test "insert: the first node is the entry, at its level"
+    built = line_of(count: 1, links: 4)
+    assert built.entry == 0 && built.top == built.levels[0] && hnsw.links_of(built, node: 0, layer: 0) == []
+
+test "insert: two hundred points, every link to a node that reaches the layer, none to itself"
+    built = line_of(count: 200, links: 4)
+    assert built.live == 200 && built.levels[built.entry] == built.top
+
+    for node in range(from: 0, to: 200)
+        for layer in range(from: 0, to: built.levels[node] + 1)
+            assert hnsw.link_count(built, node: node, layer: layer) <= hnsw.most_links(built, layer: layer)
+
+            for other in hnsw.links_of(built, node: node, layer: layer)
+                assert other != node && built.levels[other] >= layer
+
+test "insert: one seed and one order build one graph"
+    assert line_of(count: 150, links: 3) == line_of(count: 150, links: 3)
+
+test "search: an empty graph, k of zero, and the nearest points of a line"
+    empty = hnsw.empty(dimension: 1, metric: 0, links: 4, ef_construction: 8, seed: 1)
+    assert search(empty, query: [1.0], k: 3, ef: 10, accepts: every, filtered: false).ids == []
+    built = line_of(count: 300, links: 4)
+    assert search(built, query: [1.0], k: 0, ef: 10, accepts: every, filtered: false).ids == []
+    found = search(built, query: [100.2], k: 3, ef: 20, accepts: every, filtered: false)
+    assert found.ids == [1000, 1010, 990]
+
+test "search: ties at one distance ordered by id"
+    found = search(line_of(count: 50, links: 4), query: [20.5], k: 2, ef: 16, accepts: every, filtered: false)
+    assert found.ids == [200, 210] && found.distances[0] == found.distances[1]
+
+test "search: filtered by a function of the id"
+    found = search(
+        line_of(count: 100, links: 4),
+        query: [50.0],
+        k: 2,
+        ef: 32,
+        accepts: multiple_of_thirty,
+        filtered: true
+    )
+    assert found.ids == [510, 480]
+
+test "search: removed nodes walked through and never answered"
+    built @= line_of(count: 100, links: 4)
+
+    for node in range(from: 40, to: 60)
+        hnsw.mark(@built, node: node, removed: true)
+
+    found = search(built, query: [50.0], k: 2, ef: 16, accepts: every, filtered: false)
+    assert found.ids == [600, 390]
+
+test "search: every node removed answers none"
+    built @= line_of(count: 30, links: 2)
+
+    for node in range(from: 0, to: 30)
+        hnsw.mark(@built, node: node, removed: true)
+
+    assert search(built, query: [5.0], k: 3, ef: 8, accepts: every, filtered: false).ids == []
+
+test "select: fewer than the most kept whole, else the ones no kept node is nearer to"
+    built = line_of(count: 5, links: 4)
+    assert select(built, nodes: [1, 2], distances: [1.0, 2.0], most: 3) == [1, 2]
+    assert select(built, nodes: [1, 2, 3], distances: [1.0, 4.0, 9.0], most: 3) == [1]
+    assert select(built, nodes: [2, 1, 3], distances: [0.0, 1.0, 1.0], most: 2) == [2, 1]
+
+test "admit: a short vector, an infinity, and a vector normalized under the cosine"
+    zero: f32 = 0.0
+    plain = hnsw.empty(dimension: 2, metric: codes.EUCLIDEAN, links: 4, ef_construction: 8, seed: 1)
+    assert admit(plain, vector: [3.0, 4.0], what: "v").must() == [3.0, 4.0]
+    assert admit(plain, vector: [3.0], what: "v").is_err()
+    assert admit(plain, vector: [3.0, 1.0 / zero], what: "v").is_err()
+    cosine = hnsw.empty(dimension: 2, metric: codes.COSINE, links: 4, ef_construction: 8, seed: 1)
+    assert admit(cosine, vector: [3.0, 4.0], what: "v").must() == [0.6, 0.8]
+    assert admit(cosine, vector: [0.0, 0.0], what: "v").is_err()
+
+test "order_ties_by_id: runs of equal distances, and none"
+    ids @= [5, 3, 9, 8, 1]
+    order_ties_by_id(@ids, distances: [1.0, 1.0, 2.0, 2.0, 2.0])
+    assert ids == [3, 5, 1, 8, 9]
+    empty: [i64] @= []
+    order_ties_by_id(@empty, distances: [])
+    assert empty == []
+
+# `count` points of `dimension` components drawn from the generator `seed`
+# starts, each from 0 to 1.
+function drawn(count: i64, dimension: i64, seed: u64) -> [[f32]]
+    generator @= random.Generator(high: seed, low: 2)
+    out: [[f32]] @= []
+
+    for _ in range(from: 0, to: count)
+        v: [f32] @= []
+
+        for _ in range(from: 0, to: dimension)
+            v @ v.push(to_f32(random.next_f64(@generator)))
+
+        out @ out.push(v)
+
+    return out
+
+test "insert: two thousand points of four components and three links, every link reaching its layer"
+    built @= hnsw.empty(dimension: 4, metric: 0, links: 3, ef_construction: 20, seed: 100)
+    visits @= dense_visits(0)
+    points = drawn(count: 2000, dimension: 4, seed: 1)
+
+    for at in range(from: 0, to: 2000)
+        insert(@built, @visits, id: at, vector: points[at])
+
+    assert built.top >= 4
+
+    for node in range(from: 0, to: 2000)
+        for layer in range(from: 0, to: built.levels[node] + 1)
+            for other in hnsw.links_of(built, node: node, layer: layer)
+                assert built.levels[other] >= layer && other != node
+
+test "search: the recall of a thousand points of eight components against exact search"
+    built @= hnsw.empty(dimension: 8, metric: 0, links: 8, ef_construction: 64, seed: 100)
+    visits @= dense_visits(0)
+    points = drawn(count: 1000, dimension: 8, seed: 3)
+
+    for at in range(from: 0, to: 1000)
+        insert(@built, @visits, id: at, vector: points[at])
+
+    queries = drawn(count: 50, dimension: 8, seed: 4)
+    hits @= 0
+
+    for q in queries
+        truth = exact.nearest(query: q, vectors: points, k: 10, metric: 0).must().indices
+        found = search(built, query: q, k: 10, ef: 32, accepts: every, filtered: false).ids
+
+        for id in found
+            for expected in truth
+                if expected == id
+                    hits @ hits + 1
+
+    assert hits >= 490

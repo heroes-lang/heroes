@@ -1,0 +1,321 @@
+# The graph of an HNSW index, held in lists and nothing else. A node is a
+# vector's place in insertion order: its components stand at `node *
+# dimension` of `data`, its id at `node` of `ids`. Each node reaches a level
+# drawn at its insert and has a list of links on every layer from 0 to that
+# level: on layer 0 a block of `2 * links + 1` numbers in `base`, the count
+# first and then the links; above it a block of `links + 1` for each layer,
+# side by side in `upper` from `upper_at[node]`.
+#
+# A level is drawn from the seed's generator with integers alone: a uniform
+# `u` in (0, 1] reaches level `l` where `u <= links^-l`, the distribution of
+# Malkov and Yashunin's `floor(-ln(u) / ln(links))` without a logarithm, so
+# no platform's libm can move a node to another level.
+
+use random
+use vectors/internal/codes
+
+# The link, entry or node that names none.
+constant NONE: i64
+    -1
+
+# The fewest links a node keeps above layer 0.
+constant FEWEST_LINKS: i64
+    2
+
+# The most links a node keeps above layer 0.
+constant MOST_LINKS: i64
+    1024
+
+# The low word of the generator's state; the seed is its high word.
+constant SEED_LOW: u64
+    0x853c49e6748fea9b
+
+# 2 to the 53rd: the draws of a level are fractions of it.
+constant SPAN: u64
+    9007199254740992
+
+# The graph of one index.
+record Graph
+    # The length of every vector.
+    dimension: i64
+    # The metric, a number of `codes`.
+    metric: i64
+    # The most links a node keeps above layer 0; twice as many on layer 0.
+    links: i64
+    # How many candidates an insert weighs.
+    ef_construction: i64
+    # The seed the generator started from.
+    seed: u64
+    # The generator the levels are drawn from.
+    generator: random.Generator
+    # The components of every node's vector, `dimension` a node.
+    data: [f32]
+    # The program's id of each node.
+    ids: [i64]
+    # Whether each node is marked removed.
+    removed: [bool]
+    # The level each node reaches, 0 or more.
+    levels: [i64]
+    # The blocks of layer 0, `2 * links + 1` numbers a node.
+    base: [i64]
+    # Where each node's first block above layer 0 starts in `upper`.
+    upper_at: [i64]
+    # The blocks above layer 0, `links + 1` numbers a layer.
+    upper: [i64]
+    # The node of each id, the latest inserted under it.
+    node_of: {i64: i64}
+    # The node every walk starts from, `NONE` while the graph is empty.
+    entry: i64
+    # The level of the entry, the highest of all, -1 while empty.
+    top: i64
+    # How many nodes are not removed.
+    live: i64
+
+# An empty graph of vectors of `dimension` under `metric`, whose levels are
+# drawn from `seed`.
+function empty(dimension: i64, metric: i64, links: i64, ef_construction: i64, seed: u64) -> Graph
+    generator = random.Generator(high: seed, low: SEED_LOW)
+    return Graph(
+        dimension: dimension,
+        metric: metric,
+        links: links,
+        ef_construction: ef_construction,
+        seed: seed,
+        generator: generator,
+        data: [],
+        ids: [],
+        removed: [],
+        levels: [],
+        base: [],
+        upper_at: [],
+        upper: [],
+        node_of: {},
+        entry: NONE,
+        top: -1,
+        live: 0
+    )
+
+# How many nodes the graph holds, removed or not.
+function count(graph: Graph lent) -> i64
+    return graph.ids.len()
+
+# The most links a node keeps on `layer`.
+function most_links(graph: Graph lent, layer: i64) -> i64
+    if layer == 0
+        return graph.links * 2
+    return graph.links
+
+# Where the block of `node` on `layer` starts: in `base` for layer 0, in
+# `upper` above it.
+function block_at(graph: Graph lent, node: i64, layer: i64) -> i64
+    if layer == 0
+        return node * (graph.links * 2 + 1)
+    return graph.upper_at[node] + (layer - 1) * (graph.links + 1)
+
+# How many links `node` has on `layer`, which it reaches.
+function link_count(graph: Graph lent, node: i64, layer: i64) -> i64
+    at = block_at(graph, node: node, layer: layer)
+
+    if layer == 0
+        return graph.base[at]
+    return graph.upper[at]
+
+# The link at `index` of `node`'s list on `layer`.
+function link(graph: Graph lent, node: i64, layer: i64, index: i64) -> i64
+    at = block_at(graph, node: node, layer: layer) + 1 + index
+
+    if layer == 0
+        return graph.base[at]
+    return graph.upper[at]
+
+# The links of `node` on `layer`, in their order.
+function links_of(graph: Graph lent, node: i64, layer: i64) -> [i64]
+    out: [i64] @= []
+    total = link_count(graph, node: node, layer: layer)
+
+    for index in range(from: 0, to: total)
+        out @ out.push(link(graph, node: node, layer: layer, index: index))
+
+    return out
+
+# Writes `nodes` as the links of `node` on `layer`; there are no more of them
+# than `most_links` of the layer.
+function set_links(@graph: Graph, node: i64, layer: i64, nodes: [i64])
+    at = block_at(graph, node: node, layer: layer)
+
+    if layer == 0
+        write_block(xs: @graph.base, at: at, nodes: nodes)
+    else
+        write_block(xs: @graph.upper, at: at, nodes: nodes)
+
+# Writes the count of `nodes` at `at` of `xs` and the nodes after it.
+function write_block(@xs: [i64], at: i64, nodes: [i64])
+    xs[at] @ nodes.len()
+
+    for index in range(from: 0, to: nodes.len())
+        xs[at + 1 + index] @ nodes[index]
+
+# Adds `node` at the end of `owner`'s list on `layer`, which has room.
+function append_link(@graph: Graph, owner: i64, layer: i64, node: i64)
+    at = block_at(graph, node: owner, layer: layer)
+
+    if layer == 0
+        held = graph.base[at]
+        graph.base[at + 1 + held] @ node
+        graph.base[at] @ held + 1
+    else
+        held = graph.upper[at]
+        graph.upper[at + 1 + held] @ node
+        graph.upper[at] @ held + 1
+
+# The level of a node about to be inserted, drawn from the generator: the
+# count of `l` from 1 for which `k * links^l <= 2^53`, `k` a whole number
+# from 1 to 2^53 drawn uniformly.
+function draw_level(@graph: Graph) -> i64
+    drawn = random.next_u64(@graph.generator)
+    k = SPAN - drawn % SPAN
+    limit = SPAN / k
+    factor = to_u64(graph.links).must()
+    level: i64 @= 0
+    power: u64 @= factor
+
+    while power <= limit
+        level @ level + 1
+        power @ power * factor
+
+    return level
+
+# Adds `value` at the end of `xs`.
+function grow_i64(@xs: [i64], value: i64)
+    xs @ xs.push(value)
+
+# Adds `value` at the end of `xs`.
+function grow_f32(@xs: [f32], value: f32)
+    xs @ xs.push(value)
+
+# Adds `value` at the end of `xs`.
+function grow_bool(@xs: [bool], value: bool)
+    xs @ xs.push(value)
+
+# Adds a node under `id` holding `vector`, which is `dimension` long, with
+# empty lists on every layer to `level`, and answers it. It links nothing;
+# the walk does.
+function add_node(@graph: Graph, id: i64, vector: [f32] lent, level: i64) -> i64
+    node = count(graph)
+
+    for x in vector
+        grow_f32(@graph.data, value: x)
+
+    grow_i64(@graph.ids, value: id)
+    grow_bool(@graph.removed, value: false)
+    grow_i64(@graph.levels, value: level)
+
+    for _ in range(from: 0, to: graph.links * 2 + 1)
+        grow_i64(@graph.base, value: 0)
+
+    grow_i64(@graph.upper_at, value: graph.upper.len())
+
+    for _ in range(from: 0, to: level * (graph.links + 1))
+        grow_i64(@graph.upper, value: 0)
+
+    graph.node_of[id] @ node
+    graph.live @ graph.live + 1
+    return node
+
+# The node holding `id` and not removed, or `NONE`.
+function live_node(graph: Graph lent, id: i64) -> i64
+    match graph.node_of[id]
+        .ok node =>
+            if graph.removed[node]
+                return NONE
+            return node
+        .err _ => return NONE
+
+# The node holding `id` and removed, or `NONE`.
+function removed_node(graph: Graph lent, id: i64) -> i64
+    match graph.node_of[id]
+        .ok node =>
+            if graph.removed[node]
+                return node
+            return NONE
+        .err _ => return NONE
+
+# Marks `node` removed or not, keeping the count of live nodes.
+function mark(@graph: Graph, node: i64, removed: bool)
+    if graph.removed[node] != removed
+        graph.removed[node] @ removed
+
+        if removed
+            graph.live @ graph.live - 1
+        else
+            graph.live @ graph.live + 1
+
+# The vector of `node`.
+function vector_at(graph: Graph lent, node: i64) -> [f32]
+    return graph.data.slice(from: node * graph.dimension, to: (node + 1) * graph.dimension)
+
+## Tests
+
+test "empty: no node, no entry, the seed as the high word"
+    graph = empty(dimension: 3, metric: codes.EUCLIDEAN, links: 16, ef_construction: 200, seed: 100)
+    assert count(graph) == 0 && graph.entry == NONE && graph.top == -1 && graph.live == 0
+    assert graph.generator == random.Generator(high: 100, low: SEED_LOW)
+
+test "most_links and block_at: layer 0 twice the links, the layers above side by side"
+    graph @= empty(dimension: 1, metric: codes.EUCLIDEAN, links: 4, ef_construction: 10, seed: 1)
+    _ = add_node(@graph, id: 7, vector: [1.0], level: 2)
+    _ = add_node(@graph, id: 8, vector: [2.0], level: 1)
+    assert most_links(graph, layer: 0) == 8 && most_links(graph, layer: 3) == 4
+    assert block_at(graph, node: 1, layer: 0) == 9
+    assert block_at(graph, node: 0, layer: 2) == 5 && block_at(graph, node: 1, layer: 1) == 10
+    assert graph.base.len() == 18 && graph.upper.len() == 15
+
+test "set_links, append_link and links_of: on layer 0 and above"
+    graph @= empty(dimension: 1, metric: codes.EUCLIDEAN, links: 2, ef_construction: 10, seed: 1)
+    _ = add_node(@graph, id: 1, vector: [1.0], level: 1)
+    _ = add_node(@graph, id: 2, vector: [2.0], level: 1)
+    _ = add_node(@graph, id: 3, vector: [3.0], level: 0)
+    set_links(@graph, node: 0, layer: 0, nodes: [1, 2])
+    append_link(@graph, owner: 0, layer: 0, node: 2)
+    set_links(@graph, node: 1, layer: 1, nodes: [0])
+    append_link(@graph, owner: 1, layer: 1, node: 0)
+    assert links_of(graph, node: 0, layer: 0) == [1, 2, 2]
+    assert links_of(graph, node: 1, layer: 1) == [0, 0]
+    assert links_of(graph, node: 0, layer: 1) == [] && links_of(graph, node: 2, layer: 0) == []
+
+test "draw_level: one seed draws one sequence, each level about a links-th as often as the one below"
+    first @= empty(dimension: 1, metric: codes.EUCLIDEAN, links: 4, ef_construction: 10, seed: 42)
+    second @= empty(dimension: 1, metric: codes.EUCLIDEAN, links: 4, ef_construction: 10, seed: 42)
+    counts: [i64] @= [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+    for _ in range(from: 0, to: 40000)
+        level = draw_level(@first)
+        assert level == draw_level(@second)
+        counts[level] @ counts[level] + 1
+
+    assert counts[0] > 29400 && counts[0] < 30600
+    assert counts[1] > 7200 && counts[1] < 7800
+    assert counts[2] > 1700 && counts[2] < 2050
+
+test "draw_level: with two links, a level never past 53"
+    graph @= empty(dimension: 1, metric: codes.EUCLIDEAN, links: 2, ef_construction: 10, seed: 7)
+
+    for _ in range(from: 0, to: 10000)
+        assert draw_level(@graph) <= 53
+
+test "add_node: the id's node, the vector and the count of live nodes"
+    graph @= empty(dimension: 2, metric: codes.EUCLIDEAN, links: 2, ef_construction: 10, seed: 1)
+    assert add_node(@graph, id: -5, vector: [1.0, 2.0], level: 0) == 0
+    assert add_node(@graph, id: 9, vector: [3.0, 4.0], level: 3) == 1
+    assert graph.data == [1.0, 2.0, 3.0, 4.0] && graph.ids == [-5, 9] && graph.live == 2
+    assert vector_at(graph, node: 1) == [3.0, 4.0] && graph.upper_at == [0, 0]
+
+test "live_node, removed_node and mark: an id removed, restored, and absent"
+    graph @= empty(dimension: 1, metric: codes.EUCLIDEAN, links: 2, ef_construction: 10, seed: 1)
+    node = add_node(@graph, id: 3, vector: [1.0], level: 0)
+    assert live_node(graph, id: 3) == node && removed_node(graph, id: 3) == NONE
+    mark(@graph, node: node, removed: true)
+    mark(@graph, node: node, removed: true)
+    assert live_node(graph, id: 3) == NONE && removed_node(graph, id: 3) == node && graph.live == 0
+    mark(@graph, node: node, removed: false)
+    assert graph.live == 1 && live_node(graph, id: 4) == NONE && removed_node(graph, id: 4) == NONE

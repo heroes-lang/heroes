@@ -1,0 +1,168 @@
+# The nearest by exact search: every vector of a list measured from a query,
+# the `k` nearest kept in a heap of results, or every one within a radius.
+# Vectors at one distance are ordered by their index in the list, so the
+# answer is one list on every run.
+#
+# The answers are pairs of lists, the indices and the distances beside them,
+# which the face makes into its `Neighbor`s.
+
+use vectors/internal/arith
+use vectors/internal/codes
+use vectors/internal/heap
+
+# What a search by exact measure found: the indices of the vectors, nearest
+# first, and their distances as the face answers them.
+record Found
+    # The index of each vector found, in the list searched.
+    indices: [i64]
+    # The distance of each, rounded to `f32`.
+    distances: [f32]
+
+# Fails `invalid` where `query` holds a nan or an infinity, a vector of
+# `vectors` differs from it in length or holds one, or under the cosine
+# where either is all zeros; the message names the vector.
+function readable(query: [f32] lent, vectors: [[f32]] lent, metric: i64) -> ()?
+    arith.finite(query, what: "the query")?
+    zeros = arith.squares_at(query, a_at: 0, count: query.len()) == 0.0
+
+    if metric == codes.COSINE && zeros
+        return fail(code: codes.INVALID, msg: f"the query is {query.len()} zeros, which have no direction for a cosine")
+    at: i64 @= 0
+
+    while at < vectors.len()
+        length = vectors[at].len()
+
+        if length != query.len()
+            return fail(
+                code: codes.INVALID,
+                msg: f"vector {at} holds {length} components where the query holds {query.len()}"
+            )
+        arith.finite(vectors[at], what: f"vector {at}")?
+
+        if metric == codes.COSINE && arith.squares_at(vectors[at], a_at: 0, count: length) == 0.0
+            return fail(code: codes.INVALID, msg: f"vector {at} is all zeros, which have no direction for a cosine")
+        at @ at + 1
+
+    return ok()
+
+# The distance from `query` to each of `vectors` as `metric` orders it, after
+# `readable` has passed them.
+function measured(query: [f32] lent, vectors: [[f32]] lent, metric: i64) -> [f64]
+    out: [f64] @= []
+
+    at: i64 @= 0
+
+    while at < vectors.len()
+        out @ out.push(arith.between(a: query, b: vectors[at], metric: metric).must())
+        at @ at + 1
+
+    return out
+
+# The `k` vectors of `vectors` nearest to `query` under `metric`, nearest
+# first, ties by index. Fails `invalid` as `readable` does, or where `k` is
+# below zero.
+function nearest(query: [f32], vectors: [[f32]], k: i64, metric: i64) -> Found?
+    if k < 0
+        return fail(code: codes.INVALID, msg: f"k is {k}, where a search answers 0 vectors or more")
+    readable(query, vectors, metric)?
+    every_distance = measured(query, vectors, metric)
+    kept @= heap.farthest_first()
+    at: i64 @= 0
+
+    while at < every_distance.len() && k > 0
+        if kept.size < k
+            heap.add(@kept, distance: every_distance[at], node: at)
+        else if heap.beats_top(kept, distance: every_distance[at], node: at)
+            heap.replace_top(@kept, distance: every_distance[at], node: at)
+        at @ at + 1
+
+    distances: [f64] @= []
+    indices = heap.drain_nearest_first(@kept, @distances)
+    answered: [f32] @= []
+
+    for d in distances
+        answered @ answered.push(arith.answer(measured: d, metric: metric))
+
+    return ok(Found(indices: indices, distances: answered))
+
+# Every vector of `vectors` whose distance from `query`, as answered, is
+# `radius` or less, nearest first, ties by index. Fails `invalid` as
+# `readable` does, or where `radius` is a nan.
+function within(query: [f32], vectors: [[f32]], radius: f32, metric: i64) -> Found?
+    if radius != radius
+        return fail(code: codes.INVALID, msg: "the radius is a nan, which no distance is within")
+    readable(query, vectors, metric)?
+    every_distance = measured(query, vectors, metric)
+    kept @= heap.farthest_first()
+    at: i64 @= 0
+
+    while at < every_distance.len()
+        if arith.answer(measured: every_distance[at], metric: metric) <= radius
+            heap.add(@kept, distance: every_distance[at], node: at)
+        at @ at + 1
+
+    distances: [f64] @= []
+    indices = heap.drain_nearest_first(@kept, @distances)
+    answered: [f32] @= []
+
+    for d in distances
+        answered @ answered.push(arith.answer(measured: d, metric: metric))
+
+    return ok(Found(indices: indices, distances: answered))
+
+## Tests
+
+test "readable: a short vector, a nan, and zeros under the cosine"
+    zero: f32 = 0.0
+    assert !readable(query: [1.0], vectors: [], metric: codes.EUCLIDEAN).is_err()
+
+    match readable(query: [1.0, 2.0], vectors: [[1.0, 2.0], [1.0]], metric: codes.EUCLIDEAN)
+        .ok _  => assert false
+        .err e => assert e.msg == "vector 1 holds 1 components where the query holds 2"
+
+    match readable(query: [1.0], vectors: [[zero / zero]], metric: codes.EUCLIDEAN)
+        .ok _  => assert false
+        .err e => assert e.msg == "vector 0 holds nan at component 0, where a search orders distances"
+
+    assert readable(query: [0.0], vectors: [], metric: codes.COSINE).is_err()
+    assert !readable(query: [0.0], vectors: [[0.0]], metric: codes.EUCLIDEAN).is_err()
+    assert readable(query: [1.0], vectors: [[0.0]], metric: codes.COSINE).is_err()
+
+test "nearest: none, k of zero, k past the count, and a negative k"
+    assert nearest(query: [0.0], vectors: [], k: 3, metric: codes.EUCLIDEAN).must().indices == []
+    assert nearest(query: [0.0], vectors: [[1.0]], k: 0, metric: codes.EUCLIDEAN).must().indices == []
+    assert nearest(query: [0.0], vectors: [[2.0], [1.0]], k: 9, metric: codes.EUCLIDEAN).must().indices == [1, 0]
+    assert nearest(query: [0.0], vectors: [[1.0]], k: -1, metric: codes.EUCLIDEAN).is_err()
+
+test "nearest: ties kept in the order of their index"
+    found = nearest(query: [0.0], vectors: [[1.0], [-1.0], [2.0], [1.0], [-1.0]], k: 3, metric: codes.EUCLIDEAN).must()
+    assert found.indices == [0, 1, 3] && found.distances == [1.0, 1.0, 1.0]
+
+test "nearest: the inner product, the largest product first"
+    found = nearest(
+        query: [1.0, 1.0],
+        vectors: [[1.0, 0.0], [3.0, 3.0], [-5.0, 0.0]],
+        k: 2,
+        metric: codes.INNER_PRODUCT
+    ).must()
+    assert found.indices == [1, 0] && found.distances == [-6.0, -1.0]
+
+test "nearest: the cosine, by direction and not length"
+    found = nearest(
+        query: [1.0, 0.0],
+        vectors: [[0.0, 1.0], [10.0, 1.0], [0.5, 0.0]],
+        k: 2,
+        metric: codes.COSINE
+    ).must()
+    assert found.indices == [2, 1] && found.distances[0] == 0.0
+
+test "within: a radius on the edge, a negative one, and a nan"
+    zero: f32 = 0.0
+    vectors: [[f32]] = [[3.0, 4.0], [1.0, 0.0], [6.0, 8.0]]
+    assert within(query: [0.0, 0.0], vectors: vectors, radius: 5.0, metric: codes.EUCLIDEAN).must().indices == [1, 0]
+    assert within(query: [0.0, 0.0], vectors: vectors, radius: -1.0, metric: codes.EUCLIDEAN).must().indices == []
+    assert within(query: [0.0, 0.0], vectors: vectors, radius: zero / zero, metric: codes.EUCLIDEAN).is_err()
+
+test "within: a negative radius under the inner product"
+    found = within(query: [1.0], vectors: [[2.0], [-2.0], [5.0]], radius: -2.0, metric: codes.INNER_PRODUCT).must()
+    assert found.indices == [2, 0] && found.distances == [-5.0, -2.0]

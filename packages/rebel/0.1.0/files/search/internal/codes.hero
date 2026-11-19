@@ -1,0 +1,30 @@
+# The codes `search` fails with, and the numbers its private modules name a
+# formula by, since a private module cannot read the face's `Formula`.
+
+# The code of a query, a setting or bytes a function cannot read.
+constant INVALID: str
+    "invalid"
+
+# The code of an id an index does not hold.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of an id an index holds already.
+constant EXISTS: str
+    "exists"
+
+# Lucene's and tantivy's idf, never below zero.
+constant STANDARD: i64
+    0
+
+# Robertson's idf, floored at a share of the mean, rank-bm25's BM25Okapi.
+constant OKAPI: i64
+    1
+
+# BM25L.
+constant BM25L: i64
+    2
+
+# BM25+.
+constant BM25_PLUS: i64
+    3

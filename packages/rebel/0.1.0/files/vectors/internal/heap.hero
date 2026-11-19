@@ -1,0 +1,222 @@
+# A binary heap of pairs, a distance and the node it was measured to, held
+# in two lists: the nearest pair on top where it is a heap of candidates, the
+# farthest where it holds the results a walk keeps. Pairs of one distance are
+# ordered by their node, so every walk is the same on every run.
+#
+# A pop overwrites and keeps a length: the lists never shrink, and their
+# room past `size` is reused.
+
+# One heap; `size` pairs of the lists are live, the rest is room.
+record Heap
+    # The distance of each pair, in heap order.
+    distances: [f64]
+    # The node of each pair, beside its distance.
+    nodes: [i64]
+    # How many pairs are live.
+    size: i64
+    # Whether the farthest pair is on top; the nearest is otherwise.
+    farthest_first: bool
+
+# An empty heap of candidates, the nearest on top.
+function nearest_first() -> Heap
+    return Heap(distances: [], nodes: [], size: 0, farthest_first: false)
+
+# An empty heap of results, the farthest on top.
+function farthest_first() -> Heap
+    return Heap(distances: [], nodes: [], size: 0, farthest_first: true)
+
+# Whether the pair at `a` belongs above the pair at `b`.
+function above(heap: Heap lent, a: i64, b: i64) -> bool
+    da = heap.distances[a]
+    db = heap.distances[b]
+
+    if heap.farthest_first
+        return da > db || da == db && heap.nodes[a] > heap.nodes[b]
+    return da < db || da == db && heap.nodes[a] < heap.nodes[b]
+
+# Whether the pair `distance` and `node` belongs above the top pair: nearer
+# for results, so it should replace the farthest kept.
+function beats_top(heap: Heap lent, distance: f64, node: i64) -> bool
+    farthest = heap.distances[0]
+
+    if heap.farthest_first
+        return distance < farthest || distance == farthest && node < heap.nodes[0]
+    return distance > farthest || distance == farthest && node > heap.nodes[0]
+
+# Exchanges the pairs at `a` and `b`.
+function swap(@heap: Heap, a: i64, b: i64)
+    distance = heap.distances[a]
+    node = heap.nodes[a]
+    heap.distances[a] @ heap.distances[b]
+    heap.nodes[a] @ heap.nodes[b]
+    heap.distances[b] @ distance
+    heap.nodes[b] @ node
+
+# Moves the pair at `at` down until neither child belongs above it.
+function sink(@heap: Heap, at: i64)
+    here @= at
+
+    while true
+        left = here * 2 + 1
+
+        if left >= heap.size
+            return
+        best @= left
+        right = left + 1
+
+        if right < heap.size && above(heap, a: right, b: left)
+            best @ right
+
+        if !above(heap, a: best, b: here)
+            return
+        swap(@heap, a: best, b: here)
+        here @ best
+
+# Adds `distance` to `xs` at `at`, overwriting room where there is some.
+function put_f64(@xs: [f64], at: i64, value: f64)
+    if at < xs.len()
+        xs[at] @ value
+    else
+        xs @ xs.push(value)
+
+# Adds `node` to `xs` at `at`, overwriting room where there is some.
+function put_i64(@xs: [i64], at: i64, value: i64)
+    if at < xs.len()
+        xs[at] @ value
+    else
+        xs @ xs.push(value)
+
+# Adds the pair `distance` and `node` to `heap`.
+function add(@heap: Heap, distance: f64, node: i64)
+    at = heap.size
+    put_f64(@heap.distances, at, value: distance)
+    put_i64(@heap.nodes, at: at, value: node)
+    heap.size @ at + 1
+    here @= at
+
+    while here > 0
+        parent = (here - 1) / 2
+
+        if !above(heap, a: here, b: parent)
+            return
+        swap(@heap, a: here, b: parent)
+        here @ parent
+
+# Takes the top pair off `heap`; the caller read it first with `top_distance`
+# and `top_node`. Aborts where the heap is empty.
+function pop(@heap: Heap)
+    assert heap.size > 0
+    last = heap.size - 1
+    heap.distances[0] @ heap.distances[last]
+    heap.nodes[0] @ heap.nodes[last]
+    heap.size @ last
+    sink(@heap, at: 0)
+
+# Replaces the top pair of `heap` by `distance` and `node`, and restores the
+# order. Aborts where the heap is empty.
+function replace_top(@heap: Heap, distance: f64, node: i64)
+    assert heap.size > 0
+    heap.distances[0] @ distance
+    heap.nodes[0] @ node
+    sink(@heap, at: 0)
+
+# The distance of the top pair. Aborts where the heap is empty.
+function top_distance(heap: Heap lent) -> f64
+    return heap.distances[0]
+
+# The node of the top pair. Aborts where the heap is empty.
+function top_node(heap: Heap lent) -> i64
+    return heap.nodes[0]
+
+# Empties `heap`, keeping its room.
+function clear(@heap: Heap)
+    heap.size @ 0
+
+# The live pairs of a heap of results, nearest first: the nodes, and their
+# distances beside them in `distances_out`. The heap is emptied.
+function drain_nearest_first(@heap: Heap, @distances_out: [f64]) -> [i64]
+    count = heap.size
+    nodes: [i64] @= []
+    distances: [f64] @= []
+
+    for _ in range(from: 0, to: count)
+        nodes @ nodes.push(0)
+        distances @ distances.push(0.0)
+
+    at @= count - 1
+
+    while heap.size > 0
+        nodes[at] @ top_node(heap)
+        distances[at] @ top_distance(heap)
+        pop(@heap)
+        at @ at - 1
+
+    distances_out @ distances
+    return nodes
+
+## Tests
+
+test "add and pop: the nearest first, ties by node, with room reused"
+    heap @= nearest_first()
+    add(@heap, distance: 3.0, node: 1)
+    add(@heap, distance: 1.0, node: 9)
+    add(@heap, distance: 1.0, node: 4)
+    add(@heap, distance: 2.0, node: 7)
+    order: [i64] @= []
+
+    while heap.size > 0
+        order @ order.push(top_node(heap))
+        pop(@heap)
+
+    assert order == [4, 9, 7, 1]
+    add(@heap, distance: 5.0, node: 2)
+    assert heap.size == 1 && top_node(heap) == 2 && heap.nodes.len() == 4
+
+test "add and pop: the farthest first, ties by the larger node"
+    heap @= farthest_first()
+    add(@heap, distance: 1.0, node: 3)
+    add(@heap, distance: 2.0, node: 5)
+    add(@heap, distance: 2.0, node: 8)
+    assert top_node(heap) == 8 && top_distance(heap) == 2.0
+    pop(@heap)
+    assert top_node(heap) == 5
+    pop(@heap)
+    pop(@heap)
+    assert heap.size == 0
+
+test "beats_top: nearer replaces the farthest, ties by node"
+    heap @= farthest_first()
+    add(@heap, distance: 2.0, node: 5)
+    assert beats_top(heap, distance: 1.0, node: 9)
+    assert beats_top(heap, distance: 2.0, node: 4)
+    assert !beats_top(heap, distance: 2.0, node: 6)
+    assert !beats_top(heap, distance: 3.0, node: 0)
+
+test "replace_top: the farthest replaced and the order restored"
+    heap @= farthest_first()
+    add(@heap, distance: 5.0, node: 1)
+    add(@heap, distance: 3.0, node: 2)
+    add(@heap, distance: 4.0, node: 3)
+    replace_top(@heap, distance: 1.0, node: 4)
+    assert top_node(heap) == 3 && top_distance(heap) == 4.0
+
+test "drain_nearest_first: empty, and a thousand pairs in order"
+    heap @= farthest_first()
+    distances: [f64] @= []
+    assert drain_nearest_first(@heap, @distances) == [] && distances == []
+
+    for n in range(from: 0, to: 1000)
+        add(@heap, distance: to_f64(n * 7919 % 1000), node: n)
+
+    nodes = drain_nearest_first(@heap, @distances)
+    assert nodes.len() == 1000 && heap.size == 0
+    assert distances[0] == 0.0 && distances[999] == 999.0
+
+    for at in range(from: 1, to: 1000)
+        assert distances[at - 1] < distances[at]
+
+test "clear: empty, the room kept"
+    heap @= nearest_first()
+    add(@heap, distance: 1.0, node: 1)
+    clear(@heap)
+    assert heap.size == 0 && heap.nodes.len() == 1

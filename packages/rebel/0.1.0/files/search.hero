@@ -1,0 +1,555 @@
+# Texts indexed in memory by their words and searched, the best first: an
+# inverted index ranked by BM25 with the `k1` and `b` the program gives, and
+# queries of words, of words required or refused, of phrases and of
+# prefixes.
+#
+# A text is cut into terms as tantivy's default analysis cuts it: a term is
+# a run of letters and digits (Unicode's Alphabetic and Number), put in lower
+# case by `strings.to_lower`, and the words of a stop list the program gives
+# are left out, their places kept so a phrase still spans them. Words
+# are not reduced to their stems: no specification says how, for any
+# language. The scores are BM25's in `f64`, as tantivy computes them in
+# `f32` and rank-bm25 in `f64`; `Formula` also gives rank-bm25's BM25Okapi,
+# BM25L and BM25+.
+#
+# It holds the terms and their places, never the texts: the program keeps
+# its texts under the ids it gives. The nearest of vectors are `vectors`'s,
+# and a regular expression is `regex`'s. It fails with `invalid`, where a
+# query or a setting cannot be read or bytes are not an index; `not_found`,
+# where an id is not in an index; and `exists`, where an id is already
+# there.
+
+use search/internal/analyze
+use search/internal/codes
+use search/internal/engine
+use search/internal/query as parser
+use search/internal/run
+use search/internal/score
+use search/internal/store
+use strings
+
+## Codes
+
+# The code of what a function cannot read: a query whose quote is not
+# closed, a setting out of its range, bytes that are not an index.
+constant INVALID: str
+    codes.INVALID
+
+# The code of an id an index does not hold, which `remove` fails with.
+constant NOT_FOUND: str
+    codes.NOT_FOUND
+
+# The code of an id an index already holds, which `add` fails with.
+constant EXISTS: str
+    codes.EXISTS
+
+## Terms
+
+# How a term's weight and its count in a text make a score, a text scoring
+# only for the terms it holds. With `n` texts of the `N` an index holds
+# holding the term, `f` its count in a text of `d` terms, and `a` the mean
+# count of terms of a text, the standard and Okapi formulas weigh `f` as
+# `f * (k1 + 1) / (f + k1 * (1 - b + b * d / a))` and differ in the term's
+# weight, its idf; BM25L and BM25+ weigh it as their cases say, as Lv and
+# Zhai published them (2011).
+variant Formula
+    # Lucene's and tantivy's: an idf of `ln(1 + (N - n + 0.5) / (n + 0.5))`,
+    # never below zero.
+    standard
+    # Robertson's idf, `ln(N - n + 0.5) - ln(n + 0.5)`, rank-bm25's
+    # `BM25Okapi`: a term in more than half of the texts would weigh below
+    # zero, and weighs `epsilon` times the mean idf of the index's terms
+    # instead.
+    okapi
+        # The share of the mean idf a term weighs where its own is below
+        # zero, rank-bm25's 0.25.
+        epsilon: f64
+    # BM25L: an idf of `ln(N + 1) - ln(n + 0.5)`, and the count divided by
+    # `1 - b + b * d / a`, raised by `delta`, weighed as `(k1 + 1) * (c +
+    # delta) / (k1 + c + delta)`, so a long text is not lost. rank-bm25's
+    # `BM25L` also multiplies each term's score by its count, and agrees
+    # where a term stands once.
+    bm25l
+        # What the normalized count is raised by, rank-bm25's 0.5.
+        delta: f64
+    # BM25+: an idf of `ln((N + 1) / n)`, and `delta` added to the weighed
+    # count of each term a text holds, so a text that holds the term
+    # outscores one that does not, however long. rank-bm25's `BM25Plus`
+    # adds it for every term of the query to every text, which ranks as if
+    # it were not there.
+    bm25_plus
+        # What the weighed count is raised by, rank-bm25's 1.0.
+        delta: f64
+
+# The settings an `Index` is made with, built directly or by
+# `default_options`.
+record Options
+    # How fast a term's score saturates as it repeats in a text: 0 counts a
+    # term once however often it stands, larger counts more. Zero or more;
+    # Lucene and tantivy take 1.2, rank-bm25 1.5.
+    k1: f64
+    # How much a text's length lowers its scores, from 0, not at all, to 1,
+    # in full proportion to its length over the mean. 0.75 in all three.
+    b: f64
+    # The weight of a term, and how it meets the count.
+    formula: Formula
+    # The words left out of every text and every query, compared once both
+    # are in lower case; `english_stop_words` gives tantivy's list, and an
+    # empty list leaves nothing out.
+    stop_words: [str]
+
+# Lucene's and tantivy's settings: `k1` 1.2, `b` 0.75, the standard
+# formula, and no stop word.
+#
+# See also `Options`, `english_stop_words`.
+function default_options() -> Options
+    return Options(k1: 1.2, b: 0.75, formula: .standard, stop_words: [])
+
+# The 33 English words tantivy's `stopword("english")` filter leaves out, in
+# alphabetical order: articles, conjunctions, prepositions and the forms of
+# "to be" a search rarely needs.
+#
+# Observed on 2026-11-19 by running every word of a dictionary of 234,457
+# through tantivy 0.27's filter. See also `Options`.
+function english_stop_words() -> [str]
+    return [
+        "a"
+        "an"
+        "and"
+        "are"
+        "as"
+        "at"
+        "be"
+        "but"
+        "by"
+        "for"
+        "if"
+        "in"
+        "into"
+        "is"
+        "it"
+        "no"
+        "not"
+        "of"
+        "on"
+        "or"
+        "such"
+        "that"
+        "the"
+        "their"
+        "then"
+        "there"
+        "these"
+        "they"
+        "this"
+        "to"
+        "was"
+        "will"
+        "with"
+    ]
+
+# The terms of `text`, in the order they stand: each run of letters and
+# digits in lower case, the words of `stop_words` left out.
+#
+# - `text`: the text cut, any length; a text of no letter or digit gives no
+#   term.
+# - `stop_words`: the words left out, in any case.
+#
+# A letter or a digit is a character of Unicode's Alphabetic property or of
+# a Number category, as Rust's `char::is_alphanumeric`; anything else cuts,
+# an apostrophe and an underscore included. The lower case is
+# `strings.to_lower`'s, so a sigma that ends a word is `ς`, as Python's
+# `str.lower` writes it, where tantivy writes `σ`. See also `search`.
+function terms(text: str, stop_words: [str]) -> [str]
+    return analyze.tokens(text, stop: analyze.stop_set(stop_words)).terms
+
+## The index
+
+# An inverted index: each term with the texts that hold it and its places
+# in each, and each text's length in terms, so a query reaches only the
+# texts that hold its words.
+#
+# Made by `new_index` or `from_bytes`, and changed only by `add` and
+# `remove`. Copied with `=`, the copy is an index of its own.
+record Index
+    # The postings and the counts, held by the package itself: a program
+    # reads them through this section's functions.
+    engine: engine.Engine
+
+# An empty index ranked by `options`.
+#
+# - `options`: `k1` and `b`, the formula and the stop words.
+#
+# Fails `invalid` where `k1` is below zero or not finite, `b` is outside 0
+# to 1, or the formula's `epsilon` or `delta` is below zero or not finite.
+# See also `add`, `default_options`.
+function new_index(options: Options) -> Index?
+    formula = match options.formula
+        .standard    => codes.STANDARD
+        .okapi _     => codes.OKAPI
+        .bm25l _     => codes.BM25L
+        .bm25_plus _ => codes.BM25_PLUS
+
+    parameter = match options.formula
+        .standard    => 0.0
+        .okapi o     => o.epsilon
+        .bm25l l     => l.delta
+        .bm25_plus p => p.delta
+
+    score.check_settings(k1: options.k1, b: options.b, formula: formula, parameter: parameter)?
+    built = engine.empty(
+        k1: options.k1,
+        b: options.b,
+        formula: formula,
+        parameter: parameter,
+        stop_words: analyze.stop_list(options.stop_words)
+    )
+    return ok(Index(engine: built))
+
+# Adds `text` to `index` under `id`.
+#
+# - `index`: the index, which gains the text's terms.
+# - `id`: the program's name for the text, any `i64`; an id removed may be
+#   added again.
+# - `text`: the text, any length; a text with no term is held, counted in
+#   the index's size and its mean length, and found by no query.
+#
+# Fails `exists` where `index` holds `id`. See also `remove`, `search`.
+function add(@index: Index, id: i64, text: str) -> ()?
+    if engine.live_slot(index.engine, id: id) != engine.NONE
+        return fail(code: codes.EXISTS, msg: f"the index holds a text under id {id} already")
+    found = analyze.tokens(text, stop: index.engine.stop)
+    engine.add(@index.engine, id: id, terms: found.terms, positions: found.positions)
+    return ok()
+
+# Takes the text under `id` out of `index`: no query finds it, and the
+# counts every score reads leave it out.
+#
+# - `index`: the index, which loses the text.
+# - `id`: the id of a text the index holds.
+#
+# Fails `not_found` where it holds none under `id`. Its places stay in
+# memory until `compact`. See also `add`, `compact`.
+function remove(@index: Index, id: i64) -> ()?
+    slot = engine.live_slot(index.engine, id: id)
+
+    if slot == engine.NONE
+        return fail(code: codes.NOT_FOUND, msg: f"the index holds no text under id {id}")
+    engine.remove(@index.engine, slot: slot)
+    return ok()
+
+# Whether `index` holds a text under `id`.
+#
+# - `index`: the index.
+# - `id`: the id asked about.
+#
+# See also `size`.
+function contains(index: Index lent, id: i64) -> bool
+    return engine.live_slot(index.engine, id: id) != engine.NONE
+
+# How many texts `index` holds.
+#
+# - `index`: the index.
+#
+# See also `contains`.
+function size(index: Index lent) -> i64
+    return index.engine.live
+
+# How many texts of `index` hold `term`.
+#
+# - `index`: the index.
+# - `term`: a term as `terms` gives one, in lower case; any other text is
+#   held by none.
+#
+# See also `terms_with_prefix`.
+function document_frequency(index: Index lent, term: str) -> i64
+    match index.engine.term_of[term]
+        .ok known => return index.engine.term_frequency[known]
+        .err _    => return 0
+
+# The terms of `index` that begin with `prefix`, held by at least one text,
+# in the order of their bytes: what a search box completes a word to.
+#
+# - `index`: the index.
+# - `prefix`: the beginning, put in lower case first; the empty prefix gives
+#   every term.
+#
+# It reads every term of the index once. See also `document_frequency`.
+function terms_with_prefix(index: Index lent, prefix: str) -> [str]
+    lower = strings.to_lower(prefix)
+    found: [str] @= []
+
+    for term in range(from: 0, to: index.engine.term_text.len())
+        if index.engine.term_frequency[term] > 0 && strings.has_prefix(s: index.engine.term_text[term], prefix: lower)
+            found @ found.push(index.engine.term_text[term])
+
+    return sort(found)
+
+# A new index holding the texts of `index`, with its options, without what
+# `remove` left in memory.
+#
+# - `index`: the index rebuilt; it is not changed.
+#
+# Every score of the new index equals the old one's. See also `remove`.
+function compact(index: Index lent) -> Index
+    built @= engine.empty(
+        k1: index.engine.k1,
+        b: index.engine.b,
+        formula: index.engine.formula,
+        parameter: index.engine.parameter,
+        stop_words: index.engine.stop_words
+    )
+
+    for slot in range(from: 0, to: index.engine.slot_id.len())
+        if index.engine.slot_live[slot]
+            pairs = engine.terms_of_slot(index.engine, slot: slot)
+            engine.add(@built, id: index.engine.slot_id[slot], terms: pairs.terms, positions: pairs.positions)
+
+    return Index(engine: built)
+
+# `index` written as bytes: its options and each text's id and terms with
+# their places, so `from_bytes` reads back an index that scores alike.
+#
+# - `index`: the index written.
+#
+# The bytes are this package's own format, little-endian, opening with
+# `RSBM25I1`. See also `from_bytes`.
+function to_bytes(index: Index lent) -> [u8]
+    return store.write(index.engine)
+
+# The index `bytes` hold, as `to_bytes` wrote it.
+#
+# - `bytes`: the bytes read, from anywhere.
+#
+# Every count, place and text is checked before it is used, so bytes cut
+# short or changed fail and never abort. Fails `invalid` where the bytes are
+# not an index this package wrote, saying where. See also `to_bytes`.
+function from_bytes(bytes: [u8]) -> Index?
+    return ok(Index(engine: store.read(bytes)?))
+
+## Searching
+
+# A text a query found, and how well it matched.
+record Hit
+    # The id the text was added under.
+    id: i64
+    # Its score, the sum of the BM25 scores of the parts of the query it
+    # holds; larger is better.
+    score: f64
+
+# The texts of `index` that match `query`, the best first, at most `limit`.
+#
+# - `index`: the index searched.
+# - `query`: words apart by white space, each cut into terms as the texts
+#   are. A word is optional: a text holding any optional word matches, and
+#   its score is the sum of theirs. `+word` is required: a text must hold
+#   it. `-word` is refused: a text holding it does not match. `"two words"`
+#   is a phrase, its terms side by side in that order, and `+` or `-` may
+#   stand before its quote. `word*` is a prefix, every term beginning so, the
+#   scores of those a text holds summed. A word that gives several terms,
+#   `e-mail`, is the phrase of them; one that gives none, a stop word, is
+#   dropped. The empty query, or one of refused words alone, finds nothing.
+# - `limit`: the most texts answered, 0 or more.
+#
+# A phrase scores as one term whose count is how often it stands and whose
+# weight is the sum of its terms' weights, as tantivy scores one. Texts of
+# one score come in the order of their ids. Fails `invalid` where a quote is
+# not closed, a `*` follows a phrase or a word of several terms, or `limit`
+# is below zero. See also `terms`.
+function search(index: Index lent, query: str, limit: i64) -> [Hit]?
+    if limit < 0
+        return fail(code: codes.INVALID, msg: f"the limit is {limit}, where a search answers 0 texts or more")
+    clauses = parser.parse(query, stop: index.engine.stop)?
+    found = run.run(index.engine, clauses: clauses, limit: limit)
+    out: [Hit] @= []
+
+    for at in range(from: 0, to: found.ids.len())
+        out @ out.push(Hit(id: found.ids[at], score: found.scores[at]))
+
+    return ok(out)
+
+## Tests
+
+test "new_index: k1, b, epsilon and delta out of range"
+    zero = 0.0
+    assert new_index(Options(k1: -1.0, b: 0.75, formula: .standard, stop_words: [])).is_err()
+    assert new_index(Options(k1: 1.2, b: 1.01, formula: .standard, stop_words: [])).is_err()
+    assert new_index(Options(k1: zero / zero, b: 0.75, formula: .standard, stop_words: [])).is_err()
+    assert new_index(Options(k1: 1.2, b: 0.75, formula: .okapi(epsilon: -0.1), stop_words: [])).is_err()
+    assert new_index(Options(k1: 1.2, b: 0.75, formula: .bm25l(delta: 1.0 / zero), stop_words: [])).is_err()
+    assert !new_index(Options(k1: 0.0, b: 1.0, formula: .bm25_plus(delta: 0.0), stop_words: ["The"])).is_err()
+
+test "add: an id held, and an id removed added again"
+    index @= new_index(default_options()).must()
+    add(@index, id: 1, text: "first").must()
+
+    match add(@index, id: 1, text: "second")
+        .ok _  => assert false
+        .err e => assert e.code == EXISTS && e.msg == "the index holds a text under id 1 already"
+
+    remove(@index, id: 1).must()
+    add(@index, id: 1, text: "second").must()
+    assert search(index, query: "first", limit: 5).must() == [] && search(index, query: "second", limit: 5).must().len() == 1
+
+test "add: a text of no term counts in the size and the mean length"
+    index @= new_index(default_options()).must()
+    add(@index, id: 1, text: "...").must()
+    add(@index, id: 2, text: "word").must()
+    assert size(index) == 2 && search(index, query: "word", limit: 5).must()[0].id == 2
+
+test "remove: an id never held, and one removed twice"
+    index @= new_index(default_options()).must()
+
+    match remove(@index, id: 4)
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND && e.msg == "the index holds no text under id 4"
+
+    add(@index, id: 4, text: "x").must()
+    remove(@index, id: 4).must()
+    assert remove(@index, id: 4).is_err() && !contains(index, id: 4) && size(index) == 0
+
+test "document_frequency: a term unknown, one in upper case, and one of a text removed"
+    index @= new_index(default_options()).must()
+    add(@index, id: 1, text: "Tea").must()
+    add(@index, id: 2, text: "tea").must()
+    remove(@index, id: 2).must()
+    assert document_frequency(index, term: "tea") == 1
+    assert document_frequency(index, term: "Tea") == 0 && document_frequency(index, term: "coffee") == 0
+
+test "terms_with_prefix: none, every term, and a term only a removed text held"
+    index @= new_index(default_options()).must()
+    add(@index, id: 1, text: "beta alpha").must()
+    add(@index, id: 2, text: "alpine").must()
+    remove(@index, id: 2).must()
+    assert terms_with_prefix(index, prefix: "z") == []
+    assert terms_with_prefix(index, prefix: "") == ["alpha", "beta"]
+
+test "search: a limit below zero, an unclosed quote, and the empty query"
+    index @= new_index(default_options()).must()
+    add(@index, id: 1, text: "a b").must()
+    assert search(index, query: "a", limit: -1).is_err()
+
+    match search(index, query: "\"a b", limit: 5)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    assert search(index, query: "", limit: 5).must() == [] && search(index, query: "a", limit: 0).must() == []
+
+test "search: stop words left out of the query as out of the texts"
+    index @= new_index(Options(k1: 1.2, b: 0.75, formula: .standard, stop_words: english_stop_words())).must()
+    add(@index, id: 1, text: "the bank of america").must()
+    add(@index, id: 2, text: "america the bank").must()
+    assert search(index, query: "the", limit: 5).must() == []
+    found = search(index, query: "\"bank of america\"", limit: 5).must()
+    assert found.len() == 1 && found[0].id == 1
+
+test "search: the four formulas rank one query alike here, their scores apart"
+    texts = ["red apple pie", "green apple", "red red wine", "blue sky"]
+    formulas: [Formula] = [.standard, .okapi(epsilon: 0.25), .bm25l(delta: 0.5), .bm25_plus(delta: 1.0)]
+
+    for formula in formulas
+        index @= new_index(Options(k1: 1.5, b: 0.75, formula: formula, stop_words: [])).must()
+
+        for at in range(from: 0, to: texts.len())
+            add(@index, id: at, text: texts[at]).must()
+
+        found = search(index, query: "red apple", limit: 5).must()
+        assert found.len() == 3 && found[0].id == 0
+
+test "compact and to_bytes: an empty index"
+    index = new_index(default_options()).must()
+    assert size(compact(index)) == 0 && size(from_bytes(to_bytes(index)).must()) == 0
+
+test "from_bytes: another format refused, with what was found"
+    match from_bytes([82, 86, 72, 78, 83, 87, 49, 0])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "the bytes do not open with RSBM25I1, the name of a search index"
+
+## Examples
+
+# The settings Lucene and tantivy start from.
+test "default_options: k1 and b"
+    options = default_options()
+    assert options.k1 == 1.2 && options.b == 0.75 && options.stop_words == []
+
+# The English stop list, its first words.
+test "english_stop_words: the first three"
+    assert english_stop_words().slice(from: 0, to: 3) == ["a", "an", "and"]
+
+# A sentence cut into terms, its stop words left out.
+test "terms: a sentence without its stop words"
+    assert terms("The Quick-Brown fox, and its 2 friends", stop_words: english_stop_words()) == ["quick", "brown", "fox", "its", "2", "friends"]
+
+# An empty index ranked by BM25.
+test "new_index: an empty index"
+    assert size(new_index(default_options()).must()) == 0
+
+# Two texts added and one found.
+test "add: two texts, one found"
+    index @= new_index(default_options()).must()
+    add(@index, id: 1, text: "the cat sat on the mat").must()
+    add(@index, id: 2, text: "a dog barked").must()
+    assert search(index, query: "cat", limit: 10).must()[0].id == 1
+
+# A text taken out is no longer found.
+test "remove: a text no longer found"
+    index @= new_index(default_options()).must()
+    add(@index, id: 1, text: "red apple").must()
+    remove(@index, id: 1).must()
+    assert search(index, query: "apple", limit: 10).must() == []
+
+# Whether an index holds an id.
+test "contains: an id held and one not"
+    index @= new_index(default_options()).must()
+    add(@index, id: 3, text: "hello").must()
+    assert contains(index, id: 3) && !contains(index, id: 4)
+
+# How many texts an index holds.
+test "size: two texts"
+    index @= new_index(default_options()).must()
+    add(@index, id: 1, text: "one").must()
+    add(@index, id: 2, text: "two").must()
+    assert size(index) == 2
+
+# How many texts hold a term.
+test "document_frequency: a term in two of three texts"
+    index @= new_index(default_options()).must()
+    add(@index, id: 1, text: "green tea").must()
+    add(@index, id: 2, text: "black tea").must()
+    add(@index, id: 3, text: "coffee").must()
+    assert document_frequency(index, term: "tea") == 2
+
+# The words a search box completes.
+test "terms_with_prefix: the words beginning with ser"
+    index @= new_index(default_options()).must()
+    add(@index, id: 1, text: "serial server").must()
+    add(@index, id: 2, text: "service set").must()
+    assert terms_with_prefix(index, prefix: "Ser") == ["serial", "server", "service"]
+
+# An index rebuilt without what was removed.
+test "compact: the same scores"
+    index @= new_index(default_options()).must()
+    add(@index, id: 1, text: "alpha beta").must()
+    add(@index, id: 2, text: "beta gamma").must()
+    remove(@index, id: 1).must()
+    assert search(compact(index), query: "beta", limit: 5).must() == search(index, query: "beta", limit: 5).must()
+
+# An index written as bytes.
+test "to_bytes: the format's first bytes"
+    assert to_bytes(new_index(default_options()).must()).slice(from: 0, to: 8) == [82, 83, 66, 77, 50, 53, 73, 49]
+
+# An index written and read back.
+test "from_bytes: an index read back"
+    index @= new_index(default_options()).must()
+    add(@index, id: 9, text: "written and read").must()
+    again = from_bytes(to_bytes(index)).must()
+    assert search(again, query: "read", limit: 1).must() == search(index, query: "read", limit: 1).must()
+
+# A phrase, a required word and a refused one.
+test "search: a phrase, a word required and a word refused"
+    index @= new_index(default_options()).must()
+    add(@index, id: 1, text: "new york city").must()
+    add(@index, id: 2, text: "york new city").must()
+    add(@index, id: 3, text: "new york state").must()
+    found = search(index, query: "+\"new york\" city -state", limit: 10).must()
+    assert found.len() == 1 && found[0].id == 1

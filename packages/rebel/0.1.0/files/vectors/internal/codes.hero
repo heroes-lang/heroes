@@ -1,0 +1,30 @@
+# The codes `vectors` fails with, and the numbers its private modules name a
+# metric by, since a private module cannot read the face's `Metric`.
+
+# The code of a vector or a setting a function cannot read.
+constant INVALID: str
+    "invalid"
+
+# The code of an id an index does not hold.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of an id an index holds already.
+constant EXISTS: str
+    "exists"
+
+# The straight-line distance; inside an index its square, which orders alike.
+constant EUCLIDEAN: i64
+    0
+
+# One less the cosine, between vectors an index holds normalized.
+constant COSINE: i64
+    1
+
+# The dot product negated.
+constant INNER_PRODUCT: i64
+    2
+
+# The sum of the absolute differences.
+constant MANHATTAN: i64
+    3

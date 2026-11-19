@@ -1,0 +1,219 @@
+# The ledger of `search`: what a program can do with texts indexed in memory
+# and searched by their words, ranked by BM25, one block per capability, and
+# what Rebel answers.
+#
+# Neither Go's, nor Rust's, nor Python's standard library holds an inverted
+# index or a ranking, so their lines read `-`. The task (the author,
+# 2026-11-17) named the yardsticks: Python's rank-bm25 and tantivy. The lists
+# are this machine's, 2026-11-19: `dir()` of `rank_bm25` 0.2.2 and of its
+# `BM25Okapi`, `BM25L` and `BM25Plus`, and `dir()` of `tantivy` 0.27.0 (the
+# Python binding of the Rust crate) and of its `Index`, `IndexWriter`,
+# `Searcher`, `Query`, `SchemaBuilder`, `Document`, `SnippetGenerator`,
+# `Filter`, `Tokenizer` and `TextAnalyzerBuilder`, each installed into the
+# scratch folder.
+#
+# The differential, 2026-11-19, on 3,000 generated texts of 1 to 30 words
+# drawn from 170 words by Zipf's law (Latin letters with and without
+# accents, Greek, Cyrillic, Japanese, digits, the English stop words), in
+# upper, lower and title case, between spaces, punctuation and ideographic
+# spaces, 300 of them removed after they were added. The analysis: 3,000 of
+# 3,000 texts cut into the terms tantivy's simple tokenizer and lower-caser
+# cut. Against rank-bm25, 400 queries of one to four words over the 2,700
+# texts kept, six runs (each formula, with and without the English stop
+# list, k1 from 0.9 to 2.0, b from 0 to 1): every one of 1,080,000 pairs of
+# a query and a text matched by both or by neither, every score within
+# 1e-12 of rank-bm25's, 92 to 99.8 per cent of them equal to the bit.
+# Against tantivy, the standard formula, 600 queries of words, phrases,
+# required and refused words: the 578 its parser reads and that repeat no
+# word matched the same texts with every score within 1e-5 (tantivy scores
+# in f32), with and without the stop list; 268 prefix queries matched the
+# texts of tantivy's `terms_with_prefix` joined as optional terms, scores
+# within 2.2e-7. Every one of those queries answered the same after `to_bytes`
+# and `from_bytes`, and after `compact`. Cost on this Mac at -O2: 100,000
+# texts (12 MB) indexed in 4.0 s, 203 MB resident; a query of one to four
+# common words with a limit of 10 about 3 ms.
+
+capability analyze/terms  a text cut into terms: words of letters and digits, in lower case
+  heroes  search.terms
+  go      -
+  rust    -
+  python  tantivy.Tokenizer.simple, tantivy.Filter.lowercase, tantivy.TextAnalyzerBuilder, tantivy.TextAnalyzer.analyze
+  note    tantivy's simple tokenizer and lower-caser: equal on the 3,000 texts of the differential. A sigma that ends a word is written `ς`, as `strings.to_lower` and Python's `str.lower` write it, where tantivy lowers each character alone and writes `σ`: so "ΣΊΣΥΦΟΣ" is the term of "σίσυφος" here and not in tantivy
+
+capability analyze/stop-words  the words a text's terms leave out, and English's list
+  heroes  search.Options, search.english_stop_words
+  go      -
+  rust    -
+  python  tantivy.Filter.stopword, tantivy.Filter.custom_stopword
+  note    the list is the 33 words tantivy 0.27's `stopword("english")` left out of the 234,457 words of /usr/share/dict/words, observed. A stop word keeps its place, as in tantivy, so a phrase spans it: equal to tantivy on 577 queries with the list
+
+capability analyze/long-terms  terms past a length left out
+  heroes  refused: a long word costs here only its own bytes, and leaving it out would make a text unfindable by a word it holds; tantivy's default analysis leaves out words past 40 bytes
+  go      -
+  rust    -
+  python  tantivy.Filter.remove_long
+
+capability analyze/stemming  a word reduced to its stem
+  heroes  refused: no specification says how, for any language (the task, 2026-11-17); Snowball's stemmers are programs, not a standard
+  go      -
+  rust    -
+  python  tantivy.Filter.stemmer, tantivy.Filter.split_compound
+
+capability analyze/ascii-folding  accents and letters beyond ASCII folded to ASCII
+  heroes  pending
+  go      -
+  rust    -
+  python  tantivy.Filter.ascii_fold, tantivy.Filter.alphanum_only
+  note    tantivy's folding is Lucene's table of some thousand characters; `unicode/normalize`'s decomposition with its marks left out reaches part of it, and the rest wants a table of its own
+
+capability analyze/other-tokenizers  text cut by white space, by a regular expression, into n-grams, or kept whole
+  heroes  pending
+  go      -
+  rust    -
+  python  tantivy.Tokenizer.whitespace, tantivy.Tokenizer.regex, tantivy.Tokenizer.ngram, tantivy.Tokenizer.raw, tantivy.Tokenizer.facet
+  note    an analysis given by the program, which the index would call for each text and query
+
+capability index/new  an index made empty with its ranking's settings
+  heroes  search.new_index, search.Options, search.default_options, search.Index
+  go      -
+  rust    -
+  python  rank_bm25.BM25Okapi, tantivy.Index, tantivy.SchemaBuilder, tantivy.SchemaBuilder.add_text_field
+  note    k1 1.2 and b 0.75 by default, as Lucene and tantivy: tantivy's Python binding offers no setting for them, and its scores are this package's at 1.2 and 0.75 within 1e-5; rank-bm25's default k1 is 1.5. k1, epsilon and delta from 0 to a million, b from 0 to 1: past them a score could overflow, and ordering the nan it would make aborts
+
+capability index/add  a text added under an id
+  heroes  search.add
+  go      -
+  rust    -
+  python  tantivy.IndexWriter.add_document, tantivy.IndexWriter.commit, tantivy.Document.add_text
+  note    searchable at once, with no commit; an id held fails `exists`. A text of no term counts in the size and the mean length, as rank-bm25 counts an empty document
+
+capability index/remove  a text taken out by its id
+  heroes  search.remove, search.compact
+  go      -
+  rust    -
+  python  tantivy.IndexWriter.delete_documents_by_term, tantivy.IndexWriter.delete_all_documents
+  note    the counts every score reads leave the text out at once; its places stay in memory until `compact`. Removing every text is `new_index`
+
+capability index/read  how many texts, whether an id is there, how many texts hold a term, the terms of a prefix
+  heroes  search.size, search.contains, search.document_frequency, search.terms_with_prefix
+  go      -
+  rust    -
+  python  tantivy.Searcher.num_docs, tantivy.Searcher.doc_freq, tantivy.Searcher.terms_with_prefix
+  note    `terms_with_prefix` answers the terms alone, in byte order; tantivy's pairs each with its frequency, which `document_frequency` gives
+
+capability index/save  the index written as bytes and read back
+  heroes  search.to_bytes, search.from_bytes
+  go      -
+  rust    -
+  python  tantivy.Index.open, tantivy.Index.exists
+  note    this package's own format, its texts' terms and places and not its postings, which a read builds again; every cut of an index's bytes fails `invalid` and none aborts (tested on every length)
+
+capability rank/bm25  texts ranked by BM25 with k1 and b given
+  heroes  search.search, search.Hit, search.Formula
+  go      -
+  rust    -
+  python  rank_bm25.BM25Okapi.get_scores, rank_bm25.BM25Okapi.get_top_n, rank_bm25.BM25Okapi.get_batch_scores, tantivy.Searcher.search
+  note    the standard formula is Lucene's and tantivy's, equal to tantivy within its f32 on 578 queries. A word repeated in a query counts each time, as rank-bm25 counts it; tantivy counts it once (observed: "apple apple" scores as "apple"). Texts of one score come in the order of their ids; rank-bm25's `get_top_n` puts the later first (observed). `get_scores` answers a score for every text, 0 for one that holds no word; here a search with a limit of `size` answers the texts that match. `get_batch_scores`, the scores of some texts alone, is a filter on the answer
+
+capability rank/bm25-variants  BM25 with Robertson's weight, BM25L and BM25+
+  heroes  search.Formula
+  go      -
+  rust    -
+  python  rank_bm25.BM25Okapi, rank_bm25.BM25L, rank_bm25.BM25Plus
+  note    Okapi equal to rank-bm25's within 1e-12, its mean idf summed exactly where rank-bm25 sums in the order words were first seen, so a rebuilt index scores to the same bits. BM25L and BM25+ as Lv and Zhai published them (2011); rank-bm25 0.2.2's BM25L multiplies each term's score by its count (observed: 3.334 where the formula gives 1.111 for a term standing three times), and its BM25+ adds delta for every query term to every text, a text's score less those additions being this package's within 1e-12
+
+capability query/terms  texts holding any of the words of a query
+  heroes  search.search
+  go      -
+  rust    -
+  python  tantivy.Index.parse_query, tantivy.Query.term_query, tantivy.Query.term_set_query
+  note    tantivy's parser reads AND, OR and IN as operators and refuses a query of refused words alone; here they are words, and such a query finds nothing
+
+capability query/boolean  words required and words refused
+  heroes  search.search
+  go      -
+  rust    -
+  python  tantivy.Query.boolean_query, tantivy.Occur, tantivy.Query.and_must_match, tantivy.Query.and_must_not_match, tantivy.Query.or_should_match
+  note    `+` and `-` before a word or a phrase, as Lucene's and tantivy's parsers read them; groups in parentheses are not read
+
+capability query/phrase  texts holding words side by side, in order
+  heroes  search.search
+  go      -
+  rust    -
+  python  tantivy.Query.phrase_query
+  note    scored as tantivy scores a phrase, one term whose count is how often it stands and whose weight is the sum of its terms'; equal within 1e-5. A slop, words allowed between, is not offered
+
+capability query/prefix  texts holding a word that begins so
+  heroes  search.search
+  go      -
+  rust    -
+  python  tantivy.Query.phrase_prefix_query
+  note    every term that begins so, the scores of those a text holds summed in the order of their bytes; tantivy's parser does not expand `word*` (observed: it finds nothing), and its terms joined as optional term queries score as here, within 2.2e-7. A phrase whose last word is a prefix fails `invalid`
+
+capability query/fuzzy  texts holding a word within a few edits of the one asked
+  heroes  pending
+  go      -
+  rust    -
+  python  tantivy.Query.fuzzy_term_query
+  note    a term within a few edits found in the terms of the index, by a Levenshtein automaton or by a walk of them all; not yet written
+
+capability query/regex  texts holding a word a regular expression matches
+  heroes  pending
+  go      -
+  rust    -
+  python  tantivy.Query.regex_query, tantivy.Query.regex_phrase_query
+  note    the terms `regex` matches, joined as a prefix's are; not yet written
+
+capability query/boost  a part of a query weighted, scored as a constant, or the best part alone
+  heroes  pending
+  go      -
+  rust    -
+  python  tantivy.Query.boost_query, tantivy.Query.const_score_query, tantivy.Query.disjunction_max_query
+  note    wants queries built as values beside the text form; not yet written
+
+capability query/more-like-this  texts like a given one
+  heroes  pending
+  go      -
+  rust    -
+  python  tantivy.Query.more_like_this_query, tantivy.Query.more_like_this_document_fields_query
+
+capability fields/several  a document of several fields, each searched with its own weight
+  heroes  pending
+  go      -
+  rust    -
+  python  tantivy.SchemaBuilder.add_text_field, tantivy.Document.add_text, tantivy.Index.parse_query (default_field_names, field_boosts)
+  note    an index holds one text an id; a program indexes a name and a description together, or keeps two indexes and adds their scores
+
+capability fields/values  numbers, dates, facets and other values beside the text, filtered, ranged, ordered and aggregated
+  heroes  refused: the index holds texts, and the program keeps the values beside them under the same ids, filtered before or after a search; ranges, facets and aggregations are a database's
+  go      -
+  rust    -
+  python  tantivy.SchemaBuilder.add_integer_field, add_float_field, add_date_field, add_facet_field, add_boolean_field, add_bytes_field, add_json_field, add_ip_addr_field, add_unsigned_field, add_tie_breaker_field, tantivy.Query.range_query, tantivy.Query.exists_query, tantivy.Query.all_query, tantivy.Searcher.aggregate, tantivy.Searcher.cardinality, tantivy.Searcher.fast_field_values, tantivy.Order, tantivy.Facet
+
+capability results/snippets  the part of a text a query matched, its words marked
+  heroes  pending
+  go      -
+  rust    -
+  python  tantivy.SnippetGenerator, tantivy.Snippet
+  note    wants each term's byte offsets kept beside its place; the program holds the text
+
+capability results/explain  how a score was reached
+  heroes  pending
+  go      -
+  rust    -
+  python  tantivy.Query.explain, tantivy.Explanation
+
+dropped storage  a store of the texts themselves and its documents: here the program keeps its texts under the ids it gives
+  go      -
+  rust    -
+  python  tantivy.Searcher.doc, tantivy.DocAddress, tantivy.Document.get_all, tantivy.Document.get_first, tantivy.Document.to_dict, tantivy.Document.from_dict, tantivy.Document.extend, tantivy.Document.is_empty, tantivy.Document.num_fields, tantivy.SearchResult
+
+dropped engine  segments, merges, writers' threads, readers, commits and files: an index here is one value in memory
+  go      -
+  rust    -
+  python  tantivy.IndexWriter.commit_opstamp, tantivy.IndexWriter.rollback, tantivy.IndexWriter.garbage_collect_files, tantivy.IndexWriter.wait_merging_threads, tantivy.IndexWriter.add_json, tantivy.Index.writer, tantivy.Index.searcher, tantivy.Index.reload, tantivy.Index.config_reader, tantivy.Index.is_compatible, tantivy.Index.schema, tantivy.Index.register_tokenizer, tantivy.Index.register_fast_field_tokenizer, tantivy.Index.parse_query_lenient, tantivy.Searcher.num_segments, tantivy.Schema, tantivy.SchemaBuilder.build, tantivy.SchemaBuilder.is_valid_field_name, tantivy.FieldType, tantivy.PreTokenizedString, tantivy.Document.add_pre_tokenized_text, tantivy.Token, tantivy.query_parser_error, tantivy.MAX_DATETIME, tantivy.MIN_DATETIME
+
+dropped imports  names rank_bm25 imports from other modules and so lists, none of them its own
+  go      -
+  rust    -
+  python  rank_bm25.Pool, rank_bm25.cpu_count, rank_bm25.math, rank_bm25.np, rank_bm25.BM25

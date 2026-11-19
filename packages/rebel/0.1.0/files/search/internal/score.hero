@@ -1,0 +1,118 @@
+# The BM25 scores of a search, each formula's weight of a term (its idf)
+# and its weighing of a count, written in the order of operations rank-bm25
+# evaluates them, so the same counts give the same floats.
+#
+# With `n` texts of `total` holding a term, `count` its count in a text of
+# `length` terms, and `mean` the mean length of a text:
+#
+# - the standard formula's idf is `ln(1 + (total - n + 0.5) / (n + 0.5))`,
+#   Lucene's and tantivy's;
+# - Okapi's is `ln(total - n + 0.5) - ln(n + 0.5)`, and where it is below
+#   zero, `epsilon` times the mean idf of the index's terms;
+# - BM25L's is `ln(total + 1) - ln(n + 0.5)`;
+# - BM25+'s is `ln((total + 1) / n)`.
+
+use math
+use search/internal/codes
+
+# The largest `k1`, epsilon and delta an index takes: past it a score could
+# pass the largest float on the way.
+constant LARGEST_SETTING: f64
+    1000000.0
+
+# Fails `invalid` where `k1` is not from 0 to `LARGEST_SETTING`, `b` not
+# from 0 to 1, `formula` no formula's number, or `parameter` not from 0 to
+# `LARGEST_SETTING`; a nan is none of these.
+function check_settings(k1: f64, b: f64, formula: i64, parameter: f64) -> ()?
+    if k1 != k1 || k1 < 0.0 || k1 > LARGEST_SETTING
+        return fail(code: codes.INVALID, msg: f"k1 is {k1}, where it is from 0 to 1000000")
+
+    if b != b || b < 0.0 || b > 1.0
+        return fail(code: codes.INVALID, msg: f"b is {b}, where it is from 0 to 1")
+
+    if formula < codes.STANDARD || formula > codes.BM25_PLUS
+        return fail(code: codes.INVALID, msg: f"the formula is {formula}, where it is from 0 to 3")
+
+    if parameter != parameter || parameter < 0.0 || parameter > LARGEST_SETTING
+        return fail(
+            code: codes.INVALID,
+            msg: f"the formula's epsilon or delta is {parameter}, where it is from 0 to 1000000"
+        )
+    return ok()
+
+# The weight of a term held by `n` of `total` texts under `formula`, before
+# Okapi's floor.
+function raw_idf(formula: i64, n: i64, total: i64) -> f64
+    held = to_f64(n)
+    texts = to_f64(total)
+
+    if formula == codes.STANDARD
+        return math.ln(1.0 + (texts - held + 0.5) / (held + 0.5))
+    else if formula == codes.OKAPI
+        return math.ln(texts - held + 0.5) - math.ln(held + 0.5)
+    else if formula == codes.BM25L
+        return math.ln(texts + 1.0) - math.ln(held + 0.5)
+    return math.ln((texts + 1.0) / held)
+
+# The weight of a term under `formula`, Okapi's below zero replaced by
+# `parameter` times `mean_idf`.
+function idf(formula: i64, parameter: f64, n: i64, total: i64, mean_idf: f64) -> f64
+    found = raw_idf(formula: formula, n: n, total: total)
+
+    if formula == codes.OKAPI && found < 0.0
+        return parameter * mean_idf
+    return found
+
+# The score of a term of weight `weight` that stands `count` times in a text
+# of `length` terms, the mean length being `mean`.
+function weigh(formula: i64, k1: f64, b: f64, parameter: f64, weight: f64, count: i64, length: i64, mean: f64) -> f64
+    frequency = to_f64(count)
+    dl = to_f64(length)
+
+    if formula == codes.BM25L
+        normalized = frequency / (1.0 - b + b * dl / mean)
+        return weight * (k1 + 1.0) * (normalized + parameter) / (k1 + normalized + parameter)
+    else if formula == codes.BM25_PLUS
+        return weight * (parameter + frequency * (k1 + 1.0) / (k1 * (1.0 - b + b * dl / mean) + frequency))
+    return weight * (frequency * (k1 + 1.0) / (frequency + k1 * (1.0 - b + b * dl / mean)))
+
+## Tests
+
+test "raw_idf: each formula, a term in one text of four, as Python's math.log answers"
+    assert raw_idf(formula: codes.STANDARD, n: 1, total: 4) == 1.2039728043259361
+    assert raw_idf(formula: codes.OKAPI, n: 1, total: 4) == 0.8472978603872037
+    assert raw_idf(formula: codes.BM25L, n: 1, total: 4) == 1.203972804325936
+    assert raw_idf(formula: codes.BM25_PLUS, n: 1, total: 4) == 1.6094379124341003
+
+test "raw_idf: a term in every text, the standard weight above zero and Okapi's below"
+    assert raw_idf(formula: codes.STANDARD, n: 4, total: 4) > 0.0
+    assert raw_idf(formula: codes.OKAPI, n: 4, total: 4) < 0.0
+
+test "idf: Okapi's floor only below zero, and only for Okapi"
+    assert idf(formula: codes.OKAPI, parameter: 0.25, n: 4, total: 4, mean_idf: 2.0) == 0.5
+    assert idf(formula: codes.OKAPI, parameter: 0.25, n: 1, total: 4, mean_idf: 2.0) == 0.8472978603872037
+    assert idf(formula: codes.STANDARD, parameter: 0.25, n: 4, total: 4, mean_idf: 2.0) == raw_idf(formula: codes.STANDARD, n: 4, total: 4)
+
+test "weigh: k1 of zero counts a term once, b of zero ignores the length"
+    assert weigh(formula: codes.STANDARD, k1: 0.0, b: 0.75, parameter: 0.0, weight: 2.0, count: 5, length: 9, mean: 3.0) == 2.0
+    first = weigh(formula: codes.STANDARD, k1: 1.2, b: 0.0, parameter: 0.0, weight: 1.0, count: 2, length: 1, mean: 3.0)
+    assert first == weigh(formula: codes.STANDARD, k1: 1.2, b: 0.0, parameter: 0.0, weight: 1.0, count: 2, length: 100, mean: 3.0)
+
+test "check_settings: the edges of each, a nan, and an infinity"
+    zero = 0.0
+    assert !check_settings(k1: 0.0, b: 0.0, formula: codes.STANDARD, parameter: 0.0).is_err()
+    assert !check_settings(k1: 1000000.0, b: 1.0, formula: codes.BM25_PLUS, parameter: 1000000.0).is_err()
+    assert check_settings(k1: -0.5, b: 0.5, formula: 0, parameter: 0.0).is_err()
+    assert check_settings(k1: zero / zero, b: 0.5, formula: 0, parameter: 0.0).is_err()
+    assert check_settings(k1: 1.0 / zero, b: 0.5, formula: 0, parameter: 0.0).is_err()
+    assert check_settings(k1: 1.2, b: 1.5, formula: 0, parameter: 0.0).is_err()
+    assert check_settings(k1: 1.2, b: 0.5, formula: 4, parameter: 0.0).is_err()
+
+    match check_settings(k1: 1.2, b: 0.5, formula: 1, parameter: zero / zero)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "the formula's epsilon or delta is nan, where it is from 0 to 1000000"
+
+test "weigh: a text of the mean length, each formula"
+    assert weigh(formula: codes.STANDARD, k1: 1.5, b: 0.75, parameter: 0.0, weight: 1.0, count: 1, length: 4, mean: 4.0) == 1.0
+    assert weigh(formula: codes.BM25L, k1: 1.5, b: 0.75, parameter: 0.5, weight: 1.0, count: 1, length: 4, mean: 4.0) == 1.25
+    assert weigh(formula: codes.BM25_PLUS, k1: 1.5, b: 0.75, parameter: 1.0, weight: 1.0, count: 1, length: 4, mean: 4.0) == 2.0

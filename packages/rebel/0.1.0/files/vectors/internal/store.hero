@@ -1,0 +1,384 @@
+# An HNSW graph written as bytes and read back. The format, little-endian:
+#
+# - the seven bytes `RVHNSW1`;
+# - the dimension (4 bytes), the metric (1), the links (4), the candidates
+#   of an insert (4), the seed (8) and the generator's two words (8 and 8);
+# - the count of nodes (4) and the entry (4, 0 while there is no node);
+# - each node in insertion order: its id (8, two's complement), 1 where it
+#   is removed and 0 where not, its level (1), its components as IEEE 754
+#   binary32 (4 each), and its blocks of links whole, as the graph holds
+#   them: `2 * links + 1` numbers of 4 bytes on layer 0, the count first,
+#   then `links + 1` for each layer up to its level.
+#
+# The blocks are written whole, room included, so a graph read back is the
+# graph written, and so the memory bytes can ask for stays within a small
+# multiple of their own length. Every count, link, level and component is
+# checked before it is used: a link must name a node that reaches its
+# layer, a level stay within what the links can draw, a component be
+# finite, an id not live twice.
+
+use numbers
+use random
+use vectors/internal/arith
+use vectors/internal/codes
+use vectors/internal/graph as hnsw
+
+# The bytes every graph opens with: `RVHNSW1`.
+constant MAGIC: str
+    "RVHNSW1"
+
+## Writing
+
+# Adds the `count` low bytes of `value` to `out`, the lowest first.
+function put_low(@out: [u8], value: i64, count: i64)
+    for at in range(from: 0, to: count)
+        out @ out.push(to_u8(value >> at * 8 & 255).must())
+
+# Adds the eight bytes of `value` to `out`, the lowest first.
+function put_u64(@out: [u8], value: u64)
+    rest @= value
+
+    for _ in range(from: 0, to: 8)
+        out @ out.push(to_u8(rest % 256).must())
+        rest @ rest / 256
+
+# `graph` as bytes.
+function write(graph: hnsw.Graph lent) -> [u8]
+    out: [u8] @= []
+
+    for c in MAGIC.chars()
+        out @ out.push(c[0])
+
+    put_low(@out, value: graph.dimension, count: 4)
+    put_low(@out, value: graph.metric, count: 1)
+    put_low(@out, value: graph.links, count: 4)
+    put_low(@out, value: graph.ef_construction, count: 4)
+    put_u64(@out, value: graph.seed)
+    put_u64(@out, value: graph.generator.high)
+    put_u64(@out, value: graph.generator.low)
+    total = hnsw.count(graph)
+    put_low(@out, value: total, count: 4)
+
+    if graph.entry == hnsw.NONE
+        put_low(@out, value: 0, count: 4)
+    else
+        put_low(@out, value: graph.entry, count: 4)
+    base_width = graph.links * 2 + 1
+    upper_width = graph.links + 1
+
+    for node in range(from: 0, to: total)
+        put_low(@out, value: graph.ids[node], count: 8)
+
+        if graph.removed[node]
+            put_low(@out, value: 1, count: 1)
+        else
+            put_low(@out, value: 0, count: 1)
+        level = graph.levels[node]
+        put_low(@out, value: level, count: 1)
+        first = node * graph.dimension
+
+        for at in range(from: first, to: first + graph.dimension)
+            put_low(@out, value: to_i64(numbers.f32_to_bits(graph.data[at])).must(), count: 4)
+
+        base_at = node * base_width
+
+        for at in range(from: base_at, to: base_at + base_width)
+            put_low(@out, value: graph.base[at], count: 4)
+
+        upper_at = graph.upper_at[node]
+
+        for at in range(from: upper_at, to: upper_at + level * upper_width)
+            put_low(@out, value: graph.upper[at], count: 4)
+
+    return out
+
+## Reading
+
+# Fails `invalid` where `bytes` hold fewer than `count` from `at`, naming
+# `what` was read there.
+function need(bytes: [u8] lent, at: i64, count: i64, what: str) -> ()?
+    if bytes.len() - at < count
+        return fail(
+            code: codes.INVALID,
+            msg: f"the bytes end at {bytes.len()} where {what} needs {count} from byte {at}"
+        )
+    return ok()
+
+# The number of the `count` bytes from `at`, the lowest first, which `at`
+# moves past; at most 4 bytes, so it is never negative.
+function take_low(bytes: [u8] lent, @at: i64, count: i64, what: str) -> i64?
+    need(bytes, at: at, count: count, what: what)?
+    value: i64 @= 0
+
+    for index in range(from: 0, to: count)
+        value @ value | to_i64(bytes[at + index]).must() << index * 8
+
+    at @ at + count
+    return ok(value)
+
+# The `i64` of the eight bytes from `at`, two's complement, the lowest
+# first.
+function take_i64(bytes: [u8] lent, @at: i64, what: str) -> i64?
+    need(bytes, at: at, count: 8, what: what)?
+    value: i64 @= 0
+
+    for index in range(from: 0, to: 8)
+        value @ value | to_i64(bytes[at + index]).must() << index * 8
+
+    at @ at + 8
+    return ok(value)
+
+# The `u64` of the eight bytes from `at`, the lowest first.
+function take_u64(bytes: [u8] lent, @at: i64, what: str) -> u64?
+    need(bytes, at: at, count: 8, what: what)?
+    value: u64 @= 0
+    index @= 7
+
+    while index >= 0
+        value @ value * 256 + to_u64(bytes[at + index]).must()
+        index @ index - 1
+
+    at @ at + 8
+    return ok(value)
+
+# The highest level an insert can draw with `links`: the largest `l` with
+# `links^l <= 2^53`.
+function highest_level(links: i64) -> i64
+    factor = to_u64(links).must()
+    level: i64 @= 0
+    power: u64 @= factor
+
+    while power <= hnsw.SPAN
+        level @ level + 1
+        power @ power * factor
+
+    return level
+
+# Fails `invalid` where `value` is outside `from` to `to`, naming it.
+function in_range(value: i64, from: i64, to: i64, what: str) -> ()?
+    if value < from || value > to
+        return fail(code: codes.INVALID, msg: f"{what} is {value}, outside {from} to {to}")
+    return ok()
+
+# Reads the links of one block, `width` numbers at `at` of `bytes`, into
+# `xs` from `into`: a count no larger than `width - 1`, each counted link a
+# node below `total`.
+function take_block(bytes: [u8] lent, @at: i64, @xs: [i64], into: i64, width: i64, total: i64, what: str) -> ()?
+    need(bytes, at: at, count: width * 4, what: what)?
+    held = take_low(bytes, at: @at, count: 4, what: what)?
+    in_range(value: held, from: 0, to: width - 1, what: f"the count of {what}")?
+    xs[into] @ held
+
+    for index in range(from: 1, to: width)
+        value = take_low(bytes, at: @at, count: 4, what: what)?
+
+        if index <= held
+            in_range(value: value, from: 0, to: total - 1, what: f"a link of {what}")?
+        xs[into + index] @ value
+
+    return ok()
+
+# The graph `bytes` hold, every part checked. Fails `invalid` where they are
+# not a graph `write` made, saying where.
+function read(bytes: [u8] lent) -> hnsw.Graph?
+    need(bytes, at: 0, count: 7, what: "the format's name")?
+
+    for index in range(from: 0, to: 7)
+        if bytes[index] != MAGIC[index]
+            return fail(code: codes.INVALID, msg: "the bytes do not open with RVHNSW1, the name of an index of vectors")
+
+    at @= 7
+    dimension = take_low(bytes, at: @at, count: 4, what: "the dimension")?
+    in_range(value: dimension, from: 1, to: 2147483647, what: "the dimension")?
+    metric = take_low(bytes, at: @at, count: 1, what: "the metric")?
+    in_range(value: metric, from: 0, to: 3, what: "the metric")?
+    links = take_low(bytes, at: @at, count: 4, what: "the links")?
+    in_range(value: links, from: hnsw.FEWEST_LINKS, to: hnsw.MOST_LINKS, what: "the links")?
+    ef = take_low(bytes, at: @at, count: 4, what: "the candidates of an insert")?
+    in_range(value: ef, from: 1, to: 2147483647, what: "the candidates of an insert")?
+    seed = take_u64(bytes, @at, what: "the seed")?
+    high = take_u64(bytes, @at, what: "the generator")?
+    low = take_u64(bytes, @at, what: "the generator")?
+    total = take_low(bytes, at: @at, count: 4, what: "the count of nodes")?
+    entry = take_low(bytes, at: @at, count: 4, what: "the entry")?
+    base_width = links * 2 + 1
+    upper_width = links + 1
+    smallest_node = 10 + dimension * 4 + base_width * 4
+
+    if total > (bytes.len() - at) / smallest_node
+        return fail(
+            code: codes.INVALID,
+            msg: f"the bytes hold {bytes.len() - at} after the head, too few for {total} nodes of {smallest_node} or more"
+        )
+    graph @= hnsw.empty(dimension: dimension, metric: metric, links: links, ef_construction: ef, seed: seed)
+    graph.generator @ random.Generator(high: high, low: low)
+    highest = highest_level(links)
+    vector: [f32] @= []
+
+    for _ in range(from: 0, to: dimension)
+        vector @ vector.push(0.0)
+
+    for node in range(from: 0, to: total)
+        id = take_i64(bytes, @at, what: f"the id of node {node}")?
+        removed = take_low(bytes, at: @at, count: 1, what: f"node {node}")?
+        in_range(value: removed, from: 0, to: 1, what: f"the mark of node {node}")?
+        level = take_low(bytes, at: @at, count: 1, what: f"node {node}")?
+        in_range(value: level, from: 0, to: highest, what: f"the level of node {node}")?
+        need(bytes, at: at, count: dimension * 4, what: f"the vector of node {node}")?
+
+        for index in range(from: 0, to: dimension)
+            bits = take_low(bytes, at: @at, count: 4, what: f"the vector of node {node}")?
+            x = numbers.bits_to_f32(to_u32(bits).must())
+
+            if !arith.is_finite(x)
+                return fail(
+                    code: codes.INVALID,
+                    msg: f"component {index} of node {node} is {x}, where an index holds finite numbers"
+                )
+            vector[index] @ x
+
+        if hnsw.live_node(graph, id: id) != hnsw.NONE
+            return fail(
+                code: codes.INVALID,
+                msg: f"node {node} holds id {id}, which an earlier node holds and is not removed"
+            )
+        added = hnsw.add_node(@graph, id: id, vector: vector, level: level)
+
+        if removed == 1
+            hnsw.mark(@graph, node: added, removed: true)
+        base_into = added * base_width
+        take_block(bytes, at: @at, @graph.base, into: base_into, width: base_width, total: total, what: f"layer 0 of node {node}")?
+        upper_into = graph.upper_at[added]
+
+        for layer in range(from: 1, to: level + 1)
+            into = upper_into + (layer - 1) * upper_width
+            take_block(bytes, at: @at, @graph.upper, into: into, width: upper_width, total: total, what: f"layer {layer} of node {node}")?
+
+    if at != bytes.len()
+        return fail(code: codes.INVALID, msg: f"the bytes go on past the last node, at byte {at} of {bytes.len()}")
+    links_reach(graph)?
+
+    if total > 0
+        in_range(value: entry, from: 0, to: total - 1, what: "the entry")?
+        graph.entry @ entry
+        graph.top @ graph.levels[entry]
+
+        for node in range(from: 0, to: total)
+            if graph.levels[node] > graph.top
+                return fail(
+                    code: codes.INVALID,
+                    msg: f"node {node} reaches level {graph.levels[node]}, above the entry's {graph.top}"
+                )
+    return ok(graph)
+
+# Fails `invalid` where a link of `graph` names a node that does not reach
+# the link's layer.
+function links_reach(graph: hnsw.Graph lent) -> ()?
+    for node in range(from: 0, to: hnsw.count(graph))
+        for layer in range(from: 0, to: graph.levels[node] + 1)
+            total = hnsw.link_count(graph, node: node, layer: layer)
+
+            for index in range(from: 0, to: total)
+                other = hnsw.link(graph, node: node, layer: layer, index: index)
+
+                if graph.levels[other] < layer
+                    return fail(
+                        code: codes.INVALID,
+                        msg: f"node {node} links to node {other} on layer {layer}, which node {other} does not reach"
+                    )
+
+    return ok()
+
+## Tests
+
+# A graph of `count` nodes of two components, every fifth removed.
+function sample(count: i64) -> hnsw.Graph
+    built @= hnsw.empty(dimension: 2, metric: codes.EUCLIDEAN, links: 3, ef_construction: 8, seed: 5)
+
+    for at in range(from: 0, to: count)
+        node = hnsw.add_node(@built, id: at - 3, vector: [to_f32(to_f64(at)), -1.5], level: hnsw.draw_level(@built))
+
+        if node > 0
+            hnsw.set_links(@built, node: node, layer: 0, nodes: [node - 1])
+            hnsw.set_links(@built, node: node - 1, layer: 0, nodes: [node])
+
+        if at % 5 == 4
+            hnsw.mark(@built, node: node, removed: true)
+
+    if count > 0
+        built.entry @ 0
+        built.top @ built.levels[0]
+
+        for node in range(from: 0, to: count)
+            if built.levels[node] > built.top
+                built.entry @ node
+                built.top @ built.levels[node]
+    return built
+
+test "write and read: an empty graph and one of forty nodes, the same graph back"
+    empty = sample(0)
+    assert read(write(empty)).must() == empty
+    full = sample(40)
+    assert read(write(full)).must() == full
+
+test "write: the head of an empty graph, byte by byte"
+    bytes = write(sample(0))
+    assert bytes.len() == 7 + 4 + 1 + 4 + 4 + 24 + 8
+    assert bytes.slice(from: 7, to: 16) == [2, 0, 0, 0, 0, 3, 0, 0, 0]
+
+test "read: every cut of a graph's bytes fails, none aborts"
+    bytes = write(sample(6))
+
+    for end in range(from: 0, to: bytes.len())
+        assert read(bytes.slice(from: 0, to: end)).is_err()
+
+test "read: a byte past the end, a wrong name, a metric of 4 and a link past the nodes"
+    bytes = write(sample(3))
+    longer @= bytes
+    longer @ longer.push(0)
+    assert read(longer).is_err()
+    renamed @= bytes
+    renamed[0] @ 88
+    assert read(renamed).is_err()
+    metric @= bytes
+    metric[11] @ 4
+    assert read(metric).is_err()
+    linked @= bytes
+    first_link = 7 + 4 + 1 + 4 + 4 + 24 + 8 + 8 + 1 + 1 + 8 + 4
+    linked[first_link] @ 3
+    assert read(linked).is_err()
+
+test "read: a nan among the components"
+    bytes @= write(sample(1))
+    component = 7 + 4 + 1 + 4 + 4 + 24 + 8 + 8 + 1 + 1
+    bytes[component] @ 0
+    bytes[component + 1] @ 0
+    bytes[component + 2] @ 192
+    bytes[component + 3] @ 127
+
+    match read(bytes)
+        .ok _  => assert false
+        .err e => assert e.msg == "component 0 of node 0 is nan, where an index holds finite numbers"
+
+test "read: a count of nodes the bytes cannot hold, refused before any is read"
+    bytes @= write(sample(0))
+    bytes[44] @ 255
+    bytes[45] @ 255
+
+    match read(bytes)
+        .ok _  => assert false
+        .err e => assert e.msg == "the bytes hold 0 after the head, too few for 65535 nodes of 46 or more"
+
+test "highest_level: two, sixteen and the most links"
+    assert highest_level(2) == 53 && highest_level(16) == 13 && highest_level(1024) == 5
+
+test "take_i64 and take_u64: the extremes, and a cut"
+    out: [u8] @= []
+    put_low(@out, value: -9223372036854775807 - 1, count: 8)
+    put_low(@out, value: -1, count: 8)
+    put_u64(@out, value: 18446744073709551615)
+    at @= 0
+    assert take_i64(out, @at, what: "a").must() == -9223372036854775807 - 1
+    assert take_i64(out, @at, what: "b").must() == -1
+    assert take_u64(out, @at, what: "c").must() == 18446744073709551615
+    assert take_u64(out, @at, what: "d").is_err()

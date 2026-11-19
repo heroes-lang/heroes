@@ -1,0 +1,309 @@
+# The postings of a search index, in lists and nothing else. A text is a
+# SLOT, in the order texts were added; a term has an id, in the order terms
+# were first seen. An ENTRY is one term in one text: its count there and its
+# places, which stand side by side in `positions`. A term's entries are
+# chained by `entry_next` in the order of their slots; a text's entries stand
+# side by side from `slot_first`, ordered by term id, so the entry of a term
+# in a text is found by halving.
+#
+# A text removed keeps its slot and its entries until the index is rebuilt;
+# every count a score reads, the document frequencies, the count of texts and
+# their total length, leaves it out at once.
+
+# The entry, term or slot that names none.
+constant NONE: i64
+    -1
+
+# The postings of one index.
+record Engine
+    # How fast a repeated term's score saturates.
+    k1: f64
+    # How much a text's length lowers its scores.
+    b: f64
+    # The formula, a number of `codes`.
+    formula: i64
+    # The formula's epsilon or delta, 0.0 for the standard one.
+    parameter: f64
+    # The stop words, in lower case, as a set.
+    stop: {str: bool}
+    # The stop words, in lower case, each once, in the order given.
+    stop_words: [str]
+    # The id of each term.
+    term_of: {str: i64}
+    # The text of each term.
+    term_text: [str]
+    # How many texts not removed hold each term.
+    term_frequency: [i64]
+    # Each term's first entry, `NONE` before it has one.
+    term_head: [i64]
+    # Each term's last entry.
+    term_tail: [i64]
+    # The slot of each entry.
+    entry_slot: [i64]
+    # The term of each entry.
+    entry_term: [i64]
+    # How often the term stands in the text.
+    entry_count: [i64]
+    # Where the entry's places start in `positions`.
+    entry_at: [i64]
+    # The next entry of the same term, `NONE` at the last.
+    entry_next: [i64]
+    # The places of every entry, each entry's in increasing order.
+    positions: [i64]
+    # The program's id of each slot.
+    slot_id: [i64]
+    # How many terms each text holds, stop words left out.
+    slot_length: [i64]
+    # Whether each slot is a text not removed.
+    slot_live: [bool]
+    # Each slot's first entry.
+    slot_first: [i64]
+    # How many entries each slot has: its distinct terms.
+    slot_entries: [i64]
+    # The latest slot of each id.
+    slot_of: {i64: i64}
+    # How many texts are not removed.
+    live: i64
+    # The total length of the texts not removed.
+    total_length: i64
+
+# An empty engine.
+function empty(k1: f64, b: f64, formula: i64, parameter: f64, stop_words: [str]) -> Engine
+    stop: {str: bool} @= {}
+
+    for word in stop_words
+        stop[word] @ true
+
+    return Engine(
+        k1: k1,
+        b: b,
+        formula: formula,
+        parameter: parameter,
+        stop: stop,
+        stop_words: stop_words,
+        term_of: {},
+        term_text: [],
+        term_frequency: [],
+        term_head: [],
+        term_tail: [],
+        entry_slot: [],
+        entry_term: [],
+        entry_count: [],
+        entry_at: [],
+        entry_next: [],
+        positions: [],
+        slot_id: [],
+        slot_length: [],
+        slot_live: [],
+        slot_first: [],
+        slot_entries: [],
+        slot_of: {},
+        live: 0,
+        total_length: 0
+    )
+
+# Adds `value` at the end of `xs`.
+function grow_i64(@xs: [i64], value: i64)
+    xs @ xs.push(value)
+
+# Adds `value` at the end of `xs`.
+function grow_str(@xs: [str], value: str)
+    xs @ xs.push(value)
+
+# Adds `value` at the end of `xs`.
+function grow_bool(@xs: [bool], value: bool)
+    xs @ xs.push(value)
+
+# The slot holding `id` and not removed, or `NONE`.
+function live_slot(engine: Engine lent, id: i64) -> i64
+    match engine.slot_of[id]
+        .ok slot =>
+            if engine.slot_live[slot]
+                return slot
+            return NONE
+        .err _ => return NONE
+
+# The id of `term`, made where the engine has not seen it.
+function term_id(@engine: Engine, term: str) -> i64
+    match engine.term_of[term]
+        .ok known => return known
+        .err _    => _ = 0
+
+    made = engine.term_text.len()
+    engine.term_of[term] @ made
+    grow_str(@engine.term_text, value: term)
+    grow_i64(@engine.term_frequency, value: 0)
+    grow_i64(@engine.term_head, value: NONE)
+    grow_i64(@engine.term_tail, value: NONE)
+    return made
+
+# Adds a text under `id`, which the engine does not hold live, as its
+# `terms` at their `positions`, which increase.
+function add(@engine: Engine, id: i64, terms: [str], positions: [i64])
+    slot = engine.slot_id.len()
+    group_of: {i64: i64} @= {}
+    groups: [[i64]] @= []
+    ids: [i64] @= []
+
+    for at in range(from: 0, to: terms.len())
+        term = term_id(@engine, term: terms[at])
+
+        match group_of[term]
+            .ok group => grow_i64(@groups[group], value: positions[at])
+            .err _ =>
+                group_of[term] @ groups.len()
+                groups @ groups.push([positions[at]])
+                ids @ ids.push(term)
+
+    grow_i64(@engine.slot_id, value: id)
+    grow_i64(@engine.slot_length, value: terms.len())
+    grow_bool(@engine.slot_live, value: true)
+    grow_i64(@engine.slot_first, value: engine.entry_slot.len())
+    grow_i64(@engine.slot_entries, value: ids.len())
+
+    for term in sort(ids)
+        group = group_of[term].must()
+        entry = engine.entry_slot.len()
+        grow_i64(@engine.entry_slot, value: slot)
+        grow_i64(@engine.entry_term, value: term)
+        grow_i64(@engine.entry_count, value: groups[group].len())
+        grow_i64(@engine.entry_at, value: engine.positions.len())
+        grow_i64(@engine.entry_next, value: NONE)
+
+        for place in groups[group]
+            grow_i64(@engine.positions, value: place)
+
+        tail = engine.term_tail[term]
+
+        if tail == NONE
+            engine.term_head[term] @ entry
+        else
+            engine.entry_next[tail] @ entry
+        engine.term_tail[term] @ entry
+        engine.term_frequency[term] @ engine.term_frequency[term] + 1
+
+    engine.slot_of[id] @ slot
+    engine.live @ engine.live + 1
+    engine.total_length @ engine.total_length + terms.len()
+
+# Marks `slot`, a live one, removed, and takes it out of every count.
+function remove(@engine: Engine, slot: i64)
+    engine.slot_live[slot] @ false
+    first = engine.slot_first[slot]
+
+    for entry in range(from: first, to: first + engine.slot_entries[slot])
+        term = engine.entry_term[entry]
+        engine.term_frequency[term] @ engine.term_frequency[term] - 1
+
+    engine.live @ engine.live - 1
+    engine.total_length @ engine.total_length - engine.slot_length[slot]
+
+# The entry of term `term` in `slot`, found by halving the slot's entries,
+# or `NONE`.
+function entry_in(engine: Engine lent, slot: i64, term: i64) -> i64
+    low @= engine.slot_first[slot]
+    high @= low + engine.slot_entries[slot]
+
+    while low < high
+        middle = low + (high - low) / 2
+        found = engine.entry_term[middle]
+
+        if found == term
+            return middle
+        else if found < term
+            low @ middle + 1
+        else
+            high @ middle
+
+    return NONE
+
+# Whether the places of `entry` hold `place`, found by halving.
+function holds_place(engine: Engine lent, entry: i64, place: i64) -> bool
+    low @= engine.entry_at[entry]
+    high @= low + engine.entry_count[entry]
+
+    while low < high
+        middle = low + (high - low) / 2
+        found = engine.positions[middle]
+
+        if found == place
+            return true
+        else if found < place
+            low @ middle + 1
+        else
+            high @ middle
+
+    return false
+
+# The terms of `slot` and their places, in the order they stand.
+function terms_of_slot(engine: Engine lent, slot: i64) -> Pairs
+    places: [i64] @= []
+    term_at: {i64: i64} @= {}
+    first = engine.slot_first[slot]
+
+    for entry in range(from: first, to: first + engine.slot_entries[slot])
+        start = engine.entry_at[entry]
+
+        for at in range(from: start, to: start + engine.entry_count[entry])
+            places @ places.push(engine.positions[at])
+            term_at[engine.positions[at]] @ engine.entry_term[entry]
+
+    ordered = sort(places)
+    terms: [str] @= []
+
+    for place in ordered
+        term = term_at[place].must()
+        terms @ terms.push(engine.term_text[term])
+
+    return Pairs(terms: terms, positions: ordered)
+
+# The terms of a text and their places.
+record Pairs
+    # The terms, in the order they stand.
+    terms: [str]
+    # The place of each.
+    positions: [i64]
+
+## Tests
+
+# An engine of three texts, the second removed.
+function sample() -> Engine
+    built @= empty(k1: 1.2, b: 0.75, formula: 0, parameter: 0.0, stop_words: [])
+    add(@built, id: 10, terms: ["a", "b", "a"], positions: [0, 1, 2])
+    add(@built, id: 20, terms: ["b", "c"], positions: [0, 1])
+    add(@built, id: 30, terms: ["c", "a"], positions: [0, 3])
+    remove(@built, slot: 1)
+    return built
+
+test "add: terms by first sight, entries by term in each slot, chains by slot"
+    built = sample()
+    assert built.term_text == ["a", "b", "c"]
+    assert built.entry_term == [0, 1, 1, 2, 0, 2] && built.entry_count == [2, 1, 1, 1, 1, 1]
+    assert built.term_head == [0, 1, 3] && built.entry_next == [4, 2, NONE, 5, NONE, NONE]
+    assert built.positions == [0, 2, 1, 0, 1, 3, 0]
+
+test "remove: the counts leave the slot out, its entries stay"
+    built = sample()
+    assert built.live == 2 && built.total_length == 5 && built.term_frequency == [2, 1, 1]
+    assert live_slot(built, id: 20) == NONE && live_slot(built, id: 30) == 2 && live_slot(built, id: 99) == NONE
+
+test "add: a text of no term"
+    built @= empty(k1: 1.2, b: 0.75, formula: 0, parameter: 0.0, stop_words: [])
+    add(@built, id: 1, terms: [], positions: [])
+    assert built.live == 1 && built.slot_entries == [0] && built.total_length == 0
+
+test "entry_in: each term of a slot, and one it does not hold"
+    built = sample()
+    assert entry_in(built, slot: 0, term: 0) == 0 && entry_in(built, slot: 0, term: 1) == 1
+    assert entry_in(built, slot: 0, term: 2) == NONE && entry_in(built, slot: 2, term: 0) == 4
+
+test "holds_place: each place of an entry, and its neighbours"
+    built = sample()
+    assert holds_place(built, entry: 0, place: 0) && holds_place(built, entry: 0, place: 2)
+    assert !holds_place(built, entry: 0, place: 1) && !holds_place(built, entry: 0, place: 3)
+
+test "terms_of_slot: the terms back in the order they stand, places kept"
+    built = sample()
+    found = terms_of_slot(built, slot: 2)
+    assert found.terms == ["c", "a"] && found.positions == [0, 3]
+    assert terms_of_slot(built, slot: 0).terms == ["a", "b", "a"]

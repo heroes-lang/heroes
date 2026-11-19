@@ -1,0 +1,86 @@
+# Bit vectors: a vector of floats reduced to one bit a component, eight to a
+# byte with the first component in the highest bit, as pgvector's
+# `binary_quantize` writes them, and the hamming and jaccard distances of
+# two such vectors.
+
+use math
+use vectors/internal/codes
+
+# `v` with a bit set for each component above zero, the first in the highest
+# bit of the first byte, the last byte's spare bits clear.
+function quantize(v: [f32]) -> [u8]
+    out: [u8] @= []
+    byte: i64 @= 0
+    filled: i64 @= 0
+
+    for x in v
+        byte @ byte * 2
+
+        if x == x && x > 0.0
+            byte @ byte + 1
+        filled @ filled + 1
+
+        if filled == 8
+            out @ out.push(to_u8(byte).must())
+            byte @ 0
+            filled @ 0
+
+    if filled > 0
+        out @ out.push(to_u8(byte << 8 - filled).must())
+    return out
+
+# Fails `invalid` where `a` and `b` differ in length.
+function same_bytes(a: [u8] lent, b: [u8] lent) -> ()?
+    if a.len() != b.len()
+        return fail(code: codes.INVALID, msg: f"the bit vectors differ in length: {a.len()} bytes and {b.len()}")
+    return ok()
+
+# How many bits differ between `a` and `b`. Fails `invalid` where the lengths
+# differ.
+function hamming(a: [u8], b: [u8]) -> i64?
+    same_bytes(a: a, b: b)?
+    total: i64 @= 0
+
+    for at in range(from: 0, to: a.len())
+        total @ total + math.count_ones(to_i64(a[at]).must() ^ to_i64(b[at]).must())
+
+    return ok(total)
+
+# One less the share of the bits set in either that are set in both; 0.0
+# where none is set in either. Fails `invalid` where the lengths differ.
+function jaccard(a: [u8], b: [u8]) -> f32?
+    same_bytes(a: a, b: b)?
+    both: i64 @= 0
+    either: i64 @= 0
+
+    for at in range(from: 0, to: a.len())
+        x = to_i64(a[at]).must()
+        y = to_i64(b[at]).must()
+        both @ both + math.count_ones(x & y)
+        either @ either + math.count_ones(x | y)
+
+    if either == 0
+        return ok(0.0)
+    return ok(to_f32(1.0 - to_f64(both) / to_f64(either)))
+
+## Tests
+
+test "quantize: empty, a full byte, a byte and one bit, zero and a nan clear"
+    zero: f32 = 0.0
+    assert quantize([]) == []
+    assert quantize([1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]) == [255]
+    assert quantize([1.0, -1.0, 1.0, -1.0, 1.0, -1.0, 1.0, -1.0, 2.0]) == [0b10101010, 0b10000000]
+    assert quantize([0.0, -0.0, zero / zero, 0.0000001]) == [0b00010000]
+
+test "hamming: empty, equal, all differing, and lengths that differ"
+    assert hamming(a: [], b: []).must() == 0
+    assert hamming(a: [7, 9], b: [7, 9]).must() == 0
+    assert hamming(a: [0, 255], b: [255, 0]).must() == 16
+    assert hamming(a: [1], b: [1, 2]).is_err()
+
+test "jaccard: none set, the same, disjoint, and lengths that differ"
+    assert jaccard(a: [0], b: [0]).must() == 0.0
+    assert jaccard(a: [12], b: [12]).must() == 0.0
+    assert jaccard(a: [0b1100], b: [0b0011]).must() == 1.0
+    assert jaccard(a: [0b1111], b: [0b0011]).must() == 0.5
+    assert jaccard(a: [], b: [0]).is_err()

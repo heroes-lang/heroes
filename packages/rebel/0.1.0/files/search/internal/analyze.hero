@@ -1,0 +1,111 @@
+# A text cut into terms, as tantivy's default analysis cuts it without its
+# filter of long words: each run of letters and digits (Unicode's Alphabetic
+# property or a Number category, Rust's `char::is_alphanumeric`) is a token,
+# put in lower case by `strings.to_lower`; a token in the stop list is left
+# out and keeps its place, so the token after it stands one place further.
+# The one place this parts from tantivy: a sigma that ends a word is written
+# `ς`, as Python's `str.lower` writes it, where tantivy lowers each character
+# alone and writes `σ`, so "ΣΊΣΥΦΟΣ" here is the term of "σίσυφος".
+
+use strings
+use unicode
+
+# The terms of a text and the place of each, counted in tokens from 0, stop
+# words included.
+record Tokens
+    # The terms, in the order they stand.
+    terms: [str]
+    # The place of each term.
+    positions: [i64]
+
+# The stop list `words` as a set, each word in lower case.
+function stop_set(words: [str]) -> {str: bool}
+    out: {str: bool} @= {}
+
+    for word in words
+        out[strings.to_lower(word)] @ true
+
+    return out
+
+# The stop list `words` in lower case, each once, in the order first given.
+function stop_list(words: [str]) -> [str]
+    seen: {str: bool} @= {}
+    out: [str] @= []
+
+    for word in words
+        lower = strings.to_lower(word)
+
+        if !seen[lower].default(false)
+            seen[lower] @ true
+            out @ out.push(lower)
+
+    return out
+
+# Adds the token held in `pieces`, if any, to `found` at place `position`
+# unless `stop` holds it, and empties `pieces`. Answers the place of the next
+# token.
+function flush(@found: Tokens, @pieces: [str], position: i64, stop: {str: bool} lent) -> i64
+    if pieces.len() == 0
+        return position
+    term = strings.to_lower(pieces.join(""))
+    pieces @ []
+
+    if !stop[term].default(false)
+        grow_str(@found.terms, value: term)
+        grow_i64(@found.positions, value: position)
+    return position + 1
+
+# Adds `value` at the end of `xs`.
+function grow_str(@xs: [str], value: str)
+    xs @ xs.push(value)
+
+# Adds `value` at the end of `xs`.
+function grow_i64(@xs: [i64], value: i64)
+    xs @ xs.push(value)
+
+# The terms of `text` and their places, the words of `stop` left out.
+function tokens(text: str, stop: {str: bool} lent) -> Tokens
+    out @= Tokens(terms: [], positions: [])
+    pieces: [str] @= []
+    position @= 0
+
+    for c in text.chars()
+        if unicode.is_alphanumeric(c)
+            pieces @ pieces.push(c)
+        else
+            position @ flush(@out, @pieces, position: position, stop: stop)
+
+    _ = flush(@out, @pieces, position: position, stop: stop)
+    return out
+
+## Tests
+
+test "tokens: empty, white space alone, and punctuation at both ends"
+    none: {str: bool} = {}
+    assert tokens("", stop: none).terms == []
+    assert tokens(" \t\n ", stop: none).terms == []
+    result = tokens("--Hello, World!--", stop: none)
+    assert result.terms == ["hello", "world"] && result.positions == [0, 1]
+
+test "tokens: digits, an apostrophe and an underscore cut, letters of several bytes kept"
+    none: {str: bool} = {}
+    assert tokens("it's x_y 3.14 naïve ÉCOLE", stop: none).terms == ["it", "s", "x", "y", "3", "14", "naïve", "école"]
+
+test "tokens: lower case as strings.to_lower writes it, a final sigma as Python writes it"
+    none: {str: bool} = {}
+    assert tokens("ΣΊΣΥΦΟΣ İstanbul ß", stop: none).terms == ["σίσυφος", "i̇stanbul", "ß"]
+    assert tokens("ΣΊΣΥΦΟΣ", stop: none).terms == tokens("σίσυφος", stop: none).terms
+
+test "tokens: a stop word left out, its place kept"
+    stop = stop_set(["The", "of"])
+    result = tokens("Bank OF the America", stop: stop)
+    assert result.terms == ["bank", "america"] && result.positions == [0, 3]
+
+test "tokens: scripts without spaces stay one token, as tantivy's simple tokenizer keeps them"
+    none: {str: bool} = {}
+    assert tokens("東京タワー 2026年", stop: none).terms == ["東京タワー", "2026年"]
+
+test "stop_set and stop_list: lower case, each once, in the order given"
+    assert stop_set(["A", "a", "THE"]) == {"a": true, "the": true}
+    assert stop_list(["A", "a", "THE"]) == ["a", "the"]
+    assert stop_list([]) == []

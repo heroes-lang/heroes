@@ -1,0 +1,283 @@
+# A search index written as bytes and read back. It writes what scores
+# read, never the postings themselves, which a read builds again. The
+# format, little-endian:
+#
+# - the eight bytes `RSBM25I1`;
+# - `k1` and `b` as IEEE 754 binary64 (8 each), the formula (1), its epsilon
+#   or delta (8);
+# - the count of stop words (4), each as its length in bytes (4) and its
+#   UTF-8;
+# - the count of terms (4), each the same way;
+# - the count of texts (4), each as its id (8, two's complement), the count
+#   of its terms (4), and each term as its place (4) and its index in the
+#   table of terms (4), the places increasing.
+#
+# Only the texts not removed are written, in the order they were added, and
+# only the terms they hold. Every count, place, index and text is checked
+# before it is used, and a count is held to the bytes left before anything
+# is made for it.
+
+use numbers
+use search/internal/codes
+use search/internal/engine as postings
+use search/internal/score
+
+# The bytes every index opens with: `RSBM25I1`.
+constant MAGIC: str
+    "RSBM25I1"
+
+## Writing
+
+# Adds the `count` low bytes of `value` to `out`, the lowest first.
+function put_low(@out: [u8], value: i64, count: i64)
+    for at in range(from: 0, to: count)
+        out @ out.push(to_u8(value >> at * 8 & 255).must())
+
+# Adds the eight bytes of `value` to `out`, the lowest first.
+function put_f64(@out: [u8], value: f64)
+    rest @= numbers.f64_to_bits(value)
+
+    for _ in range(from: 0, to: 8)
+        out @ out.push(to_u8(rest % 256).must())
+        rest @ rest / 256
+
+# Adds `text` to `out`: its length in bytes, then its bytes.
+function put_text(@out: [u8], text: str)
+    put_low(@out, value: text.len(), count: 4)
+
+    for at in range(from: 0, to: text.len())
+        out @ out.push(text[at])
+
+# `engine` as bytes.
+function write(engine: postings.Engine lent) -> [u8]
+    out: [u8] @= []
+
+    for at in range(from: 0, to: MAGIC.len())
+        out @ out.push(MAGIC[at])
+
+    put_f64(@out, value: engine.k1)
+    put_f64(@out, value: engine.b)
+    put_low(@out, value: engine.formula, count: 1)
+    put_f64(@out, value: engine.parameter)
+    put_low(@out, value: engine.stop_words.len(), count: 4)
+
+    for word in engine.stop_words
+        put_text(@out, text: word)
+
+    index_of: {i64: i64} @= {}
+    table: [i64] @= []
+
+    for term in range(from: 0, to: engine.term_text.len())
+        if engine.term_frequency[term] > 0
+            index_of[term] @ table.len()
+            table @ table.push(term)
+
+    put_low(@out, value: table.len(), count: 4)
+
+    for term in table
+        put_text(@out, text: engine.term_text[term])
+
+    put_low(@out, value: engine.live, count: 4)
+
+    for slot in range(from: 0, to: engine.slot_id.len())
+        if engine.slot_live[slot]
+            put_low(@out, value: engine.slot_id[slot], count: 8)
+            pairs = postings.terms_of_slot(engine, slot: slot)
+            put_low(@out, value: pairs.terms.len(), count: 4)
+
+            for at in range(from: 0, to: pairs.terms.len())
+                put_low(@out, value: pairs.positions[at], count: 4)
+                put_low(@out, value: index_of[engine.term_of[pairs.terms[at]].must()].must(), count: 4)
+
+    return out
+
+## Reading
+
+# Fails `invalid` where `bytes` hold fewer than `count` from `at`, naming
+# `what` was read there.
+function need(bytes: [u8] lent, at: i64, count: i64, what: str) -> ()?
+    if bytes.len() - at < count
+        return fail(
+            code: codes.INVALID,
+            msg: f"the bytes end at {bytes.len()} where {what} needs {count} from byte {at}"
+        )
+    return ok()
+
+# The number of the `count` bytes from `at`, the lowest first, which `at`
+# moves past; at most 8, two's complement at 8.
+function take_low(bytes: [u8] lent, @at: i64, count: i64, what: str) -> i64?
+    need(bytes, at: at, count: count, what: what)?
+    value: i64 @= 0
+
+    for index in range(from: 0, to: count)
+        value @ value | to_i64(bytes[at + index]).must() << index * 8
+
+    at @ at + count
+    return ok(value)
+
+# The `f64` of the eight bytes from `at`.
+function take_f64(bytes: [u8] lent, @at: i64, what: str) -> f64?
+    need(bytes, at: at, count: 8, what: what)?
+    value: u64 @= 0
+    index @= 7
+
+    while index >= 0
+        value @ value * 256 + to_u64(bytes[at + index]).must()
+        index @ index - 1
+
+    at @ at + 8
+    return ok(numbers.bits_to_f64(value))
+
+# The text at `at`: its length, then that many bytes of UTF-8.
+function take_text(bytes: [u8] lent, @at: i64, what: str) -> str?
+    length = take_low(bytes, at: @at, count: 4, what: what)?
+    need(bytes, at: at, count: length, what: what)?
+    piece = bytes.slice(from: at, to: at + length)
+    at @ at + length
+
+    match piece.validated_bytes()
+        .ok text => return ok(text)
+        .err _   => return fail(code: codes.INVALID, msg: f"{what} is not UTF-8, at byte {at - length}")
+
+# Fails `invalid` where `count` things of at least `each` bytes cannot stand
+# in the bytes left from `at`.
+function fits(bytes: [u8] lent, at: i64, count: i64, each: i64, what: str) -> ()?
+    if count > (bytes.len() - at) / each
+        return fail(
+            code: codes.INVALID,
+            msg: f"the bytes hold {bytes.len() - at} from byte {at}, too few for {count} {what}"
+        )
+    return ok()
+
+# The engine `bytes` hold, every part checked. Fails `invalid` where they
+# are not an index `write` made, saying where.
+function read(bytes: [u8] lent) -> postings.Engine?
+    need(bytes, at: 0, count: 8, what: "the format's name")?
+
+    for index in range(from: 0, to: 8)
+        if bytes[index] != MAGIC[index]
+            return fail(code: codes.INVALID, msg: "the bytes do not open with RSBM25I1, the name of a search index")
+
+    at @= 8
+    k1 = take_f64(bytes, at: @at, what: "k1")?
+    b = take_f64(bytes, at: @at, what: "b")?
+    formula = take_low(bytes, at: @at, count: 1, what: "the formula")?
+    parameter = take_f64(bytes, at: @at, what: "the formula's parameter")?
+    score.check_settings(k1: k1, b: b, formula: formula, parameter: parameter)?
+    stop_count = take_low(bytes, at: @at, count: 4, what: "the count of stop words")?
+    fits(bytes, at: at, count: stop_count, each: 4, what: "stop words")?
+    stop_words: [str] @= []
+
+    for index in range(from: 0, to: stop_count)
+        stop_words @ stop_words.push(take_text(bytes, at: @at, what: f"stop word {index}")?)
+
+    term_count = take_low(bytes, at: @at, count: 4, what: "the count of terms")?
+    fits(bytes, at: at, count: term_count, each: 4, what: "terms")?
+    table: [str] @= []
+
+    for index in range(from: 0, to: term_count)
+        table @ table.push(take_text(bytes, at: @at, what: f"term {index}")?)
+
+    text_count = take_low(bytes, at: @at, count: 4, what: "the count of texts")?
+    fits(bytes, at: at, count: text_count, each: 12, what: "texts")?
+    built @= postings.empty(k1: k1, b: b, formula: formula, parameter: parameter, stop_words: stop_words)
+
+    for index in range(from: 0, to: text_count)
+        id = take_low(bytes, at: @at, count: 8, what: f"the id of text {index}")?
+
+        if postings.live_slot(built, id: id) != postings.NONE
+            return fail(code: codes.INVALID, msg: f"text {index} holds id {id}, which an earlier text holds")
+        pair_count = take_low(bytes, at: @at, count: 4, what: f"the count of terms of text {index}")?
+        fits(bytes, at: at, count: pair_count, each: 8, what: f"terms of text {index}")?
+        terms: [str] @= []
+        positions: [i64] @= []
+
+        for pair in range(from: 0, to: pair_count)
+            place = take_low(bytes, at: @at, count: 4, what: f"a place of text {index}")?
+            term = take_low(bytes, at: @at, count: 4, what: f"a term of text {index}")?
+
+            if pair > 0 && place <= positions[pair - 1]
+                return fail(
+                    code: codes.INVALID,
+                    msg: f"place {place} of text {index} does not follow place {positions[pair - 1]}"
+                )
+
+            if term >= term_count
+                return fail(code: codes.INVALID, msg: f"text {index} names term {term} of a table of {term_count}")
+            terms @ terms.push(table[term])
+            positions @ positions.push(place)
+
+        postings.add(@built, id: id, terms: terms, positions: positions)
+
+    if at != bytes.len()
+        return fail(code: codes.INVALID, msg: f"the bytes go on past the last text, at byte {at} of {bytes.len()}")
+    return ok(built)
+
+## Tests
+
+# An engine of three texts, one removed, with a stop word.
+function sample() -> postings.Engine
+    built @= postings.empty(k1: 1.5, b: 0.5, formula: codes.OKAPI, parameter: 0.25, stop_words: ["of"])
+    postings.add(@built, id: -4, terms: ["bank", "america"], positions: [0, 2])
+    postings.add(@built, id: 7, terms: ["école", "naïve", "école"], positions: [0, 1, 2])
+    postings.add(@built, id: 9, terms: ["gone"], positions: [0])
+    postings.remove(@built, slot: 2)
+    return built
+
+test "write and read: the texts, places and settings back, the removed text left out"
+    bytes = write(sample())
+    again = read(bytes).must()
+    assert again.k1 == 1.5 && again.b == 0.5 && again.formula == codes.OKAPI && again.parameter == 0.25
+    assert again.stop_words == ["of"] && again.live == 2 && again.slot_id == [-4, 7]
+    assert postings.terms_of_slot(again, slot: 1).terms == ["école", "naïve", "école"]
+    assert postings.terms_of_slot(again, slot: 0).positions == [0, 2]
+    assert write(again) == bytes
+
+test "read: every cut of an index's bytes fails, none aborts"
+    bytes = write(sample())
+
+    for end in range(from: 0, to: bytes.len())
+        assert read(bytes.slice(from: 0, to: end)).is_err()
+
+test "read: a byte past the end, a wrong name, a formula of 4 and a nan for k1"
+    bytes = write(sample())
+    longer @= bytes
+    longer @ longer.push(0)
+    assert read(longer).is_err()
+    renamed @= bytes
+    renamed[2] @ 0
+    assert read(renamed).is_err()
+    formula @= bytes
+    formula[24] @ 4
+    assert read(formula).is_err()
+    nan @= bytes
+    nan[14] @ 248
+    nan[15] @ 127
+    assert read(nan).is_err()
+
+test "read: a term not UTF-8, a place out of order, an index past the table"
+    bytes = write(sample())
+    text = 8 + 8 + 8 + 1 + 8 + 4 + 4 + 2 + 4 + 4
+    broken @= bytes
+    broken[text] @ 255
+
+    match read(broken)
+        .ok _  => assert false
+        .err e => assert e.msg == "term 0 is not UTF-8, at byte 51"
+
+    first_text = text + 4 + 4 + 7 + 4 + 6 + 4 + 6 + 4
+    order @= bytes
+    order[first_text + 12 + 8] @ 0
+    assert read(order).is_err()
+    past @= bytes
+    past[first_text + 12 + 4] @ 9
+    assert read(past).is_err()
+
+test "read: counts the bytes cannot hold, refused before anything is made"
+    bytes @= write(postings.empty(k1: 1.2, b: 0.75, formula: codes.STANDARD, parameter: 0.0, stop_words: []))
+    bytes[33] @ 255
+    bytes[34] @ 255
+
+    match read(bytes)
+        .ok _  => assert false
+        .err e => assert e.msg == "the bytes hold 8 from byte 37, too few for 65535 stop words"

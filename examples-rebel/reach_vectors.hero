@@ -1,0 +1,8 @@
+# Reaches Rebel's `vectors`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It prints the cosine similarity of two
+# directions at a right angle, 0.0.
+
+use <rebel>/vectors
+
+function main()
+    print(vectors.cosine_similarity(a: [1.0, 0.0], b: [0.0, 1.0]).must())

@@ -1,0 +1,432 @@
+# A query's clauses run over an engine's postings: each clause gives the
+# texts it matches and its score in each, the scores of a text summed in the
+# order of the clauses, and the best `limit` texts kept, the best first, ties
+# by id.
+#
+# A term's score is BM25's; a phrase scores as one term whose count is how
+# often it stands and whose weight is the sum of its terms' weights, as
+# tantivy scores one; a prefix sums the scores of the terms that begin so.
+# A text matches where it holds every required clause and no refused one,
+# and, with no clause required, at least one.
+
+use math
+use search/internal/analyze
+use search/internal/codes
+use search/internal/engine as postings
+use search/internal/query
+use search/internal/score as bm25
+use strings
+
+# The texts a query found, best first.
+record Hits
+    # The id of each text.
+    ids: [i64]
+    # The score of each.
+    scores: [f64]
+
+# What one clause matched: slots and the clause's score in each, each slot
+# once.
+record Matched
+    # The slots.
+    slots: [i64]
+    # The clause's score in each.
+    scores: [f64]
+
+# The counts every score reads.
+record Counts
+    # How many texts are not removed.
+    total: i64
+    # Their mean length.
+    mean: f64
+    # The mean idf of the terms texts hold, which Okapi's floor reads.
+    mean_idf: f64
+
+# The counts of `engine` as they stand. The mean idf is an exact sum
+# rounded once, so it does not hang on the order the terms were first seen,
+# and an index rebuilt from the same texts scores to the same bits.
+function counts_of(engine: postings.Engine lent) -> Counts
+    mean = to_f64(engine.total_length) / to_f64(engine.live)
+    weights: [f64] @= []
+
+    if engine.formula == codes.OKAPI
+        for term in range(from: 0, to: engine.term_text.len())
+            n = engine.term_frequency[term]
+
+            if n > 0
+                weights @ weights.push(bm25.raw_idf(formula: engine.formula, n: n, total: engine.live))
+
+    if weights.len() == 0
+        return Counts(total: engine.live, mean: mean, mean_idf: 0.0)
+    total = math.sum(weights).must()
+    return Counts(total: engine.live, mean: mean, mean_idf: total / to_f64(weights.len()))
+
+# The weight of term `term` of `engine`.
+function weight_of(engine: postings.Engine lent, counts: Counts, term: i64) -> f64
+    return bm25.idf(
+        formula: engine.formula,
+        parameter: engine.parameter,
+        n: engine.term_frequency[term],
+        total: counts.total,
+        mean_idf: counts.mean_idf
+    )
+
+# The score of a clause of weight `weight` in `slot`, where it stands
+# `count` times.
+function weighed(engine: postings.Engine lent, counts: Counts, weight: f64, count: i64, slot: i64) -> f64
+    length = engine.slot_length[slot]
+    return bm25.weigh(
+        formula: engine.formula,
+        k1: engine.k1,
+        b: engine.b,
+        parameter: engine.parameter,
+        weight: weight,
+        count: count,
+        length: length,
+        mean: counts.mean
+    )
+
+# The live texts holding term `term` and its score in each.
+function term_matches(engine: postings.Engine lent, counts: Counts, term: i64) -> Matched
+    slots: [i64] @= []
+    scores: [f64] @= []
+    weight = weight_of(engine, counts: counts, term: term)
+    entry @= engine.term_head[term]
+
+    while entry != postings.NONE
+        slot = engine.entry_slot[entry]
+
+        if engine.slot_live[slot]
+            slots @ slots.push(slot)
+            scores @ scores.push(
+                weighed(engine, counts: counts, weight: weight, count: engine.entry_count[entry], slot: slot)
+            )
+        entry @ engine.entry_next[entry]
+
+    return Matched(slots: slots, scores: scores)
+
+# The live texts holding the terms `terms` at the places `offsets` from the
+# first's, and the phrase's score in each.
+function phrase_matches(engine: postings.Engine lent, counts: Counts, terms: [i64], offsets: [i64]) -> Matched
+    slots: [i64] @= []
+    scores: [f64] @= []
+    weight @= 0.0
+
+    for term in terms
+        weight @ weight + weight_of(engine, counts: counts, term: term)
+
+    entry @= engine.term_head[terms[0]]
+
+    while entry != postings.NONE
+        slot = engine.entry_slot[entry]
+
+        if engine.slot_live[slot]
+            found = phrase_count(engine, slot: slot, first: entry, terms: terms, offsets: offsets)
+
+            if found > 0
+                slots @ slots.push(slot)
+                scores @ scores.push(weighed(engine, counts: counts, weight: weight, count: found, slot: slot))
+        entry @ engine.entry_next[entry]
+
+    return Matched(slots: slots, scores: scores)
+
+# How often the phrase of `terms` at `offsets` stands in `slot`, whose entry
+# of the first term is `first`.
+function phrase_count(engine: postings.Engine lent, slot: i64, first: i64, terms: [i64], offsets: [i64]) -> i64
+    entries: [i64] @= [first]
+
+    for index in range(from: 1, to: terms.len())
+        found = postings.entry_in(engine, slot: slot, term: terms[index])
+
+        if found == postings.NONE
+            return 0
+        entries @ entries.push(found)
+
+    total @= 0
+    start = engine.entry_at[first]
+
+    for at in range(from: start, to: start + engine.entry_count[first])
+        place = engine.positions[at]
+        every @= true
+        index @= 1
+
+        while every && index < terms.len()
+            every @ postings.holds_place(engine, entry: entries[index], place: place + offsets[index])
+            index @ index + 1
+
+        if every
+            total @ total + 1
+
+    return total
+
+# The live texts holding a term that begins with `prefix`, and the sum of
+# those terms' scores in each, added in the order of the terms' bytes, so
+# the sum does not hang on the order they were first seen.
+function prefix_matches(engine: postings.Engine lent, counts: Counts, prefix: str) -> Matched
+    slots: [i64] @= []
+    scores: [f64] @= []
+    place_of: {i64: i64} @= {}
+    expanded: [str] @= []
+
+    for term in range(from: 0, to: engine.term_text.len())
+        if engine.term_frequency[term] > 0 && strings.has_prefix(s: engine.term_text[term], prefix: prefix)
+            expanded @ expanded.push(engine.term_text[term])
+
+    for text in sort(expanded)
+        found = term_matches(engine, counts: counts, term: engine.term_of[text].must())
+
+        for index in range(from: 0, to: found.slots.len())
+            slot = found.slots[index]
+
+            match place_of[slot]
+                .ok place => add_to(@scores, at: place, value: found.scores[index])
+                .err _ =>
+                    place_of[slot] @ slots.len()
+                    slots @ slots.push(slot)
+                    scores @ scores.push(found.scores[index])
+
+    return Matched(slots: slots, scores: scores)
+
+# Adds `value` to `xs` at `at`.
+function add_to(@xs: [f64], at: i64, value: f64)
+    xs[at] @ xs[at] + value
+
+# What `clause` matches in `engine`.
+function matches_of(engine: postings.Engine lent, counts: Counts, clause: query.Clause) -> Matched
+    if clause.kind == query.PREFIX
+        return prefix_matches(engine, counts: counts, prefix: clause.terms[0])
+    ids: [i64] @= []
+
+    for text in clause.terms
+        match engine.term_of[text]
+            .ok id => ids @ ids.push(id)
+            .err _ => return Matched(slots: [], scores: [])
+
+    if clause.kind == query.TERM
+        return term_matches(engine, counts: counts, term: ids[0])
+    return phrase_matches(engine, counts: counts, terms: ids, offsets: clause.offsets)
+
+# Whether the hit `id` with `score` ranks before the hit `other_id` with
+# `other_score`: a larger score, or the same and a smaller id.
+function ranks_before(score: f64, id: i64, other_score: f64, other_id: i64) -> bool
+    return score > other_score || score == other_score && id < other_id
+
+# The texts of `engine` matching `clauses`, the best `limit`, best first.
+function run(engine: postings.Engine lent, clauses: [query.Clause], limit: i64) -> Hits
+    if limit == 0 || engine.live == 0 || clauses.len() == 0
+        return Hits(ids: [], scores: [])
+    counts = counts_of(engine)
+    place_of: {i64: i64} @= {}
+    slots: [i64] @= []
+    totals: [f64] @= []
+    required: [i64] @= []
+    matched: [bool] @= []
+    refused: [bool] @= []
+    must_total @= 0
+
+    for clause in clauses
+        if clause.occur == query.MUST
+            must_total @ must_total + 1
+        found = matches_of(engine, counts: counts, clause: clause)
+
+        for index in range(from: 0, to: found.slots.len())
+            slot = found.slots[index]
+            place @= place_of[slot].default(-1)
+
+            if place < 0
+                place @ slots.len()
+                place_of[slot] @ place
+                slots @ slots.push(slot)
+                totals @ totals.push(0.0)
+                required @ required.push(0)
+                matched @ matched.push(false)
+                refused @ refused.push(false)
+
+            if clause.occur == query.MUST_NOT
+                refused[place] @ true
+            else
+                totals[place] @ totals[place] + found.scores[index]
+                matched[place] @ true
+
+                if clause.occur == query.MUST
+                    required[place] @ required[place] + 1
+
+    ids: [i64] @= []
+    scores: [f64] @= []
+
+    for place in range(from: 0, to: slots.len())
+        if matched[place] && !refused[place] && required[place] == must_total
+            ids @ ids.push(engine.slot_id[slots[place]])
+            scores @ scores.push(totals[place])
+
+    return best(ids: ids, scores: scores, limit: limit)
+
+# The best `limit` of the hits `ids` and `scores`, best first: a heap of at
+# most `limit` hits whose worst stands on top, so it costs the logarithm of
+# `limit` for each hit, then the heap emptied from the back.
+function best(ids: [i64], scores: [f64], limit: i64) -> Hits
+    heap_ids: [i64] @= []
+    heap_scores: [f64] @= []
+
+    for index in range(from: 0, to: ids.len())
+        if heap_ids.len() < limit
+            heap_ids @ heap_ids.push(ids[index])
+            heap_scores @ heap_scores.push(scores[index])
+            rise(@heap_ids, @heap_scores, at: heap_ids.len() - 1)
+        else if ranks_before(score: scores[index], id: ids[index], other_score: heap_scores[0], other_id: heap_ids[0])
+            heap_ids[0] @ ids[index]
+            heap_scores[0] @ scores[index]
+            sink(@heap_ids, @heap_scores, at: 0, size: heap_ids.len())
+
+    size @= heap_ids.len()
+    out_ids: [i64] @= []
+    out_scores: [f64] @= []
+
+    for _ in range(from: 0, to: size)
+        out_ids @ out_ids.push(0)
+        out_scores @ out_scores.push(0.0)
+
+    while size > 0
+        last = size - 1
+        out_ids[last] @ heap_ids[0]
+        out_scores[last] @ heap_scores[0]
+        heap_ids[0] @ heap_ids[last]
+        heap_scores[0] @ heap_scores[last]
+        size @ last
+        sink(@heap_ids, @heap_scores, at: 0, size: size)
+
+    return Hits(ids: out_ids, scores: out_scores)
+
+# Whether the hit at `a` of the heap is worse than the hit at `b`, and so
+# belongs above it.
+function worse(ids: [i64] lent, scores: [f64] lent, a: i64, b: i64) -> bool
+    return ranks_before(score: scores[b], id: ids[b], other_score: scores[a], other_id: ids[a])
+
+# Exchanges the hits at `a` and `b`.
+function exchange(@ids: [i64], @scores: [f64], a: i64, b: i64)
+    id = ids[a]
+    value = scores[a]
+    ids[a] @ ids[b]
+    scores[a] @ scores[b]
+    ids[b] @ id
+    scores[b] @ value
+
+# Moves the hit at `at` up while it is worse than its parent.
+function rise(@ids: [i64], @scores: [f64], at: i64)
+    here @= at
+
+    while here > 0
+        parent = (here - 1) / 2
+
+        if !worse(ids, scores, a: here, b: parent)
+            return
+        exchange(@ids, @scores, a: here, b: parent)
+        here @ parent
+
+# Moves the hit at `at` down while a child of the first `size` is worse.
+function sink(@ids: [i64], @scores: [f64], at: i64, size: i64)
+    here @= at
+
+    while true
+        left = here * 2 + 1
+
+        if left >= size
+            return
+        pick @= left
+        right = left + 1
+
+        if right < size && worse(ids, scores, a: right, b: left)
+            pick @ right
+
+        if !worse(ids, scores, a: pick, b: here)
+            return
+        exchange(@ids, @scores, a: pick, b: here)
+        here @ pick
+
+## Tests
+
+# An engine of four texts, the standard formula.
+function sample() -> postings.Engine
+    built @= postings.empty(k1: 1.2, b: 0.75, formula: codes.STANDARD, parameter: 0.0, stop_words: [])
+    add_text(@built, id: 1, text: "the quick brown fox")
+    add_text(@built, id: 2, text: "the lazy dog")
+    add_text(@built, id: 3, text: "quick quick brown dog jumps")
+    add_text(@built, id: 4, text: "brown paper")
+    return built
+
+# Adds `text` under `id`, cut with no stop word.
+function add_text(@built: postings.Engine, id: i64, text: str)
+    none: {str: bool} = {}
+    found = analyze.tokens(text, stop: none)
+    postings.add(@built, id: id, terms: found.terms, positions: found.positions)
+
+# The ids `query_text` finds in `built`.
+function ids_for(built: postings.Engine lent, query_text: str) -> [i64]
+    none: {str: bool} = {}
+    return run(built, clauses: query.parse(query_text, stop: none).must(), limit: 10).ids
+
+test "run: a term, two terms, and a term no text holds"
+    built = sample()
+    assert ids_for(built, query_text: "quick") == [3, 1]
+    assert ids_for(built, query_text: "lazy brown") == [2, 4, 1, 3]
+    assert ids_for(built, query_text: "zebra") == []
+
+test "run: required and refused words"
+    built = sample()
+    assert ids_for(built, query_text: "+brown quick") == [3, 1, 4]
+    assert ids_for(built, query_text: "brown -quick") == [4]
+    assert ids_for(built, query_text: "-brown") == []
+
+test "run: a phrase in order, and the same words out of order"
+    built = sample()
+    assert ids_for(built, query_text: "\"quick brown\"") == [1, 3]
+    assert ids_for(built, query_text: "\"brown quick\"") == []
+
+test "run: a prefix sums the terms that begin so"
+    built = sample()
+    assert ids_for(built, query_text: "qu*") == [3, 1]
+    assert ids_for(built, query_text: "j*") == [3]
+
+test "run: a limit of zero, one, and the empty index"
+    built = sample()
+    none: {str: bool} = {}
+    assert run(built, clauses: query.parse("brown", stop: none).must(), limit: 0).ids == []
+    assert run(built, clauses: query.parse("brown", stop: none).must(), limit: 1).ids.len() == 1
+    empty = postings.empty(k1: 1.2, b: 0.75, formula: codes.STANDARD, parameter: 0.0, stop_words: [])
+    assert run(empty, clauses: query.parse("brown", stop: none).must(), limit: 5).ids == []
+
+test "run: a text removed is not found and leaves the counts"
+    built @= sample()
+    postings.remove(@built, slot: 2)
+    assert ids_for(built, query_text: "quick") == [1]
+
+test "best: a thousand hits in a scrambled order, the best ten in order"
+    ids: [i64] @= []
+    scores: [f64] @= []
+
+    for n in range(from: 0, to: 1000)
+        ids @ ids.push(n)
+        scores @ scores.push(to_f64(n * 7919 % 1000 / 10))
+
+    found = best(ids: ids, scores: scores, limit: 10)
+    assert found.scores == [99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0]
+
+    for at in range(from: 1, to: 10)
+        assert found.ids[at - 1] < found.ids[at]
+
+test "best: ties by id, and fewer than the limit"
+    found = best(ids: [9, 4, 7, 1], scores: [1.0, 2.0, 2.0, 0.5], limit: 3)
+    assert found.ids == [4, 7, 9] && found.scores == [2.0, 2.0, 1.0]
+    assert best(ids: [5], scores: [1.0], limit: 4).ids == [5]
+    assert best(ids: [], scores: [], limit: 4).ids == []
+
+test "run: a wide query and a narrow one"
+    built = sample()
+    none: {str: bool} = {}
+    wide = run(built, clauses: query.parse("brown quick", stop: none).must(), limit: 9)
+    narrow = run(built, clauses: query.parse("lazy", stop: none).must(), limit: 9)
+    assert wide.ids == [3, 1, 4] && narrow.ids == [2]
+
+test "counts_of: the mean length and, for Okapi, the mean idf"
+    built = sample()
+    found = counts_of(built)
+    assert found.total == 4 && found.mean == 3.5 && found.mean_idf == 0.0

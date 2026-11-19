@@ -1,0 +1,9 @@
+# Reaches Rebel's `search`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It prints the terms of a short text,
+# "hello" and "world".
+
+use <rebel>/search
+
+function main()
+    for term in search.terms("Hello, World!", stop_words: [])
+        print(term)

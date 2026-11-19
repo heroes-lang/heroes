@@ -1,0 +1,315 @@
+# The arithmetic under `vectors`: sums of products in `f64` over two vectors
+# that stand whole in a list or at an offset of a long one, as an index holds
+# them, and the checks every public function runs on what it is given.
+#
+# A product of two `f32` is exact in `f64`, so a dot product here rounds only
+# in its sum, and once more where the face answers an `f32`.
+
+use math
+use vectors/internal/codes
+
+## Checks
+
+# Whether `x` is a number neither infinite nor a nan: a finite float less
+# itself is zero, an infinity's or a nan's is a nan.
+function is_finite(x: f32) -> bool
+    y = to_f64(x)
+    return y - y == 0.0
+
+# The index of the first component of `v` that is a nan or an infinity, or
+# -1 where all are finite.
+function first_not_finite(v: [f32] lent) -> i64
+    at: i64 @= 0
+
+    while at < v.len()
+        if !is_finite(v[at])
+            return at
+        at @ at + 1
+
+    return -1
+
+# Fails `invalid` where `a` and `b` differ in length, naming both lengths.
+function same_length(a: [f32] lent, b: [f32] lent) -> ()?
+    if a.len() != b.len()
+        return fail(code: codes.INVALID, msg: f"the vectors differ in length: {a.len()} components and {b.len()}")
+    return ok()
+
+# Fails `invalid` where `v` holds a nan or an infinity, naming the vector by
+# `what` and the place of the first such component.
+function finite(v: [f32] lent, what: str) -> ()?
+    at = first_not_finite(v)
+
+    if at >= 0
+        return fail(
+            code: codes.INVALID,
+            msg: f"{what} holds {v[at]} at component {at}, where a search orders distances"
+        )
+    return ok()
+
+## Sums over two vectors at offsets
+
+# The dot product of the `count` components of `a` from `a_at` and of `b`
+# from `b_at`, summed in `f64`.
+function dot_at(a: [f32] lent, a_at: i64, b: [f32] lent, b_at: i64, count: i64) -> f64
+    total: f64 @= 0.0
+    at: i64 @= 0
+
+    while at < count
+        total @ total + to_f64(a[a_at + at]) * to_f64(b[b_at + at])
+        at @ at + 1
+
+    return total
+
+# The sum of the squares of the `count` components of `a` from `a_at`.
+function squares_at(a: [f32] lent, a_at: i64, count: i64) -> f64
+    total: f64 @= 0.0
+    at: i64 @= 0
+
+    while at < count
+        x = to_f64(a[a_at + at])
+        total @ total + x * x
+        at @ at + 1
+
+    return total
+
+# The sum of the squared differences of the `count` components of `a` from
+# `a_at` and of `b` from `b_at`: the squared euclidean distance.
+function squared_difference_at(a: [f32] lent, a_at: i64, b: [f32] lent, b_at: i64, count: i64) -> f64
+    total: f64 @= 0.0
+    at: i64 @= 0
+
+    while at < count
+        d = to_f64(a[a_at + at]) - to_f64(b[b_at + at])
+        total @ total + d * d
+        at @ at + 1
+
+    return total
+
+# The sum of the absolute differences of the `count` components of `a` from
+# `a_at` and of `b` from `b_at`: the manhattan distance.
+function absolute_difference_at(a: [f32] lent, a_at: i64, b: [f32] lent, b_at: i64, count: i64) -> f64
+    total: f64 @= 0.0
+    at: i64 @= 0
+
+    while at < count
+        d = to_f64(a[a_at + at]) - to_f64(b[b_at + at])
+
+        if d == d && d < 0.0
+            total @ total - d
+        else
+            total @ total + d
+        at @ at + 1
+
+    return total
+
+## Distances as an index orders them
+
+# The distance an index orders by, between the vector of `xs` at `x_at` and
+# that of `ys` at `y_at`, each `count` long: the squared euclidean distance,
+# one less the dot product of vectors held normalized, the dot product
+# negated, or the manhattan distance, as `metric` names.
+function measure(xs: [f32] lent, x_at: i64, ys: [f32] lent, y_at: i64, count: i64, metric: i64) -> f64
+    if metric == codes.EUCLIDEAN
+        return squared_difference_at(a: xs, a_at: x_at, b: ys, b_at: y_at, count: count)
+    else if metric == codes.COSINE
+        return 1.0 - dot_at(a: xs, a_at: x_at, b: ys, b_at: y_at, count: count)
+    else if metric == codes.INNER_PRODUCT
+        return -dot_at(a: xs, a_at: x_at, b: ys, b_at: y_at, count: count)
+    return absolute_difference_at(a: xs, a_at: x_at, b: ys, b_at: y_at, count: count)
+
+# The distance a search answers for `measured`, what `measure` or `between`
+# found: the root of a squared euclidean distance, every other as it is,
+# rounded to `f32`.
+function answer(measured: f64, metric: i64) -> f32
+    if metric == codes.EUCLIDEAN
+        return to_f32(math.sqrt(measured))
+    return to_f32(measured)
+
+## Distances between two whole vectors
+
+# The cosine of the angle between `a` and `b`, which are as long as each
+# other: their dot product over the root of the product of their squared
+# lengths, one rounding where two roots would take three, as pgvector
+# divides; held between -1 and 1 where rounding would pass them, a nan where
+# a component is one. Fails `invalid` where either is all zeros.
+function cosine(a: [f32] lent, b: [f32] lent) -> f64?
+    first = squares_at(a, a_at: 0, count: a.len())
+    second = squares_at(b, a_at: 0, count: b.len())
+
+    if first == 0.0 || second == 0.0
+        return fail(code: codes.INVALID, msg: "a vector of zeros has no direction, so no cosine")
+
+    found = dot_at(a: a, a_at: 0, b: b, b_at: 0, count: a.len()) / math.sqrt(first * second)
+
+    if found != found
+        return ok(found)
+    else if found > 1.0
+        return ok(1.0)
+    else if found < -1.0
+        return ok(-1.0)
+    return ok(found)
+
+# The distance between `a` and `b`, which are as long as each other, as a
+# search orders it under `metric`: the squared euclidean distance, one less
+# the cosine, the dot product negated, or the manhattan distance. Fails
+# `invalid` under the cosine where either is all zeros.
+function between(a: [f32] lent, b: [f32] lent, metric: i64) -> f64?
+    if metric == codes.EUCLIDEAN
+        return ok(squared_difference_at(a: a, a_at: 0, b: b, b_at: 0, count: a.len()))
+    else if metric == codes.COSINE
+        return ok(1.0 - cosine(a: a, b: b)?)
+    else if metric == codes.INNER_PRODUCT
+        return ok(-dot_at(a: a, a_at: 0, b: b, b_at: 0, count: a.len()))
+    return ok(absolute_difference_at(a: a, a_at: 0, b: b, b_at: 0, count: a.len()))
+
+# `v` divided by its length, each quotient in `f64` rounded once. Fails
+# `invalid` where `v` is all zeros or empty, or holds a nan or an infinity.
+function normalized(v: [f32] lent) -> [f32]?
+    finite(v, what: "the vector")?
+    length = math.sqrt(squares_at(v, a_at: 0, count: v.len()))
+
+    if length == 0.0
+        return fail(code: codes.INVALID, msg: f"a vector of {v.len()} zeros has no direction to normalize")
+
+    out: [f32] @= []
+
+    for x in v
+        out @ out.push(to_f32(to_f64(x) / length))
+
+    return ok(out)
+
+## Many vectors
+
+# The sum of `vectors`, component by component, in `f64`. Fails `invalid`
+# where there is none or their lengths differ.
+function sums_of(vectors: [[f32]] lent) -> [f64]?
+    if vectors.len() == 0
+        return fail(code: codes.INVALID, msg: "no vector to sum, so no length for the sum")
+    length = vectors[0].len()
+    totals: [f64] @= []
+
+    for _ in range(from: 0, to: length)
+        totals @ totals.push(0.0)
+
+    at: i64 @= 0
+
+    while at < vectors.len()
+        if vectors[at].len() != length
+            return fail(
+                code: codes.INVALID,
+                msg: f"vector {at} holds {vectors[at].len()} components where vector 0 holds {length}"
+            )
+
+        for index in range(from: 0, to: length)
+            totals[index] @ totals[index] + to_f64(vectors[at][index])
+
+        at @ at + 1
+
+    return ok(totals)
+
+## Tests
+
+test "is_finite: zero, the largest, the smallest, the infinities and a nan"
+    largest: f32 = 340282346638528859811704183484516925440.0
+    zero: f32 = 0.0
+    assert is_finite(0.0) && is_finite(-0.0) && is_finite(largest) && is_finite(-largest) && is_finite(0.0000000000000000000000000000000000000000000014)
+    assert !is_finite(1.0 / zero) && !is_finite(-1.0 / zero) && !is_finite(zero / zero)
+
+test "first_not_finite: empty, all finite, and a nan after an infinity"
+    zero: f32 = 0.0
+    assert first_not_finite([]) == -1
+    assert first_not_finite([1.0, -2.0]) == -1
+    assert first_not_finite([1.0, 1.0 / zero, zero / zero]) == 1
+
+test "same_length: equal, empty and different"
+    assert !same_length(a: [], b: []).is_err()
+
+    match same_length(a: [1.0], b: [1.0, 2.0])
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "the vectors differ in length: 1 components and 2"
+
+test "finite: the place of the first infinity in the message"
+    zero: f32 = 0.0
+
+    match finite([1.0, -1.0 / zero], what: "the query")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "the query holds -inf at component 1, where a search orders distances"
+
+test "dot_at: empty, at an offset, and the largest f32 squared without overflow"
+    largest: f32 = 340282346638528859811704183484516925440.0
+    assert dot_at(a: [], a_at: 0, b: [], b_at: 0, count: 0) == 0.0
+    assert dot_at(a: [9.0, 1.0, 2.0], a_at: 1, b: [3.0, 4.0], b_at: 0, count: 2) == 11.0
+    assert dot_at(a: [largest], a_at: 0, b: [largest], b_at: 0, count: 1) == to_f64(largest) * to_f64(largest)
+
+test "dot_at: products exact in f64, as Python's sum of floats over them"
+    assert dot_at(a: [0.1, 0.2, 0.3], a_at: 0, b: [0.4, 0.5, 0.6], b_at: 0, count: 3) == 0.32000001698732405
+
+test "squares_at and squared_difference_at: a right triangle"
+    assert squares_at([3.0, 4.0], a_at: 0, count: 2) == 25.0
+    assert squared_difference_at(a: [1.0, 1.0], a_at: 0, b: [4.0, 5.0], b_at: 0, count: 2) == 25.0
+
+test "absolute_difference_at: both signs, at offsets"
+    assert absolute_difference_at(a: [0.0, 1.0, -2.0], a_at: 1, b: [3.0, -1.0, 9.0], b_at: 0, count: 2) == 3.0
+
+test "measure: the four metrics at offsets"
+    xs: [f32] = [1.0, 0.0, 0.0, 1.0]
+    assert measure(xs: xs, x_at: 0, ys: xs, y_at: 2, count: 2, metric: codes.EUCLIDEAN) == 2.0
+    assert measure(xs: xs, x_at: 0, ys: xs, y_at: 2, count: 2, metric: codes.COSINE) == 1.0
+    assert measure(xs: xs, x_at: 0, ys: xs, y_at: 0, count: 2, metric: codes.INNER_PRODUCT) == -1.0
+    assert measure(xs: xs, x_at: 0, ys: xs, y_at: 2, count: 2, metric: codes.MANHATTAN) == 2.0
+
+test "answer: the root under the euclidean metric alone"
+    assert answer(measured: 25.0, metric: codes.EUCLIDEAN) == 5.0
+    assert answer(measured: 25.0, metric: codes.MANHATTAN) == 25.0
+    assert answer(measured: -3.5, metric: codes.INNER_PRODUCT) == -3.5
+
+test "cosine: the same, opposite and perpendicular, and a vector of zeros"
+    assert cosine(a: [1.0, 2.0], b: [2.0, 4.0]).must() == 1.0
+    assert cosine(a: [1.0, 2.0], b: [-1.0, -2.0]).must() == -1.0
+    assert cosine(a: [1.0, 0.0], b: [0.0, 5.0]).must() == 0.0
+    assert cosine(a: [0.0, 0.0], b: [1.0, 0.0]).is_err()
+    assert cosine(a: [], b: []).is_err()
+
+test "cosine: rounding held within one, as numpy's 1.0000000000000002 would pass it"
+    assert cosine(a: [0.1, 0.2, 0.3], b: [0.1, 0.2, 0.3]).must() <= 1.0
+
+test "between: each metric between whole vectors"
+    assert between(a: [0.0, 0.0], b: [3.0, 4.0], metric: codes.EUCLIDEAN).must() == 25.0
+    assert between(a: [1.0, 0.0], b: [0.0, 1.0], metric: codes.COSINE).must() == 1.0
+    assert between(a: [1.0, 2.0], b: [3.0, 4.0], metric: codes.INNER_PRODUCT).must() == -11.0
+    assert between(a: [1.0, 2.0], b: [3.0, -4.0], metric: codes.MANHATTAN).must() == 8.0
+    assert between(a: [0.0], b: [1.0], metric: codes.COSINE).is_err()
+
+test "normalized: a right triangle, one component, a negative one, and zeros"
+    assert normalized([3.0, 4.0]).must() == [0.6, 0.8]
+    assert normalized([-2.0]).must() == [-1.0]
+    assert normalized([0.0, 0.0]).is_err()
+    assert normalized([]).is_err()
+
+test "normalized: an infinity refused"
+    zero: f32 = 0.0
+
+    match normalized([1.0, 1.0 / zero])
+        .ok _  => assert false
+        .err e => assert e.msg == "the vector holds inf at component 1, where a search orders distances"
+
+test "cosine: a nan answers a nan, and does not abort"
+    zero: f32 = 0.0
+    found = cosine(a: [zero / zero, 1.0], b: [1.0, 1.0]).must()
+    assert found != found
+
+test "absolute_difference_at: a nan answers a nan, and does not abort"
+    zero: f32 = 0.0
+    found = absolute_difference_at(a: [zero / zero], a_at: 0, b: [1.0], b_at: 0, count: 1)
+    assert found != found
+
+test "sums_of: none, one, three, and a length that differs"
+    assert sums_of([]).is_err()
+    assert sums_of([[]]).must() == []
+    assert sums_of([[1.5, -2.0]]).must() == [1.5, -2.0]
+    assert sums_of([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]]).must() == [9.0, 12.0]
+    assert sums_of([[1.0], [1.0, 2.0]]).is_err()
+
+test "sums_of: in f64, so a sum past the largest f32 stays finite"
+    largest: f32 = 340282346638528859811704183484516925440.0
+    assert sums_of([[largest], [largest]]).must()[0] == to_f64(largest) * 2.0

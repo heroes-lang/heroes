@@ -1,0 +1,1064 @@
+# Vectors of `f32` compared and searched: the dot product, the cosine, the
+# euclidean and manhattan distances, a vector normalized, added or averaged,
+# the k nearest of a list found by exact search, and an HNSW index in memory
+# that finds them fast, deterministic from its seed and saved as bytes.
+#
+# A vector is a `[f32]`, as hnswlib, faiss and pgvector hold one, and every
+# sum is taken in `f64` over products that are exact there, then rounded once
+# to `f32`: an answer may differ from faiss's or numpy's, which sum in `f32`,
+# in its last bits. Matrices and arrays of more dimensions are not held. The
+# numbers the vectors are made of come from elsewhere: `random` draws them,
+# `json` reads them, `numbers.f32_to_f16_bits` halves their precision. A text
+# is searched by its words in `search`.
+#
+# It fails with `invalid`, where vectors differ in length, hold a nan or an
+# infinity where they are ordered, or a setting is out of its range;
+# `not_found`, where an id is not in an index; and `exists`, where an id is
+# already there.
+
+use math
+use vectors/internal/arith
+use vectors/internal/bits
+use vectors/internal/codes
+use vectors/internal/exact
+use vectors/internal/graph
+use vectors/internal/store
+use vectors/internal/walk
+
+## Codes
+
+# The code of a vector a function cannot read: two vectors of different
+# lengths, a component that is a nan or an infinity where distances are
+# ordered, a vector of zeros where it has no direction, a setting out of its
+# range, bytes that are not an index.
+constant INVALID: str
+    codes.INVALID
+
+# The code of an id an index does not hold, which `remove`, `restore` and
+# `vector_of` fail with.
+constant NOT_FOUND: str
+    codes.NOT_FOUND
+
+# The code of an id an index already holds, which `insert` fails with.
+constant EXISTS: str
+    codes.EXISTS
+
+## Two vectors compared
+
+# The dot product of `a` and `b`: the sum of the products of their
+# components taken in pairs.
+#
+# - `a`: the first vector, any length; the empty vector's dot product is 0.0.
+# - `b`: the second vector, as long as `a`.
+#
+# Each product is exact in `f64` and the sum is rounded once to `f32`, so a
+# sum past the largest `f32` answers an infinity. Fails `invalid` where the
+# lengths differ. See also `cosine_similarity`, `norm`.
+function dot(a: [f32], b: [f32]) -> f32?
+    arith.same_length(a: a, b: b)?
+    return ok(to_f32(arith.dot_at(a: a, a_at: 0, b: b, b_at: 0, count: a.len())))
+
+# The length of `v`: the square root of the sum of the squares of its
+# components.
+#
+# - `v`: the vector, any length; the empty vector's length is 0.0, and a nan
+#   among its components answers a nan.
+#
+# See also `normalize`, `euclidean_distance`.
+function norm(v: [f32]) -> f32
+    return to_f32(math.sqrt(arith.squares_at(v, a_at: 0, count: v.len())))
+
+# The cosine of the angle between `a` and `b`, from -1 to 1: their dot
+# product over the product of their lengths.
+#
+# - `a`: the first vector, not all zeros.
+# - `b`: the second vector, as long as `a`, not all zeros.
+#
+# Fails `invalid` where the lengths differ or either vector is all zeros, and
+# so has no direction. See also `cosine_distance`.
+function cosine_similarity(a: [f32], b: [f32]) -> f32?
+    arith.same_length(a: a, b: b)?
+    return ok(to_f32(arith.cosine(a: a, b: b)?))
+
+# One less the cosine similarity of `a` and `b`, from 0 for one direction to 2
+# for opposite ones: pgvector's `<=>`, hnswlib's `cosine` space.
+#
+# - `a`: the first vector, not all zeros.
+# - `b`: the second vector, as long as `a`, not all zeros.
+#
+# Fails `invalid` where the lengths differ or either vector is all zeros. See
+# also `cosine_similarity`.
+function cosine_distance(a: [f32], b: [f32]) -> f32?
+    arith.same_length(a: a, b: b)?
+    return ok(to_f32(1.0 - arith.cosine(a: a, b: b)?))
+
+# The straight-line distance between `a` and `b`: the length of their
+# difference, pgvector's `<->`.
+#
+# - `a`: the first vector, any length.
+# - `b`: the second vector, as long as `a`.
+#
+# Fails `invalid` where the lengths differ. See also
+# `squared_euclidean_distance`.
+function euclidean_distance(a: [f32], b: [f32]) -> f32?
+    arith.same_length(a: a, b: b)?
+    return ok(to_f32(math.sqrt(arith.squared_difference_at(a: a, a_at: 0, b: b, b_at: 0, count: a.len()))))
+
+# The square of the straight-line distance between `a` and `b`, which
+# faiss's and hnswlib's `l2` answer: the same order, without the root.
+#
+# - `a`: the first vector, any length.
+# - `b`: the second vector, as long as `a`.
+#
+# Fails `invalid` where the lengths differ. See also `euclidean_distance`.
+function squared_euclidean_distance(a: [f32], b: [f32]) -> f32?
+    arith.same_length(a: a, b: b)?
+    return ok(to_f32(arith.squared_difference_at(a: a, a_at: 0, b: b, b_at: 0, count: a.len())))
+
+# The sum of the absolute differences of the components of `a` and `b`,
+# pgvector's `<+>`.
+#
+# - `a`: the first vector, any length.
+# - `b`: the second vector, as long as `a`.
+#
+# Fails `invalid` where the lengths differ. See also `euclidean_distance`.
+function manhattan_distance(a: [f32], b: [f32]) -> f32?
+    arith.same_length(a: a, b: b)?
+    return ok(to_f32(arith.absolute_difference_at(a: a, a_at: 0, b: b, b_at: 0, count: a.len())))
+
+# How the distance between two vectors is measured, where a search orders
+# them: the smaller the distance, the nearer.
+variant Metric
+    # The straight-line distance, `euclidean_distance`.
+    euclidean
+    # One less the cosine similarity, `cosine_distance`; vectors of zeros are
+    # refused.
+    cosine
+    # The dot product negated, pgvector's `<#>`, so the largest product is
+    # the nearest; for vectors of length one it orders as `cosine`.
+    inner_product
+    # The sum of the absolute differences, `manhattan_distance`.
+    manhattan
+
+# The distance between `a` and `b` as `metric` measures it.
+#
+# - `a`: the first vector.
+# - `b`: the second vector, as long as `a`.
+# - `metric`: the measure; `.inner_product` answers the dot product negated.
+#
+# Fails `invalid` where the lengths differ, or under `.cosine` where either
+# vector is all zeros. See also `distances`.
+function distance(a: [f32], b: [f32], metric: Metric) -> f32?
+    code = match metric
+        .euclidean     => codes.EUCLIDEAN
+        .cosine        => codes.COSINE
+        .inner_product => codes.INNER_PRODUCT
+        .manhattan     => codes.MANHATTAN
+
+    arith.same_length(a: a, b: b)?
+    return ok(arith.answer(measured: arith.between(a: a, b: b, metric: code)?, metric: code))
+
+# The distance from `query` to each of `vectors`, in their order, as `metric`
+# measures it: faiss's `pairwise_distances` for one query.
+#
+# - `query`: the vector measured from.
+# - `vectors`: the vectors measured to, each as long as `query`; none answers
+#   an empty list.
+# - `metric`: the measure.
+#
+# Fails `invalid` where a vector's length differs from the query's, or under
+# `.cosine` where a vector is all zeros. See also `nearest`.
+function distances(query: [f32], vectors: [[f32]], metric: Metric) -> [f32]?
+    code = match metric
+        .euclidean     => codes.EUCLIDEAN
+        .cosine        => codes.COSINE
+        .inner_product => codes.INNER_PRODUCT
+        .manhattan     => codes.MANHATTAN
+
+    out: [f32] @= []
+    at: i64 @= 0
+
+    while at < vectors.len()
+        if vectors[at].len() != query.len()
+            return fail(
+                code: codes.INVALID,
+                msg: f"vector {at} holds {vectors[at].len()} components where the query holds {query.len()}"
+            )
+        found = arith.between(a: query, b: vectors[at], metric: code)?
+        out @ out.push(arith.answer(measured: found, metric: code))
+        at @ at + 1
+
+    return ok(out)
+
+## Vectors changed
+
+# `v` scaled to length one: each component divided by the length.
+#
+# - `v`: the vector, not all zeros.
+#
+# Each quotient is taken in `f64` and rounded once. Fails `invalid` where `v`
+# is empty or all zeros, which has no direction, or holds a nan or an
+# infinity. See also `norm`.
+function normalize(v: [f32]) -> [f32]?
+    return arith.normalized(v)
+
+# The sum of `a` and `b`, component by component.
+#
+# - `a`: the first vector.
+# - `b`: the second vector, as long as `a`.
+#
+# Fails `invalid` where the lengths differ. See also `subtract`, `sum`.
+function add(a: [f32], b: [f32]) -> [f32]?
+    arith.same_length(a: a, b: b)?
+    out: [f32] @= []
+
+    for at in range(from: 0, to: a.len())
+        out @ out.push(a[at] + b[at])
+
+    return ok(out)
+
+# `a` less `b`, component by component.
+#
+# - `a`: the vector subtracted from.
+# - `b`: the vector subtracted, as long as `a`.
+#
+# Fails `invalid` where the lengths differ. See also `add`.
+function subtract(a: [f32], b: [f32]) -> [f32]?
+    arith.same_length(a: a, b: b)?
+    out: [f32] @= []
+
+    for at in range(from: 0, to: a.len())
+        out @ out.push(a[at] - b[at])
+
+    return ok(out)
+
+# The product of `a` and `b`, component by component, pgvector's `*`.
+#
+# - `a`: the first vector.
+# - `b`: the second vector, as long as `a`.
+#
+# Fails `invalid` where the lengths differ. See also `scale`, `dot`.
+function multiply(a: [f32], b: [f32]) -> [f32]?
+    arith.same_length(a: a, b: b)?
+    out: [f32] @= []
+
+    for at in range(from: 0, to: a.len())
+        out @ out.push(a[at] * b[at])
+
+    return ok(out)
+
+# `v` with each component multiplied by `by`.
+#
+# - `v`: the vector, any length.
+# - `by`: the factor; 0.0 gives a vector of zeros, a negative factor turns
+#   the vector around.
+#
+# See also `multiply`, `normalize`.
+function scale(v: [f32], by: f32) -> [f32]
+    out: [f32] @= []
+
+    for x in v
+        out @ out.push(x * by)
+
+    return out
+
+# The sum of `vectors`, component by component, pgvector's `sum`.
+#
+# - `vectors`: the vectors, at least one, all of one length.
+#
+# Each component is summed in `f64` and rounded once. Fails `invalid` where
+# `vectors` is empty or their lengths differ. See also `mean`, `add`.
+function sum(vectors: [[f32]]) -> [f32]?
+    totals = arith.sums_of(vectors)?
+    out: [f32] @= []
+
+    for total in totals
+        out @ out.push(to_f32(total))
+
+    return ok(out)
+
+# The mean of `vectors`, component by component: their centre, pgvector's
+# `avg`.
+#
+# - `vectors`: the vectors, at least one, all of one length.
+#
+# Each component is summed in `f64`, divided by the count there and rounded
+# once. Fails `invalid` where `vectors` is empty or their lengths differ. See
+# also `sum`.
+function mean(vectors: [[f32]]) -> [f32]?
+    totals = arith.sums_of(vectors)?
+    count = to_f64(vectors.len())
+    out: [f32] @= []
+
+    for total in totals
+        out @ out.push(to_f32(total / count))
+
+    return ok(out)
+
+## Bit vectors
+
+# `v` reduced to one bit a component, set where the component is above zero,
+# eight to a byte, the first component in the highest bit of the first byte:
+# pgvector's `binary_quantize`.
+#
+# - `v`: the vector, any length; a nan gives a clear bit.
+#
+# The last byte's bits past the vector's length are clear, so two vectors of
+# one length compare by `hamming_distance` and `jaccard_distance` without
+# them. See also `hamming_distance`.
+function quantize_binary(v: [f32]) -> [u8]
+    return bits.quantize(v)
+
+# How many bits differ between `a` and `b`, pgvector's `<~>`.
+#
+# - `a`: the first bit vector, eight bits a byte.
+# - `b`: the second, as many bytes as `a`.
+#
+# Fails `invalid` where the lengths differ. See also `jaccard_distance`,
+# `quantize_binary`.
+function hamming_distance(a: [u8], b: [u8]) -> i64?
+    return bits.hamming(a: a, b: b)
+
+# One less the share of the bits set in either of `a` and `b` that are set in
+# both, pgvector's `<%>`.
+#
+# - `a`: the first bit vector.
+# - `b`: the second, as many bytes as `a`.
+#
+# Two vectors with no bit set are one vector, at 0.0, as SciPy answers. Fails
+# `invalid` where the lengths differ. See also `hamming_distance`.
+function jaccard_distance(a: [u8], b: [u8]) -> f32?
+    return bits.jaccard(a: a, b: b)
+
+## The nearest, by exact search
+
+# A vector found near a query: which one, and how far.
+record Neighbor
+    # Which vector: its index in the list searched by `nearest` and `within`,
+    # or the id it was inserted under in an `Index`.
+    id: i64
+    # Its distance from the query, as the search's metric measures it.
+    distance: f32
+
+# The `k` vectors of `vectors` nearest to `query`, the nearest first, by
+# measuring every one: faiss's `IndexFlat`.
+#
+# - `query`: the vector searched from, its components finite.
+# - `vectors`: the vectors searched, each as long as `query`, with finite
+#   components.
+# - `k`: how many to answer, 0 or more; fewer are answered where `vectors`
+#   holds fewer, and 0 answers none.
+# - `metric`: the measure.
+#
+# Vectors at one distance come in the order of their index. Fails `invalid`
+# where a length differs from the query's, a component is a nan or an
+# infinity, `k` is below 0, or under `.cosine` a vector is all zeros. It
+# costs the count of `vectors` times their length, and the logarithm of `k`
+# for each. See also `within`, `search`.
+function nearest(query: [f32], vectors: [[f32]], k: i64, metric: Metric) -> [Neighbor]?
+    code = match metric
+        .euclidean     => codes.EUCLIDEAN
+        .cosine        => codes.COSINE
+        .inner_product => codes.INNER_PRODUCT
+        .manhattan     => codes.MANHATTAN
+
+    found = exact.nearest(query, vectors, k: k, metric: code)?
+    out: [Neighbor] @= []
+
+    for at in range(from: 0, to: found.indices.len())
+        out @ out.push(Neighbor(id: found.indices[at], distance: found.distances[at]))
+
+    return ok(out)
+
+# Every vector of `vectors` whose distance from `query` is `radius` or less,
+# the nearest first: faiss's `range_search`.
+#
+# - `query`: the vector searched from, its components finite.
+# - `vectors`: the vectors searched, each as long as `query`, with finite
+#   components.
+# - `radius`: the largest distance answered, in the metric's own measure; a
+#   negative radius answers none but under `.inner_product`.
+# - `metric`: the measure.
+#
+# Vectors at one distance come in the order of their index. Fails `invalid`
+# as `nearest` does, and where `radius` is a nan. See also `nearest`.
+function within(query: [f32], vectors: [[f32]], radius: f32, metric: Metric) -> [Neighbor]?
+    code = match metric
+        .euclidean     => codes.EUCLIDEAN
+        .cosine        => codes.COSINE
+        .inner_product => codes.INNER_PRODUCT
+        .manhattan     => codes.MANHATTAN
+
+    found = exact.within(query, vectors, radius, metric: code)?
+    out: [Neighbor] @= []
+
+    for at in range(from: 0, to: found.indices.len())
+        out @ out.push(Neighbor(id: found.indices[at], distance: found.distances[at]))
+
+    return ok(out)
+
+## The HNSW index
+
+# The settings an `Index` is made with, built directly or by
+# `default_options`.
+record Options
+    # How many links each vector keeps to others on the layers above the
+    # lowest, from 2 to 1,024; the lowest keeps twice as many. hnswlib's and
+    # faiss's `M`, 16 by default: more links find more of the true nearest and
+    # cost memory and time.
+    links: i64
+    # How many candidates an insert weighs before it links a vector, 1 or
+    # more, hnswlib's `ef_construction`, 200 by default: more build a better
+    # index, more slowly.
+    ef_construction: i64
+    # The seed the levels of the vectors are drawn from: one seed and one
+    # order of inserts build the same index, on every platform.
+    seed: u64
+
+# An index of vectors that finds the nearest to a query by walking a graph
+# of layers, Malkov and Yashunin's Hierarchical Navigable Small World:
+# hnswlib's `Index`, faiss's `IndexHNSWFlat`. It holds its vectors, each
+# under an id the program gives, in arrays and nothing else; every walk is a
+# loop, so no index is too deep for the stack.
+#
+# Made by `new_index` or `from_bytes`, and changed only by `insert`,
+# `remove` and `restore`. A search answers the true nearest only mostly: its
+# `ef` buys more of them for more time, and `nearest` measures every vector.
+# Copied with `=`, the copy is an index of its own.
+record Index
+    # The graph, held by the package itself: a program reads it through this
+    # section's functions.
+    graph: graph.Graph
+    # Which nodes an insert's walk has reached, kept between inserts so each
+    # walk costs what it reaches and not the size of the index.
+    visits: walk.Visits
+
+# hnswlib's defaults: 16 links, 200 candidates at construction, seed 100.
+#
+# See also `Options`, `new_index`.
+function default_options() -> Options
+    return Options(links: 16, ef_construction: 200, seed: 100)
+
+# An empty index of vectors of `dimension` components, measured by
+# `metric`.
+#
+# - `dimension`: the length of every vector it will hold, 1 or more.
+# - `metric`: the measure; under `.cosine` each vector is held normalized.
+# - `options`: the links, the candidates weighed at construction, and the
+#   seed.
+#
+# Fails `invalid` where `dimension` is below 1, `options.links` is outside 2
+# to 1,024, or `options.ef_construction` is below 1. See also `insert`,
+# `default_options`.
+function new_index(dimension: i64, metric: Metric, options: Options) -> Index?
+    code = match metric
+        .euclidean     => codes.EUCLIDEAN
+        .cosine        => codes.COSINE
+        .inner_product => codes.INNER_PRODUCT
+        .manhattan     => codes.MANHATTAN
+
+    if dimension < 1
+        return fail(code: codes.INVALID, msg: f"the dimension is {dimension}, where a vector holds 1 component or more")
+
+    if options.links < graph.FEWEST_LINKS || options.links > graph.MOST_LINKS
+        return fail(
+            code: codes.INVALID,
+            msg: f"the links are {options.links}, outside {graph.FEWEST_LINKS} to {graph.MOST_LINKS}"
+        )
+
+    if options.ef_construction < 1
+        return fail(
+            code: codes.INVALID,
+            msg: f"ef_construction is {options.ef_construction}, where an insert weighs 1 candidate or more"
+        )
+    built = graph.empty(
+        dimension: dimension,
+        metric: code,
+        links: options.links,
+        ef_construction: options.ef_construction,
+        seed: options.seed
+    )
+    return ok(Index(graph: built, visits: walk.dense_visits(0)))
+
+# Adds `vector` to `index` under `id`, linking it to its nearest on each
+# layer it reaches.
+#
+# - `index`: the index, which gains the vector.
+# - `id`: the program's name for the vector, any `i64`; an id removed may be
+#   inserted again, as a new vector.
+# - `vector`: as long as the index's dimension, with finite components; under
+#   `.cosine` not all zeros, and held normalized.
+#
+# Fails `exists` where `index` holds `id`, and `invalid` where `vector`'s
+# length is not the dimension, a component is a nan or an infinity, or under
+# `.cosine` it is all zeros. It costs about `ef_construction` times the
+# logarithm of the size distances. See also `search`, `remove`.
+function insert(@index: Index, id: i64, vector: [f32]) -> ()?
+    if graph.live_node(index.graph, id: id) != graph.NONE
+        return fail(code: codes.EXISTS, msg: f"the index holds a vector under id {id} already")
+    held = walk.admit(index.graph, vector: vector, what: "the vector")?
+    walk.insert(@index.graph, @index.visits, id: id, vector: held)
+    return ok()
+
+# Marks the vector under `id` deleted: no search answers it, and the graph
+# still walks through it, as hnswlib's `mark_deleted`.
+#
+# - `index`: the index, whose vector under `id` is marked.
+# - `id`: the id of a vector the index holds.
+#
+# Fails `not_found` where no vector the index holds has `id`. The vector's
+# memory stays until `compact`. See also `restore`, `compact`.
+function remove(@index: Index, id: i64) -> ()?
+    node = graph.live_node(index.graph, id: id)
+
+    if node == graph.NONE
+        return fail(code: codes.NOT_FOUND, msg: f"the index holds no vector under id {id}")
+    graph.mark(@index.graph, node: node, removed: true)
+    return ok()
+
+# Takes back the mark of `remove` on the vector under `id`, as hnswlib's
+# `unmark_deleted`.
+#
+# - `index`: the index, whose vector under `id` is searched again.
+# - `id`: the id of a vector removed and not inserted since.
+#
+# Fails `not_found` where `id` names no vector removed. See also `remove`.
+function restore(@index: Index, id: i64) -> ()?
+    node = graph.removed_node(index.graph, id: id)
+
+    if node == graph.NONE
+        return fail(code: codes.NOT_FOUND, msg: f"the index holds no removed vector under id {id}")
+    graph.mark(@index.graph, node: node, removed: false)
+    return ok()
+
+# The `k` vectors of `index` nearest to `query` as its walk finds them, the
+# nearest first.
+#
+# - `index`: the index searched.
+# - `query`: as long as the index's dimension, with finite components; under
+#   `.cosine` not all zeros.
+# - `k`: how many to answer, 0 or more; fewer where the index holds fewer.
+# - `ef`: how many candidates the walk keeps on the lowest layer, 1 or more,
+#   hnswlib's `ef`; below `k` it is taken as `k`. More find more of the true
+#   nearest, more slowly.
+#
+# Vectors at one distance come in the order of their ids. Fails `invalid`
+# where the query's length is not the dimension, a component is a nan or an
+# infinity, under `.cosine` it is all zeros, `k` is below 0 or `ef` below 1.
+# See also `search_where`, `nearest`.
+function search(index: Index lent, query: [f32], k: i64, ef: i64) -> [Neighbor]?
+    return search_where(index, query, k: k, ef: ef, accepts: walk.every)
+
+# The `k` vectors of `index` nearest to `query` among those whose id
+# `accepts` takes, as `search` finds them: a filter on what the program
+# knows of each vector.
+#
+# - `index`: the index searched.
+# - `query`: as `search` takes it.
+# - `k`: how many to answer, 0 or more.
+# - `ef`: how many candidates the walk keeps, 1 or more; where `accepts`
+#   takes few ids, more are needed to find `k`.
+# - `accepts`: called with the id of each vector the walk reaches that is
+#   not removed, at most once each; true keeps it among the answers. The
+#   walk goes through the vectors it refuses all the same.
+#
+# Fails `invalid` as `search` does. See also `search`.
+function search_where(index: Index lent, query: [f32], k: i64, ef: i64, accepts: (function(i64) -> bool)) -> [Neighbor]?
+    if k < 0
+        return fail(code: codes.INVALID, msg: f"k is {k}, where a search answers 0 vectors or more")
+
+    if ef < 1
+        return fail(code: codes.INVALID, msg: f"ef is {ef}, where a search keeps 1 candidate or more")
+    held = walk.admit(index.graph, vector: query, what: "the query")?
+    found = walk.search(index.graph, query: held, k: k, ef: ef, accepts: accepts, filtered: accepts != walk.every)
+    out: [Neighbor] @= []
+
+    for at in range(from: 0, to: found.ids.len())
+        out @ out.push(
+            Neighbor(id: found.ids[at], distance: arith.answer(measured: found.distances[at], metric: index.graph.metric))
+        )
+
+    return ok(out)
+
+# How many vectors `index` holds that are not removed.
+#
+# - `index`: the index.
+#
+# See also `ids_of`.
+function size(index: Index lent) -> i64
+    return index.graph.live
+
+# Whether `index` holds a vector under `id` that is not removed.
+#
+# - `index`: the index.
+# - `id`: the id asked about.
+#
+# See also `vector_of`.
+function contains(index: Index lent, id: i64) -> bool
+    return graph.live_node(index.graph, id: id) != graph.NONE
+
+# The vector `index` holds under `id`, normalized where its metric is
+# `.cosine`.
+#
+# - `index`: the index.
+# - `id`: the id of a vector it holds, not removed.
+#
+# Fails `not_found` where it holds none under `id`. See also `contains`.
+function vector_of(index: Index lent, id: i64) -> [f32]?
+    node = graph.live_node(index.graph, id: id)
+
+    if node == graph.NONE
+        return fail(code: codes.NOT_FOUND, msg: f"the index holds no vector under id {id}")
+    return ok(graph.vector_at(index.graph, node: node))
+
+# The ids of the vectors `index` holds that are not removed, in the order
+# they were inserted.
+#
+# - `index`: the index.
+#
+# See also `size`.
+function ids_of(index: Index lent) -> [i64]
+    out: [i64] @= []
+
+    for node in range(from: 0, to: graph.count(index.graph))
+        if !index.graph.removed[node]
+            out @ out.push(index.graph.ids[node])
+
+    return out
+
+# The length of every vector `index` holds.
+#
+# - `index`: the index.
+#
+# See also `metric_of`.
+function dimension_of(index: Index lent) -> i64
+    return index.graph.dimension
+
+# The measure `index` orders its vectors by.
+#
+# - `index`: the index.
+#
+# See also `dimension_of`.
+function metric_of(index: Index lent) -> Metric
+    code = index.graph.metric
+
+    if code == codes.EUCLIDEAN
+        return .euclidean
+    else if code == codes.COSINE
+        return .cosine
+    else if code == codes.INNER_PRODUCT
+        return .inner_product
+    return .manhattan
+
+# A new index holding the vectors of `index` that are not removed, inserted
+# again in the order they were first inserted, with its options and seed:
+# what is removed stops costing memory.
+#
+# - `index`: the index rebuilt; it is not changed.
+#
+# It costs what inserting every vector again costs. See also `remove`.
+function compact(index: Index lent) -> Index
+    built @= graph.empty(
+        dimension: index.graph.dimension,
+        metric: index.graph.metric,
+        links: index.graph.links,
+        ef_construction: index.graph.ef_construction,
+        seed: index.graph.seed
+    )
+    visits @= walk.dense_visits(0)
+
+    for node in range(from: 0, to: graph.count(index.graph))
+        if !index.graph.removed[node]
+            walk.insert(@built, @visits, id: index.graph.ids[node], vector: graph.vector_at(index.graph, node: node))
+
+    return Index(graph: built, visits: visits)
+
+# `index` written as bytes: its settings, the state of its seed, its vectors
+# and its links, so `from_bytes` reads back the same index.
+#
+# - `index`: the index written.
+#
+# The bytes are this package's own format, little-endian, opening with
+# `RVHNSW1`; hnswlib and faiss read others. See also `from_bytes`.
+function to_bytes(index: Index lent) -> [u8]
+    return store.write(index.graph)
+
+# The index `bytes` hold, as `to_bytes` wrote it.
+#
+# - `bytes`: the bytes read, from anywhere.
+#
+# Every count, link and level is checked before it is used, so bytes cut
+# short or changed fail and never abort. Fails `invalid` where the bytes are
+# not an index this package wrote, saying where. See also `to_bytes`.
+function from_bytes(bytes: [u8]) -> Index?
+    read = store.read(bytes)?
+    return ok(Index(graph: read, visits: walk.dense_visits(graph.count(read))))
+
+## Tests
+
+test "dot, norm and the distances: lengths that differ, and the empty vector"
+    assert dot(a: [1.0], b: [1.0, 2.0]).is_err() && cosine_similarity(a: [1.0], b: []).is_err()
+    assert euclidean_distance(a: [], b: [1.0]).is_err() && manhattan_distance(a: [1.0, 2.0], b: [1.0]).is_err()
+    assert squared_euclidean_distance(a: [1.0], b: []).is_err()
+    assert dot(a: [], b: []).must() == 0.0 && norm([]) == 0.0 && euclidean_distance(a: [], b: []).must() == 0.0
+
+test "dot and norm: a sum past the largest f32 answers an infinity, a nan a nan"
+    zero: f32 = 0.0
+    big: f32 = 300000000000000000000000000000000000000.0
+    assert dot(a: [big, big], b: [big, big]).must() == 1.0 / zero
+    found = norm([zero / zero, 1.0])
+    assert found != found
+
+test "cosine_similarity: a vector of zeros refused, with what was found"
+    match cosine_similarity(a: [0.0, 0.0], b: [1.0, 0.0])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "a vector of zeros has no direction, so no cosine"
+
+test "distance: each metric, and zeros under the cosine"
+    assert distance(a: [0.0, 0.0], b: [3.0, 4.0], metric: .euclidean).must() == 5.0
+    assert distance(a: [1.0, 0.0], b: [0.0, 1.0], metric: .cosine).must() == 1.0
+    assert distance(a: [1.0, 2.0], b: [3.0, -4.0], metric: .manhattan).must() == 8.0
+    assert distance(a: [0.0], b: [1.0], metric: .cosine).is_err()
+
+test "distances: none, and a vector of another length named"
+    assert distances(query: [1.0], vectors: [], metric: .euclidean).must() == []
+
+    match distances(query: [1.0, 2.0], vectors: [[1.0, 2.0], [3.0]], metric: .euclidean)
+        .ok _  => assert false
+        .err e => assert e.msg == "vector 1 holds 1 components where the query holds 2"
+
+test "add, subtract and multiply: empty, and lengths that differ"
+    assert add(a: [], b: []).must() == [] && add(a: [1.0], b: []).is_err()
+    assert subtract(a: [1.0], b: [1.0, 1.0]).is_err() && multiply(a: [], b: [2.0]).is_err()
+
+test "scale: empty, zero and a negative factor"
+    assert scale([], by: 3.0) == [] && scale([1.0, -2.0], by: 0.0) == [0.0, -0.0] && scale([1.0], by: -1.0) == [-1.0]
+
+test "sum and mean: none, one, and lengths that differ"
+    assert sum([]).is_err() && mean([]).is_err()
+    assert sum([[1.5]]).must() == [1.5] && mean([[1.5]]).must() == [1.5]
+    assert mean([[1.0, 2.0], [2.0]]).is_err()
+
+test "mean: the f32 nearest the f64 mean, as numpy's float64 mean rounds"
+    assert mean([[0.1], [0.2], [0.4]]).must() == [0.23333333]
+
+test "new_index: a dimension, links and candidates out of range"
+    assert new_index(dimension: 0, metric: .euclidean, options: default_options()).is_err()
+    assert new_index(
+        dimension: 2,
+        metric: .euclidean,
+        options: Options(links: 1, ef_construction: 10, seed: 1)
+    ).is_err()
+    assert new_index(
+        dimension: 2,
+        metric: .euclidean,
+        options: Options(links: 1025, ef_construction: 10, seed: 1)
+    ).is_err()
+    assert new_index(dimension: 2, metric: .euclidean, options: Options(links: 2, ef_construction: 0, seed: 1)).is_err()
+    assert !new_index(dimension: 1, metric: .euclidean, options: Options(links: 1024, ef_construction: 1, seed: 0)).is_err()
+
+test "insert: an id held, a vector too short, a nan, zeros under the cosine"
+    zero: f32 = 0.0
+    index @= new_index(dimension: 2, metric: .cosine, options: default_options()).must()
+    insert(@index, id: 1, vector: [1.0, 0.0]).must()
+
+    match insert(@index, id: 1, vector: [0.0, 1.0])
+        .ok _  => assert false
+        .err e => assert e.code == EXISTS && e.msg == "the index holds a vector under id 1 already"
+
+    match insert(@index, id: 2, vector: [1.0])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "the vector holds 1 components where the index holds 2"
+
+    assert insert(@index, id: 2, vector: [zero / zero, 1.0]).is_err()
+    assert insert(@index, id: 2, vector: [0.0, 0.0]).is_err()
+    assert size(index) == 1
+
+test "remove, restore and insert: an id removed is inserted again as a new vector"
+    index @= new_index(dimension: 1, metric: .euclidean, options: default_options()).must()
+    insert(@index, id: 5, vector: [1.0]).must()
+    remove(@index, id: 5).must()
+    assert remove(@index, id: 5).is_err() && vector_of(index, id: 5).is_err()
+    insert(@index, id: 5, vector: [9.0]).must()
+    assert restore(@index, id: 5).is_err()
+    assert vector_of(index, id: 5).must() == [9.0] && size(index) == 1 && ids_of(index) == [5]
+
+test "remove and restore: ids the index never held"
+    index @= new_index(dimension: 1, metric: .euclidean, options: default_options()).must()
+
+    match remove(@index, id: 3)
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND && e.msg == "the index holds no vector under id 3"
+
+    assert restore(@index, id: 3).is_err()
+
+test "search: an empty index, k of zero, k and ef out of range, and a query too long"
+    index @= new_index(dimension: 2, metric: .euclidean, options: default_options()).must()
+    assert search(index, query: [1.0, 1.0], k: 5, ef: 5).must() == []
+    insert(@index, id: 1, vector: [1.0, 1.0]).must()
+    assert search(index, query: [1.0, 1.0], k: 0, ef: 5).must() == []
+    assert search(index, query: [1.0, 1.0], k: -1, ef: 5).is_err()
+    assert search(index, query: [1.0, 1.0], k: 1, ef: 0).is_err()
+    assert search(index, query: [1.0, 1.0, 1.0], k: 1, ef: 5).is_err()
+    assert search(index, query: [1.0, 1.0], k: 9, ef: 1).must() == [Neighbor(id: 1, distance: 0.0)]
+
+test "search: the cosine and the inner product answer their distances"
+    cosine @= new_index(dimension: 2, metric: .cosine, options: default_options()).must()
+    insert(@cosine, id: 1, vector: [2.0, 0.0]).must()
+    insert(@cosine, id: 2, vector: [0.0, 3.0]).must()
+    assert search(cosine, query: [5.0, 0.0], k: 2, ef: 8).must() == [Neighbor(id: 1, distance: 0.0), Neighbor(id: 2, distance: 1.0)]
+    assert search(cosine, query: [0.0, 0.0], k: 1, ef: 8).is_err()
+    product @= new_index(dimension: 2, metric: .inner_product, options: default_options()).must()
+    insert(@product, id: 1, vector: [1.0, 0.0]).must()
+    insert(@product, id: 2, vector: [3.0, 3.0]).must()
+    assert search(product, query: [1.0, 1.0], k: 1, ef: 8).must() == [Neighbor(id: 2, distance: -6.0)]
+
+test "search_where: every id refused answers none"
+    index @= new_index(dimension: 1, metric: .euclidean, options: default_options()).must()
+    insert(@index, id: 3, vector: [1.0]).must()
+    insert(@index, id: 5, vector: [3.0]).must()
+    assert search_where(index, query: [1.0], k: 2, ef: 8, accepts: math.is_power_of_two).must() == []
+
+test "metric_of: each metric back"
+    for_metric = new_index(dimension: 1, metric: .euclidean, options: default_options()).must()
+    assert metric_of(for_metric) == .euclidean
+    assert metric_of(new_index(dimension: 1, metric: .inner_product, options: default_options()).must()) == .inner_product
+    assert metric_of(new_index(dimension: 1, metric: .manhattan, options: default_options()).must()) == .manhattan
+
+test "compact: the same answers for the vectors kept, and an empty index"
+    index @= new_index(dimension: 2, metric: .euclidean, options: default_options()).must()
+
+    for at in range(from: 0, to: 60)
+        insert(@index, id: at, vector: [to_f32(to_f64(at % 8)), to_f32(to_f64(at / 8))]).must()
+
+    for at in range(from: 0, to: 30)
+        remove(@index, id: at * 2).must()
+
+    again = compact(index)
+    assert ids_of(again) == ids_of(index) && size(again) == 30
+    assert search(again, query: [3.0, 3.0], k: 5, ef: 32).must() == search(index, query: [3.0, 3.0], k: 5, ef: 32).must()
+    assert size(compact(new_index(dimension: 1, metric: .euclidean, options: default_options()).must())) == 0
+
+test "to_bytes and from_bytes: the same index back, every cut refused, and another format"
+    index @= new_index(dimension: 3, metric: .cosine, options: Options(links: 4, ef_construction: 16, seed: 9)).must()
+
+    for at in range(from: 0, to: 20)
+        insert(@index, id: at * 3 - 7, vector: [to_f32(to_f64(at)), 1.0, -2.0]).must()
+
+    remove(@index, id: -7).must()
+    bytes = to_bytes(index)
+    again = from_bytes(bytes).must()
+    assert again.graph == index.graph && to_bytes(again) == bytes
+
+    for end in range(from: 0, to: bytes.len())
+        assert from_bytes(bytes.slice(from: 0, to: end)).is_err()
+
+    match from_bytes([82, 83, 66, 77, 50, 53, 73, 49])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "the bytes do not open with RVHNSW1, the name of an index of vectors"
+
+## Examples
+
+# How far two points stand, by the dot product of two directions.
+test "dot: two vectors of three"
+    assert dot(a: [1.0, 2.0, 3.0], b: [4.0, 5.0, 6.0]).must() == 32.0
+
+# The length of a vector.
+test "norm: a right triangle's long side"
+    assert norm([3.0, 4.0]) == 5.0
+
+# Two directions at a right angle.
+test "cosine_similarity: perpendicular vectors"
+    assert cosine_similarity(a: [1.0, 0.0], b: [0.0, 2.0]).must() == 0.0
+
+# Two opposite directions.
+test "cosine_distance: opposite vectors"
+    assert cosine_distance(a: [1.0, 1.0], b: [-2.0, -2.0]).must() == 2.0
+
+# The distance between two points.
+test "euclidean_distance: two points of a plane"
+    assert euclidean_distance(a: [0.0, 0.0], b: [3.0, 4.0]).must() == 5.0
+
+# The square of that distance.
+test "squared_euclidean_distance: two points of a plane"
+    assert squared_euclidean_distance(a: [0.0, 0.0], b: [3.0, 4.0]).must() == 25.0
+
+# The distance walked along a grid.
+test "manhattan_distance: two corners of a grid"
+    assert manhattan_distance(a: [0.0, 0.0], b: [3.0, -4.0]).must() == 7.0
+
+# A distance chosen by a value.
+test "distance: by the inner product"
+    assert distance(a: [1.0, 2.0], b: [3.0, 4.0], metric: .inner_product).must() == -11.0
+
+# One query against three vectors.
+test "distances: one query and three points"
+    assert distances(query: [0.0, 0.0], vectors: [[3.0, 4.0], [1.0, 0.0], [0.0, 2.0]], metric: .euclidean).must() == [5.0, 1.0, 2.0]
+
+# A direction of length one.
+test "normalize: a vector of length five"
+    assert normalize([3.0, 4.0]).must() == [0.6, 0.8]
+
+# Two vectors added.
+test "add: two vectors"
+    assert add(a: [1.0, 2.0], b: [3.0, 4.0]).must() == [4.0, 6.0]
+
+# One vector taken from another.
+test "subtract: two vectors"
+    assert subtract(a: [5.0, 5.0], b: [1.0, 2.0]).must() == [4.0, 3.0]
+
+# Weights applied to a vector.
+test "multiply: a vector by its weights"
+    assert multiply(a: [1.0, 2.0, 3.0], b: [2.0, 0.5, 0.0]).must() == [2.0, 1.0, 0.0]
+
+# A vector doubled.
+test "scale: a vector doubled"
+    assert scale([1.5, -2.0], by: 2.0) == [3.0, -4.0]
+
+# Three vectors added.
+test "sum: three vectors"
+    assert sum([[1.0, 0.0], [0.0, 1.0], [1.0, 1.0]]).must() == [2.0, 2.0]
+
+# The centre of three points.
+test "mean: the centre of three points"
+    assert mean([[0.0, 0.0], [3.0, 0.0], [0.0, 3.0]]).must() == [1.0, 1.0]
+
+# A vector of nine components in two bytes.
+test "quantize_binary: nine components"
+    assert quantize_binary([1.0, -1.0, 0.5, 0.0, 2.0, -3.0, 0.1, 0.2, 4.0]) == [0b10101011, 0b10000000]
+
+# Two bit vectors compared bit by bit.
+test "hamming_distance: two bytes"
+    assert hamming_distance(a: [0b1100], b: [0b1010]).must() == 2
+
+# Two sets of bits compared.
+test "jaccard_distance: one bit shared of three"
+    assert jaccard_distance(a: [0b1100], b: [0b1010]).must() == 0.6666667
+
+# The two points nearest to the origin.
+test "nearest: two of four points"
+    found = nearest(
+        query: [0.0, 0.0],
+        vectors: [[3.0, 4.0], [1.0, 0.0], [0.0, 2.0], [9.0, 9.0]],
+        k: 2,
+        metric: .euclidean
+    ).must()
+    assert found == [Neighbor(id: 1, distance: 1.0), Neighbor(id: 2, distance: 2.0)]
+
+# Every point within a distance.
+test "within: the points within three of the origin"
+    found = within(
+        query: [0.0, 0.0],
+        vectors: [[3.0, 4.0], [1.0, 0.0], [0.0, 2.0]],
+        radius: 3.0,
+        metric: .euclidean
+    ).must()
+    assert found == [Neighbor(id: 1, distance: 1.0), Neighbor(id: 2, distance: 2.0)]
+
+# The settings hnswlib starts from.
+test "default_options: hnswlib's"
+    assert default_options() == Options(links: 16, ef_construction: 200, seed: 100)
+
+# An empty index of points of a plane.
+test "new_index: an empty index"
+    index = new_index(dimension: 2, metric: .euclidean, options: default_options()).must()
+    assert size(index) == 0
+
+# Three points inserted and the nearest found.
+test "insert: three points, then the nearest"
+    index @= new_index(dimension: 2, metric: .euclidean, options: default_options()).must()
+    insert(@index, id: 10, vector: [0.0, 0.0]).must()
+    insert(@index, id: 20, vector: [5.0, 5.0]).must()
+    insert(@index, id: 30, vector: [1.0, 1.0]).must()
+    assert search(index, query: [4.0, 4.0], k: 1, ef: 10).must()[0].id == 20
+
+# A point removed is no longer found.
+test "remove: a point no longer found"
+    index @= new_index(dimension: 2, metric: .euclidean, options: default_options()).must()
+    insert(@index, id: 1, vector: [0.0, 0.0]).must()
+    insert(@index, id: 2, vector: [1.0, 1.0]).must()
+    remove(@index, id: 2).must()
+    assert search(index, query: [1.0, 1.0], k: 1, ef: 10).must()[0].id == 1
+
+# A point removed, then restored.
+test "restore: a point found again"
+    index @= new_index(dimension: 2, metric: .euclidean, options: default_options()).must()
+    insert(@index, id: 1, vector: [0.0, 0.0]).must()
+    remove(@index, id: 1).must()
+    restore(@index, id: 1).must()
+    assert contains(index, id: 1)
+
+# The two nearest of four points.
+test "search: the two nearest of four points"
+    index @= new_index(dimension: 2, metric: .euclidean, options: default_options()).must()
+    insert(@index, id: 1, vector: [3.0, 4.0]).must()
+    insert(@index, id: 2, vector: [1.0, 0.0]).must()
+    insert(@index, id: 3, vector: [0.0, 2.0]).must()
+    insert(@index, id: 4, vector: [9.0, 9.0]).must()
+    found = search(index, query: [0.0, 0.0], k: 2, ef: 16).must()
+    assert found == [Neighbor(id: 2, distance: 1.0), Neighbor(id: 3, distance: 2.0)]
+
+# The nearest among the ids a function of the program accepts, here the
+# powers of two.
+test "search_where: the nearest id that is a power of two"
+    index @= new_index(dimension: 1, metric: .euclidean, options: default_options()).must()
+
+    for id in range(from: 3, to: 9)
+        insert(@index, id: id, vector: [to_f32(to_f64(id))]).must()
+
+    assert search_where(index, query: [7.0], k: 1, ef: 10, accepts: math.is_power_of_two).must()[0].id == 8
+
+# How many vectors an index holds.
+test "size: two vectors, one removed"
+    index @= new_index(dimension: 1, metric: .euclidean, options: default_options()).must()
+    insert(@index, id: 1, vector: [1.0]).must()
+    insert(@index, id: 2, vector: [2.0]).must()
+    remove(@index, id: 1).must()
+    assert size(index) == 1
+
+# Whether an index holds an id.
+test "contains: an id held and one not"
+    index @= new_index(dimension: 1, metric: .euclidean, options: default_options()).must()
+    insert(@index, id: 7, vector: [1.0]).must()
+    assert contains(index, id: 7) && !contains(index, id: 8)
+
+# A vector read back, normalized under the cosine.
+test "vector_of: a vector held normalized"
+    index @= new_index(dimension: 2, metric: .cosine, options: default_options()).must()
+    insert(@index, id: 1, vector: [3.0, 4.0]).must()
+    assert vector_of(index, id: 1).must() == [0.6, 0.8]
+
+# The ids an index holds.
+test "ids_of: in the order inserted"
+    index @= new_index(dimension: 1, metric: .euclidean, options: default_options()).must()
+    insert(@index, id: 5, vector: [1.0]).must()
+    insert(@index, id: 3, vector: [2.0]).must()
+    assert ids_of(index) == [5, 3]
+
+# The length of an index's vectors.
+test "dimension_of: an index of three"
+    assert dimension_of(new_index(dimension: 3, metric: .cosine, options: default_options()).must()) == 3
+
+# The measure of an index.
+test "metric_of: the cosine"
+    assert metric_of(new_index(dimension: 3, metric: .cosine, options: default_options()).must()) == .cosine
+
+# An index rebuilt without what was removed.
+test "compact: the removed vector gone"
+    index @= new_index(dimension: 1, metric: .euclidean, options: default_options()).must()
+    insert(@index, id: 1, vector: [1.0]).must()
+    insert(@index, id: 2, vector: [2.0]).must()
+    remove(@index, id: 1).must()
+    assert ids_of(compact(index)) == [2]
+
+# An index written as bytes.
+test "to_bytes: the format's first bytes"
+    bytes = to_bytes(new_index(dimension: 1, metric: .euclidean, options: default_options()).must())
+    assert bytes.slice(from: 0, to: 7) == [82, 86, 72, 78, 83, 87, 49]
+
+# An index written and read back.
+test "from_bytes: an index read back"
+    index @= new_index(dimension: 2, metric: .euclidean, options: default_options()).must()
+    insert(@index, id: 4, vector: [1.0, 2.0]).must()
+    again = from_bytes(to_bytes(index)).must()
+    assert vector_of(again, id: 4).must() == [1.0, 2.0]

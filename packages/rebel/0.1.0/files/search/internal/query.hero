@@ -1,0 +1,182 @@
+# A query read into clauses. Words stand apart by white space (Unicode's
+# White_Space); a word may open with `+`, required, or `-`, refused; a word
+# opening with `"` runs to the next `"` and is a phrase; a word ending with
+# `*` is a prefix. Each word is cut into terms as a text is: one term is a
+# term, several a phrase of them, none nothing. A loop over the query moves
+# at least one byte a pass.
+
+use search/internal/analyze
+use search/internal/codes
+use strings
+use unicode
+
+# A clause that should match: a text holding it scores it.
+constant SHOULD: i64
+    0
+
+# A clause that must match.
+constant MUST: i64
+    1
+
+# A clause that must not match.
+constant MUST_NOT: i64
+    2
+
+# A clause of one term.
+constant TERM: i64
+    0
+
+# A clause of terms side by side.
+constant PHRASE: i64
+    1
+
+# A clause of every term that begins so.
+constant PREFIX: i64
+    2
+
+# One part of a query.
+record Clause
+    # `TERM`, `PHRASE` or `PREFIX`.
+    kind: i64
+    # `SHOULD`, `MUST` or `MUST_NOT`.
+    occur: i64
+    # The terms: one for a term or a prefix, two or more for a phrase.
+    terms: [str]
+    # The place of each term after the first's, which is 0.
+    offsets: [i64]
+
+# The byte width of the character of `query` at `at`.
+function width_at(query: str, at: i64) -> i64
+    return unicode.width_at(query, index: at)
+
+# Whether the character of `query` at `at` is white space.
+function space_at(query: str, at: i64) -> bool
+    return unicode.is_space(query.slice(from: at, to: at + width_at(query, at: at)))
+
+# The clause of the terms `found` holds, under `occur`, or none where it
+# holds none.
+function clause_of(found: analyze.Tokens, occur: i64) -> [Clause]
+    if found.terms.len() == 0
+        return []
+    offsets: [i64] @= []
+
+    for place in found.positions
+        offsets @ offsets.push(place - found.positions[0])
+
+    if found.terms.len() == 1
+        return [Clause(kind: TERM, occur: occur, terms: found.terms, offsets: [0])]
+    return [Clause(kind: PHRASE, occur: occur, terms: found.terms, offsets: offsets)]
+
+# Adds `clauses` to `out`.
+function grow(@out: [Clause], clauses: [Clause])
+    for clause in clauses
+        out @ out.push(clause)
+
+# The clauses of `query`, its words cut into terms with the stop words of
+# `stop` left out. Fails `invalid` where a quote is not closed, or a `*`
+# follows a phrase or a word of several terms.
+function parse(query: str, stop: {str: bool} lent) -> [Clause]?
+    out: [Clause] @= []
+    none: {str: bool} = {}
+    at @= 0
+
+    while at < query.len()
+        if space_at(query, at: at)
+            at @ at + width_at(query, at: at)
+            continue
+        occur @= SHOULD
+
+        if query[at] == '+'
+            occur @ MUST
+            at @ at + 1
+        else if query[at] == '-'
+            occur @ MUST_NOT
+            at @ at + 1
+
+        if at < query.len() && query[at] == '"'
+            close = strings.index_of_from(s: query, substr: "\"", from: at + 1)
+
+            match close
+                .err _ => return fail(code: codes.INVALID, msg: f"the quote at byte {at} of \"{query}\" is not closed")
+                .ok end =>
+                    if end + 1 < query.len() && query[end + 1] == '*'
+                        return fail(
+                            code: codes.INVALID,
+                            msg: f"a `*` follows the phrase ending at byte {end} of \"{query}\"; a prefix is one word"
+                        )
+                    grow(
+                        out: @out,
+                        clauses: clause_of(analyze.tokens(query.slice(from: at + 1, to: end), stop: stop), occur: occur)
+                    )
+                    at @ end + 1
+
+            continue
+        start = at
+
+        while at < query.len() && !space_at(query, at: at)
+            at @ at + width_at(query, at: at)
+
+        word = query.slice(from: start, to: at)
+
+        if word.len() > 0 && word[word.len() - 1] == '*'
+            found = analyze.tokens(word.slice(from: 0, to: word.len() - 1), stop: none)
+
+            if found.terms.len() > 1
+                return fail(
+                    code: codes.INVALID,
+                    msg: f"the prefix \"{word}\" gives {found.terms.len()} terms; a prefix is one term"
+                )
+
+            if found.terms.len() == 1
+                out @ out.push(Clause(kind: PREFIX, occur: occur, terms: found.terms, offsets: [0]))
+        else
+            grow(out: @out, clauses: clause_of(analyze.tokens(word, stop: stop), occur: occur))
+
+    return ok(out)
+
+## Tests
+
+test "parse: empty, white space alone, and words of no term"
+    none: {str: bool} = {}
+    assert parse("", stop: none).must() == []
+    assert parse(" \t　\n", stop: none).must() == []
+    assert parse("+ - , ...", stop: none).must() == []
+
+test "parse: words, required and refused"
+    none: {str: bool} = {}
+    found = parse("Cat +dog -fish", stop: none).must()
+    assert found.len() == 3
+    assert found[0] == Clause(kind: TERM, occur: SHOULD, terms: ["cat"], offsets: [0])
+    assert found[1].occur == MUST && found[1].terms == ["dog"]
+    assert found[2].occur == MUST_NOT && found[2].terms == ["fish"]
+
+test "parse: a phrase, a stop word's place kept, and a word of two terms"
+    stop = analyze.stop_set(["of"])
+    found = parse("+\"bank of america\" e-mail", stop: stop).must()
+    assert found[0] == Clause(kind: PHRASE, occur: MUST, terms: ["bank", "america"], offsets: [0, 2])
+    assert found[1] == Clause(kind: PHRASE, occur: SHOULD, terms: ["e", "mail"], offsets: [0, 1])
+
+test "parse: a prefix, a stop word as a prefix kept, and a lone star"
+    stop = analyze.stop_set(["the"])
+    found = parse("Ser* the* *", stop: stop).must()
+    assert found == [Clause(kind: PREFIX, occur: SHOULD, terms: ["ser"], offsets: [0]), Clause(kind: PREFIX, occur: SHOULD, terms: ["the"], offsets: [0])]
+
+test "parse: an unclosed quote, a star after a phrase, a prefix of two terms"
+    none: {str: bool} = {}
+
+    match parse("a \"b c", stop: none)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "the quote at byte 2 of \"a \"b c\" is not closed"
+
+    assert parse("\"b c\"*", stop: none).is_err()
+    assert parse("e-ma*", stop: none).is_err()
+
+test "parse: a phrase of one term is a term, and words after a closing quote"
+    none: {str: bool} = {}
+    found = parse("\"hello\"world", stop: none).must()
+    assert found == [Clause(kind: TERM, occur: SHOULD, terms: ["hello"], offsets: [0]), Clause(kind: TERM, occur: SHOULD, terms: ["world"], offsets: [0])]
+
+test "parse: words of several bytes and an ideographic space between them"
+    none: {str: bool} = {}
+    found = parse("東京　タワー", stop: none).must()
+    assert found.len() == 2 && found[1].terms == ["タワー"]
