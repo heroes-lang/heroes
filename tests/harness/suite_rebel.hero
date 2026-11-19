@@ -30,7 +30,10 @@
 # failure naming its file and line, and a kept finding the tree no longer
 # shows is a failure too, so the list cannot rot into a list of exemptions for
 # things that are gone. `heroes run tests/harness/rebel_review.hero` prints
-# every finding, kept or not, by instrument. Reads files and runs no compiler.
+# every finding, kept or not, by instrument, and the review's record, what each
+# found and what moved, is
+# `docs/measurements/062-the-coherence-review-of-rebel-282-findings-of-ten-checks-22-repaired-in-four-kinds-261-kept-for-the-readers.md`.
+# Reads files and runs no compiler.
 
 use floors
 use package_face
