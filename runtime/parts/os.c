@@ -586,12 +586,13 @@ static void hero_lease_crash_install(void) {
  * own, defect 2587). Both had: both are flushed and KEPT, so no other thread's
  * line follows the end, and `exit` goes on; this thread takes them again at
  * once for C's own flushes. Either refused: `_Exit` with the code, at once.
- * The holder past the bound is a thread still running, blocked in its write
- * or printing for longer than the bound, or a thread that ended inside a
- * print span its body left open (`hero_print_str` called alone, the lock
- * gone with its thread): measured here on that shape too, which ended at
- * 0.06 s where C's `exit` waited for ever, its line already written. Where a
- * thread's end gives such a span back, this end finds the lock free.
+ * A print span a thread's body left open is given back when the thread ends
+ * (`parts/panic.c`'s `hero_print_thread_leave`, defect 2605), so the holder
+ * past the bound is a thread still running: blocked in its write, printing
+ * for longer than the bound, or holding a span it opened alone
+ * (`hero_print_str` called outside a statement) and not yet ended. Measured
+ * on that span's own shape before defect 2605's repair joined this one: it
+ * ended at 0.06 s here where C's `exit` waited for ever, its line written.
  * What that costs, said: the functions registered before `main` (libc++'s
  * flush, a C library's constructor's, LeakSanitizer's check on Linux) and the
  * flush of every other stream are skipped, only where a thread held stdout or

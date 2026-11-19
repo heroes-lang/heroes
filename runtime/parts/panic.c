@@ -261,7 +261,14 @@ void hero_print_end(void) {
  * of 10 s, and so did 14 lines binding `hero_print_str` in a thread
  * (2026-11-19, this Mac). So a thread leaving
  * its body gives back a span it holds, with no newline, since nothing of a
- * statement was left to write (`parts/spawn.c`). */
+ * statement was left to write (`parts/spawn.c`).
+ *
+ * One account with the end `exit(code:)` asks (defect 2600, `parts/os.c`'s
+ * `hero_exit_end`): that end waits on stdout's lock for a bound and then ends
+ * at once, so it is never held for ever, whoever holds the lock; this keeps a
+ * lock from outliving its thread at all, so that end finds it free and runs
+ * whole, stdout flushed and C's own end with it. The bound is left for a
+ * holder still running. */
 static void hero_print_thread_leave(void) {
     if (!hero_print_open) return;
     hero_print_open = false;
