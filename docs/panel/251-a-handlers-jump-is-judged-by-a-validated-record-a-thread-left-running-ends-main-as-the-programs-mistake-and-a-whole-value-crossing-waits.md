@@ -333,7 +333,7 @@ narrowed to what their pages state.
   lock, the panic's flush, validated J on Linux and Darwin, the goldens J and B' move, and the
   `runtime` suite green.
 
-## The author's verdict
+## Author's verdict
 
 **Ratified, 2026-11-19**, R1 to R3 as proposed, the W1 departure with them: the author's word given at
 about 13:10, before this synthesis was written, meant as *OK to the ratifications as proposed*, of
