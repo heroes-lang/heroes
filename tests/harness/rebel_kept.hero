@@ -83,10 +83,6 @@ constant PARAMETER_LABELS: str
 constant PLAIN_AND_LOCALE: str
     "`numbers.format_percent` writes one fixed form and `i18n/numbers.format_percent` the form a language writes: whether the plain one is the root locale's is the readers' question, and either repair moves a name callers write"
 
-# The reason repaired b.
-constant REPAIRED_B: str
-    "repaired by step 56b of this review, whose commit takes this line out"
-
 # The reason repaired c.
 constant REPAIRED_C: str
     "repaired by step 56c of this review, whose commit takes this line out"
@@ -266,10 +262,6 @@ function kept() -> [Kept]
         Kept(check: "names", key: "web copy with_etag", why: REQUEST_FIRST)
         Kept(check: "names", key: "x509 abbreviated cert", why: PARAMETER_LABELS)
         Kept(check: "names", key: "xlsx abbreviated wb", why: PARAMETER_LABELS)
-        Kept(check: "codes", key: "numbers/internal/fewest undecided", why: REPAIRED_B)
-        Kept(check: "codes", key: "numbers/internal/quick undecided", why: REPAIRED_B)
-        Kept(check: "codes", key: "numbers/internal/side undecided", why: REPAIRED_B)
-        Kept(check: "codes", key: "sql/sqlite/hero_sqlite3 none", why: REPAIRED_B)
         Kept(check: "layers", key: "no row holds containers/internal/codes", why: CONTAINERS_SHARED_MODULES)
         Kept(check: "layers", key: "no row holds containers/internal/samples", why: CONTAINERS_SHARED_MODULES)
         Kept(check: "layers", key: "no row holds containers/internal/storage", why: CONTAINERS_SHARED_MODULES)

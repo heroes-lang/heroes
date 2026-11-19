@@ -68,15 +68,15 @@ function is_normal(x: f64, format: near.Format) -> bool
     return x >= near.pow2(format.min_exp + format.bits - 1) && x < near.infinity()
 
 # `x`, finite, normal in `format` and a value of it, as its significand and
-# power of two. Fails `undecided` where it is not.
+# power of two. Fails `unsupported` where it is not.
 function binary_of(x: f64, format: near.Format) -> Binary?
     if !is_normal(x: x, format: format)
-        return fail(code: "undecided", msg: "not a normal float of the format")
+        return fail(code: "unsupported", msg: "not a normal float of the format")
     parts = exact.split(x)
     unit = 1 << 53 - format.bits
 
     if parts.significand % unit != 0
-        return fail(code: "undecided", msg: "more bits than the format holds")
+        return fail(code: "unsupported", msg: "more bits than the format holds")
     return ok(Binary(significand: parts.significand / unit, exp: parts.exp + 53 - format.bits))
 
 # The float `b` stands for.
@@ -107,7 +107,7 @@ function place(a: i64, tens: i64, b: Binary, format: near.Format) -> i64
     return 0
 
 # The float of `format` next to `b`, above it where `way` is 1 and below it
-# where `way` is -1. Fails `undecided` past the largest finite value and
+# where `way` is -1. Fails `unsupported` past the largest finite value and
 # below the smallest normal one.
 function neighbour(b: Binary, way: i64, format: near.Format) -> Binary?
     lowest = 1 << format.bits - 1
@@ -115,12 +115,12 @@ function neighbour(b: Binary, way: i64, format: near.Format) -> Binary?
 
     if s == lowest << 1
         if b.exp + 1 + format.bits - 1 > format.max_exp
-            return fail(code: "undecided", msg: "past the largest float")
+            return fail(code: "unsupported", msg: "past the largest float")
         return ok(Binary(significand: lowest, exp: b.exp + 1))
 
     if s < lowest
         if b.exp == format.min_exp
-            return fail(code: "undecided", msg: "below the smallest normal float")
+            return fail(code: "unsupported", msg: "below the smallest normal float")
         return ok(Binary(significand: (lowest << 1) - 1, exp: b.exp - 1))
     return ok(Binary(significand: s, exp: b.exp))
 

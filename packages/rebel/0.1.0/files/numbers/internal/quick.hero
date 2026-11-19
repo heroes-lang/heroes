@@ -10,6 +10,11 @@
 # the midpoints around it (`side`), which needs no division. Only that
 # comparison decides: a first float further off costs moves, never a wrong
 # answer.
+#
+# A quick route that cannot decide fails `unsupported`, § A4's code for a form
+# that holds no answer for the value asked, as `fewest` and `side` do; the
+# failure never reaches a caller of `numbers`, whose functions then take the
+# exact route.
 
 use numbers/internal/near
 use numbers/internal/side
@@ -63,10 +68,10 @@ function ten_to(k: i64) -> f64
     return result
 
 # `w` times ten to the `exponent`th as the nearest `f64`, where Clinger's
-# fast path holds. Fails `undecided` where it does not.
+# fast path holds. Fails `unsupported` where it does not.
 function exactly(w: i64, exponent: i64) -> f64?
     if w > TWO53 || exponent < 0 - TENS_MAX
-        return fail(code: "undecided", msg: "past the fast path")
+        return fail(code: "unsupported", msg: "past the fast path")
 
     if exponent < 0
         return ok(to_f64(w) / ten_to(0 - exponent))
@@ -79,17 +84,17 @@ function exactly(w: i64, exponent: i64) -> f64?
     excess = exponent - TENS_MAX
 
     if excess > 15
-        return fail(code: "undecided", msg: "past the fast path")
+        return fail(code: "unsupported", msg: "past the fast path")
     scale = to_i64(ten_to(excess)).must()
 
     if w > TWO53 / scale
-        return fail(code: "undecided", msg: "past the fast path")
+        return fail(code: "unsupported", msg: "past the fast path")
     return ok(to_f64(w * scale) * ten_to(TENS_MAX))
 
 # `r`, the nearest `f64` to some value, as the nearest float of `format` to
 # that value, an `f64`. For an `f32`, rounding twice parts from rounding once
 # only where `r` falls on a midpoint between two `f32`s, which fails
-# `undecided`.
+# `unsupported`.
 function narrowed(r: f64, format: near.Format) -> f64?
     if format.bits == 53
         return ok(r)
@@ -103,7 +108,7 @@ function narrowed(r: f64, format: near.Format) -> f64?
     other = 2.0 * r - f
 
     if to_f64(to_f32(other)) == other
-        return fail(code: "undecided", msg: "a midpoint between two f32s")
+        return fail(code: "unsupported", msg: "a midpoint between two f32s")
     return ok(f)
 
 # `w` times ten to the `exponent`th, near: each multiplication or division by
@@ -126,7 +131,7 @@ function approximately(w: i64, exponent: i64) -> f64
     return result * ten_to(left)
 
 # The float of `format` nearest to `w` times ten to the `exponent`th, by
-# AlgorithmR from the float `approximately` makes. Fails `undecided` where it
+# AlgorithmR from the float `approximately` makes. Fails `unsupported` where it
 # leaves the normal floats or moves too often.
 function refined(w: i64, exponent: i64, format: near.Format) -> f64?
     first = approximately(w: w, exponent: exponent)
@@ -147,15 +152,15 @@ function refined(w: i64, exponent: i64, format: near.Format) -> f64?
         b @ side.neighbour(b: b, way: way, format: format)?
         moves @ moves + 1
 
-    return fail(code: "undecided", msg: "moved too often")
+    return fail(code: "unsupported", msg: "moved too often")
 
 # The float of `format` nearest to the integer `digits` spell times ten to
 # the `exponent`th, as an `f64`: `digits` hold no zero first or last, and
-# the value is inside the range `read` checked. Fails `undecided` where no
+# the value is inside the range `read` checked. Fails `unsupported` where no
 # quick route decides it.
 function value(digits: [u8], exponent: i64, format: near.Format) -> f64?
     if digits.len() == 0 || digits.len() > DIGITS_MAX
-        return fail(code: "undecided", msg: "too many digits")
+        return fail(code: "unsupported", msg: "too many digits")
     w = whole_of(digits)
 
     match exactly(w: w, exponent: exponent)

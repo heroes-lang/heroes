@@ -178,7 +178,7 @@ function busy_timeout(connection: Connection, ms: i64) -> i64
 # order with no parameters, SQLite's words for a failure written into
 # `words`, "" where it gave none. Aborts where `script` holds a zero byte.
 function exec(connection: Connection, script: str, @words: str) -> i64
-    problem: str? @= fail(code: "none", msg: "")
+    problem: str? @= fail(code: "failed", msg: "")
     rc = sqlite3_exec(db: connection, sql: script.cstr(), callback: nullptr, context: nullptr, error: @problem)
     words @ problem.default("")
     return rc
