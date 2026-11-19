@@ -990,3 +990,14 @@ not state (M') refused on them); Deno, the AWS SDK for Go v2 and Boost 1.56.
   panel 250's R1 amended by name.
 - Each landing's goldens, forms and site pages as its seat priced them (`compiler-engineer.md`, § Cuts and
   each question's `implementation_cost`).
+
+## Author's verdict
+
+**Ratified, 2026-11-19**, R1 to R6 as proposed: the author's word given at about 13:10, before this
+sitting's briefs were written, meant as *OK to the ratifications as proposed*, of sittings A, B and C of
+M-rebel-library, recorded as given. Its decision is https://github.com/heroes-lang/heroes/issues/2595,
+opened and closed with this file's commit, its `## Prior art` the lines re-read that day. Filed with it:
+defect 2591 (`>>` lowered as a test of the sign, `improvement`), tasks 2592 (the stack guard's `dladdr`
+inside its signal handler on Linux) and 2593 (the Linux layer's hand-typed function-pointer slots), and
+decision 2594, open, R3's question to the author whether decision 24 admits a vendored C cryptography
+library.
