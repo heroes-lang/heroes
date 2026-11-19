@@ -471,8 +471,9 @@ test "an entry holds one source and what that source needs, and nothing else"
 # holds it and as `tests/harness/suite_spec.hero`'s `fragments` pins it: an
 # example the one document a reader trusts holds is a claim, so it is read.
 test "the specification's catalogue reads"
-    text = "[dependencies.json]\nversion = \"1.4.2\"\nsum = \"sha256-14a856d668dbbf1a29152de3db55b276e1c29cd5599823335de861c4b97da124\"\n\n[dependencies.yaml]\ngit = \"https://git.example.org/ana/yaml\"\ntag = \"v0.3.1\"\ncommit = \"9fceb02d0ae598e95dc970b74767f19372d61af8\"\nsum = \"sha256-cdde804c15d59f1c85f133e063479ca5ecaa27304bbfadbff981caa339274ee9\"\n"
+    text = "[dependencies.json]\nversion = \"1.4.2\"\nsum = \"sha256-14a856d668dbbf1a29152de3db55b276e1c29cd5599823335de861c4b97da124\"\n\n[dependencies.yaml]\ngit = \"https://git.example.org/ana/yaml\"\ntag = \"v0.3.1\"\ncommit = \"9fceb02d0ae598e95dc970b74767f19372d61af8\"\nsum = \"sha256-cdde804c15d59f1c85f133e063479ca5ecaa27304bbfadbff981caa339274ee9\"\n\n[dependencies.kit]\nversion = \"0.1.0\"\nsum = \"sha256-b0edd05953914a1ba4d3be24c2770ae4206b5edf52ed34843bf7323f16405ccb\"\npackages = [\"csv\", \"json\"]\n"
     c = parsed(file: "heroes.toml", text: text)
     assert c.problem == ""
-    assert c.entries.len() == 2
+    assert c.entries.len() == 3
     assert entry(c, name: "yaml").must().commit == "9fceb02d0ae598e95dc970b74767f19372d61af8"
+    assert listing.of(c.listings, entry: "kit") == ["csv", "json"]
