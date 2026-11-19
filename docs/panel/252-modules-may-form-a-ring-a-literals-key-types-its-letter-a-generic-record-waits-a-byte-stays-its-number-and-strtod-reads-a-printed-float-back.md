@@ -715,3 +715,13 @@ not a forecast.
   and Q5, each a paid run and the coordinator's.
 - **The sitting's evidence**, `252-reports/evidence.tar.xz` and `evidence.md`, by `SKILL.md` § 3c, as
   panel 251's (`f4e3594d5`).
+
+## Author's verdict
+
+**Ratified, 2026-11-19**, R1 to R5 as proposed: the author's word given at about 13:10, before this
+sitting's briefs were written, meant as *OK to the ratifications as proposed*, of sittings A, B and C of
+M-rebel-library, recorded as given. Its decision is https://github.com/heroes-lang/heroes/issues/2599,
+opened and closed with this file's commit, its `## Prior art` the lines re-read that day. Filed with it:
+defects 2596 (a container literal typed from its first part alone, `blocking`), 2597 (four containers
+promising an abort they do not give, `blocking`) and 2598 (Rebel's messages writing a byte's number,
+`adjacent`).
