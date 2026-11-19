@@ -45,5 +45,6 @@ checked a web framework's needs against the ledgers (the milestone page's decisi
 capabilities were counted. The question this page left in its falsifiable form, whether a framework
 with no closures reaches Echo's level or collapses into the package it wraps, is not answered by
 the retirement: it stands for whoever measures `web` against Echo with a running application. The
-row left § The chain on 2026-11-19, at M-rebel-library's landing. The page above stands as it was
-written.
+row left § The chain on 2026-11-19, at M-rebel-library's landing. Decisions 819 and 853, which
+scheduled this row with packages organised as Go's tree, are entered in the register of the
+decisions M-rebel-library invalidates, <register>. The page above stands as it was written.
