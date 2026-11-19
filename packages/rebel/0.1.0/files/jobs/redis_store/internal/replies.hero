@@ -1,0 +1,197 @@
+# What the Redis store sends and reads: a job written as the eight
+# arguments the scripts take, a job's member of a set, a duration in
+# microseconds, and the job a script's reply of its hash's fields describes.
+
+use bytes
+use jobs
+use numbers
+use redis
+use time
+
+# The prefix of every key the store writes.
+constant PREFIX: str
+    "rebel_jobs:"
+
+# `d` in whole microseconds, rounded toward zero.
+function micros(d: time.Duration) -> i64
+    return d.nanoseconds / 1_000
+
+# Job `id`'s member of a set and part of its key: its id in fifteen digits.
+function member_of(id: i64) -> str
+    digits = to_str(id)
+
+    if digits.len() >= 15
+        return digits
+    return repeat("0", to_u64(15 - digits.len()).must()) + digits
+
+# The eight arguments the scripts take of `job`, checked: its kind, queue,
+# payload, priority, attempts, unique key, and its start as `now`, `after`
+# and a wait or `at` and an instant, in microseconds. Fails as
+# `jobs.check_job` fails.
+function job_words(job: jobs.Job) -> [str]?
+    jobs.check_job(job)?
+
+    start: [str] = match job.start
+        .now     => ["now", "0"]
+        .after a => ["after", to_str(micros(a.wait))]
+        .at a    => ["at", to_str(time.unix_microseconds(a.instant))]
+
+    return ok(
+        [job.kind, job.queue, jobs.payload_text(job)?, to_str(job.priority), to_str(job.max_attempts), job.unique_key, start[0], start[1]]
+    )
+
+# The job the reply `r` of a hash's fields describes: a map, as `HGETALL`
+# answers over RESP3, or its fields and values in turn, as over RESP2 and
+# from a script. Fails `not_found` where it holds none, as no job is there,
+# and as `jobs.info_of` fails.
+function info_of_reply(r: redis.Reply) -> jobs.Info?
+    entries = redis.entries_of(r)?
+
+    if entries.len() == 0
+        return fail(code: jobs.NOT_FOUND, msg: "the store holds no such job")
+    fields: {str: str} @= {}
+
+    for e in entries
+        fields[redis.text_of(e.key)?] @ redis.text_of(e.value)?
+
+    return jobs.info_of(fields)
+
+# The whole number `text` writes, as the scripts answer one. Fails
+# `invalid` where it writes none.
+function whole(text: str) -> i64?
+    match numbers.parse_int(text)
+        .ok n  => return ok(n)
+        .err _ => return fail(code: jobs.INVALID, msg: f"the store answered \"{text}\" where a whole number was due")
+
+# The word at `at` of a script's reply `items`. Fails `invalid` where the
+# reply is shorter than the scripts write.
+function word_at(items: [str], at: i64) -> str?
+    if at < 0 || at >= items.len()
+        return fail(
+            code: jobs.INVALID,
+            msg: f"the store answered {items.len()} words where a script writes at least {at + 1}"
+        )
+    return ok(items[at])
+
+# The id a job's member writes, without the zeros before it.
+function id_text(member: str) -> str
+    return to_str(whole(member).default(0))
+
+# The ids after the word `ok` that opens `items`.
+function ids_of(items: [str]) -> [i64]?
+    found: [i64] @= []
+
+    for i in range(from: 1, to: items.len())
+        found @ found.push(whole(items[i])?)
+
+    return ok(found)
+
+# Why a call about `claimed`'s attempt found it no longer running.
+function lost(claimed: jobs.Info) -> str
+    return f"job {claimed.id}'s attempt {claimed.attempt} is no longer running: its lease ran out and `rescue` gave it back, or it was finished, cancelled or deleted"
+
+# Nothing, or `not_found` where the script `r` answers found the attempt
+# lost.
+function answered(r: redis.Reply, claimed: jobs.Info) -> ()?
+    texts = redis.texts_of(r)?
+
+    if texts.len() == 1 && texts[0] == "lost"
+        return fail(code: jobs.NOT_FOUND, msg: lost(claimed))
+    return ok()
+
+# The job the script `r` answers, or `not_found` where it found the attempt
+# lost.
+function job_answered(r: redis.Reply, claimed: jobs.Info) -> jobs.Info?
+    answered(r, claimed)?
+    return info_of_reply(r)
+
+test "member_of: one digit, fifteen, and more"
+    assert member_of(7) == "000000000000007"
+    assert member_of(123456789012345) == "123456789012345"
+    assert member_of(1234567890123456) == "1234567890123456"
+
+test "job_words: each start, and a job refused"
+    j @= jobs.new_job("k", .object(members: {"a": .text(v: "città")}))
+    assert job_words(j).must() == ["k", "default", "{\"a\":\"città\"}", "5", "25", "", "now", "0"]
+    j.start @ .after(wait: time.milliseconds(1_500).must())
+    assert job_words(j).must()[6] == "after" && job_words(j).must()[7] == "1500000"
+    j.start @ .at(instant: time.from_unix(whole_seconds: -1, extra_nanoseconds: 0).must())
+    assert job_words(j).must()[7] == "-1000000"
+    j.kind @ ""
+    assert job_words(j).is_err()
+
+test "info_of_reply: the fields of a hash read, nothing not_found, and a field missing"
+    words = [
+        "id"
+        "2"
+        "kind"
+        "k"
+        "queue"
+        "q"
+        "payload"
+        "[1]"
+        "priority"
+        "1"
+        "state"
+        "completed"
+        "attempt"
+        "1"
+        "max_attempts"
+        "1"
+        "unique_key"
+        ""
+        "created_at"
+        "1000"
+        "run_at"
+        "1000"
+        "attempted_at"
+        "2000"
+        "finished_at"
+        "3000"
+        "lease_until"
+        ""
+        "worker"
+        "w"
+        "cancel_requested"
+        "0"
+        "errors"
+        "[]"
+        "output"
+        "{\"n\":1}"
+    ]
+    items: [redis.Reply] @= []
+
+    for w in words
+        items @ items.push(.simple(v: w))
+
+    i = info_of_reply(.array(items: items)).must()
+    assert i.id == 2 && i.state == .completed && i.finished_at.must() == time.from_unix_microseconds(3000).must()
+    assert i.output == .object(members: {"n": .number(v: 1.0)})
+
+    match info_of_reply(.array(items: []))
+        .ok _  => assert false
+        .err e => assert e.code == jobs.NOT_FOUND
+
+    assert info_of_reply(.array(items: [.simple(v: "id"), .simple(v: "2")])).is_err()
+    pairs: [redis.Entry] @= []
+    at: i64 @= 0
+
+    while at + 1 < words.len()
+        pairs @ pairs.push(redis.Entry(key: .simple(v: words[at]), value: .bulk(v: bytes.from_text(words[at + 1]))))
+        at @ at + 2
+
+    assert info_of_reply(.mapping(entries: pairs)).must() == i
+
+test "whole, id_text and ids_of: a member, the ids after ok, and a word refused"
+    assert whole("000000000000042").must() == 42 && id_text("000000000000042") == "42"
+    assert ids_of(["ok", "1", "2"]).must() == [1, 2] && ids_of(["ok"]).must() == []
+    assert whole("x").is_err() && ids_of(["ok", "x"]).is_err()
+
+test "word_at: a word, and one past the reply"
+    assert word_at(["ok", "1"], 1).must() == "1"
+
+    match word_at(["ok"], 1)
+        .ok _  => assert false
+        .err e => assert e.code == jobs.INVALID && e.msg == "the store answered 1 words where a script writes at least 2"
+
+    assert word_at([], 0).is_err()

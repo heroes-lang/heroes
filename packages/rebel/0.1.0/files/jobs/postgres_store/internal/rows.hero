@@ -1,0 +1,80 @@
+# A job read from a row the statements answer, each column the text of one
+# field, as `jobs.info_of` reads them.
+
+use jobs
+use sql
+
+# The job `row` describes. Fails as `jobs.info_of` fails, `invalid` where a
+# column is missing or not of its form.
+function info_of_row(row: sql.Row) -> jobs.Info?
+    fields: {str: str} @= {}
+
+    for i in range(from: 0, to: row.names.len())
+        text = match row.values[i]
+            .text t                                                                 => t.v
+            .null_value | .boolean _ | .integer _ | .float _ | .blob _ | .instant _ => ""
+
+        fields[row.names[i]] @ text
+
+    return jobs.info_of(fields)
+
+# The jobs `rows` describe, in their order. Fails as `info_of_row` fails.
+function infos_of(rows: sql.Rows) -> [jobs.Info]?
+    found: [jobs.Info] @= []
+
+    for row in rows.rows
+        found @ found.push(info_of_row(row)?)
+
+    return ok(found)
+
+test "info_of_row: the columns of a job read, and a column missing refused"
+    names = [
+        "id"
+        "kind"
+        "queue"
+        "payload"
+        "priority"
+        "state"
+        "attempt"
+        "max_attempts"
+        "unique_key"
+        "created_at"
+        "run_at"
+        "attempted_at"
+        "finished_at"
+        "lease_until"
+        "worker"
+        "cancel_requested"
+        "errors"
+        "output"
+    ]
+    texts = [
+        "3"
+        "k"
+        "default"
+        "{\"a\": 1}"
+        "5"
+        "running"
+        "1"
+        "25"
+        ""
+        "1763460000000000"
+        "1763460000000000"
+        "1763460001000000"
+        ""
+        "1763461801000000"
+        "box:1"
+        "0"
+        "[]"
+        "null"
+    ]
+    values: [sql.Value] @= []
+
+    for t in texts
+        values @ values.push(.text(v: t))
+
+    i = info_of_row(sql.Row(names: names, values: values)).must()
+    assert i.id == 3 && i.state == .running && i.payload == .object(members: {"a": .number(v: 1.0)})
+    assert i.lease_until.must().unix_nanoseconds == 1763461801000000000 && i.finished_at.is_err()
+    assert info_of_row(sql.Row(names: ["id"], values: [.text(v: "3")])).is_err()
+    assert infos_of(sql.Rows(columns: [], rows: [])).must() == []

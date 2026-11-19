@@ -1,0 +1,24 @@
+# Reaches Rebel's `jobs/postgres_store`, so that `heroes test` on this file
+# runs the package's own tests (spec § 12). Where the variable
+# `REBEL_POSTGRES_URL` names a server, it makes the store's tables there,
+# enqueues a job, claims it and completes it; elsewhere it says why not.
+
+use <rebel>/jobs
+use <rebel>/jobs/postgres_store
+use <rebel>/os
+use <rebel>/sql/postgres
+
+function main()
+    match os.env("REBEL_POSTGRES_URL")
+        .err _ => print("REBEL_POSTGRES_URL names no server")
+        .ok url =>
+            match postgres.open(postgres.parse_url(url).must())
+                .err e => print("no server: ", e.code, ": ", e.msg)
+                .ok first =>
+                    db @= first
+                    postgres_store.install(@db).must()
+                    id = postgres_store.enqueue(@db, jobs.new_job("hello", .null_value)).must()
+                    claimed = postgres_store.claim(@db, jobs.new_worker([jobs.DEFAULT_QUEUE])).must()
+                    postgres_store.complete(@db, claimed, .null_value).must()
+                    print("job ", id, " ", jobs.state_name(postgres_store.get(@db, id).must().state))
+                    postgres.close(@db).must()

@@ -1,0 +1,109 @@
+# The steps the PostgreSQL store's calls share: a job inserted, the message
+# of a claim lost and of a unique key held, a job's state asked, the store's
+# clock read, and a duration in the microseconds the statements take.
+
+use jobs
+use jobs/postgres_store/internal/rows
+use jobs/postgres_store/internal/statements
+use json
+use sql
+use sql/postgres
+use time
+
+# `d` in whole microseconds, rounded toward zero, as the statements take a
+# wait.
+function micros(d: time.Duration) -> i64
+    return d.nanoseconds / 1_000
+
+# `text` with each zero byte written as U+FFFD, which PostgreSQL's text and
+# JSON cannot hold.
+function clean(text: str) -> str
+    at: i64 @= 0
+    found: bool @= false
+
+    while at < text.len() && !found
+        found @ text[at] == 0
+        at @ at + 1
+
+    if !found
+        return text
+    kept: [str] @= []
+
+    for c in text.chars()
+        if c[0] == 0
+            kept @ kept.push("�")
+        else
+            kept @ kept.push(c)
+
+    return kept.join("")
+
+# Why a call about `claimed`'s attempt found it no longer running.
+function lost(claimed: jobs.Info) -> str
+    return f"job {claimed.id}'s attempt {claimed.attempt} is no longer running: its lease ran out and `rescue` gave it back, or it was finished, cancelled or deleted"
+
+# The failure of a job refused for its unique key `key`, naming the job that
+# holds it where one still does.
+function held(@db: postgres.Db, key: str) -> ()?
+    found = postgres.query(@db, statements.find_unique(), [.text(v: key)])?
+
+    if found.rows.len() == 0
+        return fail(code: jobs.EXISTS, msg: f"the unique key \"{key}\" was held by a job not finished")
+    holder = rows.info_of_row(found.rows[0])?
+    return fail(
+        code: jobs.EXISTS,
+        msg: f"the unique key \"{key}\" is held by job {holder.id}, which is {jobs.state_name(holder.state)}"
+    )
+
+# Inserts `job`, checked, and answers its id. Fails as `jobs.check_job` and
+# the statement fail, and `exists` where its unique key is held.
+function insert_one(@db: postgres.Db, job: jobs.Job) -> i64?
+    jobs.check_job(job)?
+    params: [sql.Value] @= [
+        .text(v: job.kind)
+        .text(v: job.queue)
+        .text(v: jobs.payload_text(job)?)
+        .integer(v: job.priority)
+        .integer(v: job.max_attempts)
+        .text(v: job.unique_key)
+    ]
+    statement: str @= statements.insert(statements.START_NOW)
+
+    match job.start
+        .now => _ = 0
+        .after a =>
+            statement @ statements.insert(statements.START_AFTER)
+            params @ params.push(.integer(v: micros(a.wait)))
+        .at a =>
+            statement @ statements.insert(statements.START_AT)
+            params @ params.push(.instant(v: a.instant))
+
+    found = postgres.query(@db, statement, params)?
+
+    if found.rows.len() == 0
+        held(@db, job.unique_key)?
+        return fail(code: jobs.EXISTS, msg: f"the unique key \"{job.unique_key}\" is held")
+    return sql.integer_at(found.rows[0], 0)
+
+# The state's name and unique key of job `id`. Fails `not_found` where the
+# store holds no such job.
+function state_of(@db: postgres.Db, id: i64) -> sql.Row?
+    found = postgres.query(@db, statements.STATE_OF, [.integer(v: id)])?
+
+    if found.rows.len() == 0
+        return fail(code: jobs.NOT_FOUND, msg: f"the store holds no job {id}")
+    return ok(found.rows[0])
+
+# The store's clock now.
+function clock(@db: postgres.Db) -> time.Instant?
+    row = postgres.query_one(@db, statements.CLOCK, [])?
+    return time.from_unix_microseconds(sql.integer_at(row, 0)?)
+
+test "micros: whole microseconds, rounded toward zero either way"
+    assert micros(time.Duration(nanoseconds: 1_999)) == 1 && micros(time.Duration(nanoseconds: -1_999)) == -1
+    assert micros(time.seconds(30).must()) == 30_000_000
+
+test "clean: a text kept whole, and a zero byte made U+FFFD"
+    assert clean("città") == "città" && clean("") == ""
+    zero = json.text_of(json.parse("\"a\\u0000b\"").must()).must()
+    assert clean(zero) == "a�b"
+    assert lost(jobs.Info(id: 4, kind: "k", payload: .null_value, queue: "q", priority: 5, state: .running, attempt: 2, max_attempts: 3, unique_key: "", created_at: time.epoch(), run_at: time.epoch(), attempted_at: ok(time.epoch()), finished_at: ok(time.epoch()), lease_until: ok(time.epoch()), worker: "", cancel_requested: false, errors: [], output: .null_value)) == "job 4's attempt 2 is no longer running: its lease ran out and `rescue` gave it back, or it was finished, cancelled or deleted"

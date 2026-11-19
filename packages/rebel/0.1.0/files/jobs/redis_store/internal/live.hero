@@ -1,0 +1,20 @@
+# A connection for the tests that run against a live Redis: the server the
+# variable `REBEL_REDIS_URL` names, every key of the store's prefix removed
+# first, so each test starts from an empty store. Point it at a server of
+# tests: it removes those keys.
+
+use jobs/redis_store/internal/replies
+use os
+use redis
+
+# A connection to the server `REBEL_REDIS_URL` names, the store's keys
+# removed. Fails `not_found` where the variable is not set, and as
+# `redis.parse_url`, `redis.open` and the commands fail.
+function connect() -> redis.Client?
+    url = match os.env("REBEL_REDIS_URL")
+        .ok u  => u
+        .err _ => return fail(code: redis.NOT_FOUND, msg: "REBEL_REDIS_URL names no server")
+
+    c @= redis.open(redis.parse_url(url)?)?
+    _ = redis.call(@c, ["EVAL", "for _, k in ipairs(redis.call('KEYS', ARGV[1] .. '*')) do redis.call('DEL', k) end return 0", "0", replies.PREFIX])?
+    return ok(c)

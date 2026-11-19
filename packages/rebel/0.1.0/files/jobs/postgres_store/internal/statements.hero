@@ -1,0 +1,198 @@
+# The SQL of the PostgreSQL store: the tables, and each statement that
+# enqueues, claims, finishes, reads and keeps jobs. Every value goes as a
+# parameter; the only text built here is a list of placeholders. A job is
+# read back as the text fields `jobs.info_of` reads, the instants as
+# microseconds since 1970.
+
+# The table of jobs.
+constant JOBS_TABLE: str
+    "rebel_jobs"
+
+# The table of the periodic schedules' next runs.
+constant PERIODIC_TABLE: str
+    "rebel_jobs_periodic"
+
+# The table of the queues paused.
+constant QUEUES_TABLE: str
+    "rebel_jobs_queues"
+
+# The script that makes the tables and their indexes where they are not.
+constant SCHEMA: str
+    "SELECT pg_advisory_xact_lock(hashtext('rebel_jobs'));\nCREATE TABLE IF NOT EXISTS rebel_jobs (id bigserial PRIMARY KEY, kind text NOT NULL CHECK (kind <> ''), queue text NOT NULL CHECK (queue <> ''), payload jsonb NOT NULL, priority smallint NOT NULL CHECK (priority BETWEEN 1 AND 9), state text NOT NULL DEFAULT 'available' CHECK (state IN ('available', 'running', 'completed', 'failed', 'cancelled')), attempt integer NOT NULL DEFAULT 0, max_attempts integer NOT NULL CHECK (max_attempts >= 1), unique_key text NOT NULL DEFAULT '', created_at timestamptz NOT NULL DEFAULT now(), run_at timestamptz NOT NULL, attempted_at timestamptz, finished_at timestamptz, lease_until timestamptz, worker text NOT NULL DEFAULT '', cancel_requested boolean NOT NULL DEFAULT false, errors jsonb NOT NULL DEFAULT '[]', output jsonb NOT NULL DEFAULT 'null');\nCREATE INDEX IF NOT EXISTS rebel_jobs_ready ON rebel_jobs (queue, priority, run_at, id) WHERE state = 'available';\nCREATE INDEX IF NOT EXISTS rebel_jobs_leases ON rebel_jobs (lease_until) WHERE state = 'running';\nCREATE INDEX IF NOT EXISTS rebel_jobs_finished ON rebel_jobs (queue, state, finished_at) WHERE state IN ('completed', 'failed', 'cancelled');\nCREATE UNIQUE INDEX IF NOT EXISTS rebel_jobs_unique ON rebel_jobs (unique_key) WHERE unique_key <> '' AND state IN ('available', 'running');\nCREATE TABLE IF NOT EXISTS rebel_jobs_periodic (name text PRIMARY KEY, schedule text NOT NULL, next_at timestamptz NOT NULL);\nCREATE TABLE IF NOT EXISTS rebel_jobs_queues (name text PRIMARY KEY, paused boolean NOT NULL DEFAULT false);\n"
+
+# A job's fields, each as the text `jobs.info_of` reads.
+constant COLUMNS: str
+    "id::text AS id, kind, queue, payload::text AS payload, priority::text AS priority, state, attempt::text AS attempt, max_attempts::text AS max_attempts, unique_key, (extract(epoch FROM created_at) * 1000000)::bigint::text AS created_at, (extract(epoch FROM run_at) * 1000000)::bigint::text AS run_at, coalesce((extract(epoch FROM attempted_at) * 1000000)::bigint::text, '') AS attempted_at, coalesce((extract(epoch FROM finished_at) * 1000000)::bigint::text, '') AS finished_at, coalesce((extract(epoch FROM lease_until) * 1000000)::bigint::text, '') AS lease_until, worker, cancel_requested::int::text AS cancel_requested, errors::text AS errors, output::text AS output"
+
+# The conflict a unique key meets: a job not finished holding it.
+constant ON_UNIQUE: str
+    "ON CONFLICT (unique_key) WHERE unique_key <> '' AND state IN ('available', 'running') DO NOTHING"
+
+# The insert of one job, its start `run_at` written by the caller: `now()`,
+# a wait of `$7` microseconds, or the instant `$7`. `$1` kind, `$2` queue,
+# `$3` payload, `$4` priority, `$5` attempts, `$6` unique key.
+function insert(run_at: str) -> str
+    return f"INSERT INTO rebel_jobs (kind, queue, payload, priority, max_attempts, unique_key, run_at) VALUES ($1, $2, $3::jsonb, $4, $5, $6, {run_at}) {ON_UNIQUE} RETURNING id"
+
+# The start of a job enqueued now.
+constant START_NOW: str
+    "now()"
+
+# The start of a job enqueued to run after `$7` microseconds.
+constant START_AFTER: str
+    "now() + $7::bigint * interval '1 microsecond'"
+
+# The start of a job enqueued to run at the instant `$7`.
+constant START_AT: str
+    "$7::timestamptz"
+
+# A list of `count` placeholders from `$first`, separated by commas.
+function placeholders(first: i64, count: i64) -> str
+    parts: [str] @= []
+
+    for i in range(from: first, to: first + count)
+        parts @ parts.push(f"${i}")
+
+    return parts.join(", ")
+
+# The claim of the next job ready in `queues` queues, `$1` the lease in
+# microseconds, `$2` the worker's name, `$3` on the queues.
+function claim(queues: i64) -> str
+    return f"UPDATE rebel_jobs SET state = 'running', attempt = attempt + 1, attempted_at = now(), lease_until = now() + $1::bigint * interval '1 microsecond', worker = $2 WHERE id = (SELECT id FROM rebel_jobs WHERE state = 'available' AND run_at <= now() AND queue IN ({placeholders(first: 3, count: queues)}) AND queue NOT IN (SELECT name FROM rebel_jobs_queues WHERE paused) ORDER BY priority, run_at, id LIMIT 1 FOR UPDATE SKIP LOCKED) RETURNING {COLUMNS}"
+
+# The attempt completed, `$3` its output.
+constant COMPLETE: str
+    "UPDATE rebel_jobs SET state = 'completed', finished_at = now(), lease_until = NULL, output = $3::jsonb WHERE id = $1 AND state = 'running' AND attempt = $2 RETURNING id"
+
+# The attempt failed with the error `$3`: the job waits `$4` microseconds,
+# or ends failed, or cancelled where that was asked.
+constant FAIL_ATTEMPT: str
+    "UPDATE rebel_jobs SET state = CASE WHEN cancel_requested THEN 'cancelled' WHEN attempt >= max_attempts THEN 'failed' ELSE 'available' END, run_at = CASE WHEN (cancel_requested OR attempt >= max_attempts) THEN run_at ELSE now() + $4::bigint * interval '1 microsecond' END, finished_at = CASE WHEN (cancel_requested OR attempt >= max_attempts) THEN now() ELSE NULL END, lease_until = NULL, errors = errors || jsonb_build_array(jsonb_build_object('attempt', attempt, 'at', (extract(epoch FROM now()) * 1000000)::bigint, 'error', $3::text)) WHERE id = $1 AND state = 'running' AND attempt = $2 RETURNING "
+
+# The attempt failed with the error `$3`, and the job with it, for good, or
+# cancelled where that was asked.
+constant DISCARD: str
+    "UPDATE rebel_jobs SET state = CASE WHEN cancel_requested THEN 'cancelled' ELSE 'failed' END, finished_at = now(), lease_until = NULL, errors = errors || jsonb_build_array(jsonb_build_object('attempt', attempt, 'at', (extract(epoch FROM now()) * 1000000)::bigint, 'error', $3::text)) WHERE id = $1 AND state = 'running' AND attempt = $2 RETURNING id"
+
+# The attempt given back uncounted, the job to run again after `$3`
+# microseconds, or cancelled where that was asked.
+constant SNOOZE: str
+    "UPDATE rebel_jobs SET state = CASE WHEN cancel_requested THEN 'cancelled' ELSE 'available' END, attempt = CASE WHEN cancel_requested THEN attempt ELSE attempt - 1 END, run_at = CASE WHEN cancel_requested THEN run_at ELSE now() + $3::bigint * interval '1 microsecond' END, finished_at = CASE WHEN cancel_requested THEN now() ELSE NULL END, lease_until = NULL WHERE id = $1 AND state = 'running' AND attempt = $2 RETURNING id"
+
+# The attempt's lease renewed to `$3` microseconds from now.
+constant EXTEND: str
+    "UPDATE rebel_jobs SET lease_until = now() + $3::bigint * interval '1 microsecond' WHERE id = $1 AND state = 'running' AND attempt = $2 RETURNING "
+
+# Every running job whose lease ran out, given back to wait for no time, or
+# ended where it had no attempt left or its cancellation was asked.
+constant RESCUE: str
+    "UPDATE rebel_jobs SET state = CASE WHEN cancel_requested THEN 'cancelled' WHEN attempt >= max_attempts THEN 'failed' ELSE 'available' END, run_at = CASE WHEN (cancel_requested OR attempt >= max_attempts) THEN run_at ELSE now() END, finished_at = CASE WHEN (cancel_requested OR attempt >= max_attempts) THEN now() ELSE NULL END, lease_until = NULL, errors = errors || jsonb_build_array(jsonb_build_object('attempt', attempt, 'at', (extract(epoch FROM now()) * 1000000)::bigint, 'error', 'the lease of the worker \"' || worker || '\" ran out before the attempt finished')) WHERE state = 'running' AND lease_until < now()"
+
+# Job `$1` cancelled where it waits, or its cancellation asked where it
+# runs; its new state answered.
+constant CANCEL: str
+    "UPDATE rebel_jobs SET state = CASE WHEN state = 'available' THEN 'cancelled' ELSE state END, finished_at = CASE WHEN state = 'available' THEN now() ELSE finished_at END, cancel_requested = (state = 'running') WHERE id = $1 AND state IN ('available', 'running') RETURNING state"
+
+# Job `$1`, not running, made ready now with one attempt more where it had
+# none left, unless another job not finished holds its unique key.
+constant RETRY: str
+    "UPDATE rebel_jobs AS j SET state = 'available', run_at = CASE WHEN j.state = 'available' THEN least(j.run_at, now()) ELSE now() END, finished_at = NULL, cancel_requested = false, max_attempts = greatest(j.max_attempts, j.attempt + 1) WHERE j.id = $1 AND j.state <> 'running' AND NOT EXISTS (SELECT 1 FROM rebel_jobs AS o WHERE j.unique_key <> '' AND o.unique_key = j.unique_key AND o.state IN ('available', 'running') AND o.id <> j.id) RETURNING "
+
+# Job `$1` removed where it does not run.
+constant DELETE: str
+    "DELETE FROM rebel_jobs WHERE id = $1 AND state <> 'running' RETURNING id"
+
+# The state and unique key of job `$1`.
+constant STATE_OF: str
+    "SELECT state, unique_key FROM rebel_jobs WHERE id = $1"
+
+# Every job of state `$1` that finished more than `$2` microseconds ago,
+# removed.
+constant PURGE: str
+    "DELETE FROM rebel_jobs WHERE state = $1 AND finished_at < now() - $2::bigint * interval '1 microsecond'"
+
+# The queue `$1` paused.
+constant PAUSE: str
+    "INSERT INTO rebel_jobs_queues (name, paused) VALUES ($1, true) ON CONFLICT (name) DO UPDATE SET paused = true"
+
+# The queue `$1` claimed from again.
+constant RESUME: str
+    "UPDATE rebel_jobs_queues SET paused = false WHERE name = $1"
+
+# The queues paused, by name.
+constant PAUSED: str
+    "SELECT name FROM rebel_jobs_queues WHERE paused ORDER BY name"
+
+# How many jobs stand in each queue and state.
+constant COUNTS: str
+    "SELECT queue, state, count(*) AS jobs FROM rebel_jobs GROUP BY queue, state ORDER BY queue, state"
+
+# The jobs of queue `$1` in state `$2`, `$3` of them after the first `$4`,
+# in the order of `state`: the order they would be claimed for `available`,
+# the lease that runs out first for `running`, the newest first otherwise.
+function list(state: str) -> str
+    order = match state
+        "available" => "run_at > now(), CASE WHEN run_at <= now() THEN priority ELSE 0 END, run_at, id"
+        "running"   => "lease_until, id"
+        _           => "finished_at DESC, id DESC"
+
+    return f"SELECT {COLUMNS} FROM rebel_jobs WHERE queue = $1 AND state = $2 ORDER BY {order} LIMIT $3 OFFSET $4"
+
+# The job not finished holding the unique key `$1`.
+function find_unique() -> str
+    return f"SELECT {COLUMNS} FROM rebel_jobs WHERE unique_key = $1 AND state IN ('available', 'running')"
+
+# One job, `$1`, by its id.
+function by_id() -> str
+    return f"SELECT {COLUMNS} FROM rebel_jobs WHERE id = $1"
+
+# The store's clock now, in microseconds.
+constant CLOCK: str
+    "SELECT (extract(epoch FROM now()) * 1000000)::bigint AS now"
+
+# The schedule `$1` kept with its text `$2` and next run `$3`, unless it is
+# kept with that text already.
+constant KEEP_SCHEDULE: str
+    "INSERT INTO rebel_jobs_periodic (name, schedule, next_at) VALUES ($1, $2, $3) ON CONFLICT (name) DO UPDATE SET schedule = excluded.schedule, next_at = excluded.next_at WHERE rebel_jobs_periodic.schedule <> excluded.schedule"
+
+# The next run kept of schedule `$1`, in microseconds.
+constant NEXT_RUN: str
+    "SELECT (extract(epoch FROM next_at) * 1000000)::bigint AS next_at FROM rebel_jobs_periodic WHERE name = $1"
+
+# The next run of schedule `$1` moved from `$3` to `$2`, and where it moved,
+# its job enqueued in the same statement: `$4` kind, `$5` queue, `$6`
+# payload, `$7` priority, `$8` attempts, `$9` unique key.
+constant ADVANCE: str
+    "WITH advanced AS (UPDATE rebel_jobs_periodic SET next_at = $2 WHERE name = $1 AND next_at = $3 RETURNING name) INSERT INTO rebel_jobs (kind, queue, payload, priority, max_attempts, unique_key, run_at) SELECT $4, $5, $6::jsonb, $7, $8, $9, now() FROM advanced ON CONFLICT (unique_key) WHERE unique_key <> '' AND state IN ('available', 'running') DO NOTHING RETURNING id"
+
+test "insert: the three starts"
+    assert insert(START_NOW) == "INSERT INTO rebel_jobs (kind, queue, payload, priority, max_attempts, unique_key, run_at) VALUES ($1, $2, $3::jsonb, $4, $5, $6, now()) ON CONFLICT (unique_key) WHERE unique_key <> '' AND state IN ('available', 'running') DO NOTHING RETURNING id"
+    assert strings_end(
+        s: insert(START_AFTER),
+        tail: "now() + $7::bigint * interval '1 microsecond') ON CONFLICT (unique_key) WHERE unique_key <> '' AND state IN ('available', 'running') DO NOTHING RETURNING id"
+    )
+    assert strings_end(
+        s: insert(START_AT),
+        tail: "$6, $7::timestamptz) ON CONFLICT (unique_key) WHERE unique_key <> '' AND state IN ('available', 'running') DO NOTHING RETURNING id"
+    )
+
+test "placeholders and claim: one queue, three, and none"
+    assert placeholders(first: 3, count: 1) == "$3"
+    assert placeholders(first: 3, count: 3) == "$3, $4, $5"
+    assert placeholders(first: 1, count: 0) == ""
+    assert strings_end(
+        s: claim(2),
+        tail: "queue IN ($3, $4) AND queue NOT IN (SELECT name FROM rebel_jobs_queues WHERE paused) ORDER BY priority, run_at, id LIMIT 1 FOR UPDATE SKIP LOCKED) RETURNING " + COLUMNS
+    )
+
+test "list: the order of each kind of state"
+    assert strings_end(
+        s: list("available"),
+        tail: "ORDER BY run_at > now(), CASE WHEN run_at <= now() THEN priority ELSE 0 END, run_at, id LIMIT $3 OFFSET $4"
+    )
+    assert strings_end(s: list("running"), tail: "ORDER BY lease_until, id LIMIT $3 OFFSET $4")
+    assert strings_end(s: list("failed"), tail: "ORDER BY finished_at DESC, id DESC LIMIT $3 OFFSET $4")
+
+# Whether `s` ends with `tail`, for the tests.
+function strings_end(s: str, tail: str) -> bool
+    return s.len() >= tail.len() && s.slice(from: s.len() - tail.len(), to: s.len()) == tail

@@ -1,0 +1,10 @@
+# Reaches Rebel's `jobs`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It makes a job and a worker and checks
+# both, as a program does before it hands them to a store.
+
+use <rebel>/jobs
+
+function main()
+    job = jobs.new_job("send_email", .object(members: {"to": .text(v: "ana@example.org")}))
+    worker = jobs.new_worker([jobs.DEFAULT_QUEUE])
+    print(jobs.check_job(job).is_err(), " ", jobs.check_worker(worker).is_err())

@@ -1,0 +1,345 @@
+# The ledger of `jobs`: background work kept in a store and claimed by
+# workers, measured against Go's github.com/riverqueue/river v0.51.2 (with
+# `rivertype`) and github.com/hibiken/asynq v0.26.0 (their `go doc -all`,
+# the modules fetched into the scratch folder on 2026-11-18), Python's
+# Celery 5.7.0 and RQ 3.0.0 (`dir` of their applications, tasks, results,
+# canvas, schedules, queues, jobs, workers and registries, installed into the
+# scratch folder the same day), Ruby's Sidekiq 8.1.7 (the methods of its
+# `Job`, `Client`, `Queue`, `JobRecord`, sets, `Stats` and process sets,
+# installed into the scratch folder the same day; a `ruby` line), and Rust's
+# apalis 1.2.0, apalis-core 1.2.0, apalis-sql 0.7.4, apalis-cron 1.1.0 and
+# apalis-redis 1.1.1 (their items on docs.rs, read on 2026-11-19).
+#
+# The area is three faces: `jobs`, the values every store shares, and
+# `jobs/postgres_store` and `jobs/redis_store`, which keep the jobs and
+# answer the same calls. The blocks below hold the calls both stores answer,
+# each naming both; the two stores' own ledgers hold what belongs to one of
+# them. The expected values of the tests were asked of Python's croniter
+# 7.0.0 (the runs of the schedules) and of the two servers themselves: the
+# live runs, on 2026-11-19, reached PostgreSQL 16.15 (the image
+# postgres:16.15-alpine, in a container of this Mac) and Redis 8.10.2 (built
+# from its source in the scratch folder, run on this Mac's loopback).
+
+capability jobs/job  a job as a value: which work, its arguments as JSON, its queue, its priority, its attempts
+  heroes  jobs.Job, jobs.new_job, jobs.check_job, jobs.payload_text, jobs.DEFAULT_QUEUE, jobs.DEFAULT_PRIORITY, jobs.FIRST_PRIORITY, jobs.LAST_PRIORITY, jobs.DEFAULT_MAX_ATTEMPTS, jobs.MAX_NAME_BYTES
+  go      river.JobArgs, river.Job, river.InsertOpts (Queue, Priority, MaxAttempts), river.InsertManyParams, river.JobArgsWithInsertOpts, river.JobArgsWithKindAliases, river.Config.MaxAttempts, rivertype.JobArgs, rivertype.JobInsertParams, asynq.NewTask, asynq.Task, asynq.Task.Type, asynq.Task.Payload, asynq.Option, asynq.OptionType, asynq.Queue, asynq.MaxRetry
+  rust    apalis::prelude::Task, apalis::prelude::TaskBuilder, apalis::prelude::Data, apalis::prelude::TaskFn, apalis::prelude::task_fn, apalis_core::task::Task, apalis_core::task::builder::TaskBuilder, apalis_core::task::data::Data, apalis_core::task::data::AddExtension, apalis_core::task::data::MissingDataError, apalis_core::task::task_fn::TaskFn, apalis_core::task::task_fn::task_fn, apalis_core::task::from_request::FromRequest, apalis_core::task::into_response::IntoResponse, apalis_core::backend::codec::Codec
+  python  celery.Task, celery.Task.name, celery.Task.priority, celery.Task.max_retries, celery.Task.apply_async (queue, priority, max_retries), celery.Task.signature, celery.Signature, celery.signature, celery.shared_task, celery.Celery.task, celery.Celery.register_task, celery.Celery.tasks, rq.job.Job.create, rq.job.Job.args, rq.job.Job.kwargs, rq.job.Job.func, rq.job.Job.func_name, rq.job.Job.instance, rq.job.Job.data, rq.Queue.create_job, rq.Queue.parse_args
+  ruby    Sidekiq::Job.set, Sidekiq::Job::Setter.set, Sidekiq::Job.sidekiq_options, Sidekiq::Job.queue_as, Sidekiq.default_job_options
+  note    the kind is the program's own name for the work, as river's `Kind`, asynq's type and Celery's task name are, and the payload any JSON value; a priority from 1, claimed first, to 9, 5 by default, so a job can be put before the rest or after them: river's runs 1 to 4 with 1 the default, Celery's on Redis 0 to 9, and asynq, RQ and Sidekiq have none per job
+
+capability jobs/start  when a job first runs: now, after a wait, or at an instant
+  heroes  jobs.Start
+  go      river.InsertOpts.ScheduledAt, asynq.ProcessAt, asynq.ProcessIn
+  rust    -
+  python  celery.Task.apply_async (countdown, eta), rq.Queue.enqueue_at, rq.Queue.enqueue_in, rq.Queue.schedule_job, rq.Queue.scheduled_job_registry, rq.job.Job.is_scheduled
+  ruby    Sidekiq::Job.perform_in, Sidekiq::Job.perform_at, Sidekiq::Job.delay_for, Sidekiq::Job.delay_until, Sidekiq::Job::Setter.perform_in, Sidekiq::Job::Setter.perform_at, Sidekiq::Client.enqueue_in, Sidekiq::Client.enqueue_to_in
+  note    a wait is read on the store's clock, not the program's, so every program agrees on when a job is due
+
+capability jobs/states  where a job stands: waiting, running, completed, failed for good, cancelled
+  heroes  jobs.State, jobs.state_name, jobs.parse_state, jobs.is_finished
+  go      rivertype.JobState, rivertype.JobStates, rivertype.JobStateAvailable, rivertype.JobStateScheduled, rivertype.JobStateRetryable, rivertype.JobStateRunning, rivertype.JobStateCompleted, rivertype.JobStateDiscarded, rivertype.JobStateCancelled, rivertype.JobStatePending, asynq.TaskState, asynq.TaskState.String, asynq.TaskStatePending, asynq.TaskStateScheduled, asynq.TaskStateRetry, asynq.TaskStateActive, asynq.TaskStateCompleted, asynq.TaskStateArchived, asynq.TaskStateAggregating
+  rust    apalis_core::task::status::Status, apalis_core::task::status::AtomicStatus, apalis_core::task::status::StatusError, apalis_core::task::context::TerminalState
+  python  celery.result.AsyncResult.state, celery.result.AsyncResult.status, celery.result.AsyncResult.ready, celery.result.AsyncResult.successful, celery.result.AsyncResult.failed, rq.registry.JobStatus, rq.job.Job.get_status, rq.job.Job.set_status, rq.job.Job.is_queued, rq.job.Job.is_started, rq.job.Job.is_finished, rq.job.Job.is_failed, rq.job.Job.is_canceled, rq.job.Job.is_deferred, rq.job.Job.is_stopped
+  ruby    Sidekiq::SortedEntry.error?
+  note    river's `scheduled` and `retryable`, asynq's `scheduled` and `retry`, are `available` here with a later `run_at`; river's `discarded` and asynq's `archived` are `failed`; river's `pending` and asynq's `aggregating` have no state here (their blocks below)
+
+capability jobs/info  what a store holds of a job: its attempts, its times, its worker, its errors, its output
+  heroes  jobs.Info, jobs.AttemptError, jobs.info_of
+  go      rivertype.JobRow, rivertype.JobRow.Output, rivertype.AttemptError, river.JobStatistics, asynq.TaskInfo, asynq.GetTaskID, asynq.GetQueueName, asynq.GetRetryCount, asynq.GetMaxRetry
+  rust    apalis_core::task::attempt::Attempt, apalis_core::task::task_id::TaskId, apalis_core::task::task_id::TaskIdError, apalis_core::task::task_id::RandomId, apalis_core::task::task_id::GenerateId, apalis_core::task::task_id::coalesce_ids, apalis_core::task::ExecutionContext, apalis_core::task::context::TaskContext, apalis_core::task::context::TaskStateError, apalis_core::task::runs::Run
+  python  celery.result.AsyncResult.id, celery.result.AsyncResult.task_id, celery.result.AsyncResult.name, celery.result.AsyncResult.args, celery.result.AsyncResult.kwargs, celery.result.AsyncResult.retries, celery.result.AsyncResult.queue, celery.result.AsyncResult.worker, celery.result.AsyncResult.date_done, celery.result.AsyncResult.traceback, celery.result.AsyncResult.info, celery.Task.request, rq.job.Job.id, rq.job.Job.exc_info, rq.job.Job.get_executions, rq.executions, rq.get_current_job, rq.job.Job.get_call_string, rq.job.Job.to_dict, rq.job.Job.key
+  ruby    Sidekiq::JobRecord, Sidekiq::JobRecord.jid, Sidekiq::JobRecord.klass, Sidekiq::JobRecord.display_class, Sidekiq::JobRecord.args, Sidekiq::JobRecord.display_args, Sidekiq::JobRecord.queue, Sidekiq::JobRecord.created_at, Sidekiq::JobRecord.enqueued_at, Sidekiq::JobRecord.failed_at, Sidekiq::JobRecord.retried_at, Sidekiq::JobRecord.error_backtrace, Sidekiq::JobRecord.item, Sidekiq::JobRecord.value, Sidekiq::JobRecord.parse, Sidekiq::JobRecord.[], Sidekiq::SortedEntry.at, Sidekiq::SortedEntry.score, Sidekiq::SortedEntry.id
+  note    every attempt's error is kept with its number and time, as river's `errors` are; no trace is kept (river's `Trace`, Celery's `traceback`): a Heroes failure has no stack a program reads, so the error is the program's own words
+
+capability jobs/worker  how a worker claims: its name, its queues, its lease, its waits, its poll
+  heroes  jobs.Worker, jobs.new_worker, jobs.check_worker
+  go      river.Config, river.Config.ID, river.Config.Queues, river.Config.FetchPollInterval, river.Config.FetchCooldown, river.Config.PollOnly, river.QueueConfig, river.QueueConfig.FetchPollInterval, river.QueueConfig.FetchCooldown, river.Client.ID, asynq.Config, asynq.Config.Queues, asynq.Config.TaskCheckInterval, asynq.Config.DelayedTaskCheckInterval
+  rust    apalis::config::WorkerConfig, apalis::config::WorkerFromConfig, apalis_core::worker::builder::WorkerBuilder, apalis_core::backend::ext::poll_strategy::PollStrategy, apalis_core::backend::ext::poll_strategy::IntervalStrategy, apalis_core::backend::ext::poll_strategy::BackoffStrategy, apalis_core::backend::ext::poll_strategy::BackoffConfig, apalis_core::backend::ext::poll_strategy::Strategy, apalis_core::backend::ext::poll_strategy::StreamStrategy, apalis_core::backend::ext::poll_strategy::FutureStrategy, apalis_core::backend::ext::poll_strategy::BoxedPollStrategy, apalis_core::backend::ext::poll_strategy::PollWith, apalis_core::backend::ext::poll_strategy::ActivityState, apalis_core::backend::ext::poll_strategy::PollMetrics, apalis_core::backend::ext::poll_strategy::PollSnapshot
+  python  rq.Worker, rq.SimpleWorker, rq.worker.Worker.queue_names, rq.worker.Worker.queue_keys, rq.worker.Worker.validate_queues, rq.worker.Worker.dequeue_timeout, rq.worker.Worker.key, rq.worker.Worker.name, celery.Celery.Worker, celery.Celery.WorkController, celery.Celery.select_queues
+  ruby    Sidekiq.configure_server, Sidekiq::Config
+  note    one name, the host and the process id by default, kept with each job it claims; a poll of a second as river's and asynq's
+
+capability jobs/retry-waits  the wait before a failed job runs again, growing with each failure, spread by chance
+  heroes  jobs.default_backoff, jobs.retry_wait, jobs.Worker (backoff)
+  go      river.ClientRetryPolicy, river.DefaultClientRetryPolicy, river.DefaultClientRetryPolicy.NextRetry, river.Config.RetryPolicy, river.WorkerDefaults.NextRetry, asynq.RetryDelayFunc, asynq.DefaultRetryDelayFunc, asynq.Config.RetryDelayFunc
+  rust    apalis::layers::retry::RetryLayer, apalis::layers::retry::Retry, apalis::layers::retry::RetryPolicy, apalis::layers::retry::Policy, apalis::layers::retry::BackoffRetryPolicy, apalis::layers::retry::RetryIfPolicy, apalis::layers::retry::FromTaskConfigPolicy, apalis::layers::retry::RetryConfig, apalis::layers::retry::RetryConfigError, apalis::layers::retry::RetryMetadataExt, apalis::layers::retry::HasherRng, apalis::layers::retry::backoff::Backoff, apalis::layers::retry::backoff::ExponentialBackoff, apalis::layers::retry::backoff::ExponentialBackoffMaker, apalis::layers::retry::backoff::MakeBackoff, apalis::layers::retry::backoff::InvalidBackoff, apalis::layers::retry::budget::Budget, apalis::layers::retry::budget::TpsBudget, apalis::layers::retry::future::ResponseFuture
+  python  celery.Task.default_retry_delay, celery.Task.retry (countdown), rq.Retry, rq.Retry.get_interval, rq.job.Job.get_retry_interval, rq.worker.Worker.exponential_backoff_factor
+  ruby    Sidekiq::Job.sidekiq_options (retry)
+  note    15 seconds, doubling, at most a day, spread a fifth either way, about two weeks over 25 attempts as Sidekiq's `(count ** 4) + 15 + rand(10) * (count + 1)` seconds are; any `time.Backoff` serves, its jitter drawn from the system's random bytes
+
+capability jobs/periodic  a job enqueued at every run of a cron schedule, once whatever the number of programs
+  heroes  jobs.Periodic, jobs.new_periodic, jobs.next_due, postgres_store.enqueue_due, redis_store.enqueue_due
+  go      river.PeriodicJob, river.NewPeriodicJob, river.PeriodicJobConstructor, river.PeriodicJobOpts, river.PeriodicJobOpts.ID, river.PeriodicSchedule, river.PeriodicInterval, river.NeverSchedule, river.PeriodicJobBundle, river.PeriodicJobBundle.Add, river.PeriodicJobBundle.AddMany, river.PeriodicJobBundle.AddSafely, river.PeriodicJobBundle.AddManySafely, river.PeriodicJobBundle.Remove, river.PeriodicJobBundle.RemoveByID, river.PeriodicJobBundle.RemoveMany, river.PeriodicJobBundle.RemoveManyByID, river.PeriodicJobBundle.Clear, river.Client.PeriodicJobs, river.Config.PeriodicJobs, rivertype.DurablePeriodicJob, rivertype.PeriodicJobHandle, asynq.Scheduler, asynq.NewScheduler, asynq.NewSchedulerFromRedisClient, asynq.Scheduler.Register, asynq.Scheduler.Unregister, asynq.Scheduler.Run, asynq.Scheduler.Start, asynq.Scheduler.Shutdown, asynq.Scheduler.Ping, asynq.SchedulerOpts, asynq.SchedulerOpts.Location, asynq.PeriodicTaskManager, asynq.NewPeriodicTaskManager, asynq.PeriodicTaskManager.Run, asynq.PeriodicTaskManager.Start, asynq.PeriodicTaskManager.Shutdown, asynq.PeriodicTaskManagerOpts, asynq.PeriodicTaskConfig, asynq.PeriodicTaskConfigProvider
+  rust    apalis_cron::CronScheduler, apalis_cron::Schedule, apalis_cron::Tick, apalis_cron::Config, apalis_cron::Error, apalis_cron::builder::schedule, apalis_cron::builder::ScheduleBuilder, apalis_cron::builder::ScheduleIterator, apalis_cron::builder::IntervalBuilder, apalis_cron::builder::TimeUnit, apalis_cron::builder::TimeUnitBuilder, apalis_cron::builder::WeekdayBuilder, apalis_cron::jiff::JiffSchedule, apalis_cron::timezone::Tz, apalis_cron::timezone::TzOffset, apalis_cron::timezone::OffsetComponents, apalis_cron::timezone::OffsetName, apalis_cron::timezone::GapInfo, apalis_cron::timezone::ParseError, apalis_cron::timezone::IANA_TZDB_VERSION, and each zone constant of apalis_cron::timezone
+  python  celery.Celery.add_periodic_task, celery.Celery.Beat, celery.schedules.crontab, celery.schedules.schedule, celery.schedules.crontab_parser, celery.schedules.cronfield, celery.schedules.maybe_schedule, celery.schedules.schedstate, celery.schedules.BaseSchedule, celery.schedules.ParseException, rq.Repeat, rq.repeat, rq.scheduler
+  ruby    -
+  note    the store keeps each schedule's next run by its name, and the program that finds it due moves it and enqueues in one statement or script; runs missed are enqueued once, not once each, as river's periodic jobs do; a schedule first seen enqueues nothing until its first run (river's `RunOnStart` is not offered); its zone's clocks as asynq's `Location`; Sidekiq's periodic jobs are its paid edition's, not the gem's
+
+capability jobs/enqueue  a job kept in the store, to be claimed
+  heroes  postgres_store.enqueue, redis_store.enqueue
+  go      river.Client.Insert, rivertype.JobInsertResult, asynq.Client, asynq.NewClient, asynq.NewClientFromRedisClient, asynq.Client.Enqueue, asynq.Client.EnqueueContext, asynq.Client.Ping, asynq.Client.Close
+  rust    apalis_core::backend::TaskSink, apalis_core::backend::TaskSinkError, apalis::prelude::TaskSink, apalis::prelude::TaskSinkError, apalis_redis::queries::push_tasks
+  python  celery.Task.delay, celery.Task.apply_async, celery.Celery.send_task, rq.Queue, rq.Queue.enqueue, rq.Queue.enqueue_call, rq.Queue.enqueue_job, rq.Queue.push_job_id, rq.job.Job.save
+  ruby    Sidekiq::Job.perform_async, Sidekiq::Job::Setter.perform_async, Sidekiq::Job.client_push, Sidekiq::Job.build_client, Sidekiq::Client.push, Sidekiq::Client.enqueue, Sidekiq::Client.enqueue_to, Sidekiq::Client
+  note    answers the job's id, a number the store gives
+
+capability jobs/enqueue-many  many jobs kept at once, all or none
+  heroes  postgres_store.enqueue_many, redis_store.enqueue_many
+  go      river.Client.InsertMany, river.Client.InsertManyFast
+  rust    -
+  python  rq.Queue.enqueue_many, rq.Queue.prepare_data
+  ruby    Sidekiq::Job.perform_bulk, Sidekiq::Job::Setter.perform_bulk, Sidekiq::Client.push_bulk
+  note    all or none, where river's `InsertMany` keeps those it can and Sidekiq's `push_bulk` pushes each
+
+capability jobs/unique  a job refused while another not finished holds its key
+  heroes  jobs.Job (unique_key), postgres_store.find_unique, redis_store.find_unique, jobs.EXISTS
+  go      river.UniqueOpts, river.UniqueOpts.ByArgs, river.UniqueOpts.ByPeriod, river.UniqueOpts.ByQueue, river.UniqueOpts.ByState, river.UniqueOpts.ExcludeKind, river.InsertOpts.UniqueOpts, rivertype.UniqueOptsByStateDefault, rivertype.JobRow.UniqueKey, rivertype.JobRow.UniqueStates, asynq.Unique, asynq.TaskID
+  rust    -
+  python  rq.exceptions.DuplicateJobError
+  ruby    -
+  note    the program writes the key, of the arguments, of a period, of whatever makes two jobs one, where river builds it of the options; it is held while the job waits or runs, river's default states less `completed` and the ones river keeps for an hour; Sidekiq's unique jobs are its paid edition's
+
+capability jobs/claim  the next job due claimed by one worker alone, its lease held
+  heroes  postgres_store.claim, redis_store.claim, jobs.NOT_FOUND
+  go      river.Client.Start, river.Worker, river.WorkFunc, river.Workers, river.NewWorkers, river.AddWorker, river.AddWorkerSafely, river.AddWorkerArgs, river.WorkerDefaults, river.Config.Workers, asynq.Server, asynq.NewServer, asynq.NewServerFromRedisClient, asynq.Server.Run, asynq.Server.Start, asynq.Server.Ping, asynq.Handler, asynq.HandlerFunc, asynq.HandlerFunc.ProcessTask, asynq.ServeMux, asynq.NewServeMux, asynq.ServeMux.Handle, asynq.ServeMux.HandleFunc, asynq.ServeMux.Handler, asynq.ServeMux.ProcessTask, asynq.Config.StrictPriority
+  rust    apalis::prelude::Worker, apalis::prelude::WorkerBuilder, apalis::prelude::Monitor, apalis::prelude::Backend, apalis::prelude::BackendExt, apalis::prelude::IntoWorkerService, apalis::prelude::WorkerService, apalis::prelude::WorkerContext, apalis_core::worker::Worker, apalis_core::worker::context::WorkerContext, apalis_core::worker::service::IntoWorkerService, apalis_core::worker::service::WorkerService, apalis_core::worker::service::task_fn_validator (check_fn_1 to check_fn_16), apalis_core::monitor::Monitor, apalis_core::monitor::context::MonitorContext, apalis_core::monitor::MonitorError, apalis_core::monitor::MonitoredWorkerError, apalis_core::monitor::ExitError, apalis_core::backend::Backend, apalis_core::backend::BackendConfig, apalis_core::backend::TryNewBackend, apalis_core::backend::WireFormatBackend, apalis_core::backend::factory::BackendFactory, apalis_core::backend::ext::BackendExt, apalis_core::backend::ext::PollNextArgsError, apalis_redis::queries::fetch_next
+  python  rq.worker.Worker.work, rq.worker.Worker.dequeue_job_and_maintain_ttl, rq.Queue.dequeue_any, rq.Queue.lpop, rq.Queue.lmove, rq.Queue.pop_job_id, rq.job.Job.perform, rq.job.Job.prepare_for_execution, celery.Celery.worker_main, celery.Celery.start
+  ruby    Sidekiq::Job
+  note    the store claims and the program runs: it matches the job's `kind` and calls its own function, as a `ServeMux` would route it, with no closure; first by priority, then by when it became due, then by id; the queues have no weights (their block below)
+
+capability jobs/complete  a job marked done, what it answered kept
+  heroes  postgres_store.complete, redis_store.complete
+  go      river.JobCompleteTx, river.RecordOutput, asynq.ResultWriter, asynq.ResultWriter.Write, asynq.ResultWriter.TaskID, asynq.Task.ResultWriter, asynq.TaskInfo.Result, asynq.TaskInfo.CompletedAt
+  rust    apalis_core::backend::TaskResult, apalis_core::backend::WaitForCompletion, apalis_core::worker::ext::ack::Acknowledge, apalis_core::worker::ext::ack::AcknowledgeLayer, apalis_core::worker::ext::ack::AcknowledgeService, apalis_core::worker::ext::ack::AcknowledgementExt, apalis_core::task::context::WaitForExecutionFuture, apalis_core::backend::finalize::FinalizeBackend, apalis_core::backend::finalize::Durable, apalis_core::backend::finalize::DurableBackend, apalis_core::backend::finalize::DurableCompact, apalis_core::backend::finalize::DurableError, apalis_core::backend::finalize::Ephemeral
+  python  celery.result.AsyncResult.get, celery.result.AsyncResult.wait, celery.result.AsyncResult.result, celery.result.AsyncResult.collect, celery.Task.update_state, celery.Task.ignore_result, rq.job.Job.return_value, rq.job.Job.latest_result, rq.job.Job.results, rq.results, rq.registry.FinishedJobRegistry
+  ruby    -
+  note    the output is any JSON value; a program that waits for it reads the job with `get`
+
+capability jobs/fail-attempt  an attempt failed: the job waits and runs again, or fails for good with every error
+  heroes  postgres_store.fail_attempt, redis_store.fail_attempt
+  go      river.WorkerDefaults (an error returned from `Work`), asynq.Config.IsFailure
+  rust    apalis_core::error::WorkerError, apalis_core::error::BoxDynError, apalis_core::error::ErrorHandlingLayer, apalis_core::error::ErrorHandlingService
+  python  celery.Task.retry, celery.exceptions.Retry, celery.exceptions.RetryTaskError, celery.exceptions.MaxRetriesExceededError, celery.Task.MaxRetriesExceededError, rq.job.Job.retry, rq.job.Job.should_retry, rq.worker.Worker.handle_job_retry, rq.worker.Worker.handle_job_failure, rq.registry.FailedJobRegistry, rq.registry.record_job_failure
+  ruby    -
+  note    the wait is the worker's backoff's; an attempt that fails after its cancellation was asked cancels the job
+
+capability jobs/discard  a job failed for good at once, whatever attempts it had left
+  heroes  postgres_store.discard, redis_store.discard
+  go      river.JobCancel, rivertype.JobCancel, river.JobCancelError, rivertype.JobCancelError, rivertype.JobCancelError.Error, rivertype.JobCancelError.Is, rivertype.JobCancelError.Unwrap
+  rust    apalis_core::error::AbortError, apalis::prelude::AbortError
+  python  celery.exceptions.Reject, celery.exceptions.Ignore
+  ruby    Sidekiq::SortedEntry.kill, Sidekiq::DeadSet.kill, Sidekiq::JobSet.kill_all
+  note    river's `JobCancel` from inside the work ends the job `cancelled`; here it ends `failed` with its error, and `cancelled` is kept for a cancellation asked from outside
+
+capability jobs/snooze  an attempt given back uncounted, the job to run again later
+  heroes  postgres_store.snooze, redis_store.snooze
+  go      river.JobSnooze, river.JobSnoozeError, rivertype.JobSnoozeError, rivertype.JobSnoozeError.Error, rivertype.JobSnoozeError.Is
+  rust    apalis_core::error::RetryAfterError, apalis_core::error::DeferredError, apalis_core::backend::Reschedule
+  python  -
+  ruby    -
+
+capability jobs/lease  a claim that holds for a time, renewed by a long job, through which it learns of a cancellation
+  heroes  postgres_store.extend, redis_store.extend, jobs.Worker (lease), jobs.STOPPED
+  go      asynq.TaskInfo.IsOrphaned
+  rust    apalis_core::worker::ext::long_running::LongRunningLayer, apalis_core::worker::ext::long_running::LongRunningConfig, apalis_core::worker::ext::long_running::LongRunningExt, apalis_core::worker::ext::long_running::LongRunningService, apalis_core::worker::ext::long_running::TaskRunner, apalis_core::worker::ext::long_running::future::LongRunningError, apalis_core::worker::ext::long_running::future::LongRunningFuture
+  python  rq.job.Job.heartbeat, rq.worker.Worker.heartbeat, rq.worker.Worker.maintain_heartbeats, rq.worker.Worker.get_heartbeat_ttl, rq.job.Job.get_ttl, rq.job.Job.is_stopped, rq.worker.Worker.request_stop_execution
+  ruby    -
+  note    30 minutes by default, celery's visibility timeout on Redis is an hour and asynq's lease 30 seconds renewed by its own thread; here no thread renews it, so the program calls `extend`
+
+capability jobs/rescue  the jobs of a worker that died given back once their lease ran out
+  heroes  postgres_store.rescue, redis_store.rescue
+  go      river.Config.RescueStuckJobsAfter, river.Config.JobStuckThreshold, river.JobStuckHandler, river.JobStuckHandlerParams, river.JobStuckHandlerResult, river.Config.JobStuckHandler
+  rust    apalis_core::backend::ResumeAbandoned, apalis_core::backend::ResumeById, apalis::prelude::ResumeAbandoned, apalis::prelude::ResumeById
+  python  celery.Task.reject_on_worker_lost, celery.Task.acks_late, celery.Task.acks_on_failure_or_timeout, celery.exceptions.WorkerLostError, rq.registry.StartedJobRegistry, rq.registry.AbandonedJobError, rq.exceptions.AbandonedJobError, rq.registry.clean_registries, rq.worker.Worker.clean_registries, rq.worker.Worker.run_maintenance_tasks, rq.worker.Worker.should_run_maintenance_tasks, rq.Queue.acquire_maintenance_lock, rq.Queue.release_maintenance_lock
+  ruby    -
+  note    the attempt counts as failed with the store's words naming the worker, as RQ's abandoned jobs do; any worker calls it, there being no leader (river elects one)
+
+capability jobs/cancel  a job cancelled: at once where it waits, asked of its worker where it runs
+  heroes  postgres_store.cancel, redis_store.cancel
+  go      river.Client.JobCancel, river.Client.JobCancelTx, asynq.Inspector.CancelProcessing, asynq.Inspector.ArchiveTask, asynq.Inspector.ArchiveAllPendingTasks, asynq.Inspector.ArchiveAllRetryTasks, asynq.Inspector.ArchiveAllScheduledTasks
+  rust    -
+  python  celery.result.AsyncResult.revoke, celery.result.AsyncResult.revoke_by_stamped_headers, celery.exceptions.TaskRevokedError, rq.cancel_job, rq.job.Job.cancel, rq.registry.CanceledJobRegistry, rq.Queue.canceled_job_registry
+  ruby    Sidekiq::Client.cancel!
+  note    a running job's worker learns it from `extend`; nothing stops its thread, as nothing can from outside
+
+capability jobs/retry  a job finished or waiting run again now
+  heroes  postgres_store.retry, redis_store.retry
+  go      river.Client.JobRetry, river.Client.JobRetryTx, asynq.Inspector.RunTask, asynq.Inspector.RunAllArchivedTasks, asynq.Inspector.RunAllRetryTasks, asynq.Inspector.RunAllScheduledTasks
+  rust    -
+  python  rq.requeue_job, rq.job.Job.requeue, rq.Queue.enqueue_ready_jobs_by_queue, rq.registry.ReadyJobRegistry
+  ruby    Sidekiq::SortedEntry.retry, Sidekiq::SortedEntry.add_to_queue, Sidekiq::JobSet.retry_all
+  note    as river's `JobRetry`: one attempt more where it had none left
+
+capability jobs/delete  a job removed
+  heroes  postgres_store.delete, redis_store.delete
+  go      river.Client.JobDelete, river.Client.JobDeleteTx, asynq.Inspector.DeleteTask
+  rust    -
+  python  rq.job.Job.delete, rq.Queue.remove, rq.job.Job.delete_dependents, celery.result.AsyncResult.forget
+  ruby    Sidekiq::JobRecord.delete, Sidekiq::SortedEntry.delete, Sidekiq::JobSet.delete, Sidekiq::JobSet.delete_by_jid, Sidekiq::JobSet.delete_by_value, Sidekiq::JobSet.remove_job
+  note    a running job is refused, as river refuses it
+
+capability jobs/purge  the jobs finished longer ago than an age removed
+  heroes  postgres_store.purge, redis_store.purge
+  go      river.Client.JobDeleteMany, river.Client.JobDeleteManyTx, river.JobDeleteManyParams, river.NewJobDeleteManyParams, river.JobDeleteManyParams.States, river.JobDeleteManyParams.Queues, river.JobDeleteManyParams.Kinds, river.JobDeleteManyParams.IDs, river.JobDeleteManyParams.Priorities, river.JobDeleteManyParams.First, river.JobDeleteManyParams.UnsafeAll, river.JobDeleteManyParams.Where, river.JobDeleteManyResult, river.Config.CompletedJobRetentionPeriod, river.Config.CancelledJobRetentionPeriod, river.Config.DiscardedJobRetentionPeriod, river.Config.JobCleanerTimeout, asynq.Retention, asynq.TaskInfo.Retention, asynq.Inspector.DeleteAllCompletedTasks, asynq.Inspector.DeleteAllArchivedTasks, asynq.Inspector.DeleteAllPendingTasks, asynq.Inspector.DeleteAllRetryTasks, asynq.Inspector.DeleteAllScheduledTasks, asynq.Config.JanitorInterval, asynq.Config.JanitorBatchSize
+  rust    apalis_core::backend::Vacuum
+  python  rq.Queue.empty, rq.job.Job.cleanup, rq.job.Job.get_result_ttl, rq.registry.DEFAULT_FAILURE_TTL, rq.Queue.compact
+  ruby    Sidekiq::DeadSet.trim, Sidekiq::SortedSet.clear, Sidekiq::Queue.clear, Sidekiq::Stats.reset
+  note    by state and age, as river's cleaner keeps each finished state for a period; the program calls it, there being no leader to run a cleaner
+
+capability jobs/get  one job read by its id
+  heroes  postgres_store.get, redis_store.get
+  go      river.Client.JobGet, river.Client.JobGetTx, asynq.Inspector.GetTaskInfo
+  rust    apalis_core::backend::FetchById, apalis::prelude::FetchById
+  python  celery.result.AsyncResult, celery.Celery.AsyncResult, rq.Queue.fetch_job, rq.job.Job.fetch, rq.job.Job.fetch_many, rq.job.Job.exists, rq.job.Job.refresh, rq.job.Job.restore
+  ruby    Sidekiq::Queue.find_job, Sidekiq::JobSet.find_job, Sidekiq::JobSet.fetch, Sidekiq::WorkSet.find_work, Sidekiq::WorkSet.find_work_by_jid
+
+capability jobs/list  the jobs of a queue in a state, a page at a time, in the order that state reads
+  heroes  postgres_store.list, redis_store.list
+  go      river.Client.JobList, river.Client.JobListTx, river.JobListParams, river.NewJobListParams, river.JobListParams.States, river.JobListParams.Queues, river.JobListParams.First, river.JobListParams.After, river.JobListParams.OrderBy, river.JobListParams.Kinds, river.JobListParams.IDs, river.JobListParams.Priorities, river.JobListParams.Where, river.JobListResult, river.JobListCursor, river.JobListCursorFromJob, river.JobListCursor.MarshalText, river.JobListCursor.UnmarshalText, river.JobListOrderByField, river.SortOrder, river.NamedArgs, asynq.Inspector.ListPendingTasks, asynq.Inspector.ListActiveTasks, asynq.Inspector.ListScheduledTasks, asynq.Inspector.ListRetryTasks, asynq.Inspector.ListArchivedTasks, asynq.Inspector.ListCompletedTasks, asynq.ListOption, asynq.Page, asynq.PageSize
+  rust    apalis_core::backend::ListTasks, apalis_core::backend::ListAllTasks, apalis_core::backend::Filter, apalis::prelude::ListTasks, apalis::prelude::ListAllTasks, apalis::prelude::Filter
+  python  rq.Queue.get_job_ids, rq.Queue.get_jobs, rq.Queue.job_ids, rq.Queue.jobs, rq.Queue.get_job_position, rq.job.Job.get_position, rq.registry.BaseRegistry, rq.registry.ScheduledJobRegistry, rq.Queue.started_job_registry, rq.Queue.finished_job_registry, rq.Queue.failed_job_registry, rq.Queue.deferred_job_registry, rq.Queue.ready_job_registry
+  ruby    Sidekiq::Queue.each, Sidekiq::JobSet.each, Sidekiq::JobSet.pop_each, Sidekiq::SortedSet.scan, Sidekiq::ScheduledSet, Sidekiq::RetrySet, Sidekiq::DeadSet, Sidekiq::WorkSet, Sidekiq::WorkSet.each, Sidekiq::Work, Sidekiq::Queue.latency, Sidekiq::JobRecord.latency, Sidekiq::Stats.default_queue_latency
+  note    one queue and one state a call, an offset and a limit, where river filters by kind, id, priority, tag and SQL; the jobs `running` name their worker, which is what Sidekiq's `WorkSet` shows; a queue's latency is the `run_at` of the first job `available` it lists
+
+capability jobs/counts  how many jobs stand in each queue and state
+  heroes  postgres_store.counts, redis_store.counts, jobs.Count
+  go      river.Client.QueueGet, river.Client.QueueGetTx, river.Client.QueueList, river.Client.QueueListTx, river.QueueListParams, river.NewQueueListParams, river.QueueListParams.First, river.QueueListResult, rivertype.Queue, asynq.Inspector.Queues, asynq.Inspector.GetQueueInfo, asynq.QueueInfo
+  rust    apalis_core::backend::ListQueues, apalis_core::backend::QueueInfo, apalis::prelude::ListQueues, apalis::prelude::QueueInfo
+  python  rq.Queue.count, rq.Queue.is_empty, rq.Queue.all, rq.registry.BaseRegistry (count)
+  ruby    Sidekiq::Queue.size, Sidekiq::Queue.all, Sidekiq::Queue.name, Sidekiq::Queue.id, Sidekiq::Queue.as_json, Sidekiq::SortedSet.size, Sidekiq::SortedSet.name, Sidekiq::SortedSet.as_json, Sidekiq::Stats, Sidekiq::Stats.enqueued, Sidekiq::Stats.scheduled_size, Sidekiq::Stats.retry_size, Sidekiq::Stats.dead_size, Sidekiq::Stats.queues, Sidekiq::Stats.queue_summaries, Sidekiq::Stats.fetch_stats!, Sidekiq::Stats.fetch_stats_fast!, Sidekiq::Stats.fetch_stats_slow!
+  note    what stands now; the totals of jobs processed and failed over days are the metrics' block
+
+capability jobs/pause  a queue paused, its jobs waiting, and resumed
+  heroes  postgres_store.pause, postgres_store.resume, postgres_store.paused_queues, redis_store.pause, redis_store.resume, redis_store.paused_queues
+  go      river.Client.QueuePause, river.Client.QueuePauseTx, river.Client.QueueResume, river.Client.QueueResumeTx, river.QueuePauseOpts, river.Client.QueueUpdate, river.Client.QueueUpdateTx, river.QueueUpdateParams, asynq.Inspector.PauseQueue, asynq.Inspector.UnpauseQueue
+  rust    -
+  python  rq.suspension, rq.worker.Worker.check_for_suspension
+  ruby    Sidekiq::Queue.paused?
+  note    a pause is kept in the store, so every worker honours it; RQ suspends workers rather than queues, and Sidekiq's pausing is its paid edition's
+
+capability jobs/wake  a worker woken at once when a job comes, rather than at its next poll
+  heroes  pending: `sql/postgres` does not wait for `NOTIFY`, which its ledger says; a wake over Redis needs a blocking pop beside the scripts' sorted sets, not yet written
+  go      river.Client.Notify, river.ClientNotifyBundle, river.ClientNotifyBundle.RequestResign, river.ClientNotifyBundle.RequestResignTx
+  rust    apalis_sql::postgres::PgListen, apalis_sql::postgres::PgSubscription, apalis_core::backend::ext::wake_on_push::WakeOnPush
+  python  rq.Queue.dequeue_any (with a timeout), rq.exceptions.DequeueTimeout
+  ruby    -
+  note    each worker polls, a second by default (`jobs.Worker.poll`)
+
+capability jobs/rate-limit  no more than so many attempts of a kind in a time, across workers
+  heroes  pending: a limit shared by workers needs a counter kept in the store per window, not yet written; a worker may `snooze` a job it must not run yet
+  go      -
+  rust    apalis::layers::limit::RateLimitLayer, apalis::layers::limit::ConcurrencyLimitLayer, apalis::layers::limit::GlobalConcurrencyLimitLayer
+  python  celery.Task.rate_limit, rq.RateLimit, rq.rate_limit, rq.registry.RateLimitRegistry, rq.job.Job.has_rate_limit, rq.registry.release_slot
+  ruby    -
+
+capability jobs/workflows  jobs that wait for others: chains, groups, chords, dependencies, a job inserted not yet runnable
+  heroes  pending: a dependency kept with a job, released when the jobs it waits for complete, is not yet written; meanwhile a program enqueues the next job in the transaction that completes the first (`postgres_store.complete` and `postgres_store.enqueue` on one connection)
+  go      river.InsertOpts.Pending, rivertype.JobStatePending
+  rust    apalis::prelude::Pipe, apalis::prelude::PipeExt, apalis::prelude::PipeError, apalis_core::backend::ext::pipe::Pipe, apalis_core::backend::ext::pipe::PipeExt, apalis_core::backend::ext::pipe::PipeError, apalis_core::task::context::SubTaskFuture
+  python  celery.chain, celery.chord, celery.group, celery.chunks, celery.xmap, celery.xstarmap, celery.maybe_signature, celery.canvas.chain, celery.canvas.chord, celery.canvas.group, celery.canvas.chunks, celery.canvas.xmap, celery.canvas.xstarmap, celery.canvas.Signature, celery.canvas.maybe_signature, celery.canvas.maybe_subtask, celery.canvas.subtask, celery.canvas.barrier, celery.Task.s, celery.Task.si, celery.Task.map, celery.Task.starmap, celery.Task.chunks, celery.Task.replace, celery.Task.add_to_chord, celery.Task.subtask, celery.exceptions.ChordError, celery.Celery.GroupResult, celery.Celery.ResultSet, celery.result.AsyncResult.children, celery.result.AsyncResult.parent, celery.result.AsyncResult.then, celery.result.AsyncResult.build_graph, celery.result.AsyncResult.graph, celery.result.AsyncResult.iterdeps, celery.result.AsyncResult.get_leaf, rq.dependency, rq.job.Job.dependency, rq.job.Job.dependency_ids, rq.job.Job.dependent_ids, rq.job.Job.dependencies_are_met, rq.job.Job.fetch_dependencies, rq.job.Job.register_dependency, rq.job.Job.process_dependencies, rq.job.Job.dependencies_key, rq.job.Job.dependents_key, rq.job.Job.dependents_key_for, rq.job.Job.is_ready_to_enqueue, rq.Queue.enqueue_dependents, rq.Queue.setup_dependencies, rq.Queue.move_dependents_to_ready, rq.exceptions.InvalidJobDependency, rq.registry.DeferredJobRegistry, rq.group, rq.exceptions.NoSuchGroupError, rq.worker.Worker.clean_group_registries
+  ruby    -
+
+capability jobs/resumable  a long job that keeps its place between attempts and resumes from it
+  heroes  pending: a cursor kept with a job and handed to its next attempt is not yet written; a program keeps its place in its own table
+  go      river.ResumableStep, river.ResumableStepCursor, river.ResumableSetCursor, river.ResumableSetStepTx, river.ResumableSetStepCursorTx, river.StepOpts
+  rust    -
+  python  -
+  ruby    Sidekiq::IterableJob, Sidekiq::IterableJobQuery, Sidekiq::JobRecord.iterable_state
+
+capability jobs/expires  a job dropped where no worker started it by a time
+  heroes  pending: an expiry kept with a job and read by `claim` is not yet written
+  go      -
+  rust    -
+  python  celery.Task.expires, celery.Task.apply_async (expires)
+  ruby    -
+
+capability jobs/metrics  the jobs processed and failed counted over time, the latencies measured
+  heroes  pending: no counter of jobs processed or failed is kept beside the jobs, which `purge` removes; `counts` says what stands now
+  go      asynq.Inspector.History, asynq.DailyStats, asynq.QueueInfo.Processed, asynq.QueueInfo.Failed, asynq.QueueInfo.ProcessedTotal, asynq.QueueInfo.FailedTotal, asynq.QueueInfo.MemoryUsage, rivertype.Metric, rivertype.MetricName, rivertype.JobGetAvailableCountMetric, rivertype.JobGetAvailableCountMetric.Name, rivertype.JobGetAvailableDurationMetric, rivertype.JobGetAvailableDurationMetric.Name, rivertype.HookMetricEmit, rivertype.HookMetricEmitParams, river.HookMetricEmitFunc, river.HookMetricEmitFunc.MetricEmit, river.HookMetricEmitFunc.IsHook, river.HookMetricEmitFunc.IsPlugin
+  rust    apalis::layers::prometheus::PrometheusLayer, apalis::layers::prometheus::PrometheusService, apalis::layers::prometheus::ResponseFuture, apalis::layers::opentelemetry::OpenTelemetryMetricsLayer, apalis::layers::opentelemetry::OpenTelemetryMetricsService, apalis::layers::opentelemetry::ResponseFuture, apalis_core::backend::Metrics, apalis_core::backend::Statistic, apalis_core::backend::StatType, apalis_core::backend::ParseStatTypeError, apalis::prelude::Metrics, apalis::prelude::Statistic, apalis::prelude::StatType
+  python  rq.worker.Worker.increment_failed_job_count, rq.worker.Worker.increment_successful_job_count, rq.worker.Worker.increment_total_working_time
+  ruby    Sidekiq::Stats.processed, Sidekiq::Stats.failed, Sidekiq::Metrics, Sidekiq::ProfileRecord, Sidekiq::ProfileSet
+
+capability jobs/workers-alive  the worker processes alive, each with what it runs
+  heroes  pending: no worker registers itself in the store; the jobs `running` name the worker of each (`list`), but a worker that runs nothing is not seen
+  go      asynq.Inspector.Servers, asynq.ServerInfo, asynq.WorkerInfo
+  rust    apalis_core::backend::ListWorkers, apalis_core::backend::RegisterWorker, apalis_core::backend::RunningWorker, apalis_core::backend::WorkerFilter, apalis::prelude::ListWorkers, apalis::prelude::RegisterWorker, apalis::prelude::RunningWorker
+  python  rq.worker.Worker.all, rq.worker.Worker.all_keys, rq.worker.Worker.count, rq.worker.Worker.find_by_key, rq.worker.Worker.register_birth, rq.worker.Worker.register_death, rq.worker.Worker.state, rq.worker.Worker.get_state, rq.worker.Worker.set_state, rq.worker.Worker.death_date, rq.worker_registration, rq.worker.Worker.redis_workers_keys, rq.worker.Worker.get_current_job, rq.worker.Worker.get_current_job_id, rq.worker.Worker.current_execution_count, rq.worker.Worker.get_current_executions, rq.worker.Worker.execution
+  ruby    Sidekiq::ProcessSet, Sidekiq::ProcessSet.each, Sidekiq::ProcessSet.size, Sidekiq::ProcessSet.cleanup, Sidekiq::ProcessSet.leader, Sidekiq::ProcessSet.total_concurrency, Sidekiq::ProcessSet.total_rss, Sidekiq::ProcessSet.total_rss_in_kb, Sidekiq::Process, Sidekiq::Workers, Sidekiq::WorkSet.size, Sidekiq::Stats.workers_size, Sidekiq::Stats.processes_size
+
+capability jobs/concurrency  many jobs run at once inside one worker process
+  heroes  refused: Heroes' threads share nothing and the package starts none; a worker is the program's thread or process with its own connection, each calling `claim`, and the store's locks let any number of them run side by side
+  go      river.QueueConfig.MaxWorkers, asynq.Config.Concurrency, asynq.Config.BaseContext
+  rust    apalis::prelude::ParallelizeExt, apalis::prelude::ParallelizeLayer, apalis::prelude::ParallelizeService, apalis_core::worker::ext::parallelize::ParallelizeExt, apalis_core::worker::ext::parallelize::ParallelizeLayer, apalis_core::worker::ext::parallelize::ParallelizeService, apalis_core::worker::call_all::CallAllError
+  python  rq.SpawnWorker, rq.worker.Worker.fork_work_horse, rq.worker.Worker.main_work_horse, rq.worker.Worker.monitor_work_horse, rq.worker.Worker.wait_for_horse, rq.worker.Worker.kill_horse, rq.worker.Worker.horse_pid, rq.worker.Worker.is_horse, rq.worker.Worker.setup_work_horse_signals, rq.worker.Worker.handle_work_horse_killed, celery.Celery.pool, celery.maybe_patch_concurrency
+  ruby    Sidekiq::Config (concurrency)
+
+capability jobs/timeout  an attempt stopped when it runs past a time
+  heroes  refused: the program's function runs on the worker's own thread, and nothing can stop it from outside without leaving its state half written; the lease bounds a worker that died, and a long job reads its own clock and calls `extend`
+  go      river.Config.JobTimeout, river.WorkerDefaults.Timeout, asynq.Timeout, asynq.Deadline, asynq.TaskInfo.Timeout, asynq.TaskInfo.Deadline
+  rust    apalis::layers::TimeoutLayer
+  python  celery.Task.time_limit, celery.Task.soft_time_limit, celery.Task.acks_on_timeout, celery.exceptions.SoftTimeLimitExceeded, celery.exceptions.TimeLimitExceeded, celery.exceptions.TimeoutError, rq.timeouts, rq.Queue.DEFAULT_TIMEOUT, rq.Queue.death_penalty_class, rq.worker.Worker.death_penalty_class, rq.registry.BaseDeathPenalty, rq.registry.UnixSignalDeathPenalty, rq.exceptions.TimeoutFormatError
+  ruby    -
+
+capability jobs/queue-weights  queues claimed from by chance in proportion to a weight
+  heroes  refused: a worker claims the first job by priority across its queues, which is asynq's `StrictPriority`; a program that wants weights claims from one queue list, then another, in the proportion it likes
+  go      asynq.Config.Queues (weights)
+  rust    -
+  python  rq.worker.Worker.reorder_queues
+  ruby    Sidekiq.configure_server (queue weights)
+
+capability jobs/aggregate  tasks of a group gathered by the store over a time into one
+  heroes  refused: a group gathered by the store after a grace period is a second queue with its own clock; a program that batches keeps its items in its own table and enqueues one job for them
+  go      asynq.Group, asynq.GroupAggregator, asynq.GroupAggregatorFunc, asynq.GroupAggregatorFunc.Aggregate, asynq.GroupInfo, asynq.Inspector.Groups, asynq.Inspector.ListAggregatingTasks, asynq.Inspector.ArchiveAllAggregatingTasks, asynq.Inspector.DeleteAllAggregatingTasks, asynq.Inspector.RunAllAggregatingTasks, asynq.Config.GroupGracePeriod, asynq.Config.GroupMaxDelay, asynq.Config.GroupMaxSize, asynq.Config.GroupAggregator, asynq.TaskInfo.Group
+  rust    -
+  python  -
+  ruby    -
+
+capability jobs/update  a job's arguments or time changed after it was enqueued
+  heroes  refused: a job is what was enqueued; a change is a job cancelled and another enqueued, so no worker runs half of each
+  go      river.Client.JobUpdate, river.Client.JobUpdateTx, river.JobUpdateParams, asynq.Inspector.UpdateTaskPayload
+  rust    apalis_core::backend::Update
+  python  rq.job.Job.save_meta, rq.job.Job.get_meta
+  ruby    Sidekiq::SortedEntry.reschedule, Sidekiq::JobSet.schedule
+
+capability jobs/tags  tags and metadata kept beside a job's arguments
+  heroes  refused: the payload carries whatever a program keeps with a job, and a listing reads queues and states
+  go      river.InsertOpts.Metadata, river.InsertOpts.Tags, river.MetadataSet, river.JobListParams.Metadata, river.JobListParams.TagsAll, river.JobListParams.TagsAny, rivertype.JobRow.Metadata, rivertype.JobRow.Tags, asynq.NewTaskWithHeaders, asynq.Task.Headers, asynq.TaskInfo.Headers
+  rust    apalis_core::task::metadata::Meta, apalis_core::task::metadata::Metadata, apalis_core::task::metadata::MetadataError, apalis_core::task::metadata::MetadataStore, apalis_core::task::metadata::TracingContext, apalis_core::task::metadata::TracingContextParseError, apalis_core::task::extensions::Extensions
+  python  rq.job.Job.meta
+  ruby    Sidekiq::JobRecord.tags, Sidekiq::JobRecord.bid
+
+capability jobs/events  the program told as each job changes state
+  heroes  refused: the package calls no function of the program and keeps no channel to another thread; a program reads the states it needs with `get`, `list` and `counts`
+  go      river.Client.Subscribe, river.Client.SubscribeConfig, river.SubscribeConfig, river.Event, river.EventKind, asynq.ErrorHandler, asynq.ErrorHandlerFunc, asynq.ErrorHandlerFunc.HandleError, asynq.Config.ErrorHandler, asynq.ListSchedulerEnqueueEvents (Inspector), asynq.SchedulerEnqueueEvent, asynq.SchedulerEntry, asynq.Inspector.SchedulerEntries
+  rust    apalis_core::worker::event::Event, apalis_core::worker::event::EventListener, apalis_core::worker::event::EventHandlerBuilder, apalis::prelude::EventListenerExt, apalis::prelude::EventListenerLayer, apalis::prelude::EventListenerService, apalis::prelude::Event
+  python  celery.Celery.events, celery.Task.send_event, celery.Task.send_events, celery.Task.track_started, celery.Task.on_success, celery.Task.on_failure, celery.Task.on_retry, celery.Task.after_return, celery.Task.before_start, rq.Callback, rq.callbacks, rq.Webhook, rq.webhook, rq.job.Job.success_callback, rq.job.Job.failure_callback, rq.job.Job.stopped_callback, rq.job.Job.success_callback_timeout, rq.job.Job.failure_callback_timeout, rq.job.Job.stopped_callback_timeout, rq.job.Job.send_webhooks, rq.job_lifecycle
+  ruby    -
+
+capability jobs/shutdown  the workers stopped, gracefully or at once
+  heroes  refused: the loop is the program's and stops when it decides; a job claimed then is completed, failed, or left to its lease and `rescue`
+  go      river.Client.Stop, river.Client.StopAndCancel, river.Client.Stopped, river.Config.SoftStopTimeout, asynq.Server.Stop, asynq.Server.Shutdown, asynq.Config.ShutdownTimeout
+  rust    apalis_core::monitor::shutdown::Shutdown, apalis::prelude::Shutdown
+  python  rq.worker.Worker.request_stop, rq.worker.Worker.request_force_stop, rq.worker.Worker.handle_warm_shutdown_request, rq.worker.Worker.set_shutdown_requested_date, rq.worker.Worker.shutdown_requested_date, rq.worker.Worker.stop_scheduler, rq.exceptions.ShutDownImminentException, rq.exceptions.StopRequested, celery.exceptions.WorkerShutdown, celery.exceptions.WorkerTerminate, celery.exceptions.Terminated, celery.exceptions.SystemTerminate
+  ruby    Sidekiq::Shutdown
+
+capability jobs/run-at-once  a job's function run without a store, for a test or a call
+  heroes  refused: the program calls its own function; the tests here run against a live store or say they skipped
+  go      river.Config.Test, river.Config.TestOnly, river.TestConfig
+  rust    apalis::prelude::MemoryStorage, apalis::prelude::MemorySink, apalis::prelude::MemoryStorageError, apalis::prelude::BoxedReceiver, apalis_core::backend::memory::MemoryStorage, apalis_core::backend::memory::MemorySink, apalis_core::backend::memory::MemoryStorageError, apalis_core::backend::memory::BoxedReceiver, apalis_core::backend::dequeue::VecDequeBackend, apalis_core::backend::dequeue::VecDequeError, apalis_core::backend::queue::Queue, apalis_core::backend::queue::QueueError, apalis_sql::sql_storage_tests
+  python  celery.Task.apply, celery.exceptions.AlwaysEagerIgnored, rq.Queue.run_sync, rq.Queue.run_job, rq.Queue.is_async, rq.worker.Worker.execute_job, rq.worker.Worker.perform_job
+  ruby    Sidekiq::Job.perform_inline, Sidekiq::Job.perform_sync, Sidekiq::Job::Setter.perform_inline, Sidekiq::Job::Setter.perform_sync, Sidekiq.testing!
+
+capability jobs/unknown-kind  a job whose kind no worker runs
+  heroes  refused: the program's `match` on the kind decides, and `discard` ends a job it cannot run; the store knows no kinds
+  go      river.UnknownJobKindError, rivertype.UnknownJobKindError, rivertype.UnknownJobKindError.Error, rivertype.UnknownJobKindError.Is, river.Config.FetchOnlyKnownKinds, river.Config.SkipUnknownJobCheck, river.Config.SkipJobKindValidation, asynq.NotFound, asynq.NotFoundHandler
+  rust    -
+  python  celery.exceptions.NotRegistered, celery.exceptions.InvalidTaskError
+  ruby    -
+
+dropped
+  go      river.Client (and its constructor river.NewClient, river.ClientFromContext, river.ClientFromContextSafely, river.Client.Driver, river.Client.Pilot, river.Client.Schema, river.Client.Queues, river.QueueBundle, river.QueueBundle.Add, river.QueueBundle.Remove, river.QueueAlreadyAddedError, river.QueueNotFoundError and their Error and Is: a client that runs the workers in its own threads, whose work is here the program's loop and the store's calls), river.Config.WithDefaults, river.Config.AdvisoryLockPrefix, river.Config.LeaderElectionDisabled, river.Config.ReindexerSchedule, river.Config.ReindexerIndexNames, river.Config.ReindexerTimeout, river.ReindexerIndexNamesDefault (river's elected leader's services: here any program calls `rescue` and `purge`), river.Config.ErrorHandler, river.ErrorHandler, river.ErrorHandlerResult, river.Config.Logger, river.Config.Hooks, river.Config.Middleware, river.Config.Plugins, river.Config.JobInsertMiddleware, river.Config.WorkerMiddleware, river.HookDefaults, river.HookDefaults.IsHook, river.HookDefaults.IsPlugin, river.HookInsertBeginFunc (InsertBegin, IsHook, IsPlugin), river.HookPeriodicJobsStartFunc (Start, IsHook, IsPlugin), river.HookWorkBeginFunc (WorkBegin, IsHook, IsPlugin), river.HookWorkEndFunc (WorkEnd, IsHook, IsPlugin), river.JobArgsWithHooks, river.JobArgsWithPlugins, river.JobInsertMiddlewareDefaults, river.JobInsertMiddlewareDefaults.InsertMany, river.JobInsertMiddlewareFunc (InsertMany, IsMiddleware, IsPlugin), river.MiddlewareDefaults (IsMiddleware, IsPlugin), river.PluginDefaults.IsPlugin, river.WorkerDefaults.Middleware, river.WorkerMiddlewareDefaults.Work, river.WorkerMiddlewareFunc (Work, IsMiddleware, IsPlugin), rivertype.Hook, rivertype.HookInsertBegin, rivertype.HookPeriodicJobsStart, rivertype.HookPeriodicJobsStartParams, rivertype.HookWorkBegin, rivertype.HookWorkEnd, rivertype.JobInsertMiddleware, rivertype.Middleware, rivertype.Plugin, rivertype.WorkerMiddleware, rivertype.TimeGenerator, rivertype.WorkerMetadata (hooks, middleware and plugins: functions the library calls back, which need a closure), river.Config.SkipUnknownJobCheck's companions above, asynq.Config.Logger, asynq.Config.LogLevel, asynq.Logger, asynq.LogLevel, asynq.LogLevel.Set, asynq.LogLevel.String, asynq.SchedulerOpts.Logger, asynq.SchedulerOpts.LogLevel, asynq.SchedulerOpts.HeartbeatInterval, asynq.SchedulerOpts.PreEnqueueFunc, asynq.SchedulerOpts.PostEnqueueFunc, asynq.SchedulerOpts.EnqueueErrorHandler, asynq.MiddlewareFunc, asynq.ServeMux.Use, asynq.Config.HealthCheckFunc, asynq.Config.HealthCheckInterval, asynq.IsPanicError (logging, callbacks and Go's panics), asynq.Inspector, asynq.NewInspector, asynq.NewInspectorFromRedisClient, asynq.Inspector.Close (the inspector's calls each stand in their block above), asynq.Inspector.DeleteQueue (a queue is there while a job names it: its jobs go with `cancel` and `purge`), asynq.Inspector.ClusterKeySlot, asynq.Inspector.ClusterNodes, asynq.ClusterNode, asynq.RedisClusterClientOpt, asynq.RedisClusterClientOpt.MakeRedisClient, asynq.RedisFailoverClientOpt, asynq.RedisFailoverClientOpt.MakeRedisClient (a cluster and Sentinel, which `redis` refuses), asynq.RedisClientOpt, asynq.RedisClientOpt.MakeRedisClient, asynq.RedisConnOpt, asynq.ParseRedisURI (the connection is `redis`'s: `redis.parse_url`)
+  rust    every item of apalis::layers::tracing (TraceLayer, Trace, MakeSpan, DefaultMakeSpan, OnRequest, OnResponse, OnFailure, DefaultOnRequest, DefaultOnResponse, DefaultOnFailure, ContextualTaskSpan, OtelTraceContext, TracingContext, LatencyUnit, ResponseFuture, debug, info, error, trace and their spans), apalis::layers::sentry (SentryLayer, SentryTaskService, SentryTaskError, SentryHttpFuture), apalis::layers::catch_panic (CatchPanicLayer, CatchPanicService, CatchPanicFuture, PanicError), apalis::layers::WorkerBuilderExt, apalis::config::Middleware, apalis::config::MiddlewareStack, apalis::prelude::Layer, LayerFn, layer_fn, Service, Stack, Identity, ErrorHandlingLayer, ErrorHandlingService, LifecycleLayer, LifecycleService, LifecycleFuture, TaskLifecycleError, apalis_core::layers::* and apalis_core::worker::lifecycle::* (tower's layers and services: functions the library calls back), apalis_core::backend::ext::lifecycle (AfterStart, AfterStop, BeforeStart, BeforeStop), apalis_core::backend::ext::inspect_err::InspectErr, apalis_core::backend::ext::instrument::Instrumented, apalis_core::backend::ext::interleave::Interleave, apalis_core::backend::ext::map_err::MapErr, apalis_core::backend::ext::with_codec::WithCodec, apalis_core::backend::ext::shared::Shared, apalis_core::backend::custom::BackendBuilder, apalis_core::backend::custom::CustomBackend, apalis_core::backend::custom::CustomBackendError, apalis_core::backend::custom::BuildError, apalis_core::backend::persistence (Persisted, Persistence, State, TaskEvent, TaskPersistLayer), apalis_core::backend::Expose, apalis_core::backend::future::BoxSyncFuture, apalis_core::timer::Delay, apalis_core::timer::sleep, apalis_core::features_table, apalis_core::delegate_codec, delegate_config, delegate_deref, delegate_expose, delegate_sink, apalis::prelude::Shared, apalis::prelude::Expose, apalis::prelude::CircuitBreaker, apalis::prelude::config::CircuitBreakerConfig, apalis_core::worker::ext::circuit_breaker (CircuitBreaker, config::CircuitBreakerConfig: `time`'s breakers), apalis::prelude::RandomId, apalis::prelude::BoxDynError, apalis::prelude::ExitError, apalis::prelude::WorkerError, apalis::prelude::WorkerStateError, apalis::prelude::MonitorError, apalis::prelude::MonitoredWorkerError, apalis::prelude::TaskLifecycleError, apalis::prelude::Update, apalis::prelude::Vacuum (the prelude's re-exports, each standing above under apalis_core), apalis::prelude::WaitForCompletion, apalis::prelude::WaitForExecutionFuture, apalis::prelude::TaskResult, apalis::prelude::TaskRunner, apalis::prelude::LongRunningConfig, apalis::prelude::LongRunningExt, apalis::prelude::LongRunningLayer, apalis::prelude::LongRunningService, apalis::prelude::future::LongRunningError, apalis::prelude::future::LongRunningFuture, apalis::prelude::Acknowledge, apalis::prelude::AcknowledgeLayer, apalis::prelude::AcknowledgeService, apalis::prelude::AcknowledgementExt, apalis::prelude::Attempt, apalis::prelude::Status, apalis::prelude::TaskId, apalis::prelude::TaskIdError, apalis::prelude::TaskContext, apalis::prelude::ExecutionContext, apalis::prelude::SubTaskFuture, apalis::prelude::Meta, apalis::prelude::Metadata, apalis::prelude::MetadataError, apalis::prelude::MetadataStore, apalis::prelude::Extensions, apalis::prelude::FromRequest, apalis::prelude::IntoResponse, apalis::prelude::AddExtension, apalis::prelude::MissingDataError, apalis::prelude::Codec, apalis::prelude::Reschedule, apalis::prelude::RetryAfterError, apalis::prelude::DeferredError, apalis::prelude::BackendBuilder, apalis::prelude::BackendFactory, apalis::prelude::BuildError, apalis::prelude::CustomBackend, apalis::prelude::CustomBackendError, apalis::prelude::PollStrategy, apalis::prelude::IntervalStrategy, apalis::prelude::BackoffStrategy, apalis::prelude::BackoffConfig, apalis::prelude::Strategy, apalis::prelude::StreamStrategy, apalis::prelude::FutureStrategy, apalis::prelude::BoxedPollStrategy, apalis::prelude::PollWith, apalis::prelude::ActivityState, apalis::prelude::PollMetrics, apalis::prelude::PollSnapshot, apalis::prelude::PollNextArgsError, apalis::prelude::MonitorContext, apalis::prelude::TaskFn, apalis::prelude::task_fn, apalis::prelude::TaskBuilder (re-exports of the same items), apalis_cron::english::EnglishRoutine, apalis_cron::english::EnglishRoutineError (a schedule written in English words, which `time.parse_cron` does not read)
+  python  celery.Celery's configuration and plumbing (conf, config_from_object, config_from_envvar, config_from_cmdline, add_defaults, prepare_config, finalize, autodiscover_tasks, loader, loader_cls, amqp, amqp_cls, backend, backend_cls, broker_connection, connection, connection_for_read, connection_for_write, connection_or_acquire, default_connection, default_producer, producer_or_acquire, producer_pool, pool, control, control_cls, events_cls, log, log_cls, registry_cls, task_cls, create_task_cls, subclass_with_self, gen_task_name, either, now, oid, thread_oid, timezone, uses_utc_timezone, main, set_current, set_default, setup_security, steps, user_options, builtin_fixups, annotations, type_checker, on_after_configure, on_after_finalize, on_after_fork, on_configure, on_init, bugreport, close, current_task, current_worker_task, IS_WINDOWS, IS_macOS, SYSTEM, Pickler), celery.Task's plumbing (AsyncResult, Request, Strategy, abstract, acks_on_failure, add_around, add_trail, annotate, app, backend, bind, expires (its block above), from_config, on_bound, on_replace, pop_request, push_request, request_stack, resultrepr_maxsize, retry_on_worker_lost, run, serializer, shadow_name, signature_from_request, start_strategy, store_errors_even_if_ignored, subtask_from_request, throws, trail, typing, OperationalError), celery.result.AsyncResult's plumbing (TimeoutError, app, as_list, as_tuple, backend, exists, ignored, maybe_reraise, maybe_throw, supports_native_join, throw), celery's module names (Celery, SERIES, VERSION, VERSION_BANNER, bugreport, current_app, current_task, local, uuid, version_info, version_info_t), celery.schedules.solar and its SOLAR_ constants (the sun's events: not a cron schedule), celery.schedules' imports and helpers (Any, AttributeDict, Callable, Celery, Cronspec, ImproperlyConfigured, Iterable, Mapping, Sequence, Union, annotations, bisect, bisect_left, cached_property, current_app, datetime, ffwd, humanize_seconds, localize, maybe_make_aware, maybe_timedelta, namedtuple, re, remaining, subtract_datetimes, timedelta, timezone, tzinfo, weekday, yearmonth, CRON_DAYS_IN_MONTH, CRON_INVALID_DATE, CRON_INVALID_TYPE, CRON_PATTERN_INVALID, CRON_REPR), celery.canvas's imports and helpers (ABCMeta, CPendingDeprecationWarning, ChainMap, EagerResult, GeneratorType, GroupResult, IGNORED, MutableSequence, REJECTED, StampingVisitor, abstract, abstractmethod, allow_join_result, cached_property, current_app, deepcopy, deque, fxrange, getitem_property, is_list, itemgetter, itertools, maybe_list, maybe_unroll_group, operator, reduce, regen, remove_repeating_from_task, reprcall, seq_concat_item, seq_concat_seq, task_name_from, truncate, types, uuid, warnings), celery.exceptions not named above (AlreadyRegistered, BackendError, BackendGetMetaError, BackendStoreError, CDeprecationWarning, CPendingDeprecationWarning, CeleryCommandException, CeleryError, CeleryWarning, ClickException, DuplicateNodenameWarning, DuplicateTaskNameWarning, FixupWarning, ImproperlyConfigured, IncompleteStream, NotConfigured, OperationalError, QueueNotFound, SecurityError, SecurityWarning, TaskError, TaskPredicate, UNREGISTERED_FMT, get_pickleable_exception, numbers, reraise: a failure here is a value with a code), rq's module names (VERSION, version, command, connections, defaults, exceptions, intermediate_queue, job, logutils, queue, registry, scripts, serializers, types, utils, worker), rq.Queue's plumbing (death_penalty_class, delete, from_queue_key, get_redis_server_version, intermediate_queue, intermediate_queue_key, job_class, key, redis_queue_namespace_prefix, redis_queues_keys, registry_cleaning_key, scheduler_pid), rq.job.Job's plumbing (dependency's helpers above, execution_registry, failed_job_registry, finished_job_registry, started_job_registry, key_for, redis_job_namespace_prefix, should_enqueue_at_front, result), rq.worker.Worker's plumbing (bootstrap, cleanup_execution, connection_timeout, executions_key, handle_exception, handle_execution_ended, handle_job_success, handle_payload, job_class, log_job_description, log_result_lifespan, max_connection_wait_time, pop_exc_handler, prepare_execution, prepare_job_execution, procline, pubsub_channel_name, push_exc_handler, queue_class, redis_worker_namespace_prefix, refresh, serialize, subscribe, teardown, unsubscribe), rq.registry's imports and helpers (Any, Job, NoSuchJobError, Queue, Sequence, TYPE_CHECKING, WatchError, annotations, as_text, backend_class, calendar, call_exception_handlers, cast, current_timestamp, datetime, execute_failure_callback, get_connection_kwargs, logger, logging, now, parse_composite_key, resolve_serializer, timezone, warnings, FORMAT_KEY_PREFIX, InvalidJobOperation), rq.exceptions not named above (DeserializationError, DuplicateSchedulerError, InvalidJobOperation, InvalidJobOperationError, NoSuchJobError, SchedulerNotFound)
+  ruby    Sidekiq.configure_client, Sidekiq.configure_embed, Sidekiq.default_configuration, Sidekiq.default_job_options=, Sidekiq.dump_json, Sidekiq.load_json, Sidekiq.freeze!, Sidekiq.gem_version, Sidekiq.loader, Sidekiq.logger, Sidekiq.ent?, Sidekiq.pro?, Sidekiq.server?, Sidekiq.strict_args!, Sidekiq::Client.middleware, Sidekiq::ClientMiddleware, Sidekiq::ServerMiddleware, Sidekiq::Middleware, Sidekiq::Component, Sidekiq::Context, Sidekiq::Loader, Sidekiq::Logger, Sidekiq::ApiUtils, Sidekiq::JobUtil, Sidekiq::LICENSE, Sidekiq::MAJOR, Sidekiq::NAME, Sidekiq::VERSION, Sidekiq::DEFAULT_THREAD_PRIORITY, Sidekiq::Worker, Sidekiq::Queue's and Sidekiq::SortedSet's 💣 and Sidekiq's ❨╯°□°❩╯︵┻━┻ (configuration, middleware, logging and the gem's own names), Sidekiq::Job.delay (an extension the gem keeps for older code)

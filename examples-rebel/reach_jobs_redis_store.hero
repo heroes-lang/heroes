@@ -1,0 +1,23 @@
+# Reaches Rebel's `jobs/redis_store`, so that `heroes test` on this file
+# runs the package's own tests (spec § 12). Where the variable
+# `REBEL_REDIS_URL` names a server, it enqueues a job there, claims it and
+# completes it; elsewhere it says why not.
+
+use <rebel>/jobs
+use <rebel>/jobs/redis_store
+use <rebel>/os
+use <rebel>/redis
+
+function main()
+    match os.env("REBEL_REDIS_URL")
+        .err _ => print("REBEL_REDIS_URL names no server")
+        .ok url =>
+            match redis.open(redis.parse_url(url).must())
+                .err e => print("no server: ", e.code, ": ", e.msg)
+                .ok first =>
+                    c @= first
+                    id = redis_store.enqueue(@c, jobs.new_job("hello", .null_value)).must()
+                    claimed = redis_store.claim(@c, jobs.new_worker([jobs.DEFAULT_QUEUE])).must()
+                    redis_store.complete(@c, claimed, .null_value).must()
+                    print("job ", id, " ", jobs.state_name(redis_store.get(@c, id).must().state))
+                    redis.close(@c).must()

@@ -1,0 +1,38 @@
+# A connection for the tests that run against a live PostgreSQL: the one the
+# variable `REBEL_POSTGRES_URL` names, its tables made in the session's own
+# temporary schema, so each connection sees its own jobs and leaves nothing
+# when it closes.
+
+use jobs/postgres_store/internal/statements
+use os
+use sql
+use sql/postgres
+
+# A connection to the server `REBEL_POSTGRES_URL` names, with the store's
+# tables made empty in its temporary schema. Fails `not_found` where the
+# variable is not set, and as `postgres.parse_url`, `postgres.open` and the
+# statements fail.
+function connect() -> postgres.Db?
+    url = match os.env("REBEL_POSTGRES_URL")
+        .ok u  => u
+        .err _ => return fail(code: sql.NOT_FOUND, msg: "REBEL_POSTGRES_URL names no server")
+
+    db @= postgres.open(postgres.parse_url(url)?)?
+    _ = postgres.exec(@db, "SET search_path TO pg_temp", [])?
+    postgres.exec_script(@db, statements.SCHEMA)?
+    return ok(db)
+
+# A connection to the same server sharing the tables of the schema `schema`,
+# made there where they are not, for the tests of two workers. Fails as
+# `connect` fails.
+function connect_shared(schema: str) -> postgres.Db?
+    url = match os.env("REBEL_POSTGRES_URL")
+        .ok u  => u
+        .err _ => return fail(code: sql.NOT_FOUND, msg: "REBEL_POSTGRES_URL names no server")
+
+    db @= postgres.open(postgres.parse_url(url)?)?
+    quoted = sql.quote_identifier(schema)?
+    _ = postgres.exec(@db, f"CREATE SCHEMA IF NOT EXISTS {quoted}", [])?
+    _ = postgres.exec(@db, f"SET search_path TO {quoted}", [])?
+    postgres.exec_script(@db, statements.SCHEMA)?
+    return ok(db)

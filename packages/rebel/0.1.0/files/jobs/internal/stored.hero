@@ -1,0 +1,150 @@
+# Reads the fields a store keeps of a job, each as text: a text, a whole
+# number, an instant there may not be, a flag, a JSON value, and the list of
+# the errors of a job's failed attempts. `jobs.info_of` builds a job of them.
+
+use json
+use numbers
+use time
+
+constant INVALID: str
+    "invalid"
+
+constant NOT_FOUND: str
+    "not_found"
+
+# One failed attempt, as the list of errors keeps it.
+record Attempt
+    # The attempt's number.
+    attempt: i64
+    # When it was recorded, in microseconds since 1970.
+    at_micros: i64
+    # The error.
+    error: str
+
+# The text of the field `name`. Fails `invalid` where there is none.
+function text_of(fields: {str: str}, name: str) -> str?
+    match fields[name]
+        .ok v  => return ok(v)
+        .err _ => return fail(code: INVALID, msg: f"the store's fields of a job hold no \"{name}\"")
+
+# The whole number in the field `name`. Fails `invalid` where there is no
+# such field or it holds no whole number.
+function integer_of(fields: {str: str}, name: str) -> i64?
+    t = text_of(fields, name)?
+
+    match numbers.parse_int(t)
+        .ok n  => return ok(n)
+        .err _ => return fail(code: INVALID, msg: f"the field \"{name}\" of a job holds \"{t}\", not a whole number")
+
+# The whole number in the field `name`. Fails `not_found` where the field
+# holds "", and `invalid` where there is no such field or it holds anything
+# else that is no whole number.
+function optional_integer_of(fields: {str: str}, name: str) -> i64?
+    t = text_of(fields, name)?
+
+    if t == ""
+        return fail(code: NOT_FOUND, msg: f"the job has no \"{name}\"")
+    return integer_of(fields, name)
+
+# The instant the field `name` holds in microseconds since 1970. Fails
+# `not_found` where it holds "", `invalid` where it holds no whole number,
+# and `does_not_fit` where the instant is outside what `time.Instant` holds.
+function instant_of(fields: {str: str}, name: str) -> time.Instant?
+    return time.from_unix_microseconds(optional_integer_of(fields, name)?)
+
+# The flag in the field `name`, `0` or `1`. Fails `invalid` where there is
+# no such field or it holds anything else.
+function flag_of(fields: {str: str}, name: str) -> bool?
+    t = text_of(fields, name)?
+
+    return match t
+        "0" => ok(false)
+        "1" => ok(true)
+        _   => fail(code: INVALID, msg: f"the field \"{name}\" of a job holds \"{t}\", not 0 or 1")
+
+# The JSON value in the field `name`. Fails `invalid` where there is no such
+# field or its text is no JSON.
+function json_of(fields: {str: str}, name: str) -> json.Value?
+    t = text_of(fields, name)?
+
+    match json.parse(t)
+        .ok v  => return ok(v)
+        .err e => return fail(code: INVALID, msg: f"the field \"{name}\" of a job is no JSON: {e.msg}")
+
+# The errors a JSON list of objects of `attempt`, `at` and `error` holds, in
+# its order. Fails `invalid` where `text` is no such list.
+function attempts_of(text: str) -> [Attempt]?
+    value = match json.parse(text)
+        .ok v  => v
+        .err e => return fail(code: INVALID, msg: f"the errors of a job are no JSON: {e.msg}")
+
+    items = match json.items_of(value)
+        .ok xs => xs
+        .err _ => return fail(code: INVALID, msg: f"the errors of a job are no list: {text}")
+
+    found: [Attempt] @= []
+
+    for item in items
+        attempt = json.int_of(json.member(item, "attempt").default(.null_value))
+        at = json.int_of(json.member(item, "at").default(.null_value))
+        error = json.text_of(json.member(item, "error").default(.null_value))
+
+        if attempt.is_err() || at.is_err() || error.is_err()
+            return fail(
+                code: INVALID,
+                msg: f"an error of a job is not an object of a whole \"attempt\", a whole \"at\" and a text \"error\": {json.format(item).default("?")}"
+            )
+        found @ found.push(Attempt(attempt: attempt.must(), at_micros: at.must(), error: error.must()))
+
+    return ok(found)
+
+test "text_of and integer_of: present, missing, and no number"
+    fields = {"n": "42", "t": "x", "neg": "-7"}
+    assert text_of(fields, "t").must() == "x" && integer_of(fields, "n").must() == 42 && integer_of(fields, "neg").must() == -7
+
+    match text_of(fields, "nope")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "the store's fields of a job hold no \"nope\""
+
+    match integer_of(fields, "t")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "the field \"t\" of a job holds \"x\", not a whole number"
+
+test "optional_integer_of: a number, the empty text not_found, and a word invalid"
+    fields = {"a": "9223372036854775807", "b": "", "c": "z"}
+    assert optional_integer_of(fields, "a").must() == 9223372036854775807
+
+    match optional_integer_of(fields, "b")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    match optional_integer_of(fields, "c")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "flag_of and json_of: both flags, another word, JSON and no JSON"
+    fields = {"y": "1", "n": "0", "t": "true", "j": "{\"a\":[1,2]}", "bad": "{"}
+    assert flag_of(fields, "y").must() && !flag_of(fields, "n").must() && flag_of(fields, "t").is_err()
+    assert json_of(fields, "j").must() == .object(members: {"a": .list(items: [.number(v: 1.0), .number(v: 2.0)])})
+    assert json_of(fields, "bad").is_err()
+
+test "attempts_of: none, two in order, text of more than one byte, and the malformed refused"
+    assert attempts_of("[]").must() == []
+    two = attempts_of(
+        "[{\"attempt\":1,\"at\":1763460002000000,\"error\":\"città\"},{\"attempt\":2,\"at\":-5,\"error\":\"\"}]"
+    ).must()
+    assert two == [Attempt(attempt: 1, at_micros: 1763460002000000, error: "città"), Attempt(attempt: 2, at_micros: -5, error: "")]
+    assert attempts_of("{}").is_err() && attempts_of("[1]").is_err() && attempts_of("[{\"attempt\":1.5,\"at\":0,\"error\":\"\"}]").is_err()
+    assert attempts_of("").is_err()
+
+test "instant_of: an instant, none, and one past what an Instant holds"
+    fields = {"a": "-1", "b": "", "c": "9223372036854775807"}
+    assert instant_of(fields, "a").must() == time.from_unix_microseconds(-1).must()
+
+    match instant_of(fields, "b")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    match instant_of(fields, "c")
+        .ok _  => assert false
+        .err e => assert e.code == "does_not_fit"

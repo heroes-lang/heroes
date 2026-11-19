@@ -1,0 +1,51 @@
+# The ledger of `jobs/redis_store`: what belongs to keeping jobs in Redis
+# alone, measured against Go's github.com/hibiken/asynq v0.26.0 (its
+# `go doc -all`, the module fetched into the scratch folder on 2026-11-18),
+# Python's RQ 3.0.0 (`dir` of its queues, jobs, workers and scripts,
+# installed into the scratch folder the same day), Ruby's Sidekiq 8.1.7 (its
+# Redis connection) and Rust's apalis-redis 1.1.1 (its items on docs.rs,
+# read on 2026-11-19). The calls both stores answer, enqueueing to purging,
+# are counted in `jobs.ledger`, each naming this store's function.
+#
+# The live run, on 2026-11-19, reached Redis 8.10.2, built from its source
+# (redis-stable, SHA-256 430eb3e0...) in the scratch folder and run on this
+# Mac's loopback with a password, over RESP3: every call and every script,
+# a lease run out and rescued, and the periodic schedules. Redis 5 to 7 are
+# unrun.
+
+capability jobs-redis/keys  where the store keeps its jobs in a server
+  heroes  redis_store.PREFIX
+  go      asynq.RedisClientOpt, asynq.RedisConnOpt, asynq.ParseRedisURI, asynq.NewClientFromRedisClient, asynq.NewInspectorFromRedisClient, asynq.NewServerFromRedisClient, asynq.NewSchedulerFromRedisClient
+  rust    apalis_redis::RedisStorage, apalis_redis::Config, apalis_redis::connect, apalis_redis::Client, apalis_redis::ConnectionManager, apalis_redis::ConnectionLike, apalis_redis::IntoConnectionInfo, apalis_redis::RedisError, apalis_redis::Error, apalis_redis::RedisTask, apalis_redis::factory::RedisStorageFactory
+  python  rq.Queue.redis_queue_namespace_prefix, rq.job.Job.redis_job_namespace_prefix, rq.worker.Worker.redis_worker_namespace_prefix, rq.connections, rq.worker.Worker.get_redis_server_version, rq.Queue.get_redis_server_version
+  ruby    Sidekiq.redis, Sidekiq.redis_pool, Sidekiq::Client.redis_pool, Sidekiq::Client.redis_pool=, Sidekiq::Client.via, Sidekiq::RedisConnection, Sidekiq::RedisClientAdapter
+  note    one fixed prefix, as asynq's `asynq:` and RQ's `rq:`; a program keeping two stores in one server gives each its own database; the connection is the program's `redis.Client`
+
+capability jobs-redis/scripts  every change a Lua script the server runs whole, its clock the server's
+  heroes  redis_store.claim, redis_store.complete, redis_store.fail_attempt, redis_store.rescue
+  go      -
+  rust    apalis_redis::queries::fetch_next, apalis_redis::queries::push_tasks, apalis_redis::queries::CompactTask, apalis_redis::queries::deserialize_with_meta, apalis_redis::RedisPersistence
+  python  rq.scripts
+  ruby    -
+  note    a job's member in a set is its id in fifteen digits, so jobs of one priority due in one millisecond are claimed in the order of their ids; asynq and RQ run scripts too
+
+capability jobs-redis/in-transaction  a job kept only where the program's own database commits
+  heroes  refused: Redis and the program's database commit apart, so a job enqueued here is kept at once whatever the other does; a program whose jobs must follow its commits keeps them in `jobs/postgres_store`
+  go      -
+  rust    -
+  python  -
+  ruby    Sidekiq.transactional_push!
+
+capability jobs-redis/wake  a worker woken by a blocking pop or a message when a job comes
+  heroes  pending: the sorted sets the scripts keep have no blocking pop; a wake would need a list or a channel beside them, not yet written, so each worker polls
+  go      -
+  rust    apalis_redis::factory::Pubsub
+  python  rq.Queue.dequeue_any, rq.Queue.lmove, rq.intermediate_queue
+  ruby    -
+
+capability jobs-redis/cluster  a store spread over a Redis cluster, or found through Sentinel
+  heroes  refused: `redis` refuses a cluster's redirections and knows no Sentinel, which its ledger says; the scripts name keys they compute, which a cluster's slots would refuse
+  go      asynq.RedisClusterClientOpt, asynq.RedisClusterClientOpt.MakeRedisClient, asynq.RedisFailoverClientOpt, asynq.RedisFailoverClientOpt.MakeRedisClient, asynq.Inspector.ClusterKeySlot, asynq.Inspector.ClusterNodes, asynq.ClusterNode
+  rust    -
+  python  -
+  ruby    -

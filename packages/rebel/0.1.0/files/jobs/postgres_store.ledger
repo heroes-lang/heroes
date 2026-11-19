@@ -1,0 +1,48 @@
+# The ledger of `jobs/postgres_store`: what belongs to keeping jobs in
+# PostgreSQL alone, measured against Go's github.com/riverqueue/river
+# v0.51.2 (its `go doc -all`, the module fetched into the scratch folder on
+# 2026-11-18), Ruby's Sidekiq 8.1.7 (its transactional push) and Rust's
+# apalis-sql 0.7.4 (its items on docs.rs, read on 2026-11-19); Python's
+# Celery and RQ keep no jobs in PostgreSQL. The calls both stores answer,
+# enqueueing to purging, are counted in `jobs.ledger`, each naming this
+# store's function.
+#
+# The live run, on 2026-11-19, reached PostgreSQL 16.15 (the image
+# postgres:16.15-alpine in a container of this Mac, over plain TCP with
+# SCRAM-SHA-256): every call, two connections claiming side by side, a
+# lease run out and rescued, a unique key held inside the program's
+# transaction, and the periodic schedules.
+
+capability jobs-postgres/tables  the store's tables made where they are not, or their script for a migration
+  heroes  postgres_store.schema, postgres_store.install
+  go      river.Config.Schema, river.Client.Schema
+  rust    apalis_sql::postgres::PostgresStorage, apalis_sql::postgres::PgPool, apalis_sql::Config
+  python  -
+  note    three tables in the first schema of the connection's `search_path`, where river names its schema in its configuration; the script takes a lock of its transaction first, so two programs installing at once do not collide
+
+capability jobs-postgres/in-transaction  a job enqueued, or completed, in the program's own transaction
+  heroes  postgres_store.enqueue, postgres_store.enqueue_many, postgres_store.complete
+  go      river.Client.InsertTx, river.Client.InsertManyTx, river.Client.InsertManyFastTx, river.JobCompleteTx, river.Client.JobCancelTx, river.Client.JobDeleteTx, river.Client.JobRetryTx, river.Client.JobGetTx, river.Client.JobListTx
+  rust    -
+  python  -
+  ruby    Sidekiq.transactional_push!, Sidekiq::TransactionAwareClient
+  note    every call works on the program's connection, inside its transaction where one is open; a unique key held is refused without failing that transaction (`ON CONFLICT DO NOTHING`), and `enqueue_many` works under a savepoint of it
+
+capability jobs-postgres/skip-locked  each claim locks one row, and the other workers pass over it rather than wait
+  heroes  postgres_store.claim
+  go      -
+  rust    apalis_sql::postgres::PgPollError, apalis_sql::from_row::SqlRequest, apalis_sql::context::SqlContext, apalis_sql::calculate_status, apalis_sql::SqlError
+  python  -
+  note    `FOR UPDATE SKIP LOCKED` in one `UPDATE`, as river's driver claims; the test runs two connections, the first claiming inside an open transaction
+
+capability jobs-postgres/copy  many jobs kept with one `COPY`, faster than an insert each
+  heroes  pending: `sql/postgres` does not copy rows in bulk, which its ledger says; `enqueue_many` inserts each job in turn, one round trip each
+  go      river.Client.InsertManyFast, river.Client.InsertManyFastTx
+  rust    -
+  python  -
+
+capability jobs-postgres/other-databases  the same store over MySQL or SQLite
+  heroes  pending: a store over `sql/mysql`, whose MySQL 8 claims with `SKIP LOCKED` too, is not written; over `sql/sqlite` one writer holds the database at a time, so workers would claim in turn
+  go      -
+  rust    apalis_sql::mysql::MysqlStorage, apalis_sql::mysql::MySqlPool, apalis_sql::mysql::MysqlPollError, apalis_sql::sqlite::SqliteStorage, apalis_sql::sqlite::SqlitePool, apalis_sql::sqlite::SqlitePollError, apalis_sql::sql_storage_tests
+  python  -

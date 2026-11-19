@@ -1,0 +1,398 @@
+# The Lua scripts the Redis store runs with `EVAL`, each whole and alone on
+# the server, so two workers never see a job half moved. Each opens with the
+# same prelude: the prefix of every key from `ARGV[1]`, the server's clock in
+# microseconds, a job's member of a set (its id written in fifteen digits, so
+# that members of one score sort as their ids), and the steps the scripts
+# share. The keys, under the prefix:
+#
+# - `job:<member>`, a hash of the job's fields, each as `jobs.info_of`
+#   reads it, the instants in microseconds;
+# - `ready:<queue>`, the jobs due, scored by priority times 2^44 plus the
+#   millisecond they became due, so the first member is the next claimed;
+# - `waiting:<queue>`, the jobs not yet due, scored by that millisecond;
+# - `running:<queue>`, scored by the millisecond their lease runs out;
+# - `completed:<queue>`, `failed:<queue>`, `cancelled:<queue>`, scored by
+#   the millisecond they finished;
+# - `unique:<key>`, the member of the job not finished that holds the key;
+# - `queues`, every queue a job was enqueued in; `paused`, the queues paused;
+# - `next_id`, the last id given; `periodic:<name>`, a schedule's text and
+#   next run.
+
+# The steps every script shares.
+function prelude() -> str
+    lines = [
+        "local P = ARGV[1]"
+        "local function num(x) return string.format('%.0f', x) end"
+        "local function member(id) return string.format('%015.0f', tonumber(id)) end"
+        "local function job_key(m) return P .. 'job:' .. m end"
+        "local function now_us() local t = redis.call('TIME') return tonumber(t[1]) * 1000000 + tonumber(t[2]) end"
+        "local function ms(us) return math.floor(us / 1000) end"
+        "local function make_ready(m, q, priority, run_at, now)"
+        "  if run_at <= now then redis.call('ZADD', P .. 'ready:' .. q, num(tonumber(priority) * 17592186044416 + ms(run_at)), m)"
+        "  else redis.call('ZADD', P .. 'waiting:' .. q, num(ms(run_at)), m) end"
+        "end"
+        "local function finish(m, q, state, now, unique)"
+        "  redis.call('ZADD', P .. state .. ':' .. q, num(ms(now)), m)"
+        "  if unique ~= '' and redis.call('GET', P .. 'unique:' .. unique) == m then redis.call('DEL', P .. 'unique:' .. unique) end"
+        "end"
+        "local function add_error(k, attempt, now, quoted)"
+        "  local errs = redis.call('HGET', k, 'errors')"
+        "  local entry = '{\"attempt\":' .. attempt .. ',\"at\":' .. num(now) .. ',\"error\":' .. quoted .. '}'"
+        "  if errs == '[]' then errs = '[' .. entry .. ']' else errs = string.sub(errs, 1, -2) .. ',' .. entry .. ']' end"
+        "  redis.call('HSET', k, 'errors', errs)"
+        "end"
+        "local function insert(b, now)"
+        "  local id = redis.call('INCR', P .. 'next_id')"
+        "  local m = member(id)"
+        "  local run_at = now"
+        "  if ARGV[b + 6] == 'after' then run_at = now + tonumber(ARGV[b + 7]) elseif ARGV[b + 6] == 'at' then run_at = tonumber(ARGV[b + 7]) end"
+        "  redis.call('HSET', job_key(m), 'id', num(id), 'kind', ARGV[b], 'queue', ARGV[b + 1], 'payload', ARGV[b + 2], 'priority', ARGV[b + 3], 'state', 'available', 'attempt', '0', 'max_attempts', ARGV[b + 4], 'unique_key', ARGV[b + 5], 'created_at', num(now), 'run_at', num(run_at), 'attempted_at', '', 'finished_at', '', 'lease_until', '', 'worker', '', 'cancel_requested', '0', 'errors', '[]', 'output', 'null')"
+        "  redis.call('SADD', P .. 'queues', ARGV[b + 1])"
+        "  make_ready(m, ARGV[b + 1], ARGV[b + 3], run_at, now)"
+        "  if ARGV[b + 5] ~= '' then redis.call('SET', P .. 'unique:' .. ARGV[b + 5], m) end"
+        "  return num(id)"
+        "end"
+    ]
+    return lines.join("\n") + "\n"
+
+# Enqueues `ARGV[2]` jobs, eight arguments each from `ARGV[3]`: all, or none
+# where a unique key is held, answering `exists`, the job's place and the
+# holder's member (`batch` for a job before it in the batch); else `ok` and
+# the ids.
+function enqueue() -> str
+    body = [
+        "local n = tonumber(ARGV[2])"
+        "local now = now_us()"
+        "local seen = {}"
+        "for i = 0, n - 1 do"
+        "  local key = ARGV[3 + i * 8 + 5]"
+        "  if key ~= '' then"
+        "    if seen[key] then return {'exists', tostring(i), 'batch'} end"
+        "    local held = redis.call('GET', P .. 'unique:' .. key)"
+        "    if held then return {'exists', tostring(i), held} end"
+        "    seen[key] = true"
+        "  end"
+        "end"
+        "local out = {'ok'}"
+        "for i = 0, n - 1 do table.insert(out, insert(3 + i * 8, now)) end"
+        "return out"
+    ]
+    return prelude() + body.join("\n")
+
+# Claims the next job due in the queues from `ARGV[4]` that are not paused,
+# its lease `ARGV[2]` microseconds, for the worker `ARGV[3]`, moving the jobs
+# that came due to their ready set first; answers its fields, or nothing.
+function claim() -> str
+    body = [
+        "local now = now_us()"
+        "local best, best_score, best_q = nil, nil, nil"
+        "for i = 4, #ARGV do"
+        "  local q = ARGV[i]"
+        "  if redis.call('SISMEMBER', P .. 'paused', q) == 0 then"
+        "    local due = redis.call('ZRANGEBYSCORE', P .. 'waiting:' .. q, '-inf', num(ms(now)), 'LIMIT', 0, 1000)"
+        "    for _, m in ipairs(due) do"
+        "      local h = redis.call('HMGET', job_key(m), 'priority', 'run_at')"
+        "      redis.call('ZREM', P .. 'waiting:' .. q, m)"
+        "      if h[1] then make_ready(m, q, h[1], tonumber(h[2]), now) end"
+        "    end"
+        "    local head = redis.call('ZRANGE', P .. 'ready:' .. q, 0, 0, 'WITHSCORES')"
+        "    if head[1] then"
+        "      local score = tonumber(head[2])"
+        "      if best == nil or score < best_score or (score == best_score and head[1] < best) then best, best_score, best_q = head[1], score, q end"
+        "    end"
+        "  end"
+        "end"
+        "if best == nil then return {} end"
+        "redis.call('ZREM', P .. 'ready:' .. best_q, best)"
+        "local k = job_key(best)"
+        "redis.call('HINCRBY', k, 'attempt', 1)"
+        "local lease = now + tonumber(ARGV[2])"
+        "redis.call('HSET', k, 'state', 'running', 'attempted_at', num(now), 'lease_until', num(lease), 'worker', ARGV[3])"
+        "redis.call('ZADD', P .. 'running:' .. best_q, num(ms(lease)), best)"
+        "return redis.call('HGETALL', k)"
+    ]
+    return prelude() + body.join("\n")
+
+# The opening of every script about one attempt: job `ARGV[2]`, attempt
+# `ARGV[3]`, still running, or the answer `lost`.
+constant THIS_ATTEMPT: str
+    "local m = member(ARGV[2])\nlocal k = job_key(m)\nlocal h = redis.call('HMGET', k, 'state', 'attempt', 'queue', 'unique_key', 'cancel_requested', 'max_attempts', 'priority')\nif h[1] ~= 'running' or h[2] ~= ARGV[3] then return {'lost'} end\nlocal q, unique = h[3], h[4]\nlocal now = now_us()\n"
+
+# Completes the attempt, keeping the output `ARGV[4]`.
+function complete() -> str
+    body = [
+        "redis.call('ZREM', P .. 'running:' .. q, m)"
+        "redis.call('HSET', k, 'state', 'completed', 'finished_at', num(now), 'lease_until', '', 'output', ARGV[4])"
+        "finish(m, q, 'completed', now, unique)"
+        "return {'ok'}"
+    ]
+    return prelude() + THIS_ATTEMPT + body.join("\n")
+
+# Fails the attempt with the error `ARGV[4]`, written as JSON: where
+# `ARGV[5]` is `retry`, the job waits `ARGV[6]` microseconds unless it has
+# no attempt left; where it is `discard`, the job fails for good; either way
+# it is cancelled where that was asked. Answers its fields.
+function fail_attempt() -> str
+    body = [
+        "redis.call('ZREM', P .. 'running:' .. q, m)"
+        "add_error(k, ARGV[3], now, ARGV[4])"
+        "local state = 'available'"
+        "if h[5] == '1' then state = 'cancelled' elseif ARGV[5] == 'discard' or tonumber(ARGV[3]) >= tonumber(h[6]) then state = 'failed' end"
+        "if state == 'available' then"
+        "  local run_at = now + tonumber(ARGV[6])"
+        "  redis.call('HSET', k, 'state', 'available', 'run_at', num(run_at), 'lease_until', '')"
+        "  make_ready(m, q, h[7], run_at, now)"
+        "else"
+        "  redis.call('HSET', k, 'state', state, 'finished_at', num(now), 'lease_until', '')"
+        "  finish(m, q, state, now, unique)"
+        "end"
+        "return redis.call('HGETALL', k)"
+    ]
+    return prelude() + THIS_ATTEMPT + body.join("\n")
+
+# Gives the attempt back uncounted, the job to wait `ARGV[4]` microseconds,
+# or cancels it where that was asked.
+function snooze() -> str
+    body = [
+        "redis.call('ZREM', P .. 'running:' .. q, m)"
+        "if h[5] == '1' then"
+        "  redis.call('HSET', k, 'state', 'cancelled', 'finished_at', num(now), 'lease_until', '')"
+        "  finish(m, q, 'cancelled', now, unique)"
+        "else"
+        "  local run_at = now + tonumber(ARGV[4])"
+        "  redis.call('HINCRBY', k, 'attempt', -1)"
+        "  redis.call('HSET', k, 'state', 'available', 'run_at', num(run_at), 'lease_until', '')"
+        "  make_ready(m, q, h[7], run_at, now)"
+        "end"
+        "return {'ok'}"
+    ]
+    return prelude() + THIS_ATTEMPT + body.join("\n")
+
+# Renews the attempt's lease to `ARGV[4]` microseconds from now; answers
+# the job's fields.
+function extend() -> str
+    body = [
+        "local lease = now + tonumber(ARGV[4])"
+        "redis.call('HSET', k, 'lease_until', num(lease))"
+        "redis.call('ZADD', P .. 'running:' .. q, num(ms(lease)), m)"
+        "return redis.call('HGETALL', k)"
+    ]
+    return prelude() + THIS_ATTEMPT + body.join("\n")
+
+# Gives back every running job whose lease ran out, and answers how many.
+function rescue() -> str
+    body = [
+        "local now = now_us()"
+        "local count = 0"
+        "for _, q in ipairs(redis.call('SMEMBERS', P .. 'queues')) do"
+        "  for _, m in ipairs(redis.call('ZRANGEBYSCORE', P .. 'running:' .. q, '-inf', '(' .. num(ms(now)))) do"
+        "    local k = job_key(m)"
+        "    local h = redis.call('HMGET', k, 'attempt', 'worker', 'cancel_requested', 'max_attempts', 'priority', 'unique_key')"
+        "    redis.call('ZREM', P .. 'running:' .. q, m)"
+        "    add_error(k, h[1], now, cjson.encode('the lease of the worker \"' .. h[2] .. '\" ran out before the attempt finished'))"
+        "    local state = 'available'"
+        "    if h[3] == '1' then state = 'cancelled' elseif tonumber(h[1]) >= tonumber(h[4]) then state = 'failed' end"
+        "    if state == 'available' then"
+        "      redis.call('HSET', k, 'state', 'available', 'run_at', num(now), 'lease_until', '')"
+        "      make_ready(m, q, h[5], now, now)"
+        "    else"
+        "      redis.call('HSET', k, 'state', state, 'finished_at', num(now), 'lease_until', '')"
+        "      finish(m, q, state, now, h[6])"
+        "    end"
+        "    count = count + 1"
+        "  end"
+        "end"
+        "return count"
+    ]
+    return prelude() + body.join("\n")
+
+# Removes every job of the finished state `ARGV[2]` that finished more than
+# `ARGV[3]` microseconds ago; answers how many.
+function purge() -> str
+    body = [
+        "local cut = ms(now_us() - tonumber(ARGV[3]))"
+        "local count = 0"
+        "for _, q in ipairs(redis.call('SMEMBERS', P .. 'queues')) do"
+        "  local set = P .. ARGV[2] .. ':' .. q"
+        "  for _, m in ipairs(redis.call('ZRANGEBYSCORE', set, '-inf', '(' .. num(cut))) do"
+        "    redis.call('DEL', job_key(m))"
+        "    redis.call('ZREM', set, m)"
+        "    count = count + 1"
+        "  end"
+        "end"
+        "return count"
+    ]
+    return prelude() + body.join("\n")
+
+# Cancels job `ARGV[2]` where it waits, or asks it where it runs; answers
+# the state after, or `missing`.
+function cancel() -> str
+    body = [
+        "local m = member(ARGV[2])"
+        "local k = job_key(m)"
+        "local h = redis.call('HMGET', k, 'state', 'queue', 'unique_key')"
+        "if not h[1] then return 'missing' end"
+        "if h[1] == 'available' then"
+        "  local now = now_us()"
+        "  redis.call('ZREM', P .. 'ready:' .. h[2], m)"
+        "  redis.call('ZREM', P .. 'waiting:' .. h[2], m)"
+        "  redis.call('HSET', k, 'state', 'cancelled', 'finished_at', num(now))"
+        "  finish(m, h[2], 'cancelled', now, h[3])"
+        "  return 'cancelled'"
+        "end"
+        "if h[1] == 'running' then redis.call('HSET', k, 'cancel_requested', '1') end"
+        "return h[1]"
+    ]
+    return prelude() + body.join("\n")
+
+# Makes job `ARGV[2]` ready now, with one attempt more where it had none
+# left; answers its fields, or `missing`, `running`, or `exists` and the
+# holder of its unique key.
+function retry() -> str
+    body = [
+        "local m = member(ARGV[2])"
+        "local k = job_key(m)"
+        "local h = redis.call('HMGET', k, 'state', 'queue', 'unique_key', 'attempt', 'max_attempts', 'priority', 'run_at')"
+        "if not h[1] then return {'missing'} end"
+        "if h[1] == 'running' then return {'running'} end"
+        "local q, unique = h[2], h[3]"
+        "if unique ~= '' then"
+        "  local held = redis.call('GET', P .. 'unique:' .. unique)"
+        "  if held and held ~= m then return {'exists', held} end"
+        "end"
+        "local now = now_us()"
+        "if h[1] == 'available' then"
+        "  if redis.call('ZREM', P .. 'waiting:' .. q, m) == 1 then"
+        "    redis.call('HSET', k, 'run_at', num(now))"
+        "    make_ready(m, q, h[6], now, now)"
+        "  end"
+        "else"
+        "  redis.call('ZREM', P .. h[1] .. ':' .. q, m)"
+        "  local most = tonumber(h[5])"
+        "  if tonumber(h[4]) + 1 > most then most = tonumber(h[4]) + 1 end"
+        "  redis.call('HSET', k, 'state', 'available', 'run_at', num(now), 'finished_at', '', 'cancel_requested', '0', 'max_attempts', num(most))"
+        "  make_ready(m, q, h[6], now, now)"
+        "  if unique ~= '' then redis.call('SET', P .. 'unique:' .. unique, m) end"
+        "end"
+        "return redis.call('HGETALL', k)"
+    ]
+    return prelude() + body.join("\n")
+
+# Removes job `ARGV[2]` where it does not run; answers `ok`, `missing` or
+# `running`.
+function delete() -> str
+    body = [
+        "local m = member(ARGV[2])"
+        "local k = job_key(m)"
+        "local h = redis.call('HMGET', k, 'state', 'queue', 'unique_key')"
+        "if not h[1] then return 'missing' end"
+        "if h[1] == 'running' then return 'running' end"
+        "for _, s in ipairs({'ready', 'waiting', 'completed', 'failed', 'cancelled'}) do redis.call('ZREM', P .. s .. ':' .. h[2], m) end"
+        "if h[3] ~= '' and redis.call('GET', P .. 'unique:' .. h[3]) == m then redis.call('DEL', P .. 'unique:' .. h[3]) end"
+        "redis.call('DEL', k)"
+        "return 'ok'"
+    ]
+    return prelude() + body.join("\n")
+
+# The fields of the jobs of queue `ARGV[2]` in state `ARGV[3]`, `ARGV[5]`
+# of them after the first `ARGV[4]`, in the order `list` promises.
+function list() -> str
+    body = [
+        "local q, state = ARGV[2], ARGV[3]"
+        "local from, count = tonumber(ARGV[4]), tonumber(ARGV[5])"
+        "local members = {}"
+        "if count > 0 then"
+        "  if state == 'available' then"
+        "    local now = now_us()"
+        "    local due = redis.call('ZRANGEBYSCORE', P .. 'waiting:' .. q, '-inf', num(ms(now)))"
+        "    for _, m in ipairs(due) do"
+        "      local h = redis.call('HMGET', job_key(m), 'priority', 'run_at')"
+        "      redis.call('ZREM', P .. 'waiting:' .. q, m)"
+        "      if h[1] then make_ready(m, q, h[1], tonumber(h[2]), now) end"
+        "    end"
+        "    local ready = redis.call('ZCARD', P .. 'ready:' .. q)"
+        "    if from < ready then members = redis.call('ZRANGE', P .. 'ready:' .. q, from, from + count - 1) end"
+        "    local rest = count - #members"
+        "    if rest > 0 then"
+        "      local start = from - ready"
+        "      if start < 0 then start = 0 end"
+        "      for _, m in ipairs(redis.call('ZRANGE', P .. 'waiting:' .. q, start, start + rest - 1)) do table.insert(members, m) end"
+        "    end"
+        "  elseif state == 'running' then"
+        "    members = redis.call('ZRANGE', P .. 'running:' .. q, from, from + count - 1)"
+        "  else"
+        "    members = redis.call('ZREVRANGE', P .. state .. ':' .. q, from, from + count - 1)"
+        "  end"
+        "end"
+        "local out = {}"
+        "for _, m in ipairs(members) do table.insert(out, redis.call('HGETALL', job_key(m))) end"
+        "return out"
+    ]
+    return prelude() + body.join("\n")
+
+# How many jobs stand in each queue and state, as triples of the queue, the
+# state and the count, those of no job left out.
+function counts() -> str
+    body = [
+        "local out = {}"
+        "for _, q in ipairs(redis.call('SMEMBERS', P .. 'queues')) do"
+        "  local available = redis.call('ZCARD', P .. 'ready:' .. q) + redis.call('ZCARD', P .. 'waiting:' .. q)"
+        "  if available > 0 then table.insert(out, q) table.insert(out, 'available') table.insert(out, tostring(available)) end"
+        "  for _, s in ipairs({'running', 'completed', 'failed', 'cancelled'}) do"
+        "    local n = redis.call('ZCARD', P .. s .. ':' .. q)"
+        "    if n > 0 then table.insert(out, q) table.insert(out, s) table.insert(out, tostring(n)) end"
+        "  end"
+        "end"
+        "return out"
+    ]
+    return prelude() + body.join("\n")
+
+# The schedule `ARGV[2]` kept with its text `ARGV[3]` and next run
+# `ARGV[4]` microseconds, unless it is kept with that text already; answers
+# the next run kept, and the server's clock, both in microseconds.
+function keep_schedule() -> str
+    body = [
+        "local k = P .. 'periodic:' .. ARGV[2]"
+        "if redis.call('HGET', k, 'schedule') ~= ARGV[3] then redis.call('HSET', k, 'schedule', ARGV[3], 'next_at', ARGV[4]) end"
+        "return {redis.call('HGET', k, 'next_at'), num(now_us())}"
+    ]
+    return prelude() + body.join("\n")
+
+# Moves the next run of schedule `ARGV[2]` from `ARGV[3]` to `ARGV[4]`, and
+# where it moved, enqueues the job of the eight arguments from `ARGV[5]`,
+# now, unless its unique key is held; answers its id, or "".
+function advance() -> str
+    body = [
+        "local k = P .. 'periodic:' .. ARGV[2]"
+        "if redis.call('HGET', k, 'next_at') ~= ARGV[3] then return '' end"
+        "redis.call('HSET', k, 'next_at', ARGV[4])"
+        "if ARGV[10] ~= '' and redis.call('EXISTS', P .. 'unique:' .. ARGV[10]) == 1 then return '' end"
+        "return insert(5, now_us())"
+    ]
+    return prelude() + body.join("\n")
+
+test "every script: the prelude first, and the opening of an attempt's scripts after it"
+    texts = [
+        enqueue()
+        claim()
+        complete()
+        fail_attempt()
+        snooze()
+        extend()
+        rescue()
+        purge()
+        cancel()
+        retry()
+        delete()
+        list()
+        counts()
+        keep_schedule()
+        advance()
+    ]
+    head = prelude()
+
+    for t in texts
+        assert t.len() > head.len() && t.slice(from: 0, to: head.len()) == head
+
+    assert head.slice(from: 0, to: 18) == "local P = ARGV[1]\n"
+    assert complete().slice(from: head.len(), to: head.len() + THIS_ATTEMPT.len()) == THIS_ATTEMPT

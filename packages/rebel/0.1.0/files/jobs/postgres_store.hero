@@ -1,0 +1,1139 @@
+# Jobs kept in PostgreSQL, in a table of the program's own database, as
+# river keeps them: a job enqueued in the program's own transaction is
+# kept exactly where that transaction commits, a worker claims the next job
+# ready with `FOR UPDATE SKIP LOCKED`, so any number of workers each claim
+# a job once without waiting on each other, and a job completed in the
+# program's own transaction is completed exactly where the work it did
+# commits. Every call works on the program's connection of `sql/postgres`,
+# and every value goes as a parameter.
+#
+# It makes three tables, `rebel_jobs`, `rebel_jobs_periodic` and
+# `rebel_jobs_queues`, in the first schema of the connection's
+# `search_path`: `install` makes them where they are not, and `schema`
+# answers the script for a migration of `sql/migrate`. The store's clock is
+# the server's `now()`, which in a transaction stands at the transaction's
+# start; its instants are microseconds.
+#
+# It does not wake a worker when a job comes: `sql/postgres` does not wait
+# for `NOTIFY` (its ledger says so), so a worker that finds no job ready
+# sleeps its `poll`, a second by default, and asks again. It keeps no pool
+# of connections and starts no thread: each worker is the program's thread
+# or process with its own connection (`jobs`'s opening comment says how the
+# loop goes).
+#
+# It fails with `jobs`'s codes, and with `sql`'s, handed on from the
+# driver, where the database refuses or the connection is lost: `closed`,
+# `timeout`, and `not_found` where the tables are not there (`install`
+# makes them). A text the program gives that holds a zero byte, which
+# PostgreSQL cannot keep, is refused by the database `invalid`, except an
+# attempt's error, kept with each zero byte written as U+FFFD.
+
+use jobs
+use jobs/internal/limits
+use jobs/postgres_store/internal/live
+use jobs/postgres_store/internal/rows
+use jobs/postgres_store/internal/statements
+use jobs/postgres_store/internal/steps
+use json
+use os
+use sql
+use sql/postgres
+use strings
+use time
+
+## The tables
+
+# The script that makes the store's tables and indexes where they are not,
+# for a program that keeps its schema in migrations: run it once with
+# `postgres.exec_script`, or as the up script of a migration.
+#
+# It begins by taking a lock of the transaction, so two programs that run
+# it at once do not collide. See also `install`.
+function schema() -> str
+    return statements.SCHEMA
+
+# Makes the store's tables and indexes where they are not, in the first
+# schema of the connection's `search_path`.
+#
+# - `db`: the connection.
+#
+# Run it once before the first job, or let a migration run `schema`'s
+# script. Fails as `postgres.exec_script` fails, `permission` where the
+# role may not create tables. See also `schema`.
+function install(@db: postgres.Db) -> ()?
+    return postgres.exec_script(@db, statements.SCHEMA)
+
+## Enqueueing
+
+# Enqueues `job` and answers its id. Inside the program's transaction it is
+# kept only where that transaction commits, so a job never runs for work
+# that was rolled back.
+#
+# - `db`: the connection, in a transaction of the program's or not.
+# - `job`: the job, checked by `jobs.check_job`.
+#
+# Fails as `jobs.check_job` fails; `exists` where another job not finished
+# holds its unique key, the message naming that job, the program's
+# transaction left open and whole; and with the database's failure. See
+# also `enqueue_many`, `find_unique`.
+function enqueue(@db: postgres.Db, job: jobs.Job) -> i64?
+    return steps.insert_one(@db, job)
+
+# Enqueues every job of `batch`, all or none, and answers their ids in its
+# order.
+#
+# - `db`: the connection. Where no transaction is open, the call opens and
+#   ends its own; inside the program's, it works under a savepoint of it.
+# - `batch`: the jobs, each checked by `jobs.check_job`; none is a list of
+#   no id.
+#
+# Fails as `enqueue` fails for the first job refused, the message naming its
+# place in `batch`, and then keeps none of them; fails `invalid` where the
+# program's transaction has failed already. It costs a round trip per job.
+# See also `enqueue`.
+function enqueue_many(@db: postgres.Db, batch: [jobs.Job]) -> [i64]?
+    if batch.len() == 0
+        return ok([])
+
+    for i in range(from: 0, to: batch.len())
+        match jobs.check_job(batch[i])
+            .ok _  => _ = 0
+            .err e => return fail(code: e.code, msg: f"the job at {i} of the batch: {e.msg}")
+
+    own = match postgres.transaction_of(db)
+        .idle => true
+        .open => false
+        .failed => return fail(
+            code: jobs.INVALID,
+            msg: "the program's transaction has failed: roll it back before enqueueing"
+        )
+
+    if own
+        postgres.begin(@db)?
+    else
+        _ = postgres.exec(@db, "SAVEPOINT rebel_jobs_enqueue_many", [])?
+    ids: [i64] @= []
+
+    for i in range(from: 0, to: batch.len())
+        match steps.insert_one(@db, batch[i])
+            .ok id => ids @ ids.push(id)
+            .err e =>
+                if own
+                    _ = postgres.rollback(@db).is_err()
+                else
+                    _ = postgres.exec(@db, "ROLLBACK TO SAVEPOINT rebel_jobs_enqueue_many", []).is_err()
+                    _ = postgres.exec(@db, "RELEASE SAVEPOINT rebel_jobs_enqueue_many", []).is_err()
+                return fail(code: e.code, msg: f"the job at {i} of the batch: {e.msg}")
+
+    if own
+        postgres.commit(@db)?
+    else
+        _ = postgres.exec(@db, "RELEASE SAVEPOINT rebel_jobs_enqueue_many", [])?
+    return ok(ids)
+
+# The job not finished, waiting or running, that holds the unique key `key`.
+#
+# - `db`: the connection.
+# - `key`: the key, not empty.
+#
+# Fails `invalid` where `key` is empty, `not_found` where no job not
+# finished holds it. See also `enqueue`.
+function find_unique(@db: postgres.Db, key: str) -> jobs.Info?
+    limits.check_name(what: "the unique key", name: key, empty_allowed: false)?
+    found = postgres.query(@db, statements.find_unique(), [.text(v: key)])?
+
+    if found.rows.len() == 0
+        return fail(code: jobs.NOT_FOUND, msg: f"no job not finished holds the unique key \"{key}\"")
+    return rows.info_of_row(found.rows[0])
+
+## Claiming and finishing
+
+# Claims the next job ready in `worker`'s queues and answers it running,
+# its lease held for `worker.lease`: the first by priority, then by when it
+# became due, then by id, in any queue of the worker that is not paused.
+#
+# - `db`: the connection. Outside a transaction the claim commits at once;
+#   inside the program's, other workers see it once that commits.
+# - `worker`: who claims, checked by `jobs.check_worker`.
+#
+# The job's `attempt` is the attempt now begun, which every call about it
+# hands back. Fails `not_found` where no job is ready, and the program
+# sleeps `worker.poll` before it asks again; fails as `jobs.check_worker`
+# fails, and with the database's failure. See also `complete`,
+# `fail_attempt`, `extend`.
+function claim(@db: postgres.Db, worker: jobs.Worker) -> jobs.Info?
+    jobs.check_worker(worker)?
+    params: [sql.Value] @= [.integer(v: steps.micros(worker.lease)), .text(v: worker.name)]
+
+    for q in worker.queues
+        params @ params.push(.text(v: q))
+
+    found = postgres.query(@db, statements.claim(worker.queues.len()), params)?
+
+    if found.rows.len() == 0
+        return fail(code: jobs.NOT_FOUND, msg: f"no job is ready in the queues {worker.queues.join(", ")}")
+    return rows.info_of_row(found.rows[0])
+
+# Marks the claimed attempt done, the job completed, keeping `output`.
+#
+# - `db`: the connection. Inside the program's transaction, the job is
+#   completed only where the work done in it commits.
+# - `claimed`: the job as `claim` answered it.
+# - `output`: what the work answered, for whoever reads the job later;
+#   `.null_value` for nothing.
+#
+# A job whose cancellation was asked while it ran is completed all the
+# same: the work is done. Fails `not_found` where the attempt is no longer
+# running, as its lease ran out and `rescue` gave it back; fails as
+# `json.format` fails where `output` holds a `nan`. See also `claim`.
+function complete(@db: postgres.Db, claimed: jobs.Info, output: json.Value) -> ()?
+    text = json.format(output)?
+    r = postgres.exec(@db, statements.COMPLETE, [.integer(v: claimed.id), .integer(v: claimed.attempt), .text(v: text)])?
+
+    if r.rows_affected == 0
+        return fail(code: jobs.NOT_FOUND, msg: steps.lost(claimed))
+    return ok()
+
+# Marks the claimed attempt failed with `error`, and answers the job as it
+# now stands: waiting a wait of `worker.backoff` before its next attempt,
+# or failed for good where it had no attempt left, or cancelled where its
+# cancellation was asked while it ran.
+#
+# - `db`: the connection.
+# - `worker`: the worker that claimed it, whose `backoff` gives the wait.
+# - `claimed`: the job as `claim` answered it.
+# - `error`: what went wrong, kept with the job's errors; any text, a zero
+#   byte kept as U+FFFD.
+#
+# Fails `not_found` where the attempt is no longer running; as
+# `jobs.check_worker` and `jobs.retry_wait` fail. See also `discard`,
+# `snooze`, `jobs.retry_wait`.
+function fail_attempt(@db: postgres.Db, worker: jobs.Worker, claimed: jobs.Info, error: str) -> jobs.Info?
+    jobs.check_worker(worker)?
+    wait = jobs.retry_wait(worker.backoff, attempt: claimed.attempt)?
+    found = postgres.query(@db, statements.FAIL_ATTEMPT + statements.COLUMNS, [.integer(v: claimed.id), .integer(v: claimed.attempt), .text(v: steps.clean(error)), .integer(v: steps.micros(wait))])?
+
+    if found.rows.len() == 0
+        return fail(code: jobs.NOT_FOUND, msg: steps.lost(claimed))
+    return rows.info_of_row(found.rows[0])
+
+# Marks the claimed attempt failed with `error` and the job failed for
+# good, whatever attempts it had left: for an error no retry can mend, a
+# payload the program cannot read.
+#
+# - `db`: the connection.
+# - `claimed`: the job as `claim` answered it.
+# - `error`: why, kept with the job's errors.
+#
+# A job whose cancellation was asked is cancelled instead. Fails
+# `not_found` where the attempt is no longer running. See also
+# `fail_attempt`, `retry`.
+function discard(@db: postgres.Db, claimed: jobs.Info, error: str) -> ()?
+    r = postgres.exec(@db, statements.DISCARD, [.integer(v: claimed.id), .integer(v: claimed.attempt), .text(v: steps.clean(error))])?
+
+    if r.rows_affected == 0
+        return fail(code: jobs.NOT_FOUND, msg: steps.lost(claimed))
+    return ok()
+
+# Gives the claimed attempt back uncounted, the job to run again after
+# `wait`: for work that must wait for something else, a resource busy, a
+# limit of calls.
+#
+# - `db`: the connection.
+# - `claimed`: the job as `claim` answered it.
+# - `wait`: how long before it may be claimed again, zero or more.
+#
+# A job whose cancellation was asked is cancelled instead. Fails `invalid`
+# where `wait` is below zero, `not_found` where the attempt is no longer
+# running. See also `fail_attempt`.
+function snooze(@db: postgres.Db, claimed: jobs.Info, wait: time.Duration) -> ()?
+    if wait.nanoseconds < 0
+        return fail(code: jobs.INVALID, msg: f"the wait, {time.format_duration(wait)}, is below zero")
+    r = postgres.exec(@db, statements.SNOOZE, [.integer(v: claimed.id), .integer(v: claimed.attempt), .integer(v: steps.micros(wait))])?
+
+    if r.rows_affected == 0
+        return fail(code: jobs.NOT_FOUND, msg: steps.lost(claimed))
+    return ok()
+
+# Renews the claimed attempt's lease for `worker.lease` from now, and
+# answers the job: a job that runs longer than its lease calls it before the
+# lease ends, and so learns whether its cancellation was asked.
+#
+# - `db`: the connection.
+# - `worker`: the worker that claimed it, whose `lease` is renewed.
+# - `claimed`: the job as `claim` answered it.
+#
+# Fails `stopped` where the job's cancellation was asked: the lease is
+# renewed all the same, and the worker stops and calls `fail_attempt`,
+# which cancels the job. Fails `not_found` where the attempt is no longer
+# running, and as `jobs.check_worker` fails. See also `cancel`.
+function extend(@db: postgres.Db, worker: jobs.Worker, claimed: jobs.Info) -> jobs.Info?
+    jobs.check_worker(worker)?
+    found = postgres.query(@db, statements.EXTEND + statements.COLUMNS, [.integer(v: claimed.id), .integer(v: claimed.attempt), .integer(v: steps.micros(worker.lease))])?
+
+    if found.rows.len() == 0
+        return fail(code: jobs.NOT_FOUND, msg: steps.lost(claimed))
+    renewed = rows.info_of_row(found.rows[0])?
+
+    if renewed.cancel_requested
+        return fail(code: jobs.STOPPED, msg: f"job {claimed.id}'s cancellation was asked while it ran")
+    return ok(renewed)
+
+## Keeping the store
+
+# Gives back every running job whose lease ran out, its worker gone or
+# stalled, and answers how many: each attempt counts as failed with the
+# store's words, and the job is ready again at once, or failed for good
+# where it had no attempt left, or cancelled where that was asked.
+#
+# - `db`: the connection.
+#
+# Any worker may call it, as often as it likes; a worker loop calls it
+# every few minutes. Fails with the database's failure. See also `extend`.
+function rescue(@db: postgres.Db) -> i64?
+    r = postgres.exec(@db, statements.RESCUE, [])?
+    return ok(r.rows_affected)
+
+# Removes every job of `state` that finished more than `older_than` ago, and
+# answers how many.
+#
+# - `db`: the connection.
+# - `state`: `completed`, `failed` or `cancelled`.
+# - `older_than`: how long ago at least, zero or more; zero removes all.
+#
+# Fails `invalid` where `state` is not finished or `older_than` is below
+# zero. See also `jobs.is_finished`.
+function purge(@db: postgres.Db, state: jobs.State, older_than: time.Duration) -> i64?
+    if !jobs.is_finished(state)
+        return fail(
+            code: jobs.INVALID,
+            msg: f"only finished jobs are purged, and {jobs.state_name(state)} is not finished"
+        )
+
+    if older_than.nanoseconds < 0
+        return fail(code: jobs.INVALID, msg: f"the age, {time.format_duration(older_than)}, is below zero")
+    r = postgres.exec(@db, statements.PURGE, [.text(v: jobs.state_name(state)), .integer(v: steps.micros(older_than))])?
+    return ok(r.rows_affected)
+
+# Pauses `queue`: no worker claims from it until `resume`, and its jobs
+# wait. A job running goes on.
+#
+# - `db`: the connection.
+# - `queue`: the queue, which need not hold a job yet.
+#
+# Fails `invalid` where `queue` is empty, too long or holds a zero byte.
+# See also `resume`, `paused_queues`.
+function pause(@db: postgres.Db, queue: str) -> ()?
+    limits.check_name(what: "the queue", name: queue, empty_allowed: false)?
+    _ = postgres.exec(@db, statements.PAUSE, [.text(v: queue)])?
+    return ok()
+
+# Resumes `queue`, paused or not.
+#
+# - `db`: the connection.
+# - `queue`: the queue.
+#
+# Fails `invalid` where `queue` is empty, too long or holds a zero byte.
+# See also `pause`.
+function resume(@db: postgres.Db, queue: str) -> ()?
+    limits.check_name(what: "the queue", name: queue, empty_allowed: false)?
+    _ = postgres.exec(@db, statements.RESUME, [.text(v: queue)])?
+    return ok()
+
+# The queues paused, in the order of their names' bytes.
+#
+# - `db`: the connection.
+#
+# Fails with the database's failure. See also `pause`.
+function paused_queues(@db: postgres.Db) -> [str]?
+    found = postgres.query(@db, statements.PAUSED, [])?
+    names: [str] @= []
+
+    for row in found.rows
+        names @ names.push(sql.text_at(row, 0)?)
+
+    return ok(names)
+
+## Reading and changing a job
+
+# The job `id`.
+#
+# - `db`: the connection.
+# - `id`: its id.
+#
+# Fails `not_found` where the store holds no such job. See also `list`.
+function get(@db: postgres.Db, id: i64) -> jobs.Info?
+    found = postgres.query(@db, statements.by_id(), [.integer(v: id)])?
+
+    if found.rows.len() == 0
+        return fail(code: jobs.NOT_FOUND, msg: f"the store holds no job {id}")
+    return rows.info_of_row(found.rows[0])
+
+# The jobs of `queue` in `state`, at most `limit` after the first `offset`:
+# for `available` in the order they would be claimed, those ready first;
+# for `running` the lease that runs out first first; for the finished the
+# newest first.
+#
+# - `db`: the connection.
+# - `queue`: the queue.
+# - `state`: the state.
+# - `offset`: how many to pass over, zero or more.
+# - `limit`: how many at most, from 0 to 1000.
+#
+# Fails `invalid` where `offset` is below zero or `limit` outside 0 to
+# 1000. See also `counts`, `get`.
+function list(@db: postgres.Db, queue: str, state: jobs.State, offset: i64, limit: i64) -> [jobs.Info]?
+    if offset < 0 || limit < 0 || limit > 1_000
+        return fail(
+            code: jobs.INVALID,
+            msg: f"the page of {limit} jobs after {offset} is outside 0 to 1000 jobs after 0 or more"
+        )
+    name = jobs.state_name(state)
+    found = postgres.query(@db, statements.list(name), [.text(v: queue), .text(v: name), .integer(v: limit), .integer(v: offset)])?
+    return rows.infos_of(found)
+
+# How many jobs stand in each queue and state, those with none left out,
+# in the order of the queues' names, then of the states' names.
+#
+# - `db`: the connection.
+#
+# Fails with the database's failure. See also `list`.
+function counts(@db: postgres.Db) -> [jobs.Count]?
+    found = postgres.query(@db, statements.COUNTS, [])?
+    out: [jobs.Count] @= []
+
+    for row in found.rows
+        out @ out.push(
+            jobs.Count(queue: sql.text_at(row, 0)?, state: jobs.parse_state(sql.text_at(row, 1)?)?, jobs: sql.integer_at(row, 2)?)
+        )
+
+    return ok(out)
+
+# Cancels job `id` and answers its state after: `cancelled` where it waited
+# or was cancelled already; `running` where it runs, its cancellation asked,
+# which its worker learns from `extend` and which a failed attempt then
+# carries out.
+#
+# - `db`: the connection.
+# - `id`: the job.
+#
+# Fails `not_found` where the store holds no such job, `invalid` where it
+# completed or failed already. See also `extend`, `retry`.
+function cancel(@db: postgres.Db, id: i64) -> jobs.State?
+    found = postgres.query(@db, statements.CANCEL, [.integer(v: id)])?
+
+    if found.rows.len() > 0
+        return jobs.parse_state(sql.text_at(found.rows[0], 0)?)
+    now = jobs.parse_state(sql.text_at(steps.state_of(@db, id)?, 0)?)?
+
+    if now == .cancelled
+        return ok(.cancelled)
+    return fail(code: jobs.INVALID, msg: f"job {id} is {jobs.state_name(now)} already, so nothing is left to cancel")
+
+# Makes job `id` ready to run now, and answers it: a job failed, cancelled
+# or completed runs again, with one attempt more where it had none left; a
+# job waiting is made ready at once.
+#
+# - `db`: the connection.
+# - `id`: the job.
+#
+# Fails `not_found` where the store holds no such job; `invalid` where it
+# runs; `exists` where another job not finished holds its unique key. See
+# also `cancel`, `discard`.
+function retry(@db: postgres.Db, id: i64) -> jobs.Info?
+    found = postgres.query(@db, statements.RETRY + statements.COLUMNS, [.integer(v: id)])?
+
+    if found.rows.len() > 0
+        return rows.info_of_row(found.rows[0])
+    row = steps.state_of(@db, id)?
+
+    if sql.text_at(row, 0)? == "running"
+        return fail(code: jobs.INVALID, msg: f"job {id} is running, so it cannot be retried until its attempt ends")
+    steps.held(@db, sql.text_at(row, 1)?)?
+    return fail(code: jobs.EXISTS, msg: f"job {id}'s unique key is held")
+
+# Removes job `id`, whatever it stands in but `running`.
+#
+# - `db`: the connection.
+# - `id`: the job.
+#
+# Fails `not_found` where the store holds no such job, `invalid` where it
+# runs: `cancel` it, and remove it once its worker has stopped. See also
+# `purge`.
+function delete(@db: postgres.Db, id: i64) -> ()?
+    r = postgres.exec(@db, statements.DELETE, [.integer(v: id)])?
+
+    if r.rows_affected > 0
+        return ok()
+    _ = steps.state_of(@db, id)?
+    return fail(code: jobs.INVALID, msg: f"job {id} is running, so it cannot be removed: cancel it first")
+
+## Periodic jobs
+
+# Enqueues the job of each schedule of `schedules` whose run is due, and
+# answers the ids enqueued: any number of programs may call it, as often as
+# they like, and each due run is enqueued once.
+#
+# - `db`: the connection.
+# - `schedules`: the schedules, each checked; a schedule first seen, or
+#   whose cron text changed, is kept with its next run after now and
+#   enqueues nothing yet.
+#
+# The store keeps each schedule's next run by its name: the program that
+# finds it due moves it to the first run after now and enqueues its job in
+# one statement, so runs missed while no program called are enqueued once,
+# not once each. A job refused for its unique key is not enqueued, and its
+# run is passed all the same. Fails as `jobs.check_job` fails, `not_found`
+# where a schedule never runs again, and with the database's failure. See
+# also `jobs.new_periodic`.
+function enqueue_due(@db: postgres.Db, schedules: [jobs.Periodic]) -> [i64]?
+    for p in schedules
+        jobs.check_job(p.job)?
+
+    ids: [i64] @= []
+
+    for p in schedules
+        now = steps.clock(@db)?
+        first = jobs.next_due(p, after: now)?
+        _ = postgres.exec(@db, statements.KEEP_SCHEDULE, [.text(v: p.name), .text(v: p.schedule.text), .instant(v: first)])?
+        kept = time.from_unix_microseconds(sql.integer_at(postgres.query_one(@db, statements.NEXT_RUN, [.text(v: p.name)])?, 0)?)?
+
+        if !time.is_after(a: kept, b: now)
+            next = jobs.next_due(p, after: now)?
+            found = postgres.query(@db, statements.ADVANCE, [.text(v: p.name), .instant(v: next), .instant(v: kept), .text(v: p.job.kind), .text(v: p.job.queue), .text(v: jobs.payload_text(p.job)?), .integer(v: p.job.priority), .integer(v: p.job.max_attempts), .text(v: p.job.unique_key)])?
+
+            for row in found.rows
+                ids @ ids.push(sql.integer_at(row, 0)?)
+
+    return ok(ids)
+
+## Tests
+
+test "live: skipped where REBEL_POSTGRES_URL names no server"
+    match live.connect()
+        .ok first =>
+            db @= first
+            print("jobs/postgres_store live: against ", postgres.parameter_of(db, "server_version").default("?"))
+            postgres.close(@db).must()
+        .err e => print("jobs/postgres_store live: skipped, ", e.msg)
+
+test "enqueue live: each start, a past instant ready at once, a payload of more than one byte, and the refusals before the database"
+    match live.connect()
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            worker = jobs.new_worker([jobs.DEFAULT_QUEUE])
+            later @= jobs.new_job("later", .null_value)
+            later.start @ .after(wait: time.milliseconds(400).must())
+            later_id = enqueue(@db, later).must()
+            past @= jobs.new_job("past", .text(v: "città 🎸"))
+            past.start @ .at(instant: time.from_unix(whole_seconds: 0, extra_nanoseconds: 0).must())
+            past_id = enqueue(@db, past).must()
+            future @= jobs.new_job("future", .null_value)
+            future.start @ .at(instant: time.add(time.now().must(), time.hours(1).must()).must())
+            _ = enqueue(@db, future).must()
+            got = claim(@db, worker).must()
+            assert got.id == past_id && got.payload == .text(v: "città 🎸") && got.run_at == time.epoch()
+
+            match claim(@db, worker)
+                .ok _  => assert false
+                .err e => assert e.code == jobs.NOT_FOUND && e.msg == "no job is ready in the queues default"
+
+            time.sleep(time.milliseconds(500).must())
+            assert claim(@db, worker).must().id == later_id
+            bad @= jobs.new_job("", .null_value)
+            assert enqueue(@db, bad).is_err()
+            bad.kind @ "k"
+            bad.payload @ .number(v: 1.0 / 0.0)
+            assert enqueue(@db, bad).is_err()
+            assert counts(@db).must().len() == 2
+            postgres.close(@db).must()
+
+test "enqueue live: a unique key refused exists inside the program's transaction, which goes on, and free again once its job completes"
+    match live.connect()
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            j @= jobs.new_job("sync", .null_value)
+            j.unique_key @ "sync:1"
+            postgres.begin(@db).must()
+            held_id = enqueue(@db, j).must()
+
+            match enqueue(@db, j)
+                .ok _  => assert false
+                .err e => assert e.code == jobs.EXISTS && e.msg == f"the unique key \"sync:1\" is held by job {held_id}, which is available"
+
+            assert postgres.transaction_of(db) == .open
+            postgres.commit(@db).must()
+            worker = jobs.new_worker([jobs.DEFAULT_QUEUE])
+            claimed = claim(@db, worker).must()
+            assert enqueue(@db, j).is_err()
+            complete(@db, claimed, .null_value).must()
+            again = enqueue(@db, j).must()
+            assert again > held_id && find_unique(@db, "sync:1").must().id == again
+            assert find_unique(@db, "").is_err() && find_unique(@db, "none").is_err()
+            postgres.close(@db).must()
+
+test "enqueue_many live: none, all kept, and a duplicate keeping none on its own and under the program's transaction"
+    match live.connect()
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            assert enqueue_many(@db, []).must() == []
+            u @= jobs.new_job("u", .null_value)
+            u.unique_key @ "u"
+            ids = enqueue_many(@db, [jobs.new_job("a", .null_value), u]).must()
+            assert ids.len() == 2 && ids[1] == ids[0] + 1
+
+            match enqueue_many(@db, [jobs.new_job("b", .null_value), u])
+                .ok _  => assert false
+                .err e => assert e.code == jobs.EXISTS && strings.has_prefix(s: e.msg, prefix: "the job at 1 of the batch: the unique key \"u\" is held by job ")
+
+            assert postgres.transaction_of(db) == .idle
+            postgres.begin(@db).must()
+            mine = enqueue(@db, jobs.new_job("mine", .null_value)).must()
+            assert enqueue_many(@db, [jobs.new_job("c", .null_value), u]).is_err()
+            assert postgres.transaction_of(db) == .open
+            postgres.commit(@db).must()
+            assert get(@db, mine).must().kind == "mine"
+            assert counts(@db).must() == [jobs.Count(queue: "default", state: .available, jobs: 3)]
+            bad @= jobs.new_job("x", .null_value)
+            bad.priority @ 0
+
+            match enqueue_many(@db, [jobs.new_job("d", .null_value), bad])
+                .ok _  => assert false
+                .err e => assert e.code == jobs.INVALID && e.msg == "the job at 1 of the batch: the priority 0 is outside 1 to 9"
+
+            postgres.close(@db).must()
+
+test "claim live: by priority across queues, a queue paused passed over, a queue not named left, and a bad worker refused"
+    match live.connect()
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            low @= jobs.new_job("low", .null_value)
+            low.priority @ 9
+            high @= jobs.new_job("high", .null_value)
+            high.priority @ 1
+            high.queue @ "mail"
+            other @= jobs.new_job("other", .null_value)
+            other.queue @ "other"
+            other.priority @ 1
+            _ = enqueue_many(@db, [low, jobs.new_job("middle", .null_value), high, other]).must()
+            worker @= jobs.new_worker(["default", "mail"])
+            assert claim(@db, worker).must().kind == "high"
+            pause(@db, "default").must()
+            assert claim(@db, worker).is_err()
+            resume(@db, "default").must()
+            assert claim(@db, worker).must().kind == "middle"
+            assert claim(@db, worker).must().kind == "low"
+            assert claim(@db, worker).is_err()
+            worker.queues @ []
+            assert claim(@db, worker).is_err()
+            postgres.close(@db).must()
+
+test "claim live: two workers on two connections each claim another job, the first's lock passed over"
+    match live.connect()
+        .err _ => _ = 0
+        .ok probe =>
+            p @= probe
+            postgres.close(@p).must()
+            shared = "rebel_jobs_two_" + to_str(os.pid())
+            a @= live.connect_shared(shared).must()
+            b @= live.connect_shared(shared).must()
+            _ = enqueue_many(@a, [jobs.new_job("one", .null_value), jobs.new_job("two", .null_value)]).must()
+            worker = jobs.new_worker([jobs.DEFAULT_QUEUE])
+            postgres.begin(@a).must()
+            mine = claim(@a, worker).must()
+            theirs = claim(@b, worker).must()
+            assert mine.id != theirs.id
+            assert claim(@b, worker).is_err()
+            postgres.rollback(@a).must()
+            assert claim(@b, worker).must().id == mine.id
+            _ = postgres.exec(@b, "DROP SCHEMA " + sql.quote_identifier(shared).must() + " CASCADE", []).must()
+            postgres.close(@a).must()
+            postgres.close(@b).must()
+
+test "complete and fail_attempt live: a second completion refused, attempts spent fail for good with every error, and a zero byte kept as U+FFFD"
+    match live.connect()
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            worker = jobs.new_worker([jobs.DEFAULT_QUEUE])
+            _ = enqueue(@db, jobs.new_job("once", .null_value)).must()
+            done = claim(@db, worker).must()
+            complete(@db, done, .object(members: {"rows": .number(v: 3.0)})).must()
+
+            match complete(@db, done, .null_value)
+                .ok _  => assert false
+                .err e => assert e.code == jobs.NOT_FOUND && e.msg == f"job {done.id}'s attempt 1 is no longer running: its lease ran out and `rescue` gave it back, or it was finished, cancelled or deleted"
+
+            assert get(@db, done.id).must().finished_at.is_err() == false
+            two @= jobs.new_job("twice", .null_value)
+            two.max_attempts @ 2
+            id = enqueue(@db, two).must()
+            first_try = claim(@db, worker).must()
+            waiting = fail_attempt(@db, worker, first_try, error: "città").must()
+            assert waiting.state == .available && waiting.finished_at.is_err() && waiting.lease_until.is_err()
+            assert time.is_after(
+                a: waiting.run_at,
+                b: time.add(first_try.attempted_at.must(), time.seconds(11).must()).must()
+            )
+            _ = postgres.exec(@db, "UPDATE rebel_jobs SET run_at = now() WHERE id = $1", [.integer(v: id)]).must()
+            second_try = claim(@db, worker).must()
+            assert second_try.attempt == 2 && second_try.errors.len() == 1
+            zero = json.text_of(json.parse("\"a\\u0000b\"").must()).must()
+            ended = fail_attempt(@db, worker, second_try, error: zero).must()
+            assert ended.state == .failed && ended.finished_at.is_err() == false
+            assert ended.errors.len() == 2 && ended.errors[0].error == "città" && ended.errors[1].error == "a�b" && ended.errors[1].attempt == 2
+            assert fail_attempt(@db, worker, second_try, error: "again").is_err()
+            postgres.close(@db).must()
+
+test "discard, snooze and extend live: failed for good at once, an attempt given back uncounted, a lease renewed, and a cancellation learnt"
+    match live.connect()
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            worker = jobs.new_worker([jobs.DEFAULT_QUEUE])
+            id = enqueue(@db, jobs.new_job("a", .null_value)).must()
+            claimed = claim(@db, worker).must()
+            assert snooze(@db, claimed, wait: time.Duration(nanoseconds: -1)).is_err()
+            snooze(@db, claimed, wait: time.Duration(nanoseconds: 0)).must()
+            assert get(@db, id).must().attempt == 0
+            again = claim(@db, worker).must()
+            assert again.attempt == 1
+            renewed = extend(@db, worker, again).must()
+            assert renewed.attempt == 1 && !time.is_after(a: again.lease_until.must(), b: renewed.lease_until.must())
+            assert cancel(@db, id).must() == .running
+            assert get(@db, id).must().cancel_requested
+
+            match extend(@db, worker, again)
+                .ok _  => assert false
+                .err e => assert e.code == jobs.STOPPED && e.msg == f"job {id}'s cancellation was asked while it ran"
+
+            assert fail_attempt(@db, worker, again, error: "stopped").must().state == .cancelled
+            other = enqueue(@db, jobs.new_job("b", .null_value)).must()
+            discard(@db, claim(@db, worker).must(), error: "unreadable").must()
+            gone = get(@db, other).must()
+            assert gone.state == .failed && gone.attempt == 1 && gone.max_attempts == 25 && gone.errors[0].error == "unreadable"
+            postgres.close(@db).must()
+
+test "rescue live: a lease run out given back counted, a late completion refused, and a job of one attempt failed for good"
+    match live.connect()
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            worker @= jobs.new_worker([jobs.DEFAULT_QUEUE])
+            worker.lease @ time.seconds(1).must()
+            id = enqueue(@db, jobs.new_job("slow", .null_value)).must()
+            one @= jobs.new_job("single", .null_value)
+            one.max_attempts @ 1
+            single = enqueue(@db, one).must()
+            slow = claim(@db, worker).must()
+            _ = claim(@db, worker).must()
+            assert rescue(@db).must() == 0
+            time.sleep(time.milliseconds(1_100).must())
+            assert rescue(@db).must() == 2
+            back = get(@db, id).must()
+            assert back.state == .available && back.attempt == 1 && back.errors.len() == 1
+            assert back.errors[0].error == f"the lease of the worker \"{worker.name}\" ran out before the attempt finished"
+            assert get(@db, single).must().state == .failed
+            assert complete(@db, slow, .null_value).is_err()
+            assert claim(@db, worker).must().attempt == 2
+            postgres.close(@db).must()
+
+test "purge, get, list and counts live: the finished removed by age, a job not there, pages of a queue, and the refusals"
+    match live.connect()
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            worker = jobs.new_worker(["q"])
+            batch: [jobs.Job] @= []
+
+            for i in range(from: 0, to: 5)
+                j @= jobs.new_job(f"k{i}", .null_value)
+                j.queue @ "q"
+                j.priority @ 5 - i
+                batch @ batch.push(j)
+
+            ids = enqueue_many(@db, batch).must()
+            page = list(@db, queue: "q", state: .available, offset: 1, limit: 2).must()
+            assert page.len() == 2 && page[0].id == ids[3] && page[1].id == ids[2]
+            assert list(@db, queue: "q", state: .available, offset: 0, limit: 0).must() == []
+            assert list(@db, queue: "q", state: .available, offset: -1, limit: 1).is_err()
+            assert list(@db, queue: "q", state: .available, offset: 0, limit: 1_001).is_err()
+            complete(@db, claim(@db, worker).must(), .null_value).must()
+            complete(@db, claim(@db, worker).must(), .null_value).must()
+            finished = list(@db, queue: "q", state: .completed, offset: 0, limit: 10).must()
+            assert finished.len() == 2 && finished[0].id == ids[3] && finished[1].id == ids[4]
+            assert counts(@db).must() == [jobs.Count(queue: "q", state: .available, jobs: 3), jobs.Count(queue: "q", state: .completed, jobs: 2)]
+            assert purge(@db, .available, older_than: time.Duration(nanoseconds: 0)).is_err()
+            assert purge(@db, .completed, older_than: time.Duration(nanoseconds: -1)).is_err()
+            assert purge(@db, .completed, older_than: time.hours(1).must()).must() == 0
+            assert purge(@db, .completed, older_than: time.Duration(nanoseconds: 0)).must() == 2
+
+            match get(@db, 999_999)
+                .ok _  => assert false
+                .err e => assert e.code == jobs.NOT_FOUND && e.msg == "the store holds no job 999999"
+
+            postgres.close(@db).must()
+
+test "pause, resume and paused_queues live: two paused in order, one resumed, a queue never seen, and a bad name"
+    match live.connect()
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            pause(@db, "zeta").must()
+            pause(@db, "alpha").must()
+            pause(@db, "alpha").must()
+            assert paused_queues(@db).must() == ["alpha", "zeta"]
+            resume(@db, "zeta").must()
+            resume(@db, "never").must()
+            assert paused_queues(@db).must() == ["alpha"]
+            assert pause(@db, "").is_err() && resume(@db, "").is_err()
+            postgres.close(@db).must()
+
+test "cancel, retry and delete live: each state answered, a running job kept, a held key refused, and a job not there"
+    match live.connect()
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            worker = jobs.new_worker([jobs.DEFAULT_QUEUE])
+            assert cancel(@db, 424_242).is_err() && retry(@db, 424_242).is_err() && delete(@db, 424_242).is_err()
+            u @= jobs.new_job("u", .null_value)
+            u.unique_key @ "key"
+            u.max_attempts @ 1
+            id = enqueue(@db, u).must()
+            assert cancel(@db, id).must() == .cancelled
+            assert cancel(@db, id).must() == .cancelled
+            assert get(@db, id).must().finished_at.is_err() == false
+            newer = enqueue(@db, u).must()
+
+            match retry(@db, id)
+                .ok _  => assert false
+                .err e => assert e.code == jobs.EXISTS && e.msg == f"the unique key \"key\" is held by job {newer}, which is available"
+
+            running = claim(@db, worker).must()
+            assert running.id == newer
+
+            match retry(@db, newer)
+                .ok _  => assert false
+                .err e => assert e.code == jobs.INVALID
+
+            assert delete(@db, newer).is_err()
+            assert fail_attempt(@db, worker, running, error: "no").must().state == .failed
+            again = retry(@db, newer).must()
+            assert again.state == .available && again.max_attempts == 2 && again.finished_at.is_err()
+            complete(@db, claim(@db, worker).must(), .null_value).must()
+
+            match cancel(@db, newer)
+                .ok _  => assert false
+                .err e => assert e.code == jobs.INVALID && e.msg == f"job {newer} is completed already, so nothing is left to cancel"
+
+            assert retry(@db, newer).must().state == .available
+            delete(@db, newer).must()
+            delete(@db, id).must()
+            assert get(@db, id).is_err() && counts(@db).must() == []
+            postgres.close(@db).must()
+
+test "enqueue_due live: first seen nothing, due once enqueued once, called again nothing, a changed schedule kept anew, and a held key passed"
+    match live.connect()
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            job @= jobs.new_job("report", .null_value)
+            job.queue @ "reports"
+            nightly = jobs.new_periodic(name: "nightly", cron: "0 3 * * *", job: job).must()
+            assert enqueue_due(@db, [nightly]).must() == []
+            _ = postgres.exec(@db, "UPDATE rebel_jobs_periodic SET next_at = now() - interval '3 days'", []).must()
+            ids = enqueue_due(@db, [nightly]).must()
+            assert ids.len() == 1 && get(@db, ids[0]).must().queue == "reports"
+            assert enqueue_due(@db, [nightly, nightly]).must() == []
+            kept = sql.integer_at(
+                postgres.query_one(@db, "SELECT (extract(epoch FROM next_at) * 1000000)::bigint FROM rebel_jobs_periodic WHERE name = 'nightly'", []).must(),
+                0
+            ).must()
+            assert kept % 86_400_000_000 == 3 * 3_600_000_000
+            hourly = jobs.new_periodic(name: "nightly", cron: "0 * * * *", job: job).must()
+            assert enqueue_due(@db, [hourly]).must() == []
+            moved = sql.integer_at(
+                postgres.query_one(@db, "SELECT (extract(epoch FROM next_at) * 1000000)::bigint FROM rebel_jobs_periodic WHERE name = 'nightly'", []).must(),
+                0
+            ).must()
+            assert moved % 3_600_000_000 == 0 && moved <= kept
+            held @= job
+            held.unique_key @ "one-report"
+            _ = enqueue(@db, held).must()
+            once = jobs.new_periodic(name: "held", cron: "* * * * *", job: held).must()
+            assert enqueue_due(@db, [once]).must() == []
+            _ = postgres.exec(
+                @db,
+                "UPDATE rebel_jobs_periodic SET next_at = now() - interval '1 minute' WHERE name = 'held'",
+                []
+            ).must()
+            assert enqueue_due(@db, [once]).must() == []
+            assert sql.integer_at(postgres.query_one(@db, "SELECT count(*) FROM rebel_jobs_periodic WHERE name = 'held' AND next_at > now()", []).must(), 0).must() == 1
+            bad @= job
+            bad.kind @ ""
+            assert enqueue_due(@db, [jobs.new_periodic(name: "bad", cron: "* * * * *", job: bad).must()]).is_err()
+            postgres.close(@db).must()
+
+test "install and schema live: the tables made again in the same schema, and the script's lock"
+    match live.connect()
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            install(@db).must()
+            install(@db).must()
+            assert strings.has_prefix(s: schema(), prefix: "SELECT pg_advisory_xact_lock(hashtext('rebel_jobs'));")
+            postgres.close(@db).must()
+
+## Examples
+
+# The script of the tables, for a migration.
+test "schema: the tables of the store"
+    assert schema() != ""
+
+# The tables made where they are not.
+test "install: the tables made twice, the second time doing nothing"
+    match live.connect()
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            install(@db).must()
+            postgres.close(@db).must()
+
+# A job enqueued in the program's own transaction, beside the row it is
+# about.
+test "enqueue: a welcome email in the transaction of a sign-up"
+    match live.connect()
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            postgres.begin(@db).must()
+            id = enqueue(@db, jobs.new_job("send_welcome", .object(members: {"user": .number(v: 7.0)}))).must()
+            postgres.commit(@db).must()
+            assert get(@db, id).must().state == .available
+            postgres.close(@db).must()
+
+# Two jobs enqueued, all or none.
+test "enqueue_many: two jobs"
+    match live.connect()
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            ids = enqueue_many(@db, [jobs.new_job("a", .null_value), jobs.new_job("b", .null_value)]).must()
+            assert ids.len() == 2
+            postgres.close(@db).must()
+
+# The job that holds a unique key.
+test "find_unique: a nightly sync not yet run"
+    match live.connect()
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            j @= jobs.new_job("sync", .null_value)
+            j.unique_key @ "sync:shop-1"
+            id = enqueue(@db, j).must()
+            assert find_unique(@db, "sync:shop-1").must().id == id
+            postgres.close(@db).must()
+
+# A worker's loop: claim, run the program's own function, complete.
+test "claim: the next job, run and completed"
+    match live.connect()
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            _ = enqueue(@db, jobs.new_job("resize", .text(v: "photo.png"))).must()
+            worker = jobs.new_worker([jobs.DEFAULT_QUEUE])
+            claimed = claim(@db, worker).must()
+            assert claimed.kind == "resize" && claimed.attempt == 1
+            complete(@db, claimed, .null_value).must()
+            postgres.close(@db).must()
+
+# A job completed with what it answered.
+test "complete: a job and its output"
+    match live.connect()
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            id = enqueue(@db, jobs.new_job("count", .null_value)).must()
+            claimed = claim(@db, jobs.new_worker([jobs.DEFAULT_QUEUE])).must()
+            complete(@db, claimed, .number(v: 42.0)).must()
+            assert get(@db, id).must().output == .number(v: 42.0)
+            postgres.close(@db).must()
+
+# A failed attempt, the job waiting to run again.
+test "fail_attempt: the first attempt failed, the job waits"
+    match live.connect()
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            _ = enqueue(@db, jobs.new_job("charge", .null_value)).must()
+            worker = jobs.new_worker([jobs.DEFAULT_QUEUE])
+            claimed = claim(@db, worker).must()
+            after = fail_attempt(@db, worker, claimed, error: "the bank did not answer").must()
+            assert after.state == .available && after.errors.len() == 1
+            postgres.close(@db).must()
+
+# A job failed for good, whatever attempts it had left.
+test "discard: a payload the program cannot read"
+    match live.connect()
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            id = enqueue(@db, jobs.new_job("import", .text(v: "not a file"))).must()
+            claimed = claim(@db, jobs.new_worker([jobs.DEFAULT_QUEUE])).must()
+            discard(@db, claimed, error: "the payload names no file").must()
+            assert get(@db, id).must().state == .failed
+            postgres.close(@db).must()
+
+# An attempt given back, the job to run again in a minute.
+test "snooze: a resource busy"
+    match live.connect()
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            id = enqueue(@db, jobs.new_job("export", .null_value)).must()
+            claimed = claim(@db, jobs.new_worker([jobs.DEFAULT_QUEUE])).must()
+            snooze(@db, claimed, wait: time.minutes(1).must()).must()
+            assert get(@db, id).must().attempt == 0
+            postgres.close(@db).must()
+
+# A long job renewing its lease.
+test "extend: the lease of a long job renewed"
+    match live.connect()
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            _ = enqueue(@db, jobs.new_job("render", .null_value)).must()
+            worker = jobs.new_worker([jobs.DEFAULT_QUEUE])
+            claimed = claim(@db, worker).must()
+            renewed = extend(@db, worker, claimed).must()
+            assert renewed.lease_until.must().unix_nanoseconds >= claimed.lease_until.must().unix_nanoseconds
+            postgres.close(@db).must()
+
+# The jobs of workers gone given back.
+test "rescue: no lease has run out"
+    match live.connect()
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            assert rescue(@db).must() == 0
+            postgres.close(@db).must()
+
+# The completed jobs of more than a day ago removed.
+test "purge: completed jobs older than a day"
+    match live.connect()
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            assert purge(@db, .completed, older_than: time.hours(24).must()).must() == 0
+            postgres.close(@db).must()
+
+# A queue paused, its jobs waiting.
+test "pause: the mail queue"
+    match live.connect()
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            pause(@db, "mail").must()
+            assert paused_queues(@db).must() == ["mail"]
+            postgres.close(@db).must()
+
+# A queue paused, then claimed from again.
+test "resume: the mail queue"
+    match live.connect()
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            pause(@db, "mail").must()
+            resume(@db, "mail").must()
+            assert paused_queues(@db).must() == []
+            postgres.close(@db).must()
+
+# The queues paused.
+test "paused_queues: none"
+    match live.connect()
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            assert paused_queues(@db).must() == []
+            postgres.close(@db).must()
+
+# A job read by its id.
+test "get: a job just enqueued"
+    match live.connect()
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            id = enqueue(@db, jobs.new_job("thumbnail", .null_value)).must()
+            assert get(@db, id).must().kind == "thumbnail"
+            postgres.close(@db).must()
+
+# The jobs waiting in a queue, in the order they would be claimed.
+test "list: the jobs waiting in the default queue"
+    match live.connect()
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            _ = enqueue(@db, jobs.new_job("a", .null_value)).must()
+            waiting = list(@db, queue: jobs.DEFAULT_QUEUE, state: .available, offset: 0, limit: 10).must()
+            assert waiting.len() == 1
+            postgres.close(@db).must()
+
+# How many jobs stand in each queue and state.
+test "counts: one job waiting"
+    match live.connect()
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            _ = enqueue(@db, jobs.new_job("a", .null_value)).must()
+            assert counts(@db).must() == [jobs.Count(queue: "default", state: .available, jobs: 1)]
+            postgres.close(@db).must()
+
+# A job cancelled before it ran.
+test "cancel: a job waiting"
+    match live.connect()
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            id = enqueue(@db, jobs.new_job("a", .null_value)).must()
+            assert cancel(@db, id).must() == .cancelled
+            postgres.close(@db).must()
+
+# A job failed for good, run again.
+test "retry: a job discarded, run again"
+    match live.connect()
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            id = enqueue(@db, jobs.new_job("a", .null_value)).must()
+            discard(@db, claim(@db, jobs.new_worker([jobs.DEFAULT_QUEUE])).must(), error: "no").must()
+            assert retry(@db, id).must().state == .available
+            postgres.close(@db).must()
+
+# A job removed.
+test "delete: a job waiting"
+    match live.connect()
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            id = enqueue(@db, jobs.new_job("a", .null_value)).must()
+            delete(@db, id).must()
+            assert get(@db, id).is_err()
+            postgres.close(@db).must()
+
+# A nightly report: its schedule kept the first time, enqueued once due.
+test "enqueue_due: a schedule first seen enqueues nothing yet"
+    match live.connect()
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            nightly = jobs.new_periodic(
+                name: "nightly",
+                cron: "0 3 * * *",
+                job: jobs.new_job("report", .null_value)
+            ).must()
+            assert enqueue_due(@db, [nightly]).must() == []
+            postgres.close(@db).must()

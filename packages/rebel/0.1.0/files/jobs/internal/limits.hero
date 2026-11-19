@@ -1,0 +1,100 @@
+# The bounds of a job's names, the defaults of a worker, and the fraction a
+# jitter draws from random bytes.
+
+use json
+
+constant INVALID: str
+    "invalid"
+
+# The longest name, in bytes: a kind, a queue, a unique key, a worker's name,
+# a schedule's name.
+constant MAX_NAME_BYTES: i64
+    256
+
+constant SECOND_NANOSECONDS: i64
+    1_000_000_000
+
+# A worker's lease unless it names another: 30 minutes.
+constant DEFAULT_LEASE_NANOSECONDS: i64
+    1_800_000_000_000
+
+# A worker's poll unless it names another: a second.
+constant DEFAULT_POLL_NANOSECONDS: i64
+    1_000_000_000
+
+# Checks `name`, called `what` in the message: at most `MAX_NAME_BYTES`
+# bytes, no zero byte, and not empty unless `empty_allowed`.
+function check_name(what: str, name: str, empty_allowed: bool) -> ()?
+    if name.len() == 0 && !empty_allowed
+        return fail(code: INVALID, msg: f"{what} is empty")
+
+    if name.len() > MAX_NAME_BYTES
+        return fail(code: INVALID, msg: f"{what} is {name.len()} bytes, past the {MAX_NAME_BYTES} allowed")
+    at: i64 @= 0
+
+    while at < name.len()
+        if name[at] == 0
+            return fail(code: INVALID, msg: f"{what} holds a zero byte at byte {at}, which a store cannot keep")
+        at @ at + 1
+
+    return ok()
+
+# `name` cut to its first `MAX_NAME_BYTES` bytes at most, never inside a
+# character.
+function cut_name(name: str) -> str
+    if name.len() <= MAX_NAME_BYTES
+        return name
+    kept: [str] @= []
+    used: i64 @= 0
+
+    for c in name.chars()
+        if used + c.len() > MAX_NAME_BYTES
+            break
+        kept @ kept.push(c)
+        used @ used + c.len()
+
+    return kept.join("")
+
+# A number from 0 up to 1, 1 left out, of the first seven of `drawn`: their
+# 53 high bits over 2^53, so every value an `f64` spaces evenly there can
+# come. Fewer than seven bytes count as zeros after them.
+function fraction_of(drawn: [u8]) -> f64
+    n: i64 @= 0
+
+    for i in range(from: 0, to: 7)
+        b: i64 @= 0
+
+        if i < drawn.len()
+            b @ to_i64(drawn[i]).must()
+        n @ n << 8 | b
+
+    return to_f64(n >> 3) / 9007199254740992.0
+
+test "check_name: empty where it may and may not be, the longest, one past, and a zero byte"
+    check_name(what: "k", name: "", empty_allowed: true).must()
+
+    match check_name(what: "the kind", name: "", empty_allowed: false)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "the kind is empty"
+
+    check_name(what: "k", name: repeat("é", 128), empty_allowed: false).must()
+    assert check_name(what: "k", name: repeat("é", 128) + "a", empty_allowed: false).is_err()
+    zero = json.text_of(json.parse("\"a\\u0000b\"").must()).must()
+    assert zero.len() == 3
+
+    match check_name(what: "the queue", name: zero, empty_allowed: false)
+        .ok _  => assert false
+        .err e => assert e.msg == "the queue holds a zero byte at byte 1, which a store cannot keep"
+
+test "cut_name: short kept whole, long cut at a character's edge"
+    assert cut_name("box:12") == "box:12"
+    cut = cut_name("a" + repeat("é", 200))
+    assert cut.len() == 255 && cut == "a" + repeat("é", 127)
+
+test "fraction_of: zeros, every bit, the high bits alone, and fewer bytes than seven"
+    assert fraction_of([0, 0, 0, 0, 0, 0, 0]) == 0.0
+    top = fraction_of([255, 255, 255, 255, 255, 255, 255])
+    assert top < 1.0 && top > 0.9999999999999998
+    assert fraction_of([128, 0, 0, 0, 0, 0, 0]) == 0.5
+    assert fraction_of([64]) == 0.25
+    assert fraction_of([]) == 0.0

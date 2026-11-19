@@ -1,0 +1,722 @@
+# Background work kept in a store and run by workers, as Celery, Sidekiq
+# and river do it: a job is a value (a kind, a JSON payload, a queue, a
+# priority, a time to start, its attempts), a worker claims the next one
+# ready, runs the program's own function for its kind, and marks it
+# completed or failed; a failed attempt runs again after a wait that grows,
+# until its attempts are spent and it is kept, failed, with every error.
+#
+# This package holds what every store shares: the job, its states, a
+# worker's options, the waits of its retries, the periodic schedules, and
+# the reading of a job a store answers. It keeps no job itself:
+# `jobs/postgres_store` keeps them in PostgreSQL, claimed with
+# `FOR UPDATE SKIP LOCKED`, and `jobs/redis_store` in Redis, claimed by a
+# script the server runs whole. Both answer the same calls with the same
+# meanings; a program moves from one to the other by its `use` and its
+# connection.
+#
+# ## The worker loop the program writes
+#
+# Heroes has no closures, so the package never calls the program: the
+# program asks a store to `claim` the next job, runs its own function for
+# the job's `kind`, then tells the store `complete` or `fail_attempt`.
+# Where no job is ready `claim` fails `not_found` and the program sleeps the
+# worker's `poll` before asking again. Threads share nothing, so each worker
+# is a thread or a process with its own connection; the store's locks make
+# any number of them claim each job once. A claim holds a lease: a worker
+# that dies stops renewing it, and `rescue` gives the job back to the queue
+# once the lease has run out, counting the attempt as failed. A job that
+# runs longer than its lease calls `extend` before the lease ends.
+#
+# Every attempt's number is its fencing token: `complete`, `fail_attempt`,
+# `extend` and the rest act only on the attempt they were handed, so a
+# worker whose lease ran out and whose job was given back cannot finish a
+# later attempt's work.
+#
+# ## Failures
+#
+# It fails `invalid` for a job, a worker or a schedule outside its bounds,
+# the message naming the field and its value; `exists` where a unique key
+# is held by a job not yet finished; `not_found` where no job is ready, an
+# id names no job, or an attempt is no longer running; and `stopped` where
+# a job's cancellation was asked while it ran. A store fails also with its
+# driver's codes (`sql`'s, `redis`'s), handed on.
+
+use jobs/internal/limits
+use jobs/internal/stored
+use json
+use os
+use time
+
+## Codes
+
+# The code of a job, a worker or a schedule outside its bounds, and of a
+# change a job's state refuses: every check and every store.
+constant INVALID: str
+    "invalid"
+
+# The code of an id that names no job, of a claim that found no job ready,
+# and of an attempt that is no longer running: the stores.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a unique key held by a job not yet finished: the stores'
+# `enqueue` and `enqueue_many`.
+constant EXISTS: str
+    "exists"
+
+# The code of a job whose cancellation was asked while it ran: the stores'
+# `extend`.
+constant STOPPED: str
+    "stopped"
+
+## Jobs
+
+# The queue a job goes to unless it names another.
+constant DEFAULT_QUEUE: str
+    "default"
+
+# The first priority: a job of priority 1 is claimed before any other ready
+# in its worker's queues.
+constant FIRST_PRIORITY: i64
+    1
+
+# The last priority: a job of priority 9 is claimed after every other.
+constant LAST_PRIORITY: i64
+    9
+
+# The priority of a job unless it names another, in the middle, so that a
+# program can put a job before the rest or after them.
+constant DEFAULT_PRIORITY: i64
+    5
+
+# The attempts a job has in all unless it names another, the first
+# included: Sidekiq's, river's and asynq's 25, which the default backoff
+# spreads over about two weeks.
+constant DEFAULT_MAX_ATTEMPTS: i64
+    25
+
+# The longest kind, queue, unique key and worker's name, in bytes.
+constant MAX_NAME_BYTES: i64
+    limits.MAX_NAME_BYTES
+
+# When a job may first run.
+variant Start
+    # As soon as it is enqueued, by the store's clock.
+    now
+    # That long after it is enqueued, by the store's clock.
+    after
+        # The wait, zero or more.
+        wait: time.Duration
+    # At that instant, or as soon as it is enqueued where the instant has
+    # passed.
+    at
+        # The instant.
+        instant: time.Instant
+
+# A job as a program enqueues it: what to run, with what, where and when.
+# `new_job` makes one with the defaults; a program changes the fields it
+# needs with `@`. A store checks it with `check_job` before keeping it.
+record Job
+    # Which function of the program runs it: the program's own name for
+    # the work, `send_email`. Not empty, at most `MAX_NAME_BYTES` bytes, no
+    # zero byte.
+    kind: str
+    # Its arguments, any JSON value the program's function reads; a
+    # number, a text, a list or an object. Written as JSON, so a `nan` or
+    # an infinity is refused.
+    payload: json.Value
+    # The queue it waits in: a worker claims from the queues it names. Not
+    # empty, at most `MAX_NAME_BYTES` bytes, no zero byte; `DEFAULT_QUEUE`
+    # unless told.
+    queue: str
+    # From `FIRST_PRIORITY`, claimed first, to `LAST_PRIORITY`;
+    # `DEFAULT_PRIORITY` unless told. Among jobs of one priority the one
+    # due first is claimed first.
+    priority: i64
+    # When it may first run; `.now` unless told.
+    start: Start
+    # The attempts it has in all, the first included, at least 1;
+    # `DEFAULT_MAX_ATTEMPTS` unless told. 1 runs it once and never again.
+    max_attempts: i64
+    # A key no other job may hold while this one is not finished, "" for
+    # none: a second job with the key is refused `exists` until the first
+    # completes, fails for good or is cancelled. At most `MAX_NAME_BYTES`
+    # bytes, no zero byte.
+    unique_key: str
+
+# A job of `kind` with `payload`, in `DEFAULT_QUEUE` at `DEFAULT_PRIORITY`,
+# to run now, with `DEFAULT_MAX_ATTEMPTS` attempts and no unique key.
+#
+# - `kind`: which function of the program runs it.
+# - `payload`: its arguments.
+#
+# Nothing is checked here: a store checks the job when it is enqueued, and
+# `check_job` says before. See also `Job`, `check_job`.
+function new_job(kind: str, payload: json.Value) -> Job
+    return Job(
+        kind: kind,
+        payload: payload,
+        queue: DEFAULT_QUEUE,
+        priority: DEFAULT_PRIORITY,
+        start: .now,
+        max_attempts: DEFAULT_MAX_ATTEMPTS,
+        unique_key: ""
+    )
+
+# Checks that a store can keep `job`: each field within its bounds and its
+# payload written as JSON.
+#
+# - `job`: the job.
+#
+# Fails `invalid` where the kind or the queue is empty, a name is longer
+# than `MAX_NAME_BYTES` or holds a zero byte, the priority is outside
+# `FIRST_PRIORITY` to `LAST_PRIORITY`, the attempts are below 1 or a wait is
+# below zero, the message naming the field; and as `json.format` fails
+# where the payload holds a `nan` or an infinity. See also `payload_text`.
+function check_job(job: Job) -> ()?
+    limits.check_name(what: "the kind", name: job.kind, empty_allowed: false)?
+    limits.check_name(what: "the queue", name: job.queue, empty_allowed: false)?
+    limits.check_name(what: "the unique key", name: job.unique_key, empty_allowed: true)?
+
+    if job.priority < FIRST_PRIORITY || job.priority > LAST_PRIORITY
+        return fail(code: INVALID, msg: f"the priority {job.priority} is outside {FIRST_PRIORITY} to {LAST_PRIORITY}")
+
+    if job.max_attempts < 1
+        return fail(code: INVALID, msg: f"the attempts allowed, {job.max_attempts}, are below 1")
+
+    match job.start
+        .after a =>
+            if a.wait.nanoseconds < 0
+                return fail(
+                    code: INVALID,
+                    msg: f"the wait before the first run, {time.format_duration(a.wait)}, is below zero"
+                )
+        .now | .at _ => _ = 0
+
+    _ = payload_text(job)?
+    return ok()
+
+# The JSON a store keeps of `job`'s payload, compact.
+#
+# - `job`: the job.
+#
+# Fails as `json.format` fails: `unsupported` where the payload holds a
+# `nan` or an infinity. See also `check_job`.
+function payload_text(job: Job) -> str?
+    return json.format(job.payload)
+
+## States
+
+# Where a job stands in its store.
+variant State
+    # Waiting to run: now, or at its time where it was scheduled or waits
+    # before a retry.
+    available
+    # Claimed by a worker, whose lease has not run out.
+    running
+    # Done: its worker said so with `complete`.
+    completed
+    # Failed for good: every attempt failed, or its worker discarded it.
+    failed
+    # Cancelled before it ran, or while it ran and its worker gave up.
+    cancelled
+
+# The name a store keeps for `state`: `available`, `running`, `completed`,
+# `failed` or `cancelled`.
+#
+# - `state`: the state.
+#
+# See also `parse_state`.
+function state_name(state: State) -> str
+    return match state
+        .available => "available"
+        .running   => "running"
+        .completed => "completed"
+        .failed    => "failed"
+        .cancelled => "cancelled"
+
+# The state `name` names, as `state_name` writes it.
+#
+# - `name`: the name, in lower case.
+#
+# Fails `invalid` where `name` names no state. See also `state_name`.
+function parse_state(name: str) -> State?
+    return match name
+        "available" => ok(.available)
+        "running"   => ok(.running)
+        "completed" => ok(.completed)
+        "failed"    => ok(.failed)
+        "cancelled" => ok(.cancelled)
+        _ => fail(
+            code: INVALID,
+            msg: f"\"{name}\" names no state of a job: available, running, completed, failed or cancelled"
+        )
+
+# Whether `state` is one a job never leaves by itself: completed, failed or
+# cancelled.
+#
+# - `state`: the state.
+#
+# See also `State`.
+function is_finished(state: State) -> bool
+    return match state
+        .available | .running             => false
+        .completed | .failed | .cancelled => true
+
+## What a store answers
+
+# The error of one failed attempt, kept with the job.
+record AttemptError
+    # The attempt's number, from 1.
+    attempt: i64
+    # When the store recorded it, by its clock.
+    at: time.Instant
+    # The error as the worker told it, or the store's words where the
+    # attempt's lease ran out.
+    error: str
+
+# A job as its store holds it, which `claim`, `get` and the other reads of
+# a store answer. A claimed job is `running`, and its `attempt` is the
+# attempt the worker runs, which every call about it hands back.
+record Info
+    # The store's number for the job, from 1, never reused.
+    id: i64
+    # Which function of the program runs it.
+    kind: str
+    # Its arguments.
+    payload: json.Value
+    # The queue it waits in.
+    queue: str
+    # Its priority, from `FIRST_PRIORITY` to `LAST_PRIORITY`.
+    priority: i64
+    # Where it stands.
+    state: State
+    # The attempts begun, 0 before the first: the running attempt's number
+    # while it runs.
+    attempt: i64
+    # The attempts it has in all.
+    max_attempts: i64
+    # Its unique key, "" for none.
+    unique_key: str
+    # When it was enqueued, by the store's clock.
+    created_at: time.Instant
+    # When it may run next, or when it last became ready.
+    run_at: time.Instant
+    # When its last attempt began; `not_found` before the first.
+    attempted_at: time.Instant?
+    # When it completed, failed for good or was cancelled; `not_found`
+    # until then.
+    finished_at: time.Instant?
+    # When the running attempt's lease runs out; `not_found` unless it runs.
+    lease_until: time.Instant?
+    # The name of the worker of its last attempt, "" before the first.
+    worker: str
+    # Whether a cancellation was asked while it ran: its worker learns it
+    # from `extend`, and a failed attempt then cancels it.
+    cancel_requested: bool
+    # The errors of its failed attempts, oldest first.
+    errors: [AttemptError]
+    # What its worker gave `complete`, `null` before.
+    output: json.Value
+
+# How many jobs of one queue stand in one state, as a store's `counts`
+# answers it.
+record Count
+    # The queue.
+    queue: str
+    # The state.
+    state: State
+    # The jobs, at least 1.
+    jobs: i64
+
+# The job a store's fields describe: each field of `Info` by its name, as
+# text, which is how both stores read a job back.
+#
+# - `fields`: every field of `Info` by its name. Numbers are decimal;
+#   `state` a name of `state_name`; `payload` and `output` JSON; `errors` a
+#   JSON list of objects of `attempt`, `at` and `error`; the instants
+#   microseconds since 1970 in decimal, "" for an instant there is not;
+#   `cancel_requested` `0` or `1`.
+#
+# Fails `invalid` where a field is missing or not of its form, the message
+# naming it, and `does_not_fit` where an instant is outside what
+# `time.Instant` holds. A program reads jobs through a store and does not
+# call this. See also `Info`.
+function info_of(fields: {str: str}) -> Info?
+    errors: [AttemptError] @= []
+
+    for e in stored.attempts_of(stored.text_of(fields, "errors")?)?
+        errors @ errors.push(
+            AttemptError(attempt: e.attempt, at: time.from_unix_microseconds(e.at_micros)?, error: e.error)
+        )
+
+    return ok(
+        Info(id: stored.integer_of(fields, "id")?, kind: stored.text_of(fields, "kind")?, payload: stored.json_of(fields, "payload")?, queue: stored.text_of(fields, "queue")?, priority: stored.integer_of(fields, "priority")?, state: parse_state(stored.text_of(fields, "state")?)?, attempt: stored.integer_of(fields, "attempt")?, max_attempts: stored.integer_of(fields, "max_attempts")?, unique_key: stored.text_of(fields, "unique_key")?, created_at: time.from_unix_microseconds(stored.integer_of(fields, "created_at")?)?, run_at: time.from_unix_microseconds(stored.integer_of(fields, "run_at")?)?, attempted_at: stored.instant_of(fields, "attempted_at"), finished_at: stored.instant_of(fields, "finished_at"), lease_until: stored.instant_of(fields, "lease_until"), worker: stored.text_of(fields, "worker")?, cancel_requested: stored.flag_of(fields, "cancel_requested")?, errors: errors, output: stored.json_of(fields, "output")?)
+    )
+
+## Workers
+
+# How a worker claims: its name, its queues, how long a claim holds, how its
+# failed attempts wait, and how long it sleeps where none is ready.
+# `new_worker` makes one; a program changes the fields it needs with `@`. A
+# store checks it with `check_worker` at every call that reads it.
+record Worker
+    # The name kept with each job it claims, so a person can tell which
+    # worker ran what: the host's name and the process's id by default. At
+    # most `MAX_NAME_BYTES` bytes, no zero byte.
+    name: str
+    # The queues it claims from, at least one: the job claimed is the first
+    # by priority, then by when it became due, in any of them.
+    queues: [str]
+    # How long a claim holds before `rescue` may give the job back, at
+    # least a second; 30 minutes by default. A job that may run longer
+    # calls `extend`.
+    lease: time.Duration
+    # The waits between a job's failed attempts; `default_backoff()` by
+    # default. Its own limits on attempts and time are not read: a job's
+    # `max_attempts` decides when it fails for good.
+    backoff: time.Backoff
+    # How long the worker loop sleeps where no job is ready, zero or more;
+    # a second by default. Neither store wakes a worker when a job comes.
+    poll: time.Duration
+
+# A worker of `queues`, named by the host and the process, with a lease of
+# 30 minutes, `default_backoff()`, and a poll of a second.
+#
+# - `queues`: the queues it claims from.
+#
+# Nothing is checked here: a store checks the worker with `check_worker`.
+# The name is `<host>:<pid>`, or `pid <pid>` where the system gives no host
+# name. See also `Worker`.
+function new_worker(queues: [str]) -> Worker
+    host = os.host_name().default("")
+    name: str @= f"{host}:{os.pid()}"
+
+    if host == ""
+        name @ f"pid {os.pid()}"
+    return Worker(
+        name: limits.cut_name(name),
+        queues: queues,
+        lease: time.Duration(nanoseconds: limits.DEFAULT_LEASE_NANOSECONDS),
+        backoff: default_backoff(),
+        poll: time.Duration(nanoseconds: limits.DEFAULT_POLL_NANOSECONDS)
+    )
+
+# Checks that a store can claim for `worker`.
+#
+# - `worker`: the worker.
+#
+# Fails `invalid` where it names no queue, a queue is empty, a name is
+# longer than `MAX_NAME_BYTES` or holds a zero byte, the lease is shorter
+# than a second or the poll below zero, the message naming the field. See
+# also `new_worker`.
+function check_worker(worker: Worker) -> ()?
+    limits.check_name(what: "the worker's name", name: worker.name, empty_allowed: true)?
+
+    if worker.queues.len() == 0
+        return fail(code: INVALID, msg: "the worker names no queue to claim from")
+
+    for q in worker.queues
+        limits.check_name(what: "a queue of the worker", name: q, empty_allowed: false)?
+
+    if worker.lease.nanoseconds < limits.SECOND_NANOSECONDS
+        return fail(code: INVALID, msg: f"the lease, {time.format_duration(worker.lease)}, is shorter than a second")
+
+    if worker.poll.nanoseconds < 0
+        return fail(code: INVALID, msg: f"the poll, {time.format_duration(worker.poll)}, is below zero")
+    return ok()
+
+## Retries
+
+# The waits a worker's failed attempts follow unless it names others: 15
+# seconds after the first failure, doubling, at most a day, each spread by a
+# fifth either way so that jobs that failed together do not run again
+# together. Over `DEFAULT_MAX_ATTEMPTS` attempts the waits add to about two
+# weeks, as Sidekiq's do.
+#
+# See also `retry_wait`, `Worker`.
+function default_backoff() -> time.Backoff
+    policy = time.backoff(
+        first: time.Duration(nanoseconds: 15 * limits.SECOND_NANOSECONDS),
+        multiplier: 2.0,
+        longest: time.Duration(nanoseconds: 86_400 * limits.SECOND_NANOSECONDS)
+    ).must()
+    return time.with_jitter(policy, .spread(factor: 0.2)).must()
+
+# The wait before a job runs again after its attempt number `attempt`
+# failed, by `policy`, its jitter drawn from the system's random bytes.
+#
+# - `policy`: the waits; its limits on attempts and time are not read.
+# - `attempt`: the attempt that failed, from 1.
+#
+# Fails `invalid` where `attempt` is below 1 or `policy` is one
+# `time.backoff` refuses, and as `os.random_bytes` fails where the system
+# gives none. See also `default_backoff`, `time.wait_after`.
+function retry_wait(policy: time.Backoff, attempt: i64) -> time.Duration?
+    if attempt < 1
+        return fail(code: INVALID, msg: f"the attempt {attempt} is below 1")
+    drawn = os.random_bytes(7)?
+    return time.wait_after(
+        policy,
+        failures: attempt,
+        previous: time.Duration(nanoseconds: 0),
+        fraction: limits.fraction_of(drawn)
+    )
+
+## Periodic jobs
+
+# A job enqueued at every run of a cron schedule, once whatever the number
+# of programs that ask: a store keeps the next run of each schedule by its
+# name, and the program that finds it due first moves it on and enqueues.
+# `new_periodic` makes one.
+record Periodic
+    # The schedule's name, unique in its store: the key its next run is kept
+    # under. Not empty, at most `MAX_NAME_BYTES` bytes, no zero byte.
+    name: str
+    # When it runs, as `time.parse_cron` reads it.
+    schedule: time.Cron
+    # The zone whose clocks the schedule is read on; UTC unless told.
+    zone: time.Zone
+    # The job each run enqueues. Its `start` is not read: each run's job
+    # starts at once.
+    job: Job
+
+# The schedule `name` that enqueues `job` at every run of the cron
+# expression `cron`, read on UTC's clocks.
+#
+# - `name`: the schedule's name, unique in its store.
+# - `cron`: five or six fields, or a descriptor, as `time.parse_cron`
+#   reads it: `0 3 * * *` at three every night, `@every 15m`.
+# - `job`: the job each run enqueues.
+#
+# Fails `invalid` where `name` is empty, too long or holds a zero byte, and
+# as `time.parse_cron` fails where `cron` is no schedule. See also
+# `next_due`.
+function new_periodic(name: str, cron: str, job: Job) -> Periodic?
+    limits.check_name(what: "the schedule's name", name: name, empty_allowed: false)?
+    return ok(Periodic(name: name, schedule: time.parse_cron(cron)?, zone: time.utc_zone(), job: job))
+
+# The first run of `periodic` strictly after `after`.
+#
+# - `periodic`: the schedule.
+# - `after`: the instant to search from, left out.
+#
+# Fails as `time.next_run` fails, `not_found` where the schedule never runs
+# again. See also `new_periodic`.
+function next_due(periodic: Periodic, after: time.Instant) -> time.Instant?
+    return time.next_run(periodic.schedule, after: after, zone: periodic.zone)
+
+## Tests
+
+test "new_job: the defaults, checked whole"
+    j = new_job("send_email", .object(members: {"to": .text(v: "ana@example.org")}))
+    assert j.queue == "default" && j.priority == 5 && j.start == .now && j.max_attempts == 25 && j.unique_key == ""
+    check_job(j).must()
+
+test "check_job: an empty kind, a priority past each end, no attempt, a wait below zero, a zero byte, a name too long and a nan, each refused invalid"
+    base = new_job("k", .null_value)
+    bad @= base
+    bad.kind @ ""
+    assert check_job(bad).is_err()
+    bad @ base
+    bad.priority @ 0
+    assert check_job(bad).is_err()
+    bad.priority @ 10
+    assert check_job(bad).is_err()
+    bad.priority @ 9
+    check_job(bad).must()
+    bad.max_attempts @ 0
+    assert check_job(bad).is_err()
+    bad @ base
+    bad.start @ .after(wait: time.Duration(nanoseconds: -1))
+    assert check_job(bad).is_err()
+    bad.start @ .after(wait: time.Duration(nanoseconds: 0))
+    check_job(bad).must()
+    bad.queue @ "a\u{1}b"
+    check_job(bad).must()
+    bad.unique_key @ repeat("x", 256)
+    check_job(bad).must()
+    bad.unique_key @ repeat("x", 257)
+
+    match check_job(bad)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "the unique key is 257 bytes, past the 256 allowed"
+
+    bad @ base
+    bad.payload @ .number(v: 0.0 / 0.0)
+    assert check_job(bad).is_err()
+
+test "parse_state and state_name: every state both ways, and a name of none"
+    states: [State] = [.available, .running, .completed, .failed, .cancelled]
+
+    for s in states
+        assert parse_state(state_name(s)).must() == s
+
+    match parse_state("Running")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "\"Running\" names no state of a job: available, running, completed, failed or cancelled"
+
+    assert !is_finished(.available) && !is_finished(.running) && is_finished(.completed) && is_finished(.failed) && is_finished(.cancelled)
+
+test "check_worker: no queue, an empty queue, a lease under a second and a poll below zero refused"
+    w = new_worker(["default", "mail"])
+    check_worker(w).must()
+    assert w.name != "" && w.lease == time.minutes(30).must() && w.poll == time.seconds(1).must()
+    bad @= w
+    bad.queues @ []
+    assert check_worker(bad).is_err()
+    bad.queues @ ["a", ""]
+    assert check_worker(bad).is_err()
+    bad @ w
+    bad.lease @ time.milliseconds(999).must()
+    assert check_worker(bad).is_err()
+    bad.lease @ time.seconds(1).must()
+    check_worker(bad).must()
+    bad.poll @ time.Duration(nanoseconds: -1)
+    assert check_worker(bad).is_err()
+
+test "retry_wait: the first wait within a fifth of 15 s, the tenth capped near a day, and an attempt below 1 refused"
+    policy = default_backoff()
+
+    for _ in range(from: 0, to: 20)
+        first = retry_wait(policy, attempt: 1).must()
+        assert first.nanoseconds >= 12 * 1_000_000_000 && first.nanoseconds <= 18 * 1_000_000_000
+        late = retry_wait(policy, attempt: 30).must()
+        assert late.nanoseconds <= 86_400 * 1_000_000_000
+        assert late.nanoseconds >= 69_120 * 1_000_000_000
+
+    assert retry_wait(policy, attempt: 0).is_err()
+    plain = time.backoff(first: time.seconds(2).must(), multiplier: 3.0, longest: time.hours(1).must()).must()
+    assert retry_wait(plain, attempt: 3).must() == time.seconds(18).must()
+
+test "new_periodic and next_due: a nightly schedule, a zone's clocks, and the refusals"
+    p @= new_periodic(name: "nightly", cron: "0 3 * * *", job: new_job("report", .null_value)).must()
+    after = time.parse("2026-11-18T10:00:00Z", .rfc3339).must()
+    assert next_due(p, after: after).must() == time.parse("2026-11-19T03:00:00Z", .rfc3339).must()
+    p.zone @ time.fixed_zone(name: "CET", offset: time.hours(1).must()).must()
+    assert next_due(p, after: after).must() == time.parse("2026-11-19T02:00:00Z", .rfc3339).must()
+    assert new_periodic(name: "", cron: "0 3 * * *", job: new_job("report", .null_value)).is_err()
+    assert new_periodic(name: "n", cron: "61 * * * *", job: new_job("report", .null_value)).is_err()
+
+test "info_of: every field read, the instants that are not there, and a field missing or malformed"
+    fields @= {
+        "id": "7"
+        "kind": "send_email"
+        "payload": "{\"to\":\"ana@example.org\"}"
+        "queue": "mail"
+        "priority": "2"
+        "state": "available"
+        "attempt": "1"
+        "max_attempts": "3"
+        "unique_key": ""
+        "created_at": "1763460000000000"
+        "run_at": "1763460015000000"
+        "attempted_at": "1763460001000000"
+        "finished_at": ""
+        "lease_until": ""
+        "worker": "box:12"
+        "cancel_requested": "0"
+        "errors": "[{\"attempt\":1,\"at\":1763460002000000,\"error\":\"smtp said 451\"}]"
+        "output": "null"
+    }
+    i = info_of(fields).must()
+    assert i.id == 7 && i.kind == "send_email" && i.queue == "mail" && i.priority == 2 && i.state == .available
+    assert i.attempt == 1 && i.max_attempts == 3 && i.worker == "box:12" && !i.cancel_requested
+    assert i.payload == .object(members: {"to": .text(v: "ana@example.org")}) && i.output == .null_value
+    assert i.created_at == time.from_unix_microseconds(1763460000000000).must()
+    assert i.attempted_at.must() == time.from_unix_microseconds(1763460001000000).must()
+    assert i.finished_at.is_err() && i.lease_until.is_err()
+    assert i.errors == [AttemptError(attempt: 1, at: time.from_unix_microseconds(1763460002000000).must(), error: "smtp said 451")]
+    fields["priority"] @ "two"
+    assert info_of(fields).is_err()
+    fields["priority"] @ "2"
+    fields["state"] @ "done"
+    assert info_of(fields).is_err()
+    fields["state"] @ "running"
+    fields["errors"] @ "[{\"attempt\":1}]"
+    assert info_of(fields).is_err()
+    fields["errors"] @ "[]"
+    assert info_of(fields).must().errors == []
+
+## Examples
+
+# A job of the program's own kind, with its arguments, put before the rest.
+test "new_job: an email to send first"
+    j @= new_job("send_email", .object(members: {"to": .text(v: "ana@example.org")}))
+    j.priority @ FIRST_PRIORITY
+    assert j.kind == "send_email" && j.queue == DEFAULT_QUEUE
+
+# A job checked before it is enqueued.
+test "check_job: a job a store keeps"
+    assert !check_job(new_job("resize", .list(items: [.text(v: "photo.png")]))).is_err()
+
+# The JSON a store keeps of a payload.
+test "payload_text: an object, compact"
+    assert payload_text(new_job("k", .object(members: {"n": .number(v: 3.0)}))).must() == "{\"n\":3}"
+
+# The name of a state, as a store keeps it.
+test "state_name: running"
+    assert state_name(.running) == "running"
+
+# A state read from its name.
+test "parse_state: failed"
+    assert parse_state("failed").must() == .failed
+
+# The states a job never leaves.
+test "is_finished: completed, and not running"
+    assert is_finished(.completed) && !is_finished(.running)
+
+# A job read from the fields a store keeps.
+test "info_of: a job just enqueued"
+    fields = {
+        "id": "1"
+        "kind": "k"
+        "payload": "null"
+        "queue": "default"
+        "priority": "5"
+        "state": "available"
+        "attempt": "0"
+        "max_attempts": "25"
+        "unique_key": ""
+        "created_at": "0"
+        "run_at": "0"
+        "attempted_at": ""
+        "finished_at": ""
+        "lease_until": ""
+        "worker": ""
+        "cancel_requested": "0"
+        "errors": "[]"
+        "output": "null"
+    }
+    assert info_of(fields).must().state == .available
+
+# A worker of two queues, its lease made longer for long jobs.
+test "new_worker: two queues and a lease of two hours"
+    w @= new_worker(["default", "mail"])
+    w.lease @ time.hours(2).must()
+    assert w.queues.len() == 2
+
+# A worker checked before it claims.
+test "check_worker: a worker of the default queue"
+    assert !check_worker(new_worker([DEFAULT_QUEUE])).is_err()
+
+# The waits failed attempts follow unless a worker names others.
+test "default_backoff: 15 s first, at most a day"
+    policy = default_backoff()
+    assert policy.first == time.seconds(15).must() && policy.longest == time.hours(24).must()
+
+# The wait after a job's third attempt failed, without jitter.
+test "retry_wait: 2 s tripled twice"
+    policy = time.backoff(first: time.seconds(2).must(), multiplier: 3.0, longest: time.hours(1).must()).must()
+    assert retry_wait(policy, attempt: 3).must() == time.seconds(18).must()
+
+# A report enqueued every night at three.
+test "new_periodic: a nightly report"
+    p = new_periodic(name: "nightly-report", cron: "0 3 * * *", job: new_job("report", .null_value)).must()
+    assert p.name == "nightly-report"
+
+# When a schedule runs next.
+test "next_due: every fifteen minutes"
+    p = new_periodic(name: "sync", cron: "*/15 * * * *", job: new_job("sync", .null_value)).must()
+    after = time.parse("2026-11-18T10:07:00Z", .rfc3339).must()
+    assert next_due(p, after: after).must() == time.parse("2026-11-18T10:15:00Z", .rfc3339).must()
