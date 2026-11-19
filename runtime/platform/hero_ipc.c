@@ -78,10 +78,12 @@
  *
  * WINDOWS: AF_UNIX sockets (`afunix.h`, Windows 10 1803 and later),
  * named pipes in overlapped mode, `CreateFileMappingW` and `MapViewOfFile`,
- * `CreateSemaphoreW`, `CreateMutexW`. UNRUN on 2026-11-17, the box being off:
- * compiled on this Mac against zig's MinGW-w64 headers, `-Werror`, and
- * owed its runs on the box (the floor's and the face's tests, plain and
- * sanitized, which take the Windows arm on every door above).
+ * `CreateSemaphoreW`, `CreateMutexW`. The box ran the floor's and the face's
+ * tests on 2026-11-18, plain and sanitized, and found that Windows' AF_UNIX
+ * answers `WSAECONNREFUSED` for a path with no file as for a socket file
+ * nothing listens on; so a refused connect asks the path
+ * (`hero_ipc_connect_failed`) and the header's two kinds stay apart, as
+ * POSIX's `ENOENT` keeps them. That repair is owed its run on the box.
  */
 
 #include "hero_ipc.h"
@@ -1193,6 +1195,30 @@ static bool hero_ipc_address(const char *name, SOCKADDR_UN *address) {
     return true;
 }
 
+/* A connect to the path `name` failed with `code`, Winsock's number, named
+ * as the header promises: Windows' AF_UNIX answers `WSAECONNREFUSED` (10061)
+ * for a path no file is at, one never made among them, as for a socket file
+ * nothing listens on (measured on the box, 2026-11-18,
+ * `rebel-scratch/windows/ipc.md`), where POSIX answers `ENOENT` for the
+ * first. So a refusal asks the path, and where nothing is there the kind is
+ * `HERO_IPC_NOT_FOUND` with the system's number for that answer. */
+static void hero_ipc_connect_failed(const char *name, int64_t code) {
+    if (code == WSAECONNREFUSED) {
+        wchar_t wide[HERO_IPC_NAME_ROOM];
+
+        if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, name, -1, wide, HERO_IPC_NAME_ROOM) != 0 &&
+            GetFileAttributesW(wide) == INVALID_FILE_ATTRIBUTES) {
+            DWORD why = GetLastError();
+
+            if (why == ERROR_FILE_NOT_FOUND || why == ERROR_PATH_NOT_FOUND) {
+                hero_ipc_fail(HERO_IPC_NOT_FOUND, (int64_t)why);
+                return;
+            }
+        }
+    }
+    hero_ipc_failed_with(code);
+}
+
 /* A new AF_UNIX socket, not inherited and not blocking; `INVALID_SOCKET`
  * with the failure named. */
 static SOCKET hero_ipc_socket(void) {
@@ -1543,7 +1569,7 @@ hero_stream *hero_ipc_connect(const char *name, int64_t space, int64_t within_ms
 
         if (why != WSAEWOULDBLOCK) {
             (void)closesocket(s);
-            hero_ipc_failed_with((int64_t)why);
+            hero_ipc_connect_failed(name, (int64_t)why);
             return NULL;
         }
         int64_t kind = hero_ipc_socket_wait(s, POLLWRNORM, NULL, NULL, until);
@@ -1555,7 +1581,7 @@ hero_stream *hero_ipc_connect(const char *name, int64_t space, int64_t within_ms
             kind = hero_ipc_kind;
         }
         if (kind == HERO_IPC_OK && said != 0) {
-            hero_ipc_failed_with((int64_t)said);
+            hero_ipc_connect_failed(name, (int64_t)said);
             kind = hero_ipc_kind;
         }
         if (kind != HERO_IPC_OK) {

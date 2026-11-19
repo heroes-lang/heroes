@@ -517,7 +517,7 @@ test "open, open_tree and open_with: an empty path, a zero byte, room 0 and past
     close(@most).must()
     fs.remove_all(root).must()
 
-test "wait: a limit below zero invalid, a closed watch closed, a folder made told a folder, a permission changed told attributes or changed"
+test "wait: a limit below zero invalid, a closed watch closed, a folder made told a folder, a file made read-only told attributes or changed"
     root = fs.make_temp_dir(dir: "", pattern: "watch-kinds-*").must()
     w @= open(root).must()
 
@@ -531,11 +531,17 @@ test "wait: a limit below zero invalid, a closed watch closed, a folder made tol
     fs.touch(root + "/plain").must()
     _ = wait(w, limit: time.seconds(2).must()).must()
     time.sleep(time.milliseconds(1200).must())
-    fs.set_permission(path: root + "/plain", permission: 0o600).must()
+
+    # Read-only, a change every platform can see: Windows maps a permission
+    # onto its read-only flag alone, so 0o600 on a writable file changed
+    # nothing there and nothing was told (the box, 2026-11-18).
+    fs.set_permission(path: root + "/plain", permission: 0o400).must()
     facts = wait(w, limit: time.seconds(2).must()).must()
+    assert facts.len() >= 1
     last = facts[facts.len() - 1]
     assert last.path == paths.join_all([root, "plain"])
     assert last.change == .attributes || last.change == .changed
+    fs.set_permission(path: root + "/plain", permission: 0o600).must()
     close(@w).must()
 
     match wait(w, limit: time.nanoseconds(0))

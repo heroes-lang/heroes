@@ -494,7 +494,9 @@ function close_memory(@m: Memory) -> ()?
 # and `create_memory` may take it again; who has it open keeps it until they
 # close it. On Windows the system takes a name away with the last process
 # that has it open, so this checks that memory of the name is open and
-# changes nothing.
+# changes nothing, and after the last close it fails `not_found`. Called
+# while this process still has the memory open, it answers the same on every
+# platform, which is the order the examples keep.
 #
 # - `name`: a name by `is_name`'s rule.
 #
@@ -731,8 +733,8 @@ test "two processes: bytes a child writes are read here, and a thousand sums of 
     assert process.is_success(process.wait(@child).must())
     assert read_at(m, offset: 0, count: 3).must() == [1, 2, 3]
     assert load_at(m, offset: 8).must() == 2000
-    assert close_memory(@m) == ok()
     assert remove_memory(name) == ok()
+    assert close_memory(@m) == ok()
 
 test "two processes: a lock a child holds is waited on with a bound and timed out, then taken clean once the child releases it"
     if across.is_child()
@@ -755,12 +757,12 @@ test "two processes: a lock a child holds is waited on with a bound and timed ou
     assert acquire_lock(l, within_ms: 20000).must() == .clean
     assert release_lock(l) == ok()
     assert process.is_success(process.wait(@child).must())
-    assert close_lock(@l) == ok()
-    assert close_semaphore(@go) == ok()
-    assert close_semaphore(@ready) == ok()
     assert remove_lock(lock_name) == ok()
     assert remove_semaphore(go_name) == ok()
     assert remove_semaphore(ready_name) == ok()
+    assert close_lock(@l) == ok()
+    assert close_semaphore(@go) == ok()
+    assert close_semaphore(@ready) == ok()
 
 test "two processes: a child killed while it holds a lock leaves it to the next holder, told abandoned, and the take after is clean"
     if across.is_child()
@@ -779,12 +781,12 @@ test "two processes: a child killed while it holds a lock leaves it to the next 
     assert acquire_lock(l, within_ms: 5000).must() == .abandoned
     assert release_lock(l) == ok()
     assert acquire_lock(l, within_ms: 0).must() == .clean
-    assert close_lock(@l) == ok()
-    assert close_semaphore(@go) == ok()
-    assert close_semaphore(@ready) == ok()
     assert remove_lock(lock_name) == ok()
     assert remove_semaphore(go_name) == ok()
     assert remove_semaphore(ready_name) == ok()
+    assert close_lock(@l) == ok()
+    assert close_semaphore(@go) == ok()
+    assert close_semaphore(@ready) == ok()
 
 test "two threads of one process: a lock one holds is refused to the other until it is released"
     name = f"ix-th-{os.pid()}"
@@ -793,8 +795,56 @@ test "two threads of one process: a lock one holds is refused to the other until
     assert across.try_from_another_thread(name) == "refused"
     assert release_lock(l) == ok()
     assert across.try_from_another_thread(name) == "taken"
-    assert close_lock(@l) == ok()
     assert remove_lock(name) == ok()
+    assert close_lock(@l) == ok()
+
+# The face's two rules for a name whose last handle is closed, held on each
+# platform: POSIX keeps it for every later open until its `remove_`, Windows
+# takes it away with the last handle (the box's run of 2026-11-18 found every
+# other test asserting POSIX's rule alone).
+test "remove_memory, remove_semaphore and remove_lock after the last close: kept until removed on POSIX, gone with the handle on Windows"
+    memory_name = f"ix-am-{os.pid()}"
+    m @= create_memory(memory_name, size: 8, permission: 0o600).must()
+    assert write_at(m, offset: 0, data: [7]) == ok()
+    assert close_memory(@m) == ok()
+    semaphore_name = f"ix-as-{os.pid()}"
+    s @= create_semaphore(semaphore_name, count: 1, permission: 0o600).must()
+    assert close_semaphore(@s) == ok()
+    lock_name = f"ix-al-{os.pid()}"
+    l @= open_lock(lock_name, permission: 0o600).must()
+    assert close_lock(@l) == ok()
+
+    match os.family()
+        .windows =>
+            match open_memory(memory_name)
+                .ok _  => assert false
+                .err e => assert e.code == NOT_FOUND
+
+            match remove_memory(memory_name)
+                .ok _  => assert false
+                .err e => assert e.code == NOT_FOUND
+
+            match open_semaphore(semaphore_name)
+                .ok _  => assert false
+                .err e => assert e.code == NOT_FOUND
+
+            match remove_semaphore(semaphore_name)
+                .ok _  => assert false
+                .err e => assert e.code == NOT_FOUND
+
+            match remove_lock(lock_name)
+                .ok _  => assert false
+                .err e => assert e.code == NOT_FOUND
+        .posix =>
+            again @= open_memory(memory_name).must()
+            assert read_at(again, offset: 0, count: 1).must() == [7]
+            assert close_memory(@again) == ok()
+            assert remove_memory(memory_name) == ok()
+            opened @= open_semaphore(semaphore_name).must()
+            assert acquire_semaphore(opened, within_ms: 0) == ok()
+            assert close_semaphore(@opened) == ok()
+            assert remove_semaphore(semaphore_name) == ok()
+            assert remove_lock(lock_name) == ok()
 
 ## Examples
 
@@ -954,8 +1004,8 @@ test "create_memory: made, sized, removed"
     name = f"ix-ec-{os.pid()}"
     m @= create_memory(name, size: 100, permission: 0o600).must()
     assert m.size >= 100
-    assert close_memory(@m) == ok()
     assert remove_memory(name) == ok()
+    assert close_memory(@m) == ok()
 
 # Memory opened by its name sees what its maker wrote.
 test "open_memory: a second mapping of the same bytes"
@@ -964,9 +1014,9 @@ test "open_memory: a second mapping of the same bytes"
     assert write_at(m, offset: 0, data: [42]) == ok()
     o @= open_memory(name).must()
     assert read_at(o, offset: 0, count: 1).must() == [42]
+    assert remove_memory(name) == ok()
     assert close_memory(@o) == ok()
     assert close_memory(@m) == ok()
-    assert remove_memory(name) == ok()
 
 # Bytes read back, and a read past the end refused.
 test "read_at: three bytes, and one past the end"
@@ -979,8 +1029,8 @@ test "read_at: three bytes, and one past the end"
         .ok _  => assert false
         .err e => assert e.code == INVALID
 
-    assert close_memory(@m) == ok()
     assert remove_memory(name) == ok()
+    assert close_memory(@m) == ok()
 
 # Bytes written at an offset, and a write that would pass the end refused
 # before a byte moves.
@@ -990,8 +1040,8 @@ test "write_at: at an offset, and past the end"
     assert write_at(m, offset: 1, data: [5]) == ok()
     assert read_at(m, offset: 0, count: 2).must() == [0, 5]
     assert write_at(m, offset: m.size - 1, data: [1, 2]).is_err()
-    assert close_memory(@m) == ok()
     assert remove_memory(name) == ok()
+    assert close_memory(@m) == ok()
 
 # A word read whole, 0 in new memory, and an offset no multiple of 8.
 test "load_at: a new word is 0, and an offset of 4 refused"
@@ -999,8 +1049,8 @@ test "load_at: a new word is 0, and an offset of 4 refused"
     m @= create_memory(name, size: 16, permission: 0o600).must()
     assert load_at(m, offset: 8).must() == 0
     assert load_at(m, offset: 4).is_err()
-    assert close_memory(@m) == ok()
     assert remove_memory(name) == ok()
+    assert close_memory(@m) == ok()
 
 # A word written whole and read back.
 test "store_at: written and read back"
@@ -1008,8 +1058,8 @@ test "store_at: written and read back"
     m @= create_memory(name, size: 16, permission: 0o600).must()
     assert store_at(m, offset: 0, value: -5) == ok()
     assert load_at(m, offset: 0).must() == -5
-    assert close_memory(@m) == ok()
     assert remove_memory(name) == ok()
+    assert close_memory(@m) == ok()
 
 # A counter raised and lowered, and the wrap past the largest `i64`.
 test "add_at: up, down, and the wrap"
@@ -1019,8 +1069,8 @@ test "add_at: up, down, and the wrap"
     assert add_at(m, offset: 0, delta: -2).must() == 3
     assert store_at(m, offset: 8, value: 9223372036854775807) == ok()
     assert add_at(m, offset: 8, delta: 1).must() == -9223372036854775807 - 1
-    assert close_memory(@m) == ok()
     assert remove_memory(name) == ok()
+    assert close_memory(@m) == ok()
 
 # A swap made where the word is the one expected, and not made where it is
 # not, the word found answered either way.
@@ -1030,23 +1080,23 @@ test "swap_at: made, then not made"
     assert swap_at(m, offset: 0, expected: 0, desired: 1).must() == 0
     assert swap_at(m, offset: 0, expected: 0, desired: 2).must() == 1
     assert load_at(m, offset: 0).must() == 1
-    assert close_memory(@m) == ok()
     assert remove_memory(name) == ok()
+    assert close_memory(@m) == ok()
 
 # Memory closed, then closed again, which is told.
 test "close_memory: once, then closed already"
     name = f"ix-ek-{os.pid()}"
     m @= create_memory(name, size: 8, permission: 0o600).must()
+    assert remove_memory(name) == ok()
     assert close_memory(@m) == ok()
     assert close_memory(@m).is_err()
-    assert remove_memory(name) == ok()
 
 # A name taken away: opening it finds nothing, and removing it again is told.
 test "remove_memory: then nothing to open"
     name = f"ix-ed-{os.pid()}"
     m @= create_memory(name, size: 8, permission: 0o600).must()
-    assert close_memory(@m) == ok()
     assert remove_memory(name) == ok()
+    assert close_memory(@m) == ok()
 
     match open_memory(name)
         .ok _  => assert false
@@ -1063,8 +1113,8 @@ test "create_semaphore: a count of 2"
     assert acquire_semaphore(s, within_ms: 0) == ok()
     assert acquire_semaphore(s, within_ms: 0) == ok()
     assert acquire_semaphore(s, within_ms: 0).is_err()
-    assert close_semaphore(@s) == ok()
     assert remove_semaphore(name) == ok()
+    assert close_semaphore(@s) == ok()
 
 # A semaphore opened by its name counts with its maker's.
 test "open_semaphore: one count seen through two handles"
@@ -1073,9 +1123,9 @@ test "open_semaphore: one count seen through two handles"
     o @= open_semaphore(name).must()
     assert acquire_semaphore(o, within_ms: 0) == ok()
     assert acquire_semaphore(s, within_ms: 0).is_err()
+    assert remove_semaphore(name) == ok()
     assert close_semaphore(@o) == ok()
     assert close_semaphore(@s) == ok()
-    assert remove_semaphore(name) == ok()
 
 # A take that waits 20 ms on a count of 0 gives up with `timeout`.
 test "acquire_semaphore: a bound passed"
@@ -1086,8 +1136,8 @@ test "acquire_semaphore: a bound passed"
         .ok _  => assert false
         .err e => assert e.code == TIMEOUT
 
-    assert close_semaphore(@s) == ok()
     assert remove_semaphore(name) == ok()
+    assert close_semaphore(@s) == ok()
 
 # One given back, one taken.
 test "release_semaphore: then a take passes"
@@ -1095,23 +1145,23 @@ test "release_semaphore: then a take passes"
     s @= create_semaphore(name, count: 0, permission: 0o600).must()
     assert release_semaphore(s) == ok()
     assert acquire_semaphore(s, within_ms: 0) == ok()
-    assert close_semaphore(@s) == ok()
     assert remove_semaphore(name) == ok()
+    assert close_semaphore(@s) == ok()
 
 # A semaphore closed, then closed again, which is told.
 test "close_semaphore: once, then closed already"
     name = f"ix-sk-{os.pid()}"
     s @= create_semaphore(name, count: 0, permission: 0o600).must()
+    assert remove_semaphore(name) == ok()
     assert close_semaphore(@s) == ok()
     assert close_semaphore(@s).is_err()
-    assert remove_semaphore(name) == ok()
 
 # A semaphore's name taken away: opening it finds nothing.
 test "remove_semaphore: then nothing to open"
     name = f"ix-sd-{os.pid()}"
     s @= create_semaphore(name, count: 0, permission: 0o600).must()
-    assert close_semaphore(@s) == ok()
     assert remove_semaphore(name) == ok()
+    assert close_semaphore(@s) == ok()
     assert open_semaphore(name).is_err()
 
 # A lock opened, taken clean and released.
@@ -1120,8 +1170,8 @@ test "open_lock: opened, taken, released"
     l @= open_lock(name, permission: 0o600).must()
     assert acquire_lock(l, within_ms: 0).must() == .clean
     assert release_lock(l) == ok()
-    assert close_lock(@l) == ok()
     assert remove_lock(name) == ok()
+    assert close_lock(@l) == ok()
 
 # A thread that holds a lock asking it again is refused at once rather than
 # waiting for itself.
@@ -1135,8 +1185,8 @@ test "acquire_lock: taken, then asked again by its holder"
         .err e => assert e.code == INVALID
 
     assert release_lock(l) == ok()
-    assert close_lock(@l) == ok()
     assert remove_lock(name) == ok()
+    assert close_lock(@l) == ok()
 
 # A release by a thread that does not hold the lock is refused.
 test "release_lock: held, then not held"
@@ -1149,8 +1199,8 @@ test "release_lock: held, then not held"
         .ok _  => assert false
         .err e => assert e.code == INVALID
 
-    assert close_lock(@l) == ok()
     assert remove_lock(name) == ok()
+    assert close_lock(@l) == ok()
 
 # A lock closed while held is released, so the next take is clean.
 test "close_lock: held, closed, taken clean again"
@@ -1160,15 +1210,15 @@ test "close_lock: held, closed, taken clean again"
     assert close_lock(@l) == ok()
     again @= open_lock(name, permission: 0o600).must()
     assert acquire_lock(again, within_ms: 0).must() == .clean
-    assert close_lock(@again) == ok()
     assert remove_lock(name) == ok()
+    assert close_lock(@again) == ok()
 
 # A lock's name taken away, and taken away again, which is told.
 test "remove_lock: once, then not found"
     name = f"ix-ld-{os.pid()}"
     l @= open_lock(name, permission: 0o600).must()
-    assert close_lock(@l) == ok()
     assert remove_lock(name) == ok()
+    assert close_lock(@l) == ok()
 
     match remove_lock(name)
         .ok _  => assert false

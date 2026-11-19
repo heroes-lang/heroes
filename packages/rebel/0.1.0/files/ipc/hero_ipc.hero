@@ -87,9 +87,11 @@ extern "hero_ipc.h"
     function hero_ipc_last_os_error() -> i64
 
 # For the tests alone: the process's own number, to keep the names of two
-# runs of them apart.
+# runs of them apart, and the suffix of an executable, `.exe` on Windows
+# alone, to tell the one platform whose names go with their last handle.
 extern "hero_os.h"
     function hero_os_pid() -> i64
+    function hero_run_exe_suffix() -> str
 
 ## Channels
 
@@ -350,6 +352,18 @@ test "listen, connect and accept in one process: bytes both ways, the peer is th
     assert gone == nullptr
     assert last_error() == HERO_IPC_NOT_FOUND
 
+# Windows' AF_UNIX answers a path no file is at as it answers a socket file
+# nothing listens on, `WSAECONNREFUSED`; the member asks the path, so the
+# header's `HERO_IPC_NOT_FOUND` holds there as POSIX's `ENOENT` gives it
+# (found on the box, 2026-11-18).
+test "connect: a path never made, and one in a folder that is not there, are not found on every platform"
+    never = connect(f"build/{test_name("never")}.sock", space: HERO_IPC_SPACE_PATH, within_ms: 0)
+    assert never == nullptr
+    assert last_error() == HERO_IPC_NOT_FOUND
+    nowhere = connect(f"build/{test_name("no-folder")}/x.sock", space: HERO_IPC_SPACE_PATH, within_ms: 0)
+    assert nowhere == nullptr
+    assert last_error() == HERO_IPC_NOT_FOUND
+
 test "accept: within 0 and within 50 time out, -2 is refused, and no listener is not open"
     path = f"build/{test_name("bound")}.sock"
     l @= listen(path, space: HERO_IPC_SPACE_PATH, perm: 0o600)
@@ -447,8 +461,8 @@ test "memory: a size of 0 or below, a bad name and one of 30 bytes are refused, 
     twice = memory_create(name, size: 100, perm: 0o600)
     assert twice == nullptr
     assert last_error() == HERO_IPC_EXISTS
-    assert memory_close(@m) == 0
     assert memory_remove(name) == 0
+    assert memory_close(@m) == 0
     assert memory_remove(name) == -1
     assert last_error() == HERO_IPC_NOT_FOUND
     gone = memory_open(name)
@@ -476,8 +490,8 @@ test "memory: bytes written are read by a second mapping, and every offset past 
     empty: [u8] @= []
     assert memory_read(o, offset: 0, @empty, count: 0) == 0
     assert memory_close(@o) == 0
-    assert memory_close(@m) == 0
     assert memory_remove(name) == 0
+    assert memory_close(@m) == 0
 
 test "memory words: load, store, add wrapping at the largest i64, swap made and not made, and an offset not a multiple of 8"
     name = test_name("m4")
@@ -497,10 +511,10 @@ test "memory words: load, store, add wrapping at the largest i64, swap made and 
     assert last_error() == HERO_IPC_INVALID
     assert memory_load(m, offset: memory_size(m), value: @value) == -1
     assert last_error() == HERO_IPC_INVALID
+    assert memory_remove(name) == 0
     assert memory_close(@m) == 0
     assert memory_size(nullptr) == -1
     assert last_error() == HERO_IPC_NOT_OPEN
-    assert memory_remove(name) == 0
 
 test "semaphore: a count of -1 or 32,768 is refused, a wait of 0 on 0 times out, a post is taken once, and a name taken is told"
     name = test_name("s")
@@ -525,8 +539,8 @@ test "semaphore: a count of -1 or 32,768 is refused, a wait of 0 on 0 times out,
     assert twice == nullptr
     assert last_error() == HERO_IPC_EXISTS
     assert semaphore_close(@o) == 0
-    assert semaphore_close(@s) == 0
     assert semaphore_remove(name) == 0
+    assert semaphore_close(@s) == 0
     gone = semaphore_open(name)
     assert gone == nullptr
     assert last_error() == HERO_IPC_NOT_FOUND
@@ -549,10 +563,62 @@ test "lock: taken, refused to its own thread through either handle, released onc
     assert lock_acquire(second, within_ms: 0) == 0
     assert lock_close(@second) == 0
     assert lock_acquire(l, within_ms: 0) == 0
-    assert lock_close(@l) == 0
     assert lock_remove(name) == 0
+    assert lock_close(@l) == 0
     assert lock_remove(name) == -1
     assert last_error() == HERO_IPC_NOT_FOUND
     bad = lock_open("a/b", perm: 0o600)
     assert bad == nullptr
     assert last_error() == HERO_IPC_INVALID
+
+# The header's two rules for a name whose last handle is closed: POSIX keeps
+# memory, a semaphore and a lock for every later open until their remove;
+# Windows takes the name away with the last handle, so the open and the
+# remove find nothing (the box's run of 2026-11-18 found the other tests
+# asserting POSIX's rule alone).
+test "memory, a semaphore and a lock after their last close: POSIX keeps each name until its remove, Windows takes it away"
+    windows = hero_run_exe_suffix() == ".exe"
+    memory_name = test_name("after-m")
+    m @= memory_create(memory_name, size: 8, perm: 0o600)
+    data: [u8] @= [7]
+    assert memory_write(m, offset: 0, @data, count: 1) == 1
+    assert memory_close(@m) == 0
+    again @= memory_open(memory_name)
+
+    if windows
+        assert again == nullptr
+        assert last_error() == HERO_IPC_NOT_FOUND
+        assert memory_remove(memory_name) == -1
+        assert last_error() == HERO_IPC_NOT_FOUND
+    else
+        assert again != nullptr
+        back: [u8] @= [0]
+        assert memory_read(again, offset: 0, @back, count: 1) == 1
+        assert back[0] == 7
+        assert memory_close(@again) == 0
+        assert memory_remove(memory_name) == 0
+    semaphore_name = test_name("after-s")
+    s @= semaphore_create(semaphore_name, count: 1, perm: 0o600)
+    assert semaphore_close(@s) == 0
+    opened @= semaphore_open(semaphore_name)
+
+    if windows
+        assert opened == nullptr
+        assert last_error() == HERO_IPC_NOT_FOUND
+        assert semaphore_remove(semaphore_name) == -1
+        assert last_error() == HERO_IPC_NOT_FOUND
+    else
+        assert opened != nullptr
+        assert semaphore_wait(opened, within_ms: 0) == 0
+        assert semaphore_close(@opened) == 0
+        assert semaphore_remove(semaphore_name) == 0
+    lock_name = test_name("after-l")
+    l @= lock_open(lock_name, perm: 0o600)
+    assert l != nullptr
+    assert lock_close(@l) == 0
+
+    if windows
+        assert lock_remove(lock_name) == -1
+        assert last_error() == HERO_IPC_NOT_FOUND
+    else
+        assert lock_remove(lock_name) == 0

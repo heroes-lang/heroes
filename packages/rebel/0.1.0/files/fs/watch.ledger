@@ -140,7 +140,7 @@ capability event/attributes  an entry's facts changed and not its content
   go      fsnotify.Chmod
   rust    notify::event::ModifyKind::Metadata, notify::event::MetadataKind
   python  FileAttribEvent, DirAttribEvent, EVENT_TYPE_ATTRIB, FileSystemEventHandler.on_attrib
-  note    Linux's `IN_ATTRIB` and macOS's owner, metadata, extended-attribute and Finder flags; Windows says only `MODIFIED`, told `changed`. `watchdog` told the chmod `modified` (observed), Go `CHMOD`
+  note    Linux's `IN_ATTRIB` and macOS's owner, metadata, extended-attribute and Finder flags; Windows says only `MODIFIED`, told `changed`. `watchdog` told the chmod `modified` (observed), Go `CHMOD`. Windows sees a permission only as its read-only flag, so a permission that leaves that flag as it was changes nothing there and nothing is told: the test of `wait` set 0o600 on a writable file and found no event on the box (2026-11-18), where 0o400 and back were each told `changed`; since repairs-3 (2026-11-18) it makes the file read-only, which every platform tells, and gives the permission back before the folder goes
 
 capability event/renamed  an entry moved, both its paths told
   heroes  fs/watch.Change.renamed

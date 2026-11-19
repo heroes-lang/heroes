@@ -38,9 +38,10 @@
  * WINDOWS: `CreateFileW`, the `DCB` (`GetCommState`, `SetCommState`),
  * `COMMTIMEOUTS`, `GetCommModemStatus`, `EscapeCommFunction`,
  * `SetCommBreak`, `PurgeComm`, `ClearCommError`, and the registry's
- * `SERIALCOMM` key for the list. UNRUN on 2026-11-18, the box being off:
- * compiled on this Mac against zig's MinGW-w64 headers, `-Werror`, and owed
- * its runs on the box (`rebel-scratch/windows/serial.md`).
+ * `SERIALCOMM` key for the list, advapi32's, which this file names to the
+ * linker itself. Run on the box on 2026-11-18: the listing and the refusals
+ * held, plain and under ASan; every case of a port pair stays unrun there, no
+ * pair being installed (`rebel-scratch/windows/serial.md`).
  */
 
 #include "hero_serial.h"
@@ -57,6 +58,16 @@
 
 #if defined(_WIN32)
 #include <windows.h>
+#if defined(_MSC_VER)
+/* `RegOpenKeyExW`, `RegQueryInfoKeyW`, `RegEnumValueW` and `RegCloseKey`,
+ * the list's registry calls, are advapi32's: named in the object, as
+ * `hero_keyring.c` and `hero_sys.c` name it, so a program that takes this
+ * member links it and no other does. MSVC's word; a MinGW target links it by
+ * `-l`. Without it a C program linking this file alone was refused by
+ * lld-link on the box, the four names undefined (2026-11-18,
+ * `rebel-scratch/windows/serial.md`). */
+#pragma comment(lib, "advapi32.lib")
+#endif
 #else
 #include <dirent.h>
 #include <errno.h>

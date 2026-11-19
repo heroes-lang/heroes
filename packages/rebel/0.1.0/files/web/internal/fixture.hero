@@ -36,7 +36,7 @@ function started() -> time.Instant
     return time.from_unix(whole_seconds: 784_111_776, extra_nanoseconds: 750_000_000).must()
 
 # A new folder under `build/` holding: `a.txt` (`hello world`, written at
-# `clock`'s instant), `sub/b.html`, `sub/a b&<.txt`, `sub/dir/`, `idx/index.html`
+# `clock`'s instant), `sub/b.html`, `sub/a b&'.txt`, `sub/dir/`, `idx/index.html`
 # (`IDX`), `.hidden`, and `out.txt`, a link to `../outside.txt` beside the
 # folder. Answers the folder; its parent is removed by `remove`.
 function lay_out() -> str
@@ -48,7 +48,7 @@ function lay_out() -> str
     fs.make_dir(path.join_all([root, "idx"])).must()
     write(file: path.join_all([root, "a.txt"]), text: "hello world")
     write(file: path.join_all([root, "sub", "b.html"]), text: "<p>b</p>")
-    write(file: path.join_all([root, "sub", "a b&<.txt"]), text: "x")
+    write(file: path.join_all([root, "sub", "a b&'.txt"]), text: "x")
     write(file: path.join_all([root, "idx", "index.html"]), text: "IDX")
     write(file: path.join_all([root, ".hidden"]), text: "s")
     write(file: path.join_all([base, "outside.txt"]), text: "out")
@@ -76,6 +76,21 @@ function write(file: str, text: str)
 function remove(root: str)
     fs.remove_all(path.parent(root)).must()
 
+# Whether `name` holds no character a Windows file name refuses: `<`, `>`,
+# `:`, `"`, `|`, `?`, `*` and the controls below 32. `lay_out`'s names keep
+# to it, so the tests that serve them run on every platform.
+function is_held_everywhere(name: str) -> bool
+    at: i64 @= 0
+
+    while at < name.len()
+        b = name[at]
+
+        if b < 32 || b == '<' || b == '>' || b == ':' || b == '"' || b == '|' || b == '?' || b == '*'
+            return false
+        at @ at + 1
+
+    return true
+
 test "request_of: a method, a target and fields"
     r = request_of(method: "PUT", target: "http://h/a?b=1", headers: [http.Header(name: "X", value: "1")])
     assert r.method == "PUT" && r.url.path == "/a" && r.headers.len() == 1
@@ -99,6 +114,16 @@ test "ring: two keys of 32 bytes, apart"
 
 test "clock: RFC 9110's instant, and 250 ms before it"
     assert time.between(from: started(), to: clock().must()).must().nanoseconds == 250_000_000
+
+# The box's run of 2026-11-18 found `sub/a b&<.txt` refused by Windows, and
+# eleven tests dying in this fixture before they asserted anything.
+test "lay_out: every name it writes is one a Windows file name can hold"
+    root = lay_out()
+
+    for entry in fs.walk(path.parent(root)).must()
+        assert is_held_everywhere(entry.name)
+
+    remove(root)
 
 test "lay_out: the files and the link, then removed"
     root = lay_out()

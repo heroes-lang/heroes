@@ -203,13 +203,12 @@ test "read_at, write_at and the words through two mappings, a read past the end 
     assert swap_at(first, name: name, size: made.size, offset: 8, expected: 42, desired: -1).must() == 42
     assert load_at(second, name: name, size: seen.size, offset: 8).must() == -1
     assert close(@second, name: name) == ok()
+    assert remove(name) == ok()
     assert close(@first, name: name) == ok()
 
     match close(@first, name: name)
         .ok _  => assert false
         .err e => assert e.code == failure.CLOSED
-
-    assert remove(name) == ok()
 
     match open(name)
         .ok _  => assert false

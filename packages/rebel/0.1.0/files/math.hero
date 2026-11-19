@@ -1300,7 +1300,9 @@ function mul_complex(a: Complex, b: Complex) -> Complex
 #   nan or zero, as Annex G says, where Python raises.
 #
 # A zero over a zero is a nan; an infinity over a finite number an infinity;
-# a finite number over an infinity a zero.
+# a finite number over an infinity a zero. A nan part is never read for its
+# sign, which no operation promises: `0 / (nan + inf i)` is `0 + 0i` on every
+# platform.
 function div_complex(a: Complex, b: Complex) -> Complex
     p = complex_arithmetic.div(
         a: complex_arithmetic.Pair(re: a.re, im: a.im),

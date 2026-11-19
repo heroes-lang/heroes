@@ -46,7 +46,7 @@ capability ipc/connect  a connection to a listener at a path
   go      net.DialUnix, net.Dial (network "unix"), net.Dialer.DialUnix
   rust    UnixStream::connect, UnixStream::connect_addr, interprocess::local_socket::Stream::connect
   python  multiprocessing.connection.Client, multiprocessing.connection.SocketClient, socket.socket.connect, multiprocessing.connection.CONNECTION_TIMEOUT
-  note    nothing at the path and a socket file nobody listens on are both `not_found`, their messages apart; `within_ms` bounds the wait while the listener's queue is full (Linux answers EAGAIN then, asked again in steps)
+  note    nothing at the path and a socket file nobody listens on are both `not_found`, their messages apart; `within_ms` bounds the wait while the listener's queue is full (Linux answers EAGAIN then, asked again in steps). Windows' AF_UNIX answers a path no file is at as it answers a socket file nobody listens on, `WSAECONNREFUSED` (the box, 2026-11-18: a path never made and one whose listener had closed alike), so the floor told `REFUSED` where its header promises `NOT_FOUND`; since repairs-3 (2026-11-18) its Windows arm asks the path after a refusal, and the kind and the message are POSIX's on every platform
 
 capability ipc/channel-bytes  a channel's bytes read and written
   heroes  io.read, io.write
@@ -205,7 +205,7 @@ capability ipc/memory-close  shared memory unmapped from this process, its name 
   go      golang.org/x/sys/windows.UnmapViewOfFile, golang.org/x/sys/unix.Munmap
   rust    -
   python  multiprocessing.shared_memory.SharedMemory.close, multiprocessing.shared_memory.SharedMemory.unlink, posix_ipc.unlink_shared_memory, posix_ipc.SharedMemory.unlink
-  note    on Windows the system takes a name away with its last handle, so `remove_memory` there asks that the name is open and changes nothing, `not_found` where it is not, as POSIX answers. Nothing removes a name at this process's exit: the memory is the program's to remove
+  note    on Windows the system takes a name away with its last handle, so `remove_memory` there asks that the name is open and changes nothing, `not_found` where it is not, as POSIX answers. Nothing removes a name at this process's exit: the memory is the program's to remove. The box's run of 2026-11-18 found 33 tests (5 of the floor's, 28 of the face's) removing a name after its last close and asserting POSIX's `ok`, where Windows answers `not_found` as this rule says; since repairs-3 (2026-11-18) they remove it while it is still open, which every platform answers alike, and one test of the floor and one of the face hold each platform's own rule after the last close, for memory, a semaphore and a lock
 
 capability ipc/memory-list  a list of values laid out in shared memory
   heroes  refused: a layout of values is a format a program writes with `write_at`, `msgpack` or `cbor` among them; a list whose items change size in place is Python's structure

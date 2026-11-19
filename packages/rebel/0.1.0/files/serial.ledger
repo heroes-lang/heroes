@@ -19,7 +19,7 @@ capability serial/list  the names of the ports this machine has
   go      serial.GetPortsList
   rust    -
   python  serial.tools.list_ports.comports, serial.tools.list_ports.main
-  note    POSIX reads `/dev`: `tty.*` and `cu.*` on Darwin (go.bug.st's list on this Mac, 6 names; pyserial's `comports` gives the 3 `cu.*` alone), `ttyS*` (where `/sys/class/tty/<name>/device` stands), `ttyUSB*`, `ttyACM*` on Linux; Windows reads the registry's `SERIALCOMM` key, as .NET's `GetPortNames` does; sorted by bytes, as Go's
+  note    POSIX reads `/dev`: `tty.*` and `cu.*` on Darwin (go.bug.st's list on this Mac, 6 names; pyserial's `comports` gives the 3 `cu.*` alone), `ttyS*` (where `/sys/class/tty/<name>/device` stands), `ttyUSB*`, `ttyACM*` on Linux; Windows reads the registry's `SERIALCOMM` key, as .NET's `GetPortNames` does; sorted by bytes, as Go's. Repaired 2026-11-18 (repairs-3): the registry's calls are advapi32's, and the member names that library to the linker itself (`#pragma comment(lib)`, as `hero_keyring.c` and `hero_sys.c` do), since a C program linking `hero_serial.c` alone was refused on the box with the four names undefined; a program `heroes` builds had linked, and the box's run listed no port, as .NET's `GetPortNames` did there
 
 capability serial/details  a port's USB vendor, product, serial number, description and location
   heroes  pending

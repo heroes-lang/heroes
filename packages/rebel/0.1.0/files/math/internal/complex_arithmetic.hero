@@ -21,21 +21,33 @@ record Pair
     # The imaginary part.
     im: f64
 
-# 1.0 with the sign of `x` where `x` is an infinity, else 0.0 with its sign:
-# how Annex G stands an infinite part in before it recomputes.
+# 1.0 with the sign of `x` where `x` is an infinity, 0.0 with its sign where
+# it is a number, and 0.0 where it is a nan: how Annex G stands an infinite
+# part in before it recomputes. Annex G gives a nan's zero the nan's sign
+# (`copysign`), but no operation promises a nan's sign and each machine's
+# invalid operation makes its own: this Mac's `INF - INF` has it clear, and
+# x86-64's "indefinite" has it set. So the box missed cases 34 and 41 of the
+# generated division (2026-11-18), `0 / (nan + inf i)` and `-0 / (inf + nan
+# i)`, and this Mac missed the same two, and only them, once every nan of the
+# cases had its sign set. A nan is a plain zero here, the answer the same on
+# every platform and Python's for its `float("nan")`.
 #
 # - `x`: any float.
 function boxed(x: f64) -> f64
     if floats.is_inf(x)
         return floats.with_sign(x: 1.0, of: x)
+
+    if floats.is_nan(x)
+        return 0.0
     return floats.with_sign(x: 0.0, of: x)
 
-# `x`, or a zero of its sign where it is a nan.
+# `x`, or 0.0 where it is a nan, its sign read from no nan, as `boxed` reads
+# none.
 #
 # - `x`: any float.
 function nan_to_zero(x: f64) -> f64
     if floats.is_nan(x)
-        return floats.with_sign(x: 0.0, of: x)
+        return 0.0
     return x
 
 # `p * q + r * s` rounded about once: the product `r * s` split exactly into

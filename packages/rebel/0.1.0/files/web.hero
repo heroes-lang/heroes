@@ -2537,7 +2537,7 @@ test "serve_folder: a folder's redirect, its index, its listing, a file named wi
     page = http.text_of(
         serve_folder(fixture.request_of(method: "GET", target: "/static/sub/", headers: []), folder: f, rest: "sub/")
     ).must()
-    assert page == "<!doctype html>\n<meta name=\"viewport\" content=\"width=device-width\">\n<pre>\n<a href=\"a%20b%26%3C.txt\">a b&amp;&lt;.txt</a>\n<a href=\"b.html\">b.html</a>\n<a href=\"dir/\">dir/</a>\n</pre>\n"
+    assert page == "<!doctype html>\n<meta name=\"viewport\" content=\"width=device-width\">\n<pre>\n<a href=\"a%20b%26%27.txt\">a b&amp;&#39;.txt</a>\n<a href=\"b.html\">b.html</a>\n<a href=\"dir/\">dir/</a>\n</pre>\n"
     fixture.remove(root)
 
 test "serve_folder: a dot segment, a backslash, a hidden name, a link out, nothing, a method"

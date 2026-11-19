@@ -6,12 +6,37 @@
 # `misses` reads them, four floats a case.
 
 use math/internal/complex_arithmetic
+use math/internal/floats
 use math/internal/limits
 
 # Where the cases' answers come from: the face's tests name it, which is how a
 # program's tests reach this module.
 constant ORACLE: str
     "Python 3.15.2's cmath on this machine, 2026-11-17; where Python raises, this machine's C <complex.h> asked on the first quadrant and given its signs by C11 Annex G's symmetries"
+
+# `cases` with every nan given the sign of `sign`. No operation promises a
+# nan's sign, and each machine's invalid operation makes its own: this Mac's
+# `INF - INF` has it clear, x86-64's "indefinite" has it set. With every nan's
+# sign set, this Mac missed the division's cases 34 and 41 before repairs-3,
+# the two the Windows box missed on 2026-11-18. An answer must not follow it.
+#
+# - `cases`: the cases, their floats in any number.
+# - `sign`: a float whose sign every nan takes.
+function nans_signed(cases: [[f64]], sign: f64) -> [[f64]]
+    signed: [[f64]] @= []
+
+    for c in cases
+        row: [f64] @= []
+
+        for x in c
+            if floats.is_nan(x)
+                row @ row.push(floats.with_sign(x: x, of: sign))
+            else
+                row @ row.push(x)
+
+        signed @ signed.push(row)
+
+    return signed
 
 ## Tests
 
@@ -108,6 +133,8 @@ test "mul (generated): the pairings of eight edges, then 24 pairs at every scale
         [0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001766356106, 0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000157159955908475, 0.2653098414605723, 0.00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000765765, 0.00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000046863166, 0.00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004169608298603]
     ]
     assert complex_arithmetic.misses_of_two(f: complex_arithmetic.mul, cases: cases, ulps: 4.0) == []
+    assert complex_arithmetic.misses_of_two(f: complex_arithmetic.mul, cases: nans_signed(cases, sign: -1.0), ulps: 4.0) == []
+    assert complex_arithmetic.misses_of_two(f: complex_arithmetic.mul, cases: nans_signed(cases, sign: 1.0), ulps: 4.0) == []
 
 # Python 3.15.2's complex `/` on this machine, 2026-11-17, at the 64 pairings of eight numbers with an infinite, a nan or a zero part (where Python raises, this machine's C), then the exact quotient or product of 24 pairs drawn with the seed 202611172, at every scale from the subnormal to the overflow, rounded once.
 test "div (generated): the pairings of eight edges, then 24 pairs at every scale"
@@ -204,6 +231,8 @@ test "div (generated): the pairings of eight edges, then 24 pairs at every scale
         [3506826451340743000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000.0, -3197399954915569000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000.0, 0.08950791575886455, -7907075633212016000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000.0, 0.00040437199582176245, 0.0004435048574230215]
     ]
     assert complex_arithmetic.misses_of_two(f: complex_arithmetic.div, cases: cases, ulps: 4.0) == []
+    assert complex_arithmetic.misses_of_two(f: complex_arithmetic.div, cases: nans_signed(cases, sign: -1.0), ulps: 4.0) == []
+    assert complex_arithmetic.misses_of_two(f: complex_arithmetic.div, cases: nans_signed(cases, sign: 1.0), ulps: 4.0) == []
 
 # Python 3.15.2's `cmath.rect` on this machine, 2026-11-17, at the 49 pairings of seven sizes and seven angles, then at 16 random ones; where Python raises, the values `from_polar` documents.
 test "from_polar (generated): every pairing of seven sizes and seven angles, then 16 random ones"

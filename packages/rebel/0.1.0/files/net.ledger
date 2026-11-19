@@ -545,7 +545,7 @@ capability udp/open  a UDP socket bound to an address
   go      net.ListenUDP, net.ListenPacket, net.ListenConfig.ListenPacket, net.UDPConn, net.PacketConn
   rust    UdpSocket, UdpSocket::bind
   python  socket.SOCK_DGRAM
-  note    Bound to an address, not a name, as the floor binds it
+  note    Bound to an address, not a name, as the floor binds it. "" is every IPv4 address, `0.0.0.0`, on every platform, as the doc said and as Python's `bind(("", port))` on an `AF_INET` socket answers; until repairs-3 (2026-11-18) it was handed to the floor as it stood, which binds the first address the system lists, IPv6's `::` on Darwin, so a send to an IPv4 address failed `invalid` (the metrics agent's program, and `dns`'s and `metrics`' workarounds of `0.0.0.0`). Dual-stack, where Go's `ListenUDP` with no address "listens on all available IP addresses" (its doc), was not taken: it rests on `IPV6_V6ONLY`, whose default differs between systems, gives IPv4 senders as mapped IPv6 addresses, and the floor's sockets are of one kind each
 
 capability udp/address  the address a UDP socket stands on
   heroes  net.UdpSocket

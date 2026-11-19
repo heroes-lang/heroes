@@ -75,9 +75,9 @@ function try_once(query: [u8], server: net.Address, timeout_ms: i64, tcp: bool) 
 
 # The answer to `query` from `server` over UDP, within `timeout_ms`.
 function over_udp(query: [u8], server: net.Address, timeout_ms: i64) -> [u8]?
-    # "0.0.0.0" and not "": on Darwin, 2026-11-17, a socket `net.open_udp`
-    # opened on "" refused to send to an IPv4 address (`invalid`), though
-    # `net` says "" is IPv4.
+    # The family named, the server's own: "0.0.0.0" for an IPv4 server, "::"
+    # for an IPv6 one. (`net.open_udp` on "" bound IPv6's "::" on Darwin
+    # until net's repair of 2026-11-19, and since then binds "0.0.0.0".)
     host: str @= "0.0.0.0"
 
     if net.is_v6(server)

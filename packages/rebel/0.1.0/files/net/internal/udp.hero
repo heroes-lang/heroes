@@ -22,17 +22,24 @@ constant DATAGRAM_MOST: u64
 
 # A UDP socket bound to `host` at `port`.
 #
-# - `host`: an address, or "" for every address of the machine; a zero byte
-#   is refused, and a name fails as the floor fails it.
+# - `host`: an address, or "" for every IPv4 address of the machine,
+#   `0.0.0.0`; a zero byte is refused, and a name fails as the floor fails it.
 # - `port`: 0 to 65535, 0 for one the system chooses.
 #
 # Fails `invalid` where `host` holds a zero byte or `port` is out of range,
-# and as the floor fails where the socket is not made.
+# and as the floor fails where the socket is not made. The floor binds "" to
+# the first address the system lists, IPv6's `::` on Darwin (2026-11-18), and
+# a socket of one kind sends to that kind alone, so "" is named `0.0.0.0`
+# here, the same socket on every platform.
 function open_udp(host: str, port: i64) -> sockets.Bound?
     asked = f"opening a UDP socket on {hosts.joined(host, port: sockets.clamped(port))}"
     hosts.checked_zero(text: host, asked: asked)?
     _ = hosts.checked(port, asked: asked)?
-    s @= hero_net.udp(address: host, port: port)
+    on: str @= host
+
+    if host == ""
+        on @ "0.0.0.0"
+    s @= hero_net.udp(address: on, port: port)
 
     if s == nullptr
         return failure.last(asked: asked)
@@ -94,6 +101,19 @@ test "open_udp, send_to, receive: datagrams both ways, one of no bytes, the send
     assert back.data == [] && back.sender.port == b.address.port
     sockets.close(@a.socket, asked: "closing").must()
     sockets.close(@b.socket, asked: "closing").must()
+
+# The metrics agent's program of 2026-11-18: a socket opened on "" sent to an
+# IPv4 address and was refused `invalid`, Darwin's resolver listing IPv6's
+# `::` first, though the face says "" is IPv4.
+test "open_udp: \"\" binds IPv4's every address on every platform, and sends to an IPv4 address"
+    server @= open_udp("127.0.0.1", port: 0).must()
+    s @= open_udp("", port: 0).must()
+    sockets.set_deadline(server.socket, ms: 5000, asked: "deadline").must()
+    assert s.address.bytes == [0, 0, 0, 0] && s.address.port > 0
+    send_to(s.socket, data: [104], to: "127.0.0.1", port: server.address.port).must()
+    assert receive(server.socket).must().data == [104]
+    sockets.close(@s.socket, asked: "closing").must()
+    sockets.close(@server.socket, asked: "closing").must()
 
 test "send_to and receive: the largest datagram whole, an address of the other kind and port 0 invalid, a quiet socket timeout"
     a @= open_udp("127.0.0.1", port: 0).must()

@@ -150,9 +150,9 @@ test "create_semaphore: a count of -1 and 32,768 and a permission of -1 are told
     o @= open_semaphore(name).must()
     assert acquire_semaphore(o, name: name, within_ms: 10) == ok()
     assert close_semaphore(@o, name: name) == ok()
+    assert remove_semaphore(name) == ok()
     assert close_semaphore(@s, name: name) == ok()
     assert close_semaphore(@s, name: name).is_err()
-    assert remove_semaphore(name) == ok()
 
     match open_semaphore(name)
         .ok _  => assert false
@@ -175,7 +175,7 @@ test "acquire_lock: clean, refused to the thread that holds it, released, and a 
         .ok _  => assert false
         .err e => assert e.msg == f"releasing the lock \"{name}\": the calling thread does not hold the lock"
 
-    assert close_lock(@l, name: name) == ok()
     assert remove_lock(name) == ok()
+    assert close_lock(@l, name: name) == ok()
     assert remove_lock(name).is_err()
     assert open_lock("..", permission: 0o600).is_err()

@@ -846,11 +846,12 @@ record Datagram
     # The sender's address and port.
     sender: Address
 
-# A UDP socket bound to `host` at `port`: an address, or "" for every address
-# of the machine, and port 0 for one the system chooses, which the socket's
-# `address` tells. Its datagrams go to and come from addresses of the same
-# kind as `host`, IPv4 where it is "". Fails `exists`, `permission` and
-# `invalid` as `listen` does, a name among the last.
+# A UDP socket bound to `host` at `port`: an address, or "" for every IPv4
+# address of the machine, as `0.0.0.0` is, and port 0 for one the system
+# chooses, which the socket's `address` tells. Its datagrams go to and come
+# from addresses of the same kind as `host`, IPv4 where it is "", on every
+# platform; `::` asks IPv6's. Fails `exists`, `permission` and `invalid` as
+# `listen` does, a name among the last.
 function open_udp(host: str, port: i64) -> UdpSocket?
     b = udp.open_udp(host, port: port)?
     return ok(

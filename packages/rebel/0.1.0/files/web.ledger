@@ -316,7 +316,7 @@ capability static/listing  a folder's names answered as a page
   go      net/http.FileServer's listing, echo/middleware.StaticConfig.Browse
   rust    -
   python  http.server.SimpleHTTPRequestHandler.list_directory
-  note    off unless asked, as Echo's; Go's page (observed), each name sorted by its bytes, a folder's ending in `/`, its link escaped as one segment, so `&` is `%26` where Go writes it bare
+  note    off unless asked, as Echo's; Go's page (observed), each name sorted by its bytes, a folder's ending in `/`, its link escaped as one segment, so `&` is `%26` where Go writes it bare. The tests' folder held a file named `a b&<.txt`, which Windows refuses (`<`), so eleven tests of serving files and folders died in their fixture on the box (2026-11-18) before they asserted anything; since repairs-3 (2026-11-18) the name is `a b&'.txt`, which every platform holds and which still needs both escapes, `a%20b%26%27.txt` in the link and `a b&amp;&#39;.txt` in the text, and a test holds every name the fixture writes to what a Windows file name can hold
 
 capability static/conditional  a file not sent again where the client holds it
   heroes  web.serve_file, web.serve_folder
