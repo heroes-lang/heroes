@@ -81,9 +81,11 @@
  * `CreateSemaphoreW`, `CreateMutexW`. The box ran the floor's and the face's
  * tests on 2026-11-18, plain and sanitized, and found that Windows' AF_UNIX
  * answers `WSAECONNREFUSED` for a path with no file as for a socket file
- * nothing listens on; so a refused connect asks the path
- * (`hero_ipc_connect_failed`) and the header's two kinds stay apart, as
- * POSIX's `ENOENT` keeps them. That repair is owed its run on the box.
+ * nothing listens on, `WSAENETDOWN` for a path whose folder is not there and
+ * `WSAEINVAL` for one below a socket file (defect 2602, 2026-11-19); so a
+ * connect refused any of those ways asks the path (`hero_ipc_connect_failed`)
+ * and the header's two kinds stay apart, as POSIX's `ENOENT` and `ENOTDIR`
+ * keep them.
  */
 
 #include "hero_ipc.h"
@@ -1195,26 +1197,64 @@ static bool hero_ipc_address(const char *name, SOCKADDR_UN *address) {
     return true;
 }
 
-/* A connect to the path `name` failed with `code`, Winsock's number, named
- * as the header promises: Windows' AF_UNIX answers `WSAECONNREFUSED` (10061)
- * for a path no file is at, one never made among them, as for a socket file
- * nothing listens on (measured on the box, 2026-11-18,
- * `rebel-scratch/windows/ipc.md`), where POSIX answers `ENOENT` for the
- * first. So a refusal asks the path, and where nothing is there the kind is
- * `HERO_IPC_NOT_FOUND` with the system's number for that answer. */
-static void hero_ipc_connect_failed(const char *name, int64_t code) {
-    if (code == WSAECONNREFUSED) {
-        wchar_t wide[HERO_IPC_NAME_ROOM];
+/* Whether nothing stands at the path `name`, asked of the disk after Windows
+ * refused a connect to it, the number of the answer that says so in `why`.
+ * `ERROR_FILE_NOT_FOUND` or `ERROR_PATH_NOT_FOUND` say it at once. A socket
+ * file standing where a folder of the path would be is a reparse point the
+ * system cannot pass through, and its answer is `ERROR_CANT_ACCESS_FILE`
+ * (1920), however far below it the path goes (measured on the box,
+ * 2026-11-19): the nearest part of the path above that stands is asked, and
+ * one that is no folder is what POSIX's `ENOTDIR` says. */
+static bool hero_ipc_nothing_at(const char *name, DWORD *why) {
+    wchar_t wide[HERO_IPC_NAME_ROOM];
 
-        if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, name, -1, wide, HERO_IPC_NAME_ROOM) != 0 &&
-            GetFileAttributesW(wide) == INVALID_FILE_ATTRIBUTES) {
-            DWORD why = GetLastError();
+    if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, name, -1, wide, HERO_IPC_NAME_ROOM) == 0 ||
+        GetFileAttributesW(wide) != INVALID_FILE_ATTRIBUTES) {
+        return false;
+    }
+    *why = GetLastError();
+    if (*why == ERROR_FILE_NOT_FOUND || *why == ERROR_PATH_NOT_FOUND) {
+        return true;
+    }
+    if (*why != ERROR_CANT_ACCESS_FILE) {
+        return false;
+    }
+    for (size_t at = wcslen(wide); at > 0; at -= 1) {
+        if (wide[at - 1] == L'/' || wide[at - 1] == L'\\') {
+            wide[at - 1] = 0;
+            DWORD attrs = GetFileAttributesW(wide);
 
-            if (why == ERROR_FILE_NOT_FOUND || why == ERROR_PATH_NOT_FOUND) {
-                hero_ipc_fail(HERO_IPC_NOT_FOUND, (int64_t)why);
-                return;
+            if (attrs != INVALID_FILE_ATTRIBUTES) {
+                return (attrs & FILE_ATTRIBUTE_DIRECTORY) == 0;
             }
         }
+    }
+    return false;
+}
+
+/* A connect to the path `name` failed with `code`, Winsock's number, named
+ * as the header promises. Windows' AF_UNIX answers a path nothing is at with
+ * three numbers, none of them a kind of its own (measured on the box, Windows
+ * Server 2025, 2026-11-18 and 2026-11-19, blocking and not alike):
+ * `WSAECONNREFUSED` (10061) for a name never made in a folder that stands, as
+ * for a socket file nothing listens on and for a regular file; `WSAENETDOWN`
+ * (10050) for a path whose folder is not there, one folder missing or two,
+ * relative or absolute, `/` or `\`, a regular file standing where a folder
+ * would and a drive that does not exist (defect 2602, which answered
+ * `HERO_IPC_OTHER` there); and `WSAEINVAL` (10022) for a path below a socket
+ * file, as for a folder (defect 2602's shape beside, which answered
+ * `HERO_IPC_INVALID`). POSIX answers `ENOENT` or `ENOTDIR` for each path
+ * nothing is at, and the header promises `HERO_IPC_NOT_FOUND`. So after any of
+ * the three the path is asked (`hero_ipc_nothing_at`), and where nothing is
+ * there the kind is `HERO_IPC_NOT_FOUND` with the disk's number; a path that
+ * stands keeps the connect's own kind, `HERO_IPC_REFUSED` for a socket file
+ * nothing listens on. */
+static void hero_ipc_connect_failed(const char *name, int64_t code) {
+    DWORD why = 0;
+
+    if ((code == WSAECONNREFUSED || code == WSAENETDOWN || code == WSAEINVAL) && hero_ipc_nothing_at(name, &why)) {
+        hero_ipc_fail(HERO_IPC_NOT_FOUND, (int64_t)why);
+        return;
     }
     hero_ipc_failed_with(code);
 }
