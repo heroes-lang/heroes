@@ -1,0 +1,273 @@
+# tiktoken's patterns made patterns `regex` reads. tiktoken writes them for
+# the Rust crate fancy-regex, whose dialect differs from `regex`'s in four
+# places, each translated here or refused:
+#
+# - `\s` there is Unicode's White_Space, and `regex`'s is ASCII's six: it is
+#   written as the class of the 25 characters of White_Space, inside a class
+#   or as one, and `\S` outside a class as the class of all others; `\d` there
+#   is Unicode's decimal digits and is written `\p{Nd}`;
+# - a possessive repetition, `x++`, `x*+`, `x?+`, `x{1,3}+`, which `regex`
+#   refuses, is written greedy. In tiktoken's patterns the two match alike,
+#   since what follows each such repetition can never begin with what it
+#   repeats; the tests hold the translated patterns to tiktoken's answers;
+# - `\s+(?!\S)`, a run of white space not followed by anything else, is a
+#   look-ahead no automaton matches. It is read only as a whole alternative
+#   of the pattern, which `pieces` then matches in two steps: the alternative
+#   is written as a group named `AHEAD` of the run of white space, and
+#   `pieces` gives back the run's last character where something follows it,
+#   or tries the alternatives after it where the run is one character long;
+# - any other look-around, `\w`, `\W`, `\b`, `\B`, `\Z`, a class nested in a
+#   class, and a group named `AHEAD` are refused `unsupported`.
+
+# The name of the group that stands for the look-ahead alternative.
+constant AHEAD: str
+    "tiktoken_space_ahead"
+
+# The characters of Unicode's White_Space, as the inside of a class of
+# `regex`: tab to carriage return, space, U+0085, U+00A0, U+1680, U+2000 to
+# U+200A, U+2028, U+2029, U+202F, U+205F and U+3000.
+constant WHITE_SPACE: str
+    "\\t-\\r \\x{85}\\x{a0}\\x{1680}\\x{2000}-\\x{200a}\\x{2028}\\x{2029}\\x{202f}\\x{205f}\\x{3000}"
+
+# A pattern of tiktoken's, translated.
+record Translated
+    # The whole pattern in `regex`'s dialect, the look-ahead alternative, where
+    # there is one, written as the group named `AHEAD`.
+    whole: str
+    # The alternatives after the look-ahead one, joined, or "" where there are
+    # none or no look-ahead alternative.
+    after: str
+    # Whether the pattern holds the look-ahead alternative.
+    has_ahead: bool
+
+# The alternatives of `pattern` at its top level, outside every group and
+# class, in order. A `\` and the character after it are never a separator.
+function alternatives(pattern: str) -> [str]
+    out: [str] @= []
+    depth: i64 @= 0
+    in_class: bool @= false
+    class_start: i64 @= 0
+    start: i64 @= 0
+    at: i64 @= 0
+
+    while at < pattern.len()
+        c = pattern[at]
+
+        if c == '\\' && at + 1 < pattern.len()
+            at @ at + 2
+            continue
+
+        if in_class
+            if c == ']' && at > class_start
+                in_class @ false
+        else if c == '['
+            in_class @ true
+            class_start @ at + 1
+
+            if at + 1 < pattern.len() && pattern[at + 1] == '^'
+                class_start @ at + 2
+        else if c == '('
+            depth @ depth + 1
+        else if c == ')'
+            depth @ depth - 1
+        else if c == '|' && depth == 0
+            out @ out.push(pattern.slice(from: start, to: at))
+            start @ at + 1
+        at @ at + 1
+
+    out @ out.push(pattern.slice(from: start, to: pattern.len()))
+    return out
+
+# Whether `alternative` is the look-ahead tiktoken writes, a run of white
+# space with nothing but white space or the end after it.
+function is_ahead(alternative: str) -> bool
+    return alternative == "\\s+(?!\\S)" || alternative == "\\s++(?!\\S)"
+
+# Whether the character `c` ends a repetition, so that a `+` after it makes
+# the repetition possessive.
+function ends_repetition(c: u8) -> bool
+    return c == '*' || c == '+' || c == '?' || c == '}'
+
+# The refusal of `what` in `pattern`.
+function refused(pattern: str, what: str) -> str?
+    return fail(
+        code: "unsupported",
+        msg: f"the pattern \"{pattern}\" holds {what}, which no pattern of `regex` can match as fancy-regex does"
+    )
+
+# `alternative` in `regex`'s dialect: `\s`, `\S` and `\d` written as classes,
+# possessive repetitions made greedy. `pattern` is the whole, for messages.
+# Fails `unsupported` on what the module's comment refuses.
+function translate_one(alternative: str, pattern: str) -> str?
+    out: [str] @= []
+    in_class: bool @= false
+    class_start: i64 @= 0
+    last: u8 @= 0
+    at: i64 @= 0
+
+    while at < alternative.len()
+        c = alternative[at]
+
+        if c == '\\' && at + 1 < alternative.len()
+            e = alternative[at + 1]
+
+            if e == 's'
+                if in_class
+                    out @ out.push(WHITE_SPACE)
+                else
+                    out @ out.push(f"[{WHITE_SPACE}]")
+            else if e == 'S'
+                if in_class
+                    return refused(pattern: pattern, what: "`\\S` inside a class")
+                out @ out.push(f"[^{WHITE_SPACE}]")
+            else if e == 'd'
+                out @ out.push("\\p{Nd}")
+            else if e == 'D'
+                if in_class
+                    return refused(pattern: pattern, what: "`\\D` inside a class")
+                out @ out.push("\\P{Nd}")
+            else if e == 'w' || e == 'W' || e == 'b' || e == 'B' || e == 'Z'
+                return refused(
+                    pattern: pattern,
+                    what: f"`{alternative.slice(from: at, to: at + 2)}`, which fancy-regex reads by Unicode's rules"
+                )
+            else if (e == 'p' || e == 'P' || e == 'x') && at + 2 < alternative.len() && alternative[at + 2] == '{'
+                close: i64 @= at + 2
+
+                while close < alternative.len() && alternative[close] != '}'
+                    close @ close + 1
+
+                if close == alternative.len()
+                    return fail(code: "invalid", msg: f"the pattern \"{pattern}\" opens a `{{` it never closes")
+                out @ out.push(alternative.slice(from: at, to: close + 1))
+                at @ close + 1
+                last @ 'a'
+                continue
+            else
+                out @ out.push(alternative.slice(from: at, to: at + 2))
+            at @ at + 2
+            last @ 'a'
+            continue
+
+        if in_class
+            if c == '['
+                return refused(pattern: pattern, what: "a class inside a class")
+
+            if c == ']' && at > class_start
+                in_class @ false
+            out @ out.push(alternative.slice(from: at, to: at + 1))
+            at @ at + 1
+            last @ c
+            continue
+
+        if c == '['
+            in_class @ true
+            class_start @ at + 1
+
+            if at + 1 < alternative.len() && alternative[at + 1] == '^'
+                class_start @ at + 2
+            out @ out.push("[")
+            at @ at + 1
+            last @ c
+            continue
+
+        if c == '(' && at + 1 < alternative.len() && alternative[at + 1] == '?'
+            rest = alternative.slice(from: at, to: alternative.len())
+
+            if rest.len() >= 3 && (rest[2] == '=' || rest[2] == '!')
+                return refused(pattern: pattern, what: "a look-ahead other than `\\s+(?!\\S)` as a whole alternative")
+
+            if rest.len() >= 4 && rest[2] == '<' && (rest[3] == '=' || rest[3] == '!')
+                return refused(pattern: pattern, what: "a look-behind")
+
+            if rest.len() >= 3 && rest[2] == '>'
+                out @ out.push("(?:")
+                at @ at + 3
+                last @ '('
+                continue
+            out @ out.push("(?")
+            at @ at + 2
+            last @ '('
+            continue
+
+        if c == '+' && ends_repetition(last)
+            at @ at + 1
+            last @ 0
+            continue
+        out @ out.push(alternative.slice(from: at, to: at + 1))
+        last @ c
+
+        if c == '?' && at > 0 && alternative[at - 1] == '('
+            last @ '('
+        at @ at + 1
+
+    return ok(out.join(""))
+
+# `pattern`, tiktoken's, translated into `regex`'s dialect. Fails
+# `unsupported` on what the module's comment refuses, and `invalid` where a
+# `\p{` or `\x{` is never closed.
+function translate(pattern: str) -> Translated?
+    if pattern.len() >= AHEAD.len()
+        at: i64 @= 0
+
+        while at + AHEAD.len() <= pattern.len()
+            if pattern.slice(from: at, to: at + AHEAD.len()) == AHEAD
+                return fail(
+                    code: "unsupported",
+                    msg: f"the pattern \"{pattern}\" names a group \"{AHEAD}\", the name this package gives its own"
+                )
+            at @ at + 1
+
+    whole: [str] @= []
+    after: [str] @= []
+    seen_ahead: bool @= false
+
+    for alternative in alternatives(pattern)
+        if is_ahead(alternative) && !seen_ahead
+            whole @ whole.push(f"(?P<{AHEAD}>[{WHITE_SPACE}]+)")
+            seen_ahead @ true
+        else
+            written = translate_one(alternative: alternative, pattern: pattern)?
+            whole @ whole.push(written)
+
+            if seen_ahead
+                after @ after.push(written)
+
+    return ok(Translated(whole: whole.join("|"), after: after.join("|"), has_ahead: seen_ahead))
+
+test "alternatives: a bar in a class, in a group, escaped, and at the top"
+    assert alternatives("a|[|]|(b|c)|\\||d") == ["a", "[|]", "(b|c)", "\\|", "d"]
+    assert alternatives("") == [""]
+    assert alternatives("[]|]|x") == ["[]|]", "x"]
+    assert alternatives("[^]|]|x") == ["[^]|]", "x"]
+
+test "translate_one: white space inside and outside a class, possessives, a count, lazy kept"
+    assert translate_one(alternative: "\\s", pattern: "p").must() == f"[{WHITE_SPACE}]"
+    assert translate_one(alternative: "[^\\s\\p{L}]", pattern: "p").must() == f"[^{WHITE_SPACE}\\p{{L}}]"
+    assert translate_one(alternative: "\\p{L}++x?+y*+\\p{N}{1,3}+", pattern: "p").must() == "\\p{L}+x?y*\\p{N}{1,3}"
+    assert translate_one(alternative: "a+?b*?", pattern: "p").must() == "a+?b*?"
+    assert translate_one(alternative: "(?i:[sdmt]|ll)", pattern: "p").must() == "(?i:[sdmt]|ll)"
+    assert translate_one(alternative: "[+]+", pattern: "p").must() == "[+]+"
+    assert translate_one(alternative: "\\++", pattern: "p").must() == "\\++"
+    assert translate_one(alternative: "\\+++", pattern: "p").must() == "\\++"
+    assert translate_one(alternative: "(?>ab)", pattern: "p").must() == "(?:ab)"
+    assert translate_one(alternative: "\\d\\D", pattern: "p").must() == "\\p{Nd}\\P{Nd}"
+
+test "translate_one: look-around, word classes, a nested class and an unclosed brace refused"
+    for bad in ["a(?=b)", "a(?!b)", "(?<=a)b", "(?<!a)b", "\\w", "\\b", "[[a]]", "[\\S]", "\\p{L"]
+        assert translate_one(alternative: bad, pattern: bad).is_err()
+
+    match translate_one(alternative: "\\w", pattern: "\\w")
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported"
+
+test "translate: tiktoken's cl100k_base pattern, its look-ahead and what follows it"
+    t = translate("'(?i:[sdmt]|ll|ve|re)|\\s++$|\\s*[\\r\\n]|\\s+(?!\\S)|\\s").must()
+    assert t.has_ahead
+    assert t.after == f"[{WHITE_SPACE}]"
+    assert t.whole == f"'(?i:[sdmt]|ll|ve|re)|[{WHITE_SPACE}]+$|[{WHITE_SPACE}]*[\\r\\n]|(?P<{AHEAD}>[{WHITE_SPACE}]+)|[{WHITE_SPACE}]"
+
+test "translate: a pattern with no look-ahead, and one naming the package's own group"
+    t = translate("a|b").must()
+    assert !t.has_ahead && t.after == "" && t.whole == "a|b"
+    assert translate(f"(?P<{AHEAD}>a)").is_err()

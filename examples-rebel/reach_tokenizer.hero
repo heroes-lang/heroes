@@ -1,0 +1,16 @@
+# Reaches Rebel's `tokenizer` and its tables, so that `heroes test` on this
+# file runs the package's own tests, tiktoken's answers on texts of many
+# scripts among them. It counts the tokens of a sentence for a model of
+# OpenAI's, and writes them back.
+
+use <rebel>/tokenizer
+use <rebel>/tokenizer/tables
+use <rebel>/tokenizer/tables/o200k_base
+
+function main()
+    enc = o200k_base.encoding()
+    print(tables.name_for_model("gpt-4o").must())
+    text = "Heroes counts what a model reads: 世界, ¡hola!"
+    tokens = tokenizer.encode_ordinary(enc, text: text)
+    print(f"{tokens.len()} tokens for {text.len()} bytes")
+    print(tokenizer.decode(enc, tokens: tokens).must())

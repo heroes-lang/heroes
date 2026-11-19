@@ -1,0 +1,78 @@
+# What a piece's size counts, as the private modules read it: characters,
+# bytes, or the tokens of an encoding, which the face's `Measure` says and
+# hands down as a `Meter`, since a private module cannot read its face's
+# types.
+
+use tokenizer
+
+# Code points.
+constant CHARACTERS: i64
+    1
+
+# Bytes of UTF-8.
+constant BYTES: i64
+    2
+
+# The tokens of the one encoding a meter holds.
+constant TOKENS: i64
+    3
+
+# What a size counts. Made by the face from its `Measure`.
+record Meter
+    # `CHARACTERS`, `BYTES` or `TOKENS`.
+    kind: i64
+    # The encoding that counts `TOKENS`, alone; empty for the other kinds.
+    encodings: [tokenizer.Encoding]
+
+# The size of `s` from `from` to `to`, the second excluded, both a
+# character's first byte.
+function cost(m: Meter lent, s: str, from: i64, to: i64) -> i64
+    if m.kind == BYTES
+        return to - from
+
+    if m.kind == TOKENS
+        if from == 0 && to == s.len()
+            return tokenizer.count(m.encodings[0], text: s)
+        return tokenizer.count(m.encodings[0], text: s.slice(from: from, to: to))
+    count: i64 @= 0
+    at: i64 @= from
+
+    while at < to
+        b = s[at]
+
+        if b < 0x80 || b > 0xbf
+            count @ count + 1
+        at @ at + 1
+
+    return count
+
+# Whether `size` and `overlap` can cut a text: a size of 1 at least, an
+# overlap from 0 to the size less 1. Fails `invalid` where they cannot.
+function check(size: i64, overlap: i64) -> ()?
+    if size < 1
+        return fail(code: "invalid", msg: f"a piece's size must be 1 at least, and {size} was given")
+
+    if overlap < 0 || overlap >= size
+        return fail(
+            code: "invalid",
+            msg: f"an overlap must be from 0 to the size less 1, {size - 1}, and {overlap} was given"
+        )
+    return ok()
+
+test "check: the smallest size, an overlap of 0 and of the size less 1, and each refused"
+    assert !check(size: 1, overlap: 0).is_err()
+    assert !check(size: 10, overlap: 9).is_err()
+    assert check(size: 0, overlap: 0).is_err()
+    assert check(size: 10, overlap: 10).is_err()
+    assert check(size: 10, overlap: -1).is_err()
+
+    match check(size: 4, overlap: 4)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "an overlap must be from 0 to the size less 1, 3, and 4 was given"
+
+test "cost: characters of more than one byte, bytes, and an empty range"
+    m = Meter(kind: CHARACTERS, encodings: [])
+    assert cost(m, s: "aé世😀", from: 0, to: 10) == 4
+    assert cost(m, s: "aé世😀", from: 1, to: 6) == 2
+    assert cost(Meter(kind: BYTES, encodings: []), s: "aé世😀", from: 0, to: 10) == 10
+    assert cost(m, s: "abc", from: 2, to: 2) == 0

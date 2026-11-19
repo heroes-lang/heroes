@@ -1,0 +1,88 @@
+# A text cut into runs of its own tokens, as LangChain's token splitter cuts
+# it, but never inside a grapheme: the text is encoded once, and the places
+# where a token begins and a grapheme begins too are the only cuts. Between
+# two such places stands a run of whole tokens, almost always one; each run
+# counts its tokens, and the runs are joined into pieces of at most the size,
+# with their overlap, as `windows` joins any parts.
+
+use chunks/internal/meter
+use chunks/internal/windows
+use tokenizer
+use unicode/segment
+
+# Adds to `spans` the pieces of `s` that hold at most `size` of its tokens
+# in `enc`, each beginning with at most `overlap` of the one before; a run of
+# tokens that writes one grapheme is never cut.
+function add_token_windows(@spans: [i64], s: str, enc: tokenizer.Encoding lent, size: i64, overlap: i64)
+    tokens = tokenizer.encode_ordinary(enc, text: s)
+
+    if tokens.len() == 0
+        return
+    starts = tokenizer.offsets_of(enc, tokens: tokens).must()
+    graphemes = segment.grapheme_boundaries(s)
+    bounds: [i64] @= [0]
+    costs: [i64] @= []
+    count: i64 @= 0
+    g: i64 @= 0
+    t: i64 @= 1
+
+    while t < tokens.len()
+        count @ count + 1
+        place = starts[t]
+
+        while g < graphemes.len() && graphemes[g] < place
+            g @ g + 1
+
+        if g < graphemes.len() && graphemes[g] == place
+            bounds @ bounds.push(place)
+            costs @ costs.push(count)
+            count @ 0
+        t @ t + 1
+
+    bounds @ bounds.push(s.len())
+    costs @ costs.push(count + 1)
+    windows.add_windows(
+        spans: @spans,
+        s: s,
+        bounds: bounds,
+        costs: costs,
+        size: size,
+        overlap: overlap,
+        m: meter.Meter(kind: meter.BYTES, encodings: [])
+    )
+
+# The 256 bytes, "ab" and " cd" as an encoding, for the tests.
+function small() -> tokenizer.Encoding
+    ranks: [[u8]] @= []
+    b: i64 @= 0
+
+    while b < 256
+        ranks @ ranks.push([to_u8(b).must()])
+        b @ b + 1
+
+    ranks @ ranks.push([97, 98])
+    ranks @ ranks.push([32, 99, 100])
+    return tokenizer.new(name: "small", pattern: " ?\\p{L}+|\\s+", ranks: ranks, specials: {}).must()
+
+# The texts the spans of `s` cut, for the tests.
+function texts_of(s: str, spans: [i64]) -> [str]
+    out: [str] @= []
+    k: i64 @= 0
+
+    while k < spans.len()
+        out @ out.push(s.slice(from: spans[k], to: spans[k + 1]))
+        k @ k + 2
+
+    return out
+
+test "add_token_windows: runs of two tokens with an overlap of one, a character of two tokens never cut, and the empty text"
+    enc = small()
+    spans: [i64] @= []
+    add_token_windows(@spans, s: "ab cd ab cd", enc: enc, size: 2, overlap: 1)
+    assert texts_of("ab cd ab cd", spans: spans) == ["ab cd", " cd ", " ab", "ab cd"]
+    cut: [i64] @= []
+    add_token_windows(@cut, s: "éé", enc: enc, size: 1, overlap: 0)
+    assert texts_of("éé", spans: cut) == ["é", "é"]
+    none: [i64] @= []
+    add_token_windows(@none, s: "", enc: enc, size: 3, overlap: 0)
+    assert none == []

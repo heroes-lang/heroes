@@ -1,0 +1,37 @@
+# The table of `o200k_harmony`, the encoding of OpenAI's gpt-oss models,
+# alone: a program that uses this module carries this table and `o200k_base`'s
+# tokens and no other, where one that uses `tokenizer/tables`, which also
+# finds an encoding by its name or its model, carries all three. Measured
+# 2026-11-18 on this Mac at -O2, a program that counts two words is 2.05 MB
+# with `tokenizer/tables/cl100k_base`, 3.42 MB with
+# `tokenizer/tables/o200k_base`, 4.97 MB through `tokenizer/tables`, and
+# 0.81 MB with no table. What an encoding does is `tokenizer`'s. Nothing
+# here fails.
+
+use tokenizer
+use tokenizer/tables/internal/made as making
+use tokenizer/tables/internal/o200k_base as o200k
+use tokenizer/tables/internal/o200k_harmony as harmony
+
+# The encoding `o200k_harmony`: `o200k_base`'s ordinary tokens and pattern with 1,091 special tokens,
+# `<|start|>`, `<|message|>`, `<|channel|>`, `<|end|>`, `<|return|>` and the
+# rest of the harmony format's among them, numbered from 199998 to 201087.
+#
+# It reads the whole table; make it once and keep it. See also
+# `tokenizer.encode_ordinary`.
+function encoding() -> tokenizer.Encoding
+    return making.made(
+        name: "o200k_harmony",
+        pattern: o200k.PATTERN,
+        ranks: o200k.RANKS,
+        texts: harmony.SPECIAL_TEXTS,
+        numbers: harmony.SPECIAL_TOKENS
+    )
+
+## Examples
+
+# Two words counted and encoded in `o200k_harmony`.
+test "encoding: two words"
+    enc = encoding()
+    assert enc.name == "o200k_harmony"
+    assert tokenizer.encode_ordinary(enc, text: "hello world") == [24912, 2375]

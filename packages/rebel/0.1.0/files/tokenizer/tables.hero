@@ -1,0 +1,186 @@
+# The encodings of OpenAI's models by name, and which encoding a model reads,
+# as tiktoken 0.14.0 answers: `o200k_base` (GPT-4o, GPT-4.1, GPT-5, o1, o3,
+# o4-mini), `cl100k_base` (GPT-4, GPT-3.5, the embeddings of 2022 and 2024)
+# and `o200k_harmony` (gpt-oss). Each encoding's table is its own module,
+# `tokenizer/tables/o200k_base`, `tokenizer/tables/cl100k_base` and
+# `tokenizer/tables/o200k_harmony`, data made by a program from the files
+# OpenAI serves (`tokenizer/tables/internal/o200k_base.hero` says how). A
+# program that uses this module carries all three tables, since a name can
+# ask for any: a program that counts two words is 4.97 MB this way, measured
+# 2026-11-18 on this Mac at -O2, and 2.05 MB with
+# `tokenizer/tables/cl100k_base` alone.
+#
+# What an encoding does is `tokenizer`'s. tiktoken's older encodings,
+# `r50k_base`, `p50k_base`, `p50k_edit` and `gpt2`, of GPT-3 and GPT-2, are
+# not carried: `name_for_model` names them, and `named` and `for_model` fail
+# `not_found` for them. Claude's tokenizer is not published: Claude's tokens
+# are counted by Anthropic's API, `llm/anthropic`'s `count_tokens`.
+#
+# A function here fails `not_found` where a name names no encoding carried
+# or a model none known.
+
+use tokenizer
+use tokenizer/tables/cl100k_base as cl100k_table
+use tokenizer/tables/internal/cases
+use tokenizer/tables/internal/held
+use tokenizer/tables/internal/models
+use tokenizer/tables/o200k_base as o200k_table
+use tokenizer/tables/o200k_harmony as harmony_table
+
+## Codes
+
+# The code of a name that names no encoding carried, or of a model whose
+# encoding no table says.
+constant NOT_FOUND: str
+    "not_found"
+
+## The encodings
+
+# The names of the encodings carried, the ones `named` makes.
+function names() -> [str]
+    return ["o200k_base", "cl100k_base", "o200k_harmony"]
+
+# The encoding called `name`, tiktoken's `get_encoding`.
+#
+# - `name`: one of `names()`, as tiktoken spells it.
+#
+# Fails `not_found` for any other name, tiktoken's older encodings among
+# them. See also `for_model`.
+function named(name: str) -> tokenizer.Encoding?
+    if name == "o200k_base"
+        return ok(o200k_table.encoding())
+
+    if name == "cl100k_base"
+        return ok(cl100k_table.encoding())
+
+    if name == "o200k_harmony"
+        return ok(harmony_table.encoding())
+
+    if name == "r50k_base" || name == "p50k_base" || name == "p50k_edit" || name == "gpt2"
+        return fail(
+            code: NOT_FOUND,
+            msg: f"the encoding \"{name}\" is tiktoken's but not carried here; the encodings carried are o200k_base, cl100k_base and o200k_harmony"
+        )
+    return fail(
+        code: NOT_FOUND,
+        msg: f"no encoding is called \"{name}\"; the encodings carried are o200k_base, cl100k_base and o200k_harmony"
+    )
+
+# The name of the encoding the model `model` reads, as tiktoken 0.14.0
+# answers `encoding_name_for_model`: the model's whole name, then the first
+# start of a name it begins with, `gpt-4o-` or `ft:gpt-4` for instance.
+#
+# - `model`: an OpenAI model's name, as its API spells it: "gpt-4o",
+#   "gpt-4o-2024-08-06", "text-embedding-3-small".
+#
+# The answer may name an encoding not carried, "r50k_base" for "davinci".
+# Fails `not_found` where neither table knows the model.
+function name_for_model(model: str) -> str?
+    at: i64 @= 0
+
+    while at < models.MODELS.len()
+        if models.MODELS[at] == model
+            return ok(models.MODEL_ENCODINGS[at])
+        at @ at + 1
+
+    at @ 0
+
+    while at < models.PREFIXES.len()
+        prefix = models.PREFIXES[at]
+
+        if model.len() >= prefix.len() && model.slice(from: 0, to: prefix.len()) == prefix
+            return ok(models.PREFIX_ENCODINGS[at])
+        at @ at + 1
+
+    return fail(code: NOT_FOUND, msg: f"no encoding is known for the model \"{model}\"")
+
+# The encoding the model `model` reads, tiktoken's `encoding_for_model`.
+#
+# - `model`: an OpenAI model's name, as `name_for_model` reads it.
+#
+# Fails `not_found` where no encoding is known for the model, or where the one
+# it reads is not carried. See also `name_for_model`.
+function for_model(model: str) -> tokenizer.Encoding?
+    name = name_for_model(model)?
+
+    match named(name)
+        .ok enc => return ok(enc)
+        .err _ => return fail(
+            code: NOT_FOUND,
+            msg: f"the model \"{model}\" reads the encoding \"{name}\", which is not carried here"
+        )
+
+## Tests
+
+test "o200k_base: tiktoken's tokens for 204 texts of many scripts, decoded back"
+    assert held.holds_cases(o200k_table.encoding(), expected: cases.O200K_BASE)
+
+test "cl100k_base: tiktoken's tokens for 204 texts of many scripts, decoded back"
+    assert held.holds_cases(cl100k_table.encoding(), expected: cases.CL100K_BASE)
+
+test "o200k_base: the special tokens refused, allowed, read as text, and their numbers"
+    enc = o200k_table.encoding()
+    assert tokenizer.vocabulary_size(enc) == 200019
+    assert tokenizer.max_token(enc) == 200018
+    assert tokenizer.special_tokens(enc) == ["<|endoftext|>", "<|endofprompt|>"]
+    assert tokenizer.encode(enc, text: "a <|endoftext|>").is_err()
+    assert tokenizer.encode_with_specials(enc, text: "<|endoftext|>", allowed: tokenizer.special_tokens(enc), refused: []).must() == [199999]
+    assert tokenizer.token_of(enc, piece: [104, 101, 108, 108, 111]).must() == 24912
+    assert tokenizer.ranks_of(enc).len() == 199998
+
+test "cl100k_base: an allowed special token before a word, and the length of a run of one letter"
+    enc = cl100k_table.encoding()
+    assert tokenizer.encode_with_specials(enc, text: "<|endoftext|> x", allowed: ["<|endoftext|>"], refused: tokenizer.special_tokens(enc)).must() == [100257, 865]
+    assert tokenizer.end_of_text(enc).must() == 100257
+    assert tokenizer.vocabulary_size(enc) == 100277
+
+test "o200k_harmony: two texts of the number 200018, both encoded to it, decoded to the first"
+    enc = harmony_table.encoding()
+    every = tokenizer.special_tokens(enc)
+    assert every.len() == 1091
+    assert tokenizer.encode_with_specials(enc, text: "<|reserved_200018|><|endofprompt|>", allowed: every, refused: []).must() == [200018, 200018]
+    assert tokenizer.decode(enc, tokens: [200018]).must() == "<|endofprompt|>"
+    assert tokenizer.vocabulary_size(enc) == 201088
+
+test "named: every name carried, an older one of tiktoken's, and none"
+    for name in names()
+        assert named(name).must().name == name
+
+    assert named("r50k_base").is_err()
+    assert named("").is_err()
+
+test "name_for_model: whole names, starts of names, fine-tuned and older models, and none"
+    assert name_for_model("gpt-4o-2024-08-06").must() == "o200k_base"
+    assert name_for_model("gpt-5-mini").must() == "o200k_base"
+    assert name_for_model("gpt-4.5-preview").must() == "o200k_base"
+    assert name_for_model("ft:gpt-4o-mini:org::id").must() == "o200k_base"
+    assert name_for_model("gpt-oss-120b").must() == "o200k_harmony"
+    assert name_for_model("davinci").must() == "r50k_base"
+    assert name_for_model("text-embedding-3-small").must() == "cl100k_base"
+
+    match name_for_model("claude-opus-5")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+test "for_model: a model whose encoding is not carried"
+    match for_model("davinci")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+## Examples
+
+# The encodings this package carries.
+test "names: the three carried"
+    assert names() == ["o200k_base", "cl100k_base", "o200k_harmony"]
+
+# An encoding by its name.
+test "named: cl100k_base"
+    assert tokenizer.count(named("cl100k_base").must(), text: "hello world") == 2
+
+# The encoding a model reads, by the model's dated name.
+test "name_for_model: a dated GPT-4o"
+    assert name_for_model("gpt-4o-2024-08-06").must() == "o200k_base"
+
+# The encoding a model reads, made.
+test "for_model: GPT-4"
+    assert tokenizer.encode_ordinary(for_model("gpt-4").must(), text: "hello world") == [15339, 1917]

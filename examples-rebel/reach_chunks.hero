@@ -1,0 +1,74 @@
+# Reaches Rebel's `chunks`, so that `heroes test` on this file runs the
+# package's own tests. It cuts a short Markdown document into pieces for
+# retrieval and prints each with the headings above it. Its own tests hold
+# `chunks` to the tokens of `cl100k_base`, which the package itself does not
+# carry, and to LangChain's token splitter.
+
+use <rebel>/chunks
+use <rebel>/tokenizer
+use <rebel>/tokenizer/tables/cl100k_base
+
+function main()
+    text = "# Guide\n\nRead this first.\n\n## Install\n\nRun the installer. Then restart.\n"
+    options = chunks.by_characters(size: 40, overlap: 0).must()
+
+    for piece in chunks.split_markdown(text, options: options).must()
+        print(f"{piece.start}-{piece.end} {piece.path.join(" / ")}: {piece.text}")
+
+# A text of many paragraphs and sentences, some long.
+function prose() -> str
+    words = [
+        "the"
+        "retrieval"
+        "of"
+        "pieces"
+        "is"
+        "a"
+        "matter"
+        "of"
+        "care."
+        "Heroes"
+        "cuts,"
+        "text"
+        "into"
+        "parts!"
+        "世界"
+        "naïve"
+    ]
+    paragraphs: [str] @= []
+    n: i64 @= 0
+
+    while paragraphs.len() < 40
+        sentence: [str] @= []
+        k: i64 @= 0
+
+        while k < 5 + n % 70
+            sentence @ sentence.push(words[(n * 7 + k * 3) % words.len()])
+            k @ k + 1
+
+        paragraphs @ paragraphs.push(sentence.join(" "))
+        n @ n + 1
+
+    return paragraphs.join("\n\n")
+
+test "split by tokens of cl100k_base: every piece within its size, in order, a slice of the text"
+    enc = cl100k_base.encoding()
+    text = prose()
+    pieces = chunks.split(text, options: chunks.by_tokens(enc, size: 30, overlap: 5).must())
+    assert pieces.len() > 10
+    last: i64 @= 0
+
+    for piece in pieces
+        assert tokenizer.count(enc, text: piece.text) <= 30
+        assert piece.start >= last && text.slice(from: piece.start, to: piece.end) == piece.text
+        last @ piece.start
+
+test "split_tokens in cl100k_base: LangChain's token splitter's pieces"
+    pieces = chunks.split_tokens(
+        "hello world, hello world",
+        encoding: cl100k_base.encoding(),
+        size: 2,
+        overlap: 0
+    ).must()
+    assert pieces.len() == 3
+    assert pieces[0].text == "hello world" && pieces[1].text == ", hello" && pieces[2].text == " world"

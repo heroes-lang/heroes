@@ -1,0 +1,171 @@
+# The classes of a character that tiktoken's two patterns read, given once
+# to each character of a text, and the case folding of their contractions:
+# what `scan` matches its alternatives over. A class is a number, so that a
+# text's classes are one list of numbers; a character's category is
+# `unicode`'s, Unicode 17.0.0.
+
+use unicode
+
+# The classes of a character. A carriage return or a line feed.
+constant BREAK: i64
+    1
+
+# Any other character of Unicode's White_Space.
+constant SPACE: i64
+    2
+
+# A letter of the category Lu.
+constant UPPER: i64
+    3
+
+# A letter of the category Ll.
+constant LOWER: i64
+    4
+
+# A letter of the category Lt.
+constant TITLE: i64
+    5
+
+# A letter of the category Lm.
+constant MODIFIER: i64
+    6
+
+# A letter of the category Lo.
+constant LETTER_OTHER: i64
+    7
+
+# A mark: Mn, Mc or Me.
+constant MARK: i64
+    8
+
+# A number: Nd, Nl or No.
+constant NUMBER: i64
+    9
+
+# Anything else.
+constant ELSE: i64
+    10
+
+# Whether the code point `n` is of Unicode's White_Space and above ASCII.
+function is_wide_space(n: i64) -> bool
+    return n == 0x85 || n == 0xa0 || n == 0x1680 || n >= 0x2000 && n <= 0x200a || n == 0x2028 || n == 0x2029 || n == 0x202f || n == 0x205f || n == 0x3000
+
+# The class of the character of `width` bytes at `at` in `s`.
+function class_at(s: str, at: i64, width: i64) -> i64
+    b = s[at]
+
+    if width == 1
+        if b == '\r' || b == '\n'
+            return BREAK
+
+        if b == ' ' || b >= 9 && b <= 12
+            return SPACE
+
+        if b >= 'A' && b <= 'Z'
+            return UPPER
+
+        if b >= 'a' && b <= 'z'
+            return LOWER
+
+        if b >= '0' && b <= '9'
+            return NUMBER
+        return ELSE
+
+    if is_wide_space(unicode.code_point_at(s, index: at))
+        return SPACE
+    cat = unicode.category(s.slice(from: at, to: at + width))
+
+    if cat == unicode.UPPERCASE_LETTER
+        return UPPER
+
+    if cat == unicode.LOWERCASE_LETTER
+        return LOWER
+
+    if cat == unicode.TITLECASE_LETTER
+        return TITLE
+
+    if cat == unicode.MODIFIER_LETTER
+        return MODIFIER
+
+    if cat == unicode.OTHER_LETTER
+        return LETTER_OTHER
+
+    if cat == unicode.NONSPACING_MARK || cat == unicode.SPACING_MARK || cat == unicode.ENCLOSING_MARK
+        return MARK
+
+    if cat == unicode.DECIMAL_NUMBER || cat == unicode.LETTER_NUMBER || cat == unicode.OTHER_NUMBER
+        return NUMBER
+    return ELSE
+
+# Whether the class `c` is of `\s`.
+function is_ws(c: i64) -> bool
+    return c == BREAK || c == SPACE
+
+# Whether the class `c` is of `\p{L}`.
+function is_letter(c: i64) -> bool
+    return c >= UPPER && c <= LETTER_OTHER
+
+# Whether the class `c` is of `[^\r\n\p{L}\p{N}]`.
+function is_lead(c: i64) -> bool
+    return c == SPACE || c == MARK || c == ELSE
+
+# Whether the class `c` is of `[^\s\p{L}\p{N}]`.
+function is_symbol(c: i64) -> bool
+    return c == MARK || c == ELSE
+
+# Whether the class `c` is of o200k's `[\p{Lu}\p{Lt}\p{Lm}\p{Lo}\p{M}]`.
+function is_upperish(c: i64) -> bool
+    return c == UPPER || c == TITLE || c == MODIFIER || c == LETTER_OTHER || c == MARK
+
+# Whether the class `c` is of o200k's `[\p{Ll}\p{Lm}\p{Lo}\p{M}]`.
+function is_lowerish(c: i64) -> bool
+    return c == LOWER || c == MODIFIER || c == LETTER_OTHER || c == MARK
+
+# A text's characters: the class of each and where each begins, by
+# character index, and the text.
+record Chars
+    # The text.
+    s: str
+    # The class of each character.
+    kinds: [i64]
+    # Where each character begins in `s`, and last the end of `s`.
+    starts: [i64]
+
+# The characters of `s`, classed.
+function chars_of(s: str) -> Chars
+    kinds: [i64] @= []
+    starts: [i64] @= []
+    at: i64 @= 0
+
+    while at < s.len()
+        width = unicode.width_at(s, index: at)
+        kinds @ kinds.push(class_at(s, at: at, width: width))
+        starts @ starts.push(at)
+        at @ at + width
+
+    starts @ starts.push(s.len())
+    return Chars(s: s, kinds: kinds, starts: starts)
+
+# Whether the character `i` of `t` is the one byte `b`.
+function is_byte(t: Chars lent, i: i64, b: u8) -> bool
+    if i >= t.kinds.len()
+        return false
+    at = t.starts[i]
+    return t.starts[i + 1] - at == 1 && t.s[at] == b
+
+# Whether the character `i` of `t` is the lower case ASCII letter `lower`
+# with its case ignored, as fancy-regex folds: `s` is also U+017F, the long s.
+function folds_to(t: Chars lent, i: i64, lower: u8) -> bool
+    if is_byte(t, i: i, b: lower) || is_byte(t, i: i, b: lower - 32)
+        return true
+
+    if lower == 's' && i < t.kinds.len()
+        at = t.starts[i]
+        return t.starts[i + 1] - at == 2 && t.s[at] == 0xc5 && t.s[at + 1] == 0xbf
+    return false
+
+test "class_at: ASCII, white space above ASCII, letters of four categories, a mark and a number"
+    assert chars_of("\r Az9!").kinds == [BREAK, SPACE, UPPER, LOWER, NUMBER, ELSE]
+    assert chars_of("\u{85}　 ").kinds == [SPACE, SPACE, SPACE]
+    assert chars_of("ǅʰ中é").kinds == [TITLE, MODIFIER, LETTER_OTHER, LOWER]
+    assert chars_of("́٣Ⅻ").kinds == [MARK, NUMBER, NUMBER]

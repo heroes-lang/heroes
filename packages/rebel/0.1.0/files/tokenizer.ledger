@@ -1,0 +1,264 @@
+# The ledger of `tokenizer` and its tables, `tokenizer/tables`: what Go's
+# tiktoken-go (github.com/pkoukk/tiktoken-go v0.1.8), Rust's tiktoken-rs
+# (0.12.1) and Python's tiktoken (0.14.0, OpenAI's own) and Hugging Face's
+# tokenizers (0.23.3, the Python face of the Rust crate of that name) let a
+# program do with the tokens of a model, one block per capability, and what
+# Rebel answers. No standard library of the three tokenizes.
+#
+# The lists are this machine's, 2026-11-18: `go doc -all` of tiktoken-go
+# fetched into the scratch folder; the items of `cargo doc` of tiktoken-rs,
+# its functions, structs, constants and `CoreBPE`'s methods; and `dir()` of
+# `tiktoken`, `tiktoken.Encoding`, `tiktoken.load`, `tiktoken.model`,
+# `tiktoken.registry`, `tiktoken_ext.openai_public`, `tokenizers`,
+# `tokenizers.Tokenizer`, `tokenizers.Encoding` and the six modules of
+# `tokenizers`, each installed into the scratch folder.
+#
+# The tests hold tiktoken's tokens, in `o200k_base` and `cl100k_base`, for
+# 204 texts of sixteen scripts, emoji, marks, digits of four scripts, every
+# kind of white space, code and runs of one character, each decoded back;
+# and tiktoken's answers for an encoding of 268 tokens made by `new` and by
+# `tiktoken.Encoding` alike. The differential outside the tests, 2026-11-18:
+# 23,006 generated texts, 2.76 MB (mixtures of those fragments and random
+# assigned code points of nine ranges of the planes, and runs of one
+# character of 100 KB), every one made the same tokens as tiktoken 0.14.0 in
+# both encodings and decoded back. Speed, the same day on this Mac, a
+# megabyte of many scripts in `o200k_base` built at -O2: 0.30 s with the
+# table read (0.05 s), against tiktoken's 0.055 s; two megabytes of one
+# letter, one piece, 1.3 s and 116 MB, against tiktoken's 0.33 s.
+
+capability tok/new  an encoding made from its tokens, its pattern and its special tokens
+  heroes  tokenizer.new, tokenizer.Encoding
+  go      NewCoreBPE, CoreBPE, NewTiktoken, Tiktoken, Encoding
+  rust    CoreBPE::new, CoreBPE, Rank, FromRank
+  python  tiktoken.Encoding, tokenizers.Tokenizer, tokenizers.models.BPE, tokenizers.models.Model
+  note    every byte must be a token, alone, so that any text can be encoded: a table without one is refused when it is made, where tiktoken 0.14.0 makes it and panics when a text needs the byte (observed 2026-11-18: `PanicException: no entry found for key`). Two special texts may share a number, as tiktoken lets them and its `o200k_harmony` does (200018): both encode to it and it decodes to the text given first, which is the one tiktoken decodes. tokenizers' BPE merges by a list of pairs ranked, where tiktoken merges by the rank of the bytes the pair makes; the two agree on vocabularies made byte by byte, and this package reads the second
+
+capability tok/ranks-file  the `.tiktoken` file of a vocabulary read and written
+  heroes  tokenizer.parse_ranks, tokenizer.format_ranks
+  go      BpeLoader, NewDefaultBpeLoader, SetBpeLoader
+  rust    -
+  python  tiktoken.load.load_tiktoken_bpe, tiktoken.load.dump_tiktoken_bpe, tiktoken.load.read_file
+  note    a file is read with `read_file` or `fs`; fetched from a URL with `http`; its SHA-256 checked with `crypto`. tiktoken's reader keeps one line a token in any order; here too, and a rank given twice or a gap below the largest is `invalid`, the line named
+
+capability tok/ranks-fetched  a vocabulary fetched by URL, cached on disk, its hash checked
+  heroes  refused: three packages compose to it, `http` fetches, `fs` keeps, `crypto` hashes; the tables of OpenAI's encodings are carried as data and need no fetch
+  go      NewDefaultBpeLoader
+  rust    -
+  python  tiktoken.load.read_file_cached, tiktoken.load.check_hash
+  note    -
+
+capability tok/gpt2-files  GPT-2's `vocab.bpe` and `encoder.json` read into a vocabulary
+  heroes  pending
+  go      -
+  rust    -
+  python  tiktoken.load.data_gym_to_mergeable_bpe_ranks
+  note    the ranks those two files make are `r50k_base`'s; reading `encoder.json` needs `json`, a package of this package's own layer (README § A1), so it waits for the older tables (tok/older-tables)
+
+capability tok/tables  the encodings of OpenAI's models carried as data, by name
+  heroes  o200k_base.encoding, cl100k_base.encoding, o200k_harmony.encoding, tables.named, tables.names
+  go      GetEncoding, ENDOFTEXT, ENDOFPROMPT, FIM_PREFIX, FIM_MIDDLE, FIM_SUFFIX
+  rust    o200k_base, o200k_base_singleton, cl100k_base, cl100k_base_singleton, o200k_harmony, o200k_harmony_singleton, O200K_BASE_PAT_STR, ENDOFTEXT, ENDOFPROMPT, FIM_PREFIX, FIM_MIDDLE, FIM_SUFFIX, tokenizer::Tokenizer, tokenizer::get_tokenizer, bpe_for_tokenizer, get_bpe_from_tokenizer
+  python  tiktoken.get_encoding, tiktoken.list_encoding_names, tiktoken.registry.get_encoding, tiktoken.registry.list_encoding_names, tiktoken.registry.ENCODINGS, tiktoken.registry.ENCODING_CONSTRUCTORS, tiktoken_ext.openai_public.o200k_base, tiktoken_ext.openai_public.cl100k_base, tiktoken_ext.openai_public.o200k_harmony, tiktoken_ext.openai_public.ENDOFTEXT, tiktoken_ext.openai_public.ENDOFPROMPT, tiktoken_ext.openai_public.FIM_PREFIX, tiktoken_ext.openai_public.FIM_MIDDLE, tiktoken_ext.openai_public.FIM_SUFFIX, tokenizers.Tokenizer.from_pretrained
+  note    the tables are the files OpenAI serves, fetched 2026-11-18, their SHA-256 the ones tiktoken 0.14.0 expects, written as Heroes data by a program kept outside the tree (`tokenizer/tables/internal/o200k_base.hero` names it). Each table is its own module, `tokenizer/tables/o200k_base`, `cl100k_base` and `o200k_harmony`, so a program carries only the one it uses (2.05 MB for a program counting two words with `cl100k_base`, 3.42 MB with `o200k_base`, against 4.97 MB through `tokenizer/tables`, whose look-up by name reaches all three; measured 2026-11-18 at -O2). A singleton is the program's own binding: an encoding is made once and kept. The special tokens' texts are constants of no package: a text names them, `special_tokens` lists them
+
+capability tok/older-tables  tiktoken's older encodings, of GPT-3 and GPT-2
+  heroes  pending
+  go      -
+  rust    r50k_base, r50k_base_singleton, p50k_base, p50k_base_singleton, p50k_edit, p50k_edit_singleton
+  python  tiktoken_ext.openai_public.r50k_base, tiktoken_ext.openai_public.p50k_base, tiktoken_ext.openai_public.p50k_edit, tiktoken_ext.openai_public.gpt2, tiktoken_ext.openai_public.r50k_pat_str
+  note    `r50k_base`, `p50k_base`, `p50k_edit` and `gpt2`; the generator of the tables makes them, and their pattern is read by `new` (the dialect's tests hold it); not carried this round. `tables.name_for_model` names them for their models, and `tables.named` fails `not_found` for them
+
+capability tok/model  which encoding a model reads
+  heroes  tables.name_for_model, tables.for_model
+  go      EncodingForModel, MODEL_TO_ENCODING, MODEL_PREFIX_TO_ENCODING
+  rust    bpe_for_model, get_bpe_from_model
+  python  tiktoken.encoding_for_model, tiktoken.encoding_name_for_model, tiktoken.model.encoding_for_model, tiktoken.model.encoding_name_for_model, tiktoken.model.MODEL_TO_ENCODING, tiktoken.model.MODEL_PREFIX_TO_ENCODING
+  note    tiktoken 0.14.0's two tables, whole names first and then the starts of names in their order, written as data; a model none names fails `not_found`, where tiktoken raises KeyError
+
+capability tok/encode  a text made tokens, special tokens' texts refused
+  heroes  tokenizer.encode
+  go      Tiktoken.Encode
+  rust    CoreBPE::encode, CoreBPE::encode_as, EncodeError
+  python  tiktoken.Encoding.encode, tokenizers.Tokenizer.encode, tokenizers.Encoding.ids, tokenizers.Encoding.tokens
+  note    tiktoken's default: a text that holds `<|endoftext|>` from outside must not end a prompt early. Refused `invalid`, the special token and its byte index named, where tiktoken raises ValueError
+
+capability tok/encode-ordinary  a text made tokens, special tokens' texts read as text
+  heroes  tokenizer.encode_ordinary
+  go      Tiktoken.EncodeOrdinary
+  rust    CoreBPE::encode_ordinary, CoreBPE::encode_ordinary_as
+  python  tiktoken.Encoding.encode_ordinary
+  note    the pattern is matched by hand for tiktoken's two patterns and by `regex` for any other (tok/pre-tokenize); the tests hold the two ways to the same pieces
+
+capability tok/encode-specials  special tokens allowed and refused by the caller
+  heroes  tokenizer.encode_with_specials
+  go      Tiktoken.Encode, Tiktoken.SpecialTokenRegex
+  rust    CoreBPE::encode_with_special_tokens, CoreBPE::encode_with_special_tokens_as, CoreBPE::special_tokens
+  python  tiktoken.Encoding.encode, tokenizers.Tokenizer.encode_special_tokens, tokenizers.AddedToken
+  note    tiktoken's `allowed_special` and `disallowed_special`, "all" written `special_tokens(enc)`; a special token neither allowed nor refused is read as text, as in tiktoken. A name that is no special token of the encoding fails `invalid`, so a misspelt one is told; where two allowed special tokens begin at one place the longer is taken
+
+capability tok/count  the tokens of a text counted
+  heroes  tokenizer.count
+  go      -
+  rust    CoreBPE::count, CoreBPE::count_ordinary, CoreBPE::count_with_special_tokens
+  python  -
+  note    `encode_ordinary`'s count; a count with special tokens allowed is the length of `encode_with_specials`'s answer. Python counts with `len` of `encode`
+
+capability tok/claude  the tokens of a text counted as Claude reads them
+  heroes  anthropic.count_tokens
+  go      -
+  rust    -
+  python  -
+  note    Anthropic publishes no tokenizer for Claude: its tokens are counted by the API's `count_tokens`, which `llm/anthropic` asks over the network; no table of this package counts them
+
+capability tok/truncate  a text cut to at most a number of tokens
+  heroes  tokenizer.truncate
+  go      -
+  rust    -
+  python  tokenizers.Tokenizer.enable_truncation, tokenizers.Tokenizer.no_truncation, tokenizers.Tokenizer.truncation, tokenizers.Encoding.truncate, tokenizers.Encoding.overflowing
+  note    tokenizers cuts the list of ids; here the text is cut, never inside a character, and the cut moves back a token at a time until the text re-encodes within the count, since a cut piece may encode otherwise. Overlapping windows of a text are `chunks`'
+
+capability tok/pre-tokenize  the pieces a pattern cuts a text into before merging
+  heroes  tokenizer.pieces_of
+  go      -
+  rust    -
+  python  tokenizers.pre_tokenizers.Split, tokenizers.pre_tokenizers.ByteLevel, tokenizers.pre_tokenizers.PreTokenizer, tokenizers.pre_tokenizers.Sequence, tokenizers.PreTokenizedString, tokenizers.Regex, tokenizers.SplitDelimiterBehavior
+  note    the pattern is fancy-regex's dialect as tiktoken writes it, read by `regex` (`tokenizer/internal/dialect`): `\s` as Unicode's White_Space, possessives as greedy, the look-ahead `\s+(?!\S)` as a whole alternative in two steps; any other look-around, `\w`, `\b` and a class inside a class fail `unsupported`. `regex` reads a quarter of a megabyte a second on these patterns, so tiktoken's two are also matched by hand, about twenty times faster, and held to `regex`'s pieces by the tests. Character classes are Unicode 17.0.0's, `unicode`'s
+
+capability tok/pre-tokenize-other  tokenizers' other pre-tokenizers: by white space, punctuation, digits, script, a fixed length, Metaspace, BERT's
+  heroes  refused: each is a pattern `new` reads, or a cut of `strings` and `unicode/segment`; this package is tiktoken's byte-pair encoding (README § A1)
+  go      -
+  rust    -
+  python  tokenizers.pre_tokenizers.Whitespace, tokenizers.pre_tokenizers.WhitespaceSplit, tokenizers.pre_tokenizers.Punctuation, tokenizers.pre_tokenizers.Digits, tokenizers.pre_tokenizers.UnicodeScripts, tokenizers.pre_tokenizers.FixedLength, tokenizers.pre_tokenizers.Metaspace, tokenizers.pre_tokenizers.CharDelimiterSplit, tokenizers.pre_tokenizers.BertPreTokenizer
+  note    -
+
+capability tok/single-token  the token that is exactly some bytes
+  heroes  tokenizer.token_of
+  go      -
+  rust    -
+  python  tiktoken.Encoding.encode_single_token, tokenizers.Tokenizer.token_to_id
+  note    an ordinary or special token; absent is `not_found`, where tiktoken raises KeyError
+
+capability tok/piece  bytes merged as one piece, with no pattern
+  heroes  tokenizer.encode_piece
+  go      -
+  rust    byte_pair_split
+  python  tiktoken.Encoding._encode_single_piece
+  note    bytes that are not UTF-8 too; no bytes answer no token, where tiktoken 0.14.0 panics (observed: "range end index 2 out of range"). tiktoken-rs answers the bytes of each part, `decode_tokens` of this answer
+
+capability tok/decode  tokens made text
+  heroes  tokenizer.decode
+  go      Tiktoken.Decode
+  rust    CoreBPE::decode, DecodeKeyError
+  python  tiktoken.Encoding.decode, tokenizers.Tokenizer.decode, tokenizers.decoders.ByteLevel, tokenizers.decoders.Decoder
+  note    bytes that are not UTF-8 replaced by U+FFFD by Python's rule, tiktoken's default (`errors="replace"`), through `bytes.to_text_lossy`; tiktoken-rs fails there. A token that is no token fails `invalid`, its index named
+
+capability tok/decode-bytes  tokens made bytes, all together or one by one
+  heroes  tokenizer.decode_bytes, tokenizer.decode_token, tokenizer.decode_tokens
+  go      -
+  rust    CoreBPE::decode_bytes
+  python  tiktoken.Encoding.decode_bytes, tiktoken.Encoding.decode_single_token_bytes, tiktoken.Encoding.decode_tokens_bytes, tokenizers.Tokenizer.id_to_token
+  note    -
+
+capability tok/offsets  where each token stands in the text it was made from
+  heroes  tokenizer.offsets_of
+  go      -
+  rust    CoreBPE::split_by_token, CoreBPE::split_by_token_iter, CoreBPE::split_by_token_ordinary, CoreBPE::split_by_token_ordinary_iter
+  python  tiktoken.Encoding.decode_with_offsets, tokenizers.Encoding.offsets, tokenizers.Encoding.token_to_chars, tokenizers.Encoding.char_to_token, tokenizers.OffsetReferential, tokenizers.OffsetType, tokenizers.Offsets
+  note    byte indices, as a `str` is indexed; tiktoken counts characters, a token that begins inside a character given that character's index, which `unicode.floor_char_boundary` gives here. tiktoken-rs answers each token's text, `decode_token` and `bytes.to_text_lossy` here
+
+capability tok/stream  tokens decoded one at a time as they stream, a character cut between two held
+  heroes  tokenizer.decode_next
+  go      -
+  rust    -
+  python  tokenizers.decoders.DecodeStream
+  note    -
+
+capability tok/vocabulary  an encoding's size, its tokens and its special tokens read
+  heroes  tokenizer.vocabulary_size, tokenizer.max_token, tokenizer.ranks_of, tokenizer.special_tokens, tokenizer.is_special, tokenizer.end_of_text, tokenizer.pattern_of
+  go      -
+  rust    CoreBPE::special_tokens
+  python  tiktoken.Encoding.n_vocab, tiktoken.Encoding.max_token_value, tiktoken.Encoding.token_byte_values, tiktoken.Encoding.special_tokens_set, tiktoken.Encoding.is_special_token, tiktoken.Encoding.eot_token, tokenizers.Tokenizer.get_vocab, tokenizers.Tokenizer.get_vocab_size, tokenizers.Tokenizer.get_added_tokens_decoder
+  note    tiktoken's `token_byte_values` sorts the tokens' bytes; `ranks_of` gives them by rank, which the index says
+
+capability tok/added-tokens  tokens added to a vocabulary
+  heroes  tokenizer.new, tokenizer.ranks_of
+  go      -
+  rust    -
+  python  tokenizers.Tokenizer.add_tokens, tokenizers.Tokenizer.add_special_tokens, tokenizers.Tokenizer.num_special_tokens_to_add
+  note    an encoding is a value: one with more tokens is made by `new` from `ranks_of` and its special tokens
+
+capability tok/batch  many texts encoded or decoded at once
+  heroes  refused: a `for` over the texts does it; tiktoken's batches spread the work over threads, which are `threads`' and carry one `str` each way
+  go      -
+  rust    -
+  python  tiktoken.Encoding.encode_batch, tiktoken.Encoding.encode_ordinary_batch, tiktoken.Encoding.decode_batch, tiktoken.Encoding.decode_bytes_batch, tokenizers.Tokenizer.encode_batch, tokenizers.Tokenizer.encode_batch_fast, tokenizers.Tokenizer.decode_batch, tokenizers.Tokenizer.async_encode, tokenizers.Tokenizer.async_encode_batch, tokenizers.Tokenizer.async_encode_batch_fast, tokenizers.Tokenizer.async_decode_batch
+  note    -
+
+capability tok/unstable  the stable tokens of a prompt and every token sequence a completion could begin with
+  heroes  refused: tiktoken's own documentation says "this API should itself be considered unstable", and its answer is every sequence the last pieces could become
+  go      -
+  rust    CoreBPE::_encode_unstable_native
+  python  tiktoken.Encoding.encode_with_unstable
+  note    -
+
+capability tok/chat  the tokens of a chat request counted, and what is left of a model's window
+  heroes  refused: the tokens that frame a chat's messages are OpenAI's to count, and its API answers them in each response's `usage` (`llm/openai`); the rule tiktoken-rs follows is an estimate from OpenAI's cookbook, and a model's window is a fact of the model, not of its encoding
+  go      -
+  rust    num_tokens_from_messages, get_chat_completion_max_tokens, get_text_completion_max_tokens, get_completion_max_tokens, model::get_context_size, ChatCompletionRequestMessage, FunctionCall
+  python  -
+  note    -
+
+capability tok/hf-json  a tokenizer of Hugging Face read from its `tokenizer.json`, and written
+  heroes  pending
+  go      -
+  rust    -
+  python  tokenizers.Tokenizer.from_file, tokenizers.Tokenizer.from_str, tokenizers.Tokenizer.from_buffer, tokenizers.Tokenizer.save, tokenizers.Tokenizer.to_str
+  note    the byte-level BPE of Llama 3, Qwen and the like is this package's merging over another table and pattern; reading the file needs `json`, of this package's own layer, and its normalizers and pre-tokenizers, so it waits
+
+capability tok/other-models  WordPiece, Unigram and word-level vocabularies, SentencePiece's
+  heroes  refused: other algorithms than byte-pair encoding, each with its own vocabulary and rules; this package is tiktoken's byte-pair encoding (README § A1)
+  go      -
+  rust    -
+  python  tokenizers.models.WordPiece, tokenizers.models.Unigram, tokenizers.models.WordLevel, tokenizers.decoders.WordPiece, tokenizers.decoders.Metaspace, tokenizers.decoders.CTC, tokenizers.decoders.BPEDecoder, tokenizers.decoders.ByteFallback, tokenizers.decoders.Fuse, tokenizers.decoders.Replace, tokenizers.decoders.Sequence, tokenizers.decoders.Strip
+  note    -
+
+capability tok/normalize  a text normalized before it is encoded
+  heroes  refused: tiktoken normalizes nothing; `unicode/normalize` and `strings` change a text before it is encoded, where a program wants it
+  go      -
+  rust    -
+  python  tokenizers.normalizers.Normalizer, tokenizers.normalizers.NFC, tokenizers.normalizers.NFD, tokenizers.normalizers.NFKC, tokenizers.normalizers.NFKD, tokenizers.normalizers.Lowercase, tokenizers.normalizers.Strip, tokenizers.normalizers.StripAccents, tokenizers.normalizers.Replace, tokenizers.normalizers.Prepend, tokenizers.normalizers.Sequence, tokenizers.normalizers.BertNormalizer, tokenizers.normalizers.ByteLevel, tokenizers.normalizers.Nmt, tokenizers.normalizers.Precompiled, tokenizers.normalizers.unicode_normalizer_from_str, tokenizers.normalizers.NORMALIZERS, tokenizers.NormalizedString
+  note    -
+
+capability tok/post-process  the inputs of a local model: templates of special tokens, type ids, masks, padding
+  heroes  refused: they shape tensors for a model run by the program, which no package of Rebel runs; a list of tokens is grown or framed with `push`
+  go      -
+  rust    -
+  python  tokenizers.processors.PostProcessor, tokenizers.processors.TemplateProcessing, tokenizers.processors.BertProcessing, tokenizers.processors.RobertaProcessing, tokenizers.processors.ByteLevel, tokenizers.processors.Sequence, tokenizers.Tokenizer.post_process, tokenizers.Tokenizer.enable_padding, tokenizers.Tokenizer.no_padding, tokenizers.Tokenizer.padding, tokenizers.Encoding.pad, tokenizers.Encoding.attention_mask, tokenizers.Encoding.type_ids, tokenizers.Encoding.special_tokens_mask, tokenizers.Encoding.sequence_ids, tokenizers.Encoding.set_sequence_id, tokenizers.Encoding.n_sequences, tokenizers.Encoding.token_to_sequence, tokenizers.Encoding.merge
+  note    -
+
+capability tok/words  the words of an encoded text and their tokens
+  heroes  refused: words are `unicode/segment`'s, and a token's place in the text is `offsets_of`; the two together say which tokens a word holds
+  go      -
+  rust    -
+  python  tokenizers.Encoding.word_ids, tokenizers.Encoding.words, tokenizers.Encoding.token_to_word, tokenizers.Encoding.word_to_tokens, tokenizers.Encoding.word_to_chars, tokenizers.Encoding.char_to_word
+  note    -
+
+capability tok/train  a vocabulary trained from texts
+  heroes  refused: tiktoken reads vocabularies and trains none; a vocabulary is made once, from a corpus, by a model's maker, and `new` reads it
+  go      -
+  rust    -
+  python  tokenizers.Tokenizer.train, tokenizers.Tokenizer.train_from_iterator, tokenizers.trainers.Trainer, tokenizers.trainers.BpeTrainer, tokenizers.trainers.ParityBpeTrainer, tokenizers.trainers.UnigramTrainer, tokenizers.trainers.WordLevelTrainer, tokenizers.trainers.WordPieceTrainer
+  note    -
+
+dropped
+  go      Tiktoken's and CoreBPE's fields: the parts an encoding holds, read here through its functions
+  rust    CoreBPE::borrow, borrow_mut, clone, clone_from, clone_into, clone_to_uninit, from, into, to_owned, try_from, try_into, type_id: Rust's traits on every type
+  rust    CoreBPE::_decode_native_and_split: the bytes of each token, `decode_tokens`
+  python  tiktoken.Encoding.encode_to_numpy: an array of NumPy, which Heroes has not
+  python  tiktoken.Encoding._encode_bytes, tiktoken.Encoding._encode_only_native_bpe: tiktoken's private helpers; bytes not UTF-8 are `encode_piece`'s
+  python  tiktoken.core, tiktoken.load, tiktoken.model, tiktoken.registry: the modules the package is made of; tiktoken.load.annotations, base64, hashlib, os, tiktoken.model.Encoding, tiktoken.model.get_encoding, tiktoken.model.annotations, tiktoken.registry.Any, Callable, Sequence, functools, importlib, pkgutil, threading, tiktoken, tiktoken_ext, Encoding, annotations: names the modules import
+  python  tiktoken.Encoding.name: the record's field `name`
+  python  tokenizers.Tokenizer.model, normalizer, pre_tokenizer, post_processor, decoder: the parts a tokenizer of Hugging Face is assembled from, which an `Encoding` holds as its pattern and tables
+  python  tokenizers.implementations, tokenizers.BertWordPieceTokenizer, tokenizers.ByteLevelBPETokenizer, tokenizers.CharBPETokenizer, tokenizers.SentencePieceBPETokenizer, tokenizers.SentencePieceUnigramTokenizer: ready-made assemblies of the parts above
+  python  tokenizers.EncodeInput, InputSequence, PreTokenizedEncodeInput, PreTokenizedInputSequence, TextEncodeInput, TextInputSequence, Enum, List, Tuple, Union, Token: type aliases and the typing module's names
+  python  tokenizers.tokenizers, tokenizers.models.models, tokenizers.pre_tokenizers.pre_tokenizers, tokenizers.decoders.decoders, tokenizers.processors.processors: the compiled module and its submodules

@@ -1,0 +1,177 @@
+# The ledger of `chunks`: what Python's LangChain text splitters
+# (langchain-text-splitters 1.1.3) and LlamaIndex's node parsers
+# (llama-index-core 0.14.26) let a program do with a text cut into pieces for
+# retrieval, one block per capability, and what Rebel answers. Neither Go's
+# nor Rust's standard library cuts text for retrieval, so their lines read
+# `-`; the task named these two as the yardsticks.
+#
+# The lists are this machine's, 2026-11-18: `dir()` of
+# `langchain_text_splitters`, of its `TextSplitter`,
+# `RecursiveCharacterTextSplitter` and `MarkdownHeaderTextSplitter` and the
+# members of `Language`; `dir()` of `llama_index.core.node_parser` and the
+# fields and methods of `SentenceSplitter`, `TokenTextSplitter` and
+# `MarkdownNodeParser`; each installed into the scratch folder.
+#
+# The differential, 2026-11-18, 5,000 generated texts of words of seven
+# scripts, emoji and punctuation between runs of spaces, tabs and blank
+# lines, sizes 1 to 400 and overlaps 0 to the size less 1: against
+# `RecursiveCharacterTextSplitter` with its default separators, 3,007 cases:
+# 2,798 made the same pieces as `split_separators` with
+# `["\n\n", "\n", " "]` (169 of them once LangChain's pieces of white space
+# alone are left out, which it emits untrimmed at its last level), all 1,796
+# of a run whose words hold no grapheme of several code points among them,
+# and each of the 209 others stood in a text holding one, `e` and U+0301,
+# which LangChain cuts apart; against `TokenTextSplitter` in `cl100k_base`, every one of the
+# 1,058 texts whose windows end where graphemes end made the same pieces as
+# `split_tokens`, and each of the 935 others had LangChain cut inside a
+# character and write U+FFFD where `split_tokens` keeps it whole. Cost on
+# this Mac at -O2: a megabyte with no space cut to 100 characters in 0.22 s,
+# a megabyte of prose to 200 tokens of `cl100k_base` in 0.17 s, a document of
+# 10,000 headings in 0.24 s, 102 MB at most.
+
+capability chunk/piece  a piece of a text with where it stands
+  heroes  chunks.Chunk
+  go      -
+  rust    -
+  python  langchain_text_splitters.TextSplitter (add_start_index), llama_index.core.node_parser.SentenceSplitter (start_char_idx, end_char_idx of its nodes)
+  note    a slice of the text with its byte indices, as a `str` is indexed; LangChain finds a piece's start by searching the text again and LlamaIndex counts characters. A piece of a Markdown document carries its headings' path
+
+capability chunk/measure-characters  sizes counted in characters
+  heroes  chunks.by_characters
+  go      -
+  rust    -
+  python  langchain_text_splitters.TextSplitter (length_function=len, chunk_size, chunk_overlap)
+  note    code points, as Python's `len`, LangChain's default
+
+capability chunk/measure-bytes  sizes counted in bytes
+  heroes  chunks.by_bytes
+  go      -
+  rust    -
+  python  -
+  note    the bytes of UTF-8, for a store that limits a field's bytes
+
+capability chunk/measure-tokens  sizes counted in the tokens of a model's encoding
+  heroes  chunks.by_tokens
+  go      -
+  rust    -
+  python  langchain_text_splitters.TextSplitter.from_tiktoken_encoder, langchain_text_splitters.TextSplitter.from_huggingface_tokenizer, llama_index.core.node_parser.SentenceSplitter (tokenizer)
+  note    `tokenizer`'s encodings; a piece is held to its own count, `tokenizer.count` of its text, its last parts given to the next piece where a join of parts encodes to more than their sum
+
+capability chunk/size  a text measured as the pieces are
+  heroes  chunks.size_of
+  go      -
+  rust    -
+  python  -
+  note    -
+
+capability chunk/overlap  each piece beginning with the end of the one before
+  heroes  chunks.Options
+  go      -
+  rust    -
+  python  langchain_text_splitters.TextSplitter (chunk_overlap), llama_index.core.node_parser.SentenceSplitter (chunk_overlap)
+  note    the last whole parts of the piece before that fit in the overlap and leave room for the part after them, as LangChain keeps them; an overlap not below the size is `invalid`, where LangChain raises ValueError
+
+capability chunk/trim  white space at a piece's ends left out
+  heroes  chunks.Options
+  go      -
+  rust    -
+  python  langchain_text_splitters.TextSplitter (strip_whitespace)
+  note    `trims`, true from `by_characters`, `by_bytes` and `by_tokens` as LangChain's default; a piece of white space alone is then no piece
+
+capability chunk/recursive  a text cut at its coarsest boundaries first and finer only where a part is too large
+  heroes  chunks.split
+  go      -
+  rust    -
+  python  langchain_text_splitters.RecursiveCharacterTextSplitter, langchain_text_splitters.TextSplitter.split_text, llama_index.core.node_parser.SentenceSplitter, llama_index.core.node_parser.SentenceSplitter.split_text, llama_index.core.node_parser.SentenceSplitter.split_texts, llama_index.core.node_parser.TextSplitter
+  note    paragraphs, then the sentences of UAX #29, then words at white space, then graphemes, never a character cut; LlamaIndex cuts sentences with NLTK's punkt, a model of English, and LangChain at lines and spaces. Parts that fit are joined, and a part too large ends the pieces before it, as LangChain's recursive splitter does
+
+capability chunk/separators  a text cut at the separators a program gives, coarsest first
+  heroes  chunks.split_separators
+  go      -
+  rust    -
+  python  langchain_text_splitters.RecursiveCharacterTextSplitter (separators, keep_separator), langchain_text_splitters.CharacterTextSplitter, llama_index.core.node_parser.TokenTextSplitter (separator, backup_separators)
+  note    each separator begins the part after it, LangChain's default for its recursive splitter (`keep_separator=True`); graphemes after the last, where LangChain's "" cuts code points. A separator inside a grapheme is passed over
+
+capability chunk/separator-patterns  separators given as regular expressions
+  heroes  pending
+  go      -
+  rust    -
+  python  langchain_text_splitters.RecursiveCharacterTextSplitter (is_separator_regex), llama_index.core.node_parser.SentenceSplitter (secondary_chunking_regex)
+  note    `regex` would find them; not written this round
+
+capability chunk/levels  a text cut only at one kind of boundary, and the boundaries themselves
+  heroes  chunks.split_at, chunks.boundaries, chunks.Level
+  go      -
+  rust    -
+  python  langchain_text_splitters.CharacterTextSplitter (separator), llama_index.core.node_parser.SentenceSplitter (paragraph_separator, chunking_tokenizer_fn)
+  note    paragraphs, lines, sentences, words, graphemes; a part larger than the size is a piece alone, as LangChain's CharacterTextSplitter leaves it with a warning
+
+capability chunk/tokens  a text cut into runs of its own tokens
+  heroes  chunks.split_tokens
+  go      -
+  rust    -
+  python  langchain_text_splitters.TokenTextSplitter, langchain_text_splitters.split_text_on_tokens, langchain_text_splitters.Tokenizer, llama_index.core.node_parser.TokenTextSplitter
+  note    cut only where a token ends at a grapheme's end, where LangChain cuts any token boundary and decodes a character cut in two as U+FFFD; the differential above. Not trimmed, as LangChain's pieces are not
+
+capability chunk/markdown  a Markdown document cut at its headings, each piece with the headings above it
+  heroes  chunks.split_markdown
+  go      -
+  rust    -
+  python  langchain_text_splitters.MarkdownHeaderTextSplitter, langchain_text_splitters.MarkdownHeaderTextSplitter.split_text, langchain_text_splitters.MarkdownHeaderTextSplitter.aggregate_lines_to_chunks, langchain_text_splitters.ExperimentalMarkdownSyntaxTextSplitter, langchain_text_splitters.MarkdownTextSplitter, langchain_text_splitters.HeaderType, langchain_text_splitters.LineType, llama_index.core.node_parser.MarkdownNodeParser, llama_index.core.node_parser.MarkdownElementNodeParser
+  note    `markdown.parse` says which headings stand at the document's top; each is found among the lines, outside fenced code, and held to the tree's level and text, or the call fails `unsupported`, since `markdown` gives no node a position (its ledger's md/source-positions). Pieces are slices of the source with their heading lines, as LlamaIndex keeps them; LangChain rewrites the lines and strips the headings by default. A section too large is cut by `split`
+
+capability chunk/markdown-levels  only some levels of headings cutting a document
+  heroes  pending
+  go      -
+  rust    -
+  python  langchain_text_splitters.MarkdownHeaderTextSplitter (headers_to_split_on, custom_header_patterns, return_each_line, strip_headers)
+  note    every level cuts here; the levels a caller names, and a heading's line left out of its piece, wait
+
+capability chunk/hierarchy  pieces of several sizes, each within a larger one
+  heroes  chunks.split
+  go      -
+  rust    -
+  python  llama_index.core.node_parser.HierarchicalNodeParser, llama_index.core.node_parser.get_leaf_nodes, llama_index.core.node_parser.get_root_nodes, llama_index.core.node_parser.get_child_nodes, llama_index.core.node_parser.get_deeper_nodes
+  note    `split` at each size; a smaller piece lies in the larger whose `start` and `end` hold its own
+
+capability chunk/sentence-window  each sentence with the sentences around it
+  heroes  chunks.boundaries
+  go      -
+  rust    -
+  python  llama_index.core.node_parser.SentenceWindowNodeParser
+  note    the sentences' boundaries; a window is the slice from one some sentences before to one some after
+
+capability chunk/code  code cut at the separators of its language, or by its syntax tree
+  heroes  refused: the separators of a language are a list the program gives `split_separators`; LangChain's lists for 27 languages are its own choices, and LlamaIndex's code splitter parses with tree-sitter, a grammar of each language, which Rebel holds for none
+  go      -
+  rust    -
+  python  langchain_text_splitters.RecursiveCharacterTextSplitter.from_language, langchain_text_splitters.RecursiveCharacterTextSplitter.get_separators_for_language, langchain_text_splitters.Language, langchain_text_splitters.PythonCodeTextSplitter, langchain_text_splitters.LatexTextSplitter, langchain_text_splitters.JSFrameworkTextSplitter, llama_index.core.node_parser.CodeSplitter, llama_index.core.node_parser.LanguageConfig
+  note    -
+
+capability chunk/html  an HTML page cut at its headings and sections
+  heroes  pending
+  go      -
+  rust    -
+  python  langchain_text_splitters.HTMLHeaderTextSplitter, langchain_text_splitters.HTMLSectionSplitter, langchain_text_splitters.HTMLSemanticPreservingSplitter, langchain_text_splitters.ElementType, llama_index.core.node_parser.HTMLNodeParser
+  note    `html` reads the page; its nodes' places in the source, and the sections, wait
+
+capability chunk/json  a JSON value cut into smaller values
+  heroes  pending
+  go      -
+  rust    -
+  python  langchain_text_splitters.RecursiveJsonSplitter, llama_index.core.node_parser.JSONNodeParser
+  note    `json` reads the value; not written this round
+
+capability chunk/semantic  a text cut where the meaning of its sentences changes
+  heroes  refused: the change is measured between a model's embeddings of each sentence, which a program asks a model for (`llm/openai`); the sentences are `boundaries`', and the cut between them is the program's once it has the embeddings
+  go      -
+  rust    -
+  python  llama_index.core.node_parser.SemanticSplitterNodeParser, llama_index.core.node_parser.SemanticDoubleMergingSplitterNodeParser
+  note    -
+
+dropped
+  python  langchain_text_splitters.TextSplitter.create_documents, split_documents, transform_documents, atransform_documents: LangChain's `Document` and its metadata, which a program builds from `Chunk`
+  python  llama_index.core.node_parser.SentenceSplitter.get_nodes_from_documents, aget_nodes_from_documents, split_text_metadata_aware, split_texts_metadata_aware, acall, llama_index.core.node_parser.MetadataAwareTextSplitter, NodeParser, SimpleNodeParser, SimpleFileNodeParser, LangchainNodeParser, UnstructuredElementNodeParser, LlamaParseJsonNodeParser, and the fields include_metadata, include_prev_next_rel, id_func, callback_manager: LlamaIndex's nodes, documents, ids, callbacks and the parsers of other tools' formats
+  python  SentenceSplitter.class_name, construct, copy, custom_model_dump, dict, from_defaults, from_dict, from_json, from_orm, json, model_construct, model_copy, model_dump, model_dump_json, model_json_schema, model_parametrized_name, model_post_init, model_rebuild, model_validate, model_validate_json, model_validate_strings, parse_file, parse_obj, parse_raw, schema, schema_json, to_dict, to_json, update_forward_refs, validate: pydantic's model methods
+  python  langchain_text_splitters.base, character, html, json, jsx, latex, markdown, python, TYPE_CHECKING, annotations, import_module: the modules the package is made of and names they import
+  python  llama_index.core.node_parser.file, interface, node_utils, relational, text: the modules the package is made of

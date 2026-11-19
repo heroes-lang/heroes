@@ -1,0 +1,205 @@
+# Parts joined into pieces, and a text cut level by level, as LangChain's
+# recursive splitter joins its splits: parts that fit are joined from the
+# left while the sum of their sizes stays within the size, a piece always
+# taking one part at least; the next piece begins with the last parts of the
+# one before whose sizes fit in the overlap and leave room for the part
+# after them, and always one part later than the piece before began. A part
+# too large is cut at the next cutter, the parts before it ended first. With
+# tokens, a sum of parts is only an estimate of the join's count, so each
+# piece is counted whole and its last parts given to the next where it is
+# too large.
+#
+# The recursion follows the list of cutters, never the text, so its depth is
+# that list's length.
+
+use chunks/internal/cuts
+use chunks/internal/meter
+use unicode
+use unicode/segment
+
+# Adds to `spans` the pieces the parts make: part `k` is `s` from
+# `bounds[k]` to `bounds[k + 1]` and measures `costs[k]`; two indices a
+# piece.
+function add_windows(@spans: [i64], s: str, bounds: [i64] lent, costs: [i64] lent, size: i64, overlap: i64, m: meter.Meter lent)
+    k = costs.len()
+    i: i64 @= 0
+
+    while i < k
+        j: i64 @= i
+        total: i64 @= 0
+
+        while j < k && (j == i || total + costs[j] <= size)
+            total @ total + costs[j]
+            j @ j + 1
+
+        if m.kind == meter.TOKENS
+            while j - i > 1 && meter.cost(m, s: s, from: bounds[i], to: bounds[j]) > size
+                j @ j - 1
+
+        spans @ spans.push(bounds[i])
+        spans @ spans.push(bounds[j])
+
+        if j >= k
+            return
+        next: i64 @= j
+        kept: i64 @= 0
+
+        while next > i + 1 && kept + costs[next - 1] <= overlap && kept + costs[next - 1] + costs[j] <= size
+            kept @ kept + costs[next - 1]
+            next @ next - 1
+
+        i @ next
+
+# Adds to `spans` the pieces of `s` from `from` to `to`, cut by
+# `cutters[depth]`, a part too large cut by the cutters after it; at the last
+# cutter a part too large is a piece alone. `graphemes` are the grapheme
+# boundaries of all of `s`.
+function add_split(@spans: [i64], s: str, from: i64, to: i64, cutters: [cuts.Cutter] lent, depth: i64, size: i64, overlap: i64, m: meter.Meter lent, graphemes: [i64] lent)
+    b = cuts.bounds(s, from: from, to: to, cutter: cutters[depth], graphemes: graphemes)
+    run_bounds: [i64] @= []
+    run_costs: [i64] @= []
+    k: i64 @= 0
+
+    while k + 1 < b.len()
+        a = b[k]
+        z = b[k + 1]
+        c = meter.cost(m, s: s, from: a, to: z)
+
+        if c <= size || depth + 1 == cutters.len()
+            if run_bounds.len() == 0
+                run_bounds @ run_bounds.push(a)
+            run_bounds @ run_bounds.push(z)
+            run_costs @ run_costs.push(c)
+        else
+            if run_costs.len() > 0
+                add_windows(
+                    spans: @spans,
+                    s: s,
+                    bounds: run_bounds,
+                    costs: run_costs,
+                    size: size,
+                    overlap: overlap,
+                    m: m
+                )
+                run_bounds @ []
+                run_costs @ []
+            add_split(
+                spans: @spans,
+                s: s,
+                from: a,
+                to: z,
+                cutters: cutters,
+                depth: depth + 1,
+                size: size,
+                overlap: overlap,
+                m: m,
+                graphemes: graphemes
+            )
+        k @ k + 1
+
+    if run_costs.len() > 0
+        add_windows(spans: @spans, s: s, bounds: run_bounds, costs: run_costs, size: size, overlap: overlap, m: m)
+
+# How many bytes the white space character ending just before `end` in `s`
+# takes, or 0 where the character there is not white space.
+function space_before(s: str, end: i64) -> i64
+    start = unicode.floor_char_boundary(s, index: end - 1)
+
+    if unicode.is_space(s.slice(from: start, to: end))
+        return end - start
+    return 0
+
+# `spans` with the white space at either end of each piece left out, a piece
+# of white space alone dropped.
+function trimmed(s: str, spans: [i64] lent) -> [i64]
+    out: [i64] @= []
+    k: i64 @= 0
+
+    while k < spans.len()
+        start: i64 @= spans[k]
+        end: i64 @= spans[k + 1]
+
+        while start < end
+            width = unicode.width_at(s, index: start)
+
+            if !unicode.is_space(s.slice(from: start, to: start + width))
+                break
+            start @ start + width
+
+        while end > start
+            width = space_before(s, end: end)
+
+            if width == 0
+                break
+            end @ end - width
+
+        if end > start
+            out @ out.push(start)
+            out @ out.push(end)
+        k @ k + 2
+
+    return out
+
+# The cutters of the recursive splitter: paragraphs, sentences, words,
+# graphemes.
+function levels() -> [cuts.Cutter]
+    return [
+        cuts.Cutter(level: cuts.PARAGRAPHS, separator: "")
+        cuts.Cutter(level: cuts.SENTENCES, separator: "")
+        cuts.Cutter(level: cuts.WORDS, separator: "")
+        cuts.Cutter(level: cuts.GRAPHEMES, separator: "")
+    ]
+
+# The texts the spans of `s` cut, for the tests.
+function texts_of(s: str, spans: [i64]) -> [str]
+    out: [str] @= []
+    k: i64 @= 0
+
+    while k < spans.len()
+        out @ out.push(s.slice(from: spans[k], to: spans[k + 1]))
+        k @ k + 2
+
+    return out
+
+test "add_windows: parts joined to the size, an overlap of one part, a part too large alone, and none"
+    m = meter.Meter(kind: meter.BYTES, encodings: [])
+    spans: [i64] @= []
+    add_windows(spans: @spans, s: "aabbccdd", bounds: [0, 2, 4, 6, 8], costs: [2, 2, 2, 2], size: 4, overlap: 2, m: m)
+    assert spans == [0, 4, 2, 6, 4, 8]
+    alone: [i64] @= []
+    add_windows(spans: @alone, s: "abcdefgh", bounds: [0, 6, 8], costs: [6, 2], size: 4, overlap: 0, m: m)
+    assert alone == [0, 6, 6, 8]
+    none: [i64] @= []
+    add_windows(spans: @none, s: "", bounds: [0], costs: [], size: 4, overlap: 0, m: m)
+    assert none == []
+
+test "add_windows: an overlap that would leave no room for the next part is shortened"
+    m = meter.Meter(kind: meter.BYTES, encodings: [])
+    spans: [i64] @= []
+    add_windows(spans: @spans, s: "abcdef", bounds: [0, 1, 2, 3, 6], costs: [1, 1, 1, 3], size: 4, overlap: 3, m: m)
+    assert spans == [0, 3, 2, 6]
+
+test "add_split: paragraphs joined, a paragraph too large cut at its sentences, the pieces before it ended"
+    s = "Aa.\n\nBb.\n\nOne two. Three four five.\n\nCc."
+    spans: [i64] @= []
+    add_split(
+        spans: @spans,
+        s: s,
+        from: 0,
+        to: s.len(),
+        cutters: levels(),
+        depth: 0,
+        size: 12,
+        overlap: 0,
+        m: meter.Meter(kind: meter.CHARACTERS, encodings: []),
+        graphemes: segment_of(s)
+    )
+    assert texts_of(s, spans: trimmed(s, spans: spans)) == ["Aa.\n\nBb.", "One two.", "Three four", "five.", "Cc."]
+
+test "trimmed: spaces at either end, white space above ASCII, and a piece of white space alone"
+    s = " a 　\n  b"
+    assert trimmed(s, spans: [0, 6, 6, 8, 8, s.len()]) == [1, 2, 9, 10]
+
+# The grapheme boundaries of `s`, for the tests.
+function segment_of(s: str) -> [i64]
+    return segment.grapheme_boundaries(s)

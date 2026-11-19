@@ -1,0 +1,37 @@
+# The table of `cl100k_base`, the encoding of GPT-4, GPT-3.5 and the
+# embedding models `text-embedding-ada-002` and `text-embedding-3-*`, alone: a
+# program that uses this module carries this table and no other, where one
+# that uses `tokenizer/tables`, which also
+# finds an encoding by its name or its model, carries all three. Measured
+# 2026-11-18 on this Mac at -O2, a program that counts two words is 2.05 MB
+# with `tokenizer/tables/cl100k_base`, 3.42 MB with
+# `tokenizer/tables/o200k_base`, 4.97 MB through `tokenizer/tables`, and
+# 0.81 MB with no table. What an encoding does is `tokenizer`'s. Nothing
+# here fails.
+
+use tokenizer
+use tokenizer/tables/internal/cl100k_base as cl100k
+use tokenizer/tables/internal/made as making
+
+# The encoding `cl100k_base`: 100,256 ordinary tokens and the special tokens
+# `<|endoftext|>` (100257), `<|fim_prefix|>`, `<|fim_middle|>`, `<|fim_suffix|>`
+# and `<|endofprompt|>` (100276).
+#
+# It reads the whole table; make it once and keep it. See also
+# `tokenizer.encode_ordinary`.
+function encoding() -> tokenizer.Encoding
+    return making.made(
+        name: "cl100k_base",
+        pattern: cl100k.PATTERN,
+        ranks: cl100k.RANKS,
+        texts: cl100k.SPECIAL_TEXTS,
+        numbers: cl100k.SPECIAL_TOKENS
+    )
+
+## Examples
+
+# Two words counted and encoded in `cl100k_base`.
+test "encoding: two words"
+    enc = encoding()
+    assert enc.name == "cl100k_base"
+    assert tokenizer.encode_ordinary(enc, text: "hello world") == [15339, 1917]

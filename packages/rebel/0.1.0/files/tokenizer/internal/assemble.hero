@@ -1,0 +1,142 @@
+# What an encoding holds, put together and checked once, so that nothing an
+# encoding is later asked can abort: its ordinary tokens with every byte
+# among them, its pattern compiled, and its special tokens, each numbered
+# past the ordinary ones.
+
+use bytes
+use tokenizer/internal/pieces
+use tokenizer/internal/vocabulary
+
+# An encoding's parts. Made only by `make`.
+record Core
+    # The encoding's name.
+    name: str
+    # The pattern, as tiktoken writes it.
+    pattern: str
+    # The ordinary tokens, by rank.
+    table: vocabulary.Table
+    # The pattern, compiled.
+    splitter: pieces.Splitter
+    # The text of each special token, in the order of its number, two texts
+    # of one number in the order they were given.
+    special_texts: [str]
+    # The number of each text of `special_texts`, the same order.
+    special_numbers: [i64]
+    # The text each number of a special token decodes to: the one given
+    # first, where two texts share it.
+    special_by_number: {i64: str}
+    # The number of each special token by its text.
+    special_by_text: {str: i64}
+    # Every special token's text, searched for at once, the longest where two
+    # begin at one place.
+    finder: bytes.Patterns
+    # The largest number of a token, ordinary or special; -1 for none.
+    max_token: i64
+
+# The message of `name` where `what` is wrong.
+function wrong(name: str, what: str) -> str
+    return f"the encoding \"{name}\": {what}"
+
+# The parts of an encoding, checked. Fails `invalid` where a byte is no
+# ordinary token, a special token's text is empty, or its number is below
+# the ordinary tokens' count; two texts may share a number, as tiktoken lets
+# them. Fails with the splitter's code where the pattern is not one this package reads.
+function make(name: str, pattern: str, table: vocabulary.Table, specials: {str: i64}) -> Core?
+    size = vocabulary.size(table)
+    b: i64 @= 0
+
+    while b < 256
+        one: [u8] = [to_u8(b).must()]
+
+        if vocabulary.rank_of(table, s: one, from: 0, to: 1) == vocabulary.NO_RANK
+            return fail(
+                code: "invalid",
+                msg: wrong(name: name, what: f"the byte {b} is no token, and every byte must be one so that any text can be encoded")
+            )
+        b @ b + 1
+
+    splitter = pieces.compile(pattern)?
+    by_number: {i64: str} @= {}
+    texts_of: {i64: [str]} @= {}
+    numbers: [i64] @= []
+
+    for text in keys(specials)
+        number = specials[text].must()
+
+        if text == ""
+            return fail(code: "invalid", msg: wrong(name: name, what: "a special token's text is empty"))
+
+        if number < size
+            return fail(
+                code: "invalid",
+                msg: wrong(name: name, what: f"the special token \"{text}\" is numbered {number}, a rank of the {size} ordinary tokens")
+            )
+
+        match texts_of[number]
+            .ok others =>
+                shared: [str] @= others
+                shared @ shared.push(text)
+                texts_of[number] @ shared
+            .err _ =>
+                by_number[number] @ text
+                texts_of[number] @ [text]
+                numbers @ numbers.push(number)
+
+    distinct = sort(numbers)
+    sorted: [i64] @= []
+    texts: [str] @= []
+    patterns: [[u8]] @= []
+
+    for number in distinct
+        for text in texts_of[number].must()
+            sorted @ sorted.push(number)
+            texts @ texts.push(text)
+            patterns @ patterns.push(bytes.from_text(text))
+
+    largest: i64 @= size - 1
+
+    if sorted.len() > 0 && sorted[sorted.len() - 1] > largest
+        largest @ sorted[sorted.len() - 1]
+    return ok(
+        Core(name: name, pattern: pattern, table: table, splitter: splitter, special_texts: texts, special_numbers: sorted, special_by_number: by_number, special_by_text: specials, finder: bytes.compile_patterns(patterns, kind: .leftmost_longest), max_token: largest)
+    )
+
+# A table of the 256 bytes and `more` after them, for the tests.
+function bytes_and(more: [[u8]]) -> vocabulary.Table
+    tokens: [[u8]] @= []
+    b: i64 @= 0
+
+    while b < 256
+        tokens @ tokens.push([to_u8(b).must()])
+        b @ b + 1
+
+    for token in more
+        tokens @ tokens.push(token)
+
+    return vocabulary.build(tokens).must()
+
+test "make: the special tokens sorted by number, the largest token, and the finder"
+    c = make(name: "t", pattern: "\\p{L}+|\\s", table: bytes_and([[97, 98]]), specials: {"<b>": 260, "<a>": 258}).must()
+    assert c.special_texts == ["<a>", "<b>"]
+    assert c.special_numbers == [258, 260]
+    assert c.max_token == 260
+    assert c.special_by_number[260].must() == "<b>"
+    assert bytes.has_match(bytes.from_text("x<b>"), patterns: c.finder)
+
+test "make: no special token, the largest an ordinary one"
+    c = make(name: "t", pattern: "a", table: bytes_and([]), specials: {}).must()
+    assert c.max_token == 255 && c.special_texts == []
+
+test "make: a byte missing, a special empty, numbered among the ranks, and a pattern refused; two of one number kept"
+    missing: [[u8]] = [[97]]
+    assert make(name: "t", pattern: "a", table: vocabulary.build(missing).must(), specials: {}).is_err()
+    assert make(name: "t", pattern: "a", table: bytes_and([]), specials: {"": 300}).is_err()
+    assert make(name: "t", pattern: "a", table: bytes_and([]), specials: {"<s>": 255}).is_err()
+
+    shared = make(name: "t", pattern: "a", table: bytes_and([]), specials: {"<s>": 300, "<t>": 300}).must()
+    assert shared.special_texts == ["<s>", "<t>"] && shared.special_numbers == [300, 300]
+    assert shared.special_by_number[300].must() == "<s>"
+
+    match make(name: "t", pattern: "(?=a)", table: bytes_and([]), specials: {})
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported"

@@ -1,0 +1,516 @@
+# A text cut into pieces for retrieval: each piece small enough for a model
+# or an index to take, cut where the text's own structure allows, paragraphs
+# first, then sentences, words and last characters, with an overlap between
+# neighbours so that a sentence cut in two is still read whole somewhere.
+# Every piece is a slice of the text with the byte indices where it begins
+# and ends, and none is cut inside a character as a reader sees one, a
+# grapheme of UAX #29 (`unicode/segment`). A Markdown document is cut at its
+# headings, each piece keeping the path of headings above it.
+#
+# A piece's size is measured in characters, in bytes or in the tokens of an
+# encoding of `tokenizer`; its tables are `tokenizer/tables`'. Where words
+# and sentences end is `unicode/segment`'s, and what a Markdown document holds
+# is `markdown`'s; embedding a piece is a model's, and finding the nearest is
+# `vectors`'.
+#
+# A function fails `invalid` where it is given a size below 1 or an overlap
+# below 0 or not below the size, and `unsupported` where a Markdown heading
+# stands where only `markdown`'s positions could place it, which it does not
+# give.
+
+use chunks/internal/cuts
+use chunks/internal/headings
+use chunks/internal/meter
+use chunks/internal/token_runs
+use chunks/internal/windows
+use tokenizer
+use unicode/segment
+
+## Codes
+
+# The code of a size or an overlap that no piece can have, and of an empty
+# separator among others.
+constant INVALID: str
+    "invalid"
+
+# The code of a Markdown heading this package cannot place in the text.
+constant UNSUPPORTED: str
+    "unsupported"
+
+## Pieces
+
+# A piece of a text: a slice of it and where it stands.
+record Chunk
+    # The piece's text, `text.slice(from: start, to: end)` of the text cut.
+    text: str
+    # Where the piece begins in the text cut, as a byte index.
+    start: i64
+    # Where it ends: the byte index after its last byte.
+    end: i64
+    # The headings of a Markdown document above the piece, the outermost
+    # first, as their text reads without its marks; empty elsewhere.
+    path: [str]
+
+## Sizes
+
+# What a piece's size counts.
+variant Measure
+    # Characters, each code point one, as Python's `len` and LangChain's
+    # default count.
+    characters
+    # Bytes of UTF-8.
+    bytes
+    # The tokens of an encoding, as `tokenizer.count` counts a piece alone.
+    tokens
+        # The encoding.
+        encoding: tokenizer.Encoding
+
+# How a text is cut: the largest size of a piece, the overlap, and what they
+# count. Made by `by_characters`, `by_bytes` or `by_tokens`, which check it;
+# one built directly must hold what they check.
+record Options
+    # The largest size a piece may have, at least 1.
+    size: i64
+    # The most of the piece before it that a piece may begin with, from 0 to
+    # `size` less 1.
+    overlap: i64
+    # What `size` and `overlap` count.
+    measure: Measure
+    # Whether white space at either end of a piece is left out of it, as
+    # LangChain does by default; a piece that is only white space is then no
+    # piece.
+    trims: bool
+
+# The options of pieces of at most `size` characters, each beginning with at
+# most `overlap` characters of the one before, white space trimmed.
+#
+# - `size`: the most characters a piece holds, at least 1.
+# - `overlap`: the most characters of the piece before that a piece repeats,
+#   0 for none, below `size`.
+#
+# Fails `invalid` where `size` is below 1 or `overlap` below 0 or not below
+# `size`. See also `by_tokens`.
+function by_characters(size: i64, overlap: i64) -> Options?
+    meter.check(size: size, overlap: overlap)?
+    return ok(Options(size: size, overlap: overlap, measure: .characters, trims: true))
+
+# The options of pieces of at most `size` bytes, each beginning with at most
+# `overlap` bytes of the one before, white space trimmed.
+#
+# - `size`: the most bytes a piece holds, at least 1.
+# - `overlap`: the most bytes of the piece before that a piece repeats, 0
+#   for none, below `size`.
+#
+# Fails `invalid` where `size` is below 1 or `overlap` below 0 or not below
+# `size`.
+function by_bytes(size: i64, overlap: i64) -> Options?
+    meter.check(size: size, overlap: overlap)?
+    return ok(Options(size: size, overlap: overlap, measure: .bytes, trims: true))
+
+# The options of pieces of at most `size` tokens of `encoding`, each
+# beginning with at most `overlap` tokens of the one before, white space
+# trimmed.
+#
+# - `encoding`: the encoding that counts, `tokenizer/tables`' for a model of
+#   OpenAI's.
+# - `size`: the most tokens a piece encodes to, at least 1.
+# - `overlap`: the most tokens of the piece before that a piece repeats, 0
+#   for none, below `size`.
+#
+# Fails `invalid` where `size` is below 1 or `overlap` below 0 or not below
+# `size`. See also `split_tokens`.
+function by_tokens(encoding: tokenizer.Encoding, size: i64, overlap: i64) -> Options?
+    meter.check(size: size, overlap: overlap)?
+    return ok(Options(size: size, overlap: overlap, measure: .tokens(encoding: encoding), trims: true))
+
+# The size of `text` by `measure`.
+#
+# - `text`: the text.
+# - `measure`: what counts.
+#
+# 0 for the empty text.
+function size_of(text: str, measure: Measure) -> i64
+    m = match measure
+        .characters => meter.Meter(kind: meter.CHARACTERS, encodings: [])
+        .bytes      => meter.Meter(kind: meter.BYTES, encodings: [])
+        .tokens t   => meter.Meter(kind: meter.TOKENS, encodings: [t.encoding])
+
+    return meter.cost(m, s: text, from: 0, to: text.len())
+
+## Cutting
+
+# Where a text may be cut, from the coarsest to the finest.
+variant Level
+    # After a blank line: a run of white space that holds two line breaks.
+    paragraphs
+    # After each line break: a line feed, a carriage return, or both.
+    lines
+    # Between the sentences of UAX #29, each keeping the spaces after it.
+    sentences
+    # After each run of white space: a word with the spaces after it, its
+    # marks of punctuation kept, as LangChain and LlamaIndex cut at spaces.
+    words
+    # Between graphemes, what a reader sees as one character.
+    graphemes
+
+# The pieces of `text`, none larger than `options.size`: cut at paragraphs,
+# a paragraph too large cut at its sentences, a sentence too large at its
+# words, a word too large at its graphemes, LangChain's recursive splitter
+# and LlamaIndex's sentence splitter with Unicode's boundaries.
+#
+# - `text`: the text; the empty text has no piece.
+# - `options`: the largest size, the overlap and what they count.
+#
+# In order. Neighbours whose sizes fit together are joined into one piece;
+# where a part too large stands between them, the pieces before it are
+# ended, so no piece runs into one cut finer. A piece begins with the last
+# parts of the piece before that fit in `options.overlap`, where it joins
+# them; a part is never cut for an overlap. A grapheme larger than the size
+# alone is a piece alone. With tokens, a piece is held to its own count, its
+# last parts given to the next piece where a join encodes to more. Aborts
+# where `options` breaks what `by_characters` checks. It costs a measure of
+# each part at each level it is read at. See also `split_at` and
+# `split_markdown`.
+function split(text: str, options: Options) -> [Chunk]
+    assert options.size >= 1 && options.overlap >= 0 && options.overlap < options.size
+
+    m = match options.measure
+        .characters => meter.Meter(kind: meter.CHARACTERS, encodings: [])
+        .bytes      => meter.Meter(kind: meter.BYTES, encodings: [])
+        .tokens t   => meter.Meter(kind: meter.TOKENS, encodings: [t.encoding])
+
+    spans: [i64] @= []
+    windows.add_split(
+        spans: @spans,
+        s: text,
+        from: 0,
+        to: text.len(),
+        cutters: windows.levels(),
+        depth: 0,
+        size: options.size,
+        overlap: options.overlap,
+        m: m,
+        graphemes: segment.grapheme_boundaries(text)
+    )
+
+    kept = if options.trims
+        windows.trimmed(text, spans: spans)
+    else
+        spans
+    out: [Chunk] @= []
+    k: i64 @= 0
+
+    while k < kept.len()
+        out @ out.push(
+            Chunk(text: text.slice(from: kept[k], to: kept[k + 1]), start: kept[k], end: kept[k + 1], path: [])
+        )
+        k @ k + 2
+
+    return out
+
+# The pieces of `text` cut only at the boundaries of `level`, parts joined up
+# to `options.size`.
+#
+# - `text`: the text.
+# - `level`: where it may be cut.
+# - `options`: the largest size, the overlap and what they count.
+#
+# A part larger than the size is a piece alone, larger than the size; `split`
+# cuts it finer. Aborts where `options` breaks what `by_characters` checks.
+# See also `split`.
+function split_at(text: str, level: Level, options: Options) -> [Chunk]
+    assert options.size >= 1 && options.overlap >= 0 && options.overlap < options.size
+
+    m = match options.measure
+        .characters => meter.Meter(kind: meter.CHARACTERS, encodings: [])
+        .bytes      => meter.Meter(kind: meter.BYTES, encodings: [])
+        .tokens t   => meter.Meter(kind: meter.TOKENS, encodings: [t.encoding])
+
+    spans: [i64] @= []
+
+    number = match level
+        .paragraphs => cuts.PARAGRAPHS
+        .lines      => cuts.LINES
+        .sentences  => cuts.SENTENCES
+        .words      => cuts.WORDS
+        .graphemes  => cuts.GRAPHEMES
+
+    cutter = cuts.Cutter(level: number, separator: "")
+    windows.add_split(
+        spans: @spans,
+        s: text,
+        from: 0,
+        to: text.len(),
+        cutters: [cutter],
+        depth: 0,
+        size: options.size,
+        overlap: options.overlap,
+        m: m,
+        graphemes: segment.grapheme_boundaries(text)
+    )
+
+    kept = if options.trims
+        windows.trimmed(text, spans: spans)
+    else
+        spans
+    out: [Chunk] @= []
+    k: i64 @= 0
+
+    while k < kept.len()
+        out @ out.push(
+            Chunk(text: text.slice(from: kept[k], to: kept[k + 1]), start: kept[k], end: kept[k + 1], path: [])
+        )
+        k @ k + 2
+
+    return out
+
+# The pieces of `text` cut at the separators `separators`, the first that
+# the text holds tried first and each next one inside a part still too
+# large, then at graphemes: LangChain's recursive splitter with the
+# separators a program gives, for code or any text of its own shape.
+#
+# - `text`: the text.
+# - `separators`: the texts to cut at, coarsest first, `["\n\n", "\n", " "]`
+#   for LangChain's default; each separator begins the part after it, as
+#   LangChain keeps it by default. None cuts at graphemes alone.
+# - `options`: the largest size, the overlap and what they count.
+#
+# Fails `invalid` where a separator is the empty text. Aborts where `options`
+# breaks what `by_characters` checks. See also `split`.
+function split_separators(text: str, separators: [str], options: Options) -> [Chunk]?
+    assert options.size >= 1 && options.overlap >= 0 && options.overlap < options.size
+
+    m = match options.measure
+        .characters => meter.Meter(kind: meter.CHARACTERS, encodings: [])
+        .bytes      => meter.Meter(kind: meter.BYTES, encodings: [])
+        .tokens t   => meter.Meter(kind: meter.TOKENS, encodings: [t.encoding])
+
+    cutters: [cuts.Cutter] @= []
+
+    for separator in separators
+        if separator == ""
+            return fail(
+                code: INVALID,
+                msg: "a separator is the empty text, which cuts nothing; the graphemes are cut after the last separator"
+            )
+        cutters @ cutters.push(cuts.Cutter(level: cuts.SEPARATOR, separator: separator))
+
+    cutters @ cutters.push(cuts.Cutter(level: cuts.GRAPHEMES, separator: ""))
+    spans: [i64] @= []
+    windows.add_split(
+        spans: @spans,
+        s: text,
+        from: 0,
+        to: text.len(),
+        cutters: cutters,
+        depth: 0,
+        size: options.size,
+        overlap: options.overlap,
+        m: m,
+        graphemes: segment.grapheme_boundaries(text)
+    )
+
+    kept = if options.trims
+        windows.trimmed(text, spans: spans)
+    else
+        spans
+    out: [Chunk] @= []
+    k: i64 @= 0
+
+    while k < kept.len()
+        out @ out.push(
+            Chunk(text: text.slice(from: kept[k], to: kept[k + 1]), start: kept[k], end: kept[k + 1], path: [])
+        )
+        k @ k + 2
+
+    return ok(out)
+
+# The pieces of `text` that are runs of its own tokens in `encoding`, at most
+# `size` a piece, each beginning with the last `overlap` of the one before:
+# LangChain's token splitter, cut only where a token ends at a grapheme's
+# end.
+#
+# - `text`: the text, encoded once with `tokenizer.encode_ordinary`.
+# - `encoding`: the encoding.
+# - `size`: the most tokens of the text a piece holds, at least 1.
+# - `overlap`: how many tokens a piece repeats of the one before, from 0 to
+#   `size` less 1.
+#
+# A run of tokens that writes one grapheme is never cut, and alone may be
+# larger than `size`. Not trimmed. Fails `invalid` where `size` is below 1 or
+# `overlap` below 0 or not below `size`. It costs one encoding of `text`.
+# See also `split`, which cuts at sentences and words.
+function split_tokens(text: str, encoding: tokenizer.Encoding, size: i64, overlap: i64) -> [Chunk]?
+    meter.check(size: size, overlap: overlap)?
+    spans: [i64] @= []
+    token_runs.add_token_windows(@spans, s: text, enc: encoding, size: size, overlap: overlap)
+    out: [Chunk] @= []
+    k: i64 @= 0
+
+    while k < spans.len()
+        out @ out.push(
+            Chunk(text: text.slice(from: spans[k], to: spans[k + 1]), start: spans[k], end: spans[k + 1], path: [])
+        )
+        k @ k + 2
+
+    return ok(out)
+
+# The pieces of the Markdown document `text`, one for each heading and the
+# blocks under it before the next heading, each piece's `path` the headings
+# above it and its own; a section larger than `options.size` is cut by
+# `split`, each piece keeping the section's path.
+#
+# - `text`: a CommonMark document, as `markdown.parse` reads it.
+# - `options`: the largest size, the overlap and what they count.
+#
+# In order; the text before the first heading is a piece with an empty path.
+# A section's first piece begins with its heading's line. Only headings at the
+# top of the document cut it, never one inside a quote or a list. Fails
+# `unsupported` where `markdown.parse` reads a heading this function cannot
+# find a line of, which `markdown` gives no position of (a heading inside an
+# HTML block's look-alike, a heading of setext's form after a paragraph's
+# lazy line). It costs a reading of the document and of each line that
+# begins a heading. See also `split`.
+function split_markdown(text: str, options: Options) -> [Chunk]?
+    assert options.size >= 1 && options.overlap >= 0 && options.overlap < options.size
+
+    m = match options.measure
+        .characters => meter.Meter(kind: meter.CHARACTERS, encodings: [])
+        .bytes      => meter.Meter(kind: meter.BYTES, encodings: [])
+        .tokens t   => meter.Meter(kind: meter.TOKENS, encodings: [t.encoding])
+
+    graphemes = segment.grapheme_boundaries(text)
+    out: [Chunk] @= []
+
+    for section in headings.sections(text)?
+        spans: [i64] @= []
+
+        if meter.cost(m, s: text, from: section.start, to: section.end) <= options.size
+            spans @ spans.push(section.start)
+            spans @ spans.push(section.end)
+        else
+            windows.add_split(
+                spans: @spans,
+                s: text,
+                from: section.start,
+                to: section.end,
+                cutters: windows.levels(),
+                depth: 0,
+                size: options.size,
+                overlap: options.overlap,
+                m: m,
+                graphemes: graphemes
+            )
+
+        kept = if options.trims
+            windows.trimmed(text, spans: spans)
+        else
+            spans
+        k: i64 @= 0
+
+        while k < kept.len()
+            out @ out.push(
+                Chunk(text: text.slice(from: kept[k], to: kept[k + 1]), start: kept[k], end: kept[k + 1], path: section.path)
+            )
+            k @ k + 2
+
+    return ok(out)
+
+# Where `text` may be cut at `level`, as byte indices, ascending, 0 and the
+# length of `text` among them.
+#
+# - `text`: the text; the empty text answers `[0]`.
+# - `level`: which boundaries.
+function boundaries(text: str, level: Level) -> [i64]
+    number = match level
+        .paragraphs => cuts.PARAGRAPHS
+        .lines      => cuts.LINES
+        .sentences  => cuts.SENTENCES
+        .words      => cuts.WORDS
+        .graphemes  => cuts.GRAPHEMES
+
+    return cuts.bounds(
+        text,
+        from: 0,
+        to: text.len(),
+        cutter: cuts.Cutter(level: number, separator: ""),
+        graphemes: segment.grapheme_boundaries(text)
+    )
+
+## Examples
+
+# Options of pieces of at most 100 characters, the next repeating up to 10.
+test "by_characters: a size and an overlap, and an overlap as large as the size refused"
+    options = by_characters(size: 100, overlap: 10).must()
+    assert options.size == 100 && options.overlap == 10 && options.trims
+    assert by_characters(size: 100, overlap: 100).is_err()
+
+# Options that count bytes.
+test "by_bytes: a size in bytes"
+    options = by_bytes(size: 6, overlap: 0).must()
+    assert size_of("héllo", measure: options.measure) == 6
+
+# Options that count the tokens of an encoding, here a small one where "cd"
+# without its space is two tokens.
+test "by_tokens: pieces of at most two tokens"
+    enc = token_runs.small()
+    options = by_tokens(enc, size: 2, overlap: 0).must()
+    pieces = split("ab cd ab cd", options: options)
+    assert pieces.len() == 4
+    assert pieces[0].text == "ab" && pieces[1].text == "cd" && pieces[3].text == "cd"
+
+# A text measured in characters, bytes and tokens.
+test "size_of: characters, bytes and tokens"
+    assert size_of("héllo", measure: .characters) == 5
+    assert size_of("héllo", measure: .bytes) == 6
+    assert size_of("ab cd", measure: .tokens(encoding: token_runs.small())) == 2
+
+# Two paragraphs, the second too long, cut at its words, as LangChain's
+# recursive splitter cuts them.
+test "split: a paragraph whole and one cut at its words, with an overlap"
+    text = "First paragraph.\n\nSecond one here, longer than the rest."
+    pieces = split(text, options: by_characters(size: 20, overlap: 8).must())
+    assert pieces.len() == 4
+    assert pieces[0].text == "First paragraph."
+    assert pieces[1].text == "Second one here,"
+    assert pieces[2].text == "here, longer than"
+    assert pieces[3].text == "than the rest."
+    assert pieces[1].start == 18 && pieces[1].end == 34
+
+# Sentences joined up to a size, never cut.
+test "split_at: sentences"
+    pieces = split_at("One. Two. Three.", level: .sentences, options: by_characters(size: 10, overlap: 0).must())
+    assert pieces.len() == 2
+    assert pieces[0].text == "One. Two."
+    assert pieces[1].text == "Three."
+
+# Code cut at its blank lines first, then at its lines.
+test "split_separators: blank lines, then lines"
+    pieces = split_separators(
+        "a = 1\nb = 2\n\nc = 3",
+        separators: ["\n\n", "\n"],
+        options: by_characters(size: 12, overlap: 0).must()
+    ).must()
+    assert pieces.len() == 2
+    assert pieces[0].text == "a = 1\nb = 2"
+    assert pieces[1].text == "c = 3"
+
+# Runs of two tokens, as LangChain's token splitter cuts.
+test "split_tokens: two tokens a piece"
+    pieces = split_tokens("ab cd ab cd", encoding: token_runs.small(), size: 2, overlap: 0).must()
+    assert pieces.len() == 3
+    assert pieces[0].text == "ab cd"
+    assert pieces[1].text == " ab"
+    assert pieces[2].text == " cd"
+
+# A document cut at its headings, each piece with the headings above it.
+test "split_markdown: a guide and its section"
+    text = "# Guide\n\nRead this first.\n\n## Install\n\nRun the installer.\n"
+    pieces = split_markdown(text, options: by_characters(size: 100, overlap: 0).must()).must()
+    assert pieces.len() == 2
+    assert pieces[0].path == ["Guide"] && pieces[0].text == "# Guide\n\nRead this first."
+    assert pieces[1].path == ["Guide", "Install"] && pieces[1].text == "## Install\n\nRun the installer."
+
+# Where the sentences of a text begin.
+test "boundaries: sentences"
+    assert boundaries("One. Two.", level: .sentences) == [0, 5, 9]

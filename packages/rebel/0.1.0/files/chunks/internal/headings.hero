@@ -1,0 +1,313 @@
+# A Markdown document cut at its headings, each section with the path of
+# headings above it. `markdown.parse` says which headings the document has
+# at its top, their levels and texts, in order; `markdown` gives no place in
+# the text for a node (its ledger's `md/source-positions`, pending), so each
+# is found here among the document's lines.
+#
+# A line is a candidate where it stands outside every fenced code block and
+# `markdown.parse` reads it alone, with the paragraph lines above it for a
+# heading of setext's form, as one heading. The headings of the tree are
+# then matched to the candidates in order, each to the first after the last
+# matched with its level and text: a candidate no heading of the tree
+# matches, a heading's look-alike inside an HTML block or a list, is passed
+# over. A heading of the tree no candidate matches fails `unsupported`, so a
+# place is never guessed.
+
+use markdown
+
+# A section: where it stands and the headings above it, its own the last.
+record Section
+    # Where it begins, a line's first byte.
+    start: i64
+    # Where it ends: the next section's start, or the end of the text.
+    end: i64
+    # The texts of the headings above it, the outermost first, its own the
+    # last; empty before the first heading.
+    path: [str]
+    # The levels of those headings, the same order.
+    levels: [i64]
+
+# A heading found: its level, its text and where its first line begins.
+record Found
+    # 1 to 6.
+    level: i64
+    # Its text, as `markdown.text_of` reads it.
+    text: str
+    # Where its first line begins.
+    start: i64
+
+# Where each line of `s` begins, and last the length of `s`: a line ends
+# after a line feed, a carriage return and a line feed, or a carriage return
+# alone.
+function line_starts(s: str) -> [i64]
+    out: [i64] @= [0]
+    at: i64 @= 0
+
+    while at < s.len()
+        if s[at] == '\n' || s[at] == '\r' && (at + 1 == s.len() || s[at + 1] != '\n')
+            if at + 1 < s.len()
+                out @ out.push(at + 1)
+        at @ at + 1
+
+    out @ out.push(s.len())
+    return out
+
+# The line `k` of `s` without its line break, `starts` being `line_starts`.
+function line_at(s: str, starts: [i64] lent, k: i64) -> str
+    end: i64 @= starts[k + 1]
+
+    if end > starts[k] && s[end - 1] == '\n'
+        end @ end - 1
+
+    if end > starts[k] && s[end - 1] == '\r'
+        end @ end - 1
+    return s.slice(from: starts[k], to: end)
+
+# How many spaces begin `line`.
+function indent_of(line: str) -> i64
+    n: i64 @= 0
+
+    while n < line.len() && line[n] == ' '
+        n @ n + 1
+
+    return n
+
+# Whether `line` holds nothing but spaces and tabs.
+function is_blank(line: str) -> bool
+    for c in line.chars()
+        if c != " " && c != "\t"
+            return false
+
+    return true
+
+# The run of fence characters that opens a fenced code block at the start of
+# `line`, three backticks or tildes or more after up to three spaces, or ""
+# where `line` opens none. A run of backticks opens none where a backtick
+# follows it on the line.
+function fence_of(line: str) -> str
+    indent = indent_of(line)
+
+    if indent > 3 || indent >= line.len()
+        return ""
+    mark = line[indent]
+
+    if mark != '`' && mark != '~'
+        return ""
+    end: i64 @= indent
+
+    while end < line.len() && line[end] == mark
+        end @ end + 1
+
+    if end - indent < 3
+        return ""
+
+    if mark == '`'
+        rest: i64 @= end
+
+        while rest < line.len()
+            if line[rest] == '`'
+                return ""
+            rest @ rest + 1
+
+    return line.slice(from: indent, to: end)
+
+# Whether `line` closes the block `fence` opened: up to three spaces, a run of
+# its character at least as long, and only spaces or tabs after.
+function closes(line: str, fence: str) -> bool
+    indent = indent_of(line)
+
+    if indent > 3
+        return false
+    end: i64 @= indent
+
+    while end < line.len() && line[end] == fence[0]
+        end @ end + 1
+
+    return end - indent >= fence.len() && is_blank(line.slice(from: end, to: line.len()))
+
+# Whether `line` may underline a heading of setext's form: up to three
+# spaces, a run of `=` or of `-`, and only spaces or tabs after.
+function is_underline(line: str) -> bool
+    indent = indent_of(line)
+
+    if indent > 3 || indent >= line.len() || line[indent] != '=' && line[indent] != '-'
+        return false
+    end: i64 @= indent
+
+    while end < line.len() && line[end] == line[indent]
+        end @ end + 1
+
+    return is_blank(line.slice(from: end, to: line.len()))
+
+# The one heading `text` holds as a document, as its level and text, or none
+# where it holds anything else.
+function lone_heading(text: str) -> [Found]
+    doc = markdown.parse(text)
+    top = markdown.children(doc, markdown.ROOT)
+
+    if top.len() != 1
+        return []
+
+    match markdown.node_of(doc, top[0])
+        .heading h => return [Found(level: h.level, text: markdown.text_of(doc, top[0]), start: 0)]
+        .document | .block_quote | .list _ | .item _ | .paragraph | .thematic_break | .code_block _ | .html_block _ | .table _ | .table_row _ | .table_cell _ | .text _ | .soft_break | .line_break | .code _ | .emphasis | .strong | .strikethrough | .link _ | .image _ | .html_inline _ => return []
+
+# The candidates of `s`: every line, or paragraph and underline, outside the
+# fenced code blocks that `markdown.parse` reads alone as one heading.
+function candidates(s: str, starts: [i64] lent) -> [Found]
+    out: [Found] @= []
+    lines = starts.len() - 1
+    fence: str @= ""
+    paragraph_from: i64 @= -1
+    k: i64 @= 0
+
+    while k < lines
+        line = line_at(s, starts: starts, k: k)
+
+        if fence != ""
+            if closes(line: line, fence: fence)
+                fence @ ""
+            k @ k + 1
+            continue
+        opened = fence_of(line)
+
+        if opened != ""
+            fence @ opened
+            paragraph_from @ -1
+            k @ k + 1
+            continue
+
+        if is_blank(line)
+            paragraph_from @ -1
+            k @ k + 1
+            continue
+        found: bool @= false
+
+        if is_underline(line) && paragraph_from >= 0
+            from: i64 @= paragraph_from
+
+            while from < k && !found
+                for h in lone_heading(s.slice(from: starts[from], to: starts[k + 1]))
+                    out @ out.push(Found(level: h.level, text: h.text, start: starts[from]))
+                    found @ true
+
+                from @ from + 1
+
+        if !found && indent_of(line) <= 3 && indent_of(line) < line.len() && line[indent_of(line)] == '#'
+            for h in lone_heading(line)
+                out @ out.push(Found(level: h.level, text: h.text, start: starts[k]))
+                found @ true
+
+        if found
+            paragraph_from @ -1
+        else if paragraph_from < 0
+            paragraph_from @ k
+        k @ k + 1
+
+    return out
+
+# The headings at the top of the document `s`, as `markdown.parse` reads
+# them, in order.
+function expected(s: str) -> [Found]
+    doc = markdown.parse(s)
+    out: [Found] @= []
+
+    for node in markdown.children(doc, markdown.ROOT)
+        match markdown.node_of(doc, node)
+            .heading h => out @ out.push(Found(level: h.level, text: markdown.text_of(doc, node), start: -1))
+            .document | .block_quote | .list _ | .item _ | .paragraph | .thematic_break | .code_block _ | .html_block _ | .table _ | .table_row _ | .table_cell _ | .text _ | .soft_break | .line_break | .code _ | .emphasis | .strong | .strikethrough | .link _ | .image _ | .html_inline _ => _ = 0
+
+    return out
+
+# The sections of the document `s`: what stands before its first heading,
+# where it is not empty, then one for each heading at its top. Fails
+# `unsupported` where a heading of `markdown.parse`'s cannot be found among
+# the lines.
+function sections(s: str) -> [Section]?
+    starts = line_starts(s)
+    found = candidates(s, starts: starts)
+    placed: [Found] @= []
+    next: i64 @= 0
+
+    for h in expected(s)
+        while next < found.len() && (found[next].level != h.level || found[next].text != h.text)
+            next @ next + 1
+
+        if next == found.len()
+            return fail(
+                code: "unsupported",
+                msg: f"the heading \"{h.text}\" of level {h.level} stands where no line of the text reads as it alone; markdown gives no position of its nodes"
+            )
+        placed @ placed.push(found[next])
+        next @ next + 1
+
+    out: [Section] @= []
+
+    if placed.len() == 0 || placed[0].start > 0
+        first_end = if placed.len() == 0
+            s.len()
+        else
+            placed[0].start
+        out @ out.push(Section(start: 0, end: first_end, path: [], levels: []))
+    path: [str] @= []
+    levels: [i64] @= []
+    k: i64 @= 0
+
+    while k < placed.len()
+        h = placed[k]
+        kept_path: [str] @= []
+        kept_levels: [i64] @= []
+        at: i64 @= 0
+
+        while at < levels.len() && levels[at] < h.level
+            kept_path @ kept_path.push(path[at])
+            kept_levels @ kept_levels.push(levels[at])
+            at @ at + 1
+
+        kept_path @ kept_path.push(h.text)
+        kept_levels @ kept_levels.push(h.level)
+        path @ kept_path
+        levels @ kept_levels
+
+        end = if k + 1 < placed.len()
+            placed[k + 1].start
+        else
+            s.len()
+        out @ out.push(Section(start: h.start, end: end, path: path, levels: levels))
+        k @ k + 1
+
+    return ok(out)
+
+# The paths and the texts of the sections of `s`, for the tests.
+function paths_of(s: str) -> [str]
+    out: [str] @= []
+
+    for section in sections(s).must()
+        out @ out.push(f"{section.path.join(" > ")}|{s.slice(from: section.start, to: section.end)}")
+
+    return out
+
+test "sections: a preamble, nested headings, a heading back at level one, and a setext heading of two lines"
+    s = "intro\n# A\ntext\n## B\nmore\n### C\n## D\n# E\nlast\nLine\n---\n"
+    assert paths_of(s) == ["|intro\n", "A|# A\ntext\n", "A > B|## B\nmore\n", "A > B > C|### C\n", "A > D|## D\n", "E|# E\n", "E > last\nLine|last\nLine\n---\n"]
+
+test "sections: a heading's look-alike inside a fenced block, in a quote, and a hash with no space"
+    s = "# Real\n```sh\n# not a heading\n```\n> # quoted\n#tag\n~~~\n## also not\n~~~\n## Second\n"
+    assert paths_of(s) == ["Real|# Real\n```sh\n# not a heading\n```\n> # quoted\n#tag\n~~~\n## also not\n~~~\n", "Real > Second|## Second\n"]
+
+test "sections: no heading, the empty text, a heading's marks and emphasis, and CR LF"
+    assert paths_of("just text") == ["|just text"]
+    assert paths_of("") == ["|"]
+    assert paths_of("## *Big* `code` ##\r\nbody") == ["Big code|## *Big* `code` ##\r\nbody"]
+
+test "sections: a setext heading of two lines, and a thematic break after a blank line"
+    s = "First line\nsecond line\n===\n\n---\nafter\n"
+    assert paths_of(s) == ["First line\nsecond line|First line\nsecond line\n===\n\n---\nafter\n"]
+
+test "fence_of: backticks, tildes, too few, indented four, and a backtick after"
+    assert fence_of("```go") == "```"
+    assert fence_of("  ~~~~") == "~~~~"
+    assert fence_of("``") == ""
+    assert fence_of("    ```") == ""
+    assert fence_of("``` a`b") == ""
+    assert closes(line: "````", fence: "```") && !closes(line: "``", fence: "```") && !closes(line: "``` x", fence: "```")

@@ -1,0 +1,35 @@
+# The table of `o200k_base`, the encoding of GPT-4o, GPT-4.1, GPT-5 and the
+# models o1, o3 and o4-mini, alone: a program that uses this module carries
+# this table and no other, where one that uses `tokenizer/tables`, which also
+# finds an encoding by its name or its model, carries all three. Measured
+# 2026-11-18 on this Mac at -O2, a program that counts two words is 2.05 MB
+# with `tokenizer/tables/cl100k_base`, 3.42 MB with
+# `tokenizer/tables/o200k_base`, 4.97 MB through `tokenizer/tables`, and
+# 0.81 MB with no table. What an encoding does is `tokenizer`'s. Nothing
+# here fails.
+
+use tokenizer
+use tokenizer/tables/internal/made as making
+use tokenizer/tables/internal/o200k_base as o200k
+
+# The encoding `o200k_base`: 199,998 ordinary tokens and the special tokens
+# `<|endoftext|>` (199999) and `<|endofprompt|>` (200018).
+#
+# It reads the whole table; make it once and keep it. See also
+# `tokenizer.encode_ordinary`.
+function encoding() -> tokenizer.Encoding
+    return making.made(
+        name: "o200k_base",
+        pattern: o200k.PATTERN,
+        ranks: o200k.RANKS,
+        texts: o200k.SPECIAL_TEXTS,
+        numbers: o200k.SPECIAL_TOKENS
+    )
+
+## Examples
+
+# Two words counted and encoded in `o200k_base`.
+test "encoding: two words"
+    enc = encoding()
+    assert enc.name == "o200k_base"
+    assert tokenizer.encode_ordinary(enc, text: "hello world") == [24912, 2375]

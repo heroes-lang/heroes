@@ -1,0 +1,161 @@
+# A text cut into the pieces an encoding merges, by its pattern translated
+# into `regex`'s dialect (`dialect`). The matches of the pattern are the
+# pieces, one after another from the start of the text, as tiktoken takes
+# them; text between two matches is no piece, and tiktoken drops it too.
+#
+# The look-ahead `\s+(?!\S)` is matched in two steps. The pattern holds in its
+# place the group `dialect.AHEAD`, a run of white space taken whole. Where
+# that group made the match and something follows the run, the alternative
+# fancy-regex reads would give back the run's last character, the one that
+# may join the word after it: the piece ends before it. Where the run is one
+# character, the alternative fails in fancy-regex, and the alternatives after
+# it are tried at the same place; where none matches there, the search goes
+# on a character later.
+
+use regex
+use tokenizer/internal/dialect
+use tokenizer/internal/scan
+use unicode
+
+# A pattern compiled to cut texts into pieces. Made only by `compile`.
+record Splitter
+    # The whole pattern, translated and compiled.
+    whole: regex.Regex
+    # The alternatives after the look-ahead one, compiled: none, or one.
+    after: [regex.Regex]
+    # The number of the group `dialect.AHEAD` in `whole`, or 0 where the
+    # pattern has no look-ahead alternative.
+    ahead: i64
+    # `scan.CL100K_PATTERN` or `scan.O200K_PATTERN` where the pattern is one
+    # of tiktoken's two that `scan` matches by hand, else
+    # `scan.OTHER_PATTERN`.
+    kind: i64
+
+# The splitter of `pattern`, tiktoken's. Fails `unsupported` where the
+# pattern holds what `dialect` refuses, and with `regex.compile`'s code where
+# the translated pattern is not one it reads.
+function compile(pattern: str) -> Splitter?
+    t = dialect.translate(pattern)?
+    whole = regex.compile(t.whole)?
+    after: [regex.Regex] @= []
+    ahead: i64 @= 0
+
+    if t.has_ahead
+        ahead @ regex.group_number(whole, name: dialect.AHEAD)?
+
+        if t.after != ""
+            after @ after.push(regex.compile(t.after)?)
+
+    return ok(Splitter(whole: whole, after: after, ahead: ahead, kind: scan.kind_of(pattern)))
+
+# Adds to `spans` where each piece of `s` begins and ends, two byte indices a
+# piece, in order: by hand for tiktoken's two patterns, else by `regex`.
+function add_spans(@spans: [i64], sp: Splitter lent, s: str)
+    if sp.kind != scan.OTHER_PATTERN
+        scan.add_spans(@spans, kind: sp.kind, s: s)
+    else
+        add_spans_by_regex(@spans, sp: sp, s: s)
+
+# Adds to `spans` the pieces of `s` as `regex` finds them with the pattern
+# translated, whatever the pattern.
+function add_spans_by_regex(@spans: [i64], sp: Splitter lent, s: str)
+    at: i64 @= 0
+
+    while at < s.len()
+        match regex.search_from(s: s, re: sp.whole, from: at)
+            .err _ => return
+            .ok m =>
+                end: i64 @= m.end
+                taken: bool @= true
+
+                if sp.ahead > 0 && !regex.span(m, n: sp.ahead).is_err() && m.end < s.len()
+                    last = unicode.floor_char_boundary(s, index: m.end - 1)
+
+                    if last > m.start
+                        end @ last
+                    else if sp.after.len() == 1
+                        match regex.match_at(s: s, re: sp.after[0], at: m.start)
+                            .ok other => end @ other.end
+                            .err _    => taken @ false
+                    else
+                        taken @ false
+
+                if !taken
+                    at @ m.start + unicode.width_at(s, index: m.start)
+                else if end == m.start
+                    at @ m.start + unicode.width_at(s, index: m.start)
+                else
+                    spans @ spans.push(m.start)
+                    spans @ spans.push(end)
+                    at @ end
+
+# The pieces of `s`, as `add_spans` finds them, or as `regex` finds them
+# where `by_regex`.
+function split_by(sp: Splitter lent, s: str, by_regex: bool) -> [str]
+    spans: [i64] @= []
+
+    if by_regex
+        add_spans_by_regex(@spans, sp: sp, s: s)
+    else
+        add_spans(@spans, sp: sp, s: s)
+    out: [str] @= []
+    k: i64 @= 0
+
+    while k < spans.len()
+        out @ out.push(s.slice(from: spans[k], to: spans[k + 1]))
+        k @ k + 2
+
+    return out
+
+# The pieces of `s`, as `add_spans` finds them.
+function split(sp: Splitter lent, s: str) -> [str]
+    return split_by(sp, s: s, by_regex: false)
+
+# The pieces of `s` where `regex` and `scan` cut it alike, else a piece no
+# test expects, for the tests.
+function agreed(sp: Splitter lent, s: str) -> [str]
+    by_hand = split_by(sp, s: s, by_regex: false)
+
+    if by_hand != split_by(sp, s: s, by_regex: true)
+        return ["(regex and scan differ)"]
+    return by_hand
+
+test "split: cl100k_base's pattern by regex and by hand, contractions, words, numbers by three, and white space before a word"
+    sp = compile(scan.CL100K).must()
+    assert agreed(sp, s: "I'LL be 12345 here!!  ok   \n\nend  ") == ["I", "'LL", " be", " ", "123", "45", " here", "!!", " ", " ok", "   \n\n", "end", "  "]
+    assert agreed(sp, s: "") == []
+    assert agreed(sp, s: "a  b") == ["a", " ", " b"]
+    assert agreed(sp, s: "a \tb") == ["a", " ", "\tb"]
+
+test "split: by regex and by hand, a single space before a digit, a run of white space of more than one byte, and text at the end"
+    sp = compile(scan.CL100K).must()
+    assert agreed(sp, s: "x 1") == ["x", " ", "1"]
+    assert agreed(sp, s: "x　　y") == ["x", "　", "　y"]
+    assert agreed(sp, s: "x 　") == ["x", " 　"]
+
+test "split: a pattern that leaves text unmatched drops it, as tiktoken does"
+    sp = compile("[0-9]+").must()
+    assert split(sp, s: "ab12cd3") == ["12", "3"]
+
+test "split: a look-ahead with nothing after it, a run of one character before a word"
+    sp = compile("\\p{L}+|\\s+(?!\\S)").must()
+    assert split(sp, s: "ab cd  ef ") == ["ab", "cd", " ", "ef", " "]
+
+test "split: o200k_base's pattern by regex and by hand, words of mixed case, a mark alone, and slashes"
+    sp = compile(scan.O200K).must()
+    assert agreed(sp, s: "HTTPServerError camelCase I'M 'S x!//\n/y") == ["HTTPServer", "Error", " camel", "Case", " I'M", " '", "S", " x", "!//\n/", "y"]
+    assert agreed(sp, s: "́ x́́ ǅx ʰa") == ["́", " x́́", " ǅx", " ʰa"]
+    assert agreed(sp, s: "a\n\nworld  ") == ["a", "\n\n", "world", "  "]
+
+test "split: the long s read as s in a contraction, by regex and by hand, in both patterns"
+    cl = compile(scan.CL100K).must()
+    assert agreed(cl, s: "a'ſb a'Sb a'Kb") == ["a", "'ſ", "b", " a", "'S", "b", " a", "'Kb"]
+    o = compile(scan.O200K).must()
+    assert agreed(o, s: "a'ſb a'Sb") == ["a'ſ", "b", " a'S", "b"]
+
+test "compile: a pattern regex refuses, and one the dialect refuses"
+    assert compile("(").is_err()
+
+    match compile("a(?=b)")
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported"

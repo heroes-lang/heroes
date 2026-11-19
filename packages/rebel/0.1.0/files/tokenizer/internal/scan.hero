@@ -1,0 +1,332 @@
+# tiktoken's two patterns matched by hand, the pieces the same as `regex`
+# finds with them translated, about twenty times faster: `regex` runs an
+# automaton of every state at once, which over these patterns' Unicode
+# classes reads a quarter of a megabyte a second (measured 2026-11-18 on a
+# megabyte of many scripts, 4.5 s against tiktoken's 0.055 s for the whole
+# encoding). `pieces` takes this way where an encoding's pattern is exactly
+# `CL100K` or `O200K`, and the tests hold the two ways to the same pieces on
+# every case.
+#
+# Each character of the text is given its class once, then each alternative
+# of the pattern is tried in its order at each place, matched as fancy-regex
+# matches it: a greedy repetition takes all it can and gives back one
+# character at a time where what follows it fails, an optional part is taken
+# first and left out where the rest fails, and the first alternative that
+# matches is the piece. Places are counted in characters.
+
+use tokenizer/internal/classes
+
+# cl100k_base's pattern, as tiktoken 0.14.0 writes it.
+constant CL100K: str
+    "'(?i:[sdmt]|ll|ve|re)|[^\\r\\n\\p{L}\\p{N}]?+\\p{L}++|\\p{N}{1,3}+| ?[^\\s\\p{L}\\p{N}]++[\\r\\n]*+|\\s++$|\\s*[\\r\\n]|\\s+(?!\\S)|\\s"
+
+# o200k_base's pattern, as tiktoken 0.14.0 writes it.
+constant O200K: str
+    "[^\\r\\n\\p{L}\\p{N}]?[\\p{Lu}\\p{Lt}\\p{Lm}\\p{Lo}\\p{M}]*[\\p{Ll}\\p{Lm}\\p{Lo}\\p{M}]+(?i:'s|'t|'re|'ve|'m|'ll|'d)?|[^\\r\\n\\p{L}\\p{N}]?[\\p{Lu}\\p{Lt}\\p{Lm}\\p{Lo}\\p{M}]+[\\p{Ll}\\p{Lm}\\p{Lo}\\p{M}]*(?i:'s|'t|'re|'ve|'m|'ll|'d)?|\\p{N}{1,3}| ?[^\\s\\p{L}\\p{N}]+[\\r\\n/]*|\\s*[\\r\\n]+|\\s+(?!\\S)|\\s+"
+
+# The kind of a pattern: neither of the two.
+constant OTHER_PATTERN: i64
+    0
+
+# The kind of `CL100K`.
+constant CL100K_PATTERN: i64
+    1
+
+# The kind of `O200K`.
+constant O200K_PATTERN: i64
+    2
+
+# The kind of `pattern`: `CL100K_PATTERN`, `O200K_PATTERN` or
+# `OTHER_PATTERN`.
+function kind_of(pattern: str) -> i64
+    if pattern == CL100K
+        return CL100K_PATTERN
+
+    if pattern == O200K
+        return O200K_PATTERN
+    return OTHER_PATTERN
+
+# How many characters o200k's `(?i:'s|'t|'re|'ve|'m|'ll|'d)` matches at `i`,
+# 0 where none.
+function contraction(t: classes.Chars lent, i: i64) -> i64
+    if !classes.is_byte(t, i: i, b: '\'')
+        return 0
+
+    if classes.folds_to(t, i: i + 1, lower: 's') || classes.folds_to(t, i: i + 1, lower: 't')
+        return 2
+
+    if (classes.folds_to(t, i: i + 1, lower: 'r') || classes.folds_to(t, i: i + 1, lower: 'v')) && classes.folds_to(t, i: i + 2, lower: 'e')
+        return 3
+
+    if classes.folds_to(t, i: i + 1, lower: 'm')
+        return 2
+
+    if classes.folds_to(t, i: i + 1, lower: 'l') && classes.folds_to(t, i: i + 2, lower: 'l')
+        return 3
+
+    if classes.folds_to(t, i: i + 1, lower: 'd')
+        return 2
+    return 0
+
+# Where the run of white space that begins at `i` ends.
+function space_end(t: classes.Chars lent, i: i64) -> i64
+    end: i64 @= i
+
+    while end < t.kinds.len() && classes.is_ws(t.kinds[end])
+        end @ end + 1
+
+    return end
+
+# `\s*[\r\n]+` at `i`, o200k's, and cl100k's `\s*[\r\n]`, which end
+# alike: the run of white space up to its last break, or -1 where it holds
+# none.
+function up_to_break(t: classes.Chars lent, i: i64) -> i64
+    k: i64 @= space_end(t, i: i) - 1
+
+    while k >= i
+        if t.kinds[k] == classes.BREAK
+            return k + 1
+        k @ k - 1
+
+    return -1
+
+# `\s+(?!\S)` at `i`: the run of white space, less its last character where
+# something follows it; -1 where the run is one character and something
+# follows it, or there is no run.
+function space_ahead(t: classes.Chars lent, i: i64) -> i64
+    end = space_end(t, i: i)
+
+    if end == i
+        return -1
+
+    if end == t.kinds.len()
+        return end
+
+    if end - i >= 2
+        return end - 1
+    return -1
+
+# A mark or a symbol, at least one, after an optional space, then breaks and,
+# where `slash`, slashes: ` ?[^\s\p{L}\p{N}]+[\r\n]*`, or o200k's `[\r\n/]*`
+# at its end. -1 where it does not match.
+function symbols(t: classes.Chars lent, i: i64, slash: bool) -> i64
+    n = t.kinds.len()
+
+    for take in [true, false]
+        if !take || classes.is_byte(t, i: i, b: ' ')
+            from: i64 @= i
+
+            if take
+                from @ i + 1
+            end: i64 @= from
+
+            while end < n && classes.is_symbol(t.kinds[end])
+                end @ end + 1
+
+            if end > from
+                while end < n && (t.kinds[end] == classes.BREAK || slash && classes.is_byte(t, i: end, b: '/'))
+                    end @ end + 1
+
+                return end
+
+    return -1
+
+# Up to three numbers at `i`, `\p{N}{1,3}`; -1 where none.
+function numbers(t: classes.Chars lent, i: i64) -> i64
+    end: i64 @= i
+
+    while end < t.kinds.len() && end < i + 3 && t.kinds[end] == classes.NUMBER
+        end @ end + 1
+
+    if end == i
+        return -1
+    return end
+
+# The end of the piece cl100k_base's pattern matches at `i`, or -1.
+function cl100k_at(t: classes.Chars lent, i: i64) -> i64
+    n = t.kinds.len()
+
+    if classes.is_byte(t, i: i, b: '\'')
+        if classes.folds_to(t, i: i + 1, lower: 's') || classes.folds_to(t, i: i + 1, lower: 'd') || classes.folds_to(t, i: i + 1, lower: 'm') || classes.folds_to(t, i: i + 1, lower: 't')
+            return i + 2
+
+        if classes.folds_to(t, i: i + 1, lower: 'l') && classes.folds_to(t, i: i + 2, lower: 'l') || classes.folds_to(t, i: i + 1, lower: 'v') && classes.folds_to(t, i: i + 2, lower: 'e') || classes.folds_to(t, i: i + 1, lower: 'r') && classes.folds_to(t, i: i + 2, lower: 'e')
+            return i + 3
+    letters_from: i64 @= i
+
+    if classes.is_lead(t.kinds[i])
+        letters_from @ i + 1
+    end: i64 @= letters_from
+
+    while end < n && classes.is_letter(t.kinds[end])
+        end @ end + 1
+
+    if end > letters_from
+        return end
+    counted = numbers(t, i: i)
+
+    if counted >= 0
+        return counted
+    marked = symbols(t, i: i, slash: false)
+
+    if marked >= 0
+        return marked
+    spaces = space_end(t, i: i)
+
+    if spaces > i && spaces == n
+        return spaces
+    broken = up_to_break(t, i: i)
+
+    if broken >= 0
+        return broken
+    ahead = space_ahead(t, i: i)
+
+    if ahead >= 0
+        return ahead
+
+    if classes.is_ws(t.kinds[i])
+        return i + 1
+    return -1
+
+# o200k's first alternative at `i`: an optional lead, `[Lu Lt Lm Lo M]*`
+# giving back one character at a time, then `[Ll Lm Lo M]+` and an optional
+# contraction; -1 where it does not match.
+function lower_word(t: classes.Chars lent, i: i64) -> i64
+    n = t.kinds.len()
+
+    for take in [true, false]
+        if !take || i < n && classes.is_lead(t.kinds[i])
+            from: i64 @= i
+
+            if take
+                from @ i + 1
+            upper_end: i64 @= from
+
+            while upper_end < n && classes.is_upperish(t.kinds[upper_end])
+                upper_end @ upper_end + 1
+
+            k: i64 @= upper_end
+
+            while k >= from
+                if k < n && classes.is_lowerish(t.kinds[k])
+                    end: i64 @= k
+
+                    while end < n && classes.is_lowerish(t.kinds[end])
+                        end @ end + 1
+
+                    return end + contraction(t, i: end)
+                k @ k - 1
+
+    return -1
+
+# o200k's second alternative at `i`: an optional lead,
+# `[Lu Lt Lm Lo M]+`, `[Ll Lm Lo M]*` and an optional contraction; -1 where
+# it does not match.
+function upper_word(t: classes.Chars lent, i: i64) -> i64
+    n = t.kinds.len()
+
+    for take in [true, false]
+        if !take || i < n && classes.is_lead(t.kinds[i])
+            from: i64 @= i
+
+            if take
+                from @ i + 1
+            upper_end: i64 @= from
+
+            while upper_end < n && classes.is_upperish(t.kinds[upper_end])
+                upper_end @ upper_end + 1
+
+            if upper_end > from
+                end: i64 @= upper_end
+
+                while end < n && classes.is_lowerish(t.kinds[end])
+                    end @ end + 1
+
+                return end + contraction(t, i: end)
+
+    return -1
+
+# The end of the piece o200k_base's pattern matches at `i`, or -1.
+function o200k_at(t: classes.Chars lent, i: i64) -> i64
+    first = lower_word(t, i: i)
+
+    if first >= 0
+        return first
+    second = upper_word(t, i: i)
+
+    if second >= 0
+        return second
+    counted = numbers(t, i: i)
+
+    if counted >= 0
+        return counted
+    marked = symbols(t, i: i, slash: true)
+
+    if marked >= 0
+        return marked
+    broken = up_to_break(t, i: i)
+
+    if broken >= 0
+        return broken
+    ahead = space_ahead(t, i: i)
+
+    if ahead >= 0
+        return ahead
+    spaces = space_end(t, i: i)
+
+    if spaces > i
+        return spaces
+    return -1
+
+# Adds to `spans` where each piece of `s` begins and ends, two byte indices a
+# piece, by the pattern of `kind`, `CL100K_PATTERN` or `O200K_PATTERN`.
+function add_spans(@spans: [i64], kind: i64, s: str)
+    t = classes.chars_of(s)
+    i: i64 @= 0
+
+    while i < t.kinds.len()
+        end = if kind == CL100K_PATTERN
+            cl100k_at(t, i: i)
+        else
+            o200k_at(t, i: i)
+
+        if end <= i
+            i @ i + 1
+        else
+            spans @ spans.push(t.starts[i])
+            spans @ spans.push(t.starts[end])
+            i @ end
+
+# The pieces of `s` by the pattern of `kind`, for the tests.
+function split(kind: i64, s: str) -> [str]
+    spans: [i64] @= []
+    add_spans(@spans, kind: kind, s: s)
+    out: [str] @= []
+    k: i64 @= 0
+
+    while k < spans.len()
+        out @ out.push(s.slice(from: spans[k], to: spans[k + 1]))
+        k @ k + 2
+
+    return out
+
+test "kind_of: the two patterns, and another"
+    assert kind_of(CL100K) == CL100K_PATTERN
+    assert kind_of(O200K) == O200K_PATTERN
+    assert kind_of("a") == OTHER_PATTERN
+
+test "split: cl100k_base's contractions, the long s, words after a mark, numbers by three"
+    assert split(kind: CL100K_PATTERN, s: "I'LL 'ſ x'Re 'Ve") == ["I", "'LL", " '", "ſ", " x", "'Re", " '", "Ve"]
+    assert split(kind: CL100K_PATTERN, s: "1234567 ab!!\n\n") == ["123", "456", "7", " ab", "!!\n\n"]
+    assert split(kind: CL100K_PATTERN, s: "") == []
+
+test "split: o200k_base's words of mixed case, contractions, and slashes after symbols"
+    assert split(kind: O200K_PATTERN, s: "HTTPServerError camelCase I'M 'S") == ["HTTPServer", "Error", " camel", "Case", " I'M", " '", "S"]
+    assert split(kind: O200K_PATTERN, s: "x!//\n/y") == ["x", "!//\n/", "y"]
+    assert split(kind: O200K_PATTERN, s: "á́ ́") == ["á́", " ́"]
+
+test "split: white space before a word, at the end, and with breaks, in both"
+    for kind in [CL100K_PATTERN, O200K_PATTERN]
+        assert split(kind: kind, s: "a  b") == ["a", " ", " b"]
+        assert split(kind: kind, s: "a \n\n b ") == ["a", " \n\n", " b", " "]
+        assert split(kind: kind, s: "a\n\nb") == ["a", "\n\n", "b"]

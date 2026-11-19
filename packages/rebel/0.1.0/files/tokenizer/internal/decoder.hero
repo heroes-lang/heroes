@@ -1,0 +1,159 @@
+# Tokens made bytes and text again: each token's bytes, ordinary or special,
+# end to end, and the text they write with U+FFFD where they are not UTF-8,
+# as tiktoken's `decode` replaces by Python's rule.
+
+use bytes
+use tokenizer/internal/assemble
+use tokenizer/internal/vocabulary
+use unicode
+
+# Whether `token` is a token of `core`, ordinary or special.
+function holds(core: assemble.Core lent, token: i64) -> bool
+    if token >= 0 && token < vocabulary.size(core.table)
+        return true
+    return !core.special_by_number[token].is_err()
+
+# The failure of a token that is not one of `core`'s, at `index`.
+function unknown(core: assemble.Core lent, token: i64, index: i64) -> str
+    return f"the token {token}, at index {index}, is no token of \"{core.name}\", whose tokens are 0 to {core.max_token}"
+
+# Adds the bytes of `token` to `out`, which the caller owns. `token` must be
+# one of `core`'s.
+function add_token(@out: [u8], core: assemble.Core lent, token: i64)
+    if token < vocabulary.size(core.table)
+        vocabulary.add_bytes(@out, t: core.table, rank: token)
+    else
+        bytes.push_text(@out, s: core.special_by_number[token].must())
+
+# The bytes `tokens` write, end to end. Fails `invalid` at the first token
+# that is not one of `core`'s.
+function bytes_of(core: assemble.Core lent, tokens: [i64]) -> [u8]?
+    out: [u8] @= []
+    index: i64 @= 0
+
+    for token in tokens
+        if !holds(core, token: token)
+            return fail(code: "invalid", msg: unknown(core, token: token, index: index))
+        add_token(@out, core: core, token: token)
+        index @ index + 1
+
+    return ok(out)
+
+# The bytes of each of `tokens`. Fails `invalid` at the first that is not one
+# of `core`'s.
+function each_bytes(core: assemble.Core lent, tokens: [i64]) -> [[u8]]?
+    out: [[u8]] @= []
+    index: i64 @= 0
+
+    for token in tokens
+        if !holds(core, token: token)
+            return fail(code: "invalid", msg: unknown(core, token: token, index: index))
+        one: [u8] @= []
+        add_token(@one, core: core, token: token)
+        out @ out.push(one)
+        index @ index + 1
+
+    return ok(out)
+
+# Where each of `tokens` begins in their bytes end to end. Fails `invalid` at
+# the first that is not one of `core`'s.
+function offsets(core: assemble.Core lent, tokens: [i64]) -> [i64]?
+    out: [i64] @= []
+    at: i64 @= 0
+    index: i64 @= 0
+    size = vocabulary.size(core.table)
+
+    for token in tokens
+        if !holds(core, token: token)
+            return fail(code: "invalid", msg: unknown(core, token: token, index: index))
+        out @ out.push(at)
+
+        if token < size
+            at @ at + vocabulary.width_of(core.table, rank: token)
+        else
+            at @ at + core.special_by_number[token].must().len()
+        index @ index + 1
+
+    return ok(out)
+
+# Where the bytes of a character still cut begin at the end of `held`: the
+# index of the last byte that begins a character where the bytes from it
+# could still become one, else the length of `held`.
+function cut_at(held: [u8] lent) -> i64
+    back: i64 @= 1
+
+    while back <= 3 && back <= held.len()
+        at = held.len() - back
+
+        if !unicode.is_continuation(held[at])
+            tail = held.slice(from: at, to: held.len())
+
+            if unicode.is_utf8_prefix(tail) && !unicode.is_utf8(tail)
+                return at
+            return held.len()
+        back @ back + 1
+
+    return held.len()
+
+# The text `token` completes after the bytes `held` keeps; see the face's
+# `decode_next`.
+function next_text(core: assemble.Core lent, @held: [u8], token: i64) -> str?
+    if !holds(core, token: token)
+        return fail(code: "invalid", msg: unknown(core, token: token, index: 0))
+    add_token(@held, core: core, token: token)
+    cut = cut_at(held)
+    text = bytes.to_text_lossy(held.slice(from: 0, to: cut))
+    held @ held.slice(from: cut, to: held.len())
+    return ok(text)
+
+# A core of the 256 bytes and the special token "<e>", for the tests.
+function bytes_only() -> assemble.Core
+    tokens: [[u8]] @= []
+    b: i64 @= 0
+
+    while b < 256
+        tokens @ tokens.push([to_u8(b).must()])
+        b @ b + 1
+
+    tokens @ tokens.push([0xe2, 0x82])
+    return assemble.make(
+        name: "bytes",
+        pattern: "(?s:.)",
+        table: vocabulary.build(tokens).must(),
+        specials: {"<e>": 260}
+    ).must()
+
+test "bytes_of: ordinary and special tokens, none, and a number past the last"
+    c = bytes_only()
+    assert bytes_of(c, tokens: [104, 105, 260]).must() == [104, 105, 60, 101, 62]
+    assert bytes_of(c, tokens: []).must() == []
+
+    match bytes_of(c, tokens: [104, 257])
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "the token 257, at index 1, is no token of \"bytes\", whose tokens are 0 to 260"
+
+    assert bytes_of(c, tokens: [-1]).is_err()
+
+test "offsets: a token of two bytes, a special token, and none"
+    c = bytes_only()
+    assert offsets(c, tokens: [256, 0xac, 260, 33]).must() == [0, 2, 3, 6]
+    assert offsets(c, tokens: []).must() == []
+
+test "next_text: a character cut across two tokens, a byte that is never UTF-8, and plain text"
+    c = bytes_only()
+    held: [u8] @= []
+    assert next_text(c, @held, token: 104).must() == "h"
+    assert next_text(c, @held, token: 256).must() == ""
+    assert held == [0xe2, 0x82]
+    assert next_text(c, @held, token: 0xac).must() == "€"
+    assert held == []
+    assert next_text(c, @held, token: 0xff).must() == "�"
+    assert next_text(c, @held, token: 300).is_err()
+    assert held == []
+
+test "cut_at: empty, whole characters, a lead byte alone, and a cut four-byte character"
+    assert cut_at([]) == 0
+    assert cut_at([104, 105]) == 2
+    assert cut_at([104, 0xe2]) == 1
+    assert cut_at([0xf0, 0x9f, 0x98]) == 0
+    assert cut_at([0xf0, 0x9f, 0x98, 0x80]) == 4

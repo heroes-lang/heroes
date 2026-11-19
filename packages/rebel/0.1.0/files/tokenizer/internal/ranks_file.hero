@@ -1,0 +1,110 @@
+# The `.tiktoken` file format, read and written: one line a token, the
+# standard base 64 of its bytes, a space and its rank in decimal, as tiktoken
+# writes `dump_tiktoken_bpe` and reads `load_tiktoken_bpe`.
+
+use bytes
+use tokenizer/internal/vocabulary
+
+# The decimal number `s` writes, digits only, or -1 where it writes none or
+# one too large to rank a token.
+function rank_in(s: str) -> i64
+    if s.len() == 0 || s.len() > 12
+        return -1
+    n: i64 @= 0
+
+    for c in s.chars()
+        if c[0] < '0' || c[0] > '9'
+            return -1
+        n @ n * 10 + to_i64(c[0] - '0').must()
+
+    return n
+
+# The ordinary tokens `text` writes, each at its rank. Fails `invalid` at the
+# first line that is not a token and its rank, a rank given twice, or a gap
+# below the largest rank.
+function parse(text: str) -> [[u8]]?
+    found: {i64: [u8]} @= {}
+    largest: i64 @= -1
+    line_number: i64 @= 0
+    start: i64 @= 0
+    at: i64 @= 0
+
+    while at <= text.len()
+        if at == text.len() || text[at] == '\n'
+            line_number @ line_number + 1
+            end: i64 @= at
+
+            if end > start && text[end - 1] == '\r'
+                end @ end - 1
+
+            if end > start
+                line = text.slice(from: start, to: end)
+                space: i64 @= 0
+
+                while space < line.len() && line[space] != ' '
+                    space @ space + 1
+
+                if space == line.len()
+                    return fail(
+                        code: "invalid",
+                        msg: f"line {line_number} holds no space between a token and its rank: \"{line}\""
+                    )
+                rank = rank_in(line.slice(from: space + 1, to: line.len()))
+
+                if rank < 0
+                    return fail(code: "invalid", msg: f"line {line_number} holds no rank after its token: \"{line}\"")
+                token: [u8] @= []
+
+                match vocabulary.add_base64(@token, s: line, from: 0, to: space)
+                    .ok _  => _ = 0
+                    .err e => return fail(code: "invalid", msg: f"line {line_number}: {e.msg}")
+
+                if !found[rank].is_err()
+                    return fail(code: "invalid", msg: f"line {line_number} gives the rank {rank} a second time")
+                found[rank] @ token
+
+                if rank > largest
+                    largest @ rank
+            start @ at + 1
+        at @ at + 1
+
+    out: [[u8]] @= []
+    rank: i64 @= 0
+
+    while rank <= largest
+        match found[rank]
+            .ok token => out @ out.push(token)
+            .err _ => return fail(code: "invalid", msg: f"no line gives the rank {rank}, below the largest, {largest}")
+
+        rank @ rank + 1
+
+    return ok(out)
+
+# The `.tiktoken` text of `ranks`, in rank order.
+function format(ranks: [[u8]]) -> str
+    lines: [str] @= []
+    rank: i64 @= 0
+
+    for token in ranks
+        lines @ lines.push(f"{bytes.format_base64(token)} {rank}\n")
+        rank @ rank + 1
+
+    return lines.join("")
+
+test "parse: two lines in rank order, out of order, an empty line and a line ended by CR LF"
+    assert parse("IQ== 0\nIg== 1\n").must() == [[33], [34]]
+    assert parse("Ig== 1\n\nIQ== 0").must() == [[33], [34]]
+    assert parse("IQ== 0\r\n").must() == [[33]]
+    assert parse("").must() == []
+
+test "parse: no space, no rank, bad base 64, a rank twice, and a gap"
+    for bad in ["IQ==\n", "IQ== x\n", "I!== 0\n", "IQ== 0\nIg== 0\n", "IQ== 0\nIg== 2\n", "IQ== -1\n"]
+        match parse(bad)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+test "format: the tokens as lines, and read back"
+    ranks: [[u8]] = [[33], [0xe2, 0x82, 0xac], [97, 98]]
+    assert format(ranks) == "IQ== 0\n4oKs 1\nYWI= 2\n"
+    assert parse(format(ranks)).must() == ranks
+    assert format([]) == ""

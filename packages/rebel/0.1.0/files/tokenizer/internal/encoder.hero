@@ -1,0 +1,209 @@
+# A text made tokens: cut where special tokens stand when they are allowed,
+# each stretch between them cut into pieces by the pattern, each piece
+# merged. A stretch is matched apart from the rest of the text, as tiktoken
+# matches it, so `$` and the look-ahead see its end at the special token
+# after it.
+
+use bytes
+use tokenizer/internal/assemble
+use tokenizer/internal/merge
+use tokenizer/internal/pieces
+use tokenizer/internal/vocabulary
+use unicode
+
+# Adds the tokens of `text` from `from` to `to`, the second excluded, to
+# `out`, which the caller owns, every special token's text read as text.
+# `b` holds the bytes of `text`.
+function add_ordinary(@out: [i64], core: assemble.Core lent, text: str, b: [u8] lent, from: i64, to: i64)
+    if from == to
+        return
+    spans: [i64] @= []
+
+    if from == 0 && to == text.len()
+        pieces.add_spans(@spans, sp: core.splitter, s: text)
+    else
+        pieces.add_spans(@spans, sp: core.splitter, s: text.slice(from: from, to: to))
+    k: i64 @= 0
+
+    while k < spans.len()
+        merge.add_ranks(@out, t: core.table, s: b, from: from + spans[k], to: from + spans[k + 1])
+        k @ k + 2
+
+# The tokens of `text`, every special token's text read as text.
+function ordinary(core: assemble.Core lent, text: str) -> [i64]
+    b = bytes.from_text(text)
+    out: [i64] @= []
+    add_ordinary(@out, core: core, text: text, b: b, from: 0, to: text.len())
+    return out
+
+# The failure of a refused special token's text at `at`.
+function refused_at(core: assemble.Core lent, text: str, at: i64) -> str
+    return f"the text holds the special token \"{text}\" of \"{core.name}\" at byte {at}: allow it to encode it as that token, or encode it as ordinary text"
+
+# The tokens of `text`, failing `invalid` where it holds any special token's
+# text.
+function refusing_all(core: assemble.Core lent, text: str) -> [i64]?
+    b = bytes.from_text(text)
+
+    if core.special_texts.len() > 0 && bytes.has_match(b, patterns: core.finder)
+        first = bytes.search_patterns_all(b, patterns: core.finder)[0]
+        return fail(code: "invalid", msg: refused_at(core, text: core.special_texts[first.pattern], at: first.start))
+    out: [i64] @= []
+    add_ordinary(@out, core: core, text: text, b: b, from: 0, to: text.len())
+    return ok(out)
+
+# `names`, each checked to be a special token's text of `core`. Fails
+# `invalid` at the first that is not, `role` naming the list in the message.
+function checked(core: assemble.Core lent, names: [str], role: str) -> ()?
+    for name in names
+        if core.special_by_text[name].is_err()
+            return fail(code: "invalid", msg: f"\"{name}\", in `{role}`, is no special token of \"{core.name}\"")
+
+    return ok()
+
+# The tokens of `text`, the special tokens `allowed` encoded as such and
+# those `refused` and not allowed failing `invalid`.
+function with_specials(core: assemble.Core lent, text: str, allowed: [str], refused: [str]) -> [i64]?
+    checked(core, names: allowed, role: "allowed")?
+    checked(core, names: refused, role: "refused")?
+    is_allowed: {str: bool} @= {}
+
+    for name in allowed
+        is_allowed[name] @ true
+
+    b = bytes.from_text(text)
+    banned: [[u8]] @= []
+    banned_texts: [str] @= []
+
+    for name in refused
+        if is_allowed[name].is_err()
+            banned @ banned.push(bytes.from_text(name))
+            banned_texts @ banned_texts.push(name)
+
+    if banned.len() > 0
+        finder = bytes.compile_patterns(banned, kind: .leftmost_longest)
+
+        if bytes.has_match(b, patterns: finder)
+            first = bytes.search_patterns_all(b, patterns: finder)[0]
+            return fail(code: "invalid", msg: refused_at(core, text: banned_texts[first.pattern], at: first.start))
+    out: [i64] @= []
+
+    if allowed.len() == 0
+        add_ordinary(@out, core: core, text: text, b: b, from: 0, to: text.len())
+        return ok(out)
+    wanted: [[u8]] @= []
+
+    for name in allowed
+        wanted @ wanted.push(bytes.from_text(name))
+
+    finder = bytes.compile_patterns(wanted, kind: .leftmost_longest)
+    at: i64 @= 0
+
+    for m in bytes.search_patterns_all(b, patterns: finder)
+        add_ordinary(@out, core: core, text: text, b: b, from: at, to: m.start)
+        out @ out.push(core.special_by_text[allowed[m.pattern]].must())
+        at @ m.end
+
+    add_ordinary(@out, core: core, text: text, b: b, from: at, to: text.len())
+    return ok(out)
+
+# How many bytes each of `tokens` writes, end to end from 0: the index where
+# each begins, then the end. Every token must be one of `core`'s.
+function starts_of(core: assemble.Core lent, tokens: [i64]) -> [i64]
+    out: [i64] @= [0]
+    at: i64 @= 0
+    size = vocabulary.size(core.table)
+
+    for token in tokens
+        if token < size
+            at @ at + vocabulary.width_of(core.table, rank: token)
+        else
+            at @ at + core.special_by_number[token].must().len()
+        out @ out.push(at)
+
+    return out
+
+# The longest beginning of `text` that `ordinary` makes at most `most` tokens
+# of, cut at a character's first byte.
+function truncated(core: assemble.Core lent, text: str, most: i64) -> str
+    if most <= 0
+        return ""
+    tokens = ordinary(core, text: text)
+
+    if tokens.len() <= most
+        return text
+    starts = starts_of(core, tokens: tokens)
+    index: i64 @= most
+    cut: i64 @= unicode.floor_char_boundary(text, index: starts[index])
+
+    while cut > 0
+        head = text.slice(from: 0, to: cut)
+
+        if ordinary(core, text: head).len() <= most
+            return head
+
+        while index > 0 && starts[index] >= cut
+            index @ index - 1
+
+        cut @ unicode.floor_char_boundary(text, index: starts[index])
+
+    return ""
+
+# A core of the 256 bytes, "ab", "abc", "  ", and the special tokens "<s>"
+# and "<s>x", for the tests.
+function small() -> assemble.Core
+    tokens: [[u8]] @= []
+    b: i64 @= 0
+
+    while b < 256
+        tokens @ tokens.push([to_u8(b).must()])
+        b @ b + 1
+
+    tokens @ tokens.push([97, 98])
+    tokens @ tokens.push([97, 98, 99])
+    tokens @ tokens.push([32, 32])
+    table = vocabulary.build(tokens).must()
+    return assemble.make(
+        name: "small",
+        pattern: "\\p{L}+|\\s+(?!\\S)|\\s|[^\\s\\p{L}]",
+        table: table,
+        specials: {"<s>": 300, "<s>x": 301}
+    ).must()
+
+test "ordinary: words, white space before a word, and a special token's text read as text"
+    c = small()
+    assert ordinary(c, text: "") == []
+    assert ordinary(c, text: "abc ab") == [257, 32, 256]
+    assert ordinary(c, text: "ab   ab") == [256, 258, 32, 256]
+    assert ordinary(c, text: "<s>") == [60, 115, 62]
+
+test "refusing_all: a text with no special token, and one at byte 3"
+    c = small()
+    assert refusing_all(c, text: "abc").must() == [257]
+
+    match refusing_all(c, text: "ab <s>x")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "the text holds the special token \"<s>x\" of \"small\" at byte 3: allow it to encode it as that token, or encode it as ordinary text"
+
+test "with_specials: allowed, the longer of two at one place, refused, neither, and a name unknown"
+    c = small()
+    assert with_specials(c, text: "ab<s>ab", allowed: ["<s>"], refused: []).must() == [256, 300, 256]
+    assert with_specials(c, text: "<s>x<s>", allowed: ["<s>", "<s>x"], refused: []).must() == [301, 300]
+    assert with_specials(c, text: "<s>", allowed: [], refused: []).must() == [60, 115, 62]
+    assert with_specials(c, text: "<s>", allowed: ["<s>"], refused: ["<s>", "<s>x"]).must() == [300]
+    assert with_specials(c, text: "a<s>x", allowed: ["<s>"], refused: ["<s>x"]).is_err()
+    assert with_specials(c, text: "a", allowed: ["<t>"], refused: []).is_err()
+    assert with_specials(c, text: "a", allowed: [], refused: ["<t>"]).is_err()
+
+test "truncated: within the count, cut at a token, none, and a character of three bytes kept whole"
+    c = small()
+    assert truncated(c, text: "abc ab", most: 5) == "abc ab"
+    assert truncated(c, text: "abc ab", most: 2) == "abc "
+    assert truncated(c, text: "abc ab", most: 0) == ""
+    assert truncated(c, text: "€€", most: 4) == "€"
+    assert truncated(c, text: "€€", most: 2) == ""
+
+test "starts_of: ordinary and special tokens"
+    c = small()
+    assert starts_of(c, tokens: [256, 300, 32]) == [0, 2, 5, 6]
+    assert starts_of(c, tokens: []) == [0]

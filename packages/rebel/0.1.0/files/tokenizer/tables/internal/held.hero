@@ -1,0 +1,50 @@
+# What the tests of `tokenizer/tables` read the generated cases with: the
+# tokens tiktoken made of each text, written as numbers, read back, and an
+# encoding held to them.
+
+use tokenizer
+use tokenizer/tables/internal/cases
+
+# The tokens `written`, decimal numbers separated by one space, read back.
+function numbers_in(written: str) -> [i64]
+    out: [i64] @= []
+
+    if written == ""
+        return out
+    n: i64 @= 0
+
+    for c in written.chars()
+        if c == " "
+            out @ out.push(n)
+            n @ 0
+        else
+            n @ n * 10 + to_i64(c[0] - '0').must()
+
+    out @ out.push(n)
+    return out
+
+# Whether `enc` makes of every text of the cases the tokens `expected` says,
+# and decodes them back to the text; prints the first case that differs.
+function holds_cases(enc: tokenizer.Encoding lent, expected: [str]) -> bool
+    at: i64 @= 0
+
+    while at < cases.TEXTS.len()
+        text = cases.TEXTS[at]
+        want = numbers_in(expected[at])
+        got = tokenizer.encode_ordinary(enc, text: text)
+
+        if got != want
+            print(f"case {at} of {enc.name}: {got.len()} tokens where tiktoken makes {want.len()}")
+            return false
+
+        if tokenizer.decode(enc, tokens: got).must() != text || tokenizer.count(enc, text: text) != want.len()
+            print(f"case {at} of {enc.name}: not decoded back, or not counted")
+            return false
+        at @ at + 1
+
+    return true
+
+test "numbers_in: none, one, and three"
+    assert numbers_in("") == []
+    assert numbers_in("7") == [7]
+    assert numbers_in("12 0 200018") == [12, 0, 200018]

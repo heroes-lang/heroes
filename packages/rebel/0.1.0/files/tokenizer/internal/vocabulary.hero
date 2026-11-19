@@ -1,0 +1,289 @@
+# The ordinary tokens of an encoding, and the one question the merging asks
+# of them a million times: which rank, if any, do these bytes have. The
+# tokens' bytes stand end to end in one list, by rank, and an index of open
+# addressing maps the bytes of a token to its rank, so that no token is a
+# value of its own and a look-up hashes the bytes where they stand, in the
+# piece being merged, without cutting a copy of them.
+#
+# The hash is a polynomial over the bytes modulo 2^31 - 1, whose every step
+# stays far below 2^63, since nothing wraps in Heroes (spec § 7).
+
+use bytes
+
+# The rank of bytes that are no token: larger than every rank, so the merging
+# reads it as the pair it never chooses.
+constant NO_RANK: i64
+    0x7fffffffffffffff
+
+# The modulus of the hash, 2^31 - 1, a prime.
+constant MODULUS: i64
+    2147483647
+
+# The multiplier of the hash, a prime above every byte.
+constant MULTIPLIER: i64
+    257
+
+# The ordinary tokens, by rank. Made only by `build` or `from_base64`.
+record Table
+    # Every token's bytes, end to end, the rank 0 first.
+    data: [u8]
+    # Where each token begins in `data`, by rank, and one more entry where the
+    # last ends: the token of rank `r` is `data[starts[r]]` to `data[starts[r
+    # + 1]]`, the second excluded.
+    starts: [i64]
+    # The index: at each slot the rank of a token plus 1, or 0 where the slot
+    # is empty. Its length is a power of two, at least twice the tokens.
+    slots: [i64]
+
+# How many ordinary tokens `t` holds.
+function size(t: Table lent) -> i64
+    return t.starts.len() - 1
+
+# The hash of `s` from `from` to `to`, the second excluded.
+function hash_of(s: [u8] lent, from: i64, to: i64) -> i64
+    h: i64 @= 0
+    at: i64 @= from
+
+    while at < to
+        h @ (h * MULTIPLIER + to_i64(s[at]).must() + 1) % MODULUS
+        at @ at + 1
+
+    return h
+
+# Whether the token of rank `rank` holds exactly the bytes of `s` from `from`
+# to `to`.
+function holds(t: Table lent, rank: i64, s: [u8] lent, from: i64, to: i64) -> bool
+    begin = t.starts[rank]
+    end = t.starts[rank + 1]
+
+    if end - begin != to - from
+        return false
+    k: i64 @= 0
+
+    while k < to - from
+        if t.data[begin + k] != s[from + k]
+            return false
+        k @ k + 1
+
+    return true
+
+# The rank of the bytes of `s` from `from` to `to`, or `NO_RANK` where they
+# are no token.
+function rank_of(t: Table lent, s: [u8] lent, from: i64, to: i64) -> i64
+    mask = t.slots.len() - 1
+    slot: i64 @= hash_of(s, from: from, to: to) & mask
+
+    while true
+        held = t.slots[slot]
+
+        if held == 0
+            return NO_RANK
+
+        if holds(t, rank: held - 1, s: s, from: from, to: to)
+            return held - 1
+        slot @ slot + 1 & mask
+
+# The bytes of the token of rank `rank`. Aborts where `rank` is no rank of
+# `t`.
+function bytes_of(t: Table lent, rank: i64) -> [u8]
+    return t.data.slice(from: t.starts[rank], to: t.starts[rank + 1])
+
+# How many bytes the token of rank `rank` holds. Aborts where `rank` is no
+# rank of `t`.
+function width_of(t: Table lent, rank: i64) -> i64
+    return t.starts[rank + 1] - t.starts[rank]
+
+# Adds the bytes of the token of rank `rank` at the end of `out`, which the
+# caller owns. Aborts where `rank` is no rank of `t`.
+function add_bytes(@out: [u8], t: Table lent, rank: i64)
+    at: i64 @= t.starts[rank]
+    end = t.starts[rank + 1]
+
+    while at < end
+        out @ out.push(t.data[at])
+        at @ at + 1
+
+# The smallest power of two at least twice `n`, and at least 16.
+function slot_count(n: i64) -> i64
+    count: i64 @= 16
+
+    while count < 2 * n
+        count @ count * 2
+
+    return count
+
+# The index of the tokens `starts` delimits in `data`. Fails `invalid` where
+# a token is empty or two tokens hold the same bytes, the message naming both
+# ranks.
+function index(data: [u8], starts: [i64]) -> Table?
+    n = starts.len() - 1
+    slots: [i64] @= []
+    count = slot_count(n)
+
+    while slots.len() < count
+        slots @ slots.push(0)
+
+    mask = count - 1
+    rank: i64 @= 0
+
+    while rank < n
+        from = starts[rank]
+        to = starts[rank + 1]
+
+        if from == to
+            return fail(code: "invalid", msg: f"the token of rank {rank} is empty")
+        slot: i64 @= hash_of(data, from: from, to: to) & mask
+        placed: bool @= false
+
+        while !placed
+            held = slots[slot]
+
+            if held == 0
+                slots[slot] @ rank + 1
+                placed @ true
+            else
+                begin = starts[held - 1]
+                end = starts[held]
+
+                if end - begin == to - from && data.slice(from: begin, to: end) == data.slice(from: from, to: to)
+                    return fail(code: "invalid", msg: f"the tokens of ranks {held - 1} and {rank} hold the same bytes")
+                slot @ slot + 1 & mask
+
+        rank @ rank + 1
+
+    return ok(Table(data: data, starts: starts, slots: slots))
+
+# The table of `tokens`, the rank of each its index. Fails `invalid` where a
+# token is empty or two hold the same bytes.
+function build(tokens: [[u8]]) -> Table?
+    data: [u8] @= []
+    starts: [i64] @= [0]
+
+    for token in tokens
+        bytes.push_all(to: @data, from: token)
+        starts @ starts.push(data.len())
+
+    return index(data, starts: starts)
+
+# The value of one character of the standard base 64 alphabet, or -1 where
+# `c` is none of its 64.
+function digit_of(c: u8) -> i64
+    if c >= 'A' && c <= 'Z'
+        return to_i64(c - 'A').must()
+
+    if c >= 'a' && c <= 'z'
+        return to_i64(c - 'a').must() + 26
+
+    if c >= '0' && c <= '9'
+        return to_i64(c - '0').must() + 52
+
+    if c == '+'
+        return 62
+
+    if c == '/'
+        return 63
+    return -1
+
+# Adds to `data` the bytes the base 64 of `s` from `from` to `to` writes,
+# padded with `=` to a multiple of four characters. Fails `invalid` where it
+# is not.
+function add_base64(@data: [u8], s: str, from: i64, to: i64) -> ()?
+    if (to - from) % 4 != 0 || to == from
+        return fail(code: "invalid", msg: f"\"{s.slice(from: from, to: to)}\" is no padded base 64")
+    at: i64 @= from
+
+    while at < to
+        quad: i64 @= 0
+        pads: i64 @= 0
+        k: i64 @= 0
+
+        while k < 4
+            c = s[at + k]
+
+            if c == '=' && at + 4 == to && k >= 2
+                pads @ pads + 1
+                quad @ quad * 64
+            else
+                d = digit_of(c)
+
+                if d < 0 || pads > 0
+                    return fail(code: "invalid", msg: f"\"{s.slice(from: from, to: to)}\" is no padded base 64")
+                quad @ quad * 64 + d
+            k @ k + 1
+
+        data @ data.push(to_u8(quad >> 16).must())
+
+        if pads < 2
+            data @ data.push(to_u8(quad >> 8 & 255).must())
+
+        if pads < 1
+            data @ data.push(to_u8(quad & 255).must())
+        at @ at + 4
+
+    return ok()
+
+# The table of the tokens `lines` write, in rank order, each the standard
+# base 64 of its bytes, padded, several to a line separated by one space.
+# Fails `invalid` where a token is not such base 64, is empty, or repeats
+# another.
+function from_base64(lines: [str]) -> Table?
+    data: [u8] @= []
+    starts: [i64] @= [0]
+
+    for line in lines
+        start: i64 @= 0
+        at: i64 @= 0
+
+        while at <= line.len()
+            if at == line.len() || line[at] == ' '
+                add_base64(@data, s: line, from: start, to: at)?
+                starts @ starts.push(data.len())
+                start @ at + 1
+            at @ at + 1
+
+    return index(data, starts: starts)
+
+test "rank_of: a table of four tokens, present, absent, and a range inside longer bytes"
+    t = build([[97], [98], [97, 98], [0xe2, 0x82, 0xac]]).must()
+    assert size(t) == 4
+    s: [u8] = [120, 97, 98, 0xe2, 0x82, 0xac]
+    assert rank_of(t, s: s, from: 1, to: 3) == 2
+    assert rank_of(t, s: s, from: 1, to: 2) == 0
+    assert rank_of(t, s: s, from: 3, to: 6) == 3
+    assert rank_of(t, s: s, from: 0, to: 1) == NO_RANK
+    assert rank_of(t, s: s, from: 0, to: 3) == NO_RANK
+    assert bytes_of(t, rank: 3) == [0xe2, 0x82, 0xac]
+    assert width_of(t, rank: 2) == 2
+
+test "build: an empty token and a repeated token refused, an empty table accepted"
+    assert build([[97], []]).is_err()
+
+    match build([[97], [98], [97]])
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "the tokens of ranks 0 and 2 hold the same bytes"
+
+    assert size(build([]).must()) == 0
+
+test "from_base64: one line, two lines, padding of one and two, and wrong digits"
+    t = from_base64(["IQ== Ig== YWI=", "4oKs"]).must()
+    assert size(t) == 4
+    assert bytes_of(t, rank: 0) == [33]
+    assert bytes_of(t, rank: 2) == [97, 98]
+    assert bytes_of(t, rank: 3) == [0xe2, 0x82, 0xac]
+    assert from_base64(["IQ="]).is_err()
+    assert from_base64(["I!=="]).is_err()
+    assert from_base64(["IQ=a"]).is_err()
+    assert from_base64(["IQ==  Ig=="]).is_err()
+
+test "add_bytes: a token's bytes appended to bytes already there"
+    t = build([[1, 2], [3]]).must()
+    out: [u8] @= [9]
+    add_bytes(@out, t: t, rank: 0)
+    add_bytes(@out, t: t, rank: 1)
+    assert out == [9, 1, 2, 3]
+
+test "slot_count: the smallest, an exact power, and one past it"
+    assert slot_count(0) == 16
+    assert slot_count(8) == 16
+    assert slot_count(9) == 32
+    assert slot_count(199998) == 524288

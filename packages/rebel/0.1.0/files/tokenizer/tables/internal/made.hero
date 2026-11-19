@@ -1,0 +1,25 @@
+# An encoding of `tokenizer` made from the data of one of this subpackage's
+# tables. The data are the package's own, generated and held whole by the
+# tests of `tokenizer/tables`, so making the encoding cannot fail, and a
+# failure here would be this package's defect.
+
+use tokenizer
+use tokenizer/internal/assemble
+use tokenizer/internal/vocabulary
+
+# The encoding `name` of the pattern `pattern`, the ordinary tokens `ranks`
+# (base 64, several to a line) and the special tokens `texts`, numbered
+# `numbers` in the same order.
+function made(name: str, pattern: str, ranks: [str], texts: [str], numbers: [i64]) -> tokenizer.Encoding
+    specials: {str: i64} @= {}
+    at: i64 @= 0
+
+    while at < texts.len()
+        specials[texts[at]] @ numbers[at]
+        at @ at + 1
+
+    table = vocabulary.from_base64(ranks).must()
+    return tokenizer.Encoding(
+        name: name,
+        core: assemble.make(name: name, pattern: pattern, table: table, specials: specials).must()
+    )

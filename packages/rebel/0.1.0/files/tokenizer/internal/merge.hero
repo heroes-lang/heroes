@@ -1,0 +1,277 @@
+# Byte-pair merging of one piece, as tiktoken merges: the piece begins as
+# its bytes, one part each, and the two neighbouring parts whose bytes
+# together form the token of the lowest rank are merged, the leftmost pair
+# where two have that rank, again and again until no two neighbours form a
+# token. The parts left are the piece's tokens. A piece that is a token whole
+# is that token, asked first.
+#
+# Two ways give the same parts. A short piece keeps its parts in a list and
+# looks for the lowest pair by reading them all, at a cost of the square of
+# its length, which for the few bytes of a word is the cheapest. A long
+# piece, a run of white space or of one symbol that may be a megabyte long,
+# keeps its parts linked and its pairs in a heap ordered by rank and then by
+# place, at a cost of its length times its logarithm. The tests hold the two
+# to one another.
+
+use tokenizer/internal/vocabulary
+
+# The longest piece merged the short way.
+constant SHORT: i64
+    64
+
+# A pair's place in the heap: its rank times this, plus where its left part
+# begins. Pieces are shorter than this, and ranks below 2^31.
+constant PLACES: i64
+    4294967296
+
+# Adds the tokens of the piece `s[from]` to `s[to]`, the second excluded, to
+# `out`, which the caller owns. Every byte must be a token of `t`.
+function add_ranks(@out: [i64], t: vocabulary.Table lent, s: [u8] lent, from: i64, to: i64)
+    whole = vocabulary.rank_of(t, s: s, from: from, to: to)
+
+    if whole != vocabulary.NO_RANK
+        out @ out.push(whole)
+    else if to - from <= SHORT
+        add_short(@out, t: t, s: s, from: from, to: to)
+    else
+        add_long(@out, t: t, s: s, from: from, to: to)
+
+# The short way: `starts` holds where each part begins and, last, the end;
+# `pairs[i]` the rank of parts `i` and `i + 1` together. Merging shifts both
+# lists left by one in place and shortens them by a count, never by a slice.
+function add_short(@out: [i64], t: vocabulary.Table lent, s: [u8] lent, from: i64, to: i64)
+    starts: [i64] @= []
+    pairs: [i64] @= []
+    at: i64 @= from
+
+    while at <= to
+        starts @ starts.push(at)
+        at @ at + 1
+
+    k: i64 @= 0
+
+    while k + 2 < starts.len()
+        pairs @ pairs.push(vocabulary.rank_of(t, s: s, from: starts[k], to: starts[k + 2]))
+        k @ k + 1
+
+    parts: i64 @= to - from
+
+    while parts > 1
+        best: i64 @= 0
+        k @ 1
+
+        while k < parts - 1
+            if pairs[k] < pairs[best]
+                best @ k
+            k @ k + 1
+
+        if pairs[best] == vocabulary.NO_RANK
+            break
+        k @ best + 1
+
+        while k < parts
+            starts[k] @ starts[k + 1]
+            k @ k + 1
+
+        k @ best + 1
+
+        while k < parts - 2
+            pairs[k] @ pairs[k + 1]
+            k @ k + 1
+
+        parts @ parts - 1
+
+        if best + 1 < parts
+            pairs[best] @ vocabulary.rank_of(t, s: s, from: starts[best], to: starts[best + 2])
+        else
+            pairs[best] @ vocabulary.NO_RANK
+
+        if best > 0
+            pairs[best - 1] @ vocabulary.rank_of(t, s: s, from: starts[best - 1], to: starts[best + 1])
+
+    k @ 0
+
+    while k < parts
+        out @ out.push(vocabulary.rank_of(t, s: s, from: starts[k], to: starts[k + 1]))
+        k @ k + 1
+
+# Moves the entry at `at` of the heap `heap` up to its place.
+function sift_up(@heap: [i64], at: i64)
+    child: i64 @= at
+
+    while child > 0
+        parent = (child - 1) / 2
+
+        if heap[parent] <= heap[child]
+            return
+        held = heap[parent]
+        heap[parent] @ heap[child]
+        heap[child] @ held
+        child @ parent
+
+# Moves the entry at 0 of the heap `heap`, of `size` entries, down to its
+# place.
+function sift_down(@heap: [i64], size: i64)
+    parent: i64 @= 0
+
+    while true
+        left = 2 * parent + 1
+
+        if left >= size
+            return
+        smaller: i64 @= left
+
+        if left + 1 < size && heap[left + 1] < heap[left]
+            smaller @ left + 1
+
+        if heap[parent] <= heap[smaller]
+            return
+        held = heap[parent]
+        heap[parent] @ heap[smaller]
+        heap[smaller] @ held
+        parent @ smaller
+
+# Adds `entry` to the heap, `size` entries long in the list `heap`, which
+# grows only where it is full.
+function heap_add(@heap: [i64], @size: i64, entry: i64)
+    if size == heap.len()
+        heap @ heap.push(entry)
+    else
+        heap[size] @ entry
+    sift_up(@heap, at: size)
+    size @ size + 1
+
+# The long way. Part `i`, by the index of its first byte from `from`, ends
+# where `next[i]` begins; `pair[i]` is the rank of part `i` and the part
+# after it together. A heap entry is a pair's rank times `PLACES` plus `i`;
+# an entry whose rank is no longer `pair[i]`, or whose part was merged into
+# the one before it, is stale and passed over.
+function add_long(@out: [i64], t: vocabulary.Table lent, s: [u8] lent, from: i64, to: i64)
+    n = to - from
+    next: [i64] @= []
+    previous: [i64] @= []
+    alive: [bool] @= []
+    pair: [i64] @= []
+    heap: [i64] @= []
+    size: i64 @= 0
+    i: i64 @= 0
+
+    while i < n
+        next @ next.push(i + 1)
+        previous @ previous.push(i - 1)
+        alive @ alive.push(true)
+
+        if i + 2 <= n
+            pair @ pair.push(vocabulary.rank_of(t, s: s, from: from + i, to: from + i + 2))
+        else
+            pair @ pair.push(vocabulary.NO_RANK)
+        i @ i + 1
+
+    i @ 0
+
+    while i < n
+        if pair[i] != vocabulary.NO_RANK
+            heap_add(@heap, size: @size, entry: pair[i] * PLACES + i)
+        i @ i + 1
+
+    while size > 0
+        top = heap[0]
+        size @ size - 1
+        heap[0] @ heap[size]
+        sift_down(@heap, size: size)
+        left = top % PLACES
+        rank = top / PLACES
+
+        if !alive[left] || pair[left] != rank
+            continue
+        right = next[left]
+        alive[right] @ false
+        after = next[right]
+        next[left] @ after
+
+        if after < n
+            previous[after] @ left
+            pair[left] @ vocabulary.rank_of(t, s: s, from: from + left, to: from + next[after])
+        else
+            pair[left] @ vocabulary.NO_RANK
+
+        if pair[left] != vocabulary.NO_RANK
+            heap_add(@heap, size: @size, entry: pair[left] * PLACES + left)
+        before = previous[left]
+
+        if before >= 0
+            pair[before] @ vocabulary.rank_of(t, s: s, from: from + before, to: from + after)
+
+            if pair[before] != vocabulary.NO_RANK
+                heap_add(@heap, size: @size, entry: pair[before] * PLACES + before)
+
+    i @ 0
+
+    while i < n
+        out @ out.push(vocabulary.rank_of(t, s: s, from: from + i, to: from + next[i]))
+        i @ next[i]
+
+# A table where every byte is a token, then the pairs and longer tokens
+# `more` lists, in rank order after the 256 bytes.
+function table_with(more: [[u8]]) -> vocabulary.Table
+    tokens: [[u8]] @= []
+    b: i64 @= 0
+
+    while b < 256
+        tokens @ tokens.push([to_u8(b).must()])
+        b @ b + 1
+
+    for token in more
+        tokens @ tokens.push(token)
+
+    return vocabulary.build(tokens).must()
+
+# The tokens of all of `s`, merged by one way or the other.
+function merged(t: vocabulary.Table lent, s: [u8], long: bool) -> [i64]
+    out: [i64] @= []
+
+    if long
+        add_long(@out, t: t, s: s, from: 0, to: s.len())
+    else
+        add_short(@out, t: t, s: s, from: 0, to: s.len())
+    return out
+
+test "add_ranks: a whole token, a byte, the lowest rank first, and the leftmost of two equal pairs"
+    t = table_with([[97, 98], [98, 99], [97, 98, 99], [99, 100]])
+    out: [i64] @= []
+    add_ranks(@out, t: t, s: [97, 98, 99], from: 0, to: 3)
+    assert out == [258]
+    assert merged(t, s: [97, 98, 99, 100], long: false) == [258, 100]
+    assert merged(t, s: [98, 99, 100], long: false) == [257, 100]
+    assert merged(t, s: [97, 98, 97, 98], long: false) == [256, 256]
+    assert merged(t, s: [120], long: false) == [120]
+    assert merged(t, s: [], long: false) == []
+
+test "add_long: the same tokens as add_short, on pieces of every shape"
+    t = table_with(
+        [[97, 97], [97, 97, 97, 97], [98, 97], [97, 98], [98, 98], [97, 97, 98], [32, 32], [32, 32, 32, 32], [32, 32, 32, 32, 32, 32, 32, 32]]
+    )
+    cases: [[u8]] = [
+        [97, 97, 97, 97, 97]
+        [98, 97, 97, 98, 98, 97, 97, 97, 98]
+        [97, 98, 97, 98, 97, 98, 97]
+        [32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32]
+        [97]
+        [97, 97]
+        [99, 97, 97, 99]
+    ]
+
+    for c in cases
+        assert merged(t, s: c, long: true) == merged(t, s: c, long: false)
+
+test "add_ranks: a long run merged the long way, a thousand spaces"
+    t = table_with([[32, 32], [32, 32, 32, 32], [32, 32, 32, 32, 32, 32, 32, 32]])
+    run: [u8] @= []
+
+    while run.len() < 1003
+        run @ run.push(32)
+
+    out: [i64] @= []
+    add_ranks(@out, t: t, s: run, from: 0, to: run.len())
+    assert out.len() == 125 + 1 + 1
+    assert out == merged(t, s: run, long: false)
