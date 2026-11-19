@@ -1,5 +1,5 @@
 # The coherence review's sixth instrument (M-rebel-library's item 31): **an
-# error code outside § A4's closed list** (`examples-rebel/README.md` § A4,
+# error code outside README § A4's closed list** (`examples-rebel/README.md` § A4,
 # the list `package_codes.CLOSED`). Every module of Rebel is read outside its
 # `test` blocks, and every code a `fail` call writes is judged: a literal,
 # `fail(code: "invalid", ...)`, by its text; a constant, `fail(code:
@@ -190,8 +190,8 @@ function told(o: Outside) -> str
         return place + "a `fail` writes its code through `" + o.through + "`, which this instrument cannot follow to a `str` constant"
 
     if o.through.len() == 0
-        return place + "a `fail` writes `" + o.code + "`, outside § A4's list"
-    return place + "a `fail` writes `" + o.code + "` through `" + o.through + "`, outside § A4's list"
+        return place + "a `fail` writes `" + o.code + "`, outside README § A4's list"
+    return place + "a `fail` writes `" + o.code + "` through `" + o.through + "`, outside README § A4's list"
 
 ## Tests
 
@@ -211,8 +211,8 @@ test "a code outside the closed list is found, written as a literal or through c
     index = index_of_modules([codes, face])
     found = outside(index: index, module: face)
     assert found.len() == 4
-    assert told(found[0]) == "p.hero:9,19: a `fail` writes `none`, outside § A4's list"
-    assert told(found[1]) == "p.hero:11: a `fail` writes `undecided` through `c.ODD`, outside § A4's list"
+    assert told(found[0]) == "p.hero:9,19: a `fail` writes `none`, outside README § A4's list"
+    assert told(found[1]) == "p.hero:11: a `fail` writes `undecided` through `c.ODD`, outside README § A4's list"
     assert key(found[2]) == "p undecided through ALSO_ODD"
     assert told(found[3]) == "p.hero:17: a `fail` writes its code through `MISSING`, which this instrument cannot follow to a `str` constant"
 

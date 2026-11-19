@@ -21,15 +21,15 @@ constant A_SPLIT_IS_NOT_LOCAL: str
 
 # A `format_x` that writes bytes, by its area's own word.
 constant BYTES_NAMED_FORMAT: str
-    "the area's own word for writing a value out, DER and raw keys and a message being bytes; § A3's `format_x` says text, and a rename (`encode_x`) moves names callers write: the readers'"
+    "the area's own word for writing a value out, DER and raw keys and a message being bytes; README § A3's `format_x` says text, and a rename (`encode_x`) moves names callers write: the readers'"
 
 # One name in `unicode` and `strings`, for a character and for a text.
 constant CHARACTER_AND_TEXT: str
-    "`unicode` asks of one character and `strings` of a text: one meaning at two sizes, which the parameter's name says (`c`, `s`), as § A3's one name, one meaning asks"
+    "`unicode` asks of one character and `strings` of a text: one meaning at two sizes, which the parameter's name says (`c`, `s`), as README § A3's one name, one meaning asks"
 
 # The complex numbers `math` holds.
 constant COMPLEX_IN_MATH: str
-    "§ A1's row puts complex numbers in `math` (C11 Annex G); a `math/complex` subpackage, the containers smell's strongest case today, is the readers' question, and moves 30 names callers write"
+    "README § A1's row puts complex numbers in `math` (C11 Annex G); a `math/complex` subpackage, the containers smell's strongest case today, is the readers' question, and moves 30 names callers write"
 
 # The private modules `containers/`'s subpackages share.
 constant CONTAINERS_SHARED_MODULES: str
@@ -49,7 +49,7 @@ constant EACH_ITS_STREAM: str
 
 # Formats read into and written from `json.Value`.
 constant FORMATS_OF_ONE_VALUE: str
-    "each format read into or written from the one `json.Value`, by design (`yaml`'s row of § A1)"
+    "each format read into or written from the one `json.Value`, by design (`yaml`'s row of README § A1)"
 
 # A ledger naming another package's function and a helper of its own.
 constant NAMES_HTTPS: str
@@ -57,11 +57,11 @@ constant NAMES_HTTPS: str
 
 # One body in packages with no public home below them for it.
 constant NO_PUBLIC_HOME: str
-    "one helper in packages that may not share a private module (§ A2), and no package below them offers it publicly: made one only by giving it a public home, which is the readers' choice"
+    "one helper in packages that may not share a private module (README § A2), and no package below them offers it publicly: made one only by giving it a public home, which is the readers' choice"
 
 # The one API every member of a family keeps.
 constant ONE_API_BY_DESIGN: str
-    "the one shape every member of a family keeps, so a program moves from one to another by its `use` line: each compression format, each image format, each tokenizer table a subpackage of its own so a program carries the one it uses (§ A2)"
+    "the one shape every member of a family keeps, so a program moves from one to another by its `use` line: each compression format, each image format, each tokenizer table a subpackage of its own so a program carries the one it uses (README § A2)"
 
 # `math/linear`'s types, combined by its functions.
 constant ONE_DOMAIN_OF_TYPES: str
@@ -69,7 +69,7 @@ constant ONE_DOMAIN_OF_TYPES: str
 
 # Two packages of one layer, which may not use each other.
 constant ONE_LAYER: str
-    "two packages of one layer may not use each other (§ A1), so what they share is written twice until a package below both holds it publicly: the readers'"
+    "two packages of one layer may not use each other (README § A1), so what they share is written twice until a package below both holds it publicly: the readers'"
 
 # `os`'s floor of `hero_disk.h`, which names `io`'s stream.
 constant OS_DISK_NAMES_STREAMS: str
@@ -85,7 +85,7 @@ constant PLAIN_AND_LOCALE: str
 
 # The tables of `tokenizer/tables`, each a module a program names alone.
 constant TABLES_OF_A_PACKAGE: str
-    "a table of `tokenizer/tables`, data a program names alone so that it carries the one it uses; as a package of its own it would stand below `tokenizer/tables` and use that package's private modules (`made`, its data), which § A1's layers refuse, so its row and ledger are the readers' question: one package with four faces, or the private modules moved under each table"
+    "a table of `tokenizer/tables`, data a program names alone so that it carries the one it uses; as a package of its own it would stand below `tokenizer/tables` and use that package's private modules (`made`, its data), which README § A1's layers refuse, so its row and ledger are the readers' question: one package with four faces, or the private modules moved under each table"
 
 # `web`'s middleware, which takes the request first.
 constant REQUEST_FIRST: str
@@ -109,7 +109,7 @@ constant THREE_EXACT_NUMBERS: str
 
 # The two LLM clients, built to answer the same questions.
 constant TWO_LLM_CLIENTS: str
-    "`llm/anthropic` and `llm/openai` are two clients of two APIs built to answer the same questions, each through its own types, by design (§ A1's two rows)"
+    "`llm/anthropic` and `llm/openai` are two clients of two APIs built to answer the same questions, each through its own types, by design (README § A1's two rows)"
 
 # One word, two meanings.
 constant TWO_MEANINGS: str

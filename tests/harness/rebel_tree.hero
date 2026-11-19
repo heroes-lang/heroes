@@ -6,7 +6,7 @@
 # the library read the tree through here, and the `rebel` suite walks it
 # (`suite_rebel.hero`).
 #
-# **What a module is to the rules page** (§ A2): a face, `<package>.hero`,
+# **What a module is to the rules page** (README § A2): a face, `<package>.hero`,
 # every name a program writes; a private module, a path with `internal` as a
 # part after its first, which the compiler lets no module outside the package
 # name (spec § 1); a floor, a module whose last part begins `hero_`, the thin
@@ -26,7 +26,7 @@ use strings
 constant INDEX: str
     "packages/rebel"
 
-# The rules page whose § A1 is the table of packages in layers.
+# The rules page whose README § A1 is the table of packages in layers.
 constant RULES: str
     "examples-rebel/README.md"
 
@@ -36,13 +36,13 @@ record Module
     path: str
     text: str
 
-# A ledger of the source (§ A8): its path under the source's root without
+# A ledger of the source (README § A8): its path under the source's root without
 # `.ledger`, which names the package it is the ledger of, and its text.
 record Ledger
     package: str
     text: str
 
-# A row of § A1's table: the package it names, its layer, and the line of the
+# A row of README § A1's table: the package it names, its layer, and the line of the
 # rules page it stands on, counted from 1.
 record Row
     package: str
@@ -107,7 +107,7 @@ function ledgers(scratch: str, root: str) -> [Ledger]?
 function relative(root: str, file: str, suffix: str) -> str
     return strings.without_suffix(text: strings.without_prefix(text: file, prefix: root + "/"), suffix: suffix)
 
-# The rows of § A1's table in `text`, the rules page: each line between the
+# The rows of README § A1's table in `text`, the rules page: each line between the
 # heading `## A1.` and the next `## ` that opens `| <layer> | `<package>` |`.
 function rows_of(text: str) -> [Row]
     out: [Row] @= []
@@ -171,7 +171,7 @@ function is_private(path: str) -> bool
 
     return false
 
-# Whether a module is a floor (§ A2): its last part begins `hero_`.
+# Whether a module is a floor (README § A2): its last part begins `hero_`.
 function is_floor(path: str) -> bool
     return core_strings.has_prefix(s: strings.base_name(path: path), prefix: "hero_")
 
@@ -194,7 +194,7 @@ function line_opening(text: str, start: str) -> i64
 
 ## Tests
 
-test "the rows of § A1 are its table's lines, each with its layer and its line"
+test "the rows of README § A1 are its table's lines, each with its layer and its line"
     text = "# R\n\n## A1. The packages\n\n| layer | package | what |\n|---|---|---|\n| 0 | `unicode` | what a character is |\n| 2 | `compress/zstd` | Zstandard |\n| x | `bad` | no layer |\n\n## A2. Files\n\n| 9 | `outside` | after the table |\n"
     rows = rows_of(text)
     assert rows.len() == 2

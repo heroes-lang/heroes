@@ -1,18 +1,18 @@
 # Two instruments of the coherence review over where Rebel's modules stand
 # (M-rebel-library's item 31), each asked of the table of packages in layers,
-# `examples-rebel/README.md` § A1, and of the files § A2 says a package holds:
+# `examples-rebel/README.md` § A1, and of the files README § A2 says a package holds:
 #
 #   layers    **a package whose `use` lines break the layers**: every module,
 #             its private modules and its floors included, is its package's
 #             (`rebel_tree.package_of`), and each `use` it writes names a
 #             module of a package of a layer below its own, or of its own
-#             package (§ A1: *a package may use any package of a layer
+#             package (README § A1: *a package may use any package of a layer
 #             below its own*). A module no row holds, and a `use` of one, is
 #             told too, since its layer cannot be asked
-#   unlisted  **a subpackage with no row in § A1 and no ledger**: every face,
+#   unlisted  **a subpackage with no row in README § A1 and no ledger**: every face,
 #             a module a program may name that is no floor, is a row of the
-#             table and has its own `<path>.ledger` (§ A8); a module that holds
-#             an `extern` group is a floor and is named `hero_<x>` (§ A2); and
+#             table and has its own `<path>.ledger` (README § A8); a module that holds
+#             an `extern` group is a floor and is named `hero_<x>` (README § A2); and
 #             every row names a face and a ledger
 #
 # The coordinator's shell reading of the same question, `tools/layers.sh` in
@@ -52,7 +52,7 @@ function broken(rows: [rebel_tree.Row], modules: [rebel_tree.Module]) -> [Placed
 
         if own.len() == 0
             out @ out.push(
-                Placed(path: m.path, line: 0, key: "no row holds " + m.path, said: "no row of § A1 holds this module, so its layer cannot be asked")
+                Placed(path: m.path, line: 0, key: "no row holds " + m.path, said: "no row of README § A1 holds this module, so its layer cannot be asked")
             )
         line: i64 @= 0
 
@@ -110,7 +110,7 @@ function unlisted(rows: [rebel_tree.Row], modules: [rebel_tree.Module], ledgers:
 
         if !rebel_tree.is_floor(m.path) && group > 0
             out @ out.push(
-                Placed(path: m.path, line: group, key: "floor misnamed " + m.path, said: "a floor, its `extern` group binding C, and not named `hero_<x>` (§ A2)")
+                Placed(path: m.path, line: group, key: "floor misnamed " + m.path, said: "a floor, its `extern` group binding C, and not named `hero_<x>` (README § A2)")
             )
             continue
 
@@ -120,12 +120,12 @@ function unlisted(rows: [rebel_tree.Row], modules: [rebel_tree.Module], ledgers:
 
         if by[m.path].is_err()
             out @ out.push(
-                Placed(path: m.path, line: 0, key: "no row " + m.path, said: "a face a program names, and no row of § A1")
+                Placed(path: m.path, line: 0, key: "no row " + m.path, said: "a face a program names, and no row of README § A1")
             )
 
         if held[m.path].is_err()
             out @ out.push(
-                Placed(path: m.path, line: 0, key: "no ledger " + m.path, said: "a face a program names, and no `" + m.path + ".ledger` (§ A8)")
+                Placed(path: m.path, line: 0, key: "no ledger " + m.path, said: "a face a program names, and no `" + m.path + ".ledger` (README § A8)")
             )
 
     for row in rows
@@ -166,13 +166,13 @@ test "a `use` of a package of a layer not below its own is found, a private modu
     ]
     found = broken(rows: rows_fixture(), modules: modules)
     assert found.len() == 3
-    assert told(found[0]) == "containers/internal/codes: no row of § A1 holds this module, so its layer cannot be asked"
+    assert told(found[0]) == "containers/internal/codes: no row of README § A1 holds this module, so its layer cannot be asked"
     assert told(found[1]) == "compress/zstd: `compress/zstd`, layer 2, uses `compress`, layer 3, in 2 `use` lines: compress/zstd/internal/frame.hero:4 `compress/internal/codes`, compress/zstd.hero:3 `compress/internal/huffman`"
     assert found[2].key == "io uses compress/zstd"
 
 # The planted witnesses: a data subpackage with no row and no ledger, a floor
 # not named `hero_`, and a row with no face; a face with both, a private
-# module and a floor named as § A2 says pass.
+# module and a floor named as README § A2 says pass.
 test "a face with no row or no ledger, a floor misnamed and a row with no face are found"
     modules = [
         rebel_tree.Module(path: "bytes", text: "# B.\n")
@@ -195,4 +195,4 @@ test "a face with no row or no ledger, a floor misnamed and a row with no face a
         found_keys @ found_keys.push(one.key)
 
     assert found_keys == ["floor misnamed math/libm", "no row compress/zstd/tables", "no ledger compress/zstd/tables", "no face io", "row without ledger io"]
-    assert told(found[0]) == "math/libm.hero:3: a floor, its `extern` group binding C, and not named `hero_<x>` (§ A2)"
+    assert told(found[0]) == "math/libm.hero:3: a floor, its `extern` group binding C, and not named `hero_<x>` (README § A2)"

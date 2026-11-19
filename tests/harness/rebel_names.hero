@@ -16,10 +16,10 @@
 #               takes, fallible or not
 #   value       `to_x` answers a value, never `()`
 #   abbreviated a parameter named by an abbreviation of `ABBREVIATIONS`, none
-#               of the ones § A3 lets stand (`dir`, `env`, `ext`, `abs`, `len`,
+#               of the ones README § A3 lets stand (`dir`, `env`, `ext`, `abs`, `len`,
 #               `max`, `min`)
 #
-# A name of § A3's grammar and of a grammar suffix too is the suffix's shape:
+# A name of README § A3's grammar and of a grammar suffix too is the suffix's shape:
 # `format_of` is `x_of`, the format of a thing, and answers no text. The
 # grammar rules read a face's functions alone, the case rule every module's,
 # since a private module's names are read by the next person to write one.
@@ -32,7 +32,7 @@ use rebel_faces
 use strings
 
 # The abbreviations a parameter is not named by, each with the word it
-# shortens: § A3's *no abbreviation a reader must decode*. **Read from the
+# shortens: README § A3's *no abbreviation a reader must decode*. **Read from the
 # world, 2026-11-19**: the parameters of Rebel's 149 faces counted by name, and
 # each short name that is not an English word looked up; those found are the
 # first eleven, `opts` 35 times, `img` 34, `ch` 34, `re` 21, `enc` 21, `msg` 15,
@@ -146,7 +146,7 @@ function after_line(said: str) -> str
         return said
     return said.slice(from: colon.must() + 2, to: said.len())
 
-# The names of a face's functions § A3's grammar does not allow.
+# The names of a face's functions README § A3's grammar does not allow.
 function graded(path: str, text: str) -> [Misnamed]
     face = package_face.face_of(path: path, text: text)
     out: [Misnamed] @= []
@@ -190,7 +190,7 @@ function callable_named(face: package_face.Face, name: str) -> package_face.Call
 
     return face.callables[0]
 
-# The rule of § A3's grammar a function breaks and what it says, or nothing.
+# The rule of README § A3's grammar a function breaks and what it says, or nothing.
 function grammar_broken(name: str, params: [package_face.Slot], result: str) -> [str]
     nothing: [str] = []
     bare = strings.without_suffix(text: result, suffix: "?")
@@ -220,7 +220,7 @@ function grammar_broken(name: str, params: [package_face.Slot], result: str) -> 
         return ["value", "`to_x` answers the same value in another form, and this answers nothing"]
     return nothing
 
-# Whether `name` is `<word>_x` of § A3's grammar: it begins `<word>_`, and what
+# Whether `name` is `<word>_x` of README § A3's grammar: it begins `<word>_`, and what
 # follows is no grammar suffix, which makes it that suffix's shape instead.
 function grammar_shaped(name: str, word: str) -> bool
     if !core_strings.has_prefix(s: name, prefix: word + "_")

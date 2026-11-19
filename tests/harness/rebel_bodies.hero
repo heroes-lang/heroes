@@ -13,7 +13,7 @@
 #              bodies the same after that compute the same thing under any
 #              names. A body shorter than `BODY_LEAST` rows is left out
 #   one-layer  **two packages of one layer that duplicate each other's work**:
-#              two packages of the same layer of § A1, which therefore may not
+#              two packages of the same layer of README § A1, which therefore may not
 #              use each other, holding the same body (above), or binding the
 #              same C function of the same header in a floor each (an `extern`
 #              group's member); each pair is told with all it shares

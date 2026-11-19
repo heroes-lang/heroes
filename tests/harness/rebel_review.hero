@@ -32,7 +32,7 @@ function main()
     found = suite_rebel.findings(read)
     keeping = rebel_kept.kept()
     print(
-        "Rebel at " + read.root + ": " + read.modules.len().to_str() + " modules, " + read.ledgers.len().to_str() + " ledgers, " + read.rows.len().to_str() + " rows of § A1 in " + rebel_tree.RULES
+        "Rebel at " + read.root + ": " + read.modules.len().to_str() + " modules, " + read.ledgers.len().to_str() + " ledgers, " + read.rows.len().to_str() + " rows of README § A1 in " + rebel_tree.RULES
     )
 
     for line in readout(found: found, keeping: keeping)

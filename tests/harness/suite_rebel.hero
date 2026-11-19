@@ -12,12 +12,12 @@
 #   prefixed   a face whose functions a type of its own names, the smell
 #              `containers` showed before its split (`rebel_faces.hero`)
 #   oversized  a face past a size the distribution sets (`rebel_faces.hero`)
-#   names      a name § A3's grammar does not allow (`rebel_names.hero`)
-#   codes      a code outside § A4's closed list (`rebel_codes.hero`,
+#   names      a name README § A3's grammar does not allow (`rebel_names.hero`)
+#   codes      a code outside README § A4's closed list (`rebel_codes.hero`,
 #              the list `package_codes.CLOSED`)
-#   layers     a `use` that breaks § A1's layers, a private module's included
+#   layers     a `use` that breaks README § A1's layers, a private module's included
 #              (`rebel_layers.hero`)
-#   unlisted   a subpackage with no row in § A1 or no ledger, a floor not
+#   unlisted   a subpackage with no row in README § A1 or no ledger, a floor not
 #              named `hero_<x>` (`rebel_layers.hero`)
 #   bodies     one body in two packages, by its normalised text
 #              (`rebel_bodies.hero`)
@@ -55,12 +55,12 @@ use report
 constant LEAST_MODULES: i64
     1492
 
-# The floor of the ledgers read: **144 on 2026-11-19**, one per row of § A1;
+# The floor of the ledgers read: **144 on 2026-11-19**, one per row of README § A1;
 # **145 the same day**, step 56e giving `tokenizer/tables` its own.
 constant LEAST_LEDGERS: i64
     145
 
-# The floor of § A1's rows: **144 on 2026-11-19**, the page's *a hundred and
+# The floor of README § A1's rows: **144 on 2026-11-19**, the page's *a hundred and
 # forty-four packages*; **145 the same day**, step 56e's row of
 # `tokenizer/tables`.
 constant LEAST_ROWS: i64
@@ -89,7 +89,7 @@ function read_tree(scratch: str) -> Read?
     if rules.is_err()
         return fail(
             code: "unreadable",
-            msg: "cannot read " + rebel_tree.RULES + ", whose § A1 is the table of packages"
+            msg: "cannot read " + rebel_tree.RULES + ", whose README § A1 is the table of packages"
         )
     return ok(Read(root: root, modules: modules, ledgers: ledgers, rows: rebel_tree.rows_of(rules.must())))
 
@@ -221,7 +221,7 @@ function run_all(scratch: str) -> report.Report?
         label: "rebel",
         found: tree.rows.len(),
         floor: LEAST_ROWS,
-        what: "rows of § A1 in " + rebel_tree.RULES
+        what: "rows of README § A1 in " + rebel_tree.RULES
     )
     judged(@r, found: findings(tree), keeping: rebel_kept.kept())
     return ok(r)

@@ -11,7 +11,7 @@
 # answering one question**, which a reader decides is a redundancy or two
 # meanings that share an id; this module finds them and the review reads them.
 # The same id done in one ledger by another package's function is no finding:
-# § A8 asks every entry of the three reference libraries in a package's area
+# README § A8 asks every entry of the three reference libraries in a package's area
 # to stand in some block of that package's ledger, so `web.ledger` names
 # `http.respond_redirect` where Echo's redirect stands, and that is the ledger
 # saying where the capability lives, not a second one. A capability's id is

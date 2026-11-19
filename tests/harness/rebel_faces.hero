@@ -13,7 +13,7 @@
 #              `containers` showed before its split): a type the face declares
 #              names at least `PREFIX_LEAST` of its functions, as their first
 #              words or their last, `deque_push` or `add_complex`, a name that
-#              is only the type and a grammar suffix of § A3 (`plural_of`)
+#              is only the type and a grammar suffix of README § A3 (`plural_of`)
 #              left out, since that is the grammar's shape and not a group
 #   oversized  **a face past a size**: more than `SIZE_MOST` public functions
 #
@@ -47,7 +47,7 @@ constant PREFIX_LEAST: i64
 constant SIZE_MOST: i64
     90
 
-# The words § A3's grammar sets after a subject, which make a name of a type
+# The words README § A3's grammar sets after a subject, which make a name of a type
 # and one of them its grammar's shape rather than a group: `plural_of`.
 constant GRAMMAR_SUFFIXES: [str]
     [
