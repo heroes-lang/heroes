@@ -1,0 +1,68 @@
+# WHAT M-REBEL-LIBRARY RETIRED, READ FROM THE TREE: a milestone page whose row
+# left § The chain because another milestone enclosed it.
+#
+# A row of the chain is a milestone the work still owes or has closed
+# (`ROADMAP.md`, `.claude/rules/records.md` § Milestone identifiers). On
+# 2026-11-15 the author's decision 4 enclosed M-core-packages and
+# M-doc-generator in M-rebel-library, and decision 23 of 2026-11-16 enclosed
+# M-web-framework, so their rows left the chain at the milestone's landing
+# (2026-11-19) while their pages stayed, each the record of what it held. A
+# page with no row read as a page filed where no reader would find it until
+# then (`records/homes`); a retired page now says so, on a line of its own,
+# with the day and the milestone it went into, and that milestone has a row.
+#
+# design.md §1.11 is what M-rebel-library rewrote; this module reads only the
+# records of it.
+
+use cards
+use strings
+
+# How the line a retired page carries opens: `**Retired YYYY-MM-DD into
+# M-<name>**`, the day the author's decision retired it and the milestone that
+# encloses it. Bold, at the start of a line, as the pages' dated notes are.
+constant RETIRED: str
+    "**Retired "
+
+# The milestone a retired page says it went into, read off its first line of
+# the shape `RETIRED` opens, or why the page says none.
+function retired_into(text: str) -> str?
+    for row in strings.lines(text)
+        if !strings.has_prefix(s: row, prefix: RETIRED)
+            continue
+        rest = strings.without_prefix(text: row, prefix: RETIRED)
+
+        # `day_of` reads ten ASCII bytes before it answers, so the cut at ten
+        # stands between characters.
+        if cards.day_of(rest).is_err()
+            continue
+        after = rest.slice(from: 10, to: rest.len())
+
+        if !strings.has_prefix(s: after, prefix: " into ")
+            continue
+        named = strings.without_prefix(text: after, prefix: " into ")
+        end = strings.index_of(text: named, needle: "**")
+
+        if end.is_err()
+            continue
+        name = named.slice(from: 0, to: end.must())
+
+        if cards.is_milestone_name(name)
+            return ok(name)
+
+    return fail(code: "none", msg: "no line opens `**Retired YYYY-MM-DD into M-<name>**`")
+
+## Tests
+
+test "a retired page names the milestone that encloses it, on a dated line of its own"
+    page = "# M-core-packages\n\nWhat it held.\n\n**Retired 2026-11-15 into M-rebel-library**, by the author's decision 4.\n"
+    assert retired_into(page).must() == "M-rebel-library"
+    assert retired_into("**Retired 2026-11-16 into M-rebel-packages-manager**\n").must() == "M-rebel-packages-manager"
+
+test "a line that only resembles the retirement names nothing"
+    assert retired_into("# M-doc-generator\n\nNothing retired here.\n").is_err()
+    assert retired_into("  **Retired 2026-11-15 into M-rebel-library**\n").is_err()
+    assert retired_into("**Retired 2026-13-15 into M-rebel-library**\n").is_err()
+    assert retired_into("**Retired 2026-11-15 to M-rebel-library**\n").is_err()
+    assert retired_into("**Retired 2026-11-15 into M-Rebel**\n").is_err()
+    assert retired_into("**Retired 2026-11-15 into M-rebel-library\n").is_err()
+    assert retired_into("**Retired 2026-11-15 into rebel**\n").is_err()
