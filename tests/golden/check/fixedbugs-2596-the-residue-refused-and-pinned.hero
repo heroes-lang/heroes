@@ -1,0 +1,31 @@
+# Defect 2596's residue, 2026-11-19, pinned as a known cost (panel 252's R2,
+# which leaves both rows refused and filed in the defect, each priced by the
+# sitting's compiler-engineer and unbuilt). Both programs are correct and both
+# are refused today:
+# - `[1, b]` with `b: u8` is `type_mismatch` where `[b, 1]` builds: the lead is
+#   still the first part that does not refuse itself, and `1` takes `i64` by
+#   default. Taking the lead by weight, lightest first, as panel 203 ruled
+#   across a call's arguments, could change the type of a program accepted
+#   today, so it waits for a census.
+# - `{name(): []}` is `cannot_infer` with a FALSE message, *no other argument
+#   and no context says what `K` is*, where the key `name()` says it: a key
+#   written as a call needs its synthesis, which the repair does not do, since
+#   the argument's later check would synthesise it a second time.
+# This case moves, either way, when the residue is repaired.
+function count_lists<K>(graph: {K: [K]}) -> i64
+    return keys(graph).len()
+
+function name() -> str
+    return "a"
+
+function a_default_width_first()
+    b: u8 = 7
+    x = [1, b]  #~ type_mismatch
+    print(x.len())
+
+function a_key_written_as_a_call()
+    print(count_lists({name(): []}))  #~ cannot_infer
+
+function main()
+    a_default_width_first()
+    a_key_written_as_a_call()

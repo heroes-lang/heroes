@@ -1,0 +1,14 @@
+# A ring between two packages, panel 252's R1 (2026-11-19, the sitting's
+# completeness critic's case): `alpha`'s module uses `beta`'s, and `beta`'s
+# names `alpha`'s record, each package read from a folder through the
+# catalogue beside this file and naming the other in its own. 20 doubled,
+# plus one, is 41. A surface fixture rather than a `run` case, since every
+# build of a `path` entry says so on stderr. Through fetched entries this
+# ring is unrun: an entry fetched by `version` or `git` carries a `sum`
+# (`selfhost/module/catalogue.hero`) of every file of its tree, its own
+# catalogue among them (`selfhost/module/fingerprint.hero`), so each of two
+# such packages would name a fingerprint that covers its own (read, not run).
+use <alpha>/a
+
+function main()
+    print(a.more(c: a.Count(n: 20)))

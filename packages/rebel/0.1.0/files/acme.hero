@@ -600,7 +600,7 @@ function key_authorization(client: Client, token: str) -> str?
         if !letter && b != '-' && b != '_'
             return fail(
                 code: INVALID,
-                msg: f"a challenge's token holds byte {b} at {at}, which base 64 for URLs does not"
+                msg: f"a challenge's token holds '{bytes.format_escaped([b])}' at {at}, which base 64 for URLs does not"
             )
 
     return ok(f"{token}.{wire.thumbprint(client.session)?}")
@@ -1050,6 +1050,10 @@ test "key_authorization: the token, a dot, the thumbprint"
     thumbprint = bytes.format_base64_url_unpadded(jose.thumbprint(key: key, algorithm: .sha256).must())
     assert key_authorization(client: client, token: "DGyRejmCefe7v4NfDGDKfA").must() == "DGyRejmCefe7v4NfDGDKfA." + thumbprint
     assert key_authorization(client: client, token: "a.b").is_err()
+
+    match key_authorization(client: client, token: "a.b")
+        .ok _  => assert false
+        .err e => assert e.msg == "a challenge's token holds '.' at 1, which base 64 for URLs does not"
 
 # The path an HTTP-01 answer is served at.
 test "http01_path: the token's place"

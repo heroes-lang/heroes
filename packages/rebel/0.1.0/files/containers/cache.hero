@@ -16,8 +16,11 @@
 # until it is rebuilt. Every call costs a constant over many calls.
 #
 # It fails with `not_found`, where no live entry stands under a key. A call
-# aborts where a capacity or a time to live is below 1, or a list or the
-# lookup map is not the cache's own.
+# aborts where a capacity or a time to live is below 1, or where a list or
+# the lookup map is not as long as this package left the cache's own, which
+# those of another cache mostly are: ones just as long are not told apart,
+# since the shape holds none of the entries, so a program keeps each cache's
+# shape beside its own lists and map.
 
 use containers/cache/internal/lru
 use containers/internal/codes
@@ -107,9 +110,11 @@ function capacity(cache: Cache) -> i64
 #
 # It first forgets the entries expired at `now`, then, where the cache is full
 # and `key` is new, the entry used least recently. Aborts where a list or the
-# lookup map is not the cache's own. See also `get`.
+# lookup map is not as long as this package left the cache's own. See also
+# `get`.
 function put<K, V>(@cache: Cache, @key_list: [K], @value_list: [V], @lookup: {K: i64}, key: K, value: V, now: i64)
     lru.require_lists(cache.entries, keys_held: key_list.len(), values_held: value_list.len())
+    lru.require_lookup(cache.entries, lookup.len())
     lru.put(@cache.entries, @key_list, @value_list, @lookup, key: key, value: value, now: now)
 
 # The value under `key`, the entry becoming the one used last.
@@ -126,6 +131,7 @@ function put<K, V>(@cache: Cache, @key_list: [K], @value_list: [V], @lookup: {K:
 # `put`.
 function get<K, V>(@cache: Cache, @key_list: [K], @value_list: [V], @lookup: {K: i64}, key: K, now: i64) -> V?
     lru.require_lists(cache.entries, keys_held: key_list.len(), values_held: value_list.len())
+    lru.require_lookup(cache.entries, lookup.len())
     lru.expire(@cache.entries, @key_list, @value_list, @lookup, now)
     at = lru.slot_of(cache.entries, lookup, key)
 
@@ -150,7 +156,8 @@ function get<K, V>(@cache: Cache, @key_list: [K], @value_list: [V], @lookup: {K:
 # Fails `not_found` where the cache holds no entry under `key`, or holds one
 # expired at `now`. See also `get`, `contains`.
 function peek<K, V>(cache: Cache, value_list: [V] lent, lookup: {K: i64} lent, key: K, now: i64) -> V?
-    codes.require_storage(held: value_list.len(), count: cache.entries.count, what: "value list")
+    codes.require_kept(held: value_list.len(), kept: lru.room(cache.entries), what: "value list")
+    lru.require_lookup(cache.entries, lookup.len())
     at = lru.slot_of(cache.entries, lookup, key)
 
     if at == lru.NONE || lru.is_expired(cache.entries, at: at, now: now)
@@ -169,6 +176,7 @@ function peek<K, V>(cache: Cache, value_list: [V] lent, lookup: {K: i64} lent, k
 #
 # False for an entry expired at `now`. See also `peek`.
 function contains<K>(cache: Cache, lookup: {K: i64} lent, key: K, now: i64) -> bool
+    lru.require_lookup(cache.entries, lookup.len())
     at = lru.slot_of(cache.entries, lookup, key)
     return at != lru.NONE && !lru.is_expired(cache.entries, at: at, now: now)
 
@@ -186,6 +194,7 @@ function contains<K>(cache: Cache, lookup: {K: i64} lent, key: K, now: i64) -> b
 # `clear`.
 function remove<K, V>(@cache: Cache, @key_list: [K], @value_list: [V], @lookup: {K: i64}, key: K) -> V?
     lru.require_lists(cache.entries, keys_held: key_list.len(), values_held: value_list.len())
+    lru.require_lookup(cache.entries, lookup.len())
     at = lru.slot_of(cache.entries, lookup, key)
 
     if at == lru.NONE
@@ -209,6 +218,7 @@ function remove<K, V>(@cache: Cache, @key_list: [K], @value_list: [V], @lookup: 
 # One step an entry forgotten. See also `new_with_ttl`.
 function expire<K, V>(@cache: Cache, @key_list: [K], @value_list: [V], @lookup: {K: i64}, now: i64)
     lru.require_lists(cache.entries, keys_held: key_list.len(), values_held: value_list.len())
+    lru.require_lookup(cache.entries, lookup.len())
     lru.expire(@cache.entries, @key_list, @value_list, @lookup, now)
 
 # The slots of a cache's entries, the one used last first.

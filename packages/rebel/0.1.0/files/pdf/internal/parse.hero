@@ -368,7 +368,7 @@ function value(data: [u8] lent, @at: i64, depth: i64, key: [u8]) -> model.Obj?
             else
                 return codes.invalid_at(at: start, why: f"\"{w}\" is no value")
         else
-            return codes.invalid_at(at: at, why: f"the byte {b} begins no value")
+            return codes.invalid_at(at: at, why: f"'{bytes.format_escaped([b])}' begins no value")
 
         if stack.len() == 0
             return ok(v)
@@ -452,3 +452,8 @@ test "value: what is no value"
     assert value_of("").is_err()
     assert value_of("[1 2").is_err()
     assert value_of(")").is_err()
+
+test "value: a byte that begins no value, told as its character (defect 2598)"
+    match value_of(")")
+        .ok _  => assert false
+        .err e => assert e.msg == "not a valid PDF file at byte 0: ')' begins no value"

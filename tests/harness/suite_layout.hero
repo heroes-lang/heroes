@@ -14,11 +14,13 @@
 #    the difference is the whole check: **30 of 144** files pass 300 lines
 #    counted whole, and **17** counted as code.
 #
-# 2. **The knot rule.** §11 yields entirely where the LANGUAGE forbids the
-#    seam: Heroes refuses module cycles (`module_cycle` fires on the `use`
-#    edge), and a recursive-descent grammar is mutually recursive by
-#    construction — so what is five files in the Rust is one file here,
-#    and no cut exists. `grammar_expr.hero` is that file.
+# 2. **The knot rule.** §11 yielded entirely where the LANGUAGE forbade the
+#    seam: Heroes refused module cycles (`module_cycle` fired on the `use`
+#    edge, until panel 252's R1, 2026-11-19), and a recursive-descent grammar is
+#    mutually recursive by construction — so what is five files in the Rust
+#    became one file here, and no cut existed. `grammar_expr.hero` is that
+#    file; a ring of modules builds since that sitting, and it is not cut
+#    yet.
 #
 # 3. **So a bare ceiling would go red on day one**, which is the shape §9
 #    calls a rule nobody can obey. What stands instead is a CEILING PER
@@ -68,10 +70,10 @@ constant CEILING: i64
 # The one number that WAS raised, four times on 2026-08-26 and -28:
 # `print_fmt.hero` 843 -> 888 -> 903 -> 996 -> 1005 for defect 003,
 # defect 004, panel 095 stage 3 and WIDTH 88 -> 120. Raised, never
-# split, because the language refuses the only cut available — 003's two
+# split, because the language refused the only cut available — 003's two
 # functions read `power` and `wrapped`, so the seam runs print_bodies ->
-# print_fmt -> print_bodies and `module_cycle` fires on the `use` edge
-# (§11's knot clause).
+# print_fmt -> print_bodies and `module_cycle` fired on the `use` edge
+# (§11's knot clause; the refusal left the language at panel 252's R1, 2026-11-19).
 #
 # **It stands at 1150, a round number, by author decision 2026-08-28**
 # (`/decide`, answer `7c`), and the open question it was keeping is
@@ -247,7 +249,8 @@ constant CEILING: i64
 # `parse/tails.hero`, which neither of the other two is used by, the edges run
 # one way: **217 + 246 + 235**, no entry needed for any of the three. The
 # answer had been printing itself in `module_cycle`'s own note the whole time
-# — *"move what both modules need into a third one that neither uses"*.
+# — *"move what both modules need into a third one that neither uses"* (the
+# refusal and its note left the language at panel 252's R1, 2026-11-19).
 #
 # `ir/lower.hero` DOES have a knot, and it is why `flatten.hero` needs a row at
 # all: **25 functions, 990 code lines** by this file's own counting rule, all
@@ -887,7 +890,7 @@ function run_all(scratch: str, only: str) -> report.Report?
         report.keep_failure(
             @r,
             label: "layout",
-            detail: "  CLAUDE.md §11: *split a module before it passes ~300 lines*, because \"the author must be able to open any file and read it without drowning\":\n" + over.join("\n") + "\n  Split along a seam that names a concern, never at a line count. Where the LANGUAGE forbids the seam — a knot of mutually recursive functions, which cannot be two modules because Heroes refuses module cycles — the file stays and its module doc owes a map: the cycle, the entry points, which function calls which."
+            detail: "  CLAUDE.md §11: *split a module before it passes ~300 lines*, because \"the author must be able to open any file and read it without drowning\":\n" + over.join("\n") + "\n  Split along a seam that names a concern, never at a line count. A knot of mutually recursive functions that stands as one file owes, in its module doc, a map: the cycle, the entry points, which function calls which."
         )
     else
         report.keep_pass(@r)

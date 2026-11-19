@@ -15,8 +15,10 @@
 #
 # It fails with `not_found`, where a place or an end is not there, and
 # `invalid`, where an item is put into a full bounded deque. A call aborts
-# where a deque is given an item list that is not its own, or a bound below
-# 1.
+# where a bound is below 1, or where the item list is not as long as this
+# package left the deque's own, which a list of another deque mostly is: one
+# just as long is not told apart, since the shape holds none of the items, so
+# a program keeps each deque's shape beside its own list.
 
 use containers/deque/internal/ring
 use containers/internal/codes
@@ -73,7 +75,7 @@ function new_bounded(most: i64) -> Deque
 #
 # A deque without a bound. See also `new`, `to_list`.
 function over<T>(items: [T] lent) -> Deque
-    return Deque(ring: ring.Ring(head: 0, count: items.len(), limit: 0))
+    return Deque(ring: ring.Ring(head: 0, count: items.len(), limit: 0, room: items.len()))
 
 # How many items a deque holds.
 #

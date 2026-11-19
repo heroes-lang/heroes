@@ -1,0 +1,3 @@
+# `beta`'s own catalogue: it uses `alpha`, which uses it back.
+[dependencies.alpha]
+path = "../alpha"

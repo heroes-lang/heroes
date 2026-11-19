@@ -3,9 +3,9 @@
 # It lived in `toolchain.hero` until 2026-08-26 and moved for a
 # reason the LANGUAGE gave: `deps.hero` needs to hash a file, and
 # `toolchain.hero` needs to ask `cli_deps` whether the runtime's
-# object is still fresh. Heroes refuses module cycles (`module_cycle`
-# fires on the `use` edge whatever it carries), so the two could not
-# both exist while the hash sat inside the toolchain. Hashing bytes is
+# object is still fresh. Heroes refused module cycles then (`module_cycle`
+# fired on the `use` edge whatever it carried, until panel 252's R1, 2026-11-19),
+# so the two could not both exist while the hash sat inside the toolchain. Hashing bytes is
 # not toolchain business anyway — nothing here knows what clang is —
 # and CLAUDE.md §11's single-concern rule says the same thing from the
 # other side.

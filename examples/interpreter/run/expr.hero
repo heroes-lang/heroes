@@ -8,13 +8,15 @@
 #
 # HOW THIS MODULE CALLS A FUNCTION WITHOUT KNOWING HOW TO RUN A BODY. A script
 # function's body is statements, and statements are `run/eval.hero`'s job — but
-# an expression can hold a call, so the two need each other. Heroes refuses a
-# module cycle (`error[module_cycle]`, on the `use` edge whatever it carries),
-# so the loop is broken with a **function value**: `evaluated` takes
-# `(function(value.Request) -> value.Frame?)` and `run/eval.hero` hands it its
-# own `called`. The recursion is real and it crosses a `use` in one direction
-# only, which is the shape a language without module cycles forces and the
-# reason the corpus wanted a program this size.
+# an expression can hold a call, so the two need each other. Heroes refused a
+# module cycle when this was written (`error[module_cycle]`, on the `use` edge
+# whatever it carried, until panel 252's R1, 2026-11-19), so the loop is broken with
+# a **function value**: `evaluated` takes `(function(value.Request) ->
+# value.Frame?)` and `run/eval.hero` hands it its own `called`. The recursion
+# is real and it crosses a `use` in one direction only, which is the shape a
+# language without module cycles forced and the reason the corpus wanted a
+# program this size; a ring of modules builds since that sitting, and the
+# program keeps the function value, which reads the same either way.
 #
 # THE FOUR REFUSALS, and every one of them is Heroes aborting if it is not
 # caught here (design.md §1.12, CLAUDE.md §12 — robustness beats every other

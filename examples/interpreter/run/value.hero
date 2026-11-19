@@ -10,8 +10,9 @@
 # style choice: it is what makes the recursion between `run/eval.hero` and
 # `run/expr.hero` expressible at all. Those two need each other — a statement
 # holds expressions, and an expression can call a function whose body is
-# statements — and Heroes refuses a module cycle, so one of them has to take
-# the other as a **function value**. A function type in this language cannot
+# statements — and Heroes refused a module cycle when this was written (until
+# panel 252's R1, 2026-11-19), so one of them takes the other as a **function
+# value**. A function type in this language cannot
 # carry an `@` parameter (`error[expected_type]: expected a type, found `@``,
 # measured), so the state crosses that boundary by value or not at
 # all. Copy-on-write is what makes it cheap: handing a `Frame` down costs a

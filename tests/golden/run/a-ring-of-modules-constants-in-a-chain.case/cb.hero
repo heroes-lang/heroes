@@ -1,0 +1,9 @@
+use ca
+
+# Two.
+constant B: i64
+    2
+
+# Ten times the first.
+constant C: i64
+    ca.A * 10

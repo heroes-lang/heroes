@@ -3,8 +3,9 @@
 # C, and the `.hero` line the verdict must land on. A record of its own so
 # that the file that asks (`cli/pointee.hero`) and the file that writes and
 # reads the units (`cli/header_types.hero`) can both name it without either
-# importing the other — Heroes refuses module cycles, and the seam between
-# asking and reading is the one worth keeping.
+# importing the other — Heroes refused module cycles when it was cut (until
+# panel 252's R1, 2026-11-19), and the seam between asking and reading is the one
+# worth keeping.
 #
 # `declared` is a C type for a width ask, `ptr` or `handle` for a depth ask,
 # and one of the words below for the asks a LEND makes (panel 194's R7,

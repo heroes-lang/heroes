@@ -1,0 +1,14 @@
+use va
+
+# A bag of shapes.
+record Bag
+    shapes: [va.Shape]
+
+# The size of every shape it holds.
+function total(b: Bag) -> i64
+    t: i64 @= 0
+
+    for x in b.shapes
+        t @ t + va.size(s: x)
+
+    return t

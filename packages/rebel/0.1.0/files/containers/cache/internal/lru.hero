@@ -77,10 +77,28 @@ function empty(capacity: i64, ttl: i64) -> Lru
 function grow(@xs: [i64], value: i64)
     xs @ xs.push(value)
 
-# Ends the program where a list is shorter than the cache.
+# How long the key and value lists are as this package left them: the
+# shape's own lists of a slot grow and are cut with them, `claim` beside
+# `storage.store` and `trim` beside `storage.drop_slot`, by one rule.
+function room(cache: Lru lent) -> i64
+    return cache.older.len()
+
+# Ends the program where a list is not as long as this package left it, so
+# not this cache's own (defect 2597).
 function require_lists(cache: Lru lent, keys_held: i64, values_held: i64)
-    codes.require_storage(held: keys_held, count: cache.count, what: "key list")
-    codes.require_storage(held: values_held, count: cache.count, what: "value list")
+    codes.require_kept(held: keys_held, kept: room(cache), what: "key list")
+    codes.require_kept(held: values_held, kept: room(cache), what: "value list")
+
+# Ends the program where the lookup map does not hold a key for each live
+# entry and each key taken out since it was last rebuilt, so is not this
+# cache's own (defect 2597).
+function require_lookup(cache: Lru lent, held: i64)
+    codes.require_kept(held: held, kept: cache.count + cache.dead, what: "lookup map")
+
+# Whether lists and a lookup map of these lengths are as this package left
+# the cache's own: what `require_lists` and `require_lookup` ask.
+function holds_own(cache: Lru lent, keys_held: i64, values_held: i64, lookup_held: i64) -> bool
+    return keys_held == room(cache) && values_held == room(cache) && lookup_held == cache.count + cache.dead
 
 # The time an entry written at `now` expires at.
 function deadline(cache: Lru lent, now: i64) -> i64
@@ -383,6 +401,7 @@ test "put, get, take and expire: four thousand random operations against a list 
         now @= 0
 
         for step in range(from: 0, to: 4000)
+            assert holds_own(cache, keys_held: held.len(), values_held: values.len(), lookup_held: lookup.len())
             now @ now + samples.roll(@dice, 3)
             key = samples.roll(@dice, 12)
             choice = samples.roll(@dice, 4)
@@ -428,3 +447,19 @@ test "put, get, take and expire: four thousand random operations against a list 
 
             for at in range(from: 0, to: model.len())
                 assert values[slot_of(cache, lookup, model[at])] == model_values[at]
+
+test "holds_own: another cache's lists and lookup map are told (defect 2597)"
+    a @= empty(capacity: 4, ttl: 0)
+    a_keys: [str] @= []
+    a_values: [i64] @= []
+    a_lookup: {str: i64} @= {}
+    b @= empty(capacity: 4, ttl: 0)
+    b_keys: [str] @= []
+    b_values: [i64] @= []
+    b_lookup: {str: i64} @= {}
+    put(@b, @b_keys, @b_values, @b_lookup, key: "x", value: 1, now: 0)
+    put(@b, @b_keys, @b_values, @b_lookup, key: "y", value: 2, now: 0)
+    put(@a, @a_keys, @a_values, @a_lookup, key: "p", value: 10, now: 0)
+    assert holds_own(a, keys_held: a_keys.len(), values_held: a_values.len(), lookup_held: a_lookup.len())
+    assert !holds_own(a, keys_held: b_keys.len(), values_held: b_values.len(), lookup_held: b_lookup.len())
+    assert !holds_own(a, keys_held: a_keys.len(), values_held: a_values.len(), lookup_held: b_lookup.len())

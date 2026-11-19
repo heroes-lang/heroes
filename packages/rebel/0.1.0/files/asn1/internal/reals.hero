@@ -10,6 +10,7 @@
 
 use asn1/internal/scalars
 use big
+use bytes
 use math
 use numbers
 
@@ -140,7 +141,10 @@ function read_decimal(content: [u8]) -> f64?
         else if (c == 'E' || c == 'e') && form == 3
             kept @ kept.push('E')
         else
-            return fail(code: INVALID, msg: f"a decimal REAL holding the byte {c}, which its form does not")
+            return fail(
+                code: INVALID,
+                msg: f"a decimal REAL holding '{bytes.format_escaped([c])}', which its form does not"
+            )
         i @ i + 1
 
     if kept.len() == 0
@@ -264,3 +268,8 @@ test "read_decimal: NR1, NR2 with a comma, NR3, and bytes a form refuses"
     assert read_real(content: [0x01, 0x31, 0x2e, 0x35], der: false).is_err()
     assert read_real(content: [0x04, 0x31], der: false).is_err()
     assert read_real(content: [0x03], der: false).is_err()
+
+test "read_decimal: a byte its form does not hold, told as its character (defect 2598)"
+    match read_decimal([0x03, 0x31, 0x78])
+        .ok _  => assert false
+        .err e => assert e.msg == "a decimal REAL holding 'x', which its form does not"

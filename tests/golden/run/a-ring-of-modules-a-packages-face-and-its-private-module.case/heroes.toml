@@ -1,0 +1,6 @@
+# The package of the case beside it, placed in `heroes.packages/` at its
+# fingerprint: its face and its private module use each other.
+
+[dependencies.ringlib]
+version = "1.0.0"
+sum = "sha256-4650878f7a48f9a7bdba204c33db8470cf6d60bda6bcde2daab401d25c555d20"

@@ -69,7 +69,10 @@ function read_text(number: i64, content: [u8]) -> str?
 
     for i in range(from: 0, to: content.len())
         if !is_ascii_char(number: number, c: content[i])
-            return fail(code: NOT_TEXT, msg: f"the byte {content[i]} at {i}, which a string of this type does not hold")
+            return fail(
+                code: NOT_TEXT,
+                msg: f"'{bytes.format_escaped([content[i]])}' at {i}, which a string of this type does not hold"
+            )
 
     return ok(bytes.to_text(content).must())
 
@@ -194,3 +197,8 @@ test "write_text: each kind, and characters a kind lacks"
     assert write_text(number: 30, s: "hi").must() == [0x00, 0x68, 0x00, 0x69]
     assert write_text(number: 30, s: "😀").is_err()
     assert write_text(number: 18, s: "").must().len() == 0
+
+test "read_text: a character a type lacks, told as itself (defect 2598)"
+    match read_text(number: 19, content: bytes.from_text("a@b"))
+        .ok _  => assert false
+        .err e => assert e.msg == "'@' at 1, which a string of this type does not hold"

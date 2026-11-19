@@ -34,3 +34,17 @@ the package it wraps — in which case the honest outcome is one package and no
 framework. It is scored against the running application rather than argued, and
 M-closures-verdict sits eight rows earlier precisely so its answer is known
 first.
+
+## Retired into M-rebel-library, 2026-11-16
+
+**Retired 2026-11-16 into M-rebel-library**, by the author's decision 23 of that day, which grew
+Rebel's list to what a complete library holds and gave it *`web` for what Echo gives*, enclosing this
+row (`docs/roadmap/milestones/M-rebel-library.md`). The framework this page planned over
+M-core-packages' packages is Rebel's `web`, over Rebel's `http`; the decision of 2026-11-17 that
+checked a web framework's needs against the ledgers (the milestone page's decision 32) is where its
+capabilities were counted. The question this page left in its falsifiable form, whether a framework
+with no closures reaches Echo's level or collapses into the package it wraps, is not answered by
+the retirement: it stands for whoever measures `web` against Echo with a running application. The
+row left § The chain on 2026-11-19, at M-rebel-library's landing. Decisions 819 and 853, which
+scheduled this row with packages organised as Go's tree, are entered in the register of the
+decisions M-rebel-library invalidates, <register>. The page above stands as it was written.

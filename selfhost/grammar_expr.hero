@@ -4,16 +4,17 @@
 #
 # ## The map this file owes its reader (CLAUDE.md §11, 2026-08-16)
 #
-# **This is one module because the language leaves no choice.** Heroes refuses
-# module cycles — `module_cycle` fires on the `use` edge, whatever it carries —
-# and these functions call each other in a ring. In the Rust bootstrap the same
-# code is five files (`expr.rs`, `primary.rs`, `control.rs`, `stmt.rs`,
-# `name_stmt.rs`, 1025 lines) held together by `super::`; there is no such
-# spelling here, so the knot is one file. §11's threshold yields for exactly
-# this reason (author instruction *"go past the rule for heroes"*), and what it
-# asks in exchange is this map.
+# **This is one module because the language left no choice.** Until panel
+# 252's R1 (2026-11-19) Heroes refused module cycles — `module_cycle` fired on
+# the `use` edge, whatever it carried — and these functions call each other in
+# a ring. In the Rust bootstrap the same code is five files (`expr.rs`,
+# `primary.rs`, `control.rs`, `stmt.rs`, `name_stmt.rs`, 1025 lines) held
+# together by `super::`; there was no such spelling here, so the knot became
+# one file. §11's threshold yielded for exactly this reason (author instruction
+# *"go past the rule for heroes"*), and what it asks in exchange is this map. A
+# ring of modules builds since that sitting, and nobody has cut this one yet.
 #
-# **The ring**, and it is why nothing here can be split: `parse_expr` → `binary`
+# **The ring**, and it is why nothing here could be split: `parse_expr` → `binary`
 # → `unary` → `postfix` → `primary` → (`group`, `array_literal`, `map_literal`,
 # `case_expr`, `if_expr`, `match_expr`) → `block` → `statement` → back to
 # `parse_expr`. `postfix` reaches `call_args`, which reaches `parse_expr`;

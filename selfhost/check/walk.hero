@@ -239,26 +239,27 @@ function synth(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
             if items.elements.len() == 0
                 state.push_diagnostic(@c, contextless_errors.empty_array_literal(span))
                 return state.record_expr(@c, at: id, ty: state.error_ty_of(c))
-            first = synth(@c, a, r, s, decls, items.elements[0])
-            n: i64 @= 1
 
-            while n < items.elements.len()
-                check(@c, a, r, s, decls, id: items.elements[n], expected: first)
-                n @ n + 1
+            # Its lead first (defect 2596): `check/waiting_order.hero`'s `led`.
+            led = settle_order.led(@c, a, r, s, decls, ids: items.elements)
+            first = synth(@c, a, r, s, decls, led[0])
+
+            for other in led.slice(from: 1, to: led.len())
+                check(@c, a, r, s, decls, id: other, expected: first)
 
             return state.record_expr(@c, at: id, ty: table.intern(@c.out.types, .array(element: first)))
         .map entries =>
             if entries.entries.len() == 0
                 state.push_diagnostic(@c, contextless_errors.empty_map_literal(span))
                 return state.record_expr(@c, at: id, ty: state.error_ty_of(c))
-            key = synth(@c, a, r, s, decls, entries.entries[0].key)
-            value = synth(@c, a, r, s, decls, entries.entries[0].value)
-            n: i64 @= 1
+            keys_led = settle_order.led(@c, a, r, s, decls, ids: settle_order.parts_of(entries.entries, key: true))
+            values_led = settle_order.led(@c, a, r, s, decls, ids: settle_order.parts_of(entries.entries, key: false))
+            key = synth(@c, a, r, s, decls, keys_led[0])
+            value = synth(@c, a, r, s, decls, values_led[0])
 
-            while n < entries.entries.len()
-                check(@c, a, r, s, decls, id: entries.entries[n].key, expected: key)
-                check(@c, a, r, s, decls, id: entries.entries[n].value, expected: value)
-                n @ n + 1
+            for n in range(from: 1, to: entries.entries.len())
+                check(@c, a, r, s, decls, id: keys_led[n], expected: key)
+                check(@c, a, r, s, decls, id: values_led[n], expected: value)
 
             return state.record_expr(
                 @c,

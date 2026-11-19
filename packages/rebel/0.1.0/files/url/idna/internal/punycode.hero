@@ -281,7 +281,7 @@ function decode(s: str) -> [i64]?
             digit = digit_value(s[at])
 
             if digit < 0
-                return fail(code: INVALID, msg: f"Punycode holds a byte that is no digit, {s[at]}, at {at}")
+                return fail(code: INVALID, msg: f"Punycode holds a byte that is no digit, {shown_at(s, at)}, at {at}")
 
             if digit > (MOST - i) / w
                 return fail(code: INVALID, msg: f"Punycode writes a number past the largest i64 at {at}")
@@ -333,6 +333,19 @@ function settled(values: [i64] lent, places: [i64] lent) -> [i64]
         at @ at - 1
 
     return out
+
+# The byte at `at` of `s` as a message shows it: a printable ASCII character
+# quoted, `'`, `"` and `\` behind a `\` as `bytes.format_escaped` writes
+# them, and any other byte as its number, this package using no other
+# (defect 2598).
+function shown_at(s: str, at: i64) -> str
+    if s[at] < 32 || s[at] > 126
+        return f"byte {s[at]}"
+    c = s.slice(from: at, to: at + 1)
+
+    if c == "'" || c == "\"" || c == "\\"
+        return "'\\" + c + "'"
+    return "'" + c + "'"
 
 ## Tests
 
@@ -774,3 +787,11 @@ test "place_of_one and settled: the first and the last one, after places are tak
     assert settled(values: [1, 2, 3], places: [0, 1, 2]) == [1, 2, 3]
     assert settled(values: [1, 2, 3], places: [0, 0, 0]) == [3, 2, 1]
     assert settled(values: [1, 2, 3, 9], places: [0, 1, 2, 1]) == [1, 9, 2, 3]
+
+test "decode: a byte that is no digit, told as the character it is (defect 2598)"
+    match decode("ab-c!")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "Punycode holds a byte that is no digit, '!', at 4"
+
+    assert shown_at("a'\u{7f}", 1) == "'\\''"
+    assert shown_at("a'\u{7f}", 2) == "byte 127"

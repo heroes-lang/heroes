@@ -9,9 +9,10 @@
 # follows what it includes — and a concern that grows a body of its own
 # is a concern that wants a file.
 #
-# It depends on nothing in `cli_toolchain`, which is why the split is
-# possible at all: Heroes refuses module cycles whatever the edge
-# carries, so a seam only exists where the arrows already point one way.
+# It depends on nothing in `cli_toolchain`, which is why the split was
+# possible at all: until panel 252's R1, 2026-11-19, Heroes refused module cycles
+# whatever the edge carried, so a seam only existed where the arrows
+# already pointed one way.
 
 use bytes
 use cli/files
@@ -105,9 +106,10 @@ function is_member(name: str) -> bool
 # hash.
 #
 # Scanned by hand rather than through a split-and-search helper,
-# because this module is the toolchain's and may not `use` a text
-# module that would `use` it back — the language refuses module cycles
-# whatever the edge carries. `bytes` uses nothing, so it cannot.
+# because this module is the toolchain's and could not `use` a text
+# module that would `use` it back while the language refused module
+# cycles (until panel 252's R1, 2026-11-19). `bytes` uses nothing, so it closes
+# no ring.
 #
 # **Every question is asked of the bytes** (found beside defect 110,
 # 2026-09-27). The scan split the text into characters, counted a line in

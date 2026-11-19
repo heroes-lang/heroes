@@ -91,10 +91,10 @@ function codes_of(face: package_face.Face, modules: [str]) -> [Code]
                 via[found.must().value] @ named
 
     # A code a private module writes as text is the face's constant that holds
-    # it: the module cannot name the face's constants, since the face `use`s it
-    # and a module cycle is refused (spec § 1), so it writes the code itself and
-    # the face declares it (`net/internal/failure.hero` beside `net.STOPPED`,
-    # 2026-11-13). The constant then names a code a `fail` writes, and the card
+    # it: the module could not name the face's constants while a module cycle
+    # was refused (until panel 252's R1, 2026-11-19; no sentence of the spec ever
+    # stated it), so it writes the code itself and the face declares it
+    # (`net/internal/failure.hero` beside `net.STOPPED`, 2026-11-13). The constant then names a code a `fail` writes, and the card
     # says it beside the code.
     for code in values
         if via[code].must().len() == 0

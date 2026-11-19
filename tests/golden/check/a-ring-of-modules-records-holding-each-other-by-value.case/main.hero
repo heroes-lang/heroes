@@ -1,0 +1,8 @@
+# Panel 252's R1 (2026-11-19) lets modules form a ring, and two records
+# holding each other BY VALUE across it stay refused by their own rule:
+# `sa.A` holds an `sb.B` and `sb.B` holds an `sa.A`, so neither has a size.
+# Told once, as `no_size`.
+use sa
+
+function main()
+    print(sa.one())

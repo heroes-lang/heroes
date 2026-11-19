@@ -1,0 +1,7 @@
+# A ring of two modules whose functions recurse into each other, panel 252's
+# R1 (2026-11-19): `ev.is_even` asks `od.is_odd` one step down and back.
+use ev
+use od
+
+function main()
+    print(ev.is_even(n: 10), " ", od.is_odd(n: 7))
