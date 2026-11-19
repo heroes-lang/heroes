@@ -353,9 +353,11 @@ test "listen, connect and accept in one process: bytes both ways, the peer is th
     assert last_error() == HERO_IPC_NOT_FOUND
 
 # Windows' AF_UNIX answers a path no file is at as it answers a socket file
-# nothing listens on, `WSAECONNREFUSED`; the member asks the path, so the
-# header's `HERO_IPC_NOT_FOUND` holds there as POSIX's `ENOENT` gives it
-# (found on the box, 2026-11-18).
+# nothing listens on, `WSAECONNREFUSED`, and a path whose folder is not there
+# `WSAENETDOWN`; the member asks the path after either, so the header's
+# `HERO_IPC_NOT_FOUND` holds there as POSIX's `ENOENT` and `ENOTDIR` give it
+# (found on the box, 2026-11-18, and defect 2602, 2026-11-19, the folder's
+# shape, which answered `HERO_IPC_OTHER` until then).
 test "connect: a path never made, and one in a folder that is not there, are not found on every platform"
     never = connect(f"build/{test_name("never")}.sock", space: HERO_IPC_SPACE_PATH, within_ms: 0)
     assert never == nullptr
@@ -363,6 +365,27 @@ test "connect: a path never made, and one in a folder that is not there, are not
     nowhere = connect(f"build/{test_name("no-folder")}/x.sock", space: HERO_IPC_SPACE_PATH, within_ms: 0)
     assert nowhere == nullptr
     assert last_error() == HERO_IPC_NOT_FOUND
+    deeper = connect(
+        f"build/{test_name("no-folder")}/{test_name("nor-this")}/x.sock",
+        space: HERO_IPC_SPACE_PATH,
+        within_ms: 0
+    )
+    assert deeper == nullptr
+    assert last_error() == HERO_IPC_NOT_FOUND
+
+# A file where a folder of the path would be: POSIX's `ENOTDIR`, and on
+# Windows `WSAEINVAL`, the disk unable to pass through a socket file, which the
+# member reads as nothing there (defect 2602's shape beside, which answered
+# `HERO_IPC_INVALID`). The file is a listener's own socket file, so the test
+# leaves nothing behind.
+test "connect: a path under a file that is not a folder is not found on every platform"
+    path = f"build/{test_name("on-the-way")}.sock"
+    l @= listen(path, space: HERO_IPC_SPACE_PATH, perm: 0o600)
+    assert l != nullptr
+    under = connect(path + "/x.sock", space: HERO_IPC_SPACE_PATH, within_ms: 0)
+    assert under == nullptr
+    assert last_error() == HERO_IPC_NOT_FOUND
+    assert close_listener(@l) == 0
 
 test "accept: within 0 and within 50 time out, -2 is refused, and no listener is not open"
     path = f"build/{test_name("bound")}.sock"
