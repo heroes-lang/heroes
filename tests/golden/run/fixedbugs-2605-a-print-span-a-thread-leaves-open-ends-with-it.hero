@@ -1,4 +1,5 @@
-# Found beside panel 252's landing, 2026-11-19: `hero_print_str` called alone,
+# Fixed defect 2605, found beside panel 252's landing, 2026-11-19, lane
+# lane-impl-b: `hero_print_str` called alone,
 # outside a `print` statement, opens a print span that nothing closes, and in
 # a thread that then ends, stdout's lock went with the thread: `exit`,
 # flushing stdout on the main thread, waited for it for ever, the line

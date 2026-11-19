@@ -236,8 +236,8 @@ void hero_print_end(void) {
 #endif
 }
 
-/* A SPAN ENDS WITH ITS THREAD, WHATEVER OPENED IT (found beside panel 252's
- * landing, 2026-11-19). A `print` statement opens and closes its span, but
+/* A SPAN ENDS WITH ITS THREAD, WHATEVER OPENED IT (defect 2605, found beside
+ * panel 252's landing, 2026-11-19). A `print` statement opens and closes its span, but
  * `hero_print_str` is also bound alone, by the compiler for an artifact
  * (`selfhost/cli/io.hero`'s `print_artifact`) and by any program that names
  * `hero_os.h`, and a printer called outside a statement opens a span nothing
