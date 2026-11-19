@@ -63,15 +63,21 @@ constant EXAMPLES: str
 # `.case` folders, in `emit/` 13 cases (`cases.collect`), and 56 of the
 # folders of `examples/` holding a `main.hero`, the count `corpus` floors. The
 # gallery's floor is its module's, `gallery.LEAST`, as `corpus` asks it.
-# Raised as `floors.check` tells, never lowered.
+# Raised as `floors.check` tells, never lowered to fit a walk.
 constant LEAST_RUN: i64
     825
 
 constant LEAST_EMIT: i64
     13
 
+# **55 since 2026-11-19, lowered on purpose, the world moved and not the
+# floor to fit it** (M-rebel-library step 55g), as `corpus`'s at step 55b:
+# the author's decision of 2026-11-15 splits the examples in two groups, and
+# `packages`, the one program that held a package's own tests, moved to
+# `examples-rebel/packages/`; this suite's walk read 55 folders holding a
+# `main.hero` that day, and failed on its floor of 56 alone.
 constant LEAST_EXAMPLES: i64
-    56
+    55
 
 # What the suite walks, each list with its floor: the golden directories, the
 # folders of the examples, and the gallery.
