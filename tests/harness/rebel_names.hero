@@ -265,7 +265,7 @@ test "each rule of the grammar fires on its witness and leaves the shape beside 
 
     assert rules == ["question", "one-meaning", "one-meaning", "text", "copy", "value", "abbreviated"]
     assert told(found[0]) == "m.hero:4: question: `function is_odd(n: i64) -> i64`: a question answers `bool`, and this answers `i64`"
-    assert found[6].said == "the parameter `opts` shortens `options`, in 1 functions, at lines 44"
+    assert found[6].said == "the parameter `opts` shortens `options`, in 1 functions, at lines 40"
     assert key(found[6]) == "m abbreviated opts"
 
 test "a name of a grammar word and a grammar suffix is the suffix's shape"
