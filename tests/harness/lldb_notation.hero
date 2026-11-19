@@ -18,8 +18,6 @@
 # It needs no debugger: the session is lldb's answer, judged by the `lldb`
 # suite where lldb runs, and read here as text, so the check runs on every leg.
 
-use <core>/strings as core_strings
-
 use report
 use shell
 use strings
@@ -88,7 +86,7 @@ function summaries(session: str) -> {str: str}
     out: {str: str} @= {}
 
     for row in strings.lines(session)
-        if core_strings.has_prefix(s: row, prefix: "!shows: (")
+        if strings.has_prefix(s: row, prefix: "!shows: (")
             after = strings.split_text(text: row, separator: ") ")
 
             if after.len() >= 2
@@ -99,7 +97,7 @@ function summaries(session: str) -> {str: str}
                     local = parts[0]
                     under = strings.split_text(text: local, separator: "_")
 
-                    if under.len() >= 2 && core_strings.has_prefix(s: local, prefix: "h")
+                    if under.len() >= 2 && strings.has_prefix(s: local, prefix: "h")
                         out[under.slice(from: 1, to: under.len()).join("_")] @ parts.slice(from: 1, to: parts.len()).join(
                             " = "
                         )
@@ -114,11 +112,11 @@ function bindings(program: str) -> [Binding]
     for row in strings.lines(program)
         if row == "function main()"
             inside @ true
-        else if inside && core_strings.has_prefix(s: row, prefix: "    ") && !core_strings.has_prefix(s: row, prefix: "     ")
+        else if inside && strings.has_prefix(s: row, prefix: "    ") && !strings.has_prefix(s: row, prefix: "     ")
             head = strings.split_text(text: strings.trimmed(row), separator: " ")[0]
             name = strings.split_text(text: head, separator: ":")[0]
 
-            if core_strings.contains(s: row, substr: " = ") && name != "print"
+            if strings.contains(s: row, substr: " = ") && name != "print"
                 out @ out.push(Binding(name: name, line: row))
 
     return out
@@ -151,10 +149,10 @@ function left_sides(err: str) -> {str: str}
     title: str @= ""
 
     for row in strings.lines(err)
-        if core_strings.has_prefix(s: row, prefix: "  at ") && core_strings.contains(s: row, substr: ", in test \"")
+        if strings.has_prefix(s: row, prefix: "  at ") && strings.contains(s: row, substr: ", in test \"")
             named = strings.split_text(text: row, separator: ", in test \"")
             title @ strings.without_suffix(text: named[named.len() - 1], suffix: "\"")
-        else if title != "" && core_strings.has_prefix(s: row, prefix: "  left:  ")
+        else if title != "" && strings.has_prefix(s: row, prefix: "  left:  ")
             out[title] @ strings.without_prefix(text: row, prefix: "  left:  ")
             title @ ""
 

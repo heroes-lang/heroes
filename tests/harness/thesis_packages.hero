@@ -34,8 +34,6 @@
 # inert: a program with no bracketed `use` reads no catalogue (panel 235's
 # R12), so the arm with the tree grades such a program as the arm without it.
 
-use <core>/strings as core_strings
-
 use shell
 use strings
 use thesis_sha256
@@ -102,12 +100,12 @@ function pinned_entries(dir: str, text: str) -> [str]?
     for raw in strings.lines(text: text)
         line = strings.trimmed(text: raw)
 
-        if core_strings.has_prefix(s: line, prefix: "[dependencies.") && core_strings.has_suffix(s: line, suffix: "]")
+        if strings.has_prefix(s: line, prefix: "[dependencies.") && strings.has_suffix(s: line, suffix: "]")
             names @ names.push(
                 strings.without_suffix(text: strings.without_prefix(text: line, prefix: "[dependencies."), suffix: "]")
             )
             summed @ summed.push(false)
-        else if core_strings.has_prefix(s: line, prefix: "sum = ") && names.len() > 0
+        else if strings.has_prefix(s: line, prefix: "sum = ") && names.len() > 0
             summed[summed.len() - 1] @ true
 
     if names.len() == 0
@@ -131,7 +129,7 @@ function without_index(text: str) -> str
     kept: [str] @= []
 
     for line in strings.lines(text: text)
-        if !core_strings.has_prefix(s: strings.trimmed(text: line), prefix: "index = ")
+        if !strings.has_prefix(s: strings.trimmed(text: line), prefix: "index = ")
             kept @ kept.push(line + "\n")
 
     return kept.join("")
@@ -184,7 +182,7 @@ function placed(scratch: str, dir: str, into: str) -> ()?
 # such a task is replaced from the reserve before the freeze).
 function names_a_package(program: str) -> bool
     for line in strings.lines(text: program)
-        if core_strings.has_prefix(s: line, prefix: "use <")
+        if strings.has_prefix(s: line, prefix: "use <")
             return true
 
     return false
@@ -252,7 +250,7 @@ test "a folder that is no tree, a catalogue naming nothing and an entry no sum p
         .ok _ => assert false
         .err e =>
             assert e.code == "unpinned_entry"
-            assert core_strings.contains(s: e.msg, substr: "entry `core` carries no `sum`")
+            assert strings.contains(s: e.msg, substr: "entry `core` carries no `sum`")
 
     write_file(path: scratch + "/path/" + CATALOGUE, text: "index = \"file://x\"\n").must()
 

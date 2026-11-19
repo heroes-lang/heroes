@@ -20,8 +20,6 @@
 # `annotations` suite reads a case's diagnostics from its `.expected`, which
 # under this form is what the program prints.
 
-use <core>/strings as core_strings
-
 use cases
 use expectation
 use floors
@@ -30,6 +28,7 @@ use mark_readers
 use platform_skips
 use report
 use shell
+use strings
 
 constant CONTROL_DIR: str
     "tests/golden/control"
@@ -180,7 +179,7 @@ function one_case(scratch: str, compiler: str, binaries: str, item: cases.Case, 
         report.keep_pass(@r)
         return
 
-    if core_strings.contains(s: sanitised.must().err, substr: "AddressSanitizer") || core_strings.contains(s: sanitised.must().err, substr: "runtime error:")
+    if strings.contains(s: sanitised.must().err, substr: "AddressSanitizer") || strings.contains(s: sanitised.must().err, substr: "runtime error:")
         report.keep_failure(
             @r,
             label: "control/" + item.name + " at --permissive --sanitize",
@@ -215,8 +214,8 @@ test "the control cases are the 27 witnesses less two, each marked with the rule
 
     for item in found
         text = read_file(item.source).must()
-        assert core_strings.contains(s: text, substr: "#~ ")
-        assert core_strings.contains(s: text, substr: "panel 226")
+        assert strings.contains(s: text, substr: "#~ ")
+        assert strings.contains(s: text, substr: "panel 226")
         assert !expectation.split(read_file(item.expected).must()).is_err()
 
 # TASK 2505, held as a test (2026-11-14): a shard asks the floor of the whole
@@ -238,16 +237,16 @@ test "a shard of the control form asks the floor of the whole directory, and a f
     floor = "FAIL control\n  the walk found 2 cases in " + tree + " and had 3 — "
     shard = run_dir(scratch: scratch, compiler: compiler, dir: tree, least: 3, only: "1/2").must()
     assert shard.failed == 2
-    assert core_strings.has_prefix(s: shard.failures[0], prefix: floor)
-    assert core_strings.has_prefix(s: shard.failures[1], prefix: "FAIL control/a\n")
+    assert strings.has_prefix(s: shard.failures[0], prefix: floor)
+    assert strings.has_prefix(s: shard.failures[1], prefix: "FAIL control/a\n")
 
     # The floor counts the directory, two, and never the shard's one case.
     met = run_dir(scratch: scratch, compiler: compiler, dir: tree, least: 2, only: "1/2").must()
     assert met.failed == 1
-    assert core_strings.has_prefix(s: met.failures[0], prefix: "FAIL control/a\n")
+    assert strings.has_prefix(s: met.failures[0], prefix: "FAIL control/a\n")
     filtered = run_dir(scratch: scratch, compiler: compiler, dir: tree, least: 3, only: "b").must()
     assert filtered.failed == 1
-    assert core_strings.has_prefix(s: filtered.failures[0], prefix: "FAIL control/b\n")
+    assert strings.has_prefix(s: filtered.failures[0], prefix: "FAIL control/b\n")
     assert !shell.remove_tree(scratch).is_err()
 
 # DEFECT 2535's shape in this form, held as a test (2026-11-15): the floor was
@@ -269,14 +268,14 @@ test "fixedbugs: a floor the control directory has outgrown is told with the num
     compiler = scratch + "/no-compiler-here"
     told = run_dir(scratch: scratch, compiler: compiler, dir: tree, least: 1, only: "1/2").must()
     assert told.outgrown.len() == 1
-    assert core_strings.has_prefix(
+    assert strings.has_prefix(
         s: told.outgrown[0],
         prefix: "FLOOR control\n  cases in " + tree + ": 2 against a floor of 1"
     )
-    assert core_strings.contains(s: told.outgrown[0], substr: "RAISE the floor to 2")
+    assert strings.contains(s: told.outgrown[0], substr: "RAISE the floor to 2")
     assert told.passed == 1
     assert told.failed == 1
-    assert core_strings.has_prefix(s: told.failures[0], prefix: "FAIL control/a\n")
+    assert strings.has_prefix(s: told.failures[0], prefix: "FAIL control/a\n")
     filtered = run_dir(scratch: scratch, compiler: compiler, dir: tree, least: 1, only: "a").must()
     assert filtered.outgrown.len() == 0
     assert filtered.passed == 0

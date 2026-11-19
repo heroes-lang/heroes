@@ -52,8 +52,6 @@
 # project's own is a failure (`foreign_floor`), never a pass that judged
 # nothing.
 
-use <core>/strings as core_strings
-
 use cards
 use issue_github
 use issue_pace
@@ -334,7 +332,7 @@ function listed_of(j: json_read.Json) -> Listed?
 # `class_of`'s, which reads two (defect 2326).
 function label_value(issue: Listed, name: str) -> str
     for label in issue.labels
-        if core_strings.has_prefix(s: label, prefix: name + ":")
+        if strings.has_prefix(s: label, prefix: name + ":")
             return strings.without_prefix(text: label, prefix: name + ":")
 
     return ""
@@ -357,7 +355,7 @@ function class_of(labels: [str]) -> str
     rank: i64 @= SEVERITY.len()
 
     for label in labels
-        if core_strings.has_prefix(s: label, prefix: "class:")
+        if strings.has_prefix(s: label, prefix: "class:")
             grade = strings.without_prefix(text: label, prefix: "class:")
             at = severity_of(grade)
 
@@ -400,7 +398,7 @@ function by_project(association: str, body: str) -> bool
 # Whether `body` opens as the transcription program renders every issue,
 # `Filed ` and a day `YYYY-MM-DD`.
 function rendered(body: str) -> bool
-    if !core_strings.has_prefix(s: body, prefix: "Filed ")
+    if !strings.has_prefix(s: body, prefix: "Filed ")
         return false
 
     # `Filed ` is ASCII, so the cut stands between characters.
@@ -580,7 +578,7 @@ test "an issue is the project's own where its author is the project's and the pr
         why: "",
         issues: [written(number: 1, association: "NONE", body: filed), pulled]
     )
-    assert core_strings.contains(
+    assert strings.contains(
         s: foreign_floor(strangers),
         substr: "GitHub listed 1 issues and none of them is the project's own"
     )
@@ -641,12 +639,12 @@ test "a listing GitHub gives in part is a skip, never part of a list read as the
     got = listed(@s, dir: scratch + "/" + CACHE)
     assert !got.asked
     assert !got.broken
-    assert core_strings.contains(s: got.why, substr: "the pages hold no issue 1 of the 2188 GitHub numbers")
+    assert strings.contains(s: got.why, substr: "the pages hold no issue 1 of the 2188 GitHub numbers")
     assert read_file(scratch + "/" + CACHE + "/pages").is_err()
     mute: issue_pace.Session @= issue_pace.scripted(
         [issue_wire.answer(status: 200, headers: [DATE], body: "[]"), issue_wire.answer(status: 200, headers: [DATE], body: "[]")]
     )
-    assert core_strings.contains(s: listed(@mute, dir: "").why, substr: "gave no newest issue")
+    assert strings.contains(s: listed(@mute, dir: "").why, substr: "gave no newest issue")
     one = json_of(
         number: 1,
         title: "t",
@@ -662,7 +660,7 @@ test "a listing GitHub gives in part is a skip, never part of a list read as the
     )
     short = listed_from(@opened, dir: "", listing: OPEN_LISTING)
     assert !short.asked
-    assert core_strings.contains(s: short.why, substr: "the pages listed 1 open issues where GitHub counts 63")
+    assert strings.contains(s: short.why, substr: "the pages listed 1 open issues where GitHub counts 63")
     agreed: issue_pace.Session @= issue_pace.scripted(
         [issue_wire.answer(status: 200, headers: [DATE], body: "[" + one + "]"), issue_wire.answer(status: 200, headers: [DATE], body: "{\"open_issues_count\":1}")]
     )
@@ -674,7 +672,7 @@ test "a GitHub that cannot be asked is a skip with its reason, and an answer thi
     gone = listed(@nobody, dir: "")
     assert !gone.asked
     assert !gone.broken
-    assert core_strings.contains(s: gone.why, substr: "the script holds no answer for GET " + LISTING + "1")
+    assert strings.contains(s: gone.why, substr: "the script holds no answer for GET " + LISTING + "1")
 
     for status in [401, 403, 502]
         s: issue_pace.Session @= issue_pace.scripted(
@@ -690,14 +688,14 @@ test "a GitHub that cannot be asked is a skip with its reason, and an answer thi
         got = listed(@s, dir: "")
         assert !got.asked
         assert !got.broken
-        assert core_strings.contains(s: got.why, substr: "answered " + status.to_str())
+        assert strings.contains(s: got.why, substr: "answered " + status.to_str())
 
     lost: issue_pace.Session @= issue_pace.scripted(
         [issue_wire.answer(status: 404, headers: [DATE], body: "{\"message\":\"Not Found\"}")]
     )
     missing = listed(@lost, dir: "")
     assert missing.broken
-    assert core_strings.contains(s: missing.why, substr: "404: Not Found")
+    assert strings.contains(s: missing.why, substr: "404: Not Found")
     odd: issue_pace.Session @= issue_pace.scripted(
         [issue_wire.answer(status: 200, headers: [DATE], body: "{\"not\":\"a list\"}")]
     )

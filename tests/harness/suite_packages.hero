@@ -70,8 +70,6 @@
 # driver reaches it. Such a module is told as unreached, the loud direction, and
 # the failure says why.
 
-use <core>/strings as core_strings
-
 use floors
 use package_judge
 use package_rules
@@ -149,7 +147,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     count: i64 @= 0
 
     for h in source
-        if core_strings.has_suffix(s: h.rel, suffix: ".hero")
+        if strings.has_suffix(s: h.rel, suffix: ".hero")
             count @ count + 1
 
     floors.check(
@@ -464,7 +462,7 @@ function reach(@r: report.Report, scratch: str, compiler: str, root: str, source
     prefix = strings.without_suffix(text: DRIVER, suffix: "main.hero") + placed_trees.FOLDER + "/"
 
     for path in package_rules.line_paths(ran.out)
-        if core_strings.has_prefix(s: path, prefix: prefix)
+        if strings.has_prefix(s: path, prefix: prefix)
             rest = strings.without_prefix(text: path, prefix: prefix)
             cut = strings.index_of(text: rest, needle: "/")
 
@@ -483,7 +481,7 @@ function reach(@r: report.Report, scratch: str, compiler: str, root: str, source
         )
 
     for h in source
-        if held_newest && core_strings.has_suffix(s: h.rel, suffix: ".hero") && named[h.rel].is_err()
+        if held_newest && strings.has_suffix(s: h.rel, suffix: ".hero") && named[h.rel].is_err()
             found @ found.push("    " + h.path)
 
     keep(
@@ -502,7 +500,7 @@ function tests_ran(@r: report.Report, scratch: str, compiler: str, source: [Held
     found: [str] @= []
 
     for h in source
-        if core_strings.has_suffix(s: h.rel, suffix: ".hero")
+        if strings.has_suffix(s: h.rel, suffix: ".hero")
             for title in package_rules.test_titles(h.text)
                 if passed[title].is_err()
                     found @ found.push("    " + h.path + ": `test \"" + title + "\"`")
@@ -526,7 +524,7 @@ function hero_paths(listed: [str]) -> [str]
     out: [str] @= []
 
     for path in placed_trees.outside(listed)
-        if core_strings.has_suffix(s: path, suffix: ".hero")
+        if strings.has_suffix(s: path, suffix: ".hero")
             out @ out.push(path)
 
     return out
@@ -560,7 +558,7 @@ function each_module(@r: report.Report, root: str, source: [Held])
     tests: [str] @= []
 
     for h in source
-        if !core_strings.has_suffix(s: h.rel, suffix: ".hero")
+        if !strings.has_suffix(s: h.rel, suffix: ".hero")
             continue
         at = "    " + h.path + ": "
 

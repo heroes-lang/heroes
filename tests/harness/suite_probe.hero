@@ -57,8 +57,6 @@
 # when one stops failing, which is the day its entry goes, as well as when
 # anything else fails.
 
-use <core>/strings as core_strings
-
 use floors
 use report
 use shell
@@ -264,7 +262,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
 
     # Every directory a `fmt` row reads is one the fixtures' row probed.
     for dir in fixture_directories()
-        if !core_strings.contains(s: ran.out, substr: "\n  " + dir + ": ")
+        if !strings.contains(s: ran.out, substr: "\n  " + dir + ": ")
             report.keep_failure(
                 @r,
                 label: "probe/fixtures",
@@ -369,7 +367,7 @@ function judged(@r: report.Report, row: Row, ran: shell.Run)
 function added(sum: Sum, file: str, family: str, ran: shell.Run) -> Sum
     out: Sum @= sum
 
-    if ran.code == 1 && core_strings.contains(s: ran.err, substr: REFUSING)
+    if ran.code == 1 && strings.contains(s: ran.err, substr: REFUSING)
         out.refused @ out.refused + 1
         return out
     named = failures(ran.err)
@@ -492,9 +490,9 @@ function failures(err: str) -> [str]
     out: [str] @= []
 
     for line in strings.lines(err)
-        first = core_strings.has_prefix(s: line, prefix: "error: the first, `")
+        first = strings.has_prefix(s: line, prefix: "error: the first, `")
 
-        if !first && !core_strings.has_prefix(s: line, prefix: "    `")
+        if !first && !strings.has_prefix(s: line, prefix: "    `")
             continue
         parts = strings.split_text(text: line, separator: "`")
 
@@ -534,7 +532,7 @@ function refused_of(out: str) -> i64
 # The cells of the report's row for `family`, the family first.
 function tally(text: str, family: str) -> [str]
     for line in strings.lines(text)
-        if core_strings.has_prefix(s: line, prefix: "| " + family + " | ")
+        if strings.has_prefix(s: line, prefix: "| " + family + " | ")
             cells: [str] @= []
 
             for cell in strings.split_text(text: line, separator: "|")
@@ -578,7 +576,7 @@ function fixture_directories() -> [str]
         for p in table
             words = strings.words(p.argv)
 
-            if words.len() < 2 || words[0] != "fmt" || !core_strings.has_prefix(s: words[1], prefix: "tests/golden/surface-fixtures/")
+            if words.len() < 2 || words[0] != "fmt" || !strings.has_prefix(s: words[1], prefix: "tests/golden/surface-fixtures/")
                 continue
             dir = directory_of(words[1])
 
@@ -678,7 +676,7 @@ test "a file's run adds a seed, a file the parser refuses, or a run no row allow
         ran: shell.Run(code: 2, out: "", err: "error: cannot read `e.hero`", started: true, why: 0)
     )
     assert sum.broken.len() == 3
-    assert core_strings.has_prefix(s: sum.broken[0], prefix: "  `c.hero` exited 124")
+    assert strings.has_prefix(s: sum.broken[0], prefix: "  `c.hero` exited 124")
     assert sum.seeds == 1
 
     # A 2 naming its failures adds them, to be held to the row's known ones.
@@ -707,7 +705,7 @@ test "a tree is red when its files do not read what the probe reads of its root"
     missed: report.Report @= report.empty()
     summed(@missed, tree: low, census: census, sum: short)
     assert missed.failed == 1
-    assert core_strings.contains(s: missed.failures[0], substr: "FAIL probe/t/covered")
+    assert strings.contains(s: missed.failures[0], substr: "FAIL probe/t/covered")
 
     # A census the watchdog stopped, and a file's run no row allows.
     stopped: report.Report @= report.empty()
@@ -722,7 +720,7 @@ test "a tree is red when its files do not read what the probe reads of its root"
     broken: report.Report @= report.empty()
     summed(@broken, tree: tree, census: census, sum: killed)
     assert broken.failed == 1
-    assert core_strings.contains(s: broken.failures[0], substr: "`c.hero` exited 124")
+    assert strings.contains(s: broken.failures[0], substr: "`c.hero` exited 124")
 
 test "a tree's failures are held to the ones its row names as known"
     census = file_run(code: 0, seeds: 1, err: "")

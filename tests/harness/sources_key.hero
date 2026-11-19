@@ -28,8 +28,6 @@
 #   - `runtime <key>` for `runtime.c` and each file it names on a line
 #     opening `#include "`, each keyed, the keys joined and keyed again.
 
-use <core>/strings as core_strings
-
 use strings
 
 extern "hero_compiler.h"
@@ -257,7 +255,7 @@ function included_names(text: str) -> [str]
     out: [str] @= []
 
     for line in strings.split_on(text: text, byte: 10)
-        if core_strings.has_prefix(s: line, prefix: head)
+        if strings.has_prefix(s: line, prefix: head)
             shut = strings.index_of(text: line.slice(from: head.len(), to: line.len()), needle: "\"")
 
             if !shut.is_err()

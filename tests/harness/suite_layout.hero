@@ -31,8 +31,6 @@
 # `tests/harness/` is excluded the way the Rust excluded `tests/`: it is
 # the net, not the compiler.
 
-use <core>/strings as core_strings
-
 use floors
 use growth
 use placed_trees
@@ -885,7 +883,7 @@ function tally(@spent: [i64], @held: [i64], rows: [str], path: str, lines: i64)
     for entry in rows
         parts = strings.words(entry)
 
-        if parts.len() > 0 && core_strings.has_prefix(s: path, prefix: parts[0])
+        if parts.len() > 0 && strings.has_prefix(s: path, prefix: parts[0])
             spent[index] @ spent[index] + lines
             held[index] @ held[index] + 1
         index @ index + 1
@@ -905,7 +903,7 @@ function over_budget(rows: [str], spent: [i64], held: [i64]) -> [str]
         if parts.len() == 2
             number @ strings.to_number(parts[1])
 
-        if number.is_err() || !core_strings.has_suffix(s: parts[0], suffix: "/")
+        if number.is_err() || !strings.has_suffix(s: parts[0], suffix: "/")
             out @ out.push("    `" + entry + "` is not a directory with its `/` and a number")
         else if held[index] == 0
             out @ out.push("    " + parts[0] + " holds no module, so its budget measures nothing")
@@ -958,7 +956,7 @@ function rows_holding(rows: [str], modules: [str]) -> [str]
         holds: bool @= false
 
         for path in modules
-            if parts.len() > 0 && core_strings.has_prefix(s: path, prefix: parts[0])
+            if parts.len() > 0 && strings.has_prefix(s: path, prefix: parts[0])
                 holds @ true
 
         if holds
@@ -984,13 +982,13 @@ function slow_appends(path: str, text: str) -> [str]
         at @ at + 1
         code = strings.trimmed(row)
 
-        if core_strings.has_prefix(s: code, prefix: "#")
+        if strings.has_prefix(s: code, prefix: "#")
             continue
 
         hit: bool @= reports_through_a_field(code)
 
         for needle in SLOW_APPENDS
-            if core_strings.contains(s: code, substr: needle)
+            if strings.contains(s: code, substr: needle)
                 hit @ true
 
         if hit
@@ -1007,7 +1005,7 @@ function reports_through_a_field(code: str) -> bool
         return false
     place = code.slice(from: 0, to: at.must())
     rest = code.slice(from: at.must() + 3, to: code.len())
-    return core_strings.contains(s: place, substr: ".") && core_strings.has_suffix(s: place, suffix: "diagnostics") && core_strings.has_prefix(s: rest, prefix: place + ".push(")
+    return strings.contains(s: place, substr: ".") && strings.has_suffix(s: place, suffix: "diagnostics") && strings.has_prefix(s: rest, prefix: place + ".push(")
 
 # The lines a reader must hold in their head: everything outside a `test`
 # block, AND NOT A BLANK LINE.
@@ -1036,11 +1034,11 @@ function code_lines(text: str) -> i64
     inside: bool @= false
 
     for row in strings.lines(text)
-        if core_strings.has_prefix(s: row, prefix: "test \"")
+        if strings.has_prefix(s: row, prefix: "test \"")
             inside @ true
             continue
 
-        if inside && row.len() > 0 && !starts_indented(row) && !core_strings.has_prefix(s: row, prefix: "#")
+        if inside && row.len() > 0 && !starts_indented(row) && !strings.has_prefix(s: row, prefix: "#")
             inside @ false
 
         if !inside && strings.trimmed(row).len() > 0
@@ -1073,7 +1071,7 @@ function modules_of(files: [str], only: str) -> [str]
     out: [str] @= []
 
     for path in placed_trees.outside(files)
-        if core_strings.has_suffix(s: path, suffix: ".hero") && (only == "" || core_strings.contains(s: path, substr: only))
+        if strings.has_suffix(s: path, suffix: ".hero") && (only == "" || strings.contains(s: path, substr: only))
             out @ out.push(path)
 
     return out
@@ -1264,7 +1262,7 @@ test "an append to the lexer's state through the field is found, and one in a co
     text = "function f(@l: LexState)\n    l.tokens @ l.tokens.push(t)\n    # l.tokens @ l.tokens.push(t) is the slow spelling\n    push_token(@l.tokens, t)\n"
     found = slow_appends(path: "x.hero", text: text)
     assert found.len() == 1
-    assert core_strings.contains(s: found[0], substr: "x.hero:2:")
+    assert strings.contains(s: found[0], substr: "x.hero:2:")
     opened = slow_appends(
         path: "y.hero",
         text: "    l.open_brackets @ l.open_brackets.push(span)\n    push_bracket(@l.open_brackets, span)\n"
@@ -1330,23 +1328,23 @@ test "a growth the allowance names passes, any other fails, and a stale allowanc
     none: [str] = []
     stale = unallowed(found: none, written: none, allowed: ["selfhost/b.hero lvalue"])
     assert stale.len() == 1
-    assert core_strings.contains(s: stale[0], substr: "no longer grown")
+    assert strings.contains(s: stale[0], substr: "no longer grown")
 
     # Every allowance names a module of the compiler and one name in it.
     for entry in GROWTH_ALLOWED
         parts = strings.words(entry)
         assert parts.len() == 2
-        assert core_strings.has_prefix(s: parts[0], prefix: "selfhost/")
+        assert strings.has_prefix(s: parts[0], prefix: "selfhost/")
 
 test "a budget's row is a directory with its slash, so `parse.hero` is not under `parse/`"
     for entry in BUDGETS
         parts = strings.words(entry)
         assert parts.len() == 2
-        assert core_strings.has_suffix(s: parts[0], suffix: "/")
+        assert strings.has_suffix(s: parts[0], suffix: "/")
         assert !strings.to_number(parts[1]).is_err()
 
-    assert !core_strings.has_prefix(s: "selfhost/parse.hero", prefix: "selfhost/parse/")
-    assert core_strings.has_prefix(s: "selfhost/parse/opening.hero", prefix: "selfhost/parse/")
+    assert !strings.has_prefix(s: "selfhost/parse.hero", prefix: "selfhost/parse/")
+    assert strings.has_prefix(s: "selfhost/parse/opening.hero", prefix: "selfhost/parse/")
 
 test "a budget is passed, met, empty or malformed, and each but the met is said"
     rows = ["selfhost/parse/ 10", "selfhost/none/ 5", "selfhost/parse 3"]
@@ -1362,13 +1360,13 @@ test "a budget is passed, met, empty or malformed, and each but the met is said"
     # with no `/` are told, a walk that finds nothing never passing in silence.
     said = over_budget(rows: rows, spent: spent, held: held)
     assert said.len() == 2
-    assert core_strings.contains(s: said[0], substr: "selfhost/none/ holds no module")
-    assert core_strings.contains(s: said[1], substr: "is not a directory")
+    assert strings.contains(s: said[0], substr: "selfhost/none/ holds no module")
+    assert strings.contains(s: said[1], substr: "is not a directory")
 
     # One line more than the row grants is said, with both numbers.
     tally(spent: @spent, held: @held, rows: rows, path: "selfhost/parse/c.hero", lines: 1)
     past = over_budget(rows: rows, spent: spent, held: held)
-    assert core_strings.contains(s: past[0], substr: "selfhost/parse/: 11 lines of code, past its budget of 10")
+    assert strings.contains(s: past[0], substr: "selfhost/parse/: 11 lines of code, past its budget of 10")
 
 test "a placed tree's module is no module the ceiling counts, narrowed or not (feature 2425)"
     walked = [

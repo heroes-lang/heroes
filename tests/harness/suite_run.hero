@@ -47,8 +47,6 @@
 # would be the defect. `expectation.hero` carries the reasoning and the
 # two things the line does not do.
 
-use <core>/strings as core_strings
-
 use absence
 use case_setting
 use cases
@@ -285,7 +283,7 @@ function starter_of(scratch: str, item: cases.Case) -> Starter?
     tail = "/main.hero"
     none = plain()
 
-    if !core_strings.has_suffix(s: item.source, suffix: ".case" + tail)
+    if !strings.has_suffix(s: item.source, suffix: ".case" + tail)
         return ok(none)
     dir = item.source.slice(from: 0, to: item.source.len() - tail.len())
     setting = case_setting.read_setting(dir)?
@@ -329,7 +327,7 @@ function compiled(scratch: str, by: Starter, words: [str]) -> shell.Run?
 function tested_failed(@r: report.Report, scratch: str, compiler: str, item: cases.Case, by: Starter) -> bool
     text = read_file(item.source)
 
-    if text.is_err() || !core_strings.has_prefix(s: text.must(), prefix: "test \"") && !core_strings.contains(s: text.must(), substr: "\ntest \"")
+    if text.is_err() || !strings.has_prefix(s: text.must(), prefix: "test \"") && !strings.contains(s: text.must(), substr: "\ntest \"")
         return false
     said = compiled(scratch: scratch, by: by, words: [compiler, "test", item.source])
 
@@ -402,7 +400,7 @@ function sanitised_failed(@r: report.Report, scratch: str, compiler: str, item: 
             return true
         return false
 
-    if core_strings.contains(s: sanitised.must().err, substr: "AddressSanitizer") || core_strings.contains(s: sanitised.must().err, substr: "runtime error:")
+    if strings.contains(s: sanitised.must().err, substr: "AddressSanitizer") || strings.contains(s: sanitised.must().err, substr: "runtime error:")
         report.keep_failure(
             @r,
             label: "run/" + item.name + " at " + level,
@@ -484,9 +482,9 @@ test "fixedbugs: a program that writes bytes that are not UTF-8 is told as one t
         r: @got
     )
     assert got.failed == 1
-    assert core_strings.has_prefix(s: got.failures[0], prefix: "FAIL run/latin at -O0\n")
-    assert core_strings.contains(s: got.failures[0], substr: "ran and exited 0, and what it wrote is not UTF-8")
-    assert core_strings.contains(s: got.failures[0], substr: "on stdout 1 byte is not, in `c<0xE9>`")
+    assert strings.has_prefix(s: got.failures[0], prefix: "FAIL run/latin at -O0\n")
+    assert strings.contains(s: got.failures[0], substr: "ran and exited 0, and what it wrote is not UTF-8")
+    assert strings.contains(s: got.failures[0], substr: "on stdout 1 byte is not, in `c<0xE9>`")
     assert !shell.remove_tree(scratch).is_err()
 
 # DEFECT 2287 (2026-11-07): four threads that ran out of their stacks at once
@@ -512,10 +510,10 @@ test "fixedbugs: four threads out of stack at once tell one whole line, run afte
         said = shell.run(scratch: scratch, program: binary, words: [binary]).must()
         assert said.code != 0
         assert said.out == ""
-        assert core_strings.has_prefix(s: said.err, prefix: "panic: stack exhausted")
+        assert strings.has_prefix(s: said.err, prefix: "panic: stack exhausted")
         assert strings.split_text(text: said.err, separator: "panic:").len() == 2
         assert strings.split_text(text: said.err, separator: "\n").len() == 2
-        assert core_strings.has_suffix(s: said.err, suffix: "\n")
+        assert strings.has_suffix(s: said.err, suffix: "\n")
 
     assert !shell.remove_tree(scratch).is_err()
 
@@ -565,8 +563,8 @@ test "fixedbugs: a C write past a field is seen by the sanitiser at -O0, asked o
         by: plain()
     )
     assert seen.failed == 1
-    assert core_strings.has_prefix(s: seen.failures[0], prefix: "FAIL run/over at --sanitize -O0\n")
-    assert core_strings.contains(s: seen.failures[0], substr: "stack-buffer-overflow")
+    assert strings.has_prefix(s: seen.failures[0], prefix: "FAIL run/over at --sanitize -O0\n")
+    assert strings.contains(s: seen.failures[0], substr: "stack-buffer-overflow")
     unseen: report.Report @= report.empty()
     assert !sanitised_failed(@unseen, scratch: scratch, compiler: compiler, item: exact_case, want: want, flags: leg, by: plain())
     assert unseen.failed == 0
@@ -640,7 +638,7 @@ test "a program that does not build is a failure naming clang's words"
         r: @r
     )
     assert r.failed == 1
-    assert core_strings.contains(s: r.failures[0], substr: "did not build")
+    assert strings.contains(s: r.failures[0], substr: "did not build")
     assert !shell.remove_tree(scratch).is_err()
 
 # DEFECT 2523, held as a test (2026-11-14): a program the Windows target
@@ -664,14 +662,14 @@ test "fixedbugs: a program Windows cannot build is skipped there before its buil
     if shell.exe_suffix() == ".exe"
         assert r.failed == 0
         assert r.skips.len() == 1
-        assert core_strings.has_prefix(
+        assert strings.has_prefix(
             s: r.skips[0],
             prefix: "SKIP run/unbuilt\n  `sigaction` and its struct are POSIX's"
         )
     else
         assert r.failed == 1
         assert r.skips.len() == 0
-        assert core_strings.contains(s: r.failures[0], substr: "no-compiler-here")
+        assert strings.contains(s: r.failures[0], substr: "no-compiler-here")
     assert !shell.remove_tree(scratch).is_err()
 
 # DEFECT 246's cause in this suite, held as a test (2026-10-04): the skip took
@@ -702,7 +700,7 @@ test "fixedbugs: a program that does not build is skipped only where the machine
     assert !took
     assert refuted.failed == 1
     assert refuted.skips.len() == 0
-    assert core_strings.contains(s: refuted.failures[0], substr: "clang finds `stdio.h`")
+    assert strings.contains(s: refuted.failures[0], substr: "clang finds `stdio.h`")
     lacks = absence.planted_case(dir: tree, name: "lacks", bound: absence.NOWHERE, missing: absence.NOWHERE)
     assert !lacks.is_err()
     excused: report.Report @= report.empty()
@@ -717,7 +715,7 @@ test "fixedbugs: a program that does not build is skipped only where the machine
     assert skipped
     assert excused.failed == 0
     assert excused.skips.len() == 1
-    assert core_strings.has_prefix(s: excused.skips[0], prefix: "SKIP run/lacks\n")
+    assert strings.has_prefix(s: excused.skips[0], prefix: "SKIP run/lacks\n")
     assert !shell.remove_tree(scratch).is_err()
 
 # **A case that is a folder is started as its setting asks** (panel 243's R2,
@@ -747,7 +745,7 @@ test "the run form starts a case folder's compiler as its setting asks, and refu
     probe = variables_probe.built(scratch).must()
     said = compiled(scratch: scratch, by: by, words: [probe, "PKG_CONFIG_PATH", "PKG_CONFIG_LIBDIR"]).must()
     separator = case_setting.separator(shell.exe_suffix() == ".exe")
-    assert said.code == 0 && core_strings.has_suffix(s: said.out, suffix: "\nPKG_CONFIG_PATH [" + dir + "/pa" + separator + dir + "/pb]\nPKG_CONFIG_LIBDIR [" + dir + "/pc]\n")
+    assert said.code == 0 && strings.has_suffix(s: said.out, suffix: "\nPKG_CONFIG_PATH [" + dir + "/pa" + separator + dir + "/pb]\nPKG_CONFIG_LIBDIR [" + dir + "/pc]\n")
     one = starter_of(scratch: scratch, item: cases.Case(source: scratch + "/y.hero", expected: "", name: "y")).must()
     assert !case_setting.asks(one.setting) && one.root == ""
     assert !write_file(path: dir + "/directory", text: "here\n").is_err()
@@ -785,7 +783,7 @@ test "a shard asks the floor of the whole directory and the skip ratio of its ow
     shard = run_dir(scratch: scratch, compiler: compiler, dir: tree, least: 3, only: "1/2").must()
     assert shard.skips.len() == 1
     assert own_failures(shard).len() == 2
-    assert core_strings.has_prefix(s: own_failures(shard)[0], prefix: floor)
+    assert strings.has_prefix(s: own_failures(shard)[0], prefix: floor)
     assert own_failures(shard)[1] == "FAIL run\n  1 of 1 cases of shard 1 of 2" + part
 
     # The floor counts the directory, two, and never the shard's one case.
@@ -795,7 +793,7 @@ test "a shard asks the floor of the whole directory and the skip ratio of its ow
     assert own_failures(filtered) == ["FAIL run\n  1 of 1 cases selected by `lacks-a`" + part]
     whole = run_dir(scratch: scratch, compiler: compiler, dir: tree, least: 3, only: "").must()
     assert own_failures(whole).len() == 2
-    assert core_strings.has_prefix(s: own_failures(whole)[0], prefix: floor)
+    assert strings.has_prefix(s: own_failures(whole)[0], prefix: floor)
     assert own_failures(whole)[1] == "FAIL run\n  2 of 2 cases" + tail
     assert !shell.remove_tree(scratch).is_err()
 
@@ -819,11 +817,11 @@ test "fixedbugs: a floor the run directory has outgrown is told with the number 
     compiler = scratch + "/no-compiler-here"
     told = run_dir(scratch: scratch, compiler: compiler, dir: tree, least: 1, only: "1/2").must()
     assert told.outgrown.len() == 1
-    assert core_strings.has_prefix(
+    assert strings.has_prefix(
         s: told.outgrown[0],
         prefix: "FLOOR run\n  cases in " + tree + ": 2 against a floor of 1"
     )
-    assert core_strings.contains(s: told.outgrown[0], substr: "RAISE the floor to 2")
+    assert strings.contains(s: told.outgrown[0], substr: "RAISE the floor to 2")
     assert own_failures(told).len() == 0
     short = run_dir(scratch: scratch, compiler: compiler, dir: tree, least: 3, only: "1/2").must()
     assert short.outgrown.len() == 0
@@ -872,7 +870,7 @@ function own_failures(r: report.Report) -> [str]
     out: [str] @= []
 
     for one in r.failures
-        if core_strings.has_prefix(s: one, prefix: "FAIL run\n")
+        if strings.has_prefix(s: one, prefix: "FAIL run\n")
             out @ out.push(one)
 
     return out

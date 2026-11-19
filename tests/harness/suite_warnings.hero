@@ -37,8 +37,6 @@
 # `examples/sqlite` the same afternoon, exactly as the sentence above it
 # promised, and the exemption was deleted by the step that made it obsolete.
 
-use <core>/strings as core_strings
-
 use absence
 use cases
 use floors
@@ -202,7 +200,7 @@ function example_programs(scratch: str, dir: str) -> [str]?
 # program where the word is empty, else the ones whose name holds it, as
 # `cases.matching` reads a case's.
 function kept_by_word(name: str, only: str) -> bool
-    return only == "" || core_strings.contains(s: name, substr: only)
+    return only == "" || strings.contains(s: name, substr: only)
 
 # A machine that skipped a third of the programs for libraries it lacks: the
 # floor `run`, `lines` and the golden forms hold.
@@ -300,7 +298,7 @@ function warnings_in(err: str) -> [str]
     found: [str] @= []
 
     for row in strings.lines(err)
-        if core_strings.contains(s: row, substr: "warning:")
+        if strings.contains(s: row, substr: "warning:")
             found @ found.push(row)
 
     return found
@@ -329,7 +327,7 @@ function foreign_program(noise: [str], main: str) -> str
 
     for row in noise
         for word in strings.words(row)
-            if !core_strings.contains(s: word, substr: ".hero")
+            if !strings.contains(s: word, substr: ".hero")
                 continue
             at = strings.index_of(text: word, needle: ".hero").must()
             named = word.slice(from: 0, to: at + 5)
@@ -337,7 +335,7 @@ function foreign_program(noise: [str], main: str) -> str
             if named == main
                 continue
 
-            if home.len() > 0 && core_strings.has_prefix(s: named, prefix: home + "/")
+            if home.len() > 0 && strings.has_prefix(s: named, prefix: home + "/")
                 continue
             return named
 
@@ -392,7 +390,7 @@ test "fixedbugs: a program that cannot build is skipped only where the machine l
     assert refuted.failed == 1
     assert refuted.passed == 0
     assert refuted.skips.len() == 0
-    assert core_strings.contains(s: refuted.failures[0], substr: "clang finds `stdio.h`")
+    assert strings.contains(s: refuted.failures[0], substr: "clang finds `stdio.h`")
     lacks = absence.planted_case(dir: tree, name: "lacks", bound: absence.NOWHERE, missing: absence.NOWHERE)
     assert !lacks.is_err()
     excused: report.Report @= report.empty()
@@ -402,7 +400,7 @@ test "fixedbugs: a program that cannot build is skipped only where the machine l
     assert excused.failed == 0
     assert excused.passed == 0
     assert excused.skips.len() == 1
-    assert core_strings.has_prefix(s: excused.skips[0], prefix: "SKIP warnings/lacks\n")
+    assert strings.has_prefix(s: excused.skips[0], prefix: "SKIP warnings/lacks\n")
     assert !shell.remove_tree(scratch).is_err()
 
 # DEFECT 2523, held as a test (2026-11-14): a program the Windows target
@@ -427,12 +425,12 @@ test "fixedbugs: a program Windows cannot build is skipped there before its buil
     if shell.exe_suffix() == ".exe"
         assert r.failed == 0
         assert r.skips.len() == 1
-        assert core_strings.has_prefix(s: r.skips[0], prefix: "SKIP warnings/unbuilt\n  POSIX's signal sets")
+        assert strings.has_prefix(s: r.skips[0], prefix: "SKIP warnings/unbuilt\n  POSIX's signal sets")
     else
         assert r.failed == 1
         assert r.skips.len() == 0
-        assert core_strings.has_prefix(s: r.failures[0], prefix: "FAIL warnings/unbuilt at -O0\n")
-        assert core_strings.contains(s: r.failures[0], substr: "no-compiler-here")
+        assert strings.has_prefix(s: r.failures[0], prefix: "FAIL warnings/unbuilt at -O0\n")
+        assert strings.contains(s: r.failures[0], substr: "no-compiler-here")
     assert !shell.remove_tree(scratch).is_err()
 
 # DEFECT 299, held as a test (2026-10-04). A build that fails for a reason
@@ -457,8 +455,8 @@ test "fixedbugs: a build that fails is a failure at either level, and the skips 
     judge(@refused, @none, scratch: scratch, compiler: always, label: "warnings/x", main: main)
     assert refused.passed == 0
     assert refused.failed == 1
-    assert core_strings.has_prefix(s: refused.failures[0], prefix: "FAIL warnings/x at -O0\n")
-    assert core_strings.contains(
+    assert strings.has_prefix(s: refused.failures[0], prefix: "FAIL warnings/x at -O0\n")
+    assert strings.contains(
         s: refused.failures[0],
         substr: " -O0` exited 1, so its C was never judged for warnings:\n    error[boom]: the build failed"
     )
@@ -470,7 +468,7 @@ test "fixedbugs: a build that fails is a failure at either level, and the skips 
     at_o2: report.Report @= report.empty()
     judge(@at_o2, @none, scratch: scratch, compiler: late, label: "warnings/x", main: main)
     assert at_o2.failed == 1
-    assert core_strings.has_prefix(s: at_o2.failures[0], prefix: "FAIL warnings/x at -O2\n")
+    assert strings.has_prefix(s: at_o2.failures[0], prefix: "FAIL warnings/x at -O2\n")
     clean = stub_compiler(scratch: scratch, name: "stub-clean.sh", body: "exit 0").must()
     quiet: report.Report @= report.empty()
     judge(@quiet, @none, scratch: scratch, compiler: clean, label: "warnings/x", main: main)
@@ -556,13 +554,13 @@ test "fixedbugs: a walk that finds nothing in a list fails by that list's floor,
     assert got.passed == 0
     assert got.failed == 4
     head = "FAIL warnings\n  the walk found 0 "
-    assert core_strings.has_prefix(s: got.failures[0], prefix: head + "cases in " + tree + "/run and had 1 — ")
-    assert core_strings.has_prefix(s: got.failures[1], prefix: head + "cases in " + tree + "/emit and had 1 — ")
-    assert core_strings.has_prefix(
+    assert strings.has_prefix(s: got.failures[0], prefix: head + "cases in " + tree + "/run and had 1 — ")
+    assert strings.has_prefix(s: got.failures[1], prefix: head + "cases in " + tree + "/emit and had 1 — ")
+    assert strings.has_prefix(
         s: got.failures[2],
         prefix: head + "folders holding a main.hero in " + tree + "/examples and had 1 — "
     )
-    assert core_strings.has_prefix(s: got.failures[3], prefix: head + "programs in " + tree + "/gallery and had 1 — ")
+    assert strings.has_prefix(s: got.failures[3], prefix: head + "programs in " + tree + "/gallery and had 1 — ")
     filtered = walk(scratch: scratch, compiler: compiler, lists: empty, only: "fixedbugs-2534").must()
     assert filtered.passed == 0
     assert filtered.failed == 0

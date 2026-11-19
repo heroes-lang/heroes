@@ -87,8 +87,6 @@
 # would also put a `.h` outside the three directories that own C, which
 # `suite_records.c_files` refuses by design.
 
-use <core>/strings as core_strings
-
 use report
 use shell
 use strings
@@ -319,7 +317,7 @@ function a_header_found_ahead_is_seen(@r: report.Report, scratch: str, compiler:
         if step[2] == ""
             refused = !said.is_err() && said.must().code == 1
             needle = "ffi_header_refused"
-            told = refused && core_strings.contains(s: said.must().err, substr: needle) && core_strings.contains(s: said.must().err, substr: AHEAD_DECOY)
+            told = refused && strings.contains(s: said.must().err, substr: needle) && strings.contains(s: said.must().err, substr: AHEAD_DECOY)
 
             if !told
                 wrong @ wrong.push(
@@ -464,7 +462,7 @@ function a_warm_cache_never_replays_a_warning_that_was_repaired(@r: report.Repor
 
     # The premise, asserted rather than assumed: without a warning here
     # the rest of this case tests nothing and would pass vacuously.
-    if !core_strings.contains(s: noisy.must().err, substr: NOISE_WORDS)
+    if !strings.contains(s: noisy.must().err, substr: NOISE_WORDS)
         report.keep_failure(
             @r,
             label: label,
@@ -483,7 +481,7 @@ function a_warm_cache_never_replays_a_warning_that_was_repaired(@r: report.Repor
             wrong @ wrong.push("    " + attempt + " did not succeed after the header was repaired")
             continue
 
-        if core_strings.contains(s: said.must().err, substr: NOISE_WORDS)
+        if strings.contains(s: said.must().err, substr: NOISE_WORDS)
             wrong @ wrong.push(
                 "    " + attempt + " reported `" + NOISE_WORDS + "` on a header that no longer has it:\n      " + strings.trimmed(said.must().err)
             )
@@ -530,7 +528,7 @@ function a_header_edit_reaches_the_value_probes(@r: report.Report, scratch: str,
 
         if value == UNDEFINED_VALUE
             refused = !said.is_err() && said.must().code == 1
-            named = refused && core_strings.contains(s: said.must().err, substr: "`CONF_VALUE`") && core_strings.contains(s: said.must().err, substr: "`CONF_INIT`")
+            named = refused && strings.contains(s: said.must().err, substr: "`CONF_VALUE`") && strings.contains(s: said.must().err, substr: "`CONF_INIT`")
 
             if !named
                 wrong @ wrong.push(
@@ -700,7 +698,7 @@ function only_the_module_that_read_it_is_rebuilt(@r: report.Report, scratch: str
 # the suite reads either compiler the same way. A name of neither shape
 # comes back whole, so a report names it rather than a guess.
 function module_of_object(name: str) -> str
-    if !core_strings.has_suffix(s: name, suffix: ".o")
+    if !strings.has_suffix(s: name, suffix: ".o")
         return name
     stem = name.slice(from: 0, to: name.len() - 2)
 
@@ -825,12 +823,12 @@ function a_warm_cache_never_turns_a_failure_into_a_pass(@r: report.Report, scrat
                 "    the " + attempt + " build exited " + said.must().code.to_str() + " where the `extern` disagrees with `math.h` — exit 1 is the contract, and a warm cache is not a reason to stop checking"
             )
 
-        if !core_strings.contains(s: said.must().err, substr: "error[ffi_return_type]")
+        if !strings.contains(s: said.must().err, substr: "error[ffi_return_type]")
             wrong @ wrong.push(
                 "    the " + attempt + " build did not report `ffi_return_type`; it said:\n      " + strings.trimmed(said.must().err)
             )
 
-        if !core_strings.contains(s: said.must().err, substr: "failbind.hero")
+        if !strings.contains(s: said.must().err, substr: "failbind.hero")
             wrong @ wrong.push(
                 "    the " + attempt + " build blamed something other than the declaring module — the span must land on the author's line, wherever the cache happens to be warm"
             )
@@ -956,7 +954,7 @@ test "fixedbugs: a warm build that rewrites the runtime's object is told (defect
     rebuilt: report.Report @= report.empty()
     an_untouched_build_still_hits(@rebuilt, scratch: scratch, compiler: every, objects: every_objects)
     assert rebuilt.failed == 1
-    assert core_strings.contains(s: rebuilt.failures[0], substr: every_objects + name)
+    assert strings.contains(s: rebuilt.failures[0], substr: every_objects + name)
     kept: report.Report @= report.empty()
     an_untouched_build_still_hits(@kept, scratch: scratch, compiler: once, objects: once_objects)
     assert kept.passed == 1

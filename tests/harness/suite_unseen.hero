@@ -41,8 +41,6 @@
 # place, and a place that no longer holds its character is red too, so the
 # list cannot outlive what it excuses.
 
-use <core>/strings as core_strings
-
 use floors
 use placed_trees
 use report
@@ -276,7 +274,7 @@ function exempt(path: str) -> bool
         return true
 
     for tree in EXEMPT
-        if core_strings.has_prefix(s: path, prefix: tree)
+        if strings.has_prefix(s: path, prefix: tree)
             return true
 
     return false

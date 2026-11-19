@@ -39,8 +39,6 @@
 # library), so a claim on anything else that does not name its own next line
 # fails here rather than passing unread.
 
-use <core>/strings as core_strings
-
 use absence
 use cases
 use floors
@@ -246,7 +244,7 @@ function units_walked(@r: report.Report, scratch: str, compiler: str, item: case
         blind: bool @= false
 
         for one in entry_offences(c: unit.text, source: named)
-            if core_strings.contains(s: one, substr: "no function's entry")
+            if strings.contains(s: one, substr: "no function's entry")
                 blind @ true
             else
                 wrong @ wrong.push(one)
@@ -304,7 +302,7 @@ test "fixedbugs: a case that cannot emit is skipped only where the machine lacks
     assert judged.failed == 1
     assert none_skipped == 0
     assert judged.skips.len() == 0
-    assert core_strings.contains(s: judged.failures[0], substr: "clang finds `stdio.h`")
+    assert strings.contains(s: judged.failures[0], substr: "clang finds `stdio.h`")
     lacks = absence.planted_case(dir: tree, name: "lacks", bound: absence.NOWHERE, missing: absence.NOWHERE)
     assert !lacks.is_err()
     excused: report.Report @= report.empty()
@@ -319,7 +317,7 @@ test "fixedbugs: a case that cannot emit is skipped only where the machine lacks
     assert excused.failed == 0
     assert one_skipped == 1
     assert excused.skips.len() == 1
-    assert core_strings.has_prefix(s: excused.skips[0], prefix: "SKIP lines/lacks\n")
+    assert strings.has_prefix(s: excused.skips[0], prefix: "SKIP lines/lacks\n")
     assert !shell.remove_tree(scratch).is_err()
 
 # DEFECT 2523, held as a test (2026-11-14): a case the Windows target cannot
@@ -343,14 +341,14 @@ test "fixedbugs: a case Windows cannot build is skipped there before its emissio
     if shell.exe_suffix() == ".exe"
         assert r.failed == 0
         assert r.skips.len() == 1
-        assert core_strings.has_prefix(
+        assert strings.has_prefix(
             s: r.skips[0],
             prefix: "SKIP lines/unbuilt\n  `sigaction` and its struct are POSIX's"
         )
     else
         assert r.failed == 1
         assert r.skips.len() == 0
-        assert core_strings.contains(s: r.failures[0], substr: "no-compiler-here")
+        assert strings.contains(s: r.failures[0], substr: "no-compiler-here")
     assert !shell.remove_tree(scratch).is_err()
 
 # DEFECT 453's widening in this suite, held as a test (2026-10-10): a program
@@ -397,7 +395,7 @@ test "fixedbugs: the third word narrows the walk to the cases whose name holds i
     assert got.passed + got.failed + got.skips.len() == named
 
     for one in got.failures
-        assert !core_strings.has_prefix(s: one, prefix: "FAIL lines\n")
+        assert !strings.has_prefix(s: one, prefix: "FAIL lines\n")
 
     assert got.outgrown.len() == 0
     assert !shell.remove_tree(scratch).is_err()
@@ -425,7 +423,7 @@ test "a shard asks the floor of the whole directory and the skip ratio of its ow
     shard = walk(scratch: scratch, compiler: compiler, dir: tree, least: 3, only: "1/2").must()
     assert shard.skips.len() == 1
     assert shard.failed == 2
-    assert core_strings.has_prefix(s: shard.failures[0], prefix: floor)
+    assert strings.has_prefix(s: shard.failures[0], prefix: floor)
     assert shard.failures[1] == "FAIL lines\n  1 of 1 cases of shard 1 of 2" + part
 
     # The floor counts the directory, two, and never the shard's one case:
@@ -467,7 +465,7 @@ function offences(c: str, source: str) -> [str]
     for row in strings.lines(c)
         row_number @ row_number + 1
 
-        if core_strings.has_prefix(s: row, prefix: "#line ")
+        if strings.has_prefix(s: row, prefix: "#line ")
             rest = strings.without_prefix(text: row, prefix: "#line ")
             kept = claim_file
             claim_line @ 0
@@ -503,7 +501,7 @@ function offences(c: str, source: str) -> [str]
         if claim_file.len() == 0
             continue
 
-        if core_strings.has_suffix(s: claim_file, suffix: ".hero")
+        if strings.has_suffix(s: claim_file, suffix: ".hero")
             if claim_file != held
                 held @ claim_file
                 text = read_file(claim_file)
@@ -566,7 +564,7 @@ function entry_offences(c: str, source: str) -> [str]
     for row in strings.lines(c)
         row_number @ row_number + 1
 
-        if core_strings.has_prefix(s: row, prefix: "#line ")
+        if strings.has_prefix(s: row, prefix: "#line ")
             rest = strings.without_prefix(text: row, prefix: "#line ")
             space = strings.index_of(text: rest, needle: " ")
             kept = file
@@ -587,12 +585,12 @@ function entry_offences(c: str, source: str) -> [str]
                     file @ named.must()
             continue
 
-        if core_strings.has_prefix(s: row, prefix: "#define ")
+        if strings.has_prefix(s: row, prefix: "#define ")
             line @ line + 1
             continue
 
         if pending
-            if core_strings.has_suffix(s: row, suffix: "goto bb0;") || core_strings.has_suffix(s: row, suffix: "goto bb0; bb0:")
+            if strings.has_suffix(s: row, suffix: "goto bb0;") || strings.has_suffix(s: row, suffix: "goto bb0; bb0:")
                 entries @ entries + 1
                 pending @ false
 
@@ -616,7 +614,7 @@ function entry_offences(c: str, source: str) -> [str]
         # R1), which the signature's claim claims by construction.
         if row.len() > 0 && row[0] != 32 && !strings.index_of(text: row, needle: ") { ").is_err() && !strings.index_of(text: row, needle: " goto bb0;").is_err()
             entries @ entries + 1
-        else if row.len() > 0 && row[0] != 32 && core_strings.has_suffix(s: row, suffix: ") {")
+        else if row.len() > 0 && row[0] != 32 && strings.has_suffix(s: row, suffix: ") {")
             pending @ true
             spread @ 0
             signature_file @ file
@@ -633,7 +631,7 @@ function entry_offences(c: str, source: str) -> [str]
 # `.hero` file nor the library. An empty name is a directive this walk could
 # not read, and claims nothing.
 function generated_claim(file: str) -> bool
-    return file.len() > 0 && !core_strings.has_suffix(s: file, suffix: ".hero") && file != LIBRARY_FILE
+    return file.len() > 0 && !strings.has_suffix(s: file, suffix: ".hero") && file != LIBRARY_FILE
 
 # The first three offences and a count of the rest: a drifted `#line`
 # repeats, and five hundred of them in one message is a message nobody
@@ -726,11 +724,11 @@ test "a claim that lands on a real line is no offence, and the two bad shapes ar
 
     blank = "#line 2 " + quoted(tree + "/s.hero") + "\nint x;\n"
     assert offences(c: blank, source: "t").len() == 1
-    assert core_strings.contains(s: offences(c: blank, source: "t")[0], substr: "a blank line")
+    assert strings.contains(s: offences(c: blank, source: "t")[0], substr: "a blank line")
 
     past = "#line 9 " + quoted(tree + "/s.hero") + "\nint x;\n"
     assert offences(c: past, source: "t").len() == 1
-    assert core_strings.contains(s: offences(c: past, source: "t")[0], substr: "past the end")
+    assert strings.contains(s: offences(c: past, source: "t")[0], substr: "past the end")
     assert !shell.remove_tree(scratch).is_err()
 
 test "the count advances after the anchor, which is the defect this exists for"
@@ -744,7 +742,7 @@ test "the count advances after the anchor, which is the defect this exists for"
     # backend's whole life — the anchor was right and the drift was not.
     drifting = "#line 1 " + quoted(tree + "/s.hero") + "\nint a;\nint b;\n"
     assert offences(c: drifting, source: "t").len() == 1
-    assert core_strings.contains(s: offences(c: drifting, source: "t")[0], substr: ":2 is a blank line")
+    assert strings.contains(s: offences(c: drifting, source: "t")[0], substr: ":2 is a blank line")
     assert !shell.remove_tree(scratch).is_err()
 
 test "the library is nobody's line"
@@ -758,7 +756,7 @@ test "a restore of the generated file names its own next line, and one short is 
     assert offences(c: good, source: "t").len() == 0
     short = "int a;\nint b;\nint c;\n#line 4 \"m.c\"\nint d;\n"
     assert offences(c: short, source: "t").len() == 1
-    assert core_strings.contains(
+    assert strings.contains(
         s: offences(c: short, source: "t")[0],
         substr: "names line 4 of the generated file, and the line after it is 5"
     )
@@ -778,7 +776,7 @@ test "a function's entry is claimed by its signature's line, and an entry under 
     generated = "#line 3 \"a.hero\"\nint64_t f(void) {\n#line 3 \"m.c\"\n    int64_t t1;\n    goto bb0;\n"
     spread = entry_offences(c: generated, source: "t")
     assert spread.len() == 1
-    assert core_strings.contains(
+    assert strings.contains(
         s: spread[0],
         substr: "entry is 2 lines of C, the first claimed by m.c:3, where one line claimed by its signature's a.hero:3 is owed"
     )
@@ -787,8 +785,8 @@ test "a function's entry is claimed by its signature's line, and an entry under 
     drifted = "#line 3 \"a.hero\"\nint64_t f(void) {\n    int64_t t1; goto bb0;\n"
     found = entry_offences(c: drifted, source: "t")
     assert found.len() == 1
-    assert core_strings.contains(s: found[0], substr: "claimed by a.hero:4, and its signature by a.hero:3")
-    assert core_strings.contains(s: entry_offences(c: "int x;\n", source: "t")[0], substr: "so the walk asked nothing")
+    assert strings.contains(s: found[0], substr: "claimed by a.hero:4, and its signature by a.hero:3")
+    assert strings.contains(s: entry_offences(c: "int x;\n", source: "t")[0], substr: "so the walk asked nothing")
 
 # PANEL 219'S R1: a `#line` naming no file keeps the one clang presumes, so
 # a bare one is read as a claim on that file, and an entry joined onto its
@@ -802,7 +800,7 @@ test "a bare #line claims the file clang presumes, and an entry on its signature
     assert offences(c: bare, source: "t").len() == 0
     blank = "#line 1 " + quoted(tree + "/s.hero") + "\nint a;\n#line 2\nint b;\n"
     assert offences(c: blank, source: "t").len() == 1
-    assert core_strings.contains(s: offences(c: blank, source: "t")[0], substr: "s.hero:2 is a blank line")
+    assert strings.contains(s: offences(c: blank, source: "t")[0], substr: "s.hero:2 is a blank line")
 
     # A bare restore of the generated file names its own next line too.
     assert offences(c: "#line 2 \"m.c\"\nint a;\n#line 4\nint b;\n", source: "t").len() == 0
@@ -815,7 +813,7 @@ test "a bare #line claims the file clang presumes, and an entry on its signature
     drifted = "#line 3 \"a.hero\"\nint64_t f(void) {\n#line 4\n    int64_t t1; goto bb0; bb0:\n"
     found = entry_offences(c: drifted, source: "t")
     assert found.len() == 1
-    assert core_strings.contains(s: found[0], substr: "claimed by a.hero:4, and its signature by a.hero:3")
+    assert strings.contains(s: found[0], substr: "claimed by a.hero:4, and its signature by a.hero:3")
 
 test "unquoted undoes C's escapes"
     assert unquoted("\"a.hero\"").must() == "a.hero"
@@ -848,13 +846,13 @@ test "fixedbugs: a #line name is read with every escape the emitter writes, and 
         assert !write_file(path: scratch + "/a\nb.hero", text: "function main()\n\n    print(1)\n").is_err()
         found = offences(c: "#line 2 \"" + scratch + "/a\\nb.hero\"\nint x;\n", source: "t")
         assert found.len() == 1
-        assert core_strings.contains(s: found[0], substr: ":2 is a blank line")
+        assert strings.contains(s: found[0], substr: ":2 is a blank line")
     unwritten = offences(c: "#line 1 \"caf\\303\\251.hero\"\nint x;\n", source: "t")
     assert unwritten.len() == 1
-    assert core_strings.contains(s: unwritten[0], substr: "names no file this walk can read")
+    assert strings.contains(s: unwritten[0], substr: "names no file this walk can read")
     gone = offences(c: "#line 1 \"" + scratch + "/gone.hero\"\nint x;\n", source: "t")
     assert gone.len() == 1
-    assert core_strings.contains(s: gone[0], substr: "/gone.hero, which this walk cannot read")
+    assert strings.contains(s: gone[0], substr: "/gone.hero, which this walk cannot read")
     assert !shell.remove_tree(scratch).is_err()
 
 function quoted(path: str) -> str
