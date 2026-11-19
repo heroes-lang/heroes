@@ -3466,7 +3466,11 @@ test "redraw: the next flush whole"
     assert io.read_all_text(p.reader).must() == "\u{1b}[0m\u{1b}[2J\u{1b}[H\u{1b}[1;1Ha\u{1b}[?25l"
     io.close(@p.reader).must()
 
-# The next event, or, where the tests run with no terminal, its failure.
+# The next event; a program with no terminal is told, and on a terminal the
+# example asks nothing, a person being needed to answer: `read_event` waits
+# as long as it takes, and a terminal nobody types at gives no event (this
+# Mac's, and the console Windows gives a program started with none, measured
+# 2026-11-19).
 test "read_event: an event or no terminal"
     p @= io.pipe().must()
     t @= Terminal(
@@ -3474,9 +3478,12 @@ test "read_event: an event or no terminal"
         screen: screen.Screen(shown: grid.new(x: 0, y: 0, width: 2, height: 1), whole: false, columns: 2, rows: 1, mouse: false, motion: false, paste: false, focus: false, active: true)
     )
 
-    match read_event(@t)
-        .ok _  => _ = 0
-        .err e => assert e.code == UNSUPPORTED || e.code == CLOSED
+    match term.enter_raw()
+        .ok _ => term.leave_raw().must()
+        .err _ =>
+            match read_event(@t)
+                .ok _  => _ = 0
+                .err e => assert e.code == UNSUPPORTED || e.code == CLOSED
 
     io.close(@p.writer).must()
     io.close(@p.reader).must()

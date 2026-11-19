@@ -996,7 +996,13 @@ test "extract_tar: Python's PAX archive into a folder, its files, links, modes a
     assert names.len() == 8
     a = path.join_all([root, "dir", "a.txt"])
     assert fs.read_bytes(a).must() == bytes.from_text("alpha\n")
-    assert fs.permission_of(a).must() == 0o640
+
+    # The entry's 0o640 as this system keeps it: the bits on POSIX, and on
+    # Windows, which keeps only whether a file is read-only, 0o666.
+    kept = path.join_all([root, "kept"])
+    fs.write_bytes(kept, data: []).must()
+    fs.set_permission(kept, permission: 0o640).must()
+    assert fs.permission_of(a).must() == fs.permission_of(kept).must()
     assert time.unix_seconds(fs.info(a).must().written) == 1700000000
     assert fs.read_link(path.join_all([root, "dir", "link"])).must() == "a.txt"
     assert fs.read_bytes(path.join_all([root, "dir", "hard"])).must() == bytes.from_text("alpha\n")
@@ -1093,14 +1099,20 @@ test "add_tar_tree and extract_tar: a folder on the disk through an archive and 
     fs.write_bytes(path.join_all([src, "top.txt"]), data: bytes.from_text("top")).must()
     fs.write_bytes(path.join_all([src, "sub", "deep.txt"]), data: bytes.from_text("deep")).must()
     fs.symlink(target: "top.txt", name: path.join_all([src, "to-top"])).must()
-    p @= io.pipe().must()
-    w @= tar_writer(p.writer, compression: .none)
+
+    # The archive goes through a file: its 9,728 bytes (on macOS) are more
+    # than a pipe holds on Windows, 4,096, where one thread writing them all
+    # before it reads waits for ever (both measured 2026-11-19).
+    file = path.join_all([root, "tree.tar"])
+    out @= fs.create(file).must()
+    w @= tar_writer(out, compression: .none)
     add_tar_tree(@w, dir: src, name: "tree").must()
     finish_tar(@w).must()
-    io.close(@p.writer).must()
+    io.close(@out).must()
     dst = path.join_all([root, "dst"])
-    _ = extract_tar(p.reader, compression: .none, to: dst, limit: 1000000).must()
-    io.close(@p.reader).must()
+    s @= fs.open(file).must()
+    _ = extract_tar(s, compression: .none, to: dst, limit: 1000000).must()
+    io.close(@s).must()
     assert fs.read_bytes(path.join_all([dst, "tree", "sub", "deep.txt"])).must() == bytes.from_text("deep")
     assert fs.read_link(path.join_all([dst, "tree", "to-top"])).must() == "top.txt"
     fs.remove_all(root).must()

@@ -403,7 +403,14 @@ test "dial: TLS begun after the INFO line, over the connection where tls can, on
     server = tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: [])
     hello = "INFO {\"server_name\":\"tlsfake\",\"tls_required\":true,\"max_payload\":4096}\r\n"
     l @= tls.listen_after("127.0.0.1", port: 0, server: server, steps: [.send(data: bytes.from_text(hello))]).must()
-    t @= threads.spawn_text(body: dial_tls_for_test, arg: f"tls://localhost:{l.port}")
+
+    # The client dials the address the server listens on, which the test
+    # certificate names: `localhost` is `::1` first on Windows, where a
+    # refused connection takes 2 s and the client's 1,000 ms ran out there
+    # (measured on the box, 2026-11-19). A client that fails ends the wait for
+    # it, and the test fails with the client's words.
+    tls.set_accept_deadline(l, ms: 30000).must()
+    t @= threads.spawn_text(body: dial_tls_for_test, arg: f"tls://127.0.0.1:{l.port}")
     tries: i64 @= 0
     done: bool @= false
 
@@ -423,5 +430,7 @@ test "dial: TLS begun after the INFO line, over the connection where tls can, on
                 io.close(@c).must()
                 done @ true
 
+    if !done
+        assert threads.wait_text(@t) == "open tlsfake 4096 1 true"
     assert done
     tls.close_listener(@l).must()
