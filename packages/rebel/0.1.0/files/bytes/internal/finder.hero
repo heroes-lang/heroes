@@ -1,0 +1,186 @@
+# Where a list of bytes holds another, sought from the start or from the
+# end: what every search of `bytes` for a list stands on, its occurrences
+# counted, cut at and replaced. A pattern longer than `SHORT` is sought with
+# a table built once, Knuth, Morris and Pratt's, so that no input makes a
+# search quadratic; a shorter one is compared at each position, which costs
+# less than building the table.
+
+# The code a search fails with where the bytes hold no occurrence.
+constant NOT_FOUND: str
+    "not_found"
+
+# The longest pattern sought by comparing it at each position; a longer one
+# builds its tables.
+constant SHORT: i64
+    8
+
+# A pattern to seek, with the two tables that make the search of a long one
+# linear in the bytes searched, one for each direction.
+record Finder
+    # The bytes sought.
+    pattern: [u8]
+    # For each count k of the pattern's first bytes matched, how many of
+    # them still match once the match moves on one byte: the longest proper
+    # prefix of those k bytes that is also their suffix. Empty for a short
+    # pattern.
+    forward: [i64]
+    # The same table for the pattern read from its last byte to its first.
+    backward: [i64]
+
+# The byte of `pattern` at `at`, counted from its end where `reversed`.
+function byte_at(pattern: [u8] lent, at: i64, reversed: bool) -> u8
+    if reversed
+        return pattern[pattern.len() - 1 - at]
+    return pattern[at]
+
+# The table of `pattern` read forward, or from its end where `reversed`: one
+# entry for each count of bytes matched, 0 to the pattern's length.
+function table(pattern: [u8] lent, reversed: bool) -> [i64]
+    back: [i64] @= [0, 0]
+    k: i64 @= 0
+    at: i64 @= 1
+
+    while at < pattern.len()
+        here = byte_at(pattern, at: at, reversed: reversed)
+
+        while k > 0 && here != byte_at(pattern, at: k, reversed: reversed)
+            k @ back[k]
+
+        if here == byte_at(pattern, at: k, reversed: reversed)
+            k @ k + 1
+        back @ back.push(k)
+        at @ at + 1
+
+    return back
+
+# `pattern` ready to be sought, its tables built where it is long.
+function finder(pattern: [u8]) -> Finder
+    if pattern.len() <= SHORT
+        return Finder(pattern: pattern, forward: [], backward: [])
+    return Finder(
+        pattern: pattern,
+        forward: table(pattern, reversed: false),
+        backward: table(pattern, reversed: true)
+    )
+
+# Where `f`'s pattern first begins in `s` at or after `from`, which is 0 to
+# `s.len()`. Fails `not_found` where it begins nowhere there. The empty
+# pattern is found at `from`.
+function first_from(f: Finder lent, s: [u8] lent, from: i64) -> i64?
+    m = f.pattern.len()
+
+    if f.forward.len() == 0
+        last = s.len() - m
+        at: i64 @= from
+
+        while at <= last
+            matched: i64 @= 0
+
+            while matched < m && s[at + matched] == f.pattern[matched]
+                matched @ matched + 1
+
+            if matched == m
+                return ok(at)
+            at @ at + 1
+
+        return fail(code: NOT_FOUND, msg: "no occurrence")
+    k: i64 @= 0
+    at: i64 @= from
+
+    while at < s.len()
+        while k > 0 && s[at] != f.pattern[k]
+            k @ f.forward[k]
+
+        if s[at] == f.pattern[k]
+            k @ k + 1
+
+        if k == m
+            return ok(at - m + 1)
+        at @ at + 1
+
+    return fail(code: NOT_FOUND, msg: "no occurrence")
+
+# Where `f`'s pattern last begins in `s` with its end at or before `end`,
+# which is 0 to `s.len()`. Fails `not_found` where it ends nowhere there. The
+# empty pattern is found at `end`.
+function last_before(f: Finder lent, s: [u8] lent, end: i64) -> i64?
+    m = f.pattern.len()
+
+    if f.backward.len() == 0
+        at: i64 @= end - m
+
+        while at >= 0
+            matched: i64 @= 0
+
+            while matched < m && s[at + matched] == f.pattern[matched]
+                matched @ matched + 1
+
+            if matched == m
+                return ok(at)
+            at @ at - 1
+
+        return fail(code: NOT_FOUND, msg: "no occurrence")
+    k: i64 @= 0
+    at: i64 @= end - 1
+
+    while at >= 0
+        while k > 0 && s[at] != f.pattern[m - 1 - k]
+            k @ f.backward[k]
+
+        if s[at] == f.pattern[m - 1 - k]
+            k @ k + 1
+
+        if k == m
+            return ok(at)
+        at @ at - 1
+
+    return fail(code: NOT_FOUND, msg: "no occurrence")
+
+## Tests
+
+test "table: a pattern with no border, one of a repeated byte, and one with a border inside"
+    assert table([0x61, 0x62, 0x63], reversed: false) == [0, 0, 0, 0]
+    assert table([0x61, 0x61, 0x61], reversed: false) == [0, 0, 1, 2]
+    assert table([0x61, 0x62, 0x61, 0x62, 0x63], reversed: false) == [0, 0, 0, 1, 2, 0]
+    assert table([0x61, 0x62, 0x61, 0x62, 0x63], reversed: true) == [0, 0, 0, 0, 0, 0]
+
+test "first_from and last_before: a short and a long pattern alike, at either end, inside, overlapping, absent, and empty"
+    s: [u8] = [0x61, 0x61, 0x62, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x62, 0x00, 0xff]
+    long: [u8] = [0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x62]
+    f = finder(long)
+    assert f.forward.len() == 10 && f.backward.len() == 10
+    assert first_from(f, s: s, from: 0).must() == 4
+    assert first_from(f, s: s, from: 5).is_err()
+    assert last_before(f, s: s, end: s.len()).must() == 4
+    assert last_before(f, s: s, end: 12).is_err()
+    short = finder([0x61, 0x62])
+    assert short.forward.len() == 0
+    assert first_from(short, s: s, from: 0).must() == 1
+    assert first_from(short, s: s, from: 2).must() == 11
+    assert last_before(short, s: s, end: s.len()).must() == 11
+    assert last_before(short, s: s, end: 12).must() == 1
+    edge = finder([0x00, 0xff])
+    assert first_from(edge, s: s, from: 0).must() == 13 && last_before(edge, s: s, end: 15).must() == 13
+    empty = finder([])
+    assert first_from(empty, s: s, from: 3).must() == 3 && last_before(empty, s: s, end: 7).must() == 7
+    nothing: [u8] = []
+    assert first_from(f, s: nothing, from: 0).is_err() && last_before(f, s: nothing, end: 0).is_err()
+
+test "first_from and last_before: a long pattern answers what comparing at each position does, at every start and end"
+    s: [u8] @= []
+
+    for i in range(from: 0, to: 200)
+        s @ s.push(to_u8(i % 7 % 3 + 0x61).must())
+
+    patterns: [[u8]] = [
+        [0x61, 0x62, 0x63, 0x61, 0x62, 0x61, 0x61, 0x62, 0x63, 0x61]
+        [0x62, 0x61, 0x61, 0x62, 0x63, 0x61, 0x62, 0x61, 0x61, 0x62]
+    ]
+
+    for p in patterns
+        f = finder(p)
+        naive = Finder(pattern: p, forward: [], backward: [])
+
+        for from in range(from: 0, to: s.len() + 1)
+            assert first_from(f, s: s, from: from).default(-1) == first_from(naive, s: s, from: from).default(-1)
+            assert last_before(f, s: s, end: from).default(-1) == last_before(naive, s: s, end: from).default(-1)

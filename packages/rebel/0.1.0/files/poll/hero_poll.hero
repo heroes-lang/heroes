@@ -332,15 +332,34 @@ test "a timer ends a wait with no limit at its time, and set_timer sets it again
     assert hero_net.close(@listener) == 0
 
 test "an interval waited past is told once with every time it fell due, then due again at its next time"
+    # The layer's own clock, `hero_time.monotonic_ns`, is read either side of
+    # each call, so what is asserted holds however late a loaded machine runs
+    # it: a timer added between `added_from` and `added_by`, due first 1 ms on
+    # and then every 10 ms, has fallen due by a moment `t` as many times as
+    # 1 ms and whole 10 ms fit between its adding and `t`, and a wait that
+    # tells it again before its next time is a fault whatever the load.
     set @= make(4)
-    key = add_timer(set, first_ns: 1000000, every_ns: 1000000)
-    assert hero_time.sleep_ns(30000000) == 0
+    added_from = hero_time.monotonic_ns()
+    key = add_timer(set, first_ns: 1000000, every_ns: 10000000)
+    added_by = hero_time.monotonic_ns()
+    assert hero_time.sleep_ns(35000000) == 0
+    waited_from = hero_time.monotonic_ns()
     events: [i64] @= [0, 0, 0]
     assert wait(set, limit_ns: 0, @events, n: 3) == 1
+    waited_by = hero_time.monotonic_ns()
     assert events[0] == key
-    assert events[2] >= 25
-    assert wait(set, limit_ns: 0, @events, n: 3) == 0
+    assert events[1] == HERO_POLL_DUE
+    told = events[2]
+    assert told >= 4
+    assert told >= (waited_from - added_by - 1000000) / 10000000 + 1
+    assert told <= (waited_by - added_from - 1000000) / 10000000 + 1
+    next_from = added_from + 1000000 + told * 10000000
+    again = wait(set, limit_ns: 0, @events, n: 3)
+    again_by = hero_time.monotonic_ns()
+    assert again == 0 || again_by >= next_from
     assert wait(set, limit_ns: 1000000000, @events, n: 3) == 1
+    assert hero_time.monotonic_ns() >= next_from
+    assert events[0] == key
     assert events[2] >= 1
     assert close(@set) == 0
 

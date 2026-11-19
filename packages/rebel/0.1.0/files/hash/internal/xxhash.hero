@@ -1,0 +1,528 @@
+# xxHash, XXH32 and XXH64, with a seed, over bytes at once or fed in steps:
+# the hash LZ4's frames check with, and the one whose low 32 bits are a
+# Zstandard frame's checksum. A word of 32 bits is an `i64` from 0 to
+# 2^32 - 1, masked after each sum and taken in halves of 16 bits for a
+# product, so nothing passes 2^49; a word of 64 bits is an `i64` holding its
+# bits, summed in halves of 32 and multiplied in pieces of 16. The sums and
+# products are this module's own rather than `word`'s, so the compiler can
+# put them inside the loops that call them: measured over 16 MiB on
+# 2026-11-19, beside other programs' tests, a call into `word` for each cost
+# 7 % more, and with them here XXH64 took what `compress/zstd`'s copy took
+# and XXH32 2 % less than `compress/lz4`'s. The state of a hash fed
+# in steps is the face's `Xxh32` or `Xxh64`: this module is handed its lanes,
+# the bytes held after the last whole stripe, and the count fed.
+
+use hash/internal/word
+
+# 2^32 - 1, which keeps a word to 32 bits.
+constant MASK32: i64
+    0xffffffff
+
+# The first of XXH32's five primes.
+constant P32_1: i64
+    2654435761
+
+# XXH32's second prime.
+constant P32_2: i64
+    2246822519
+
+# XXH32's third prime.
+constant P32_3: i64
+    3266489917
+
+# XXH32's fourth prime.
+constant P32_4: i64
+    668265263
+
+# XXH32's fifth prime.
+constant P32_5: i64
+    374761393
+
+# The first of XXH64's five primes, as the bits of an `i64`:
+# 11400714785074694791.
+constant P64_1: i64
+    0x9e3779b1 << 32 | 0x85ebca87
+
+# XXH64's second prime, 14029467366897019727.
+constant P64_2: i64
+    0xc2b2ae3d << 32 | 0x27d4eb4f
+
+# XXH64's third prime, 1609587929392839161.
+constant P64_3: i64
+    0x165667b1 << 32 | 0x9e3779f9
+
+# XXH64's fourth prime, 9650029242287828579.
+constant P64_4: i64
+    0x85ebca77 << 32 | 0xc2b2ae63
+
+# XXH64's fifth prime, 2870177450012600261.
+constant P64_5: i64
+    0x27d4eb2f << 32 | 0x165667c5
+
+# The bytes of a text fed to a state at a time, so no copy of a whole text
+# is made.
+constant TEXT_PIECE: i64
+    4096
+
+## XXH32
+
+# `a` times `b` modulo 2^32, both from 0 to 2^32 - 1: `a` times each half
+# of 16 bits of `b`, the high one's product kept to its low 16 bits.
+function mul32(a: i64, b: i64) -> i64
+    return a * (b & 0xffff) + ((a * (b >> 16) & 0xffff) << 16) & MASK32
+
+# `x`, from 0 to 2^32 - 1, rotated left by `r` bits within 32, `r` from 1
+# to 31.
+function rotl32(x: i64, r: i64) -> i64
+    return (x << r | x >> 32 - r) & MASK32
+
+# The four bytes at `at` of `data` as a word, the lowest first.
+function lane32(data: [u8] lent, at: i64) -> i64
+    b0 = to_i64(data[at]).must()
+    b1 = to_i64(data[at + 1]).must()
+    b2 = to_i64(data[at + 2]).must()
+    b3 = to_i64(data[at + 3]).must()
+    return b0 | b1 << 8 | b2 << 16 | b3 << 24
+
+# One word of input mixed into an accumulator.
+function round32(acc: i64, input: i64) -> i64
+    return mul32(a: rotl32(x: acc + mul32(a: input, b: P32_2) & MASK32, r: 13), b: P32_1)
+
+# The four accumulators of XXH32 before any stripe, for `seed`, from 0 to
+# 2^32 - 1.
+function lanes32(seed: i64) -> [i64]
+    return [seed + P32_1 + P32_2 & MASK32, seed + P32_2 & MASK32, seed, seed + MASK32 + 1 - P32_1 & MASK32]
+
+# The four `lanes` after every whole stripe of 16 bytes of `data` from
+# `from` to `to` is mixed into them, held in four cells while it is.
+function stripes32(lanes: [i64] lent, data: [u8] lent, from: i64, to: i64) -> [i64]
+    v1: i64 @= lanes[0]
+    v2: i64 @= lanes[1]
+    v3: i64 @= lanes[2]
+    v4: i64 @= lanes[3]
+    at: i64 @= from
+
+    while to - at >= 16
+        v1 @ round32(acc: v1, input: lane32(data, at: at))
+        v2 @ round32(acc: v2, input: lane32(data, at: at + 4))
+        v3 @ round32(acc: v3, input: lane32(data, at: at + 8))
+        v4 @ round32(acc: v4, input: lane32(data, at: at + 12))
+        at @ at + 16
+
+    return [v1, v2, v3, v4]
+
+# `data` fed to a state of XXH32: `held`, the bytes fed after its last whole
+# stripe, filled to a stripe first, then every whole stripe of `data` mixed
+# into `lanes` where it stands, and what is left held.
+function feed32(@lanes: [i64], @held: [u8], data: [u8] lent)
+    at: i64 @= 0
+
+    if held.len() > 0
+        while held.len() < 16 && at < data.len()
+            held @ held.push(data[at])
+            at @ at + 1
+
+        if held.len() < 16
+            return
+        lanes @ stripes32(lanes, data: held, from: 0, to: 16)
+        held @ []
+    whole = (data.len() - at) / 16 * 16
+    lanes @ stripes32(lanes, data: data, from: at, to: at + whole)
+    at @ at + whole
+
+    while at < data.len()
+        held @ held.push(data[at])
+        at @ at + 1
+
+# The XXH32 of `fed` bytes with `seed`, its whole stripes mixed into
+# `lanes` and its last bytes the part of `tail` from `from` to `to`, fewer
+# than 16.
+function digest32(lanes: [i64] lent, tail: [u8] lent, from: i64, to: i64, fed: i64, seed: i64) -> i64
+    h: i64 @= seed + P32_5 & MASK32
+
+    if fed >= 16
+        h @ rotl32(x: lanes[0], r: 1) + rotl32(x: lanes[1], r: 7) + rotl32(x: lanes[2], r: 12) + rotl32(x: lanes[3], r: 18) & MASK32
+    h @ h + (fed & MASK32) & MASK32
+    at: i64 @= from
+
+    while to - at >= 4
+        h @ h + mul32(a: lane32(tail, at: at), b: P32_3) & MASK32
+        h @ mul32(a: rotl32(x: h, r: 17), b: P32_4)
+        at @ at + 4
+
+    while at < to
+        h @ h + mul32(a: to_i64(tail[at]).must(), b: P32_5) & MASK32
+        h @ mul32(a: rotl32(x: h, r: 11), b: P32_1)
+        at @ at + 1
+
+    h @ h ^ h >> 15
+    h @ mul32(a: h, b: P32_2)
+    h @ h ^ h >> 13
+    h @ mul32(a: h, b: P32_3)
+    return h ^ h >> 16
+
+# The XXH32 of `data` with `seed`, from 0 to 2^32 - 1: its whole stripes
+# mixed where they stand, nothing copied.
+function hash32(data: [u8] lent, seed: i64) -> i64
+    whole = data.len() / 16 * 16
+    lanes = stripes32(lanes32(seed), data: data, from: 0, to: whole)
+    return digest32(lanes, tail: data, from: whole, to: data.len(), fed: data.len(), seed: seed)
+
+# The bytes of `s` fed to a state of XXH32, `TEXT_PIECE` bytes at a time.
+function feed32_text(@lanes: [i64], @held: [u8], s: str)
+    piece: [u8] @= []
+    at: i64 @= 0
+
+    while at < s.len()
+        piece @ piece.push(s[at])
+        at @ at + 1
+
+        if piece.len() == TEXT_PIECE || at == s.len()
+            feed32(@lanes, held: @held, data: piece)
+            piece @ []
+
+# The XXH32 of the bytes of `s` with `seed`.
+function hash32_text(s: str, seed: i64) -> i64
+    lanes @= lanes32(seed)
+    held: [u8] @= []
+    feed32_text(@lanes, held: @held, s: s)
+    return digest32(lanes, tail: held, from: 0, to: held.len(), fed: s.len(), seed: seed)
+
+## XXH64
+
+# `a` + `b` modulo 2^64: the low halves are added, and their carry goes into
+# the high halves' sum, whose bits past 32 `<<` drops.
+function add64(a: i64, b: i64) -> i64
+    low = (a & MASK32) + (b & MASK32)
+    high = (a >> 32 & MASK32) + (b >> 32 & MASK32) + (low >> 32)
+    return high << 32 | low & MASK32
+
+# `a` times `b` modulo 2^64, for any two words: each is cut into four
+# pieces of 16 bits, and the products of pieces that reach the low 64 bits
+# are summed column by column with the carry of the column below, each sum
+# below 2^51.
+function mul64(a: i64, b: i64) -> i64
+    a0 = a & 0xffff
+    a1 = a >> 16 & 0xffff
+    a2 = a >> 32 & 0xffff
+    a3 = a >> 48 & 0xffff
+    b0 = b & 0xffff
+    b1 = b >> 16 & 0xffff
+    b2 = b >> 32 & 0xffff
+    b3 = b >> 48 & 0xffff
+    r0 = a0 * b0
+    r1 = a1 * b0 + a0 * b1 + (r0 >> 16)
+    r2 = a2 * b0 + a1 * b1 + a0 * b2 + (r1 >> 16)
+    r3 = a3 * b0 + a2 * b1 + a1 * b2 + a0 * b3 + (r2 >> 16)
+    return (r3 & 0xffff) << 48 | (r2 & 0xffff) << 32 | (r1 & 0xffff) << 16 | r0 & 0xffff
+
+# `x` shifted right by `n` bits, 1 to 63, zeros coming in at the top.
+function shr64(x: i64, n: i64) -> i64
+    return x >> n & ~(-1 << 64 - n)
+
+# `x` rotated left by `n` bits within 64, `n` from 1 to 63.
+function rotl64(x: i64, n: i64) -> i64
+    return x << n | x >> 64 - n & ~(-1 << n)
+
+# The eight bytes at `at` of `data` as a word, the lowest first.
+function lane64(data: [u8] lent, at: i64) -> i64
+    value: i64 @= 0
+    k: i64 @= 7
+
+    while k >= 0
+        value @ value << 8 | to_i64(data[at + k]).must()
+        k @ k - 1
+
+    return value
+
+# One word of input mixed into an accumulator.
+function round64(acc: i64, input: i64) -> i64
+    return mul64(a: rotl64(x: add64(a: acc, b: mul64(a: input, b: P64_2)), n: 31), b: P64_1)
+
+# An accumulator merged into the hash.
+function merge64(h: i64, acc: i64) -> i64
+    return add64(a: mul64(a: h ^ round64(acc: 0, input: acc), b: P64_1), b: P64_4)
+
+# The four accumulators of XXH64 before any stripe, for `seed`, a word.
+function lanes64(seed: i64) -> [i64]
+    return [
+        add64(a: add64(a: seed, b: P64_1), b: P64_2)
+        add64(a: seed, b: P64_2)
+        seed
+        add64(a: seed, b: add64(a: ~P64_1, b: 1))
+    ]
+
+# The four `lanes` after every whole stripe of 32 bytes of `data` from
+# `from` to `to` is mixed into them, held in four cells while it is.
+function stripes64(lanes: [i64] lent, data: [u8] lent, from: i64, to: i64) -> [i64]
+    v1: i64 @= lanes[0]
+    v2: i64 @= lanes[1]
+    v3: i64 @= lanes[2]
+    v4: i64 @= lanes[3]
+    at: i64 @= from
+
+    while to - at >= 32
+        v1 @ round64(acc: v1, input: lane64(data, at: at))
+        v2 @ round64(acc: v2, input: lane64(data, at: at + 8))
+        v3 @ round64(acc: v3, input: lane64(data, at: at + 16))
+        v4 @ round64(acc: v4, input: lane64(data, at: at + 24))
+        at @ at + 32
+
+    return [v1, v2, v3, v4]
+
+# `data` fed to a state of XXH64, as `feed32` feeds XXH32 but by stripes of
+# 32 bytes.
+function feed64(@lanes: [i64], @held: [u8], data: [u8] lent)
+    at: i64 @= 0
+
+    if held.len() > 0
+        while held.len() < 32 && at < data.len()
+            held @ held.push(data[at])
+            at @ at + 1
+
+        if held.len() < 32
+            return
+        lanes @ stripes64(lanes, data: held, from: 0, to: 32)
+        held @ []
+    whole = (data.len() - at) / 32 * 32
+    lanes @ stripes64(lanes, data: data, from: at, to: at + whole)
+    at @ at + whole
+
+    while at < data.len()
+        held @ held.push(data[at])
+        at @ at + 1
+
+# The XXH64 of `fed` bytes with `seed`, as the bits of an `i64`, its whole
+# stripes mixed into `lanes` and its last bytes the part of `tail` from
+# `from` to `to`, fewer than 32.
+function digest64(lanes: [i64] lent, tail: [u8] lent, from: i64, to: i64, fed: i64, seed: i64) -> i64
+    h: i64 @= add64(a: seed, b: P64_5)
+
+    if fed >= 32
+        h @ add64(
+            a: add64(a: rotl64(x: lanes[0], n: 1), b: rotl64(x: lanes[1], n: 7)),
+            b: add64(a: rotl64(x: lanes[2], n: 12), b: rotl64(x: lanes[3], n: 18))
+        )
+        h @ merge64(h: h, acc: lanes[0])
+        h @ merge64(h: h, acc: lanes[1])
+        h @ merge64(h: h, acc: lanes[2])
+        h @ merge64(h: h, acc: lanes[3])
+    h @ add64(a: h, b: fed)
+    at: i64 @= from
+
+    while to - at >= 8
+        h @ add64(
+            a: mul64(a: rotl64(x: h ^ round64(acc: 0, input: lane64(tail, at: at)), n: 27), b: P64_1),
+            b: P64_4
+        )
+        at @ at + 8
+
+    if to - at >= 4
+        four = to_i64(tail[at]).must() | to_i64(tail[at + 1]).must() << 8 | to_i64(tail[at + 2]).must() << 16 | to_i64(tail[at + 3]).must() << 24
+        h @ add64(a: mul64(a: rotl64(x: h ^ mul64(a: four, b: P64_1), n: 23), b: P64_2), b: P64_3)
+        at @ at + 4
+
+    while at < to
+        h @ mul64(a: rotl64(x: h ^ mul64(a: to_i64(tail[at]).must(), b: P64_5), n: 11), b: P64_1)
+        at @ at + 1
+
+    h @ h ^ shr64(x: h, n: 33)
+    h @ mul64(a: h, b: P64_2)
+    h @ h ^ shr64(x: h, n: 29)
+    h @ mul64(a: h, b: P64_3)
+    return h ^ shr64(x: h, n: 32)
+
+# The XXH64 of `data` with `seed`, as the bits of an `i64`: its whole
+# stripes mixed where they stand, nothing copied.
+function hash64(data: [u8] lent, seed: i64) -> i64
+    whole = data.len() / 32 * 32
+    lanes = stripes64(lanes64(seed), data: data, from: 0, to: whole)
+    return digest64(lanes, tail: data, from: whole, to: data.len(), fed: data.len(), seed: seed)
+
+# The bytes of `s` fed to a state of XXH64, `TEXT_PIECE` bytes at a time.
+function feed64_text(@lanes: [i64], @held: [u8], s: str)
+    piece: [u8] @= []
+    at: i64 @= 0
+
+    while at < s.len()
+        piece @ piece.push(s[at])
+        at @ at + 1
+
+        if piece.len() == TEXT_PIECE || at == s.len()
+            feed64(@lanes, held: @held, data: piece)
+            piece @ []
+
+# The XXH64 of the bytes of `s` with `seed`, as the bits of an `i64`.
+function hash64_text(s: str, seed: i64) -> i64
+    lanes @= lanes64(seed)
+    held: [u8] @= []
+    feed64_text(@lanes, held: @held, s: s)
+    return digest64(lanes, tail: held, from: 0, to: held.len(), fed: s.len(), seed: seed)
+
+## Tests
+
+# The buffer xxHash's own sanity check hashes (`xsum_sanity_check.c`): from
+# 2654435761, each byte the top 8 bits of a word of 64 bits multiplied by
+# 11400714785074694797 after it, modulo 2^64.
+function sanity_buffer(n: i64) -> [u8]
+    out: [u8] @= []
+    g: i64 @= P32_1
+    step = word.from_unsigned(11400714785074694797)
+
+    while out.len() < n
+        out @ out.push(to_u8(shr64(x: g, n: 56)).must())
+        g @ mul64(a: g, b: step)
+
+    return out
+
+test "sanity_buffer: its first bytes, as Python computed them from the generator"
+    assert sanity_buffer(16) == [0, 82, 146, 155, 183, 50, 163, 36, 45, 0, 175, 149, 14, 236, 184, 147]
+
+test "hash32: every test vector of xxHash's own sanity check, seeds 0 and 2654435761"
+    b = sanity_buffer(222)
+    assert hash32(b.slice(from: 0, to: 0), seed: 0) == 0x02cc5d05
+    assert hash32(b.slice(from: 0, to: 0), seed: P32_1) == 0x36b78ae7
+    assert hash32(b.slice(from: 0, to: 1), seed: 0) == 0xcf65b03e
+    assert hash32(b.slice(from: 0, to: 1), seed: P32_1) == 0xb4545aa4
+    assert hash32(b.slice(from: 0, to: 14), seed: 0) == 0x1208e7e2
+    assert hash32(b.slice(from: 0, to: 14), seed: P32_1) == 0x6af1d1fe
+    assert hash32(b, seed: 0) == 0x5bd11dbd
+    assert hash32(b, seed: P32_1) == 0x58803c5f
+
+test "hash64: every test vector of xxHash's own sanity check, seeds 0 and 2654435761"
+    b = sanity_buffer(222)
+    assert hash64(b.slice(from: 0, to: 0), seed: 0) == word.from_unsigned(0xef46db3751d8e999)
+    assert hash64(b.slice(from: 0, to: 0), seed: P32_1) == word.from_unsigned(0xac75fda2929b17ef)
+    assert hash64(b.slice(from: 0, to: 1), seed: 0) == word.from_unsigned(0xe934a84adb052768)
+    assert hash64(b.slice(from: 0, to: 1), seed: P32_1) == word.from_unsigned(0x5014607643a9b4c3)
+    assert hash64(b.slice(from: 0, to: 4), seed: 0) == word.from_unsigned(0x9136a0dca57457ee)
+    assert hash64(b.slice(from: 0, to: 14), seed: 0) == word.from_unsigned(0x8282dcc4994e35c8)
+    assert hash64(b.slice(from: 0, to: 14), seed: P32_1) == word.from_unsigned(0xc3bd6bf63deb6df0)
+    assert hash64(b, seed: 0) == word.from_unsigned(0xb641ae8cb691c174)
+    assert hash64(b, seed: P32_1) == word.from_unsigned(0x20cb8ab7ae10c14a)
+
+test "hash32 and hash64: lengths about every stripe and the largest seeds, as Python's xxhash 4.1.0 answers"
+    b = sanity_buffer(2367)
+    lengths = [3, 4, 8, 15, 16, 17, 31, 32, 33, 63, 64, 100, 2367]
+    zero32 = [
+        0xc23884f5
+        0xa9de7ce9
+        0xa3f6f44b
+        0x6b859e14
+        0x93ba3759
+        0x89fdc23e
+        0x5f40e562
+        0xd89829ec
+        0x31a427e5
+        0xf1d48fdb
+        0x2e95dbb
+        0x96ad8143
+        0x4c8a9773
+    ]
+    max32 = [
+        0x37919432
+        0xe68b32dc
+        0x5e281ae4
+        0x83c33fab
+        0x6d7a6de2
+        0x9326491c
+        0x67dbe47f
+        0xf46f6efc
+        0x5f754e67
+        0x4a617d91
+        0x5b8086e0
+        0xad1c5a0b
+        0x1a72852f
+    ]
+    zero64: [u64] = [
+        0xff7e1959cb50794a
+        0x9136a0dca57457ee
+        0xcdbcf538e71d1348
+        0x180719316d622d84
+        0x98c90b57fdfcb55c
+        0xd39a2d051a30c2c
+        0x299b39a290e6d783
+        0x18b216492bb44b70
+        0x55c8dc3e578f5b59
+        0xa9efbe0fa0f3f4e7
+        0xef558f8acac2b5cd
+        0x4bfe019cd91d9ea4
+        0xa82418ddec0ea581
+    ]
+    max64: [u64] = [
+        0xd98ff19e5346b786
+        0x159fbdb3fc3fc1d6
+        0x568e81b1596e8283
+        0xaba497cf6bece3a5
+        0x2a361a78823233fe
+        0x29cb6dd1a6236e81
+        0x6ed1061f61c686e5
+        0x3a793d9020113c2a
+        0x3e29b6e70f2543da
+        0x93b7c9e8ce6de24c
+        0xd48294c0c6d5d9fd
+        0x2fe1b1460f4666c4
+        0x14371c2901c92a60
+    ]
+
+    for i in range(from: 0, to: lengths.len())
+        part = b.slice(from: 0, to: lengths[i])
+        assert hash32(part, seed: 0) == zero32[i]
+        assert hash32(part, seed: MASK32) == max32[i]
+        assert hash64(part, seed: 0) == word.from_unsigned(zero64[i])
+        assert hash64(part, seed: -1) == word.from_unsigned(max64[i])
+
+test "feed32 and feed64: fed in pieces of every length answer what hashing at once does"
+    b = sanity_buffer(300)
+    whole32 = hash32(b, seed: 7)
+    whole64 = hash64(b, seed: 7)
+
+    for piece in [1, 3, 4, 15, 16, 17, 31, 32, 33, 100, 300]
+        lanes_32 @= lanes32(7)
+        held_32: [u8] @= []
+        lanes_64 @= lanes64(7)
+        held_64: [u8] @= []
+        at: i64 @= 0
+
+        while at < b.len()
+            next = if at + piece > b.len()
+                b.len()
+            else
+                at + piece
+
+            part = b.slice(from: at, to: next)
+            feed32(@lanes_32, held: @held_32, data: part)
+            feed64(@lanes_64, held: @held_64, data: part)
+            at @ next
+
+        assert held_32.len() == 300 % 16 && held_64.len() == 300 % 32
+        assert digest32(lanes_32, tail: held_32, from: 0, to: held_32.len(), fed: 300, seed: 7) == whole32
+        assert digest64(lanes_64, tail: held_64, from: 0, to: held_64.len(), fed: 300, seed: 7) == whole64
+
+test "hash32_text and hash64_text: the empty text, ASCII, a character of three bytes, and a text past one piece"
+    assert hash32_text("", seed: 0) == 0x02cc5d05
+    assert hash32_text("abc", seed: 0) == 0x32d153ff
+    assert hash64_text("abc", seed: 0) == word.from_unsigned(0x44bc2cf5ad770999)
+    assert hash32_text("☃", seed: 0) == 0xcfa362d0
+    assert hash64_text("☃", seed: 0) == word.from_unsigned(0xf01bc08930d9944b)
+    long = repeat("0123456789", 1000)
+    bytes_long = word.bytes_of(long)
+    assert hash32_text(long, seed: 3) == hash32(bytes_long, seed: 3)
+    assert hash64_text(long, seed: 3) == hash64(bytes_long, seed: 3)
+
+test "add64, mul64 and shr64: by 0 and 1, the largest words, sums and products past 2^64 that wrap, and Python's answers modulo 2^64"
+    assert add64(a: -1, b: 1) == 0 && add64(a: -1, b: -1) == -2 && add64(a: 0x7fffffffffffffff, b: 1) == 1 << 63
+    assert mul64(a: -1, b: 0) == 0 && mul64(a: -1, b: 1) == -1 && mul64(a: -1, b: -1) == 1
+    assert mul64(a: 1 << 63, b: 2) == 0 && mul64(a: 1 << 32, b: 1 << 32) == 0
+    assert mul64(a: MASK32, b: MASK32) == word.from_unsigned(18446744065119617025)
+    assert mul64(a: P64_1, b: P64_2) == word.from_unsigned(16065284355873402025)
+    assert shr64(x: -1, n: 1) == 0x7fffffffffffffff && shr64(x: -1, n: 63) == 1 && shr64(x: 0x100, n: 8) == 1
+
+test "mul32, rotl32 and rotl64: the largest values, and rotations by 1 and by the width less one"
+    assert mul32(a: MASK32, b: MASK32) == 1
+    assert mul32(a: 0x10000, b: 0x10000) == 0
+    assert mul32(a: P32_1, b: P32_1) == 4293315681
+    assert rotl32(x: 0x80000000, r: 1) == 1
+    assert rotl32(x: 1, r: 31) == 0x80000000
+    assert rotl64(x: 1 << 63, n: 1) == 1
+    assert rotl64(x: 1, n: 63) == 1 << 63

@@ -2,6 +2,7 @@
 # joined and repeated. Each result is built in one local list, grown in place,
 # so its cost is the bytes it holds.
 
+use bytes/internal/finder
 use bytes/internal/raw
 use bytes/internal/search
 
@@ -25,18 +26,17 @@ function replaced(s: [u8], old: [u8], new: [u8], n: u64, bounded: bool) -> [u8]
             at @ at + 1
 
         return out
+    f = finder.finder(old)
     start: i64 @= 0
-    at: i64 @= 0
 
-    while at + old.len() <= s.len() && (!bounded || made < n)
-        if search.has_prefix_at(s: s, prefix: old, at: at)
-            raw.push_range(out: @out, s: s, from: start, to: at)
-            raw.push_all(to: @out, from: new)
-            at @ at + old.len()
-            start @ at
-            made @ made + 1
-        else
-            at @ at + 1
+    while !bounded || made < n
+        match finder.first_from(f, s: s, from: start)
+            .err _ => break
+            .ok found =>
+                raw.push_range(out: @out, s: s, from: start, to: found)
+                raw.push_all(to: @out, from: new)
+                start @ found + old.len()
+                made @ made + 1
 
     raw.push_range(out: @out, s: s, from: start, to: s.len())
     return out

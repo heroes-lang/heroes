@@ -73,7 +73,7 @@ capability bytes/find-first  where bytes first hold other bytes
   go      bytes.Index, bytes.IndexByte, bytes.IndexRune
   rust    -
   python  bytes.find, bytes.index, bytearray.find, bytearray.index
-  note    absent is `not_found`, where Go and Python's `find` answer -1 and Python's `index` raises; Python's start argument is `index_of_from`, and its end argument a slice
+  note    absent is `not_found`, where Go and Python's `find` answer -1 and Python's `index` raises; Python's start argument is `index_of_from`, and its end argument a slice; since 2026-11-19 (repairs 6) a needle longer than 8 bytes is sought with Knuth, Morris and Pratt's table, as `strings` seeks one, so no input makes a search quadratic: compared at every position, 40,000 bytes of `a` searched for 19,999 `a` and a `b` took 295 ms and 80,000 took 1,191 ms, four times for each doubling, and the table takes under 1 ms for both; `contains`, `index_of_last`, `count_of`, `index_of_all`, the `split` family and the `replace` family stand on the same search (`bytes/internal/finder`), every answer the same over 3,000 generated cases
 
 capability bytes/find-last  where bytes last hold other bytes
   heroes  bytes.index_of_last

@@ -39,6 +39,7 @@ use cbor/internal/decoder
 use cbor/internal/diagnostic
 use cbor/internal/encoder
 use cbor/internal/event
+use cbor/internal/kinds
 use cbor/internal/samples
 use json
 
@@ -117,7 +118,9 @@ record Entry
 
 # The code of bytes that are not one well-formed and valid CBOR item, of a
 # value `encode` cannot write, and of a value that is not of the kind asked
-# for.
+# for: `int_of`, `member`, `bool_of`, `float_of`, `text_of`, `bytes_of`,
+# `items_of`, `entries_of`, `entry_value`, `tag_of` and `content_of` fail
+# with it.
 constant INVALID: str
     "invalid"
 
@@ -130,7 +133,8 @@ constant NOT_TEXT: str
 constant DOES_NOT_FIT: str
     "does_not_fit"
 
-# The code of a key a map does not hold, which `member` fails with.
+# The code of a key a map does not hold, which `member` and `entry_value`
+# fail with.
 constant NOT_FOUND: str
     "not_found"
 
@@ -449,6 +453,156 @@ function member(v: Value, key: str) -> Value?
         .unsigned _ | .negative _ | .binary _ | .text _ | .list _ | .tagged _ | .float _ | .boolean _ | .null_value | .undefined | .simple _ =>
             fail(code: INVALID, msg: f"the item is no map, so it holds no key {json.quote(key)}")
 
+# The name of `v`'s case, as a `match` on it writes it: `unsigned`,
+# `negative`, `binary`, `text`, `list`, `pairs`, `tagged`, `float`,
+# `boolean`, `null_value`, `undefined` or `simple`.
+#
+# - `v`: any item.
+function kind_of(v: Value) -> str
+    return match v
+        .unsigned _ => "unsigned"
+        .negative _ => "negative"
+        .binary _   => "binary"
+        .text _     => "text"
+        .list _     => "list"
+        .pairs _    => "pairs"
+        .tagged _   => "tagged"
+        .float _    => "float"
+        .boolean _  => "boolean"
+        .null_value => "null_value"
+        .undefined  => "undefined"
+        .simple _   => "simple"
+
+# The `bool` of `false` or `true`.
+#
+# - `v`: the item read, expected to be a `boolean`.
+#
+# Fails `invalid` where `v` is of another kind, and the message names the
+# kind it is. See also `kind_of`.
+function bool_of(v: Value) -> bool?
+    match v
+        .boolean b => return ok(b.v)
+        .unsigned _ | .negative _ | .binary _ | .text _ | .list _ | .pairs _ | .tagged _ | .float _ | .null_value | .undefined | .simple _ =>
+            return fail(code: INVALID, msg: f"expected a boolean, found {kinds.described(kind_of(v))}")
+
+# The number of a float, encoded as a half, a single or a double.
+#
+# - `v`: the item read, expected to be a `float`; an integer is not one,
+#   and `int_of` reads it.
+#
+# A `nan` and the infinities are answered as they are. Fails `invalid` where
+# `v` is of another kind, and the message names the kind it is.
+function float_of(v: Value) -> f64?
+    match v
+        .float f => return ok(f.v)
+        .unsigned _ | .negative _ | .binary _ | .text _ | .list _ | .pairs _ | .tagged _ | .boolean _ | .null_value | .undefined | .simple _ =>
+            return fail(code: INVALID, msg: f"expected a float, found {kinds.described(kind_of(v))}")
+
+# The characters of a text string.
+#
+# - `v`: the item read, expected to be a `text`; a byte string is not one,
+#   and `bytes_of` reads it.
+#
+# Fails `invalid` where `v` is of another kind, and the message names the
+# kind it is.
+function text_of(v: Value) -> str?
+    match v
+        .text t => return ok(t.v)
+        .unsigned _ | .negative _ | .binary _ | .list _ | .pairs _ | .tagged _ | .float _ | .boolean _ | .null_value | .undefined | .simple _ =>
+            return fail(code: INVALID, msg: f"expected a text string, found {kinds.described(kind_of(v))}")
+
+# The bytes of a byte string.
+#
+# - `v`: the item read, expected to be a `binary`; a text string is not
+#   one, and `text_of` reads it.
+#
+# The empty byte string answers no bytes. Fails `invalid` where `v` is of
+# another kind, and the message names the kind it is.
+function bytes_of(v: Value) -> [u8]?
+    match v
+        .binary b => return ok(b.v)
+        .unsigned _ | .negative _ | .text _ | .list _ | .pairs _ | .tagged _ | .float _ | .boolean _ | .null_value | .undefined | .simple _ =>
+            return fail(code: INVALID, msg: f"expected a byte string, found {kinds.described(kind_of(v))}")
+
+# The items of an array, in order.
+#
+# - `v`: the item read, expected to be a `list`.
+#
+# Fails `invalid` where `v` is of another kind, and the message names the
+# kind it is.
+function items_of(v: Value) -> [Value]?
+    match v
+        .list l => return ok(l.items)
+        .unsigned _ | .negative _ | .binary _ | .text _ | .pairs _ | .tagged _ | .float _ | .boolean _ | .null_value | .undefined | .simple _ =>
+            return fail(code: INVALID, msg: f"expected an array, found {kinds.described(kind_of(v))}")
+
+# The entries of a map, its keys of any kind, in the order they were read or
+# built.
+#
+# - `v`: the item read, expected to be a `pairs`.
+#
+# A key written twice stands in both its entries. Fails `invalid` where `v`
+# is of another kind, and the message names the kind it is. See also
+# `entry_value`, `member`.
+function entries_of(v: Value) -> [Entry]?
+    match v
+        .pairs p => return ok(p.entries)
+        .unsigned _ | .negative _ | .binary _ | .text _ | .list _ | .tagged _ | .float _ | .boolean _ | .null_value | .undefined | .simple _ =>
+            return fail(code: INVALID, msg: f"expected a map, found {kinds.described(kind_of(v))}")
+
+# The value the map `v` holds under `key`, a key of any kind: an integer
+# label of COSE (RFC 9052) as well as a text.
+#
+# - `v`: the map to read.
+# - `key`: the key, compared with each entry's by `==`: `from_int(-1)` for
+#   the label -1. An integer never matches a float, a `nan` matches no key,
+#   and `0.0` matches `-0.0`, which `==` holds equal.
+#
+# The first entry with that key answers where a map holds it twice. Fails
+# `not_found` where `v` holds no such key, and `invalid` where `v` is no map.
+# It reads the entries in order, so it costs one comparison an entry. See
+# also `member`, `entries_of`.
+function entry_value(v: Value, key: Value) -> Value?
+    entries = entries_of(v)?
+
+    for entry in entries
+        if entry.key == key
+            return ok(entry.value)
+
+    return fail(
+        code: NOT_FOUND,
+        msg: f"no key of {kinds.described(kind_of(key))} equal to the one asked in a map of {entries.len()} entries"
+    )
+
+# The number of a tag, which gives the item it holds a meaning.
+#
+# - `v`: the item read, expected to be a `tagged`.
+#
+# Fails `invalid` where `v` is of another kind, and the message names the
+# kind it is. See also `content_of`.
+function tag_of(v: Value) -> u64?
+    match v
+        .tagged t => return ok(t.tag)
+        .unsigned _ | .negative _ | .binary _ | .text _ | .list _ | .pairs _ | .float _ | .boolean _ | .null_value | .undefined | .simple _ =>
+            return fail(code: INVALID, msg: f"expected a tag, found {kinds.described(kind_of(v))}")
+
+# The item a tag holds.
+#
+# - `v`: the item read, expected to be a `tagged` holding exactly one item,
+#   as every tag `decode` reads does.
+#
+# Fails `invalid` where `v` is of another kind, the message naming the kind
+# it is, and where a tag built by the program holds no item or several. See
+# also `tag_of`.
+function content_of(v: Value) -> Value?
+    match v
+        .tagged t =>
+            if t.content.len() != 1
+                return fail(code: INVALID, msg: f"tag {t.tag} holds {t.content.len()} items, where a tag holds one")
+            return ok(t.content[0])
+        .unsigned _ | .negative _ | .binary _ | .text _ | .list _ | .pairs _ | .float _ | .boolean _ | .null_value | .undefined | .simple _ =>
+            return fail(code: INVALID, msg: f"expected a tag, found {kinds.described(kind_of(v))}")
+
 # `v` in the diagnostic notation of RFC 8949 section 8, the text a person
 # reads: `[1, {"a": h'00ff'}, 1(-2.5)]`.
 #
@@ -643,6 +797,49 @@ test "member: the value under a text key"
     v = decode([0xa1, 0x61, 0x61, 0x01]).must()
     assert int_of(member(v, key: "a").must()).must() == 1
 
+# The kind of an item, by the name its case has in a `match`.
+test "kind_of: a byte string"
+    assert kind_of(.binary(v: [1])) == "binary"
+
+# A boolean read out of a decoded item.
+test "bool_of: true"
+    assert bool_of(decode([0xf5]).must()).must()
+
+# A float read out, encoded as a half.
+test "float_of: 1.5 encoded in two bytes"
+    assert float_of(decode([0xf9, 0x3e, 0x00]).must()).must() == 1.5
+
+# A text string read out.
+test "text_of: the text \"IETF\""
+    assert text_of(decode([0x64, 0x49, 0x45, 0x54, 0x46]).must()).must() == "IETF"
+
+# A byte string read out.
+test "bytes_of: four bytes"
+    assert bytes_of(decode([0x44, 0x01, 0x02, 0x03, 0x04]).must()).must() == [1, 2, 3, 4]
+
+# The items of an array.
+test "items_of: an array of three integers"
+    items = items_of(decode([0x83, 0x01, 0x02, 0x03]).must()).must()
+    assert items.len() == 3 && int_of(items[2]).must() == 3
+
+# The entries of a map whose keys are integers.
+test "entries_of: a map of two integer keys"
+    entries = entries_of(decode([0xa2, 0x01, 0x02, 0x03, 0x04]).must()).must()
+    assert entries.len() == 2 && int_of(entries[1].key).must() == 3 && int_of(entries[1].value).must() == 4
+
+# A COSE key's member read by its integer label: the curve, label -1.
+test "entry_value: the label -1 of a COSE key"
+    cose = decode([0xa2, 0x01, 0x02, 0x20, 0x01]).must()
+    assert int_of(entry_value(v: cose, key: from_int(-1)).must()).must() == 1
+
+# The number of the tag that marks an epoch time.
+test "tag_of: tag 1"
+    assert tag_of(decode([0xc1, 0x1a, 0x51, 0x4b, 0x67, 0xb0]).must()).must() == 1
+
+# The item an epoch-time tag holds.
+test "content_of: the seconds of tag 1"
+    assert int_of(content_of(decode([0xc1, 0x1a, 0x51, 0x4b, 0x67, 0xb0]).must()).must()).must() == 1363896240
+
 # An item written for a person to read.
 test "format_diagnostic: a tag, a byte string and a float"
     v: Value = .list(items: [.tagged(tag: 1, content: [.float(v: -2.5)]), .binary(v: [0x00, 0xff])])
@@ -736,3 +933,112 @@ test "from_decimal and decimal_of: the scale kept, the smallest and largest scal
     assert decimal_of(decode(encode(from_decimal(smallest)).must()).must()).must() == smallest
     largest = big.Decimal(unscaled: big.from_int(1), scale: 9223372036854775807)
     assert decimal_of(decode(encode(from_decimal(largest)).must()).must()).must() == largest
+
+test "kind_of: every case by its name"
+    nothing: [Value] = []
+    none: [Entry] = []
+    cases: [Value] = [
+        .unsigned(v: 0)
+        .negative(n: 0)
+        .binary(v: [])
+        .text(v: "")
+        .list(items: nothing)
+        .pairs(entries: none)
+        .tagged(tag: 0, content: [.null_value])
+        .float(v: 0.0)
+        .boolean(v: false)
+        .null_value
+        .undefined
+        .simple(v: 0)
+    ]
+    names: [str] @= []
+
+    for c in cases
+        names @ names.push(kind_of(c))
+
+    assert names.join(",") == "unsigned,negative,binary,text,list,pairs,tagged,float,boolean,null_value,undefined,simple"
+
+test "bool_of, float_of, text_of, bytes_of: false, a nan and the infinities, the empty text and bytes, and each kind refused with its words"
+    assert !bool_of(.boolean(v: false)).must()
+    x = float_of(.float(v: 0.0 / 0.0)).must()
+    assert x != x
+    assert float_of(decode([0xf9, 0x7c, 0x00]).must()).must() == 1.0 / 0.0
+    assert float_of(decode([0xf9, 0xfc, 0x00]).must()).must() == -1.0 / 0.0
+    assert text_of(.text(v: "")).must() == "" && text_of(.text(v: "über")).must() == "über"
+    assert bytes_of(.binary(v: [])).must().len() == 0
+
+    match bool_of(.null_value)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "expected a boolean, found null"
+
+    match float_of(.unsigned(v: 1))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "expected a float, found an unsigned integer"
+
+    match text_of(.binary(v: [0x61]))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "expected a text string, found a byte string"
+
+    match bytes_of(.text(v: "a"))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "expected a byte string, found a text string"
+
+test "items_of and entries_of: empty ones, a key twice kept, and each refusing the other"
+    assert items_of(decode([0x80]).must()).must().len() == 0
+    assert entries_of(decode([0xa0]).must()).must().len() == 0
+    lenient = DecodeOptions(max_depth: DEFAULT_MAX_DEPTH, duplicate_keys: true, deterministic: false)
+    twice = decode_with(data: [0xa2, 0x01, 0x02, 0x01, 0x03], options: lenient).must()
+    entries = entries_of(twice).must()
+    assert entries.len() == 2 && int_of(entries[0].value).must() == 2 && int_of(entries[1].value).must() == 3
+
+    match items_of(twice)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "expected an array, found a map"
+
+    match entries_of(decode([0x80]).must())
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "expected a map, found an array"
+
+    assert entries_of(.undefined).is_err() && items_of(.simple(v: 16)).is_err()
+
+test "entry_value: a text, an integer and a byte string as keys, the first of two, absent, and no map"
+    lenient = DecodeOptions(max_depth: DEFAULT_MAX_DEPTH, duplicate_keys: true, deterministic: false)
+    m = decode_with(
+        data: [0xa4, 0x61, 0x61, 0x01, 0x20, 0x02, 0x42, 0x00, 0xff, 0x03, 0x20, 0x04],
+        options: lenient
+    ).must()
+    assert int_of(entry_value(v: m, key: .text(v: "a")).must()).must() == 1
+    assert int_of(entry_value(v: m, key: from_int(-1)).must()).must() == 2
+    assert int_of(entry_value(v: m, key: .binary(v: [0x00, 0xff])).must()).must() == 3
+    assert entry_value(v: m, key: .float(v: -1.0)).is_err()
+
+    match entry_value(v: m, key: from_int(7))
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND && e.msg == "no key of an unsigned integer equal to the one asked in a map of 4 entries"
+
+    match entry_value(v: .list(items: [from_int(1)]), key: from_int(0))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "expected a map, found an array"
+
+test "entry_value: a nan key matches nothing, 0.0 matches -0.0"
+    keyed = decode([0xa2, 0xf9, 0x80, 0x00, 0x01, 0xf9, 0x7e, 0x00, 0x02]).must()
+    assert int_of(entry_value(v: keyed, key: .float(v: 0.0)).must()).must() == 1
+    assert entry_value(v: keyed, key: .float(v: 0.0 / 0.0)).is_err()
+
+test "tag_of and content_of: the largest tag number, a bignum's bytes, a tag of no item or two, and no tag"
+    far = decode([0xdb, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00]).must()
+    assert tag_of(far).must() == 18446744073709551615
+    assert bytes_of(content_of(decode([0xc2, 0x41, 0x01]).must()).must()).must() == [1]
+    nothing: [Value] = []
+
+    match content_of(.tagged(tag: 24, content: nothing))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "tag 24 holds 0 items, where a tag holds one"
+
+    assert content_of(.tagged(tag: 24, content: [.null_value, .null_value])).is_err()
+
+    match tag_of(.text(v: "1"))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "expected a tag, found a text string"
+
+    assert content_of(.float(v: 1.0)).is_err()

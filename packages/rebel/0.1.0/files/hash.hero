@@ -1,8 +1,9 @@
 # Checksums and fast hashes that are not cryptographic, computed over bytes or
 # over text, all at once or in steps: CRC-32 by the IEEE polynomial, by
 # Castagnoli's or by one of the caller's; CRC-64 by ISO's polynomial, by
-# ECMA's or by one of the caller's; Adler-32; and FNV-1 and FNV-1a in 32 and
-# 64 bits. Text is hashed as its UTF-8 bytes, so a text and its bytes answer
+# ECMA's or by one of the caller's; Adler-32; FNV-1 and FNV-1a in 32 and 64
+# bits; and xxHash's XXH32 and XXH64, with a seed, the checksums of LZ4's and
+# Zstandard's frames. Text is hashed as its UTF-8 bytes, so a text and its bytes answer
 # alike, and a state fed piece by piece answers what feeding everything at
 # once does.
 #
@@ -24,6 +25,7 @@ use hash/internal/table_ecma
 use hash/internal/table_ieee
 use hash/internal/table_iso
 use hash/internal/word
+use hash/internal/xxhash
 
 ## CRC-32
 
@@ -456,7 +458,199 @@ function update_text64(@state: State64, s: str)
 
     state.value @ word.unsigned(after)
 
+## xxHash
+
+# xxHash's XXH32 of `data` with `seed`: a fast hash of 32 bits, the
+# checksum of LZ4's frames, what Python's `xxhash.xxh32_intdigest` answers.
+#
+# - `data`: the bytes to hash; the XXH32 of no bytes with the seed 0 is
+#   46947589.
+# - `seed`: the seed, any `u32`; LZ4 hashes with 0.
+#
+# It is held to xxHash's own test vectors (`xsum_sanity_check.c`). See also
+# `xxh32_text`, `start_xxh32` and `xxh64`.
+function xxh32(data: [u8], seed: u32) -> u32
+    return to_u32(xxhash.hash32(data, seed: to_i64(seed).must())).must()
+
+# The XXH32 of the bytes of `s` with `seed`, what `xxh32` answers for its
+# UTF-8.
+#
+# - `s`: the text to hash, copied 4096 bytes at a time; the XXH32 of the
+#   empty text with the seed 0 is 46947589.
+# - `seed`: the seed, any `u32`.
+#
+# See also `xxh32`.
+function xxh32_text(s: str, seed: u32) -> u32
+    return to_u32(xxhash.hash32_text(s, seed: to_i64(seed).must())).must()
+
+# xxHash's XXH64 of `data` with `seed`: a fast hash of 64 bits, whose low 32
+# bits are a Zstandard frame's checksum, what Python's
+# `xxhash.xxh64_intdigest` answers.
+#
+# - `data`: the bytes to hash; the XXH64 of no bytes with the seed 0 is
+#   17241709254077376921.
+# - `seed`: the seed, any `u64`; Zstandard hashes with 0.
+#
+# It is held to xxHash's own test vectors (`xsum_sanity_check.c`). See also
+# `xxh64_text`, `start_xxh64` and `xxh32`.
+function xxh64(data: [u8], seed: u64) -> u64
+    return word.unsigned(xxhash.hash64(data, seed: word.from_unsigned(seed)))
+
+# The XXH64 of the bytes of `s` with `seed`, what `xxh64` answers for its
+# UTF-8.
+#
+# - `s`: the text to hash, copied 4096 bytes at a time; the XXH64 of the
+#   empty text with the seed 0 is 17241709254077376921.
+# - `seed`: the seed, any `u64`.
+#
+# See also `xxh64`.
+function xxh64_text(s: str, seed: u64) -> u64
+    return word.unsigned(xxhash.hash64_text(s, seed: word.from_unsigned(seed)))
+
+# An XXH32 computed in steps: the caller holds it and feeds it piece by piece
+# with `update_xxh32` and `update_text_xxh32`, and its `value` is at every
+# moment what `xxh32` answers for all the pieces at once. It is made by
+# `start_xxh32` and copied with `=` like any value, so one prefix may go on
+# two ways; one built directly answers wrong values. It cannot be taken up
+# again from a `value`, which does not hold its lanes.
+record Xxh32
+    # The seed it was started with.
+    seed: u32
+    # The XXH32 of every byte fed so far: the answer, read whenever it is
+    # wanted.
+    value: u32
+    # The four accumulators the whole stripes of 16 bytes were mixed into,
+    # each from 0 to 2^32 - 1.
+    lanes: [i64]
+    # The bytes fed after the last whole stripe, fewer than 16.
+    held: [u8]
+    # How many bytes were fed, 0 or more.
+    fed: i64
+
+# An XXH32 with `seed` that has been fed nothing, its `value` the XXH32 of no
+# bytes.
+#
+# - `seed`: the seed, any `u32`.
+#
+# See also `update_xxh32`.
+function start_xxh32(seed: u32) -> Xxh32
+    return Xxh32(seed: seed, value: xxh32([], seed: seed), lanes: xxhash.lanes32(to_i64(seed).must()), held: [], fed: 0)
+
+# Feeds `data` to `state`, whose `value` becomes the XXH32 of what it was fed
+# before and then `data`.
+#
+# - `state`: the state fed, which the caller holds; its `seed` stays.
+# - `data`: the bytes fed, each whole stripe of 16 mixed where it stands; no
+#   bytes leave `value` as it was.
+#
+# See also `update_text_xxh32`.
+function update_xxh32(@state: Xxh32, data: [u8])
+    xxhash.feed32(@state.lanes, held: @state.held, data: data)
+    state.fed @ state.fed + data.len()
+    seed = to_i64(state.seed).must()
+    state.value @ to_u32(
+        xxhash.digest32(state.lanes, tail: state.held, from: 0, to: state.held.len(), fed: state.fed, seed: seed)
+    ).must()
+
+# Feeds the bytes of `s` to `state`, as `update_xxh32` feeds its UTF-8.
+#
+# - `state`: the state fed, which the caller holds; its `seed` stays.
+# - `s`: the text fed, copied 4096 bytes at a time; the empty text leaves
+#   `value` as it was.
+#
+# See also `update_xxh32`.
+function update_text_xxh32(@state: Xxh32, s: str)
+    xxhash.feed32_text(@state.lanes, held: @state.held, s: s)
+    state.fed @ state.fed + s.len()
+    seed = to_i64(state.seed).must()
+    state.value @ to_u32(
+        xxhash.digest32(state.lanes, tail: state.held, from: 0, to: state.held.len(), fed: state.fed, seed: seed)
+    ).must()
+
+# An XXH64 computed in steps, as an `Xxh32` computes an XXH32: made by
+# `start_xxh64`, fed by `update_xxh64` and `update_text_xxh64`, its `value`
+# at every moment what `xxh64` answers for all the pieces at once.
+record Xxh64
+    # The seed it was started with.
+    seed: u64
+    # The XXH64 of every byte fed so far: the answer, read whenever it is
+    # wanted.
+    value: u64
+    # The four accumulators the whole stripes of 32 bytes were mixed into,
+    # each an `i64` holding the accumulator's 64 bits, the highest as the
+    # sign.
+    lanes: [i64]
+    # The bytes fed after the last whole stripe, fewer than 32.
+    held: [u8]
+    # How many bytes were fed, 0 or more.
+    fed: i64
+
+# An XXH64 with `seed` that has been fed nothing, its `value` the XXH64 of no
+# bytes.
+#
+# - `seed`: the seed, any `u64`.
+#
+# See also `update_xxh64`.
+function start_xxh64(seed: u64) -> Xxh64
+    return Xxh64(
+        seed: seed,
+        value: xxh64([], seed: seed),
+        lanes: xxhash.lanes64(word.from_unsigned(seed)),
+        held: [],
+        fed: 0
+    )
+
+# Feeds `data` to `state`, whose `value` becomes the XXH64 of what it was fed
+# before and then `data`.
+#
+# - `state`: the state fed, which the caller holds; its `seed` stays.
+# - `data`: the bytes fed, each whole stripe of 32 mixed where it stands; no
+#   bytes leave `value` as it was.
+#
+# See also `update_text_xxh64`.
+function update_xxh64(@state: Xxh64, data: [u8])
+    xxhash.feed64(@state.lanes, held: @state.held, data: data)
+    state.fed @ state.fed + data.len()
+    seed = word.from_unsigned(state.seed)
+    state.value @ word.unsigned(
+        xxhash.digest64(state.lanes, tail: state.held, from: 0, to: state.held.len(), fed: state.fed, seed: seed)
+    )
+
+# Feeds the bytes of `s` to `state`, as `update_xxh64` feeds its UTF-8.
+#
+# - `state`: the state fed, which the caller holds; its `seed` stays.
+# - `s`: the text fed, copied 4096 bytes at a time; the empty text leaves
+#   `value` as it was.
+#
+# See also `update_xxh64`.
+function update_text_xxh64(@state: Xxh64, s: str)
+    xxhash.feed64_text(@state.lanes, held: @state.held, s: s)
+    state.fed @ state.fed + s.len()
+    seed = word.from_unsigned(state.seed)
+    state.value @ word.unsigned(
+        xxhash.digest64(state.lanes, tail: state.held, from: 0, to: state.held.len(), fed: state.fed, seed: seed)
+    )
+
 ## Tests
+
+test "xxh32, xxh64 and their steps: nothing, the largest seeds, bytes and text alike, and every piece of a text fed apart"
+    assert xxh32([], seed: 0) == 46947589 && xxh32_text("", seed: 1) == 187479954
+    assert xxh64([], seed: 0) == 17241709254077376921 && xxh64_text("", seed: 1) == 15397730242686860875
+    assert xxh32_text("héros ☃", seed: 4294967295) == 3711472998
+    assert xxh64_text("héros ☃", seed: 18446744073709551615) == 5513066925820553751
+    assert xxh32(word.bytes_of("héros ☃"), seed: 1) == 716561019 && xxh32_text("héros ☃", seed: 1) == 716561019
+    assert xxh64(word.bytes_of("héros ☃"), seed: 1) == 14061231710036351315 && xxh64_text("héros ☃", seed: 1) == 14061231710036351315
+    a @= start_xxh32(1)
+    b @= start_xxh64(1)
+    update_text_xxh32(@a, "hé")
+    update_text_xxh64(@b, "hé")
+    update_xxh32(@a, [])
+    update_xxh64(@b, [])
+    fork_a = a
+    update_xxh32(@a, word.bytes_of("ros ☃"))
+    update_text_xxh64(@b, "ros ☃")
+    assert a.value == 716561019 && b.value == 14061231710036351315 && a.fed == 10 && b.fed == 10
+    assert fork_a.value == xxh32_text("hé", seed: 1) && fork_a.seed == 1
 
 test "the steps of every 32-bit algorithm answer what feeding at once does, by bytes and by text"
     all32: [Algorithm32] = [.crc32, .crc32c, .crc32_poly(poly: KOOPMAN), .adler32, .fnv1_32, .fnv1a_32]
@@ -648,3 +842,58 @@ test "update_text64: a CRC-64 by a polynomial given as a number"
     state @= start64(.crc64_poly(poly: 0xd800000000000000))
     update_text64(@state, "123456789")
     assert state.value == crc64_iso_text("123456789")
+
+# The XXH32 of a byte, as Python's `xxhash.xxh32_intdigest(b"a")` answers it.
+test "xxh32: the XXH32 of one byte"
+    assert xxh32([0x61], seed: 0) == 1426945110
+
+# The XXH32 of the standard check text, with the seed 1.
+test "xxh32_text: the check text with a seed"
+    assert xxh32_text("123456789", seed: 1) == 4066480524
+
+# The XXH64 of a byte, as Python's `xxhash.xxh64_intdigest(b"a")` answers it.
+test "xxh64: the XXH64 of one byte"
+    assert xxh64([0x61], seed: 0) == 15154266338359012955
+
+# The XXH64 of the standard check text; its low 32 bits would be a Zstandard
+# frame's checksum.
+test "xxh64_text: the check text"
+    assert xxh64_text("123456789", seed: 0) == 10139926970967174787
+
+# An XXH32 begun before any byte.
+test "start_xxh32: an XXH32 fed nothing yet"
+    state = start_xxh32(0)
+    assert state.value == xxh32([], seed: 0) && state.fed == 0
+
+# An XXH32 fed a greeting in two pieces, as LZ4 checks a frame block by block.
+test "update_xxh32: a greeting fed in two pieces"
+    state @= start_xxh32(0)
+    update_xxh32(@state, [0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x2c, 0x20])
+    update_xxh32(@state, [0x77, 0x6f, 0x72, 0x6c, 0x64])
+    assert state.value == 1336278999
+
+# An XXH32 fed line by line.
+test "update_text_xxh32: a greeting fed as text"
+    state @= start_xxh32(0)
+    update_text_xxh32(@state, "hello, ")
+    update_text_xxh32(@state, "world")
+    assert state.value == xxh32_text("hello, world", seed: 0)
+
+# An XXH64 begun with a seed before any byte.
+test "start_xxh64: an XXH64 with a seed, fed nothing yet"
+    state = start_xxh64(5)
+    assert state.value == xxh64([], seed: 5)
+
+# An XXH64 with the seed 5 fed in two pieces.
+test "update_xxh64: the check text fed in two pieces"
+    state @= start_xxh64(5)
+    update_xxh64(@state, [0x31, 0x32, 0x33, 0x34])
+    update_xxh64(@state, [0x35, 0x36, 0x37, 0x38, 0x39])
+    assert state.value == 13419003385674707777
+
+# An XXH64 fed a text in two pieces.
+test "update_text_xxh64: the check text fed as text"
+    state @= start_xxh64(5)
+    update_text_xxh64(@state, "1234")
+    update_text_xxh64(@state, "56789")
+    assert state.value == xxh64_text("123456789", seed: 5)

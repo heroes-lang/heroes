@@ -25,7 +25,7 @@ function shift_right(x: i64, n: i64) -> i64
 # the high halves' sum, whose bits past 32 `<<` drops.
 function add(a: i64, b: i64) -> i64
     low = (a & LOW32) + (b & LOW32)
-    high = shift_right(x: a, n: 32) + shift_right(x: b, n: 32) + (low >> 32)
+    high = (a >> 32 & LOW32) + (b >> 32 & LOW32) + (low >> 32)
     return high << 32 | low & LOW32
 
 # `x` times `m` modulo 2^64, for an `m` from 0 to 2^31 - 1: each half of `x`

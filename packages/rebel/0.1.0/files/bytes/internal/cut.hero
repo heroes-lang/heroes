@@ -4,6 +4,7 @@
 # pieces stand in the order of the bytes.
 
 use bytes/internal/ascii
+use bytes/internal/finder
 use bytes/internal/raw
 use bytes/internal/search
 
@@ -19,22 +20,21 @@ function from_start(s: [u8], sep: [u8], n: u64, bounded: bool, keep: bool) -> [[
 
     if sep.len() == 0
         return each_byte(s: s, n: n, bounded: bounded)
+    f = finder.finder(sep)
     start: i64 @= 0
-    at: i64 @= 0
     made: u64 @= 1
 
-    while at + sep.len() <= s.len() && (!bounded || made < n)
-        if search.has_prefix_at(s: s, prefix: sep, at: at)
-            end: i64 @= at
+    while !bounded || made < n
+        match finder.first_from(f, s: s, from: start)
+            .err _ => break
+            .ok found =>
+                end: i64 @= found
 
-            if keep
-                end @ at + sep.len()
-            out @ out.push(s.slice(from: start, to: end))
-            at @ at + sep.len()
-            start @ at
-            made @ made + 1
-        else
-            at @ at + 1
+                if keep
+                    end @ found + sep.len()
+                out @ out.push(s.slice(from: start, to: end))
+                start @ found + sep.len()
+                made @ made + 1
 
     if !keep || start < s.len()
         out @ out.push(s.slice(from: start, to: s.len()))
@@ -68,17 +68,18 @@ function from_end(s: [u8], sep: [u8], n: u64) -> [[u8]]
 
     if sep.len() == 0
         return each_byte_from_end(s, n)
+    f = finder.finder(sep)
     cuts: [i64] @= []
-    at: i64 @= s.len() - sep.len()
+    end: i64 @= s.len()
     made: u64 @= 1
 
-    while at >= 0 && made < n
-        if search.has_prefix_at(s: s, prefix: sep, at: at)
-            cuts @ cuts.push(at)
-            at @ at - sep.len()
-            made @ made + 1
-        else
-            at @ at - 1
+    while made < n
+        match finder.last_before(f, s: s, end: end)
+            .err _ => break
+            .ok found =>
+                cuts @ cuts.push(found)
+                end @ found
+                made @ made + 1
 
     start: i64 @= 0
     k: i64 @= cuts.len() - 1

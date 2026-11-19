@@ -101,6 +101,27 @@ capability hash/crc16  CRC-16 by the CCITT polynomial, from a value of the calle
   rust    -
   python  binascii.crc_hqx
 
+capability hash/xxh32  xxHash's XXH32 of bytes or of text, with a seed
+  heroes  hash.xxh32, hash.xxh32_text
+  go      -
+  rust    -
+  python  -
+  note    added 2026-11-19 (repairs 6), so that `compress/lz4` holds no copy of its own; none of the three standard libraries has xxHash, so it is held to xxHash's own sanity vectors (`cli/xsum_sanity_check.c`, read 2026-11-19: its buffer generator and every XXH32 row) and to Python's third-party `xxhash` 4.1.0 over the C library 0.8.4, installed in the scratch folder, for lengths about every stripe, the seeds 0 and 2^32 - 1 and text of more than one byte
+
+capability hash/xxh64  xxHash's XXH64 of bytes or of text, with a seed
+  heroes  hash.xxh64, hash.xxh64_text
+  go      -
+  rust    -
+  python  -
+  note    added 2026-11-19 (repairs 6), so that `compress/zstd` holds no copy of its own (a frame's checksum is the XXH64's low 32 bits); held as XXH32 is, every XXH64 row of xxHash's sanity check and Python's `xxhash` for the seeds 0 and 2^64 - 1; XXH3 and XXH128, which Python's `xxhash` also offers, are in none of the three standard libraries and no format Rebel reads checks with them
+
+capability hash/xxh-steps  an XXH32 or an XXH64 fed piece by piece, its value read at any moment
+  heroes  hash.Xxh32, hash.start_xxh32, hash.update_xxh32, hash.update_text_xxh32, hash.Xxh64, hash.start_xxh64, hash.update_xxh64, hash.update_text_xxh64
+  go      -
+  rust    -
+  python  -
+  note    added 2026-11-19 (repairs 6); a record apart from `State32` and `State64`, since xxHash goes on from its four lanes and the bytes held after its last stripe, which its value does not hold: copied with `=`, never taken up again from a value, as Python's `xxhash.xxh32` object is copied and has no resume; a text is fed 4096 bytes at a time, so no copy of a whole text is made
+
 capability hash/seeded  a hash seeded afresh by each process, for the buckets of a table of the program's own
   heroes  refused: the language's `{K: V}` holds a table and hashes its own keys, Heroes has no trait a key would implement, and a fresh seed needs `os`'s random bytes, which a package of layer 0 may not use
   go      maphash.Bytes, maphash.String, maphash.Comparable, maphash.WriteComparable, maphash.Hash, maphash.Hash.BlockSize, maphash.Hash.Clone, maphash.Hash.Reset, maphash.Hash.Seed, maphash.Hash.SetSeed, maphash.Hash.Size, maphash.Hash.Sum, maphash.Hash.Sum64, maphash.Hash.Write, maphash.Hash.WriteByte, maphash.Hash.WriteString, maphash.Seed, maphash.MakeSeed, maphash.Hasher, maphash.ComparableHasher, maphash.ComparableHasher.Equal, maphash.ComparableHasher.Hash

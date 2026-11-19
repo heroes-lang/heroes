@@ -5,6 +5,7 @@
 
 use bytes/internal/ascii
 use bytes/internal/codes
+use bytes/internal/finder
 use bytes/internal/raw
 
 # Whether `prefix` stands in `s` at index `at`; false for an `at` below 0 or
@@ -68,16 +69,10 @@ function in_set(set: ByteSet lent, c: u8) -> bool
     k = raw.widened(c)
     return set.table[k]
 
-# Whether `s` holds `substr`, asked with no message built on a miss.
+# Whether `s` holds `substr`, asked with no message of `bytes` built on a
+# miss.
 function contains(s: [u8], substr: [u8]) -> bool
-    at: i64 @= 0
-
-    while at + substr.len() <= s.len()
-        if has_prefix_at(s: s, prefix: substr, at: at)
-            return true
-        at @ at + 1
-
-    return false
+    return !finder.first_from(finder.finder(substr), s: s, from: 0).is_err()
 
 # Whether `s` holds any byte of `set`, in time linear in `s` whatever the
 # set's length.
@@ -104,23 +99,18 @@ function index_of_from(s: [u8], substr: [u8], from: i64) -> i64?
     if at < 0
         at @ 0
 
-    while at + substr.len() <= s.len()
-        if has_prefix_at(s: s, prefix: substr, at: at)
-            return ok(at)
-        at @ at + 1
+    if at <= s.len()
+        match finder.first_from(finder.finder(substr), s: s, from: at)
+            .ok found => return ok(found)
+            .err _    => _ = 0
 
     return absent(sought: raw.quoted(substr), s: s, from: from)
 
 # Where `substr` last begins in `s`.
 function index_of_last(s: [u8], substr: [u8]) -> i64?
-    at: i64 @= s.len() - substr.len()
-
-    while at >= 0
-        if has_prefix_at(s: s, prefix: substr, at: at)
-            return ok(at)
-        at @ at - 1
-
-    return absent(sought: raw.quoted(substr), s: s, from: 0)
+    match finder.last_before(finder.finder(substr), s: s, end: s.len())
+        .ok found => return ok(found)
+        .err _    => return absent(sought: raw.quoted(substr), s: s, from: 0)
 
 # Where the first byte that `set` holds stands in `s` at or after `from`,
 # in time linear in `s` whatever the set's length.
@@ -181,33 +171,31 @@ function index_where_last(s: [u8], accepts: (function(u8) -> bool)) -> i64?
 function count_of(s: [u8], substr: [u8]) -> i64
     if substr.len() == 0
         return s.len() + 1
+    f = finder.finder(substr)
     count: i64 @= 0
     at: i64 @= 0
 
-    while at + substr.len() <= s.len()
-        if has_prefix_at(s: s, prefix: substr, at: at)
-            count @ count + 1
-            at @ at + substr.len()
-        else
-            at @ at + 1
-
-    return count
+    while true
+        match finder.first_from(f, s: s, from: at)
+            .err _ => return count
+            .ok found =>
+                count @ count + 1
+                at @ found + substr.len()
 
 # Where each occurrence of `substr` begins in `s`, no two sharing a byte.
 function index_of_all(s: [u8], substr: [u8]) -> [i64]
     if substr.len() == 0
         return range(from: 0, to: s.len() + 1)
+    f = finder.finder(substr)
     found: [i64] @= []
     at: i64 @= 0
 
-    while at + substr.len() <= s.len()
-        if has_prefix_at(s: s, prefix: substr, at: at)
-            found @ found.push(at)
-            at @ at + substr.len()
-        else
-            at @ at + 1
-
-    return found
+    while true
+        match finder.first_from(f, s: s, from: at)
+            .err _ => return found
+            .ok next =>
+                found @ found.push(next)
+                at @ next + substr.len()
 
 # Which of `a` and `b` orders first, byte by byte and then by length.
 function compare(a: [u8], b: [u8]) -> i64

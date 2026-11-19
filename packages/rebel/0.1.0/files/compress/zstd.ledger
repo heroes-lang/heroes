@@ -68,7 +68,7 @@ capability zstd/frame-flags  the checksum and the content size written or not
   go      -
   rust    -
   python  CompressionParameter.checksum_flag, CompressionParameter.content_size_flag, CompressionParameter.dict_id_flag
-  note    the checksum off and the size on by default, as Python's; the dictionary's id is always written where it has one
+  note    the checksum off and the size on by default, as Python's; the dictionary's id is always written where it has one; the checksum, the low 32 bits of the frame's XXH64, is `hash.xxh64`'s since 2026-11-19 (repairs 6), fed block by block as a frame is read, where this package held a copy of its own
 
 capability zstd/parameters  the compressor's own parameters: window, hash and chain sizes, strategy, long matching, threads
   heroes  pending

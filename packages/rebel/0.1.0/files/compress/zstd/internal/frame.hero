@@ -7,7 +7,7 @@ use compress/internal/codes
 use compress/zstd/internal/literals
 use compress/zstd/internal/samples
 use compress/zstd/internal/sequences
-use compress/zstd/internal/xxh64
+use hash
 
 # The most bytes a block may hold.
 constant BLOCK_MOST: i64
@@ -141,8 +141,11 @@ function frame_into(@out: [u8], input: [u8] lent, at: i64, limit: i64, dict: Dic
     e @= dict.entropy
     p: i64 @= at + h.size
     place = sequences.Place(frame_start: start, limit: limit, block_most: block_most)
+    check @= hash.start_xxh64(0)
 
     while true
+        block_start = out.len()
+
         if input.len() - p < 3
             return codes.invalid_at(at: p, why: "a frame cut short before a block's header")
         bh = literals.little(input, at: p, width: 3)
@@ -186,6 +189,9 @@ function frame_into(@out: [u8], input: [u8] lent, at: i64, limit: i64, dict: Dic
         if h.content_size >= 0 && out.len() - start > h.content_size
             return codes.invalid_at(at: p, why: f"a frame past the {h.content_size} bytes its header says")
 
+        if h.has_checksum
+            hash.update_xxh64(@check, out.slice(from: block_start, to: out.len()))
+
         if bh & 1 == 1
             break
 
@@ -199,7 +205,7 @@ function frame_into(@out: [u8], input: [u8] lent, at: i64, limit: i64, dict: Dic
         if input.len() - p < 4
             return codes.invalid_at(at: p, why: "a frame cut short inside its checksum")
 
-        if xxh64.checksum(out, from: start, to: out.len()) != literals.little(input, at: p, width: 4)
+        if to_i64(check.value % 4294967296).must() != literals.little(input, at: p, width: 4)
             return codes.invalid_at(at: p, why: "a frame whose checksum does not match its bytes")
         p @ p + 4
     return ok(p)

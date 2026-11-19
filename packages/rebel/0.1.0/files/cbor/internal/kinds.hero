@@ -1,0 +1,33 @@
+# The words a message of `cbor` names a kind of item with: each case of the
+# face's `Value`, by the name `kind_of` answers, read as RFC 8949 names it.
+# The face's accessors say with them what they expected and what they found.
+
+# The kind `kind`, a name `kind_of` answers, as RFC 8949 names it and with
+# its article: `"binary"` is `"a byte string"`. A name that is no case's is
+# written as it came, in backquotes.
+function described(kind: str) -> str
+    return match kind
+        "unsigned"   => "an unsigned integer"
+        "negative"   => "a negative integer"
+        "binary"     => "a byte string"
+        "text"       => "a text string"
+        "list"       => "an array"
+        "pairs"      => "a map"
+        "tagged"     => "a tag"
+        "float"      => "a float"
+        "boolean"    => "a boolean"
+        "null_value" => "null"
+        "undefined"  => "undefined"
+        "simple"     => "a simple value"
+        _            => f"`{kind}`"
+
+## Tests
+
+test "described: every case's name, and a name that is none"
+    assert described("binary") == "a byte string"
+    assert described("pairs") == "a map"
+    assert described("null_value") == "null"
+    assert described("unsigned") == "an unsigned integer"
+    assert described("simple") == "a simple value"
+    assert described("") == "``"
+    assert described("map") == "`map`"

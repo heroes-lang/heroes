@@ -4,7 +4,7 @@
 # optional fields, and the header's own checksum.
 
 use compress/internal/codes
-use compress/lz4/internal/xxh32
+use hash
 
 # The magic of a standard frame, 04 22 4D 18 in the input.
 constant FRAME_MAGIC: i64
@@ -116,7 +116,7 @@ function read(data: [u8] lent, at: i64, base: i64) -> Header?
     if flags & 1 != 0
         dictionary_id @ u32_at(data, at: p)
         p @ p + 4
-    expected = xxh32.of(data, from: at + 4, to: p) >> 8 & 255
+    expected = to_i64(hash.xxh32(data.slice(from: at + 4, to: p), seed: 0)).must() >> 8 & 255
     found = to_i64(data[p]).must()
 
     if found != expected
@@ -159,7 +159,7 @@ function write(@out: [u8], h: Header, id: i64)
 
     if h.dictionary_id != 0
         put_u32(@out, value: h.dictionary_id)
-    out @ out.push(to_u8(xxh32.of(out, from: start, to: out.len()) >> 8 & 255).must())
+    out @ out.push(to_u8(to_i64(hash.xxh32(out.slice(from: start, to: out.len()), seed: 0)).must() >> 8 & 255).must())
 
 # A header of `id` 4 to 7 and every flag off, for tests.
 function plain(id: i64) -> Header

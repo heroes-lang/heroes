@@ -1333,6 +1333,13 @@ function write_response(s: io.Stream, response: Response, method: str) -> ()?
 
 ## The client
 
+# The `User-Agent` `default_client` sends, one product as RFC 9110 § 10.1.5
+# writes it: Heroes' library Rebel, its package `http`, and Rebel's version.
+# A program naming itself writes its own beside it, `"tool/2 " + USER_AGENT`,
+# as RFC 8555 § 6.1 asks of an ACME client.
+constant USER_AGENT: str
+    "heroes-rebel-http/0.1.0"
+
 # When a request is sent again, and how long the client waits first.
 record Retries
     # How many times a request is sent again after its first, 0 for never.
@@ -1375,11 +1382,17 @@ record Client
     # `no_proxy()` sends every request directly, `proxy_from_env()` as the
     # environment says.
     proxy: Proxy
+    # The `User-Agent` sent with a request that holds none of its own: a
+    # `User-Agent` of the request, or of the `Session`, is sent in its place.
+    # `USER_AGENT` in `default_client`; "" sends none, which RFC 9110 allows a
+    # client configured so.
+    user_agent: str
 
 # The usual client: 10 redirects, as Go and Python follow, a time limit of
 # 30 seconds, `default_limits()`, the system's own authorities, no retry,
-# whose waits would be 100 ms doubled up to 10 s, and no proxy: the
-# environment's are read only where the program asks, `proxy_from_env()`.
+# whose waits would be 100 ms doubled up to 10 s, no proxy: the
+# environment's are read only where the program asks, `proxy_from_env()`;
+# and `USER_AGENT` sent, as Go and Python send their own.
 function default_client() -> Client
     return Client(
         max_redirects: 10,
@@ -1387,7 +1400,8 @@ function default_client() -> Client
         limits: default_limits(),
         roots: "",
         retries: Retries(count: 0, statuses: [429, 500, 502, 503, 504], backoff_ms: 100, max_backoff_ms: 10_000),
-        proxy: no_proxy()
+        proxy: no_proxy(),
+        user_agent: USER_AGENT
     )
 
 # What a program keeps between requests, as `requests`' session does: how they
@@ -1506,6 +1520,9 @@ function fetch_once(@s: Session, r: Request) -> Response?
         if sent.len() > 0
             fields @ fields.push(wire.Field(name: "Cookie", value: sent.join("; ")))
 
+        if c.user_agent != "" && !has_header(out.headers, name: "User-Agent")
+            fields @ fields.push(wire.Field(name: "User-Agent", value: c.user_agent))
+
         if !has_header(out.headers, name: "Accept-Encoding")
             fields @ fields.push(wire.Field(name: "Accept-Encoding", value: "gzip, deflate"))
         left = policy.left_ms(deadline_ms: c.deadline_ms, start: start)?
@@ -1594,7 +1611,7 @@ function fetch_once(@s: Session, r: Request) -> Response?
 # HTTP/1.1 by ALPN, HTTP/2 spoken through `http2` where the server chooses it,
 # the server's certificate checked against `c.roots`. The response is answered
 # whatever its status; a 4xx or 5xx is no failure (`require_success` makes it
-# one). A 301, 302 or 303 is followed with `GET` and no body, a `HEAD`
+# one). It carries `c.user_agent` as its `User-Agent` where `r` holds none. A 301, 302 or 303 is followed with `GET` and no body, a `HEAD`
 # staying `HEAD`; a 307 or 308 with the same method and body; between
 # `http://` and `https://` either way; `Authorization` and the request's own
 # `Cookie` are dropped where the scheme, the host or the port changes, so an
@@ -4008,6 +4025,28 @@ test "write_response: a text answer on the wire"
 test "default_client: ten redirects, thirty seconds, no retry"
     c = default_client()
     assert c.max_redirects == 10 && c.deadline_ms == 30_000 && c.retries.count == 0
+    assert c.user_agent == "heroes-rebel-http/0.1.0" && c.user_agent == USER_AGENT
+
+test "send: the client's User-Agent sent once where the request holds none, the request's own in its place, none where the client's is empty"
+    t @= canned.start(
+        canned.script(responses: ["HTTP/1.1 204 No Content\r\n\r\n", "HTTP/1.1 204 No Content\r\n\r\n", "HTTP/1.1 204 No Content\r\n\r\n"])
+    )
+    port = t.port
+    plain = default_client()
+    assert get(plain, target: f"http://127.0.0.1:{port}/default").must().status == 204
+    named @= request(method: METHOD_GET, target: f"http://127.0.0.1:{port}/own").must()
+    named.headers @ with_header(headers: named.headers, name: "user-agent", value: "tool/2")
+    assert send(plain, r: named).must().status == 204
+    quiet @= default_client()
+    quiet.user_agent @ ""
+    assert get(quiet, target: f"http://127.0.0.1:{port}/none").must().status == 204
+    seen = strings.split(s: threads.wait_text(@t.thread), sep: canned.SEPARATOR)
+    assert seen.len() == 3
+    assert strings.has_prefix(s: seen[0], prefix: "GET /default\n") && strings.contains(s: seen[0], substr: "\nUser-Agent: heroes-rebel-http/0.1.0\n")
+    assert strings.count_of(s: strings.to_lower(seen[0]), substr: "\nuser-agent:") == 1
+    assert strings.has_prefix(s: seen[1], prefix: "GET /own\n") && strings.count_of(s: strings.to_lower(seen[1]), substr: "\nuser-agent: tool/2\n") == 1
+    assert strings.count_of(s: strings.to_lower(seen[1]), substr: "\nuser-agent:") == 1
+    assert strings.has_prefix(s: seen[2], prefix: "GET /none\n") && !strings.contains(s: strings.to_lower(seen[2]), substr: "user-agent")
 
 # The usual session.
 test "default_session: nothing kept yet"

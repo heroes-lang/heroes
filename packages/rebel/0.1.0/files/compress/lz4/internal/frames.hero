@@ -10,7 +10,7 @@ use compress/lz4/internal/decoder
 use compress/lz4/internal/header
 use compress/lz4/internal/sequences
 use compress/lz4/internal/unframer
-use compress/lz4/internal/xxh32
+use hash
 
 # What a whole read answers: the bytes, and how much input it took.
 record Whole
@@ -77,7 +77,7 @@ function head(@s: unframer.State) -> i64?
     s.head @ h
     s.window @ s.dictionary
     s.frame_produced @ 0
-    s.content @ xxh32.start()
+    s.content @ hash.start_xxh32(0)
     s.phase @ unframer.BLOCK_SIZE
     return ok(unframer.MOVED)
 
@@ -120,7 +120,7 @@ function block_data(@s: unframer.State) -> i64?
     to = s.at + s.block_size
 
     if s.head.block_checksum
-        expected = xxh32.of(s.input, from: from, to: to)
+        expected = to_i64(hash.xxh32(s.input.slice(from: from, to: to), seed: 0)).must()
         found = header.u32_at(s.input, at: to)
 
         if found != expected
@@ -160,7 +160,7 @@ function content_check(@s: unframer.State) -> i64?
     if !unframer.has(s, n: 4, what: "a content checksum")?
         return ok(unframer.STARVED)
     found = header.u32_at(s.input, at: s.at)
-    expected = xxh32.digest(s.content)
+    expected = to_i64(s.content.value).must()
 
     if found != expected
         return codes.invalid_at(

@@ -6,7 +6,7 @@ use compress/internal/codes
 use compress/lz4/internal/blocks
 use compress/lz4/internal/header
 use compress/lz4/internal/sequences
-use compress/lz4/internal/xxh32
+use hash
 
 # Looking for the next frame's magic.
 constant MAGIC: i64
@@ -104,7 +104,7 @@ record State
     # How many bytes the frame being read has produced.
     frame_produced: i64
     # The checksum of the frame's bytes so far.
-    content: xxh32.State
+    content: hash.Xxh32
     # The block being read: how many bytes it takes, not its checksum.
     block_size: i64
     # Whether the block is stored as it is.
@@ -138,7 +138,7 @@ function start(limit: i64, multi: bool) -> State
         dictionary: [],
         head: header.plain(4),
         frame_produced: 0,
-        content: xxh32.start(),
+        content: hash.start_xxh32(0),
         block_size: 0,
         block_raw: false,
         skip_left: 0,
@@ -240,7 +240,7 @@ function produce(@s: State, from: i64)
     n = s.window.len() - from
 
     if s.head.content_checksum
-        xxh32.update(@s.content, data: s.window, from: from, to: s.window.len())
+        hash.update_xxh32(@s.content, s.window.slice(from: from, to: s.window.len()))
     sequences.copy_range(out: @s.pending, data: s.window, from: from, to: s.window.len())
     s.produced @ s.produced + n
     s.frame_produced @ s.frame_produced + n

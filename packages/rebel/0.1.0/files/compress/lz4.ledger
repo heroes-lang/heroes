@@ -150,7 +150,7 @@ capability lz4/checksums  the content checksum and the block checksums written a
   rust    Error::HeaderChecksumError, Error::BlockChecksumError, Error::ContentChecksumError
   python  lz4.frame.compress (content_checksum=, block_checksum=)
   odin    Frame_Flag.Content_Checksum, Frame_Flag.Block_Checksum
-  note    xxHash32, written in this package because `hash` holds none; a block's checksum is checked before the block is decoded
+  note    xxHash32, `hash.xxh32` and `hash.Xxh32` since 2026-11-19 (repairs 6), where until then this package held a copy of its own because `hash` had none; a block's checksum is checked before the block is decoded
 
 capability lz4/content-size  the frame's decompressed size written in its header and checked
   heroes  compress/lz4.Options, compress/lz4.with_size, compress/lz4.FrameInfo

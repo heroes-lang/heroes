@@ -6,7 +6,7 @@ use compress/internal/codes
 use compress/lz4/internal/blocks
 use compress/lz4/internal/header
 use compress/lz4/internal/sequences
-use compress/lz4/internal/xxh32
+use hash
 
 # The work of a compressor in progress.
 record State
@@ -24,7 +24,7 @@ record State
     # The bytes fed and not yet compressed, fewer than a block's most.
     held: [u8]
     # The checksum of every byte fed.
-    content: xxh32.State
+    content: hash.Xxh32
     # How many bytes were fed.
     fed: i64
     # Whether the header has been answered.
@@ -38,7 +38,7 @@ function start(level: i64, id: i64, head: header.Header, dictionary: [u8]) -> St
     blocks.check_level(level)?
     window = blocks.tail(dictionary, most: blocks.WINDOW)
     return ok(
-        State(level: level, id: id, head: head, dictionary: window, history: window, held: [], content: xxh32.start(), fed: 0, started: false, ended: false)
+        State(level: level, id: id, head: head, dictionary: window, history: window, held: [], content: hash.start_xxh32(0), fed: 0, started: false, ended: false)
     )
 
 # A compressor at `level` of blocks of id `id` (4 to 7), linked or not,
@@ -68,7 +68,7 @@ function begin(@s: State, @out: [u8])
 # they are where compressing does not make them shorter; `s`'s history
 # moves on.
 function put_block(@s: State, @out: [u8], held: [u8] lent)
-    xxh32.update(@s.content, data: held, from: 0, to: held.len())
+    hash.update_xxh32(@s.content, held)
     s.fed @ s.fed + held.len()
     packed: [u8] @= []
 
@@ -91,7 +91,7 @@ function put_block(@s: State, @out: [u8], held: [u8] lent)
         sequences.copy_range(out: @out, data: held, from: 0, to: held.len())
 
     if s.head.block_checksum
-        header.put_u32(@out, value: xxh32.of(out, from: stored_from, to: out.len()))
+        header.put_u32(@out, value: to_i64(hash.xxh32(out.slice(from: stored_from, to: out.len()), seed: 0)).must())
 
     if s.head.linked
         s.history @ blocks.tail(blocks.joined(history: s.history, data: held), most: blocks.WINDOW)
@@ -143,7 +143,7 @@ function finish(@s: State, @out: [u8]) -> ()?
     header.put_u32(@out, value: 0)
 
     if s.head.content_checksum
-        header.put_u32(@out, value: xxh32.digest(s.content))
+        header.put_u32(@out, value: to_i64(s.content.value).must())
     s.ended @ true
     return ok()
 

@@ -79,7 +79,7 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 2 | `tokenizer` | byte-pair encoding as tiktoken does it: encode, decode, count; its tables in subpackages, one per encoding, so a program carries only the one it uses | `bytes`, `regex`, `unicode` |  |
 | 2 | `search` | an inverted index in memory, ranked by BM25, with phrase and prefix queries | `math`, `numbers`, `strings`, `unicode` |  |
 | 2 | `http/suffixes` | the Public Suffix List, so cookies for a public suffix are refused and a site's registrable domain is known; its data apart | `strings` |  |
-| 2 | `compress/zstd` | Zstandard (RFC 8878) read, and written at a basic level | `bytes` |  |
+| 2 | `compress/zstd` | Zstandard (RFC 8878) read, and written at a basic level | `bytes`, `hash` |  |
 | 2 | `compress/brotli` | Brotli (RFC 7932) read, and written at a basic level | `bytes` |  |
 | 2 | `compress/bzip2` | bzip2 read and written | `bytes` |  |
 | 2 | `image/jpeg` | JPEG read (baseline and progressive, every sampling, restart intervals, EXIF orientation) and baseline JPEG written at a quality | `bytes`, `image`, `math` |  |
@@ -97,7 +97,7 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 3 | `compress` | DEFLATE, gzip and zlib, written and read | `bytes`, `hash`, `io` |  |
 | 3 | `template` | text and HTML made from a template and values, escaped by context | `json`, `strings`, `unicode` |  |
 | 3 | `markdown` | CommonMark and GFM's tables read into a tree and written as HTML | `html`, `numbers`, `strings`, `unicode` |  |
-| 3 | `compress/lz4` | LZ4 frames and blocks, compressed and decompressed | `bytes`, `io` |  |
+| 3 | `compress/lz4` | LZ4 frames and blocks, compressed and decompressed | `bytes`, `hash`, `io` |  |
 | 3 | `html/sanitize` | HTML from outside cleaned by an allow-list policy | `html`, `regex`, `strings`, `unicode`, `url` |  |
 | 3 | `json/schema` | JSON Schema 2020-12 (and draft 7) validation, every error with its place | `bytes`, `json`, `numbers`, `regex`, `strings`, `unicode`, `url` |  |
 | 3 | `json/patch` | JSON Patch (RFC 6902) and JSON Merge Patch (RFC 7386) made and applied | `json`, `strings` |  |

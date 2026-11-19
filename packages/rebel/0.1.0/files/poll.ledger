@@ -122,7 +122,7 @@ capability poll/missed-ticks  what an interval does when the program waited past
   go      time.Ticker (drops the ticks a slow receiver missed)
   rust    tokio::time::MissedTickBehavior::Burst, tokio::time::MissedTickBehavior::Delay, tokio::time::MissedTickBehavior::Skip
   python  -
-  note    told once, `due` counting every time it fell, then due at the first of its times still to come: Go's and tokio's `Skip`, with the count tokio and Go do not give. Tokio's default `Burst` is not offered: a burst of events for one timer says nothing the count does not
+  note    told once, `due` counting every time it fell, then due at the first of its times still to come: Go's and tokio's `Skip`, with the count tokio and Go do not give. Tokio's default `Burst` is not offered: a burst of events for one timer says nothing the count does not; the floor's test of it reads the layer's own clock either side of each wait since 2026-11-19 (repairs 6), an interval of 10 ms asserted told once with every time the clock allows, and told again only where the clock reached its next time: with 1 ms and no clock it failed once on a loaded Mac, 1 run in 200 under 24 busy processes and 20 in 21 with a pause of 1 to 20 ms put between two waits
 
 capability poll/reset-timer  a timer set again from now
   heroes  poll.reset_timer

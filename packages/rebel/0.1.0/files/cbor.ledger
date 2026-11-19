@@ -133,6 +133,20 @@ capability cbor/member  a map's value read by its text key
   python  -
   note    the first entry where a key is written twice, as `.as_written` keeps it
 
+capability cbor/read-kind  an item's truth, float, text, bytes, array items, map entries and tag read out, each failing where the item is of another kind
+  heroes  cbor.kind_of, cbor.bool_of, cbor.float_of, cbor.text_of, cbor.bytes_of, cbor.items_of, cbor.entries_of, cbor.tag_of, cbor.content_of
+  go      -
+  rust    -
+  python  -
+  note    added 2026-11-19 (repairs 6), the family `json` and `protobuf` give their own values, since a `match` on a variant names every case and a program reading one kind wrote all twelve (`webauthn` held these matches itself); each fails `invalid` naming the kind it expected and the kind it found in RFC 8949's words; a text string is no bytes and an integer no float, CBOR keeping the kinds apart; `kind_of` answers the case's name as a `match` writes it
+
+capability cbor/entry  a map's value read by a key of any kind, a COSE (RFC 9052) integer label among them
+  heroes  cbor.entry_value
+  go      -
+  rust    -
+  python  -
+  note    added 2026-11-19 (repairs 6); the key compared by `==`, the first entry where one is written twice, as `cbor.member` answers a text key; so an integer never matches a float, a `nan` key matches nothing and `0.0` matches `-0.0`, which `decode` keeps as two keys
+
 capability cbor/diagnostic  an item written in diagnostic notation for a person
   heroes  cbor.format_diagnostic
   go      -

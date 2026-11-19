@@ -12,7 +12,7 @@ use compress/zstd/internal/frame
 use compress/zstd/internal/samples
 use compress/zstd/internal/sections
 use compress/zstd/internal/sequences
-use compress/zstd/internal/xxh64
+use hash
 
 # How the encoder works: the frame it writes and its effort.
 record Plan
@@ -206,7 +206,7 @@ function frame_of(input: [u8] lent, prefix: [u8] lent, dictionary_id: i64, plan:
             break
 
     if plan.checksum
-        sections.put_little(@out, value: xxh64.checksum(input, from: 0, to: n), width: 4)
+        sections.put_little(@out, value: to_i64(hash.xxh64(input, seed: 0) % 4294967296).must(), width: 4)
     return out
 
 test "frame_of: round trips of nothing, one byte, text, runs, every byte and bytes no repeat shrinks"

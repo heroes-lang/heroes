@@ -5,7 +5,6 @@
 # further the longer it has found nothing.
 
 use compress/lz4/internal/sequences
-use compress/lz4/internal/xxh32
 
 # After this many places with no repeat, the step ahead grows by one, as a
 # power of two.
@@ -22,18 +21,38 @@ function bits_for(size: i64) -> i64
 
     return bits
 
+# 2^32 - 1: what keeps a value to 32 bits.
+constant MASK: i64
+    0xffffffff
+
+# `a` times `b` modulo 2^32, both below 2^32: `a` times each half of 16 bits
+# of `b`, the high one's product kept to its low 16 bits, so nothing passes
+# 2^49.
+function mul32(a: i64, b: i64) -> i64
+    low = a * (b & 0xffff)
+    high = a * (b >> 16) & 0xffff
+    return low + (high << 16) & MASK
+
+# The four bytes at `at` of `data` as a number, the low byte first.
+function lane(data: [u8] lent, at: i64) -> i64
+    b0 = to_i64(data[at]).must()
+    b1 = to_i64(data[at + 1]).must()
+    b2 = to_i64(data[at + 2]).must()
+    b3 = to_i64(data[at + 3]).must()
+    return b0 | b1 << 8 | b2 << 16 | b3 << 24
+
 # The hash of the bytes at `at` of `data`, `bits` bits wide: four bytes
 # read as a number, low byte first, times Knuth's multiplier modulo 2^32,
 # its top bits kept; where `five`, a fifth byte mixed in before, so that a
 # place is found only beside another whose five first bytes are alike, as
 # liblz4 hashes the places of a block that reaches past 64 KiB.
 function hash_at(data: [u8] lent, at: i64, bits: i64, five: bool) -> i64
-    x: i64 @= xxh32.lane(data, at: at)
+    x: i64 @= lane(data, at: at)
 
     if five
-        x @ xxh32.mul32(a: x, b: 2246822519) ^ to_i64(data[at + 4]).must()
+        x @ mul32(a: x, b: 2246822519) ^ to_i64(data[at + 4]).must()
         x @ x ^ x >> 15
-    return xxh32.mul32(a: x, b: 2654435761) >> 32 - bits
+    return mul32(a: x, b: 2654435761) >> 32 - bits
 
 # Whether the four bytes at `a` and at `b` of `data` are the same.
 function same_four(data: [u8] lent, a: i64, b: i64) -> bool
@@ -130,3 +149,9 @@ test "parse: a history the block repeats, reached back into"
     parse(out: @out, data: data, start: 16, acceleration: 1)
     assert out.len() < 16
     assert to_i64(out[0]).must() & 0xf0 == 0
+
+test "mul32 and lane: the largest values, a product that wraps, and four bytes low first"
+    assert mul32(a: MASK, b: MASK) == 1
+    assert mul32(a: 0x10000, b: 0x10000) == 0
+    assert mul32(a: 2654435761, b: 2654435761) == 4293315681
+    assert lane([0x01, 0x02, 0x03, 0x04, 0xff], at: 1) == 0xff040302

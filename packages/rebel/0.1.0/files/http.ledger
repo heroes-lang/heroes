@@ -298,6 +298,13 @@ capability client/options  how a client sends, made with its usual values
   rust    -
   python  urllib.request.build_opener, urllib.request.install_opener, urllib.request.OpenerDirector, requests.Session.max_redirects
 
+capability client/user-agent  a User-Agent sent with every request, the request's own in its place, or none
+  heroes  http.USER_AGENT, http.Client
+  go      net/http.Request.UserAgent
+  rust    -
+  python  urllib.request.OpenerDirector.addheaders
+  note    added 2026-11-19 (repairs 6): with no header asked, Go 1.27 sent `Go-http-client/1.1` and Python 3.15's urllib `Python-urllib/3.15` (observed that day on a listener of 127.0.0.1); RFC 9110 § 10.1.5 says a client SHOULD send one unless configured not to, RFC 8555 § 6.1 that an ACME client MUST, and the acme agent reported Pebble refusing a request without one (not run here). `Client.user_agent` is `USER_AGENT`, `heroes-rebel-http/0.1.0`, in `default_client`: one product, Heroes' library Rebel, its package and Rebel's version, no comment, since § 10.1.5 asks for no needlessly fine-grained detail; a `User-Agent` of the request or of the `Session` is sent in its place, and `user_agent` "" sends none, where Go sends none for a header set empty
+
 capability client/send  a request sent and its response read, redirects followed
   heroes  http.send
   go      net/http.Client.Do, net/http.Transport.RoundTrip, net/http.RoundTripper
