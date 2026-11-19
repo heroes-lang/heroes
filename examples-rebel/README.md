@@ -2,9 +2,11 @@
 
 **Rebel is the non-standard standard library of Heroes.** Heroes imposes no
 standard library and ships none with the compiler; it offers one, Rebel, that a
-program may take or leave. A program takes it with `heroes add rebel` and names
-a package of it `use <rebel>/strings`; a program that takes nothing has no
-catalogue at all. The compiler itself is written without it.
+program may take or leave. A program takes it with `heroes add rebel`, lists each
+package it uses with `heroes add rebel/strings`, and names it
+`use <rebel>/strings`; its catalogue's entry places the packages it lists, with
+each one they use, and nothing else of Rebel. A program that takes nothing has
+no catalogue at all. The compiler itself is written without it.
 
 Rebel is written from scratch in idiomatic Heroes. Its tree, its names and its
 shapes are its own, taken from no other library; Go's, Rust's and Python's are
