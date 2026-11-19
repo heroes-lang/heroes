@@ -857,7 +857,7 @@ function renewal_info(client: Client, certificate: [u8]) -> RenewalInfo?
 # A client of the test server, its directory read.
 test "connect: the directory of a test server"
     match sample.directory_url()
-        .err _ => print("connect: skipped, ACME_DIRECTORY is not set or nothing answers there")
+        .err _ => skip_test(reason: "ACME_DIRECTORY is not set or nothing answers there")
         .ok url =>
             client = connect(
                 directory_url: url,
@@ -878,7 +878,7 @@ test "parse_directory: Pebble's directory"
 # An account made for a new key.
 test "new_account: an account for a new key"
     match sample.directory_url()
-        .err _ => print("new_account: skipped, ACME_DIRECTORY is not set or nothing answers there")
+        .err _ => skip_test(reason: "ACME_DIRECTORY is not set or nothing answers there")
         .ok url =>
             client @= connect(
                 directory_url: url,
@@ -891,7 +891,7 @@ test "new_account: an account for a new key"
 # An account bound to one the CA keeps, its key and identifier given by the environment.
 test "new_account_bound: an external account"
     match sample.eab()
-        .err _ => print("new_account_bound: skipped, ACME_DIRECTORY, ACME_EAB_KID or ACME_EAB_KEY is not set")
+        .err _ => skip_test(reason: "ACME_DIRECTORY, ACME_EAB_KID or ACME_EAB_KEY is not set")
         .ok binding =>
             client @= connect(
                 directory_url: sample.directory_url().must(),
