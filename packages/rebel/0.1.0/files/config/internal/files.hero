@@ -116,10 +116,11 @@ test "relative_to: no file, an absolute value, a relative one beside its file"
     assert relative_to(value: "certs/a.pem", file: "") == "certs/a.pem"
     assert relative_to(value: "/etc/a.pem", file: "conf/app.toml") == "/etc/a.pem"
 
-    # The file's folder and the value joined by the system's separator.
+    # The file's folder and the value joined by the system's separator; a
+    # folder at a root as `path.parent` writes it, which is `\etc` on Windows.
     assert relative_to(value: "certs/a.pem", file: "conf/app.toml") == "conf" + path.sep() + "certs/a.pem"
     assert relative_to(value: "a.pem", file: "app.toml") == "a.pem"
-    assert relative_to(value: "a.pem", file: "/etc/app.toml") == "/etc" + path.sep() + "a.pem"
+    assert path.to_slash(relative_to(value: "a.pem", file: "/etc/app.toml")) == "/etc/a.pem"
 
 test "find_file and find_upward: nothing there, no folder given"
     assert find_file("no-such-settings-zz", dirs: []).is_err()
