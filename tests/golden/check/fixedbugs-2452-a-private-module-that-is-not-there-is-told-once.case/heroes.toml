@@ -1,2 +1,2 @@
-[dependencies.core]
-path = "vendor/core"
+[dependencies.rebel]
+path = "vendor/rebel"

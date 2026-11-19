@@ -4,13 +4,13 @@
 # bracket at every place on these lines; `fmt` writes them in the order the
 # compiler walks, and the surface suite pins what it writes.
 use zeta  # the last letter
-use <core2>/x
+use <rebel2>/x
 
 # a remark about the file, which rises above the block
 
 use lib/beta as near_beta
 # about the package
-use <core>/strings
+use <rebel>/strings
 use Alpha
 use alpha
 

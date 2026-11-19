@@ -1,5 +1,5 @@
 # Fixed defect 2368, 2026-11-09, lane b26-misc, a shape beside it: two
-# packages' modules of one last part, `<core>/strings` and `<json>/strings`,
+# packages' modules of one last part, `<base>/strings` and `<json>/strings`,
 # each binding `strings`.
 #
 # SYMPTOM: the line read second was told with `fix (guess): write
@@ -13,7 +13,7 @@
 # mark left out, `json_strings`, and a fix is offered only where its alias is
 # a name; applied, with `json_strings.hello()` written for the second module,
 # the program builds.
-use <core>/strings
+use <base>/strings
 use <json>/strings  #~ module_binding_taken
 
 function main()

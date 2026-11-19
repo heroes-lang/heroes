@@ -1,6 +1,6 @@
-note: the package `core` is read from the folder `tests/golden/full/fixedbugs-2373-a-packages-call-into-the-program-is-offered-no-use.case/vendor/core/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
-error[unknown_name]: nothing named `greeting_of_the_program` is in scope, and no `use` of this file can name a module declaring it: `other/greetings` is a module of the program, and no file of the package `core` names a module of the program that uses it
-  at tests/golden/full/fixedbugs-2373-a-packages-call-into-the-program-is-offered-no-use.case/vendor/core/strings.hero:6:12
+note: the package `rebel` is read from the folder `tests/golden/full/fixedbugs-2373-a-packages-call-into-the-program-is-offered-no-use.case/vendor/rebel/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+error[unknown_name]: nothing named `greeting_of_the_program` is in scope, and no `use` of this file can name a module declaring it: `other/greetings` is a module of the program, and no file of the package `rebel` names a module of the program that uses it
+  at tests/golden/full/fixedbugs-2373-a-packages-call-into-the-program-is-offered-no-use.case/vendor/rebel/strings.hero:6:12
     |
   6 |     return greeting_of_the_program()  #~ unknown_name
     |            ^^^^^^^^^^^^^^^^^^^^^^^

@@ -1,0 +1,5 @@
+# The placed package's own catalogue of defect 2431's case beside it, a
+# file of its tree and so of its sum: `rebel`, from the index.
+[dependencies.rebel]
+version = "1.0.0"
+sum = "sha256-611bf597ec25edb198d27e866dbecff8853f017707143dc49eed823b6eaa8248"

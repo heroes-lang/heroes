@@ -1,6 +1,6 @@
 # Fixed defect 2379, 2026-11-10, lane b29-pkgmsg, a shape beside it: a file
-# of the package `core` calls `mine()`, declared by `<alpha>/a`, which no
-# line of `core` names, and by `core`'s own `util`, which `use util` names.
+# of the package `rebel` calls `mine()`, declared by `<alpha>/a`, which no
+# line of `rebel` names, and by `rebel`'s own `util`, which `use util` names.
 #
 # SYMPTOM: `unknown_name` with a near name's rename: only the first module
 # in the names' order was asked, `<alpha>/a`, and found out of reach.
@@ -8,8 +8,8 @@
 # FIX: every module declaring the name is asked, and the one a line of the
 # file names is offered, `use util`.
 use <alpha>/a
-use <core>/strings
-use <core>/util
+use <rebel>/strings
+use <rebel>/util
 
 function main()
     print(strings.word() + a.mine() + util.mine())

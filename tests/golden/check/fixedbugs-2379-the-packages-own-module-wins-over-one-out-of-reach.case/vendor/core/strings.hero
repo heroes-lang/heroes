@@ -1,6 +1,0 @@
-# The package `core`'s module of defect 2379's case beside it, its `use util`
-# missing.
-
-# A word.
-function word() -> str
-    return mine()  #~ needs_qualifying

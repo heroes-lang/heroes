@@ -1,0 +1,4 @@
+# A module of defect 2368's cases, the package `rebel`'s `strings`.
+
+function hello() -> str
+    return "rebel"

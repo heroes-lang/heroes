@@ -1,6 +1,6 @@
 # Defect 2452, 2026-11-11: the shape in a package's file. It was told
 # `package_unmarked` with a fix the private rule refuses, and `private_module`
-# of `<json>/core/internal/scan`, a module no tree holds.
+# of `<json>/rebel/internal/scan`, a module no tree holds.
 use <json>/c
 
 function main()

@@ -1,9 +1,9 @@
 # Fixed defect 2431, 2026-11-10, lane b30-pkg, the whole message: `json`, a
-# folder of the author's own, writes `use core/strconv`, `core` an entry of
+# folder of the author's own, writes `use rebel/strconv`, `rebel` an entry of
 # its own catalogue whose folder holds `strconv.hero`, and `json` has no
-# `core/strconv.hero`.
+# `rebel/strconv.hero`.
 #
-# The repair writing `use <core>/strconv` is `certain` (panel 235's R18):
+# The repair writing `use <rebel>/strconv` is `certain` (panel 235's R18):
 # nothing on the package's own side answers that path, the entry's tree holds
 # the module, and the file stands in a folder the author edits, so `check
 # <directory> --apply --in-place` writes it and the program checks clean,

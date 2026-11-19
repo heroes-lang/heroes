@@ -1,7 +1,10 @@
 # The catalogue of defect 2368's case beside it: two packages of the author's
-# own, read from folders, the mark `<core>` and `<json>` any entry's.
-[dependencies.core]
-path = "vendor/core"
+# own, read from folders, the mark `<base>` and `<json>` any entry's. The
+# first is named to sort before `json`, as the name it had until
+# M-rebel-library step 55c did, so `json`'s line is the one the compiler
+# reads second and tells (the `use` block's one order, panel 238's R1).
+[dependencies.base]
+path = "vendor/base"
 
 [dependencies.json]
 path = "vendor/json"
