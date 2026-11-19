@@ -1,0 +1,196 @@
+# xxHash32, the checksum of LZ4's frame headers, blocks and contents, with
+# the seed 0, fed at once or piece by piece. Its arithmetic is modulo 2^32,
+# done in `i64` on values below 2^32 so that nothing overflows: a product is
+# taken in two halves of 16 bits.
+
+use bytes
+
+# The first of xxHash32's five primes.
+constant PRIME1: i64
+    2654435761
+
+# The second prime.
+constant PRIME2: i64
+    2246822519
+
+# The third prime.
+constant PRIME3: i64
+    3266489917
+
+# The fourth prime.
+constant PRIME4: i64
+    668265263
+
+# The fifth prime.
+constant PRIME5: i64
+    374761393
+
+# 2^32 - 1: what keeps a value to 32 bits.
+constant MASK: i64
+    0xffffffff
+
+# A checksum in progress: four lanes, the bytes not yet a whole stripe of
+# 16, and how many bytes were fed.
+record State
+    # The four accumulators, each below 2^32.
+    v1: i64
+    # The second.
+    v2: i64
+    # The third.
+    v3: i64
+    # The fourth.
+    v4: i64
+    # The bytes fed after the last whole stripe, fewer than 16.
+    tail: [u8]
+    # How many bytes were fed in all.
+    total: i64
+
+# `a` times `b` modulo 2^32, both below 2^32.
+function mul32(a: i64, b: i64) -> i64
+    low = a * (b & 0xffff)
+    high = a * (b >> 16) & 0xffff
+    return low + (high << 16) & MASK
+
+# `x`, below 2^32, rotated left by `r` bits within 32.
+function rotl32(x: i64, r: i64) -> i64
+    return (x << r | x >> 32 - r) & MASK
+
+# The four bytes at `at` of `data` as a number, the low byte first.
+function lane(data: [u8] lent, at: i64) -> i64
+    b0 = to_i64(data[at]).must()
+    b1 = to_i64(data[at + 1]).must()
+    b2 = to_i64(data[at + 2]).must()
+    b3 = to_i64(data[at + 3]).must()
+    return b0 | b1 << 8 | b2 << 16 | b3 << 24
+
+# One lane mixed into an accumulator.
+function round(acc: i64, input: i64) -> i64
+    mixed = acc + mul32(a: input, b: PRIME2) & MASK
+    return mul32(a: rotl32(x: mixed, r: 13), b: PRIME1)
+
+# A checksum of nothing yet, with the seed 0.
+function start() -> State
+    return State(
+        v1: PRIME1 + PRIME2 & MASK,
+        v2: PRIME2,
+        v3: 0,
+        v4: MASK + 1 - PRIME1 & MASK,
+        tail: [],
+        total: 0
+    )
+
+# The stripe of 16 bytes at `at` of `data` mixed into `s`'s four lanes.
+function stripe(@s: State, data: [u8] lent, at: i64)
+    s.v1 @ round(acc: s.v1, input: lane(data, at: at))
+    s.v2 @ round(acc: s.v2, input: lane(data, at: at + 4))
+    s.v3 @ round(acc: s.v3, input: lane(data, at: at + 8))
+    s.v4 @ round(acc: s.v4, input: lane(data, at: at + 12))
+
+# The bytes `from` to `to` of `data` fed to `s`.
+function update(@s: State, data: [u8] lent, from: i64, to: i64)
+    s.total @ s.total + (to - from)
+    at: i64 @= from
+
+    if s.tail.len() > 0
+        held @= s.tail
+
+        while held.len() < 16 && at < to
+            held @ held.push(data[at])
+            at @ at + 1
+
+        if held.len() < 16
+            s.tail @ held
+            return
+        stripe(@s, data: held, at: 0)
+        s.tail @ []
+
+    while to - at >= 16
+        stripe(@s, data: data, at: at)
+        at @ at + 16
+
+    if at < to
+        rest: [u8] @= []
+
+        while at < to
+            rest @ rest.push(data[at])
+            at @ at + 1
+
+        s.tail @ rest
+
+# The checksum of everything fed to `s`, below 2^32; `s` may be fed more
+# after.
+function digest(s: State) -> i64
+    h: i64 @= 0
+
+    if s.total >= 16
+        h @ rotl32(x: s.v1, r: 1) + rotl32(x: s.v2, r: 7) + rotl32(x: s.v3, r: 12) + rotl32(x: s.v4, r: 18) & MASK
+    else
+        h @ PRIME5
+    h @ h + (s.total & MASK) & MASK
+    at: i64 @= 0
+
+    while s.tail.len() - at >= 4
+        h @ h + mul32(a: lane(s.tail, at: at), b: PRIME3) & MASK
+        h @ mul32(a: rotl32(x: h, r: 17), b: PRIME4)
+        at @ at + 4
+
+    while at < s.tail.len()
+        h @ h + mul32(a: to_i64(s.tail[at]).must(), b: PRIME5) & MASK
+        h @ mul32(a: rotl32(x: h, r: 11), b: PRIME1)
+        at @ at + 1
+
+    h @ h ^ h >> 15
+    h @ mul32(a: h, b: PRIME2)
+    h @ h ^ h >> 13
+    h @ mul32(a: h, b: PRIME3)
+    return h ^ h >> 16
+
+# The checksum of the bytes `from` to `to` of `data`.
+function of(data: [u8] lent, from: i64, to: i64) -> i64
+    s @= start()
+    update(@s, data: data, from: from, to: to)
+    return digest(s)
+
+test "of: nothing, one byte, three, a stripe, a stripe and one, and 768 bytes, as Python's xxhash answers"
+    assert of([], from: 0, to: 0) == 0x2cc5d05
+    assert of([0x61], from: 0, to: 1) == 0x550d7456
+    assert of([0x61, 0x62, 0x63], from: 0, to: 3) == 0x32d153ff
+    digits = bytes.from_text("0123456789abcdefg")
+    assert of(digits, from: 0, to: 16) == 0xc2c45b69
+    assert of(digits, from: 0, to: 17) == 0xcc79b217
+    every: [u8] @= []
+
+    for _ in range(from: 0, to: 3)
+        for i in range(from: 0, to: 256)
+            every @ every.push(to_u8(i).must())
+
+    assert of(every, from: 0, to: every.len()) == 0xcdb946b1
+
+test "update: fed in pieces of every length answers what fed at once does"
+    every: [u8] @= []
+
+    for i in range(from: 0, to: 768)
+        every @ every.push(to_u8(i % 256).must())
+
+    whole = of(every, from: 0, to: every.len())
+
+    for piece in [1, 3, 15, 16, 17, 100]
+        s @= start()
+        at: i64 @= 0
+
+        while at < every.len()
+            next = if at + piece > every.len()
+                every.len()
+            else
+                at + piece
+
+            update(@s, data: every, from: at, to: next)
+            at @ next
+
+        assert digest(s) == whole
+
+test "mul32 and rotl32: the largest values, and a rotation by 1 and by 31"
+    assert mul32(a: MASK, b: MASK) == 1
+    assert mul32(a: 0x10000, b: 0x10000) == 0
+    assert rotl32(x: 0x80000000, r: 1) == 1
+    assert rotl32(x: 1, r: 31) == 0x80000000

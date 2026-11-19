@@ -1,0 +1,147 @@
+# A frame told and measured without being decoded: its kind and header
+# read, and its blocks walked by their sizes to where it ends.
+
+use compress/internal/codes
+use compress/lz4/internal/header
+
+# A standard frame.
+constant STANDARD: i64
+    0
+
+# A skippable frame.
+constant SKIPPABLE: i64
+    1
+
+# A legacy frame.
+constant LEGACY: i64
+    2
+
+# What the start of a frame says.
+record Info
+    # `STANDARD`, `SKIPPABLE` or `LEGACY`.
+    kind: i64
+    # The low four bits of a skippable frame's magic.
+    magic: i64
+    # A standard frame's header; for the other kinds, one with no flag.
+    head: header.Header
+    # How many bytes the header takes, the magic included.
+    header_size: i64
+
+# What the frame at the start of `data` says of itself.
+function info(data: [u8]) -> Info?
+    if data.len() < 4
+        return codes.invalid_at(at: data.len(), why: "an input too short for a frame's magic")
+    value = header.u32_at(data, at: 0)
+
+    if header.is_skippable(value)
+        if data.len() < 8
+            return codes.invalid_at(at: data.len(), why: "the input ends inside a skippable frame's size")
+        return ok(Info(kind: SKIPPABLE, magic: value - header.SKIPPABLE_MAGIC, head: header.plain(4), header_size: 8))
+
+    if value == header.LEGACY_MAGIC
+        h @= header.plain(4)
+        h.block_most @ header.LEGACY_BLOCK
+        return ok(Info(kind: LEGACY, magic: 0, head: h, header_size: 4))
+
+    if value != header.FRAME_MAGIC
+        return codes.invalid_at(at: 0, why: "no LZ4 frame, whose magic is 04 22 4D 18")
+
+    if data.len() < 5 || data.len() < header.size_of(data, at: 0)
+        return codes.invalid_at(at: data.len(), why: "the input ends inside a frame header")
+    h = header.read(data, at: 0, base: 0)?
+    return ok(Info(kind: STANDARD, magic: 0, head: h, header_size: h.size))
+
+# How many bytes the frame at the start of `data` takes.
+function size(data: [u8]) -> i64?
+    found = info(data)?
+
+    if found.kind == SKIPPABLE
+        length = header.u32_at(data, at: 4)
+
+        if length > data.len() - 8
+            return codes.invalid_at(at: data.len(), why: "the input ends inside a skippable frame")
+        return ok(8 + length)
+
+    if found.kind == LEGACY
+        return legacy_size(data)
+    h = found.head
+    p: i64 @= h.size
+
+    while true
+        if data.len() - p < 4
+            return codes.invalid_at(at: data.len(), why: "the input ends inside a block's size")
+        value = header.u32_at(data, at: p)
+        p @ p + 4
+
+        if value == 0
+            if h.content_checksum
+                p @ p + 4
+
+            if p > data.len()
+                return codes.invalid_at(at: data.len(), why: "the input ends inside a content checksum")
+            return ok(p)
+        block = value & 0x7fffffff
+
+        if block > h.block_most
+            return codes.invalid_at(
+                at: p - 4,
+                why: f"a block of {block} bytes, past the frame's most of {h.block_most}"
+            )
+        p @ p + block
+
+        if h.block_checksum
+            p @ p + 4
+
+        if p > data.len()
+            return codes.invalid_at(at: data.len(), why: "the input ends inside a block")
+
+    return ok(p)
+
+# How many bytes the legacy frame at the start of `data` takes: to the end
+# of `data`, to another frame's magic, or past a size of 0 or the four bytes
+# of size a compressed Linux kernel ends with.
+function legacy_size(data: [u8]) -> i64?
+    p: i64 @= 4
+
+    while true
+        left = data.len() - p
+
+        if left == 0
+            return ok(p)
+
+        if left < 4
+            return codes.invalid_at(at: data.len(), why: "the input ends inside a legacy block's size")
+        value = header.u32_at(data, at: p)
+
+        if header.is_magic(value)
+            return ok(p)
+        p @ p + 4
+
+        if value == 0 || left == 4
+            return ok(p)
+
+        if value > header.LEGACY_BOUND
+            return codes.invalid_at(
+                at: p - 4,
+                why: f"a legacy block of {value} bytes, past the {header.LEGACY_BOUND} one takes"
+            )
+        p @ p + value
+
+        if p > data.len()
+            return codes.invalid_at(at: data.len(), why: "the input ends inside a legacy block")
+
+    return ok(p)
+
+test "size: a skippable frame, one cut short, and a legacy frame ended by another's magic"
+    assert size([0x50, 0x2a, 0x4d, 0x18, 2, 0, 0, 0, 7, 7, 9]).must() == 10
+    assert size([0x50, 0x2a, 0x4d, 0x18, 3, 0, 0, 0, 7, 7]).is_err()
+    legacy: [u8] = [0x02, 0x21, 0x4c, 0x18, 2, 0, 0, 0, 0x10, 0x61, 0x02, 0x21, 0x4c, 0x18]
+    assert size(legacy).must() == 10
+    assert size(legacy.slice(from: 0, to: 10)).must() == 10
+    assert size(legacy.slice(from: 0, to: 12)).is_err()
+
+test "info: too short, an unknown magic, and a header cut short"
+    assert info([0x04, 0x22]).is_err()
+    assert info([1, 2, 3, 4, 5, 6, 7]).is_err()
+    assert info([0x04, 0x22, 0x4d, 0x18, 0x64]).is_err()
+    assert info([0x04, 0x22, 0x4d, 0x18, 0x64, 0x70, 0xb9]).must().head.block_most == 4194304

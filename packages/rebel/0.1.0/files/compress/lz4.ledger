@@ -1,0 +1,284 @@
+# The ledger of `compress/lz4`: what Go's `github.com/pierrec/lz4/v4`
+# (4.1.33), Rust's `lz4_flex` (0.14.2), Python's `lz4` (4.4.5, over liblz4
+# 1.11.0) and Odin's `core:compress/lz4` (2026-11a) let a program do, one
+# block per capability, and what Rebel answers. None of the three standard
+# libraries has LZ4, so the yardsticks are these four. The lists are this
+# machine's, 2026-11-19: `go doc -all` on the module, the items of `cargo doc`
+# for the crate, `dir()` of `lz4`, `lz4.block` and `lz4.frame` and of their
+# classes, and `odin doc` of the package. Every frame in the package's tests
+# was made by the `lz4` tool 1.11.0, by Python's `lz4` or by hand. The
+# cross-check in the scratch folder ran 1,015
+# comparisons, all alike: frames the tool wrote at levels 1, 9, 12 and
+# `--fast=5`, every block size, linked and standing alone, with block
+# checksums, the size, no content checksum, legacy and with a dictionary,
+# on eleven inputs from none to 5,000,000 bytes, read whole and piece by
+# piece by Rebel; Rebel's frames at six levels and five sets of flags, its
+# legacy frames, its frames with a dictionary and its frames written piece
+# by piece, read by the tool and by Python; Python's blocks, bare and sized,
+# with a dictionary, read by Rebel, and Rebel's read by Python. A decoder
+# built with `--sanitize` was fed 2,000 mutated frames of the tool's,
+# Python's and its own: no abort, no hang (the slowest 0.4 s), 1,987 read
+# as the tool reads them, and the 13 others are the offset of 0 and the
+# empty input this ledger refuses. Python's `lz4.block.compress` in mode
+# `high_compression` at levels 10 to 12 crashed its process on 13 bytes or
+# more of one repeated byte (observed, exit 139), so the cross-check used
+# level 9 there.
+
+capability lz4/block-compress  bytes compressed into one LZ4 block, with no frame around it
+  heroes  compress/lz4.compress_block
+  go      CompressBlock, CompressBlockHC, Compressor, Compressor.CompressBlock, CompressorHC, CompressorHC.Level, CompressorHC.CompressBlock
+  rust    block::compress, block::compress_into, block::CompressError, CompressError::OutputTooSmall
+  python  lz4.block.compress (store_size=False)
+  odin    compress_block, compress_block_to_slice, compress_block_to_dynamic, LZ4
+  note    a level from -65,536 to 12 as the frames take it; the block keeps LZ4's rules for its end (its last five bytes literals, its last repeat 12 bytes or more before its end), so liblz4 reads every one (observed: 1,015 cross-checks, the blocks of three levels on ten inputs among them). Go's and Rust's write into a buffer the caller sizes and answer 0 where it is too small; Rebel answers the block
+
+capability lz4/block-decompress  one LZ4 block decompressed, under a limit
+  heroes  compress/lz4.decompress_block
+  go      UncompressBlock, ErrInvalidSourceShortBuffer
+  rust    block::decompress, block::decompress_into, block::DecompressError, DecompressError::ExpectedAnotherByte, DecompressError::LiteralOutOfBounds, DecompressError::OffsetOutOfBounds, DecompressError::OffsetZero, DecompressError::OutputTooSmall
+  python  lz4.block.decompress (uncompressed_size=)
+  odin    decompress_block, decompress_block_to_slice, decompress_block_from_bytes, decompress_block_from_context
+  note    a `limit` is required, as Go's and Python's size the output. An offset of 0 fails `invalid`, as the block format says and as Rust's `OffsetZero`, where liblz4 copies bytes not yet written (observed: Python decoded `10 61 00 00 50 62 63 64 65 66` to `a`, four zero bytes and `bcdef`; 11 of the 13 frames, of 2,000 mutated, that the `lz4` tool read and Rebel refused were such; the other 2 were empty). A block that is whole but breaks the rules for its end is read, where liblz4 refuses some, by the room it is given rather than by the block (observed: one block read with a capacity of 20 and refused with 10, its exact size). An empty block fails `invalid` as liblz4's
+
+capability lz4/block-dictionary  a block compressed and decompressed against a dictionary
+  heroes  compress/lz4.compress_block_with, compress/lz4.decompress_block_with
+  go      UncompressBlockWithDict
+  rust    block::compress_with_dict, block::compress_into_with_dict, block::decompress_with_dict, block::decompress_into_with_dict
+  python  lz4.block.compress (dict=), lz4.block.decompress (dict=)
+  odin    compress_block (dictionary), decompress_block (dictionary)
+  note    only the dictionary's last 65,536 bytes count, the farthest an offset reaches
+
+capability lz4/block-sized  a block led by its decompressed size in four bytes
+  heroes  compress/lz4.compress_sized, compress/lz4.compress_sized_with, compress/lz4.decompress_sized, compress/lz4.decompress_sized_with
+  go      -
+  rust    block::compress_prepend_size, block::compress_prepend_size_with_dict, block::decompress_size_prepended, block::decompress_size_prepended_with_dict, block::uncompressed_size
+  python  lz4.block.compress (store_size=True), lz4.block.decompress
+  odin    -
+  note    Python's default form. A length past 2,147,483,647 fails `invalid` (observed: Python refused FF FF FF FF), and a block that decompresses to another length fails `invalid` as Python's does. Rust's `uncompressed_size`, the four bytes read alone, is `bytes.decode_u32_le`
+
+capability lz4/block-bound  the most bytes a block of n bytes compresses to
+  heroes  compress/lz4.block_bound
+  go      CompressBlockBound
+  rust    block::get_maximum_output_size
+  python  -
+  odin    compress_block_bound
+  note    n + n / 255 + 16, the bound of the LZ4 block format; fails `invalid` below 0 and where it would pass what an `i64` holds
+
+capability lz4/frame-compress  bytes compressed whole into one LZ4 frame
+  heroes  compress/lz4.compress
+  go      NewWriter, Writer.Write, Writer.Close (into a bytes.Buffer)
+  rust    frame::FrameEncoder, FrameEncoder::new, FrameEncoder::with_frame_info, FrameEncoder::write, FrameEncoder::finish
+  python  lz4.frame.compress
+  odin    compress_frame, compress_frame_to_slice, compress_frame_to_dynamic, compress_frame_bound, FRAME_MAGIC, FRAME_HEADER_MAX, FRAME_DESCRIPTOR_MAX, FRAME_FOOTER_MAX, DEFAULT_FRAME_FLAGS
+  note    `defaults` is the `lz4` tool's (level 1, blocks of 4 MiB that stand alone, a content checksum), where Python's are blocks of 64 KiB linked, no content checksum and the size said; the tool lowers its block size for a file smaller than a block (observed: 64 KiB for 17 bytes), `defaults` keeps 4 MiB. Measured against the tool on 300,000 bytes of words and 5,000,000 of words, noise and zeros: level 1 writes 152,585 and 1,769,805 bytes where `lz4 -1` writes 158,867 and 1,823,537; level 3, 130,549 and 1,584,329 against 133,053 and 1,606,579; level 9, 110,223 and 1,400,846 against 110,491 and 1,406,180; level 12, 2.6% and 1.6% more than `lz4 -12`, which parses optimally
+
+capability lz4/frame-decompress  frames decompressed whole, under a limit
+  heroes  compress/lz4.decompress
+  go      NewReader, Reader.Read, io.ReadAll
+  rust    frame::FrameDecoder, FrameDecoder::new, FrameDecoder::read, FrameDecoder::read_to_end
+  python  lz4.frame.decompress
+  odin    decompress_frame, decompress_frame_from_bytes, decompress_frame_from_context
+  note    a `limit` is required. Every frame to the input's end is read, as the `lz4` tool reads them, where Python's `lz4.frame.decompress` reads the first and passes over the rest (observed: two frames gave the first's bytes alone, and bytes after a frame were ignored); bytes after the last frame fail `invalid`, as the tool fails (exit 26). An empty input fails `invalid` as Python's does, where the tool answers nothing
+
+capability lz4/frame-dictionary  frames compressed and decompressed against a dictionary
+  heroes  compress/lz4.Options, compress/lz4.decompress_with, compress/lz4.with_dictionary
+  go      -
+  rust    -
+  python  -
+  odin    compress_frame (dictionary), decompress_frame (dictionary)
+  note    blocks that stand alone each reach into the dictionary, linked blocks into the dictionary and then the blocks before, as `lz4 -D` reads them (observed: frames of `lz4 -D` with `-BD` and `-BI` read, and Rebel's read by `lz4 -D -d`)
+
+capability lz4/leading  a frame at the start of other bytes, and where it ended
+  heroes  compress/lz4.decompress_leading, compress/lz4.Leading, compress/lz4.unused, compress/lz4.is_done
+  go      -
+  rust    -
+  python  lz4.frame.decompress (return_bytes_read=True), LZ4FrameDecompressor.eof, LZ4FrameDecompressor.unused_data
+  odin    -
+  note    -
+
+capability lz4/frame-info  what a frame's header says, read without decompressing
+  heroes  compress/lz4.frame_info, compress/lz4.FrameInfo, compress/lz4.FrameKind, compress/lz4.ContentSize
+  go      ValidFrameHeader, Reader.Size
+  rust    frame::FrameInfo, FrameInfo.block_size, FrameInfo.block_mode, FrameInfo.block_checksums, FrameInfo.content_checksum, FrameInfo.content_size, FrameInfo.legacy_frame
+  python  lz4.frame.get_frame_info
+  odin    -
+  note    the kind is a variant, skippable with its magic's low four bits; an unknown size is a case of its own, where Python answers 0 (observed)
+
+capability lz4/frame-size  where a frame ends, its blocks walked and not decoded
+  heroes  compress/lz4.frame_size
+  go      -
+  rust    -
+  python  -
+  odin    -
+  note    none of the four offers it; `compress/zstd.frame_size`'s twin, blocks walked by their sizes
+
+capability lz4/levels  how hard the compressor works: fast, or high compression
+  heroes  compress/lz4.Options, compress/lz4.MIN_LEVEL, compress/lz4.DEFAULT_LEVEL, compress/lz4.MIN_HIGH_LEVEL, compress/lz4.MAX_LEVEL
+  go      CompressionLevel, Fast, Level1, Level2, Level3, Level4, Level5, Level6, Level7, Level8, Level9, CompressionLevelOption, CompressionLevel.String, ErrOptionInvalidCompressionLevel
+  rust    -
+  python  lz4.frame.COMPRESSIONLEVEL_MIN, lz4.frame.COMPRESSIONLEVEL_MINHC, lz4.frame.COMPRESSIONLEVEL_MAX, lz4.frame.compress (compression_level=), lz4.block.compress (mode='high_compression', compression=)
+  odin    Level, Level.Fastest, Level.Default, Level.Best
+  note    liblz4's numbers, which the tool and Python's frames take: 1 and 2 fast, 3 to 12 high compression; Python's frames take levels up to 16, which Rebel refuses past 12. The high levels follow hash chains 16 to 8,192 deep with one byte of look-ahead, where `lz4 -10` to `-12` parse optimally. Go's levels are search depths of its own, Odin's liblz4's
+
+capability lz4/acceleration  the fast compressor made faster, compressing less
+  heroes  compress/lz4.Options
+  go      CCompatFast, CompressorCCompat, CompressorCCompat.Acceleration, CompressorCCompat.CompressBlock
+  rust    -
+  python  lz4.frame.compress (compression_level below 0), lz4.block.compress (mode='fast', acceleration=)
+  odin    -
+  note    a level below 1 makes the fast compressor's first step after a place with no repeat 1 - level bytes, the meaning liblz4 gives an acceleration; the tool's `--fast=n`, Python's negative frame levels and its block `acceleration` name the same dial, and Rebel's output at a level is its own
+
+capability lz4/block-size  the most bytes a block of a frame holds
+  heroes  compress/lz4.BlockSize, compress/lz4.Options, compress/lz4.FrameInfo
+  go      BlockSize, Block64Kb, Block256Kb, Block1Mb, Block4Mb, BlockSize.String, BlockSizeOption, DefaultBlockSizeOption, ErrOptionInvalidBlockSize
+  rust    frame::BlockSize, BlockSize::Auto, BlockSize::Max64KB, BlockSize::Max256KB, BlockSize::Max1MB, BlockSize::Max4MB, BlockSize::Max8MB, Error::UnsupportedBlocksize, Error::BlockTooBig
+  python  lz4.frame.BLOCKSIZE_DEFAULT, lz4.frame.BLOCKSIZE_MAX64KB, lz4.frame.BLOCKSIZE_MAX256KB, lz4.frame.BLOCKSIZE_MAX1MB, lz4.frame.BLOCKSIZE_MAX4MB
+  odin    Block_Max_Size, Frame_Options.block_max_size
+  note    Rust's `Max8MB` is the legacy frame's, `compress_legacy`; its `Auto` is a choice the program makes
+
+capability lz4/linked-blocks  blocks that repeat bytes of the blocks before them, or stand alone
+  heroes  compress/lz4.Options, compress/lz4.FrameInfo
+  go      -
+  rust    frame::BlockMode, BlockMode::Independent, BlockMode::Linked
+  python  lz4.frame.compress (block_linked=)
+  odin    Frame_Flag.Independent_Blocks
+  note    Go writes blocks that stand alone only
+
+capability lz4/checksums  the content checksum and the block checksums written and checked
+  heroes  compress/lz4.Options, compress/lz4.FrameInfo
+  go      ChecksumOption, BlockChecksumOption, DefaultChecksumOption, ErrInvalidHeaderChecksum, ErrInvalidBlockChecksum, ErrInvalidFrameChecksum
+  rust    Error::HeaderChecksumError, Error::BlockChecksumError, Error::ContentChecksumError
+  python  lz4.frame.compress (content_checksum=, block_checksum=)
+  odin    Frame_Flag.Content_Checksum, Frame_Flag.Block_Checksum
+  note    xxHash32, written in this package because `hash` holds none; a block's checksum is checked before the block is decoded
+
+capability lz4/content-size  the frame's decompressed size written in its header and checked
+  heroes  compress/lz4.Options, compress/lz4.with_size, compress/lz4.FrameInfo
+  go      SizeOption, ErrInvalidContentSize
+  rust    Error::ContentLengthError
+  python  lz4.frame.compress (store_size=), lz4.frame.compress_begin (source_size=, content_size=)
+  odin    Frame_Flag.Content_Size
+  note    a size said past the `limit` fails `limit` before a byte is decoded; a compressor's size is given by `with_size`, and `compress_end` fails `invalid` where another number of bytes was fed, as Go's `Close` fails `ErrInvalidContentSize`
+
+capability lz4/dictionary-id  the id of the dictionary a frame was made with, written and read
+  heroes  compress/lz4.Options, compress/lz4.FrameInfo
+  go      ErrInvalidFrameDescriptor
+  rust    Error::DictionaryNotSupported
+  python  -
+  odin    Frame_Options.dictionary_id
+  note    an id is written and read and never checked: the format gives it no meaning, as liblz4 reads it (observed: the tool and Python read a frame naming 7), where Go's documentation says it refuses such a frame and Rust's errors name `DictionaryNotSupported`
+
+capability lz4/skippable  a skippable frame written, and read past
+  heroes  compress/lz4.skippable_frame, compress/lz4.decompress, compress/lz4.frame_info
+  go      -
+  rust    Error::SkippableFrame
+  python  lz4.frame.get_frame_info (skippable)
+  odin    SKIPPABLE_MAGIC_MIN, SKIPPABLE_MAGIC_MAX
+  note    passed over as the `lz4` tool does, where Python's `decompress` stops at one (observed: no bytes) and Rust's errors name `SkippableFrame`
+
+capability lz4/legacy  the legacy frame, as the Linux kernel and `lz4 -l` write it
+  heroes  compress/lz4.compress_legacy, compress/lz4.decompress, compress/lz4.frame_info, compress/lz4.frame_size
+  go      LegacyOption
+  rust    FrameInfo.legacy_frame
+  python  -
+  odin    LEGACY_MAGIC, LEGACY_BLOCK_SIZE
+  note    a legacy frame ends where the input ends, at another frame's magic, or after a block size of 0, as the `lz4` tool reads it (observed); four bytes that end the input after it are the size a compressed Linux kernel says, checked, as Go reads that variant
+
+capability lz4/concatenated  frames one after another read as one
+  heroes  compress/lz4.decompress, compress/lz4.reader
+  go      -
+  rust    -
+  python  -
+  odin    -
+  note    frames of every kind one after another, as the `lz4` tool reads them
+
+capability lz4/piece-compress  a frame compressed piece by piece in memory
+  heroes  compress/lz4.Compressor, compress/lz4.compressor, compress/lz4.compress_part, compress/lz4.compress_flush, compress/lz4.compress_end, compress/lz4.is_ended
+  go      -
+  rust    -
+  python  lz4.frame.LZ4FrameCompressor, LZ4FrameCompressor.begin, LZ4FrameCompressor.compress, LZ4FrameCompressor.flush, LZ4FrameCompressor.started, LZ4FrameCompressor.has_context, lz4.frame.create_compression_context, lz4.frame.compress_begin, lz4.frame.compress_chunk, lz4.frame.compress_flush
+  odin    -
+  note    Python's `started` is whether the header was answered, which a program sees in the bytes it was given
+
+capability lz4/piece-decompress  a frame decompressed piece by piece in memory
+  heroes  compress/lz4.Decompressor, compress/lz4.decompressor, compress/lz4.decompress_part, compress/lz4.with_dictionary
+  go      -
+  rust    -
+  python  lz4.frame.LZ4FrameDecompressor, LZ4FrameDecompressor.decompress, LZ4FrameDecompressor.needs_input, lz4.frame.create_decompression_context, lz4.frame.decompress_chunk
+  odin    -
+  note    Python's `needs_input` is an answer of no bytes before `is_done`
+
+capability lz4/stream-write  a frame written through a stream
+  heroes  compress/lz4.Writer, compress/lz4.writer, compress/lz4.write, compress/lz4.flush, compress/lz4.finish
+  go      NewWriter, Writer.Write, Writer.Flush, Writer.Close
+  rust    FrameEncoder::flush, FrameEncoder::try_finish, FrameEncoder::get_ref, FrameEncoder::get_mut, FrameEncoder::into_inner, FrameEncoder::frame_info, FrameEncoder::auto_finish, frame::AutoFinishEncoder
+  python  LZ4FrameFile.write, LZ4FrameFile.flush, LZ4FrameFile.close (mode 'wb'), auto_flush
+  odin    -
+  note    Python's `auto_flush` is a `flush` after each `write`; the stream is never closed by the writer, as Rust's `into_inner` hands it back
+
+capability lz4/stream-read  frames read through a stream
+  heroes  compress/lz4.Reader, compress/lz4.reader, compress/lz4.read, compress/lz4.read_rest
+  go      NewReader, Reader.Read
+  rust    FrameDecoder::read, FrameDecoder::get_ref, FrameDecoder::get_mut, FrameDecoder::into_inner
+  python  LZ4FrameFile.read, LZ4FrameFile.read1, LZ4FrameFile.readinto, LZ4FrameFile.readinto1, LZ4FrameFile.readall, LZ4FrameFile.peek
+  odin    -
+  note    -
+
+capability lz4/stream-copy  everything a stream holds compressed or decompressed into another
+  heroes  compress/lz4.compress_stream, compress/lz4.decompress_stream
+  go      Writer.ReadFrom, Reader.WriteTo
+  rust    std::io::copy over FrameEncoder and FrameDecoder
+  python  -
+  odin    -
+  note    -
+
+capability lz4/compressing-reader  a reader that answers compressed bytes of what it reads
+  heroes  compress/lz4.compressor, compress/lz4.compress_part
+  go      CompressingReader, NewCompressingReader, CompressingReader.Read, CompressingReader.Close, CompressingReader.Source, CompressingReader.Apply, CompressingReader.Reset
+  rust    -
+  python  -
+  odin    -
+  note    a reader that answers compressed bytes is a `Compressor` fed what the program reads; Heroes has no interface for it to stand behind
+
+capability lz4/concurrency  the blocks of a frame compressed on several threads
+  heroes  refused: a thread carries one `i64` or one `str` (spec section 13), so a block cannot reach another thread but as text written and read back, which costs what the thread would save
+  go      ConcurrencyOption, DefaultConcurrency
+  rust    -
+  python  -
+  odin    -
+  note    -
+
+capability lz4/failures  what a broken block or frame answers
+  heroes  compress/lz4.INVALID, compress/lz4.LIMIT, compress/lz4.CLOSED
+  go      ErrInvalidFrame, ErrInternalUnhandledState, ErrOptionClosedOrError, ErrOptionNotApplicable, ErrWriterNotClosed, ErrWriterClosed
+  rust    frame::Error, Error::CompressionError, Error::DecompressionError, Error::InvalidBlockInfo, Error::IoError, Error::ReservedBitsSet, Error::UnsupportedVersion, Error::WrongMagicNumber
+  python  lz4.block.LZ4BlockError, RuntimeError
+  odin    Error, General_Error, LZ4_Error
+  note    `invalid` names the byte where the input stopped being LZ4
+
+capability lz4/file  an LZ4 file opened by its path, read and written as a file
+  heroes  refused: a path is `fs`'s, and a file's bytes are read whole by `fs.read_bytes` and written by `fs.write_bytes`, or streamed by `reader` and `writer` over `fs.open`
+  go      -
+  rust    -
+  python  lz4.frame.open, lz4.frame.LZ4FrameFile, LZ4FrameFile.closed, LZ4FrameFile.close
+  odin    -
+  note    -
+
+capability lz4/lines  a compressed text read line by line, or sought in
+  heroes  refused: lines are `io`'s and `bytes.lines`'s over the bytes read whole; seeking is decompressing again from the start
+  go      -
+  rust    -
+  python  LZ4FrameFile.readline, LZ4FrameFile.readlines, LZ4FrameFile.seek, LZ4FrameFile.tell, LZ4FrameFile.seekable
+  odin    -
+  note    -
+
+dropped
+  go      OnBlockDoneOption: a callback told of each block, a closure over the caller's state, which Heroes has not; a program feeding a `Compressor` sees each block as it goes
+  go      Writer.Apply, Reader.Apply, Option, Option.String: options applied as functions after the object is made; Heroes's are a record given at once
+  go      Writer.Reset, Reader.Reset, CompressingReader.Reset, LZ4FrameCompressor.reset, LZ4FrameDecompressor.reset, lz4.frame.reset_decompression_context: an object reused for another stream; a Heroes program makes a new value
+  rust    block::CompressTable, CompressTable::Small, CompressTable::Large, CompressTable::small, CompressTable::large, block::compress_into_with_table: the size of the compressor's hash table, a memory knob
+  rust    FrameInfo::new, FrameInfo::default and the builder setters: how Rust makes an options value; `defaults` and a record's fields here
+  python  return_bytearray: which Python type the bytes come back as
+  python  lz4.VERSION, lz4.version, lz4.library_version_number, lz4.library_version_string: which C library Python links; Rebel stands on none
+  python  lz4.frame.builtins, lz4.frame.io, lz4.frame.lz4, lz4.frame.os, lz4.frame.sys: modules Python's `lz4.frame` imports
+  python  LZ4FrameFile.fileno, LZ4FrameFile.isatty, LZ4FrameFile.readable, LZ4FrameFile.writable, LZ4FrameFile.detach, LZ4FrameFile.truncate, LZ4FrameFile.writelines: what every Python file object has

@@ -1,0 +1,132 @@
+# The fast compressor: one table remembers, for the hash of four bytes, the
+# last place they were seen; each place is tried once, a repeat found is
+# stretched back over the literals before it and forward as far as it
+# holds, and after each place that begins none the compressor moves ahead,
+# further the longer it has found nothing.
+
+use compress/lz4/internal/sequences
+use compress/lz4/internal/xxh32
+
+# After this many places with no repeat, the step ahead grows by one, as a
+# power of two.
+constant SKIP_BITS: i64
+    6
+
+# How many bits the table's hash has for a block of `size` bytes: 10 to
+# 16.
+function bits_for(size: i64) -> i64
+    bits: i64 @= 10
+
+    while 1 << bits < size && bits < 16
+        bits @ bits + 1
+
+    return bits
+
+# The hash of the bytes at `at` of `data`, `bits` bits wide: four bytes
+# read as a number, low byte first, times Knuth's multiplier modulo 2^32,
+# its top bits kept; where `five`, a fifth byte mixed in before, so that a
+# place is found only beside another whose five first bytes are alike, as
+# liblz4 hashes the places of a block that reaches past 64 KiB.
+function hash_at(data: [u8] lent, at: i64, bits: i64, five: bool) -> i64
+    x: i64 @= xxh32.lane(data, at: at)
+
+    if five
+        x @ xxh32.mul32(a: x, b: 2246822519) ^ to_i64(data[at + 4]).must()
+        x @ x ^ x >> 15
+    return xxh32.mul32(a: x, b: 2654435761) >> 32 - bits
+
+# Whether the four bytes at `a` and at `b` of `data` are the same.
+function same_four(data: [u8] lent, a: i64, b: i64) -> bool
+    return data[a] == data[b] && data[a + 1] == data[b + 1] && data[a + 2] == data[b + 2] && data[a + 3] == data[b + 3]
+
+# The bytes of `data` from `start` to its end written as one block onto
+# `out`, the bytes before `start` a history its repeats may reach back
+# into. `acceleration`, 1 or more, is how far ahead the first step after a
+# place with no repeat goes.
+function parse(@out: [u8], data: [u8] lent, start: i64, acceleration: i64)
+    end = data.len()
+
+    if end - start < sequences.MATCH_FLOOR + 1
+        sequences.emit_last(out: @out, data: data, from: start, to: end)
+        return
+    bits = bits_for(end)
+    five = end > 65547
+    table: [i64] @= []
+
+    for _ in range(from: 0, to: 1 << bits)
+        table @ table.push(0)
+
+    history_from: i64 @= start - sequences.MAX_OFFSET
+
+    if history_from < 0
+        history_from @ 0
+    h_at: i64 @= history_from
+
+    while h_at + 4 <= start
+        table[hash_at(data, at: h_at, bits: bits, five: five)] @ h_at + 1
+        h_at @ h_at + 1
+
+    last_start = end - sequences.MATCH_FLOOR
+    match_end = end - sequences.LAST_LITERALS
+    anchor: i64 @= start
+    p: i64 @= start
+    searches: i64 @= acceleration << SKIP_BITS
+
+    while p <= last_start
+        h = hash_at(data, at: p, bits: bits, five: five)
+        candidate = table[h] - 1
+        table[h] @ p + 1
+
+        if candidate >= 0 && p - candidate <= sequences.MAX_OFFSET && same_four(data, a: candidate, b: p)
+            s: i64 @= p
+            c: i64 @= candidate
+
+            while s > anchor && c > 0 && data[s - 1] == data[c - 1]
+                s @ s - 1
+                c @ c - 1
+
+            n: i64 @= 4
+
+            while p + n < match_end && data[p + n] == data[candidate + n]
+                n @ n + 1
+
+            sequences.emit(out: @out, data: data, from: anchor, to: s, offset: p - candidate, length: p - s + n)
+            p @ p + n
+            anchor @ p
+            table[hash_at(data, at: p - 2, bits: bits, five: five)] @ p - 1
+            searches @ acceleration << SKIP_BITS
+        else
+            p @ p + (searches >> SKIP_BITS)
+            searches @ searches + 1
+
+    sequences.emit_last(out: @out, data: data, from: anchor, to: end)
+
+test "parse: a short input all literals, a run, and text that repeats"
+    out: [u8] @= []
+    parse(
+        out: @out,
+        data: [0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61, 0x61],
+        start: 0,
+        acceleration: 1
+    )
+    assert out[0] == 0xc0 && out.len() == 13
+    run: [u8] @= []
+
+    for _ in range(from: 0, to: 20)
+        run @ run.push(0x61)
+
+    packed: [u8] @= []
+    parse(out: @packed, data: run, start: 0, acceleration: 1)
+    assert packed == [0x1a, 0x61, 1, 0, 0x50, 0x61, 0x61, 0x61, 0x61, 0x61]
+
+test "parse: a history the block repeats, reached back into"
+    history: [u8] = [0x6b, 0x6f, 0x6f, 0x6b, 0x73, 0x20, 0x6b, 0x6f, 0x6f, 0x6b, 0x73, 0x20, 0x6b, 0x6f, 0x6f, 0x6b]
+    data @= history
+
+    for b in history
+        data @ data.push(b)
+
+    out: [u8] @= []
+    parse(out: @out, data: data, start: 16, acceleration: 1)
+    assert out.len() < 16
+    assert to_i64(out[0]).must() & 0xf0 == 0

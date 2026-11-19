@@ -1,0 +1,220 @@
+# A frame written: its header, its blocks as they fill, the end mark and
+# the checksums, for `compress`, a `Compressor` and a `Writer`; and the
+# legacy frame and the skippable frame, written whole.
+
+use compress/internal/codes
+use compress/lz4/internal/blocks
+use compress/lz4/internal/header
+use compress/lz4/internal/sequences
+use compress/lz4/internal/xxh32
+
+# The work of a compressor in progress.
+record State
+    # The level, -65,536 to 12.
+    level: i64
+    # The id of the block size, 4 to 7.
+    id: i64
+    # The header to write: its flags, the size and the dictionary id.
+    head: header.Header
+    # The last 65,536 bytes of the dictionary, empty for none.
+    dictionary: [u8]
+    # What the next block may reach back into: the dictionary, then for
+    # linked blocks the last 65,536 bytes of everything compressed.
+    history: [u8]
+    # The bytes fed and not yet compressed, fewer than a block's most.
+    held: [u8]
+    # The checksum of every byte fed.
+    content: xxh32.State
+    # How many bytes were fed.
+    fed: i64
+    # Whether the header has been answered.
+    started: bool
+    # Whether the end has been answered.
+    ended: bool
+
+# A compressor at `level` of blocks of id `id` (4 to 7) with the flags of
+# `head`, reaching back into `dictionary`.
+function start(level: i64, id: i64, head: header.Header, dictionary: [u8]) -> State?
+    blocks.check_level(level)?
+    window = blocks.tail(dictionary, most: blocks.WINDOW)
+    return ok(
+        State(level: level, id: id, head: head, dictionary: window, history: window, held: [], content: xxh32.start(), fed: 0, started: false, ended: false)
+    )
+
+# A compressor at `level` of blocks of id `id` (4 to 7), linked or not,
+# with the checksums asked, the size `size` said where `has_size`, reaching
+# back into `dictionary`, whose id `dictionary_id` (0 for none) the header
+# names.
+function of(level: i64, id: i64, linked: bool, block_checksum: bool, content_checksum: bool, has_size: bool, size: u64, dictionary: [u8], dictionary_id: i64) -> State?
+    h = header.Header(
+        size: 0,
+        linked: linked,
+        block_checksum: block_checksum,
+        content_checksum: content_checksum,
+        has_size: has_size,
+        content_size: size,
+        dictionary_id: dictionary_id,
+        block_most: header.most_of(id)
+    )
+    return start(level: level, id: id, head: h, dictionary: dictionary)
+
+# The header added to `out`, where it has not been yet.
+function begin(@s: State, @out: [u8])
+    if !s.started
+        header.write(@out, h: s.head, id: s.id)
+        s.started @ true
+
+# The bytes `held` compressed as one block and added to `out`, stored as
+# they are where compressing does not make them shorter; `s`'s history
+# moves on.
+function put_block(@s: State, @out: [u8], held: [u8] lent)
+    xxh32.update(@s.content, data: held, from: 0, to: held.len())
+    s.fed @ s.fed + held.len()
+    packed: [u8] @= []
+
+    if s.history.len() == 0
+        blocks.encode(out: @packed, data: held, start: 0, level: s.level)
+    else
+        blocks.encode(
+            out: @packed,
+            data: blocks.joined(history: s.history, data: held),
+            start: s.history.len(),
+            level: s.level
+        )
+    stored_from = out.len() + 4
+
+    if packed.len() < held.len()
+        header.put_u32(@out, value: packed.len())
+        sequences.copy_range(out: @out, data: packed, from: 0, to: packed.len())
+    else
+        header.put_u32(@out, value: held.len() | 0x80000000)
+        sequences.copy_range(out: @out, data: held, from: 0, to: held.len())
+
+    if s.head.block_checksum
+        header.put_u32(@out, value: xxh32.of(out, from: stored_from, to: out.len()))
+
+    if s.head.linked
+        s.history @ blocks.tail(blocks.joined(history: s.history, data: held), most: blocks.WINDOW)
+
+# `more` fed to `s`, every block it fills added to `out`, the header
+# first. Aborts where `s` has ended.
+function feed(@s: State, more: [u8] lent, @out: [u8])
+    assert !s.ended
+    begin(@s, @out)
+    most = header.most_of(s.id)
+    at: i64 @= 0
+
+    while at < more.len()
+        if s.held.len() == 0 && more.len() - at >= most
+            whole = more.slice(from: at, to: at + most)
+            put_block(@s, out: @out, held: whole)
+            at @ at + most
+        else
+            room = most - s.held.len()
+            take = sequences.smaller(a: room, b: more.len() - at)
+            sequences.copy_range(out: @s.held, data: more, from: at, to: at + take)
+            at @ at + take
+
+            if s.held.len() == most
+                held = s.held
+                s.held @ []
+                put_block(@s, out: @out, held: held)
+
+# The block in progress added to `out`, short, the header first. Aborts
+# where `s` has ended.
+function flush(@s: State, @out: [u8])
+    assert !s.ended
+    begin(@s, @out)
+
+    if s.held.len() > 0
+        held = s.held
+        s.held @ []
+        put_block(@s, out: @out, held: held)
+
+# The frame's end added to `out`: its last block, the end mark and the
+# content checksum. Fails `invalid` where the header says a size that is
+# not how many bytes were fed, and then adds nothing.
+function finish(@s: State, @out: [u8]) -> ()?
+    total = s.fed + s.held.len()
+
+    if s.head.has_size && to_u64(total).must() != s.head.content_size
+        return fail(code: codes.INVALID, msg: f"{total} bytes fed, where the frame's header says {s.head.content_size}")
+    flush(@s, @out)
+    header.put_u32(@out, value: 0)
+
+    if s.head.content_checksum
+        header.put_u32(@out, value: xxh32.digest(s.content))
+    s.ended @ true
+    return ok()
+
+# `data` as one legacy frame: its magic, then each 8 MiB compressed at
+# `level`, led by its length.
+function legacy(data: [u8], level: i64) -> [u8]?
+    blocks.check_level(level)?
+    out: [u8] @= []
+    header.put_u32(@out, value: header.LEGACY_MAGIC)
+    at: i64 @= 0
+
+    while at < data.len()
+        end = sequences.smaller(a: at + header.LEGACY_BLOCK, b: data.len())
+        packed: [u8] @= []
+        blocks.encode(out: @packed, data: data.slice(from: at, to: end), start: 0, level: level)
+        header.put_u32(@out, value: packed.len())
+        sequences.copy_range(out: @out, data: packed, from: 0, to: packed.len())
+        at @ end
+
+    return ok(out)
+
+# `data` as one skippable frame of magic `magic`, 0 to 15.
+function skippable(data: [u8], magic: i64) -> [u8]?
+    if magic < 0 || magic > 15
+        return fail(code: codes.INVALID, msg: f"a skippable frame's magic of {magic}, where it is 0 to 15")
+
+    if data.len() > 4294967295
+        return fail(code: codes.INVALID, msg: f"{data.len()} bytes, past the 4294967295 a skippable frame holds")
+    out: [u8] @= []
+    header.put_u32(@out, value: header.SKIPPABLE_MAGIC + magic)
+    header.put_u32(@out, value: data.len())
+    sequences.copy_range(out: @out, data: data, from: 0, to: data.len())
+    return ok(out)
+
+test "feed and finish: nothing, then the end mark and the checksum of nothing"
+    s @= start(level: 1, id: 7, head: header.plain(7), dictionary: []).must()
+    s.head.content_checksum @ true
+    out: [u8] @= []
+    feed(@s, more: [], out: @out)
+    assert out.len() == 7
+    finish(@s, out: @out).must()
+    assert out.slice(from: 7, to: out.len()) == [0, 0, 0, 0, 0x05, 0x5d, 0xcc, 0x02]
+
+test "feed: blocks cut at their most, whatever the pieces fed"
+    s @= start(level: 1, id: 4, head: header.plain(4), dictionary: []).must()
+    out: [u8] @= []
+    piece: [u8] @= []
+
+    for i in range(from: 0, to: 40000)
+        piece @ piece.push(to_u8(i * 7 % 256).must())
+
+    feed(@s, more: piece, out: @out)
+    assert s.held.len() == 40000
+    feed(@s, more: piece, out: @out)
+    assert s.held.len() == 80000 - 65536
+    assert s.fed == 65536
+
+test "finish: a size said and not fed, then fed"
+    h @= header.plain(4)
+    h.has_size @ true
+    h.content_size @ 3
+    s @= start(level: 1, id: 4, head: h, dictionary: []).must()
+    out: [u8] @= []
+    feed(@s, more: [1, 2], out: @out)
+    assert finish(@s, out: @out).is_err()
+    feed(@s, more: [3], out: @out)
+    finish(@s, out: @out).must()
+    assert s.ended
+
+test "legacy and skippable: the magic of each, nothing, and a magic out of range"
+    assert legacy([], level: 1).must() == [0x02, 0x21, 0x4c, 0x18]
+    assert skippable([9], magic: 15).must() == [0x5f, 0x2a, 0x4d, 0x18, 1, 0, 0, 0, 9]
+    assert skippable([], magic: 16).is_err()
+    assert legacy([], level: 13).is_err()

@@ -1,0 +1,211 @@
+# The magic numbers of LZ4's three kinds of frame, and the header of a
+# standard frame read and written: the descriptor's flags (version, linked
+# blocks, the checksums, the size, the dictionary id), the block size, the
+# optional fields, and the header's own checksum.
+
+use compress/internal/codes
+use compress/lz4/internal/xxh32
+
+# The magic of a standard frame, 04 22 4D 18 in the input.
+constant FRAME_MAGIC: i64
+    0x184d2204
+
+# The magic of a legacy frame, 02 21 4C 18 in the input.
+constant LEGACY_MAGIC: i64
+    0x184c2102
+
+# The lowest magic of a skippable frame; the highest is 15 more.
+constant SKIPPABLE_MAGIC: i64
+    0x184d2a50
+
+# The most bytes a block of a legacy frame decompresses to.
+constant LEGACY_BLOCK: i64
+    8388608
+
+# The most bytes a block of a legacy frame takes: the bound of 8 MiB.
+constant LEGACY_BOUND: i64
+    8421520
+
+# What a standard frame's header says.
+record Header
+    # How many bytes the header takes, the magic and the checksum included.
+    size: i64
+    # Whether a block may reach back into the blocks before it.
+    linked: bool
+    # Whether each block is followed by its checksum.
+    block_checksum: bool
+    # Whether the frame ends with the checksum of its content.
+    content_checksum: bool
+    # Whether the header says the content's size.
+    has_size: bool
+    # The content's size, 0 where it is not said.
+    content_size: u64
+    # The dictionary id, 0 where none is named.
+    dictionary_id: i64
+    # The most bytes a block decompresses to.
+    block_most: i64
+
+# The four bytes at `at` of `data` as a number, low byte first; `data`
+# holds them.
+function u32_at(data: [u8] lent, at: i64) -> i64
+    return to_i64(data[at]).must() | to_i64(data[at + 1]).must() << 8 | to_i64(data[at + 2]).must() << 16 | to_i64(data[at + 3]).must() << 24
+
+# `value`, below 2^32, added to `out` in four bytes, low byte first.
+function put_u32(@out: [u8], value: i64)
+    out @ out.push(to_u8(value & 255).must())
+    out @ out.push(to_u8(value >> 8 & 255).must())
+    out @ out.push(to_u8(value >> 16 & 255).must())
+    out @ out.push(to_u8(value >> 24 & 255).must())
+
+# Whether `value` is the magic of a frame of any kind.
+function is_magic(value: i64) -> bool
+    return value == FRAME_MAGIC || value == LEGACY_MAGIC || is_skippable(value)
+
+# Whether `value` is the magic of a skippable frame.
+function is_skippable(value: i64) -> bool
+    return value >= SKIPPABLE_MAGIC && value <= SKIPPABLE_MAGIC + 15
+
+# The most bytes a block decompresses to for the id `id`, 4 to 7.
+function most_of(id: i64) -> i64
+    return 1 << 2 * id + 8
+
+# How many bytes the header at `at` of `data` takes, read from its flags:
+# `data` holds the magic and the flags byte.
+function size_of(data: [u8] lent, at: i64) -> i64
+    flags = to_i64(data[at + 4]).must()
+    size: i64 @= 7
+
+    if flags & 8 != 0
+        size @ size + 8
+
+    if flags & 1 != 0
+        size @ size + 4
+    return size
+
+# The header of the standard frame at `at` of `data`, whose bytes stand at
+# `base` of the input: `data` holds the whole header, as `size_of` says.
+function read(data: [u8] lent, at: i64, base: i64) -> Header?
+    flags = to_i64(data[at + 4]).must()
+    descriptor = to_i64(data[at + 5]).must()
+    version = flags >> 6
+
+    if version != 1
+        return codes.invalid_at(
+            at: base + at + 4,
+            why: f"a frame of version {version}, where LZ4's frames are version 1"
+        )
+
+    if flags & 2 != 0
+        return codes.invalid_at(at: base + at + 4, why: "a frame header whose reserved bit 1 is set")
+
+    if descriptor & 0x8f != 0
+        return codes.invalid_at(at: base + at + 5, why: "a frame header whose reserved bits of the block size are set")
+    id = descriptor >> 4
+
+    if id < 4
+        return codes.invalid_at(at: base + at + 5, why: f"a block size of id {id}, where it is 4 to 7")
+    size = size_of(data, at: at)
+    p: i64 @= at + 6
+    content_size: u64 @= 0
+
+    if flags & 8 != 0
+        content_size @ to_u64(u32_at(data, at: p)).must() + to_u64(u32_at(data, at: p + 4)).must() * 4294967296
+        p @ p + 8
+    dictionary_id: i64 @= 0
+
+    if flags & 1 != 0
+        dictionary_id @ u32_at(data, at: p)
+        p @ p + 4
+    expected = xxh32.of(data, from: at + 4, to: p) >> 8 & 255
+    found = to_i64(data[p]).must()
+
+    if found != expected
+        return codes.invalid_at(
+            at: base + p,
+            why: f"a header checksum of {found}, where the header's bytes give {expected}"
+        )
+    return ok(
+        Header(size: size, linked: flags & 0x20 == 0, block_checksum: flags & 0x10 != 0, content_checksum: flags & 4 != 0, has_size: flags & 8 != 0, content_size: content_size, dictionary_id: dictionary_id, block_most: most_of(id))
+    )
+
+# The header `h` says, its magic first, added to `out`; `id` is its block
+# size's id, 4 to 7.
+function write(@out: [u8], h: Header, id: i64)
+    put_u32(@out, value: FRAME_MAGIC)
+    start = out.len()
+    flags: i64 @= 0x40
+
+    if !h.linked
+        flags @ flags | 0x20
+
+    if h.block_checksum
+        flags @ flags | 0x10
+
+    if h.has_size
+        flags @ flags | 8
+
+    if h.content_checksum
+        flags @ flags | 4
+
+    if h.dictionary_id != 0
+        flags @ flags | 1
+    out @ out.push(to_u8(flags).must())
+    out @ out.push(to_u8(id << 4).must())
+
+    if h.has_size
+        size = h.content_size
+        put_u32(@out, value: to_i64(size % 4294967296).must())
+        put_u32(@out, value: to_i64(size / 4294967296).must())
+
+    if h.dictionary_id != 0
+        put_u32(@out, value: h.dictionary_id)
+    out @ out.push(to_u8(xxh32.of(out, from: start, to: out.len()) >> 8 & 255).must())
+
+# A header of `id` 4 to 7 and every flag off, for tests.
+function plain(id: i64) -> Header
+    return Header(
+        size: 7,
+        linked: false,
+        block_checksum: false,
+        content_checksum: false,
+        has_size: false,
+        content_size: 0,
+        dictionary_id: 0,
+        block_most: most_of(id)
+    )
+
+test "write: the lz4 tool's header, 04 22 4D 18 64 70 B9, and back"
+    out: [u8] @= []
+    h @= plain(7)
+    h.content_checksum @ true
+    write(@out, h: h, id: 7)
+    assert out == [0x04, 0x22, 0x4d, 0x18, 0x64, 0x70, 0xb9]
+    back = read(out, at: 0, base: 0).must()
+    assert back.content_checksum && !back.linked && back.block_most == 4194304 && back.size == 7
+
+test "write and read: a size of more than 32 bits and a dictionary id"
+    out: [u8] @= []
+    h @= plain(4)
+    h.has_size @ true
+    h.content_size @ 4294967301
+    h.dictionary_id @ 0xdeadbeef
+    h.linked @ true
+    write(@out, h: h, id: 4)
+    assert size_of(out, at: 0) == 19 && out.len() == 19
+    back = read(out, at: 0, base: 0).must()
+    assert back.content_size == 4294967301 && back.dictionary_id == 0xdeadbeef && back.linked && back.block_most == 65536
+
+test "read: a version of 0 and of 2, reserved bits, a block size of id 3, a wrong checksum"
+    good: [u8] = [0x04, 0x22, 0x4d, 0x18, 0x64, 0x70, 0xb9]
+
+    for change in [[4, 0x24], [4, 0xa4], [4, 0x66], [5, 0xf0], [5, 0x71], [5, 0x30], [6, 0xb8]]
+        bad @= good
+        bad[change[0]] @ to_u8(change[1]).must()
+
+        match read(bad, at: 0, base: 0)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+test "is_magic: the three kinds and their neighbours"
+    assert is_magic(FRAME_MAGIC) && is_magic(LEGACY_MAGIC) && is_magic(0x184d2a5f)
+    assert !is_magic(0x184d2a60) && !is_magic(0x184d2a4f) && !is_magic(0)

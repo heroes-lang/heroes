@@ -1,0 +1,258 @@
+# Bare blocks, compressed at a level and decompressed under a limit, with or
+# without a dictionary, and with or without their size in four bytes before
+# them: what the face's block functions and the frames' writer call.
+
+use compress/internal/codes
+use compress/lz4/internal/decoder
+use compress/lz4/internal/fast
+use compress/lz4/internal/high
+use compress/lz4/internal/sequences
+
+# The lowest level: an acceleration of 65,537.
+constant MIN_LEVEL: i64
+    -65536
+
+# The first level of high compression.
+constant MIN_HIGH_LEVEL: i64
+    3
+
+# The highest level.
+constant MAX_LEVEL: i64
+    12
+
+# The most bytes a dictionary may hold that a block reaches back into.
+constant WINDOW: i64
+    65536
+
+# The most bytes the sized form says.
+constant SIZED_MOST: i64
+    2147483647
+
+# Fails `invalid` where `level` is outside -65,536 to 12.
+function check_level(level: i64) -> ()?
+    if level < MIN_LEVEL || level > MAX_LEVEL
+        return fail(code: codes.INVALID, msg: f"a level of {level}, where it is -65536 to 12")
+    return ok()
+
+# The last `most` bytes of `data`, or all of it where it holds fewer.
+function tail(data: [u8] lent, most: i64) -> [u8]
+    if data.len() <= most
+        return data
+    return data.slice(from: data.len() - most, to: data.len())
+
+# The bytes of `data` from `start` to its end written as one block onto
+# `out` at `level`, the bytes before `start` a history the block may reach
+# back into.
+function encode(@out: [u8], data: [u8] lent, start: i64, level: i64)
+    if level >= MIN_HIGH_LEVEL
+        high.parse(out: @out, data: data, start: start, level: level)
+    else if level <= 0
+        fast.parse(out: @out, data: data, start: start, acceleration: 1 - level)
+    else
+        fast.parse(out: @out, data: data, start: start, acceleration: 1)
+
+# `history` followed by `data`, one list.
+function joined(history: [u8] lent, data: [u8] lent) -> [u8]
+    both @= history
+    sequences.copy_range(out: @both, data: data, from: 0, to: data.len())
+    return both
+
+# `data` compressed into one bare block at `level`, reaching back into the
+# last 65,536 bytes of `dictionary`.
+function compress(data: [u8], dictionary: [u8], level: i64) -> [u8]?
+    check_level(level)?
+    out: [u8] @= []
+
+    if dictionary.len() == 0
+        encode(out: @out, data: data, start: 0, level: level)
+        return ok(out)
+    history = tail(dictionary, most: WINDOW)
+    encode(out: @out, data: joined(history: history, data: data), start: history.len(), level: level)
+    return ok(out)
+
+# The bytes the block `from` to `to` of `src` decompresses to, at most
+# `limit`, reaching back into the last 65,536 bytes of `dictionary`; `src`'s
+# index 0 stands at `base` of the input.
+function decompress(src: [u8] lent, from: i64, to: i64, dictionary: [u8], limit: i64, base: i64) -> [u8]?
+    if limit < 0
+        return fail(code: codes.INVALID, msg: f"a limit of {limit} bytes, where it is 0 or more")
+    out @= tail(dictionary, most: WINDOW)
+    before = out.len()
+    decoder.decode(out: @out, src: src, from: from, to: to, room: decoder.room_of(before: before, limit: limit, base: base))?
+
+    if before == 0
+        return ok(out)
+    return ok(out.slice(from: before, to: out.len()))
+
+# `data` compressed at `level` into one block led by its length in four
+# bytes, low byte first.
+function compress_sized(data: [u8], dictionary: [u8], level: i64) -> [u8]?
+    check_level(level)?
+
+    if data.len() > SIZED_MOST
+        return fail(code: codes.INVALID, msg: f"{data.len()} bytes, past the 2147483647 a sized block says")
+    n = data.len()
+    out: [u8] @= [to_u8(n & 255).must(), to_u8(n >> 8 & 255).must(), to_u8(n >> 16 & 255).must(), to_u8(n >> 24).must()]
+    block = compress(data: data, dictionary: dictionary, level: level)?
+    sequences.copy_range(out: @out, data: block, from: 0, to: block.len())
+    return ok(out)
+
+# The bytes a block led by its length decompresses to, exactly that many.
+function decompress_sized(data: [u8], dictionary: [u8], limit: i64) -> [u8]?
+    if limit < 0
+        return fail(code: codes.INVALID, msg: f"a limit of {limit} bytes, where it is 0 or more")
+
+    if data.len() < 4
+        return codes.invalid_at(at: data.len(), why: "a sized block cut short in its four bytes of length")
+    n = to_i64(data[0]).must() | to_i64(data[1]).must() << 8 | to_i64(data[2]).must() << 16 | to_i64(data[3]).must() << 24
+
+    if n > SIZED_MOST
+        return codes.invalid_at(at: 0, why: f"a length of {n}, past the 2147483647 a sized block says")
+
+    if n > limit
+        return codes.past_limit(limit: limit, at: 0)
+
+    out = match decompress(src: data, from: 4, to: data.len(), dictionary: dictionary, limit: n, base: 0)
+        .ok bytes => bytes
+        .err e =>
+            if e.code == codes.LIMIT
+                return codes.invalid_at(at: data.len(), why: f"a block that decodes past the {n} bytes its length says")
+            return fail(code: e.code, msg: e.msg)
+
+    if out.len() != n
+        return codes.invalid_at(at: data.len(), why: f"a block of {out.len()} bytes, where its length says {n}")
+    return ok(out)
+
+# The most bytes a block of `size` bytes compresses to.
+function bound(size: i64) -> i64?
+    if size < 0 || size > 9000000000000000000
+        return fail(code: codes.INVALID, msg: f"a size of {size} bytes, where it is 0 to 9000000000000000000")
+    return ok(size + size / 255 + 16)
+
+test "compress and decompress: nothing, one byte, a run and a text, at every kind of level"
+    text: [u8] = [
+        0x77
+        0x65
+        0x20
+        0x63
+        0x61
+        0x6e
+        0x20
+        0x62
+        0x65
+        0x20
+        0x68
+        0x65
+        0x72
+        0x6f
+        0x65
+        0x73
+        0x2c
+        0x20
+        0x77
+        0x65
+        0x20
+        0x63
+        0x61
+        0x6e
+        0x20
+        0x62
+        0x65
+        0x20
+        0x68
+        0x65
+        0x72
+        0x6f
+        0x65
+        0x73
+    ]
+    run: [u8] @= []
+
+    for _ in range(from: 0, to: 1000)
+        run @ run.push(0x2a)
+
+    for level in [MIN_LEVEL, -5, 0, 1, 2, 3, 9, 12]
+        none: [u8] = []
+        one: [u8] = [0x61]
+
+        for data in [none, one, run, text]
+            packed = compress(data: data, dictionary: [], level: level).must()
+            assert packed.len() <= bound(data.len()).must()
+            assert decompress(src: packed, from: 0, to: packed.len(), dictionary: [], limit: data.len(), base: 0).must() == data
+
+    assert compress(data: [], dictionary: [], level: 1).must() == [0]
+
+test "compress: a level outside -65536 to 12"
+    for level in [MIN_LEVEL - 1, 13]
+        match compress(data: [1], dictionary: [], level: level)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+test "compress and decompress: a dictionary the data repeats, and one longer than the window"
+    dictionary: [u8] = [0x61, 0x73, 0x68, 0x65, 0x73, 0x20, 0x74, 0x6f, 0x20, 0x61, 0x73, 0x68, 0x65, 0x73, 0x2c, 0x20]
+    data: [u8] = [
+        0x61
+        0x73
+        0x68
+        0x65
+        0x73
+        0x20
+        0x74
+        0x6f
+        0x20
+        0x61
+        0x73
+        0x68
+        0x65
+        0x73
+        0x2c
+        0x20
+        0x66
+        0x75
+        0x6e
+        0x6b
+    ]
+    packed = compress(data: data, dictionary: dictionary, level: 1).must()
+    assert packed.len() < data.len()
+    assert decompress(src: packed, from: 0, to: packed.len(), dictionary: dictionary, limit: 100, base: 0).must() == data
+
+    match decompress(src: packed, from: 0, to: packed.len(), dictionary: [], limit: 100, base: 0)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    long: [u8] @= []
+
+    for i in range(from: 0, to: 70000)
+        long @ long.push(to_u8(i % 251).must())
+
+    deep = compress(data: data, dictionary: long, level: 9).must()
+    assert decompress(src: deep, from: 0, to: deep.len(), dictionary: long, limit: 100, base: 0).must() == data
+
+test "compress_sized and decompress_sized: Python's form, a length that is not the block's, and limits"
+    assert compress_sized(data: [0x61, 0x62, 0x63], dictionary: [], level: 1).must() == [3, 0, 0, 0, 0x30, 0x61, 0x62, 0x63]
+    assert decompress_sized(data: [3, 0, 0, 0, 0x30, 0x61, 0x62, 0x63], dictionary: [], limit: 3).must() == [0x61, 0x62, 0x63]
+    assert decompress_sized(data: [0, 0, 0, 0, 0], dictionary: [], limit: 0).must().len() == 0
+
+    bads: [[u8]] = [
+        [5, 0, 0, 0, 0x10, 0x61]
+        [1, 0, 0, 0, 0x20, 0x61, 0x62]
+        [1, 0]
+        [0xff, 0xff, 0xff, 0xff, 0x10, 0x61]
+        [0, 0, 0, 0]
+    ]
+
+    for bad in bads
+        match decompress_sized(data: bad, dictionary: [], limit: 100)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+    match decompress_sized(data: [3, 0, 0, 0, 0x30, 0x61, 0x62, 0x63], dictionary: [], limit: 2)
+        .ok _  => assert false
+        .err e => assert e.code == "limit"
+
+test "bound: 0, 255, 256 and a size too large"
+    assert bound(0).must() == 16
+    assert bound(255).must() == 272
+    assert bound(256).must() == 273
+    assert bound(-1).is_err()
+    assert bound(9223372036854775807).is_err()

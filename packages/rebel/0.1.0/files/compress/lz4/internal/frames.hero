@@ -1,0 +1,343 @@
+# Frames read piece by piece, step by step: a magic tells the kind, a
+# standard frame's header and blocks are read as their bytes arrive, each
+# block checked and decoded into the window, a skippable frame passed over,
+# a legacy frame's blocks read until the input ends or another magic
+# begins. Every step reads at least one byte, or changes the phase, or
+# waits for input.
+
+use compress/internal/codes
+use compress/lz4/internal/decoder
+use compress/lz4/internal/header
+use compress/lz4/internal/sequences
+use compress/lz4/internal/unframer
+use compress/lz4/internal/xxh32
+
+# What a whole read answers: the bytes, and how much input it took.
+record Whole
+    # The bytes produced.
+    data: [u8]
+    # How many bytes of the input were read.
+    used: i64
+
+# The phase `MAGIC`: the next frame's kind told by its first four bytes.
+function magic(@s: unframer.State) -> i64?
+    left = unframer.available(s)
+
+    if left < 4
+        if !s.input_ended
+            return ok(unframer.STARVED)
+
+        if left == 0 && s.frames > 0
+            s.phase @ unframer.DONE
+            return ok(unframer.MOVED)
+
+        if s.frames == 0
+            return codes.invalid_at(at: s.base + s.at, why: f"an input of {left} bytes, too few for an LZ4 frame")
+        return codes.invalid_at(
+            at: s.base + s.at,
+            why: f"{left} bytes after the last frame, too few for a frame's magic"
+        )
+    value = header.u32_at(s.input, at: s.at)
+
+    if value == header.FRAME_MAGIC
+        s.phase @ unframer.HEADER
+    else if header.is_skippable(value)
+        s.phase @ unframer.SKIP_SIZE
+    else if value == header.LEGACY_MAGIC
+        s.at @ s.at + 4
+        s.frame_produced @ 0
+        s.phase @ unframer.LEGACY_SIZE
+    else if s.frames == 0
+        return codes.invalid_at(at: s.base + s.at, why: "no LZ4 frame, whose magic is 04 22 4D 18")
+    else
+        return codes.invalid_at(at: s.base + s.at, why: "bytes after the last frame that begin no frame")
+    s.frames @ s.frames + 1
+    return ok(unframer.MOVED)
+
+# The phase `HEADER`: a standard frame's header read and held to the limit.
+function head(@s: unframer.State) -> i64?
+    if !unframer.has(s, n: 5, what: "a frame header")?
+        return ok(unframer.STARVED)
+    size = header.size_of(s.input, at: s.at)
+
+    if !unframer.has(s, n: size, what: "a frame header")?
+        return ok(unframer.STARVED)
+    h = header.read(s.input, at: s.at, base: s.base)?
+    s.at @ s.at + size
+
+    if h.has_size
+        room = s.limit - s.produced
+
+        match to_i64(h.content_size)
+            .ok n =>
+                if n > room
+                    return codes.past_limit(limit: s.limit, at: s.base + s.at)
+            .err _ => return codes.past_limit(limit: s.limit, at: s.base + s.at)
+
+    s.head @ h
+    s.window @ s.dictionary
+    s.frame_produced @ 0
+    s.content @ xxh32.start()
+    s.phase @ unframer.BLOCK_SIZE
+    return ok(unframer.MOVED)
+
+# The phase `BLOCK_SIZE`: the next block's size, or the end mark.
+function block_size(@s: unframer.State) -> i64?
+    if !unframer.has(s, n: 4, what: "a block's size")?
+        return ok(unframer.STARVED)
+    value = header.u32_at(s.input, at: s.at)
+    s.at @ s.at + 4
+
+    if value == 0
+        if s.head.content_checksum
+            s.phase @ unframer.CONTENT_CHECK
+        else
+            s.phase @ unframer.FRAME_END
+        return ok(unframer.MOVED)
+    size = value & 0x7fffffff
+
+    if size > s.head.block_most
+        return codes.invalid_at(
+            at: s.base + s.at - 4,
+            why: f"a block of {size} bytes, past the frame's most of {s.head.block_most}"
+        )
+    s.block_size @ size
+    s.block_raw @ value & 0x80000000 != 0
+    s.phase @ unframer.BLOCK_DATA
+    return ok(unframer.MOVED)
+
+# The phase `BLOCK_DATA`: a block checked, decoded into the window and
+# handed on.
+function block_data(@s: unframer.State) -> i64?
+    checksum: i64 @= 0
+
+    if s.head.block_checksum
+        checksum @ 4
+
+    if !unframer.has(s, n: s.block_size + checksum, what: "a block")?
+        return ok(unframer.STARVED)
+    from = s.at
+    to = s.at + s.block_size
+
+    if s.head.block_checksum
+        expected = xxh32.of(s.input, from: from, to: to)
+        found = header.u32_at(s.input, at: to)
+
+        if found != expected
+            return codes.invalid_at(
+                at: s.base + to,
+                why: f"a block checksum of {found}, where the block's bytes give {expected}"
+            )
+
+    if !s.head.linked
+        s.window @ s.dictionary
+    start = s.window.len()
+
+    if s.block_raw
+        if s.produced + s.block_size > s.limit
+            return codes.past_limit(limit: s.limit, at: s.base + from)
+        sequences.copy_range(out: @s.window, data: s.input, from: from, to: to)
+    else
+        room = decoder.Room(
+            block_end: start + s.head.block_most,
+            limit_end: start + s.limit - s.produced,
+            limit: s.limit,
+            base: s.base
+        )
+        decoder.decode(out: @s.window, src: s.input, from: from, to: to, room: room)?
+    unframer.produce(@s, from: start)
+    s.at @ to + checksum
+
+    if !s.head.linked
+        s.window @ []
+    else if s.window.len() > 4 * 65536
+        s.window @ s.window.slice(from: s.window.len() - 65536, to: s.window.len())
+    s.phase @ unframer.BLOCK_SIZE
+    return ok(unframer.MOVED)
+
+# The phase `CONTENT_CHECK`: the frame's checksum against its bytes.
+function content_check(@s: unframer.State) -> i64?
+    if !unframer.has(s, n: 4, what: "a content checksum")?
+        return ok(unframer.STARVED)
+    found = header.u32_at(s.input, at: s.at)
+    expected = xxh32.digest(s.content)
+
+    if found != expected
+        return codes.invalid_at(
+            at: s.base + s.at,
+            why: f"a content checksum of {found}, where the frame's bytes give {expected}"
+        )
+    s.at @ s.at + 4
+    s.phase @ unframer.FRAME_END
+    return ok(unframer.MOVED)
+
+# The phase `FRAME_END`: the size the header said held to what was read.
+function frame_end(@s: unframer.State) -> i64?
+    if s.head.has_size && to_u64(s.frame_produced).must() != s.head.content_size
+        return codes.invalid_at(
+            at: s.base + s.at,
+            why: f"a frame of {s.frame_produced} bytes, where its header says {s.head.content_size}"
+        )
+    unframer.end_frame(@s)
+    return ok(unframer.MOVED)
+
+# The phases `SKIP_SIZE` and `SKIP`: a skippable frame passed over.
+function skip(@s: unframer.State) -> i64?
+    if s.phase == unframer.SKIP_SIZE
+        if !unframer.has(s, n: 8, what: "a skippable frame's size")?
+            return ok(unframer.STARVED)
+        s.skip_left @ header.u32_at(s.input, at: s.at + 4)
+        s.at @ s.at + 8
+        s.phase @ unframer.SKIP
+
+        if s.skip_left == 0
+            unframer.end_frame(@s)
+        return ok(unframer.MOVED)
+    n = sequences.smaller(a: s.skip_left, b: unframer.available(s))
+
+    if n == 0
+        if !unframer.has(s, n: 1, what: "a skippable frame")?
+            return ok(unframer.STARVED)
+    s.at @ s.at + n
+    s.skip_left @ s.skip_left - n
+
+    if s.skip_left == 0
+        unframer.end_frame(@s)
+    return ok(unframer.MOVED)
+
+# The phase `LEGACY_SIZE`: the next legacy block's size, or the frame's
+# end at the input's end, at another frame's magic, or at a size of 0; four
+# bytes that end the input are the size the frame decompresses to, as a
+# compressed Linux kernel ends.
+function legacy_size(@s: unframer.State) -> i64?
+    left = unframer.available(s)
+
+    if left < 4
+        if !s.input_ended
+            return ok(unframer.STARVED)
+
+        if left == 0
+            unframer.end_frame(@s)
+            return ok(unframer.MOVED)
+        return codes.invalid_at(at: s.base + s.at, why: "the input ends inside a legacy block's size")
+    value = header.u32_at(s.input, at: s.at)
+
+    if header.is_magic(value)
+        unframer.end_frame(@s)
+        return ok(unframer.MOVED)
+    s.at @ s.at + 4
+
+    if value == 0
+        unframer.end_frame(@s)
+        return ok(unframer.MOVED)
+
+    if left == 4 && s.input_ended
+        if value != s.frame_produced
+            return codes.invalid_at(
+                at: s.base + s.at - 4,
+                why: f"the last four bytes of a legacy frame say {value} bytes, where it decompressed to {s.frame_produced}"
+            )
+        unframer.end_frame(@s)
+        return ok(unframer.MOVED)
+
+    if value > header.LEGACY_BOUND
+        return codes.invalid_at(
+            at: s.base + s.at - 4,
+            why: f"a legacy block of {value} bytes, past the {header.LEGACY_BOUND} one takes"
+        )
+    s.block_size @ value
+    s.phase @ unframer.LEGACY_DATA
+    return ok(unframer.MOVED)
+
+# The phase `LEGACY_DATA`: a legacy block decoded, standing alone.
+function legacy_data(@s: unframer.State) -> i64?
+    if !unframer.has(s, n: s.block_size, what: "a legacy block")?
+        return ok(unframer.STARVED)
+    from = s.at
+    s.window @ []
+    s.head @ header.plain(4)
+    room = decoder.Room(block_end: header.LEGACY_BLOCK, limit_end: s.limit - s.produced, limit: s.limit, base: s.base)
+    decoder.decode(out: @s.window, src: s.input, from: from, to: from + s.block_size, room: room)?
+    unframer.produce(@s, from: 0)
+    s.window @ []
+    s.at @ from + s.block_size
+    s.phase @ unframer.LEGACY_SIZE
+    return ok(unframer.MOVED)
+
+# One step of `s` in its phase.
+function step(@s: unframer.State) -> i64?
+    p = s.phase
+
+    if p == unframer.MAGIC
+        return magic(@s)
+
+    if p == unframer.HEADER
+        return head(@s)
+
+    if p == unframer.BLOCK_SIZE
+        return block_size(@s)
+
+    if p == unframer.BLOCK_DATA
+        return block_data(@s)
+
+    if p == unframer.CONTENT_CHECK
+        return content_check(@s)
+
+    if p == unframer.FRAME_END
+        return frame_end(@s)
+
+    if p == unframer.SKIP_SIZE || p == unframer.SKIP
+        return skip(@s)
+
+    if p == unframer.LEGACY_SIZE
+        return legacy_size(@s)
+
+    if p == unframer.LEGACY_DATA
+        return legacy_data(@s)
+    return ok(unframer.MOVED)
+
+# `s` moved on until it holds `want` bytes of output (where `want` is 1 or
+# more), needs input, or has read every frame asked for. Answers `READY`,
+# `STARVED` or `ENDED`. A failure is kept, and every later call answers it.
+function run(@s: unframer.State, want: i64) -> i64?
+    if s.failed
+        return fail(code: s.failure_code, msg: s.failure_msg)
+
+    if s.limit < 0
+        s.failed @ true
+        s.failure_code @ codes.INVALID
+        s.failure_msg @ f"a limit of {s.limit} bytes, where it is 0 or more"
+        return fail(code: s.failure_code, msg: s.failure_msg)
+
+    while true
+        if s.phase == unframer.DONE
+            return ok(unframer.ENDED)
+
+        if want > 0 && unframer.pending_count(s) >= want
+            return ok(unframer.READY)
+
+        match step(@s)
+            .ok status =>
+                if status == unframer.STARVED
+                    return ok(unframer.STARVED)
+            .err e =>
+                s.failed @ true
+                s.failure_code @ e.code
+                s.failure_msg @ e.msg
+                return fail(code: e.code, msg: e.msg)
+
+    return ok(unframer.READY)
+
+# `data` read whole: every frame where `multi`, else the first, with
+# `dictionary` before each, producing at most `limit` bytes.
+function whole(data: [u8], dictionary: [u8], limit: i64, multi: bool) -> Whole?
+    s @= unframer.start(limit: limit, multi: multi)
+    unframer.set_dictionary(@s, dictionary: dictionary)?
+    unframer.feed(@s, more: data)
+    unframer.end_input(@s)
+    _ = run(@s, want: 0)?
+
+    if s.phase != unframer.DONE
+        return codes.invalid_at(at: s.base + s.at, why: "a frame that does not end")
+    out = unframer.take(@s, most: unframer.pending_count(s))
+    return ok(Whole(data: out, used: s.base + s.at))

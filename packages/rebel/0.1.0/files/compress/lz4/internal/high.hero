@@ -1,0 +1,97 @@
+# The high compressor, levels 3 to 12: every place goes into the chains of
+# `compress/internal/finder`, the longest repeat at a place is looked for
+# along its chain as deep as the level says, and a repeat is put off by one
+# byte where the next place begins a longer one.
+
+use compress/internal/finder
+use compress/lz4/internal/sequences
+
+# How many earlier places level `level`, 3 to 12, tries for each byte: 16
+# at level 3, twice as many at each level after, and 8,192 at 12.
+function depth_of(level: i64) -> i64
+    return 1 << level + 1
+
+# The repeat length that ends a search at once at level `level`.
+function nice_of(level: i64) -> i64
+    if level <= 6
+        return 64
+
+    if level <= 9
+        return 256
+    return 1024
+
+# The bytes of `data` from `start` to its end written as one block onto
+# `out` at level `level`, 3 to 12, the bytes before `start` a history its
+# repeats may reach back into.
+function parse(@out: [u8], data: [u8] lent, start: i64, level: i64)
+    end = data.len()
+
+    if end - start < sequences.MATCH_FLOOR + 1
+        sequences.emit_last(out: @out, data: data, from: start, to: end)
+        return
+    f @= finder.start(
+        size: end,
+        window: sequences.MAX_OFFSET,
+        shortest: 4,
+        chain: depth_of(level),
+        nice: nice_of(level)
+    )
+
+    if start > sequences.MAX_OFFSET
+        f.inserted @ start - sequences.MAX_OFFSET
+    finder.insert_upto(@f, data: data, upto: start)
+    last_start = end - sequences.MATCH_FLOOR
+    match_end = end - sequences.LAST_LITERALS
+    anchor: i64 @= start
+    p: i64 @= start
+    held: i64 @= 0
+    held_distance: i64 @= 0
+
+    while p <= last_start
+        length: i64 @= held
+        distance: i64 @= held_distance
+        held @ 0
+
+        if length == 0
+            finder.insert_upto(@f, data: data, upto: p)
+            found = finder.longest(f, data: data, at: p, most: match_end - p)
+            length @ found.length
+            distance @ found.distance
+
+        if length < sequences.MIN_MATCH
+            p @ p + 1
+            continue
+
+        if p + 1 <= last_start && length < nice_of(level)
+            finder.insert_upto(@f, data: data, upto: p + 1)
+            next = finder.longest(f, data: data, at: p + 1, most: match_end - p - 1)
+
+            if next.length > length
+                held @ next.length
+                held_distance @ next.distance
+                p @ p + 1
+                continue
+        sequences.emit(out: @out, data: data, from: anchor, to: p, offset: distance, length: length)
+        p @ p + length
+        anchor @ p
+
+    sequences.emit_last(out: @out, data: data, from: anchor, to: end)
+
+test "depth_of and nice_of: the first and last levels"
+    assert depth_of(3) == 16
+    assert depth_of(11) == 4096
+    assert depth_of(12) == 8192
+    assert nice_of(3) == 64 && nice_of(12) == 1024
+
+test "parse: a short input all literals, and a run, as the fast parse writes it"
+    out: [u8] @= []
+    parse(out: @out, data: [1, 2, 3], start: 0, level: 9)
+    assert out == [0x30, 1, 2, 3]
+    run: [u8] @= []
+
+    for _ in range(from: 0, to: 20)
+        run @ run.push(0x61)
+
+    packed: [u8] @= []
+    parse(out: @packed, data: run, start: 0, level: 9)
+    assert packed == [0x1a, 0x61, 1, 0, 0x50, 0x61, 0x61, 0x61, 0x61, 0x61]

@@ -1,0 +1,105 @@
+# An LZ4 block written: each sequence a token (four bits of literal length,
+# four of repeat length less 4), the lengths past 15 as bytes of 255 and a
+# last byte below it, the literals, and the offset in two bytes, low byte
+# first. The last sequence holds literals alone.
+
+# The shortest repeat a block holds.
+constant MIN_MATCH: i64
+    4
+
+# The farthest back a repeat reaches, in bytes.
+constant MAX_OFFSET: i64
+    65535
+
+# How many bytes at a block's end are always literals.
+constant LAST_LITERALS: i64
+    5
+
+# How many bytes before a block's end the last repeat begins at the latest.
+constant MATCH_FLOOR: i64
+    12
+
+# `value`, 0 to 255, added to `out`.
+function put(@out: [u8], value: i64)
+    out @ out.push(to_u8(value).must())
+
+# The bytes that say a length past 15: 255 while `n` is 255 or more, then
+# what is left.
+function put_length(@out: [u8], n: i64)
+    left: i64 @= n
+
+    while left >= 255
+        out @ out.push(255)
+        left @ left - 255
+
+    put(@out, value: left)
+
+# The bytes `from` to `to` of `data` added to `out`.
+function copy_range(@out: [u8], data: [u8] lent, from: i64, to: i64)
+    at: i64 @= from
+
+    while at < to
+        out @ out.push(data[at])
+        at @ at + 1
+
+# The smaller of `a` and `b`.
+function smaller(a: i64, b: i64) -> i64
+    if a < b
+        return a
+    return b
+
+# One sequence: the literals `from` to `to` of `data`, then a repeat of
+# `length` bytes (4 or more) from `offset` bytes back (1 to 65,535).
+function emit(@out: [u8], data: [u8] lent, from: i64, to: i64, offset: i64, length: i64)
+    literals = to - from
+    rest = length - MIN_MATCH
+    put(@out, value: smaller(a: literals, b: 15) << 4 | smaller(a: rest, b: 15))
+
+    if literals >= 15
+        put_length(@out, n: literals - 15)
+    copy_range(out: @out, data: data, from: from, to: to)
+    put(@out, value: offset & 255)
+    put(@out, value: offset >> 8)
+
+    if rest >= 15
+        put_length(@out, n: rest - 15)
+
+# The last sequence: the literals `from` to `to` of `data` and no repeat.
+function emit_last(@out: [u8], data: [u8] lent, from: i64, to: i64)
+    literals = to - from
+    put(@out, value: smaller(a: literals, b: 15) << 4)
+
+    if literals >= 15
+        put_length(@out, n: literals - 15)
+    copy_range(out: @out, data: data, from: from, to: to)
+
+test "emit_last: no literal, one, 15 and 270, as liblz4 writes them"
+    none: [u8] @= []
+    emit_last(out: @none, data: [], from: 0, to: 0)
+    assert none == [0]
+    one: [u8] @= []
+    emit_last(out: @one, data: [0x61], from: 0, to: 1)
+    assert one == [0x10, 0x61]
+    fifteen: [u8] @= []
+    data: [u8] @= []
+
+    for _ in range(from: 0, to: 270)
+        data @ data.push(0x79)
+
+    emit_last(out: @fifteen, data: data, from: 0, to: 15)
+    assert fifteen.slice(from: 0, to: 2) == [0xf0, 0]
+    long: [u8] @= []
+    emit_last(out: @long, data: data, from: 0, to: 270)
+    assert long.slice(from: 0, to: 3) == [0xf0, 0xff, 0] && long.len() == 273
+
+test "emit: a repeat of 4, of 19 and of 274, at offsets 1 and 65,535"
+    data: [u8] = [0x61, 0x62]
+    short: [u8] @= []
+    emit(out: @short, data: data, from: 0, to: 1, offset: 1, length: 4)
+    assert short == [0x10, 0x61, 1, 0]
+    nineteen: [u8] @= []
+    emit(out: @nineteen, data: data, from: 0, to: 0, offset: 65535, length: 19)
+    assert nineteen == [0x0f, 0xff, 0xff, 0]
+    long: [u8] @= []
+    emit(out: @long, data: data, from: 0, to: 2, offset: 2, length: 274)
+    assert long == [0x2f, 0x61, 0x62, 2, 0, 0xff, 0]

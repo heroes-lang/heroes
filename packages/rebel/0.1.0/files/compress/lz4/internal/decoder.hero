@@ -1,0 +1,184 @@
+# An LZ4 block read: its sequences decoded onto the end of what came
+# before, which its repeats may reach back into. Every length is held to
+# the block's own bytes, every offset to what stands before it, and every
+# byte written to the block's most and the caller's limit, before it is
+# written.
+
+use compress/internal/codes
+
+# How much a block decoded onto `out` may write, and where its bytes stand
+# for a message.
+record Room
+    # The most bytes `out` may hold once the block is decoded; past it the
+    # block is not one of its frame.
+    block_end: i64
+    # The most bytes `out` may hold before the caller's limit passes.
+    limit_end: i64
+    # The caller's limit, for the message.
+    limit: i64
+    # Where index 0 of the block's source stands in the whole input.
+    base: i64
+
+# Room that only the caller's limit bounds: `out` holding `before` bytes,
+# at most `limit` more.
+function room_of(before: i64, limit: i64, base: i64) -> Room
+    return Room(block_end: 9223372036854775807, limit_end: before + limit, limit: limit, base: base)
+
+# Whether `out` may grow to `after` bytes: `invalid` past the block's most,
+# `limit` past the caller's, `at` the byte being read.
+function check_room(after: i64, room: Room, start: i64, at: i64) -> ()?
+    if after > room.block_end
+        return codes.invalid_at(
+            at: room.base + at,
+            why: f"a block that decodes past its most of {room.block_end - start} bytes"
+        )
+
+    if after > room.limit_end
+        return codes.past_limit(limit: room.limit, at: room.base + at)
+    return ok()
+
+# The length that follows a nibble of 15 at `at` of `src`: bytes added while
+# they are 255. Answers the length and where the next byte is, as `[length,
+# next]`.
+function more_length(src: [u8] lent, at: i64, to: i64, room: Room) -> [i64]?
+    total: i64 @= 0
+    i: i64 @= at
+
+    while true
+        if i >= to
+            return codes.invalid_at(at: room.base + i, why: "a length cut short by the block's end")
+        b = to_i64(src[i]).must()
+        total @ total + b
+        i @ i + 1
+
+        if b != 255
+            return ok([total, i])
+
+    return ok([total, i])
+
+# The block `from` to `to` of `src` decoded onto the end of `out`, whose
+# bytes before it a repeat may reach back into.
+function decode(@out: [u8], src: [u8] lent, from: i64, to: i64, room: Room) -> ()?
+    start = out.len()
+
+    if from >= to
+        return codes.invalid_at(at: room.base + from, why: "an empty block, where a block holds one byte at least")
+    i: i64 @= from
+
+    while true
+        if i >= to
+            return codes.invalid_at(
+                at: room.base + i,
+                why: "a block that ends after a repeat, where its last sequence holds literals alone"
+            )
+        token = to_i64(src[i]).must()
+        i @ i + 1
+        literals: i64 @= token >> 4
+
+        if literals == 15
+            found = more_length(src, at: i, to: to, room: room)?
+            literals @ literals + found[0]
+            i @ found[1]
+
+        if literals > to - i
+            return codes.invalid_at(
+                at: room.base + i,
+                why: f"{literals} literals, where the block holds {to - i} more bytes"
+            )
+        check_room(after: out.len() + literals, room: room, start: start, at: i)?
+        end = i + literals
+
+        while i < end
+            out @ out.push(src[i])
+            i @ i + 1
+
+        if i == to
+            return ok()
+
+        if to - i < 2
+            return codes.invalid_at(at: room.base + i, why: "an offset cut short by the block's end")
+        offset = to_i64(src[i]).must() | to_i64(src[i + 1]).must() << 8
+
+        if offset == 0
+            return codes.invalid_at(at: room.base + i, why: "an offset of 0")
+
+        if offset > out.len()
+            return codes.invalid_at(
+                at: room.base + i,
+                why: f"a repeat reaching {offset} bytes back, where {out.len()} come before it"
+            )
+        i @ i + 2
+        length: i64 @= (token & 15) + 4
+
+        if token & 15 == 15
+            found = more_length(src, at: i, to: to, room: room)?
+            length @ length + found[0]
+            i @ found[1]
+        check_room(after: out.len() + length, room: room, start: start, at: i)?
+        p: i64 @= out.len() - offset
+        last = p + length
+
+        while p < last
+            out @ out.push(out[p])
+            p @ p + 1
+
+    return ok()
+
+# The code of what decoding `src` whole with no history answers, "ok" for a
+# success.
+function code_of(src: [u8], limit: i64) -> str
+    out: [u8] @= []
+
+    match decode(out: @out, src: src, from: 0, to: src.len(), room: room_of(before: 0, limit: limit, base: 0))
+        .ok _  => return "ok"
+        .err e => return e.code
+
+# What decoding `src` whole with no history answers, under `limit`.
+function decoded(src: [u8], limit: i64) -> [u8]
+    out: [u8] @= []
+    decode(out: @out, src: src, from: 0, to: src.len(), room: room_of(before: 0, limit: limit, base: 0)).must()
+    return out
+
+test "decode: a token alone, one literal, 15 literals, and 270, as liblz4 reads them"
+    assert decoded([0], limit: 10).len() == 0
+    assert decoded([0x10, 0x61], limit: 10) == [0x61]
+    fifteen: [u8] @= [0xf0, 0]
+    long: [u8] @= [0xf0, 0xff, 0]
+
+    for _ in range(from: 0, to: 15)
+        fifteen @ fifteen.push(0x78)
+
+    for _ in range(from: 0, to: 270)
+        long @ long.push(0x79)
+
+    assert decoded(fifteen, limit: 20).len() == 15
+    assert decoded(long, limit: 300).len() == 270
+
+test "decode: repeats of 4 and 8 that overlap, and a last token whose repeat nibble is 15"
+    assert decoded([0x10, 0x61, 1, 0, 0x50, 0x62, 0x63, 0x64, 0x65, 0x66], limit: 20).len() == 10
+    run = decoded([0x14, 0x61, 1, 0, 0x50, 0x62, 0x63, 0x64, 0x65, 0x66], limit: 100)
+    assert run.len() == 14 && run[8] == 0x61 && run[9] == 0x62
+    assert decoded([0x1f, 0x61], limit: 20) == [0x61]
+
+test "decode: empty, ending after a repeat, cut short in a length, in literals and in an offset"
+    assert code_of([], limit: 10) == "invalid"
+    assert code_of([0x14, 0x61, 1, 0], limit: 20) == "invalid"
+    assert code_of([0xf0], limit: 20) == "invalid"
+    assert code_of([0x1f, 0x61, 0xff], limit: 20) == "invalid"
+    assert code_of([0x30, 0x61], limit: 20) == "invalid"
+    assert code_of([0x10, 0x61, 1], limit: 20) == "invalid"
+
+test "decode: an offset of 0, one before the start, and a limit passed by literals and by a repeat"
+    assert code_of([0x10, 0x61, 0, 0, 0x50, 0x62, 0x63, 0x64, 0x65, 0x66], limit: 20) == "invalid"
+    assert code_of([0x10, 0x61, 2, 0, 0x50, 0x62, 0x63, 0x64, 0x65, 0x66], limit: 20) == "invalid"
+    assert code_of([0x20, 0x61, 0x62], limit: 1) == "limit"
+    assert code_of([0x10, 0x61, 1, 0, 0x50, 0x62, 0x63, 0x64, 0x65, 0x66], limit: 9) == "limit"
+    assert code_of([0x10, 0x61, 1, 0, 0x50, 0x62, 0x63, 0x64, 0x65, 0x66], limit: 10) == "ok"
+
+test "decode: the message names the byte, past the block's base"
+    out: [u8] @= []
+    room = Room(block_end: 1, limit_end: 100, limit: 100, base: 40)
+
+    match decode(out: @out, src: [0x20, 0x61, 0x62], from: 0, to: 3, room: room)
+        .ok _  => assert false
+        .err e => assert e.msg == "not a valid compressed stream at byte 41: a block that decodes past its most of 1 bytes"

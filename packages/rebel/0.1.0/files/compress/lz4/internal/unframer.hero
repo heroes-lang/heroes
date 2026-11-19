@@ -1,0 +1,279 @@
+# Frames read piece by piece, what holds them: the input fed and not yet
+# read, the phase, the window a block may reach back into, and the output
+# not yet handed out. `frames` moves it from phase to phase.
+
+use compress/internal/codes
+use compress/lz4/internal/blocks
+use compress/lz4/internal/header
+use compress/lz4/internal/sequences
+use compress/lz4/internal/xxh32
+
+# Looking for the next frame's magic.
+constant MAGIC: i64
+    0
+
+# Reading a standard frame's header.
+constant HEADER: i64
+    1
+
+# Reading the size of the next block, or the end mark.
+constant BLOCK_SIZE: i64
+    2
+
+# Reading a block, and its checksum.
+constant BLOCK_DATA: i64
+    3
+
+# Reading the content checksum.
+constant CONTENT_CHECK: i64
+    4
+
+# A standard frame read whole: its size checked.
+constant FRAME_END: i64
+    5
+
+# Reading a skippable frame's magic and size.
+constant SKIP_SIZE: i64
+    6
+
+# Passing over a skippable frame's bytes.
+constant SKIP: i64
+    7
+
+# Reading the size of a legacy frame's next block.
+constant LEGACY_SIZE: i64
+    8
+
+# Reading a legacy block.
+constant LEGACY_DATA: i64
+    9
+
+# Every frame asked for has been read.
+constant DONE: i64
+    10
+
+# What a step answers: it moved, and may move again.
+constant MOVED: i64
+    0
+
+# What a step answers: it needs more input.
+constant STARVED: i64
+    1
+
+# What `run` answers: every frame asked for has been read.
+constant ENDED: i64
+    2
+
+# What `run` answers: the output asked for is held.
+constant READY: i64
+    3
+
+# The work of a decompressor in progress.
+record State
+    # The input fed, read up to `at`.
+    input: [u8]
+    # The next byte of `input` to read.
+    at: i64
+    # Where `input[0]` stands in the whole input.
+    base: i64
+    # Whether the input has ended: no byte will be fed after.
+    input_ended: bool
+    # Whether any byte has been fed.
+    fed: bool
+    # One of the phases above.
+    phase: i64
+    # Whether every frame to the input's end is read, or only one.
+    multi: bool
+    # How many frames have begun.
+    frames: i64
+    # The most bytes every frame together may produce.
+    limit: i64
+    # How many bytes every frame has produced.
+    produced: i64
+    # The bytes produced and not yet handed out, from `given`.
+    pending: [u8]
+    # The next byte of `pending` to hand out.
+    given: i64
+    # What the next block may reach back into: the dictionary, then the
+    # frame's bytes for linked blocks.
+    window: [u8]
+    # The last 65,536 bytes of the dictionary, empty for none.
+    dictionary: [u8]
+    # The header of the standard frame being read.
+    head: header.Header
+    # How many bytes the frame being read has produced.
+    frame_produced: i64
+    # The checksum of the frame's bytes so far.
+    content: xxh32.State
+    # The block being read: how many bytes it takes, not its checksum.
+    block_size: i64
+    # Whether the block is stored as it is.
+    block_raw: bool
+    # How many bytes of a skippable frame are still to pass over.
+    skip_left: i64
+    # Whether a step has failed; every call after fails the same way.
+    failed: bool
+    # The failure's code.
+    failure_code: str
+    # The failure's message.
+    failure_msg: str
+
+# A reader of one frame, or of every frame where `multi`, that may produce
+# at most `limit` bytes.
+function start(limit: i64, multi: bool) -> State
+    return State(
+        input: [],
+        at: 0,
+        base: 0,
+        input_ended: false,
+        fed: false,
+        phase: MAGIC,
+        multi: multi,
+        frames: 0,
+        limit: limit,
+        produced: 0,
+        pending: [],
+        given: 0,
+        window: [],
+        dictionary: [],
+        head: header.plain(4),
+        frame_produced: 0,
+        content: xxh32.start(),
+        block_size: 0,
+        block_raw: false,
+        skip_left: 0,
+        failed: false,
+        failure_code: "",
+        failure_msg: ""
+    )
+
+# `s` reading frames made with `dictionary`. Fails `invalid` where `s` has
+# been fed.
+function set_dictionary(@s: State, dictionary: [u8]) -> ()?
+    if s.fed
+        return fail(code: codes.INVALID, msg: "a dictionary given to a decompressor already fed")
+    s.dictionary @ blocks.tail(dictionary, most: blocks.WINDOW)
+    return ok()
+
+# `more` added to the input of `s`.
+function feed(@s: State, more: [u8] lent)
+    if more.len() == 0
+        return
+    s.fed @ true
+
+    if s.at == s.input.len()
+        s.base @ s.base + s.at
+        s.input @ more
+        s.at @ 0
+        return
+
+    if s.at >= blocks.WINDOW && s.at * 2 >= s.input.len()
+        s.base @ s.base + s.at
+        s.input @ s.input.slice(from: s.at, to: s.input.len())
+        s.at @ 0
+    sequences.copy_range(out: @s.input, data: more, from: 0, to: more.len())
+
+# No more input will come: what is missing now is cut short.
+function end_input(@s: State)
+    s.input_ended @ true
+
+# How many bytes of input `s` holds unread.
+function available(s: State lent) -> i64
+    return s.input.len() - s.at
+
+# How many bytes `s` holds produced and not handed out.
+function pending_count(s: State lent) -> i64
+    return s.pending.len() - s.given
+
+# Whether `s` holds `n` unread bytes: `true`, or `false` while more input
+# may come. Fails `invalid` where the input has ended without them,
+# `what` saying what they were.
+function has(s: State lent, n: i64, what: str) -> bool?
+    if available(s) >= n
+        return ok(true)
+
+    if !s.input_ended
+        return ok(false)
+    return codes.invalid_at(at: s.base + s.input.len(), why: f"the input ends inside {what}")
+
+# Up to `most` bytes of what `s` produced, handed out.
+function take(@s: State, most: i64) -> [u8]
+    n = sequences.smaller(a: most, b: pending_count(s))
+
+    if s.given == 0 && n == s.pending.len()
+        whole = s.pending
+        s.pending @ []
+        return whole
+    out = s.pending.slice(from: s.given, to: s.given + n)
+    s.given @ s.given + n
+
+    if s.given == s.pending.len()
+        s.pending @ []
+        s.given @ 0
+    else if s.given >= blocks.WINDOW * 16 && s.given * 2 >= s.pending.len()
+        s.pending @ s.pending.slice(from: s.given, to: s.pending.len())
+        s.given @ 0
+    return out
+
+# Whether every frame asked for has been read and handed out.
+function is_done(s: State lent) -> bool
+    return s.phase == DONE && pending_count(s) == 0
+
+# The input fed after the frame `s` read, once it has ended.
+function unused(s: State lent) -> [u8]
+    if s.phase != DONE
+        return []
+    return s.input.slice(from: s.at, to: s.input.len())
+
+# The frame being read has ended: the next is looked for, or none.
+function end_frame(@s: State)
+    s.window @ []
+
+    if s.multi
+        s.phase @ MAGIC
+    else
+        s.phase @ DONE
+
+# The bytes `from` to the end of `s.window` handed on: the checksum fed,
+# the output held, the counts moved.
+function produce(@s: State, from: i64)
+    n = s.window.len() - from
+
+    if s.head.content_checksum
+        xxh32.update(@s.content, data: s.window, from: from, to: s.window.len())
+    sequences.copy_range(out: @s.pending, data: s.window, from: from, to: s.window.len())
+    s.produced @ s.produced + n
+    s.frame_produced @ s.frame_produced + n
+
+test "feed, take and unused: pieces in, pieces out"
+    s @= start(limit: 100, multi: false)
+    feed(@s, more: [1, 2, 3])
+    feed(@s, more: [4])
+    assert available(s) == 4
+    s.at @ 2
+    assert unused(s).len() == 0
+    s.phase @ DONE
+    assert unused(s) == [3, 4]
+    sequences.copy_range(out: @s.pending, data: [7, 8, 9], from: 0, to: 3)
+    assert take(@s, most: 2) == [7, 8]
+    assert pending_count(s) == 1
+    assert take(@s, most: 5) == [9]
+    assert is_done(s)
+
+test "has: enough, starved, and cut short once the input has ended"
+    s @= start(limit: 100, multi: true)
+    feed(@s, more: [1, 2])
+    assert has(s, n: 2, what: "x").must()
+    assert !has(s, n: 3, what: "x").must()
+    end_input(@s)
+
+    match has(s, n: 3, what: "a block")
+        .ok _  => assert false
+        .err e => assert e.msg == "not a valid compressed stream at byte 2: the input ends inside a block"
+
+test "set_dictionary: before any input, and refused after"
+    s @= start(limit: 100, multi: false)
+    set_dictionary(@s, dictionary: [1, 2, 3]).must()
+    assert s.dictionary == [1, 2, 3]
+    feed(@s, more: [9])
+    assert set_dictionary(@s, dictionary: [4]).is_err()
