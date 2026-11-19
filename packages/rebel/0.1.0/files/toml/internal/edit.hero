@@ -102,7 +102,7 @@ function checked(written: str, expected: [doc.Node] lent, path: [str]) -> ()?
     match doc.parse_document(written)
         .err e => return fail(
             code: scalar.INVALID,
-            msg: f"the edit of \"{sections.shown(path)}\" would leave a text that is not TOML 1.0.0: {e.msg}"
+            msg: f"the edit of \"{sections.shown(path)}\" would leave a text that is not TOML 1.1.0: {e.msg}"
         )
         .ok after =>
             if !tree.same(a: expected, b: after)
@@ -427,3 +427,12 @@ test "add_entry: after the last entry and its sub-tables, inline, an array made,
     assert entry_shown(text: "a = 1\n", path: ["bin"], wrapped: "[[v]]\nname = \"b\"\n") == "0:a = 1\n\n[[bin]]\nname = \"b\"\n"
     assert entry_shown(text: "[t]\n", path: ["t"], wrapped: "[[v]]\n") == "invalid: \"t\" is a table, not an array of tables"
     assert entry_shown(text: "a = 1\n", path: ["a"], wrapped: "[[v]]\n") == "invalid: \"a\" is a value, neither a table nor an array"
+
+test "set_value, remove_value and add_table: an inline table across lines, TOML 1.1.0's, edited member by member, its comments kept"
+    text = "t = {\n    a = 1, # one\n    b = \"x\",\n}\nz = 2\n"
+    assert set_shown(text: text, path: ["t", "a"], wrapped: "v = 5\n") == "t = {\n    a = 5, # one\n    b = \"x\",\n}\nz = 2\n"
+    assert set_shown(text: text, path: ["t", "c"], wrapped: "v = true\n") == "t = {\n    a = 1, # one\n    b = \"x\",\n    c = true,\n}\nz = 2\n"
+    assert remove_shown(text: text, path: ["t", "a"]) == "t = {\n    b = \"x\",\n}\nz = 2\n"
+    assert remove_shown(text: text, path: ["t"]) == "z = 2\n"
+    assert table_shown(text: text, path: ["t", "u"]) == "t = {\n    a = 1, # one\n    b = \"x\",\n    u = {},\n}\nz = 2\n"
+    assert set_shown(text: "t = {\n    a = 1,\n}\n", path: ["y"], wrapped: "v = 2\n") == "t = {\n    a = 1,\n}\ny = 2\n"

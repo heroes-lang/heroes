@@ -1,4 +1,4 @@
-# The values of TOML 1.0.0 that hold no other value, read at a byte index of
+# The values of TOML 1.1.0 that hold no other value, read at a byte index of
 # a text: the four forms of string, integers in four bases, floats, booleans,
 # and the four forms of date and time. A failure's message opens
 # `line L, column C:`, both from 1 and the column in characters.
@@ -131,8 +131,8 @@ record Escape
     # The byte index past the escape.
     end: i64
 
-# The escape at byte `at` of `text`, a backslash: one of TOML 1.0.0's seven,
-# or a Unicode scalar value in four or eight hexadecimal digits.
+# The escape at byte `at` of `text`, a backslash: one of TOML 1.1.0's eight,
+# or a Unicode scalar value in two, four or eight hexadecimal digits.
 function escape_at(text: str, at: i64) -> Escape?
     if at + 1 >= text.len()
         return wrong(text: text, at: at, what: "a backslash at the end of the text")
@@ -153,16 +153,21 @@ function escape_at(text: str, at: i64) -> Escape?
     if c == 'r'
         return ok(Escape(text: "\r", end: at + 2))
 
+    if c == 'e'
+        return ok(Escape(text: "\u{1b}", end: at + 2))
+
     if c == '"'
         return ok(Escape(text: "\"", end: at + 2))
 
     if c == '\\'
         return ok(Escape(text: "\\", end: at + 2))
 
-    if c == 'u' || c == 'U'
+    if c == 'x' || c == 'u' || c == 'U'
         width: i64 @= 4
 
-        if c == 'U'
+        if c == 'x'
+            width @ 2
+        else if c == 'U'
             width @ 8
 
         if at + 2 + width > text.len()
@@ -185,7 +190,7 @@ function escape_at(text: str, at: i64) -> Escape?
                 what: f"\"\\{text.slice(from: at + 1, to: at + 2)}{digits}\" names no Unicode scalar value"
             )
     shown = text.slice(from: at, to: strings.ceil_boundary(s: text, at: at + 2))
-    return wrong(text: text, at: at, what: f"\"{shown}\" is no escape of TOML 1.0.0")
+    return wrong(text: text, at: at, what: f"\"{shown}\" is no escape of TOML 1.1.0")
 
 # The length of the line end at byte `at`: 1 for a line feed, 2 for CR LF,
 # 0 for anything else.
@@ -414,36 +419,45 @@ function digits_at(text: str, at: i64, count: i64) -> i64?
 
     return ok(numbers.parse_int(text.slice(from: at, to: at + count)).must())
 
-# A time of day read at byte `at`: `HH:MM:SS` and an optional fraction.
+# A time of day read at byte `at`: `HH:MM`, then `:SS` where its seconds are
+# written, then a fraction where they are.
 record Clock
     # The hour.
     hour: i64
     # The minute.
     minute: i64
-    # The second.
+    # The second; 0 where the seconds are not written.
     second: i64
     # The nanoseconds of the fraction, its digits past the ninth dropped.
     nanosecond: i64
     # The byte index past it.
     end: i64
 
-# The time of day at byte `at` of `text`.
+# The time of day at byte `at` of `text`. Its seconds may be left out, as
+# TOML 1.1.0 allows, and are then 0; a fraction follows only seconds.
 function read_clock(text: str, at: i64) -> Clock?
-    shape = "a time of day, HH:MM:SS with seconds, as TOML 1.0.0 writes one"
+    shape = "a time of day, HH:MM or HH:MM:SS"
 
-    if at + 8 > text.len() || text[at + 2] != ':' || text[at + 5] != ':'
+    if at + 5 > text.len() || text[at + 2] != ':'
         return wrong(text: text, at: at, what: f"expected {shape}")
     hour = digits_at(text, at: at, count: 2).default(-1)
     minute = digits_at(text, at: at + 3, count: 2).default(-1)
-    second = digits_at(text, at: at + 6, count: 2).default(-1)
+    end @= at + 5
+    second @= 0
+
+    if end < text.len() && text[end] == ':'
+        second @ digits_at(text, at: end + 1, count: 2).default(-1)
+        end @ end + 3
 
     if hour < 0 || minute < 0 || second < 0
         return wrong(text: text, at: at, what: f"expected {shape}")
 
     if hour > 23 || minute > 59 || second > 59
         return wrong(text: text, at: at, what: "an hour past 23, a minute past 59 or a second past 59")
-    end @= at + 8
     nanosecond @= 0
+
+    if end == at + 5 && end < text.len() && text[end] == '.'
+        return wrong(text: text, at: end, what: "a fraction of a second where no seconds are written")
 
     if end < text.len() && text[end] == '.'
         k @= end + 1
@@ -654,8 +668,11 @@ test "read_scalar: the four strings, every escape, quotes closing a multi-line s
 test "read_scalar: escapes and characters a string refuses, and strings left open"
     assert shown_of("\"\\ud800\"") == "invalid: line 1, column 2: \"\\ud800\" names no Unicode scalar value"
     assert shown_of("\"\\U00110000\"") == "invalid: line 1, column 2: \"\\U00110000\" names no Unicode scalar value"
-    assert shown_of("\"\\x41\"") == "invalid: line 1, column 2: \"\\x\" is no escape of TOML 1.0.0"
-    assert shown_of("\"\\e\"") == "invalid: line 1, column 2: \"\\e\" is no escape of TOML 1.0.0"
+    assert shown_of("\"\\E\"") == "invalid: line 1, column 2: \"\\E\" is no escape of TOML 1.1.0"
+    assert shown_of("\"\\X41\"") == "invalid: line 1, column 2: \"\\X\" is no escape of TOML 1.1.0"
+    assert shown_of("\"\\x4\"") == "invalid: line 1, column 2: an escape with too few hexadecimal digits"
+    assert shown_of("\"\\xg1\"") == "invalid: line 1, column 2: an escape with too few hexadecimal digits"
+    assert shown_of("\"\\x") == "invalid: line 1, column 2: an escape with too few hexadecimal digits"
     assert shown_of("\"x\ry\"") == "invalid: line 1, column 3: a control character inside a string"
     assert shown_of("\"a\nb\"") == "invalid: line 1, column 3: a line end inside a string of one line"
     assert shown_of("\"\u{1}\"") == "invalid: line 1, column 2: a control character inside a string"
@@ -673,8 +690,26 @@ test "read_scalar: dates and times in their four forms, offsets, a space or a sm
     assert shown_of("07:32:00.5") == "time 27120500000000"
     assert shown_of("00:00:00") == "time 0"
 
-test "read_scalar: dates and times TOML 1.0.0 refuses: no seconds, a leap second, a day the calendar lacks, short fields"
-    assert shown_of("1979-05-27T07:32") == "invalid: line 1, column 12: expected a time of day, HH:MM:SS with seconds, as TOML 1.0.0 writes one"
+test "read_scalar: the escapes TOML 1.1.0 adds, \\e and \\x in either case, a zero byte and the largest, as tomllib reads them"
+    assert shown_of("\"\\x41\\e\\xff\\xE9\"") == "text A\u{1b}ÿé"
+    assert shown_of("\"\"\"\\x61\\e[\"\"\"") == "text a\u{1b}["
+    zero = read_scalar("\"\\x00\"", 0).must()
+    assert zero.text.len() == 1 && zero.text[0] == 0 && zero.end == 6
+
+test "read_scalar: times with no seconds, which TOML 1.1.0 allows, in the three forms that hold a time, as tomllib reads them"
+    assert shown_of("07:32") == "time 27120000000000"
+    assert shown_of("1979-05-27T07:32") == "7 1979-5-27 7:32:0.0 0 end 16"
+    assert shown_of("1979-05-27 07:32Z") == "6 1979-5-27 7:32:0.0 0 end 17"
+    assert shown_of("1979-05-27T07:32-07:00") == "6 1979-5-27 7:32:0.0 -420 end 22"
+    assert shown_of("1979-05-27t23:59+05:30") == "6 1979-5-27 23:59:0.0 330 end 22"
+    assert shown_of("07:32.5") == "invalid: line 1, column 6: a fraction of a second where no seconds are written"
+    assert shown_of("1979-05-27T07:32.5Z") == "invalid: line 1, column 17: a fraction of a second where no seconds are written"
+    assert shown_of("07:32:") == "invalid: line 1, column 1: expected a time of day, HH:MM or HH:MM:SS"
+    assert shown_of("07:3") == "invalid: line 1, column 1: expected a time of day, HH:MM or HH:MM:SS"
+    assert shown_of("1979-05-27T07") == "invalid: line 1, column 12: expected a time of day, HH:MM or HH:MM:SS"
+    assert shown_of("24:00") == "invalid: line 1, column 1: an hour past 23, a minute past 59 or a second past 59"
+
+test "read_scalar: dates and times TOML refuses: a leap second, a day the calendar lacks, short fields"
     assert shown_of("1979-05-27T23:59:60Z") == "invalid: line 1, column 12: an hour past 23, a minute past 59 or a second past 59"
     assert shown_of("1979-05-27T24:00:00") == "invalid: line 1, column 12: an hour past 23, a minute past 59 or a second past 59"
     assert shown_of("2023-02-29") == "invalid: line 1, column 1: 2023-02-29 is no day of the calendar"

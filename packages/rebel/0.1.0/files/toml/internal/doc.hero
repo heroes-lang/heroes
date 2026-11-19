@@ -1,6 +1,7 @@
-# A TOML 1.0.0 document read into an arena of nodes, the root table first:
+# A TOML 1.1.0 document read into an arena of nodes, the root table first:
 # headers, arrays of tables, keys bare, quoted and dotted, arrays and inline
-# tables. A table remembers how it was defined, so that the rules of
+# tables, both across lines with comments and a comma after their last
+# member. A table remembers how it was defined, so that the rules of
 # definition hold as Python's tomllib holds them: a header names a table
 # once; a dotted key adds no key to a table a header defined, nor, past the
 # next header, to one it defined itself; an inline table and an array written
@@ -119,7 +120,7 @@ function end_line(text: str, @at: i64) -> ()?
     return ok()
 
 # Moves `at` past the spaces, comments and line ends between an array's
-# items.
+# items or an inline table's members.
 function skip_blank(text: str, @at: i64) -> ()?
     while true
         skip_spaces(text, @at)
@@ -202,12 +203,10 @@ function place_inline(@nodes: [Node], table: i64, path: [str], value: i64, text:
     nodes[t].children @ nodes[t].children.push(value)
     return ok()
 
-# The key at `at` of an inline table and the `=` after it, white space
-# skipped on either side. Fails `invalid` at a line end, which TOML 1.0.0
-# refuses inside an inline table.
+# The key at `at` of an inline table and the `=` after it, spaces and tabs
+# skipped on either side of the `=`: a line end may stand around a member of
+# an inline table, never inside one.
 function read_inline_key(text: str, @at: i64) -> [str]?
-    if scalar.line_end_len(text, at) > 0 || at < text.len() && text[at] == '#'
-        return scalar.wrong(text: text, at: at, what: "a line end inside an inline table, which TOML 1.0.0 refuses")
     path = read_key(text, @at)?
     skip_spaces(text, @at)
 
@@ -267,7 +266,7 @@ function read_value(text: str, @at: i64, @nodes: [Node], depth: i64) -> i64?
                 else
                     here @ here + 1
             else
-                skip_spaces(text, @at)
+                skip_blank(text, @at)?
 
                 if at < text.len() && text[at] == '}'
                     at @ at + 1
@@ -318,33 +317,25 @@ function read_value(text: str, @at: i64, @nodes: [Node], depth: i64) -> i64?
                     return scalar.wrong(text: text, at: at, what: "expected \",\" or \"]\" in an array")
             else
                 place_inline(@nodes, table: t, path: paths[top], value: done, text: text, at: key_ats[top])?
-                skip_spaces(text, @at)
+                skip_blank(text, @at)?
 
                 if at < text.len() && text[at] == ','
                     at @ at + 1
-                    skip_spaces(text, @at)
+                    skip_blank(text, @at)?
 
                     if at < text.len() && text[at] == '}'
-                        return scalar.wrong(
-                            text: text,
-                            at: at,
-                            what: "a comma before the end of an inline table, which TOML 1.0.0 refuses"
-                        )
-                    key_at = at
-                    path = read_inline_key(text, @at)?
-                    paths[top] @ path
-                    key_ats[top] @ key_at
-                    here @ nodes[t].depth + path.len()
-                    done @ -1
+                        at @ at + 1
+                        closing @ true
+                    else
+                        key_at = at
+                        path = read_inline_key(text, @at)?
+                        paths[top] @ path
+                        key_ats[top] @ key_at
+                        here @ nodes[t].depth + path.len()
+                        done @ -1
                 else if at < text.len() && text[at] == '}'
                     at @ at + 1
                     closing @ true
-                else if scalar.line_end_len(text, at) > 0 || at < text.len() && text[at] == '#'
-                    return scalar.wrong(
-                        text: text,
-                        at: at,
-                        what: "a line end inside an inline table, which TOML 1.0.0 refuses"
-                    )
                 else
                     return scalar.wrong(text: text, at: at, what: "expected \",\" or \"}\" in an inline table")
 
@@ -512,7 +503,7 @@ function read_pair(text: str, @at: i64, @nodes: [Node], table: i64, prefix: [str
     return ok()
 
 # Every node of the document `text`, the root table first. Fails `invalid`,
-# the message opening `line L, column C:`, where `text` is not TOML 1.0.0,
+# the message opening `line L, column C:`, where `text` is not TOML 1.1.0,
 # and `does_not_fit` where an integer is past an `i64`.
 function parse_document(text: str) -> [Node]?
     root @= container(kind: scalar.TABLE, depth: 0)
@@ -624,13 +615,32 @@ test "parse_document: inline tables and arrays written whole take nothing more"
     assert read_shape("a = { b = 1 }\n[a.c]") == "line 2, column 1: \"a\" was written whole as a value, and nothing may add to it"
     assert read_shape("a=[{x=1}]\n[[a]]") == "line 2, column 1: \"a\" was written whole as a value, and nothing may add to it"
 
-test "parse_document: inline tables, dotted keys inside, and the commas and line ends TOML 1.0.0 refuses"
+test "parse_document: inline tables, dotted keys inside, and a key defined twice"
     assert read_shape("a = { x = 1, y.z = 2 }") == "{a={x=1,y={z=2}}}"
     assert read_shape("a={}") == "{a={}}"
-    assert read_shape("a = { x = 1, }") == "line 1, column 14: a comma before the end of an inline table, which TOML 1.0.0 refuses"
-    assert read_shape("a = { x = 1,\n y = 2 }") == "line 1, column 13: a line end inside an inline table, which TOML 1.0.0 refuses"
     assert read_shape("a = { x = 1, x = 2 }") == "line 1, column 14: the key \"x\" is defined twice in an inline table"
     assert read_shape("a = { x = 1, x.y = 2 }") == "line 1, column 14: \"x\" is defined already, as a value"
+
+test "parse_document: inline tables across lines, with comments and a comma after the last member, which TOML 1.1.0 allows, as tomllib reads them"
+    assert read_shape("a = { x = 1, }") == "{a={x=1}}"
+    assert read_shape("a = { x = 1,\n y = 2 }") == "{a={x=1,y=2}}"
+    assert read_shape("a = {\n  x = 1, # one\n  # alone\n  y = { z = 2, },\n}\n") == "{a={x=1,y={z=2}}}"
+    assert read_shape("a = {x=1\n,y=2}") == "{a={x=1,y=2}}"
+    assert read_shape("a = {\n}") == "{a={}}"
+    assert read_shape("a = { # c\n}") == "{a={}}"
+    assert read_shape("a = {\r\n b.c = 1,\r\n b.d = 2,\r\n}") == "{a={b={c=1,d=2}}}"
+    assert read_shape("a = {\n k = \"\"\"\nx\n\"\"\" # c\n}") == "{a={k='x\n'}}"
+    assert read_shape("a = [{\n x = 1,\n}, {y = 2,},]") == "{a=[{x=1},{y=2}]}"
+
+test "parse_document: inline tables across lines that TOML 1.1.0 still refuses: no member around a comma, a line end inside a member, a comment over the brace"
+    assert read_shape("a = {,}") == "line 1, column 6: expected a key, found \",\""
+    assert read_shape("a = { x = 1,, }") == "line 1, column 13: expected a key, found \",\""
+    assert read_shape("a = { x =\n 1 }") == "line 1, column 10: expected a value"
+    assert read_shape("a = { x\n = 1 }") == "line 1, column 8: expected \"=\" after a key"
+    assert read_shape("a = { x = 1 # c }") == "line 1, column 18: expected \",\" or \"}\" in an inline table"
+    assert read_shape("a = { # c\u{1}\n}") == "line 1, column 10: a control character inside a comment"
+    assert read_shape("a = {\n x = 1,\n x = 2 }") == "line 3, column 2: the key \"x\" is defined twice in an inline table"
+    assert read_shape("a = {\n x = 1,\n}\na.y = 2") == "line 4, column 1: \"a\" was written whole as a value, and nothing may add to it"
 
 test "parse_document: arrays across lines with comments, a trailing comma, nested, empty, and broken"
     assert read_shape("a = [\n  1, # one\n  2,\n]") == "{a=[1,2]}"

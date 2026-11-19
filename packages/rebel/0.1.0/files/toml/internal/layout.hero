@@ -136,7 +136,7 @@ function plain(kind: i64, start: i64, end: i64, content: i64, section: i64) -> S
     )
 
 # Every statement of `text`, in order, their spans covering every byte.
-# Fails `invalid` where `text` is not TOML 1.0.0; a text `parse_document`
+# Fails `invalid` where `text` is not TOML 1.1.0; a text `parse_document`
 # accepted is read whole.
 function scan(text: str) -> [Statement]?
     out: [Statement] @= []

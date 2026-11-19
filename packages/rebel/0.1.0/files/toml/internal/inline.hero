@@ -1,9 +1,11 @@
 # The members of an inline table and the items of an array written as a
 # value, each with the bytes it spans, and the edits inside such a value:
 # a member set, added or removed, an item set, removed or appended. Every
-# edit keeps the bytes it does not touch: an added member goes after the
-# last, `, key = value`; a removed one takes its comma, and in an array
-# written across lines its own line with its trailing comment.
+# edit keeps the bytes it does not touch: an added member or item goes after
+# the last, `, key = value`, or on a line of its own where the last stands on
+# its own; a removed one takes its comma, and in a value written across lines
+# its own line with its trailing comment. An inline table is read across
+# lines as an array is, which TOML 1.1.0 allows.
 
 use toml/internal/doc
 use toml/internal/layout
@@ -47,10 +49,7 @@ function container_at(text: str, at: i64, shown: str) -> Container?
     here: i64 @= at + 1
     scratch: [doc.Node] @= []
 
-    if array
-        doc.skip_blank(text, @here)?
-    else
-        doc.skip_spaces(text, @here)
+    doc.skip_blank(text, @here)?
 
     while here < text.len() && text[here] != ']' && text[here] != '}'
         start = here
@@ -62,21 +61,13 @@ function container_at(text: str, at: i64, shown: str) -> Container?
         scratch @ []
         _ = doc.read_value(text: text, at: @here, nodes: @scratch, depth: 0)?
         value_end = here
-
-        if array
-            doc.skip_blank(text, @here)?
-        else
-            doc.skip_spaces(text, @here)
+        doc.skip_blank(text, @here)?
         comma: i64 @= -1
 
         if here < text.len() && text[here] == ','
             comma @ here
             here @ here + 1
-
-            if array
-                doc.skip_blank(text, @here)?
-            else
-                doc.skip_spaces(text, @here)
+            doc.skip_blank(text, @here)?
         members @ members.push(
             Member(keys: names, start: start, value_start: value_start, value_end: value_end, comma: comma)
         )
@@ -202,8 +193,8 @@ function dotted_text(names: [str]) -> str
 
     return parts.join(".")
 
-# `text` with `member` of `c` taken out, its comma with it; in an array
-# written across lines, its line and its trailing comment too, never another
+# `text` with `member` of `c` taken out, its comma with it; where it stands
+# on a line of its own, its line and its trailing comment too, never another
 # line's.
 function without(text: str, c: Container, member: i64) -> str
     m = c.members[member]
@@ -214,12 +205,12 @@ function without(text: str, c: Container, member: i64) -> str
     if m.comma >= 0
         rest = line_rest(text: text, at: m.comma + 1)
 
-        if c.array && rest.ended && begins_line(text: text, at: m.start)
+        if rest.ended && begins_line(text: text, at: m.start)
             return replaced(text: text, from: line_start(text: text, at: m.start), to: rest.end, with: "")
         return replaced(text: text, from: m.start, to: c.members[member + 1].start, with: "")
     before = c.members[member - 1]
 
-    if c.array && begins_line(text: text, at: m.start)
+    if begins_line(text: text, at: m.start)
         rest = line_rest(text: text, at: m.value_end)
         from = line_start(text: text, at: m.start)
 
@@ -227,9 +218,10 @@ function without(text: str, c: Container, member: i64) -> str
         return replaced(text: cut, from: before.comma, to: before.comma + 1, with: "")
     return replaced(text: text, from: before.comma, to: m.value_end, with: "")
 
-# `text` with `item`, an inline value's text, added after the last item of
-# the array `c`: on its own line where the last stands on its own, else after
-# a comma and a space.
+# `text` with `item`, an inline value's text or a member `key = value`, added
+# after the last item or member of `c`: on its own line where the last stands
+# on its own, else after a comma and a space; a comma after the last stays
+# after the new one.
 function appended(text: str, c: Container, item: str, newline: str) -> str
     if c.members.len() == 0
         return replaced(text: text, from: c.open + 1, to: c.close, with: item)
@@ -251,13 +243,10 @@ function appended(text: str, c: Container, item: str, newline: str) -> str
         return replaced(text: added, from: last.value_end, to: last.value_end, with: ",")
     return replaced(text: text, from: last.value_end, to: last.value_end, with: ", " + item)
 
-# `text` with the member `keys` = `value` added to the inline table `c`, after
-# its last member.
+# `text` with `member`, `key = value`, added to the inline table `c` after its
+# last member, as `appended` adds an item, in the line ends `text` writes.
 function member_added(text: str, c: Container, member: str) -> str
-    if c.members.len() == 0
-        return replaced(text: text, from: c.open + 1, to: c.close, with: member)
-    last = c.members[c.members.len() - 1]
-    return replaced(text: text, from: last.value_end, to: last.value_end, with: ", " + member)
+    return appended(text: text, c: c, item: member, newline: layout.newline_of(text))
 
 # The members of the inline table `c` whose keys go on below `rest`, a table
 # their dotted keys make, last first.
@@ -442,3 +431,26 @@ test "append_inside: to an empty array, one line, across lines with and without 
     assert append_shown(text: "v = [\n  1,\n  2 # two\n]", steps: [], item: "3") == "2:v = [\n  1,\n  2, # two\n  3\n]"
     assert append_shown(text: "v = {a = [1]}", steps: ["a"], item: "2") == "1:v = {a = [1, 2]}"
     assert append_shown(text: "v = {a = 1}", steps: [], item: "2") == "invalid: \"v\" is a table, not an array"
+
+test "container_at: an inline table across lines, with comments around its members and a comma after the last"
+    t = container_at(text: "v = { # c\n  a.b = 1, # one\n  # alone\n  c = 2,\n}", at: 4, shown: "v").must()
+    assert !t.array && t.members.len() == 2 && t.close == 46
+    assert t.members[0].keys == ["a", "b"] && t.members[0].start == 12 && t.members[0].comma == 19
+    assert t.members[1].keys == ["c"] && t.members[1].start == 39 && t.members[1].comma == 44
+
+test "set_inside: a member added to an inline table across lines, on a line of its own, its last comma kept, in the text's line ends"
+    assert set_shown(text: "v = {\n    a = 1,\n}", steps: ["b"], value: "2") == "v = {\n    a = 1,\n    b = 2,\n}"
+    assert set_shown(text: "v = {\n    a = 1 # one\n}", steps: ["b"], value: "2") == "v = {\n    a = 1, # one\n    b = 2\n}"
+    assert set_shown(text: "v = { a = 1, }", steps: ["b"], value: "2") == "v = { a = 1, b = 2, }"
+    assert set_shown(text: "v = {\r\n    a = 1,\r\n}", steps: ["b"], value: "2") == "v = {\r\n    a = 1,\r\n    b = 2,\r\n}"
+    assert set_shown(text: "v = {\n    a = 1, # one\n    b = 2, # two\n}", steps: ["b"], value: "3") == "v = {\n    a = 1, # one\n    b = 3, # two\n}"
+    dotted = "v = {\n    a.b = 1,\n    a.c = 2,\n    d = 3,\n}"
+    assert set_shown(text: dotted, steps: ["a"], value: "{x = 1}") == "v = {\n    d = 3,\n    a = {x = 1},\n}"
+
+test "remove_inside: a member of an inline table across lines taken out with its line and its comment, never another's"
+    lines = "v = {\n    a = 1, # one\n    b = 2, # two\n}"
+    assert remove_shown(text: lines, steps: ["a"]) == "v = {\n    b = 2, # two\n}"
+    assert remove_shown(text: lines, steps: ["b"]) == "v = {\n    a = 1, # one\n}"
+    assert remove_shown(text: "v = {\n    a = 1, # one\n    b = 2 # two\n}", steps: ["b"]) == "v = {\n    a = 1 # one\n}"
+    assert remove_shown(text: "v = {x=1\n,y=2}", steps: ["x"]) == "v = {y=2}"
+    assert remove_shown(text: "v = {x=1\n,y=2}", steps: ["y"]) == "v = {x=1\n}"

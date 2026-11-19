@@ -1,4 +1,4 @@
-# An arena of nodes written as a TOML 1.0.0 document that reads back as the
+# An arena of nodes written as a TOML 1.1.0 document that reads back as the
 # same values: a table's plain keys first, then each of its tables under a
 # header and each array of tables under `[[...]]`, and everything else inline.
 # A string is written in one line with its escapes; a float in the fewest
@@ -37,7 +37,9 @@ function path_text(path: [str]) -> str
     return parts.join(".")
 
 # `s` as a basic string of one line, its quotes, backslashes and control
-# characters escaped.
+# characters escaped: each by its short escape where TOML has one, `\e` for
+# ESC among them, and the others by `\x` and two hexadecimal digits, the forms
+# TOML 1.1.0 adds.
 function string_text(s: str) -> str
     pieces: [str] @= ["\""]
     start @= 0
@@ -60,8 +62,10 @@ function string_text(s: str) -> str
             escaped @ "\\b"
         else if b == 0x0c
             escaped @ "\\f"
+        else if b == 0x1b
+            escaped @ "\\e"
         else if b < 0x20 || b == 0x7f
-            escaped @ "\\u" + strings.pad_zeros(numbers.format_int(n: to_i64(b).must(), base: 16), 4)
+            escaped @ "\\x" + strings.pad_zeros(numbers.format_int(n: to_i64(b).must(), base: 16), 2)
 
         if escaped != ""
             pieces @ pieces.push(s.slice(from: start, to: k))
@@ -328,7 +332,7 @@ test "document_text: plain keys first, tables under headers, arrays of tables, a
 
 test "document_text: values inline, arrays mixing tables and values, strings escaped"
     assert round("a = [1, {x = 2}]\nb = [[1, 2], []]\n") == "a = [1, {x = 2}]\nb = [[1, 2], []]\n"
-    assert round("s = \"q\\\"b\\\\\\n\\t\\u0001é\"\n") == "s = \"q\\\"b\\\\\\n\\t\\u0001é\"\n"
+    assert round("s = \"q\\\"b\\\\\\n\\t\\u0001é\"\n") == "s = \"q\\\"b\\\\\\n\\t\\x01é\"\n"
     assert round("s = '''\nx\r\ny'''\n") == "s = \"x\\ny\"\n"
 
 test "document_text: numbers, booleans, and floats in the fewest digits"
@@ -357,8 +361,9 @@ test "inline_text: a date, a time and an offset outside their ranges refused"
     bad_clock.value.clock @ time.nanoseconds(86400000000000)
     assert inline_text([bad_clock], 0).is_err()
 
-test "string_text and key_text: the escapes, a DEL, and bare keys"
-    assert string_text("\u{8}\u{c}\u{7f}") == "\"\\b\\f\\u007f\""
+test "string_text and key_text: the escapes, ESC as TOML 1.1.0 writes it, a DEL, the last control character, and bare keys"
+    assert string_text("\u{8}\u{c}\u{7f}") == "\"\\b\\f\\x7f\""
+    assert string_text("\u{1b}[0m\u{1f}") == "\"\\e[0m\\x1f\""
     assert key_text("a-b_9") == "a-b_9"
     assert key_text("a.b") == "\"a.b\""
 

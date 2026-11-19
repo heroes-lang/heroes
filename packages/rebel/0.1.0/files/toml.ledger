@@ -1,20 +1,102 @@
-# The ledger of `toml`: what TOML 1.0.0 (toml.io) asks of a reader and what
+# The ledger of `toml`: what TOML 1.1.0 (toml.io) asks of a reader and what
 # Python's `tomllib` (3.15) lets a program do, one block per capability, and
 # what Rebel answers. Neither Go's nor Rust's standard library reads TOML, so
 # their lines are `-` in every block; Python's reads and does not write. The
 # list is this machine's, 2026-11-16: `dir(tomllib)`,
 # `dir(tomllib.TOMLDecodeError)`, the signatures `inspect.signature` prints,
 # and an instance's attributes. Every expected value of the package's tests
-# that tomllib answers was observed from it the same day; where 3.15's
-# tomllib reads TOML 1.1.0 and 1.0.0 refuses, 1.0.0 was followed, and the note
-# says so.
+# that tomllib answers was observed from it, tomllib 3.15.2 for the forms
+# TOML 1.1.0 adds (2026-11-19).
+#
+# TOML 1.1.0, not 1.0.0, since 2026-11-19: no mode reads or writes 1.0.0
+# alone. What 1.1.0 changes, read from the specification's text, its ABNF
+# and its changelog at the toml-lang/toml repository's tag `1.1.0`
+# (2025-12-18), each in the specification's words, then what `toml` does:
+#
+# 1. Inline tables across lines, with comments, and a comma after the last
+#    member. "Inline tables can have multiple key/value pairs on the same
+#    line, or they can be put on different lines. A terminating comma (also
+#    called trailing comma) is permitted after the last key/value pair."; the
+#    ABNF: `inline-table-keyvals = ws-comment-newline keyval
+#    ws-comment-newline [ inline-table-sep ]`. Read by `parse`, and edited in
+#    place by `set_value`, `remove_value` and `add_table`: a member added on
+#    a line of its own where the last stands on its own, its last comma kept;
+#    one removed with its line and its comment. `format` writes an inline
+#    table on one line. A line end inside a member, between its key, its `=`
+#    and its value, is still refused, as the ABNF and tomllib refuse it.
+# 2. The escape `\xHH`. "\xHH - unicode (U+00HH)"; "Any Unicode character
+#    may be escaped with the `\xHH`, `\uHHHH`, or `\UHHHHHHHH` forms." Read,
+#    hexadecimal digits of either case, `\x00` included; `format` writes
+#    every control character with no short escape as `\xHH`, where it wrote
+#    `\u00HH`.
+# 3. The escape `\e`. "\e - escape (U+001B)". Read; `format` writes ESC as
+#    `\e`.
+# 4. Seconds left out of a date and time with an offset. "One exception to
+#    RFC 3339 is permitted: seconds may be omitted, in which case `:00` will
+#    be assumed. The offset immediately follows the minutes." Read as `:00`.
+# 5. Seconds left out of a local date and time. "Seconds may be omitted, in
+#    which case `:00` will be assumed." Read as `:00`.
+# 6. Seconds left out of a local time. "Seconds may be omitted, in which case
+#    `:00` will be assumed." Read as `:00`. In 4 to 6 a fraction follows only
+#    seconds, `partial-time = time-hour ":" time-minute [ ":" time-second [
+#    time-secfrac ] ]`, so `07:32.5` is refused, as tomllib refuses it;
+#    `format` and `to_json` write every time with its seconds, the form both
+#    versions and RFC 3339 read.
+# 7. Comments. "Parsers must not modify keys or values, based on the
+#    presence (or contents) of a comment." Held already: a comment reaches no
+#    value.
+# 8. Unicode and UTF-8. "Specifically this means that a file _as a whole_
+#    must form a well-formed code-unit sequence. Otherwise, it must be
+#    rejected (preferably) or have ill-formed byte sequences replaced with
+#    U+FFFD"; "All strings must contain only Unicode characters." Held
+#    already: a `str` is UTF-8, `read_file` fails `not_text`, and an escape of
+#    no Unicode scalar value is refused.
+# 9. Where dotted keys define tables. "Any such table must have all its
+#    key/value pairs defined under the current `[table]` header, or in the
+#    root table if defined before all headers, or in one inline table." Held
+#    already: a dotted key adds no key, past the next header, to a table it
+#    defined (block toml/tables).
+# 10. Line ends in a multi-line literal string. "TOML parsers must normalize
+#    newlines in the same manner as multi-line basic strings." Held already:
+#    CR LF is read as LF in both. And "Carriage returns (U+000D) are only
+#    allowed as part of a newline sequence": a lone CR refused, as before.
+# 11. The precision of a fraction of a second. "Implementations are required
+#    to support at least millisecond precision. Additional digits of
+#    precision may be specified, but if they exceed the supported precision
+#    then the extra digits must be truncated, not rounded." Held already:
+#    nine digits kept, the rest cut.
+# 12. The sizes of numbers. "Implementations are free to support any integer
+#    size. It's recommended that at least 64-bit signed integers (from -2^63
+#    to 2^63-1) are accepted and handled losslessly. If an integer cannot be
+#    represented losslessly, an error must be thrown."; "Implementations are
+#    free to support any precision level. It's recommended that at least IEEE
+#    754 binary64 values are supported." Held already: an `i64`, failing
+#    `does_not_fit` past it, and an `f64`.
+# 13. DEL in a comment. The ABNF's `non-eol = %x09 / %x20-7E / non-ascii`,
+#    where 1.0.0's said `%x20-7F` and its text refused U+007F. Held already:
+#    DEL refused in a comment, as both texts say.
+# 14. A multi-line string as a key. "You cannot use multi-line strings to
+#    define quoted keys." Held already, 1.0.0's ABNF saying the same.
+#
+# Measured on 2026-11-19 with toml-test (BurntSushi/toml-test at 96fd0884,
+# its own runner built from it), a decoder and an encoder built on this
+# package in the scratch folder, `-toml 1.1.0`: valid 218 passed and 0
+# failed, invalid 502 and 0, the encoder 218 and 0; before this change the
+# same decoder read valid 207 and 11 failed, invalid 502 and 0. Under
+# `-toml 1.0.0` valid 208 and 0, the encoder 208 and 0, and invalid 500 and
+# 9: the nine cases 1.0.0 refuses and 1.1.0 accepts, the flips, which read
+# 509 and 0 before: `invalid/datetime/no-secs`, `invalid/local-datetime/no-secs`,
+# `invalid/local-time/no-secs`, `invalid/string/basic-byte-escapes`,
+# `invalid/inline-table/trailing-comma` and `invalid/inline-table/linebreak-01`
+# to `-04`. Every valid 1.1.0 case, read by `parse` and written by `format`,
+# reads back in tomllib 3.15.2 as tomllib reads the case itself: 218 of 218.
 
 capability toml/parse  a TOML text read into a tree of values a program matches on
   heroes  toml.parse, toml.Value
   go      -
   rust    -
   python  tomllib.loads, dict, list, str, int, float, bool, datetime.datetime, datetime.date, datetime.time
-  note    a document is a `table`; its members keep the order they were defined in, as a Python dict does; ten cases, one per kind TOML 1.0.0 names
+  note    a document is a `table`; its members keep the order they were defined in, as a Python dict does; ten cases, one per kind TOML names
 
 capability toml/load  a TOML file read
   heroes  built-in read_file, toml.parse
@@ -28,7 +110,7 @@ capability toml/strings  the four forms of string and their escapes
   go      -
   rust    -
   python  tomllib.loads
-  note    basic, literal, and each across lines, up to two quotes before the closing three, a backslash ending a line; CR LF inside a string read as LF, as tomllib reads it. `\x41` and `\e` are TOML 1.1's and refused, where tomllib reads them; a control character, a lone CR and an escape of no Unicode scalar value are refused as both refuse them
+  note    basic, literal, and each across lines, up to two quotes before the closing three, a backslash ending a line; CR LF inside a string read as LF, as tomllib reads it. `\e` and `\xHH`, TOML 1.1.0's, read as tomllib reads them, `\x00` and `\xE9` included, and `\E`, `\X41` and `\x4` refused as it refuses them (refused here until 2026-11-19, 1.0.0 then followed); a control character, a lone CR and an escape of no Unicode scalar value are refused as both refuse them
 
 capability toml/integers  integers in decimal, hexadecimal, octal and binary, with underscores
   heroes  toml.parse, toml.DOES_NOT_FIT
@@ -56,7 +138,7 @@ capability toml/dates  dates and times in their four forms, as `time` values
   go      -
   rust    -
   python  datetime.datetime, datetime.date, datetime.time, datetime.timezone
-  note    a date and time with an offset is held as written, with its offset in minutes, so that every year from 0 to 9999 is held; a fraction keeps nine digits, the rest cut, where tomllib keeps six. A time with no seconds is TOML 1.1's and refused, where tomllib reads it; a second of 60 is refused, as tomllib refuses it, `time` having no leap second; the year 0 is read, as RFC 3339 allows, where tomllib refuses it for Python's calendar
+  note    a date and time with an offset is held as written, with its offset in minutes, so that every year from 0 to 9999 is held; a fraction keeps nine digits, the rest cut, where tomllib keeps six. A time with no seconds, TOML 1.1.0's, in the three forms that hold a time, is read as `:00`, as tomllib reads it (refused here until 2026-11-19), and a fraction with no seconds before it refused as tomllib refuses it; a second of 60 is refused, as tomllib refuses it, `time` having no leap second; the year 0 is read, as RFC 3339 allows, where tomllib refuses it for Python's calendar
 
 capability toml/instant  the instant a date and time with an offset names
   heroes  toml.instant_of
@@ -72,12 +154,12 @@ capability toml/tables  tables, arrays of tables, dotted keys and inline tables,
   python  tomllib.loads
   note    a header names a table once, a super-table may follow its child, a dotted key adds no key to a table a header defined nor, past the next header, to one it defined itself, and an inline table or an array written whole takes nothing more: each refused as tomllib refuses it, the message naming the table's whole path
 
-capability toml/inline-tables-1.1  an inline table across lines, or with a comma before its end
-  heroes  refused: TOML 1.0.0 keeps an inline table on one line with no comma before its end; both are TOML 1.1's, which tomllib reads
+capability toml/inline-tables-1.1  an inline table across lines, with comments, or with a comma before its end
+  heroes  toml.parse, toml.set_value, toml.remove_value, toml.add_table
   go      -
   rust    -
   python  tomllib.loads
-  note    -
+  note    TOML 1.1.0's, read as tomllib reads them since 2026-11-19, refused until then; `{,}`, `{ x = 1,, }` and a line end between a key, its `=` and its value refused as tomllib refuses them. A document edited in place keeps such a table's layout: a member added on a line of its own where the last stands on its own, a last comma kept, one removed with its line and its comment; `format` writes an inline table on one line
 
 capability toml/errors  a text that is not TOML, with its line and column
   heroes  toml.INVALID
@@ -105,14 +187,14 @@ capability toml/write  a tree of values written as TOML text that reads back as 
   go      -
   rust    -
   python  -
-  note    tomllib writes nothing; each table's plain keys first, then its tables under headers and its arrays of tables under `[[...]]`, every other value inline, a float in the fewest digits that read back; a date, a time or an offset outside its range fails `invalid`
+  note    tomllib writes nothing; each table's plain keys first, then its tables under headers and its arrays of tables under `[[...]]`, every other value inline, a float in the fewest digits that read back; a date, a time or an offset outside its range fails `invalid`. TOML 1.1.0 since 2026-11-19: ESC written `\e` and the other control characters with no short escape `\xHH`, where `\u00HH` was written; a time with its seconds and an inline table on one line, which every version reads. Every valid case of toml-test's 1.1.0 list written back reads in tomllib 3.15.2 as the case does, 218 of 218
 
 capability toml/comments-kept  a document's comments and layout kept from read to write
   heroes  toml.Document, toml.parse_document, toml.format_document
   go      -
   rust    -
   python  -
-  note    refused until 2026-11-17, when the author's decision (queue 58) asked for it: the package manager writes `heroes.toml` with it. The yardsticks are Rust's crate toml_edit (77th crate; DocumentMut, its parse and Display) and PyPI's tomlkit (53rd; parse, dumps, TOMLDocument), neither in a standard library. A document is held as its text and every edit rewrites only the bytes it touches; measured on 2026-11-17 over every TOML file the repository tracks, 232 of which 222 are TOML 1.0.0 (the other 10 refused by `parse` and `parse_document` alike), each written back byte for byte, and over the 45 TOML 1.0.0 inputs of this package's own tests
+  note    refused until 2026-11-17, when the author's decision (queue 58) asked for it: the package manager writes `heroes.toml` with it. The yardsticks are Rust's crate toml_edit (77th crate; DocumentMut, its parse and Display) and PyPI's tomlkit (53rd; parse, dumps, TOMLDocument), neither in a standard library. A document is held as its text and every edit rewrites only the bytes it touches; measured on 2026-11-17 over every TOML file the repository tracks, 232 of which 222 are TOML 1.0.0 (the other 10 refused by `parse` and `parse_document` alike), each written back byte for byte, and over the 45 TOML 1.0.0 inputs of this package's own tests; measured again on 2026-11-19 under TOML 1.1.0, the same 232 files: 222 read and written back byte for byte, the 10 refused (catalogues the compiler's tests write wrong on purpose, which tomllib 3.15.2 refuses too), 497 leaves set to themselves (493 byte for byte), 497 removed, 676 keys added, no failure
 
 capability toml/edit-set  a value set by its path in a document edited in place, made where it is missing, every other byte kept
   heroes  toml.set_value, toml.add_table

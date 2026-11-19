@@ -142,7 +142,7 @@ function layer_at(layer: Layer, path: str) -> Layer?
 variant Format
     # JSON, RFC 8259, as `json.parse` reads it.
     json
-    # TOML 1.0.0, as `toml.parse` reads it; a date or a time becomes its RFC
+    # TOML 1.1.0, as `toml.parse` reads it; a date or a time becomes its RFC
     # 3339 text, as `toml.to_json` writes it.
     toml
     # YAML 1.2, one document, as `yaml.parse` reads it.

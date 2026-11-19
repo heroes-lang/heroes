@@ -1,9 +1,12 @@
-# TOML 1.0.0 read and written: a document of tables, keys and values, read
+# TOML 1.1.0 read and written: a document of tables, keys and values, read
 # into a tree a program matches on and written back as text that reads as
-# the same tree. Every rule of TOML 1.0.0 is held: a key or a table is
-# defined once, an inline table and an array written whole take nothing more,
-# and the forms TOML 1.1 adds (a time with no seconds, `\x` and `\e`, a line
-# end or a last comma inside an inline table) are refused.
+# the same tree. Every rule of TOML 1.1.0 is held: a key or a table is
+# defined once, an inline table and an array written whole take nothing more.
+# What TOML 1.1.0 adds to 1.0.0 is read: an inline table across lines, with
+# comments and a comma after its last member, the escapes `\e` and `\xHH`,
+# and a time with no seconds, read as `:00`. A string's ESC is written `\e`
+# and its other control characters `\xHH`, so a reader of TOML 1.0.0 alone
+# may refuse what `format` writes; there is no mode that writes 1.0.0.
 #
 # Its dates and times are `time` values: a date and a time with an offset is
 # held as written, with its offset, so that every year from 0 to 9999 is held,
@@ -15,7 +18,7 @@
 # blank lines, order and spacing with them, as a program needs that writes a
 # file a person also edits.
 #
-# Fails `invalid` where a text is not TOML 1.0.0, the message opening `line L,
+# Fails `invalid` where a text is not TOML 1.1.0, the message opening `line L,
 # column C:`, both from 1 and the column in characters; `does_not_fit` where an
 # integer is past an `i64`; `not_found` where a key looked up is not there;
 # `exists` where a table added is there already.
@@ -80,7 +83,7 @@ variant Value
 
 ## Codes and limits
 
-# The code of a text that is not TOML 1.0.0, of a value that is not of the
+# The code of a text that is not TOML 1.1.0, of a value that is not of the
 # kind asked for, and of a value no TOML writes.
 constant INVALID: str
     "invalid"
@@ -111,12 +114,12 @@ constant MAX_DEPTH: i64
 #
 # - `text`: the TOML text, LF or CR LF line ends; empty for an empty table.
 #
-# Fails `invalid` where `text` is not TOML 1.0.0, a key or a table is defined
+# Fails `invalid` where `text` is not TOML 1.1.0, a key or a table is defined
 # twice, a dotted key adds to a table a header defined, or anything adds to an
 # inline table or an array written whole, the message opening `line L, column
 # C:` and saying what was expected and what was found; where a date is no day
-# of the calendar, a time has no seconds or a second of 60; where a value is
-# nested deeper than `MAX_DEPTH`. Fails `does_not_fit` where an integer is
+# of the calendar or a time has a second of 60; where a value is nested
+# deeper than `MAX_DEPTH`. Fails `does_not_fit` where an integer is
 # past an `i64`. A byte order mark is refused, as Python's tomllib refuses it.
 #
 # A table of `n` keys costs time in `n` squared.
@@ -227,15 +230,17 @@ function instant_of(v: Value) -> time.Instant?
 
 ## Writing
 
-# `v`, a document, written as TOML 1.0.0 text that `parse` reads back as `v`.
+# `v`, a document, written as TOML 1.1.0 text that `parse` reads back as `v`.
 #
 # - `v`: a `table`, the document's root.
 #
 # Each table's plain keys come first, `key = value`, then each of its tables
 # under its header `[a.b]` and each array of tables, an array of tables alone
 # and not empty, under `[[a.b]]`; every other value is inline. A key is bare
-# where it may be, else quoted; a string is written in one line; a float in
-# the fewest digits that read back.
+# where it may be, else quoted; a string is written in one line, ESC as `\e`
+# and the other control characters as `\xHH`; a float in the fewest digits
+# that read back; a time with its seconds, which both versions of TOML read;
+# an inline table on one line.
 #
 # Fails `invalid` where `v` is not a table, is nested deeper than
 # `MAX_DEPTH`, or holds a date that is no day of the calendar from year 0 to
