@@ -1,0 +1,29 @@
+# Fixed 2026-11-19, defect 2522, lane-251 (panel 251's R1, route J with a
+# validated record): a handler of C's that copies its own buffer into one the program filled earlier at a frame that has returned, and jumps to that one: the stale record, then reaches the program's function through
+# twelve frames of its own (the header's shape 2,
+# `fixedbugs-2522-a-handler-of-cs-jumps-and-its-deep-callback.h`).
+# Symptom: the Heroes function ran inside the signal at exit 0: the thunk's
+# exact test sees a direct call from the delivery, and its walk climbs eight
+# frame records, never the twelve between it and the handler.
+# Cause: nothing saw the handler begin. The runtime now enters every handler a
+# program's C installs through its own wrapper (Linux) or trampoline (Darwin)
+# and keeps an entry while it runs; a jump drops the entries its target
+# leaves, by the record of the buffer it jumps to, which is trusted only
+# while the buffer still holds the bytes the C library saved. This jump lands
+# within the handler, so its entry stands and the function is refused.
+extern "fixedbugs-2522-a-handler-of-cs-jumps-and-its-deep-callback.h"
+    function jumps_install(sig: i32, how: i32, cb: (function(i64) -> i64)) -> i32
+    function jumps_raise(sig: i32) -> i32
+    function jumps_seen() -> i64
+
+extern "signal.h"
+    constant SIGUSR1: i32
+
+function answer(sig: i64) -> i64
+    print("answer ran for ", sig)
+    return sig * 2
+
+function main()
+    print("installed ", jumps_install(sig: SIGUSR1, how: 2, cb: answer))
+    print("raised ", jumps_raise(sig: SIGUSR1))
+    print("seen ", jumps_seen())

@@ -1,0 +1,26 @@
+# Fixed 2026-11-19, defect 2522, lane-251 (panel 251's R1; panel 249's
+# `kmiss`): a handler of C's with no frame record, its frame register holding
+# the signal's context when it calls the program's function
+# (`fixedbugs-2522-a-frameless-handler-whose-frame-register-holds-the-context.h`).
+# Symptom: the Heroes function ran inside the signal at exit 0, 20 runs of 20
+# on Linux arm64 and Darwin: the thunk is not called by the delivery, and its
+# walk reads the context's words, not frame records.
+# Cause: nothing saw the handler begin. Every handler a program's C installs
+# is entered through the runtime's wrapper (Linux) or trampoline (Darwin),
+# which keeps an entry while it runs, whatever the handler keeps of frames.
+extern "fixedbugs-2522-a-frameless-handler-whose-frame-register-holds-the-context.h"
+    function frameless_install(sig: i32, cb: (function(i64) -> i64)) -> i32
+    function frameless_raise(sig: i32) -> i32
+    function frameless_seen() -> i64
+
+extern "signal.h"
+    constant SIGUSR1: i32
+
+function answer(sig: i64) -> i64
+    print("answer ran for ", sig)
+    return sig * 2
+
+function main()
+    print("installed ", frameless_install(sig: SIGUSR1, cb: answer))
+    print("raised ", frameless_raise(sig: SIGUSR1))
+    print("seen ", frameless_seen())

@@ -1,0 +1,21 @@
+# A thread a library starts for the program, Rebel's `threads.spawn` and
+# `threads.wait` in their shape: the runtime's door called from this module,
+# and the thread's start a handle's life, which `wait` ends.
+use lives
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+record Thread
+    handle: i64
+    life: lives.Life
+
+function start(body: (function(i64) -> i64), arg: i64) -> Thread
+    handle = hero_thread_spawn(body: body, arg: arg)
+    return Thread(handle: handle, life: lives.begin())
+
+function wait(@thread: Thread) -> i64
+    answer = hero_thread_join(thread.handle)
+    lives.end(@thread.life)
+    return answer

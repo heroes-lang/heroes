@@ -1,0 +1,23 @@
+# Fixed 2026-11-19, defect 2552, lane-251 (panel 251's R2): a thread that
+# built a `str` and FINISHED before `main` returns, never joined.
+# Symptom: exit 0 in silence, 20 runs of 20 (the sitting's
+# `finished_unjoined`): its `str` died on its own thread, so the balance had
+# nothing of it to count, and a handle nobody joins was not told at all.
+# Cause: a slot finished and not yet joined was never written (`spawn.c` named
+# the state and no line wrote it). A thread's end now writes it, and the end of
+# `main` tells such a thread as finished, none of them still running.
+extern "unistd.h"
+    function usleep(useconds: u32) -> i32
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+function quick(n: i64) -> i64
+    word = "held by a thread " + n.to_str()
+    return word.len()
+
+function main()
+    handle = hero_thread_spawn(body: quick, arg: 7)
+    _ = usleep(useconds: 500000)
+    print("started ", handle, ", finished, never joined")

@@ -220,8 +220,14 @@ typedef struct {
      * for nothing and is what Windows records for an unsized thread. */
     size_t want;
     /* 0 free · 1 running · 2 finished and not yet joined. A joined slot goes
-     * back to 0, which is what makes the bound a concurrency bound. */
+     * back to 0, which is what makes the bound a concurrency bound. The end
+     * of `main` reads it before anything else (`hero_spawn_check_joined`). */
     int state;
+    /* The function the program handed the door, and the address the door was
+     * called from: what the end of `main` names a thread nobody joined by
+     * (panel 251's R2). Neither is ever called through or read as data. */
+    uintptr_t runs;
+    uintptr_t from;
 #if !defined(_WIN32)
     /* The signal mask of the thread that started this one, as it was before
      * the start held the signals off (defect 2496): what POSIX says a new
@@ -444,6 +450,16 @@ static void hero_spawn_enter(HeroSpawnSlot *slot) {
      * with it. The thread ends holding them, and a signal sent to the process
      * meanwhile goes to one that does not. */
     hero_spawn_hold(NULL);
+#endif
+    /* FINISHED, AND NOT YET JOINED (panel 251's R2): the program's function
+     * has returned, so the end of `main` tells this thread as finished rather
+     * than running. Under the table's lock, as every write of `state` is, and
+     * on POSIX with the signals held, since a handler that started a thread
+     * would wait for the lock it interrupted. */
+    HERO_SPAWN_TAKE();
+    slot->state = 2;
+    HERO_SPAWN_DROP();
+#if !defined(_WIN32)
     hero_spawn_drain(slot);
 #endif
     /* The alternate stack goes back to the OS with the thread that took it: a
@@ -474,8 +490,10 @@ static void *hero_spawn_trampoline(void *p) {
  * thread; more asks for at least that much (panel 184 R5). A thread the
  * operating system will not start is -1 with its own number in `*why`, and
  * the caller decides what to say: the unsized door panics as it always has,
- * the sized one hands the refusal back. */
-static int64_t hero_spawn_start(HeroThreadBody body, int64_t arg, size_t bytes, int kind, int64_t *why) {
+ * the sized one hands the refusal back. `runs` and `from` are the program's
+ * function and the door's caller, kept for the end of `main` to name. */
+static int64_t hero_spawn_start(HeroThreadBody body, int64_t arg, size_t bytes, int kind, int64_t *why, uintptr_t runs,
+                                 uintptr_t from) {
     if (body == NULL) hero_panic("a thread was started with no function to run");
 #if !defined(_WIN32)
     /* Held before the table's lock and given back after it (defect 2496): the
@@ -506,6 +524,8 @@ static int64_t hero_spawn_start(HeroThreadBody body, int64_t arg, size_t bytes, 
     hero_spawn_slots[at].result = 0;
     hero_spawn_slots[at].kind = kind;
     hero_spawn_slots[at].state = 1;
+    hero_spawn_slots[at].runs = runs;
+    hero_spawn_slots[at].from = from;
     hero_spawn_slots[at].want = bytes > hero_spawn_floor ? bytes : hero_spawn_floor;
     int refused = 0;
 #if defined(_WIN32)
@@ -589,7 +609,8 @@ static int64_t hero_spawn_start(HeroThreadBody body, int64_t arg, size_t bytes, 
 
 int64_t hero_thread_spawn(HeroThreadBody body, int64_t arg) {
     int64_t why = 0;
-    int64_t at = hero_spawn_start(body, arg, 0, HERO_SPAWN_I64, &why);
+    int64_t at = hero_spawn_start(body, arg, 0, HERO_SPAWN_I64, &why, (uintptr_t)body,
+                                  (uintptr_t)__builtin_return_address(0));
 
     if (at < 0) hero_panic("the operating system refused to start a thread");
     return at;
@@ -609,7 +630,8 @@ int64_t hero_thread_spawn(HeroThreadBody body, int64_t arg) {
  * -1, `*why` the operating system's own number. */
 int64_t hero_thread_spawn_sized(HeroThreadBody body, int64_t arg, int64_t bytes, int64_t *why) {
     if (bytes < 0) hero_panic("a thread was asked for a negative number of bytes of stack");
-    return hero_spawn_start(body, arg, (size_t)bytes, HERO_SPAWN_I64, why);
+    return hero_spawn_start(body, arg, (size_t)bytes, HERO_SPAWN_I64, why, (uintptr_t)body,
+                            (uintptr_t)__builtin_return_address(0));
 }
 
 /* Waiting is where the two undefined behaviours of C become named panics, and
@@ -662,3 +684,98 @@ int64_t hero_thread_join(int64_t handle) { return hero_spawn_join(handle, HERO_S
  * for it through an ordinary declaration instead of writing a guess into the
  * language. */
 int64_t hero_thread_limit(void) { return HERO_SPAWN_SLOTS; }
+
+/* A THREAD NOBODY JOINS IS THE PROGRAM'S MISTAKE, TOLD WHEN `main` RETURNS
+ * (panel 251's R2, ratified 2026-11-19; defect 2552; spec section 13, *a
+ * thread nobody joins ... aborts when `main` returns, saying how many*).
+ *
+ * The end of `main` asks this table before it reads any balance
+ * (`hero_runtime_check_leaks`, `parts/alloc.c`), because what a thread still
+ * running holds is no missing decref: a worker holding one `str` when `main`
+ * returned was told *"2 heap blocks still live at exit ... this is a compiler
+ * bug"*, 20 runs of 20, and one holding no block, or a lease it was about to
+ * end, was told nothing or a lease's words (the sitting's eleven programs).
+ * A slot running (1) or finished and not yet joined (2) is told, both: a
+ * finished thread's answer waits in its slot for a join that never came. So
+ * the gate's premise, that every thread was joined before it reads the
+ * counters (`parts/alloc.c`'s RELAXED paragraph), holds whenever a balance is
+ * read at all.
+ *
+ * WHAT IS NOT COUNTED, said: the runtime's own threads (the poller, a
+ * launch's watcher), which take no slot; and a program that ends by
+ * `exit(code:)`, which ends every thread with the process and skips the gate
+ * (`hero_os.h`'s `hero_exit`).
+ *
+ * WHAT IT SAYS: how many, how many of them still run, and for the first
+ * `HERO_SPAWN_NAMED` by slot, the handle the program was given, whether it
+ * runs, the function it was handed and the function that started it, each
+ * named by `parts/stack.c`'s reader where the platform has one (POSIX); on
+ * Windows the handle and the state alone. A thread a library starts for the
+ * program is named by the library's own function, the door's caller. Then
+ * `hero_abort`, as every report of the gate ends: C's `exit` would flush
+ * stdout and wait on the lock a worker blocked in a `print` holds, which is
+ * also why stdout is flushed here only where its lock can be had
+ * (`hero_stdout_before_report`, `parts/panic.c`). */
+#define HERO_SPAWN_NAMED 8
+
+#if !defined(_WIN32)
+/* The function whose bytes hold `at`, as a stack walk tells one; nothing where
+ * no symbol holds it. */
+static void hero_spawn_say_function(const char *before, uintptr_t at) {
+    const char *sym = at != 0 ? hero_stack_symbol(at) : NULL;
+    if (sym == NULL) return;
+    hero_stack_say(before);
+    if (hero_stack_is_heroes(sym)) {
+        hero_stack_say_heroes_name(sym);
+    } else {
+        hero_stack_say(sym);
+    }
+}
+#endif
+
+static void hero_spawn_check_joined(void) {
+    int64_t handle[HERO_SPAWN_NAMED];
+    int state[HERO_SPAWN_NAMED];
+    uintptr_t runs[HERO_SPAWN_NAMED];
+    uintptr_t from[HERO_SPAWN_NAMED];
+    int64_t left = 0;
+    int64_t running = 0;
+
+    HERO_SPAWN_TAKE();
+    for (int64_t i = 0; i < HERO_SPAWN_SLOTS; i += 1) {
+        const HeroSpawnSlot *slot = &hero_spawn_slots[i];
+
+        if (slot->state == 0) continue;
+        if (left < HERO_SPAWN_NAMED) {
+            handle[left] = i;
+            state[left] = slot->state;
+            runs[left] = slot->runs;
+            from[left] = slot->from;
+        }
+        left += 1;
+        if (slot->state == 1) running += 1;
+    }
+    HERO_SPAWN_DROP();
+    if (left == 0) return;
+
+    hero_stdout_before_report();
+    fprintf(stderr,
+            "panic: %lld thread(s) never joined when `main` returned, %lld of them still running — every thread a "
+            "program starts is joined before `main` returns, and this program is missing that many\n",
+            (long long)left, (long long)running);
+    for (int64_t k = 0; k < left && k < HERO_SPAWN_NAMED; k += 1) {
+        fprintf(stderr, "  thread %lld, %s", (long long)handle[k], state[k] == 1 ? "still running" : "finished");
+#if !defined(_WIN32)
+        hero_spawn_say_function(" ", runs[k]);
+        /* A return address names the instruction after the call; one byte
+         * back is still the caller's, as the stack walk asks it. */
+        hero_spawn_say_function(", started in ", from[k] != 0 ? from[k] - 1 : 0);
+#else
+        (void)runs[k];
+        (void)from[k];
+#endif
+        fputs("\n", stderr);
+    }
+    if (left > HERO_SPAWN_NAMED) fprintf(stderr, "  and %lld more\n", (long long)(left - HERO_SPAWN_NAMED));
+    hero_abort();
+}

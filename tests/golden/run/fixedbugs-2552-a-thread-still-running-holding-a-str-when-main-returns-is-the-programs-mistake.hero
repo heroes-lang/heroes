@@ -1,0 +1,26 @@
+# Fixed 2026-11-19, defect 2552, lane-251 (panel 251's R2, ratified that day):
+# a thread still running, holding a `str`, when `main` returns.
+# Symptom: `panic: 2 heap blocks still live at exit (a missing decref) — this
+# is a compiler bug`, exit 134, 20 runs of 20 (the sitting's `unjoined`): the
+# compiler emitted nothing wrong, the program returned without joining.
+# Cause: the end of `main` read the heap's balance while a thread the program
+# started still held blocks. It now asks the thread table first and reads no
+# balance while a thread runs or waits unjoined; one such thread is the
+# program's mistake, told with how many (spec § 13, *a thread nobody joins*).
+extern "unistd.h"
+    function usleep(useconds: u32) -> i32
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+function busy(n: i64) -> i64
+    word = "held by a thread " + n.to_str()
+    _ = usleep(useconds: 1000000)
+    _ = usleep(useconds: 1000000)
+    return word.len()
+
+function main()
+    handle = hero_thread_spawn(body: busy, arg: 7)
+    _ = usleep(useconds: 200000)
+    print("started ", handle, ", never joined, still running")

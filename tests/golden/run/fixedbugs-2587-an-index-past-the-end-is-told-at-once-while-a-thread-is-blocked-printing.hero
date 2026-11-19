@@ -1,0 +1,39 @@
+# Fixed 2026-11-19, defect 2587, lane-251 (panel 251's ffi-pragmatist,
+# reproduced by its critic): an index past the end on `main` while a worker
+# sits blocked printing into a pipe nobody reads.
+# Symptom: the panic never said its line, stderr empty past 8 s, 3 runs of 3,
+# the program hanging until the reader went and SIGPIPE ended it; with stdout
+# to `/dev/null` the same panic spoke at 0.22 s.
+# Cause: a report flushed stdout first, and the flush waited on the lock the
+# blocked worker holds inside its `write`. A report now flushes stdout only
+# where its lock can be had within a bound, so the panic is said at once and
+# the program aborts.
+# The program makes its own stdout the unread pipe (the header of defect
+# 2552's case), since the harness reads what it prints.
+extern "fixedbugs-2552-stdout-into-a-pipe-nobody-reads.h"
+    function unread_stdout() -> i64
+
+extern "unistd.h"
+    function usleep(useconds: u32) -> i32
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+function talk(n: i64) -> i64
+    i @= 0
+
+    while i < 1_000_000_000
+        print("worker ", i)
+        i @ i + 1
+
+    return n
+
+function main()
+    if unread_stdout() == 1
+        t = hero_thread_spawn(body: talk, arg: 7)
+        _ = usleep(useconds: 200000)
+        xs = [1, 2, 3]
+        at = 5 + t
+        print(xs[at])
+        _ = hero_thread_join(handle: t)

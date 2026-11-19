@@ -1175,7 +1175,10 @@ typedef struct {
     int (*variant_lookup)(void *dictionary, const char *key, const char *format, ...);
     void (*variant_unref)(void *value);
     void (*strfreev)(char **strings);
-    void (*free)(void *memory);
+    /* GLib's `g_free`, under the library's own name: a release of GLib's
+     * memory, never C's `free` (the net's `runtime` suite reads a call to
+     * `free` anywhere outside `parts/alloc.c` as a second allocation point). */
+    void (*g_free)(void *memory);
     void (*object_unref)(void *object);
     void (*error_free)(hero_keyring_gerror *error);
 } hero_keyring_libsecret;
@@ -1225,7 +1228,7 @@ static void hero_keyring_load(void) {
     HERO_KEYRING_FIND(variant_lookup, "g_variant_lookup");
     HERO_KEYRING_FIND(variant_unref, "g_variant_unref");
     HERO_KEYRING_FIND(strfreev, "g_strfreev");
-    HERO_KEYRING_FIND(free, "g_free");
+    HERO_KEYRING_FIND(g_free, "g_free");
     HERO_KEYRING_FIND(object_unref, "g_object_unref");
     HERO_KEYRING_FIND(error_free, "g_error_free");
     hero_keyring_found = ok;
@@ -1504,7 +1507,7 @@ static bool hero_keyring_linux_item(void *bus, const char *path, void *buffer, u
         if (hero_keyring_listable((const unsigned char *)account, length)) {
             fits = hero_keyring_list_one(buffer, count, used, (const unsigned char *)account, length);
         }
-        f->free(account);
+        f->g_free(account);
     }
     f->variant_unref(attributes);
     return fits;

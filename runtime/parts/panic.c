@@ -9,15 +9,20 @@
 
 /* parts/panic.c — stopping, and the three unconditional printers.
  *
- * Every abort in the language funnels through `hero_panic`: an out-of-range
- * index, integer overflow, a `.must()` on an error, a slice that splits a
- * character. It flushes stdout first, because the interesting half of a failing
- * program is what it printed before it stopped.
+ * Every abort in the language funnels through `hero_panic` or a report of
+ * its kind: an out-of-range index, integer overflow, a `.must()` on an error, a
+ * slice that splits a character. Each flushes stdout first, because the
+ * interesting half of a failing program is what it printed before it stopped,
+ * and since defect 2587 only where stdout's lock can be had
+ * (`hero_stdout_before_report`, below), so a thread blocked printing never
+ * holds a report back.
  *
  * design.md §4.14 (arithmetic edges abort), §4.20.
  */
 
 #include <signal.h>
+/* `clock_gettime`, for how long a report waits on stdout's lock (below). */
+#include <time.h>
 
 /* THE RUNTIME HAS SPOKEN, and this is the one bit that says so. Every death
  * the runtime initiates is a line on stderr followed by `hero_abort()`, which
@@ -55,8 +60,53 @@ static _Noreturn void hero_abort(void) {
     abort();
 }
 
-_Noreturn void hero_panic(const char *msg) {
+/* STDOUT IS FLUSHED BEFORE A REPORT ONLY WHERE ITS LOCK CAN BE HAD (panel 251's
+ * R2, ratified 2026-11-19; defect 2587). A report flushes what the program
+ * printed first, so a reader sees the output and the report in the order they
+ * happened. But a thread blocked writing into a pipe nobody reads holds
+ * stdout's lock inside that `write`, and an `fflush(stdout)` waits on the lock
+ * for as long as the reader does: with a worker printing into such a pipe, the
+ * end of `main`'s report and an index's panic both hung with stderr empty, 3
+ * runs of 3 past 8 s, ended only by SIGPIPE when the reader went (the sitting's
+ * `fp-quiet` and `fp-panic-blocked`). C's own `exit` waits the same way, which
+ * is why the reports end by `abort`.
+ *
+ * So the lock is asked with `ftrylockfile`, again and again for at most
+ * `HERO_REPORT_WAIT_NS`: a writer between two statements gives it back within
+ * microseconds, and a blocked one never does. Had, stdout is flushed and the
+ * lock is KEPT, since every caller ends the process and no other thread's line
+ * should follow the report; not had, the report goes out unflushed, and what
+ * stdout's buffer held is lost with the process, the price of saying the report
+ * at all. The lock counts its holder's takings, so a thread that holds it
+ * itself, a `print` statement of its own under way, takes it at once.
+ *
+ * WINDOWS' C LIBRARY HAS NO TRY-LOCK ON A STREAM (`_lock_file` waits), so its
+ * arm flushes as it always has, and a writer blocked there can still hold a
+ * report back: unrun on the box. */
+#define HERO_REPORT_WAIT_NS INT64_C(50000000)
+
+static void hero_stdout_before_report(void) {
+#if defined(_WIN32)
     fflush(stdout);
+#else
+    struct timespec from;
+    int timed = clock_gettime(CLOCK_MONOTONIC, &from) == 0;
+
+    for (;;) {
+        if (ftrylockfile(stdout) == 0) {
+            fflush(stdout);
+            return;
+        }
+        struct timespec now;
+        if (!timed || clock_gettime(CLOCK_MONOTONIC, &now) != 0) return;
+        int64_t waited = (int64_t)(now.tv_sec - from.tv_sec) * INT64_C(1000000000) + (now.tv_nsec - from.tv_nsec);
+        if (waited >= HERO_REPORT_WAIT_NS) return;
+    }
+#endif
+}
+
+_Noreturn void hero_panic(const char *msg) {
+    hero_stdout_before_report();
     fprintf(stderr, "panic: %s\n", msg);
     hero_abort();
 }
@@ -128,11 +178,63 @@ _Noreturn void hero_unreachable(void) {
  * kept for an older program being what the author's rule before 1.0.0 refuses
  * (panel 232's R8). */
 
-void hero_print_int(int64_t v) { printf("%lld", (long long)v); }
+/* A LINE IS WRITTEN WHOLE, WHATEVER ANOTHER THREAD PRINTS (defect 2582;
+ * adopted with panel 251's R2, ratified 2026-11-19). `print` is one printer per
+ * value and then `hero_print_end`'s newline (`selfhost/emit/printing.hero`),
+ * separate calls that each took stdout's lock and gave it back, so another
+ * thread's value could land between two of them: a worker's `sum 15` written
+ * inside `main`'s `main done` line, 21 runs of 200 on this Mac (the sitting's
+ * critic), 18 of 200 (its compiler-engineer).
+ *
+ * So the statement's first printer takes stdout's own lock, `flockfile` on
+ * POSIX and `_lock_file` on Windows, and `hero_print_end` gives it back after
+ * the newline: one statement's values and newline are one span of stdout. The
+ * lock counts its holder's takings and the C library's own writes take it
+ * too, so the printers' `printf`, `fputs` and `fwrite` inside the span take it
+ * again at once, and another thread's line waits for the newline. Nothing runs
+ * between two printers of one statement but the printers: every argument is
+ * computed before the first (`printing.hero` prints values already held), so
+ * no `print` can open inside another. A panic inside the span, a `str` refused
+ * by its printer, finds the lock already its own (`hero_stdout_before_report`).
+ * Its price, in instructions retired over 100,000 `print`s of three values
+ * into `/dev/null` (`/usr/bin/time -l`, best of five after the first, this Mac,
+ * 2026-11-19): 562,888,637 without the lock and 579,266,753 with it, about 160
+ * a `print`, 2.9 %; the sitting's compiler-engineer read about 209. */
+static _Thread_local bool hero_print_open = false;
+
+static void hero_print_begin(void) {
+    if (hero_print_open) return;
+#if defined(_WIN32)
+    _lock_file(stdout);
+#else
+    flockfile(stdout);
+#endif
+    hero_print_open = true;
+}
+
+void hero_print_int(int64_t v) {
+    hero_print_begin();
+    printf("%lld", (long long)v);
+}
 /* See `hero_uint_to_str`: `u64` above 2^63 prints negative through the signed one. */
-void hero_print_uint(uint64_t v) { printf("%llu", (unsigned long long)v); }
-void hero_print_bool(bool v) { fputs(v ? "true" : "false", stdout); }
-void hero_print_end(void) { putchar('\n'); }
+void hero_print_uint(uint64_t v) {
+    hero_print_begin();
+    printf("%llu", (unsigned long long)v);
+}
+void hero_print_bool(bool v) {
+    hero_print_begin();
+    fputs(v ? "true" : "false", stdout);
+}
+void hero_print_end(void) {
+    hero_print_begin();
+    putchar('\n');
+    hero_print_open = false;
+#if defined(_WIN32)
+    _unlock_file(stdout);
+#else
+    funlockfile(stdout);
+#endif
+}
 
 /* Which test `heroes test` asked for. In the runtime rather than the generated C
  * because CLAUDE.md §7 lets a translation unit include `heroes_runtime.h` and

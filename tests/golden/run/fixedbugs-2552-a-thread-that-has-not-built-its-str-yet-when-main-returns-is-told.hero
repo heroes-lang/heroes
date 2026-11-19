@@ -1,0 +1,23 @@
+# Fixed 2026-11-19, defect 2552, lane-251 (panel 251's R2; panel 252's critic,
+# `cr-late`): a worker that builds its `str` only after its first sleep, and a
+# `main` that returns at once.
+# Symptom: exit 0 in silence, 20 runs of 20: what the end of `main` read
+# depended on what the worker held at that instant, nothing yet.
+# Cause: a balance was asked where a thread was the question. The thread is
+# told as running, whatever it has built so far.
+extern "unistd.h"
+    function usleep(useconds: u32) -> i32
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+function busy(n: i64) -> i64
+    _ = usleep(useconds: 500000)
+    word = "held by a thread " + n.to_str()
+    _ = usleep(useconds: 1000000)
+    return word.len()
+
+function main()
+    handle = hero_thread_spawn(body: busy, arg: 7)
+    print("started ", handle, ", never joined, still running")

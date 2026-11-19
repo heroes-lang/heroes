@@ -1,0 +1,24 @@
+# Fixed 2026-11-19, defect 2552, lane-251 (panel 251's R2): a thread still
+# running when `main` returns that holds no heap block, only numbers.
+# Symptom: exit 0 in silence, 20 runs of 20 (the sitting's `unjoined_noheap`):
+# the end of `main` counted blocks, and nothing it counted told the thread was
+# there, so the same mistake was told or not by what the thread happened to
+# hold.
+# Cause: no question about threads was asked at all. The table is asked first,
+# so every thread nobody joins is told, whatever it holds.
+extern "unistd.h"
+    function usleep(useconds: u32) -> i32
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+function busy(n: i64) -> i64
+    _ = usleep(useconds: 1000000)
+    _ = usleep(useconds: 1000000)
+    return n + 1
+
+function main()
+    handle = hero_thread_spawn(body: busy, arg: 7)
+    _ = usleep(useconds: 200000)
+    print("started ", handle, ", never joined, still running")

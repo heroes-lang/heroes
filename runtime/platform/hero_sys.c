@@ -40,6 +40,10 @@
 
 #include "hero_sys.h"
 
+/* A file of `/proc` read whole and given back before the call returns, through
+ * `parts/alloc.c`, the single allocation point (design.md §4.20). */
+#include "hero_layer_alloc.h"
+
 #include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
@@ -1879,10 +1883,11 @@ int64_t hero_sys_network_counters(void *buffer, uint64_t count) {
  * bytes an interface, so some hundred thousand interfaces. */
 #define HERO_SYS_PROC_MOST ((size_t)16 << 20)
 
-/* The file at `path` read whole into memory `*text` the caller frees, its
- * length into `*length`; -1 with the kind set where it cannot be opened or
- * read, or holds more than `HERO_SYS_PROC_MOST`. A file of `/proc` tells no
- * size, so the room grows until a read finds the end. */
+/* The file at `path` read whole into memory `*text` the caller gives back
+ * with `hero_layer_free`, its length into `*length`; -1 with the kind set
+ * where it cannot be opened or read, or holds more than `HERO_SYS_PROC_MOST`.
+ * A file of `/proc` tells no size, so the room grows until a read finds the
+ * end. */
 static int64_t hero_sys_proc_file(const char *path, char **text, size_t *length) {
     int file = open(path, O_RDONLY | O_CLOEXEC);
     size_t room = 4096;
@@ -1894,7 +1899,7 @@ static int64_t hero_sys_proc_file(const char *path, char **text, size_t *length)
 
         return hero_sys_fail(hero_sys_kind_of(code), code);
     }
-    bytes = malloc(room);
+    bytes = hero_layer_alloc(room);
     if (bytes == NULL) {
         (void)close(file);
         return hero_sys_fail(HERO_SYS_LIMIT, ENOMEM);
@@ -1906,13 +1911,13 @@ static int64_t hero_sys_proc_file(const char *path, char **text, size_t *length)
             char *larger = NULL;
 
             if (room >= HERO_SYS_PROC_MOST) {
-                free(bytes);
+                hero_layer_free(bytes);
                 (void)close(file);
                 return hero_sys_fail(HERO_SYS_LIMIT, 0);
             }
-            larger = realloc(bytes, room * 2);
+            larger = hero_layer_grow(bytes, room * 2);
             if (larger == NULL) {
-                free(bytes);
+                hero_layer_free(bytes);
                 (void)close(file);
                 return hero_sys_fail(HERO_SYS_LIMIT, ENOMEM);
             }
@@ -1926,7 +1931,7 @@ static int64_t hero_sys_proc_file(const char *path, char **text, size_t *length)
         if (read_now < 0) {
             int code = errno;
 
-            free(bytes);
+            hero_layer_free(bytes);
             (void)close(file);
             return hero_sys_fail(hero_sys_kind_of(code), code);
         }
@@ -1997,14 +2002,14 @@ int64_t hero_sys_cpu_times(int64_t *user_us, int64_t *system_us, int64_t *idle_u
     }
     memset(columns, 0, sizeof columns);
     if (length < 4 || memcmp(text, "cpu ", 4) != 0) {
-        free(text);
+        hero_layer_free(text);
         return hero_sys_fail(HERO_SYS_OTHER, 0);
     }
     at = 4;
     while (read_columns < 8 && hero_sys_proc_number(text, length, &at, &columns[read_columns])) {
         read_columns += 1;
     }
-    free(text);
+    hero_layer_free(text);
     if (read_columns < 4 || __builtin_add_overflow(columns[0], columns[1], &user) || __builtin_add_overflow(columns[2], columns[5], &system) || __builtin_add_overflow(system, columns[6], &system)) {
         return hero_sys_fail(HERO_SYS_OTHER, 0);
     }
@@ -2074,7 +2079,7 @@ int64_t hero_sys_process_usage(int64_t pid, int64_t *resident, int64_t *virtual_
     /* After the `)`, a space, the state's one letter, then the numbers from
      * the 4th field on: `fields[k]` is field `k + 4`. */
     if (at == 0 || length - at < 3 || text[at] != ' ') {
-        free(text);
+        hero_layer_free(text);
         return hero_sys_fail(HERO_SYS_OTHER, 0);
     }
     at += 2;
@@ -2089,11 +2094,11 @@ int64_t hero_sys_process_usage(int64_t pid, int64_t *resident, int64_t *virtual_
                     continue;
                 }
             }
-            free(text);
+            hero_layer_free(text);
             return hero_sys_fail(HERO_SYS_OTHER, 0);
         }
     }
-    free(text);
+    hero_layer_free(text);
     /* `fields[10]` is utime, `[11]` stime, `[19]` vsize, `[20]` rss. */
     if (__builtin_mul_overflow(fields[20], (uint64_t)page, &resident_bytes) || resident_bytes > (uint64_t)INT64_MAX || fields[19] > (uint64_t)INT64_MAX) {
         return hero_sys_fail(HERO_SYS_OTHER, 0);
@@ -2145,7 +2150,7 @@ int64_t hero_sys_network_counters(void *buffer, uint64_t count) {
                 name_to += 1;
             }
             if (name_to == end || name_to == name_from) {
-                free(text);
+                hero_layer_free(text);
                 return hero_sys_fail(HERO_SYS_OTHER, 0);
             }
             {
@@ -2153,7 +2158,7 @@ int64_t hero_sys_network_counters(void *buffer, uint64_t count) {
 
                 for (int k = 0; k < 16; k += 1) {
                     if (!hero_sys_proc_number(text, end, &i, &columns[k])) {
-                        free(text);
+                        hero_layer_free(text);
                         return hero_sys_fail(HERO_SYS_OTHER, 0);
                     }
                 }
@@ -2171,7 +2176,7 @@ int64_t hero_sys_network_counters(void *buffer, uint64_t count) {
         }
         at = end + 1;
     }
-    free(text);
+    hero_layer_free(text);
     return hero_sys_filled(&f);
 }
 

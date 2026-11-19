@@ -21,6 +21,13 @@
 # allocator's guard cannot speak first. A thread of the program's own C
 # sends SIGUSR1 to `main` without pause, for at most 20 seconds, while
 # `main` lends a buffer to C.
+# Moved 2026-11-19, lane-251 (panel 251's R1; defect 2522): where a route
+# stands, the runtime enters the program's C handler through its own wrapper
+# (Linux) or trampoline (Darwin) and keeps an entry while the handler runs,
+# so the thunk refuses `on_signal` at its first line, before this guard is
+# reached, in words true of the program: C called it from inside a signal
+# handler. The expectation moved with it; the guard stays beneath, for a
+# handler no route sees (defect 2522's rows).
 
 extern "fixedbugs-2494-a-thread-of-cs-own-sends-the-signal-to-a-lender.h"
     function lender_install(called: (function(i32) -> ())) -> i32

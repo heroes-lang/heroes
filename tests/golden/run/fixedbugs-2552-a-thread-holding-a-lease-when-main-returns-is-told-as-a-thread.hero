@@ -1,0 +1,25 @@
+# Fixed 2026-11-19, defect 2552, lane-251 (panel 251's R2; panel 252's critic,
+# `cr-lease`): a worker still running when `main` returns that holds a lease
+# it ends after its sleep.
+# Symptom: `panic: 1 lease(s) never ended`, naming the place the worker took
+# it, 20 runs of 20: false of the program, whose worker ends its lease; the
+# mistake is the missing join, which the end of `main` does not wait for.
+# Cause: the lease balance was read while a thread ran. The thread is told
+# first, and no lease is counted while it stands.
+extern "unistd.h"
+    function usleep(useconds: u32) -> i32
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+function busy(n: i64) -> i64
+    x: cstr @= "held by a thread".lease()
+    _ = usleep(useconds: 1000000)
+    end_lease(@x)
+    return n
+
+function main()
+    handle = hero_thread_spawn(body: busy, arg: 7)
+    _ = usleep(useconds: 200000)
+    print("started ", handle, ", never joined, still running")

@@ -32,9 +32,10 @@
  * decref — this is a compiler bug"*. Counted as a `str`'s bytes, the answer
  * of a thread the program finished and never joined was told that way,
  * measured on this Mac on 2026-11-14, blaming the compiler for the program's
- * join. So a thread never joined drops its answer with the process, as an
- * `i64` thread's answer is dropped, and its slot is kept, so the drop is
- * bounded by the table's 256 (`parts/spawn.c`).
+ * join. A thread nobody joins is told at the end of `main` as the program's
+ * mistake since panel 251's R2, before any balance is read
+ * (`hero_spawn_check_joined`, `parts/spawn.c`), and its answer goes with the
+ * process.
  *
  * BUILT ON THE `i64` RUNG, so it has no platform arm of its own: the way in
  * crosses `hero_spawn_start` as the runtime's number for its own block, and
@@ -90,7 +91,8 @@ int64_t hero_thread_spawn_str(HeroThreadBodyStr body, HeroStr arg) {
     if (body == NULL) hero_panic("a thread was started with no function to run");
     HeroSpawnStrBox *in = hero_spawn_str_box(body, arg);
     int64_t why = 0;
-    int64_t at = hero_spawn_start(hero_spawn_str_run, (int64_t)(uintptr_t)in, 0, HERO_SPAWN_STR, &why);
+    int64_t at = hero_spawn_start(hero_spawn_str_run, (int64_t)(uintptr_t)in, 0, HERO_SPAWN_STR, &why, (uintptr_t)body,
+                                  (uintptr_t)__builtin_return_address(0));
 
     if (at < 0) {
         hero_free_raw(in);

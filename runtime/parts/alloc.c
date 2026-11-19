@@ -79,7 +79,10 @@
  * RELAXED on the way up and down, because the counter is read once, at exit,
  * after every thread has been joined: the join is what orders it, and a relaxed
  * read-modify-write still cannot lose an increment. The gate below reads the
- * plain field, which on an `_Atomic` is a sequentially consistent load. */
+ * plain field, which on an `_Atomic` is a sequentially consistent load. That
+ * every thread has been joined is asked, not assumed, since panel 251's R2: a
+ * thread the program started and never joined ends the program before any
+ * counter is read (`hero_spawn_check_joined`, `parts/spawn.c`). */
 
 /* live heap-block balance: the leak detector that works on this platform */
 static _Atomic int64_t hero_live_blocks = 0;
@@ -246,7 +249,7 @@ int64_t hero_runtime_live(void) { return hero_live_blocks; }
  * shipped goldens went red on a message that was right. Last, the sentence a
  * case asserts is contiguous and the address a reader needs is still here. */
 static void hero_handle_report_stray(size_t strays, const void *first_stray, const HeroPlace *site) {
-    fflush(stdout);
+    hero_stdout_before_report();
     fprintf(stderr, "panic: %llu C handle(s) given back that were never taken — "
                     "the set of live handles did not hold that address when a "
                     "call that ends or transfers it ran. Three things do this: "
@@ -270,7 +273,7 @@ static void hero_handle_report_stray(size_t strays, const void *first_stray, con
  * of ABI 24 came after C had already freed twice (the landing review,
  * 2026-09-24). Panel 176 ruled it a message and a shim, not a word. */
 static void hero_handle_report_twice_in_one_call(const void *h, size_t held, const HeroPlace *site) {
-    fflush(stdout);
+    hero_stdout_before_report();
     fprintf(stderr, "panic: one call takes the same C handle at two consuming positions, "
                     "and the handle holds %llu reference(s) — the library takes one "
                     "reference where the binding says it takes two, as OpenSSL's "
@@ -304,10 +307,15 @@ static int64_t hero_dir_names_held_at_exit(void);
 static int64_t hero_dir_blocks_held_at_exit(void);
 
 void hero_runtime_check_leaks(void) {
+    /* THE THREADS FIRST (panel 251's R2): no balance below is read while a
+     * thread the program started runs or waits unjoined, since what it holds
+     * is no missing decref; one such thread is the program's mistake, told by
+     * `parts/spawn.c` with how many, and the program aborts there. */
+    hero_spawn_check_joined();
     hero_lend_audit_given("found when the program ended");
     int64_t blocks = hero_live_blocks;
     if (blocks != 0) {
-        fflush(stdout);
+        hero_stdout_before_report();
         fprintf(stderr, "panic: %lld heap blocks still live at exit "
                         "(a missing decref) — this is a compiler bug\n",
                 (long long)blocks);
@@ -327,7 +335,7 @@ void hero_runtime_check_leaks(void) {
         int64_t names = hero_dir_names_held_at_exit();
         int64_t listing = names + hero_dir_blocks_held_at_exit();
         int64_t rest = scratch - words - variables - folders - listing;
-        fflush(stdout);
+        hero_stdout_before_report();
         if (words > 0) {
             fprintf(stderr, "panic: a launch's argument list still holds %lld word(s) at exit — "
                             "`hero_run_arg` keeps each word until `hero_run_reset()` gives the list "
@@ -367,7 +375,7 @@ void hero_runtime_check_leaks(void) {
     if (held != 0) {
         HeroPlaces taken = {.used = 0};
         hero_lease_places(&taken);
-        fflush(stdout);
+        hero_stdout_before_report();
         fprintf(stderr, "panic: %lld lease(s) never ended — every `.lease()` owes "
                         "one `end_lease`, and this program is missing that "
                         "many\n",
@@ -477,7 +485,7 @@ void hero_runtime_check_leaks(void) {
         const char *began = doors == 0      ? "a mark began, `acquires` or `retains`,"
                             : doors >= live ? "a door of the runtime began"
                                             : "a mark began, `acquires` or `retains`, or a door of the runtime began,";
-        fflush(stdout);
+        hero_stdout_before_report();
         fprintf(stderr, "panic: %llu C handle(s) never given back — every life %s owes one "
                         "release, and this program is missing that many. The first is at %p\n",
                 (unsigned long long)live, began, first_live);
@@ -1037,7 +1045,7 @@ static int hero_dead_holds_locked(const void *h) {
  * a runtime abort can name is the C's, not the author's. The address goes
  * last, for the stray report's reason. */
 static void hero_handle_report_poisoned(const char *where, const HeroPlace *site) {
-    fflush(stdout);
+    hero_stdout_before_report();
     fprintf(stderr, "panic: a dead C handle reached %s: a call marked `consumes` or `transfers` "
                     "ended this handle's life and emptied the binding, field or element it "
                     "was read from, so the program is using a handle after giving it back. "
@@ -1049,7 +1057,7 @@ static void hero_handle_report_poisoned(const char *where, const HeroPlace *site
 }
 
 static void hero_handle_report_remembered(const char *where, const void *h, const HeroPlace *site) {
-    fflush(stdout);
+    hero_stdout_before_report();
     fprintf(stderr, "panic: a C handle reached %s at an address a call marked `consumes` or "
                     "`transfers` ended, and nothing has handed that address out since: a "
                     "copy made before the ending call, which C would read or free after "
@@ -1115,7 +1123,7 @@ void hero_handle_eq_from(const HeroPlace *site) { hero_handle_eq_where = site; }
 bool hero_handle_eq_at(const void *a, const void *b, const HeroPlace *site) {
     void *dead = atomic_load_explicit(&hero_handle_dead_page, memory_order_acquire);
     if (dead != NULL && (a == dead || b == dead)) {
-        fflush(stdout);
+        hero_stdout_before_report();
         fprintf(stderr, "panic: `==` read a dead C handle: a call marked `consumes` or `transfers` "
                         "ended its life and emptied the binding, field or element it was read "
                         "from, and a dead value holds no address to compare. Compare a handle "
@@ -1133,7 +1141,7 @@ bool hero_handle_eq(const void *a, const void *b) { return hero_handle_eq_at(a, 
  * like the stray, and it says what the two declarations say and nothing about
  * why they disagree. */
 static void hero_handle_report_crossed(const void *h, const char *owed, const char *by, const HeroPlace *site) {
-    fflush(stdout);
+    hero_stdout_before_report();
     fprintf(stderr, "panic: a C handle was given back to `%s`, and the mark that began its "
                     "life names `%s` — the set names the calls that may end this "
                     "handle's life, and `%s` is not one of them. The handle is at %p\n",
@@ -1294,7 +1302,7 @@ void hero_handle_kept(const void *h, uint64_t life) {
  * is refused here, and so is a real `BIO_new_fp(BIO_CLOSE)` over a `popen`
  * stream, which C would end with `fclose` and leave a child unwaited. */
 static void hero_handle_report_misdirected(const void *h, const char *owed, const char *into, const HeroPlace *site) {
-    fflush(stdout);
+    hero_stdout_before_report();
     fprintf(stderr, "panic: a C handle was handed into a value that will end it with `%s`, "
                     "and the mark that began its life names `%s` — the set names the "
                     "calls that may end this handle's life, and `%s` is not one of them. "
@@ -1326,7 +1334,7 @@ uint64_t hero_handle_transferring_at(const void *h, const char *into, const Hero
 uint64_t hero_handle_transferring(const void *h, const char *into) { return hero_handle_transferring_at(h, into, NULL); }
 
 static void hero_handle_report_joined_wrong(const void *h, const char *owed, const char *set, const HeroPlace *site) {
-    fflush(stdout);
+    hero_stdout_before_report();
     fprintf(stderr, "panic: a reference marked `retains %s` was taken to a C handle whose "
                     "life a mark owed to `%s` — the two name no releaser in common, so one "
                     "of the two releases the program now owes would end the other's life "

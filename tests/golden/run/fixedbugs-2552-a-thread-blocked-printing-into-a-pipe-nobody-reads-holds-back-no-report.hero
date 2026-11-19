@@ -1,0 +1,36 @@
+# Fixed 2026-11-19, defect 2552, lane-251 (panel 251's R2, the ffi-pragmatist's
+# `fp-quiet`): a worker printing without end into a pipe nobody reads, and a
+# `main` that returns without joining it.
+# Symptom: the program never ended and said nothing, stderr empty past 8 s,
+# 3 runs of 3, until the reader went and SIGPIPE ended it, under today's
+# runtime and under a first R alike: the worker sat blocked inside `write`
+# holding stdout's lock, and the end of `main` flushed stdout, waiting on that
+# lock for as long as the reader did.
+# Cause: the flush waited. The end of `main` now flushes stdout only where its
+# lock can be had within a bound, so the report is said and the program
+# aborts at once, the worker's unread lines lost with the process.
+# The program makes its own stdout the unread pipe (its header), since the
+# harness reads what it prints: nothing reaches the harness's stdout.
+extern "fixedbugs-2552-stdout-into-a-pipe-nobody-reads.h"
+    function unread_stdout() -> i64
+
+extern "unistd.h"
+    function usleep(useconds: u32) -> i32
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+function talk(n: i64) -> i64
+    i @= 0
+
+    while i < 1_000_000_000
+        print("worker ", i)
+        i @ i + 1
+
+    return n
+
+function main()
+    if unread_stdout() == 1
+        _ = hero_thread_spawn(body: talk, arg: 7)
+        _ = usleep(useconds: 300000)

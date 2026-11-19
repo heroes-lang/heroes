@@ -446,7 +446,7 @@ reads and never writes.
 `x: cstr @= s.lease()` is a COPY of the bytes that C may read for as long as the
 program says, and `end_lease(@x)` frees it and empties the cell. A lend and a
 lease name stand only as an argument of a call, nothing else writes a lease's
-cell, and a lease nobody ends, like a handle nobody consumes, aborts when
+cell, and a lease nobody ends, like a handle nobody consumes or a thread nobody joins, aborts when
 `main` returns, saying how many. No word says C frees what it is handed; one
 that frees a lease kills the process, naming the leases live. Bytes C owns come
 from its own allocator, with their disposer.
