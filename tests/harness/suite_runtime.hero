@@ -131,8 +131,13 @@ constant ALLOCATORS: [str]
 # `heroes_reserved_open.h` and `_close.h`, and `parts/lock.c`,
 # `parts/sha256.c`, `parts/symbols.c`, and panel 247's `parts/sigdoor.c` and
 # `parts/sigguard.c`, the newest.
+#
+# **48 -> 79 on 2026-11-19**, told by this suite's own `FLOOR` line on
+# `rebel-round` at 181555e9a, raised with defect 2588's repair: M-rebel-library's
+# platform layer, sixteen members and their headers, put the tree past a
+# quarter above 48.
 constant LEAST_FILES: i64
-    48
+    79
 
 # **3 -> 7 on 2026-09-13.** Four allocation sites had been added to the single
 # point since the floor was written, which is the single point doing its job —
@@ -147,8 +152,13 @@ constant LEAST_FILES: i64
 # `FLOOR` line: 13 calls, past a quarter above 10, the newest the `calloc`
 # of `hero_calloc_raw`, the zeroed record a bit-field's masks are found in
 # (defect 2354, lane b25-misc).
+#
+# **13 -> 17 on 2026-11-19**, told by this suite's own `FLOOR` line on
+# `rebel-round` at 181555e9a, raised with defect 2588's repair: the platform
+# layer's four doors, `hero_layer_alloc`, `_alloc_zero`, `_grow` and `_free`,
+# each calling the family once inside the single point.
 constant LEAST_AT_THE_POINT: i64
-    13
+    17
 
 constant LEAST_REFCOUNT: i64
     6
@@ -267,6 +277,88 @@ constant SHARED_BY_DECISION: [str]
         "runtime/platform/hero_net.c hero_net_up | whether `WSAStartup` has answered, Windows' alone, set once under `hero_net_lock` before the first socket and read under it; process-wide by Windows' own definition, since the sockets it starts are the process's"
         "runtime/platform/hero_net.c hero_net_rounds | Windows' alone: the rounds the poller has ended, read and written only under `hero_net_lock`, the lock's own state, as `hero_net_fresh` is. The poller counts a round once it has let go of every slot it held and closed every socket it was the last user of, and a close waits for the count to move before it answers (defect 2554); the close and the poller are two threads and the count is what passes between them, so a per-thread count would never move for the thread that waits"
         "runtime/platform/hero_net.c hero_net_round_ended | Windows' alone: the condition a close sleeps on, with `SleepConditionVariableSRW` over `hero_net_lock`, until the poller's round that holds its socket ends, the poller waking every sleeper as it counts the round (defect 2554). Being shared is what a condition variable IS, as it is what a lock is; the sleep lets the lock go while it waits, so it is never held across the poller's `WSAPoll`"
+        "runtime/platform/hero_crypto.c hero_crypto_slots | the platform layer's table of keys the program holds (M-rebel-library), shared on purpose and guarded by `hero_crypto_lock`, `hero_net_slots`'s shape one member over: a handle the program holds names a slot and the life it was issued for, and a key opened on one thread may be used and closed on another, so a per-thread table would answer `not open` for one the program holds; issuing a slot is a read-then-write over the free list, which no atomic makes single"
+        "runtime/platform/hero_crypto.c hero_crypto_fresh | how many slots have ever held a key, read and written only under `hero_crypto_lock`, the lock's own state, as `hero_net_fresh` is"
+        "runtime/platform/hero_crypto.c hero_crypto_given_back | the head of the slots given back, under `hero_crypto_lock`, the lock's own state; deliberately not `_Atomic` beside a locked table, on `hero_handle_live`'s reason"
+        "runtime/platform/hero_crypto.c hero_crypto_lock | the lock over the key table, one per platform arm, `pthread_mutex_t` on POSIX and `SRWLOCK` on Windows, both statically initialisable, `hero_handle_lock`'s two spellings. Being shared is what a lock IS, and the platform owns its safety"
+        "runtime/platform/hero_crypto.c hero_crypto_ssl | OpenSSL's functions on Linux, found by `dlsym` ONCE inside `pthread_once` (`hero_crypto_once`) and only read after it, `hero_kept_key`'s shape: a once-guard is the one shape where shared and safe are the same word, and the functions are the process's, the same on every thread"
+        "runtime/platform/hero_crypto.c hero_crypto_ssl_found | whether every one of those functions was found, written once inside the same `pthread_once` and only read after it, on the entry above's reason"
+        "runtime/platform/hero_crypto.c hero_crypto_once | the once-guard over finding those functions, `pthread_once_t`: being shared is its entire job and the platform owns its synchronisation, as `parts/alloc.c`'s `once`"
+        "runtime/platform/hero_crypto.c names | the library names `dlopen` is asked for, in order: an array of `const` pointers to `const` text, written by its initialiser and by nothing after it, so no thread can write it and there is nothing for this project to make safe. This sweep reads a `T *const` as mutable on purpose, the loud direction, so it is named here rather than passed in silence"
+        "runtime/platform/hero_disk.c hero_disk_maps | the platform layer's table of mapped files the program holds (M-rebel-library), shared on purpose and guarded by `hero_disk_maps_lock`, `hero_net_slots`'s shape one member over: a handle the program holds names a slot and the life it was issued for, and a map opened on one thread may be used and closed on another, so a per-thread table would answer `not open` for one the program holds; issuing a slot is a read-then-write over the free list, which no atomic makes single. A copy through a map never holds the lock: it marks its slot busy under it, copies outside it and lets the slot go under it, so a close meanwhile unmaps nothing under the copy"
+        "runtime/platform/hero_disk.c hero_disk_maps_fresh | how many slots have ever held a map, read and written only under `hero_disk_maps_lock`, the lock's own state, as `hero_net_fresh` is"
+        "runtime/platform/hero_disk.c hero_disk_maps_given_back | the head of the slots given back, under `hero_disk_maps_lock`, the lock's own state; deliberately not `_Atomic` beside a locked table, on `hero_handle_live`'s reason"
+        "runtime/platform/hero_disk.c hero_disk_maps_lock | the lock over the map table, one per platform arm, `pthread_mutex_t` on POSIX and `SRWLOCK` on Windows, both statically initialisable, `hero_handle_lock`'s two spellings. Being shared is what a lock IS, and the platform owns its safety"
+        "runtime/platform/hero_ipc.c hero_ipc_table | the table of listeners, channels and locks the program holds and its free list, one object under `hero_ipc_lock_of_table`, `hero_net_slots`'s shape: a handle names a slot and the life it was issued for, and one opened on one thread may be closed on another; issuing a slot is a read-then-write over the free list, which no atomic makes single"
+        "runtime/platform/hero_ipc.c hero_ipc_lock_of_table | the lock over that table, one per platform arm, `pthread_mutex_t` on POSIX and `SRWLOCK` on Windows, both statically initialisable, `hero_handle_lock`'s two spellings. Being shared is what a lock IS, and the platform owns its safety"
+        "runtime/platform/hero_ipc.c hero_ipc_winsock_once | the once-guard over `WSAStartup`, asked once for the process on Windows, `INIT_ONCE`: being shared is its entire job and the platform owns its synchronisation, as `parts/alloc.c`'s `once`"
+        "runtime/platform/hero_ipc.c hero_ipc_winsock_said | Windows' alone: what `WSAStartup` answered, written once inside `InitOnceExecuteOnce` and only read after it, `hero_kept_slot`'s shape; process-wide by Windows' own definition, since the sockets it starts are the process's"
+        "runtime/platform/hero_keyring.c hero_keyring_functions | libsecret's and GLib's functions on Linux, found by `dlsym` ONCE inside `pthread_once` (`hero_keyring_once`) and only read after it, `hero_kept_key`'s shape: a once-guard is the one shape where shared and safe are the same word, and the functions are the process's, the same on every thread"
+        "runtime/platform/hero_keyring.c hero_keyring_found | whether every one of those functions was found, written once inside the same `pthread_once` and only read after it, on the entry above's reason"
+        "runtime/platform/hero_keyring.c hero_keyring_once | the once-guard over finding those functions, `pthread_once_t`: being shared is its entire job and the platform owns its synchronisation, as `parts/alloc.c`'s `once`"
+        "runtime/platform/hero_keyring.c hero_keyring_lock | the lock every call of the Linux arm holds (ONE CALL AT A TIME, the member's own words), so the library's synchronous calls, each running a main loop of its own, never run side by side from two threads of the program. Being shared is what a lock IS; statically initialisable"
+        "runtime/platform/hero_net.c hero_net_hearers | the functions the layer's other members ask to be told of a stop by (`hero_net_when_stopped`), each place written once, from NULL to a function, under `hero_net_lock`, and read under it by `hero_net_nudge_all`; process-wide by nature, since the stop is the process's and is heard on whichever thread hears it"
+        "runtime/platform/hero_odbc.c hero_odbc_call | the driver manager's functions, found ONCE inside the member's once-guard (`hero_odbc_once`, `pthread_once` on POSIX and `InitOnceExecuteOnce` on Windows) and only read after it, `hero_kept_key`'s shape; the functions are the process's, the same on every thread"
+        "runtime/platform/hero_odbc.c hero_odbc_env | the ODBC environment, made once inside that once-guard and only read after it, on the entry above's reason: every connection the program makes is allocated from it, on whichever thread"
+        "runtime/platform/hero_odbc.c hero_odbc_loaded | whether the driver manager and its functions were found, written once inside that once-guard and only read after it, on the same reason"
+        "runtime/platform/hero_odbc.c hero_odbc_loaded_name | the name of the library that was loaded, written once inside that once-guard and only read after it, words every later call may say; the same reason"
+        "runtime/platform/hero_odbc.c hero_odbc_load_failure | why no driver manager was loaded, written once inside that once-guard and only read after it, words every later call says; the same reason"
+        "runtime/platform/hero_odbc.c hero_odbc_once | the once-guard over loading the driver manager, `pthread_once_t`: being shared is its entire job and the platform owns its synchronisation, as `parts/alloc.c`'s `once`, and `INIT_ONCE` on Windows"
+        "runtime/platform/hero_odbc.c hero_odbc_library | the driver manager's library, `dlopen`'s or `LoadLibraryExW`'s answer, written once inside that once-guard and only read after it, on the same reason"
+        "runtime/platform/hero_odbc.c names | the library names `dlopen` is asked for, in order: an array of `const` pointers to `const` text, written by its initialiser and by nothing after it, so no thread can write it and there is nothing for this project to make safe. This sweep reads a `T *const` as mutable on purpose, the loud direction, so it is named here rather than passed in silence"
+        "runtime/platform/hero_odbc.c hero_odbc_slots | the platform layer's table of connections and statements the program holds, both kinds in one table under one tag (M-rebel-library), shared on purpose and guarded by `hero_odbc_lock`, `hero_net_slots`'s shape one member over: a handle the program holds names a slot and the life it was issued for, and a connection or a statement opened on one thread may be used and closed on another, so a per-thread table would answer `not open` for one the program holds; issuing a slot is a read-then-write over the free list, which no atomic makes single"
+        "runtime/platform/hero_odbc.c hero_odbc_fresh | how many slots have ever held a connection or a statement, read and written only under `hero_odbc_lock`, the lock's own state, as `hero_net_fresh` is"
+        "runtime/platform/hero_odbc.c hero_odbc_given_back | the head of the slots given back, under `hero_odbc_lock`, the lock's own state; deliberately not `_Atomic` beside a locked table, on `hero_handle_live`'s reason"
+        "runtime/platform/hero_odbc.c hero_odbc_lock | the lock over that table, one per platform arm, `pthread_mutex_t` on POSIX and `SRWLOCK` on Windows, both statically initialisable, `hero_handle_lock`'s two spellings. Being shared is what a lock IS, and the platform owns its safety"
+        "runtime/platform/hero_poll.c hero_poll_sets | the platform layer's table of readiness sets the program holds (M-rebel-library), shared on purpose and guarded by `hero_poll_lock`, `hero_net_slots`'s shape one member over: a handle the program holds names a slot and the life it was issued for, and a set opened on one thread may be used and closed on another, so a per-thread table would answer `not open` for one the program holds; issuing a slot is a read-then-write over the free list, which no atomic makes single"
+        "runtime/platform/hero_poll.c hero_poll_entries | the entries of every set, each set owning the range from its `base`, read and written under `hero_poll_lock` alone, on the set table's reason above: an entry added on one thread is waited on by another"
+        "runtime/platform/hero_poll.c hero_poll_fresh | how many slots have ever held a set, read and written only under `hero_poll_lock`, the lock's own state, as `hero_net_fresh` is"
+        "runtime/platform/hero_poll.c hero_poll_given_back | the head of the slots given back, under `hero_poll_lock`, the lock's own state; deliberately not `_Atomic` beside a locked table, on `hero_handle_live`'s reason"
+        "runtime/platform/hero_poll.c hero_poll_up_done | the member's once, the stop's bell made and the hook asked, read and written under `hero_poll_lock` alone, the lock's own state"
+        "runtime/platform/hero_poll.c hero_poll_array | on the systems whose wait takes an array (`HERO_POLL_ARRAY`): what a wait hands the system, each set's part its own range. Filled under `hero_poll_lock`, handed to `poll` or `WSAPoll` by the one wait a set allows, which touches its own range alone, and read back under the lock; one array for the process because a set's range is its own, so a per-thread copy would be a second answer to one question"
+        "runtime/platform/hero_poll.c hero_poll_array_entry | the entry each place of that array stands for, beside it and on its reason: written under `hero_poll_lock` as the set's range is filled, read under it after the wait"
+        "runtime/platform/hero_poll.c hero_poll_lock | the lock over the set table, its entries and the array, one per platform arm, `pthread_mutex_t` on POSIX and `SRWLOCK` on Windows, both statically initialisable, `hero_handle_lock`'s two spellings. Being shared is what a lock IS, and the platform owns its safety"
+        "runtime/platform/hero_poll.c hero_poll_bell_at | Windows' alone: the address of the stop's bell, written once before the bell's socket is published by an atomic store and only read after a load sees it published, `hero_own_symbols`'s shape; process-wide, since the bell is the process's"
+        "runtime/platform/hero_proc.c hero_proc_table | the table of processes the program started, its free list and its count of released processes no thread waits for, one object under `hero_proc_lock`, `hero_net_slots`'s shape: a process started on one thread may be waited for or released on another, and issuing a slot is a read-then-write over the free list, which no atomic makes single"
+        "runtime/platform/hero_proc.c hero_proc_lock | the lock over that table, one per platform arm, `pthread_mutex_t` on POSIX and `SRWLOCK` on Windows, both statically initialisable, `hero_handle_lock`'s two spellings. Being shared is what a lock IS, and the platform owns its safety"
+        "runtime/platform/hero_stream.c hero_stream_slots | the platform layer's table of byte streams the program holds, the process's three standard ones first (M-rebel-library), shared on purpose and guarded by `hero_stream_lock`, `hero_net_slots`'s shape one member over: a handle the program holds names a slot and the life it was issued for, and a stream opened on one thread may be used and closed on another, so a per-thread table would answer `not open` for one the program holds; issuing a slot is a read-then-write over the free list, which no atomic makes single"
+        "runtime/platform/hero_stream.c hero_stream_fresh | how many slots have ever held a stream, the three standard ones from the start, read and written only under `hero_stream_lock`, the lock's own state, as `hero_net_fresh` is"
+        "runtime/platform/hero_stream.c hero_stream_given_back | the head of the slots given back, under `hero_stream_lock`, the lock's own state; deliberately not `_Atomic` beside a locked table, on `hero_handle_live`'s reason"
+        "runtime/platform/hero_stream.c hero_stream_lock | the lock over the stream table, one per platform arm, `pthread_mutex_t` on POSIX and `SRWLOCK` on Windows, both statically initialisable, `hero_handle_lock`'s two spellings. Being shared is what a lock IS, and the platform owns its safety"
+        "runtime/platform/hero_stream.c hero_stream_quiet_writers | on Darwin (`HERO_STREAM_MARKS`): how many writes to a standard stream are in flight, read and written under `hero_stream_lock` alone, so the last write out takes away the marks the first set; process-wide because the open file it marks is the process's"
+        "runtime/platform/hero_stream.c hero_stream_quiet_marked | the standard descriptors whose open file this member marked for those writes, a bit each, under `hero_stream_lock` alone, beside the count above and on its reason"
+        "runtime/platform/hero_term.c hero_term_ahead | the bytes read from the terminal and not yet handed out, read and written under `hero_term_reading` alone: the terminal is the process's, so a key read ahead on one thread is the next key of every thread"
+        "runtime/platform/hero_term.c hero_term_ahead_count | how many of those bytes stand, under `hero_term_reading`, that lock's own state"
+        "runtime/platform/hero_term.c hero_term_lock | the lock over the terminal's state, its mode and the signals the keys mode takes, one per platform arm, `pthread_mutex_t` on POSIX and `SRWLOCK` on Windows, both statically initialisable, `hero_handle_lock`'s two spellings. Being shared is what a lock IS, and the platform owns its safety"
+        "runtime/platform/hero_term.c hero_term_reading | the lock a read of keys holds, apart from `hero_term_lock` so a read waiting on the terminal never holds the mode's lock; one per platform arm, `pthread_mutex_t` and `SRWLOCK`, statically initialisable. Being shared is what a lock IS"
+        "runtime/platform/hero_term.c hero_term_looked | whether the terminal was looked for, read and written under `hero_term_lock` alone, the lock's own state"
+        "runtime/platform/hero_term.c hero_term_in | the terminal's input, found once under `hero_term_lock` and read under it, a descriptor on POSIX and a handle on Windows; process-wide, since the terminal is the process's"
+        "runtime/platform/hero_term.c hero_term_out | the terminal's output, beside the input and on its reason"
+        "runtime/platform/hero_term.c hero_term_saved | the terminal's state before the keys mode: on POSIX written before `hero_term_saved_fd` (an `_Atomic`) publishes it and never while it stands, so the signal handler that reads it after an atomic load reads it whole; on Windows the input's mode, under `hero_term_lock`. Process-wide, since the mode is the terminal's"
+        "runtime/platform/hero_term.c hero_term_keys | Windows' alone: whether the keys mode stands, under `hero_term_lock`, the lock's own state"
+        "runtime/platform/hero_term.c hero_term_high | Windows' alone: a high surrogate whose low half is the next record's, under `hero_term_reading`, since the next record may be read by another thread"
+        "runtime/platform/hero_term.c hero_term_turned | Windows' alone: the output consoles whose processing of sequences this member turned on, put back when the program ends, written and read under `hero_term_lock`; process-wide, since a console's mode is the process's"
+        "runtime/platform/hero_term.c hero_term_turned_mode | Windows' alone: each such console's mode before, beside it and on its reason"
+        "runtime/platform/hero_term.c hero_term_turned_count | Windows' alone: how many such consoles stand, under `hero_term_lock`, the lock's own state"
+        "runtime/platform/hero_term.c hero_term_took | which of the four signals the keys mode took where the program had left them to their default, read and written under `hero_term_lock`; process-wide by the kernel's own definition, `sigaction` being the process's, `hero_stack_prev_segv`'s reason"
+        "runtime/platform/hero_term.c hero_term_exit_set | whether the `atexit` function that puts the terminal back was registered, under `hero_term_lock`, the lock's own state; process-wide, as the end of the program is"
+        "runtime/platform/hero_tls.c hero_tls_lock | the lock over the listener table, one per platform arm, `pthread_mutex_t` on POSIX and `SRWLOCK` on Windows, both statically initialisable, `hero_handle_lock`'s two spellings. Being shared is what a lock IS, and the platform owns its safety"
+        "runtime/platform/hero_tls.c hero_tls_slots | the platform layer's table of TLS listeners the program holds (M-rebel-library), shared on purpose and guarded by `hero_tls_lock`, `hero_net_slots`'s shape one member over: a handle the program holds names a slot and the life it was issued for, and a listener opened on one thread may be used and closed on another, so a per-thread table would answer `not open` for one the program holds; issuing a slot is a read-then-write over the free list, which no atomic makes single"
+        "runtime/platform/hero_tls.c hero_tls_fresh | how many slots have ever held a listener, read and written only under `hero_tls_lock`, the lock's own state, as `hero_net_fresh` is"
+        "runtime/platform/hero_tls.c hero_tls_given_back | the head of the slots given back, under `hero_tls_lock`, the lock's own state; deliberately not `_Atomic` beside a locked table, on `hero_handle_live`'s reason"
+        "runtime/platform/hero_tls.c hero_tls_ssl | OpenSSL's functions on Linux, found by `dlsym` ONCE inside `pthread_once` (`hero_tls_once`) and only read after it, `hero_kept_key`'s shape: a once-guard is the one shape where shared and safe are the same word, and the functions are the process's, the same on every thread"
+        "runtime/platform/hero_tls.c hero_tls_ssl_found | whether every one of those functions was found, written once inside the same `pthread_once` and only read after it, on the entry above's reason"
+        "runtime/platform/hero_tls.c hero_tls_once | the once-guard over finding those functions, `pthread_once_t`: being shared is its entire job and the platform owns its synchronisation, as `parts/alloc.c`'s `once`"
+        "runtime/platform/hero_tls.c ssl_names | the library names `dlopen` is asked for, in order: an array of `const` pointers to `const` text, written by its initialiser and by nothing after it, so no thread can write it and there is nothing for this project to make safe. This sweep reads a `T *const` as mutable on purpose, the loud direction, so it is named here rather than passed in silence"
+        "runtime/platform/hero_tls.c crypto_names | the library names `dlopen` is asked for, in order: an array of `const` pointers to `const` text, written by its initialiser and by nothing after it, so no thread can write it and there is nothing for this project to make safe. This sweep reads a `T *const` as mutable on purpose, the loud direction, so it is named here rather than passed in silence"
+        "runtime/platform/hero_watch.c hero_watch_slots | the platform layer's table of folder watches the program holds (M-rebel-library), shared on purpose and guarded by `hero_watch_lock`, `hero_net_slots`'s shape one member over: a handle the program holds names a slot and the life it was issued for, and a watch opened on one thread may be used and closed on another, so a per-thread table would answer `not open` for one the program holds; issuing a slot is a read-then-write over the free list, which no atomic makes single. One lock, and no other member called under it (the member's own words)"
+        "runtime/platform/hero_watch.c hero_watch_fresh | how many slots have ever held a watch, read and written only under `hero_watch_lock`, the lock's own state, as `hero_net_fresh` is"
+        "runtime/platform/hero_watch.c hero_watch_given_back | the head of the slots given back, under `hero_watch_lock`, the lock's own state; deliberately not `_Atomic` beside a locked table, on `hero_handle_live`'s reason"
+        "runtime/platform/hero_watch.c hero_watch_stop_heard | whether the stop was heard by the hook, read and written under `hero_watch_lock` alone, the lock's own state; process-wide, since the stop is the process's"
+        "runtime/platform/hero_watch.c hero_watch_lock | the lock over the watch table and its queues, one per platform arm, `pthread_mutex_t` on POSIX and `SRWLOCK` on Windows, both statically initialisable, `hero_handle_lock`'s two spellings. Being shared is what a lock IS, and the platform owns its safety"
+        "runtime/platform/hero_watch.c hero_watch_cond | the condition every wait for a watch's events sleeps on over `hero_watch_lock`, woken by a broadcast; one per platform arm, `pthread_cond_t` and `CONDITION_VARIABLE`. Being shared is what a condition variable IS, as it is what a lock is"
+        "runtime/platform/hero_watch.c hero_watch_cond_once | the once-guard over giving that condition a clock that never goes back, on Linux, `pthread_once_t`: being shared is its entire job and the platform owns its synchronisation, as `parts/alloc.c`'s `once`"
+        "runtime/platform/hero_watch.c hero_watch_seen_tomb | on Darwin: a byte whose ADDRESS marks a slot of a watch's seen table emptied by a removal; its value is never read or written, only compared as an address, so there is nothing for any thread to race on"
         "runtime/parts/stack.c done | the once-flag over the PROCESS-wide half of the guard — the two dispositions on POSIX, the vectored handler on Windows — in each platform arm. The per-thread half moved out from under it at M-thread-stacks and is `_Thread_local`, so what is left here is genuinely the process's; `hero_args_set`'s callee, exactly like `os.c`'s pair above"
     ]
 
@@ -290,8 +382,13 @@ constant SHARED_BY_DECISION: [str]
 # rounds since 83 put their objects between calls, and feature 2295's
 # platform layer the five of `runtime/platform/hero_net.c` that took the tree
 # past a quarter above 83.
+#
+# **275 on 2026-11-19**, told by this suite's own `FLOOR` line on `rebel-round`
+# at 181555e9a, raised with defect 2588's repair: M-rebel-library's platform
+# layer put its tables, locks and once-found functions between calls, sixteen
+# members of them, the hundred that defect named among them.
 constant LEAST_SHARED_STATE: i64
-    109
+    275
 
 function run_all(scratch: str) -> report.Report?
     nothing: [str] = []
@@ -692,8 +789,11 @@ constant LAYER: str
 
 # A floor, `LEAST_FILES`' reason: a sweep that finds no member is green and
 # judged nothing. Two on 2026-11-12, `hero_net.c` and `hero_time.c`.
+# **Sixteen on 2026-11-19**, told by this suite's own `FLOOR` line on
+# `rebel-round` at 181555e9a and raised with defect 2588's repair:
+# M-rebel-library's members, `hero_crypto.c` to `hero_watch.c`.
 constant LEAST_LAYER_MEMBERS: i64
-    2
+    16
 
 function keep_layer(@r: report.Report, sources: [str])
     wrong: [str] @= []
