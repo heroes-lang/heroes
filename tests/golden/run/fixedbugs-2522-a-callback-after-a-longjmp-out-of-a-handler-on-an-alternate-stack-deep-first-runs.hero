@@ -1,0 +1,25 @@
+# Kept 2026-11-19, defect 2522, lane-251 (panel 251's R1; panel 249's depth
+# program how 1, onstack 1, deep-first): a handler of C's leaves by `longjmp` out
+# of itself, then the program's function is called with no signal running,
+# deeper and shallower than the abandoned handler
+# (`fixedbugs-2522-a-jump-out-of-a-handler-then-a-correct-callback.h`).
+# What it pins: a correct program runs. Route B' alone kept the abandoned
+# handler's entry and refused three of these twelve at `-O0`; route J drops
+# the entries a jump's target leaves, by its buffer's validated record.
+extern "fixedbugs-2522-a-jump-out-of-a-handler-then-a-correct-callback.h"
+    function depth_install(sig: i32, onstack: i32) -> i32
+    function depth_escape(sig: i32, how: i32) -> i32
+    function depth_deep(n: i32, cb: (function(i64) -> i64)) -> i64
+    function depth_shallow(cb: (function(i64) -> i64)) -> i64
+
+extern "signal.h"
+    constant SIGUSR1: i32
+
+function answer(n: i64) -> i64
+    return n + 1
+
+function main()
+    print("installed ", depth_install(sig: SIGUSR1, onstack: 1))
+    print("escaped ", depth_escape(sig: SIGUSR1, how: 1))
+    print("deep ", depth_deep(n: 32, cb: answer))
+    print("shallow ", depth_shallow(cb: answer))

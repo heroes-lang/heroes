@@ -46,10 +46,25 @@
  *      `pthread_atfork` list or `qsort`? Bounded by the thread's own stack,
  *      read once per thread as it is claimed, never inside a signal.
  *
+ * AND A FOURTH, ASKED WHERE A ROUTE STANDS (panel 251's R1, ratified
+ * 2026-11-19; defect 2522): is this thread inside a handler of C's that the
+ * runtime saw begin and has not seen end? On Linux this runtime wraps every
+ * handler a program's C installs and keeps the wrappers' frames
+ * (`parts/siginstall.c`); on Darwin it rewrites the pointers every image
+ * outside the shared cache calls `sigaction` and `signal` through, and the
+ * kernel enters every handler through its trampoline (`parts/rebind.c`). A
+ * handler left by a jump is told from one jumped within by the record of the
+ * jump's buffer, validated (`parts/sigjump.c` on Linux, `parts/rebind.c` on
+ * Darwin): a jump to a buffer with no trusted record keeps the entry, so a
+ * miss is a told refusal and never Heroes code inside a signal.
+ *
  * WHAT IT DOES NOT SEE, said, and `parts/alloc.c`'s guard (D) stays beneath it
- * for that (panel 247's R2 and R3): a handler whose frames keep no record (a
- * library built `-fomit-frame-pointer`), one more than HERO_SIGNAL_WALK frames
- * below the Heroes function (glibc's `qsort` of 10,000 values), and Windows,
+ * for that (panel 247's R2 and R3): where no route stands or a route's own
+ * residue lies (defect 2522's rows: a handler installed by a raw system call,
+ * by a `sigaction` a library reached by `dlsym`, or inside Darwin's shared
+ * cache), a handler whose frames keep no record (a library built
+ * `-fomit-frame-pointer`), one more than HERO_SIGNAL_WALK frames below the
+ * Heroes function (glibc's `qsort` of 10,000 values), and Windows,
  * where a console's Ctrl-C runs on a thread Windows makes, which
  * `parts/thread.c`'s guard refuses, and a fault's handler runs on the faulting
  * thread. A thread C made, which nothing claimed, is refused here too, in that
@@ -154,6 +169,14 @@ static _Noreturn void hero_signal_stop(const char *const *parts, size_t count) {
     _exit(134);
 }
 
+/* WHICH ROUTE STANDS (panel 251's R1): B' with J on Linux and every POSIX
+ * system but Darwin, D-rebind with J on Darwin, none on Windows. */
+#if defined(__APPLE__)
+#define HERO_SIG_REBIND 1
+#elif !defined(_WIN32)
+#define HERO_SIG_WRAPS 1
+#endif
+
 #if !defined(_WIN32)
 
 /* How many frame records above the thunk the walk reads. Eight reaches a
@@ -163,33 +186,63 @@ static _Noreturn void hero_signal_stop(const char *const *parts, size_t count) {
 #define HERO_SIGNAL_WALK 8
 
 /* The delivery's return address, for a plain handler and an `SA_SIGINFO` one,
- * 0 until learned; and whether it is: 0 not yet, 1 being learned, 2 learned. */
-static _Atomic uintptr_t hero_signal_returns[2];
+ * 0 until learned; and whether it is: 0 not yet, 1 being learned, 2 learned.
+ * Where B' stands, [2] and [3] are its wrapper's two calls of a program's
+ * handler, plain and `SA_SIGINFO`, which call it on the system's behalf: a
+ * Heroes function the program itself installed is called from there, and is
+ * told as the system's call, as it is where no wrapper stands. */
+static _Atomic uintptr_t hero_signal_returns[4];
 static _Atomic int hero_signal_state = 0;
+/* Which pair the probe running now learns: 0 the delivery's, 2 the wrapper's. */
+static _Atomic int hero_signal_probing = 0;
 
 static void hero_signal_probe_plain(int sig) {
     (void)sig;
-    atomic_store_explicit(&hero_signal_returns[0], (uintptr_t)__builtin_return_address(0), memory_order_relaxed);
+    int at = atomic_load_explicit(&hero_signal_probing, memory_order_relaxed);
+    atomic_store_explicit(&hero_signal_returns[at], (uintptr_t)__builtin_return_address(0), memory_order_relaxed);
 }
 
 static void hero_signal_probe_info(int sig, siginfo_t *info, void *context) {
     (void)sig;
     (void)info;
     (void)context;
-    atomic_store_explicit(&hero_signal_returns[1], (uintptr_t)__builtin_return_address(0), memory_order_relaxed);
+    int at = atomic_load_explicit(&hero_signal_probing, memory_order_relaxed);
+    atomic_store_explicit(&hero_signal_returns[at + 1], (uintptr_t)__builtin_return_address(0), memory_order_relaxed);
 }
 
-/* One probe: SIGURG to `probe` through the C library's own `sigaction`, never
- * through a definition of this runtime's (a runtime that defined it learned
- * its own wrapper's address and refused nothing: panel 247's critic), and the
- * action the program had put back. A thread-directed `raise` is delivered
- * before it returns. */
-static void hero_signal_probe(struct sigaction *probe) {
+typedef int (*HeroSignalInstall)(int, const struct sigaction *, struct sigaction *);
+
+#if defined(HERO_SIG_WRAPS)
+/* `parts/siginstall.c`, below: the C library's own `sigaction`. */
+static int hero_sig_real(int sig, const struct sigaction *act, struct sigaction *old);
+#endif
+
+/* One probe: SIGURG to `probe` through `install`, and the action the program
+ * had put back the same way. A thread-directed `raise` is delivered before it
+ * returns. The delivery's pair is learned through the C library's own
+ * `sigaction`, never through B''s definition (a runtime that learned only its
+ * own wrapper's address refused nothing: panel 247's critic); on Darwin the
+ * call reaches D-rebind's rewritten slot, so the delivery learned is its
+ * trampoline's, which enters every handler there. */
+static void hero_signal_probe(struct sigaction *probe, HeroSignalInstall install) {
     struct sigaction before;
     sigemptyset(&probe->sa_mask);
-    if (sigaction(SIGURG, probe, &before) != 0) return;
+    if (install(SIGURG, probe, &before) != 0) return;
     raise(SIGURG);
-    sigaction(SIGURG, &before, NULL);
+    install(SIGURG, &before, NULL);
+}
+
+/* Both kinds of handler probed through `install`, into the pair `at` names. */
+static void hero_signal_probe_both(HeroSignalInstall install, int at) {
+    atomic_store_explicit(&hero_signal_probing, at, memory_order_relaxed);
+    struct sigaction probe;
+    memset(&probe, 0, sizeof probe);
+    probe.sa_handler = hero_signal_probe_plain;
+    hero_signal_probe(&probe, install);
+    memset(&probe, 0, sizeof probe);
+    probe.sa_sigaction = hero_signal_probe_info;
+    probe.sa_flags = SA_SIGINFO;
+    hero_signal_probe(&probe, install);
 }
 
 /* LEARNED ONCE PER PROCESS, at the first crossing of a function into C (the
@@ -212,14 +265,12 @@ void hero_signal_learn(void) {
     sigemptyset(&urg);
     sigaddset(&urg, SIGURG);
     pthread_sigmask(SIG_UNBLOCK, &urg, &was);
-    struct sigaction probe;
-    memset(&probe, 0, sizeof probe);
-    probe.sa_handler = hero_signal_probe_plain;
-    hero_signal_probe(&probe);
-    memset(&probe, 0, sizeof probe);
-    probe.sa_sigaction = hero_signal_probe_info;
-    probe.sa_flags = SA_SIGINFO;
-    hero_signal_probe(&probe);
+#if defined(HERO_SIG_WRAPS)
+    hero_signal_probe_both(hero_sig_real, 0);
+    hero_signal_probe_both(sigaction, 2);
+#else
+    hero_signal_probe_both(sigaction, 0);
+#endif
     pthread_sigmask(SIG_SETMASK, &was, NULL);
     /* A probe the system refused learns nothing, and its kind is asked by the
      * other's address, the same on every leg measured; two refused leave the
@@ -254,12 +305,44 @@ void hero_signal_learn(void) {
  * thread-local of this runtime is touched there. One read of the slot, where
  * the record was one thread-local access (four of those cost a `qsort`
  * comparator 3.7 times D's instructions, the compiler-engineer). */
+#if defined(HERO_SIG_WRAPS)
+/* How many of B''s wrappers one thread may be inside at once; a deeper one
+ * runs its handler without an entry (`parts/siginstall.c`). */
+#define HERO_SIG_DEPTH 8
+
+/* How many save points' buffers J remembers per thread (`parts/sigjump.c`);
+ * a full record overwrites its oldest pair. */
+#define HERO_SIG_JUMPS 32
+#endif
+
 typedef struct {
     uintptr_t lo;
     uintptr_t hi;
+#if defined(HERO_SIG_WRAPS)
+    /* B': the frames of the wrappers this thread is inside, innermost last. */
+    uintptr_t entries[HERO_SIG_DEPTH];
+    int depth;
+    /* J: which buffer each save point filled, the frame of the call that
+     * filled it, the buffer's bytes as the C library left them (0 until read
+     * at this thread's next save point or jump), and how many bytes it holds;
+     * `jump_next` is the pair a full record overwrites next. */
+    uintptr_t jump_buf[HERO_SIG_JUMPS];
+    uintptr_t jump_frame[HERO_SIG_JUMPS];
+    uint64_t jump_print[HERO_SIG_JUMPS];
+    uint32_t jump_size[HERO_SIG_JUMPS];
+    unsigned jump_next;
+#endif
 } HeroSignalStack;
 
-static _Thread_local HeroSignalStack hero_signal_stack = {0, 0};
+static _Thread_local HeroSignalStack hero_signal_stack;
+
+#if defined(HERO_SIG_WRAPS)
+/* `parts/siginstall.c`, below: is a wrapper still running above `frame`? */
+static int hero_sig_inside(HeroSignalStack *own, uintptr_t frame);
+#elif defined(HERO_SIG_REBIND)
+/* `parts/rebind.c`, below: is this thread inside a trampolined handler? */
+static int hero_rebind_inside(void);
+#endif
 
 /* The key, made once by the first claim, `main`'s, before any thunk exists;
  * and whether it is: 0 not yet, 1 being made, 2 made. */
@@ -323,13 +406,21 @@ static _Noreturn void hero_signal_refuse(const char *what, int delivered) {
 void hero_callback_entered(const char *what, void *ret, void *frame) {
     uintptr_t plain = atomic_load_explicit(&hero_signal_returns[0], memory_order_acquire);
     uintptr_t info = atomic_load_explicit(&hero_signal_returns[1], memory_order_relaxed);
+    uintptr_t wrapped = atomic_load_explicit(&hero_signal_returns[2], memory_order_relaxed);
+    uintptr_t wrapped_info = atomic_load_explicit(&hero_signal_returns[3], memory_order_relaxed);
     uintptr_t back = (uintptr_t)ret;
     if (plain != 0 && (back == plain || back == info)) hero_signal_refuse(what, 1);
-    const HeroSignalStack *own = NULL;
+    if (wrapped != 0 && (back == wrapped || back == wrapped_info)) hero_signal_refuse(what, 1);
+    HeroSignalStack *own = NULL;
     if (atomic_load_explicit(&hero_signal_keyed, memory_order_acquire) == 2) {
         own = pthread_getspecific(atomic_load_explicit(&hero_signal_key, memory_order_relaxed));
         if (own == NULL) hero_thread_refuse(what);
     }
+#if defined(HERO_SIG_WRAPS)
+    if (hero_sig_inside(own, (uintptr_t)frame)) hero_signal_refuse(what, 0);
+#elif defined(HERO_SIG_REBIND)
+    if (hero_rebind_inside()) hero_signal_refuse(what, 0);
+#endif
     if (plain == 0 || own == NULL) return;
     uintptr_t lo = own->lo;
     uintptr_t hi = own->hi;
@@ -347,6 +438,7 @@ void hero_callback_entered(const char *what, void *ret, void *frame) {
         if (next <= fp || next > top || (next & (sizeof(uintptr_t) - 1)) != 0) return;
         uintptr_t above = ((const uintptr_t *)next)[1];
         if (above == plain || above == info) hero_signal_refuse(what, 0);
+        if (wrapped != 0 && (above == wrapped || above == wrapped_info)) hero_signal_refuse(what, 0);
         fp = next;
     }
 }

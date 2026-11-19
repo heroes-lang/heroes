@@ -1,0 +1,48 @@
+# Added 2026-11-19, defect 2522, lane-251 (panel 251's R1): defect 2494's
+# allocator case with its handler installed through the C library's own
+# `sigaction`, found by `dlsym`, which no route of the runtime sees (defect
+# 2522's row; the header says why on each platform). Where a route sees the
+# handler, the thunk refuses first (defect 2494's case of the same shape, its
+# expectation moved that day); here only the allocator's guard stands, as it
+# did before the routes, and it must still stop the program by name before
+# the allocator is entered twice (panel 247's R2). A thread of the program's
+# own C sends SIGUSR1 to `main` without pause, for at most 20 seconds, while
+# `main` builds and drops small arrays, so a signal lands inside the
+# allocator early. Neither side formats a number (defect 2494's case says
+# why). `main` prints its one line before the sender starts.
+
+extern "fixedbugs-2522-a-handler-installed-through-dlsym-in-a-storm.h"
+    function storm_install(called: (function(i32) -> ())) -> i32
+    function storm_start() -> i64
+    function storm_stop()
+
+# Builds an array and drops it, as any function a handler calls that keeps a
+# value does.
+function on_signal(sig: i32)
+    seen = [sig, sig, sig]
+    _ = seen.len()
+
+# A hundred thousand small arrays built into an array and dropped with it.
+function round(r: i64) -> i64
+    rows: [[i64]] @= []
+    i @= 0
+
+    while i < 100_000
+        rows @ rows.push([r, i])
+        i @ i + 1
+
+    return rows.len()
+
+function main()
+    _ = storm_install(called: on_signal)
+    print("starting a sender aimed at main")
+    started = storm_start()
+    total @= 0
+    r @= 0
+
+    while r < 50
+        total @ total + round(r)
+        r @ r + 1
+
+    storm_stop()
+    print("sender started ", started, ", built ", total, " rows, and no signal met the allocator")

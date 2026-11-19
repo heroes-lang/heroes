@@ -24,6 +24,13 @@
 # nothing said, the part the repair does not reach (12 runs of 200 on this
 # Mac with the storm's strings; 0 of 50 in Linux arm64, where it takes none).
 # `main` prints its one line before the sender starts, for stdio's own reason.
+# Moved 2026-11-19, lane-251 (panel 251's R1; defect 2522): where a route
+# stands, the runtime enters the program's C handler through its own wrapper
+# (Linux) or trampoline (Darwin) and keeps an entry while the handler runs,
+# so the thunk refuses `on_signal` at its first line, before this guard is
+# reached, in words true of the program: C called it from inside a signal
+# handler. The expectation moved with it; the guard stays beneath, for a
+# handler no route sees (defect 2522's rows).
 
 extern "fixedbugs-2494-a-thread-of-cs-own-sends-the-signal.h"
     function storm_install(called: (function(i32) -> ())) -> i32

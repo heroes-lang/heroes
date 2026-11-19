@@ -1,0 +1,44 @@
+# Added 2026-11-19, defect 2522, lane-251 (panel 251's R1): defect 2494's
+# lend-tracking case with its handler installed through the C library's own
+# `sigaction`, found by `dlsym`, which no route of the runtime sees (defect
+# 2522's row; the header says why). Where a route sees the handler, the thunk
+# refuses first (defect 2494's case of the same shape, its expectation moved
+# that day); here only the lend tracking's guard stands, as it did before the
+# routes, and it must still stop the program by name (panel 247's R2).
+
+extern "fixedbugs-2522-a-handler-installed-through-dlsym-in-a-storm-of-lends.h"
+    function lender_install(called: (function(i32) -> ())) -> i32
+    function lender_touch(@cell: i32) -> i32
+    function lender_fill(@buf: [u8] counted_by n lent, n: u64) -> i32
+    function lender_start() -> i64
+    function lender_stop()
+
+# Lends a local to C, as a handler's `write(@b)` does, and builds nothing.
+function on_signal(sig: i32)
+    cell: i32 @= sig
+    _ = lender_touch(@cell)
+
+# A hundred thousand buffers lent to C and given back.
+function round() -> i64
+    buf: [u8] @= []
+    i @= 0
+
+    while i < 100_000
+        _ = lender_fill(@buf, n: 8)
+        i @ i + 1
+
+    return i
+
+function main()
+    _ = lender_install(called: on_signal)
+    print("starting a sender aimed at main")
+    started = lender_start()
+    total @= 0
+    r @= 0
+
+    while r < 50
+        total @ total + round()
+        r @ r + 1
+
+    lender_stop()
+    print("sender started ", started, ", lent ", total, " buffers, and no signal met the lend tracking")
