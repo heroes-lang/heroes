@@ -1,0 +1,365 @@
+# Three instruments of the coherence review over Rebel's faces (M-rebel-
+# library's item 31), each a function over faces read as text
+# (`package_face.hero` reads one, as the core packages' cards do):
+#
+#   twins      **two public functions of two packages with the same name and
+#              the same signature**: the same type parameters, the same types
+#              in the same order with the same marks, and the same result,
+#              each type a face declares written qualified by its binding, so
+#              `cbor.Value` and `msgpack.Value` differ and `json.Value` written
+#              by `yaml` is `json`'s; the parameters' names are told, not
+#              compared, since a call names them only where two share a type
+#   prefixed   **a face whose functions share a prefix** (the smell
+#              `containers` showed before its split): a type the face declares
+#              names at least `PREFIX_LEAST` of its functions, as their first
+#              words or their last, `deque_push` or `add_complex`, a name that
+#              is only the type and a grammar suffix of § A3 (`plural_of`)
+#              left out, since that is the grammar's shape and not a group
+#   oversized  **a face past a size**: more than `SIZE_MOST` public functions
+#
+# Each threshold is a measurement, written beside it with its day. What each
+# finds is a candidate the review's readers judge: two answers to one question,
+# a structure that wants its own package, or a face a reader cannot hold.
+
+use <core>/strings as core_strings
+
+use package_face
+use strings
+
+# The fewest functions a declared type names before its face reads as holding
+# a structure of its own. **12, measured 2026-11-19**: `containers` before its
+# split (`86dd93d9e^`, 122 functions) held five structures whose names led
+# 36, 22, 18, 18 and 12 of them, the smallest `cache_`'s 12, and the split
+# that followed is the author's ruling that this many is a package's worth.
+# The same day the largest group of Rebel's 149 faces was `math`'s 30
+# `*_complex`, then `math/linear`'s `mat3` 17, `vec3` 16, `vec2` 15, `mat4`
+# 15, `big`'s `fraction` 14, `math/linear`'s `vec4` 13 and `big`'s `decimal`
+# 13, and below 12 `math/linear`'s `quat` 11.
+constant PREFIX_LEAST: i64
+    12
+
+# The most public functions a face holds before it is told. **90, measured
+# 2026-11-19** over Rebel's 149 faces, floors left out: their counts' quartiles
+# 13, 26 and 44, so Tukey's fence for an outlier, the third quartile and one
+# and a half times the spread between the quartiles, stands at 90.5; the
+# ninetieth percentile was 79, the ninety-fifth 101, the largest `math`'s 155,
+# and `containers` before its split held 122.
+constant SIZE_MOST: i64
+    90
+
+# The words § A3's grammar sets after a subject, which make a name of a type
+# and one of them its grammar's shape rather than a group: `plural_of`.
+constant GRAMMAR_SUFFIXES: [str]
+    [
+        "of"
+        "where"
+        "by"
+        "all"
+        "n"
+        "last"
+    ]
+
+# One function of a face, as the instruments compare it: the face's path, the
+# function's name, its signature with every type the face declares written
+# qualified, and its line as the face writes it.
+record Signed
+    face: str
+    name: str
+    signature: str
+    written: str
+    line: i64
+
+# A name two faces or more give one signature: the functions, in the order of
+# their faces.
+record Twins
+    name: str
+    signature: str
+    functions: [Signed]
+
+# The functions of one face a type it declares names, beyond `PREFIX_LEAST`.
+record Prefixed
+    face: str
+    type_name: str
+    names: [str]
+
+# A face past `SIZE_MOST`: its path and how many public functions it holds.
+record Oversized
+    face: str
+    count: i64
+
+# The types `face` declares, its records' and its variants' names.
+function declared(face: package_face.Face) -> [str]
+    out: [str] @= []
+
+    for shape in face.shapes
+        out @ out.push(shape.name)
+
+    for choice in face.choices
+        out @ out.push(choice.name)
+
+    return out
+
+# `ty` with every type of `local` written `<binding>.<Type>`, and every type
+# parameter of `generics` written by its place, `$0`, `$1`: a name that begins
+# with a capital and stands after no `.` is a type of the face where `local`
+# holds it.
+function qualified(ty: str, binding: str, local: [str], generics: [str]) -> str
+    out: [str] @= []
+    at: i64 @= 0
+
+    while at < ty.len()
+        if !word_byte(ty[at])
+            out @ out.push(ty.slice(from: at, to: at + 1))
+            at @ at + 1
+            continue
+        end: i64 @= at
+
+        while end < ty.len() && word_byte(ty[end])
+            end @ end + 1
+
+        word = ty.slice(from: at, to: end)
+        after_dot = at > 0 && ty[at - 1] == '.'
+        place = place_in(names: generics, name: word)
+
+        if !after_dot && place >= 0
+            out @ out.push("$" + place.to_str())
+        else if !after_dot && place_in(names: local, name: word) >= 0
+            out @ out.push(binding + "." + word)
+        else
+            out @ out.push(word)
+        at @ end
+
+    return out.join("")
+
+function place_in(names: [str], name: str) -> i64
+    for at in range(from: 0, to: names.len())
+        if names[at] == name
+            return at
+
+    return -1
+
+function word_byte(byte: u8) -> bool
+    return byte >= 'a' && byte <= 'z' || byte >= 'A' && byte <= 'Z' || byte >= '0' && byte <= '9' || byte == '_'
+
+# The type parameters a function's `<A, B>` names, in order.
+function generic_names(generics: str) -> [str]
+    out: [str] @= []
+
+    if generics.len() < 2
+        return out
+
+    for piece in strings.split_on(text: generics.slice(from: 1, to: generics.len() - 1), byte: ',')
+        out @ out.push(strings.trimmed(piece))
+
+    return out
+
+# The functions of a face as the instruments compare them, `text` its source.
+function signed_of(face: package_face.Face, text: str) -> [Signed]
+    local = declared(face)
+    rows = strings.lines(text)
+    out: [Signed] @= []
+
+    for f in face.callables
+        generics = generic_names(f.generics)
+        parts: [str] @= []
+
+        for p in f.params
+            mark = if p.mutable
+                "@"
+            else
+                ""
+
+            lent = if p.lent
+                " lent"
+            else
+                ""
+            parts @ parts.push(
+                mark + qualified(ty: p.ty, binding: face.binding, local: local, generics: generics) + lent
+            )
+
+        result = qualified(ty: f.result, binding: face.binding, local: local, generics: generics)
+        signature = "<" + generics.len().to_str() + ">(" + parts.join(", ") + ") -> " + result
+        out @ out.push(
+            Signed(face: face.path, name: f.name, signature: signature, written: f.written, line: line_of(rows: rows, written: "function " + f.written))
+        )
+
+    return out
+
+function line_of(rows: [str], written: str) -> i64
+    for at in range(from: 0, to: rows.len())
+        if rows[at] == written
+            return at + 1
+
+    return 0
+
+# Every name two faces or more give one signature, in the order of the names
+# and then of the signatures; `signed` holds every face's functions.
+function twins(signed: [Signed]) -> [Twins]
+    groups: {str: [Signed]} @= {}
+    order: [str] @= []
+
+    for one in signed
+        k = one.name + " " + one.signature
+        held = groups[k]
+
+        if held.is_err()
+            order @ order.push(k)
+            groups[k] @ [one]
+        else
+            groups[k] @ held.must().push(one)
+
+    out: [Twins] @= []
+
+    for k in order.sort()
+        held = groups[k].must()
+
+        if faces_in(held).len() > 1
+            out @ out.push(Twins(name: held[0].name, signature: held[0].signature, functions: held))
+
+    return out
+
+function faces_in(functions: [Signed]) -> [str]
+    seen: {str: bool} @= {}
+    out: [str] @= []
+
+    for one in functions
+        if seen[one.face].is_err()
+            seen[one.face] @ true
+            out @ out.push(one.face)
+
+    return out.sort()
+
+# What the review keeps a pair of twins under: the name and its faces.
+function twins_key(t: Twins) -> str
+    return t.name + " in " + faces_in(t.functions).join(", ")
+
+function twins_told(t: Twins) -> str
+    lines: [str] @= ["`" + t.name + "` has one signature, " + t.signature + ", in each of:"]
+
+    for one in t.functions
+        lines @ lines.push("    " + one.face + ".hero:" + one.line.to_str() + ": function " + one.written)
+
+    return lines.join("\n")
+
+# The snake_case of a type's name: `ObjectId` gives `object_id`.
+function snake(name: str) -> str
+    out: [u8] @= []
+
+    for at in range(from: 0, to: name.len())
+        byte = name[at]
+
+        if byte >= 'A' && byte <= 'Z'
+            if at > 0
+                out @ out.push('_')
+            out @ out.push(byte + 32)
+        else
+            out @ out.push(byte)
+
+    # Lowering an ASCII capital and adding `_` leave a name of ASCII letters,
+    # digits and `_` (spec § 1), so the bytes are UTF-8 still.
+    return out.validated_bytes().must()
+
+# Whether `type_name`, snake_cased, names the function `name`: its first words
+# or its last, a name that is the type and one grammar suffix left out.
+function names_function(type_name: str, name: str) -> bool
+    s = snake(type_name)
+
+    if core_strings.has_prefix(s: name, prefix: s + "_")
+        rest = name.slice(from: s.len() + 1, to: name.len())
+        return place_in(names: GRAMMAR_SUFFIXES, name: rest) < 0
+    return core_strings.has_suffix(s: name, suffix: "_" + s)
+
+# Each type of the face that names at least `least` of its functions.
+function prefixed(face: package_face.Face, least: i64) -> [Prefixed]
+    out: [Prefixed] @= []
+
+    for type_name in declared(face)
+        names: [str] @= []
+
+        for f in face.callables
+            if names_function(type_name: type_name, name: f.name)
+                names @ names.push(f.name)
+
+        if names.len() >= least
+            out @ out.push(Prefixed(face: face.path, type_name: type_name, names: names))
+
+    return out
+
+function prefixed_key(p: Prefixed) -> str
+    return p.face + " " + p.type_name
+
+function prefixed_told(p: Prefixed) -> str
+    return p.face + ".hero: the type `" + p.type_name + "` names " + p.names.len().to_str() + " of its functions (`" + snake(p.type_name) + "` first or last): " + p.names.join(", ")
+
+# The face, where it holds more than `most` public functions.
+function oversized(face: package_face.Face, most: i64) -> [Oversized]
+    out: [Oversized] @= []
+
+    if face.callables.len() > most
+        out @ out.push(Oversized(face: face.path, count: face.callables.len()))
+    return out
+
+function oversized_told(o: Oversized) -> str
+    return o.face + ".hero: " + o.count.to_str() + " public functions, past " + SIZE_MOST.to_str()
+
+## Tests
+
+test "a type the face declares is written qualified, a type parameter by its place, and another's left"
+    local = ["Value", "Options"]
+    assert qualified(ty: "Value?", binding: "cbor", local: local, generics: []) == "cbor.Value?"
+    assert qualified(ty: "json.Value", binding: "yaml", local: ["Value"], generics: []) == "json.Value"
+    assert qualified(ty: "{str: [Options]}", binding: "x", local: local, generics: []) == "{str: [x.Options]}"
+    assert qualified(ty: "(function(A) -> B)", binding: "x", local: local, generics: ["A", "B"]) == "(function($0) -> $1)"
+    assert generic_names("<A, B>") == ["A", "B"]
+    assert snake("ObjectId") == "object_id" && snake("Deque") == "deque"
+
+# The planted witness: two faces give `escape` one signature and fire; two
+# faces' `decode` over each one's own `Value` differ and do not.
+test "twins are one name with one signature in two faces, each face's own types told apart"
+    html = package_face.face_of(
+        path: "html",
+        text: "# H.\n\n# Escapes.\nfunction escape(s: str) -> str\n    return s\n"
+    )
+    regex = package_face.face_of(
+        path: "regex",
+        text: "# R.\n\n# Quotes.\nfunction escape(text: str) -> str\n    return text\n"
+    )
+    cbor = package_face.face_of(
+        path: "cbor",
+        text: "# C.\n\n# A value.\nrecord Value\n    n: i64\n\n# Reads.\nfunction decode(data: [u8]) -> Value?\n    return fail(code: \"invalid\", msg: \"m\")\n"
+    )
+    msgpack = package_face.face_of(
+        path: "msgpack",
+        text: "# M.\n\n# A value.\nrecord Value\n    n: i64\n\n# Reads.\nfunction decode(data: [u8]) -> Value?\n    return fail(code: \"invalid\", msg: \"m\")\n"
+    )
+    signed: [Signed] @= []
+
+    for one in [signed_of(face: html, text: "# H.\n\n# Escapes.\nfunction escape(s: str) -> str\n"), signed_of(face: regex, text: "x"), signed_of(face: cbor, text: "x"), signed_of(face: msgpack, text: "x")]
+        for f in one
+            signed @ signed.push(f)
+
+    found = twins(signed)
+    assert found.len() == 1
+    assert twins_key(found[0]) == "escape in html, regex"
+    assert found[0].signature == "<0>(str) -> str"
+    assert twins_told(found[0]) == "`escape` has one signature, <0>(str) -> str, in each of:\n    html.hero:4: function escape(s: str) -> str\n    regex.hero:0: function escape(text: str) -> str"
+
+# The planted witness: a type naming as many functions as the floor fires; its
+# grammar-shaped name is not counted.
+test "a type that names many of its face's functions is a group, its `x_of` left out"
+    text = "# D.\n\n# A deque.\nrecord Deque\n    n: i64\n\n# A.\nfunction deque_push(d: Deque) -> Deque\n    return d\n\n# B.\nfunction deque_pop(d: Deque) -> Deque\n    return d\n\n# C.\nfunction deque_of(n: i64) -> Deque\n    return Deque(n: n)\n\n# D.\nfunction size_deque(d: Deque) -> i64\n    return d.n\n"
+    face = package_face.face_of(path: "containers", text: text)
+    found = prefixed(face: face, least: 3)
+    assert found.len() == 1
+    assert found[0].names == ["deque_push", "deque_pop", "size_deque"]
+    assert prefixed_key(found[0]) == "containers Deque"
+    assert prefixed(face: face, least: 4).len() == 0
+
+test "a face past the size is told with its count"
+    face = package_face.face_of(
+        path: "big",
+        text: "# B.\n\n# A.\nfunction a()\n    _ = 0\n\n# B.\nfunction b()\n    _ = 0\n"
+    )
+    assert oversized(face: face, most: 1).len() == 1
+    assert oversized(face: face, most: 1)[0].count == 2
+    assert oversized(face: face, most: 2).len() == 0

@@ -1,0 +1,220 @@
+# The coherence review's first instrument (M-rebel-library's item 31): **the
+# same capability marked done in two ledgers.** A ledger (`examples-rebel/
+# README.md` § A8) writes one block per capability, `capability <id>  <what>`,
+# and its `heroes` line names what does it: a function or a type, `built-in`,
+# `refused:` or `pending`. A block is **done** where its `heroes` line names
+# something, and **done by its own package** where one name it gives is
+# qualified by the ledger's package, its path or the binding a `use` of it
+# takes (`linear.dot_vec2` in `math/linear.ledger`).
+#
+# **Two ledgers that do one capability by their own functions are two packages
+# answering one question**, which a reader decides is a redundancy or two
+# meanings that share an id; this module finds them and the review reads them.
+# The same id done in one ledger by another package's function is no finding:
+# § A8 asks every entry of the three reference libraries in a package's area
+# to stand in some block of that package's ledger, so `web.ledger` names
+# `http.respond_redirect` where Echo's redirect stands, and that is the ledger
+# saying where the capability lives, not a second one. A capability's id is
+# the instrument's measure of sameness: ids are each ledger's own words, so two
+# blocks of one meaning under two ids are not seen here, and two meanings under
+# one id are; both directions are told to the reader in the finding.
+
+use <core>/strings as core_strings
+
+use strings
+
+# One block of a ledger: the ledger it stands in, the line its `capability`
+# word opens, its id and what it says it is, and its `heroes` line's text.
+record Block
+    ledger: str
+    line: i64
+    id: str
+    what: str
+    heroes: str
+
+# One capability done by its own package in two ledgers or more: its id, and
+# each block, in the order of their ledgers.
+record Twice
+    id: str
+    blocks: [Block]
+
+# The blocks of the ledger of `package`, `text`, in their order. A block whose
+# `heroes` line is missing keeps "" there, which is not done.
+function blocks_of(package: str, text: str) -> [Block]
+    out: [Block] @= []
+    line: i64 @= 0
+
+    for row in strings.lines(text)
+        line @ line + 1
+
+        if core_strings.has_prefix(s: row, prefix: "capability ")
+            rest = row.slice(from: 11, to: row.len())
+            gap = strings.index_of(text: rest, needle: "  ")
+
+            id = if gap.is_err()
+                strings.trimmed(rest)
+            else
+                rest.slice(from: 0, to: gap.must())
+
+            what = if gap.is_err()
+                ""
+            else
+                strings.trimmed(rest.slice(from: gap.must(), to: rest.len()))
+            out @ out.push(Block(ledger: package, line: line, id: id, what: what, heroes: ""))
+        else if core_strings.has_prefix(s: row, prefix: "  heroes ") && out.len() > 0
+            last = out.len() - 1
+            out[last].heroes @ strings.trimmed(row.slice(from: 9, to: row.len()))
+
+    return out
+
+# Whether a `heroes` line names something that does the capability: neither
+# empty, nor `pending`, `refused` or `built-in`.
+function done(heroes: str) -> bool
+    if heroes.len() == 0
+        return false
+
+    for word in ["pending", "refused", "built-in"]
+        if core_strings.has_prefix(s: heroes, prefix: word)
+            return false
+
+    return true
+
+# The names a `heroes` line gives, each its first word up to a comma, a space
+# or the line's end: `a.f, a.g (its options)` gives `a.f` and `a.g`.
+function names_in(heroes: str) -> [str]
+    out: [str] @= []
+
+    for piece in strings.split_on(text: heroes, byte: ',')
+        words = strings.words(piece)
+
+        if words.len() > 0
+            out @ out.push(words[0])
+
+    return out
+
+# The qualifier of a name, what stands before its first `.`: `llm/openai` for
+# `llm/openai.Client`, "" for a name with none.
+function qualifier(name: str) -> str
+    dot = strings.index_of(text: name, needle: ".")
+
+    if dot.is_err()
+        return ""
+    return name.slice(from: 0, to: dot.must())
+
+# Whether a block is done by its own ledger's package: one name it gives is
+# qualified by the package's path or by its binding, the path's last part.
+function own(block: Block) -> bool
+    if !done(block.heroes)
+        return false
+    binding = strings.base_name(path: block.ledger)
+
+    for name in names_in(block.heroes)
+        q = qualifier(name)
+
+        if q == block.ledger || q == binding
+            return true
+
+    return false
+
+# Each capability done by its own package in two ledgers or more, in the order
+# of the ids; `blocks` holds every ledger's blocks.
+function twice_done(blocks: [Block]) -> [Twice]
+    by_id: {str: [Block]} @= {}
+    ids: [str] @= []
+
+    for block in blocks
+        if own(block)
+            held = by_id[block.id]
+
+            if held.is_err()
+                ids @ ids.push(block.id)
+                by_id[block.id] @ [block]
+            else
+                by_id[block.id] @ held.must().push(block)
+
+    out: [Twice] @= []
+
+    for id in ids.sort()
+        held = by_id[id].must()
+
+        if ledgers_in(held).len() > 1
+            out @ out.push(Twice(id: id, blocks: held))
+
+    return out
+
+# The ledgers a group of blocks stands in, each once, sorted.
+function ledgers_in(blocks: [Block]) -> [str]
+    seen: {str: bool} @= {}
+    out: [str] @= []
+
+    for block in blocks
+        if seen[block.ledger].is_err()
+            seen[block.ledger] @ true
+            out @ out.push(block.ledger)
+
+    return out.sort()
+
+# What the review keeps a finding under: the id and its ledgers, which no
+# line number moves.
+function key(twice: Twice) -> str
+    return twice.id + " in " + ledgers_in(twice.blocks).join(", ")
+
+# The finding as the record and the suite's failure say it: each block by its
+# ledger's file and line, with what it says it is and what does it.
+function told(twice: Twice) -> str
+    lines: [str] @= ["capability `" + twice.id + "` is done by the package of each ledger:"]
+
+    for block in twice.blocks
+        lines @ lines.push(
+            "    " + block.ledger + ".ledger:" + block.line.to_str() + ": " + block.what + "; heroes " + block.heroes
+        )
+
+    return lines.join("\n")
+
+## Tests
+
+test "a ledger's blocks are read with their ids, what they are, their lines and what does them"
+    text = "# The ledger.\n\ncapability text/find-first  where a text first holds another\n  heroes  strings.index_of\n  go      strings.Index\n\ncapability text/repeat  a text written n times\n  heroes  built-in repeat\n"
+    blocks = blocks_of(package: "strings", text: text)
+    assert blocks.len() == 2
+    assert blocks[0].id == "text/find-first" && blocks[0].what == "where a text first holds another"
+    assert blocks[0].line == 3 && blocks[0].heroes == "strings.index_of"
+    assert blocks[1].heroes == "built-in repeat"
+
+test "a block is done where it names something, and by its own package where a name is the package's"
+    assert done("strings.index_of") && !done("pending") && !done("pending: later")
+    assert !done("refused: no") && !done("built-in sort") && !done("")
+    assert names_in("linear.dot_vec2, linear.dot_vec3 (and four)") == ["linear.dot_vec2", "linear.dot_vec3"]
+    assert own(Block(ledger: "math/linear", line: 1, id: "v", what: "", heroes: "linear.dot_vec2"))
+    assert own(Block(ledger: "llm/openai", line: 1, id: "v", what: "", heroes: "llm/openai.Client"))
+    assert !own(Block(ledger: "web", line: 1, id: "v", what: "", heroes: "http.respond_redirect"))
+    assert !own(Block(ledger: "web", line: 1, id: "v", what: "", heroes: "pending"))
+
+# The planted witness: one capability two packages do by their own functions
+# fires; the same id named in a third ledger by another package's function,
+# and an id done in one ledger alone, do not.
+test "a capability two packages do by their own functions is found, and a ledger naming another's is not"
+    html = blocks_of(
+        package: "html",
+        text: "capability html/escape  text escaped\n  heroes  html.escape\n\ncapability html/parse  a page read\n  heroes  html.parse\n"
+    )
+    template = blocks_of(
+        package: "template",
+        text: "capability html/escape  a text escaped as HTML\n  heroes  template.escape_html\n"
+    )
+    web = blocks_of(package: "web", text: "capability html/escape  escaped\n  heroes  html.escape\n")
+    every: [Block] @= []
+
+    for part in [html, template, web]
+        for block in part
+            every @ every.push(block)
+
+    found = twice_done(every)
+    assert found.len() == 1
+    assert found[0].id == "html/escape" && found[0].blocks.len() == 2
+    assert key(found[0]) == "html/escape in html, template"
+    assert told(found[0]) == "capability `html/escape` is done by the package of each ledger:\n    html.ledger:1: text escaped; heroes html.escape\n    template.ledger:1: a text escaped as HTML; heroes template.escape_html"
+
+test "a capability done twice in one ledger is one ledger's, and no finding of this instrument"
+    one = blocks_of(package: "a", text: "capability x/y  one\n  heroes  a.f\n\ncapability x/y  two\n  heroes  a.g\n")
+    assert twice_done(one).len() == 0

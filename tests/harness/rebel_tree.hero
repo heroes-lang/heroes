@@ -1,0 +1,219 @@
+# Rebel's tree as the coherence review reads it (M-rebel-library's item 31,
+# the half measured by tools): the source, the newest version folder of
+# `packages/rebel`, read module by module and ledger by ledger, and the table
+# of packages in layers that `examples-rebel/README.md` § A1 writes, from
+# which each module's package and layer are asked. The instruments that judge
+# the library read the tree through here, and the `rebel` suite walks it
+# (`suite_rebel.hero`).
+#
+# **What a module is to the rules page** (§ A2): a face, `<package>.hero`,
+# every name a program writes; a private module, a path with `internal` as a
+# part after its first, which the compiler lets no module outside the package
+# name (spec § 1); a floor, a module whose last part begins `hero_`, the thin
+# binding of one header. **A module's package is the longest row of the table
+# that is its path or stands before it at a `/`**: `compress/brotli/internal/x`
+# is `compress/brotli`'s, `compress/internal/codes` is `compress`'s. A module
+# no row holds has no package, "", and every instrument that asks for one says
+# so rather than guessing one.
+
+use <core>/strings as core_strings
+
+use package_rules
+use shell
+use strings
+
+# The index folder that holds Rebel, beside `core`'s, at the repository's root.
+constant INDEX: str
+    "packages/rebel"
+
+# The rules page whose § A1 is the table of packages in layers.
+constant RULES: str
+    "examples-rebel/README.md"
+
+# A module of the source: its path under the source's root without `.hero`,
+# `compress/brotli/internal/decoder`, and its text.
+record Module
+    path: str
+    text: str
+
+# A ledger of the source (§ A8): its path under the source's root without
+# `.ledger`, which names the package it is the ledger of, and its text.
+record Ledger
+    package: str
+    text: str
+
+# A row of § A1's table: the package it names, its layer, and the line of the
+# rules page it stands on, counted from 1.
+record Row
+    package: str
+    layer: i64
+    line: i64
+
+# The source: the `files/` of the newest version folder of `INDEX`, the one a
+# version in preparation is written in.
+function source_root(scratch: str) -> str?
+    if !shell.is_directory(INDEX)
+        return fail(code: "absent", msg: INDEX + " is not there, and Rebel's source is its newest version")
+    versions: [str] @= []
+
+    for dir in shell.list_directories(scratch: scratch, dir: INDEX)?
+        name = strings.base_name(path: dir)
+
+        if package_rules.version_shape(name)
+            versions @ versions.push(name)
+
+    last = package_rules.newest(versions)
+
+    if last.len() == 0
+        return fail(code: "absent", msg: INDEX + " holds no version folder, and Rebel's source is its newest")
+    return ok(INDEX + "/" + last + "/files")
+
+# Every `.hero` file under `root`, read, in the order of their paths.
+function modules(scratch: str, root: str) -> [Module]?
+    nothing: [str] = []
+    out: [Module] @= []
+
+    for file in shell.list_tree(scratch: scratch, dir: root, skip: nothing)?
+        if core_strings.has_suffix(s: file, suffix: ".hero")
+            text = read_file(file)
+
+            if text.is_err()
+                return fail(
+                    code: "unreadable",
+                    msg: "cannot read " + file + " as text, and every module of Rebel is read"
+                )
+            out @ out.push(Module(path: relative(root: root, file: file, suffix: ".hero"), text: text.must()))
+
+    return ok(out)
+
+# Every `.ledger` file under `root`, read, in the order of their paths.
+function ledgers(scratch: str, root: str) -> [Ledger]?
+    nothing: [str] = []
+    out: [Ledger] @= []
+
+    for file in shell.list_tree(scratch: scratch, dir: root, skip: nothing)?
+        if core_strings.has_suffix(s: file, suffix: ".ledger")
+            text = read_file(file)
+
+            if text.is_err()
+                return fail(
+                    code: "unreadable",
+                    msg: "cannot read " + file + " as text, and every ledger of Rebel is read"
+                )
+            out @ out.push(Ledger(package: relative(root: root, file: file, suffix: ".ledger"), text: text.must()))
+
+    return ok(out)
+
+function relative(root: str, file: str, suffix: str) -> str
+    return strings.without_suffix(text: strings.without_prefix(text: file, prefix: root + "/"), suffix: suffix)
+
+# The rows of § A1's table in `text`, the rules page: each line between the
+# heading `## A1.` and the next `## ` that opens `| <layer> | `<package>` |`.
+function rows_of(text: str) -> [Row]
+    out: [Row] @= []
+    inside: bool @= false
+    line: i64 @= 0
+
+    for row in strings.lines(text)
+        line @ line + 1
+
+        if core_strings.has_prefix(s: row, prefix: "## ")
+            inside @ core_strings.has_prefix(s: row, prefix: "## A1.")
+            continue
+
+        if !inside || !core_strings.has_prefix(s: row, prefix: "| ")
+            continue
+        cells = strings.split_on(text: row, byte: '|')
+
+        if cells.len() < 4
+            continue
+        layer = strings.to_number(strings.trimmed(cells[1]))
+        named = strings.trimmed(cells[2])
+
+        if layer.is_err() || named.len() < 3 || named[0] != '`' || named[named.len() - 1] != '`'
+            continue
+        out @ out.push(Row(package: named.slice(from: 1, to: named.len() - 1), layer: layer.must(), line: line))
+
+    return out
+
+# The rows by the package each names.
+function by_package(rows: [Row]) -> {str: Row}
+    out: {str: Row} @= {}
+
+    for one in rows
+        out[one.package] @ one
+
+    return out
+
+# The package that holds the module at `path`: the longest row that is the
+# path or stands before it at a `/`, or "" where no row does.
+function package_of(rows: {str: Row}, path: str) -> str
+    parts = strings.split_on(text: path, byte: '/')
+    count: i64 @= parts.len()
+
+    while count > 0
+        head = parts.slice(from: 0, to: count).join("/")
+
+        if !rows[head].is_err()
+            return head
+        count @ count - 1
+
+    return ""
+
+# Whether a module is private to its package: a part `internal` after the
+# first (spec § 1).
+function is_private(path: str) -> bool
+    parts = strings.split_on(text: path, byte: '/')
+
+    for at in range(from: 1, to: parts.len())
+        if parts[at] == "internal"
+            return true
+
+    return false
+
+# Whether a module is a floor (§ A2): its last part begins `hero_`.
+function is_floor(path: str) -> bool
+    return core_strings.has_prefix(s: strings.base_name(path: path), prefix: "hero_")
+
+# Whether a module is a face a program names: neither private nor a floor.
+function is_face(path: str) -> bool
+    return !is_private(path) && !is_floor(path)
+
+# The line, counted from 1, of the first row of `text` that begins with
+# `start`, or 0 where none does: where a declaration a finding names stands.
+function line_opening(text: str, start: str) -> i64
+    line: i64 @= 0
+
+    for row in strings.lines(text)
+        line @ line + 1
+
+        if core_strings.has_prefix(s: row, prefix: start)
+            return line
+
+    return 0
+
+## Tests
+
+test "the rows of § A1 are its table's lines, each with its layer and its line"
+    text = "# R\n\n## A1. The packages\n\n| layer | package | what |\n|---|---|---|\n| 0 | `unicode` | what a character is |\n| 2 | `compress/zstd` | Zstandard |\n| x | `bad` | no layer |\n\n## A2. Files\n\n| 9 | `outside` | after the table |\n"
+    rows = rows_of(text)
+    assert rows.len() == 2
+    assert rows[0].package == "unicode" && rows[0].layer == 0 && rows[0].line == 7
+    assert rows[1].package == "compress/zstd" && rows[1].layer == 2 && rows[1].line == 8
+
+test "a module's package is the longest row before it, and none where no row is"
+    rows = by_package([Row(package: "compress", layer: 3, line: 1), Row(package: "compress/zstd", layer: 2, line: 2)])
+    assert package_of(rows: rows, path: "compress/zstd/internal/frame") == "compress/zstd"
+    assert package_of(rows: rows, path: "compress/internal/codes") == "compress"
+    assert package_of(rows: rows, path: "compress") == "compress"
+    assert package_of(rows: rows, path: "compression/x") == ""
+    assert package_of(rows: rows, path: "containers/internal/codes") == ""
+
+test "a module is private by an `internal` after its first part, a floor by `hero_`, else a face"
+    assert is_private("compress/internal/codes")
+    assert is_private("a/b/internal/c/d")
+    assert !is_private("internal/x")
+    assert is_floor("os/hero_os") && !is_face("os/hero_os")
+    assert is_face("unicode/normalize") && is_face("math/libm")
+    assert line_opening(text: "a\nfunction f()\nb\n", start: "function f(") == 2
+    assert line_opening(text: "a\n", start: "x") == 0

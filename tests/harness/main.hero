@@ -70,6 +70,11 @@
 #                 copy the canonical tree's, every module reached by its
 #                 driver, named and spelled as the conventions say, quiet,
 #                 documented and tested (task 2293)
+#   rebel         Rebel, the optional library, held to its coherence by the
+#                 review's instruments: a capability done twice, twins, a
+#                 face too large or holding a structure of its own, a name
+#                 or a code outside the rules page, a layer broken, a
+#                 package unlisted, a body written twice (M-rebel-library)
 #   warnings      the generated C compiles without a single warning
 #   records       §14's identifiers, the alias table, stray C, the goldens
 #   surface       what a user types: exit codes, streams, flags, rendering
@@ -138,6 +143,7 @@ use suite_lldb
 use suite_order
 use suite_packages
 use suite_probe
+use suite_rebel
 use suite_records
 use suite_run
 use suite_runtime
@@ -574,6 +580,20 @@ function main()
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
+    # Rebel's coherence, measured (M-rebel-library's item 31): the review's
+    # instruments over the newest version of `packages/rebel` and the rules
+    # page, every finding repaired or kept with its reason in
+    # `rebel_kept.hero`. Reads files and runs no compiler.
+    if only == "" || only == "rebel"
+        got = suite_rebel.run_all(scratch)
+
+        if got.is_err()
+            print("harness: the rebel suite could not run" + why(got))
+            exit(2)
+        print("  rebel: " + report.counted(got.must()))
+        total @ report.tally(one: total, two: got.must())
+        ran @ ran + 1
+
     # The package manager's interface (panel 235's R19, task 2312): what
     # `heroes add` and `heroes fetch` print, exit with and write, each case a
     # folder of `tests/golden/fetch/`, an index read from a folder and a git
@@ -796,6 +816,14 @@ constant LATENCY_PROGRAM: str
 # Tested the same way, one test for the root.
 constant CARDS_PROGRAM: str
     "tests/harness/package_cards.hero"
+
+# **AND THE SEVENTH, the coherence review's readout** (M-rebel-library's item
+# 31, 2026-11-19): `rebel_review.hero`, which only it reaches; the modules of
+# the review's instruments are reached from this root as well, through the
+# `rebel` suite, so their tests run twice and the readout's once. Tested the
+# same way, one test for the root.
+constant REVIEW_PROGRAM: str
+    "tests/harness/rebel_review.hero"
 
 # Every module the root `root` reaches through its `use` lines, the root among
 # them, each named by its path under `dir` without `.hero`, in the order they
@@ -1169,6 +1197,32 @@ test "the package cards' program's own tests run with the net's own, every block
     assert ran.code == 0
     assert strays(out: ran.out, modules: reached(dir: "tests/harness", root: "package_cards").must()).join("\n") == ""
     held = blocks(dir: "tests/harness", root: "package_cards").must()
+    said: [str] @= []
+
+    for line in strings.lines(ran.out)
+        if counts(strings.words(line))
+            said @ said.push(line)
+
+    assert said == [held.to_str() + " tests, all passed"]
+    assert !shell.remove_tree(scratch).is_err()
+
+test "the coherence review's readout's own tests run with the net's own, every block its modules hold and all passed"
+    compiler = shell.some_compiler().must()
+    scratch = shell.own_scratch()
+    ran = shell.run(scratch: scratch, program: compiler, words: [compiler, "test", REVIEW_PROGRAM]).must()
+    failed: [str] @= []
+
+    for line in strings.lines(ran.out)
+        if core_strings.has_prefix(s: line, prefix: "FAIL \"")
+            failed @ failed.push(line)
+
+    for line in skips_in(ran.out)
+        print(REVIEW_PROGRAM + ": " + line)
+
+    assert failed.join("\n") == ""
+    assert ran.code == 0
+    assert strays(out: ran.out, modules: reached(dir: "tests/harness", root: "rebel_review").must()).join("\n") == ""
+    held = blocks(dir: "tests/harness", root: "rebel_review").must()
     said: [str] @= []
 
     for line in strings.lines(ran.out)

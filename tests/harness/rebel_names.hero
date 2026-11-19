@@ -1,0 +1,276 @@
+# The coherence review's instrument of names (M-rebel-library's item 31): **a
+# name the grammar of names does not allow**, `examples-rebel/README.md` § A3,
+# each rule a machine can ask of a declaration:
+#
+#   case        a function's and a parameter's name in `snake_case`,
+#               `[a-z][a-z0-9_]*` with no `_` doubled or last, in every module;
+#               a record's, a variant's and a constant's by the core packages'
+#               rule (`package_rules.misnamed`), which this reads rather than
+#               repeats. The compiler takes `fooBar` (measured 2026-11-19), so
+#               nothing else asks
+#   question    `is_x` and `has_x` answer `bool`
+#   one-meaning `contains` answers `bool` and `index_of` answers `i64?`,
+#               wherever they stand
+#   text        `format_x` answers text, `str` or `str?`: a value to text
+#   copy        `with_x` answers a copy of its first parameter, the type it
+#               takes, fallible or not
+#   value       `to_x` answers a value, never `()`
+#   abbreviated a parameter named by an abbreviation of `ABBREVIATIONS`, none
+#               of the ones § A3 lets stand (`dir`, `env`, `ext`, `abs`, `len`,
+#               `max`, `min`)
+#
+# A name of § A3's grammar and of a grammar suffix too is the suffix's shape:
+# `format_of` is `x_of`, the format of a thing, and answers no text. The
+# grammar rules read a face's functions alone, the case rule every module's,
+# since a private module's names are read by the next person to write one.
+
+use <core>/strings as core_strings
+
+use package_face
+use package_rules
+use rebel_faces
+use strings
+
+# The abbreviations a parameter is not named by, each with the word it
+# shortens: § A3's *no abbreviation a reader must decode*. **Read from the
+# world, 2026-11-19**: the parameters of Rebel's 149 faces counted by name, and
+# each short name that is not an English word looked up; those found are the
+# first eleven, `opts` 35 times, `img` 34, `ch` 34, `re` 21, `enc` 21, `msg` 15,
+# `wb` 8, `cert` 6, `src` 2, `conn` 1 and `arg` 1, and the rest are the common
+# shapes of the same habit, none found that day. Left out on purpose: `db` and
+# `doc`, words of their own in a programmer's English; `dn` and `sid`, the names
+# LDAP and NATS give the thing (a distinguished name, a subscription's id);
+# `params`, the word JSON-RPC and SQL use.
+constant ABBREVIATIONS: [[str]]
+    [
+        ["opts", "options"]
+        ["opt", "option"]
+        ["img", "image"]
+        ["ch", "channel"]
+        ["re", "regex"]
+        ["enc", "encoding"]
+        ["msg", "message"]
+        ["wb", "workbook"]
+        ["cert", "certificate"]
+        ["src", "source"]
+        ["dst", "destination"]
+        ["conn", "connection"]
+        ["arg", "argument"]
+        ["cfg", "config"]
+        ["ctx", "context"]
+        ["buf", "buffer"]
+        ["idx", "index"]
+        ["cnt", "count"]
+        ["tmp", "temporary"]
+        ["addr", "address"]
+        ["req", "request"]
+        ["resp", "response"]
+        ["val", "value"]
+        ["num", "number"]
+        ["err", "error"]
+        ["elem", "element"]
+        ["prev", "previous"]
+        ["cur", "current"]
+    ]
+
+# One name the grammar does not allow: the module's path, the line, the rule
+# it breaks, the name it is about, and what the finding says.
+record Misnamed
+    path: str
+    line: i64
+    rule: str
+    name: str
+    said: str
+
+# What the review keeps a name under: its module, its rule and the name, which
+# no line number moves.
+function key(m: Misnamed) -> str
+    return m.path + " " + m.rule + " " + m.name
+
+function told(m: Misnamed) -> str
+    return m.path + ".hero:" + m.line.to_str() + ": " + m.rule + ": " + m.said
+
+# Whether `name` is `snake_case`: `[a-z][a-z0-9_]*`, no `_` doubled or last.
+function snake_shaped(name: str) -> bool
+    if !package_rules.lower_word(name) || core_strings.has_suffix(s: name, suffix: "_")
+        return false
+    return strings.index_of(text: name, needle: "__").is_err()
+
+# The names of a module that are not in their case, `text` its source: each
+# top-level function's and parameter's, and each record, variant and constant
+# by `package_rules.misnamed`.
+function cased(path: str, text: str) -> [Misnamed]
+    out: [Misnamed] @= []
+    rows = strings.lines(text)
+
+    for at in range(from: 0, to: rows.len())
+        if core_strings.has_prefix(s: rows[at], prefix: "function ")
+            got = package_face.callable_at(rows: rows, at: at)
+
+            if got.is_err()
+                continue
+            f = got.must()
+
+            if !snake_shaped(f.name)
+                out @ out.push(
+                    Misnamed(path: path, line: at + 1, rule: "case", name: f.name, said: "`function " + f.name + "` is not snake_case")
+                )
+
+            for p in f.params
+                if !snake_shaped(p.name)
+                    out @ out.push(
+                        Misnamed(path: path, line: at + 1, rule: "case", name: f.name + "." + p.name, said: "`" + f.name + "`'s parameter `" + p.name + "` is not snake_case")
+                    )
+
+    for said in package_rules.misnamed(text)
+        out @ out.push(
+            Misnamed(path: path, line: line_said(said), rule: "case", name: after_line(said), said: after_line(said))
+        )
+
+    return out
+
+# The line a `package_rules.misnamed` finding names, `line 12: ...`.
+function line_said(said: str) -> i64
+    colon = strings.index_of(text: said, needle: ":")
+
+    if colon.is_err()
+        return 0
+    return strings.to_number(strings.without_prefix(text: said.slice(from: 0, to: colon.must()), prefix: "line ")).default(
+        0
+    )
+
+function after_line(said: str) -> str
+    colon = strings.index_of(text: said, needle: ": ")
+
+    if colon.is_err()
+        return said
+    return said.slice(from: colon.must() + 2, to: said.len())
+
+# The names of a face's functions § A3's grammar does not allow.
+function graded(path: str, text: str) -> [Misnamed]
+    face = package_face.face_of(path: path, text: text)
+    out: [Misnamed] @= []
+    lines: {str: [i64]} @= {}
+    shortened: [str] @= []
+
+    for one in rebel_faces.signed_of(face: face, text: text)
+        f = callable_named(face: face, name: one.name)
+        broken = grammar_broken(name: f.name, params: f.params, result: f.result)
+
+        if broken.len() > 0
+            out @ out.push(
+                Misnamed(path: path, line: one.line, rule: broken[0], name: f.name, said: "`function " + f.written + "`: " + broken[1])
+            )
+
+        for p in f.params
+            if expanded(p.name).len() > 0
+                if lines[p.name].is_err()
+                    shortened @ shortened.push(p.name)
+                lines[p.name] @ lines[p.name].default([]).push(one.line)
+
+    # One finding per abbreviation a face uses, with every function's line,
+    # since the word is the face's habit and the repair one rename.
+    for name in shortened
+        at = lines[name].must()
+        shown: [str] @= []
+
+        for line in at
+            shown @ shown.push(line.to_str())
+
+        out @ out.push(
+            Misnamed(path: path, line: at[0], rule: "abbreviated", name: name, said: "the parameter `" + name + "` shortens `" + expanded(name) + "`, in " + at.len().to_str() + " functions, at lines " + shown.join(", "))
+        )
+
+    return out
+
+function callable_named(face: package_face.Face, name: str) -> package_face.Callable
+    for f in face.callables
+        if f.name == name
+            return f
+
+    return face.callables[0]
+
+# The rule of § A3's grammar a function breaks and what it says, or nothing.
+function grammar_broken(name: str, params: [package_face.Slot], result: str) -> [str]
+    nothing: [str] = []
+    bare = strings.without_suffix(text: result, suffix: "?")
+
+    if (core_strings.has_prefix(s: name, prefix: "is_") || core_strings.has_prefix(s: name, prefix: "has_")) && bare != "bool"
+        return ["question", "a question answers `bool`, and this answers `" + result + "`"]
+
+    if (name == "contains" || core_strings.has_prefix(s: name, prefix: "contains_")) && bare != "bool"
+        return ["one-meaning", "`contains` answers `bool` wherever it appears, and this answers `" + result + "`"]
+
+    if name == "index_of" && result != "i64?"
+        return [
+            "one-meaning"
+            "`index_of` answers a byte index as `i64?` wherever it appears, and this answers `" + result + "`"
+        ]
+
+    if grammar_shaped(name: name, word: "format") && bare != "str"
+        return ["text", "`format_x` writes a value as text, and this answers `" + result + "`"]
+
+    if grammar_shaped(name: name, word: "with") && params.len() > 0 && bare != strings.without_suffix(text: params[0].ty, suffix: "?")
+        return [
+            "copy"
+            "`with_x` answers a copy of what it is given with one thing changed, and this takes `" + params[0].ty + "` first and answers `" + result + "`"
+        ]
+
+    if grammar_shaped(name: name, word: "to") && (bare == "" || bare == "()")
+        return ["value", "`to_x` answers the same value in another form, and this answers nothing"]
+    return nothing
+
+# Whether `name` is `<word>_x` of § A3's grammar: it begins `<word>_`, and what
+# follows is no grammar suffix, which makes it that suffix's shape instead.
+function grammar_shaped(name: str, word: str) -> bool
+    if !core_strings.has_prefix(s: name, prefix: word + "_")
+        return false
+    rest = name.slice(from: word.len() + 1, to: name.len())
+
+    for suffix in rebel_faces.GRAMMAR_SUFFIXES
+        if rest == suffix
+            return false
+
+    return rest != "with"
+
+# The word `name` abbreviates, or "" where it is none of `ABBREVIATIONS`.
+function expanded(name: str) -> str
+    for pair in ABBREVIATIONS
+        if pair[0] == name
+            return pair[1]
+
+    return ""
+
+## Tests
+
+# The planted witnesses: one name per rule, each firing, and the shape beside
+# each that does not.
+test "a function or a parameter not in snake_case is told, and a type and a constant by their own rule"
+    text = "# M.\n\n# F.\nfunction fooBar(myArg: i64, ok_name: i64) -> i64\n    return myArg + ok_name\n\n# G.\nfunction bad__name()\n    _ = 0\n\nrecord bad_record\n    x: i64\n"
+    found = cased(path: "m", text: text)
+    assert found.len() == 4
+    assert told(found[0]) == "m.hero:4: case: `function fooBar` is not snake_case"
+    assert told(found[1]) == "m.hero:4: case: `fooBar`'s parameter `myArg` is not snake_case"
+    assert found[2].said == "`function bad__name` is not snake_case"
+    assert told(found[3]) == "m.hero:11: case: `record bad_record` is not PascalCase"
+    assert snake_shaped("index_of_last") && !snake_shaped("trailing_") && !snake_shaped("_x")
+
+test "each rule of the grammar fires on its witness and leaves the shape beside it"
+    text = "# M.\n\n# Q.\nfunction is_odd(n: i64) -> i64\n    return n\n\n# A.\nfunction is_even(n: i64) -> bool\n    return true\n\n# C.\nfunction contains(s: str) -> i64\n    return 0\n\n# I.\nfunction index_of(s: str) -> i64\n    return 0\n\n# F.\nfunction format_der(k: i64) -> [u8]?\n    return ok([])\n\n# G.\nfunction format_of(data: [u8]) -> i64?\n    return ok(0)\n\n# W.\nfunction with_cors(r: i64, s: str) -> str\n    return s\n\n# X.\nfunction with_name(s: str, name: str) -> str?\n    return ok(name)\n\n# T.\nfunction to_disk(s: str)\n    _ = s\n\n# O.\nfunction open(opts: i64) -> i64\n    return opts\n"
+    found = graded(path: "m", text: text)
+    rules: [str] @= []
+
+    for one in found
+        rules @ rules.push(one.rule)
+
+    assert rules == ["question", "one-meaning", "one-meaning", "text", "copy", "value", "abbreviated"]
+    assert told(found[0]) == "m.hero:4: question: `function is_odd(n: i64) -> i64`: a question answers `bool`, and this answers `i64`"
+    assert found[6].said == "the parameter `opts` shortens `options`, in 1 functions, at lines 44"
+    assert key(found[6]) == "m abbreviated opts"
+
+test "a name of a grammar word and a grammar suffix is the suffix's shape"
+    assert !grammar_shaped(name: "format_of", word: "format")
+    assert !grammar_shaped(name: "format_with", word: "format")
+    assert grammar_shaped(name: "format_date", word: "format")
+    assert !grammar_shaped(name: "formatted", word: "format")
+    assert expanded("img") == "image" && expanded("db") == ""

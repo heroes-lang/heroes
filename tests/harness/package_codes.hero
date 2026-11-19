@@ -14,6 +14,46 @@ use module_text
 use package_face
 use strings
 
+# **Rebel's closed vocabulary of codes** (`examples-rebel/README.md` § A4,
+# the coherence review's sixth instrument, M-rebel-library's item 31): the
+# codes the table there lists, and the language's own a Rebel package may hand
+# on, which § A4 says keep their meanings, each from the place spec § 6 and
+# § 11 name it (`missing_key`, `read_failed`, `write_failed`, `null_cstr`;
+# `file_not_found`, `does_not_fit` and `not_text` stand in both). A code
+# outside this list is one § A4 refuses; the core packages' cards read their
+# codes from the faces and are not held to it.
+constant CLOSED: [str]
+    [
+        "not_found"
+        "file_not_found"
+        "exists"
+        "permission"
+        "not_a_directory"
+        "is_a_directory"
+        "not_empty"
+        "invalid"
+        "does_not_fit"
+        "not_text"
+        "closed"
+        "timeout"
+        "stopped"
+        "limit"
+        "unsupported"
+        "failed"
+        "missing_key"
+        "read_failed"
+        "write_failed"
+        "null_cstr"
+    ]
+
+# Whether `code` is one of the closed vocabulary.
+function closed(code: str) -> bool
+    for one in CLOSED
+        if one == code
+            return true
+
+    return false
+
 # A code the package's modules write: the code, the face's constant a `fail`
 # writes it `through` ("" for a literal), and what the face's docs say of it,
 # "" where none does. A code written through a name that is no `str` constant
@@ -239,3 +279,10 @@ test "a code a private module writes as text is the face's constant that holds i
     assert codes.len() == 1
     assert codes[0].code == "stopped" && codes[0].through == "STOPPED"
     assert codes[0].meaning == "What a call fails with once a stop is asked."
+
+# The planted witness of Rebel's sixth instrument: a code § A4 lists and one
+# of the language's own pass, a code of neither does not.
+test "the closed vocabulary holds § A4's codes and the language's own, and nothing else"
+    assert closed("not_found") && closed("missing_key") && closed("null_cstr")
+    assert !closed("undecided") && !closed("none") && !closed("Invalid")
+    assert CLOSED.len() == 20

@@ -1,0 +1,223 @@
+# The coherence review's sixth instrument (M-rebel-library's item 31): **an
+# error code outside § A4's closed list** (`examples-rebel/README.md` § A4,
+# the list `package_codes.CLOSED`). Every module of Rebel is read outside its
+# `test` blocks, and every code a `fail` call writes is judged: a literal,
+# `fail(code: "invalid", ...)`, by its text; a constant, `fail(code:
+# codes.INVALID, ...)` or `fail(code: INVALID, ...)`, by the value it names,
+# followed through the module a `use` binds and through a constant that names
+# another (`constant INVALID: str` over `codes.INVALID`), as the compiler
+# would; a name in lower case is a code handed on, `e.code` or a parameter,
+# and is judged where it was written.
+#
+# **What it cannot see**, said so the reader does not trust a silence: a code
+# that reaches `fail` through a parameter of a helper (`failure.failed(code:
+# ...)`) is judged where the helper's caller writes a `fail` of its own, and
+# not where it passes the code; and a code a function computes, an errno
+# mapped to a word, is judged only where it is written into a `fail`. A
+# constant whose value is not a plain literal nor a name, or a name that leads
+# nowhere this instrument can follow, is told as unread, the loud direction.
+
+use <core>/strings as core_strings
+
+use module_text
+use package_codes
+use rebel_tree
+use strings
+
+# The most constants a code is followed through before it is told unread: a
+# face naming a private module's constant is two, and a chain of eight is a
+# cycle or a shape this instrument does not know.
+constant DEPTH: i64
+    8
+
+# A code a module writes outside the closed list, or through a name this
+# instrument cannot follow: the module, the lines it is written on, its value
+# ("" where unread) and the name it is written through ("" for a literal).
+record Outside
+    path: str
+    lines: [i64]
+    code: str
+    through: str
+
+# What every module declares and binds, by `<module> <name>`: each `str`
+# constant's value as written, the row below its declaration trimmed, and the
+# module each `use` binds a name to.
+record Index
+    constants: {str: str}
+    uses: {str: str}
+
+# The index of every module of `modules`.
+function index_of_modules(modules: [rebel_tree.Module]) -> Index
+    constants: {str: str} @= {}
+    uses: {str: str} @= {}
+
+    for m in modules
+        rows = strings.lines(m.text)
+
+        for at in range(from: 0, to: rows.len())
+            row = rows[at]
+
+            if core_strings.has_prefix(s: row, prefix: "constant ") && core_strings.has_suffix(s: row, suffix: ": str") && at + 1 < rows.len()
+                name = row.slice(from: 9, to: row.len() - 5)
+                constants[m.path + " " + name] @ strings.trimmed(rows[at + 1])
+            else if core_strings.has_prefix(s: row, prefix: "use ") && !core_strings.has_prefix(s: row, prefix: "use <")
+                bound = bound_by(row)
+                uses[m.path + " " + bound[0]] @ bound[1]
+
+    return Index(constants: constants, uses: uses)
+
+# What a `use` line binds and the module it names: `use a/b` binds `b`, `use
+# a/b as c` binds `c` (spec § 1).
+function bound_by(row: str) -> [str]
+    rest = strings.trimmed(row.slice(from: 4, to: row.len()))
+    alias = strings.index_of(text: rest, needle: " as ")
+
+    if alias.is_err()
+        return [strings.base_name(path: rest), rest]
+    return [strings.trimmed(rest.slice(from: alias.must() + 4, to: rest.len())), rest.slice(from: 0, to: alias.must())]
+
+# Whether a name is a constant's, its last part in SCREAMING_CASE: `INVALID`,
+# `codes.NOT_FOUND`; a name in lower case is a value handed on.
+function constant_shaped(name: str) -> bool
+    last = strings.base_name(path: name_tail(name))
+
+    if last.len() == 0 || last[0] < 'A' || last[0] > 'Z'
+        return false
+
+    for at in range(from: 0, to: last.len())
+        if last[at] >= 'a' && last[at] <= 'z'
+            return false
+
+    return true
+
+# The part of a name after its last `.`.
+function name_tail(name: str) -> str
+    parts = strings.split_on(text: name, byte: '.')
+    return parts[parts.len() - 1]
+
+# The value the constant `name` holds, read in the module `module`: a name
+# qualified by a binding is looked up in the module the binding names, and a
+# value that is itself a name is followed, at most `DEPTH` times.
+function resolve(index: Index, module: str, name: str, depth: i64) -> str?
+    if depth > DEPTH
+        return fail(code: "unread", msg: name + " leads through more than " + DEPTH.to_str() + " constants")
+    parts = strings.split_on(text: name, byte: '.')
+    target: str @= module
+    named: str @= name
+
+    if parts.len() == 2
+        bound = index.uses[module + " " + parts[0]]
+
+        if bound.is_err()
+            return fail(code: "unread", msg: "`" + parts[0] + "` is bound by no `use` of " + module)
+        target @ bound.must()
+        named @ parts[1]
+    else if parts.len() != 1
+        return fail(code: "unread", msg: name + " is not a constant this instrument reads")
+    written = index.constants[target + " " + named]
+
+    if written.is_err()
+        return fail(code: "unread", msg: "no `constant " + named + ": str` in " + target)
+    value = written.must()
+
+    if value.len() >= 2 && value[0] == '"' && value[value.len() - 1] == '"'
+        inner = value.slice(from: 1, to: value.len() - 1)
+
+        if strings.index_of(text: inner, needle: "\\").is_err() && strings.index_of(text: inner, needle: "\"").is_err()
+            return ok(inner)
+        return fail(code: "unread", msg: target + "'s `" + named + "` is no plain literal")
+
+    if constant_shaped(value)
+        return resolve(index: index, module: target, name: value, depth: depth + 1)
+    return fail(code: "unread", msg: target + "'s `" + named + "` is written `" + value + "`")
+
+# The codes `module` writes outside the closed list, each code and name once,
+# with every line it stands on, in the order first written.
+function outside(index: Index, module: rebel_tree.Module) -> [Outside]
+    scoped = module_text.without_tests(module.text)
+    found: {str: Outside} @= {}
+    order: [str] @= []
+
+    for one in module_text.literal_codes_at(scoped)
+        if !package_codes.closed(one.code)
+            kept(@found, @order, path: module.path, line: one.line, code: one.code, through: "")
+
+    for one in module_text.named_codes_at(scoped)
+        if !constant_shaped(one.code)
+            continue
+        value = resolve(index: index, module: module.path, name: one.code, depth: 0)
+
+        if value.is_err()
+            kept(@found, @order, path: module.path, line: one.line, code: "", through: one.code)
+        else if !package_codes.closed(value.must())
+            kept(@found, @order, path: module.path, line: one.line, code: value.must(), through: one.code)
+
+    out: [Outside] @= []
+
+    for k in order
+        out @ out.push(found[k].must())
+
+    return out
+
+function kept(@found: {str: Outside}, @order: [str], path: str, line: i64, code: str, through: str)
+    k = code + " " + through
+    held = found[k]
+
+    if held.is_err()
+        order @ order.push(k)
+        found[k] @ Outside(path: path, lines: [line], code: code, through: through)
+    else
+        found[k] @ Outside(path: path, lines: held.must().lines.push(line), code: code, through: through)
+
+# What the review keeps a finding under: the module, the code and its name.
+function key(o: Outside) -> str
+    if o.code.len() == 0
+        return o.path + " unread " + o.through
+
+    if o.through.len() == 0
+        return o.path + " " + o.code
+    return o.path + " " + o.code + " through " + o.through
+
+function told(o: Outside) -> str
+    lines: [str] @= []
+
+    for line in o.lines
+        lines @ lines.push(line.to_str())
+
+    place = o.path + ".hero:" + lines.join(",") + ": "
+
+    if o.code.len() == 0
+        return place + "a `fail` writes its code through `" + o.through + "`, which this instrument cannot follow to a `str` constant"
+
+    if o.through.len() == 0
+        return place + "a `fail` writes `" + o.code + "`, outside § A4's list"
+    return place + "a `fail` writes `" + o.code + "` through `" + o.through + "`, outside § A4's list"
+
+## Tests
+
+# The planted witnesses: a literal outside the list, a constant of a private
+# module named through its binding and through a face's own constant that
+# names it, and a name that leads nowhere; beside them a code of the list,
+# written each way, and a code handed on, which pass.
+test "a code outside the closed list is found, written as a literal or through constants, and an unread name is told"
+    codes = rebel_tree.Module(
+        path: "p/internal/codes",
+        text: "constant ODD: str\n    \"undecided\"\n\nconstant FINE: str\n    \"invalid\"\n"
+    )
+    face = rebel_tree.Module(
+        path: "p",
+        text: "use p/internal/codes\nuse p/internal/codes as c\n\nconstant ALSO_ODD: str\n    codes.ODD\n\nfunction f(e: i64?) -> i64?\n    if true\n        return fail(code: \"none\", msg: \"m\")\n    if true\n        return fail(code: c.ODD, msg: \"m\")\n    if true\n        return fail(code: ALSO_ODD, msg: \"m\")\n    if true\n        return fail(code: codes.FINE, msg: \"m\")\n    if true\n        return fail(code: MISSING, msg: \"m\")\n    if true\n        return fail(code: \"none\", msg: \"again\")\n    return fail(code: e.code, msg: \"handed on\")\n\ntest \"t\"\n    x: i64? = fail(code: \"in_a_test\", msg: \"m\")\n    assert x.is_err()\n"
+    )
+    index = index_of_modules([codes, face])
+    found = outside(index: index, module: face)
+    assert found.len() == 4
+    assert told(found[0]) == "p.hero:9,19: a `fail` writes `none`, outside § A4's list"
+    assert told(found[1]) == "p.hero:11: a `fail` writes `undecided` through `c.ODD`, outside § A4's list"
+    assert key(found[2]) == "p undecided through ALSO_ODD"
+    assert told(found[3]) == "p.hero:17: a `fail` writes its code through `MISSING`, which this instrument cannot follow to a `str` constant"
+
+test "a name is a constant's by its last part in capitals, and a `use` binds its last part or its alias"
+    assert constant_shaped("INVALID") && constant_shaped("codes.NOT_FOUND") && constant_shaped("X2")
+    assert !constant_shaped("e.code") && !constant_shaped("code") && !constant_shaped("Mixed")
+    assert bound_by("use a/b/c") == ["c", "a/b/c"]
+    assert bound_by("use a/b as x") == ["x", "a/b"]
