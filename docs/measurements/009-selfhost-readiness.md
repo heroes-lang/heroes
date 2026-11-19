@@ -311,6 +311,14 @@ and Heroes refuses module cycles.
     rule is on the `use` edge, whatever it carries. So the port's module graph
     must be acyclic in a stronger sense than the Rust call graph is.
 
+    **Corrected 2026-11-19**: panel 252's R1, ratified that day, lifted the
+    rule. `module_cycle` left the compiler, and both shapes above, two modules
+    calling each other and two naming each other's types, build and run; a
+    constant defined through itself and a record holding itself by value stay
+    refused by their own checks, `constant_cycle` and `no_size`. The sitting
+    found nothing in the compiler that reads the module graph in an order, so
+    the topological order below was never needed.
+
 **The size of what that forces, measured over `crates/heroes/src/syntax/`
 (20 files, call edges verified by reading every call site):**
 

@@ -1,0 +1,8 @@
+use ga
+
+# Calls the generic function of the module that uses this one.
+function twice(b: ga.Box) -> i64
+    c = ga.pick(x: b, y: ga.Box(v: 9), first: true)
+    names: [str] = ["x", "yy"]
+    w = ga.pick(x: names, y: ["z"], first: true)
+    return c.v * 2 + ga.pick(x: 1, y: 2, first: false) + w.len()

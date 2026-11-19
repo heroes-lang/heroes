@@ -941,6 +941,10 @@ binds `geom` to the declarations in `geom.hero` beside it, written qualified
 (`geom.dist2(a: p, b: q)`, `p: geom.Point`); every module you name needs its own
 `use`, which `as` may rename (`use syntax/decl as sd`), there is no wildcard, and modules may not
 form a cycle (corrected 2026-11-06, panel 234's R11).
+**Corrected 2026-11-19** (panel 252's R1, ratified that day): modules may form a cycle, a face
+and its private module included; `module_cycle` left the language, and a constant defined
+through itself or a record held by value through itself stays refused by its own check,
+`constant_cycle` or `no_size`, wherever its modules stand.
 A program's C is cut by module (panel 093; panel 202 R1, ratified 2026-10-10):
 `build` and `run` compile one unit per module, prototypes across them and each
 unit cached, and each unit reads the headers of its own module's groups and of

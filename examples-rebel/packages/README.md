@@ -103,10 +103,11 @@ it: the compiler, the net's `packages` suite, or a reader's review.
    adds a code only for a failure none of them names.
 3. **A code a package adds is a constant of the package**, `sql.UNIQUE`, and
    its card lists it: a misspelt constant is a compile error, where a misspelt
-   string compares false and the program runs on. A private module, which
-   cannot name its face's constants without a module cycle, writes the code as
-   text, and the card holds it to the face's constant of that text (`net`'s
-   `net/internal/failure.hero` beside `net.STOPPED`).
+   string compares false and the program runs on. A private module that
+   writes the code as text, as those written while the compiler refused a
+   module cycle do (until panel 252's R1, 2026-11-19, which lets a private module
+   name its face's constants), is held by the card to the face's constant of
+   that text (`net`'s `net/internal/failure.hero` beside `net.STOPPED`).
 4. **A message says what was asked and what was found**, in words a reader can
    act on: `no "x" in "abc"`, never `failed`.
 5. **A package aborts only where its caller broke a precondition the caller

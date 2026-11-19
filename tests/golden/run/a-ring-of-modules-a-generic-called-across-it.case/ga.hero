@@ -1,0 +1,15 @@
+use gb
+
+# A box of one number.
+record Box
+    v: i64
+
+# One of two values of any type.
+function pick<T>(x: T, y: T, first: bool) -> T
+    if first
+        return x
+    return y
+
+# Hands a box round the ring.
+function run() -> i64
+    return gb.twice(b: Box(v: 3))

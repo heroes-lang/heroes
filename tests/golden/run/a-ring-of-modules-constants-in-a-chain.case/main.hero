@@ -1,0 +1,10 @@
+# Constants across a ring of modules that is no cycle of constants, panel
+# 252's R1 (2026-11-19): `ca.A` is `cb.B + 1` and `cb.C` is `ca.A * 10`, so
+# the modules use each other while every constant has a value. The ring whose
+# constants are each other is `constant_cycle`, the `check` case
+# `a-ring-of-modules-constants-defined-by-each-other`.
+use ca
+use cb
+
+function main()
+    print(ca.A, " ", cb.C)

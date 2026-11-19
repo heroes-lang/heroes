@@ -1,0 +1,7 @@
+# Panel 252's R1 (2026-11-19) lets modules form a ring, and a ring of
+# CONSTANTS stays refused by its own rule: `ca.A` is `cb.B + 1` and `cb.B` is
+# `ca.A + 1`, so neither has a value. Told once, as `constant_cycle`, in `ca`.
+use ca
+
+function main()
+    print(ca.A)

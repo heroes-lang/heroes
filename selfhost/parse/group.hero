@@ -18,9 +18,10 @@
 # declarations `parse/decl.hero` dispatches: a member differs from an
 # ordinary declaration in its HEAD — no `function` keyword of its own to
 # recover on, a group doc above it — and not in what follows its name.
-# That shared module is also what lets this be a module at all: with the
+# That shared module is also what let this be a module at all: with the
 # tails next door to the dispatcher, `file -> extern_group -> members ->
-# function_tail` was a ring, and Heroes refuses module cycles.
+# function_tail` was a ring, and Heroes refused module cycles until
+# panel 252's R1, 2026-11-19.
 
 use ast
 use c_names

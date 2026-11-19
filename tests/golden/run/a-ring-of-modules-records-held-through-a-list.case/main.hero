@@ -1,0 +1,11 @@
+# Two records of a ring of modules holding each other, one through a list,
+# panel 252's R1 (2026-11-19): `sa.A` holds an `sb.B` by value and `sb.B`
+# holds `[sa.A]`, which has a size. Held by value both ways it is `no_size`,
+# the `check` case `a-ring-of-modules-records-holding-each-other-by-value`.
+use sa
+use sb
+
+function main()
+    inner = sa.A(b: sb.B(items: []), n: 4)
+    outer = sa.A(b: sb.B(items: [inner, inner]), n: 1)
+    print(sa.total(a: outer))

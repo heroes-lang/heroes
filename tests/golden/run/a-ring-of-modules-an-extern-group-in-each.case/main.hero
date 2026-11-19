@@ -1,0 +1,9 @@
+# An `extern` group in each of two modules of a ring, panel 252's R1
+# (2026-11-19): `xa` binds `xa.h` and its C record `XRect`, which `xb` takes
+# from it, and `xb` binds `xb.h`. Each module calls its own header through a
+# function of its own, since an `extern` called from another module is
+# `extern_across_modules` in any graph. 3 * 4 doubled, plus 1 + 2, is 27.
+use xa
+
+function main()
+    print(xa.run())

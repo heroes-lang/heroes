@@ -184,8 +184,8 @@ function field_types(c: state.Checked, decls: [ast.Decl], decl: i64) -> [i64]
 # typedefs, per-type functions and descriptors for the types its own
 # code reaches. It lives HERE rather than in emit.hero because
 # emit_typeorder and emit_perfn read it and emit.hero calls them —
-# Heroes refuses module cycles, so the shared vocabulary goes to the
-# leaf both sides already use.
+# Heroes refused module cycles when it moved (until panel 252's R1, 2026-11-19),
+# so the shared vocabulary went to the leaf both sides already use.
 #
 # WHY IT MATTERS, measured 2026-08-25 on the compiler compiling itself:
 # unfiltered, one TU of a 157-module program is 19,193 lines of C, and

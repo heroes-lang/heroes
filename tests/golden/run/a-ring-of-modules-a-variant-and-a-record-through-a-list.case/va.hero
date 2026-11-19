@@ -1,0 +1,14 @@
+use vb
+
+# A shape, or a bag of them.
+variant Shape
+    circle
+        r: i64
+    group
+        bag: vb.Bag
+
+# The sum of every circle's radius.
+function size(s: Shape) -> i64
+    return match s
+        .circle c => c.r
+        .group g  => vb.total(b: g.bag)

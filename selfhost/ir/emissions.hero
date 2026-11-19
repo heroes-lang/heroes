@@ -12,8 +12,9 @@
 # spelling it once here is what stops two of them from drifting.
 #
 # It is a module rather than a section of `ir/flatten.hero` because
-# nothing here calls the walk, and Heroes refuses module cycles: the
-# functions that only call inwards are exactly the ones that can leave.
+# nothing here calls the walk: while Heroes refused module cycles (until
+# panel 252's R1, 2026-11-19), the functions that only call inwards were exactly
+# the ones that could leave.
 # Cut at M-declared-freer step 1, panel 109's condition.
 
 use ast

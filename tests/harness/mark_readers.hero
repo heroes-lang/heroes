@@ -6,8 +6,8 @@
 # lived in `suite_annotations.hero`, and `absence.hero` read a case's marks
 # through it to ask whether a missing library is the case's own subject. Then
 # the annotations sweep had to ask `absence.hero` whether a program it steps
-# aside is the machine's answer, and Heroes refuses a module cycle (CLAUDE.md
-# §11's knot clause), so the reader moved here and both read it: a second copy
+# aside is the machine's answer, and Heroes refused a module cycle then
+# (until panel 252's R1, 2026-11-19), so the reader moved here and both read it: a second copy
 # would be two readers of one mark, and the day they disagreed a case would be
 # skipped by one rule and judged by the other.
 

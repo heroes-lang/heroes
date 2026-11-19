@@ -296,8 +296,9 @@ function integer_count(c: state.Checker, param: ast.Param) -> bool
 
 # A bare checker and the lowering loop, which is `check/lending.hero`'s shape
 # and for its reason one level up: `checker.hero` imports THAT module, and this
-# one is imported by it, so a `use checker` here would be a module cycle the
-# language refuses outright. The lowering loop is not decoration —
+# one is imported by it, so a `use checker` here would close a ring of
+# modules, which the language refused until panel 252's R1, 2026-11-19, and which
+# this test still does not need. The lowering loop is not decoration —
 # `declared_extents` reads `written_types`, and `lower_ty` is what fills it.
 # `declared_lends` is asked beside it, as `check/ffi.hero` asks both.
 function judged(text: str) -> [diag.Diagnostic]
