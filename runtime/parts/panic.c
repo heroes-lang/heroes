@@ -18,6 +18,8 @@
  */
 
 #include <signal.h>
+/* `clock_gettime`, for how long a report waits on stdout's lock (below). */
+#include <time.h>
 
 /* THE RUNTIME HAS SPOKEN, and this is the one bit that says so. Every death
  * the runtime initiates is a line on stderr followed by `hero_abort()`, which
@@ -53,6 +55,51 @@ static _Noreturn void hero_abort(void) {
     hero_runtime_spoke = 1;
     signal(SIGABRT, SIG_DFL);
     abort();
+}
+
+/* STDOUT IS FLUSHED BEFORE A REPORT ONLY WHERE ITS LOCK CAN BE HAD (panel 251's
+ * R2, ratified 2026-11-19; defect 2587). A report flushes what the program
+ * printed first, so a reader sees the output and the report in the order they
+ * happened. But a thread blocked writing into a pipe nobody reads holds
+ * stdout's lock inside that `write`, and an `fflush(stdout)` waits on the lock
+ * for as long as the reader does: with a worker printing into such a pipe, the
+ * end of `main`'s report and an index's panic both hung with stderr empty, 3
+ * runs of 3 past 8 s, ended only by SIGPIPE when the reader went (the sitting's
+ * `fp-quiet` and `fp-panic-blocked`). C's own `exit` waits the same way, which
+ * is why the reports end by `abort`.
+ *
+ * So the lock is asked with `ftrylockfile`, again and again for at most
+ * `HERO_REPORT_WAIT_NS`: a writer between two statements gives it back within
+ * microseconds, and a blocked one never does. Had, stdout is flushed and the
+ * lock is KEPT, since every caller ends the process and no other thread's line
+ * should follow the report; not had, the report goes out unflushed, and what
+ * stdout's buffer held is lost with the process, the price of saying the report
+ * at all. The lock counts its holder's takings, so a thread that holds it
+ * itself, a `print` statement of its own under way, takes it at once.
+ *
+ * WINDOWS' C LIBRARY HAS NO TRY-LOCK ON A STREAM (`_lock_file` waits), so its
+ * arm flushes as it always has, and a writer blocked there can still hold a
+ * report back: unrun on the box. */
+#define HERO_REPORT_WAIT_NS INT64_C(50000000)
+
+static void hero_stdout_before_report(void) {
+#if defined(_WIN32)
+    fflush(stdout);
+#else
+    struct timespec from;
+    int timed = clock_gettime(CLOCK_MONOTONIC, &from) == 0;
+
+    for (;;) {
+        if (ftrylockfile(stdout) == 0) {
+            fflush(stdout);
+            return;
+        }
+        struct timespec now;
+        if (!timed || clock_gettime(CLOCK_MONOTONIC, &now) != 0) return;
+        int64_t waited = (int64_t)(now.tv_sec - from.tv_sec) * INT64_C(1000000000) + (now.tv_nsec - from.tv_nsec);
+        if (waited >= HERO_REPORT_WAIT_NS) return;
+    }
+#endif
 }
 
 _Noreturn void hero_panic(const char *msg) {

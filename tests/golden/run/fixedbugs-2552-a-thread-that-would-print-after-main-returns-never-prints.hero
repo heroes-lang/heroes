@@ -1,0 +1,24 @@
+# Fixed 2026-11-19, defect 2552, lane-251 (panel 251's R2; the sitting's
+# `t1`): a worker that prints two seconds after `main` has returned.
+# Symptom: told as a compiler bug, its `str` still live, 20 runs of 20.
+# Cause: the balance was read while the thread ran. It is told as the
+# program's mistake when `main` returns, and its line is never printed, the
+# process ending there.
+extern "unistd.h"
+    function usleep(useconds: u32) -> i32
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+function busy(n: i64) -> i64
+    word = "held by a worker " + n.to_str()
+    _ = usleep(useconds: 1000000)
+    _ = usleep(useconds: 1000000)
+    print("worker done: ", word)
+    return word.len()
+
+function main()
+    handle = hero_thread_spawn(body: busy, arg: 7)
+    _ = usleep(useconds: 200000)
+    print("main done, worker ", handle, " not joined")

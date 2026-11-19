@@ -1,0 +1,20 @@
+# Fixed 2026-11-19, defect 2552, lane-251 (panel 251's R2; the brief writer's
+# `bw_unwaited_done`): a thread a library started for the program, its start a
+# C handle's life as Rebel's `threads` makes it, FINISHED and never waited for.
+# Symptom: `panic: 1 C handle(s) never given back`, naming the library's line
+# where the life began, 20 runs of 20 on Rebel's own package: the program
+# missed a wait, and was told of a handle it never wrote.
+# Cause: the handle balance was read while a slot waited unjoined. The thread
+# table is asked first, so the finished thread is told as one nobody joined.
+use waited
+
+extern "unistd.h"
+    function usleep(useconds: u32) -> i32
+
+function quick(n: i64) -> i64
+    return n + 1
+
+function main()
+    t = waited.start(body: quick, arg: 7)
+    _ = usleep(useconds: 200000)
+    print("started ", t.handle, ", finished, never waited for")

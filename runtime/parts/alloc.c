@@ -79,7 +79,10 @@
  * RELAXED on the way up and down, because the counter is read once, at exit,
  * after every thread has been joined: the join is what orders it, and a relaxed
  * read-modify-write still cannot lose an increment. The gate below reads the
- * plain field, which on an `_Atomic` is a sequentially consistent load. */
+ * plain field, which on an `_Atomic` is a sequentially consistent load. That
+ * every thread has been joined is asked, not assumed, since panel 251's R2: a
+ * thread the program started and never joined ends the program before any
+ * counter is read (`hero_spawn_check_joined`, `parts/spawn.c`). */
 
 /* live heap-block balance: the leak detector that works on this platform */
 static _Atomic int64_t hero_live_blocks = 0;
@@ -304,6 +307,11 @@ static int64_t hero_dir_names_held_at_exit(void);
 static int64_t hero_dir_blocks_held_at_exit(void);
 
 void hero_runtime_check_leaks(void) {
+    /* THE THREADS FIRST (panel 251's R2): no balance below is read while a
+     * thread the program started runs or waits unjoined, since what it holds
+     * is no missing decref; one such thread is the program's mistake, told by
+     * `parts/spawn.c` with how many, and the program aborts there. */
+    hero_spawn_check_joined();
     hero_lend_audit_given("found when the program ended");
     int64_t blocks = hero_live_blocks;
     if (blocks != 0) {

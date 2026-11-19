@@ -1,0 +1,23 @@
+# Fixed 2026-11-19, defect 2552, lane-251 (panel 251's R2; the sitting's
+# `t3`): a worker that never ends.
+# Symptom: exit 0 in silence, 20 runs of 20: C ended the thread with the
+# process and the end of `main` had nothing to count.
+# Cause: no question about threads was asked. A thread that never ends is one
+# nobody joins, told when `main` returns.
+extern "unistd.h"
+    function usleep(useconds: u32) -> i32
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+function forever(n: i64) -> i64
+    count: i64 @= n
+
+    while true
+        _ = usleep(useconds: 100000)
+        count @ count + 1
+
+function main()
+    handle = hero_thread_spawn(body: forever, arg: 0)
+    print("main done, worker ", handle, " not joined")

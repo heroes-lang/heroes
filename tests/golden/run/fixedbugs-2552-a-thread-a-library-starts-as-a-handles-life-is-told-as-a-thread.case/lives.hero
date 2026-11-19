@@ -1,0 +1,17 @@
+# The life a started thread owes its wait, held as a handle of C, as Rebel's
+# `threads` holds it (`packages/rebel/0.1.0/files/threads/internal/lives.hero`):
+# a block of one byte from `malloc`, which `acquires free`, given back by
+# `free`, which `consumes` it, so the language's count of C handles tells a
+# thread never waited for. The byte is never read or written.
+extern "stdlib.h"
+    record Life tag void
+    function malloc(size: u64) -> Life acquires free
+    function free(p: Life consumes)
+
+# A new life, which the program then owes `end`.
+function begin() -> Life
+    return malloc(1)
+
+# Ends `life`, which may not be read again.
+function end(@life: Life)
+    free(life)

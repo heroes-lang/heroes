@@ -449,7 +449,9 @@ int64_t hero_run_serial(void);
  *
  * The handle is an `int64_t` index and never a `pthread_t`, which has three
  * spellings and no portable one. Joining twice, or joining a handle nobody was
- * given, are named panics here rather than undefined behaviour in C.
+ * given, are named panics here rather than undefined behaviour in C, and a
+ * thread nobody joins is one when `main` returns, naming how many and where
+ * each was started (spec section 13; panel 251's R2).
  *
  * WHAT CROSSES IS ONE `int64_t` EACH WAY, the body's type below, and spec
  * section 13 says so since panel 246's R3 (2026-11-13). A Heroes program binds
@@ -483,8 +485,9 @@ int64_t hero_thread_join(int64_t handle);
  * A thread is joined by the door of its kind: `hero_thread_join` on a thread
  * started here, or `hero_thread_join_str` on one `hero_thread_spawn` started,
  * is a named panic before any wait, since each would read the other's answer
- * as what it is not. A thread never joined drops its answer with the
- * process, as an `i64` thread's is dropped. Bound from Heroes as
+ * as what it is not. A thread nobody joins, of either door, ends the program
+ * when `main` returns, saying how many (spec section 13; panel 251's R2,
+ * `parts/spawn.c`). Bound from Heroes as
  * `hero_thread_spawn_str(body: (function(str) -> str), arg: str) -> i64` and
  * `hero_thread_join_str(handle: i64) -> str`. */
 int64_t hero_thread_spawn_str(HeroStr (*body)(HeroStr), HeroStr arg);

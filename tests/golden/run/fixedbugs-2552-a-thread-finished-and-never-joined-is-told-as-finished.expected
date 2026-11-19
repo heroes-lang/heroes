@@ -1,0 +1,2 @@
+started 0, finished, never joined
+!panic: 1 thread(s) never joined when `main` returned, 0 of them still running — every thread a program starts is joined before `main` returns, and this program is missing that many

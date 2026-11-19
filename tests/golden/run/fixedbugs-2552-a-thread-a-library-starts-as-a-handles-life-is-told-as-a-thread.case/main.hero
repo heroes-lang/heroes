@@ -1,0 +1,24 @@
+# Fixed 2026-11-19, defect 2552, lane-251 (panel 251's R2; the brief writer's
+# `bw_unwaited`): a thread a library starts for the program, its start a C
+# handle's life as Rebel's `threads` makes it, never waited for, its worker
+# still running and holding a `str` when `main` returns.
+# Symptom: `panic: 2 heap blocks still live at exit (a missing decref) — this
+# is a compiler bug`, 20 runs of 20 on Rebel's own package: the worker's `str`
+# was counted before the library's life could say what the program missed.
+# Cause: the end of `main` read the heap's balance first. The thread table is
+# asked before every balance, the handle's among them, so the thread is told
+# as the program's mistake and named by the library function that started it.
+use waited
+
+extern "unistd.h"
+    function usleep(useconds: u32) -> i32
+
+function busy(n: i64) -> i64
+    word = "held by a thread " + n.to_str()
+    _ = usleep(useconds: 1000000)
+    return word.len()
+
+function main()
+    t = waited.start(body: busy, arg: 7)
+    _ = usleep(useconds: 200000)
+    print("started ", t.handle, ", never waited for, still running")

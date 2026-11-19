@@ -1,0 +1,25 @@
+# Kept 2026-11-19, defect 2552, lane-251 (panel 251's R2, *`exit(code:)` keeps
+# ending every thread with the process*): `main` ends by `exit(code: 0)` while
+# its thread still runs and holds a `str`.
+# What it pins: `exit` skips the end of `main`'s audit on purpose
+# (`hero_os.h`'s `hero_exit`, panel 036), so a program that asks to stop now
+# stops with its status and says nothing of its threads; only a return from
+# `main` asks whether every thread was joined.
+extern "unistd.h"
+    function usleep(useconds: u32) -> i32
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+function busy(n: i64) -> i64
+    word = "held by a thread " + n.to_str()
+    _ = usleep(useconds: 1000000)
+    _ = usleep(useconds: 1000000)
+    return word.len()
+
+function main()
+    handle = hero_thread_spawn(body: busy, arg: 7)
+    _ = usleep(useconds: 200000)
+    print("started ", handle, ", never joined, still running, exit 0")
+    exit(code: 0)
