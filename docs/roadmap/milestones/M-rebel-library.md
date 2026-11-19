@@ -354,7 +354,7 @@ At about 21:25, to the coordinator's question whether the landing holds the thre
 meant as: *no, I want to face them before closing this whole chat, so run them one at a time and
 let us resolve them; and as always, when we close the steps no blocking may be active.* So no
 row of the chain is written for them, and this milestone owes them, one at a time and in this
-order, after the landing's lanes:
+order, the first with the landing's umbrella lane and the two others after it:
 
 1. **Panel 253's R6, `heroes fetch` placing a `packages` list's closure**: an entry's listed
    packages placed with each one they use, priced by the sitting's compiler-engineer at about 150
