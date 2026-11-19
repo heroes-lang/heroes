@@ -21,8 +21,6 @@
 # What either finds is a candidate: a helper made one where a package below
 # both can hold it, or a repetition a reader keeps because no package may.
 
-use <core>/strings as core_strings
-
 use module_text
 use rebel_tree
 use strings
@@ -77,7 +75,7 @@ function functions_of(module: rebel_tree.Module, package: str, least: i64) -> [F
     at: i64 @= 0
 
     while at < rows.len()
-        if !core_strings.has_prefix(s: rows[at], prefix: "function ")
+        if !strings.has_prefix(s: rows[at], prefix: "function ")
             at @ at + 1
             continue
         start = at
@@ -282,7 +280,7 @@ function bound_of(module: rebel_tree.Module, package: str) -> [Bound]
     for row in strings.lines(module.text)
         line @ line + 1
 
-        if core_strings.has_prefix(s: row, prefix: "extern ")
+        if strings.has_prefix(s: row, prefix: "extern ")
             parts = strings.split_on(text: row, byte: '"')
 
             header @ if parts.len() >= 3
@@ -291,7 +289,7 @@ function bound_of(module: rebel_tree.Module, package: str) -> [Bound]
                 ""
         else if row.len() > 0 && row[0] != ' '
             header @ ""
-        else if header.len() > 0 && core_strings.has_prefix(s: row, prefix: "    function ")
+        else if header.len() > 0 && strings.has_prefix(s: row, prefix: "    function ")
             out @ out.push(
                 Bound(header: header, name: name_of(row.slice(from: 13, to: row.len())), path: module.path, line: line, package: package)
             )

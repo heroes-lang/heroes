@@ -17,8 +17,6 @@
 # constant whose value is not a plain literal nor a name, or a name that leads
 # nowhere this instrument can follow, is told as unread, the loud direction.
 
-use <core>/strings as core_strings
-
 use module_text
 use package_codes
 use rebel_tree
@@ -57,10 +55,10 @@ function index_of_modules(modules: [rebel_tree.Module]) -> Index
         for at in range(from: 0, to: rows.len())
             row = rows[at]
 
-            if core_strings.has_prefix(s: row, prefix: "constant ") && core_strings.has_suffix(s: row, suffix: ": str") && at + 1 < rows.len()
+            if strings.has_prefix(s: row, prefix: "constant ") && strings.has_suffix(s: row, suffix: ": str") && at + 1 < rows.len()
                 name = row.slice(from: 9, to: row.len() - 5)
                 constants[m.path + " " + name] @ strings.trimmed(rows[at + 1])
-            else if core_strings.has_prefix(s: row, prefix: "use ") && !core_strings.has_prefix(s: row, prefix: "use <")
+            else if strings.has_prefix(s: row, prefix: "use ") && !strings.has_prefix(s: row, prefix: "use <")
                 bound = bound_by(row)
                 uses[m.path + " " + bound[0]] @ bound[1]
 

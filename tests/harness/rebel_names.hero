@@ -24,8 +24,6 @@
 # grammar rules read a face's functions alone, the case rule every module's,
 # since a private module's names are read by the next person to write one.
 
-use <core>/strings as core_strings
-
 use package_face
 use package_rules
 use rebel_faces
@@ -92,7 +90,7 @@ function told(m: Misnamed) -> str
 
 # Whether `name` is `snake_case`: `[a-z][a-z0-9_]*`, no `_` doubled or last.
 function snake_shaped(name: str) -> bool
-    if !package_rules.lower_word(name) || core_strings.has_suffix(s: name, suffix: "_")
+    if !package_rules.lower_word(name) || strings.has_suffix(s: name, suffix: "_")
         return false
     return strings.index_of(text: name, needle: "__").is_err()
 
@@ -104,7 +102,7 @@ function cased(path: str, text: str) -> [Misnamed]
     rows = strings.lines(text)
 
     for at in range(from: 0, to: rows.len())
-        if core_strings.has_prefix(s: rows[at], prefix: "function ")
+        if strings.has_prefix(s: rows[at], prefix: "function ")
             got = package_face.callable_at(rows: rows, at: at)
 
             if got.is_err()
@@ -195,10 +193,10 @@ function grammar_broken(name: str, params: [package_face.Slot], result: str) -> 
     nothing: [str] = []
     bare = strings.without_suffix(text: result, suffix: "?")
 
-    if (core_strings.has_prefix(s: name, prefix: "is_") || core_strings.has_prefix(s: name, prefix: "has_")) && bare != "bool"
+    if (strings.has_prefix(s: name, prefix: "is_") || strings.has_prefix(s: name, prefix: "has_")) && bare != "bool"
         return ["question", "a question answers `bool`, and this answers `" + result + "`"]
 
-    if (name == "contains" || core_strings.has_prefix(s: name, prefix: "contains_")) && bare != "bool"
+    if (name == "contains" || strings.has_prefix(s: name, prefix: "contains_")) && bare != "bool"
         return ["one-meaning", "`contains` answers `bool` wherever it appears, and this answers `" + result + "`"]
 
     if name == "index_of" && result != "i64?"
@@ -223,7 +221,7 @@ function grammar_broken(name: str, params: [package_face.Slot], result: str) -> 
 # Whether `name` is `<word>_x` of README § A3's grammar: it begins `<word>_`, and what
 # follows is no grammar suffix, which makes it that suffix's shape instead.
 function grammar_shaped(name: str, word: str) -> bool
-    if !core_strings.has_prefix(s: name, prefix: word + "_")
+    if !strings.has_prefix(s: name, prefix: word + "_")
         return false
     rest = name.slice(from: word.len() + 1, to: name.len())
 

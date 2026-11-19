@@ -19,8 +19,6 @@
 # blocks of one meaning under two ids are not seen here, and two meanings under
 # one id are; both directions are told to the reader in the finding.
 
-use <core>/strings as core_strings
-
 use strings
 
 # One block of a ledger: the ledger it stands in, the line its `capability`
@@ -47,7 +45,7 @@ function blocks_of(package: str, text: str) -> [Block]
     for row in strings.lines(text)
         line @ line + 1
 
-        if core_strings.has_prefix(s: row, prefix: "capability ")
+        if strings.has_prefix(s: row, prefix: "capability ")
             rest = row.slice(from: 11, to: row.len())
             gap = strings.index_of(text: rest, needle: "  ")
 
@@ -61,7 +59,7 @@ function blocks_of(package: str, text: str) -> [Block]
             else
                 strings.trimmed(rest.slice(from: gap.must(), to: rest.len()))
             out @ out.push(Block(ledger: package, line: line, id: id, what: what, heroes: ""))
-        else if core_strings.has_prefix(s: row, prefix: "  heroes ") && out.len() > 0
+        else if strings.has_prefix(s: row, prefix: "  heroes ") && out.len() > 0
             last = out.len() - 1
             out[last].heroes @ strings.trimmed(row.slice(from: 9, to: row.len()))
 
@@ -74,7 +72,7 @@ function done(heroes: str) -> bool
         return false
 
     for word in ["pending", "refused", "built-in"]
-        if core_strings.has_prefix(s: heroes, prefix: word)
+        if strings.has_prefix(s: heroes, prefix: word)
             return false
 
     return true

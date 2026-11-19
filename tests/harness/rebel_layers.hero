@@ -20,8 +20,6 @@
 # every module's, which is where a private module of one package reaching
 # another's stands.
 
-use <core>/strings as core_strings
-
 use rebel_tree
 use strings
 
@@ -59,7 +57,7 @@ function broken(rows: [rebel_tree.Row], modules: [rebel_tree.Module]) -> [Placed
         for row in strings.lines(m.text)
             line @ line + 1
 
-            if !core_strings.has_prefix(s: row, prefix: "use ") || core_strings.has_prefix(s: row, prefix: "use <")
+            if !strings.has_prefix(s: row, prefix: "use ") || strings.has_prefix(s: row, prefix: "use <")
                 continue
             used = used_path(row)
             theirs = rebel_tree.package_of(rows: by, path: used)

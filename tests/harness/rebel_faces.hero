@@ -21,8 +21,6 @@
 # finds is a candidate the review's readers judge: two answers to one question,
 # a structure that wants its own package, or a face a reader cannot hold.
 
-use <core>/strings as core_strings
-
 use package_face
 use strings
 
@@ -264,10 +262,10 @@ function snake(name: str) -> str
 function names_function(type_name: str, name: str) -> bool
     s = snake(type_name)
 
-    if core_strings.has_prefix(s: name, prefix: s + "_")
+    if strings.has_prefix(s: name, prefix: s + "_")
         rest = name.slice(from: s.len() + 1, to: name.len())
         return place_in(names: GRAMMAR_SUFFIXES, name: rest) < 0
-    return core_strings.has_suffix(s: name, suffix: "_" + s)
+    return strings.has_suffix(s: name, suffix: "_" + s)
 
 # Each type of the face that names at least `least` of its functions.
 function prefixed(face: package_face.Face, least: i64) -> [Prefixed]

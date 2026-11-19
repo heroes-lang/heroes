@@ -16,8 +16,6 @@
 # no row holds has no package, "", and every instrument that asks for one says
 # so rather than guessing one.
 
-use <core>/strings as core_strings
-
 use package_rules
 use shell
 use strings
@@ -74,7 +72,7 @@ function modules(scratch: str, root: str) -> [Module]?
     out: [Module] @= []
 
     for file in shell.list_tree(scratch: scratch, dir: root, skip: nothing)?
-        if core_strings.has_suffix(s: file, suffix: ".hero")
+        if strings.has_suffix(s: file, suffix: ".hero")
             text = read_file(file)
 
             if text.is_err()
@@ -92,7 +90,7 @@ function ledgers(scratch: str, root: str) -> [Ledger]?
     out: [Ledger] @= []
 
     for file in shell.list_tree(scratch: scratch, dir: root, skip: nothing)?
-        if core_strings.has_suffix(s: file, suffix: ".ledger")
+        if strings.has_suffix(s: file, suffix: ".ledger")
             text = read_file(file)
 
             if text.is_err()
@@ -117,11 +115,11 @@ function rows_of(text: str) -> [Row]
     for row in strings.lines(text)
         line @ line + 1
 
-        if core_strings.has_prefix(s: row, prefix: "## ")
-            inside @ core_strings.has_prefix(s: row, prefix: "## A1.")
+        if strings.has_prefix(s: row, prefix: "## ")
+            inside @ strings.has_prefix(s: row, prefix: "## A1.")
             continue
 
-        if !inside || !core_strings.has_prefix(s: row, prefix: "| ")
+        if !inside || !strings.has_prefix(s: row, prefix: "| ")
             continue
         cells = strings.split_on(text: row, byte: '|')
 
@@ -173,7 +171,7 @@ function is_private(path: str) -> bool
 
 # Whether a module is a floor (README § A2): its last part begins `hero_`.
 function is_floor(path: str) -> bool
-    return core_strings.has_prefix(s: strings.base_name(path: path), prefix: "hero_")
+    return strings.has_prefix(s: strings.base_name(path: path), prefix: "hero_")
 
 # Whether a module is a face a program names: neither private nor a floor.
 function is_face(path: str) -> bool
@@ -187,7 +185,7 @@ function line_opening(text: str, start: str) -> i64
     for row in strings.lines(text)
         line @ line + 1
 
-        if core_strings.has_prefix(s: row, prefix: start)
+        if strings.has_prefix(s: row, prefix: start)
             return line
 
     return 0
