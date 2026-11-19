@@ -82,27 +82,39 @@ static _Noreturn void hero_abort(void) {
  *
  * WINDOWS' C LIBRARY HAS NO TRY-LOCK ON A STREAM (`_lock_file` waits), so its
  * arm flushes as it always has, and a writer blocked there can still hold a
- * report back: unrun on the box. */
+ * report back: unrun on the box. Measured since by a C probe on the box
+ * (2026-11-19, defect 2600's lane): with stdout unbuffered, as
+ * `hero_streams_survive_abort` sets it there, `fflush(stdout)` returned at once
+ * while another thread was blocked writing into an unread pipe.
+ *
+ * The same question is asked of a stream at `exit(code:)`'s end (defect 2600,
+ * `parts/os.c`'s `hero_exit_end`), which needs its answer: true where the lock
+ * was had and the stream flushed, false where it was not. */
 #define HERO_REPORT_WAIT_NS INT64_C(50000000)
 
-static void hero_stdout_before_report(void) {
+static bool hero_stream_flushed_held(FILE *stream) {
 #if defined(_WIN32)
-    fflush(stdout);
+    fflush(stream);
+    return true;
 #else
     struct timespec from;
     int timed = clock_gettime(CLOCK_MONOTONIC, &from) == 0;
 
     for (;;) {
-        if (ftrylockfile(stdout) == 0) {
-            fflush(stdout);
-            return;
+        if (ftrylockfile(stream) == 0) {
+            fflush(stream);
+            return true;
         }
         struct timespec now;
-        if (!timed || clock_gettime(CLOCK_MONOTONIC, &now) != 0) return;
+        if (!timed || clock_gettime(CLOCK_MONOTONIC, &now) != 0) return false;
         int64_t waited = (int64_t)(now.tv_sec - from.tv_sec) * INT64_C(1000000000) + (now.tv_nsec - from.tv_nsec);
-        if (waited >= HERO_REPORT_WAIT_NS) return;
+        if (waited >= HERO_REPORT_WAIT_NS) return false;
     }
 #endif
+}
+
+static void hero_stdout_before_report(void) {
+    (void)hero_stream_flushed_held(stdout);
 }
 
 _Noreturn void hero_panic(const char *msg) {

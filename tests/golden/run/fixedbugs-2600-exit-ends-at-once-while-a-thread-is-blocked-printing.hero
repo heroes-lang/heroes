@@ -1,0 +1,36 @@
+# Fixed 2026-11-19, defect 2600, lane-impl-rt (found by lane-251 beside defect
+# 2587's repair): `main` asks `exit(code: 0)` while a worker sits blocked
+# printing into a pipe nobody reads.
+# Symptom: the program never ended, stderr empty, 3 runs of 3 killed at 6 s on
+# this Mac.
+# Cause: `hero_exit` ended by C's `exit`, which runs the `atexit` functions and
+# then flushes stdout, and the flush waited on the lock the blocked worker
+# holds inside its `write` (in libc++'s stream destructor, registered before
+# `main`, on this Mac). The end `exit` asks is now decided after the program's
+# own `atexit` functions: where stdout's lock cannot be had within a bound, the
+# process ends at once with its code, the worker's unread lines lost with it.
+# The program makes its own stdout the unread pipe (defect 2552's header), since
+# the harness reads what it prints: nothing reaches the harness's stdout.
+extern "fixedbugs-2552-stdout-into-a-pipe-nobody-reads.h"
+    function unread_stdout() -> i64
+
+extern "unistd.h"
+    function usleep(useconds: u32) -> i32
+
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+
+function talk(n: i64) -> i64
+    i @= 0
+
+    while i < 1_000_000_000
+        print("worker ", i)
+        i @ i + 1
+
+    return n
+
+function main()
+    if unread_stdout() == 1
+        _ = hero_thread_spawn(body: talk, arg: 7)
+        _ = usleep(useconds: 300000)
+        exit(code: 0)

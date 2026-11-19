@@ -560,9 +560,74 @@ static void hero_lease_crash_install(void) {
 }
 #endif
 
+/* `EXIT(CODE:)` ENDS THE PROGRAM EVEN WHILE A THREAD IS BLOCKED PRINTING
+ * (defect 2600). `hero_exit` ends by C's `exit`, which runs the functions
+ * registered with `atexit` and then flushes every stream, each flush waiting on
+ * its stream's lock. A thread blocked writing stdout into a pipe nobody reads
+ * holds that lock inside its `write` for as long as the reader does, so the
+ * program never ended: 3 runs of 3 killed at 6 s with stderr empty (the defect's
+ * `exit_blocked`, this Mac, 2026-11-19). Where it waits, read by `sample` on a C
+ * probe of the same shape: in `exit`'s `__cxa_finalize_ranges`, libc++'s
+ * `std::DoIOSInit` destructor, registered before `main`, flushing `cout`, after
+ * the program's own `atexit` functions had run; and a thread blocked writing
+ * STDERR holds it the same way, the same destructor flushing `clog` (killed at
+ * 5 s). On Linux arm64 (glibc 2.41, the container of
+ * `docs/platforms/linux/LINUX-MACHINE.md`) the same shapes hung too, killed at
+ * 6 s, and end at once with what follows; where glibc's `exit` waits was not
+ * read.
+ *
+ * So the end is decided at the last moment the program's own work allows. The
+ * function below is registered at the program's first line, `hero_args_set`, so
+ * it runs after every function registered while the program ran (the terminal
+ * put back, `platform/hero_term.c`; a C library's, registered by a call) and
+ * before every one registered before `main` and C's own flushes. Asked by
+ * `hero_exit` alone, it asks stdout's lock and then stderr's, each with
+ * `hero_stream_flushed_held`'s bounded try-lock (`parts/panic.c`, the reports'
+ * own, defect 2587). Both had: both are flushed and KEPT, so no other thread's
+ * line follows the end, and `exit` goes on; this thread takes them again at
+ * once for C's own flushes. Either refused: `_Exit` with the code, at once.
+ * The holder past the bound is a thread still running, blocked in its write
+ * or printing for longer than the bound, or a thread that ended inside a
+ * print span its body left open (`hero_print_str` called alone, the lock
+ * gone with its thread): measured here on that shape too, which ended at
+ * 0.06 s where C's `exit` waited for ever, its line already written. Where a
+ * thread's end gives such a span back, this end finds the lock free.
+ * What that costs, said: the functions registered before `main` (libc++'s
+ * flush, a C library's constructor's, LeakSanitizer's check on Linux) and the
+ * flush of every other stream are skipped, only where a thread held stdout or
+ * stderr past the bound; what such a stream's buffer held is lost with the
+ * process, as a report's unflushed stdout is.
+ *
+ * The status and the ask are the thread's: `exit` runs the registered functions
+ * on the thread that called it. Where the registration was refused, `hero_exit`
+ * asks the same question itself before `exit`. On Windows the try-lock answers
+ * true after a plain flush, so its end is C's `exit` as before; and there the
+ * shape does not hold it back: a C probe of it on the box, stdout unbuffered as
+ * `hero_streams_survive_abort` sets it there, ended at `exit` at once, 0, with
+ * a thread blocked writing into an unread pipe (2026-11-19). */
+static _Thread_local bool hero_exit_asked = false;
+static _Thread_local int hero_exit_status = 0;
+static _Atomic int hero_exit_end_set = 0;
+
+static void hero_exit_end(void) {
+    if (!hero_exit_asked) return;
+    if (hero_stream_flushed_held(stdout) && hero_stream_flushed_held(stderr)) return;
+    _Exit(hero_exit_status);
+}
+
+/* Once per process, at the program's first line. */
+static void hero_exit_end_install(void) {
+    if (atomic_load(&hero_exit_end_set) == 0 && atexit(hero_exit_end) == 0) {
+        atomic_store(&hero_exit_end_set, 1);
+    }
+}
+
 void hero_args_set(int argc, char **argv) {
     hero_stdout_is_bytes();
     hero_streams_survive_abort();
+    /* Before anything of the program can register a function with `atexit`,
+     * so the end `exit(code:)` asks runs after all of them (defect 2600). */
+    hero_exit_end_install();
     /* Before anything of the program runs, and after the streams, so the refusal
      * is seen: a Windows that ignores the UTF-8 code page this runtime carries
      * would read every name above ASCII as another (parts/codepage.c). */
@@ -1128,6 +1193,14 @@ _Noreturn void hero_exit(int64_t code) {
      * audited all the same, which asks nothing of the frames the exit leaves
      * (defect 451, `parts/lend.c`). */
     hero_lend_audit_given("found when the program ended");
+    /* The end decided after the program's `atexit` functions, by
+     * `hero_exit_end` above: `exit` must not wait on a stream a thread blocked
+     * printing holds (defect 2600). */
+    hero_exit_status = (int)code;
+    hero_exit_asked = true;
+    if (atomic_load(&hero_exit_end_set) == 0) {
+        hero_exit_end();
+    }
     exit((int)code);
 }
 
