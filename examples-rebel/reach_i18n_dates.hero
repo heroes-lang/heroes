@@ -1,0 +1,12 @@
+# Reaches Rebel's `i18n/dates`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It writes a day in long French and three
+# days ago in Spanish: "5 mars 2024 hace 3 días".
+
+use <rebel>/i18n
+use <rebel>/i18n/dates
+use <rebel>/time
+
+function main()
+    day = time.date(year: 2024, month: 3, day: 5).must()
+    french = dates.format_date(i18n.parse_locale("fr").must(), t: day, zone: time.utc_zone(), style: .long)
+    print(french, " ", dates.format_relative(i18n.parse_locale("es").must(), amount: -3, unit: .day, style: .long))

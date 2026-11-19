@@ -1,0 +1,618 @@
+# Texts ordered as a language orders them, by the Unicode Collation
+# Algorithm (UTS #10) over CLDR's root collation and the tailorings CLDR
+# gives the languages: "ä" after "z" in Swedish and beside "a" in German,
+# "ch" after "h" in Czech, accents ignored or weighed, case first or last,
+# numbers by their value. It answers comparisons and sort keys, as ICU's
+# `Collator` does; the root collation is UCA `UCA_VERSION` as CLDR release
+# `i18n.CLDR_VERSION` writes it.
+#
+# What it does NOT do: compare texts by their bytes (`strings.compare`) or
+# ignoring case only (`strings.equals_ignoring_case`); put a text in a normal
+# form (`unicode/normalize`), which it does inside on its own. Chinese is
+# ordered by the root's order of the Han characters and not by pinyin or
+# strokes, whose tables are CLDR's largest.
+#
+# It fails `invalid` where tailoring rules do not parse, the message saying
+# where.
+
+use i18n
+use i18n/collate/internal/collate_tables
+use i18n/collate/internal/tailoring
+use i18n/collate/internal/weighing
+use i18n/internal/locale_syntax
+use strings
+use unicode
+use unicode/normalize
+
+## Codes
+
+# The code `collator_of_rules` fails with where rules do not parse.
+constant INVALID: str
+    "invalid"
+
+## Versions
+
+# The version of the Unicode Collation Algorithm's tables the root collation
+# is made from.
+constant UCA_VERSION: str
+    "18.0.0"
+
+## Options
+
+# How many levels of difference two texts are compared at, each level read
+# only where the ones before it are equal.
+variant Strength
+    # Base letters alone: "a", "á" and "A" are equal.
+    primary
+    # Accents too: "a" before "á", but "a" equal to "A".
+    secondary
+    # Case and variants too: "a" before "A". The default.
+    tertiary
+    # Punctuation ignored at the levels before, where `alternate` is
+    # `shifted`, then weighed.
+    quaternary
+    # Every code point of the normalized texts, after every other level.
+    identical
+
+# How spaces, punctuation and symbols are weighed.
+variant Alternate
+    # As letters are, at the first level: "a b" before "ab". The default.
+    non_ignorable
+    # Ignored at the first three levels and weighed at the fourth: "a b" and
+    # "ab" are equal at a tertiary strength.
+    shifted
+
+# Which characters `shifted` ignores, each including the ones before it.
+variant MaxVariable
+    # Spaces.
+    space
+    # Spaces and punctuation, the default.
+    punct
+    # Spaces, punctuation and symbols.
+    symbol
+    # Spaces, punctuation, symbols and currency signs.
+    currency
+
+# Which case comes first among texts that differ only by it.
+variant CaseFirst
+    # As the tables say: lower case first.
+    off
+    # Upper case first, "A" before "a", as Danish orders them.
+    upper
+    # Lower case first.
+    lower
+
+# How a collator compares, UTS #35's collation settings.
+record CollateOptions
+    # How many levels are compared.
+    strength: Strength
+    # How spaces and punctuation are weighed.
+    alternate: Alternate
+    # Which characters `shifted` ignores.
+    max_variable: MaxVariable
+    # Which case comes first.
+    case_first: CaseFirst
+    # Whether case is weighed as a level of its own after accents, so that a
+    # primary strength still tells "a" from "A".
+    case_level: bool
+    # Whether accents are compared from the end of the text, as French of
+    # Canada orders them.
+    backwards: bool
+    # Whether runs of decimal digits are compared by their numeric value, so
+    # that "2" comes before "10".
+    numeric: bool
+
+# A collation element: what a character weighs at each level.
+record Element
+    # The first level's weight, the base letter; 0 where it is ignored.
+    primary: i64
+    # The second level's weight, the accent; 0 where ignored.
+    secondary: i64
+    # The third level's weight, case and variant; 0 where ignored.
+    tertiary: i64
+    # Whether the element is variable, a space, punctuation or a symbol that
+    # `shifted` ignores.
+    variable: bool
+
+# A collator: a language's order and the options it compares by. `collator_of`,
+# `collator_with` and `collator_of_rules` make one; a collator built
+# directly is read as its fields say.
+record Collator
+    # The tag of the locale whose tailoring it holds, `sv`, or `und` for the
+    # root and for rules.
+    locale: str
+    # The tailoring's rules as CLDR writes them; empty for the root.
+    rules: str
+    # The options it compares by.
+    options: CollateOptions
+    # The texts the tailoring places, in NFD, each with its elements: four
+    # numbers an element, its primary, secondary and tertiary weights and 1
+    # where it is variable, the root's weights scaled by 65,536 so that the
+    # tailoring's fall between them.
+    tailored: {str: [i64]}
+    # How many characters the longest text of `tailored` holds.
+    longest: i64
+
+# The options the root collation compares by: tertiary strength, spaces and
+# punctuation as letters, lower case first, accents from the start, digits
+# as characters.
+#
+# See also `collator_with`.
+function default_options() -> CollateOptions
+    return CollateOptions(
+        strength: .tertiary,
+        alternate: .non_ignorable,
+        max_variable: .punct,
+        case_first: .off,
+        case_level: false,
+        backwards: false,
+        numeric: false
+    )
+
+# The collator of `locale`'s language: CLDR's tailoring of it, the type its
+# `co` keyword asks or the standard one, with the options the tailoring
+# sets and those its keywords ask (`ks`, `ka`, `kb`, `kc`, `kf`, `kn`,
+# `kv`).
+#
+# - `locale`: the locale; a language CLDR gives no tailoring is ordered by
+#   the root, as is Chinese (the module's comment says why).
+#
+# See also `collator_with`, `collation_types`.
+function collator_of(locale: i18n.Locale) -> Collator
+    wanted = i18n.unicode_keyword(locale, key: "co").default("standard")
+    tag @= "und"
+    rules @= ""
+    found @= false
+
+    for step in i18n.fallback_chain(locale)
+        if !found
+            name = i18n.format_locale(step)
+
+            for kind in [wanted, "standard"]
+                at = locale_syntax.search(collate_tables.RULE_KEYS, key: name + " " + kind)
+
+                if at >= 0 && !found
+                    tag @ name
+                    rules @ collate_tables.RULE_TEXTS[at]
+                    found @ true
+
+    options @= default_options()
+    start = weighing.Settings(
+        strength: 3,
+        shifted: false,
+        max_variable: 1,
+        case_first: 0,
+        case_level: false,
+        backwards: false,
+        numeric: false
+    )
+    built = tailoring.build(rules, settings: start)
+    tailored: {str: [i64]} @= {}
+    longest @= 0
+    named @= start
+
+    match built
+        .ok t =>
+            tailored @ t.tailored
+            longest @ t.longest
+            named @ t.settings
+        .err _ =>
+            tag @ "und"
+            rules @ ""
+
+    built_strength: Strength = match named.strength
+        1 => .primary
+        2 => .secondary
+        3 => .tertiary
+        4 => .quaternary
+        _ => .identical
+
+    built_variable: MaxVariable = match named.max_variable
+        0 => .space
+        1 => .punct
+        2 => .symbol
+        _ => .currency
+
+    built_case: CaseFirst = match named.case_first
+        1 => .upper
+        2 => .lower
+        _ => .off
+
+    built_alternate: Alternate = .non_ignorable
+    options @ CollateOptions(
+        strength: built_strength,
+        alternate: built_alternate,
+        max_variable: built_variable,
+        case_first: built_case,
+        case_level: named.case_level,
+        backwards: named.backwards,
+        numeric: named.numeric
+    )
+
+    if named.shifted
+        options.alternate @ .shifted
+
+    keyword = i18n.unicode_keyword(locale, key: "ks").default("")
+
+    if keyword == "level1"
+        options.strength @ .primary
+    else if keyword == "level2"
+        options.strength @ .secondary
+    else if keyword == "level3"
+        options.strength @ .tertiary
+    else if keyword == "level4"
+        options.strength @ .quaternary
+    else if keyword == "identic"
+        options.strength @ .identical
+    alternate = i18n.unicode_keyword(locale, key: "ka").default("")
+
+    if alternate == "shifted"
+        options.alternate @ .shifted
+    else if alternate == "noignore"
+        options.alternate @ .non_ignorable
+    case_first = i18n.unicode_keyword(locale, key: "kf").default("")
+
+    if case_first == "upper"
+        options.case_first @ .upper
+    else if case_first == "lower"
+        options.case_first @ .lower
+    else if case_first == "false"
+        options.case_first @ .off
+    max_variable = i18n.unicode_keyword(locale, key: "kv").default("")
+
+    if max_variable == "space"
+        options.max_variable @ .space
+    else if max_variable == "punct"
+        options.max_variable @ .punct
+    else if max_variable == "symbol"
+        options.max_variable @ .symbol
+    else if max_variable == "currency"
+        options.max_variable @ .currency
+    backwards = i18n.unicode_keyword(locale, key: "kb").default("")
+
+    if backwards != ""
+        options.backwards @ backwards == "true"
+    case_level = i18n.unicode_keyword(locale, key: "kc").default("")
+
+    if case_level != ""
+        options.case_level @ case_level == "true"
+    numeric = i18n.unicode_keyword(locale, key: "kn").default("")
+
+    if numeric != ""
+        options.numeric @ numeric == "true"
+    return Collator(locale: tag, rules: rules, options: options, tailored: tailored, longest: longest)
+
+# The collator of `locale`'s language with `options` in place of its own.
+#
+# - `locale`: the locale, whose tailoring is taken.
+# - `options`: the options; the tailoring's own and the keywords' are
+#   replaced whole.
+#
+# See also `collator_of`, `default_options`.
+function collator_with(locale: i18n.Locale, options: CollateOptions) -> Collator
+    c @= collator_of(locale)
+    c.options @ options
+    return c
+
+# A collator of rules written in CLDR's and ICU's syntax, applied to the
+# root: `&c < č <<< Č`, `&[before 1]a < å`, `[caseFirst upper]`.
+#
+# - `rules`: the rules: resets `&`, relations `<` `<<` `<<<` `<*` `=`,
+#   contractions, expansions after `/`, quoting with `'` and `\u`, positions
+#   `[before 1]`, `[last regular]`, `[first variable]`, and the settings
+#   `[strength]`, `[alternate]`, `[backwards 2]`, `[caseFirst]`,
+#   `[caseLevel]`, `[numericOrdering]`, `[maxVariable]`, `[import]` of a
+#   CLDR tailoring Rebel carries; `[reorder]`, `[suppressContractions]`,
+#   `[optimize]` and `[normalization]` are read and change nothing, a script
+#   order being beyond what this package carries.
+# - `options`: the options the rules' settings change.
+#
+# Fails `invalid` where the rules do not parse, the message giving the
+# offset; where a reset names a position or an import Rebel does not hold;
+# where a prefix `|` is written, which is not read; and where more texts are
+# placed between two weights than the scale leaves room for, sixteen deep. See
+# also `collator_of`.
+function collator_of_rules(rules: str, options: CollateOptions) -> Collator?
+    strength = match options.strength
+        .primary    => 1
+        .secondary  => 2
+        .tertiary   => 3
+        .quaternary => 4
+        .identical  => 5
+
+    max_variable = match options.max_variable
+        .space    => 0
+        .punct    => 1
+        .symbol   => 2
+        .currency => 3
+
+    case_first = match options.case_first
+        .off   => 0
+        .upper => 1
+        .lower => 2
+
+    shifted = match options.alternate
+        .shifted       => true
+        .non_ignorable => false
+
+    settings = weighing.Settings(
+        strength: strength,
+        shifted: shifted,
+        max_variable: max_variable,
+        case_first: case_first,
+        case_level: options.case_level,
+        backwards: options.backwards,
+        numeric: options.numeric
+    )
+    built = tailoring.build(rules, settings: settings)?
+    result @= default_options()
+
+    built_strength: Strength = match built.settings.strength
+        1 => .primary
+        2 => .secondary
+        3 => .tertiary
+        4 => .quaternary
+        _ => .identical
+
+    built_variable: MaxVariable = match built.settings.max_variable
+        0 => .space
+        1 => .punct
+        2 => .symbol
+        _ => .currency
+
+    built_case: CaseFirst = match built.settings.case_first
+        1 => .upper
+        2 => .lower
+        _ => .off
+
+    built_alternate: Alternate = .non_ignorable
+    result @ CollateOptions(
+        strength: built_strength,
+        alternate: built_alternate,
+        max_variable: built_variable,
+        case_first: built_case,
+        case_level: built.settings.case_level,
+        backwards: built.settings.backwards,
+        numeric: built.settings.numeric
+    )
+
+    if built.settings.shifted
+        result.alternate @ .shifted
+    return ok(Collator(locale: "und", rules: rules, options: result, tailored: built.tailored, longest: built.longest))
+
+# How `a` compares with `b` in `collator`'s order: -1 where `a` comes first,
+# 0 where they are equal at its strength, 1 where `b` comes first.
+#
+# - `collator`: the collator.
+# - `a`: the first text.
+# - `b`: the second text.
+#
+# Equal at the strength asked is not equal as texts: at a secondary strength
+# "a" and "A" are 0. See also `sort_key`, `sort_texts`.
+function compare(collator: Collator, a: str, b: str) -> i64
+    return weighing.compare_keys(a: sort_key(collator, s: a), b: sort_key(collator, s: b))
+
+# Whether `a` and `b` are equal in `collator`'s order at its strength.
+#
+# - `collator`: the collator.
+# - `a`: the first text.
+# - `b`: the second text.
+#
+# See also `compare`.
+function equals(collator: Collator, a: str, b: str) -> bool
+    return compare(collator, a: a, b: b) == 0
+
+# The sort key of `s`: bytes whose order, compared byte by byte, is
+# `collator`'s order of the texts, so that a text compared often is weighed
+# once.
+#
+# - `collator`: the collator.
+# - `s`: the text.
+#
+# Two keys compare as `compare` compares their texts, `bytes.compare` reading
+# them; a level's weights are each opened by the byte 1 and the levels are
+# separated by the byte 0, and the bytes are Rebel's own, not ICU's. See
+# also `compare`.
+function sort_key(collator: Collator, s: str) -> [u8]
+    strength = match collator.options.strength
+        .primary    => 1
+        .secondary  => 2
+        .tertiary   => 3
+        .quaternary => 4
+        .identical  => 5
+
+    max_variable = match collator.options.max_variable
+        .space    => 0
+        .punct    => 1
+        .symbol   => 2
+        .currency => 3
+
+    case_first = match collator.options.case_first
+        .off   => 0
+        .upper => 1
+        .lower => 2
+
+    shifted = match collator.options.alternate
+        .shifted       => true
+        .non_ignorable => false
+
+    settings = weighing.Settings(
+        strength: strength,
+        shifted: shifted,
+        max_variable: max_variable,
+        case_first: case_first,
+        case_level: collator.options.case_level,
+        backwards: collator.options.backwards,
+        numeric: collator.options.numeric
+    )
+    elements = weighing.elements_of(
+        s,
+        tailored: collator.tailored,
+        longest: collator.longest,
+        numeric: collator.options.numeric
+    )
+    return weighing.sort_key(ces: elements, points: unicode.code_points(normalize.to_nfd(s)), settings: settings)
+
+# `texts` in `collator`'s order, texts that compare equal kept in the order
+# they were given.
+#
+# - `collator`: the collator.
+# - `texts`: the texts.
+#
+# Each text is weighed once. See also `compare`.
+function sort_texts(collator: Collator, texts: [str]) -> [str]
+    sort_keys: [[u8]] @= []
+
+    for text in texts
+        sort_keys @ sort_keys.push(sort_key(collator, s: text))
+
+    out: [str] @= []
+
+    for at in weighing.sorted_positions(sort_keys)
+        out @ out.push(texts[at])
+
+    return out
+
+# The collation elements of `s` in `collator`'s order, after normalization:
+# what the comparison weighs, as Java's `CollationElementIterator` walks
+# them.
+#
+# - `collator`: the collator.
+# - `s`: the text.
+#
+# Ignorable characters give elements of zero weights, and numbers read by
+# `numeric` give their own. See also `sort_key`.
+function elements_of(collator: Collator, s: str) -> [Element]
+    weights = weighing.elements_of(
+        s,
+        tailored: collator.tailored,
+        longest: collator.longest,
+        numeric: collator.options.numeric
+    )
+    out: [Element] @= []
+    at @= 0
+
+    while at + 3 < weights.len()
+        out @ out.push(
+            Element(primary: weights[at], secondary: weights[at + 1], tertiary: weights[at + 2], variable: weights[at + 3] == 1)
+        )
+        at @ at + 4
+
+    return out
+
+# The collation types CLDR gives `locale`'s language, the standard one
+# first: `standard`, `phonebook`, `search` for German.
+#
+# - `locale`: the locale.
+#
+# Only `standard` for a language with no tailoring of its own. See also
+# `collator_of`.
+function collation_types(locale: i18n.Locale) -> [str]
+    for step in i18n.fallback_chain(locale)
+        name = i18n.format_locale(step) + " "
+        found: [str] @= []
+
+        for key in collate_tables.RULE_KEYS
+            if strings.has_prefix(s: key, prefix: name)
+                found @ found.push(key.slice(from: name.len(), to: key.len()))
+
+        if found.len() > 0 && name != "und "
+            out: [str] @= ["standard"]
+
+            for kind in found
+                if kind != "standard"
+                    out @ out.push(kind)
+
+            return out
+
+    return ["standard"]
+
+# The languages whose tailorings Rebel carries, as CLDR names them: `cs`,
+# `de`, `sv`, `zh-Hant` among them.
+#
+# In the order of their names' bytes. See also `collator_of`.
+function tailored_locales() -> [str]
+    out: [str] @= []
+
+    for key in collate_tables.RULE_KEYS
+        tag = strings.split(s: key, sep: " ")[0]
+
+        if tag != "und" && (out.len() == 0 || out[out.len() - 1] != tag)
+            out @ out.push(tag)
+
+    return out
+
+## Tests
+
+# The options as the internal modules number them, for the face's own use.
+
+test "default_options: the root's options"
+    assert default_options().max_variable == .punct
+
+## Examples
+
+# The options of the root.
+test "default_options: tertiary, non-ignorable"
+    options = default_options()
+    assert options.strength == .tertiary && options.alternate == .non_ignorable
+
+# Swedish puts "ä" after "z", German beside "a".
+test "collator_of: Swedish and German umlauts"
+    swedish = collator_of(i18n.parse_locale("sv").must())
+    german = collator_of(i18n.parse_locale("de").must())
+    assert compare(swedish, a: "z", b: "ä") == -1 && compare(german, a: "ä", b: "z") == -1
+
+# Accents ignored at the primary strength.
+test "collator_with: a primary strength"
+    options @= default_options()
+    options.strength @ .primary
+    english = collator_with(i18n.parse_locale("en").must(), options: options)
+    assert compare(english, a: "resume", b: "Résumé") == 0
+
+# A rule of the program's own.
+test "collator_of_rules: c with a caron after c"
+    rules = collator_of_rules("&c < č <<< Č", options: default_options()).must()
+    assert sort_texts(rules, texts: ["d", "č", "c"]) == ["c", "č", "d"]
+
+# English order, case and accents.
+test "compare: lower case before upper, and accents"
+    english = collator_of(i18n.parse_locale("en").must())
+    assert compare(english, a: "a", b: "A") == -1 && compare(english, a: "cote", b: "côte") == -1
+
+# Two texts equal at the secondary strength.
+test "equals: case ignored at the secondary strength"
+    options @= default_options()
+    options.strength @ .secondary
+    english = collator_with(i18n.parse_locale("en").must(), options: options)
+    assert equals(english, a: "Straße", b: "strasse") == false && equals(english, a: "ABC", b: "abc")
+
+# Sort keys order as the texts do.
+test "sort_key: keys in the order of their texts"
+    english = collator_of(i18n.parse_locale("en").must())
+    a = sort_key(english, s: "apple")
+    b = sort_key(english, s: "Banana")
+    assert a.len() > 0 && compare(english, a: "apple", b: "Banana") == -1 && a[0] <= b[0]
+
+# Names in Swedish order.
+test "sort_texts: Swedish names"
+    swedish = collator_of(i18n.parse_locale("sv").must())
+    assert sort_texts(swedish, texts: ["Östen", "Anna", "Åsa", "Zoe"]) == ["Anna", "Zoe", "Åsa", "Östen"]
+
+# The elements of a letter with an accent.
+test "elements_of: one letter and its accent"
+    elements = elements_of(collator_of(i18n.parse_locale("en").must()), s: "é")
+    assert elements.len() == 2 && elements[1].primary == 0
+
+# The collation types of German.
+test "collation_types: German"
+    assert collation_types(i18n.parse_locale("de").must()).len() >= 2
+
+# Swedish is among the tailored languages.
+test "tailored_locales: Swedish is tailored"
+    found @= false
+
+    for tag in tailored_locales()
+        if tag == "sv"
+            found @ true
+
+    assert found

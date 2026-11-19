@@ -1,0 +1,511 @@
+# BCP 47 language tags (RFC 5646) read into their parts and written back,
+# POSIX locale names read and written, and the keywords of a tag's `u`
+# extension. The face turns `Parts` into its `Locale`.
+
+use i18n/internal/locale_tables
+use strings
+
+# The code a tag that is not well formed fails with.
+constant INVALID: str
+    "invalid"
+
+# The code an absent keyword fails with.
+constant NOT_FOUND: str
+    "not_found"
+
+# The parts of a tag, each in its canonical case; the face's `Locale` field
+# by field, each extension written whole, `u-ca-buddhist`.
+record Parts
+    language: str
+    script: str
+    region: str
+    variants: [str]
+    extensions: [str]
+    private_use: [str]
+
+# The tag with no part but `und`.
+function root() -> Parts
+    return Parts(language: "und", script: "", region: "", variants: [], extensions: [], private_use: [])
+
+# Whether `b` is an ASCII letter.
+function is_alpha(b: u8) -> bool
+    return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z'
+
+# Whether `b` is an ASCII digit.
+function is_digit(b: u8) -> bool
+    return b >= '0' && b <= '9'
+
+# Whether every byte of `s` is a letter.
+function all_alpha(s: str) -> bool
+    at @= 0
+
+    while at < s.len()
+        if !is_alpha(s[at])
+            return false
+        at @ at + 1
+
+    return true
+
+# Whether every byte of `s` is a digit.
+function all_digits(s: str) -> bool
+    at @= 0
+
+    while at < s.len()
+        if !is_digit(s[at])
+            return false
+        at @ at + 1
+
+    return true
+
+# Whether every byte of `s` is a letter or a digit.
+function all_alphanumeric(s: str) -> bool
+    at @= 0
+
+    while at < s.len()
+        if !is_alpha(s[at]) && !is_digit(s[at])
+            return false
+        at @ at + 1
+
+    return true
+
+# `s` in ASCII lower case.
+function lower(s: str) -> str
+    return strings.to_lower_ascii(s)
+
+# `s` in ASCII upper case.
+function upper(s: str) -> str
+    return strings.to_upper_ascii(s)
+
+# `s` with its first letter upper case and the rest lower case.
+function title(s: str) -> str
+    if s.len() == 0
+        return s
+    return upper(s.slice(from: 0, to: 1)) + lower(s.slice(from: 1, to: s.len()))
+
+# The subtags of `tag`, split on `-` and `_`; an empty subtag is kept, so
+# that the caller refuses it.
+function subtags_of(tag: str) -> [str]
+    out: [str] @= []
+    start @= 0
+    at @= 0
+
+    while at < tag.len()
+        if tag[at] == '-' || tag[at] == '_'
+            out @ out.push(tag.slice(from: start, to: at))
+            start @ at + 1
+        at @ at + 1
+
+    out @ out.push(tag.slice(from: start, to: tag.len()))
+    return out
+
+# The position of `key` in `sorted`, a list in the order of its bytes, or -1.
+function search(sorted: [str], key: str) -> i64
+    low @= 0
+    high @= sorted.len()
+
+    while low < high
+        middle = (low + high) / 2
+        order = strings.compare(a: sorted[middle], b: key)
+
+        if order == 0
+            return middle
+
+        if order < 0
+            low @ middle + 1
+        else
+            high @ middle
+
+    return -1
+
+# `tag` read as a BCP 47 tag.
+function parse(tag: str) -> Parts?
+    if tag.len() == 0
+        return fail(code: INVALID, msg: "an empty tag")
+
+    if tag.len() > 1000
+        return fail(code: INVALID, msg: f"a tag of {tag.len()} bytes, more than 1000")
+    at @= 0
+
+    while at < tag.len()
+        b = tag[at]
+
+        if !is_alpha(b) && !is_digit(b) && b != '-' && b != '_'
+            return fail(
+                code: INVALID,
+                msg: f"\"{tag}\" holds a character that is no letter, digit, - or _ at byte {at}"
+            )
+        at @ at + 1
+
+    lowered = lower(strings.replace_all(s: tag, old: "_", new: "-"))
+    old = search(locale_tables.GRANDFATHERED_KEYS, key: lowered)
+
+    if old >= 0
+        return parse_subtags(subtags_of(locale_tables.GRANDFATHERED_VALUES[old]), tag: tag)
+
+    if lowered == "root"
+        return ok(root())
+    return parse_subtags(subtags_of(tag), tag: tag)
+
+# The parts of a tag split into `subtags`; `tag` is named in a message.
+function parse_subtags(subtags: [str], tag: str) -> Parts?
+    for s in subtags
+        if s.len() == 0
+            return fail(code: INVALID, msg: f"\"{tag}\" holds an empty subtag")
+
+        if s.len() > 8
+            return fail(code: INVALID, msg: f"the subtag \"{s}\" of \"{tag}\" is longer than 8")
+
+    parts @= root()
+    at @= 0
+    first = lower(subtags[0])
+
+    if first == "x"
+        if subtags.len() == 1
+            return fail(code: INVALID, msg: f"\"{tag}\" ends at its x")
+        at @ 1
+
+        while at < subtags.len()
+            parts.private_use @ parts.private_use.push(lower(subtags[at]))
+            at @ at + 1
+
+        return ok(parts)
+
+    if all_alpha(first) && (first.len() >= 2 && first.len() <= 3 || first.len() >= 5)
+        parts.language @ first
+        at @ 1
+
+        # One extended language subtag stands for the language itself.
+        if first.len() <= 3 && at < subtags.len() && subtags[at].len() == 3 && all_alpha(subtags[at])
+            parts.language @ lower(subtags[at])
+            at @ at + 1
+
+            if at < subtags.len() && subtags[at].len() == 3 && all_alpha(subtags[at])
+                return fail(code: INVALID, msg: f"\"{tag}\" holds more than one extended language subtag")
+    else if !(first.len() == 4 && all_alpha(first))
+        return fail(code: INVALID, msg: f"\"{subtags[0]}\" is no language subtag, in \"{tag}\"")
+
+    if at < subtags.len() && subtags[at].len() == 4 && all_alpha(subtags[at])
+        parts.script @ title(subtags[at])
+        at @ at + 1
+
+    if at < subtags.len() && (subtags[at].len() == 2 && all_alpha(subtags[at]) || subtags[at].len() == 3 && all_digits(subtags[at]))
+        parts.region @ upper(subtags[at])
+        at @ at + 1
+    variants: [str] @= []
+
+    while at < subtags.len() && is_variant(subtags[at])
+        subtag = lower(subtags[at])
+
+        if contains(variants, item: subtag)
+            return fail(code: INVALID, msg: f"the variant \"{subtag}\" is written twice in \"{tag}\"")
+        variants @ variants.push(subtag)
+        at @ at + 1
+
+    parts.variants @ variants
+    singletons: [str] @= []
+    extensions: [str] @= []
+
+    while at < subtags.len() && subtags[at].len() == 1 && lower(subtags[at]) != "x"
+        singleton = lower(subtags[at])
+
+        if contains(singletons, item: singleton)
+            return fail(code: INVALID, msg: f"the extension \"{singleton}\" is written twice in \"{tag}\"")
+        at @ at + 1
+        items: [str] @= []
+
+        while at < subtags.len() && subtags[at].len() >= 2
+            items @ items.push(lower(subtags[at]))
+            at @ at + 1
+
+        if items.len() == 0
+            return fail(code: INVALID, msg: f"the extension \"{singleton}\" of \"{tag}\" has no subtag")
+        singletons @ singletons.push(singleton)
+        extensions @ extensions.push(singleton + "-" + items.join("-"))
+
+    if at < subtags.len() && lower(subtags[at]) == "x"
+        at @ at + 1
+
+        if at == subtags.len()
+            return fail(code: INVALID, msg: f"\"{tag}\" ends at its x")
+
+        while at < subtags.len()
+            parts.private_use @ parts.private_use.push(lower(subtags[at]))
+            at @ at + 1
+
+    if at < subtags.len()
+        return fail(code: INVALID, msg: f"\"{subtags[at]}\" stands where no subtag of its kind may, in \"{tag}\"")
+    parts.extensions @ sort(extensions)
+    return ok(parts)
+
+# Whether `s` is a variant subtag: five to eight letters or digits, or four
+# opening with a digit.
+function is_variant(s: str) -> bool
+    if !all_alphanumeric(s)
+        return false
+    return s.len() >= 5 || s.len() == 4 && is_digit(s[0])
+
+# Whether `items` holds `item`.
+function contains(items: [str], item: str) -> bool
+    for each in items
+        if each == item
+            return true
+
+    return false
+
+# `parts` written as a tag.
+function format(parts: Parts) -> str
+    out: [str] @= []
+
+    if parts.language == ""
+        out @ out.push("und")
+    else
+        out @ out.push(parts.language)
+
+    if parts.script != ""
+        out @ out.push(parts.script)
+
+    if parts.region != ""
+        out @ out.push(parts.region)
+
+    for v in parts.variants
+        out @ out.push(v)
+
+    for e in parts.extensions
+        out @ out.push(e)
+
+    if parts.private_use.len() > 0
+        out @ out.push("x")
+
+        for s in parts.private_use
+            out @ out.push(s)
+    return out.join("-")
+
+# The script a POSIX modifier names, or the empty text.
+function script_of_modifier(modifier: str) -> str
+    return match lower(modifier)
+        "latin"      => "Latn"
+        "cyrillic"   => "Cyrl"
+        "devanagari" => "Deva"
+        _            => ""
+
+# The POSIX modifier naming `script`, or the empty text.
+function modifier_of_script(script: str) -> str
+    return match script
+        "Latn" => "latin"
+        "Cyrl" => "cyrillic"
+        "Deva" => "devanagari"
+        _      => ""
+
+# A POSIX locale name read as parts.
+function parse_posix(name: str) -> Parts?
+    if name == "" || name == "C" || name == "POSIX"
+        return ok(root())
+    base @= name
+    modifier @= ""
+
+    match strings.split_once(s: base, sep: "@")
+        .ok halves =>
+            base @ halves.before
+            modifier @ halves.after
+        .err _ => _ = 0
+
+    match strings.split_once(s: base, sep: ".")
+        .ok halves => base @ halves.before
+        .err _     => _ = 0
+
+    if base == "C" || base == "POSIX"
+        return ok(root())
+    parts @= parse_subtags(subtags_of(base), tag: name)?
+
+    if modifier != "" && lower(modifier) != "euro"
+        script = script_of_modifier(modifier)
+
+        if script != ""
+            parts.script @ script
+        else if is_variant(modifier)
+            parts.variants @ parts.variants.push(lower(modifier))
+        else
+            return fail(code: INVALID, msg: f"the modifier \"{modifier}\" of \"{name}\" is no script and no variant")
+    return ok(parts)
+
+# `parts` written as a POSIX name with no code set.
+function to_posix(parts: Parts) -> str
+    if parts.language == "und" || parts.language == ""
+        return "C"
+    out @= parts.language
+
+    if parts.region != ""
+        out @ out + "_" + parts.region
+    modifier = modifier_of_script(parts.script)
+
+    if modifier != ""
+        out @ out + "@" + modifier
+    else if parts.variants.len() > 0
+        out @ out + "@" + parts.variants[0]
+    return out
+
+# The keyword `key` of the `u` extension `subtags`.
+function keyword(subtags: [str], key: str) -> str?
+    wanted = lower(key)
+    at @= 0
+
+    while at < subtags.len()
+        if subtags[at].len() == 2 && subtags[at] == wanted
+            values: [str] @= []
+            at @ at + 1
+
+            while at < subtags.len() && subtags[at].len() != 2
+                values @ values.push(subtags[at])
+                at @ at + 1
+
+            if values.len() == 0
+                return ok("true")
+            return ok(values.join("-"))
+        at @ at + 1
+
+    return fail(code: NOT_FOUND, msg: f"no keyword \"{key}\"")
+
+# Whether `key` is a keyword of a `u` extension: a letter or digit, then a
+# letter.
+function is_key(key: str) -> bool
+    return key.len() == 2 && all_alphanumeric(key) && is_alpha(key[1])
+
+# The `u` extension `subtags` with `key` set to `value`, or removed where
+# `value` is empty; its keywords in the order of their keys.
+function with_keyword(subtags: [str], key: str, value: str) -> [str]?
+    if !is_key(key)
+        return fail(code: INVALID, msg: f"\"{key}\" is no keyword: a letter or digit, then a letter")
+    wanted = lower(key)
+    new_values: [str] @= []
+
+    if value != ""
+        for v in subtags_of(value)
+            if v.len() < 3 || v.len() > 8 || !all_alphanumeric(v)
+                return fail(code: INVALID, msg: f"\"{value}\" is no keyword value: subtags of 3 to 8 letters or digits")
+            new_values @ new_values.push(lower(v))
+    attributes: [str] @= []
+    names: [str] @= []
+    values: [str] @= []
+    at @= 0
+
+    while at < subtags.len() && subtags[at].len() != 2
+        attributes @ attributes.push(subtags[at])
+        at @ at + 1
+
+    while at < subtags.len()
+        name = subtags[at]
+        at @ at + 1
+        start = at
+
+        while at < subtags.len() && subtags[at].len() != 2
+            at @ at + 1
+
+        if name != wanted
+            names @ names.push(name)
+            values @ values.push(subtags.slice(from: start, to: at).join("-"))
+
+    if new_values.len() > 0
+        names @ names.push(wanted)
+        values @ values.push(new_values.join("-"))
+    out: [str] @= attributes
+
+    for name in sort(names)
+        out @ out.push(name)
+        index @= 0
+
+        while names[index] != name
+            index @ index + 1
+
+        if values[index] != ""
+            for v in subtags_of(values[index])
+                out @ out.push(v)
+
+    return ok(out)
+
+# The subtags of the `u` extension of `parts`, its singleton left out; empty
+# where it has none.
+function unicode_subtags(parts: Parts lent) -> [str]
+    for e in parts.extensions
+        if strings.has_prefix(s: e, prefix: "u-")
+            return strings.split(s: e.slice(from: 2, to: e.len()), sep: "-")
+
+    return []
+
+# `parts` with the `u` extension `subtags`, removed where empty.
+function with_unicode_subtags(parts: Parts, subtags: [str]) -> Parts
+    out @= parts
+    kept: [str] @= []
+
+    for e in parts.extensions
+        if !strings.has_prefix(s: e, prefix: "u-")
+            kept @ kept.push(e)
+
+    if subtags.len() > 0
+        kept @ kept.push("u-" + subtags.join("-"))
+    out.extensions @ sort(kept)
+    return out
+
+## Tests
+
+test "parse: the empty tag, a tag of one language, case, and underscores"
+    assert parse("").is_err()
+    assert format(parse("EN").must()) == "en"
+    assert format(parse("zh_hant_tw").must()) == "zh-Hant-TW"
+    assert format(parse("es-419").must()) == "es-419"
+
+test "parse: variants, extensions sorted, private use, and the root"
+    assert format(parse("de-CH-1996").must()) == "de-CH-1996"
+    assert format(parse("en-u-ca-gregory-a-xyz").must()) == "en-a-xyz-u-ca-gregory"
+    assert format(parse("en-x-Private").must()) == "en-x-private"
+    assert format(parse("root").must()) == "und"
+    assert format(parse("x-whatever").must()) == "und-x-whatever"
+
+test "parse: a script with no language, an extended language, and grandfathered tags"
+    assert format(parse("Latn-US").must()) == "und-Latn-US"
+    assert format(parse("zh-yue-HK").must()) == "yue-HK"
+    assert format(parse("i-klingon").must()) == "tlh"
+    assert format(parse("en-GB-oed").must()) == "en-GB-oxendict"
+    assert format(parse("zh-min-nan").must()) == "nan"
+
+test "parse: what is not well formed"
+    assert parse("e").is_err()
+    assert parse("en--US").is_err()
+    assert parse("en-").is_err()
+    assert parse("toolongsubtag").is_err()
+    assert parse("de-1996-1996").is_err()
+    assert parse("en-u-ca-u-co").is_err()
+    assert parse("en-u").is_err()
+    assert parse("en-x").is_err()
+    assert parse("en US").is_err()
+    assert parse("en-é").is_err()
+    assert parse("en-US-a").is_err()
+    assert parse("zh-min-nan-yue").is_err()
+
+test "parse_posix: C, a code set, modifiers, and a broken name"
+    assert format(parse_posix("C").must()) == "und"
+    assert format(parse_posix("C.UTF-8").must()) == "und"
+    assert format(parse_posix("de_DE.UTF-8@euro").must()) == "de-DE"
+    assert format(parse_posix("ca_ES@valencia").must()) == "ca-ES-valencia"
+    assert format(parse_posix("uz_UZ@cyrillic").must()) == "uz-Cyrl-UZ"
+    assert parse_posix("de_DE@ab").is_err()
+
+test "to_posix: the root, a region, a script and a variant"
+    assert to_posix(root()) == "C"
+    assert to_posix(parse("pt-BR").must()) == "pt_BR"
+    assert to_posix(parse("sr-Latn-RS").must()) == "sr_RS@latin"
+    assert to_posix(parse("ca-ES-valencia").must()) == "ca_ES@valencia"
+
+test "keyword: a value, a key with none, a value of two subtags, and absent"
+    subtags = ["attr", "ca", "islamic", "civil", "kn", "co", "phonebk"]
+    assert keyword(subtags, key: "CA").must() == "islamic-civil"
+    assert keyword(subtags, key: "kn").must() == "true"
+    assert keyword(subtags, key: "co").must() == "phonebk"
+    assert keyword(subtags, key: "nu").is_err()
+
+test "with_keyword: added in order, replaced, removed, and refused"
+    assert with_keyword(["co", "phonebk"], key: "ca", value: "buddhist").must() == ["ca", "buddhist", "co", "phonebk"]
+    assert with_keyword(["co", "phonebk"], key: "co", value: "tr").is_err()
+    assert with_keyword(["co", "phonebk"], key: "co", value: "search").must() == ["co", "search"]
+    assert with_keyword(["co", "phonebk"], key: "co", value: "").must() == []
+    assert with_keyword([], key: "c", value: "abc").is_err()
+    assert with_keyword(["attr"], key: "nu", value: "arab").must() == ["attr", "nu", "arab"]

@@ -1,0 +1,10 @@
+# Reaches Rebel's `i18n/collate`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It orders four names as Swedish does and
+# prints them: "Anna Zoe Åsa Östen".
+
+use <rebel>/i18n
+use <rebel>/i18n/collate
+
+function main()
+    swedish = collate.collator_of(i18n.parse_locale("sv").must())
+    print(join(collate.sort_texts(swedish, texts: ["Östen", "Anna", "Åsa", "Zoe"]), " "))

@@ -1,0 +1,613 @@
+# Numbers written and read as a language writes them: "1.234,5" in German
+# and "1,234.5" in English, percentages, amounts of money with their
+# currency's symbol and digits, compact forms ("1.2K", "1,2 Mio."), and
+# CLDR's number patterns, from the data of CLDR release `i18n.CLDR_VERSION`
+# for every locale it holds.
+#
+# What it does NOT do: a number written in C's or a program's own form, in a
+# base or a precision (`numbers`); dates (`i18n/dates`); spelling a number
+# out in words, which CLDR's rule-based formats do and this package does not
+# carry.
+#
+# A number is handed and answered as decimal text, `-1234.5`, `1e21`, so that
+# no digit is lost to a float: `to_str` writes an `f64` or an `i64` so. It
+# fails `invalid` where a number, a pattern or a text to read is not what the
+# function reads, and `not_found` where a numbering system or a currency is
+# unknown.
+
+use i18n
+use i18n/numbers/internal/data
+use i18n/numbers/internal/decimal
+use i18n/numbers/internal/formatting
+use i18n/numbers/internal/icu_cases
+use i18n/numbers/internal/pattern
+use i18n/numbers/internal/reading
+use strings
+
+## Codes
+
+# The code a function fails with where its input is not what it reads.
+constant INVALID: str
+    "invalid"
+
+# The code a function fails with where a numbering system or a currency is
+# not one CLDR names.
+constant NOT_FOUND: str
+    "not_found"
+
+## Options
+
+# What a number is written as.
+variant NumberStyle
+    # A plain number, "1,234.5".
+    decimal
+    # A fraction written as a percentage: 0.25 is "25%".
+    percent
+    # A number with an exponent, "1.2345E3".
+    scientific
+    # An amount of money, "$1,234.50".
+    currency
+    # An amount of money with a negative one written as accountants do,
+    # "($1,234.50)" in English.
+    accounting
+    # A number cut short with a word or letter for its size, "1.2K", "1,2
+    # Mio.".
+    compact_short
+    # The same with the size written out, "1.2 thousand", "1,2 Millionen".
+    compact_long
+
+# How a currency is named in an amount.
+variant CurrencyDisplay
+    # Its symbol in the language, "$", "US$", "€", or its code where the
+    # language gives none.
+    symbol
+    # Its narrowest symbol, "$" for every dollar.
+    narrow_symbol
+    # Its ISO 4217 code, "USD".
+    code
+
+# How a number is rounded to the digits it is written with.
+variant Rounding
+    # To the nearest, a half to the even digit: ICU's and Java's default.
+    half_even
+    # To the nearest, a half away from zero.
+    half_up
+    # To the nearest, a half toward zero.
+    half_down
+    # Away from zero.
+    up
+    # Toward zero, the digits cut.
+    down
+    # Toward positive infinity.
+    ceiling
+    # Toward negative infinity.
+    floor
+
+# When a number is written with its sign.
+variant SignDisplay
+    # A negative number alone: "-1", "0", "1".
+    auto
+    # Every number: "-1", "+0", "+1".
+    always
+    # No number: "1", "0", "1".
+    never
+    # Every number but zero: "-1", "0", "+1".
+    except_zero
+    # A negative number but negative zero: "-1", "0", "1" for "-0".
+    negative
+
+# When the digits of the integer part are grouped.
+variant Grouping
+    # As the language groups them: German and English from four digits,
+    # Polish and Spanish from five, as CLDR's minimum grouping digits say.
+    auto
+    # Always, from four digits, whatever the language says.
+    always
+    # From five digits, "1000" and "10,000".
+    min2
+    # Never.
+    off
+
+# How `format_number` writes a number. `number_options` makes one with the
+# language's own choices; a field of `-1` or the empty text leaves the
+# choice to the language's pattern or the currency.
+record NumberOptions
+    # What the number is written as.
+    style: NumberStyle
+    # The currency's ISO 4217 code, `EUR`, for `currency` and `accounting`;
+    # read in any case.
+    currency: str
+    # How the currency is named.
+    currency_display: CurrencyDisplay
+    # The fewest digits of the integer part, zeros before it where it has
+    # fewer; `-1` for the pattern's.
+    min_integer_digits: i64
+    # The fewest digits after the point, zeros added; `-1` for the pattern's,
+    # or the currency's own digits.
+    min_fraction_digits: i64
+    # The most digits after the point, the rest rounded; `-1` for the
+    # pattern's, or the currency's own digits.
+    max_fraction_digits: i64
+    # The fewest significant digits, zeros added; 0 to count fraction digits
+    # instead.
+    min_significant_digits: i64
+    # The most significant digits, the rest rounded; 0 to count fraction
+    # digits instead.
+    max_significant_digits: i64
+    # How the number is rounded.
+    rounding: Rounding
+    # When the sign is written.
+    sign: SignDisplay
+    # When the integer part is grouped.
+    grouping: Grouping
+    # The numbering system the digits are written in, `latn`, `arab`,
+    # `deva`; the empty text for the language's own, or the one its `nu`
+    # keyword asks.
+    numbering_system: str
+
+# The symbols a language writes numbers with, in one numbering system.
+record Symbols
+    # The numbering system, `latn`.
+    numbering_system: str
+    # The ten digits, zero first.
+    digits: [str]
+    # The decimal separator, "." in English and "," in German.
+    decimal: str
+    # The grouping separator, "," in English and "." in German.
+    group: str
+    # The percent sign.
+    percent: str
+    # The per mille sign.
+    per_mille: str
+    # The plus sign.
+    plus: str
+    # The minus sign.
+    minus: str
+    # The exponent's mark, "E".
+    exponential: str
+    # The mark before a superscript exponent, "×".
+    superscripting_exponent: str
+    # Infinity, "∞".
+    infinity: str
+    # Not a number, "NaN".
+    nan: str
+    # The sign of an approximate number, "~".
+    approximately: str
+    # The separator of hours and minutes, ":".
+    time_separator: str
+
+# An amount of money read by `parse_currency`.
+record Amount
+    # The number, as decimal text.
+    number: str
+    # The currency's ISO 4217 code, upper case.
+    currency: str
+
+# The options `format_number` writes `style` with in a language's own way:
+# its pattern's digits and grouping, the currency's digits, rounding half to
+# even, the sign where negative.
+#
+# - `style`: what the number is written as; the currency is left empty, and
+#   `currency` and `accounting` need one set.
+#
+# See also `format_number`.
+function number_options(style: NumberStyle) -> NumberOptions
+    return NumberOptions(
+        style: style,
+        currency: "",
+        currency_display: .symbol,
+        min_integer_digits: -1,
+        min_fraction_digits: -1,
+        max_fraction_digits: -1,
+        min_significant_digits: 0,
+        max_significant_digits: 0,
+        rounding: .half_even,
+        sign: .auto,
+        grouping: .auto,
+        numbering_system: ""
+    )
+
+# `number` written in `locale`'s language as `options` say.
+#
+# - `locale`: the locale; its `nu` keyword chooses the digits where
+#   `options` names no numbering system, and its region nothing else.
+# - `number`: the number as decimal text, `-1234.5`, `1.5e-7`, or `inf`,
+#   `-inf`, `nan`; any number of digits.
+# - `options`: how it is written.
+#
+# A compact style chooses its pattern by the number's size and plural
+# category, with two significant digits under 100 of its unit, as ICU does.
+# Fails `invalid` where `number` is not decimal text, a currency style has
+# no currency, or a digit count is outside 0 to 999; `not_found` where the
+# numbering system is not one CLDR names with digits. See also
+# `number_options`, `format_decimal`.
+function format_number(locale: i18n.Locale, number: str, options: NumberOptions) -> str?
+    style = match options.style
+        .decimal       => formatting.DECIMAL
+        .percent       => formatting.PERCENT
+        .scientific    => formatting.SCIENTIFIC
+        .currency      => formatting.CURRENCY
+        .accounting    => formatting.ACCOUNTING
+        .compact_short => formatting.COMPACT_SHORT
+        .compact_long  => formatting.COMPACT_LONG
+
+    display = match options.currency_display
+        .symbol        => 0
+        .narrow_symbol => 1
+        .code          => 2
+
+    rounding = match options.rounding
+        .half_even => decimal.HALF_EVEN
+        .half_up   => decimal.HALF_UP
+        .half_down => decimal.HALF_DOWN
+        .up        => decimal.UP
+        .down      => decimal.DOWN
+        .ceiling   => decimal.CEILING
+        .floor     => decimal.FLOOR
+
+    sign = match options.sign
+        .auto        => 0
+        .always      => 1
+        .never       => 2
+        .except_zero => 3
+        .negative    => 4
+
+    grouping = match options.grouping
+        .auto   => 0
+        .always => 1
+        .min2   => 2
+        .off    => 3
+
+    for count in [options.min_integer_digits, options.min_fraction_digits, options.max_fraction_digits]
+        if count < -1
+            return fail(code: INVALID, msg: f"a digit count of {count}, below zero")
+
+    if options.min_significant_digits < 0 || options.max_significant_digits < 0
+        return fail(code: INVALID, msg: "a count of significant digits below zero")
+    settings = formatting.Settings(
+        style: style,
+        currency: options.currency,
+        display: display,
+        min_integer: options.min_integer_digits,
+        min_fraction: options.min_fraction_digits,
+        max_fraction: options.max_fraction_digits,
+        min_significant: options.min_significant_digits,
+        max_significant: options.max_significant_digits,
+        rounding: rounding,
+        sign: sign,
+        grouping: grouping,
+        system: options.numbering_system
+    )
+    return formatting.format(locale, number: number, settings: settings)
+
+# `number` written as a plain number in `locale`'s language, with at most
+# three digits after the point as CLDR's patterns say.
+#
+# - `locale`: the locale.
+# - `number`: the number as decimal text.
+#
+# Fails `invalid` where `number` is not decimal text. See also
+# `format_number`, `format_int`.
+function format_decimal(locale: i18n.Locale, number: str) -> str?
+    return format_number(locale, number: number, options: number_options(.decimal))
+
+# The whole number `n` written in `locale`'s language, its digits grouped.
+#
+# - `locale`: the locale.
+# - `n`: the number, `i64`'s least included.
+#
+# See also `format_decimal`.
+function format_int(locale: i18n.Locale, n: i64) -> str
+    return format_number(locale, number: to_str(n), options: number_options(.decimal)).must()
+
+# `number`, a fraction, written as a percentage in `locale`'s language:
+# 0.25 is "25%" in English and "25 %" in German.
+#
+# - `locale`: the locale.
+# - `number`: the fraction as decimal text; 1 is a hundred percent.
+#
+# Fails `invalid` where `number` is not decimal text. See also
+# `format_number`.
+function format_percent(locale: i18n.Locale, number: str) -> str?
+    return format_number(locale, number: number, options: number_options(.percent))
+
+# `number` written as an amount of `currency` in `locale`'s language, with
+# the currency's symbol and its digits: "$1,234.50", "1.234,50 €".
+#
+# - `locale`: the locale.
+# - `number`: the amount as decimal text.
+# - `currency`: the ISO 4217 code, three letters, any case.
+#
+# Fails `invalid` where `number` is not decimal text or `currency` not three
+# ASCII letters. See also `format_number`, `currency_symbol`.
+function format_currency(locale: i18n.Locale, number: str, currency: str) -> str?
+    options @= number_options(.currency)
+    options.currency @ currency
+    return format_number(locale, number: number, options: options)
+
+# `number` written short with a word or letter for its size, as CLDR's
+# short compact patterns say: "1.2K" in English, "1234" stays "1.2K", and
+# "999" stays "999".
+#
+# - `locale`: the locale.
+# - `number`: the number as decimal text.
+#
+# Fails `invalid` where `number` is not decimal text. See also
+# `format_number`.
+function format_compact(locale: i18n.Locale, number: str) -> str?
+    return format_number(locale, number: number, options: number_options(.compact_short))
+
+# `number` written by a CLDR number pattern with `locale`'s symbols, as
+# Java's `DecimalFormat` and ICU's read one: `#,##0.00`, `0.###E0`,
+# `#,##0.00 ¤;(#,##0.00 ¤)`, `#,##0%`.
+#
+# - `locale`: the locale, whose symbols replace the pattern's.
+# - `number`: the number as decimal text.
+# - `pattern_text`: the pattern; `¤` is the currency `currency` names, `¤¤`
+#   its code.
+# - `currency`: the ISO 4217 code a `¤` writes; the empty text where the
+#   pattern has none.
+#
+# Rounding is half to even. Fails `invalid` where `number` is not decimal
+# text, the pattern does not parse, or it has a `¤` and `currency` is empty.
+# See also `format_number`, `pattern_of`.
+function format_pattern(locale: i18n.Locale, number: str, pattern_text: str, currency: str) -> str?
+    value = decimal.parse(number)?
+    p = pattern.parse(pattern_text)?
+
+    if p.currency > 0 && !formatting.is_currency_code(currency)
+        return fail(code: INVALID, msg: f"the pattern has a currency and \"{currency}\" is no currency code")
+    profile = data.profile(locale, system: "")?
+    code = strings.to_upper_ascii(currency)
+    currency_text @= ""
+
+    if p.currency > 0
+        currency_text @ data.currency_symbol(index: profile.locale, code: code, display: 0)
+
+        if p.currency == 2
+            currency_text @ code
+        else if p.currency >= 5
+            currency_text @ data.currency_symbol(index: profile.locale, code: code, display: 1)
+    settings @= formatting.settings_of(formatting.DECIMAL)
+    settings.grouping @ 1
+    return ok(
+        formatting.write(value, p: p, profile: profile, settings: settings, currency_text: currency_text, locale: locale)
+    )
+
+# The decimal text of a number written in `locale`'s language: "1.234,5" in
+# German is `1234.5`.
+#
+# - `locale`: the locale.
+# - `text`: the number as the language writes it, with its digits, its
+#   separators where they belong, its signs and a percent sign; spaces
+#   around it are ignored, and so is grouping where the language's separator
+#   is a space and the text has another space.
+#
+# A percentage is answered divided by a hundred. Fails `invalid` where the
+# text is not a number the language writes. See also `parse_currency`.
+function parse_number(locale: i18n.Locale, text: str) -> str?
+    return reading.parse(locale, text: text)
+
+# An amount of money written in `locale`'s language read back: "1.234,50 €"
+# in German is 1234.50 euros.
+#
+# - `locale`: the locale.
+# - `text`: the amount, with the currency's symbol or its ISO code before or
+#   after the number.
+#
+# A symbol several currencies share is read as the locale's own currency
+# where it is one of them, as ICU reads "$" as US dollars in `en-US`. Fails
+# `invalid` where the text holds no number or no currency the language
+# names. See also `parse_number`, `format_currency`.
+function parse_currency(locale: i18n.Locale, text: str) -> Amount?
+    money = reading.parse_currency(locale, text: text)?
+    return ok(Amount(number: money.number, currency: money.currency))
+
+# The symbols `locale`'s language writes numbers with, in its own numbering
+# system or the one its `nu` keyword asks.
+#
+# - `locale`: the locale.
+#
+# See also `symbols_in`.
+function symbols_of(locale: i18n.Locale) -> Symbols
+    return symbols_in(locale, numbering_system: data.system_of(locale)).must()
+
+# The symbols `locale`'s language writes numbers with in `numbering_system`.
+#
+# - `locale`: the locale.
+# - `numbering_system`: `latn`, `arab`, `deva`, a numbering system with ten
+#   digits.
+#
+# A language with no symbols of its own in that system takes its Latin
+# ones, as CLDR says. Fails `not_found` where the system is not one CLDR
+# names with ten digits. See also `symbols_of`.
+function symbols_in(locale: i18n.Locale, numbering_system: str) -> Symbols?
+    profile = data.profile(locale, system: numbering_system)?
+    s = profile.symbols
+    return ok(
+        Symbols(numbering_system: profile.system, digits: profile.digits, decimal: s[0], group: s[1], percent: s[2], per_mille: s[3], plus: s[4], minus: s[5], exponential: s[6], superscripting_exponent: s[7], infinity: s[8], nan: s[9], approximately: s[10], time_separator: s[11])
+    )
+
+# The numbering system `locale`'s language writes its numbers in: `latn`
+# for most, `arab` for Arabic in Egypt, `beng` for Bangla.
+#
+# - `locale`: the locale; its `nu` keyword, where it names a system with
+#   digits, is the answer.
+#
+# See also `symbols_of`.
+function numbering_system_of(locale: i18n.Locale) -> str
+    return data.system_of(locale)
+
+# The pattern `locale`'s language writes a style with, CLDR's standard one:
+# `#,##0.###` for a decimal in English.
+#
+# - `locale`: the locale.
+# - `style`: the style; a compact style answers the decimal pattern.
+#
+# See also `format_pattern`.
+function pattern_of(locale: i18n.Locale, style: NumberStyle) -> str
+    profile = data.profile(locale, system: "").must()
+
+    return match style
+        .decimal       => profile.patterns[0]
+        .percent       => profile.patterns[1]
+        .scientific    => profile.patterns[2]
+        .currency      => profile.patterns[3]
+        .accounting    => profile.patterns[5]
+        .compact_short => profile.patterns[0]
+        .compact_long  => profile.patterns[0]
+
+# The symbol `locale`'s language writes a currency with: "$" for `USD` in
+# English, "US$" in English of Canada, "€" for `EUR`.
+#
+# - `locale`: the locale.
+# - `currency`: the ISO 4217 code, any case.
+# - `display`: the symbol, the narrow symbol or the code.
+#
+# The code itself where the language has no symbol for the currency. See
+# also `format_currency`.
+function currency_symbol(locale: i18n.Locale, currency: str, display: CurrencyDisplay) -> str
+    which = match display
+        .symbol        => 0
+        .narrow_symbol => 1
+        .code          => 2
+
+    return data.currency_symbol(
+        index: data.locale_index(locale),
+        code: strings.to_upper_ascii(currency),
+        display: which
+    )
+
+# The digits after the point an amount of `currency` is written with: 2 for
+# `EUR`, 0 for `JPY`, 3 for `KWD`.
+#
+# - `currency`: the ISO 4217 code, any case.
+#
+# 2 for a currency CLDR gives no digits, as CLDR's default says. See also
+# `format_currency`.
+function currency_digits(currency: str) -> i64
+    return data.currency_digits(strings.to_upper_ascii(currency))
+
+# The currency in use in `locale`'s region today, as CLDR's data says:
+# `EUR` for `de-DE` and for `de`, whose likely region is Germany.
+#
+# - `locale`: the locale; its `cu` keyword, where it has one, is the answer.
+#
+# Fails `not_found` where the locale names no region and CLDR knows no
+# likely one, or the region has no currency of its own. See also
+# `format_currency`.
+function currency_of(locale: i18n.Locale) -> str?
+    match i18n.unicode_keyword(locale, key: "cu")
+        .ok asked =>
+            if formatting.is_currency_code(asked)
+                return ok(strings.to_upper_ascii(asked))
+        .err _ => _ = 0
+
+    region = data.region_of(locale)
+    found = data.currency_of_region(region)
+
+    if found == ""
+        return fail(code: NOT_FOUND, msg: f"no currency for the region \"{region}\" of {i18n.format_locale(locale)}")
+    return ok(found)
+
+# The ten digits of a numbering system, zero first.
+#
+# - `numbering_system`: `latn`, `arab`, `deva`, `thai`.
+#
+# Fails `not_found` where the system is not one CLDR names with ten digits,
+# as `roman`, which is written by rules. See also `symbols_in`.
+function digits_of(numbering_system: str) -> [str]?
+    return data.digits_of(numbering_system)
+
+## Tests
+
+# The expected values of the tests are what ICU 79.1 (CLDR 49) wrote for the
+# same input, observed 2026-11-19; `icu_cases` holds six hundred of them.
+
+test "icu_cases: the cases are carried"
+    assert icu_cases.CASES.len() == 600
+
+## Examples
+
+# The options of a plain number, with grouping turned off.
+test "number_options: a plain number with no grouping"
+    options @= number_options(.decimal)
+    options.grouping @ .off
+    assert format_number(i18n.parse_locale("en").must(), number: "12345.678", options: options).must() == "12345.678"
+
+# A number written with two digits after the point.
+test "format_number: two fraction digits"
+    options @= number_options(.decimal)
+    options.min_fraction_digits @ 2
+    options.max_fraction_digits @ 2
+    assert format_number(i18n.parse_locale("de").must(), number: "1234.5", options: options).must() == "1.234,50"
+
+# A number in English and in German.
+test "format_decimal: English and German separators"
+    assert format_decimal(i18n.parse_locale("en").must(), number: "1234.5").must() == "1,234.5"
+    assert format_decimal(i18n.parse_locale("de").must(), number: "1234.5").must() == "1.234,5"
+
+# A count of items.
+test "format_int: a million in French"
+    assert format_int(i18n.parse_locale("fr").must(), n: 1000000) == "1 000 000"
+
+# A share written as a percentage.
+test "format_percent: a quarter"
+    assert format_percent(i18n.parse_locale("en").must(), number: "0.25").must() == "25%"
+
+# A price in dollars and in euros.
+test "format_currency: dollars in English, euros in German"
+    assert format_currency(i18n.parse_locale("en-US").must(), number: "1234.5", currency: "USD").must() == "$1,234.50"
+    assert format_currency(i18n.parse_locale("de-DE").must(), number: "1234.5", currency: "EUR").must() == "1.234,50 €"
+
+# A large count cut short.
+test "format_compact: thousands and millions"
+    assert format_compact(i18n.parse_locale("en").must(), number: "1234").must() == "1.2K"
+
+# A pattern that writes negative numbers in parentheses.
+test "format_pattern: negative numbers in parentheses"
+    english = i18n.parse_locale("en").must()
+    assert format_pattern(english, number: "-1234.5", pattern_text: "#,##0.00;(#,##0.00)", currency: "").must() == "(1,234.50)"
+
+# A German number read back.
+test "parse_number: a German number"
+    assert parse_number(i18n.parse_locale("de").must(), text: "1.234,5").must() == "1234.5"
+
+# An amount in euros read back.
+test "parse_currency: euros in German"
+    amount = parse_currency(i18n.parse_locale("de").must(), text: "1.234,50 €").must()
+    assert amount.number == "1234.50" && amount.currency == "EUR"
+
+# The separators of German.
+test "symbols_of: German separators"
+    symbols = symbols_of(i18n.parse_locale("de").must())
+    assert symbols.decimal == "," && symbols.group == "."
+
+# Arabic digits asked for.
+test "symbols_in: Arabic-Indic digits"
+    assert symbols_in(i18n.parse_locale("ar").must(), numbering_system: "arab").must().digits[3] == "٣"
+
+# The digits Bangla writes.
+test "numbering_system_of: Bangla"
+    assert numbering_system_of(i18n.parse_locale("bn").must()) == "beng"
+
+# The decimal pattern of English.
+test "pattern_of: English decimal"
+    assert pattern_of(i18n.parse_locale("en").must(), style: .decimal) == "#,##0.###"
+
+# The dollar's symbol in two languages.
+test "currency_symbol: the dollar"
+    assert currency_symbol(i18n.parse_locale("en").must(), currency: "USD", display: .symbol) == "$"
+    assert currency_symbol(i18n.parse_locale("en-CA").must(), currency: "USD", display: .symbol) == "US$"
+
+# The yen has no digits after the point.
+test "currency_digits: yen and euro"
+    assert currency_digits("JPY") == 0 && currency_digits("EUR") == 2
+
+# The currency of Switzerland.
+test "currency_of: Swiss German"
+    assert currency_of(i18n.parse_locale("de-CH").must()).must() == "CHF"
+
+# The digits of Thai.
+test "digits_of: Thai digits"
+    assert digits_of("thai").must()[1] == "๑"

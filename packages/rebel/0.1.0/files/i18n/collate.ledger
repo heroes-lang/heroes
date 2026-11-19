@@ -1,0 +1,105 @@
+# The ledger of `i18n/collate`: texts ordered for a language by the Unicode
+# Collation Algorithm over CLDR 49's root collation (UCA 18.0.0) and its
+# tailorings. One block per capability. The census is the one `i18n.ledger`
+# names: Go's `golang.org/x/text/collate`, Python 3.15.2's `locale`, Java SE
+# 25's `java.text.Collator`, .NET's `CompareInfo`, ICU 79.1 the yardstick.
+# Held to both of CLDR 49's conformance files, `CollationTest_CLDR_NON_IGNORABLE`
+# and `CollationTest_CLDR_SHIFTED`: 206,191 lines each in order, 0 out of
+# order, the 3,995 lines holding a surrogate or a character Unicode 17 does
+# not assign left out (run by a probe in the round's scratch folder). Against
+# ICU over 12,000 pairs from the characters of each tailoring, 9,497 of the
+# 9,603 pairs within one script agree; the pairs that mix scripts differ
+# where a tailoring reorders scripts, which is not carried.
+
+capability collate/compare  two texts compared in a language's order
+  heroes  collate.compare, collate.equals
+  go      collate.Collator.Compare, collate.Collator.CompareString
+  rust    -
+  python  locale.strcoll
+  java    Collator.compare, Collator.equals
+  dotnet  CompareInfo.Compare, String.Compare(String, String, CultureInfo, CompareOptions)
+  icu     Collator.compare, ucol_strcoll
+
+capability collate/sort-key  a text's sort key
+  heroes  collate.sort_key
+  go      collate.Collator.Key, collate.Collator.KeyFromString, collate.Buffer
+  rust    -
+  python  locale.strxfrm
+  java    Collator.getCollationKey, CollationKey, CollationKey.compareTo, CollationKey.toByteArray
+  dotnet  CompareInfo.GetSortKey, SortKey, SortKey.Compare, SortKey.KeyData
+  icu     ucol_getSortKey
+  note    the bytes are Rebel's own, not ICU's
+
+capability collate/sort  texts sorted in a language's order, stable
+  heroes  collate.sort_texts
+  go      collate.Collator.Sort, collate.Collator.SortStrings, collate.Lister
+  rust    -
+  python  sorted(key=locale.strxfrm)
+  java    Collections.sort(list, collator)
+  dotnet  Array.Sort(array, StringComparer.Create(culture, options))
+  icu     -
+
+capability collate/locale  a language's collator, its type and keywords
+  heroes  collate.collator_of, collate.collation_types, collate.tailored_locales
+  go      collate.New, collate.OptionsFromTag, collate.Supported
+  rust    -
+  python  locale.setlocale(LC_COLLATE)
+  java    Collator.getInstance(Locale), Collator.getAvailableLocales
+  dotnet  CultureInfo.CompareInfo, CompareInfo.GetCompareInfo
+  icu     Collator.getInstance, ucol_open
+  note    every CLDR tailoring but Chinese, Japanese and Korean, whose tables are the largest; those languages order by the root
+
+capability collate/options  strength, alternate, maximum variable, case first, case level, French accents, numeric order
+  heroes  collate.collator_with, collate.default_options, collate.CollateOptions, collate.Strength, collate.Alternate, collate.MaxVariable, collate.CaseFirst
+  go      collate.IgnoreCase, collate.IgnoreDiacritics, collate.IgnoreWidth, collate.Loose, collate.Force, collate.Numeric, collate.Option
+  rust    -
+  python  -
+  java    Collator.setStrength, Collator.setDecomposition, Collator.PRIMARY, SECONDARY, TERTIARY, IDENTICAL
+  dotnet  CompareOptions.IgnoreCase, IgnoreNonSpace, IgnoreSymbols, IgnoreKanaType, IgnoreWidth, StringSort, Ordinal
+  icu     ucol_setAttribute, UColAttribute
+  note    normalization is always on; width and kana options are not offered
+
+capability collate/rules  a collator of tailoring rules
+  heroes  collate.collator_of_rules, collate.Collator
+  go      collate.NewFromTable
+  rust    -
+  python  -
+  java    RuleBasedCollator, RuleBasedCollator.getRules
+  dotnet  -
+  icu     RuleBasedCollator, ucol_openRules
+  note    prefixes `|` are `invalid`; `[reorder]` is read and changes nothing (below)
+
+capability collate/reorder  scripts reordered, a language's own script first
+  heroes  pending: the bounds of each script's primary weights are not carried yet
+  go      collate.Reorder
+  rust    -
+  python  -
+  java    -
+  dotnet  -
+  icu     ucol_setReorderCodes
+
+capability collate/elements  a text's collation elements
+  heroes  collate.elements_of, collate.Element
+  go      -
+  rust    -
+  python  -
+  java    RuleBasedCollator.getCollationElementIterator, CollationElementIterator, CollationElementIterator.primaryOrder, secondaryOrder, tertiaryOrder
+  dotnet  -
+  icu     CollationElementIterator
+
+capability collate/search  a text searched for by collation, accents or case ignored
+  heroes  pending: not written yet
+  go      -
+  rust    -
+  python  -
+  java    -
+  dotnet  CompareInfo.IndexOf, CompareInfo.LastIndexOf, CompareInfo.IsPrefix, CompareInfo.IsSuffix
+  icu     StringSearch, usearch_open
+
+dropped plumbing  identity, mutation and plumbing of a collator object
+  go      collate.Collator's buffers reused, colltab.Weighter
+  rust    -
+  python  -
+  java    Collator.clone, Collator.hashCode, Collator.setDecomposition, Collator.CANONICAL_DECOMPOSITION, Collator.FULL_DECOMPOSITION, Collator.NO_DECOMPOSITION
+  dotnet  CompareInfo.Name, CompareInfo.LCID, CompareInfo.Version, SortVersion, CompareInfo.GetHashCode(String, CompareOptions)
+  icu     -

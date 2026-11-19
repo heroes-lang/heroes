@@ -1,0 +1,444 @@
+# gettext's `.mo` files read and written. A file opens with seven 32-bit
+# numbers, the magic number telling their byte order: the revision, the
+# count of strings, the offsets of the originals' and the translations'
+# tables, the size and offset of a hash table; each table holds a length and
+# an offset per string. An original is `context \x04 id`, with `\0 plural`
+# after a plural's id; a translation is its forms joined by `\0`. The writer
+# writes what GNU `msgfmt` writes, the hash table included.
+
+use bytes
+use i18n/internal/po_file
+use strings
+
+# The code a broken file fails with.
+constant INVALID: str
+    "invalid"
+
+# The code a string that is not UTF-8 fails with.
+constant NOT_TEXT: str
+    "not_text"
+
+# The code a file in another character set fails with.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The magic number.
+constant MAGIC: i64
+    0x950412de
+
+# The 32-bit number at `at` of `data`, little-endian or not.
+function word_at(data: [u8] lent, at: i64, little: bool) -> i64
+    b0 = to_i64(data[at]).must()
+    b1 = to_i64(data[at + 1]).must()
+    b2 = to_i64(data[at + 2]).must()
+    b3 = to_i64(data[at + 3]).must()
+
+    if little
+        return b0 | b1 << 8 | b2 << 16 | b3 << 24
+    return b3 | b2 << 8 | b1 << 16 | b0 << 24
+
+# The bytes of string `index` of the table at `table`.
+function string_at(data: [u8] lent, table: i64, index: i64, little: bool) -> [u8]?
+    length = word_at(data, at: table + 8 * index, little: little)
+    offset = word_at(data, at: table + 8 * index + 4, little: little)
+
+    if offset + length > data.len()
+        return fail(code: INVALID, msg: f"string {index} runs from byte {offset} past the file's end at {data.len()}")
+    return ok(data.slice(from: offset, to: offset + length))
+
+# The position of the first `b` in `data`, or -1.
+function position(data: [u8] lent, b: u8) -> i64
+    at @= 0
+
+    while at < data.len()
+        if data[at] == b
+            return at
+        at @ at + 1
+
+    return -1
+
+# `data` cut at every zero byte.
+function split_zero(data: [u8] lent) -> [[u8]]
+    out: [[u8]] @= []
+    start @= 0
+    at @= 0
+
+    while at < data.len()
+        if data[at] == 0
+            out @ out.push(data.slice(from: start, to: at))
+            start @ at + 1
+        at @ at + 1
+
+    out @ out.push(data.slice(from: start, to: data.len()))
+    return out
+
+# The character set a header names, lower case, or the empty text.
+function charset_of(header: str) -> str
+    for line in strings.split(s: header, sep: "\n")
+        match strings.split_once(s: line, sep: ":")
+            .ok halves =>
+                if strings.equals_ignoring_case_ascii(a: strings.trim(halves.before), b: "Content-Type")
+                    match strings.index_of(s: strings.to_lower_ascii(halves.after), substr: "charset=")
+                        .ok at => return strings.to_lower_ascii(
+                            strings.trim(halves.after.slice(from: at + 8, to: halves.after.len()))
+                        )
+                        .err _ => _ = 0
+            .err _ => _ = 0
+
+    return ""
+
+# Whether `charset` reads as UTF-8 here: UTF-8 itself, ASCII, or none named.
+function is_utf8_charset(charset: str) -> bool
+    return charset == "" || charset == "utf-8" || charset == "utf8" || charset == "charset" || charset == "ascii" || charset == "us-ascii"
+
+# Whether every byte of `data` is ASCII.
+function is_ascii(data: [u8] lent) -> bool
+    for b in data
+        if b >= 128
+            return false
+
+    return true
+
+# `data` as text, by the rules of the file's character set.
+function text_of(data: [u8], utf8: bool, charset: str) -> str?
+    if !utf8 && !is_ascii(data)
+        return fail(
+            code: UNSUPPORTED,
+            msg: f"the file is in {charset}, and only UTF-8 is read; decode it with unicode/encodings first"
+        )
+
+    match bytes.to_text(data)
+        .ok text => return ok(text)
+        .err _   => return fail(code: NOT_TEXT, msg: "a string of the file is not UTF-8")
+
+# The entries of a `.mo` file.
+function decode(data: [u8]) -> [po_file.Entry]?
+    if data.len() < 28
+        return fail(code: INVALID, msg: f"a file of {data.len()} bytes, shorter than a .mo header")
+    little @= true
+
+    if word_at(data, at: 0, little: true) != MAGIC
+        if word_at(data, at: 0, little: false) != MAGIC
+            return fail(code: INVALID, msg: "no .mo magic number")
+        little @ false
+    revision = word_at(data, at: 4, little: little)
+
+    if revision >> 16 > 1
+        return fail(code: INVALID, msg: f"revision {revision >> 16}, where 0 and 1 are read")
+    count = word_at(data, at: 8, little: little)
+    originals = word_at(data, at: 12, little: little)
+    translated = word_at(data, at: 16, little: little)
+
+    if originals + 8 * count > data.len() || translated + 8 * count > data.len()
+        return fail(code: INVALID, msg: f"the tables of {count} strings run past the file's end")
+    raw_originals: [[u8]] @= []
+    raw_translations: [[u8]] @= []
+    charset @= ""
+    index @= 0
+
+    while index < count
+        o = string_at(data, table: originals, index: index, little: little)?
+        t = string_at(data, table: translated, index: index, little: little)?
+
+        if o.len() == 0
+            charset @ charset_of(bytes.to_text_lossy(t))
+        raw_originals @ raw_originals.push(o)
+        raw_translations @ raw_translations.push(t)
+        index @ index + 1
+
+    utf8 = is_utf8_charset(charset)
+    out: [po_file.Entry] @= []
+    index @ 0
+
+    while index < count
+        entry @= po_file.empty_entry()
+        o @= raw_originals[index]
+        separator = position(o, b: 4)
+
+        if separator >= 0
+            entry.has_context @ true
+            entry.context @ text_of(o.slice(from: 0, to: separator), utf8: utf8, charset: charset)?
+            o @ o.slice(from: separator + 1, to: o.len())
+        zero = position(o, b: 0)
+
+        if zero >= 0
+            entry.has_plural @ true
+            entry.id @ text_of(o.slice(from: 0, to: zero), utf8: utf8, charset: charset)?
+            entry.plural_id @ text_of(o.slice(from: zero + 1, to: o.len()), utf8: utf8, charset: charset)?
+            forms: [str] @= []
+
+            for part in split_zero(raw_translations[index])
+                forms @ forms.push(text_of(part, utf8: utf8, charset: charset)?)
+
+            entry.translations @ forms
+        else
+            entry.id @ text_of(o, utf8: utf8, charset: charset)?
+            entry.translations @ [text_of(raw_translations[index], utf8: utf8, charset: charset)?]
+        out @ out.push(entry)
+        index @ index + 1
+
+    return ok(out)
+
+## Writing
+
+# Whether `n` is prime.
+function is_prime(n: i64) -> bool
+    if n < 2
+        return false
+
+    if n % 2 == 0
+        return n == 2
+    d @= 3
+
+    while d * d <= n
+        if n % d == 0
+            return false
+        d @ d + 2
+
+    return true
+
+# The size of the hash table `msgfmt` writes for `count` strings: the
+# first odd prime from `count * 4 / 3`, and at least 3.
+function hash_size(count: i64) -> i64
+    candidate @= count * 4 / 3 | 1
+
+    while !is_prime(candidate)
+        candidate @ candidate + 2
+
+    if candidate < 3
+        return 3
+    return candidate
+
+# GNU gettext's `hash_string` of the bytes of `key` up to its first zero.
+function hash_of(key: [u8] lent) -> i64
+    value @= 0
+
+    for b in key
+        if b == 0
+            return value
+        value @ (value << 4) + to_i64(b).must()
+        top = value & 0xf0000000
+
+        if top != 0
+            value @ value ^ top >> 24
+            value @ value ^ top
+
+    return value
+
+# Adds `n` to `out` as four bytes, little-endian.
+function put_word(@out: [u8], n: i64)
+    out @ out.push(to_u8(n & 255).must())
+    out @ out.push(to_u8(n >> 8 & 255).must())
+    out @ out.push(to_u8(n >> 16 & 255).must())
+    out @ out.push(to_u8(n >> 24 & 255).must())
+
+# Whether `entry` is written to a `.mo` file, as `msgfmt` chooses: not
+# obsolete, not fuzzy unless it is the header, and its first translation
+# not empty.
+function is_written(entry: po_file.Entry lent) -> bool
+    if entry.obsolete || entry.translations.len() == 0 || entry.translations[0] == ""
+        return false
+    return po_file.is_header(entry) || !po_file.has_flag(entry, flag: "fuzzy")
+
+# `entries` written as a `.mo` file, little-endian.
+function encode(entries: [po_file.Entry] lent) -> [u8]
+    chosen: {str: i64} @= {}
+    at @= 0
+
+    while at < entries.len()
+        e = entries[at]
+
+        if is_written(e)
+            chosen[po_file.key_of(has_context: e.has_context, context: e.context, id: e.id)] @ at
+        at @ at + 1
+
+    order = sort(keys(chosen))
+    count = order.len()
+    originals: [[u8]] @= []
+    translations: [[u8]] @= []
+
+    for key in order
+        e = entries[chosen[key].must()]
+        original @= bytes.from_text(key)
+        translation @= bytes.from_text(e.translations[0])
+
+        if e.has_plural
+            original @ original.push(0)
+
+            for b in bytes.from_text(e.plural_id)
+                original @ original.push(b)
+
+            index @= 1
+
+            while index < e.translations.len()
+                translation @ translation.push(0)
+
+                for b in bytes.from_text(e.translations[index])
+                    translation @ translation.push(b)
+
+                index @ index + 1
+        originals @ originals.push(original)
+        translations @ translations.push(translation)
+
+    size = hash_size(count)
+    hash_offset = 28 + 16 * count
+    offset @= hash_offset + 4 * size
+    out: [u8] @= []
+    put_word(@out, n: MAGIC)
+    put_word(@out, n: 0)
+    put_word(@out, n: count)
+    put_word(@out, n: 28)
+    put_word(@out, n: 28 + 8 * count)
+    put_word(@out, n: size)
+    put_word(@out, n: hash_offset)
+
+    for s in originals
+        put_word(@out, n: s.len())
+        put_word(@out, n: offset)
+        offset @ offset + s.len() + 1
+
+    for s in translations
+        put_word(@out, n: s.len())
+        put_word(@out, n: offset)
+        offset @ offset + s.len() + 1
+
+    table: [i64] @= []
+
+    for _ in range(from: 0, to: size)
+        table @ table.push(0)
+
+    index @= 0
+
+    while index < count
+        value = hash_of(originals[index])
+        slot @= value % size
+
+        if table[slot] != 0
+            step = 1 + value % (size - 2)
+
+            while table[slot] != 0
+                if slot >= size - step
+                    slot @ slot - (size - step)
+                else
+                    slot @ slot + step
+        table[slot] @ index + 1
+        index @ index + 1
+
+    for t in table
+        put_word(@out, n: t)
+
+    for s in originals
+        for b in s
+            out @ out.push(b)
+
+        out @ out.push(0)
+
+    for s in translations
+        for b in s
+            out @ out.push(b)
+
+        out @ out.push(0)
+
+    return out
+
+## Tests
+
+# The bytes GNU gettext-tools 1.0's `msgfmt` wrote, observed 2026-11-19, for
+# a catalog of 26 entries with a header, a context, a plural, and an
+# untranslated, a fuzzy and an obsolete entry that it leaves out.
+test "encode: byte for byte what msgfmt writes for the same entries"
+    text = "msgid \"\"\nmsgstr \"\"\n\"Content-Type: text/plain; charset=UTF-8\\n\"\n\"Plural-Forms: nplurals=2; plural=(n != 1);\\n\"\n\nmsgid \"alpha\"\nmsgstr \"alpha-tr\"\n\nmsgid \"beta\"\nmsgstr \"beta-tr\"\n\nmsgid \"gamma\"\nmsgstr \"gamma-tr\"\n\nmsgid \"delta\"\nmsgstr \"delta-tr\"\n\nmsgid \"epsilon\"\nmsgstr \"epsilon-tr\"\n\nmsgid \"zeta\"\nmsgstr \"zeta-tr\"\n\nmsgid \"eta\"\nmsgstr \"eta-tr\"\n\nmsgid \"theta\"\nmsgstr \"theta-tr\"\n\nmsgid \"iota\"\nmsgstr \"iota-tr\"\n\nmsgid \"kappa\"\nmsgstr \"kappa-tr\"\n\nmsgid \"lambda\"\nmsgstr \"lambda-tr\"\n\nmsgid \"mu\"\nmsgstr \"mu-tr\"\n\nmsgid \"nu\"\nmsgstr \"nu-tr\"\n\nmsgid \"xi\"\nmsgstr \"xi-tr\"\n\nmsgid \"omicron\"\nmsgstr \"omicron-tr\"\n\nmsgid \"pi\"\nmsgstr \"pi-tr\"\n\nmsgid \"rho\"\nmsgstr \"rho-tr\"\n\nmsgid \"sigma\"\nmsgstr \"sigma-tr\"\n\nmsgid \"tau\"\nmsgstr \"tau-tr\"\n\nmsgid \"upsilon\"\nmsgstr \"upsilon-tr\"\n\nmsgctxt \"menu\"\nmsgid \"File\"\nmsgstr \"Datei\"\n\nmsgid \"file\"\nmsgid_plural \"files\"\nmsgstr[0] \"Datei\"\nmsgstr[1] \"Dateien\"\n\nmsgid \"untr\"\nmsgstr \"\"\n\n#, fuzzy\nmsgid \"fz\"\nmsgstr \"x\"\n\n#~ msgid \"old\"\n#~ msgstr \"alt\"\n"
+    entries = po_file.parse(text).must()
+    assert bytes.format_hex(encode(entries)) == "de12049500000000170000001c000000d40000001f0000008c01000000000000080200000500000009020000040000000f0200000500000014020000070000001a02000003000000220200000a0000002602000005000000310200000400000037020000050000003c02000006000000420200000900000049020000020000005302000002000000560200000700000059020000020000006102000003000000640200000500000068020000030000006e0200000500000072020000070000007802000002000000800200000400000083020000530000008802000008000000dc02000007000000e502000008000000ed0200000a000000f602000006000000010300000d000000080300000800000016030000070000001f03000008000000270300000900000030030000050000003a030000050000004003000005000000460300000a0000004c0300000500000057030000060000005d0300000800000064030000060000006d03000008000000740300000a0000007d0300000500000088030000070000008e030000010000000d00000006000000000000000f000000160000000900000011000000070000000b0000001500000004000000000000000c0000000000000000000000000000000e00000000000000100000000000000008000000030000000a0000001300000017000000050000000000000002000000120000001400000000616c70686100626574610064656c746100657073696c6f6e006574610066696c650066696c65730067616d6d6100696f7461006b61707061006c616d626461006d656e750446696c65006d75006e75006f6d6963726f6e0070690072686f007369676d610074617500746865746100757073696c6f6e007869007a65746100436f6e74656e742d547970653a20746578742f706c61696e3b20636861727365743d5554462d380a506c7572616c2d466f726d733a206e706c7572616c733d323b20706c7572616c3d286e20213d2031293b0a00616c7068612d747200626574612d74720064656c74612d747200657073696c6f6e2d7472006574612d7472004461746569004461746569656e0067616d6d612d747200696f74612d7472006b617070612d7472006c616d6264612d7472004461746569006d752d7472006e752d7472006f6d6963726f6e2d74720070692d74720072686f2d7472007369676d612d7472007461752d74720074686574612d747200757073696c6f6e2d74720078692d7472007a6574612d747200"
+
+test "hash_size: what msgfmt chose for 1 to 21 strings"
+    assert [hash_size(1), hash_size(2), hash_size(3), hash_size(4), hash_size(5), hash_size(6), hash_size(7), hash_size(11), hash_size(21)] == [3, 3, 5, 5, 7, 11, 11, 17, 29]
+    assert hash_size(0) == 3
+
+test "hash_of: the empty key, one byte, and a key that sets the top bits"
+    assert hash_of([]) == 0
+    assert hash_of([0x61]) == 0x61
+    assert hash_of(bytes.from_text("abcdefghij")) < 0x100000000
+
+test "decode: too short, no magic, a later revision, and tables past the end"
+    assert decode([]).is_err()
+    assert decode(bytes.from_text("0123456789012345678901234567")).is_err()
+    header: [u8] @= []
+    put_word(@header, n: MAGIC)
+    put_word(@header, n: 0x20000)
+    put_word(@header, n: 0)
+    put_word(@header, n: 28)
+    put_word(@header, n: 28)
+    put_word(@header, n: 0)
+    put_word(@header, n: 28)
+    assert decode(header).is_err()
+    many: [u8] @= []
+    put_word(@many, n: MAGIC)
+    put_word(@many, n: 0)
+    put_word(@many, n: 0xffffffff)
+    put_word(@many, n: 28)
+    put_word(@many, n: 28)
+    put_word(@many, n: 0)
+    put_word(@many, n: 28)
+    assert decode(many).is_err()
+
+test "encode then decode: a header, a context and a plural, both byte orders"
+    header @= po_file.empty_entry()
+    header.translations @ ["Content-Type: text/plain; charset=UTF-8\n"]
+    plural @= po_file.empty_entry()
+    plural.id @ "file"
+    plural.has_plural @ true
+    plural.plural_id @ "files"
+    plural.translations @ ["Datei", "Dateien"]
+    context @= po_file.empty_entry()
+    context.has_context @ true
+    context.context @ "menu"
+    context.id @ "Open"
+    context.translations @ ["Öffnen"]
+    data = encode([plural, context, header])
+    back = decode(data).must()
+    assert back.len() == 3 && back[0].id == "" && back[1].translations == ["Datei", "Dateien"] && back[2].context == "menu"
+    words_end = 28 + 16 * 3 + 4 * hash_size(3)
+    swapped @= data
+    at @= 0
+
+    while at < words_end
+        swapped[at] @ data[at + 3]
+        swapped[at + 1] @ data[at + 2]
+        swapped[at + 2] @ data[at + 1]
+        swapped[at + 3] @ data[at]
+        at @ at + 4
+
+    assert decode(swapped).must() == back
+
+test "decode: a file in Latin-1 with a byte past ASCII is unsupported, UTF-8 that is not is not_text"
+    header @= po_file.empty_entry()
+    header.translations @ ["Content-Type: text/plain; charset=ISO-8859-1\n"]
+    word @= po_file.empty_entry()
+    word.id @ "x"
+    word.translations @ ["y"]
+    data @= encode([header, word])
+    data[data.len() - 2] @ 0xe9
+
+    match decode(data)
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+    plain @= encode([word])
+    plain[plain.len() - 2] @ 0xff
+
+    match decode(plain)
+        .ok _  => assert false
+        .err e => assert e.code == NOT_TEXT
+
+test "is_written: obsolete, fuzzy, untranslated and the fuzzy header"
+    e @= po_file.empty_entry()
+    e.id @ "a"
+    e.translations @ ["b"]
+    assert is_written(e)
+    e.flags @ ["fuzzy"]
+    assert !is_written(e)
+    e.id @ ""
+    assert is_written(e)
+    e.translations @ [""]
+    assert !is_written(e)

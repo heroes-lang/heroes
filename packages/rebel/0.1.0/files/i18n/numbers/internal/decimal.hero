@@ -1,0 +1,388 @@
+# Decimal numbers held as their digits, so that no digit is lost to a float:
+# read from decimal text, scaled by a power of ten, and rounded to a count of
+# fraction or significant digits by each rounding mode.
+
+use strings
+
+# The code a text that is no number fails with.
+constant INVALID: str
+    "invalid"
+
+# The largest exponent a number is read with, and the most digits it holds.
+constant MAX_DIGITS: i64
+    10000
+
+# The rounding modes, as the face's `Rounding` numbers them.
+constant HALF_EVEN: i64
+    0
+
+constant HALF_UP: i64
+    1
+
+constant HALF_DOWN: i64
+    2
+
+constant UP: i64
+    3
+
+constant DOWN: i64
+    4
+
+constant CEILING: i64
+    5
+
+constant FLOOR: i64
+    6
+
+# A number: its sign, whether it is infinite or not a number, and its
+# digits on each side of the point, the integer part with no leading zero
+# and the fraction with no trailing zero. Zero has both empty.
+record Decimal
+    negative: bool
+    infinite: bool
+    nan: bool
+    whole: str
+    fraction: str
+
+# Whether `b` is an ASCII digit.
+function is_digit(b: u8) -> bool
+    return b >= '0' && b <= '9'
+
+# `whole` and `fraction` with the zeros that mean nothing removed.
+function trimmed(negative: bool, whole: str, fraction: str) -> Decimal
+    lead @= 0
+
+    while lead < whole.len() && whole[lead] == '0'
+        lead @ lead + 1
+
+    end @= fraction.len()
+
+    while end > 0 && fraction[end - 1] == '0'
+        end @ end - 1
+
+    return Decimal(
+        negative: negative,
+        infinite: false,
+        nan: false,
+        whole: whole.slice(from: lead, to: whole.len()),
+        fraction: fraction.slice(from: 0, to: end)
+    )
+
+# Whether `d` is zero.
+function is_zero(d: Decimal lent) -> bool
+    return !d.infinite && !d.nan && d.whole == "" && d.fraction == ""
+
+# `text` read as a decimal number: an optional sign, digits with an optional
+# point, an optional exponent `e` or `E`; or `inf`, `infinity` or `nan` in
+# any case, with a sign.
+function parse(text: str) -> Decimal?
+    at @= 0
+    negative @= false
+
+    if at < text.len() && (text[at] == '-' || text[at] == '+')
+        negative @ text[at] == '-'
+        at @ at + 1
+    rest = strings.to_lower_ascii(text.slice(from: at, to: text.len()))
+
+    if rest == "inf" || rest == "infinity"
+        return ok(Decimal(negative: negative, infinite: true, nan: false, whole: "", fraction: ""))
+
+    if rest == "nan"
+        return ok(Decimal(negative: negative, infinite: false, nan: true, whole: "", fraction: ""))
+    start = at
+
+    while at < text.len() && is_digit(text[at])
+        at @ at + 1
+
+    whole = text.slice(from: start, to: at)
+    fraction @= ""
+
+    if at < text.len() && text[at] == '.'
+        at @ at + 1
+        from = at
+
+        while at < text.len() && is_digit(text[at])
+            at @ at + 1
+
+        fraction @ text.slice(from: from, to: at)
+
+    if whole == "" && fraction == ""
+        return fail(code: INVALID, msg: f"\"{text}\" is no decimal number")
+    exponent @= 0
+
+    if at < text.len() && (text[at] == 'e' || text[at] == 'E')
+        at @ at + 1
+        minus @= false
+
+        if at < text.len() && (text[at] == '-' || text[at] == '+')
+            minus @ text[at] == '-'
+            at @ at + 1
+        from = at
+
+        while at < text.len() && is_digit(text[at])
+            if exponent > MAX_DIGITS
+                return fail(code: INVALID, msg: f"the exponent of \"{text}\" is beyond {MAX_DIGITS}")
+            exponent @ exponent * 10 + to_i64(text[at] - '0').must()
+            at @ at + 1
+
+        if at == from
+            return fail(code: INVALID, msg: f"\"{text}\" has no digit after its exponent's letter")
+
+        if exponent > MAX_DIGITS
+            return fail(code: INVALID, msg: f"the exponent of \"{text}\" is beyond {MAX_DIGITS}")
+
+        if minus
+            exponent @ -exponent
+
+    if at != text.len()
+        return fail(code: INVALID, msg: f"\"{text}\" is no decimal number")
+
+    if whole.len() + fraction.len() > MAX_DIGITS
+        return fail(code: INVALID, msg: f"\"{text}\" has more than {MAX_DIGITS} digits")
+    return ok(scale(trimmed(negative: negative, whole: whole, fraction: fraction), places: exponent))
+
+# `d` multiplied by ten to the power `places`, which may be negative.
+function scale(d: Decimal, places: i64) -> Decimal
+    if places == 0 || d.infinite || d.nan || is_zero(d)
+        return d
+    digits = d.whole + d.fraction
+    point = d.whole.len() + places
+
+    if point >= digits.len()
+        return trimmed(
+            negative: d.negative,
+            whole: digits + repeat("0", to_u64(point - digits.len()).must()),
+            fraction: ""
+        )
+
+    if point <= 0
+        return trimmed(negative: d.negative, whole: "", fraction: repeat("0", to_u64(-point).must()) + digits)
+    return trimmed(
+        negative: d.negative,
+        whole: digits.slice(from: 0, to: point),
+        fraction: digits.slice(from: point, to: digits.len())
+    )
+
+# The power of ten of `d`'s first significant digit: 3 for 1234, -2 for
+# 0.05, 0 for zero.
+function magnitude(d: Decimal lent) -> i64
+    if d.whole != ""
+        return d.whole.len() - 1
+    at @= 0
+
+    while at < d.fraction.len() && d.fraction[at] == '0'
+        at @ at + 1
+
+    if at == d.fraction.len()
+        return 0
+    return -at - 1
+
+# Whether rounding away the digits `dropped` after `last` moves the kept
+# digits up by one, in `mode`, for a number of sign `negative`.
+function rounds_up(dropped: str, last: u8, mode: i64, negative: bool) -> bool
+    nonzero @= false
+    at @= 0
+
+    while at < dropped.len()
+        if dropped[at] != '0'
+            nonzero @ true
+        at @ at + 1
+
+    if !nonzero
+        return false
+
+    if mode == DOWN
+        return false
+
+    if mode == UP
+        return true
+
+    if mode == CEILING
+        return !negative
+
+    if mode == FLOOR
+        return negative
+    first = dropped[0]
+
+    if first > '5'
+        return true
+
+    if first < '5'
+        return false
+    rest_nonzero @= false
+    at @ 1
+
+    while at < dropped.len()
+        if dropped[at] != '0'
+            rest_nonzero @ true
+        at @ at + 1
+
+    if rest_nonzero
+        return true
+
+    if mode == HALF_UP
+        return true
+
+    if mode == HALF_DOWN
+        return false
+    return last == '1' || last == '3' || last == '5' || last == '7' || last == '9'
+
+# `digits` plus one in its last place, and whether a digit was added before
+# it by the carry.
+function increment(digits: str) -> str
+    out: [u8] @= []
+
+    for b in strings.to_bytes(digits)
+        out @ out.push(b)
+
+    at @= out.len() - 1
+
+    while at >= 0
+        if out[at] == '9'
+            out[at] @ '0'
+            at @ at - 1
+        else
+            out[at] @ out[at] + 1
+            return text_of(out)
+
+    return "1" + text_of(out)
+
+# The ASCII bytes `out` as text.
+function text_of(out: [u8]) -> str
+    parts: [str] @= []
+    digits = "0123456789"
+
+    for b in out
+        d = to_i64(b - '0').must()
+        parts @ parts.push(digits.slice(from: d, to: d + 1))
+
+    return parts.join("")
+
+# `d` with the digits from position `keep` of its digits, counted from its
+# first integer digit, rounded away in `mode`.
+function round_at(d: Decimal, keep: i64, mode: i64) -> Decimal
+    if d.infinite || d.nan
+        return d
+    digits = d.whole + d.fraction
+    point = d.whole.len()
+
+    if keep >= digits.len()
+        return d
+
+    if keep < 0
+        # Every digit and the place before them are rounded away.
+        if rounds_up(dropped: repeat("0", to_u64(-keep).must()) + digits, last: '0', mode: mode, negative: d.negative)
+            return scale(
+                Decimal(negative: d.negative, infinite: false, nan: false, whole: "1", fraction: ""),
+                places: point - keep
+            )
+        return Decimal(negative: d.negative, infinite: false, nan: false, whole: "", fraction: "")
+    kept @= digits.slice(from: 0, to: keep)
+    last: u8 @= '0'
+
+    if keep > 0
+        last @ digits[keep - 1]
+
+    if rounds_up(dropped: digits.slice(from: keep, to: digits.len()), last: last, mode: mode, negative: d.negative)
+        before = kept.len()
+        kept @ increment(kept)
+
+        if kept.len() > before
+            return scale(trimmed(negative: d.negative, whole: kept, fraction: ""), places: point - keep)
+    whole_digits @= ""
+    fraction_digits @= ""
+
+    if keep <= point
+        whole_digits @ kept + repeat("0", to_u64(point - keep).must())
+    else
+        whole_digits @ kept.slice(from: 0, to: point)
+        fraction_digits @ kept.slice(from: point, to: kept.len())
+    return trimmed(negative: d.negative, whole: whole_digits, fraction: fraction_digits)
+
+# `d` rounded to at most `places` digits after the point.
+function round_fraction(d: Decimal, places: i64, mode: i64) -> Decimal
+    return round_at(d, keep: d.whole.len() + places, mode: mode)
+
+# `d` rounded to at most `digits` significant digits, at least one.
+function round_significant(d: Decimal, digits: i64, mode: i64) -> Decimal
+    if is_zero(d) || d.infinite || d.nan
+        return d
+    first = d.whole.len() - 1 - magnitude(d)
+    return round_at(d, keep: first + digits, mode: mode)
+
+# The count of significant digits `d` holds: from its first digit not zero
+# to its last.
+function significant_count(d: Decimal lent) -> i64
+    if is_zero(d)
+        return 0
+
+    if d.whole != ""
+        return d.whole.len() + d.fraction.len()
+    return d.fraction.len() + magnitude(d) + 1
+
+# `d` as plain decimal text, `-1234.5`, `0` for zero.
+function format(d: Decimal lent) -> str
+    if d.nan
+        return "nan"
+    sign @= ""
+
+    if d.negative && !is_zero(d)
+        sign @ "-"
+
+    if d.infinite
+        return sign + "inf"
+    whole @= d.whole
+
+    if whole == ""
+        whole @ "0"
+
+    if d.fraction == ""
+        return sign + whole
+    return sign + whole + "." + d.fraction
+
+## Tests
+
+test "parse: integers, fractions, exponents, signs, specials and junk"
+    assert format(parse("0").must()) == "0"
+    assert format(parse("-001234.5000").must()) == "-1234.5"
+    assert format(parse("1.5e3").must()) == "1500"
+    assert format(parse("1e-06").must()) == "0.000001"
+    assert format(parse(".5").must()) == "0.5"
+    assert format(parse("+7.").must()) == "7"
+    assert parse("-Infinity").must().infinite && parse("NaN").must().nan
+    assert parse("").is_err() && parse("1.2.3").is_err() && parse("1e").is_err() && parse("abc").is_err()
+    assert parse("1e99999").is_err()
+
+test "scale: up, down, past the point both ways, and zero"
+    assert format(scale(parse("1.234").must(), places: 2)) == "123.4"
+    assert format(scale(parse("12").must(), places: -3)) == "0.012"
+    assert format(scale(parse("0.05").must(), places: 5)) == "5000"
+    assert format(scale(parse("0").must(), places: 9)) == "0"
+
+test "round_fraction: every mode at a half, below and above"
+    half = parse("2.5").must()
+    assert format(round_fraction(half, places: 0, mode: HALF_EVEN)) == "2"
+    assert format(round_fraction(parse("3.5").must(), places: 0, mode: HALF_EVEN)) == "4"
+    assert format(round_fraction(half, places: 0, mode: HALF_UP)) == "3"
+    assert format(round_fraction(half, places: 0, mode: HALF_DOWN)) == "2"
+    assert format(round_fraction(parse("2.51").must(), places: 0, mode: HALF_DOWN)) == "3"
+    assert format(round_fraction(parse("2.1").must(), places: 0, mode: UP)) == "3"
+    assert format(round_fraction(parse("2.9").must(), places: 0, mode: DOWN)) == "2"
+    assert format(round_fraction(parse("-2.1").must(), places: 0, mode: CEILING)) == "-2"
+    assert format(round_fraction(parse("-2.1").must(), places: 0, mode: FLOOR)) == "-3"
+
+test "round_fraction: a carry that adds a digit, a fraction to zero, and nothing to round"
+    assert format(round_fraction(parse("9.995").must(), places: 2, mode: HALF_EVEN)) == "10"
+    assert format(round_fraction(parse("0.7").must(), places: 0, mode: HALF_EVEN)) == "1"
+    assert format(round_fraction(parse("0.004").must(), places: 2, mode: HALF_EVEN)) == "0"
+    assert format(round_fraction(parse("-0.004").must(), places: 2, mode: HALF_EVEN)) == "0"
+    assert format(round_fraction(parse("1.25").must(), places: 5, mode: HALF_EVEN)) == "1.25"
+
+test "round_significant: two digits of thousands and of a small fraction"
+    assert format(round_significant(parse("1234").must(), digits: 2, mode: HALF_EVEN)) == "1200"
+    assert format(round_significant(parse("0.012345").must(), digits: 3, mode: HALF_EVEN)) == "0.0123"
+    assert format(round_significant(parse("999.9").must(), digits: 2, mode: HALF_EVEN)) == "1000"
+    assert significant_count(parse("0.0120").must()) == 2 && significant_count(parse("1200").must()) == 4
+
+test "magnitude: large, small and zero"
+    assert magnitude(parse("1234").must()) == 3 && magnitude(parse("0.05").must()) == -2 && magnitude(parse("0").must()) == 0

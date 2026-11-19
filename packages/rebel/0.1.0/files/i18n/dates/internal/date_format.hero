@@ -1,0 +1,688 @@
+# A moment written by a CLDR date pattern (UTS #35, Part 4, § 8): the
+# pattern read into its fields and its literal text, each field written from
+# the moment's calendar parts with the locale's names, digits, week rules and
+# GMT formats.
+
+use i18n/dates/internal/date_data
+use strings
+use time
+
+# The code a pattern that does not parse fails with.
+constant INVALID: str
+    "invalid"
+
+# A moment as a locale's calendar names it, in its zone.
+record Moment
+    year: i64
+    month: i64
+    day: i64
+    hour: i64
+    minute: i64
+    second: i64
+    nanosecond: i64
+    weekday: i64
+    day_of_year: i64
+    offset: i64
+    zone: str
+
+# One piece of a pattern: a field, its letter repeated `count` times, or
+# literal text where `letter` is empty.
+record Piece
+    letter: str
+    count: i64
+    text: str
+
+# The days from 1970-01-01 to the civil date `year`, `month`, `day`, by the
+# proleptic Gregorian calendar.
+function days_from_civil(year: i64, month: i64, day: i64) -> i64
+    y @= year
+
+    if month <= 2
+        y @ y - 1
+    era @= y / 400
+
+    if y < 0 && y % 400 != 0
+        era @ era - 1
+    yoe = y - era * 400
+    shifted @= month - 3
+
+    if month <= 2
+        shifted @ month + 9
+    doy = (153 * shifted + 2) / 5 + day - 1
+    doe = yoe * 365 + yoe / 4 - yoe / 100 + doy
+    return era * 146097 + doe - 719468
+
+# The ISO weekday, 1 for Monday to 7 for Sunday, of the day `days` after
+# 1970-01-01.
+function weekday_of_days(days: i64) -> i64
+    r @= (days + 3) % 7
+
+    if r < 0
+        r @ r + 7
+    return r + 1
+
+# Whether `year` is a leap year of the Gregorian calendar.
+function is_leap(year: i64) -> bool
+    return year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)
+
+# The days of `year`.
+function days_in_year(year: i64) -> i64
+    if is_leap(year)
+        return 366
+    return 365
+
+# `t` in `zone`, its calendar parts read.
+function moment_of(t: time.Instant, zone: time.Zone) -> Moment
+    dt = time.to_date_time_in(t, zone: zone)
+    offset = time.offset_at(zone, t: t).from_utc.nanoseconds / 1000000000
+    days = days_from_civil(year: dt.year, month: dt.month, day: dt.day)
+    first = days_from_civil(year: dt.year, month: 1, day: 1)
+    return Moment(
+        year: dt.year,
+        month: dt.month,
+        day: dt.day,
+        hour: dt.hour,
+        minute: dt.minute,
+        second: dt.second,
+        nanosecond: dt.nanosecond,
+        weekday: weekday_of_days(days),
+        day_of_year: days - first + 1,
+        offset: offset,
+        zone: zone.name
+    )
+
+# The day of `year` week 1 begins on, counted from 1 for January 1, which
+# may be before it or after it, for weeks beginning on `first` (1 Monday to
+# 7 Sunday) whose first week holds at least `minimal` days of the year.
+function week_one_start(year: i64, first: i64, minimal: i64) -> i64
+    jan1 = weekday_of_days(days_from_civil(year: year, month: 1, day: 1))
+    behind = (jan1 - first + 7) % 7
+
+    if 7 - behind >= minimal
+        return 1 - behind
+    return 8 - behind
+
+# The week-based year and week of the day `day_of_year` of `year`.
+record Week
+    year: i64
+    week: i64
+
+# The week of `m` by the week rules `first` and `minimal`.
+function week_of(m: Moment lent, first: i64, minimal: i64) -> Week
+    start = week_one_start(year: m.year, first: first, minimal: minimal)
+
+    if m.day_of_year < start
+        previous = m.year - 1
+        doy = m.day_of_year + days_in_year(previous)
+        return Week(
+            year: previous,
+            week: (doy - week_one_start(year: previous, first: first, minimal: minimal)) / 7 + 1
+        )
+    next_start = week_one_start(year: m.year + 1, first: first, minimal: minimal)
+
+    if m.day_of_year - days_in_year(m.year) >= next_start
+        return Week(year: m.year + 1, week: 1)
+    return Week(year: m.year, week: (m.day_of_year - start) / 7 + 1)
+
+# The week of the month `m` falls in, 0 for days before its first week.
+function week_of_month(m: Moment lent, first: i64, minimal: i64) -> i64
+    day1 = weekday_of_days(days_from_civil(year: m.year, month: m.month, day: 1))
+    behind = (day1 - first + 7) % 7
+    start @= 1 - behind
+
+    if 7 - behind < minimal
+        start @ 8 - behind
+
+    if m.day < start
+        return 0
+    return (m.day - start) / 7 + 1
+
+# The pieces of `pattern`.
+function pieces_of(pattern: str) -> [Piece]?
+    out: [Piece] @= []
+    cs = pattern.chars()
+    literal: [str] @= []
+    at @= 0
+
+    while at < cs.len()
+        c = cs[at]
+
+        if c == "'"
+            if at + 1 < cs.len() && cs[at + 1] == "'"
+                literal @ literal.push("'")
+                at @ at + 2
+            else
+                at @ at + 1
+                closed @= false
+
+                while at < cs.len() && !closed
+                    if cs[at] == "'"
+                        if at + 1 < cs.len() && cs[at + 1] == "'"
+                            literal @ literal.push("'")
+                            at @ at + 2
+                        else
+                            closed @ true
+                            at @ at + 1
+                    else
+                        literal @ literal.push(cs[at])
+                        at @ at + 1
+
+                if !closed
+                    return fail(code: INVALID, msg: f"an unclosed quote in \"{pattern}\"")
+        else if c.len() == 1 && (c[0] >= 'a' && c[0] <= 'z' || c[0] >= 'A' && c[0] <= 'Z')
+            if literal.len() > 0
+                out @ out.push(Piece(letter: "", count: 0, text: literal.join("")))
+                literal @ []
+            count @= 1
+
+            while at + count < cs.len() && cs[at + count] == c
+                count @ count + 1
+
+            if !strings.contains(s: "GyYuUQqMLwWdDFgEecabBhHkKmsSAzZOvVXx", substr: c) || c == "U"
+                return fail(code: INVALID, msg: f"\"{c}\" is no field of a date pattern, in \"{pattern}\"")
+            out @ out.push(Piece(letter: c, count: count, text: ""))
+            at @ at + count
+        else
+            literal @ literal.push(c)
+            at @ at + 1
+
+    if literal.len() > 0
+        out @ out.push(Piece(letter: "", count: 0, text: literal.join("")))
+    return ok(out)
+
+# `n`, at least zero, in `data`'s digits padded with zeros to `width`.
+function number(data: date_data.Data lent, n: i64, width: i64) -> str
+    digits @= to_str(n)
+
+    while digits.len() < width
+        digits @ "0" + digits
+
+    if data.digits.len() != 10
+        return digits
+    out: [str] @= []
+    at @= 0
+
+    while at < digits.len()
+        out @ out.push(data.digits[to_i64(digits[at] - '0').must()])
+        at @ at + 1
+
+    return out.join("")
+
+# The width slot of a name written with `count` letters: 0 abbreviated, 1
+# narrow, 2 wide, 3 short.
+function width_of(count: i64) -> i64
+    if count == 4
+        return 2
+
+    if count == 5
+        return 1
+
+    if count == 6
+        return 3
+    return 0
+
+# The text of month `month` of `data`, `standalone` or in a date, by width.
+function month_name(data: date_data.Data lent, month: i64, width: i64, standalone: bool) -> str
+    base @= width * 12
+
+    if standalone
+        base @ base + 36
+    return date_data.slot_text(block: data.blocks[date_data.MONTHS], slot: base + month - 1)
+
+# The name of ISO weekday `weekday` of `data`, by width: 0 abbreviated, 1
+# narrow, 2 wide, 3 short.
+function day_name(data: date_data.Data lent, weekday: i64, width: i64, standalone: bool) -> str
+    order = [0, 1, 3, 2]
+    base @= order[width] * 7
+
+    if standalone
+        base @ base + 28
+    return date_data.slot_text(block: data.blocks[date_data.DAYS], slot: base + weekday % 7)
+
+# The name of quarter `quarter`, by width.
+function quarter_name(data: date_data.Data lent, quarter: i64, width: i64, standalone: bool) -> str
+    base @= width * 4
+
+    if standalone
+        base @ base + 12
+    return date_data.slot_text(block: data.blocks[date_data.QUARTERS], slot: base + quarter - 1)
+
+# The name of day period `period`, its position in CLDR's list, by width.
+function period_name(data: date_data.Data lent, period: i64, width: i64) -> str
+    found = date_data.slot_text(block: data.blocks[date_data.PERIODS], slot: width * 12 + period)
+
+    if found == "" && width != 0
+        return date_data.slot_text(block: data.blocks[date_data.PERIODS], slot: period)
+    return found
+
+# The positions of day periods in CLDR's list.
+function period_position(name: str) -> i64
+    return match name
+        "am"         => 0
+        "pm"         => 1
+        "midnight"   => 2
+        "noon"       => 3
+        "morning1"   => 4
+        "morning2"   => 5
+        "afternoon1" => 6
+        "afternoon2" => 7
+        "evening1"   => 8
+        "evening2"   => 9
+        "night1"     => 10
+        "night2"     => 11
+        _            => -1
+
+# The minutes since midnight a rule's `HH:mm` writes.
+function minutes_of(text: str) -> i64
+    parts = strings.split(s: text, sep: ":")
+    hours = to_i64(parts[0][0] - '0').must() * 10 + to_i64(parts[0][1] - '0').must()
+    return hours * 60 + to_i64(parts[1][0] - '0').must() * 10 + to_i64(parts[1][1] - '0').must()
+
+# The flexible day period of `m` by `data`'s rules, `B`, or the empty text.
+function flexible_period(data: date_data.Data lent, m: Moment lent, width: i64) -> str
+    now = m.hour * 60 + m.minute
+
+    for rule in date_data.period_rules(language: data.language, script: data.script, region: data.region)
+        parts = strings.split(s: rule, sep: " ")
+
+        if parts.len() == 2 && m.minute == 0 && m.second == 0 && now == minutes_of(parts[1])
+            name = period_name(data, period: period_position(parts[0]), width: width)
+
+            if name != ""
+                return name
+
+    for rule in date_data.period_rules(language: data.language, script: data.script, region: data.region)
+        parts = strings.split(s: rule, sep: " ")
+
+        if parts.len() == 3
+            from = minutes_of(parts[1])
+            before = minutes_of(parts[2])
+            inside @= now >= from && now < before
+
+            if from >= before
+                inside @ now >= from || now < before
+
+            if inside
+                return period_name(data, period: period_position(parts[0]), width: width)
+
+    return ""
+
+# The offset `seconds` from GMT in the language's GMT format: the long form
+# with two digits of hours, the short one with no padding and its minutes
+# only where they are not zero.
+function localized_gmt(data: date_data.Data lent, seconds: i64, long: bool) -> str
+    patterns = data.blocks[date_data.PATTERNS]
+    zero = date_data.slot_text(block: patterns, slot: date_data.GMT_ZERO)
+
+    if seconds == 0 && zero != ""
+        return zero
+    hour_format @= date_data.slot_text(block: patterns, slot: date_data.HOUR_FORMAT)
+
+    if hour_format == ""
+        hour_format @ "+HH:mm;-HH:mm"
+    gmt @= date_data.slot_text(block: patterns, slot: date_data.GMT_FORMAT)
+
+    if gmt == ""
+        gmt @ "GMT{0}"
+    halves = strings.split(s: hour_format, sep: ";")
+    format @= halves[0]
+    plain @= seconds
+
+    if seconds < 0
+        format @ halves[halves.len() - 1]
+        plain @ -seconds
+    hours = plain / 3600
+    minutes = plain / 60 % 60
+    rest = plain % 60
+    out: [str] @= []
+    cs = format.chars()
+    at @= 0
+
+    while at < cs.len()
+        c = cs[at]
+
+        if c == "H"
+            count @= 1
+
+            while at + count < cs.len() && cs[at + count] == "H"
+                count @ count + 1
+
+            if long
+                out @ out.push(number(data, n: hours, width: 2))
+            else
+                out @ out.push(number(data, n: hours, width: 1))
+            at @ at + count
+        else if c == "m"
+            count @= 1
+
+            while at + count < cs.len() && cs[at + count] == "m"
+                count @ count + 1
+
+            if long || minutes != 0 || rest != 0
+                out @ out.push(number(data, n: minutes, width: 2))
+
+                if rest != 0
+                    out @ out.push(separator_of(format) + number(data, n: rest, width: 2))
+            else if out.len() > 0 && !is_hours_text(out[out.len() - 1], data: data)
+                out @ out.slice(from: 0, to: out.len() - 1)
+            at @ at + count
+        else
+            out @ out.push(c)
+            at @ at + 1
+
+    return strings.replace_all(
+        s: date_data.slot_text(block: patterns, slot: date_data.GMT_FORMAT),
+        old: "{0}",
+        new: out.join("")
+    )
+
+# The separator an hour format writes between its hours and minutes, `:`
+# in `+HH:mm`, or the empty text.
+function separator_of(format: str) -> str
+    cs = format.chars()
+    at @= 0
+
+    while at < cs.len() && cs[at] != "H"
+        at @ at + 1
+
+    while at < cs.len() && cs[at] == "H"
+        at @ at + 1
+
+    if at < cs.len() && cs[at] != "m"
+        return cs[at]
+    return ""
+
+# Whether `piece`, a piece of a written offset, is digits of hours rather
+# than the separator before the minutes.
+function is_hours_text(piece: str, data: date_data.Data lent) -> bool
+    for d in data.digits
+        if strings.has_prefix(s: piece, prefix: d)
+            return true
+
+    return piece.len() > 0 && piece[0] >= '0' && piece[0] <= '9'
+
+# The offset `seconds` in ISO 8601's form: `+05`, `+0530`, `+05:30`, with
+# its seconds where asked and not zero, and `Z` for zero where allowed.
+function iso_offset(seconds: i64, minutes_always: bool, colon: bool, with_seconds: bool, zulu: bool) -> str
+    if seconds == 0 && zulu
+        return "Z"
+    sign @= "+"
+    plain @= seconds
+
+    if seconds < 0
+        sign @ "-"
+        plain @ -seconds
+    hours = plain / 3600
+    minutes = plain / 60 % 60
+    rest = plain % 60
+    out @= sign + pad2(hours)
+    separator @= ""
+
+    if colon
+        separator @ ":"
+
+    if minutes_always || minutes != 0
+        out @ out + separator + pad2(minutes)
+
+    if with_seconds && rest != 0
+        out @ out + separator + pad2(rest)
+    return out
+
+# `n` with two digits at least.
+function pad2(n: i64) -> str
+    if n < 10
+        return "0" + to_str(n)
+    return to_str(n)
+
+# Whether `m` is in UTC by name.
+function is_utc(m: Moment lent) -> bool
+    return m.offset == 0 && (m.zone == "UTC" || m.zone == "Etc/UTC" || m.zone == "Etc/UCT" || m.zone == "Etc/Universal" || m.zone == "Etc/Zulu" || m.zone == "Zulu")
+
+# The zone field `letter` of `count` letters of `m`.
+function zone_field(data: date_data.Data lent, m: Moment lent, letter: str, count: i64) -> str
+    patterns = data.blocks[date_data.PATTERNS]
+
+    if letter == "z" || letter == "v"
+        if is_utc(m)
+            name @= date_data.slot_text(block: patterns, slot: date_data.UTC_SHORT)
+
+            if count >= 4
+                name @ date_data.slot_text(block: patterns, slot: date_data.UTC_LONG)
+
+            if name != ""
+                return name
+        return localized_gmt(data, seconds: m.offset, long: count >= 4)
+
+    if letter == "O"
+        return localized_gmt(data, seconds: m.offset, long: count >= 4)
+
+    if letter == "Z"
+        if count <= 3
+            return iso_offset(m.offset, minutes_always: true, colon: false, with_seconds: true, zulu: false)
+
+        if count == 4
+            return localized_gmt(data, seconds: m.offset, long: true)
+        return iso_offset(m.offset, minutes_always: true, colon: true, with_seconds: true, zulu: true)
+
+    if letter == "V"
+        if count == 1
+            return "unk"
+
+        if count == 2
+            return m.zone
+
+        if count == 3
+            parts = strings.split(s: m.zone, sep: "/")
+            return strings.replace_all(s: parts[parts.len() - 1], old: "_", new: " ")
+        return localized_gmt(data, seconds: m.offset, long: true)
+    zulu = letter == "X"
+
+    if count == 1
+        return iso_offset(m.offset, minutes_always: false, colon: false, with_seconds: false, zulu: zulu)
+
+    if count == 2
+        return iso_offset(m.offset, minutes_always: true, colon: false, with_seconds: false, zulu: zulu)
+
+    if count == 3
+        return iso_offset(m.offset, minutes_always: true, colon: true, with_seconds: false, zulu: zulu)
+
+    if count == 4
+        return iso_offset(m.offset, minutes_always: true, colon: false, with_seconds: true, zulu: zulu)
+    return iso_offset(m.offset, minutes_always: true, colon: true, with_seconds: true, zulu: zulu)
+
+# The year `y` asks of `value`: two digits for `yy`, else padded to the
+# count, a minus before a negative one.
+function year_text(data: date_data.Data lent, value: i64, count: i64) -> str
+    if count == 2
+        last @= value % 100
+
+        if last < 0
+            last @ -last
+        return number(data, n: last, width: 2)
+
+    if value < 0
+        return data.minus + number(data, n: -value, width: count)
+    return number(data, n: value, width: count)
+
+# `m` written by the pieces of a pattern with `data`.
+function write(data: date_data.Data lent, m: Moment lent, pieces: [Piece] lent) -> str
+    out: [str] @= []
+    first = date_data.first_day(data.region)
+    minimal = date_data.min_days(data.region)
+
+    for p in pieces
+        n = p.count
+        letter = p.letter
+
+        if letter == ""
+            out @ out.push(p.text)
+        else if letter == "G"
+            era @= 1
+
+            if m.year <= 0
+                era @ 0
+            slot @= 2 + era
+
+            if n == 4
+                slot @ era
+            else if n == 5
+                slot @ 4 + era
+            out @ out.push(date_data.slot_text(block: data.blocks[date_data.ERAS], slot: slot))
+        else if letter == "y"
+            value @= m.year
+
+            if m.year <= 0
+                value @ 1 - m.year
+            out @ out.push(year_text(data, value: value, count: n))
+        else if letter == "u"
+            out @ out.push(year_text(data, value: m.year, count: n))
+        else if letter == "Y"
+            out @ out.push(year_text(data, value: week_of(m, first: first, minimal: minimal).year, count: n))
+        else if letter == "Q" || letter == "q"
+            quarter = (m.month - 1) / 3 + 1
+
+            if n <= 2
+                out @ out.push(number(data, n: quarter, width: n))
+            else
+                out @ out.push(quarter_name(data, quarter: quarter, width: width_of(n) % 3, standalone: letter == "q"))
+        else if letter == "M" || letter == "L"
+            if n <= 2
+                out @ out.push(number(data, n: m.month, width: n))
+            else
+                out @ out.push(month_name(data, month: m.month, width: width_of(n) % 3, standalone: letter == "L"))
+        else if letter == "w"
+            out @ out.push(number(data, n: week_of(m, first: first, minimal: minimal).week, width: n))
+        else if letter == "W"
+            out @ out.push(number(data, n: week_of_month(m, first: first, minimal: minimal), width: n))
+        else if letter == "d"
+            out @ out.push(number(data, n: m.day, width: n))
+        else if letter == "D"
+            out @ out.push(number(data, n: m.day_of_year, width: n))
+        else if letter == "F"
+            out @ out.push(number(data, n: (m.day - 1) / 7 + 1, width: n))
+        else if letter == "g"
+            out @ out.push(number(data, n: days_from_civil(year: m.year, month: m.month, day: m.day) + 40587, width: n))
+        else if letter == "E" || (letter == "e" || letter == "c") && n >= 3
+            standalone = letter == "c"
+            out @ out.push(day_name(data, weekday: m.weekday, width: width_of(n), standalone: standalone))
+        else if letter == "e" || letter == "c"
+            out @ out.push(number(data, n: (m.weekday - first + 7) % 7 + 1, width: n))
+        else if letter == "a" || letter == "b" || letter == "B"
+            width = width_of(n) % 3
+            text @= ""
+
+            if letter == "b" && m.minute == 0 && m.second == 0 && (m.hour == 0 || m.hour == 12)
+                period = if_noon(m.hour == 12)
+                text @ period_name(data, period: period, width: width)
+            else if letter == "B"
+                text @ flexible_period(data, m: m, width: width)
+
+            if text == ""
+                text @ period_name(data, period: m.hour / 12 % 2, width: width)
+            out @ out.push(text)
+        else if letter == "h"
+            hour @= m.hour % 12
+
+            if hour == 0
+                hour @ 12
+            out @ out.push(number(data, n: hour, width: n))
+        else if letter == "H"
+            out @ out.push(number(data, n: m.hour, width: n))
+        else if letter == "K"
+            out @ out.push(number(data, n: m.hour % 12, width: n))
+        else if letter == "k"
+            hour @= m.hour
+
+            if hour == 0
+                hour @ 24
+            out @ out.push(number(data, n: hour, width: n))
+        else if letter == "m"
+            out @ out.push(number(data, n: m.minute, width: n))
+        else if letter == "s"
+            out @ out.push(number(data, n: m.second, width: n))
+        else if letter == "S"
+            fraction @= to_str(m.nanosecond)
+
+            while fraction.len() < 9
+                fraction @ "0" + fraction
+
+            while fraction.len() < n
+                fraction @ fraction + "0"
+
+            out @ out.push(number_text(data, digits: fraction.slice(from: 0, to: n)))
+        else if letter == "A"
+            millis = ((m.hour * 60 + m.minute) * 60 + m.second) * 1000 + m.nanosecond / 1000000
+            out @ out.push(number(data, n: millis, width: n))
+        else
+            out @ out.push(zone_field(data, m: m, letter: letter, count: n))
+
+    return out.join("")
+
+# The position of noon in CLDR's list where `noon`, else midnight's.
+function if_noon(noon: bool) -> i64
+    if noon
+        return 3
+    return 2
+
+# ASCII `digits` in `data`'s digits, leading zeros kept.
+function number_text(data: date_data.Data lent, digits: str) -> str
+    if data.digits.len() != 10
+        return digits
+    out: [str] @= []
+    at @= 0
+
+    while at < digits.len()
+        out @ out.push(data.digits[to_i64(digits[at] - '0').must()])
+        at @ at + 1
+
+    return out.join("")
+
+## Tests
+
+test "days_from_civil: the epoch, a leap day, before the epoch and year 0"
+    assert days_from_civil(year: 1970, month: 1, day: 1) == 0
+    assert days_from_civil(year: 2000, month: 3, day: 1) == 11017
+    assert days_from_civil(year: 1969, month: 12, day: 31) == -1
+    assert days_from_civil(year: 0, month: 1, day: 1) == -719528
+    assert weekday_of_days(0) == 4 && weekday_of_days(-1) == 3
+
+test "week_of: ISO weeks at a year's turn, and the United States' rules"
+    m @= Moment(
+        year: 2021,
+        month: 1,
+        day: 1,
+        hour: 0,
+        minute: 0,
+        second: 0,
+        nanosecond: 0,
+        weekday: 5,
+        day_of_year: 1,
+        offset: 0,
+        zone: "UTC"
+    )
+    iso = week_of(m, first: 1, minimal: 4)
+    assert iso.year == 2020 && iso.week == 53
+    american = week_of(m, first: 7, minimal: 1)
+    assert american.year == 2021 && american.week == 1
+    m.year @ 2024
+    m.month @ 12
+    m.day @ 30
+    m.day_of_year @ 365
+    m.weekday @ 1
+    late = week_of(m, first: 1, minimal: 4)
+    assert late.year == 2025 && late.week == 1
+
+test "pieces_of: fields, literal text, quotes, a doubled quote, and refusals"
+    pieces = pieces_of("EEEE, d 'de' MMMM 'o''clock' ''").must()
+    assert pieces.len() == 6 && pieces[0].letter == "E" && pieces[0].count == 4
+    assert pieces[3].text == " de " && pieces[5].text == " o'clock '"
+    assert pieces_of("yyyy 'open").is_err()
+    assert pieces_of("yyyy J").is_err()
+    assert pieces_of("").must().len() == 0
+
+test "iso_offset: every form, zero and negative"
+    assert iso_offset(19800, minutes_always: false, colon: false, with_seconds: false, zulu: true) == "+0530"
+    assert iso_offset(3600, minutes_always: false, colon: false, with_seconds: false, zulu: true) == "+01"
+    assert iso_offset(0, minutes_always: true, colon: true, with_seconds: true, zulu: true) == "Z"
+    assert iso_offset(0, minutes_always: true, colon: true, with_seconds: true, zulu: false) == "+00:00"
+    assert iso_offset(-12645, minutes_always: true, colon: true, with_seconds: true, zulu: true) == "-03:30:45"

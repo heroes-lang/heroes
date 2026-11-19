@@ -1,0 +1,398 @@
+# A text's collation elements and sort key (UTS #10, §§ 4 to 7): the text
+# put in NFD, each character or contraction looked up in a tailoring then in
+# the root, discontiguous contractions found over unblocked marks, runs of
+# digits read as numbers where asked, variable elements shifted to the
+# fourth level where asked, and the weights of each level written in turn.
+
+use i18n/collate/internal/root
+use unicode
+use unicode/normalize
+
+# How a collator compares, the face's `CollateOptions` with each choice
+# numbered: strength 1 primary to 5 identical, case first 0 off, 1 upper, 2
+# lower, max variable 0 space to 3 currency.
+record Settings
+    strength: i64
+    shifted: bool
+    max_variable: i64
+    case_first: i64
+    case_level: bool
+    backwards: bool
+    numeric: bool
+
+# The tertiary weights of the root UCA calls upper case (UTS #10, table 18).
+function is_upper(tertiary: i64) -> bool
+    t = tertiary / root.SCALE
+    return t == 8 || t == 9 || t == 10 || t == 11 || t == 12 || t == 14 || t == 17 || t == 18 || t == 29
+
+# The text of code points `points` from `from` to `to`.
+function text_of(points: [i64] lent, from: i64, to: i64) -> str
+    return unicode.from_code_points(points.slice(from: from, to: to)).must()
+
+# Whether `point` is a decimal digit, and its value, or -1.
+function digit_value(point: i64) -> i64
+    c = unicode.from_code_point(point).must()
+
+    if unicode.category(c) != "Nd"
+        return -1
+    return unicode.digit_value(c).default(-1)
+
+# The elements of `s`, NFD first, by the tailoring `tailored`, whose longest
+# key has `longest` characters.
+function elements_of(s: str, tailored: {str: [i64]} lent, longest: i64, numeric: bool) -> [i64]
+    points = unicode.code_points(normalize.to_nfd(s))
+    out: [i64] @= []
+    used: [bool] @= []
+
+    for _ in points
+        used @ used.push(false)
+
+    zero_primary @= -1
+    i @= 0
+
+    while i < points.len()
+        if used[i]
+            i @ i + 1
+        else if numeric && digit_value(points[i]) >= 0
+            if zero_primary < 0
+                zero: [i64] @= []
+                root.add_single(@zero, point: 0x30)
+                zero_primary @ zero[0]
+            start = i
+
+            while i < points.len() && digit_value(points[i]) >= 0
+                i @ i + 1
+
+            significant @= start
+
+            while significant < i - 1 && digit_value(points[significant]) == 0
+                significant @ significant + 1
+
+            length @= i - significant
+
+            if length > 254
+                length @ 254
+            out @ out.push(zero_primary + length)
+            out @ out.push(root.COMMON_SECONDARY)
+            out @ out.push(root.COMMON_TERTIARY)
+            out @ out.push(0)
+            k @= significant
+
+            while k < i
+                out @ out.push(zero_primary + 255 + digit_value(points[k]))
+                out @ out.push(root.COMMON_SECONDARY)
+                out @ out.push(root.COMMON_TERTIARY)
+                out @ out.push(0)
+                k @ k + 1
+        else
+            found @= 0
+            length @= longest
+
+            if length > points.len() - i
+                length @ points.len() - i
+
+            while length >= 1 && found == 0
+                match tailored[text_of(points, from: i, to: i + length)]
+                    .ok weights =>
+                        for w in weights
+                            out @ out.push(w)
+
+                        found @ length
+                    .err _ => length @ length - 1
+
+            if found > 0
+                i @ i + found
+            else
+                i @ i + root_step(points: points, at: i, used: @used, out: @out)
+
+    return out
+
+# Adds the root's elements of the longest contraction or character at `at`
+# of `points` to `out`, marks the marks a discontiguous contraction took in
+# `used`, and answers how many code points it moved over.
+function root_step(points: [i64] lent, at: i64, @used: [bool], @out: [i64]) -> i64
+    first = unicode.from_code_point(points[at]).must()
+    candidates = root.contractions_from(first)
+
+    if candidates.len() == 0
+        root.add_single(@out, point: points[at])
+        return 1
+    best @= 1
+
+    for c in candidates
+        if c.len() > best && at + c.len() <= points.len() && points.slice(from: at, to: at + c.len()) == c
+            best @ c.len()
+
+    matched: [i64] @= points.slice(from: at, to: at + best)
+
+    # Unblocked marks after the match that extend it.
+    j @= at + best
+    highest @= 0
+    keeps @= true
+
+    while j < points.len() && keeps
+        mark = unicode.from_code_point(points[j]).must()
+        ccc = normalize.combining_class(mark)
+
+        if ccc == 0
+            keeps @ false
+        else if used[j]
+            j @ j + 1
+        else
+            if ccc > highest
+                trial @= matched
+                trial @ trial.push(points[j])
+
+                if !root.contraction(unicode.from_code_points(trial).must()).is_err()
+                    matched @ trial
+                    used[j] @ true
+                else if ccc > highest
+                    highest @ ccc
+            j @ j + 1
+
+    if matched.len() == 1
+        root.add_single(@out, point: points[at])
+        return 1
+    weights = root.contraction(unicode.from_code_points(matched).must()).must()
+
+    for w in weights
+        out @ out.push(w)
+
+    return best
+
+# The last primary of the group `max_variable` makes variable, scaled.
+function variable_top(max_variable: i64) -> i64
+    if max_variable <= 2
+        return root.group_bound(max_variable)
+    zero: [i64] @= []
+    root.add_single(@zero, point: 0x30)
+    return zero[0] - 1
+
+# Adds weight `w` to `key` after a marker byte, in `width` bytes.
+function put(@key: [u8], w: i64, width: i64)
+    key @ key.push(1)
+    shift @= 8 * (width - 1)
+
+    while shift >= 0
+        key @ key.push(to_u8(w >> shift & 255).must())
+        shift @ shift - 8
+
+# The sort key of elements `ces` of a text whose NFD code points are
+# `points`, by `settings`.
+function sort_key(ces: [i64] lent, points: [i64] lent, settings: Settings lent) -> [u8]
+    key: [u8] @= []
+    top = variable_top(settings.max_variable)
+    count = ces.len() / 4
+
+    # The weights each element keeps after variable weighting.
+    p: [i64] @= []
+    s: [i64] @= []
+    t: [i64] @= []
+    q: [i64] @= []
+    after_variable @= false
+    i @= 0
+
+    while i < count
+        primary = ces[4 * i]
+        secondary = ces[4 * i + 1]
+        tertiary = ces[4 * i + 2]
+
+        if settings.shifted && primary > 0 && primary <= top
+            p @ p.push(0)
+            s @ s.push(0)
+            t @ t.push(0)
+            q @ q.push(primary)
+            after_variable @ true
+        else if settings.shifted && primary == 0 && after_variable
+            p @ p.push(0)
+            s @ s.push(0)
+            t @ t.push(0)
+            q @ q.push(0)
+        else
+            p @ p.push(primary)
+            s @ s.push(secondary)
+            t @ t.push(tertiary)
+
+            if primary == 0 && secondary == 0 && tertiary == 0
+                q @ q.push(0)
+            else
+                q @ q.push(0xffffffff)
+            after_variable @ false
+        i @ i + 1
+
+    for w in p
+        if w != 0
+            put(@key, w: w, width: 5)
+
+    if settings.strength >= 2
+        key @ key.push(0)
+        seconds: [i64] @= []
+
+        for w in s
+            if w != 0
+                seconds @ seconds.push(w)
+
+        if settings.backwards
+            at @= seconds.len() - 1
+
+            while at >= 0
+                put(@key, w: seconds[at], width: 4)
+                at @ at - 1
+        else
+            for w in seconds
+                put(@key, w: w, width: 4)
+
+    if settings.case_level
+        key @ key.push(0)
+        at @= 0
+
+        while at < count
+            if p[at] != 0
+                upper = is_upper(t[at])
+                rank @= 1
+
+                if upper == (settings.case_first == 1)
+                    rank @ 0
+                put(@key, w: rank, width: 1)
+            at @ at + 1
+
+    if settings.strength >= 3
+        key @ key.push(0)
+        at @= 0
+
+        while at < count
+            if t[at] != 0
+                rank @= 0
+
+                if settings.case_first != 0 && p[at] != 0
+                    rank @ 1
+
+                    if is_upper(t[at]) == (settings.case_first == 1)
+                        rank @ 0
+                put(@key, w: rank << 32 | t[at], width: 5)
+            at @ at + 1
+
+    if settings.strength >= 4 && settings.shifted
+        key @ key.push(0)
+
+        for w in q
+            if w != 0
+                put(@key, w: w, width: 5)
+
+    if settings.strength >= 5
+        key @ key.push(0)
+
+        for point in points
+            put(@key, w: point, width: 3)
+    return key
+
+# Whether key `a` comes before key `b`, byte by byte: -1, 0 or 1.
+function compare_keys(a: [u8] lent, b: [u8] lent) -> i64
+    at @= 0
+
+    while at < a.len() && at < b.len()
+        if a[at] != b[at]
+            if a[at] < b[at]
+                return -1
+            return 1
+        at @ at + 1
+
+    if a.len() < b.len()
+        return -1
+
+    if a.len() > b.len()
+        return 1
+    return 0
+
+# The positions of `sort_keys` in their order, equal keys in the order
+# given: a merge sort, its runs doubling, with no recursion.
+function sorted_positions(sort_keys: [[u8]] lent) -> [i64]
+    order @= range(from: 0, to: sort_keys.len())
+    width @= 1
+
+    while width < order.len()
+        merged: [i64] @= []
+        start @= 0
+
+        while start < order.len()
+            middle @= start + width
+
+            if middle > order.len()
+                middle @ order.len()
+            end @= start + 2 * width
+
+            if end > order.len()
+                end @ order.len()
+            i @= start
+            j @= middle
+
+            while i < middle || j < end
+                if j >= end || i < middle && compare_keys(a: sort_keys[order[i]], b: sort_keys[order[j]]) <= 0
+                    merged @ merged.push(order[i])
+                    i @ i + 1
+                else
+                    merged @ merged.push(order[j])
+                    j @ j + 1
+
+            start @ end
+
+        order @ merged
+        width @ width * 2
+
+    return order
+
+## Tests
+
+test "sorted_positions: none, one, and equal keys kept in order"
+    assert sorted_positions([]) == []
+    assert sorted_positions([[1]]) == [0]
+    assert sorted_positions([[3], [1], [3], [2]]) == [1, 3, 0, 2]
+
+test "elements_of: a letter, a letter with an accent, and digits read as numbers"
+    empty: {str: [i64]} = {}
+    assert elements_of("a", tailored: empty, longest: 0, numeric: false).len() == 4
+    assert elements_of("é", tailored: empty, longest: 0, numeric: false).len() == 8
+    two = elements_of("2", tailored: empty, longest: 0, numeric: true)
+    ten = elements_of("10", tailored: empty, longest: 0, numeric: true)
+    assert two[0] < ten[0]
+    assert elements_of("007", tailored: empty, longest: 0, numeric: true).len() == 8
+
+test "elements_of: a tailored contraction is taken before the root's characters"
+    tailored: {str: [i64]} = {"ch": [5, 6, 7, 0]}
+    assert elements_of("cha", tailored: tailored, longest: 2, numeric: false).slice(from: 0, to: 4) == [5, 6, 7, 0]
+
+test "sort_key: lower case before upper, and levels by strength"
+    settings @= Settings(
+        strength: 3,
+        shifted: false,
+        max_variable: 1,
+        case_first: 0,
+        case_level: false,
+        backwards: false,
+        numeric: false
+    )
+    empty: {str: [i64]} = {}
+    lower = sort_key(
+        ces: elements_of("a", tailored: empty, longest: 0, numeric: false),
+        points: [0x61],
+        settings: settings
+    )
+    upper = sort_key(
+        ces: elements_of("A", tailored: empty, longest: 0, numeric: false),
+        points: [0x41],
+        settings: settings
+    )
+    assert bytes_less(a: lower, b: upper)
+    settings.strength @ 2
+    assert sort_key(ces: elements_of("a", tailored: empty, longest: 0, numeric: false), points: [0x61], settings: settings) == sort_key(ces: elements_of("A", tailored: empty, longest: 0, numeric: false), points: [0x41], settings: settings)
+
+# Whether `a` comes before `b`, byte by byte, for the tests.
+function bytes_less(a: [u8] lent, b: [u8] lent) -> bool
+    at @= 0
+
+    while at < a.len() && at < b.len()
+        if a[at] != b[at]
+            return a[at] < b[at]
+        at @ at + 1
+
+    return a.len() < b.len()

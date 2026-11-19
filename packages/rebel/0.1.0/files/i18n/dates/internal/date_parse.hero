@@ -1,0 +1,359 @@
+# A date or time written by a CLDR pattern read back: each field of the
+# pattern read from the text in turn, numbers in the locale's digits or
+# ASCII ones, names of any width and either context compared ignoring case,
+# offsets in ISO's form or the locale's GMT form, spaces matching any space.
+
+use i18n
+use i18n/dates/internal/date_data
+use i18n/dates/internal/date_format
+use strings
+use time
+use unicode
+
+# The code a text that does not hold what the pattern asks fails with.
+constant INVALID: str
+    "invalid"
+
+# The longest text read.
+constant MAX_TEXT: i64
+    1000
+
+# What the fields read so far say.
+record Read
+    year: i64
+    bc: bool
+    two_digit_year: bool
+    month: i64
+    day: i64
+    hour: i64
+    minute: i64
+    second: i64
+    nanosecond: i64
+    pm: i64
+    twelve: bool
+    has_offset: bool
+    offset: i64
+
+# The value of `c` as a digit of `data` or ASCII, or -1.
+function digit_of(data: date_data.Data lent, c: str) -> i64
+    if c.len() == 1 && c[0] >= '0' && c[0] <= '9'
+        return to_i64(c[0] - '0').must()
+    at @= 0
+
+    while at < data.digits.len()
+        if data.digits[at] == c
+            return at
+        at @ at + 1
+
+    return -1
+
+# Whether `c` is a space of any kind.
+function is_space(c: str) -> bool
+    return unicode.is_space(c) || c == "\u{200e}" || c == "\u{200f}"
+
+# The index of the longest of `names` the text `cs` holds from `at`,
+# ignoring case, and how many characters it takes; -1 where none.
+record Found
+    index: i64
+    length: i64
+
+# The longest name of `names` at `at` of `cs`.
+function match_name(cs: [str] lent, at: i64, names: [str] lent) -> Found
+    best @= Found(index: -1, length: 0)
+    index @= 0
+
+    while index < names.len()
+        name = names[index]
+        wanted = name.chars()
+
+        if name != "" && wanted.len() > best.length && at + wanted.len() <= cs.len()
+            piece = cs.slice(from: at, to: at + wanted.len()).join("")
+
+            if strings.equals_ignoring_case(a: piece, b: name)
+                best @ Found(index: index, length: wanted.len())
+        index @ index + 1
+
+    return best
+
+# A number read: its value and the characters it took.
+record Number
+    value: i64
+    length: i64
+
+# The digits at `at` of `cs`, at most `most`.
+function read_number(data: date_data.Data lent, cs: [str] lent, at: i64, most: i64) -> Number
+    value @= 0
+    length @= 0
+
+    while at + length < cs.len() && length < most && digit_of(data, c: cs[at + length]) >= 0
+        value @ value * 10 + digit_of(data, c: cs[at + length])
+        length @ length + 1
+
+    return Number(value: value, length: length)
+
+# Whether piece `index` of `pieces` is a field written as a number.
+function is_numeric(pieces: [date_format.Piece] lent, index: i64) -> bool
+    if index >= pieces.len()
+        return false
+    p = pieces[index]
+
+    if p.letter == ""
+        return false
+
+    if strings.contains(s: "yYudDFgHhKkmsSAwW", substr: p.letter)
+        return true
+    return strings.contains(s: "MLQqec", substr: p.letter) && p.count <= 2
+
+# The names a text field of `letter` may be written with, every width and
+# context, in a fixed order whose positions `value_of_name` reads.
+function names_of(data: date_data.Data lent, letter: str) -> [str]
+    if letter == "M" || letter == "L"
+        return date_data.slot_texts(block: data.blocks[date_data.MONTHS], from: 0, to: 72)
+
+    if letter == "E" || letter == "e" || letter == "c"
+        return date_data.slot_texts(block: data.blocks[date_data.DAYS], from: 0, to: 56)
+
+    if letter == "Q" || letter == "q"
+        return date_data.slot_texts(block: data.blocks[date_data.QUARTERS], from: 0, to: 24)
+
+    if letter == "G"
+        return date_data.slot_texts(block: data.blocks[date_data.ERAS], from: 0, to: 6)
+    return date_data.slot_texts(block: data.blocks[date_data.PERIODS], from: 0, to: 72)
+
+# The offset in seconds an ISO or GMT offset at `at` of `cs` writes, and the
+# characters it took; a length of 0 where none.
+function read_offset(data: date_data.Data lent, cs: [str] lent, at: i64) -> Number
+    i @= at
+
+    if i < cs.len() && (cs[i] == "Z" || cs[i] == "z")
+        return Number(value: 0, length: 1)
+    patterns = data.blocks[date_data.PATTERNS]
+    gmt = strings.split(s: date_data.slot_text(block: patterns, slot: date_data.GMT_FORMAT), sep: "{0}")[0]
+    zero = date_data.slot_text(block: patterns, slot: date_data.GMT_ZERO)
+    names = [
+        gmt
+        zero
+        "GMT"
+        "UTC"
+        date_data.slot_text(block: patterns, slot: date_data.UTC_SHORT)
+        date_data.slot_text(block: patterns, slot: date_data.UTC_LONG)
+    ]
+    prefix = match_name(cs: cs, at: i, names: names)
+
+    if prefix.index >= 0
+        i @ i + prefix.length
+    sign @= 0
+
+    if i < cs.len() && cs[i] == "+"
+        sign @ 1
+    else if i < cs.len() && (cs[i] == "-" || cs[i] == "−")
+        sign @ -1
+
+    if sign == 0
+        if prefix.index >= 0
+            return Number(value: 0, length: i - at)
+        return Number(value: 0, length: 0)
+    i @ i + 1
+    hours = read_number(data, cs: cs, at: i, most: 2)
+
+    if hours.length == 0
+        return Number(value: 0, length: 0)
+    i @ i + hours.length
+    minutes @= 0
+
+    if i < cs.len() && (cs[i] == ":" || cs[i] == ".")
+        i @ i + 1
+    found = read_number(data, cs: cs, at: i, most: 2)
+
+    if found.length == 2
+        minutes @ found.value
+        i @ i + 2
+    return Number(value: sign * (hours.value * 3600 + minutes * 60), length: i - at)
+
+# `text` read by `pattern` for `data`'s locale, an instant; a time with no
+# offset is read in `zone`.
+function parse(data: date_data.Data lent, text: str, pattern: str, zone: time.Zone) -> time.Instant?
+    if text.len() > MAX_TEXT
+        return fail(code: INVALID, msg: f"a text of {text.len()} bytes, more than {MAX_TEXT}")
+    pieces = date_format.pieces_of(pattern)?
+    cs = text.chars()
+    r @= Read(
+        year: 1970,
+        bc: false,
+        two_digit_year: false,
+        month: 1,
+        day: 1,
+        hour: 0,
+        minute: 0,
+        second: 0,
+        nanosecond: 0,
+        pm: -1,
+        twelve: false,
+        has_offset: false,
+        offset: 0
+    )
+    at @= 0
+    index @= 0
+
+    while index < pieces.len()
+        p = pieces[index]
+
+        if p.letter == ""
+            for c in p.text.chars()
+                if is_space(c)
+                    while at < cs.len() && is_space(cs[at])
+                        at @ at + 1
+                else if at < cs.len() && strings.equals_ignoring_case(a: cs[at], b: c)
+                    at @ at + 1
+                else
+                    return fail(code: INVALID, msg: f"\"{text}\" does not hold \"{c}\" where the pattern writes it")
+        else if is_numeric(pieces, index: index)
+            most @= 9
+
+            if is_numeric(pieces, index: index + 1)
+                most @ p.count
+
+                if p.letter == "y" && p.count == 1
+                    most @ 4
+            n = read_number(data, cs: cs, at: at, most: most)
+
+            if n.length == 0
+                return fail(code: INVALID, msg: f"\"{text}\" has no number where the pattern writes {p.letter}")
+            at @ at + n.length
+            v = n.value
+            letter = p.letter
+
+            if letter == "y" || letter == "u" || letter == "Y"
+                r.year @ v
+                r.two_digit_year @ p.count == 2 && n.length == 2
+            else if letter == "M" || letter == "L"
+                r.month @ v
+            else if letter == "d"
+                r.day @ v
+            else if letter == "H" || letter == "k"
+                r.hour @ v % 24
+            else if letter == "h" || letter == "K"
+                r.hour @ v % 12
+                r.twelve @ true
+            else if letter == "m"
+                r.minute @ v
+            else if letter == "s"
+                r.second @ v
+            else if letter == "S"
+                scaled @= v
+                places @= n.length
+
+                while places < 9
+                    scaled @ scaled * 10
+                    places @ places + 1
+
+                while places > 9
+                    scaled @ scaled / 10
+                    places @ places - 1
+
+                r.nanosecond @ scaled
+        else if strings.contains(s: "zZOvVXx", substr: p.letter)
+            found = read_offset(data, cs: cs, at: at)
+
+            if found.length == 0
+                return fail(code: INVALID, msg: f"\"{text}\" has no offset where the pattern writes {p.letter}")
+            at @ at + found.length
+            r.has_offset @ true
+            r.offset @ found.value
+        else
+            names = names_of(data, letter: p.letter)
+            found = match_name(cs: cs, at: at, names: names)
+
+            if found.index < 0
+                return fail(code: INVALID, msg: f"\"{text}\" has no name where the pattern writes {p.letter}")
+            at @ at + found.length
+            letter = p.letter
+
+            if letter == "M" || letter == "L"
+                r.month @ found.index % 12 + 1
+            else if letter == "G"
+                r.bc @ found.index % 2 == 0
+            else if letter == "a" || letter == "b" || letter == "B"
+                period = found.index % 12
+
+                if period == 0 || period == 2
+                    r.pm @ 0
+                else if period == 1 || period == 3
+                    r.pm @ 1
+        index @ index + 1
+
+    while at < cs.len() && is_space(cs[at])
+        at @ at + 1
+
+    if at < cs.len()
+        return fail(code: INVALID, msg: f"\"{text}\" goes on after what the pattern reads")
+    year @= r.year
+
+    if r.two_digit_year
+        if year <= 20
+            year @ 2000 + year
+        else
+            year @ 1900 + year
+
+    if r.bc
+        year @ 1 - year
+    hour @= r.hour
+
+    if r.pm == 1 && hour < 12
+        hour @ hour + 12
+    dt = time.DateTime(
+        year: year,
+        month: r.month,
+        day: r.day,
+        hour: hour,
+        minute: r.minute,
+        second: r.second,
+        nanosecond: r.nanosecond
+    )
+
+    if r.has_offset
+        local = time.from_date_time(dt)?
+        return time.add(local, d: time.seconds(-r.offset)?)
+    return time.from_date_time_in(dt, zone: zone, choice: .compatible)
+
+## Tests
+
+test "parse: a German date, an English time with its period, and an ISO offset"
+    german = date_data.load(i18n_de())
+    t = parse(german, text: "5. März 2024", pattern: "d. MMMM y", zone: time.utc_zone()).must()
+    assert t == time.date(year: 2024, month: 3, day: 5).must()
+    english = date_data.load(i18n_en())
+    evening = parse(english, text: "3:04 pm", pattern: "h:mm a", zone: time.utc_zone()).must()
+    assert time.to_date_time(evening).hour == 15
+    shifted = parse(
+        english,
+        text: "2024-03-05T10:00+02:00",
+        pattern: "yyyy-MM-dd'T'HH:mmXXX",
+        zone: time.utc_zone()
+    ).must()
+    assert time.to_date_time(shifted).hour == 8
+
+test "parse: adjacent numbers, a two-digit year, a weekday name and spaces"
+    english = date_data.load(i18n_en())
+    packed = parse(english, text: "20240305", pattern: "yyyyMMdd", zone: time.utc_zone()).must()
+    assert packed == time.date(year: 2024, month: 3, day: 5).must()
+    old = parse(english, text: "3/5/99", pattern: "M/d/yy", zone: time.utc_zone()).must()
+    assert time.to_date_time(old).year == 1999
+    named = parse(english, text: "tuesday,   MARCH 5, 2024", pattern: "EEEE, MMMM d, y", zone: time.utc_zone()).must()
+    assert named == time.date(year: 2024, month: 3, day: 5).must()
+
+test "parse: a date that does not exist, text left over, a missing field and a bad pattern"
+    english = date_data.load(i18n_en())
+    assert parse(english, text: "2/30/2024", pattern: "M/d/y", zone: time.utc_zone()).is_err()
+    assert parse(english, text: "3/5/2024 x", pattern: "M/d/y", zone: time.utc_zone()).is_err()
+    assert parse(english, text: "3/", pattern: "M/d", zone: time.utc_zone()).is_err()
+    assert parse(english, text: "x", pattern: "'", zone: time.utc_zone()).is_err()
+    assert parse(english, text: "", pattern: "", zone: time.utc_zone()).must() == time.epoch()
+
+# English, for the tests.
+function i18n_en() -> i18n.Locale
+    return i18n.parse_locale("en").must()
+
+# German, for the tests.
+function i18n_de() -> i18n.Locale
+    return i18n.parse_locale("de").must()

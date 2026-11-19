@@ -1,0 +1,9 @@
+# Reaches Rebel's `i18n`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It reads a tag, asks the plural category
+# of 22 in Russian, and prints the tag and the category: "ru-RU few".
+
+use <rebel>/i18n
+
+function main()
+    russian = i18n.parse_locale("ru_RU").must()
+    print(i18n.format_locale(russian), " ", i18n.plural_name(i18n.plural_of_int(russian, n: 22)))

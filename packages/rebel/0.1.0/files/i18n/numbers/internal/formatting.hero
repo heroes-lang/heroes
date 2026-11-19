@@ -1,0 +1,646 @@
+# A number written for a locale as the face's options ask: the pattern of
+# its style read, the number scaled and rounded, its digits grouped and
+# localized, its exponent, compact form or currency added, and its sign put
+# where the pattern says. `Settings` is the face's `NumberOptions` with each
+# choice numbered in the order of its cases.
+
+use i18n
+use i18n/numbers/internal/data
+use i18n/numbers/internal/decimal
+use i18n/numbers/internal/pattern
+use strings
+use unicode
+
+# The code a number, a pattern or a currency that is not read fails with.
+constant INVALID: str
+    "invalid"
+
+# The most digits an option may ask.
+constant MAX_OPTION: i64
+    999
+
+# The styles, as the face's `NumberStyle` numbers them.
+constant DECIMAL: i64
+    0
+
+constant PERCENT: i64
+    1
+
+constant SCIENTIFIC: i64
+    2
+
+constant CURRENCY: i64
+    3
+
+constant ACCOUNTING: i64
+    4
+
+constant COMPACT_SHORT: i64
+    5
+
+constant COMPACT_LONG: i64
+    6
+
+# The face's `NumberOptions`, each choice numbered.
+record Settings
+    style: i64
+    currency: str
+    display: i64
+    min_integer: i64
+    min_fraction: i64
+    max_fraction: i64
+    min_significant: i64
+    max_significant: i64
+    rounding: i64
+    sign: i64
+    grouping: i64
+    system: str
+
+# The settings of a style, every choice the language's own.
+function settings_of(style: i64) -> Settings
+    return Settings(
+        style: style,
+        currency: "",
+        display: 0,
+        min_integer: -1,
+        min_fraction: -1,
+        max_fraction: -1,
+        min_significant: 0,
+        max_significant: 0,
+        rounding: decimal.HALF_EVEN,
+        sign: 0,
+        grouping: 0,
+        system: ""
+    )
+
+# Whether `code` is three ASCII letters.
+function is_currency_code(code: str) -> bool
+    if code.len() != 3
+        return false
+    at @= 0
+
+    while at < 3
+        b = code[at]
+
+        if !(b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z')
+            return false
+        at @ at + 1
+
+    return true
+
+# Whether the first character of `s` is a decimal digit.
+function opens_with_digit(s: str) -> bool
+    if s == ""
+        return false
+    first = s.chars()[0]
+    return unicode.category(first) == "Nd"
+
+# Whether `c` matches CLDR's currency match `[[:^S:]&[:^Z:]]`: no symbol and
+# no separator.
+function is_currency_match(c: str) -> bool
+    category = unicode.category(c)
+    return !strings.has_prefix(s: category, prefix: "S") && !strings.has_prefix(s: category, prefix: "Z")
+
+# The last character of `s`, or the empty text.
+function last_char(s: str) -> str
+    cs = s.chars()
+
+    if cs.len() == 0
+        return ""
+    return cs[cs.len() - 1]
+
+# The first character of `s`, or the empty text.
+function first_char(s: str) -> str
+    cs = s.chars()
+
+    if cs.len() == 0
+        return ""
+    return cs[0]
+
+# The digits of `d` laid out: the integer part padded to `min_integer` and
+# grouped, the fraction padded to `min_fraction`, marks U+0001 and U+0002 for
+# the group and decimal separators.
+function laid_out(d: decimal.Decimal lent, min_integer: i64, min_fraction: i64, primary: i64, secondary: i64, min_grouping: i64) -> str
+    whole @= d.whole
+
+    while whole.len() < min_integer
+        whole @ "0" + whole
+
+    if whole == ""
+        whole @ "0"
+    fraction @= d.fraction
+
+    while fraction.len() < min_fraction
+        fraction @ fraction + "0"
+
+    text @= pattern.grouped(
+        whole: whole,
+        primary: primary,
+        secondary: secondary,
+        min_grouping: min_grouping,
+        separator: "\u{1}"
+    )
+
+    if fraction != ""
+        text @ text + "\u{2}" + fraction
+    return text
+
+# `laid` with its marks replaced and its digits localized.
+function localized(laid: str, profile: data.Profile lent, group: str, point: str) -> str
+    text = pattern.localize(laid, system: profile.digits)
+    return strings.replace_all(s: strings.replace_all(s: text, old: "\u{1}", new: group), old: "\u{2}", new: point)
+
+# `d` in scientific form by `p`: its mantissa and its exponent, written.
+function scientific_body(d: decimal.Decimal, p: pattern.Pattern lent, profile: data.Profile lent, settings: Settings lent) -> str
+    digits_asked @= p.min_integer + p.max_fraction
+
+    if settings.max_significant > 0
+        digits_asked @ settings.max_significant
+    engineering = p.max_integer > p.min_integer && p.max_integer > 1
+    exponent @= 0
+    current @= d
+    mantissa @= d
+    passes @= 0
+
+    while passes < 2
+        exponent @ 0
+
+        if !decimal.is_zero(current)
+            m = decimal.magnitude(current)
+
+            if engineering
+                exponent @ floor_multiple(n: m, by: p.max_integer)
+            else
+                integers @= p.min_integer
+
+                if integers < 1
+                    integers @ 1
+                exponent @ m - (integers - 1)
+        mantissa @ decimal.scale(current, places: -exponent)
+
+        if digits_asked > 0
+            mantissa @ decimal.round_significant(mantissa, digits: digits_asked, mode: settings.rounding)
+
+        if passes == 0 && !decimal.is_zero(mantissa) && decimal.magnitude(mantissa) + exponent != decimal.magnitude(current)
+            current @ decimal.scale(mantissa, places: exponent)
+            passes @ 1
+        else
+            passes @ 2
+
+    min_fraction @= p.min_fraction
+
+    if settings.min_fraction >= 0
+        min_fraction @ settings.min_fraction
+    laid = laid_out(mantissa, min_integer: 1, min_fraction: min_fraction, primary: 0, secondary: 0, min_grouping: 1)
+    text = localized(laid: laid, profile: profile, group: profile.symbols[1], point: profile.symbols[0])
+    sign @= ""
+
+    if exponent < 0
+        sign @ profile.symbols[5]
+    else if p.exponent_sign
+        sign @ profile.symbols[4]
+    magnitude_text @= to_str(abs(exponent))
+
+    while magnitude_text.len() < p.exponent_digits
+        magnitude_text @ "0" + magnitude_text
+
+    return text + profile.symbols[6] + sign + pattern.localize(magnitude_text, system: profile.digits)
+
+# The largest multiple of `by` not above `n`.
+function floor_multiple(n: i64, by: i64) -> i64
+    if n >= 0
+        return n / by * by
+    return -((-n + by - 1) / by * by)
+
+# The absolute value of `n`, which is never `i64`'s least here.
+function abs(n: i64) -> i64
+    if n < 0
+        return -n
+    return n
+
+# A compact pattern and the power of ten it is for.
+record Compact
+    text: str
+    power: i64
+
+# The compact entry of `entries` for a number of magnitude `magnitude` and
+# category `count`.
+function compact_for(entries: [str] lent, magnitude: i64, count: str) -> Compact
+    best_power @= -1
+
+    for entry in entries
+        fields = strings.split(s: entry, sep: "\u{1}")
+        power = fields[0].len() - 1
+
+        if power <= magnitude && power > best_power
+            best_power @ power
+
+    if best_power < 0
+        return Compact(text: "", power: 0)
+    key = "1" + repeat("0", to_u64(best_power).must())
+    other @= ""
+
+    for entry in entries
+        fields = strings.split(s: entry, sep: "\u{1}")
+
+        if fields[0] == key
+            if fields[1] == count
+                return Compact(text: fields[2], power: best_power)
+
+            if fields[1] == "other"
+                other @ fields[2]
+
+    return Compact(text: other, power: best_power)
+
+# The count of `0` in the number part of a compact pattern, its first
+# section.
+function zeros_of(text: str) -> i64
+    count @= 0
+    quoted @= false
+
+    for c in pattern.split_sections(text)[0].chars()
+        if c == "'"
+            quoted @ !quoted
+        else if !quoted && c == "0"
+            count @ count + 1
+
+    return count
+
+# `d` rounded as a compact number is: two significant digits under ten of
+# its unit, a whole number from ten up.
+function compact_round(d: decimal.Decimal, mode: i64) -> decimal.Decimal
+    if decimal.magnitude(d) < 1
+        return decimal.round_significant(d, digits: 2, mode: mode)
+    return decimal.round_fraction(d, places: 0, mode: mode)
+
+# `number` written for `locale` as `settings` say.
+function format(locale: i18n.Locale, number: str, settings: Settings) -> str?
+    d = decimal.parse(number)?
+
+    for count in [settings.min_integer, settings.min_fraction, settings.max_fraction, settings.min_significant, settings.max_significant]
+        if count > MAX_OPTION
+            return fail(code: INVALID, msg: f"a digit count of {count}, more than {MAX_OPTION}")
+
+    profile = data.profile(locale, system: settings.system)?
+    style = settings.style
+    pattern_text @= profile.patterns[0]
+
+    if style == PERCENT
+        pattern_text @ profile.patterns[1]
+    else if style == SCIENTIFIC
+        pattern_text @ profile.patterns[2]
+    else if style == CURRENCY
+        pattern_text @ profile.patterns[3]
+    else if style == ACCOUNTING
+        pattern_text @ profile.patterns[5]
+    p = pattern.parse(pattern_text)?
+    code @= ""
+    currency_text @= ""
+    is_money = style == CURRENCY || style == ACCOUNTING
+
+    if is_money
+        if !is_currency_code(settings.currency)
+            return fail(code: INVALID, msg: f"\"{settings.currency}\" is no currency code of three letters")
+        code @ strings.to_upper_ascii(settings.currency)
+        currency_text @ data.currency_symbol(index: profile.locale, code: code, display: settings.display)
+    return ok(write(d, p: p, profile: profile, settings: settings, currency_text: currency_text, locale: locale))
+
+# The minimum grouping digits `settings` ask, the language's where `auto`;
+# 0 for no grouping at all.
+function min_grouping_of(settings: Settings lent, profile: data.Profile lent) -> i64
+    if settings.grouping == 3
+        return 0
+
+    if settings.grouping == 1
+        return 1
+
+    if settings.grouping == 2
+        return 2
+    given = profile.patterns[9]
+
+    if given == "2"
+        return 2
+
+    if given == "3"
+        return 3
+    return 1
+
+# `d` written by `p` with `profile`'s symbols: scaled, rounded, laid out,
+# signed and given its affixes.
+function write(d: decimal.Decimal, p: pattern.Pattern, profile: data.Profile, settings: Settings, currency_text: str, locale: i18n.Locale) -> str
+    style = settings.style
+    is_money = style == CURRENCY || style == ACCOUNTING
+    group @= profile.symbols[1]
+    point @= profile.symbols[0]
+
+    if is_money && profile.symbols[12] != ""
+        point @ profile.symbols[12]
+
+    if is_money && profile.symbols[13] != ""
+        group @ profile.symbols[13]
+    min_grouping @= min_grouping_of(settings, profile: profile)
+
+    if (style == COMPACT_SHORT || style == COMPACT_LONG) && settings.grouping == 0 && min_grouping < 2
+        # ICU groups a compact number from five digits, whatever the
+        # language says.
+        min_grouping @ 2
+    value @= decimal.scale(d, places: p.scale)
+    body @= ""
+    prefix_pattern @= p.positive_prefix
+    suffix_pattern @= p.positive_suffix
+    negative_prefix @= p.negative_prefix
+    negative_suffix @= p.negative_suffix
+
+    if value.nan
+        body @ profile.symbols[9]
+    else if value.infinite
+        body @ profile.symbols[8]
+    else if style == COMPACT_SHORT || style == COMPACT_LONG
+        entries = if_long(style == COMPACT_LONG, short: profile.short, long: profile.long)
+        plain = decimal.Decimal(
+            negative: false,
+            infinite: false,
+            nan: false,
+            whole: value.whole,
+            fraction: value.fraction
+        )
+        magnitude @= decimal.magnitude(plain)
+        rounded @= compact_round(plain, mode: settings.rounding)
+        chosen @= Compact(text: "", power: 0)
+        divisor @= 0
+        passes @= 0
+
+        while passes < 2
+            chosen @ compact_for(entries, magnitude: magnitude, count: "other")
+            divisor @ 0
+
+            if chosen.text != "" && chosen.text != "0"
+                divisor @ chosen.power - (zeros_of(chosen.text) - 1)
+            rounded @ compact_round(decimal.scale(plain, places: -divisor), mode: settings.rounding)
+            grown = decimal.magnitude(rounded) + divisor
+
+            if passes == 0 && !decimal.is_zero(rounded) && grown > magnitude
+                magnitude @ grown
+                passes @ 1
+            else
+                passes @ 2
+
+        count @= i18n.plural_name(i18n.plural_of(locale, number: decimal.format(rounded)).default(.other))
+
+        if decimal.format(rounded) == "1"
+            # CLDR's pattern for exactly one of the unit, `mille`, where it
+            # gives one.
+            exact = compact_for(entries, magnitude: magnitude, count: "1")
+
+            if exact.power == chosen.power && exact.text != compact_for(entries, magnitude: magnitude, count: "other").text
+                count @ "1"
+        chosen @ compact_for(entries, magnitude: magnitude, count: count)
+        laid = laid_out(
+            rounded,
+            min_integer: 1,
+            min_fraction: 0,
+            primary: p.primary_group,
+            secondary: p.secondary_group,
+            min_grouping: min_grouping
+        )
+        body @ localized(laid: laid, profile: profile, group: group, point: point)
+        value @ decimal.Decimal(
+            negative: value.negative,
+            infinite: false,
+            nan: false,
+            whole: rounded.whole,
+            fraction: rounded.fraction
+        )
+
+        if chosen.text != "" && chosen.text != "0"
+            if zeros_of(chosen.text) == 0
+                # A pattern with no digit writes the unit alone: `mille`.
+                body @ ""
+                prefix_pattern @ chosen.text
+                suffix_pattern @ ""
+                negative_prefix @ "-" + chosen.text
+                negative_suffix @ ""
+            else
+                compact = pattern.parse(chosen.text).must()
+                prefix_pattern @ compact.positive_prefix
+                suffix_pattern @ compact.positive_suffix
+                negative_prefix @ compact.negative_prefix
+                negative_suffix @ compact.negative_suffix
+    else if p.exponent_digits > 0
+        body @ scientific_body(value, p: p, profile: profile, settings: settings)
+        value @ decimal.round_significant(value, digits: 17, mode: settings.rounding)
+    else
+        min_integer @= p.min_integer
+        min_fraction @= p.min_fraction
+        max_fraction @= p.max_fraction
+
+        if is_money
+            digits = data.currency_digits(strings.to_upper_ascii(settings.currency))
+            min_fraction @ digits
+            max_fraction @ digits
+
+        if settings.min_integer >= 0
+            min_integer @ settings.min_integer
+
+        if settings.max_fraction >= 0
+            max_fraction @ settings.max_fraction
+
+        if settings.min_fraction >= 0
+            min_fraction @ settings.min_fraction
+
+        if min_fraction > max_fraction
+            max_fraction @ min_fraction
+        significant_max @= settings.max_significant
+        significant_min @= settings.min_significant
+
+        if significant_max == 0 && p.max_significant > 0
+            significant_max @ p.max_significant
+            significant_min @ p.min_significant
+
+        if significant_max > 0
+            if significant_min > significant_max
+                significant_max @ significant_min
+            value @ decimal.round_significant(value, digits: significant_max, mode: settings.rounding)
+            have = decimal.significant_count(value)
+            needed @= 0
+
+            if have < significant_min
+                needed @ value.fraction.len() + significant_min - have
+
+                if decimal.is_zero(value)
+                    needed @ significant_min - 1
+            min_fraction @ needed
+        else
+            value @ decimal.round_fraction(value, places: max_fraction, mode: settings.rounding)
+        primary @= p.primary_group
+
+        if min_grouping == 0
+            primary @ 0
+        laid = laid_out(
+            value,
+            min_integer: min_integer,
+            min_fraction: min_fraction,
+            primary: primary,
+            secondary: p.secondary_group,
+            min_grouping: min_grouping
+        )
+        body @ localized(laid: laid, profile: profile, group: group, point: point)
+    zero = decimal.is_zero(value) && !value.nan && !value.infinite
+    show_minus @= false
+    show_plus @= false
+
+    if !value.nan
+        if settings.sign == 0
+            show_minus @ value.negative
+        else if settings.sign == 1
+            show_minus @ value.negative
+            show_plus @ !value.negative
+        else if settings.sign == 3
+            show_minus @ value.negative && !zero
+            show_plus @ !value.negative && !zero
+        else if settings.sign == 4
+            show_minus @ value.negative && !zero
+    prefix_used @= prefix_pattern
+    suffix_used @= suffix_pattern
+
+    if show_minus
+        prefix_used @ negative_prefix
+        suffix_used @ negative_suffix
+    else if show_plus
+        if p.has_negative && strings.contains(s: negative_prefix + negative_suffix, substr: "-")
+            prefix_used @ strings.replace_all(s: negative_prefix, old: "-", new: "+")
+            suffix_used @ strings.replace_all(s: negative_suffix, old: "-", new: "+")
+        else
+            prefix_used @ "+" + prefix_pattern
+    symbols = pattern.Affix(
+        minus: profile.symbols[5],
+        plus: profile.symbols[4],
+        percent: profile.symbols[2],
+        per_mille: profile.symbols[3],
+        currency: currency_text
+    )
+    prefix @= pattern.write_affix(prefix_used, symbols: symbols)
+    suffix @= pattern.write_affix(suffix_used, symbols: symbols)
+
+    if currency_text != ""
+        if strings.has_suffix(s: prefix_used, suffix: "¤") && is_currency_match(last_char(currency_text)) && opens_with_digit(body)
+            prefix @ prefix + profile.patterns[7]
+
+        if strings.has_prefix(s: suffix_used, prefix: "¤") && is_currency_match(first_char(currency_text)) && closes_with_digit(body)
+            suffix @ profile.patterns[8] + suffix
+    return prefix + body + suffix
+
+# Whether the last character of `s` is a decimal digit.
+function closes_with_digit(s: str) -> bool
+    last = last_char(s)
+    return last != "" && unicode.category(last) == "Nd"
+
+# `long` where `wanted`, else `short`.
+function if_long(wanted: bool, short: [str], long: [str]) -> [str]
+    if wanted
+        return long
+    return short
+
+## Tests
+
+# Each expected text below is what ICU 79.1 (CLDR 49) wrote for the same
+# number, locale and pattern, observed 2026-11-19 with the oracle kept in the
+# round's scratch folder, its style formats using CLDR's minimum grouping.
+test "format: decimals in English, German, Spanish, Polish, Hindi and Bangla"
+    plain = settings_of(DECIMAL)
+    assert format(i18n.parse_locale("en").must(), number: "1234.5678", settings: plain).must() == "1,234.568"
+    assert format(i18n.parse_locale("de").must(), number: "1234.5", settings: plain).must() == "1.234,5"
+    assert format(i18n.parse_locale("es").must(), number: "1234", settings: plain).must() == "1234"
+    assert format(i18n.parse_locale("es").must(), number: "12345", settings: plain).must() == "12.345"
+    assert format(i18n.parse_locale("pl").must(), number: "1234.5678", settings: plain).must() == "1234,568"
+    assert format(i18n.parse_locale("hi").must(), number: "1234567.5", settings: plain).must() == "12,34,567.5"
+    assert format(i18n.parse_locale("bn").must(), number: "1234567.5", settings: plain).must() == "১২,৩৪,৫৬৭.৫"
+
+test "format: negative zero, half to even, infinity and not a number"
+    plain = settings_of(DECIMAL)
+    english = i18n.parse_locale("en").must()
+    assert format(english, number: "-0.0001", settings: plain).must() == "-0"
+    assert format(english, number: "0.0005", settings: plain).must() == "0"
+    assert format(english, number: "0.0015", settings: plain).must() == "0.002"
+    assert format(english, number: "inf", settings: plain).must() == "∞"
+    assert format(english, number: "nan", settings: plain).must() == "NaN"
+    assert format(english, number: "x", settings: plain).is_err()
+
+test "format: Arabic of Egypt, with its digits and marks"
+    assert format(i18n.parse_locale("ar-EG").must(), number: "-1234.5", settings: settings_of(DECIMAL)).must() == "\u{61c}-١٬٢٣٤٫٥"
+
+test "format: percentages in French and German, and scientific numbers in English"
+    assert format(i18n.parse_locale("fr").must(), number: "0.256", settings: settings_of(PERCENT)).must() == "26 %"
+    assert format(i18n.parse_locale("de").must(), number: "-0.256", settings: settings_of(PERCENT)).must() == "-26 %"
+    english = i18n.parse_locale("en").must()
+    assert format(english, number: "1234", settings: settings_of(SCIENTIFIC)).must() == "1.234E3"
+    assert format(english, number: "0.00012345", settings: settings_of(SCIENTIFIC)).must() == "1.2345E-4"
+    assert format(english, number: "0", settings: settings_of(SCIENTIFIC)).must() == "0E0"
+
+test "format: currencies with symbols, spacing, digits and accounting"
+    dollars @= settings_of(CURRENCY)
+    dollars.currency @ "USD"
+    english = i18n.parse_locale("en").must()
+    assert format(english, number: "-1234.5", settings: dollars).must() == "-$1,234.50"
+    assert format(i18n.parse_locale("en-CA").must(), number: "1234.5", settings: dollars).must() == "US$1,234.50"
+    assert format(i18n.parse_locale("de").must(), number: "-1234.5", settings: dollars).must() == "-1.234,50 $"
+    francs @= dollars
+    francs.currency @ "chf"
+    assert format(english, number: "1234.5", settings: francs).must() == "CHF 1,234.50"
+    assert format(i18n.parse_locale("de-CH").must(), number: "1234.567", settings: francs).must() == "CHF 1'234.57"
+    yen @= dollars
+    yen.currency @ "JPY"
+    assert format(i18n.parse_locale("ja").must(), number: "1234.5", settings: yen).must() == "￥1,234"
+    books @= settings_of(ACCOUNTING)
+    books.currency @ "USD"
+    assert format(english, number: "-1234.5", settings: books).must() == "($1,234.50)"
+    assert format(english, number: "1", settings: settings_of(CURRENCY)).is_err()
+
+test "format: compact numbers, short and long, past the largest unit and back to a million"
+    short = settings_of(COMPACT_SHORT)
+    english = i18n.parse_locale("en").must()
+    assert format(english, number: "1234", settings: short).must() == "1.2K"
+    assert format(english, number: "999999", settings: short).must() == "1M"
+    assert format(english, number: "999", settings: short).must() == "999"
+    assert format(english, number: "-1500", settings: short).must() == "-1.5K"
+    assert format(english, number: "0.5", settings: short).must() == "0.5"
+    assert format(english, number: "12345678901234567890", settings: short).must() == "12,345,679T"
+    assert format(i18n.parse_locale("de").must(), number: "1234", settings: short).must() == "1234"
+    long = settings_of(COMPACT_LONG)
+    assert format(i18n.parse_locale("de").must(), number: "1000000", settings: long).must() == "1 Million"
+    assert format(i18n.parse_locale("de").must(), number: "2500000", settings: long).must() == "2,5 Millionen"
+    assert format(i18n.parse_locale("fr").must(), number: "1200000", settings: long).must() == "1,2 million"
+    assert format(i18n.parse_locale("fr-HT").must(), number: "1000", settings: long).must() == "mille"
+    assert format(i18n.parse_locale("sw").must(), number: "12345", settings: short).must() == "elfu 12"
+    assert format(i18n.parse_locale("sw").must(), number: "-12345", settings: short).must() == "elfu -12"
+    assert format(i18n.parse_locale("zh-Hant-HK").must(), number: "1234.5678", settings: short).must() == "1.2K"
+    assert format(i18n.parse_locale("sr-Latn-ME").must(), number: "1234.5678", settings: short).must() == "1,2 hilj."
+
+test "format: signs always, never, except zero and negative"
+    english = i18n.parse_locale("en").must()
+    always @= settings_of(DECIMAL)
+    always.sign @ 1
+    assert format(english, number: "0", settings: always).must() == "+0"
+    except_zero @= always
+    except_zero.sign @ 3
+    assert format(english, number: "0", settings: except_zero).must() == "0"
+    assert format(english, number: "-0.0001", settings: except_zero).must() == "0"
+    never @= always
+    never.sign @ 2
+    assert format(english, number: "-5", settings: never).must() == "5"
+    negative @= always
+    negative.sign @ 4
+    assert format(english, number: "-0.0001", settings: negative).must() == "0"
+
+test "format: significant digits, fraction digits and digit counts out of range"
+    english = i18n.parse_locale("en").must()
+    three @= settings_of(DECIMAL)
+    three.max_significant @ 3
+    assert format(english, number: "1234.5", settings: three).must() == "1,230"
+    padded @= three
+    padded.min_significant @ 3
+    assert format(english, number: "1.5", settings: padded).must() == "1.50"
+    assert format(english, number: "0", settings: padded).must() == "0.00"
+    too_many @= settings_of(DECIMAL)
+    too_many.max_fraction @ 1000
+    assert format(english, number: "1", settings: too_many).is_err()

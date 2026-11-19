@@ -1,0 +1,14 @@
+# Reaches Rebel's `i18n/numbers`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It writes a number as German writes it,
+# and a price in euros: "1.234,5 1.234,50 €".
+
+use <rebel>/i18n
+use <rebel>/i18n/numbers
+
+function main()
+    german = i18n.parse_locale("de-DE").must()
+    print(
+        numbers.format_decimal(german, number: "1234.5").must(),
+        " ",
+        numbers.format_currency(german, number: "1234.5", currency: "EUR").must()
+    )

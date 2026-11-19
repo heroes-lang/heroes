@@ -1,0 +1,444 @@
+# Language ranges matched by RFC 4647's plain rules: an `Accept-Language`
+# header read into its ranges and weights (RFC 9110 § 12.5.4), the lookup of
+# one tag and the extended filtering of many, and the parents CLDR's data is
+# looked up through.
+
+use i18n/internal/locale_syntax
+use i18n/internal/locale_tables
+use strings
+
+# The code a broken header fails with.
+constant INVALID: str
+    "invalid"
+
+# The code a lookup that reaches nothing fails with.
+constant NOT_FOUND: str
+    "not_found"
+
+# One pattern of a header and its weight in thousandths.
+record Weighted
+    range: str
+    thousandths: i64
+
+# The weight `q`, `0.8`, in thousandths; RFC 9110's `qvalue`.
+function weight_of(q: str) -> i64?
+    if q.len() == 0 || q.len() > 5 || q[0] != '0' && q[0] != '1'
+        return fail(code: INVALID, msg: f"\"{q}\" is no weight from 0 to 1")
+    whole = to_i64(q[0] - '0').must()
+
+    if q.len() == 1
+        return ok(whole * 1000)
+
+    if q[1] != '.'
+        return fail(code: INVALID, msg: f"\"{q}\" is no weight from 0 to 1")
+    value @= 0
+    places @= 0
+    at @= 2
+
+    while at < q.len()
+        if !locale_syntax.is_digit(q[at])
+            return fail(code: INVALID, msg: f"\"{q}\" is no weight from 0 to 1")
+        value @ value * 10 + to_i64(q[at] - '0').must()
+        places @ places + 1
+        at @ at + 1
+
+    while places < 3
+        value @ value * 10
+        places @ places + 1
+
+    if whole == 1 && value != 0
+        return fail(code: INVALID, msg: f"\"{q}\" is more than 1")
+    return ok(whole * 1000 + value)
+
+# Whether `text` is a language range: `*`, or subtags of one to eight
+# letters, digits after the first, joined by `-`.
+function is_range(text: str) -> bool
+    if text == "*"
+        return true
+    subtags = strings.split(s: text, sep: "-")
+
+    for s in subtags
+        if s.len() == 0 || s.len() > 8 || !locale_syntax.all_alphanumeric(s)
+            return false
+
+    return locale_syntax.all_alpha(subtags[0])
+
+# The ranges of an `Accept-Language` header, the highest weight first.
+function parse_header(header: str) -> [Weighted]?
+    found: [Weighted] @= []
+
+    for item in strings.split(s: header, sep: ",")
+        part = strings.trim(item)
+
+        if part != ""
+            pieces = strings.split(s: part, sep: ";")
+            pattern = locale_syntax.lower(strings.trim(pieces[0]))
+
+            if !is_range(pattern)
+                return fail(code: INVALID, msg: f"\"{pieces[0]}\" is no language pattern")
+            weight @= 1000
+            at @= 1
+
+            while at < pieces.len()
+                parameter = strings.trim(pieces[at])
+
+                match strings.split_once(s: parameter, sep: "=")
+                    .ok halves =>
+                        if locale_syntax.lower(strings.trim(halves.before)) != "q"
+                            return fail(code: INVALID, msg: f"\"{parameter}\" is no weight of \"{pattern}\"")
+                        weight @ weight_of(strings.trim(halves.after))?
+                    .err _ => return fail(code: INVALID, msg: f"\"{parameter}\" is no weight of \"{pattern}\"")
+
+                at @ at + 1
+
+            found @ found.push(Weighted(range: pattern, thousandths: weight))
+
+    weights: {i64: bool} @= {}
+
+    for w in found
+        weights[w.thousandths] @ true
+
+    ordered = sort(keys(weights))
+    out: [Weighted] @= []
+    index @= ordered.len() - 1
+
+    while index >= 0
+        for w in found
+            if w.thousandths == ordered[index]
+                out @ out.push(w)
+
+        index @ index - 1
+
+    return ok(out)
+
+# `text` with its last subtag removed, and a singleton left last removed
+# with it, as RFC 4647's lookup truncates; the empty text after the last.
+function truncate(text: str) -> str
+    match strings.split_once_last(s: text, sep: "-")
+        .ok halves =>
+            match strings.split_once_last(s: halves.before, sep: "-")
+                .ok again =>
+                    if again.after.len() == 1
+                        return again.before
+                    return halves.before
+                .err _ => return halves.before
+        .err _ => return ""
+
+# The first of `tags` RFC 4647's lookup chooses for `ranges`.
+function lookup(ranges: [str], tags: [str]) -> str?
+    lowered: [str] @= []
+
+    for tag in tags
+        lowered @ lowered.push(locale_syntax.lower(tag))
+
+    for pattern in ranges
+        candidate @= locale_syntax.lower(pattern)
+
+        while candidate != "" && candidate != "*"
+            at @= 0
+
+            while at < lowered.len()
+                if lowered[at] == candidate
+                    return ok(tags[at])
+                at @ at + 1
+
+            candidate @ truncate(candidate)
+
+    return fail(code: NOT_FOUND, msg: f"no tag of {tags.len()} reached by {ranges.len()} ranges")
+
+# Whether the extended `pattern` matches `tag`, by RFC 4647 § 3.3.2.
+function extended_match(pattern: str, tag: str) -> bool
+    want = strings.split(s: locale_syntax.lower(pattern), sep: "-")
+    have = strings.split(s: locale_syntax.lower(tag), sep: "-")
+
+    if want[0] != "*" && want[0] != have[0]
+        return false
+    w @= 1
+    h @= 1
+
+    while w < want.len()
+        if want[w] == "*"
+            w @ w + 1
+        else if h >= have.len()
+            return false
+        else if want[w] == have[h]
+            w @ w + 1
+            h @ h + 1
+        else if have[h].len() == 1
+            return false
+        else
+            h @ h + 1
+
+    return true
+
+# The tags of `tags` that `ranges` match, in the order of the ranges.
+function filter_ranges(ranges: [str], tags: [str]) -> [str]
+    taken: [bool] @= []
+
+    for _ in tags
+        taken @ taken.push(false)
+
+    out: [str] @= []
+
+    for pattern in ranges
+        at @= 0
+
+        while at < tags.len()
+            if !taken[at] && extended_match(pattern: pattern, tag: tags[at])
+                taken[at] @ true
+                out @ out.push(tags[at])
+            at @ at + 1
+
+    return out
+
+# The parent of `parts` in CLDR's inheritance, extensions dropped first; the
+# root has none.
+function parent(parts: locale_syntax.Parts) -> locale_syntax.Parts?
+    bare = locale_syntax.Parts(
+        language: parts.language,
+        script: parts.script,
+        region: parts.region,
+        variants: parts.variants,
+        extensions: [],
+        private_use: []
+    )
+    tag = locale_syntax.format(bare)
+
+    if tag == "und"
+        return fail(code: NOT_FOUND, msg: "the root has no parent")
+    named = locale_syntax.search(locale_tables.PARENT_KEYS, key: tag)
+
+    if named >= 0
+        given = locale_tables.PARENT_VALUES[named]
+
+        if given == "root"
+            return ok(locale_syntax.root())
+        return locale_syntax.parse(given)
+
+    if bare.variants.len() > 0
+        shorter @= bare
+        shorter.variants @ bare.variants.slice(from: 0, to: bare.variants.len() - 1)
+        return ok(shorter)
+
+    if bare.region != ""
+        shorter @= bare
+        shorter.region @ ""
+        return ok(shorter)
+
+    if bare.script != ""
+        # A language written in a script other than its own inherits from
+        # the root, as CLDR's parent locales say of every such locale.
+        own = script_of(bare.language)
+
+        if own != "" && own != bare.script
+            return ok(locale_syntax.root())
+        shorter @= bare
+        shorter.script @ ""
+        return ok(shorter)
+    return ok(locale_syntax.root())
+
+# The script `language` is likely written in, or the empty text.
+function script_of(language: str) -> str
+    at = locale_syntax.search(locale_tables.SCRIPT_KEYS, key: language)
+
+    if at < 0
+        return ""
+    return locale_tables.SCRIPT_VALUES[at]
+
+# The script `language` is likely written in within `region`.
+function script_in(language: str, region: str) -> str
+    if region != ""
+        at = locale_syntax.search(locale_tables.REGION_SCRIPT_KEYS, key: language + "-" + region)
+
+        if at >= 0
+            return locale_tables.REGION_SCRIPT_VALUES[at]
+    return script_of(language)
+
+# The region `key`, a language or a language and a script, is likely
+# spoken in, or the empty text.
+function region_of(key: str) -> str
+    at = locale_syntax.search(locale_tables.LIKELY_REGION_KEYS, key: key)
+
+    if at < 0
+        return ""
+    return locale_tables.LIKELY_REGION_VALUES[at]
+
+# The locales CLDR's data is looked up in for `parts`, the most particular
+# first and the root last. A missing script is added where the region
+# chooses one other than the language's own (`zh-TW` is `zh-Hant-TW`); a
+# script that is the language's own is tried with and then without it
+# (`en-Latn-US`, then `en-US`).
+function chain(parts: locale_syntax.Parts) -> [locale_syntax.Parts]
+    start @= locale_syntax.Parts(
+        language: parts.language,
+        script: parts.script,
+        region: parts.region,
+        variants: parts.variants,
+        extensions: [],
+        private_use: []
+    )
+    own = script_of(start.language)
+    likely = script_in(language: start.language, region: start.region)
+
+    if start.script == "" && likely != "" && likely != own
+        start.script @ likely
+    out: [locale_syntax.Parts] @= [start]
+    current @= start
+
+    if start.script != "" && start.script == own && likely == own
+        current @ start
+        current.script @ ""
+        out @ out.push(current)
+    steps @= 0
+
+    while locale_syntax.format(current) != "und" && steps < 20
+        match parent(current)
+            .ok next =>
+                current @ next
+                out @ out.push(next)
+            .err _ => steps @ 20
+
+        steps @ steps + 1
+
+    return out
+
+# The forms of a POSIX name gettext looks for, the most particular first:
+# every choice of its territory, code set and modifier, as Python's
+# `gettext` expands it.
+function expand_posix(name: str) -> [str]
+    rest @= name
+    modifier @= ""
+    codeset @= ""
+    territory @= ""
+
+    match strings.split_once(s: rest, sep: "@")
+        .ok halves =>
+            rest @ halves.before
+            modifier @ "@" + halves.after
+        .err _ => _ = 0
+
+    match strings.split_once(s: rest, sep: ".")
+        .ok halves =>
+            rest @ halves.before
+            codeset @ "." + halves.after
+        .err _ => _ = 0
+
+    match strings.split_once(s: rest, sep: "_")
+        .ok halves =>
+            rest @ halves.before
+            territory @ "_" + halves.after
+        .err _ => _ = 0
+
+    out: [str] @= []
+    mask @= 7
+
+    while mask >= 0
+        has_codeset = mask & 1 != 0
+        has_territory = mask & 2 != 0
+        has_modifier = mask & 4 != 0
+
+        if (!has_codeset || codeset != "") && (!has_territory || territory != "") && (!has_modifier || modifier != "")
+            value @= rest
+
+            if has_territory
+                value @ value + territory
+
+            if has_codeset
+                value @ value + codeset
+
+            if has_modifier
+                value @ value + modifier
+            out @ out.push(value)
+        mask @ mask - 1
+
+    return out
+
+# The paths gettext looks for a catalog of `domain` at in `dir`.
+function catalog_paths(dir: str, domain: str, languages: [str]) -> [str]
+    out: [str] @= []
+    seen: {str: bool} @= {}
+
+    for language in languages
+        if language == "C" || language == "POSIX"
+            return out
+
+        if language != ""
+            for form in expand_posix(language)
+                path = dir + "/" + form + "/LC_MESSAGES/" + domain + ".mo"
+
+                if seen[path].is_err()
+                    seen[path] @ true
+                    out @ out.push(path)
+
+    return out
+
+## Tests
+
+test "expand_posix: every part, none, and a modifier alone"
+    assert expand_posix("de_DE.UTF-8@euro") == ["de_DE.UTF-8@euro", "de_DE@euro", "de.UTF-8@euro", "de@euro", "de_DE.UTF-8", "de_DE", "de.UTF-8", "de"]
+    assert expand_posix("fr") == ["fr"]
+    assert expand_posix("sr@latin") == ["sr@latin", "sr"]
+
+test "catalog_paths: two languages, a repeat, the empty list and C"
+    assert catalog_paths(dir: "d", domain: "x", languages: ["pt_BR", "pt"]) == ["d/pt_BR/LC_MESSAGES/x.mo", "d/pt/LC_MESSAGES/x.mo"]
+    assert catalog_paths(dir: "d", domain: "x", languages: []) == []
+    assert catalog_paths(dir: "d", domain: "x", languages: ["C", "de"]) == []
+
+test "parse_header: the empty header, weights, order kept among equals, and a weight of zero"
+    assert parse_header("").must().len() == 0
+    found = parse_header("fr-CH, fr;q=0.9, en;q=0.8, de;q=0.8, *;q=0.5, it;q=0").must()
+    assert found.map(range_of) == ["fr-ch", "fr", "en", "de", "*", "it"]
+    assert found[1].thousandths == 900 && found[5].thousandths == 0
+
+test "parse_header: what is not a header"
+    assert parse_header("en;q=2").is_err()
+    assert parse_header("en;q=1.5").is_err()
+    assert parse_header("en;q=0.1234").is_err()
+    assert parse_header("en;level=1").is_err()
+    assert parse_header("e n").is_err()
+    assert parse_header("1en").is_err()
+    assert parse_header(",, en ,").must().len() == 1
+
+# The pattern of `w`, for the tests above.
+function range_of(w: Weighted) -> str
+    return w.range
+
+test "lookup: a region falls back, a singleton is truncated with its subtag, and nothing"
+    assert lookup(ranges: ["de-CH-1996"], tags: ["de"]).must() == "de"
+    assert lookup(ranges: ["zh-Hant-CN-x-private1"], tags: ["zh-Hant-CN"]).must() == "zh-Hant-CN"
+    assert lookup(ranges: ["fr", "*"], tags: ["de"]).is_err()
+    assert lookup(ranges: [], tags: ["de"]).is_err()
+    assert lookup(ranges: ["EN-us"], tags: ["en-US"]).must() == "en-US"
+
+test "filter: the RFC's own example, a wildcard, and no match"
+    tags = [
+        "de"
+        "de-DE"
+        "de-de"
+        "de-Latn-DE"
+        "de-Latf-DE"
+        "de-DE-x-goethe"
+        "de-Latn-DE-1996"
+        "de-Deva-DE"
+        "de-x-DE"
+        "de-Deva"
+    ]
+    assert filter_ranges(ranges: ["de-*-DE"], tags: tags) == ["de-DE", "de-de", "de-Latn-DE", "de-Latf-DE", "de-DE-x-goethe", "de-Latn-DE-1996", "de-Deva-DE"]
+    assert filter_ranges(ranges: ["*"], tags: ["en", "fr"]) == ["en", "fr"]
+    assert filter_ranges(ranges: ["it"], tags: ["en"]) == []
+
+test "parent: a named parent, truncation, a script of its own, and the root"
+    assert locale_syntax.format(parent(locale_syntax.parse("en-AU").must()).must()) == "en-001"
+    assert locale_syntax.format(parent(locale_syntax.parse("de-CH-1996").must()).must()) == "de-CH"
+    assert locale_syntax.format(parent(locale_syntax.parse("sr-Latn").must()).must()) == "und"
+    assert locale_syntax.format(parent(locale_syntax.parse("de").must()).must()) == "und"
+    assert parent(locale_syntax.root()).is_err()
+
+test "chain: a script added, a script dropped, and a region's own script"
+    assert chain(locale_syntax.parse("zh-TW").must()).map(locale_syntax.format) == ["zh-Hant-TW", "zh-Hant", "und"]
+    assert chain(locale_syntax.parse("en-Latn-US").must()).map(locale_syntax.format) == ["en-Latn-US", "en-US", "en", "und"]
+    assert chain(locale_syntax.parse("zh-Hant-HK").must()).map(locale_syntax.format) == ["zh-Hant-HK", "zh-Hant", "und"]
+    assert chain(locale_syntax.parse("sr-Latn-ME").must()).map(locale_syntax.format) == ["sr-Latn-ME", "sr-Latn", "und"]
+    assert chain(locale_syntax.parse("es-MX").must()).map(locale_syntax.format) == ["es-MX", "es-419", "es", "und"]
+    assert chain(locale_syntax.parse("und").must()).map(locale_syntax.format) == ["und"]
+    assert chain(locale_syntax.parse("sr-Latn-RS").must()).map(locale_syntax.format) == ["sr-Latn-RS", "sr-Latn", "und"]

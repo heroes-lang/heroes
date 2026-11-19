@@ -1,0 +1,269 @@
+# What `date_tables` holds for a locale, read: the locale CLDR's data is
+# found under, its blocks of names, patterns, skeletons and relative times,
+# one text of a block at a time, its digits and number symbols, and its
+# region's week and hour.
+
+use i18n
+use i18n/dates/internal/date_tables
+use i18n/internal/locale_syntax
+use i18n/internal/matching
+use strings
+
+# The blocks of a locale, in the order of a row of `LOCALE_DATA`.
+constant MONTHS: i64
+    0
+
+constant DAYS: i64
+    1
+
+constant QUARTERS: i64
+    2
+
+constant PERIODS: i64
+    3
+
+constant ERAS: i64
+    4
+
+constant PATTERNS: i64
+    5
+
+constant SKELETONS: i64
+    6
+
+constant RELATIVE: i64
+    7
+
+# The slots of the patterns block: the date, time, joining and at-time
+# patterns, full first; then the GMT format, the GMT zero format, the hour
+# format, and the long and short names of UTC.
+constant GMT_FORMAT: i64
+    16
+
+constant GMT_ZERO: i64
+    17
+
+constant HOUR_FORMAT: i64
+    18
+
+constant UTC_LONG: i64
+    19
+
+constant UTC_SHORT: i64
+    20
+
+# What a locale writes dates with.
+record Data
+    index: i64
+    blocks: [i64]
+    digits: [str]
+    group: str
+    minus: str
+    min_grouping: i64
+    region: str
+    language: str
+    script: str
+
+# The number three characters of `ALPHABET` from `at` of `codes` write.
+function number_at(codes: str, at: i64) -> i64
+    value @= 0
+    i @= at
+
+    while i < at + 3
+        value @ value * 64 + digit_of(codes[i])
+        i @ i + 1
+
+    return value
+
+# The value of one character of `ALPHABET`.
+function digit_of(b: u8) -> i64
+    if b >= '0' && b <= '9'
+        return to_i64(b - '0').must()
+
+    if b >= 'A' && b <= 'Z'
+        return to_i64(b - 'A').must() + 10
+
+    if b >= 'a' && b <= 'z'
+        return to_i64(b - 'a').must() + 36
+
+    if b == '+'
+        return 62
+    return 63
+
+# Text `id` of `STRINGS`.
+function text_of(id: i64) -> str
+    chunk = strings.split(s: date_tables.STRINGS[id / 100], sep: "\u{1}")
+    return chunk[id % 100]
+
+# The text in slot `slot` of block `block`, the empty text past its end.
+function slot_text(block: i64, slot: i64) -> str
+    codes = date_tables.BLOCKS[block]
+
+    if 3 * slot + 3 > codes.len()
+        return ""
+    return text_of(number_at(codes, at: 3 * slot))
+
+# The texts of slots `from` to `to` of block `block`.
+function slot_texts(block: i64, from: i64, to: i64) -> [str]
+    out: [str] @= []
+    at @= from
+
+    while at < to
+        out @ out.push(slot_text(block: block, slot: at))
+        at @ at + 1
+
+    return out
+
+# How many slots block `block` has.
+function slot_count(block: i64) -> i64
+    return date_tables.BLOCKS[block].len() / 3
+
+# The position of the locale CLDR's data is found under for `locale`.
+function locale_index(locale: i18n.Locale) -> i64
+    for step in i18n.fallback_chain(locale)
+        at = locale_syntax.search(date_tables.LOCALES, key: i18n.format_locale(step))
+
+        if at >= 0
+            return at
+
+    return locale_syntax.search(date_tables.LOCALES, key: "und")
+
+# The ten digits of `system`, or the empty list.
+function digits_of(system: str) -> [str]
+    at = locale_syntax.search(date_tables.SYSTEM_NAMES, key: system)
+
+    if at < 0
+        return []
+    return date_tables.SYSTEM_DIGITS[at].chars()
+
+# What `locale` writes dates with.
+function load(locale: i18n.Locale) -> Data
+    index = locale_index(locale)
+    fields = strings.split(s: date_tables.LOCALE_DATA[index], sep: "\u{1}")
+    codes = fields[0]
+    blocks: [i64] @= []
+    at @= 0
+
+    while at < codes.len()
+        blocks @ blocks.push(number_at(codes, at: at))
+        at @ at + 3
+
+    system @= fields[1]
+
+    match i18n.unicode_keyword(locale, key: "nu")
+        .ok asked =>
+            if digits_of(asked).len() == 10
+                system @ asked
+        .err _ => _ = 0
+
+    min_grouping @= 1
+
+    if fields[4] == "2"
+        min_grouping @ 2
+    else if fields[4] == "3"
+        min_grouping @ 3
+    return Data(
+        index: index,
+        blocks: blocks,
+        digits: digits_of(system),
+        group: fields[2],
+        minus: fields[3],
+        min_grouping: min_grouping,
+        region: region_of(locale),
+        language: locale.language,
+        script: locale.script
+    )
+
+# What the root writes dates with.
+function load_root() -> Data
+    return load(i18n.Locale(language: "und", script: "", region: "", variants: [], extensions: [], private_use: []))
+
+# The region of `locale`, or the one its language is likely spoken in;
+# `001` where none is known.
+function region_of(locale: i18n.Locale) -> str
+    if locale.region != ""
+        return locale.region
+    found @= ""
+
+    if locale.script != ""
+        found @ matching.region_of(locale.language + "-" + locale.script)
+
+    if found == ""
+        found @ matching.region_of(locale.language)
+
+    if found == ""
+        return "001"
+    return found
+
+# The value `region` has in `regions` and `values`, or the world's.
+function region_value(regions: [str] lent, values: [str] lent, region: str) -> str
+    at = locale_syntax.search(regions, key: region)
+
+    if at >= 0
+        return values[at]
+    return values[locale_syntax.search(regions, key: "001")]
+
+# The day `region`'s week begins on, 1 for Monday to 7 for Sunday.
+function first_day(region: str) -> i64
+    return match region_value(regions: date_tables.FIRST_DAY_REGIONS, values: date_tables.FIRST_DAYS, region: region)
+        "mon" => 1
+        "tue" => 2
+        "wed" => 3
+        "thu" => 4
+        "fri" => 5
+        "sat" => 6
+        _     => 7
+
+# The fewest days of a new year `region`'s first week holds.
+function min_days(region: str) -> i64
+    at = locale_syntax.search(date_tables.MIN_DAYS_REGIONS, key: region)
+
+    if at >= 0
+        return date_tables.MIN_DAYS[at]
+    return date_tables.MIN_DAYS[locale_syntax.search(date_tables.MIN_DAYS_REGIONS, key: "001")]
+
+# The hour `language` in `region` prefers, `h` or `H`: CLDR's choice for
+# the two together where it makes one, `fr-CA`, else the region's.
+function hour_of(language: str, region: str) -> str
+    at = locale_syntax.search(date_tables.HOUR_REGIONS, key: language + "-" + region)
+
+    if at >= 0
+        return date_tables.HOUR_CYCLES[at]
+    return region_value(regions: date_tables.HOUR_REGIONS, values: date_tables.HOUR_CYCLES, region: region)
+
+# The day period rules of a locale, `name from before` or `name at`: those
+# CLDR gives its language and region, or its language and script, or its
+# language; the empty list where it gives none.
+function period_rules(language: str, script: str, region: str) -> [str]
+    for key in [language + "-" + region, language + "-" + script, language]
+        at = locale_syntax.search(date_tables.PERIOD_LANGUAGES, key: key)
+
+        if at >= 0
+            return strings.split(s: date_tables.PERIOD_RULES[at], sep: ";")
+
+    return []
+
+## Tests
+
+test "load: German, a locale falling back, and the root"
+    german = load(i18n.parse_locale("de").must())
+    assert slot_text(block: german.blocks[MONTHS], slot: 26) == "März" && german.group == "."
+    assert date_tables.LOCALES[load(i18n.parse_locale("de-DE").must()).index] == "de"
+    assert date_tables.LOCALES[load(i18n.parse_locale("xx").must()).index] == "und"
+
+test "load: Arabic of Egypt writes its own digits, and a keyword chooses others"
+    assert load(i18n.parse_locale("ar-EG").must()).digits[1] == "١"
+    assert load(i18n.parse_locale("en-u-nu-thai").must()).digits[1] == "๑"
+
+test "first_day, min_days and hour_of: the United States, Germany and the world"
+    assert first_day("US") == 7 && first_day("DE") == 1 && first_day("ZZ") == 1
+    assert min_days("DE") == 4 && min_days("US") == 1
+    assert hour_of(language: "en", region: "US") == "h" && hour_of(language: "de", region: "DE") == "H"
+    assert hour_of(language: "fr", region: "CA") == "H" && hour_of(language: "en", region: "CA") == "h"
+
+test "number_at and text_of: the empty text is text 0"
+    assert number_at("00A", at: 0) == 10 && number_at("010", at: 0) == 64
+    assert text_of(0) == ""
+
+test "period_rules: English has noon and midnight"
+    assert period_rules(language: "en", script: "", region: "US").len() >= 4 && period_rules(language: "xx", script: "", region: "").len() == 0

@@ -1,0 +1,224 @@
+# What `number_tables` holds for a locale, read: the locale CLDR's data is
+# found under, its numbering system, the symbols, patterns and compact
+# patterns of that system, its currency symbols, and the digits of every
+# numbering system and currency.
+
+use i18n
+use i18n/internal/locale_syntax
+use i18n/internal/matching
+use i18n/numbers/internal/number_tables
+use strings
+
+# The code an unknown numbering system fails with.
+constant NOT_FOUND: str
+    "not_found"
+
+# The separator of a block's fields.
+constant FIELD: str
+    "\u{1}"
+
+# The separator of a list's entries.
+constant ENTRY: str
+    "\u{2}"
+
+# What a locale writes numbers with in one numbering system.
+record Profile
+    system: str
+    digits: [str]
+    symbols: [str]
+    patterns: [str]
+    short: [str]
+    long: [str]
+    locale: i64
+
+# The position of the locale CLDR's data is found under for `locale`: the
+# first of its fallback chain the tables hold.
+function locale_index(locale: i18n.Locale) -> i64
+    for step in i18n.fallback_chain(locale)
+        at = locale_syntax.search(number_tables.LOCALES, key: i18n.format_locale(step))
+
+        if at >= 0
+            return at
+
+    return locale_syntax.search(number_tables.LOCALES, key: "und")
+
+# The digits of `system`, ten characters, or a failure where it has none.
+function digits_of(system: str) -> [str]?
+    at = locale_syntax.search(number_tables.SYSTEM_NAMES, key: system)
+
+    if at < 0
+        return fail(code: NOT_FOUND, msg: f"\"{system}\" is no numbering system with ten digits")
+    return ok(number_tables.SYSTEM_DIGITS[at].chars())
+
+# The default and native numbering systems of the locale at `index`.
+function systems_of(index: i64) -> [str]
+    head = strings.split(s: number_tables.LOCALE_DATA[index], sep: "|")[0]
+    return strings.split(s: head, sep: " ")
+
+# The numbering system `locale` writes in: its `nu` keyword where that names
+# a system with digits or `native`, else its default.
+function system_of(locale: i18n.Locale) -> str
+    systems = systems_of(locale_index(locale))
+
+    match i18n.unicode_keyword(locale, key: "nu")
+        .ok asked =>
+            if asked == "native"
+                return systems[1]
+
+            if !digits_of(asked).is_err()
+                return asked
+        .err _ => _ = 0
+
+    return systems[0]
+
+# The pieces of a block of `table`, split at `separator`; empty for the
+# empty block.
+function pieces(text: str, separator: str) -> [str]
+    if text == ""
+        return []
+    return strings.split(s: text, sep: separator)
+
+# The profile of `locale` in `system`, or in its own where `system` is
+# empty. A locale with no data for the system takes its Latin data with
+# the system's digits, as CLDR says.
+function profile(locale: i18n.Locale, system: str) -> Profile?
+    index = locale_index(locale)
+    chosen @= system
+
+    if chosen == ""
+        chosen @ system_of(locale)
+    digits = digits_of(chosen)?
+    entries = strings.split(s: strings.split(s: number_tables.LOCALE_DATA[index], sep: "|")[1], sep: ";")
+    found @= ""
+    latin @= ""
+
+    for entry in entries
+        halves = strings.split_once(s: entry, sep: ":").must()
+
+        if halves.before == chosen
+            found @ halves.after
+
+        if halves.before == "latn"
+            latin @ halves.after
+
+    if found == ""
+        found @ latin
+    ids = strings.split(s: found, sep: ",")
+    numbers: [i64] @= []
+
+    for id in ids
+        value @= 0
+        at @= 0
+
+        while at < id.len()
+            value @ value * 10 + to_i64(id[at] - '0').must()
+            at @ at + 1
+
+        numbers @ numbers.push(value)
+
+    return ok(
+        Profile(system: chosen, digits: digits, symbols: strings.split(s: number_tables.SYMBOLS[numbers[0]], sep: FIELD), patterns: strings.split(s: number_tables.PATTERNS[numbers[1]], sep: FIELD), short: pieces(text: number_tables.COMPACTS[numbers[2]], separator: ENTRY), long: pieces(text: number_tables.COMPACTS[numbers[3]], separator: ENTRY), locale: index)
+    )
+
+# The symbol, narrow symbol and code of `code` in the currency block at
+# `block`, or the empty list.
+function currency_entry(block: i64, code: str) -> [str]
+    for entry in pieces(text: number_tables.CURRENCY_SYMBOLS[block], separator: ENTRY)
+        if strings.has_prefix(s: entry, prefix: code + FIELD)
+            return strings.split(s: entry, sep: FIELD)
+
+    return []
+
+# The symbol of `code` for the locale at `index`, as `display` asks: 0 the
+# symbol, 1 the narrow symbol, 2 the code.
+function currency_symbol(index: i64, code: str, display: i64) -> str
+    if display == 2
+        return code
+    entry @= currency_entry(number_tables.LOCALE_CURRENCIES[index], code: code)
+
+    if entry.len() == 0
+        root = locale_syntax.search(number_tables.LOCALES, key: "und")
+        entry @ currency_entry(number_tables.LOCALE_CURRENCIES[root], code: code)
+
+    if entry.len() == 0
+        return code
+
+    if display == 1
+        return entry[2]
+    return entry[1]
+
+# Every `code symbol narrow` entry the locale at `index` reads, its own
+# first and the root's after.
+function currency_entries(index: i64) -> [[str]]
+    out: [[str]] @= []
+
+    for entry in pieces(text: number_tables.CURRENCY_SYMBOLS[number_tables.LOCALE_CURRENCIES[index]], separator: ENTRY)
+        out @ out.push(strings.split(s: entry, sep: FIELD))
+
+    root = locale_syntax.search(number_tables.LOCALES, key: "und")
+
+    for entry in pieces(text: number_tables.CURRENCY_SYMBOLS[number_tables.LOCALE_CURRENCIES[root]], separator: ENTRY)
+        out @ out.push(strings.split(s: entry, sep: FIELD))
+
+    return out
+
+# The digits after the point an amount of `code` is written with.
+function currency_digits(code: str) -> i64
+    at = locale_syntax.search(number_tables.DIGIT_CODES, key: code)
+
+    if at < 0
+        return 2
+    return number_tables.DIGIT_COUNTS[at]
+
+# The currency `region` uses today, or the empty text.
+function currency_of_region(region: str) -> str
+    at = locale_syntax.search(number_tables.REGION_CODES, key: region)
+
+    if at < 0
+        return ""
+    return number_tables.REGION_CURRENCIES[at]
+
+# The region of `locale`, or the one its language is likely spoken in.
+function region_of(locale: i18n.Locale) -> str
+    if locale.region != ""
+        return locale.region
+
+    if locale.script != ""
+        found = matching.region_of(locale.language + "-" + locale.script)
+
+        if found != ""
+            return found
+    return matching.region_of(locale.language)
+
+## Tests
+
+test "locale_index: a locale held, a region falling back, and the root"
+    assert number_tables.LOCALES[locale_index(i18n.parse_locale("de").must())] == "de"
+    assert number_tables.LOCALES[locale_index(i18n.parse_locale("de-DE-u-nu-latn").must())] == "de"
+    assert number_tables.LOCALES[locale_index(i18n.parse_locale("xx").must())] == "und"
+
+test "system_of: the default, a keyword, native, and a keyword with no digits"
+    assert system_of(i18n.parse_locale("ar-EG").must()) == "arab"
+    assert system_of(i18n.parse_locale("en-u-nu-thai").must()) == "thai"
+    assert system_of(i18n.parse_locale("hi-u-nu-native").must()) == "deva"
+    assert system_of(i18n.parse_locale("en-u-nu-roman").must()) == "latn"
+
+test "profile: German symbols, a system the locale lacks, and an unknown system"
+    german = profile(i18n.parse_locale("de").must(), system: "").must()
+    assert german.symbols[0] == "," && german.symbols[1] == "." && german.patterns[0] == "#,##0.###"
+    thai_digits = profile(i18n.parse_locale("de").must(), system: "thai").must()
+    assert thai_digits.digits[1] == "๑" && thai_digits.symbols[0] == ","
+    assert profile(i18n.parse_locale("de").must(), system: "xyz").is_err()
+
+test "currency_symbol, currency_digits and currency_of_region"
+    english = locale_index(i18n.parse_locale("en").must())
+    assert currency_symbol(index: english, code: "USD", display: 0) == "$"
+    assert currency_symbol(index: english, code: "XYZ", display: 0) == "XYZ"
+    assert currency_symbol(index: english, code: "USD", display: 2) == "USD"
+    assert currency_digits("JPY") == 0 && currency_digits("KWD") == 3 && currency_digits("EUR") == 2
+    assert currency_of_region("DE") == "EUR" && currency_of_region("ZZ") == ""
+
+test "region_of: given, likely, and by script"
+    assert region_of(i18n.parse_locale("fr-CA").must()) == "CA"
+    assert region_of(i18n.parse_locale("de").must()) == "DE"
+    assert region_of(i18n.parse_locale("zh-Hant").must()) == "TW"

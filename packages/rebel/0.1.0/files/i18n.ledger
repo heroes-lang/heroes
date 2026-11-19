@@ -1,0 +1,346 @@
+# The ledger of `i18n`: languages named and matched (BCP 47), CLDR's plural
+# rules, and gettext's message catalogs. One block per capability, and what
+# Heroes answers to each. Its subpackages keep their own ledgers:
+# `i18n/numbers`, `i18n/dates`, `i18n/collate`, `i18n/locales`.
+#
+# The census, by the author's decision of 2026-11-17, is wider than README
+# § A8's three libraries, since Go's and Rust's standard libraries hold no
+# i18n: `go` is `golang.org/x/text` v0.14.0 (`go doc`, from a module cache
+# of the round's scratch folder); `rust` is the crate `icu_locale_core` 2.4
+# (its documentation; no source opened); `python` is Python 3.15.2's
+# `gettext` and `locale` (`dir()`); `java` is Java SE 25's `java.util.Locale`,
+# `java.util.ResourceBundle` and `java.text`; `dotnet` is .NET's
+# `System.Globalization` and `System.Resources`; `odin` is Odin's
+# `core:text/i18n`; `icu` is ICU 79.1, the yardstick, run on this machine
+# (CLDR 49). Java, .NET and Odin were read from their documentation, none
+# being on this machine: the census's unrun lists.
+
+## Locales
+
+capability locale/parse  a BCP 47 tag read into its parts, case made canonical
+  heroes  i18n.parse_locale
+  go      language.Parse, language.Make, language.MustParse, language.ParseBase, language.ParseScript, language.ParseRegion, language.ParseVariant, language.ParseExtension, language.Compose
+  rust    Locale::try_from_str, LanguageIdentifier::try_from_str
+  python  -
+  java    Locale.forLanguageTag, Locale.Builder.setLanguageTag, Locale.Builder.setLanguage, Locale.Builder.setScript, Locale.Builder.setRegion, Locale.Builder.setVariant, Locale.Builder.setExtension, Locale.of, IllformedLocaleException
+  dotnet  CultureInfo.GetCultureInfoByIetfLanguageTag, CultureInfo.GetCultureInfo, CultureInfo(String), CultureNotFoundException
+  odin    -
+  icu     ULocale.forLanguageTag, uloc_forLanguageTag
+  note    `_` separates as `-` does, as ICU reads it; `root` is `und`; an extended language subtag stands for the language (`zh-yue` is `yue`), as ICU writes it; the irregular grandfathered tags take CLDR's replacements (`en-GB-oed` is `en-GB-oxendict`); a variant or singleton written twice is `invalid`, as Java refuses it
+
+capability locale/format  a locale written as a BCP 47 tag
+  heroes  i18n.format_locale
+  go      Tag.String
+  rust    Locale::to_string
+  python  -
+  java    Locale.toLanguageTag, Locale.toString
+  dotnet  CultureInfo.Name, CultureInfo.IetfLanguageTag
+  odin    -
+  icu     ULocale.toLanguageTag, uloc_toLanguageTag
+  note    extensions in the order of their singletons, as RFC 5646 § 4.5 asks
+
+capability locale/parts  a tag's language, script, region, variants, extensions and private use
+  heroes  i18n.Locale
+  go      Tag.Base, Tag.Script, Tag.Region, Tag.Variants, Tag.Extensions, Tag.Extension, Tag.Raw, Tag.IsRoot, Tag.Parent, Base.String, Script.String, Region.String, Variant.String, Extension.String, Extension.Type, Extension.Tokens
+  rust    Locale::id, LanguageIdentifier::language, LanguageIdentifier::script, LanguageIdentifier::region, LanguageIdentifier::variants, Locale::extensions
+  python  -
+  java    Locale.getLanguage, Locale.getScript, Locale.getCountry, Locale.getVariant, Locale.getExtension, Locale.getExtensionKeys, Locale.hasExtensions, Locale.stripExtensions
+  dotnet  CultureInfo.TwoLetterISOLanguageName, RegionInfo.TwoLetterISORegionName, RegionInfo.Name
+  odin    -
+  icu     ULocale.getLanguage, ULocale.getScript, ULocale.getCountry, ULocale.getVariant
+
+capability locale/posix  a POSIX locale name read and written
+  heroes  i18n.parse_posix, i18n.to_posix
+  go      -
+  rust    -
+  python  locale.normalize, locale.locale_alias, locale.windows_locale, locale.getlocale
+  java    -
+  dotnet  -
+  odin    -
+  icu     uloc_canonicalize
+  note    the code set is dropped, a text being UTF-8 here; `C` and `POSIX` are `und`; Python's alias table, which guesses a code set per name, is not taken
+
+capability locale/keywords  a Unicode locale keyword read and set: calendar, collation, numbering system, hour cycle
+  heroes  i18n.unicode_keyword, i18n.with_unicode_keyword
+  go      Tag.TypeForKey, Tag.SetTypeForKey
+  rust    Locale::extensions.unicode.keywords
+  python  -
+  java    Locale.getUnicodeLocaleType, Locale.getUnicodeLocaleKeys, Locale.getUnicodeLocaleAttributes, Locale.Builder.setUnicodeLocaleKeyword, Locale.Builder.addUnicodeLocaleAttribute, Locale.Builder.removeUnicodeLocaleAttribute, Locale.Builder.clearExtensions
+  dotnet  -
+  odin    -
+  icu     ULocale.getKeywordValue, ULocale.setKeywordValue, ULocale.getUnicodeLocaleType
+
+capability locale/fallback  the locales a lookup falls back through, CLDR's parents
+  heroes  i18n.parent_of, i18n.fallback_chain
+  go      Tag.Parent
+  rust    -
+  python  -
+  java    ResourceBundle.Control.getCandidateLocales, ResourceBundle.Control.getFallbackLocale
+  dotnet  CultureInfo.Parent
+  odin    -
+  icu     ULocale.getFallback, uloc_getParent
+  note    CLDR's parent locales (`en-AU` from `en-001`), a script other than the language's own going to the root, and a missing script added where the region chooses one (`zh-TW` is `zh-Hant-TW`); every subpackage finds its data through this chain
+
+capability locale/accept-language  an HTTP Accept-Language header read into weighted ranges
+  heroes  i18n.parse_accept_language
+  go      language.ParseAcceptLanguage
+  rust    -
+  python  -
+  java    Locale.LanguageRange.parse, Locale.LanguageRange.getRange, Locale.LanguageRange.getWeight, Locale.LanguageRange.mapEquivalents, Locale.LanguageRange.MAX_WEIGHT, Locale.LanguageRange.MIN_WEIGHT
+  dotnet  -
+  odin    -
+  icu     LocaleMatcher.Builder.setSupportedLocalesFromListString
+  note    ranges of equal weight keep the header's order; a weight of 0 is kept; Java's equivalent-ranges map is not offered
+
+capability locale/lookup  the one tag RFC 4647's lookup chooses
+  heroes  i18n.lookup_tag
+  go      -
+  rust    -
+  python  -
+  java    Locale.lookup, Locale.lookupTag
+  dotnet  -
+  odin    -
+  icu     -
+
+capability locale/filter  the tags RFC 4647's extended filtering matches
+  heroes  i18n.filter_tags
+  go      -
+  rust    -
+  python  -
+  java    Locale.filter, Locale.filterTags, Locale.FilteringMode
+  dotnet  -
+  odin    -
+  icu     -
+  note    extended filtering alone; Java's other modes are its own and not offered
+
+capability locale/environment  the languages the environment asks messages in
+  heroes  i18n.environment_languages
+  go      -
+  rust    -
+  python  locale.getdefaultlocale, locale.getlocale
+  java    Locale.getDefault
+  dotnet  CultureInfo.CurrentUICulture, CultureInfo.CurrentCulture, CultureInfo.InstalledUICulture
+  odin    -
+  icu     uloc_getDefault
+  note    LANGUAGE, LC_ALL, LC_MESSAGES and LANG in gettext's order, as Python's `gettext.find` reads them
+
+capability locale/set-default  the process's own locale changed
+  heroes  refused: a process-wide locale is mutable state every thread reads (C's setlocale is not thread-safe); every function here takes its locale as an argument
+  go      -
+  rust    -
+  python  locale.setlocale, locale.LC_ALL, locale.LC_COLLATE, locale.LC_CTYPE, locale.LC_MESSAGES, locale.LC_MONETARY, locale.LC_NUMERIC, locale.LC_TIME, locale.Error, locale.CHAR_MAX
+  java    Locale.setDefault, Locale.Category
+  dotnet  CultureInfo.CurrentCulture, CultureInfo.DefaultThreadCurrentCulture, CultureInfo.DefaultThreadCurrentUICulture
+  odin    -
+  icu     uloc_setDefault
+
+capability locale/display-name  a language, script or region named in words in a language
+  heroes  pending: CLDR's display names are its largest tables after annotations, 35 MB of JSON; not carried yet
+  go      display.Tags, display.Languages, display.Scripts, display.Regions, display.Language, display.Region, display.Script, display.Tag, display.Self, display.Dictionary
+  rust    -
+  python  -
+  java    Locale.getDisplayName, Locale.getDisplayLanguage, Locale.getDisplayScript, Locale.getDisplayCountry, Locale.getDisplayVariant
+  dotnet  CultureInfo.DisplayName, CultureInfo.NativeName, CultureInfo.EnglishName, RegionInfo.DisplayName, RegionInfo.NativeName, RegionInfo.EnglishName
+  odin    -
+  icu     ULocale.getDisplayName, LocaleDisplayNames
+
+capability locale/available  every locale CLDR has data for, and every ISO code
+  heroes  pending: each subpackage reads its own list of locales and none is offered yet
+  go      language.Supported, collate.Supported
+  rust    -
+  python  -
+  java    Locale.getAvailableLocales, Locale.getISOCountries, Locale.getISOLanguages, Locale.IsoCountryCode
+  dotnet  CultureInfo.GetCultures, CultureTypes
+  odin    -
+  icu     ULocale.getAvailableLocales
+
+## Plural rules
+
+capability plural/cardinal  the plural category of a count in a language, CLDR's rules
+  heroes  i18n.plural_rules, i18n.select_plural, i18n.plural_of, i18n.plural_of_int, i18n.Plural, i18n.PluralKind
+  go      plural.Cardinal, plural.Rules.MatchPlural, plural.Form
+  rust    -
+  python  -
+  java    -
+  dotnet  -
+  odin    -
+  icu     PluralRules.forLocale, PluralRules.select, uplrules_select
+  note    a number is decimal text so that `1.0` is not `1`, as CLDR's operands read it; every sample CLDR gives every rule of every locale is a test
+
+capability plural/ordinal  the ordinal category of a position
+  heroes  i18n.ordinal_of
+  go      plural.Ordinal
+  rust    -
+  python  -
+  java    -
+  dotnet  -
+  odin    -
+  icu     PluralRules.forLocale(ORDINAL), uplrules_openForType
+
+capability plural/custom  rules written by the program
+  heroes  i18n.parse_plural_rules, i18n.PluralRules, i18n.PluralRule
+  go      -
+  rust    -
+  python  -
+  java    -
+  dotnet  -
+  odin    -
+  icu     PluralRules.createRules, PluralRules.parseDescription, PluralRules.getRules, PluralRules.getSamples
+  note    conditions compiled to flat programs; a condition is at most 1,000 bytes and a number at most 15 digits, so nothing overflows
+
+capability plural/ranges  the category of a range "1-2 days"
+  heroes  i18n.plural_range_of, i18n.plural_ranges, i18n.PluralRange
+  go      -
+  rust    -
+  python  -
+  java    -
+  dotnet  -
+  odin    -
+  icu     PluralRules.select(FormattedNumberRange)
+  note    a language with no ranges takes the end's category, as ICU does
+
+capability plural/categories  the categories a language uses, and their names
+  heroes  i18n.plural_categories, i18n.plural_name, i18n.parse_plural_name
+  go      -
+  rust    -
+  python  -
+  java    -
+  dotnet  -
+  odin    -
+  icu     PluralRules.getKeywords
+
+## Message catalogs
+
+capability gettext/lookup  a message's translation, with its context and plural forms
+  heroes  i18n.translate, i18n.translate_in, i18n.translate_plural, i18n.translate_plural_in, i18n.find_message
+  go      message.Printer.Sprintf, message.SetString, message.Set, catalog.Builder.SetString, catalog.Builder.Set, catalog.Catalog.Matcher, catalog.String, catalog.Var, plural.Selectf, catalog.ErrNotFound
+  rust    -
+  python  gettext.gettext, gettext.ngettext, gettext.pgettext, gettext.npgettext, gettext.dgettext, gettext.dngettext, gettext.dpgettext, gettext.dnpgettext, GNUTranslations.gettext, GNUTranslations.ngettext, GNUTranslations.pgettext, GNUTranslations.npgettext, NullTranslations.gettext, NullTranslations.ngettext, NullTranslations.pgettext, NullTranslations.npgettext
+  java    ResourceBundle.getString, ResourceBundle.getObject, ResourceBundle.getStringArray, ResourceBundle.containsKey, ResourceBundle.keySet, ResourceBundle.getKeys, MissingResourceException
+  dotnet  ResourceManager.GetString, ResourceManager.GetObject, ResourceSet.GetString
+  odin    i18n.get, i18n.get_single_section, i18n.get_by_section, i18n.get_by_slot, i18n.get_single_section_by_slot
+  note    a fuzzy, obsolete or untranslated message is no translation, as msgfmt leaves it out; a missing translation is the program's own text, 1 and -1 taking the singular; an expression that fails takes the first form, as GNU gettext does
+
+capability gettext/mo-read  a .mo file read
+  heroes  i18n.decode_mo
+  go      -
+  rust    -
+  python  GNUTranslations, GNUTranslations.LE_MAGIC, GNUTranslations.BE_MAGIC, GNUTranslations.VERSIONS, GNUTranslations.CONTEXT, gettext.Catalog
+  java    -
+  dotnet  -
+  odin    i18n.parse_mo_file, i18n.parse_mo_from_bytes
+  icu     -
+  note    both byte orders, revisions 0 and 1; a character set other than UTF-8 is `unsupported` where a string leaves ASCII (decode it with `unicode/encodings` first)
+
+capability gettext/mo-write  a .mo file written
+  heroes  i18n.encode_mo
+  go      -
+  rust    -
+  python  -
+  java    -
+  dotnet  -
+  odin    -
+  icu     -
+  note    byte for byte what GNU gettext-tools 1.0's msgfmt writes, hash table included (a test holds 26 entries to it); Python ships msgfmt as a tool, not in its library
+
+capability gettext/po  a .po file read and written, comments, flags and obsolete entries kept
+  heroes  i18n.parse_po, i18n.format_po
+  go      -
+  rust    -
+  python  -
+  java    -
+  dotnet  -
+  odin    -
+  icu     -
+  note    strings with C's escapes; a string with a line break inside is written across lines as msgcat writes it, every string otherwise on one line (msgcat wraps at 79 columns)
+
+capability gettext/catalog  a catalog built and changed in memory
+  heroes  i18n.catalog_of, i18n.add_message, i18n.message_of, i18n.Catalog, i18n.Message
+  go      catalog.NewBuilder, catalog.NewFromMap, catalog.Dictionary, catalog.Fallback, message.DefaultCatalog, message.Catalog, message.NewPrinter
+  rust    -
+  python  NullTranslations, NullTranslations.info, NullTranslations.charset
+  java    ListResourceBundle, ListResourceBundle.getContents, PropertyResourceBundle
+  dotnet  ResourceSet, ResourceReader, ResourceWriter
+  odin    i18n.Translation, i18n.destroy
+  note    `add_message` copies the catalog's list; a large catalog is built by `catalog_of`
+
+capability gettext/plural-forms  a header's Plural-Forms read and run safely
+  heroes  i18n.parse_plural_forms, i18n.plural_index, i18n.PluralForms
+  go      -
+  rust    -
+  python  gettext.c2py
+  java    -
+  dotnet  -
+  odin    -
+  icu     -
+  note    parsed by a shunting yard and run by an explicit stack, so a nesting the file chooses never reaches the program's stack; at most 100 deep and 10,000 bytes; `&&`, `||` and `?:` short-circuit as C does; overflow, a division by zero or a subtraction below zero fails, where C's unsigned numbers wrap
+
+capability gettext/header  a field of a catalog's header
+  heroes  i18n.header_field
+  go      -
+  rust    -
+  python  GNUTranslations.info, GNUTranslations.charset
+  java    -
+  dotnet  -
+  odin    -
+  icu     -
+
+capability gettext/find  where a catalog of a domain is looked for
+  heroes  i18n.catalog_paths
+  go      -
+  rust    -
+  python  gettext.find, gettext.translation, gettext.bindtextdomain, gettext.textdomain
+  java    ResourceBundle.getBundle, ResourceBundle.Control.toBundleName, ResourceBundle.Control.newBundle, ResourceBundle.clearCache
+  dotnet  ResourceManager.GetResourceSet, ResourceManager.BaseName
+  odin    -
+  icu     -
+  note    the paths, touching no disk, as Python expands a POSIX name; the program reads the first that exists; a bound text domain is process-wide state and is not kept
+
+capability gettext/install  a catalog made the process's own `_`
+  heroes  refused: it writes into a global name every module reads; a program passes its catalog
+  go      -
+  rust    -
+  python  gettext.install, NullTranslations.install
+  java    -
+  dotnet  -
+  odin    -
+  icu     -
+
+capability gettext/fallback  a second catalog looked in where the first has nothing
+  heroes  refused: the program holds its catalogs in a list and asks each in turn; `find_message` says which has the message
+  go      catalog.Fallback
+  rust    -
+  python  NullTranslations.add_fallback
+  java    ResourceBundle.setParent
+  dotnet  ResourceManager's culture fallback
+  odin    -
+  icu     -
+
+capability message/format  a message with arguments formatted, plural and select chosen inside it
+  heroes  pending: ICU's MessageFormat over `i18n/numbers` and `i18n/dates` is not written yet
+  go      message.Printer.Printf, message.Printer.Fprintf, message.Key, message.Reference
+  rust    -
+  python  -
+  java    MessageFormat, MessageFormat.format, MessageFormat.parse, MessageFormat.applyPattern, MessageFormat.toPattern, MessageFormat.setFormat, MessageFormat.Field, ChoiceFormat, ChoiceFormat.nextDouble, ChoiceFormat.previousDouble
+  dotnet  String.Format(IFormatProvider, ...)
+  odin    -
+  icu     MessageFormat, PluralFormat, SelectFormat, MessageFormatter (MF2)
+
+capability message/qt  Qt Linguist's .ts files read
+  heroes  pending: not written yet; `xml` reads them
+  go      -
+  rust    -
+  python  -
+  java    -
+  dotnet  -
+  odin    i18n.parse_qt_linguist_file, i18n.parse_qt_linguist_from_bytes
+  icu     -
+
+dropped identity  what a value's identity or a runtime's plumbing would have needed
+  go      language.CanonType, language.Confidence, language.Coverage, language.NewCoverage, language.CompactIndex, language.NumCompactTags, language.EncodeM49, language.ValueError, language.ErrMissingLikelyTagsData, language.Und
+  rust    Clone, Debug, Eq, Hash, Ord, PartialEq, Writeable
+  python  gettext.os, gettext.sys, gettext.operator, locale.sys, locale.functools, locale.encodings, locale.getencoding, locale.getpreferredencoding, locale.locale_encoding_alias
+  java    Locale.clone, Locale.equals, Locale.hashCode, Locale.ROOT, Locale constants (ENGLISH, US...), ResourceBundle.Control.getTimeToLive, ResourceBundle.Control.needsReload, ResourceBundle.getBaseBundleName
+  dotnet  CultureInfo.Clone, CultureInfo.ReadOnly, CultureInfo.IsReadOnly, CultureInfo.LCID, CultureInfo.KeyboardLayoutId, CultureInfo.ThreeLetterWindowsLanguageName, CultureInfo.UseUserOverride, CultureInfo.ClearCachedData, CultureInfo.GetConsoleFallbackUICulture, CultureInfo.IsNeutralCulture, CultureInfo.InvariantCulture, CultureInfo.TextInfo (case: `strings`, `unicode/normalize`), CultureInfo.CompareInfo (`i18n/collate`), CultureInfo.NumberFormat (`i18n/numbers`), CultureInfo.DateTimeFormat and Calendar (`i18n/dates`)
+  odin    -
+  icu     -

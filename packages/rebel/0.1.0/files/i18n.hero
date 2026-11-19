@@ -1,0 +1,1196 @@
+# A program spoken in its reader's language: the language a reader asked for
+# named and matched (BCP 47 tags), the plural rules of every language CLDR
+# knows, and the translations of a program's messages read from gettext's
+# `.po` and `.mo` files and looked up with their context and plural forms.
+# The plural rules and the locale data are CLDR's, release `CLDR_VERSION`,
+# which Rebel carries.
+#
+# What it does NOT do, each a subpackage so that only its users carry its
+# tables: numbers written and read for a language (`i18n/numbers`), dates and
+# times written for a language (`i18n/dates`), texts ordered for a language
+# (`i18n/collate`), the likely script and region of a language and the
+# aliases of old tags (`i18n/locales`). Text put in a normal form or its case folded is
+# `unicode/normalize`'s; legacy encodings are `unicode/encodings`'.
+#
+# It fails `invalid` where a tag, a rule, a `.po` text or a `.mo` file is not
+# what the function reads, the message saying where; `not_found` where a
+# message, a header field or a parent is absent; `not_text` where a `.mo`
+# string is not UTF-8; and `unsupported` where a `.mo` file declares a
+# character set other than UTF-8.
+
+use i18n/internal/locale_syntax
+use i18n/internal/matching
+use i18n/internal/mo_file
+use i18n/internal/plural_expr
+use i18n/internal/plural_rules as rule_engine
+use i18n/internal/po_file
+use os
+use strings
+
+## Codes
+
+# The code a function fails with where its input is not what it reads: a tag
+# that is not well formed, a plural rule or expression that does not parse, a
+# `.po` text or `.mo` file that is broken.
+constant INVALID: str
+    "invalid"
+
+# The code `find_message`, `header_field`, `unicode_keyword`, `parent_of` and
+# `lookup_tag` fail with where what they look for is absent.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code `decode_mo` fails with where a string of the file is not UTF-8.
+constant NOT_TEXT: str
+    "not_text"
+
+# The code `decode_mo` fails with where the file declares a character set
+# other than UTF-8 and holds bytes outside ASCII.
+constant UNSUPPORTED: str
+    "unsupported"
+
+## Versions
+
+# The CLDR release whose plural rules and locale data this package and its
+# subpackages carry.
+constant CLDR_VERSION: str
+    "49"
+
+## Locales
+
+# A language as BCP 47 (RFC 5646) names it, read into its parts, each in its
+# canonical case. `parse_locale` and `parse_posix` make one; a locale built
+# directly is written by `format_locale` as its fields say.
+record Locale
+    # The language subtag, lower case: `en`, `zh`, `gsw`; `und` where the tag
+    # names none, as CLDR's `root` and POSIX's `C`.
+    language: str
+    # The script subtag, title case: `Latn`, `Hant`; the empty text where
+    # none is named.
+    script: str
+    # The region subtag, upper case or three digits: `US`, `419`; the empty
+    # text where none is named.
+    region: str
+    # The variant subtags, lower case, in the order written: `1996`,
+    # `valencia`.
+    variants: [str]
+    # The extensions, each written whole with its singleton first and its
+    # subtags lower case, `u-ca-buddhist`, in the order of their singletons.
+    extensions: [str]
+    # The private use subtags after `x`, lower case; empty where none.
+    private_use: [str]
+
+# A language range of an `Accept-Language` header with its weight.
+record LanguageRange
+    # The range, `de-CH`, `en` or `*`, lower case as RFC 4647 compares it.
+    range: str
+    # Its quality, from 0.0 to 1.0; 1.0 where the header gives none.
+    weight: f64
+
+# `tag` read as a BCP 47 language tag, its parts put in their canonical case
+# and its extensions in the order of their singletons.
+#
+# - `tag`: the tag; `-` and `_` both separate subtags, as CLDR's and ICU's
+#   identifiers write `_`. `root` reads as `und`, and the irregular
+#   grandfathered tags of RFC 5646 (`i-klingon`, `en-GB-oed`) as the tags
+#   CLDR replaces them with.
+#
+# Fails `invalid` where `tag` is empty or not well formed by RFC 5646: a
+# subtag too long or of the wrong kind, a variant or a singleton written
+# twice, an extension with no subtag. See also `format_locale`,
+# `parse_posix`.
+function parse_locale(tag: str) -> Locale?
+    p = locale_syntax.parse(tag)?
+    return ok(
+        Locale(language: p.language, script: p.script, region: p.region, variants: p.variants, extensions: p.extensions, private_use: p.private_use)
+    )
+
+# `locale` written as a BCP 47 tag: its parts joined by `-` in their
+# canonical case, `zh-Hant-TW`, `de-DE-u-co-phonebk`.
+#
+# - `locale`: the locale; an empty language is written `und`.
+#
+# The answer reads back through `parse_locale` as the same locale where the
+# fields hold well-formed subtags. See also `parse_locale`, `to_posix`.
+function format_locale(locale: Locale) -> str
+    return locale_syntax.format(
+        locale_syntax.Parts(language: locale.language, script: locale.script, region: locale.region, variants: locale.variants, extensions: locale.extensions, private_use: locale.private_use)
+    )
+
+# A POSIX locale name, as the environment's `LANG` holds it, read as a
+# locale: `de_DE.UTF-8@euro` is `de-DE`, `sr_RS@latin` is `sr-Latn-RS` and
+# `ca_ES@valencia` is `ca-ES-valencia`.
+#
+# - `name`: the name, `language[_TERRITORY][.codeset][@modifier]`; `C` and
+#   `POSIX` read as `und`, and so does the empty text.
+#
+# The code set is dropped, a text being UTF-8 here; a modifier that names a
+# script (`latin`, `cyrillic`, `devanagari`) becomes the script, `euro` is
+# dropped, and any other becomes a variant. Fails `invalid` where what
+# remains is not a well-formed tag. See also `to_posix`.
+function parse_posix(name: str) -> Locale?
+    p = locale_syntax.parse_posix(name)?
+    return ok(
+        Locale(language: p.language, script: p.script, region: p.region, variants: p.variants, extensions: p.extensions, private_use: p.private_use)
+    )
+
+# `locale` as a POSIX locale name with no code set: `de_DE`, `sr_RS@latin`.
+#
+# - `locale`: the locale; `und` is written `C`.
+#
+# A script that POSIX names by a modifier (`Latn`, `Cyrl`, `Deva`) is
+# written so, a variant as a modifier, and any other part is dropped. See
+# also `parse_posix`.
+function to_posix(locale: Locale) -> str
+    return locale_syntax.to_posix(
+        locale_syntax.Parts(language: locale.language, script: locale.script, region: locale.region, variants: locale.variants, extensions: locale.extensions, private_use: locale.private_use)
+    )
+
+# The value of a Unicode locale keyword of `locale`, read from its `u`
+# extension: `ca` of `th-u-ca-buddhist` is `buddhist`.
+#
+# - `locale`: the locale.
+# - `key`: the keyword, two characters, any case: `ca`, `co`, `nu`, `hc`.
+#
+# A keyword written with no value answers `true`, as UTS #35 reads it. Fails
+# `not_found` where the locale has no such keyword. See also
+# `with_unicode_keyword`.
+function unicode_keyword(locale: Locale, key: str) -> str?
+    parts = locale_syntax.Parts(
+        language: locale.language,
+        script: locale.script,
+        region: locale.region,
+        variants: locale.variants,
+        extensions: locale.extensions,
+        private_use: locale.private_use
+    )
+    return locale_syntax.keyword(locale_syntax.unicode_subtags(parts), key: key)
+
+# `locale` with a Unicode locale keyword set, replacing the one it held.
+#
+# - `locale`: the locale.
+# - `key`: the keyword, two characters, a letter or digit then a letter.
+# - `value`: its value, subtags of three to eight letters or digits joined by
+#   `-`; the empty text removes the keyword.
+#
+# Fails `invalid` where `key` or `value` is not well formed. See also
+# `unicode_keyword`.
+function with_unicode_keyword(locale: Locale, key: str, value: str) -> Locale?
+    parts = locale_syntax.Parts(
+        language: locale.language,
+        script: locale.script,
+        region: locale.region,
+        variants: locale.variants,
+        extensions: locale.extensions,
+        private_use: locale.private_use
+    )
+    subtags = locale_syntax.with_keyword(locale_syntax.unicode_subtags(parts), key: key, value: value)?
+    p = locale_syntax.with_unicode_subtags(parts, subtags: subtags)
+    return ok(
+        Locale(language: p.language, script: p.script, region: p.region, variants: p.variants, extensions: p.extensions, private_use: p.private_use)
+    )
+
+# The locale CLDR's data inherits from after `locale`: `en-AU` from
+# `en-001`, `es-MX` from `es-419`, `zh-Hant` from the root, and otherwise
+# the locale with its last subtag removed.
+#
+# - `locale`: the locale; its extensions and private use are dropped first.
+#
+# Fails `not_found` for the root, `und` with nothing else. See also
+# `fallback_chain`.
+function parent_of(locale: Locale) -> Locale?
+    parts = locale_syntax.Parts(
+        language: locale.language,
+        script: locale.script,
+        region: locale.region,
+        variants: locale.variants,
+        extensions: locale.extensions,
+        private_use: locale.private_use
+    )
+    p = matching.parent(parts)?
+    return ok(
+        Locale(language: p.language, script: p.script, region: p.region, variants: p.variants, extensions: p.extensions, private_use: p.private_use)
+    )
+
+# The locales CLDR's data is looked up in for `locale`, the most particular
+# first and the root last: `zh-TW` gives `zh-Hant-TW`, `zh-Hant`, `und`.
+#
+# - `locale`: the locale; its extensions and private use are dropped.
+#
+# A missing script is added first where the language is written in more
+# than one script and the region chooses (`zh-TW` is `zh-Hant-TW`), and a
+# script that is the language's own is tried with and then without it
+# (`en-Latn-US`, then `en-US`).
+# The answer is never empty: its last element is `und`. See also
+# `parent_of`.
+function fallback_chain(locale: Locale) -> [Locale]
+    parts = locale_syntax.Parts(
+        language: locale.language,
+        script: locale.script,
+        region: locale.region,
+        variants: locale.variants,
+        extensions: locale.extensions,
+        private_use: locale.private_use
+    )
+    out: [Locale] @= []
+
+    for p in matching.chain(parts)
+        out @ out.push(
+            Locale(language: p.language, script: p.script, region: p.region, variants: p.variants, extensions: p.extensions, private_use: p.private_use)
+        )
+
+    return out
+
+# The language ranges of an HTTP `Accept-Language` header, the highest
+# weight first.
+#
+# - `header`: the header's value, `fr-CH, fr;q=0.9, en;q=0.8, *;q=0.5`; the
+#   empty text answers the empty list.
+#
+# Ranges of equal weight keep the header's order, and a range of weight 0 is
+# kept, meaning "not this". Fails `invalid` where a range or a weight is not
+# well formed. See also `lookup_tag`, `filter_tags`.
+function parse_accept_language(header: str) -> [LanguageRange]?
+    out: [LanguageRange] @= []
+
+    for w in matching.parse_header(header)?
+        out @ out.push(LanguageRange(range: w.range, weight: to_f64(w.thousandths) / 1000.0))
+
+    return ok(out)
+
+# The one tag of `tags` that RFC 4647's lookup chooses for `ranges`: each
+# range in turn, then the range with its last subtag removed, until a tag
+# equals it, case ignored.
+#
+# - `ranges`: the language ranges, the preferred first; `*` is skipped.
+# - `tags`: the tags available, as the program names them.
+#
+# The answer is the tag as `tags` writes it. Fails `not_found` where no range
+# reaches a tag. See also `filter_tags`, `parse_accept_language`.
+function lookup_tag(ranges: [str], tags: [str]) -> str?
+    return matching.lookup(ranges: ranges, tags: tags)
+
+# The tags of `tags` that RFC 4647's extended filtering matches with
+# `ranges`, in the order of the ranges that match them.
+#
+# - `ranges`: the extended language ranges, `de-*-DE` or `*`, the preferred
+#   first.
+# - `tags`: the tags available.
+#
+# Each tag appears once, at the first range that matches it, as `tags`
+# writes it; the empty list where none matches. See also `lookup_tag`.
+function filter_tags(ranges: [str], tags: [str]) -> [str]
+    return matching.filter_ranges(ranges: ranges, tags: tags)
+
+# The languages the environment asks messages in, as gettext reads them:
+# the first of `LANGUAGE`, `LC_ALL`, `LC_MESSAGES` and `LANG` that is set and
+# not empty, `LANGUAGE` read as a list separated by `:`.
+#
+# The names are as the environment writes them, POSIX's (`de_DE.UTF-8`); the
+# empty list where none is set or the first set is `C` or `POSIX`. See also
+# `parse_posix`, `catalog_paths`.
+function environment_languages() -> [str]
+    for name in ["LANGUAGE", "LC_ALL", "LC_MESSAGES", "LANG"]
+        match os.env(name)
+            .ok value =>
+                if value != ""
+                    out: [str] @= []
+
+                    for part in strings.split(s: value, sep: ":")
+                        if part == "C" || part == "POSIX"
+                            return out
+
+                        if part != ""
+                            out @ out.push(part)
+
+                    return out
+            .err _ => _ = 0
+
+    return []
+
+## Plural rules
+
+# The plural categories of CLDR, which a language uses some of.
+variant Plural
+    # Zero, in languages that name it apart: Arabic and Latvian.
+    zero
+    # One, singular in English.
+    one
+    # Two, the dual of Arabic, Hebrew and Slovenian.
+    two
+    # A few, the paucal of Polish, Russian, Czech and Arabic.
+    few
+    # Many, a further form in Polish, Russian, Arabic and French.
+    many
+    # Every other number, the one category every language has.
+    other
+
+# Which rules choose a number's plural category.
+variant PluralKind
+    # The rules for a count, "1 day", "2 days".
+    cardinal
+    # The rules for an ordinal, "1st", "2nd", "3rd", "4th".
+    ordinal
+
+# One rule of a language: the category a number takes where its condition
+# holds.
+record PluralRule
+    # The category.
+    category: Plural
+    # The condition in CLDR's syntax, `i = 1 and v = 0`; the empty text for
+    # `other`, which holds for every number.
+    condition: str
+    # The samples CLDR gives, `@integer 1` and `@decimal ...` as written;
+    # empty where none.
+    samples: str
+
+# The plural rules of a language, the conditions read and checked. Made by
+# `plural_rules` and `parse_plural_rules`.
+record PluralRules
+    # The rules in the order they are tried, `other` last.
+    rules: [PluralRule]
+    # Each rule's condition compiled, in the order of `rules`: what
+    # `select_plural` runs.
+    programs: [[i64]]
+
+# A plural range's rule: the category of a range "start to end".
+record PluralRange
+    # The category of the range's start.
+    start: Plural
+    # The category of the range's end.
+    end: Plural
+    # The category of the range.
+    result: Plural
+
+# The plural rules CLDR gives `locale`'s language, for counts or for
+# ordinals.
+#
+# - `locale`: the locale; its language, and its region where CLDR gives the
+#   region its own rules (`pt-PT`), choose the rules, through
+#   `fallback_chain`.
+# - `kind`: cardinal or ordinal.
+#
+# A language CLDR gives no rules has the root's, `other` alone. See also
+# `select_plural`, `plural_of`.
+function plural_rules(locale: Locale, kind: PluralKind) -> PluralRules
+    parts = locale_syntax.Parts(
+        language: locale.language,
+        script: locale.script,
+        region: locale.region,
+        variants: locale.variants,
+        extensions: locale.extensions,
+        private_use: locale.private_use
+    )
+
+    is_ordinal = match kind
+        .cardinal => false
+        .ordinal  => true
+
+    text = rule_engine.rules_text_for(rule_engine.candidates_of(parts), ordinal: is_ordinal)
+    return parse_plural_rules(text).must()
+
+# Rules written in CLDR's syntax read as plural rules: each a category, a
+# `:` and a condition, separated by `;`, as ICU's `PluralRules` reads them:
+# `one: n = 1; few: n % 10 = 2..4`.
+#
+# - `text`: the rules; `other` may be left out and is added last, and
+#   samples after `@` are kept as written.
+#
+# Fails `invalid` where a rule does not parse, names a category twice or
+# gives `other` a condition. A condition is at most 1,000 bytes and its
+# numbers at most 18 digits. See also `select_plural`.
+function parse_plural_rules(text: str) -> PluralRules?
+    rules = rule_engine.parse_rules(text)?
+    out: [PluralRule] @= []
+    programs: [[i64]] @= []
+
+    for r in rules
+        category = parse_plural_name(rule_engine.CATEGORIES[r.category]).must()
+        out @ out.push(PluralRule(category: category, condition: r.condition, samples: r.samples))
+        programs @ programs.push(r.program)
+
+    return ok(PluralRules(rules: out, programs: programs))
+
+# The category `rules` choose for `number`, the first rule whose condition
+# holds.
+#
+# - `rules`: the rules.
+# - `number`: the number as decimal text, `-1`, `1.50`, `1.2e3`, `1.2c3`;
+#   the digits written after the point count (`1.0` is not `1` in English),
+#   and an exponent is CLDR's operand `e`.
+#
+# Fails `invalid` where `number` is not decimal text. See also `plural_of`.
+function select_plural(rules: PluralRules, number: str) -> Plural?
+    categories: [i64] @= []
+
+    for r in rules.rules
+        index = match r.category
+            .zero  => 0
+            .one   => 1
+            .two   => 2
+            .few   => 3
+            .many  => 4
+            .other => 5
+
+        categories @ categories.push(index)
+
+    chosen = rule_engine.select_with(rules.programs, categories: categories, number: number)?
+    return parse_plural_name(rule_engine.CATEGORIES[chosen])
+
+# The cardinal category of `number` in `locale`'s language: `one` for "1"
+# and `other` for "1.0" in English, `few` for "3" in Polish.
+#
+# - `locale`: the locale.
+# - `number`: the number as decimal text, as `select_plural` reads it.
+#
+# Fails `invalid` where `number` is not decimal text. See also
+# `plural_of_int`, `ordinal_of`.
+function plural_of(locale: Locale, number: str) -> Plural?
+    return select_plural(plural_rules(locale, kind: .cardinal), number: number)
+
+# The cardinal category of the whole number `n` in `locale`'s language.
+#
+# - `locale`: the locale.
+# - `n`: the number; a negative one is read by its absolute value, as CLDR
+#   reads every operand, `i64`'s least included.
+#
+# See also `plural_of`.
+function plural_of_int(locale: Locale, n: i64) -> Plural
+    return select_plural(plural_rules(locale, kind: .cardinal), number: to_str(n)).must()
+
+# The ordinal category of `n` in `locale`'s language: in English `one` for
+# 1st, `two` for 2nd, `few` for 3rd and `other` for 4th.
+#
+# - `locale`: the locale.
+# - `n`: the position; a negative one is read by its absolute value.
+#
+# See also `plural_of_int`.
+function ordinal_of(locale: Locale, n: i64) -> Plural
+    return select_plural(plural_rules(locale, kind: .ordinal), number: to_str(n)).must()
+
+# The category of a range of numbers in `locale`'s language, by CLDR's
+# plural ranges: in English "1-2 days" takes `other` from `one` and `other`.
+#
+# - `locale`: the locale.
+# - `start`: the category of the range's first number.
+# - `end`: the category of its last number.
+#
+# A language CLDR gives no ranges takes `end`'s category, as ICU does. See
+# also `plural_ranges`.
+function plural_range_of(locale: Locale, start: Plural, end: Plural) -> Plural
+    for r in plural_ranges(locale)
+        if r.start == start && r.end == end
+            return r.result
+
+    return end
+
+# Every plural range rule CLDR gives `locale`'s language, in CLDR's order.
+#
+# - `locale`: the locale.
+#
+# The empty list for a language CLDR gives no ranges. See also
+# `plural_range_of`.
+function plural_ranges(locale: Locale) -> [PluralRange]
+    parts = locale_syntax.Parts(
+        language: locale.language,
+        script: locale.script,
+        region: locale.region,
+        variants: locale.variants,
+        extensions: locale.extensions,
+        private_use: locale.private_use
+    )
+    text = rule_engine.ranges_text_for(rule_engine.candidates_of(parts))
+    out: [PluralRange] @= []
+
+    if text == ""
+        return out
+
+    for row in strings.split(s: text, sep: ";")
+        names = strings.split(s: row, sep: " ")
+        out @ out.push(
+            PluralRange(start: parse_plural_name(names[0]).must(), end: parse_plural_name(names[1]).must(), result: parse_plural_name(names[2]).must())
+        )
+
+    return out
+
+# The categories `rules` can choose, in the order `zero`, `one`, `two`,
+# `few`, `many`, `other`.
+#
+# - `rules`: the rules.
+#
+# `other` is always the last. See also `plural_rules`.
+function plural_categories(rules: PluralRules) -> [Plural]
+    order: [Plural] = [.zero, .one, .two, .few, .many]
+    out: [Plural] @= []
+
+    for c in order
+        found @= false
+
+        for r in rules.rules
+            if r.category == c
+                found @ true
+
+        if found
+            out @ out.push(c)
+
+    out @ out.push(.other)
+    return out
+
+# The name CLDR writes a category by: `one`, `few`, `other`.
+#
+# - `category`: the category.
+#
+# See also `parse_plural_name`.
+function plural_name(category: Plural) -> str
+    return match category
+        .zero  => "zero"
+        .one   => "one"
+        .two   => "two"
+        .few   => "few"
+        .many  => "many"
+        .other => "other"
+
+# The category a CLDR name writes.
+#
+# - `name`: `zero`, `one`, `two`, `few`, `many` or `other`, lower case.
+#
+# Fails `invalid` for any other text. See also `plural_name`.
+function parse_plural_name(name: str) -> Plural?
+    return match name
+        "zero"  => ok(.zero)
+        "one"   => ok(.one)
+        "two"   => ok(.two)
+        "few"   => ok(.few)
+        "many"  => ok(.many)
+        "other" => ok(.other)
+        _       => fail(code: INVALID, msg: f"\"{name}\" is no plural category")
+
+## Message catalogs
+
+# The plural forms of a catalog, its header's `Plural-Forms` field: how many
+# translations a plural message holds, and the C expression that says which
+# one a number takes.
+record PluralForms
+    # How many forms, `nplurals`, from 1 to 100.
+    count: i64
+    # The expression as written, `(n != 1)`.
+    expression: str
+    # The expression compiled: what `plural_index` runs.
+    program: [i64]
+
+# One message of a catalog, a `.po` entry: the text a program writes, with
+# its context and plural, and its translations.
+record Message
+    # Whether the message has a context, `msgctxt`; the empty context is a
+    # context, and differs from none.
+    has_context: bool
+    # The context, the empty text where `has_context` is false.
+    context: str
+    # The text the program writes, `msgid`; the empty text for the header.
+    id: str
+    # Whether the message has a plural, `msgid_plural`.
+    has_plural: bool
+    # The plural the program writes, the empty text where `has_plural` is
+    # false.
+    plural_id: str
+    # The translations: one for a message with no plural, `count` forms of
+    # the catalog's plural forms for one with; an empty text is untranslated.
+    translations: [str]
+    # The translator's comments, the lines `# ` with that opening removed.
+    comments: [str]
+    # The comments extracted from the source, the lines `#.`.
+    extracted_comments: [str]
+    # The references to the source, each `file:line`, from the lines `#:`.
+    references: [str]
+    # The flags, `fuzzy`, `c-format`, from the lines `#,`.
+    flags: [str]
+    # The previous texts of a fuzzy message, the lines `#|` as written,
+    # their opening removed.
+    previous: [str]
+    # Whether the entry is obsolete, written with `#~`: kept, never looked
+    # up.
+    obsolete: bool
+
+# The translations of a program's messages into one language, as a `.po`
+# or `.mo` file holds them. `parse_po`, `decode_mo` and `catalog_of` make
+# one, and `add_message` changes one; a catalog built directly is looked up
+# by a scan of its messages.
+record Catalog
+    # The messages in the order read or added, the header first where there
+    # is one.
+    messages: [Message]
+    # The position in `messages` of each message's key, its context and id;
+    # what the lookups read.
+    index: {str: i64}
+    # The plural forms the header gives, or `n != 1` with two forms where it
+    # gives none, as GNU gettext takes them.
+    plural_forms: PluralForms
+
+# A catalog of `messages`, its index built and its plural forms read from
+# the header among them.
+#
+# - `messages`: the messages, all kept; a later message with the key of an
+#   earlier one replaces it in the index, an obsolete one never replacing
+#   one that is not.
+#
+# Fails `invalid` where the header's `Plural-Forms` field does not parse.
+# See also `add_message`, `parse_po`.
+function catalog_of(messages: [Message]) -> Catalog?
+    germanic = plural_expr.germanic()
+    forms @= PluralForms(count: germanic.count, expression: germanic.expression, program: germanic.program)
+    index: {str: i64} @= {}
+    kept: [Message] @= []
+
+    for m in messages
+        key = po_file.key_of(has_context: m.has_context, context: m.context, id: m.id)
+
+        if !m.obsolete && !m.has_context && m.id == "" && m.translations.len() > 0
+            match po_file.header_value(header: m.translations[0], name: "Plural-Forms")
+                .ok value =>
+                    read = plural_expr.parse_forms(value)?
+                    forms @ PluralForms(count: read.count, expression: read.expression, program: read.program)
+                .err _ => _ = 0
+
+        match index[key]
+            .ok at =>
+                if !m.obsolete || kept[at].obsolete
+                    index[key] @ kept.len()
+            .err _ => index[key] @ kept.len()
+
+        kept @ kept.push(m)
+
+    return ok(Catalog(messages: kept, index: index, plural_forms: forms))
+
+# Adds `message` to `catalog`, or replaces the message with its context and
+# id.
+#
+# - `catalog`: the catalog it changes, the caller's own.
+# - `message`: the message; a header, the empty id with no context, sets the
+#   plural forms again.
+#
+# Fails `invalid` where a header's `Plural-Forms` field does not parse, and
+# `catalog` is then unchanged. See also `catalog_of`.
+function add_message(@catalog: Catalog, message: Message) -> ()?
+    if !message.obsolete && !message.has_context && message.id == "" && message.translations.len() > 0
+        match po_file.header_value(header: message.translations[0], name: "Plural-Forms")
+            .ok value =>
+                read = plural_expr.parse_forms(value)?
+                catalog.plural_forms @ PluralForms(
+                    count: read.count,
+                    expression: read.expression,
+                    program: read.program
+                )
+            .err _ => _ = 0
+    key = po_file.key_of(has_context: message.has_context, context: message.context, id: message.id)
+    messages @= catalog.messages
+    catalog.messages @ []
+
+    match catalog.index[key]
+        .ok at =>
+            if at < messages.len() && (!message.obsolete || messages[at].obsolete)
+                messages[at] @ message
+            else
+                messages @ messages.push(message)
+        .err _ =>
+            catalog.index[key] @ messages.len()
+            messages @ messages.push(message)
+
+    catalog.messages @ messages
+    return ok()
+
+# A message with no context and no plural, translated as `translation`.
+#
+# - `id`: the text the program writes.
+# - `translation`: its translation.
+#
+# Every other field is empty. See also `add_message`.
+function message_of(id: str, translation: str) -> Message
+    return Message(
+        has_context: false,
+        context: "",
+        id: id,
+        has_plural: false,
+        plural_id: "",
+        translations: [translation],
+        comments: [],
+        extracted_comments: [],
+        references: [],
+        flags: [],
+        previous: [],
+        obsolete: false
+    )
+
+# A `.po` file read into a catalog: its entries, their comments, flags and
+# obsolete entries, the header among them.
+#
+# - `text`: the file's text, UTF-8; a `\r` before a line's end is dropped.
+#
+# Strings are read with C's escapes (`\n`, `\t`, `\"`, `\\`, octal and
+# `\x`), and adjacent strings joined. Fails `invalid` where an entry does
+# not parse, the message giving its line, and where the header's
+# `Plural-Forms` does not. See also `format_po`, `decode_mo`.
+function parse_po(text: str) -> Catalog?
+    messages: [Message] @= []
+
+    for e in po_file.parse(text)?
+        messages @ messages.push(
+            Message(has_context: e.has_context, context: e.context, id: e.id, has_plural: e.has_plural, plural_id: e.plural_id, translations: e.translations, comments: e.comments, extracted_comments: e.extracted_comments, references: e.references, flags: e.flags, previous: e.previous, obsolete: e.obsolete)
+        )
+
+    return catalog_of(messages)
+
+# `catalog` written as a `.po` file, every message in its order with its
+# comments and flags, each string on one line with its escapes.
+#
+# - `catalog`: the catalog.
+#
+# A string holding a line break is written across lines after an empty
+# first line, as `msgcat` writes it. The answer reads back through
+# `parse_po` as the same messages. See also `parse_po`.
+function format_po(catalog: Catalog) -> str
+    entries: [po_file.Entry] @= []
+
+    for m in catalog.messages
+        entries @ entries.push(
+            po_file.Entry(has_context: m.has_context, context: m.context, id: m.id, has_plural: m.has_plural, plural_id: m.plural_id, translations: m.translations, comments: m.comments, extracted_comments: m.extracted_comments, references: m.references, flags: m.flags, previous: m.previous, obsolete: m.obsolete)
+        )
+
+    return po_file.format(entries)
+
+# A gettext `.mo` file read into a catalog, its byte order told by its
+# magic number.
+#
+# - `data`: the file's bytes.
+#
+# Fails `invalid` where the magic number, the revision, a table or a string
+# reaches outside the file; `not_text` where a string is not UTF-8; and
+# `unsupported` where the header names a character set other than UTF-8 and
+# a string holds a byte outside ASCII. See also `encode_mo`.
+function decode_mo(data: [u8]) -> Catalog?
+    messages: [Message] @= []
+
+    for e in mo_file.decode(data)?
+        messages @ messages.push(
+            Message(has_context: e.has_context, context: e.context, id: e.id, has_plural: e.has_plural, plural_id: e.plural_id, translations: e.translations, comments: e.comments, extracted_comments: e.extracted_comments, references: e.references, flags: e.flags, previous: e.previous, obsolete: e.obsolete)
+        )
+
+    return catalog_of(messages)
+
+# `catalog` written as a gettext `.mo` file, little-endian, as GNU
+# `msgfmt` writes one: its messages sorted by their keys' bytes, with its
+# hash table.
+#
+# - `catalog`: the catalog.
+#
+# A message that is obsolete, fuzzy (the header aside) or untranslated is
+# left out, as `msgfmt` leaves it. The answer is byte for byte what `msgfmt`
+# writes for the same `.po`. See also `decode_mo`.
+function encode_mo(catalog: Catalog) -> [u8]
+    entries: [po_file.Entry] @= []
+
+    for m in catalog.messages
+        entries @ entries.push(
+            po_file.Entry(has_context: m.has_context, context: m.context, id: m.id, has_plural: m.has_plural, plural_id: m.plural_id, translations: m.translations, comments: m.comments, extracted_comments: m.extracted_comments, references: m.references, flags: m.flags, previous: m.previous, obsolete: m.obsolete)
+        )
+
+    return mo_file.encode(entries)
+
+# The message of `catalog` with `context` and `id`.
+#
+# - `catalog`: the catalog.
+# - `has_context`: whether the message looked for has a context.
+# - `context`: the context, read only where `has_context`.
+# - `id`: the text the program writes.
+#
+# Fails `not_found` where the catalog has no such message. See also
+# `translate`.
+function find_message(catalog: Catalog, has_context: bool, context: str, id: str) -> Message?
+    key = po_file.key_of(has_context: has_context, context: context, id: id)
+
+    match catalog.index[key]
+        .ok at =>
+            if at >= 0 && at < catalog.messages.len()
+                return ok(catalog.messages[at])
+        .err _ => _ = 0
+
+    if catalog.index.len() == 0
+        for m in catalog.messages
+            if !m.obsolete && m.has_context == has_context && m.id == id && (!has_context || m.context == context)
+                return ok(m)
+    return fail(code: NOT_FOUND, msg: f"no message \"{id}\" in the catalog")
+
+# The translation of `id`, or `id` itself where the catalog has none, as
+# gettext's `gettext` answers.
+#
+# - `catalog`: the catalog.
+# - `id`: the text the program writes, with no context.
+#
+# A message that is fuzzy, obsolete or untranslated is not a translation.
+# See also `translate_plural`, `translate_in`.
+function translate(catalog: Catalog, id: str) -> str
+    match find_message(catalog, has_context: false, context: "", id: id)
+        .ok m =>
+            if po_file.is_usable(obsolete: m.obsolete, flags: m.flags, translations: m.translations)
+                return m.translations[0]
+        .err _ => _ = 0
+
+    return id
+
+# The translation of `id` in `context`, gettext's `pgettext`.
+#
+# - `catalog`: the catalog.
+# - `context`: the context, `msgctxt`.
+# - `id`: the text the program writes.
+#
+# `id` itself where the catalog has none. See also `translate`.
+function translate_in(catalog: Catalog, context: str, id: str) -> str
+    match find_message(catalog, has_context: true, context: context, id: id)
+        .ok m =>
+            if po_file.is_usable(obsolete: m.obsolete, flags: m.flags, translations: m.translations)
+                return m.translations[0]
+        .err _ => _ = 0
+
+    return id
+
+# The plural form of a message for `n`, gettext's `ngettext`: the form the
+# catalog's plural forms choose, or `id` for 1 and `plural_id` otherwise
+# where the catalog has no translation.
+#
+# - `catalog`: the catalog.
+# - `id`: the singular the program writes.
+# - `plural_id`: the plural it writes.
+# - `n`: the count; a negative one is read by its absolute value, and the
+#   program's own singular is taken for 1 and -1.
+#
+# A plural expression that divides by zero, overflows or chooses a form
+# past the last takes the first form, as GNU gettext does. See also
+# `translate_plural_in`.
+function translate_plural(catalog: Catalog, id: str, plural_id: str, n: i64) -> str
+    match find_message(catalog, has_context: false, context: "", id: id)
+        .ok m =>
+            if po_file.is_usable(obsolete: m.obsolete, flags: m.flags, translations: m.translations)
+                index = plural_index(catalog.plural_forms, n: n).default(0)
+
+                if index < m.translations.len() && m.translations[index] != ""
+                    return m.translations[index]
+        .err _ => _ = 0
+
+    if n == 1 || n == -1
+        return id
+    return plural_id
+
+# The plural form of a message in `context` for `n`, gettext's
+# `npgettext`.
+#
+# - `catalog`: the catalog.
+# - `context`: the context.
+# - `id`: the singular the program writes.
+# - `plural_id`: the plural it writes.
+# - `n`: the count, read as `translate_plural` reads it.
+#
+# See also `translate_plural`.
+function translate_plural_in(catalog: Catalog, context: str, id: str, plural_id: str, n: i64) -> str
+    match find_message(catalog, has_context: true, context: context, id: id)
+        .ok m =>
+            if po_file.is_usable(obsolete: m.obsolete, flags: m.flags, translations: m.translations)
+                index = plural_index(catalog.plural_forms, n: n).default(0)
+
+                if index < m.translations.len() && m.translations[index] != ""
+                    return m.translations[index]
+        .err _ => _ = 0
+
+    if n == 1 || n == -1
+        return id
+    return plural_id
+
+# A field of the catalog's header, `Language` or `Plural-Forms`, its name
+# compared ignoring ASCII case.
+#
+# - `catalog`: the catalog.
+# - `name`: the field's name.
+#
+# The value with the spaces around it removed. Fails `not_found` where the
+# catalog has no header or the header no such field. See also
+# `parse_plural_forms`.
+function header_field(catalog: Catalog, name: str) -> str?
+    header = find_message(catalog, has_context: false, context: "", id: "")?
+
+    if header.translations.len() == 0
+        return fail(code: NOT_FOUND, msg: "the header holds no text")
+    return po_file.header_value(header: header.translations[0], name: name)
+
+# A `Plural-Forms` value read and its expression compiled:
+# `nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 ? 1 : 2);`.
+#
+# - `text`: the value; spaces anywhere, the last `;` optional.
+#
+# The expression is C's over one variable `n`: integers, `!`, `* / %`,
+# `+ -`, `< <= > >=`, `== !=`, `&&`, `||`, `? :` and parentheses. Fails
+# `invalid` where it does not parse, nests deeper than 100 or is longer than
+# 10,000 bytes, or `nplurals` is not from 1 to 100. See also
+# `plural_index`.
+function parse_plural_forms(text: str) -> PluralForms?
+    read = plural_expr.parse_forms(text)?
+    return ok(PluralForms(count: read.count, expression: read.expression, program: read.program))
+
+# The form `forms` choose for `n`, from 0 to `count` minus 1.
+#
+# - `forms`: the plural forms.
+# - `n`: the count; a negative one is read by its absolute value.
+#
+# Fails `invalid` where the expression divides by zero, overflows or
+# chooses a form outside 0 to `count` minus 1. See also
+# `parse_plural_forms`.
+function plural_index(forms: PluralForms, n: i64) -> i64?
+    return plural_expr.index_of(
+        plural_expr.Forms(count: forms.count, expression: forms.expression, program: forms.program),
+        n: n
+    )
+
+# The paths gettext looks for a catalog at, the most particular first:
+# `<dir>/<language>/LC_MESSAGES/<domain>.mo` for each language and its
+# shorter forms, as Python's `gettext.find` expands them.
+#
+# - `dir`: the folder of the catalogs, `/usr/share/locale`.
+# - `domain`: the program's domain, the file's name with no extension.
+# - `languages`: POSIX names, the preferred first, as
+#   `environment_languages` answers them; `C` stops the list.
+#
+# `de_DE.UTF-8@euro` gives `de_DE.UTF-8@euro`, `de_DE@euro`, `de.UTF-8@euro`,
+# `de@euro`, `de_DE.UTF-8`, `de_DE`, `de.UTF-8`, `de`, each once. It touches
+# no disk: the program reads the first that exists. See also
+# `environment_languages`.
+function catalog_paths(dir: str, domain: str, languages: [str]) -> [str]
+    return matching.catalog_paths(dir: dir, domain: domain, languages: languages)
+
+## Examples
+
+# A tag read into its parts and written back in its canonical case.
+test "parse_locale: a tag with a script and a region"
+    locale = parse_locale("zh_hant_tw").must()
+    assert locale.script == "Hant" && format_locale(locale) == "zh-Hant-TW"
+
+# A locale written as a tag.
+test "format_locale: a locale built from its parts"
+    locale = Locale(language: "pt", script: "", region: "BR", variants: [], extensions: [], private_use: [])
+    assert format_locale(locale) == "pt-BR"
+
+# The environment's POSIX name read as a locale.
+test "parse_posix: a name with a code set and a modifier"
+    assert format_locale(parse_posix("sr_RS.UTF-8@latin").must()) == "sr-Latn-RS"
+
+# A locale written as POSIX names it.
+test "to_posix: a language and a region"
+    assert to_posix(parse_locale("pt-BR").must()) == "pt_BR"
+
+# The calendar a tag asks for.
+test "unicode_keyword: the calendar of a tag"
+    assert unicode_keyword(parse_locale("th-TH-u-ca-buddhist").must(), key: "ca").must() == "buddhist"
+
+# A collation asked for by setting a keyword.
+test "with_unicode_keyword: the phone book order of German"
+    locale = with_unicode_keyword(parse_locale("de-DE").must(), key: "co", value: "phonebk").must()
+    assert format_locale(locale) == "de-DE-u-co-phonebk"
+
+# The parent CLDR's data takes Australian English from.
+test "parent_of: Australian English"
+    assert format_locale(parent_of(parse_locale("en-AU").must()).must()) == "en-001"
+
+# Where the data for Traditional Chinese in Taiwan is looked for.
+test "fallback_chain: Chinese in Taiwan"
+    chain = fallback_chain(parse_locale("zh-TW").must()).map(format_locale)
+    assert chain == ["zh-Hant-TW", "zh-Hant", "und"]
+
+# The languages of a browser's header, the preferred first.
+test "parse_accept_language: three ranges with weights"
+    ranges = parse_accept_language("en;q=0.8, fr-CH, fr;q=0.9").must()
+    assert ranges[0].range == "fr-ch" && ranges[2].range == "en"
+
+# The catalog a reader of Swiss German gets, when the program has German.
+test "lookup_tag: a region falls back to its language"
+    assert lookup_tag(ranges: ["de-CH", "en"], tags: ["en", "de"]).must() == "de"
+
+# The tags any German matches.
+test "filter_tags: every German"
+    assert filter_tags(ranges: ["de"], tags: ["de-CH", "fr", "de"]) == ["de-CH", "de"]
+
+# The languages the environment asks for are POSIX names.
+test "environment_languages: every name is a POSIX name"
+    for name in environment_languages()
+        assert name != "" && name != "C"
+
+# The plural rules of Polish, and the category of five.
+test "plural_rules: Polish counts"
+    rules = plural_rules(parse_locale("pl").must(), kind: .cardinal)
+    assert select_plural(rules, number: "5").must() == .many
+
+# Rules written by the program.
+test "parse_plural_rules: a rule for one and a rule for few"
+    rules = parse_plural_rules("one: n = 1; few: n in 2..4").must()
+    assert select_plural(rules, number: "3").must() == .few
+
+# The category of a number chosen by rules.
+test "select_plural: English one and other"
+    rules = plural_rules(parse_locale("en").must(), kind: .cardinal)
+    assert select_plural(rules, number: "1").must() == .one && select_plural(rules, number: "1.0").must() == .other
+
+# Visible fraction digits change the category in English.
+test "plural_of: one and one point zero"
+    english = parse_locale("en").must()
+    assert plural_of(english, number: "1").must() == .one && plural_of(english, number: "1.0").must() == .other
+
+# Russian counts of days.
+test "plural_of_int: Russian one, few and many"
+    russian = parse_locale("ru").must()
+    assert plural_of_int(russian, n: 21) == .one && plural_of_int(russian, n: 22) == .few && plural_of_int(russian, n: 25) == .many
+
+# English ordinals.
+test "ordinal_of: first, second, third and fourth"
+    english = parse_locale("en").must()
+    assert [ordinal_of(english, n: 1), ordinal_of(english, n: 2), ordinal_of(english, n: 3), ordinal_of(english, n: 4)] == [.one, .two, .few, .other]
+
+# A range of days in English.
+test "plural_range_of: one to other in English"
+    assert plural_range_of(parse_locale("en").must(), start: .one, end: .other) == .other
+
+# The ranges of French.
+test "plural_ranges: French has its own"
+    assert plural_ranges(parse_locale("fr").must()).len() > 0
+
+# The categories Arabic uses, all six.
+test "plural_categories: Arabic uses every category"
+    assert plural_categories(plural_rules(parse_locale("ar").must(), kind: .cardinal)).len() == 6
+
+# A category's name.
+test "plural_name: few"
+    assert plural_name(.few) == "few"
+
+# A category read from its name.
+test "parse_plural_name: many"
+    assert parse_plural_name("many").must() == .many
+
+# A catalog built from messages, and a message looked up.
+test "catalog_of: two messages"
+    catalog = catalog_of([message_of(id: "Yes", translation: "Ja"), message_of(id: "No", translation: "Nein")]).must()
+    assert translate(catalog, id: "No") == "Nein"
+
+# A message added to a catalog.
+test "add_message: a translation added"
+    catalog @= catalog_of([]).must()
+    add_message(@catalog, message: message_of(id: "Open", translation: "Öffnen")).must()
+    assert translate(catalog, id: "Open") == "Öffnen"
+
+# A message made from its text and translation.
+test "message_of: a message with no context"
+    message = message_of(id: "Save", translation: "Speichern")
+    assert !message.has_context && message.translations == ["Speichern"]
+
+# A `.po` file with a header and a plural message.
+test "parse_po: a header and a plural"
+    text = "msgid \"\"\nmsgstr \"Plural-Forms: nplurals=2; plural=(n != 1);\\n\"\n\nmsgid \"file\"\nmsgid_plural \"files\"\nmsgstr[0] \"Datei\"\nmsgstr[1] \"Dateien\"\n"
+    catalog = parse_po(text).must()
+    assert translate_plural(catalog, id: "file", plural_id: "files", n: 2) == "Dateien"
+
+# A catalog written as a `.po` file.
+test "format_po: one message"
+    catalog = catalog_of([message_of(id: "Yes", translation: "Ja")]).must()
+    assert format_po(catalog) == "msgid \"Yes\"\nmsgstr \"Ja\"\n"
+
+# A `.mo` file written and read back.
+test "decode_mo: a file encode_mo wrote"
+    catalog = catalog_of([message_of(id: "Yes", translation: "Ja")]).must()
+    assert translate(decode_mo(encode_mo(catalog)).must(), id: "Yes") == "Ja"
+
+# The bytes of a `.mo` file open with its magic number, little-endian.
+test "encode_mo: the magic number"
+    data = encode_mo(catalog_of([]).must())
+    assert data.slice(from: 0, to: 4) == [0xde, 0x12, 0x04, 0x95]
+
+# A message looked up with its context.
+test "find_message: a message in a context"
+    message = Message(
+        has_context: true,
+        context: "menu",
+        id: "File",
+        has_plural: false,
+        plural_id: "",
+        translations: ["Datei"],
+        comments: [],
+        extracted_comments: [],
+        references: [],
+        flags: [],
+        previous: [],
+        obsolete: false
+    )
+    catalog = catalog_of([message]).must()
+    assert find_message(catalog, has_context: true, context: "menu", id: "File").must().translations == ["Datei"]
+
+# A message with no translation is its own text.
+test "translate: a translation and a text with none"
+    catalog = catalog_of([message_of(id: "Yes", translation: "Sì")]).must()
+    assert translate(catalog, id: "Yes") == "Sì" && translate(catalog, id: "No") == "No"
+
+# The same text translated two ways in two contexts.
+test "translate_in: a word in a context"
+    message = Message(
+        has_context: true,
+        context: "month",
+        id: "May",
+        has_plural: false,
+        plural_id: "",
+        translations: ["Maggio"],
+        comments: [],
+        extracted_comments: [],
+        references: [],
+        flags: [],
+        previous: [],
+        obsolete: false
+    )
+    catalog = catalog_of([message]).must()
+    assert translate_in(catalog, context: "month", id: "May") == "Maggio" && translate(catalog, id: "May") == "May"
+
+# A count with no catalog takes the program's own singular or plural.
+test "translate_plural: the program's own forms"
+    catalog = catalog_of([]).must()
+    assert translate_plural(catalog, id: "a file", plural_id: "files", n: 1) == "a file"
+
+# A plural in a context.
+test "translate_plural_in: a plural in a context"
+    message = Message(
+        has_context: true,
+        context: "disk",
+        id: "file",
+        has_plural: true,
+        plural_id: "files",
+        translations: ["Datei", "Dateien"],
+        comments: [],
+        extracted_comments: [],
+        references: [],
+        flags: [],
+        previous: [],
+        obsolete: false
+    )
+    catalog = catalog_of([message]).must()
+    assert translate_plural_in(catalog, context: "disk", id: "file", plural_id: "files", n: 3) == "Dateien"
+
+# A field of a catalog's header.
+test "header_field: the language"
+    catalog = parse_po("msgid \"\"\nmsgstr \"Language: de\\n\"\n").must()
+    assert header_field(catalog, name: "language").must() == "de"
+
+# The plural forms of Polish read.
+test "parse_plural_forms: Polish's three forms"
+    forms = parse_plural_forms(
+        "nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);"
+    ).must()
+    assert forms.count == 3 && plural_index(forms, n: 22).must() == 1
+
+# The form an expression chooses.
+test "plural_index: French's two forms"
+    forms = parse_plural_forms("nplurals=2; plural=n > 1;").must()
+    assert plural_index(forms, n: 0).must() == 0 && plural_index(forms, n: 2).must() == 1
+
+# Where gettext looks for a German catalog.
+test "catalog_paths: a language with a region"
+    paths = catalog_paths(dir: "/usr/share/locale", domain: "app", languages: ["de_DE"])
+    assert paths == ["/usr/share/locale/de_DE/LC_MESSAGES/app.mo", "/usr/share/locale/de/LC_MESSAGES/app.mo"]

@@ -1,0 +1,71 @@
+# What CLDR knows of the languages a tag names: the script and region a
+# language is most likely written in (`en` is `en-Latn-US`, `zh-TW` is
+# `zh-Hant-TW`), and the tags old names are replaced by (`iw` is `he`, `sh`
+# is `sr-Latn`). Its tables are CLDR release `i18n.CLDR_VERSION`'s.
+#
+# What it does NOT do: read or write a tag, or match one by RFC 4647's plain
+# rules (`i18n`); name a language in words, "German", "Deutsch", which
+# CLDR's display names would need; choose the best of a program's languages
+# by CLDR's language matching, which is not carried yet (the ledger says
+# so).
+#
+# Nothing here fails: a tag CLDR knows nothing of answers itself.
+
+use i18n
+use i18n/locales/internal/subtags
+
+## Likely subtags and aliases
+
+# `locale` with the script and region CLDR says its language is most likely
+# written in added where it names none, as UTS #35's "Add Likely Subtags":
+# `en` is `en-Latn-US`, `zh-TW` is `zh-Hant-TW`, `und-RU` is `ru-Cyrl-RU`.
+#
+# - `locale`: the locale; its variants and extensions are kept.
+#
+# A locale CLDR knows nothing of answers itself, and so does one whose
+# language, script and region are all named. See also
+# `remove_likely_subtags`.
+function add_likely_subtags(locale: i18n.Locale) -> i18n.Locale
+    return subtags.add(locale)
+
+# `locale` with every script and region its likely subtags would add
+# removed, as UTS #35's "Remove Likely Subtags" favouring the region:
+# `en-Latn-US` is `en`, `zh-Hant-TW` is `zh-TW`, `sr-Cyrl-RS` is `sr`.
+#
+# - `locale`: the locale; its variants and extensions are kept.
+#
+# The shortest tag whose likely subtags are the locale's own. See also
+# `add_likely_subtags`.
+function remove_likely_subtags(locale: i18n.Locale) -> i18n.Locale
+    return subtags.remove(locale)
+
+# `locale` in UTS #35's canonical form: deprecated and legacy codes replaced
+# by CLDR's aliases (`iw` is `he`, `in` is `id`, `sh` is `sr-Latn`, `DD` is
+# `DE`, `no-bok` is `nb`), variants in alphabetical order and the keywords
+# of its `u` extension sorted, their old values replaced.
+#
+# - `locale`: the locale.
+#
+# A region alias naming several regions, as `SU`, takes the one the
+# language is likely spoken in, as UTS #35 says; the old values of the `u`
+# extension's keywords, `islamicc`, are kept as written. See also
+# `add_likely_subtags`.
+function canonicalize(locale: i18n.Locale) -> i18n.Locale
+    return subtags.canonicalize(locale)
+
+## Examples
+
+# The likely script and region of three tags.
+test "add_likely_subtags: English, Taiwan's Chinese and Russia's unknown language"
+    assert i18n.format_locale(add_likely_subtags(i18n.parse_locale("en").must())) == "en-Latn-US"
+    assert i18n.format_locale(add_likely_subtags(i18n.parse_locale("zh-TW").must())) == "zh-Hant-TW"
+
+# The shortest form of two tags.
+test "remove_likely_subtags: American English and Taiwan's Chinese"
+    assert i18n.format_locale(remove_likely_subtags(i18n.parse_locale("en-Latn-US").must())) == "en"
+    assert i18n.format_locale(remove_likely_subtags(i18n.parse_locale("zh-Hant-TW").must())) == "zh-TW"
+
+# Old codes replaced by their aliases.
+test "canonicalize: Hebrew's old code and Serbo-Croatian"
+    assert i18n.format_locale(canonicalize(i18n.parse_locale("iw-IL").must())) == "he-IL"
+    assert i18n.format_locale(canonicalize(i18n.parse_locale("sh").must())) == "sr-Latn"

@@ -1,0 +1,188 @@
+# The ledger of `i18n/numbers`: numbers written and read as a language writes
+# them, from CLDR 49's data for each of its 657 locales. One block per
+# capability. The census is the one `i18n.ledger` names: Go's
+# `golang.org/x/text` v0.14.0 `number` and `currency`, Python 3.15.2's
+# `locale`, Java SE 25's `java.text` and `java.util.Currency`, .NET's
+# `NumberFormatInfo`, ICU 79.1 the yardstick. Java and .NET were read from
+# their documentation, not run. The tests hold 600 numbers of every style
+# drawn from 6,570 that ICU wrote (`icu_cases`); 2 of the 6,430 of locales
+# ICU carries differ, both euros of en-GE and en-HU, which ICU writes before
+# the number and CLDR's data after it.
+
+capability number/decimal  a number written as a language writes it
+  heroes  numbers.format_decimal, numbers.format_int, numbers.format_number
+  go      number.Decimal, message.Printer.Sprint
+  rust    -
+  python  locale.format_string, locale.str, locale.localize
+  java    NumberFormat.getInstance, NumberFormat.getNumberInstance, NumberFormat.getIntegerInstance, NumberFormat.format, DecimalFormat.format
+  dotnet  Double.ToString(IFormatProvider), Decimal.ToString("N"), NumberFormatInfo
+  icu     NumberFormatter, unum_formatDecimal
+  note    a number is decimal text, any number of digits; CLDR's minimum grouping digits are kept (Spanish writes 1234), as ICU's NumberFormatter and JavaScript's Intl do and Java does not
+
+capability number/percent  a fraction written as a percentage
+  heroes  numbers.format_percent
+  go      number.Percent, number.PerMille
+  rust    -
+  python  -
+  java    NumberFormat.getPercentInstance
+  dotnet  Double.ToString("P"), NumberFormatInfo.PercentSymbol, NumberFormatInfo.PercentPositivePattern, NumberFormatInfo.PercentNegativePattern
+  icu     NumberFormatter percent
+
+capability number/scientific  a number with an exponent
+  heroes  numbers.format_number (.scientific)
+  go      number.Scientific, number.Engineering
+  rust    -
+  python  -
+  java    DecimalFormat with an exponent pattern
+  dotnet  Double.ToString("E")
+  icu     NumberFormatter scientific, engineering
+
+capability number/currency  an amount with its currency's symbol, code or narrow symbol and digits, and accounting's negatives
+  heroes  numbers.format_currency, numbers.format_number (.currency, .accounting), numbers.CurrencyDisplay
+  go      currency.Symbol, currency.NarrowSymbol, currency.ISO, currency.Amount, currency.Unit.Amount, currency.Formatter, currency.Kind, currency.Standard, currency.Cash, currency.Accounting
+  rust    -
+  python  locale.currency
+  java    NumberFormat.getCurrencyInstance, NumberFormat.setCurrency, DecimalFormatSymbols.getCurrencySymbol, DecimalFormatSymbols.getInternationalCurrencySymbol
+  dotnet  Decimal.ToString("C"), NumberFormatInfo.CurrencySymbol, NumberFormatInfo.CurrencyPositivePattern, NumberFormatInfo.CurrencyNegativePattern
+  icu     NumberFormatter currency, unit-width-narrow, sign-accounting
+  note    CLDR's currency spacing puts a space between a symbol of letters and the digits, `CHF 1,234.50`; cash rounding is not applied
+
+capability number/compact  a number cut short, 1.2K, 1,2 Mio.
+  heroes  numbers.format_compact, numbers.format_number (.compact_short, .compact_long)
+  go      -
+  rust    -
+  python  -
+  java    NumberFormat.getCompactNumberInstance, CompactNumberFormat
+  dotnet  -
+  icu     NumberFormatter compact-short, compact-long
+  note    two significant digits under ten of the unit, grouped from five digits, the plural of the rounded number choosing the pattern, as ICU writes them
+
+capability number/options  digits, significant digits, rounding, sign and grouping chosen
+  heroes  numbers.NumberOptions, numbers.number_options, numbers.Rounding, numbers.SignDisplay, numbers.Grouping
+  go      number.MinIntegerDigits, number.MaxIntegerDigits, number.MinFractionDigits, number.MaxFractionDigits, number.Precision, number.Scale, number.NoSeparator, number.FormatWidth, number.Pad, number.IncrementString, number.NewFormat, number.Option, number.Formatter
+  rust    -
+  python  -
+  java    NumberFormat.setMinimumIntegerDigits, setMaximumIntegerDigits, setMinimumFractionDigits, setMaximumFractionDigits, setGroupingUsed, setRoundingMode, RoundingMode
+  dotnet  NumberFormatInfo.NumberDecimalDigits, NumberGroupSizes, MidpointRounding
+  icu     Precision, RoundingMode, UNumberSignDisplay, UNumberGroupingStrategy
+  note    integer digits are never cut, as ICU leaves them; padding and rounding increments are not offered (Java has neither)
+
+capability number/pattern  a number written by a CLDR pattern, DecimalFormat's
+  heroes  numbers.format_pattern
+  go      number.PatternOverrides
+  rust    -
+  python  -
+  java    DecimalFormat(String), DecimalFormat.applyPattern, DecimalFormat.toPattern, DecimalFormat.applyLocalizedPattern
+  dotnet  Double.ToString("#,##0.00")
+  icu     DecimalFormat, unum_open(UNUM_PATTERN_DECIMAL)
+  note    a pattern with padding `*` or a rounding increment `#0.05` is `invalid`, read by neither Java nor here
+
+capability number/parse  a number written in a language read back
+  heroes  numbers.parse_number
+  go      -
+  rust    -
+  python  locale.atof, locale.atoi, locale.delocalize
+  java    NumberFormat.parse, DecimalFormat.parse, ParsePosition
+  dotnet  Double.Parse(IFormatProvider), Decimal.Parse
+  icu     unum_parseDecimal
+  note    strict on the groups' places, lenient on spaces and bidirectional marks; answers decimal text with its written digits
+
+capability number/parse-currency  an amount read back with its currency
+  heroes  numbers.parse_currency, numbers.Amount
+  go      -
+  rust    -
+  python  -
+  java    NumberFormat.getCurrencyInstance().parse
+  dotnet  Decimal.Parse(NumberStyles.Currency)
+  icu     unum_parseCurrency
+
+capability number/symbols  a language's decimal and group separators, signs and digits
+  heroes  numbers.symbols_of, numbers.symbols_in, numbers.Symbols
+  go      -
+  rust    -
+  python  locale.localeconv, locale.nl_langinfo(RADIXCHAR, THOUSEP, CRNCYSTR, ALT_DIGITS)
+  java    DecimalFormatSymbols, DecimalFormatSymbols.getInstance, getDecimalSeparator, getGroupingSeparator, getMinusSign, getPercent, getPerMill, getInfinity, getNaN, getExponentSeparator, getZeroDigit
+  dotnet  NumberFormatInfo.NumberDecimalSeparator, NumberGroupSeparator, NegativeSign, PositiveSign, PercentSymbol, PerMilleSymbol, NaNSymbol, PositiveInfinitySymbol, NativeDigits, DigitSubstitution
+  icu     DecimalFormatSymbols
+
+capability number/systems  numbering systems and their digits
+  heroes  numbers.numbering_system_of, numbers.digits_of
+  go      -
+  rust    -
+  python  -
+  java    -
+  dotnet  NumberFormatInfo.NativeDigits
+  icu     NumberingSystem
+  note    algorithmic systems (`roman`) are `not_found`; written by rules this package does not carry
+
+capability number/pattern-of  a language's standard pattern of a style
+  heroes  numbers.pattern_of
+  go      -
+  rust    -
+  python  -
+  java    DecimalFormat.toPattern
+  dotnet  -
+  icu     unum_toPattern
+
+capability currency/symbol  a currency's symbol in a language
+  heroes  numbers.currency_symbol
+  go      currency.Symbol, currency.NarrowSymbol
+  rust    -
+  python  locale.localeconv()["currency_symbol"]
+  java    Currency.getSymbol
+  dotnet  RegionInfo.CurrencySymbol
+  icu     ucurr_getName
+
+capability currency/digits  a currency's digits after the point
+  heroes  numbers.currency_digits
+  go      currency.Kind.Rounding
+  rust    -
+  python  locale.localeconv()["frac_digits"]
+  java    Currency.getDefaultFractionDigits
+  dotnet  NumberFormatInfo.CurrencyDecimalDigits
+  icu     ucurr_getDefaultFractionDigits
+
+capability currency/of-region  the currency a region uses today
+  heroes  numbers.currency_of
+  go      currency.FromRegion, currency.FromTag, currency.Query, currency.Region, currency.Date, currency.Historical, currency.NonTender
+  rust    -
+  python  -
+  java    Currency.getInstance(Locale), Currency.getAvailableCurrencies
+  dotnet  RegionInfo.ISOCurrencySymbol
+  icu     ucurr_forLocale
+  note    the history of a region's currencies is not offered
+
+capability currency/name  a currency named in words, "US dollars"
+  heroes  pending: CLDR's currency names, with their plural forms, are 60 KB a locale; not carried yet
+  go      -
+  rust    -
+  python  -
+  java    Currency.getDisplayName
+  dotnet  RegionInfo.CurrencyEnglishName, RegionInfo.CurrencyNativeName
+  icu     ucurr_getName(UCURR_LONG_NAME), ucurr_getPluralName
+
+capability number/spellout  a number spelled out in words, "one hundred"
+  heroes  pending: CLDR's rule-based number formats are not carried
+  go      -
+  rust    -
+  python  -
+  java    -
+  dotnet  -
+  icu     RuleBasedNumberFormat
+
+capability number/range  a range of numbers, "3–5"
+  heroes  pending: not written yet
+  go      -
+  rust    -
+  python  -
+  java    -
+  dotnet  -
+  icu     NumberRangeFormatter
+
+dropped plumbing  what an interface, a mutable formatter or a parse position would have needed
+  go      number.FormatFunc, number.Formatter.Format, currency.Unit.String, currency.MustParseISO, currency.ParseISO, currency.XXX, currency.QueryIter
+  rust    -
+  python  -
+  java    NumberFormat.Field, NumberFormat.Style, NumberFormat.clone, NumberFormat.equals, NumberFormat.hashCode, DecimalFormat.setDecimalFormatSymbols, FieldPosition, ParsePosition, NumberFormatProvider
+  dotnet  NumberFormatInfo.Clone, NumberFormatInfo.ReadOnly, NumberFormatInfo.GetFormat, NumberFormatInfo.InvariantInfo, NumberStyles
+  icu     -

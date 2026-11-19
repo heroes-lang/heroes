@@ -1,0 +1,270 @@
+# The root collation of `collate_tables`, read: a character's elements, a
+# contraction's, UCA's implicit weights for the characters the table leaves
+# out (UTS #10, § 10.1), and every distinct weight of each level, which a
+# tailoring places its own between.
+#
+# Every weight here is scaled by `SCALE`, so that a tailoring finds room
+# between two of the root's. An element is four numbers in a flat list:
+# primary, secondary, tertiary, and flags, 1 where the root marks it
+# variable.
+
+use i18n/collate/internal/collate_tables
+use i18n/internal/locale_syntax
+use unicode
+
+# What every weight of the root is multiplied by.
+constant SCALE: i64
+    65536
+
+# The common secondary and tertiary weights, scaled.
+constant COMMON_SECONDARY: i64
+    2097152
+
+constant COMMON_TERTIARY: i64
+    131072
+
+# The value of one character of `ALPHABET`.
+function digit_of(b: u8) -> i64
+    if b >= '0' && b <= '9'
+        return to_i64(b - '0').must()
+
+    if b >= 'A' && b <= 'Z'
+        return to_i64(b - 'A').must() + 10
+
+    if b >= 'a' && b <= 'z'
+        return to_i64(b - 'a').must() + 36
+
+    if b == '+'
+        return 62
+    return 63
+
+# The number `width` characters from `at` of `text` write.
+function number_at(text: str, at: i64, width: i64) -> i64
+    value @= 0
+    i @= at
+
+    while i < at + width
+        value @ value * 64 + digit_of(text[i])
+        i @ i + 1
+
+    return value
+
+# Entry `index` of `SINGLES`: code point << 21 | first element << 5 | count.
+function single(index: i64) -> i64
+    return number_at(collate_tables.SINGLES[index / 512], at: index % 512 * 7, width: 7)
+
+# Packed element `index` of `ELEMENTS`.
+function packed(index: i64) -> i64
+    return number_at(collate_tables.ELEMENTS[index / 512], at: index % 512 * 6, width: 6)
+
+# Adds packed element `e` to `out`, scaled.
+function add_packed(@out: [i64], e: i64)
+    out @ out.push((e >> 14 & 0xffff) * SCALE)
+    out @ out.push((e >> 5 & 0x1ff) * SCALE)
+    out @ out.push((e & 0x1f) * SCALE)
+    out @ out.push(e >> 30 & 1)
+
+# The position of `point`'s entry in `SINGLES`, or -1.
+function find_single(point: i64) -> i64
+    low @= 0
+    high @= collate_tables.SINGLE_COUNT
+
+    while low < high
+        middle = (low + high) / 2
+        found = single(middle) >> 21
+
+        if found == point
+            return middle
+
+        if found < point
+            low @ middle + 1
+        else
+            high @ middle
+
+    return -1
+
+# Whether `point` is a unified ideograph of the CJK Unified Ideographs block
+# or one of the twelve of CJK Compatibility Ideographs.
+function is_core_han(point: i64) -> bool
+    if point >= 0x4e00 && point <= 0x9fff
+        return true
+    return point == 0xfa0e || point == 0xfa0f || point == 0xfa11 || point == 0xfa13 || point == 0xfa14 || point == 0xfa1f || point == 0xfa21 || point == 0xfa23 || point == 0xfa24 || point == 0xfa27 || point == 0xfa28 || point == 0xfa29
+
+# Whether `point` is a unified ideograph of an extension block.
+function is_other_han(point: i64) -> bool
+    return point >= 0x3400 && point <= 0x4dbf || point >= 0x20000 && point <= 0x2a6df || point >= 0x2a700 && point <= 0x2ee5f || point >= 0x30000 && point <= 0x3347f
+
+# Adds the implicit elements UCA gives `point` to `out`.
+function add_implicit(@out: [i64], point: i64)
+    base @= 0xfbc0 + (point >> 15)
+    rest @= point & 0x7fff | 0x8000
+
+    if point >= 0x17000 && point <= 0x18aff || point >= 0x18d00 && point <= 0x18dff
+        base @ 0xfb00
+        rest @ point - 0x17000 | 0x8000
+    else if point >= 0x1b170 && point <= 0x1b2ff
+        base @ 0xfb01
+        rest @ point - 0x1b170 | 0x8000
+    else if point >= 0x18b00 && point <= 0x18cff
+        base @ 0xfb02
+        rest @ point - 0x18b00 | 0x8000
+    else if is_core_han(point)
+        base @ 0xfb40 + (point >> 15)
+    else if is_other_han(point)
+        base @ 0xfb80 + (point >> 15)
+    out @ out.push(base * SCALE)
+    out @ out.push(COMMON_SECONDARY)
+    out @ out.push(COMMON_TERTIARY)
+    out @ out.push(0)
+    out @ out.push(rest * SCALE)
+    out @ out.push(0)
+    out @ out.push(0)
+    out @ out.push(0)
+
+# Adds the root's elements of the one character `point` to `out`.
+function add_single(@out: [i64], point: i64)
+    at = find_single(point)
+
+    if at < 0
+        add_implicit(@out, point: point)
+        return
+    entry = single(at)
+    first = entry >> 5 & 0xffff
+    count = entry & 0x1f
+    i @= 0
+
+    while i < count
+        add_packed(@out, e: packed(first + i))
+        i @ i + 1
+
+# The root's elements of contraction `key`, or a failure where it is none.
+function contraction(key: str) -> [i64]?
+    at = locale_syntax.search(collate_tables.CONTRACTION_KEYS, key: key)
+
+    if at < 0
+        return fail(code: "not_found", msg: "no contraction")
+    codes = collate_tables.CONTRACTION_ELEMENTS[at]
+    out: [i64] @= []
+    i @= 0
+
+    while i < codes.len()
+        add_packed(@out, e: number_at(codes, at: i, width: 6))
+        i @ i + 6
+
+    return ok(out)
+
+# The contractions that open with the character `first`, as code points.
+function contractions_from(first: str) -> [[i64]]
+    names = collate_tables.CONTRACTION_KEYS
+    low @= 0
+    high @= names.len()
+
+    while low < high
+        middle = (low + high) / 2
+
+        if strings_less(a: names[middle], b: first)
+            low @ middle + 1
+        else
+            high @ middle
+
+    out: [[i64]] @= []
+    at @= low
+
+    while at < names.len() && has_prefix(s: names[at], prefix: first)
+        out @ out.push(unicode.code_points(names[at]))
+        at @ at + 1
+
+    return out
+
+# Whether `a` comes before `b` by their bytes.
+function strings_less(a: str, b: str) -> bool
+    at @= 0
+
+    while at < a.len() && at < b.len()
+        if a[at] != b[at]
+            return a[at] < b[at]
+        at @ at + 1
+
+    return a.len() < b.len()
+
+# Whether `s` opens with `prefix`.
+function has_prefix(s: str, prefix: str) -> bool
+    if prefix.len() > s.len()
+        return false
+    at @= 0
+
+    while at < prefix.len()
+        if s[at] != prefix[at]
+            return false
+        at @ at + 1
+
+    return true
+
+# The last primary, scaled, of the group a maximum variable `which` makes
+# variable: 0 the spaces, 1 punctuation, 2 symbols, the last before the
+# first currency sign.
+function group_bound(which: i64) -> i64
+    if which == 0
+        return collate_tables.LAST_SPACE * SCALE
+
+    if which == 1
+        return collate_tables.LAST_PUNCT * SCALE
+    return collate_tables.FIRST_CURRENCY * SCALE - 1
+
+# Every distinct weight of the root at `level`, 0 primary to 2 tertiary,
+# scaled and ascending.
+function weights(level: i64) -> [i64]
+    seen: {i64: bool} @= {}
+    total = collate_tables.ELEMENTS.len() * 512
+    index @= 0
+
+    while index < total
+        chunk = index / 512
+
+        if index % 512 * 6 >= collate_tables.ELEMENTS[chunk].len()
+            index @ (chunk + 1) * 512
+        else
+            e = packed(index)
+
+            value = match level
+                0 => e >> 14 & 0xffff
+                1 => e >> 5 & 0x1ff
+                _ => e & 0x1f
+
+            seen[value * SCALE] @ true
+            index @ index + 1
+
+    return sort(keys(seen))
+
+## Tests
+
+test "add_single: a letter, a space marked variable, and an implicit Han character"
+    a: [i64] @= []
+    add_single(@a, point: 0x61)
+    assert a.len() == 4 && a[0] > 0 && a[1] == COMMON_SECONDARY && a[3] == 0
+    space: [i64] @= []
+    add_single(@space, point: 0x20)
+    assert space[3] == 1
+    han: [i64] @= []
+    add_single(@han, point: 0x4e00)
+    assert han.len() == 8 && han[0] == (0xfb40 + 0) * SCALE && han[4] == 0xce00 * SCALE
+
+test "contraction and contractions_from: the Catalan l with a middle dot"
+    assert contraction("l·").must().len() == 8
+    assert contraction("xy").is_err()
+    assert contractions_from("l").len() >= 2
+
+test "weights: the primaries ascend and include the letter a"
+    primaries = weights(0)
+    a: [i64] @= []
+    add_single(@a, point: 0x61)
+    assert primaries.len() > 1000 && primaries[0] < primaries[1]
+    assert locale_syntax_contains(primaries, value: a[0])
+
+# Whether `values` holds `value`, for the tests above.
+function locale_syntax_contains(values: [i64] lent, value: i64) -> bool
+    for v in values
+        if v == value
+            return true
+
+    return false

@@ -1,0 +1,347 @@
+# The pattern a locale writes a skeleton's fields with, as ICU's
+# `DateTimePatternGenerator` chooses it: the closest of the locale's
+# available formats by a distance over the fields' kinds and widths, its
+# fields widened to the skeleton's, and a skeleton with both a date and a
+# time split in two and joined as the locale joins a date and a time.
+
+use i18n/dates/internal/date_data
+use i18n/dates/internal/date_format
+use strings
+
+# The code a skeleton with a letter that is no field fails with.
+constant INVALID: str
+    "invalid"
+
+# What a distance adds for a field the skeleton asks and a format lacks.
+constant MISSING: i64
+    4096
+
+# What a distance adds for a field a format has and the skeleton does not
+# ask.
+constant EXTRA: i64
+    65536
+
+# The kinds of a field, by letter, or -1.
+function kind_of(letter: str) -> i64
+    return match letter
+        "G" => 0
+        "y" => 1
+        "Y" => 1
+        "u" => 1
+        "Q" => 2
+        "q" => 2
+        "M" => 3
+        "L" => 3
+        "w" => 4
+        "W" => 5
+        "d" => 6
+        "D" => 7
+        "F" => 8
+        "g" => 9
+        "E" => 10
+        "e" => 10
+        "c" => 10
+        "a" => 11
+        "b" => 11
+        "B" => 11
+        "h" => 12
+        "H" => 12
+        "K" => 12
+        "k" => 12
+        "m" => 13
+        "s" => 14
+        "S" => 15
+        "A" => 16
+        "z" => 17
+        "Z" => 17
+        "O" => 17
+        "v" => 17
+        "V" => 17
+        "X" => 17
+        "x" => 17
+        _   => -1
+
+# Whether `letter` written `count` times is a name rather than a number.
+function is_text(letter: str, count: i64) -> bool
+    if strings.contains(s: "GEabBzZOvVXx", substr: letter)
+        return true
+
+    if strings.contains(s: "QqMLec", substr: letter)
+        return count >= 3
+    return false
+
+# A skeleton's fields by kind: the letter of each kind, the empty text for
+# none, and its count; `free_period` where a period is neither asked nor
+# refused, as for a 12-hour clock asked with no period, which ICU writes with
+# the period whether a format has it or not.
+record Fields
+    letters: [str]
+    counts: [i64]
+    free_period: bool
+
+# The fields of `skeleton`, its `j` read as `hour`.
+function fields_of(skeleton: str, hour: str) -> Fields?
+    letters: [str] @= []
+    counts: [i64] @= []
+
+    for _ in range(from: 0, to: 18)
+        letters @ letters.push("")
+        counts @ counts.push(0)
+
+    for c in skeleton.chars()
+        letter @= c
+
+        if c == "j" || c == "J" || c == "C"
+            letter @ hour
+        kind = kind_of(letter)
+
+        if kind < 0
+            return fail(code: INVALID, msg: f"\"{c}\" is no field of a skeleton, in \"{skeleton}\"")
+
+        if letters[kind] == "" || letters[kind] == letter
+            letters[kind] @ letter
+            counts[kind] @ counts[kind] + 1
+
+    free = (letters[12] == "h" || letters[12] == "K") && letters[11] == ""
+    return ok(Fields(letters: letters, counts: counts, free_period: free))
+
+# The fields a pattern writes, its literal text left out.
+function fields_of_pattern(pattern: str) -> Fields?
+    letters: [str] @= []
+    counts: [i64] @= []
+
+    for _ in range(from: 0, to: 18)
+        letters @ letters.push("")
+        counts @ counts.push(0)
+
+    for p in date_format.pieces_of(pattern)?
+        if p.letter != ""
+            kind = kind_of(p.letter)
+
+            if kind >= 0 && letters[kind] == ""
+                letters[kind] @ p.letter
+                counts[kind] @ p.count
+
+    return ok(Fields(letters: letters, counts: counts, free_period: false))
+
+# How far a format's fields `have` are from the skeleton's `want`.
+function distance(want: Fields lent, have: Fields lent) -> i64
+    total @= 0
+    kind @= 0
+
+    while kind < 18
+        w = want.letters[kind]
+        h = have.letters[kind]
+
+        if kind == 11 && want.free_period && w == ""
+            if h == "b" || h == "B"
+                total @ total + EXTRA
+        else if w != "" && h == ""
+            total @ total + MISSING
+        else if w == "" && h != ""
+            total @ total + EXTRA
+        else if w != "" && h != ""
+            if w != h
+                total @ total + 16
+
+            if is_text(w, count: want.counts[kind]) != is_text(h, count: have.counts[kind])
+                total @ total + 256
+            difference @= want.counts[kind] - have.counts[kind]
+
+            if difference < 0
+                difference @ -difference
+            total @ total + difference
+        kind @ kind + 1
+
+    return total
+
+# The pattern of the available format closest to `want`, its fields widened
+# to the skeleton's, and its distance.
+record Best
+    pattern: str
+    distance: i64
+    fields: Fields
+
+# Whether the available format `skeleton` with `pattern` is the root's own,
+# which ICU lets a standard pattern of the locale override.
+function is_inherited(root: i64, skeleton: str, pattern: str) -> bool
+    count = date_data.slot_count(root)
+    at @= 0
+
+    while at + 1 < count
+        if date_data.slot_text(block: root, slot: at) == skeleton
+            return date_data.slot_text(block: root, slot: at + 1) == pattern
+        at @ at + 2
+
+    return false
+
+# The best of `data`'s date and time patterns and available formats for
+# `want`, as ICU's generator weighs them: the locale's own available formats
+# first, then its standard date and time patterns, then the formats it
+# inherits from the root, each only where strictly closer than the best
+# before it.
+function best_of(data: date_data.Data lent, want: Fields lent, hour: str) -> Best?
+    best @= Best(pattern: "", distance: EXTRA * 64, fields: want)
+    block = data.blocks[date_data.SKELETONS]
+    count = date_data.slot_count(block)
+    root = date_data.load_root().blocks[date_data.SKELETONS]
+    pass @= 0
+
+    while pass < 3
+        if pass == 1
+            patterns = data.blocks[date_data.PATTERNS]
+            slot @= 0
+
+            while slot < 8
+                pattern = date_data.slot_text(block: patterns, slot: slot)
+
+                match fields_of_pattern(pattern)
+                    .ok fields =>
+                        d = distance(want: want, have: fields)
+
+                        if pattern != "" && d < best.distance
+                            best @ Best(pattern: pattern, distance: d, fields: fields)
+                    .err _ => _ = 0
+
+                slot @ slot + 1
+        else
+            at @= 0
+
+            while at + 1 < count
+                skeleton = date_data.slot_text(block: block, slot: at)
+                pattern = date_data.slot_text(block: block, slot: at + 1)
+                inherited = is_inherited(root, skeleton: skeleton, pattern: pattern)
+
+                if inherited == (pass == 2)
+                    match fields_of(skeleton: skeleton, hour: hour)
+                        .ok fields =>
+                            d = distance(want: want, have: fields)
+
+                            if d < best.distance
+                                best @ Best(pattern: pattern, distance: d, fields: fields)
+                        .err _ => _ = 0
+                at @ at + 2
+        pass @ pass + 1
+
+    if best.pattern == ""
+        return fail(code: INVALID, msg: "the locale has no available formats")
+    return ok(
+        Best(pattern: adjusted(best.pattern, want: want, have: best.fields), distance: best.distance, fields: best.fields)
+    )
+
+# `pattern` with each of its fields of a kind `want` asks set to the
+# skeleton's width where the format matched, `have`, has it at another, a
+# name to a name and a number to a number, hours, minutes and seconds kept;
+# a weekday's name at least abbreviated; its literal text kept as written.
+function adjusted(pattern: str, want: Fields lent, have: Fields lent) -> str
+    out: [str] @= []
+    cs = pattern.chars()
+    quoted @= false
+    at @= 0
+
+    while at < cs.len()
+        c = cs[at]
+
+        if c == "'"
+            quoted @ !quoted
+            out @ out.push(c)
+            at @ at + 1
+        else if quoted || kind_of(c) < 0
+            out @ out.push(c)
+            at @ at + 1
+        else
+            count @= 1
+
+            while at + count < cs.len() && cs[at + count] == c
+                count @ count + 1
+
+            kind = kind_of(c)
+            written @= count
+
+            if want.letters[kind] != "" && kind != 12 && kind != 17
+                wanted = want.counts[kind]
+                text_wanted = is_text(want.letters[kind], count: wanted)
+
+                if have.counts[kind] != wanted && text_wanted == is_text(c, count: count) && (text_wanted || kind < 12)
+                    written @ wanted
+
+                if kind == 10 && wanted < 3 && is_text(c, count: count)
+                    # ICU writes a weekday asked by `E` abbreviated at least.
+                    written @ 3
+            out @ out.push(repeat(c, to_u64(written).must()))
+            at @ at + count
+
+    return out.join("")
+
+# The fields of `fields` of the kinds from `from` to `to`, the others empty.
+function part_of(fields: Fields lent, from: i64, to: i64) -> Fields
+    letters: [str] @= []
+    counts: [i64] @= []
+    kind @= 0
+
+    while kind < 18
+        if kind >= from && kind < to
+            letters @ letters.push(fields.letters[kind])
+            counts @ counts.push(fields.counts[kind])
+        else
+            letters @ letters.push("")
+            counts @ counts.push(0)
+        kind @ kind + 1
+
+    return Fields(letters: letters, counts: counts, free_period: fields.free_period)
+
+# Whether `fields` has any field of a kind from `from` to `to`.
+function has_any(fields: Fields lent, from: i64, to: i64) -> bool
+    kind @= from
+
+    while kind < to
+        if fields.letters[kind] != ""
+            return true
+        kind @ kind + 1
+
+    return false
+
+# The pattern `data`'s locale writes `skeleton` with.
+function pattern_of(data: date_data.Data lent, skeleton: str) -> str?
+    hour = date_data.hour_of(language: data.language, region: data.region)
+    want = fields_of(skeleton: skeleton, hour: hour)?
+
+    if !has_any(want, from: 0, to: 18)
+        return fail(code: INVALID, msg: "an empty skeleton")
+    whole = best_of(data, want: want, hour: hour)?
+
+    if whole.distance < MISSING || !has_any(want, from: 0, to: 11) || !has_any(want, from: 11, to: 18)
+        return ok(whole.pattern)
+    date_part = best_of(data, want: part_of(want, from: 0, to: 11), hour: hour)?
+    time_part = best_of(data, want: part_of(want, from: 11, to: 18), hour: hour)?
+    style @= 3
+
+    if want.counts[3] >= 4 && want.letters[10] != "" && want.counts[10] >= 4
+        style @ 0
+    else if want.counts[3] >= 4
+        style @ 1
+    else if want.counts[3] == 3
+        style @ 2
+    patterns = data.blocks[date_data.PATTERNS]
+    glue @= date_data.slot_text(block: patterns, slot: 12 + style)
+
+    if glue == ""
+        glue @ date_data.slot_text(block: patterns, slot: 8 + style)
+    return ok(
+        strings.replace_all(s: strings.replace_all(s: glue, old: "{1}", new: date_part.pattern), old: "{0}", new: time_part.pattern)
+    )
+
+## Tests
+
+test "fields_of: counts by kind, j read as the hour, and a letter that is no field"
+    f = fields_of(skeleton: "yMMMdj", hour: "h").must()
+    assert f.letters[1] == "y" && f.counts[3] == 3 && f.letters[12] == "h"
+    assert fields_of(skeleton: "yMMMdT", hour: "H").is_err()
+
+test "distance: equal, wider, a name for a number, missing and extra"
+    want = fields_of(skeleton: "yMMMd", hour: "h").must()
+    assert distance(want: want, have: fields_of(skeleton: "yMMMd", hour: "h").must()) == 0
+    assert distance(want: want, have: fields_of(skeleton: "yMMMMd", hour: "h").must()) == 1
+    assert distance(want: want, have: fields_of(skeleton: "yMd", hour: "h").must()) == 258
+    assert distance(want: want, have: fields_of(skeleton: "yMMM", hour: "h").must()) == MISSING
+    assert distance(want: want, have: fields_of(skeleton: "yMMMEd", hour: "h").must()) == EXTRA

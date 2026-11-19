@@ -1,0 +1,359 @@
+# CLDR's number patterns (UTS #35, Part 3, § 3): a pattern read into its
+# prefixes, suffixes, digit counts, grouping and exponent, and a rounded
+# number written by one with a language's symbols and digits.
+
+use strings
+
+# The code a pattern that does not parse fails with.
+constant INVALID: str
+    "invalid"
+
+# The most digits a pattern may ask on either side of the point.
+constant MAX_DIGITS: i64
+    999
+
+# A pattern read. The prefixes and suffixes keep their special characters,
+# `-` `+` `%` `‰` `¤`, quotes already read: a special character meant as
+# itself is held quoted, `'%'`.
+record Pattern
+    positive_prefix: str
+    positive_suffix: str
+    negative_prefix: str
+    negative_suffix: str
+    has_negative: bool
+    min_integer: i64
+    max_integer: i64
+    min_fraction: i64
+    max_fraction: i64
+    min_significant: i64
+    max_significant: i64
+    primary_group: i64
+    secondary_group: i64
+    exponent_digits: i64
+    exponent_sign: bool
+    scale: i64
+    currency: i64
+
+# What the special characters of an affix write.
+record Affix
+    minus: str
+    plus: str
+    percent: str
+    per_mille: str
+    currency: str
+
+# Whether `c` is a character of a pattern's number part.
+function is_number_char(c: str) -> bool
+    return c == "#" || c == "0" || c == "@" || c == "," || c == "." || is_nonzero_digit(c)
+
+# Whether `c` is a digit from 1 to 9.
+function is_nonzero_digit(c: str) -> bool
+    return c.len() == 1 && c[0] >= '1' && c[0] <= '9'
+
+# The characters of `s`, a quote pair `''` read as one quote in a quote.
+function affix_of(cs: [str] lent, from: i64, to: i64) -> str
+    out: [str] @= []
+    at @= from
+
+    while at < to
+        out @ out.push(cs[at])
+        at @ at + 1
+
+    return out.join("")
+
+# The section of a pattern before or after its `;`.
+record Section
+    prefix: str
+    number: str
+    suffix: str
+
+# The prefix, number part and suffix of `section`, quotes kept in the
+# affixes.
+function split_section(section: str) -> Section?
+    cs = section.chars()
+    at @= 0
+    quoted @= false
+
+    while at < cs.len() && (quoted || !is_number_char(cs[at]))
+        if cs[at] == "'"
+            quoted @ !quoted
+        at @ at + 1
+
+    start = at
+
+    while at < cs.len() && (is_number_char(cs[at]) || cs[at] == "E" && !quoted)
+        if cs[at] == "E"
+            at @ at + 1
+
+            if at < cs.len() && cs[at] == "+"
+                at @ at + 1
+
+            while at < cs.len() && cs[at] == "0"
+                at @ at + 1
+
+            break
+        at @ at + 1
+
+    end = at
+
+    while at < cs.len()
+        if cs[at] == "'"
+            quoted @ !quoted
+        else if !quoted && (cs[at] == "#" || cs[at] == "0" || cs[at] == "@")
+            return fail(code: INVALID, msg: f"a digit after the number part of \"{section}\"")
+        at @ at + 1
+
+    if quoted
+        return fail(code: INVALID, msg: f"an unclosed quote in \"{section}\"")
+    return ok(
+        Section(prefix: affix_of(cs, from: 0, to: start), number: affix_of(cs, from: start, to: end), suffix: affix_of(cs, from: end, to: cs.len()))
+    )
+
+# The section of `pattern` before its first `;` outside quotes, and the
+# rest, or the empty text.
+function split_sections(pattern: str) -> [str]
+    quoted @= false
+    at @= 0
+
+    while at < pattern.len()
+        if pattern[at] == '\''
+            quoted @ !quoted
+        else if pattern[at] == ';' && !quoted
+            return [pattern.slice(from: 0, to: at), pattern.slice(from: at + 1, to: pattern.len())]
+        at @ at + 1
+
+    return [pattern]
+
+# How many times `c` stands in `s` outside quotes.
+function count_unquoted(s: str, c: str) -> i64
+    count @= 0
+    quoted @= false
+
+    for each in s.chars()
+        if each == "'"
+            quoted @ !quoted
+        else if !quoted && each == c
+            count @ count + 1
+
+    return count
+
+# `pattern` read.
+function parse(pattern: str) -> Pattern?
+    if pattern.len() > 1000
+        return fail(code: INVALID, msg: f"a pattern of {pattern.len()} bytes, more than 1000")
+    sections = split_sections(pattern)
+    positive = split_section(sections[0])?
+
+    if positive.number == ""
+        return fail(code: INVALID, msg: f"\"{pattern}\" has no digit")
+
+    if strings.contains(s: positive.prefix + positive.suffix, substr: "*")
+        if count_unquoted(s: positive.prefix + positive.suffix, c: "*") > 0
+            return fail(code: INVALID, msg: f"\"{pattern}\" pads with *, which is not read")
+    number @= positive.number
+    exponent_digits @= 0
+    exponent_sign @= false
+
+    match strings.index_of(s: number, substr: "E")
+        .ok at =>
+            exponent_part = number.slice(from: at + 1, to: number.len())
+            exponent_sign @ strings.has_prefix(s: exponent_part, prefix: "+")
+            exponent_digits @ strings.count_of(s: exponent_part, substr: "0")
+            number @ number.slice(from: 0, to: at)
+
+            if exponent_digits == 0
+                return fail(code: INVALID, msg: f"\"{pattern}\" has no 0 after its E")
+        .err _ => _ = 0
+
+    integer @= number
+    fraction @= ""
+
+    match strings.index_of(s: number, substr: ".")
+        .ok at =>
+            integer @ number.slice(from: 0, to: at)
+            fraction @ number.slice(from: at + 1, to: number.len())
+
+            if strings.contains(s: fraction, substr: ".") || strings.contains(s: fraction, substr: ",")
+                return fail(code: INVALID, msg: f"\"{pattern}\" has a second point or a group in its fraction")
+        .err _ => _ = 0
+
+    for c in (integer + fraction).chars()
+        if is_nonzero_digit(c)
+            return fail(code: INVALID, msg: f"\"{pattern}\" has a rounding increment, which is not read")
+
+    groups = strings.split(s: integer, sep: ",")
+    primary @= 0
+    secondary @= 0
+
+    if groups.len() > 1
+        primary @ groups[groups.len() - 1].len()
+
+        if groups.len() > 2
+            secondary @ groups[groups.len() - 2].len()
+
+        if primary == 0
+            return fail(code: INVALID, msg: f"\"{pattern}\" ends its integer part with a group")
+    digits = strings.replace_all(s: integer, old: ",", new: "")
+    min_significant = strings.count_of(s: digits, substr: "@")
+    max_significant @= 0
+
+    if min_significant > 0
+        first = strings.index_of(s: digits, substr: "@").must()
+        max_significant @ min_significant + strings.count_of(s: digits.slice(from: first, to: digits.len()), substr: "#")
+
+        if fraction != "" || strings.contains(s: digits, substr: "0")
+            return fail(code: INVALID, msg: f"\"{pattern}\" mixes @ with 0 or a fraction")
+    min_integer = strings.count_of(s: digits, substr: "0")
+    min_fraction = strings.count_of(s: fraction, substr: "0")
+    max_fraction = fraction.len()
+
+    if min_integer > MAX_DIGITS || max_fraction > MAX_DIGITS || exponent_digits > MAX_DIGITS
+        return fail(code: INVALID, msg: f"\"{pattern}\" asks more than {MAX_DIGITS} digits")
+    affixes = positive.prefix + positive.suffix
+    scale @= 0
+
+    if count_unquoted(s: affixes, c: "%") > 0
+        scale @ 2
+    else if count_unquoted(s: affixes, c: "‰") > 0
+        scale @ 3
+    currency = count_unquoted(s: affixes, c: "¤")
+    negative_prefix @= "-" + positive.prefix
+    negative_suffix @= positive.suffix
+    has_negative @= false
+
+    if sections.len() > 1
+        negative = split_section(sections[1])?
+        negative_prefix @ negative.prefix
+        negative_suffix @ negative.suffix
+        has_negative @ true
+    return ok(
+        Pattern(positive_prefix: positive.prefix, positive_suffix: positive.suffix, negative_prefix: negative_prefix, negative_suffix: negative_suffix, has_negative: has_negative, min_integer: min_integer, max_integer: digits.len(), min_fraction: min_fraction, max_fraction: max_fraction, min_significant: min_significant, max_significant: max_significant, primary_group: primary, secondary_group: secondary, exponent_digits: exponent_digits, exponent_sign: exponent_sign, scale: scale, currency: currency)
+    )
+
+# `affix` with its special characters written: the signs, the percent and
+# per mille signs and the currency, a run of `¤` standing for one currency,
+# and quotes read.
+function write_affix(affix: str, symbols: Affix lent) -> str
+    out: [str] @= []
+    quoted @= false
+    cs = affix.chars()
+    at @= 0
+
+    while at < cs.len()
+        c = cs[at]
+
+        if c == "'"
+            if at + 1 < cs.len() && cs[at + 1] == "'"
+                out @ out.push("'")
+                at @ at + 1
+            else
+                quoted @ !quoted
+        else if quoted
+            out @ out.push(c)
+        else if c == "-"
+            out @ out.push(symbols.minus)
+        else if c == "+"
+            out @ out.push(symbols.plus)
+        else if c == "%"
+            out @ out.push(symbols.percent)
+        else if c == "‰"
+            out @ out.push(symbols.per_mille)
+        else if c == "¤"
+            while at + 1 < cs.len() && cs[at + 1] == "¤"
+                at @ at + 1
+
+            out @ out.push(symbols.currency)
+        else
+            out @ out.push(c)
+        at @ at + 1
+
+    return out.join("")
+
+# `digits`, ASCII, written in `system`'s ten digits.
+function localize(digits: str, system: [str] lent) -> str
+    if system.len() != 10 || system[0] == "0"
+        return digits
+    out: [str] @= []
+    at @= 0
+
+    while at < digits.len()
+        b = digits[at]
+
+        if b >= '0' && b <= '9'
+            out @ out.push(system[to_i64(b - '0').must()])
+        else
+            out @ out.push(digits.slice(from: at, to: at + 1))
+        at @ at + 1
+
+    return out.join("")
+
+# The integer digits `whole` with group separators, as `primary` and
+# `secondary` group them, where it has at least `primary` plus
+# `min_grouping` digits.
+function grouped(whole: str, primary: i64, secondary: i64, min_grouping: i64, separator: str) -> str
+    if primary <= 0 || whole.len() < primary + min_grouping
+        return whole
+    pieces: [str] @= []
+    end @= whole.len()
+    size @= primary
+
+    while end > size
+        pieces @ pieces.push(whole.slice(from: end - size, to: end))
+        end @ end - size
+
+        if secondary > 0
+            size @ secondary
+
+    pieces @ pieces.push(whole.slice(from: 0, to: end))
+    out: [str] @= []
+    at @= pieces.len() - 1
+
+    while at >= 0
+        out @ out.push(pieces[at])
+        at @ at - 1
+
+    return out.join(separator)
+
+## Tests
+
+test "parse: the decimal pattern of English and of Hindi"
+    english = parse("#,##0.###").must()
+    assert english.min_integer == 1 && english.max_fraction == 3 && english.primary_group == 3 && english.secondary_group == 0
+    hindi = parse("#,##,##0.###").must()
+    assert hindi.primary_group == 3 && hindi.secondary_group == 2
+
+test "parse: percent, currency, a negative section, an exponent and significant digits"
+    percent = parse("#,##0%").must()
+    assert percent.scale == 2 && percent.positive_suffix == "%"
+    money = parse("¤#,##0.00;(¤#,##0.00)").must()
+    assert money.currency == 1 && money.negative_prefix == "(¤" && money.negative_suffix == ")" && money.min_fraction == 2
+    science = parse("0.###E+00").must()
+    assert science.exponent_digits == 2 && science.exponent_sign
+    significant = parse("@@##").must()
+    assert significant.min_significant == 2 && significant.max_significant == 4
+
+test "parse: a quoted special character, and what is refused"
+    quoted = parse("'#'0").must()
+    assert quoted.positive_prefix == "'#'"
+    assert parse("").is_err() && parse("abc").is_err() && parse("#,##0.05").is_err()
+    assert parse("*x#0").is_err() && parse("0'").is_err() && parse("0.0.0").is_err() && parse("#,").is_err()
+    assert parse("0E").is_err()
+
+test "write_affix: signs, percent, currency runs and quotes"
+    symbols = Affix(minus: "−", plus: "+", percent: "%", per_mille: "‰", currency: "€")
+    assert write_affix("-", symbols: symbols) == "−"
+    assert write_affix("¤¤ ", symbols: symbols) == "€ "
+    assert write_affix("'%'%", symbols: symbols) == "%%"
+    assert write_affix("o''clock", symbols: symbols) == "o'clock"
+
+test "grouped: none, at the threshold, two sizes, and a minimum of two"
+    assert grouped(whole: "123", primary: 3, secondary: 0, min_grouping: 1, separator: ",") == "123"
+    assert grouped(whole: "1234", primary: 3, secondary: 0, min_grouping: 1, separator: ",") == "1,234"
+    assert grouped(whole: "1234567", primary: 3, secondary: 2, min_grouping: 1, separator: ",") == "12,34,567"
+    assert grouped(whole: "1234", primary: 3, secondary: 0, min_grouping: 2, separator: ".") == "1234"
+    assert grouped(whole: "12345", primary: 3, secondary: 0, min_grouping: 2, separator: ".") == "12.345"
+
+test "localize: Arabic-Indic digits and the Latin ones"
+    arabic = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"]
+    assert localize("2024", system: arabic) == "٢٠٢٤"
+    assert localize("12.5", system: []) == "12.5"

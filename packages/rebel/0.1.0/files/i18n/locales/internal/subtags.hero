@@ -1,0 +1,256 @@
+# UTS #35's likely subtags (Part 1, § 3.2.1, "Add Likely Subtags" and
+# "Remove Likely Subtags" favouring the region) and its canonicalization by
+# CLDR's aliases (Annex C), over the tables of `locale_data`.
+
+use i18n
+use i18n/internal/locale_syntax
+use i18n/locales/internal/locale_data
+use strings
+
+# `value` of `keys_sorted` and `values` for `key`, or the empty text.
+function lookup(keys_sorted: [str] lent, values: [str] lent, key: str) -> str
+    at = locale_syntax.search(keys_sorted, key: key)
+
+    if at < 0
+        return ""
+    return values[at]
+
+# The parts of a tag the tables write, `zh-Hant-TW`.
+record Triple
+    language: str
+    script: str
+    region: str
+
+# `tag`, a tag of the tables, read into its three parts.
+function triple_of(tag: str) -> Triple
+    parts = strings.split(s: tag, sep: "-")
+    out @= Triple(language: parts[0], script: "", region: "")
+    at @= 1
+
+    while at < parts.len()
+        if parts[at].len() == 4
+            out.script @ parts[at]
+        else
+            out.region @ parts[at]
+        at @ at + 1
+
+    return out
+
+# The tag of `language`, `script` and `region`, each part left out where
+# empty.
+function tag_of(language: str, script: str, region: str) -> str
+    out @= language
+
+    if script != ""
+        out @ out + "-" + script
+
+    if region != ""
+        out @ out + "-" + region
+    return out
+
+# `locale` with the likely script and region filled in.
+function add(locale: i18n.Locale) -> i18n.Locale
+    language = if_empty(text: locale.language, fallback: "und")
+    s = locale.script
+    r = locale.region
+    candidates: [str] @= []
+
+    if s != "" && r != ""
+        candidates @ candidates.push(tag_of(language: language, script: s, region: r))
+
+    if r != ""
+        candidates @ candidates.push(tag_of(language: language, script: "", region: r))
+
+    if s != ""
+        candidates @ candidates.push(tag_of(language: language, script: s, region: ""))
+    candidates @ candidates.push(language)
+
+    if language != "und"
+        if s != "" && r != ""
+            candidates @ candidates.push(tag_of(language: "und", script: s, region: r))
+
+        if r != ""
+            candidates @ candidates.push(tag_of(language: "und", script: "", region: r))
+
+        if s != ""
+            candidates @ candidates.push(tag_of(language: "und", script: s, region: ""))
+
+    for key in candidates
+        found = lookup(keys_sorted: locale_data.LIKELY_KEYS, values: locale_data.LIKELY_VALUES, key: key)
+
+        if found != ""
+            full = triple_of(found)
+            out @= locale
+
+            if language == "und"
+                out.language @ full.language
+            else
+                out.language @ language
+
+            if s == ""
+                out.script @ full.script
+
+            if r == ""
+                out.region @ full.region
+            return out
+
+    return locale
+
+# `text`, or `fallback` where it is empty.
+function if_empty(text: str, fallback: str) -> str
+    if text == ""
+        return fallback
+    return text
+
+# `locale` with every script and region its likely subtags would add taken
+# out, the region kept before the script.
+function remove(locale: i18n.Locale) -> i18n.Locale
+    most = add(locale)
+    bare @= most
+    bare.variants @ []
+    bare.extensions @ []
+    bare.private_use @ []
+
+    for trial in [Triple(language: most.language, script: "", region: ""), Triple(language: most.language, script: "", region: most.region), Triple(language: most.language, script: most.script, region: "")]
+        candidate @= bare
+        candidate.script @ trial.script
+        candidate.region @ trial.region
+        grown = add(candidate)
+
+        if grown.language == bare.language && grown.script == bare.script && grown.region == bare.region
+            out @= locale
+            out.language @ candidate.language
+            out.script @ candidate.script
+            out.region @ candidate.region
+            return out
+
+    out @= locale
+    out.language @ most.language
+    out.script @ most.script
+    out.region @ most.region
+    return out
+
+# `locale` canonicalized by CLDR's aliases, its variants in order and its
+# `u` keywords sorted.
+function canonicalize(locale: i18n.Locale) -> i18n.Locale
+    out @= locale
+    language = out.language
+    replaced @= ""
+
+    for v in out.variants
+        if replaced == ""
+            replaced @ lookup(
+                keys_sorted: locale_data.LANGUAGE_KEYS,
+                values: locale_data.LANGUAGE_VALUES,
+                key: language + "-" + v
+            )
+
+            if replaced != ""
+                kept: [str] @= []
+
+                for other in out.variants
+                    if other != v
+                        kept @ kept.push(other)
+
+                out.variants @ kept
+
+    if replaced == "" && out.region != ""
+        replaced @ lookup(
+            keys_sorted: locale_data.LANGUAGE_KEYS,
+            values: locale_data.LANGUAGE_VALUES,
+            key: language + "-" + out.region
+        )
+
+        if replaced != ""
+            out.region @ ""
+
+    if replaced == ""
+        replaced @ lookup(keys_sorted: locale_data.LANGUAGE_KEYS, values: locale_data.LANGUAGE_VALUES, key: language)
+
+    if replaced != ""
+        match i18n.parse_locale(replaced)
+            .ok r =>
+                out.language @ r.language
+
+                if out.script == ""
+                    out.script @ r.script
+
+                if out.region == ""
+                    out.region @ r.region
+
+                for v in r.variants
+                    out.variants @ out.variants.push(v)
+            .err _ => _ = 0
+    script = lookup(keys_sorted: locale_data.SCRIPT_KEYS, values: locale_data.SCRIPT_VALUES, key: out.script)
+
+    if script != ""
+        out.script @ script
+    regions = lookup(keys_sorted: locale_data.REGION_KEYS, values: locale_data.REGION_VALUES, key: out.region)
+
+    if regions != ""
+        choices = strings.split(s: regions, sep: " ")
+        out.region @ choices[0]
+
+        if choices.len() > 1
+            likely = add(i18n.Locale(language: out.language, script: out.script, region: "", variants: [], extensions: [], private_use: [])).region
+
+            for choice in choices
+                if choice == likely
+                    out.region @ choice
+    variants: [str] @= []
+
+    for v in out.variants
+        alias = lookup(keys_sorted: locale_data.VARIANT_KEYS, values: locale_data.VARIANT_VALUES, key: v)
+
+        if alias != ""
+            variants @ variants.push(alias)
+        else
+            variants @ variants.push(v)
+
+    unique: [str] @= []
+
+    for v in sort(variants)
+        if unique.len() == 0 || unique[unique.len() - 1] != v
+            unique @ unique.push(v)
+
+    out.variants @ unique
+    parts = locale_syntax.Parts(
+        language: out.language,
+        script: out.script,
+        region: out.region,
+        variants: out.variants,
+        extensions: out.extensions,
+        private_use: out.private_use
+    )
+    keywords = locale_syntax.unicode_subtags(parts)
+
+    if keywords.len() > 0
+        sorted = locale_syntax.with_keyword(keywords, key: "zz", value: "").default(keywords)
+        out.extensions @ locale_syntax.with_unicode_subtags(parts, subtags: sorted).extensions
+    return out
+
+## Tests
+
+# Expected tags are what ICU 79.1's `uloc_addLikelySubtags`,
+# `uloc_minimizeSubtags` and `Locale::canonicalize` (CLDR 49) answered,
+# observed 2026-11-19.
+test "add: English, Russia's unknown language, Taiwan's Chinese, Serbian of Montenegro, and nothing known"
+    assert i18n.format_locale(add(i18n.parse_locale("und").must())) == "en-Latn-US"
+    assert i18n.format_locale(add(i18n.parse_locale("und-RU").must())) == "ru-Cyrl-RU"
+    assert i18n.format_locale(add(i18n.parse_locale("zh-TW").must())) == "zh-Hant-TW"
+    assert i18n.format_locale(add(i18n.parse_locale("sr-ME").must())) == "sr-Latn-ME"
+    assert i18n.format_locale(add(i18n.parse_locale("de-1996").must())) == "de-Latn-DE-1996"
+
+test "remove: Taiwan's Chinese, Serbian of Serbia, and Austrian German"
+    assert i18n.format_locale(remove(i18n.parse_locale("zh-Hant-TW").must())) == "zh-TW"
+    assert i18n.format_locale(remove(i18n.parse_locale("sr-Cyrl-RS").must())) == "sr"
+    assert i18n.format_locale(remove(i18n.parse_locale("de-Latn-AT").must())) == "de-AT"
+
+test "canonicalize: old codes, a region split in many, a variant pair sorted, and a sign language"
+    assert i18n.format_locale(canonicalize(i18n.parse_locale("iw-IL").must())) == "he-IL"
+    assert i18n.format_locale(canonicalize(i18n.parse_locale("sh").must())) == "sr-Latn"
+    assert i18n.format_locale(canonicalize(i18n.parse_locale("ru-SU").must())) == "ru-RU"
+    assert i18n.format_locale(canonicalize(i18n.parse_locale("de-DD").must())) == "de-DE"
+    assert i18n.format_locale(canonicalize(i18n.parse_locale("no-bok").must())) == "nb"
+    assert i18n.format_locale(canonicalize(i18n.parse_locale("sgn-BR").must())) == "bzs"
+    assert i18n.format_locale(canonicalize(i18n.parse_locale("de-1996-1901").must())) == "de-1901-1996"

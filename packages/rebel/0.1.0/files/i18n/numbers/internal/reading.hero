@@ -1,0 +1,287 @@
+# Numbers and amounts written in a language read back as decimal text: its
+# digits and ASCII ones, its separators where its grouping puts them, its
+# signs and the ASCII ones, a percent sign, an exponent, and an amount's
+# currency by its symbol or its code.
+
+use i18n
+use i18n/numbers/internal/data
+use i18n/numbers/internal/decimal
+use i18n/numbers/internal/pattern
+use strings
+use unicode
+
+# The code a text that holds no number fails with.
+constant INVALID: str
+    "invalid"
+
+# Whether `c` is a space of any kind, or a bidirectional mark a language
+# writes around its numbers.
+function is_ignorable(c: str) -> bool
+    n = unicode.code_point(c)
+    return unicode.is_space(c) || n == 0x200e || n == 0x200f || n == 0x61c || n == 0xa0 || n == 0x202f
+
+# The value of `c` as a digit of `digits` or ASCII, or -1.
+function digit_value(c: str, digits: [str] lent) -> i64
+    if c.len() == 1 && c[0] >= '0' && c[0] <= '9'
+        return to_i64(c[0] - '0').must()
+    at @= 0
+
+    while at < digits.len()
+        if digits[at] == c
+            return at
+        at @ at + 1
+
+    return -1
+
+# Whether `group` is a space, which a reader may write as any space.
+function is_space_group(group: str) -> bool
+    cs = group.chars()
+    return cs.len() == 1 && is_ignorable(cs[0])
+
+# `text`, a number written in `locale`'s language, as decimal text.
+function parse(locale: i18n.Locale, text: str) -> str?
+    if text.len() > 1000
+        return fail(code: INVALID, msg: f"a number of {text.len()} bytes, more than 1000")
+    profile = data.profile(locale, system: "")?
+    cs: [str] @= []
+
+    for c in strings.trim(text).chars()
+        cs @ cs.push(c)
+
+    decimal_symbol = profile.symbols[0]
+    group = profile.symbols[1]
+    space_group = is_space_group(group)
+    p = pattern.parse(profile.patterns[0])?
+    negative @= false
+    percent @= false
+    seen_sign @= false
+    whole: [str] @= []
+    groups: [i64] @= []
+    fraction: [str] @= []
+    exponent: [str] @= []
+    state @= 0
+    run @= 0
+    at @= 0
+
+    while at < cs.len()
+        c = cs[at]
+        value = digit_value(c, digits: profile.digits)
+        rest = rest_from(cs, from: at)
+
+        if value >= 0
+            if state == 0
+                whole @ whole.push(to_str(value))
+                run @ run + 1
+            else if state == 1
+                fraction @ fraction.push(to_str(value))
+            else
+                exponent @ exponent.push(to_str(value))
+            at @ at + 1
+        else if state == 0 && whole.len() > 0 && (group != "" && strings.has_prefix(s: rest, prefix: group) || space_group && is_ignorable(c) && at + 1 < cs.len() && digit_value(cs[at + 1], digits: profile.digits) >= 0)
+            groups @ groups.push(run)
+            run @ 0
+            at @ at + step_of(rest: rest, symbol: group, fallback: c)
+        else if state == 0 && strings.has_prefix(s: rest, prefix: decimal_symbol)
+            state @ 1
+            at @ at + decimal_symbol.chars().len()
+        else if state <= 1 && whole.len() + fraction.len() > 0 && (strings.has_prefix(s: rest, prefix: profile.symbols[6]) || c == "E" || c == "e")
+            state @ 2
+            at @ at + step_of(rest: rest, symbol: profile.symbols[6], fallback: c)
+
+            if at < cs.len() && (cs[at] == "-" || cs[at] == profile.symbols[5] || cs[at] == "−")
+                exponent @ exponent.push("-")
+                at @ at + 1
+            else if at < cs.len() && (cs[at] == "+" || cs[at] == profile.symbols[4])
+                at @ at + 1
+        else if !seen_sign && (strings.has_prefix(s: rest, prefix: profile.symbols[5]) || c == "-" || c == "−")
+            negative @ true
+            seen_sign @ true
+            at @ at + step_of(rest: rest, symbol: profile.symbols[5], fallback: c)
+        else if !seen_sign && (strings.has_prefix(s: rest, prefix: profile.symbols[4]) || c == "+")
+            seen_sign @ true
+            at @ at + step_of(rest: rest, symbol: profile.symbols[4], fallback: c)
+        else if !percent && (strings.has_prefix(s: rest, prefix: profile.symbols[2]) || c == "%")
+            percent @ true
+            at @ at + step_of(rest: rest, symbol: profile.symbols[2], fallback: c)
+        else if is_ignorable(c)
+            at @ at + 1
+        else
+            return fail(code: INVALID, msg: f"\"{text}\" holds \"{c}\", which is no part of a number in this language")
+
+    if whole.len() + fraction.len() == 0
+        return fail(code: INVALID, msg: f"\"{text}\" holds no digit")
+
+    if groups.len() > 0
+        groups @ groups.push(run)
+
+        if !groups_fit(groups, primary: p.primary_group, secondary: p.secondary_group)
+            return fail(code: INVALID, msg: f"the groups of \"{text}\" are not where this language puts them")
+
+    if state == 2 && (exponent.len() == 0 || exponent.len() == 1 && exponent[0] == "-")
+        return fail(code: INVALID, msg: f"\"{text}\" has no digit after its exponent")
+    digits @= whole.join("")
+    lead @= 0
+
+    while lead + 1 < digits.len() && digits[lead] == '0'
+        lead @ lead + 1
+
+    digits @ digits.slice(from: lead, to: digits.len())
+
+    if digits == ""
+        digits @ "0"
+    sign @= ""
+
+    if negative
+        sign @ "-"
+    written @= sign + digits
+
+    if fraction.len() > 0
+        written @ written + "." + fraction.join("")
+
+    if exponent.len() > 0
+        written @ written + "e" + exponent.join("")
+
+    if percent
+        return ok(decimal.format(decimal.scale(decimal.parse(written)?, places: -2)))
+
+    if exponent.len() > 0
+        return ok(decimal.format(decimal.parse(written)?))
+    return ok(written)
+
+# The characters of `cs` from `from`, joined.
+function rest_from(cs: [str] lent, from: i64) -> str
+    return cs.slice(from: from, to: cs.len()).join("")
+
+# How many characters a match of `symbol` at the start of `rest` takes, or
+# one for `fallback`.
+function step_of(rest: str, symbol: str, fallback: str) -> i64
+    if symbol != "" && strings.has_prefix(s: rest, prefix: symbol)
+        return symbol.chars().len()
+    return fallback.chars().len()
+
+# Whether the runs of digits `groups`, the first before the first separator,
+# are grouped as `primary` and `secondary` group them.
+function groups_fit(groups: [i64] lent, primary: i64, secondary: i64) -> bool
+    if primary <= 0
+        return false
+    last = groups.len() - 1
+
+    if groups[last] != primary
+        return false
+    middle @= primary
+
+    if secondary > 0
+        middle @ secondary
+    at @= 1
+
+    while at < last
+        if groups[at] != middle
+            return false
+        at @ at + 1
+
+    return groups[0] >= 1 && groups[0] <= middle
+
+# An amount read: its number and its currency's code.
+record Money
+    number: str
+    currency: str
+
+# `text`, an amount written in `locale`'s language, read.
+function parse_currency(locale: i18n.Locale, text: str) -> Money?
+    if text.len() > 1000
+        return fail(code: INVALID, msg: f"an amount of {text.len()} bytes, more than 1000")
+    profile = data.profile(locale, system: "")?
+    trimmed = strings.trim(text)
+    own = data.currency_of_region(data.region_of(locale))
+    best_code @= ""
+    best_length @= 0
+    best_at @= -1
+
+    for entry in data.currency_entries(profile.locale)
+        for symbol in [entry[1], entry[2]]
+            if symbol != "" && symbol.len() >= best_length
+                match strings.index_of(s: trimmed, substr: symbol)
+                    .ok at =>
+                        if symbol.len() > best_length || entry[0] == own
+                            best_code @ entry[0]
+                            best_length @ symbol.len()
+                            best_at @ at
+                    .err _ => _ = 0
+
+    code_at = code_position(trimmed)
+
+    if code_at >= 0 && 3 >= best_length
+        best_code @ strings.to_upper_ascii(trimmed.slice(from: code_at, to: code_at + 3))
+        best_length @ 3
+        best_at @ code_at
+
+    if best_at < 0
+        return fail(code: INVALID, msg: f"\"{text}\" names no currency")
+    rest = trimmed.slice(from: 0, to: best_at) + trimmed.slice(from: best_at + best_length, to: trimmed.len())
+    inner @= strings.trim(rest)
+    negative @= false
+
+    if strings.has_prefix(s: inner, prefix: "(") && strings.has_suffix(s: inner, suffix: ")")
+        inner @ inner.slice(from: 1, to: inner.len() - 1)
+        negative @ true
+    number @= parse(locale, text: inner)?
+
+    if negative && !strings.has_prefix(s: number, prefix: "-")
+        number @ "-" + number
+    return ok(Money(number: number, currency: best_code))
+
+# Where `s` holds three ASCII letters standing apart from other letters, or
+# -1.
+function code_position(s: str) -> i64
+    at @= 0
+
+    while at + 3 <= s.len()
+        if is_upper(s[at]) && is_upper(s[at + 1]) && is_upper(s[at + 2]) && (at == 0 || !is_letter(s[at - 1])) && (at + 3 == s.len() || !is_letter(s[at + 3]))
+            return at
+        at @ at + 1
+
+    return -1
+
+# Whether `b` is an ASCII capital.
+function is_upper(b: u8) -> bool
+    return b >= 'A' && b <= 'Z'
+
+# Whether `b` is an ASCII letter.
+function is_letter(b: u8) -> bool
+    return b >= 'a' && b <= 'z' || is_upper(b)
+
+## Tests
+
+test "parse: German, English, a sign, a percentage and an exponent"
+    german = i18n.parse_locale("de").must()
+    assert parse(german, text: "1.234,5").must() == "1234.5"
+    assert parse(german, text: "-1.234.567,89").must() == "-1234567.89"
+    assert parse(i18n.parse_locale("en").must(), text: " 1,234.50 ").must() == "1234.50"
+    assert parse(i18n.parse_locale("en").must(), text: "50%").must() == "0.5"
+    assert parse(i18n.parse_locale("en").must(), text: "1.5E3").must() == "1500"
+    assert parse(i18n.parse_locale("en").must(), text: "007").must() == "7"
+
+test "parse: French spaces, Arabic digits, and Hindi groups"
+    assert parse(i18n.parse_locale("fr").must(), text: "1 234 567,5").must() == "1234567.5"
+    assert parse(i18n.parse_locale("ar-EG").must(), text: "\u{61c}-١٬٢٣٤٫٥").must() == "-1234.5"
+    assert parse(i18n.parse_locale("hi").must(), text: "12,34,567").must() == "1234567"
+
+test "parse: groups out of place, no digit, a stray letter and a lone exponent"
+    english = i18n.parse_locale("en").must()
+    assert parse(english, text: "1,23").is_err()
+    assert parse(english, text: "12,3456").is_err()
+    assert parse(english, text: "").is_err()
+    assert parse(english, text: "-").is_err()
+    assert parse(english, text: "12a").is_err()
+    assert parse(english, text: "1E").is_err()
+
+test "parse_currency: euros, dollars by symbol and by code, and accounting"
+    amount = parse_currency(i18n.parse_locale("de").must(), text: "1.234,50 €").must()
+    assert amount.number == "1234.50" && amount.currency == "EUR"
+    dollars = parse_currency(i18n.parse_locale("en-US").must(), text: "$1,234.50").must()
+    assert dollars.currency == "USD"
+    francs = parse_currency(i18n.parse_locale("en").must(), text: "CHF 12").must()
+    assert francs.currency == "CHF" && francs.number == "12"
+    owed = parse_currency(i18n.parse_locale("en").must(), text: "($5.00)").must()
+    assert owed.number == "-5.00"
+    assert parse_currency(i18n.parse_locale("en").must(), text: "12").is_err()

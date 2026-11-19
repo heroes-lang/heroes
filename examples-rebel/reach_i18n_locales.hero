@@ -1,0 +1,10 @@
+# Reaches Rebel's `i18n/locales`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It adds the likely script and region of
+# Taiwan's Chinese and replaces Hebrew's old code: "zh-Hant-TW he".
+
+use <rebel>/i18n
+use <rebel>/i18n/locales
+
+function main()
+    full = locales.add_likely_subtags(i18n.parse_locale("zh-TW").must())
+    print(i18n.format_locale(full), " ", i18n.format_locale(locales.canonicalize(i18n.parse_locale("iw").must())))

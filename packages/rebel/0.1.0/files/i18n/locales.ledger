@@ -1,0 +1,40 @@
+# The ledger of `i18n/locales`: likely subtags and aliases from CLDR 49. One
+# block per capability. The census is the one `i18n.ledger` names. Expected
+# tags are what ICU 79.1 answered.
+
+capability locale/likely  a language's likely script and region added, and taken away
+  heroes  locales.add_likely_subtags, locales.remove_likely_subtags
+  go      Tag.Script (with its Confidence), Tag.Region, Tag.Base
+  rust    LocaleExpander::maximize, LocaleExpander::minimize (icu_locale)
+  python  -
+  java    -
+  dotnet  -
+  icu     ULocale.addLikelySubtags, ULocale.minimizeSubtags, uloc_addLikelySubtags, uloc_minimizeSubtags
+
+capability locale/canonical  a tag canonicalized by CLDR's aliases
+  heroes  locales.canonicalize
+  go      language.CanonType, language.Deprecated, language.Macro, language.All
+  rust    LocaleCanonicalizer::canonicalize (icu_locale)
+  python  locale.normalize
+  java    -
+  dotnet  -
+  icu     Locale.canonicalize, uloc_canonicalize
+  note    language, script, region and variant aliases, a region split in many taking the language's likely one, variants sorted, `u` keywords sorted; the old values of `u` keywords (`islamicc`) are kept, where ICU replaces them
+
+capability locale/match  the best of a program's languages for a reader, by CLDR's language matching
+  heroes  pending: CLDR's distances need its match variables and paradigm locales, not carried yet; `i18n.lookup_tag` and `i18n.filter_tags` match by RFC 4647
+  go      language.NewMatcher, language.Matcher.Match, language.MatchStrings, language.Comprehends, language.PreferSameScript, message.MatchLanguage
+  rust    -
+  python  -
+  java    -
+  dotnet  -
+  icu     LocaleMatcher, LocaleMatcher.getBestMatch, LocaleMatcher.Builder
+
+capability locale/validity  whether each subtag is a valid code
+  heroes  pending: CLDR's validity data is not carried
+  go      language.ValueError
+  rust    -
+  python  -
+  java    -
+  dotnet  -
+  icu     -

@@ -1,0 +1,765 @@
+# CLDR's plural rules (UTS #35, Part 3, § 5.1): a rule set read and its
+# conditions compiled, a number's operands taken from its decimal text, and
+# the category whose condition holds chosen. A condition is compiled to a
+# flat list of numbers, so that choosing walks no tree:
+#
+#     [groups, then per group: relations, then per relation:
+#      operand, modulus, negated, within, ranges, low, high, ...]
+#
+# the groups joined by `or` and the relations of a group by `and`. Every
+# number of a rule is at most 15 digits, so that a remainder taken digit by
+# digit never overflows.
+
+use i18n/internal/locale_syntax
+use i18n/internal/plural_tables
+use numbers
+use strings
+
+# The code rules or a number that do not parse fail with.
+constant INVALID: str
+    "invalid"
+
+# The categories, in CLDR's order.
+constant CATEGORIES: [str]
+    ["zero", "one", "two", "few", "many", "other"]
+
+# The longest condition read.
+constant MAX_CONDITION: i64
+    1000
+
+# The most digits of a number in a rule.
+constant MAX_DIGITS: i64
+    15
+
+# The largest exponent a number is read with.
+constant MAX_EXPONENT: i64
+    1000
+
+# One rule read: its category's position in `CATEGORIES`, its condition and
+# samples as written, and its program.
+record Rule
+    category: i64
+    condition: str
+    samples: str
+    program: [i64]
+
+# The operands of a number: the digits of its integer part with no leading
+# zero, the digits written after its point, and its compact exponent.
+record Operands
+    whole: str
+    fraction: str
+    exponent: i64
+
+# A value an operand takes: `big` where it has more digits than any rule's
+# number, else `value`, and whether a fraction follows it.
+record Value
+    big: bool
+    value: i64
+    fractional: bool
+
+## Reading rules
+
+# One token of a condition: a word, a number or a sign.
+record Token
+    kind: str
+    text: str
+    value: i64
+
+# The tokens of `condition`.
+function tokens_of(condition: str) -> [Token]?
+    out: [Token] @= []
+    at @= 0
+
+    while at < condition.len()
+        b = condition[at]
+
+        if b == ' ' || b == '\t'
+            at @ at + 1
+        else if locale_syntax.is_alpha(b)
+            start = at
+
+            while at < condition.len() && locale_syntax.is_alpha(condition[at])
+                at @ at + 1
+
+            out @ out.push(Token(kind: "word", text: condition.slice(from: start, to: at), value: 0))
+        else if locale_syntax.is_digit(b)
+            start = at
+            value @= 0
+
+            while at < condition.len() && locale_syntax.is_digit(condition[at])
+                if at - start >= MAX_DIGITS
+                    return fail(
+                        code: INVALID,
+                        msg: f"a number of more than {MAX_DIGITS} digits at byte {start} of \"{condition}\""
+                    )
+                value @ value * 10 + to_i64(condition[at] - '0').must()
+                at @ at + 1
+
+            out @ out.push(Token(kind: "number", text: condition.slice(from: start, to: at), value: value))
+        else if b == '!' && at + 1 < condition.len() && condition[at + 1] == '='
+            out @ out.push(Token(kind: "!=", text: "!=", value: 0))
+            at @ at + 2
+        else if b == '.' && at + 1 < condition.len() && condition[at + 1] == '.'
+            out @ out.push(Token(kind: "..", text: "..", value: 0))
+            at @ at + 2
+        else if b == '=' || b == '%' || b == ','
+            sign = condition.slice(from: at, to: at + 1)
+            out @ out.push(Token(kind: sign, text: sign, value: 0))
+            at @ at + 1
+        else
+            return fail(code: INVALID, msg: f"an unexpected character at byte {at} of \"{condition}\"")
+
+    return ok(out)
+
+# The code of operand `name`, or -1.
+function operand_code(name: str) -> i64
+    return match name
+        "n" => 0
+        "i" => 1
+        "f" => 2
+        "t" => 3
+        "v" => 4
+        "w" => 5
+        "c" => 6
+        "e" => 6
+        _   => -1
+
+# Whether token `at` of `tokens` is the word `word`.
+function is_word(tokens: [Token] lent, at: i64, word: str) -> bool
+    return at < tokens.len() && tokens[at].kind == "word" && tokens[at].text == word
+
+# Whether token `at` of `tokens` is of `kind`.
+function is_kind(tokens: [Token] lent, at: i64, kind: str) -> bool
+    return at < tokens.len() && tokens[at].kind == kind
+
+# `condition` compiled; the empty condition compiles to an empty program,
+# which holds for every number.
+function compile(condition: str) -> [i64]?
+    if condition.len() > MAX_CONDITION
+        return fail(code: INVALID, msg: f"a condition of {condition.len()} bytes, more than {MAX_CONDITION}")
+    tokens = tokens_of(condition)?
+
+    if tokens.len() == 0
+        return ok([])
+    groups: [[i64]] @= []
+    group: [i64] @= []
+    relations @= 0
+    at @= 0
+
+    while true
+        # A relation: operand, modulus, then its comparison and ranges.
+        if !is_kind(tokens, at: at, kind: "word") || operand_code(tokens[at].text) < 0
+            return fail(code: INVALID, msg: f"no operand where one is expected in \"{condition}\"")
+        operand = operand_code(tokens[at].text)
+        at @ at + 1
+        modulus @= 0
+
+        if is_kind(tokens, at: at, kind: "%") || is_word(tokens, at: at, word: "mod")
+            at @ at + 1
+
+            if !is_kind(tokens, at: at, kind: "number") || tokens[at].value == 0
+                return fail(code: INVALID, msg: f"no modulus above zero after % in \"{condition}\"")
+            modulus @ tokens[at].value
+            at @ at + 1
+        negated @= 0
+        within @= 0
+        single @= false
+
+        if is_kind(tokens, at: at, kind: "=")
+            at @ at + 1
+        else if is_kind(tokens, at: at, kind: "!=")
+            negated @ 1
+            at @ at + 1
+        else if is_word(tokens, at: at, word: "is")
+            at @ at + 1
+            single @ true
+
+            if is_word(tokens, at: at, word: "not")
+                negated @ 1
+                at @ at + 1
+        else
+            if is_word(tokens, at: at, word: "not")
+                negated @ 1
+                at @ at + 1
+
+            if is_word(tokens, at: at, word: "within")
+                within @ 1
+            else if !is_word(tokens, at: at, word: "in")
+                return fail(code: INVALID, msg: f"no comparison after an operand in \"{condition}\"")
+            at @ at + 1
+        ranges: [i64] @= []
+
+        while true
+            if !is_kind(tokens, at: at, kind: "number")
+                return fail(code: INVALID, msg: f"no number where a range is expected in \"{condition}\"")
+            low = tokens[at].value
+            high @= low
+            at @ at + 1
+
+            if is_kind(tokens, at: at, kind: "..") && !single
+                at @ at + 1
+
+                if !is_kind(tokens, at: at, kind: "number")
+                    return fail(code: INVALID, msg: f"no number after .. in \"{condition}\"")
+                high @ tokens[at].value
+                at @ at + 1
+
+                if high < low
+                    return fail(code: INVALID, msg: f"the range {low}..{high} runs backwards in \"{condition}\"")
+            ranges @ ranges.push(low)
+            ranges @ ranges.push(high)
+
+            if is_kind(tokens, at: at, kind: ",") && !single
+                at @ at + 1
+            else
+                break
+
+        group @ group.push(operand)
+        group @ group.push(modulus)
+        group @ group.push(negated)
+        group @ group.push(within)
+        group @ group.push(ranges.len() / 2)
+
+        for r in ranges
+            group @ group.push(r)
+
+        relations @ relations + 1
+
+        if is_word(tokens, at: at, word: "and")
+            at @ at + 1
+        else
+            whole: [i64] @= [relations]
+
+            for g in group
+                whole @ whole.push(g)
+
+            groups @ groups.push(whole)
+            group @ []
+            relations @ 0
+
+            if is_word(tokens, at: at, word: "or")
+                at @ at + 1
+            else if at < tokens.len()
+                return fail(
+                    code: INVALID,
+                    msg: f"\"{tokens[at].text}\" stands where and, or or the end is expected in \"{condition}\""
+                )
+            else
+                break
+
+    program: [i64] @= [groups.len()]
+
+    for g in groups
+        for item in g
+            program @ program.push(item)
+
+    return ok(program)
+
+# The rules of `text`, `category: condition @samples` separated by `;`.
+function parse_rules(text: str) -> [Rule]?
+    found: [Rule] @= []
+    seen: [bool] @= [false, false, false, false, false, false]
+
+    for piece in strings.split(s: text, sep: ";")
+        rule = strings.trim(piece)
+
+        if rule != ""
+            halves = strings.split_once(s: rule, sep: ":")
+
+            if halves.is_err()
+                return fail(code: INVALID, msg: f"\"{rule}\" has no : after its category")
+            parts = halves.must()
+            name = strings.trim(parts.before)
+            category @= -1
+            index @= 0
+
+            while index < CATEGORIES.len()
+                if CATEGORIES[index] == name
+                    category @ index
+                index @ index + 1
+
+            if category < 0
+                return fail(code: INVALID, msg: f"\"{name}\" is no plural category")
+
+            if seen[category]
+                return fail(code: INVALID, msg: f"the category \"{name}\" is given twice")
+            seen[category] @ true
+            body = parts.after
+            condition @= strings.trim(body)
+            samples @= ""
+
+            match strings.index_of(s: body, substr: "@")
+                .ok at =>
+                    condition @ strings.trim(body.slice(from: 0, to: at))
+                    samples @ strings.trim(body.slice(from: at, to: body.len()))
+                .err _ => _ = 0
+
+            if category == 5 && condition != ""
+                return fail(code: INVALID, msg: f"the category other has a condition, \"{condition}\"")
+
+            if category != 5 && condition == ""
+                return fail(code: INVALID, msg: f"the category \"{name}\" has no condition")
+            found @ found.push(
+                Rule(category: category, condition: condition, samples: samples, program: compile(condition)?)
+            )
+
+    out: [Rule] @= []
+    other @= Rule(category: 5, condition: "", samples: "", program: [])
+
+    for r in found
+        if r.category == 5
+            other @ r
+        else
+            out @ out.push(r)
+
+    out @ out.push(other)
+    return ok(out)
+
+## Operands
+
+# The operands of `number`, decimal text with an optional sign, point and
+# exponent `e` or `c`.
+function operands_of(number: str) -> Operands?
+    at @= 0
+
+    if at < number.len() && (number[at] == '-' || number[at] == '+')
+        at @ at + 1
+    start = at
+
+    while at < number.len() && locale_syntax.is_digit(number[at])
+        at @ at + 1
+
+    whole @= number.slice(from: start, to: at)
+    fraction @= ""
+
+    if at < number.len() && number[at] == '.'
+        at @ at + 1
+        from = at
+
+        while at < number.len() && locale_syntax.is_digit(number[at])
+            at @ at + 1
+
+        fraction @ number.slice(from: from, to: at)
+
+    if whole == "" && fraction == ""
+        return fail(code: INVALID, msg: f"\"{number}\" is no decimal number")
+    exponent @= 0
+
+    if at < number.len() && (number[at] == 'e' || number[at] == 'E' || number[at] == 'c' || number[at] == 'C')
+        at @ at + 1
+        negative @= false
+
+        if at < number.len() && (number[at] == '-' || number[at] == '+')
+            negative @ number[at] == '-'
+            at @ at + 1
+        from = at
+
+        while at < number.len() && locale_syntax.is_digit(number[at])
+            if exponent > MAX_EXPONENT
+                return fail(code: INVALID, msg: f"the exponent of \"{number}\" is beyond {MAX_EXPONENT}")
+            exponent @ exponent * 10 + to_i64(number[at] - '0').must()
+            at @ at + 1
+
+        if at == from
+            return fail(code: INVALID, msg: f"\"{number}\" has no digit after its exponent's letter")
+
+        if exponent > MAX_EXPONENT
+            return fail(code: INVALID, msg: f"the exponent of \"{number}\" is beyond {MAX_EXPONENT}")
+
+        if negative
+            exponent @ -exponent
+
+    if at != number.len()
+        return fail(code: INVALID, msg: f"\"{number}\" is no decimal number")
+
+    if exponent != 0
+        digits = whole + fraction
+        point = whole.len() + exponent
+
+        if point >= digits.len()
+            whole @ digits + repeat("0", to_u64(point - digits.len()).must())
+            fraction @ ""
+        else if point <= 0
+            whole @ ""
+            fraction @ repeat("0", to_u64(-point).must()) + digits
+        else
+            whole @ digits.slice(from: 0, to: point)
+            fraction @ digits.slice(from: point, to: digits.len())
+    lead @= 0
+
+    while lead < whole.len() && whole[lead] == '0'
+        lead @ lead + 1
+
+    compact @= 0
+
+    if exponent > 0
+        compact @ exponent
+    return ok(Operands(whole: whole.slice(from: lead, to: whole.len()), fraction: fraction, exponent: compact))
+
+# `digits` read as a value, its remainder by `modulus` where that is above
+# zero.
+function value_of_digits(digits: str, modulus: i64, fractional: bool) -> Value
+    if modulus > 0
+        rest @= 0
+        at @= 0
+
+        while at < digits.len()
+            rest @ (rest * 10 + to_i64(digits[at] - '0').must()) % modulus
+            at @ at + 1
+
+        return Value(big: false, value: rest, fractional: fractional)
+    lead @= 0
+
+    while lead < digits.len() && digits[lead] == '0'
+        lead @ lead + 1
+
+    if digits.len() - lead > MAX_DIGITS + 1
+        return Value(big: true, value: 0, fractional: fractional)
+    value @= 0
+    at @= lead
+
+    while at < digits.len()
+        value @ value * 10 + to_i64(digits[at] - '0').must()
+        at @ at + 1
+
+    return Value(big: false, value: value, fractional: fractional)
+
+# `digits` with the zeros at their end removed.
+function without_trailing_zeros(digits: str) -> str
+    end @= digits.len()
+
+    while end > 0 && digits[end - 1] == '0'
+        end @ end - 1
+
+    return digits.slice(from: 0, to: end)
+
+# The value operand `code` takes for `operands`.
+function operand_value(operands: Operands lent, code: i64, modulus: i64) -> Value
+    if code == 0
+        fractional = without_trailing_zeros(operands.fraction) != ""
+        return value_of_digits(operands.whole, modulus: modulus, fractional: fractional)
+
+    if code == 1
+        return value_of_digits(operands.whole, modulus: modulus, fractional: false)
+
+    if code == 2
+        return value_of_digits(operands.fraction, modulus: modulus, fractional: false)
+
+    if code == 3
+        return value_of_digits(without_trailing_zeros(operands.fraction), modulus: modulus, fractional: false)
+    plain @= operands.exponent
+
+    if code == 4
+        plain @ operands.fraction.len()
+    else if code == 5
+        plain @ without_trailing_zeros(operands.fraction).len()
+
+    if modulus > 0
+        plain @ plain % modulus
+    return Value(big: false, value: plain, fractional: false)
+
+# Whether `program` holds for `operands`.
+function holds(program: [i64] lent, operands: Operands lent) -> bool
+    if program.len() == 0
+        return true
+    at @= 1
+    group @= 0
+
+    while group < program[0]
+        relations = program[at]
+        at @ at + 1
+        all_hold @= true
+        relation @= 0
+
+        while relation < relations
+            value = operand_value(operands, code: program[at], modulus: program[at + 1])
+            negated = program[at + 2] == 1
+            within = program[at + 3] == 1
+            ranges = program[at + 4]
+            at @ at + 5
+            inside @= false
+            r @= 0
+
+            while r < ranges
+                low = program[at + 2 * r]
+                high = program[at + 2 * r + 1]
+
+                if !value.big
+                    if value.fractional
+                        if within && value.value >= low && value.value < high
+                            inside @ true
+                    else if value.value >= low && value.value <= high
+                        inside @ true
+                r @ r + 1
+
+            at @ at + 2 * ranges
+
+            if inside == negated
+                all_hold @ false
+            relation @ relation + 1
+
+        if all_hold
+            return true
+        group @ group + 1
+
+    return false
+
+# Whether `program` is one `compile` could have made, so that `holds` reads
+# no number past its end.
+function is_valid(program: [i64] lent) -> bool
+    if program.len() == 0
+        return true
+    at @= 1
+    group @= 0
+
+    while group < program[0]
+        if at >= program.len() || program[at] < 1
+            return false
+        relations = program[at]
+        at @ at + 1
+        relation @= 0
+
+        while relation < relations
+            if at + 5 > program.len() || program[at] < 0 || program[at] > 6 || program[at + 1] < 0 || program[at + 4] < 1
+                return false
+            ranges = program[at + 4]
+
+            if ranges > (program.len() - at - 5) / 2
+                return false
+            at @ at + 5 + 2 * ranges
+            relation @ relation + 1
+
+        group @ group + 1
+
+    return program[0] >= 1 && at == program.len()
+
+# The position in `CATEGORIES` of the first program of `programs` that holds
+# for `number`, each program choosing the category beside it in
+# `categories`; `other` where none holds. Fails `invalid` where a program is
+# none `compile` makes.
+function select_with(programs: [[i64]] lent, categories: [i64] lent, number: str) -> i64?
+    operands = operands_of(number)?
+    at @= 0
+
+    while at < programs.len() && at < categories.len()
+        if !is_valid(programs[at])
+            return fail(code: INVALID, msg: f"the program of rule {at} is none a rule compiles to")
+
+        if holds(programs[at], operands: operands)
+            return ok(categories[at])
+        at @ at + 1
+
+    return ok(5)
+
+# The position in `CATEGORIES` of the first of `rules` that holds for
+# `number`.
+function select(rules: [Rule] lent, number: str) -> i64?
+    operands = operands_of(number)?
+
+    for r in rules
+        if holds(r.program, operands: operands)
+            return ok(r.category)
+
+    return ok(5)
+
+## Tables
+
+# The rules text CLDR gives the first of `candidates` it has, cardinal or
+# ordinal, or the root's.
+function rules_text_for(candidates: [str], ordinal: bool) -> str
+    for tag in candidates
+        if ordinal
+            at = locale_syntax.search(plural_tables.ORDINAL_KEYS, key: tag)
+
+            if at >= 0
+                return plural_tables.ORDINAL_RULES[at]
+        else
+            at = locale_syntax.search(plural_tables.CARDINAL_KEYS, key: tag)
+
+            if at >= 0
+                return plural_tables.CARDINAL_RULES[at]
+
+    return "other:"
+
+# The ranges text CLDR gives the first of `candidates` it has, or the empty
+# text.
+function ranges_text_for(candidates: [str]) -> str
+    for tag in candidates
+        at = locale_syntax.search(plural_tables.RANGE_KEYS, key: tag)
+
+        if at >= 0
+            return plural_tables.RANGE_RULES[at]
+
+    return ""
+
+# The tags plural data is looked up in for `parts`, by truncation alone, as
+# CLDR's plural data is keyed by language.
+function candidates_of(parts: locale_syntax.Parts lent) -> [str]
+    out: [str] @= []
+
+    if parts.script != "" && parts.region != ""
+        out @ out.push(parts.language + "-" + parts.script + "-" + parts.region)
+
+    if parts.region != ""
+        out @ out.push(parts.language + "-" + parts.region)
+
+    if parts.script != ""
+        out @ out.push(parts.language + "-" + parts.script)
+    out @ out.push(parts.language)
+    out @ out.push("und")
+    return out
+
+## Tests
+
+# The numbers a sample list of CLDR names, `@integer 0, 2~16, 100, …`: every
+# number of each range, the step of a decimal range its last digit's, and
+# the closing `…` left out.
+function samples_of(samples: str) -> [str]
+    out: [str] @= []
+
+    for list in strings.split(s: samples, sep: "@")
+        words = strings.trim(list)
+        cut = strings.index_of(s: words, substr: " ")
+
+        if !cut.is_err()
+            for item in strings.split(s: words.slice(from: cut.must() + 1, to: words.len()), sep: ",")
+                sample = strings.trim(item)
+
+                match strings.split_once(s: sample, sep: "~")
+                    .ok halves =>
+                        for n in expand_range(low: halves.before, high: halves.after)
+                            out @ out.push(n)
+                    .err _ =>
+                        if sample != "" && sample != "…"
+                            out @ out.push(sample)
+
+    return out
+
+# Every number from `low` to `high`, decimal texts with one count of
+# fraction digits, stepping by their last digit.
+function expand_range(low: str, high: str) -> [str]
+    point = strings.index_of(s: low, substr: ".").default(-1)
+    places @= 0
+
+    if point >= 0
+        places @ low.len() - point - 1
+    first = strings.replace_all(s: low, old: ".", new: "")
+    last = strings.replace_all(s: high, old: ".", new: "")
+    from = numbers.parse_int(first).must()
+    to = numbers.parse_int(last).must()
+    out: [str] @= []
+    value @= from
+
+    while value <= to
+        digits @= to_str(value)
+
+        if places > 0
+            while digits.len() <= places
+                digits @ "0" + digits
+
+            digits @ digits.slice(from: 0, to: digits.len() - places) + "." + digits.slice(from: digits.len() - places, to: digits.len())
+        out @ out.push(digits)
+        value @ value + 1
+
+    return out
+
+test "samples_of: integers, a decimal range, and the closing ellipsis"
+    assert samples_of("@integer 0, 2~4, 100, … @decimal 0.0~0.2, 1.05") == ["0", "2", "3", "4", "100", "0.0", "0.1", "0.2", "1.05"]
+    assert samples_of("") == []
+
+# Every sample CLDR 49 gives a rule, for every locale's cardinal and ordinal
+# rules, held to the rule it is a sample of: CLDR's own test data.
+test "select: every sample of every rule of every locale chooses its rule"
+    for ordinal in [false, true]
+        keys_of @= plural_tables.CARDINAL_KEYS
+        texts @= plural_tables.CARDINAL_RULES
+
+        if ordinal
+            keys_of @ plural_tables.ORDINAL_KEYS
+            texts @ plural_tables.ORDINAL_RULES
+        at @= 0
+
+        while at < keys_of.len()
+            rules = parse_rules(texts[at]).must()
+
+            for r in rules
+                for sample in samples_of(r.samples)
+                    chosen = select(rules, number: sample).must()
+
+                    if chosen != r.category
+                        print(keys_of[at], " ", sample, " chose ", CATEGORIES[chosen], " not ", CATEGORIES[r.category])
+                    assert chosen == r.category
+
+            at @ at + 1
+
+test "compile: the empty condition, a modulus, a range list, and or of ands"
+    assert compile("").must() == []
+    assert compile("n % 10 = 3..4").must() == [1, 1, 0, 10, 0, 0, 1, 3, 4]
+    assert compile("i = 1 and v = 0").must() == [1, 2, 1, 0, 0, 0, 1, 1, 1, 4, 0, 0, 0, 1, 0, 0]
+    assert compile("n = 0 or n != 1,5").must() == [2, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 2, 1, 1, 5, 5]
+
+test "compile: the older words is, not in, within and mod"
+    assert compile("n is not 1").must() == [1, 1, 0, 0, 1, 0, 1, 1, 1]
+    assert compile("n mod 100 not within 11..14").must() == [1, 1, 0, 100, 1, 1, 1, 11, 14]
+
+test "compile: what does not parse"
+    assert compile("x = 1").is_err()
+    assert compile("n = ").is_err()
+    assert compile("n % 0 = 1").is_err()
+    assert compile("n = 5..1").is_err()
+    assert compile("n = 1 and").is_err()
+    assert compile("n = 1 n = 2").is_err()
+    assert compile("n = 1234567890123456").is_err()
+    assert compile("n = 1 # 2").is_err()
+    assert compile(repeat("n = 1 or ", 120) + "n = 1").is_err()
+
+test "operands_of: integers, fractions, exponents and signs"
+    assert operands_of("0").must() == Operands(whole: "", fraction: "", exponent: 0)
+    assert operands_of("-1.50").must() == Operands(whole: "1", fraction: "50", exponent: 0)
+    assert operands_of("1.2c3").must() == Operands(whole: "1200", fraction: "", exponent: 3)
+    assert operands_of("1.2345e2").must() == Operands(whole: "123", fraction: "45", exponent: 2)
+    assert operands_of("1e-06").must() == Operands(whole: "", fraction: "000001", exponent: 0)
+    assert operands_of(".5").must() == Operands(whole: "", fraction: "5", exponent: 0)
+    assert operands_of("").is_err()
+    assert operands_of("1.2.3").is_err()
+    assert operands_of("1e").is_err()
+    assert operands_of("1e5000").is_err()
+    assert operands_of("abc").is_err()
+
+test "select: English, Russian and French with numbers of every kind"
+    english = parse_rules(rules_text_for(["en"], ordinal: false)).must()
+    assert select(english, number: "1").must() == 1
+    assert select(english, number: "1.0").must() == 5
+    assert select(english, number: "-1").must() == 1
+    russian = parse_rules(rules_text_for(["ru"], ordinal: false)).must()
+    assert select(russian, number: "21").must() == 1
+    assert select(russian, number: "111").must() == 4
+    assert select(russian, number: "1.5").must() == 5
+    assert select(russian, number: "123456789012345678901234567892").must() == 3
+    french = parse_rules(rules_text_for(["fr"], ordinal: false)).must()
+    assert select(french, number: "1c6").must() == 4
+    assert select(french, number: "1000000").must() == 4
+    assert select(french, number: "1.5").must() == 1
+
+test "is_valid: compiled programs, the empty one, and broken ones"
+    assert is_valid(compile("n % 10 = 3..4 or i = 1 and v = 0").must())
+    assert is_valid([])
+    assert !is_valid([1])
+    assert !is_valid([1, 1, 0, 10, 0, 0, 2, 3, 4])
+    assert !is_valid([1, 1, 9, 0, 0, 0, 1, 1, 1])
+    assert select_with([[1, 1]], categories: [1], number: "1").is_err()
+
+test "parse_rules: other added, other with a condition, a category twice, and a bad name"
+    assert parse_rules("one: n = 1").must().len() == 2
+    assert parse_rules("other: n = 1").is_err()
+    assert parse_rules("one: n = 1; one: n = 2").is_err()
+    assert parse_rules("single: n = 1").is_err()
+    assert parse_rules("one n = 1").is_err()
+    assert parse_rules("one: @integer 1").is_err()
+    assert parse_rules("").must().len() == 1
+
+test "rules_text_for: a region's own rules, a language's, and the root's"
+    assert strings.has_prefix(s: rules_text_for(["pt-PT", "pt"], ordinal: false), prefix: "one: i = 1 and v = 0")
+    assert strings.has_prefix(s: rules_text_for(["pt"], ordinal: false), prefix: "one: i = 0..1")
+    assert rules_text_for(["xx"], ordinal: false) == "other:"
+    assert strings.has_prefix(s: rules_text_for(["en"], ordinal: true), prefix: "one:")

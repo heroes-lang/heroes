@@ -1,0 +1,535 @@
+# CLDR's and ICU's tailoring rules (UTS #35, Part 5, § 3) read and applied
+# to the root: each relation places its text just after the reset position
+# at its level, between the position's weight and the next weight of that
+# level the root or the tailoring already holds, so that a later reset to
+# the same position puts its text before the earlier one, as ICU does.
+# Expansions take the reset's elements, extensions add theirs, and the
+# settings the rules name change the collator's.
+
+use i18n/collate/internal/collate_tables
+use i18n/collate/internal/root
+use i18n/collate/internal/weighing
+use i18n/internal/locale_syntax
+use strings
+use unicode
+use unicode/normalize
+
+# The code rules that do not parse fail with.
+constant INVALID: str
+    "invalid"
+
+# The deepest chain of imports read.
+constant MAX_IMPORTS: i64
+    8
+
+# A tailoring built: the texts it places and their elements, the length of
+# its longest text in characters, and the settings its rules name.
+record Tailoring
+    tailored: {str: [i64]}
+    longest: i64
+    settings: weighing.Settings
+
+# What a build works on: the tailoring so far, the root's weights of each
+# level, the weights the tailoring has added, and the elements of the
+# position the next relation follows.
+record Builder
+    tailored: {str: [i64]}
+    longest: i64
+    settings: weighing.Settings
+    root_weights: [[i64]]
+    added: [{i64: bool}]
+    current: [i64]
+
+# One token of the rules: `reset`, `relation` with its strength (0 for
+# `=`) and whether it is a starred list, `text`, `option`, `extension` or
+# `prefix`; and its offset.
+record Token
+    kind: str
+    strength: i64
+    star: bool
+    text: str
+    offset: i64
+
+# Whether `c` ends a text of the rules.
+function is_special(c: str) -> bool
+    return c == "&" || c == "<" || c == "=" || c == "/" || c == "|" || c == "[" || c == "]" || c == " " || c == "\t" || c == "\n" || c == "\r"
+
+# The tokens of `rules`.
+function tokens_of(rules: str) -> [Token]?
+    cs = rules.chars()
+    out: [Token] @= []
+    at @= 0
+
+    while at < cs.len()
+        c = cs[at]
+
+        if c == " " || c == "\t" || c == "\n" || c == "\r"
+            at @ at + 1
+        else if c == "&"
+            out @ out.push(Token(kind: "reset", strength: 0, star: false, text: "", offset: at))
+            at @ at + 1
+        else if c == "/" || c == "|"
+            kind = if_extension(c == "/")
+            out @ out.push(Token(kind: kind, strength: 0, star: false, text: "", offset: at))
+            at @ at + 1
+        else if c == "<" || c == "="
+            start = at
+            strength @= 0
+
+            if c == "<"
+                while at < cs.len() && cs[at] == "<" && strength < 4
+                    strength @ strength + 1
+                    at @ at + 1
+            else
+                at @ at + 1
+            star @= false
+
+            if at < cs.len() && cs[at] == "*"
+                star @ true
+                at @ at + 1
+            out @ out.push(Token(kind: "relation", strength: strength, star: star, text: "", offset: start))
+        else if c == "["
+            start = at
+            depth @= 0
+            inner: [str] @= []
+
+            while at < cs.len() && !(cs[at] == "]" && depth == 1)
+                if cs[at] == "["
+                    depth @ depth + 1
+
+                    if depth > 1
+                        inner @ inner.push("[")
+                else if cs[at] == "]"
+                    depth @ depth - 1
+                    inner @ inner.push("]")
+                else
+                    inner @ inner.push(cs[at])
+                at @ at + 1
+
+            if at >= cs.len()
+                return fail(code: INVALID, msg: f"a [ with no ] at offset {start} of the rules")
+            at @ at + 1
+            out @ out.push(
+                Token(kind: "option", strength: 0, star: false, text: strings.trim(inner.join("")), offset: start)
+            )
+        else
+            start = at
+            text: [str] @= []
+
+            while at < cs.len() && (!is_special(cs[at]) || cs[at] == "'" || cs[at] == "\\")
+                if cs[at] == "'"
+                    if at + 1 < cs.len() && cs[at + 1] == "'"
+                        text @ text.push("'")
+                        at @ at + 2
+                    else
+                        at @ at + 1
+
+                        while at < cs.len() && cs[at] != "'"
+                            text @ text.push(cs[at])
+                            at @ at + 1
+
+                        if at >= cs.len()
+                            return fail(code: INVALID, msg: f"an unclosed quote at offset {start} of the rules")
+                        at @ at + 1
+                else if cs[at] == "\\"
+                    escaped = escape_at(cs, at: at)?
+                    text @ text.push(escaped.text)
+                    at @ at + escaped.length
+                else
+                    text @ text.push(cs[at])
+                    at @ at + 1
+
+            out @ out.push(Token(kind: "text", strength: 0, star: false, text: text.join(""), offset: start))
+
+    return ok(out)
+
+# `extension` where `yes`, else `prefix`.
+function if_extension(yes: bool) -> str
+    if yes
+        return "extension"
+    return "prefix"
+
+# What an escape writes and how many characters it takes.
+record Escaped
+    text: str
+    length: i64
+
+# The escape at `at` of `cs`, a backslash: `\uXXXX`, `\UXXXXXXXX`, or the
+# character after it as itself.
+function escape_at(cs: [str] lent, at: i64) -> Escaped?
+    if at + 1 >= cs.len()
+        return fail(code: INVALID, msg: f"a \\ ends the rules at offset {at}")
+    kind = cs[at + 1]
+    width @= 0
+
+    if kind == "u"
+        width @ 4
+    else if kind == "U"
+        width @ 8
+    else
+        return ok(Escaped(text: kind, length: 2))
+
+    if at + 2 + width > cs.len()
+        return fail(code: INVALID, msg: f"a short \\{kind} escape at offset {at}")
+    value @= 0
+    i @= at + 2
+
+    while i < at + 2 + width
+        d = unicode.to_digit(cs[i], base: 16)
+
+        if d.is_err()
+            return fail(code: INVALID, msg: f"a \\{kind} escape with a digit that is not hexadecimal at offset {at}")
+        value @ value * 16 + d.must()
+        i @ i + 1
+
+    c = unicode.from_code_point(value)
+
+    if c.is_err()
+        return fail(code: INVALID, msg: f"a \\{kind} escape that is no character at offset {at}")
+    return ok(Escaped(text: c.must(), length: 2 + width))
+
+# The elements `text` takes now, by the tailoring so far and the root.
+function elements_now(builder: Builder lent, text: str) -> [i64]
+    return weighing.elements_of(text, tailored: builder.tailored, longest: builder.longest, numeric: false)
+
+# The smallest weight at `level` above `value`, of the root's and the
+# tailoring's, or `value` plus the scale where none is.
+function next_above(builder: Builder lent, level: i64, value: i64) -> i64
+    list = builder.root_weights[level]
+    low @= 0
+    high @= list.len()
+
+    while low < high
+        middle = (low + high) / 2
+
+        if list[middle] <= value
+            low @ middle + 1
+        else
+            high @ middle
+
+    best @= value + root.SCALE
+
+    if low < list.len()
+        best @ list[low]
+
+    for w in keys(builder.added[level])
+        if w > value && w < best
+            best @ w
+
+    return best
+
+# The largest weight at `level` below `value`, of the root's and the
+# tailoring's, or 0.
+function next_below(builder: Builder lent, level: i64, value: i64) -> i64
+    best @= 0
+
+    for w in builder.root_weights[level]
+        if w < value && w > best
+            best @ w
+
+    for w in keys(builder.added[level])
+        if w < value && w > best
+            best @ w
+
+    return best
+
+# A weight halfway between `low` and `high`.
+function between(low: i64, high: i64) -> i64?
+    if high - low < 2
+        return fail(code: INVALID, msg: "the rules place more texts between two weights than there is room for")
+    return ok(low + (high - low) / 2)
+
+# Records weight `w` at `level` as the tailoring's.
+function add_weight(@builder: Builder, level: i64, w: i64)
+    added @= builder.added
+    builder.added @ []
+    set @= added[level]
+    set[w] @ true
+    added[level] @ set
+    builder.added @ added
+
+# The elements of a text placed at `strength` after `base`, its last element
+# changed and the others kept.
+function placed(@builder: Builder, base: [i64], strength: i64) -> [i64]?
+    if base.len() < 4
+        return fail(code: INVALID, msg: "a relation follows a position with no elements")
+    out @= base
+
+    if strength == 0
+        return ok(out)
+    last = base.len() - 4
+    p = base[last]
+    s = base[last + 1]
+    t = base[last + 2]
+
+    if strength == 1
+        new_p = between(low: p, high: next_above(builder, level: 0, value: p))?
+        out[last] @ new_p
+        out[last + 1] @ root.COMMON_SECONDARY
+        out[last + 2] @ root.COMMON_TERTIARY
+        out[last + 3] @ 0
+        add_weight(@builder, level: 0, w: new_p)
+    else if strength == 2
+        new_s = between(low: s, high: next_above(builder, level: 1, value: s))?
+        out[last + 1] @ new_s
+        out[last + 2] @ root.COMMON_TERTIARY
+        add_weight(@builder, level: 1, w: new_s)
+    else
+        new_t = between(low: t, high: next_above(builder, level: 2, value: t))?
+        out[last + 2] @ new_t
+        add_weight(@builder, level: 2, w: new_t)
+    return ok(out)
+
+# The position a `[before n]` reset to `base` names: a weight just below the
+# last element's at level `n`.
+function before(@builder: Builder, base: [i64], level: i64) -> [i64]?
+    if base.len() < 4
+        return fail(code: INVALID, msg: "a [before] reset to a text with no elements")
+    out @= base
+    last = base.len() - 4
+    index = last + level - 1
+    lower = next_below(builder, level: level - 1, value: base[index])
+    out[index] @ between(low: lower, high: base[index])?
+    add_weight(@builder, level: level - 1, w: out[index])
+    return ok(out)
+
+# The elements of a special reset position, `last regular`.
+function special_position(name: str) -> [i64]?
+    if name == "last regular"
+        return ok([collate_tables.LAST_REGULAR * root.SCALE, root.COMMON_SECONDARY, root.COMMON_TERTIARY, 0])
+
+    if name == "first variable" || name == "last variable"
+        space: [i64] @= []
+        root.add_single(@space, point: 0x20)
+
+        if name == "first variable"
+            return ok(space)
+        return ok([collate_tables.LAST_PUNCT * root.SCALE, root.COMMON_SECONDARY, root.COMMON_TERTIARY, 1])
+
+    if name == "first tertiary ignorable" || name == "last tertiary ignorable"
+        return ok([0, 0, 0, 0])
+
+    if name == "first secondary ignorable" || name == "last secondary ignorable"
+        return ok([0, 0, root.COMMON_TERTIARY, 0])
+
+    if name == "first primary ignorable" || name == "last primary ignorable"
+        return ok([0, root.COMMON_SECONDARY, root.COMMON_TERTIARY, 0])
+    return fail(code: INVALID, msg: f"the position [{name}] is not read")
+
+# Applies a setting `option` to `builder`, or an import.
+function apply_option(@builder: Builder, option: str, depth: i64) -> ()?
+    words = strings.words(option)
+
+    if words.len() == 0
+        return ok()
+    name = words[0]
+    value @= ""
+
+    if words.len() > 1
+        value @ words[1]
+
+    if name == "import"
+        return apply_import(@builder, tag: value, depth: depth)
+
+    if name == "strength"
+        builder.settings.strength @ match value
+            "1" => 1
+            "2" => 2
+            "3" => 3
+            "4" => 4
+            _   => 5
+    else if name == "alternate"
+        builder.settings.shifted @ value == "shifted"
+    else if name == "backwards"
+        builder.settings.backwards @ value == "2"
+    else if name == "caseFirst"
+        builder.settings.case_first @ match value
+            "upper" => 1
+            "lower" => 2
+            _       => 0
+    else if name == "caseLevel"
+        builder.settings.case_level @ value == "on"
+    else if name == "numericOrdering"
+        builder.settings.numeric @ value == "on"
+    else if name == "maxVariable"
+        builder.settings.max_variable @ match value
+            "space"  => 0
+            "punct"  => 1
+            "symbol" => 2
+            _        => 3
+    else if name != "reorder" && name != "suppressContractions" && name != "optimize" && name != "normalization" && name != "hiraganaQ"
+        return fail(code: INVALID, msg: f"the setting [{option}] is not read")
+    return ok()
+
+# Applies the rules of the carried tailoring `tag`, `de-u-co-phonebk`.
+function apply_import(@builder: Builder, tag: str, depth: i64) -> ()?
+    if depth >= MAX_IMPORTS
+        return fail(code: INVALID, msg: f"imports nest deeper than {MAX_IMPORTS} at {tag}")
+    halves = strings.split_once(s: tag, sep: "-u-co-")
+    key @= tag + " standard"
+
+    match halves
+        .ok h  => key @ h.before + " " + h.after
+        .err _ => _ = 0
+
+    at = locale_syntax.search(collate_tables.RULE_KEYS, key: key)
+
+    if at < 0
+        return fail(code: INVALID, msg: f"no carried tailoring {tag} to import")
+    return apply_rules(@builder, rules: collate_tables.RULE_TEXTS[at], depth: depth + 1)
+
+# Places `text` at `strength` after the current position.
+function relate(@builder: Builder, text: str, strength: i64, extension: str) -> ()?
+    key = normalize.to_nfd(text)
+
+    if key == ""
+        return fail(code: INVALID, msg: "a relation with no text")
+    weights @= placed(@builder, base: builder.current, strength: strength)?
+
+    if extension != ""
+        for w in elements_now(builder, text: extension)
+            weights @ weights.push(w)
+    tailored @= builder.tailored
+    builder.tailored @ {}
+    tailored[key] @ weights
+    builder.tailored @ tailored
+    length = unicode.code_points(key).len()
+
+    if length > builder.longest
+        builder.longest @ length
+    builder.current @ weights
+    return ok()
+
+# Applies `rules` to `builder`.
+function apply_rules(@builder: Builder, rules: str, depth: i64) -> ()?
+    tokens = tokens_of(rules)?
+    at @= 0
+
+    while at < tokens.len()
+        token = tokens[at]
+
+        if token.kind == "option"
+            apply_option(@builder, option: token.text, depth: depth)?
+            at @ at + 1
+        else if token.kind == "reset"
+            at @ at + 1
+            level @= 0
+
+            if at < tokens.len() && tokens[at].kind == "option" && strings.has_prefix(s: tokens[at].text, prefix: "before ")
+                level @ to_i64(tokens[at].text[7] - '0').must()
+                at @ at + 1
+
+                if level < 1 || level > 3
+                    return fail(
+                        code: INVALID,
+                        msg: f"[before {level}] at offset {tokens[at - 1].offset}: the level is 1, 2 or 3"
+                    )
+
+            if at >= tokens.len()
+                return fail(code: INVALID, msg: "a & ends the rules")
+            position @= [0]
+
+            if tokens[at].kind == "option"
+                position @ special_position(tokens[at].text)?
+            else if tokens[at].kind == "text"
+                position @ elements_now(builder, text: tokens[at].text)
+            else
+                return fail(code: INVALID, msg: f"a & with no position at offset {tokens[at].offset}")
+            at @ at + 1
+
+            if level > 0
+                position @ before(@builder, base: position, level: level)?
+            builder.current @ position
+        else if token.kind == "relation"
+            if builder.current.len() == 0
+                return fail(code: INVALID, msg: f"a relation before any & at offset {token.offset}")
+            at @ at + 1
+
+            if at < tokens.len() && tokens[at].kind == "prefix"
+                return fail(code: INVALID, msg: f"a prefix before | at offset {tokens[at].offset}, which is not read")
+
+            if at >= tokens.len() || tokens[at].kind != "text"
+                return fail(code: INVALID, msg: f"a relation with no text at offset {token.offset}")
+            text = tokens[at].text
+            at @ at + 1
+
+            if at < tokens.len() && tokens[at].kind == "prefix"
+                return fail(code: INVALID, msg: f"a prefix | at offset {tokens[at].offset}, which is not read")
+            extension @= ""
+
+            if at + 1 < tokens.len() && tokens[at].kind == "extension" && tokens[at + 1].kind == "text"
+                extension @ tokens[at + 1].text
+                at @ at + 2
+
+            if token.star
+                for c in text.chars()
+                    relate(@builder, text: c, strength: token.strength, extension: "")?
+            else
+                relate(@builder, text: text, strength: token.strength, extension: extension)?
+        else
+            return fail(
+                code: INVALID,
+                msg: f"\"{token.text}\" stands where & or a relation is expected, at offset {token.offset}"
+            )
+
+    return ok()
+
+# The tailoring `rules` build on the root with `settings` as the start.
+function build(rules: str, settings: weighing.Settings) -> Tailoring?
+    builder @= Builder(tailored: {}, longest: 0, settings: settings, root_weights: [], added: [{}, {}, {}], current: [])
+
+    if strings.contains(s: rules, substr: "<") || strings.contains(s: rules, substr: "=") || strings.contains(s: rules, substr: "import")
+        builder.root_weights @ [root.weights(0), root.weights(1), root.weights(2)]
+    else
+        builder.root_weights @ [[], [], []]
+    apply_rules(@builder, rules: rules, depth: 0)?
+    return ok(Tailoring(tailored: builder.tailored, longest: builder.longest, settings: builder.settings))
+
+## Tests
+
+test "tokens_of: a reset, relations of every strength, a quoted and an escaped text, and options"
+    tokens = tokens_of("[caseFirst upper]&c<č<<<Č & a <<'-'= \\u0101 <*xy").must()
+    assert tokens[0].kind == "option" && tokens[0].text == "caseFirst upper"
+    assert tokens[3].strength == 1 && tokens[4].text == "č" && tokens[5].strength == 3
+    assert tokens[9].strength == 2 && tokens[10].text == "-" && tokens[11].strength == 0 && tokens[12].text == "ā"
+    assert tokens[13].star && tokens[14].text == "xy"
+    assert tokens_of("&a<'b").is_err() && tokens_of("[x").is_err() && tokens_of("&a<\\u00").is_err()
+
+test "build: a letter after c, a reset again before it, and an expansion"
+    settings = weighing.Settings(
+        strength: 3,
+        shifted: false,
+        max_variable: 1,
+        case_first: 0,
+        case_level: false,
+        backwards: false,
+        numeric: false
+    )
+    t = build("&c<č<<<Č&c<x", settings: settings).must()
+    c = weighing.elements_of("c", tailored: t.tailored, longest: t.longest, numeric: false)
+    hacek = t.tailored[normalize.to_nfd("č")].must()
+    x = t.tailored["x"].must()
+    d = weighing.elements_of("d", tailored: t.tailored, longest: t.longest, numeric: false)
+    assert c[0] < x[0] && x[0] < hacek[0] && hacek[0] < d[0]
+    ae = build("&ae<<<æ", settings: settings).must()
+    assert ae.tailored["æ"].must().len() == 8
+
+test "build: settings, an import, before, and what is refused"
+    settings = weighing.Settings(
+        strength: 3,
+        shifted: false,
+        max_variable: 1,
+        case_first: 0,
+        case_level: false,
+        backwards: false,
+        numeric: false
+    )
+    assert build("[caseFirst upper][backwards 2]", settings: settings).must().settings.case_first == 1
+    assert build("[import de-u-co-phonebk]", settings: settings).must().tailored.len() > 0
+    first = build("&[before 1]a<b", settings: settings).must()
+    a = weighing.elements_of("a", tailored: first.tailored, longest: first.longest, numeric: false)
+    assert first.tailored["b"].must()[0] < a[0]
+    assert build("<a", settings: settings).is_err()
+    assert build("&a<b|c", settings: settings).is_err()
+    assert build("[import xx]", settings: settings).is_err()
+    assert build("&a b", settings: settings).is_err()

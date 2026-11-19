@@ -1,0 +1,100 @@
+# Times relative to now written as a locale writes them, "in 3 days", "3
+# days ago", "yesterday": the pattern of the unit, width and plural
+# category of the amount, or the unit's own word for the amount where the
+# locale has one.
+
+use i18n
+use i18n/dates/internal/date_data
+use strings
+
+# The amount `text`, decimal digits with no sign, grouped by threes with
+# `data`'s separator from four digits, as ICU's relative formatter groups
+# whatever the language's minimum grouping digits, in `data`'s digits.
+function grouped(data: date_data.Data lent, text: str) -> str
+    pieces: [str] @= []
+    end @= text.len()
+
+    if text.len() >= 4
+        while end > 3
+            pieces @ pieces.push(text.slice(from: end - 3, to: end))
+            end @ end - 3
+    pieces @ pieces.push(text.slice(from: 0, to: end))
+    ordered: [str] @= []
+    at @= pieces.len() - 1
+
+    while at >= 0
+        ordered @ ordered.push(localized(data, digits: pieces[at]))
+        at @ at - 1
+
+    return ordered.join(data.group)
+
+# ASCII `digits` in `data`'s digits.
+function localized(data: date_data.Data lent, digits: str) -> str
+    if data.digits.len() != 10
+        return digits
+    out: [str] @= []
+    at @= 0
+
+    while at < digits.len()
+        out @ out.push(data.digits[to_i64(digits[at] - '0').must()])
+        at @ at + 1
+
+    return out.join("")
+
+# The position of a plural category in a relative block's counts.
+function count_slot(category: i18n.Plural) -> i64
+    return match category
+        .zero  => 0
+        .one   => 1
+        .two   => 2
+        .few   => 3
+        .many  => 4
+        .other => 5
+
+# `amount` units from now written for `locale`: unit 0 years to 7 seconds,
+# width 0 long to 2 narrow; the locale's word for the amount first where
+# `named` and it has one.
+function format(locale: i18n.Locale, amount: i64, unit: i64, width: i64, named: bool) -> str
+    data = date_data.load(locale)
+    block = data.blocks[date_data.RELATIVE + unit * 3 + width]
+
+    if named && amount >= -2 && amount <= 2
+        word = date_data.slot_text(block: block, slot: 3 + amount)
+
+        if word != ""
+            return word
+    digits @= to_str(amount)
+    past = amount < 0
+
+    if past
+        digits @ digits.slice(from: 1, to: digits.len())
+    base @= 6
+
+    if past
+        base @ 12
+    category = i18n.plural_of(locale, number: digits).default(.other)
+    pattern @= date_data.slot_text(block: block, slot: base + count_slot(category))
+
+    if pattern == ""
+        pattern @ date_data.slot_text(block: block, slot: base + 5)
+    return strings.replace_all(s: pattern, old: "{0}", new: grouped(data, text: digits))
+
+## Tests
+
+# Expected texts are what ICU 79.1's `RelativeDateTimeFormatter` (CLDR 49)
+# wrote for the same amount and unit, observed 2026-11-19.
+test "format: days in English, both ways, named and not, and a large amount"
+    english = i18n.parse_locale("en").must()
+    assert format(english, amount: -3, unit: 4, width: 0, named: false) == "3 days ago"
+    assert format(english, amount: 1, unit: 4, width: 0, named: false) == "in 1 day"
+    assert format(english, amount: 0, unit: 4, width: 0, named: false) == "in 0 days"
+    assert format(english, amount: -1, unit: 4, width: 0, named: true) == "yesterday"
+    assert format(english, amount: 0, unit: 7, width: 0, named: true) == "now"
+    assert format(english, amount: 12345, unit: 5, width: 0, named: false) == "in 12,345 hours"
+    assert format(english, amount: -9223372036854775807 - 1, unit: 7, width: 0, named: false) == "9,223,372,036,854,775,808 seconds ago"
+
+test "format: Russian plurals, German's day after tomorrow, and Arabic digits"
+    russian = i18n.parse_locale("ru").must()
+    assert format(russian, amount: -5, unit: 4, width: 0, named: false) == "5 дней назад"
+    assert format(russian, amount: 2, unit: 4, width: 0, named: false) == "через 2 дня"
+    assert format(i18n.parse_locale("de").must(), amount: 2, unit: 4, width: 0, named: true) == "übermorgen"
