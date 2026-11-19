@@ -1,0 +1,21 @@
+# Reaches Rebel's package `s3`, so that `heroes test` on this file runs the
+# tests of its face and its private modules. It prints the S3 reference's
+# presigned URL, signed at that example's instant with its example keys on
+# the global endpoint the reference names, touching no network and no
+# credential of this machine.
+
+use <rebel>/s3
+
+function main()
+    example = s3.Credentials(
+        access_key_id: "AKIAIOSFODNN7EXAMPLE",
+        secret_access_key: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+        session_token: ""
+    )
+    c @= s3.aws_client(region: "us-east-1", credentials: example)
+    c.endpoint @ "https://s3.amazonaws.com"
+    c.addressing @ .virtual_host
+    at = s3.parse_amz_date("20130524T000000Z").must()
+    print(
+        s3.presign_url(c, method: "GET", bucket: "examplebucket", key: "test.txt", headers: [], at: at, expires_seconds: 86_400).must()
+    )

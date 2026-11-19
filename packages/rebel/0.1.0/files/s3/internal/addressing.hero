@@ -1,0 +1,344 @@
+# Where a request of the S3 API goes: Amazon's endpoint for a region, or the
+# program's own, and a bucket reached by its host name or by path, as
+# botocore, Go's SDK and minio-go choose; the names a bucket may have.
+
+use s3/internal/signing
+use strings
+use url
+
+# How a bucket is reached, as the face's `Addressing` says.
+variant Style
+    # Amazon's endpoints by host name, any other by path.
+    auto
+    # Always by path.
+    path
+    # By host name wherever the bucket's name can be one.
+    virtual_host
+
+# Whether `b`, a byte of a bucket's name, is a lower-case letter or a digit.
+function is_lower_or_digit(b: u8) -> bool
+    return b >= 'a' && b <= 'z' || b >= '0' && b <= '9'
+
+# Whether `name` is written as an IPv4 address: four runs of digits between
+# three dots.
+function is_ipv4(name: str) -> bool
+    parts = strings.split(s: name, sep: ".")
+
+    if parts.len() != 4
+        return false
+
+    for p in parts
+        if p == "" || p.len() > 3
+            return false
+
+        for c in p.chars()
+            if c[0] < '0' || c[0] > '9'
+                return false
+
+    return true
+
+# Whether `name` may name a new bucket by S3's rules: 3 to 63 bytes of
+# lower-case letters, digits, `.` and `-`, a letter or a digit at each end,
+# no `..`, `.-` or `-.`, and no IPv4 address.
+function is_bucket_name(name: str) -> bool
+    if name.len() < 3 || name.len() > 63
+        return false
+
+    if !is_lower_or_digit(name[0]) || !is_lower_or_digit(name[name.len() - 1])
+        return false
+    at: i64 @= 0
+
+    while at < name.len()
+        b = name[at]
+
+        if !is_lower_or_digit(b) && b != '.' && b != '-'
+            return false
+
+        if b == '.' && (name[at + 1] == '.' || name[at + 1] == '-' || name[at - 1] == '-')
+            return false
+        at @ at + 1
+
+    return !is_ipv4(name)
+
+# Whether `name` may be written in a request's path: 1 to 255 bytes of
+# letters, digits, `.`, `-` and `_`, as botocore holds an older bucket's
+# name.
+function is_reachable_name(name: str) -> bool
+    if name.len() < 1 || name.len() > 255
+        return false
+
+    for c in name.chars()
+        b = c[0]
+        letter = b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z'
+
+        if !letter && !(b >= '0' && b <= '9') && b != '.' && b != '-' && b != '_'
+            return false
+
+    return true
+
+# Whether `host` is an address rather than a name: IPv4, or IPv6, which holds
+# a `:`.
+function is_address(host: str) -> bool
+    return is_ipv4(host) || strings.contains(s: host, substr: ":")
+
+# Whether a bucket named `bucket` is reached by host name under `scheme`: a
+# name of S3's rules, with no dot where TLS must check the certificate,
+# whose one level of wildcard a dot would pass.
+function may_be_host(bucket: str, scheme: str) -> bool
+    return is_bucket_name(bucket) && (scheme == "http" || !strings.contains(s: bucket, substr: "."))
+
+# Amazon's host for `region`: `s3.<region>.amazonaws.com`, `.com.cn` after
+# `amazonaws` for a `cn-` region, `dualstack.` after `s3.` for the dual
+# stack, and `s3-accelerate.amazonaws.com` for Transfer Acceleration.
+function aws_host(region: str, dualstack: bool, accelerate: bool) -> str
+    suffix: str @= ".amazonaws.com"
+
+    if strings.has_prefix(s: region, prefix: "cn-")
+        suffix @ ".amazonaws.com.cn"
+
+    if accelerate && dualstack
+        return "s3-accelerate.dualstack" + suffix
+
+    if accelerate
+        return "s3-accelerate" + suffix
+
+    if dualstack
+        return "s3.dualstack." + region + suffix
+    return "s3." + region + suffix
+
+# The path after the bucket: `/` and the key URI-encoded, its `/` kept; ""
+# where `key` is "".
+function key_path(key: str) -> str
+    if key == ""
+        return ""
+    return "/" + signing.uri_encode(key, keep_slash: true)
+
+# The URL a request on `key` of `bucket` goes to, with no query: the
+# endpoint, Amazon's for `region` where `endpoint` is "", and the bucket by
+# host name or by path as `style` and the name allow. `bucket` "" is the
+# service itself, `/`. Fails `invalid` where the region cannot be a host's
+# label, the endpoint is no absolute `http` or `https` URL with a host and
+# no query, the bucket's name cannot be written, the key passes 1,024 bytes,
+# or acceleration is asked for a bucket no host name can hold.
+function target(endpoint: str, region: str, style: Style, dualstack: bool, accelerate: bool, bucket: str, key: str) -> url.Url?
+    if bucket != "" && !is_reachable_name(bucket)
+        return fail(
+            code: "invalid",
+            msg: f"the bucket's name {signing.quoted(bucket)} is not 1 to 255 bytes of letters, digits, `.`, `-` and `_`"
+        )
+
+    if key.len() > 1_024
+        return fail(code: "invalid", msg: f"the key of {key.len()} bytes passes the 1,024 bytes S3 holds")
+
+    if key != "" && bucket == ""
+        return fail(code: "invalid", msg: "a key was given with no bucket")
+
+    if endpoint == ""
+        return aws_target(
+            region: region,
+            style: style,
+            dualstack: dualstack,
+            accelerate: accelerate,
+            bucket: bucket,
+            key: key
+        )
+    base = url.parse(endpoint)?
+
+    if base.scheme != "http" && base.scheme != "https" || base.host == "" || base.query != "" || base.fragment != "" || base.user != ""
+        return fail(
+            code: "invalid",
+            msg: f"the endpoint {signing.quoted(endpoint)} is not an absolute http:// or https:// URL with a host, no user, no query and no fragment"
+        )
+    out @= base
+    root = strings.trim_suffix(s: base.path, suffix: "/")
+
+    match style
+        .virtual_host =>
+            if bucket != "" && may_be_host(bucket: bucket, scheme: base.scheme) && !is_address(base.host)
+                out.host @ bucket + "." + base.host
+                out.path @ root + one_slash(key_path(key))
+                return ok(out)
+        .auto | .path => _ = 0
+
+    if bucket == ""
+        out.path @ root + "/"
+    else
+        out.path @ root + "/" + bucket + key_path(key)
+    return ok(out)
+
+# `path` where it begins with `/`, else `/` and `path`: a virtual host's
+# path, `/` for the bucket itself.
+function one_slash(path: str) -> str
+    if path == ""
+        return "/"
+    return path
+
+# Amazon's URL for a request on `key` of `bucket` in `region`. Fails
+# `invalid` as `target` does.
+function aws_target(region: str, style: Style, dualstack: bool, accelerate: bool, bucket: str, key: str) -> url.Url?
+    if !is_region(region)
+        return fail(
+            code: "invalid",
+            msg: f"the region {signing.quoted(region)} is not lower-case letters, digits and `-`, as a host's label"
+        )
+
+    by_host = match style
+        .path                 => false
+        .auto | .virtual_host => bucket != "" && may_be_host(bucket: bucket, scheme: "https")
+
+    if accelerate && !by_host
+        return fail(
+            code: "invalid",
+            msg: f"Transfer Acceleration reaches a bucket by its host name, which {signing.quoted(bucket)} cannot be, or the addressing is by path"
+        )
+    host = aws_host(region, dualstack: dualstack, accelerate: accelerate)
+    out @= url.parse("https://" + host + "/").must()
+
+    if by_host
+        out.host @ bucket + "." + host
+        out.path @ one_slash(key_path(key))
+    else if bucket != ""
+        out.path @ "/" + bucket + key_path(key)
+    return ok(out)
+
+# Whether `region` may stand in a host name: lower-case letters, digits and
+# `-`, not empty, with no `-` at either end.
+function is_region(region: str) -> bool
+    if region == "" || region[0] == '-' || region[region.len() - 1] == '-'
+        return false
+
+    for c in region.chars()
+        if !is_lower_or_digit(c[0]) && c[0] != '-'
+            return false
+
+    return true
+
+test "is_bucket_name: the shortest and longest, capitals, an underscore, dots and hyphens beside, an IPv4 address, and an end that is no letter"
+    assert !is_bucket_name("ab") && is_bucket_name("abc")
+    assert is_bucket_name("a" + repeat("b", 61) + "c") && !is_bucket_name("a" + repeat("b", 62) + "c")
+    assert !is_bucket_name("My_Bucket") && !is_bucket_name("my_bucket")
+    assert is_bucket_name("my.bucket") && is_bucket_name("my-bucket.v2")
+    assert !is_bucket_name("my..bucket") && !is_bucket_name("my.-bucket") && !is_bucket_name("my-.bucket")
+    assert !is_bucket_name("-bucket") && !is_bucket_name("bucket-") && !is_bucket_name(".bucket")
+    assert !is_bucket_name("192.168.5.4") && is_bucket_name("192.168.5.4a")
+    assert !is_bucket_name("bücket")
+
+test "is_reachable_name: empty, the longest, an underscore and capitals, a slash and a space"
+    assert !is_reachable_name("") && is_reachable_name("a") && is_reachable_name("My_Bucket.v-2")
+    assert is_reachable_name(repeat("a", 255)) && !is_reachable_name(repeat("a", 256))
+    assert !is_reachable_name("a/b") && !is_reachable_name("a b")
+
+test "target: Amazon's regional host, a dotted name and a name of capitals by path, path forced, the dual stack, acceleration and China, as Go's SDK answered"
+    t = target(
+        endpoint: "",
+        region: "eu-west-1",
+        style: .auto,
+        dualstack: false,
+        accelerate: false,
+        bucket: "mybucket",
+        key: "a/b.txt"
+    ).must()
+    assert url.format(t) == "https://mybucket.s3.eu-west-1.amazonaws.com/a/b.txt"
+    assert url.format(target(endpoint: "", region: "us-east-1", style: .auto, dualstack: false, accelerate: false, bucket: "mybucket", key: "a/b.txt").must()) == "https://mybucket.s3.us-east-1.amazonaws.com/a/b.txt"
+    assert url.format(target(endpoint: "", region: "eu-west-1", style: .auto, dualstack: false, accelerate: false, bucket: "my.bucket", key: "k").must()) == "https://s3.eu-west-1.amazonaws.com/my.bucket/k"
+    assert url.format(target(endpoint: "", region: "eu-west-1", style: .auto, dualstack: false, accelerate: false, bucket: "My_Bucket", key: "k").must()) == "https://s3.eu-west-1.amazonaws.com/My_Bucket/k"
+    assert url.format(target(endpoint: "", region: "eu-west-1", style: .auto, dualstack: false, accelerate: false, bucket: "192.168.5.4", key: "k").must()) == "https://s3.eu-west-1.amazonaws.com/192.168.5.4/k"
+    assert url.format(target(endpoint: "", region: "eu-west-1", style: .auto, dualstack: false, accelerate: false, bucket: "ab", key: "k").must()) == "https://s3.eu-west-1.amazonaws.com/ab/k"
+    assert url.format(target(endpoint: "", region: "eu-west-1", style: .path, dualstack: false, accelerate: false, bucket: "mybucket", key: "k").must()) == "https://s3.eu-west-1.amazonaws.com/mybucket/k"
+    assert url.format(target(endpoint: "", region: "eu-west-1", style: .auto, dualstack: true, accelerate: false, bucket: "mybucket", key: "k").must()) == "https://mybucket.s3.dualstack.eu-west-1.amazonaws.com/k"
+    assert url.format(target(endpoint: "", region: "eu-west-1", style: .auto, dualstack: false, accelerate: true, bucket: "mybucket", key: "k").must()) == "https://mybucket.s3-accelerate.amazonaws.com/k"
+    assert url.format(target(endpoint: "", region: "cn-north-1", style: .auto, dualstack: false, accelerate: false, bucket: "mybucket", key: "k").must()) == "https://mybucket.s3.cn-north-1.amazonaws.com.cn/k"
+    assert target(
+        endpoint: "",
+        region: "eu-west-1",
+        style: .auto,
+        dualstack: false,
+        accelerate: true,
+        bucket: "my.bucket",
+        key: "k"
+    ).is_err()
+    assert target(
+        endpoint: "",
+        region: "EU west",
+        style: .auto,
+        dualstack: false,
+        accelerate: false,
+        bucket: "b",
+        key: ""
+    ).is_err()
+
+test "target: the service, a bucket alone, and a key every byte of which botocore, Go's SDK and minio-go encode alike"
+    assert url.format(target(endpoint: "", region: "eu-west-1", style: .auto, dualstack: false, accelerate: false, bucket: "", key: "").must()) == "https://s3.eu-west-1.amazonaws.com/"
+    assert url.format(target(endpoint: "", region: "eu-west-1", style: .auto, dualstack: false, accelerate: false, bucket: "mybucket", key: "").must()) == "https://mybucket.s3.eu-west-1.amazonaws.com/"
+    assert url.format(target(endpoint: "", region: "eu-west-1", style: .path, dualstack: false, accelerate: false, bucket: "mybucket", key: "").must()) == "https://s3.eu-west-1.amazonaws.com/mybucket"
+    key = "a b/c+d~e!f*g'h(i)j$k&l=m;n:o@p,q?r#s[t]u%v^w`x{y}z|é"
+    assert url.format(target(endpoint: "", region: "eu-west-1", style: .auto, dualstack: false, accelerate: false, bucket: "mybucket", key: key).must()) == "https://mybucket.s3.eu-west-1.amazonaws.com/a%20b/c%2Bd~e%21f%2Ag%27h%28i%29j%24k%26l%3Dm%3Bn%3Ao%40p%2Cq%3Fr%23s%5Bt%5Du%25v%5Ew%60x%7By%7Dz%7C%C3%A9"
+    assert url.format(target(endpoint: "", region: "eu-west-1", style: .auto, dualstack: false, accelerate: false, bucket: "mybucket", key: "/lead//double/").must()) == "https://mybucket.s3.eu-west-1.amazonaws.com//lead//double/"
+    assert target(
+        endpoint: "",
+        region: "eu-west-1",
+        style: .auto,
+        dualstack: false,
+        accelerate: false,
+        bucket: "mybucket",
+        key: repeat("k", 1_025)
+    ).is_err()
+    assert target(
+        endpoint: "",
+        region: "eu-west-1",
+        style: .auto,
+        dualstack: false,
+        accelerate: false,
+        bucket: "a/b",
+        key: "k"
+    ).is_err()
+    assert target(
+        endpoint: "",
+        region: "eu-west-1",
+        style: .auto,
+        dualstack: false,
+        accelerate: false,
+        bucket: "",
+        key: "k"
+    ).is_err()
+
+test "target: an endpoint of the program's, by path as botocore and minio-go answered, by host where asked but on an address, and its own path kept"
+    assert url.format(target(endpoint: "http://127.0.0.1:9000", region: "us-east-1", style: .auto, dualstack: false, accelerate: false, bucket: "mybucket", key: "k").must()) == "http://127.0.0.1:9000/mybucket/k"
+    assert url.format(target(endpoint: "https://minio.example.com", region: "us-east-1", style: .auto, dualstack: false, accelerate: false, bucket: "mybucket", key: "k").must()) == "https://minio.example.com/mybucket/k"
+    assert url.format(target(endpoint: "https://minio.example.com/base/", region: "us-east-1", style: .auto, dualstack: false, accelerate: false, bucket: "mybucket", key: "k").must()) == "https://minio.example.com/base/mybucket/k"
+    assert url.format(target(endpoint: "https://acct.r2.cloudflarestorage.com", region: "auto", style: .auto, dualstack: false, accelerate: false, bucket: "mybucket", key: "k").must()) == "https://acct.r2.cloudflarestorage.com/mybucket/k"
+    assert url.format(target(endpoint: "https://minio.example.com", region: "us-east-1", style: .virtual_host, dualstack: false, accelerate: false, bucket: "mybucket", key: "k").must()) == "https://mybucket.minio.example.com/k"
+    assert url.format(target(endpoint: "http://localhost:9000", region: "us-east-1", style: .virtual_host, dualstack: false, accelerate: false, bucket: "mybucket", key: "").must()) == "http://mybucket.localhost:9000/"
+    assert url.format(target(endpoint: "http://127.0.0.1:9000", region: "us-east-1", style: .virtual_host, dualstack: false, accelerate: false, bucket: "mybucket", key: "k").must()) == "http://127.0.0.1:9000/mybucket/k"
+    assert url.format(target(endpoint: "http://127.0.0.1:9000", region: "us-east-1", style: .auto, dualstack: false, accelerate: false, bucket: "", key: "").must()) == "http://127.0.0.1:9000/"
+    assert target(
+        endpoint: "ftp://h",
+        region: "us-east-1",
+        style: .auto,
+        dualstack: false,
+        accelerate: false,
+        bucket: "b",
+        key: ""
+    ).is_err()
+    assert target(
+        endpoint: "http://h/?q=1",
+        region: "us-east-1",
+        style: .auto,
+        dualstack: false,
+        accelerate: false,
+        bucket: "b",
+        key: ""
+    ).is_err()
+    assert target(
+        endpoint: "/relative",
+        region: "us-east-1",
+        style: .auto,
+        dualstack: false,
+        accelerate: false,
+        bucket: "b",
+        key: ""
+    ).is_err()
+
+test "is_region: Amazon's, R2's, Backblaze's, and capitals, a space and an end hyphen"
+    assert is_region("us-east-1") && is_region("auto") && is_region("us-west-004")
+    assert !is_region("") && !is_region("US-EAST-1") && !is_region("us east") && !is_region("-us")

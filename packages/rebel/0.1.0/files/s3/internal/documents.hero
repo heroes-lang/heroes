@@ -1,0 +1,127 @@
+# The XML documents a request of S3 sends: the keys of a multiple delete,
+# the parts of an upload completed, a bucket's location and an object's
+# tags, each in S3's namespace, every text escaped. A text XML cannot hold,
+# a control character, is `invalid`.
+
+use lists
+use url
+use xml
+
+# The namespace of S3's documents.
+constant SPACE: str
+    "http://s3.amazonaws.com/doc/2006-03-01/"
+
+# One part of an upload completed, as its document names it.
+record Piece
+    # The part's number.
+    number: i64
+    # Its ETag, its quotes kept.
+    etag: str
+    # Its checksum in base 64; "" where the upload has none.
+    checksum: str
+
+# `s` as XML text. Fails `invalid` where it holds a character XML 1.0
+# cannot, the message naming `what`.
+function escaped(s: str, what: str) -> str?
+    match xml.escape_text(s)
+        .ok t  => return ok(t)
+        .err e => return fail(code: "invalid", msg: f"{what} cannot be written in XML: {e.msg}")
+
+# The document of a multiple delete of `keys`, quiet, so S3 answers only the
+# keys it refused. Fails `invalid` where a key holds a character XML cannot.
+function delete_body(names: [str]) -> str?
+    pieces: [str] @= [f"<Delete xmlns=\"{SPACE}\"><Quiet>true</Quiet>"]
+
+    for k in names
+        pieces @ pieces.push("<Object><Key>" + escaped(s: k, what: "a key to delete")? + "</Key></Object>")
+
+    pieces @ pieces.push("</Delete>")
+    return ok(pieces.join(""))
+
+# The document completing an upload of `parts`, with each part's checksum
+# named `checksum_name` where it is not "".
+function complete_body(parts: [Piece], checksum_name: str) -> str
+    pieces: [str] @= [f"<CompleteMultipartUpload xmlns=\"{SPACE}\">"]
+
+    for p in parts
+        pieces @ pieces.push(
+            f"<Part><PartNumber>{p.number}</PartNumber><ETag>" + xml.escape_text(p.etag).default("") + "</ETag>"
+        )
+
+        if checksum_name != "" && p.checksum != ""
+            pieces @ pieces.push(
+                f"<Checksum{checksum_name}>" + xml.escape_text(p.checksum).default("") + f"</Checksum{checksum_name}>"
+            )
+        pieces @ pieces.push("</Part>")
+
+    pieces @ pieces.push("</CompleteMultipartUpload>")
+    return pieces.join("")
+
+# The document making a bucket in `region`.
+function location_body(region: str) -> str
+    return f"<CreateBucketConfiguration xmlns=\"{SPACE}\"><LocationConstraint>{region}</LocationConstraint></CreateBucketConfiguration>"
+
+# The document setting the tags `tags`. Fails `invalid` where a key or a
+# value holds a character XML cannot.
+function tagging_body(tags: [url.Pair]) -> str?
+    pieces: [str] @= [f"<Tagging xmlns=\"{SPACE}\"><TagSet>"]
+
+    for t in tags
+        pieces @ pieces.push(
+            "<Tag><Key>" + escaped(s: t.key, what: "a tag's key")? + "</Key><Value>" + escaped(s: t.value, what: "a tag's value")? + "</Value></Tag>"
+        )
+
+    pieces @ pieces.push("</TagSet></Tagging>")
+    return ok(pieces.join(""))
+
+# Whether the configuration `name` of a bucket can be read.
+function is_readable_config(name: str) -> bool
+    return is_writable_config(name) || name == "policyStatus"
+
+# Whether the configuration `name` of a bucket can be written.
+function is_writable_config(name: str) -> bool
+    return is_deletable_config(name) || name == "versioning" || name == "logging" || name == "notification" || name == "accelerate" || name == "requestPayment" || name == "acl" || name == "object-lock"
+
+# Whether the configuration `name` of a bucket can be deleted.
+function is_deletable_config(name: str) -> bool
+    return name == "policy" || name == "cors" || name == "lifecycle" || name == "tagging" || name == "encryption" || name == "website" || name == "replication" || name == "ownershipControls" || name == "publicAccessBlock"
+
+# Whether `a` comes before `b`, by number.
+function piece_before(a: Piece, b: Piece) -> bool
+    return a.number < b.number
+
+# `parts` sorted by number, as S3 asks them.
+function sorted_pieces(parts: [Piece]) -> [Piece]
+    return lists.sort_by(parts, less: piece_before)
+
+test "delete_body: none, two keys with characters XML escapes, and a control character"
+    assert delete_body([]).must() == "<Delete xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"><Quiet>true</Quiet></Delete>"
+    assert delete_body(["a&b", "<c>"]).must() == "<Delete xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"><Quiet>true</Quiet><Object><Key>a&amp;b</Key></Object><Object><Key>&lt;c&gt;</Key></Object></Delete>"
+    assert delete_body(["a\u{1}b"]).is_err()
+
+test "complete_body: no part, two parts without a checksum, and one with"
+    assert complete_body([], checksum_name: "") == "<CompleteMultipartUpload xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"></CompleteMultipartUpload>"
+    two = complete_body(
+        [Piece(number: 1, etag: "\"a\"", checksum: ""), Piece(number: 2, etag: "\"b\"", checksum: "")],
+        checksum_name: ""
+    )
+    assert two == "<CompleteMultipartUpload xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"><Part><PartNumber>1</PartNumber><ETag>\"a\"</ETag></Part><Part><PartNumber>2</PartNumber><ETag>\"b\"</ETag></Part></CompleteMultipartUpload>"
+    one = complete_body([Piece(number: 1, etag: "\"a\"", checksum: "NhCmhg==")], checksum_name: "CRC32")
+    assert one == "<CompleteMultipartUpload xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"><Part><PartNumber>1</PartNumber><ETag>\"a\"</ETag><ChecksumCRC32>NhCmhg==</ChecksumCRC32></Part></CompleteMultipartUpload>"
+
+test "location_body and tagging_body: a region, no tag, two tags, and a value XML cannot hold"
+    assert location_body("eu-west-1") == "<CreateBucketConfiguration xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"><LocationConstraint>eu-west-1</LocationConstraint></CreateBucketConfiguration>"
+    assert tagging_body([]).must() == "<Tagging xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"><TagSet></TagSet></Tagging>"
+    assert tagging_body([url.Pair(key: "a", value: "1"), url.Pair(key: "b&c", value: "")]).must() == "<Tagging xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"><TagSet><Tag><Key>a</Key><Value>1</Value></Tag><Tag><Key>b&amp;c</Key><Value></Value></Tag></TagSet></Tagging>"
+    assert tagging_body([url.Pair(key: "a", value: "\u{1}")]).is_err()
+
+test "is_readable_config, is_writable_config and is_deletable_config: a configuration of each kind, one only read, one never deleted, and none"
+    assert is_readable_config("policyStatus") && !is_writable_config("policyStatus")
+    assert is_writable_config("versioning") && !is_deletable_config("versioning")
+    assert is_deletable_config("lifecycle") && is_writable_config("lifecycle") && is_readable_config("lifecycle")
+    assert !is_readable_config("") && !is_readable_config("uploads")
+
+test "sorted_pieces: parts out of order, and none"
+    got = sorted_pieces([Piece(number: 3, etag: "c", checksum: ""), Piece(number: 1, etag: "a", checksum: "")])
+    assert got[0].number == 1 && got[1].number == 3
+    assert sorted_pieces([]).len() == 0

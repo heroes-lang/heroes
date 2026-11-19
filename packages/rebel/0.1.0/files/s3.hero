@@ -1,0 +1,3709 @@
+# The S3 API spoken over HTTP and HTTPS with Signature Version 4: objects
+# put, read whole or by a range, asked about, copied, deleted and listed;
+# buckets made, listed and removed; uploads in parts; presigned URLs and
+# browser forms; checksums; and any other request of the API signed and
+# sent. It speaks to Amazon S3 and to every server that speaks its API:
+# MinIO, Cloudflare R2, Backblaze B2.
+#
+# **A request is signed as AWS documents it** (`sign_request`), its
+# canonical request built by the rules of AWS's own test suite, and the same
+# signer serves any AWS service. A presigned URL (`presign_url`) lets a
+# program with no key fetch or put one object for a time.
+#
+# **Credentials come from the program, the environment or the shared files**
+# (`~/.aws/credentials` and `~/.aws/config`, their profiles), never from the
+# instance's metadata service, a role assumed or a single sign-on. A secret
+# travels only as a signature: no message and no text this package writes
+# holds it (`format_credentials`).
+#
+# **How a bucket is addressed** (`Addressing`): Amazon's endpoints by the
+# bucket's own host name, `bucket.s3.region.amazonaws.com`, and any other
+# endpoint by path, `endpoint/bucket/key`, as botocore and minio-go choose;
+# a name that cannot be a host name always by path.
+#
+# **What it does not do.** A body is held whole in memory, but where a
+# program reads an object into a stream (`get_object_to`) or puts one from a
+# stream in parts (`put_object_from`). It does not reach a server through a
+# proxy, speak HTTP/2, sign by SigV4a, or open S3 Express's sessions. Every
+# bucket configuration is a document the program reads and writes as text
+# (`get_bucket_config`), XML or JSON as the API reference gives it; XML is
+# `xml`'s, a time `time`'s, a request and a response `http`'s.
+#
+# A request that fails on the server is sent again, at most
+# `Client.attempts` times in all, where S3 calls the failure passing (500,
+# 502, 503, 504, `SlowDown`, `RequestTimeout`) or the connection failed.
+#
+# The codes it fails with, each S3 error code mapped to one, the message
+# opening with S3's own code: `not_found` (`NoSuchBucket`, `NoSuchKey`,
+# `NoSuchUpload`, a 404, credentials or a profile not found), `exists`
+# (`BucketAlreadyExists`, `BucketAlreadyOwnedByYou`, a put refused by
+# `if_none_match`), `permission` (403, `AccessDenied`, `SignatureDoesNotMatch`,
+# `InvalidAccessKeyId`, `ExpiredToken`), `not_empty` (`BucketNotEmpty`),
+# `invalid` (a name, a key, a region or an argument this package or the
+# server refuses, a 400 or a 416, an answer not of the API's shape, a
+# checksum that does not match), `limit` (`SlowDown`, 429 and 503 after the
+# retries, an answer past `Client.limits`), `unsupported` (501), `failed`
+# (412, 304, and every other refusal), and from the connection `closed`,
+# `timeout` and `stopped`.
+
+use bytes
+use crypto
+use http
+use io
+use json
+use numbers
+use os
+use s3/internal/addressing
+use s3/internal/answers
+use s3/internal/checksums
+use s3/internal/documents
+use s3/internal/failures
+use s3/internal/fields
+use s3/internal/profiles
+use s3/internal/signing
+use s3/internal/transport
+use strings
+use time
+use url
+
+## Codes
+
+# The code of an argument this package refuses before sending (a bucket's
+# name, a key, a region, a part's number), and of a server's 400 and 416 and
+# an answer not of the API's shape.
+constant INVALID: str
+    "invalid"
+
+# The code of a bucket, a key, an upload or a version the server does not
+# hold, and of credentials or a profile nobody wrote.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a bucket made that is there already, and of a put that
+# `PutOptions.if_none_match` refused because the object exists.
+constant EXISTS: str
+    "exists"
+
+# The code of a request the server refuses to these credentials: denied,
+# signed by an unknown key, a wrong secret or an expired token.
+constant PERMISSION: str
+    "permission"
+
+# The code of a bucket deleted while it holds objects or versions.
+constant NOT_EMPTY: str
+    "not_empty"
+
+# The code of a server that asks the client to slow down after every retry,
+# and of an answer past `Client.limits`.
+constant LIMIT: str
+    "limit"
+
+# The code of an operation the server does not implement (501).
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The code of every other refusal: a condition not met (412), an object not
+# modified (304), a status no other code names.
+constant FAILED: str
+    "failed"
+
+# The code of a connection the server closed before it answered.
+constant CLOSED: str
+    "closed"
+
+# The code of a request that passed `Client.deadline_ms`.
+constant TIMEOUT: str
+    "timeout"
+
+# The code of a request the program was asked to stop while it waited.
+constant STOPPED: str
+    "stopped"
+
+## Credentials
+
+# The keys a request is signed with. Built directly, or read by
+# `credentials_from_env`, `credentials_from_files` or `default_credentials`.
+# No text this package writes holds the secret or the token.
+record Credentials
+    # The access key's id, `AKIAIOSFODNN7EXAMPLE`: letters, digits, `-`, `_`
+    # and `.`.
+    access_key_id: str
+    # The secret access key, which signs and is never sent.
+    secret_access_key: str
+    # The session token of temporary credentials, sent as
+    # `X-Amz-Security-Token`; "" for none.
+    session_token: str
+
+# Which of the two shared files a text is: they name a profile's section
+# differently.
+variant SharedFile
+    # `~/.aws/credentials`, whose sections are named `[name]`.
+    credentials
+    # `~/.aws/config`, whose sections are named `[profile name]`, and
+    # `[default]` for the default.
+    config
+
+# The credentials the environment holds: `AWS_ACCESS_KEY_ID`,
+# `AWS_SECRET_ACCESS_KEY` and `AWS_SESSION_TOKEN`.
+#
+# The token is "" where `AWS_SESSION_TOKEN` is unset or empty. Fails
+# `not_found` where neither key is set, and `invalid` where one is set
+# without the other, as botocore refuses keys by halves.
+# See also `default_credentials`.
+function credentials_from_env() -> Credentials?
+    id = os.env("AWS_ACCESS_KEY_ID").default("")
+    secret = os.env("AWS_SECRET_ACCESS_KEY").default("")
+
+    if id == "" && secret == ""
+        return fail(
+            code: NOT_FOUND,
+            msg: "no credentials in the environment: AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are unset or empty"
+        )
+
+    if id == ""
+        return fail(code: INVALID, msg: "the environment holds AWS_SECRET_ACCESS_KEY but no AWS_ACCESS_KEY_ID")
+
+    if secret == ""
+        return fail(code: INVALID, msg: "the environment holds AWS_ACCESS_KEY_ID but no AWS_SECRET_ACCESS_KEY")
+    return ok(
+        Credentials(access_key_id: id, secret_access_key: secret, session_token: os.env("AWS_SESSION_TOKEN").default(""))
+    )
+
+# The credentials the profile `profile` holds in `text`, a shared file's.
+#
+# - `text`: the file's text, INI as botocore reads it; empty for none.
+# - `profile`: the profile's name, `default` for the default.
+# - `kind`: which file `text` is, which says how a section is named.
+#
+# Keys are read in any case. Fails `invalid` where `text` is not INI, the
+# message naming the line; `not_found` where no section is the profile's, or
+# it holds no `aws_access_key_id` or `aws_secret_access_key`. See also
+# `credentials_from_files`.
+function credentials_from_text(text: str, profile: str, kind: SharedFile) -> Credentials?
+    config = match kind
+        .credentials => false
+        .config      => true
+
+    held = profiles.keys_from_text(text: text, profile: profile, config: config)?
+    return ok(Credentials(access_key_id: held.access_key_id, secret_access_key: held.secret, session_token: held.token))
+
+# The credentials of the profile `profile` in the shared files: the
+# credentials file first, then the config file.
+#
+# - `profile`: the profile's name, `default` for the default.
+#
+# The files are `AWS_SHARED_CREDENTIALS_FILE` and `AWS_CONFIG_FILE` where
+# set, else `credentials` and `config` in the folder `.aws` of the home
+# folder. A file that is not there is skipped. Fails `not_found` where
+# neither file holds the profile's keys; `invalid` where a file is not INI or
+# not text. See also `default_credentials`.
+function credentials_from_files(profile: str) -> Credentials?
+    home = os.home_dir().default("")
+    first = profiles.shared_path(
+        chosen: os.env("AWS_SHARED_CREDENTIALS_FILE").default(""),
+        home: home,
+        file: "credentials"
+    )
+
+    match credentials_from_text(text: profiles.text_of_file(first)?, profile: profile, kind: .credentials)
+        .ok c => return ok(c)
+        .err e =>
+            if e.code != NOT_FOUND
+                return fail(code: e.code, msg: f"{first}: {e.msg}")
+
+    second = profiles.shared_path(chosen: os.env("AWS_CONFIG_FILE").default(""), home: home, file: "config")
+
+    match credentials_from_text(text: profiles.text_of_file(second)?, profile: profile, kind: .config)
+        .ok c => return ok(c)
+        .err e =>
+            if e.code != NOT_FOUND
+                return fail(code: e.code, msg: f"{second}: {e.msg}")
+            return fail(
+                code: NOT_FOUND,
+                msg: f"neither {first} nor {second} holds the keys of the profile \"{profile}\""
+            )
+
+# The credentials a program finds by itself, as botocore looks: the
+# environment's, then the shared files' for the profile `profile_name`
+# names.
+#
+# Fails `not_found` where neither holds any, the message saying where it
+# looked; `invalid` where a shared file is not INI. See also
+# `credentials_from_env`, `credentials_from_files`.
+function default_credentials() -> Credentials?
+    match credentials_from_env()
+        .ok c => return ok(c)
+        .err e =>
+            if e.code != NOT_FOUND
+                return fail(code: e.code, msg: e.msg)
+
+    match credentials_from_files(profile_name())
+        .ok c => return ok(c)
+        .err e =>
+            if e.code == NOT_FOUND
+                return fail(code: NOT_FOUND, msg: "no credentials: AWS_ACCESS_KEY_ID is unset, and " + e.msg)
+            return fail(code: e.code, msg: e.msg)
+
+# The profile a program uses: `AWS_PROFILE`, else `AWS_DEFAULT_PROFILE`,
+# else `default`.
+function profile_name() -> str
+    chosen = os.env("AWS_PROFILE").default("")
+
+    if chosen != ""
+        return chosen
+    fallback = os.env("AWS_DEFAULT_PROFILE").default("")
+
+    if fallback != ""
+        return fallback
+    return "default"
+
+# `c` written for a person, with no secret: the key's id with its last four
+# characters alone shown, whether a secret is held, and whether a token is.
+#
+# - `c`: the credentials.
+#
+# `****************MPLE, a secret, no token`, the id shown as the AWS CLI
+# shows it; an id under 8 bytes is all stars. See also `Credentials`.
+function format_credentials(c: Credentials) -> str
+    id = c.access_key_id
+    shown: str @= repeat("*", to_u64(id.len()).default(0))
+
+    if id.len() >= 8 && strings.is_boundary(id, at: id.len() - 4)
+        shown @ repeat("*", to_u64(id.len() - 4).default(0)) + id.slice(from: id.len() - 4, to: id.len())
+    secret: str @= "no secret"
+
+    if c.secret_access_key != ""
+        secret @ "a secret"
+    token: str @= "no token"
+
+    if c.session_token != ""
+        token @ "a token"
+    return shown + ", " + secret + ", " + token
+
+## Profiles
+
+# How a client reaches its buckets: by host name, by path, or as this
+# package chooses.
+variant Addressing
+    # Amazon's endpoints by host name, any other by path, and by path a name
+    # that cannot be a host name.
+    auto
+    # Always `endpoint/bucket/key`.
+    path
+    # `bucket.endpoint/key` wherever the bucket's name can be a host name,
+    # and by path where it cannot.
+    virtual_host
+
+# What a profile of the config file says of S3: its region, its endpoint and
+# its addressing.
+record Profile
+    # The region, `eu-west-1`; "" where the profile names none.
+    region: str
+    # The endpoint, `services.s3.endpoint_url` or `endpoint_url`, an
+    # absolute URL; "" where it names none.
+    endpoint_url: str
+    # The addressing `s3.addressing_style` names, `auto` where none.
+    addressing: Addressing
+
+# The profile `profile` of `text`, a config file's.
+#
+# - `text`: the file's text, empty for none.
+# - `profile`: the profile's name, `default` for the default.
+#
+# A profile nobody wrote holds nothing: no region, no endpoint, `auto`.
+# Fails `invalid` where `text` is not INI or `addressing_style` is neither
+# `auto`, `path` nor `virtual`. See also `profile_from_files`.
+function profile_from_text(text: str, profile: str) -> Profile?
+    s = profiles.settings_from_text(text: text, profile: profile)?
+
+    if s.addressing == "" || s.addressing == "auto"
+        return ok(Profile(region: s.region, endpoint_url: s.endpoint_url, addressing: .auto))
+
+    if s.addressing == "path"
+        return ok(Profile(region: s.region, endpoint_url: s.endpoint_url, addressing: .path))
+
+    if s.addressing == "virtual"
+        return ok(Profile(region: s.region, endpoint_url: s.endpoint_url, addressing: .virtual_host))
+    return fail(
+        code: INVALID,
+        msg: f"the profile \"{profile}\" names the addressing style \"{s.addressing}\", which is neither auto, path nor virtual"
+    )
+
+# The profile `profile` of the config file, `AWS_CONFIG_FILE` or
+# `~/.aws/config`.
+#
+# - `profile`: the profile's name, `default` for the default.
+#
+# A file that is not there holds nothing. Fails as `profile_from_text`
+# does, and `invalid` where the file is not text.
+function profile_from_files(profile: str) -> Profile?
+    path = profiles.shared_path(
+        chosen: os.env("AWS_CONFIG_FILE").default(""),
+        home: os.home_dir().default(""),
+        file: "config"
+    )
+    return profile_from_text(text: profiles.text_of_file(path)?, profile: profile)
+
+## Clients and endpoints
+
+# How every request is sent: to whom, as whom, and within what. Made by
+# `aws_client`, `minio_client`, `r2_client`, `backblaze_client` or
+# `client_from_env`, its fields changed by the program.
+record Client
+    # The keys requests are signed with.
+    credentials: Credentials
+    # The region signed for, `us-east-1`; `auto` for R2.
+    region: str
+    # The endpoint, an absolute `http://` or `https://` URL with no query,
+    # `http://127.0.0.1:9000`; "" for Amazon's own, made from the region.
+    # A path it holds stands before every bucket's.
+    endpoint: str
+    # How a bucket is reached.
+    addressing: Addressing
+    # Whether Amazon's dual-stack endpoint is used, which IPv6 reaches; read
+    # only where `endpoint` is "".
+    dualstack: bool
+    # Whether Amazon's Transfer Acceleration endpoint is used; read only
+    # where `endpoint` is "", for a bucket whose name holds no dot.
+    accelerate: bool
+    # Whether a body's SHA-256 is signed; else `UNSIGNED-PAYLOAD` is sent,
+    # which only HTTPS keeps whole, and is refused over `http://`.
+    sign_payload: bool
+    # The milliseconds one attempt may take, its connection included; 0 for
+    # no limit.
+    deadline_ms: i64
+    # What an answer may hold; a body past `limits.body_bytes` fails `limit`.
+    limits: http.Limits
+    # The PEM of the only authorities an HTTPS server's certificate may be
+    # signed by; "" trusts the system's own store.
+    roots: str
+    # How many times a request is sent at most, its first included: 1 for no
+    # retry.
+    attempts: i64
+
+# A client of Amazon S3 in `region`.
+#
+# - `region`: the region, `eu-west-1`; its endpoint is
+#   `s3.<region>.amazonaws.com`, `.amazonaws.com.cn` for a `cn-` region.
+# - `credentials`: the keys.
+#
+# Addressing `auto`, payloads signed, no dual stack, no acceleration, 60
+# seconds an attempt, botocore's read timeout, and three attempts, as
+# botocore's standard mode and Go's SDK default, and an answer's body of
+# 1 GiB at most: `get_object_to` reads a larger object.
+function aws_client(region: str, credentials: Credentials) -> Client
+    return Client(
+        credentials: credentials,
+        region: region,
+        endpoint: "",
+        addressing: .auto,
+        dualstack: false,
+        accelerate: false,
+        sign_payload: true,
+        deadline_ms: 60_000,
+        limits: http.Limits(head_bytes: 65_536, field_count: 200, body_bytes: 1_073_741_824),
+        roots: "",
+        attempts: 3
+    )
+
+# A client of a MinIO server, or of any server of the S3 API, at
+# `endpoint`.
+#
+# - `endpoint`: an absolute URL, `http://127.0.0.1:9000`.
+# - `credentials`: the keys.
+#
+# Region `us-east-1`, as MinIO answers by default; by path; otherwise as
+# `aws_client`.
+function minio_client(endpoint: str, credentials: Credentials) -> Client
+    out @= aws_client(region: "us-east-1", credentials: credentials)
+    out.endpoint @ endpoint
+    out.addressing @ .path
+    return out
+
+# A client of Cloudflare R2 for the account `account_id`.
+#
+# - `account_id`: the account's id, a word of letters and digits as
+#   Cloudflare writes it; the endpoint is
+#   `https://<account_id>.r2.cloudflarestorage.com`.
+# - `credentials`: an R2 API token's keys.
+#
+# Region `auto`, as R2 asks; by path; otherwise as `aws_client`.
+function r2_client(account_id: str, credentials: Credentials) -> Client
+    out @= aws_client(region: "auto", credentials: credentials)
+    out.endpoint @ "https://" + account_id + ".r2.cloudflarestorage.com"
+    out.addressing @ .path
+    return out
+
+# A client of Backblaze B2's S3 API in `region`.
+#
+# - `region`: the region of the bucket, `us-west-004`; the endpoint is
+#   `https://s3.<region>.backblazeb2.com`.
+# - `credentials`: an application key's id and key.
+#
+# By path; otherwise as `aws_client`.
+function backblaze_client(region: str, credentials: Credentials) -> Client
+    out @= aws_client(region: region, credentials: credentials)
+    out.endpoint @ "https://s3." + region + ".backblazeb2.com"
+    out.addressing @ .path
+    return out
+
+# The client the environment and the shared files describe, as botocore
+# reads them: `default_credentials`, the region of `AWS_REGION`,
+# `AWS_DEFAULT_REGION` or the profile, `us-east-1` where none names one,
+# and the endpoint of `AWS_ENDPOINT_URL_S3`, `AWS_ENDPOINT_URL` or the
+# profile.
+#
+# Addressing as the profile says; otherwise as `aws_client`. Fails as
+# `default_credentials` and `profile_from_files` do.
+function client_from_env() -> Client?
+    credentials = default_credentials()?
+    p = profile_from_files(profile_name())?
+    region: str @= os.env("AWS_REGION").default("")
+
+    if region == ""
+        region @ os.env("AWS_DEFAULT_REGION").default("")
+
+    if region == ""
+        region @ p.region
+
+    if region == ""
+        region @ "us-east-1"
+    endpoint: str @= os.env("AWS_ENDPOINT_URL_S3").default("")
+
+    if endpoint == ""
+        endpoint @ os.env("AWS_ENDPOINT_URL").default("")
+
+    if endpoint == ""
+        endpoint @ p.endpoint_url
+    out @= aws_client(region: region, credentials: credentials)
+    out.endpoint @ endpoint
+    out.addressing @ p.addressing
+    return ok(out)
+
+# The URL of the object `key` in `bucket`, unsigned, as `c` reaches it.
+#
+# - `c`: the client.
+# - `bucket`: the bucket's name.
+# - `key`: the object's key, written URI-encoded with its `/` kept; ""
+#   names the bucket itself.
+#
+# Fails `invalid` where `bucket` is no bucket's name, `key` is longer than
+# 1,024 bytes, or `c`'s region or endpoint cannot make a URL. See also
+# `presign_url`, `is_bucket_name`.
+function object_url(c: Client, bucket: str, key: str) -> str?
+    style: addressing.Style = match c.addressing
+        .auto         => .auto
+        .path         => .path
+        .virtual_host => .virtual_host
+
+    target = addressing.target(endpoint: c.endpoint, region: c.region, style: style, dualstack: c.dualstack, accelerate: c.accelerate, bucket: bucket, key: key)?
+    return ok(url.format(target))
+
+# Whether `name` may name a new bucket, by S3's rules: 3 to 63 bytes of
+# lower-case letters, digits, `.` and `-`, a letter or a digit at each end,
+# no `..`, no `.-` or `-.`, and not written as an IPv4 address.
+#
+# - `name`: the name asked about.
+#
+# Such a name can be a host name. An older bucket of `us-east-1` may hold
+# capitals and `_`, which every function here reaches by path. See also
+# `object_url`.
+function is_bucket_name(name: str) -> bool
+    return addressing.is_bucket_name(name)
+
+## Signature Version 4
+
+# The payload's hash a request sends when its body is not signed.
+constant UNSIGNED_PAYLOAD: str
+    "UNSIGNED-PAYLOAD"
+
+# The hexadecimal SHA-256 of no bytes, the hash of an empty payload.
+constant EMPTY_PAYLOAD_SHA256: str
+    "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+
+# The longest a presigned URL may live: 604,800 seconds, seven days.
+constant MAX_EXPIRES_SECONDS: i64
+    604_800
+
+# What a signature was made from, for a program that shows or checks it.
+record Signature
+    # The request signed: its `Authorization`, or its query for a presigned
+    # URL.
+    request: http.Request
+    # The canonical request, its lines joined by `\n`.
+    canonical_request: str
+    # The string to sign, its four lines joined by `\n`.
+    string_to_sign: str
+    # The signature, 64 lower-case hexadecimal digits.
+    signature: str
+
+# The instant `t` as SigV4 writes it: `20150830T123600Z`.
+#
+# - `t`: the instant, in UTC; every instant's year, 1677 to 2262, has four
+#   digits.
+#
+# See also `parse_amz_date`.
+function format_amz_date(t: time.Instant) -> str
+    return signing.amz_date(t)
+
+# The instant `s` writes as SigV4's date, `20150830T123600Z`.
+#
+# - `s`: the text, 16 bytes.
+#
+# Fails `invalid` where `s` is not that form or names a day or a time that is
+# none. See also `format_amz_date`.
+function parse_amz_date(s: str) -> time.Instant?
+    return signing.parse_amz_date(s)
+
+# `s` URI-encoded as SigV4 asks: every byte but a letter, a digit, `-`, `.`,
+# `_` and `~` written as `%` and two upper-case hexadecimal digits.
+#
+# - `s`: the text; a character above ASCII is written byte by byte.
+# - `keep_slash`: whether a `/` stays as it is, as in a path and an object's
+#   key.
+#
+# A space is `%20`, never `+`.
+function uri_encode(s: str, keep_slash: bool) -> str
+    return signing.uri_encode(s, keep_slash: keep_slash)
+
+# The canonical request of `r`, the text a signature is made over.
+#
+# - `r`: the request; every field is signed but `Authorization`,
+#   `Connection`, `Content-Length`, `Expect`, `Transfer-Encoding`,
+#   `User-Agent` and `X-Amzn-Trace-Id`, and `Host` is made from the target
+#   where `r` has none.
+# - `payload_hash`: the hexadecimal SHA-256 of the body, or
+#   `UNSIGNED_PAYLOAD`.
+# - `s3`: whether S3's rules hold: the path encoded once and never
+#   normalized; else the path's `.` and `..` resolved, its empty segments
+#   dropped and its bytes encoded again, as for every other service.
+#
+# A query's keys and values are decoded, a `+` read as a space, encoded
+# again and sorted. Fails `invalid` where the path or the query holds a `%`
+# not followed by two hexadecimal digits. See also `sign_request`.
+function canonical_request(r: http.Request, payload_hash: str, s3: bool) -> str?
+    return signing.canonical_request(r, payload_hash: payload_hash, s3: s3)
+
+# The key a signature is made with: the secret, then the day, the region,
+# the service and `aws4_request`, each an HMAC-SHA256 of the one before.
+#
+# - `secret`: the secret access key.
+# - `at`: the instant signed; its day is used.
+# - `region`: the region.
+# - `service`: the service, `s3`.
+#
+# A key serves every signature of that day, region and service.
+function signing_key(secret: str, at: time.Instant, region: str, service: str) -> [u8]
+    return signing.signing_key(secret: secret, at: at, region: region, service: service)
+
+# `r` signed for `service` in `region` at `at`, in its header: `Host` where
+# it has none, `X-Amz-Date`, `X-Amz-Security-Token` where the credentials
+# hold a token, and `Authorization`, the fields of those names it held
+# replaced.
+#
+# - `r`: the request; its body's SHA-256 is signed, and `X-Amz-Content-Sha256`
+#   is added for the service `s3`, whose rules `canonical_request` names.
+# - `credentials`: the keys.
+# - `region`: the region, letters, digits, `-`, `_` and `.`.
+# - `service`: the service's signing name: `s3`, `sts`, `execute-api`.
+# - `at`: the instant signed, which the server holds to within 15 minutes
+#   of its own clock.
+#
+# Fails `invalid` where the region, the service or the key's id cannot
+# stand in a credential, or the path or the query holds a bad escape. See also `presign_request`, `canonical_request`.
+function sign_request(r: http.Request, credentials: Credentials, region: str, service: str, at: time.Instant) -> Signature?
+    signed = signing.sign(r, access_key_id: credentials.access_key_id, secret: credentials.secret_access_key, token: credentials.session_token, region: region, service: service, at: at, payload_hash: bytes.format_hex(crypto.sha256(r.body)), s3: service == "s3")?
+    return ok(
+        Signature(request: signed.request, canonical_request: signed.canonical, string_to_sign: signed.text, signature: signed.signature)
+    )
+
+# `r` presigned: its target given the query that signs it, so whoever holds
+# the URL may send `r` until it expires.
+#
+# - `r`: the request; its fields are signed and must be sent as they are,
+#   and `Host` is made from the target where it has none.
+# - `credentials`: the keys; a token is put in the query.
+# - `region`: the region.
+# - `service`: the service's signing name; for `s3` the payload is
+#   `UNSIGNED-PAYLOAD`, else the SHA-256 of the body.
+# - `at`: the instant the URL is signed at.
+# - `expires_seconds`: how long it lives, 1 to 604,800.
+#
+# Fails `invalid` where `expires_seconds` is outside its range, and as
+# `sign_request` does. See also `presign_url`.
+function presign_request(r: http.Request, credentials: Credentials, region: str, service: str, at: time.Instant, expires_seconds: i64) -> Signature?
+    signed = signing.presign(r, access_key_id: credentials.access_key_id, secret: credentials.secret_access_key, token: credentials.session_token, region: region, service: service, at: at, expires: expires_seconds, s3: service == "s3")?
+    return ok(
+        Signature(request: signed.request, canonical_request: signed.canonical, string_to_sign: signed.text, signature: signed.signature)
+    )
+
+## Checksums
+
+# A checksum S3 keeps beside an object, sent as `x-amz-checksum-<name>` and
+# checked by the server.
+variant Checksum
+    # No checksum is sent.
+    none
+    # CRC-32 (IEEE), four bytes.
+    crc32
+    # CRC-32C (Castagnoli), four bytes.
+    crc32c
+    # CRC-64/NVME, eight bytes, the checksum AWS's SDKs send by default
+    # since 2025.
+    crc64nvme
+    # SHA-1, twenty bytes.
+    sha1
+    # SHA-256, thirty-two bytes.
+    sha256
+
+# The checksum of `data` by `algorithm`, as S3 writes it: its bytes, big
+# endian, in base 64.
+#
+# - `data`: the bytes.
+# - `algorithm`: the checksum; `none` answers "".
+#
+# `checksum_of(bytes.from_text("hello"), .crc32)` is `NhCmhg==`.
+function checksum_of(data: [u8], algorithm: Checksum) -> str
+    return checksums.value_of(data, name: format_checksum(algorithm))
+
+# The name S3 gives `algorithm`: `CRC32`, `CRC32C`, `CRC64NVME`, `SHA1`,
+# `SHA256`; "" for `none`.
+#
+# - `algorithm`: the checksum.
+function format_checksum(algorithm: Checksum) -> str
+    return match algorithm
+        .none      => ""
+        .crc32     => "CRC32"
+        .crc32c    => "CRC32C"
+        .crc64nvme => "CRC64NVME"
+        .sha1      => "SHA1"
+        .sha256    => "SHA256"
+
+# The checksum S3 names `s`, in any case.
+#
+# - `s`: the name, `crc32c` or `CRC32C`.
+#
+# Fails `invalid` where `s` names none of the five.
+function parse_checksum(s: str) -> Checksum?
+    name = checksums.parse_name(s)?
+
+    if name == "CRC32"
+        return ok(.crc32)
+
+    if name == "CRC32C"
+        return ok(.crc32c)
+
+    if name == "CRC64NVME"
+        return ok(.crc64nvme)
+
+    if name == "SHA1"
+        return ok(.sha1)
+    return ok(.sha256)
+
+## Sending any request
+
+# One request of the S3 API, before it is signed: what `send` sends and
+# every function below makes.
+record Operation
+    # The method: `GET`, `PUT`, `POST`, `DELETE`, `HEAD`.
+    method: str
+    # The bucket's name; "" for the service itself, as `ListBuckets`.
+    bucket: str
+    # The object's key, as written, not encoded; "" for the bucket.
+    key: str
+    # The query's keys and values, not encoded, in their order:
+    # `[url.Pair(key: "uploads", value: "")]`.
+    query: [url.Pair]
+    # The fields sent; `Host`, `X-Amz-Date`, `X-Amz-Content-Sha256` and
+    # `Authorization` are the signer's.
+    headers: [http.Header]
+    # The body; none for most.
+    body: [u8]
+
+# An operation `method` on `key` of `bucket`, with no query, no field and no
+# body.
+#
+# - `method`: the method.
+# - `bucket`: the bucket's name; "" for the service.
+# - `key`: the object's key; "" for the bucket.
+function operation(method: str, bucket: str, key: str) -> Operation
+    return Operation(method: method, bucket: bucket, key: key, query: [], headers: [], body: [])
+
+# The request `op` makes for `c`, signed at `at`: its URL by `c`'s
+# addressing, its fields, and its signature.
+#
+# - `c`: the client.
+# - `op`: the operation.
+# - `at`: the instant signed.
+#
+# Nothing is sent. Fails `invalid` where `op.bucket` is no bucket's name,
+# `op.key` is longer than 1,024 bytes, `c.sign_payload` is false over
+# `http://`, or as `sign_request` fails. See also `send`.
+function prepare(c: Client, op: Operation, at: time.Instant) -> http.Request?
+    target @= url.parse(object_url(c, bucket: op.bucket, key: op.key)?)?
+    pieces: [str] @= []
+
+    for p in op.query
+        if p.value == ""
+            pieces @ pieces.push(signing.uri_encode(p.key, keep_slash: false))
+        else
+            pieces @ pieces.push(
+                signing.uri_encode(p.key, keep_slash: false) + "=" + signing.uri_encode(p.value, keep_slash: false)
+            )
+
+    target.query @ pieces.join("&")
+    payload: str @= UNSIGNED_PAYLOAD
+
+    if c.sign_payload
+        payload @ bytes.format_hex(crypto.sha256(op.body))
+    else if target.scheme == "http"
+        return fail(
+            code: INVALID,
+            msg: "an unsigned payload over http:// would travel unchecked: set `sign_payload`, or reach the server by https://"
+        )
+    r = http.Request(method: op.method, url: target, headers: op.headers, body: op.body, closing: false, remote: "")
+    signed = signing.sign(r, access_key_id: c.credentials.access_key_id, secret: c.credentials.secret_access_key, token: c.credentials.session_token, region: c.region, service: "s3", at: at, payload_hash: payload, s3: true)?
+    return ok(signed.request)
+
+# The response to `op`, signed now and sent as `c` says, its status from
+# 200 to 299.
+#
+# - `c`: the client.
+# - `op`: the operation.
+#
+# A failure S3 calls passing is sent again, signed anew, at most
+# `c.attempts` times in all, waiting 100 ms doubled each time up to 20 s.
+# Fails with the code S3's own error code maps to (the face's comment names
+# them), the message opening with S3's code, or with the status where S3
+# answered no error document, and naming the method, the bucket and the key; and as `prepare` and the connection fail. A body is
+# read whole and never decoded: an object stored with a `Content-Encoding`
+# is answered as stored.
+function send(c: Client, op: Operation) -> http.Response?
+    attempt: i64 @= 0
+
+    while true
+        attempt @ attempt + 1
+        r = prepare(c, op: op, at: time.now()?)?
+
+        match transport.exchange(r, deadline_ms: c.deadline_ms, roots: c.roots, limits: c.limits)
+            .ok response =>
+                if response.status >= 200 && response.status < 300
+                    return ok(response)
+                reply @= answers.error_of(response.body)
+
+                if reply.region == ""
+                    reply.region @ http.value_of(response.headers, name: "x-amz-bucket-region").default("")
+
+                if attempt >= c.attempts || !failures.is_retryable(status: response.status, s3_code: reply.code)
+                    return fail(
+                        code: failures.code_for(status: response.status, s3_code: reply.code),
+                        msg: failures.message_for(method: op.method, bucket: op.bucket, key: op.key, status: response.status, reply: reply)
+                    )
+            .err e =>
+                if attempt >= c.attempts || !failures.is_transient(e.code)
+                    return fail(
+                        code: e.code,
+                        msg: "S3 " + failures.request_named(method: op.method, bucket: op.bucket, key: op.key) + ": " + e.msg
+                    )
+
+        transport.pause(failures.backoff_ms(attempt))
+
+## Objects
+
+# One piece of an object's metadata, sent as `x-amz-meta-<name>`.
+record Meta
+    # The name, in lower case, without `x-amz-meta-`.
+    name: str
+    # The value: printable ASCII is sent as it is.
+    value: str
+
+# One tag of an object, a key and its value.
+record Tag
+    # The key, 1 to 128 characters.
+    key: str
+    # The value, 0 to 256 characters.
+    value: str
+
+# How an object is put: its fields, its metadata, its checksum and its
+# conditions. `put_options` makes one with none; the program sets the
+# fields it needs.
+record PutOptions
+    # The `Content-Type`; "" sends none, and S3 keeps
+    # `binary/octet-stream`.
+    content_type: str
+    # The `Cache-Control`; "" for none.
+    cache_control: str
+    # The `Content-Disposition`; "" for none.
+    content_disposition: str
+    # The `Content-Encoding` kept with the object, as `gzip`; "" for none.
+    content_encoding: str
+    # The `Content-Language`; "" for none.
+    content_language: str
+    # The `Expires`, an HTTP date; "" for none.
+    expires: str
+    # The metadata, in its order.
+    metadata: [Meta]
+    # The tags, sent as `x-amz-tagging`.
+    tags: [Tag]
+    # The storage class, `STANDARD`, `STANDARD_IA`, `GLACIER`; "" for the
+    # bucket's.
+    storage_class: str
+    # A canned ACL, `private`, `public-read`; "" for none.
+    acl: str
+    # The server-side encryption, `AES256` or `aws:kms`; "" for none.
+    server_side_encryption: str
+    # The KMS key's id for `aws:kms`; "" for the default.
+    kms_key_id: str
+    # The checksum sent and checked by the server.
+    checksum: Checksum
+    # `*` to put only where no object has the key, else an ETag the object
+    # must not have; "" for no condition.
+    if_none_match: str
+    # The ETag the object must have for the put to replace it; "" for no
+    # condition.
+    if_match: str
+
+# Put options with no field, no metadata, no tag and no condition, the
+# checksum CRC-32 as botocore sends by default.
+function put_options() -> PutOptions
+    return PutOptions(
+        content_type: "",
+        cache_control: "",
+        content_disposition: "",
+        content_encoding: "",
+        content_language: "",
+        expires: "",
+        metadata: [],
+        tags: [],
+        storage_class: "",
+        acl: "",
+        server_side_encryption: "",
+        kms_key_id: "",
+        checksum: .crc32,
+        if_none_match: "",
+        if_match: ""
+    )
+
+# The fields a put of `options` sends: what a presigned PUT's sender must
+# send too.
+#
+# - `options`: the options.
+#
+# One field per option set, in the record's order; the checksum's field is
+# not among them, since it depends on the body. Fails `invalid` where a
+# metadata name is no token or a value holds a line end.
+function headers_of(options: PutOptions) -> [http.Header]?
+    named = [
+        url.Pair(key: "Content-Type", value: options.content_type)
+        url.Pair(key: "Cache-Control", value: options.cache_control)
+        url.Pair(key: "Content-Disposition", value: options.content_disposition)
+        url.Pair(key: "Content-Encoding", value: options.content_encoding)
+        url.Pair(key: "Content-Language", value: options.content_language)
+        url.Pair(key: "Expires", value: options.expires)
+    ]
+    out: [http.Header] @= []
+
+    for p in named
+        if p.value != ""
+            fields.check_field(name: p.key, value: p.value, what: "a field")?
+            out @ out.push(http.Header(name: p.key, value: p.value))
+
+    for m in options.metadata
+        name = fields.META_PREFIX + strings.to_lower_ascii(m.name)
+        fields.check_field(name: name, value: m.value, what: "metadata")?
+        out @ out.push(http.Header(name: name, value: m.value))
+
+    if options.tags.len() > 0
+        pairs: [url.Pair] @= []
+
+        for t in options.tags
+            pairs @ pairs.push(url.Pair(key: t.key, value: t.value))
+
+        out @ out.push(http.Header(name: "x-amz-tagging", value: fields.tagging_value(pairs)))
+    rest = [
+        url.Pair(key: "x-amz-storage-class", value: options.storage_class)
+        url.Pair(key: "x-amz-acl", value: options.acl)
+        url.Pair(key: "x-amz-server-side-encryption", value: options.server_side_encryption)
+        url.Pair(key: "x-amz-server-side-encryption-aws-kms-key-id", value: options.kms_key_id)
+        url.Pair(key: "If-None-Match", value: options.if_none_match)
+        url.Pair(key: "If-Match", value: options.if_match)
+    ]
+
+    for p in rest
+        if p.value != ""
+            fields.check_field(name: p.key, value: p.value, what: "a field")?
+            out @ out.push(http.Header(name: p.key, value: p.value))
+
+    return ok(out)
+
+# What S3 answers to a put, a copy or an upload completed.
+record Stored
+    # The new object's ETag, its quotes kept: `"d41d8cd98f00b204e9800998ecf8427e"`.
+    etag: str
+    # The version made, where the bucket keeps versions; "" otherwise.
+    version_id: str
+    # The checksum S3 computed, in base 64, where one was asked; "" else.
+    checksum: str
+
+# Puts `data` as the object `key` of `bucket`, replacing any of that key.
+#
+# - `c`: the client.
+# - `bucket`: the bucket's name.
+# - `key`: the key, 1 to 1,024 bytes of UTF-8.
+# - `data`: the bytes, at most 5 GiB; a larger object goes in parts.
+# - `options`: the fields, metadata and conditions.
+#
+# Fails `exists` where `options.if_none_match` is `*` and the key is held,
+# `failed` where another condition is not met, and as `send` fails. See also
+# `put_object_in_parts`, `put_object_from`.
+function put_object(c: Client, bucket: str, key: str, data: [u8], options: PutOptions) -> Stored?
+    fields.check_key(key)?
+    op @= operation(method: "PUT", bucket: bucket, key: key)
+    sent: [http.Header] @= headers_of(options)?
+    name = format_checksum(options.checksum)
+
+    if name != ""
+        sent @ sent.push(http.Header(name: checksums.header_of(name), value: checksums.value_of(data, name: name)))
+    op.headers @ sent
+    op.body @ data
+
+    match send(c, op: op)
+        .ok response =>
+            return ok(
+                Stored(etag: http.value_of(response.headers, name: "ETag").default(""), version_id: http.value_of(response.headers, name: "x-amz-version-id").default(""), checksum: fields.checksum_of(response.headers)[1])
+            )
+        .err e =>
+            if e.code == FAILED && options.if_none_match == "*" && strings.has_prefix(s: e.msg, prefix: "PreconditionFailed")
+                return fail(code: EXISTS, msg: e.msg)
+            return fail(code: e.code, msg: e.msg)
+
+# Which bytes of an object a read asks for.
+variant Range
+    # The whole object.
+    whole
+    # From the byte `first` to the end.
+    from
+        # The first byte's index, 0 or more.
+        first: i64
+    # From the byte `first` to the byte `last`, both included.
+    between
+        # The first byte's index, 0 or more.
+        first: i64
+        # The last byte's index, `first` or more; one past the end reads to
+        # the end.
+        last: i64
+    # The last `count` bytes.
+    suffix
+        # How many, 1 or more.
+        count: i64
+
+# How an object is read: which bytes, which version, on which conditions.
+# `get_options` makes one asking for the whole of the newest version.
+record GetOptions
+    # The bytes asked for.
+    span: Range
+    # The version read; "" for the newest.
+    version_id: str
+    # The ETag the object must have, else the read fails `failed`; "" for no
+    # condition.
+    if_match: str
+    # An ETag the object must not have, else the read fails `failed` as not
+    # modified; "" for no condition.
+    if_none_match: str
+    # Read only where the object changed after this HTTP date; "" for no
+    # condition.
+    if_modified_since: str
+    # Read only where the object did not change after this HTTP date; "" for
+    # no condition.
+    if_unmodified_since: str
+    # The part of an object uploaded in parts read alone, 1 to 10,000; 0 for
+    # none.
+    part_number: i64
+    # Whether S3 is asked for the object's checksum and the bytes read are
+    # checked against it, where they are the whole object.
+    verify_checksum: bool
+
+# Get options for the whole of the newest version, no condition, no part,
+# no check.
+function get_options() -> GetOptions
+    return GetOptions(
+        span: .whole,
+        version_id: "",
+        if_match: "",
+        if_none_match: "",
+        if_modified_since: "",
+        if_unmodified_since: "",
+        part_number: 0,
+        verify_checksum: false
+    )
+
+# The `Range` field `span` asks for: `bytes=0-9`, `bytes=100-`, `bytes=-10`.
+#
+# - `span`: the bytes; `whole` asks for none.
+#
+# Fails `invalid` for `whole`, a first byte below 0, a last byte before the
+# first, or a suffix of no byte.
+function range_header(span: Range) -> str?
+    match span
+        .whole => return fail(code: INVALID, msg: "the whole object is asked by no Range field")
+        .from f =>
+            if f.first < 0
+                return fail(code: INVALID, msg: f"a range from byte {f.first}: the first byte is 0 or more")
+            return ok(f"bytes={f.first}-")
+        .between b =>
+            if b.first < 0 || b.last < b.first
+                return fail(
+                    code: INVALID,
+                    msg: f"a range from byte {b.first} to byte {b.last}: the first is 0 or more and the last not before it"
+                )
+            return ok(f"bytes={b.first}-{b.last}")
+        .suffix s =>
+            if s.count < 1
+                return fail(code: INVALID, msg: f"the last {s.count} bytes: a suffix holds 1 byte or more")
+            return ok(f"bytes=-{s.count}")
+
+# The operation `get_object_with` sends: the version and the part in the
+# query, the range, the conditions and the checksum's mode in the fields.
+#
+# - `bucket`: the bucket's name.
+# - `key`: the key.
+# - `options`: the bytes, the version and the conditions.
+#
+# For a program that presigns or sends a read itself. Fails `invalid` where
+# `key` is empty, the part's number is outside 1 to 10,000, the range is
+# none `range_header` writes, or a condition holds a line end.
+function get_operation(bucket: str, key: str, options: GetOptions) -> Operation?
+    fields.check_key(key)?
+    op @= operation(method: "GET", bucket: bucket, key: key)
+    query: [url.Pair] @= []
+    sent: [http.Header] @= []
+
+    if options.part_number != 0
+        if options.part_number < 1 || options.part_number > MAX_PARTS
+            return fail(code: INVALID, msg: f"the part {options.part_number} is outside 1 to {MAX_PARTS}")
+        query @ query.push(url.Pair(key: "partNumber", value: f"{options.part_number}"))
+
+    if options.version_id != ""
+        query @ query.push(url.Pair(key: "versionId", value: options.version_id))
+
+    match options.span
+        .whole                           => _ = 0
+        .from _ | .between _ | .suffix _ => sent @ sent.push(
+            http.Header(name: "Range", value: range_header(options.span)?)
+        )
+
+    conditions = [
+        url.Pair(key: "If-Match", value: options.if_match)
+        url.Pair(key: "If-None-Match", value: options.if_none_match)
+        url.Pair(key: "If-Modified-Since", value: options.if_modified_since)
+        url.Pair(key: "If-Unmodified-Since", value: options.if_unmodified_since)
+    ]
+
+    for p in conditions
+        if p.value != ""
+            fields.check_field(name: p.key, value: p.value, what: "a condition")?
+            sent @ sent.push(http.Header(name: p.key, value: p.value))
+
+    if options.verify_checksum
+        sent @ sent.push(http.Header(name: "x-amz-checksum-mode", value: "ENABLED"))
+    op.query @ query
+    op.headers @ sent
+    return ok(op)
+
+# What S3 says of an object: its size, its fields, its metadata.
+record Info
+    # The key asked for.
+    key: str
+    # The bytes of the body answered: the object's, or the range's.
+    size: i64
+    # The whole object's size: the size of `Content-Range` for a range,
+    # else `size`.
+    total_size: i64
+    # The ETag, its quotes kept.
+    etag: str
+    # When the object was last written.
+    last_modified: time.Instant
+    # The `Content-Type`; "" where none was answered.
+    content_type: str
+    # The `Cache-Control`; "" where none.
+    cache_control: str
+    # The `Content-Disposition`; "" where none.
+    content_disposition: str
+    # The `Content-Encoding`; "" where none.
+    content_encoding: str
+    # The `Content-Language`; "" where none.
+    content_language: str
+    # The `Expires`; "" where none.
+    expires: str
+    # The metadata, names in lower case, in the order answered.
+    metadata: [Meta]
+    # The version; "" where the bucket keeps none.
+    version_id: str
+    # The storage class; "" for `STANDARD`, which S3 does not name.
+    storage_class: str
+    # The checksum's kind S3 answered, `none` where none.
+    checksum_algorithm: Checksum
+    # The checksum in base 64, `-` and the parts' count after it for one of
+    # an object uploaded in parts; "" where none.
+    checksum: str
+    # The server-side encryption; "" where none.
+    server_side_encryption: str
+    # How many parts the object was uploaded in, where `part_number` asked;
+    # 0 else.
+    parts_count: i64
+    # Every field answered, in order.
+    headers: [http.Header]
+
+# An object read: what S3 says of it and its bytes.
+record Object
+    # What S3 says of it.
+    info: Info
+    # Its bytes, or the range's.
+    data: [u8]
+
+# What the fields of `r`, S3's answer about the object `key`, say of it.
+#
+# - `r`: the answer to a GET or a HEAD of the object; its body's length is
+#   the size where it carries no `Content-Length`.
+# - `key`: the key asked for.
+#
+# Fails `invalid` where its `Content-Length`, `Content-Range` or
+# `Last-Modified` is not what S3 writes. See also `head_object`.
+function info_of(r: http.Response, key: str) -> Info?
+    h = r.headers
+    size: i64 @= r.body.len()
+
+    match http.value_of(h, name: "Content-Length")
+        .ok text =>
+            match numbers.parse_int(text)
+                .ok n => size @ n
+                .err _ => return fail(
+                    code: INVALID,
+                    msg: f"S3 answered the Content-Length \"{text}\", which is no integer"
+                )
+        .err _ => _ = 0
+
+    total: i64 @= size
+
+    match http.value_of(h, name: "Content-Range")
+        .ok text => total @ fields.total_of(text)?
+        .err _   => _ = 0
+
+    modified_text = http.value_of(h, name: "Last-Modified").default("")
+    modified: time.Instant @= time.epoch()
+
+    match time.parse(modified_text, layout: .http)
+        .ok t => modified @ t
+        .err _ => return fail(
+            code: INVALID,
+            msg: f"S3 answered the Last-Modified \"{modified_text}\", which is no HTTP date"
+        )
+
+    meta: [Meta] @= []
+
+    for p in fields.metadata_of(h)
+        meta @ meta.push(Meta(name: p.key, value: p.value))
+
+    sum = fields.checksum_of(h)
+    algorithm = parse_checksum(sum[0]).default(.none)
+    parts = numbers.parse_int(http.value_of(h, name: "x-amz-mp-parts-count").default("0")).default(0)
+    return ok(
+        Info(key: key, size: size, total_size: total, etag: http.value_of(h, name: "ETag").default(""), last_modified: modified, content_type: http.value_of(h, name: "Content-Type").default(""), cache_control: http.value_of(h, name: "Cache-Control").default(""), content_disposition: http.value_of(h, name: "Content-Disposition").default(""), content_encoding: http.value_of(h, name: "Content-Encoding").default(""), content_language: http.value_of(h, name: "Content-Language").default(""), expires: http.value_of(h, name: "Expires").default(""), metadata: meta, version_id: http.value_of(h, name: "x-amz-version-id").default(""), storage_class: http.value_of(h, name: "x-amz-storage-class").default(""), checksum_algorithm: algorithm, checksum: sum[1], server_side_encryption: http.value_of(h, name: "x-amz-server-side-encryption").default(""), parts_count: parts, headers: h)
+    )
+
+# The object `key` of `bucket`, whole.
+#
+# - `c`: the client.
+# - `bucket`: the bucket's name.
+# - `key`: the key.
+#
+# Fails `not_found` where the bucket or the key is not there, `limit` where
+# the object passes `c.limits.body_bytes`, and as `send` fails. See also
+# `get_object_with`, `get_object_to`.
+function get_object(c: Client, bucket: str, key: str) -> Object?
+    return get_object_with(c, bucket: bucket, key: key, options: get_options())
+
+# The object `key` of `bucket`, read as `options` say.
+#
+# - `c`: the client.
+# - `bucket`: the bucket's name.
+# - `key`: the key.
+# - `options`: the bytes, the version and the conditions.
+#
+# Fails `invalid` where the range is not satisfiable or the checksum does
+# not match, `failed` where a condition is not met or the object was not
+# modified, and as `get_object` fails.
+function get_object_with(c: Client, bucket: str, key: str, options: GetOptions) -> Object?
+    response = send(c, op: get_operation(bucket: bucket, key: key, options: options)?)?
+    info = info_of(response, key: key)?
+
+    if options.verify_checksum && info.checksum != "" && !strings.contains(s: info.checksum, substr: "-") && info.size == info.total_size
+        name = format_checksum(info.checksum_algorithm)
+        got = checksums.value_of(response.body, name: name)
+
+        if got != info.checksum
+            return fail(
+                code: INVALID,
+                msg: f"the {response.body.len()} bytes of {bucket}/{key} have the {name} {got}, where S3 answered {info.checksum}"
+            )
+    return ok(Object(info: info, data: response.body))
+
+# Writes the object `key` of `bucket`, read as `options` say, to `s` as it
+# comes: an object of any size.
+#
+# - `c`: the client.
+# - `bucket`: the bucket's name.
+# - `key`: the key.
+# - `options`: the bytes, the version and the conditions.
+# - `s`: the stream written; its owner closes it.
+#
+# Answers what S3 says of the object. Fails as `get_object_with` does, and
+# as `io.write` fails; a failure past the first byte leaves those written.
+function get_object_to(c: Client, bucket: str, key: str, options: GetOptions, s: io.Stream) -> Info?
+    op = get_operation(bucket: bucket, key: key, options: options)?
+    attempt: i64 @= 0
+
+    while true
+        attempt @ attempt + 1
+        r = prepare(c, op: op, at: time.now()?)?
+
+        match transport.open_head(r, deadline_ms: c.deadline_ms, roots: c.roots, limits: c.limits)
+            .ok opened =>
+                held @= opened
+
+                if held.head.status >= 200 && held.head.status < 300
+                    outcome = transport.copy_body(@held, method: "GET", limits: c.limits, s: s)
+                    transport.close(@held)
+                    _ = outcome?
+                    return info_of(held.head, key: key)
+                held.head.body @ transport.read_body(@held, method: "GET", limits: c.limits, most: 1_048_576).default(
+                    []
+                )
+                transport.close(@held)
+                reply @= answers.error_of(held.head.body)
+
+                if reply.region == ""
+                    reply.region @ http.value_of(held.head.headers, name: "x-amz-bucket-region").default("")
+
+                if attempt >= c.attempts || !failures.is_retryable(status: held.head.status, s3_code: reply.code)
+                    return fail(
+                        code: failures.code_for(status: held.head.status, s3_code: reply.code),
+                        msg: failures.message_for(method: "GET", bucket: bucket, key: key, status: held.head.status, reply: reply)
+                    )
+            .err e =>
+                if attempt >= c.attempts || !failures.is_transient(e.code)
+                    return fail(
+                        code: e.code,
+                        msg: "S3 " + failures.request_named(method: "GET", bucket: bucket, key: key) + ": " + e.msg
+                    )
+
+        transport.pause(failures.backoff_ms(attempt))
+
+# What S3 says of the object `key` of `bucket`, without its bytes.
+#
+# - `c`: the client.
+# - `bucket`: the bucket's name.
+# - `key`: the key.
+#
+# Fails `not_found` where it is not there, and as `send` fails. See also
+# `object_exists`.
+function head_object(c: Client, bucket: str, key: str) -> Info?
+    fields.check_key(key)?
+    response = send(c, op: operation(method: "HEAD", bucket: bucket, key: key))?
+    return info_of(response, key: key)
+
+# Whether `bucket` holds an object of the key `key`.
+#
+# - `c`: the client.
+# - `bucket`: the bucket's name.
+# - `key`: the key.
+#
+# Fails as `head_object` does, but never `not_found` for the key. A missing
+# bucket answers false as S3 does not say which is missing to `HEAD`.
+function object_exists(c: Client, bucket: str, key: str) -> bool?
+    match head_object(c, bucket: bucket, key: key)
+        .ok _ => return ok(true)
+        .err e =>
+            if e.code == NOT_FOUND
+                return ok(false)
+            return fail(code: e.code, msg: e.msg)
+
+# Deletes the object `key` of `bucket`; deleting one that is not there
+# succeeds, as S3 answers.
+#
+# - `c`: the client.
+# - `bucket`: the bucket's name.
+# - `key`: the key.
+#
+# In a bucket that keeps versions it adds a delete marker. Fails as `send`
+# fails. See also `delete_objects`, `delete_object_version`.
+function delete_object(c: Client, bucket: str, key: str) -> ()?
+    fields.check_key(key)?
+    _ = send(c, op: operation(method: "DELETE", bucket: bucket, key: key))?
+    return ok()
+
+# Deletes the version `version_id` of the object `key` of `bucket` for good.
+#
+# - `c`: the client.
+# - `bucket`: the bucket's name.
+# - `key`: the key.
+# - `version_id`: the version, as a put or a listing answered it.
+#
+# Fails as `send` fails.
+function delete_object_version(c: Client, bucket: str, key: str, version_id: str) -> ()?
+    fields.check_key(key)?
+
+    if version_id == ""
+        return fail(code: INVALID, msg: f"deleting a version of {bucket}/{key}: the version's id is empty")
+    op @= operation(method: "DELETE", bucket: bucket, key: key)
+    op.query @ [url.Pair(key: "versionId", value: version_id)]
+    _ = send(c, op: op)?
+    return ok()
+
+# One object a `delete_objects` did not delete, and why.
+record NotDeleted
+    # The key.
+    key: str
+    # S3's code, `AccessDenied`.
+    code: str
+    # S3's message.
+    message: str
+
+# Deletes every object of `keys` from `bucket`, a thousand to a request.
+#
+# - `c`: the client.
+# - `bucket`: the bucket's name.
+# - `names`: the keys, each 1 to 1,024 bytes; none sends nothing.
+#
+# Answers the keys S3 did not delete, in its order: empty where it deleted
+# all. Fails as `send` fails, where a request as a whole is refused.
+function delete_objects(c: Client, bucket: str, names: [str]) -> [NotDeleted]?
+    out: [NotDeleted] @= []
+    at: i64 @= 0
+
+    while at < names.len()
+        end: i64 @= at + 1_000
+
+        if end > names.len()
+            end @ names.len()
+        chunk = names.slice(from: at, to: end)
+
+        for k in chunk
+            fields.check_key(k)?
+
+        body = bytes.from_text(documents.delete_body(chunk)?)
+        op @= operation(method: "POST", bucket: bucket, key: "")
+        op.query @ [url.Pair(key: "delete", value: "")]
+        op.headers @ [
+            http.Header(name: "Content-Type", value: "application/xml")
+            http.Header(name: "Content-MD5", value: bytes.format_base64(crypto.md5(body)))
+        ]
+        op.body @ body
+        response = send(c, op: op)?
+
+        for r in answers.refused_of(response.body)?
+            out @ out.push(NotDeleted(key: r.key, code: r.code, message: r.message))
+
+        at @ end
+
+    return ok(out)
+
+# Copies the object `from_key` of `from_bucket` to `to_key` of `to_bucket`,
+# its metadata and fields kept.
+#
+# - `c`: the client.
+# - `from_bucket`: the source's bucket.
+# - `from_key`: the source's key.
+# - `to_bucket`: the copy's bucket.
+# - `to_key`: the copy's key.
+#
+# An object of at most 5 GiB. Fails `not_found` where the source is not
+# there, and as `send` fails, a refusal S3 answers with 200 included. See
+# also `copy_object_with`.
+function copy_object(c: Client, from_bucket: str, from_key: str, to_bucket: str, to_key: str) -> Stored?
+    fields.check_key(from_key)?
+    fields.check_key(to_key)?
+    op @= operation(method: "PUT", bucket: to_bucket, key: to_key)
+    op.headers @ [http.Header(name: "x-amz-copy-source", value: fields.copy_source(bucket: from_bucket, key: from_key))]
+    response = send(c, op: op)?
+    failures.refusal_in(response.body, method: "PUT", bucket: to_bucket, key: to_key)?
+    result = answers.result_of(response.body, name: "CopyObjectResult")?
+    return ok(
+        Stored(etag: result.etag, version_id: http.value_of(response.headers, name: "x-amz-version-id").default(""), checksum: result.checksum)
+    )
+
+# Copies the object `from_key` of `from_bucket` to `to_key` of `to_bucket`,
+# its metadata and fields replaced by those of `options`.
+#
+# - `c`: the client.
+# - `from_bucket`: the source's bucket.
+# - `from_key`: the source's key.
+# - `to_bucket`: the copy's bucket.
+# - `to_key`: the copy's key; the source's own key changes its metadata in
+#   place.
+# - `options`: the copy's fields, metadata, tags and checksum; its
+#   conditions are the copy's, held to the destination.
+#
+# Fails as `copy_object` does.
+function copy_object_with(c: Client, from_bucket: str, from_key: str, to_bucket: str, to_key: str, options: PutOptions) -> Stored?
+    fields.check_key(from_key)?
+    fields.check_key(to_key)?
+    op @= operation(method: "PUT", bucket: to_bucket, key: to_key)
+    sent: [http.Header] @= headers_of(options)?
+    sent @ sent.push(
+        http.Header(name: "x-amz-copy-source", value: fields.copy_source(bucket: from_bucket, key: from_key))
+    )
+    sent @ sent.push(http.Header(name: "x-amz-metadata-directive", value: "REPLACE"))
+
+    if options.tags.len() > 0
+        sent @ sent.push(http.Header(name: "x-amz-tagging-directive", value: "REPLACE"))
+    name = format_checksum(options.checksum)
+
+    if name != ""
+        sent @ sent.push(http.Header(name: "x-amz-checksum-algorithm", value: name))
+    op.headers @ sent
+    response = send(c, op: op)?
+    failures.refusal_in(response.body, method: "PUT", bucket: to_bucket, key: to_key)?
+    result = answers.result_of(response.body, name: "CopyObjectResult")?
+    return ok(
+        Stored(etag: result.etag, version_id: http.value_of(response.headers, name: "x-amz-version-id").default(""), checksum: result.checksum)
+    )
+
+# The tags of the object `key` of `bucket`, in their order.
+#
+# - `c`: the client.
+# - `bucket`: the bucket's name.
+# - `key`: the key.
+#
+# Empty where it has none. Fails as `send` fails.
+function get_object_tags(c: Client, bucket: str, key: str) -> [Tag]?
+    fields.check_key(key)?
+    op @= operation(method: "GET", bucket: bucket, key: key)
+    op.query @ [url.Pair(key: "tagging", value: "")]
+    response = send(c, op: op)?
+    out: [Tag] @= []
+
+    for p in answers.tags_of(response.body)?
+        out @ out.push(Tag(key: p.key, value: p.value))
+
+    return ok(out)
+
+# Sets the tags of the object `key` of `bucket` to `tags`, every one before
+# replaced.
+#
+# - `c`: the client.
+# - `bucket`: the bucket's name.
+# - `key`: the key.
+# - `tags`: the tags, at most 10; none removes them all.
+#
+# Fails `invalid` where a tag's key or value cannot be written, and as `send`
+# fails.
+function put_object_tags(c: Client, bucket: str, key: str, tags: [Tag]) -> ()?
+    fields.check_key(key)?
+    pairs: [url.Pair] @= []
+
+    for t in tags
+        pairs @ pairs.push(url.Pair(key: t.key, value: t.value))
+
+    body = bytes.from_text(documents.tagging_body(pairs)?)
+    op @= operation(method: "PUT", bucket: bucket, key: key)
+    op.query @ [url.Pair(key: "tagging", value: "")]
+    op.headers @ [
+        http.Header(name: "Content-Type", value: "application/xml")
+        http.Header(name: "Content-MD5", value: bytes.format_base64(crypto.md5(body)))
+    ]
+    op.body @ body
+    _ = send(c, op: op)?
+    return ok()
+
+## Listing objects
+
+# How a page of objects is asked for. `list_options` makes one asking for
+# every key.
+record ListOptions
+    # Only keys that begin with it; "" for all.
+    prefix: str
+    # A text keys are grouped at: the keys holding it after the prefix are
+    # answered once, as a common prefix; "" groups none.
+    delimiter: str
+    # Only keys after it, in byte order; "" from the first.
+    start_after: str
+    # The token of the page asked for, which the page before answered; "" for
+    # the first.
+    continuation_token: str
+    # The most keys and prefixes of a page, 1 to 1,000; 0 for the server's
+    # 1,000.
+    max_keys: i64
+
+# List options for every key, the first page, the server's page size.
+function list_options() -> ListOptions
+    return ListOptions(prefix: "", delimiter: "", start_after: "", continuation_token: "", max_keys: 0)
+
+# One object of a listing.
+record Summary
+    # The key.
+    key: str
+    # The size in bytes.
+    size: i64
+    # The ETag, its quotes kept.
+    etag: str
+    # When it was last written.
+    last_modified: time.Instant
+    # The storage class, `STANDARD`.
+    storage_class: str
+
+# One page of a listing.
+record Listing
+    # The objects, in byte order of their keys.
+    objects: [Summary]
+    # The common prefixes where `delimiter` was given, in byte order.
+    prefixes: [str]
+    # Whether more pages follow.
+    truncated: bool
+    # The token of the next page, given where `truncated`; "" else.
+    next_token: str
+
+# One page of the objects of `bucket`, by the API's version 2.
+#
+# - `c`: the client.
+# - `bucket`: the bucket's name.
+# - `options`: the prefix, the delimiter and the page.
+#
+# Keys are asked URI-encoded and answered decoded, so a key with a
+# character XML cannot hold is listed. Fails `not_found` where the bucket is
+# not there, and as `send` fails. See also `list_all_objects`.
+function list_objects(c: Client, bucket: str, options: ListOptions) -> Listing?
+    if bucket == ""
+        return fail(code: INVALID, msg: "listing objects: the bucket's name is empty")
+
+    if options.max_keys < 0 || options.max_keys > 1_000
+        return fail(
+            code: INVALID,
+            msg: f"listing {bucket}: {options.max_keys} keys a page is outside 1 to 1,000, or 0 for the server's"
+        )
+    query: [url.Pair] @= [url.Pair(key: "list-type", value: "2"), url.Pair(key: "encoding-type", value: "url")]
+    asked = [
+        url.Pair(key: "prefix", value: options.prefix)
+        url.Pair(key: "delimiter", value: options.delimiter)
+        url.Pair(key: "start-after", value: options.start_after)
+        url.Pair(key: "continuation-token", value: options.continuation_token)
+        url.Pair(key: "max-keys", value: fields.count_text(options.max_keys))
+    ]
+
+    for p in asked
+        if p.value != ""
+            query @ query.push(p)
+
+    op @= operation(method: "GET", bucket: bucket, key: "")
+    op.query @ query
+    response = send(c, op: op)?
+    page = answers.page_of(response.body)?
+    objects: [Summary] @= []
+
+    for e in page.entries
+        objects @ objects.push(
+            Summary(key: e.key, size: e.size, etag: e.etag, last_modified: e.last_modified, storage_class: e.storage_class)
+        )
+
+    return ok(
+        Listing(objects: objects, prefixes: page.prefixes, truncated: page.truncated, next_token: page.next_token)
+    )
+
+# Every object of `bucket` whose key begins with `prefix`, page after page.
+#
+# - `c`: the client.
+# - `bucket`: the bucket's name.
+# - `prefix`: the prefix; "" for every key.
+#
+# In byte order of their keys. Fails as `list_objects` does, and `invalid`
+# where a page says more follow and gives no token.
+function list_all_objects(c: Client, bucket: str, prefix: str) -> [Summary]?
+    every: [Summary] @= []
+    options @= list_options()
+    options.prefix @ prefix
+
+    while true
+        page = list_objects(c, bucket: bucket, options: options)?
+
+        for o in page.objects
+            every @ every.push(o)
+
+        if !page.truncated
+            return ok(every)
+
+        if page.next_token == "" || page.next_token == options.continuation_token
+            return fail(code: INVALID, msg: f"listing {bucket}: a page says more follow and gives no new token")
+        options.continuation_token @ page.next_token
+
+# One version of an object, or a delete marker, in a bucket that keeps
+# versions.
+record Version
+    # The key.
+    key: str
+    # The version's id, `null` for one written before versions were kept.
+    version_id: str
+    # Whether it is the newest of its key.
+    is_latest: bool
+    # Whether it is a delete marker, which `delete_object` leaves and which
+    # holds no bytes.
+    delete_marker: bool
+    # The size in bytes; 0 for a delete marker.
+    size: i64
+    # The ETag, its quotes kept; "" for a delete marker.
+    etag: str
+    # When it was written.
+    last_modified: time.Instant
+
+# Every version and delete marker of the objects of `bucket` whose key
+# begins with `prefix`, page after page.
+#
+# - `c`: the client.
+# - `bucket`: the bucket's name.
+# - `prefix`: the prefix; "" for every key.
+#
+# By key, and for each key the newest first, as S3 answers. A bucket that
+# never kept versions answers each object once, its id `null`. Fails as
+# `send` fails, and `invalid` where a page says more follow and gives no new
+# marker. See also `delete_object_version`.
+function list_object_versions(c: Client, bucket: str, prefix: str) -> [Version]?
+    every: [Version] @= []
+    key_marker: str @= ""
+    id_marker: str @= ""
+
+    while true
+        query: [url.Pair] @= [url.Pair(key: "versions", value: ""), url.Pair(key: "encoding-type", value: "url")]
+
+        if prefix != ""
+            query @ query.push(url.Pair(key: "prefix", value: prefix))
+
+        if key_marker != ""
+            query @ query.push(url.Pair(key: "key-marker", value: key_marker))
+
+        if id_marker != ""
+            query @ query.push(url.Pair(key: "version-id-marker", value: id_marker))
+        op @= operation(method: "GET", bucket: bucket, key: "")
+        op.query @ query
+        page = answers.versions_of(send(c, op: op)?.body)?
+
+        for v in page.versions
+            every @ every.push(
+                Version(key: v.key, version_id: v.version_id, is_latest: v.is_latest, delete_marker: v.delete_marker, size: v.size, etag: v.etag, last_modified: v.last_modified)
+            )
+
+        if !page.truncated
+            return ok(every)
+
+        if page.next_key_marker == key_marker && page.next_version_id_marker == id_marker
+            return fail(
+                code: INVALID,
+                msg: f"listing the versions of {bucket}: a page says more follow and gives no new marker"
+            )
+        key_marker @ page.next_key_marker
+        id_marker @ page.next_version_id_marker
+
+## Buckets
+
+# One bucket of a listing.
+record Bucket
+    # The name.
+    name: str
+    # When it was made.
+    created: time.Instant
+    # Its region, where the server names it; "" else.
+    region: str
+
+# The buckets the credentials own, in the order answered.
+#
+# - `c`: the client.
+#
+# Fails as `send` fails.
+function list_buckets(c: Client) -> [Bucket]?
+    response = send(c, op: operation(method: "GET", bucket: "", key: ""))?
+    out: [Bucket] @= []
+
+    for b in answers.buckets_of(response.body)?
+        out @ out.push(Bucket(name: b.name, created: b.created, region: b.region))
+
+    return ok(out)
+
+# Makes the bucket `bucket` in `c`'s region.
+#
+# - `c`: the client; a region other than `us-east-1` and `auto` is sent as
+#   the bucket's location.
+# - `bucket`: the name, which `is_bucket_name` must accept.
+#
+# Fails `invalid` where `is_bucket_name` refuses the name, `exists` where a
+# bucket of that name is there, and as `send` fails.
+function create_bucket(c: Client, bucket: str) -> ()?
+    if !is_bucket_name(bucket)
+        return fail(
+            code: INVALID,
+            msg: f"\"{bucket}\" cannot name a new bucket: 3 to 63 bytes of lower-case letters, digits, `.` and `-`, a letter or a digit at each end, and no IPv4 address"
+        )
+    op @= operation(method: "PUT", bucket: bucket, key: "")
+
+    if c.region != "us-east-1" && c.region != "auto" && c.region != ""
+        op.headers @ [http.Header(name: "Content-Type", value: "application/xml")]
+        op.body @ bytes.from_text(documents.location_body(c.region))
+    _ = send(c, op: op)?
+    return ok()
+
+# Deletes the bucket `bucket`, which must be empty.
+#
+# - `c`: the client.
+# - `bucket`: the name.
+#
+# Fails `not_empty` where it holds an object, `not_found` where it is not
+# there, and as `send` fails.
+function delete_bucket(c: Client, bucket: str) -> ()?
+    if bucket == ""
+        return fail(code: INVALID, msg: "deleting a bucket: its name is empty")
+    _ = send(c, op: operation(method: "DELETE", bucket: bucket, key: ""))?
+    return ok()
+
+# Whether the bucket `bucket` is there and the credentials may reach it.
+#
+# - `c`: the client.
+# - `bucket`: the name.
+#
+# Fails `permission` where it is there and refused, and as `send` fails, but
+# never `not_found`.
+function bucket_exists(c: Client, bucket: str) -> bool?
+    if bucket == ""
+        return fail(code: INVALID, msg: "asking for a bucket: its name is empty")
+
+    match send(c, op: operation(method: "HEAD", bucket: bucket, key: ""))
+        .ok _ => return ok(true)
+        .err e =>
+            if e.code == NOT_FOUND
+                return ok(false)
+            return fail(code: e.code, msg: e.msg)
+
+# The region the bucket `bucket` stands in, as `GetBucketLocation` answers:
+# `us-east-1` where S3 answers no location.
+#
+# - `c`: the client.
+# - `bucket`: the name.
+#
+# Fails as `send` fails.
+function bucket_region(c: Client, bucket: str) -> str?
+    if bucket == ""
+        return fail(code: INVALID, msg: "asking a bucket's region: its name is empty")
+    op @= operation(method: "GET", bucket: bucket, key: "")
+    op.query @ [url.Pair(key: "location", value: "")]
+    response = send(c, op: op)?
+    return answers.location_of(response.body)
+
+# The configuration `name` of the bucket `bucket`, the document S3 answers.
+#
+# - `c`: the client.
+# - `bucket`: the name.
+# - `name`: the configuration, as the query names it: `versioning`,
+#   `policy`, `cors`, `lifecycle`, `tagging`, `encryption`, `website`,
+#   `logging`, `notification`, `replication`, `ownershipControls`,
+#   `publicAccessBlock`, `accelerate`, `requestPayment`, `acl`,
+#   `object-lock`, `policyStatus`.
+#
+# XML, or JSON for `policy`, as the API reference gives it. Fails
+# `invalid` where `name` is none of those, `not_found` where the bucket has
+# none (S3's `NoSuchBucketPolicy`, `NoSuchCORSConfiguration` and the
+# others), and as `send` fails. See also `put_bucket_config`.
+function get_bucket_config(c: Client, bucket: str, name: str) -> str?
+    if !documents.is_readable_config(name)
+        return fail(code: INVALID, msg: f"no configuration of a bucket is read as \"{name}\"")
+    op @= operation(method: "GET", bucket: bucket, key: "")
+    op.query @ [url.Pair(key: name, value: "")]
+    response = send(c, op: op)?
+
+    match bytes.to_text(response.body)
+        .ok text => return ok(text)
+        .err _   => return fail(code: INVALID, msg: f"the configuration \"{name}\" of {bucket} is not UTF-8 text")
+
+# Sets the configuration `name` of the bucket `bucket` to `document`.
+#
+# - `c`: the client.
+# - `bucket`: the name.
+# - `name`: the configuration, as `get_bucket_config` names it, but
+#   `policyStatus`, which is only read.
+# - `document`: the XML or JSON the API reference gives; its MD5 is sent as
+#   `Content-MD5`.
+#
+# Fails as `get_bucket_config` does, and `invalid` where S3 refuses the
+# document.
+function put_bucket_config(c: Client, bucket: str, name: str, document: str) -> ()?
+    if !documents.is_writable_config(name)
+        return fail(code: INVALID, msg: f"no configuration of a bucket is written as \"{name}\"")
+    body = bytes.from_text(document)
+    kind: str @= "application/xml"
+
+    if name == "policy"
+        kind @ "application/json"
+    op @= operation(method: "PUT", bucket: bucket, key: "")
+    op.query @ [url.Pair(key: name, value: "")]
+    op.headers @ [
+        http.Header(name: "Content-Type", value: kind)
+        http.Header(name: "Content-MD5", value: bytes.format_base64(crypto.md5(body)))
+    ]
+    op.body @ body
+    _ = send(c, op: op)?
+    return ok()
+
+# Deletes the configuration `name` of the bucket `bucket`.
+#
+# - `c`: the client.
+# - `bucket`: the name.
+# - `name`: one of `policy`, `cors`, `lifecycle`, `tagging`, `encryption`,
+#   `website`, `replication`, `ownershipControls`, `publicAccessBlock`.
+#
+# Fails as `get_bucket_config` does.
+function delete_bucket_config(c: Client, bucket: str, name: str) -> ()?
+    if !documents.is_deletable_config(name)
+        return fail(code: INVALID, msg: f"no configuration of a bucket is deleted as \"{name}\"")
+    op @= operation(method: "DELETE", bucket: bucket, key: "")
+    op.query @ [url.Pair(key: name, value: "")]
+    _ = send(c, op: op)?
+    return ok()
+
+## Uploads in parts
+
+# The least size of every part but the last: 5 MiB.
+constant MIN_PART_SIZE: i64
+    5_242_880
+
+# The most parts an upload holds: 10,000.
+constant MAX_PARTS: i64
+    10_000
+
+# The largest part, and the largest object of one put: 5 GiB.
+constant MAX_PART_SIZE: i64
+    5_368_709_120
+
+# An upload in parts begun: where it goes and the id S3 gave it.
+record Upload
+    # The bucket's name.
+    bucket: str
+    # The object's key.
+    key: str
+    # The upload's id, which every part names.
+    upload_id: str
+    # The checksum each part sends, as the upload began with.
+    checksum: Checksum
+
+# One part uploaded.
+record Part
+    # Its number, 1 to 10,000.
+    number: i64
+    # Its ETag, its quotes kept.
+    etag: str
+    # Its size in bytes, where a listing answered it; 0 else.
+    size: i64
+    # Its checksum in base 64, where the upload has one; "" else.
+    checksum: str
+
+# Begins an upload in parts of the object `key` of `bucket`.
+#
+# - `c`: the client.
+# - `bucket`: the bucket's name.
+# - `key`: the key.
+# - `options`: the object's fields, metadata, tags and checksum, its
+#   conditions not read.
+#
+# Answers the upload, which `complete_multipart_upload` or
+# `abort_multipart_upload` ends: an upload nobody ends keeps its parts, and
+# their cost. Fails as `send` fails.
+function create_multipart_upload(c: Client, bucket: str, key: str, options: PutOptions) -> Upload?
+    fields.check_key(key)?
+    unconditional @= options
+    unconditional.if_none_match @ ""
+    unconditional.if_match @ ""
+    sent: [http.Header] @= headers_of(unconditional)?
+    name = format_checksum(options.checksum)
+
+    if name != ""
+        sent @ sent.push(http.Header(name: "x-amz-checksum-algorithm", value: name))
+    op @= operation(method: "POST", bucket: bucket, key: key)
+    op.query @ [url.Pair(key: "uploads", value: "")]
+    op.headers @ sent
+    response = send(c, op: op)?
+    return ok(
+        Upload(bucket: bucket, key: key, upload_id: answers.upload_id_of(response.body)?, checksum: options.checksum)
+    )
+
+# Uploads `data` as the part `number` of `upload`.
+#
+# - `c`: the client.
+# - `upload`: the upload.
+# - `number`: the part's number, 1 to 10,000; a part sent again replaces it.
+# - `data`: the bytes, at least `MIN_PART_SIZE` but in the last part.
+#
+# Fails `invalid` where `number` is outside its range, `not_found` where the
+# upload is not there, and as `send` fails.
+function upload_part(c: Client, upload: Upload, number: i64, data: [u8]) -> Part?
+    if number < 1 || number > MAX_PARTS
+        return fail(code: INVALID, msg: f"the part {number} is outside 1 to {MAX_PARTS}")
+    op @= operation(method: "PUT", bucket: upload.bucket, key: upload.key)
+    op.query @ [url.Pair(key: "partNumber", value: f"{number}"), url.Pair(key: "uploadId", value: upload.upload_id)]
+    name = format_checksum(upload.checksum)
+    sum: str @= ""
+
+    if name != ""
+        sum @ checksums.value_of(data, name: name)
+        op.headers @ [http.Header(name: checksums.header_of(name), value: sum)]
+    op.body @ data
+    response = send(c, op: op)?
+    return ok(
+        Part(number: number, etag: http.value_of(response.headers, name: "ETag").default(""), size: data.len(), checksum: sum)
+    )
+
+# Copies the bytes `span` names of the object `from_key` of `from_bucket` as
+# the part `number` of `upload`.
+#
+# - `c`: the client.
+# - `upload`: the upload.
+# - `number`: the part's number, 1 to 10,000.
+# - `from_bucket`: the source's bucket.
+# - `from_key`: the source's key.
+# - `span`: the source's bytes; `suffix` is refused, which S3 refuses.
+#
+# Fails as `upload_part` and `copy_object` do. MinIO refuses a part copied
+# into an upload begun with a checksum, `invalid`, as it refused botocore's
+# (RELEASE.2025-10-15T17-29-55Z, measured 2026-11-19); Amazon computes it.
+function upload_part_copy(c: Client, upload: Upload, number: i64, from_bucket: str, from_key: str, span: Range) -> Part?
+    if number < 1 || number > MAX_PARTS
+        return fail(code: INVALID, msg: f"the part {number} is outside 1 to {MAX_PARTS}")
+    fields.check_key(from_key)?
+    sent: [http.Header] @= [
+        http.Header(name: "x-amz-copy-source", value: fields.copy_source(bucket: from_bucket, key: from_key))
+    ]
+    size: i64 @= 0
+
+    match span
+        .whole => _ = 0
+        .between b =>
+            sent @ sent.push(http.Header(name: "x-amz-copy-source-range", value: range_header(span)?))
+            size @ b.last - b.first + 1
+        .from _ | .suffix _ => return fail(
+            code: INVALID,
+            msg: "a part copied names its source's first and last bytes, or the whole source: S3 reads no open range"
+        )
+
+    op @= operation(method: "PUT", bucket: upload.bucket, key: upload.key)
+    op.query @ [url.Pair(key: "partNumber", value: f"{number}"), url.Pair(key: "uploadId", value: upload.upload_id)]
+    op.headers @ sent
+    response = send(c, op: op)?
+    failures.refusal_in(response.body, method: "PUT", bucket: upload.bucket, key: upload.key)?
+    result = answers.result_of(response.body, name: "CopyPartResult")?
+    return ok(Part(number: number, etag: result.etag, size: size, checksum: result.checksum))
+
+# Ends `upload` by joining `parts` into its object.
+#
+# - `c`: the client.
+# - `upload`: the upload.
+# - `parts`: the parts, sorted here by number; each but the last at least
+#   `MIN_PART_SIZE`.
+#
+# Fails `invalid` where a part is too small, missing or in no order S3
+# reads, and as `send` fails, a refusal S3 answers with 200 included.
+function complete_multipart_upload(c: Client, upload: Upload, parts: [Part]) -> Stored?
+    pieces: [documents.Piece] @= []
+
+    for p in parts
+        pieces @ pieces.push(documents.Piece(number: p.number, etag: p.etag, checksum: p.checksum))
+
+    body = bytes.from_text(
+        documents.complete_body(documents.sorted_pieces(pieces), checksum_name: format_checksum(upload.checksum))
+    )
+    op @= operation(method: "POST", bucket: upload.bucket, key: upload.key)
+    op.query @ [url.Pair(key: "uploadId", value: upload.upload_id)]
+    op.headers @ [http.Header(name: "Content-Type", value: "application/xml")]
+    op.body @ body
+    response = send(c, op: op)?
+    failures.refusal_in(response.body, method: "POST", bucket: upload.bucket, key: upload.key)?
+    result = answers.result_of(response.body, name: "CompleteMultipartUploadResult")?
+    return ok(
+        Stored(etag: result.etag, version_id: http.value_of(response.headers, name: "x-amz-version-id").default(""), checksum: result.checksum)
+    )
+
+# Ends `upload` without an object, its parts deleted.
+#
+# - `c`: the client.
+# - `upload`: the upload.
+#
+# Fails `not_found` where the server answers that the upload is not there,
+# and as `send` fails. MinIO aborts an upload aborted before with no
+# failure, as it answered botocore (RELEASE.2025-10-15T17-29-55Z, measured
+# 2026-11-19).
+function abort_multipart_upload(c: Client, upload: Upload) -> ()?
+    op @= operation(method: "DELETE", bucket: upload.bucket, key: upload.key)
+    op.query @ [url.Pair(key: "uploadId", value: upload.upload_id)]
+    _ = send(c, op: op)?
+    return ok()
+
+# Every part of `upload` uploaded so far, page after page, by number.
+#
+# - `c`: the client.
+# - `upload`: the upload.
+#
+# Fails as `send` fails.
+function list_parts(c: Client, upload: Upload) -> [Part]?
+    every: [Part] @= []
+    marker: str @= ""
+
+    while true
+        op @= operation(method: "GET", bucket: upload.bucket, key: upload.key)
+        query: [url.Pair] @= [url.Pair(key: "uploadId", value: upload.upload_id)]
+
+        if marker != ""
+            query @ query.push(url.Pair(key: "part-number-marker", value: marker))
+        op.query @ query
+        page = answers.parts_of(send(c, op: op)?.body)?
+
+        for p in page.parts
+            every @ every.push(Part(number: p.number, etag: p.etag, size: p.size, checksum: p.checksum))
+
+        if !page.truncated
+            return ok(every)
+
+        if page.next_marker == "" || page.next_marker == marker
+            return fail(
+                code: INVALID,
+                msg: f"listing the parts of {upload.bucket}/{upload.key}: a page says more follow and gives no new marker"
+            )
+        marker @ page.next_marker
+
+# Every upload in parts of `bucket` begun and not ended whose key begins
+# with `prefix`, page after page.
+#
+# - `c`: the client.
+# - `bucket`: the bucket's name.
+# - `prefix`: the prefix; "" for every key.
+#
+# By key, then by when they began. Each answers its checksum as `none`,
+# which the listing does not say. MinIO answers only the uploads of a key
+# equal to `prefix`, as it answered botocore (RELEASE.2025-10-15T17-29-55Z,
+# measured 2026-11-19); Amazon answers every key it begins. Fails as `send` fails.
+function list_multipart_uploads(c: Client, bucket: str, prefix: str) -> [Upload]?
+    every: [Upload] @= []
+    key_marker: str @= ""
+    id_marker: str @= ""
+
+    while true
+        query: [url.Pair] @= [url.Pair(key: "uploads", value: ""), url.Pair(key: "encoding-type", value: "url")]
+
+        if prefix != ""
+            query @ query.push(url.Pair(key: "prefix", value: prefix))
+
+        if key_marker != ""
+            query @ query.push(url.Pair(key: "key-marker", value: key_marker))
+
+        if id_marker != ""
+            query @ query.push(url.Pair(key: "upload-id-marker", value: id_marker))
+        op @= operation(method: "GET", bucket: bucket, key: "")
+        op.query @ query
+        page = answers.uploads_of(send(c, op: op)?.body)?
+
+        for u in page.uploads
+            every @ every.push(Upload(bucket: bucket, key: u.key, upload_id: u.upload_id, checksum: .none))
+
+        if !page.truncated
+            return ok(every)
+
+        if page.next_key_marker == key_marker && page.next_upload_id_marker == id_marker
+            return fail(
+                code: INVALID,
+                msg: f"listing the uploads of {bucket}: a page says more follow and gives no new marker"
+            )
+        key_marker @ page.next_key_marker
+        id_marker @ page.next_upload_id_marker
+
+# Puts `data` as the object `key` of `bucket` in parts of `part_size`
+# bytes, the last smaller, as AWS's upload managers do.
+#
+# - `c`: the client.
+# - `bucket`: the bucket's name.
+# - `key`: the key.
+# - `data`: the bytes; none, or no more than `part_size`, goes in one put.
+# - `part_size`: each part's size, `MIN_PART_SIZE` to 5 GiB; raised so the
+#   object takes at most `MAX_PARTS`.
+# - `options`: the object's fields, metadata, tags and checksum.
+#
+# An upload that fails after it began is aborted. Fails `invalid` where
+# `part_size` is outside its range, and as `put_object` and the parts fail.
+function put_object_in_parts(c: Client, bucket: str, key: str, data: [u8], part_size: i64, options: PutOptions) -> Stored?
+    if part_size < MIN_PART_SIZE || part_size > MAX_PART_SIZE
+        return fail(code: INVALID, msg: f"a part of {part_size} bytes is outside {MIN_PART_SIZE} to {MAX_PART_SIZE}")
+
+    if data.len() <= part_size
+        return put_object(c, bucket: bucket, key: key, data: data, options: options)
+    size: i64 @= part_size
+
+    while (data.len() + size - 1) / size > MAX_PARTS && size < MAX_PART_SIZE
+        size @ size * 2
+
+    if size > MAX_PART_SIZE
+        size @ MAX_PART_SIZE
+    upload = create_multipart_upload(c, bucket: bucket, key: key, options: options)?
+    parts: [Part] @= []
+    at: i64 @= 0
+    number: i64 @= 1
+
+    while at < data.len()
+        end: i64 @= at + size
+
+        if end > data.len()
+            end @ data.len()
+
+        match upload_part(c, upload: upload, number: number, data: data.slice(from: at, to: end))
+            .ok p => parts @ parts.push(p)
+            .err e =>
+                match abort_multipart_upload(c, upload: upload)
+                    .ok _  => _ = 0
+                    .err _ => _ = 0
+
+                return fail(code: e.code, msg: e.msg)
+
+        at @ end
+        number @ number + 1
+
+    match complete_multipart_upload(c, upload: upload, parts: parts)
+        .ok stored => return ok(stored)
+        .err e =>
+            match abort_multipart_upload(c, upload: upload)
+                .ok _  => _ = 0
+                .err _ => _ = 0
+
+            return fail(code: e.code, msg: e.msg)
+
+# Puts what `s` holds until its end as the object `key` of `bucket`, read
+# and uploaded a part of `part_size` bytes at a time, so an object of any
+# size is put holding one part in memory.
+#
+# - `c`: the client.
+# - `bucket`: the bucket's name.
+# - `key`: the key.
+# - `s`: the stream read to its end; its owner closes it.
+# - `part_size`: each part's size, `MIN_PART_SIZE` to 5 GiB.
+# - `options`: the object's fields, metadata, tags and checksum.
+#
+# A stream that ends within the first part is put in one request. An
+# upload that fails after it began is aborted. Fails as
+# `put_object_in_parts` does, `limit` past `MAX_PARTS` parts, and as
+# `io.read` fails.
+function put_object_from(c: Client, bucket: str, key: str, s: io.Stream, part_size: i64, options: PutOptions) -> Stored?
+    if part_size < MIN_PART_SIZE || part_size > MAX_PART_SIZE
+        return fail(code: INVALID, msg: f"a part of {part_size} bytes is outside {MIN_PART_SIZE} to {MAX_PART_SIZE}")
+    first = transport.read_up_to(s, count: part_size)?
+
+    if first.len() < part_size
+        return put_object(c, bucket: bucket, key: key, data: first, options: options)
+    upload = create_multipart_upload(c, bucket: bucket, key: key, options: options)?
+    parts: [Part] @= []
+    piece: [u8] @= first
+    number: i64 @= 1
+
+    while piece.len() > 0
+        failure: str @= ""
+        code: str @= ""
+
+        if number > MAX_PARTS
+            code @ LIMIT
+            failure @ f"putting {bucket}/{key} from a stream: it holds more than {MAX_PARTS} parts of {part_size} bytes"
+        else
+            match upload_part(c, upload: upload, number: number, data: piece)
+                .ok p => parts @ parts.push(p)
+                .err e =>
+                    code @ e.code
+                    failure @ e.msg
+
+        if code == ""
+            match transport.read_up_to(s, count: part_size)
+                .ok next => piece @ next
+                .err e =>
+                    code @ e.code
+                    failure @ e.msg
+
+        if code != ""
+            match abort_multipart_upload(c, upload: upload)
+                .ok _  => _ = 0
+                .err _ => _ = 0
+
+            return fail(code: code, msg: failure)
+        number @ number + 1
+
+    match complete_multipart_upload(c, upload: upload, parts: parts)
+        .ok stored => return ok(stored)
+        .err e =>
+            match abort_multipart_upload(c, upload: upload)
+                .ok _  => _ = 0
+                .err _ => _ = 0
+
+            return fail(code: e.code, msg: e.msg)
+
+## Presigned URLs
+
+# A URL that sends `method` to the object `key` of `bucket` until it
+# expires, with no key: what a browser or another program fetches.
+#
+# - `c`: the client; its token, where its credentials hold one, is in the
+#   URL.
+# - `method`: `GET`, `PUT`, `HEAD`, `DELETE`.
+# - `bucket`: the bucket's name.
+# - `key`: the key.
+# - `headers`: the fields the sender must send as they are, signed:
+#   `headers_of(options)` for a PUT with options; none for most.
+# - `at`: the instant it is signed at.
+# - `expires_seconds`: how long it lives, 1 to 604,800.
+#
+# Fails `invalid` where `expires_seconds` is outside its range, and as
+# `prepare` fails. See also `presign_get`, `presign_put`.
+function presign_url(c: Client, method: str, bucket: str, key: str, headers: [http.Header], at: time.Instant, expires_seconds: i64) -> str?
+    target = url.parse(object_url(c, bucket: bucket, key: key)?)?
+    r = http.Request(method: method, url: target, headers: headers, body: [], closing: false, remote: "")
+    signed = signing.presign(r, access_key_id: c.credentials.access_key_id, secret: c.credentials.secret_access_key, token: c.credentials.session_token, region: c.region, service: "s3", at: at, expires: expires_seconds, s3: true)?
+    return ok(url.format(signed.request.url))
+
+# A URL that reads the object `key` of `bucket` for `expires_seconds`
+# from now.
+#
+# - `c`: the client.
+# - `bucket`: the bucket's name.
+# - `key`: the key.
+# - `expires_seconds`: how long it lives, 1 to 604,800.
+#
+# Fails as `presign_url` does, and `failed` where the clock cannot be read.
+function presign_get(c: Client, bucket: str, key: str, expires_seconds: i64) -> str?
+    return presign_url(
+        c,
+        method: "GET",
+        bucket: bucket,
+        key: key,
+        headers: [],
+        at: time.now()?,
+        expires_seconds: expires_seconds
+    )
+
+# A URL that puts the object `key` of `bucket` for `expires_seconds` from
+# now; the sender sends no field the URL did not sign.
+#
+# - `c`: the client.
+# - `bucket`: the bucket's name.
+# - `key`: the key.
+# - `expires_seconds`: how long it lives, 1 to 604,800.
+#
+# Fails as `presign_get` does.
+function presign_put(c: Client, bucket: str, key: str, expires_seconds: i64) -> str?
+    return presign_url(
+        c,
+        method: "PUT",
+        bucket: bucket,
+        key: key,
+        headers: [],
+        at: time.now()?,
+        expires_seconds: expires_seconds
+    )
+
+## Browser forms
+
+# A form a browser POSTs to put an object: the URL it goes to and the fields
+# it holds before the file, as `presign_post` makes them.
+record PostForm
+    # The URL the form is sent to: the bucket's, by `Client.addressing`.
+    target: str
+    # The fields, in the order the form holds them, every one before the
+    # file: the key, the signing's, the policy and the signature.
+    fields: [url.Pair]
+
+# A form that lets a browser, or any program with no key, put the object
+# `key` of `bucket` by POST until it expires: S3's signed policy.
+#
+# - `c`: the client; its token, where its credentials hold one, is a field.
+# - `bucket`: the bucket's name.
+# - `key`: the key the file is put as, exactly.
+# - `content_type`: the `Content-Type` the form names, held by the policy;
+#   "" for any.
+# - `max_size`: the most bytes the file may hold, 1 or more; 0 for no bound.
+# - `at`: the instant it is signed at.
+# - `expires_seconds`: how long it lives, 1 to 604,800.
+#
+# The sender writes `fields` in their order, then the file as a part named
+# `file`, as `multipart/form-data` (`http.with_multipart`); S3 answers 204.
+# The policy is botocore's, condition for condition. Fails `invalid` where
+# `key` is empty, `max_size` is below 0, `expires_seconds` is outside its
+# range, or as `object_url` fails. See also `presign_url`.
+function presign_post(c: Client, bucket: str, key: str, content_type: str, max_size: i64, at: time.Instant, expires_seconds: i64) -> PostForm?
+    fields.check_key(key)?
+
+    if max_size < 0
+        return fail(code: INVALID, msg: f"a form for {bucket}/{key}: a bound of {max_size} bytes is below 0")
+
+    if expires_seconds < 1 || expires_seconds > MAX_EXPIRES_SECONDS
+        return fail(
+            code: INVALID,
+            msg: f"a form for {bucket}/{key}: {expires_seconds} seconds is outside 1 to {MAX_EXPIRES_SECONDS}"
+        )
+    target = object_url(c, bucket: bucket, key: "")?
+    k = c.credentials
+    signing.check_scope(access_key_id: k.access_key_id, region: c.region, service: "s3")?
+    credential = k.access_key_id + "/" + signing.scope(at, region: c.region, service: "s3")
+    when = signing.amz_date(at)
+    expiration = time.format(time.add(at, d: time.seconds(expires_seconds)?)?, layout: .rfc3339_seconds)
+    conditions: [str] @= []
+    out: [url.Pair] @= []
+
+    if content_type != ""
+        conditions @ conditions.push("{\"Content-Type\": " + json.quote(content_type) + "}")
+        out @ out.push(url.Pair(key: "Content-Type", value: content_type))
+
+    if max_size > 0
+        conditions @ conditions.push(f"[\"content-length-range\", 0, {max_size}]")
+    signed = [
+        url.Pair(key: "key", value: key)
+        url.Pair(key: "x-amz-algorithm", value: signing.ALGORITHM)
+        url.Pair(key: "x-amz-credential", value: credential)
+        url.Pair(key: "x-amz-date", value: when)
+    ]
+    conditions @ conditions.push("{\"bucket\": " + json.quote(bucket) + "}")
+
+    for p in signed
+        conditions @ conditions.push("{" + json.quote(p.key) + ": " + json.quote(p.value) + "}")
+        out @ out.push(p)
+
+    if k.session_token != ""
+        conditions @ conditions.push("{\"x-amz-security-token\": " + json.quote(k.session_token) + "}")
+        out @ out.push(url.Pair(key: "x-amz-security-token", value: k.session_token))
+    policy = bytes.format_base64(
+        bytes.from_text("{\"expiration\": " + json.quote(expiration) + ", \"conditions\": [" + conditions.join(", ") + "]}")
+    )
+    key_of_day = signing.signing_key(secret: k.secret_access_key, at: at, region: c.region, service: "s3")
+    out @ out.push(url.Pair(key: "policy", value: policy))
+    out @ out.push(
+        url.Pair(key: "x-amz-signature", value: bytes.format_hex(crypto.hmac_text(.sha256, key: key_of_day, s: policy)))
+    )
+    return ok(PostForm(target: target, fields: out))
+
+## Tests
+
+test "credentials_from_text: both files' sections, a token, a profile written the other file's way, keys by halves, and none"
+    credentials = "[default]\naws_access_key_id = AKIDDEFAULT\naws_secret_access_key = secretdefault\n\n[work]\naws_access_key_id = AKIDWORK\naws_secret_access_key = s\naws_session_token = tok\n\n[half]\naws_access_key_id = AKIDHALF\n"
+    d = credentials_from_text(text: credentials, profile: "default", kind: .credentials).must()
+    assert d.access_key_id == "AKIDDEFAULT" && d.secret_access_key == "secretdefault" && d.session_token == ""
+    assert credentials_from_text(text: credentials, profile: "work", kind: .credentials).must().session_token == "tok"
+
+    match credentials_from_text(text: credentials, profile: "half", kind: .credentials)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match credentials_from_text(text: credentials, profile: "nobody", kind: .credentials)
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    config = "[profile work]\naws_access_key_id = AKIDCFG\naws_secret_access_key = c\n[work]\naws_access_key_id = WRONG\naws_secret_access_key = w\n"
+    assert credentials_from_text(text: config, profile: "work", kind: .config).must().access_key_id == "AKIDCFG"
+    assert credentials_from_text(text: "", profile: "default", kind: .config).is_err()
+
+test "format_credentials: a key's id of twenty bytes, one of eight, one shorter, no secret, and a token, never the secret's bytes"
+    shown = format_credentials(
+        Credentials(access_key_id: "AKIAIOSFODNN7EXAMPLE", secret_access_key: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY", session_token: "")
+    )
+    assert shown == "****************MPLE, a secret, no token"
+    assert !strings.contains(s: shown, substr: "wJal")
+    assert format_credentials(Credentials(access_key_id: "ABCDEFGH", secret_access_key: "", session_token: "t")) == "****EFGH, no secret, a token"
+    assert format_credentials(Credentials(access_key_id: "ABC", secret_access_key: "s", session_token: "")) == "***, a secret, no token"
+    assert format_credentials(Credentials(access_key_id: "", secret_access_key: "s", session_token: "")) == ", a secret, no token"
+
+test "profile_from_text: the three addressing styles, none, a style of no name, and a profile nobody wrote"
+    text = "[default]\nregion = eu-west-1\ns3 =\n    addressing_style = path\n[profile v]\ns3 =\n  addressing_style = virtual\n[profile a]\nregion = ap-south-1\nendpoint_url = https://a.example\n[profile bad]\ns3 =\n  addressing_style = sideways\n"
+    d = profile_from_text(text: text, profile: "default").must()
+    assert d.region == "eu-west-1" && d.addressing == .path && d.endpoint_url == ""
+    assert profile_from_text(text: text, profile: "v").must().addressing == .virtual_host
+    a = profile_from_text(text: text, profile: "a").must()
+    assert a.addressing == .auto && a.endpoint_url == "https://a.example" && a.region == "ap-south-1"
+    assert profile_from_text(text: text, profile: "bad").is_err()
+    nobody = profile_from_text(text: text, profile: "nobody").must()
+    assert nobody.region == "" && nobody.addressing == .auto
+
+test "aws_client, minio_client, r2_client and backblaze_client: the URL each reaches an object by"
+    k = Credentials(access_key_id: "A", secret_access_key: "s", session_token: "")
+    assert object_url(aws_client(region: "eu-west-1", credentials: k), bucket: "b1b", key: "a b").must() == "https://b1b.s3.eu-west-1.amazonaws.com/a%20b"
+    assert object_url(minio_client(endpoint: "http://127.0.0.1:9000", credentials: k), bucket: "b1b", key: "k").must() == "http://127.0.0.1:9000/b1b/k"
+    assert object_url(r2_client(account_id: "acct", credentials: k), bucket: "b1b", key: "k").must() == "https://acct.r2.cloudflarestorage.com/b1b/k"
+    assert object_url(backblaze_client(region: "us-west-004", credentials: k), bucket: "b1b", key: "k").must() == "https://s3.us-west-004.backblazeb2.com/b1b/k"
+    r2 = r2_client(account_id: "acct", credentials: k)
+    assert r2.region == "auto" && r2.attempts == 3 && r2.sign_payload
+
+test "prepare: a PUT with fields and metadata, and a listing's query on a MinIO, signed as botocore 1.44.6 signs them"
+    k = Credentials(
+        access_key_id: "AKIAIOSFODNN7EXAMPLE",
+        secret_access_key: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+        session_token: ""
+    )
+    at = parse_amz_date("20130524T000000Z").must()
+    put @= operation(method: "PUT", bucket: "examplebucket", key: "photos/a b.jpg")
+    put.headers @ [
+        http.Header(name: "Content-Type", value: "image/jpeg")
+        http.Header(name: "x-amz-meta-colour", value: "blue")
+    ]
+    put.body @ bytes.from_text("hello")
+    r = prepare(aws_client(region: "us-east-1", credentials: k), op: put, at: at).must()
+    assert url.format(r.url) == "https://examplebucket.s3.us-east-1.amazonaws.com/photos/a%20b.jpg"
+    assert http.value_of(r.headers, name: "authorization").must() == "AWS4-HMAC-SHA256 Credential=AKIAIOSFODNN7EXAMPLE/20130524/us-east-1/s3/aws4_request, SignedHeaders=content-type;host;x-amz-content-sha256;x-amz-date;x-amz-meta-colour, Signature=9be3bf5878201adeb5d6fda033668d08cf3ced919f2e549330f6e4d24ce08490"
+    listing @= operation(method: "GET", bucket: "mybucket", key: "")
+    listing.query @ [
+        url.Pair(key: "list-type", value: "2")
+        url.Pair(key: "encoding-type", value: "url")
+        url.Pair(key: "prefix", value: "a b")
+    ]
+    g = prepare(minio_client(endpoint: "http://127.0.0.1:9000", credentials: k), op: listing, at: at).must()
+    assert url.format(g.url) == "http://127.0.0.1:9000/mybucket?list-type=2&encoding-type=url&prefix=a%20b"
+    assert strings.has_suffix(
+        s: http.value_of(g.headers, name: "authorization").must(),
+        suffix: "Signature=aef25411ad6a3ca63d113568383df13130f12c83b6ecae996f3b31775d055b43"
+    )
+
+test "prepare: an unsigned payload over https and refused over http, and a name or a key refused before signing"
+    k = Credentials(access_key_id: "A", secret_access_key: "s", session_token: "")
+    at = parse_amz_date("20130524T000000Z").must()
+    c @= aws_client(region: "us-east-1", credentials: k)
+    c.sign_payload @ false
+    r = prepare(c, op: operation(method: "GET", bucket: "b1b", key: "k"), at: at).must()
+    assert http.value_of(r.headers, name: "x-amz-content-sha256").must() == UNSIGNED_PAYLOAD
+    m @= minio_client(endpoint: "http://127.0.0.1:9000", credentials: k)
+    m.sign_payload @ false
+    assert prepare(m, op: operation(method: "GET", bucket: "b1b", key: "k"), at: at).is_err()
+    assert prepare(c, op: operation(method: "GET", bucket: "a b", key: "k"), at: at).is_err()
+    assert prepare(c, op: operation(method: "GET", bucket: "b1b", key: repeat("k", 1_025)), at: at).is_err()
+
+test "presign_url: a PUT with a session token on a MinIO, its URL as botocore 1.44.6 writes it, and lives out of range"
+    k = Credentials(
+        access_key_id: "AKIAIOSFODNN7EXAMPLE",
+        secret_access_key: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+        session_token: "tok/en+="
+    )
+    c = minio_client(endpoint: "http://127.0.0.1:9000", credentials: k)
+    at = parse_amz_date("20130524T000000Z").must()
+    got = presign_url(
+        c,
+        method: "PUT",
+        bucket: "mybucket",
+        key: "a b.txt",
+        headers: [],
+        at: at,
+        expires_seconds: 3_600
+    ).must()
+    assert got == "http://127.0.0.1:9000/mybucket/a%20b.txt?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAIOSFODNN7EXAMPLE%2F20130524%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20130524T000000Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Security-Token=tok%2Fen%2B%3D&X-Amz-Signature=93ac85f83287af3de963dc22df33334bbc6a8e218c5e41d2141cd7278e33036b"
+    assert presign_url(c, method: "GET", bucket: "mybucket", key: "k", headers: [], at: at, expires_seconds: 0).is_err()
+    assert presign_url(
+        c,
+        method: "GET",
+        bucket: "mybucket",
+        key: "k",
+        headers: [],
+        at: at,
+        expires_seconds: MAX_EXPIRES_SECONDS + 1
+    ).is_err()
+
+test "presign_request: another service's GET, its payload the SHA-256 of no bytes, as botocore 1.44.6 presigns it"
+    k = Credentials(
+        access_key_id: "AKIDEXAMPLE",
+        secret_access_key: "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY",
+        session_token: ""
+    )
+    r = http.request(method: "GET", target: "https://example.amazonaws.com/?Param1=value1").must()
+    s = presign_request(
+        r,
+        credentials: k,
+        region: "us-east-1",
+        service: "service",
+        at: parse_amz_date("20150830T123600Z").must(),
+        expires_seconds: 3_600
+    ).must()
+    assert s.signature == "49096700cbbaa5753443850f40df10f904fc2fdb544dc9512203cc77c471a9de"
+    assert strings.has_suffix(
+        s: s.canonical_request,
+        suffix: "\nhost\ne3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    )
+
+test "headers_of: none, every field, metadata in lower case, tags, and a value with a line end"
+    assert headers_of(put_options()).must().len() == 0
+    o @= put_options()
+    o.content_type @ "text/plain"
+    o.metadata @ [Meta(name: "Colour", value: "blue")]
+    o.tags @ [Tag(key: "a b", value: "1")]
+    o.storage_class @ "STANDARD_IA"
+    o.if_none_match @ "*"
+    h = headers_of(o).must()
+    assert h.len() == 5 && h[0] == http.Header(name: "Content-Type", value: "text/plain")
+    assert h[1] == http.Header(name: "x-amz-meta-colour", value: "blue") && h[2] == http.Header(name: "x-amz-tagging", value: "a%20b=1")
+    assert h[3] == http.Header(name: "x-amz-storage-class", value: "STANDARD_IA") && h[4] == http.Header(name: "If-None-Match", value: "*")
+    o.cache_control @ "a\nb"
+    assert headers_of(o).is_err()
+    m @= put_options()
+    m.metadata @ [Meta(name: "a b", value: "x")]
+    assert headers_of(m).is_err()
+
+test "range_header and get_operation: the four ranges, each refusal, a version, a part, conditions and the checksum's mode"
+    assert range_header(.from(first: 0)).must() == "bytes=0-" && range_header(.between(first: 0, last: 9)).must() == "bytes=0-9"
+    assert range_header(.suffix(count: 10)).must() == "bytes=-10" && range_header(.whole).is_err()
+    assert range_header(.from(first: -1)).is_err() && range_header(.between(first: 5, last: 4)).is_err() && range_header(.suffix(count: 0)).is_err()
+    o @= get_options()
+    o.span @ .between(first: 0, last: 9_223_372_036_854_775_806)
+    o.version_id @ "v1"
+    o.part_number @ 2
+    o.if_none_match @ "\"e\""
+    o.verify_checksum @ true
+    op = get_operation(bucket: "b1b", key: "k", options: o).must()
+    assert op.query == [url.Pair(key: "partNumber", value: "2"), url.Pair(key: "versionId", value: "v1")]
+    assert http.value_of(op.headers, name: "Range").must() == "bytes=0-9223372036854775806"
+    assert http.value_of(op.headers, name: "If-None-Match").must() == "\"e\"" && http.has_header(op.headers, name: "x-amz-checksum-mode")
+    o.part_number @ 10_001
+    assert get_operation(bucket: "b1b", key: "k", options: o).is_err()
+    assert get_operation(bucket: "b1b", key: "", options: get_options()).is_err()
+
+test "info_of: a ranged answer's fields, metadata and checksum, an answer with no length, and dates that are none"
+    r = http.Response(
+        status: 206,
+        reason: "Partial Content",
+        headers: [http.Header(name: "Content-Length", value: "10"), http.Header(name: "Content-Range", value: "bytes 0-9/443"), http.Header(name: "ETag", value: "\"e\""), http.Header(name: "Last-Modified", value: "Mon, 12 Oct 2009 17:50:00 GMT"), http.Header(name: "x-amz-meta-Colour", value: "blue"), http.Header(name: "x-amz-checksum-crc32", value: "NhCmhg=="), http.Header(name: "x-amz-version-id", value: "v1")],
+        body: [],
+        closing: false
+    )
+    i = info_of(r, key: "k").must()
+    assert i.size == 10 && i.total_size == 443 && i.etag == "\"e\"" && i.version_id == "v1"
+    assert i.metadata == [Meta(name: "colour", value: "blue")] && i.checksum_algorithm == .crc32 && i.checksum == "NhCmhg=="
+    assert time.format(i.last_modified, layout: .rfc3339) == "2009-10-12T17:50:00Z"
+    bare = http.Response(
+        status: 200,
+        reason: "OK",
+        headers: [http.Header(name: "Last-Modified", value: "Mon, 02 Jan 2006 15:04:05 GMT")],
+        body: [1, 2, 3],
+        closing: false
+    )
+    assert info_of(bare, key: "k").must().size == 3 && info_of(bare, key: "k").must().checksum_algorithm == .none
+    none = http.Response(status: 200, reason: "OK", headers: [], body: [], closing: false)
+    assert info_of(none, key: "k").is_err()
+
+test "presign_post: a form with a type and a bound, and one with a token on a MinIO, their policies and signatures as botocore 1.44.6 makes them"
+    k = Credentials(
+        access_key_id: "AKIAIOSFODNN7EXAMPLE",
+        secret_access_key: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+        session_token: ""
+    )
+    at = parse_amz_date("20130524T000000Z").must()
+    form = presign_post(
+        aws_client(region: "us-east-1", credentials: k),
+        bucket: "examplebucket",
+        key: "user/eric/photo.jpg",
+        content_type: "image/jpeg",
+        max_size: 1_048_576,
+        at: at,
+        expires_seconds: 3_600
+    ).must()
+    assert form.target == "https://examplebucket.s3.us-east-1.amazonaws.com/"
+    assert form.fields[0] == url.Pair(key: "Content-Type", value: "image/jpeg") && form.fields[1] == url.Pair(key: "key", value: "user/eric/photo.jpg")
+    assert url.value_of(form.fields, key: "x-amz-credential").must() == "AKIAIOSFODNN7EXAMPLE/20130524/us-east-1/s3/aws4_request"
+    assert url.value_of(form.fields, key: "policy").must() == "eyJleHBpcmF0aW9uIjogIjIwMTMtMDUtMjRUMDE6MDA6MDBaIiwgImNvbmRpdGlvbnMiOiBbeyJDb250ZW50LVR5cGUiOiAiaW1hZ2UvanBlZyJ9LCBbImNvbnRlbnQtbGVuZ3RoLXJhbmdlIiwgMCwgMTA0ODU3Nl0sIHsiYnVja2V0IjogImV4YW1wbGVidWNrZXQifSwgeyJrZXkiOiAidXNlci9lcmljL3Bob3RvLmpwZyJ9LCB7IngtYW16LWFsZ29yaXRobSI6ICJBV1M0LUhNQUMtU0hBMjU2In0sIHsieC1hbXotY3JlZGVudGlhbCI6ICJBS0lBSU9TRk9ETk43RVhBTVBMRS8yMDEzMDUyNC91cy1lYXN0LTEvczMvYXdzNF9yZXF1ZXN0In0sIHsieC1hbXotZGF0ZSI6ICIyMDEzMDUyNFQwMDAwMDBaIn1dfQ=="
+    assert form.fields[form.fields.len() - 1] == url.Pair(key: "x-amz-signature", value: "e3472e52a0aa26d2042d4dd57f33bfd51b44de520c8c23aab26e70c9576ab9d4")
+    t = Credentials(
+        access_key_id: "AKIAIOSFODNN7EXAMPLE",
+        secret_access_key: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+        session_token: "tok"
+    )
+    m = presign_post(
+        minio_client(endpoint: "http://127.0.0.1:9000", credentials: t),
+        bucket: "mybucket",
+        key: "a b.txt",
+        content_type: "",
+        max_size: 0,
+        at: at,
+        expires_seconds: 3_600
+    ).must()
+    assert m.target == "http://127.0.0.1:9000/mybucket" && url.value_of(m.fields, key: "x-amz-security-token").must() == "tok"
+    assert url.value_of(m.fields, key: "x-amz-signature").must() == "ee2f6bb1863c8ff4193a989305ae12e996881a7140da1586bd44dcfe68ec067c"
+    assert presign_post(
+        aws_client(region: "us-east-1", credentials: k),
+        bucket: "b1b",
+        key: "",
+        content_type: "",
+        max_size: 0,
+        at: at,
+        expires_seconds: 60
+    ).is_err()
+    assert presign_post(
+        aws_client(region: "us-east-1", credentials: k),
+        bucket: "b1b",
+        key: "k",
+        content_type: "",
+        max_size: -1,
+        at: at,
+        expires_seconds: 60
+    ).is_err()
+    assert presign_post(
+        aws_client(region: "us-east-1", credentials: k),
+        bucket: "b1b",
+        key: "k",
+        content_type: "",
+        max_size: 0,
+        at: at,
+        expires_seconds: 604_801
+    ).is_err()
+
+test "checksum_of, format_checksum and parse_checksum: every kind of a word, none, and a name of none"
+    hello = bytes.from_text("hello")
+    assert checksum_of(hello, algorithm: .crc32) == "NhCmhg==" && checksum_of(hello, algorithm: .crc32c) == "mnG7TA=="
+    assert checksum_of(hello, algorithm: .crc64nvme) == "M3eFcAZSQlc=" && checksum_of(hello, algorithm: .sha1) == "qvTGHdzF6KLavt4PO0gs2a6pQ00="
+    assert checksum_of(hello, algorithm: .sha256) == "LPJNul+wow4m6DsqxbninhsWHlwfp0JecwQzYpOLmCQ=" && checksum_of(hello, algorithm: .none) == ""
+    assert format_checksum(.crc64nvme) == "CRC64NVME" && format_checksum(.none) == ""
+    assert parse_checksum("crc32c").must() == .crc32c && parse_checksum("md5").is_err()
+
+test "uri_encode, format_amz_date, canonical_request and signing_key: a key's bytes, the date, an S3 request's text, and the key of AWS's documented example"
+    assert uri_encode("a b/é", keep_slash: true) == "a%20b/%C3%A9" && uri_encode("a/b", keep_slash: false) == "a%2Fb"
+    at = parse_amz_date("20150830T123600Z").must()
+    assert format_amz_date(at) == "20150830T123600Z"
+    r = http.request(method: "GET", target: "https://h.example/a%20b?z=1&a=2").must()
+    assert canonical_request(r, payload_hash: UNSIGNED_PAYLOAD, s3: true).must() == "GET\n/a%20b\na=2&z=1\nhost:h.example\n\nhost\nUNSIGNED-PAYLOAD"
+    key = signing_key(secret: "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY", at: at, region: "us-east-1", service: "iam")
+    assert bytes.format_hex(key) == "c4afb1cc5771d871763a393e44b703571b55cc28424d1a5e86da6ed3c154a4b9"
+
+test "live: objects put, read whole and by range, asked about, copied, tagged, deleted, listed by page, where REBEL_S3_LIVE_URL names a server that answers"
+    endpoint = os.env("REBEL_S3_LIVE_URL").default("")
+
+    if endpoint == ""
+        print("live s3 objects: skipped, REBEL_S3_LIVE_URL is not set")
+    else
+        c = minio_client(
+            endpoint: endpoint,
+            credentials: Credentials(access_key_id: os.env("REBEL_S3_LIVE_ACCESS_KEY").default("minioadmin"), secret_access_key: os.env("REBEL_S3_LIVE_SECRET_KEY").default("minioadmin"), session_token: "")
+        )
+
+        match list_buckets(c)
+            .err e =>
+                if e.code == PERMISSION || e.code == INVALID
+                    print(f"live s3 objects: the server at {endpoint} answered and refused: {e.msg}")
+                    assert false
+                print(f"live s3 objects: skipped, nothing answered at {endpoint}: {e.code}")
+            .ok _ =>
+                bucket = f"rebel-objects-{time.unix_milliseconds(time.now().must())}"
+                create_bucket(c, bucket: bucket).must()
+                assert bucket_exists(c, bucket: bucket).must() && !bucket_exists(c, bucket: bucket + "-none").must()
+                assert bucket_region(c, bucket: bucket).must() == "us-east-1"
+
+                match create_bucket(c, bucket: bucket)
+                    .ok _  => assert false
+                    .err e => assert e.code == EXISTS
+
+                o @= put_options()
+                o.content_type @ "text/plain"
+                o.metadata @ [Meta(name: "Colour", value: "blue")]
+                o.checksum @ .sha256
+                key = "dir/a b+c é.txt"
+                stored = put_object(
+                    c,
+                    bucket: bucket,
+                    key: key,
+                    data: bytes.from_text("hello, world"),
+                    options: o
+                ).must()
+                assert stored.etag == "\"" + bytes.format_hex(crypto.md5_text("hello, world")) + "\"" && stored.checksum == checksum_of(bytes.from_text("hello, world"), algorithm: .sha256)
+                whole = get_object(c, bucket: bucket, key: key).must()
+                assert whole.data == bytes.from_text("hello, world") && whole.info.content_type == "text/plain" && whole.info.metadata == [Meta(name: "colour", value: "blue")]
+                g @= get_options()
+                g.span @ .between(first: 7, last: 11)
+                g.verify_checksum @ true
+                part = get_object_with(c, bucket: bucket, key: key, options: g).must()
+                assert part.data == bytes.from_text("world") && part.info.size == 5 && part.info.total_size == 12
+                g.span @ .suffix(count: 5)
+                assert get_object_with(c, bucket: bucket, key: key, options: g).must().data == bytes.from_text("world")
+                g.span @ .whole
+                checked = get_object_with(c, bucket: bucket, key: key, options: g).must()
+                assert checked.info.checksum_algorithm == .sha256 && checked.info.checksum == stored.checksum
+                g.span @ .from(first: 100)
+
+                match get_object_with(c, bucket: bucket, key: key, options: g)
+                    .ok _  => assert false
+                    .err e => assert e.code == INVALID && strings.has_prefix(s: e.msg, prefix: "InvalidRange")
+
+                n @= get_options()
+                n.if_none_match @ stored.etag
+
+                match get_object_with(c, bucket: bucket, key: key, options: n)
+                    .ok _  => assert false
+                    .err e => assert e.code == FAILED
+
+                head = head_object(c, bucket: bucket, key: key).must()
+                assert head.size == 12 && head.etag == stored.etag
+                assert object_exists(c, bucket: bucket, key: key).must() && !object_exists(c, bucket: bucket, key: "absent").must()
+
+                match get_object(c, bucket: bucket, key: "absent")
+                    .ok _  => assert false
+                    .err e => assert e.code == NOT_FOUND && strings.has_prefix(s: e.msg, prefix: "NoSuchKey")
+
+                only @= put_options()
+                only.if_none_match @ "*"
+
+                match put_object(c, bucket: bucket, key: key, data: [1], options: only)
+                    .ok _  => assert false
+                    .err e => assert e.code == EXISTS
+
+                copied = copy_object(
+                    c,
+                    from_bucket: bucket,
+                    from_key: key,
+                    to_bucket: bucket,
+                    to_key: "copy.txt"
+                ).must()
+                assert copied.etag == stored.etag
+                r @= put_options()
+                r.content_type @ "application/x-rebel"
+                _ = copy_object_with(
+                    c,
+                    from_bucket: bucket,
+                    from_key: key,
+                    to_bucket: bucket,
+                    to_key: "copy2.txt",
+                    options: r
+                ).must()
+                assert head_object(c, bucket: bucket, key: "copy2.txt").must().content_type == "application/x-rebel"
+                put_object_tags(
+                    c,
+                    bucket: bucket,
+                    key: key,
+                    tags: [Tag(key: "a", value: "1"), Tag(key: "b c", value: "x y")]
+                ).must()
+                tags = get_object_tags(c, bucket: bucket, key: key).must()
+                assert tags.len() == 2
+                assert tags[0] == Tag(key: "a", value: "1") || tags[1] == Tag(key: "a", value: "1")
+                every: [str] @= []
+                i: i64 @= 0
+
+                while i < 7
+                    name = f"page/{i}"
+                    _ = put_object(c, bucket: bucket, key: name, data: [], options: put_options()).must()
+                    every @ every.push(name)
+                    i @ i + 1
+
+                l @= list_options()
+                l.prefix @ "page/"
+                l.max_keys @ 3
+                first = list_objects(c, bucket: bucket, options: l).must()
+                assert first.objects.len() == 3 && first.truncated && first.next_token != ""
+                assert list_all_objects(c, bucket: bucket, prefix: "page/").must().len() == 7
+                d @= list_options()
+                d.delimiter @ "/"
+                top = list_objects(c, bucket: bucket, options: d).must()
+                assert top.prefixes == ["dir/", "page/"] && top.objects.len() == 2
+                assert list_all_objects(c, bucket: bucket, prefix: "dir/").must()[0].key == key
+
+                match delete_bucket(c, bucket: bucket)
+                    .ok _  => assert false
+                    .err e => assert e.code == NOT_EMPTY
+
+                every @ every.push(key)
+                every @ every.push("copy.txt")
+                every @ every.push("copy2.txt")
+                assert delete_objects(c, bucket: bucket, names: every).must().len() == 0
+                delete_object(c, bucket: bucket, key: "absent").must()
+                assert list_all_objects(c, bucket: bucket, prefix: "").must().len() == 0
+                delete_bucket(c, bucket: bucket).must()
+                assert !bucket_exists(c, bucket: bucket).must()
+                print("live s3 objects: every operation answered as expected")
+
+test "live: an upload in parts, from data and from a stream, a part copied, an upload aborted, presigned URLs fetched, a configuration written and read, where REBEL_S3_LIVE_URL names a server that answers"
+    endpoint = os.env("REBEL_S3_LIVE_URL").default("")
+
+    if endpoint == ""
+        print("live s3 uploads: skipped, REBEL_S3_LIVE_URL is not set")
+    else
+        c = minio_client(
+            endpoint: endpoint,
+            credentials: Credentials(access_key_id: os.env("REBEL_S3_LIVE_ACCESS_KEY").default("minioadmin"), secret_access_key: os.env("REBEL_S3_LIVE_SECRET_KEY").default("minioadmin"), session_token: "")
+        )
+
+        match list_buckets(c)
+            .err e =>
+                if e.code == PERMISSION || e.code == INVALID
+                    print(f"live s3 uploads: the server at {endpoint} answered and refused: {e.msg}")
+                    assert false
+                print(f"live s3 uploads: skipped, nothing answered at {endpoint}: {e.code}")
+            .ok _ =>
+                bucket = f"rebel-uploads-{time.unix_milliseconds(time.now().must())}"
+                create_bucket(c, bucket: bucket).must()
+                data: [u8] @= []
+                i: i64 @= 0
+
+                while i < MIN_PART_SIZE + 1_000
+                    data @ data.push(to_u8(i % 251).must())
+                    i @ i + 1
+
+                o @= put_options()
+                o.checksum @ .crc32c
+                stored = put_object_in_parts(
+                    c,
+                    bucket: bucket,
+                    key: "big",
+                    data: data,
+                    part_size: MIN_PART_SIZE,
+                    options: o
+                ).must()
+                assert strings.has_suffix(s: stored.etag, suffix: "-2\"")
+                back = get_object(c, bucket: bucket, key: "big").must()
+                assert back.data.len() == data.len() && crypto.sha256(back.data) == crypto.sha256(data)
+                pipe = io.pipe().must()
+                io.write(pipe.writer, data: bytes.from_text("from a stream")).must()
+                writer @= pipe.writer
+                io.close(@writer).must()
+                reader @= pipe.reader
+                _ = put_object_from(
+                    c,
+                    bucket: bucket,
+                    key: "streamed",
+                    s: reader,
+                    part_size: MIN_PART_SIZE,
+                    options: put_options()
+                ).must()
+                io.close(@reader).must()
+                assert get_object(c, bucket: bucket, key: "streamed").must().data == bytes.from_text("from a stream")
+                out = io.pipe().must()
+                g @= get_options()
+                g.span @ .between(first: 0, last: 3)
+                info = get_object_to(c, bucket: bucket, key: "streamed", options: g, s: out.writer).must()
+                assert info.size == 4
+                w @= out.writer
+                io.close(@w).must()
+                rd @= out.reader
+                assert io.read_all(rd).must() == bytes.from_text("from")
+                io.close(@rd).must()
+                plain @= put_options()
+                plain.checksum @ .none
+                upload = create_multipart_upload(c, bucket: bucket, key: "copied", options: plain).must()
+                p1 = upload_part_copy(
+                    c,
+                    upload: upload,
+                    number: 1,
+                    from_bucket: bucket,
+                    from_key: "big",
+                    span: .between(first: 0, last: MIN_PART_SIZE - 1)
+                ).must()
+                p2 = upload_part(c, upload: upload, number: 2, data: bytes.from_text("tail")).must()
+                assert list_parts(c, upload: upload).must().len() == 2
+                assert list_multipart_uploads(c, bucket: bucket, prefix: "copied").must().len() == 1
+                _ = complete_multipart_upload(c, upload: upload, parts: [p2, p1]).must()
+                assert head_object(c, bucket: bucket, key: "copied").must().size == MIN_PART_SIZE + 4
+                dropped = create_multipart_upload(c, bucket: bucket, key: "dropped", options: put_options()).must()
+                abort_multipart_upload(c, upload: dropped).must()
+                assert list_multipart_uploads(c, bucket: bucket, prefix: "").must().len() == 0
+
+                match abort_multipart_upload(c, upload: dropped)
+                    .ok _  => _ = 0
+                    .err e => assert e.code == NOT_FOUND
+
+                web = http.default_client()
+                fetched = http.get(
+                    web,
+                    target: presign_get(c, bucket: bucket, key: "streamed", expires_seconds: 60).must()
+                ).must()
+                assert fetched.status == 200 && fetched.body == bytes.from_text("from a stream")
+                sent = http.send(
+                    web,
+                    r: http.with_body(http.request(method: "PUT", target: presign_put(c, bucket: bucket, key: "presigned", expires_seconds: 60).must()).must(), content_type: "", body: bytes.from_text("put by URL"))
+                ).must()
+                assert sent.status == 200 && get_object(c, bucket: bucket, key: "presigned").must().data == bytes.from_text("put by URL")
+                form = presign_post(
+                    c,
+                    bucket: bucket,
+                    key: "posted",
+                    content_type: "text/plain",
+                    max_size: 100,
+                    at: time.now().must(),
+                    expires_seconds: 60
+                ).must()
+                parts: [http.Part] @= []
+
+                for f in form.fields
+                    parts @ parts.push(
+                        http.Part(name: f.key, filename: "", content_type: "", data: bytes.from_text(f.value))
+                    )
+
+                parts @ parts.push(
+                    http.Part(name: "file", filename: "posted.txt", content_type: "text/plain", data: bytes.from_text("posted by a form"))
+                )
+                posted = http.send(
+                    web,
+                    r: http.with_multipart(http.request(method: "POST", target: form.target).must(), parts: parts)
+                ).must()
+                assert posted.status == 204
+                assert get_object(c, bucket: bucket, key: "posted").must().data == bytes.from_text("posted by a form")
+                assert delete_objects(c, bucket: bucket, names: ["big", "streamed", "copied", "presigned", "posted"]).must().len() == 0
+                delete_bucket(c, bucket: bucket).must()
+                kept = bucket + "-versions"
+                create_bucket(c, bucket: kept).must()
+                put_bucket_config(
+                    c,
+                    bucket: kept,
+                    name: "versioning",
+                    document: "<VersioningConfiguration xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"><Status>Enabled</Status></VersioningConfiguration>"
+                ).must()
+                assert strings.contains(
+                    s: get_bucket_config(c, bucket: kept, name: "versioning").must(),
+                    substr: "<Status>Enabled</Status>"
+                )
+                versioned = put_object(c, bucket: kept, key: "v", data: [1, 2, 3], options: put_options()).must()
+                assert versioned.version_id != ""
+                second = put_object(c, bucket: kept, key: "v", data: [4], options: put_options()).must()
+                delete_object(c, bucket: kept, key: "v").must()
+                versions = list_object_versions(c, bucket: kept, prefix: "").must()
+                assert versions.len() == 3 && versions[0].delete_marker && versions[0].is_latest
+                assert versions[1].version_id == second.version_id && versions[1].size == 1 && versions[2].version_id == versioned.version_id
+
+                for v in versions
+                    delete_object_version(c, bucket: kept, key: v.key, version_id: v.version_id).must()
+
+                assert list_object_versions(c, bucket: kept, prefix: "").must().len() == 0
+
+                match get_bucket_config(c, bucket: kept, name: "policy")
+                    .ok _  => assert false
+                    .err e => assert e.code == NOT_FOUND
+
+                delete_bucket(c, bucket: kept).must()
+                print("live s3 uploads: every operation answered as expected")
+
+## Examples
+
+# The keys of the environment, where it holds them.
+test "credentials_from_env: the keys a shell exported"
+    match credentials_from_env()
+        .ok c  => assert c.access_key_id != "" && c.secret_access_key != ""
+        .err e => assert e.code == NOT_FOUND || e.code == INVALID
+
+# The keys of a profile of a credentials file's text.
+test "credentials_from_text: a profile of a credentials file"
+    text = "[work]\naws_access_key_id = AKIDWORK\naws_secret_access_key = s3cret\n"
+    c = credentials_from_text(text: text, profile: "work", kind: .credentials).must()
+    assert c.access_key_id == "AKIDWORK" && c.session_token == ""
+
+# The keys of the default profile in this machine's shared files, where
+# they hold them.
+test "credentials_from_files: the default profile"
+    match credentials_from_files("default")
+        .ok c  => assert c.access_key_id != ""
+        .err e => assert e.code == NOT_FOUND || e.code == INVALID || e.code == FAILED
+
+# The keys a program finds by itself, where the machine holds some.
+test "default_credentials: the environment, then the shared files"
+    match default_credentials()
+        .ok c  => assert c.secret_access_key != ""
+        .err e => assert e.code == NOT_FOUND || e.code == INVALID || e.code == FAILED
+
+# The profile a program uses.
+test "profile_name: AWS_PROFILE or the default"
+    assert profile_name() != ""
+
+# Keys written for a log, the secret left out.
+test "format_credentials: a key's id with its last four characters"
+    k = Credentials(
+        access_key_id: "AKIAIOSFODNN7EXAMPLE",
+        secret_access_key: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+        session_token: ""
+    )
+    assert format_credentials(k) == "****************MPLE, a secret, no token"
+
+# What a profile of a config file's text says of S3.
+test "profile_from_text: a region and an addressing by path"
+    p = profile_from_text(
+        text: "[default]\nregion = eu-west-1\ns3 =\n    addressing_style = path\n",
+        profile: "default"
+    ).must()
+    assert p.region == "eu-west-1" && p.addressing == .path
+
+# What the default profile of this machine's config file says, where it is
+# there.
+test "profile_from_files: the default profile"
+    match profile_from_files("default")
+        .ok p  => assert p.region == p.region
+        .err e => assert e.code == INVALID || e.code == FAILED
+
+# A client of Amazon S3 in one region.
+test "aws_client: Ireland"
+    c = aws_client(
+        region: "eu-west-1",
+        credentials: Credentials(access_key_id: "AKID", secret_access_key: "s", session_token: "")
+    )
+    assert object_url(c, bucket: "my-photos", key: "2026/cat.jpg").must() == "https://my-photos.s3.eu-west-1.amazonaws.com/2026/cat.jpg"
+
+# A client of a MinIO on this machine.
+test "minio_client: a local server by path"
+    c = minio_client(
+        endpoint: "http://127.0.0.1:9000",
+        credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
+    )
+    assert object_url(c, bucket: "my-photos", key: "cat.jpg").must() == "http://127.0.0.1:9000/my-photos/cat.jpg"
+
+# A client of Cloudflare R2.
+test "r2_client: an account's endpoint"
+    c = r2_client(
+        account_id: "0123abcd",
+        credentials: Credentials(access_key_id: "AKID", secret_access_key: "s", session_token: "")
+    )
+    assert object_url(c, bucket: "assets", key: "logo.svg").must() == "https://0123abcd.r2.cloudflarestorage.com/assets/logo.svg"
+
+# A client of Backblaze B2.
+test "backblaze_client: a region's endpoint"
+    c = backblaze_client(
+        region: "us-west-004",
+        credentials: Credentials(access_key_id: "AKID", secret_access_key: "s", session_token: "")
+    )
+    assert object_url(c, bucket: "backups", key: "db.gz").must() == "https://s3.us-west-004.backblazeb2.com/backups/db.gz"
+
+# The client the environment describes, where it holds keys.
+test "client_from_env: keys, region and endpoint as the AWS CLI finds them"
+    match client_from_env()
+        .ok c  => assert c.region != ""
+        .err e => assert e.code == NOT_FOUND || e.code == INVALID || e.code == FAILED
+
+# The unsigned URL of a public object.
+test "object_url: a key with a space"
+    c = aws_client(
+        region: "us-east-1",
+        credentials: Credentials(access_key_id: "AKID", secret_access_key: "s", session_token: "")
+    )
+    assert object_url(c, bucket: "public-data", key: "a b.csv").must() == "https://public-data.s3.us-east-1.amazonaws.com/a%20b.csv"
+
+# Whether a name may name a new bucket.
+test "is_bucket_name: a good name and a name of capitals"
+    assert is_bucket_name("my-photos-2026") && !is_bucket_name("My_Photos")
+
+# An instant as SigV4 writes it.
+test "format_amz_date: the epoch"
+    assert format_amz_date(time.epoch()) == "19700101T000000Z"
+
+# A SigV4 date read back.
+test "parse_amz_date: the test suite's instant"
+    assert time.format(parse_amz_date("20150830T123600Z").must(), layout: .rfc3339) == "2015-08-30T12:36:00Z"
+
+# A key encoded for a path.
+test "uri_encode: a key with a space and a slash"
+    assert uri_encode("photos/a b.jpg", keep_slash: true) == "photos/a%20b.jpg"
+
+# The text a signature of a request to S3 is made over.
+test "canonical_request: a GET with no field of its own"
+    r = http.request(method: "GET", target: "https://b1b.s3.amazonaws.com/k").must()
+    assert canonical_request(r, payload_hash: EMPTY_PAYLOAD_SHA256, s3: true).must() == "GET\n/k\n\nhost:b1b.s3.amazonaws.com\n\nhost\n" + EMPTY_PAYLOAD_SHA256
+
+# The key of AWS's documented example for IAM.
+test "signing_key: a day's key for IAM in us-east-1"
+    key = signing_key(
+        secret: "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY",
+        at: parse_amz_date("20150830T123600Z").must(),
+        region: "us-east-1",
+        service: "iam"
+    )
+    assert key.len() == 32
+
+# A request to another AWS service signed in its header.
+test "sign_request: the test suite's vanilla GET"
+    r = http.request(method: "GET", target: "https://example.amazonaws.com/").must()
+    k = Credentials(
+        access_key_id: "AKIDEXAMPLE",
+        secret_access_key: "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY",
+        session_token: ""
+    )
+    s = sign_request(
+        r,
+        credentials: k,
+        region: "us-east-1",
+        service: "service",
+        at: parse_amz_date("20150830T123600Z").must()
+    ).must()
+    assert s.signature == "5fa00fa31553b73ebf1942676e86291e8372ff2a2260956d9b8aae1d763fbf31"
+
+# A request presigned for an hour.
+test "presign_request: an S3 GET of the reference's example"
+    r = http.request(method: "GET", target: "https://examplebucket.s3.amazonaws.com/test.txt").must()
+    k = Credentials(
+        access_key_id: "AKIAIOSFODNN7EXAMPLE",
+        secret_access_key: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+        session_token: ""
+    )
+    s = presign_request(
+        r,
+        credentials: k,
+        region: "us-east-1",
+        service: "s3",
+        at: parse_amz_date("20130524T000000Z").must(),
+        expires_seconds: 86_400
+    ).must()
+    assert s.signature == "aeeed9bbccd4d02ee5c0109b86d86835f995330da4c265957d157751f604d404"
+
+# The CRC-32 S3 keeps of a word.
+test "checksum_of: CRC-32 of hello"
+    assert checksum_of(bytes.from_text("hello"), algorithm: .crc32) == "NhCmhg=="
+
+# The name S3 gives a checksum.
+test "format_checksum: CRC-64/NVME"
+    assert format_checksum(.crc64nvme) == "CRC64NVME"
+
+# A checksum named in any case.
+test "parse_checksum: sha256 in lower case"
+    assert parse_checksum("sha256").must() == .sha256
+
+# An operation of the API with no typed function here, a restore.
+test "operation: a POST of an object's restore"
+    op @= operation(method: "POST", bucket: "archive", key: "2019.tar")
+    op.query @ [url.Pair(key: "restore", value: "")]
+    assert op.method == "POST" && op.body.len() == 0
+
+# A request signed and not sent, for a program's own transport.
+test "prepare: a GET of an object"
+    c = minio_client(
+        endpoint: "http://127.0.0.1:9000",
+        credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
+    )
+    r = prepare(c, op: operation(method: "GET", bucket: "photos", key: "cat.jpg"), at: time.epoch()).must()
+    assert http.has_header(r.headers, name: "Authorization") && http.value_of(r.headers, name: "X-Amz-Date").must() == "19700101T000000Z"
+
+# An operation sent, where a MinIO of its defaults answers on this machine;
+# elsewhere it shows nothing.
+test "send: the buckets listed by hand"
+    c = minio_client(
+        endpoint: "http://127.0.0.1:9000",
+        credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
+    )
+
+    match send(c, op: operation(method: "GET", bucket: "", key: ""))
+        .ok r  => assert r.status == 200
+        .err _ => _ = 0
+
+# Options for a page of text kept a day by caches.
+test "put_options: a type and a cache's lifetime"
+    o @= put_options()
+    o.content_type @ "text/html; charset=utf-8"
+    o.cache_control @ "max-age=86400"
+    assert o.checksum == .crc32 && o.if_none_match == ""
+
+# The fields a presigned PUT's sender must send.
+test "headers_of: a type and a piece of metadata"
+    o @= put_options()
+    o.content_type @ "image/png"
+    o.metadata @ [Meta(name: "author", value: "ana")]
+    assert headers_of(o).must() == [http.Header(name: "Content-Type", value: "image/png"), http.Header(name: "x-amz-meta-author", value: "ana")]
+
+# A text put, where a MinIO of its defaults answers on this machine and
+# holds the bucket `rebel-examples`; elsewhere it shows nothing.
+test "put_object: a text"
+    c = minio_client(
+        endpoint: "http://127.0.0.1:9000",
+        credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
+    )
+
+    match put_object(c, bucket: "rebel-examples", key: "hello.txt", data: bytes.from_text("hello"), options: put_options())
+        .ok s  => assert s.etag == "\"5d41402abc4b2a76b9719d911017c592\""
+        .err _ => _ = 0
+
+# Options asking for the first ten bytes.
+test "get_options: a range"
+    o @= get_options()
+    o.span @ .between(first: 0, last: 9)
+    assert range_header(o.span).must() == "bytes=0-9"
+
+# The field asking for the last kilobyte.
+test "range_header: a suffix"
+    assert range_header(.suffix(count: 1_024)).must() == "bytes=-1024"
+
+# The operation of a read of a version, for a program that sends it itself.
+test "get_operation: a version"
+    o @= get_options()
+    o.version_id @ "3HL4kqtJlcpXroDTDmJ"
+    assert get_operation(bucket: "b1b", key: "k", options: o).must().query == [url.Pair(key: "versionId", value: "3HL4kqtJlcpXroDTDmJ")]
+
+# What an answer's fields say of an object.
+test "info_of: a length, a type and a date"
+    r = http.Response(
+        status: 200,
+        reason: "OK",
+        headers: [http.Header(name: "Content-Length", value: "5"), http.Header(name: "Content-Type", value: "text/plain"), http.Header(name: "Last-Modified", value: "Mon, 02 Jan 2006 15:04:05 GMT")],
+        body: [],
+        closing: false
+    )
+    i = info_of(r, key: "hello.txt").must()
+    assert i.size == 5 && i.content_type == "text/plain"
+
+# An object read whole, where a MinIO of its defaults answers on this
+# machine and holds it; elsewhere it shows nothing.
+test "get_object: a text read back"
+    c = minio_client(
+        endpoint: "http://127.0.0.1:9000",
+        credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
+    )
+
+    match get_object(c, bucket: "rebel-examples", key: "hello.txt")
+        .ok o  => assert o.data.len() == o.info.size
+        .err _ => _ = 0
+
+# The first byte of an object, where a MinIO of its defaults answers on this
+# machine and holds it; elsewhere it shows nothing.
+test "get_object_with: a range of one byte"
+    c = minio_client(
+        endpoint: "http://127.0.0.1:9000",
+        credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
+    )
+    o @= get_options()
+    o.span @ .between(first: 0, last: 0)
+
+    match get_object_with(c, bucket: "rebel-examples", key: "hello.txt", options: o)
+        .ok got => assert got.data.len() == 1
+        .err _  => _ = 0
+
+# An object copied to the process's standard output as it comes, where a
+# MinIO of its defaults answers on this machine and holds it; elsewhere it
+# shows nothing.
+test "get_object_to: an object to a stream"
+    c = minio_client(
+        endpoint: "http://127.0.0.1:9000",
+        credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
+    )
+    p = io.pipe().must()
+
+    match get_object_to(c, bucket: "rebel-examples", key: "hello.txt", options: get_options(), s: p.writer)
+        .ok i  => assert i.size >= 0
+        .err _ => _ = 0
+
+    w @= p.writer
+    io.close(@w).must()
+    r @= p.reader
+    io.close(@r).must()
+
+# What S3 says of an object, where a MinIO of its defaults answers on this
+# machine and holds it; elsewhere it shows nothing.
+test "head_object: the size of a text"
+    c = minio_client(
+        endpoint: "http://127.0.0.1:9000",
+        credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
+    )
+
+    match head_object(c, bucket: "rebel-examples", key: "hello.txt")
+        .ok i  => assert i.size >= 0
+        .err _ => _ = 0
+
+# Whether an object is there, where a MinIO of its defaults answers on this
+# machine; elsewhere it shows nothing.
+test "object_exists: a key nobody put"
+    c = minio_client(
+        endpoint: "http://127.0.0.1:9000",
+        credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
+    )
+
+    match object_exists(c, bucket: "rebel-examples", key: "nobody-put-this")
+        .ok there => assert !there
+        .err _    => _ = 0
+
+# An object deleted, where a MinIO of its defaults answers on this machine;
+# elsewhere it shows nothing.
+test "delete_object: a key, there or not"
+    c = minio_client(
+        endpoint: "http://127.0.0.1:9000",
+        credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
+    )
+
+    match delete_object(c, bucket: "rebel-examples", key: "gone.txt")
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+# One version deleted for good, where a MinIO of its defaults answers on
+# this machine; elsewhere it shows nothing.
+test "delete_object_version: a version that is not there"
+    c = minio_client(
+        endpoint: "http://127.0.0.1:9000",
+        credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
+    )
+
+    match delete_object_version(c, bucket: "rebel-examples", key: "hello.txt", version_id: "null")
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+# Two objects deleted in one request, where a MinIO of its defaults answers
+# on this machine; elsewhere it shows nothing.
+test "delete_objects: two keys"
+    c = minio_client(
+        endpoint: "http://127.0.0.1:9000",
+        credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
+    )
+
+    match delete_objects(c, bucket: "rebel-examples", names: ["a.txt", "b.txt"])
+        .ok refused => assert refused.len() == 0
+        .err _      => _ = 0
+
+# An object copied, where a MinIO of its defaults answers on this machine
+# and holds it; elsewhere it shows nothing.
+test "copy_object: a text to a second key"
+    c = minio_client(
+        endpoint: "http://127.0.0.1:9000",
+        credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
+    )
+
+    match copy_object(c, from_bucket: "rebel-examples", from_key: "hello.txt", to_bucket: "rebel-examples", to_key: "hello-copy.txt")
+        .ok s  => assert s.etag != ""
+        .err _ => _ = 0
+
+# An object's type changed in place, where a MinIO of its defaults answers
+# on this machine and holds it; elsewhere it shows nothing.
+test "copy_object_with: a new type"
+    c = minio_client(
+        endpoint: "http://127.0.0.1:9000",
+        credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
+    )
+    o @= put_options()
+    o.content_type @ "text/markdown"
+
+    match copy_object_with(c, from_bucket: "rebel-examples", from_key: "hello.txt", to_bucket: "rebel-examples", to_key: "hello.txt", options: o)
+        .ok s  => assert s.etag != ""
+        .err _ => _ = 0
+
+# An object's tags, where a MinIO of its defaults answers on this machine
+# and holds it; elsewhere it shows nothing.
+test "get_object_tags: the tags of a text"
+    c = minio_client(
+        endpoint: "http://127.0.0.1:9000",
+        credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
+    )
+
+    match get_object_tags(c, bucket: "rebel-examples", key: "hello.txt")
+        .ok tags => assert tags.len() <= 10
+        .err _   => _ = 0
+
+# An object tagged, where a MinIO of its defaults answers on this machine
+# and holds it; elsewhere it shows nothing.
+test "put_object_tags: one tag"
+    c = minio_client(
+        endpoint: "http://127.0.0.1:9000",
+        credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
+    )
+
+    match put_object_tags(c, bucket: "rebel-examples", key: "hello.txt", tags: [Tag(key: "project", value: "rebel")])
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+# Options for the folders at the top of a bucket.
+test "list_options: a delimiter"
+    o @= list_options()
+    o.delimiter @ "/"
+    assert o.prefix == "" && o.max_keys == 0
+
+# One page of objects, where a MinIO of its defaults answers on this machine
+# and holds the bucket; elsewhere it shows nothing.
+test "list_objects: ten keys a page"
+    c = minio_client(
+        endpoint: "http://127.0.0.1:9000",
+        credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
+    )
+    o @= list_options()
+    o.max_keys @ 10
+
+    match list_objects(c, bucket: "rebel-examples", options: o)
+        .ok page => assert page.objects.len() <= 10
+        .err _   => _ = 0
+
+# Every object under a prefix, where a MinIO of its defaults answers on this
+# machine and holds the bucket; elsewhere it shows nothing.
+test "list_all_objects: every key under a prefix"
+    c = minio_client(
+        endpoint: "http://127.0.0.1:9000",
+        credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
+    )
+
+    match list_all_objects(c, bucket: "rebel-examples", prefix: "hello")
+        .ok all_of => assert all_of.len() >= 0
+        .err _     => _ = 0
+
+# The buckets of the credentials, where a MinIO of its defaults answers on
+# this machine; elsewhere it shows nothing.
+test "list_buckets: every bucket"
+    c = minio_client(
+        endpoint: "http://127.0.0.1:9000",
+        credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
+    )
+
+    match list_buckets(c)
+        .ok buckets => assert buckets.len() >= 0
+        .err _      => _ = 0
+
+# Every version kept of a key, where a MinIO of its defaults answers on this
+# machine and holds the bucket; elsewhere it shows nothing.
+test "list_object_versions: the versions of a key"
+    c = minio_client(
+        endpoint: "http://127.0.0.1:9000",
+        credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
+    )
+
+    match list_object_versions(c, bucket: "rebel-examples", prefix: "hello.txt")
+        .ok versions => assert versions.len() >= 0
+        .err _       => _ = 0
+
+# A form that lets a browser upload one photo of at most 10 MB for an hour.
+test "presign_post: a photo's upload form"
+    c = aws_client(
+        region: "eu-west-1",
+        credentials: Credentials(access_key_id: "AKID", secret_access_key: "s", session_token: "")
+    )
+    form = presign_post(
+        c,
+        bucket: "uploads",
+        key: "photos/cat.jpg",
+        content_type: "image/jpeg",
+        max_size: 10_000_000,
+        at: time.now().must(),
+        expires_seconds: 3_600
+    ).must()
+    assert form.target == "https://uploads.s3.eu-west-1.amazonaws.com/" && form.fields.len() == 7
+
+# The bucket the other examples use, made where a MinIO of its defaults
+# answers on this machine; elsewhere it shows nothing.
+test "create_bucket: the examples' bucket"
+    c = minio_client(
+        endpoint: "http://127.0.0.1:9000",
+        credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
+    )
+
+    match create_bucket(c, bucket: "rebel-examples")
+        .ok _  => _ = 0
+        .err e => assert e.code != INVALID
+
+# A bucket made and deleted, where a MinIO of its defaults answers on this
+# machine; elsewhere it shows nothing.
+test "delete_bucket: an empty bucket"
+    c = minio_client(
+        endpoint: "http://127.0.0.1:9000",
+        credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
+    )
+
+    match create_bucket(c, bucket: "rebel-examples-gone")
+        .ok _  => delete_bucket(c, bucket: "rebel-examples-gone").must()
+        .err _ => _ = 0
+
+# Whether a bucket is there, where a MinIO of its defaults answers on this
+# machine; elsewhere it shows nothing.
+test "bucket_exists: a bucket nobody made"
+    c = minio_client(
+        endpoint: "http://127.0.0.1:9000",
+        credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
+    )
+
+    match bucket_exists(c, bucket: "rebel-nobody-made-this")
+        .ok there => assert !there
+        .err _    => _ = 0
+
+# The region of a bucket, where a MinIO of its defaults answers on this
+# machine and holds it; elsewhere it shows nothing.
+test "bucket_region: a MinIO's"
+    c = minio_client(
+        endpoint: "http://127.0.0.1:9000",
+        credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
+    )
+
+    match bucket_region(c, bucket: "rebel-examples")
+        .ok region => assert region != ""
+        .err _     => _ = 0
+
+# A bucket's versioning read, where a MinIO of its defaults answers on this
+# machine and holds it; elsewhere it shows nothing.
+test "get_bucket_config: versioning"
+    c = minio_client(
+        endpoint: "http://127.0.0.1:9000",
+        credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
+    )
+
+    match get_bucket_config(c, bucket: "rebel-examples", name: "versioning")
+        .ok text => assert strings.contains(s: text, substr: "VersioningConfiguration")
+        .err _   => _ = 0
+
+# A bucket's tags set, where a MinIO of its defaults answers on this machine
+# and holds it; elsewhere it shows nothing.
+test "put_bucket_config: tags"
+    c = minio_client(
+        endpoint: "http://127.0.0.1:9000",
+        credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
+    )
+    tags = "<Tagging xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"><TagSet><Tag><Key>team</Key><Value>web</Value></Tag></TagSet></Tagging>"
+
+    match put_bucket_config(c, bucket: "rebel-examples", name: "tagging", document: tags)
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+# A bucket's tags deleted, where a MinIO of its defaults answers on this
+# machine and holds it; elsewhere it shows nothing.
+test "delete_bucket_config: tags"
+    c = minio_client(
+        endpoint: "http://127.0.0.1:9000",
+        credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
+    )
+
+    match delete_bucket_config(c, bucket: "rebel-examples", name: "tagging")
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+# An upload in parts begun and aborted, where a MinIO of its defaults
+# answers on this machine and holds the bucket; elsewhere it shows nothing.
+test "create_multipart_upload: an upload begun"
+    c = minio_client(
+        endpoint: "http://127.0.0.1:9000",
+        credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
+    )
+
+    match create_multipart_upload(c, bucket: "rebel-examples", key: "video.mp4", options: put_options())
+        .ok u =>
+            assert u.upload_id != ""
+            abort_multipart_upload(c, upload: u).must()
+        .err _ => _ = 0
+
+# A last part uploaded, where a MinIO of its defaults answers on this
+# machine and holds the bucket; elsewhere it shows nothing.
+test "upload_part: one small part"
+    c = minio_client(
+        endpoint: "http://127.0.0.1:9000",
+        credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
+    )
+
+    match create_multipart_upload(c, bucket: "rebel-examples", key: "parts.bin", options: put_options())
+        .ok u =>
+            p = upload_part(c, upload: u, number: 1, data: [1, 2, 3]).must()
+            assert p.number == 1 && p.etag != ""
+            abort_multipart_upload(c, upload: u).must()
+        .err _ => _ = 0
+
+# A part copied from another object, where a MinIO of its defaults answers
+# on this machine and holds it; elsewhere it shows nothing.
+test "upload_part_copy: a whole object as one part"
+    c = minio_client(
+        endpoint: "http://127.0.0.1:9000",
+        credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
+    )
+
+    match create_multipart_upload(c, bucket: "rebel-examples", key: "joined.txt", options: put_options())
+        .ok u =>
+            match upload_part_copy(c, upload: u, number: 1, from_bucket: "rebel-examples", from_key: "hello.txt", span: .whole)
+                .ok p  => assert p.etag != ""
+                .err _ => _ = 0
+
+            abort_multipart_upload(c, upload: u).must()
+        .err _ => _ = 0
+
+# An upload of one part completed, where a MinIO of its defaults answers on
+# this machine and holds the bucket; elsewhere it shows nothing.
+test "complete_multipart_upload: one part"
+    c = minio_client(
+        endpoint: "http://127.0.0.1:9000",
+        credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
+    )
+
+    match create_multipart_upload(c, bucket: "rebel-examples", key: "one-part.txt", options: put_options())
+        .ok u =>
+            p = upload_part(c, upload: u, number: 1, data: bytes.from_text("one")).must()
+            assert complete_multipart_upload(c, upload: u, parts: [p]).must().etag != ""
+        .err _ => _ = 0
+
+# An upload aborted, where a MinIO of its defaults answers on this machine
+# and holds the bucket; elsewhere it shows nothing.
+test "abort_multipart_upload: an upload nobody finishes"
+    c = minio_client(
+        endpoint: "http://127.0.0.1:9000",
+        credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
+    )
+
+    match create_multipart_upload(c, bucket: "rebel-examples", key: "abandoned.bin", options: put_options())
+        .ok u  => abort_multipart_upload(c, upload: u).must()
+        .err _ => _ = 0
+
+# The parts of an upload, where a MinIO of its defaults answers on this
+# machine and holds the bucket; elsewhere it shows nothing.
+test "list_parts: one part listed"
+    c = minio_client(
+        endpoint: "http://127.0.0.1:9000",
+        credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
+    )
+
+    match create_multipart_upload(c, bucket: "rebel-examples", key: "listed.bin", options: put_options())
+        .ok u =>
+            _ = upload_part(c, upload: u, number: 1, data: [7]).must()
+            assert list_parts(c, upload: u).must().len() == 1
+            abort_multipart_upload(c, upload: u).must()
+        .err _ => _ = 0
+
+# The uploads nobody ended, where a MinIO of its defaults answers on this
+# machine and holds the bucket; elsewhere it shows nothing.
+test "list_multipart_uploads: uploads left open"
+    c = minio_client(
+        endpoint: "http://127.0.0.1:9000",
+        credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
+    )
+
+    match list_multipart_uploads(c, bucket: "rebel-examples", prefix: "")
+        .ok open => assert open.len() >= 0
+        .err _   => _ = 0
+
+# Data of two parts put, where a MinIO of its defaults answers on this
+# machine and holds the bucket; elsewhere it shows nothing.
+test "put_object_in_parts: parts of 5 MiB"
+    c = minio_client(
+        endpoint: "http://127.0.0.1:9000",
+        credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
+    )
+
+    match put_object_in_parts(c, bucket: "rebel-examples", key: "small.bin", data: [1, 2, 3], part_size: MIN_PART_SIZE, options: put_options())
+        .ok s  => assert s.etag != ""
+        .err _ => _ = 0
+
+# What a pipe holds put, where a MinIO of its defaults answers on this
+# machine and holds the bucket; elsewhere it shows nothing.
+test "put_object_from: a stream's bytes"
+    c = minio_client(
+        endpoint: "http://127.0.0.1:9000",
+        credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
+    )
+    p = io.pipe().must()
+    io.write(p.writer, data: bytes.from_text("streamed")).must()
+    w @= p.writer
+    io.close(@w).must()
+
+    match put_object_from(c, bucket: "rebel-examples", key: "streamed.txt", s: p.reader, part_size: MIN_PART_SIZE, options: put_options())
+        .ok s  => assert s.etag != ""
+        .err _ => _ = 0
+
+    r @= p.reader
+    io.close(@r).must()
+
+# A URL that deletes an object for five minutes, signed now.
+test "presign_url: a DELETE"
+    c = minio_client(
+        endpoint: "http://127.0.0.1:9000",
+        credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
+    )
+    link = presign_url(
+        c,
+        method: "DELETE",
+        bucket: "photos",
+        key: "cat.jpg",
+        headers: [],
+        at: time.now().must(),
+        expires_seconds: 300
+    ).must()
+    assert strings.has_prefix(s: link, prefix: "http://127.0.0.1:9000/photos/cat.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256")
+
+# A URL that reads an object for an hour.
+test "presign_get: an hour"
+    c = minio_client(
+        endpoint: "http://127.0.0.1:9000",
+        credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
+    )
+    assert strings.contains(
+        s: presign_get(c, bucket: "photos", key: "cat.jpg", expires_seconds: 3_600).must(),
+        substr: "X-Amz-Expires=3600"
+    )
+
+# A URL that puts an object for ten minutes.
+test "presign_put: ten minutes"
+    c = minio_client(
+        endpoint: "http://127.0.0.1:9000",
+        credentials: Credentials(access_key_id: "minioadmin", secret_access_key: "minioadmin", session_token: "")
+    )
+    assert strings.contains(
+        s: presign_put(c, bucket: "uploads", key: "in.csv", expires_seconds: 600).must(),
+        substr: "X-Amz-SignedHeaders=host"
+    )

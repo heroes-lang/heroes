@@ -1,0 +1,165 @@
+# A signed request sent on a connection of its own and its answer read:
+# `net` for `http://`, `tls` for `https://`, HTTP/1.1 by `http`'s
+# `round_trip`, so no body is decoded and an object stored compressed is
+# answered as stored; or the head read first and the body copied to a
+# stream as it comes. The connection closes after each request.
+
+use bytes
+use http
+use io
+use net
+use time
+use tls
+use url
+
+# How a connection is reached, for its deadline.
+variant Link
+    # A plain TCP connection, `http://`.
+    plain
+        # The connection, whose stream the reader holds.
+        conn: net.Conn
+    # A TLS connection, `https://`, whose stream the reader holds.
+    secure
+
+# A connection opened for one request.
+record Opened
+    # The reader of the connection; `close` closes it.
+    reader: io.Reader
+    # How the connection is reached.
+    link: Link
+    # The head of the answer, once read: its status and fields, no body.
+    head: http.Response
+
+# Waits `ms` milliseconds.
+function pause(ms: i64)
+    if ms > 0
+        time.sleep(time.milliseconds(ms).default(time.nanoseconds(0)))
+
+# A connection to the host of `target`, its TLS checked against `roots`
+# where its scheme is `https`. Fails `unsupported` for another scheme, and as
+# `net.connect` and `tls.connect` fail.
+function open(target: url.Url, deadline_ms: i64, roots: str) -> Opened?
+    port = url.port_of(target)?
+
+    if target.scheme == "https"
+        stream = tls.connect(target.host, port: port, deadline_ms: deadline_ms, client: tls.Client(roots: roots, protocols: ["http/1.1"]))?
+        return ok(Opened(reader: io.reader(stream), link: .secure, head: http.respond_status(200)))
+
+    if target.scheme == "http"
+        conn = net.connect(target.host, port: port, deadline_ms: deadline_ms)?
+        return ok(Opened(reader: io.reader(conn.stream), link: .plain(conn: conn), head: http.respond_status(200)))
+    return fail(code: "unsupported", msg: f"the scheme \"{target.scheme}\" is neither http nor https")
+
+# Moves the deadline of `o`'s connection to `ms` from now; 0 takes it away.
+function set_deadline(o: Opened lent, ms: i64) -> ()?
+    match o.link
+        .plain p => return net.set_deadline(p.conn, ms: ms)
+        .secure  => return tls.set_deadline(o.reader.stream, ms: ms)
+
+# Closes `o`'s connection; a failure closing is no news to its caller.
+function close(@o: Opened)
+    match io.close(@o.reader.stream)
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+# `r` written on `o` and its answer read whole, within `limits`.
+function round(@o: Opened, r: http.Request, deadline_ms: i64, limits: http.Limits) -> http.Response?
+    set_deadline(o, ms: deadline_ms)?
+    return http.round_trip(@o.reader, r: r, limits: limits)
+
+# The answer to `r`, sent on a connection of its own, which closes after
+# it, and read whole within `limits`; its body as it came, never decoded.
+# Fails as `open` and `http.round_trip` fail.
+function exchange(r: http.Request, deadline_ms: i64, roots: str, limits: http.Limits) -> http.Response?
+    sent @= r
+    sent.closing @ true
+    o @= open(r.url, deadline_ms: deadline_ms, roots: roots)?
+    outcome = round(@o, r: sent, deadline_ms: deadline_ms, limits: limits)
+    close(@o)
+    return outcome
+
+# `o` with `r` written and the head of its answer read into `o.head`.
+function headed(@o: Opened, r: http.Request, deadline_ms: i64, limits: http.Limits) -> ()?
+    set_deadline(o, ms: deadline_ms)?
+    http.write_request(o.reader.stream, r: r)?
+    o.head @ http.read_response_head(@o.reader, method: r.method, limits: limits)?
+    return ok()
+
+# A connection with `r` written and the head of its answer read, its body
+# left on it; the caller closes it. Fails as `open` fails and as the head
+# is read, the connection then closed.
+function open_head(r: http.Request, deadline_ms: i64, roots: str, limits: http.Limits) -> Opened?
+    sent @= r
+    sent.closing @ true
+    o @= open(r.url, deadline_ms: deadline_ms, roots: roots)?
+
+    match headed(@o, r: sent, deadline_ms: deadline_ms, limits: limits)
+        .ok _ => return ok(o)
+        .err e =>
+            close(@o)
+            return fail(code: e.code, msg: e.msg)
+
+# The rest of `o`'s body, at most `most` bytes. Fails `limit` past them, and
+# as `http.read_piece` fails.
+function read_body(@o: Opened, method: str, limits: http.Limits, most: i64) -> [u8]?
+    body @= http.body_reader(o.head, method: method, limits: limits)?
+    pieces: [[u8]] @= []
+    held: i64 @= 0
+
+    while true
+        piece = http.read_piece(@o.reader, @body, most: 65_536)?
+
+        if piece.len() == 0
+            return ok(concat_all(pieces))
+        held @ held + piece.len()
+
+        if held > most
+            return fail(code: "limit", msg: f"the answer's body passes {most} bytes")
+        pieces @ pieces.push(piece)
+
+# The rest of `o`'s body written to `s` as it comes, its count of bytes
+# answered. Fails as `http.read_piece` and `io.write` fail.
+function copy_body(@o: Opened, method: str, limits: http.Limits, s: io.Stream) -> i64?
+    body @= http.body_reader(o.head, method: method, limits: limits)?
+    written: i64 @= 0
+
+    while true
+        piece = http.read_piece(@o.reader, @body, most: 65_536)?
+
+        if piece.len() == 0
+            return ok(written)
+        io.write(s, data: piece)?
+        written @ written + piece.len()
+
+# The lists of `pieces` one after another.
+function concat_all(pieces: [[u8]]) -> [u8]
+    return bytes.concat(pieces)
+
+# Up to `count` bytes of `s`, fewer only where it ends first: one part of
+# an upload. Fails as `io.read` fails.
+function read_up_to(s: io.Stream, count: i64) -> [u8]?
+    pieces: [[u8]] @= []
+    held: i64 @= 0
+
+    while held < count
+        most: i64 @= count - held
+
+        if most > 65_536
+            most @ 65_536
+        piece = io.read(s, most: most)?
+
+        if piece.len() == 0
+            return ok(bytes.concat(pieces))
+        pieces @ pieces.push(piece)
+        held @ held + piece.len()
+
+    return ok(bytes.concat(pieces))
+
+test "open: a scheme that is neither http nor https, and a port nobody listens on"
+    assert open(url.parse("ftp://127.0.0.1/").must(), deadline_ms: 1_000, roots: "").is_err()
+    assert open(url.parse("http://127.0.0.1:1/").must(), deadline_ms: 1_000, roots: "").is_err()
+
+test "concat_all and pause: none, pieces with an empty one between, and a wait of nothing"
+    assert concat_all([]).len() == 0
+    assert concat_all([[1, 2], [], [3]]) == [1, 2, 3]
+    pause(0)

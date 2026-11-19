@@ -1,0 +1,471 @@
+# The XML documents S3 answers, read into this module's records: an error,
+# a page of objects, the buckets, an upload begun, a part, an object stored,
+# the keys a multiple delete refused, the parts and the uploads in parts, a
+# bucket's location and an object's tags. A document of another shape is
+# `invalid`, its message naming what was found.
+
+use bytes
+use numbers
+use time
+use url
+use xml
+
+# What an error document says; every field "" where the answer held no
+# such element, or no XML at all.
+record Reply
+    # S3's code, `NoSuchKey`.
+    code: str
+    # S3's message.
+    message: str
+    # The request's id, which S3's support asks for.
+    request_id: str
+    # The region a bucket stands in, where a redirect or a wrong region
+    # names it.
+    region: str
+
+# One object of a page.
+record Entry
+    # The key, decoded.
+    key: str
+    # The size in bytes.
+    size: i64
+    # The ETag, its quotes kept.
+    etag: str
+    # When it was last written.
+    last_modified: time.Instant
+    # The storage class.
+    storage_class: str
+
+# One page of a listing of objects.
+record Page
+    # The objects.
+    entries: [Entry]
+    # The common prefixes, decoded.
+    prefixes: [str]
+    # Whether more pages follow.
+    truncated: bool
+    # The next page's token; "" where none.
+    next_token: str
+
+# One bucket of a listing.
+record BucketEntry
+    # The name.
+    name: str
+    # When it was made.
+    created: time.Instant
+    # Its region; "" where not answered.
+    region: str
+
+# What S3 answers to a copy, an upload completed or a part copied.
+record Result
+    # The ETag, its quotes kept.
+    etag: str
+    # The checksum's name, `CRC32`; "" where none was answered.
+    checksum_name: str
+    # The checksum in base 64; "" where none.
+    checksum: str
+
+# One key a multiple delete did not delete.
+record Refused
+    # The key.
+    key: str
+    # S3's code.
+    code: str
+    # S3's message.
+    message: str
+
+# One part of a listing of parts.
+record PartEntry
+    # Its number.
+    number: i64
+    # Its ETag.
+    etag: str
+    # Its size in bytes.
+    size: i64
+    # Its checksum in base 64; "" where none.
+    checksum: str
+
+# One page of a listing of parts.
+record PartsPage
+    # The parts.
+    parts: [PartEntry]
+    # Whether more pages follow.
+    truncated: bool
+    # The part number the next page starts after.
+    next_marker: str
+
+# One upload in parts of a listing.
+record UploadEntry
+    # The key, decoded.
+    key: str
+    # The upload's id.
+    upload_id: str
+
+# One page of a listing of uploads in parts.
+record UploadsPage
+    # The uploads.
+    uploads: [UploadEntry]
+    # Whether more pages follow.
+    truncated: bool
+    # The key the next page starts after, decoded.
+    next_key_marker: str
+    # The upload id the next page starts after.
+    next_upload_id_marker: str
+
+# One version of an object, or a delete marker, of a listing of versions.
+record VersionEntry
+    # The key, decoded.
+    key: str
+    # The version's id.
+    version_id: str
+    # Whether it is the newest of its key.
+    is_latest: bool
+    # Whether it is a delete marker, which holds no bytes.
+    delete_marker: bool
+    # The size in bytes; 0 for a delete marker.
+    size: i64
+    # The ETag; "" for a delete marker.
+    etag: str
+    # When it was written.
+    last_modified: time.Instant
+
+# One page of a listing of versions.
+record VersionsPage
+    # The versions and delete markers, in the order answered.
+    versions: [VersionEntry]
+    # Whether more pages follow.
+    truncated: bool
+    # The key the next page starts after, decoded.
+    next_key_marker: str
+    # The version the next page starts after.
+    next_version_id_marker: str
+
+# The checksums an element may hold, by the names S3 gives them.
+function checksum_names() -> [str]
+    return ["CRC32", "CRC32C", "CRC64NVME", "SHA1", "SHA256"]
+
+# The root of the document `body` holds, which must be named `name`. Fails
+# `invalid` where `body` is not UTF-8 XML or its root is another.
+function root_of(body: [u8], name: str) -> xml.Element?
+    text = bytes.to_text(body).default("")
+
+    if text == "" && body.len() > 0
+        return fail(code: "invalid", msg: f"S3's answer was to be <{name}>, and its {body.len()} bytes are not UTF-8")
+
+    match xml.parse(text)
+        .err e => return fail(code: "invalid", msg: f"S3's answer was to be <{name}>, and it is not XML: {e.msg}")
+        .ok doc =>
+            if doc.root.name.local != name
+                return fail(
+                    code: "invalid",
+                    msg: f"S3's answer was to be <{name}>, and its root is <{xml.format_name(doc.root.name)}>"
+                )
+            return ok(doc.root)
+
+# The text of the first child of `e` named `name`; "" where it has none.
+function text_at(e: xml.Element, name: str) -> str
+    match xml.child(e, name: name)
+        .ok c  => return xml.text_of(c)
+        .err _ => return ""
+
+# Whether the child `name` of `e` says `true`.
+function flag_at(e: xml.Element, name: str) -> bool
+    return text_at(e, name: name) == "true"
+
+# The number the child `name` of `e` writes; 0 where it has none. Fails
+# `invalid` where it writes no integer.
+function number_at(e: xml.Element, name: str) -> i64?
+    text = text_at(e, name: name)
+
+    if text == ""
+        return ok(0)
+
+    match numbers.parse_int(text)
+        .ok n  => return ok(n)
+        .err _ => return fail(code: "invalid", msg: f"S3's <{name}> holds \"{text}\", which is no integer")
+
+# The instant the child `name` of `e` writes, as RFC 3339. Fails `invalid`
+# where it is absent or no such time.
+function time_at(e: xml.Element, name: str) -> time.Instant?
+    text = text_at(e, name: name)
+
+    match time.parse(text, layout: .rfc3339)
+        .ok t  => return ok(t)
+        .err _ => return fail(code: "invalid", msg: f"S3's <{name}> holds \"{text}\", which is no RFC 3339 time")
+
+# `s` decoded where `encoded`, as S3 encodes a key for `encoding-type=url`:
+# its escapes read and a `+` read as a space. Fails `invalid` where an escape
+# is broken or the bytes are no text.
+function decoded(s: str, encoded: bool) -> str?
+    if !encoded
+        return ok(s)
+
+    match url.unescape_query(s)
+        .ok t  => return ok(t)
+        .err e => return fail(code: "invalid", msg: f"S3's encoded name \"{s}\" cannot be read: {e.msg}")
+
+# The checksum `e` holds, its name and its value; two "" where none.
+function checksum_in(e: xml.Element) -> [str]
+    for name in checksum_names()
+        value = text_at(e, name: "Checksum" + name)
+
+        if value != ""
+            return [name, value]
+
+    return ["", ""]
+
+# What the error document `body` says; every field "" where `body` is none.
+function error_of(body: [u8]) -> Reply
+    match root_of(body, name: "Error")
+        .err _ => return Reply(code: "", message: "", request_id: "", region: "")
+        .ok e =>
+            return Reply(
+                code: text_at(e, name: "Code"),
+                message: text_at(e, name: "Message"),
+                request_id: text_at(e, name: "RequestId"),
+                region: text_at(e, name: "Region")
+            )
+
+# Whether `body` is an error document, as S3 answers with 200 to a copy or
+# an upload completed that failed after it began.
+function is_error(body: [u8]) -> bool
+    return root_of(body, name: "Error").is_err() == false
+
+# The page of objects `body` holds, a `ListBucketResult` of version 2.
+# Fails `invalid` where it is none.
+function page_of(body: [u8]) -> Page?
+    root = root_of(body, name: "ListBucketResult")?
+    encoded = text_at(root, name: "EncodingType") == "url"
+    entries: [Entry] @= []
+
+    for c in xml.children_named(root, name: "Contents")
+        entries @ entries.push(
+            Entry(key: decoded(text_at(c, name: "Key"), encoded: encoded)?, size: number_at(c, name: "Size")?, etag: text_at(c, name: "ETag"), last_modified: time_at(c, name: "LastModified")?, storage_class: text_at(c, name: "StorageClass"))
+        )
+
+    prefixes: [str] @= []
+
+    for p in xml.children_named(root, name: "CommonPrefixes")
+        prefixes @ prefixes.push(decoded(text_at(p, name: "Prefix"), encoded: encoded)?)
+
+    return ok(
+        Page(entries: entries, prefixes: prefixes, truncated: flag_at(root, name: "IsTruncated"), next_token: text_at(root, name: "NextContinuationToken"))
+    )
+
+# The buckets `body` holds, a `ListAllMyBucketsResult`, and the token of the
+# next page where it is cut. Fails `invalid` where it is none.
+function buckets_of(body: [u8]) -> [BucketEntry]?
+    root = root_of(body, name: "ListAllMyBucketsResult")?
+    out: [BucketEntry] @= []
+
+    match xml.child(root, name: "Buckets")
+        .err _ => return ok(out)
+        .ok held =>
+            for b in xml.children_named(held, name: "Bucket")
+                out @ out.push(
+                    BucketEntry(name: text_at(b, name: "Name"), created: time_at(b, name: "CreationDate")?, region: text_at(b, name: "BucketRegion"))
+                )
+
+    return ok(out)
+
+# The token of the next page of buckets `body` names; "" where none.
+function buckets_token_of(body: [u8]) -> str
+    match root_of(body, name: "ListAllMyBucketsResult")
+        .ok root => return text_at(root, name: "ContinuationToken")
+        .err _   => return ""
+
+# The upload id `body` holds, an `InitiateMultipartUploadResult`. Fails
+# `invalid` where it is none or holds no id.
+function upload_id_of(body: [u8]) -> str?
+    root = root_of(body, name: "InitiateMultipartUploadResult")?
+    id = text_at(root, name: "UploadId")
+
+    if id == ""
+        return fail(code: "invalid", msg: "S3 began an upload and gave it no <UploadId>")
+    return ok(id)
+
+# What `body` says of an object stored or a part copied, whose root is
+# `name`: `CompleteMultipartUploadResult`, `CopyObjectResult` or
+# `CopyPartResult`. Fails `invalid` where it is none.
+function result_of(body: [u8], name: str) -> Result?
+    root = root_of(body, name: name)?
+    sum = checksum_in(root)
+    return ok(Result(etag: text_at(root, name: "ETag"), checksum_name: sum[0], checksum: sum[1]))
+
+# The keys `body`, a `DeleteResult`, says were not deleted. Fails `invalid`
+# where it is none.
+function refused_of(body: [u8]) -> [Refused]?
+    root = root_of(body, name: "DeleteResult")?
+    out: [Refused] @= []
+
+    for e in xml.children_named(root, name: "Error")
+        out @ out.push(
+            Refused(key: text_at(e, name: "Key"), code: text_at(e, name: "Code"), message: text_at(e, name: "Message"))
+        )
+
+    return ok(out)
+
+# The page of parts `body` holds, a `ListPartsResult`. Fails `invalid`
+# where it is none.
+function parts_of(body: [u8]) -> PartsPage?
+    root = root_of(body, name: "ListPartsResult")?
+    out: [PartEntry] @= []
+
+    for p in xml.children_named(root, name: "Part")
+        out @ out.push(
+            PartEntry(number: number_at(p, name: "PartNumber")?, etag: text_at(p, name: "ETag"), size: number_at(p, name: "Size")?, checksum: checksum_in(p)[1])
+        )
+
+    return ok(
+        PartsPage(parts: out, truncated: flag_at(root, name: "IsTruncated"), next_marker: text_at(root, name: "NextPartNumberMarker"))
+    )
+
+# The page of uploads in parts `body` holds, a `ListMultipartUploadsResult`.
+# Fails `invalid` where it is none.
+function uploads_of(body: [u8]) -> UploadsPage?
+    root = root_of(body, name: "ListMultipartUploadsResult")?
+    encoded = text_at(root, name: "EncodingType") == "url"
+    out: [UploadEntry] @= []
+
+    for u in xml.children_named(root, name: "Upload")
+        out @ out.push(
+            UploadEntry(key: decoded(text_at(u, name: "Key"), encoded: encoded)?, upload_id: text_at(u, name: "UploadId"))
+        )
+
+    return ok(
+        UploadsPage(uploads: out, truncated: flag_at(root, name: "IsTruncated"), next_key_marker: decoded(text_at(root, name: "NextKeyMarker"), encoded: encoded)?, next_upload_id_marker: text_at(root, name: "NextUploadIdMarker"))
+    )
+
+# The page of versions `body` holds, a `ListVersionsResult`, its versions
+# and delete markers in the order answered. Fails `invalid` where it is none.
+function versions_of(body: [u8]) -> VersionsPage?
+    root = root_of(body, name: "ListVersionsResult")?
+    encoded = text_at(root, name: "EncodingType") == "url"
+    out: [VersionEntry] @= []
+
+    for e in xml.elements_of(root)
+        marker = e.name.local == "DeleteMarker"
+
+        if marker || e.name.local == "Version"
+            out @ out.push(
+                VersionEntry(key: decoded(text_at(e, name: "Key"), encoded: encoded)?, version_id: text_at(e, name: "VersionId"), is_latest: flag_at(e, name: "IsLatest"), delete_marker: marker, size: number_at(e, name: "Size")?, etag: text_at(e, name: "ETag"), last_modified: time_at(e, name: "LastModified")?)
+            )
+
+    return ok(
+        VersionsPage(versions: out, truncated: flag_at(root, name: "IsTruncated"), next_key_marker: decoded(text_at(root, name: "NextKeyMarker"), encoded: encoded)?, next_version_id_marker: text_at(root, name: "NextVersionIdMarker"))
+    )
+
+# The region `body`, a `LocationConstraint`, names: `us-east-1` where it is
+# empty, and `eu-west-1` for the old `EU`. Fails `invalid` where it is none.
+function location_of(body: [u8]) -> str?
+    root = root_of(body, name: "LocationConstraint")?
+    region = xml.text_of(root)
+
+    if region == ""
+        return ok("us-east-1")
+
+    if region == "EU"
+        return ok("eu-west-1")
+    return ok(region)
+
+# The tags `body`, a `Tagging`, holds, in their order. Fails `invalid` where
+# it is none.
+function tags_of(body: [u8]) -> [url.Pair]?
+    root = root_of(body, name: "Tagging")?
+    out: [url.Pair] @= []
+
+    match xml.child(root, name: "TagSet")
+        .err _ => return ok(out)
+        .ok set =>
+            for t in xml.children_named(set, name: "Tag")
+                out @ out.push(url.Pair(key: text_at(t, name: "Key"), value: text_at(t, name: "Value")))
+
+    return ok(out)
+
+## Tests
+
+# The bytes of `s`.
+function utf8(s: str) -> [u8]
+    return bytes.from_text(s)
+
+test "error_of: S3's error with its code, message, request and region, no body, and a body that is not XML"
+    r = error_of(
+        utf8("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Error><Code>NoSuchKey</Code><Message>The specified key does not exist.</Message><Key>a</Key><RequestId>4442587FB7D0A2F9</RequestId><Region>eu-west-1</Region></Error>")
+    )
+    assert r.code == "NoSuchKey" && r.message == "The specified key does not exist." && r.request_id == "4442587FB7D0A2F9" && r.region == "eu-west-1"
+    assert error_of([]).code == "" && error_of(utf8("<html>bad gateway</html>")).code == ""
+    assert error_of([0xff, 0xfe]).code == ""
+    assert is_error(utf8("<Error><Code>InternalError</Code></Error>")) && !is_error(utf8("<CopyObjectResult/>"))
+
+test "page_of: a page in S3's namespace, keys and prefixes decoded, a page cut with its token, and an empty bucket"
+    text = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ListBucketResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"><Name>b</Name><Prefix></Prefix><KeyCount>2</KeyCount><MaxKeys>2</MaxKeys><Delimiter>%2F</Delimiter><EncodingType>url</EncodingType><IsTruncated>true</IsTruncated><Contents><Key>a+b%2Bc%C3%A9</Key><LastModified>2009-10-12T17:50:30.000Z</LastModified><ETag>&quot;fba9dede5f27731c9771645a39863328&quot;</ETag><Size>434234</Size><StorageClass>STANDARD</StorageClass></Contents><CommonPrefixes><Prefix>dir%20one/</Prefix></CommonPrefixes><NextContinuationToken>1ueGcxLPRx1Tr/XYExHnhbYLgveDs2J/wm36Hy4vbOwM=</NextContinuationToken></ListBucketResult>"
+    p = page_of(utf8(text)).must()
+    assert p.entries.len() == 1 && p.entries[0].key == "a b+cé" && p.entries[0].size == 434_234
+    assert p.entries[0].etag == "\"fba9dede5f27731c9771645a39863328\"" && p.entries[0].storage_class == "STANDARD"
+    assert time.format(p.entries[0].last_modified, layout: .rfc3339) == "2009-10-12T17:50:30Z"
+    assert p.prefixes == ["dir one/"] && p.truncated && p.next_token == "1ueGcxLPRx1Tr/XYExHnhbYLgveDs2J/wm36Hy4vbOwM="
+    empty = page_of(
+        utf8("<ListBucketResult><Name>b</Name><KeyCount>0</KeyCount><IsTruncated>false</IsTruncated></ListBucketResult>")
+    ).must()
+    assert empty.entries.len() == 0 && empty.prefixes.len() == 0 && !empty.truncated && empty.next_token == ""
+    assert page_of(
+        utf8("<ListBucketResult><Contents><Key>k</Key><Size>x</Size><LastModified>2009-10-12T17:50:30.000Z</LastModified></Contents></ListBucketResult>")
+    ).is_err()
+    assert page_of(
+        utf8("<ListBucketResult><Contents><Key>k</Key><Size>1</Size></Contents></ListBucketResult>")
+    ).is_err()
+    assert page_of(utf8("<Error><Code>NoSuchBucket</Code></Error>")).is_err()
+
+test "buckets_of: two buckets with their dates and a region, none, and another document"
+    text = "<ListAllMyBucketsResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"><Owner><ID>o</ID></Owner><Buckets><Bucket><Name>one</Name><CreationDate>2019-12-11T23:32:47+00:00</CreationDate><BucketRegion>eu-west-1</BucketRegion></Bucket><Bucket><Name>two</Name><CreationDate>2020-01-01T00:00:00.000Z</CreationDate></Bucket></Buckets></ListAllMyBucketsResult>"
+    got = buckets_of(utf8(text)).must()
+    assert got.len() == 2 && got[0].name == "one" && got[0].region == "eu-west-1" && got[1].region == ""
+    assert time.format(got[0].created, layout: .rfc3339) == "2019-12-11T23:32:47Z"
+    assert buckets_of(utf8("<ListAllMyBucketsResult><Buckets/></ListAllMyBucketsResult>")).must().len() == 0
+    assert buckets_of(utf8("<ListBucketResult/>")).is_err()
+    assert buckets_token_of(utf8("<ListAllMyBucketsResult><ContinuationToken>t</ContinuationToken></ListAllMyBucketsResult>")) == "t"
+
+test "upload_id_of, result_of and refused_of: an upload begun, an upload with no id, a copy with its checksum, and two keys refused"
+    assert upload_id_of(utf8("<InitiateMultipartUploadResult><Bucket>b</Bucket><Key>k</Key><UploadId>VXBsb2FkIElE</UploadId></InitiateMultipartUploadResult>")).must() == "VXBsb2FkIElE"
+    assert upload_id_of(utf8("<InitiateMultipartUploadResult/>")).is_err()
+    r = result_of(
+        utf8("<CopyObjectResult><LastModified>2009-10-28T22:32:00Z</LastModified><ETag>\"9b2cf535f27731c974343645a3985328\"</ETag><ChecksumCRC32C>mnG7TA==</ChecksumCRC32C></CopyObjectResult>"),
+        name: "CopyObjectResult"
+    ).must()
+    assert r.etag == "\"9b2cf535f27731c974343645a3985328\"" && r.checksum_name == "CRC32C" && r.checksum == "mnG7TA=="
+    assert result_of(utf8("<Error/>"), name: "CopyObjectResult").is_err()
+    refused = refused_of(
+        utf8("<DeleteResult><Deleted><Key>a</Key></Deleted><Error><Key>b</Key><Code>AccessDenied</Code><Message>Access Denied</Message></Error></DeleteResult>")
+    ).must()
+    assert refused.len() == 1 && refused[0].key == "b" && refused[0].code == "AccessDenied"
+    assert refused_of(utf8("<DeleteResult/>")).must().len() == 0
+
+test "parts_of and uploads_of: two parts with a checksum, a page cut, and uploads with an encoded key"
+    p = parts_of(
+        utf8("<ListPartsResult><IsTruncated>true</IsTruncated><NextPartNumberMarker>2</NextPartNumberMarker><Part><PartNumber>1</PartNumber><ETag>\"e1\"</ETag><Size>5242880</Size><ChecksumCRC32>NhCmhg==</ChecksumCRC32></Part><Part><PartNumber>2</PartNumber><ETag>\"e2\"</ETag><Size>3</Size></Part></ListPartsResult>")
+    ).must()
+    assert p.parts.len() == 2 && p.parts[0].number == 1 && p.parts[0].size == 5_242_880 && p.parts[0].checksum == "NhCmhg=="
+    assert p.parts[1].checksum == "" && p.truncated && p.next_marker == "2"
+    u = uploads_of(
+        utf8("<ListMultipartUploadsResult><EncodingType>url</EncodingType><IsTruncated>false</IsTruncated><Upload><Key>a%20b</Key><UploadId>id1</UploadId></Upload></ListMultipartUploadsResult>")
+    ).must()
+    assert u.uploads.len() == 1 && u.uploads[0].key == "a b" && u.uploads[0].upload_id == "id1" && !u.truncated
+
+test "location_of and tags_of: an empty location, the old EU, a region, two tags, and no tag set"
+    assert location_of(utf8("<LocationConstraint xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"/>")).must() == "us-east-1"
+    assert location_of(utf8("<LocationConstraint>EU</LocationConstraint>")).must() == "eu-west-1"
+    assert location_of(utf8("<LocationConstraint>ap-south-1</LocationConstraint>")).must() == "ap-south-1"
+    tags = tags_of(
+        utf8("<Tagging><TagSet><Tag><Key>a</Key><Value>1</Value></Tag><Tag><Key>b</Key><Value></Value></Tag></TagSet></Tagging>")
+    ).must()
+    assert tags == [url.Pair(key: "a", value: "1"), url.Pair(key: "b", value: "")]
+    assert tags_of(utf8("<Tagging/>")).must().len() == 0
+
+test "versions_of: a version and a delete marker in the order answered, an encoded key, a page cut, and none"
+    text = "<ListVersionsResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"><EncodingType>url</EncodingType><IsTruncated>true</IsTruncated><NextKeyMarker>a%20b</NextKeyMarker><NextVersionIdMarker>v0</NextVersionIdMarker><DeleteMarker><Key>a%20b</Key><VersionId>v2</VersionId><IsLatest>true</IsLatest><LastModified>2009-10-15T17:50:30.000Z</LastModified></DeleteMarker><Version><Key>a%20b</Key><VersionId>v1</VersionId><IsLatest>false</IsLatest><LastModified>2009-10-12T17:50:30.000Z</LastModified><ETag>\"e\"</ETag><Size>3</Size></Version></ListVersionsResult>"
+    p = versions_of(utf8(text)).must()
+    assert p.versions.len() == 2 && p.versions[0].delete_marker && p.versions[0].is_latest && p.versions[0].key == "a b"
+    assert !p.versions[1].delete_marker && p.versions[1].size == 3 && p.versions[1].version_id == "v1"
+    assert p.truncated && p.next_key_marker == "a b" && p.next_version_id_marker == "v0"
+    assert versions_of(utf8("<ListVersionsResult/>")).must().versions.len() == 0
+    assert versions_of(utf8("<ListBucketResult/>")).is_err()

@@ -1,0 +1,386 @@
+# The ledger of `s3`: what a program does with the S3 API, measured
+# against the census the author set on 2026-11-17: Python's boto3 1.44.6
+# and botocore 1.44.6 (installed with `pip --target` into the scratch
+# folder on 2026-11-19, walked with `dir()` of an S3 client and of
+# `botocore.auth`, its 116 operations read from the client's service
+# model), Go's github.com/aws/aws-sdk-go-v2/service/s3 v1.116.0 with
+# `aws/signer/v4` of aws-sdk-go-v2 v1.48.0, `config` v1.33.20 and
+# `feature/s3/manager` v1.23.27, and github.com/minio/minio-go/v7 v7.4.1
+# (`go doc -all`, fetched into the scratch folder the same day), and
+# Rust's aws-sdk-s3 1.161.0 and rust-s3 0.38.0 (their docs.rs pages of
+# `Client` and `Bucket`, read the same day; no crate was built).
+#
+# The expected values were observed: botocore 1.44.6 signed the vectors of
+# AWS's SigV4 test suite (service `service`, us-east-1,
+# 2015-08-30T12:36:00Z) and the S3 reference's examples (2013-05-24), with
+# its clock held, and answered every canonical request, string to sign,
+# signature and presigned URL the tests hold; botocore, Go's SDK and
+# minio-go were asked which URL each reaches a bucket and a key by; Go's
+# hash/crc32 and hash/crc64 answered the checksums, CRC-64/NVME by the
+# polynomial 0x9a6c9329ac4bc9b5; botocore read the shared files of the
+# tests. The live runs reached MinIO built from the commit of its release
+# RELEASE.2025-10-15T17-29-55Z (Go module v0.0.0-20251015172955-9e49d5e7a648,
+# its server naming its version DEVELOPMENT.GOGET), the image
+# alpine/minio:RELEASE.2025-10-15T17-29-55Z (224 MB), since Docker Hub
+# answers no repository minio/minio and quay.io no manifest of seven of its
+# release tags (asked 2026-11-19); in a container of this Mac, by path, at
+# http://127.0.0.1:9000, named to the tests by REBEL_S3_LIVE_URL.
+
+capability auth/sign  a request to S3 or any AWS service signed by Signature Version 4, in its header
+  heroes  s3.sign_request, s3.Signature
+  go      v4.NewSigner, v4.Signer.SignHTTP, v4.SignHTTPRequestMiddleware, v4.NewSignHTTPRequestMiddleware, v4.SigningError, v4.GetSignedRequestSignature
+  rust    -
+  python  botocore.auth.SigV4Auth, botocore.auth.S3SigV4Auth
+  note    S3's rules hold for the service `s3`, as botocore's two classes divide them: the path encoded once and never normalized, `x-amz-content-sha256` sent; every other service's path is normalized and encoded again, as the test suite asks. Every field is signed but those a connection or a proxy may write, as botocore signs; Go's SDK signs a fixed list
+
+capability auth/parts  the canonical request, the key derived from the secret, the date and the encoding of SigV4, each alone
+  heroes  s3.canonical_request, s3.signing_key, s3.format_amz_date, s3.parse_amz_date, s3.uri_encode
+  go      -
+  rust    -
+  python  botocore.auth.SigV4Auth.canonical_request, botocore.auth.SigV4Auth.string_to_sign, botocore.auth.SigV4Auth.signature, botocore.auth.SigV4Auth.canonical_headers, botocore.auth.SigV4Auth.signed_headers, botocore.auth.SigV4Auth.payload, botocore.auth.SigV4Auth.credential_scope
+  note    A query's `+` is read as a space before it is encoded again, as Go's SDK and Python's parse_qsl read it; botocore signs a URL's query as written
+
+capability auth/presign  a request presigned in its URL's query, for any service
+  heroes  s3.presign_request
+  go      v4.Signer.PresignHTTP, v4.PresignHTTPRequestMiddleware, v4.NewPresignHTTPRequestMiddleware
+  rust    -
+  python  botocore.auth.SigV4QueryAuth, botocore.auth.S3SigV4QueryAuth
+  note    S3's payload is `UNSIGNED-PAYLOAD`, any other service's the SHA-256 of the body, as botocore presigns; a token is in the query
+
+capability auth/payload  a body sent unsigned over HTTPS, its integrity left to TLS and the checksums
+  heroes  s3.Client, s3.UNSIGNED_PAYLOAD, s3.EMPTY_PAYLOAD_SHA256
+  go      v4.AddUnsignedPayloadMiddleware, v4.SwapComputePayloadSHA256ForUnsignedPayloadMiddleware, v4.UseDynamicPayloadSigningMiddleware, v4.AddComputePayloadSHA256Middleware, v4.RemoveComputePayloadSHA256Middleware, v4.AddContentSHA256HeaderMiddleware, v4.RemoveContentSHA256HeaderMiddleware, v4.ComputePayloadSHA256, v4.ContentSHA256Header, v4.UnsignedPayload, v4.GetPayloadHash, v4.SetPayloadHash, v4.HashComputationError
+  rust    -
+  python  botocore.config.Config(s3={'payload_signing_enabled'})
+  note    Signed by default, which every server checks; unsigned is refused over http://, where nothing else would keep the body whole
+
+capability auth/streaming  a body signed chunk by chunk as it streams (aws-chunked)
+  heroes  refused: a body of a length not known in advance goes in parts (`s3.put_object_from`), which every server of the API reads, holding one part in memory; the chunked signature adds a second way to the same upload
+  go      v4.NewStreamSigner, v4.StreamSigner.GetSignature, v4.AddStreamingEventsPayload, v4.StreamingEventsPayload
+  rust    -
+  python  -
+
+capability auth/sigv4a  a request signed by SigV4a for a multi-region access point
+  heroes  pending: SigV4a signs with an ECDSA P-256 key derived from the secret, which needs a key pair made from a scalar the program computes; not written
+  go      s3.WithSigV4ASigningRegions, s3.WithSigV4SigningName, s3.WithSigV4SigningRegion
+  rust    -
+  python  botocore.crt.auth (needs awscrt)
+
+capability credentials/given  the keys given by the program, a session token among them
+  heroes  s3.Credentials
+  go      aws.Credentials, credentials.NewStaticCredentialsProvider
+  rust    aws_sdk_s3::config::Builder::credentials_provider
+  python  boto3.client(aws_access_key_id=, aws_secret_access_key=, aws_session_token=)
+  note    minio-go credentials.NewStaticV4, rust-s3 Credentials::new and Bucket::credentials, set_credentials, access_key, secret_key, security_token, session_token
+
+capability credentials/env  the keys read from the environment
+  heroes  s3.credentials_from_env
+  go      config.EnvConfig, config.NewEnvConfig
+  rust    -
+  python  botocore.credentials.EnvProvider
+  note    One key set without the other is `invalid`, as botocore's PartialCredentialsError; minio-go credentials.NewEnvAWS and NewEnvMinio, rust-s3's aws-creds 0.40.0 Credentials::from_env and from_env_specific
+
+capability credentials/files  the keys of a profile in the shared credentials and config files
+  heroes  s3.credentials_from_text, s3.credentials_from_files, s3.SharedFile, s3.profile_name
+  go      config.LoadSharedConfigProfile, config.SharedConfig, config.WithSharedConfigProfile, config.WithSharedCredentialsFiles, config.WithSharedConfigFiles, config.DefaultSharedCredentialsFilename, config.DefaultSharedConfigFilename, config.DefaultSharedConfigProfile
+  rust    -
+  python  botocore.credentials.SharedCredentialProvider, botocore.credentials.ConfigProvider, boto3.Session(profile_name=)
+  note    The credentials file first, then the config file, as botocore; `[profile x]` in a credentials file and `[x]` in a config file name no profile x, as botocore 1.44.6 answered; a section given twice is read as one, as Go's SDK reads it, where botocore refuses the file. minio-go credentials.NewFileAWSCredentials, rust-s3's aws-creds Credentials::from_profile and from_credentials_file
+
+capability credentials/chain  the keys a program finds by itself
+  heroes  s3.default_credentials
+  go      config.LoadDefaultConfig
+  rust    aws_sdk_s3::config::Builder::credentials_provider
+  python  boto3.Session.get_credentials, botocore.credentials.create_credential_resolver
+  note    The environment, then the shared files; minio-go credentials.NewChainCredentials, rust-s3's aws-creds Credentials::default and anonymous
+
+capability credentials/shown  credentials written for a person without the secret
+  heroes  s3.format_credentials
+  go      -
+  rust    -
+  python  -
+  note    The id's last four characters alone shown
+
+capability credentials/vended  keys vended by another service: the instance's metadata, STS's roles assumed, web identity, single sign-on, a process
+  heroes  refused: each is a client of a service other than S3 (IMDS, STS, SSO OIDC) or a program's; a program asks it with `s3.sign_request` or its own package and gives the keys it gets as `s3.Credentials`
+  go      config.WithEC2IMDSRegion, config.WithAssumeRoleCredentialOptions, config.WithWebIdentityRoleCredentialOptions, config.WithSSOTokenProviderOptions, config.WithProcessCredentialOptions, config.WithCredentialsProvider
+  rust    -
+  python  botocore.credentials.InstanceMetadataProvider, botocore.credentials.AssumeRoleProvider, botocore.credentials.AssumeRoleWithWebIdentityProvider, botocore.credentials.SSOProvider, botocore.credentials.ProcessProvider, botocore.credentials.ContainerProvider, botocore.credentials.RefreshableCredentials
+  note    minio-go credentials.NewIAM, NewSTSAssumeRole, NewSTSWebIdentity, NewLDAPIdentity, NewSTSClientGrants and the MinIO STS of its own; rust-s3's aws-creds Credentials::from_sts, from_sts_env, from_instance_metadata, from_instance_metadata_v2, from_container_credentials_provider, refresh, and its Bucket::credentials_refresh
+
+capability config/profile  what a profile of the config file says of S3: region, endpoint, addressing
+  heroes  s3.profile_from_text, s3.profile_from_files, s3.Profile
+  go      config.SharedConfig, config.LoadSharedConfigProfile
+  rust    -
+  python  botocore.session.Session.get_scoped_config, botocore.session.Session.get_config_variable
+  note    `services` sections and their nested `s3 = endpoint_url` before the profile's own `endpoint_url`, as botocore 1.44.6 answered
+
+capability client/env  a client made from the environment and the shared files
+  heroes  s3.client_from_env
+  go      s3.NewFromConfig, config.LoadDefaultConfig
+  rust    aws_sdk_s3::Client::new
+  python  boto3.client('s3')
+  note    AWS_REGION, AWS_DEFAULT_REGION, AWS_ENDPOINT_URL_S3 and AWS_ENDPOINT_URL before the profile, as botocore reads them; us-east-1 where none names a region
+
+capability client/aws  a client of Amazon S3 in a region, by its regional endpoint
+  heroes  s3.aws_client, s3.Client
+  go      s3.New, s3.Options, s3.NewDefaultEndpointResolverV2, s3.NewDefaultEndpointResolver
+  rust    aws_sdk_s3::Client::from_conf, aws_sdk_s3::Client::config
+  python  boto3.client('s3', region_name=)
+  note    us-east-1 is reached at s3.us-east-1.amazonaws.com, as Go's SDK and minio-go reach it, where botocore's legacy default uses s3.amazonaws.com; a `cn-` region ends `.amazonaws.com.cn`, as all three answered; rust-s3 Bucket::new, Region
+
+capability client/endpoint  a client of any server of the S3 API: MinIO, R2, Backblaze B2, a base path kept
+  heroes  s3.minio_client, s3.r2_client, s3.backblaze_client, s3.Client
+  go      s3.Options.BaseEndpoint, s3.EndpointResolverFromURL, s3.WithEndpointResolver, s3.WithEndpointResolverV2
+  rust    aws_sdk_s3::config::Builder::endpoint_url
+  python  boto3.client('s3', endpoint_url=)
+  note    minio-go New and EndpointURL, rust-s3 Region::Custom, Region::R2, Bucket::new_public, Bucket::region, Bucket::scheme
+
+capability client/addressing  a bucket reached by its host name or by path
+  heroes  s3.Addressing, s3.object_url, s3.is_bucket_name
+  go      s3.Options.UsePathStyle
+  rust    aws_sdk_s3::config::Builder::force_path_style
+  python  botocore.config.Config(s3={'addressing_style'})
+  note    Amazon's endpoints by host name, any other by path, as botocore and minio-go choose where Go's SDK reaches every endpoint by host name; a name with a dot by path under HTTPS, as all three; rust-s3 with_path_style, set_path_style, set_subdomain_style, is_path_style, is_subdomain_style, path_style_host, subdomain_style_host, host, url, name, create_with_path_style; minio-go Options.BucketLookup
+
+capability client/dualstack-accelerate  Amazon's dual-stack and Transfer Acceleration endpoints
+  heroes  s3.Client
+  go      s3.Options.EndpointOptions, s3.Options.UseAccelerate
+  rust    aws_sdk_s3::config::Builder::use_dual_stack, aws_sdk_s3::config::Builder::accelerate
+  python  botocore.config.Config(s3={'use_dualstack_endpoint', 'use_accelerate_endpoint'})
+  note    minio-go SetS3EnableDualstack, SetS3TransferAccelerate
+
+capability client/fips  Amazon's FIPS endpoints
+  heroes  pending: the hosts `s3-fips.<region>.amazonaws.com` are known; the field that chooses them is not written
+  go      s3.Options.EndpointOptions
+  rust    aws_sdk_s3::config::Builder::use_fips
+  python  botocore.config.Config(use_fips_endpoint=)
+
+capability client/limits  a time limit, retries, the authorities trusted and the size of an answer
+  heroes  s3.Client
+  go      s3.Options.Retryer, s3.Options.RetryMaxAttempts, s3.Options.RetryMode, s3.Options.HTTPClient
+  rust    aws_sdk_s3::config::Builder::retry_config, aws_sdk_s3::config::Builder::timeout_config
+  python  botocore.config.Config(retries=, connect_timeout=, read_timeout=)
+  note    Three attempts in all, as botocore 1.44.6's standard mode and Go's retry.DefaultMaxAttempts answered, after 500, 502, 503, 504, 429, SlowDown and RequestTimeout and a connection that failed, the waits 100 ms doubled; rust-s3 set_request_timeout, request_timeout, with_request_timeout; minio-go Options.Transport
+
+capability client/proxy  requests sent through a proxy
+  heroes  pending: `http` reaches a proxy only from its own client, which undoes a stored `Content-Encoding`; S3's bytes must come as stored, so requests go on a connection of this package's own, which knows no proxy
+  go      -
+  rust    -
+  python  botocore.config.Config(proxies=)
+  note    rust-s3 set_proxy; Go's through its HTTPClient
+
+capability client/raw  any operation of the API signed and sent, or signed and handed to the program's transport
+  heroes  s3.operation, s3.Operation, s3.prepare, s3.send
+  go      s3.WithAPIOptions, s3.Options.APIOptions
+  rust    aws_sdk_s3::Client::config
+  python  boto3.client.meta, botocore.awsrequest.AWSRequest
+  note    rust-s3 add_header, add_query, extra_headers, extra_headers_mut, extra_query, extra_query_mut, with_extra_headers, with_extra_query, http_client
+
+capability objects/put  an object put with its type, fields, metadata, tags, storage class, ACL, encryption and conditions
+  heroes  s3.put_object, s3.put_options, s3.PutOptions, s3.headers_of, s3.Stored, s3.Meta, s3.Tag
+  go      s3.Client.PutObject, s3.PutObjectInput
+  rust    aws_sdk_s3::Client::put_object
+  python  S3.Client.put_object
+  note    `if_none_match` `*` refused is `exists`; a CRC-32 is sent by default, as botocore 1.44.6 sends `x-amz-checksum-crc32` (its `request_checksum_calculation` `when_supported`, measured against MinIO); minio-go PutObject, PutObjectOptions; rust-s3 put_object, put_object_with_content_type, put_object_with_headers, put_object_with_content_type_and_headers, put_object_builder
+
+capability objects/get  an object read whole, by a range, by version, by part and on conditions
+  heroes  s3.get_object, s3.get_object_with, s3.get_options, s3.GetOptions, s3.Range, s3.range_header, s3.get_operation, s3.Object, s3.Info
+  go      s3.Client.GetObject, s3.GetObjectInput
+  rust    aws_sdk_s3::Client::get_object
+  python  S3.Client.get_object
+  note    An object stored with a `Content-Encoding` is answered as stored, as all three; not modified (304) and a condition not met (412) are `failed`; minio-go GetObject, GetObjectOptions.SetRange; rust-s3 get_object, get_object_range
+
+capability objects/get-stream  an object of any size written to a stream as it comes
+  heroes  s3.get_object_to
+  go      manager.NewDownloader, manager.Downloader.Download
+  rust    -
+  python  S3.Client.download_file, S3.Client.download_fileobj
+  note    One connection, read in order; Go's downloader reads ranges on threads at once (`objects/get-parallel`); minio-go FGetObject; rust-s3 get_object_to_writer, get_object_range_to_writer, get_object_stream
+
+capability objects/get-parallel  an object read by ranges on several connections at once
+  heroes  pending: a range read on each thread needs a thread to carry a client and a range, which the language's threads (an i64 or a str each way) do only through text; not written
+  go      manager.Downloader.Concurrency, manager.Downloader.PartSize, manager.WithDownloaderClientOptions, manager.WriteAtBuffer, manager.NewWriteAtBuffer
+  rust    -
+  python  boto3.s3.transfer.TransferConfig, s3transfer.manager.TransferManager
+
+capability objects/head  what S3 says of an object without its bytes
+  heroes  s3.head_object, s3.info_of
+  go      s3.Client.HeadObject
+  rust    aws_sdk_s3::Client::head_object
+  python  S3.Client.head_object
+  note    minio-go StatObject, ToObjectInfo; rust-s3 head_object
+
+capability objects/exists  whether an object is there
+  heroes  s3.object_exists
+  go      s3.NewObjectExistsWaiter, s3.NewObjectNotExistsWaiter
+  rust    -
+  python  S3.Client.get_waiter('object_exists')
+  note    rust-s3 object_exists; a waiter is `object_exists` called again by the program, which sleeps by `time`
+
+capability objects/delete  an object deleted, or one version of it
+  heroes  s3.delete_object, s3.delete_object_version
+  go      s3.Client.DeleteObject
+  rust    aws_sdk_s3::Client::delete_object
+  python  S3.Client.delete_object
+  note    minio-go RemoveObject; rust-s3 delete_object
+
+capability objects/delete-many  up to a thousand objects deleted in one request, any number in several
+  heroes  s3.delete_objects, s3.NotDeleted
+  go      s3.Client.DeleteObjects
+  rust    aws_sdk_s3::Client::delete_objects
+  python  S3.Client.delete_objects
+  note    Quiet, so only the refusals are answered; `Content-MD5` is sent, where botocore 1.44.6 sends a CRC-32 (measured), and MinIO accepts it; minio-go RemoveObjects, RemoveObjectsWithResult, RemoveObjectsWithIter; rust-s3 delete_objects
+
+capability objects/copy  an object copied on the server, its metadata kept or replaced
+  heroes  s3.copy_object, s3.copy_object_with
+  go      s3.Client.CopyObject
+  rust    aws_sdk_s3::Client::copy_object
+  python  S3.Client.copy_object, S3.Client.copy
+  note    A refusal S3 answers with 200 is a failure; minio-go CopyObject, CopyDestOptions, CopySrcOptions; rust-s3 copy_object_internal
+
+capability objects/tags  an object's tags read, set and removed
+  heroes  s3.get_object_tags, s3.put_object_tags
+  go      s3.Client.GetObjectTagging, s3.Client.PutObjectTagging, s3.Client.DeleteObjectTagging
+  rust    aws_sdk_s3::Client::get_object_tagging, aws_sdk_s3::Client::put_object_tagging, aws_sdk_s3::Client::delete_object_tagging
+  python  S3.Client.get_object_tagging, S3.Client.put_object_tagging, S3.Client.delete_object_tagging
+  note    Tags removed are `put_object_tags` with none; minio-go GetObjectTagging, PutObjectTagging, RemoveObjectTagging; rust-s3 get_object_tagging, put_object_tagging, delete_object_tagging
+
+capability objects/checksums  CRC-32, CRC-32C, CRC-64/NVME, SHA-1 and SHA-256 sent with an object and checked on reading it
+  heroes  s3.Checksum, s3.checksum_of, s3.format_checksum, s3.parse_checksum
+  go      s3.GetChecksumValidationMetadata, s3.GetComputedInputChecksumsMetadata, s3.ChecksumValidationMetadata, s3.ComputedInputChecksumsMetadata, types.ChecksumAlgorithm, types.ChecksumMode
+  rust    aws_sdk_s3::config::Builder::request_checksum_calculation, aws_sdk_s3::config::Builder::response_checksum_validation
+  python  botocore.config.Config(request_checksum_calculation=, response_checksum_validation=)
+  note    A checksum of an object uploaded in parts (`-` and a count) is not checked, since it is no checksum of the bytes read; minio-go NewChecksum, NewChecksumString
+
+capability objects/versions  the versions and delete markers of every object listed, one read or deleted by its id
+  heroes  s3.list_object_versions, s3.Version, s3.delete_object_version, s3.GetOptions
+  go      s3.Client.ListObjectVersions, s3.NewListObjectVersionsPaginator
+  rust    aws_sdk_s3::Client::list_object_versions
+  python  S3.Client.list_object_versions
+  note    Every page followed, keys asked URI-encoded; minio-go ListObjects with ListObjectsOptions.WithVersions
+
+capability objects/lock  an object's ACL, retention, legal hold and its bucket's lock configuration
+  heroes  pending: no typed form; a bucket's lock is `s3.get_bucket_config` with `object-lock`, and an object's is an `s3.Operation` sent by `s3.send` (`?acl`, `?retention`, `?legal-hold`), its XML the program's
+  go      s3.Client.GetObjectAcl, s3.Client.PutObjectAcl, s3.Client.GetObjectRetention, s3.Client.PutObjectRetention, s3.Client.GetObjectLegalHold, s3.Client.PutObjectLegalHold, s3.Client.GetObjectLockConfiguration, s3.Client.PutObjectLockConfiguration
+  rust    aws_sdk_s3::Client::get_object_acl, aws_sdk_s3::Client::put_object_acl, aws_sdk_s3::Client::get_object_retention, aws_sdk_s3::Client::put_object_retention, aws_sdk_s3::Client::get_object_legal_hold, aws_sdk_s3::Client::put_object_legal_hold, aws_sdk_s3::Client::get_object_lock_configuration, aws_sdk_s3::Client::put_object_lock_configuration
+  python  S3.Client.get_object_acl, S3.Client.put_object_acl, S3.Client.get_object_retention, S3.Client.put_object_retention, S3.Client.get_object_legal_hold, S3.Client.put_object_legal_hold, S3.Client.get_object_lock_configuration, S3.Client.put_object_lock_configuration
+  note    minio-go GetObjectACL, GetObjectRetention, PutObjectRetention, GetObjectLegalHold, PutObjectLegalHold, GetObjectLockConfig, SetObjectLockConfig, GetBucketObjectLockConfig, SetBucketObjectLockConfig
+
+capability objects/restore-attributes  an archived object restored, an object's attributes asked, its encryption changed
+  heroes  pending: no typed form; each is an `s3.Operation` sent by `s3.send` (`?restore`, `?attributes`, `?encryption`), its XML the program's
+  go      s3.Client.RestoreObject, s3.Client.GetObjectAttributes, s3.Client.UpdateObjectEncryption
+  rust    aws_sdk_s3::Client::restore_object, aws_sdk_s3::Client::get_object_attributes, aws_sdk_s3::Client::update_object_encryption
+  python  S3.Client.restore_object, S3.Client.get_object_attributes, S3.Client.update_object_encryption
+  note    minio-go RestoreObject, GetObjectAttributes, UpdateObjectEncryption; rust-s3 get_object_attributes
+
+capability objects/select  an object queried with SQL on the server
+  heroes  pending: the answer is AWS's event stream, binary frames with their own CRCs, which nothing here reads
+  go      s3.Client.SelectObjectContent, s3.NewSelectObjectContentEventStream
+  rust    aws_sdk_s3::Client::select_object_content
+  python  S3.Client.select_object_content
+  note    minio-go SelectObjectContent, NewSelectResults
+
+capability objects/amazon-only  operations of Amazon's alone: torrents, annotations, a rename in a directory bucket, an answer written for S3 Object Lambda
+  heroes  refused: each serves a feature of Amazon S3 (directory buckets, S3 Object Lambda, object annotations, BitTorrent) that the API's other servers do not answer; a program reaches them by `s3.send`
+  go      s3.Client.GetObjectTorrent, s3.Client.GetObjectAnnotation, s3.Client.PutObjectAnnotation, s3.Client.DeleteObjectAnnotation, s3.Client.ListObjectAnnotations, s3.NewListObjectAnnotationsPaginator, s3.Client.RenameObject, s3.Client.WriteGetObjectResponse
+  rust    aws_sdk_s3::Client::get_object_torrent, aws_sdk_s3::Client::get_object_annotation, aws_sdk_s3::Client::put_object_annotation, aws_sdk_s3::Client::delete_object_annotation, aws_sdk_s3::Client::list_object_annotations, aws_sdk_s3::Client::rename_object, aws_sdk_s3::Client::write_get_object_response
+  python  S3.Client.get_object_torrent, S3.Client.get_object_annotation, S3.Client.put_object_annotation, S3.Client.delete_object_annotation, S3.Client.list_object_annotations, S3.Client.rename_object, S3.Client.write_get_object_response
+  note    minio-go GetObjectAnnotation, PutObjectAnnotation, RemoveObjectAnnotation, ListObjectAnnotations; rust-s3 get_object_torrent
+
+capability listing/objects  the objects of a bucket listed by prefix and delimiter, page by page or whole
+  heroes  s3.list_objects, s3.list_all_objects, s3.list_options, s3.ListOptions, s3.Listing, s3.Summary
+  go      s3.Client.ListObjectsV2, s3.NewListObjectsV2Paginator
+  rust    aws_sdk_s3::Client::list_objects_v2
+  python  S3.Client.list_objects_v2, S3.Client.get_paginator('list_objects_v2')
+  note    Keys asked URI-encoded and decoded, as botocore asks by default, so a key XML cannot hold is listed; minio-go ListObjects, ListObjectsIter, ListUnsorted; rust-s3 list, list_page, set_listobjects_v2
+
+capability listing/v1  objects listed by version 1 of the API, by marker
+  heroes  refused: version 2 answers the same with a token, and every server of the census speaks it; a second way to list
+  go      s3.Client.ListObjects
+  rust    aws_sdk_s3::Client::list_objects
+  python  S3.Client.list_objects
+  note    rust-s3 set_listobjects_v1, with_listobjects_v1
+
+capability buckets/list  the buckets of the credentials
+  heroes  s3.list_buckets, s3.Bucket
+  go      s3.Client.ListBuckets, s3.NewListBucketsPaginator
+  rust    aws_sdk_s3::Client::list_buckets
+  python  S3.Client.list_buckets
+  note    One request; a page cut by `max-buckets` is the program's `s3.send`; minio-go ListBuckets; rust-s3 Bucket::list_buckets
+
+capability buckets/create-delete  a bucket made in the client's region, and deleted
+  heroes  s3.create_bucket, s3.delete_bucket
+  go      s3.Client.CreateBucket, s3.Client.DeleteBucket
+  rust    aws_sdk_s3::Client::create_bucket, aws_sdk_s3::Client::delete_bucket
+  python  S3.Client.create_bucket, S3.Client.delete_bucket
+  note    Its location sent where the region is not us-east-1 or `auto`; a bucket already owned is `exists`, S3's BucketAlreadyOwnedByYou; minio-go RemoveBucket, RemoveBucketWithOptions; rust-s3 Bucket::create, Bucket::delete
+
+capability buckets/exists-region  whether a bucket is there, and its region
+  heroes  s3.bucket_exists, s3.bucket_region
+  go      s3.Client.HeadBucket, s3.Client.GetBucketLocation, manager.GetBucketRegion, s3.NewBucketExistsWaiter, s3.NewBucketNotExistsWaiter
+  rust    aws_sdk_s3::Client::head_bucket, aws_sdk_s3::Client::get_bucket_location
+  python  S3.Client.head_bucket, S3.Client.get_bucket_location
+  note    An empty location is read as us-east-1 and the old `EU` as eu-west-1; minio-go BucketExists, GetBucketLocation; rust-s3 exists, location
+
+capability buckets/configuration  a bucket's configurations read, written and deleted as the documents the API gives
+  heroes  s3.get_bucket_config, s3.put_bucket_config, s3.delete_bucket_config
+  go      s3.Client.GetBucketVersioning, s3.Client.PutBucketVersioning, s3.Client.GetBucketPolicy, s3.Client.PutBucketPolicy, s3.Client.DeleteBucketPolicy, s3.Client.GetBucketPolicyStatus, s3.Client.GetBucketCors, s3.Client.PutBucketCors, s3.Client.DeleteBucketCors, s3.Client.GetBucketLifecycleConfiguration, s3.Client.PutBucketLifecycleConfiguration, s3.Client.DeleteBucketLifecycle, s3.Client.GetBucketTagging, s3.Client.PutBucketTagging, s3.Client.DeleteBucketTagging, s3.Client.GetBucketEncryption, s3.Client.PutBucketEncryption, s3.Client.DeleteBucketEncryption, s3.Client.GetBucketWebsite, s3.Client.PutBucketWebsite, s3.Client.DeleteBucketWebsite, s3.Client.GetBucketLogging, s3.Client.PutBucketLogging, s3.Client.GetBucketNotificationConfiguration, s3.Client.PutBucketNotificationConfiguration, s3.Client.GetBucketReplication, s3.Client.PutBucketReplication, s3.Client.DeleteBucketReplication, s3.Client.GetBucketOwnershipControls, s3.Client.PutBucketOwnershipControls, s3.Client.DeleteBucketOwnershipControls, s3.Client.GetPublicAccessBlock, s3.Client.PutPublicAccessBlock, s3.Client.DeletePublicAccessBlock, s3.Client.GetBucketAccelerateConfiguration, s3.Client.PutBucketAccelerateConfiguration, s3.Client.GetBucketRequestPayment, s3.Client.PutBucketRequestPayment, s3.Client.GetBucketAcl, s3.Client.PutBucketAcl
+  rust    aws_sdk_s3::Client::get_bucket_versioning, put_bucket_versioning, get_bucket_policy, put_bucket_policy, delete_bucket_policy, get_bucket_policy_status, get_bucket_cors, put_bucket_cors, delete_bucket_cors, get_bucket_lifecycle_configuration, put_bucket_lifecycle_configuration, delete_bucket_lifecycle, get_bucket_tagging, put_bucket_tagging, delete_bucket_tagging, get_bucket_encryption, put_bucket_encryption, delete_bucket_encryption, get_bucket_website, put_bucket_website, delete_bucket_website, get_bucket_logging, put_bucket_logging, get_bucket_notification_configuration, put_bucket_notification_configuration, get_bucket_replication, put_bucket_replication, delete_bucket_replication, get_bucket_ownership_controls, put_bucket_ownership_controls, delete_bucket_ownership_controls, get_public_access_block, put_public_access_block, delete_public_access_block, get_bucket_accelerate_configuration, put_bucket_accelerate_configuration, get_bucket_request_payment, put_bucket_request_payment, get_bucket_acl, put_bucket_acl
+  python  S3.Client.get_bucket_versioning, put_bucket_versioning, get_bucket_policy, put_bucket_policy, delete_bucket_policy, get_bucket_policy_status, get_bucket_cors, put_bucket_cors, delete_bucket_cors, get_bucket_lifecycle, get_bucket_lifecycle_configuration, put_bucket_lifecycle, put_bucket_lifecycle_configuration, delete_bucket_lifecycle, get_bucket_tagging, put_bucket_tagging, delete_bucket_tagging, get_bucket_encryption, put_bucket_encryption, delete_bucket_encryption, get_bucket_website, put_bucket_website, delete_bucket_website, get_bucket_logging, put_bucket_logging, get_bucket_notification, get_bucket_notification_configuration, put_bucket_notification, put_bucket_notification_configuration, get_bucket_replication, put_bucket_replication, delete_bucket_replication, get_bucket_ownership_controls, put_bucket_ownership_controls, delete_bucket_ownership_controls, get_public_access_block, put_public_access_block, delete_public_access_block, get_bucket_accelerate_configuration, put_bucket_accelerate_configuration, get_bucket_request_payment, put_bucket_request_payment, get_bucket_acl, put_bucket_acl
+  note    Each configuration is the XML, or for `policy` the JSON, the API reference gives, read by `xml` or `json`: the documents are the API's and the typed records of the SDKs are their own, generated from the API's model; `Content-MD5` is sent with every one written. minio-go GetBucketPolicy, SetBucketPolicy, SetCannedBucketPolicy, GetBucketVersioning, SetBucketVersioning, EnableVersioning, SuspendVersioning, GetBucketLifecycle, GetBucketLifecycleWithInfo, SetBucketLifecycle, GetBucketCors, SetBucketCors, GetBucketTagging, SetBucketTagging, RemoveBucketTagging, GetBucketEncryption, SetBucketEncryption, RemoveBucketEncryption, GetBucketNotification, SetBucketNotification, RemoveAllBucketNotification, GetBucketReplication, SetBucketReplication, RemoveBucketReplication; rust-s3 get_bucket_policy, put_bucket_policy, delete_bucket_policy, get_bucket_cors, put_bucket_cors, delete_bucket_cors, get_bucket_lifecycle, put_bucket_lifecycle, delete_bucket_lifecycle
+
+capability buckets/configuration-by-id  analytics, inventory, metrics and Intelligent-Tiering configurations, each named by an id
+  heroes  pending: the query names an id (`?analytics&id=x`), which `s3.get_bucket_config` does not take; reachable as an `s3.Operation` by `s3.send`
+  go      s3.Client.GetBucketAnalyticsConfiguration, s3.Client.PutBucketAnalyticsConfiguration, s3.Client.DeleteBucketAnalyticsConfiguration, s3.Client.ListBucketAnalyticsConfigurations, s3.Client.GetBucketInventoryConfiguration, s3.Client.PutBucketInventoryConfiguration, s3.Client.DeleteBucketInventoryConfiguration, s3.Client.ListBucketInventoryConfigurations, s3.Client.GetBucketMetricsConfiguration, s3.Client.PutBucketMetricsConfiguration, s3.Client.DeleteBucketMetricsConfiguration, s3.Client.ListBucketMetricsConfigurations, s3.Client.GetBucketIntelligentTieringConfiguration, s3.Client.PutBucketIntelligentTieringConfiguration, s3.Client.DeleteBucketIntelligentTieringConfiguration, s3.Client.ListBucketIntelligentTieringConfigurations
+  rust    aws_sdk_s3::Client::get_bucket_analytics_configuration, put_bucket_analytics_configuration, delete_bucket_analytics_configuration, list_bucket_analytics_configurations, get_bucket_inventory_configuration, put_bucket_inventory_configuration, delete_bucket_inventory_configuration, list_bucket_inventory_configurations, get_bucket_metrics_configuration, put_bucket_metrics_configuration, delete_bucket_metrics_configuration, list_bucket_metrics_configurations, get_bucket_intelligent_tiering_configuration, put_bucket_intelligent_tiering_configuration, delete_bucket_intelligent_tiering_configuration, list_bucket_intelligent_tiering_configurations
+  python  S3.Client.get_bucket_analytics_configuration, put_bucket_analytics_configuration, delete_bucket_analytics_configuration, list_bucket_analytics_configurations, get_bucket_inventory_configuration, put_bucket_inventory_configuration, delete_bucket_inventory_configuration, list_bucket_inventory_configurations, get_bucket_metrics_configuration, put_bucket_metrics_configuration, delete_bucket_metrics_configuration, list_bucket_metrics_configurations, get_bucket_intelligent_tiering_configuration, put_bucket_intelligent_tiering_configuration, delete_bucket_intelligent_tiering_configuration, list_bucket_intelligent_tiering_configurations
+  note    minio-go GetBucketInventoryConfiguration, PutBucketInventoryConfiguration, DeleteBucketInventoryConfiguration, ListBucketInventoryConfigurations, ListBucketInventoryConfigurationsIterator, GenerateInventoryConfigYAML, GetBucketInventoryJobStatus
+
+capability buckets/amazon-only  directory buckets and their sessions, S3 Metadata tables, ABAC
+  heroes  refused: S3 Express One Zone's directory buckets sign by sessions of their own (`CreateSession`), and S3 Metadata and ABAC configure Amazon's other services; none is answered by the API's other servers
+  go      s3.Client.CreateSession, s3.Client.ListDirectoryBuckets, s3.NewListDirectoryBucketsPaginator, s3.Client.CreateBucketMetadataConfiguration, s3.Client.CreateBucketMetadataTableConfiguration, s3.Client.GetBucketMetadataConfiguration, s3.Client.GetBucketMetadataTableConfiguration, s3.Client.DeleteBucketMetadataConfiguration, s3.Client.DeleteBucketMetadataTableConfiguration, s3.Client.UpdateBucketMetadataAnnotationTableConfiguration, s3.Client.UpdateBucketMetadataInventoryTableConfiguration, s3.Client.UpdateBucketMetadataJournalTableConfiguration, s3.Client.GetBucketAbac, s3.Client.PutBucketAbac
+  rust    aws_sdk_s3::Client::create_session, list_directory_buckets, create_bucket_metadata_configuration, create_bucket_metadata_table_configuration, get_bucket_metadata_configuration, get_bucket_metadata_table_configuration, delete_bucket_metadata_configuration, delete_bucket_metadata_table_configuration, update_bucket_metadata_annotation_table_configuration, update_bucket_metadata_inventory_table_configuration, update_bucket_metadata_journal_table_configuration, get_bucket_abac, put_bucket_abac
+  python  S3.Client.create_session, list_directory_buckets, create_bucket_metadata_configuration, create_bucket_metadata_table_configuration, get_bucket_metadata_configuration, get_bucket_metadata_table_configuration, delete_bucket_metadata_configuration, delete_bucket_metadata_table_configuration, update_bucket_metadata_annotation_table_configuration, update_bucket_metadata_inventory_table_configuration, update_bucket_metadata_journal_table_configuration, get_bucket_abac, put_bucket_abac
+  note    minio-go CreateSession, ListDirectoryBuckets; aws-sdk-s3's config::Builder::disable_s3_express_session_auth
+
+capability multipart/steps  an upload in parts begun, its parts uploaded or copied, listed, completed or aborted
+  heroes  s3.create_multipart_upload, s3.upload_part, s3.upload_part_copy, s3.complete_multipart_upload, s3.abort_multipart_upload, s3.list_parts, s3.list_multipart_uploads, s3.Upload, s3.Part, s3.MIN_PART_SIZE, s3.MAX_PARTS, s3.MAX_PART_SIZE
+  go      s3.Client.CreateMultipartUpload, s3.Client.UploadPart, s3.Client.UploadPartCopy, s3.Client.CompleteMultipartUpload, s3.Client.AbortMultipartUpload, s3.Client.ListParts, s3.Client.ListMultipartUploads, s3.NewListPartsPaginator, s3.NewListMultipartUploadsPaginator
+  rust    aws_sdk_s3::Client::create_multipart_upload, upload_part, upload_part_copy, complete_multipart_upload, abort_multipart_upload, list_parts, list_multipart_uploads
+  python  S3.Client.create_multipart_upload, upload_part, upload_part_copy, complete_multipart_upload, abort_multipart_upload, list_parts, list_multipart_uploads
+  note    Parts completed in order of their numbers whatever order they are given in; a refusal answered with 200 is a failure; minio-go ListIncompleteUploads, RemoveIncompleteUpload, ComposeObject (parts copied); rust-s3 initiate_multipart_upload, put_multipart_chunk, complete_multipart_upload, abort_upload, list_multiparts_uploads, list_multiparts_uploads_page
+
+capability multipart/managed  an object put in parts from data or a stream, aborted where it fails
+  heroes  s3.put_object_in_parts, s3.put_object_from
+  go      manager.NewUploader, manager.Uploader.Upload, manager.WithUploaderRequestOptions, manager.NewBufferedReadSeeker, manager.ReadSeekCloser, manager.NewBufferedReadSeekerWriteToPool, manager.NewPooledBufferedWriterReadFromProvider
+  rust    -
+  python  S3.Client.upload_file, S3.Client.upload_fileobj, boto3.s3.transfer.S3Transfer
+  note    One part at a time on one thread; the part's size doubled until 10,000 parts hold the data; minio-go PutObject (parts by itself), FPutObject, OptimalPartInfo; rust-s3 put_object_stream, put_object_stream_with_content_type, put_object_stream_builder, put_multipart_stream
+
+capability presign/url  a URL that GETs, PUTs, HEADs or DELETEs an object for a time
+  heroes  s3.presign_url, s3.presign_get, s3.presign_put
+  go      s3.NewPresignClient, s3.PresignClient.PresignGetObject, s3.PresignClient.PresignPutObject, s3.PresignClient.PresignHeadObject, s3.PresignClient.PresignDeleteObject, s3.PresignClient.PresignUploadPart, s3.PresignClient.PresignHeadBucket, s3.PresignClient.PresignDeleteBucket, s3.WithPresignExpires, s3.WithPresignClientFromClientOptions
+  rust    aws_sdk_s3::presigning::PresigningConfig, aws_sdk_s3::presigning::PresignedRequest
+  python  S3.Client.generate_presigned_url
+  note    A part's upload and a bucket's are `s3.presign_request` of an `s3.prepare`d request; minio-go Presign, PresignHeader, PresignedGetObject, PresignedPutObject, PresignedHeadObject; rust-s3 presign_get, presign_put, presign_delete
+
+capability presign/post  a browser form's policy, signed, that lets the browser POST an object
+  heroes  s3.presign_post, s3.PostForm
+  go      s3.PresignClient.PresignPostObject, s3.PresignedPostRequest
+  rust    -
+  python  S3.Client.generate_presigned_post, botocore.auth.S3SigV4PostAuth
+  note    The policy is botocore's, condition for condition, and its signature the same, as botocore 1.44.6 answered; an exact key, a type and a bound of size are its conditions, where minio-go's and botocore's take any; minio-go PresignedPostPolicy, NewPostPolicy; rust-s3 presign_post
+
+capability failures/codes  S3's refusals told by the closed vocabulary, S3's code first in the message
+  heroes  s3.INVALID, s3.NOT_FOUND, s3.EXISTS, s3.PERMISSION, s3.NOT_EMPTY, s3.LIMIT, s3.UNSUPPORTED, s3.FAILED, s3.CLOSED, s3.TIMEOUT, s3.STOPPED
+  go      smithy.APIError, types.NoSuchKey, types.NoSuchBucket, types.NoSuchUpload, types.BucketAlreadyExists, types.BucketAlreadyOwnedByYou, types.NotFound, types.InvalidObjectState, s3.GetHostIDMetadata
+  rust    -
+  python  S3.Client.exceptions, botocore.exceptions.ClientError
+  note    minio-go ToErrorResponse, ErrorResponse, IsNetworkOrHostDown
+
+dropped
+  go      the middleware stack and its options (s3.Options.APIOptions' entries, Logger, ClientLogMode, AppID, Interceptors, AuthSchemeResolver, ResponseChecksumValidation, RequestChecksumCalculation: covered by `objects/checksums`), the endpoint resolver's parameters and its V1 form, the waiters' option records, the paginators' option records, manager's pools and buffers beyond `multipart/managed`: plumbing an interface or a closure would need
+  go      minio-go's MinIO-only extensions beyond the S3 API: AppendObject, PutObjectFanOut, PutObjectsSnowball, PromptObject, ListenBucketNotification, ListenNotification, GetBucketQOS, SetBucketQOS, GetBucketQOSMetrics, NewQOSConfig, GetBucketReplicationMetrics, GetBucketReplicationMetricsV2, GetBucketReplicationResyncStatus, ResetBucketReplication, ResetBucketReplicationOnTarget, CancelBucketReplicationResync, CheckBucketReplication, HealthCheck, IsOnline, IsOffline, GetCreds, CredContext, UploadLimits, AlignedBuffer, FreeAlignedBuffer, IsRDMAAvailable; its tracing (TraceOn, TraceOff, TraceErrorsOnlyOn, TraceErrorsOnlyOff), SetAppInfo and NewCore, a second way to the same calls
+  python  boto3's resource layer (`boto3.resource('s3')`, Bucket, Object, ObjectSummary and their collections), a second way to the same operations; the event system and `meta.events`; `close`, `can_paginate`, `waiter_names`, `get_waiter`: a waiter is a loop of `object_exists` or `bucket_exists` the program writes, with no closure to hand
+  rust    the fluent builders and their `customize`, `send` and `presigned` (one function per operation here), and the SDK's config builder's other knobs (sleep, time source, interceptors, stalled stream protection, behavior version); rust-s3 set_dangerous_config and set_dangereous_config, which turn the certificate's check off, refused as `http` refuses it

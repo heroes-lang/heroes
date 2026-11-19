@@ -1,0 +1,186 @@
+# The shared files of AWS's tools read as botocore reads them: the keys of a
+# profile in the credentials file (`[name]`) or the config file
+# (`[profile name]`, `[default]`), and what a profile of the config file
+# says of S3: its region, its endpoint, directly or through a `services`
+# section, and its addressing, in the nested `s3 =` setting.
+
+use ini
+use strings
+
+# The keys a profile holds.
+record Keys
+    # The access key's id.
+    access_key_id: str
+    # The secret access key.
+    secret: str
+    # The session token; "" for none.
+    token: str
+
+# What a profile of the config file says of S3.
+record Settings
+    # The region; "" for none.
+    region: str
+    # The endpoint: the `s3` setting of the `services` section the profile
+    # names, else its own `endpoint_url`; "" for none.
+    endpoint_url: str
+    # `auto`, `path` or `virtual`, as `s3.addressing_style` writes it; "" for
+    # none.
+    addressing: str
+
+# How the files are read: Python's `configparser` as botocore uses it, keys
+# in lower case, and a section or a key given twice read as one, the last
+# value winning, as Go's SDK reads it rather than failing.
+function options() -> ini.ReadOptions
+    out @= ini.strict()
+    out.lower_keys @ true
+    out.duplicates @ true
+    return out
+
+# The name of the section of `doc` that is the profile `profile`'s: `name`
+# in a credentials file, `profile name` in a config file, where `default`
+# may also be written `default`. Fails `not_found` where none is.
+function section_of(doc: ini.Document, profile: str, config: bool) -> str?
+    if !config
+        if ini.has_section(doc, name: profile)
+            return ok(profile)
+        return fail(code: "not_found", msg: f"no section [{profile}] in the credentials file")
+
+    if ini.has_section(doc, name: "profile " + profile)
+        return ok("profile " + profile)
+
+    if profile == "default" && ini.has_section(doc, name: "default")
+        return ok("default")
+    return fail(code: "not_found", msg: f"no section [profile {profile}] in the config file")
+
+# The keys of the profile `profile` in `text`, a credentials file's, or a
+# config file's where `config`. Fails `invalid` where `text` is not INI or
+# the profile holds one key without the other, `not_found` where no section
+# is the profile's or it holds neither key.
+function keys_from_text(text: str, profile: str, config: bool) -> Keys?
+    doc = ini.parse_with(text, options())?
+    name = section_of(doc, profile: profile, config: config)?
+    id = ini.value_of(doc, section: name, key: "aws_access_key_id").default("")
+    secret = ini.value_of(doc, section: name, key: "aws_secret_access_key").default("")
+
+    if id == "" && secret == ""
+        return fail(
+            code: "not_found",
+            msg: f"the section [{name}] holds neither aws_access_key_id nor aws_secret_access_key"
+        )
+
+    if id == ""
+        return fail(code: "invalid", msg: f"the section [{name}] holds aws_secret_access_key but no aws_access_key_id")
+
+    if secret == ""
+        return fail(code: "invalid", msg: f"the section [{name}] holds aws_access_key_id but no aws_secret_access_key")
+    token: str @= ini.value_of(doc, section: name, key: "aws_session_token").default("")
+
+    if token == ""
+        token @ ini.value_of(doc, section: name, key: "aws_security_token").default("")
+    return ok(Keys(access_key_id: id, secret: secret, token: token))
+
+# The setting `key` of the nested `value`, its lines `key = value` as the
+# lines under `s3 =` write them; "" where none is.
+function nested(value: str, key: str) -> str
+    for line in strings.split(s: value, sep: "\n")
+        match strings.split_once(s: line, sep: "=")
+            .ok halves =>
+                if strings.to_lower_ascii(strings.trim(halves.before)) == key
+                    return strings.trim(halves.after)
+            .err _ => _ = 0
+
+    return ""
+
+# What the profile `profile` of `text`, a config file's, says of S3: nothing
+# where no section is the profile's. Fails `invalid` where `text` is not
+# INI.
+function settings_from_text(text: str, profile: str) -> Settings?
+    doc = ini.parse_with(text, options())?
+
+    match section_of(doc, profile: profile, config: true)
+        .err _ => return ok(Settings(region: "", endpoint_url: "", addressing: ""))
+        .ok name =>
+            s3 = ini.value_of(doc, section: name, key: "s3").default("")
+            endpoint: str @= ""
+            services = ini.value_of(doc, section: name, key: "services").default("")
+
+            if services != ""
+                endpoint @ nested(
+                    value: ini.value_of(doc, section: "services " + services, key: "s3").default(""),
+                    key: "endpoint_url"
+                )
+
+            if endpoint == ""
+                endpoint @ ini.value_of(doc, section: name, key: "endpoint_url").default("")
+            return ok(
+                Settings(region: ini.value_of(doc, section: name, key: "region").default(""), endpoint_url: endpoint, addressing: nested(value: s3, key: "addressing_style"))
+            )
+
+# The path of a shared file: `chosen` where it is not "", a `~/` at its
+# start read as `home`, else `file` in the folder `.aws` of `home`.
+function shared_path(chosen: str, home: str, file: str) -> str
+    if chosen != ""
+        if strings.has_prefix(s: chosen, prefix: "~/")
+            return home + chosen.slice(from: 1, to: chosen.len())
+        return chosen
+    return home + "/.aws/" + file
+
+# The text of the shared file at `path`: "" where it is not there. Fails
+# `invalid` where it is not text, and `failed` where it cannot be read.
+function text_of_file(path: str) -> str?
+    match read_file(path)
+        .ok text => return ok(text)
+        .err e =>
+            if e.code == "file_not_found"
+                return ok("")
+
+            if e.code == "not_text"
+                return fail(code: "invalid", msg: f"the shared file {path} is not UTF-8 text")
+            return fail(code: "failed", msg: f"the shared file {path} cannot be read: {e.msg}")
+
+# A credentials file of the tests, the one botocore 1.44.6 was asked about.
+function credentials_text() -> str
+    return "[default]\naws_access_key_id = AKIDDEFAULT\naws_secret_access_key = secretdefault\n\n[work]\nAWS_ACCESS_KEY_ID=AKIDWORK\naws_secret_access_key=secret=with=equals\naws_session_token = tok\n\n[profile weird]\naws_access_key_id = AKIDWEIRD\naws_secret_access_key = s\n\n[half]\naws_access_key_id = AKIDHALF\n"
+
+# A config file of the tests, the one botocore 1.44.6 was asked about.
+function config_text() -> str
+    return "[default]\nregion = eu-west-1\ns3 =\n    addressing_style = path\n\n[profile work]\nregion=us-west-2\naws_access_key_id = AKIDCFG\naws_secret_access_key = cfgsecret\nendpoint_url = http://127.0.0.1:9000\nservices = local\n\n[services local]\ns3 =\n  endpoint_url = http://localhost:9100\n\n[profile plain]\nregion = ap-south-1\nendpoint_url = https://plain.example\n\n[weird]\nregion = nope\n\n[profile cfgonly]\naws_access_key_id = AKIDCFGONLY\naws_secret_access_key = cfgonlysecret\ns3 =\n  addressing_style = virtual\n"
+
+test "keys_from_text: the default, keys in capitals, a secret holding `=`, a token, a profile written the other file's way, one key alone, and none"
+    d = keys_from_text(text: credentials_text(), profile: "default", config: false).must()
+    assert d.access_key_id == "AKIDDEFAULT" && d.secret == "secretdefault" && d.token == ""
+    w = keys_from_text(text: credentials_text(), profile: "work", config: false).must()
+    assert w.access_key_id == "AKIDWORK" && w.secret == "secret=with=equals" && w.token == "tok"
+
+    match keys_from_text(text: credentials_text(), profile: "weird", config: false)
+        .ok _  => assert false
+        .err e => assert e.code == "not_found"
+
+    match keys_from_text(text: credentials_text(), profile: "half", config: false)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+test "keys_from_text: a config file's profile, its default, a profile it does not hold, a text that is not INI, and the empty text"
+    c = keys_from_text(text: config_text(), profile: "cfgonly", config: true).must()
+    assert c.access_key_id == "AKIDCFGONLY" && c.secret == "cfgonlysecret"
+    assert keys_from_text(text: config_text(), profile: "work", config: true).must().access_key_id == "AKIDCFG"
+    assert keys_from_text(text: config_text(), profile: "weird", config: true).is_err()
+    assert keys_from_text(text: config_text(), profile: "default", config: true).is_err()
+    assert keys_from_text(text: "no section here\n", profile: "default", config: false).is_err()
+    assert keys_from_text(text: "", profile: "default", config: false).is_err()
+
+test "settings_from_text: a region and a nested addressing, a services section beside an endpoint, an endpoint alone, a profile written without `profile`, and none, as botocore 1.44.6 read them"
+    d = settings_from_text(text: config_text(), profile: "default").must()
+    assert d.region == "eu-west-1" && d.addressing == "path" && d.endpoint_url == ""
+    w = settings_from_text(text: config_text(), profile: "work").must()
+    assert w.region == "us-west-2" && w.endpoint_url == "http://localhost:9100"
+    p = settings_from_text(text: config_text(), profile: "plain").must()
+    assert p.region == "ap-south-1" && p.endpoint_url == "https://plain.example" && p.addressing == ""
+    assert settings_from_text(text: config_text(), profile: "weird").must().region == ""
+    assert settings_from_text(text: config_text(), profile: "cfgonly").must().addressing == "virtual"
+    assert settings_from_text(text: "", profile: "default").must().region == ""
+
+test "nested: a setting found among several, in any case, and one absent"
+    assert nested(value: "\naddressing_style = path\nUse_Accelerate_Endpoint=true", key: "use_accelerate_endpoint") == "true"
+    assert nested(value: "addressing_style = path", key: "addressing_style") == "path"
+    assert nested(value: "", key: "addressing_style") == ""

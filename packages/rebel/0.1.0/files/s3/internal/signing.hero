@@ -1,0 +1,691 @@
+# Signature Version 4 as AWS documents it: the canonical request, the text
+# signed, the key derived from the secret and the signature, for any AWS
+# service and by S3's own rules (its path encoded once and never
+# normalized, its payload's hash sent as `x-amz-content-sha256`), in a
+# header or in a presigned URL's query. It reads requests as `http` holds
+# them and credentials as three texts, which the face hands it.
+
+use bytes
+use crypto
+use http
+use lists
+use strings
+use time
+use url
+
+# The name of the algorithm: the first line of every text signed.
+constant ALGORITHM: str
+    "AWS4-HMAC-SHA256"
+
+# The hexadecimal SHA-256 of no bytes, an empty payload's hash.
+constant EMPTY_SHA256: str
+    "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+
+# The payload's hash of a request whose body is not signed.
+constant UNSIGNED_PAYLOAD: str
+    "UNSIGNED-PAYLOAD"
+
+# The longest a presigned URL may live, in seconds: seven days.
+constant MAX_EXPIRES: i64
+    604_800
+
+# One header field as it is signed: its name in lower case, its values joined.
+record Field
+    # The name, in lower case.
+    name: str
+    # The values of every field of the name, each trimmed and its runs of
+    # white space made one space, joined by `,` in their order.
+    value: str
+
+# One key of a query and its value, each URI-encoded.
+record Pair
+    # The key, encoded.
+    key: str
+    # The value, encoded; "" where the query wrote none.
+    value: str
+
+# What signing a request answers: the request signed, or the query of a
+# presigned URL, with the texts it was made from.
+record Signed
+    # The request with its fields added: `Host`, `X-Amz-Date`, the token, the
+    # payload's hash for S3, and `Authorization`; for a presigned URL, its
+    # target holding the query instead.
+    request: http.Request
+    # The canonical request signed.
+    canonical: str
+    # The string to sign.
+    text: str
+    # The signature, 64 hexadecimal digits.
+    signature: str
+
+# `n` as at least `width` decimal digits, zeros before it.
+function digits(n: i64, width: i64) -> str
+    text: str @= f"{n}"
+
+    while text.len() < width
+        text @ "0" + text
+
+    return text
+
+# The instant `t` as SigV4 writes it, `20150830T123600Z`: every instant's
+# year, 1677 to 2262, has four digits.
+function amz_date(t: time.Instant) -> str
+    d = time.to_date_time(t)
+    return digits(n: d.year, width: 4) + digits(n: d.month, width: 2) + digits(n: d.day, width: 2) + "T" + digits(n: d.hour, width: 2) + digits(n: d.minute, width: 2) + digits(n: d.second, width: 2) + "Z"
+
+# The number the decimal digits of `s` from `from` to `to` write; the caller
+# has checked they are digits.
+function number_at(s: str, from: i64, to: i64) -> i64
+    n: i64 @= 0
+    at: i64 @= from
+
+    while at < to
+        n @ n * 10 + to_i64(s[at] - '0').must()
+        at @ at + 1
+
+    return n
+
+# The instant `s` writes as a SigV4 date, `20150830T123600Z`. Fails `invalid`
+# where it is not that form or names a day or a time that is not one.
+function parse_amz_date(s: str) -> time.Instant?
+    if s.len() != 16 || s[8] != 'T' || s[15] != 'Z'
+        return fail(
+            code: "invalid",
+            msg: f"reading {quoted(s)} as a SigV4 date: it is not 16 bytes of the form 20150830T123600Z"
+        )
+    at: i64 @= 0
+
+    while at < 15
+        if at != 8 && (s[at] < '0' || s[at] > '9')
+            return fail(code: "invalid", msg: f"reading {quoted(s)} as a SigV4 date: byte {at} is no digit")
+        at @ at + 1
+
+    return time.from_date_time(
+        time.DateTime(year: number_at(s, from: 0, to: 4), month: number_at(s, from: 4, to: 6), day: number_at(s, from: 6, to: 8), hour: number_at(s, from: 9, to: 11), minute: number_at(s, from: 11, to: 13), second: number_at(s, from: 13, to: 15), nanosecond: 0)
+    )
+
+# `s` between double quotes, for a message; at most 80 bytes of it, cut at
+# a character's start.
+function quoted(s: str) -> str
+    if s.len() <= 80
+        return "\"" + s + "\""
+    cut: i64 @= 80
+
+    while cut > 0 && !strings.is_boundary(s, at: cut)
+        cut @ cut - 1
+
+    return "\"" + s.slice(from: 0, to: cut) + "...\""
+
+# `s` URI-encoded as SigV4 asks: every byte but a letter, a digit, `-`, `.`,
+# `_` and `~` written `%` and two upper-case hexadecimal digits, a `/` kept
+# where `keep_slash`.
+function uri_encode(s: str, keep_slash: bool) -> str
+    if !keep_slash
+        return url.escape_segment(s)
+    pieces: [str] @= []
+
+    for part in strings.split(s: s, sep: "/")
+        pieces @ pieces.push(url.escape_segment(part))
+
+    return pieces.join("/")
+
+# `data` URI-encoded as `uri_encode` encodes, each `/` kept.
+function encode_path_bytes(data: [u8]) -> str
+    pieces: [str] @= []
+    part: [u8] @= []
+
+    for b in data
+        if b == '/'
+            pieces @ pieces.push(url.escape_bytes(part))
+            part @ []
+        else
+            part @ part.push(b)
+
+    pieces @ pieces.push(url.escape_bytes(part))
+    return pieces.join("/")
+
+# The bytes `s` stands for, its escapes read, and each `+` a space where
+# `plus`. Fails `invalid` where a `%` is not followed by two hexadecimal
+# digits.
+function decoded(s: str, plus: bool) -> [u8]?
+    if plus
+        return url.unescape_bytes(strings.replace_all(s: s, old: "+", new: "%20"))
+    return url.unescape_bytes(s)
+
+# `path` with its `.` and `..` segments resolved and its empty segments
+# dropped, as AWS normalizes a path for every service but S3; a `/` kept at
+# its end where it had one.
+function normalized(path: str) -> str
+    kept: [str] @= []
+
+    for part in strings.split(s: path, sep: "/")
+        if part == ".."
+            if kept.len() > 0
+                kept @ kept.slice(from: 0, to: kept.len() - 1)
+        else if part != "" && part != "."
+            kept @ kept.push(part)
+
+    out = "/" + kept.join("/")
+
+    if kept.len() > 0 && strings.has_suffix(s: path, suffix: "/")
+        return out + "/"
+    return out
+
+# The canonical URI of the raw `path`: for S3 its bytes encoded once, a `/`
+# kept, so an escape written another way is written as SigV4 writes it; for
+# every other service the path normalized and encoded again, as AWS's test
+# suite does. An empty path is `/`. Fails `invalid` where a `%` is not
+# followed by two hexadecimal digits.
+function canonical_path(path: str, s3: bool) -> str?
+    if path == ""
+        return ok("/")
+
+    if s3
+        return ok(encode_path_bytes(decoded(path, plus: false)?))
+    return ok(uri_encode(normalized(path), keep_slash: true))
+
+# Whether `a` comes before `b`: by key, then by value, byte by byte.
+function pair_before(a: Pair, b: Pair) -> bool
+    by_key = strings.compare(a: a.key, b: b.key)
+
+    if by_key != 0
+        return by_key < 0
+    return strings.compare(a: a.value, b: b.value) < 0
+
+# The canonical query of the raw `query`: each key and value decoded, a `+`
+# read as a space, encoded again, and the pairs sorted by key then value. A
+# key with no `=` has the empty value. Fails `invalid` where a `%` is not
+# followed by two hexadecimal digits.
+function canonical_query(query: str) -> str?
+    pairs: [Pair] @= []
+
+    for piece in strings.split(s: query, sep: "&")
+        if piece != ""
+            key: str @= piece
+            value: str @= ""
+
+            match strings.index_of(s: piece, substr: "=")
+                .ok at =>
+                    key @ piece.slice(from: 0, to: at)
+                    value @ piece.slice(from: at + 1, to: piece.len())
+                .err _ => _ = 0
+
+            pairs @ pairs.push(
+                Pair(key: url.escape_bytes(decoded(key, plus: true)?), value: url.escape_bytes(decoded(value, plus: true)?))
+            )
+
+    written: [str] @= []
+
+    for p in lists.sort_by(pairs, less: pair_before)
+        written @ written.push(p.key + "=" + p.value)
+
+    return ok(written.join("&"))
+
+# Whether a field named `name`, in lower case, is left out of a signature:
+# those a connection or a proxy may write or change.
+function is_unsigned(name: str) -> bool
+    return name == "authorization" || name == "connection" || name == "content-length" || name == "expect" || name == "transfer-encoding" || name == "user-agent" || name == "x-amzn-trace-id"
+
+# `value` trimmed and each run of white space in it made one space.
+function canonical_value(value: str) -> str
+    return strings.words(value).join(" ")
+
+# The `Host` a request to `u` carries, as `http` writes it: the host, in
+# brackets where it is an IPv6 address, and the port where it is not the
+# scheme's own.
+function host_value(u: url.Url) -> str
+    shown: str @= u.host
+
+    if strings.contains(s: u.host, substr: ":")
+        shown @ "[" + u.host + "]"
+
+    if u.port == ""
+        return shown
+
+    match url.default_port(u.scheme)
+        .ok p =>
+            if f"{p}" == u.port
+                return shown
+        .err _ => _ = 0
+
+    return shown + ":" + u.port
+
+# The fields of `r` that are signed, by name in lower case and sorted, each
+# name once; its `Host` made from its target where it has none.
+function canonical_fields(r: http.Request) -> [Field]
+    values: {str: [str]} @= {}
+    names: [str] @= []
+
+    if !http.has_header(r.headers, name: "Host")
+        values["host"] @ [host_value(r.url)]
+        names @ names.push("host")
+
+    for h in r.headers
+        name = strings.to_lower_ascii(h.name)
+
+        if !is_unsigned(name)
+            match values[name]
+                .ok held => values[name] @ held.push(canonical_value(h.value))
+                .err _ =>
+                    values[name] @ [canonical_value(h.value)]
+                    names @ names.push(name)
+
+    out: [Field] @= []
+
+    for name in sort(names)
+        out @ out.push(Field(name: name, value: values[name].default([]).join(",")))
+
+    return out
+
+# The names of `fields`, joined by `;`: the signed headers.
+function signed_names(fields: [Field]) -> str
+    names: [str] @= []
+
+    for f in fields
+        names @ names.push(f.name)
+
+    return names.join(";")
+
+# The canonical request of `r`: its method, its canonical path and query,
+# its signed fields and their names, and `payload_hash`, one per line. Fails
+# `invalid` where its path or query holds a `%` not followed by two
+# hexadecimal digits.
+function canonical_request(r: http.Request, payload_hash: str, s3: bool) -> str?
+    fields = canonical_fields(r)
+    lines: [str] @= [r.method, canonical_path(r.url.path, s3: s3)?, canonical_query(r.url.query)?]
+
+    for f in fields
+        lines @ lines.push(f.name + ":" + f.value)
+
+    lines @ lines.push("")
+    lines @ lines.push(signed_names(fields))
+    lines @ lines.push(payload_hash)
+    return ok(lines.join("\n"))
+
+# The scope of a signature: its day, region and service, and
+# `aws4_request`.
+function scope(at: time.Instant, region: str, service: str) -> str
+    day = amz_date(at).slice(from: 0, to: 8)
+    return day + "/" + region + "/" + service + "/aws4_request"
+
+# The string to sign for `canonical`: the algorithm, the date, the scope and
+# the SHA-256 of the canonical request, one per line.
+function string_to_sign(canonical: str, at: time.Instant, region: str, service: str) -> str
+    lines = [
+        ALGORITHM
+        amz_date(at)
+        scope(at, region: region, service: service)
+        bytes.format_hex(crypto.sha256_text(canonical))
+    ]
+    return lines.join("\n")
+
+# The key a signature is made with, derived from `secret` by four HMACs:
+# the day, the region, the service and `aws4_request`.
+function signing_key(secret: str, at: time.Instant, region: str, service: str) -> [u8]
+    day = amz_date(at).slice(from: 0, to: 8)
+    k_date = crypto.hmac_text(.sha256, key: bytes.from_text("AWS4" + secret), s: day)
+    k_region = crypto.hmac_text(.sha256, key: k_date, s: region)
+    k_service = crypto.hmac_text(.sha256, key: k_region, s: service)
+    return crypto.hmac_text(.sha256, key: k_service, s: "aws4_request")
+
+# Whether `s` may stand in a scope or a credential: not empty, and only
+# ASCII letters, digits, `-`, `_` and `.`.
+function is_scope_word(s: str) -> bool
+    if s == ""
+        return false
+
+    for b in bytes.from_text(s)
+        letter = b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z'
+        digit = b >= '0' && b <= '9'
+
+        if !letter && !digit && b != '-' && b != '_' && b != '.'
+            return false
+
+    return true
+
+# Fails `invalid` where the region, the service or the key's id cannot stand
+# in a credential's scope.
+function check_scope(access_key_id: str, region: str, service: str) -> ()?
+    if !is_scope_word(region)
+        return fail(
+            code: "invalid",
+            msg: f"signing: the region {quoted(region)} is not a word of letters, digits, `-`, `_` and `.`"
+        )
+
+    if !is_scope_word(service)
+        return fail(
+            code: "invalid",
+            msg: f"signing: the service {quoted(service)} is not a word of letters, digits, `-`, `_` and `.`"
+        )
+
+    if !is_scope_word(access_key_id)
+        return fail(
+            code: "invalid",
+            msg: "signing: the access key's id is empty or holds a byte other than letters, digits, `-`, `_` and `.`"
+        )
+    return ok()
+
+# `r` signed in its header: `Host` added where it has none, `X-Amz-Date`,
+# `X-Amz-Security-Token` where `token` is not "", for S3 its path written
+# canonical and `X-Amz-Content-Sha256`, and `Authorization` last, every field
+# of those names it held before replaced. Fails `invalid` where the scope,
+# the date, the path or the query cannot be signed.
+function sign(r: http.Request, access_key_id: str, secret: str, token: str, region: str, service: str, at: time.Instant, payload_hash: str, s3: bool) -> Signed?
+    check_scope(access_key_id: access_key_id, region: region, service: service)?
+    when = amz_date(at)
+    out @= r
+    out.headers @ http.without_header(r.headers, name: "Authorization")
+
+    if !http.has_header(out.headers, name: "Host")
+        out.headers @ http.with_header(out.headers, name: "Host", value: host_value(r.url))
+    out.headers @ http.with_header(out.headers, name: "X-Amz-Date", value: when)
+
+    if token != ""
+        out.headers @ http.with_header(out.headers, name: "X-Amz-Security-Token", value: token)
+
+    if s3
+        out.headers @ http.with_header(out.headers, name: "X-Amz-Content-Sha256", value: payload_hash)
+        out.url.path @ canonical_path(r.url.path, s3: true)?
+    canonical = canonical_request(out, payload_hash: payload_hash, s3: s3)?
+    text = string_to_sign(canonical: canonical, at: at, region: region, service: service)
+    key = signing_key(secret: secret, at: at, region: region, service: service)
+    signature = bytes.format_hex(crypto.hmac_text(.sha256, key: key, s: text))
+    credential = access_key_id + "/" + scope(at, region: region, service: service)
+    authorization = ALGORITHM + " Credential=" + credential + ", SignedHeaders=" + signed_names(canonical_fields(out)) + ", Signature=" + signature
+    out.headers @ http.with_header(out.headers, name: "Authorization", value: authorization)
+    return ok(Signed(request: out, canonical: canonical, text: text, signature: signature))
+
+# `r` presigned: its target's query given the algorithm, the credential, the
+# date, `expires`, the fields signed (its own and `Host`), the token where
+# `token` is not "", and the signature last; for S3 its path written
+# canonical and its payload `UNSIGNED-PAYLOAD`, for any other service the
+# SHA-256 of its body. Fails `invalid` where `expires` is outside 1 to
+# 604,800 seconds or the scope, the date, the path or the query cannot be
+# signed.
+function presign(r: http.Request, access_key_id: str, secret: str, token: str, region: str, service: str, at: time.Instant, expires: i64, s3: bool) -> Signed?
+    if expires < 1 || expires > MAX_EXPIRES
+        return fail(
+            code: "invalid",
+            msg: f"presigning: {expires} seconds is outside 1 to {MAX_EXPIRES}, the seven days a presigned URL may live"
+        )
+    check_scope(access_key_id: access_key_id, region: region, service: service)?
+    when = amz_date(at)
+    out @= r
+    out.headers @ http.without_header(r.headers, name: "Authorization")
+
+    if !http.has_header(out.headers, name: "Host")
+        out.headers @ http.with_header(out.headers, name: "Host", value: host_value(r.url))
+
+    if s3
+        out.url.path @ canonical_path(r.url.path, s3: true)?
+    credential = access_key_id + "/" + scope(at, region: region, service: service)
+    added: [str] @= [
+        "X-Amz-Algorithm=" + ALGORITHM
+        "X-Amz-Credential=" + uri_encode(credential, keep_slash: false)
+        "X-Amz-Date=" + when
+        f"X-Amz-Expires={expires}"
+        "X-Amz-SignedHeaders=" + uri_encode(signed_names(canonical_fields(out)), keep_slash: false)
+    ]
+
+    if token != ""
+        added @ added.push("X-Amz-Security-Token=" + uri_encode(token, keep_slash: false))
+
+    if r.url.query == ""
+        out.url.query @ added.join("&")
+    else
+        out.url.query @ r.url.query + "&" + added.join("&")
+    payload: str @= UNSIGNED_PAYLOAD
+
+    if !s3
+        payload @ bytes.format_hex(crypto.sha256(r.body))
+    canonical = canonical_request(out, payload_hash: payload, s3: s3)?
+    text = string_to_sign(canonical: canonical, at: at, region: region, service: service)
+    key = signing_key(secret: secret, at: at, region: region, service: service)
+    signature = bytes.format_hex(crypto.hmac_text(.sha256, key: key, s: text))
+    out.url.query @ out.url.query + "&X-Amz-Signature=" + signature
+    out.url.empty_query @ false
+    return ok(Signed(request: out, canonical: canonical, text: text, signature: signature))
+
+## Tests
+
+# The instant of AWS's SigV4 test suite, 2015-08-30T12:36:00Z.
+function suite_time() -> time.Instant
+    return parse_amz_date("20150830T123600Z").must()
+
+# The instant of the S3 reference's examples, 2013-05-24T00:00:00Z.
+function s3_time() -> time.Instant
+    return parse_amz_date("20130524T000000Z").must()
+
+# A request of the test suite: `method` to `target` with the fields `pairs`
+# names, two by two, and `body`.
+function suite_request(method: str, target: str, pairs: [str], body: str) -> http.Request
+    r @= http.request(method: method, target: target).must()
+    at: i64 @= 0
+
+    while at + 1 < pairs.len()
+        r.headers @ r.headers.push(http.Header(name: pairs[at], value: pairs[at + 1]))
+        at @ at + 2
+
+    r.body @ bytes.from_text(body)
+    return r
+
+# The signature of the test suite's credentials over `r`, as `sign` makes it
+# for the service `service` in us-east-1.
+function suite_signature(r: http.Request, token: str) -> str
+    hash = bytes.format_hex(crypto.sha256(r.body))
+    signed = sign(
+        r,
+        access_key_id: "AKIDEXAMPLE",
+        secret: "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY",
+        token: token,
+        region: "us-east-1",
+        service: "service",
+        at: suite_time(),
+        payload_hash: hash,
+        s3: false
+    ).must()
+    return signed.signature
+
+test "amz_date and parse_amz_date: the suite's instant, the epoch, the last second an instant holds, a year past it, and texts of no date"
+    assert amz_date(suite_time()) == "20150830T123600Z"
+    assert amz_date(time.epoch()) == "19700101T000000Z"
+    assert amz_date(time.max_instant()) == "22620411T234716Z"
+    assert amz_date(time.min_instant()) == "16770921T001243Z"
+    assert parse_amz_date("22620411T234716Z").must() == time.truncate(time.max_instant(), unit: time.seconds(1).must()).must()
+    assert parse_amz_date("99991231T235959Z").is_err()
+    assert parse_amz_date("20150830T123600").is_err()
+    assert parse_amz_date("2015083OT123600Z").is_err()
+    assert parse_amz_date("20150230T123600Z").is_err()
+    assert parse_amz_date("20150830T246000Z").is_err()
+    assert parse_amz_date("").is_err()
+
+test "uri_encode: empty, unreserved kept, a slash kept or not, a space, a plus, a tilde, and a character of three bytes"
+    assert uri_encode("", keep_slash: true) == ""
+    assert uri_encode("AZaz09-._~", keep_slash: false) == "AZaz09-._~"
+    assert uri_encode("a/b", keep_slash: true) == "a/b"
+    assert uri_encode("a/b", keep_slash: false) == "a%2Fb"
+    assert uri_encode("a b+c", keep_slash: true) == "a%20b%2Bc"
+    assert uri_encode("ሴ", keep_slash: false) == "%E1%88%B4"
+    assert uri_encode("/lead//double/", keep_slash: true) == "/lead//double/"
+
+test "canonical_path: empty, S3's path re-encoded once and kept whole, and another service's normalized and encoded again"
+    assert canonical_path("", s3: true).must() == "/"
+    assert canonical_path("/test%24file.text", s3: true).must() == "/test%24file.text"
+    assert canonical_path("/test$file.text", s3: true).must() == "/test%24file.text"
+    assert canonical_path("//a/../b/./", s3: true).must() == "//a/../b/./"
+    assert canonical_path("/a%2fb", s3: true).must() == "/a/b"
+    assert canonical_path("/example%20space/", s3: false).must() == "/example%2520space/"
+    assert canonical_path("/example1/example2/../..", s3: false).must() == "/"
+    assert canonical_path("//example//", s3: false).must() == "/example/"
+    assert canonical_path("/..", s3: false).must() == "/"
+    assert canonical_path("/a%zz", s3: true).is_err()
+
+test "canonical_query: empty, a key with no value, keys sorted by byte, a repeated key sorted by value, a plus, and a bad escape"
+    assert canonical_query("").must() == ""
+    assert canonical_query("lifecycle").must() == "lifecycle="
+    assert canonical_query("Param2=value2&Param1=value1").must() == "Param1=value1&Param2=value2"
+    assert canonical_query("a=2&a=1&a-b=0").must() == "a=1&a=2&a-b=0"
+    assert canonical_query("q=a+b&r=%7e").must() == "q=a%20b&r=~"
+    assert canonical_query("%E1%88%B4=bar&&").must() == "%E1%88%B4=bar"
+    assert canonical_query("a=%4").is_err()
+
+test "canonical_fields: Host from the target and its port, names in lower case and sorted, a repeated name joined, runs of space made one, and the fields left out"
+    r = suite_request(
+        method: "GET",
+        target: "http://h.example:8080/",
+        pairs: ["My-Header1", "value2", "my-header1", " value1 ", "B", "\"a   b\tc\"", "User-Agent", "x", "Content-Length", "0"],
+        body: ""
+    )
+    fields = canonical_fields(r)
+    assert signed_names(fields) == "b;host;my-header1"
+    assert fields[0].value == "\"a b c\"" && fields[1].value == "h.example:8080" && fields[2].value == "value2,value1"
+    assert host_value(url.parse("https://h:443/").must()) == "h"
+    assert host_value(url.parse("http://[::1]:9000/").must()) == "[::1]:9000"
+
+test "sign: the vectors of AWS's SigV4 test suite, signatures as botocore 1.44.6 answers them"
+    host = ["Host", "example.amazonaws.com"]
+    assert suite_signature(suite_request(method: "GET", target: "https://example.amazonaws.com/", pairs: host, body: ""), token: "") == "5fa00fa31553b73ebf1942676e86291e8372ff2a2260956d9b8aae1d763fbf31"
+    assert suite_signature(suite_request(method: "GET", target: "https://example.amazonaws.com/?Param2=value2&Param1=value1", pairs: host, body: ""), token: "") == "b97d918cfa904a5beff61c982a1b6f458b799221646efd99d3219ec94cdf2500"
+    assert suite_signature(suite_request(method: "GET", target: "https://example.amazonaws.com/?-._~0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz=-._~0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", pairs: host, body: ""), token: "") == "9c3e54bfcdf0b19771a7f523ee5669cdf59bc7cc0884027167c21bb143a40197"
+    assert suite_signature(suite_request(method: "GET", target: "https://example.amazonaws.com/?Param1=value1", pairs: host, body: ""), token: "") == "a67d582fa61cc504c4bae71f336f98b97f1ea3c7a6bfe1b6e45aec72011b9aeb"
+    assert suite_signature(suite_request(method: "GET", target: "https://example.amazonaws.com/", pairs: ["Host", "example.amazonaws.com", "My-Header1", " value1", "My-Header2", " \"a   b   c\""], body: ""), token: "") == "acc3ed3afb60bb290fc8d2dd0098b9911fcaa05412b367055dee359757a9c736"
+    assert suite_signature(suite_request(method: "GET", target: "https://example.amazonaws.com/", pairs: ["Host", "example.amazonaws.com", "My-Header1", "value2", "My-Header1", "value2", "My-Header1", "value1"], body: ""), token: "") == "c9d5ea9f3f72853aea855b47ea873832890dbdd183b4468f858259531a5138ea"
+    assert suite_signature(suite_request(method: "POST", target: "https://example.amazonaws.com/", pairs: host, body: ""), token: "") == "5da7c1a2acd57cee7505fc6676e4e544621c30862966e37dddb68e92efbe5d6b"
+    assert suite_signature(suite_request(method: "POST", target: "https://example.amazonaws.com/", pairs: ["Content-Type", "application/x-www-form-urlencoded", "Host", "example.amazonaws.com"], body: "Param1=value1"), token: "") == "ff11897932ad3f4e8b18135d722051e5ac45fc38421b1da7b9d196a0fe09473a"
+    assert suite_signature(suite_request(method: "GET", target: "https://example.amazonaws.com/example%20space/", pairs: host, body: ""), token: "") == "446b817944c553435b35e813c261ff4e161fff982d1bacdef1c87f6785dd1662"
+    assert suite_signature(suite_request(method: "GET", target: "https://example.amazonaws.com/%E1%88%B4", pairs: host, body: ""), token: "") == "697b34846207a3f72246f99d74ae1ee4fe54f44bb06730c58a0d339eb079596d"
+    assert suite_signature(suite_request(method: "GET", target: "https://example.amazonaws.com/example1/example2/../..", pairs: host, body: ""), token: "") == "5fa00fa31553b73ebf1942676e86291e8372ff2a2260956d9b8aae1d763fbf31"
+    assert suite_signature(suite_request(method: "GET", target: "https://example.amazonaws.com//example//", pairs: host, body: ""), token: "") == "9a624bd73a37c9a373b5312afbebe7a714a789de108f0bdfe846570885f57e84"
+
+test "sign: a session token signed after the date, the suite's post-sts-header-after"
+    token = "AQoDYXdzEPT//////////wEXAMPLEtc764bNrC9SAPBSM22wDOk4x4HIZ8j4FZTwdQWLWsKWHGBuFqwAeMicRXmxfpSPfIeoIYRqTflfKD8YUuwthAx7mSEI/qkPpKPi/kMcGdQrmGdeehM4IC1NtBmUpp2wUE8phUZampKsburEDy0KPkyQDYwT7WZ0wq5VSXDvp75YU9HFvlRd8Tx6q6fE8YQcHNVXAkiY9q6d+xo0rKwT38xVqr7ZD0u0iPPkUL64lIZbqBAz+scqKmlzm8FDrypNC9Yjc8fPOLn9FX9KSYvKTr4rvx3iSIlTJabIQwj2ICCR/oLxBA=="
+    r = suite_request(
+        method: "POST",
+        target: "https://example.amazonaws.com/",
+        pairs: ["Host", "example.amazonaws.com"],
+        body: ""
+    )
+    assert suite_signature(r, token: token) == "85d96828115b5dc0cfc3bd16ad9e210dd772bbebba041836c64533a82be05ead"
+
+test "sign: the S3 reference's examples, their canonical requests, strings to sign and signatures as botocore 1.44.6 answers them"
+    get = suite_request(
+        method: "GET",
+        target: "https://examplebucket.s3.amazonaws.com/test.txt",
+        pairs: ["Range", "bytes=0-9"],
+        body: ""
+    )
+    signed = sign(
+        get,
+        access_key_id: "AKIAIOSFODNN7EXAMPLE",
+        secret: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+        token: "",
+        region: "us-east-1",
+        service: "s3",
+        at: s3_time(),
+        payload_hash: EMPTY_SHA256,
+        s3: true
+    ).must()
+    assert signed.canonical == "GET\n/test.txt\n\nhost:examplebucket.s3.amazonaws.com\nrange:bytes=0-9\nx-amz-content-sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\nx-amz-date:20130524T000000Z\n\nhost;range;x-amz-content-sha256;x-amz-date\ne3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    assert signed.text == "AWS4-HMAC-SHA256\n20130524T000000Z\n20130524/us-east-1/s3/aws4_request\n7344ae5b7ee6c3e7e6b0fe0640412a37625d1fbfff95c48bbb2dc43964946972"
+    assert signed.signature == "f0e8bdb87c964420e857bd35b5d6ed310bd44f0170aba48dd91039c6036bdb41"
+    assert http.value_of(signed.request.headers, name: "authorization").must() == "AWS4-HMAC-SHA256 Credential=AKIAIOSFODNN7EXAMPLE/20130524/us-east-1/s3/aws4_request, SignedHeaders=host;range;x-amz-content-sha256;x-amz-date, Signature=f0e8bdb87c964420e857bd35b5d6ed310bd44f0170aba48dd91039c6036bdb41"
+    lifecycle = suite_request(
+        method: "GET",
+        target: "https://examplebucket.s3.amazonaws.com/?lifecycle",
+        pairs: [],
+        body: ""
+    )
+    assert sign(lifecycle, access_key_id: "AKIAIOSFODNN7EXAMPLE", secret: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY", token: "", region: "us-east-1", service: "s3", at: s3_time(), payload_hash: EMPTY_SHA256, s3: true).must().signature == "fea454ca298b7da1c68078a5d1bdbfbbe0d65c699e0f91ac7a200a0136783543"
+    listing = suite_request(
+        method: "GET",
+        target: "https://examplebucket.s3.amazonaws.com/?max-keys=2&prefix=J",
+        pairs: [],
+        body: ""
+    )
+    assert sign(listing, access_key_id: "AKIAIOSFODNN7EXAMPLE", secret: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY", token: "", region: "us-east-1", service: "s3", at: s3_time(), payload_hash: EMPTY_SHA256, s3: true).must().signature == "34b48302e7b5fa45bde8084f4b7868a86f0a534bc59db6670ed5711ef69dc6f7"
+
+test "presign: the S3 reference's presigned GET, its URL as botocore 1.44.6 writes it"
+    r = suite_request(method: "GET", target: "https://examplebucket.s3.amazonaws.com/test.txt", pairs: [], body: "")
+    signed = presign(
+        r,
+        access_key_id: "AKIAIOSFODNN7EXAMPLE",
+        secret: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+        token: "",
+        region: "us-east-1",
+        service: "s3",
+        at: s3_time(),
+        expires: 86_400,
+        s3: true
+    ).must()
+    assert signed.signature == "aeeed9bbccd4d02ee5c0109b86d86835f995330da4c265957d157751f604d404"
+    assert url.format(signed.request.url) == "https://examplebucket.s3.amazonaws.com/test.txt?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAIOSFODNN7EXAMPLE%2F20130524%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20130524T000000Z&X-Amz-Expires=86400&X-Amz-SignedHeaders=host&X-Amz-Signature=aeeed9bbccd4d02ee5c0109b86d86835f995330da4c265957d157751f604d404"
+    assert presign(
+        r,
+        access_key_id: "A",
+        secret: "s",
+        token: "",
+        region: "us-east-1",
+        service: "s3",
+        at: s3_time(),
+        expires: 0,
+        s3: true
+    ).is_err()
+    assert presign(
+        r,
+        access_key_id: "A",
+        secret: "s",
+        token: "",
+        region: "us-east-1",
+        service: "s3",
+        at: s3_time(),
+        expires: 604_801,
+        s3: true
+    ).is_err()
+    assert presign(r, access_key_id: "A", secret: "s", token: "", region: "us-east-1", service: "s3", at: s3_time(), expires: 604_800, s3: true).is_err() == false
+
+test "sign: a region, a service or a key id that cannot stand in a scope is refused before anything is signed"
+    r = suite_request(method: "GET", target: "https://h/", pairs: [], body: "")
+    assert sign(
+        r,
+        access_key_id: "A",
+        secret: "s",
+        token: "",
+        region: "us east",
+        service: "s3",
+        at: s3_time(),
+        payload_hash: EMPTY_SHA256,
+        s3: true
+    ).is_err()
+    assert sign(
+        r,
+        access_key_id: "A",
+        secret: "s",
+        token: "",
+        region: "us-east-1",
+        service: "",
+        at: s3_time(),
+        payload_hash: EMPTY_SHA256,
+        s3: true
+    ).is_err()
+    assert sign(
+        r,
+        access_key_id: "A/B",
+        secret: "s",
+        token: "",
+        region: "us-east-1",
+        service: "s3",
+        at: s3_time(),
+        payload_hash: EMPTY_SHA256,
+        s3: true
+    ).is_err()
+    assert sign(
+        r,
+        access_key_id: "",
+        secret: "s",
+        token: "",
+        region: "us-east-1",
+        service: "s3",
+        at: s3_time(),
+        payload_hash: EMPTY_SHA256,
+        s3: true
+    ).is_err()

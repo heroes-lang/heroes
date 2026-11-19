@@ -1,0 +1,132 @@
+# The checksums S3 keeps beside an object, by the names S3 gives them:
+# CRC-32 and CRC-32C from `hash`, SHA-1 and SHA-256 from `crypto`, and
+# CRC-64/NVME, which no other package of Rebel computes, here; each written
+# as S3 writes it, its bytes big endian in base 64.
+
+use bytes
+use crypto
+use hash
+use strings
+
+# The reflected polynomial of CRC-64/NVME, 0x9a6c9329ac4bc9b5, as the `i64`
+# of its bits.
+constant NVME_POLYNOMIAL: i64
+    -7_319_313_487_190_308_427
+
+# Every bit of an `i64` but the sign's: what a right shift by one keeps, so
+# that it moves no sign bit in.
+constant LOW_63: i64
+    0x7fff_ffff_ffff_ffff
+
+# The 256 values of CRC-64/NVME's table, one per byte, each the remainder
+# of that byte shifted through the polynomial eight times.
+function nvme_table() -> [i64]
+    table: [i64] @= []
+    n: i64 @= 0
+
+    while n < 256
+        c: i64 @= n
+        k: i64 @= 0
+
+        while k < 8
+            if c & 1 == 1
+                c @ c >> 1 & LOW_63 ^ NVME_POLYNOMIAL
+            else
+                c @ c >> 1 & LOW_63
+            k @ k + 1
+
+        table @ table.push(c)
+        n @ n + 1
+
+    return table
+
+# The CRC-64/NVME of `data` as its eight bytes, big endian: every bit set at
+# the start and at the end, the bits read from the low end.
+function crc64nvme(data: [u8]) -> [u8]
+    table = nvme_table()
+    crc: i64 @= -1
+
+    for b in data
+        crc @ table[(crc ^ to_i64(b).must()) & 0xff] ^ crc >> 8 & 0x00ff_ffff_ffff_ffff
+
+    crc @ ~crc
+    out: [u8] @= []
+    shift: i64 @= 56
+
+    while shift >= 0
+        out @ out.push(to_u8(crc >> shift & 0xff).must())
+        shift @ shift - 8
+
+    return out
+
+# Whether `name` is one of the five checksums S3 knows, in upper case.
+function is_known(name: str) -> bool
+    return name == "CRC32" || name == "CRC32C" || name == "CRC64NVME" || name == "SHA1" || name == "SHA256"
+
+# The name S3 gives the checksum `s` names, in upper case. Fails `invalid`
+# where it names none of the five.
+function parse_name(s: str) -> str?
+    upper = strings.to_upper_ascii(s)
+
+    if is_known(upper)
+        return ok(upper)
+    return fail(code: "invalid", msg: f"no checksum named \"{s}\": S3 knows CRC32, CRC32C, CRC64NVME, SHA1 and SHA256")
+
+# The checksum `name` of `data` as its bytes; none for a name of none of the
+# five.
+function digest(data: [u8], name: str) -> [u8]
+    if name == "CRC32"
+        return bytes.encode_u32_be(hash.crc32(data))
+
+    if name == "CRC32C"
+        return bytes.encode_u32_be(hash.crc32c(data))
+
+    if name == "CRC64NVME"
+        return crc64nvme(data)
+
+    if name == "SHA1"
+        return crypto.sha1(data)
+
+    if name == "SHA256"
+        return crypto.sha256(data)
+    return []
+
+# The checksum `name` of `data` as S3 writes it, in base 64; "" for a name
+# of none of the five.
+function value_of(data: [u8], name: str) -> str
+    if !is_known(name)
+        return ""
+    return bytes.format_base64(digest(data, name: name))
+
+# The field a checksum `name` is sent in: `x-amz-checksum-crc32`.
+function header_of(name: str) -> str
+    return "x-amz-checksum-" + strings.to_lower_ascii(name)
+
+test "crc64nvme: no bytes, one word, the check value of the catalogue, and a thousand bytes, as Go's hash/crc64 answers"
+    assert bytes.format_hex(crc64nvme([])) == "0000000000000000"
+    assert bytes.format_hex(crc64nvme(bytes.from_text("hello"))) == "3377857006524257"
+    assert bytes.format_hex(crc64nvme(bytes.from_text("123456789"))) == "ae8b14860a799888"
+    long: [u8] @= []
+    i: i64 @= 0
+
+    while i < 1_000
+        long @ long.push(to_u8(i * 7 % 251).must())
+        i @ i + 1
+
+    assert bytes.format_hex(crc64nvme(long)) == "f799e2cc12c2138b"
+
+test "value_of: the five checksums of no bytes, of a word and of the check text, in base 64 as Go answers"
+    assert value_of([], name: "CRC32") == "AAAAAA==" && value_of([], name: "CRC64NVME") == "AAAAAAAAAAA="
+    assert value_of([], name: "SHA256") == "47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU="
+    hello = bytes.from_text("hello")
+    assert value_of(hello, name: "CRC32") == "NhCmhg==" && value_of(hello, name: "CRC32C") == "mnG7TA=="
+    assert value_of(hello, name: "CRC64NVME") == "M3eFcAZSQlc=" && value_of(hello, name: "SHA1") == "qvTGHdzF6KLavt4PO0gs2a6pQ00="
+    assert value_of(hello, name: "SHA256") == "LPJNul+wow4m6DsqxbninhsWHlwfp0JecwQzYpOLmCQ="
+    check = bytes.from_text("123456789")
+    assert value_of(check, name: "CRC32") == "y/Q5Jg==" && value_of(check, name: "CRC32C") == "4waSgw=="
+    assert value_of(check, name: "MD5") == ""
+
+test "parse_name and header_of: any case, a name of none, and the field"
+    assert parse_name("crc32c").must() == "CRC32C" && parse_name("Sha256").must() == "SHA256"
+    assert parse_name("md5").is_err() && parse_name("").is_err()
+    assert header_of("CRC64NVME") == "x-amz-checksum-crc64nvme"

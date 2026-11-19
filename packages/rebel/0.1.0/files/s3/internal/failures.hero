@@ -1,0 +1,150 @@
+# A refusal of S3 told as a failure of the language: the code each of S3's
+# error codes and statuses maps to, whether a refusal is worth a retry and
+# how long to wait first, and a message that opens with S3's own code and
+# names the request, never a credential.
+
+use s3/internal/answers
+use strings
+
+# Whether `s3_code` says the thing asked for is not there: `NoSuch...`,
+# `...NotFound`, `...NotFoundError`.
+function is_missing(s3_code: str) -> bool
+    return strings.has_prefix(s: s3_code, prefix: "NoSuch") || strings.has_suffix(s: s3_code, suffix: "NotFound") || strings.has_suffix(s: s3_code, suffix: "NotFoundError")
+
+# The code of the language a refusal of `status` with S3's code `s3_code`
+# maps to; `s3_code` "" where the answer held none.
+function code_for(status: i64, s3_code: str) -> str
+    if is_missing(s3_code)
+        return "not_found"
+
+    if s3_code == "BucketAlreadyExists" || s3_code == "BucketAlreadyOwnedByYou"
+        return "exists"
+
+    if s3_code == "BucketNotEmpty"
+        return "not_empty"
+
+    if s3_code == "AccessDenied" || s3_code == "AllAccessDisabled" || s3_code == "InvalidAccessKeyId" || s3_code == "SignatureDoesNotMatch" || s3_code == "ExpiredToken" || s3_code == "InvalidToken" || s3_code == "TokenRefreshRequired" || s3_code == "AccountProblem" || s3_code == "RequestTimeTooSkewed" || s3_code == "InvalidSecurity"
+        return "permission"
+
+    if s3_code == "SlowDown" || s3_code == "TooManyRequests" || s3_code == "ServiceUnavailable" || s3_code == "Throttling" || s3_code == "ThrottlingException"
+        return "limit"
+
+    if s3_code == "NotImplemented"
+        return "unsupported"
+
+    if s3_code == "RequestTimeout"
+        return "timeout"
+
+    if status == 404
+        return "not_found"
+
+    if status == 401 || status == 403
+        return "permission"
+
+    if status == 429 || status == 503
+        return "limit"
+
+    if status == 501
+        return "unsupported"
+
+    if status == 400 || status == 411 || status == 413 || status == 416 || status == 301 || status == 307 || status == 405
+        return "invalid"
+    return "failed"
+
+# Whether a refusal of `status` with S3's code `s3_code` passes, so the
+# request is worth sending again: 500, 502, 503, 504 and 429, and S3's
+# codes of a server that asks for patience.
+function is_retryable(status: i64, s3_code: str) -> bool
+    if status == 500 || status == 502 || status == 503 || status == 504 || status == 429
+        return true
+    return s3_code == "SlowDown" || s3_code == "RequestTimeout" || s3_code == "InternalError" || s3_code == "Throttling" || s3_code == "ThrottlingException" || s3_code == "RequestLimitExceeded"
+
+# Whether a failure of the connection, by its code, is worth a retry.
+function is_transient(code: str) -> bool
+    return code == "closed" || code == "timeout" || code == "failed"
+
+# The milliseconds waited before the retry after `attempt` attempts: 100
+# doubled for each attempt after the first, at most 20,000.
+function backoff_ms(attempt: i64) -> i64
+    wait: i64 @= 100
+    n: i64 @= 1
+
+    while n < attempt && wait < 20_000
+        wait @ wait * 2
+        n @ n + 1
+
+    if wait > 20_000
+        return 20_000
+    return wait
+
+# Where a request went, for a message: `method bucket/key`, the bucket or
+# the key left out where "".
+function request_named(method: str, bucket: str, key: str) -> str
+    if bucket == ""
+        return method + " the service"
+
+    if key == ""
+        return method + " " + bucket
+    return method + " " + bucket + "/" + key
+
+# The message of a refusal: S3's code and its message, or the status where
+# S3 answered no document, then the request, the status, the request's id
+# and the region S3 named.
+function message_for(method: str, bucket: str, key: str, status: i64, reply: answers.Reply) -> str
+    pieces: [str] @= []
+
+    if reply.code != ""
+        pieces @ pieces.push(reply.code + ": ")
+    else
+        pieces @ pieces.push(f"{status}: ")
+
+    if reply.message != ""
+        pieces @ pieces.push(reply.message + " ")
+    else
+        pieces @ pieces.push("S3 answered no error document. ")
+    pieces @ pieces.push(f"({request_named(method: method, bucket: bucket, key: key)}, status {status}")
+
+    if reply.request_id != ""
+        pieces @ pieces.push(", request id " + reply.request_id)
+
+    if reply.region != ""
+        pieces @ pieces.push(", the bucket stands in " + reply.region)
+    pieces @ pieces.push(")")
+    return pieces.join("")
+
+# Fails with the refusal `body` holds where it is an error document, as S3
+# answers with 200 to a copy or an upload completed that failed late.
+function refusal_in(body: [u8], method: str, bucket: str, key: str) -> ()?
+    if !answers.is_error(body)
+        return ok()
+    reply = answers.error_of(body)
+    return fail(
+        code: code_for(status: 200, s3_code: reply.code),
+        msg: message_for(method: method, bucket: bucket, key: key, status: 200, reply: reply)
+    )
+
+test "code_for: a missing key, bucket and configuration, a bucket held, refusals of the credentials, a throttle, a status alone, and the rest"
+    assert code_for(status: 404, s3_code: "NoSuchKey") == "not_found" && code_for(status: 404, s3_code: "NoSuchBucketPolicy") == "not_found"
+    assert code_for(status: 404, s3_code: "ServerSideEncryptionConfigurationNotFoundError") == "not_found"
+    assert code_for(status: 409, s3_code: "BucketAlreadyOwnedByYou") == "exists" && code_for(status: 409, s3_code: "BucketNotEmpty") == "not_empty"
+    assert code_for(status: 403, s3_code: "SignatureDoesNotMatch") == "permission" && code_for(status: 403, s3_code: "") == "permission"
+    assert code_for(status: 503, s3_code: "SlowDown") == "limit" && code_for(status: 501, s3_code: "NotImplemented") == "unsupported"
+    assert code_for(status: 404, s3_code: "") == "not_found" && code_for(status: 416, s3_code: "InvalidRange") == "invalid"
+    assert code_for(status: 412, s3_code: "PreconditionFailed") == "failed" && code_for(status: 304, s3_code: "") == "failed"
+    assert code_for(status: 500, s3_code: "InternalError") == "failed" && code_for(status: 301, s3_code: "PermanentRedirect") == "invalid"
+
+test "is_retryable and is_transient: the statuses that pass, S3's codes of patience, a refusal that does not pass, and the codes of a connection"
+    assert is_retryable(status: 503, s3_code: "") && is_retryable(status: 400, s3_code: "RequestTimeout") && is_retryable(status: 429, s3_code: "")
+    assert !is_retryable(status: 404, s3_code: "NoSuchKey") && !is_retryable(status: 403, s3_code: "AccessDenied")
+    assert is_transient("closed") && is_transient("timeout") && is_transient("failed") && !is_transient("invalid")
+
+test "backoff_ms: the first wait, the second, and the ceiling"
+    assert backoff_ms(1) == 100 && backoff_ms(2) == 200 && backoff_ms(3) == 400
+    assert backoff_ms(20) == 20_000 && backoff_ms(0) == 100
+
+test "message_for: S3's code and message with the request and region, and a status with no document"
+    reply = answers.Reply(code: "NoSuchKey", message: "The specified key does not exist.", request_id: "R1", region: "")
+    assert message_for(method: "GET", bucket: "b", key: "k", status: 404, reply: reply) == "NoSuchKey: The specified key does not exist. (GET b/k, status 404, request id R1)"
+    none = answers.Reply(code: "", message: "", request_id: "", region: "eu-west-1")
+    assert message_for(method: "HEAD", bucket: "b", key: "", status: 301, reply: none) == "301: S3 answered no error document. (HEAD b, status 301, the bucket stands in eu-west-1)"
+    assert request_named(method: "GET", bucket: "", key: "") == "GET the service"

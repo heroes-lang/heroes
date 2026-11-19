@@ -1,0 +1,155 @@
+# The header fields S3 reads and answers: an object's metadata
+# (`x-amz-meta-`), its tags as a query (`x-amz-tagging`), the whole size a
+# `Content-Range` names, the checksum an answer carries, the source of a
+# copy, and what a name and a value must be to be sent at all.
+
+use http
+use numbers
+use s3/internal/checksums
+use s3/internal/signing
+use strings
+use url
+
+# The prefix of a field of metadata.
+constant META_PREFIX: str
+    "x-amz-meta-"
+
+# Whether `name` is a token of RFC 9110, which a field's name must be:
+# letters, digits and ``!#$%&'*+-.^_`|~``, not empty.
+function is_token(name: str) -> bool
+    if name == ""
+        return false
+
+    for c in name.chars()
+        b = c[0]
+        letter = b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z'
+        digit = b >= '0' && b <= '9'
+
+        if !letter && !digit && !strings.contains(s: "!#$%&'*+-.^_`|~", substr: c)
+            return false
+
+    return true
+
+# Whether `value` may be sent as a field's value: no line end and no other
+# control character but a tab.
+function is_value(value: str) -> bool
+    for c in value.chars()
+        if c[0] < 0x20 && c[0] != '\t' || c[0] == 0x7f
+            return false
+
+    return true
+
+# Fails `invalid` where `name` is no token or `value` holds a line end or a
+# control character, naming `what`.
+function check_field(name: str, value: str, what: str) -> ()?
+    if !is_token(name)
+        return fail(
+            code: "invalid",
+            msg: f"{what}: the name {signing.quoted(name)} is no token of letters, digits and !#$%&'*+-.^_`|~"
+        )
+
+    if !is_value(value)
+        return fail(
+            code: "invalid",
+            msg: f"{what} {signing.quoted(name)}: its value holds a line end or a control character"
+        )
+    return ok()
+
+# The metadata `headers` carries, each `x-amz-meta-` field's name in lower
+# case without the prefix, in their order.
+function metadata_of(headers: [http.Header]) -> [url.Pair]
+    out: [url.Pair] @= []
+
+    for h in headers
+        name = strings.to_lower_ascii(h.name)
+
+        if strings.has_prefix(s: name, prefix: META_PREFIX)
+            out @ out.push(url.Pair(key: name.slice(from: META_PREFIX.len(), to: name.len()), value: h.value))
+
+    return out
+
+# The tags `tags` as `x-amz-tagging` sends them: a query whose keys and
+# values are URI-encoded, a space `%20`.
+function tagging_value(tags: [url.Pair]) -> str
+    pieces: [str] @= []
+
+    for t in tags
+        pieces @ pieces.push(
+            signing.uri_encode(t.key, keep_slash: false) + "=" + signing.uri_encode(t.value, keep_slash: false)
+        )
+
+    return pieces.join("&")
+
+# The whole size a `Content-Range` of `bytes first-last/size` names. Fails
+# `invalid` where it is no such field or its size is `*`.
+function total_of(value: str) -> i64?
+    match strings.split_once(s: value, sep: "/")
+        .err _ => return fail(code: "invalid", msg: f"the Content-Range {signing.quoted(value)} names no whole size")
+        .ok halves =>
+            match numbers.parse_int(strings.trim(halves.after))
+                .ok n => return ok(n)
+                .err _ => return fail(
+                    code: "invalid",
+                    msg: f"the Content-Range {signing.quoted(value)} names no whole size"
+                )
+
+# The checksum `headers` carries, its name in upper case and its value;
+# two "" where none.
+function checksum_of(headers: [http.Header]) -> [str]
+    for h in headers
+        name = strings.to_lower_ascii(h.name)
+
+        if strings.has_prefix(s: name, prefix: "x-amz-checksum-") && name != "x-amz-checksum-type" && name != "x-amz-checksum-algorithm" && name != "x-amz-checksum-mode"
+            upper = strings.to_upper_ascii(name.slice(from: 15, to: name.len()))
+
+            if checksums.is_known(upper)
+                return [upper, h.value]
+
+    return ["", ""]
+
+# The `x-amz-copy-source` of the object `key` of `bucket`: the bucket, `/`
+# and the key URI-encoded with its `/` kept.
+function copy_source(bucket: str, key: str) -> str
+    return bucket + "/" + signing.uri_encode(key, keep_slash: true)
+
+# `n` as text, or "" for 0: a field left out.
+function count_text(n: i64) -> str
+    if n == 0
+        return ""
+    return f"{n}"
+
+# Fails `invalid` where `key` cannot name an object: empty, or longer than
+# the 1,024 bytes S3 holds.
+function check_key(key: str) -> ()?
+    if key == ""
+        return fail(code: "invalid", msg: "an object's key is empty")
+
+    if key.len() > 1_024
+        return fail(code: "invalid", msg: f"the key of {key.len()} bytes passes the 1,024 bytes S3 holds")
+    return ok()
+
+test "is_token and is_value: a name, an empty one, a space and a colon, a value with a tab and with a line end"
+    assert is_token("x-amz-meta-a") && is_token("A1!#") && !is_token("") && !is_token("a b") && !is_token("a:b")
+    assert is_value("a\tb c") && is_value("") && !is_value("a\nb") && !is_value("a\rb") && !is_value("\u{7f}")
+    assert check_field(name: "ok", value: "v", what: "metadata").is_err() == false
+    assert check_field(name: "a b", value: "v", what: "metadata").is_err()
+
+test "metadata_of: two fields of metadata in any case among others, and none"
+    h = [
+        http.Header(name: "X-Amz-Meta-Colour", value: "blue")
+        http.Header(name: "Content-Type", value: "t")
+        http.Header(name: "x-amz-meta-n", value: "")
+    ]
+    assert metadata_of(h) == [url.Pair(key: "colour", value: "blue"), url.Pair(key: "n", value: "")]
+    assert metadata_of([]).len() == 0
+
+test "tagging_value: none, two tags, and a space, a plus and an equals sign encoded"
+    assert tagging_value([]) == ""
+    assert tagging_value([url.Pair(key: "a", value: "1"), url.Pair(key: "b c", value: "x+y=z")]) == "a=1&b%20c=x%2By%3Dz"
+
+test "total_of, checksum_of and copy_source: a range's size, an unknown size, a checksum among fields, none, and a key with a space"
+    assert total_of("bytes 0-9/443").must() == 443 && total_of("bytes 0-9/*").is_err() && total_of("garbage").is_err()
+    assert checksum_of([http.Header(name: "x-amz-checksum-type", value: "FULL_OBJECT"), http.Header(name: "X-Amz-Checksum-Crc32c", value: "mnG7TA==")]) == ["CRC32C", "mnG7TA=="]
+    assert checksum_of([http.Header(name: "x-amz-checksum-mode", value: "ENABLED")]) == ["", ""]
+    assert copy_source(bucket: "b", key: "a b/c") == "b/a%20b/c"
+    assert count_text(0) == "" && count_text(3) == "3"
