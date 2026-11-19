@@ -2,10 +2,12 @@
 # byte index, an `i64`, as the language indexes a `str`, and every index a
 # function here cuts at is a character's first byte, so no text read from
 # outside makes one abort. A search that finds nothing fails `not_found`; none
-# answers -1. A character is what `s.chars()` yields, a `str` of one
-# character, and a function that takes a function takes a top-level one over
-# one character. What the language does itself is not here: `join`, `repeat`,
-# `chars`, `slice`, `+`, and `map`, `filter`, `any` and `all` over
+# answers -1. A failure's message quotes a text it names where it is 32 bytes
+# or shorter, its control and invisible characters escaped, and names a
+# longer one by its length. A character is what `s.chars()` yields, a `str`
+# of one character, and a function that takes a function takes a top-level
+# one over one character. What the language does itself is not here: `join`,
+# `repeat`, `chars`, `slice`, `+`, and `map`, `filter`, `any` and `all` over
 # `s.chars()`. A word quoted for a POSIX shell is `process.quote`'s, beside
 # the shell it runs; a text read as the words a shell or a Windows command
 # line gives is here.
@@ -14,6 +16,7 @@ use strings/internal/automaton
 use strings/internal/bounds
 use strings/internal/bytewise
 use strings/internal/casing
+use strings/internal/messages
 use strings/internal/multi
 use strings/internal/padding
 use strings/internal/pieces
@@ -416,8 +419,12 @@ function expand_tabs(s: str, tab_width: i64) -> str
 
 ## Case
 
-# `s` in lower case, each character by Unicode's mapping, which is the same
-# for every language. The text may change its length in bytes and in
+# `s` in lower case by Unicode's full mapping, the same for every language:
+# each character lowered alone but the capital sigma, which becomes "ς"
+# where it ends a word and "σ" elsewhere, by Unicode's Final_Sigma (a cased
+# letter before it and none after it, an apostrophe or another
+# case-ignorable character passed over), as Python and Rust write it:
+# "ΣΊΣΥΦΟΣ" is "σίσυφος". The text may change its length in bytes and in
 # characters.
 function to_lower(s: str) -> str
     return casing.to_lower(s)
@@ -612,20 +619,24 @@ function to_slug(s: str) -> str
 function split_shell(s: str) -> [str]?
     return shell.split(s)
 
-# The arguments of a Windows command line, the program name first, as
-# `CommandLineToArgvW` and the C runtime read them by Microsoft's documented
-# rules: arguments between spaces and tabs; double quotes that group, two
-# side by side inside a quoted part making one; backslashes as they stand
-# but before a double quote, where they are halved and an odd one left makes
-# the quote itself; and a program name that runs to the first blank outside
-# double quotes, its quotes taken away and its backslashes as they stand.
+# The arguments of a Windows command line, the program name first, as the C
+# runtime reads them into a program's `argv` by Microsoft's documented rules
+# since Visual Studio 2008: arguments between spaces and tabs; double quotes
+# that group, two side by side inside a quoted part making one quote and the
+# part going on; backslashes as they stand but before a double quote, where
+# they are halved and an odd one left makes the quote itself; and a program
+# name that runs to the first blank outside double quotes, its quotes taken
+# away and its backslashes as they stand.
 #
 # - `s`: the command line; one that begins with a blank names an empty
 #   program, and one that ends inside double quotes ends its last argument.
 #
 # The empty line has no arguments, where `CommandLineToArgvW` answers the
-# path of the program running. See also `quote_windows_args` and
-# `split_shell`.
+# path of the program running. Shell32's `CommandLineToArgvW` reads the same
+# but for two double quotes inside a quoted part, which it makes one quote
+# that closes the part: `p "a""b" c` is `p`, `a"b`, `c` here and in the C
+# runtime, and `p`, `a"b c` there (both run on Windows, 2026-11-18). See also
+# `quote_windows_args` and `split_shell`.
 function split_windows_args(s: str) -> [str]
     return windows_args.split(s)
 
@@ -827,12 +838,12 @@ function search_patterns(s: str, patterns: Patterns lent) -> PatternMatch?
 # `match_patterns_at`.
 function search_patterns_from(s: str, patterns: Patterns lent, from: i64) -> PatternMatch?
     if from > s.len()
-        return fail(code: NOT_FOUND, msg: f"no pattern in {multi.shown(s)} from byte {from}")
+        return fail(code: NOT_FOUND, msg: search.missing(what: "pattern", s: s, from: from))
     begin = unicode.ceil_char_boundary(s, from)
     f = multi.search_from(m: patterns.compiled, s: s, from: begin)
 
     if f.pattern == -1
-        return fail(code: NOT_FOUND, msg: f"no pattern in {multi.shown(s)} from byte {from}")
+        return fail(code: NOT_FOUND, msg: search.missing(what: "pattern", s: s, from: from))
     return ok(PatternMatch(pattern: f.pattern, start: f.start, end: f.end, text: s.slice(from: f.start, to: f.end)))
 
 # The match of the patterns that begins at byte `at` of `s`, as a lexer reads
@@ -850,7 +861,7 @@ function match_patterns_at(s: str, patterns: Patterns lent, at: i64) -> PatternM
     f = multi.anchored(m: patterns.compiled, s: s, at: at)
 
     if f.pattern == -1
-        return fail(code: NOT_FOUND, msg: f"no pattern at byte {at} of {multi.shown(s)}")
+        return fail(code: NOT_FOUND, msg: f"no pattern at byte {at} of {messages.shown(s)}")
     return ok(PatternMatch(pattern: f.pattern, start: f.start, end: f.end, text: s.slice(from: f.start, to: f.end)))
 
 # Every match of the patterns in `s`, one after another from the start, each
@@ -976,7 +987,7 @@ test "search_patterns_from: a start below 0, inside a character, at the end, pas
 
     match search_patterns_from(s: "aéx", patterns: p, from: 9)
         .ok _  => assert false
-        .err e => assert e.code == NOT_FOUND && e.msg == "no pattern in \"aéx\" from byte 9"
+        .err e => assert e.code == NOT_FOUND && e.msg == "no pattern in \"aéx\" at or after byte 9"
 
 test "match_patterns_at: each kind at one place, nothing there, past the end, and no pattern at all"
     pats = ["a", "abc", "ab"]
@@ -1014,6 +1025,10 @@ test "has_match: the kinds alike, the empty pattern, and no pattern"
     assert !has_match(s: "abc", patterns: compile_patterns([], .leftmost_first))
 
 ## Examples
+
+# A name lowered, its first sigma inside the word and its last one ending it.
+test "to_lower: a Greek name, whose last sigma ends its word"
+    assert to_lower("ΣΊΣΥΦΟΣ") == "σίσυφος"
 
 # The words of a name in camel case, a run of capitals among them.
 test "case_words: a name with an acronym"

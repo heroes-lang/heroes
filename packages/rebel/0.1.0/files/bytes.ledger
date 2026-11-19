@@ -94,7 +94,7 @@ capability bytes/find-first-of-a-set  where the first byte of a set stands
   go      bytes.IndexAny, bytes.ContainsAny
   rust    -
   python  -
-  note    the set is bytes; Go's is a string of characters, and Go reads `s` as UTF-8
+  note    the set is bytes; Go's is a string of characters, and Go reads `s` as UTF-8. A set longer than 8 bytes is asked through a table of 256 flags built once, so the search is linear in `s` whatever the set's length; `index_of_any_last`, `split_any`, `trim_any`, `trim_start_any` and `trim_end_any` the same. Until 2026-11-19 each byte was compared with the whole set: measured that day, a million bytes against a set of 5,000 took 23.18 s before and 0.06 s after, and each of the six others on 100,000 bytes about 2.3 s before and 0.02 s after
 
 capability bytes/find-last-of-a-set  where the last byte of a set stands
   heroes  bytes.index_of_any_last
@@ -640,7 +640,7 @@ capability bytes/many-patterns  many patterns of bytes compiled once into one au
   go      -
   rust    aho_corasick::AhoCorasick::find, AhoCorasick::find_iter, AhoCorasick::find_overlapping_iter, AhoCorasick::is_match (over `&[u8]`)
   python  ahocorasick.Automaton (its keys as sequences of integers)
-  note    the twin of `strings`' search of many patterns, whose blocks name the rest of Rust's crate aho-corasick and of pyahocorasick; it is written apart because `strings` and `bytes` stand on one layer and neither may use the other. An empty pattern matches at every index, as Rust's does; its answers held to Rust's crate aho-corasick 1.1.5 over 10,091 generated cases with no empty pattern, every one alike (bytes 0 and 255 and bytes that are not UTF-8 among them), and to a naive search of the definitions over 12,000 with empty patterns, on 2026-11-17; where a pattern is empty Rust's crate departs from its own definition, as `strings`' note says
+  note    the twin of `strings`' search of many patterns, whose blocks name the rest of Rust's crate aho-corasick and of pyahocorasick; it is written apart because `strings` and `bytes` stand on one layer and neither may use the other. An empty pattern matches at every index, as Rust's does; a failure's message names an input over 32 bytes by its length and never copies it, measured 2026-11-19 on a million bytes over every function of the package that fails (the longest message 106 bytes; `search_patterns_from`'s 47) and held by a test, so a report that the message quoted the whole input, read and unrun, changed nothing; its answers held to Rust's crate aho-corasick 1.1.5 over 10,091 generated cases with no empty pattern, every one alike (bytes 0 and 255 and bytes that are not UTF-8 among them), and to a naive search of the definitions over 12,000 with empty patterns, on 2026-11-17; where a pattern is empty Rust's crate departs from its own definition, as `strings`' note says
 
 capability bytes/many-patterns-replace  every match of many patterns of bytes replaced at once, each by its pattern's replacement or by what a function answers
   heroes  bytes.replace_patterns_all, bytes.replace_patterns_all_by

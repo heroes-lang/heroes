@@ -42,36 +42,38 @@ function trim_end_where(s: [u8], accepts: (function(u8) -> bool)) -> [u8]
     return s.slice(from: 0, to: last_kept(s, accepts, 0))
 
 # The index of the first byte of `s` that `set` does not hold.
-function first_outside(s: [u8], set: [u8]) -> i64
+function first_outside(s: [u8], set: search.ByteSet lent) -> i64
     at: i64 @= 0
 
-    while at < s.len() && search.holds(set, s[at])
+    while at < s.len() && search.in_set(set, s[at])
         at @ at + 1
 
     return at
 
 # The index just after the last byte of `s` that `set` does not hold, never
 # below `floor`.
-function last_outside(s: [u8], set: [u8], floor: i64) -> i64
+function last_outside(s: [u8], set: search.ByteSet lent, floor: i64) -> i64
     at: i64 @= s.len()
 
-    while at > floor && search.holds(set, s[at - 1])
+    while at > floor && search.in_set(set, s[at - 1])
         at @ at - 1
 
     return at
 
-# `s` without the bytes of `set` at either end.
+# `s` without the bytes of `set` at either end, in time linear in `s`
+# whatever the set's length.
 function trim_any(s: [u8], set: [u8]) -> [u8]
-    from = first_outside(s: s, set: set)
-    return s.slice(from: from, to: last_outside(s: s, set: set, floor: from))
+    members = search.byte_set(set)
+    from = first_outside(s: s, set: members)
+    return s.slice(from: from, to: last_outside(s: s, set: members, floor: from))
 
 # `s` without the bytes of `set` at its start.
 function trim_start_any(s: [u8], set: [u8]) -> [u8]
-    return s.slice(from: first_outside(s: s, set: set), to: s.len())
+    return s.slice(from: first_outside(s: s, set: search.byte_set(set)), to: s.len())
 
 # `s` without the bytes of `set` at its end.
 function trim_end_any(s: [u8], set: [u8]) -> [u8]
-    return s.slice(from: 0, to: last_outside(s: s, set: set, floor: 0))
+    return s.slice(from: 0, to: last_outside(s: s, set: search.byte_set(set), floor: 0))
 
 # `s` without `prefix` at its start, once, or `s` itself.
 function trim_prefix(s: [u8], prefix: [u8]) -> [u8]
@@ -215,6 +217,8 @@ test "first_kept, last_kept, first_outside and last_outside: where the kept byte
     assert first_kept(t("12"), ascii.is_digit) == 2
     assert last_kept(t("ab12"), ascii.is_digit, 0) == 2
     assert last_kept(t("1212"), ascii.is_digit, 3) == 3
-    assert first_outside(s: t("xxa"), set: t("x")) == 2
-    assert last_outside(s: t("axx"), set: t("x"), floor: 0) == 1
-    assert last_outside(s: t("xxx"), set: t("x"), floor: 2) == 2
+    assert first_outside(s: t("xxa"), set: search.byte_set(t("x"))) == 2
+    assert last_outside(s: t("axx"), set: search.byte_set(t("x")), floor: 0) == 1
+    assert last_outside(s: t("xxx"), set: search.byte_set(t("x")), floor: 2) == 2
+    assert first_outside(s: t("xyzxa"), set: search.byte_set(t("abcdefghijklmnopqrstuvwxyz").slice(from: 1, to: 26))) == 4
+    assert last_outside(s: t("axyzx"), set: search.byte_set(t("bcdefghijklmnopqrstuvwxyz")), floor: 0) == 1

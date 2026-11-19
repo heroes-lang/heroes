@@ -134,8 +134,10 @@ function split_terminated(s: str, sep: str) -> [str]
         return pieces.slice(from: 0, to: pieces.len() - 1)
     return pieces
 
-# The pieces of `s` between its characters that `set` holds.
+# The pieces of `s` between its characters that `set` holds, in time linear
+# in `s` whatever the set's length.
 function split_any(s: str, set: str) -> [str]
+    members = scan.char_set(set)
     out: [str] @= []
     from: i64 @= 0
     at: i64 @= 0
@@ -143,7 +145,7 @@ function split_any(s: str, set: str) -> [str]
     while at < s.len()
         end = scan.next_at(s, at)
 
-        if scan.holds_char(set: set, s: s, at: at, end: end)
+        if scan.in_set(set: members, s: s, at: at, end: end)
             out @ out.push(s.slice(from: from, to: at))
             from @ end
         at @ end
@@ -251,6 +253,8 @@ test "split_any: two separators, an empty set, an empty text, separators at both
     assert split_any(s: "", set: ",") == [""]
     assert split_any(s: ",a,", set: ",") == ["", "a", ""]
     assert split_any(s: "è,ù;à", set: ",;") == ["è", "ù", "à"]
+    assert split_any(s: "è,ù;à", set: ",;:.!?-_+") == ["è", "ù", "à"]
+    assert split_any(s: "aébèc", set: "éxyzwvutsr") == ["a", "bèc"]
     assert split_any(s: "aéb", set: "é") == ["a", "b"]
 
 test "split_where: separators side by side, an empty text, one alone, and characters of more than one byte"

@@ -2,15 +2,18 @@
 # function accepts: the searches of `strings`, each answering a byte index
 # that begins a character, or failing `not_found`.
 
+use strings/internal/messages
 use strings/internal/scan
 use unicode
 
 # What a search that found nothing says: what was sought, in which text, and
-# from where, where the search did not start at the beginning.
+# from where, where the search did not start at the beginning. `what` is
+# already written for a message, by `messages.sought` or around `messages.shown`,
+# and `s` is named by `messages.shown`, so the message is bounded and escaped.
 function missing(what: str, s: str, from: i64) -> str
     if from > 0
-        return f"no {what} in {scan.shown(s)} at or after byte {from}"
-    return f"no {what} in {scan.shown(s)}"
+        return f"no {what} in {messages.shown(s)} at or after byte {from}"
+    return f"no {what} in {messages.shown(s)}"
 
 # Whether `s` holds `substr`.
 function contains(s: str, substr: str) -> bool
@@ -49,7 +52,7 @@ function has_suffix(s: str, suffix: str) -> bool
 # Where `substr` first begins in `s` at or after byte `from`.
 function index_of_from(s: str, substr: str, from: i64) -> i64?
     if from > s.len()
-        return fail(code: scan.NOT_FOUND, msg: missing(what: scan.shown(substr), s: s, from: from))
+        return fail(code: scan.NOT_FOUND, msg: missing(what: messages.sought(substr), s: s, from: from))
     start: i64 @= from
 
     if start < 0
@@ -60,7 +63,7 @@ function index_of_from(s: str, substr: str, from: i64) -> i64?
 
     match scan.first_from(scan.finder(substr), s, start)
         .ok at => return ok(at)
-        .err _ => return fail(code: scan.NOT_FOUND, msg: missing(what: scan.shown(substr), s: s, from: start))
+        .err _ => return fail(code: scan.NOT_FOUND, msg: missing(what: messages.sought(substr), s: s, from: start))
 
 # Where `substr` last begins in `s`.
 function index_of_last(s: str, substr: str) -> i64?
@@ -68,36 +71,42 @@ function index_of_last(s: str, substr: str) -> i64?
         return ok(s.len())
     return scan.last_before(scan.finder(substr), s, s.len())
 
-# Where the first character that `set` holds begins in `s` at or after byte
-# `from`.
-function index_of_any_from(s: str, set: str, from: i64) -> i64?
-    what = f"character of {scan.shown(set)}"
+# What a search for a character of `set` sought, as its message names it.
+function any_of(set: str) -> str
+    return f"character of {messages.shown(set)}"
 
+# Where the first character that `set` holds begins in `s` at or after byte
+# `from`. The set is made ready once, so the search is linear in `s`
+# whatever the set's length.
+function index_of_any_from(s: str, set: str, from: i64) -> i64?
     if from > s.len()
-        return fail(code: scan.NOT_FOUND, msg: missing(what: what, s: s, from: from))
+        return fail(code: scan.NOT_FOUND, msg: missing(what: any_of(set), s: s, from: from))
+    members = scan.char_set(set)
     at: i64 @= unicode.ceil_char_boundary(s, from)
 
     while at < s.len()
         end = scan.next_at(s, at)
 
-        if scan.holds_char(set: set, s: s, at: at, end: end)
+        if scan.in_set(set: members, s: s, at: at, end: end)
             return ok(at)
         at @ end
 
-    return fail(code: scan.NOT_FOUND, msg: missing(what: what, s: s, from: from))
+    return fail(code: scan.NOT_FOUND, msg: missing(what: any_of(set), s: s, from: from))
 
-# Where the last character that `set` holds begins in `s`.
+# Where the last character that `set` holds begins in `s`, in time linear in
+# `s` whatever the set's length.
 function index_of_any_last(s: str, set: str) -> i64?
+    members = scan.char_set(set)
     end: i64 @= s.len()
 
     while end > 0
         at = scan.previous_at(s, end)
 
-        if scan.holds_char(set: set, s: s, at: at, end: end)
+        if scan.in_set(set: members, s: s, at: at, end: end)
             return ok(at)
         end @ at
 
-    return fail(code: scan.NOT_FOUND, msg: missing(what: f"character of {scan.shown(set)}", s: s, from: 0))
+    return fail(code: scan.NOT_FOUND, msg: missing(what: any_of(set), s: s, from: 0))
 
 # Where the first character that `accepts` accepts begins in `s` at or after
 # byte `from`.
@@ -232,6 +241,27 @@ test "index_of_from: at the start, further in, the empty text, past the end, bef
         .ok _  => assert false
         .err e => assert e.code == "not_found" && e.msg == "no \"x\" in \"abcabc\" at or after byte 2"
 
+# Measured 2026-11-19 on a million bytes: every message of `strings` names a
+# text over 32 bytes by its length and escapes a shorter one, the longest 128
+# bytes (`quote_windows_args`'s), where until then that function copied a
+# million-byte name whole and an escape and a line feed reached a message raw.
+test "index_of_from, index_of_any_from and index_where_from: a long needle and a long text named by their lengths, and control characters escaped"
+    match index_of_from(s: repeat("a", 100), substr: repeat("z", 40), from: 3)
+        .ok _  => assert false
+        .err e => assert e.msg == "no text of 40 bytes in a text of 100 bytes at or after byte 3"
+
+    match index_of_from(s: "\u{1b}[2J\nline", substr: "z", from: 0)
+        .ok _  => assert false
+        .err e => assert e.msg == "no \"z\" in \"\\x1b[2J\\nline\""
+
+    match index_of_any_from(s: "abc", set: repeat("z", 33), from: 0)
+        .ok _  => assert false
+        .err e => assert e.msg == "no character of a text of 33 bytes in \"abc\""
+
+    match index_where_from(s: "a\tb\"", accepts: is_digit, from: 1)
+        .ok _  => assert false
+        .err e => assert e.msg == "no character accepted in \"a\\tb\\\"\" at or after byte 1"
+
 test "index_of_last: repeats, overlapping ones, the empty text, absent, and characters of more than one byte"
     assert index_of_last(s: "abcabc", substr: "bc").must() == 4
     assert index_of_last(s: "aaa", substr: "aa").must() == 1
@@ -251,6 +281,8 @@ test "index_of_any_from: the first of a set, an empty set, from inside a charact
     assert index_of_any_from(s: "città", set: "à", from: 5).is_err()
     assert index_of_any_from(s: "abc", set: "c", from: 0 - 3).must() == 2
     assert index_of_any_from(s: "abc", set: "a", from: 9).is_err()
+    assert index_of_any_from(s: "città", set: "àbdefghjklmn", from: 0).must() == 4
+    assert index_of_any_from(s: "città", set: "àbdefghjklmn", from: 5).is_err()
 
     match index_of_any_from(s: "abc", set: "xy", from: 0)
         .ok _  => assert false
@@ -260,6 +292,8 @@ test "index_of_any_last: the last of a set, an empty set, and characters of more
     assert index_of_any_last(s: "golang", set: "go").must() == 5
     assert index_of_any_last(s: "città", set: "ct").must() == 3
     assert index_of_any_last(s: "àbà", set: "à").must() == 3
+    assert index_of_any_last(s: "àbà", set: "àxyzwvutsr").must() == 3
+    assert index_of_any_last(s: "città", set: "èxyzwvqsr").is_err()
     assert index_of_any_last(s: "abc", set: "").is_err()
     assert index_of_any_last(s: "", set: "a").is_err()
 

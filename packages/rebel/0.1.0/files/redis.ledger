@@ -56,7 +56,7 @@ capability redis/login  a password and a user of Redis 6's access lists sent at 
   go      Options (Username, Password, CredentialsProvider), Auth, AuthACL, Select, SwapDB, ClientSetName, ClientSetInfo, Hello
   rust    -
   python  auth, credentials, CredentialProvider, UsernamePasswordCredentialProvider, auth, client_setinfo, client_setname, hello, select, swapdb, reset
-  note    `HELLO 3 AUTH user password`, or `AUTH` over RESP2; `SELECT` and `CLIENT SETNAME` after it; `SWAPDB` and `RESET` run through `call`
+  note    `HELLO 3 AUTH user password`, or `AUTH` over RESP2; `SELECT` and `CLIENT SETNAME` after it; `SWAPDB` and `RESET` run through `call`. A server started with no password, or whose user is `nopass`, takes any password in `HELLO 3 AUTH` (Redis 8.10.2, run 2026-11-19), so the live test asks the server first, `AUTH <user> <a wrong password>` on its open connection, and asserts that `open` with a wrong password fails `permission` only where the server refused that `AUTH`; elsewhere it prints why it did not try. Until that day it asserted the failure on every server and failed on one with no password (the jobs agent's report): held on both kinds that day, plain and `--sanitize`, 1201 tests passing each time
 
 capability redis/tls  TLS from the first byte, the server's certificate checked for its authority and its host
   heroes  redis.Security, redis.open, redis.parse_url

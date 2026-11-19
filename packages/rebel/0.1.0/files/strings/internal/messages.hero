@@ -1,0 +1,119 @@
+# How a message of `strings` names a text it was asked about: quoted and
+# escaped where it is short, by its length where it is long, so that no
+# failure copies a long input and no character a terminal acts on reaches a
+# message raw. It uses no other module of the package.
+
+use unicode
+
+# How many bytes of a text a message quotes; a longer text is named by its
+# length. The bound `bytes` puts on its messages, so a failure of either
+# package says a long input's length and never copies it.
+constant QUOTED: i64
+    32
+
+# The hexadecimal digits in lower case, a value from 0 to 15 indexing its
+# digit.
+constant HEX_DIGITS: str
+    "0123456789abcdef"
+
+# `t` as a message names it: between double quotes and escaped as `escaped`
+# writes it where it is `QUOTED` bytes long or shorter, and "a text of N
+# bytes" where it is longer, so that a message stays one short line, with no
+# character a terminal acts on, whatever it was asked about.
+function shown(t: str) -> str
+    if t.len() > QUOTED
+        return f"a text of {t.len()} bytes"
+    return "\"" + escaped(t) + "\""
+
+# `t` named after a message's "no", as what was sought and not found: as
+# `shown` names it where it is short, and "text of N bytes" where it is long,
+# so that the message reads "no text of 5000 bytes in ...".
+function sought(t: str) -> str
+    if t.len() > QUOTED
+        return f"text of {t.len()} bytes"
+    return shown(t)
+
+# `t` as a message writes it, every character as itself but those a reader
+# cannot see or a terminal acts on: a backslash and a double quote behind a
+# backslash; tab, line feed and carriage return as `\t`, `\n` and `\r`; and
+# every other character `unicode.is_printable` refuses (a control, a format
+# character such as a bidirectional override, a separator of lines or of
+# paragraphs, a space other than U+0020, a private or unassigned code point)
+# as `\x` and two hexadecimal digits below U+0100, `\u` and four below
+# U+10000 and `\U` and eight above, in lower case: Python's `repr`, observed,
+# with a double quote always the one escaped.
+function escaped(t: str) -> str
+    pieces: [str] @= []
+
+    for c in t.chars()
+        pieces @ pieces.push(escape_of(c))
+
+    return pieces.join("")
+
+# The character `c` as `escaped` writes it.
+function escape_of(c: str) -> str
+    if c == "\\" || c == "\""
+        return "\\" + c
+
+    if c == "\t"
+        return "\\t"
+
+    if c == "\n"
+        return "\\n"
+
+    if c == "\r"
+        return "\\r"
+
+    if unicode.is_printable(c)
+        return c
+    n = unicode.code_point(c)
+
+    if n < 0x100
+        return "\\x" + hex_of(n: n, digits: 2)
+
+    if n < 0x10000
+        return "\\u" + hex_of(n: n, digits: 4)
+    return "\\U" + hex_of(n: n, digits: 8)
+
+# `n`, 0 or more and below 16 to the power `digits`, written in `digits`
+# hexadecimal digits in lower case, zeros first.
+function hex_of(n: i64, digits: i64) -> str
+    out: [str] @= []
+    place: i64 @= 1
+
+    for _ in range(from: 1, to: digits)
+        place @ place * 16
+
+    while place > 0
+        d = n / place % 16
+        out @ out.push(HEX_DIGITS.slice(from: d, to: d + 1))
+        place @ place / 16
+
+    return out.join("")
+
+## Tests
+
+# The expected text is what Python 3.15.2's `repr` wrote between its single
+# quotes for the same characters on 2026-11-19 (its Unicode 17.0.0).
+test "escaped: printable characters as themselves, the three named escapes, controls, format characters, separators, private and unassigned code points"
+    assert escaped("") == ""
+    assert escaped("città é😀") == "città é😀"
+    unseen = unicode.from_code_points(
+        [0xa0, 0xad, 0x200b, 0x2028, 0x202e, 0xe000, 0xe0001, 0x10ffff, 0x20, 0xe9, 0x1f600, 0x3000]
+    ).must()
+    mixed = "a\\c\t\n\r\u{1b}\u{7f}\u{85}" + unseen
+    assert escaped(mixed) == "a\\\\c\\t\\n\\r\\x1b\\x7f\\x85\\xa0\\xad\\u200b\\u2028\\u202e\\ue000\\U000e0001\\U0010ffff é😀\\u3000"
+    assert escaped("say \"hi\"") == "say \\\"hi\\\""
+
+test "shown and sought: a control character escaped inside the bound, the bound counted on the bytes given, and a long text named by its length"
+    assert shown("\u{1b}[2J\n") == "\"\\x1b[2J\\n\""
+    assert shown(repeat("\u{1b}", 32)) == "\"" + repeat("\\x1b", 32) + "\""
+    assert shown(repeat("\u{1b}", 33)) == "a text of 33 bytes"
+    assert sought("x") == "\"x\""
+    assert sought(repeat("x", 33)) == "text of 33 bytes"
+
+test "shown: a short text quoted, a long one named by its length"
+    assert shown("") == "\"\""
+    assert shown("città") == "\"città\""
+    assert shown(repeat("é", 16)) == "\"" + repeat("é", 16) + "\""
+    assert shown(repeat("é", 17)) == "a text of 34 bytes"

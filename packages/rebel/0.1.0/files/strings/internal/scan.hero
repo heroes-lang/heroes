@@ -8,6 +8,7 @@
 # cut at. A pattern longer than `SHORT` is sought with a table built once,
 # Knuth, Morris and Pratt's, so that no text makes a search quadratic.
 
+use strings/internal/messages
 use unicode
 
 # The code a search fails with where the text holds nothing of what was
@@ -19,11 +20,6 @@ constant NOT_FOUND: str
 # builds its tables.
 constant SHORT: i64
     8
-
-# How many bytes of a text a message quotes; a longer text is named by its
-# length.
-constant QUOTED: i64
-    40
 
 # A text to seek, with the two tables that make the search of a long one
 # linear in the text, one for each direction.
@@ -46,13 +42,6 @@ constant NO_LIMIT: i64
 # more than any text holds, so it is no limit at all.
 function limit_of(n: u64) -> i64
     return to_i64(n).default(NO_LIMIT)
-
-# `t` as a message names it: quoted where it is short, by its length where
-# it is long.
-function shown(t: str) -> str
-    if t.len() > QUOTED
-        return f"a text of {t.len()} bytes"
-    return f"\"{t}\""
 
 # The byte of `pattern` at `at`, counted from its end where `reversed`.
 function byte_at(pattern: str, at: i64, reversed: bool) -> u8
@@ -109,7 +98,7 @@ function first_from(f: Finder lent, s: str, from: i64) -> i64?
                 return ok(at)
             at @ at + 1
 
-        return fail(code: NOT_FOUND, msg: f"no {shown(f.pattern)} in {shown(s)}")
+        return fail(code: NOT_FOUND, msg: f"no {messages.sought(f.pattern)} in {messages.shown(s)}")
     k: i64 @= 0
     at: i64 @= from
 
@@ -124,7 +113,7 @@ function first_from(f: Finder lent, s: str, from: i64) -> i64?
             return ok(at - m + 1)
         at @ at + 1
 
-    return fail(code: NOT_FOUND, msg: f"no {shown(f.pattern)} in {shown(s)}")
+    return fail(code: NOT_FOUND, msg: f"no {messages.sought(f.pattern)} in {messages.shown(s)}")
 
 # Where `f`'s pattern last begins in `s` with its end at or before byte
 # `end`, which is 0 to `s.len()`. Fails `not_found` where it ends nowhere
@@ -145,7 +134,7 @@ function last_before(f: Finder lent, s: str, end: i64) -> i64?
                 return ok(at)
             at @ at - 1
 
-        return fail(code: NOT_FOUND, msg: f"no {shown(f.pattern)} in {shown(s)}")
+        return fail(code: NOT_FOUND, msg: f"no {messages.sought(f.pattern)} in {messages.shown(s)}")
     k: i64 @= 0
     at: i64 @= end - 1
 
@@ -160,7 +149,7 @@ function last_before(f: Finder lent, s: str, end: i64) -> i64?
             return ok(at)
         at @ at - 1
 
-    return fail(code: NOT_FOUND, msg: f"no {shown(f.pattern)} in {shown(s)}")
+    return fail(code: NOT_FOUND, msg: f"no {messages.sought(f.pattern)} in {messages.shown(s)}")
 
 # Where the character that begins at byte `at` of `s` ends, which is where
 # the next one begins. Aborts where `at` is not a character's first byte.
@@ -191,13 +180,58 @@ function holds_char(set: str, s: str, at: i64, end: i64) -> bool
 
     return false
 
-## Tests
+# The characters of a set, ready to be asked whether they hold a character of
+# a text at a cost that does not grow with the set: one longer than `SHORT`
+# bytes is asked through a table of its ASCII characters and a map of the
+# code points of its others, built once by `char_set`; a shorter one by
+# comparing its bytes, which costs less than building the table.
+record CharSet
+    # The set's characters, as given.
+    text: str
+    # 128 flags, the one at an ASCII character's byte true where the set holds
+    # it; empty where `text` is `SHORT` bytes long or shorter.
+    ascii: [bool]
+    # The code point of each character of more than one byte the set holds;
+    # empty where `ascii` is.
+    others: {i64: bool}
 
-test "shown: a short text quoted, a long one named by its length"
-    assert shown("") == "\"\""
-    assert shown("città") == "\"città\""
-    assert shown(repeat("é", 20)) == "\"" + repeat("é", 20) + "\""
-    assert shown(repeat("é", 21)) == "a text of 42 bytes"
+# `set` made ready to be asked by `in_set`, in time linear in its length.
+function char_set(set: str) -> CharSet
+    ascii: [bool] @= []
+    others: {i64: bool} @= {}
+
+    if set.len() > SHORT
+        for _ in range(from: 0, to: 128)
+            ascii @ ascii.push(false)
+
+        at: i64 @= 0
+
+        while at < set.len()
+            if set[at] < 128
+                k = to_i64(set[at]).must()
+                ascii[k] @ true
+            else
+                n = unicode.code_point_at(set, at)
+                others[n] @ true
+            at @ next_at(set, at)
+
+    return CharSet(text: set, ascii: ascii, others: others)
+
+# Whether `set` holds the character of `s` from byte `at` up to `end`, where
+# the next one begins: a table or a map asked once for a long set, the bytes
+# of a short one compared.
+function in_set(set: CharSet lent, s: str, at: i64, end: i64) -> bool
+    if set.ascii.len() == 0
+        return holds_char(set: set.text, s: s, at: at, end: end)
+    b = s[at]
+
+    if b < 128
+        k = to_i64(b).must()
+        return set.ascii[k]
+    n = unicode.code_point_at(s, at)
+    return set.others[n].default(false)
+
+## Tests
 
 test "table: the forward and backward tables of a pattern with repeats"
     assert table(pattern: "abcabd", reversed: false) == [0, 0, 0, 0, 1, 2, 0]
@@ -249,6 +283,27 @@ test "next_at and previous_at step over characters of one to four bytes"
     assert previous_at(s, 6) == 3
     assert previous_at(s, 3) == 1
     assert previous_at(s, 1) == 0
+
+test "char_set and in_set: a short set and a long one answer alike, ASCII and characters of two, three and four bytes, an accent that is not its letter, and the empty set"
+    text = "aé€😀zè"
+    short = char_set("é€z")
+    long = char_set("é€😀xyzwvut")
+    assert short.ascii.len() == 0 && long.ascii.len() == 128
+    ends = [1, 3, 6, 10, 11, 13]
+    at: i64 @= 0
+
+    for end in ends
+        held = holds_char(set: "é€😀xyzwvut", s: text, at: at, end: end)
+        assert in_set(set: long, s: text, at: at, end: end) == held
+        assert in_set(set: short, s: text, at: at, end: end) == holds_char(set: "é€z", s: text, at: at, end: end)
+        at @ end
+
+    assert in_set(set: long, s: text, at: 1, end: 3)
+    assert in_set(set: long, s: text, at: 6, end: 10)
+    assert in_set(set: long, s: text, at: 10, end: 11)
+    assert !in_set(set: long, s: text, at: 0, end: 1)
+    assert !in_set(set: long, s: text, at: 11, end: 13)
+    assert !in_set(set: char_set(""), s: "a", at: 0, end: 1)
 
 test "holds_char: a whole character of a set, never part of one"
     assert holds_char(set: "xyz", s: "ay", at: 1, end: 2)

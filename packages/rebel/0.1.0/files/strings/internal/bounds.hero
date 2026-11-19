@@ -2,7 +2,7 @@
 # themselves, and a part of the text cut at indices that may come from
 # outside the program, refused rather than aborting where they cut no part.
 
-use strings/internal/scan
+use strings/internal/messages
 use unicode
 
 # The code `slice_checked` fails with.
@@ -37,17 +37,17 @@ function slice_checked(s: str, from: i64, to: i64) -> str?
     if from < 0 || to > s.len()
         return fail(
             code: INVALID,
-            msg: f"bytes {from} to {to} are outside {scan.shown(s)}, which holds {s.len()} bytes"
+            msg: f"bytes {from} to {to} are outside {messages.shown(s)}, which holds {s.len()} bytes"
         )
 
     if from > to
         return fail(code: INVALID, msg: f"byte {from} comes after byte {to}")
 
     if !unicode.is_char_boundary(s, from)
-        return fail(code: INVALID, msg: f"byte {from} of {scan.shown(s)} is inside a character")
+        return fail(code: INVALID, msg: f"byte {from} of {messages.shown(s)} is inside a character")
 
     if !unicode.is_char_boundary(s, to)
-        return fail(code: INVALID, msg: f"byte {to} of {scan.shown(s)} is inside a character")
+        return fail(code: INVALID, msg: f"byte {to} of {messages.shown(s)} is inside a character")
     return ok(s.slice(from: from, to: to))
 
 ## Tests

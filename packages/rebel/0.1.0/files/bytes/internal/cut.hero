@@ -122,14 +122,16 @@ function split_terminated(s: [u8], sep: [u8]) -> [[u8]]
         return pieces.slice(from: 0, to: pieces.len() - 1)
     return pieces
 
-# The pieces of `s` between its bytes that `set` holds.
+# The pieces of `s` between its bytes that `set` holds, in time linear in
+# `s` whatever the set's length.
 function split_any(s: [u8], set: [u8]) -> [[u8]]
+    members = search.byte_set(set)
     out: [[u8]] @= []
     start: i64 @= 0
     at: i64 @= 0
 
     while at < s.len()
-        if search.holds(set, s[at])
+        if search.in_set(members, s[at])
             out @ out.push(s.slice(from: start, to: at))
             start @ at + 1
         at @ at + 1
@@ -261,6 +263,7 @@ test "split_any and split_where: a set of two, the empty set, separators side by
     assert split_any(s: t("ab"), set: t("")) == [t("ab")]
     assert split_any(s: t(""), set: t(",")) == [t("")]
     assert split_any(s: t(",,"), set: t(",")) == [t(""), t(""), t("")]
+    assert split_any(s: t("a,b;c d"), set: t(",;:.!?-_+=*&^%$#@")) == [t("a"), t("b"), t("c d")]
     assert split_where(t("a b\tc"), ascii.is_space) == [t("a"), t("b"), t("c")]
     assert split_where(t("  "), ascii.is_space) == [t(""), t(""), t("")]
 

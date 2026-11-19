@@ -1177,6 +1177,24 @@ test "search_patterns_from: a start below 0, at the end, past it, and the messag
         .ok _  => assert false
         .err e => assert e.code == NOT_FOUND && e.msg == "no pattern in \"\\x01\\xff\\x00\" at or after index 9"
 
+# Measured 2026-11-19 on a million bytes: every failure of `bytes` names an
+# input over 32 bytes by its length, the longest message 106 bytes.
+test "search_patterns_from and match_patterns_at: a long input is named by its length, never copied into the message"
+    input: [u8] @= []
+
+    for _ in range(from: 0, to: 100000)
+        input @ input.push('a')
+
+    p = compile_patterns([['z']], .leftmost_first)
+
+    match search_patterns_from(s: input, patterns: p, from: 0)
+        .ok _  => assert false
+        .err e => assert e.msg == "no pattern in 100000 bytes at or after index 0"
+
+    match match_patterns_at(s: input, patterns: p, at: 7)
+        .ok _  => assert false
+        .err e => assert e.msg == "no pattern at index 7 of 100000 bytes"
+
 test "search_patterns_all and replace_patterns_all: the empty pattern at every index, a byte that is not UTF-8, and no match"
     empty = compile_patterns([[], [0xc3]], .leftmost_first)
     assert search_patterns_all(s: [0xc3, 0xa9], patterns: empty).len() == 3

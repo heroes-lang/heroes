@@ -43,7 +43,7 @@ capability text/find-first  where a text first holds another
   go      strings.Index, strings.IndexByte, strings.IndexRune
   rust    str::find (a text, a character)
   python  str.find, str.index
-  note    absent is `not_found`, where Go and Python's find answer -1; the empty text is found at 0, as all three say
+  note    absent is `not_found`, where Go and Python's find answer -1; the empty text is found at 0, as all three say. A failure's message, of this and of every function of the package that fails, quotes a text of 32 bytes or fewer escaped as Python's `repr` writes it (a double quote always the one escaped; a control, a format character, a line or paragraph separator, a space but U+0020, a private or unassigned code point as `\x`, `\u` or `\U` and its digits) and names a longer one by its length, the bound `bytes` puts on its own. Measured 2026-11-19 over every function that fails, on a million-byte input and a 5,000-byte needle: the longest message 128 bytes (`quote_windows_args`'s), where until that day `quote_windows_args` wrote 1,000,090 bytes for a 1,000,001-byte program name, an escape and a line feed reached raw all 19 messages that named a short input holding them, two bounds stood (40 and 32 bytes), two wordings ("from byte N" and "at or after byte N", now the second everywhere), and a long needle read "no a text of 5000 bytes in" (now "no text of 5000 bytes in"); tests hold each
 
 capability text/find-first-from  where a text first holds another at or after a position
   heroes  strings.index_of_from
@@ -64,6 +64,7 @@ capability text/find-first-any  where a text first holds a character of a set
   go      strings.IndexAny
   rust    str::find (a set of characters)
   python  -
+  note    a set longer than 8 bytes is asked through a table of its ASCII characters and a map of the code points of its others, built once, so the search is linear in the text whatever the set's length; `contains_any`, `index_of_any_from`, `index_of_any_last`, `split_any`, `trim_any`, `trim_start_any` and `trim_end_any` the same. Until 2026-11-19 every character was compared with the whole set: measured that day, a million bytes against a set of 5,000 took 47.70 s before and 0.08 s after, and each of the six others on 100,000 bytes about 4.8 s before and 0.02 s after
 
 capability text/find-first-any-from  where a text first holds a character of a set at or after a position
   heroes  strings.index_of_any_from
@@ -461,7 +462,7 @@ capability text/lower  a text in lower case
   go      strings.ToLower
   rust    str::to_lowercase
   python  str.lower
-  note    Unicode's full mapping with the word-final sigma, Python's and Rust's: "ΟΔΟΣ" is "οδος" (Go maps one character to one and answers "οδοσ")
+  note    Unicode's full mapping with the word-final sigma, Python's and Rust's: "ΟΔΟΣ" is "οδος" (Go maps one character to one and answers "οδοσ"). The doc said "each character by Unicode's mapping" until 2026-11-19, which the sigma, read with its neighbours, belies; it names Final_Sigma since, with "ΣΊΣΥΦΟΣ" as "σίσυφος" (Python 3.15.2's answer that day) in an example, and the behaviour did not change
 
 capability text/upper  a text in upper case
   heroes  strings.to_upper
@@ -694,14 +695,14 @@ capability text/split-windows-command-line  the arguments of a Windows command l
   go      -
   rust    -
   python  -
-  note    Microsoft's documented rules for `CommandLineToArgvW` and the C runtime since Visual Studio 2008 ("Parsing C++ command-line arguments"), the program name by its own rule: two double quotes inside a quoted part are one quote and the part goes on, where the C runtime before 2008, and `CommandLineToArgvW` by reports, also close the part; the empty line has no arguments, where `CommandLineToArgvW` answers the running program's path. Go's `golang.org/x/sys/windows.DecomposeCommandLine` and Rust's `std::env::args` on Windows read the same rules and are not on this Mac; unrun on Windows, where the box compares it with `CommandLineToArgvW`
+  note    the C runtime's rules since Visual Studio 2008 ("Parsing C++ command-line arguments"), the program name by its own rule: two double quotes inside a quoted part are one quote and the part goes on; the empty line has no arguments, where `CommandLineToArgvW` answers the running program's path. Run on Windows on 2026-11-18 against the UCRT's own `argv` (a child started by `CreateProcessW` with the line as it stands) and shell32's `CommandLineToArgvW`, three lines: the function agreed with the C runtime on all three, and `CommandLineToArgvW` read `p "a""b" c` as two arguments, `p` and `a"b c`, making one quote of the two and closing the part. Decided 2026-11-18 (repairs-3): the C runtime is the rule followed, since it is what a program's `argv` holds and what `quote_windows_args` writes for (Python's `list2cmdline` writes for it too); the doc said both until then and now says where shell32 parts, and that line is a test. Go's `golang.org/x/sys/windows.DecomposeCommandLine` and Rust's `std::env::args` on Windows are not on this Mac and were not asked
 
 capability text/quote-windows-command-line  arguments written into a Windows command line that its rules read back as the same list
   heroes  strings.quote_windows_arg, strings.quote_windows_args
   go      -
   rust    -
   python  subprocess.list2cmdline
-  note    an argument as Python's `list2cmdline` writes it, asked on 2026-11-17 (quoted only where empty or holding a space or a tab, the backslashes before a quote and at the end of a quoted argument doubled), which the rules of 2008 and those before read alike, since it never writes two quotes side by side; the program name by its own rule, which `list2cmdline` does not know, so a name ending in a backslash is read back from its line with the backslash doubled there and whole here, and one holding a double quote fails `invalid`. Go's `syscall.EscapeArg` and `golang.org/x/sys/windows.ComposeCommandLine` are Windows-only and not on this Mac
+  note    an argument as Python's `list2cmdline` writes it, asked on 2026-11-17 (quoted only where empty or holding a space or a tab, the backslashes before a quote and at the end of a quoted argument doubled), which the rules of 2008 and those before read alike, since it never writes two quotes side by side; the program name by its own rule, which `list2cmdline` does not know, so a name ending in a backslash is read back from its line with the backslash doubled there and whole here, and one holding a double quote fails `invalid`, its message naming the name as every message of the package does and the byte where the quote stands (until 2026-11-19 it quoted the name whole, 1,000,090 bytes for a name of 1,000,001). Go's `syscall.EscapeArg` and `golang.org/x/sys/windows.ComposeCommandLine` are Windows-only and not on this Mac
 
 capability text/read-as-stream  a text read like a file
   heroes  refused: a stream is `io`'s, which stands above `strings` and so cannot be named here
@@ -742,7 +743,7 @@ capability text/many-patterns-first  the first match of many patterns in a text,
   go      -
   rust    AhoCorasick::find, AhoCorasick::try_find, aho_corasick::Input, Input::new, Input::range, Input::span, Input::start, Input::end, Input::haystack, Input::get_range, Input::get_span, Input::set_range, Input::set_span, Input::set_start, Input::set_end, Input::is_done
   python  Automaton.iter (its `start` and `end`)
-  note    a search ends at the text's end; one that must stop before it searches a slice, which is a copy here, where Rust's `Input::range` sets both ends
+  note    a search ends at the text's end; one that must stop before it searches a slice, which is a copy here, where Rust's `Input::range` sets both ends. A failure says "at or after byte N", as every search of the package does; it said "from byte N", even from byte 0, until 2026-11-19
 
 capability text/many-patterns-anchored  the match of many patterns that begins at one byte, as a lexer reads its next token
   heroes  strings.match_patterns_at

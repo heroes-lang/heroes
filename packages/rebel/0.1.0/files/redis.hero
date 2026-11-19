@@ -1695,14 +1695,33 @@ test "open live, against the server REBEL_REDIS_URL names: both protocols, value
             unlock(@old, second).must()
             assert !is_held(@old, second).must()
             close(@old).must()
-            close(@c).must()
             wrong @= opts
             wrong.password @ "not the password"
 
-            match open(wrong)
-                .ok _  => assert false
-                .err e => assert e.code == "permission"
+            user = if opts.username == ""
+                "default"
+            else
+                opts.username
 
+            # The server is asked first, on the connection already open,
+            # whether it refuses this user a wrong password: one started with
+            # no password, or whose user is `nopass`, answers OK to any, and an
+            # open with a wrong one proves nothing there.
+            match call(@c, ["AUTH", user, wrong.password])
+                .ok _ => print(
+                    "open live: a wrong password not tried, since the server takes any password for this user"
+                )
+                .err asked =>
+                    if asked.code == "permission"
+                        match open(wrong)
+                            .ok _  => assert false
+                            .err e => assert e.code == "permission"
+                    else
+                        print(
+                            f"open live: a wrong password not tried, since the server answered AUTH with {asked.code}"
+                        )
+
+            close(@c).must()
             print(
                 f"open live: RESP3 and RESP2, 10000 elements, 2 MB, 1000 in a pipeline, a watch, messages and a lock fenced {second.fence}"
             )

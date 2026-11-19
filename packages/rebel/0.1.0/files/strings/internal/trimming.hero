@@ -2,6 +2,7 @@
 # set, the characters a function accepts, a prefix or a suffix. Every cut
 # stands where a character begins or ends.
 
+use strings/internal/messages
 use strings/internal/scan
 use strings/internal/search
 use unicode
@@ -35,13 +36,13 @@ function end_where(s: str, accepts: (function(str) -> bool), floor: i64) -> i64
     return end
 
 # Where the run of characters at the start of `s` that `set` holds ends.
-function start_any(s: str, set: str) -> i64
+function start_any(s: str, set: scan.CharSet lent) -> i64
     at: i64 @= 0
 
     while at < s.len()
         end = scan.next_at(s, at)
 
-        if !scan.holds_char(set: set, s: s, at: at, end: end)
+        if !scan.in_set(set: set, s: s, at: at, end: end)
             return at
         at @ end
 
@@ -49,13 +50,13 @@ function start_any(s: str, set: str) -> i64
 
 # Where the run of characters at the end of `s` that `set` holds begins,
 # never below `floor`.
-function end_any(s: str, set: str, floor: i64) -> i64
+function end_any(s: str, set: scan.CharSet lent, floor: i64) -> i64
     end: i64 @= s.len()
 
     while end > floor
         at = scan.previous_at(s, end)
 
-        if !scan.holds_char(set: set, s: s, at: at, end: end)
+        if !scan.in_set(set: set, s: s, at: at, end: end)
             return end
         end @ at
 
@@ -88,16 +89,17 @@ function trim_end(s: str) -> str
 
 # `s` without the characters of `set` at either end.
 function trim_any(s: str, set: str) -> str
-    from = start_any(s: s, set: set)
-    return s.slice(from: from, to: end_any(s: s, set: set, floor: from))
+    members = scan.char_set(set)
+    from = start_any(s: s, set: members)
+    return s.slice(from: from, to: end_any(s: s, set: members, floor: from))
 
 # `s` without the characters of `set` at its start.
 function trim_start_any(s: str, set: str) -> str
-    return s.slice(from: start_any(s: s, set: set), to: s.len())
+    return s.slice(from: start_any(s: s, set: scan.char_set(set)), to: s.len())
 
 # `s` without the characters of `set` at its end.
 function trim_end_any(s: str, set: str) -> str
-    return s.slice(from: 0, to: end_any(s: s, set: set, floor: 0))
+    return s.slice(from: 0, to: end_any(s: s, set: scan.char_set(set), floor: 0))
 
 # `s` without `prefix` at its start, once.
 function trim_prefix(s: str, prefix: str) -> str
@@ -138,14 +140,14 @@ function trim_suffix_all(s: str, suffix: str) -> str
 function after_prefix(s: str, prefix: str) -> str?
     if search.has_prefix_at(s: s, prefix: prefix, at: 0)
         return ok(s.slice(from: prefix.len(), to: s.len()))
-    return fail(code: scan.NOT_FOUND, msg: f"{scan.shown(s)} does not begin with {scan.shown(prefix)}")
+    return fail(code: scan.NOT_FOUND, msg: f"{messages.shown(s)} does not begin with {messages.shown(prefix)}")
 
 # The text of `s` before `suffix`, failing `not_found` where `s` does not
 # end with it.
 function before_suffix(s: str, suffix: str) -> str?
     if search.has_suffix(s: s, suffix: suffix)
         return ok(s.slice(from: 0, to: s.len() - suffix.len()))
-    return fail(code: scan.NOT_FOUND, msg: f"{scan.shown(s)} does not end with {scan.shown(suffix)}")
+    return fail(code: scan.NOT_FOUND, msg: f"{messages.shown(s)} does not end with {messages.shown(suffix)}")
 
 # The text of `s` between `prefix` and `suffix`, failing `not_found` where
 # `s` does not hold both at its ends, apart.
@@ -156,7 +158,7 @@ function between(s: str, prefix: str, suffix: str) -> str?
         return ok(s.slice(from: prefix.len(), to: s.len() - suffix.len()))
     return fail(
         code: scan.NOT_FOUND,
-        msg: f"{scan.shown(s)} does not hold {scan.shown(prefix)} at its start and {scan.shown(suffix)} at its end apart"
+        msg: f"{messages.shown(s)} does not hold {messages.shown(prefix)} at its start and {messages.shown(suffix)} at its end apart"
     )
 
 ## Tests
@@ -205,6 +207,9 @@ test "trim_start_any and trim_end_any: one end each, and characters of more than
     assert trim_end_any(s: "xxhixx", set: "x") == "xxhi"
     assert trim_start_any(s: "ààbà", set: "à") == "bà"
     assert trim_end_any(s: "àbàà", set: "à") == "àb"
+    assert trim_start_any(s: "ààbà", set: "àxyzwvutsr") == "bà"
+    assert trim_end_any(s: "àbàà", set: "àxyzwvut") == "àb"
+    assert trim_any(s: "xyhiéyx", set: "xyzwvutsrq") == "hié"
     assert trim_end_any(s: "xxx", set: "x") == ""
 
 test "trim_where: both ends, one end each, everything, and characters of more than one byte"

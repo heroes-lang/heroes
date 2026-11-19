@@ -18,13 +18,6 @@ record Found
     # Where it ends: the byte index just after its last byte.
     end: i64
 
-# `s` as a message names it: quoted where it is short, by its length where
-# it is long, so a failed search in a loop never copies a long text.
-function shown(s: str) -> str
-    if s.len() <= 32
-        return "\"" + s + "\""
-    return f"a text of {s.len()} bytes"
-
 # The value that says nothing matched.
 function nothing() -> Found
     return Found(pattern: -1, start: 0, end: 0)
@@ -196,10 +189,6 @@ function overlapping(m: automaton.Machine lent, s: str) -> [Found]
         at @ at + 1
 
 ## Tests
-
-test "shown: a short text quoted and a long one by its length"
-    assert shown("abc") == "\"abc\""
-    assert shown(repeat("é", 20)) == "a text of 40 bytes"
 
 test "earliest: the first end, the longest at one end, a pattern given twice, the empty pattern, and none"
     m = automaton.build(patterns: ["b", "abc", "abcd"], kind: automaton.STANDARD, caseless: false)

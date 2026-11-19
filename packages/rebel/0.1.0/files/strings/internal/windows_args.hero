@@ -1,10 +1,15 @@
 # A Windows command line read into its arguments, and arguments written
-# into one, by the rules Microsoft documents for `CommandLineToArgvW` and
-# for the C runtime since Visual Studio 2008 ("Parsing C++ command-line
-# arguments"): arguments between spaces and tabs, double quotes that group,
-# a backslash that is itself but before a double quote, and the program
-# name read by a rule of its own. Every byte this module stops at is ASCII,
-# so every cut stands between two characters.
+# into one, by the rules Microsoft documents for the C runtime since Visual
+# Studio 2008 ("Parsing C++ command-line arguments"): arguments between spaces
+# and tabs, double quotes that group, a backslash that is itself but before a
+# double quote, and the program name read by a rule of its own. The C runtime
+# is the one followed where `CommandLineToArgvW` parts from it: two double
+# quotes side by side inside a quoted part make one quote and the part goes
+# on, where shell32's call makes one quote and closes the part (measured on
+# Windows, 2026-11-18). Every byte this module stops at is ASCII, so every cut
+# stands between two characters.
+
+use strings/internal/messages
 
 # The code `quoted_line` fails with where a program name holds a double
 # quote, which no line can carry.
@@ -179,7 +184,7 @@ function quoted_line(words: [str]) -> str?
         if program[i] == '"'
             return fail(
                 code: INVALID,
-                msg: f"the program name \"{program}\" holds a double quote, which a Windows command line cannot carry in it"
+                msg: f"the program name, {messages.shown(program)}, holds a double quote at byte {i}, which a Windows command line cannot carry in it"
             )
 
     pieces: [str] @= []
@@ -194,8 +199,9 @@ function quoted_line(words: [str]) -> str?
 
     return ok(pieces.join(" "))
 
-# The cases below follow the rules Microsoft documents; `CommandLineToArgvW`
-# itself is unrun on this Mac.
+# The cases below follow the rules Microsoft documents for the C runtime;
+# neither it nor `CommandLineToArgvW` runs on this Mac, and the three lines
+# the Windows box read with both are the test after these.
 test "split: the empty line, a program alone, blanks of both kinds, and blanks at both ends"
     assert split("").len() == 0
     assert split("prog") == ["prog"]
@@ -227,6 +233,15 @@ test "split: backslashes, alone, before a quote odd and even, and two quotes ins
     assert split("p \"a\"\"\"") == ["p", "a\""]
     assert split("p \"é ü\" ñ") == ["p", "é ü", "ñ"]
 
+# The three lines the box read on 2026-11-18 with the UCRT's own `argv` (a
+# child started by `CreateProcessW` with the line as it stands) and with
+# shell32's `CommandLineToArgvW`: this reads each as the C runtime did. On the
+# first, `CommandLineToArgvW` answered two arguments, `p` and `a"b c`.
+test "split: the lines the C runtime read on Windows, two quotes inside a quoted part where CommandLineToArgvW reads otherwise"
+    assert split("p \"a\"\"b\" c") == ["p", "a\"b", "c"]
+    assert split(" a") == ["", "a"]
+    assert split("\"C:\\dir\\\" a") == ["C:\\dir\\", "a"]
+
 test "quoted: plain, empty, blanks, quotes and backslashes as Python's list2cmdline writes them"
     assert quoted("a") == "a"
     assert quoted("") == "\"\""
@@ -248,7 +263,15 @@ test "quoted_line: none, a program with a blank, the arguments, and every one re
     words = ["C:\\dir with space\\", "a\\", "b c\\", "\"q\"", "", "x\\\\\"y", "é"]
     assert split(quoted_line(words).must()) == words
 
-test "quoted_line fails: a program name holding a double quote"
+test "quoted_line fails: a program name holding a double quote, its message bounded and escaped"
     match quoted_line(["a\"b", "c"])
         .ok _  => assert false
-        .err e => assert e.code == INVALID
+        .err e => assert e.code == INVALID && e.msg == "the program name, \"a\\\"b\", holds a double quote at byte 1, which a Windows command line cannot carry in it"
+
+    match quoted_line([repeat("a", 1000000) + "\"", "c"])
+        .ok _  => assert false
+        .err e => assert e.msg == "the program name, a text of 1000001 bytes, holds a double quote at byte 1000000, which a Windows command line cannot carry in it"
+
+    match quoted_line(["\u{1b}[2J\"", "c"])
+        .ok _  => assert false
+        .err e => assert e.msg == "the program name, \"\\x1b[2J\\\"\", holds a double quote at byte 4, which a Windows command line cannot carry in it"
