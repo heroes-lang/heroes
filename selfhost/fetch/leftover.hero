@@ -33,6 +33,7 @@ use cli/files
 use cli/process
 use cli/strings
 use fetch/run_lock
+use fetch/stage_home
 use fetch/staging
 use module/fingerprint
 
@@ -60,7 +61,7 @@ function recovered(program: str)
     # Never inside a placed package's tree (defect 2576): no writer writes
     # one, so what stands there is that tree's change, which the build of
     # the program that placed it tells, and nothing is undone here.
-    if staging.in_tree(program)
+    if stage_home.in_tree(program)
         return
     made: bool @= false
 

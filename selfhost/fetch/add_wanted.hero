@@ -11,6 +11,7 @@
 use cli/argv
 use cli/process
 use fetch/address
+use fetch/closure
 use fetch/git_source
 use fetch/index_source
 use fetch/staging
@@ -20,6 +21,7 @@ use fetch/verb_place
 use module/catalogue
 use module/entry_name
 use module/fingerprint
+use module/listing
 use module/placed
 use module/sums
 use module_text
@@ -111,6 +113,18 @@ function git_entry(@ledger: staging.Ledger, inv: argv.Invocation, tools: transpo
     if sum.is_err()
         staging.dropped(@s)
         return fail(code: "cannot_place", msg: verb_place.reason(sum))
+
+    # The whole tree's sum is the entry's; an entry of this name with a
+    # `packages` line keeps that line, and the tree is narrowed to it (panel
+    # 253's R6).
+    listed = listing.of(c.listings, entry: name)
+
+    if listed.len() > 0
+        narrowed = closure.narrowed(tree: s.tree, scratch: s.folder, listed: listed, what: "the tree of `" + name + "`")
+
+        if narrowed.is_err()
+            staging.dropped(@s)
+            return fail(code: verb_place.code_of(narrowed), msg: verb_place.why(narrowed))
     e = catalogue.Entry(
         name: name,
         version: "",
@@ -162,7 +176,7 @@ function index_entry(@ledger: staging.Ledger, inv: argv.Invocation, tools: trans
     listed = index_source.versions(tools, index: index, name: name, scratch: ledger.folder)?
     pick = verb_place.version_picked(listed, asked: asked, at: at_sign, index: index.written)?
     e = catalogue.Entry(name: name, version: pick.version, git: "", tag: "", commit: "", path: "", sum: pick.sum)
-    _ = index_source.fetched(@ledger, tools, e: e, program: program, root: root, index: c.index)?
+    _ = index_source.fetched(@ledger, tools, e: e, program: program, root: root, index: c.index, listed: listing.of(c.listings, entry: name))?
     return ok(e)
 
 # Whether the operand is an address rather than a name: a scheme, git's

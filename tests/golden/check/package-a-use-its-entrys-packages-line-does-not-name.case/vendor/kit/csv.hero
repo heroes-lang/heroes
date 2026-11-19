@@ -1,0 +1,6 @@
+# A package the program lists; its own `use` reaches `text`, which the
+# program does not list and need not.
+use text
+
+function first(line: str) -> str
+    return text.before_comma(line)

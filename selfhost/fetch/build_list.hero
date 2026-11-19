@@ -38,6 +38,7 @@ use fetch/staging
 use fetch/transport
 use fetch/versions
 use module/catalogue
+use module/listing
 use module/path_entries
 use module/sums
 
@@ -79,7 +80,7 @@ function chosen(@ledger: staging.Ledger, tools: transport.Tools, program: str, r
         at = pending[pending.len() - 1]
         pending @ pending.slice(from: 0, to: pending.len() - 1)
         e = picks[at].entry
-        tree = placing.placed_tree(@ledger, tools, e: e, program: program, root: root, index: c.index)?
+        tree = placing.placed_tree(@ledger, tools, e: e, program: program, root: root, index: c.index, listed: listing.of(c.listings, entry: e.name))?
         own = placing.own_catalogue(e, folder: tree.folder)?
 
         for r in own.entries

@@ -41,6 +41,14 @@ function differences(placed: str, fetched: str) -> [str]
     for line in was.must()
         sums[fingerprint.name_of(line)] @ line.slice(from: 0, to: fingerprint.NAME_AT)
 
+    # A part placed by a `packages` line (panel 253's R6) is held to the
+    # version's listing it keeps, which names every file the version holds:
+    # a file it left out is no change, and one it keeps is told against that.
+    kept = fingerprint.kept_listing(placed).default("")
+
+    if kept.len() > 0
+        return part_differences(now.must(), kept: kept)
+
     present: {str: bool} @= {}
     out: [str] @= []
 
@@ -60,6 +68,31 @@ function differences(placed: str, fetched: str) -> [str]
         if present[name].is_err()
             out @ out.push("`" + name + "` taken out")
 
+    return sort(out)
+
+# What happened to each file of a part, its lines `now`, against the listing
+# `kept` it keeps: "`a.hero` changed", "`b.hero` added", in the order of their
+# names; the listing itself changed where its own text moved.
+function part_differences(now: [str], kept: str) -> [str]
+    sums: {str: str} @= {}
+
+    for line in keys(fingerprint.kept_lines(kept))
+        sums[fingerprint.name_of(line)] @ line.slice(from: 0, to: fingerprint.NAME_AT)
+
+    out: [str] @= []
+
+    for line in now
+        name = fingerprint.name_of(line)
+
+        if name != fingerprint.LISTING
+            match sums[name]
+                .err _ => out @ out.push("`" + name + "` added")
+                .ok sum =>
+                    if sum != line.slice(from: 0, to: fingerprint.NAME_AT)
+                        out @ out.push("`" + name + "` changed")
+
+    if out.len() == 0
+        return ["`" + fingerprint.LISTING + "` changed"]
     return sort(out)
 
 # The refusal of a run that would place `what` (`"`json` 1.4.2 from the index

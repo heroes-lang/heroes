@@ -1,0 +1,2 @@
+function first(line: str) -> str
+    return line

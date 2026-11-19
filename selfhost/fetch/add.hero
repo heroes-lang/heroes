@@ -7,6 +7,8 @@
 #     heroes add json@1.4.2               that version
 #     heroes add <git address> --tag v1   a git source at a tag, its commit read
 #     heroes add --path ../json           a folder of the author's own
+#     heroes add rebel/csv                a package of the entry `rebel`,
+#                                         added to its `packages` line
 #
 # `--as <name>` names a git or folder entry where its last part will not do;
 # an index package keeps the index's name, which is its identity (R3).
@@ -30,6 +32,7 @@ use cli/files
 use cli/process
 use cli/publish
 use cli/table as cli_table
+use fetch/add_package
 use fetch/add_wanted
 use fetch/address_form
 use fetch/build_list
@@ -65,6 +68,11 @@ function outcome(inv: argv.Invocation, tools: transport.Tools) -> [told.Said]
 
     if c.problem.len() > 0
         return [told.of_catalogue(c)]
+
+    # `rebel/csv`: a package of an entry the catalogue holds, added to its
+    # `packages` line (panel 253's R6, `fetch/add_package.hero`).
+    if add_package.asks(c, operand: inv.file.default(""))
+        return add_package.added(inv, tools: tools, program: program.must(), c: c, operand: inv.file.default(""))
     out: [told.Said] @= []
 
     match added(inv, tools: tools, program: program.must(), c: c)
@@ -105,7 +113,16 @@ function added(inv: argv.Invocation, tools: transport.Tools, program: str, c: ca
 # The build list walked, each tree placed into the run's `ledger`, and the
 # catalogue written: the lines the command prints.
 function placed_and_written(@ledger: staging.Ledger, inv: argv.Invocation, tools: transport.Tools, program: str, c: catalogue.Catalogue, line: str) -> [str]?
-    held = catalogue.Catalogue(file: c.file, index: line, entries: c.entries, problem: "", code: "", at: "", said: "")
+    held = catalogue.Catalogue(
+        file: c.file,
+        index: line,
+        entries: c.entries,
+        listings: c.listings,
+        problem: "",
+        code: "",
+        at: "",
+        said: ""
+    )
     root = transport.root_of(tools, folder: verb_place.dot_if_empty(program), scratch: ledger.folder)?
     wanted = add_wanted.entry_of(@ledger, inv, tools: tools, program: program, root: root, c: held)?
     built = build_list.chosen(@ledger, tools, program: program, root: root, c: held, wanted: wanted)?

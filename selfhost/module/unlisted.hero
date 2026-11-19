@@ -1,0 +1,121 @@
+# A program's `use` of a package its entry's `packages` line does not name
+# (spec § 1; panel 253's R6, ratified 2026-11-19): where the program's
+# catalogue gives an entry a `packages` line, every `use <entry>/<path>` the
+# PROGRAM's own modules write names a path that line names, whole, or is
+# refused, `package_not_listed`, a `path` entry's line included. A package's
+# own files are never judged here: a listed package reaches what it needs
+# through its own bare `use` lines, and the entry places that closure with it
+# (`fetch/closure.hero`), never listed by the program.
+#
+# Told before the graph asks which modules are missing (`modules.errors`), and
+# the `use` it refuses is told once: a module the list does not name is often
+# not placed either, and `module/package_told.hero` says nothing more of it.
+#
+# **The repair is a command, never a `Fix`**: a `Fix` edits a file of the
+# compilation, and the catalogue is none (panel 235's R5,
+# `module/package_told.hero`'s header), so the note names `heroes add
+# <entry>/<path>`, which writes the name into the line (`fetch/add_package.hero`).
+
+use ast
+use diag
+use module/catalogue
+use module/fingerprint
+use module/listing
+use module/paths
+use module/placed
+use module/reached
+use source
+use token
+
+constant CODE: str
+    "package_not_listed"
+
+# How many of a line's names the note quotes before it counts them instead: a
+# catalogue shared by a folder of programs lists them by the hundred.
+constant QUOTED: i64
+    6
+
+# `found` with every `use` of the program's own modules that names a package
+# its entry's `packages` line does not, told at the `use`.
+function told(s: source.Source, uses: [ast.Use], found: [diag.Diagnostic]) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @= found
+
+    for used in uses
+        if source.is_library(s, used.span.start) || placed.is_package(source.module_at(s, used.span.start))
+            continue
+        written = source.span_text(s, used.name)
+
+        if !placed.is_package(written)
+            continue
+        entry = placed.entry_of(written)
+        inside = placed.inside_of(written)
+
+        if listing.has(s.reached.listings, entry: entry) && !listing.names(listing.of(s.reached.listings, entry: entry), wanted: inside)
+            out @ out.push(
+                refused(s, entry: entry, inside: inside, listed: listing.of(s.reached.listings, entry: entry), span: used.name)
+            )
+
+    return out
+
+# Whether `found` already holds this refusal at `span`, so the `use` is told
+# once.
+function said_at(found: [diag.Diagnostic], span: token.Span) -> bool
+    for d in found
+        if d.code == CODE && d.span.start == span.start && d.span.end == span.end
+            return true
+
+    return false
+
+function refused(s: source.Source, entry: str, inside: str, listed: [str], span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: CODE,
+        message: "`<" + entry + ">/" + inside + "` is not among the packages the entry `" + entry + "` places, the ones its `packages` line names",
+        span: span
+    )
+    file = paths.directory_text(s.name) + catalogue.FILE
+    d.notes @ d.notes.push(
+        "`" + file + "`'s `[dependencies." + entry + "]` places " + said(listed) + ", with the modules each one uses; `heroes add " + entry + "/" + inside + "` adds `" + inside + "` to its `packages` line, and a program names every package it uses there"
+    )
+    return d
+
+# What a `use` of `<alias>/<inside>` is told where the package's tree is a
+# part placed by a `packages` line and its version holds the module the part
+# does not: none where the tree is no part or the version holds no such
+# module, the build's own words then standing. The part holds what the line
+# named when it was placed; a line changed since, or a module another package
+# reaches, is placed by `heroes fetch` or listed by `heroes add`.
+function part_lacks(package: reached.Package, inside: str, span: token.Span) -> [diag.Diagnostic]
+    kept = fingerprint.kept_listing(package.opened).default("")
+
+    if kept.len() == 0
+        return []
+
+    for line in keys(fingerprint.kept_lines(kept))
+        if fingerprint.name_of(line) == inside + ".hero"
+            return [
+                diag.new_diagnostic(code: "package_unread", message: "`<" + package.alias + ">/" + inside + "` is a module of the package `" + package.alias + "`, and its tree at `" + package.root + "` does not hold it: a tree placed by the entry's `packages` line holds what that line named when it was placed and the modules those use — `heroes fetch` places what the line names now, and `heroes add " + package.alias + "/" + inside + "` adds a package it does not name", span: span)
+            ]
+
+    return []
+
+# The names of a `packages` line as the note says them: each quoted, or their
+# count past `QUOTED`.
+function said(listed: [str]) -> str
+    if listed.len() > QUOTED
+        return listed.len().to_str() + " packages"
+    quoted: [str] @= []
+
+    for one in listed
+        quoted @ quoted.push("`" + one + "`")
+
+    if quoted.len() == 1
+        return quoted[0]
+    return quoted.slice(from: 0, to: quoted.len() - 1).join(", ") + " and " + quoted[quoted.len() - 1]
+
+## Tests
+
+test "a line's names are quoted, each, until they are too many to read"
+    assert said(["csv"]) == "`csv`"
+    assert said(["csv", "json"]) == "`csv` and `json`"
+    assert said(["a", "b", "c"]) == "`a`, `b` and `c`"
+    assert said(["a", "b", "c", "d", "e", "f", "g"]) == "7 packages"

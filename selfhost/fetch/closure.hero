@@ -1,0 +1,231 @@
+# What an entry with a `packages` line places (spec § 1; panel 253's R6,
+# ratified 2026-11-19, and the author's answer of 2026-11-19 that it is built
+# before M-rebel-library closes): the module of each listed path, and every
+# module their own `use` lines reach inside the version, walked as discovery
+# walks a program, never the version whole. A program that lists `csv` gets
+# `csv` and what `csv` uses on disk; Rebel whole was 38.3 MB in 1,639 files by
+# panel 253's count.
+#
+# **The walk is the build's own reading**: each module's `use` lines are read
+# by the lexer discovery reads them with (`module/use_paths.uses_of`), a bare
+# `use` starting at the package's own root (panel 235's R4), so the files
+# placed are the ones the build of a program that names only the listed
+# packages opens. A `use <x>/...` names another entry, placed by that entry's
+# own line; a bare `use` naming no file of the version is the build's to tell.
+# The walk reads `.hero` files only: a package placed by its list carries no
+# other file, its ledgers and cards left out, since no build reads one (Rebel
+# ships no C, panel 253's fact (1)).
+#
+# **Every file placed is held to the version's listing**, as a whole tree's is
+# (`fetch/index_source.hero`), and the listing itself is placed beside them,
+# `heroes.list`, so every build holds the part to the version's `sum`
+# (`module/fingerprint.hero`). A name the line lists that the version holds no
+# module of is refused before any file lands, `package_unknown`, exit 1.
+
+use cli/process
+use cli/strings
+use module/catalogue
+use module/fingerprint
+use module/use_paths
+
+# A walk of a version's modules from the listed paths: the files the version
+# holds, the ones still to read and the ones taken, in the order taken.
+record Walk
+    held: {str: bool}
+    queue: [str]
+    seen: {str: bool}
+    order: [str]
+
+# The code a listed name the version holds no module of is refused with.
+constant UNKNOWN: str
+    "package_unknown"
+
+# A walk begun at each listed path's module, or a failure naming the first
+# path the version, `what` ("`rebel` 0.1.0"), holds no module of; `held` is
+# every file the version holds, by its name in the version.
+function begun(held: {str: bool}, listed: [str], what: str) -> Walk?
+    w: Walk @= Walk(held: held, queue: [], seen: {}, order: [])
+
+    for name in listed
+        file = name + ".hero"
+
+        if held[file].is_err()
+            return fail(
+                code: UNKNOWN,
+                msg: "`" + name + "` is no package of " + what + ": the version holds no `" + file + "` for a `packages` line to place"
+            )
+        taken(@w, file: file)
+
+    # The version's own catalogue is read by every build of it (panel 235's
+    # R3), so it is placed with any part.
+    if !held[catalogue.FILE].is_err()
+        taken(@w, file: catalogue.FILE)
+    return ok(w)
+
+function taken(@w: Walk, file: str)
+    if w.seen[file].is_err()
+        w.seen[file] @ true
+        w.queue @ w.queue.push(file)
+
+# The next file the walk reads, "" once it has read them all.
+function next(@w: Walk) -> str
+    if w.queue.len() == 0
+        return ""
+    file = w.queue[w.queue.len() - 1]
+    w.queue @ w.queue.slice(from: 0, to: w.queue.len() - 1)
+    w.order @ w.order.push(file)
+    return file
+
+# The modules `text`, the file `file` the walk last took, uses inside its
+# version, taken into the walk where the version holds them; a file that is no
+# module uses none.
+function read(@w: Walk, file: str, text: str)
+    if !strings.ends_with(text: file, suffix: ".hero")
+        return
+
+    for used in use_paths.uses_of(text)
+        if used.len() > 0 && used[0] != '<' && !w.held[used + ".hero"].is_err()
+            taken(@w, file: used + ".hero")
+
+# The files of a listing's text, by name.
+function held_of(listing: str) -> {str: bool}
+    out: {str: bool} @= {}
+
+    for line in keys(fingerprint.kept_lines(listing))
+        out[fingerprint.name_of(line)] @ true
+
+    return out
+
+## A tree on disk
+
+# A whole version's tree at `tree`, its sum already held, narrowed to what
+# `listed` places, its listing kept beside it: the files moved through
+# `scratch`, a folder of the run's own, and the tree's folder replaced by
+# what they make. `what` names the version in a refusal.
+function narrowed(tree: str, scratch: str, listed: [str], what: str) -> ()?
+    if listed.len() == 0
+        return ok()
+    whole = fingerprint.listing(tree)?
+    w: Walk @= begun(held_of(whole), listed: listed, what: what)?
+    into = scratch + "/narrowed"
+    file: str @= next(@w)
+
+    while file.len() > 0
+        to = into + "/" + file
+        placed(process.mkdir_all(folder_of(to)))?
+        placed(process.rename_over(from: tree + "/" + file, to: to))?
+        read(@w, file: file, text: read_file(to).default(""))
+        file @ next(@w)
+
+    placed(write_file(path: into + "/" + fingerprint.LISTING, text: whole))?
+    placed(process.remove_tree(tree))?
+    return placed(process.rename_over(from: into, to: tree))
+
+# Whether the tree standing at `at`, already held to its sum, holds what
+# `listed` places and no other file: a whole version where `listed` is empty,
+# else the listed modules and each one they reach, with the listing kept.
+function holds_exactly(at: str, listed: [str]) -> bool
+    kept = fingerprint.kept_listing(at).default("")
+
+    if listed.len() == 0 || kept.len() == 0
+        return listed.len() == 0 && kept.len() == 0
+    present = fingerprint.names_in(at)
+    begun_at = begun(held_of(kept), listed: listed, what: "")
+
+    if begun_at.is_err()
+        return false
+    w: Walk @= begun_at.must()
+    file: str @= next(@w)
+
+    while file.len() > 0
+        if present[file].is_err()
+            return false
+        read(@w, file: file, text: read_file(at + "/" + file).default(""))
+        file @ next(@w)
+
+    return w.order.len() + 1 == keys(present).len()
+
+# What a verb says after a tree's folder for a part placed by a `packages`
+# line: how many of the version's files it holds; "" for a whole version.
+function counted(folder: str) -> str
+    kept = fingerprint.kept_listing(folder).default("")
+
+    if kept.len() == 0
+        return ""
+    return ", " + (keys(fingerprint.names_in(folder)).len() - 1).to_str() + " of " + keys(fingerprint.kept_lines(kept)).len().to_str() + " files: what its `packages` line names and the modules those use"
+
+# The folder `path` stands in: the part before its last `/`.
+function folder_of(path: str) -> str
+    at: i64 @= path.len() - 1
+
+    while at > 0 && path[at] != '/'
+        at @ at - 1
+
+    return path.slice(from: 0, to: at)
+
+# A failure of the machine's while the part is moved into place, told as what
+# could not be placed.
+function placed(done: ()?) -> ()?
+    match done
+        .ok _  => return ok()
+        .err e => return fail(code: "cannot_place", msg: e.msg)
+
+## Tests
+
+constant SCRATCH: str
+    "build/selftest-fetch-closure"
+
+# A version of four modules and a ledger: `csv` uses `text`, which uses
+# `unicode`; `flags` stands alone; a `use <other>/x` names another entry.
+function version_made() -> str
+    _ = process.remove_tree(SCRATCH).is_err()
+    process.mkdir_all(SCRATCH + "/tree/text").must()
+    write_file(
+        path: SCRATCH + "/tree/csv.hero",
+        text: "use text\nuse <other>/x\n\nfunction a() -> i64\n    return 1\n"
+    ).must()
+    write_file(
+        path: SCRATCH + "/tree/text.hero",
+        text: "use text/unicode\n\nfunction b() -> i64\n    return 2\n"
+    ).must()
+    write_file(path: SCRATCH + "/tree/text/unicode.hero", text: "function c() -> i64\n    return 3\n").must()
+    write_file(path: SCRATCH + "/tree/flags.hero", text: "use nowhere\n\nfunction d() -> i64\n    return 4\n").must()
+    write_file(path: SCRATCH + "/tree/csv.ledger", text: "# a ledger\n").must()
+    return fingerprint.of(SCRATCH + "/tree").must()
+
+test "a packages line places the listed modules and what their use lines reach, held to the version's sum"
+    sum = version_made()
+    narrowed(tree: SCRATCH + "/tree", scratch: SCRATCH, listed: ["csv"], what: "`kit` 1.0.0").must()
+    assert keys(fingerprint.names_in(SCRATCH + "/tree")).len() == 4
+    assert process.path_exists(SCRATCH + "/tree/text/unicode.hero")
+    assert !process.path_exists(SCRATCH + "/tree/flags.hero")
+    assert !process.path_exists(SCRATCH + "/tree/csv.ledger")
+    assert fingerprint.of(SCRATCH + "/tree").must() == sum
+    assert holds_exactly(at: SCRATCH + "/tree", listed: ["csv"])
+    assert !holds_exactly(at: SCRATCH + "/tree", listed: ["csv", "flags"])
+    assert !holds_exactly(at: SCRATCH + "/tree", listed: [])
+    assert counted(SCRATCH + "/tree") == ", 3 of 5 files: what its `packages` line names and the modules those use"
+
+    # A file added or changed is no longer the version's: the tree's own sum.
+    write_file(path: SCRATCH + "/tree/mine.hero", text: "").must()
+    assert fingerprint.of(SCRATCH + "/tree").must() != sum
+    assert fingerprint.added(root: SCRATCH + "/tree", sum: sum) == ["mine.hero"]
+    process.remove_file(SCRATCH + "/tree/mine.hero").must()
+    write_file(path: SCRATCH + "/tree/text.hero", text: "edited\n").must()
+    assert fingerprint.of(SCRATCH + "/tree").must() != sum
+    assert fingerprint.added(root: SCRATCH + "/tree", sum: sum) == []
+    assert !process.remove_tree(SCRATCH).is_err()
+
+test "a listed name the version holds no module of is refused before anything moves"
+    sum = version_made()
+    refused = narrowed(tree: SCRATCH + "/tree", scratch: SCRATCH, listed: ["csv", "nosuch"], what: "`kit` 1.0.0")
+
+    match refused
+        .ok _ => assert false
+        .err e =>
+            assert e.code == UNKNOWN
+            assert e.msg == "`nosuch` is no package of `kit` 1.0.0: the version holds no `nosuch.hero` for a `packages` line to place"
+
+    assert fingerprint.of(SCRATCH + "/tree").must() == sum
+    assert strings.starts_with(text: folder_of("a/b/c.hero"), prefix: "a/b")
+    assert !process.remove_tree(SCRATCH).is_err()

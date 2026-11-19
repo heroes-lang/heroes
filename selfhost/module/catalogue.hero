@@ -5,7 +5,8 @@
 # on its line, `#` a comment, and one `index` line above the tables, the
 # address of the index the verbs read. Every other TOML form is refused with
 # its line (inline tables, dotted keys, literal and multi-line strings,
-# escapes, arrays, numbers, booleans, dates), so `version = 2.1.0` and
+# escapes, numbers, booleans, dates, and every array but an entry's
+# `packages` list on one line, `module/listing.hero`), so `version = 2.1.0` and
 # `tag = 1.10` are refused and never converted; and so is every key an entry
 # does not have, a compiler flag, a search path, a library, a language version
 # or the program's own name among them (`.claude/rules/cli-surface.md` § Four
@@ -30,12 +31,13 @@
 # 2026-11-08). What only the repository answers, a path outside it or
 # through a link, is the verb's alone: the build reads no repository.
 
-use bytes
 use fetch/address
 use fetch/address_form
-use module/entry_name
+use module/listing
+use module/reached
 use module/standing
 use module/sums
+use module/table_head
 use module/toml_line
 
 # One entry: its name, the alias its program's `use` lines write between the
@@ -59,6 +61,9 @@ record Catalogue
     # The `index` line's address, "" where the line is absent.
     index: str
     entries: [Entry]
+    # Each entry's `packages` line, where one is written (panel 253's R6):
+    # kept beside the entries, whose source fields every verb reads.
+    listings: [reached.Listing]
     # The first line refused, with its file and number, "" where every line
     # read; a catalogue holding one names no entry.
     problem: str
@@ -83,7 +88,7 @@ constant HOLDS: str
 # The catalogue of no entries, which no file holds.
 function empty() -> Catalogue
     entries: [Entry] = []
-    return Catalogue(file: "", index: "", entries: entries, problem: "", code: "", at: "", said: "")
+    return Catalogue(file: "", index: "", entries: entries, listings: [], problem: "", code: "", at: "", said: "")
 
 # The catalogue in the directory `opened`, named in a message as `named` is
 # (the directory as the author spelt it, `paths.directory_text`). Absent, it
@@ -138,22 +143,15 @@ function said_source(e: Entry) -> str
 ## The reading
 
 function parsed(file: str, text: str) -> Catalogue
-    c: Catalogue @= Catalogue(file: file, index: "", entries: [], problem: "", code: "", at: "", said: "")
-    at: i64 @= 0
-    number: i64 @= 1
+    c: Catalogue @= Catalogue(file: file, index: "", entries: [], listings: [], problem: "", code: "", at: "", said: "")
 
-    while at < text.len()
-        end: i64 @= at
-
-        while end < text.len() && text[end] != '\n'
-            end @ end + 1
-
-        said = line(@c, row: text.slice(from: at, to: end))
+    # A `packages` list over several lines is one row, told at the line that
+    # opens it (`listing.rows`).
+    for row in listing.rows(text)
+        said = line(@c, row: row.text)
 
         if said.len() > 0
-            return refused(c, code: code_of(c), at: file + ":" + number.to_str(), said: said)
-        at @ end + 1
-        number @ number + 1
+            return refused(c, code: code_of(c), at: file + ":" + row.number.to_str(), said: said)
 
     for e in c.entries
         wrong = incomplete(e)
@@ -175,7 +173,16 @@ function refused(c: Catalogue, code: str, at: str, said: str) -> Catalogue
 
     if at.len() > 0
         whole @ at + ": " + said
-    return Catalogue(file: c.file, index: "", entries: none, problem: whole, code: code, at: at, said: said)
+    return Catalogue(
+        file: c.file,
+        index: "",
+        entries: none,
+        listings: [],
+        problem: whole,
+        code: code,
+        at: at,
+        said: said
+    )
 
 # The code a refused line is told with: the address rule's where a line set
 # it, else the catalogue's own.
@@ -203,6 +210,15 @@ function line(@c: Catalogue, row: str) -> str
 
     if key.len() == 0 || eq >= row.len() || row[eq] != '='
         return "a line is a table `[dependencies.<name>]`, `<key> = \"<value>\"`, a comment or nothing, found `" + row + "`"
+
+    # An entry's `packages` list, the one array a catalogue holds (R6).
+    if key == "packages" && c.entries.len() > 0
+        return listing.read(
+            @c.listings,
+            entry: c.entries[c.entries.len() - 1].name,
+            row: row,
+            at: toml_line.past_spaces(row, at: eq + 1)
+        )
     value = toml_line.quoted(row, at: toml_line.past_spaces(row, at: eq + 1))
 
     if value.is_err()
@@ -252,7 +268,7 @@ function field(@c: Catalogue, key: str, value: str) -> str
         taken @ e.sum.len() > 0
         e.sum @ value
     else
-        return "`" + key + "` is not a key an entry has: an entry holds `version` and `sum` for the index, `git`, `tag`, `commit` and `sum` for git, or `path`; " + HOLDS
+        return "`" + key + "` is not a key an entry has: an entry holds `version` and `sum` for the index, `git`, `tag`, `commit` and `sum` for git, or `path`, and the `packages` it places where it publishes several; " + HOLDS
 
     if taken
         return "`" + key + "` is written twice in the entry `" + e.name + "`"
@@ -270,44 +286,19 @@ function field(@c: Catalogue, key: str, value: str) -> str
     c.entries[last] @ e
     return ""
 
-# A table row read: its head asked of the row's bytes from `at`, never cut at
-# the head's length (defect 2410), since a row is the author's and may hold
-# any character, and `[dependencieXé]` put that cut inside `é`, which stopped
-# `check` with *string slice splits a character* where the catalogue's own
-# message was owed. Every later cut stands beside an ASCII byte: the head's
-# `.`, a `]`, or the row's end.
+# A table row read: its head and its name judged (`module/table_head.hero`),
+# and the entry it opens added.
 function table(@c: Catalogue, row: str, at: i64) -> str
-    head = "[dependencies."
-
-    if !bytes.bytes_at(text: row, at: at, needle: head)
-        return "a table is `[dependencies.<name>]`, one per entry, found `" + row + "`; " + HOLDS
-    start = at + head.len()
-    close: i64 @= start
-
-    while close < row.len() && row[close] != ']'
-        close @ close + 1
-
-    name = row.slice(from: start, to: close)
-
-    if close == row.len() || toml_line.after_value(row, at: close + 1).len() > 0
-        return "a table is `[dependencies.<name>]` and nothing after it but a comment, found `" + row + "`"
-
-    if !entry_name.shaped(name)
-        return "an entry's name is lowercase letters, digits and `_`, starting with a letter, as `[dependencies.json]`, found `" + name + "`"
-
-    # A name no `use` writes between the brackets names an entry no line
-    # reaches, and a message quoting the alias would offer a line the parser
-    # refuses (defect 2432).
-    word = entry_name.word(name)
-
-    if word.len() > 0
-        return word + ", so no line reaches the entry: a folder or a git source takes another name, `[dependencies.<name>]`, which its `use` lines write, and a package of the index keeps the index's name, so one called `" + name + "` is reached by no program"
+    names: [str] @= []
 
     for one in c.entries
-        if one.name == name
-            return "the entry `" + name + "` is written twice"
+        names @ names.push(one.name)
 
-    c.entries @ c.entries.push(Entry(name: name, version: "", git: "", tag: "", commit: "", path: "", sum: ""))
+    name = table_head.named(row: row, at: at, names: names, holds: HOLDS)
+
+    if name.is_err()
+        return toml_line.failure_of(name)
+    c.entries @ c.entries.push(Entry(name: name.must(), version: "", git: "", tag: "", commit: "", path: "", sum: ""))
     return ""
 
 ## What an entry holds

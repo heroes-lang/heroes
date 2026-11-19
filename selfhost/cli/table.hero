@@ -191,7 +191,7 @@ function commands() -> [Command]
         Command(tag: .run_cmd, name: "run", operand: .file_operand, flags: run_flags, summary: "compile and execute (the dev loop, -O2); `-- a b` passes a and b to the program")
         Command(tag: .test_cmd, name: "test", operand: .file_operand, flags: test_flags, summary: "run the file's `test` blocks")
         Command(tag: .fmt_cmd, name: "fmt", operand: .file_operand, flags: fmt_flags, summary: "print the canonical form")
-        Command(tag: .add_cmd, name: "add", operand: .package_operand, flags: add_flags, summary: "add a package to the program's heroes.toml: a name from the index, a git address with --tag, or a folder with --path; writes every package of the build with its sum, and places each")
+        Command(tag: .add_cmd, name: "add", operand: .package_operand, flags: add_flags, summary: "add a package to the program's heroes.toml: a name from the index, a git address with --tag, a folder with --path, or <entry>/<path>, one package of an entry publishing several, to that entry's packages line; writes every package of the build with its sum, and places each")
         Command(tag: .fetch_cmd, name: "fetch", operand: .no_operand, flags: fetch_flags, summary: "place every package heroes.toml names under heroes.packages/, each checked against its sum; build, check and run never fetch")
         Command(tag: .new_cmd, name: "new", operand: .name_operand, flags: new_flags, summary: "write a new program, its main.hero, into a new folder named for it, or with --package a new package; refuses a name already there, and then writes nothing")
         Command(tag: .doctor_cmd, name: "doctor", operand: .no_operand, flags: no_flags, summary: "check the toolchain (clang, CLT, arch, runtime, cache)")

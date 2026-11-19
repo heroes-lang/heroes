@@ -18,6 +18,7 @@ use cli/process
 use cli/strings
 use cli/table as cli_table
 use fetch/catalogue_edit
+use fetch/closure
 use fetch/leftover
 use fetch/made_index
 use fetch/made_repo
@@ -28,6 +29,7 @@ use fetch/transport
 use fetch/verb_place
 use module/catalogue
 use module/fingerprint
+use module/listing
 use module/path_entries
 use module/placed
 
@@ -71,7 +73,15 @@ function outcome(inv: argv.Invocation, tools: transport.Tools) -> [told.Said]
     out: [told.Said] @= []
 
     for e in c.entries
-        tree = placing.placed_tree(@ledger, tools, e: e, program: folder, root: root.must(), index: c.index)
+        tree = placing.placed_tree(
+            @ledger,
+            tools,
+            e: e,
+            program: folder,
+            root: root.must(),
+            index: c.index,
+            listed: listing.of(c.listings, entry: e.name)
+        )
 
         if tree.is_err()
             line = catalogue_edit.place_of(
@@ -91,11 +101,11 @@ function outcome(inv: argv.Invocation, tools: transport.Tools) -> [told.Said]
             )
         else if tree.must().fetched
             out @ out.push(
-                told.Said(code: "", at: "", said: "placed " + e.name + " " + placing.at_said(e) + " " + tree.must().folder)
+                told.Said(code: "", at: "", said: "placed " + e.name + " " + placing.at_said(e) + " " + tree.must().folder + closure.counted(tree.must().folder))
             )
         else
             out @ out.push(
-                told.Said(code: "", at: "", said: "kept " + e.name + " " + placing.at_said(e) + " " + tree.must().folder)
+                told.Said(code: "", at: "", said: "kept " + e.name + " " + placing.at_said(e) + " " + tree.must().folder + closure.counted(tree.must().folder))
             )
 
     # Every tree fetch places is one its catalogue names, so the run is never

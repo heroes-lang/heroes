@@ -1,0 +1,11 @@
+# Panel 253's R6 (2026-11-19): the catalogue's entry `kit` lists `csv` alone,
+# so `csv` and the module it uses, `text`, are the program's; `flags` is in
+# the same folder and not listed, and its `use` is refused, told once with
+# the command that lists it in a note, never as a `Fix`, the catalogue being
+# no file of the compilation.
+use <kit>/csv
+use <kit>/flags  #~ package_not_listed
+
+function main()
+    print(csv.first("a,b"))
+    print(flags.on())

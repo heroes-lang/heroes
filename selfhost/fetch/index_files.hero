@@ -1,0 +1,111 @@
+# A version's files written from a static index into a run's staging tree
+# (panel 235's R20 and R9's C3, ratified 2026-11-07; panel 253's R6, ratified
+# 2026-11-19), its listing already held to the entry's `sum` and its names
+# judged (`fetch/index_source.hero`, `fetch/listing_read.hero`): every file of
+# the version, or where the entry's `packages` line names some, the module of
+# each and every module those reach (`fetch/closure.hero`), the listing kept
+# beside them, so no other file is asked of the index. Each file is held to
+# its line of the listing as it lands, so a file the index changed is named.
+# Moved out of `fetch/index_source.hero` with R6, along the seam between
+# asking an index for a version and writing its files, so that module keeps
+# room under the ceiling `.claude/rules/module-shape.md` sets.
+
+use cli/process
+use fetch/address
+use fetch/closure
+use fetch/listing_read
+use fetch/staging
+use fetch/transport
+use module/fingerprint
+
+extern "hero_compiler.h"
+    function hero_file_sha256(path: cstr lent, @status: i64) -> str
+
+extern "hero_os.h"
+    constant HERO_OS_OK: i64
+
+# The most bytes one file of a package may hold: Go's bound on a module's
+# whole zip, 500 MiB, rounded up to a power of two.
+constant FILE_CAP: i64
+    536870912
+
+# The files `files` of `name` at `version`, from the listing `listing` at the
+# index's `base`, written into `s`'s tree: all of them where `packages` is
+# empty, else the part it places with the listing kept.
+function written(tools: transport.Tools, index: address.Address, base: str, s: staging.Staging, listing: str, files: [listing_read.Line], packages: [str], name: str, version: str) -> ()?
+    what = name + " " + version
+
+    if packages.len() == 0
+        for one in files
+            landed(tools, index: index, base: base, s: s, one: one, what: what)?
+
+        return ok()
+    lines: {str: listing_read.Line} @= {}
+    held: {str: bool} @= {}
+
+    for one in files
+        lines[one.path] @ one
+        held[one.path] @ true
+
+    w: closure.Walk @= closure.begun(held, listed: packages, what: "`" + name + "` " + version)?
+    file: str @= closure.next(@w)
+
+    while file.len() > 0
+        landed(tools, index: index, base: base, s: s, one: lines[file].must(), what: what)?
+        closure.read(@w, file: file, text: read_file(s.tree + "/" + file).default(""))
+        file @ closure.next(@w)
+
+    return made(write_file(path: s.tree + "/" + fingerprint.LISTING, text: listing))
+
+# One file of the version fetched into `s`'s tree and held to its line of the
+# listing as it lands.
+function landed(tools: transport.Tools, index: address.Address, base: str, s: staging.Staging, one: listing_read.Line, what: str) -> ()?
+    path = s.tree + "/" + one.path
+    made(process.mkdir_all(folder_of(path)))?
+    transport.got(tools, at: address.under(index, inside: base + "/files/" + one.path), into: path, cap: FILE_CAP, scratch: s.folder)?
+    status: i64 @= 0
+    sum = hero_file_sha256(path: path.cstr(), status: @status)
+
+    if status != HERO_OS_OK || sum != one.sum
+        return fail(
+            code: "sum_mismatch",
+            msg: "`" + one.path + "` of " + what + " does not match its line of the listing, " + one.sum + ", and nothing was placed"
+        )
+    return ok()
+
+# The folder `path` stands in, Go's `path.Dir` for a path with no trailing
+# `/`: the part before its last `/`, `/` where that slash is its first byte,
+# and `.` where it holds none. Every byte is asked, the first included: until
+# defect 2406 the loop stopped at index 0, so `a` answered a slash there as
+# `/a` does, and `""` sliced to -1 and aborted.
+function folder_of(path: str) -> str
+    at: i64 @= path.len() - 1
+
+    while at >= 0 && path[at] != '/'
+        at @ at - 1
+
+    if at < 0
+        return "."
+
+    if at == 0
+        return "/"
+    return path.slice(from: 0, to: at)
+
+# A folder that could not be made under the staging folder, told as the
+# machine's.
+function made(done: ()?) -> ()?
+    match done
+        .ok _  => return ok()
+        .err e => return fail(code: "cannot_place", msg: e.msg)
+
+## Tests
+
+test "a path's folder is asked of every byte, the first included (defect 2406)"
+    assert folder_of("") == "."
+    assert folder_of("a") == "."
+    assert folder_of("/") == "/"
+    assert folder_of("/a") == "/"
+    assert folder_of(".bashrc") == "."
+    assert folder_of("..") == "."
+    assert folder_of("file.tar.gz") == "."
+    assert folder_of("staging/tree/file.tar.gz") == "staging/tree"

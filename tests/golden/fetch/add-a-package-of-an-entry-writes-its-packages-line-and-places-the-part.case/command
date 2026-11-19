@@ -1,0 +1,5 @@
+fetch -C <work>/app
+add kit/flags -C <work>/app
+add kit/flags -C <work>/app
+add kit/nosuch -C <work>/app
+run <work>/app/main.hero

@@ -85,5 +85,5 @@ test "a package read from a `path` entry is told, once, and one read from its pl
         unverified: true
     )
     aliases: [reached.Alias] = []
-    s.reached @ reached.Reached(packages: [folder, tree, missing], aliases: aliases)
+    s.reached @ reached.Reached(packages: [folder, tree, missing], aliases: aliases, listings: [])
     assert notes(s) == ["the package `json` is read from the folder `vendor/json/`, a `path` entry of the catalogue: unverified, no fingerprint holds it"]

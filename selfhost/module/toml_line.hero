@@ -32,7 +32,71 @@ function quoted(row: str, at: i64) -> str?
         return fail(code: "trailing", msg: rest)
     return ok(row.slice(from: at + 1, to: probe))
 
+# A list of basic strings, `["csv", "json"]`, each held to `quoted`'s rule,
+# separated by commas, a last comma allowed, nothing after the `]` but spaces
+# and a comment (panel 253's R6: an entry's `packages`, the one list a
+# catalogue holds). A list over several lines is read here once its lines are
+# joined into one (`module/listing.joined`).
+function strings(row: str, at: i64) -> [str]?
+    if at >= row.len() || row[at] != '['
+        return fail(
+            code: "unbracketed",
+            msg: "a list is names between brackets: `packages = [\"csv\", \"json\"]`"
+        )
+    out: [str] @= []
+    probe: i64 @= past_spaces(row, at: at + 1)
+
+    if probe < row.len() && row[probe] == ']'
+        return ok(out)
+
+    while probe < row.len()
+        if row[probe] != '"'
+            return fail(
+                code: "unquoted",
+                msg: "each name of a list is a string between double quotes: `[\"csv\", \"json\"]`"
+            )
+        close: i64 @= probe + 1
+
+        while close < row.len() && row[close] != '"'
+            if row[close] == '\\'
+                return fail(code: "escape", msg: "a value holds no `\\`: the catalogue's strings have no escapes")
+
+            if row[close] < 32 || row[close] == 127
+                return fail(code: "control", msg: "a value holds no control character")
+            close @ close + 1
+
+        if close >= row.len()
+            return fail(code: "unclosed", msg: "the string is not closed on its line")
+        out @ out.push(row.slice(from: probe + 1, to: close))
+        probe @ past_spaces(row, at: close + 1)
+
+        # A comma before the `]` is TOML's too, as a list one name a line
+        # writes it.
+        if probe < row.len() && row[probe] == ','
+            probe @ past_spaces(row, at: probe + 1)
+
+            if probe >= row.len() || row[probe] != ']'
+                continue
+
+        if probe < row.len() && row[probe] == ']'
+            rest = after_value(row, at: probe + 1)
+
+            if rest.len() > 0
+                return fail(code: "trailing", msg: rest)
+            return ok(out)
+        return fail(
+            code: "unseparated",
+            msg: "the names of a list are separated by commas and closed by `]`"
+        )
+
+    return fail(code: "unclosed", msg: "the list is not closed by `]`")
+
 function failure_of(value: str?) -> str
+    match value
+        .ok _  => return ""
+        .err e => return e.msg
+
+function failure_of_list(value: [str]?) -> str
     match value
         .ok _  => return ""
         .err e => return e.msg

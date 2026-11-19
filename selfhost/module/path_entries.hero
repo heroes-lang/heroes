@@ -65,6 +65,7 @@ test "a path stands in the catalogue of a package read from a path, and in no fe
         file: "heroes.toml",
         index: "",
         entries: [entry(name: "rebel", version: "1.0.0", path: ""), folder],
+        listings: [],
         problem: "",
         code: "",
         at: "",
