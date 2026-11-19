@@ -1,0 +1,466 @@
+# Two instruments of the coherence review over what Rebel's packages write
+# twice (M-rebel-library's item 31):
+#
+#   bodies     **a helper written twice: the same body in two packages**, as
+#              `cbor`'s and `msgpack`'s floats were, measured by the body
+#              normalised and never by the name. A top-level function's body
+#              is the rows below its signature to the next row in column 0; it
+#              is normalised by dropping its comments and blank rows and the
+#              spaces that end a row, and by writing each parameter by its
+#              place, `$0`, `$1`, and the function's own name `$self`, where
+#              the word stands as a value: not after a `.`, where it is a
+#              field, nor before a `:`, where it labels an argument. Two
+#              bodies the same after that compute the same thing under any
+#              names. A body shorter than `BODY_LEAST` rows is left out
+#   one-layer  **two packages of one layer that duplicate each other's work**:
+#              two packages of the same layer of README § A1, which therefore may not
+#              use each other, holding the same body (above), or binding the
+#              same C function of the same header in a floor each (an `extern`
+#              group's member); each pair is told with all it shares
+#
+# What either finds is a candidate: a helper made one where a package below
+# both can hold it, or a repetition a reader keeps because no package may.
+
+use <core>/strings as core_strings
+
+use module_text
+use rebel_tree
+use strings
+
+# The fewest rows a body holds to be compared. **5, measured 2026-11-19**
+# over the 16,736 top-level functions of Rebel's 1,495 modules: their bodies'
+# rows of code had a first quartile of 1, a median of 5, a third quartile of
+# 12 and a ninetieth percentile of 24. A body as long as the median function's
+# is a helper somebody wrote, not a one-line accessor two packages share by
+# the language's own shape; the same reading counted 97 bodies held in two
+# packages or more at this floor, 144 at 4 rows and 35 at 8.
+constant BODY_LEAST: i64
+    5
+
+# A top-level function of a module: its path, its name, the line of its
+# signature, its package (`rebel_tree.package_of`, else the path's first
+# part), and its body normalised with the count of its rows.
+record Function
+    path: str
+    name: str
+    line: i64
+    package: str
+    body: str
+    rows: i64
+
+# One body two packages or more hold: its functions in the order of their
+# paths.
+record Shared
+    functions: [Function]
+
+# One C function a floor binds: its header, its name, the module and the line.
+record Bound
+    header: str
+    name: str
+    path: str
+    line: i64
+    package: str
+
+# Two packages of one layer and what they both hold: the bodies, each by the
+# names of the two functions, and the C functions both bind.
+record Pair
+    first: str
+    second: str
+    layer: i64
+    bodies: [str]
+    bindings: [str]
+
+# Every top-level function of `module` with a body of at least `least` rows.
+function functions_of(module: rebel_tree.Module, package: str, least: i64) -> [Function]
+    rows = strings.lines(module.text)
+    out: [Function] @= []
+    at: i64 @= 0
+
+    while at < rows.len()
+        if !core_strings.has_prefix(s: rows[at], prefix: "function ")
+            at @ at + 1
+            continue
+        start = at
+        at @ at + 1
+
+        while at < rows.len() && (rows[at].len() == 0 || rows[at][0] == ' ')
+            at @ at + 1
+
+        written = rows.slice(from: start + 1, to: at).join("\n")
+        signature = rows[start].slice(from: 9, to: rows[start].len())
+        name = name_of(signature)
+        body = normalised(text: written, params: param_names(signature), name: name)
+
+        count = if body.len() == 0
+            0
+        else
+            strings.lines(body).len()
+
+        if count >= least
+            out @ out.push(
+                Function(path: module.path, name: name, line: start + 1, package: package, body: body, rows: count)
+            )
+
+    return out
+
+# The name a signature begins with, its word characters.
+function name_of(signature: str) -> str
+    end: i64 @= 0
+
+    while end < signature.len() && module_text.word_byte(signature[end])
+        end @ end + 1
+
+    return signature.slice(from: 0, to: end)
+
+# The parameters' names of a signature, in order: each `name:` at the depth
+# of its parentheses, an `@` before it dropped.
+function param_names(signature: str) -> [str]
+    out: [str] @= []
+    open = strings.index_of(text: signature, needle: "(")
+
+    if open.is_err()
+        return out
+    depth: i64 @= 0
+    start: i64 @= open.must() + 1
+    at: i64 @= open.must()
+
+    while at < signature.len()
+        byte = signature[at]
+
+        if byte == '(' || byte == '[' || byte == '{'
+            depth @ depth + 1
+        else if byte == ')' || byte == ']' || byte == '}'
+            depth @ depth - 1
+
+            if depth == 0
+                push_param(@out, piece: signature.slice(from: start, to: at))
+                return out
+        else if byte == ',' && depth == 1
+            push_param(@out, piece: signature.slice(from: start, to: at))
+            start @ at + 1
+        at @ at + 1
+
+    return out
+
+# Adds to `out` the name one parameter `piece` declares, `@` dropped.
+function push_param(@out: [str], piece: str)
+    trimmed = strings.without_prefix(text: strings.trimmed(piece), prefix: "@")
+    colon = strings.index_of(text: trimmed, needle: ":")
+
+    if !colon.is_err()
+        out @ out.push(trimmed.slice(from: 0, to: colon.must()))
+
+# `text`, a body, normalised: its comments dropped and every literal kept with
+# its quotes, its blank rows and the spaces that end a row dropped, each of
+# `params` written `$<place>` and `name` written `$self` where it stands as a
+# value.
+function normalised(text: str, params: [str], name: str) -> str
+    code: [str] @= []
+
+    for piece in module_text.pieces(text)
+        if piece.kind == module_text.CODE
+            code @ code.push(renamed(text: piece.text, params: params, name: name))
+        else if piece.kind == module_text.CHARACTER
+            code @ code.push("'" + piece.text + "'")
+        else
+            code @ code.push("\"" + piece.text + "\"")
+
+    kept: [str] @= []
+
+    for row in strings.lines(code.join(""))
+        trimmed = module_text.right_trimmed(row)
+
+        if strings.trimmed(trimmed).len() > 0
+            kept @ kept.push(trimmed)
+
+    return kept.join("\n")
+
+# `text`, code, with each word of `params` written `$<place>` and `name`
+# written `$self`, where the word stands after no `.` and before no `:`.
+function renamed(text: str, params: [str], name: str) -> str
+    out: [str] @= []
+    at: i64 @= 0
+    copied: i64 @= 0
+
+    while at < text.len()
+        if !module_text.word_byte(text[at])
+            at @ at + 1
+            continue
+        end: i64 @= at
+
+        while end < text.len() && module_text.word_byte(text[end])
+            end @ end + 1
+
+        word = text.slice(from: at, to: end)
+        after_dot = at > 0 && text[at - 1] == '.'
+        labels = end < text.len() && text[end] == ':'
+        place = place_of(names: params, name: word)
+
+        if !after_dot && !labels && (place >= 0 || word == name)
+            out @ out.push(text.slice(from: copied, to: at))
+
+            if place >= 0
+                out @ out.push("$" + place.to_str())
+            else
+                out @ out.push("$self")
+            copied @ end
+        at @ end
+
+    out @ out.push(text.slice(from: copied, to: text.len()))
+    return out.join("")
+
+function place_of(names: [str], name: str) -> i64
+    for at in range(from: 0, to: names.len())
+        if names[at] == name
+            return at
+
+    return -1
+
+# Every body two packages or more hold, in the order of their first
+# function's path and line.
+function shared(functions: [Function]) -> [Shared]
+    groups: {str: [Function]} @= {}
+    order: [str] @= []
+
+    for f in functions
+        held = groups[f.body]
+
+        if held.is_err()
+            order @ order.push(f.body)
+            groups[f.body] @ [f]
+        else
+            groups[f.body] @ held.must().push(f)
+
+    out: [Shared] @= []
+
+    for body in order
+        held = groups[body].must()
+
+        if packages_in(held).len() > 1
+            out @ out.push(Shared(functions: held))
+
+    return out
+
+function packages_in(functions: [Function]) -> [str]
+    seen: {str: bool} @= {}
+    out: [str] @= []
+
+    for f in functions
+        if seen[f.package].is_err()
+            seen[f.package] @ true
+            out @ out.push(f.package)
+
+    return out.sort()
+
+# What the review keeps a shared body under: each function by its module and
+# name, sorted, which no line number moves.
+function shared_key(s: Shared) -> str
+    names: [str] @= []
+
+    for f in s.functions
+        names @ names.push(f.path + "." + f.name)
+
+    return names.sort().join(", ")
+
+function shared_told(s: Shared) -> str
+    lines: [str] @= [
+        "one body of " + s.functions[0].rows.to_str() + " rows in " + packages_in(s.functions).len().to_str() + " packages:"
+    ]
+
+    for f in s.functions
+        lines @ lines.push("    " + f.path + ".hero:" + f.line.to_str() + ": " + f.name)
+
+    return lines.join("\n")
+
+# Every C function a floor of `module` binds: each member `function <name>(`
+# of each `extern` group.
+function bound_of(module: rebel_tree.Module, package: str) -> [Bound]
+    out: [Bound] @= []
+    header: str @= ""
+    line: i64 @= 0
+
+    for row in strings.lines(module.text)
+        line @ line + 1
+
+        if core_strings.has_prefix(s: row, prefix: "extern ")
+            parts = strings.split_on(text: row, byte: '"')
+
+            header @ if parts.len() >= 3
+                parts[1]
+            else
+                ""
+        else if row.len() > 0 && row[0] != ' '
+            header @ ""
+        else if header.len() > 0 && core_strings.has_prefix(s: row, prefix: "    function ")
+            out @ out.push(
+                Bound(header: header, name: name_of(row.slice(from: 13, to: row.len())), path: module.path, line: line, package: package)
+            )
+
+    return out
+
+# Every pair of packages of one layer holding a body or a binding in common,
+# in the order of their names; `layers` gives each package's layer.
+function one_layer(shared_bodies: [Shared], bound: [Bound], layers: {str: rebel_tree.Row}) -> [Pair]
+    pairs: {str: Pair} @= {}
+    order: [str] @= []
+
+    for s in shared_bodies
+        for a in s.functions
+            for b in s.functions
+                if before(first: a.package, second: b.package)
+                    noted(
+                        @pairs,
+                        @order,
+                        layers: layers,
+                        first: a.package,
+                        second: b.package,
+                        body: a.path + "." + a.name + " = " + b.path + "." + b.name,
+                        binding: ""
+                    )
+
+    by_c: {str: [Bound]} @= {}
+
+    for one in bound
+        k = one.header + " " + one.name
+        by_c[k] @ by_c[k].default([]).push(one)
+
+    for k in keys(by_c).sort()
+        held = by_c[k].must()
+
+        for a in held
+            for b in held
+                if before(first: a.package, second: b.package)
+                    noted(
+                        @pairs,
+                        @order,
+                        layers: layers,
+                        first: a.package,
+                        second: b.package,
+                        body: "",
+                        binding: a.name + " of " + a.header + " in " + a.path + " and " + b.path
+                    )
+
+    out: [Pair] @= []
+
+    for k in order.sort()
+        out @ out.push(pairs[k].must())
+
+    return out
+
+# Whether `first` sorts before `second` by bytes, as `sort` orders texts.
+function before(first: str, second: str) -> bool
+    return first != second && [first, second].sort()[0] == first
+
+function noted(@pairs: {str: Pair}, @order: [str], layers: {str: rebel_tree.Row}, first: str, second: str, body: str, binding: str)
+    one = layers[first]
+    two = layers[second]
+
+    if one.is_err() || two.is_err() || one.must().layer != two.must().layer
+        return
+    k = first + " & " + second
+    nothing: [str] = []
+    held = pairs[k].default(
+        Pair(first: first, second: second, layer: one.must().layer, bodies: nothing, bindings: nothing)
+    )
+
+    if pairs[k].is_err()
+        order @ order.push(k)
+
+    if body.len() > 0
+        pairs[k] @ Pair(
+            first: first,
+            second: second,
+            layer: held.layer,
+            bodies: held.bodies.push(body),
+            bindings: held.bindings
+        )
+    else
+        pairs[k] @ Pair(
+            first: first,
+            second: second,
+            layer: held.layer,
+            bodies: held.bodies,
+            bindings: held.bindings.push(binding)
+        )
+
+function pair_key(p: Pair) -> str
+    return p.first + " & " + p.second
+
+function pair_told(p: Pair) -> str
+    lines: [str] @= [
+        "`" + p.first + "` and `" + p.second + "`, both of layer " + p.layer.to_str() + ", so neither may use the other, hold " + p.bodies.len().to_str() + " bodies and " + p.bindings.len().to_str() + " bindings in common:"
+    ]
+
+    for one in p.bodies
+        lines @ lines.push("    the body of " + one)
+
+    for one in p.bindings
+        lines @ lines.push("    the binding of " + one)
+
+    return lines.join("\n")
+
+## Tests
+
+test "a body is normalised: comments, blank rows and its own names gone, a field and a label kept"
+    text = "    # why\n    total @= s.len()   \n\n    return f(s: s, n: total + n) # more\n"
+    assert normalised(text: text, params: ["s", "n"], name: "f") == "    total @= $0.len()\n    return $self(s: $0, n: total + $1)"
+    assert normalised(text: "    return \"# not a comment\" + s.s\n", params: ["s"], name: "g") == "    return \"# not a comment\" + $0.s"
+    assert param_names("f(@a: [u8], b: {str: i64}, c: (function(x: i64) -> i64)) -> i64") == ["a", "b", "c"]
+    assert param_names("g()") == []
+
+# The planted witness: two packages' helpers that differ only in their names
+# and comments fire; one package's two copies, and a body below the floor, do
+# not.
+test "one body in two packages is found whatever its names, and one package's copies or a short body are not"
+    cbor = rebel_tree.Module(
+        path: "cbor/internal/floats",
+        text: "# Floats.\n\n# The bits.\nfunction bits_of(x: f64, count: i64) -> [u8]\n    out: [u8] @= []\n\n    for at in range(from: 0, to: count)\n        out @ out.push(0)\n    # a comment\n    return out\n\nfunction short(x: i64) -> i64\n    return x\n"
+    )
+    msgpack = rebel_tree.Module(
+        path: "msgpack/internal/floats",
+        text: "# Floats too.\n\nfunction bytes_of(n: f64, many: i64) -> [u8]\n    out: [u8] @= []\n\n    for at in range(from: 0, to: many)\n        out @ out.push(0)\n    return out\n\nfunction short(y: i64) -> i64\n    return y\n"
+    )
+    again = rebel_tree.Module(
+        path: "cbor/internal/again",
+        text: "function same(x: f64, count: i64) -> [u8]\n    out: [u8] @= []\n\n    for at in range(from: 0, to: count)\n        out @ out.push(0)\n    return out\n"
+    )
+    functions: [Function] @= []
+
+    for one in [functions_of(module: cbor, package: "cbor", least: 3), functions_of(module: msgpack, package: "msgpack", least: 3), functions_of(module: again, package: "cbor", least: 3)]
+        for f in one
+            functions @ functions.push(f)
+
+    found = shared(functions)
+    assert found.len() == 1
+    assert shared_key(found[0]) == "cbor/internal/again.same, cbor/internal/floats.bits_of, msgpack/internal/floats.bytes_of"
+    assert shared_told(found[0]) == "one body of 4 rows in 2 packages:\n    cbor/internal/floats.hero:4: bits_of\n    msgpack/internal/floats.hero:3: bytes_of\n    cbor/internal/again.hero:1: same"
+    alone = shared([functions[0], functions[2]])
+    assert alone.len() == 0
+
+# The planted witness: two floors of one layer binding one C function fire as a
+# pair; a binding shared across layers and a body shared across layers do not.
+test "two packages of one layer binding one C function or holding one body are a pair, across layers not"
+    os = rebel_tree.Module(
+        path: "os/hero_os",
+        text: "# O.\n\nextern \"hero_os.h\"\n    function hero_os_pid() -> i64\n    function hero_run_exe_suffix() -> cstr\n\nfunction pid() -> i64\n    return hero_os_pid()\n"
+    )
+    path = rebel_tree.Module(
+        path: "path/hero_os",
+        text: "# P.\n\nextern \"hero_os.h\"\n    function hero_run_exe_suffix() -> cstr\n"
+    )
+    io = rebel_tree.Module(path: "io/hero_stream", text: "extern \"hero_os.h\"\n    function hero_os_pid() -> i64\n")
+    bound: [Bound] @= []
+
+    for one in [bound_of(module: os, package: "os"), bound_of(module: path, package: "path"), bound_of(module: io, package: "io")]
+        for b in one
+            bound @ bound.push(b)
+
+    assert bound.len() == 4 && bound[0].line == 4
+    layers = rebel_tree.by_package(
+        [rebel_tree.Row(package: "os", layer: 0, line: 1), rebel_tree.Row(package: "path", layer: 0, line: 2), rebel_tree.Row(package: "io", layer: 2, line: 3)]
+    )
+    nothing: [Shared] = []
+    found = one_layer(shared_bodies: nothing, bound: bound, layers: layers)
+    assert found.len() == 1
+    assert pair_key(found[0]) == "os & path"
+    assert pair_told(found[0]) == "`os` and `path`, both of layer 0, so neither may use the other, hold 0 bodies and 1 bindings in common:\n    the binding of hero_run_exe_suffix of hero_os.h in os/hero_os and path/hero_os"

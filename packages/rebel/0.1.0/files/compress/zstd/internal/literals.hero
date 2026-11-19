@@ -3,6 +3,7 @@
 # tree described here or kept from before.
 
 use compress/internal/codes
+use compress/internal/cursor
 use compress/zstd/internal/huff
 
 # The most literals a block may hold.
@@ -15,17 +16,6 @@ record Section
     literals: [u8]
     # The bytes of the section, its header included.
     used: i64
-
-# The number of `width` bytes at `at` of `input`, the lowest first.
-function little(input: [u8] lent, at: i64, width: i64) -> i64
-    value: i64 @= 0
-    k: i64 @= width - 1
-
-    while k >= 0
-        value @ value << 8 | to_i64(input[at + k]).must()
-        k @ k - 1
-
-    return value
 
 # The literals section at `at` of `input`, which may run to `end`. A tree
 # it describes replaces `tree`; one it does not describe is `tree`'s.
@@ -49,7 +39,7 @@ function read(input: [u8] lent, at: i64, end: i64, @tree: huff.Table) -> Section
             return codes.invalid_at(at: at, why: "a literals header cut short")
 
         if header > 1
-            size @ little(input, at: at, width: header) >> 4
+            size @ cursor.little(input, at: at, width: header) >> 4
         p = at + header
 
         if size > MOST
@@ -81,7 +71,7 @@ function read(input: [u8] lent, at: i64, end: i64, @tree: huff.Table) -> Section
 
     if end - at < header
         return codes.invalid_at(at: at, why: "a literals header cut short")
-    fields = little(input, at: at, width: header)
+    fields = cursor.little(input, at: at, width: header)
     regenerated = fields >> 4 & (1 << width) - 1
     compressed = fields >> 4 + width & (1 << width) - 1
     p: i64 @= at + header
@@ -107,9 +97,9 @@ function read(input: [u8] lent, at: i64, end: i64, @tree: huff.Table) -> Section
 
     if stop - p < 6
         return codes.invalid_at(at: p, why: "a jump table cut short")
-    one = little(input, at: p, width: 2)
-    two = little(input, at: p + 2, width: 2)
-    three = little(input, at: p + 4, width: 2)
+    one = cursor.little(input, at: p, width: 2)
+    two = cursor.little(input, at: p + 2, width: 2)
+    three = cursor.little(input, at: p + 4, width: 2)
     start = p + 6
 
     if one + two + three > stop - start

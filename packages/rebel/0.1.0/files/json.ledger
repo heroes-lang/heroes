@@ -189,6 +189,13 @@ capability json/copy  an independent copy of a value
   python  copy.deepcopy
   note    every value of the language is an independent copy (spec section 3)
 
+capability json/equal  two values compared as JSON compares them, however deep
+  heroes  json.equal
+  go      -
+  rust    -
+  python  -
+  note    the language's `==` answers the same, objects equal whatever the order of their members, and follows the nesting with recursion; `equal` walks a stack of its own, so a value nested a hundred thousand deep compares. Go compares two `any` with `reflect.DeepEqual`, Python two dicts with `==`, neither a function of their json packages. Until 2026-11-19 `json/patch`, `json/path` and `json/schema` each held a copy of this function, and they call this one since
+
 capability json/records  a record filled from JSON by its field names, and written as JSON
   heroes  refused: needs reflection
   go      Marshal (of a struct), Unmarshal (into a struct), v2.Marshal, v2.Unmarshal, struct tags, Decoder.DisallowUnknownFields, v2.RejectUnknownMembers, v2.ErrUnknownName, v2.MatchCaseInsensitiveNames, MatchCaseSensitiveDelimiter, v2.OmitZeroStructFields, OmitEmptyWithLegacySemantics, v2.StringifyNumbers, StringifyWithLegacySemantics, v2.FormatNilMapAsNull, v2.FormatNilSliceAsNull, FormatByteArrayAsArray, FormatBytesWithLegacySemantics, FormatDurationAsNano, ParseBytesWithLooseRFC4648, ParseTimeWithLooseRFC3339, UnmarshalArrayFromAnyLength, MergeWithLegacySemantics, CallMethodsWithLegacySemantics, ReportErrorsWithLegacySemantics, DefaultOptionsV1, v2.DefaultOptionsV2, InvalidUnmarshalError, InvalidUnmarshalError.Error, UnmarshalFieldError, UnmarshalFieldError.Error, UnsupportedTypeError, UnsupportedTypeError.Error, v2.SemanticError, v2.SemanticError.Error, v2.SemanticError.Unwrap, jsontext.ErrNonStringName

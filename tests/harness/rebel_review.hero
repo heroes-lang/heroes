@@ -1,0 +1,98 @@
+# THE COHERENCE REVIEW'S READOUT (M-rebel-library's item 31), a root of the
+# harness beside `main.hero`:
+#
+#     heroes run tests/harness/rebel_review.hero
+#
+# from the repository's root. It reads Rebel as the `rebel` suite does
+# (`suite_rebel.hero`) and prints every finding of every instrument, the ones
+# the review keeps with their reason and the ones it does not marked `OPEN`,
+# each instrument under its name with its count: the list the review's record
+# is written from, and the one its readers start from. The suite judges; this
+# prints, and exits 0 whatever it found, 2 where the tree could not be read.
+# A program and not a verb of `heroes`, for the reason `main.hero` is one:
+# § 10's stopping rule.
+
+use rebel_kept
+use rebel_tree
+use shell
+use suite_rebel
+
+function main()
+    scratch = "build/harness-rebel-" + shell.pid().to_str()
+
+    if shell.mkdir_all(scratch).is_err()
+        print("rebel_review: cannot make " + scratch)
+        exit(code: 2)
+    tree = suite_rebel.read_tree(scratch)
+
+    if tree.is_err()
+        print("rebel_review: " + said(tree))
+        exit(code: 2)
+    read = tree.must()
+    found = suite_rebel.findings(read)
+    keeping = rebel_kept.kept()
+    print(
+        "Rebel at " + read.root + ": " + read.modules.len().to_str() + " modules, " + read.ledgers.len().to_str() + " ledgers, " + read.rows.len().to_str() + " rows of README § A1 in " + rebel_tree.RULES
+    )
+
+    for line in readout(found: found, keeping: keeping)
+        print(line)
+
+    _ = shell.remove_tree(scratch).is_err()
+
+# The readout's lines: each check's name and count, then each finding, its
+# reason beneath where the review keeps it, `OPEN` where it does not, with the
+# key `rebel_kept.hero` would keep it under.
+function readout(found: [suite_rebel.Finding], keeping: [rebel_kept.Kept]) -> [str]
+    out: [str] @= []
+
+    for check in suite_rebel.CHECKS
+        mine: [suite_rebel.Finding] @= []
+
+        for f in found
+            if f.check == check
+                mine @ mine.push(f)
+
+        out @ out.push("")
+        out @ out.push("## " + check + ": " + mine.len().to_str())
+
+        for f in mine
+            why = reason(keeping: keeping, check: check, key: f.key)
+
+            if why.len() == 0
+                out @ out.push("OPEN " + f.said)
+                out @ out.push("     under " + f.key)
+            else
+                out @ out.push("kept " + f.said)
+                out @ out.push("     because " + why)
+
+    return out
+
+function reason(keeping: [rebel_kept.Kept], check: str, key: str) -> str
+    for k in keeping
+        if k.check == check && k.key == key
+            return k.why
+
+    return ""
+
+function said<A>(got: A?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
+
+test "the readout counts each check and marks each finding kept with its reason or open"
+    found = [
+        suite_rebel.Finding(check: "codes", key: "a", said: "a.hero:1: x")
+        suite_rebel.Finding(check: "codes", key: "b", said: "b.hero:2: y")
+    ]
+    lines = readout(found: found, keeping: [rebel_kept.Kept(check: "codes", key: "b", why: "the reason")])
+    assert lines[0] == "" && lines[1] == "## ledgers: 0"
+    at: i64 @= 0
+
+    while lines[at] != "## codes: 2"
+        at @ at + 1
+
+    assert lines[at + 1] == "OPEN a.hero:1: x"
+    assert lines[at + 2] == "     under a"
+    assert lines[at + 3] == "kept b.hero:2: y"
+    assert lines[at + 4] == "     because the reason"

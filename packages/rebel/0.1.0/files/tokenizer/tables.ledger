@@ -1,0 +1,29 @@
+# The ledger of `tokenizer/tables`: the encodings of OpenAI's models carried
+# as data, each a module of its own (`tokenizer/tables/o200k_base`,
+# `cl100k_base`, `o200k_harmony`) so a program carries the one it names, and
+# which encoding a model reads. Its blocks were `tokenizer.ledger`'s until
+# 2026-11-19, moved whole when the coherence review gave the package its row
+# of § A1; the libraries, their versions and the lists are that ledger's
+# (tiktoken-go v0.1.8, tiktoken-rs 0.12.1, tiktoken 0.14.0, tokenizers
+# 0.23.3), read on this machine 2026-11-18.
+
+capability tok/tables  the encodings of OpenAI's models carried as data, by name
+  heroes  o200k_base.encoding, cl100k_base.encoding, o200k_harmony.encoding, tables.named, tables.names
+  go      GetEncoding, ENDOFTEXT, ENDOFPROMPT, FIM_PREFIX, FIM_MIDDLE, FIM_SUFFIX
+  rust    o200k_base, o200k_base_singleton, cl100k_base, cl100k_base_singleton, o200k_harmony, o200k_harmony_singleton, O200K_BASE_PAT_STR, ENDOFTEXT, ENDOFPROMPT, FIM_PREFIX, FIM_MIDDLE, FIM_SUFFIX, tokenizer::Tokenizer, tokenizer::get_tokenizer, bpe_for_tokenizer, get_bpe_from_tokenizer
+  python  tiktoken.get_encoding, tiktoken.list_encoding_names, tiktoken.registry.get_encoding, tiktoken.registry.list_encoding_names, tiktoken.registry.ENCODINGS, tiktoken.registry.ENCODING_CONSTRUCTORS, tiktoken_ext.openai_public.o200k_base, tiktoken_ext.openai_public.cl100k_base, tiktoken_ext.openai_public.o200k_harmony, tiktoken_ext.openai_public.ENDOFTEXT, tiktoken_ext.openai_public.ENDOFPROMPT, tiktoken_ext.openai_public.FIM_PREFIX, tiktoken_ext.openai_public.FIM_MIDDLE, tiktoken_ext.openai_public.FIM_SUFFIX, tokenizers.Tokenizer.from_pretrained
+  note    the tables are the files OpenAI serves, fetched 2026-11-18, their SHA-256 the ones tiktoken 0.14.0 expects, written as Heroes data by a program kept outside the tree (`tokenizer/tables/internal/o200k_base.hero` names it). Each table is its own module, `tokenizer/tables/o200k_base`, `cl100k_base` and `o200k_harmony`, so a program carries only the one it uses (2.05 MB for a program counting two words with `cl100k_base`, 3.42 MB with `o200k_base`, against 4.97 MB through `tokenizer/tables`, whose look-up by name reaches all three; measured 2026-11-18 at -O2). A singleton is the program's own binding: an encoding is made once and kept. The special tokens' texts are constants of no package: a text names them, `special_tokens` lists them
+
+capability tok/older-tables  tiktoken's older encodings, of GPT-3 and GPT-2
+  heroes  pending
+  go      -
+  rust    r50k_base, r50k_base_singleton, p50k_base, p50k_base_singleton, p50k_edit, p50k_edit_singleton
+  python  tiktoken_ext.openai_public.r50k_base, tiktoken_ext.openai_public.p50k_base, tiktoken_ext.openai_public.p50k_edit, tiktoken_ext.openai_public.gpt2, tiktoken_ext.openai_public.r50k_pat_str
+  note    `r50k_base`, `p50k_base`, `p50k_edit` and `gpt2`; the generator of the tables makes them, and their pattern is read by `new` (the dialect's tests hold it); not carried this round. `tables.name_for_model` names them for their models, and `tables.named` fails `not_found` for them
+
+capability tok/model  which encoding a model reads
+  heroes  tables.name_for_model, tables.for_model
+  go      EncodingForModel, MODEL_TO_ENCODING, MODEL_PREFIX_TO_ENCODING
+  rust    bpe_for_model, get_bpe_from_model
+  python  tiktoken.encoding_for_model, tiktoken.encoding_name_for_model, tiktoken.model.encoding_for_model, tiktoken.model.encoding_name_for_model, tiktoken.model.MODEL_TO_ENCODING, tiktoken.model.MODEL_PREFIX_TO_ENCODING
+  note    tiktoken 0.14.0's two tables, whole names first and then the starts of names in their order, written as data; a model none names fails `not_found`, where tiktoken raises KeyError

@@ -1,0 +1,310 @@
+# Rebel, the optional library, held to its coherence (M-rebel-library's item
+# 31, the author's of 2026-11-17: *before going to main, a check of coherence
+# and style: redundancies, things not well organised*), measured by
+# instruments rather than read, each a module of this harness asked of the
+# newest version of `packages/rebel` and of the rules page,
+# `examples-rebel/README.md`:
+#
+#   ledgers    the same capability done by its own package in two ledgers
+#              (`rebel_ledgers.hero`)
+#   twins      two public functions of two packages with one name and one
+#              signature (`rebel_faces.hero`)
+#   prefixed   a face whose functions a type of its own names, the smell
+#              `containers` showed before its split (`rebel_faces.hero`)
+#   oversized  a face past a size the distribution sets (`rebel_faces.hero`)
+#   names      a name README § A3's grammar does not allow (`rebel_names.hero`)
+#   codes      a code outside README § A4's closed list (`rebel_codes.hero`,
+#              the list `package_codes.CLOSED`)
+#   layers     a `use` that breaks README § A1's layers, a private module's included
+#              (`rebel_layers.hero`)
+#   unlisted   a subpackage with no row in README § A1 or no ledger, a floor not
+#              named `hero_<x>` (`rebel_layers.hero`)
+#   bodies     one body in two packages, by its normalised text
+#              (`rebel_bodies.hero`)
+#   one-layer  two packages of one layer that hold a body or a binding of C
+#              in common (`rebel_bodies.hero`)
+#
+# **A finding is repaired or kept, never ignored.** The review that built these
+# repaired what was local and sure, and kept the rest in `rebel_kept.hero`, each
+# with its reason, for the readers who come after it; a finding not kept is a
+# failure naming its file and line, and a kept finding the tree no longer
+# shows is a failure too, so the list cannot rot into a list of exemptions for
+# things that are gone. `heroes run tests/harness/rebel_review.hero` prints
+# every finding, kept or not, by instrument, and the review's record, what each
+# found and what moved, is
+# `docs/measurements/062-the-coherence-review-of-rebel-282-findings-of-ten-checks-22-repaired-in-four-kinds-261-kept-for-the-readers.md`.
+# Reads files and runs no compiler.
+
+use floors
+use package_face
+use rebel_bodies
+use rebel_codes
+use rebel_faces
+use rebel_kept
+use rebel_layers
+use rebel_ledgers
+use rebel_names
+use rebel_tree
+use report
+
+# The floor of the modules read: **1,495 on 2026-11-19**, Rebel 0.1.0's
+# `.hero` files the day the review's instruments first ran. **1,492 the same
+# day**, step 56d deleting the three copies of the JSON equality it made one
+# function of `json`'s face: a floor follows a deletion made on purpose in the
+# commit that makes it, which says so, and never a walk that lost the tree.
+constant LEAST_MODULES: i64
+    1492
+
+# The floor of the ledgers read: **144 on 2026-11-19**, one per row of README § A1;
+# **145 the same day**, step 56e giving `tokenizer/tables` its own.
+constant LEAST_LEDGERS: i64
+    145
+
+# The floor of README § A1's rows: **144 on 2026-11-19**, the page's *a hundred and
+# forty-four packages*; **145 the same day**, step 56e's row of
+# `tokenizer/tables`.
+constant LEAST_ROWS: i64
+    145
+
+# One finding of one instrument: the check, what the review keeps it under, and
+# what it says, its file and line first.
+record Finding
+    check: str
+    key: str
+    said: str
+
+# What the tree holds, read once for every instrument.
+record Read
+    root: str
+    modules: [rebel_tree.Module]
+    ledgers: [rebel_tree.Ledger]
+    rows: [rebel_tree.Row]
+
+function read_tree(scratch: str) -> Read?
+    root = rebel_tree.source_root(scratch)?
+    modules = rebel_tree.modules(scratch: scratch, root: root)?
+    ledgers = rebel_tree.ledgers(scratch: scratch, root: root)?
+    rules = read_file(rebel_tree.RULES)
+
+    if rules.is_err()
+        return fail(
+            code: "unreadable",
+            msg: "cannot read " + rebel_tree.RULES + ", whose README § A1 is the table of packages"
+        )
+    return ok(Read(root: root, modules: modules, ledgers: ledgers, rows: rebel_tree.rows_of(rules.must())))
+
+# Every finding of every instrument over the tree read, in the order of the
+# checks above.
+function findings(tree: Read) -> [Finding]
+    out: [Finding] @= []
+    blocks: [rebel_ledgers.Block] @= []
+
+    for one in tree.ledgers
+        for block in rebel_ledgers.blocks_of(package: one.package, text: one.text)
+            blocks @ blocks.push(block)
+
+    for t in rebel_ledgers.twice_done(blocks)
+        out @ out.push(Finding(check: "ledgers", key: rebel_ledgers.key(t), said: rebel_ledgers.told(t)))
+
+    signed: [rebel_faces.Signed] @= []
+    faces: [package_face.Face] @= []
+
+    for m in tree.modules
+        if rebel_tree.is_face(m.path)
+            face = package_face.face_of(path: m.path, text: m.text)
+            faces @ faces.push(face)
+
+            for one in rebel_faces.signed_of(face: face, text: m.text)
+                signed @ signed.push(one)
+
+    for t in rebel_faces.twins(signed)
+        out @ out.push(Finding(check: "twins", key: rebel_faces.twins_key(t), said: rebel_faces.twins_told(t)))
+
+    for face in faces
+        for p in rebel_faces.prefixed(face: face, least: rebel_faces.PREFIX_LEAST)
+            out @ out.push(
+                Finding(check: "prefixed", key: rebel_faces.prefixed_key(p), said: rebel_faces.prefixed_told(p))
+            )
+
+    for face in faces
+        for o in rebel_faces.oversized(face: face, most: rebel_faces.SIZE_MOST)
+            out @ out.push(Finding(check: "oversized", key: o.face, said: rebel_faces.oversized_told(o)))
+
+    for m in tree.modules
+        for one in rebel_names.cased(path: m.path, text: m.text)
+            out @ out.push(Finding(check: "names", key: rebel_names.key(one), said: rebel_names.told(one)))
+
+        if rebel_tree.is_face(m.path)
+            for one in rebel_names.graded(path: m.path, text: m.text)
+                out @ out.push(Finding(check: "names", key: rebel_names.key(one), said: rebel_names.told(one)))
+
+    index = rebel_codes.index_of_modules(tree.modules)
+
+    for m in tree.modules
+        for one in rebel_codes.outside(index: index, module: m)
+            out @ out.push(Finding(check: "codes", key: rebel_codes.key(one), said: rebel_codes.told(one)))
+
+    for one in rebel_layers.broken(rows: tree.rows, modules: tree.modules)
+        out @ out.push(Finding(check: "layers", key: one.key, said: rebel_layers.told(one)))
+
+    for one in rebel_layers.unlisted(rows: tree.rows, modules: tree.modules, ledgers: tree.ledgers)
+        out @ out.push(Finding(check: "unlisted", key: one.key, said: rebel_layers.told(one)))
+
+    by = rebel_tree.by_package(tree.rows)
+    functions: [rebel_bodies.Function] @= []
+    bound: [rebel_bodies.Bound] @= []
+
+    for m in tree.modules
+        package = home_of(rows: by, path: m.path)
+
+        for f in rebel_bodies.functions_of(module: m, package: package, least: rebel_bodies.BODY_LEAST)
+            functions @ functions.push(f)
+
+        for b in rebel_bodies.bound_of(module: m, package: package)
+            bound @ bound.push(b)
+
+    held = rebel_bodies.shared(functions)
+
+    for s in held
+        out @ out.push(Finding(check: "bodies", key: rebel_bodies.shared_key(s), said: rebel_bodies.shared_told(s)))
+
+    for p in rebel_bodies.one_layer(shared_bodies: held, bound: bound, layers: by)
+        out @ out.push(Finding(check: "one-layer", key: rebel_bodies.pair_key(p), said: rebel_bodies.pair_told(p)))
+
+    return out
+
+# A module's package for the instruments that compare packages: its row's,
+# else its path's first part, so the private modules of a folder no row names
+# stand together.
+function home_of(rows: {str: rebel_tree.Row}, path: str) -> str
+    package = rebel_tree.package_of(rows: rows, path: path)
+
+    if package.len() > 0
+        return package
+    return strings_first(path)
+
+function strings_first(path: str) -> str
+    for at in range(from: 0, to: path.len())
+        if path[at] == '/'
+            return path.slice(from: 0, to: at)
+
+    return path
+
+# The checks in the order the suite reports them.
+constant CHECKS: [str]
+    [
+        "ledgers"
+        "twins"
+        "prefixed"
+        "oversized"
+        "names"
+        "codes"
+        "layers"
+        "unlisted"
+        "bodies"
+        "one-layer"
+    ]
+
+function run_all(scratch: str) -> report.Report?
+    r: report.Report @= report.empty()
+    tree = read_tree(scratch)?
+    floors.check(
+        @r,
+        label: "rebel",
+        found: tree.modules.len(),
+        floor: LEAST_MODULES,
+        what: "`.hero` files in " + tree.root
+    )
+    floors.check(@r, label: "rebel", found: tree.ledgers.len(), floor: LEAST_LEDGERS, what: "ledgers in " + tree.root)
+    floors.check(
+        @r,
+        label: "rebel",
+        found: tree.rows.len(),
+        floor: LEAST_ROWS,
+        what: "rows of README § A1 in " + rebel_tree.RULES
+    )
+    judged(@r, found: findings(tree), keeping: rebel_kept.kept())
+    return ok(r)
+
+# Each check's findings against what the review keeps: a finding not kept is a
+# failure, a kept one the tree no longer shows is a failure, and a check with
+# neither is a pass.
+function judged(@r: report.Report, found: [Finding], keeping: [rebel_kept.Kept])
+    for check in CHECKS
+        before = r.failed
+        label = "rebel/" + check
+        seen: {str: bool} @= {}
+
+        for f in found
+            if f.check != check
+                continue
+            seen[f.key] @ true
+
+            if !kept_has(keeping: keeping, check: check, key: f.key)
+                report.keep_failure(
+                    @r,
+                    label: label,
+                    detail: "  " + f.said + "\n  repair it, or keep it in `rebel_kept.hero` with its reason, under `" + f.key + "`"
+                )
+
+        for k in keeping
+            if k.check == check && seen[k.key].is_err()
+                report.keep_failure(
+                    @r,
+                    label: label,
+                    detail: "  `rebel_kept.hero` keeps `" + k.key + "`, which the tree no longer shows: take it out of the list, since a kept finding that is gone is an exemption for nothing"
+                )
+
+        if r.failed == before
+            report.keep_pass(@r)
+
+function kept_has(keeping: [rebel_kept.Kept], check: str, key: str) -> bool
+    for k in keeping
+        if k.check == check && k.key == key
+            return true
+
+    return false
+
+## Tests
+
+# The planted witnesses of the judgement: a finding not kept fails, a kept one
+# passes, and a kept one the tree no longer shows fails.
+test "a finding not kept fails, a kept one passes, and a kept one gone fails"
+    found = [
+        Finding(check: "codes", key: "a", said: "a.hero:1: x")
+        Finding(check: "layers", key: "b", said: "b.hero:2: y")
+    ]
+    r: report.Report @= report.empty()
+    judged(
+        @r,
+        found: found,
+        keeping: [rebel_kept.Kept(check: "layers", key: "b", why: "kept"), rebel_kept.Kept(check: "names", key: "gone", why: "kept")]
+    )
+    assert r.failed == 2
+    assert r.passed == CHECKS.len() - 2
+    assert r.failures.len() == 2
+    clean: report.Report @= report.empty()
+    judged(
+        @clean,
+        found: found,
+        keeping: [rebel_kept.Kept(check: "codes", key: "a", why: "k"), rebel_kept.Kept(check: "layers", key: "b", why: "k")]
+    )
+    assert clean.failed == 0 && clean.passed == CHECKS.len()
+
+test "a module's home is its row, else its first folder"
+    rows = rebel_tree.by_package([rebel_tree.Row(package: "compress", layer: 3, line: 1)])
+    assert home_of(rows: rows, path: "compress/internal/codes") == "compress"
+    assert home_of(rows: rows, path: "containers/internal/codes") == "containers"
+    assert home_of(rows: rows, path: "lone") == "lone"
+
+test "every kept finding names a check and gives its reason"
+    for k in rebel_kept.kept()
+        assert kept_has(keeping: [k], check: k.check, key: k.key)
+        assert k.why.len() > 0
+        named: bool @= false
+
+        for check in CHECKS
+            if check == k.check
+                named @ true
+
+        assert named

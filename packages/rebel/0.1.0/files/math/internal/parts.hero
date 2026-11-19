@@ -3,9 +3,9 @@
 # work; this module answers for the zeros, the infinities and the nan, where
 # C leaves the exponent unspecified.
 
+use math/hero_math
 use math/internal/floats
 use math/internal/limits
-use math/libm
 
 # The fraction `to_scaled` answers: from 0.5 up to 1.0 in size, or `x` itself
 # where it is a zero, an infinity or a nan.
@@ -15,7 +15,7 @@ function scaled_fraction(x: f64) -> f64
     if x == 0.0 || !floats.is_finite(x)
         return x
     exponent: i32 @= 0
-    return libm.c_frexp(x, @exponent)
+    return hero_math.c_frexp(x, @exponent)
 
 # The power of two `to_scaled` answers: 0 for a zero, an infinity and a nan.
 #
@@ -24,7 +24,7 @@ function scaled_exponent(x: f64) -> i64
     if x == 0.0 || !floats.is_finite(x)
         return 0
     exponent: i32 @= 0
-    _ = libm.c_frexp(x, @exponent)
+    _ = hero_math.c_frexp(x, @exponent)
     return to_i64(exponent).must()
 
 # `x` times 2 raised to `exponent`.
@@ -40,7 +40,7 @@ function scale(x: f64, exponent: i64) -> f64
         held @ 4000
     else if held < -4000
         held @ -4000
-    return libm.c_ldexp(x, to_i32(held).must())
+    return hero_math.c_ldexp(x, to_i32(held).must())
 
 # The power of two `x` lies at.
 #
@@ -55,14 +55,14 @@ function exponent_of(x: f64) -> i64?
 # - `x`: any float.
 # - `toward`: the direction.
 function next_after(x: f64, toward: f64) -> f64
-    return libm.c_nextafter(x: x, y: toward)
+    return hero_math.c_nextafter(x: x, y: toward)
 
 # The `f32` next to `x` toward `toward`.
 #
 # - `x`: any `f32`.
 # - `toward`: the direction.
 function next_after_f32(x: f32, toward: f32) -> f32
-    return libm.c_nextafterf(x: x, y: toward)
+    return hero_math.c_nextafterf(x: x, y: toward)
 
 # The gap between the size of `x` and the next float above it, or below it at
 # the largest float.
@@ -87,7 +87,7 @@ function ulp(x: f64) -> f64
 # - `times`: the other factor.
 # - `plus`: what is added.
 function mul_add(x: f64, times: f64, plus: f64) -> f64
-    return libm.c_fma(x: x, y: times, z: plus)
+    return hero_math.c_fma(x: x, y: times, z: plus)
 
 # Whether `x` is within `ulps` units in the last place of `expected`: how the
 # tests of `math` hold a function C's libraries round differently, the value

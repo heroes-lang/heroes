@@ -6,33 +6,33 @@
 # The remainder of two floats is exact, so each quotient is computed from it
 # and only rounded where the division itself must round.
 
+use math/hero_math
 use math/internal/floats
 use math/internal/limits
-use math/libm
 
 # The largest whole number at or below `x`.
 #
 # - `x`: any float.
 function floor(x: f64) -> f64
-    return libm.c_floor(x)
+    return hero_math.c_floor(x)
 
 # The smallest whole number at or above `x`.
 #
 # - `x`: any float.
 function ceil(x: f64) -> f64
-    return libm.c_ceil(x)
+    return hero_math.c_ceil(x)
 
 # `x` rounded toward zero.
 #
 # - `x`: any float.
 function trunc(x: f64) -> f64
-    return libm.c_trunc(x)
+    return hero_math.c_trunc(x)
 
 # The whole number nearest to `x`, a half away from zero.
 #
 # - `x`: any float.
 function round(x: f64) -> f64
-    return libm.c_round(x)
+    return hero_math.c_round(x)
 
 # The whole number nearest to `x`, a half to the even one. `x - trunc(x)` is
 # exact for every float, so a half is seen as a half; C's `rint` would read
@@ -56,7 +56,7 @@ function round_even(x: f64) -> f64
 # - `x`: any float.
 function fraction(x: f64) -> f64
     whole: f64 @= 0.0
-    return libm.c_modf(x: x, iptr: @whole)
+    return hero_math.c_modf(x: x, iptr: @whole)
 
 # The quotient of `x` by `by` rounded down.
 #
@@ -128,7 +128,7 @@ function rem_euclid(x: f64, by: f64) -> f64
 # - `x`: the dividend.
 # - `by`: the divisor.
 function rem_nearest(x: f64, by: f64) -> f64
-    return libm.c_remainder(x: x, y: by)
+    return hero_math.c_remainder(x: x, y: by)
 
 ## Tests
 

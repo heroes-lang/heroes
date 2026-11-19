@@ -95,25 +95,25 @@ function reads_as(d: exact.Digits, b: side.Binary, format: near.Format) -> bool
     return side.place(a: quick.whole_of(d.digits), tens: d.point - count, b: b, format: format) == 0
 
 # The fewest digits that read back as `x`, as `digits` answers them, decided
-# without the exact digits of `x`. Fails `undecided` where `x` is not normal,
+# without the exact digits of `x`. Fails `unsupported` where `x` is not normal,
 # is a power of two, or `hint` is not the nearest of its length.
 function quickly(x: f64, hint: exact.Digits, format: near.Format) -> exact.Digits?
     if !side.is_normal(x: x, format: format)
-        return fail(code: "undecided", msg: "not a normal float")
+        return fail(code: "unsupported", msg: "not a normal float")
     count = hint.digits.len()
 
     if count <= unique_digits(format)
         return ok(hint)
 
     if count > quick.DIGITS_MAX
-        return fail(code: "undecided", msg: "too many digits")
+        return fail(code: "unsupported", msg: "too many digits")
     b = side.binary_of(x: x, format: format)?
 
     if b.significand == 1 << format.bits - 1
-        return fail(code: "undecided", msg: "a power of two")
+        return fail(code: "unsupported", msg: "a power of two")
 
     if !is_nearest(whole: quick.whole_of(hint.digits), tens: hint.point - count, b: b)
-        return fail(code: "undecided", msg: "not the nearest of its length")
+        return fail(code: "unsupported", msg: "not the nearest of its length")
 
     # Its gaps both ways equal, a decimal of a length reads back only where
     # the nearest of that length does, so the nearest is the only one asked.

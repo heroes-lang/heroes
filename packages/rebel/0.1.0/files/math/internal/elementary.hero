@@ -7,16 +7,16 @@
 # Python's `math`, which asks this machine's C library: another platform's C
 # library may round the last bit otherwise.
 
+use math/hero_math
 use math/internal/floats
 use math/internal/limits
 use math/internal/parts
-use math/libm
 
 # The square root of `x`.
 #
 # - `x`: any float.
 function sqrt(x: f64) -> f64
-    return libm.c_sqrt(x)
+    return hero_math.c_sqrt(x)
 
 # The cube root of `x`, within a hair over half a unit in the last place on
 # every platform: C's own root, which the C libraries round differently
@@ -30,10 +30,10 @@ function sqrt(x: f64) -> f64
 # - `x`: any float; a zero, an infinity and a nan answer themselves.
 function cbrt(x: f64) -> f64
     if x == 0.0 || !floats.is_finite(x)
-        return libm.c_cbrt(x)
+        return hero_math.c_cbrt(x)
     thirds = parts.scaled_exponent(x) / 3
     near = parts.scale(x: x, exponent: -3 * thirds)
-    root = libm.c_cbrt(near)
+    root = hero_math.c_cbrt(near)
     square = root * root
     square_error = parts.mul_add(x: root, times: root, plus: -square)
     cube = square * root
@@ -46,50 +46,50 @@ function cbrt(x: f64) -> f64
 # - `x`: one side.
 # - `y`: the other.
 function hypot(x: f64, y: f64) -> f64
-    return libm.c_hypot(x: x, y: y)
+    return hero_math.c_hypot(x: x, y: y)
 
 # `base` raised to `exponent`.
 #
 # - `base`: any float.
 # - `exponent`: any float.
 function pow(base: f64, exponent: f64) -> f64
-    return libm.c_pow(x: base, y: exponent)
+    return hero_math.c_pow(x: base, y: exponent)
 
 # E raised to `x`.
 #
 # - `x`: any float.
 function exp(x: f64) -> f64
-    return libm.c_exp(x)
+    return hero_math.c_exp(x)
 
 # 2 raised to `x`.
 #
 # - `x`: any float.
 function exp2(x: f64) -> f64
-    return libm.c_exp2(x)
+    return hero_math.c_exp2(x)
 
 # E raised to `x`, less one.
 #
 # - `x`: any float.
 function exp_minus_1(x: f64) -> f64
-    return libm.c_expm1(x)
+    return hero_math.c_expm1(x)
 
 # The natural logarithm of `x`.
 #
 # - `x`: any float.
 function ln(x: f64) -> f64
-    return libm.c_log(x)
+    return hero_math.c_log(x)
 
 # The logarithm of `x` in base 2.
 #
 # - `x`: any float.
 function log2(x: f64) -> f64
-    return libm.c_log2(x)
+    return hero_math.c_log2(x)
 
 # The logarithm of `x` in base 10.
 #
 # - `x`: any float.
 function log10(x: f64) -> f64
-    return libm.c_log10(x)
+    return hero_math.c_log10(x)
 
 # The logarithm of `x` in base `base`.
 #
@@ -102,7 +102,7 @@ function log(x: f64, base: f64) -> f64
 #
 # - `x`: any float.
 function ln_1_plus(x: f64) -> f64
-    return libm.c_log1p(x)
+    return hero_math.c_log1p(x)
 
 ## Tests
 

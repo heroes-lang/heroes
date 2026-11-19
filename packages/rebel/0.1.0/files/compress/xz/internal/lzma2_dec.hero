@@ -3,6 +3,7 @@
 # control byte says, its sizes held to what its range coder used.
 
 use compress/internal/codes
+use compress/internal/cursor
 use compress/xz/internal/lzma_dec
 use compress/xz/internal/samples
 
@@ -12,17 +13,6 @@ record Alone
     data: [u8]
     # The index after the stream's last byte.
     used: i64
-
-# The number of `width` bytes at `at` of `input`, the lowest first.
-function little(input: [u8] lent, at: i64, width: i64) -> i64
-    value: i64 @= 0
-    k: i64 @= width - 1
-
-    while k >= 0
-        value @ value << 8 | to_i64(input[at + k]).must()
-        k @ k - 1
-
-    return value
 
 # Decodes the LZMA2 data that begins at `at` of `input`, which may run to
 # `end`, onto `out`, which may hold at most `limit` bytes; answers the index
@@ -55,7 +45,7 @@ function lzma2(input: [u8] lent, at: i64, end: i64, @out: [u8], limit: i64) -> i
 
             if end - pos < 3
                 return codes.invalid_at(at: end, why: "LZMA2 data cut short inside a chunk's header")
-            size = little(input, at: pos + 1, width: 1) << 8 | little(input, at: pos + 2, width: 1)
+            size = cursor.little(input, at: pos + 1, width: 1) << 8 | cursor.little(input, at: pos + 2, width: 1)
             pos @ pos + 3
 
             if end - pos < size + 1
@@ -72,8 +62,8 @@ function lzma2(input: [u8] lent, at: i64, end: i64, @out: [u8], limit: i64) -> i
 
         if end - pos < 5
             return codes.invalid_at(at: end, why: "LZMA2 data cut short inside a chunk's header")
-        unpacked = ((control & 0x1f) << 16 | little(input, at: pos + 1, width: 1) << 8 | little(input, at: pos + 2, width: 1)) + 1
-        packed = (little(input, at: pos + 3, width: 1) << 8 | little(input, at: pos + 4, width: 1)) + 1
+        unpacked = ((control & 0x1f) << 16 | cursor.little(input, at: pos + 1, width: 1) << 8 | cursor.little(input, at: pos + 2, width: 1)) + 1
+        packed = (cursor.little(input, at: pos + 3, width: 1) << 8 | cursor.little(input, at: pos + 4, width: 1)) + 1
         reset = control >> 5 & 3
         pos @ pos + 5
 
@@ -127,7 +117,7 @@ function alone(input: [u8] lent, limit: i64) -> Alone?
     if !unknown
         if input[12] >= 0x80
             return codes.invalid_at(at: 5, why: "an .lzma size past 2^63 bytes")
-        size @ little(input, at: 5, width: 8)
+        size @ cursor.little(input, at: 5, width: 8)
 
         if size > limit
             return codes.past_limit(limit: limit, at: 5)
