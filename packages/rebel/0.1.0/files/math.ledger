@@ -1,3 +1,9 @@
+# The ledger of `math`. Its floor, the thin binding of `math.h`, is the module
+# `math/hero_math` since 2026-11-19, `math/libm` until that day: the coherence
+# review renamed it to README § A2's `hero_<x>`, and a program that named the
+# floor to call C as C answers names it so now. What `math` answers is the
+# face's, and did not move.
+
 capability const/circle-and-e  pi, twice pi, and the base of the natural logarithm
   heroes  math.PI, math.TAU, math.E
   go      Pi, E

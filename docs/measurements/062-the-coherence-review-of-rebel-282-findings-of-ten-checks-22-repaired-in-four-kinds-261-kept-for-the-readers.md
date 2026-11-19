@@ -400,3 +400,6 @@ What the instruments cannot decide and the review did not, the strongest first b
 
 `heroes run tests/harness/main.hero -- <compiler> rebel` judges, and `heroes run tests/harness/rebel_review.hero` prints every finding, kept or not, with the key a new one is kept under. A reader who repairs a finding takes its line out of `rebel_kept.hero` in the same commit, as the steps above did, and appends here, under this record, what moved and the day.
 
+## Corrected 2026-11-19, the same day
+
+**One more name a program may write moved, and the sentence above under What moved said none did.** `math/libm` is no private module: a program may name it, `use <rebel>/math/libm`, to call C as C answers, and since step 56e it names `math/hero_math`. None of `examples-rebel/` names it (searched the same day), and `math.ledger` says so at its head since step 56g.
