@@ -277,12 +277,31 @@ static _Thread_local int64_t hero_watch_os;
 #if defined(_WIN32)
 static SRWLOCK hero_watch_lock = SRWLOCK_INIT;
 static CONDITION_VARIABLE hero_watch_cond = CONDITION_VARIABLE_INIT;
-#else
+#elif defined(__APPLE__)
 static pthread_mutex_t hero_watch_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t hero_watch_cond = PTHREAD_COND_INITIALIZER;
-#if !defined(__APPLE__)
+#else
+static pthread_mutex_t hero_watch_lock = PTHREAD_MUTEX_INITIALIZER;
+/* INITIALISED IN PLACE, ONCE, never copied (defect 2601). POSIX lets only the
+ * condition object itself be used to wait and to wake, and leaves a copy's
+ * behaviour undefined (`pthread_cond_init`'s page, *"Only cond itself may be
+ * used for performing synchronization"*), and initialising one already
+ * initialised is undefined too. Until then this arm initialised a local
+ * condition with the monotonic clock and assigned it over the static one,
+ * which `PTHREAD_COND_INITIALIZER` had already initialised. So the static one
+ * has no initialiser, and `hero_watch_cond_made` initialises it where it
+ * stands, once, before any wait or wake can reach it: every way in passes
+ * `hero_watch_up`'s `pthread_once` first (`hero_watch_open`, whose handle is
+ * the only way to the others). Which clock its waits are read on is kept
+ * beside it, since a system that refuses the monotonic one leaves it on
+ * C's realtime clock, and a deadline read on the other clock would end every
+ * wait at once; neither initialisation standing, a watch is refused
+ * `HERO_WATCH_LIMIT` and nothing waits on it. Written once inside the
+ * `pthread_once`, and read after it. */
+static pthread_cond_t hero_watch_cond;
 static pthread_once_t hero_watch_cond_once = PTHREAD_ONCE_INIT;
-#endif
+static _Atomic bool hero_watch_cond_ready;
+static _Atomic clockid_t hero_watch_cond_clock = CLOCK_REALTIME;
 #endif
 
 static void hero_watch_enter(void) {
@@ -310,21 +329,26 @@ static void hero_watch_broadcast(void) {
 }
 
 #if !defined(_WIN32) && !defined(__APPLE__)
-/* The condition read on a clock that never goes back, where the system lets
- * a condition choose its clock. */
+/* The condition initialised where it stands, read on a clock that never goes
+ * back where the system lets a condition choose its clock, else on C's
+ * realtime clock; `hero_watch_cond_ready` says whether either stands. Run
+ * once, by `pthread_once`. */
 static void hero_watch_cond_made(void) {
     pthread_condattr_t attr;
+    bool made = false;
 
     if (pthread_condattr_init(&attr) == 0) {
-        if (pthread_condattr_setclock(&attr, CLOCK_MONOTONIC) == 0) {
-            pthread_cond_t made;
-
-            if (pthread_cond_init(&made, &attr) == 0) {
-                hero_watch_cond = made;
-            }
+        if (pthread_condattr_setclock(&attr, CLOCK_MONOTONIC) == 0 && pthread_cond_init(&hero_watch_cond, &attr) == 0) {
+            atomic_store(&hero_watch_cond_clock, CLOCK_MONOTONIC);
+            made = true;
         }
         (void)pthread_condattr_destroy(&attr);
     }
+    if (!made && pthread_cond_init(&hero_watch_cond, NULL) == 0) {
+        atomic_store(&hero_watch_cond_clock, CLOCK_REALTIME);
+        made = true;
+    }
+    atomic_store(&hero_watch_cond_ready, made);
 }
 #endif
 
@@ -348,7 +372,8 @@ static void hero_watch_sleep(int64_t ns) {
 #else
     struct timespec at;
 
-    if (clock_gettime(CLOCK_MONOTONIC, &at) != 0) {
+    /* The deadline on the clock the condition was made with (defect 2601). */
+    if (clock_gettime(atomic_load(&hero_watch_cond_clock), &at) != 0) {
         at.tv_sec = 0;
         at.tv_nsec = 0;
     }
@@ -2220,16 +2245,25 @@ static void hero_watch_hear_stop(void) {
     hero_watch_leave();
 }
 
-/* Asked once, outside the lock: where it is refused a wait asks in slices. */
-static void hero_watch_up(void) {
+/* Before the first watch: the condition made, and the stop's hook asked once,
+ * outside the lock, a wait asking in slices where it is refused. False where
+ * the condition could not be made. The `pthread_once` is asked by every
+ * caller, never by the first alone (defect 2601): a second thread opening a
+ * watch while the first still makes the condition waits for it, where it
+ * passed the hook's exchange and could reach the condition half made. */
+static bool hero_watch_up(void) {
+#if !defined(_WIN32) && !defined(__APPLE__)
+    (void)pthread_once(&hero_watch_cond_once, hero_watch_cond_made);
+    if (!atomic_load(&hero_watch_cond_ready)) {
+        return false;
+    }
+#endif
     int was = 0;
 
     if (atomic_compare_exchange_strong(&hero_watch_hook, &was, 3)) {
-#if !defined(_WIN32) && !defined(__APPLE__)
-        (void)pthread_once(&hero_watch_cond_once, hero_watch_cond_made);
-#endif
         atomic_store(&hero_watch_hook, hero_net_when_stopped(hero_watch_hear_stop) == 0 ? 1 : 2);
     }
+    return true;
 }
 
 /* -- the table -------------------------------------------------------------- */
@@ -2359,7 +2393,10 @@ hero_watch *hero_watch_open(const char *path, int64_t flags, int64_t most) {
         hero_watch_fail(HERO_WATCH_INVALID, 0);
         return NULL;
     }
-    hero_watch_up();
+    if (!hero_watch_up()) {
+        hero_watch_fail(HERO_WATCH_LIMIT, 0);
+        return NULL;
+    }
     hero_watch_state *st = hero_layer_alloc_zero(1, sizeof *st);
 
     if (st == NULL) {
