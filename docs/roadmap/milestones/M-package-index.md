@@ -44,3 +44,9 @@ half first**, the indexes as files a site serves, which panel 235 measured as a 
 can be tried from a local folder, **then the service that publishes** (uploads, who holds a name,
 what a withdrawn version does). Rebel is the first package it publishes. Refused: a static index
 alone with publishing left to git and a request by hand, and leaving the row as it stood.
+
+**Feature 2315 moves to M-rebel-packages-manager, 2026-11-19**, at M-rebel-library's landing, by
+the author's decision 4 of 2026-11-15 (`docs/roadmap/milestones/M-rebel-library.md`): the package
+manager written with the library has a row of its own, row 78, and this row comes after it, as the
+paragraph above decided on 2026-11-17. So the paragraph of 2026-11-15 that made 2315 this row's
+stands at its date and holds no longer; the issue's GitHub milestone moves with it.

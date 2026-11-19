@@ -148,7 +148,10 @@ The algorithm, and this is its only home (CL-003; `docs/roadmap/names.md`
 carries the map):
 
 - **two words**, `M-<what-it-delivers>`, hyphenated and lowercase after the
-  `M-`; the tag is the same string lowercased;
+  `M-`; the tag is the same string lowercased. **One exception, the author's
+  choice of 2026-11-15**: `M-rebel-packages-manager`, three words after the
+  `M-`, the package manager written with Rebel (`docs/roadmap/names.md` has
+  its row); no other id takes three;
 - **name the deliverable, never the area**, because the area must stay free for
   the second milestone that touches it. A one-word name appropriates a topic, and
   an identifier must make no claim a later milestone can falsify;

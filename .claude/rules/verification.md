@@ -121,7 +121,12 @@ which pins a diagnostic's notes and excerpts (defect 289).
 | `selfhost/inventory.hero`, `selfhost/escape.hero` | **`spec`** (its built-ins' and escapes' tables), plus everything `selfhost/**` already gets |
 | `selfhost/diag.hero` | **`annotations`** (every thesis rule it lists has a witness), plus everything `selfhost/**` already gets |
 | `selfhost/emit/ffi_build.hero`, `ffi_lookup.hero`, `header_reach.hero`, `selfhost/cli/pkgconfig_answer.hero`, `selfhost/diag_render.hero` | **the net's own tests** (`absence.hero`'s `spellings()`), plus everything `selfhost/**` already gets |
-| `runtime/**` | **`runtime`**, plus the form that holds the change's cases (`run` for a program that runs) and the platforms (`.claude/rules/platforms.md`) |
+| `runtime/**` | **`runtime`**, **`emission`** (it asks clang `-fsyntax-only -I runtime` of every emission, so a header of the runtime moves its verdict; read 2026-11-19), plus the form that holds the change's cases (`run` for a program that runs) and the platforms (`.claude/rules/platforms.md`) |
+| `packages/**`, Rebel's tree under `packages/rebel/` | **`rebel`** (its instruments read the newest version of `packages/rebel`, through `rebel_tree.hero` and `package_rules.hero`), `canonical` and `probe` (their `packages` literal: the canonical form, and the probe's `packages, multi` family), `records` `unseen`; and Rebel's own pipeline, which a push touching Rebel starts (the author's decision 7 of 2026-11-15) |
+| `examples-rebel/README.md`, Rebel's rules page | **`rebel`** (`rebel_tree.hero` reads its layers and its lists), `records` `unseen`; the other files of `examples-rebel/` no suite of the net names (read 2026-11-19), and Rebel's own pipeline builds its programs |
+| `tests/golden/fetch/**` | **`fetch`** (the interface `heroes add` and `heroes fetch` keep, panel 235's R19) |
+| `tests/golden/generated/**` | **`generated`** (the answers the sample of generated programs is judged against) |
+| `README.md`, `site/src/html/**`, `selfhost/cli/doctor.hero`, `.claude/agents/ffi-pragmatist.md` | **`records`** (`records/sentence` and `records/retired`, `tests/harness/superseded.hero`: the homes of M-rebel-library's new sentence and the wordings it retired, since 2026-11-19), plus each path's own row |
 | `docs/**`, `.claude/**` | `records` `unseen` |
 | `CLAUDE.md`, `ROADMAP.md`, `docs/measurements/010-spec-budget-ledger.md` | `records` `unseen` **`spec`** (the contract's ceiling, the headings a `§` citation names, the spec's ledger) |
 | `docs/measurements/061-the-latency-ledger.md`, `tests/harness/suite_latency.hero` | **`latency`** (the newest row and the count held to the suite's pins, no clock run; § The latency ceiling's instrument), `records` `unseen` for the ledger, plus what `tests/harness/**` gets for the suite |
@@ -130,6 +135,19 @@ which pins a diagnostic's notes and excerpts (defect 289).
 | `tests/harness/**` | **the net's own tests**, `heroes test tests/harness/main.hero`, which runs the issue program's own, `tests/harness/issues.hero`'s, inside it since defect 2064, and the thesis instrument's own, `tests/harness/thesis.hero`'s, since M-thesis-harness (2026-10-20), the generator's own, `tests/harness/generate.hero`'s, since M-generated-programs (2026-10-28), and the latency instrument's own, `tests/harness/latency.hero`'s, since M-latency-ceiling (2026-10-30), and `canonical`, plus what `tests/**` gets |
 | `tests/thesis/**` (the assistant's task suite, `tests/harness/thesis.hero`'s input) | **the net's own tests** (the instrument's end-to-end tests read the suite), `-- dry tests/thesis` in the strict and the control arm (every reference passes every case and every hand mutant ends as its opening lines say), `records` for its `.md`, `unseen`, plus what `tests/**` gets; a held-out archive under it is text the instrument alone opens |
 | a file the site's build reads, every path in `.github/workflows/deploy-site.yml`'s `paths:` (the build holds that list to its reads since 2026-10-24, `site/src/lib/triggers.ts`; until then this cell named the files `claims.ts` lists at its top), the lexer's own files among them since the build holds the site's colouring to `heroes lex` (`site/src/lib/lexed.ts`), or `site/**` | **the site's build**, `npm run build` in `site/`, before the push, and where `site/package*.json` moved, also under the deploy's own Node and npm (below the table, 2026-10-26); and `spec` for `site/README.md`, whose headings a `§` citation names |
+
+**Run again 2026-11-19, at M-rebel-library's landing** (lane land-records): the
+command printed 37 names, 31 suites and 6 forms as on 2026-11-13, the
+`packages` suite gone with `core` and `rebel` in its place (the dispatcher's
+lists at `f6c49d84c` and at `f44b7234c`, compared), and what the table
+lacked, written above, five rows and one cell: `rebel` over `packages/**` and
+Rebel's rules page, `fetch` and `generated` over their golden folders,
+`records` over the homes of the new sentence outside `docs/` and `.claude/`,
+and `emission` in the `runtime/**` row. What it printed and is not a row: `units`, `cache` and
+`latency` name no path, since they build programs of their own or read
+`build/`; and `issue_links`, `issues`, `gen_symptom`, `package_judge` and the
+`thesis` modules reach no suite, the net's own tests and their own programs
+running them.
 
 **The paths a suite names have been read from the tree since 2026-10-08, and
 `tests/harness` was the first one found missing** (defect 486, lane
