@@ -1,0 +1,14 @@
+use geom/internal/calc
+
+# A point.
+record Point
+    x: i64
+    y: i64
+
+# The point (3, 4).
+function origin() -> Point
+    return Point(x: 3, y: 4)
+
+# The squared distance from zero.
+function norm(p: Point) -> i64
+    return calc.square_sum(p)

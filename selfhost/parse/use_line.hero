@@ -18,10 +18,10 @@
 # nobody reads twice.
 #
 # **Why this file could be ported today while the expression grammar waits.**
-# The port measured Heroes' own module rule on 2026-08-16: `module_cycle` fires
-# on the `use` edge, whatever it carries, and recursive descent has two knots
-# that must therefore each become one module (measurement 009 § the structural
-# finding). `uses.rs` is in neither — it calls the cursor and nothing calls it
+# The port measured Heroes' own module rule on 2026-08-16: `module_cycle` fired
+# on the `use` edge, whatever it carried (until panel 252's R1, 2026-11-19 lifted
+# it), and recursive descent has two knots that therefore each became one
+# module (measurement 009 § the structural finding). `uses.rs` is in neither — it calls the cursor and nothing calls it
 # back — so it ports as its own module with the question still open.
 
 use ast

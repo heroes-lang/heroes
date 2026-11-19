@@ -13,8 +13,9 @@
 #
 # **And it is why neither of those two has to be one module with the other**
 # (M-declared-freer step 1): with the tails living beside the dispatcher,
-# `file -> extern_group -> members -> constant_tail` closed a ring and
-# Heroes refuses module cycles. Nothing in here calls back out — every
+# `file -> extern_group -> members -> constant_tail` closed a ring, and
+# Heroes refused module cycles until panel 252's R1, 2026-11-19. Nothing in here
+# calls back out — every
 # function takes the cursor and the spans its caller already read — so the
 # ring becomes three one-way edges.
 #

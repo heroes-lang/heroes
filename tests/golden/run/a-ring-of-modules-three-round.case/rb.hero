@@ -1,0 +1,5 @@
+use rc
+
+# The second stop.
+function step(n: i64) -> i64
+    return rc.finish(n: n + 1)

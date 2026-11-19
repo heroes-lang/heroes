@@ -1,0 +1,12 @@
+use xa
+
+extern "xb.h"
+    function xb_add(a: i64, b: i64) -> i64
+
+# The sum, by this module's header.
+function add(a: i64, b: i64) -> i64
+    return xb_add(a: a, b: b)
+
+# A C record of the other module's header, doubled by that module.
+function area(r: xa.XRect) -> i64
+    return xa.twice(n: r.w * r.h)

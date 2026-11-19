@@ -1,0 +1,9 @@
+use <beta>/b
+
+# A count.
+record Count
+    n: i64
+
+# One more than the other package says.
+function more(c: Count) -> i64
+    return b.base(c: c) + 1

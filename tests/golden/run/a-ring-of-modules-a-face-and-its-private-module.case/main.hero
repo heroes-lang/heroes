@@ -1,0 +1,10 @@
+# A ring of modules, panel 252's R1 (2026-11-19): a face, `geom`, uses its
+# private module `geom/internal/calc`, and the private module names the
+# face's own record, `geom.Point`, through `use geom`. Until that sitting the
+# second `use` was `error[module_cycle]`, and Rebel's packages wrote a mirror
+# of their faces' types instead. `calc` adds one to the sum of the squares.
+use geom
+
+function main()
+    p = geom.origin()
+    print(geom.norm(p))

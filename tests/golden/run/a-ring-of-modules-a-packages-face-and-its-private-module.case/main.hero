@@ -1,0 +1,11 @@
+# A ring inside a package, panel 252's R1 (2026-11-19): the package
+# `ringlib`, fetched and placed in `heroes.packages/` at the fingerprint its
+# catalogue entry names, has a face `shapes` that uses `shapes/internal/calc`,
+# and the private module names and builds the face's own record, the shape
+# Rebel's packages wrote mirrors to avoid. A 5 by 6 rectangle: area 30,
+# doubled width 10.
+use <ringlib>/shapes
+
+function main()
+    r = shapes.Rect(w: 5, h: 6)
+    print(shapes.area(r: r), " ", shapes.doubled(r: r).w)

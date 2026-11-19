@@ -1,0 +1,115 @@
+# The parts of a waiting literal that have a type of their own, read before
+# the forms that refuse themselves are told (defect 2596, panel 252's R2;
+# spec § 9: a type parameter takes its type from the arguments that have one
+# of their own). `count({"a": []})` with `count<K>(graph: {K: [K]})`: the key
+# `"a"` says what `K` is though the value refuses itself, so `K` is `str` and
+# the argument is then checked against `{str: [str]}`
+# (`check/settling.hero`'s step 4b). Until the repair nothing of a literal
+# whose first part refused itself was read, and the call was told that no
+# argument said what `K` is.
+#
+# **Only a part whose type needs no synthesis is read**: a literal, an
+# interpolation, a local; never what stands inside `ok(…)`, which spec § 9
+# says gives no type, so `held(ok(1))` stays refused. Nothing is synthesised
+# here, so nothing is synthesised twice: the argument is checked once, whole,
+# against its parameter with the letters replaced. **Two rounds, by form and never by
+# position**: the parts whose type is their own first, then those whose type
+# is a literal's default width (`check/waiting_order.hero`'s `own`), so
+# `{k8: [], 1: []}` and `{1: [], k8: []}` read one verdict. A letter is only
+# ever settled here where nothing before this step settled it, so a call
+# accepted without this step binds what it bound before.
+
+use ast
+use check/state
+use check/table
+use check/waiting
+use resolved
+
+# Whether reading the waiting arguments' typed parts settled a letter.
+function bind_parts(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, params: [i64], left: [waiting.Held], @bindings: [i64?]) -> bool
+    before = settled_count(bindings)
+
+    for w in left
+        walk(@c, a, r, id: w.value, param: params[w.at], defaults: false, @bindings)
+
+    for w in left
+        walk(@c, a, r, id: w.value, param: params[w.at], defaults: true, @bindings)
+
+    return settled_count(bindings) > before
+
+function settled_count(bindings: [i64?]) -> i64
+    n: i64 @= 0
+
+    for b in bindings
+        if !b.is_err()
+            n @ n + 1
+
+    return n
+
+# The expression `id` read against the parameter's type `param`, down through
+# the literals it is made of, settling a letter it meets unsettled.
+function walk(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, id: i64, param: i64, defaults: bool, @bindings: [i64?])
+    match table.get(c.out.types, param)
+        .generic g =>
+            if g.at < bindings.len() && bindings[g.at].is_err()
+                got = part_type(c, a, r, id: id, defaults: defaults)
+
+                if !got.is_err()
+                    bindings[g.at] @ ok(got.must())
+        .array w =>
+            match a.exprs[id].kind
+                .array el =>
+                    for e in el.elements
+                        walk(@c, a, r, id: e, param: w.element, defaults: defaults, @bindings)
+                .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return
+                .hole | .name | .unary | .binary | .field | .field_name | .index | .map        => return
+                .call | .method | .variant_case | .try_expr | .if_expr | .match_expr | .error  => return
+        .map w =>
+            match a.exprs[id].kind
+                .map en =>
+                    for e in en.entries
+                        walk(@c, a, r, id: e.key, param: w.key, defaults: defaults, @bindings)
+                        walk(@c, a, r, id: e.value, param: w.value, defaults: defaults, @bindings)
+                .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return
+                .hole | .name | .unary | .binary | .field | .field_name | .index | .array      => return
+                .call | .method | .variant_case | .try_expr | .if_expr | .match_expr | .error  => return
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit | .fixed | .fallible => return
+        .function_ty | .named | .case_ty | .failure | .error                           => return
+
+# The type of a part that needs no synthesis to say it: with `defaults`
+# false, a string, an interpolation, a `bool` or a local whose type is no
+# literal's default width; with `defaults` true, a number or character
+# literal at its default width, or a local of `i64` or `f64`. Absent for
+# every other part, which this step does not read.
+function part_type(c: state.Checker, a: ast.Ast, r: resolved.Resolved, id: i64, defaults: bool) -> i64?
+    none: i64? = fail(code: "none", msg: "no type without synthesis")
+
+    match a.exprs[id].kind
+        .str_lit | .interp =>
+            if !defaults
+                return ok(table.str_ty(c.out.types))
+        .bool_lit =>
+            if !defaults
+                return ok(table.bool_ty(c.out.types))
+        .int_lit | .char_lit =>
+            if defaults
+                return ok(table.int_ty_id(c.out.types))
+        .float_lit =>
+            if defaults
+                return ok(table.f64_ty(c.out.types))
+        .name =>
+            match r.uses[id]
+                .local l =>
+                    ty = c.out.local_types[l.at]
+
+                    if table.poisoned(c.out.types, ty)
+                        return none
+                    wide = ty == table.int_ty_id(c.out.types) || ty == table.f64_ty(c.out.types)
+
+                    if wide == defaults
+                        return ok(ty)
+                .top | .builtin | .module | .unresolved => return none
+        .null_ptr | .hole | .unary | .binary | .field | .field_name | .index | .array | .map => return none
+        .call | .method | .variant_case | .try_expr | .if_expr | .match_expr | .error        => return none
+
+    return none

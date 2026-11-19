@@ -1,0 +1,1 @@
+tests/golden/check/a-ring-of-modules-records-holding-each-other-by-value.case/sb.hero:5:8: error[no_size]: `record B` contains itself through `A`, so it has no size

@@ -233,7 +233,7 @@ test "number_of: octal with spaces and zeros, base 256, and a stray byte"
 
     match tar_header.number_of(block, from: 0, width: 8, at: 100)
         .ok _  => assert false
-        .err e => assert e.msg == "not a valid archive at byte 102: a byte 120 inside a number"
+        .err e => assert e.msg == "not a valid archive at byte 102: 'x' inside a number"
 
 test "parse: a checksum that does not match"
     block @= block_of(tar_header.empty())

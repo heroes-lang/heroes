@@ -14,7 +14,7 @@
 # §11's 300 at 321. The cut is the seam and not the count: nothing here writes
 # a probe, nothing there reads one, and the edge runs one way — this module
 # uses `extern_probe` for `probe_line` and `extern_probe` does not use this
-# one, so `module_cycle` never fires.
+# one.
 
 use emit/extern_probe as extern_probe
 

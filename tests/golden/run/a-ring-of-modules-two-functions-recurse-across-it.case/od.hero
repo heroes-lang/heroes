@@ -1,0 +1,7 @@
+use ev
+
+# Whether `n` is odd, asked of the other module one step down.
+function is_odd(n: i64) -> bool
+    if n == 0
+        return false
+    return ev.is_even(n: n - 1)

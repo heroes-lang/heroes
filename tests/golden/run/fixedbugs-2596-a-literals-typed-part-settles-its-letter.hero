@@ -1,0 +1,49 @@
+# Fixed defect 2596, 2026-11-19 (panel 252's R2, ratified that day). Symptom:
+# `count({"a": []})` with `count<K>(graph: {K: [K]})` was refused
+# `cannot_infer`, saying no argument said what `K` is, where the key `"a"`
+# says it; and a literal whose first part gave no type was refused where its
+# reverse built, `[[], ["a"]]` against `[["a"], []]`. Cause: a container
+# literal was typed from its first element, key or value alone, and where that
+# one refused itself nothing else of it was read. Repair: a literal's lead is
+# its first part that does not refuse itself, so its verdict is one in either
+# order (`check/waiting_order.hero`'s `lead`), and a waiting literal's parts
+# that need no synthesis, a string, a number, a `bool` or a local, settle the
+# letters nothing else settled (`check/waiting_parts.hero`). The shapes: a
+# string key and a number key, an empty map as the value, the literal inside
+# an array, `ok(…)` as the value, two entries in both orders, two rows in both
+# orders, a local as the key, a byte key beside a number key in both orders,
+# and the plain literals with no call at all.
+function count_lists<K>(graph: {K: [K]}) -> i64
+    return keys(graph).len()
+
+function first_key<K>(graph: {K: [K]}) -> K
+    return keys(graph)[0]
+
+function count_maps<K>(m: {K: {str: i64}}) -> i64
+    return keys(m).len()
+
+function count_nested<K>(xs: [{K: [K]}]) -> i64
+    return xs.len()
+
+function count_held<K>(m: {K: K?}) -> i64
+    return keys(m).len()
+
+function count_rows<K>(xs: [[K]]) -> i64
+    return xs.len()
+
+function main()
+    print(count_lists({"a": []}), " ", first_key({"a": []}))
+    print(count_lists({1: []}), " ", first_key({1: []}))
+    print(count_maps({"a": {}}))
+    print(count_nested([{"a": []}]))
+    print(count_held({"a": ok("b")}))
+    print(count_lists({"a": [], "b": ["c"]}), " ", count_lists({"b": ["c"], "a": []}))
+    print(count_rows([[], ["a"]]), " ", count_rows([["a"], []]))
+    k = "a"
+    print(count_lists({k: []}))
+    k8: u8 = 7
+    print(count_lists({1: [], k8: []}), " ", count_lists({k8: [], 1: []}))
+    rows = [[], ["a"]]
+    pairs = {"a": [], "b": ["c"]}
+    nested = [{"a": []}, {"b": ["c"]}]
+    print(rows.len(), " ", pairs.len(), " ", nested.len())

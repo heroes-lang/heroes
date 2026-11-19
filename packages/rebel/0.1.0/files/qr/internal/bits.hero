@@ -82,7 +82,7 @@ function check(piece: Piece) -> ()?
             if !is_digit(data[at])
                 return fail(
                     code: codes.INVALID,
-                    msg: f"a numeric segment holds byte {data[at]} at {at}, which is not a digit"
+                    msg: f"a numeric segment holds {shown_byte(data[at])} at {at}, which is not a digit"
                 )
             at @ at + 1
 
@@ -91,7 +91,7 @@ function check(piece: Piece) -> ()?
             if alphanumeric_value(data[at]) == 45
                 return fail(
                     code: codes.INVALID,
-                    msg: f"an alphanumeric segment holds byte {data[at]} at {at}, which is not one of \"{ALPHANUMERIC}\""
+                    msg: f"an alphanumeric segment holds {shown_byte(data[at])} at {at}, which is not one of \"{ALPHANUMERIC}\""
                 )
             at @ at + 1
 
@@ -396,6 +396,24 @@ function grouped(text: str, starts: [i64], modes: [i64]) -> [Piece]
 
     return pieces
 
+# The printable ASCII characters, the space to the tilde, in their order.
+constant PRINTABLE: str
+    " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+
+# A byte as a message shows it: a printable ASCII character quoted, `'`, `"`
+# and `\` behind a `\` as `bytes.format_escaped` writes them, and any other
+# byte as its number, this package using no other (defect 2598).
+function shown_byte(b: u8) -> str
+    for k in range(from: 0, to: PRINTABLE.len())
+        if PRINTABLE[k] == b
+            c = PRINTABLE.slice(from: k, to: k + 1)
+
+            if c == "'" || c == "\"" || c == "\\"
+                return "'\\" + c + "'"
+            return "'" + c + "'"
+
+    return f"byte {b}"
+
 ## Tests
 
 test "alphanumeric_value: digits, letters, the nine others, and what is not"
@@ -428,7 +446,7 @@ test "check: each mode's refusals, and an empty segment of every mode"
 
     match check(Piece(mode: 0, data: [0x31, 0x61], number: 0))
         .ok _  => assert false
-        .err e => assert e.code == "invalid" && e.msg == "a numeric segment holds byte 97 at 1, which is not a digit"
+        .err e => assert e.code == "invalid" && e.msg == "a numeric segment holds 'a' at 1, which is not a digit"
 
     assert check(Piece(mode: 1, data: [0x61], number: 0)).is_err()
     assert check(Piece(mode: 3, data: [0x81], number: 0)).is_err()
@@ -500,3 +518,14 @@ test "shortest: few digits stay in the byte run, and characters of more than one
     assert accented.len() == 2
     assert accented[0].data.len() == 7
     assert accented[1].mode == 0
+
+test "check: a byte no segment's alphabet holds, told as its character, or its number where it has none (defect 2598)"
+    match check(Piece(mode: 1, data: [0x41, 0x61], number: 0))
+        .ok _  => assert false
+        .err e => assert e.msg == f"an alphanumeric segment holds 'a' at 1, which is not one of \"{ALPHANUMERIC}\""
+
+    match check(Piece(mode: 0, data: [0x31, 0x9f], number: 0))
+        .ok _  => assert false
+        .err e => assert e.msg == "a numeric segment holds byte 159 at 1, which is not a digit"
+
+    assert shown_byte(' ') == "' '" && shown_byte('~') == "'~'" && shown_byte('\\') == "'\\\\'"

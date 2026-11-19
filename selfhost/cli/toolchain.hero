@@ -18,8 +18,8 @@
 # - the digest is `digest.digest` — two polynomial hashes rather
 #   than FNV-64, with the reason in that file. It left this one on
 #   2026-08-26 because the runtime object's freshness check needs
-#   `cli_deps`, `cli_deps` needs to hash a file, and Heroes refuses
-#   module cycles.
+#   `cli_deps`, `cli_deps` needs to hash a file, and Heroes refused
+#   module cycles then (until panel 252's R1, 2026-11-19).
 # - the release's fingerprint and the runtime hint arrive as PARAMETERS
 #   from the driver; what this compiler was compiled from is its own
 #   answer (`hero_program_sources`, defect 2472), and where it stands the

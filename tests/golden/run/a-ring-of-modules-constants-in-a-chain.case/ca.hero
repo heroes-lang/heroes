@@ -1,0 +1,5 @@
+use cb
+
+# One more than the other.
+constant A: i64
+    cb.B + 1

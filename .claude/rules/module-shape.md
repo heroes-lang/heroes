@@ -32,10 +32,13 @@ Three things that threshold is not:
 - **It is a number to think at, not a limit to round.** A file split against its
   own seam is harder to read than a long one, which is why one 400-line module
   was ratified where the cut ran through a shared cache key (CL-011).
-- **It yields entirely where the language forbids the seam.** Heroes refuses
+- **It yielded entirely where the language forbade the seam.** Heroes refused
   module cycles, and a recursive-descent grammar is mutually recursive by
-  construction, so its knots cannot be split at all. A rule that cannot be
-  obeyed is not a standard but a lie (CL-020).
+  construction, so its knots could not be split at all. A rule that cannot be
+  obeyed is not a standard but a lie (CL-020). **Since panel 252's R1
+  (2026-11-19) a ring of modules builds**, so the seam exists: the knots that
+  stand, `grammar_expr.hero` and `ir/flatten.hero` among them, keep their rows
+  on `suite_layout.hero`'s decided list and their maps until they are cut.
 
 **What is owed in exchange, and it is what the threshold actually protects**: a
 knot carries a module doc naming its cycle, its entry points, and which function
