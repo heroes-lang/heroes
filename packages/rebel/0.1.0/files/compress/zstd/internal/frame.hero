@@ -4,6 +4,7 @@
 # checksum; skippable frames passed over; frames one after another.
 
 use compress/internal/codes
+use compress/internal/cursor
 use compress/zstd/internal/literals
 use compress/zstd/internal/samples
 use compress/zstd/internal/sequences
@@ -53,7 +54,7 @@ function header_at(input: [u8] lent, at: i64) -> Header?
     if is_skippable(input, at: at)
         if input.len() - at < 8
             return codes.invalid_at(at: at, why: "a skippable frame cut short")
-        size = literals.little(input, at: at + 4, width: 4)
+        size = cursor.little(input, at: at + 4, width: 4)
 
         if size > input.len() - at - 8
             return codes.invalid_at(at: at, why: "a skippable frame cut short")
@@ -91,14 +92,14 @@ function header_at(input: [u8] lent, at: i64) -> Header?
         log = 10 + (w >> 3)
         window @ (1 << log) + (1 << log >> 3) * (w & 7)
         p @ p + 1
-    dict_id = literals.little(input, at: p, width: dict_width)
+    dict_id = cursor.little(input, at: p, width: dict_width)
     p @ p + dict_width
     content_size: i64 @= -1
 
     if fcs_width == 8 && input[p + 7] >= 0x80
         content_size @ 9223372036854775807
     else if fcs_width > 0
-        content_size @ literals.little(input, at: p, width: fcs_width)
+        content_size @ cursor.little(input, at: p, width: fcs_width)
 
         if fcs_width == 2
             content_size @ content_size + 256
@@ -148,7 +149,7 @@ function frame_into(@out: [u8], input: [u8] lent, at: i64, limit: i64, dict: Dic
 
         if input.len() - p < 3
             return codes.invalid_at(at: p, why: "a frame cut short before a block's header")
-        bh = literals.little(input, at: p, width: 3)
+        bh = cursor.little(input, at: p, width: 3)
         kind = bh >> 1 & 3
         size = bh >> 3
         body = p + 3
@@ -205,7 +206,7 @@ function frame_into(@out: [u8], input: [u8] lent, at: i64, limit: i64, dict: Dic
         if input.len() - p < 4
             return codes.invalid_at(at: p, why: "a frame cut short inside its checksum")
 
-        if to_i64(check.value % 4294967296).must() != literals.little(input, at: p, width: 4)
+        if to_i64(check.value % 4294967296).must() != cursor.little(input, at: p, width: 4)
             return codes.invalid_at(at: p, why: "a frame whose checksum does not match its bytes")
         p @ p + 4
     return ok(p)
@@ -234,7 +235,7 @@ function size_of(input: [u8] lent, at: i64) -> i64?
     while true
         if input.len() - p < 3
             return codes.invalid_at(at: p, why: "a frame cut short before a block's header")
-        bh = literals.little(input, at: p, width: 3)
+        bh = cursor.little(input, at: p, width: 3)
         kind = bh >> 1 & 3
 
         if kind == 3

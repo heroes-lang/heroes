@@ -1,5 +1,6 @@
 # The bits of a DEFLATE stream read as RFC 1951 section 3.1.1 packs them, from
-# input held in memory. A cursor is a value: a reader saves one before a step
+# input held in memory, and a number read from whole bytes the lowest first,
+# as the headers of `compress/zstd` and `compress/xz` hold their numbers. A cursor is a value: a reader saves one before a step
 # and puts it back where the input ran out in the middle, so a step either
 # happens whole or not at all, and the next call takes it again with more
 # input. Nothing here reads past the input or waits for more.
@@ -73,6 +74,17 @@ function last_byte(c: Cursor) -> i64
 function left(c: Cursor, input: [u8] lent) -> i64
     return input.len() - c.pos + c.count / 8
 
+# The number of `width` bytes at `at` of `input`, the lowest first.
+function little(input: [u8] lent, at: i64, width: i64) -> i64
+    value: i64 @= 0
+    k: i64 @= width - 1
+
+    while k >= 0
+        value @ value << 8 | to_i64(input[at + k]).must()
+        k @ k - 1
+
+    return value
+
 test "fill and take: bits lowest first, across bytes, and an input that runs out"
     input: [u8] = [0b1010_1101, 0xff]
     c @= start()
@@ -114,3 +126,10 @@ test "last_byte: nothing read, inside the first byte, at the start of the second
     _ = take(@c, n: 1)
     assert last_byte(c) == 1
     assert left(c, input) == 0
+
+test "little: one byte, the lowest first across four, eight bytes, and an offset"
+    input: [u8] = [0x01, 0x02, 0x03, 0x04, 0xff, 0x00, 0x00, 0x00, 0x00]
+    assert little(input, at: 0, width: 1) == 1
+    assert little(input, at: 0, width: 4) == 0x04030201
+    assert little(input, at: 4, width: 2) == 0xff
+    assert little(input, at: 1, width: 8) == 0xff040302

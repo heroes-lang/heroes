@@ -35,7 +35,8 @@ use json/internal/writer
 # that order. `==` compares two values whatever the order of their members; it
 # follows their nesting, so on two values nested many thousands deep it runs
 # out of stack and aborts, which is why `parse` reads no deeper than
-# `DEFAULT_MAX_DEPTH` unless it is asked to.
+# `DEFAULT_MAX_DEPTH` unless it is asked to; `equal` answers the same on a
+# stack of its own.
 variant Value
     # JSON's `null`, a word the language keeps for itself.
     null_value
@@ -54,6 +55,79 @@ variant Value
     # An object: its members by key, in the order they were written.
     object
         members: {str: Value}
+
+# Whether `a` and `b` are the same JSON value: numbers by value, texts by
+# bytes, lists element by element, objects member by member whatever their
+# order. `==` answers the same and follows the nesting with recursion; this
+# walks it on a stack the package holds, so two values nested a hundred
+# thousand deep compare as two flat ones do.
+#
+# - `a`: any value.
+# - `b`: any value.
+#
+# It visits each element and member of the two once, so its cost is linear
+# in their size. See also `kind_of`.
+function equal(a: Value, b: Value) -> bool
+    lefts: [Value] @= [a]
+    rights: [Value] @= [b]
+    top: i64 @= 1
+
+    while top > 0
+        top @ top - 1
+        left = lefts[top]
+        right = rights[top]
+
+        match left
+            .null_value =>
+                if !is_null(right)
+                    return false
+            .boolean l =>
+                match right
+                    .boolean r =>
+                        if l.v != r.v
+                            return false
+                    .null_value | .number _ | .text _ | .list _ | .object _ => return false
+            .number l =>
+                match right
+                    .number r =>
+                        if l.v != r.v
+                            return false
+                    .null_value | .boolean _ | .text _ | .list _ | .object _ => return false
+            .text l =>
+                match right
+                    .text r =>
+                        if l.v != r.v
+                            return false
+                    .null_value | .boolean _ | .number _ | .list _ | .object _ => return false
+            .list l =>
+                match right
+                    .list r =>
+                        if l.items.len() != r.items.len()
+                            return false
+
+                        for at in range(from: 0, to: l.items.len())
+                            stack.put(items: @lefts, top: top, item: l.items[at])
+                            stack.put(items: @rights, top: top, item: r.items[at])
+                            top @ top + 1
+                    .null_value | .boolean _ | .number _ | .text _ | .object _ => return false
+            .object l =>
+                match right
+                    .object r =>
+                        names = keys(l.members)
+
+                        if names.len() != keys(r.members).len()
+                            return false
+
+                        for name in names
+                            match r.members[name]
+                                .err _ => return false
+                                .ok found =>
+                                    stack.put(items: @lefts, top: top, item: l.members[name].must())
+                                    stack.put(items: @rights, top: top, item: found)
+                                    top @ top + 1
+                    .null_value | .boolean _ | .number _ | .text _ | .list _ => return false
+
+    return true
 
 ## Codes and limits
 
@@ -1259,6 +1333,28 @@ test "parse_partial: what no byte more can mend fails as parse does, where pydan
 
     assert parse_partial(repeat("[", 512)).must().cut == .container
 
+test "equal: each kind, a number written two ways, and members in another order"
+    assert equal(a: .null_value, b: .null_value)
+    assert !equal(a: .null_value, b: .boolean(v: false))
+    assert equal(a: parse("1").must(), b: parse("1.0").must())
+    assert !equal(a: .number(v: 1.0), b: .text(v: "1"))
+    assert equal(a: parse("{\"a\":1,\"b\":[2,{}]}").must(), b: parse("{\"b\":[2,{}],\"a\":1}").must())
+    assert !equal(a: parse("{\"a\":1}").must(), b: parse("{\"a\":1,\"b\":2}").must())
+    assert !equal(a: parse("{\"a\":1}").must(), b: parse("{\"b\":1}").must())
+    assert !equal(a: parse("[1,2]").must(), b: parse("[2,1]").must())
+    assert equal(a: .text(v: "città"), b: .text(v: "città"))
+
+test "equal: two lists nested a hundred thousand deep"
+    a: Value @= .null_value
+    b: Value @= .null_value
+
+    for _ in range(from: 0, to: 100000)
+        a @ .list(items: [a])
+        b @ .list(items: [b])
+
+    assert equal(a: a, b: b)
+    assert !equal(a: a, b: .list(items: [b]))
+
 ## Examples
 
 # The arguments of a tool as a model streams them, read again as each piece
@@ -1270,3 +1366,9 @@ test "parse_partial: a tool's arguments half arrived"
     assert member(got.value, "note").must() == .text(v: "Hansa Stu")
     assert got.cut == .text
     assert got.pointer == "/note"
+
+# Two objects written with their members in two orders, which are one value.
+test "equal: one object written in two orders"
+    one = parse("{\"a\": 1, \"b\": [true, null]}").must()
+    two = parse("{\"b\": [true, null], \"a\": 1.0}").must()
+    assert equal(a: one, b: two)

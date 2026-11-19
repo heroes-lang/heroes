@@ -45,9 +45,12 @@ use rebel_tree
 use report
 
 # The floor of the modules read: **1,495 on 2026-11-19**, Rebel 0.1.0's
-# `.hero` files the day the review's instruments first ran.
+# `.hero` files the day the review's instruments first ran. **1,492 the same
+# day**, step 56d deleting the three copies of the JSON equality it made one
+# function of `json`'s face: a floor follows a deletion made on purpose in the
+# commit that makes it, which says so, and never a walk that lost the tree.
 constant LEAST_MODULES: i64
-    1495
+    1492
 
 # The floor of the ledgers read: **144 on 2026-11-19**, one per row of § A1.
 constant LEAST_LEDGERS: i64

@@ -83,10 +83,6 @@ constant PARAMETER_LABELS: str
 constant PLAIN_AND_LOCALE: str
     "`numbers.format_percent` writes one fixed form and `i18n/numbers.format_percent` the form a language writes: whether the plain one is the root locale's is the readers' question, and either repair moves a name callers write"
 
-# A finding repaired by step 56d, which takes its line out.
-constant REPAIRED_D: str
-    "repaired by step 56d of this review, whose commit takes this line out"
-
 # A finding repaired by step 56e, which takes its line out.
 constant REPAIRED_E: str
     "repaired by step 56e of this review, whose commit takes this line out"
@@ -295,7 +291,6 @@ function kept() -> [Kept]
         Kept(check: "bodies", key: "compress.write, compress/lz4.write", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "compress.read_rest, compress/lz4.read_rest", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "compress/lz4/internal/fast.lane, hash/internal/xxhash.lane32", why: NO_PUBLIC_HOME)
-        Kept(check: "bodies", key: "compress/xz/internal/lzma2_dec.little, compress/zstd/internal/literals.little", why: REPAIRED_D)
         Kept(check: "bodies", key: "containers/cache/internal/lru.rebuild, containers/indexed/internal/table.rebuild", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "containers/internal/samples.by_bytes, i18n/collate/internal/root.strings_less, i18n/collate/internal/weighing.bytes_less", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "containers/internal/samples.roll, graphs/internal/samples.roll", why: NO_PUBLIC_HOME)
@@ -317,7 +312,6 @@ function kept() -> [Kept]
         Kept(check: "bodies", key: "json/jq/internal/dates.month_names, time/internal/forms.month_names", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "json/jq/internal/lexer.holds_at, openapi/internal/routes.has_at, web/internal/sniffing.holds_at", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "json/jq/internal/text.begins, term/internal/words.begins_with, web/internal/sniffing.begins", why: NO_PUBLIC_HOME)
-        Kept(check: "bodies", key: "json/patch/internal/same.equal, json/path/internal/same.equal, json/schema/internal/same.equal", why: REPAIRED_D)
         Kept(check: "bodies", key: "json/path/internal/edit.depth_of, json/schema/internal/ranking.depth_of", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "keyring/internal/names.has_zero, os/internal/codes.has_zero, serial/internal/calls.holds_zero, sql/mysql/internal/wire.has_zero, sql/postgres/internal/wire.has_zero, tls/internal/text.has_zero", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "ldap/internal/fake.until_listening, mail/smtp/internal/fake.until_listening", why: TEST_FIXTURES)
@@ -377,8 +371,6 @@ function kept() -> [Kept]
         Kept(check: "one-layer", key: "json & xml", why: ONE_LAYER)
         Kept(check: "one-layer", key: "json/jq & term", why: ONE_LAYER)
         Kept(check: "one-layer", key: "json/jq & time", why: ONE_LAYER)
-        Kept(check: "one-layer", key: "json/patch & json/path", why: REPAIRED_D)
-        Kept(check: "one-layer", key: "json/patch & json/schema", why: REPAIRED_D)
         Kept(check: "one-layer", key: "json/path & json/schema", why: ONE_LAYER)
         Kept(check: "one-layer", key: "ldap & mail/smtp", why: ONE_LAYER)
         Kept(check: "one-layer", key: "ldap & pdf", why: ONE_LAYER)
@@ -393,7 +385,6 @@ function kept() -> [Kept]
         Kept(check: "one-layer", key: "unicode/names & unicode/normalize", why: ONE_LAYER)
         Kept(check: "one-layer", key: "unicode/names & unicode/segment", why: ONE_LAYER)
         Kept(check: "one-layer", key: "unicode/normalize & unicode/segment", why: ONE_LAYER)
-        Kept(check: "one-layer", key: "compress/xz & compress/zstd", why: REPAIRED_D)
         Kept(check: "one-layer", key: "fs & process", why: ONE_LAYER)
     ]
 

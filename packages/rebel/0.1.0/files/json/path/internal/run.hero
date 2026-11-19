@@ -10,7 +10,6 @@ use json/path/internal/iregexp
 use json/path/internal/places
 use json/path/internal/program
 use json/path/internal/reader
-use json/path/internal/same
 use json/path/internal/stack
 use regex
 use unicode
@@ -122,7 +121,7 @@ function is_less(a: Operand, b: Operand) -> bool
 function is_equal(a: Operand, b: Operand) -> bool
     if a.kind == NOTHING_KIND || b.kind == NOTHING_KIND
         return a.kind == b.kind
-    return same.equal(a: a.value, b: b.value)
+    return json.equal(a: a.value, b: b.value)
 
 # The truth of `left op right` for one of the six comparison operators.
 function compare(left: Operand, op: str, right: Operand) -> bool

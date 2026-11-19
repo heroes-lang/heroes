@@ -6,6 +6,7 @@
 
 use bytes
 use compress/internal/codes
+use compress/internal/cursor
 use compress/xz/internal/filters
 use compress/xz/internal/lzma2_dec
 use compress/xz/internal/samples
@@ -35,10 +36,6 @@ constant CHECK_SHA256: i64
 # The six bytes every stream begins with.
 constant MAGIC: [u8]
     [0xfd, 0x37, 0x7a, 0x58, 0x5a, 0]
-
-# The number of `width` bytes at `at`, the lowest first.
-function little(input: [u8] lent, at: i64, width: i64) -> i64
-    return lzma2_dec.little(input, at: at, width: width)
 
 # The CRC-32 of `input` from `from` to `to`.
 function crc32_of(input: [u8] lent, from: i64, to: i64) -> i64
@@ -75,7 +72,7 @@ function check_of(input: [u8] lent, at: i64) -> i64?
     if input[at + 6] != 0 || input[at + 7] > 0x0f
         return codes.invalid_at(at: at + 6, why: "xz stream flags this format does not define")
 
-    if crc32_of(input, from: at + 6, to: at + 8) != little(input, at: at + 8, width: 4)
+    if crc32_of(input, from: at + 6, to: at + 8) != cursor.little(input, at: at + 8, width: 4)
         return codes.invalid_at(at: at + 8, why: "an xz stream header whose CRC-32 does not match")
     return ok(to_i64(input[at + 7]).must())
 
@@ -83,7 +80,7 @@ function check_of(input: [u8] lent, at: i64) -> i64?
 # `at` of `input`. An id this format reserves is not verified.
 function check_matches(out: [u8] lent, from: i64, check: i64, input: [u8] lent, at: i64) -> bool
     if check == CHECK_CRC32
-        return to_i64(hash.crc32(out.slice(from: from, to: out.len()))).must() == little(input, at: at, width: 4)
+        return to_i64(hash.crc32(out.slice(from: from, to: out.len()))).must() == cursor.little(input, at: at, width: 4)
 
     if check == CHECK_CRC64
         return hash.crc64_ecma(out.slice(from: from, to: out.len())) == bytes.decode_u64_le(input, at: at).must()
@@ -132,7 +129,7 @@ function stream_into(@out: [u8], input: [u8] lent, at: i64, limit: i64) -> i64?
             return codes.invalid_at(at: pos, why: "an xz block header cut short")
         crc_at = pos + header_size - 4
 
-        if crc32_of(input, from: pos, to: crc_at) != little(input, at: crc_at, width: 4)
+        if crc32_of(input, from: pos, to: crc_at) != cursor.little(input, at: crc_at, width: 4)
             return codes.invalid_at(at: crc_at, why: "an xz block header whose CRC-32 does not match")
         flags = to_i64(input[pos + 1]).must()
 
@@ -223,14 +220,14 @@ function index_and_footer(input: [u8] lent, at: i64, records: [i64] lent, stream
     if input.len() - p < 16
         return codes.invalid_at(at: p, why: "an xz stream cut short after its index")
 
-    if crc32_of(input, from: at, to: p) != little(input, at: p, width: 4)
+    if crc32_of(input, from: at, to: p) != cursor.little(input, at: p, width: 4)
         return codes.invalid_at(at: p, why: "an xz index whose CRC-32 does not match")
     footer = p + 4
 
-    if crc32_of(input, from: footer + 4, to: footer + 10) != little(input, at: footer, width: 4)
+    if crc32_of(input, from: footer + 4, to: footer + 10) != cursor.little(input, at: footer, width: 4)
         return codes.invalid_at(at: footer, why: "an xz stream footer whose CRC-32 does not match")
 
-    if (little(input, at: footer + 4, width: 4) + 1) * 4 != footer - at
+    if (cursor.little(input, at: footer + 4, width: 4) + 1) * 4 != footer - at
         return codes.invalid_at(at: footer + 4, why: "an xz footer that does not name its index's size")
 
     if input[footer + 8] != input[stream + 6] || input[footer + 9] != input[stream + 7]
