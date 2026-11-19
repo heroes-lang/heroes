@@ -6,10 +6,10 @@
 # Each new float is added into them with the two-sum, which gives a sum and the
 # exact error of rounding it, and only the last step rounds.
 
+use math/hero_math
 use math/internal/floats
 use math/internal/limits
 use math/internal/parts
-use math/libm
 
 # The sum of `xs` rounded once.
 #
@@ -153,7 +153,7 @@ function norm(xs: [f64]) -> f64
         squares @ squares.push(square)
         squares @ squares.push(parts.mul_add(x: scaled, times: scaled, plus: -square))
 
-    root = libm.c_sqrt(sum(squares).must())
+    root = hero_math.c_sqrt(sum(squares).must())
     square = root * root
     squares @ squares.push(-square)
     squares @ squares.push(-parts.mul_add(x: root, times: root, plus: -square))

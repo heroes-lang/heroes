@@ -4,11 +4,11 @@
 # Each answers only where the answer itself fits in an `i64`: a step that
 # would overflow on the way to an answer that fits is written another way.
 
+use math/hero_math
 use math/internal/bits
 use math/internal/checked
 use math/internal/integers
 use math/internal/limits
-use math/libm
 
 # The largest whole number whose square fits in an `i64`.
 constant ROOT_OF_MAX: i64
@@ -72,7 +72,7 @@ function lcm(a: i64, b: i64) -> i64?
 function isqrt(x: i64) -> i64?
     if x < 0
         return fail(code: limits.INVALID, msg: f"{x} is negative and has no whole square root")
-    root: i64 @= integers.min_i64(a: to_i64(libm.c_sqrt(to_f64(x))).must(), b: ROOT_OF_MAX)
+    root: i64 @= integers.min_i64(a: to_i64(hero_math.c_sqrt(to_f64(x))).must(), b: ROOT_OF_MAX)
 
     while root * root > x
         root @ root - 1

@@ -5,8 +5,8 @@
 # `<` asks `is_nan` first; `==` never aborts, and a nan equals nothing, so
 # `x != x` is the question itself.
 
+use math/hero_math
 use math/internal/limits
-use math/libm
 
 # Whether `x` is a nan.
 #
@@ -42,13 +42,13 @@ function is_subnormal(x: f64) -> bool
 #
 # - `x`: any float.
 function has_minus_sign(x: f64) -> bool
-    return libm.c_copysign(x: 1.0, y: x) < 0.0
+    return hero_math.c_copysign(x: 1.0, y: x) < 0.0
 
 # `x` without its sign.
 #
 # - `x`: any float.
 function abs(x: f64) -> f64
-    return libm.c_fabs(x)
+    return hero_math.c_fabs(x)
 
 # -1.0, 1.0, or `x` where it is a zero or a nan.
 #
@@ -66,7 +66,7 @@ function sign(x: f64) -> f64
 # - `x`: any float.
 # - `of`: any float.
 function with_sign(x: f64, of: f64) -> f64
-    return libm.c_copysign(x: x, y: of)
+    return hero_math.c_copysign(x: x, y: of)
 
 # The smaller of two floats, a nan on either side answering a nan.
 #

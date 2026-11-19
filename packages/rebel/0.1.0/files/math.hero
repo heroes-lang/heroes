@@ -1,7 +1,7 @@
 # The functions of mathematics over `f64`, and the integer helpers that answer
 # where the language's own arithmetic aborts.
 #
-# The functions of floats are the platform's C library's (`math/libm.hero`)
+# The functions of floats are the platform's C library's (`math/hero_math.hero`)
 # where C has them, and every one answers what IEEE 754 answers: a nan for a
 # question with no real answer, an infinity for one too large, never a failure,
 # so float arithmetic stays one expression and `is_nan` asks afterwards. A

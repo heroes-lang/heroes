@@ -5,53 +5,53 @@
 # As in `elementary`, an edge is held to the bit and a value inside the range
 # to within two units of the last place of Python's `math` on this machine.
 
+use math/hero_math
 use math/internal/floats
 use math/internal/limits
 use math/internal/parts
-use math/libm
 
 # The sine of `x`.
 #
 # - `x`: an angle in radians.
 function sin(x: f64) -> f64
-    return libm.c_sin(x)
+    return hero_math.c_sin(x)
 
 # The cosine of `x`.
 #
 # - `x`: an angle in radians.
 function cos(x: f64) -> f64
-    return libm.c_cos(x)
+    return hero_math.c_cos(x)
 
 # The tangent of `x`.
 #
 # - `x`: an angle in radians.
 function tan(x: f64) -> f64
-    return libm.c_tan(x)
+    return hero_math.c_tan(x)
 
 # The angle whose sine is `x`.
 #
 # - `x`: a sine.
 function asin(x: f64) -> f64
-    return libm.c_asin(x)
+    return hero_math.c_asin(x)
 
 # The angle whose cosine is `x`.
 #
 # - `x`: a cosine.
 function acos(x: f64) -> f64
-    return libm.c_acos(x)
+    return hero_math.c_acos(x)
 
 # The angle whose tangent is `x`.
 #
 # - `x`: a tangent.
 function atan(x: f64) -> f64
-    return libm.c_atan(x)
+    return hero_math.c_atan(x)
 
 # The angle of the point (`x`, `y`).
 #
 # - `y`: the point's height.
 # - `x`: the point's distance along the axis.
 function atan2(y: f64, x: f64) -> f64
-    return libm.c_atan2(y: y, x: x)
+    return hero_math.c_atan2(y: y, x: x)
 
 # `x` radians in degrees: `x` times the nearest float to 180 over pi, as
 # Python's `math.degrees` computes it.
@@ -71,61 +71,61 @@ function to_radians(x: f64) -> f64
 #
 # - `x`: any float.
 function sinh(x: f64) -> f64
-    return libm.c_sinh(x)
+    return hero_math.c_sinh(x)
 
 # The hyperbolic cosine of `x`.
 #
 # - `x`: any float.
 function cosh(x: f64) -> f64
-    return libm.c_cosh(x)
+    return hero_math.c_cosh(x)
 
 # The hyperbolic tangent of `x`.
 #
 # - `x`: any float.
 function tanh(x: f64) -> f64
-    return libm.c_tanh(x)
+    return hero_math.c_tanh(x)
 
 # The inverse hyperbolic sine of `x`.
 #
 # - `x`: any float.
 function asinh(x: f64) -> f64
-    return libm.c_asinh(x)
+    return hero_math.c_asinh(x)
 
 # The inverse hyperbolic cosine of `x`.
 #
 # - `x`: 1.0 or more.
 function acosh(x: f64) -> f64
-    return libm.c_acosh(x)
+    return hero_math.c_acosh(x)
 
 # The inverse hyperbolic tangent of `x`.
 #
 # - `x`: from -1.0 to 1.0.
 function atanh(x: f64) -> f64
-    return libm.c_atanh(x)
+    return hero_math.c_atanh(x)
 
 # The error function of `x`.
 #
 # - `x`: any float.
 function erf(x: f64) -> f64
-    return libm.c_erf(x)
+    return hero_math.c_erf(x)
 
 # The complementary error function of `x`.
 #
 # - `x`: any float.
 function erfc(x: f64) -> f64
-    return libm.c_erfc(x)
+    return hero_math.c_erfc(x)
 
 # The gamma function of `x`.
 #
 # - `x`: any float.
 function gamma(x: f64) -> f64
-    return libm.c_tgamma(x)
+    return hero_math.c_tgamma(x)
 
 # The natural logarithm of the size of the gamma function of `x`.
 #
 # - `x`: any float.
 function ln_gamma(x: f64) -> f64
-    return libm.c_lgamma(x)
+    return hero_math.c_lgamma(x)
 
 ## Tests
 

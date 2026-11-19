@@ -83,9 +83,9 @@ constant PARAMETER_LABELS: str
 constant PLAIN_AND_LOCALE: str
     "`numbers.format_percent` writes one fixed form and `i18n/numbers.format_percent` the form a language writes: whether the plain one is the root locale's is the readers' question, and either repair moves a name callers write"
 
-# A finding repaired by step 56e, which takes its line out.
-constant REPAIRED_E: str
-    "repaired by step 56e of this review, whose commit takes this line out"
+# The tables of `tokenizer/tables`, each a module a program names alone.
+constant TABLES_OF_A_PACKAGE: str
+    "a table of `tokenizer/tables`, data a program names alone so that it carries the one it uses; as a package of its own it would stand below `tokenizer/tables` and use that package's private modules (`made`, its data), which § A1's layers refuse, so its row and ledger are the readers' question: one package with four faces, or the private modules moved under each table"
 
 # `web`'s middleware, which takes the request first.
 constant REQUEST_FIRST: str
@@ -258,15 +258,12 @@ function kept() -> [Kept]
         Kept(check: "layers", key: "no row holds containers/internal/samples", why: CONTAINERS_SHARED_MODULES)
         Kept(check: "layers", key: "no row holds containers/internal/storage", why: CONTAINERS_SHARED_MODULES)
         Kept(check: "layers", key: "os uses io", why: OS_DISK_NAMES_STREAMS)
-        Kept(check: "unlisted", key: "floor misnamed math/libm", why: REPAIRED_E)
-        Kept(check: "unlisted", key: "no row tokenizer/tables", why: REPAIRED_E)
-        Kept(check: "unlisted", key: "no ledger tokenizer/tables", why: REPAIRED_E)
-        Kept(check: "unlisted", key: "no row tokenizer/tables/cl100k_base", why: REPAIRED_E)
-        Kept(check: "unlisted", key: "no ledger tokenizer/tables/cl100k_base", why: REPAIRED_E)
-        Kept(check: "unlisted", key: "no row tokenizer/tables/o200k_base", why: REPAIRED_E)
-        Kept(check: "unlisted", key: "no ledger tokenizer/tables/o200k_base", why: REPAIRED_E)
-        Kept(check: "unlisted", key: "no row tokenizer/tables/o200k_harmony", why: REPAIRED_E)
-        Kept(check: "unlisted", key: "no ledger tokenizer/tables/o200k_harmony", why: REPAIRED_E)
+        Kept(check: "unlisted", key: "no row tokenizer/tables/cl100k_base", why: TABLES_OF_A_PACKAGE)
+        Kept(check: "unlisted", key: "no ledger tokenizer/tables/cl100k_base", why: TABLES_OF_A_PACKAGE)
+        Kept(check: "unlisted", key: "no row tokenizer/tables/o200k_base", why: TABLES_OF_A_PACKAGE)
+        Kept(check: "unlisted", key: "no ledger tokenizer/tables/o200k_base", why: TABLES_OF_A_PACKAGE)
+        Kept(check: "unlisted", key: "no row tokenizer/tables/o200k_harmony", why: TABLES_OF_A_PACKAGE)
+        Kept(check: "unlisted", key: "no ledger tokenizer/tables/o200k_harmony", why: TABLES_OF_A_PACKAGE)
         Kept(check: "bodies", key: "amqp/internal/link.read, kafka/internal/link.read", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "amqp/internal/link.close, kafka/internal/link.close", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "archive/internal/tar_format.clamp, tui/internal/solve.kept", why: NO_PUBLIC_HOME)

@@ -20,13 +20,13 @@ code is written. Everyone who writes a line of Rebel reads both first.
 
 ## A1. The packages
 
-A hundred and forty-four packages, in layers. **A package may use any package of a layer below
+A hundred and forty-five packages, in layers. **A package may use any package of a layer below
 its own**; the column "may use" names the ones it is expected to need, not a limit. There is no cycle.
 
 | layer | package | what it holds | may use | C under it |
 |---|---|---|---|---|
 | 0 | `unicode` | what a character is: classes, case, the tables, UTF-8 read and written |  |  |
-| 0 | `math` | the functions of mathematics, complex numbers by C11 Annex G, and the integer helpers that cannot overflow in silence | `math/libm` | `math.h` |
+| 0 | `math` | the functions of mathematics, complex numbers by C11 Annex G, and the integer helpers that cannot overflow in silence |  | `math.h` |
 | 0 | `lists` | what the built-ins do not do for a `[T]`: a stable sort by an order, search, slices of a list, pairs |  |  |
 | 0 | `maps` | what the built-ins do not do for a `{K: V}`: values, entries, merging, removing |  |  |
 | 0 | `numbers` | a number read from text and written as text, in every base and precision |  |  |
@@ -102,6 +102,7 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 3 | `i18n/locales` | what CLDR knows of a language tag: its likely script and region, and the tags old names are replaced by | `i18n`, `strings` |  |
 | 3 | `crypto/seal` | authenticated encryption by the system's own cryptography | `bytes`, `crypto` | `hero_crypto.h` |
 | 3 | `crypto/keypairs` | key pairs, signatures and key agreement by the system's own cryptography | `bytes`, `crypto` | `hero_crypto.h` |
+| 3 | `tokenizer/tables` | the encodings of OpenAI's models carried as data, by name, and which encoding a model reads; each table a module of its own, `tokenizer/tables/o200k_base`, `cl100k_base` and `o200k_harmony`, so a program carries the one it names | `tokenizer` |  |
 | 4 | `fs` | files and directories by path: whole reads and writes, metadata, links, trees, temporaries | `bytes`, `io`, `os`, `path`, `time` | `hero_disk.h`, `hero_os.h` |
 | 4 | `msgpack` | MessagePack read into and written from a `json.Value`, bytes and extensions kept | `bytes`, `json`, `lists`, `time` |  |
 | 4 | `poll` | waiting on many streams, sockets and timers at once, and being told which are ready | `io`, `net`, `time` | `hero_poll.h` |

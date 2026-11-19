@@ -52,14 +52,16 @@ use report
 constant LEAST_MODULES: i64
     1492
 
-# The floor of the ledgers read: **144 on 2026-11-19**, one per row of § A1.
+# The floor of the ledgers read: **144 on 2026-11-19**, one per row of § A1;
+# **145 the same day**, step 56e giving `tokenizer/tables` its own.
 constant LEAST_LEDGERS: i64
-    144
+    145
 
 # The floor of § A1's rows: **144 on 2026-11-19**, the page's *a hundred and
-# forty-four packages*.
+# forty-four packages*; **145 the same day**, step 56e's row of
+# `tokenizer/tables`.
 constant LEAST_ROWS: i64
-    144
+    145
 
 # One finding of one instrument: the check, what the review keeps it under, and
 # what it says, its file and line first.
