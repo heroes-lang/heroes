@@ -368,6 +368,9 @@ test "3-4-5 triangle"
 ```
 `test` blocks run only when asked for; ordinary builds ignore them. An
 `assert` failure shows the source expression, and both sides of a comparison.
+`skip_test(reason: "no server named")` ends a test there as skipped, never passed:
+`heroes test` prints its title and reason and counts it apart, and a run
+where every test skipped fails; only a `test` block calls it.
 
 `???` is a valid expression anywhere. It is not an error: the compiler
 reports what belongs there (the expected type, what is in scope). A program

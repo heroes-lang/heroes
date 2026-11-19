@@ -74,6 +74,7 @@ use check/render
 use check/settling
 use check/state
 use check/table
+use check/test_only
 use check/type_fit
 use check/waiting as waits
 use check/waiting_order as settle_order
@@ -1708,6 +1709,7 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
             tainted @ settle_waiting(@c, a, r, s, decls, call, waiting, @bindings) || tainted
             given_width.after_call(@c, a, s, decls, call: call, given: given, from: said)
             exit_code.after_call(@c, a, s, decls, call: call, given: given)
+            test_only.after_call(@c, s, decls, decl: decl, span: span)
 
             # The label rule asked first of the bytes, so a call written right
             # pays no copy of the tree to learn it (task 2279).

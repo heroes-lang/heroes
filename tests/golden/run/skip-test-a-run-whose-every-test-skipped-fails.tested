@@ -1,0 +1,4 @@
+SKIP "a: needs a server": REBEL_X_URL is not set
+SKIP "b: needs a server too": REBEL_X_URL is not set
+2 tests, every one skipped: none ran its subject
+!exit: 1

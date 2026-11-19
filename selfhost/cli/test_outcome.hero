@@ -1,0 +1,128 @@
+# What one test ended as, and what a run of them says (design.md §3.5, §4.18;
+# panel 253's R4, ratified 2026-11-19; spec § 12): passed, failed, or
+# skipped, a third outcome a test tells through a file this runner names,
+# never through how its process ends.
+#
+# WHY A FILE AND NOT A STATUS. `heroes test` runs each test as a process of
+# its own (`cli/verbs.hero`), and every status 0 to 255 is one a program can
+# end with, `exit(code:)` taking each of them (spec § 11) and an abort being
+# 134: a status reserved for a skip, automake's 77, is one a test reaches by
+# accident. So the runner names a file, private to its run, as the test
+# binary's second word after the index; the library's `skip_test` writes
+# `skipped`, a line feed and its reason there and ends the process at 0
+# (`library_source.hero`); and a skip is read from the two together, exit 0
+# and that file holding that text. Exit 0 and no file is a pass; everything
+# else is a failure: an abort, a signal, any other status, a file holding
+# anything else, a file that cannot be read. So no `exit`, `print`, abort or
+# `assert` of a test reads as a skip, nor a skip as a pass (the sitting's
+# prototype, measured over the seven ways out a test process has).
+#
+# WHAT A RUN SAYS. A run where every test skipped tested nothing, and is no
+# green: it fails, exit 1, as the harness's floor fails a machine that judged
+# nothing (`tests/harness/report.hero`, defect 246) and as `--only` selecting
+# no test is refused. A skip beside a pass is a green run that says how many
+# skipped; beside a failure, a red one that says both. A file with no test
+# at all is not this module's: it exits 0 as it did, which R4 keeps until the
+# census of the files it would turn red is taken.
+
+use cli/strings
+
+# How one test ended.
+variant Outcome
+    passed
+    skipped
+        reason: str
+    failed
+
+# The first line of what `skip_test` writes, the whole protocol's one word.
+constant SKIPPED: str
+    "skipped\n"
+
+# What one test ended as: `ended_at_zero` whether its process started and
+# ended itself at 0, and `told` the file this runner named for it, read after
+# it ended (`read_file`'s answer, `file_not_found` where the test wrote none).
+function of(ended_at_zero: bool, told: str?) -> Outcome
+    if !ended_at_zero
+        return .failed
+
+    match told
+        .ok text =>
+            if strings.starts_with(text: text, prefix: SKIPPED)
+                return .skipped(reason: text.slice(from: SKIPPED.len(), to: text.len()))
+            return .failed
+        .err e =>
+            if e.code == "file_not_found"
+                return .passed
+            return .failed
+
+# The line `heroes test` prints for one test, its quoted title after the word.
+function line(outcome: Outcome, title: str) -> str
+    return match outcome
+        .passed    => "ok   " + title
+        .skipped s => "SKIP " + title + ": " + s.reason
+        .failed    => "FAIL " + title
+
+# What a run says once every test it selected ended: its last line, and
+# whether it is green.
+record Verdict
+    said: str
+    green: bool
+
+function verdict(ran: i64, failed: i64, skipped: i64) -> Verdict
+    unit: str @= "tests"
+
+    if ran == 1
+        unit @ "test"
+    counted = ran.to_str() + " " + unit + ", "
+
+    if failed == 0 && skipped == ran && ran == 1
+        return Verdict(said: counted + "skipped: it did not run its subject", green: false)
+
+    if failed == 0 && skipped == ran
+        return Verdict(said: counted + "every one skipped: none ran its subject", green: false)
+
+    if failed == 0 && skipped == 0
+        return Verdict(said: counted + "all passed", green: true)
+
+    if failed == 0
+        return Verdict(said: counted + skipped.to_str() + " skipped", green: true)
+
+    if skipped == 0
+        return Verdict(said: counted + failed.to_str() + " failed", green: false)
+    return Verdict(said: counted + failed.to_str() + " failed, " + skipped.to_str() + " skipped", green: false)
+
+## Tests
+
+test "a skip is exit 0 and the file's word together, and nothing else is one"
+    gone: str? = fail(code: "file_not_found", msg: "no file")
+    unreadable: str? = fail(code: "not_text", msg: "not text")
+    assert of(ended_at_zero: true, told: gone) == .passed
+    assert of(ended_at_zero: true, told: ok("skipped\nno server")) == .skipped(reason: "no server")
+    assert of(ended_at_zero: true, told: ok("skipped\n")) == .skipped(reason: "")
+
+    # An abort, a signal or any other status, whatever the file holds.
+    assert of(ended_at_zero: false, told: ok("skipped\nno server")) == .failed
+    assert of(ended_at_zero: false, told: gone) == .failed
+
+    # A file holding anything else, or one that cannot be read.
+    assert of(ended_at_zero: true, told: ok("")) == .failed
+    assert of(ended_at_zero: true, told: ok("skipped")) == .failed
+    assert of(ended_at_zero: true, told: ok("SKIPPED\nno server")) == .failed
+    assert of(ended_at_zero: true, told: unreadable) == .failed
+
+test "each outcome's line names the test, and a skip its reason"
+    assert line(.passed, title: "\"a\"") == "ok   \"a\""
+    assert line(.skipped(reason: "no server"), title: "\"a\"") == "SKIP \"a\": no server"
+    assert line(.failed, title: "\"a\"") == "FAIL \"a\""
+
+test "a run where every test skipped fails, and a skip beside a pass does not"
+    assert verdict(ran: 1, failed: 0, skipped: 1) == Verdict(said: "1 test, skipped: it did not run its subject", green: false)
+    assert verdict(ran: 3, failed: 0, skipped: 3) == Verdict(said: "3 tests, every one skipped: none ran its subject", green: false)
+    assert verdict(ran: 3, failed: 0, skipped: 0) == Verdict(said: "3 tests, all passed", green: true)
+    assert verdict(ran: 3, failed: 0, skipped: 1) == Verdict(said: "3 tests, 1 skipped", green: true)
+    assert verdict(ran: 3, failed: 2, skipped: 0) == Verdict(said: "3 tests, 2 failed", green: false)
+    assert verdict(ran: 3, failed: 1, skipped: 2) == Verdict(said: "3 tests, 1 failed, 2 skipped", green: false)
+    assert verdict(ran: 1, failed: 1, skipped: 0) == Verdict(said: "1 test, 1 failed", green: false)
+
+test "the word the runner reads is the one the library's skip_test writes"
+    assert SKIPPED == "skipped\n"

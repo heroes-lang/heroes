@@ -1,0 +1,21 @@
+# Panel 253's R4, M-rebel-library step 61a, 2026-11-19: a skip is read from
+# exit 0 and the runner's file together, so no other way out of a test reads
+# as one: `exit(code: 77)`, automake's skip status, and an abort are failures,
+# `exit(code: 0)` is a pass, and the run with a failure in it is red
+# (`skip-test-no-status-reads-as-a-skip.tested`), the skip counted beside.
+
+function main()
+    print("main runs")
+
+test "a: skips"
+    skip_test(reason: "no server named")
+
+test "b: exits 0"
+    exit(code: 0)
+
+test "c: exits 77, automake's skip status"
+    exit(code: 77)
+
+test "d: aborts"
+    xs = [1]
+    print(xs[2])
