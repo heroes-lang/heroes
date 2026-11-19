@@ -332,3 +332,13 @@ narrowed to what their pages state.
   one change (the spec and the runtime land together, so neither says what the other does not), the print
   lock, the panic's flush, validated J on Linux and Darwin, the goldens J and B' move, and the
   `runtime` suite green.
+
+## The author's verdict
+
+**Ratified, 2026-11-19**, R1 to R3 as proposed, the W1 departure with them: the author's word given at
+about 13:10, before this synthesis was written, meant as *OK to the ratifications as proposed*, of
+sittings A, B and C of M-rebel-library, recorded as given. Its decision is
+https://github.com/heroes-lang/heroes/issues/2590, opened and closed that day with this file's commit,
+its `## Prior art` the six lines re-read that day. Filed with it: defects 2587 (a panic behind a blocked
+stdout writer), 2588 (the `runtime` suite red on the branch's platform members) and 2589 (the blind
+runner's leaks); commented: 2522, 2552 and 2582.
